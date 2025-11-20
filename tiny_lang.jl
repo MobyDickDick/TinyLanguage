@@ -1,5 +1,19 @@
 module TinyLanguage
 
+"""
+Mini-Compiler für eine winzige, C-ähnliche Sprache. Die Übersetzung läuft in
+vier Schritten:
+
+1. **Lexer**: zerlegt den Quelltext in Tokens.
+2. **Parser**: baut aus den Tokens eine kleine IR (Abstract Syntax Tree).
+3. **Linter**: erzwingt MUST-USE-Regeln (Parameter + lokale Bindungen nutzen).
+4. **Codegen**: erzeugt Julia-Quelltext samt tiny Runtime und führt ihn auf
+   Wunsch direkt aus.
+
+Alle Bausteine sind in dieser einen Datei enthalten, sodass man bequem
+nachvollziehen kann, wie Lexer/Parser/Emitter ineinandergreifen.
+"""
+
 # tiny_lang.jl — Mini-Sprache (Lexer → Parser/IR → Linter → Julia-Codegen)
 # Features:
 #   - define, Zuweisung, print, if/else, while, fn, return, operator-Overloads
@@ -46,6 +60,13 @@ const KEYWORDS = Set(["define","print","if","else","while","fn","return","operat
 
 trace_lex_token(tok::Token) = (TRACE_LEX[] && @info "LEX" kind=tok.kind text=tok.text pos=tok.pos; tok)
 
+"""
+    skip_ws_and_comments!(lx)
+
+Überspringt Whitespace und `//`-Zeilenkommentare. Aktualisiert den
+Lexer-Index, ohne Tokens zu erzeugen, damit `next_token` direkt am nächsten
+relevanten Zeichen fortsetzen kann.
+"""
 function skip_ws_and_comments!(lx::Lexer)
     while lx.i <= lx.n
         c = lx.s[lx.i]
@@ -64,6 +85,13 @@ function skip_ws_and_comments!(lx::Lexer)
     end
 end
 
+"""
+    read_string!(lx)
+
+Liest ein Stringliteral inklusive Escape-Handling (`\n`, `\t`, `\\`, `\"`).
+Gibt ein fertiges `Token(:STRING, ...)` zurück und hebt einen Fehler aus, wenn
+das schließende Anführungszeichen fehlt.
+"""
 function read_string!(lx::Lexer)
     pos0 = lx.i
     lx.i = nextind(lx.s, lx.i)  # skip opening "
@@ -94,6 +122,12 @@ function read_string!(lx::Lexer)
     error("unterminated string literal starting at $pos0")
 end
 
+"""
+    next_token(lx)
+
+Liefert das nächste Token und rückt den Lexer-Index entsprechend vor. Hier
+werden Keywords, Nummern, Operatoren und Sonderzeichen erkannt.
+"""
 function next_token(lx::Lexer)
     skip_ws_and_comments!(lx)
     pos = lx.i
@@ -237,6 +271,12 @@ function accept!(p::Parser, kind::Symbol, txt::Union{Nothing,String}=nothing)
     false
 end
 
+"""
+    parse_program(p)
+
+Parst den vollständigen Quelltext bis `:EOF` und liefert einen Vektor aus
+IR-Knoten (Statements). Fehler werden mit genauer Positionsangabe geworfen.
+"""
 function parse_program(p::Parser)
     out = IR[]
     while p.look.kind != :EOF
@@ -245,6 +285,12 @@ function parse_program(p::Parser)
     out
 end
 
+"""
+    parse_block(p)
+
+Parst einen Block `{ ... }` und gibt die enthaltenen Statements als Vektor
+zurück. Die schließende Klammer wird konsumiert.
+"""
 function parse_block(p::Parser)
     expect!(p, :SYMBOL, "{")
     out = IR[]
@@ -255,6 +301,12 @@ function parse_block(p::Parser)
     out
 end
 
+"""
+    parse_params(p)
+
+Liest Funktions-Parameterliste `a, b, c` (ohne Klammern) und gibt sie als
+`Vector{String}` zurück.
+"""
 function parse_params(p::Parser)
     names = String[]
     if p.look.kind == :NAME
@@ -266,6 +318,12 @@ function parse_params(p::Parser)
     names
 end
 
+"""
+    parse_args(p)
+
+Parst eine Argumentliste innerhalb von `(...)` für Aufrufe. Liefert einen
+Vektor aus Expressions.
+"""
 function parse_args(p::Parser)
     args = IR[]
     if !(p.look.kind == :SYMBOL && p.look.text == ")")
@@ -288,6 +346,13 @@ function default_expr_for(tname::String)::IR
     end
 end
 
+"""
+    parse_obj_literal(p)
+
+Parst ein Objektliteral `{ field: expr, ... }`. Kurzformen wie `field: number`
+werden mit Default-Werten gefüllt, damit der Generator später sinnvolle Werte
+setzen kann.
+"""
 function parse_obj_literal(p::Parser)::IR
     expect!(p, :SYMBOL, "{")
     fields = Pair{String,IR}[]
@@ -309,6 +374,12 @@ function parse_obj_literal(p::Parser)::IR
     return ObjLit(fields)
 end
 
+"""
+    parse_postfix_dot(p, base)
+
+Kettet beliebig viele `.feld`-Zugriffe an einen Basis-Ausdruck. Dadurch können
+z. B. `foo.bar.baz` ohne separate Parser-Regeln abgehandelt werden.
+"""
 function parse_postfix_dot(p::Parser, base::IR)::IR
     while p.look.kind == :SYMBOL && p.look.text == "."
         advance!(p)
@@ -318,6 +389,13 @@ function parse_postfix_dot(p::Parser, base::IR)::IR
     return base
 end
 
+"""
+    parse_stmt(p)
+
+Parst ein einzelnes Statement (inklusive Destrukturierung, if/while, fn,
+type-Definition, Operator-Definition und Ausdrücke mit Semikolon). Gibt einen
+passenden IR-Knoten zurück.
+"""
 function parse_stmt(p::Parser)::IR
     t = p.look
 
@@ -436,8 +514,19 @@ function parse_stmt(p::Parser)::IR
     error("Parse error near pos $(t.pos): unexpected token $(t.kind) '$(t.text)'")
 end
 
+"""
+    parse_expr(p)
+
+Einstiegspunkt für Expressions. Nutzt rekursiv die Präzedenzkaskade
+`parse_equality → parse_comparison → parse_sum → parse_term → parse_factor`.
+"""
 parse_expr(p::Parser) = parse_equality(p)
 
+"""
+    parse_equality(p)
+
+Parst `==`-Verkettungen linksassoziativ (z. B. `a == b == c`).
+"""
 function parse_equality(p::Parser)
     left = parse_comparison(p)
     while p.look.kind == :OP && p.look.text == "=="
@@ -448,6 +537,11 @@ function parse_equality(p::Parser)
     left
 end
 
+"""
+    parse_comparison(p)
+
+Parst Vergleichsoperatoren `> >= < <=` linksassoziativ.
+"""
 function parse_comparison(p::Parser)
     left = parse_sum(p)
     while p.look.kind == :OP && (p.look.text in (">", ">=", "<", "<="))
@@ -458,6 +552,11 @@ function parse_comparison(p::Parser)
     left
 end
 
+"""
+    parse_sum(p)
+
+Parst `+` und `-` linksassoziativ.
+"""
 function parse_sum(p::Parser)
     left = parse_term(p)
     while p.look.kind == :OP && (p.look.text == "+" || p.look.text == "-")
@@ -468,6 +567,11 @@ function parse_sum(p::Parser)
     left
 end
 
+"""
+    parse_term(p)
+
+Parst `*` und `/` linksassoziativ.
+"""
 function parse_term(p::Parser)
     left = parse_factor(p)
     while p.look.kind == :OP && (p.look.text == "*" || p.look.text == "/")
@@ -478,6 +582,12 @@ function parse_term(p::Parser)
     left
 end
 
+"""
+    parse_factor(p)
+
+Behandelt Primärausdrücke (Literale, Variablen, Aufrufe, `new`, Objekt- und
+Klammerausdrücke) und hängt eventuelle `.feld`-Zugriffe an.
+"""
 function parse_factor(p::Parser)
     t = p.look
     if t.kind == :KW && t.text == "new"
@@ -529,16 +639,35 @@ end
 # Codegen-Runtime (Julia)
 ########################
 
+"""
+    Emitter
+
+Sammelt erzeugte Julia-Codezeilen und kümmert sich um Einrückung. Der
+Emitter selbst ist sehr simpel: `emit!` hängt Strings mit dem aktuellen
+Indent (`ind`) an den Puffer `lines` an.
+"""
 mutable struct Emitter
     lines::Vector{String}
     ind::Int
 end
 Emitter() = Emitter(String[], 0)
 
+"""
+    emit!(em, s="")
+
+Fügt eine neue Codezeile mit aktueller Einrückung hinzu. Leere Strings werden
+als blank lines geschrieben.
+"""
 function emit!(em::Emitter, s::AbstractString = "")
     push!(em.lines, repeat("    ", em.ind) * String(s))
 end
 
+"""
+    mangle_op(op)
+
+Erzeugt einen eindeutigen Funktionssuffix für Operator-Overloads (z. B. `+`
+→ `add`).
+"""
 function mangle_op(op::String)
     if op == "+"; "add"
     elseif op == "-"; "sub"
@@ -553,6 +682,12 @@ function mangle_op(op::String)
     end
 end
 
+"""
+    jl_string_literal(s)
+
+Escaped einen beliebigen String, damit er sicher als Julia-Stringliteral im
+generierten Code verwendet werden kann.
+"""
 function jl_string_literal(s::AbstractString)
     x = replace(String(s),
                 "\\" => "\\\\",
@@ -599,6 +734,14 @@ function __delete(p)
     catch e
         return __ERR_REC(e)
     end
+end
+
+# Öffentliche Wrapper-Funktion, damit Tiny-Code delete(...) aufrufen kann
+# (wurde nach Projekt-Umzug verloren, weil nur __delete existierte).
+# explizit als function ... end, um sicher eine globale Bindung anzulegen
+# (manche Julia-Versionen warnen sonst vor fehlender Definition).
+function delete(p)
+    return __delete(p)
 end
 
 function heap_get(p, i)
@@ -694,6 +837,12 @@ function __type_field_type(tname, fname)
 end
 """
 
+"""
+    gen_expr(em, e)
+
+Übersetzt einen Ausdrucksknoten in Julia-Quelltext. Die Funktion ist rein
+rekursiv und erzeugt Strings, die später in den Code-Emitter eingefügt werden.
+"""
 function gen_expr(em::Emitter, e::IR)::String
     if e isa Num
         return (e::Num).txt
@@ -735,6 +884,12 @@ function gen_expr(em::Emitter, e::IR)::String
     end
 end
 
+"""
+    gen_stmt!(em, s)
+
+Erzeugt Julia-Code für ein einzelnes Statement und hängt ihn an den Emitter.
+Einrückungen werden automatisch angepasst.
+"""
 function gen_stmt!(em::Emitter, s::IR)
     if s isa Let
         emit!(em, string((s::Let).name, " = ", gen_expr(em, (s::Let).expr)))
@@ -810,6 +965,13 @@ function gen_stmt!(em::Emitter, s::IR)
     end
 end
 
+"""
+    gen_program(stmts)
+
+Erzeugt den kompletten Julia-Quelltext: zuerst die tiny Runtime, dann
+Operator-Definitionen, Typen, Funktionen und schließlich den Programmkörper
+plus `__tiny_run__`-Wrapper zum Output-Capturing.
+"""
 function gen_program(stmts::Vector{IR})::String
     em = Emitter()
     emit!(em, "# generated from tiny language (Julia)")
@@ -853,6 +1015,12 @@ end
 # Linter (MUST-USE)
 ########################
 
+"""
+    uses_in_expr(e, reads)
+
+Traversiert einen Ausdruck und zählt Variablennutzungen in `reads`. Wird vom
+Linter genutzt, um MUST-USE-Verstöße aufzuspüren.
+"""
 function uses_in_expr(e::IR, reads::Dict{String,Int})
     if e isa Var
         nm = (e::Var).name
@@ -879,6 +1047,13 @@ function uses_in_expr(e::IR, reads::Dict{String,Int})
     end
 end
 
+"""
+    lint_stmt_reads!(stmt, reads)
+
+Traversiert ein Statement rekursiv und zählt alle Variablennutzungen. Für
+Operator-Definitionen wird eine eigene Zählung mit Pflichtparametern
+durchgeführt.
+"""
 function lint_stmt_reads!(s::IR, reads::Dict{String,Int})
     if s isa Let
         uses_in_expr((s::Let).expr, reads)
@@ -917,6 +1092,12 @@ function lint_stmt_reads!(s::IR, reads::Dict{String,Int})
     end
 end
 
+"""
+    lint_fn_params_used!(fn)
+
+Verifiziert, dass alle Funktionsparameter mindestens einmal verwendet werden
+und delegiert anschließend an `lint_locals_used!` für lokale Bindungen.
+"""
 function lint_fn_params_used!(f::Fn)
     reads = Dict{String,Int}()
     for st in f.body
@@ -929,6 +1110,12 @@ function lint_fn_params_used!(f::Fn)
     lint_locals_used!(f.body)
 end
 
+"""
+    lint_locals_used!(stmts)
+
+Sucht alle Top-Level-Bindungen und prüft, ob sie in den Statements gelesen
+werden. Hebt einen Fehler aus, sobald ungenutzte Variablen gefunden werden.
+"""
 function lint_locals_used!(stmts::Vector{IR})
     defs = Dict{String,Int}()
     uses = Dict{String,Int}()
@@ -954,6 +1141,12 @@ end
 # Driver
 ########################
 
+"""
+    compile_to_julia(src) -> String
+
+Haupteinstieg: parst den TinyLanguage-Quelltext, lintet ihn und gibt den
+generierten Julia-Code (inkl. Runtime) als String zurück.
+"""
 function compile_to_julia(src::String)::String
     p = Parser(src)
     ir = parse_program(p)
@@ -978,6 +1171,13 @@ if abspath(PROGRAM_FILE) == @__FILE__
 
     # robuste Pfadauflösung
     src_arg = ARGS[1]
+    """
+        resolve_src(arg)
+
+    Sucht die angegebene Quelldatei relativ zu `@__DIR__`, zu einem möglichen
+    Unterordner `TinyLanguage` oder zum aktuellen Arbeitsverzeichnis. Wirkt
+    damit robust gegenüber Projekt-Umzügen.
+    """
     function resolve_src(arg::AbstractString)
         if isabspath(arg) && isfile(arg); return arg; end
         p1 = joinpath(@__DIR__, arg);                 isfile(p1) && return p1
@@ -1005,7 +1205,11 @@ if abspath(PROGRAM_FILE) == @__FILE__
     if any(==("--run"), ARGS)
         mod = Module()
         Base.include_string(mod, code)
-        f = getfield(mod, :__tiny_run__)
+        # __tiny_run__ wird erst beim dynamischen Laden des Strings erzeugt.
+        # Da Base.include_string neuen Code in einer frischen Welt einführt,
+        # greifen wir über invokelatest sowohl auf das Binding als auch auf den
+        # Call zu, damit keine World-Age-Warnungen (Julia ≥1.12) ausgelöst werden.
+        f = Base.invokelatest(() -> getfield(mod, :__tiny_run__))
         Base.invokelatest(f)
         println(mod.__CAPTURED__)
     elseif !any(==("--emit"), ARGS)

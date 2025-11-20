@@ -11,7 +11,7 @@ function run_tiny(src::String)
     Base.include_string(mod, julia_code)
 
     # __tiny_run__ aufrufen (world-age-sicher)
-    f = getfield(mod, :__tiny_run__)
+    f = Base.invokelatest(getfield, mod, :__tiny_run__)
     return Base.invokelatest(f)
 end
 

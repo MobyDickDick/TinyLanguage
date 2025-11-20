@@ -601,6 +601,14 @@ function __delete(p)
     end
 end
 
+# Öffentliche Wrapper-Funktion, damit Tiny-Code delete(...) aufrufen kann
+# (wurde nach Projekt-Umzug verloren, weil nur __delete existierte).
+# explizit als function ... end, um sicher eine globale Bindung anzulegen
+# (manche Julia-Versionen warnen sonst vor fehlender Definition).
+function delete(p)
+    return __delete(p)
+end
+
 function heap_get(p, i)
     return __heap[Int(p)][Int(i)+1]
 end

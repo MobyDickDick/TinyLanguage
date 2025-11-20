@@ -1,0 +1,55 @@
+/// demo.tiny - port demo for Julia
+operator + (a: Box, b: Box) -> Box {
+  return box(unbox(a) + unbox(b));
+}
+operator == (x: Box, y: Box) -> Bool {
+  return unbox(x) == unbox(y);
+}
+
+// default numerics
+define a = 7 + 5 * 2;
+print(a >= 17);       // true
+
+// object overloading
+define x = box(10);
+define y = box(32);
+define z = x + y;
+print(unbox(z));      // 42
+print(x == y);        // false
+
+// heap & tags (new(size))
+define n = 3;
+define p = new(n);
+tag(p, Arr);
+heap_set(p, 0, 1);
+heap_set(p, 1, 2);
+heap_set(p, 2, 3);
+print(heap_get(p, 2)); // 3
+delete(p);
+
+// array literal via new[ ... ]
+define q = new[10, 20, 12];
+print(heap_get(q, 0)); // 10
+print(heap_get(q, 1)); // 20
+print(heap_get(q, 2)); // 12
+delete(q);
+
+// strings
+define a2 = 17;
+print("Hallo");
+print("a2 = " + a2);
+
+// while + if/else + assignments
+define i = 0;
+define s = 0;
+while (i < 5) {
+  if (i == 3) {
+    define tmp = i * 10;
+    print(tmp);
+  } else {
+    print(i);
+  }
+  s = s + i;
+  i = i + 1;
+}
+print(s); // 10

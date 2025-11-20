@@ -706,10 +706,10 @@ global __CAPTURED__ = ""
 __emitln(x) = (print(__OUT, x); print(__OUT, '\\n'); nothing)
 
 # Heap & Tags & Ops
-const __heap = Dict{Int, Vector{Any}}()
-const __ptr_tags = Dict{Int, String}()
-const __ops = Dict{Tuple{String, Union{Nothing,String}, Union{Nothing,String}}, Function}()
-__next_ptr = Ref(1)
+const __heap = Dict{Int, Vector{Any}}()  # Pointer → Value-Vektor
+const __ptr_tags = Dict{Int, String}()    # Pointer → Typname
+const __ops = Dict{Tuple{String, Union{Nothing,String}, Union{Nothing,String}}, Function}()  # (op, ta, tb) → Fn
+__next_ptr = Ref(1)  # nächste freie Pointer-ID
 
 # Fehler-Records
 const __OK  = Dict("__tag__"=>"Error", "code"=>0, "msg"=>"")
@@ -718,19 +718,19 @@ __OK_REC()  = Dict("__tag__"=>"Record", "e"=>__OK)
 __ERR_REC(msg) = Dict("__tag__"=>"Record", "e"=>__ERR(msg))
 
 function __new(n)
-    n < 0 && error("alloc error: negative size")
-    p = __next_ptr[]
-    __next_ptr[] += 1
-    __heap[p] = [0 for _ in 1:Int(n)]
-    return p
+    n < 0 && error("alloc error: negative size")  # nur positive Längen erlaubt
+    p = __next_ptr[]  # aktuelle Pointer-ID merken
+    __next_ptr[] += 1  # für nächste Allocation erhöhen
+    __heap[p] = [0 for _ in 1:Int(n)]  # einfachen Null-Vektor anlegen
+    return p  # Pointer zurückgeben
 end
 
 function __delete(p)
     try
-        p = Int(p)
-        pop!(__heap, p, nothing)
-        pop!(__ptr_tags, p, nothing)
-        return __OK_REC()
+        p = Int(p)  # pointer in Integer casten
+        pop!(__heap, p, nothing)      # Speicher freigeben (silent, falls fehlend)
+        pop!(__ptr_tags, p, nothing)  # evtl. Tag-Eintrag entfernen
+        return __OK_REC()             # Erfolg als Record zurückgeben
     catch e
         return __ERR_REC(e)
     end
@@ -745,13 +745,13 @@ function delete(p)
 end
 
 function heap_get(p, i)
-    return __heap[Int(p)][Int(i)+1]
+    return __heap[Int(p)][Int(i)+1]  # +1, weil Julia 1-basiert indiziert
 end
 
 function heap_set(p, i, v)
     try
-        __heap[Int(p)][Int(i)+1] = v
-        return __OK_REC()
+        __heap[Int(p)][Int(i)+1] = v  # Schreibzugriff auf Heap-Slot
+        return __OK_REC()             # Erfolg
     catch e
         return __ERR_REC(e)
     end
@@ -759,8 +759,8 @@ end
 
 function tag(p, typ)
     try
-        __ptr_tags[Int(p)] = String(typ)
-        return __OK_REC()
+        __ptr_tags[Int(p)] = String(typ)  # Typnamen am Pointer speichern
+        return __OK_REC()                 # Erfolgscode zurückgeben
     catch e
         return __ERR_REC(e)
     end
@@ -768,28 +768,28 @@ end
 
 function __get_tag(v)
     if v isa Dict && haskey(v, "__tag__")
-        return v["__tag__"]
+        return v["__tag__"]             # Records/Boxen tragen __tag__ direkt
     end
     try
-        iv = Int(v)
+        iv = Int(v)                      # Pointer zu Int casten (kann fehlschlagen)
         if haskey(__ptr_tags, iv)
-            return __ptr_tags[iv]
+            return __ptr_tags[iv]        # Heap-Tag finden
         end
     catch
     end
-    return nothing
+    return nothing                       # kein Tag bekannt
 end
 
 function __register_op(op, ta, tb, fn)
-    __ops[(String(op), ta === nothing ? nothing : String(ta), tb === nothing ? nothing : String(tb))] = fn
-    return nothing
+    __ops[(String(op), ta === nothing ? nothing : String(ta), tb === nothing ? nothing : String(tb))] = fn  # Overload
+    return nothing  # nur Seiteneffekt
 end
 
 function __binop(op, a, b)
-    ta = __get_tag(a); tb = __get_tag(b)
+    ta = __get_tag(a); tb = __get_tag(b)  # Typ-Informationen der Operanden holen
     key = (String(op), ta, tb)
     if haskey(__ops, key)
-        return __ops[key](a, b)
+        return __ops[key](a, b)           # benutzerdefinierten Operator ausführen
     end
     op = String(op)
     if op == "+" ; return a + b
@@ -806,15 +806,15 @@ function __binop(op, a, b)
     end
 end
 
-box(v) = Dict("__tag__"=>"Box", "v"=>v)
-unbox(b) = b["v"]
+box(v) = Dict("__tag__"=>"Box", "v"=>v)  # Wert in einfaches Record-Boxing legen
+unbox(b) = b["v"]                          # Wert aus Box holen
 
 # Struct-Felder
 function field_get(o, k)
-    return o[String(k)]
+    return o[String(k)]  # generischer Feldzugriff (Dict-basiert)
 end
 function field_set(o, k, v)
-    o[String(k)] = v
+    o[String(k)] = v     # mutiert das Record-Dict
     return nothing
 end
 

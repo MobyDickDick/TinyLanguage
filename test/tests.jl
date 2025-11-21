@@ -160,6 +160,37 @@ end
     @test out == "0\n0\n0\n11\n22\n33\n7\n8\n9\n0\n0\n3\n5\n0\n0\n0\n0\n0\n"
 end
 
+@testset "Classes: fields + methods" begin
+    out = run_tiny("""
+        class Point {
+            x: number;
+            y: number;
+
+            fn init(self, x, y) {
+                self.x = x;
+                self.y = y;
+                return self;
+            }
+
+            fn move(self, dx, dy) {
+                self.x = self.x + dx;
+                self.y = self.y + dy;
+                return self;
+            }
+
+            fn sum(self) { return self.x + self.y; }
+        }
+
+        define p = new Point { x: 0; y: 0; };
+        p = p.init(2, 3);
+        p = p.move(1, -1);
+        print(p.x);
+        print(p.y);
+        print(p.sum());
+    """)
+    @test out == "3\n2\n5\n"
+end
+
 # ---------- NEGATIVE: MUST-USE ----------
 
 @testset "MUST-USE: ungenutzter Funktionsparameter" begin

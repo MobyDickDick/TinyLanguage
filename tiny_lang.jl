@@ -23,6 +23,7 @@ nachvollziehen kann, wie Lexer/Parser/Emitter ineinandergreifen.
 #   - Feldzugriff: obj.field
 #   - Destrukturierung zu Record: {a, b} = expr;
 #   - type-Definitionen: type Name { field: Type; ... }
+#   - Klassen: class Name { field: Type; fn method(self, ...) { ... } }
 #   - MUST-USE-Linter: alle Funktionsparameter + lokale Bindungen müssen verwendet werden
 #   - Bare call Statements sind verboten (jede Funktion liefert etwas; wenn ignoriert → Fehler)
 
@@ -56,7 +57,7 @@ Lexer(s::String) = Lexer(s, firstindex(s), lastindex(s))
 is_name_start(c::Char) = (c == '_') || isletter(c)
 is_name_char(c::Char)  = (c == '_') || isletter(c) || isdigit(c)
 
-const KEYWORDS = Set(["define","print","if","else","while","fn","return","operator","new","type"])
+const KEYWORDS = Set(["define","print","if","else","while","fn","return","operator","new","type","class"])
 
 trace_lex_token(tok::Token) = (TRACE_LEX[] && @info "LEX" kind=tok.kind text=tok.text pos=tok.pos; tok)
 
@@ -202,6 +203,7 @@ struct While   <: IR; cond::IR; body::Vector{IR}; end
 struct Fn      <: IR; name::String; params::Vector{String}; body::Vector{IR}; end
 struct CallStmt <: IR; name::String; args::Vector{IR}; end
 struct Return  <: IR; expr::IR; end
+struct FieldAssign <: IR; obj::IR; name::String; expr::IR; end
 
 struct OpDef   <: IR
     op::String
@@ -216,6 +218,21 @@ end
 struct DestructAssign <: IR
     names::Vector{String}
     expr::IR
+end
+
+"Klassen-Definition mit Feldern und Methoden."
+struct ClassDef <: IR
+    name::String
+    fields::Vector{Pair{String,String}}
+    methods::Vector{IR}
+end
+
+"Methodendefinition innerhalb einer Klasse."
+struct MethodDef <: IR
+    class_name::String
+    name::String
+    params::Vector{String}
+    body::Vector{IR}
 end
 
 "Named Record-Typen (erste Stufe Richtung Klassen)."
@@ -234,6 +251,8 @@ struct New    <: IR; size::IR; end
 struct NewLit <: IR; items::Vector{IR}; end
 struct ObjLit <: IR; fields::Vector{Pair{String, IR}}; end
 struct Field  <: IR; obj::IR; name::String; end
+struct MethodCall <: IR; obj::IR; name::String; args::Vector{IR}; end
+struct ClassNew   <: IR; name::String; init::Vector{Pair{String, IR}}; end
 
 ########################
 # Parser
@@ -377,14 +396,21 @@ end
 """
     parse_postfix_dot(p, base)
 
-Kettet beliebig viele `.feld`-Zugriffe an einen Basis-Ausdruck. Dadurch können
-z. B. `foo.bar.baz` ohne separate Parser-Regeln abgehandelt werden.
+Kettet beliebig viele `.feld`-Zugriffe oder Methoden-Aufrufe an einen
+Basis-Ausdruck. Dadurch können `foo.bar.baz()` ohne separate Parser-Regeln
+abgehandelt werden.
 """
 function parse_postfix_dot(p::Parser, base::IR)::IR
     while p.look.kind == :SYMBOL && p.look.text == "."
         advance!(p)
         fname = expect!(p, :NAME).text
-        base = Field(base, fname)
+        if accept!(p, :SYMBOL, "(")
+            args = parse_args(p)
+            expect!(p, :SYMBOL, ")")
+            base = MethodCall(base, fname, args)
+        else
+            base = Field(base, fname)
+        end
     end
     return base
 end
@@ -492,22 +518,59 @@ function parse_stmt(p::Parser)::IR
             ret_type = expect!(p, :NAME).text
             body = parse_block(p)
             return OpDef(op, a_name, a_type, b_name, b_type, ret_type, body)
+
+        elseif t.text == "class"
+            advance!(p)
+            cname = expect!(p, :NAME).text
+            expect!(p, :SYMBOL, "{")
+            fields = Pair{String,String}[]
+            methods = IR[]
+            while !(p.look.kind == :SYMBOL && p.look.text == "}")
+                if p.look.kind == :KW && p.look.text == "fn"
+                    advance!(p)
+                    mname = expect!(p, :NAME).text
+                    expect!(p, :SYMBOL, "(")
+                    params = parse_params(p)
+                    isempty(params) && error("method $(cname).$(mname) needs a receiver parameter (e.g. self)")
+                    expect!(p, :SYMBOL, ")")
+                    body = parse_block(p)
+                    push!(methods, MethodDef(cname, mname, params, body))
+                else
+                    fname = expect!(p, :NAME).text
+                    expect!(p, :SYMBOL, ":")
+                    ftype = expect!(p, :NAME).text
+                    push!(fields, fname => ftype)
+                    accept!(p, :SYMBOL, ";")
+                    accept!(p, :SYMBOL, ",")
+                end
+            end
+            expect!(p, :SYMBOL, "}")
+            return ClassDef(cname, fields, methods)
         end
     end
 
     if t.kind == :NAME
         name = t.text
         advance!(p)
-        if accept!(p, :SYMBOL, "=")
-            expr = parse_expr(p)
-            expect!(p, :SYMBOL, ";")
-            return Assign(name, expr)
-        elseif accept!(p, :SYMBOL, "(")
+        if accept!(p, :SYMBOL, "(")
             args = parse_args(p)
             expect!(p, :SYMBOL, ")"); expect!(p, :SYMBOL, ";")
             return CallStmt(name, args)
+        end
+        lhs = parse_postfix_dot(p, Var(name))
+        if accept!(p, :SYMBOL, "=")
+            expr = parse_expr(p)
+            expect!(p, :SYMBOL, ";")
+            if lhs isa Field
+                lf = (lhs::Field)
+                return FieldAssign(lf.obj, lf.name, expr)
+            elseif lhs isa Var
+                return Assign((lhs::Var).name, expr)
+            else
+                error("invalid assignment target")
+            end
         else
-            error("Parse error near pos $(t.pos): after identifier '$name' expected '=' or '('.")
+            error("Parse error near pos $(t.pos): after identifier '$name' expected '=', '(', or field access.")
         end
     end
 
@@ -592,7 +655,23 @@ function parse_factor(p::Parser)
     t = p.look
     if t.kind == :KW && t.text == "new"
         advance!(p)
-        if accept!(p, :SYMBOL, "(")
+        if p.look.kind == :NAME
+            cname = expect!(p, :NAME).text
+            if accept!(p, :SYMBOL, "{")
+                inits = Pair{String,IR}[]
+                while !(p.look.kind == :SYMBOL && p.look.text == "}")
+                    fname = expect!(p, :NAME).text
+                    expect!(p, :SYMBOL, ":")
+                    push!(inits, fname => parse_expr(p))
+                    accept!(p, :SYMBOL, ";")
+                    accept!(p, :SYMBOL, ",")
+                end
+                expect!(p, :SYMBOL, "}")
+                return parse_postfix_dot(p, ClassNew(cname, inits))
+            else
+                return parse_postfix_dot(p, ClassNew(cname, Pair{String,IR}[]))
+            end
+        elseif accept!(p, :SYMBOL, "(")
             e = parse_expr(p); expect!(p, :SYMBOL, ")")
             return parse_postfix_dot(p, New(e))
         elseif accept!(p, :SYMBOL, "[")
@@ -606,7 +685,7 @@ function parse_factor(p::Parser)
             expect!(p, :SYMBOL, "]")
             return parse_postfix_dot(p, NewLit(items))
         else
-            error("Parse error near pos $(t.pos): expected '(' or '[' after 'new'")
+            error("Parse error near pos $(t.pos): expected '(', '[' or class name after 'new'")
         end
     elseif t.kind == :NUMBER
         advance!(p); return parse_postfix_dot(p, Num(t.text))
@@ -709,6 +788,7 @@ __emitln(x) = (print(__OUT, x); print(__OUT, '\\n'); nothing)
 const __heap = Dict{Int, Vector{Any}}()  # Pointer → Value-Vektor
 const __ptr_tags = Dict{Int, String}()    # Pointer → Typname
 const __ops = Dict{Tuple{String, Union{Nothing,String}, Union{Nothing,String}}, Function}()  # (op, ta, tb) → Fn
+const __methods = Dict{Tuple{String,String}, Function}()  # (class, name) → Fn
 __next_ptr = Ref(1)  # nächste freie Pointer-ID
 
 # Fehler-Records
@@ -829,6 +909,43 @@ function __register_type(name, fields::Dict{String,String})
     return nothing
 end
 
+function __register_class(name, fields::Dict{String,String})
+    __types[String(name)] = Dict(
+        "kind" => "class",
+        "fields" => fields,
+    )
+    return nothing
+end
+
+function __register_method(class_name, method_name, fn)
+    __methods[(String(class_name), String(method_name))] = fn
+    return nothing
+end
+
+function __instantiate_class(name, init_fields::Dict{String,Any})
+    n = String(name)
+    info = get(__types, n, nothing)
+    info === nothing && error("unknown class " * n)
+    obj = Dict("__tag__"=>n)
+    for (fname, _) in info["fields"]
+        obj[String(fname)] = nothing
+    end
+    for (k,v) in init_fields
+        obj[String(k)] = v
+    end
+    return obj
+end
+
+function __call_method(obj, method, args...)
+    cname = __get_tag(obj)
+    cname === nothing && error("method call on untagged value")
+    key = (String(cname), String(method))
+    if haskey(__methods, key)
+        return __methods[key](obj, args...)
+    end
+    error("no method " * String(method) * " for class " * String(cname))
+end
+
 function __type_field_type(tname, fname)
     T = get(__types, String(tname), nothing)
     T === nothing && return nothing
@@ -879,6 +996,16 @@ function gen_expr(em::Emitter, e::IR)::String
     elseif e isa Field
         ee = (e::Field)
         return string("field_get(", gen_expr(em, ee.obj), ", \"", ee.name, "\")")
+    elseif e isa MethodCall
+        ee = (e::MethodCall)
+        args = [gen_expr(em, a) for a in ee.args]
+        return string("__call_method(", gen_expr(em, ee.obj), ", \"", ee.name, "\"",
+                      isempty(args) ? ")" : ", " * join(args, ", ") * ")")
+    elseif e isa ClassNew
+        ee = (e::ClassNew)
+        init_pairs = [string("\"", pr.first, "\"=>", gen_expr(em, pr.second)) for pr in ee.init]
+        init_src = "Dict(" * join(init_pairs, ", ") * ")"
+        return string("__instantiate_class(\"", ee.name, "\", ", init_src, ")")
     else
         error("unknown expr node")
     end
@@ -896,6 +1023,9 @@ function gen_stmt!(em::Emitter, s::IR)
     elseif s isa Assign
         ss = (s::Assign)
         emit!(em, string(ss.name, " = ", gen_expr(em, ss.expr)))
+    elseif s isa FieldAssign
+        ss = (s::FieldAssign)
+        emit!(em, string("field_set(", gen_expr(em, ss.obj), ", \"", ss.name, "\", ", gen_expr(em, ss.expr), ")"))
     elseif s isa Print
         emit!(em, "__emitln(" * gen_expr(em, (s::Print).expr) * ")")
     elseif s isa If
@@ -960,6 +1090,29 @@ function gen_stmt!(em::Emitter, s::IR)
             push!(parts, "\"$(pr.first)\"=>\"$(pr.second)\"")
         end
         emit!(em, "__register_type(\"$(ss.name)\", Dict(" * join(parts, ", ") * "))")
+    elseif s isa ClassDef
+        ss = (s::ClassDef)
+        parts = String[]
+        for pr in ss.fields
+            push!(parts, "\"$(pr.first)\"=>\"$(pr.second)\"")
+        end
+        emit!(em, "__register_class(\"$(ss.name)\", Dict(" * join(parts, ", ") * "))")
+        emit!(em, "")
+        for m in ss.methods
+            mm = (m::MethodDef)
+            fname = "__method_$(ss.name)_$(mm.name)"
+            emit!(em, "function $(fname)($(join(mm.params, ", ")))")
+            em.ind += 1
+            if isempty(mm.body)
+                emit!(em, "nothing")
+            else
+                for st in mm.body; gen_stmt!(em, st); end
+            end
+            em.ind -= 1
+            emit!(em, "end")
+            emit!(em, "__register_method(\"$(ss.name)\", \"$(mm.name)\", $(fname))")
+            emit!(em, "")
+        end
     else
         error("unknown stmt node")
     end
@@ -986,6 +1139,10 @@ function gen_program(stmts::Vector{IR})::String
     for s in stmts
         s isa TypeDef && gen_stmt!(em, s)
     end
+    # Klassen
+    for s in stmts
+        s isa ClassDef && gen_stmt!(em, s)
+    end
     # Funktionsdefinitionen
     for s in stmts
         s isa Fn && gen_stmt!(em, s)
@@ -995,7 +1152,7 @@ function gen_program(stmts::Vector{IR})::String
     emit!(em, "function __tiny_main__()")
     em.ind += 1
     for s in stmts
-        !(s isa OpDef) && !(s isa Fn) && !(s isa TypeDef) && gen_stmt!(em, s)
+        !(s isa OpDef) && !(s isa Fn) && !(s isa TypeDef) && !(s isa ClassDef) && gen_stmt!(em, s)
     end
     em.ind -= 1
     emit!(em, "end")
@@ -1040,6 +1197,14 @@ function uses_in_expr(e::IR, reads::Dict{String,Int})
         end
     elseif e isa Field
         uses_in_expr((e::Field).obj, reads)
+    elseif e isa MethodCall
+        ee = (e::MethodCall)
+        uses_in_expr(ee.obj, reads)
+        for a in ee.args; uses_in_expr(a, reads); end
+    elseif e isa ClassNew
+        for pr in (e::ClassNew).init
+            uses_in_expr(pr.second, reads)
+        end
     elseif e isa ObjLit
         for pr in (e::ObjLit).fields
             uses_in_expr(pr.second, reads)
@@ -1059,6 +1224,10 @@ function lint_stmt_reads!(s::IR, reads::Dict{String,Int})
         uses_in_expr((s::Let).expr, reads)
     elseif s isa Assign
         uses_in_expr((s::Assign).expr, reads)
+    elseif s isa FieldAssign
+        ss = (s::FieldAssign)
+        uses_in_expr(ss.obj, reads)
+        uses_in_expr(ss.expr, reads)
     elseif s isa Print
         uses_in_expr((s::Print).expr, reads)
     elseif s isa If
@@ -1089,6 +1258,18 @@ function lint_stmt_reads!(s::IR, reads::Dict{String,Int})
     elseif s isa TypeDef
         # keine Variablenzugriffe
         return
+    elseif s isa MethodDef
+        tmp_reads = Dict{String,Int}()
+        for t in s.body
+            lint_stmt_reads!(t, tmp_reads)
+        end
+        miss = String[]
+        for p in s.params
+            get(tmp_reads, p, 0) == 0 && push!(miss, p)
+        end
+        if !isempty(miss)
+            error("unused parameter(s) in method $(s.class_name).$(s.name): " * join(miss, ", "))
+        end
     end
 end
 
@@ -1108,6 +1289,18 @@ function lint_fn_params_used!(f::Fn)
         error("unused parameter(s) in function $(f.name): " * join(unused, ", "))
     end
     lint_locals_used!(f.body)
+end
+
+function lint_fn_params_used!(m::MethodDef)
+    reads = Dict{String,Int}()
+    for st in m.body
+        lint_stmt_reads!(st, reads)
+    end
+    unused = [p for p in m.params if get(reads, p, 0) == 0]
+    if !isempty(unused)
+        error("unused parameter(s) in method $(m.class_name).$(m.name): " * join(unused, ", "))
+    end
+    lint_locals_used!(m.body)
 end
 
 """
@@ -1154,6 +1347,11 @@ function compile_to_julia(src::String)::String
     # Lint
     for s in ir
         s isa Fn && lint_fn_params_used!(s)
+        if s isa ClassDef
+            for m in (s::ClassDef).methods
+                lint_fn_params_used!(m::MethodDef)
+            end
+        end
     end
     lint_locals_used!(ir)
 

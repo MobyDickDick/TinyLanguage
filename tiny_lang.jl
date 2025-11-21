@@ -201,7 +201,15 @@ struct Print   <: IR; expr::IR; end
 struct If      <: IR; cond::IR; then_::Vector{IR}; els::Vector{IR}; end
 struct While   <: IR; cond::IR; body::Vector{IR}; end
 struct Fn      <: IR; name::String; params::Vector{String}; body::Vector{IR}; end
-struct CallStmt <: IR; name::String; args::Vector{IR}; end
+struct CallStmt <: IR
+    """
+    Funktionsaufruf als eigenständiges Statement. Standardmäßig werden solche
+    Aufrufe verboten (MUST-USE-Regel), außer der Call ist explizit als
+    "seiteneffekt-only" whitelisted.
+    """
+    name::String
+    args::Vector{IR}
+end
 struct Return  <: IR; expr::IR; end
 struct FieldAssign <: IR; obj::IR; name::String; expr::IR; end
 
@@ -1060,7 +1068,13 @@ function gen_stmt!(em::Emitter, s::IR)
         emit!(em, "end")
     elseif s isa CallStmt
         ss = (s::CallStmt)
-        error("call with return value must be bound; bare call statements are not allowed (offending call: $(ss.name)())")
+        allow = ss.name in ("heap_set", "heap_get", "delete", "tag")
+        if allow
+            args_src = [gen_expr(em, a) for a in ss.args]
+            emit!(em, string(ss.name, "(", join(args_src, ", "), ")"))
+        else
+            error("call with return value must be bound; bare call statements are not allowed (offending call: $(ss.name)())")
+        end
     elseif s isa Return
         emit!(em, string("return ", gen_expr(em, (s::Return).expr)))
     elseif s isa OpDef

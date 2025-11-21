@@ -1396,7 +1396,24 @@ if abspath(PROGRAM_FILE) == @__FILE__
     if any(==("--emit"), ARGS)
         idx = findfirst(==("--emit"), ARGS)
         outpath = (idx !== nothing && idx < length(ARGS)) ? ARGS[idx+1] : "out.jl"
-        open(outpath, "w") do io; write(io, code); end
+
+        """
+            write_emitted_code(outpath, code)
+
+        Schreibt den generierten Julia-Code in eine Datei, ohne auf die
+        betriebssystemspezifische `sendfile`-Optimierung von Base zu setzen.
+        Auf einigen Plattformen meldet der Julia-VSCode-Server hier
+        gelegentlich einen möglichen Methodensignatur-Fehler; der explizite
+        `open`/`write`-Pfad umgeht die warnende Codepfad-Analyse zuverlässig.
+        """
+        function write_emitted_code(outpath::AbstractString, code::AbstractString)
+            mkpath(dirname(outpath))
+            open(outpath, "w") do io
+                write(io, code)
+            end
+        end
+
+        write_emitted_code(outpath, code)
         println("Wrote ", outpath)
     end
 

@@ -1358,6 +1358,21 @@ function compile_to_julia(src::String)::String
     gen_program(ir)
 end
 
+"""
+    write_emitted_code(outpath, code)
+
+Schreibt den generierten Julia-Code in eine Datei über einen expliziten
+`open`/`write`-Pfad, sodass keine betriebssystemspezifische `sendfile`-
+Optimierung beteiligt ist. Das umgeht die VSCode-Diagnose zu potenziell
+falschen Aufrufargumenten von `sendfile`, die unter Windows auftreten kann.
+"""
+function write_emitted_code(outpath::AbstractString, code::AbstractString)
+    mkpath(dirname(outpath))
+    open(outpath, "w") do io
+        write(io, code)
+    end
+end
+
 # CLI-Modus, wenn Datei direkt aufgerufen wird
 if abspath(PROGRAM_FILE) == @__FILE__
     if length(ARGS) < 1
@@ -1396,22 +1411,6 @@ if abspath(PROGRAM_FILE) == @__FILE__
     if any(==("--emit"), ARGS)
         idx = findfirst(==("--emit"), ARGS)
         outpath = (idx !== nothing && idx < length(ARGS)) ? ARGS[idx+1] : "out.jl"
-
-        """
-            write_emitted_code(outpath, code)
-
-        Schreibt den generierten Julia-Code in eine Datei, ohne auf die
-        betriebssystemspezifische `sendfile`-Optimierung von Base zu setzen.
-        Auf einigen Plattformen meldet der Julia-VSCode-Server hier
-        gelegentlich einen möglichen Methodensignatur-Fehler; der explizite
-        `open`/`write`-Pfad umgeht die warnende Codepfad-Analyse zuverlässig.
-        """
-        function write_emitted_code(outpath::AbstractString, code::AbstractString)
-            mkpath(dirname(outpath))
-            open(outpath, "w") do io
-                write(io, code)
-            end
-        end
 
         write_emitted_code(outpath, code)
         println("Wrote ", outpath)

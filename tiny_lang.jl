@@ -1,5 +1,19 @@
 module TinyLanguage
 
+"""
+Mini-Compiler für eine winzige, C-ähnliche Sprache. Die Übersetzung läuft in
+vier Schritten:
+
+1. **Lexer**: zerlegt den Quelltext in Tokens.
+2. **Parser**: baut aus den Tokens eine kleine IR (Abstract Syntax Tree).
+3. **Linter**: erzwingt MUST-USE-Regeln (Parameter + lokale Bindungen nutzen).
+4. **Codegen**: erzeugt Julia-Quelltext samt tiny Runtime und führt ihn auf
+   Wunsch direkt aus.
+
+Alle Bausteine sind in dieser einen Datei enthalten, sodass man bequem
+nachvollziehen kann, wie Lexer/Parser/Emitter ineinandergreifen.
+"""
+
 # tiny_lang.jl — Mini-Sprache (Lexer → Parser/IR → Linter → Julia-Codegen)
 # Features:
 #   - define, Zuweisung, print, if/else, while, fn, return, operator-Overloads
@@ -9,6 +23,7 @@ module TinyLanguage
 #   - Feldzugriff: obj.field
 #   - Destrukturierung zu Record: {a, b} = expr;
 #   - type-Definitionen: type Name { field: Type; ... }
+#   - Klassen: class Name { field: Type; fn method(self, ...) { ... } }
 #   - MUST-USE-Linter: alle Funktionsparameter + lokale Bindungen müssen verwendet werden
 #   - Bare call Statements sind verboten (jede Funktion liefert etwas; wenn ignoriert → Fehler)
 
@@ -42,10 +57,17 @@ Lexer(s::String) = Lexer(s, firstindex(s), lastindex(s))
 is_name_start(c::Char) = (c == '_') || isletter(c)
 is_name_char(c::Char)  = (c == '_') || isletter(c) || isdigit(c)
 
-const KEYWORDS = Set(["define","print","if","else","while","fn","return","operator","new","type"])
+const KEYWORDS = Set(["define","print","if","else","while","fn","return","operator","new","type","class"])
 
 trace_lex_token(tok::Token) = (TRACE_LEX[] && @info "LEX" kind=tok.kind text=tok.text pos=tok.pos; tok)
 
+"""
+    skip_ws_and_comments!(lx)
+
+Überspringt Whitespace und `//`-Zeilenkommentare. Aktualisiert den
+Lexer-Index, ohne Tokens zu erzeugen, damit `next_token` direkt am nächsten
+relevanten Zeichen fortsetzen kann.
+"""
 function skip_ws_and_comments!(lx::Lexer)
     while lx.i <= lx.n
         c = lx.s[lx.i]
@@ -64,6 +86,13 @@ function skip_ws_and_comments!(lx::Lexer)
     end
 end
 
+"""
+    read_string!(lx)
+
+Liest ein Stringliteral inklusive Escape-Handling (`\n`, `\t`, `\\`, `\"`).
+Gibt ein fertiges `Token(:STRING, ...)` zurück und hebt einen Fehler aus, wenn
+das schließende Anführungszeichen fehlt.
+"""
 function read_string!(lx::Lexer)
     pos0 = lx.i
     lx.i = nextind(lx.s, lx.i)  # skip opening "
@@ -94,6 +123,12 @@ function read_string!(lx::Lexer)
     error("unterminated string literal starting at $pos0")
 end
 
+"""
+    next_token(lx)
+
+Liefert das nächste Token und rückt den Lexer-Index entsprechend vor. Hier
+werden Keywords, Nummern, Operatoren und Sonderzeichen erkannt.
+"""
 function next_token(lx::Lexer)
     skip_ws_and_comments!(lx)
     pos = lx.i
@@ -168,6 +203,7 @@ struct While   <: IR; cond::IR; body::Vector{IR}; end
 struct Fn      <: IR; name::String; params::Vector{String}; body::Vector{IR}; end
 struct CallStmt <: IR; name::String; args::Vector{IR}; end
 struct Return  <: IR; expr::IR; end
+struct FieldAssign <: IR; obj::IR; name::String; expr::IR; end
 
 struct OpDef   <: IR
     op::String
@@ -182,6 +218,21 @@ end
 struct DestructAssign <: IR
     names::Vector{String}
     expr::IR
+end
+
+"Klassen-Definition mit Feldern und Methoden."
+struct ClassDef <: IR
+    name::String
+    fields::Vector{Pair{String,String}}
+    methods::Vector{IR}
+end
+
+"Methodendefinition innerhalb einer Klasse."
+struct MethodDef <: IR
+    class_name::String
+    name::String
+    params::Vector{String}
+    body::Vector{IR}
 end
 
 "Named Record-Typen (erste Stufe Richtung Klassen)."
@@ -200,6 +251,8 @@ struct New    <: IR; size::IR; end
 struct NewLit <: IR; items::Vector{IR}; end
 struct ObjLit <: IR; fields::Vector{Pair{String, IR}}; end
 struct Field  <: IR; obj::IR; name::String; end
+struct MethodCall <: IR; obj::IR; name::String; args::Vector{IR}; end
+struct ClassNew   <: IR; name::String; init::Vector{Pair{String, IR}}; end
 
 ########################
 # Parser
@@ -237,6 +290,12 @@ function accept!(p::Parser, kind::Symbol, txt::Union{Nothing,String}=nothing)
     false
 end
 
+"""
+    parse_program(p)
+
+Parst den vollständigen Quelltext bis `:EOF` und liefert einen Vektor aus
+IR-Knoten (Statements). Fehler werden mit genauer Positionsangabe geworfen.
+"""
 function parse_program(p::Parser)
     out = IR[]
     while p.look.kind != :EOF
@@ -245,6 +304,12 @@ function parse_program(p::Parser)
     out
 end
 
+"""
+    parse_block(p)
+
+Parst einen Block `{ ... }` und gibt die enthaltenen Statements als Vektor
+zurück. Die schließende Klammer wird konsumiert.
+"""
 function parse_block(p::Parser)
     expect!(p, :SYMBOL, "{")
     out = IR[]
@@ -255,6 +320,12 @@ function parse_block(p::Parser)
     out
 end
 
+"""
+    parse_params(p)
+
+Liest Funktions-Parameterliste `a, b, c` (ohne Klammern) und gibt sie als
+`Vector{String}` zurück.
+"""
 function parse_params(p::Parser)
     names = String[]
     if p.look.kind == :NAME
@@ -266,6 +337,12 @@ function parse_params(p::Parser)
     names
 end
 
+"""
+    parse_args(p)
+
+Parst eine Argumentliste innerhalb von `(...)` für Aufrufe. Liefert einen
+Vektor aus Expressions.
+"""
 function parse_args(p::Parser)
     args = IR[]
     if !(p.look.kind == :SYMBOL && p.look.text == ")")
@@ -288,6 +365,13 @@ function default_expr_for(tname::String)::IR
     end
 end
 
+"""
+    parse_obj_literal(p)
+
+Parst ein Objektliteral `{ field: expr, ... }`. Kurzformen wie `field: number`
+werden mit Default-Werten gefüllt, damit der Generator später sinnvolle Werte
+setzen kann.
+"""
 function parse_obj_literal(p::Parser)::IR
     expect!(p, :SYMBOL, "{")
     fields = Pair{String,IR}[]
@@ -309,15 +393,35 @@ function parse_obj_literal(p::Parser)::IR
     return ObjLit(fields)
 end
 
+"""
+    parse_postfix_dot(p, base)
+
+Kettet beliebig viele `.feld`-Zugriffe oder Methoden-Aufrufe an einen
+Basis-Ausdruck. Dadurch können `foo.bar.baz()` ohne separate Parser-Regeln
+abgehandelt werden.
+"""
 function parse_postfix_dot(p::Parser, base::IR)::IR
     while p.look.kind == :SYMBOL && p.look.text == "."
         advance!(p)
         fname = expect!(p, :NAME).text
-        base = Field(base, fname)
+        if accept!(p, :SYMBOL, "(")
+            args = parse_args(p)
+            expect!(p, :SYMBOL, ")")
+            base = MethodCall(base, fname, args)
+        else
+            base = Field(base, fname)
+        end
     end
     return base
 end
 
+"""
+    parse_stmt(p)
+
+Parst ein einzelnes Statement (inklusive Destrukturierung, if/while, fn,
+type-Definition, Operator-Definition und Ausdrücke mit Semikolon). Gibt einen
+passenden IR-Knoten zurück.
+"""
 function parse_stmt(p::Parser)::IR
     t = p.look
 
@@ -414,30 +518,78 @@ function parse_stmt(p::Parser)::IR
             ret_type = expect!(p, :NAME).text
             body = parse_block(p)
             return OpDef(op, a_name, a_type, b_name, b_type, ret_type, body)
+
+        elseif t.text == "class"
+            advance!(p)
+            cname = expect!(p, :NAME).text
+            expect!(p, :SYMBOL, "{")
+            fields = Pair{String,String}[]
+            methods = IR[]
+            while !(p.look.kind == :SYMBOL && p.look.text == "}")
+                if p.look.kind == :KW && p.look.text == "fn"
+                    advance!(p)
+                    mname = expect!(p, :NAME).text
+                    expect!(p, :SYMBOL, "(")
+                    params = parse_params(p)
+                    isempty(params) && error("method $(cname).$(mname) needs a receiver parameter (e.g. self)")
+                    expect!(p, :SYMBOL, ")")
+                    body = parse_block(p)
+                    push!(methods, MethodDef(cname, mname, params, body))
+                else
+                    fname = expect!(p, :NAME).text
+                    expect!(p, :SYMBOL, ":")
+                    ftype = expect!(p, :NAME).text
+                    push!(fields, fname => ftype)
+                    accept!(p, :SYMBOL, ";")
+                    accept!(p, :SYMBOL, ",")
+                end
+            end
+            expect!(p, :SYMBOL, "}")
+            return ClassDef(cname, fields, methods)
         end
     end
 
     if t.kind == :NAME
         name = t.text
         advance!(p)
-        if accept!(p, :SYMBOL, "=")
-            expr = parse_expr(p)
-            expect!(p, :SYMBOL, ";")
-            return Assign(name, expr)
-        elseif accept!(p, :SYMBOL, "(")
+        if accept!(p, :SYMBOL, "(")
             args = parse_args(p)
             expect!(p, :SYMBOL, ")"); expect!(p, :SYMBOL, ";")
             return CallStmt(name, args)
+        end
+        lhs = parse_postfix_dot(p, Var(name))
+        if accept!(p, :SYMBOL, "=")
+            expr = parse_expr(p)
+            expect!(p, :SYMBOL, ";")
+            if lhs isa Field
+                lf = (lhs::Field)
+                return FieldAssign(lf.obj, lf.name, expr)
+            elseif lhs isa Var
+                return Assign((lhs::Var).name, expr)
+            else
+                error("invalid assignment target")
+            end
         else
-            error("Parse error near pos $(t.pos): after identifier '$name' expected '=' or '('.")
+            error("Parse error near pos $(t.pos): after identifier '$name' expected '=', '(', or field access.")
         end
     end
 
     error("Parse error near pos $(t.pos): unexpected token $(t.kind) '$(t.text)'")
 end
 
+"""
+    parse_expr(p)
+
+Einstiegspunkt für Expressions. Nutzt rekursiv die Präzedenzkaskade
+`parse_equality → parse_comparison → parse_sum → parse_term → parse_factor`.
+"""
 parse_expr(p::Parser) = parse_equality(p)
 
+"""
+    parse_equality(p)
+
+Parst `==`-Verkettungen linksassoziativ (z. B. `a == b == c`).
+"""
 function parse_equality(p::Parser)
     left = parse_comparison(p)
     while p.look.kind == :OP && p.look.text == "=="
@@ -448,6 +600,11 @@ function parse_equality(p::Parser)
     left
 end
 
+"""
+    parse_comparison(p)
+
+Parst Vergleichsoperatoren `> >= < <=` linksassoziativ.
+"""
 function parse_comparison(p::Parser)
     left = parse_sum(p)
     while p.look.kind == :OP && (p.look.text in (">", ">=", "<", "<="))
@@ -458,6 +615,11 @@ function parse_comparison(p::Parser)
     left
 end
 
+"""
+    parse_sum(p)
+
+Parst `+` und `-` linksassoziativ.
+"""
 function parse_sum(p::Parser)
     left = parse_term(p)
     while p.look.kind == :OP && (p.look.text == "+" || p.look.text == "-")
@@ -468,6 +630,11 @@ function parse_sum(p::Parser)
     left
 end
 
+"""
+    parse_term(p)
+
+Parst `*` und `/` linksassoziativ.
+"""
 function parse_term(p::Parser)
     left = parse_factor(p)
     while p.look.kind == :OP && (p.look.text == "*" || p.look.text == "/")
@@ -478,11 +645,33 @@ function parse_term(p::Parser)
     left
 end
 
+"""
+    parse_factor(p)
+
+Behandelt Primärausdrücke (Literale, Variablen, Aufrufe, `new`, Objekt- und
+Klammerausdrücke) und hängt eventuelle `.feld`-Zugriffe an.
+"""
 function parse_factor(p::Parser)
     t = p.look
     if t.kind == :KW && t.text == "new"
         advance!(p)
-        if accept!(p, :SYMBOL, "(")
+        if p.look.kind == :NAME
+            cname = expect!(p, :NAME).text
+            if accept!(p, :SYMBOL, "{")
+                inits = Pair{String,IR}[]
+                while !(p.look.kind == :SYMBOL && p.look.text == "}")
+                    fname = expect!(p, :NAME).text
+                    expect!(p, :SYMBOL, ":")
+                    push!(inits, fname => parse_expr(p))
+                    accept!(p, :SYMBOL, ";")
+                    accept!(p, :SYMBOL, ",")
+                end
+                expect!(p, :SYMBOL, "}")
+                return parse_postfix_dot(p, ClassNew(cname, inits))
+            else
+                return parse_postfix_dot(p, ClassNew(cname, Pair{String,IR}[]))
+            end
+        elseif accept!(p, :SYMBOL, "(")
             e = parse_expr(p); expect!(p, :SYMBOL, ")")
             return parse_postfix_dot(p, New(e))
         elseif accept!(p, :SYMBOL, "[")
@@ -496,7 +685,7 @@ function parse_factor(p::Parser)
             expect!(p, :SYMBOL, "]")
             return parse_postfix_dot(p, NewLit(items))
         else
-            error("Parse error near pos $(t.pos): expected '(' or '[' after 'new'")
+            error("Parse error near pos $(t.pos): expected '(', '[' or class name after 'new'")
         end
     elseif t.kind == :NUMBER
         advance!(p); return parse_postfix_dot(p, Num(t.text))
@@ -529,16 +718,35 @@ end
 # Codegen-Runtime (Julia)
 ########################
 
+"""
+    Emitter
+
+Sammelt erzeugte Julia-Codezeilen und kümmert sich um Einrückung. Der
+Emitter selbst ist sehr simpel: `emit!` hängt Strings mit dem aktuellen
+Indent (`ind`) an den Puffer `lines` an.
+"""
 mutable struct Emitter
     lines::Vector{String}
     ind::Int
 end
 Emitter() = Emitter(String[], 0)
 
+"""
+    emit!(em, s="")
+
+Fügt eine neue Codezeile mit aktueller Einrückung hinzu. Leere Strings werden
+als blank lines geschrieben.
+"""
 function emit!(em::Emitter, s::AbstractString = "")
     push!(em.lines, repeat("    ", em.ind) * String(s))
 end
 
+"""
+    mangle_op(op)
+
+Erzeugt einen eindeutigen Funktionssuffix für Operator-Overloads (z. B. `+`
+→ `add`).
+"""
 function mangle_op(op::String)
     if op == "+"; "add"
     elseif op == "-"; "sub"
@@ -553,6 +761,12 @@ function mangle_op(op::String)
     end
 end
 
+"""
+    jl_string_literal(s)
+
+Escaped einen beliebigen String, damit er sicher als Julia-Stringliteral im
+generierten Code verwendet werden kann.
+"""
 function jl_string_literal(s::AbstractString)
     x = replace(String(s),
                 "\\" => "\\\\",
@@ -571,10 +785,11 @@ global __CAPTURED__ = ""
 __emitln(x) = (print(__OUT, x); print(__OUT, '\\n'); nothing)
 
 # Heap & Tags & Ops
-const __heap = Dict{Int, Vector{Any}}()
-const __ptr_tags = Dict{Int, String}()
-const __ops = Dict{Tuple{String, Union{Nothing,String}, Union{Nothing,String}}, Function}()
-__next_ptr = Ref(1)
+const __heap = Dict{Int, Vector{Any}}()  # Pointer → Value-Vektor
+const __ptr_tags = Dict{Int, String}()    # Pointer → Typname
+const __ops = Dict{Tuple{String, Union{Nothing,String}, Union{Nothing,String}}, Function}()  # (op, ta, tb) → Fn
+const __methods = Dict{Tuple{String,String}, Function}()  # (class, name) → Fn
+__next_ptr = Ref(1)  # nächste freie Pointer-ID
 
 # Fehler-Records
 const __OK  = Dict("__tag__"=>"Error", "code"=>0, "msg"=>"")
@@ -583,32 +798,40 @@ __OK_REC()  = Dict("__tag__"=>"Record", "e"=>__OK)
 __ERR_REC(msg) = Dict("__tag__"=>"Record", "e"=>__ERR(msg))
 
 function __new(n)
-    n < 0 && error("alloc error: negative size")
-    p = __next_ptr[]
-    __next_ptr[] += 1
-    __heap[p] = [0 for _ in 1:Int(n)]
-    return p
+    n < 0 && error("alloc error: negative size")  # nur positive Längen erlaubt
+    p = __next_ptr[]  # aktuelle Pointer-ID merken
+    __next_ptr[] += 1  # für nächste Allocation erhöhen
+    __heap[p] = [0 for _ in 1:Int(n)]  # einfachen Null-Vektor anlegen
+    return p  # Pointer zurückgeben
 end
 
 function __delete(p)
     try
-        p = Int(p)
-        pop!(__heap, p, nothing)
-        pop!(__ptr_tags, p, nothing)
-        return __OK_REC()
+        p = Int(p)  # pointer in Integer casten
+        pop!(__heap, p, nothing)      # Speicher freigeben (silent, falls fehlend)
+        pop!(__ptr_tags, p, nothing)  # evtl. Tag-Eintrag entfernen
+        return __OK_REC()             # Erfolg als Record zurückgeben
     catch e
         return __ERR_REC(e)
     end
 end
 
+# Öffentliche Wrapper-Funktion, damit Tiny-Code delete(...) aufrufen kann
+# (wurde nach Projekt-Umzug verloren, weil nur __delete existierte).
+# explizit als function ... end, um sicher eine globale Bindung anzulegen
+# (manche Julia-Versionen warnen sonst vor fehlender Definition).
+function delete(p)
+    return __delete(p)
+end
+
 function heap_get(p, i)
-    return __heap[Int(p)][Int(i)+1]
+    return __heap[Int(p)][Int(i)+1]  # +1, weil Julia 1-basiert indiziert
 end
 
 function heap_set(p, i, v)
     try
-        __heap[Int(p)][Int(i)+1] = v
-        return __OK_REC()
+        __heap[Int(p)][Int(i)+1] = v  # Schreibzugriff auf Heap-Slot
+        return __OK_REC()             # Erfolg
     catch e
         return __ERR_REC(e)
     end
@@ -616,8 +839,8 @@ end
 
 function tag(p, typ)
     try
-        __ptr_tags[Int(p)] = String(typ)
-        return __OK_REC()
+        __ptr_tags[Int(p)] = String(typ)  # Typnamen am Pointer speichern
+        return __OK_REC()                 # Erfolgscode zurückgeben
     catch e
         return __ERR_REC(e)
     end
@@ -625,28 +848,28 @@ end
 
 function __get_tag(v)
     if v isa Dict && haskey(v, "__tag__")
-        return v["__tag__"]
+        return v["__tag__"]             # Records/Boxen tragen __tag__ direkt
     end
     try
-        iv = Int(v)
+        iv = Int(v)                      # Pointer zu Int casten (kann fehlschlagen)
         if haskey(__ptr_tags, iv)
-            return __ptr_tags[iv]
+            return __ptr_tags[iv]        # Heap-Tag finden
         end
     catch
     end
-    return nothing
+    return nothing                       # kein Tag bekannt
 end
 
 function __register_op(op, ta, tb, fn)
-    __ops[(String(op), ta === nothing ? nothing : String(ta), tb === nothing ? nothing : String(tb))] = fn
-    return nothing
+    __ops[(String(op), ta === nothing ? nothing : String(ta), tb === nothing ? nothing : String(tb))] = fn  # Overload
+    return nothing  # nur Seiteneffekt
 end
 
 function __binop(op, a, b)
-    ta = __get_tag(a); tb = __get_tag(b)
+    ta = __get_tag(a); tb = __get_tag(b)  # Typ-Informationen der Operanden holen
     key = (String(op), ta, tb)
     if haskey(__ops, key)
-        return __ops[key](a, b)
+        return __ops[key](a, b)           # benutzerdefinierten Operator ausführen
     end
     op = String(op)
     if op == "+" ; return a + b
@@ -663,15 +886,15 @@ function __binop(op, a, b)
     end
 end
 
-box(v) = Dict("__tag__"=>"Box", "v"=>v)
-unbox(b) = b["v"]
+box(v) = Dict("__tag__"=>"Box", "v"=>v)  # Wert in einfaches Record-Boxing legen
+unbox(b) = b["v"]                          # Wert aus Box holen
 
 # Struct-Felder
 function field_get(o, k)
-    return o[String(k)]
+    return o[String(k)]  # generischer Feldzugriff (Dict-basiert)
 end
 function field_set(o, k, v)
-    o[String(k)] = v
+    o[String(k)] = v     # mutiert das Record-Dict
     return nothing
 end
 
@@ -686,6 +909,43 @@ function __register_type(name, fields::Dict{String,String})
     return nothing
 end
 
+function __register_class(name, fields::Dict{String,String})
+    __types[String(name)] = Dict(
+        "kind" => "class",
+        "fields" => fields,
+    )
+    return nothing
+end
+
+function __register_method(class_name, method_name, fn)
+    __methods[(String(class_name), String(method_name))] = fn
+    return nothing
+end
+
+function __instantiate_class(name, init_fields::Dict{String,Any})
+    n = String(name)
+    info = get(__types, n, nothing)
+    info === nothing && error("unknown class " * n)
+    obj = Dict("__tag__"=>n)
+    for (fname, _) in info["fields"]
+        obj[String(fname)] = nothing
+    end
+    for (k,v) in init_fields
+        obj[String(k)] = v
+    end
+    return obj
+end
+
+function __call_method(obj, method, args...)
+    cname = __get_tag(obj)
+    cname === nothing && error("method call on untagged value")
+    key = (String(cname), String(method))
+    if haskey(__methods, key)
+        return __methods[key](obj, args...)
+    end
+    error("no method " * String(method) * " for class " * String(cname))
+end
+
 function __type_field_type(tname, fname)
     T = get(__types, String(tname), nothing)
     T === nothing && return nothing
@@ -694,6 +954,12 @@ function __type_field_type(tname, fname)
 end
 """
 
+"""
+    gen_expr(em, e)
+
+Übersetzt einen Ausdrucksknoten in Julia-Quelltext. Die Funktion ist rein
+rekursiv und erzeugt Strings, die später in den Code-Emitter eingefügt werden.
+"""
 function gen_expr(em::Emitter, e::IR)::String
     if e isa Num
         return (e::Num).txt
@@ -730,17 +996,36 @@ function gen_expr(em::Emitter, e::IR)::String
     elseif e isa Field
         ee = (e::Field)
         return string("field_get(", gen_expr(em, ee.obj), ", \"", ee.name, "\")")
+    elseif e isa MethodCall
+        ee = (e::MethodCall)
+        args = [gen_expr(em, a) for a in ee.args]
+        return string("__call_method(", gen_expr(em, ee.obj), ", \"", ee.name, "\"",
+                      isempty(args) ? ")" : ", " * join(args, ", ") * ")")
+    elseif e isa ClassNew
+        ee = (e::ClassNew)
+        init_pairs = [string("\"", pr.first, "\"=>", gen_expr(em, pr.second)) for pr in ee.init]
+        init_src = "Dict(" * join(init_pairs, ", ") * ")"
+        return string("__instantiate_class(\"", ee.name, "\", ", init_src, ")")
     else
         error("unknown expr node")
     end
 end
 
+"""
+    gen_stmt!(em, s)
+
+Erzeugt Julia-Code für ein einzelnes Statement und hängt ihn an den Emitter.
+Einrückungen werden automatisch angepasst.
+"""
 function gen_stmt!(em::Emitter, s::IR)
     if s isa Let
         emit!(em, string((s::Let).name, " = ", gen_expr(em, (s::Let).expr)))
     elseif s isa Assign
         ss = (s::Assign)
         emit!(em, string(ss.name, " = ", gen_expr(em, ss.expr)))
+    elseif s isa FieldAssign
+        ss = (s::FieldAssign)
+        emit!(em, string("field_set(", gen_expr(em, ss.obj), ", \"", ss.name, "\", ", gen_expr(em, ss.expr), ")"))
     elseif s isa Print
         emit!(em, "__emitln(" * gen_expr(em, (s::Print).expr) * ")")
     elseif s isa If
@@ -805,11 +1090,41 @@ function gen_stmt!(em::Emitter, s::IR)
             push!(parts, "\"$(pr.first)\"=>\"$(pr.second)\"")
         end
         emit!(em, "__register_type(\"$(ss.name)\", Dict(" * join(parts, ", ") * "))")
+    elseif s isa ClassDef
+        ss = (s::ClassDef)
+        parts = String[]
+        for pr in ss.fields
+            push!(parts, "\"$(pr.first)\"=>\"$(pr.second)\"")
+        end
+        emit!(em, "__register_class(\"$(ss.name)\", Dict(" * join(parts, ", ") * "))")
+        emit!(em, "")
+        for m in ss.methods
+            mm = (m::MethodDef)
+            fname = "__method_$(ss.name)_$(mm.name)"
+            emit!(em, "function $(fname)($(join(mm.params, ", ")))")
+            em.ind += 1
+            if isempty(mm.body)
+                emit!(em, "nothing")
+            else
+                for st in mm.body; gen_stmt!(em, st); end
+            end
+            em.ind -= 1
+            emit!(em, "end")
+            emit!(em, "__register_method(\"$(ss.name)\", \"$(mm.name)\", $(fname))")
+            emit!(em, "")
+        end
     else
         error("unknown stmt node")
     end
 end
 
+"""
+    gen_program(stmts)
+
+Erzeugt den kompletten Julia-Quelltext: zuerst die tiny Runtime, dann
+Operator-Definitionen, Typen, Funktionen und schließlich den Programmkörper
+plus `__tiny_run__`-Wrapper zum Output-Capturing.
+"""
 function gen_program(stmts::Vector{IR})::String
     em = Emitter()
     emit!(em, "# generated from tiny language (Julia)")
@@ -824,6 +1139,10 @@ function gen_program(stmts::Vector{IR})::String
     for s in stmts
         s isa TypeDef && gen_stmt!(em, s)
     end
+    # Klassen
+    for s in stmts
+        s isa ClassDef && gen_stmt!(em, s)
+    end
     # Funktionsdefinitionen
     for s in stmts
         s isa Fn && gen_stmt!(em, s)
@@ -833,7 +1152,7 @@ function gen_program(stmts::Vector{IR})::String
     emit!(em, "function __tiny_main__()")
     em.ind += 1
     for s in stmts
-        !(s isa OpDef) && !(s isa Fn) && !(s isa TypeDef) && gen_stmt!(em, s)
+        !(s isa OpDef) && !(s isa Fn) && !(s isa TypeDef) && !(s isa ClassDef) && gen_stmt!(em, s)
     end
     em.ind -= 1
     emit!(em, "end")
@@ -853,6 +1172,12 @@ end
 # Linter (MUST-USE)
 ########################
 
+"""
+    uses_in_expr(e, reads)
+
+Traversiert einen Ausdruck und zählt Variablennutzungen in `reads`. Wird vom
+Linter genutzt, um MUST-USE-Verstöße aufzuspüren.
+"""
 function uses_in_expr(e::IR, reads::Dict{String,Int})
     if e isa Var
         nm = (e::Var).name
@@ -872,6 +1197,14 @@ function uses_in_expr(e::IR, reads::Dict{String,Int})
         end
     elseif e isa Field
         uses_in_expr((e::Field).obj, reads)
+    elseif e isa MethodCall
+        ee = (e::MethodCall)
+        uses_in_expr(ee.obj, reads)
+        for a in ee.args; uses_in_expr(a, reads); end
+    elseif e isa ClassNew
+        for pr in (e::ClassNew).init
+            uses_in_expr(pr.second, reads)
+        end
     elseif e isa ObjLit
         for pr in (e::ObjLit).fields
             uses_in_expr(pr.second, reads)
@@ -879,11 +1212,22 @@ function uses_in_expr(e::IR, reads::Dict{String,Int})
     end
 end
 
+"""
+    lint_stmt_reads!(stmt, reads)
+
+Traversiert ein Statement rekursiv und zählt alle Variablennutzungen. Für
+Operator-Definitionen wird eine eigene Zählung mit Pflichtparametern
+durchgeführt.
+"""
 function lint_stmt_reads!(s::IR, reads::Dict{String,Int})
     if s isa Let
         uses_in_expr((s::Let).expr, reads)
     elseif s isa Assign
         uses_in_expr((s::Assign).expr, reads)
+    elseif s isa FieldAssign
+        ss = (s::FieldAssign)
+        uses_in_expr(ss.obj, reads)
+        uses_in_expr(ss.expr, reads)
     elseif s isa Print
         uses_in_expr((s::Print).expr, reads)
     elseif s isa If
@@ -914,9 +1258,27 @@ function lint_stmt_reads!(s::IR, reads::Dict{String,Int})
     elseif s isa TypeDef
         # keine Variablenzugriffe
         return
+    elseif s isa MethodDef
+        tmp_reads = Dict{String,Int}()
+        for t in s.body
+            lint_stmt_reads!(t, tmp_reads)
+        end
+        miss = String[]
+        for p in s.params
+            get(tmp_reads, p, 0) == 0 && push!(miss, p)
+        end
+        if !isempty(miss)
+            error("unused parameter(s) in method $(s.class_name).$(s.name): " * join(miss, ", "))
+        end
     end
 end
 
+"""
+    lint_fn_params_used!(fn)
+
+Verifiziert, dass alle Funktionsparameter mindestens einmal verwendet werden
+und delegiert anschließend an `lint_locals_used!` für lokale Bindungen.
+"""
 function lint_fn_params_used!(f::Fn)
     reads = Dict{String,Int}()
     for st in f.body
@@ -929,6 +1291,24 @@ function lint_fn_params_used!(f::Fn)
     lint_locals_used!(f.body)
 end
 
+function lint_fn_params_used!(m::MethodDef)
+    reads = Dict{String,Int}()
+    for st in m.body
+        lint_stmt_reads!(st, reads)
+    end
+    unused = [p for p in m.params if get(reads, p, 0) == 0]
+    if !isempty(unused)
+        error("unused parameter(s) in method $(m.class_name).$(m.name): " * join(unused, ", "))
+    end
+    lint_locals_used!(m.body)
+end
+
+"""
+    lint_locals_used!(stmts)
+
+Sucht alle Top-Level-Bindungen und prüft, ob sie in den Statements gelesen
+werden. Hebt einen Fehler aus, sobald ungenutzte Variablen gefunden werden.
+"""
 function lint_locals_used!(stmts::Vector{IR})
     defs = Dict{String,Int}()
     uses = Dict{String,Int}()
@@ -954,6 +1334,12 @@ end
 # Driver
 ########################
 
+"""
+    compile_to_julia(src) -> String
+
+Haupteinstieg: parst den TinyLanguage-Quelltext, lintet ihn und gibt den
+generierten Julia-Code (inkl. Runtime) als String zurück.
+"""
 function compile_to_julia(src::String)::String
     p = Parser(src)
     ir = parse_program(p)
@@ -961,10 +1347,30 @@ function compile_to_julia(src::String)::String
     # Lint
     for s in ir
         s isa Fn && lint_fn_params_used!(s)
+        if s isa ClassDef
+            for m in (s::ClassDef).methods
+                lint_fn_params_used!(m::MethodDef)
+            end
+        end
     end
     lint_locals_used!(ir)
 
     gen_program(ir)
+end
+
+"""
+    write_emitted_code(outpath, code)
+
+Schreibt den generierten Julia-Code in eine Datei über einen expliziten
+`open`/`write`-Pfad, sodass keine betriebssystemspezifische `sendfile`-
+Optimierung beteiligt ist. Das umgeht die VSCode-Diagnose zu potenziell
+falschen Aufrufargumenten von `sendfile`, die unter Windows auftreten kann.
+"""
+function write_emitted_code(outpath::AbstractString, code::AbstractString)
+    mkpath(dirname(outpath))
+    open(outpath, "w") do io
+        write(io, code)
+    end
 end
 
 # CLI-Modus, wenn Datei direkt aufgerufen wird
@@ -978,6 +1384,13 @@ if abspath(PROGRAM_FILE) == @__FILE__
 
     # robuste Pfadauflösung
     src_arg = ARGS[1]
+    """
+        resolve_src(arg)
+
+    Sucht die angegebene Quelldatei relativ zu `@__DIR__`, zu einem möglichen
+    Unterordner `TinyLanguage` oder zum aktuellen Arbeitsverzeichnis. Wirkt
+    damit robust gegenüber Projekt-Umzügen.
+    """
     function resolve_src(arg::AbstractString)
         if isabspath(arg) && isfile(arg); return arg; end
         p1 = joinpath(@__DIR__, arg);                 isfile(p1) && return p1
@@ -998,14 +1411,19 @@ if abspath(PROGRAM_FILE) == @__FILE__
     if any(==("--emit"), ARGS)
         idx = findfirst(==("--emit"), ARGS)
         outpath = (idx !== nothing && idx < length(ARGS)) ? ARGS[idx+1] : "out.jl"
-        open(outpath, "w") do io; write(io, code); end
+
+        write_emitted_code(outpath, code)
         println("Wrote ", outpath)
     end
 
     if any(==("--run"), ARGS)
         mod = Module()
         Base.include_string(mod, code)
-        f = getfield(mod, :__tiny_run__)
+        # __tiny_run__ wird erst beim dynamischen Laden des Strings erzeugt.
+        # Da Base.include_string neuen Code in einer frischen Welt einführt,
+        # greifen wir über invokelatest sowohl auf das Binding als auch auf den
+        # Call zu, damit keine World-Age-Warnungen (Julia ≥1.12) ausgelöst werden.
+        f = Base.invokelatest(() -> getfield(mod, :__tiny_run__))
         Base.invokelatest(f)
         println(mod.__CAPTURED__)
     elseif !any(==("--emit"), ARGS)

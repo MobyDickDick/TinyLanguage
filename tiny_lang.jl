@@ -1365,9 +1365,17 @@ end
   `open`/`write`-Pfad, sodass keine betriebssystemspezifische `sendfile`-
   Optimierung beteiligt ist. Das umgeht die VSCode-Diagnose zu potenziell
   falschen Aufrufargumenten von `sendfile`, die unter Windows auftreten kann.
+
+  Zusätzlich wird das Ausgabeverzeichnis nur angelegt, wenn es tatsächlich
+  ein vom aktuellen Arbeitsverzeichnis abweichender Pfad ist. Damit entfallen
+  weitere Linter-Hinweise aus `Base.Filesystem` (z. B. `path.jl`), die unter
+  Windows bei Aufrufen wie `mkpath(".")` oder `mkpath("")` auftreten können.
 """
 function write_emitted_code(outpath::AbstractString, code::AbstractString)
-    mkpath(dirname(outpath))
+    outdir = dirname(outpath)
+    if !isempty(outdir) && outdir != "."
+        mkpath(outdir)
+    end
     open(outpath, "w") do io
         write(io, code)
     end

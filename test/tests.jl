@@ -2,6 +2,13 @@ using Test
 
 include("../tiny_lang.jl")  # lädt module TinyLanguage
 
+"""
+    run_tiny(src) -> String
+
+Kompiliert den gegebenen TinyLanguage-Quelltext, lädt den resultierenden
+Julia-Code in ein anonymes Modul und führt `__tiny_run__` world-age-sicher aus.
+Liefert die vom Runtime-Buffer eingefangene Ausgabe als String.
+"""
 function run_tiny(src::String)
     # kompiliert TinyLanguage-Quelltext zu einem Julia-String
     julia_code = TinyLanguage.compile_to_julia(src)
@@ -10,12 +17,22 @@ function run_tiny(src::String)
     mod = Module()
     Base.include_string(mod, julia_code)
 
-    # __tiny_run__ aufrufen (world-age-sicher)
-    f = getfield(mod, :__tiny_run__)
-    return Base.invokelatest(f)
+    # __tiny_run__ aufrufen (world-age-sicher – Lookup + Call im selben invokelatest).
+    # include_string legt das generierte Modul in einer "neuen Welt" an; durch
+    # invokelatest bleiben wir kompatibel zu Julia ≥1.12, das sonst warnen würde.
+    return Base.invokelatest(() -> begin
+        f = getfield(mod, :__tiny_run__)
+        return Base.invokelatest(f)
+    end)
 end
 
 # Compile-Error erwarten
+"""
+    expect_compile_error(src, pattern)
+
+Hilfsfunktion für negative Tests: kompiliert `src` und erwartet, dass eine
+Fehlermeldung mit dem Regex `pattern` auftritt.
+"""
 function expect_compile_error(src::String, pat::AbstractString)
     try
         TinyLanguage.compile_to_julia(src)
@@ -141,6 +158,37 @@ end
         { e } = delete(r); print(e.code);
     """)
     @test out == "0\n0\n0\n11\n22\n33\n7\n8\n9\n0\n0\n3\n5\n0\n0\n0\n0\n0\n"
+end
+
+@testset "Classes: fields + methods" begin
+    out = run_tiny("""
+        class Point {
+            x: number;
+            y: number;
+
+            fn init(self, x, y) {
+                self.x = x;
+                self.y = y;
+                return self;
+            }
+
+            fn move(self, dx, dy) {
+                self.x = self.x + dx;
+                self.y = self.y + dy;
+                return self;
+            }
+
+            fn sum(self) { return self.x + self.y; }
+        }
+
+        define p = new Point { x: 0; y: 0; };
+        p = p.init(2, 3);
+        p = p.move(1, -1);
+        print(p.x);
+        print(p.y);
+        print(p.sum());
+    """)
+    @test out == "3\n2\n5\n"
 end
 
 # ---------- NEGATIVE: MUST-USE ----------

@@ -276,3 +276,19 @@ end
     out = run_tiny(src)
     @test out == "number\nstring\n"
 end
+
+# Stellt sicher, dass unser sendfile-Fallback für Windows-Lints existiert und
+# bei Bedarf Bytes korrekt kopiert.
+@testset "sendfile IO fallback present" begin
+    src_path = tempname()
+    dst_path = tempname()
+    write(src_path, "hi!")
+
+    open(src_path, "r") do src_io
+        open(dst_path, "w") do dst_io
+            Base.sendfile(dst_io, src_io, 0, 3)
+        end
+    end
+
+    @test read(dst_path, String) == "hi!"
+end

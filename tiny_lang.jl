@@ -936,7 +936,7 @@ function __register_method(class_name, method_name, fn)
     return nothing
 end
 
-function __instantiate_class(name, init_fields::Dict{String,Any})
+function __instantiate_class(name, init_fields::AbstractDict{String})
     n = String(name)
     info = get(__types, n, nothing)
     info === nothing && error("unknown class " * n)

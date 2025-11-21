@@ -661,6 +661,12 @@ Klammerausdrücke) und hängt eventuelle `.feld`-Zugriffe an.
 """
 function parse_factor(p::Parser)
     t = p.look
+    if t.kind == :OP && (t.text == "-" || t.text == "+")
+        op = t.text; advance!(p)
+        inner = parse_factor(p)
+        expr = op == "-" ? Bin("-", Num("0"), inner) : inner
+        return parse_postfix_dot(p, expr)
+    end
     if t.kind == :KW && t.text == "new"
         advance!(p)
         if p.look.kind == :NAME

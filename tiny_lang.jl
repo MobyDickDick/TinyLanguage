@@ -1365,17 +1365,9 @@ end
   `open`/`write`-Pfad, sodass keine betriebssystemspezifische `sendfile`-
   Optimierung beteiligt ist. Das umgeht die VSCode-Diagnose zu potenziell
   falschen Aufrufargumenten von `sendfile`, die unter Windows auftreten kann.
-
-  Zusätzlich wird das Ausgabeverzeichnis nur angelegt, wenn es tatsächlich
-  ein vom aktuellen Arbeitsverzeichnis abweichender Pfad ist. Damit entfallen
-  weitere Linter-Hinweise aus `Base.Filesystem` (z. B. `path.jl`), die unter
-  Windows bei Aufrufen wie `mkpath(".")` oder `mkpath("")` auftreten können.
 """
 function write_emitted_code(outpath::AbstractString, code::AbstractString)
-    outdir = dirname(outpath)
-    if !isempty(outdir) && outdir != "."
-        mkpath(outdir)
-    end
+    mkpath(dirname(outpath))
     open(outpath, "w") do io
         write(io, code)
     end
@@ -1390,23 +1382,16 @@ if abspath(PROGRAM_FILE) == @__FILE__
     if any(==("--trace-lex"), ARGS);   TRACE_LEX[] = true;   end
     if any(==("--trace-parse"), ARGS); TRACE_PARSE[] = true; end
 
-    # robuste Pfadauflösung
+    # robuste Pfadauflösung: nur der explizit angegebene Pfad oder dessen
+    # absolute Form wird genutzt, um Linter-Warnungen über alternative
+    # Join-/Norm-Pfade zu vermeiden.
     src_arg = ARGS[1]
-    """
-        resolve_src(arg)
-
-    Sucht die angegebene Quelldatei relativ zu `@__DIR__`, zu einem möglichen
-    Unterordner `TinyLanguage` oder zum aktuellen Arbeitsverzeichnis. Wirkt
-    damit robust gegenüber Projekt-Umzügen.
-    """
-    function resolve_src(arg::AbstractString)
-        if isabspath(arg) && isfile(arg); return arg; end
-        p1 = joinpath(@__DIR__, arg);                 isfile(p1) && return p1
-        p2 = joinpath(@__DIR__, "TinyLanguage", arg); isfile(p2) && return p2
-        p3 = joinpath(pwd(), arg);                    isfile(p3) && return p3
-        error("Source file not found: $arg\n  @__DIR__=$(abspath(@__DIR__))\n  pwd()=$(abspath(pwd()))")
+    src_path = if isabspath(src_arg)
+        src_arg
+    else
+        abspath(src_arg)
     end
-    src_path = resolve_src(src_arg)
+    isfile(src_path) || error("Source file not found: $src_arg (resolved: $src_path)")
     src = read(src_path, String)
 
     code = try

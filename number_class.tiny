@@ -1,17 +1,140 @@
-// Example TinyLanguage program demonstrating a Number class with operator overloads.
+// Number class with error propagation for infinities and undefined results.
 
 class Number {
   value: number;
+  error: string;
+}
+
+fn __number_with_error(code) {
+  return new Number { value: 0, error: code };
+}
+
+fn __number_from_value(v) {
+  return new Number { value: v, error: "normal" };
 }
 
 fn Number(v) {
-  return new Number { value: v; };
+  return __number_from_value(v);
 }
 
-operator + (a: Number, b: Number) -> Number { return Number(a.value + b.value); }
-operator - (a: Number, b: Number) -> Number { return Number(a.value - b.value); }
-operator * (a: Number, b: Number) -> Number { return Number(a.value * b.value); }
-operator / (a: Number, b: Number) -> Number { return Number(a.value / b.value); }
+fn __is_error(n, code) { return n.error == code; }
+fn __is_normal(n) { return n.error == "normal"; }
+
+fn __overflowed(v) {
+  if (v > 1000000000000000000000) { return "plus_infinity"; }
+  if (v < -1000000000000000000000) { return "minus_infinity"; }
+  return "normal";
+}
+
+operator + (a: Number, b: Number) -> Number {
+  return __number_from_value(a.value + b.value);
+}
+
+operator - (a: Number, b: Number) -> Number {
+  if (__is_error(a, "any_number")) { return __number_with_error("any_number"); }
+  if (__is_error(b, "any_number")) { return __number_with_error("any_number"); }
+
+  if (__is_error(a, "plus_infinity")) {
+    if (__is_normal(b)) {
+      if (b.value > 0) { return __number_with_error("any_number"); }
+    }
+    return __number_with_error("plus_infinity");
+  }
+
+  if (__is_error(b, "minus_infinity")) { return __number_with_error("plus_infinity"); }
+  if (__is_error(a, "minus_infinity")) { return __number_with_error("minus_infinity"); }
+  if (__is_error(b, "plus_infinity")) { return __number_with_error("minus_infinity"); }
+
+  define result = a.value - b.value;
+  define ov = __overflowed(result);
+  if (ov == "normal") { return __number_from_value(result); }
+  return __number_with_error(ov);
+}
+
+operator * (a: Number, b: Number) -> Number {
+  if (__is_error(a, "any_number")) { return __number_with_error("any_number"); }
+  if (__is_error(b, "any_number")) { return __number_with_error("any_number"); }
+
+  define a_inf = __is_normal(a) == false;
+  define b_inf = __is_normal(b) == false;
+
+  if (a_inf) {
+    if (b_inf) {
+      define sign = 1;
+      if (__is_error(a, "minus_infinity")) { sign = -sign; }
+      if (__is_error(b, "minus_infinity")) { sign = -sign; }
+      if (sign > 0) { return __number_with_error("plus_infinity"); }
+      return __number_with_error("minus_infinity");
+    }
+
+    if (__is_normal(b)) {
+      if (b.value == 0) { return __number_with_error("any_number"); }
+    }
+    define sign = 1;
+    if (__is_error(a, "minus_infinity")) { sign = -sign; }
+    if (__is_normal(b)) {
+      if (b.value < 0) { sign = -sign; }
+    }
+    if (sign > 0) { return __number_with_error("plus_infinity"); }
+    return __number_with_error("minus_infinity");
+  }
+
+  if (b_inf) {
+    if (__is_normal(a)) {
+      if (a.value == 0) { return __number_with_error("any_number"); }
+    }
+    define sign = 1;
+    if (__is_normal(a)) {
+      if (a.value < 0) { sign = -sign; }
+    }
+    if (__is_error(b, "minus_infinity")) { sign = -sign; }
+    if (sign > 0) { return __number_with_error("plus_infinity"); }
+    return __number_with_error("minus_infinity");
+  }
+
+  define result = a.value * b.value;
+  define ov = __overflowed(result);
+  if (ov == "normal") { return __number_from_value(result); }
+  return __number_with_error(ov);
+}
+
+operator / (a: Number, b: Number) -> Number {
+  if (__is_error(a, "any_number")) { return __number_with_error("any_number"); }
+  if (__is_error(b, "any_number")) { return __number_with_error("any_number"); }
+
+  if (__is_normal(b)) {
+    if (b.value == 0) {
+      if (__is_normal(a)) {
+        if (a.value > 0) { return __number_with_error("plus_infinity"); }
+        if (a.value < 0) { return __number_with_error("minus_infinity"); }
+        return __number_with_error("any_number");
+      }
+      if (__is_error(a, "plus_infinity")) { return __number_with_error("plus_infinity"); }
+      if (__is_error(a, "minus_infinity")) { return __number_with_error("minus_infinity"); }
+    }
+  }
+
+  if (__is_normal(b) == false) {
+    if (__is_normal(a)) {
+      return __number_from_value(0);
+    }
+  }
+
+  if (__is_normal(a) == false) {
+    if (__is_error(a, "minus_infinity")) { return __number_with_error("minus_infinity"); }
+    return __number_with_error("plus_infinity");
+  }
+
+  if (__is_normal(b) == false) {
+    if (__is_error(b, "minus_infinity")) { return __number_with_error("minus_infinity"); }
+    return __number_with_error("plus_infinity");
+  }
+
+  define result = a.value / b.value;
+  define ov = __overflowed(result);
+  if (ov == "normal") { return __number_from_value(result); }
+  return __number_with_error(ov);
+}
 
 // Sample calculations.
 define a = Number(5);

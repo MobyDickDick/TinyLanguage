@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import argparse
+
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -1015,4 +1017,23 @@ def compile_and_run(src: str) -> str:
     return "".join(runtime.output)
 
 
-__all__ = ["compile_and_run"]
+def run_file(path: str) -> str:
+    with open(path, "r", encoding="utf-8") as f:
+        return compile_and_run(f.read())
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    parser = argparse.ArgumentParser(description="Run a TinyLanguage program from a file")
+    parser.add_argument("file", help="Path to the TinyLanguage source file to execute")
+    args = parser.parse_args(argv)
+
+    output = run_file(args.file)
+    print(output, end="")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+
+__all__ = ["compile_and_run", "run_file", "main"]

@@ -5,6 +5,10 @@ class Number {
   error: string;
 }
 
+// Python float boundaries for overflow detection.
+define PYTHON_FLOAT_MAX = 1.7976931348623157e308;
+define PYTHON_FLOAT_MIN = -1.7976931348623157e308;
+
 fn __number_with_error(code) {
   return new Number { value: 0, error: code };
 }
@@ -21,13 +25,16 @@ fn __is_error(n, code) { return n.error == code; }
 fn __is_normal(n) { return n.error == "normal"; }
 
 fn __overflowed(v) {
-  if (v > 1000000000000000000000) { return "plus_infinity"; }
-  if (v < -1000000000000000000000) { return "minus_infinity"; }
+  if (v > PYTHON_FLOAT_MAX) { return "plus_infinity"; }
+  if (v < PYTHON_FLOAT_MIN) { return "minus_infinity"; }
   return "normal";
 }
 
 operator + (a: Number, b: Number) -> Number {
-  return __number_from_value(a.value + b.value);
+  define result = a.value + b.value;
+  define ov = __overflowed(result);
+  if (ov == "normal") { return __number_from_value(result); }
+  return __number_with_error(ov);
 }
 
 operator - (a: Number, b: Number) -> Number {

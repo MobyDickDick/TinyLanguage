@@ -37,8 +37,8 @@ def test_subtraction_infinities_and_overflow():
     print(minf_result.error);
     print(minus_from_plus_b.error);
 
-    define big = Number(1000000000000000000000);
-    define overflow = big - Number(-1);
+    define big = Number(PYTHON_FLOAT_MAX);
+    define overflow = big - Number(-PYTHON_FLOAT_MAX);
     print(overflow.error);
     """
 

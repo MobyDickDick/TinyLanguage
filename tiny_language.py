@@ -709,12 +709,21 @@ def lint_method_params_used(md: MethodDef) -> None:
 def lint_locals_used(stmts: List[IR]) -> None:
     defs: Dict[str, int] = {}
     uses: Dict[str, int] = {}
-    for idx, s in enumerate(stmts):
-        if isinstance(s, Let):
-            defs[s.name] = idx
-        elif isinstance(s, DestructAssign):
-            for nm in s.names:
-                defs[nm] = idx
+
+    def collect_defs(block: List[IR]) -> None:
+        for idx, s in enumerate(block):
+            if isinstance(s, Let):
+                defs[s.name] = idx
+            elif isinstance(s, DestructAssign):
+                for nm in s.names:
+                    defs[nm] = idx
+            elif isinstance(s, If):
+                collect_defs(s.then)
+                collect_defs(s.els)
+            elif isinstance(s, While):
+                collect_defs(s.body)
+
+    collect_defs(stmts)
     for s in stmts:
         lint_stmt_reads(s, uses)
     unused = [n for n in defs if uses.get(n, 0) == 0]

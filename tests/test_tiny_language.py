@@ -496,3 +496,37 @@ def test_rosetta_fibonacci_program():
 
     assert out == expected
 
+
+def test_number_class_with_operator_overloads():
+    src = """
+    class Number {
+        value: number;
+    }
+
+    fn Number(v) {
+        return new Number { value: v; };
+    }
+
+    operator + (a: Number, b: Number) -> Number { return Number(a.value + b.value); }
+    operator - (a: Number, b: Number) -> Number { return Number(a.value - b.value); }
+    operator * (a: Number, b: Number) -> Number { return Number(a.value * b.value); }
+    operator / (a: Number, b: Number) -> Number { return Number(a.value / b.value); }
+
+    define a = Number(5);
+    define b = Number(7.5);
+
+    define c = a + b;
+    define d = a - b;
+    define e = a * b;
+    define f = a / b;
+
+    print(c.value);
+    print(d.value);
+    print(e.value);
+    print(f.value);
+    """
+
+    out = run_tiny(src)
+
+    assert out == "12.5\n-2.5\n37.5\n0.6666666666666666\n"
+

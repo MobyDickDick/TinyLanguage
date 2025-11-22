@@ -1,0 +1,28 @@
+// Example TinyLanguage program demonstrating a Number class with operator overloads.
+
+class Number {
+  value: number;
+}
+
+fn Number(v) {
+  return new Number { value: v; };
+}
+
+operator + (a: Number, b: Number) -> Number { return Number(a.value + b.value); }
+operator - (a: Number, b: Number) -> Number { return Number(a.value - b.value); }
+operator * (a: Number, b: Number) -> Number { return Number(a.value * b.value); }
+operator / (a: Number, b: Number) -> Number { return Number(a.value / b.value); }
+
+// Sample calculations.
+define a = Number(5);
+define b = Number(7.5);
+
+define c = a + b;
+define d = a - b;
+define e = a * b;
+define f = a / b;
+
+print(c.value);
+print(d.value);
+print(e.value);
+print(f.value);

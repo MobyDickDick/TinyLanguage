@@ -1,0 +1,282 @@
+// Interval number class capturing lower and upper bounds for a value.
+
+class NumberIntervall {
+  lower: number;
+  upper: number;
+  error: string;
+
+  fn to_string(self) {
+    return self;
+  }
+}
+
+fn __intervall_with_error(code) {
+  return new NumberIntervall { lower: 0, upper: 0, error: code };
+}
+
+fn __intervall_from_bounds(l, u) {
+  return new NumberIntervall { lower: l, upper: u, error: "normal" };
+}
+
+fn NumberIntervall(l, u) {
+  return __intervall_from_bounds(l, u);
+}
+
+fn __is_error(iv, code) { return iv.error == code; }
+fn __is_normal(iv) { return iv.error == "normal"; }
+fn __is_wrapped(iv) { return iv.lower > iv.upper; }
+
+fn __overflowed(v) {
+  if (v > 1.7976931348623157e308) { return "plus_infinity"; }
+  if (v < -1.7976931348623157e308) { return "minus_infinity"; }
+  return "normal";
+}
+
+fn __check_products(p1, p2, p3, p4) {
+  define plus = 0;
+  define minus = 0;
+
+  define ov1 = __overflowed(p1);
+  if (ov1 == "plus_infinity") { plus = 1; }
+  if (ov1 == "minus_infinity") { minus = 1; }
+
+  define ov2 = __overflowed(p2);
+  if (ov2 == "plus_infinity") { plus = 1; }
+  if (ov2 == "minus_infinity") { minus = 1; }
+
+  define ov3 = __overflowed(p3);
+  if (ov3 == "plus_infinity") { plus = 1; }
+  if (ov3 == "minus_infinity") { minus = 1; }
+
+  define ov4 = __overflowed(p4);
+  if (ov4 == "plus_infinity") { plus = 1; }
+  if (ov4 == "minus_infinity") { minus = 1; }
+
+  if (plus > 0) {
+    if (minus > 0) { return "any_number"; }
+    return "plus_infinity";
+  }
+  if (minus > 0) { return "minus_infinity"; }
+  return "normal";
+}
+
+operator + (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
+  define a_err = a.error;
+  define b_err = b.error;
+
+  if (a_err == "any_number") { return __intervall_with_error("any_number"); }
+  if (b_err == "any_number") { return __intervall_with_error("any_number"); }
+
+  if (a_err == "plus_infinity") {
+    if (b_err == "minus_infinity") { return __intervall_with_error("any_number"); }
+    return __intervall_with_error("plus_infinity");
+  }
+
+  if (a_err == "minus_infinity") {
+    if (b_err == "plus_infinity") { return __intervall_with_error("any_number"); }
+    return __intervall_with_error("minus_infinity");
+  }
+
+  if (b_err == "plus_infinity") { return __intervall_with_error("plus_infinity"); }
+  if (b_err == "minus_infinity") { return __intervall_with_error("minus_infinity"); }
+
+  if (a.lower > a.upper) { return __intervall_with_error("any_number"); }
+  if (b.lower > b.upper) { return __intervall_with_error("any_number"); }
+
+  define lo = a.lower + b.lower;
+  define hi = a.upper + b.upper;
+
+  define lo_ov = __overflowed(lo);
+  define hi_ov = __overflowed(hi);
+  if (lo_ov == "normal") {
+    if (hi_ov == "normal") {
+    } else {
+      return __intervall_with_error(hi_ov);
+    }
+  } else {
+    if (hi_ov == "normal") { return __intervall_with_error(lo_ov); }
+    if (lo_ov == hi_ov) { return __intervall_with_error(lo_ov); }
+    return __intervall_with_error("any_number");
+  }
+
+  return __intervall_from_bounds(lo, hi);
+}
+
+operator - (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
+  define a_err = a.error;
+  define b_err = b.error;
+
+  if (a_err == "any_number") { return __intervall_with_error("any_number"); }
+  if (b_err == "any_number") { return __intervall_with_error("any_number"); }
+
+  if (a_err == "plus_infinity") {
+    if (b_err == "plus_infinity") { return __intervall_with_error("any_number"); }
+    return __intervall_with_error("plus_infinity");
+  }
+
+  if (a_err == "minus_infinity") {
+    if (b_err == "minus_infinity") { return __intervall_with_error("any_number"); }
+    return __intervall_with_error("minus_infinity");
+  }
+
+  if (b_err == "plus_infinity") { return __intervall_with_error("minus_infinity"); }
+  if (b_err == "minus_infinity") { return __intervall_with_error("plus_infinity"); }
+
+  if (a.lower > a.upper) { return __intervall_with_error("any_number"); }
+  if (b.lower > b.upper) { return __intervall_with_error("any_number"); }
+
+  define lo = a.lower - b.upper;
+  define hi = a.upper - b.lower;
+
+  define lo_ov = __overflowed(lo);
+  define hi_ov = __overflowed(hi);
+  if (lo_ov == "normal") {
+    if (hi_ov == "normal") {
+    } else {
+      return __intervall_with_error(hi_ov);
+    }
+  } else {
+    if (hi_ov == "normal") { return __intervall_with_error(lo_ov); }
+    if (lo_ov == hi_ov) { return __intervall_with_error(lo_ov); }
+    return __intervall_with_error("any_number");
+  }
+
+  return __intervall_from_bounds(lo, hi);
+}
+
+operator * (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
+  if (a.error == "any_number") { return __intervall_with_error("any_number"); }
+  if (b.error == "any_number") { return __intervall_with_error("any_number"); }
+
+  if (a.error == "plus_infinity") {
+    if (__is_normal(b)) {
+      if (b.lower <= 0) {
+        if (b.upper >= 0) { return __intervall_with_error("any_number"); }
+      }
+    }
+    define sign = 1;
+    if (__is_normal(b)) {
+      if (b.upper < 0) { sign = -sign; }
+    }
+    if (sign > 0) { return __intervall_with_error("plus_infinity"); }
+    return __intervall_with_error("minus_infinity");
+  }
+
+  if (a.error == "minus_infinity") {
+    if (__is_normal(b)) {
+      if (b.lower <= 0) {
+        if (b.upper >= 0) { return __intervall_with_error("any_number"); }
+      }
+    }
+    define sign = -1;
+    if (__is_normal(b)) {
+      if (b.upper < 0) { sign = -sign; }
+    }
+    if (sign > 0) { return __intervall_with_error("plus_infinity"); }
+    return __intervall_with_error("minus_infinity");
+  }
+
+  if (b.error == "plus_infinity") {
+    if (__is_normal(a)) {
+      if (a.lower <= 0) {
+        if (a.upper >= 0) { return __intervall_with_error("any_number"); }
+      }
+    }
+    define sign = 1;
+    if (__is_normal(a)) {
+      if (a.upper < 0) { sign = -sign; }
+    }
+    if (sign > 0) { return __intervall_with_error("plus_infinity"); }
+    return __intervall_with_error("minus_infinity");
+  }
+
+  if (b.error == "minus_infinity") {
+    if (__is_normal(a)) {
+      if (a.lower <= 0) {
+        if (a.upper >= 0) { return __intervall_with_error("any_number"); }
+      }
+    }
+    define sign = -1;
+    if (__is_normal(a)) {
+      if (a.upper < 0) { sign = -sign; }
+    }
+    if (sign > 0) { return __intervall_with_error("plus_infinity"); }
+    return __intervall_with_error("minus_infinity");
+  }
+
+  if (a.lower > a.upper) { return __intervall_with_error("any_number"); }
+  if (b.lower > b.upper) { return __intervall_with_error("any_number"); }
+
+  define p1 = a.lower * b.lower;
+  define p2 = a.lower * b.upper;
+  define p3 = a.upper * b.lower;
+  define p4 = a.upper * b.upper;
+
+  define ov = __check_products(p1, p2, p3, p4);
+  if (ov == "normal") {
+  } else {
+    return __intervall_with_error(ov);
+  }
+
+  define lo = p1;
+  if (p2 < lo) { lo = p2; }
+  if (p3 < lo) { lo = p3; }
+  if (p4 < lo) { lo = p4; }
+
+  define hi = p1;
+  if (p2 > hi) { hi = p2; }
+  if (p3 > hi) { hi = p3; }
+  if (p4 > hi) { hi = p4; }
+
+  return __intervall_from_bounds(lo, hi);
+}
+
+operator / (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
+  if (a.error == "any_number") { return __intervall_with_error("any_number"); }
+  if (b.error == "any_number") { return __intervall_with_error("any_number"); }
+
+  if (b.error == "plus_infinity") { return __intervall_from_bounds(0, 0); }
+  if (b.error == "minus_infinity") { return __intervall_from_bounds(0, 0); }
+
+  if (a.error == "plus_infinity") {
+    if (b.error == "plus_infinity") { return __intervall_with_error("any_number"); }
+    if (b.error == "minus_infinity") { return __intervall_with_error("any_number"); }
+    return __intervall_with_error("plus_infinity");
+  }
+
+  if (a.error == "minus_infinity") {
+    if (b.error == "plus_infinity") { return __intervall_with_error("any_number"); }
+    if (b.error == "minus_infinity") { return __intervall_with_error("any_number"); }
+    return __intervall_with_error("minus_infinity");
+  }
+
+  if (a.lower > a.upper) { return __intervall_with_error("any_number"); }
+  if (b.lower > b.upper) { return __intervall_with_error("any_number"); }
+
+  if (b.lower <= 0) {
+    if (b.upper >= 0) { return __intervall_with_error("any_number"); }
+  }
+
+  define q1 = a.lower / b.lower;
+  define q2 = a.lower / b.upper;
+  define q3 = a.upper / b.lower;
+  define q4 = a.upper / b.upper;
+
+  define ov = __check_products(q1, q2, q3, q4);
+  if (ov == "normal") {
+  } else {
+    return __intervall_with_error(ov);
+  }
+
+  define lo = q1;
+  if (q2 < lo) { lo = q2; }
+  if (q3 < lo) { lo = q3; }
+  if (q4 < lo) { lo = q4; }
+
+  define hi = q1;
+  if (q2 > hi) { hi = q2; }
+  if (q3 > hi) { hi = q3; }
+  if (q4 > hi) { hi = q4; }
+
+  return __intervall_from_bounds(lo, hi);
+}

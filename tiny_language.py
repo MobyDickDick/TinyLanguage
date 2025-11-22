@@ -1106,7 +1106,12 @@ class Runtime:
             ov = overflow(res)
             if ov:
                 return mk(ov)
-            return mk("normal", res)
+            rounded = False
+            if isinstance(res, float):
+                rounded = not res.is_integer()
+                if not rounded:
+                    res = int(res)
+            return mk("rounded" if rounded else "normal", res)
 
         return None
 
@@ -1336,7 +1341,10 @@ class Runtime:
             if err in {"plus_infinity", "minus_infinity", "any_number"}:
                 return str(err)
             if "value" in fields:
-                return str(fields.get("value"))
+                value = fields.get("value")
+                if err == "rounded":
+                    return f"{value} (rounded)"
+                return str(value)
         if isinstance(val, bool):
             return "true" if val else "false"
         return str(val)

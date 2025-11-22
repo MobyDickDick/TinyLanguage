@@ -18,7 +18,7 @@ def load_number_class() -> str:
 
 def test_subtraction_infinities_and_overflow():
     number_def = load_number_class()
-    baseline = "12.5\n-2.5\n37.5\n0.6666666666666666\n"
+    baseline = "12.5\n-2.5\n37.5\n0.6666666666666666 (rounded)\n"
     extra = """
     define inf = __number_with_error("plus_infinity");
     define minf = __number_with_error("minus_infinity");
@@ -57,7 +57,7 @@ def test_subtraction_infinities_and_overflow():
 
 def test_multiplication_zero_and_infinity_signs():
     number_def = load_number_class()
-    baseline = "12.5\n-2.5\n37.5\n0.6666666666666666\n"
+    baseline = "12.5\n-2.5\n37.5\n0.6666666666666666 (rounded)\n"
     extra = """
     define inf = __number_with_error("plus_infinity");
     define minf = __number_with_error("minus_infinity");
@@ -92,7 +92,7 @@ def test_multiplication_zero_and_infinity_signs():
 
 def test_division_with_infinities_and_zero():
     number_def = load_number_class()
-    baseline = "12.5\n-2.5\n37.5\n0.6666666666666666\n"
+    baseline = "12.5\n-2.5\n37.5\n0.6666666666666666 (rounded)\n"
     extra = """
     define inf = __number_with_error("plus_infinity");
     define minf = __number_with_error("minus_infinity");
@@ -126,3 +126,22 @@ def test_division_with_infinities_and_zero():
         + "plus_infinity\n"
         + "minus_infinity\n"
     )
+
+
+def test_division_rounding_marks_error_code():
+    number_def = load_number_class()
+    extra = """
+    define one = Number(1);
+    define two = Number(2);
+    define four = Number(4);
+
+    define rounded = one / two;
+    define exact = four / two;
+
+    print(rounded.to_string());
+    print(exact.to_string());
+    """
+
+    out = run_tiny(number_def + "\n" + extra)
+
+    assert out.endswith("0.5 (rounded)\n2\n")

@@ -180,6 +180,55 @@ def test_classes_fields_methods():
     assert out == "3\n2\n5\n"
 
 
+def test_class_inheritance_with_conflicting_fields_and_methods():
+    out = run_tiny(
+        """
+        class BaseOne {
+            myProperty: number;
+
+            fn init(self, v) {
+                self.myProperty = v;
+                return self;
+            }
+
+            fn get(self) { return self.myProperty; }
+        }
+
+        class BaseTwo {
+            myProperty: number;
+
+            fn init(self, v) {
+                self.myProperty = v;
+                return self;
+            }
+
+            fn get(self) { return self.myProperty + 10; }
+        }
+
+        class Derived: BaseOne, BaseTwo {
+            myProperty: number;
+
+            fn init(self, a, b, c) {
+                BaseOne.myProperty = a;
+                BaseTwo.myProperty = b;
+                self.myProperty = c;
+                return self;
+            }
+
+            fn totals(self) { return BaseOne.myProperty + BaseTwo.myProperty + self.myProperty; }
+            fn base_calls(self) { return BaseOne.get() + BaseTwo.get() + 0 * self.myProperty; }
+        }
+
+        define d = new Derived { };
+        d = d.init(1, 2, 3);
+        print(d.totals());
+        print(d.base_calls());
+        """
+    )
+
+    assert out == "6\n13\n"
+
+
 def test_must_use_unused_param_function():
     src = """
     fn f(a, b) {

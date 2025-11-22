@@ -228,6 +228,7 @@ class ClassDef(IR):
     name: str
     fields: List[Tuple[str, str]]
     methods: List["MethodDef"]
+    bases: List[str]
 
 
 # Expressions
@@ -387,6 +388,11 @@ class Parser:
         if self.tok.kind == "KW" and self.tok.text == "class":
             self._eat("KW", "class")
             cname = self._eat("NAME").text
+            bases: List[str] = []
+            if self._accept("SYM", ":"):
+                bases.append(self._eat("NAME").text)
+                while self._accept("SYM", ","):
+                    bases.append(self._eat("NAME").text)
             self._eat("SYM", "{")
             fields: List[Tuple[str, str]] = []
             methods: List[MethodDef] = []
@@ -404,7 +410,7 @@ class Parser:
                     self._eat("SYM", ";")
                     fields.append((fname, ftype))
             self._eat("SYM", "}")
-            return ClassDef(cname, fields, methods)
+            return ClassDef(cname, fields, methods, bases)
         # destructuring or assignment/field assignment
         if self.tok.kind == "SYM" and self.tok.text == "{":
             names = self.parse_destruct_names()
@@ -547,7 +553,7 @@ class Parser:
                 self._eat("SYM", "{")
                 init: List[Tuple[str, IR]] = []
                 while not self._accept("SYM", "}"):
-                    fname = self._eat("NAME").text
+                    fname = self.parse_field_name()
                     self._eat("SYM", ":")
                     fexpr = self.parse_expr()
                     init.append((fname, fexpr))
@@ -560,7 +566,7 @@ class Parser:
         if self._accept("SYM", "{"):
             fields: List[Tuple[str, IR]] = []
             while not self._accept("SYM", "}"):
-                fname = self._eat("NAME").text
+                fname = self.parse_field_name()
                 self._eat("SYM", ":")
                 fexpr = self.parse_expr()
                 fields.append((fname, fexpr))
@@ -570,6 +576,13 @@ class Parser:
                     raise SyntaxError(f"expected field separator at {self.tok.pos}")
             return ObjLit(fields)
         raise SyntaxError(f"unexpected token {self.tok.kind} at {self.tok.pos}")
+
+    def parse_field_name(self) -> str:
+        name = self._eat("NAME").text
+        if self._accept("SYM", "."):
+            sub = self._eat("NAME").text
+            return f"{name}.{sub}"
+        return name
 
 
 # ----- Linter -----
@@ -778,6 +791,12 @@ class ReturnSignal(Exception):
         self.value = value
 
 
+@dataclass
+class BaseView:
+    obj: Dict[str, Any]
+    class_name: str
+
+
 class Runtime:
     def __init__(self):
         self.heap: Dict[int, List[Any]] = {}
@@ -870,40 +889,146 @@ class Runtime:
             return a == b
         raise RuntimeError(f"unsupported op {op}")
 
-    def field_get(self, obj: Dict[str, Any], key: str) -> Any:
-        return obj[str(key)]
+    def field_get(self, obj: Any, key: str) -> Any:
+        target_obj = obj.obj if isinstance(obj, BaseView) else obj
+        owner_hint = obj.class_name if isinstance(obj, BaseView) else None
+        if isinstance(target_obj, dict) and "__fields__" in target_obj:
+            fmap = self._resolve_field_storage(target_obj, key, owner_hint, target_obj["__tag__"], allow_write=False)
+            return fmap[key]
+        return target_obj[str(key)]
 
-    def field_set(self, obj: Dict[str, Any], key: str, val: Any) -> None:
-        obj[str(key)] = val
+    def field_set(self, obj: Any, key: str, val: Any) -> None:
+        target_obj = obj.obj if isinstance(obj, BaseView) else obj
+        owner_hint = obj.class_name if isinstance(obj, BaseView) else None
+        if isinstance(target_obj, dict) and "__fields__" in target_obj:
+            fmap = self._resolve_field_storage(target_obj, key, owner_hint, target_obj["__tag__"], allow_write=True)
+            fmap[key] = val
+            return
+        target_obj[str(key)] = val
 
     def register_type(self, name: str, fields: List[Tuple[str, str]]) -> None:
         self.types[str(name)] = {"kind": "record", "fields": dict(fields)}
 
-    def register_class(self, name: str, fields: List[Tuple[str, str]]) -> None:
-        self.types[str(name)] = {"kind": "class", "fields": dict(fields)}
+    def register_class(self, name: str, fields: List[Tuple[str, str]], bases: Optional[List[str]] = None) -> None:
+        base_list = list(bases) if bases is not None else []
+        existing = self.types.get(name)
+        if existing:
+            if existing.get("kind") != "class":
+                raise RuntimeError(f"type {name} already defined and is not a class")
+            existing["fields"].update(dict(fields))
+            if bases is not None:
+                existing["bases"] = base_list
+            return
+        self.types[str(name)] = {"kind": "class", "fields": dict(fields), "bases": base_list}
 
     def register_method(self, md: MethodDef) -> None:
         self.methods[(md.class_name, md.name)] = md
 
+    def class_mro(self, name: str) -> List[str]:
+        info = self.types.get(name)
+        if info is None or info.get("kind") != "class":
+            raise RuntimeError(f"unknown class {name}")
+        mro: List[str] = [name]
+        for base in info.get("bases", []):
+            if base not in self.types:
+                raise RuntimeError(f"unknown base class {base} for {name}")
+            for ancestor in self.class_mro(base):
+                if ancestor not in mro:
+                    mro.append(ancestor)
+        return mro
+
+    @staticmethod
+    def _split_field_name(fname: str) -> Tuple[Optional[str], str]:
+        if "." in fname:
+            owner, rest = fname.split(".", 1)
+            return owner, rest
+        return None, fname
+
     def instantiate_class(self, name: str, init: Dict[str, Any]) -> Dict[str, Any]:
         info = self.types.get(name)
-        if info is None:
+        if info is None or info.get("kind") != "class":
             raise RuntimeError(f"unknown class {name}")
-        obj: Dict[str, Any] = {"__tag__": name}
-        for fname in info["fields"]:
-            obj[fname] = None
-        obj.update(init)
+        mro = self.class_mro(name)
+        obj: Dict[str, Any] = {"__tag__": name, "__fields__": {}}
+        for cls in mro:
+            finfo = self.types.get(cls)
+            if finfo is None or finfo.get("kind") != "class":
+                raise RuntimeError(f"unknown class {cls}")
+            obj["__fields__"][cls] = {fname: None for fname in finfo["fields"]}
+
+        for raw_name, val in init.items():
+            owner_hint, fname = self._split_field_name(raw_name)
+            fmap = self._resolve_field_storage(obj, fname, owner_hint, name)
+            fmap[fname] = val
         return obj
 
-    def call_method(self, obj: Dict[str, Any], name: str, args: List[Any]) -> Any:
-        cname = self.__get_tag(obj)
-        if cname is None:
+    def _resolve_field_storage(
+        self,
+        obj: Dict[str, Any],
+        fname: str,
+        owner_hint: Optional[str],
+        current_class: str,
+        *,
+        allow_write: bool = True,
+    ) -> Dict[str, Any]:
+        if "__fields__" not in obj:
+            raise RuntimeError("field access on non-class value")
+
+        def lookup_mro(start_class: str) -> List[str]:
+            return self.class_mro(start_class)
+
+        mro = lookup_mro(owner_hint or current_class)
+        matches: List[Tuple[str, Dict[str, Any]]] = []
+
+        for cls in mro:
+            fmap = obj["__fields__"].get(cls, {})
+            if fname in fmap:
+                matches.append((cls, fmap))
+
+        if owner_hint:
+            for cls, fmap in matches:
+                if cls == owner_hint:
+                    return fmap
+            raise RuntimeError(f"unknown field {fname} for base class {owner_hint}")
+
+        if matches:
+            primary_class = current_class
+            for cls, fmap in matches:
+                if cls == primary_class:
+                    return fmap
+
+        if len(matches) == 1:
+            return matches[0][1]
+        if len(matches) > 1:
+            action = "assign" if allow_write else "access"
+            raise RuntimeError(
+                f"ambiguous field {fname} during {action}; please qualify with a base class name"
+            )
+        raise RuntimeError(f"unknown field {fname} for class {current_class}")
+
+    def find_method(self, start_class: str, name: str) -> Optional[MethodDef]:
+        for cls in self.class_mro(start_class):
+            md = self.methods.get((cls, name))
+            if md:
+                return md
+        return None
+
+    def call_method(self, obj: Any, name: str, args: List[Any]) -> Any:
+        target_obj = obj.obj if isinstance(obj, BaseView) else obj
+        start_class = obj.class_name if isinstance(obj, BaseView) else self.__get_tag(target_obj)
+        cname = self.__get_tag(target_obj)
+        if start_class is None or cname is None:
             raise RuntimeError("method call on untagged value")
-        md = self.methods.get((cname, name))
+        md = self.find_method(start_class, name)
         if md is None:
-            raise RuntimeError(f"no method {name} for class {cname}")
+            raise RuntimeError(f"no method {name} for class {start_class}")
         env = Environment(parent=None)
-        env.values[md.params[0]] = obj  # self
+        self_value: Any = target_obj
+        if md.class_name != cname:
+            self_value = BaseView(target_obj, md.class_name)
+        env.values[md.params[0]] = self_value  # self
+        for base in self.class_mro(cname)[1:]:
+            env.values[base] = BaseView(target_obj, base)
         for pname, arg in zip(md.params[1:], args):
             env.values[pname] = arg
         return self.eval_block(md.body, env)
@@ -912,7 +1037,27 @@ class Runtime:
         t = self.types.get(tname)
         if t is None:
             return None
-        return t["fields"].get(fname)
+        owner_hint, field_name = self._split_field_name(fname)
+        if t.get("kind") == "class":
+            targets: List[str] = []
+            if owner_hint:
+                targets.append(owner_hint)
+            else:
+                targets.append(tname)
+                targets.extend(self.class_mro(tname)[1:])
+            hits = []
+            for cls in targets:
+                info = self.types.get(cls)
+                if info and field_name in info.get("fields", {}):
+                    hits.append(info["fields"][field_name])
+                    if owner_hint:
+                        break
+                    if cls == tname:
+                        return info["fields"][field_name]
+            if len(hits) == 1:
+                return hits[0]
+            return None
+        return t["fields"].get(field_name)
 
     @staticmethod
     def format_value(val: Any) -> str:
@@ -976,7 +1121,7 @@ class Runtime:
             # type and class share same registration
             self.register_type(s.name, s.fields)
         elif isinstance(s, ClassDef):
-            self.register_class(s.name, s.fields)
+            self.register_class(s.name, s.fields, s.bases)
             for m in s.methods:
                 self.register_method(m)
         elif isinstance(s, MethodDef):

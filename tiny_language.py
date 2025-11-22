@@ -736,6 +736,45 @@ def lint_destruct_call_outputs(stmts: List[IR]) -> None:
         lint_destruct_call_outputs_stmt(st)
 
 
+def lint_no_consecutive_definitions(stmts: List[IR]) -> None:
+    prev: Optional[str] = None
+
+    def check_block(block: List[IR]) -> None:
+        nonlocal prev
+        prev = None
+        for st in block:
+            if isinstance(st, (If, While)):
+                lint_no_consecutive_definitions(st.then if isinstance(st, If) else st.body)
+                if isinstance(st, If):
+                    lint_no_consecutive_definitions(st.els)
+                prev = None
+                continue
+            if isinstance(st, Fn):
+                lint_no_consecutive_definitions(st.body)
+                prev = None
+                continue
+            if isinstance(st, MethodDef):
+                lint_no_consecutive_definitions(st.body)
+                prev = None
+                continue
+            if isinstance(st, ClassDef):
+                for m in st.methods:
+                    lint_no_consecutive_definitions(m.body)
+                prev = None
+                continue
+
+            current: Optional[str] = None
+            if isinstance(st, Let):
+                current = st.name
+
+            if current is not None and prev == current:
+                raise RuntimeError(f"variable {current} defined twice in a row")
+
+            prev = current if current is not None else None
+
+    check_block(stmts)
+
+
 def lint_destruct_call_outputs_stmt(st: IR) -> None:
     if isinstance(st, DestructAssign):
         check_destruct_call_expr(st.expr, set(st.names))
@@ -1301,6 +1340,7 @@ def compile_and_run(src: str) -> str:
 
     # lint functions + top level locals
     lint_destruct_call_outputs(stmts)
+    lint_no_consecutive_definitions(stmts)
     lint_locals_used(stmts)
     for st in stmts:
         if isinstance(st, Fn):

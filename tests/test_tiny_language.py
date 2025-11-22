@@ -18,6 +18,16 @@ def expect_compile_error(src: str, pattern: str) -> None:
         compile_and_run(src)
 
 
+def test_double_definition_error():
+    expect_compile_error(
+        """
+        define a = 2 + 3;
+        define a = 4 + 5;
+        """,
+        r"variable a defined twice in a row",
+    )
+
+
 def test_lexer_basics_define():
     out = run_tiny(
         """

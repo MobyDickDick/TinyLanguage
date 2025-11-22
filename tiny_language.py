@@ -955,9 +955,136 @@ class Runtime:
             pass
         return None
 
+    @staticmethod
+    def _number_fields(val: Any) -> Optional[Dict[str, Any]]:
+        if isinstance(val, dict) and val.get("__tag__") == "Number":
+            return val.get("__fields__", {}).get("Number")
+        return None
+
+    @staticmethod
+    def _make_number(value: Any, error: str) -> Dict[str, Any]:
+        return {"__tag__": "Number", "__fields__": {"Number": {"value": value, "error": error}}}
+
+    def _number_binop(self, op: str, a: Any, b: Any) -> Any:
+        fields_a = self._number_fields(a)
+        fields_b = self._number_fields(b)
+        if fields_a is None or fields_b is None:
+            return None
+
+        val_a = fields_a.get("value", 0)
+        val_b = fields_b.get("value", 0)
+        err_a = fields_a.get("error", "normal") or "normal"
+        err_b = fields_b.get("error", "normal") or "normal"
+
+        def mk(err: str, value: Any = 0) -> Dict[str, Any]:
+            return self._make_number(value, err)
+
+        def overflow(v: float) -> Optional[str]:
+            limit = 1e21
+            if v > limit:
+                return "plus_infinity"
+            if v < -limit:
+                return "minus_infinity"
+            return None
+
+        if op == "+":
+            if err_a == "any_number" or err_b == "any_number":
+                return mk("any_number")
+            if err_a == "minus_infinity" and err_b == "normal" and val_b > 0:
+                return mk("any_number")
+            if err_b == "minus_infinity" and err_a == "normal" and val_a > 0:
+                return mk("any_number")
+            if err_a == "plus_infinity" or err_b == "plus_infinity":
+                return mk("plus_infinity")
+            if err_a == "minus_infinity" or err_b == "minus_infinity":
+                return mk("minus_infinity")
+            res = val_a + val_b
+            ov = overflow(res)
+            if ov:
+                return mk(ov)
+            return mk("normal", res)
+
+        if op == "-":
+            if err_a == "any_number" or err_b == "any_number":
+                return mk("any_number")
+            if err_a == "plus_infinity" and err_b == "normal" and val_b > 0:
+                return mk("any_number")
+            if err_a == "plus_infinity" or err_b == "minus_infinity":
+                return mk("plus_infinity")
+            if err_a == "minus_infinity" or err_b == "plus_infinity":
+                return mk("minus_infinity")
+            res = val_a - val_b
+            ov = overflow(res)
+            if ov:
+                return mk(ov)
+            return mk("normal", res)
+
+        if op == "*":
+            if err_a == "any_number" or err_b == "any_number":
+                return mk("any_number")
+            if err_a in {"plus_infinity", "minus_infinity"} and err_b in {"plus_infinity", "minus_infinity"}:
+                sign = 1
+                if err_a == "minus_infinity":
+                    sign *= -1
+                if err_b == "minus_infinity":
+                    sign *= -1
+                return mk("plus_infinity" if sign > 0 else "minus_infinity")
+            if err_a in {"plus_infinity", "minus_infinity"}:
+                if val_b == 0:
+                    return mk("any_number")
+                sign = -1 if err_a == "minus_infinity" else 1
+                if val_b < 0:
+                    sign *= -1
+                return mk("plus_infinity" if sign > 0 else "minus_infinity")
+            if err_b in {"plus_infinity", "minus_infinity"}:
+                if val_a == 0:
+                    return mk("any_number")
+                sign = -1 if err_b == "minus_infinity" else 1
+                if val_a < 0:
+                    sign *= -1
+                return mk("plus_infinity" if sign > 0 else "minus_infinity")
+            res = val_a * val_b
+            ov = overflow(res)
+            if ov:
+                return mk(ov)
+            return mk("normal", res)
+
+        if op == "/":
+            if err_a == "any_number" or err_b == "any_number":
+                return mk("any_number")
+            if err_b in {"plus_infinity", "minus_infinity"} and err_a == "normal":
+                return mk("normal", 0)
+            if err_b == "normal" and val_b == 0:
+                if err_a == "plus_infinity":
+                    return mk("plus_infinity")
+                if err_a == "minus_infinity":
+                    return mk("minus_infinity")
+                if val_a > 0:
+                    return mk("plus_infinity")
+                if val_a < 0:
+                    return mk("minus_infinity")
+                return mk("any_number")
+            if err_a in {"plus_infinity", "minus_infinity"}:
+                if err_b in {"plus_infinity", "minus_infinity"}:
+                    return mk("any_number")
+                sign = -1 if err_a == "minus_infinity" else 1
+                if err_b == "normal" and val_b < 0:
+                    sign *= -1
+                return mk("plus_infinity" if sign > 0 else "minus_infinity")
+            res = val_a / val_b
+            ov = overflow(res)
+            if ov:
+                return mk(ov)
+            return mk("normal", res)
+
+        return None
+
     def __binop(self, op: str, a: Any, b: Any) -> Any:
         ta = self.__get_tag(a)
         tb = self.__get_tag(b)
+        num_res = self._number_binop(op, a, b)
+        if num_res is not None:
+            return num_res
         key = (op, ta, tb)
         if key in self.ops:
             return self.ops[key](a, b)
@@ -1172,6 +1299,13 @@ class Runtime:
 
     @staticmethod
     def format_value(val: Any) -> str:
+        if isinstance(val, dict) and val.get("__tag__") == "Number":
+            fields = val.get("__fields__", {}).get("Number", {})
+            err = fields.get("error")
+            if err in {"plus_infinity", "minus_infinity", "any_number"}:
+                return str(err)
+            if "value" in fields:
+                return str(fields.get("value"))
         if isinstance(val, bool):
             return "true" if val else "false"
         return str(val)

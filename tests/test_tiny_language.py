@@ -6,7 +6,7 @@ import pytest
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
-from tiny_language import compile_and_run
+from tiny_language import compile_and_run, main, run_file
 
 
 def run_tiny(src: str) -> str:
@@ -196,6 +196,30 @@ def test_must_use_unused_local_binding_top_level():
     print(42);
     """
     expect_compile_error(src, r"unused local binding\(s\): x")
+
+
+def test_run_file_executes_source(tmp_path):
+    src_file = tmp_path / "prog.tiny"
+    src_file.write_text(
+        """
+        define x = 5;
+        print(x + 1);
+        """
+    )
+
+    out = run_file(str(src_file))
+    assert out == "6\n"
+
+
+def test_main_runs_and_writes_output(tmp_path, capsys):
+    src_file = tmp_path / "prog.tiny"
+    src_file.write_text("print(21 + 21);")
+
+    exit_code = main([str(src_file)])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert captured.out == "42\n"
 
 
 def test_must_use_unused_local_binding_function():

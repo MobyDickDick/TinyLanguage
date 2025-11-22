@@ -1,15 +1,9 @@
-
-{
-  "version": "0.2.0",
-  "configurations": [
+{ 
+   "version": "0.2.0",
     {
-      "type": "julia",
-      "request": "launch",
-      "name": "Run TinyLanguage tests",
-      "program": "${workspaceFolder}/test/runtests.jl",
-      "cwd": "${workspaceFolder}",
-      "juliaEnv": "${workspaceFolder}",
-      "env": { "JULIA_PROJECT": "${workspaceFolder}" }
-    }
+      "type": "python",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "env": {
+      }
   ]
-}

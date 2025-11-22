@@ -411,6 +411,23 @@ class Parser:
                     fields.append((fname, ftype))
             self._eat("SYM", "}")
             return ClassDef(cname, fields, methods, bases)
+        if self.tok.kind == "KW" and self.tok.text == "operator":
+            self._eat("KW", "operator")
+            op = self._eat("OP").text
+            self._eat("SYM", "(")
+            a_name = self._eat("NAME").text
+            self._eat("SYM", ":")
+            a_type = self._eat("NAME").text
+            self._eat("SYM", ",")
+            b_name = self._eat("NAME").text
+            self._eat("SYM", ":")
+            b_type = self._eat("NAME").text
+            self._eat("SYM", ")")
+            self._eat("OP", "-")
+            self._eat("OP", ">")
+            _ = self._eat("NAME").text  # return type (unused)
+            body = self.parse_block()
+            return OpDef(op, a_name, a_type, b_name, b_type, body)
         # destructuring or assignment/field assignment
         if self.tok.kind == "SYM" and self.tok.text == "{":
             names = self.parse_destruct_names()
@@ -961,6 +978,15 @@ class Runtime:
     def register_method(self, md: MethodDef) -> None:
         self.methods[(md.class_name, md.name)] = md
 
+    def register_operator(self, opdef: OpDef, env: "Environment") -> None:
+        def impl(a_val: Any, b_val: Any) -> Any:
+            op_env = Environment(parent=env)
+            op_env.values[opdef.a_name] = a_val
+            op_env.values[opdef.b_name] = b_val
+            return self.eval_block(opdef.body, op_env)
+
+        self.ops[(opdef.op, opdef.a_type, opdef.b_type)] = impl
+
     def class_mro(self, name: str) -> List[str]:
         info = self.types.get(name)
         if info is None or info.get("kind") != "class":
@@ -1148,8 +1174,7 @@ class Runtime:
                 )
             self.eval_expr(Call(s.name, s.args), env)
         elif isinstance(s, OpDef):
-            # not required for tests
-            pass
+            self.register_operator(s, env)
         elif isinstance(s, DestructAssign):
             val = self.eval_expr(s.expr, env)
             for nm in s.names:

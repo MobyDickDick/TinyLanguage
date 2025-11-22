@@ -335,6 +335,32 @@ def test_ok_destructure_both_values():
     assert out == "1\n0\n"
 
 
+def test_unused_binding_in_nested_block_function():
+    src = """
+    fn g(a) {
+        if (true) {
+            define t = 99;
+        }
+        return a;
+    }
+    """
+    expect_compile_error(src, r"unused local binding\(s\): t")
+
+
+def test_unused_binding_in_nested_block_method():
+    src = """
+    class Box {
+        fn touch(self, v) {
+            while (false) {
+                define tmp = v;
+            }
+            return self;
+        }
+    }
+    """
+    expect_compile_error(src, r"unused local binding\(s\): tmp")
+
+
 def test_method_param_mutation_must_be_returned():
     src = """
     class Box {

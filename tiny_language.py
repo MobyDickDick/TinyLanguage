@@ -657,6 +657,7 @@ def lint_fn_params_used(fn: Fn) -> None:
     unused = [p for p in fn.params if reads.get(p, 0) == 0]
     if unused:
         raise RuntimeError(f"unused parameter(s) in function {fn.name}: {', '.join(unused)}")
+    lint_destruct_call_outputs(fn.body)
     lint_locals_used(fn.body)
 
 
@@ -669,6 +670,7 @@ def lint_method_params_used(md: MethodDef) -> None:
         raise RuntimeError(
             f"unused parameter(s) in method {md.class_name}.{md.name}: {', '.join(unused)}"
         )
+    lint_destruct_call_outputs(md.body)
     lint_locals_used(md.body)
 
 
@@ -686,6 +688,46 @@ def lint_locals_used(stmts: List[IR]) -> None:
     unused = [n for n in defs if uses.get(n, 0) == 0]
     if unused:
         raise RuntimeError(f"unused local binding(s): {', '.join(unused)}")
+
+
+def lint_destruct_call_outputs(stmts: List[IR]) -> None:
+    for st in stmts:
+        lint_destruct_call_outputs_stmt(st)
+
+
+def lint_destruct_call_outputs_stmt(st: IR) -> None:
+    if isinstance(st, DestructAssign):
+        check_destruct_call_expr(st.expr, set(st.names))
+    elif isinstance(st, If):
+        lint_destruct_call_outputs(st.then)
+        lint_destruct_call_outputs(st.els)
+    elif isinstance(st, While):
+        lint_destruct_call_outputs(st.body)
+    elif isinstance(st, Fn):
+        lint_destruct_call_outputs(st.body)
+    elif isinstance(st, MethodDef):
+        lint_destruct_call_outputs(st.body)
+    elif isinstance(st, ClassDef):
+        for m in st.methods:
+            lint_destruct_call_outputs_stmt(m)
+
+
+def check_destruct_call_expr(expr: IR, names: set[str]) -> None:
+    if isinstance(expr, Call):
+        skip = {"heap_set", "heap_get", "delete", "tag", "__new", "new"}
+        if expr.name in skip:
+            return
+        missing = sorted({arg.name for arg in expr.args if isinstance(arg, Var) and arg.name not in names})
+        if missing:
+            raise RuntimeError(
+                f"destructuring call to {expr.name} must include output for argument(s): {', '.join(missing)}"
+            )
+    elif isinstance(expr, MethodCall):
+        missing = sorted({arg.name for arg in expr.args if isinstance(arg, Var) and arg.name not in names})
+        if missing:
+            raise RuntimeError(
+                f"destructuring method call to {expr.name} must include output for argument(s): {', '.join(missing)}"
+            )
 
 
 # ----- Runtime -----
@@ -1001,6 +1043,7 @@ def compile_and_run(src: str) -> str:
     runtime = Runtime()
 
     # lint functions + top level locals
+    lint_destruct_call_outputs(stmts)
     lint_locals_used(stmts)
     for st in stmts:
         if isinstance(st, Fn):

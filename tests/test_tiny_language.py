@@ -270,6 +270,27 @@ def test_ok_function_call_as_argument():
     assert out == "1\n"
 
 
+def test_destructure_requires_all_call_args():
+    src = """
+    fn f(a) { return { a: a + 1, e: 0 }; }
+    define a = 3;
+    { a, e } = f(a);
+    print(a);
+    print(e);
+    """
+    out = run_tiny(src)
+    assert out == "4\n0\n"
+
+
+def test_destructure_missing_input_variable_fails():
+    src = """
+    fn f(a) { return { a: a + 1, e: 0 }; }
+    define a = 3;
+    { b, e } = f(a);
+    """
+    expect_compile_error(src, r"destructuring call to f must include output for argument\(s\): a")
+
+
 def test_typedef_simple_record():
     src = """
     type Error {

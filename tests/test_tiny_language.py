@@ -190,6 +190,31 @@ def test_must_use_unused_param_function():
     expect_compile_error(src, r"unused parameter\(s\) in function f: b")
 
 
+def test_param_mutation_must_be_returned_function():
+    src = """
+    fn bump(a) {
+        a = a + 1;
+        return 0;
+    }
+    """
+    expect_compile_error(src, r"mutated parameter\(s\) in function bump must be returned: a")
+
+
+def test_param_mutation_returned_allows_change():
+    src = """
+    fn bump(a) {
+        a = a + 1;
+        return { a: a, e: 0 };
+    }
+
+    { a, e } = bump(1);
+    print(a);
+    print(e);
+    """
+    out = run_tiny(src)
+    assert out == "2\n0\n"
+
+
 def test_must_use_unused_local_binding_top_level():
     src = """
     define x = 1;
@@ -261,6 +286,21 @@ def test_ok_destructure_both_values():
     assert out == "1\n0\n"
 
 
+def test_method_param_mutation_must_be_returned():
+    src = """
+    class Box {
+        value: number;
+
+        fn set(self, v) {
+            self.value = v;
+            return 0;
+        }
+    }
+    """
+
+    expect_compile_error(src, r"mutated parameter\(s\) in method Box.set must be returned: self")
+
+
 def test_ok_function_call_as_argument():
     src = """
     fn one() { return 1; }
@@ -289,6 +329,26 @@ def test_destructure_missing_input_variable_fails():
     { b, e } = f(a);
     """
     expect_compile_error(src, r"destructuring call to f must include output for argument\(s\): a")
+
+
+def test_method_param_mutation_returned_allows_change():
+    src = """
+    class Box {
+        value: number;
+
+        fn set(self, v) {
+            self.value = v;
+            return self;
+        }
+    }
+
+    define b = new Box { value: 1; };
+    b = b.set(5);
+    print(b.value);
+    """
+
+    out = run_tiny(src)
+    assert out == "5\n"
 
 
 def test_typedef_simple_record():

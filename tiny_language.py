@@ -657,6 +657,7 @@ def lint_fn_params_used(fn: Fn) -> None:
     unused = [p for p in fn.params if reads.get(p, 0) == 0]
     if unused:
         raise RuntimeError(f"unused parameter(s) in function {fn.name}: {', '.join(unused)}")
+    lint_param_mutations_returned(fn.body, set(fn.params), fn.name, is_method=False)
     lint_destruct_call_outputs(fn.body)
     lint_locals_used(fn.body)
 
@@ -670,6 +671,7 @@ def lint_method_params_used(md: MethodDef) -> None:
         raise RuntimeError(
             f"unused parameter(s) in method {md.class_name}.{md.name}: {', '.join(unused)}"
         )
+    lint_param_mutations_returned(md.body, set(md.params), f"{md.class_name}.{md.name}", is_method=True)
     lint_destruct_call_outputs(md.body)
     lint_locals_used(md.body)
 
@@ -728,6 +730,43 @@ def check_destruct_call_expr(expr: IR, names: set[str]) -> None:
             raise RuntimeError(
                 f"destructuring method call to {expr.name} must include output for argument(s): {', '.join(missing)}"
             )
+
+
+def lint_param_mutations_returned(
+    stmts: List[IR], params: set[str], fn_name: str, *, is_method: bool
+) -> None:
+    mutated: set[str] = set()
+    returned: set[str] = set()
+
+    def visit(st: IR) -> None:
+        if isinstance(st, Assign) and st.name in params:
+            mutated.add(st.name)
+        elif isinstance(st, FieldAssign) and isinstance(st.obj, Var) and st.obj.name in params:
+            mutated.add(st.obj.name)
+        elif isinstance(st, DestructAssign):
+            mutated.update(nm for nm in st.names if nm in params)
+        elif isinstance(st, Return):
+            reads: Dict[str, int] = {}
+            uses_in_expr(st.expr, reads)
+            returned.update(n for n in reads if n in params)
+        elif isinstance(st, If):
+            for branch_stmt in st.then:
+                visit(branch_stmt)
+            for branch_stmt in st.els:
+                visit(branch_stmt)
+        elif isinstance(st, While):
+            for body_stmt in st.body:
+                visit(body_stmt)
+
+    for st in stmts:
+        visit(st)
+
+    missing = sorted(mutated - returned)
+    if missing:
+        kind = "method" if is_method else "function"
+        raise RuntimeError(
+            f"mutated parameter(s) in {kind} {fn_name} must be returned: {', '.join(missing)}"
+        )
 
 
 # ----- Runtime -----

@@ -4,3 +4,5 @@
 venv/
 dist/*
 !dist/tinylanguage_bundle.zip
+__pycache__
+*.pyc

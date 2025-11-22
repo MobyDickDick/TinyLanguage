@@ -400,6 +400,28 @@ def test_method_param_mutation_returned_allows_change():
     assert out == "5\n"
 
 
+def test_error_message_for_missing_heap_index():
+    src = """
+    define a = new[1, 2];
+    print(heap_get(a, 5));
+    print(errorMessage);
+    """
+
+    out = run_tiny(src)
+    assert out == "None\nheap access error: index 5 out of range for pointer 1\n"
+
+
+def test_error_message_for_missing_field():
+    src = """
+    define o = { existing: 1; };
+    print(o.missing);
+    print(errorMessage);
+    """
+
+    out = run_tiny(src)
+    assert out == "None\nunknown field missing\n"
+
+
 def test_typedef_simple_record():
     src = """
     type Error {

@@ -807,6 +807,16 @@ class Runtime:
         self.next_ptr = 1
         self.output: List[str] = []
         self.functions: Dict[str, Fn] = {}
+        self.error_messages: List[str] = []
+
+    def _record_error(self, msg: str) -> None:
+        self.error_messages.append(msg)
+
+    @property
+    def error_message(self) -> Optional[str]:
+        if not self.error_messages:
+            return None
+        return "; ".join(self.error_messages)
 
     # heap helpers
     def __new(self, n: int) -> int:
@@ -830,7 +840,24 @@ class Runtime:
             }
 
     def heap_get(self, p: Any, i: Any) -> Any:
-        return self.heap[int(p)][int(i)]
+        try:
+            ip = int(p)
+            idx = int(i)
+        except Exception:
+            self._record_error("heap access error: pointer or index is not numeric")
+            return None
+
+        try:
+            arr = self.heap[ip]
+        except KeyError:
+            self._record_error(f"heap access error: unknown pointer {ip}")
+            return None
+
+        try:
+            return arr[idx]
+        except Exception:
+            self._record_error(f"heap access error: index {idx} out of range for pointer {ip}")
+            return None
 
     def heap_set(self, p: Any, i: Any, v: Any) -> Dict[str, Any]:
         try:
@@ -893,9 +920,19 @@ class Runtime:
         target_obj = obj.obj if isinstance(obj, BaseView) else obj
         owner_hint = obj.class_name if isinstance(obj, BaseView) else None
         if isinstance(target_obj, dict) and "__fields__" in target_obj:
-            fmap = self._resolve_field_storage(target_obj, key, owner_hint, target_obj["__tag__"], allow_write=False)
-            return fmap[key]
-        return target_obj[str(key)]
+            try:
+                fmap = self._resolve_field_storage(
+                    target_obj, key, owner_hint, target_obj["__tag__"], allow_write=False
+                )
+                return fmap[key]
+            except Exception as err:  # noqa: BLE001
+                self._record_error(str(err))
+                return None
+        try:
+            return target_obj[str(key)]
+        except Exception:
+            self._record_error(f"unknown field {key}")
+            return None
 
     def field_set(self, obj: Any, key: str, val: Any) -> None:
         target_obj = obj.obj if isinstance(obj, BaseView) else obj
@@ -1137,6 +1174,8 @@ class Runtime:
         if isinstance(e, Str):
             return e.txt
         if isinstance(e, Var):
+            if e.name == "errorMessage":
+                return self.error_message
             try:
                 return env.get(e.name)
             except RuntimeError:

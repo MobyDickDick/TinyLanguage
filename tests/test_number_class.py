@@ -31,15 +31,15 @@ def test_subtraction_infinities_and_overflow():
     define minf_result = minf - pos;
     define minus_from_plus_b = minf - inf;
 
-    print(any.error);
-    print(keep_inf.error);
-    print(plus_from_minus_b.error);
-    print(minf_result.error);
-    print(minus_from_plus_b.error);
+    print(any.print());
+    print(keep_inf.print());
+    print(plus_from_minus_b.print());
+    print(minf_result.print());
+    print(minus_from_plus_b.print());
 
     define big = Number(PYTHON_FLOAT_MAX);
     define overflow = big - Number(-PYTHON_FLOAT_MAX);
-    print(overflow.error);
+    print(overflow.print());
     """
 
     out = run_tiny(number_def + "\n" + extra)
@@ -71,11 +71,11 @@ def test_multiplication_zero_and_infinity_signs():
     define neg_inf = inf * neg;
     define pos_inf2 = minf * neg;
 
-    print(any1.error);
-    print(any2.error);
-    print(pos_inf.error);
-    print(neg_inf.error);
-    print(pos_inf2.error);
+    print(any1.print());
+    print(any2.print());
+    print(pos_inf.print());
+    print(neg_inf.print());
+    print(pos_inf2.print());
     """
 
     out = run_tiny(number_def + "\n" + extra)
@@ -107,12 +107,12 @@ def test_division_with_infinities_and_zero():
     define pos_over_zero = pos / zero;
     define neg_over_zero = neg / zero;
 
-    print(zero_from_inf.value);
-    print(zero_from_neg_inf.value);
-    print(pos_inf_over_pos.error);
-    print(minf_over_neg.error);
-    print(pos_over_zero.error);
-    print(neg_over_zero.error);
+    print(zero_from_inf.print());
+    print(zero_from_neg_inf.print());
+    print(pos_inf_over_pos.print());
+    print(minf_over_neg.print());
+    print(pos_over_zero.print());
+    print(neg_over_zero.print());
     """
 
     out = run_tiny(number_def + "\n" + extra)

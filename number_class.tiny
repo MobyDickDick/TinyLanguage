@@ -3,6 +3,10 @@
 class Number {
   value: number;
   error: string;
+
+  fn print(self) {
+    return self;
+  }
 }
 
 // Python float boundaries for overflow detection.
@@ -152,7 +156,7 @@ define d = a - b;
 define e = a * b;
 define f = a / b;
 
-print(c.value);
-print(d.value);
-print(e.value);
-print(f.value);
+print(c.print());
+print(d.print());
+print(e.print());
+print(f.print());

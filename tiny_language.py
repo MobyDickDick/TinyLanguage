@@ -317,6 +317,13 @@ class Parser:
         self.tok = self.lx.next_token()
         return t
 
+    def _eat_name_or_kw(self) -> Token:
+        if self.tok.kind in {"NAME", "KW"}:
+            t = self.tok
+            self.tok = self.lx.next_token()
+            return t
+        raise SyntaxError(f"expected NAME at {self.tok.pos}")
+
     def _accept(self, kind: str, text: Optional[str] = None) -> bool:
         if self.tok.kind == kind and (text is None or self.tok.text == text):
             self.tok = self.lx.next_token()
@@ -407,7 +414,7 @@ class Parser:
             while not (self.tok.kind == "SYM" and self.tok.text == "}"):
                 if self.tok.kind == "KW" and self.tok.text == "fn":
                     self._eat("KW", "fn")
-                    mname = self._eat("NAME").text
+                    mname = self._eat_name_or_kw().text
                     params = self.parse_param_list()
                     body = self.parse_block()
                     methods.append(MethodDef(cname, mname, params, body))
@@ -448,7 +455,7 @@ class Parser:
             name_tok = self.tok
             self._eat("NAME")
             if self._accept("SYM", "."):
-                field_name = self._eat("NAME").text
+                field_name = self._eat_name_or_kw().text
                 if self._accept("SYM", "="):
                     expr = self.parse_expr()
                     self._eat("SYM", ";")
@@ -538,7 +545,7 @@ class Parser:
         expr = self.parse_primary()
         while True:
             if self._accept("SYM", "."):
-                name = self._eat("NAME").text
+                name = self._eat_name_or_kw().text
                 if self.tok.kind == "SYM" and self.tok.text == "(":
                     args = self.parse_arg_list()
                     expr = MethodCall(expr, name, args)

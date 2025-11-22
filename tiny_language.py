@@ -79,10 +79,18 @@ class Lexer:
                 if cj == "." and not hasdot:
                     hasdot = True
                     j += 1
-                elif cj.isdigit():
+                    continue
+                if cj.isdigit():
                     j += 1
-                else:
+                    continue
+                if cj in ("e", "E"):
+                    j += 1
+                    if j < self.n and self.s[j] in "+-":
+                        j += 1
+                    while j < self.n and self.s[j].isdigit():
+                        j += 1
                     break
+                break
             txt = self.s[self.i:j]
             self.i = j
             return Token("NUMBER", txt, pos)
@@ -664,6 +672,10 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
             miss.append(s.b_name)
         if miss:
             raise RuntimeError(f"unused operator parameter(s) in op {s.op}: {', '.join(miss)}")
+        for name, count in tmp.items():
+            if name in {s.a_name, s.b_name}:
+                continue
+            reads[name] = max(reads.get(name, 0), count)
     elif isinstance(s, DestructAssign):
         uses_in_expr(s.expr, reads)
     elif isinstance(s, MethodDef):
@@ -675,6 +687,18 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
             raise RuntimeError(
                 f"unused parameter(s) in method {s.class_name}.{s.name}: {', '.join(miss)}"
             )
+        for name, count in tmp.items():
+            if name in set(s.params):
+                continue
+            reads[name] = max(reads.get(name, 0), count)
+    elif isinstance(s, Fn):
+        tmp: Dict[str, int] = {}
+        for t in s.body:
+            lint_stmt_reads(t, tmp)
+        for name, count in tmp.items():
+            if name in set(s.params):
+                continue
+            reads[name] = max(reads.get(name, 0), count)
     elif isinstance(s, ClassDef):
         for m in s.methods:
             lint_stmt_reads(m, reads)

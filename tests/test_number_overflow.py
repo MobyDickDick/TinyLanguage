@@ -14,7 +14,7 @@ def test_number_error_propagation_and_printing():
     number_def = (pathlib.Path(__file__).resolve().parents[1] / "number_class.tiny").read_text()
 
     extra = """
-    define big = Number(2000000000000000000000);
+    define big = Number(PYTHON_FLOAT_MAX);
     define overflow = big + big;
     print(overflow.error);
 

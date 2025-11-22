@@ -438,3 +438,25 @@ def test_typedef_simple_record():
     """
     out = run_tiny(src)
     assert out == "number\nstring\n"
+def test_rosetta_fibonacci_program():
+    program = pathlib.Path(__file__).resolve().parents[1] / "rosetta_fibonacci.tiny"
+
+    out = run_file(str(program))
+
+    expected = "\n".join(
+        [
+            "0",
+            "1",
+            "1",
+            "2",
+            "3",
+            "5",
+            "8",
+            "13",
+            "21",
+            "34",
+        ]
+    ) + "\n"
+
+    assert out == expected
+

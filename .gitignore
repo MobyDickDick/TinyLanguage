@@ -1,4 +1,6 @@
-__pycache__/
-.pytest_cache/
-# Virtual environments
+ __pycache__/
+ .pytest_cache/
+ # Virtual environments
 venv/
+dist/*
+!dist/tinylanguage_bundle.zip

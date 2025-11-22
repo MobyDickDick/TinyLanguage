@@ -1,6 +1,17 @@
-{
+ {
    "version": "0.2.0",
    "configurations": [
+    {
+      "name": "Python: TinyLanguage (current file)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tiny_language.py",
+      "console": "integratedTerminal",
+      "args": [
+        "${file}"
+      ],
+      "justMyCode": true
+    },
      {
        "name": "Python: pytest - tests/test_tiny_language.py",
        "type": "debugpy",

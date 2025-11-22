@@ -4,7 +4,7 @@ class Number {
   value: number;
   error: string;
 
-  fn print(self) {
+  fn to_string(self) {
     return self;
   }
 }
@@ -156,7 +156,7 @@ define d = a - b;
 define e = a * b;
 define f = a / b;
 
-print(c.print());
-print(d.print());
-print(e.print());
-print(f.print());
+print(c.to_string());
+print(d.to_string());
+print(e.to_string());
+print(f.to_string());

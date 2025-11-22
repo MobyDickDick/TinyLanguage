@@ -940,7 +940,7 @@ function __instantiate_class(name, init_fields::AbstractDict{String})
     n = String(name)
     info = get(__types, n, nothing)
     info === nothing && error("unknown class " * n)
-    obj = Dict("__tag__"=>n)
+    obj = Dict{String,Any}("__tag__"=>n)
     for (fname, _) in info["fields"]
         obj[String(fname)] = nothing
     end

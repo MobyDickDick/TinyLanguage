@@ -1194,7 +1194,10 @@ class Runtime:
             op_env = Environment(parent=env)
             op_env.values[opdef.a_name] = a_val
             op_env.values[opdef.b_name] = b_val
-            return self.eval_block(opdef.body, op_env)
+            res = self.eval_block(opdef.body, op_env)
+            if isinstance(res, ReturnSignal):
+                return res.value
+            return res
 
         self.ops[(opdef.op, opdef.a_type, opdef.b_type)] = impl
 
@@ -1305,7 +1308,10 @@ class Runtime:
             env.values[base] = BaseView(target_obj, base)
         for pname, arg in zip(md.params[1:], args):
             env.values[pname] = arg
-        return self.eval_block(md.body, env)
+        res = self.eval_block(md.body, env)
+        if isinstance(res, ReturnSignal):
+            return res.value
+        return res
 
     def type_field_type(self, tname: str, fname: str) -> Optional[str]:
         t = self.types.get(tname)
@@ -1345,6 +1351,17 @@ class Runtime:
                 if err == "rounded":
                     return f"{value} (rounded)"
                 return str(value)
+        if isinstance(val, dict) and val.get("__tag__") == "NumberIntervall":
+            fields = val.get("__fields__", {}).get("NumberIntervall", {})
+            err = fields.get("error")
+            if err in {"plus_infinity", "minus_infinity", "any_number"}:
+                return str(err)
+            if "lower" in fields and "upper" in fields:
+                lower = fields.get("lower")
+                upper = fields.get("upper")
+                center = (lower + upper) / 2
+                radius = (upper - lower) / 2
+                return f"{center} +/- {radius}"
         if isinstance(val, bool):
             return "true" if val else "false"
         return str(val)
@@ -1354,7 +1371,7 @@ class Runtime:
         for st in stmts:
             res = self.eval_stmt(st, env)
             if isinstance(res, ReturnSignal):
-                return res.value
+                return res
         return None
 
     def eval_stmt(self, s: IR, env: "Environment") -> Any:
@@ -1447,6 +1464,8 @@ class Runtime:
                 for pname, arg_expr in zip(fn.params, e.args):
                     call_env.values[pname] = self.eval_expr(arg_expr, env)
                 res = self.eval_block(fn.body, call_env)
+                if isinstance(res, ReturnSignal):
+                    return res.value
                 return res
             raise RuntimeError(f"unknown function {e.name}")
         if isinstance(e, New):

@@ -9,6 +9,7 @@
       "args": ["${workspaceFolder}/all_features.tiny"],
       "console": "integratedTerminal"
     },
+    
      {
        "name": "Python: pytest - tests/test_tiny_language.py",
        "type": "debugpy",
@@ -17,6 +18,17 @@
        "console": "integratedTerminal",
        "args": [
          "tests/test_tiny_language.py",
+         "-q"
+       ]
+    },
+     {
+       "name": "Python: pytest - tests/test_number_class.py",
+       "type": "debugpy",
+       "request": "launch",
+       "module": "pytest",
+       "console": "integratedTerminal",
+       "args": [
+         "tests/test_number_class.py",
          "-q"
        ]
     },

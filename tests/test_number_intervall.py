@@ -88,3 +88,20 @@ def test_interval_number_uses_neighboring_floats():
         + expected_line(-2.5)
         + expected_line(0)
     )
+
+
+def test_dividing_infinities_by_zero_spanning_interval_yields_any_number():
+    interval_def = load_number_intervall()
+
+    extra = """
+    define plus_inf = __intervall_with_error("plus_infinity");
+    define minus_inf = __intervall_with_error("minus_infinity");
+    define crosses_zero = NumberIntervall(-2, 3);
+
+    print((plus_inf / crosses_zero).to_string());
+    print((minus_inf / crosses_zero).to_string());
+    """
+
+    out = run_tiny(interval_def + "\n" + extra)
+
+    assert out == "any_number\nany_number\n"

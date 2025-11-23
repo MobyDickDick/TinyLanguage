@@ -260,12 +260,22 @@ operator / (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
   if (b.error == "minus_infinity") { return __intervall_from_bounds(0, 0); }
 
   if (a.error == "plus_infinity") {
+    if (__is_normal(b)) {
+      if (b.lower <= 0) {
+        if (b.upper >= 0) { return __intervall_with_error("any_number"); }
+      }
+    }
     if (b.error == "plus_infinity") { return __intervall_with_error("any_number"); }
     if (b.error == "minus_infinity") { return __intervall_with_error("any_number"); }
     return __intervall_with_error("plus_infinity");
   }
 
   if (a.error == "minus_infinity") {
+    if (__is_normal(b)) {
+      if (b.lower <= 0) {
+        if (b.upper >= 0) { return __intervall_with_error("any_number"); }
+      }
+    }
     if (b.error == "plus_infinity") { return __intervall_with_error("any_number"); }
     if (b.error == "minus_infinity") { return __intervall_with_error("any_number"); }
     return __intervall_with_error("minus_infinity");

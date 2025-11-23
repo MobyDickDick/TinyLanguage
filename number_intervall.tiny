@@ -48,8 +48,8 @@ fn __is_normal(iv) { return iv.error == "normal"; }
 fn __is_wrapped(iv) { return iv.lower > iv.upper; }
 
 fn __overflowed(v) {
-  if (v > 1.7976931348623157e308) { return "plus_infinity"; }
-  if (v < -1.7976931348623157e308) { return "minus_infinity"; }
+  if (v > 1.7976931348623157 * 10 ^ 308) { return "plus_infinity"; }
+  if (v < -1.7976931348623157 * 10 ^ 308) { return "minus_infinity"; }
   return "normal";
 }
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import pathlib
 import sys
 from pathlib import Path
@@ -32,6 +33,9 @@ def test_read_repl_command_collects_until_complete():
 
 
 def test_history_file_roundtrip(tmp_path: Path):
+    if readline is None:
+        pytest.skip("readline not available on this platform", allow_module_level=True)
+
     history_file = tmp_path / "history"
     readline.clear_history()
     tl._configure_readline(history_file)

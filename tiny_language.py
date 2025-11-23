@@ -4,32 +4,58 @@ import argparse
 import math
 import threading
 
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+
+@dataclass(frozen=True)
+class SourcePos:
+    index: int
+    line: int
+    col: int
+
+    @staticmethod
+    def origin() -> "SourcePos":
+        return SourcePos(0, 1, 1)
 
 
 @dataclass
 class TinyLangError(Exception):
     message: str
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
     def __str__(self) -> str:  # pragma: no cover - Exception already stringifies message
         return self.message
 
 
-def _line_info(source: str, pos: int) -> Tuple[int, int, str]:
-    safe_pos = max(0, min(len(source), pos))
-    line = source.count("\n", 0, safe_pos) + 1
-    last_nl = source.rfind("\n", 0, safe_pos)
-    col = safe_pos - (last_nl + 1) + 1
-    line_text = source.splitlines()[line - 1] if source.splitlines() else ""
+def _line_info(source: str, pos: Union[int, SourcePos]) -> Tuple[int, int, str]:
+    lines = source.splitlines()
+    if isinstance(pos, SourcePos):
+        line = max(1, min(pos.line, len(lines) or 1))
+        line_text = lines[line - 1] if 0 <= line - 1 < len(lines) else ""
+        col = max(1, min(pos.col, len(line_text) + 1)) if line_text else pos.col
+        return line, col, line_text
+    idx = max(0, min(len(source), pos))
+    line = source.count("\n", 0, idx) + 1
+    last_nl = source.rfind("\n", 0, idx)
+    col = idx - (last_nl + 1) + 1
+    line_text = lines[line - 1] if lines else ""
     return line, col, line_text
 
 
-def format_error(source: str, pos: int, message: str) -> str:
-    line, col, line_text = _line_info(source, pos)
-    pointer = " " * (col - 1) + "^"
-    return f"{message} (line {line}, col {col})\n    {line_text}\n    {pointer}"
+def format_error(source: str, pos: Union[int, SourcePos], message: str) -> str:
+    lines = source.splitlines()
+    line, col, _ = _line_info(source, pos)
+    gutter_width = len(str(max(1, len(lines))))
+    start = max(1, line - 1)
+    end = min(len(lines), line + 1) if lines else line
+    context: List[str] = []
+    for ln in range(start, end + 1):
+        prefix = ">" if ln == line else " "
+        text = lines[ln - 1] if 0 <= ln - 1 < len(lines) else ""
+        context.append(f"{prefix} {ln:>{gutter_width}} | {text}")
+    pointer_line = f"  {' ' * gutter_width} | {' ' * (col - 1)}^"
+    return "\n".join([f"{message} (line {line}, col {col})"] + context + [pointer_line])
 
 # ----- Lexer -----
 
@@ -59,9 +85,7 @@ KEYWORDS = {
 class Token:
     kind: str
     text: str
-    pos: int
-    line: int
-    col: int
+    pos: SourcePos
 
 
 class Lexer:
@@ -100,18 +124,16 @@ class Lexer:
     def next_token(self) -> Token:
         self._skip_ws_comments()
         if self.i >= self.n:
-            return Token("EOF", "", self.i, self.line, self.col)
+            return Token("EOF", "", SourcePos(self.i, self.line, self.col))
         c = self.s[self.i]
-        pos = self.i
-        line = self.line
-        col = self.col
+        pos = SourcePos(self.i, self.line, self.col)
 
         if c == "&" and self.i + 1 < self.n and self.s[self.i + 1] == "&":
             self._advance(2)
-            return Token("OP", "&&", pos, line, col)
+            return Token("OP", "&&", pos)
         if c == "|" and self.i + 1 < self.n and self.s[self.i + 1] == "|":
             self._advance(2)
-            return Token("OP", "||", pos, line, col)
+            return Token("OP", "||", pos)
         if c == '"':
             return self._read_string()
         if c.isalpha() or c == "_":
@@ -119,9 +141,11 @@ class Lexer:
             while j < self.n and (self.s[j].isalnum() or self.s[j] == "_"):
                 j += 1
             txt = self.s[self.i:j]
+            consumed = j - self.i
             self.i = j
+            self.col += consumed
             kind = "KW" if txt in KEYWORDS else "NAME"
-            return Token(kind, txt, pos, line, col)
+            return Token(kind, txt, pos)
         if c.isdigit():
             j = self.i + 1
             hasdot = False
@@ -136,31 +160,32 @@ class Lexer:
                     continue
                 break
             txt = self.s[self.i:j]
+            consumed = j - self.i
             self.i = j
-            return Token("NUMBER", txt, pos, line, col)
+            self.col += consumed
+            return Token("NUMBER", txt, pos)
         if c in (">", "<", "=", "!"):
             if self.i + 1 < self.n and self.s[self.i + 1] == "=":
                 self.i += 2
-                return Token("OP", c + "=", pos, line, col)
+                self.col += 2
+                return Token("OP", c + "=", pos)
         if c in "+-*/><^!":
             self._advance()
-            return Token("OP", c, pos, line, col)
+            return Token("OP", c, pos)
         if c in "(){}[];,=:.":
             self._advance()
-            return Token("SYM", c, pos, line, col)
+            return Token("SYM", c, pos)
         raise TinyLangError(format_error(self.s, pos, f"lexing error: unexpected character '{c}'"), pos)
 
     def _read_string(self) -> Token:
-        pos0 = self.i
-        line = self.line
-        col = self.col
+        pos0 = SourcePos(self.i, self.line, self.col)
         self._advance()  # skip opening quote
         buf = []
         while self.i < self.n:
             c = self.s[self.i]
             if c == '"':
                 self._advance()
-                return Token("STRING", "".join(buf), pos0, line, col)
+                return Token("STRING", "".join(buf), pos0)
             if c == "\\":
                 self._advance()
                 if self.i >= self.n:
@@ -200,14 +225,14 @@ class IR:
 class Let(IR):
     name: str
     expr: IR
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class Assign(IR):
     name: str
     expr: IR
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
@@ -215,13 +240,13 @@ class FieldAssign(IR):
     obj: IR
     name: str
     expr: IR
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class Print(IR):
     exprs: List[IR]
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
@@ -229,14 +254,14 @@ class If(IR):
     cond: IR
     then: List[IR]
     els: List[IR]
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class While(IR):
     cond: IR
     body: List[IR]
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
@@ -245,7 +270,7 @@ class Fn(IR):
     params: List[str]
     body: List[IR]
     namespace: Optional[str] = None
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
@@ -254,27 +279,27 @@ class MethodDef(IR):
     name: str
     params: List[str]
     body: List[IR]
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class Namespace(IR):
     name: str
     body: List[IR]
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class Return(IR):
     expr: IR
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class CallStmt(IR):
     name: str
     args: List[IR]
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
@@ -285,21 +310,21 @@ class OpDef(IR):
     b_name: str
     b_type: str
     body: List[IR]
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class DestructAssign(IR):
     names: List[str]
     expr: IR
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class TypeDef(IR):
     name: str
     fields: List[Tuple[str, str]]
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
@@ -308,51 +333,51 @@ class ClassDef(IR):
     fields: List[Tuple[str, str]]
     methods: List["MethodDef"]
     bases: List[str]
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 # Expressions
 @dataclass
 class Num(IR):
     txt: str
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class Str(IR):
     txt: str
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class Bool(IR):
     value: bool
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class Var(IR):
     name: str
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class Call(IR):
     name: str
     args: List[IR]
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class New(IR):
     size: IR
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class NewLit(IR):
     items: List[IR]
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
@@ -360,20 +385,20 @@ class Bin(IR):
     op: str
     a: IR
     b: IR
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class ObjLit(IR):
     fields: List[Tuple[str, IR]]
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class Field(IR):
     obj: IR
     name: str
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
@@ -381,21 +406,21 @@ class MethodCall(IR):
     obj: IR
     name: str
     args: List[IR]
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class ClassNew(IR):
     name: str
     init: List[Tuple[str, IR]]
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 @dataclass
 class Spawn(IR):
     name: str
     args: List[IR]
-    pos: int = 0
+    pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
 # ----- Parser -----
@@ -407,7 +432,7 @@ class Parser:
         self.source = source
         self.tok = lx.next_token()
 
-    def _error(self, message: str, pos: int) -> TinyLangError:
+    def _error(self, message: str, pos: SourcePos) -> TinyLangError:
         return TinyLangError(format_error(self.source, pos, message), pos)
 
     def _eat(self, kind: str, text: Optional[str] = None) -> Token:
@@ -605,7 +630,7 @@ class Parser:
         self._eat("SYM", ")")
         return args
 
-    def parse_destruct_names(self) -> Tuple[List[str], int]:
+    def parse_destruct_names(self) -> Tuple[List[str], SourcePos]:
         start_pos = self._eat("SYM", "{").pos
         names = [self._eat("NAME").text]
         while self._accept("SYM", ","):
@@ -1105,12 +1130,12 @@ class Runtime:
     def _qualify_name(name: str, namespace: Optional[str]) -> str:
         return f"{namespace}.{name}" if namespace else name
 
-    def _record_error(self, msg: str, pos: Optional[int] = None) -> None:
+    def _record_error(self, msg: str, pos: Optional[SourcePos] = None) -> None:
         formatted = format_error(self.source, pos, msg) if pos is not None else msg
         with self._lock:
             self.error_messages.append(formatted)
 
-    def _error(self, msg: str, pos: int) -> TinyLangError:
+    def _error(self, msg: str, pos: SourcePos) -> TinyLangError:
         formatted = format_error(self.source, pos, msg)
         self._record_error(msg, pos)
         return TinyLangError(formatted, pos)
@@ -1132,7 +1157,7 @@ class Runtime:
             self.heap[p] = [0 for _ in range(int(n))]
             return p
 
-    def delete(self, p: Any, pos: Optional[int] = None) -> Dict[str, Any]:
+    def delete(self, p: Any, pos: Optional[SourcePos] = None) -> Dict[str, Any]:
         try:
             ip = int(p)
             with self._lock:
@@ -1145,7 +1170,7 @@ class Runtime:
                 "e": {"__tag__": "Error", "code": 1, "msg": str(e)},
             }
 
-    def heap_get(self, p: Any, i: Any, *, pos: Optional[int] = None) -> Any:
+    def heap_get(self, p: Any, i: Any, *, pos: Optional[SourcePos] = None) -> Any:
         try:
             ip = int(p)
             idx = int(i)
@@ -1168,7 +1193,7 @@ class Runtime:
                 )
                 return None
 
-    def heap_set(self, p: Any, i: Any, v: Any, *, pos: Optional[int] = None) -> Dict[str, Any]:
+    def heap_set(self, p: Any, i: Any, v: Any, *, pos: Optional[SourcePos] = None) -> Dict[str, Any]:
         try:
             with self._lock:
                 self.heap[int(p)][int(i)] = v
@@ -1180,7 +1205,7 @@ class Runtime:
                 "e": {"__tag__": "Error", "code": 1, "msg": str(e)},
             }
 
-    def tag(self, p: Any, typ: Any, *, pos: Optional[int] = None) -> Dict[str, Any]:
+    def tag(self, p: Any, typ: Any, *, pos: Optional[SourcePos] = None) -> Dict[str, Any]:
         try:
             with self._lock:
                 self.ptr_tags[int(p)] = str(typ)
@@ -1439,7 +1464,7 @@ class Runtime:
             return a != b
         raise RuntimeError(f"unsupported op {op}")
 
-    def field_get(self, obj: Any, key: str, *, pos: Optional[int] = None) -> Any:
+    def field_get(self, obj: Any, key: str, *, pos: Optional[SourcePos] = None) -> Any:
         target_obj = obj.obj if isinstance(obj, BaseView) else obj
         owner_hint = obj.class_name if isinstance(obj, BaseView) else None
         if isinstance(target_obj, dict) and "__fields__" in target_obj:
@@ -1826,7 +1851,7 @@ class Runtime:
         except (ReturnSignal, TinyLangError):
             raise
         except Exception as exc:  # noqa: BLE001
-            raise self._error(str(exc), getattr(s, "pos", 0)) from exc
+            raise self._error(str(exc), getattr(s, "pos", SourcePos.origin())) from exc
 
     def eval_expr(self, e: IR, env: "Environment") -> Any:
         try:
@@ -1949,7 +1974,7 @@ class Runtime:
         except TinyLangError:
             raise
         except Exception as exc:  # noqa: BLE001
-            raise self._error(str(exc), getattr(e, "pos", 0)) from exc
+            raise self._error(str(exc), getattr(e, "pos", SourcePos.origin())) from exc
 
 
 class Environment:

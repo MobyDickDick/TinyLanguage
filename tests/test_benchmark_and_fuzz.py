@@ -44,6 +44,17 @@ def _time_limit(seconds: float):
         signal.signal(signal.SIGALRM, previous)
 
 
+def _worker_run_program(queue: multiprocessing.Queue, source: str) -> None:
+    """Helper to run ``compile_and_run`` in a child process."""
+
+    try:
+        compile_and_run(source)
+    except Exception as exc:  # pragma: no cover - subprocess bridge
+        queue.put(("error", exc))
+    else:  # pragma: no cover - subprocess bridge
+        queue.put(("ok", None))
+
+
 def _run_program_with_timeout(source: str, seconds: float) -> None:
     """Run ``compile_and_run`` with a timeout on all platforms."""
 
@@ -52,16 +63,9 @@ def _run_program_with_timeout(source: str, seconds: float) -> None:
             compile_and_run(source)
         return
 
-    def _worker(queue: multiprocessing.Queue) -> None:
-        try:
-            compile_and_run(source)
-        except Exception as exc:  # pragma: no cover - subprocess bridge
-            queue.put(("error", exc))
-        else:  # pragma: no cover - subprocess bridge
-            queue.put(("ok", None))
-
-    result_queue: multiprocessing.Queue = multiprocessing.Queue()
-    proc = multiprocessing.Process(target=_worker, args=(result_queue,))
+    ctx = multiprocessing.get_context("spawn")
+    result_queue: multiprocessing.Queue = ctx.Queue()
+    proc = ctx.Process(target=_worker_run_program, args=(result_queue, source))
     proc.start()
     proc.join(seconds)
 

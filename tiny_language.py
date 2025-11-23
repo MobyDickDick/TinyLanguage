@@ -2,14 +2,20 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import importlib.util
 import math
-import readline
 import sys
 import threading
 from pathlib import Path
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple, Union
+
+_readline_spec = importlib.util.find_spec("readline")
+if _readline_spec is not None:
+    import readline
+else:  # pragma: no cover - platform without readline
+    readline = None
 
 
 @dataclass(frozen=True)
@@ -2170,6 +2176,8 @@ def _is_incomplete_source(src: str) -> bool:
 
 
 def _configure_readline(history_path: Path) -> None:
+    if readline is None:
+        return
     readline.set_completer_delims(" \t\n")
     completions = sorted(KEYWORDS | BUILTINS)
 
@@ -2187,6 +2195,8 @@ def _configure_readline(history_path: Path) -> None:
 
 
 def _save_history(history_path: Path) -> None:
+    if readline is None:
+        return
     try:
         readline.write_history_file(history_path)
     except FileNotFoundError:

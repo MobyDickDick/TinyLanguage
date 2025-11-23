@@ -23,6 +23,11 @@ KEYWORDS = {
     "class",
     "namespace",
     "spawn",
+    "true",
+    "false",
+    "and",
+    "or",
+    "not",
 }
 
 
@@ -65,6 +70,12 @@ class Lexer:
         c = self.s[self.i]
         pos = self.i
 
+        if c == "&" and self.i + 1 < self.n and self.s[self.i + 1] == "&":
+            self._advance(2)
+            return Token("OP", "&&", pos)
+        if c == "|" and self.i + 1 < self.n and self.s[self.i + 1] == "|":
+            self._advance(2)
+            return Token("OP", "||", pos)
         if c == '"':
             return self._read_string()
         if c.isalpha() or c == "_":
@@ -95,7 +106,7 @@ class Lexer:
             if self.i + 1 < self.n and self.s[self.i + 1] == "=":
                 self.i += 2
                 return Token("OP", c + "=", pos)
-        if c in "+-*/><^":
+        if c in "+-*/><^!":
             self._advance()
             return Token("OP", c, pos)
         if c in "(){}[];,=:.":
@@ -164,7 +175,7 @@ class FieldAssign(IR):
 
 @dataclass
 class Print(IR):
-    expr: IR
+    exprs: List[IR]
 
 
 @dataclass
@@ -252,6 +263,11 @@ class Num(IR):
 @dataclass
 class Str(IR):
     txt: str
+
+
+@dataclass
+class Bool(IR):
+    value: bool
 
 
 @dataclass
@@ -365,10 +381,14 @@ class Parser:
         if self.tok.kind == "KW" and self.tok.text == "print":
             self._eat("KW", "print")
             self._eat("SYM", "(")
-            expr = self.parse_expr()
+            exprs: List[IR] = []
+            if not (self.tok.kind == "SYM" and self.tok.text == ")"):
+                exprs.append(self.parse_expr())
+                while self._accept("SYM", ","):
+                    exprs.append(self.parse_expr())
             self._eat("SYM", ")")
             self._eat("SYM", ";")
-            return Print(expr)
+            return Print(exprs)
         if self.tok.kind == "KW" and self.tok.text == "if":
             self._eat("KW", "if")
             self._eat("SYM", "(")
@@ -521,7 +541,29 @@ class Parser:
 
     # expression parsing with precedence
     def parse_expr(self) -> IR:
-        return self.parse_compare()
+        return self.parse_logic_or()
+
+    def parse_logic_or(self) -> IR:
+        left = self.parse_logic_and()
+        while (
+            (self.tok.kind == "KW" and self.tok.text == "or")
+            or (self.tok.kind == "OP" and self.tok.text == "||")
+        ):
+            self._eat(self.tok.kind)
+            right = self.parse_logic_and()
+            left = Bin("or", left, right)
+        return left
+
+    def parse_logic_and(self) -> IR:
+        left = self.parse_compare()
+        while (
+            (self.tok.kind == "KW" and self.tok.text == "and")
+            or (self.tok.kind == "OP" and self.tok.text == "&&")
+        ):
+            self._eat(self.tok.kind)
+            right = self.parse_compare()
+            left = Bin("and", left, right)
+        return left
 
     def parse_compare(self) -> IR:
         left = self.parse_term()
@@ -562,6 +604,11 @@ class Parser:
         if self.tok.kind == "OP" and self.tok.text == "-":
             self._eat("OP")
             return Bin("-", Num("0"), self.parse_unary())
+        if (self.tok.kind == "KW" and self.tok.text == "not") or (
+            self.tok.kind == "OP" and self.tok.text == "!"
+        ):
+            self._eat(self.tok.kind)
+            return Bin("not", Num("0"), self.parse_unary())
         return self.parse_postfix()
 
     def parse_postfix(self) -> IR:
@@ -589,6 +636,10 @@ class Parser:
         if self.tok.kind == "STRING":
             t = self._eat("STRING")
             return Str(t.text)
+        if self.tok.kind == "KW" and self.tok.text in {"true", "false"}:
+            val = self.tok.text == "true"
+            self._eat("KW")
+            return Bool(val)
         if self.tok.kind in {"NAME", "KW"}:
             name = self._eat(self.tok.kind).text
             if name == "spawn":
@@ -691,7 +742,8 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
         uses_in_expr(s.obj, reads)
         uses_in_expr(s.expr, reads)
     elif isinstance(s, Print):
-        uses_in_expr(s.expr, reads)
+        for expr in s.exprs:
+            uses_in_expr(expr, reads)
     elif isinstance(s, If):
         uses_in_expr(s.cond, reads)
         for t in s.then:
@@ -1591,6 +1643,21 @@ class Runtime:
             return "true" if val else "false"
         return str(val)
 
+    @staticmethod
+    def _is_truthy(val: Any) -> bool:
+        if isinstance(val, bool):
+            return val
+        if val is None:
+            return False
+        if isinstance(val, (int, float)):
+            return val != 0
+        if isinstance(val, str):
+            return len(val) > 0
+        try:
+            return bool(val)
+        except Exception:
+            return True
+
     # ----- Evaluation -----
     def eval_block(self, stmts: List[IR], env: "Environment", namespace: Optional[str] = None) -> Any:
         for st in stmts:
@@ -1612,17 +1679,18 @@ class Runtime:
             val = self.eval_expr(s.expr, env)
             self.field_set(obj, s.name, val)
         elif isinstance(s, Print):
-            val = self.eval_expr(s.expr, env)
+            vals = [self.eval_expr(expr, env) for expr in s.exprs]
+            text = " ".join(self.format_value(v) for v in vals)
             with self._lock:
-                self.output.append(f"{self.format_value(val)}\n")
+                self.output.append(f"{text}\n")
         elif isinstance(s, If):
             cond = self.eval_expr(s.cond, env)
-            branch = s.then if cond else s.els
+            branch = s.then if self._is_truthy(cond) else s.els
             res = self.eval_block(branch, env, namespace)
             if isinstance(res, ReturnSignal):
                 return res
         elif isinstance(s, While):
-            while self.eval_expr(s.cond, env):
+            while self._is_truthy(self.eval_expr(s.cond, env)):
                 res = self.eval_block(s.body, env, namespace)
                 if isinstance(res, ReturnSignal):
                     return res
@@ -1670,6 +1738,8 @@ class Runtime:
             return float(e.txt) if "." in e.txt else int(e.txt)
         if isinstance(e, Str):
             return e.txt
+        if isinstance(e, Bool):
+            return e.value
         if isinstance(e, Var):
             if e.name == "errorMessage":
                 return self.error_message
@@ -1696,6 +1766,16 @@ class Runtime:
                 if len(e.args) != 1:
                     raise RuntimeError("join expects 1 argument")
                 return self.join_handle(self.eval_expr(e.args[0], env))
+            if e.name == "len":
+                if len(e.args) != 1:
+                    raise RuntimeError("len expects 1 argument")
+                target = self.eval_expr(e.args[0], env)
+                try:
+                    if isinstance(target, int) and target in self.heap:
+                        return len(self.heap[target])
+                    return len(target)  # type: ignore[arg-type]
+                except Exception:
+                    raise RuntimeError("len expects a sized value")
             if e.name == "__nextafter":
                 return math.nextafter(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env))
             if e.name == "power":
@@ -1735,6 +1815,18 @@ class Runtime:
                 self.heap_set(p, idx, self.eval_expr(item, env))
             return p
         if isinstance(e, Bin):
+            if e.op == "and":
+                left = self.eval_expr(e.a, env)
+                if not self._is_truthy(left):
+                    return False
+                return bool(self._is_truthy(self.eval_expr(e.b, env)))
+            if e.op == "or":
+                left = self.eval_expr(e.a, env)
+                if self._is_truthy(left):
+                    return True
+                return bool(self._is_truthy(self.eval_expr(e.b, env)))
+            if e.op == "not":
+                return not self._is_truthy(self.eval_expr(e.b, env))
             return self.__binop(e.op, self.eval_expr(e.a, env), self.eval_expr(e.b, env))
         if isinstance(e, ObjLit):
             obj: Dict[str, Any] = {"__tag__": "Struct"}

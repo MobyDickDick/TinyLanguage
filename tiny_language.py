@@ -9,7 +9,9 @@ import threading
 from pathlib import Path
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+from stdlib import register_stdlib
 
 class _FallbackReadline:
     """Minimal in-memory readline replacement for platforms without it."""
@@ -194,7 +196,7 @@ KEYWORDS = {
     "not",
 }
 
-BUILTINS = {"len", "print"}
+BUILTINS = {"Collections", "Math", "String", "len", "print"}
 
 
 @dataclass
@@ -1271,6 +1273,7 @@ class Runtime:
         self.next_ptr = 1
         self.output: List[str] = []
         self.functions: Dict[str, Fn] = {}
+        self.native_functions: Dict[str, Callable[..., Any]] = {}
         self.error_messages: List[str] = []
         self.source = source
 
@@ -1673,6 +1676,11 @@ class Runtime:
         with self._lock:
             self.methods[(md.class_name, md.name)] = md
 
+    def register_native(self, name: str, func: Callable[..., Any], namespace: Optional[str] = None) -> None:
+        qualified = self._qualify_name(name, namespace)
+        with self._lock:
+            self.native_functions[qualified] = func
+
     def register_operator(self, opdef: OpDef, env: "Environment") -> None:
         def impl(a_val: Any, b_val: Any) -> Any:
             op_env = Environment(parent=env, namespace=env.namespace)
@@ -1741,6 +1749,13 @@ class Runtime:
             if fn is not None:
                 return qualified, fn
         return None, None
+
+    def _invoke_native(self, qualified_name: str, args: List[Any]) -> Tuple[bool, Any]:
+        with self._lock:
+            native = self.native_functions.get(qualified_name)
+        if native is None:
+            return False, None
+        return True, native(*args)
 
     def _invoke_function(self, fn: Fn, args: List[Any]) -> Any:
         call_env = Environment(parent=None, namespace=fn.namespace)
@@ -1823,6 +1838,9 @@ class Runtime:
     def call_method(self, obj: Any, name: str, args: List[Any]) -> Any:
         if isinstance(obj, NamespaceRef):
             qualified_name = self._qualify_name(name, obj.name)
+            invoked, native_res = self._invoke_native(qualified_name, args)
+            if invoked:
+                return native_res
             fn = self.functions.get(qualified_name)
             if fn is None:
                 raise RuntimeError(f"unknown function {qualified_name}")
@@ -2083,9 +2101,12 @@ class Runtime:
                     if isinstance(res, float) and res.is_integer():
                         res = int(res)
                     return res
+                arg_values = [self.eval_expr(arg_expr, env) for arg_expr in e.args]
+                invoked, native_res = self._invoke_native(e.name, arg_values)
+                if invoked:
+                    return native_res
                 resolved_name, fn = self._resolve_function(e.name, env)
                 if fn is not None:
-                    arg_values = [self.eval_expr(arg_expr, env) for arg_expr in e.args]
                     return self._invoke_function(fn, arg_values)
                 raise RuntimeError(f"unknown function {e.name}")
             if isinstance(e, Spawn):
@@ -2206,6 +2227,7 @@ def compile_and_run(src: str) -> str:
     lint_nested(stmts)
 
     env = Environment(parent=None, namespace=None)
+    register_stdlib(runtime, env)
     for st in stmts:
         runtime.eval_stmt(st, env)
     return "".join(runtime.output)

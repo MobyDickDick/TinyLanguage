@@ -63,16 +63,24 @@ def _run_program_with_timeout(source: str, seconds: float) -> None:
             compile_and_run(source)
         return
 
+    # ``spawn`` has noticeable process-start overhead on Windows; add a
+    # small buffer so legitimate programs are not incorrectly flagged as
+    # hung while still enforcing a hard upper bound.
+    padded_seconds = max(seconds, seconds + 1.0)
+
     ctx = multiprocessing.get_context("spawn")
     result_queue: multiprocessing.Queue = ctx.Queue()
     proc = ctx.Process(target=_worker_run_program, args=(result_queue, source))
     proc.start()
-    proc.join(seconds)
+    proc.join(padded_seconds)
 
     if proc.is_alive():
         proc.terminate()
         proc.join()
-        raise TimeoutError(f"program exceeded {seconds:.2f}s time limit")
+        raise TimeoutError(
+            f"program exceeded {seconds:.2f}s time limit "
+            f"({padded_seconds:.2f}s with spawn overhead)"
+        )
 
     if result_queue.empty():  # pragma: no cover - defensive
         return

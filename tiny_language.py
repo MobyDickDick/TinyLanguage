@@ -88,7 +88,7 @@ class Lexer:
             txt = self.s[self.i:j]
             self.i = j
             return Token("NUMBER", txt, pos)
-        if c in (">", "<", "="):
+        if c in (">", "<", "=", "!"):
             if self.i + 1 < self.n and self.s[self.i + 1] == "=":
                 self.i += 2
                 return Token("OP", c + "=", pos)
@@ -504,7 +504,7 @@ class Parser:
 
     def parse_compare(self) -> IR:
         left = self.parse_term()
-        while self.tok.kind == "OP" and self.tok.text in (">", ">=", "<", "<=", "=="):
+        while self.tok.kind == "OP" and self.tok.text in (">", ">=", "<", "<=", "==", "!="):
             op = self.tok.text
             self._eat("OP")
             right = self.parse_term()
@@ -1217,6 +1217,8 @@ class Runtime:
             return a <= b
         if op == "==":
             return a == b
+        if op == "!=":
+            return a != b
         raise RuntimeError(f"unsupported op {op}")
 
     def field_get(self, obj: Any, key: str) -> Any:

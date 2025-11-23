@@ -94,9 +94,11 @@ def test_comparisons():
         print(2 < 1);
         print(2 <= 2);
         print(3 == 3);
+        print(3 != 2);
+        print(2 != 2);
         """
     )
-    assert out == "true\ntrue\nfalse\ntrue\ntrue\n"
+    assert out == "true\ntrue\nfalse\ntrue\ntrue\ntrue\nfalse\n"
 
 
 def test_function_return_call():

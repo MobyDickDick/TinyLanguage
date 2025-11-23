@@ -1,5 +1,5 @@
+import io
 import pathlib
-import re
 import re
 import sys
 
@@ -394,6 +394,45 @@ def test_main_runs_and_writes_output(tmp_path, capsys):
 
     assert exit_code == 0
     assert captured.out == "42\n"
+
+
+def test_main_eval_executes_snippet(capsys):
+    exit_code = main(["--eval", "print(3 * 4);"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert captured.out == "12\n"
+    assert captured.err == ""
+
+
+def test_main_eval_reports_error(capsys):
+    exit_code = main(["--eval", "define x = ;"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert "expected" in captured.err
+
+
+def test_repl_executes_lines(monkeypatch, capsys):
+    monkeypatch.setattr("sys.stdin", io.StringIO("print(2 + 3);\nprint(1);\n"))
+
+    exit_code = main(["--repl"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "tiny> " in captured.out
+    assert "5\ntiny> 1\n" in captured.out
+
+
+def test_repl_reports_errors(monkeypatch, capsys):
+    monkeypatch.setattr("sys.stdin", io.StringIO("define y = ;\n"))
+
+    exit_code = main(["--repl"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "tiny> " in captured.out
+    assert "expected" in captured.err
 
 
 def test_must_use_unused_local_binding_function():

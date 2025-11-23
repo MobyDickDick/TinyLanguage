@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import sys
 import threading
 
 from dataclasses import dataclass, field
@@ -2041,10 +2042,62 @@ def run_file(path: str) -> str:
         return compile_and_run(f.read())
 
 
+def _format_error_for_source(source: str, err: TinyLangError) -> str:
+    if "(line " in err.message:
+        return err.message
+    return format_error(source, err.pos, err.message)
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Run a TinyLanguage program from a file")
-    parser.add_argument("file", help="Path to the TinyLanguage source file to execute")
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument(
+        "-e",
+        "--eval",
+        metavar="SRC",
+        help="Execute the provided TinyLanguage source code string",
+    )
+    mode_group.add_argument("--repl", action="store_true", help="Start a TinyLanguage REPL")
+    parser.add_argument(
+        "file",
+        nargs="?",
+        help="Path to the TinyLanguage source file to execute",
+    )
     args = parser.parse_args(argv)
+
+    if args.eval is not None:
+        try:
+            output = compile_and_run(args.eval)
+            print(output, end="")
+            return 0
+        except TinyLangError as err:
+            print(_format_error_for_source(args.eval, err), file=sys.stderr)
+            return 1
+        except Exception as exc:  # pragma: no cover - unexpected errors
+            print(str(exc), file=sys.stderr)
+            return 1
+
+    if args.repl:
+        while True:
+            try:
+                src = input("tiny> ")
+            except EOFError:
+                print()
+                break
+            if not src.strip():
+                continue
+            try:
+                output = compile_and_run(src)
+                if output:
+                    print(output, end="")
+            except TinyLangError as err:
+                print(_format_error_for_source(src, err), file=sys.stderr)
+            except Exception as exc:  # pragma: no cover - unexpected errors
+                print(str(exc), file=sys.stderr)
+        return 0
+
+    if not args.file:
+        parser.error("the following arguments are required: file")
 
     output = run_file(args.file)
     print(output, end="")

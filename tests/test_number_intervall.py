@@ -79,7 +79,7 @@ def test_interval_number_uses_neighboring_floats(run_tiny_source):
     )
 
 
-def test_dividing_infinities_by_zero_spanning_interval_yields_any_number():
+def test_dividing_infinities_by_zero_spanning_interval_yields_any_number(run_tiny_source):
     interval_def = load_number_intervall()
 
     extra = """
@@ -91,12 +91,12 @@ def test_dividing_infinities_by_zero_spanning_interval_yields_any_number():
     print((minus_inf / crosses_zero).to_string());
     """
 
-    out = run_tiny(interval_def + "\n" + extra)
+    out = run_tiny_source(interval_def + "\n" + extra)
 
     assert out == "any_number\nany_number\n"
 
 
-def test_dividing_zero_spanning_intervals_yields_wrapped_interval():
+def test_dividing_zero_spanning_intervals_yields_wrapped_interval(run_tiny_source):
     interval_def = load_number_intervall()
 
     extra = """
@@ -106,12 +106,12 @@ def test_dividing_zero_spanning_intervals_yields_wrapped_interval():
     print((numerator / denominator).to_string());
     """
 
-    out = run_tiny(interval_def + "\n" + extra)
+    out = run_tiny_source(interval_def + "\n" + extra)
 
     assert out == "[6.0, -4.0]\n"
 
 
-def test_division_results_with_infinite_bounds():
+def test_division_results_with_infinite_bounds(run_tiny_source):
     interval_def = load_number_intervall()
 
     extra = """
@@ -132,6 +132,6 @@ def test_division_results_with_infinite_bounds():
     print((base / lower_inf).to_string());
     """
 
-    out = run_tiny(interval_def + "\n" + extra)
+    out = run_tiny_source(interval_def + "\n" + extra)
 
     assert out == "[1.0, -1.0]\n[1.0, infinity]\n[-infinity, -1.0]\n[-1.0, 1.0]\n[0, 1.0]\n[-1.0, 0]\n"

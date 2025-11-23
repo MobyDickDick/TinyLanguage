@@ -117,7 +117,7 @@ def test_division_with_infinities_and_zero(run_tiny_source):
     )
 
 
-def test_division_rounding_marks_error_code():
+def test_division_rounding_marks_error_code(run_tiny_source):
     number_def = load_number_class()
     extra = """
     define one = Number(1);
@@ -131,6 +131,6 @@ def test_division_rounding_marks_error_code():
     print(exact.to_string());
     """
 
-    out = run_tiny(number_def + "\n" + extra)
+    out = run_tiny_source(number_def + "\n" + extra)
 
     assert out.endswith("0.5 (rounded)\n2\n")

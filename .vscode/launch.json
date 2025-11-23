@@ -54,6 +54,28 @@
       ]
     },
     {
+      "name": "Python: pytest - tests/test_benchmark_and_fuzz.py",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_benchmark_and_fuzz.py",
+        "-q"
+      ]
+    },
+    {
+      "name": "Python: pytest - tests/test_error_messages.py",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_error_messages.py",
+        "-q"
+      ]
+    },
+    {
       "name": "Python: pytest - tests/test_repl.py",
       "type": "debugpy",
       "request": "launch",

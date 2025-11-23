@@ -591,3 +591,21 @@ def test_number_class_with_operator_overloads():
 
     assert out == "12.5\n-2.5\n37.5\n0.6666666666666666\n"
 
+
+def test_spawn_and_join():
+    out = run_tiny(
+        """
+        fn add(x, y) {
+            return x + y;
+        }
+
+        define first = spawn add(2, 3);
+        define second = spawn add(4, 5);
+
+        print(join(first));
+        print(join(second));
+        """
+    )
+
+    assert out == "5\n9\n"
+

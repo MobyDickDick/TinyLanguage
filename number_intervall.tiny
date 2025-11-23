@@ -14,6 +14,10 @@ fn __intervall_with_error(code) {
   return new NumberIntervall { lower: 0, upper: 0, error: code };
 }
 
+fn __intervall_with_bounds_and_error(l, u, code) {
+  return new NumberIntervall { lower: l, upper: u, error: code };
+}
+
 fn __intervall_from_bounds(l, u) {
   return new NumberIntervall { lower: l, upper: u, error: "normal" };
 }
@@ -45,6 +49,8 @@ fn interval_number(v) {
 
 fn __is_error(iv, code) { return iv.error == code; }
 fn __is_normal(iv) { return iv.error == "normal"; }
+fn __is_upper_infinity(iv) { return iv.error == "upper_bound_is_plus_infinity"; }
+fn __is_lower_infinity(iv) { return iv.error == "lower_bound_is_minus_infinity"; }
 fn __is_wrapped(iv) { return iv.lower > iv.upper; }
 fn __contains_zero(iv) {
   if (__is_normal(iv)) {
@@ -268,6 +274,40 @@ operator / (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
   if (b.error == "plus_infinity") { return __intervall_from_bounds(0, 0); }
   if (b.error == "minus_infinity") { return __intervall_from_bounds(0, 0); }
 
+  if (__is_upper_infinity(b)) {
+    if (b.lower == 0) { return __intervall_with_error("any_number"); }
+
+    define lower = a.lower / b.lower;
+    define upper = a.upper / b.lower;
+
+    if (lower > upper) {
+      define tmp = lower;
+      lower = upper;
+      upper = tmp;
+    }
+
+    if (upper < 0) { return __intervall_with_bounds_and_error(lower, upper, "wrapped_interval"); }
+    if (lower > 0) { return __intervall_with_bounds_and_error(0, upper, "wrapped_interval"); }
+    return __intervall_with_bounds_and_error(lower, upper, "wrapped_interval");
+  }
+
+  if (__is_lower_infinity(b)) {
+    if (b.upper == 0) { return __intervall_with_error("any_number"); }
+
+    define lower = a.lower / b.upper;
+    define upper = a.upper / b.upper;
+
+    if (lower > upper) {
+      define tmp = lower;
+      lower = upper;
+      upper = tmp;
+    }
+
+    if (upper < 0) { return __intervall_with_bounds_and_error(lower, 0, "wrapped_interval"); }
+    if (lower > 0) { return __intervall_with_bounds_and_error(lower, upper, "wrapped_interval"); }
+    return __intervall_with_bounds_and_error(lower, upper, "wrapped_interval");
+  }
+
   if (a.error == "plus_infinity") {
     if (__is_normal(b)) {
       if (b.lower <= 0) {
@@ -290,15 +330,72 @@ operator / (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
     return __intervall_with_error("minus_infinity");
   }
 
-  if (a.lower > a.upper) { return __intervall_with_error("any_number"); }
-  if (b.lower > b.upper) { return __intervall_with_error("any_number"); }
+  if (__is_wrapped(a)) { return __intervall_with_error("any_number"); }
 
-  if (__contains_zero(a)) {
-    if (__contains_zero(b)) { return __intervall_with_error("any_number"); }
+  if (__is_wrapped(b)) {
+    define r1 = a.lower / b.lower;
+    define r2 = a.upper / b.lower;
+    define r3 = a.lower / b.upper;
+    define r4 = a.upper / b.upper;
+
+    define lo_wrap = r1;
+    if (r2 < lo_wrap) { lo_wrap = r2; }
+    if (r3 < lo_wrap) { lo_wrap = r3; }
+    if (r4 < lo_wrap) { lo_wrap = r4; }
+
+    define hi_wrap = r1;
+    if (r2 > hi_wrap) { hi_wrap = r2; }
+    if (r3 > hi_wrap) { hi_wrap = r3; }
+    if (r4 > hi_wrap) { hi_wrap = r4; }
+
+    return __intervall_with_bounds_and_error(lo_wrap, hi_wrap, "wrapped_interval");
   }
 
-  if (b.lower <= 0) {
-    if (b.upper >= 0) { return __intervall_with_error("any_number"); }
+  if (b.lower == 0) {
+    if (b.upper == 0) { return __intervall_with_error("any_number"); }
+
+    if (b.upper > 0) {
+      define q1 = a.lower / b.upper;
+      define q2 = a.upper / b.upper;
+
+      define lo = q1;
+      if (q2 < lo) { lo = q2; }
+
+      return __intervall_with_bounds_and_error(lo, q2, "upper_bound_is_plus_infinity");
+    }
+  }
+
+  if (b.upper == 0) {
+    if (b.lower < 0) {
+      define q1 = a.lower / b.lower;
+      define q2 = a.upper / b.lower;
+
+      define hi = q1;
+      if (q2 > hi) { hi = q2; }
+
+      return __intervall_with_bounds_and_error(q1, hi, "lower_bound_is_minus_infinity");
+    }
+  }
+
+  if (b.lower < 0) {
+    if (b.upper > 0) {
+      define r1 = a.lower / b.lower;
+      define r2 = a.lower / b.upper;
+      define r3 = a.upper / b.lower;
+      define r4 = a.upper / b.upper;
+
+      define lo_gap = r1;
+      if (r2 < lo_gap) { lo_gap = r2; }
+      if (r3 < lo_gap) { lo_gap = r3; }
+      if (r4 < lo_gap) { lo_gap = r4; }
+
+      define hi_gap = r1;
+      if (r2 > hi_gap) { hi_gap = r2; }
+      if (r3 > hi_gap) { hi_gap = r3; }
+      if (r4 > hi_gap) { hi_gap = r4; }
+
+      return __intervall_with_bounds_and_error(hi_gap, lo_gap, "wrapped_interval");
+    }
   }
 
   define q1 = a.lower / b.lower;

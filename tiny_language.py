@@ -1433,6 +1433,16 @@ class Runtime:
             err = fields.get("error")
             if err in {"plus_infinity", "minus_infinity", "any_number"}:
                 return str(err)
+            if err == "upper_bound_is_plus_infinity":
+                lower = fields.get("lower")
+                return f"[{lower}, infinity]"
+            if err == "lower_bound_is_minus_infinity":
+                upper = fields.get("upper")
+                return f"[-infinity, {upper}]"
+            if err == "wrapped_interval":
+                lower = fields.get("lower")
+                upper = fields.get("upper")
+                return f"[{lower}, {upper}]"
             if "lower" in fields and "upper" in fields:
                 lower = fields.get("lower")
                 upper = fields.get("upper")

@@ -41,7 +41,7 @@ def test_basic_interval_operations_and_formatting():
     assert out == "2.0 +/- 1.0\n1.0 +/- 1.0\n1.0 +/- 1.0\n2.5 +/- 1.5\n"
 
 
-def test_wrapped_intervals_and_zero_division_expand_to_any_number():
+def test_wrapped_intervals_and_zero_division_expand_to_wrapped_result():
     interval_def = load_number_intervall()
     extra = """
     define wrapped = NumberIntervall(1, 0);
@@ -58,7 +58,7 @@ def test_wrapped_intervals_and_zero_division_expand_to_any_number():
 
     out = run_tiny(interval_def + "\n" + extra)
 
-    assert out == "0.5 +/- -0.5\nany_number\nany_number\n"
+    assert out == "0.5 +/- -0.5\nany_number\n[3.0, -3.0]\n"
 
 
 def test_interval_number_uses_neighboring_floats():
@@ -107,7 +107,7 @@ def test_dividing_infinities_by_zero_spanning_interval_yields_any_number():
     assert out == "any_number\nany_number\n"
 
 
-def test_dividing_zero_spanning_intervals_yields_any_number():
+def test_dividing_zero_spanning_intervals_yields_wrapped_interval():
     interval_def = load_number_intervall()
 
     extra = """
@@ -119,4 +119,30 @@ def test_dividing_zero_spanning_intervals_yields_any_number():
 
     out = run_tiny(interval_def + "\n" + extra)
 
-    assert out == "any_number\n"
+    assert out == "[6.0, -4.0]\n"
+
+
+def test_division_results_with_infinite_bounds():
+    interval_def = load_number_intervall()
+
+    extra = """
+    define base = NumberIntervall(1, 1);
+    define crosses_zero = NumberIntervall(-1, 1);
+    define touches_zero_positive = NumberIntervall(0, 1);
+    define touches_zero_negative = NumberIntervall(-1, 0);
+
+    define upper_inf = base / touches_zero_positive;
+    define lower_inf = base / touches_zero_negative;
+    define wrapped_denominator = NumberIntervall(1, -1);
+
+    print((base / crosses_zero).to_string());
+    print(upper_inf.to_string());
+    print(lower_inf.to_string());
+    print((base / wrapped_denominator).to_string());
+    print((base / upper_inf).to_string());
+    print((base / lower_inf).to_string());
+    """
+
+    out = run_tiny(interval_def + "\n" + extra)
+
+    assert out == "[1.0, -1.0]\n[1.0, infinity]\n[-infinity, -1.0]\n[-1.0, 1.0]\n[0, 1.0]\n[-1.0, 0]\n"

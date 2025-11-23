@@ -11,60 +11,85 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-_readline_spec = importlib.util.find_spec("readline")
-if _readline_spec is not None:
-    import readline
-else:  # pragma: no cover - platform without readline
-    class _FallbackReadline:
-        """Minimal in-memory readline replacement for platforms without it."""
+class _FallbackReadline:
+    """Minimal in-memory readline replacement for platforms without it."""
 
-        def __init__(self) -> None:
-            self._history: List[str] = []
-            self._completions = None
-            self._history_length = 1000
+    def __init__(self) -> None:
+        self._history: List[str] = []
+        self._completions = None
+        self._history_length = 1000
 
-        # Configuration API
-        def set_completer_delims(self, _delims: str) -> None:  # pragma: no cover - noop
+    # Configuration API
+    def set_completer_delims(self, _delims: str) -> None:  # pragma: no cover - noop
+        return
+
+    def set_completer(self, completer) -> None:  # pragma: no cover - noop
+        self._completions = completer
+
+    def parse_and_bind(self, _cmd: str) -> None:  # pragma: no cover - noop
+        return
+
+    # History management
+    def read_history_file(self, path: Path) -> None:
+        if not Path(path).exists():
             return
+        with open(path, "r", encoding="utf-8") as f:
+            self._history = [line.rstrip("\n") for line in f]
 
-        def set_completer(self, completer) -> None:  # pragma: no cover - noop
-            self._completions = completer
+    def write_history_file(self, path: Path) -> None:
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            for entry in self._history[-self._history_length :]:
+                f.write(entry + "\n")
 
-        def parse_and_bind(self, _cmd: str) -> None:  # pragma: no cover - noop
-            return
+    def set_history_length(self, length: int) -> None:  # pragma: no cover - simple setter
+        self._history_length = max(0, length)
 
-        # History management
-        def read_history_file(self, path: Path) -> None:
-            if not Path(path).exists():
-                return
-            with open(path, "r", encoding="utf-8") as f:
-                self._history = [line.rstrip("\n") for line in f]
+    def clear_history(self) -> None:
+        self._history.clear()
 
-        def write_history_file(self, path: Path) -> None:
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
-            with open(path, "w", encoding="utf-8") as f:
-                for entry in self._history[-self._history_length :]:
-                    f.write(entry + "\n")
+    def add_history(self, line: str) -> None:
+        self._history.append(line)
 
-        def set_history_length(self, length: int) -> None:  # pragma: no cover - simple setter
-            self._history_length = max(0, length)
+    def get_history_item(self, index: int) -> Optional[str]:
+        idx = index - 1
+        if 0 <= idx < len(self._history):
+            return self._history[idx]
+        return None
 
-        def clear_history(self) -> None:
-            self._history.clear()
+    def get_current_history_length(self) -> int:  # pragma: no cover - trivial
+        return len(self._history)
 
-        def add_history(self, line: str) -> None:
-            self._history.append(line)
 
-        def get_history_item(self, index: int) -> Optional[str]:
-            idx = index - 1
-            if 0 <= idx < len(self._history):
-                return self._history[idx]
-            return None
+def _load_readline():
+    """Return a readline-compatible object even on platforms without it."""
 
-        def get_current_history_length(self) -> int:  # pragma: no cover - trivial
-            return len(self._history)
+    required_api = {
+        "set_completer_delims",
+        "set_completer",
+        "parse_and_bind",
+        "read_history_file",
+        "write_history_file",
+        "set_history_length",
+        "clear_history",
+        "add_history",
+        "get_history_item",
+        "get_current_history_length",
+    }
 
-    readline = _FallbackReadline()
+    try:  # pragma: no cover - import may fail on some platforms
+        import readline as rl  # type: ignore
+    except Exception:  # pragma: no cover - fallback path
+        return _FallbackReadline()
+
+    missing = [name for name in required_api if not hasattr(rl, name)]
+    if missing:  # pragma: no cover - platforms with partial readline support
+        return _FallbackReadline()
+
+    return rl
+
+
+readline = _load_readline()
 
 
 @dataclass(frozen=True)

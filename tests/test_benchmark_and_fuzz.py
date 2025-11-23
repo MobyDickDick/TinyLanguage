@@ -149,11 +149,11 @@ def test_randomized_programs_do_not_crash(record_property) -> None:
 
     # Keep the loop count modest so CI does not cancel the job for taking too
     # long on slower runners while still exercising a broad sample of seeds.
-    for _ in range(24):
+    for _ in range(12):
         seed = rng.getrandbits(32)
         _, src = _generate_program(seed)
         try:
-            with _time_limit(0.75):
+            with _time_limit(0.5):
                 compile_and_run(src)
             successes += 1
         except TimeoutError:

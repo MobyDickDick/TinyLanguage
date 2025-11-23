@@ -1,9 +1,17 @@
 from __future__ import annotations
 
+import importlib.util
 import pathlib
-import readline
 import sys
 from pathlib import Path
+
+import pytest
+
+readline_spec = importlib.util.find_spec("readline")
+if readline_spec is not None:
+    import readline
+else:
+    readline = None
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.append(str(PROJECT_ROOT))
@@ -30,6 +38,9 @@ def test_read_repl_command_collects_until_complete():
 
 
 def test_history_file_roundtrip(tmp_path: Path):
+    if readline is None:
+        pytest.skip("readline not available on this platform", allow_module_level=True)
+
     history_file = tmp_path / "history"
     readline.clear_history()
     tl._configure_readline(history_file)

@@ -84,13 +84,6 @@ class Lexer:
                 if cj.isdigit():
                     j += 1
                     continue
-                if cj in ("e", "E"):
-                    j += 1
-                    if j < self.n and self.s[j] in "+-":
-                        j += 1
-                    while j < self.n and self.s[j].isdigit():
-                        j += 1
-                    break
                 break
             txt = self.s[self.i:j]
             self.i = j
@@ -99,7 +92,7 @@ class Lexer:
             if self.i + 1 < self.n and self.s[self.i + 1] == "=":
                 self.i += 2
                 return Token("OP", c + "=", pos)
-        if c in "+-*/><":
+        if c in "+-*/><^":
             self._advance()
             return Token("OP", c, pos)
         if c in "(){}[];,=:.":
@@ -528,12 +521,20 @@ class Parser:
         return left
 
     def parse_factor(self) -> IR:
-        left = self.parse_unary()
+        left = self.parse_power()
         while self.tok.kind == "OP" and self.tok.text in ("*", "/"):
             op = self.tok.text
             self._eat("OP")
-            right = self.parse_unary()
+            right = self.parse_power()
             left = Bin(op, left, right)
+        return left
+
+    def parse_power(self) -> IR:
+        left = self.parse_unary()
+        if self.tok.kind == "OP" and self.tok.text == "^":
+            self._eat("OP")
+            right = self.parse_power()
+            return Bin("^", left, right)
         return left
 
     def parse_unary(self) -> IR:
@@ -1019,6 +1020,31 @@ class Runtime:
                 return "minus_infinity"
             return None
 
+        if op == "^":
+            if err_a == "any_number" or err_b == "any_number":
+                return mk("any_number")
+            if err_a != "normal" or err_b != "normal":
+                return mk("any_number")
+            if not isinstance(val_b, (int, float)):
+                return mk("any_number")
+            if isinstance(val_b, float):
+                if not val_b.is_integer():
+                    return mk("any_number")
+                val_b = int(val_b)
+            try:
+                res = val_a**val_b
+            except Exception:
+                return mk("any_number")
+            ov = overflow(res)
+            if ov:
+                return mk(ov)
+            rounded = False
+            if isinstance(res, float):
+                rounded = not res.is_integer()
+                if not rounded:
+                    res = int(res)
+            return mk("rounded" if rounded else "normal", res)
+
         if op == "+":
             if err_a == "any_number" or err_b == "any_number":
                 return mk("any_number")
@@ -1116,6 +1142,46 @@ class Runtime:
 
         return None
 
+    def _number_power(self, base: Any, exponent: Any) -> Any:
+        fields_a = self._number_fields(base)
+        fields_b = self._number_fields(exponent)
+        if fields_a is None or fields_b is None:
+            return None
+
+        val_a = fields_a.get("value", 0)
+        val_b = fields_b.get("value", 0)
+        err_a = fields_a.get("error", "normal") or "normal"
+        err_b = fields_b.get("error", "normal") or "normal"
+
+        def mk(err: str, value: Any = 0) -> Dict[str, Any]:
+            return self._make_number(value, err)
+
+        def overflow(v: float) -> Optional[str]:
+            limit = 1e21
+            if v > limit:
+                return "plus_infinity"
+            if v < -limit:
+                return "minus_infinity"
+            return None
+
+        if err_a == "any_number" or err_b == "any_number":
+            return mk("any_number")
+        if err_a != "normal" or err_b != "normal":
+            return mk("any_number")
+        try:
+            res = val_a**val_b
+        except Exception:
+            return mk("any_number")
+        ov = overflow(res)
+        if ov:
+            return mk(ov)
+        rounded = False
+        if isinstance(res, float):
+            rounded = not res.is_integer()
+            if not rounded:
+                res = int(res)
+        return mk("rounded" if rounded else "normal", res)
+
     def __binop(self, op: str, a: Any, b: Any) -> Any:
         ta = self.__get_tag(a)
         tb = self.__get_tag(b)
@@ -1133,6 +1199,14 @@ class Runtime:
             return a * b
         if op == "/":
             return a / b
+        if op == "^":
+            if isinstance(b, float):
+                if not b.is_integer():
+                    raise RuntimeError("exponent for ^ must be an integer")
+                b = int(b)
+            elif not isinstance(b, int):
+                raise RuntimeError("exponent for ^ must be an integer")
+            return a**b
         if op == ">":
             return a > b
         if op == ">=":
@@ -1461,6 +1535,16 @@ class Runtime:
                 return self.tag(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env))
             if e.name == "__nextafter":
                 return math.nextafter(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env))
+            if e.name == "power":
+                base = self.eval_expr(e.args[0], env)
+                exp = self.eval_expr(e.args[1], env)
+                number_res = self._number_power(base, exp)
+                if number_res is not None:
+                    return number_res
+                res = math.pow(base, exp)
+                if isinstance(res, float) and res.is_integer():
+                    res = int(res)
+                return res
             if e.name in self.functions:
                 fn = self.functions[e.name]
                 call_env = Environment(parent=None)

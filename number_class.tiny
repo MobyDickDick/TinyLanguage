@@ -10,8 +10,8 @@ class Number {
 }
 
 // Python float boundaries for overflow detection.
-define PYTHON_FLOAT_MAX = 1.7976931348623157e308;
-define PYTHON_FLOAT_MIN = -1.7976931348623157e308;
+define PYTHON_FLOAT_MAX = 1.7976931348623157 * 10 ^ 308;
+define PYTHON_FLOAT_MIN = -1.7976931348623157 * 10 ^ 308;
 
 fn __number_with_error(code) {
   return new Number { value: 0, error: code };

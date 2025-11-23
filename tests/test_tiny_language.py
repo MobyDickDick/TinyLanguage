@@ -48,6 +48,44 @@ def test_arithmetic_and_print_with_define():
     assert out == "17\n"
 
 
+def test_power_operator():
+    out = run_tiny(
+        """
+        print(2 ^ 3);
+        print(2 ^ 3 ^ 2);
+        """
+    )
+    assert out == "8\n512\n"
+
+
+def test_power_operator_requires_integer_exponent():
+    expect_compile_error(
+        """
+        print(2 ^ 0.5);
+        """,
+        r"exponent for \^ must be an integer",
+    )
+
+
+def test_power_function_allows_fractional_exponent():
+    out = run_tiny(
+        """
+        print(power(81, 0.5));
+        print(power(2, 0.5));
+        """
+    )
+    assert out == "9\n1.4142135623730951\n"
+
+
+def test_scientific_notation_not_supported():
+    expect_compile_error(
+        """
+        print(1.2e2);
+        """,
+        r"expected SYM \)"
+    )
+
+
 def test_comparisons():
     out = run_tiny(
         """

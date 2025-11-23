@@ -22,6 +22,27 @@ fn NumberIntervall(l, u) {
   return __intervall_from_bounds(l, u);
 }
 
+fn interval_number(v) {
+  if (v == v) {
+    define ov = __overflowed(v);
+    if (ov == "normal") {
+      define lower = __nextafter(v, v - 1);
+      define upper = __nextafter(v, v + 1);
+
+      define lo_ov = __overflowed(lower);
+      if (lo_ov == "normal") {
+        define hi_ov = __overflowed(upper);
+        if (hi_ov == "normal") { return __intervall_from_bounds(lower, upper); }
+        return __intervall_with_error(hi_ov);
+      }
+      return __intervall_with_error(lo_ov);
+    }
+    return __intervall_with_error(ov);
+  }
+
+  return __intervall_with_error("any_number");
+}
+
 fn __is_error(iv, code) { return iv.error == code; }
 fn __is_normal(iv) { return iv.error == "normal"; }
 fn __is_wrapped(iv) { return iv.lower > iv.upper; }

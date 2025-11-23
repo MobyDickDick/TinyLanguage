@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
@@ -1458,6 +1459,8 @@ class Runtime:
                 return self.delete(self.eval_expr(e.args[0], env))
             if e.name == "tag":
                 return self.tag(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env))
+            if e.name == "__nextafter":
+                return math.nextafter(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env))
             if e.name in self.functions:
                 fn = self.functions[e.name]
                 call_env = Environment(parent=None)

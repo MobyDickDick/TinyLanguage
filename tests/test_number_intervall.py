@@ -1,3 +1,4 @@
+import math
 import pathlib
 import sys
 
@@ -58,3 +59,32 @@ def test_wrapped_intervals_and_zero_division_expand_to_any_number():
     out = run_tiny(interval_def + "\n" + extra)
 
     assert out == "0.5 +/- -0.5\nany_number\nany_number\n"
+
+
+def test_interval_number_uses_neighboring_floats():
+    interval_def = load_number_intervall()
+
+    extra = """
+    define around_five = interval_number(5);
+    define around_negative = interval_number(-2.5);
+    define around_zero = interval_number(0);
+
+    print(around_five.to_string());
+    print(around_negative.to_string());
+    print(around_zero.to_string());
+    """
+
+    out = run_tiny(interval_def + "\n" + extra)
+
+    def expected_line(value: float) -> str:
+        lower = math.nextafter(value, value - 1)
+        upper = math.nextafter(value, value + 1)
+        center = (lower + upper) / 2
+        radius = (upper - lower) / 2
+        return f"{center} +/- {radius}\n"
+
+    assert out == (
+        expected_line(5)
+        + expected_line(-2.5)
+        + expected_line(0)
+    )

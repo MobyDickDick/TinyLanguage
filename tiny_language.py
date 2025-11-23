@@ -15,7 +15,56 @@ _readline_spec = importlib.util.find_spec("readline")
 if _readline_spec is not None:
     import readline
 else:  # pragma: no cover - platform without readline
-    readline = None
+    class _FallbackReadline:
+        """Minimal in-memory readline replacement for platforms without it."""
+
+        def __init__(self) -> None:
+            self._history: List[str] = []
+            self._completions = None
+            self._history_length = 1000
+
+        # Configuration API
+        def set_completer_delims(self, _delims: str) -> None:  # pragma: no cover - noop
+            return
+
+        def set_completer(self, completer) -> None:  # pragma: no cover - noop
+            self._completions = completer
+
+        def parse_and_bind(self, _cmd: str) -> None:  # pragma: no cover - noop
+            return
+
+        # History management
+        def read_history_file(self, path: Path) -> None:
+            if not Path(path).exists():
+                return
+            with open(path, "r", encoding="utf-8") as f:
+                self._history = [line.rstrip("\n") for line in f]
+
+        def write_history_file(self, path: Path) -> None:
+            Path(path).parent.mkdir(parents=True, exist_ok=True)
+            with open(path, "w", encoding="utf-8") as f:
+                for entry in self._history[-self._history_length :]:
+                    f.write(entry + "\n")
+
+        def set_history_length(self, length: int) -> None:  # pragma: no cover - simple setter
+            self._history_length = max(0, length)
+
+        def clear_history(self) -> None:
+            self._history.clear()
+
+        def add_history(self, line: str) -> None:
+            self._history.append(line)
+
+        def get_history_item(self, index: int) -> Optional[str]:
+            idx = index - 1
+            if 0 <= idx < len(self._history):
+                return self._history[idx]
+            return None
+
+        def get_current_history_length(self) -> int:  # pragma: no cover - trivial
+            return len(self._history)
+
+    readline = _FallbackReadline()
 
 
 @dataclass(frozen=True)

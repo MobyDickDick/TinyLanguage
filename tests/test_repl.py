@@ -7,16 +7,11 @@ from pathlib import Path
 
 import pytest
 
-readline_spec = importlib.util.find_spec("readline")
-if readline_spec is not None:
-    import readline
-else:
-    readline = None
-
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.append(str(PROJECT_ROOT))
 
 import tiny_language as tl
+readline = tl.readline
 
 
 def test_is_incomplete_source_multiline_blocks():

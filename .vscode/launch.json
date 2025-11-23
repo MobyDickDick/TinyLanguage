@@ -98,6 +98,17 @@
       ]
     },
     {
+      "name": "Python: pytest - tests/test_error_messages.py",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_error_messages.py",
+        "-q"
+      ]
+    },
+    {
       "name": "Python: pytest - tests/test_objects.py",
       "type": "debugpy",
       "request": "launch",

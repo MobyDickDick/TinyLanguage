@@ -20,6 +20,7 @@ KEYWORDS = {
     "new",
     "type",
     "class",
+    "namespace",
 }
 
 
@@ -182,6 +183,7 @@ class Fn(IR):
     name: str
     params: List[str]
     body: List[IR]
+    namespace: Optional[str] = None
 
 
 @dataclass
@@ -189,6 +191,12 @@ class MethodDef(IR):
     class_name: str
     name: str
     params: List[str]
+    body: List[IR]
+
+
+@dataclass
+class Namespace(IR):
+    name: str
     body: List[IR]
 
 
@@ -371,6 +379,11 @@ class Parser:
             self._eat("SYM", ")")
             body = self.parse_block()
             return While(cond, body)
+        if self.tok.kind == "KW" and self.tok.text == "namespace":
+            self._eat("KW", "namespace")
+            name = self.parse_qualified_name()
+            body = self.parse_block()
+            return Namespace(name, body)
         if self.tok.kind == "KW" and self.tok.text == "fn":
             self._eat("KW", "fn")
             name = self._eat("NAME").text
@@ -618,6 +631,12 @@ class Parser:
             return f"{name}.{sub}"
         return name
 
+    def parse_qualified_name(self) -> str:
+        parts = [self._eat("NAME").text]
+        while self._accept("SYM", "."):
+            parts.append(self._eat("NAME").text)
+        return ".".join(parts)
+
 
 # ----- Linter -----
 
@@ -711,6 +730,9 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
     elif isinstance(s, ClassDef):
         for m in s.methods:
             lint_stmt_reads(m, reads)
+    elif isinstance(s, Namespace):
+        for t in s.body:
+            lint_stmt_reads(t, reads)
 
 
 def lint_fn_params_used(fn: Fn) -> None:
@@ -755,6 +777,8 @@ def lint_locals_used(stmts: List[IR]) -> None:
                 collect_defs(s.els)
             elif isinstance(s, While):
                 collect_defs(s.body)
+            elif isinstance(s, Namespace):
+                collect_defs(s.body)
 
     collect_defs(stmts)
     for s in stmts:
@@ -795,6 +819,10 @@ def lint_no_consecutive_definitions(stmts: List[IR]) -> None:
                     lint_no_consecutive_definitions(m.body)
                 prev = None
                 continue
+            if isinstance(st, Namespace):
+                lint_no_consecutive_definitions(st.body)
+                prev = None
+                continue
 
             current: Optional[str] = None
             if isinstance(st, Let):
@@ -823,6 +851,8 @@ def lint_destruct_call_outputs_stmt(st: IR) -> None:
     elif isinstance(st, ClassDef):
         for m in st.methods:
             lint_destruct_call_outputs_stmt(m)
+    elif isinstance(st, Namespace):
+        lint_destruct_call_outputs(st.body)
 
 
 def check_destruct_call_expr(expr: IR, names: set[str]) -> None:
@@ -895,6 +925,12 @@ class BaseView:
     class_name: str
 
 
+@dataclass
+class NamespaceRef:
+    runtime: "Runtime"
+    name: str
+
+
 class Runtime:
     def __init__(self):
         self.heap: Dict[int, List[Any]] = {}
@@ -906,6 +942,10 @@ class Runtime:
         self.output: List[str] = []
         self.functions: Dict[str, Fn] = {}
         self.error_messages: List[str] = []
+
+    @staticmethod
+    def _qualify_name(name: str, namespace: Optional[str]) -> str:
+        return f"{namespace}.{name}" if namespace else name
 
     def _record_error(self, msg: str) -> None:
         self.error_messages.append(msg)
@@ -1268,10 +1308,10 @@ class Runtime:
 
     def register_operator(self, opdef: OpDef, env: "Environment") -> None:
         def impl(a_val: Any, b_val: Any) -> Any:
-            op_env = Environment(parent=env)
+            op_env = Environment(parent=env, namespace=env.namespace)
             op_env.values[opdef.a_name] = a_val
             op_env.values[opdef.b_name] = b_val
-            res = self.eval_block(opdef.body, op_env)
+            res = self.eval_block(opdef.body, op_env, env.namespace)
             if isinstance(res, ReturnSignal):
                 return res.value
             return res
@@ -1315,6 +1355,17 @@ class Runtime:
             fmap = self._resolve_field_storage(obj, fname, owner_hint, name)
             fmap[fname] = val
         return obj
+
+    def _resolve_function(self, name: str, env: "Environment") -> Tuple[Optional[str], Optional[Fn]]:
+        fn = self.functions.get(name)
+        if fn is not None:
+            return name, fn
+        if "." not in name and env.namespace:
+            qualified = self._qualify_name(name, env.namespace)
+            fn = self.functions.get(qualified)
+            if fn is not None:
+                return qualified, fn
+        return None, None
 
     def _resolve_field_storage(
         self,
@@ -1368,6 +1419,18 @@ class Runtime:
         return None
 
     def call_method(self, obj: Any, name: str, args: List[Any]) -> Any:
+        if isinstance(obj, NamespaceRef):
+            qualified_name = self._qualify_name(name, obj.name)
+            fn = self.functions.get(qualified_name)
+            if fn is None:
+                raise RuntimeError(f"unknown function {qualified_name}")
+            call_env = Environment(parent=None, namespace=fn.namespace)
+            for pname, arg in zip(fn.params, args):
+                call_env.values[pname] = arg
+            res = self.eval_block(fn.body, call_env, fn.namespace)
+            if isinstance(res, ReturnSignal):
+                return res.value
+            return res
         target_obj = obj.obj if isinstance(obj, BaseView) else obj
         start_class = obj.class_name if isinstance(obj, BaseView) else self.__get_tag(target_obj)
         cname = self.__get_tag(target_obj)
@@ -1454,14 +1517,14 @@ class Runtime:
         return str(val)
 
     # ----- Evaluation -----
-    def eval_block(self, stmts: List[IR], env: "Environment") -> Any:
+    def eval_block(self, stmts: List[IR], env: "Environment", namespace: Optional[str] = None) -> Any:
         for st in stmts:
-            res = self.eval_stmt(st, env)
+            res = self.eval_stmt(st, env, namespace)
             if isinstance(res, ReturnSignal):
                 return res
         return None
 
-    def eval_stmt(self, s: IR, env: "Environment") -> Any:
+    def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) -> Any:
         if isinstance(s, Let):
             env.values[s.name] = self.eval_expr(s.expr, env)
         elif isinstance(s, Assign):
@@ -1479,16 +1542,23 @@ class Runtime:
         elif isinstance(s, If):
             cond = self.eval_expr(s.cond, env)
             branch = s.then if cond else s.els
-            res = self.eval_block(branch, env)
+            res = self.eval_block(branch, env, namespace)
             if isinstance(res, ReturnSignal):
                 return res
         elif isinstance(s, While):
             while self.eval_expr(s.cond, env):
-                res = self.eval_block(s.body, env)
+                res = self.eval_block(s.body, env, namespace)
                 if isinstance(res, ReturnSignal):
                     return res
+        elif isinstance(s, Namespace):
+            qualified = self._qualify_name(s.name, namespace)
+            child_env = Environment(parent=env, namespace=qualified)
+            env.values[s.name] = NamespaceRef(self, qualified)
+            self.eval_block(s.body, child_env, qualified)
         elif isinstance(s, Fn):
-            self.functions[s.name] = s
+            s.namespace = namespace
+            fn_name = self._qualify_name(s.name, namespace)
+            self.functions[fn_name] = s
         elif isinstance(s, Return):
             return ReturnSignal(self.eval_expr(s.expr, env))
         elif isinstance(s, CallStmt):
@@ -1557,12 +1627,12 @@ class Runtime:
                 if isinstance(res, float) and res.is_integer():
                     res = int(res)
                 return res
-            if e.name in self.functions:
-                fn = self.functions[e.name]
-                call_env = Environment(parent=None)
+            resolved_name, fn = self._resolve_function(e.name, env)
+            if fn is not None:
+                call_env = Environment(parent=None, namespace=fn.namespace)
                 for pname, arg_expr in zip(fn.params, e.args):
                     call_env.values[pname] = self.eval_expr(arg_expr, env)
-                res = self.eval_block(fn.body, call_env)
+                res = self.eval_block(fn.body, call_env, fn.namespace)
                 if isinstance(res, ReturnSignal):
                     return res.value
                 return res
@@ -1596,8 +1666,9 @@ class Runtime:
 
 
 class Environment:
-    def __init__(self, parent: Optional["Environment"]):
+    def __init__(self, parent: Optional["Environment"], namespace: Optional[str] = None):
         self.parent = parent
+        self.namespace = namespace
         self.values: Dict[str, Any] = {}
 
     def get(self, name: str) -> Any:
@@ -1633,16 +1704,21 @@ def compile_and_run(src: str) -> str:
     lint_destruct_call_outputs(stmts)
     lint_no_consecutive_definitions(stmts)
     lint_locals_used(stmts)
-    for st in stmts:
-        if isinstance(st, Fn):
-            lint_fn_params_used(st)
-        if isinstance(st, MethodDef):
-            lint_method_params_used(st)
-        if isinstance(st, ClassDef):
-            for m in st.methods:
-                lint_method_params_used(m)
+    def lint_nested(block: List[IR]) -> None:
+        for st in block:
+            if isinstance(st, Fn):
+                lint_fn_params_used(st)
+            if isinstance(st, MethodDef):
+                lint_method_params_used(st)
+            if isinstance(st, ClassDef):
+                for m in st.methods:
+                    lint_method_params_used(m)
+            if isinstance(st, Namespace):
+                lint_nested(st.body)
 
-    env = Environment(parent=None)
+    lint_nested(stmts)
+
+    env = Environment(parent=None, namespace=None)
     for st in stmts:
         runtime.eval_stmt(st, env)
     return "".join(runtime.output)

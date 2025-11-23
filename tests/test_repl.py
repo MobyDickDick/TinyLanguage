@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import pathlib
-import readline
 import sys
 from pathlib import Path
+
+import pytest
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.append(str(PROJECT_ROOT))
 
 import tiny_language as tl
+readline = tl.readline
 
 
 def test_is_incomplete_source_multiline_blocks():

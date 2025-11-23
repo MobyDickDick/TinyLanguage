@@ -1,14 +1,95 @@
 from __future__ import annotations
 
 import argparse
+import difflib
+import importlib.util
 import math
-import readline
 import sys
 import threading
 from pathlib import Path
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple, Union
+
+class _FallbackReadline:
+    """Minimal in-memory readline replacement for platforms without it."""
+
+    def __init__(self) -> None:
+        self._history: List[str] = []
+        self._completions = None
+        self._history_length = 1000
+
+    # Configuration API
+    def set_completer_delims(self, _delims: str) -> None:  # pragma: no cover - noop
+        return
+
+    def set_completer(self, completer) -> None:  # pragma: no cover - noop
+        self._completions = completer
+
+    def parse_and_bind(self, _cmd: str) -> None:  # pragma: no cover - noop
+        return
+
+    # History management
+    def read_history_file(self, path: Path) -> None:
+        if not Path(path).exists():
+            return
+        with open(path, "r", encoding="utf-8") as f:
+            self._history = [line.rstrip("\n") for line in f]
+
+    def write_history_file(self, path: Path) -> None:
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            for entry in self._history[-self._history_length :]:
+                f.write(entry + "\n")
+
+    def set_history_length(self, length: int) -> None:  # pragma: no cover - simple setter
+        self._history_length = max(0, length)
+
+    def clear_history(self) -> None:
+        self._history.clear()
+
+    def add_history(self, line: str) -> None:
+        self._history.append(line)
+
+    def get_history_item(self, index: int) -> Optional[str]:
+        idx = index - 1
+        if 0 <= idx < len(self._history):
+            return self._history[idx]
+        return None
+
+    def get_current_history_length(self) -> int:  # pragma: no cover - trivial
+        return len(self._history)
+
+
+def _load_readline():
+    """Return a readline-compatible object even on platforms without it."""
+
+    required_api = {
+        "set_completer_delims",
+        "set_completer",
+        "parse_and_bind",
+        "read_history_file",
+        "write_history_file",
+        "set_history_length",
+        "clear_history",
+        "add_history",
+        "get_history_item",
+        "get_current_history_length",
+    }
+
+    try:  # pragma: no cover - import may fail on some platforms
+        import readline as rl  # type: ignore
+    except Exception:  # pragma: no cover - fallback path
+        return _FallbackReadline()
+
+    missing = [name for name in required_api if not hasattr(rl, name)]
+    if missing:  # pragma: no cover - platforms with partial readline support
+        return _FallbackReadline()
+
+    return rl
+
+
+readline = _load_readline()
 
 
 @dataclass(frozen=True)
@@ -26,6 +107,8 @@ class SourcePos:
 class TinyLangError(Exception):
     message: str
     pos: SourcePos = field(default_factory=SourcePos.origin)
+    code: str = "E000"
+    hint: Optional[str] = None
 
     def __str__(self) -> str:  # pragma: no cover - Exception already stringifies message
         return self.message
@@ -46,7 +129,9 @@ def _line_info(source: str, pos: Union[int, SourcePos]) -> Tuple[int, int, str]:
     return line, col, line_text
 
 
-def format_error(source: str, pos: Union[int, SourcePos], message: str) -> str:
+def format_error(
+    source: str, pos: Union[int, SourcePos], message: str, *, code: str = "E000", hint: Optional[str] = None
+) -> str:
     lines = source.splitlines()
     line, col, _ = _line_info(source, pos)
     gutter_width = len(str(max(1, len(lines))))
@@ -58,7 +143,33 @@ def format_error(source: str, pos: Union[int, SourcePos], message: str) -> str:
         text = lines[ln - 1] if 0 <= ln - 1 < len(lines) else ""
         context.append(f"{prefix} {ln:>{gutter_width}} | {text}")
     pointer_line = f"  {' ' * gutter_width} | {' ' * (col - 1)}^"
-    return "\n".join([f"{message} (line {line}, col {col})"] + context + [pointer_line])
+    header = f"[{code}] {message} (line {line}, col {col})"
+    lines_out = [header] + context + [pointer_line]
+    if hint:
+        lines_out.append(f"  Hint: {hint}")
+    return "\n".join(lines_out)
+
+
+def _closest_match(name: str, candidates: List[str]) -> Optional[str]:
+    if not candidates:
+        return None
+    matches = difflib.get_close_matches(name, candidates, n=1, cutoff=0.6)
+    return matches[0] if matches else None
+
+
+def _classify_error(msg: str, candidates: Optional[List[str]] = None) -> Tuple[str, Optional[str]]:
+    lower_msg = msg.lower()
+    if "return value must be bound" in lower_msg or "must be returned" in lower_msg:
+        return "E001", "Bind the return value, e.g. `define result = call();`, or add a return that includes the mutated data."
+    if lower_msg.startswith("unused"):
+        return "E002", "Remove the unused binding or reference it so it is clearly consumed (prefix with '_' to silence)."
+    if "unknown variable" in lower_msg:
+        suggestion = _closest_match(msg.split()[-1], candidates or []) if candidates is not None else None
+        base_hint = "Declare the variable first, e.g. `define name = ...;`."
+        if suggestion:
+            return "E003", f"Did you mean `{suggestion}`? {base_hint}"
+        return "E003", base_hint
+    return "E000", None
 
 # ----- Lexer -----
 
@@ -438,7 +549,8 @@ class Parser:
         self.tok = lx.next_token()
 
     def _error(self, message: str, pos: SourcePos) -> TinyLangError:
-        return TinyLangError(format_error(self.source, pos, message), pos)
+        code, hint = _classify_error(message)
+        return TinyLangError(format_error(self.source, pos, message, code=code, hint=hint), pos, code=code, hint=hint)
 
     def _eat(self, kind: str, text: Optional[str] = None) -> Token:
         if self.tok.kind != kind or (text is not None and self.tok.text != text):
@@ -913,43 +1025,59 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
             lint_stmt_reads(t, reads)
 
 
-def lint_fn_params_used(fn: Fn) -> None:
+def lint_fn_params_used(fn: Fn, source: Optional[str] = None) -> None:
     reads: Dict[str, int] = {}
     for st in fn.body:
         lint_stmt_reads(st, reads)
     unused = [p for p in fn.params if reads.get(p, 0) == 0]
     if unused:
-        raise RuntimeError(f"unused parameter(s) in function {fn.name}: {', '.join(unused)}")
-    lint_param_mutations_returned(fn.body, set(fn.params), fn.name, is_method=False)
+        msg = f"unused parameter(s) in function {fn.name}: {', '.join(unused)}"
+        if source is None:
+            raise RuntimeError(msg)
+        raise TinyLangError(
+            format_error(source, fn.pos, msg, code="E002", hint="Remove the unused parameter or reference it."),
+            fn.pos,
+            code="E002",
+            hint="Remove the unused parameter or reference it.",
+        )
+    lint_param_mutations_returned(fn.body, set(fn.params), fn.name, is_method=False, source=source, pos=fn.pos)
     lint_destruct_call_outputs(fn.body)
-    lint_locals_used(fn.body)
+    lint_locals_used(fn.body, source)
 
 
-def lint_method_params_used(md: MethodDef) -> None:
+def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None:
     reads: Dict[str, int] = {}
     for st in md.body:
         lint_stmt_reads(st, reads)
     unused = [p for p in md.params if reads.get(p, 0) == 0]
     if unused:
-        raise RuntimeError(
-            f"unused parameter(s) in method {md.class_name}.{md.name}: {', '.join(unused)}"
+        msg = f"unused parameter(s) in method {md.class_name}.{md.name}: {', '.join(unused)}"
+        if source is None:
+            raise RuntimeError(msg)
+        raise TinyLangError(
+            format_error(source, md.pos, msg, code="E002", hint="Remove the unused parameter or reference it."),
+            md.pos,
+            code="E002",
+            hint="Remove the unused parameter or reference it.",
         )
-    lint_param_mutations_returned(md.body, set(md.params), f"{md.class_name}.{md.name}", is_method=True)
+    lint_param_mutations_returned(
+        md.body, set(md.params), f"{md.class_name}.{md.name}", is_method=True, source=source, pos=md.pos
+    )
     lint_destruct_call_outputs(md.body)
-    lint_locals_used(md.body)
+    lint_locals_used(md.body, source)
 
 
-def lint_locals_used(stmts: List[IR]) -> None:
-    defs: Dict[str, int] = {}
+def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
+    defs: Dict[str, SourcePos] = {}
     uses: Dict[str, int] = {}
 
     def collect_defs(block: List[IR]) -> None:
         for idx, s in enumerate(block):
             if isinstance(s, Let):
-                defs[s.name] = idx
+                defs[s.name] = s.pos
             elif isinstance(s, DestructAssign):
                 for nm in s.names:
-                    defs[nm] = idx
+                    defs[nm] = s.pos
             elif isinstance(s, If):
                 collect_defs(s.then)
                 collect_defs(s.els)
@@ -963,7 +1091,16 @@ def lint_locals_used(stmts: List[IR]) -> None:
         lint_stmt_reads(s, uses)
     unused = [n for n in defs if uses.get(n, 0) == 0]
     if unused:
-        raise RuntimeError(f"unused local binding(s): {', '.join(unused)}")
+        pos = defs[unused[0]]
+        msg = f"unused local binding(s): {', '.join(unused)}"
+        if source is None:
+            raise RuntimeError(msg)
+        raise TinyLangError(
+            format_error(source, pos, msg, code="E002", hint="Remove the unused binding or reference it."),
+            pos,
+            code="E002",
+            hint="Remove the unused binding or reference it.",
+        )
 
 
 def lint_destruct_call_outputs(stmts: List[IR]) -> None:
@@ -1052,7 +1189,7 @@ def check_destruct_call_expr(expr: IR, names: set[str]) -> None:
 
 
 def lint_param_mutations_returned(
-    stmts: List[IR], params: set[str], fn_name: str, *, is_method: bool
+    stmts: List[IR], params: set[str], fn_name: str, *, is_method: bool, source: Optional[str] = None, pos: SourcePos
 ) -> None:
     mutated: set[str] = set()
     returned: set[str] = set()
@@ -1083,8 +1220,14 @@ def lint_param_mutations_returned(
     missing = sorted(mutated - returned)
     if missing:
         kind = "method" if is_method else "function"
-        raise RuntimeError(
-            f"mutated parameter(s) in {kind} {fn_name} must be returned: {', '.join(missing)}"
+        msg = f"mutated parameter(s) in {kind} {fn_name} must be returned: {', '.join(missing)}"
+        if source is None:
+            raise RuntimeError(msg)
+        raise TinyLangError(
+            format_error(source, pos, msg, code="E001", hint="Return the mutated parameters so callers receive the updates."),
+            pos,
+            code="E001",
+            hint="Return the mutated parameters so callers receive the updates.",
         )
 
 
@@ -1135,15 +1278,28 @@ class Runtime:
     def _qualify_name(name: str, namespace: Optional[str]) -> str:
         return f"{namespace}.{name}" if namespace else name
 
-    def _record_error(self, msg: str, pos: Optional[SourcePos] = None) -> None:
-        formatted = format_error(self.source, pos, msg) if pos is not None else msg
+    def _record_error(
+        self, msg: str, pos: Optional[SourcePos] = None, *, code: str = "E000", hint: Optional[str] = None
+    ) -> None:
+        formatted = format_error(self.source, pos, msg, code=code, hint=hint) if pos is not None else msg
         with self._lock:
             self.error_messages.append(formatted)
 
-    def _error(self, msg: str, pos: SourcePos) -> TinyLangError:
-        formatted = format_error(self.source, pos, msg)
-        self._record_error(msg, pos)
-        return TinyLangError(formatted, pos)
+    def _error(
+        self,
+        msg: str,
+        pos: SourcePos,
+        *,
+        code: Optional[str] = None,
+        hint: Optional[str] = None,
+        candidates: Optional[List[str]] = None,
+    ) -> TinyLangError:
+        derived_code, derived_hint = _classify_error(msg, candidates)
+        code = code or derived_code
+        hint = hint or derived_hint
+        formatted = format_error(self.source, pos, msg, code=code, hint=hint)
+        self._record_error(msg, pos, code=code, hint=hint)
+        return TinyLangError(formatted, pos, code=code, hint=hint)
 
     @property
     def error_message(self) -> Optional[str]:
@@ -1869,10 +2025,18 @@ class Runtime:
             if isinstance(e, Var):
                 if e.name == "errorMessage":
                     return self.error_message
-                try:
+                if env.contains(e.name):
                     return env.get(e.name)
-                except RuntimeError:
+                # Allow tag identifiers such as `Arr` to be passed through as plain
+                # strings when they look like type names, while still flagging
+                # genuinely undefined variables used in expressions.
+                if e.name and e.name[0].isupper():
                     return e.name
+                raise self._error(
+                    f"unknown variable {e.name}",
+                    e.pos,
+                    candidates=env.all_names(),
+                )
             if isinstance(e, Call):
                 if e.name == "__type_field_type":
                     return self.type_field_type(str(self.eval_expr(e.args[0], env)), str(self.eval_expr(e.args[1], env)))
@@ -2008,6 +2172,12 @@ class Environment:
             return True
         return self.parent.contains(name) if self.parent else False
 
+    def all_names(self) -> List[str]:
+        names = list(self.values.keys())
+        if self.parent:
+            names.extend(self.parent.all_names())
+        return names
+
 
 # ----- Public API -----
 
@@ -2020,16 +2190,16 @@ def compile_and_run(src: str) -> str:
     # lint functions + top level locals
     lint_destruct_call_outputs(stmts)
     lint_no_consecutive_definitions(stmts)
-    lint_locals_used(stmts)
+    lint_locals_used(stmts, src)
     def lint_nested(block: List[IR]) -> None:
         for st in block:
             if isinstance(st, Fn):
-                lint_fn_params_used(st)
+                lint_fn_params_used(st, src)
             if isinstance(st, MethodDef):
-                lint_method_params_used(st)
+                lint_method_params_used(st, src)
             if isinstance(st, ClassDef):
                 for m in st.methods:
-                    lint_method_params_used(m)
+                    lint_method_params_used(m, src)
             if isinstance(st, Namespace):
                 lint_nested(st.body)
 
@@ -2080,6 +2250,8 @@ def _is_incomplete_source(src: str) -> bool:
 
 
 def _configure_readline(history_path: Path) -> None:
+    if readline is None:
+        return
     readline.set_completer_delims(" \t\n")
     completions = sorted(KEYWORDS | BUILTINS)
 
@@ -2097,6 +2269,8 @@ def _configure_readline(history_path: Path) -> None:
 
 
 def _save_history(history_path: Path) -> None:
+    if readline is None:
+        return
     try:
         readline.write_history_file(history_path)
     except FileNotFoundError:

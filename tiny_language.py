@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import threading
 
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
@@ -21,6 +22,7 @@ KEYWORDS = {
     "type",
     "class",
     "namespace",
+    "spawn",
 }
 
 
@@ -304,6 +306,12 @@ class ClassNew(IR):
     init: List[Tuple[str, IR]]
 
 
+@dataclass
+class Spawn(IR):
+    name: str
+    args: List[IR]
+
+
 # ----- Parser -----
 
 
@@ -583,6 +591,10 @@ class Parser:
             return Str(t.text)
         if self.tok.kind in {"NAME", "KW"}:
             name = self._eat(self.tok.kind).text
+            if name == "spawn":
+                target = self._eat_name_or_kw().text
+                args = self.parse_arg_list()
+                return Spawn(target, args)
             if name == "new" and self.tok.kind == "SYM" and self.tok.text == "[":
                 self._eat("SYM", "[")
                 items: List[IR] = []
@@ -648,6 +660,9 @@ def uses_in_expr(e: IR, reads: Dict[str, int]) -> None:
         uses_in_expr(e.a, reads)
         uses_in_expr(e.b, reads)
     elif isinstance(e, Call):
+        for a in e.args:
+            uses_in_expr(a, reads)
+    elif isinstance(e, Spawn):
         for a in e.args:
             uses_in_expr(a, reads)
     elif isinstance(e, New):
@@ -931,8 +946,17 @@ class NamespaceRef:
     name: str
 
 
+@dataclass
+class SpawnHandle:
+    thread: threading.Thread
+    done: threading.Event
+    result: Any = None
+    error: Optional[BaseException] = None
+
+
 class Runtime:
     def __init__(self):
+        self._lock = threading.RLock()
         self.heap: Dict[int, List[Any]] = {}
         self.ptr_tags: Dict[int, str] = {}
         self.ops: Dict[Tuple[str, Optional[str], Optional[str]], Any] = {}
@@ -948,28 +972,32 @@ class Runtime:
         return f"{namespace}.{name}" if namespace else name
 
     def _record_error(self, msg: str) -> None:
-        self.error_messages.append(msg)
+        with self._lock:
+            self.error_messages.append(msg)
 
     @property
     def error_message(self) -> Optional[str]:
-        if not self.error_messages:
-            return None
-        return "; ".join(self.error_messages)
+        with self._lock:
+            if not self.error_messages:
+                return None
+            return "; ".join(self.error_messages)
 
     # heap helpers
     def __new(self, n: int) -> int:
         if n < 0:
             raise RuntimeError("alloc error: negative size")
-        p = self.next_ptr
-        self.next_ptr += 1
-        self.heap[p] = [0 for _ in range(int(n))]
-        return p
+        with self._lock:
+            p = self.next_ptr
+            self.next_ptr += 1
+            self.heap[p] = [0 for _ in range(int(n))]
+            return p
 
     def delete(self, p: Any) -> Dict[str, Any]:
         try:
             ip = int(p)
-            self.heap.pop(ip, None)
-            self.ptr_tags.pop(ip, None)
+            with self._lock:
+                self.heap.pop(ip, None)
+                self.ptr_tags.pop(ip, None)
             return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 0, "msg": ""}}
         except Exception as e:  # noqa: BLE001
             return {
@@ -985,21 +1013,25 @@ class Runtime:
             self._record_error("heap access error: pointer or index is not numeric")
             return None
 
-        try:
-            arr = self.heap[ip]
-        except KeyError:
-            self._record_error(f"heap access error: unknown pointer {ip}")
-            return None
+        with self._lock:
+            try:
+                arr = self.heap[ip]
+            except KeyError:
+                self._record_error(f"heap access error: unknown pointer {ip}")
+                return None
 
-        try:
-            return arr[idx]
-        except Exception:
-            self._record_error(f"heap access error: index {idx} out of range for pointer {ip}")
-            return None
+            try:
+                return arr[idx]
+            except Exception:
+                self._record_error(
+                    f"heap access error: index {idx} out of range for pointer {ip}"
+                )
+                return None
 
     def heap_set(self, p: Any, i: Any, v: Any) -> Dict[str, Any]:
         try:
-            self.heap[int(p)][int(i)] = v
+            with self._lock:
+                self.heap[int(p)][int(i)] = v
             return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 0, "msg": ""}}
         except Exception as e:  # noqa: BLE001
             return {
@@ -1009,7 +1041,8 @@ class Runtime:
 
     def tag(self, p: Any, typ: Any) -> Dict[str, Any]:
         try:
-            self.ptr_tags[int(p)] = str(typ)
+            with self._lock:
+                self.ptr_tags[int(p)] = str(typ)
             return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 0, "msg": ""}}
         except Exception as e:  # noqa: BLE001
             return {
@@ -1022,8 +1055,9 @@ class Runtime:
             return v["__tag__"]
         try:
             iv = int(v)
-            if iv in self.ptr_tags:
-                return self.ptr_tags[iv]
+            with self._lock:
+                if iv in self.ptr_tags:
+                    return self.ptr_tags[iv]
         except Exception:
             pass
         return None
@@ -1229,8 +1263,10 @@ class Runtime:
         if num_res is not None:
             return num_res
         key = (op, ta, tb)
-        if key in self.ops:
-            return self.ops[key](a, b)
+        with self._lock:
+            impl = self.ops.get(key)
+        if impl:
+            return impl(a, b)
         if op == "+":
             return a + b
         if op == "-":
@@ -1289,22 +1325,25 @@ class Runtime:
         target_obj[str(key)] = val
 
     def register_type(self, name: str, fields: List[Tuple[str, str]]) -> None:
-        self.types[str(name)] = {"kind": "record", "fields": dict(fields)}
+        with self._lock:
+            self.types[str(name)] = {"kind": "record", "fields": dict(fields)}
 
     def register_class(self, name: str, fields: List[Tuple[str, str]], bases: Optional[List[str]] = None) -> None:
         base_list = list(bases) if bases is not None else []
-        existing = self.types.get(name)
-        if existing:
-            if existing.get("kind") != "class":
-                raise RuntimeError(f"type {name} already defined and is not a class")
-            existing["fields"].update(dict(fields))
-            if bases is not None:
-                existing["bases"] = base_list
-            return
-        self.types[str(name)] = {"kind": "class", "fields": dict(fields), "bases": base_list}
+        with self._lock:
+            existing = self.types.get(name)
+            if existing:
+                if existing.get("kind") != "class":
+                    raise RuntimeError(f"type {name} already defined and is not a class")
+                existing["fields"].update(dict(fields))
+                if bases is not None:
+                    existing["bases"] = base_list
+                return
+            self.types[str(name)] = {"kind": "class", "fields": dict(fields), "bases": base_list}
 
     def register_method(self, md: MethodDef) -> None:
-        self.methods[(md.class_name, md.name)] = md
+        with self._lock:
+            self.methods[(md.class_name, md.name)] = md
 
     def register_operator(self, opdef: OpDef, env: "Environment") -> None:
         def impl(a_val: Any, b_val: Any) -> Any:
@@ -1316,16 +1355,20 @@ class Runtime:
                 return res.value
             return res
 
-        self.ops[(opdef.op, opdef.a_type, opdef.b_type)] = impl
+        with self._lock:
+            self.ops[(opdef.op, opdef.a_type, opdef.b_type)] = impl
 
     def class_mro(self, name: str) -> List[str]:
-        info = self.types.get(name)
-        if info is None or info.get("kind") != "class":
-            raise RuntimeError(f"unknown class {name}")
+        with self._lock:
+            info = self.types.get(name)
+            if info is None or info.get("kind") != "class":
+                raise RuntimeError(f"unknown class {name}")
+            bases = list(info.get("bases", []))
         mro: List[str] = [name]
-        for base in info.get("bases", []):
-            if base not in self.types:
-                raise RuntimeError(f"unknown base class {base} for {name}")
+        for base in bases:
+            with self._lock:
+                if base not in self.types:
+                    raise RuntimeError(f"unknown base class {base} for {name}")
             for ancestor in self.class_mro(base):
                 if ancestor not in mro:
                     mro.append(ancestor)
@@ -1339,15 +1382,17 @@ class Runtime:
         return None, fname
 
     def instantiate_class(self, name: str, init: Dict[str, Any]) -> Dict[str, Any]:
-        info = self.types.get(name)
-        if info is None or info.get("kind") != "class":
-            raise RuntimeError(f"unknown class {name}")
+        with self._lock:
+            info = self.types.get(name)
+            if info is None or info.get("kind") != "class":
+                raise RuntimeError(f"unknown class {name}")
         mro = self.class_mro(name)
         obj: Dict[str, Any] = {"__tag__": name, "__fields__": {}}
         for cls in mro:
-            finfo = self.types.get(cls)
-            if finfo is None or finfo.get("kind") != "class":
-                raise RuntimeError(f"unknown class {cls}")
+            with self._lock:
+                finfo = self.types.get(cls)
+                if finfo is None or finfo.get("kind") != "class":
+                    raise RuntimeError(f"unknown class {cls}")
             obj["__fields__"][cls] = {fname: None for fname in finfo["fields"]}
 
         for raw_name, val in init.items():
@@ -1357,15 +1402,43 @@ class Runtime:
         return obj
 
     def _resolve_function(self, name: str, env: "Environment") -> Tuple[Optional[str], Optional[Fn]]:
-        fn = self.functions.get(name)
+        with self._lock:
+            fn = self.functions.get(name)
         if fn is not None:
             return name, fn
         if "." not in name and env.namespace:
             qualified = self._qualify_name(name, env.namespace)
-            fn = self.functions.get(qualified)
+            with self._lock:
+                fn = self.functions.get(qualified)
             if fn is not None:
                 return qualified, fn
         return None, None
+
+    def _invoke_function(self, fn: Fn, args: List[Any]) -> Any:
+        call_env = Environment(parent=None, namespace=fn.namespace)
+        for pname, arg in zip(fn.params, args):
+            call_env.values[pname] = arg
+        res = self.eval_block(fn.body, call_env, fn.namespace)
+        if isinstance(res, ReturnSignal):
+            return res.value
+        return res
+
+    def _run_spawn(self, fn: Fn, args: List[Any], handle: SpawnHandle) -> None:
+        try:
+            handle.result = self._invoke_function(fn, args)
+        except Exception as exc:  # noqa: BLE001
+            handle.error = exc
+        finally:
+            handle.done.set()
+
+    def join_handle(self, handle: Any) -> Any:
+        if not isinstance(handle, SpawnHandle):
+            raise RuntimeError("join expects a spawn handle")
+        handle.done.wait()
+        handle.thread.join()
+        if handle.error:
+            raise RuntimeError(f"error in spawned task: {handle.error}")
+        return handle.result
 
     def _resolve_field_storage(
         self,
@@ -1413,7 +1486,8 @@ class Runtime:
 
     def find_method(self, start_class: str, name: str) -> Optional[MethodDef]:
         for cls in self.class_mro(start_class):
-            md = self.methods.get((cls, name))
+            with self._lock:
+                md = self.methods.get((cls, name))
             if md:
                 return md
         return None
@@ -1454,7 +1528,8 @@ class Runtime:
         return res
 
     def type_field_type(self, tname: str, fname: str) -> Optional[str]:
-        t = self.types.get(tname)
+        with self._lock:
+            t = self.types.get(tname)
         if t is None:
             return None
         owner_hint, field_name = self._split_field_name(fname)
@@ -1538,7 +1613,8 @@ class Runtime:
             self.field_set(obj, s.name, val)
         elif isinstance(s, Print):
             val = self.eval_expr(s.expr, env)
-            self.output.append(f"{self.format_value(val)}\n")
+            with self._lock:
+                self.output.append(f"{self.format_value(val)}\n")
         elif isinstance(s, If):
             cond = self.eval_expr(s.cond, env)
             branch = s.then if cond else s.els
@@ -1558,11 +1634,12 @@ class Runtime:
         elif isinstance(s, Fn):
             s.namespace = namespace
             fn_name = self._qualify_name(s.name, namespace)
-            self.functions[fn_name] = s
+            with self._lock:
+                self.functions[fn_name] = s
         elif isinstance(s, Return):
             return ReturnSignal(self.eval_expr(s.expr, env))
         elif isinstance(s, CallStmt):
-            allowed = s.name in {"heap_set", "heap_get", "delete", "tag"}
+            allowed = s.name in {"heap_set", "heap_get", "delete", "tag", "join"}
             if not allowed:
                 raise RuntimeError(
                     f"call with return value must be bound; bare call statements are not allowed (offending call: {s.name}())"
@@ -1615,6 +1692,10 @@ class Runtime:
                 return self.delete(self.eval_expr(e.args[0], env))
             if e.name == "tag":
                 return self.tag(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env))
+            if e.name == "join":
+                if len(e.args) != 1:
+                    raise RuntimeError("join expects 1 argument")
+                return self.join_handle(self.eval_expr(e.args[0], env))
             if e.name == "__nextafter":
                 return math.nextafter(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env))
             if e.name == "power":
@@ -1629,14 +1710,23 @@ class Runtime:
                 return res
             resolved_name, fn = self._resolve_function(e.name, env)
             if fn is not None:
-                call_env = Environment(parent=None, namespace=fn.namespace)
-                for pname, arg_expr in zip(fn.params, e.args):
-                    call_env.values[pname] = self.eval_expr(arg_expr, env)
-                res = self.eval_block(fn.body, call_env, fn.namespace)
-                if isinstance(res, ReturnSignal):
-                    return res.value
-                return res
+                arg_values = [self.eval_expr(arg_expr, env) for arg_expr in e.args]
+                return self._invoke_function(fn, arg_values)
             raise RuntimeError(f"unknown function {e.name}")
+        if isinstance(e, Spawn):
+            resolved_name, fn = self._resolve_function(e.name, env)
+            if fn is None:
+                raise RuntimeError(f"unknown function {e.name}")
+            arg_values = [self.eval_expr(arg, env) for arg in e.args]
+
+            done = threading.Event()
+
+            def run_task() -> None:
+                self._run_spawn(fn, arg_values, handle)
+
+            handle = SpawnHandle(thread=threading.Thread(target=run_task), done=done)
+            handle.thread.start()
+            return handle
         if isinstance(e, New):
             return self.__new(int(self.eval_expr(e.size, env)))
         if isinstance(e, NewLit):

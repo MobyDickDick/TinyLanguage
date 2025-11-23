@@ -65,6 +65,17 @@
       ]
     },
     {
+      "name": "Python: pytest - tests/test_concurrency.py",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_concurrency.py",
+        "-q"
+      ]
+    },
+    {
       "name": "Python: pytest - tests/test_number_overflow.py",
       "type": "debugpy",
       "request": "launch",

@@ -8,11 +8,9 @@ import pytest
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.append(str(PROJECT_ROOT))
 
+from tests.utils import run_tiny
+
 from tiny_language import compile_and_run, main, run_file
-
-
-def run_tiny(src: str) -> str:
-    return compile_and_run(src)
 
 
 def expect_compile_error(src: str, pattern: str) -> None:
@@ -386,15 +384,12 @@ def test_run_file_executes_source(tmp_path):
     assert out == "6\n"
 
 
-def test_main_runs_and_writes_output(tmp_path, capsys):
-    src_file = tmp_path / "prog.tiny"
-    src_file.write_text("print(21 + 21);")
+def test_main_runs_and_writes_output(run_program):
+    result = run_program("print(21 + 21);")
 
-    exit_code = main([str(src_file)])
-    captured = capsys.readouterr()
-
-    assert exit_code == 0
-    assert captured.out == "42\n"
+    assert result.returncode == 0
+    assert result.stdout == "42\n"
+    assert result.stderr == ""
 
 
 def test_main_eval_executes_snippet(capsys):

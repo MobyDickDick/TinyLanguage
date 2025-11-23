@@ -101,6 +101,34 @@ def test_comparisons():
     assert out == "true\ntrue\nfalse\ntrue\ntrue\ntrue\nfalse\n"
 
 
+def test_boolean_literals_and_logic():
+    out = run_tiny(
+        """
+        print(true);
+        print(false);
+        print(not false);
+        print(true and false);
+        print(true or false);
+        print(false || (1 < 2));
+        """,
+    )
+
+    assert out == "true\nfalse\ntrue\nfalse\ntrue\ntrue\n"
+
+
+def test_len_and_variadic_print():
+    out = run_tiny(
+        """
+        define arr = new[1, 2, 3, 4];
+        print(len(arr));
+        print(len("hi!"));
+        print("values", 1 < 2, len(arr));
+        """,
+    )
+
+    assert out == "4\n3\nvalues true 4\n"
+
+
 def test_function_return_call():
     out = run_tiny(
         """

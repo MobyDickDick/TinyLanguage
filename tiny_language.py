@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import argparse
 import math
+import readline
 import sys
 import threading
+from pathlib import Path
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -80,6 +82,8 @@ KEYWORDS = {
     "or",
     "not",
 }
+
+BUILTINS = {"len", "print"}
 
 
 @dataclass
@@ -2048,6 +2052,74 @@ def _format_error_for_source(source: str, err: TinyLangError) -> str:
     return format_error(source, err.pos, err.message)
 
 
+def _is_incomplete_source(src: str) -> bool:
+    balances = {"(": 0, "[": 0, "{": 0}
+    in_string = False
+    escape = False
+    for ch in src:
+        if in_string:
+            if escape:
+                escape = False
+                continue
+            if ch == "\\":
+                escape = True
+                continue
+            if ch == '"':
+                in_string = False
+            continue
+        if ch == '"':
+            in_string = True
+            continue
+        if ch in balances:
+            balances[ch] += 1
+        elif ch in (")", "]", "}"):
+            match = {"}": "{", ")": "(", "]": "["}[ch]
+            if balances[match] > 0:
+                balances[match] -= 1
+    return in_string or any(v > 0 for v in balances.values())
+
+
+def _configure_readline(history_path: Path) -> None:
+    readline.set_completer_delims(" \t\n")
+    completions = sorted(KEYWORDS | BUILTINS)
+
+    def completer(text: str, state: int) -> Optional[str]:
+        matches = [word for word in completions if word.startswith(text)]
+        return matches[state] if state < len(matches) else None
+
+    readline.set_completer(completer)
+    readline.parse_and_bind("tab: complete")
+    try:
+        readline.read_history_file(history_path)
+    except FileNotFoundError:
+        history_path.touch()
+    readline.set_history_length(1000)
+
+
+def _save_history(history_path: Path) -> None:
+    try:
+        readline.write_history_file(history_path)
+    except FileNotFoundError:
+        history_path.parent.mkdir(parents=True, exist_ok=True)
+        history_path.touch()
+        readline.write_history_file(history_path)
+
+
+def _read_repl_command(read_fn) -> Optional[str]:
+    buffer: List[str] = []
+    while True:
+        prompt = "tiny> " if not buffer else "...> "
+        try:
+            line = read_fn(prompt)
+        except EOFError:
+            return None if not buffer else "\n".join(buffer)
+        buffer.append(line)
+        src = "\n".join(buffer)
+        if _is_incomplete_source(src):
+            continue
+        return src
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Run a TinyLanguage program from a file")
     mode_group = parser.add_mutually_exclusive_group()
@@ -2078,22 +2150,26 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 1
 
     if args.repl:
-        while True:
-            try:
-                src = input("tiny> ")
-            except EOFError:
-                print()
-                break
-            if not src.strip():
-                continue
-            try:
-                output = compile_and_run(src)
-                if output:
-                    print(output, end="")
-            except TinyLangError as err:
-                print(_format_error_for_source(src, err), file=sys.stderr)
-            except Exception as exc:  # pragma: no cover - unexpected errors
-                print(str(exc), file=sys.stderr)
+        history_path = Path.home() / ".tiny_language_history"
+        _configure_readline(history_path)
+        try:
+            while True:
+                src = _read_repl_command(input)
+                if src is None:
+                    print()
+                    break
+                if not src.strip():
+                    continue
+                try:
+                    output = compile_and_run(src)
+                    if output:
+                        print(output, end="")
+                except TinyLangError as err:
+                    print(_format_error_for_source(src, err), file=sys.stderr)
+                except Exception as exc:  # pragma: no cover - unexpected errors
+                    print(str(exc), file=sys.stderr)
+        finally:
+            _save_history(history_path)
         return 0
 
     if not args.file:

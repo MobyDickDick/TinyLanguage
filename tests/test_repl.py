@@ -1,9 +1,17 @@
 from __future__ import annotations
 
+import importlib.util
 import pathlib
-import readline
 import sys
 from pathlib import Path
+
+import pytest
+
+readline_spec = importlib.util.find_spec("readline")
+if readline_spec is None:
+    pytest.skip("readline not available on this platform", allow_module_level=True)
+else:
+    import readline
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.append(str(PROJECT_ROOT))

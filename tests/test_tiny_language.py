@@ -115,6 +115,27 @@ def test_function_return_call():
     assert out == "10\n15\n"
 
 
+def test_namespaced_functions_and_scoping():
+    out = run_tiny(
+        """
+        namespace Math {
+            fn add(a, b) { return a + b; }
+            fn inc(x) { return add(x, 1); }
+        }
+
+        namespace Strings {
+            fn add(a, b) { return a + b; }
+        }
+
+        print(Math.add(2, 3));
+        print(Strings.add("hi", "!"));
+        print(Math.inc(4));
+        """
+    )
+
+    assert out == "5\nhi!\n5\n"
+
+
 def test_while_if_else():
     out = run_tiny(
         """

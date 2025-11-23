@@ -59,4 +59,6 @@ print(Math.inc(4));
 - **Programm starten**: `python tiny_language.py <datei.tiny>` fuehrt ein TinyLanguage-Programm aus und beendet sich bei Erfolg mit Status 0. Beispiel: `python tiny_language.py demo.tiny`.
 - **Test-Suite**: `python -m pytest` fuehrt alle Tests aus. Einzelne Dateien lassen sich gezielt starten, z. B. `python -m pytest tests/test_tiny_language.py -k class`.
 
+Hinweis: Auf Plattformen ohne `readline` (z. B. Windows) werden die REPL-History-Tests automatisch mit `1 skipped` uebersprungen. Die uebrigen Tests laufen trotzdem und das Testergebnis bleibt gueltig; der Skip ist lediglich ein Hinweis auf die optionale Abhaengigkeit.
+
 Weitere Beispiele und erwartete Diagnosen finden sich in `tests/test_tiny_language.py` und den Beispielprogrammen oben.

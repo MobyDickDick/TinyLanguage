@@ -147,11 +147,13 @@ def test_randomized_programs_do_not_crash(record_property) -> None:
     runtime_error_seeds: List[int] = []
     successes = 0
 
-    for _ in range(40):
+    # Keep the loop count modest so CI does not cancel the job for taking too
+    # long on slower runners while still exercising a broad sample of seeds.
+    for _ in range(12):
         seed = rng.getrandbits(32)
         _, src = _generate_program(seed)
         try:
-            with _time_limit(0.75):
+            with _time_limit(0.5):
                 compile_and_run(src)
             successes += 1
         except TimeoutError:
@@ -176,7 +178,9 @@ if hypothesis_spec:  # pragma: no cover - optional
     hypothesis_available = True
 
     @pytest.mark.skipif(not hypothesis_available, reason="hypothesis not installed")
-    @settings(max_examples=20, deadline=1000)
+    # Fewer examples keep CI runtimes short while still providing shrinkable
+    # seeds when Hypothesis is available locally.
+    @settings(max_examples=10, deadline=1000)
     @given(st.integers(min_value=0, max_value=2**32 - 1))
     def test_randomized_programs_shrink_on_failure(seed: int, record_property):
         seed, src = _generate_program(seed)

@@ -1,5 +1,6 @@
 import pathlib
 import re
+import re
 import sys
 
 import pytest
@@ -533,7 +534,8 @@ def test_error_message_for_missing_heap_index():
     """
 
     out = run_tiny(src)
-    assert out == "None\nheap access error: index 5 out of range for pointer 1\n"
+    assert re.search(r"heap access error: index 5 out of range for pointer 1 \(line 3, col \d+\)", out)
+    assert "^" in out
 
 
 def test_error_message_for_missing_field():
@@ -544,7 +546,16 @@ def test_error_message_for_missing_field():
     """
 
     out = run_tiny(src)
-    assert out == "None\nunknown field missing\n"
+    assert re.search(r"unknown field missing \(line 3, col \d+\)", out)
+    assert "^" in out
+
+
+def test_parser_error_reports_context():
+    expect_compile_error("define a = ;", r"unexpected token SYM \(line 1, col 12\)")
+
+
+def test_runtime_error_reports_context():
+    expect_compile_error("print(1/0);", r"(?s)division by zero \(line 1, col 8\).*\^")
 
 
 def test_typedef_simple_record():

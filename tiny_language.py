@@ -1947,6 +1947,11 @@ class Runtime:
                     return self.error_message
                 if env.contains(e.name):
                     return env.get(e.name)
+                # Allow tag identifiers such as `Arr` to be passed through as plain
+                # strings when they look like type names, while still flagging
+                # genuinely undefined variables used in expressions.
+                if e.name and e.name[0].isupper():
+                    return e.name
                 raise self._error(
                     f"unknown variable {e.name}",
                     e.pos,

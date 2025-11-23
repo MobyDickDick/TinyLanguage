@@ -1,7 +1,12 @@
 import random
 import time
 
+import pathlib
+import sys
+
 import pytest
+
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
 from tiny_language import TinyLangError, compile_and_run
 

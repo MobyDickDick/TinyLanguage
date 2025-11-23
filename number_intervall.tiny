@@ -46,6 +46,15 @@ fn interval_number(v) {
 fn __is_error(iv, code) { return iv.error == code; }
 fn __is_normal(iv) { return iv.error == "normal"; }
 fn __is_wrapped(iv) { return iv.lower > iv.upper; }
+fn __contains_zero(iv) {
+  if (__is_normal(iv)) {
+    if (iv.lower <= 0) {
+      if (iv.upper >= 0) { return 1; }
+    }
+  }
+
+  return 0;
+}
 
 fn __overflowed(v) {
   if (v > 1.7976931348623157 * 10 ^ 308) { return "plus_infinity"; }
@@ -283,6 +292,10 @@ operator / (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
 
   if (a.lower > a.upper) { return __intervall_with_error("any_number"); }
   if (b.lower > b.upper) { return __intervall_with_error("any_number"); }
+
+  if (__contains_zero(a)) {
+    if (__contains_zero(b)) { return __intervall_with_error("any_number"); }
+  }
 
   if (b.lower <= 0) {
     if (b.upper >= 0) { return __intervall_with_error("any_number"); }

@@ -105,3 +105,18 @@ def test_dividing_infinities_by_zero_spanning_interval_yields_any_number():
     out = run_tiny(interval_def + "\n" + extra)
 
     assert out == "any_number\nany_number\n"
+
+
+def test_dividing_zero_spanning_intervals_yields_any_number():
+    interval_def = load_number_intervall()
+
+    extra = """
+    define numerator = NumberIntervall(-2, 3);
+    define denominator = NumberIntervall(-5, 0.5);
+
+    print((numerator / denominator).to_string());
+    """
+
+    out = run_tiny(interval_def + "\n" + extra)
+
+    assert out == "any_number\n"

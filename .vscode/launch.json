@@ -76,6 +76,17 @@
       ]
     },
     {
+      "name": "Python: pytest - tests/test_objects.py",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_objects.py",
+        "-q"
+      ]
+    },
+    {
       "name": "Python: pytest - tests/test_number_overflow.py",
       "type": "debugpy",
       "request": "launch",

@@ -5,7 +5,8 @@ import sys
 
 import pytest
 
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.append(str(PROJECT_ROOT))
 
 from tiny_language import compile_and_run, main, run_file
 

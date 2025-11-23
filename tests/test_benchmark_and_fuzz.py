@@ -29,6 +29,12 @@ def _time_limit(seconds: float):
     def _timeout_handler(signum, frame):
         raise TimeoutError(f"program exceeded {seconds:.2f}s time limit")
 
+    if not hasattr(signal, "setitimer"):
+        # setitimer is missing on Windows; skip time limiting rather than
+        # failing the test with runtime errors from unsupported signals.
+        yield
+        return
+
     previous = signal.signal(signal.SIGALRM, _timeout_handler)
     signal.setitimer(signal.ITIMER_REAL, seconds)
     try:

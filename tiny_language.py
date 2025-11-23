@@ -7,6 +7,30 @@ import threading
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
+
+@dataclass
+class TinyLangError(Exception):
+    message: str
+    pos: int = 0
+
+    def __str__(self) -> str:  # pragma: no cover - Exception already stringifies message
+        return self.message
+
+
+def _line_info(source: str, pos: int) -> Tuple[int, int, str]:
+    safe_pos = max(0, min(len(source), pos))
+    line = source.count("\n", 0, safe_pos) + 1
+    last_nl = source.rfind("\n", 0, safe_pos)
+    col = safe_pos - (last_nl + 1) + 1
+    line_text = source.splitlines()[line - 1] if source.splitlines() else ""
+    return line, col, line_text
+
+
+def format_error(source: str, pos: int, message: str) -> str:
+    line, col, line_text = _line_info(source, pos)
+    pointer = " " * (col - 1) + "^"
+    return f"{message} (line {line}, col {col})\n    {line_text}\n    {pointer}"
+
 # ----- Lexer -----
 
 KEYWORDS = {
@@ -36,6 +60,8 @@ class Token:
     kind: str
     text: str
     pos: int
+    line: int
+    col: int
 
 
 class Lexer:
@@ -43,12 +69,20 @@ class Lexer:
         self.s = source
         self.i = 0
         self.n = len(source)
+        self.line = 1
+        self.col = 1
 
     def _peek(self) -> str:
         return self.s[self.i] if self.i < self.n else ""
 
     def _advance(self, n: int = 1) -> None:
-        self.i += n
+        for _ in range(n):
+            if self.i < self.n and self.s[self.i] == "\n":
+                self.line += 1
+                self.col = 1
+            else:
+                self.col += 1
+            self.i += 1
 
     def _skip_ws_comments(self) -> None:
         while self.i < self.n:
@@ -66,16 +100,18 @@ class Lexer:
     def next_token(self) -> Token:
         self._skip_ws_comments()
         if self.i >= self.n:
-            return Token("EOF", "", self.i)
+            return Token("EOF", "", self.i, self.line, self.col)
         c = self.s[self.i]
         pos = self.i
+        line = self.line
+        col = self.col
 
         if c == "&" and self.i + 1 < self.n and self.s[self.i + 1] == "&":
             self._advance(2)
-            return Token("OP", "&&", pos)
+            return Token("OP", "&&", pos, line, col)
         if c == "|" and self.i + 1 < self.n and self.s[self.i + 1] == "|":
             self._advance(2)
-            return Token("OP", "||", pos)
+            return Token("OP", "||", pos, line, col)
         if c == '"':
             return self._read_string()
         if c.isalpha() or c == "_":
@@ -85,7 +121,7 @@ class Lexer:
             txt = self.s[self.i:j]
             self.i = j
             kind = "KW" if txt in KEYWORDS else "NAME"
-            return Token(kind, txt, pos)
+            return Token(kind, txt, pos, line, col)
         if c.isdigit():
             j = self.i + 1
             hasdot = False
@@ -101,32 +137,36 @@ class Lexer:
                 break
             txt = self.s[self.i:j]
             self.i = j
-            return Token("NUMBER", txt, pos)
+            return Token("NUMBER", txt, pos, line, col)
         if c in (">", "<", "=", "!"):
             if self.i + 1 < self.n and self.s[self.i + 1] == "=":
                 self.i += 2
-                return Token("OP", c + "=", pos)
+                return Token("OP", c + "=", pos, line, col)
         if c in "+-*/><^!":
             self._advance()
-            return Token("OP", c, pos)
+            return Token("OP", c, pos, line, col)
         if c in "(){}[];,=:.":
             self._advance()
-            return Token("SYM", c, pos)
-        raise SyntaxError(f"Lexing error at position {pos} (char='{c}')")
+            return Token("SYM", c, pos, line, col)
+        raise TinyLangError(format_error(self.s, pos, f"lexing error: unexpected character '{c}'"), pos)
 
     def _read_string(self) -> Token:
         pos0 = self.i
+        line = self.line
+        col = self.col
         self._advance()  # skip opening quote
         buf = []
         while self.i < self.n:
             c = self.s[self.i]
             if c == '"':
                 self._advance()
-                return Token("STRING", "".join(buf), pos0)
+                return Token("STRING", "".join(buf), pos0, line, col)
             if c == "\\":
                 self._advance()
                 if self.i >= self.n:
-                    raise SyntaxError(f"unterminated escape in string at {pos0}")
+                    raise TinyLangError(
+                        format_error(self.s, pos0, "unterminated escape in string"), pos0
+                    )
                 esc = self.s[self.i]
                 self._advance()
                 if esc == "n":
@@ -144,7 +184,9 @@ class Lexer:
             else:
                 buf.append(c)
                 self._advance()
-        raise SyntaxError(f"unterminated string literal starting at {pos0}")
+        raise TinyLangError(
+            format_error(self.s, pos0, "unterminated string literal"), pos0
+        )
 
 
 # ----- AST Nodes -----
@@ -158,12 +200,14 @@ class IR:
 class Let(IR):
     name: str
     expr: IR
+    pos: int = 0
 
 
 @dataclass
 class Assign(IR):
     name: str
     expr: IR
+    pos: int = 0
 
 
 @dataclass
@@ -171,11 +215,13 @@ class FieldAssign(IR):
     obj: IR
     name: str
     expr: IR
+    pos: int = 0
 
 
 @dataclass
 class Print(IR):
     exprs: List[IR]
+    pos: int = 0
 
 
 @dataclass
@@ -183,12 +229,14 @@ class If(IR):
     cond: IR
     then: List[IR]
     els: List[IR]
+    pos: int = 0
 
 
 @dataclass
 class While(IR):
     cond: IR
     body: List[IR]
+    pos: int = 0
 
 
 @dataclass
@@ -197,6 +245,7 @@ class Fn(IR):
     params: List[str]
     body: List[IR]
     namespace: Optional[str] = None
+    pos: int = 0
 
 
 @dataclass
@@ -205,23 +254,27 @@ class MethodDef(IR):
     name: str
     params: List[str]
     body: List[IR]
+    pos: int = 0
 
 
 @dataclass
 class Namespace(IR):
     name: str
     body: List[IR]
+    pos: int = 0
 
 
 @dataclass
 class Return(IR):
     expr: IR
+    pos: int = 0
 
 
 @dataclass
 class CallStmt(IR):
     name: str
     args: List[IR]
+    pos: int = 0
 
 
 @dataclass
@@ -232,18 +285,21 @@ class OpDef(IR):
     b_name: str
     b_type: str
     body: List[IR]
+    pos: int = 0
 
 
 @dataclass
 class DestructAssign(IR):
     names: List[str]
     expr: IR
+    pos: int = 0
 
 
 @dataclass
 class TypeDef(IR):
     name: str
     fields: List[Tuple[str, str]]
+    pos: int = 0
 
 
 @dataclass
@@ -252,43 +308,51 @@ class ClassDef(IR):
     fields: List[Tuple[str, str]]
     methods: List["MethodDef"]
     bases: List[str]
+    pos: int = 0
 
 
 # Expressions
 @dataclass
 class Num(IR):
     txt: str
+    pos: int = 0
 
 
 @dataclass
 class Str(IR):
     txt: str
+    pos: int = 0
 
 
 @dataclass
 class Bool(IR):
     value: bool
+    pos: int = 0
 
 
 @dataclass
 class Var(IR):
     name: str
+    pos: int = 0
 
 
 @dataclass
 class Call(IR):
     name: str
     args: List[IR]
+    pos: int = 0
 
 
 @dataclass
 class New(IR):
     size: IR
+    pos: int = 0
 
 
 @dataclass
 class NewLit(IR):
     items: List[IR]
+    pos: int = 0
 
 
 @dataclass
@@ -296,17 +360,20 @@ class Bin(IR):
     op: str
     a: IR
     b: IR
+    pos: int = 0
 
 
 @dataclass
 class ObjLit(IR):
     fields: List[Tuple[str, IR]]
+    pos: int = 0
 
 
 @dataclass
 class Field(IR):
     obj: IR
     name: str
+    pos: int = 0
 
 
 @dataclass
@@ -314,31 +381,38 @@ class MethodCall(IR):
     obj: IR
     name: str
     args: List[IR]
+    pos: int = 0
 
 
 @dataclass
 class ClassNew(IR):
     name: str
     init: List[Tuple[str, IR]]
+    pos: int = 0
 
 
 @dataclass
 class Spawn(IR):
     name: str
     args: List[IR]
+    pos: int = 0
 
 
 # ----- Parser -----
 
 
 class Parser:
-    def __init__(self, lx: Lexer):
+    def __init__(self, lx: Lexer, source: str):
         self.lx = lx
+        self.source = source
         self.tok = lx.next_token()
+
+    def _error(self, message: str, pos: int) -> TinyLangError:
+        return TinyLangError(format_error(self.source, pos, message), pos)
 
     def _eat(self, kind: str, text: Optional[str] = None) -> Token:
         if self.tok.kind != kind or (text is not None and self.tok.text != text):
-            raise SyntaxError(f"expected {kind}{' '+text if text else ''} at {self.tok.pos}")
+            raise self._error(f"expected {kind}{' '+text if text else ''}", self.tok.pos)
         t = self.tok
         self.tok = self.lx.next_token()
         return t
@@ -348,7 +422,7 @@ class Parser:
             t = self.tok
             self.tok = self.lx.next_token()
             return t
-        raise SyntaxError(f"expected NAME at {self.tok.pos}")
+        raise self._error("expected NAME", self.tok.pos)
 
     def _accept(self, kind: str, text: Optional[str] = None) -> bool:
         if self.tok.kind == kind and (text is None or self.tok.text == text):
@@ -372,14 +446,14 @@ class Parser:
 
     def parse_stmt(self) -> IR:
         if self.tok.kind == "KW" and self.tok.text == "define":
-            self._eat("KW", "define")
-            name = self._eat("NAME").text
+            kw = self._eat("KW", "define")
+            name_tok = self._eat("NAME")
             self._eat("SYM", "=")
             expr = self.parse_expr()
             self._eat("SYM", ";")
-            return Let(name, expr)
+            return Let(name_tok.text, expr, pos=kw.pos)
         if self.tok.kind == "KW" and self.tok.text == "print":
-            self._eat("KW", "print")
+            kw = self._eat("KW", "print")
             self._eat("SYM", "(")
             exprs: List[IR] = []
             if not (self.tok.kind == "SYM" and self.tok.text == ")"):
@@ -388,9 +462,9 @@ class Parser:
                     exprs.append(self.parse_expr())
             self._eat("SYM", ")")
             self._eat("SYM", ";")
-            return Print(exprs)
+            return Print(exprs, pos=kw.pos)
         if self.tok.kind == "KW" and self.tok.text == "if":
-            self._eat("KW", "if")
+            kw = self._eat("KW", "if")
             self._eat("SYM", "(")
             cond = self.parse_expr()
             self._eat("SYM", ")")
@@ -399,33 +473,33 @@ class Parser:
             if self.tok.kind == "KW" and self.tok.text == "else":
                 self._eat("KW", "else")
                 els = self.parse_block()
-            return If(cond, then, els)
+            return If(cond, then, els, pos=kw.pos)
         if self.tok.kind == "KW" and self.tok.text == "while":
-            self._eat("KW", "while")
+            kw = self._eat("KW", "while")
             self._eat("SYM", "(")
             cond = self.parse_expr()
             self._eat("SYM", ")")
             body = self.parse_block()
-            return While(cond, body)
+            return While(cond, body, pos=kw.pos)
         if self.tok.kind == "KW" and self.tok.text == "namespace":
-            self._eat("KW", "namespace")
+            kw = self._eat("KW", "namespace")
             name = self.parse_qualified_name()
             body = self.parse_block()
-            return Namespace(name, body)
+            return Namespace(name, body, pos=kw.pos)
         if self.tok.kind == "KW" and self.tok.text == "fn":
-            self._eat("KW", "fn")
-            name = self._eat("NAME").text
+            kw = self._eat("KW", "fn")
+            name_tok = self._eat("NAME")
             params = self.parse_param_list()
             body = self.parse_block()
-            return Fn(name, params, body)
+            return Fn(name_tok.text, params, body, pos=kw.pos)
         if self.tok.kind == "KW" and self.tok.text == "return":
-            self._eat("KW", "return")
+            kw = self._eat("KW", "return")
             expr = self.parse_expr()
             self._eat("SYM", ";")
-            return Return(expr)
+            return Return(expr, pos=kw.pos)
         if self.tok.kind == "KW" and self.tok.text == "type":
-            self._eat("KW", "type")
-            name = self._eat("NAME").text
+            kw = self._eat("KW", "type")
+            name_tok = self._eat("NAME")
             self._eat("SYM", "{")
             fields: List[Tuple[str, str]] = []
             while not self._accept("SYM", "}"):
@@ -434,10 +508,10 @@ class Parser:
                 ftype = self._eat("NAME").text
                 self._eat("SYM", ";")
                 fields.append((fname, ftype))
-            return TypeDef(name, fields)
+            return TypeDef(name_tok.text, fields, pos=kw.pos)
         if self.tok.kind == "KW" and self.tok.text == "class":
-            self._eat("KW", "class")
-            cname = self._eat("NAME").text
+            kw = self._eat("KW", "class")
+            cname_tok = self._eat("NAME")
             bases: List[str] = []
             if self._accept("SYM", ":"):
                 bases.append(self._eat("NAME").text)
@@ -449,10 +523,10 @@ class Parser:
             while not (self.tok.kind == "SYM" and self.tok.text == "}"):
                 if self.tok.kind == "KW" and self.tok.text == "fn":
                     self._eat("KW", "fn")
-                    mname = self._eat_name_or_kw().text
+                    mname_tok = self._eat_name_or_kw()
                     params = self.parse_param_list()
                     body = self.parse_block()
-                    methods.append(MethodDef(cname, mname, params, body))
+                    methods.append(MethodDef(cname_tok.text, mname_tok.text, params, body, pos=mname_tok.pos))
                 else:
                     fname = self._eat("NAME").text
                     self._eat("SYM", ":")
@@ -460,10 +534,10 @@ class Parser:
                     self._eat("SYM", ";")
                     fields.append((fname, ftype))
             self._eat("SYM", "}")
-            return ClassDef(cname, fields, methods, bases)
+            return ClassDef(cname_tok.text, fields, methods, bases, pos=kw.pos)
         if self.tok.kind == "KW" and self.tok.text == "operator":
-            self._eat("KW", "operator")
-            op = self._eat("OP").text
+            kw = self._eat("KW", "operator")
+            op_tok = self._eat("OP")
             self._eat("SYM", "(")
             a_name = self._eat("NAME").text
             self._eat("SYM", ":")
@@ -477,14 +551,14 @@ class Parser:
             self._eat("OP", ">")
             _ = self._eat("NAME").text  # return type (unused)
             body = self.parse_block()
-            return OpDef(op, a_name, a_type, b_name, b_type, body)
+            return OpDef(op_tok.text, a_name, a_type, b_name, b_type, body, pos=kw.pos)
         # destructuring or assignment/field assignment
         if self.tok.kind == "SYM" and self.tok.text == "{":
-            names = self.parse_destruct_names()
+            names, start_pos = self.parse_destruct_names()
             self._eat("SYM", "=")
             expr = self.parse_expr()
             self._eat("SYM", ";")
-            return DestructAssign(names, expr)
+            return DestructAssign(names, expr, pos=start_pos)
         if self.tok.kind == "NAME":
             # look ahead for field assignment or normal assignment/call
             name_tok = self.tok
@@ -494,22 +568,22 @@ class Parser:
                 if self._accept("SYM", "="):
                     expr = self.parse_expr()
                     self._eat("SYM", ";")
-                    return FieldAssign(Var(name_tok.text), field_name, expr)
+                    return FieldAssign(Var(name_tok.text, pos=name_tok.pos), field_name, expr, pos=name_tok.pos)
                 # method call statement
                 args = self.parse_arg_list()
                 self._eat("SYM", ";")
-                return CallStmt(f"{name_tok.text}.{field_name}", args)
+                return CallStmt(f"{name_tok.text}.{field_name}", args, pos=name_tok.pos)
             if self._accept("SYM", "="):
                 expr = self.parse_expr()
                 self._eat("SYM", ";")
-                return Assign(name_tok.text, expr)
+                return Assign(name_tok.text, expr, pos=name_tok.pos)
             # call statement on identifier
             if self.tok.kind == "SYM" and self.tok.text == "(":
                 args = self.parse_arg_list()
                 self._eat("SYM", ";")
-                return CallStmt(name_tok.text, args)
-            raise SyntaxError(f"unexpected token after name at {name_tok.pos}")
-        raise SyntaxError(f"unexpected token {self.tok.kind} at {self.tok.pos}")
+                return CallStmt(name_tok.text, args, pos=name_tok.pos)
+            raise self._error("unexpected token after name", name_tok.pos)
+        raise self._error(f"unexpected token {self.tok.kind}", self.tok.pos)
 
     def parse_param_list(self) -> List[str]:
         self._eat("SYM", "(")
@@ -531,13 +605,13 @@ class Parser:
         self._eat("SYM", ")")
         return args
 
-    def parse_destruct_names(self) -> List[str]:
-        self._eat("SYM", "{")
+    def parse_destruct_names(self) -> Tuple[List[str], int]:
+        start_pos = self._eat("SYM", "{").pos
         names = [self._eat("NAME").text]
         while self._accept("SYM", ","):
             names.append(self._eat("NAME").text)
         self._eat("SYM", "}")
-        return names
+        return names, start_pos
 
     # expression parsing with precedence
     def parse_expr(self) -> IR:
@@ -549,9 +623,10 @@ class Parser:
             (self.tok.kind == "KW" and self.tok.text == "or")
             or (self.tok.kind == "OP" and self.tok.text == "||")
         ):
+            op_tok = self.tok
             self._eat(self.tok.kind)
             right = self.parse_logic_and()
-            left = Bin("or", left, right)
+            left = Bin("or", left, right, pos=op_tok.pos)
         return left
 
     def parse_logic_and(self) -> IR:
@@ -560,67 +635,70 @@ class Parser:
             (self.tok.kind == "KW" and self.tok.text == "and")
             or (self.tok.kind == "OP" and self.tok.text == "&&")
         ):
+            op_tok = self.tok
             self._eat(self.tok.kind)
             right = self.parse_compare()
-            left = Bin("and", left, right)
+            left = Bin("and", left, right, pos=op_tok.pos)
         return left
 
     def parse_compare(self) -> IR:
         left = self.parse_term()
         while self.tok.kind == "OP" and self.tok.text in (">", ">=", "<", "<=", "==", "!="):
             op = self.tok.text
-            self._eat("OP")
+            op_tok = self._eat("OP")
             right = self.parse_term()
-            left = Bin(op, left, right)
+            left = Bin(op, left, right, pos=op_tok.pos)
         return left
 
     def parse_term(self) -> IR:
         left = self.parse_factor()
         while self.tok.kind == "OP" and self.tok.text in ("+", "-"):
             op = self.tok.text
-            self._eat("OP")
+            op_tok = self._eat("OP")
             right = self.parse_factor()
-            left = Bin(op, left, right)
+            left = Bin(op, left, right, pos=op_tok.pos)
         return left
 
     def parse_factor(self) -> IR:
         left = self.parse_power()
         while self.tok.kind == "OP" and self.tok.text in ("*", "/"):
             op = self.tok.text
-            self._eat("OP")
+            op_tok = self._eat("OP")
             right = self.parse_power()
-            left = Bin(op, left, right)
+            left = Bin(op, left, right, pos=op_tok.pos)
         return left
 
     def parse_power(self) -> IR:
         left = self.parse_unary()
         if self.tok.kind == "OP" and self.tok.text == "^":
-            self._eat("OP")
+            op_tok = self._eat("OP")
             right = self.parse_power()
-            return Bin("^", left, right)
+            return Bin("^", left, right, pos=op_tok.pos)
         return left
 
     def parse_unary(self) -> IR:
         if self.tok.kind == "OP" and self.tok.text == "-":
-            self._eat("OP")
-            return Bin("-", Num("0"), self.parse_unary())
+            op_tok = self._eat("OP")
+            return Bin("-", Num("0", pos=op_tok.pos), self.parse_unary(), pos=op_tok.pos)
         if (self.tok.kind == "KW" and self.tok.text == "not") or (
             self.tok.kind == "OP" and self.tok.text == "!"
         ):
+            op_tok = self.tok
             self._eat(self.tok.kind)
-            return Bin("not", Num("0"), self.parse_unary())
+            return Bin("not", Num("0", pos=op_tok.pos), self.parse_unary(), pos=op_tok.pos)
         return self.parse_postfix()
 
     def parse_postfix(self) -> IR:
         expr = self.parse_primary()
         while True:
-            if self._accept("SYM", "."):
-                name = self._eat_name_or_kw().text
+            if self.tok.kind == "SYM" and self.tok.text == ".":
+                dot_tok = self._eat("SYM", ".")
+                name_tok = self._eat_name_or_kw()
                 if self.tok.kind == "SYM" and self.tok.text == "(":
                     args = self.parse_arg_list()
-                    expr = MethodCall(expr, name, args)
+                    expr = MethodCall(expr, name_tok.text, args, pos=dot_tok.pos)
                 else:
-                    expr = Field(expr, name)
+                    expr = Field(expr, name_tok.text, pos=dot_tok.pos)
                 continue
             break
         return expr
@@ -632,35 +710,37 @@ class Parser:
             return inner
         if self.tok.kind == "NUMBER":
             t = self._eat("NUMBER")
-            return Num(t.text)
+            return Num(t.text, pos=t.pos)
         if self.tok.kind == "STRING":
             t = self._eat("STRING")
-            return Str(t.text)
+            return Str(t.text, pos=t.pos)
         if self.tok.kind == "KW" and self.tok.text in {"true", "false"}:
-            val = self.tok.text == "true"
+            kw = self.tok
+            val = kw.text == "true"
             self._eat("KW")
-            return Bool(val)
+            return Bool(val, pos=kw.pos)
         if self.tok.kind in {"NAME", "KW"}:
-            name = self._eat(self.tok.kind).text
+            name_tok = self._eat(self.tok.kind)
+            name = name_tok.text
             if name == "spawn":
                 target = self._eat_name_or_kw().text
                 args = self.parse_arg_list()
-                return Spawn(target, args)
+                return Spawn(target, args, pos=name_tok.pos)
             if name == "new" and self.tok.kind == "SYM" and self.tok.text == "[":
-                self._eat("SYM", "[")
+                start_tok = self._eat("SYM", "[")
                 items: List[IR] = []
                 if not (self.tok.kind == "SYM" and self.tok.text == "]"):
                     items.append(self.parse_expr())
                     while self._accept("SYM", ","):
                         items.append(self.parse_expr())
                 self._eat("SYM", "]")
-                return NewLit(items)
+                return NewLit(items, pos=start_tok.pos)
             if self.tok.kind == "SYM" and self.tok.text == "(":
                 args = self.parse_arg_list()
-                return Call(name, args)
+                return Call(name, args, pos=name_tok.pos)
             if name == "new" and self.tok.kind == "NAME":
                 cname = self._eat("NAME").text
-                self._eat("SYM", "{")
+                start_tok = self._eat("SYM", "{")
                 init: List[Tuple[str, IR]] = []
                 while not self._accept("SYM", "}"):
                     fname = self.parse_field_name()
@@ -670,10 +750,11 @@ class Parser:
                     if self._accept("SYM", "}"):
                         break
                     if not (self._accept("SYM", ";") or self._accept("SYM", ",")):
-                        raise SyntaxError(f"expected field separator at {self.tok.pos}")
-                return ClassNew(cname, init)
-            return Var(name)
-        if self._accept("SYM", "{"):
+                        raise self._error("expected field separator", self.tok.pos)
+                return ClassNew(cname, init, pos=name_tok.pos)
+            return Var(name, pos=name_tok.pos)
+        if self.tok.kind == "SYM" and self.tok.text == "{":
+            start_tok = self._eat("SYM", "{")
             fields: List[Tuple[str, IR]] = []
             while not self._accept("SYM", "}"):
                 fname = self.parse_field_name()
@@ -683,9 +764,9 @@ class Parser:
                 if self._accept("SYM", "}"):
                     break
                 if not (self._accept("SYM", ";") or self._accept("SYM", ",")):
-                    raise SyntaxError(f"expected field separator at {self.tok.pos}")
-            return ObjLit(fields)
-        raise SyntaxError(f"unexpected token {self.tok.kind} at {self.tok.pos}")
+                    raise self._error("expected field separator", self.tok.pos)
+            return ObjLit(fields, pos=start_tok.pos)
+        raise self._error(f"unexpected token {self.tok.kind}", self.tok.pos)
 
     def parse_field_name(self) -> str:
         name = self._eat("NAME").text
@@ -1007,7 +1088,7 @@ class SpawnHandle:
 
 
 class Runtime:
-    def __init__(self):
+    def __init__(self, source: str):
         self._lock = threading.RLock()
         self.heap: Dict[int, List[Any]] = {}
         self.ptr_tags: Dict[int, str] = {}
@@ -1018,14 +1099,21 @@ class Runtime:
         self.output: List[str] = []
         self.functions: Dict[str, Fn] = {}
         self.error_messages: List[str] = []
+        self.source = source
 
     @staticmethod
     def _qualify_name(name: str, namespace: Optional[str]) -> str:
         return f"{namespace}.{name}" if namespace else name
 
-    def _record_error(self, msg: str) -> None:
+    def _record_error(self, msg: str, pos: Optional[int] = None) -> None:
+        formatted = format_error(self.source, pos, msg) if pos is not None else msg
         with self._lock:
-            self.error_messages.append(msg)
+            self.error_messages.append(formatted)
+
+    def _error(self, msg: str, pos: int) -> TinyLangError:
+        formatted = format_error(self.source, pos, msg)
+        self._record_error(msg, pos)
+        return TinyLangError(formatted, pos)
 
     @property
     def error_message(self) -> Optional[str]:
@@ -1044,7 +1132,7 @@ class Runtime:
             self.heap[p] = [0 for _ in range(int(n))]
             return p
 
-    def delete(self, p: Any) -> Dict[str, Any]:
+    def delete(self, p: Any, pos: Optional[int] = None) -> Dict[str, Any]:
         try:
             ip = int(p)
             with self._lock:
@@ -1057,46 +1145,48 @@ class Runtime:
                 "e": {"__tag__": "Error", "code": 1, "msg": str(e)},
             }
 
-    def heap_get(self, p: Any, i: Any) -> Any:
+    def heap_get(self, p: Any, i: Any, *, pos: Optional[int] = None) -> Any:
         try:
             ip = int(p)
             idx = int(i)
         except Exception:
-            self._record_error("heap access error: pointer or index is not numeric")
+            self._record_error("heap access error: pointer or index is not numeric", pos)
             return None
 
         with self._lock:
             try:
                 arr = self.heap[ip]
             except KeyError:
-                self._record_error(f"heap access error: unknown pointer {ip}")
+                self._record_error(f"heap access error: unknown pointer {ip}", pos)
                 return None
 
             try:
                 return arr[idx]
             except Exception:
                 self._record_error(
-                    f"heap access error: index {idx} out of range for pointer {ip}"
+                    f"heap access error: index {idx} out of range for pointer {ip}", pos
                 )
                 return None
 
-    def heap_set(self, p: Any, i: Any, v: Any) -> Dict[str, Any]:
+    def heap_set(self, p: Any, i: Any, v: Any, *, pos: Optional[int] = None) -> Dict[str, Any]:
         try:
             with self._lock:
                 self.heap[int(p)][int(i)] = v
             return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 0, "msg": ""}}
         except Exception as e:  # noqa: BLE001
+            self._record_error(str(e), pos)
             return {
                 "__tag__": "Record",
                 "e": {"__tag__": "Error", "code": 1, "msg": str(e)},
             }
 
-    def tag(self, p: Any, typ: Any) -> Dict[str, Any]:
+    def tag(self, p: Any, typ: Any, *, pos: Optional[int] = None) -> Dict[str, Any]:
         try:
             with self._lock:
                 self.ptr_tags[int(p)] = str(typ)
             return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 0, "msg": ""}}
         except Exception as e:  # noqa: BLE001
+            self._record_error(str(e), pos)
             return {
                 "__tag__": "Record",
                 "e": {"__tag__": "Error", "code": 1, "msg": str(e)},
@@ -1349,7 +1439,7 @@ class Runtime:
             return a != b
         raise RuntimeError(f"unsupported op {op}")
 
-    def field_get(self, obj: Any, key: str) -> Any:
+    def field_get(self, obj: Any, key: str, *, pos: Optional[int] = None) -> Any:
         target_obj = obj.obj if isinstance(obj, BaseView) else obj
         owner_hint = obj.class_name if isinstance(obj, BaseView) else None
         if isinstance(target_obj, dict) and "__fields__" in target_obj:
@@ -1359,12 +1449,12 @@ class Runtime:
                 )
                 return fmap[key]
             except Exception as err:  # noqa: BLE001
-                self._record_error(str(err))
+                self._record_error(str(err), pos)
                 return None
         try:
             return target_obj[str(key)]
         except Exception:
-            self._record_error(f"unknown field {key}")
+            self._record_error(f"unknown field {key}", pos)
             return None
 
     def field_set(self, obj: Any, key: str, val: Any) -> None:
@@ -1667,184 +1757,199 @@ class Runtime:
         return None
 
     def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) -> Any:
-        if isinstance(s, Let):
-            env.values[s.name] = self.eval_expr(s.expr, env)
-        elif isinstance(s, Assign):
-            if env.contains(s.name):
-                env.set(s.name, self.eval_expr(s.expr, env))
-            else:
+        try:
+            if isinstance(s, Let):
                 env.values[s.name] = self.eval_expr(s.expr, env)
-        elif isinstance(s, FieldAssign):
-            obj = self.eval_expr(s.obj, env)
-            val = self.eval_expr(s.expr, env)
-            self.field_set(obj, s.name, val)
-        elif isinstance(s, Print):
-            vals = [self.eval_expr(expr, env) for expr in s.exprs]
-            text = " ".join(self.format_value(v) for v in vals)
-            with self._lock:
-                self.output.append(f"{text}\n")
-        elif isinstance(s, If):
-            cond = self.eval_expr(s.cond, env)
-            branch = s.then if self._is_truthy(cond) else s.els
-            res = self.eval_block(branch, env, namespace)
-            if isinstance(res, ReturnSignal):
-                return res
-        elif isinstance(s, While):
-            while self._is_truthy(self.eval_expr(s.cond, env)):
-                res = self.eval_block(s.body, env, namespace)
+            elif isinstance(s, Assign):
+                if env.contains(s.name):
+                    env.set(s.name, self.eval_expr(s.expr, env))
+                else:
+                    env.values[s.name] = self.eval_expr(s.expr, env)
+            elif isinstance(s, FieldAssign):
+                obj = self.eval_expr(s.obj, env)
+                val = self.eval_expr(s.expr, env)
+                self.field_set(obj, s.name, val)
+            elif isinstance(s, Print):
+                vals = [self.eval_expr(expr, env) for expr in s.exprs]
+                text = " ".join(self.format_value(v) for v in vals)
+                with self._lock:
+                    self.output.append(f"{text}\n")
+            elif isinstance(s, If):
+                cond = self.eval_expr(s.cond, env)
+                branch = s.then if self._is_truthy(cond) else s.els
+                res = self.eval_block(branch, env, namespace)
                 if isinstance(res, ReturnSignal):
                     return res
-        elif isinstance(s, Namespace):
-            qualified = self._qualify_name(s.name, namespace)
-            child_env = Environment(parent=env, namespace=qualified)
-            env.values[s.name] = NamespaceRef(self, qualified)
-            self.eval_block(s.body, child_env, qualified)
-        elif isinstance(s, Fn):
-            s.namespace = namespace
-            fn_name = self._qualify_name(s.name, namespace)
-            with self._lock:
-                self.functions[fn_name] = s
-        elif isinstance(s, Return):
-            return ReturnSignal(self.eval_expr(s.expr, env))
-        elif isinstance(s, CallStmt):
-            allowed = s.name in {"heap_set", "heap_get", "delete", "tag", "join"}
-            if not allowed:
-                raise RuntimeError(
-                    f"call with return value must be bound; bare call statements are not allowed (offending call: {s.name}())"
-                )
-            self.eval_expr(Call(s.name, s.args), env)
-        elif isinstance(s, OpDef):
-            self.register_operator(s, env)
-        elif isinstance(s, DestructAssign):
-            val = self.eval_expr(s.expr, env)
-            for nm in s.names:
-                env.values[nm] = val[str(nm)]
-        elif isinstance(s, TypeDef):
-            # type and class share same registration
-            self.register_type(s.name, s.fields)
-        elif isinstance(s, ClassDef):
-            self.register_class(s.name, s.fields, s.bases)
-            for m in s.methods:
-                self.register_method(m)
-        elif isinstance(s, MethodDef):
-            self.register_class(s.class_name, []) if s.class_name not in self.types else None
-            self.register_method(s)
-        else:
-            raise RuntimeError(f"unknown statement {s}")
-        return None
+            elif isinstance(s, While):
+                while self._is_truthy(self.eval_expr(s.cond, env)):
+                    res = self.eval_block(s.body, env, namespace)
+                    if isinstance(res, ReturnSignal):
+                        return res
+            elif isinstance(s, Namespace):
+                qualified = self._qualify_name(s.name, namespace)
+                child_env = Environment(parent=env, namespace=qualified)
+                env.values[s.name] = NamespaceRef(self, qualified)
+                self.eval_block(s.body, child_env, qualified)
+            elif isinstance(s, Fn):
+                s.namespace = namespace
+                fn_name = self._qualify_name(s.name, namespace)
+                with self._lock:
+                    self.functions[fn_name] = s
+            elif isinstance(s, Return):
+                return ReturnSignal(self.eval_expr(s.expr, env))
+            elif isinstance(s, CallStmt):
+                allowed = s.name in {"heap_set", "heap_get", "delete", "tag", "join"}
+                if not allowed:
+                    raise RuntimeError(
+                        f"call with return value must be bound; bare call statements are not allowed (offending call: {s.name}())"
+                    )
+                self.eval_expr(Call(s.name, s.args, pos=s.pos), env)
+            elif isinstance(s, OpDef):
+                self.register_operator(s, env)
+            elif isinstance(s, DestructAssign):
+                val = self.eval_expr(s.expr, env)
+                for nm in s.names:
+                    env.values[nm] = val[str(nm)]
+            elif isinstance(s, TypeDef):
+                # type and class share same registration
+                self.register_type(s.name, s.fields)
+            elif isinstance(s, ClassDef):
+                self.register_class(s.name, s.fields, s.bases)
+                for m in s.methods:
+                    self.register_method(m)
+            elif isinstance(s, MethodDef):
+                self.register_class(s.class_name, []) if s.class_name not in self.types else None
+                self.register_method(s)
+            else:
+                raise RuntimeError(f"unknown statement {s}")
+            return None
+        except (ReturnSignal, TinyLangError):
+            raise
+        except Exception as exc:  # noqa: BLE001
+            raise self._error(str(exc), getattr(s, "pos", 0)) from exc
 
     def eval_expr(self, e: IR, env: "Environment") -> Any:
-        if isinstance(e, Num):
-            return float(e.txt) if "." in e.txt else int(e.txt)
-        if isinstance(e, Str):
-            return e.txt
-        if isinstance(e, Bool):
-            return e.value
-        if isinstance(e, Var):
-            if e.name == "errorMessage":
-                return self.error_message
-            try:
-                return env.get(e.name)
-            except RuntimeError:
-                return e.name
-        if isinstance(e, Call):
-            if e.name == "__type_field_type":
-                return self.type_field_type(str(self.eval_expr(e.args[0], env)), str(self.eval_expr(e.args[1], env)))
-            if e.name == "__new":
-                return self.__new(int(self.eval_expr(e.args[0], env)))
-            if e.name == "new":
-                return self.__new(int(self.eval_expr(e.args[0], env)))
-            if e.name == "heap_get":
-                return self.heap_get(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env))
-            if e.name == "heap_set":
-                return self.heap_set(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env), self.eval_expr(e.args[2], env))
-            if e.name == "delete":
-                return self.delete(self.eval_expr(e.args[0], env))
-            if e.name == "tag":
-                return self.tag(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env))
-            if e.name == "join":
-                if len(e.args) != 1:
-                    raise RuntimeError("join expects 1 argument")
-                return self.join_handle(self.eval_expr(e.args[0], env))
-            if e.name == "len":
-                if len(e.args) != 1:
-                    raise RuntimeError("len expects 1 argument")
-                target = self.eval_expr(e.args[0], env)
+        try:
+            if isinstance(e, Num):
+                return float(e.txt) if "." in e.txt else int(e.txt)
+            if isinstance(e, Str):
+                return e.txt
+            if isinstance(e, Bool):
+                return e.value
+            if isinstance(e, Var):
+                if e.name == "errorMessage":
+                    return self.error_message
                 try:
-                    if isinstance(target, int) and target in self.heap:
-                        return len(self.heap[target])
-                    return len(target)  # type: ignore[arg-type]
-                except Exception:
-                    raise RuntimeError("len expects a sized value")
-            if e.name == "__nextafter":
-                return math.nextafter(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env))
-            if e.name == "power":
-                base = self.eval_expr(e.args[0], env)
-                exp = self.eval_expr(e.args[1], env)
-                number_res = self._number_power(base, exp)
-                if number_res is not None:
-                    return number_res
-                res = math.pow(base, exp)
-                if isinstance(res, float) and res.is_integer():
-                    res = int(res)
-                return res
-            resolved_name, fn = self._resolve_function(e.name, env)
-            if fn is not None:
-                arg_values = [self.eval_expr(arg_expr, env) for arg_expr in e.args]
-                return self._invoke_function(fn, arg_values)
-            raise RuntimeError(f"unknown function {e.name}")
-        if isinstance(e, Spawn):
-            resolved_name, fn = self._resolve_function(e.name, env)
-            if fn is None:
+                    return env.get(e.name)
+                except RuntimeError:
+                    return e.name
+            if isinstance(e, Call):
+                if e.name == "__type_field_type":
+                    return self.type_field_type(str(self.eval_expr(e.args[0], env)), str(self.eval_expr(e.args[1], env)))
+                if e.name == "__new":
+                    return self.__new(int(self.eval_expr(e.args[0], env)))
+                if e.name == "new":
+                    return self.__new(int(self.eval_expr(e.args[0], env)))
+                if e.name == "heap_get":
+                    return self.heap_get(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env), pos=e.pos)
+                if e.name == "heap_set":
+                    return self.heap_set(
+                        self.eval_expr(e.args[0], env),
+                        self.eval_expr(e.args[1], env),
+                        self.eval_expr(e.args[2], env),
+                        pos=e.pos,
+                    )
+                if e.name == "delete":
+                    return self.delete(self.eval_expr(e.args[0], env), pos=e.pos)
+                if e.name == "tag":
+                    return self.tag(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env), pos=e.pos)
+                if e.name == "join":
+                    if len(e.args) != 1:
+                        raise RuntimeError("join expects 1 argument")
+                    return self.join_handle(self.eval_expr(e.args[0], env))
+                if e.name == "len":
+                    if len(e.args) != 1:
+                        raise RuntimeError("len expects 1 argument")
+                    target = self.eval_expr(e.args[0], env)
+                    try:
+                        if isinstance(target, int) and target in self.heap:
+                            return len(self.heap[target])
+                        return len(target)  # type: ignore[arg-type]
+                    except Exception:
+                        raise RuntimeError("len expects a sized value")
+                if e.name == "__nextafter":
+                    return math.nextafter(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env))
+                if e.name == "power":
+                    base = self.eval_expr(e.args[0], env)
+                    exp = self.eval_expr(e.args[1], env)
+                    number_res = self._number_power(base, exp)
+                    if number_res is not None:
+                        return number_res
+                    res = math.pow(base, exp)
+                    if isinstance(res, float) and res.is_integer():
+                        res = int(res)
+                    return res
+                resolved_name, fn = self._resolve_function(e.name, env)
+                if fn is not None:
+                    arg_values = [self.eval_expr(arg_expr, env) for arg_expr in e.args]
+                    return self._invoke_function(fn, arg_values)
                 raise RuntimeError(f"unknown function {e.name}")
-            arg_values = [self.eval_expr(arg, env) for arg in e.args]
+            if isinstance(e, Spawn):
+                resolved_name, fn = self._resolve_function(e.name, env)
+                if fn is None:
+                    raise RuntimeError(f"unknown function {e.name}")
+                arg_values = [self.eval_expr(arg, env) for arg in e.args]
 
-            done = threading.Event()
+                done = threading.Event()
 
-            def run_task() -> None:
-                self._run_spawn(fn, arg_values, handle)
+                def run_task() -> None:
+                    self._run_spawn(fn, arg_values, handle)
 
-            handle = SpawnHandle(thread=threading.Thread(target=run_task), done=done)
-            handle.thread.start()
-            return handle
-        if isinstance(e, New):
-            return self.__new(int(self.eval_expr(e.size, env)))
-        if isinstance(e, NewLit):
-            p = self.__new(len(e.items))
-            for idx, item in enumerate(e.items):
-                self.heap_set(p, idx, self.eval_expr(item, env))
-            return p
-        if isinstance(e, Bin):
-            if e.op == "and":
-                left = self.eval_expr(e.a, env)
-                if not self._is_truthy(left):
-                    return False
-                return bool(self._is_truthy(self.eval_expr(e.b, env)))
-            if e.op == "or":
-                left = self.eval_expr(e.a, env)
-                if self._is_truthy(left):
-                    return True
-                return bool(self._is_truthy(self.eval_expr(e.b, env)))
-            if e.op == "not":
-                return not self._is_truthy(self.eval_expr(e.b, env))
-            return self.__binop(e.op, self.eval_expr(e.a, env), self.eval_expr(e.b, env))
-        if isinstance(e, ObjLit):
-            obj: Dict[str, Any] = {"__tag__": "Struct"}
-            for k, v in e.fields:
-                obj[k] = self.eval_expr(v, env)
-            return obj
-        if isinstance(e, Field):
-            obj = self.eval_expr(e.obj, env)
-            return self.field_get(obj, e.name)
-        if isinstance(e, MethodCall):
-            obj = self.eval_expr(e.obj, env)
-            args = [self.eval_expr(a, env) for a in e.args]
-            return self.call_method(obj, e.name, args)
-        if isinstance(e, ClassNew):
-            init = {k: self.eval_expr(v, env) for k, v in e.init}
-            self.register_class(e.name, []) if e.name not in self.types else None
-            return self.instantiate_class(e.name, init)
-        raise RuntimeError(f"unknown expr {e}")
+                handle = SpawnHandle(thread=threading.Thread(target=run_task), done=done)
+                handle.thread.start()
+                return handle
+            if isinstance(e, New):
+                return self.__new(int(self.eval_expr(e.size, env)))
+            if isinstance(e, NewLit):
+                p = self.__new(len(e.items))
+                for idx, item in enumerate(e.items):
+                    self.heap_set(p, idx, self.eval_expr(item, env), pos=e.pos)
+                return p
+            if isinstance(e, Bin):
+                if e.op == "and":
+                    left = self.eval_expr(e.a, env)
+                    if not self._is_truthy(left):
+                        return False
+                    return bool(self._is_truthy(self.eval_expr(e.b, env)))
+                if e.op == "or":
+                    left = self.eval_expr(e.a, env)
+                    if self._is_truthy(left):
+                        return True
+                    return bool(self._is_truthy(self.eval_expr(e.b, env)))
+                if e.op == "not":
+                    return not self._is_truthy(self.eval_expr(e.b, env))
+                return self.__binop(e.op, self.eval_expr(e.a, env), self.eval_expr(e.b, env))
+            if isinstance(e, ObjLit):
+                obj: Dict[str, Any] = {"__tag__": "Struct"}
+                for k, v in e.fields:
+                    obj[k] = self.eval_expr(v, env)
+                return obj
+            if isinstance(e, Field):
+                obj = self.eval_expr(e.obj, env)
+                return self.field_get(obj, e.name, pos=e.pos)
+            if isinstance(e, MethodCall):
+                obj = self.eval_expr(e.obj, env)
+                args = [self.eval_expr(a, env) for a in e.args]
+                return self.call_method(obj, e.name, args)
+            if isinstance(e, ClassNew):
+                init = {k: self.eval_expr(v, env) for k, v in e.init}
+                self.register_class(e.name, []) if e.name not in self.types else None
+                return self.instantiate_class(e.name, init)
+            raise RuntimeError(f"unknown expr {e}")
+        except TinyLangError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            raise self._error(str(exc), getattr(e, "pos", 0)) from exc
 
 
 class Environment:
@@ -1878,9 +1983,9 @@ class Environment:
 
 
 def compile_and_run(src: str) -> str:
-    parser = Parser(Lexer(src))
+    parser = Parser(Lexer(src), src)
     stmts = parser.parse()
-    runtime = Runtime()
+    runtime = Runtime(src)
 
     # lint functions + top level locals
     lint_destruct_call_outputs(stmts)

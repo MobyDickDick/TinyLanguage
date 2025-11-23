@@ -1,4 +1,5 @@
 import importlib.util
+import multiprocessing
 import pathlib
 import random
 import signal
@@ -29,6 +30,11 @@ def _time_limit(seconds: float):
     def _timeout_handler(signum, frame):
         raise TimeoutError(f"program exceeded {seconds:.2f}s time limit")
 
+    if not hasattr(signal, "setitimer"):
+        # setitimer is missing on Windows; enforcement handled elsewhere.
+        yield
+        return
+
     previous = signal.signal(signal.SIGALRM, _timeout_handler)
     signal.setitimer(signal.ITIMER_REAL, seconds)
     try:
@@ -36,6 +42,40 @@ def _time_limit(seconds: float):
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0)
         signal.signal(signal.SIGALRM, previous)
+
+
+def _run_program_with_timeout(source: str, seconds: float) -> None:
+    """Run ``compile_and_run`` with a timeout on all platforms."""
+
+    if hasattr(signal, "setitimer"):
+        with _time_limit(seconds):
+            compile_and_run(source)
+        return
+
+    def _worker(queue: multiprocessing.Queue) -> None:
+        try:
+            compile_and_run(source)
+        except Exception as exc:  # pragma: no cover - subprocess bridge
+            queue.put(("error", exc))
+        else:  # pragma: no cover - subprocess bridge
+            queue.put(("ok", None))
+
+    result_queue: multiprocessing.Queue = multiprocessing.Queue()
+    proc = multiprocessing.Process(target=_worker, args=(result_queue,))
+    proc.start()
+    proc.join(seconds)
+
+    if proc.is_alive():
+        proc.terminate()
+        proc.join()
+        raise TimeoutError(f"program exceeded {seconds:.2f}s time limit")
+
+    if result_queue.empty():  # pragma: no cover - defensive
+        return
+
+    status, payload = result_queue.get()
+    if status == "error":
+        raise payload
 
 
 def test_recursive_fibonacci_benchmark(record_property) -> None:
@@ -153,8 +193,7 @@ def test_randomized_programs_do_not_crash(record_property) -> None:
         seed = rng.getrandbits(32)
         _, src = _generate_program(seed)
         try:
-            with _time_limit(0.5):
-                compile_and_run(src)
+            _run_program_with_timeout(src, 0.5)
             successes += 1
         except TimeoutError:
             timeout_seeds.append(seed)
@@ -185,8 +224,7 @@ if hypothesis_spec:  # pragma: no cover - optional
     def test_randomized_programs_shrink_on_failure(seed: int, record_property):
         seed, src = _generate_program(seed)
         try:
-            with _time_limit(1.0):
-                compile_and_run(src)
+            _run_program_with_timeout(src, 1.0)
         except TimeoutError:
             record_property("timeout_seed", seed)
             pytest.fail(f"program timed out for seed {seed}")

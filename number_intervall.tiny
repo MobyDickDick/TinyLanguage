@@ -22,6 +22,19 @@ fn __intervall_from_bounds(l, u) {
   return new NumberIntervall { lower: l, upper: u, error: "normal" };
 }
 
+fn __expand_bounds_outwards(lo, hi) {
+  define expanded_lower = __nextafter(lo, lo - 1);
+  define expanded_upper = __nextafter(hi, hi + 1);
+
+  define lo_ov = __overflowed(expanded_lower);
+  if (lo_ov != "normal") { return __intervall_with_error(lo_ov); }
+
+  define hi_ov = __overflowed(expanded_upper);
+  if (hi_ov != "normal") { return __intervall_with_error(hi_ov); }
+
+  return __intervall_from_bounds(expanded_lower, expanded_upper);
+}
+
 fn NumberIntervall(l, u) {
   return __intervall_from_bounds(l, u);
 }
@@ -419,5 +432,5 @@ operator / (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
   if (q3 > hi) { hi = q3; }
   if (q4 > hi) { hi = q4; }
 
-  return __intervall_from_bounds(lo, hi);
+  return __expand_bounds_outwards(lo, hi);
 }

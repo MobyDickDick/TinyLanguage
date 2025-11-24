@@ -27,7 +27,8 @@ define ignored_oob = heap_get(too_short, 5); // Runtime-Fehler wird aufgezeichne
 if (false) { print(ignored_oob); }
 
 // Fehlermeldung direkt zwischenspeichern, damit sie nicht erneut zusammengesetzt wird.
-define oob_error = errorMessage;
+define oob_error = errorMessage;             // Zuletzt gemeldeter Fehler wird abgelegt
+print("Aufgezeichnete Out-of-Bounds-Meldung:");
 print(oob_error);                            // "heap access error: index 5 out of range ..."
 
 delete(too_short); // Nach Fehlern ebenfalls aufraeumen
@@ -38,4 +39,5 @@ define ignored_missing = record.missing; // Meldet "unknown field missing"
 if (false) { print(ignored_missing); }
 
 define missing_error = errorMessage;     // Nur die aktuellste Fehlermeldung ausgeben
+print("Aufgezeichnete Missing-Field-Meldung:");
 print(missing_error);

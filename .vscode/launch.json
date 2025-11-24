@@ -107,7 +107,7 @@
       ]
     },
     {
-      "name": "Python: pytest - tests/test_stdlib.py",
+      "name": "Python: pytest - tests/test_stdlib.py (stdlib utilities)",
       "type": "debugpy",
       "request": "launch",
       "module": "pytest",
@@ -125,17 +125,6 @@
       "console": "integratedTerminal",
       "args": [
         "tests/test_benchmark_and_fuzz.py",
-        "-q"
-      ]
-    },
-    {
-      "name": "Python: pytest - tests/test_error_messages.py",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "pytest",
-      "console": "integratedTerminal",
-      "args": [
-        "tests/test_error_messages.py",
         "-q"
       ]
     },

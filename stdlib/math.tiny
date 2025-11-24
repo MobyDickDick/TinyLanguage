@@ -1,0 +1,14 @@
+// Standardbibliothek: Math
+// Nativ implementierte Helfer fuer Zahlen.
+//
+// Math.abs(x) -> Absolutwert
+// Math.max(a, b) -> Groesserer Wert
+// Math.min(a, b) -> Kleinerer Wert
+// Math.pow(base, exp) -> Potenz, akzeptiert auch Kommazahlen
+// Math.clamp(value, lower, upper) -> Schneidet Wert in [lower, upper]
+// Math.sqrt(x) -> Quadratwurzel
+//
+// Beispiel:
+// print(Math.max(3, -5));
+// print(Math.clamp(-2, 0, 10));
+// print(Math.sqrt(16));

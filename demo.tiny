@@ -1,4 +1,12 @@
 /// demo.tiny - port demo for Julia
+fn box(v) {
+  return { __tag__: "Box", value: v };
+}
+
+fn unbox(b) {
+  return b.value;
+}
+
 operator + (a: Box, b: Box) -> Box {
   return box(unbox(a) + unbox(b));
 }
@@ -37,7 +45,8 @@ delete(q);
 // strings
 define a2 = 17;
 print("Hallo");
-print("a2 = " + a2);
+print("a2 = ");
+print(a2);
 
 // while + if/else + assignments
 define i = 0;

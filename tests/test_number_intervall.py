@@ -6,6 +6,10 @@ def load_number_intervall() -> str:
     return (pathlib.Path(__file__).resolve().parents[1] / "number_intervall.tiny").read_text()
 
 
+def load_number_class() -> str:
+    return (pathlib.Path(__file__).resolve().parents[1] / "number_class.tiny").read_text()
+
+
 def test_basic_interval_operations_and_formatting(run_tiny_source):
     interval_def = load_number_intervall()
     extra = """
@@ -135,3 +139,24 @@ def test_division_results_with_infinite_bounds(run_tiny_source):
     out = run_tiny_source(interval_def + "\n" + extra)
 
     assert out == "[1.0, -1.0]\n[1.0, infinity]\n[-infinity, -1.0]\n[-1.0, 1.0]\n[0, 1.0]\n[-1.0, 0]\n"
+
+
+def test_python_numbers_promote_to_intervals(run_tiny_source):
+    interval_def = load_number_intervall()
+    number_def = load_number_class()
+
+    extra = """
+    define a = Number(5);
+    define b = NumberIntervall(6, 7);
+    define c = 42 * a;
+    define d = (9 * c) * b;
+
+    print(c.to_string());
+    print(d.to_string());
+    """
+
+    out = run_tiny_source(number_def + "\n" + interval_def + "\n" + extra)
+
+    baseline = "12.5\n-2.5\n37.5\n0.6666666666666666 (rounded)\n"
+
+    assert out == baseline + "210\n12285.0 +/- 945.0\n"

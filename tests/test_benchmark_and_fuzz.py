@@ -141,11 +141,29 @@ def _random_statement(rng: random.Random, defined_vars: List[str], used_vars: se
         )
         return f"if ({_random_expression(rng, defined_vars, used_vars)}) {{\n    {body}\n}} else {{ print(0); }}"
     if choice < 0.85:
-        body = "\n    ".join(
+        loop_var = f"i{rng.randint(0, max(5, len(defined_vars) + 2))}"
+        defined_vars.append(loop_var)
+        used_vars.add(loop_var)
+
+        # Keep while loops bounded so fuzzing cannot generate programs that spin
+        # forever. The explicit counter forces an exit after ``limit``
+        # iterations even if the body never changes the condition.
+        limit = rng.randint(0, 4)
+        body_statements = [
             _random_statement(rng, defined_vars, used_vars)
             for _ in range(rng.randint(1, 2))
+        ]
+        body_statements.append(f"{loop_var} = {loop_var} + 1;")
+        body = "\n    ".join(body_statements)
+
+        return "\n".join(
+            [
+                f"define {loop_var} = 0;",
+                f"while ({loop_var} < {limit}) {{",
+                f"    {body}",
+                "}",
+            ]
         )
-        return f"while ({_random_expression(rng, defined_vars, used_vars)}) {{\n    {body}\n}}"
 
     fn_defined_vars = list(defined_vars) + ["a", "b"]
     fn_used_vars: set[str] = set()

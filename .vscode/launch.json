@@ -50,6 +50,14 @@
       "console": "integratedTerminal"
     },
     {
+      "name": "Run heap_pointer_demo.tiny",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tiny_language.py",
+      "args": ["${workspaceFolder}/heap_pointer_demo.tiny"],
+      "console": "integratedTerminal"
+    },
+    {
       "name": "Run tests/logic_example.tiny",
       "type": "debugpy",
       "request": "launch",

@@ -1,0 +1,17 @@
+// Standardbibliothek: String
+// Die Funktionen werden nativ registriert. Dieses Modul dokumentiert die
+// Signaturen und typische Aufrufe.
+//
+// String.split(text, sep) -> Pointer auf Array von Teilstrings
+// String.join(items, sep) -> String aus Liste oder Heap-Pointer
+// String.contains(text, needle) -> Bool
+// String.upper(text) -> Grossbuchstaben
+// String.lower(text) -> Kleinbuchstaben
+// String.trim(text) -> Trimt Leerzeichen links und rechts
+// String.repeat(text, count) -> Wiederholt den Text count-mal
+//
+// Beispiel:
+// define parts = String.split(" a,b ,c ", ",");
+// print(String.trim(heap_get(parts, 0)));
+// print(String.upper(String.join(parts, "-")));
+// print(String.repeat("ha", 3));

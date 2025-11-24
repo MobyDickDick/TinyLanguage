@@ -1,0 +1,14 @@
+// Standardbibliothek: Collections
+// Operationen auf Arrays/Listen (Heap-Pointer oder native Listen).
+//
+// Collections.len(target) -> Laenge
+// Collections.push(target, value) -> Haengt an, liefert neue Laenge
+// Collections.pop(target) -> Entfernt letztes Element, Fehler wenn leer
+// Collections.slice(target, start, end) -> Pointer auf Teilbereich [start, end)
+// Collections.contains(target, value) -> True falls Wert enthalten
+//
+// Beispiel:
+// define arr = new[1, 2, 3, 4];
+// define mid = Collections.slice(arr, 1, 3);
+// print(Collections.contains(mid, 2));
+// print(Collections.len(mid));

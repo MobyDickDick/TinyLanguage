@@ -1,0 +1,28 @@
+/// concurrency_demo.tiny - zeigt spawn/join mit String.split und String.join
+fn label(prefix, word) {
+    // arbeitet ohne Stdlib, damit der Task in seinem eigenen Thread laeuft
+    return prefix + "=" + word;
+}
+
+// vier Teile parallel bearbeiten
+define keywords = String.split("spawn,join,string,interop", ",");
+
+define first = spawn label("erstes", heap_get(keywords, 0));
+define second = spawn label("zweites", heap_get(keywords, 1));
+define third = spawn label("drittes", heap_get(keywords, 2));
+define fourth = spawn label("viertes", heap_get(keywords, 3));
+
+define first_result = join(first);
+define second_result = join(second);
+define third_result = join(third);
+define fourth_result = join(fourth);
+
+define annotated = new[first_result, second_result, third_result, fourth_result];
+
+print("etiketten");
+print(String.join(annotated, " | "));
+
+// erneutes split/join auf dem Gesamtergebnis
+print("als liste");
+define parts_again = String.split(String.join(annotated, ";"), ";");
+print(String.join(parts_again, " -> "));

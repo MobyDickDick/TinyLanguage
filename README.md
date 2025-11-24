@@ -53,6 +53,7 @@ Vor jedem Programmstart registriert der Interpreter die eingebaute Stdlib mit fo
 - [`all_features.tiny`](all_features.tiny): Umfangreiches Feature-Rundlaufprogramm mit Arrays, Klassen und Operator-Overloading. Praktisch, um die Sprache als Ganzes zu erkunden.
 - [`number_class.tiny`](number_class.tiny): Demonstriert die `Number`-Klasse und den ueberladenen `+`-Operator; instanziiert Objekte, ruft Methoden auf und gibt das Ergebnis aus.
 - [`number_intervall.tiny`](number_intervall.tiny): Beispiel fuer numerische Intervallrechnungen und Grenzenkontrolle.
+- [`concurrency_demo.tiny`](concurrency_demo.tiny): Startet mehrere Aufgaben mit `spawn`, sammelt die Ergebnisse ueber `join` und kombiniert sie mit `String.split`/`String.join` zu einer Ausgabe.
 
 ## Haeufige Fehler
 - **Ungenutzte Bindungen**: Nicht verwendete lokale Variablen oder Parameter fuehren zu Fehlern (z. B. "unused parameter(s) in function f: b", "unused local binding(s): t").

@@ -23,8 +23,23 @@ fn __intervall_from_bounds(l, u) {
 }
 
 fn __expand_bounds_outwards(lo, hi) {
-  define expanded_lower = __nextafter(lo, lo - 1);
-  define expanded_upper = __nextafter(hi, hi + 1);
+  define lower_neighbor = __nextafter(lo, lo - 1);
+  define upper_neighbor = __nextafter(hi, hi + 1);
+
+  define lo_neighbor_ov = __overflowed(lower_neighbor);
+  if (lo_neighbor_ov != "normal") { return __intervall_with_error(lo_neighbor_ov); }
+
+  define hi_neighbor_ov = __overflowed(upper_neighbor);
+  if (hi_neighbor_ov != "normal") { return __intervall_with_error(hi_neighbor_ov); }
+
+  define delta_lower = lo - lower_neighbor;
+  define delta_upper = upper_neighbor - hi;
+
+  define delta = delta_lower;
+  if (delta_upper > delta) { delta = delta_upper; }
+
+  define expanded_lower = lo - delta;
+  define expanded_upper = hi + delta;
 
   define lo_ov = __overflowed(expanded_lower);
   if (lo_ov != "normal") { return __intervall_with_error(lo_ov); }

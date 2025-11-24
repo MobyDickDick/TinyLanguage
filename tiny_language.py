@@ -1992,7 +1992,16 @@ class Runtime:
                 upper = fields.get("upper")
                 center = (lower + upper) / 2
                 radius = (upper - lower) / 2
-                return f"{center} +/- {radius}"
+
+                def _format_float(val: float) -> str:
+                    abs_val = abs(val)
+                    if abs_val >= 1e-9:
+                        rounded = round(val, 12)
+                        if abs(rounded - val) <= abs_val * 1e-12:
+                            val = rounded
+                    return str(val)
+
+                return f"{_format_float(center)} +/- {_format_float(radius)}"
         if isinstance(val, bool):
             return "true" if val else "false"
         return str(val)

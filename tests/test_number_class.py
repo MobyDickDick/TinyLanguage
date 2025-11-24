@@ -1,20 +1,11 @@
 import pathlib
-import sys
-
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-
-from tiny_language import compile_and_run
-
-
-def run_tiny(src: str) -> str:
-    return compile_and_run(src)
 
 
 def load_number_class() -> str:
     return (pathlib.Path(__file__).resolve().parents[1] / "number_class.tiny").read_text()
 
 
-def test_subtraction_infinities_and_overflow():
+def test_subtraction_infinities_and_overflow(run_tiny_source):
     number_def = load_number_class()
     baseline = "12.5\n-2.5\n37.5\n0.6666666666666666 (rounded)\n"
     extra = """
@@ -40,7 +31,7 @@ def test_subtraction_infinities_and_overflow():
     print(overflow.to_string());
     """
 
-    out = run_tiny(number_def + "\n" + extra)
+    out = run_tiny_source(number_def + "\n" + extra)
 
     assert out == (
         baseline
@@ -53,7 +44,7 @@ def test_subtraction_infinities_and_overflow():
     )
 
 
-def test_multiplication_zero_and_infinity_signs():
+def test_multiplication_zero_and_infinity_signs(run_tiny_source):
     number_def = load_number_class()
     baseline = "12.5\n-2.5\n37.5\n0.6666666666666666 (rounded)\n"
     extra = """
@@ -76,7 +67,7 @@ def test_multiplication_zero_and_infinity_signs():
     print(pos_inf2.to_string());
     """
 
-    out = run_tiny(number_def + "\n" + extra)
+    out = run_tiny_source(number_def + "\n" + extra)
 
     assert out == (
         baseline
@@ -88,7 +79,7 @@ def test_multiplication_zero_and_infinity_signs():
     )
 
 
-def test_division_with_infinities_and_zero():
+def test_division_with_infinities_and_zero(run_tiny_source):
     number_def = load_number_class()
     baseline = "12.5\n-2.5\n37.5\n0.6666666666666666 (rounded)\n"
     extra = """
@@ -113,7 +104,7 @@ def test_division_with_infinities_and_zero():
     print(neg_over_zero.to_string());
     """
 
-    out = run_tiny(number_def + "\n" + extra)
+    out = run_tiny_source(number_def + "\n" + extra)
 
     assert out == (
         baseline
@@ -126,7 +117,7 @@ def test_division_with_infinities_and_zero():
     )
 
 
-def test_division_rounding_marks_error_code():
+def test_division_rounding_marks_error_code(run_tiny_source):
     number_def = load_number_class()
     extra = """
     define one = Number(1);
@@ -140,6 +131,6 @@ def test_division_rounding_marks_error_code():
     print(exact.to_string());
     """
 
-    out = run_tiny(number_def + "\n" + extra)
+    out = run_tiny_source(number_def + "\n" + extra)
 
     assert out.endswith("0.5 (rounded)\n2\n")

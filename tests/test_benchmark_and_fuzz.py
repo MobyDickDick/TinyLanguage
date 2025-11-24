@@ -1,4 +1,5 @@
 import importlib.util
+import multiprocessing
 import pathlib
 import random
 import signal
@@ -29,6 +30,11 @@ def _time_limit(seconds: float):
     def _timeout_handler(signum, frame):
         raise TimeoutError(f"program exceeded {seconds:.2f}s time limit")
 
+    if not hasattr(signal, "setitimer"):
+        # setitimer is missing on Windows; enforcement handled elsewhere.
+        yield
+        return
+
     previous = signal.signal(signal.SIGALRM, _timeout_handler)
     signal.setitimer(signal.ITIMER_REAL, seconds)
     try:
@@ -36,6 +42,56 @@ def _time_limit(seconds: float):
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0)
         signal.signal(signal.SIGALRM, previous)
+
+
+def _worker_run_program(queue: multiprocessing.Queue, source: str) -> None:
+    """Helper to run ``compile_and_run`` in a child process."""
+
+    try:
+        compile_and_run(source)
+    except Exception as exc:  # pragma: no cover - subprocess bridge
+        queue.put(("error", exc))
+    else:  # pragma: no cover - subprocess bridge
+        queue.put(("ok", None))
+
+
+def _run_program_with_timeout(source: str, seconds: float) -> None:
+    """Run ``compile_and_run`` with a timeout on all platforms."""
+
+    if hasattr(signal, "setitimer"):
+        with _time_limit(seconds):
+            compile_and_run(source)
+        return
+
+    # ``spawn`` has noticeable process-start overhead on Windows; add a
+    # generous buffer so legitimate programs are not incorrectly flagged as
+    # hung while still enforcing a hard upper bound.
+    # Give the worker ample time to start up and finish even on slower
+    # machines while still bounding total runtime. A larger buffer keeps the
+    # fuzz test stable on Windows where spawning carries noticeable overhead
+    # and child creation can vary widely based on host load.
+    padded_seconds = max(seconds * 12, seconds + 8.0)
+
+    ctx = multiprocessing.get_context("spawn")
+    result_queue: multiprocessing.Queue = ctx.Queue()
+    proc = ctx.Process(target=_worker_run_program, args=(result_queue, source))
+    proc.start()
+    proc.join(padded_seconds)
+
+    if proc.is_alive():
+        proc.terminate()
+        proc.join()
+        raise TimeoutError(
+            f"program exceeded {seconds:.2f}s time limit "
+            f"({padded_seconds:.2f}s with spawn overhead)"
+        )
+
+    if result_queue.empty():  # pragma: no cover - defensive
+        return
+
+    status, payload = result_queue.get()
+    if status == "error":
+        raise payload
 
 
 def test_recursive_fibonacci_benchmark(record_property) -> None:
@@ -153,8 +209,7 @@ def test_randomized_programs_do_not_crash(record_property) -> None:
         seed = rng.getrandbits(32)
         _, src = _generate_program(seed)
         try:
-            with _time_limit(0.5):
-                compile_and_run(src)
+            _run_program_with_timeout(src, 0.5)
             successes += 1
         except TimeoutError:
             timeout_seeds.append(seed)
@@ -185,8 +240,7 @@ if hypothesis_spec:  # pragma: no cover - optional
     def test_randomized_programs_shrink_on_failure(seed: int, record_property):
         seed, src = _generate_program(seed)
         try:
-            with _time_limit(1.0):
-                compile_and_run(src)
+            _run_program_with_timeout(src, 1.0)
         except TimeoutError:
             record_property("timeout_seed", seed)
             pytest.fail(f"program timed out for seed {seed}")

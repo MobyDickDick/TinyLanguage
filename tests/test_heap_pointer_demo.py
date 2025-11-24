@@ -13,9 +13,9 @@ def test_heap_pointer_demo_outputs_errors_and_hints():
 
     output = compile_and_run(program.read_text())
 
-    assert output.startswith("30\nNone\n")
+    assert output.startswith("30\n")
     assert output.count("heap access error: index 5 out of range") >= 2
     assert "unknown field missing" in output
 
-    assert re.search(r"> 26 \| print\(heap_get\(too_short, 5\)\); // Wirft einen Laufzeitfehler", output)
-    assert re.search(r"> 33 \| print\(record\.missing\);", output)
+    assert re.search(r"> 26 \| define ignored_oob = heap_get\(too_short, 5\); // Runtime-Fehler wird aufgezeichnet", output)
+    assert re.search(r"> 34 \| define ignored_missing = record\.missing; // Meldet \"unknown field missing\"", output)

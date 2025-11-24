@@ -23,12 +23,14 @@ delete(buffer);
 
 // 2) Fehlerfall: Out-of-Bounds-Zugriff demonstrieren.
 define too_short = new[1, 2];
-print(heap_get(too_short, 5)); // Wirft einen Laufzeitfehler
-print(errorMessage);           // "heap access error: index 5 out of range ..."
+define ignored_oob = heap_get(too_short, 5); // Runtime-Fehler wird aufgezeichnet
+ignored_oob = ignored_oob;                   // Markiert die Variable als genutzt, ohne sie auszugeben
+print(errorMessage);                         // "heap access error: index 5 out of range ..."
 
 delete(too_short); // Nach Fehlern ebenfalls aufraeumen
 
 // 3) Fehlerfall: Zugriff auf fehlendes Feld.
 define record = { existing: 1; };
-print(record.missing);   // Meldet "unknown field missing"
-print(errorMessage);     // Die Fehlermeldung bleibt abrufbar
+define ignored_missing = record.missing; // Meldet "unknown field missing"
+ignored_missing = ignored_missing;       // Variable bleibt genutzt, Ausgabe bleibt sauber
+print(errorMessage);                     // Die Fehlermeldung bleibt abrufbar

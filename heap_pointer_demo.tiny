@@ -32,6 +32,7 @@ if (read_index < buffer_len) {
 delete(buffer);
 
 print("\n=== Typische Fehlerquellen ===");
+print("Die folgenden Fehlermeldungen sind bewusst provoziert; das Programm laeuft trotzdem weiter und endet erfolgreich.\n");
 
 // 2) Fehlerfall: Out-of-Bounds-Zugriff demonstrieren.
 define too_short = new[1, 2];

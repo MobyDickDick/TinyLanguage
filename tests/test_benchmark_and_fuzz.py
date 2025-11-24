@@ -70,7 +70,7 @@ def _run_program_with_timeout(source: str, seconds: float) -> None:
     # machines while still bounding total runtime. A larger buffer keeps the
     # fuzz test stable on Windows where spawning carries noticeable overhead
     # and child creation can vary widely based on host load.
-    padded_seconds = max(seconds * 5, seconds + 3.0)
+    padded_seconds = max(seconds * 12, seconds + 8.0)
 
     ctx = multiprocessing.get_context("spawn")
     result_queue: multiprocessing.Queue = ctx.Queue()

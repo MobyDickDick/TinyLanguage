@@ -1,0 +1,34 @@
+/// heap_pointer_demo.tiny - zeigt sichere Heap-Nutzung und typische Fehlerquellen.
+/// Safe Patterns: Pointer taggen, Bounds pruefen bevor heap_get/heap_set, spaetestens nach der Nutzung delete aufrufen.
+
+// 1) Pointer anlegen und mit Tag versehen, damit klar ist, was im Heap steckt.
+define buffer = new(3);
+tag(buffer, Buffer);
+
+// Werte setzen: vor dem Schreiben auf gueltige Indizes achten.
+heap_set(buffer, 0, 10);
+heap_set(buffer, 1, 20);
+heap_set(buffer, 2, 30);
+
+// Sicherer Lesezugriff: erst Bounds pruefen, dann lesen.
+define read_index = 2;
+if (read_index < Collections.len(buffer)) {
+    print(heap_get(buffer, read_index));
+} else {
+    print("index ausserhalb der bounds, nichts zu tun");
+}
+
+// Pointer wieder freigeben, wenn er nicht mehr gebraucht wird.
+delete(buffer);
+
+// 2) Fehlerfall: Out-of-Bounds-Zugriff demonstrieren.
+define too_short = new[1, 2];
+print(heap_get(too_short, 5)); // Wirft einen Laufzeitfehler
+print(errorMessage);           // "heap access error: index 5 out of range ..."
+
+delete(too_short); // Nach Fehlern ebenfalls aufraeumen
+
+// 3) Fehlerfall: Zugriff auf fehlendes Feld.
+define record = { existing: 1; };
+print(record.missing);   // Meldet "unknown field missing"
+print(errorMessage);     // Die Fehlermeldung bleibt abrufbar

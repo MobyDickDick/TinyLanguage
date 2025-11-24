@@ -1,16 +1,4 @@
-import pathlib
-import sys
-
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-
-from tiny_language import compile_and_run
-
-
-def run_tiny(src: str) -> str:
-    return compile_and_run(src)
-
-
-def test_class_operator_overloads_with_numbers():
+def test_class_operator_overloads_with_numbers(run_tiny_source):
     src = """
     class Counter {
         total: number;
@@ -57,6 +45,6 @@ def test_class_operator_overloads_with_numbers():
     print(added_right == diff_value);
     """
 
-    out = run_tiny(src)
+    out = run_tiny_source(src)
 
     assert out == "15\nbase+n\n15\nn+base\n7\nbase-n\n10\nn-base\ntrue\nfalse\nfalse\n"

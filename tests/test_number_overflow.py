@@ -1,16 +1,7 @@
 import pathlib
-import sys
-
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-
-from tiny_language import compile_and_run
 
 
-def run_tiny(src: str) -> str:
-    return compile_and_run(src)
-
-
-def test_number_error_propagation_and_printing():
+def test_number_error_propagation_and_printing(run_tiny_source):
     number_def = (pathlib.Path(__file__).resolve().parents[1] / "number_class.tiny").read_text()
 
     extra = """
@@ -47,7 +38,7 @@ def test_number_error_propagation_and_printing():
     print(divpos.to_string());
     """
 
-    out = run_tiny(number_def + "\n" + extra)
+    out = run_tiny_source(number_def + "\n" + extra)
 
     assert (
         out

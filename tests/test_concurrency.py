@@ -1,18 +1,5 @@
-import pathlib
-import sys
-
-PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
-sys.path.append(str(PROJECT_ROOT))
-
-from tiny_language import compile_and_run
-
-
-def run_tiny(src: str) -> str:
-    return compile_and_run(src)
-
-
-def test_spawn_results_applied_in_join_order():
-    out = run_tiny(
+def test_spawn_results_applied_in_join_order(run_tiny_source):
+    out = run_tiny_source(
         """
         fn compute(value) { return value; }
 
@@ -39,8 +26,8 @@ def test_spawn_results_applied_in_join_order():
     assert out == "after first 1\nafter second 3\nfinal 3\n"
 
 
-def test_join_waits_for_spawned_heap_update():
-    out = run_tiny(
+def test_join_waits_for_spawned_heap_update(run_tiny_source):
+    out = run_tiny_source(
         """
         fn store(ptr, idx, value) {
             // make sure the indices are read so linting accepts the parameters

@@ -1,20 +1,8 @@
-import pathlib
-import sys
-
 import pytest
 
-PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
-sys.path.append(str(PROJECT_ROOT))
 
-from tiny_language import compile_and_run  # noqa: E402
-
-
-def run_tiny(src: str) -> str:
-    return compile_and_run(src)
-
-
-def test_stdlib_functions_cover_math_string_and_collections():
-    out = run_tiny(
+def test_stdlib_functions_cover_math_string_and_collections(run_tiny_source):
+    out = run_tiny_source(
         """
         print(Math.abs(-5));
         print(Math.pow(2, 3));
@@ -37,9 +25,9 @@ def test_stdlib_functions_cover_math_string_and_collections():
     assert out == "5\n8\n3\na\na-b-c\ntrue\n2\n3\n3\n3\n2\n"
 
 
-def test_collections_pop_errors_on_empty():
+def test_collections_pop_errors_on_empty(run_tiny_source):
     with pytest.raises(Exception, match=r"pop from empty collection"):
-        run_tiny(
+        run_tiny_source(
             """
             define arr = new[1];
             print(Collections.pop(arr));

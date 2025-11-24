@@ -1780,7 +1780,7 @@ class Runtime:
         handle.done.wait()
         handle.thread.join()
         if handle.error:
-            raise RuntimeError(f"error in spawned task: {handle.error}")
+            raise handle.error
         return handle.result
 
     def _resolve_field_storage(

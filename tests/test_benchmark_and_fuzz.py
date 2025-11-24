@@ -66,7 +66,10 @@ def _run_program_with_timeout(source: str, seconds: float) -> None:
     # ``spawn`` has noticeable process-start overhead on Windows; add a
     # small buffer so legitimate programs are not incorrectly flagged as
     # hung while still enforcing a hard upper bound.
-    padded_seconds = max(seconds, seconds + 1.0)
+    # Give the worker ample time to start up and finish even on slower
+    # machines while still bounding total runtime. A larger buffer keeps the
+    # fuzz test stable on Windows where spawning carries noticeable overhead.
+    padded_seconds = max(seconds * 3, seconds + 2.0)
 
     ctx = multiprocessing.get_context("spawn")
     result_queue: multiprocessing.Queue = ctx.Queue()

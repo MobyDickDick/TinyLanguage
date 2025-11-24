@@ -108,7 +108,12 @@ class _StdLibRegistrar:
         return seq.pop()
 
 
-def register_stdlib(runtime: "Runtime", env: "Environment") -> None:
-    from tiny_language import NamespaceRef  # Imported lazily to avoid circular imports
+def register_stdlib(
+    runtime: "Runtime", env: "Environment", namespace_ref_cls: type | None = None
+) -> None:
+    if namespace_ref_cls is None:
+        from tiny_language import NamespaceRef  # Imported lazily to avoid circular imports
 
-    _StdLibRegistrar(runtime, env, NamespaceRef).install()
+        namespace_ref_cls = NamespaceRef
+
+    _StdLibRegistrar(runtime, env, namespace_ref_cls).install()

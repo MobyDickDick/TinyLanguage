@@ -2227,7 +2227,7 @@ def compile_and_run(src: str) -> str:
     lint_nested(stmts)
 
     env = Environment(parent=None, namespace=None)
-    register_stdlib(runtime, env)
+    register_stdlib(runtime, env, NamespaceRef)
     for st in stmts:
         runtime.eval_stmt(st, env)
     return "".join(runtime.output)

@@ -1403,6 +1403,63 @@ class Runtime:
     def _make_number(value: Any, error: str) -> Dict[str, Any]:
         return {"__tag__": "Number", "__fields__": {"Number": {"value": value, "error": error}}}
 
+    @staticmethod
+    def _intervall_fields(val: Any) -> Optional[Dict[str, Any]]:
+        if isinstance(val, dict) and val.get("__tag__") == "NumberIntervall":
+            return val.get("__fields__", {}).get("NumberIntervall")
+        return None
+
+    @staticmethod
+    def _make_intervall(lower: Any, upper: Any, error: str) -> Dict[str, Any]:
+        return {
+            "__tag__": "NumberIntervall",
+            "__fields__": {"NumberIntervall": {"lower": lower, "upper": upper, "error": error}},
+        }
+
+    def _number_to_intervall(self, value: Any) -> Optional[Dict[str, Any]]:
+        fields = self._number_fields(value)
+        if fields is None:
+            return None
+        err = fields.get("error", "normal") or "normal"
+        if err in {"plus_infinity", "minus_infinity", "any_number"}:
+            return self._make_intervall(0, 0, err)
+        lower = fields.get("value", 0)
+        upper = fields.get("value", 0)
+        return self._make_intervall(lower, upper, "normal")
+
+    def _coerce_to_number(self, val: Any) -> Any:
+        if self.__get_tag(val) == "Number":
+            return val
+        if isinstance(val, bool):
+            return val
+        if isinstance(val, (int, float)):
+            return self._make_number(val, "normal")
+        return val
+
+    def _coerce_to_intervall(self, val: Any) -> Any:
+        if self.__get_tag(val) == "NumberIntervall":
+            return val
+        from_number = self._number_to_intervall(val)
+        if from_number is not None:
+            return from_number
+        if isinstance(val, bool):
+            return val
+        if isinstance(val, (int, float)):
+            return self._make_intervall(val, val, "normal")
+        return val
+
+    def _coerce_numeric_operands(
+        self, op: str, a: Any, b: Any, ta: Optional[str], tb: Optional[str]
+    ) -> Tuple[Any, Any]:
+        arithmetic_ops = {"+", "-", "*", "/", "^"}
+        if op not in arithmetic_ops:
+            return a, b
+        if ta == "NumberIntervall" or tb == "NumberIntervall":
+            return self._coerce_to_intervall(a), self._coerce_to_intervall(b)
+        if ta == "Number" or tb == "Number":
+            return self._coerce_to_number(a), self._coerce_to_number(b)
+        return a, b
+
     def _number_binop(self, op: str, a: Any, b: Any) -> Any:
         fields_a = self._number_fields(a)
         fields_b = self._number_fields(b)
@@ -1588,6 +1645,9 @@ class Runtime:
         return mk("rounded" if rounded else "normal", res)
 
     def __binop(self, op: str, a: Any, b: Any) -> Any:
+        ta = self.__get_tag(a)
+        tb = self.__get_tag(b)
+        a, b = self._coerce_numeric_operands(op, a, b, ta, tb)
         ta = self.__get_tag(a)
         tb = self.__get_tag(b)
         num_res = self._number_binop(op, a, b)

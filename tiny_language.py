@@ -1286,7 +1286,9 @@ class Runtime:
     ) -> None:
         formatted = format_error(self.source, pos, msg, code=code, hint=hint) if pos is not None else msg
         with self._lock:
-            self.error_messages.append(formatted)
+            # Only keep the most recent runtime error so `errorMessage` reflects
+            # the latest failure instead of accumulating older ones.
+            self.error_messages = [formatted]
 
     def _error(
         self,
@@ -1309,7 +1311,7 @@ class Runtime:
         with self._lock:
             if not self.error_messages:
                 return None
-            return "; ".join(self.error_messages)
+            return self.error_messages[-1]
 
     # heap helpers
     def __new(self, n: int) -> int:

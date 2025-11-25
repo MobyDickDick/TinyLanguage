@@ -1178,6 +1178,9 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
     elif isinstance(s, Namespace):
         for t in s.body:
             lint_stmt_reads(t, reads)
+    elif isinstance(s, CallStmt):
+        for arg in s.args:
+            uses_in_expr(arg, reads)
 
 
 def lint_fn_params_used(fn: Fn, source: Optional[str] = None) -> None:

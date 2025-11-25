@@ -70,4 +70,8 @@ Vor jedem Programmstart registriert der Interpreter die eingebaute Stdlib mit fo
 
 Hinweis: Auf Plattformen ohne `readline` (z. B. Windows) werden die REPL-History-Tests automatisch mit `1 skipped` uebersprungen. Die uebrigen Tests laufen trotzdem und das Testergebnis bleibt gueltig; der Skip ist lediglich ein Hinweis auf die optionale Abhaengigkeit.
 
+### Interaktiver REPL
+- Tab-Autocomplete beruecksichtigt Keywords, Stdlib-Namen und bereits definierte Bindungen aus der aktuellen Sitzung. Die Vervollstaendigung funktioniert auch ohne native `readline`-Bibliothek.
+- Die History wird im Speicher gefuehrt und kann ueber Pfeiltasten oder eine einfache Reverse-Suche (`Ctrl + R`) erneut geladen werden. Beim Beenden wird sie unter `~/.tiny_language_history` persistiert, sofern Schreibrechte vorhanden sind.
+
 Weitere Beispiele und erwartete Diagnosen finden sich in `tests/test_tiny_language.py` und den Beispielprogrammen oben.

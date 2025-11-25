@@ -333,6 +333,10 @@ KEYWORDS = {
     "class",
     "namespace",
     "spawn",
+    "match",
+    "case",
+    "sum",
+    "product",
     "true",
     "false",
     "and",
@@ -587,6 +591,28 @@ class DestructAssign(IR):
 class TypeDef(IR):
     name: str
     fields: List[Tuple[str, str]]
+    kind: str = "record"
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
+class ProductTypeDef(IR):
+    name: str
+    fields: List[Tuple[str, str]]
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
+class SumVariant:
+    name: str
+    fields: List[Tuple[str, str]]
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
+class SumTypeDef(IR):
+    name: str
+    variants: List[SumVariant]
     pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
@@ -688,6 +714,21 @@ class ClassNew(IR):
 class Spawn(IR):
     name: str
     args: List[IR]
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
+class MatchCase:
+    pattern: str
+    bindings: List[str]
+    expr: IR
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
+class Match(IR):
+    expr: IR
+    cases: List[MatchCase]
     pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
@@ -794,6 +835,39 @@ class Parser:
         if self.tok.kind == "KW" and self.tok.text == "type":
             kw = self._eat("KW", "type")
             name_tok = self._eat("NAME")
+            if self._accept("SYM", "="):
+                if self._accept("KW", "sum"):
+                    self._eat("SYM", "{")
+                    variants: List[SumVariant] = []
+                    while not self._accept("SYM", "}"):
+                        vname = self._eat("NAME").text
+                        fields: List[Tuple[str, str]] = []
+                        if self._accept("SYM", "("):
+                            if not self._accept("SYM", ")"):
+                                fname = self._eat("NAME").text
+                                self._eat("SYM", ":")
+                                ftype = self._eat("NAME").text
+                                fields.append((fname, ftype))
+                                while self._accept("SYM", ","):
+                                    fname = self._eat("NAME").text
+                                    self._eat("SYM", ":")
+                                    ftype = self._eat("NAME").text
+                                    fields.append((fname, ftype))
+                                self._eat("SYM", ")")
+                        self._eat("SYM", ";")
+                        variants.append(SumVariant(vname, fields, pos=kw.pos))
+                    return SumTypeDef(name_tok.text, variants, pos=kw.pos)
+                self._eat("KW", "product")
+                self._eat("SYM", "{")
+                fields = []
+                while not self._accept("SYM", "}"):
+                    fname = self._eat("NAME").text
+                    self._eat("SYM", ":")
+                    ftype = self._eat("NAME").text
+                    self._eat("SYM", ";")
+                    fields.append((fname, ftype))
+                return ProductTypeDef(name_tok.text, fields, pos=kw.pos)
+
             self._eat("SYM", "{")
             fields: List[Tuple[str, str]] = []
             while not self._accept("SYM", "}"):
@@ -802,7 +876,7 @@ class Parser:
                 ftype = self._eat("NAME").text
                 self._eat("SYM", ";")
                 fields.append((fname, ftype))
-            return TypeDef(name_tok.text, fields, pos=kw.pos)
+            return TypeDef(name_tok.text, fields, kind="record", pos=kw.pos)
         if self.tok.kind == "KW" and self.tok.text == "class":
             kw = self._eat("KW", "class")
             cname_tok = self._eat("NAME")
@@ -1002,6 +1076,29 @@ class Parser:
             inner = self.parse_expr()
             self._eat("SYM", ")")
             return inner
+        if self.tok.kind == "KW" and self.tok.text == "match":
+            kw = self._eat("KW", "match")
+            self._eat("SYM", "(")
+            expr = self.parse_expr()
+            self._eat("SYM", ")")
+            self._eat("SYM", "{")
+            cases: List[MatchCase] = []
+            while not self._accept("SYM", "}"):
+                self._eat("KW", "case")
+                pattern_tok = self._eat_name_or_kw()
+                bindings: List[str] = []
+                if self._accept("SYM", "("):
+                    if not self._accept("SYM", ")"):
+                        bindings.append(self._eat("NAME").text)
+                        while self._accept("SYM", ","):
+                            bindings.append(self._eat("NAME").text)
+                        self._eat("SYM", ")")
+                self._eat("SYM", "=")
+                self._eat("OP", ">")
+                body_expr = self.parse_expr()
+                self._eat("SYM", ";")
+                cases.append(MatchCase(pattern_tok.text, bindings, body_expr, pos=pattern_tok.pos))
+            return Match(expr, cases, pos=kw.pos)
         if self.tok.kind == "NUMBER":
             t = self._eat("NUMBER")
             return Num(t.text, pos=t.pos)
@@ -1108,6 +1205,10 @@ def uses_in_expr(e: IR, reads: Dict[str, int]) -> None:
     elif isinstance(e, ClassNew):
         for _, v in e.init:
             uses_in_expr(v, reads)
+    elif isinstance(e, Match):
+        uses_in_expr(e.expr, reads)
+        for case in e.cases:
+            uses_in_expr(case.expr, reads)
     elif isinstance(e, ObjLit):
         for _, v in e.fields:
             uses_in_expr(v, reads)
@@ -1503,6 +1604,7 @@ class Runtime:
         self.ops: Dict[Tuple[str, Optional[str], Optional[str]], Any] = {}
         self.methods: Dict[Tuple[str, str], MethodDef] = {}
         self.types: Dict[str, Dict[str, Any]] = {}
+        self.sum_variants: Dict[str, Tuple[str, List[str]]] = {}
         self.next_ptr = 1
         self.output: List[str] = []
         self.functions: Dict[str, Fn] = {}
@@ -1960,8 +2062,29 @@ class Runtime:
         target_obj[str(key)] = val
 
     def register_type(self, name: str, fields: List[Tuple[str, str]]) -> None:
+        field_order = [fname for fname, _ in fields]
         with self._lock:
-            self.types[str(name)] = {"kind": "record", "fields": dict(fields)}
+            self.types[str(name)] = {"kind": "record", "fields": dict(fields), "field_order": field_order}
+
+    def register_product_type(self, name: str, fields: List[Tuple[str, str]]) -> None:
+        field_order = [fname for fname, _ in fields]
+        with self._lock:
+            if name in self.types:
+                raise RuntimeError(f"type {name} already defined")
+            self.types[str(name)] = {"kind": "product", "fields": dict(fields), "field_order": field_order}
+
+    def register_sum_type(self, name: str, variants: List[SumVariant]) -> None:
+        with self._lock:
+            if name in self.types:
+                raise RuntimeError(f"type {name} already defined")
+            variant_info: Dict[str, Dict[str, Any]] = {}
+            for variant in variants:
+                if variant.name in self.sum_variants:
+                    raise RuntimeError(f"variant {variant.name} already defined")
+                field_order = [fname for fname, _ in variant.fields]
+                variant_info[variant.name] = {"fields": dict(variant.fields), "field_order": field_order}
+                self.sum_variants[variant.name] = (name, field_order)
+            self.types[str(name)] = {"kind": "sum", "variants": variant_info}
 
     def register_class(self, name: str, fields: List[Tuple[str, str]], bases: Optional[List[str]] = None) -> None:
         base_list = list(bases) if bases is not None else []
@@ -2249,7 +2372,14 @@ class Runtime:
             if len(hits) == 1:
                 return hits[0]
             return None
-        return t["fields"].get(field_name)
+        if t.get("kind") in {"record", "product"}:
+            return t["fields"].get(field_name)
+        if t.get("kind") == "sum":
+            target_variant = owner_hint
+            variants = t.get("variants", {})
+            if target_variant and target_variant in variants:
+                return variants[target_variant]["fields"].get(field_name)
+        return None
 
     @staticmethod
     def format_value(val: Any) -> str:
@@ -2293,6 +2423,14 @@ class Runtime:
                     return str(val)
 
                 return f"{_format_float(center)} +/- {_format_float(radius)}"
+        if isinstance(val, dict) and "__variant__" in val:
+            variant = val.get("__variant__")
+            parts = [f"{k}={self.format_value(v)}" for k, v in val.items() if k not in {"__tag__", "__variant__"}]
+            return f"{variant}({', '.join(parts)})"
+        if isinstance(val, dict) and "__tag__" in val and "__variant__" not in val:
+            tag = val.get("__tag__")
+            parts = [f"{k}={self.format_value(v)}" for k, v in val.items() if k != "__tag__"]
+            return f"{tag}({', '.join(parts)})"
         if isinstance(val, bool):
             return "true" if val else "false"
         if val is None:
@@ -2379,6 +2517,10 @@ class Runtime:
             elif isinstance(s, TypeDef):
                 # type and class share same registration
                 self.register_type(s.name, s.fields)
+            elif isinstance(s, ProductTypeDef):
+                self.register_product_type(s.name, s.fields)
+            elif isinstance(s, SumTypeDef):
+                self.register_sum_type(s.name, s.variants)
             elif isinstance(s, ClassDef):
                 self.register_class(s.name, s.fields, s.bases)
                 for m in s.methods:
@@ -2484,6 +2626,31 @@ class Runtime:
                     if isinstance(res, float) and res.is_integer():
                         res = int(res)
                     return res
+                with self._lock:
+                    variant_meta = self.sum_variants.get(e.name)
+                    type_meta = self.types.get(e.name)
+                if variant_meta:
+                    sum_name, field_order = variant_meta
+                    if len(e.args) != len(field_order):
+                        raise RuntimeError(
+                            f"variant {e.name} expects {len(field_order)} field(s), got {len(e.args)}"
+                        )
+                    values = [self.eval_expr(arg_expr, env) for arg_expr in e.args]
+                    obj: Dict[str, Any] = {"__tag__": sum_name, "__variant__": e.name}
+                    for fname, val in zip(field_order, values):
+                        obj[fname] = val
+                    return obj
+                if type_meta and type_meta.get("kind") in {"product", "record"}:
+                    field_order = type_meta.get("field_order", list(type_meta.get("fields", {}).keys()))
+                    if len(e.args) != len(field_order):
+                        raise RuntimeError(
+                            f"constructor for {e.name} expects {len(field_order)} argument(s), got {len(e.args)}"
+                        )
+                    values = [self.eval_expr(arg_expr, env) for arg_expr in e.args]
+                    obj: Dict[str, Any] = {"__tag__": e.name}
+                    for fname, val in zip(field_order, values):
+                        obj[fname] = val
+                    return obj
                 arg_values = [self.eval_expr(arg_expr, env) for arg_expr in e.args]
                 invoked, native_res = self._invoke_native(e.name, arg_values)
                 if invoked:
@@ -2530,6 +2697,79 @@ class Runtime:
                 if e.op == "not":
                     return not self._is_truthy(self.eval_expr(e.b, env))
                 return self.__binop(e.op, self.eval_expr(e.a, env), self.eval_expr(e.b, env))
+            if isinstance(e, Match):
+                value = self.eval_expr(e.expr, env)
+                variant_name = None
+                type_name = None
+                if isinstance(value, dict):
+                    variant_name = value.get("__variant__")
+                    type_name = value.get("__tag__")
+                    if variant_name is None:
+                        variant_name = type_name
+
+                seen: set[str] = set()
+                wildcard_case: Optional[MatchCase] = None
+                for case in e.cases:
+                    if case.pattern == "_":
+                        if wildcard_case is not None:
+                            raise RuntimeError("wildcard case defined more than once in match")
+                        wildcard_case = case
+                    else:
+                        if case.pattern in seen:
+                            raise RuntimeError(f"duplicate case {case.pattern} in match expression")
+                        seen.add(case.pattern)
+
+                if type_name and type_name in self.types:
+                    tinfo = self.types[type_name]
+                    if tinfo.get("kind") == "sum":
+                        variants = set(tinfo.get("variants", {}).keys())
+                        provided = {c.pattern for c in e.cases if c.pattern != "_"}
+                        unknown = provided - variants
+                        if unknown:
+                            raise RuntimeError(
+                                f"unknown case(s) for sum type {type_name}: {', '.join(sorted(unknown))}"
+                            )
+                        missing = variants - provided
+                        if missing and wildcard_case is None:
+                            raise RuntimeError(
+                                f"non-exhaustive match for {type_name}: missing {', '.join(sorted(missing))}"
+                            )
+
+                def _field_order(target_variant: Optional[str], target_type: Optional[str]) -> List[str]:
+                    if target_variant and target_type and target_type in self.types:
+                        tinfo = self.types[target_type]
+                        if tinfo.get("kind") == "sum":
+                            variant_info = tinfo.get("variants", {}).get(target_variant)
+                            if variant_info:
+                                return list(variant_info.get("field_order", []))
+                    if target_type and target_type in self.types:
+                        tinfo = self.types[target_type]
+                        if tinfo.get("kind") in {"product", "record"}:
+                            return list(tinfo.get("field_order", []))
+                    if isinstance(value, dict):
+                        return [k for k in value.keys() if k not in {"__tag__", "__variant__"}]
+                    return []
+
+                for case in e.cases:
+                    matches = False
+                    if case.pattern == "_":
+                        matches = True
+                    elif variant_name is not None and case.pattern == variant_name:
+                        matches = True
+                    if matches:
+                        ordered_fields = _field_order(variant_name, type_name)
+                        if case.bindings and len(case.bindings) != len(ordered_fields):
+                            raise RuntimeError(
+                                f"case {case.pattern} expects {len(ordered_fields)} binding(s), got {len(case.bindings)}"
+                            )
+                        case_env = Environment(parent=env, namespace=env.namespace)
+                        for bname, fname in zip(case.bindings, ordered_fields):
+                            if isinstance(value, dict):
+                                case_env.values[bname] = value.get(fname)
+                            else:
+                                case_env.values[bname] = None
+                        return self.eval_expr(case.expr, case_env)
+                raise RuntimeError("no matching case in match expression")
             if isinstance(e, ObjLit):
                 obj: Dict[str, Any] = {"__tag__": "Struct"}
                 for k, v in e.fields:

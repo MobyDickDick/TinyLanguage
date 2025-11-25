@@ -338,6 +338,7 @@ KEYWORDS = {
     "and",
     "or",
     "not",
+    "Null",
 }
 
 BUILTINS = {"Collections", "Math", "String", "len", "print"}
@@ -614,6 +615,11 @@ class Str(IR):
 @dataclass
 class Bool(IR):
     value: bool
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
+class Null(IR):
     pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
@@ -1007,6 +1013,9 @@ class Parser:
             val = kw.text == "true"
             self._eat("KW")
             return Bool(val, pos=kw.pos)
+        if self.tok.kind == "KW" and self.tok.text == "Null":
+            kw = self._eat("KW")
+            return Null(pos=kw.pos)
         if self.tok.kind in {"NAME", "KW"}:
             name_tok = self._eat(self.tok.kind)
             name = name_tok.text
@@ -1600,6 +1609,8 @@ class Runtime:
         return self._make_intervall(lower, upper, "normal")
 
     def _coerce_to_number(self, val: Any) -> Any:
+        if val is None:
+            return self._make_number(0, "normal")
         if self.__get_tag(val) == "Number":
             return val
         if isinstance(val, bool):
@@ -1609,6 +1620,8 @@ class Runtime:
         return val
 
     def _coerce_to_intervall(self, val: Any) -> Any:
+        if val is None:
+            return self._make_intervall(0, 0, "normal")
         if self.__get_tag(val) == "NumberIntervall":
             return val
         from_number = self._number_to_intervall(val)
@@ -1817,6 +1830,10 @@ class Runtime:
         return mk("rounded" if rounded else "normal", res)
 
     def __binop(self, op: str, a: Any, b: Any) -> Any:
+        if a is None:
+            a = 0
+        if b is None:
+            b = 0
         ta = self.__get_tag(a)
         tb = self.__get_tag(b)
         a, b = self._coerce_numeric_operands(op, a, b, ta, tb)
@@ -2223,6 +2240,8 @@ class Runtime:
                 return f"{_format_float(center)} +/- {_format_float(radius)}"
         if isinstance(val, bool):
             return "true" if val else "false"
+        if val is None:
+            return "Null"
         return str(val)
 
     @staticmethod
@@ -2328,6 +2347,8 @@ class Runtime:
                 return e.txt
             if isinstance(e, Bool):
                 return e.value
+            if isinstance(e, Null):
+                return None
             if isinstance(e, Var):
                 if e.name == "errorMessage":
                     return self.error_message

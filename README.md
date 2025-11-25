@@ -40,6 +40,131 @@ print(Math.inc(4));
 - **Klassen und Operatoren**: Klassen besitzen Felder und Methoden, Mehrfachvererbung ist erlaubt. Operatoren lassen sich ueberladen, etwa `operator + (a: Number, b: Number) -> Number { ... }`.
 - **Nebenlaeufigkeit**: `spawn f(1, 2)` startet einen Task, `join` wartet und liefert das Ergebnis.
 
+### Klassen
+Minimalbeispiel mit Konstruktor-Funktion und Methode. Die Ausgabe wurde mit `python tiny_language.py class_demo.tiny` verifiziert.
+
+```tiny
+class Greeter {
+    name: string;
+
+    fn greeting(self) {
+        return "Hallo, " + self.name + "!";
+    }
+}
+
+fn Greeter(name) { return new Greeter { name: name }; }
+
+define greeter = Greeter("TinyLanguage");
+print(greeter.greeting());
+```
+
+Erwartete Ausgabe:
+
+```
+Hallo, TinyLanguage!
+```
+
+Mehr dazu in [`class_demo.tiny`](class_demo.tiny).
+
+### Operator-Overloading
+Ein `Point`-Typ ueberschreibt `+` und `==`. Ergebnis bestaetigt via `python tiny_language.py operator_overloading_demo.tiny`.
+
+```tiny
+class Point {
+    x: number; y: number;
+    fn to_tuple(self) { return new[self.x, self.y]; }
+}
+
+fn Point(x, y) { return new Point { x: x; y: y }; }
+operator + (a: Point, b: Point) -> Point { return Point(a.x + b.x, a.y + b.y); }
+operator == (left: Point, right: Point) -> Bool { return left.x == right.x && left.y == right.y; }
+
+define p = Point(1, 2);
+define q = Point(3, 4);
+define sum = p + q;
+print(heap_get(sum.to_tuple(), 0));
+print(heap_get(sum.to_tuple(), 1));
+print(p == sum);
+```
+
+Erwartete Ausgabe:
+
+```
+4
+6
+false
+```
+
+Vollstaendiges Programm: [`operator_overloading_demo.tiny`](operator_overloading_demo.tiny).
+
+### Namespaces
+Namenraeume koennen Funktionen logisch gruppieren. Lauf getestet mit `python tiny_language.py namespace_demo.tiny`.
+
+```tiny
+namespace Tools {
+    fn double(x) { return x * 2; }
+    fn label(x) { return "#" + x; }
+}
+
+define value = Tools.double(5);
+print(value);
+print(Tools.label("done"));
+```
+
+Erwartete Ausgabe:
+
+```
+10
+#done
+```
+
+Siehe [`namespace_demo.tiny`](namespace_demo.tiny) fuer mehr Kontext.
+
+### Nebenlaeufigkeit
+`spawn` und `join` kombinieren Aufgaben und Rueckgaben. Das untenstehende Ergebnis stammt aus `python tiny_language.py concurrency_demo.tiny`.
+
+```tiny
+fn label(prefix, word) { return prefix + "=" + word; }
+
+define keywords = String.split("spawn,join,string,interop", ",");
+define first = spawn label("erstes", heap_get(keywords, 0));
+define second = spawn label("zweites", heap_get(keywords, 1));
+define third = spawn label("drittes", heap_get(keywords, 2));
+define fourth = spawn label("viertes", heap_get(keywords, 3));
+
+print("etiketten");
+print(String.join(new[join(first), join(second), join(third), join(fourth)], " | "));
+```
+
+Erwartete Ausgabe:
+
+```
+etiketten
+erstes=spawn | zweites=join | drittes=string | viertes=interop
+```
+
+Vollversion mit erneutem Split/Join: [`concurrency_demo.tiny`](concurrency_demo.tiny).
+
+### Heap/Pointer
+`new[...]` legt Arrays an, `heap_get`/`heap_set` lesen bzw. schreiben, `delete` raeumt auf. Ausgabedaten stammen aus `python tiny_language.py heap_pointer_demo.tiny`.
+
+```tiny
+define pointer = new[1, 2, 3];
+print(heap_get(pointer, 1));
+heap_set(pointer, 1, 5);
+print(heap_get(pointer, 1));
+delete(pointer);
+```
+
+Erwartete Ausgabe:
+
+```
+2
+5
+```
+
+Mehr Beispiele und Fehlerszenarien finden sich in [`heap_pointer_demo.tiny`](heap_pointer_demo.tiny).
+
 ### Standardbibliothek
 Vor jedem Programmstart registriert der Interpreter die eingebaute Stdlib mit folgenden Namespaces:
 
@@ -51,8 +176,11 @@ Vor jedem Programmstart registriert der Interpreter die eingebaute Stdlib mit fo
 - [`demo.tiny`](demo.tiny): Kleines Schaufenster fuer Variablen, Schleifen, Funktionen, Klassen und Heap-Operationen. Laeuft sequenziell durch und druckt Zwischenergebnisse, wodurch man die Sprachfeatures in Aktion sieht.
 - [`rosetta_fibonacci.tiny`](rosetta_fibonacci.tiny): Implementiert die klassische Fibonacci-Folge; zeigt Funktionsdefinitionen und einfache Loops. Erwartet werden die ersten 10 Fibonacci-Zahlen auf der Konsole.
 - [`all_features.tiny`](all_features.tiny): Umfangreiches Feature-Rundlaufprogramm mit Arrays, Klassen und Operator-Overloading. Praktisch, um die Sprache als Ganzes zu erkunden.
+- [`class_demo.tiny`](class_demo.tiny): Minimaler Klassen-Constructor mit Methode; gibt einen personalisierten Gruss aus.
+- [`operator_overloading_demo.tiny`](operator_overloading_demo.tiny): Schlanke Punkt-Klasse, die `+` und `==` ueberschreibt und Zwischenergebnisse ausgibt.
 - [`number_class.tiny`](number_class.tiny): Demonstriert die `Number`-Klasse und den ueberladenen `+`-Operator; instanziiert Objekte, ruft Methoden auf und gibt das Ergebnis aus.
 - [`number_intervall.tiny`](number_intervall.tiny): Beispiel fuer numerische Intervallrechnungen und Grenzenkontrolle.
+- [`namespace_demo.tiny`](namespace_demo.tiny): Kleine `Tools`-Bibliothek als Namespace mit `double` und `label`.
 - [`concurrency_demo.tiny`](concurrency_demo.tiny): Startet mehrere Aufgaben mit `spawn`, sammelt die Ergebnisse ueber `join` und kombiniert sie mit `String.split`/`String.join` zu einer Ausgabe.
 - [`heap_pointer_demo.tiny`](heap_pointer_demo.tiny): Zeigt sicheres Heap-Handling mit `new`, `heap_get`/`heap_set` und `delete` sowie typische Fehlermeldungen bei Out-of-Bounds- oder Feldzugriffen.
 

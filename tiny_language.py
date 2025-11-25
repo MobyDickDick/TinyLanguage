@@ -7,8 +7,14 @@ import math
 import sys
 import threading
 from pathlib import Path
-import termios
-import tty
+try:  # pragma: no cover - platform-specific imports
+    import termios  # type: ignore
+    import tty  # type: ignore
+    _HAS_TERMIOS = True
+except ImportError:  # pragma: no cover - Windows and other platforms without termios
+    termios = None  # type: ignore
+    tty = None  # type: ignore
+    _HAS_TERMIOS = False
 
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -92,6 +98,8 @@ class _FallbackReadline:
         return len(buffer)
 
     def _reverse_search(self, prompt: str, fd: int) -> Optional[str]:
+        if not _HAS_TERMIOS:
+            return None
         sys.stdout.write("\n(reverse-search): ")
         sys.stdout.flush()
         termios.tcsetattr(fd, termios.TCSADRAIN, self._old_settings)
@@ -107,6 +115,11 @@ class _FallbackReadline:
         return None
 
     def readline(self, prompt: str = "") -> str:
+        if not _HAS_TERMIOS:
+            line = input(prompt)
+            if line:
+                self.add_history(line)
+            return line
         fd = sys.stdin.fileno()
         self._old_settings = termios.tcgetattr(fd)
         buffer: List[str] = []

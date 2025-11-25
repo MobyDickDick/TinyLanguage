@@ -203,3 +203,37 @@ Hinweis: Auf Plattformen ohne `readline` (z. B. Windows) werden die REPL-History
 - Die History wird im Speicher gefuehrt und kann ueber Pfeiltasten oder eine einfache Reverse-Suche (`Ctrl + R`) erneut geladen werden. Beim Beenden wird sie unter `~/.tiny_language_history` persistiert, sofern Schreibrechte vorhanden sind.
 
 Weitere Beispiele und erwartete Diagnosen finden sich in `tests/test_tiny_language.py` und den Beispielprogrammen oben.
+
+## Ideen für Erweiterungen
+- [ ] **Pattern Matching und Algebraic Data Types**
+  - [ ] Syntax-Entwurf für Sum-/Product-Types und Match-Expressions
+  - [ ] Exhaustiveness-Checks im Parser/Interpreter implementieren
+  - [ ] Beispielprogramme und Tests für fehlende/zusätzliche Fälle ergänzen
+- [ ] **Module/Packages**
+  - [ ] Modul-Ladesemantik (Namespacing, relative Imports, Suchpfad) definieren
+  - [ ] Interpreter um Modul-Resolver und Caching erweitern
+  - [ ] CLI-Workflow für Modul-Init/Publish (Version-Pins optional) beschreiben
+- [ ] **Optionale Typ-Hinweise**
+  - [ ] Syntax für optionale Typ-Anmerkungen auf Funktionen, Parametern und Rückgabewerten festlegen
+  - [ ] Gradual-Typing-Prüfungen und einfache Exhaustiveness-Checks implementieren
+  - [ ] Fehlermeldungen und Docs um Typ-Hinweise erweitern
+- [ ] **Verbesserte Fehlerbehandlung**
+  - [ ] Entwurf für `try/catch`-Blöcke oder `Result`-Typ erstellen
+  - [ ] Stacktraces in Fehlermeldungen einblenden
+  - [ ] Beispielprogramme/Tests für Fehlerpfade ohne Programmabbruch hinzufügen
+- [ ] **Tooling**
+  - [ ] Minimalen Formatter (Spacing, Semikolons, Imports) spezifizieren und implementieren
+  - [ ] Linter-Regeln für ungenutzte Bindungen, Bare Calls, Style-Lints definieren
+  - [ ] Language-Server-Prototyp mit Hover/Completion/Diagnostics skizzieren
+- [ ] **Parallelität**
+  - [ ] Design für `async/await` oder Channels mit strukturiertem Concurrency-Model beschreiben
+  - [ ] Cancellation-Tokens und sichere Abbruchpfade im Runtime-Model ergänzen
+  - [ ] Testfälle für deterministische und rennfreie Ausführung erstellen
+- [ ] **Stdlib-Ausbau**
+  - [ ] Collections-API (Maps, Sets, Deques) entwerfen und kernelnah implementieren
+  - [ ] Math/Random-Erweiterungen plus File-/JSON-Utilities hinzufügen
+  - [ ] Dokumentation und Beispielprogramme für neue Stdlib-Teile schreiben
+- [ ] **Interop**
+  - [ ] FFI-Schnittstelle zu Python-Funktionen/Modulen definieren (Argument/Return-Mapping)
+  - [ ] Sicherheits- und Sandbox-Mechanismen festlegen
+  - [ ] Beispiele für häufige Python-Interop-Szenarien dokumentieren

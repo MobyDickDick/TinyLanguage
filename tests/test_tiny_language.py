@@ -338,6 +338,21 @@ def test_must_use_unused_param_function():
     expect_compile_error(src, r"unused parameter\(s\) in function f: b")
 
 
+def test_call_stmt_counts_param_usage():
+    src = """
+    define p = new(1);
+
+    fn init(ptr) {
+        heap_set(ptr, 0, 99);
+        return 0;
+    }
+
+    print(init(p));
+    """
+
+    assert run_tiny(src) == "0\n"
+
+
 def test_param_mutation_must_be_returned_function():
     src = """
     fn bump(a) {

@@ -1288,6 +1288,7 @@ class NamespaceRef:
 class SpawnHandle:
     thread: threading.Thread
     done: threading.Event
+    cancelled: threading.Event
     result: Any = None
     error: Optional[BaseException] = None
 
@@ -1860,19 +1861,66 @@ class Runtime:
 
     def _run_spawn(self, fn: Fn, args: List[Any], handle: SpawnHandle) -> None:
         try:
-            handle.result = self._invoke_function(fn, args)
+            if handle.cancelled.is_set():
+                handle.error = RuntimeError("spawn cancelled")
+                return
+            result = self._invoke_function(fn, args)
+            if handle.cancelled.is_set():
+                handle.error = RuntimeError("spawn cancelled")
+            else:
+                handle.result = result
         except Exception as exc:  # noqa: BLE001
             handle.error = exc
         finally:
             handle.done.set()
 
-    def join_handle(self, handle: Any) -> Any:
+    def _join_status(self, handle: SpawnHandle, *, done: bool) -> Dict[str, Any]:
+        return {
+            "__tag__": "JoinStatus",
+            "done": done,
+            "cancelled": handle.cancelled.is_set(),
+            "error": str(handle.error) if handle.error else None,
+            "result": None if handle.error or not done or handle.cancelled.is_set() else handle.result,
+        }
+
+    def cancel_handle(self, handle: Any) -> bool:
+        if not isinstance(handle, SpawnHandle):
+            raise RuntimeError("cancel expects a spawn handle")
+        already = handle.cancelled.is_set()
+        handle.cancelled.set()
+        return not already
+
+    def join_handle(
+        self,
+        handle: Any,
+        *,
+        timeout_ms: Optional[float] = None,
+        cancel_on_timeout: bool = False,
+        want_status: bool = False,
+    ) -> Any:
         if not isinstance(handle, SpawnHandle):
             raise RuntimeError("join expects a spawn handle")
-        handle.done.wait()
+
+        timeout = None if timeout_ms is None else max(0.0, timeout_ms / 1000.0)
+        finished = handle.done.wait(timeout)
+        if not finished:
+            if cancel_on_timeout:
+                self.cancel_handle(handle)
+            if want_status:
+                return self._join_status(handle, done=False)
+            return None
+
         handle.thread.join()
+        if handle.cancelled.is_set():
+            if want_status:
+                return self._join_status(handle, done=True)
+            raise handle.error or RuntimeError("join cancelled")
         if handle.error:
+            if want_status:
+                return self._join_status(handle, done=True)
             raise handle.error
+        if want_status:
+            return self._join_status(handle, done=True)
         return handle.result
 
     def _resolve_field_storage(
@@ -2177,9 +2225,28 @@ class Runtime:
                 if e.name == "tag":
                     return self.tag(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env), pos=e.pos)
                 if e.name == "join":
+                    if not (1 <= len(e.args) <= 3):
+                        raise RuntimeError("join expects between 1 and 3 arguments")
+                    handle = self.eval_expr(e.args[0], env)
+                    if len(e.args) == 1:
+                        return self.join_handle(handle)
+                    try:
+                        timeout_ms = float(self.eval_expr(e.args[1], env))
+                    except Exception:
+                        raise RuntimeError("join timeout must be numeric")
+                    cancel_on_timeout = False
+                    if len(e.args) == 3:
+                        cancel_on_timeout = bool(self.eval_expr(e.args[2], env))
+                    return self.join_handle(
+                        handle,
+                        timeout_ms=timeout_ms,
+                        cancel_on_timeout=cancel_on_timeout,
+                        want_status=True,
+                    )
+                if e.name == "cancel":
                     if len(e.args) != 1:
-                        raise RuntimeError("join expects 1 argument")
-                    return self.join_handle(self.eval_expr(e.args[0], env))
+                        raise RuntimeError("cancel expects 1 argument")
+                    return self.cancel_handle(self.eval_expr(e.args[0], env))
                 if e.name == "len":
                     if len(e.args) != 1:
                         raise RuntimeError("len expects 1 argument")
@@ -2217,11 +2284,14 @@ class Runtime:
                 arg_values = [self.eval_expr(arg, env) for arg in e.args]
 
                 done = threading.Event()
+                cancelled = threading.Event()
 
                 def run_task() -> None:
                     self._run_spawn(fn, arg_values, handle)
 
-                handle = SpawnHandle(thread=threading.Thread(target=run_task), done=done)
+                handle = SpawnHandle(
+                    thread=threading.Thread(target=run_task), done=done, cancelled=cancelled
+                )
                 handle.thread.start()
                 return handle
             if isinstance(e, New):

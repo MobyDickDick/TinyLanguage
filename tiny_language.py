@@ -171,6 +171,12 @@ def _classify_error(msg: str, candidates: Optional[List[str]] = None) -> Tuple[s
         if suggestion:
             return "E003", f"Did you mean `{suggestion}`? {base_hint}"
         return "E003", base_hint
+    if "exponent for ^ must be an integer" in lower_msg:
+        return "E004", "Use an integer exponent (cast with `int(...)` if necessary) when using the ^ operator."
+    if "len expects a sized value" in lower_msg:
+        return "E005", "Pass a list, string, heap pointer, or other sized value to `len`."
+    if "destructuring call" in lower_msg and "must include output" in lower_msg:
+        return "E006", "Add the missing binding(s) to the destructuring pattern so each referenced argument is captured."
     return "E000", None
 
 # ----- Lexer -----
@@ -1043,7 +1049,7 @@ def lint_fn_params_used(fn: Fn, source: Optional[str] = None) -> None:
             hint="Remove the unused parameter or reference it.",
         )
     lint_param_mutations_returned(fn.body, set(fn.params), fn.name, is_method=False, source=source, pos=fn.pos)
-    lint_destruct_call_outputs(fn.body)
+    lint_destruct_call_outputs(fn.body, source)
     lint_locals_used(fn.body, source)
 
 
@@ -1065,7 +1071,7 @@ def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None
     lint_param_mutations_returned(
         md.body, set(md.params), f"{md.class_name}.{md.name}", is_method=True, source=source, pos=md.pos
     )
-    lint_destruct_call_outputs(md.body)
+    lint_destruct_call_outputs(md.body, source)
     lint_locals_used(md.body, source)
 
 
@@ -1105,9 +1111,9 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
         )
 
 
-def lint_destruct_call_outputs(stmts: List[IR]) -> None:
+def lint_destruct_call_outputs(stmts: List[IR], source: Optional[str] = None) -> None:
     for st in stmts:
-        lint_destruct_call_outputs_stmt(st)
+        lint_destruct_call_outputs_stmt(st, source)
 
 
 def lint_no_consecutive_definitions(stmts: List[IR]) -> None:
@@ -1153,41 +1159,65 @@ def lint_no_consecutive_definitions(stmts: List[IR]) -> None:
     check_block(stmts)
 
 
-def lint_destruct_call_outputs_stmt(st: IR) -> None:
+def lint_destruct_call_outputs_stmt(st: IR, source: Optional[str]) -> None:
     if isinstance(st, DestructAssign):
-        check_destruct_call_expr(st.expr, set(st.names))
+        check_destruct_call_expr(st.expr, set(st.names), source=source, pos=st.pos)
     elif isinstance(st, If):
-        lint_destruct_call_outputs(st.then)
-        lint_destruct_call_outputs(st.els)
+        lint_destruct_call_outputs(st.then, source)
+        lint_destruct_call_outputs(st.els, source)
     elif isinstance(st, While):
-        lint_destruct_call_outputs(st.body)
+        lint_destruct_call_outputs(st.body, source)
     elif isinstance(st, Fn):
-        lint_destruct_call_outputs(st.body)
+        lint_destruct_call_outputs(st.body, source)
     elif isinstance(st, MethodDef):
-        lint_destruct_call_outputs(st.body)
+        lint_destruct_call_outputs(st.body, source)
     elif isinstance(st, ClassDef):
         for m in st.methods:
-            lint_destruct_call_outputs_stmt(m)
+            lint_destruct_call_outputs_stmt(m, source)
     elif isinstance(st, Namespace):
-        lint_destruct_call_outputs(st.body)
+        lint_destruct_call_outputs(st.body, source)
 
 
-def check_destruct_call_expr(expr: IR, names: set[str]) -> None:
+def check_destruct_call_expr(expr: IR, names: set[str], *, source: Optional[str], pos: SourcePos) -> None:
     if isinstance(expr, Call):
         skip = {"heap_set", "heap_get", "delete", "tag", "__new", "new"}
         if expr.name in skip:
             return
         missing = sorted({arg.name for arg in expr.args if isinstance(arg, Var) and arg.name not in names})
         if missing:
-            raise RuntimeError(
-                f"destructuring call to {expr.name} must include output for argument(s): {', '.join(missing)}"
-            )
+            msg = f"destructuring call to {expr.name} must include output for argument(s): {', '.join(missing)}"
+            if source:
+                raise TinyLangError(
+                    format_error(
+                        source,
+                        pos,
+                        msg,
+                        code="E006",
+                        hint="Add the missing binding(s) to the destructuring pattern so each referenced argument is captured.",
+                    ),
+                    pos,
+                    code="E006",
+                    hint="Add the missing binding(s) to the destructuring pattern so each referenced argument is captured.",
+                )
+            raise RuntimeError(msg)
     elif isinstance(expr, MethodCall):
         missing = sorted({arg.name for arg in expr.args if isinstance(arg, Var) and arg.name not in names})
         if missing:
-            raise RuntimeError(
-                f"destructuring method call to {expr.name} must include output for argument(s): {', '.join(missing)}"
-            )
+            msg = f"destructuring method call to {expr.name} must include output for argument(s): {', '.join(missing)}"
+            if source:
+                raise TinyLangError(
+                    format_error(
+                        source,
+                        pos,
+                        msg,
+                        code="E006",
+                        hint="Add the missing binding(s) to the destructuring pattern so each referenced argument is captured.",
+                    ),
+                    pos,
+                    code="E006",
+                    hint="Add the missing binding(s) to the destructuring pattern so each referenced argument is captured.",
+                )
+            raise RuntimeError(msg)
 
 
 def lint_param_mutations_returned(
@@ -2280,7 +2310,7 @@ def compile_and_run(src: str) -> str:
     runtime = Runtime(src)
 
     # lint functions + top level locals
-    lint_destruct_call_outputs(stmts)
+    lint_destruct_call_outputs(stmts, src)
     lint_no_consecutive_definitions(stmts)
     lint_locals_used(stmts, src)
     def lint_nested(block: List[IR]) -> None:

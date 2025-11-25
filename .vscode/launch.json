@@ -209,5 +209,17 @@
         "${workspaceFolder}/rosetta_fibonacci.tiny"
       ]
     }
+  ],
+  "compounds": [
+    {
+      "name": "Run demos + tests (run_all.py)",
+      "configurations": ["Python: run_all.py"],
+      "stopAll": true,
+      "presentation": {
+        "group": "Demos und Tests",
+        "order": 1,
+        "hidden": false
+      }
+    }
   ]
 }

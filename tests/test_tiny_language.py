@@ -363,6 +363,24 @@ def test_param_mutation_returned_allows_change():
     assert out == "2\n0\n"
 
 
+def test_inconsistent_return_signature_in_function():
+    src = """
+    fn f(a) {
+        if (a) {
+            return { a: a + 1, e: 0 };
+        }
+        return { a: a + 2, e: 1, extra: 99 };
+    }
+
+    f(1);
+    """
+
+    expect_compile_error(
+        src,
+        r"inconsistent return signature in function f: expected \{a, e\} but found \{a, e, extra\}",
+    )
+
+
 def test_must_use_unused_local_binding_top_level():
     src = """
     define x = 1;
@@ -509,6 +527,26 @@ def test_method_param_mutation_must_be_returned():
     """
 
     expect_compile_error(src, r"mutated parameter\(s\) in method Box.set must be returned: self")
+
+
+def test_inconsistent_return_signature_in_method():
+    src = """
+    class Box {
+        value: number;
+
+        fn wrap(self, v) {
+            if (v) {
+                return { value: self.value, e: 0 };
+            }
+            return { value: self.value, e: 1, extra: 2 };
+        }
+    }
+    """
+
+    expect_compile_error(
+        src,
+        r"inconsistent return signature in method Box.wrap: expected \{value, e\} but found \{value, e, extra\}",
+    )
 
 
 def test_ok_function_call_as_argument():

@@ -1197,6 +1197,7 @@ def lint_fn_params_used(fn: Fn, source: Optional[str] = None) -> None:
         )
     lint_param_mutations_returned(fn.body, set(fn.params), fn.name, is_method=False, source=source, pos=fn.pos)
     lint_destruct_call_outputs(fn.body, source)
+    lint_return_signatures(fn.body, fn.name, is_method=False, source=source, pos=fn.pos)
     lint_locals_used(fn.body, source)
 
 
@@ -1219,6 +1220,7 @@ def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None
         md.body, set(md.params), f"{md.class_name}.{md.name}", is_method=True, source=source, pos=md.pos
     )
     lint_destruct_call_outputs(md.body, source)
+    lint_return_signatures(md.body, f"{md.class_name}.{md.name}", is_method=True, source=source, pos=md.pos)
     lint_locals_used(md.body, source)
 
 
@@ -1261,6 +1263,56 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
 def lint_destruct_call_outputs(stmts: List[IR], source: Optional[str] = None) -> None:
     for st in stmts:
         lint_destruct_call_outputs_stmt(st, source)
+
+
+def _return_signature(expr: IR) -> Tuple[str, ...]:
+    if isinstance(expr, ObjLit):
+        return tuple(name for name, _ in expr.fields)
+    if isinstance(expr, NewLit):
+        return tuple(str(i) for i in range(len(expr.items)))
+    return ("<scalar>",)
+
+
+def _format_signature(sig: Tuple[str, ...]) -> str:
+    if sig == ("<scalar>",):
+        return "single value"
+    return "{" + ", ".join(sig) + "}"
+
+
+def lint_return_signatures(
+    stmts: List[IR],
+    fn_name: str,
+    *,
+    is_method: bool,
+    source: Optional[str] = None,
+    pos: SourcePos,
+) -> None:
+    expected: Optional[Tuple[str, ...]] = None
+    hint = "Ensure every return statement uses the same tuple/record structure (fields and order)."
+
+    def visit(block: List[IR]) -> None:
+        nonlocal expected
+        for st in block:
+            if isinstance(st, Return):
+                sig = _return_signature(st.expr)
+                if expected is None:
+                    expected = sig
+                elif sig != expected:
+                    kind = "method" if is_method else "function"
+                    msg = (
+                        f"inconsistent return signature in {kind} {fn_name}: "
+                        f"expected {_format_signature(expected)} but found {_format_signature(sig)}"
+                    )
+                    if source is None:
+                        raise RuntimeError(msg)
+                    raise TinyLangError(format_error(source, st.pos, msg, code="E007", hint=hint), st.pos, code="E007", hint=hint)
+            elif isinstance(st, If):
+                visit(st.then)
+                visit(st.els)
+            elif isinstance(st, While):
+                visit(st.body)
+
+    visit(stmts)
 
 
 def lint_no_consecutive_definitions(stmts: List[IR]) -> None:

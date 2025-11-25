@@ -48,3 +48,52 @@ def test_join_waits_for_spawned_heap_update(run_tiny_source):
     )
 
     assert out == "joined 11 22\nslots 11 22\n"
+
+
+def test_join_timeout_status(run_tiny_source):
+    out = run_tiny_source(
+        """
+        fn slow(value) {
+            define i = 0;
+            while (i < 100000) { i = i + 1; }
+            return value;
+        }
+
+        define pending = spawn slow(5);
+
+        define first = join(pending, 0);
+        print("first", first.done, first.cancelled);
+
+        define final = join(pending);
+        print("final", final);
+        """,
+    )
+
+    assert out == "first false false\nfinal 5\n"
+
+
+def test_join_timeout_can_cancel(run_tiny_source):
+    out = run_tiny_source(
+        """
+        fn slow(value) {
+            define i = 0;
+            while (i < 100000) { i = i + 1; }
+            return value;
+        }
+
+        define first = spawn slow(3);
+        define second = spawn slow(7);
+
+        define status_first = join(first, 0);
+        print("status", status_first.done, status_first.cancelled);
+
+        define status_second = join(second, 0, true);
+        print("cancelled?", status_second.done, status_second.cancelled);
+
+        define first_value = join(first);
+        define second_status = join(second, 1000);
+        print("final", first_value, second_status.done, second_status.cancelled);
+        """,
+    )
+
+    assert out == "status false false\ncancelled? false true\nfinal 3 true true\n"

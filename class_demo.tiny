@@ -1,0 +1,15 @@
+// Minimales Klassenbeispiel: Felder + Methode
+class Greeter {
+    name: string;
+
+    fn greeting(self) {
+        return "Hallo, " + self.name + "!";
+    }
+}
+
+fn Greeter(name) {
+    return new Greeter { name: name };
+}
+
+define greeter = Greeter("TinyLanguage");
+print(greeter.greeting());

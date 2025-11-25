@@ -1,0 +1,9 @@
+// Namespaces trennen Funktionen logisch
+namespace Tools {
+    fn double(x) { return x * 2; }
+    fn label(x) { return "#" + x; }
+}
+
+define value = Tools.double(5);
+print(value);
+print(Tools.label("done"));

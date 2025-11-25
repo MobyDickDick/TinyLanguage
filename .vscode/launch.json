@@ -58,6 +58,46 @@
       "console": "integratedTerminal"
     },
     {
+      "name": "Run concurrency_pipeline.tiny",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tiny_language.py",
+      "args": ["${workspaceFolder}/concurrency_pipeline.tiny"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Run class_demo.tiny",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tiny_language.py",
+      "args": ["${workspaceFolder}/class_demo.tiny"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Run namespace_demo.tiny",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tiny_language.py",
+      "args": ["${workspaceFolder}/namespace_demo.tiny"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Run operator_overloading_demo.tiny",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tiny_language.py",
+      "args": ["${workspaceFolder}/operator_overloading_demo.tiny"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Run parallel_map.tiny",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tiny_language.py",
+      "args": ["${workspaceFolder}/parallel_map.tiny"],
+      "console": "integratedTerminal"
+    },
+    {
       "name": "Run heap_pointer_demo.tiny",
       "type": "debugpy",
       "request": "launch",
@@ -134,6 +174,17 @@
       ]
     },
     {
+      "name": "Python: pytest - tests/test_errors.py",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_errors.py",
+        "-q"
+      ]
+    },
+    {
       "name": "Python: pytest - tests/test_benchmark_and_fuzz.py",
       "type": "debugpy",
       "request": "launch",
@@ -152,6 +203,17 @@
       "console": "integratedTerminal",
       "args": [
         "tests/test_repl.py",
+        "-q"
+      ]
+    },
+    {
+      "name": "Python: pytest - tests/test_heap_pointer_demo.py",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_heap_pointer_demo.py",
         "-q"
       ]
     },
@@ -178,6 +240,17 @@
       ]
     },
     {
+      "name": "Python: pytest - tests/test_inheritance.py",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_inheritance.py",
+        "-q"
+      ]
+    },
+    {
       "name": "Python: pytest - tests/test_objects.py",
       "type": "debugpy",
       "request": "launch",
@@ -196,6 +269,39 @@
       "console": "integratedTerminal",
       "args": [
         "tests/test_number_overflow.py",
+        "-q"
+      ]
+    },
+    {
+      "name": "Python: pytest - tests/test_null.py",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_null.py",
+        "-q"
+      ]
+    },
+    {
+      "name": "Python: pytest - tests/test_operator_overloading.py",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_operator_overloading.py",
+        "-q"
+      ]
+    },
+    {
+      "name": "Python: pytest - tests/test_namespaces.py",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_namespaces.py",
         "-q"
       ]
     },

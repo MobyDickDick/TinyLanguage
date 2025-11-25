@@ -1443,6 +1443,7 @@ class Runtime:
         self.output: List[str] = []
         self.functions: Dict[str, Fn] = {}
         self.native_functions: Dict[str, Callable[..., Any]] = {}
+        self.global_env: Optional["Environment"] = None
         self.error_messages: List[str] = []
         self.source = source
 
@@ -1989,7 +1990,7 @@ class Runtime:
         return True, native(*args)
 
     def _invoke_function(self, fn: Fn, args: List[Any]) -> Any:
-        call_env = Environment(parent=None, namespace=fn.namespace)
+        call_env = Environment(parent=self.global_env, namespace=fn.namespace)
         for pname, arg in zip(fn.params, args):
             call_env.values[pname] = arg
         res = self.eval_block(fn.body, call_env, fn.namespace)
@@ -2122,7 +2123,7 @@ class Runtime:
             fn = self.functions.get(qualified_name)
             if fn is None:
                 raise RuntimeError(f"unknown function {qualified_name}")
-            call_env = Environment(parent=None, namespace=fn.namespace)
+            call_env = Environment(parent=self.global_env, namespace=fn.namespace)
             for pname, arg in zip(fn.params, args):
                 call_env.values[pname] = arg
             res = self.eval_block(fn.body, call_env, fn.namespace)
@@ -2539,6 +2540,7 @@ def compile_and_run(src: str, env: Optional[Environment] = None, runtime: Option
     lint_nested(stmts)
 
     env = env or Environment(parent=None, namespace=None)
+    runtime.global_env = env
     register_stdlib(runtime, env, NamespaceRef)
     for st in stmts:
         runtime.eval_stmt(st, env)

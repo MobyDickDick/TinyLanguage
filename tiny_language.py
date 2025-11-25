@@ -7,6 +7,8 @@ import math
 import sys
 import threading
 from pathlib import Path
+import termios
+import tty
 
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -20,6 +22,7 @@ class _FallbackReadline:
         self._history: List[str] = []
         self._completions = None
         self._history_length = 1000
+        self._history_index: Optional[int] = None
 
     # Configuration API
     def set_completer_delims(self, _delims: str) -> None:  # pragma: no cover - noop
@@ -52,6 +55,7 @@ class _FallbackReadline:
 
     def add_history(self, line: str) -> None:
         self._history.append(line)
+        self._history_index = None
 
     def get_history_item(self, index: int) -> Optional[str]:
         idx = index - 1
@@ -61,6 +65,127 @@ class _FallbackReadline:
 
     def get_current_history_length(self) -> int:  # pragma: no cover - trivial
         return len(self._history)
+
+    # Interactive helpers
+    def _collect_matches(self, text: str) -> List[str]:
+        if self._completions is None:
+            return []
+        matches: List[str] = []
+        idx = 0
+        while True:
+            candidate = self._completions(text, idx)
+            if candidate is None:
+                break
+            matches.append(candidate)
+            idx += 1
+        return matches
+
+    def _redraw(self, prompt: str, buffer: List[str], last_len: int) -> int:
+        sys.stdout.write("\r")
+        rendered = prompt + "".join(buffer)
+        sys.stdout.write(rendered)
+        if last_len > len(buffer):
+            sys.stdout.write(" " * (last_len - len(buffer)))
+        sys.stdout.write("\r")
+        sys.stdout.write(prompt + "".join(buffer))
+        sys.stdout.flush()
+        return len(buffer)
+
+    def _reverse_search(self, prompt: str, fd: int) -> Optional[str]:
+        sys.stdout.write("\n(reverse-search): ")
+        sys.stdout.flush()
+        termios.tcsetattr(fd, termios.TCSADRAIN, self._old_settings)
+        try:
+            query = sys.stdin.readline().rstrip("\n")
+        finally:
+            tty.setraw(fd)
+        if not query:
+            return None
+        for entry in reversed(self._history):
+            if query in entry:
+                return entry
+        return None
+
+    def readline(self, prompt: str = "") -> str:
+        fd = sys.stdin.fileno()
+        self._old_settings = termios.tcgetattr(fd)
+        buffer: List[str] = []
+        last_len = 0
+        self._history_index = None
+
+        sys.stdout.write(prompt)
+        sys.stdout.flush()
+        try:
+            tty.setraw(fd)
+            while True:
+                ch = sys.stdin.read(1)
+                if ch in ("\n", "\r"):
+                    sys.stdout.write("\n")
+                    line = "".join(buffer)
+                    if line:
+                        self.add_history(line)
+                    return line
+                if ch == "\x7f":  # Backspace
+                    if buffer:
+                        buffer.pop()
+                        last_len = self._redraw(prompt, buffer, last_len)
+                    continue
+                if ch == "\t":  # Tab completion
+                    prefix = "".join(buffer)
+                    last_word = prefix.split()[-1] if prefix else ""
+                    matches = self._collect_matches(last_word)
+                    if not matches:
+                        continue
+                    if len(matches) == 1:
+                        completed = matches[0]
+                    else:
+                        shared_prefix = last_word
+                        for idx in range(len(last_word), len(max(matches, key=len)) + 1):
+                            candidates = {m[:idx] for m in matches if len(m) >= idx}
+                            if len(candidates) == 1:
+                                shared_prefix = candidates.pop()
+                            else:
+                                break
+                        completed = shared_prefix
+                        sys.stdout.write("\n" + "  ".join(sorted(matches)) + "\n")
+                    if last_word:
+                        buffer = buffer[: len(prefix) - len(last_word)] + list(completed)
+                    else:
+                        buffer = list(completed)
+                    last_len = self._redraw(prompt, buffer, last_len)
+                    continue
+                if ch == "\x12":  # Ctrl+R reverse search
+                    match = self._reverse_search(prompt, fd)
+                    if match is not None:
+                        buffer = list(match)
+                        last_len = self._redraw(prompt, buffer, last_len)
+                    else:
+                        last_len = self._redraw(prompt, buffer, last_len)
+                    continue
+                if ch == "\x1b":  # Escape sequences (arrow keys)
+                    seq = sys.stdin.read(2)
+                    if seq == "[A":  # Up
+                        if self._history:
+                            if self._history_index is None:
+                                self._history_index = len(self._history) - 1
+                            elif self._history_index > 0:
+                                self._history_index -= 1
+                            buffer = list(self._history[self._history_index])
+                            last_len = self._redraw(prompt, buffer, last_len)
+                    elif seq == "[B":  # Down
+                        if self._history_index is not None:
+                            if self._history_index < len(self._history) - 1:
+                                self._history_index += 1
+                                buffer = list(self._history[self._history_index])
+                            else:
+                                self._history_index = None
+                                buffer = []
+                            last_len = self._redraw(prompt, buffer, last_len)
+                    continue
+                buffer.append(ch)
+                last_len = self._redraw(prompt, buffer, last_len)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, self._old_settings)
 
 
 def _load_readline():
@@ -2374,10 +2499,13 @@ class Environment:
 # ----- Public API -----
 
 
-def compile_and_run(src: str) -> str:
+def compile_and_run(src: str, env: Optional[Environment] = None, runtime: Optional[Runtime] = None) -> str:
     parser = Parser(Lexer(src), src)
     stmts = parser.parse()
-    runtime = Runtime(src)
+    runtime = runtime or Runtime(src)
+    runtime.source = src
+    runtime.output.clear()
+    runtime.error_messages.clear()
 
     # lint functions + top level locals
     lint_destruct_call_outputs(stmts, src)
@@ -2397,7 +2525,7 @@ def compile_and_run(src: str) -> str:
 
     lint_nested(stmts)
 
-    env = Environment(parent=None, namespace=None)
+    env = env or Environment(parent=None, namespace=None)
     register_stdlib(runtime, env, NamespaceRef)
     for st in stmts:
         runtime.eval_stmt(st, env)
@@ -2442,13 +2570,15 @@ def _is_incomplete_source(src: str) -> bool:
     return in_string or any(v > 0 for v in balances.values())
 
 
-def _configure_readline(history_path: Path) -> None:
+def _configure_readline(
+    history_path: Path, scope_provider: Callable[[], List[str]] = lambda: sorted(KEYWORDS | BUILTINS)
+) -> None:
     if readline is None:
         return
     readline.set_completer_delims(" \t\n")
-    completions = sorted(KEYWORDS | BUILTINS)
 
     def completer(text: str, state: int) -> Optional[str]:
+        completions = sorted(set(scope_provider()))
         matches = [word for word in completions if word.startswith(text)]
         return matches[state] if state < len(matches) else None
 
@@ -2487,6 +2617,12 @@ def _read_repl_command(read_fn) -> Optional[str]:
         return src
 
 
+def _resolve_read_fn():
+    if isinstance(readline, _FallbackReadline):
+        return readline.readline
+    return input
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Run a TinyLanguage program from a file")
     mode_group = parser.add_mutually_exclusive_group()
@@ -2518,17 +2654,26 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if args.repl:
         history_path = Path.home() / ".tiny_language_history"
-        _configure_readline(history_path)
+        env = Environment(parent=None, namespace=None)
+        runtime = Runtime("")
+        scope_provider = lambda: list(KEYWORDS | BUILTINS | set(env.all_names()))
+        _configure_readline(history_path, scope_provider)
+        read_fn = _resolve_read_fn()
         try:
             while True:
-                src = _read_repl_command(input)
+                src = _read_repl_command(read_fn)
                 if src is None:
                     print()
                     break
                 if not src.strip():
                     continue
+                if readline is not None:
+                    try:
+                        readline.add_history(src)
+                    except Exception:
+                        pass
                 try:
-                    output = compile_and_run(src)
+                    output = compile_and_run(src, env=env, runtime=runtime)
                     if output:
                         print(output, end="")
                 except TinyLangError as err:

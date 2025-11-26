@@ -17,6 +17,7 @@ class _StdLibRegistrar:
         self._ensure_namespace("Math")
         self._ensure_namespace("String")
         self._ensure_namespace("Collections")
+        self._ensure_namespace("Async")
 
         self.runtime.register_native("abs", self._math_abs, namespace="Math")
         self.runtime.register_native("max", self._math_max, namespace="Math")
@@ -38,6 +39,12 @@ class _StdLibRegistrar:
         self.runtime.register_native("pop", self._collections_pop, namespace="Collections")
         self.runtime.register_native("slice", self._collections_slice, namespace="Collections")
         self.runtime.register_native("contains", self._collections_contains, namespace="Collections")
+
+        self.runtime.register_native("token", self._async_token, namespace="Async")
+        self.runtime.register_native("cancel", self._async_cancel, namespace="Async")
+        self.runtime.register_native("is_cancelled", self._async_is_cancelled, namespace="Async")
+        self.runtime.register_native("reason", self._async_reason, namespace="Async")
+        self.runtime.register_native("link", self._async_link, namespace="Async")
 
     def _ensure_namespace(self, name: str) -> None:
         if name not in self.env.values:
@@ -183,6 +190,22 @@ class _StdLibRegistrar:
     def _collections_contains(self, target: Any, value: Any) -> bool:
         seq = self._resolve_sequence(target)
         return value in seq
+
+    def _async_token(self) -> Any:
+        return self.runtime.make_cancellation_token()
+
+    def _async_cancel(self, token: Any, reason: Any | None = None) -> bool:
+        text = None if reason is None else str(reason)
+        return self.runtime.cancel_token(token, text)
+
+    def _async_is_cancelled(self, token: Any) -> bool:
+        return self.runtime.token_cancelled(token)
+
+    def _async_reason(self, token: Any) -> Any:
+        return self.runtime.token_reason(token)
+
+    def _async_link(self, token: Any, handle: Any) -> bool:
+        return self.runtime.link_token(token, handle)
 
 
 def register_stdlib(

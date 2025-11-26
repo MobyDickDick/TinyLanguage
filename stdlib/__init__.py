@@ -173,11 +173,7 @@ class _StdLibRegistrar:
             err = num_fields.get("error", "normal") or "normal"
             if err in {"plus_infinity", "minus_infinity", "any_number"}:
                 return 0, 0, err
-            val = num_fields.get("value", 0)
-            return val, val, "normal"
-
-        if isinstance(value, (int, float)):
-            return value, value, "normal"
+            return None
 
         return None
 

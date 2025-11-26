@@ -120,6 +120,12 @@ Erwartete Ausgabe:
 
 Siehe [`namespace_demo.tiny`](namespace_demo.tiny) fuer mehr Kontext.
 
+### Module laden
+- **Import-Syntax**: `import math.trig;` holt `math/trig.tiny` und bindet es standardmaessig unter dem letzten Pfadsegment (`trig`). Optional kann via Alias gebunden werden: `import utils.helpers as helpers;` oder relativ aus einem Modul heraus: `import .shared as shared;`.
+- **Namespacing**: Jede importierte Datei wird unter ihrem vollqualifizierten Modulnamen registriert (z. B. `pkg.core`), sodass Funktionen und Konstanten als Namespace-Felder abrufbar sind (`core.helper_fn()` bzw. `core.value`).
+- **Suchpfad**: Der Resolver prueft zuerst das Verzeichnis der aufrufenden Datei, dann Eintraege aus `TINYPATH` (mit `:` getrennt), gefolgt vom aktuellen Arbeitsverzeichnis und dem Verzeichnis von `tiny_language.py`. Fehlende Module oder Kreisimporte werden als `E008` gemeldet.
+- **Caching**: Eine Moduldatei wird pro Runtime nur einmal ausgefuehrt; Mehrfach-Imports liefern denselben Namespace-Ref und vermeiden doppelte Nebeneffekte.
+
 ### Nebenlaeufigkeit
 `spawn` und `join` kombinieren Aufgaben und Rueckgaben. Das untenstehende Ergebnis stammt aus `python tiny_language.py concurrency_demo.tiny`.
 
@@ -196,6 +202,16 @@ Vor jedem Programmstart registriert der Interpreter die eingebaute Stdlib mit fo
 - **Programm starten**: `python tiny_language.py <datei.tiny>` fuehrt ein TinyLanguage-Programm aus und beendet sich bei Erfolg mit Status 0. Beispiel: `python tiny_language.py demo.tiny`.
 - **Test-Suite**: `python -m pytest` fuehrt alle Tests aus. Einzelne Dateien lassen sich gezielt starten, z. B. `python -m pytest tests/test_tiny_language.py -k class`.
 
+### CLI: Module-Init und Publish
+- **Init**: Neues Modul-Verzeichnis anlegen (`mkdir my_pkg && cd my_pkg`), einen Einstiegspunkt wie `main.tiny` erzeugen und optional eine `module.json` mit Metadaten pflegen:
+
+  ```json
+  {"name": "my_pkg", "version": "1.0.0", "entrypoint": "main.tiny", "dependencies": ["utils@^2.1.0"]}
+  ```
+
+  Anschliessend per `python ../tiny_language.py main.tiny` lokal validieren; relative Imports wie `import .helpers;` funktionieren dank des Modul-Resolvers out-of-the-box.
+- **Publish**: Die Modul-Quellen samt `module.json` paketieren, z. B. `tar -czf my_pkg-1.0.0.tgz module.json *.tiny`, und in das Ziel-Repository oder Artefakt-Registry hochladen. Version-Pins (z. B. `lib@1.4.2` oder `lib@~1.4`) werden im Manifest dokumentiert und erleichtern reproduzierbare Builds.
+
 Hinweis: Auf Plattformen ohne `readline` (z. B. Windows) werden die REPL-History-Tests automatisch mit `1 skipped` uebersprungen. Die uebrigen Tests laufen trotzdem und das Testergebnis bleibt gueltig; der Skip ist lediglich ein Hinweis auf die optionale Abhaengigkeit.
 
 ### Interaktiver REPL
@@ -209,10 +225,10 @@ Weitere Beispiele und erwartete Diagnosen finden sich in `tests/test_tiny_langua
   - [ ] Syntax-Entwurf für Sum-/Product-Types und Match-Expressions
   - [ ] Exhaustiveness-Checks im Parser/Interpreter implementieren
   - [ ] Beispielprogramme und Tests für fehlende/zusätzliche Fälle ergänzen
-- [ ] **Module/Packages**
-  - [ ] Modul-Ladesemantik (Namespacing, relative Imports, Suchpfad) definieren
-  - [ ] Interpreter um Modul-Resolver und Caching erweitern
-  - [ ] CLI-Workflow für Modul-Init/Publish (Version-Pins optional) beschreiben
+- [x] **Module/Packages**
+  - [x] Modul-Ladesemantik (Namespacing, relative Imports, Suchpfad) definieren
+  - [x] Interpreter um Modul-Resolver und Caching erweitern
+  - [x] CLI-Workflow für Modul-Init/Publish (Version-Pins optional) beschreiben
 - [ ] **Optionale Typ-Hinweise**
   - [ ] Syntax für optionale Typ-Anmerkungen auf Funktionen, Parametern und Rückgabewerten festlegen
   - [ ] Gradual-Typing-Prüfungen und einfache Exhaustiveness-Checks implementieren

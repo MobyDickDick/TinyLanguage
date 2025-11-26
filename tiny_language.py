@@ -4,6 +4,7 @@ import argparse
 import difflib
 import importlib.util
 import math
+import os
 import sys
 import threading
 from pathlib import Path
@@ -326,12 +327,14 @@ KEYWORDS = {
     "else",
     "while",
     "fn",
+    "import",
     "return",
     "operator",
     "new",
     "type",
     "class",
     "namespace",
+    "as",
     "spawn",
     "true",
     "false",
@@ -559,6 +562,13 @@ class Return(IR):
 
 
 @dataclass
+class Import(IR):
+    module: str
+    alias: Optional[str] = None
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
 class CallStmt(IR):
     name: str
     args: List[IR]
@@ -775,6 +785,15 @@ class Parser:
             self._eat("SYM", ")")
             body = self.parse_block()
             return While(cond, body, pos=kw.pos)
+        if self.tok.kind == "KW" and self.tok.text == "import":
+            kw = self._eat("KW", "import")
+            module = self.parse_module_path()
+            alias: Optional[str] = None
+            if self.tok.kind == "KW" and self.tok.text == "as":
+                self._eat("KW", "as")
+                alias = self._eat("NAME").text
+            self._eat("SYM", ";")
+            return Import(module, alias, pos=kw.pos)
         if self.tok.kind == "KW" and self.tok.text == "namespace":
             kw = self._eat("KW", "namespace")
             name = self.parse_qualified_name()
@@ -1072,6 +1091,17 @@ class Parser:
             return f"{name}.{sub}"
         return name
 
+    def parse_module_path(self) -> str:
+        prefix = ""
+        while self._accept("SYM", "."):
+            prefix += "."
+        if self.tok.kind != "NAME":
+            raise self._error("expected NAME", self.tok.pos)
+        parts = [self._eat("NAME").text]
+        while self._accept("SYM", "."):
+            parts.append(self._eat("NAME").text)
+        return prefix + ".".join(parts)
+
     def parse_qualified_name(self) -> str:
         parts = [self._eat("NAME").text]
         while self._accept("SYM", "."):
@@ -1235,6 +1265,8 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
         for idx, s in enumerate(block):
             if isinstance(s, Let):
                 defs[s.name] = s.pos
+            elif isinstance(s, Import):
+                defs[_import_binding_name(s.module, s.alias)] = s.pos
             elif isinstance(s, DestructAssign):
                 for nm in s.names:
                     defs[nm] = s.pos
@@ -1486,6 +1518,112 @@ class NamespaceRef:
     name: str
 
 
+def _import_binding_name(module: str, alias: Optional[str]) -> str:
+    if alias:
+        return alias
+    stripped = module.lstrip(".") or module
+    return stripped.split(".")[-1]
+
+
+class ModuleResolver:
+    def __init__(self, search_paths: Optional[List[Path]] = None):
+        env_paths = os.environ.get("TINYPATH", "")
+        configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
+        default_roots = [Path.cwd(), Path(__file__).parent]
+        self.search_paths: List[Path] = search_paths or configured_paths + default_roots
+        self.cache: Dict[Path, NamespaceRef] = {}
+        self._in_progress: List[Path] = []
+
+    def _resolve_name(self, raw: str, caller_namespace: Optional[str], pos: Optional[SourcePos]) -> str:
+        leading = len(raw) - len(raw.lstrip("."))
+        if leading == 0:
+            return raw
+        if not caller_namespace:
+            raise TinyLangError(
+                format_error("", pos or SourcePos.origin(), "relative import outside a module", code="E008"),
+                pos or SourcePos.origin(),
+                code="E008",
+            )
+        base = caller_namespace.split(".")
+        if leading > len(base):
+            raise TinyLangError(
+                format_error(
+                    "",
+                    pos or SourcePos.origin(),
+                    "relative import traverses beyond module root",
+                    code="E008",
+                ),
+                pos or SourcePos.origin(),
+                code="E008",
+            )
+        trimmed = base[: len(base) - leading]
+        remainder = raw.lstrip(".")
+        if remainder:
+            trimmed.append(remainder)
+        return ".".join(part for part in trimmed if part)
+
+    def _candidate_paths(self, module_name: str, caller_path: Optional[Path]) -> List[Path]:
+        rel_path = Path(*module_name.split("."))
+        candidates: List[Path] = []
+        roots: List[Path] = []
+        if caller_path:
+            roots.append(caller_path.parent)
+        roots.extend(self.search_paths)
+        for root in roots:
+            candidates.append((root / rel_path).with_suffix(".tiny"))
+        return candidates
+
+    def import_module(
+        self,
+        name: str,
+        runtime: "Runtime",
+        *,
+        caller_namespace: Optional[str],
+        caller_path: Optional[Path],
+        pos: Optional[SourcePos] = None,
+    ) -> NamespaceRef:
+        resolved_name = self._resolve_name(name, caller_namespace, pos)
+        for candidate in self._candidate_paths(resolved_name, caller_path):
+            resolved_path = candidate.resolve()
+            if resolved_path in self.cache:
+                return self.cache[resolved_path]
+            if resolved_path.exists():
+                if resolved_path in self._in_progress:
+                    raise TinyLangError(
+                        format_error(
+                            "",
+                            pos or SourcePos.origin(),
+                            f"circular import involving {resolved_path}",
+                            code="E008",
+                        ),
+                        pos or SourcePos.origin(),
+                        code="E008",
+                    )
+                self._in_progress.append(resolved_path)
+                try:
+                    module_env = Environment(parent=None, namespace=resolved_name)
+                    compile_and_run(
+                        resolved_path.read_text(encoding="utf-8"),
+                        env=module_env,
+                        runtime=runtime,
+                        module_namespace=resolved_name,
+                        module_path=resolved_path,
+                        module_resolver=self,
+                    )
+                    ns_ref = NamespaceRef(runtime, resolved_name)
+                    self.cache[resolved_path] = ns_ref
+                    return ns_ref
+                finally:
+                    self._in_progress.remove(resolved_path)
+        raise TinyLangError(
+            format_error(
+                "", pos or SourcePos.origin(), f"module '{name}' not found on search path", code="E008"
+            ),
+            pos or SourcePos.origin(),
+            code="E008",
+        )
+
+
 @dataclass
 class SpawnHandle:
     thread: threading.Thread
@@ -1510,6 +1648,10 @@ class Runtime:
         self.global_env: Optional["Environment"] = None
         self.error_messages: List[str] = []
         self.source = source
+        self.namespace_envs: Dict[str, "Environment"] = {}
+        self.module_resolver: ModuleResolver = ModuleResolver()
+        self.current_module_path: Optional[Path] = None
+        self.current_module_namespace: Optional[str] = None
 
     @staticmethod
     def _qualify_name(name: str, namespace: Optional[str]) -> str:
@@ -1935,6 +2077,16 @@ class Runtime:
     def field_get(self, obj: Any, key: str, *, pos: Optional[SourcePos] = None) -> Any:
         target_obj = obj.obj if isinstance(obj, BaseView) else obj
         owner_hint = obj.class_name if isinstance(obj, BaseView) else None
+        if isinstance(target_obj, NamespaceRef):
+            env = self.namespace_envs.get(target_obj.name)
+            if env and env.contains(key):
+                return env.get(key)
+            qualified = self._qualify_name(key, target_obj.name)
+            with self._lock:
+                if qualified in self.functions:
+                    return NamespaceRef(self, qualified)
+            self._record_error(f"unknown field {key}", pos)
+            return None
         if isinstance(target_obj, dict) and "__fields__" in target_obj:
             try:
                 fmap = self._resolve_field_storage(
@@ -2355,7 +2507,18 @@ class Runtime:
                 qualified = self._qualify_name(s.name, namespace)
                 child_env = Environment(parent=env, namespace=qualified)
                 env.values[s.name] = NamespaceRef(self, qualified)
+                self.namespace_envs[qualified] = child_env
                 self.eval_block(s.body, child_env, qualified)
+            elif isinstance(s, Import):
+                binding = _import_binding_name(s.module, s.alias)
+                ns_ref = self.module_resolver.import_module(
+                    s.module,
+                    self,
+                    caller_namespace=namespace or env.namespace,
+                    caller_path=self.current_module_path,
+                    pos=s.pos,
+                )
+                env.values[binding] = ns_ref
             elif isinstance(s, Fn):
                 s.namespace = namespace
                 fn_name = self._qualify_name(s.name, namespace)
@@ -2589,11 +2752,26 @@ class Environment:
 # ----- Public API -----
 
 
-def compile_and_run(src: str, env: Optional[Environment] = None, runtime: Optional[Runtime] = None) -> str:
+def compile_and_run(
+    src: str,
+    env: Optional[Environment] = None,
+    runtime: Optional[Runtime] = None,
+    *,
+    module_namespace: Optional[str] = None,
+    module_path: Optional[Path] = None,
+    module_resolver: Optional[ModuleResolver] = None,
+) -> str:
     parser = Parser(Lexer(src), src)
     stmts = parser.parse()
     runtime = runtime or Runtime(src)
+    prev_source = runtime.source
     runtime.source = src
+    previous_path = runtime.current_module_path
+    previous_namespace = runtime.current_module_namespace
+    runtime.current_module_path = module_path
+    runtime.current_module_namespace = module_namespace
+    if module_resolver is not None:
+        runtime.module_resolver = module_resolver
     runtime.output.clear()
     runtime.error_messages.clear()
 
@@ -2615,17 +2793,31 @@ def compile_and_run(src: str, env: Optional[Environment] = None, runtime: Option
 
     lint_nested(stmts)
 
-    env = env or Environment(parent=None, namespace=None)
+    env = env or Environment(parent=None, namespace=module_namespace)
+    if module_namespace:
+        runtime.namespace_envs[module_namespace] = env
     runtime.global_env = env
     register_stdlib(runtime, env, NamespaceRef)
-    for st in stmts:
-        runtime.eval_stmt(st, env)
+    try:
+        for st in stmts:
+            runtime.eval_stmt(st, env, namespace=module_namespace)
+    finally:
+        runtime.current_module_path = previous_path
+        runtime.current_module_namespace = previous_namespace
+        runtime.source = prev_source
     return "".join(runtime.output)
 
 
 def run_file(path: str) -> str:
+    path_obj = Path(path)
+    resolved = path_obj.resolve()
+    try:
+        rel = resolved.relative_to(Path.cwd())
+        namespace = ".".join(rel.with_suffix("").parts)
+    except Exception:  # noqa: BLE001
+        namespace = resolved.stem
     with open(path, "r", encoding="utf-8") as f:
-        return compile_and_run(f.read())
+        return compile_and_run(f.read(), module_namespace=namespace, module_path=resolved)
 
 
 def _format_error_for_source(source: str, err: TinyLangError) -> str:
@@ -2787,4 +2979,4 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 
-__all__ = ["compile_and_run", "run_file", "main"]
+__all__ = ["compile_and_run", "run_file", "main", "ModuleResolver"]

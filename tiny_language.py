@@ -75,85 +75,91 @@ class _FallbackReadline:
 
     # Interactive helpers
     def _collect_matches(self, text: str) -> List[str]:
-        if self._completions is None:
+        """Gather completion candidates from the configured completer."""
+
+        if self._completions is None:  # No completer means no matches
             return []
-        matches: List[str] = []
-        idx = 0
+        matches: List[str] = []  # Accumulate completion strings
+        idx = 0  # State counter required by readline-compatible completers
         while True:
-            candidate = self._completions(text, idx)
-            if candidate is None:
+            candidate = self._completions(text, idx)  # Ask completer for the idx-th match
+            if candidate is None:  # A "None" sentinel marks the end
                 break
             matches.append(candidate)
             idx += 1
         return matches
 
     def _redraw(self, prompt: str, buffer: List[str], last_len: int) -> int:
-        sys.stdout.write("\r")
-        rendered = prompt + "".join(buffer)
+        """Render the current prompt + buffer, padding leftover characters if needed."""
+
+        sys.stdout.write("\r")  # Start at the beginning of the line
+        rendered = prompt + "".join(buffer)  # Prompt plus current text
         sys.stdout.write(rendered)
-        if last_len > len(buffer):
+        if last_len > len(buffer):  # Clear any extra characters from a previous render
             sys.stdout.write(" " * (last_len - len(buffer)))
-        sys.stdout.write("\r")
-        sys.stdout.write(prompt + "".join(buffer))
+        sys.stdout.write("\r")  # Return to the line start again
+        sys.stdout.write(prompt + "".join(buffer))  # Write prompt and buffer
         sys.stdout.flush()
         return len(buffer)
 
     def _reverse_search(self, prompt: str, fd: int) -> Optional[str]:
-        if not _HAS_TERMIOS:
+        """Implement a simple reverse-i-search inspired by readline."""
+
+        if not _HAS_TERMIOS:  # Without termios support, we cannot drive raw input
             return None
-        sys.stdout.write("\n(reverse-search): ")
+        sys.stdout.write("\n(reverse-search): ")  # Start a new prompt line
         sys.stdout.flush()
-        termios.tcsetattr(fd, termios.TCSADRAIN, self._old_settings)
+        termios.tcsetattr(fd, termios.TCSADRAIN, self._old_settings)  # Restore cooked mode
         try:
-            query = sys.stdin.readline().rstrip("\n")
+            query = sys.stdin.readline().rstrip("\n")  # Grab the search term
         finally:
-            tty.setraw(fd)
-        if not query:
+            tty.setraw(fd)  # Return to raw mode for normal handling
+        if not query:  # Empty search means abort
             return None
-        for entry in reversed(self._history):
+        for entry in reversed(self._history):  # Walk history from newest to oldest
             if query in entry:
-                return entry
+                return entry  # Return the first entry that contains the query
         return None
 
     def readline(self, prompt: str = "") -> str:
         if not _HAS_TERMIOS:
-            line = input(prompt)
+            line = input(prompt)  # Fall back to default input() when raw mode is unavailable
             if line:
-                self.add_history(line)
+                self.add_history(line)  # Persist history in the in-memory buffer
             return line
-        fd = sys.stdin.fileno()
-        self._old_settings = termios.tcgetattr(fd)
-        buffer: List[str] = []
-        last_len = 0
-        self._history_index = None
+        fd = sys.stdin.fileno()  # Grab the file descriptor to toggle terminal modes
+        self._old_settings = termios.tcgetattr(fd)  # Remember previous termios state
+        buffer: List[str] = []  # Characters typed so far
+        last_len = 0  # Track the previous render length for erasing
+        self._history_index = None  # Reset history navigation state
 
         sys.stdout.write(prompt)
         sys.stdout.flush()
         try:
-            tty.setraw(fd)
+            tty.setraw(fd)  # Switch to raw mode to intercept keystrokes
             while True:
-                ch = sys.stdin.read(1)
+                ch = sys.stdin.read(1)  # Read a single byte
                 if ch in ("\n", "\r"):
-                    sys.stdout.write("\n")
-                    line = "".join(buffer)
+                    sys.stdout.write("\n")  # Move to the next line
+                    line = "".join(buffer)  # Turn the buffer into a full string
                     if line:
-                        self.add_history(line)
+                        self.add_history(line)  # Save successful entries
                     return line
                 if ch == "\x7f":  # Backspace
                     if buffer:
-                        buffer.pop()
-                        last_len = self._redraw(prompt, buffer, last_len)
+                        buffer.pop()  # Remove the last character
+                        last_len = self._redraw(prompt, buffer, last_len)  # Refresh the line
                     continue
                 if ch == "\t":  # Tab completion
                     prefix = "".join(buffer)
-                    last_word = prefix.split()[-1] if prefix else ""
+                    last_word = prefix.split()[-1] if prefix else ""  # Only complete the final token
                     matches = self._collect_matches(last_word)
                     if not matches:
-                        continue
+                        continue  # Nothing to complete
                     if len(matches) == 1:
-                        completed = matches[0]
+                        completed = matches[0]  # Single match, accept immediately
                     else:
-                        shared_prefix = last_word
+                        shared_prefix = last_word  # Find longest shared prefix for multiple matches
                         for idx in range(len(last_word), len(max(matches, key=len)) + 1):
                             candidates = {m[:idx] for m in matches if len(m) >= idx}
                             if len(candidates) == 1:
@@ -161,7 +167,7 @@ class _FallbackReadline:
                             else:
                                 break
                         completed = shared_prefix
-                        sys.stdout.write("\n" + "  ".join(sorted(matches)) + "\n")
+                        sys.stdout.write("\n" + "  ".join(sorted(matches)) + "\n")  # Show options
                     if last_word:
                         buffer = buffer[: len(prefix) - len(last_word)] + list(completed)
                     else:
@@ -171,32 +177,32 @@ class _FallbackReadline:
                 if ch == "\x12":  # Ctrl+R reverse search
                     match = self._reverse_search(prompt, fd)
                     if match is not None:
-                        buffer = list(match)
+                        buffer = list(match)  # Replace buffer with the match
                         last_len = self._redraw(prompt, buffer, last_len)
                     else:
                         last_len = self._redraw(prompt, buffer, last_len)
                     continue
                 if ch == "\x1b":  # Escape sequences (arrow keys)
-                    seq = sys.stdin.read(2)
+                    seq = sys.stdin.read(2)  # Read the remaining bytes of the escape code
                     if seq == "[A":  # Up
                         if self._history:
                             if self._history_index is None:
-                                self._history_index = len(self._history) - 1
+                                self._history_index = len(self._history) - 1  # Start at the newest entry
                             elif self._history_index > 0:
-                                self._history_index -= 1
+                                self._history_index -= 1  # Move further back in history
                             buffer = list(self._history[self._history_index])
                             last_len = self._redraw(prompt, buffer, last_len)
                     elif seq == "[B":  # Down
                         if self._history_index is not None:
                             if self._history_index < len(self._history) - 1:
-                                self._history_index += 1
+                                self._history_index += 1  # Move forward in history
                                 buffer = list(self._history[self._history_index])
                             else:
-                                self._history_index = None
+                                self._history_index = None  # Clear history selection at the end
                                 buffer = []
                             last_len = self._redraw(prompt, buffer, last_len)
                     continue
-                buffer.append(ch)
+                buffer.append(ch)  # Normal character: append to buffer
                 last_len = self._redraw(prompt, buffer, last_len)
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, self._old_settings)
@@ -3099,9 +3105,9 @@ class Runtime:
 
 class Environment:
     def __init__(self, parent: Optional["Environment"], namespace: Optional[str] = None):
-        self.parent = parent
-        self.namespace = namespace
-        self.values: Dict[str, Any] = {}
+        self.parent = parent  # Outer lexical scope (if any)
+        self.namespace = namespace  # Module/namespace name for namespacing lookups
+        self.values: Dict[str, Any] = {}  # Local symbol table
 
     def get(self, name: str) -> Any:
         if name in self.values:
@@ -3112,11 +3118,11 @@ class Environment:
 
     def set(self, name: str, value: Any) -> None:
         if name in self.values:
-            self.values[name] = value
+            self.values[name] = value  # Update local binding
         elif self.parent is not None:
-            self.parent.set(name, value)
+            self.parent.set(name, value)  # Bubble up to parent scope
         else:
-            self.values[name] = value
+            self.values[name] = value  # Create new binding when absent
 
     def contains(self, name: str) -> bool:
         if name in self.values:
@@ -3124,9 +3130,9 @@ class Environment:
         return self.parent.contains(name) if self.parent else False
 
     def all_names(self) -> List[str]:
-        names = list(self.values.keys())
+        names = list(self.values.keys())  # Start with current scope names
         if self.parent:
-            names.extend(self.parent.all_names())
+            names.extend(self.parent.all_names())  # Include ancestors
         return names
 
 
@@ -3142,20 +3148,20 @@ def compile_and_run(
     module_path: Optional[Path] = None,
     module_resolver: Optional[ModuleResolver] = None,
 ) -> str:
-    parser = Parser(Lexer(src), src)
-    stmts = parser.parse()
-    runtime = runtime or Runtime(src)
-    runtime.source_map[module_namespace] = src
-    prev_source = runtime.source
-    runtime.source = src
-    previous_path = runtime.current_module_path
+    parser = Parser(Lexer(src), src)  # Build a parser over the raw source
+    stmts = parser.parse()  # Produce an intermediate representation of the program
+    runtime = runtime or Runtime(src)  # Reuse an existing runtime or create a fresh one
+    runtime.source_map[module_namespace] = src  # Track source text for later diagnostics
+    prev_source = runtime.source  # Remember previous source to restore after module execution
+    runtime.source = src  # Swap in the new source for this run
+    previous_path = runtime.current_module_path  # Save module bookkeeping fields
     previous_namespace = runtime.current_module_namespace
     runtime.current_module_path = module_path
     runtime.current_module_namespace = module_namespace
     if module_resolver is not None:
-        runtime.module_resolver = module_resolver
-    runtime.output.clear()
-    runtime.error_messages.clear()
+        runtime.module_resolver = module_resolver  # Override resolver when running imports
+    runtime.output.clear()  # Reset buffered program output
+    runtime.error_messages.clear()  # Reset accumulated error messages
 
     # lint functions + top level locals
     lint_import_style(stmts, src)
@@ -3166,41 +3172,41 @@ def compile_and_run(
     def lint_nested(block: List[IR]) -> None:
         for st in block:
             if isinstance(st, Fn):
-                lint_fn_params_used(st, src)
+                lint_fn_params_used(st, src)  # Verify function parameters are referenced
             if isinstance(st, MethodDef):
-                lint_method_params_used(st, src)
+                lint_method_params_used(st, src)  # Same check for methods
             if isinstance(st, ClassDef):
                 for m in st.methods:
                     lint_method_params_used(m, src)
             if isinstance(st, Namespace):
-                lint_nested(st.body)
+                lint_nested(st.body)  # Recurse into nested namespaces
 
     lint_nested(stmts)
     lint_bare_call_results(stmts, signatures, src)
 
-    env = env or Environment(parent=None, namespace=module_namespace)
+    env = env or Environment(parent=None, namespace=module_namespace)  # Build module environment
     if module_namespace:
-        runtime.namespace_envs[module_namespace] = env
-    runtime.global_env = env
-    register_stdlib(runtime, env, NamespaceRef)
+        runtime.namespace_envs[module_namespace] = env  # Register namespace for imports
+    runtime.global_env = env  # Keep a reference for the runtime
+    register_stdlib(runtime, env, NamespaceRef)  # Expose built-in functions and types
     try:
         for st in stmts:
-            runtime.eval_stmt(st, env, namespace=module_namespace)
+            runtime.eval_stmt(st, env, namespace=module_namespace)  # Evaluate each top-level stmt
     finally:
-        runtime.current_module_path = previous_path
+        runtime.current_module_path = previous_path  # Restore runtime context even on errors
         runtime.current_module_namespace = previous_namespace
         runtime.source = prev_source
     return "".join(runtime.output)
 
 
 def run_file(path: str) -> str:
-    path_obj = Path(path)
-    resolved = path_obj.resolve()
+    path_obj = Path(path)  # Accept strings or Path-like objects
+    resolved = path_obj.resolve()  # Normalize to an absolute path
     try:
-        rel = resolved.relative_to(Path.cwd())
+        rel = resolved.relative_to(Path.cwd())  # Try to derive a module namespace from cwd
         namespace = ".".join(rel.with_suffix("").parts)
     except Exception:  # noqa: BLE001
-        namespace = resolved.stem
+        namespace = resolved.stem  # Fall back to filename when relative resolution fails
     with open(path, "r", encoding="utf-8") as f:
         return compile_and_run(f.read(), module_namespace=namespace, module_path=resolved)
 
@@ -3242,28 +3248,28 @@ def _configure_readline(
     history_path: Path, scope_provider: Callable[[], List[str]] = lambda: sorted(KEYWORDS | BUILTINS)
 ) -> None:
     if readline is None:
-        return
-    readline.set_completer_delims(" \t\n")
+        return  # Skip configuration if readline support is unavailable
+    readline.set_completer_delims(" \t\n")  # Treat whitespace as completion delimiters
 
     def completer(text: str, state: int) -> Optional[str]:
-        completions = sorted(set(scope_provider()))
+        completions = sorted(set(scope_provider()))  # Grab the latest symbol list
         matches = [word for word in completions if word.startswith(text)]
-        return matches[state] if state < len(matches) else None
+        return matches[state] if state < len(matches) else None  # Return nth match or None
 
     readline.set_completer(completer)
-    readline.parse_and_bind("tab: complete")
+    readline.parse_and_bind("tab: complete")  # Enable tab completion binding
     try:
-        readline.read_history_file(history_path)
+        readline.read_history_file(history_path)  # Load persisted history if available
     except FileNotFoundError:
-        history_path.touch()
-    readline.set_history_length(1000)
+        history_path.touch()  # Create an empty history file on first run
+    readline.set_history_length(1000)  # Keep a generous but bounded history size
 
 
 def _save_history(history_path: Path) -> None:
     if readline is None:
-        return
+        return  # Nothing to do without readline support
     try:
-        readline.write_history_file(history_path)
+        readline.write_history_file(history_path)  # Persist the in-memory buffer
     except FileNotFoundError:
         history_path.parent.mkdir(parents=True, exist_ok=True)
         history_path.touch()
@@ -3271,29 +3277,29 @@ def _save_history(history_path: Path) -> None:
 
 
 def _read_repl_command(read_fn) -> Optional[str]:
-    buffer: List[str] = []
+    buffer: List[str] = []  # Accumulate multi-line input until braces balance
     while True:
-        prompt = "tiny> " if not buffer else "...> "
+        prompt = "tiny> " if not buffer else "...> "  # Primary or continuation prompt
         try:
-            line = read_fn(prompt)
+            line = read_fn(prompt)  # Ask the configured read function for input
         except EOFError:
-            return None if not buffer else "\n".join(buffer)
+            return None if not buffer else "\n".join(buffer)  # Exit or return partial block
         buffer.append(line)
         src = "\n".join(buffer)
         if _is_incomplete_source(src):
-            continue
+            continue  # Keep reading if brackets/parens are unbalanced
         return src
 
 
 def _resolve_read_fn():
     if isinstance(readline, _FallbackReadline):
-        return readline.readline
-    return input
+        return readline.readline  # Use the fallback implementation when available
+    return input  # Otherwise rely on the built-in input()
 
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Run a TinyLanguage program from a file")
-    mode_group = parser.add_mutually_exclusive_group()
+    mode_group = parser.add_mutually_exclusive_group()  # Eval and REPL are exclusive options
     mode_group.add_argument(
         "-e",
         "--eval",
@@ -3333,7 +3339,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(str(exc), file=sys.stderr)
             return 1
 
-    if args.repl:
+    if args.repl:  # Interactive shell mode
         history_path = Path.home() / ".tiny_language_history"
         env = Environment(parent=None, namespace=None)
         runtime = Runtime("")
@@ -3347,12 +3353,12 @@ def main(argv: Optional[List[str]] = None) -> int:
                     print()
                     break
                 if not src.strip():
-                    continue
+                    continue  # Ignore blank submissions
                 if readline is not None:
                     try:
                         readline.add_history(src)
                     except Exception:
-                        pass
+                        pass  # History persistence failures should not crash the REPL
                 try:
                     output = compile_and_run(src, env=env, runtime=runtime)
                     if output:
@@ -3362,11 +3368,11 @@ def main(argv: Optional[List[str]] = None) -> int:
                 except Exception as exc:  # pragma: no cover - unexpected errors
                     print(str(exc), file=sys.stderr)
         finally:
-            _save_history(history_path)
+            _save_history(history_path)  # Always attempt to save history on exit
         return 0
 
     if not args.file:
-        parser.error("the following arguments are required: file")
+        parser.error("the following arguments are required: file")  # Align with argparse behavior
 
     output = run_file(args.file)
     print(output, end="")

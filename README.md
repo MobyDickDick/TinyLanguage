@@ -1,16 +1,16 @@
 # TinyLanguage
 
-TinyLanguage ist eine kleine, von Julia inspirierte Sprache mit einem Python-Interpreter. Dieses README liefert eine Stackedit.io-artige Markdown-Uebersicht: Syntax-Highlights, ein kompaktes Tutorial, Hinweise zu Beispielen, haeufige Fehlermeldungen und die wichtigsten Run-/Test-Kommandos.
+TinyLanguage is a small Julia-inspired language with a Python interpreter. This README provides a StackEdit-style Markdown overview: syntax highlights, a compact tutorial, pointers to examples, common error messages, and the most important run/test commands.
 
-## Syntax und Features
+## Syntax and Features
 
-### Mini-Tutorial: von Variablen bis Funktionen
+### Mini tutorial: variables, control flow, and functions
 ```tiny
-// Variablen, Arithmetik, Ausgabe
+// Variables, arithmetic, printing
 define a = 7 + 5 * 2;
 print(a);                // -> 17
 
-// Funktionen definieren und aufrufen
+// Declare and call functions
 fn add(x, y) {
     return x + y;
 }
@@ -18,42 +18,42 @@ fn add(x, y) {
 define sum = add(a, 3);
 print(sum);
 
-// If/while und Mutation
+// If/while and mutation
 define i = 0;
 while (i < 3) {
     if (i == 1) { print("in the middle"); }
     i = i + 1;
 }
 
-// Namenraeume
+// Namespaces
 namespace Math {
     fn inc(x) { return add(x, 1); }
 }
 print(Math.inc(4));
 ```
 
-### Weitere Sprachbausteine
-- **Vergleiche und Strings**: `>`, `>=`, `<`, `<=`, `==`, `!=` sowie String-Konkatenation mit `+`. Wissenschaftliche Notation wie `1.2e2` wird nicht unterstuetzt.
-- **Potenzieren**: Der Operator `^` akzeptiert nur ganzzahlige Exponenten; fuer Brueche `power(base, exponent)` nutzen.
-- **Heap und Arrays**: `new(3)` erzeugt einen Pointer mit drei Plaetzen, `new[1, 2, 3]` legt ein Array auf dem Heap an. `heap_get`/`heap_set` greifen darauf zu, `tag` versieht Pointer mit Typ-Tags, `delete` entfernt sie.
-- **Destructuring**: Funktionen koennen Strukturen zurueckgeben: `fn bump(a) { a = a + 1; return { a: a, e: 0 }; }` wird mit `{ a, e } = bump(1);` gebunden.
-- **Klassen und Operatoren**: Klassen besitzen Felder und Methoden, Mehrfachvererbung ist erlaubt. Operatoren lassen sich ueberladen, etwa `operator + (a: Number, b: Number) -> Number { ... }`.
-- **Nebenlaeufigkeit**: `spawn f(1, 2)` startet einen Task, `join` wartet und liefert das Ergebnis.
+### More building blocks
+- **Comparisons and strings**: `>`, `>=`, `<`, `<=`, `==`, `!=` plus string concatenation with `+`. Scientific notation like `1.2e2` is not supported.
+- **Exponentiation**: The `^` operator only accepts integer exponents; for fractional exponents use `power(base, exponent)`.
+- **Heap and arrays**: `new(3)` creates a pointer with three slots, `new[1, 2, 3]` allocates an array on the heap. `heap_get`/`heap_set` read and write, `tag` adds type tags to pointers, `delete` removes them.
+- **Destructuring**: Functions can return structs: `fn bump(a) { a = a + 1; return { a: a, e: 0 }; }` can be bound with `{ a, e } = bump(1);`.
+- **Classes and operators**: Classes have fields and methods and allow multiple inheritance. Operators can be overloaded, e.g. `operator + (a: Number, b: Number) -> Number { ... }`.
+- **Concurrency**: `spawn f(1, 2)` starts a task, `join` waits and returns its result.
 
-### Typ-Hinweise und Gradual Typing
-- **Syntax**: Parameter und Rueckgaben koennen annotiert werden: `fn label(x: string, times: number) -> string { return x * times; }`. Methoden nutzen dieselbe Syntax.
-- **Gradual-Typing-Checks**: Annotierte Argumente und Rueckgaben werden zur Laufzeit geprueft. Ein Aufruf wie `label(1, "x")` fuehrt zu einem `[E009] type mismatch ... expected string/number ...`-Hinweis.
-- **Einfache Exhaustiveness-Checks**: Annotierte Funktionen muessen auf allen Pfaden einen Wert liefern. Fehlt ein `return`, meldet der Linter `[E010] not all paths ... return a value ...` mit Hinweis auf fehlende Branch-Rueckgaben.
+### Type hints and gradual typing
+- **Syntax**: Annotate parameters and return values: `fn label(x: string, times: number) -> string { return x * times; }`. Methods follow the same syntax.
+- **Gradual typing checks**: Annotated arguments and returns are validated at runtime. A call like `label(1, "x")` yields `[E009] type mismatch ... expected string/number ...`.
+- **Basic exhaustiveness checks**: Annotated functions must return a value on all paths. Missing `return` statements trigger `[E010] not all paths ... return a value ...` with hints about missing branch returns.
 
-### Klassen
-Minimalbeispiel mit Konstruktor-Funktion und Methode. Die Ausgabe wurde mit `python tiny_language.py class_demo.tiny` verifiziert.
+### Classes
+A minimal example with a constructor function and a method. The output was verified via `python tiny_language.py class_demo.tiny`.
 
 ```tiny
 class Greeter {
     name: string;
 
     fn greeting(self) {
-        return "Hallo, " + self.name + "!";
+        return "Hello, " + self.name + "!";
     }
 }
 
@@ -63,16 +63,16 @@ define greeter = Greeter("TinyLanguage");
 print(greeter.greeting());
 ```
 
-Erwartete Ausgabe:
+Expected output:
 
 ```
-Hallo, TinyLanguage!
+Hello, TinyLanguage!
 ```
 
-Mehr dazu in [`class_demo.tiny`](class_demo.tiny).
+See [`class_demo.tiny`](class_demo.tiny) for the full program.
 
-### Operator-Overloading
-Ein `Point`-Typ ueberschreibt `+` und `==`. Ergebnis bestaetigt via `python tiny_language.py operator_overloading_demo.tiny`.
+### Operator overloading
+A `Point` type overrides `+` and `==`. Verified via `python tiny_language.py operator_overloading_demo.tiny`.
 
 ```tiny
 class Point {
@@ -92,7 +92,7 @@ print(heap_get(sum.to_tuple(), 1));
 print(p == sum);
 ```
 
-Erwartete Ausgabe:
+Expected output:
 
 ```
 4
@@ -100,10 +100,10 @@ Erwartete Ausgabe:
 false
 ```
 
-Vollstaendiges Programm: [`operator_overloading_demo.tiny`](operator_overloading_demo.tiny).
+Full program: [`operator_overloading_demo.tiny`](operator_overloading_demo.tiny).
 
 ### Namespaces
-Namenraeume koennen Funktionen logisch gruppieren. Lauf getestet mit `python tiny_language.py namespace_demo.tiny`.
+Namespaces help group related functions. Run with `python tiny_language.py namespace_demo.tiny`.
 
 ```tiny
 namespace Tools {
@@ -116,23 +116,23 @@ print(value);
 print(Tools.label("done"));
 ```
 
-Erwartete Ausgabe:
+Expected output:
 
 ```
 10
 #done
 ```
 
-Siehe [`namespace_demo.tiny`](namespace_demo.tiny) fuer mehr Kontext.
+More context in [`namespace_demo.tiny`](namespace_demo.tiny).
 
-### Module laden
-- **Import-Syntax**: `import math.trig;` holt `math/trig.tiny` und bindet es standardmaessig unter dem letzten Pfadsegment (`trig`). Optional kann via Alias gebunden werden: `import utils.helpers as helpers;` oder relativ aus einem Modul heraus: `import .shared as shared;`.
-- **Namespacing**: Jede importierte Datei wird unter ihrem vollqualifizierten Modulnamen registriert (z. B. `pkg.core`), sodass Funktionen und Konstanten als Namespace-Felder abrufbar sind (`core.helper_fn()` bzw. `core.value`).
-- **Suchpfad**: Der Resolver prueft zuerst das Verzeichnis der aufrufenden Datei, dann Eintraege aus `TINYPATH` (mit `:` getrennt), gefolgt vom aktuellen Arbeitsverzeichnis und dem Verzeichnis von `tiny_language.py`. Fehlende Module oder Kreisimporte werden als `E008` gemeldet.
-- **Caching**: Eine Moduldatei wird pro Runtime nur einmal ausgefuehrt; Mehrfach-Imports liefern denselben Namespace-Ref und vermeiden doppelte Nebeneffekte.
+### Importing modules
+- **Syntax**: `import math.trig;` loads `math/trig.tiny` and binds it under the last path segment (`trig`). Optional aliasing works too: `import utils.helpers as helpers;` or relative imports from inside modules: `import .shared as shared;`.
+- **Namespacing**: Every imported file is registered under its fully qualified module name (e.g. `pkg.core`), so functions and constants are accessible as namespace fields (`core.helper_fn()` or `core.value`).
+- **Search path**: The resolver checks the caller directory, entries from `TINYPATH` (colon-separated), then the current working directory and the directory containing `tiny_language.py`. Missing modules or cyclic imports raise `E008`.
+- **Caching**: Each module file executes only once per runtime; repeated imports return the same namespace reference and avoid duplicate side effects.
 
-### Nebenlaeufigkeit
-`spawn` und `join` kombinieren Aufgaben und Rueckgaben. Das untenstehende Ergebnis stammt aus `python tiny_language.py concurrency_demo.tiny`.
+### Concurrency
+`spawn` and `join` mix tasks and results. Output from `python tiny_language.py concurrency_demo.tiny`:
 
 ```tiny
 fn label(prefix, word) { return prefix + "=" + word; }
@@ -147,17 +147,17 @@ print("etiketten");
 print(String.join(new[join(first), join(second), join(third), join(fourth)], " | "));
 ```
 
-Erwartete Ausgabe:
+Expected output:
 
 ```
 etiketten
 erstes=spawn | zweites=join | drittes=string | viertes=interop
 ```
 
-Vollversion mit erneutem Split/Join: [`concurrency_demo.tiny`](concurrency_demo.tiny).
+The full version with another split/join lives in [`concurrency_demo.tiny`](concurrency_demo.tiny).
 
-### Heap/Pointer
-`new[...]` legt Arrays an, `heap_get`/`heap_set` lesen bzw. schreiben, `delete` raeumt auf. Ausgabedaten stammen aus `python tiny_language.py heap_pointer_demo.tiny`.
+### Heap/pointer operations
+`new[...]` allocates arrays, `heap_get`/`heap_set` read and write, `delete` cleans up. Output from `python tiny_language.py heap_pointer_demo.tiny`.
 
 ```tiny
 define pointer = new[1, 2, 3];
@@ -167,7 +167,7 @@ print(heap_get(pointer, 1));
 delete(pointer);
 ```
 
-Erwartete Ausgabe:
+Expected output:
 
 ```
 2
@@ -214,52 +214,87 @@ Vor jedem Programmstart registriert der Interpreter die eingebaute Stdlib mit fo
 
 ### CLI: Module-Init und Publish
 - **Init**: Neues Modul-Verzeichnis anlegen (`mkdir my_pkg && cd my_pkg`), einen Einstiegspunkt wie `main.tiny` erzeugen und optional eine `module.json` mit Metadaten pflegen:
+See [`heap_pointer_demo.tiny`](heap_pointer_demo.tiny) for more examples and failure scenarios.
+
+### Standard library
+The interpreter registers the built-in stdlib before running any program. Namespaces include:
+
+- **Math**: `Math.abs(x)`, `Math.pow(base, exp)`, `Math.sqrt(x)` for basics. New helpers `Math.max(a, b)`, `Math.min(a, b)`, and `Math.clamp(value, lower, upper)` make comparisons and clamping easier. Example: `print(Math.clamp(Math.max(-2, 10), 0, 5));` prints `5`.
+- **String**: `String.split(text, sep)` returns a heap pointer to an array of substrings; `String.join(items, sep)` joins a list/pointer; `String.contains(text, needle)` checks for substrings. Extras: `String.upper(text)`, `String.lower(text)`, `String.trim(text)`, and `String.repeat(text, count)` for casing, trimming, and repetition. Example: `print(String.upper(String.trim("  tiny "))); print(String.repeat("ha", 3));` prints `TINY` and `hahaha`.
+- **Collections**: `Collections.len(x)` measures the length of heap pointers or Python lists, `Collections.push(target, value)` appends and returns the new length, `Collections.pop(target)` removes the last element or raises on empty collections. New helpers: `Collections.slice(target, start, end)` and `Collections.contains(target, value)` for slicing and lookups: `define mid = Collections.slice(new[1, 2, 3], 1, 3); print(Collections.contains(mid, 2));` prints `true`.
+
+## Example programs
+- [`demo.tiny`](demo.tiny): Small showcase for variables, loops, functions, classes, and heap operations. Runs sequentially and prints intermediate results.
+- [`rosetta_fibonacci.tiny`](rosetta_fibonacci.tiny): Classic Fibonacci implementation demonstrating function declarations and simple loops. Prints the first 10 numbers.
+- [`all_features.tiny`](all_features.tiny): Comprehensive feature tour with arrays, classes, and operator overloading.
+- [`class_demo.tiny`](class_demo.tiny): Minimal constructor + method that prints a personalized greeting.
+- [`operator_overloading_demo.tiny`](operator_overloading_demo.tiny): Lean point class that overrides `+` and `==` and prints intermediate results.
+- [`number_class.tiny`](number_class.tiny): Demonstrates the `Number` class and overloaded `+`, instantiates objects, calls methods, and prints results.
+- [`number_intervall.tiny`](number_intervall.tiny): Example for numeric interval calculations and bounds checking.
+- [`namespace_demo.tiny`](namespace_demo.tiny): A small `Tools` namespace with `double` and `label` helpers.
+- [`concurrency_demo.tiny`](concurrency_demo.tiny): Starts multiple tasks with `spawn`, collects them via `join`, and combines them with `String.split`/`String.join`.
+- [`heap_pointer_demo.tiny`](heap_pointer_demo.tiny): Safe heap handling with `new`, `heap_get`/`heap_set`, `delete`, and typical error messages for out-of-bounds or field access mistakes.
+
+## Common errors
+- **Unused bindings**: Unused local variables or parameters raise errors (e.g., "unused parameter(s) in function f: b", "unused local binding(s): t").
+- **Mutated parameters not returned**: When parameters are mutated they must be included in the return value (e.g., "mutated parameter(s) in function bump must be returned: a").
+- **Incomplete destructuring**: All fields of a returned struct must be bound ("destructuring call to f must include output for argument(s): a"), and every binding must be used.
+- **Bare calls**: Function calls cannot stand alone as statements ("bare call statements are not allowed"); print or assign the result instead.
+- **Arithmetic limits**: The `^` operator accepts only integer exponents ("exponent for ^ must be an integer"); use `power` for fractions.
+- **Heap/field access**: Out-of-bounds or missing fields raise runtime errors (e.g., "heap access error: index 5 out of range ...", "unknown field missing"). `errorMessage` stores the last runtime error.
+
+## Running programs and tests
+- **Run a program**: `python tiny_language.py <file.tiny>` executes a TinyLanguage program and exits with status 0 on success. Example: `python tiny_language.py demo.tiny`.
+- **Test suite**: `python -m pytest` runs all tests. Target individual files with commands like `python -m pytest tests/test_tiny_language.py -k class`.
+
+### CLI: module init and publish
+- **Init**: Create a new module directory (`mkdir my_pkg && cd my_pkg`), add an entry point such as `main.tiny`, and optionally maintain a `module.json` with metadata:
 
   ```json
   {"name": "my_pkg", "version": "1.0.0", "entrypoint": "main.tiny", "dependencies": ["utils@^2.1.0"]}
   ```
 
-  Anschliessend per `python ../tiny_language.py main.tiny` lokal validieren; relative Imports wie `import .helpers;` funktionieren dank des Modul-Resolvers out-of-the-box.
-- **Publish**: Die Modul-Quellen samt `module.json` paketieren, z. B. `tar -czf my_pkg-1.0.0.tgz module.json *.tiny`, und in das Ziel-Repository oder Artefakt-Registry hochladen. Version-Pins (z. B. `lib@1.4.2` oder `lib@~1.4`) werden im Manifest dokumentiert und erleichtern reproduzierbare Builds.
+  Then validate locally with `python ../tiny_language.py main.tiny`; relative imports like `import .helpers;` work thanks to the module resolver.
+- **Publish**: Package the module sources plus `module.json`, e.g., `tar -czf my_pkg-1.0.0.tgz module.json *.tiny`, and upload to your target repository or artifact registry. Document version pins (e.g., `lib@1.4.2` or `lib@~1.4`) in the manifest to keep builds reproducible.
 
-Hinweis: Auf Plattformen ohne `readline` (z. B. Windows) werden die REPL-History-Tests automatisch mit `1 skipped` uebersprungen. Die uebrigen Tests laufen trotzdem und das Testergebnis bleibt gueltig; der Skip ist lediglich ein Hinweis auf die optionale Abhaengigkeit.
+Note: On platforms without `readline` (e.g., Windows) the REPL history tests are automatically skipped (`1 skipped`). Other tests still run; the skip simply notes the optional dependency.
 
-### Interaktiver REPL
-- Tab-Autocomplete beruecksichtigt Keywords, Stdlib-Namen und bereits definierte Bindungen aus der aktuellen Sitzung. Die Vervollstaendigung funktioniert auch ohne native `readline`-Bibliothek.
-- Die History wird im Speicher gefuehrt und kann ueber Pfeiltasten oder eine einfache Reverse-Suche (`Ctrl + R`) erneut geladen werden. Beim Beenden wird sie unter `~/.tiny_language_history` persistiert, sofern Schreibrechte vorhanden sind.
+### Interactive REPL
+- Tab completion covers keywords, stdlib names, and bindings defined in the current session. Completion works even without the native `readline` library.
+- History is kept in memory and can be replayed via arrow keys or a simple reverse search (`Ctrl + R`). On exit it is persisted to `~/.tiny_language_history` when possible.
 
-Weitere Beispiele und erwartete Diagnosen finden sich in `tests/test_tiny_language.py` und den Beispielprogrammen oben.
+Additional examples and expected diagnostics live in `tests/test_tiny_language.py` and the programs above.
 
-## Ideen für Erweiterungen
-- [ ] **Pattern Matching und Algebraic Data Types**
-  - [ ] Syntax-Entwurf für Sum-/Product-Types und Match-Expressions
-  - [ ] Exhaustiveness-Checks im Parser/Interpreter implementieren
-  - [ ] Beispielprogramme und Tests für fehlende/zusätzliche Fälle ergänzen
-- [x] **Module/Packages**
-  - [x] Modul-Ladesemantik (Namespacing, relative Imports, Suchpfad) definieren
-  - [x] Interpreter um Modul-Resolver und Caching erweitern
-  - [x] CLI-Workflow für Modul-Init/Publish (Version-Pins optional) beschreiben
-- [ ] **Optionale Typ-Hinweise**
-  - [ ] Syntax für optionale Typ-Anmerkungen auf Funktionen, Parametern und Rückgabewerten festlegen
-  - [ ] Gradual-Typing-Prüfungen und einfache Exhaustiveness-Checks implementieren
-  - [ ] Fehlermeldungen und Docs um Typ-Hinweise erweitern
-- [ ] **Verbesserte Fehlerbehandlung**
-  - [ ] Entwurf für `try/catch`-Blöcke oder `Result`-Typ erstellen
-  - [ ] Stacktraces in Fehlermeldungen einblenden
-  - [ ] Beispielprogramme/Tests für Fehlerpfade ohne Programmabbruch hinzufügen
+## Ideas for future extensions
+- [ ] **Pattern matching and algebraic data types**
+  - [ ] Design syntax for sum/product types and match expressions
+  - [ ] Implement exhaustiveness checks in the parser/interpreter
+  - [ ] Add example programs and tests for missing/extra cases
+- [x] **Modules/packages**
+  - [x] Define module loading semantics (namespacing, relative imports, search path)
+  - [x] Extend the interpreter with a module resolver and caching
+  - [x] Describe CLI workflow for module init/publish (version pins optional)
+- [ ] **Optional type hints**
+  - [ ] Specify syntax for optional type annotations on functions, parameters, and return values
+  - [ ] Implement gradual typing checks and simple exhaustiveness checks
+  - [ ] Extend error messages and docs with type hints
+- [ ] **Better error handling**
+  - [ ] Design `try/catch` blocks or a `Result` type
+  - [ ] Show stack traces in error messages
+  - [ ] Add example programs/tests for error paths without aborting execution
 - [ ] **Tooling**
-  - [ ] Minimalen Formatter (Spacing, Semikolons, Imports) spezifizieren und implementieren
-  - [ ] Linter-Regeln für ungenutzte Bindungen, Bare Calls, Style-Lints definieren
-  - [ ] Language-Server-Prototyp mit Hover/Completion/Diagnostics skizzieren
-- [ ] **Parallelität**
-  - [ ] Design für `async/await` oder Channels mit strukturiertem Concurrency-Model beschreiben
-  - [ ] Cancellation-Tokens und sichere Abbruchpfade im Runtime-Model ergänzen
-  - [ ] Testfälle für deterministische und rennfreie Ausführung erstellen
-- [ ] **Stdlib-Ausbau**
-  - [ ] Collections-API (Maps, Sets, Deques) entwerfen und kernelnah implementieren
-  - [ ] Math/Random-Erweiterungen plus File-/JSON-Utilities hinzufügen
-  - [ ] Dokumentation und Beispielprogramme für neue Stdlib-Teile schreiben
+  - [ ] Specify and implement a minimal formatter (spacing, semicolons, imports)
+  - [ ] Define lints for unused bindings, bare calls, and style rules
+  - [ ] Sketch a language-server prototype with hover/completion/diagnostics
+- [ ] **Parallelism**
+  - [ ] Design `async/await` or channel-based structured concurrency
+  - [ ] Add cancellation tokens and safe abort paths to the runtime model
+  - [ ] Create deterministic, race-free test cases
+- [ ] **Stdlib expansion**
+  - [ ] Design and implement core Collections APIs (maps, sets, deques)
+  - [ ] Add Math/Random extensions plus file/JSON utilities
+  - [ ] Document and demo new stdlib components
 - [ ] **Interop**
-  - [ ] FFI-Schnittstelle zu Python-Funktionen/Modulen definieren (Argument/Return-Mapping)
-  - [ ] Sicherheits- und Sandbox-Mechanismen festlegen
-  - [ ] Beispiele für häufige Python-Interop-Szenarien dokumentieren
+  - [ ] Define an FFI to Python functions/modules (argument/return mapping)
+  - [ ] Specify security and sandboxing mechanisms
+  - [ ] Document common Python interop scenarios

@@ -1,0 +1,10 @@
+fn risky_divide(a, b) {
+  return a / b;
+}
+
+try {
+  print(risky_divide(4, 2));
+  print(risky_divide(1, 0));
+} catch(err) {
+  print("handled error", err.code);
+}

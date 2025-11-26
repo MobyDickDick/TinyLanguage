@@ -317,6 +317,64 @@
       ]
     },
     {
+      "name": "Python: pytest - tests/test_try_catch.py",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_try_catch.py",
+        "-q"
+      ]
+    },
+    {
+      "name": "Python: pytest - tests/test_typing.py",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_typing.py",
+        "-q"
+      ]
+    },
+    {
+      "name": "Python: pytest - tests/test_modules.py",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_modules.py",
+        "-q"
+      ]
+    },
+    {
+      "name": "Python: utils helper module",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tests/utils.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Python: tiny_language REPL",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tiny_language.py",
+      "args": ["--repl"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Python: import_code helper",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/.vscode/import_code.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
       "name": "Python: TinyLanguage Rosetta Fibonacci",
       "type": "debugpy",
       "request": "launch",

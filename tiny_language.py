@@ -316,6 +316,10 @@ def _classify_error(msg: str, candidates: Optional[List[str]] = None) -> Tuple[s
         return "E005", "Pass a list, string, heap pointer, or other sized value to `len`."
     if "destructuring call" in lower_msg and "must include output" in lower_msg:
         return "E006", "Add the missing binding(s) to the destructuring pattern so each referenced argument is captured."
+    if "type mismatch" in lower_msg:
+        return "E009", "Adjust the annotation or the provided value so they agree."
+    if "not all paths" in lower_msg and "return" in lower_msg:
+        return "E010", "Add return statements for every branch or supply a default return value."
     return "E000", None
 
 # ----- Lexer -----
@@ -531,11 +535,18 @@ class While(IR):
 
 
 @dataclass
+class Param:
+    name: str
+    type: Optional[str] = None
+
+
+@dataclass
 class Fn(IR):
     name: str
-    params: List[str]
+    params: List[Param]
     body: List[IR]
     namespace: Optional[str] = None
+    return_type: Optional[str] = None
     pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
@@ -543,8 +554,9 @@ class Fn(IR):
 class MethodDef(IR):
     class_name: str
     name: str
-    params: List[str]
+    params: List[Param]
     body: List[IR]
+    return_type: Optional[str] = None
     pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
@@ -803,8 +815,12 @@ class Parser:
             kw = self._eat("KW", "fn")
             name_tok = self._eat("NAME")
             params = self.parse_param_list()
+            return_type = None
+            if self._accept("OP", "-"):
+                self._eat("OP", ">")
+                return_type = self._eat_name_or_kw().text
             body = self.parse_block()
-            return Fn(name_tok.text, params, body, pos=kw.pos)
+            return Fn(name_tok.text, params, body, return_type=return_type, pos=kw.pos)
         if self.tok.kind == "KW" and self.tok.text == "return":
             kw = self._eat("KW", "return")
             expr = self.parse_expr()
@@ -838,8 +854,14 @@ class Parser:
                     self._eat("KW", "fn")
                     mname_tok = self._eat_name_or_kw()
                     params = self.parse_param_list()
+                    return_type = None
+                    if self._accept("OP", "-"):
+                        self._eat("OP", ">")
+                        return_type = self._eat_name_or_kw().text
                     body = self.parse_block()
-                    methods.append(MethodDef(cname_tok.text, mname_tok.text, params, body, pos=mname_tok.pos))
+                    methods.append(
+                        MethodDef(cname_tok.text, mname_tok.text, params, body, return_type=return_type, pos=mname_tok.pos)
+                    )
                 else:
                     fname = self._eat("NAME").text
                     self._eat("SYM", ":")
@@ -898,13 +920,20 @@ class Parser:
             raise self._error("unexpected token after name", name_tok.pos)
         raise self._error(f"unexpected token {self.tok.kind}", self.tok.pos)
 
-    def parse_param_list(self) -> List[str]:
+    def parse_param(self) -> Param:
+        name_tok = self._eat("NAME")
+        annotation = None
+        if self._accept("SYM", ":"):
+            annotation = self._eat_name_or_kw().text
+        return Param(name_tok.text, annotation)
+
+    def parse_param_list(self) -> List[Param]:
         self._eat("SYM", "(")
-        params: List[str] = []
+        params: List[Param] = []
         if not (self.tok.kind == "SYM" and self.tok.text == ")"):
-            params.append(self._eat("NAME").text)
+            params.append(self.parse_param())
             while self._accept("SYM", ","):
-                params.append(self._eat("NAME").text)
+                params.append(self.parse_param())
         self._eat("SYM", ")")
         return params
 
@@ -1112,6 +1141,10 @@ class Parser:
 # ----- Linter -----
 
 
+def _param_names(params: List[Param]) -> List[str]:
+    return [p.name for p in params]
+
+
 def uses_in_expr(e: IR, reads: Dict[str, int]) -> None:
     if isinstance(e, Var):
         reads[e.name] = reads.get(e.name, 0) + 1
@@ -1185,21 +1218,23 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
         tmp: Dict[str, int] = {}
         for t in s.body:
             lint_stmt_reads(t, tmp)
-        miss = [p for p in s.params if tmp.get(p, 0) == 0]
+        param_names = _param_names(s.params)
+        miss = [p for p in param_names if tmp.get(p, 0) == 0]
         if miss:
             raise RuntimeError(
                 f"unused parameter(s) in method {s.class_name}.{s.name}: {', '.join(miss)}"
             )
         for name, count in tmp.items():
-            if name in set(s.params):
+            if name in set(param_names):
                 continue
             reads[name] = max(reads.get(name, 0), count)
     elif isinstance(s, Fn):
         tmp: Dict[str, int] = {}
         for t in s.body:
             lint_stmt_reads(t, tmp)
+        param_names = _param_names(s.params)
         for name, count in tmp.items():
-            if name in set(s.params):
+            if name in set(param_names):
                 continue
             reads[name] = max(reads.get(name, 0), count)
     elif isinstance(s, ClassDef):
@@ -1217,7 +1252,8 @@ def lint_fn_params_used(fn: Fn, source: Optional[str] = None) -> None:
     reads: Dict[str, int] = {}
     for st in fn.body:
         lint_stmt_reads(st, reads)
-    unused = [p for p in fn.params if reads.get(p, 0) == 0]
+    param_names = _param_names(fn.params)
+    unused = [p for p in param_names if reads.get(p, 0) == 0]
     if unused:
         msg = f"unused parameter(s) in function {fn.name}: {', '.join(unused)}"
         if source is None:
@@ -1228,9 +1264,12 @@ def lint_fn_params_used(fn: Fn, source: Optional[str] = None) -> None:
             code="E002",
             hint="Remove the unused parameter or reference it.",
         )
-    lint_param_mutations_returned(fn.body, set(fn.params), fn.name, is_method=False, source=source, pos=fn.pos)
+    lint_param_mutations_returned(fn.body, set(param_names), fn.name, is_method=False, source=source, pos=fn.pos)
     lint_destruct_call_outputs(fn.body, source)
     lint_return_signatures(fn.body, fn.name, is_method=False, source=source, pos=fn.pos)
+    lint_return_exhaustiveness(
+        fn.body, fn.name, expected_return=fn.return_type, is_method=False, source=source, pos=fn.pos
+    )
     lint_locals_used(fn.body, source)
 
 
@@ -1238,7 +1277,8 @@ def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None
     reads: Dict[str, int] = {}
     for st in md.body:
         lint_stmt_reads(st, reads)
-    unused = [p for p in md.params if reads.get(p, 0) == 0]
+    param_names = _param_names(md.params)
+    unused = [p for p in param_names if reads.get(p, 0) == 0]
     if unused:
         msg = f"unused parameter(s) in method {md.class_name}.{md.name}: {', '.join(unused)}"
         if source is None:
@@ -1250,10 +1290,18 @@ def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None
             hint="Remove the unused parameter or reference it.",
         )
     lint_param_mutations_returned(
-        md.body, set(md.params), f"{md.class_name}.{md.name}", is_method=True, source=source, pos=md.pos
+        md.body, set(param_names), f"{md.class_name}.{md.name}", is_method=True, source=source, pos=md.pos
     )
     lint_destruct_call_outputs(md.body, source)
     lint_return_signatures(md.body, f"{md.class_name}.{md.name}", is_method=True, source=source, pos=md.pos)
+    lint_return_exhaustiveness(
+        md.body,
+        f"{md.class_name}.{md.name}",
+        expected_return=md.return_type,
+        is_method=True,
+        source=source,
+        pos=md.pos,
+    )
     lint_locals_used(md.body, source)
 
 
@@ -1314,6 +1362,20 @@ def _format_signature(sig: Tuple[str, ...]) -> str:
     return "{" + ", ".join(sig) + "}"
 
 
+def _block_guarantees_return(stmts: List[IR]) -> bool:
+    for st in stmts:
+        if isinstance(st, Return):
+            return True
+        if isinstance(st, If):
+            if _block_guarantees_return(st.then) and _block_guarantees_return(st.els):
+                return True
+        elif isinstance(st, While):
+            continue
+        elif isinstance(st, (Fn, MethodDef, ClassDef, Namespace)):
+            continue
+    return False
+
+
 def lint_return_signatures(
     stmts: List[IR],
     fn_name: str,
@@ -1348,6 +1410,37 @@ def lint_return_signatures(
                 visit(st.body)
 
     visit(stmts)
+
+
+def lint_return_exhaustiveness(
+    stmts: List[IR],
+    fn_name: str,
+    *,
+    expected_return: Optional[str],
+    is_method: bool,
+    source: Optional[str],
+    pos: SourcePos,
+) -> None:
+    if expected_return is None:
+        return
+    if _block_guarantees_return(stmts):
+        return
+    kind = "method" if is_method else "function"
+    msg = f"not all paths in {kind} {fn_name} return a value for annotated type {expected_return}"
+    if source is None:
+        raise RuntimeError(msg)
+    raise TinyLangError(
+        format_error(
+            source,
+            pos,
+            msg,
+            code="E010",
+            hint="Add return statements for every branch or provide a default return to satisfy the annotation.",
+        ),
+        pos,
+        code="E010",
+        hint="Add return statements for every branch or provide a default return to satisfy the annotation.",
+    )
 
 
 def lint_no_consecutive_definitions(stmts: List[IR]) -> None:
@@ -1762,6 +1855,8 @@ class Runtime:
     def __get_tag(self, v: Any) -> Optional[str]:
         if isinstance(v, dict) and "__tag__" in v:
             return v["__tag__"]
+        if isinstance(v, BaseView):
+            return v.class_name
         try:
             iv = int(v)
             with self._lock:
@@ -1770,6 +1865,48 @@ class Runtime:
         except Exception:
             pass
         return None
+
+    def _value_type_name(self, value: Any) -> Optional[str]:
+        tag = self.__get_tag(value)
+        if tag:
+            return tag
+        if value is None:
+            return "Null"
+        if isinstance(value, bool):
+            return "Bool"
+        if isinstance(value, (int, float)):
+            return "number"
+        if isinstance(value, str):
+            return "string"
+        return type(value).__name__
+
+    def _type_matches(self, expected: str, value: Any) -> bool:
+        actual = self._value_type_name(value)
+        if actual is None:
+            return False
+        expected_norm = expected.strip()
+        actual_norm = actual.strip() if isinstance(actual, str) else str(actual)
+        if expected_norm == actual_norm or expected_norm.lower() == actual_norm.lower():
+            return True
+        if expected_norm.lower() == "number" and actual_norm.lower() in {"number", "int", "float"}:
+            return True
+        if expected_norm.lower() == "string" and actual_norm.lower() == "string":
+            return True
+        if expected_norm.lower() in {"bool", "boolean"} and actual_norm.lower() in {"bool", "boolean"}:
+            return True
+        if expected_norm == "Null" and value is None:
+            return True
+        return False
+
+    def _enforce_annotation(self, expected: str, value: Any, *, label: str, pos: SourcePos) -> None:
+        if not self._type_matches(expected, value):
+            actual = self._value_type_name(value) or type(value).__name__
+            raise self._error(
+                f"type mismatch for {label}: expected {expected} but got {actual}",
+                pos,
+                code="E009",
+                hint="Adjust the type annotation or pass a compatible value to satisfy the hint.",
+            )
 
     @staticmethod
     def _number_fields(val: Any) -> Optional[Dict[str, Any]]:
@@ -2215,11 +2352,18 @@ class Runtime:
 
     def _invoke_function(self, fn: Fn, args: List[Any]) -> Any:
         call_env = Environment(parent=self.global_env, namespace=fn.namespace)
-        for pname, arg in zip(fn.params, args):
-            call_env.values[pname] = arg
+        for param, arg in zip(fn.params, args):
+            if param.type:
+                self._enforce_annotation(param.type, arg, label=f"parameter {param.name} in function {fn.name}", pos=fn.pos)
+            call_env.values[param.name] = arg
         res = self.eval_block(fn.body, call_env, fn.namespace)
         if isinstance(res, ReturnSignal):
-            return res.value
+            value = res.value
+            if fn.return_type:
+                self._enforce_annotation(fn.return_type, value, label=f"return value for function {fn.name}", pos=fn.pos)
+            return value
+        if fn.return_type:
+            self._enforce_annotation(fn.return_type, res, label=f"return value for function {fn.name}", pos=fn.pos)
         return res
 
     def _run_spawn(self, fn: Fn, args: List[Any], handle: SpawnHandle) -> None:
@@ -2347,13 +2491,7 @@ class Runtime:
             fn = self.functions.get(qualified_name)
             if fn is None:
                 raise RuntimeError(f"unknown function {qualified_name}")
-            call_env = Environment(parent=self.global_env, namespace=fn.namespace)
-            for pname, arg in zip(fn.params, args):
-                call_env.values[pname] = arg
-            res = self.eval_block(fn.body, call_env, fn.namespace)
-            if isinstance(res, ReturnSignal):
-                return res.value
-            return res
+            return self._invoke_function(fn, args)
         target_obj = obj.obj if isinstance(obj, BaseView) else obj
         start_class = obj.class_name if isinstance(obj, BaseView) else self.__get_tag(target_obj)
         cname = self.__get_tag(target_obj)
@@ -2366,14 +2504,21 @@ class Runtime:
         self_value: Any = target_obj
         if md.class_name != cname:
             self_value = BaseView(target_obj, md.class_name)
-        env.values[md.params[0]] = self_value  # self
+        env.values[md.params[0].name] = self_value  # self
         for base in self.class_mro(cname)[1:]:
             env.values[base] = BaseView(target_obj, base)
-        for pname, arg in zip(md.params[1:], args):
-            env.values[pname] = arg
+        for param, arg in zip(md.params[1:], args):
+            if param.type:
+                self._enforce_annotation(param.type, arg, label=f"parameter {param.name} in method {md.class_name}.{md.name}", pos=md.pos)
+            env.values[param.name] = arg
         res = self.eval_block(md.body, env)
         if isinstance(res, ReturnSignal):
-            return res.value
+            value = res.value
+            if md.return_type:
+                self._enforce_annotation(md.return_type, value, label=f"return value for method {md.class_name}.{md.name}", pos=md.pos)
+            return value
+        if md.return_type:
+            self._enforce_annotation(md.return_type, res, label=f"return value for method {md.class_name}.{md.name}", pos=md.pos)
         return res
 
     def type_field_type(self, tname: str, fname: str) -> Optional[str]:

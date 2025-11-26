@@ -462,23 +462,31 @@ class _StdLibRegistrar:
         random.shuffle(seq)
         return len(seq)
 
+    def _coerce_path(self, path: Any) -> Path:
+        path_str = str(path)
+        # Normalize platform-specific separators that may appear inside TinyLanguage
+        # string literals (especially on Windows where backslashes are common and can
+        # be interpreted as escape sequences by editors).
+        path_str = path_str.replace("\\", "/")
+        return Path(path_str)
+
     def _file_read(self, path: Any) -> str:
-        text_path = Path(str(path))
+        text_path = self._coerce_path(path)
         if not text_path.exists():
             raise RuntimeError(f"file does not exist: {text_path}")
         return text_path.read_text(encoding="utf-8")
 
     def _file_write(self, path: Any, content: Any) -> bool:
-        text_path = Path(str(path))
+        text_path = self._coerce_path(path)
         text_path.parent.mkdir(parents=True, exist_ok=True)
         text_path.write_text(str(content), encoding="utf-8")
         return True
 
     def _file_exists(self, path: Any) -> bool:
-        return Path(str(path)).exists()
+        return self._coerce_path(path).exists()
 
     def _file_remove(self, path: Any) -> bool:
-        text_path = Path(str(path))
+        text_path = self._coerce_path(path)
         if not text_path.exists():
             return False
         text_path.unlink()

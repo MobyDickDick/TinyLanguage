@@ -100,7 +100,7 @@ def test_random_file_and_json_helpers(run_tiny_source, tmp_path):
 
         define data = JSON.parse("{{\\"n\\": [1, 2], \\"flag\\": true}}");
         define _ = Map.set(data, "extra", 5);
-        define path = "{file_path}";
+        define path = "{file_path.as_posix()}";
         define _write = File.write(path, JSON.stringify(data));
         print(File.exists(path));
         define text = File.read(path);

@@ -1882,6 +1882,35 @@ class SpawnHandle:
     error: Optional[BaseException] = None
 
 
+@dataclass
+class CancellationToken:
+    cancelled: threading.Event = field(default_factory=threading.Event)
+    reason: Optional[str] = None
+    _linked: List[SpawnHandle] = field(default_factory=list)
+    _lock: threading.Lock = field(default_factory=threading.Lock)
+
+    def cancel(self, reason: Optional[str] = None) -> bool:
+        with self._lock:
+            already = self.cancelled.is_set()
+            if already:
+                return False
+            self.reason = reason
+            self.cancelled.set()
+            for handle in list(self._linked):
+                handle.cancelled.set()
+            return True
+
+    def link_handle(self, handle: SpawnHandle) -> bool:
+        with self._lock:
+            if handle in self._linked:
+                return False
+            if self.cancelled.is_set():
+                handle.cancelled.set()
+                return False
+            self._linked.append(handle)
+            return True
+
+
 class Runtime:
     def __init__(self, source: str):
         self._lock = threading.RLock()
@@ -2615,6 +2644,31 @@ class Runtime:
         already = handle.cancelled.is_set()
         handle.cancelled.set()
         return not already
+
+    def make_cancellation_token(self) -> CancellationToken:
+        return CancellationToken()
+
+    def cancel_token(self, token: Any, reason: Optional[str] = None) -> bool:
+        if not isinstance(token, CancellationToken):
+            raise RuntimeError("cancel_token expects a cancellation token")
+        return token.cancel(reason)
+
+    def token_cancelled(self, token: Any) -> bool:
+        if not isinstance(token, CancellationToken):
+            raise RuntimeError("token_cancelled expects a cancellation token")
+        return token.cancelled.is_set()
+
+    def token_reason(self, token: Any) -> Optional[str]:
+        if not isinstance(token, CancellationToken):
+            raise RuntimeError("token_reason expects a cancellation token")
+        return token.reason
+
+    def link_token(self, token: Any, handle: Any) -> bool:
+        if not isinstance(token, CancellationToken):
+            raise RuntimeError("link_token expects a cancellation token")
+        if not isinstance(handle, SpawnHandle):
+            raise RuntimeError("link_token expects a spawn handle")
+        return token.link_handle(handle)
 
     def join_handle(
         self,

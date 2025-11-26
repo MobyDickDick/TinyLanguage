@@ -229,6 +229,17 @@
       ]
     },
     {
+      "name": "Python: pytest - tests/test_async_tokens.py",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_async_tokens.py",
+        "-q"
+      ]
+    },
+    {
       "name": "Python: pytest - tests/test_error_messages.py",
       "type": "debugpy",
       "request": "launch",

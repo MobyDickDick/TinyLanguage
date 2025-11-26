@@ -1,0 +1,17 @@
+// Demo: Random + File + JSON
+
+// Zufallszahlen
+print(Random.randint(1, 3));
+print(Random.choice(new["rot", "gruen", "blau"]));
+
+// JSON roundtrip
+
+define json_text = "{\"title\":\"Tiny\", \"numbers\":[1,2,3]}";
+define data = JSON.parse(json_text);
+Map.set(data, "rand", Random.random());
+
+define tmp = "tmp/demo.json";
+File.write(tmp, JSON.stringify(data));
+print(File.exists(tmp));
+print(String.contains(File.read(tmp), "\"numbers\""));
+File.remove(tmp);

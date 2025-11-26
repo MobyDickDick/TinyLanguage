@@ -180,9 +180,11 @@ Mehr Beispiele und Fehlerszenarien finden sich in [`heap_pointer_demo.tiny`](hea
 ### Standardbibliothek
 Vor jedem Programmstart registriert der Interpreter die eingebaute Stdlib mit folgenden Namespaces:
 
-- **Math**: `Math.abs(x)`, `Math.pow(base, exp)`, `Math.sqrt(x)` fuer grundlegende Mathematik. Neu hinzugekommen sind `Math.max(a, b)` und `Math.min(a, b)` zum Vergleichen sowie `Math.clamp(value, lower, upper)`, um Werte einzugrenzen. Beispiel: `print(Math.clamp(Math.max(-2, 10), 0, 5));` gibt `5` aus.
+- **Math**: `Math.abs(x)`, `Math.pow(base, exp)`, `Math.sqrt(x)` fuer grundlegende Mathematik. Neu hinzugekommen sind `Math.max(a, b)` und `Math.min(a, b)` zum Vergleichen sowie `Math.clamp(value, lower, upper)`, um Werte einzugrenzen. Weitere Helfer: `Math.round(value, digits?)` rundet auf Nachkommastellen, `Math.floor`/`Math.ceil` runden nach unten/oben und `Math.sign(x)` liefert -1/0/1 je nach Vorzeichen. Beispiel: `print(Math.clamp(Math.max(-2, 10), 0, 5));` gibt `5` aus.
 - **String**: `String.split(text, sep)` liefert einen Heap-Pointer auf ein Array der Teilstrings, `String.join(items, sep)` verbindet eine Liste/Pointer, `String.contains(text, needle)` prueft Teilstrings. Zusaetzlich gibt es `String.upper(text)`, `String.lower(text)`, `String.trim(text)` und `String.repeat(text, count)` fuer Gross-/Kleinschreibung, Whitespace-Trimming und Wiederholung. Beispiel: `print(String.upper(String.trim("  tiny "))); print(String.repeat("ha", 3));` erzeugt `TINY` und `hahaha`.
-- **Collections**: `Collections.len(x)` misst die Laenge von Heap-Pointern oder Python-Listen, `Collections.push(target, value)` fuegt am Ende an und liefert die neue Laenge, `Collections.pop(target)` entfernt das letzte Element oder wirft einen Fehler bei leeren Collections. Neu sind `Collections.slice(target, start, end)` fuer Teilbereiche und `Collections.contains(target, value)` zum Nachschlagen: `define mid = Collections.slice(new[1, 2, 3], 1, 3); print(Collections.contains(mid, 2));` druckt `true`.
+- **Collections**: `Collections.len(x)` misst die Laenge von Heap-Pointern oder Python-Listen, `Collections.push(target, value)` fuegt am Ende an und liefert die neue Laenge, `Collections.pop(target)` entfernt das letzte Element oder wirft einen Fehler bei leeren Collections. Neu sind `Collections.slice(target, start, end)` fuer Teilbereiche und `Collections.contains(target, value)` zum Nachschlagen: `define mid = Collections.slice(new[1, 2, 3], 1, 3); print(Collections.contains(mid, 2));` druckt `true`. Darueber hinaus gibt es eine eigenstaendige `Map`-API (`Map.new`, `Map.set`, `Map.get`, `Map.keys` usw.), Mengen per `Set`-Namespace (`Set.add`, `Set.delete`, `Set.to_list`) und doppelt verkettete Queues ueber `Deque` (`Deque.push_left/right`, `Deque.pop_left/right`, `Deque.peek_left/right`).
+- **Random**: Zufallshelfer `Random.random()`, `Random.randint(lower, upper)`, `Random.choice(seq)` und `Random.shuffle(seq)` fuer einfache Stichproben.
+- **File/JSON**: `File.read`/`File.write`/`File.exists`/`File.remove` fuer UTF-8-Dateien. `JSON.parse(text)` wandelt Strings in Listen/Maps/Numerics/Null um, `JSON.stringify(value)` baut aus kompatiblen Strukturen wieder einen JSON-String.
 
 ## Beispielprogramme
 - [`demo.tiny`](demo.tiny): Kleines Schaufenster fuer Variablen, Schleifen, Funktionen, Klassen und Heap-Operationen. Laeuft sequenziell durch und druckt Zwischenergebnisse, wodurch man die Sprachfeatures in Aktion sieht.
@@ -195,6 +197,8 @@ Vor jedem Programmstart registriert der Interpreter die eingebaute Stdlib mit fo
 - [`namespace_demo.tiny`](namespace_demo.tiny): Kleine `Tools`-Bibliothek als Namespace mit `double` und `label`.
 - [`concurrency_demo.tiny`](concurrency_demo.tiny): Startet mehrere Aufgaben mit `spawn`, sammelt die Ergebnisse ueber `join` und kombiniert sie mit `String.split`/`String.join` zu einer Ausgabe.
 - [`heap_pointer_demo.tiny`](heap_pointer_demo.tiny): Zeigt sicheres Heap-Handling mit `new`, `heap_get`/`heap_set` und `delete` sowie typische Fehlermeldungen bei Out-of-Bounds- oder Feldzugriffen.
+- [`stdlib_collections_demo.tiny`](stdlib_collections_demo.tiny): Map/Set/Deque-Beispiele aus der neuen Collections-API.
+- [`stdlib_io_random_demo.tiny`](stdlib_io_random_demo.tiny): Random-Helfer plus JSON-Parsing und Datei-I/O im Zusammenspiel.
 
 ## Haeufige Fehler
 - **Ungenutzte Bindungen**: Nicht verwendete lokale Variablen oder Parameter fuehren zu Fehlern (z. B. "unused parameter(s) in function f: b", "unused local binding(s): t").

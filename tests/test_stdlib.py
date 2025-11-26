@@ -1,3 +1,5 @@
+import random
+
 import pytest
 
 
@@ -56,3 +58,60 @@ def test_string_repeat_validates_count(run_tiny_source):
 
     with pytest.raises(Exception, match=r"repeat expects an integer count"):
         run_tiny_source('print(String.repeat("x", "oops"));')
+
+
+def test_map_set_and_deque_helpers(run_tiny_source):
+    out = run_tiny_source(
+        """
+        define capitals = Map.from_entries(new[
+            new["DE", "Berlin"],
+            new["AT", "Wien"]
+        ]);
+        print(Map.get(capitals, "DE", "?"));
+        print(Map.has(capitals, "CH"));
+        define _ = Map.set(capitals, "CH", "Bern");
+        print(Map.len(capitals));
+        print(Map.get(capitals, "CH", "?"));
+        print(heap_get(Map.keys(capitals), 1));
+
+        define features = Set.from_list(String.split("map,set,deque", ","));
+        print(Set.add(features, "json"));
+        print(Set.len(features));
+        print(Set.has(features, "map"));
+
+        define todo = Deque.new(String.split("a,b", ","));
+        define _dq = Deque.push_left(todo, "start");
+        print(Deque.peek_right(todo));
+        print(Deque.pop_left(todo));
+        print(String.join(Deque.to_list(todo), "|"));
+        """,
+    )
+
+    assert out == "Berlin\nfalse\n3\nBern\nAT\ntrue\n4\ntrue\nb\nstart\na|b\n"
+
+
+def test_random_file_and_json_helpers(run_tiny_source, tmp_path):
+    random.seed(0)
+    file_path = tmp_path / "demo.json"
+    out = run_tiny_source(
+        f"""
+        print(Random.randint(1, 10));
+        print(Random.choice(new["rot", "gruen", "blau"]));
+
+        define data = JSON.parse("{{\\"n\\": [1, 2], \\"flag\\": true}}");
+        define _ = Map.set(data, "extra", 5);
+        define path = "{file_path.as_posix()}";
+        define _write = File.write(path, JSON.stringify(data));
+        print(File.exists(path));
+        define text = File.read(path);
+        print(String.contains(text, "flag"));
+        print(Map.get(JSON.parse(text), "flag", false));
+        define _rm = File.remove(path);
+        print(File.exists(path));
+        """
+    )
+
+    lines = out.strip().split("\n")
+    assert lines[0].isdigit()
+    assert lines[1] in {"rot", "gruen", "blau"}
+    assert lines[2:] == ["true", "true", "true", "false"]

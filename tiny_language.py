@@ -1249,9 +1249,9 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
         for t in s.body:
             lint_stmt_reads(t, tmp)
         miss = []
-        if tmp.get(s.a_name, 0) == 0:
+        if not s.a_name.startswith("_") and tmp.get(s.a_name, 0) == 0:
             miss.append(s.a_name)
-        if tmp.get(s.b_name, 0) == 0:
+        if not s.b_name.startswith("_") and tmp.get(s.b_name, 0) == 0:
             miss.append(s.b_name)
         if miss:
             raise RuntimeError(f"unused operator parameter(s) in op {s.op}: {', '.join(miss)}")
@@ -1266,7 +1266,7 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
         for t in s.body:
             lint_stmt_reads(t, tmp)
         param_names = _param_names(s.params)
-        miss = [p for p in param_names if tmp.get(p, 0) == 0]
+        miss = [p for p in param_names if not p.startswith("_") and tmp.get(p, 0) == 0]
         if miss:
             raise RuntimeError(
                 f"unused parameter(s) in method {s.class_name}.{s.name}: {', '.join(miss)}"
@@ -1300,7 +1300,7 @@ def lint_fn_params_used(fn: Fn, source: Optional[str] = None) -> None:
     for st in fn.body:
         lint_stmt_reads(st, reads)
     param_names = _param_names(fn.params)
-    unused = [p for p in param_names if reads.get(p, 0) == 0]
+    unused = [p for p in param_names if not p.startswith("_") and reads.get(p, 0) == 0]
     if unused:
         msg = f"unused parameter(s) in function {fn.name}: {', '.join(unused)}"
         if source is None:
@@ -1325,7 +1325,7 @@ def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None
     for st in md.body:
         lint_stmt_reads(st, reads)
     param_names = _param_names(md.params)
-    unused = [p for p in param_names if reads.get(p, 0) == 0]
+    unused = [p for p in param_names if not p.startswith("_") and reads.get(p, 0) == 0]
     if unused:
         msg = f"unused parameter(s) in method {md.class_name}.{md.name}: {', '.join(unused)}"
         if source is None:
@@ -1381,7 +1381,7 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
     collect_defs(stmts)
     for s in stmts:
         lint_stmt_reads(s, uses)
-    unused = [n for n in defs if uses.get(n, 0) == 0]
+    unused = [n for n in defs if not n.startswith("_") and uses.get(n, 0) == 0]
     if unused:
         pos = defs[unused[0]]
         msg = f"unused local binding(s): {', '.join(unused)}"
@@ -1393,6 +1393,85 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
             code="E002",
             hint="Remove the unused binding or reference it.",
         )
+
+
+def _collect_function_signatures(stmts: List[IR], prefix: str = "") -> Dict[str, Optional[str]]:
+    sigs: Dict[str, Optional[str]] = {}
+
+    def qualify(name: str) -> str:
+        return f"{prefix}.{name}" if prefix else name
+
+    for st in stmts:
+        if isinstance(st, Fn):
+            sigs[qualify(st.name)] = st.return_type
+        elif isinstance(st, Namespace):
+            nested_prefix = qualify(st.name)
+            sigs.update(_collect_function_signatures(st.body, prefix=nested_prefix))
+    return sigs
+
+
+def lint_bare_call_results(
+    stmts: List[IR], signatures: Dict[str, Optional[str]], source: Optional[str] = None
+) -> None:
+    disallowed: set[str] = {name for name, ret in signatures.items() if ret not in {None, "Null"}}
+
+    def visit(block: List[IR]) -> None:
+        for st in block:
+            if isinstance(st, CallStmt):
+                if st.name in disallowed:
+                    hint = "Assign the return value or explicitly acknowledge it with `_ = ...;`."
+                    msg = f"call to {st.name} returns a value that is ignored"
+                    if source is None:
+                        raise RuntimeError(msg)
+                    raise TinyLangError(
+                        format_error(source, st.pos, msg, code="E011", hint=hint),
+                        st.pos,
+                        code="E011",
+                        hint=hint,
+                    )
+            if isinstance(st, If):
+                visit(st.then)
+                visit(st.els)
+            elif isinstance(st, While):
+                visit(st.body)
+            elif isinstance(st, TryCatch):
+                visit(st.body)
+                visit(st.handler)
+            elif isinstance(st, Namespace):
+                visit(st.body)
+            elif isinstance(st, ClassDef):
+                for method in st.methods:
+                    visit(method.body)
+
+    visit(stmts)
+
+
+def lint_import_style(stmts: List[IR], source: Optional[str] = None) -> None:
+    imports: List[Import] = []
+
+    for st in stmts:
+        if isinstance(st, Import):
+            imports.append(st)
+        else:
+            break
+
+    ordered = sorted(imports, key=lambda imp: (imp.module, imp.alias or ""))
+    if imports and [(imp.module, imp.alias) for imp in imports] != [(imp.module, imp.alias) for imp in ordered]:
+        first_misordered = imports[0]
+        hint = "Sort the leading import block alphabetically to keep module headers consistent."
+        msg = "imports are not sorted alphabetically"
+        if source is None:
+            raise RuntimeError(msg)
+        raise TinyLangError(
+            format_error(source, first_misordered.pos, msg, code="E012", hint=hint),
+            first_misordered.pos,
+            code="E012",
+            hint=hint,
+        )
+
+    for st in stmts:
+        if isinstance(st, Namespace):
+            lint_import_style(st.body, source)
 
 
 def lint_destruct_call_outputs(stmts: List[IR], source: Optional[str] = None) -> None:
@@ -3079,9 +3158,11 @@ def compile_and_run(
     runtime.error_messages.clear()
 
     # lint functions + top level locals
+    lint_import_style(stmts, src)
     lint_destruct_call_outputs(stmts, src)
     lint_no_consecutive_definitions(stmts)
     lint_locals_used(stmts, src)
+    signatures = _collect_function_signatures(stmts)
     def lint_nested(block: List[IR]) -> None:
         for st in block:
             if isinstance(st, Fn):
@@ -3095,6 +3176,7 @@ def compile_and_run(
                 lint_nested(st.body)
 
     lint_nested(stmts)
+    lint_bare_call_results(stmts, signatures, src)
 
     env = env or Environment(parent=None, namespace=module_namespace)
     if module_namespace:
@@ -3219,12 +3301,25 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Execute the provided TinyLanguage source code string",
     )
     mode_group.add_argument("--repl", action="store_true", help="Start a TinyLanguage REPL")
+    mode_group.add_argument(
+        "--format",
+        dest="format_file",
+        metavar="FILE",
+        help="Format the given TinyLanguage source file and print the result",
+    )
     parser.add_argument(
         "file",
         nargs="?",
         help="Path to the TinyLanguage source file to execute",
     )
     args = parser.parse_args(argv)
+
+    if args.format_file is not None:
+        from formatter import format_source
+
+        with open(args.format_file, "r", encoding="utf-8") as handle:
+            print(format_source(handle.read()), end="")
+        return 0
 
     if args.eval is not None:
         try:

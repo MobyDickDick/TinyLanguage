@@ -198,6 +198,11 @@ Vor jedem Programmstart registriert der Interpreter die eingebaute Stdlib mit fo
 ## Haeufige Fehler
 - **Ungenutzte Bindungen**: Nicht verwendete lokale Variablen oder Parameter fuehren zu Fehlern (z. B. "unused parameter(s) in function f: b", "unused local binding(s): t").
 - **Mutierte Parameter nicht zurueckgegeben**: Wird ein Parameter veraendert, muss er im Rueckgabewert enthalten sein (z. B. "mutated parameter(s) in function bump must be returned: a").
+
+## Formatter, Lints und Language-Server
+- **Formatter**: `python tiny_language.py --format datei.tiny` erzwingt Einrueckungen mit vier Leerzeichen, genau ein Leerzeichen um Operatoren und nach Kommas sowie normierte Import-Zeilen (`import pfad as alias;`). Kommentare bleiben erhalten.
+- **Linter-Stilregeln**: Ungenutzte Bindungen lassen sich jetzt mit einem vorangestellten `_` gezielt unterdruecken. Import-Anweisungen muessen sortiert vor dem restlichen Code stehen (`E012`). Funktionsaufrufe mit Rueckgabetyp duerfen nicht laienhaft ignoriert werden (`E011`); entweder das Ergebnis binden oder bewusst mit `_ = fn();` verwerfen.
+- **Language-Server-Prototyp**: Das Modul `language_server.py` bietet eine Mini-API fuer Hover, Completions und Diagnostics. Ideal, um LSP-Ideen auszuprobieren, ohne direkt einen JSON-RPC-Server zu schreiben.
 - **Unvollstaendiges Destructuring**: Alle Felder eines zurueckgegebenen Structs muessen gebunden werden ("destructuring call to f must include output for argument(s): a"), und jede Bindung muss benutzt werden.
 - **Bare Calls**: Funktionsaufrufe duerfen nicht allein als Statement stehen ("bare call statements are not allowed"); Ergebnis ausgeben oder zuweisen.
 - **Arithmetik-Einschraenkungen**: Der `^`-Operator akzeptiert nur ganzzahlige Exponenten ("exponent for ^ must be an integer"); fuer Brueche `power` nutzen.

@@ -299,7 +299,7 @@ Additional examples and expected diagnostics live in `tests/test_tiny_language.p
   - [ ] Design and implement core Collections APIs (maps, sets, deques)
   - [ ] Add Math/Random extensions plus file/JSON utilities
   - [ ] Document and demo new stdlib components
-- [ ] **Interop**
-  - [ ] Define an FFI to Python functions/modules (argument/return mapping)
-  - [ ] Specify security and sandboxing mechanisms
-  - [ ] Document common Python interop scenarios
+- [x] **Interop** (see [`docs/python_interop.md`](docs/python_interop.md) for the design)
+  - [x] Define an FFI to Python functions/modules (argument/return mapping)
+  - [x] Specify security and sandboxing mechanisms
+  - [x] Document common Python interop scenarios

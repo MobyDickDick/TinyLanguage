@@ -40,6 +40,11 @@ print(Math.inc(4));
 - **Klassen und Operatoren**: Klassen besitzen Felder und Methoden, Mehrfachvererbung ist erlaubt. Operatoren lassen sich ueberladen, etwa `operator + (a: Number, b: Number) -> Number { ... }`.
 - **Nebenlaeufigkeit**: `spawn f(1, 2)` startet einen Task, `join` wartet und liefert das Ergebnis.
 
+### Typ-Hinweise und Gradual Typing
+- **Syntax**: Parameter und Rueckgaben koennen annotiert werden: `fn label(x: string, times: number) -> string { return x * times; }`. Methoden nutzen dieselbe Syntax.
+- **Gradual-Typing-Checks**: Annotierte Argumente und Rueckgaben werden zur Laufzeit geprueft. Ein Aufruf wie `label(1, "x")` fuehrt zu einem `[E009] type mismatch ... expected string/number ...`-Hinweis.
+- **Einfache Exhaustiveness-Checks**: Annotierte Funktionen muessen auf allen Pfaden einen Wert liefern. Fehlt ein `return`, meldet der Linter `[E010] not all paths ... return a value ...` mit Hinweis auf fehlende Branch-Rueckgaben.
+
 ### Klassen
 Minimalbeispiel mit Konstruktor-Funktion und Methode. Die Ausgabe wurde mit `python tiny_language.py class_demo.tiny` verifiziert.
 

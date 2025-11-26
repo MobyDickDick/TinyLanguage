@@ -159,7 +159,41 @@ class _StdLibRegistrar:
             return fields.get("value", 0), fields.get("error", "normal") or "normal"
         return value, None
 
+    def _resolve_intervall(self, value: Any) -> tuple[Any, Any, str | None] | None:
+        fields = self.runtime._intervall_fields(value)  # noqa: SLF001 - internal helper reuse
+        if fields is not None:
+            return (
+                fields.get("lower", 0),
+                fields.get("upper", 0),
+                fields.get("error", "normal") or "normal",
+            )
+
+        num_fields = self.runtime._number_fields(value)  # noqa: SLF001 - internal helper reuse
+        if num_fields is not None:
+            err = num_fields.get("error", "normal") or "normal"
+            if err in {"plus_infinity", "minus_infinity", "any_number"}:
+                return 0, 0, err
+            return None
+
+        return None
+
     def _math_abs(self, value: Any) -> Any:
+        interval = self._resolve_intervall(value)
+        if interval is not None:
+            lower, upper, err = interval
+            if err != "normal":
+                return self.runtime._make_intervall(lower, upper, err)  # noqa: SLF001
+
+            if lower > upper:
+                return self.runtime._make_intervall(lower, upper, "wrapped_interval")  # noqa: SLF001
+
+            candidates = [abs(lower), abs(upper)]
+            if lower <= 0 <= upper:
+                lo, hi = 0, max(candidates)
+            else:
+                lo, hi = min(candidates), max(candidates)
+            return self.runtime._make_intervall(lo, hi, "normal")  # noqa: SLF001
+
         fields = self.runtime._number_fields(value)  # noqa: SLF001 - internal helper reuse
         if fields is not None:
             err = fields.get("error", "normal") or "normal"
@@ -168,6 +202,29 @@ class _StdLibRegistrar:
         return abs(value)
 
     def _math_max(self, left: Any, right: Any) -> Any:
+        left_interval = self._resolve_intervall(left)
+        right_interval = self._resolve_intervall(right)
+
+        if left_interval is not None or right_interval is not None:
+            if left_interval is not None and right_interval is not None:
+                l_lo, l_hi, l_err = left_interval
+                r_lo, r_hi, r_err = right_interval
+                err = l_err or r_err or "normal"
+                if l_err != "normal" or r_err != "normal":
+                    return self.runtime._make_intervall(0, 0, err)  # noqa: SLF001
+
+                return self.runtime._make_intervall(max(l_lo, r_lo), max(l_hi, r_hi), err)  # noqa: SLF001
+
+            interval_value = left_interval or right_interval
+            other = right if left_interval is not None else left
+            lo, hi, err = interval_value
+            if err != "normal":
+                return self.runtime._make_intervall(0, 0, err)  # noqa: SLF001
+            try:
+                return self.runtime._make_intervall(max(lo, other), max(hi, other), "normal")  # noqa: SLF001
+            except Exception:
+                return self.runtime._make_intervall(0, 0, "any_number")  # noqa: SLF001
+
         l_val, l_err = self._resolve_number(left)
         r_val, r_err = self._resolve_number(right)
 
@@ -178,6 +235,29 @@ class _StdLibRegistrar:
         return res
 
     def _math_min(self, left: Any, right: Any) -> Any:
+        left_interval = self._resolve_intervall(left)
+        right_interval = self._resolve_intervall(right)
+
+        if left_interval is not None or right_interval is not None:
+            if left_interval is not None and right_interval is not None:
+                l_lo, l_hi, l_err = left_interval
+                r_lo, r_hi, r_err = right_interval
+                err = l_err or r_err or "normal"
+                if l_err != "normal" or r_err != "normal":
+                    return self.runtime._make_intervall(0, 0, err)  # noqa: SLF001
+
+                return self.runtime._make_intervall(min(l_lo, r_lo), min(l_hi, r_hi), err)  # noqa: SLF001
+
+            interval_value = left_interval or right_interval
+            other = right if left_interval is not None else left
+            lo, hi, err = interval_value
+            if err != "normal":
+                return self.runtime._make_intervall(0, 0, err)  # noqa: SLF001
+            try:
+                return self.runtime._make_intervall(min(lo, other), min(hi, other), "normal")  # noqa: SLF001
+            except Exception:
+                return self.runtime._make_intervall(0, 0, "any_number")  # noqa: SLF001
+
         l_val, l_err = self._resolve_number(left)
         r_val, r_err = self._resolve_number(right)
 
@@ -188,6 +268,32 @@ class _StdLibRegistrar:
         return res
 
     def _math_pow(self, base: Any, exponent: Any) -> Any:
+        base_interval = self._resolve_intervall(base)
+        exp_interval = self._resolve_intervall(exponent)
+
+        if base_interval is not None or exp_interval is not None:
+            if base_interval is None or exp_interval is None:
+                return self.runtime._make_intervall(0, 0, "any_number")  # noqa: SLF001
+
+            b_lo, b_hi, b_err = base_interval
+            e_lo, e_hi, e_err = exp_interval
+            if b_err != "normal" or e_err != "normal":
+                return self.runtime._make_intervall(0, 0, b_err or e_err)  # noqa: SLF001
+
+            try:
+                candidates = [
+                    math.pow(b_lo, e_lo),
+                    math.pow(b_lo, e_hi),
+                    math.pow(b_hi, e_lo),
+                    math.pow(b_hi, e_hi),
+                ]
+                lo = min(candidates)
+                hi = max(candidates)
+            except Exception:
+                return self.runtime._make_intervall(0, 0, "any_number")  # noqa: SLF001
+
+            return self.runtime._make_intervall(lo, hi, "normal")  # noqa: SLF001
+
         num_res = self.runtime._number_power(base, exponent)  # noqa: SLF001
         if num_res is not None:
             return num_res
@@ -197,6 +303,22 @@ class _StdLibRegistrar:
         return res
 
     def _math_sqrt(self, value: Any) -> Any:
+        interval = self._resolve_intervall(value)
+        if interval is not None:
+            lower, upper, err = interval
+            if err != "normal":
+                return self.runtime._make_intervall(lower, upper, err)  # noqa: SLF001
+            if lower < 0:
+                return self.runtime._make_intervall(lower, upper, "any_number")  # noqa: SLF001
+            try:
+                lo = math.sqrt(lower)
+                hi = math.sqrt(upper)
+                if lo > hi:
+                    lo, hi = hi, lo
+            except Exception:
+                return self.runtime._make_intervall(0, 0, "any_number")  # noqa: SLF001
+            return self.runtime._make_intervall(lo, hi, "normal")  # noqa: SLF001
+
         fields = self.runtime._number_fields(value)  # noqa: SLF001
         if fields is not None:
             err = fields.get("error", "normal") or "normal"
@@ -217,6 +339,19 @@ class _StdLibRegistrar:
                 places = int(digits)
             except Exception:
                 raise RuntimeError("round expects an optional integer for digits")
+        interval = self._resolve_intervall(value)
+        if interval is not None:
+            lower, upper, err = interval
+            if err != "normal":
+                return self.runtime._make_intervall(lower, upper, err)  # noqa: SLF001
+            try:
+                lo = round(lower, places) if places is not None else round(lower)
+                hi = round(upper, places) if places is not None else round(upper)
+            except Exception:
+                return self.runtime._make_intervall(0, 0, "any_number")  # noqa: SLF001
+            if lo > hi:
+                lo, hi = hi, lo
+            return self.runtime._make_intervall(lo, hi, "normal")  # noqa: SLF001
         if num_fields is not None:
             err = num_fields.get("error", "normal") or "normal"
             res = round(num_fields.get("value", 0), places) if places is not None else round(num_fields.get("value", 0))
@@ -224,6 +359,12 @@ class _StdLibRegistrar:
         return round(value, places) if places is not None else round(value)
 
     def _math_floor(self, value: Any) -> Any:
+        interval = self._resolve_intervall(value)
+        if interval is not None:
+            lower, upper, err = interval
+            if err != "normal":
+                return self.runtime._make_intervall(lower, upper, err)  # noqa: SLF001
+            return self.runtime._make_intervall(math.floor(lower), math.floor(upper), "normal")  # noqa: SLF001
         fields = self.runtime._number_fields(value)  # noqa: SLF001
         if fields is not None:
             err = fields.get("error", "normal") or "normal"
@@ -232,6 +373,12 @@ class _StdLibRegistrar:
         return math.floor(value)
 
     def _math_ceil(self, value: Any) -> Any:
+        interval = self._resolve_intervall(value)
+        if interval is not None:
+            lower, upper, err = interval
+            if err != "normal":
+                return self.runtime._make_intervall(lower, upper, err)  # noqa: SLF001
+            return self.runtime._make_intervall(math.ceil(lower), math.ceil(upper), "normal")  # noqa: SLF001
         fields = self.runtime._number_fields(value)  # noqa: SLF001
         if fields is not None:
             err = fields.get("error", "normal") or "normal"
@@ -239,7 +386,17 @@ class _StdLibRegistrar:
             return self.runtime._make_number(res, err)  # noqa: SLF001
         return math.ceil(value)
 
-    def _math_sign(self, value: Any) -> int:
+    def _math_sign(self, value: Any) -> Any:
+        interval = self._resolve_intervall(value)
+        if interval is not None:
+            lower, upper, err = interval
+            if err != "normal":
+                return self.runtime._make_number(0, err)  # noqa: SLF001
+            if lower > 0 and upper > 0:
+                return 1
+            if lower < 0 and upper < 0:
+                return -1
+            return self.runtime._make_number(0, "any_number")  # noqa: SLF001
         val, _err = self._resolve_number(value)
         if val > 0:
             return 1
@@ -248,6 +405,30 @@ class _StdLibRegistrar:
         return 0
 
     def _math_clamp(self, value: Any, lower: Any, upper: Any) -> Any:
+        interval_val = self._resolve_intervall(value)
+        interval_lower = self._resolve_intervall(lower)
+        interval_upper = self._resolve_intervall(upper)
+
+        if interval_val is not None or interval_lower is not None or interval_upper is not None:
+            val_lo, val_hi, val_err = interval_val or (0, 0, "normal")
+            low_lo, low_hi, low_err = interval_lower or (0, 0, "normal")
+            up_lo, up_hi, up_err = interval_upper or (0, 0, "normal")
+
+            err = val_err or low_err or up_err or "normal"
+            if err != "normal":
+                return self.runtime._make_intervall(0, 0, err)  # noqa: SLF001
+
+            try:
+                lower_bound = max(low_lo, min(val_lo, up_hi))
+                upper_bound = max(low_hi, min(val_hi, up_lo))
+            except Exception:
+                return self.runtime._make_intervall(0, 0, "any_number")  # noqa: SLF001
+
+            if lower_bound > upper_bound:
+                lower_bound, upper_bound = upper_bound, lower_bound
+
+            return self.runtime._make_intervall(lower_bound, upper_bound, "normal")  # noqa: SLF001
+
         v_val, v_err = self._resolve_number(value)
         lower_val, lower_err = self._resolve_number(lower)
         upper_val, upper_err = self._resolve_number(upper)

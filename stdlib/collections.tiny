@@ -1,4 +1,4 @@
-// Standardbibliothek: Collections
+// Standardbibliothek: Collections & Freunde
 // Operationen auf Arrays/Listen (Heap-Pointer oder native Listen).
 //
 // Collections.len(target) -> Laenge
@@ -7,8 +7,29 @@
 // Collections.slice(target, start, end) -> Pointer auf Teilbereich [start, end)
 // Collections.contains(target, value) -> True falls Wert enthalten
 //
+// Zusaetzliche Strukturen:
+// Map.new(), Map.get(map, key, default?), Map.set(map, key, value),
+// Map.delete(map, key), Map.has(map, key), Map.keys(map), Map.values(map),
+// Map.entries(map) und Map.from_entries(paarListe) fuer einfache Key/Value-Tabellen.
+//
+// Set.new(), Set.from_list(list), Set.add(set, value), Set.delete(set, value),
+// Set.has(set, value), Set.len(set), Set.to_list(set) liefern Mengenoperationen.
+//
+// Deque.new([items?]), Deque.push_left/right, Deque.pop_left/right,
+// Deque.peek_left/right, Deque.len und Deque.to_list bieten doppelt
+// angekettete Queues fuer schnelle Einfuegungen am Kopf und Ende.
+//
 // Beispiel:
 // define arr = new[1, 2, 3, 4];
 // define mid = Collections.slice(arr, 1, 3);
 // print(Collections.contains(mid, 2));
 // print(Collections.len(mid));
+//
+// define map = Map.new();
+// Map.set(map, "a", 1);
+// print(Map.get(map, "a", 0));
+// print(heap_get(Map.keys(map), 0));
+//
+// define queue = Deque.new(new[1, 2]);
+// Deque.push_left(queue, 0);
+// print(Deque.pop_right(queue));

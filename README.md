@@ -174,6 +174,46 @@ Expected output:
 5
 ```
 
+Mehr Beispiele und Fehlerszenarien finden sich in [`heap_pointer_demo.tiny`](heap_pointer_demo.tiny).
+
+### Standardbibliothek
+Vor jedem Programmstart registriert der Interpreter die eingebaute Stdlib mit folgenden Namespaces:
+
+- **Math**: `Math.abs(x)`, `Math.pow(base, exp)`, `Math.sqrt(x)` fuer grundlegende Mathematik. Neu hinzugekommen sind `Math.max(a, b)` und `Math.min(a, b)` zum Vergleichen sowie `Math.clamp(value, lower, upper)`, um Werte einzugrenzen. Beispiel: `print(Math.clamp(Math.max(-2, 10), 0, 5));` gibt `5` aus.
+- **String**: `String.split(text, sep)` liefert einen Heap-Pointer auf ein Array der Teilstrings, `String.join(items, sep)` verbindet eine Liste/Pointer, `String.contains(text, needle)` prueft Teilstrings. Zusaetzlich gibt es `String.upper(text)`, `String.lower(text)`, `String.trim(text)` und `String.repeat(text, count)` fuer Gross-/Kleinschreibung, Whitespace-Trimming und Wiederholung. Beispiel: `print(String.upper(String.trim("  tiny "))); print(String.repeat("ha", 3));` erzeugt `TINY` und `hahaha`.
+- **Collections**: `Collections.len(x)` misst die Laenge von Heap-Pointern oder Python-Listen, `Collections.push(target, value)` fuegt am Ende an und liefert die neue Laenge, `Collections.pop(target)` entfernt das letzte Element oder wirft einen Fehler bei leeren Collections. Neu sind `Collections.slice(target, start, end)` fuer Teilbereiche und `Collections.contains(target, value)` zum Nachschlagen: `define mid = Collections.slice(new[1, 2, 3], 1, 3); print(Collections.contains(mid, 2));` druckt `true`.
+
+## Beispielprogramme
+- [`demo.tiny`](demo.tiny): Kleines Schaufenster fuer Variablen, Schleifen, Funktionen, Klassen und Heap-Operationen. Laeuft sequenziell durch und druckt Zwischenergebnisse, wodurch man die Sprachfeatures in Aktion sieht.
+- [`rosetta_fibonacci.tiny`](rosetta_fibonacci.tiny): Implementiert die klassische Fibonacci-Folge; zeigt Funktionsdefinitionen und einfache Loops. Erwartet werden die ersten 10 Fibonacci-Zahlen auf der Konsole.
+- [`all_features.tiny`](all_features.tiny): Umfangreiches Feature-Rundlaufprogramm mit Arrays, Klassen und Operator-Overloading. Praktisch, um die Sprache als Ganzes zu erkunden.
+- [`class_demo.tiny`](class_demo.tiny): Minimaler Klassen-Constructor mit Methode; gibt einen personalisierten Gruss aus.
+- [`operator_overloading_demo.tiny`](operator_overloading_demo.tiny): Schlanke Punkt-Klasse, die `+` und `==` ueberschreibt und Zwischenergebnisse ausgibt.
+- [`number_class.tiny`](number_class.tiny): Demonstriert die `Number`-Klasse und den ueberladenen `+`-Operator; instanziiert Objekte, ruft Methoden auf und gibt das Ergebnis aus.
+- [`number_intervall.tiny`](number_intervall.tiny): Beispiel fuer numerische Intervallrechnungen und Grenzenkontrolle.
+- [`namespace_demo.tiny`](namespace_demo.tiny): Kleine `Tools`-Bibliothek als Namespace mit `double` und `label`.
+- [`concurrency_demo.tiny`](concurrency_demo.tiny): Startet mehrere Aufgaben mit `spawn`, sammelt die Ergebnisse ueber `join` und kombiniert sie mit `String.split`/`String.join` zu einer Ausgabe.
+- [`heap_pointer_demo.tiny`](heap_pointer_demo.tiny): Zeigt sicheres Heap-Handling mit `new`, `heap_get`/`heap_set` und `delete` sowie typische Fehlermeldungen bei Out-of-Bounds- oder Feldzugriffen.
+
+## Haeufige Fehler
+- **Ungenutzte Bindungen**: Nicht verwendete lokale Variablen oder Parameter fuehren zu Fehlern (z. B. "unused parameter(s) in function f: b", "unused local binding(s): t").
+- **Mutierte Parameter nicht zurueckgegeben**: Wird ein Parameter veraendert, muss er im Rueckgabewert enthalten sein (z. B. "mutated parameter(s) in function bump must be returned: a").
+
+## Formatter, Lints und Language-Server
+- **Formatter**: `python tiny_language.py --format datei.tiny` erzwingt Einrueckungen mit vier Leerzeichen, genau ein Leerzeichen um Operatoren und nach Kommas sowie normierte Import-Zeilen (`import pfad as alias;`). Kommentare bleiben erhalten.
+- **Linter-Stilregeln**: Ungenutzte Bindungen lassen sich jetzt mit einem vorangestellten `_` gezielt unterdruecken. Import-Anweisungen muessen sortiert vor dem restlichen Code stehen (`E012`). Funktionsaufrufe mit Rueckgabetyp duerfen nicht laienhaft ignoriert werden (`E011`); entweder das Ergebnis binden oder bewusst mit `_ = fn();` verwerfen.
+- **Language-Server-Prototyp**: Das Modul `language_server.py` bietet eine Mini-API fuer Hover, Completions und Diagnostics. Ideal, um LSP-Ideen auszuprobieren, ohne direkt einen JSON-RPC-Server zu schreiben.
+- **Unvollstaendiges Destructuring**: Alle Felder eines zurueckgegebenen Structs muessen gebunden werden ("destructuring call to f must include output for argument(s): a"), und jede Bindung muss benutzt werden.
+- **Bare Calls**: Funktionsaufrufe duerfen nicht allein als Statement stehen ("bare call statements are not allowed"); Ergebnis ausgeben oder zuweisen.
+- **Arithmetik-Einschraenkungen**: Der `^`-Operator akzeptiert nur ganzzahlige Exponenten ("exponent for ^ must be an integer"); fuer Brueche `power` nutzen.
+- **Heap/Field-Zugriffe**: Out-of-Bounds oder fehlende Felder melden Laufzeitfehler (z. B. "heap access error: index 5 out of range ...", "unknown field missing"). `errorMessage` enthaelt den letzten Laufzeitfehler.
+
+## Programme ausfuehren und testen
+- **Programm starten**: `python tiny_language.py <datei.tiny>` fuehrt ein TinyLanguage-Programm aus und beendet sich bei Erfolg mit Status 0. Beispiel: `python tiny_language.py demo.tiny`.
+- **Test-Suite**: `python -m pytest` fuehrt alle Tests aus. Einzelne Dateien lassen sich gezielt starten, z. B. `python -m pytest tests/test_tiny_language.py -k class`.
+
+### CLI: Module-Init und Publish
+- **Init**: Neues Modul-Verzeichnis anlegen (`mkdir my_pkg && cd my_pkg`), einen Einstiegspunkt wie `main.tiny` erzeugen und optional eine `module.json` mit Metadaten pflegen:
 See [`heap_pointer_demo.tiny`](heap_pointer_demo.tiny) for more examples and failure scenarios.
 
 ### Standard library

@@ -18,7 +18,7 @@ except ImportError:  # pragma: no cover - Windows and other platforms without te
     _HAS_TERMIOS = False
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 from stdlib import register_stdlib
 
@@ -244,12 +244,24 @@ class SourcePos:
         return SourcePos(0, 1, 1)
 
 
+@dataclass(frozen=True)
+class StackFrame:
+    name: str
+    namespace: Optional[str]
+    pos: SourcePos
+
+    @property
+    def qualified_name(self) -> str:
+        return f"{self.namespace}.{self.name}" if self.namespace else self.name
+
+
 @dataclass
 class TinyLangError(Exception):
     message: str
     pos: SourcePos = field(default_factory=SourcePos.origin)
     code: str = "E000"
     hint: Optional[str] = None
+    stack: Tuple[StackFrame, ...] = field(default_factory=tuple)
 
     def __str__(self) -> str:  # pragma: no cover - Exception already stringifies message
         return self.message
@@ -346,6 +358,8 @@ KEYWORDS = {
     "or",
     "not",
     "Null",
+    "try",
+    "catch",
 }
 
 BUILTINS = {"Collections", "Math", "String", "len", "print"}
@@ -535,6 +549,14 @@ class While(IR):
 
 
 @dataclass
+class TryCatch(IR):
+    body: List[IR]
+    err_name: Optional[str]
+    handler: List[IR]
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
 class Param:
     name: str
     type: Optional[str] = None
@@ -557,6 +579,7 @@ class MethodDef(IR):
     params: List[Param]
     body: List[IR]
     return_type: Optional[str] = None
+    namespace: Optional[str] = None
     pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
@@ -797,6 +820,18 @@ class Parser:
             self._eat("SYM", ")")
             body = self.parse_block()
             return While(cond, body, pos=kw.pos)
+        if self.tok.kind == "KW" and self.tok.text == "try":
+            kw = self._eat("KW", "try")
+            body = self.parse_block()
+            self._eat("KW", "catch")
+            err_name = None
+            if self._accept("SYM", "("):
+                err_name = self._eat("NAME").text
+                self._eat("SYM", ")")
+            else:
+                err_name = self._eat("NAME").text
+            handler = self.parse_block()
+            return TryCatch(body, err_name, handler, pos=kw.pos)
         if self.tok.kind == "KW" and self.tok.text == "import":
             kw = self._eat("KW", "import")
             module = self.parse_module_path()
@@ -1195,6 +1230,18 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
         uses_in_expr(s.cond, reads)
         for t in s.body:
             lint_stmt_reads(t, reads)
+    elif isinstance(s, TryCatch):
+        for t in s.body:
+            lint_stmt_reads(t, reads)
+        handler_reads: Dict[str, int] = {}
+        for t in s.handler:
+            lint_stmt_reads(t, handler_reads)
+        if s.err_name:
+            # Mark the catch binding as referenced if it is consumed inside the handler
+            if handler_reads.get(s.err_name, 0) == 0:
+                handler_reads[s.err_name] = 0
+        for name, count in handler_reads.items():
+            reads[name] = max(reads.get(name, 0), count)
     elif isinstance(s, Return):
         uses_in_expr(s.expr, reads)
     elif isinstance(s, OpDef):
@@ -1318,6 +1365,11 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
             elif isinstance(s, DestructAssign):
                 for nm in s.names:
                     defs[nm] = s.pos
+            elif isinstance(s, TryCatch):
+                collect_defs(s.body)
+                if s.err_name:
+                    defs[s.err_name] = s.pos
+                collect_defs(s.handler)
             elif isinstance(s, If):
                 collect_defs(s.then)
                 collect_defs(s.els)
@@ -1369,6 +1421,9 @@ def _block_guarantees_return(stmts: List[IR]) -> bool:
         if isinstance(st, If):
             if _block_guarantees_return(st.then) and _block_guarantees_return(st.els):
                 return True
+        if isinstance(st, TryCatch):
+            if _block_guarantees_return(st.body) and _block_guarantees_return(st.handler):
+                return True
         elif isinstance(st, While):
             continue
         elif isinstance(st, (Fn, MethodDef, ClassDef, Namespace)):
@@ -1408,6 +1463,9 @@ def lint_return_signatures(
                 visit(st.els)
             elif isinstance(st, While):
                 visit(st.body)
+            elif isinstance(st, TryCatch):
+                visit(st.body)
+                visit(st.handler)
 
     visit(stmts)
 
@@ -1473,6 +1531,11 @@ def lint_no_consecutive_definitions(stmts: List[IR]) -> None:
                 lint_no_consecutive_definitions(st.body)
                 prev = None
                 continue
+            if isinstance(st, TryCatch):
+                lint_no_consecutive_definitions(st.body)
+                lint_no_consecutive_definitions(st.handler)
+                prev = None
+                continue
 
             current: Optional[str] = None
             if isinstance(st, Let):
@@ -1503,6 +1566,9 @@ def lint_destruct_call_outputs_stmt(st: IR, source: Optional[str]) -> None:
             lint_destruct_call_outputs_stmt(m, source)
     elif isinstance(st, Namespace):
         lint_destruct_call_outputs(st.body, source)
+    elif isinstance(st, TryCatch):
+        lint_destruct_call_outputs(st.body, source)
+        lint_destruct_call_outputs(st.handler, source)
 
 
 def check_destruct_call_expr(expr: IR, names: set[str], *, source: Optional[str], pos: SourcePos) -> None:
@@ -1568,6 +1634,11 @@ def lint_param_mutations_returned(
             for branch_stmt in st.then:
                 visit(branch_stmt)
             for branch_stmt in st.els:
+                visit(branch_stmt)
+        elif isinstance(st, TryCatch):
+            for branch_stmt in st.body:
+                visit(branch_stmt)
+            for branch_stmt in st.handler:
                 visit(branch_stmt)
         elif isinstance(st, While):
             for body_stmt in st.body:
@@ -1741,19 +1812,45 @@ class Runtime:
         self.global_env: Optional["Environment"] = None
         self.error_messages: List[str] = []
         self.source = source
+        self.source_map: Dict[Optional[str], str] = {None: source}
         self.namespace_envs: Dict[str, "Environment"] = {}
         self.module_resolver: ModuleResolver = ModuleResolver()
         self.current_module_path: Optional[Path] = None
         self.current_module_namespace: Optional[str] = None
+        self.call_stack: List[StackFrame] = []
 
     @staticmethod
     def _qualify_name(name: str, namespace: Optional[str]) -> str:
         return f"{namespace}.{name}" if namespace else name
 
+    def _source_for_namespace(self, namespace: Optional[str]) -> str:
+        with self._lock:
+            if namespace in self.source_map:
+                return self.source_map[namespace]
+        return self.source
+
+    def _format_stacktrace(self, stack: Sequence[StackFrame]) -> str:
+        if not stack:
+            return ""
+        lines = ["Stack trace:"]
+        for frame in reversed(stack):
+            lines.append(f"  at {frame.qualified_name} (line {frame.pos.line}, col {frame.pos.col})")
+        return "\n".join(lines)
+
     def _record_error(
-        self, msg: str, pos: Optional[SourcePos] = None, *, code: str = "E000", hint: Optional[str] = None
+        self,
+        msg: str,
+        pos: Optional[SourcePos] = None,
+        *,
+        code: str = "E000",
+        hint: Optional[str] = None,
+        formatted: Optional[str] = None,
     ) -> None:
-        formatted = format_error(self.source, pos, msg, code=code, hint=hint) if pos is not None else msg
+        if formatted is None:
+            source = self._source_for_namespace(self.current_module_namespace if pos is not None else None)
+            base = format_error(source, pos, msg, code=code, hint=hint) if pos is not None else msg
+            stack_part = self._format_stacktrace(self.call_stack)
+            formatted = f"{base}\n{stack_part}" if stack_part else base
         with self._lock:
             # Only keep the most recent runtime error so `errorMessage` reflects
             # the latest failure instead of accumulating older ones.
@@ -1767,13 +1864,40 @@ class Runtime:
         code: Optional[str] = None,
         hint: Optional[str] = None,
         candidates: Optional[List[str]] = None,
-    ) -> TinyLangError:
+        ) -> TinyLangError:
         derived_code, derived_hint = _classify_error(msg, candidates)
         code = code or derived_code
         hint = hint or derived_hint
-        formatted = format_error(self.source, pos, msg, code=code, hint=hint)
-        self._record_error(msg, pos, code=code, hint=hint)
-        return TinyLangError(formatted, pos, code=code, hint=hint)
+        source = self._source_for_namespace(self.current_module_namespace)
+        formatted = format_error(source, pos, msg, code=code, hint=hint)
+        stack = tuple(self.call_stack)
+        if stack:
+            formatted = f"{formatted}\n{self._format_stacktrace(stack)}"
+        self._record_error(msg, pos, code=code, hint=hint, formatted=formatted)
+        return TinyLangError(formatted, pos, code=code, hint=hint, stack=stack)
+
+    def _ensure_error_has_stack(self, err: TinyLangError) -> TinyLangError:
+        if err.stack:
+            return err
+        stack = tuple(self.call_stack)
+        if not stack:
+            return err
+        err.stack = stack
+        err.message = f"{err.message}\n{self._format_stacktrace(stack)}"
+        return err
+
+    @staticmethod
+    def _error_value(err: TinyLangError) -> Dict[str, Any]:
+        stack_strings = [
+            f"{frame.qualified_name} (line {frame.pos.line}, col {frame.pos.col})" for frame in err.stack
+        ]
+        return {
+            "__tag__": "Error",
+            "code": err.code,
+            "message": str(err),
+            "hint": err.hint,
+            "stack": stack_strings,
+        }
 
     @property
     def error_message(self) -> Optional[str]:
@@ -2356,15 +2480,25 @@ class Runtime:
             if param.type:
                 self._enforce_annotation(param.type, arg, label=f"parameter {param.name} in function {fn.name}", pos=fn.pos)
             call_env.values[param.name] = arg
-        res = self.eval_block(fn.body, call_env, fn.namespace)
-        if isinstance(res, ReturnSignal):
-            value = res.value
+        frame = StackFrame(fn.name, fn.namespace, fn.pos)
+        self.call_stack.append(frame)
+        prev_namespace = self.current_module_namespace
+        self.current_module_namespace = fn.namespace or prev_namespace
+        try:
+            res = self.eval_block(fn.body, call_env, fn.namespace)
+            if isinstance(res, ReturnSignal):
+                value = res.value
+                if fn.return_type:
+                    self._enforce_annotation(fn.return_type, value, label=f"return value for function {fn.name}", pos=fn.pos)
+                return value
             if fn.return_type:
-                self._enforce_annotation(fn.return_type, value, label=f"return value for function {fn.name}", pos=fn.pos)
-            return value
-        if fn.return_type:
-            self._enforce_annotation(fn.return_type, res, label=f"return value for function {fn.name}", pos=fn.pos)
-        return res
+                self._enforce_annotation(fn.return_type, res, label=f"return value for function {fn.name}", pos=fn.pos)
+            return res
+        except TinyLangError as err:
+            raise self._ensure_error_has_stack(err) from err
+        finally:
+            self.call_stack.pop()
+            self.current_module_namespace = prev_namespace
 
     def _run_spawn(self, fn: Fn, args: List[Any], handle: SpawnHandle) -> None:
         try:
@@ -2511,15 +2645,25 @@ class Runtime:
             if param.type:
                 self._enforce_annotation(param.type, arg, label=f"parameter {param.name} in method {md.class_name}.{md.name}", pos=md.pos)
             env.values[param.name] = arg
-        res = self.eval_block(md.body, env)
-        if isinstance(res, ReturnSignal):
-            value = res.value
+        frame = StackFrame(f"{md.class_name}.{md.name}", md.namespace, md.pos)
+        self.call_stack.append(frame)
+        prev_namespace = self.current_module_namespace
+        self.current_module_namespace = md.namespace or prev_namespace
+        try:
+            res = self.eval_block(md.body, env)
+            if isinstance(res, ReturnSignal):
+                value = res.value
+                if md.return_type:
+                    self._enforce_annotation(md.return_type, value, label=f"return value for method {md.class_name}.{md.name}", pos=md.pos)
+                return value
             if md.return_type:
-                self._enforce_annotation(md.return_type, value, label=f"return value for method {md.class_name}.{md.name}", pos=md.pos)
-            return value
-        if md.return_type:
-            self._enforce_annotation(md.return_type, res, label=f"return value for method {md.class_name}.{md.name}", pos=md.pos)
-        return res
+                self._enforce_annotation(md.return_type, res, label=f"return value for method {md.class_name}.{md.name}", pos=md.pos)
+            return res
+        except TinyLangError as err:
+            raise self._ensure_error_has_stack(err) from err
+        finally:
+            self.call_stack.pop()
+            self.current_module_namespace = prev_namespace
 
     def type_field_type(self, tname: str, fname: str) -> Optional[str]:
         with self._lock:
@@ -2648,6 +2792,17 @@ class Runtime:
                     res = self.eval_block(s.body, env, namespace)
                     if isinstance(res, ReturnSignal):
                         return res
+            elif isinstance(s, TryCatch):
+                try:
+                    res = self.eval_block(s.body, env, namespace)
+                    if isinstance(res, ReturnSignal):
+                        return res
+                except TinyLangError as err:
+                    if s.err_name:
+                        env.values[s.err_name] = self._error_value(self._ensure_error_has_stack(err))
+                    res = self.eval_block(s.handler, env, namespace)
+                    if isinstance(res, ReturnSignal):
+                        return res
             elif isinstance(s, Namespace):
                 qualified = self._qualify_name(s.name, namespace)
                 child_env = Environment(parent=env, namespace=qualified)
@@ -2690,8 +2845,10 @@ class Runtime:
             elif isinstance(s, ClassDef):
                 self.register_class(s.name, s.fields, s.bases)
                 for m in s.methods:
+                    m.namespace = namespace
                     self.register_method(m)
             elif isinstance(s, MethodDef):
+                s.namespace = namespace
                 self.register_class(s.class_name, []) if s.class_name not in self.types else None
                 self.register_method(s)
             else:
@@ -2909,6 +3066,7 @@ def compile_and_run(
     parser = Parser(Lexer(src), src)
     stmts = parser.parse()
     runtime = runtime or Runtime(src)
+    runtime.source_map[module_namespace] = src
     prev_source = runtime.source
     runtime.source = src
     previous_path = runtime.current_module_path

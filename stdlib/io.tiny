@@ -1,0 +1,16 @@
+// Standardbibliothek: File & JSON
+//
+// File.read(path) -> Liest UTF-8 Datei als String (Fehler wenn nicht vorhanden)
+// File.write(path, text) -> Schreibt Text (UTF-8), legt Ordner bei Bedarf an
+// File.exists(path) -> true/false
+// File.remove(path) -> true wenn geloescht wurde, sonst false
+//
+// JSON.parse(text) -> wandelt Text zu Zahlen/Strings/Bools/Null, Listen
+//                     und Maps (auch als native Container) um
+// JSON.stringify(value) -> JSON-String aus Listen, Maps, Strings, Zahlen usw.
+//
+// Beispiel:
+// define path = "tmp/data.json";
+// File.write(path, "{\\"x\\": [1, 2, 3]}");
+// define data = JSON.parse(File.read(path));
+// print(Map.get(data, "x", Null));

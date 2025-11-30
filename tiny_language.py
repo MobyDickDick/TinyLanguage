@@ -3024,5 +3024,32 @@ def main(argv: Optional[List[str]] = None) -> int:
 if __name__ == "__main__":
     raise SystemExit(main())
 
+from __future__ import annotations
 
-__all__ = ["compile_and_run", "run_file", "main"]
+from pathlib import Path as _Path
+
+
+def _load_and_exec_all() -> None:
+    base = _Path(__file__).resolve().parent
+    parts = []
+    for name in [
+        "tiny_language_preamble.py",
+        "tiny_language_lexer.py",
+        "tiny_language_ast.py",
+        "tiny_language_parser.py",
+        "tiny_language_linter.py",
+        "tiny_language_runtime.py",
+        "tiny_language_eval.py",
+        "tiny_language_api.py",
+    ]:
+        path = base / name
+        parts.append(path.read_text(encoding="utf-8"))
+    full_source = "".join(parts)
+    code = compile(full_source, str(base / "tiny_language_stitched.py"), "exec")
+    exec(code, globals(), globals())
+
+
+_load_and_exec_all()
+
+# Clean up helper names
+del _load_and_exec_all, _Path

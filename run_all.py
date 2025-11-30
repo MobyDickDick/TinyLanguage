@@ -20,7 +20,7 @@ def run_step(name: str, args: list[str]) -> None:
         raise SystemExit(result.returncode)
 
 def main() -> None:
-    tiny_language = ROOT / "tiny_language.py"
+    tiny_language = ROOT / "src" / "tiny_language.py"
     demo_files = [
         "demo.tiny",
         "all_features.tiny",

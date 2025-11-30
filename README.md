@@ -214,6 +214,7 @@ The interpreter registers the built-in stdlib before running any program. Namesp
 - **Collections**: `Collections.len(x)` measures the length of heap pointers or Python lists, `Collections.push(target, value)` appends and returns the new length, and `Collections.pop(target)` removes the last element or raises on empty collections. New helpers `Collections.slice(target, start, end)` and `Collections.contains(target, value)` support slicing and lookups: `define mid = Collections.slice(new[1, 2, 3], 1, 3); print(Collections.contains(mid, 2));` prints `true`. There is also a dedicated `Map` API (`Map.new`, `Map.set`, `Map.get`, `Map.keys`, etc.), a `Set` namespace (`Set.add`, `Set.delete`, `Set.to_list`), and doubly linked queues via `Deque` (`Deque.push_left/right`, `Deque.pop_left/right`, `Deque.peek_left/right`).
 - **Random**: Random helpers `Random.random()`, `Random.randint(lower, upper)`, `Random.choice(seq)`, and `Random.shuffle(seq)` for quick sampling.
 - **File/JSON**: `File.read`/`File.write`/`File.exists`/`File.remove` handle UTF-8 files. `JSON.parse(text)` converts strings to lists/maps/numerics/null, and `JSON.stringify(value)` builds a JSON string from compatible structures.
+Detailed notes live in [`docs/stdlib_extensions.md`](docs/stdlib_extensions.md), and ready-made snippets can be tried via [`stdlib_collections_demo.tiny`](stdlib_collections_demo.tiny) or [`stdlib_io_random_demo.tiny`](stdlib_io_random_demo.tiny).
 
 ## Example programs
 - [`demo.tiny`](demo.tiny): Small showcase for variables, loops, functions, classes, and heap operations. Runs sequentially and prints intermediate results.
@@ -303,10 +304,10 @@ Additional examples and expected diagnostics live in `tests/test_tiny_language.p
   - [x] Design `async/await` or channel-based structured concurrency
   - [x] Add cancellation tokens and safe abort paths to the runtime model
   - [x] Create deterministic, race-free test cases
-- [ ] **Stdlib expansion**
-  - [ ] Design and implement core Collections APIs (maps, sets, deques)
-  - [ ] Add Math/Random extensions plus file/JSON utilities
-  - [ ] Document and demo new stdlib components
+- [x] **Stdlib expansion**
+  - [x] Design and implement core Collections APIs (maps, sets, deques)
+  - [x] Add Math/Random extensions plus file/JSON utilities
+  - [x] Document and demo new stdlib components
 - [x] **Interop** (see [`docs/python_interop.md`](docs/python_interop.md) for the design)
   - [x] Define an FFI to Python functions/modules (argument/return mapping)
   - [x] Specify security and sandboxing mechanisms

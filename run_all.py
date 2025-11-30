@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+SRC_TINY = ROOT / "src_tiny"
 PYTHON = sys.executable
 
 def run_step(name: str, args: list[str]) -> None:
@@ -42,7 +43,7 @@ def main() -> None:
     ]
 
     for demo in demo_files:
-        demo_path = ROOT / demo
+        demo_path = SRC_TINY / demo
         if not demo_path.exists():
             print(f"Skipping missing demo: {demo}")
             continue

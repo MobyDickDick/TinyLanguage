@@ -14,7 +14,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/all_features.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/all_features.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -22,7 +22,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/demo.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/demo.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -30,7 +30,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/number_class.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/number_class.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -38,7 +38,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/rosetta_fibonacci.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/rosetta_fibonacci.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -46,7 +46,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/concurrency_demo.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/concurrency_demo.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -54,7 +54,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/number_intervall.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/number_intervall.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -62,7 +62,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/concurrency_pipeline.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/concurrency_pipeline.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -70,7 +70,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/class_demo.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/class_demo.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -78,7 +78,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/namespace_demo.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/namespace_demo.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -86,7 +86,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/match_demo.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/match_demo.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -94,7 +94,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/operator_overloading_demo.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/operator_overloading_demo.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -102,7 +102,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/parallel_map.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/parallel_map.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -110,7 +110,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/heap_pointer_demo.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/heap_pointer_demo.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -118,7 +118,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/result_demo.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/result_demo.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -150,7 +150,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/try_catch_demo.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/try_catch_demo.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -158,7 +158,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/stdlib_collections_demo.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/stdlib_collections_demo.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -166,7 +166,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/tiny_language.py",
-      "args": ["${workspaceFolder}/stdlib_io_random_demo.tiny"],
+      "args": ["${workspaceFolder}/src_tiny/stdlib_io_random_demo.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -421,7 +421,7 @@
       "program": "${workspaceFolder}/src/tiny_language.py",
       "console": "integratedTerminal",
       "args": [
-        "${workspaceFolder}/rosetta_fibonacci.tiny"
+        "${workspaceFolder}/src_tiny/rosetta_fibonacci.tiny"
       ]
     }
   ],

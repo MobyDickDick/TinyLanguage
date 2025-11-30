@@ -12,24 +12,25 @@ from pathlib import Path  # Resolve project-relative paths
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent  # Root directory of the repository
 SRC_ROOT = PROJECT_ROOT / "src"
+DEMO_ROOT = PROJECT_ROOT / "src_tiny"
 PYTHON = sys.executable  # Absolute path to the active Python executable
 
 # Pairs of human-friendly names and the commands they represent.
 INTERPRETER = SRC_ROOT / "tiny_language.py"
 COMMANDS: list[tuple[str, list[str]]] = [
     ("pytest (full suite)", [PYTHON, "-m", "pytest"]),  # Run all Python tests
-    ("demo.tiny", [PYTHON, str(INTERPRETER), "demo.tiny"]),  # Showcase basics
-    ("class_demo.tiny", [PYTHON, str(INTERPRETER), "class_demo.tiny"]),  # Class walkthrough
-    ("all_features.tiny", [PYTHON, str(INTERPRETER), "all_features.tiny"]),  # Feature tour
-    ("number_class.tiny", [PYTHON, str(INTERPRETER), "number_class.tiny"]),  # Number class demo
-    ("number_intervall.tiny", [PYTHON, str(INTERPRETER), "number_intervall.tiny"]),  # Interval arithmetic
-    ("rosetta_fibonacci.tiny", [PYTHON, str(INTERPRETER), "rosetta_fibonacci.tiny"]),  # Rosetta Fibonacci sample
-    ("concurrency_demo.tiny", [PYTHON, str(INTERPRETER), "concurrency_demo.tiny"]),  # Spawn/join example
-    ("concurrency_pipeline.tiny", [PYTHON, str(INTERPRETER), "concurrency_pipeline.tiny"]),  # Pipeline concurrency
-    ("parallel_map.tiny", [PYTHON, str(INTERPRETER), "parallel_map.tiny"]),  # Parallel map helper
-    ("heap_pointer_demo.tiny", [PYTHON, str(INTERPRETER), "heap_pointer_demo.tiny"]),  # Heap safety showcase
-    ("namespace_demo.tiny", [PYTHON, str(INTERPRETER), "namespace_demo.tiny"]),  # Namespaces walkthrough
-    ("operator_overloading_demo.tiny", [PYTHON, str(INTERPRETER), "operator_overloading_demo.tiny"]),  # Operator overloads
+    ("demo.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "demo.tiny")]),  # Showcase basics
+    ("class_demo.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "class_demo.tiny")]),  # Class walkthrough
+    ("all_features.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "all_features.tiny")]),  # Feature tour
+    ("number_class.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "number_class.tiny")]),  # Number class demo
+    ("number_intervall.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "number_intervall.tiny")]),  # Interval arithmetic
+    ("rosetta_fibonacci.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "rosetta_fibonacci.tiny")]),  # Rosetta Fibonacci sample
+    ("concurrency_demo.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "concurrency_demo.tiny")]),  # Spawn/join example
+    ("concurrency_pipeline.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "concurrency_pipeline.tiny")]),  # Pipeline concurrency
+    ("parallel_map.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "parallel_map.tiny")]),  # Parallel map helper
+    ("heap_pointer_demo.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "heap_pointer_demo.tiny")]),  # Heap safety showcase
+    ("namespace_demo.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "namespace_demo.tiny")]),  # Namespaces walkthrough
+    ("operator_overloading_demo.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "operator_overloading_demo.tiny")]),  # Operator overloads
     ("tests/logic_example.tiny", [PYTHON, str(INTERPRETER), "tests/logic_example.tiny"]),  # Logic test sample
     (".vscode/all_features.tiny", [PYTHON, str(INTERPRETER), ".vscode/all_features.tiny"]),  # VS Code tutorial copy
     (".vscode/rosetta_fibonacci.tiny", [PYTHON, str(INTERPRETER), ".vscode/rosetta_fibonacci.tiny"]),  # VS Code Fib copy

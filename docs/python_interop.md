@@ -49,7 +49,7 @@ Dieser Entwurf beschreibt, wie TinyLanguage kontrolliert mit Python-Funktionen u
   ```tiny
   define os = Python.import_module("os", allow=["getcwd", "stat"]);
   define cwd = os.getcwd();
-  define info = os.stat("./demo.tiny");
+  define info = os.stat("./src_tiny/demo.tiny");
   print(info.st_size);
   ```
 

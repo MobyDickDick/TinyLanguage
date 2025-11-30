@@ -14,5 +14,5 @@
 - **JSON**: `JSON.parse(text)` wandelt Text in Maps/Listen mit nativen Python-Containern um; Zahlen/Bools/Null bleiben erhalten. `JSON.stringify(value)` serialisiert kompatible TinyLanguage-Werte (inkl. Map/Deque/List-Heap-Pointer) zu String.
 
 ## Beispielprogramme
-- [`stdlib_collections_demo.tiny`](../stdlib_collections_demo.tiny) zeigt Map/Set/Deque.
-- [`stdlib_io_random_demo.tiny`](../stdlib_io_random_demo.tiny) kombiniert Random, File und JSON.
+- [`stdlib_collections_demo.tiny`](../src_tiny/stdlib_collections_demo.tiny) zeigt Map/Set/Deque.
+- [`stdlib_io_random_demo.tiny`](../src_tiny/stdlib_io_random_demo.tiny) kombiniert Random, File und JSON.

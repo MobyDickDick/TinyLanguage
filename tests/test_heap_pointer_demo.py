@@ -9,7 +9,7 @@ from tiny_language import compile_and_run
 
 
 def test_heap_pointer_demo_outputs_errors_and_hints():
-    program = PROJECT_ROOT / "heap_pointer_demo.tiny"
+    program = PROJECT_ROOT / "src_tiny" / "heap_pointer_demo.tiny"
 
     output = compile_and_run(program.read_text())
 

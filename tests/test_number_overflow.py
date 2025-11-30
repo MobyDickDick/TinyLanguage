@@ -2,7 +2,7 @@ import pathlib
 
 
 def test_number_error_propagation_and_printing(run_tiny_source):
-    number_def = (pathlib.Path(__file__).resolve().parents[1] / "number_class.tiny").read_text()
+    number_def = (pathlib.Path(__file__).resolve().parents[1] / "src_tiny" / "number_class.tiny").read_text()
 
     extra = """
     define big = Number(PYTHON_FLOAT_MAX);

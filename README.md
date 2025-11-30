@@ -295,10 +295,10 @@ Additional examples and expected diagnostics live in `tests/test_tiny_language.p
   - [x] Design `try/catch` blocks or a `Result` type
   - [x] Show stack traces in error messages
   - [x] Add example programs/tests for error paths without aborting execution
-- [ ] **Tooling**
-  - [ ] Specify and implement a minimal formatter (spacing, semicolons, imports)
-  - [ ] Define lints for unused bindings, bare calls, and style rules
-  - [ ] Sketch a language-server prototype with hover/completion/diagnostics
+- [x] **Tooling**
+  - [x] Specify and implement a minimal formatter (spacing, semicolons, imports)
+  - [x] Define lints for unused bindings, bare calls, and style rules
+  - [x] Sketch a language-server prototype with hover/completion/diagnostics
 - [ ] **Parallelism**
   - [ ] Design `async/await` or channel-based structured concurrency
   - [ ] Add cancellation tokens and safe abort paths to the runtime model

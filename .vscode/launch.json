@@ -82,6 +82,14 @@
       "console": "integratedTerminal"
     },
     {
+      "name": "Run match_demo.tiny",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tiny_language.py",
+      "args": ["${workspaceFolder}/match_demo.tiny"],
+      "console": "integratedTerminal"
+    },
+    {
       "name": "Run operator_overloading_demo.tiny",
       "type": "debugpy",
       "request": "launch",
@@ -106,6 +114,14 @@
       "console": "integratedTerminal"
     },
     {
+      "name": "Run result_demo.tiny",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tiny_language.py",
+      "args": ["${workspaceFolder}/result_demo.tiny"],
+      "console": "integratedTerminal"
+    },
+    {
       "name": "Run tests/logic_example.tiny",
       "type": "debugpy",
       "request": "launch",
@@ -127,6 +143,30 @@
       "request": "launch",
       "program": "${workspaceFolder}/tiny_language.py",
       "args": ["${workspaceFolder}/.vscode/rosetta_fibonacci.tiny"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Run try_catch_demo.tiny",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tiny_language.py",
+      "args": ["${workspaceFolder}/try_catch_demo.tiny"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Run stdlib_collections_demo.tiny",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tiny_language.py",
+      "args": ["${workspaceFolder}/stdlib_collections_demo.tiny"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Run stdlib_io_random_demo.tiny",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tiny_language.py",
+      "args": ["${workspaceFolder}/stdlib_io_random_demo.tiny"],
       "console": "integratedTerminal"
     },
     {
@@ -247,17 +287,6 @@
       "console": "integratedTerminal",
       "args": [
         "tests/test_error_messages.py",
-        "-q"
-      ]
-    },
-    {
-      "name": "Python: pytest - tests/test_tiny_language.py",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "pytest",
-      "console": "integratedTerminal",
-      "args": [
-        "tests/test_tiny_language.py",
         "-q"
       ]
     },

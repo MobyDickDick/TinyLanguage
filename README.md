@@ -5,9 +5,9 @@ TinyLanguage is a small Julia-inspired language with a Python interpreter. This 
 For interoperability guidance, see the cross-language compatibility notes in [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md). For concrete Rosetta Code–style ports from Python to TinyLanguage, walk through [`docs/rosetta_python_examples.md`](docs/rosetta_python_examples.md).
 
 ## Transpiler roadmap (task list)
-1. **Expand the shared IR**: Add new statement/expression types (for example, control flow nodes like `IfElse` and `While`) and prepare helper functions in [`tiny_language_transpilers.py`](tiny_language_transpilers.py).
-2. **Update language transpilers**: Extend the parser/renderers in `PythonTranspiler`, `JuliaTranspiler`, `JavaScriptTranspiler`, and `CppTranspiler` so the new IR nodes round-trip correctly.
-3. **Add tests**: Provide round-trip tests for every new language feature (source → IR → source) plus negative tests for unsupported constructs.
+- [x] **Expand the shared IR**: Ergänze neue Statement-/Expression-Typen (z. B. Kontrollflussknoten wie `IfElse` und `While`) und rüste die Hilfsfunktionen in [`tiny_language_transpilers.py`](tiny_language_transpilers.py) so auf, dass spätere Sprachen-Erweiterungen darauf aufbauen können.
+- [ ] **Update language transpilers**: Ziehe die Parser/Renderer der `PythonTranspiler`, `JuliaTranspiler`, `JavaScriptTranspiler` und `CppTranspiler` nach, damit die neuen IR-Knoten korrekt hin- und zurückübersetzt werden.
+- [ ] **Add tests**: Erweitere die Round-Trip-Tests (Quelle → IR → Quelle) für jede neue Sprachfunktion und ergänze Negativtests für nicht unterstützte Konstrukte.
 
 ## Syntax and Features
 

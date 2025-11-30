@@ -219,14 +219,39 @@ class PythonTranspiler(LanguageTranspiler):
         for fn in program.functions:
             chunks.append(self._render_function(fn))
         if program.body:
-            chunks.extend(_render_block(program.body, _expr_to_python))
+            chunks.extend(self._render_statements(program.body, indent_level=0))
         return self._lines(chunks)
 
     def _render_function(self, fn: FunctionIR) -> str:
         header = f"def {fn.name}({', '.join(fn.params)}):"
-        body_lines = _render_block(fn.body, _expr_to_python)
-        indented = [self.indent + line for line in body_lines or ["pass"]]
-        return "\n".join([header, *indented])
+        body_lines = self._render_statements(fn.body, indent_level=1) or [self.indent + "pass"]
+        return "\n".join([header, *body_lines])
+
+    def _render_statements(self, statements: Sequence[Statement], indent_level: int) -> List[str]:
+        rendered: List[str] = []
+        pad = self.indent * indent_level
+        for stmt in statements:
+            if isinstance(stmt, Assign):
+                rendered.append(f"{pad}{stmt.target} = {_expr_to_python(stmt.expr)}")
+            elif isinstance(stmt, Return):
+                rendered.append(f"{pad}return {_expr_to_python(stmt.expr)}")
+            elif isinstance(stmt, ExprStmt):
+                rendered.append(f"{pad}{_expr_to_python(stmt.expr)}")
+            elif isinstance(stmt, IfElse):
+                rendered.append(f"{pad}if {_expr_to_python(stmt.condition)}:")
+                then_body = self._render_statements(stmt.then_body, indent_level + 1)
+                rendered.extend(then_body or [pad + self.indent + "pass"])
+                if stmt.else_body:
+                    rendered.append(f"{pad}else:")
+                    else_body = self._render_statements(stmt.else_body, indent_level + 1)
+                    rendered.extend(else_body or [pad + self.indent + "pass"])
+            elif isinstance(stmt, While):
+                rendered.append(f"{pad}while {_expr_to_python(stmt.condition)}:")
+                body = self._render_statements(stmt.body, indent_level + 1)
+                rendered.extend(body or [pad + self.indent + "pass"])
+            else:
+                raise ValueError(f"Unsupported statement: {stmt}")
+        return rendered
 
     def from_source(self, code: str) -> ProgramIR:
         module = ast.parse(code)
@@ -241,7 +266,11 @@ class PythonTranspiler(LanguageTranspiler):
 
     def _function_from_ast(self, node: ast.FunctionDef) -> FunctionIR:
         params = [arg.arg for arg in node.args.args]
-        stmts = [self._stmt_from_ast(stmt) for stmt in node.body if not isinstance(stmt, ast.Expr) or not isinstance(stmt.value, ast.Constant)]
+        stmts = [
+            self._stmt_from_ast(stmt)
+            for stmt in node.body
+            if not isinstance(stmt, ast.Expr) or not isinstance(stmt.value, ast.Constant)
+        ]
         return FunctionIR(name=node.name, params=params, body=stmts)
 
     def _stmt_from_ast(self, node: ast.AST) -> Statement:
@@ -253,6 +282,13 @@ class PythonTranspiler(LanguageTranspiler):
             return Return(_expr_from_ast(node.value))
         if isinstance(node, ast.Expr):
             return ExprStmt(_expr_from_ast(node.value))
+        if isinstance(node, ast.If):
+            then_body = [self._stmt_from_ast(stmt) for stmt in node.body]
+            else_body = [self._stmt_from_ast(stmt) for stmt in node.orelse]
+            return IfElse(_expr_from_ast(node.test), then_body, else_body)
+        if isinstance(node, ast.While):
+            loop_body = [self._stmt_from_ast(stmt) for stmt in node.body]
+            return While(_expr_from_ast(node.test), loop_body)
         raise ValueError(f"Unsupported statement node: {ast.dump(node)}")
 
 
@@ -266,11 +302,10 @@ class JuliaTranspiler(LanguageTranspiler):
         chunks: List[str] = []
         for fn in program.functions:
             header = f"function {fn.name}({', '.join(fn.params)})"
-            body_lines = _render_block(fn.body, _expr_to_python)
-            indented = [self.indent + line for line in body_lines]
-            chunks.append("\n".join([header, *indented, "end"]))
+            body_lines = self._render_statements(fn.body, indent_level=1)
+            chunks.append("\n".join([header, *body_lines, "end"]))
         if program.body:
-            chunks.extend(_render_block(program.body, _expr_to_python))
+            chunks.extend(self._render_statements(program.body, indent_level=0))
         return self._lines(chunks)
 
     def from_source(self, code: str) -> ProgramIR:
@@ -282,15 +317,14 @@ class JuliaTranspiler(LanguageTranspiler):
             line = lines[i]
             if line.startswith("function "):
                 name, params_text = self._parse_signature(line)
+                fn_body, i = self._parse_block(lines, i + 1)
+                if i >= len(lines) or lines[i] != "end":
+                    raise ValueError("Unterminated Julia function body")
+                functions.append(FunctionIR(name=name, params=params_text, body=fn_body))
                 i += 1
-                fn_body: List[str] = []
-                while i < len(lines) and lines[i] != "end":
-                    fn_body.append(lines[i])
-                    i += 1
-                functions.append(FunctionIR(name=name, params=params_text, body=self._parse_statements(fn_body)))
             else:
-                body.extend(self._parse_statements([line]))
-            i += 1
+                block, i = self._parse_block(lines, i)
+                body.extend(block)
         return ProgramIR(functions=functions, body=body)
 
     def _parse_signature(self, line: str) -> tuple[str, List[str]]:
@@ -301,11 +335,59 @@ class JuliaTranspiler(LanguageTranspiler):
         params = [param.strip() for param in match.group(2).split(",") if param.strip()]
         return name, params
 
-    def _parse_statements(self, lines: List[str]) -> List[Statement]:
+    def _parse_block(self, lines: List[str], i: int) -> tuple[List[Statement], int]:
         stmts: List[Statement] = []
-        for line in lines:
+        while i < len(lines):
+            line = lines[i]
+            if line == "end" or line == "else":
+                return stmts, i
+            if line.startswith("if "):
+                condition = line[3:].strip()
+                then_body, i = self._parse_block(lines, i + 1)
+                else_body: List[Statement] = []
+                if i < len(lines) and lines[i] == "else":
+                    else_body, i = self._parse_block(lines, i + 1)
+                if i >= len(lines) or lines[i] != "end":
+                    raise ValueError("Unterminated Julia if/else block")
+                stmts.append(IfElse(_parse_expression(condition), then_body, else_body))
+                i += 1
+                continue
+            if line.startswith("while "):
+                condition = line[6:].strip()
+                loop_body, i = self._parse_block(lines, i + 1)
+                if i >= len(lines) or lines[i] != "end":
+                    raise ValueError("Unterminated Julia while block")
+                stmts.append(While(_parse_expression(condition), loop_body))
+                i += 1
+                continue
             stmts.append(_parse_statement(line))
-        return stmts
+            i += 1
+        return stmts, i
+
+    def _render_statements(self, statements: Sequence[Statement], indent_level: int) -> List[str]:
+        rendered: List[str] = []
+        pad = self.indent * indent_level
+        for stmt in statements:
+            if isinstance(stmt, Assign):
+                rendered.append(f"{pad}{stmt.target} = {_expr_to_python(stmt.expr)}")
+            elif isinstance(stmt, Return):
+                rendered.append(f"{pad}return {_expr_to_python(stmt.expr)}")
+            elif isinstance(stmt, ExprStmt):
+                rendered.append(f"{pad}{_expr_to_python(stmt.expr)}")
+            elif isinstance(stmt, IfElse):
+                rendered.append(f"{pad}if {_expr_to_python(stmt.condition)}")
+                rendered.extend(self._render_statements(stmt.then_body, indent_level + 1) or [pad + self.indent + "nothing"])
+                if stmt.else_body:
+                    rendered.append(f"{pad}else")
+                    rendered.extend(self._render_statements(stmt.else_body, indent_level + 1) or [pad + self.indent + "nothing"])
+                rendered.append(f"{pad}end")
+            elif isinstance(stmt, While):
+                rendered.append(f"{pad}while {_expr_to_python(stmt.condition)}")
+                rendered.extend(self._render_statements(stmt.body, indent_level + 1) or [pad + self.indent + "nothing"])
+                rendered.append(f"{pad}end")
+            else:
+                raise ValueError(f"Unsupported statement: {stmt}")
+        return rendered
 
 
 # ----- JavaScript -----
@@ -318,15 +400,14 @@ class JavaScriptTranspiler(LanguageTranspiler):
         chunks: List[str] = []
         for fn in program.functions:
             header = f"function {fn.name}({', '.join(fn.params)}) {{"
-            body_lines = _render_block(fn.body, _expr_to_python, line_suffix=";")
-            indented = [self.indent + line for line in body_lines]
-            chunks.append("\n".join([header, *indented, "}"]))
+            body_lines = self._render_statements(fn.body, indent_level=1)
+            chunks.append("\n".join([header, *body_lines, "}"]))
         if program.body:
-            chunks.extend(_render_block(program.body, _expr_to_python, line_suffix=";"))
+            chunks.extend(self._render_statements(program.body, indent_level=0))
         return self._lines(chunks)
 
     def from_source(self, code: str) -> ProgramIR:
-        lines = [line.strip().rstrip(";") for line in code.splitlines() if line.strip()]
+        lines = self._tokenize_lines(code)
         functions: List[FunctionIR] = []
         body: List[Statement] = []
         i = 0
@@ -334,15 +415,15 @@ class JavaScriptTranspiler(LanguageTranspiler):
             line = lines[i]
             if line.startswith("function "):
                 name, params = self._parse_signature(line)
+                body_start = self._block_start_index(lines, i, line)
+                fn_body, i = self._parse_block(lines, body_start)
+                if i >= len(lines) or lines[i] != "}":
+                    raise ValueError("Unterminated JavaScript function body")
+                functions.append(FunctionIR(name=name, params=params, body=fn_body))
                 i += 1
-                fn_body: List[str] = []
-                while i < len(lines) and lines[i] != "}":
-                    fn_body.append(lines[i])
-                    i += 1
-                functions.append(FunctionIR(name=name, params=params, body=[_parse_statement(l) for l in fn_body]))
             else:
-                body.append(_parse_statement(line))
-            i += 1
+                block, i = self._parse_block(lines, i)
+                body.extend(block)
         return ProgramIR(functions=functions, body=body)
 
     def _parse_signature(self, line: str) -> tuple[str, List[str]]:
@@ -352,6 +433,98 @@ class JavaScriptTranspiler(LanguageTranspiler):
         name = match.group(1)
         params = [param.strip() for param in match.group(2).split(",") if param.strip()]
         return name, params
+
+    def _tokenize_lines(self, code: str) -> List[str]:
+        tokens: List[str] = []
+        for raw in code.splitlines():
+            stripped = raw.strip()
+            if not stripped:
+                continue
+            pieces = re.split(r"([{}])", stripped)
+            for piece in pieces:
+                part = piece.strip()
+                if not part:
+                    continue
+                tokens.append(part.rstrip(";"))
+        return tokens
+
+    def _parse_block(self, lines: List[str], i: int) -> tuple[List[Statement], int]:
+        stmts: List[Statement] = []
+        while i < len(lines):
+            line = lines[i]
+            if line == "}":
+                return stmts, i
+            if line == "else":
+                return stmts, i
+            if line.startswith("if"):
+                condition = self._extract_condition(line, keyword="if")
+                body_start = self._block_start_index(lines, i, line)
+                then_body, i = self._parse_block(lines, body_start)
+                if i >= len(lines) or lines[i] != "}":
+                    raise ValueError("Unterminated JavaScript if block")
+                i += 1
+                else_body: List[Statement] = []
+                if i < len(lines) and lines[i].startswith("else"):
+                    else_start = self._block_start_index(lines, i, lines[i], keyword="else", expects_condition=False)
+                    else_body, i = self._parse_block(lines, else_start)
+                    if i >= len(lines) or lines[i] != "}":
+                        raise ValueError("Unterminated JavaScript else block")
+                    i += 1
+                stmts.append(IfElse(_parse_expression(condition), then_body, else_body))
+                continue
+            if line.startswith("while"):
+                condition = self._extract_condition(line, keyword="while")
+                body_start = self._block_start_index(lines, i, line)
+                loop_body, i = self._parse_block(lines, body_start)
+                if i >= len(lines) or lines[i] != "}":
+                    raise ValueError("Unterminated JavaScript while block")
+                i += 1
+                stmts.append(While(_parse_expression(condition), loop_body))
+                continue
+            stmts.append(_parse_statement(line))
+            i += 1
+        return stmts, i
+
+    def _block_start_index(self, lines: List[str], i: int, line: str, keyword: str | None = None, expects_condition: bool = True) -> int:
+        stripped = line.strip()
+        if stripped.endswith("{"):
+            return i + 1
+        if i + 1 < len(lines) and lines[i + 1] == "{":
+            return i + 2
+        label = keyword or "block"
+        raise ValueError(f"JavaScript {label} must open with '{{'")
+
+    def _extract_condition(self, line: str, keyword: str) -> str:
+        match = re.match(rf"{keyword}\s*\((.*)\)\s*\{{?", line)
+        if not match:
+            raise ValueError(f"Invalid JavaScript {keyword} syntax: {line}")
+        return match.group(1)
+
+    def _render_statements(self, statements: Sequence[Statement], indent_level: int) -> List[str]:
+        rendered: List[str] = []
+        pad = self.indent * indent_level
+        for stmt in statements:
+            if isinstance(stmt, Assign):
+                rendered.append(f"{pad}{stmt.target} = {_expr_to_python(stmt.expr)};")
+            elif isinstance(stmt, Return):
+                rendered.append(f"{pad}return {_expr_to_python(stmt.expr)};")
+            elif isinstance(stmt, ExprStmt):
+                rendered.append(f"{pad}{_expr_to_python(stmt.expr)};")
+            elif isinstance(stmt, IfElse):
+                rendered.append(f"{pad}if ({_expr_to_python(stmt.condition)}) {{")
+                rendered.extend(self._render_statements(stmt.then_body, indent_level + 1))
+                rendered.append(f"{pad}}}")
+                if stmt.else_body:
+                    rendered.append(f"{pad}else {{")
+                    rendered.extend(self._render_statements(stmt.else_body, indent_level + 1))
+                    rendered.append(f"{pad}}}")
+            elif isinstance(stmt, While):
+                rendered.append(f"{pad}while ({_expr_to_python(stmt.condition)}) {{")
+                rendered.extend(self._render_statements(stmt.body, indent_level + 1))
+                rendered.append(f"{pad}}}")
+            else:
+                raise ValueError(f"Unsupported statement: {stmt}")
+        return rendered
 
 
 # ----- C++ -----
@@ -364,15 +537,14 @@ class CppTranspiler(LanguageTranspiler):
         chunks: List[str] = []
         for fn in program.functions:
             signature = f"auto {fn.name}({', '.join(f'auto {p}' for p in fn.params)}) {{"
-            body_lines = _render_block(fn.body, _expr_to_python, line_suffix=";")
-            indented = [self.indent + line for line in body_lines]
-            chunks.append("\n".join([signature, *indented, "}"]))
+            body_lines = self._render_statements(fn.body, indent_level=1)
+            chunks.append("\n".join([signature, *body_lines, "}"]))
         if program.body:
-            chunks.extend(_render_block(program.body, _expr_to_python, line_suffix=";"))
+            chunks.extend(self._render_statements(program.body, indent_level=0))
         return self._lines(chunks)
 
     def from_source(self, code: str) -> ProgramIR:
-        lines = [line.strip().rstrip(";") for line in code.splitlines() if line.strip()]
+        lines = self._tokenize_lines(code)
         functions: List[FunctionIR] = []
         body: List[Statement] = []
         i = 0
@@ -380,15 +552,15 @@ class CppTranspiler(LanguageTranspiler):
             line = lines[i]
             if line.startswith("auto "):
                 name, params = self._parse_signature(line)
+                body_start = self._block_start_index(lines, i, line)
+                fn_body, i = self._parse_block(lines, body_start)
+                if i >= len(lines) or lines[i] != "}":
+                    raise ValueError("Unterminated C++ function body")
+                functions.append(FunctionIR(name=name, params=params, body=fn_body))
                 i += 1
-                fn_body: List[str] = []
-                while i < len(lines) and lines[i] != "}":
-                    fn_body.append(lines[i])
-                    i += 1
-                functions.append(FunctionIR(name=name, params=params, body=[_parse_statement(l) for l in fn_body]))
             else:
-                body.append(_parse_statement(line))
-            i += 1
+                block, i = self._parse_block(lines, i)
+                body.extend(block)
         return ProgramIR(functions=functions, body=body)
 
     def _parse_signature(self, line: str) -> tuple[str, List[str]]:
@@ -405,6 +577,98 @@ class CppTranspiler(LanguageTranspiler):
                 if cleaned:
                     params.append(cleaned)
         return name, params
+
+    def _tokenize_lines(self, code: str) -> List[str]:
+        tokens: List[str] = []
+        for raw in code.splitlines():
+            stripped = raw.strip()
+            if not stripped:
+                continue
+            pieces = re.split(r"([{}])", stripped)
+            for piece in pieces:
+                part = piece.strip()
+                if not part:
+                    continue
+                tokens.append(part.rstrip(";"))
+        return tokens
+
+    def _parse_block(self, lines: List[str], i: int) -> tuple[List[Statement], int]:
+        stmts: List[Statement] = []
+        while i < len(lines):
+            line = lines[i]
+            if line == "}":
+                return stmts, i
+            if line == "else":
+                return stmts, i
+            if line.startswith("if"):
+                condition = self._extract_condition(line, keyword="if")
+                body_start = self._block_start_index(lines, i, line)
+                then_body, i = self._parse_block(lines, body_start)
+                if i >= len(lines) or lines[i] != "}":
+                    raise ValueError("Unterminated C++ if block")
+                i += 1
+                else_body: List[Statement] = []
+                if i < len(lines) and lines[i].startswith("else"):
+                    else_start = self._block_start_index(lines, i, lines[i], keyword="else", expects_condition=False)
+                    else_body, i = self._parse_block(lines, else_start)
+                    if i >= len(lines) or lines[i] != "}":
+                        raise ValueError("Unterminated C++ else block")
+                    i += 1
+                stmts.append(IfElse(_parse_expression(condition), then_body, else_body))
+                continue
+            if line.startswith("while"):
+                condition = self._extract_condition(line, keyword="while")
+                body_start = self._block_start_index(lines, i, line)
+                loop_body, i = self._parse_block(lines, body_start)
+                if i >= len(lines) or lines[i] != "}":
+                    raise ValueError("Unterminated C++ while block")
+                i += 1
+                stmts.append(While(_parse_expression(condition), loop_body))
+                continue
+            stmts.append(_parse_statement(line))
+            i += 1
+        return stmts, i
+
+    def _block_start_index(self, lines: List[str], i: int, line: str, keyword: str | None = None, expects_condition: bool = True) -> int:
+        stripped = line.strip()
+        if stripped.endswith("{"):
+            return i + 1
+        if i + 1 < len(lines) and lines[i + 1] == "{":
+            return i + 2
+        label = keyword or "block"
+        raise ValueError(f"C++ {label} must open with '{{'")
+
+    def _extract_condition(self, line: str, keyword: str) -> str:
+        match = re.match(rf"{keyword}\s*\((.*)\)\s*\{{?", line)
+        if not match:
+            raise ValueError(f"Invalid C++ {keyword} syntax: {line}")
+        return match.group(1)
+
+    def _render_statements(self, statements: Sequence[Statement], indent_level: int) -> List[str]:
+        rendered: List[str] = []
+        pad = self.indent * indent_level
+        for stmt in statements:
+            if isinstance(stmt, Assign):
+                rendered.append(f"{pad}{stmt.target} = {_expr_to_python(stmt.expr)};")
+            elif isinstance(stmt, Return):
+                rendered.append(f"{pad}return {_expr_to_python(stmt.expr)};")
+            elif isinstance(stmt, ExprStmt):
+                rendered.append(f"{pad}{_expr_to_python(stmt.expr)};")
+            elif isinstance(stmt, IfElse):
+                rendered.append(f"{pad}if ({_expr_to_python(stmt.condition)}) {{")
+                rendered.extend(self._render_statements(stmt.then_body, indent_level + 1))
+                rendered.append(f"{pad}}}")
+                if stmt.else_body:
+                    rendered.append(f"{pad}else {{")
+                    rendered.extend(self._render_statements(stmt.else_body, indent_level + 1))
+                    rendered.append(f"{pad}}}")
+            elif isinstance(stmt, While):
+                rendered.append(f"{pad}while ({_expr_to_python(stmt.condition)}) {{")
+                rendered.extend(self._render_statements(stmt.body, indent_level + 1))
+                rendered.append(f"{pad}}}")
+            else:
+                raise ValueError(f"Unsupported statement: {stmt}")
+        return rendered
 
 
 # ----- Generic parsing -----

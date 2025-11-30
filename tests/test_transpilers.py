@@ -9,6 +9,7 @@ from tiny_language_transpilers import (
     CppTranspiler,
     ExprStmt,
     FunctionIR,
+    IfElse,
     JavaScriptTranspiler,
     JuliaTranspiler,
     Literal,
@@ -16,12 +17,29 @@ from tiny_language_transpilers import (
     ProgramIR,
     PythonTranspiler,
     Return,
+    While,
 )
 
 
 def sample_program():
     body = [Assign("total", BinaryOp("+", Name("a"), Name("b"))), Return(Name("total"))]
     return ProgramIR(functions=[FunctionIR(name="add", params=["a", "b"], body=body)])
+
+
+def control_flow_program():
+    loop_body = [
+        IfElse(
+            BinaryOp("==", Name("x"), Literal(2)),
+            then_body=[Return(Name("x"))],
+            else_body=[Assign("x", BinaryOp("+", Name("x"), Literal(1)))],
+        )
+    ]
+    body = [
+        Assign("total", Literal(0)),
+        While(BinaryOp("<", Name("x"), Literal(3)), loop_body),
+        Return(Name("total")),
+    ]
+    return ProgramIR(functions=[FunctionIR(name="loop", params=["x"], body=body)])
 
 
 def test_python_roundtrip():
@@ -107,3 +125,82 @@ def test_expression_statements_render_across_languages():
 
     julia_source = JuliaTranspiler().to_source(program)
     assert julia_source.strip() == "print('ready')"
+
+
+def test_control_flow_roundtrip_python():
+    program = control_flow_program()
+    transpiler = PythonTranspiler()
+    rendered = transpiler.to_source(program)
+    assert "while x < 3:" in rendered
+    parsed = transpiler.from_source(rendered)
+    assert parsed == program
+
+
+def test_control_flow_cross_language_parsing():
+    expected = control_flow_program()
+
+    python_src = textwrap.dedent(
+        """
+        def loop(x):
+            total = 0
+            while x < 3:
+                if x == 2:
+                    return x
+                else:
+                    x = x + 1
+            return total
+        """
+    )
+
+    julia_src = textwrap.dedent(
+        """
+        function loop(x)
+            total = 0
+            while x < 3
+                if x == 2
+                    return x
+                else
+                    x = x + 1
+                end
+            end
+            return total
+        end
+        """
+    )
+
+    js_src = textwrap.dedent(
+        """
+        function loop(x) {
+          let total = 0;
+          while (x < 3) {
+            if (x == 2) {
+              return x;
+            } else {
+              x = x + 1;
+            }
+          }
+          return total;
+        }
+        """
+    )
+
+    cpp_src = textwrap.dedent(
+        """
+        auto loop(auto x) {
+          auto total = 0;
+          while (x < 3) {
+            if (x == 2) {
+              return x;
+            } else {
+              x = x + 1;
+            }
+          }
+          return total;
+        }
+        """
+    )
+
+    assert PythonTranspiler().from_source(python_src) == expected
+    assert JuliaTranspiler().from_source(julia_src) == expected
+    assert JavaScriptTranspiler().from_source(js_src) == expected
+    assert CppTranspiler().from_source(cpp_src) == expected

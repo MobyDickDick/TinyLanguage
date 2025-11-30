@@ -6,7 +6,7 @@ import sys
 import pytest
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
-sys.path.append(str(PROJECT_ROOT))
+sys.path.append(str(PROJECT_ROOT / "src"))
 
 from tests.utils import run_tiny
 

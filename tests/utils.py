@@ -1,3 +1,4 @@
+import os
 import pathlib
 import subprocess
 import sys
@@ -5,7 +6,8 @@ import tempfile
 from dataclasses import dataclass
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
-sys.path.append(str(PROJECT_ROOT))
+SRC_ROOT = PROJECT_ROOT / "src"
+sys.path.append(str(SRC_ROOT))
 
 from tiny_language import compile_and_run  # noqa: E402
 
@@ -48,6 +50,12 @@ def execute_tiny_program(source: str, *, timeout: float | None = None) -> Execut
             text=True,
             timeout=timeout,
             cwd=PROJECT_ROOT,
+            env={
+                **os.environ,
+                "PYTHONPATH": os.pathsep.join(
+                    filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
+                ),
+            },
         )
 
         return ExecutionResult(proc.stdout, proc.stderr, proc.returncode)

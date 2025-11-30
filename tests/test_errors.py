@@ -5,7 +5,7 @@ import pytest
 
 # Ensure project root is importable
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
-sys.path.append(str(PROJECT_ROOT))
+sys.path.append(str(PROJECT_ROOT / "src"))
 
 from tiny_language import TinyLangError, compile_and_run  # noqa: E402
 

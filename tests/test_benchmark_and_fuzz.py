@@ -10,7 +10,7 @@ from typing import List, Tuple
 
 import pytest
 
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1] / "src"))
 
 from tiny_language import TinyLangError, compile_and_run
 

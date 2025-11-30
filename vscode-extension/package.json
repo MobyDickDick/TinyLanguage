@@ -1,0 +1,75 @@
+{
+  "name": "tinylanguage-vscode",
+  "displayName": "TinyLanguage",
+  "description": "Syntax highlighting, formatting, REPL integration, and diagnostics for TinyLanguage programs.",
+  "version": "0.1.0",
+  "publisher": "tinylanguage",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Programming Languages"],
+  "activationEvents": [
+    "onLanguage:tinylanguage",
+    "onCommand:tinylanguage.startRepl",
+    "onCommand:tinylanguage.runFile",
+    "onCommand:tinylanguage.formatDocument",
+    "onCommand:tinylanguage.refreshDiagnostics"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "tinylanguage",
+        "aliases": ["TinyLanguage", "tinylanguage"],
+        "extensions": [".tiny"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "tinylanguage",
+        "scopeName": "source.tiny",
+        "path": "./syntaxes/tiny.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "tinylanguage.startRepl",
+        "title": "TinyLanguage: Start REPL"
+      },
+      {
+        "command": "tinylanguage.runFile",
+        "title": "TinyLanguage: Run Active File"
+      },
+      {
+        "command": "tinylanguage.formatDocument",
+        "title": "TinyLanguage: Format Document"
+      },
+      {
+        "command": "tinylanguage.refreshDiagnostics",
+        "title": "TinyLanguage: Refresh Diagnostics"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "TinyLanguage",
+      "properties": {
+        "tinylanguage.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Python executable used to run TinyLanguage tooling."
+        },
+        "tinylanguage.runtimePath": {
+          "type": "string",
+          "default": "${workspaceFolder}/src/tiny_language.py",
+          "description": "Path to tiny_language.py for running the REPL or executing files."
+        }
+      }
+    }
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://example.com/tinylanguage-vscode"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "scopeName": "source.tiny",
+  "name": "TinyLanguage",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#operators" },
+    { "include": "#functions" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.tiny",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.tiny",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.tiny",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            { "name": "constant.character.escape.tiny", "match": "\\\\." }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "name": "constant.numeric.tiny",
+      "match": "\\b((0[xX][0-9a-fA-F]+)|([0-9]+(\\.[0-9]+)?))\\b"
+    },
+    "keywords": {
+      "name": "keyword.control.tiny",
+      "match": "\\b(define|print|if|else|while|fn|import|return|operator|new|type|class|namespace|as|spawn|async|await|true|false|and|or|not|Null|try|catch|match|case)\\b"
+    },
+    "types": {
+      "name": "support.type.tiny",
+      "match": "\\b(Bool|Number|string|number|array|map|set)\\b"
+    },
+    "operators": {
+      "name": "keyword.operator.tiny",
+      "match": "(\\+|-|\\*\\*|/|==|!=|<=|>=|<|>|=|\\^|&&|\\|\\|)"
+    },
+    "functions": {
+      "patterns": [
+        {
+          "name": "entity.name.function.tiny",
+          "match": "\\b(?:fn\\s+)?([A-Za-z_][A-Za-z0-9_]*)\\s*(?=\\()"
+        }
+      ]
+    }
+  },
+  "fileTypes": ["tiny"],
+  "uuid": "f8d8de9e-65dc-4c45-8f97-7560d1111111"
+}

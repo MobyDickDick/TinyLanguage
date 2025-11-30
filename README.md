@@ -204,77 +204,42 @@ Expected output:
 5
 ```
 
-Mehr Beispiele und Fehlerszenarien finden sich in [`heap_pointer_demo.tiny`](heap_pointer_demo.tiny).
-
-### Standardbibliothek
-Vor jedem Programmstart registriert der Interpreter die eingebaute Stdlib mit folgenden Namespaces:
-
-- **Math**: `Math.abs(x)`, `Math.pow(base, exp)`, `Math.sqrt(x)` fuer grundlegende Mathematik. Neu hinzugekommen sind `Math.max(a, b)` und `Math.min(a, b)` zum Vergleichen sowie `Math.clamp(value, lower, upper)`, um Werte einzugrenzen. Weitere Helfer: `Math.round(value, digits?)` rundet auf Nachkommastellen, `Math.floor`/`Math.ceil` runden nach unten/oben und `Math.sign(x)` liefert -1/0/1 je nach Vorzeichen. Beispiel: `print(Math.clamp(Math.max(-2, 10), 0, 5));` gibt `5` aus.
-- **String**: `String.split(text, sep)` liefert einen Heap-Pointer auf ein Array der Teilstrings, `String.join(items, sep)` verbindet eine Liste/Pointer, `String.contains(text, needle)` prueft Teilstrings. Zusaetzlich gibt es `String.upper(text)`, `String.lower(text)`, `String.trim(text)` und `String.repeat(text, count)` fuer Gross-/Kleinschreibung, Whitespace-Trimming und Wiederholung. Beispiel: `print(String.upper(String.trim("  tiny "))); print(String.repeat("ha", 3));` erzeugt `TINY` und `hahaha`.
-- **Collections**: `Collections.len(x)` misst die Laenge von Heap-Pointern oder Python-Listen, `Collections.push(target, value)` fuegt am Ende an und liefert die neue Laenge, `Collections.pop(target)` entfernt das letzte Element oder wirft einen Fehler bei leeren Collections. Neu sind `Collections.slice(target, start, end)` fuer Teilbereiche und `Collections.contains(target, value)` zum Nachschlagen: `define mid = Collections.slice(new[1, 2, 3], 1, 3); print(Collections.contains(mid, 2));` druckt `true`. Darueber hinaus gibt es eine eigenstaendige `Map`-API (`Map.new`, `Map.set`, `Map.get`, `Map.keys` usw.), Mengen per `Set`-Namespace (`Set.add`, `Set.delete`, `Set.to_list`) und doppelt verkettete Queues ueber `Deque` (`Deque.push_left/right`, `Deque.pop_left/right`, `Deque.peek_left/right`).
-- **Random**: Zufallshelfer `Random.random()`, `Random.randint(lower, upper)`, `Random.choice(seq)` und `Random.shuffle(seq)` fuer einfache Stichproben.
-- **File/JSON**: `File.read`/`File.write`/`File.exists`/`File.remove` fuer UTF-8-Dateien. `JSON.parse(text)` wandelt Strings in Listen/Maps/Numerics/Null um, `JSON.stringify(value)` baut aus kompatiblen Strukturen wieder einen JSON-String.
-
-## Beispielprogramme
-- [`demo.tiny`](demo.tiny): Kleines Schaufenster fuer Variablen, Schleifen, Funktionen, Klassen und Heap-Operationen. Laeuft sequenziell durch und druckt Zwischenergebnisse, wodurch man die Sprachfeatures in Aktion sieht.
-- [`rosetta_fibonacci.tiny`](rosetta_fibonacci.tiny): Implementiert die klassische Fibonacci-Folge; zeigt Funktionsdefinitionen und einfache Loops. Erwartet werden die ersten 10 Fibonacci-Zahlen auf der Konsole.
-- [`all_features.tiny`](all_features.tiny): Umfangreiches Feature-Rundlaufprogramm mit Arrays, Klassen und Operator-Overloading. Praktisch, um die Sprache als Ganzes zu erkunden.
-- [`class_demo.tiny`](class_demo.tiny): Minimaler Klassen-Constructor mit Methode; gibt einen personalisierten Gruss aus.
-- [`operator_overloading_demo.tiny`](operator_overloading_demo.tiny): Schlanke Punkt-Klasse, die `+` und `==` ueberschreibt und Zwischenergebnisse ausgibt.
-- [`number_class.tiny`](number_class.tiny): Demonstriert die `Number`-Klasse und den ueberladenen `+`-Operator; instanziiert Objekte, ruft Methoden auf und gibt das Ergebnis aus.
-- [`number_intervall.tiny`](number_intervall.tiny): Beispiel fuer numerische Intervallrechnungen und Grenzenkontrolle.
-- [`namespace_demo.tiny`](namespace_demo.tiny): Kleine `Tools`-Bibliothek als Namespace mit `double` und `label`.
-- [`concurrency_demo.tiny`](concurrency_demo.tiny): Startet mehrere Aufgaben mit `spawn`, sammelt die Ergebnisse ueber `join` und kombiniert sie mit `String.split`/`String.join` zu einer Ausgabe.
-- [`heap_pointer_demo.tiny`](heap_pointer_demo.tiny): Zeigt sicheres Heap-Handling mit `new`, `heap_get`/`heap_set` und `delete` sowie typische Fehlermeldungen bei Out-of-Bounds- oder Feldzugriffen.
-- [`stdlib_collections_demo.tiny`](stdlib_collections_demo.tiny): Map/Set/Deque-Beispiele aus der neuen Collections-API.
-- [`stdlib_io_random_demo.tiny`](stdlib_io_random_demo.tiny): Random-Helfer plus JSON-Parsing und Datei-I/O im Zusammenspiel.
-
-## Haeufige Fehler
-- **Ungenutzte Bindungen**: Nicht verwendete lokale Variablen oder Parameter fuehren zu Fehlern (z. B. "unused parameter(s) in function f: b", "unused local binding(s): t").
-- **Mutierte Parameter nicht zurueckgegeben**: Wird ein Parameter veraendert, muss er im Rueckgabewert enthalten sein (z. B. "mutated parameter(s) in function bump must be returned: a").
-
-## Formatter, Lints und Language-Server
-- **Formatter**: `python tiny_language.py --format datei.tiny` erzwingt Einrueckungen mit vier Leerzeichen, genau ein Leerzeichen um Operatoren und nach Kommas sowie normierte Import-Zeilen (`import pfad as alias;`). Kommentare bleiben erhalten.
-- **Linter-Stilregeln**: Ungenutzte Bindungen lassen sich jetzt mit einem vorangestellten `_` gezielt unterdruecken. Import-Anweisungen muessen sortiert vor dem restlichen Code stehen (`E012`). Funktionsaufrufe mit Rueckgabetyp duerfen nicht laienhaft ignoriert werden (`E011`); entweder das Ergebnis binden oder bewusst mit `_ = fn();` verwerfen.
-- **Language-Server-Prototyp**: Das Modul `language_server.py` bietet eine Mini-API fuer Hover, Completions und Diagnostics. Ideal, um LSP-Ideen auszuprobieren, ohne direkt einen JSON-RPC-Server zu schreiben.
-- **Unvollstaendiges Destructuring**: Alle Felder eines zurueckgegebenen Structs muessen gebunden werden ("destructuring call to f must include output for argument(s): a"), und jede Bindung muss benutzt werden.
-- **Bare Calls**: Funktionsaufrufe duerfen nicht allein als Statement stehen ("bare call statements are not allowed"); Ergebnis ausgeben oder zuweisen.
-- **Arithmetik-Einschraenkungen**: Der `^`-Operator akzeptiert nur ganzzahlige Exponenten ("exponent for ^ must be an integer"); fuer Brueche `power` nutzen.
-- **Heap/Field-Zugriffe**: Out-of-Bounds oder fehlende Felder melden Laufzeitfehler (z. B. "heap access error: index 5 out of range ...", "unknown field missing"). `errorMessage` enthaelt den letzten Laufzeitfehler.
-
-## Programme ausfuehren und testen
-- **Programm starten**: `python tiny_language.py <datei.tiny>` fuehrt ein TinyLanguage-Programm aus und beendet sich bei Erfolg mit Status 0. Beispiel: `python tiny_language.py demo.tiny`.
-- **Test-Suite**: `python -m pytest` fuehrt alle Tests aus. Einzelne Dateien lassen sich gezielt starten, z. B. `python -m pytest tests/test_tiny_language.py -k class`.
-
-### CLI: Module-Init und Publish
-- **Init**: Neues Modul-Verzeichnis anlegen (`mkdir my_pkg && cd my_pkg`), einen Einstiegspunkt wie `main.tiny` erzeugen und optional eine `module.json` mit Metadaten pflegen:
 See [`heap_pointer_demo.tiny`](heap_pointer_demo.tiny) for more examples and failure scenarios.
 
 ### Standard library
 The interpreter registers the built-in stdlib before running any program. Namespaces include:
 
-- **Math**: `Math.abs(x)`, `Math.pow(base, exp)`, `Math.sqrt(x)` for basics. New helpers `Math.max(a, b)`, `Math.min(a, b)`, and `Math.clamp(value, lower, upper)` make comparisons and clamping easier. Example: `print(Math.clamp(Math.max(-2, 10), 0, 5));` prints `5`.
-- **String**: `String.split(text, sep)` returns a heap pointer to an array of substrings; `String.join(items, sep)` joins a list/pointer; `String.contains(text, needle)` checks for substrings. Extras: `String.upper(text)`, `String.lower(text)`, `String.trim(text)`, and `String.repeat(text, count)` for casing, trimming, and repetition. Example: `print(String.upper(String.trim("  tiny "))); print(String.repeat("ha", 3));` prints `TINY` and `hahaha`.
-- **Collections**: `Collections.len(x)` measures the length of heap pointers or Python lists, `Collections.push(target, value)` appends and returns the new length, `Collections.pop(target)` removes the last element or raises on empty collections. New helpers: `Collections.slice(target, start, end)` and `Collections.contains(target, value)` for slicing and lookups: `define mid = Collections.slice(new[1, 2, 3], 1, 3); print(Collections.contains(mid, 2));` prints `true`.
+- **Math**: `Math.abs(x)`, `Math.pow(base, exp)`, `Math.sqrt(x)` for basics. New helpers `Math.max(a, b)`, `Math.min(a, b)`, and `Math.clamp(value, lower, upper)` make comparisons and clamping easier. Additional helpers: `Math.round(value, digits?)` rounds to decimal places, `Math.floor`/`Math.ceil` round down/up, and `Math.sign(x)` returns -1/0/1 based on the sign. Example: `print(Math.clamp(Math.max(-2, 10), 0, 5));` prints `5`.
+- **String**: `String.split(text, sep)` returns a heap pointer to an array of substrings; `String.join(items, sep)` joins a list/pointer; `String.contains(text, needle)` checks for substrings. Extra helpers `String.upper(text)`, `String.lower(text)`, `String.trim(text)`, and `String.repeat(text, count)` handle casing, trimming, and repetition. Example: `print(String.upper(String.trim("  tiny "))); print(String.repeat("ha", 3));` prints `TINY` and `hahaha`.
+- **Collections**: `Collections.len(x)` measures the length of heap pointers or Python lists, `Collections.push(target, value)` appends and returns the new length, and `Collections.pop(target)` removes the last element or raises on empty collections. New helpers `Collections.slice(target, start, end)` and `Collections.contains(target, value)` support slicing and lookups: `define mid = Collections.slice(new[1, 2, 3], 1, 3); print(Collections.contains(mid, 2));` prints `true`. There is also a dedicated `Map` API (`Map.new`, `Map.set`, `Map.get`, `Map.keys`, etc.), a `Set` namespace (`Set.add`, `Set.delete`, `Set.to_list`), and doubly linked queues via `Deque` (`Deque.push_left/right`, `Deque.pop_left/right`, `Deque.peek_left/right`).
+- **Random**: Random helpers `Random.random()`, `Random.randint(lower, upper)`, `Random.choice(seq)`, and `Random.shuffle(seq)` for quick sampling.
+- **File/JSON**: `File.read`/`File.write`/`File.exists`/`File.remove` handle UTF-8 files. `JSON.parse(text)` converts strings to lists/maps/numerics/null, and `JSON.stringify(value)` builds a JSON string from compatible structures.
 
 ## Example programs
 - [`demo.tiny`](demo.tiny): Small showcase for variables, loops, functions, classes, and heap operations. Runs sequentially and prints intermediate results.
-- [`rosetta_fibonacci.tiny`](rosetta_fibonacci.tiny): Classic Fibonacci implementation demonstrating function declarations and simple loops. Prints the first 10 numbers.
-- [`all_features.tiny`](all_features.tiny): Comprehensive feature tour with arrays, classes, and operator overloading.
+- [`rosetta_fibonacci.tiny`](rosetta_fibonacci.tiny): Classic Fibonacci implementation demonstrating function declarations and simple loops. Prints the first 10 Fibonacci numbers.
+- [`all_features.tiny`](all_features.tiny): Comprehensive feature tour with arrays, classes, and operator overloading—handy for exploring the language end-to-end.
 - [`class_demo.tiny`](class_demo.tiny): Minimal constructor + method that prints a personalized greeting.
 - [`operator_overloading_demo.tiny`](operator_overloading_demo.tiny): Lean point class that overrides `+` and `==` and prints intermediate results.
-- [`number_class.tiny`](number_class.tiny): Demonstrates the `Number` class and overloaded `+`, instantiates objects, calls methods, and prints results.
+- [`number_class.tiny`](number_class.tiny): Demonstrates the `Number` class and the overloaded `+` operator; instantiates objects, calls methods, and prints the result.
 - [`number_intervall.tiny`](number_intervall.tiny): Example for numeric interval calculations and bounds checking.
 - [`namespace_demo.tiny`](namespace_demo.tiny): A small `Tools` namespace with `double` and `label` helpers.
-- [`concurrency_demo.tiny`](concurrency_demo.tiny): Starts multiple tasks with `spawn`, collects them via `join`, and combines them with `String.split`/`String.join`.
-- [`heap_pointer_demo.tiny`](heap_pointer_demo.tiny): Safe heap handling with `new`, `heap_get`/`heap_set`, `delete`, and typical error messages for out-of-bounds or field access mistakes.
+- [`concurrency_demo.tiny`](concurrency_demo.tiny): Starts multiple tasks with `spawn`, collects them via `join`, and combines them with `String.split`/`String.join` into a single output.
+- [`heap_pointer_demo.tiny`](heap_pointer_demo.tiny): Safe heap handling with `new`, `heap_get`/`heap_set`, and `delete`, plus typical error messages for out-of-bounds or field access mistakes.
+- [`stdlib_collections_demo.tiny`](stdlib_collections_demo.tiny): Map/Set/Deque examples from the Collections API.
+- [`stdlib_io_random_demo.tiny`](stdlib_io_random_demo.tiny): Random helpers plus JSON parsing and file I/O working together.
 
 ## Common errors
 - **Unused bindings**: Unused local variables or parameters raise errors (e.g., "unused parameter(s) in function f: b", "unused local binding(s): t").
 - **Mutated parameters not returned**: When parameters are mutated they must be included in the return value (e.g., "mutated parameter(s) in function bump must be returned: a").
+
+## Formatter, lints, and language server
+- **Formatter**: `python tiny_language.py --format file.tiny` enforces four-space indents, a single space around operators and after commas, and normalized import lines (`import path as alias;`). Comments are preserved.
+- **Linter style rules**: Unused bindings can be intentionally suppressed with a leading `_`. Import statements must appear sorted before the rest of the code (`E012`). Function calls with return types must not be silently ignored (`E011`); either bind the result or explicitly discard it with `_ = fn();`).
+- **Language server prototype**: The `language_server.py` module exposes a small API for hover, completions, and diagnostics—handy for experimenting with LSP ideas without writing a JSON-RPC server.
 - **Incomplete destructuring**: All fields of a returned struct must be bound ("destructuring call to f must include output for argument(s): a"), and every binding must be used.
 - **Bare calls**: Function calls cannot stand alone as statements ("bare call statements are not allowed"); print or assign the result instead.
-- **Arithmetic limits**: The `^` operator accepts only integer exponents ("exponent for ^ must be an integer"); use `power` for fractions.
+- **Arithmetic limits**: The `^` operator accepts only integer exponents ("exponent for ^ must be an integer"); use `power` for fractional exponents.
 - **Heap/field access**: Out-of-bounds or missing fields raise runtime errors (e.g., "heap access error: index 5 out of range ...", "unknown field missing"). `errorMessage` stores the last runtime error.
 
 ## Running programs and tests

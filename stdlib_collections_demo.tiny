@@ -2,11 +2,11 @@
 
 define capitals = Map.from_entries(new[
     new["DE", "Berlin"],
-    new["AT", "Wien"],
+    new["AT", "Wien"]
 ]);
 print(Map.get(capitals, "DE", "?"));
 print(Map.has(capitals, "CH"));
-Map.set(capitals, "CH", "Bern");
+define _ = Map.set(capitals, "CH", "Bern");
 print(Map.len(capitals));
 
 print(String.join(Map.values(capitals), ","));
@@ -23,7 +23,7 @@ print(String.join(Set.to_list(features), "+"));
 
 define todo = Deque.new(String.split("parse,transform,emit", ","));
 print(Deque.peek_left(todo));
-Deque.push_left(todo, "read");
+define _dq = Deque.push_left(todo, "read");
 print(Deque.pop_right(todo));
 print(Deque.len(todo));
 print(String.join(Deque.to_list(todo), " -> "));

@@ -1,28 +1,28 @@
-/// concurrency_demo.tiny - zeigt spawn/join mit String.split und String.join
-fn label(prefix, word) {
+/// concurrency_demo.tiny - zeigt spawn/join mit String.split und String.join, Zeile für Zeile erläutert.
+fn label(prefix, word) { // Hilfsfunktion, die einen beschrifteten String zurückgibt.
     // arbeitet ohne Stdlib, damit der Task in seinem eigenen Thread laeuft
-    return prefix + "=" + word;
+    return prefix + "=" + word; // Fügt Präfix und Wort mit einem Gleichheitszeichen zusammen.
 }
 
 // vier Teile parallel bearbeiten
-define keywords = String.split("spawn,join,string,interop", ",");
+define keywords = String.split("spawn,join,string,interop", ","); // Zerlegt die Eingabezeichenkette in ein Array.
 
-define first = spawn label("erstes", heap_get(keywords, 0));
-define second = spawn label("zweites", heap_get(keywords, 1));
-define third = spawn label("drittes", heap_get(keywords, 2));
-define fourth = spawn label("viertes", heap_get(keywords, 3));
+define first = spawn label("erstes", heap_get(keywords, 0)); // Startet Task für das erste Wort.
+define second = spawn label("zweites", heap_get(keywords, 1)); // Startet Task für das zweite Wort.
+define third = spawn label("drittes", heap_get(keywords, 2)); // Startet Task für das dritte Wort.
+define fourth = spawn label("viertes", heap_get(keywords, 3)); // Startet Task für das vierte Wort.
 
-define first_result = join(first);
-define second_result = join(second);
-define third_result = join(third);
-define fourth_result = join(fourth);
+define first_result = join(first); // Wartet auf das Ergebnis des ersten Tasks.
+define second_result = join(second); // Wartet auf das Ergebnis des zweiten Tasks.
+define third_result = join(third); // Wartet auf das Ergebnis des dritten Tasks.
+define fourth_result = join(fourth); // Wartet auf das Ergebnis des vierten Tasks.
 
-define annotated = new[first_result, second_result, third_result, fourth_result];
+define annotated = new[first_result, second_result, third_result, fourth_result]; // Baut ein Array aus allen Ergebnissen.
 
-print("etiketten");
-print(String.join(annotated, " | "));
+print("etiketten"); // Überschrift für die Ausgabe.
+print(String.join(annotated, " | ")); // Fügt die annotierten Strings zusammen und druckt sie.
 
 // erneutes split/join auf dem Gesamtergebnis
-print("als liste");
-define parts_again = String.split(String.join(annotated, ";"), ";");
-print(String.join(parts_again, " -> "));
+print("als liste"); // Zweite Überschrift zur Verdeutlichung.
+define parts_again = String.split(String.join(annotated, ";"), ";"); // Trennt die zusammengefügte Zeichenkette erneut.
+print(String.join(parts_again, " -> ")); // Verknüpft die erneute Liste mit Pfeilen zwischen den Einträgen.

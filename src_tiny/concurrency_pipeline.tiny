@@ -1,31 +1,31 @@
 // Demonstrates how to poll spawned work without blocking the main loop
-// by using the timeout-enabled join API.
+// by using the timeout-enabled join API. Jede Zeile erklärt den Ablauf.
 
-fn uppercase(text) {
-    define i = 0;
-    while (i < 20000) { i = i + 1; }
-    return String.upper(text);
+fn uppercase(text) { // Teure Funktion, die Text nach Großbuchstaben wandelt.
+    define i = 0; // Dummy-Zähler, um Arbeit zu simulieren.
+    while (i < 20000) { i = i + 1; } // Busy-wait-Loop als Platzhalter für echte CPU-Last.
+    return String.upper(text); // Gibt den Großbuchstaben-Text zurück.
 }
 
-fn token_count(text) {
-    define i = 0;
-    while (i < 20000) { i = i + 1; }
-    return len(String.split(text, " "));
+fn token_count(text) { // Zählt die Wörter in der Zeichenkette.
+    define i = 0; // Wiederholung des Dummy-Zählers für Symmetrie.
+    while (i < 20000) { i = i + 1; } // Simuliert Rechenaufwand.
+    return len(String.split(text, " ")); // Teilt am Leerzeichen und liefert die Anzahl der Tokens.
 }
 
 // Kick off independent tasks.
-define headline = "Tiny language concurrency demo";
-define upper_task = spawn uppercase(headline);
-define count_task = spawn token_count(headline);
+define headline = "Tiny language concurrency demo"; // Der gemeinsame Eingabetext.
+define upper_task = spawn uppercase(headline); // Startet die Uppercase-Funktion in einem eigenen Task.
+define count_task = spawn token_count(headline); // Startet die Zählfunktion parallel dazu.
 
 // Non-blocking check for the first task.
-define status = join(upper_task, 0);
-print("uppercase ready?", status.done, status.cancelled);
+define status = join(upper_task, 0); // Fragt mit Timeout 0 ab, ob der Task schon fertig ist.
+print("uppercase ready?", status.done, status.cancelled); // Druckt Statusflags ohne zu blockieren.
 
 // Await both tasks.
-define upper = join(upper_task);
-define words = join(count_task);
-print("results", upper, words);
+define upper = join(upper_task); // Wartet endgültig auf die Großschreibung.
+define words = join(count_task); // Wartet auf die Wortanzahl.
+print("results", upper, words); // Druckt die beiden Ergebnisse nebeneinander.
 
 // Output:
 // uppercase ready? false false

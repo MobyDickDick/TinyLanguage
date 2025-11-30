@@ -1,122 +1,125 @@
-// Demonstrates most TinyLanguage features in one program.
+// Demonstrates most TinyLanguage features in one program, annotated line by line for learners.
 
-// Helper functions for tagged Box records used in operator overloading.
+// Define a helper that wraps a raw value in a tagged Box record so operator overloads can detect it.
 fn box(v) { return { __tag__: "Box", value: v }; }
+// Define the inverse helper that extracts the stored value from a Box record.
 fn unbox(b) { return b.value; }
 
-// Operator overloading with Box wrappers.
+// Overload addition to combine two Box values by unboxing, adding, and reboxing the result.
 operator + (a: Box, b: Box) -> Box { return box(unbox(a) + unbox(b)); }
+// Overload equality so Boxes compare their contained payloads instead of identity.
 operator == (a: Box, b: Box) -> Bool { return unbox(a) == unbox(b); }
 
+// Declare an Error record type with numeric code and message fields.
 type Error {
-  code: number;
-  msg: string;
+  code: number; // Numeric code describing the outcome of an operation.
+  msg: string; // Human-readable explanation paired with the code.
 }
 
-// Simple function that supports destructuring assignments.
+// A tiny function that increments its argument and returns both the new value and an error placeholder.
 fn bump(a) {
-  return { a: a + 1, e: 0 };
+  return { a: a + 1, e: 0 }; // Build a struct-like map with the incremented value and a zero error code.
 }
 
-// Basic arithmetic, destructuring, and printing.
-define a = 5;
-{ a, e } = bump(a);
-print("bumped a");
-print(a);
-print("bump error");
-print(e);
+// Start with a number and demonstrate destructuring assignment plus printing.
+define a = 5; // Seed value for the demo.
+{ a, e } = bump(a); // Destructure the returned object into `a` and `e`.
+print("bumped a"); // Announce what is being printed next.
+print(a); // Show the incremented value.
+print("bump error"); // Introduce the companion error code.
+print(e); // Print the error field from the bump call.
 
-// Heap operations (new, new[], heap_set/get, tag, delete).
-define arr_ptr = new(3);
-{ e } = heap_set(arr_ptr, 0, 10); print(e.code);
-{ e } = heap_set(arr_ptr, 1, 20); print(e.code);
-{ e } = heap_set(arr_ptr, 2, 30); print(e.code);
-print(heap_get(arr_ptr, 2));
-{ e } = tag(arr_ptr, Arr); print(e.code);
-{ e } = delete(arr_ptr); print(e.code);
+// Allocate an empty heap array and mutate it through the standard heap helpers.
+define arr_ptr = new(3); // Reserve three slots on the heap and capture the pointer.
+{ e } = heap_set(arr_ptr, 0, 10); print(e.code); // Store 10 in slot 0 and print the status code.
+{ e } = heap_set(arr_ptr, 1, 20); print(e.code); // Store 20 in slot 1 and print the status code.
+{ e } = heap_set(arr_ptr, 2, 30); print(e.code); // Store 30 in slot 2 and print the status code.
+print(heap_get(arr_ptr, 2)); // Read back the final slot to prove the values landed.
+{ e } = tag(arr_ptr, Arr); print(e.code); // Tag the pointer with an Arr type tag and display the result.
+{ e } = delete(arr_ptr); print(e.code); // Release the allocation and show the deletion status.
 
-define literal_ptr = new[7, 8, 9];
-print(heap_get(literal_ptr, 1));
-{ e } = delete(literal_ptr); print(e.code);
+define literal_ptr = new[7, 8, 9]; // Allocate and initialize a heap array literal in one expression.
+print(heap_get(literal_ptr, 1)); // Read the second element to demonstrate indexed access.
+{ e } = delete(literal_ptr); print(e.code); // Free the literal-backed array and print the status code.
 
-// Object literal.
-define settings = { greeting: "hi"; count: a; };
-print(settings.greeting);
-print(settings.count);
+// Build an object literal to show field initialization and access.
+define settings = { greeting: "hi"; count: a; }; // Create a tiny record with a greeting and the current count.
+print(settings.greeting); // Output the greeting string.
+print(settings.count); // Output the numeric field to prove the record stored it.
 
-// Control flow (while, if/else) and assignments.
-define i = 0;
-define sum = 0;
-while (i < 3) {
-  if (i == 1) {
-    print("midpoint");
-  } else {
-    print(i);
+// Demonstrate control flow with a loop, a branch, and mutation.
+define i = 0; // Loop counter starting at zero.
+define sum = 0; // Accumulator that will collect the counters.
+while (i < 3) { // Continue looping while the counter is below three.
+  if (i == 1) { // Special-case the midpoint of the loop.
+    print("midpoint"); // Print a message when the counter hits one.
+  } else { // For all other iterations...
+    print(i); // ...print the current counter value.
   }
-  sum = sum + i;
-  i = i + 1;
+  sum = sum + i; // Add the current counter into the accumulator.
+  i = i + 1; // Bump the counter toward the loop exit condition.
 }
-print(sum);
+print(sum); // Show the final accumulated total after the loop ends.
 
-// Classes, fields, methods, and inheritance.
+// Define a counter class to showcase fields, methods, and inheritance.
 class Counter {
-  value: number;
-  label: string;
+  value: number; // Stores the current numeric value.
+  label: string; // Holds a descriptive label for the counter.
 
-  fn init(self, start, label) {
-    self.value = start;
-    self.label = label;
-    return self;
+  fn init(self, start, label) { // Constructor-style initializer.
+    self.value = start; // Seed the counter with the provided start value.
+    self.label = label; // Store the caller-specified label.
+    return self; // Return self to allow chained calls.
   }
 
-  fn bump(self, delta) {
-    self.value = self.value + delta;
-    return self;
+  fn bump(self, delta) { // Increase the counter by a delta.
+    self.value = self.value + delta; // Perform the mutation directly on the field.
+    return self; // Return self so callers can chain operations.
   }
 
-  fn read(self) { return self.value; }
+  fn read(self) { return self.value; } // Expose the current value as a simple getter.
 }
 
-class FancyCounter: Counter {
-  bonus: number;
+class FancyCounter: Counter { // Subclass that inherits fields and behavior from Counter.
+  bonus: number; // Extra bonus value that contributes to totals.
 
-  fn init(self, start, label, bonus) {
-    Counter.value = start;
-    self.label = label;
-    self.bonus = bonus;
-    return self;
+  fn init(self, start, label, bonus) { // Initializer that seeds base fields and the bonus.
+    Counter.value = start; // Initialize the inherited value field.
+    self.label = label; // Store the provided label for display.
+    self.bonus = bonus; // Capture the extra bonus contribution.
+    return self; // Return the initialized instance for chaining.
   }
 
-  fn bump(self, delta) {
-    self.value = self.value + delta;
-    return self;
+  fn bump(self, delta) { // Override bump to reuse the same increment logic explicitly.
+    self.value = self.value + delta; // Update the inherited value field.
+    return self; // Return self to support chaining.
   }
 
-  fn total(self) { return Counter.value + self.bonus; }
+  fn total(self) { return Counter.value + self.bonus; } // Compute the headline total by combining value and bonus.
 }
 
-// Instantiate classes and call methods (including chained returns).
-define c = new Counter { value: 0; label: "basic"; };
-c = c.init(1, "basic");
-c = c.bump(4);
-print(c.read());
+// Instantiate counters and exercise their methods to show mutation and method chaining.
+define c = new Counter { value: 0; label: "basic"; }; // Allocate a Counter with initial values.
+c = c.init(1, "basic"); // Run the initializer to set the starting state.
+c = c.bump(4); // Increase by four using the bump method.
+print(c.read()); // Print the resulting value.
 
-define fc = new FancyCounter { bonus: 0; label: "temp"; value: 0; };
-fc = fc.init(3, "fancy", 7);
-fc = fc.bump(2);
-print(fc.total());
-print(fc.read());
+define fc = new FancyCounter { bonus: 0; label: "temp"; value: 0; }; // Allocate a FancyCounter placeholder.
+fc = fc.init(3, "fancy", 7); // Initialize with a start value, label, and bonus.
+fc = fc.bump(2); // Apply a delta to the inherited value.
+print(fc.total()); // Show the computed total including the bonus.
+print(fc.read()); // Show the raw inherited value stored on the base class.
 
-// Operator overloads for Box.
-define boxed_a = box(2);
-define boxed_b = box(3);
-define boxed_sum = boxed_a + boxed_b;
-print(unbox(boxed_sum));
-if (boxed_a == boxed_b) {
-  print("boxed equality: true");
-} else {
-  print("boxed equality: false");
+// Exercise the Box overloads to verify the operator implementations above.
+define boxed_a = box(2); // Wrap the number 2 in a Box.
+define boxed_b = box(3); // Wrap the number 3 in another Box.
+define boxed_sum = boxed_a + boxed_b; // Add the boxes using the overloaded + operator.
+print(unbox(boxed_sum)); // Unbox and print the resulting sum.
+if (boxed_a == boxed_b) { // Compare boxes using the overloaded == operator.
+  print("boxed equality: true"); // Report when boxes are equal.
+} else { // Otherwise handle inequality.
+  print("boxed equality: false"); // Report when boxes are unequal.
 }
 
-// Type inspection helper.
-print(__type_field_type("Error", "msg"));
+// Ask the runtime about the type of a field to demonstrate reflection support.
+print(__type_field_type("Error", "msg")); // Expect the string type for the Error.msg field.

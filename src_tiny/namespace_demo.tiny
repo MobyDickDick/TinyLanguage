@@ -1,9 +1,9 @@
-// Namespaces trennen Funktionen logisch
-namespace Tools {
-    fn double(x) { return x * 2; }
-    fn label(x) { return "#" + x; }
+// Namespaces trennen Funktionen logisch, hier mit Kommentaren zu jeder Zeile.
+namespace Tools { // Start des Namespace-Blocks.
+    fn double(x) { return x * 2; } // Verdoppelt die Eingabe und gibt sie zurück.
+    fn label(x) { return "#" + x; } // Präfixiert einen String mit einem Hash-Zeichen.
 }
 
-define value = Tools.double(5);
-print(value);
-print(Tools.label("done"));
+define value = Tools.double(5); // Ruft die Namespaced-Funktion auf.
+print(value); // Gibt das verdoppelte Ergebnis aus.
+print(Tools.label("done")); // Zeigt die label-Funktion im Namespace.

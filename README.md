@@ -126,6 +126,35 @@ Expected output:
 
 More context in [`namespace_demo.tiny`](namespace_demo.tiny).
 
+### Pattern matching and algebraic data types
+Define tagged unions with `type` and handle variants via `match` with named bindings or wildcards. Constructors are available as
+functions, so `Circle { radius: 2 }` builds a `Shape` value. Match expressions must be exhaustive: missing cases or unknown
+variants raise descriptive errors. Example (see [`match_demo.tiny`](match_demo.tiny)):
+
+```tiny
+type Shape {
+  Circle { radius: number };
+  Rectangle { width: number, height: number };
+}
+
+fn area(shape) {
+  return match shape {
+    case Circle { radius: r }: 3.14 * r * r;
+    case Rectangle { width: w, height: h }: w * h;
+  };
+}
+
+print(area(Circle { radius: 2 }));
+print(area(Rectangle { width: 3, height: 4 }));
+```
+
+Expected output:
+
+```
+12.56
+12
+```
+
 ### Importing modules
 - **Syntax**: `import math.trig;` loads `math/trig.tiny` and binds it under the last path segment (`trig`). Optional aliasing works too: `import utils.helpers as helpers;` or relative imports from inside modules: `import .shared as shared;`.
 - **Namespacing**: Every imported file is registered under its fully qualified module name (e.g. `pkg.core`), so functions and constants are accessible as namespace fields (`core.helper_fn()` or `core.value`).
@@ -271,10 +300,10 @@ Note: On platforms without `readline` (e.g., Windows) the REPL history tests are
 Additional examples and expected diagnostics live in `tests/test_tiny_language.py` and the programs above.
 
 ## Ideas for future extensions
-- [ ] **Pattern matching and algebraic data types**
-  - [ ] Design syntax for sum/product types and match expressions
-  - [ ] Implement exhaustiveness checks in the parser/interpreter
-  - [ ] Add example programs and tests for missing/extra cases
+- [x] **Pattern matching and algebraic data types**
+  - [x] Design syntax for sum/product types and match expressions
+  - [x] Implement exhaustiveness checks in the parser/interpreter
+  - [x] Add example programs and tests for missing/extra cases
 - [x] **Modules/packages**
   - [x] Define module loading semantics (namespacing, relative imports, search path)
   - [x] Extend the interpreter with a module resolver and caching

@@ -169,6 +169,25 @@ def test_control_flow_roundtrip_python():
     assert parsed == program
 
 
+def test_control_flow_roundtrip_other_languages():
+    program = control_flow_program()
+
+    julia = JuliaTranspiler()
+    julia_source = julia.to_source(program)
+    assert "while x < 3" in julia_source
+    assert julia.from_source(julia_source) == program
+
+    js = JavaScriptTranspiler()
+    js_source = js.to_source(program)
+    assert "while (x < 3) {" in js_source
+    assert js.from_source(js_source) == program
+
+    cpp = CppTranspiler()
+    cpp_source = cpp.to_source(program)
+    assert "while (x < 3) {" in cpp_source
+    assert cpp.from_source(cpp_source) == program
+
+
 def test_literal_roundtrip_parsing():
     expected = literal_program()
 

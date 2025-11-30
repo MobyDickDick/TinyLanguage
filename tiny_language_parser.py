@@ -114,9 +114,9 @@ class Parser:
             if self.tok.text == "async":
                 self._eat("KW", "async")
                 is_async = True
-                self._eat("KW", "fn")
+                fn_kw = self._eat("KW", "fn")
             else:
-                self._eat("KW", "fn")
+                fn_kw = self._eat("KW", "fn")
             name_tok = self._eat("NAME")
             params = self.parse_param_list()
             return_type = None
@@ -130,7 +130,7 @@ class Parser:
                 body,
                 return_type=return_type,
                 is_async=is_async,
-                pos=name_tok.pos,
+                pos=fn_kw.pos,
             )
         if self.tok.kind == "KW" and self.tok.text == "return":
             kw = self._eat("KW", "return")
@@ -183,9 +183,9 @@ class Parser:
                     if self.tok.text == "async":
                         self._eat("KW", "async")
                         is_async = True
-                        self._eat("KW", "fn")
+                        fn_kw = self._eat("KW", "fn")
                     else:
-                        self._eat("KW", "fn")
+                        fn_kw = self._eat("KW", "fn")
                     mname_tok = self._eat_name_or_kw()
                     params = self.parse_param_list()
                     return_type = None
@@ -202,7 +202,7 @@ class Parser:
                             return_type=return_type,
                             namespace=cname_tok.text,
                             is_async=is_async,
-                            pos=mname_tok.pos,
+                            pos=fn_kw.pos,
                         )
                     )
                 else:

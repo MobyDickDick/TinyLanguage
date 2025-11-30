@@ -42,6 +42,15 @@ def control_flow_program():
     return ProgramIR(functions=[FunctionIR(name="loop", params=["x"], body=body)])
 
 
+def literal_program():
+    body = [
+        Assign("flag", Literal(True)),
+        Assign("name", Literal("hi")),
+        Return(Literal(None)),
+    ]
+    return ProgramIR(functions=[FunctionIR(name="literals", params=[], body=body)])
+
+
 def test_python_roundtrip():
     program = sample_program()
     transpiler = PythonTranspiler()
@@ -118,13 +127,37 @@ def test_expression_statements_render_across_languages():
     assert python_source.strip() == "print('ready')"
 
     js_source = JavaScriptTranspiler().to_source(program)
-    assert js_source.strip() == "print('ready');"
+    assert js_source.strip() == 'print("ready");'
 
     cpp_source = CppTranspiler().to_source(program)
-    assert cpp_source.strip() == "print('ready');"
+    assert cpp_source.strip() == 'print("ready");'
 
     julia_source = JuliaTranspiler().to_source(program)
-    assert julia_source.strip() == "print('ready')"
+    assert julia_source.strip() == 'print("ready")'
+
+
+def test_literal_rendering_across_languages():
+    program = literal_program()
+
+    python_source = PythonTranspiler().to_source(program)
+    assert "flag = True" in python_source
+    assert "name = 'hi'" in python_source
+    assert "return None" in python_source
+
+    julia_source = JuliaTranspiler().to_source(program)
+    assert "flag = true" in julia_source
+    assert 'name = "hi"' in julia_source
+    assert "return nothing" in julia_source
+
+    js_source = JavaScriptTranspiler().to_source(program)
+    assert "flag = true;" in js_source
+    assert 'name = "hi";' in js_source
+    assert "return null;" in js_source
+
+    cpp_source = CppTranspiler().to_source(program)
+    assert "flag = true;" in cpp_source
+    assert 'name = "hi";' in cpp_source
+    assert "return nullptr;" in cpp_source
 
 
 def test_control_flow_roundtrip_python():
@@ -134,6 +167,54 @@ def test_control_flow_roundtrip_python():
     assert "while x < 3:" in rendered
     parsed = transpiler.from_source(rendered)
     assert parsed == program
+
+
+def test_literal_roundtrip_parsing():
+    expected = literal_program()
+
+    python_src = textwrap.dedent(
+        """
+        def literals():
+            flag = True
+            name = "hi"
+            return None
+        """
+    )
+
+    julia_src = textwrap.dedent(
+        """
+        function literals()
+            flag = true
+            name = "hi"
+            return nothing
+        end
+        """
+    )
+
+    js_src = textwrap.dedent(
+        """
+        function literals() {
+          const flag = true;
+          const name = "hi";
+          return null;
+        }
+        """
+    )
+
+    cpp_src = textwrap.dedent(
+        """
+        auto literals() {
+          auto flag = true;
+          auto name = "hi";
+          return nullptr;
+        }
+        """
+    )
+
+    assert PythonTranspiler().from_source(python_src) == expected
+    assert JuliaTranspiler().from_source(julia_src) == expected
+    assert JavaScriptTranspiler().from_source(js_src) == expected
+    assert CppTranspiler().from_source(cpp_src) == expected
 
 
 def test_control_flow_cross_language_parsing():

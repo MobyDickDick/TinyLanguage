@@ -65,7 +65,14 @@
           "description": "Path to tiny_language.py for running the REPL or executing files."
         }
       }
-    }
+    },
+    "iconThemes": [
+      {
+        "id": "tinylanguage-icons",
+        "label": "TinyLanguage File Icons",
+        "path": "./icons/fileicons.json"
+      }
+    ]
   },
   "devDependencies": {},
   "repository": {

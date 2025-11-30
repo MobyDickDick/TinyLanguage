@@ -13,7 +13,7 @@
       "name": "Run all_features.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/all_features.tiny"],
       "console": "integratedTerminal"
     },
@@ -21,7 +21,7 @@
       "name": "Run demo.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/demo.tiny"],
       "console": "integratedTerminal"
     },
@@ -29,7 +29,7 @@
       "name": "Run number_class.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/number_class.tiny"],
       "console": "integratedTerminal"
     },
@@ -37,7 +37,7 @@
       "name": "Run rosetta_fibonacci.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/rosetta_fibonacci.tiny"],
       "console": "integratedTerminal"
     },
@@ -45,7 +45,7 @@
       "name": "Run concurrency_demo.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/concurrency_demo.tiny"],
       "console": "integratedTerminal"
     },
@@ -53,7 +53,7 @@
       "name": "Run number_intervall.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/number_intervall.tiny"],
       "console": "integratedTerminal"
     },
@@ -61,7 +61,7 @@
       "name": "Run concurrency_pipeline.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/concurrency_pipeline.tiny"],
       "console": "integratedTerminal"
     },
@@ -69,7 +69,7 @@
       "name": "Run class_demo.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/class_demo.tiny"],
       "console": "integratedTerminal"
     },
@@ -77,7 +77,7 @@
       "name": "Run namespace_demo.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/namespace_demo.tiny"],
       "console": "integratedTerminal"
     },
@@ -85,7 +85,7 @@
       "name": "Run match_demo.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/match_demo.tiny"],
       "console": "integratedTerminal"
     },
@@ -93,7 +93,7 @@
       "name": "Run operator_overloading_demo.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/operator_overloading_demo.tiny"],
       "console": "integratedTerminal"
     },
@@ -101,7 +101,7 @@
       "name": "Run parallel_map.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/parallel_map.tiny"],
       "console": "integratedTerminal"
     },
@@ -109,7 +109,7 @@
       "name": "Run heap_pointer_demo.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/heap_pointer_demo.tiny"],
       "console": "integratedTerminal"
     },
@@ -117,7 +117,7 @@
       "name": "Run result_demo.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/result_demo.tiny"],
       "console": "integratedTerminal"
     },
@@ -125,7 +125,7 @@
       "name": "Run tests/logic_example.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/tests/logic_example.tiny"],
       "console": "integratedTerminal"
     },
@@ -133,7 +133,7 @@
       "name": "Run .vscode/all_features.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/.vscode/all_features.tiny"],
       "console": "integratedTerminal"
     },
@@ -141,7 +141,7 @@
       "name": "Run .vscode/rosetta_fibonacci.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/.vscode/rosetta_fibonacci.tiny"],
       "console": "integratedTerminal"
     },
@@ -149,7 +149,7 @@
       "name": "Run try_catch_demo.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/try_catch_demo.tiny"],
       "console": "integratedTerminal"
     },
@@ -157,7 +157,7 @@
       "name": "Run stdlib_collections_demo.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/stdlib_collections_demo.tiny"],
       "console": "integratedTerminal"
     },
@@ -165,7 +165,7 @@
       "name": "Run stdlib_io_random_demo.tiny",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["${workspaceFolder}/stdlib_io_random_demo.tiny"],
       "console": "integratedTerminal"
     },
@@ -401,7 +401,7 @@
       "name": "Python: tiny_language REPL",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "args": ["--repl"],
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}"
@@ -418,7 +418,7 @@
       "name": "Python: TinyLanguage Rosetta Fibonacci",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tiny_language.py",
+      "program": "${workspaceFolder}/src/tiny_language.py",
       "console": "integratedTerminal",
       "args": [
         "${workspaceFolder}/rosetta_fibonacci.tiny"

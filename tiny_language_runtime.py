@@ -378,17 +378,23 @@ class Runtime:
         if actual is None:
             return False
         expected_norm = expected.strip()
+        optional = expected_norm.endswith("?")
+        base_expected = expected_norm[:-1].strip() if optional else expected_norm
         actual_norm = actual.strip() if isinstance(actual, str) else str(actual)
-        if expected_norm == actual_norm or expected_norm.lower() == actual_norm.lower():
+        if optional and actual_norm.lower() == "null":
             return True
-        if expected_norm.lower() == "number" and actual_norm.lower() in {"number", "int", "float"}:
+        if base_expected == actual_norm or base_expected.lower() == actual_norm.lower():
             return True
-        if expected_norm.lower() == "string" and actual_norm.lower() == "string":
+        if base_expected.lower() == "number" and actual_norm.lower() in {"number", "int", "float"}:
             return True
-        if expected_norm.lower() in {"bool", "boolean"} and actual_norm.lower() in {"bool", "boolean"}:
+        if base_expected.lower() == "string" and actual_norm.lower() == "string":
             return True
-        if expected_norm == "Null" and value is None:
+        if base_expected.lower() in {"bool", "boolean"} and actual_norm.lower() in {"bool", "boolean"}:
             return True
+        if base_expected == "Null" and value is None:
+            return True
+        if optional and actual_norm.lower() != "null":
+            return self._type_matches(base_expected, value)
         return False
 
     def _enforce_annotation(self, expected: str, value: Any, *, label: str, pos: SourcePos) -> None:
@@ -398,7 +404,7 @@ class Runtime:
                 f"type mismatch for {label}: expected {expected} but got {actual}",
                 pos,
                 code="E009",
-                hint="Adjust the type annotation or pass a compatible value to satisfy the hint.",
+                hint="Adjust the type annotation (use '?' to allow Null) or pass a compatible value to satisfy the hint.",
             )
 
     @staticmethod

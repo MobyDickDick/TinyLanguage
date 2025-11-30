@@ -122,7 +122,7 @@ class Lexer:
         if c in "+-*/><^!":
             self._advance()
             return Token("OP", c, pos)
-        if c in "(){}[];,=:.":
+        if c in "(){}[];,=:.,?":
             self._advance()
             return Token("SYM", c, pos)
         raise TinyLangError(format_error(self.s, pos, f"lexing error: unexpected character '{c}'"), pos)

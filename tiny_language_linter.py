@@ -328,6 +328,10 @@ def _format_signature(sig: Tuple[str, ...]) -> str:
     return "{" + ", ".join(sig) + "}"
 
 
+def _is_optional_annotation(annotation: Optional[str]) -> bool:
+    return bool(annotation and annotation.strip().endswith("?"))
+
+
 def _block_guarantees_return(stmts: List[IR]) -> bool:
     for st in stmts:
         if isinstance(st, Return):
@@ -394,6 +398,8 @@ def lint_return_exhaustiveness(
     pos: SourcePos,
 ) -> None:
     if expected_return is None:
+        return
+    if _is_optional_annotation(expected_return):
         return
     if _block_guarantees_return(stmts):
         return

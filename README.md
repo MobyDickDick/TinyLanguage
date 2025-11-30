@@ -246,6 +246,11 @@ The interpreter registers the built-in stdlib before running any program. Namesp
 - **Run a program**: `python tiny_language.py <file.tiny>` executes a TinyLanguage program and exits with status 0 on success. Example: `python tiny_language.py demo.tiny`.
 - **Test suite**: `python -m pytest` runs all tests. Target individual files with commands like `python -m pytest tests/test_tiny_language.py -k class`.
 
+### Optional type hints
+- **Syntax**: Parameters and return types can be annotated with a trailing `?` (for example, `fn greet(name: string?) -> string?`). The suffix allows `Null` values in addition to the annotated type.
+- **Gradual checks**: Type hints remain optional, but when provided the runtime enforces them on call boundaries and returns. Non-optional annotations still require every control-flow path to return a value.
+- **Diagnostics**: Type errors surface with code `E009` and mention that `?` can be used to permit `Null` when desired.
+
 ### CLI: module init and publish
 - **Init**: Create a new module directory (`mkdir my_pkg && cd my_pkg`), add an entry point such as `main.tiny`, and optionally maintain a `module.json` with metadata:
 
@@ -273,10 +278,10 @@ Additional examples and expected diagnostics live in `tests/test_tiny_language.p
   - [x] Define module loading semantics (namespacing, relative imports, search path)
   - [x] Extend the interpreter with a module resolver and caching
   - [x] Describe CLI workflow for module init/publish (version pins optional)
-- [ ] **Optional type hints**
-  - [ ] Specify syntax for optional type annotations on functions, parameters, and return values
-  - [ ] Implement gradual typing checks and simple exhaustiveness checks
-  - [ ] Extend error messages and docs with type hints
+- [x] **Optional type hints**
+  - [x] Specify syntax for optional type annotations on functions, parameters, and return values
+  - [x] Implement gradual typing checks and simple exhaustiveness checks
+  - [x] Extend error messages and docs with type hints
 - [ ] **Better error handling**
   - [ ] Design `try/catch` blocks or a `Result` type
   - [ ] Show stack traces in error messages

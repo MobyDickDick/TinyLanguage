@@ -1,15 +1,15 @@
-// Minimales Klassenbeispiel: Felder + Methode, mit Kommentaren pro Zeile.
-class Greeter { // Deklariert die Klasse, die eine Begrüßung erzeugen kann.
-    name: string; // Feld für den Namen, der in der Ausgabe verwendet wird.
+// Minimal class example: fields + method, with per-line comments.
+class Greeter { // Declares the class that can produce a greeting.
+    name: string; // Field for the name used in the output.
 
-    fn greeting(self) { // Methode, die eine personalisierte Begrüßung erstellt.
-        return "Hallo, " + self.name + "!"; // Verkettet den Text mit dem gespeicherten Namen.
+    fn greeting(self) { // Method that builds a personalized greeting.
+        return "Hello, " + self.name + "!"; // Concatenates text with the stored name.
     }
 }
 
-fn Greeter(name) { // Fabrikfunktion, die eine neue Instanz mit Name baut.
-    return new Greeter { name: name }; // Initialisiert das Feld und liefert das Objekt zurück.
+fn Greeter(name) { // Factory function that builds a new instance with a name.
+    return new Greeter { name: name }; // Initializes the field and returns the object.
 }
 
-define greeter = Greeter("TinyLanguage"); // Erstellt einen Greeter für "TinyLanguage".
-print(greeter.greeting()); // Ruft die Methode auf und druckt die Begrüßung.
+define greeter = Greeter("TinyLanguage"); // Create a Greeter for "TinyLanguage".
+print(greeter.greeting()); // Call the method and print the greeting.

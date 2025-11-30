@@ -1,31 +1,31 @@
 // Demonstrates how to poll spawned work without blocking the main loop
-// by using the timeout-enabled join API. Jede Zeile erklärt den Ablauf.
+// by using the timeout-enabled join API. Every line explains the flow.
 
-fn uppercase(text) { // Teure Funktion, die Text nach Großbuchstaben wandelt.
-    define i = 0; // Dummy-Zähler, um Arbeit zu simulieren.
-    while (i < 20000) { i = i + 1; } // Busy-wait-Loop als Platzhalter für echte CPU-Last.
-    return String.upper(text); // Gibt den Großbuchstaben-Text zurück.
+fn uppercase(text) { // Expensive function that uppercases text.
+    define i = 0; // Dummy counter to simulate work.
+    while (i < 20000) { i = i + 1; } // Busy-wait loop standing in for real CPU load.
+    return String.upper(text); // Returns the uppercase string.
 }
 
-fn token_count(text) { // Zählt die Wörter in der Zeichenkette.
-    define i = 0; // Wiederholung des Dummy-Zählers für Symmetrie.
-    while (i < 20000) { i = i + 1; } // Simuliert Rechenaufwand.
-    return len(String.split(text, " ")); // Teilt am Leerzeichen und liefert die Anzahl der Tokens.
+fn token_count(text) { // Counts the words in the string.
+    define i = 0; // Reuse the dummy counter for symmetry.
+    while (i < 20000) { i = i + 1; } // Simulates compute work.
+    return len(String.split(text, " ")); // Splits on spaces and returns the token count.
 }
 
 // Kick off independent tasks.
-define headline = "Tiny language concurrency demo"; // Der gemeinsame Eingabetext.
-define upper_task = spawn uppercase(headline); // Startet die Uppercase-Funktion in einem eigenen Task.
-define count_task = spawn token_count(headline); // Startet die Zählfunktion parallel dazu.
+define headline = "Tiny language concurrency demo"; // Shared input text.
+define upper_task = spawn uppercase(headline); // Start the uppercase function in its own task.
+define count_task = spawn token_count(headline); // Start the counter in parallel.
 
 // Non-blocking check for the first task.
-define status = join(upper_task, 0); // Fragt mit Timeout 0 ab, ob der Task schon fertig ist.
-print("uppercase ready?", status.done, status.cancelled); // Druckt Statusflags ohne zu blockieren.
+define status = join(upper_task, 0); // Poll with timeout 0 to see if the task is finished.
+print("uppercase ready?", status.done, status.cancelled); // Print status flags without blocking.
 
 // Await both tasks.
-define upper = join(upper_task); // Wartet endgültig auf die Großschreibung.
-define words = join(count_task); // Wartet auf die Wortanzahl.
-print("results", upper, words); // Druckt die beiden Ergebnisse nebeneinander.
+define upper = join(upper_task); // Wait for the uppercase string.
+define words = join(count_task); // Wait for the word count.
+print("results", upper, words); // Print both results side by side.
 
 // Output:
 // uppercase ready? false false

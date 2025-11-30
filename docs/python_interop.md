@@ -1,51 +1,51 @@
-# Python-Interop und FFI-Entwurf
+# Python interop and FFI design
 
-Dieser Entwurf beschreibt, wie TinyLanguage kontrolliert mit Python-Funktionen und -Modulen interagieren kann. Der Schwerpunkt liegt auf einer klaren Argument-/Return-Abbildung, vorhersehbaren Sicherheitsmechanismen und anschaulichen Beispielen.
+This draft describes how TinyLanguage can interact safely with Python functions and modules. The focus is on clear argument/return mapping, predictable security controls, and illustrative examples.
 
-## Ziele
-- **Einfache API**: TinyLanguage-Code soll Python-Module laden und Funktionen mit minimaler Boilerplate aufrufen können.
-- **Vorhersehbare Typabbildung**: Argumente und Rückgaben werden deterministisch zwischen TinyLanguage- und Python-Werten gemappt.
-- **Sicherheit**: Ein Sandbox-Mechanismus verhindert ungewollte Dateisystem-, Netzwerk- oder Prozesszugriffe.
-- **Testbarkeit**: Das Mapping und die Sandbox-Einstellungen sind deterministisch und pro Aufruf konfigurierbar.
+## Goals
+- **Simple API**: TinyLanguage code should load Python modules and call functions with minimal boilerplate.
+- **Predictable type mapping**: Arguments and returns are deterministically mapped between TinyLanguage and Python values.
+- **Security**: Sandbox rules prevent unwanted filesystem, network, or process access.
+- **Testability**: Mapping and sandbox settings are deterministic and configurable per call.
 
-## FFI-API und Typ-Mapping
-- **Import**: `define os = Python.import_module("os", allow=["getcwd", "listdir"]);` lädt ein Python-Modul und gibt ein Namespace-Objekt zurück. Der optionale `allow`-Parameter schränkt zugängliche Attribute ein (siehe Sicherheit).
-- **Direkter Funktionsaufruf**: `define now = Python.call("time", "time");` lädt das Modul bei Bedarf und ruft die Funktion auf. Zusatzoptionen wie `timeout_ms` sind erlaubt: `Python.call("requests", "get", new["https://example.com"], { timeout_ms: 500 });`.
-- **Gebundene Funktionen**: `define sqrt = Python.fn("math", "sqrt"); define nine = sqrt(81);` erstellt einen TinyLanguage-Wrapper, der wie eine normale Funktion aufgerufen werden kann.
-- **Exceptions**: Python-Ausnahmen werden als TinyLanguage-Fehler propagiert und behalten den Python-Fehlertyp im Fehlermeldungstext (`[PYERR] ValueError: ...`).
+## FFI API and type mapping
+- **Import**: `define os = Python.import_module("os", allow=["getcwd", "listdir"]);` loads a Python module and returns a namespace object. The optional `allow` parameter restricts accessible attributes (see security).
+- **Direct function call**: `define now = Python.call("time", "time");` loads the module if needed and invokes the function. Extra options like `timeout_ms` are supported: `Python.call("requests", "get", new["https://example.com"], { timeout_ms: 500 });`.
+- **Bound functions**: `define sqrt = Python.fn("math", "sqrt"); define nine = sqrt(81);` creates a TinyLanguage wrapper that can be called like a regular function.
+- **Exceptions**: Python exceptions propagate as TinyLanguage errors and keep the Python error type in the message (`[PYERR] ValueError: ...`).
 
-### Typ-Mapping TinyLanguage → Python
-- `number` → `int` oder `float` (abhängig vom Vorhandensein von Nachkommastellen)
+### Type mapping TinyLanguage → Python
+- `number` → `int` or `float` (depending on the presence of a fractional part)
 - `string` → `str`
 - `Bool` → `bool`
 - `Null` → `None`
-- Heap-Array (`new[...]`) → `list`
+- Heap array (`new[...]`) → `list`
 - `Map` → `dict`
 - `Set` → `set`
 - `Deque` → `collections.deque`
-- Klasseninstanzen → Python-Proxy-Objekte, die nur ihre Felder exponieren (keine Methodenaufrufe auf der Python-Seite)
+- Class instances → Python proxy objects that expose only their fields (no method calls on the Python side)
 
-### Typ-Mapping Python → TinyLanguage
+### Type mapping Python → TinyLanguage
 - `None` → `Null`
 - `bool` → `Bool`
 - `int`/`float` → `number`
 - `str` → `string`
-- `list`/`tuple` → Heap-Array (`new[...]`)
+- `list`/`tuple` → heap array (`new[...]`)
 - `dict` → `Map`
 - `set` → `Set`
 - `collections.deque` → `Deque`
-- Andere Objekte → intransparente Proxy-Handles. Nur Identität, Pointer-Vergleiche und Übergabe zurück an Python sind erlaubt; Feldzugriff ist blockiert, sofern nicht explizit freigegeben (siehe Sicherheit).
+- Other objects → opaque proxy handles. Only identity, pointer comparisons, and passing back into Python are allowed; field access is blocked unless explicitly allowed (see security).
 
-## Sicherheits- und Sandbox-Mechanismen
-- **Allowlist pro Modul**: `allow=[...]` definiert explizit, welche Attribute/Funktionen eines Moduls verfügbar sind. Standard ist ein leerer Allowlist-Eintrag, der alle Attribute blockiert.
-- **Globale Sperren**: Bestimmte Module sind generell gesperrt (`subprocess`, `socket`, `multiprocessing`, `ctypes`, `sys.modules` Mutationen). Versuche, sie zu laden, erzeugen einen Fehler `[PYSEC] module denied`.
-- **Timeouts**: Jeder Aufruf unterstützt `timeout_ms`; überschrittene Zeit führt zu `[PYTIMEOUT]` und bricht den Python-Call ab.
-- **Side-Effect-Sandbox**: Dateisystemzugriffe sind nur erlaubt, wenn das Modul und die Funktion auf einer Allowlist stehen und das Arbeitsverzeichnis nicht verlassen. Netzwerkzugriffe sind standardmäßig verboten.
-- **Isolation**: Proxy-Objekte, die aus Python zurückgegeben werden, erlauben keinen Attributzugriff, außer wenn sie via `allow` explizit freigegeben sind (`Python.import_module("pathlib", allow=["Path.name"])`). Dies verhindert das Einschleusen von beliebigem Python-Code über dynamische Attribute.
-- **Deterministische Fehlercodes**: Sicherheitsverletzungen, Zeitüberschreitungen und fehlende Allowlist-Einträge liefern klar getrennte Fehlerpräfixe (`[PYSEC]`, `[PYTIMEOUT]`, `[PYDENY]`).
+## Security and sandboxing
+- **Per-module allowlist**: `allow=[...]` explicitly defines which attributes/functions of a module are available. The default is an empty allowlist entry that blocks everything.
+- **Global bans**: Certain modules are always denied (`subprocess`, `socket`, `multiprocessing`, `ctypes`, `sys.modules` mutations). Attempts to load them raise `[PYSEC] module denied`.
+- **Timeouts**: Every call supports `timeout_ms`; exceeding it yields `[PYTIMEOUT]` and aborts the Python call.
+- **Side-effect sandbox**: Filesystem access is allowed only when the module and function are allowlisted and do not escape the working directory. Network access is disabled by default.
+- **Isolation**: Proxy objects returned from Python do not allow attribute access unless explicitly freed via `allow` (`Python.import_module("pathlib", allow=["Path.name"])`). This prevents injecting arbitrary Python code through dynamic attributes.
+- **Deterministic error codes**: Security violations, timeouts, and missing allowlist entries produce clear, distinct error prefixes (`[PYSEC]`, `[PYTIMEOUT]`, `[PYDENY]`).
 
-## Häufige Interop-Szenarien
-- **Datei-Infos auslesen**
+## Common interop scenarios
+- **Read file info**
   ```tiny
   define os = Python.import_module("os", allow=["getcwd", "stat"]);
   define cwd = os.getcwd();
@@ -53,15 +53,15 @@ Dieser Entwurf beschreibt, wie TinyLanguage kontrolliert mit Python-Funktionen u
   print(info.st_size);
   ```
 
-- **JSON per Python-Stdlib parsen** (als Alternative zur eingebauten `JSON`-Namespace)
+- **Parse JSON via the Python stdlib** (as an alternative to the built-in `JSON` namespace)
   ```tiny
   define json = Python.import_module("json", allow=["loads", "dumps"]);
-  define data = json.loads("{\"ok\": true}"); // Map aus Python-dict
+  define data = json.loads("{\"ok\": true}"); // Map from Python dict
   print(data["ok"]);
   print(json.dumps(data));
   ```
 
-- **Numerik mit `math`**
+- **Numerics with `math`**
   ```tiny
   define math = Python.import_module("math", allow=["sqrt", "isfinite"]);
   define root = math.sqrt(144);
@@ -69,17 +69,17 @@ Dieser Entwurf beschreibt, wie TinyLanguage kontrolliert mit Python-Funktionen u
   print(math.isfinite(root));
   ```
 
-- **HTTP-Call mit Timeout**
+- **HTTP call with timeout**
   ```tiny
   define response = Python.call("requests", "get", new["https://example.com"], { allow=["status_code", "text"], timeout_ms: 300 });
   print(response.status_code);
   ```
 
-- **Proxy-Weitergabe** (ohne Feldzugriff)
+- **Proxy pass-through** (without field access)
   ```tiny
   define datetime = Python.import_module("datetime", allow=["datetime"]);
-  define now = datetime.datetime.utcnow(); // gibt Proxy zurueck
-  // Proxy kann nur an andere Python-Aufrufe weitergereicht werden
+  define now = datetime.datetime.utcnow(); // returns proxy
+  // Proxy can only be forwarded into other Python calls
   define iso = Python.call("datetime", "datetime.isoformat", new[now]);
   print(iso);
   ```

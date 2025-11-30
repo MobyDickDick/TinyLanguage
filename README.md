@@ -269,6 +269,15 @@ Note: On platforms without `readline` (e.g., Windows) the REPL history tests are
 
 Additional examples and expected diagnostics live in `tests/test_tiny_language.py` and the programs above.
 
+### Error handling
+- **Try/catch blocks**: Wrap risky code in `try { ... } catch(err) { ... }` to intercept runtime failures. The `err`
+  object carries a `code`, human-readable `message`, optional `hint`, and a `stack` array with the formatted call chain.
+- **Result helpers**: The stdlib exposes a lightweight `Result` type with `Result.ok(value)` and `Result.err(error)` helpers
+  plus `Result.is_ok`/`Result.is_err` and `Result.unwrap_or`. Use it to thread success/failure through pipelines without
+  throwing.
+- **Stack traces**: Unhandled runtime errors include stack traces in their messages by default, and caught errors preserve
+  the same information for logging or conversion into `Result.Err` values.
+
 ## Ideas for future extensions
 - [x] **Pattern matching and algebraic data types**
   - [x] Design syntax for sum/product types and match expressions
@@ -282,10 +291,10 @@ Additional examples and expected diagnostics live in `tests/test_tiny_language.p
   - [x] Specify syntax for optional type annotations on functions, parameters, and return values
   - [x] Implement gradual typing checks and simple exhaustiveness checks
   - [x] Extend error messages and docs with type hints
-- [ ] **Better error handling**
-  - [ ] Design `try/catch` blocks or a `Result` type
-  - [ ] Show stack traces in error messages
-  - [ ] Add example programs/tests for error paths without aborting execution
+- [x] **Better error handling**
+  - [x] Design `try/catch` blocks or a `Result` type
+  - [x] Show stack traces in error messages
+  - [x] Add example programs/tests for error paths without aborting execution
 - [ ] **Tooling**
   - [ ] Specify and implement a minimal formatter (spacing, semicolons, imports)
   - [ ] Define lints for unused bindings, bare calls, and style rules

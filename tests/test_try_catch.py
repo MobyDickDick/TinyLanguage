@@ -44,3 +44,24 @@ print(wrapper());
 
     assert output.startswith("E000\n")
     assert "unknown function missing" in output
+
+
+def test_try_catch_keeps_program_running():
+    source = """
+fn explode() { missing(); }
+
+print("before");
+try {
+  explode();
+  print("unreachable");
+} catch(err) {
+  print(err.code);
+}
+print("after");
+"""
+
+    output = compile_and_run(source)
+    lines = output.splitlines()
+    assert lines[0] == "before"
+    assert lines[1].startswith("E")
+    assert lines[2] == "after"

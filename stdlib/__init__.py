@@ -4,8 +4,15 @@ import json
 import math
 import random
 from collections import deque
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Tuple
+
+@dataclass
+class _Variant:
+    name: str
+    fields: List[Tuple[str, str]]
+
 
 if TYPE_CHECKING:  # pragma: no cover - import for typing only
     from tiny_language import Environment, NamespaceRef, Runtime
@@ -28,6 +35,15 @@ class _StdLibRegistrar:
         self._ensure_namespace("File")
         self._ensure_namespace("JSON")
         self._ensure_namespace("Async")
+        self._ensure_namespace("Result")
+
+        self.runtime.register_type(
+            "Result",
+            variants=[
+                _Variant("Ok", [("value", "any")]),
+                _Variant("Err", [("code", "string?"), ("message", "string"), ("hint", "string?"), ("stack", "any")]),
+            ],
+        )
 
         self.runtime.register_native("abs", self._math_abs, namespace="Math")
         self.runtime.register_native("max", self._math_max, namespace="Math")
@@ -101,6 +117,12 @@ class _StdLibRegistrar:
         self.runtime.register_native("is_cancelled", self._async_is_cancelled, namespace="Async")
         self.runtime.register_native("reason", self._async_reason, namespace="Async")
         self.runtime.register_native("link", self._async_link, namespace="Async")
+
+        self.runtime.register_native("ok", self._result_ok, namespace="Result")
+        self.runtime.register_native("err", self._result_err, namespace="Result")
+        self.runtime.register_native("is_ok", self._result_is_ok, namespace="Result")
+        self.runtime.register_native("is_err", self._result_is_err, namespace="Result")
+        self.runtime.register_native("unwrap_or", self._result_unwrap_or, namespace="Result")
 
     def _ensure_namespace(self, name: str) -> None:
         if name not in self.env.values:
@@ -737,6 +759,36 @@ class _StdLibRegistrar:
 
     def _async_link(self, token: Any, handle: Any) -> bool:
         return self.runtime.link_token(token, handle)
+
+    def _result_ok(self, value: Any) -> Dict[str, Any]:
+        return self.runtime.instantiate_variant("Ok", {"value": value}, type_name="Result")
+
+    def _result_err(self, value: Any, code: Any | None = None) -> Dict[str, Any]:
+        if hasattr(value, "__class__") and value.__class__.__name__ == "TinyLangError":
+            err_obj = self.runtime._error_value(value)
+        elif isinstance(value, dict) and value.get("__tag__") == "Error":
+            err_obj = {
+                "code": value.get("code"),
+                "message": value.get("message") or value.get("msg"),
+                "hint": value.get("hint"),
+                "stack": value.get("stack", []),
+            }
+        else:
+            err_obj = {"code": code or "E000", "message": str(value), "hint": None, "stack": []}
+        return self.runtime.instantiate_variant("Err", err_obj, type_name="Result")
+
+    def _result_is_ok(self, value: Any) -> bool:
+        return isinstance(value, dict) and value.get("__type__") == "Result" and value.get("__tag__") == "Ok"
+
+    def _result_is_err(self, value: Any) -> bool:
+        return isinstance(value, dict) and value.get("__type__") == "Result" and value.get("__tag__") == "Err"
+
+    def _result_unwrap_or(self, value: Any, default: Any) -> Any:
+        if self._result_is_ok(value):
+            return value.get("value")
+        if self._result_is_err(value):
+            return default
+        return value
 
 
 def register_stdlib(

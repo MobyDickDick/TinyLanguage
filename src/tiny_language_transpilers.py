@@ -18,6 +18,7 @@ so language frontends can grow into them gradually.
 from __future__ import annotations
 
 import ast
+import json
 import re
 from dataclasses import dataclass, field
 from typing import Iterable, List, Sequence
@@ -142,17 +143,21 @@ def _expr_from_ast(node: ast.AST) -> Expression:
     raise ValueError(f"Unsupported expression node: {ast.dump(node)}")
 
 
-def _expr_to_python(expr: Expression) -> str:
+def _expr_to_source(expr: Expression, render_literal) -> str:
     if isinstance(expr, Name):
         return expr.identifier
     if isinstance(expr, Literal):
-        return repr(expr.value)
+        return render_literal(expr.value)
     if isinstance(expr, BinaryOp):
-        return f"{_expr_to_python(expr.left)} {expr.op} {_expr_to_python(expr.right)}"
+        return f"{_expr_to_source(expr.left, render_literal)} {expr.op} {_expr_to_source(expr.right, render_literal)}"
     if isinstance(expr, Call):
-        args = ", ".join(_expr_to_python(arg) for arg in expr.args)
+        args = ", ".join(_expr_to_source(arg, render_literal) for arg in expr.args)
         return f"{expr.func}({args})"
-    raise ValueError(f"Unsupported expression for Python rendering: {expr}")
+    raise ValueError(f"Unsupported expression for rendering: {expr}")
+
+
+def _expr_to_python(expr: Expression) -> str:
+    return _expr_to_source(expr, repr)
 
 
 def _sanitize_for_python(expr_text: str) -> str:
@@ -160,6 +165,8 @@ def _sanitize_for_python(expr_text: str) -> str:
     sanitized = sanitized.replace("&&", " and ").replace("||", " or ")
     sanitized = re.sub(r"\btrue\b", "True", sanitized)
     sanitized = re.sub(r"\bfalse\b", "False", sanitized)
+    sanitized = re.sub(r"\bnull\b", "None", sanitized)
+    sanitized = re.sub(r"\bnullptr\b", "None", sanitized)
     sanitized = re.sub(r"\bnothing\b", "None", sanitized)
     return sanitized
 
@@ -198,6 +205,12 @@ def _render_block(statements: Sequence[Statement], render_expr, line_suffix: str
 class LanguageTranspiler:
     indent: str = "    "
 
+    def _render_literal(self, value: object) -> str:
+        return repr(value)
+
+    def _render_expr(self, expr: Expression) -> str:
+        return _expr_to_source(expr, self._render_literal)
+
     def to_source(self, program: ProgramIR) -> str:
         raise NotImplementedError
 
@@ -232,13 +245,13 @@ class PythonTranspiler(LanguageTranspiler):
         pad = self.indent * indent_level
         for stmt in statements:
             if isinstance(stmt, Assign):
-                rendered.append(f"{pad}{stmt.target} = {_expr_to_python(stmt.expr)}")
+                rendered.append(f"{pad}{stmt.target} = {self._render_expr(stmt.expr)}")
             elif isinstance(stmt, Return):
-                rendered.append(f"{pad}return {_expr_to_python(stmt.expr)}")
+                rendered.append(f"{pad}return {self._render_expr(stmt.expr)}")
             elif isinstance(stmt, ExprStmt):
-                rendered.append(f"{pad}{_expr_to_python(stmt.expr)}")
+                rendered.append(f"{pad}{self._render_expr(stmt.expr)}")
             elif isinstance(stmt, IfElse):
-                rendered.append(f"{pad}if {_expr_to_python(stmt.condition)}:")
+                rendered.append(f"{pad}if {self._render_expr(stmt.condition)}:")
                 then_body = self._render_statements(stmt.then_body, indent_level + 1)
                 rendered.extend(then_body or [pad + self.indent + "pass"])
                 if stmt.else_body:
@@ -246,7 +259,7 @@ class PythonTranspiler(LanguageTranspiler):
                     else_body = self._render_statements(stmt.else_body, indent_level + 1)
                     rendered.extend(else_body or [pad + self.indent + "pass"])
             elif isinstance(stmt, While):
-                rendered.append(f"{pad}while {_expr_to_python(stmt.condition)}:")
+                rendered.append(f"{pad}while {self._render_expr(stmt.condition)}:")
                 body = self._render_statements(stmt.body, indent_level + 1)
                 rendered.extend(body or [pad + self.indent + "pass"])
             else:
@@ -297,6 +310,15 @@ class PythonTranspiler(LanguageTranspiler):
 
 class JuliaTranspiler(LanguageTranspiler):
     indent = "    "
+
+    def _render_literal(self, value: object) -> str:
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        if value is None:
+            return "nothing"
+        if isinstance(value, str):
+            return json.dumps(value)
+        return repr(value)
 
     def to_source(self, program: ProgramIR) -> str:
         chunks: List[str] = []
@@ -369,20 +391,20 @@ class JuliaTranspiler(LanguageTranspiler):
         pad = self.indent * indent_level
         for stmt in statements:
             if isinstance(stmt, Assign):
-                rendered.append(f"{pad}{stmt.target} = {_expr_to_python(stmt.expr)}")
+                rendered.append(f"{pad}{stmt.target} = {self._render_expr(stmt.expr)}")
             elif isinstance(stmt, Return):
-                rendered.append(f"{pad}return {_expr_to_python(stmt.expr)}")
+                rendered.append(f"{pad}return {self._render_expr(stmt.expr)}")
             elif isinstance(stmt, ExprStmt):
-                rendered.append(f"{pad}{_expr_to_python(stmt.expr)}")
+                rendered.append(f"{pad}{self._render_expr(stmt.expr)}")
             elif isinstance(stmt, IfElse):
-                rendered.append(f"{pad}if {_expr_to_python(stmt.condition)}")
+                rendered.append(f"{pad}if {self._render_expr(stmt.condition)}")
                 rendered.extend(self._render_statements(stmt.then_body, indent_level + 1) or [pad + self.indent + "nothing"])
                 if stmt.else_body:
                     rendered.append(f"{pad}else")
                     rendered.extend(self._render_statements(stmt.else_body, indent_level + 1) or [pad + self.indent + "nothing"])
                 rendered.append(f"{pad}end")
             elif isinstance(stmt, While):
-                rendered.append(f"{pad}while {_expr_to_python(stmt.condition)}")
+                rendered.append(f"{pad}while {self._render_expr(stmt.condition)}")
                 rendered.extend(self._render_statements(stmt.body, indent_level + 1) or [pad + self.indent + "nothing"])
                 rendered.append(f"{pad}end")
             else:
@@ -395,6 +417,15 @@ class JuliaTranspiler(LanguageTranspiler):
 
 class JavaScriptTranspiler(LanguageTranspiler):
     indent = "  "
+
+    def _render_literal(self, value: object) -> str:
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        if value is None:
+            return "null"
+        if isinstance(value, str):
+            return json.dumps(value)
+        return repr(value)
 
     def to_source(self, program: ProgramIR) -> str:
         chunks: List[str] = []
@@ -505,13 +536,13 @@ class JavaScriptTranspiler(LanguageTranspiler):
         pad = self.indent * indent_level
         for stmt in statements:
             if isinstance(stmt, Assign):
-                rendered.append(f"{pad}{stmt.target} = {_expr_to_python(stmt.expr)};")
+                rendered.append(f"{pad}{stmt.target} = {self._render_expr(stmt.expr)};")
             elif isinstance(stmt, Return):
-                rendered.append(f"{pad}return {_expr_to_python(stmt.expr)};")
+                rendered.append(f"{pad}return {self._render_expr(stmt.expr)};")
             elif isinstance(stmt, ExprStmt):
-                rendered.append(f"{pad}{_expr_to_python(stmt.expr)};")
+                rendered.append(f"{pad}{self._render_expr(stmt.expr)};")
             elif isinstance(stmt, IfElse):
-                rendered.append(f"{pad}if ({_expr_to_python(stmt.condition)}) {{")
+                rendered.append(f"{pad}if ({self._render_expr(stmt.condition)}) {{")
                 rendered.extend(self._render_statements(stmt.then_body, indent_level + 1))
                 rendered.append(f"{pad}}}")
                 if stmt.else_body:
@@ -519,7 +550,7 @@ class JavaScriptTranspiler(LanguageTranspiler):
                     rendered.extend(self._render_statements(stmt.else_body, indent_level + 1))
                     rendered.append(f"{pad}}}")
             elif isinstance(stmt, While):
-                rendered.append(f"{pad}while ({_expr_to_python(stmt.condition)}) {{")
+                rendered.append(f"{pad}while ({self._render_expr(stmt.condition)}) {{")
                 rendered.extend(self._render_statements(stmt.body, indent_level + 1))
                 rendered.append(f"{pad}}}")
             else:
@@ -532,6 +563,15 @@ class JavaScriptTranspiler(LanguageTranspiler):
 
 class CppTranspiler(LanguageTranspiler):
     indent = "  "
+
+    def _render_literal(self, value: object) -> str:
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        if value is None:
+            return "nullptr"
+        if isinstance(value, str):
+            return json.dumps(value)
+        return repr(value)
 
     def to_source(self, program: ProgramIR) -> str:
         chunks: List[str] = []
@@ -649,13 +689,13 @@ class CppTranspiler(LanguageTranspiler):
         pad = self.indent * indent_level
         for stmt in statements:
             if isinstance(stmt, Assign):
-                rendered.append(f"{pad}{stmt.target} = {_expr_to_python(stmt.expr)};")
+                rendered.append(f"{pad}{stmt.target} = {self._render_expr(stmt.expr)};")
             elif isinstance(stmt, Return):
-                rendered.append(f"{pad}return {_expr_to_python(stmt.expr)};")
+                rendered.append(f"{pad}return {self._render_expr(stmt.expr)};")
             elif isinstance(stmt, ExprStmt):
-                rendered.append(f"{pad}{_expr_to_python(stmt.expr)};")
+                rendered.append(f"{pad}{self._render_expr(stmt.expr)};")
             elif isinstance(stmt, IfElse):
-                rendered.append(f"{pad}if ({_expr_to_python(stmt.condition)}) {{")
+                rendered.append(f"{pad}if ({self._render_expr(stmt.condition)}) {{")
                 rendered.extend(self._render_statements(stmt.then_body, indent_level + 1))
                 rendered.append(f"{pad}}}")
                 if stmt.else_body:
@@ -663,7 +703,7 @@ class CppTranspiler(LanguageTranspiler):
                     rendered.extend(self._render_statements(stmt.else_body, indent_level + 1))
                     rendered.append(f"{pad}}}")
             elif isinstance(stmt, While):
-                rendered.append(f"{pad}while ({_expr_to_python(stmt.condition)}) {{")
+                rendered.append(f"{pad}while ({self._render_expr(stmt.condition)}) {{")
                 rendered.extend(self._render_statements(stmt.body, indent_level + 1))
                 rendered.append(f"{pad}}}")
             else:

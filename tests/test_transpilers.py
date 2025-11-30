@@ -304,3 +304,44 @@ def test_control_flow_cross_language_parsing():
     assert JuliaTranspiler().from_source(julia_src) == expected
     assert JavaScriptTranspiler().from_source(js_src) == expected
     assert CppTranspiler().from_source(cpp_src) == expected
+
+
+@pytest.mark.parametrize(
+    "transpiler, code",
+    [
+        (
+            PythonTranspiler(),
+            """
+            def combine(a, b):
+                return a and b
+            """,
+        ),
+        (
+            JuliaTranspiler(),
+            """
+            function combine(a, b)
+                return a && b
+            end
+            """,
+        ),
+        (
+            JavaScriptTranspiler(),
+            """
+            function combine(a, b) {
+              return a && b;
+            }
+            """,
+        ),
+        (
+            CppTranspiler(),
+            """
+            auto combine(auto a, auto b) {
+              return a && b;
+            }
+            """,
+        ),
+    ],
+)
+def test_unsupported_boolean_operations_raise(transpiler, code):
+    with pytest.raises(ValueError):
+        transpiler.from_source(textwrap.dedent(code))

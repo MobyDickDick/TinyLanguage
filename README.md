@@ -6,8 +6,8 @@ For interoperability guidance, see the cross-language compatibility notes in [`d
 
 ## Transpiler roadmap (task list)
 - [x] **Expand the shared IR**: Ergänze neue Statement-/Expression-Typen (z. B. Kontrollflussknoten wie `IfElse` und `While`) und rüste die Hilfsfunktionen in [`tiny_language_transpilers.py`](tiny_language_transpilers.py) so auf, dass spätere Sprachen-Erweiterungen darauf aufbauen können.
-- [ ] **Update language transpilers**: Ziehe die Parser/Renderer der `PythonTranspiler`, `JuliaTranspiler`, `JavaScriptTranspiler` und `CppTranspiler` nach, damit die neuen IR-Knoten korrekt hin- und zurückübersetzt werden.
-- [ ] **Add tests**: Erweitere die Round-Trip-Tests (Quelle → IR → Quelle) für jede neue Sprachfunktion und ergänze Negativtests für nicht unterstützte Konstrukte.
+- [x] **Update language transpilers**: Ziehe die Parser/Renderer der `PythonTranspiler`, `JuliaTranspiler`, `JavaScriptTranspiler` und `CppTranspiler` nach, damit die neuen IR-Knoten korrekt hin- und zurückübersetzt werden.
+- [x] **Add tests**: Erweitere die Round-Trip-Tests (Quelle → IR → Quelle) für jede neue Sprachfunktion und ergänze Negativtests für nicht unterstützte Konstrukte.
 
 ## Syntax and Features
 

@@ -1,6 +1,7 @@
 # ----- Public API -----
 
 import ast
+from typing import List, Optional
 
 
 def _parse_and_lint(src: str) -> List[IR]:
@@ -101,6 +102,12 @@ def run_with_python_backend(src: str) -> str:
     namespace: dict = {}
     exec(compile(module, "<tiny_python_backend>", "exec"), namespace, namespace)
     return namespace["tiny_main"]()
+
+
+def run_with_native_backend(src: str) -> str:
+    stmts = _parse_and_lint(src)
+    program = NativeCodeGenerator().compile_program(stmts)
+    return NativeVM().run(program)
 
 
 def _is_incomplete_source(src: str) -> bool:
@@ -210,12 +217,21 @@ def main(argv: Optional[List[str]] = None) -> int:
         metavar="FILE",
         help="Emit Python code generated from TinyLanguage and write it to FILE (use '-' for stdout)",
     )
-    parser.add_argument(
+    backend_group = parser.add_mutually_exclusive_group()
+    backend_group.add_argument(
         "--python-backend",
         action="store_true",
         help="Execute the program via the experimental Python codegen backend",
     )
+    backend_group.add_argument(
+        "--native-backend",
+        action="store_true",
+        help="Execute the program via the experimental native bytecode backend",
+    )
     args = parser.parse_args(argv)
+
+    if args.repl and (args.python_backend or args.native_backend):
+        parser.error("--native-backend/--python-backend cannot be combined with --repl")
 
     if args.format_file is not None:
         from formatter import format_source
@@ -226,7 +242,12 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if args.eval is not None:
         try:
-            runner = run_with_python_backend if args.python_backend else compile_and_run
+            if args.native_backend:
+                runner = run_with_native_backend
+            elif args.python_backend:
+                runner = run_with_python_backend
+            else:
+                runner = compile_and_run
             output = runner(args.eval)
             print(output, end="")
             return 0
@@ -283,7 +304,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     if not args.file:
         parser.error("the following arguments are required: file")  # Align with argparse behavior
 
-    if args.python_backend:
+    if args.native_backend:
+        output = run_with_native_backend(Path(args.file).read_text(encoding="utf-8"))
+    elif args.python_backend:
         output = run_with_python_backend(Path(args.file).read_text(encoding="utf-8"))
     else:
         output = run_file(args.file)
@@ -300,6 +323,7 @@ __all__ = [
     "compile_to_python_ast",
     "compile_to_python_source",
     "run_with_python_backend",
+    "run_with_native_backend",
     "run_file",
     "main",
     "ModuleResolver",

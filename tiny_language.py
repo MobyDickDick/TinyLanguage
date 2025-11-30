@@ -335,8 +335,6 @@ KEYWORDS = {
     "spawn",
     "match",
     "case",
-    "sum",
-    "product",
     "true",
     "false",
     "and",
@@ -836,7 +834,7 @@ class Parser:
             kw = self._eat("KW", "type")
             name_tok = self._eat("NAME")
             if self._accept("SYM", "="):
-                if self._accept("KW", "sum"):
+                if self._accept("NAME", "sum") or self._accept("KW", "sum"):
                     self._eat("SYM", "{")
                     variants: List[SumVariant] = []
                     while not self._accept("SYM", "}"):
@@ -857,7 +855,7 @@ class Parser:
                         self._eat("SYM", ";")
                         variants.append(SumVariant(vname, fields, pos=kw.pos))
                     return SumTypeDef(name_tok.text, variants, pos=kw.pos)
-                self._eat("KW", "product")
+                self._eat("NAME", "product")
                 self._eat("SYM", "{")
                 fields = []
                 while not self._accept("SYM", "}"):

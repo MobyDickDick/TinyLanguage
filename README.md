@@ -4,10 +4,10 @@ TinyLanguage is a small Julia-inspired language with a Python interpreter. This 
 
 For interoperability guidance, see the cross-language compatibility notes in [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md).
 
-## Transpiler-Ausbau (Aufgabenliste)
-1. **Gemeinsame IR erweitern**: Neue Statement-/Expression-Typen anlegen (z. B. Kontrollfluss wie `IfElse` und `While`) und die Hilfsfunktionen in [`tiny_language_transpilers.py`](tiny_language_transpilers.py) vorbereiten.
-2. **Sprach-Transpiler anpassen**: Parser/Renderer in `PythonTranspiler`, `JuliaTranspiler`, `JavaScriptTranspiler` und `CppTranspiler` so erweitern, dass die neuen IR-Knoten roundtrip-fähig werden.
-3. **Tests ergänzen**: Roundtrip-Tests für jedes neue Sprachfeature hinzufügen (Quelle → IR → Quelle) sowie Negativtests für nicht unterstützte Konstrukte.
+## Transpiler roadmap (task list)
+1. **Expand the shared IR**: Add new statement/expression types (for example, control flow nodes like `IfElse` and `While`) and prepare helper functions in [`tiny_language_transpilers.py`](tiny_language_transpilers.py).
+2. **Update language transpilers**: Extend the parser/renderers in `PythonTranspiler`, `JuliaTranspiler`, `JavaScriptTranspiler`, and `CppTranspiler` so the new IR nodes round-trip correctly.
+3. **Add tests**: Provide round-trip tests for every new language feature (source → IR → source) plus negative tests for unsupported constructs.
 
 ## Syntax and Features
 
@@ -175,20 +175,20 @@ Expected output:
 fn label(prefix, word) { return prefix + "=" + word; }
 
 define keywords = String.split("spawn,join,string,interop", ",");
-define first = spawn label("erstes", heap_get(keywords, 0));
-define second = spawn label("zweites", heap_get(keywords, 1));
-define third = spawn label("drittes", heap_get(keywords, 2));
-define fourth = spawn label("viertes", heap_get(keywords, 3));
+define first = spawn label("first", heap_get(keywords, 0));
+define second = spawn label("second", heap_get(keywords, 1));
+define third = spawn label("third", heap_get(keywords, 2));
+define fourth = spawn label("fourth", heap_get(keywords, 3));
 
-print("etiketten");
+print("labels");
 print(String.join(new[join(first), join(second), join(third), join(fourth)], " | "));
 ```
 
 Expected output:
 
 ```
-etiketten
-erstes=spawn | zweites=join | drittes=string | viertes=interop
+labels
+first=spawn | second=join | third=string | fourth=interop
 ```
 
 The full version with another split/join lives in [`concurrency_demo.tiny`](src_tiny/concurrency_demo.tiny).
@@ -325,4 +325,4 @@ Additional examples and expected diagnostics live in `tests/test_tiny_language.p
 - [ ] **Transpilers**: Prototype bidirectional translators to and from Python, Julia, JavaScript, and C++ while preserving semantics and idioms.
 - [ ] **VS Code extension**: Ship syntax highlighting, formatting, REPL integration, and diagnostics as a Visual Studio Code marketplace extension.
 - [ ] **Cross-language compatibility**: Document any constructs that do not map cleanly to other mainstream languages and propose portable alternatives.
-- [ ] **Full inline commentary**: Add exhaustive line-by-line comments across TinyLanguage source and sample programs for learners.
+- [x] **Full inline commentary**: Add exhaustive line-by-line comments across TinyLanguage source and sample programs for learners.

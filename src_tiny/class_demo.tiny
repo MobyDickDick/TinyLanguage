@@ -1,15 +1,15 @@
-// Minimales Klassenbeispiel: Felder + Methode
-class Greeter {
-    name: string;
+// Minimal class example: fields + method, with per-line comments.
+class Greeter { // Declares the class that can produce a greeting.
+    name: string; // Field for the name used in the output.
 
-    fn greeting(self) {
-        return "Hallo, " + self.name + "!";
+    fn greeting(self) { // Method that builds a personalized greeting.
+        return "Hello, " + self.name + "!"; // Concatenates text with the stored name.
     }
 }
 
-fn Greeter(name) {
-    return new Greeter { name: name };
+fn Greeter(name) { // Factory function that builds a new instance with a name.
+    return new Greeter { name: name }; // Initializes the field and returns the object.
 }
 
-define greeter = Greeter("TinyLanguage");
-print(greeter.greeting());
+define greeter = Greeter("TinyLanguage"); // Create a Greeter for "TinyLanguage".
+print(greeter.greeting()); // Call the method and print the greeting.

@@ -20,26 +20,20 @@ segments (e.g. methods inside classes) keeps working exactly as in the
 original monolithic file.
 """
 
-from __future__ import annotations  # Allow postponed evaluation of annotations
+from __future__ import annotations  # Enable postponed evaluation for annotations used later.
 
 # Path handling is only needed while we stitch the module pieces together.
-from pathlib import Path as _Path
+from pathlib import Path as _Path  # Import Path with an alias to avoid polluting the public API.
 
 
 def _load_and_exec_all() -> None:
-    """Concatenate the segmented TinyLanguage sources and execute them.
+    """Concatenate the segmented TinyLanguage sources and execute them."""
 
-    The original monolithic interpreter was split into several files. To keep
-    imports stable for existing users, we read those pieces in order, join
-    them, compile the resulting source code, and execute it in this module's
-    namespace.
-    """
-
-    # Determine the directory that contains the segmented files.
-    base = _Path(__file__).resolve().parent
+    # Determine the directory that contains the segmented files so we can read them.
+    base = _Path(__file__).resolve().parent  # Resolve to an absolute path to be robust to CWD changes.
 
     # Accumulate the textual contents of each segment in the correct order.
-    parts = []
+    parts = []  # Prepare a list that will hold each source fragment.
     for name in [
         "tiny_language_preamble.py",  # shared definitions and constants
         "tiny_language_lexer.py",  # tokenization logic
@@ -51,23 +45,16 @@ def _load_and_exec_all() -> None:
         "tiny_language_eval.py",  # AST evaluator
         "tiny_language_api.py",  # public API and CLI entrypoints
     ]:
-        # Construct the absolute path for the current segment file.
-        path = base / name
-        # Read the file contents using UTF-8 to preserve symbols.
-        parts.append(path.read_text(encoding="utf-8"))
+        path = base / name  # Construct the absolute path for the current segment file.
+        parts.append(path.read_text(encoding="utf-8"))  # Read the file contents using UTF-8 to preserve symbols.
 
-    # Join the individual source strings into a single Python module body.
-    full_source = "".join(parts)
+    full_source = "".join(parts)  # Join the individual source strings into a single Python module body.
 
-    # Compile the generated source so that tracebacks reference the stitched file.
-    code = compile(full_source, str(base / "tiny_language_stitched.py"), "exec")
+    code = compile(full_source, str(base / "tiny_language_stitched.py"), "exec")  # Compile so tracebacks reference the stitched file.
 
-    # Execute the compiled module in this file's global namespace.
-    exec(code, globals(), globals())
+    exec(code, globals(), globals())  # Execute the compiled module in this file's global namespace.
 
 
-# Perform the stitching immediately when the module is imported.
-_load_and_exec_all()
+_load_and_exec_all()  # Perform the stitching immediately when the module is imported.
 
-# Remove helper names so that the public namespace mirrors the original module.
-del _load_and_exec_all, _Path
+del _load_and_exec_all, _Path  # Remove helper names so that the public namespace mirrors the original module.

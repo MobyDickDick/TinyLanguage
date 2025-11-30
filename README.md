@@ -2,7 +2,7 @@
 
 TinyLanguage is a small Julia-inspired language with a Python interpreter. This README provides a StackEdit-style Markdown overview: syntax highlights, a compact tutorial, pointers to examples, common error messages, and the most important run/test commands.
 
-For interoperability guidance, see the cross-language compatibility notes in [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md).
+For interoperability guidance, see the cross-language compatibility notes in [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md). For concrete Rosetta Code–style ports from Python to TinyLanguage, walk through [`docs/rosetta_python_examples.md`](docs/rosetta_python_examples.md).
 
 ## Transpiler roadmap (task list)
 1. **Expand the shared IR**: Add new statement/expression types (for example, control flow nodes like `IfElse` and `While`) and prepare helper functions in [`tiny_language_transpilers.py`](tiny_language_transpilers.py).

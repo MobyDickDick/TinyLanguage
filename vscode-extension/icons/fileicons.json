@@ -1,0 +1,12 @@
+{
+  "$schema": "vscode://schemas/icon-theme",
+  "iconDefinitions": {
+    "tinyFile": {
+      "iconPath": "./gnome.svg"
+    }
+  },
+  "fileExtensions": {
+    "tiny": "tinyFile"
+  },
+  "version": "1.0"
+}

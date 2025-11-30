@@ -1,5 +1,34 @@
 # ----- Public API -----
 
+import ast
+
+
+def _parse_and_lint(src: str) -> List[IR]:
+    parser = Parser(Lexer(src), src)
+    stmts = parser.parse()
+
+    lint_import_style(stmts, src)
+    lint_destruct_call_outputs(stmts, src)
+    lint_no_consecutive_definitions(stmts)
+    lint_locals_used(stmts, src)
+    signatures = _collect_function_signatures(stmts)
+
+    def lint_nested(block: List[IR]) -> None:
+        for st in block:
+            if isinstance(st, Fn):
+                lint_fn_params_used(st, src)
+            if isinstance(st, MethodDef):
+                lint_method_params_used(st, src)
+            if isinstance(st, ClassDef):
+                for m in st.methods:
+                    lint_method_params_used(m, src)
+            if isinstance(st, Namespace):
+                lint_nested(st.body)
+
+    lint_nested(stmts)
+    lint_bare_call_results(stmts, signatures, src)
+    return stmts
+
 
 def compile_and_run(
     src: str,
@@ -10,8 +39,7 @@ def compile_and_run(
     module_path: Optional[Path] = None,
     module_resolver: Optional[ModuleResolver] = None,
 ) -> str:
-    parser = Parser(Lexer(src), src)  # Build a parser over the raw source
-    stmts = parser.parse()  # Produce an intermediate representation of the program
+    stmts = _parse_and_lint(src)
     runtime = runtime or Runtime(src)  # Reuse an existing runtime or create a fresh one
     runtime.source_map[module_namespace] = src  # Track source text for later diagnostics
     prev_source = runtime.source  # Remember previous source to restore after module execution
@@ -24,27 +52,6 @@ def compile_and_run(
         runtime.module_resolver = module_resolver  # Override resolver when running imports
     runtime.output.clear()  # Reset buffered program output
     runtime.error_messages.clear()  # Reset accumulated error messages
-
-    # lint functions + top level locals
-    lint_import_style(stmts, src)
-    lint_destruct_call_outputs(stmts, src)
-    lint_no_consecutive_definitions(stmts)
-    lint_locals_used(stmts, src)
-    signatures = _collect_function_signatures(stmts)
-    def lint_nested(block: List[IR]) -> None:
-        for st in block:
-            if isinstance(st, Fn):
-                lint_fn_params_used(st, src)  # Verify function parameters are referenced
-            if isinstance(st, MethodDef):
-                lint_method_params_used(st, src)  # Same check for methods
-            if isinstance(st, ClassDef):
-                for m in st.methods:
-                    lint_method_params_used(m, src)
-            if isinstance(st, Namespace):
-                lint_nested(st.body)  # Recurse into nested namespaces
-
-    lint_nested(stmts)
-    lint_bare_call_results(stmts, signatures, src)
 
     env = env or Environment(parent=None, namespace=module_namespace)  # Build module environment
     if module_namespace:
@@ -77,6 +84,23 @@ def _format_error_for_source(source: str, err: TinyLangError) -> str:
     if "(line " in err.message:
         return err.message
     return format_error(source, err.pos, err.message)
+
+
+def compile_to_python_ast(src: str) -> ast.AST:
+    stmts = _parse_and_lint(src)
+    return PythonCodeGenerator().module_for_program(stmts)
+
+
+def compile_to_python_source(src: str) -> str:
+    module = compile_to_python_ast(src)
+    return PythonCodeGenerator().to_source(module)
+
+
+def run_with_python_backend(src: str) -> str:
+    module = compile_to_python_ast(src)
+    namespace: dict = {}
+    exec(compile(module, "<tiny_python_backend>", "exec"), namespace, namespace)
+    return namespace["tiny_main"]()
 
 
 def _is_incomplete_source(src: str) -> bool:
@@ -180,6 +204,17 @@ def main(argv: Optional[List[str]] = None) -> int:
         nargs="?",
         help="Path to the TinyLanguage source file to execute",
     )
+    parser.add_argument(
+        "--emit-python",
+        dest="emit_python",
+        metavar="FILE",
+        help="Emit Python code generated from TinyLanguage and write it to FILE (use '-' for stdout)",
+    )
+    parser.add_argument(
+        "--python-backend",
+        action="store_true",
+        help="Execute the program via the experimental Python codegen backend",
+    )
     args = parser.parse_args(argv)
 
     if args.format_file is not None:
@@ -191,7 +226,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if args.eval is not None:
         try:
-            output = compile_and_run(args.eval)
+            runner = run_with_python_backend if args.python_backend else compile_and_run
+            output = runner(args.eval)
             print(output, end="")
             return 0
         except TinyLangError as err:
@@ -233,10 +269,24 @@ def main(argv: Optional[List[str]] = None) -> int:
             _save_history(history_path)  # Always attempt to save history on exit
         return 0
 
+    if args.emit_python:
+        if not args.file:
+            parser.error("--emit-python requires a source file")
+        source_text = Path(args.file).read_text(encoding="utf-8")
+        generated = compile_to_python_source(source_text)
+        if args.emit_python == "-":
+            print(generated)
+        else:
+            Path(args.emit_python).write_text(generated, encoding="utf-8")
+        return 0
+
     if not args.file:
         parser.error("the following arguments are required: file")  # Align with argparse behavior
 
-    output = run_file(args.file)
+    if args.python_backend:
+        output = run_with_python_backend(Path(args.file).read_text(encoding="utf-8"))
+    else:
+        output = run_file(args.file)
     print(output, end="")
     return 0
 
@@ -245,4 +295,12 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 
-__all__ = ["compile_and_run", "run_file", "main", "ModuleResolver"]
+__all__ = [
+    "compile_and_run",
+    "compile_to_python_ast",
+    "compile_to_python_source",
+    "run_with_python_backend",
+    "run_file",
+    "main",
+    "ModuleResolver",
+]

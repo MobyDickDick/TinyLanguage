@@ -1,0 +1,13 @@
+fn risky_parse(text) {
+  if (text == "ok") {
+    return Result.ok(42);
+  }
+  try {
+    return Result.ok(String.len(text));
+  } catch(err) {
+    return Result.err(err);
+  }
+}
+
+print(Result.unwrap_or(risky_parse("ok"), -1));
+print(Result.unwrap_or(risky_parse("boom"), -1));

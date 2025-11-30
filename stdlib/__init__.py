@@ -7,11 +7,50 @@ from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Tuple
+import threading
 
 @dataclass
 class _Variant:
     name: str
     fields: List[Tuple[str, str]]
+
+
+class _Channel:
+    def __init__(self, capacity: int):
+        self.capacity = max(0, int(capacity))
+        self.buffer: deque[Any] = deque()
+        self.closed = False
+        self.lock = threading.Lock()
+        self.not_empty = threading.Condition(self.lock)
+        self.not_full = threading.Condition(self.lock)
+
+    def send(self, value: Any) -> bool:
+        with self.not_full:
+            while len(self.buffer) >= self.capacity and not self.closed:
+                self.not_full.wait()
+            if self.closed:
+                return False
+            self.buffer.append(value)
+            self.not_empty.notify()
+            return True
+
+    def recv(self) -> Any:
+        with self.not_empty:
+            while not self.buffer and not self.closed:
+                self.not_empty.wait()
+            if not self.buffer:
+                return None
+            value = self.buffer.popleft()
+            self.not_full.notify()
+            return value
+
+    def close(self) -> bool:
+        with self.lock:
+            already = self.closed
+            self.closed = True
+            self.not_empty.notify_all()
+            self.not_full.notify_all()
+            return not already
 
 
 if TYPE_CHECKING:  # pragma: no cover - import for typing only
@@ -117,6 +156,10 @@ class _StdLibRegistrar:
         self.runtime.register_native("is_cancelled", self._async_is_cancelled, namespace="Async")
         self.runtime.register_native("reason", self._async_reason, namespace="Async")
         self.runtime.register_native("link", self._async_link, namespace="Async")
+        self.runtime.register_native("channel", self._async_channel, namespace="Async")
+        self.runtime.register_native("send", self._async_send, namespace="Async")
+        self.runtime.register_native("recv", self._async_recv, namespace="Async")
+        self.runtime.register_native("close", self._async_close, namespace="Async")
 
         self.runtime.register_native("ok", self._result_ok, namespace="Result")
         self.runtime.register_native("err", self._result_err, namespace="Result")
@@ -759,6 +802,28 @@ class _StdLibRegistrar:
 
     def _async_link(self, token: Any, handle: Any) -> bool:
         return self.runtime.link_token(token, handle)
+
+    def _async_channel(self, capacity: Any) -> _Channel:
+        try:
+            cap = int(capacity)
+        except Exception:
+            raise RuntimeError("channel expects an integer capacity")
+        return _Channel(cap)
+
+    def _async_send(self, chan: Any, value: Any) -> bool:
+        if not isinstance(chan, _Channel):
+            raise RuntimeError("send expects a channel")
+        return chan.send(value)
+
+    def _async_recv(self, chan: Any) -> Any:
+        if not isinstance(chan, _Channel):
+            raise RuntimeError("recv expects a channel")
+        return chan.recv()
+
+    def _async_close(self, chan: Any) -> bool:
+        if not isinstance(chan, _Channel):
+            raise RuntimeError("close expects a channel")
+        return chan.close()
 
     def _result_ok(self, value: Any) -> Dict[str, Any]:
         return self.runtime.instantiate_variant("Ok", {"value": value}, type_name="Result")

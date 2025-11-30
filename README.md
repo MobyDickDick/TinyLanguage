@@ -10,9 +10,9 @@ For interoperability guidance, see the cross-language compatibility notes in [`d
 - [x] **Add tests**: Erweitere die Round-Trip-Tests (Quelle → IR → Quelle) für jede neue Sprachfunktion und ergänze Negativtests für nicht unterstützte Konstrukte.
 
 ## Offene Aufgaben
-- **Native-Compiler-Prototyp evaluieren**: Einen alternativen Backend-Pfad implementieren, der aus dem vorhandenen AST Bytecode oder native IR erzeugt und über eine kleine VM lauffähig ist. Iterativ über Smoke-Tests (Arithmetik, Branching, Funktionen) mit dem Interpreter abgleichen.
-- **Python-Interop-Demos ausbauen**: Zusätzliche `.tiny`-Programme bereitstellen, die die Anleitung in [`docs/python_interop.md`](docs/python_interop.md) konkret durchspielen, inklusive How-to-Run-Hinweisen und Tests.
-- **Language-Server-Workflows dokumentieren**: Die API aus [`src/language_server.py`](src/language_server.py) mit Beispiel-Requests/-Responses beschreiben und mit kleinen CLI-Demos sowie Tests absichern.
+- [ ] **Language-Server-Workflows dokumentieren (gestartet)**: Eine kompakte Referenz für `TinyLanguageServer` schreiben, Beispiel-Requests/-Responses aufnehmen und die neuen CLI-Demos dokumentieren (siehe [`docs/language_server_workflows.md`](docs/language_server_workflows.md)). Ergänzend dazu Tests für Hover/Completion/Diagnostics hinzufügen, damit künftige Änderungen abgesichert sind.
+- [ ] **Python-Interop-Demos ausbauen**: Zusätzliche `.tiny`-Programme bereitstellen, die die Anleitung in [`docs/python_interop.md`](docs/python_interop.md) konkret durchspielen, inklusive How-to-Run-Hinweisen und Tests.
+- [ ] **Native-Compiler-Prototyp evaluieren**: Einen alternativen Backend-Pfad implementieren, der aus dem vorhandenen AST Bytecode oder native IR erzeugt und über eine kleine VM lauffähig ist. Iterativ über Smoke-Tests (Arithmetik, Branching, Funktionen) mit dem Interpreter abgleichen.
 
 ## Syntax and Features
 
@@ -249,7 +249,7 @@ Detailed notes live in [`docs/stdlib_extensions.md`](docs/stdlib_extensions.md),
 ## Formatter, lints, and language server
 - **Formatter**: `python tiny_language.py --format file.tiny` enforces four-space indents, a single space around operators and after commas, and normalized import lines (`import path as alias;`). Comments are preserved.
 - **Linter style rules**: Unused bindings can be intentionally suppressed with a leading `_`. Import statements must appear sorted before the rest of the code (`E012`). Function calls with return types must not be silently ignored (`E011`); either bind the result or explicitly discard it with `_ = fn();`).
-- **Language server prototype**: The `language_server.py` module exposes a small API for hover, completions, and diagnostics—handy for experimenting with LSP ideas without writing a JSON-RPC server.
+- **Language server prototype**: The `language_server.py` module exposes a small API for hover, completions, and diagnostics—handy for experimenting with LSP ideas without writing a JSON-RPC server. See [`docs/language_server_workflows.md`](docs/language_server_workflows.md) for a quickstart with example CLI commands and structured JSON outputs.
 - **Incomplete destructuring**: All fields of a returned struct must be bound ("destructuring call to f must include output for argument(s): a"), and every binding must be used.
 - **Bare calls**: Function calls cannot stand alone as statements ("bare call statements are not allowed"); print or assign the result instead.
 - **Arithmetic limits**: The `^` operator accepts only integer exponents ("exponent for ^ must be an integer"); use `power` for fractional exponents.

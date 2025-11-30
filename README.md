@@ -299,10 +299,10 @@ Additional examples and expected diagnostics live in `tests/test_tiny_language.p
   - [x] Specify and implement a minimal formatter (spacing, semicolons, imports)
   - [x] Define lints for unused bindings, bare calls, and style rules
   - [x] Sketch a language-server prototype with hover/completion/diagnostics
-- [ ] **Parallelism**
-  - [ ] Design `async/await` or channel-based structured concurrency
-  - [ ] Add cancellation tokens and safe abort paths to the runtime model
-  - [ ] Create deterministic, race-free test cases
+- [x] **Parallelism**
+  - [x] Design `async/await` or channel-based structured concurrency
+  - [x] Add cancellation tokens and safe abort paths to the runtime model
+  - [x] Create deterministic, race-free test cases
 - [ ] **Stdlib expansion**
   - [ ] Design and implement core Collections APIs (maps, sets, deques)
   - [ ] Add Math/Random extensions plus file/JSON utilities

@@ -66,6 +66,9 @@
         }
       }
     },
+    "configurationDefaults": {
+      "workbench.iconTheme": "tinylanguage-icons"
+    },
     "iconThemes": [
       {
         "id": "tinylanguage-icons",

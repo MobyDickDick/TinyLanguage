@@ -13,7 +13,7 @@ This extension adds TinyLanguage editing support to Visual Studio Code:
 2. **Open the folder**: Launch VS Code in the repository root (`code .`).
 3. **Install locally**: From the `vscode-extension` directory run `npm install` (not required for pure JS) and `vsce package` to build a `.vsix`, or use the built-in `F5` launch to run the extension host.
 4. **Install the packaged extension**: `code --install-extension tinylanguage-vscode-0.1.0.vsix`.
-5. **Enable the TinyLanguage icons**: In VS Code, open **File → Preferences → File Icon Theme** and choose **TinyLanguage File Icons** to see the custom gnome icon for `.tiny` files.
+5. **Enable the TinyLanguage icons**: The extension now defaults the file icon theme to **TinyLanguage File Icons** on install. If you switch themes later, you can re-enable it via **File → Preferences → File Icon Theme**.
 
 ## Commands
 

@@ -312,3 +312,10 @@ Additional examples and expected diagnostics live in `tests/test_tiny_language.p
   - [x] Define an FFI to Python functions/modules (argument/return mapping)
   - [x] Specify security and sandboxing mechanisms
   - [x] Document common Python interop scenarios
+
+## Further issues to explore
+- [ ] **Native compiler**: Investigate emitting bytecode or native code directly from the TinyLanguage AST instead of interpreting it.
+- [ ] **Transpilers**: Prototype bidirectional translators to and from Python, Julia, JavaScript, and C++ while preserving semantics and idioms.
+- [ ] **VS Code extension**: Ship syntax highlighting, formatting, REPL integration, and diagnostics as a Visual Studio Code marketplace extension.
+- [ ] **Cross-language compatibility**: Document any constructs that do not map cleanly to other mainstream languages and propose portable alternatives.
+- [ ] **Full inline commentary**: Add exhaustive line-by-line comments across TinyLanguage source and sample programs for learners.

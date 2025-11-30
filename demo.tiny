@@ -1,64 +1,97 @@
 /// demo.tiny - port demo for Julia
+// Define a helper that wraps a raw value in a Box record with a tag field.
 fn box(v) {
+  // Return a struct-like map containing the tag and the stored value.
   return { __tag__: "Box", value: v };
 }
 
+// Define the inverse helper that extracts the stored value from a Box.
 fn unbox(b) {
+  // Grab the `value` field from the passed Box instance.
   return b.value;
 }
 
+// Overload the `+` operator for Box values by unboxing, adding, and reboxing.
 operator + (a: Box, b: Box) -> Box {
+  // Add the inner numbers and return a new Box containing the sum.
   return box(unbox(a) + unbox(b));
 }
+// Overload equality to compare the inner values instead of object identity.
 operator == (x: Box, y: Box) -> Bool {
+  // Two boxes are equal when their contained values are equal.
   return unbox(x) == unbox(y);
 }
 
 // default numerics
+// Compute a simple arithmetic expression using built-in operators.
 define a = 7 + 5 * 2;
+// Compare the result against a threshold and print the Boolean outcome.
 print(a >= 17);       // true
 
 // object overloading
+// Create two boxed numbers to demonstrate the overloaded operators.
 define x = box(10);
 define y = box(32);
+// Use the overloaded `+` to combine the boxes.
 define z = x + y;
+// Print the unboxed sum to confirm the overload behavior.
 print(unbox(z));      // 42
+// Show that distinct boxes with different values are not equal.
 print(x == y);        // false
 
 // heap & tags (new(size))
+// Allocate a new pointer-sized array on the heap.
 define n = 3;
 define p = new(n);
+// Tag the pointer to mark it as an Arr for debugging/runtime checks.
 tag(p, Arr);
+// Populate each slot with incremental numbers.
 heap_set(p, 0, 1);
 heap_set(p, 1, 2);
 heap_set(p, 2, 3);
+// Read back the last element to verify storage.
 print(heap_get(p, 2)); // 3
+// Release the heap allocation to avoid leaks.
 delete(p);
 
 // array literal via new[ ... ]
+// Allocate and initialize an array literal in one expression.
 define q = new[10, 20, 12];
+// Print each element to demonstrate literal indexing.
 print(heap_get(q, 0)); // 10
 print(heap_get(q, 1)); // 20
 print(heap_get(q, 2)); // 12
+// Free the allocated array.
 delete(q);
 
 // strings
+// Declare a number to mix numeric and string output.
 define a2 = 17;
+// Print a greeting string.
 print("Hallo");
+// Print a label followed by the numeric value.
 print("a2 = ");
 print(a2);
 
 // while + if/else + assignments
+// Initialize loop counter and accumulator variables.
 define i = 0;
 define s = 0;
+// Loop five times to demonstrate control flow and mutation.
 while (i < 5) {
+  // Branch when the counter reaches 3 to highlight conditional execution.
   if (i == 3) {
+    // Compute and print a temporary value derived from the counter.
     define tmp = i * 10;
     print(tmp);
   } else {
+    // Otherwise just print the current counter.
     print(i);
   }
+  // Accumulate the running sum of loop counters.
   s = s + i;
+  // Increment the loop counter to progress toward termination.
   i = i + 1;
 }
+// Show the final accumulator value once the loop completes.
 print(s); // 10

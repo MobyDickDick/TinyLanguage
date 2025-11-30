@@ -197,6 +197,8 @@
                     return native_res
                 resolved_name, fn = self._resolve_function(e.name, env)
                 if fn is not None:
+                    if fn.is_async:
+                        return self._start_task(fn, arg_values)
                     return self._invoke_function(fn, arg_values)
                 raise RuntimeError(f"unknown function {e.name}")
             if isinstance(e, Spawn):
@@ -204,18 +206,10 @@
                 if fn is None:
                     raise RuntimeError(f"unknown function {e.name}")
                 arg_values = [self.eval_expr(arg, env) for arg in e.args]
-
-                done = threading.Event()
-                cancelled = threading.Event()
-
-                def run_task() -> None:
-                    self._run_spawn(fn, arg_values, handle)
-
-                handle = SpawnHandle(
-                    thread=threading.Thread(target=run_task), done=done, cancelled=cancelled
-                )
-                handle.thread.start()
-                return handle
+                return self._start_task(fn, arg_values)
+            if isinstance(e, Await):
+                handle = self.eval_expr(e.expr, env)
+                return self.join_handle(handle)
             if isinstance(e, New):
                 return self.__new(int(self.eval_expr(e.size, env)))
             if isinstance(e, NewLit):

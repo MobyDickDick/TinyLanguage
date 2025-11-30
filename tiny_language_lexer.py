@@ -16,6 +16,8 @@ KEYWORDS = {
     "namespace",
     "as",
     "spawn",
+    "async",
+    "await",
     "true",
     "false",
     "and",

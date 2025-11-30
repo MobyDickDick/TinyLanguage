@@ -109,8 +109,14 @@ class Parser:
             name = self.parse_qualified_name()
             body = self.parse_block()
             return Namespace(name, body, pos=kw.pos)
-        if self.tok.kind == "KW" and self.tok.text == "fn":
-            kw = self._eat("KW", "fn")
+        if self.tok.kind == "KW" and self.tok.text in {"fn", "async"}:
+            is_async = False
+            if self.tok.text == "async":
+                self._eat("KW", "async")
+                is_async = True
+                self._eat("KW", "fn")
+            else:
+                self._eat("KW", "fn")
             name_tok = self._eat("NAME")
             params = self.parse_param_list()
             return_type = None
@@ -118,7 +124,14 @@ class Parser:
                 self._eat("OP", ">")
                 return_type = self.parse_type_annotation()
             body = self.parse_block()
-            return Fn(name_tok.text, params, body, return_type=return_type, pos=kw.pos)
+            return Fn(
+                name_tok.text,
+                params,
+                body,
+                return_type=return_type,
+                is_async=is_async,
+                pos=name_tok.pos,
+            )
         if self.tok.kind == "KW" and self.tok.text == "return":
             kw = self._eat("KW", "return")
             expr = self.parse_expr()
@@ -165,8 +178,14 @@ class Parser:
             fields: List[Tuple[str, str]] = []
             methods: List[MethodDef] = []
             while not (self.tok.kind == "SYM" and self.tok.text == "}"):
-                if self.tok.kind == "KW" and self.tok.text == "fn":
-                    self._eat("KW", "fn")
+                if self.tok.kind == "KW" and self.tok.text in {"fn", "async"}:
+                    is_async = False
+                    if self.tok.text == "async":
+                        self._eat("KW", "async")
+                        is_async = True
+                        self._eat("KW", "fn")
+                    else:
+                        self._eat("KW", "fn")
                     mname_tok = self._eat_name_or_kw()
                     params = self.parse_param_list()
                     return_type = None
@@ -175,7 +194,16 @@ class Parser:
                         return_type = self.parse_type_annotation()
                     body = self.parse_block()
                     methods.append(
-                        MethodDef(cname_tok.text, mname_tok.text, params, body, return_type=return_type, pos=mname_tok.pos)
+                        MethodDef(
+                            cname_tok.text,
+                            mname_tok.text,
+                            params,
+                            body,
+                            return_type=return_type,
+                            namespace=cname_tok.text,
+                            is_async=is_async,
+                            pos=mname_tok.pos,
+                        )
                     )
                 else:
                     fname = self._eat("NAME").text
@@ -414,6 +442,10 @@ class Parser:
             inner = self.parse_expr()
             self._eat("SYM", ")")
             return inner
+        if self.tok.kind == "KW" and self.tok.text == "await":
+            kw = self._eat("KW", "await")
+            expr = self.parse_expr()
+            return Await(expr, pos=kw.pos)
         if self.tok.kind == "KW" and self.tok.text == "match":
             return self.parse_match()
         if self.tok.kind == "NUMBER":

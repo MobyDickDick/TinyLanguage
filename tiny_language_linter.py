@@ -17,6 +17,8 @@ def uses_in_expr(e: IR, reads: Dict[str, int]) -> None:
     elif isinstance(e, Spawn):
         for a in e.args:
             uses_in_expr(a, reads)
+    elif isinstance(e, Await):
+        uses_in_expr(e.expr, reads)
     elif isinstance(e, New):
         uses_in_expr(e.size, reads)
     elif isinstance(e, NewLit):

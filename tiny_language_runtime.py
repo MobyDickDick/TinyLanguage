@@ -997,6 +997,20 @@ class Runtime:
         finally:
             handle.done.set()
 
+    def _start_task(self, fn: Fn, args: List[Any]) -> SpawnHandle:
+        done = threading.Event()
+        cancelled = threading.Event()
+        placeholder_thread = threading.Thread(target=lambda: None)
+        handle = SpawnHandle(thread=placeholder_thread, done=done, cancelled=cancelled)
+
+        def run_task() -> None:
+            self._run_spawn(fn, args, handle)
+
+        worker = threading.Thread(target=run_task)
+        handle.thread = worker
+        worker.start()
+        return handle
+
     def _join_status(self, handle: SpawnHandle, *, done: bool) -> Dict[str, Any]:
         return {
             "__tag__": "JoinStatus",

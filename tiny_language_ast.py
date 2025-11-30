@@ -69,6 +69,7 @@ class Fn(IR):
     body: List[IR]
     namespace: Optional[str] = None
     return_type: Optional[str] = None
+    is_async: bool = False
     pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
@@ -80,6 +81,7 @@ class MethodDef(IR):
     body: List[IR]
     return_type: Optional[str] = None
     namespace: Optional[str] = None
+    is_async: bool = False
     pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
@@ -240,6 +242,12 @@ class ClassNew(IR):
 class Spawn(IR):
     name: str
     args: List[IR]
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
+class Await(IR):
+    expr: IR
     pos: SourcePos = field(default_factory=SourcePos.origin)
 
 

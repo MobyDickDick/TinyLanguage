@@ -34,6 +34,16 @@ def uses_in_expr(e: IR, reads: Dict[str, int]) -> None:
     elif isinstance(e, ObjLit):
         for _, v in e.fields:
             uses_in_expr(v, reads)
+    elif isinstance(e, Match):
+        uses_in_expr(e.expr, reads)
+        for case in e.cases:
+            case_reads: Dict[str, int] = {}
+            uses_in_expr(case.body, case_reads)
+            for name, count in case_reads.items():
+                reads[name] = max(reads.get(name, 0), count)
+    elif isinstance(e, VariantCtor):
+        for _, v in e.fields:
+            uses_in_expr(v, reads)
 
 
 def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:

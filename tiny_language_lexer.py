@@ -24,6 +24,8 @@ KEYWORDS = {
     "Null",
     "try",
     "catch",
+    "match",
+    "case",
 }
 
 BUILTINS = {"Collections", "Math", "String", "len", "print"}

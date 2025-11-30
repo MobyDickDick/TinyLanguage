@@ -83,8 +83,7 @@
                 for nm in s.names:
                     env.values[nm] = val[str(nm)]
             elif isinstance(s, TypeDef):
-                # type and class share same registration
-                self.register_type(s.name, s.fields)
+                self.register_type(s.name, s.fields, s.variants)
             elif isinstance(s, ClassDef):
                 self.register_class(s.name, s.fields, s.bases)
                 for m in s.methods:
@@ -243,6 +242,12 @@
                 for k, v in e.fields:
                     obj[k] = self.eval_expr(v, env)
                 return obj
+            if isinstance(e, VariantCtor):
+                init = {k: self.eval_expr(v, env) for k, v in e.fields}
+                return self.instantiate_variant(e.variant, init, type_name=e.type_name, pos=e.pos)
+            if isinstance(e, Match):
+                val = self.eval_expr(e.expr, env)
+                return self.eval_match(e, val, env)
             if isinstance(e, Field):
                 obj = self.eval_expr(e.obj, env)
                 return self.field_get(obj, e.name, pos=e.pos)

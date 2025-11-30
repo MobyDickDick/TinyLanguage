@@ -1,0 +1,18 @@
+// Demonstrates algebraic data types and match expressions
+
+type Shape {
+  Circle { radius: number };
+  Rectangle { width: number, height: number };
+}
+
+fn area(shape) {
+  return match shape {
+    case Circle { radius: r }: 3.14 * r * r;
+    case Rectangle { width: w, height: h }: w * h;
+  };
+}
+
+define c = Circle { radius: 2 };
+define r = Rectangle { width: 3, height: 4 };
+print(area(c));
+print(area(r));

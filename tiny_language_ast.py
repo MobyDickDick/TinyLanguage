@@ -129,9 +129,16 @@ class DestructAssign(IR):
 
 
 @dataclass
-class TypeDef(IR):
+class TypeVariant:
     name: str
     fields: List[Tuple[str, str]]
+
+
+@dataclass
+class TypeDef(IR):
+    name: str
+    fields: Optional[List[Tuple[str, str]]] = None
+    variants: Optional[List[TypeVariant]] = None
     pos: SourcePos = field(default_factory=SourcePos.origin)
 
 
@@ -233,6 +240,45 @@ class ClassNew(IR):
 class Spawn(IR):
     name: str
     args: List[IR]
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
+class MatchCase:
+    pattern: "Pattern"
+    body: IR
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+class Pattern:
+    pos: SourcePos
+
+
+@dataclass
+class VariantPattern(Pattern):
+    variant: str
+    bindings: Dict[str, Optional[str]]
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
+class WildcardPattern(Pattern):
+    name: Optional[str] = None
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
+class Match(IR):
+    expr: IR
+    cases: List[MatchCase]
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
+class VariantCtor(IR):
+    variant: str
+    fields: List[Tuple[str, IR]]
+    type_name: Optional[str] = None
     pos: SourcePos = field(default_factory=SourcePos.origin)
 
 

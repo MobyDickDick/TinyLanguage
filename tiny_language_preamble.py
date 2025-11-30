@@ -18,7 +18,7 @@ except ImportError:  # pragma: no cover - Windows and other platforms without te
     _HAS_TERMIOS = False
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from stdlib import register_stdlib
 

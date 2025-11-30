@@ -171,6 +171,7 @@ class Runtime:
         self.ops: Dict[Tuple[str, Optional[str], Optional[str]], Any] = {}
         self.methods: Dict[Tuple[str, str], MethodDef] = {}
         self.types: Dict[str, Dict[str, Any]] = {}
+        self.variant_to_type: Dict[str, str] = {}
         self.next_ptr = 1
         self.output: List[str] = []
         self.functions: Dict[str, Fn] = {}
@@ -357,6 +358,8 @@ class Runtime:
         return None
 
     def _value_type_name(self, value: Any) -> Optional[str]:
+        if isinstance(value, dict) and "__type__" in value:
+            return str(value.get("__type__"))
         tag = self.__get_tag(value)
         if tag:
             return tag
@@ -738,9 +741,57 @@ class Runtime:
             return
         target_obj[str(key)] = val
 
-    def register_type(self, name: str, fields: List[Tuple[str, str]]) -> None:
+    def register_type(
+        self,
+        name: str,
+        fields: Optional[List[Tuple[str, str]]] = None,
+        variants: Optional[List[TypeVariant]] = None,
+    ) -> None:
+        variant_map: Dict[str, Dict[str, str]] = {}
+        if variants:
+            variant_map = {v.name: dict(v.fields) for v in variants}
+        elif fields is not None:
+            variant_map[name] = dict(fields)
         with self._lock:
-            self.types[str(name)] = {"kind": "record", "fields": dict(fields)}
+            for vname in variant_map:
+                self.variant_to_type[vname] = name
+            self.types[str(name)] = {
+                "kind": "sum" if variants else "product",
+                "fields": variant_map.get(name, {}),
+                "variants": variant_map,
+            }
+
+    def _type_variants(self, name: str) -> Optional[Dict[str, Dict[str, str]]]:
+        with self._lock:
+            tinfo = self.types.get(name)
+        if not tinfo:
+            return None
+        variants = tinfo.get("variants")
+        if variants:
+            return variants
+        if tinfo.get("fields") is not None:
+            return {name: tinfo.get("fields", {})}
+        return None
+
+    def instantiate_variant(
+        self, variant: str, init: Dict[str, Any], *, type_name: Optional[str] = None, pos: Optional[SourcePos] = None
+    ) -> Dict[str, Any]:
+        inferred_type = type_name or self.variant_to_type.get(variant)
+        if inferred_type is None:
+            raise self._error(f"unknown variant {variant}", pos)
+        variants = self._type_variants(inferred_type)
+        if not variants or variant not in variants:
+            raise self._error(f"variant {variant} not allowed for type {inferred_type}", pos)
+        expected_fields = variants.get(variant, {})
+        missing = [f for f in expected_fields if f not in init]
+        extra = [f for f in init if f not in expected_fields]
+        if missing:
+            raise self._error(f"missing field(s) for variant {variant}: {', '.join(missing)}", pos)
+        if extra:
+            raise self._error(f"unknown field(s) for variant {variant}: {', '.join(extra)}", pos)
+        value: Dict[str, Any] = {"__tag__": variant, "__type__": inferred_type}
+        value.update(init)
+        return value
 
     def register_class(self, name: str, fields: List[Tuple[str, str]], bases: Optional[List[str]] = None) -> None:
         base_list = list(bases) if bases is not None else []
@@ -819,6 +870,65 @@ class Runtime:
             fmap = self._resolve_field_storage(obj, fname, owner_hint, name)
             fmap[fname] = val
         return obj
+
+    def eval_match(self, m: Match, value: Any, env: "Environment") -> Any:
+        tag = self.__get_tag(value)
+        if tag is None:
+            raise self._error("match target is not tagged", m.pos)
+
+        type_name = None
+        if isinstance(value, dict):
+            type_name = value.get("__type__") or self.variant_to_type.get(tag)
+        else:
+            type_name = self.variant_to_type.get(tag)
+
+        expected: Optional[Set[str]] = None
+        if type_name:
+            variants = self._type_variants(str(type_name))
+            if variants:
+                expected = set(variants.keys())
+
+        seen: Set[str] = set()
+        has_wildcard = False
+        for case in m.cases:
+            if isinstance(case.pattern, WildcardPattern):
+                has_wildcard = True
+            elif isinstance(case.pattern, VariantPattern):
+                if case.pattern.variant in seen:
+                    raise self._error(f"duplicate case {case.pattern.variant}", case.pattern.pos)
+                seen.add(case.pattern.variant)
+                if expected is not None and case.pattern.variant not in expected:
+                    raise self._error(
+                        f"unexpected case {case.pattern.variant} for type {type_name}", case.pattern.pos
+                    )
+
+        if expected is not None and not has_wildcard:
+            missing = expected - seen
+            if missing:
+                raise self._error(
+                    f"non-exhaustive match; missing cases: {', '.join(sorted(missing))}",
+                    m.pos,
+                    hint="Add the missing branches or a trailing '_' catch-all case.",
+                )
+
+        for case in m.cases:
+            pattern = case.pattern
+            if isinstance(pattern, WildcardPattern):
+                branch_env = Environment(parent=env, namespace=env.namespace)
+                if pattern.name:
+                    branch_env.values[pattern.name] = value
+                return self.eval_expr(case.body, branch_env)
+
+            if isinstance(pattern, VariantPattern) and pattern.variant == tag:
+                branch_env = Environment(parent=env, namespace=env.namespace)
+                for fname, bind in pattern.bindings.items():
+                    if not isinstance(value, dict) or fname not in value:
+                        raise self._error(f"field {fname} missing for variant {pattern.variant}", pattern.pos)
+                    if bind:
+                        branch_env.values[bind] = value[fname]
+                return self.eval_expr(case.body, branch_env)
+
+        raise self._error(f"non-exhaustive match for tag {tag}", m.pos)
 
     def _resolve_function(self, name: str, env: "Environment") -> Tuple[Optional[str], Optional[Fn]]:
         with self._lock:
@@ -1081,7 +1191,15 @@ class Runtime:
             if len(hits) == 1:
                 return hits[0]
             return None
-        return t["fields"].get(field_name)
+        variants = t.get("variants") or ({tname: t.get("fields", {})} if t.get("fields") is not None else {})
+        if owner_hint:
+            return variants.get(owner_hint, {}).get(field_name)
+        if len(variants) == 1:
+            return next(iter(variants.values())).get(field_name)
+        hits = [fields.get(field_name) for fields in variants.values() if field_name in fields]
+        if len(hits) == 1:
+            return hits[0]
+        return None
 
     @staticmethod
     def format_value(val: Any) -> str:

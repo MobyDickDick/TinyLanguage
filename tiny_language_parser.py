@@ -6,6 +6,7 @@ class Parser:
         self.lx = lx
         self.source = source
         self.tok = lx.next_token()
+        self._allow_variant_ctor = True
 
     def _error(self, message: str, pos: SourcePos) -> TinyLangError:
         code, hint = _classify_error(message)
@@ -127,14 +128,31 @@ class Parser:
             kw = self._eat("KW", "type")
             name_tok = self._eat("NAME")
             self._eat("SYM", "{")
-            fields: List[Tuple[str, str]] = []
-            while not self._accept("SYM", "}"):
-                fname = self._eat("NAME").text
-                self._eat("SYM", ":")
-                ftype = self._eat("NAME").text
+            variants: List[TypeVariant] = []
+            # Distinguish between legacy product types (field list) and
+            # sum types (variant list) by peeking for an early ':'.
+            if self.tok.kind == "NAME":
+                first_name_tok = self._eat("NAME")
+                if self._accept("SYM", ":"):
+                    first_type = self._eat_name_or_kw().text
+                    self._eat("SYM", ";")
+                    fields: List[Tuple[str, str]] = [(first_name_tok.text, first_type)]
+                    while not self._accept("SYM", "}"):
+                        fname = self._eat("NAME").text
+                        self._eat("SYM", ":")
+                        ftype = self._eat_name_or_kw().text
+                        self._eat("SYM", ";")
+                        fields.append((fname, ftype))
+                    return TypeDef(name_tok.text, fields=fields, pos=kw.pos)
+                # otherwise treat it as a variant name and fall through
+                variants.append(TypeVariant(first_name_tok.text, self.parse_variant_fields()))
                 self._eat("SYM", ";")
-                fields.append((fname, ftype))
-            return TypeDef(name_tok.text, fields, pos=kw.pos)
+            while not self._accept("SYM", "}"):
+                vname = self._eat("NAME").text
+                vfields = self.parse_variant_fields()
+                self._eat("SYM", ";")
+                variants.append(TypeVariant(vname, vfields))
+            return TypeDef(name_tok.text, variants=variants, pos=kw.pos)
         if self.tok.kind == "KW" and self.tok.text == "class":
             kw = self._eat("KW", "class")
             cname_tok = self._eat("NAME")
@@ -342,11 +360,56 @@ class Parser:
             break
         return expr
 
+    def parse_match(self) -> Match:
+        kw = self._eat("KW", "match")
+        prev_allow = self._allow_variant_ctor
+        self._allow_variant_ctor = False
+        try:
+            target = self.parse_expr()
+        finally:
+            self._allow_variant_ctor = prev_allow
+        self._eat("SYM", "{")
+        cases: List[MatchCase] = []
+        while not self._accept("SYM", "}"):
+            if not (self.tok.kind == "KW" and self.tok.text == "case"):
+                raise self._error("expected case", self.tok.pos)
+            self._eat("KW", "case")
+            pattern = self.parse_pattern()
+            self._eat("SYM", ":")
+            body = self.parse_expr()
+            self._eat("SYM", ";")
+            cases.append(MatchCase(pattern, body, pos=pattern.pos))
+        return Match(target, cases, pos=kw.pos)
+
+    def parse_pattern(self) -> Pattern:
+        if self.tok.kind == "NAME" and self.tok.text == "_":
+            tok = self._eat("NAME")
+            return WildcardPattern(name=None, pos=tok.pos)
+        if self.tok.kind != "NAME":
+            raise self._error("expected pattern", self.tok.pos)
+        vname_tok = self._eat("NAME")
+        bindings: Dict[str, Optional[str]] = {}
+        if self._accept("SYM", "{"):
+            while not self._accept("SYM", "}"):
+                fname = self._eat("NAME").text
+                bind_name: Optional[str] = fname
+                if self._accept("SYM", ":"):
+                    bind_tok = self._eat_name_or_kw()
+                    bind_name = None if bind_tok.text == "_" else bind_tok.text
+                bindings[fname] = bind_name
+                if self._accept("SYM", "}"):
+                    break
+                if not (self._accept("SYM", ";") or self._accept("SYM", ",")):
+                    raise self._error("expected field separator", self.tok.pos)
+        return VariantPattern(vname_tok.text, bindings, pos=vname_tok.pos)
+
     def parse_primary(self) -> IR:
         if self._accept("SYM", "("):
             inner = self.parse_expr()
             self._eat("SYM", ")")
             return inner
+        if self.tok.kind == "KW" and self.tok.text == "match":
+            return self.parse_match()
         if self.tok.kind == "NUMBER":
             t = self._eat("NUMBER")
             return Num(t.text, pos=t.pos)
@@ -394,6 +457,9 @@ class Parser:
                     if not (self._accept("SYM", ";") or self._accept("SYM", ",")):
                         raise self._error("expected field separator", self.tok.pos)
                 return ClassNew(cname, init, pos=name_tok.pos)
+            if self._allow_variant_ctor and self.tok.kind == "SYM" and self.tok.text == "{":
+                fields = self.parse_variant_init_fields()
+                return VariantCtor(name, fields, pos=name_tok.pos)
             return Var(name, pos=name_tok.pos)
         if self.tok.kind == "SYM" and self.tok.text == "{":
             start_tok = self._eat("SYM", "{")
@@ -416,6 +482,34 @@ class Parser:
             sub = self._eat("NAME").text
             return f"{name}.{sub}"
         return name
+
+    def parse_variant_fields(self) -> List[Tuple[str, str]]:
+        fields: List[Tuple[str, str]] = []
+        if self._accept("SYM", "{"):
+            while not self._accept("SYM", "}"):
+                fname = self._eat("NAME").text
+                self._eat("SYM", ":")
+                ftype = self._eat_name_or_kw().text
+                fields.append((fname, ftype))
+                if self._accept("SYM", "}"):
+                    break
+                if not (self._accept("SYM", ";") or self._accept("SYM", ",")):
+                    raise self._error("expected field separator", self.tok.pos)
+        return fields
+
+    def parse_variant_init_fields(self) -> List[Tuple[str, IR]]:
+        start_tok = self._eat("SYM", "{")
+        fields: List[Tuple[str, IR]] = []
+        while not self._accept("SYM", "}"):
+            fname = self._eat("NAME").text
+            self._eat("SYM", ":")
+            fexpr = self.parse_expr()
+            fields.append((fname, fexpr))
+            if self._accept("SYM", "}"):
+                break
+            if not (self._accept("SYM", ";") or self._accept("SYM", ",")):
+                raise self._error("expected field separator", self.tok.pos)
+        return fields
 
     def parse_module_path(self) -> str:
         prefix = ""

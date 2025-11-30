@@ -663,7 +663,7 @@ def test_typedef_simple_record():
     out = run_tiny(src)
     assert out == "number\nstring\n"
 def test_rosetta_fibonacci_program():
-    program = pathlib.Path(__file__).resolve().parents[1] / "rosetta_fibonacci.tiny"
+    program = pathlib.Path(__file__).resolve().parents[1] / "src_tiny" / "rosetta_fibonacci.tiny"
 
     out = run_file(str(program))
 

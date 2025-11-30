@@ -52,7 +52,7 @@ print(Math.inc(4));
 - **Basic exhaustiveness checks**: Annotated functions must return a value on all paths. Missing `return` statements trigger `[E010] not all paths ... return a value ...` with hints about missing branch returns.
 
 ### Classes
-A minimal example with a constructor function and a method. The output was verified via `python tiny_language.py class_demo.tiny`.
+A minimal example with a constructor function and a method. The output was verified via `python tiny_language.py src_tiny/class_demo.tiny`.
 
 ```tiny
 class Greeter {
@@ -75,10 +75,10 @@ Expected output:
 Hello, TinyLanguage!
 ```
 
-See [`class_demo.tiny`](class_demo.tiny) for the full program.
+See [`class_demo.tiny`](src_tiny/class_demo.tiny) for the full program.
 
 ### Operator overloading
-A `Point` type overrides `+` and `==`. Verified via `python tiny_language.py operator_overloading_demo.tiny`.
+A `Point` type overrides `+` and `==`. Verified via `python tiny_language.py src_tiny/operator_overloading_demo.tiny`.
 
 ```tiny
 class Point {
@@ -106,10 +106,10 @@ Expected output:
 false
 ```
 
-Full program: [`operator_overloading_demo.tiny`](operator_overloading_demo.tiny).
+Full program: [`operator_overloading_demo.tiny`](src_tiny/operator_overloading_demo.tiny).
 
 ### Namespaces
-Namespaces help group related functions. Run with `python tiny_language.py namespace_demo.tiny`.
+Namespaces help group related functions. Run with `python tiny_language.py src_tiny/namespace_demo.tiny`.
 
 ```tiny
 namespace Tools {
@@ -129,12 +129,12 @@ Expected output:
 #done
 ```
 
-More context in [`namespace_demo.tiny`](namespace_demo.tiny).
+More context in [`namespace_demo.tiny`](src_tiny/namespace_demo.tiny).
 
 ### Pattern matching and algebraic data types
 Define tagged unions with `type` and handle variants via `match` with named bindings or wildcards. Constructors are available as
 functions, so `Circle { radius: 2 }` builds a `Shape` value. Match expressions must be exhaustive: missing cases or unknown
-variants raise descriptive errors. Example (see [`match_demo.tiny`](match_demo.tiny)):
+variants raise descriptive errors. Example (see [`match_demo.tiny`](src_tiny/match_demo.tiny)):
 
 ```tiny
 type Shape {
@@ -167,7 +167,7 @@ Expected output:
 - **Caching**: Each module file executes only once per runtime; repeated imports return the same namespace reference and avoid duplicate side effects.
 
 ### Concurrency
-`spawn` and `join` mix tasks and results. Output from `python tiny_language.py concurrency_demo.tiny`:
+`spawn` and `join` mix tasks and results. Output from `python tiny_language.py src_tiny/concurrency_demo.tiny`:
 
 ```tiny
 fn label(prefix, word) { return prefix + "=" + word; }
@@ -189,10 +189,10 @@ etiketten
 erstes=spawn | zweites=join | drittes=string | viertes=interop
 ```
 
-The full version with another split/join lives in [`concurrency_demo.tiny`](concurrency_demo.tiny).
+The full version with another split/join lives in [`concurrency_demo.tiny`](src_tiny/concurrency_demo.tiny).
 
 ### Heap/pointer operations
-`new[...]` allocates arrays, `heap_get`/`heap_set` read and write, `delete` cleans up. Output from `python tiny_language.py heap_pointer_demo.tiny`.
+`new[...]` allocates arrays, `heap_get`/`heap_set` read and write, `delete` cleans up. Output from `python tiny_language.py src_tiny/heap_pointer_demo.tiny`.
 
 ```tiny
 define pointer = new[1, 2, 3];
@@ -209,7 +209,7 @@ Expected output:
 5
 ```
 
-See [`heap_pointer_demo.tiny`](heap_pointer_demo.tiny) for more examples and failure scenarios.
+See [`heap_pointer_demo.tiny`](src_tiny/heap_pointer_demo.tiny) for more examples and failure scenarios.
 
 ### Standard library
 The interpreter registers the built-in stdlib before running any program. Namespaces include:
@@ -219,21 +219,21 @@ The interpreter registers the built-in stdlib before running any program. Namesp
 - **Collections**: `Collections.len(x)` measures the length of heap pointers or Python lists, `Collections.push(target, value)` appends and returns the new length, and `Collections.pop(target)` removes the last element or raises on empty collections. New helpers `Collections.slice(target, start, end)` and `Collections.contains(target, value)` support slicing and lookups: `define mid = Collections.slice(new[1, 2, 3], 1, 3); print(Collections.contains(mid, 2));` prints `true`. There is also a dedicated `Map` API (`Map.new`, `Map.set`, `Map.get`, `Map.keys`, etc.), a `Set` namespace (`Set.add`, `Set.delete`, `Set.to_list`), and doubly linked queues via `Deque` (`Deque.push_left/right`, `Deque.pop_left/right`, `Deque.peek_left/right`).
 - **Random**: Random helpers `Random.random()`, `Random.randint(lower, upper)`, `Random.choice(seq)`, and `Random.shuffle(seq)` for quick sampling.
 - **File/JSON**: `File.read`/`File.write`/`File.exists`/`File.remove` handle UTF-8 files. `JSON.parse(text)` converts strings to lists/maps/numerics/null, and `JSON.stringify(value)` builds a JSON string from compatible structures.
-Detailed notes live in [`docs/stdlib_extensions.md`](docs/stdlib_extensions.md), and ready-made snippets can be tried via [`stdlib_collections_demo.tiny`](stdlib_collections_demo.tiny) or [`stdlib_io_random_demo.tiny`](stdlib_io_random_demo.tiny).
+Detailed notes live in [`docs/stdlib_extensions.md`](docs/stdlib_extensions.md), and ready-made snippets can be tried via [`stdlib_collections_demo.tiny`](src_tiny/stdlib_collections_demo.tiny) or [`stdlib_io_random_demo.tiny`](src_tiny/stdlib_io_random_demo.tiny).
 
 ## Example programs
-- [`demo.tiny`](demo.tiny): Small showcase for variables, loops, functions, classes, and heap operations. Runs sequentially and prints intermediate results.
-- [`rosetta_fibonacci.tiny`](rosetta_fibonacci.tiny): Classic Fibonacci implementation demonstrating function declarations and simple loops. Prints the first 10 Fibonacci numbers.
-- [`all_features.tiny`](all_features.tiny): Comprehensive feature tour with arrays, classes, and operator overloading—handy for exploring the language end-to-end.
-- [`class_demo.tiny`](class_demo.tiny): Minimal constructor + method that prints a personalized greeting.
-- [`operator_overloading_demo.tiny`](operator_overloading_demo.tiny): Lean point class that overrides `+` and `==` and prints intermediate results.
-- [`number_class.tiny`](number_class.tiny): Demonstrates the `Number` class and the overloaded `+` operator; instantiates objects, calls methods, and prints the result.
-- [`number_intervall.tiny`](number_intervall.tiny): Example for numeric interval calculations and bounds checking.
-- [`namespace_demo.tiny`](namespace_demo.tiny): A small `Tools` namespace with `double` and `label` helpers.
-- [`concurrency_demo.tiny`](concurrency_demo.tiny): Starts multiple tasks with `spawn`, collects them via `join`, and combines them with `String.split`/`String.join` into a single output.
-- [`heap_pointer_demo.tiny`](heap_pointer_demo.tiny): Safe heap handling with `new`, `heap_get`/`heap_set`, and `delete`, plus typical error messages for out-of-bounds or field access mistakes.
-- [`stdlib_collections_demo.tiny`](stdlib_collections_demo.tiny): Map/Set/Deque examples from the Collections API.
-- [`stdlib_io_random_demo.tiny`](stdlib_io_random_demo.tiny): Random helpers plus JSON parsing and file I/O working together.
+- [`demo.tiny`](src_tiny/demo.tiny): Small showcase for variables, loops, functions, classes, and heap operations. Runs sequentially and prints intermediate results.
+- [`rosetta_fibonacci.tiny`](src_tiny/rosetta_fibonacci.tiny): Classic Fibonacci implementation demonstrating function declarations and simple loops. Prints the first 10 Fibonacci numbers.
+- [`all_features.tiny`](src_tiny/all_features.tiny): Comprehensive feature tour with arrays, classes, and operator overloading—handy for exploring the language end-to-end.
+- [`class_demo.tiny`](src_tiny/class_demo.tiny): Minimal constructor + method that prints a personalized greeting.
+- [`operator_overloading_demo.tiny`](src_tiny/operator_overloading_demo.tiny): Lean point class that overrides `+` and `==` and prints intermediate results.
+- [`number_class.tiny`](src_tiny/number_class.tiny): Demonstrates the `Number` class and the overloaded `+` operator; instantiates objects, calls methods, and prints the result.
+- [`number_intervall.tiny`](src_tiny/number_intervall.tiny): Example for numeric interval calculations and bounds checking.
+- [`namespace_demo.tiny`](src_tiny/namespace_demo.tiny): A small `Tools` namespace with `double` and `label` helpers.
+- [`concurrency_demo.tiny`](src_tiny/concurrency_demo.tiny): Starts multiple tasks with `spawn`, collects them via `join`, and combines them with `String.split`/`String.join` into a single output.
+- [`heap_pointer_demo.tiny`](src_tiny/heap_pointer_demo.tiny): Safe heap handling with `new`, `heap_get`/`heap_set`, and `delete`, plus typical error messages for out-of-bounds or field access mistakes.
+- [`stdlib_collections_demo.tiny`](src_tiny/stdlib_collections_demo.tiny): Map/Set/Deque examples from the Collections API.
+- [`stdlib_io_random_demo.tiny`](src_tiny/stdlib_io_random_demo.tiny): Random helpers plus JSON parsing and file I/O working together.
 
 ## Common errors
 - **Unused bindings**: Unused local variables or parameters raise errors (e.g., "unused parameter(s) in function f: b", "unused local binding(s): t").
@@ -249,7 +249,7 @@ Detailed notes live in [`docs/stdlib_extensions.md`](docs/stdlib_extensions.md),
 - **Heap/field access**: Out-of-bounds or missing fields raise runtime errors (e.g., "heap access error: index 5 out of range ...", "unknown field missing"). `errorMessage` stores the last runtime error.
 
 ## Running programs and tests
-- **Run a program**: `python tiny_language.py <file.tiny>` executes a TinyLanguage program and exits with status 0 on success. Example: `python tiny_language.py demo.tiny`.
+- **Run a program**: `python tiny_language.py <file.tiny>` executes a TinyLanguage program and exits with status 0 on success. Example: `python tiny_language.py src_tiny/demo.tiny`.
 - **Test suite**: `python -m pytest` runs all tests. Target individual files with commands like `python -m pytest tests/test_tiny_language.py -k class`.
 
 ### Optional type hints

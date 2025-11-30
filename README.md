@@ -2,6 +2,11 @@
 
 TinyLanguage is a small Julia-inspired language with a Python interpreter. This README provides a StackEdit-style Markdown overview: syntax highlights, a compact tutorial, pointers to examples, common error messages, and the most important run/test commands.
 
+## Transpiler-Ausbau (Aufgabenliste)
+1. **Gemeinsame IR erweitern**: Neue Statement-/Expression-Typen anlegen (z. B. Kontrollfluss wie `IfElse` und `While`) und die Hilfsfunktionen in [`tiny_language_transpilers.py`](tiny_language_transpilers.py) vorbereiten.
+2. **Sprach-Transpiler anpassen**: Parser/Renderer in `PythonTranspiler`, `JuliaTranspiler`, `JavaScriptTranspiler` und `CppTranspiler` so erweitern, dass die neuen IR-Knoten roundtrip-fähig werden.
+3. **Tests ergänzen**: Roundtrip-Tests für jedes neue Sprachfeature hinzufügen (Quelle → IR → Quelle) sowie Negativtests für nicht unterstützte Konstrukte.
+
 ## Syntax and Features
 
 ### Mini tutorial: variables, control flow, and functions

@@ -10,7 +10,9 @@ transpiler implements bidirectional conversion against that IR.
 The prototypes intentionally keep the supported syntax small so that we
 can iterate quickly while adding more constructs later. When a construct
 is not supported, the transpilers raise ``ValueError`` with descriptive
-messages so callers can fail fast and extend the IR as needed.
+messages so callers can fail fast and extend the IR as needed. The shared
+IR already includes placeholders for common control-flow building blocks
+so language frontends can grow into them gradually.
 """
 
 from __future__ import annotations
@@ -71,6 +73,19 @@ class Return(Statement):
 @dataclass(eq=True)
 class ExprStmt(Statement):
     expr: Expression
+
+
+@dataclass(eq=True)
+class IfElse(Statement):
+    condition: Expression
+    then_body: List[Statement]
+    else_body: List[Statement] = field(default_factory=list)
+
+
+@dataclass(eq=True)
+class While(Statement):
+    condition: Expression
+    body: List[Statement]
 
 
 @dataclass(eq=True)
@@ -155,6 +170,10 @@ def _parse_expression(expr_text: str) -> Expression:
     return _expr_from_ast(node)
 
 
+def _indent_lines(lines: Iterable[str], indent: str) -> List[str]:
+    return [f"{indent}{line}" for line in lines]
+
+
 def _render_block(statements: Sequence[Statement], render_expr, line_suffix: str = "") -> List[str]:
     rendered: List[str] = []
     for stmt in statements:
@@ -164,6 +183,10 @@ def _render_block(statements: Sequence[Statement], render_expr, line_suffix: str
             rendered.append(f"return {render_expr(stmt.expr)}{line_suffix}")
         elif isinstance(stmt, ExprStmt):
             rendered.append(f"{render_expr(stmt.expr)}{line_suffix}")
+        elif isinstance(stmt, IfElse):
+            raise ValueError("If/else rendering requires language-specific handling (not yet implemented).")
+        elif isinstance(stmt, While):
+            raise ValueError("While-loop rendering requires language-specific handling (not yet implemented).")
         else:
             raise ValueError(f"Unsupported statement: {stmt}")
     return rendered

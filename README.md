@@ -9,6 +9,11 @@ For interoperability guidance, see the cross-language compatibility notes in [`d
 - [x] **Update language transpilers**: Ziehe die Parser/Renderer der `PythonTranspiler`, `JuliaTranspiler`, `JavaScriptTranspiler` und `CppTranspiler` nach, damit die neuen IR-Knoten korrekt hin- und zurückübersetzt werden.
 - [x] **Add tests**: Erweitere die Round-Trip-Tests (Quelle → IR → Quelle) für jede neue Sprachfunktion und ergänze Negativtests für nicht unterstützte Konstrukte.
 
+## Offene Aufgaben
+- **Native-Compiler-Prototyp evaluieren**: Einen alternativen Backend-Pfad implementieren, der aus dem vorhandenen AST Bytecode oder native IR erzeugt und über eine kleine VM lauffähig ist. Iterativ über Smoke-Tests (Arithmetik, Branching, Funktionen) mit dem Interpreter abgleichen.
+- **Python-Interop-Demos ausbauen**: Zusätzliche `.tiny`-Programme bereitstellen, die die Anleitung in [`docs/python_interop.md`](docs/python_interop.md) konkret durchspielen, inklusive How-to-Run-Hinweisen und Tests.
+- **Language-Server-Workflows dokumentieren**: Die API aus [`src/language_server.py`](src/language_server.py) mit Beispiel-Requests/-Responses beschreiben und mit kleinen CLI-Demos sowie Tests absichern.
+
 ## Syntax and Features
 
 ### Mini tutorial: variables, control flow, and functions

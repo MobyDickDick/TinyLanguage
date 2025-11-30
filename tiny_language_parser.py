@@ -116,7 +116,7 @@ class Parser:
             return_type = None
             if self._accept("OP", "-"):
                 self._eat("OP", ">")
-                return_type = self._eat_name_or_kw().text
+                return_type = self.parse_type_annotation()
             body = self.parse_block()
             return Fn(name_tok.text, params, body, return_type=return_type, pos=kw.pos)
         if self.tok.kind == "KW" and self.tok.text == "return":
@@ -172,7 +172,7 @@ class Parser:
                     return_type = None
                     if self._accept("OP", "-"):
                         self._eat("OP", ">")
-                        return_type = self._eat_name_or_kw().text
+                        return_type = self.parse_type_annotation()
                     body = self.parse_block()
                     methods.append(
                         MethodDef(cname_tok.text, mname_tok.text, params, body, return_type=return_type, pos=mname_tok.pos)
@@ -239,7 +239,7 @@ class Parser:
         name_tok = self._eat("NAME")
         annotation = None
         if self._accept("SYM", ":"):
-            annotation = self._eat_name_or_kw().text
+            annotation = self.parse_type_annotation()
         return Param(name_tok.text, annotation)
 
     def parse_param_list(self) -> List[Param]:
@@ -251,6 +251,12 @@ class Parser:
                 params.append(self.parse_param())
         self._eat("SYM", ")")
         return params
+
+    def parse_type_annotation(self) -> str:
+        name = self._eat_name_or_kw().text
+        if self._accept("SYM", "?"):
+            return f"{name}?"
+        return name
 
     def parse_arg_list(self) -> List[IR]:
         self._eat("SYM", "(")

@@ -85,6 +85,8 @@ def run_file(path: str) -> str:
 def _format_error_for_source(source: str, err: TinyLangError) -> str:
     if "(line " in err.message:
         return err.message
+    if err.span is not None:
+        return format_error(source, err.span, err.message)
     return format_error(source, err.pos, err.message)
 
 

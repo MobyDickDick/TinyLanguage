@@ -258,6 +258,7 @@ class TinyLangError(Exception):
     code: str = "E000"
     hint: Optional[str] = None
     stack: Tuple[StackFrame, ...] = field(default_factory=tuple)
+    span: Optional[SourceSpan] = None
 
     def __str__(self) -> str:  # pragma: no cover - Exception already stringifies message
         return self.message
@@ -283,13 +284,26 @@ def _line_info(source: str, pos: Union[int, SourcePos, SourceSpan]) -> Tuple[int
 def format_error(
     source: str, pos: Union[int, SourcePos, SourceSpan], message: str, *, code: str = "E000", hint: Optional[str] = None
 ) -> str:
-    if isinstance(pos, SourceSpan):
-        err = TinyError(kind=code, msg=message, span=pos)
-        rendered = format_error_with_span(err, source)
-        if hint:
-            rendered += f"\n  Hint: {hint}"
-        return rendered
     lines = source.splitlines()
+    if isinstance(pos, SourceSpan):
+        start_line, start_col, _ = _line_info(source, pos.start)
+        stop_line, stop_col, _ = _line_info(source, pos.stop)
+        end_col = stop_col if stop_line == start_line else start_col
+        gutter_width = len(str(max(1, len(lines))))
+        start = max(1, start_line - 1)
+        end = min(len(lines), start_line + 1) if lines else start_line
+        context: List[str] = []
+        for ln in range(start, end + 1):
+            prefix = ">" if ln == start_line else " "
+            text = lines[ln - 1] if 0 <= ln - 1 < len(lines) else ""
+            context.append(f"{prefix} {ln:>{gutter_width}} | {text}")
+        underline = " " * (start_col - 1) + "^" * max(end_col - start_col + 1, 1)
+        pointer_line = f"  {' ' * gutter_width} | {underline}"
+        header = f"[{code}] {message} (line {start_line}, col {start_col})"
+        lines_out = [header] + context + [pointer_line]
+        if hint:
+            lines_out.append(f"  Hint: {hint}")
+        return "\n".join(lines_out)
     line, col, _ = _line_info(source, pos)
     gutter_width = len(str(max(1, len(lines))))
     start = max(1, line - 1)

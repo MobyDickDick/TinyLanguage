@@ -23,3 +23,52 @@ This extension adds TinyLanguage editing support to Visual Studio Code:
 - **TinyLanguage: Refresh Diagnostics** (`tinylanguage.refreshDiagnostics`): Manually recomputes diagnostics for the active file.
 
 Diagnostics and formatting rely on the helper script in `vscode-extension/python/vscode_helpers.py`, which imports `formatter.py` and `language_server.py`. If the sources live outside the workspace folder, adjust the `TinyLanguage › Python Path` and `TinyLanguage › Runtime Path` settings accordingly.
+
+## Roadmap / TODO
+
+Dieser Abschnitt sammelt anstehende Aufgaben für TinyLanguage.  
+Grob unterteilt in: Frontend/Sprache, Typdisziplin, Runtime und Tooling.  
+Der „nativeCompiler“ wird separat geführt.
+
+### 1. Frontend / Sprache
+
+- [ ] **Fehlerpositionen und Fehlermeldungen verbessern**
+  - Tokens und AST-Knoten sollen konsistent Zeilen- und Spalteninformation tragen.
+  - Einheitlicher Fehlertyp mit optionalem `SourceSpan`, der bei Ausgabe die betroffene Zeile und eine Unterstreichung zeigt.
+  - Parser und Linter sollen diesen Fehlertyp verwenden.
+
+- [ ] **Linter verfeinern**
+  - „must use“-Regel über Kontrollfluss: eine Variable gilt nur als benutzt, wenn sie auf allen relevanten Pfaden verwendet wird.
+  - Unreachable-Code-Warnungen (z.B. Code nach `return`).
+
+### 2. Typdisziplin
+
+- [ ] **Keine impliziten Typänderungen**
+  - Nach `define i = 5;` darf `i = 0.5;` ein Fehler sein (oder explizit über einen anderen Weg erzwungen werden).
+  - Typregeln einheitlich in Ausdrücken, Funktionen und Heap-Operationen anwenden.
+- [ ] (Optional) Einfache Typinferenz
+  - Z.B. `define x = 0;` ⇒ `x` ist vom Typ `number`, ohne explizite Annotation.
+
+### 3. Runtime
+
+- [ ] **Heap-API robuster machen**
+  - Präzisere Fehlermeldungen für ungültige Pointer, Out-of-Bounds, doppelte `delete` usw.
+  - Einfaches Leak-Tracking (z.B. für Tests).
+- [ ] **Test-Suite erweitern**
+  - Randfälle: verschachtelte Arrays, viele `new/delete`, tiefe Rekursion, Fehlerfälle der Heap-API.
+
+### 4. Tooling
+
+- [ ] **CLI-Wrapper**
+  - Ein kleines Kommandozeilentool, das TinyLanguage-Dateien kompiliert/ausführt (z.B. `julia --project=. tiny_cli.jl source.tiny`).
+- [ ] **Sprache dokumentieren**
+  - Kurze, stabile Sprachspezifikation (Syntax, Typregeln, „must use“-Regeln), damit das Verhalten klar bleibt.
+
+### 5. Native Compiler
+
+Der native Compiler wird in einem eigenen Branch (`nativeCompiler`) entwickelt.
+
+- [ ] Eigenes Native-IR definieren (stack-/registerbasiert).
+- [ ] Kleine VM, die dieses IR ausführt (Interpreter in Julia).
+- [ ] Lowering: AST → Native-IR für Ausdrücke, Statements, Funktionen, Heap-API.
+- [ ] Optional: Backend auf LLVM oder „Plain Julia“ ohne Runtime-Wrapper zur Erzeugung nativen Codes.

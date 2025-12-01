@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# TinyLanguage launcher to run .tiny programs without typing the Python interpreter explicitly.
+set -euo pipefail
+
+# Resolve repository root even when invoked via a symlink.
+ROOT_DIR="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_BIN="${PYTHON:-python3}"
+
+exec "${PYTHON_BIN}" "${ROOT_DIR}/src/tiny_language.py" "$@"

@@ -256,7 +256,8 @@ Detailed notes live in [`docs/stdlib_extensions.md`](docs/stdlib_extensions.md),
 - **Heap/field access**: Out-of-bounds or missing fields raise runtime errors (e.g., "heap access error: index 5 out of range ...", "unknown field missing"). `errorMessage` stores the last runtime error.
 
 ## Running programs and tests
-- **Run a program**: `python tiny_language.py <file.tiny>` executes a TinyLanguage program and exits with status 0 on success. Example: `python tiny_language.py src_tiny/demo.tiny`.
+- **Run a program**: `./tiny_language <file.tiny>` executes a TinyLanguage program and exits with status 0 on success. Example: `./tiny_language src_tiny/demo.tiny`.
+  - If you prefer per-file executability, add a shebang such as `#!/usr/bin/env -S ./tiny_language` to the top of your `.tiny` file, mark it executable (`chmod +x your_program.tiny`), and run it directly with `./your_program.tiny`.
 - **Test suite**: `python -m pytest` runs all tests. Target individual files with commands like `python -m pytest tests/test_tiny_language.py -k class`.
 
 ### Optional type hints

@@ -83,3 +83,16 @@ This draft describes how TinyLanguage can interact safely with Python functions 
   define iso = Python.call("datetime", "datetime.isoformat", new[now]);
   print(iso);
   ```
+
+## Demo programmes zum Ausprobieren
+
+Die `.tiny`-Beispiele im Repository spiegeln die oben beschriebenen Flows wider und können direkt ausgeführt werden:
+
+- `src_tiny/python_math_demo.tiny`: lädt `math` mit einer Allowlist, ruft `sqrt`/`isfinite` auf und liest die Konstante `tau`.
+- `src_tiny/python_json_demo.tiny`: kombiniert einen direkten `Python.call` auf `os.getcwd` mit JSON-`loads`/`dumps` und zeigt, wie Listen aus Python als Heap-Pointer zurückkommen.
+
+Aufruf jeweils mit:
+
+```
+python src/tiny_language.py <pfad_zur_datei.tiny>
+```

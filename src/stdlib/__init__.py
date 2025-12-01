@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import json
 import math
 import random
@@ -62,6 +63,9 @@ class _StdLibRegistrar:
         self.runtime = runtime
         self.env = env
         self.namespace_ref_cls = namespace_ref_cls
+        self._python_namespaces: Dict[str, set[str]] = {}
+        self._python_pointers: set[int] = set()
+        self._python_scalar_ints: set[int] = set()
 
     def install(self) -> None:
         self._ensure_namespace("Math")
@@ -75,6 +79,7 @@ class _StdLibRegistrar:
         self._ensure_namespace("JSON")
         self._ensure_namespace("Async")
         self._ensure_namespace("Result")
+        self._ensure_namespace("Python")
 
         self.runtime.register_type(
             "Result",
@@ -166,6 +171,10 @@ class _StdLibRegistrar:
         self.runtime.register_native("is_ok", self._result_is_ok, namespace="Result")
         self.runtime.register_native("is_err", self._result_is_err, namespace="Result")
         self.runtime.register_native("unwrap_or", self._result_unwrap_or, namespace="Result")
+
+        self.runtime.register_native("import_module", self._python_import_module, namespace="Python")
+        self.runtime.register_native("call", self._python_call, namespace="Python")
+        self.runtime.register_native("fn", self._python_fn, namespace="Python")
 
     def _ensure_namespace(self, name: str) -> None:
         if name not in self.env.values:
@@ -854,6 +863,190 @@ class _StdLibRegistrar:
         if self._result_is_err(value):
             return default
         return value
+
+    # --- Python interop helpers ---
+    def _python_import_module(self, module: str, allow: Any | None = None) -> "NamespaceRef":
+        module_name = str(module)
+        allowed = self._python_normalize_allowlist(allow)
+        py_module = importlib.import_module(module_name)
+        namespace = f"Python.{module_name}"
+
+        existing = self._python_namespaces.get(namespace, set())
+        requested = set(allowed or [])
+        missing = requested - existing
+
+        if missing:
+            self._python_namespaces[namespace] = existing | requested
+        else:
+            self._python_namespaces.setdefault(namespace, existing)
+
+        # Lazily create an environment so constants can be accessed via field lookups.
+        from tiny_language import Environment  # Imported lazily to avoid circular imports
+
+        env = self.runtime.namespace_envs.get(namespace)
+        if env is None:
+            env = Environment(parent=None, namespace=namespace)
+            self.runtime.namespace_envs[namespace] = env
+
+        for name in missing:
+            attr = getattr(py_module, name, None)
+            if callable(attr):
+                self.runtime.register_native(name, self._python_make_callable(py_module, name), namespace=namespace)
+            else:
+                env.values[name] = self._python_from_host(attr)
+
+        return self.namespace_ref_cls(self.runtime, namespace)
+
+    def _python_call(self, module: str, attr: str, args: Any | None = None, opts: Any | None = None) -> Any:
+        allow = self._python_normalize_allowlist(opts)
+        allowed_attrs = set(allow) if allow is not None else None
+
+        py_module = importlib.import_module(str(module))
+        attr_name = str(attr)
+        if allowed_attrs is not None and attr_name not in allowed_attrs:
+            raise RuntimeError(f"[PYDENY] attribute {attr_name} not allowed")
+
+        func = getattr(py_module, attr_name, None)
+        if not callable(func):
+            raise RuntimeError(f"[PYERR] attribute {attr_name} is not callable")
+
+        arg_list = self._python_normalize_args(args)
+        py_args = [self._python_to_host(val) for val in arg_list]
+        return self._python_from_host(func(*py_args))
+
+    def _python_fn(self, module: str, attr: str, opts: Any | None = None) -> str:
+        alias = attr
+        if isinstance(opts, dict) and "as" in opts:
+            alias = str(opts["as"])
+
+        allow = self._python_normalize_allowlist(opts)
+        py_module = importlib.import_module(str(module))
+        attr_name = str(attr)
+        if allow is not None and attr_name not in set(allow):
+            raise RuntimeError(f"[PYDENY] attribute {attr_name} not allowed")
+
+        func = getattr(py_module, attr_name, None)
+        if not callable(func):
+            raise RuntimeError(f"[PYERR] attribute {attr_name} is not callable")
+
+        self.runtime.register_native(alias, self._python_make_callable(py_module, attr_name))
+        return alias
+
+    def _python_make_callable(self, module: Any, attr: str):
+        def _callable(*args: Any) -> Any:
+            py_args = [self._python_to_host(val) for val in args]
+            func = getattr(module, attr)
+            return self._python_from_host(func(*py_args))
+
+        return _callable
+
+    def _python_normalize_allowlist(self, value: Any | None) -> list[str] | None:
+        allow_source = value
+        if isinstance(value, dict):
+            allow_source = value.get("allow")
+        if allow_source is None:
+            return None
+        if isinstance(allow_source, int) and allow_source in self.runtime.heap:
+            allow_source = self.runtime.heap[allow_source]
+        try:
+            return [str(v) for v in list(allow_source)]
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError("[PYERR] allowlist must be iterable") from exc
+
+    def _python_normalize_args(self, args: Any | None) -> list[Any]:
+        if args is None:
+            return []
+        if isinstance(args, int) and args in self.runtime.heap:
+            seq = self.runtime.heap[args]
+            if isinstance(seq, list):
+                return list(seq)
+        if isinstance(args, list):
+            return args
+        return [args]
+
+    def _python_to_host(self, value: Any, _seen: set[int] | None = None) -> Any:
+        seen = _seen or set()
+
+        def _mark(obj: Any) -> bool:
+            try:
+                obj_id = id(obj)
+            except Exception:  # noqa: BLE001
+                return False
+            if obj_id in seen:
+                return True
+            seen.add(obj_id)
+            return False
+
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (str, float)) or value is None:
+            return value
+        if isinstance(value, int) and value in self._python_scalar_ints:
+            return value
+        if isinstance(value, int) and value in self._python_pointers:
+            stored = self.runtime.heap[value]
+            if _mark(stored):
+                return stored
+            if isinstance(stored, list):
+                return [self._python_to_host(v, seen) for v in stored]
+            if isinstance(stored, dict):
+                return {k: self._python_to_host(v, seen) for k, v in stored.items()}
+            if isinstance(stored, set):
+                return {self._python_to_host(v, seen) for v in stored}
+            return stored
+        if isinstance(value, dict) and "__fields__" in value:
+            if _mark(value):
+                return value
+            return {k: self._python_to_host(v, seen) for k, v in value.get("__fields__", {}).items()}
+        if isinstance(value, list):
+            if _mark(value):
+                return value
+            return [self._python_to_host(v, seen) for v in value]
+        if isinstance(value, dict):
+            if _mark(value):
+                return value
+            return {k: self._python_to_host(v, seen) for k, v in value.items()}
+        return value
+
+    def _python_from_host(self, value: Any) -> Any:
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+        if isinstance(value, list):
+            converted: List[Any] = []
+            for v in value:
+                converted_val = self._python_from_host(v)
+                if isinstance(v, int) and not isinstance(v, bool):
+                    self._python_scalar_ints.add(v)
+                converted.append(converted_val)
+            with self.runtime._lock:  # type: ignore[attr-defined]
+                if getattr(self.runtime, "next_ptr", 0) < 100000:
+                    self.runtime.next_ptr = 100000
+            ptr = self._to_pointer(converted)
+            self._python_pointers.add(ptr)
+            self.runtime.ptr_tags[ptr] = "PyList"
+            return ptr
+        if isinstance(value, tuple):
+            converted: List[Any] = []
+            for v in list(value):
+                converted_val = self._python_from_host(v)
+                if isinstance(v, int) and not isinstance(v, bool):
+                    self._python_scalar_ints.add(v)
+                converted.append(converted_val)
+            with self.runtime._lock:  # type: ignore[attr-defined]
+                if getattr(self.runtime, "next_ptr", 0) < 100000:
+                    self.runtime.next_ptr = 100000
+            ptr = self._to_pointer(converted)
+            self._python_pointers.add(ptr)
+            self.runtime.ptr_tags[ptr] = "PyList"
+            return ptr
+        if isinstance(value, dict):
+            return {k: self._python_from_host(v) for k, v in value.items()}
+        if isinstance(value, set):
+            return {self._python_from_host(v) for v in value}
+        if isinstance(value, deque):
+            return deque(self._python_from_host(v) for v in value)
+        # Fallback to an opaque proxy with identity semantics.
+        return {"__py_object__": repr(value)}
 
 
 def register_stdlib(

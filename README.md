@@ -11,7 +11,7 @@ For interoperability guidance, see the cross-language compatibility notes in [`d
 
 ## Offene Aufgaben
 - [x] **Language-Server-Workflows dokumentieren (gestartet)**: Eine kompakte Referenz für `TinyLanguageServer` schreiben, Beispiel-Requests/-Responses aufnehmen und die neuen CLI-Demos dokumentieren (siehe [`docs/language_server_workflows.md`](docs/language_server_workflows.md)). Ergänzend dazu Tests für Hover/Completion/Diagnostics hinzufügen, damit künftige Änderungen abgesichert sind.
-- [ ] **Python-Interop-Demos ausbauen**: Zusätzliche `.tiny`-Programme bereitstellen, die die Anleitung in [`docs/python_interop.md`](docs/python_interop.md) konkret durchspielen, inklusive How-to-Run-Hinweisen und Tests.
+- [x] **Python-Interop-Demos ausbauen**: Zusätzliche `.tiny`-Programme bereitstellen, die die Anleitung in [`docs/python_interop.md`](docs/python_interop.md) konkret durchspielen, inklusive How-to-Run-Hinweisen und Tests.
 - [ ] **Native-Compiler-Prototyp evaluieren**: Einen alternativen Backend-Pfad implementieren, der aus dem vorhandenen AST Bytecode oder native IR erzeugt und über eine kleine VM lauffähig ist. Iterativ über Smoke-Tests (Arithmetik, Branching, Funktionen) mit dem Interpreter abgleichen.
 
 ## Syntax and Features

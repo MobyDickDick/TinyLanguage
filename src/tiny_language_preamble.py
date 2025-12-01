@@ -20,6 +20,8 @@ except ImportError:  # pragma: no cover - Windows and other platforms without te
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
+from tiny_errors import SourcePos, SourceSpan, TinyError, format_error as format_error_with_span
+
 from stdlib import register_stdlib
 
 class _FallbackReadline:
@@ -238,18 +240,6 @@ def _load_readline():
 
 readline = _load_readline()
 
-
-@dataclass(frozen=True)
-class SourcePos:
-    index: int
-    line: int
-    col: int
-
-    @staticmethod
-    def origin() -> "SourcePos":
-        return SourcePos(0, 1, 1)
-
-
 @dataclass(frozen=True)
 class StackFrame:
     name: str
@@ -273,8 +263,10 @@ class TinyLangError(Exception):
         return self.message
 
 
-def _line_info(source: str, pos: Union[int, SourcePos]) -> Tuple[int, int, str]:
+def _line_info(source: str, pos: Union[int, SourcePos, SourceSpan]) -> Tuple[int, int, str]:
     lines = source.splitlines()
+    if isinstance(pos, SourceSpan):
+        pos = pos.start
     if isinstance(pos, SourcePos):
         line = max(1, min(pos.line, len(lines) or 1))
         line_text = lines[line - 1] if 0 <= line - 1 < len(lines) else ""
@@ -289,8 +281,14 @@ def _line_info(source: str, pos: Union[int, SourcePos]) -> Tuple[int, int, str]:
 
 
 def format_error(
-    source: str, pos: Union[int, SourcePos], message: str, *, code: str = "E000", hint: Optional[str] = None
+    source: str, pos: Union[int, SourcePos, SourceSpan], message: str, *, code: str = "E000", hint: Optional[str] = None
 ) -> str:
+    if isinstance(pos, SourceSpan):
+        err = TinyError(kind=code, msg=message, span=pos)
+        rendered = format_error_with_span(err, source)
+        if hint:
+            rendered += f"\n  Hint: {hint}"
+        return rendered
     lines = source.splitlines()
     line, col, _ = _line_info(source, pos)
     gutter_width = len(str(max(1, len(lines))))

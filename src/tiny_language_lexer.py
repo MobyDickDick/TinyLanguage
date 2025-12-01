@@ -140,7 +140,10 @@ class Lexer:
         if c in "(){}[];,=:.,?":
             self._advance()
             return Token("SYM", c, pos, SourcePos(start_line, start_col))
-        raise TinyLangError(format_error(self.s, pos, f"lexing error: unexpected character '{c}'"), pos)
+        span = SourceSpan(pos, pos)
+        raise TinyLangError(
+            format_error(self.s, span, f"lexing error: unexpected character '{c}'"), pos, span=span
+        )
 
     def _read_string(self) -> Token:
         start_line = self.line
@@ -177,8 +180,9 @@ class Lexer:
             else:
                 buf.append(c)
                 self._advance()
+        span = SourceSpan(pos0, pos0)
         raise TinyLangError(
-            format_error(self.s, pos0, "unterminated string literal"), pos0
+            format_error(self.s, span, "unterminated string literal"), pos0, span=span
         )
 
 

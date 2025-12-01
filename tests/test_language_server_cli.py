@@ -33,6 +33,17 @@ def test_cli_completions_emit_labels():
     assert "alpha" in labels
 
 
+def test_cli_completions_respect_prefix_filter(tmp_path):
+    program = "fn zero() { return 0; }\nfn main() { return zero(); }"
+    file_path = tmp_path / "program.tiny"
+    file_path.write_text(program, encoding="utf-8")
+
+    payload = run_cli(["--file", str(file_path), "completions", "--prefix", "ze"])
+    labels = {item["label"] for item in payload}
+    assert "zero" in labels
+    assert all(label.startswith("ze") for label in labels)
+
+
 def test_cli_hover_returns_position():
     payload = run_cli(["--source", "fn probe() { return 1; }", "hover", "--symbol", "probe"])
     assert payload["symbol"] == "probe"
@@ -47,3 +58,16 @@ def test_cli_reports_diagnostics():
     )
     assert payload
     assert payload[0]["code"] == "E011"
+
+
+def test_cli_reports_diagnostics_from_file(tmp_path):
+    source = "fn describe(x: number) -> number { if (x > 0) { return x; } }"
+    file_path = tmp_path / "lint_example.tiny"
+    file_path.write_text(source, encoding="utf-8")
+
+    payload = run_cli(["--file", str(file_path), "diagnostics"])
+    assert payload
+    diag = payload[0]
+    assert diag["code"] == "E010"
+    assert isinstance(diag["range"], list)
+    assert len(diag["range"]) == 4

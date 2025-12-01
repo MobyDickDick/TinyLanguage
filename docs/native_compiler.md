@@ -23,3 +23,8 @@ Dieser Entwurf steckt die Zielarchitektur für ein alternatives Backend ab, das 
 ## Nachweise und Tests
 - **Smoke-Tests** vergleichen Interpreter- und Native-Backend-Ausgabe für Arithmetik, Branching und Funktionen.
 - Die VM bleibt absichtlich klein, um spätere Erweiterungen (z. B. Arrays, Objekte, Pattern Matching) messbar zu halten.
+
+## Nutzung
+- **CLI-Schalter**: `python src/tiny_language.py --native-backend -e "print(1 + 2);"` führt ein Snippet ohne den AST-Interpreter aus.
+- **Datei-Ausführung**: `python src/tiny_language.py --native-backend path/to/program.tiny` lädt ein Programm und nutzt denselben Codegen/VM-Pfad.
+- **Regression-Tests**: `python -m pytest tests/test_native_codegen.py -q` vergleicht Interpreter- und Native-Backend-Ausgaben und stellt sicher, dass nicht unterstützte Konstrukte weiterhin als `NotImplementedError` sichtbar bleiben.

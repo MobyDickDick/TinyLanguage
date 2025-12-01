@@ -1,3 +1,7 @@
+import subprocess
+import sys
+from pathlib import Path
+
 import pytest
 
 from tiny_language import compile_and_run, run_with_native_backend
@@ -56,3 +60,34 @@ def test_boolean_formatting_matches_interpreter():
     interpreter_output = compile_and_run(source)
     native_output = run_with_native_backend(source)
     assert native_output == interpreter_output
+
+
+def test_native_cli_flag_executes_program(tmp_path):
+    script = """
+    define x = 2;
+    define y = 3;
+    fn add(a, b) { return a + b; }
+    print(add(x, y));
+    """
+    src_file = tmp_path / "program.tiny"
+    src_file.write_text(script)
+
+    result = subprocess.run(
+        [sys.executable, str(Path(__file__).parents[1] / "src" / "tiny_language.py"), "--native-backend", str(src_file)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "5"
+
+
+def test_unsupported_constructs_signal_not_implemented():
+    source = """
+    class Example { value: number; }
+    print(Example);
+    """
+
+    with pytest.raises(NotImplementedError):
+        run_with_native_backend(source)

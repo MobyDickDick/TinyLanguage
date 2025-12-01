@@ -37,7 +37,12 @@ BUILTINS = {"Collections", "Math", "String", "len", "print"}
 class Token:
     kind: str
     text: str
-    pos: SourcePos
+    start: SourcePos
+    stop: SourcePos
+
+    @property
+    def pos(self) -> SourcePos:
+        return self.start
 
 
 class Lexer:
@@ -76,16 +81,21 @@ class Lexer:
     def next_token(self) -> Token:
         self._skip_ws_comments()
         if self.i >= self.n:
-            return Token("EOF", "", SourcePos(self.i, self.line, self.col))
+            pos = SourcePos(self.line, self.col)
+            return Token("EOF", "", pos, pos)
         c = self.s[self.i]
-        pos = SourcePos(self.i, self.line, self.col)
+        start_line = self.line
+        start_col = self.col
+        pos = SourcePos(start_line, start_col)
 
         if c == "&" and self.i + 1 < self.n and self.s[self.i + 1] == "&":
             self._advance(2)
-            return Token("OP", "&&", pos)
+            stop = SourcePos(start_line, start_col + 1)
+            return Token("OP", "&&", pos, stop)
         if c == "|" and self.i + 1 < self.n and self.s[self.i + 1] == "|":
             self._advance(2)
-            return Token("OP", "||", pos)
+            stop = SourcePos(start_line, start_col + 1)
+            return Token("OP", "||", pos, stop)
         if c == '"':
             return self._read_string()
         if c.isalpha() or c == "_":
@@ -97,7 +107,8 @@ class Lexer:
             self.i = j
             self.col += consumed
             kind = "KW" if txt in KEYWORDS else "NAME"
-            return Token(kind, txt, pos)
+            stop = SourcePos(start_line, start_col + consumed - 1)
+            return Token(kind, txt, pos, stop)
         if c.isdigit():
             j = self.i + 1
             hasdot = False
@@ -115,29 +126,34 @@ class Lexer:
             consumed = j - self.i
             self.i = j
             self.col += consumed
-            return Token("NUMBER", txt, pos)
+            stop = SourcePos(start_line, start_col + consumed - 1)
+            return Token("NUMBER", txt, pos, stop)
         if c in (">", "<", "=", "!"):
             if self.i + 1 < self.n and self.s[self.i + 1] == "=":
                 self.i += 2
                 self.col += 2
-                return Token("OP", c + "=", pos)
+                stop = SourcePos(start_line, start_col + 1)
+                return Token("OP", c + "=", pos, stop)
         if c in "+-*/><^!":
             self._advance()
-            return Token("OP", c, pos)
+            return Token("OP", c, pos, SourcePos(start_line, start_col))
         if c in "(){}[];,=:.,?":
             self._advance()
-            return Token("SYM", c, pos)
+            return Token("SYM", c, pos, SourcePos(start_line, start_col))
         raise TinyLangError(format_error(self.s, pos, f"lexing error: unexpected character '{c}'"), pos)
 
     def _read_string(self) -> Token:
-        pos0 = SourcePos(self.i, self.line, self.col)
+        start_line = self.line
+        start_col = self.col
+        pos0 = SourcePos(start_line, start_col)
         self._advance()  # skip opening quote
         buf = []
         while self.i < self.n:
             c = self.s[self.i]
             if c == '"':
                 self._advance()
-                return Token("STRING", "".join(buf), pos0)
+                stop = SourcePos(start_line, self.col - 1)
+                return Token("STRING", "".join(buf), pos0, stop)
             if c == "\\":
                 self._advance()
                 if self.i >= self.n:

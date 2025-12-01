@@ -351,6 +351,16 @@ def _block_guarantees_return(stmts: List[IR]) -> bool:
     return False
 
 
+def _stmt_guarantees_exit(st: IR) -> bool:
+    if isinstance(st, Return):
+        return True
+    if isinstance(st, If):
+        return _block_guarantees_return(st.then) and _block_guarantees_return(st.els)
+    if isinstance(st, TryCatch):
+        return _block_guarantees_return(st.body) and _block_guarantees_return(st.handler)
+    return False
+
+
 def lint_return_signatures(
     stmts: List[IR],
     fn_name: str,
@@ -421,6 +431,51 @@ def lint_return_exhaustiveness(
         code="E010",
         hint="Add return statements for every branch or provide a default return to satisfy the annotation.",
     )
+
+
+def lint_unreachable_code(stmts: List[IR], source: Optional[str] = None) -> None:
+    def visit_block(block: List[IR]) -> None:
+        terminated = False
+        for st in block:
+            if terminated:
+                msg = "unreachable statement after a return"
+                if source is None:
+                    raise RuntimeError(msg)
+                raise TinyLangError(
+                    format_error(
+                        source,
+                        st.pos,
+                        msg,
+                        code="E013",
+                        hint="Remove the dead code or restructure control flow so it can be reached.",
+                    ),
+                    st.pos,
+                    code="E013",
+                    hint="Remove the dead code or restructure control flow so it can be reached.",
+                )
+
+            if isinstance(st, If):
+                visit_block(st.then)
+                visit_block(st.els)
+            elif isinstance(st, While):
+                visit_block(st.body)
+            elif isinstance(st, TryCatch):
+                visit_block(st.body)
+                visit_block(st.handler)
+            elif isinstance(st, Fn):
+                visit_block(st.body)
+            elif isinstance(st, MethodDef):
+                visit_block(st.body)
+            elif isinstance(st, ClassDef):
+                for m in st.methods:
+                    visit_block(m.body)
+            elif isinstance(st, Namespace):
+                visit_block(st.body)
+
+            if _stmt_guarantees_exit(st):
+                terminated = True
+
+    visit_block(stmts)
 
 
 def lint_no_consecutive_definitions(stmts: List[IR]) -> None:

@@ -23,3 +23,27 @@ def test_imports_must_precede_code():
     """
     with pytest.raises(TinyLangError):
         compile_and_run(src)
+
+
+def test_unreachable_after_return_is_flagged():
+    src = """
+    fn unreachable() {
+        return 1;
+        define x = 2;
+    }
+    """
+    with pytest.raises(TinyLangError) as err:
+        compile_and_run(src)
+    assert "unreachable" in str(err.value).lower()
+
+
+def test_unreachable_after_exhaustive_if_is_flagged():
+    src = """
+    fn chooser(flag) {
+        if (flag) { return 1; } else { return 2; }
+        print(flag);
+    }
+    """
+    with pytest.raises(TinyLangError) as err:
+        compile_and_run(src)
+    assert "unreachable" in str(err.value).lower()

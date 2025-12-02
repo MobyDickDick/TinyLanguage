@@ -19,8 +19,10 @@ For interoperability guidance, see the cross-language compatibility notes in [`d
   - In [`docs/language_server_workflows.md`](docs/language_server_workflows.md) alle derzeit verfügbaren LSP-Methoden mit Beispiel-Requests/-Responses ergänzen und die Demo-Aufrufe aus der README-Sektion „Syntax and Features“ als kurze „So testest du es“-Abschnitte einfügen.
   - In [`docs/python_interop.md`](docs/python_interop.md) mehr Durchstich-Beispiele aufnehmen, die modulare Imports, Namespaces und typisierte Funktionssignaturen gemeinsam demonstrieren; dabei die passenden `.tiny`-Demos aus `src_tiny/` verlinken und deren erwartete Ausgaben dokumentieren.
   - In [`docs/native_compiler.md`](docs/native_compiler.md) den aktuellen CLI-Workflow und Grenzen der VM betonen und eine kleine Troubleshooting-Liste (häufige Fehlercodes, typisches Stacktrace-Beispiel) anhängen.
-- **Feature-Übersicht konsolidieren**: Aus den Beispielen in „Syntax and Features“ ein kompaktes Cheat Sheet bauen (kurze Code-Snippets + Verweise auf die vollständigen `.tiny`-Demos), damit Einsteiger zentrale Konstrukte schneller nachschlagen können.
-- **Test- und Run-Beispiele bündeln**: Die verstreuten CLI-Aufrufe (z. B. `python tiny_language.py src_tiny/class_demo.tiny`) zu einer Befehlsliste oder einem kleinen Skript zusammenführen, das alle Demos in einem Lauf startet; Fehlerausgaben können als Schnell-Regressionstest dienen.
+
+## Neue Schnellreferenzen
+- **Feature Cheat Sheet**: [`docs/feature_cheat_sheet.md`](docs/feature_cheat_sheet.md) fasst die Kernkonstrukte mit kurzen Hinweisen zu den zugehörigen `.tiny`-Demos zusammen.
+- **Run-/Test-Befehle gebündelt**: [`docs/demo_run_commands.md`](docs/demo_run_commands.md) listet Interpreterläufe, Native-Backend-Vergleiche, Python-Interop-Demos und Language-Server-CLI-Checks auf. Als Komplettlauf eignet sich weiterhin `python run_all.py`.
 
 ## Syntax and Features
 

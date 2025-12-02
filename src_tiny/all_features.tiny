@@ -31,16 +31,16 @@ print(e); // Print the error field from the bump call.
 
 // Allocate an empty heap array and mutate it through the standard heap helpers.
 define arr_ptr = new(3); // Reserve three slots on the heap and capture the pointer.
-{ e } = heap_set(arr_ptr, 0, 10); print(e.code); // Store 10 in slot 0 and print the status code.
-{ e } = heap_set(arr_ptr, 1, 20); print(e.code); // Store 20 in slot 1 and print the status code.
-{ e } = heap_set(arr_ptr, 2, 30); print(e.code); // Store 30 in slot 2 and print the status code.
+define heap_status = heap_set(arr_ptr, 0, 10); print(heap_status.e.code); // Store 10 in slot 0 and print the status code.
+heap_status = heap_set(arr_ptr, 1, 20); print(heap_status.e.code); // Store 20 in slot 1 and print the status code.
+heap_status = heap_set(arr_ptr, 2, 30); print(heap_status.e.code); // Store 30 in slot 2 and print the status code.
 print(heap_get(arr_ptr, 2)); // Read back the final slot to prove the values landed.
-{ e } = tag(arr_ptr, Arr); print(e.code); // Tag the pointer with an Arr type tag and display the result.
-{ e } = delete(arr_ptr); print(e.code); // Release the allocation and show the deletion status.
+heap_status = tag(arr_ptr, Arr); print(heap_status.e.code); // Tag the pointer with an Arr type tag and display the result.
+heap_status = delete(arr_ptr); print(heap_status.e.code); // Release the allocation and show the deletion status.
 
 define literal_ptr = new[7, 8, 9]; // Allocate and initialize a heap array literal in one expression.
 print(heap_get(literal_ptr, 1)); // Read the second element to demonstrate indexed access.
-{ e } = delete(literal_ptr); print(e.code); // Free the literal-backed array and print the status code.
+heap_status = delete(literal_ptr); print(heap_status.e.code); // Free the literal-backed array and print the status code.
 
 // Build an object literal to show field initialization and access.
 define settings = { greeting: "hi"; count: a; }; // Create a tiny record with a greeting and the current count.

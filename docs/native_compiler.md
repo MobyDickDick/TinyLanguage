@@ -53,3 +53,6 @@ Dieser Entwurf steckt die Zielarchitektur für ein alternatives Backend ab, das 
   ```
   Die Frames spiegeln die Bytecode-Ausführung wider und helfen, fehlerhafte Instruktionen zu lokalisieren.
 - **CLI-Parsing klappt nicht**: Stelle sicher, dass `--native-backend` vor `-e` oder dem Dateipfad steht; andernfalls interpretiert `argparse` das Flag als Programmargument.
+- **Ungültige Instruktion im Bytecode**: Falls die VM `RuntimeError: unknown opcode` meldet, ist der Bytecode vermutlich aus einer älteren Generator-Version. Lege den Bytecode neu an, indem du das Quellprogramm erneut mit `--native-backend` ausführst und alte Artefakte löschst.
+- **Interpreter/Nativ divergieren**: Nutze den A/B-Vergleich aus dem Workflow oben: einmal mit und einmal ohne `--native-backend` laufen lassen. Unterschiedliche Ausgaben deuten auf fehlende Lowerings hin und sollten als Regression dokumentiert werden.
+- **Timeouts in Test-Suites**: Lange Läufe können die VM blockieren. Begrenze Schleifen in `.tiny`-Fixtures oder verwende gezielte Test-Filter (`-k while`) und `-q`, um die Logmenge klein zu halten.

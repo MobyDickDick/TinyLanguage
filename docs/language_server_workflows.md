@@ -42,44 +42,30 @@ Outputs are JSON so they can be piped into tools or inspected visually. Example 
 
 ## Supported methods and example payloads
 
-Each subcommand is a thin wrapper around an internal request/response pair and can be copy/pasted into JSON-RPC glue code:
+Each subcommand is a thin wrapper around an internal request/response pair and can be copy/pasted into JSON-RPC glue code. The
+list below mirrors the currently available LSP-style helpers and shows the relevant request parameters and response shapes:
 
-- **Completions** request for prefix `gr` (inline source):
-  ```bash
-  PYTHONPATH=src python src/language_server_cli.py --source $'fn greet() { return 1; }\ngreet();' completions --prefix gr
-  ```
-  Response:
-  ```json
-  [
-    { "label": "greet", "kind": "identifier" }
-  ]
-  ```
-- **Hover** request for the `Greeter` class in `src_tiny/class_demo.tiny`:
-  ```bash
-  PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny hover --symbol Greeter
-  ```
-  Response:
-  ```json
-  {
-    "symbol": "Greeter",
-    "detail": "TinyLanguage symbol",
-    "position": [10, 1]
-  }
-  ```
-- **Diagnostics** for an unused return value:
-  ```bash
-  PYTHONPATH=src python src/language_server_cli.py --source $'fn greet() -> string { return "hi"; }\ngreet();' diagnostics
-  ```
-  Response (trimmed):
-  ```json
-  [
-    {
-      "message": "[E011] call to greet returns a value that is ignored (line 2, col 1) ...",
-      "code": "E011",
-      "range": [2, 1, 2, 2]
-    }
-  ]
-  ```
+- **Completions** (`textDocument/completion` equivalent)
+  - Request payload: `{ "prefix": "gr" }`
+  - Response payload: `[ { "label": "greet", "kind": "identifier" }, ... ]`
+  - CLI demo for inline source:
+    ```bash
+    PYTHONPATH=src python src/language_server_cli.py --source $'fn greet() { return 1; }\ngreet();' completions --prefix gr
+    ```
+- **Hover** (`textDocument/hover` equivalent)
+  - Request payload: `{ "symbol": "Greeter" }`
+  - Response payload: `{ "symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [10, 1] }`
+  - CLI demo for a file on disk:
+    ```bash
+    PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny hover --symbol Greeter
+    ```
+- **Diagnostics** (`textDocument/diagnostic` equivalent)
+  - Request payload: `{}` (uses the supplied source)
+  - Response payload: list of `{ "message": "[E011] ...", "code": "E011", "range": [2, 1, 2, 2] }`
+  - CLI demo for an unused return value:
+    ```bash
+    PYTHONPATH=src python src/language_server_cli.py --source $'fn greet() -> string { return "hi"; }\ngreet();' diagnostics
+    ```
 
 ## "So testest du es" quick demos
 

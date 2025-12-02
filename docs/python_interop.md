@@ -104,6 +104,38 @@ file=example.txt
 
 Weitere Demo-Dateien in `src_tiny/` lassen sich kombinieren, um Namespaces (`namespace_demo.tiny`) oder komplexere Stdlib-Aufrufe (`stdlib_io_random_demo.tiny`) mit Python-FFI zu vergleichen. Dokumentiere beim Hinzufügen eigener Demos sowohl die erlaubten Attribute (Allowlist) als auch die erwarteten Ausgaben, damit Konsumenten sie als Regressionstests nutzen können.
 
+## Mehr Beispiele mit erwarteten Ausgaben
+
+Die folgenden Runs decken häufige Kombinationen aus Allowlist, Namespace-Kapselung und typisierten Signaturen ab. Sie können 1:1 ausgeführt und mit den notierten Ausgaben abgeglichen werden:
+
+- **Stdlib-JSON plus `os.getcwd`** (`src_tiny/python_json_demo.tiny`):
+  ```
+  PYTHONPATH=src python src/tiny_language.py src_tiny/python_json_demo.tiny
+  # Erwartete Ausgabe
+  cwd=.../TinyLanguage
+  ok=True
+  payload={"ok": true}
+  ```
+  Die Allowlist beschränkt `json` auf `loads`/`dumps` und `os` auf `getcwd`, so dass das Beispiel ohne ungewollte Nebenwirkungen läuft.
+- **Numerik mit Allowlist** (`src_tiny/python_math_demo.tiny`):
+  ```
+  PYTHONPATH=src python src/tiny_language.py src_tiny/python_math_demo.tiny
+  # Erwartete Ausgabe
+  13.0
+  tau=6.283185307179586
+  isfinite=true
+  ```
+  Das Script zeigt, dass Python-`float`/`bool` sauber nach `number`/`Bool` abgebildet werden und dass nur die erlaubten Attribute (`sqrt`, `isfinite`, `tau`) verfügbar sind.
+- **Getypte Namespaces plus Dateipfade** (`src_tiny/python_namespace_typed_demo.tiny`):
+  ```
+  PYTHONPATH=src python src/tiny_language.py src_tiny/python_namespace_typed_demo.tiny
+  # Erwartete Ausgabe
+  13.0
+  tau fraction=0.499999999985709
+  file=example.txt
+  ```
+  Hier sind die Wrapper-Funktionen in `namespace PyInterop` mit Parameter- und Rückgabetypen annotiert. Die Ausgaben belegen, dass typisierte Signaturen, Namespaces und Python-Proxies gemeinsam funktionieren.
+
 ## Demo programmes zum Ausprobieren
 
 Die `.tiny`-Beispiele im Repository spiegeln die oben beschriebenen Flows wider und können direkt ausgeführt werden:

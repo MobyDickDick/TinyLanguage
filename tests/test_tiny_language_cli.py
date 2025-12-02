@@ -23,6 +23,22 @@ def run_cli(command):
     )
 
 
+def run_cli_module(command):
+    env = {
+        **os.environ,
+        "PYTHONPATH": os.pathsep.join(
+            filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
+        ),
+    }
+    return subprocess.run(
+        [sys.executable, "-m", "tiny_lang_cli", *command],
+        capture_output=True,
+        text=True,
+        cwd=PROJECT_ROOT,
+        env=env,
+    )
+
+
 def test_cli_runs_file(tmp_path):
     program = "print(1 + 2);"
     file_path = tmp_path / "hello.tiny"
@@ -54,3 +70,15 @@ def test_cli_renders_spans_on_errors(tmp_path):
     assert "[E000]" in proc.stderr
     assert "line 1" in proc.stderr
     assert "^" in proc.stderr
+
+
+def test_cli_supports_positional_path(tmp_path):
+    program = "print(4 * 5);"
+    file_path = tmp_path / "positional.tiny"
+    file_path.write_text(program, encoding="utf-8")
+
+    proc = run_cli_module([str(file_path)])
+
+    assert proc.returncode == 0
+    assert proc.stdout == "20\n"
+    assert proc.stderr == ""

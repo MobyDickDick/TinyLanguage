@@ -42,7 +42,8 @@ def _execute(source: str, *, backend: str, module_path: Path | None) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run TinyLanguage programs from the command line")
-    source_group = parser.add_mutually_exclusive_group(required=True)
+    parser.add_argument("path", nargs="?", type=Path, help="Path to a .tiny source file")
+    source_group = parser.add_mutually_exclusive_group()
     source_group.add_argument("--file", "-f", type=Path, help="Path to a .tiny source file")
     source_group.add_argument("--source", "-s", type=str, help="Inline TinyLanguage source code")
     parser.add_argument(
@@ -55,11 +56,14 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     module_path: Path | None = None
     source: str
-    if args.file:
-        module_path = args.file.resolve()
+    cli_path = args.path or args.file
+    if cli_path:
+        module_path = cli_path.resolve()
         source = _read_source_from_file(module_path)
+    elif args.source is not None:
+        source = args.source
     else:
-        source = args.source  # type: ignore[assignment]
+        parser.error("either provide a path argument, --file, or --source")
 
     try:
         output = _execute(source, backend=args.backend, module_path=module_path)

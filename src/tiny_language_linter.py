@@ -11,6 +11,46 @@ def _param_names(params: List[Param]) -> List[str]:
     return [p.name for p in params]
 
 
+def _collect_names_in_expr(e: IR, names: Set[str]) -> None:
+    if isinstance(e, Var):
+        names.add(e.name)
+    elif isinstance(e, Bin):
+        _collect_names_in_expr(e.a, names)
+        _collect_names_in_expr(e.b, names)
+    elif isinstance(e, Call):
+        for a in e.args:
+            _collect_names_in_expr(a, names)
+    elif isinstance(e, Spawn):
+        for a in e.args:
+            _collect_names_in_expr(a, names)
+    elif isinstance(e, Await):
+        _collect_names_in_expr(e.expr, names)
+    elif isinstance(e, New):
+        _collect_names_in_expr(e.size, names)
+    elif isinstance(e, NewLit):
+        for it in e.items:
+            _collect_names_in_expr(it, names)
+    elif isinstance(e, Field):
+        _collect_names_in_expr(e.obj, names)
+    elif isinstance(e, MethodCall):
+        _collect_names_in_expr(e.obj, names)
+        for a in e.args:
+            _collect_names_in_expr(a, names)
+    elif isinstance(e, ClassNew):
+        for _, v in e.init:
+            _collect_names_in_expr(v, names)
+    elif isinstance(e, ObjLit):
+        for _, v in e.fields:
+            _collect_names_in_expr(v, names)
+    elif isinstance(e, Match):
+        _collect_names_in_expr(e.expr, names)
+        for case in e.cases:
+            _collect_names_in_expr(case.body, names)
+    elif isinstance(e, VariantCtor):
+        for _, v in e.fields:
+            _collect_names_in_expr(v, names)
+
+
 def uses_in_expr(e: IR, reads: Dict[str, int]) -> None:
     if isinstance(e, Var):
         reads[e.name] = reads.get(e.name, 0) + 1
@@ -236,6 +276,97 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
             code="E002",
             hint="Remove the unused binding or reference it.",
         )
+
+
+def _infer_expr_type(expr: IR, env: Dict[str, str]) -> Optional[str]:
+    if isinstance(expr, Num):
+        txt = expr.txt.lower()
+        if "." in txt or "e" in txt:
+            return "float"
+        return "int"
+    if isinstance(expr, Str):
+        return "string"
+    if isinstance(expr, Bool):
+        return "Bool"
+    if isinstance(expr, Null):
+        return "Null"
+    if isinstance(expr, Var):
+        return env.get(expr.name)
+    return None
+
+
+def lint_assignment_types(stmts: List[IR], source: Optional[str] = None, env: Optional[Dict[str, str]] = None) -> None:
+    env = dict(env or {})
+
+    def check_block(block: List[IR], local_env: Dict[str, str]) -> Dict[str, str]:
+        for st in block:
+            if isinstance(st, Let):
+                inferred = _infer_expr_type(st.expr, local_env)
+                if inferred:
+                    local_env[st.name] = inferred
+            elif isinstance(st, Assign):
+                inferred = _infer_expr_type(st.expr, local_env)
+                expected = local_env.get(st.name)
+                if expected and inferred and expected != inferred:
+                    msg = f"type change for variable {st.name}: expected {expected} but got {inferred}"
+                    if source is None:
+                        raise RuntimeError(msg)
+                    raise TinyLangError(
+                        format_error(
+                            source,
+                            st.pos,
+                            msg,
+                            code="E014",
+                            hint="Use a new variable or cast explicitly if a different type is required.",
+                        ),
+                        st.pos,
+                        code="E014",
+                        hint="Use a new variable or cast explicitly if a different type is required.",
+                    )
+                if inferred:
+                    local_env[st.name] = inferred
+            elif isinstance(st, DestructAssign):
+                inferred = _infer_expr_type(st.expr, local_env)
+                if inferred:
+                    for nm in st.names:
+                        local_env[nm] = inferred
+            elif isinstance(st, If):
+                then_env = check_block(list(st.then), dict(local_env))
+                else_env = check_block(list(st.els), dict(local_env))
+                for name in list(local_env.keys()):
+                    if name in then_env and name in else_env and then_env[name] == else_env[name]:
+                        local_env[name] = then_env[name]
+            elif isinstance(st, While):
+                _ = check_block(list(st.body), dict(local_env))
+            elif isinstance(st, TryCatch):
+                body_env = check_block(list(st.body), dict(local_env))
+                handler_env = dict(local_env)
+                if st.err_name:
+                    handler_env[st.err_name] = "Error"
+                handler_env = check_block(list(st.handler), handler_env)
+                for name in list(local_env.keys()):
+                    if name in body_env and name in handler_env and body_env[name] == handler_env[name]:
+                        local_env[name] = body_env[name]
+            elif isinstance(st, Namespace):
+                check_block(list(st.body), {})
+            elif isinstance(st, Fn):
+                fn_env = {p.name: p.type for p in st.params if p.type}
+                check_block(list(st.body), fn_env)
+            elif isinstance(st, MethodDef):
+                method_env = {p.name: p.type for p in st.params if p.type}
+                check_block(list(st.body), method_env)
+            elif isinstance(st, ClassDef):
+                for method in st.methods:
+                    method_env = {p.name: p.type for p in method.params if p.type}
+                    check_block(list(method.body), method_env)
+            elif isinstance(st, CallStmt):
+                for arg in st.args:
+                    inferred = _infer_expr_type(arg, local_env)
+                    if isinstance(arg, Var) and inferred:
+                        local_env[arg.name] = inferred
+        return local_env
+
+    check_block(stmts, env)
 
 
 def _collect_function_signatures(stmts: List[IR], prefix: str = "") -> Dict[str, Optional[str]]:

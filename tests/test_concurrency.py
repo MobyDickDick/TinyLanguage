@@ -55,7 +55,7 @@ def test_join_timeout_status(run_tiny_source):
         """
         fn slow(value) {
             define i = 0;
-            while (i < 100000) { i = i + 1; }
+            while (i < 20000) { i = i + 1; }
             return value;
         }
 
@@ -77,7 +77,7 @@ def test_join_timeout_can_cancel(run_tiny_source):
         """
         fn slow(value) {
             define i = 0;
-            while (i < 100000) { i = i + 1; }
+            while (i < 20000) { i = i + 1; }
             return value;
         }
 

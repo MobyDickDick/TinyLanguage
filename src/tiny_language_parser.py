@@ -6,7 +6,25 @@ class Parser:
         self.lx = lx
         self.source = source
         self.tok = lx.next_token()
+        self._last_tok = Token("<start>", "", SourcePos.origin(), SourcePos.origin())
         self._allow_variant_ctor = True
+
+    @staticmethod
+    def _attach_span(node: IR, start: SourcePos, stop: SourcePos) -> IR:
+        node.span = SourceSpan(start, stop)
+        try:
+            current_pos = node.pos  # type: ignore[attr-defined]
+        except Exception:
+            current_pos = None
+        if current_pos is None or current_pos == SourcePos.origin():
+            node.pos = start
+        return node
+
+    @staticmethod
+    def _span_cover(a: IR, b: IR) -> SourceSpan:
+        start = getattr(a, "span", None).start if hasattr(a, "span") else getattr(a, "pos")
+        stop = getattr(b, "span", None).stop if hasattr(b, "span") else getattr(b, "pos")
+        return SourceSpan(start, stop)
 
     def _error(self, message: str, pos: SourcePos, span: Optional[SourceSpan] = None) -> TinyLangError:
         code, hint = _classify_error(message)
@@ -23,18 +41,22 @@ class Parser:
             raise self._error(f"expected {kind}{' '+text if text else ''}", self.tok.pos, self._tok_span(self.tok))
         t = self.tok
         self.tok = self.lx.next_token()
+        self._last_tok = t
         return t
 
     def _eat_name_or_kw(self) -> Token:
         if self.tok.kind in {"NAME", "KW"}:
             t = self.tok
             self.tok = self.lx.next_token()
+            self._last_tok = t
             return t
         raise self._error("expected NAME", self.tok.pos, self._tok_span(self.tok))
 
     def _accept(self, kind: str, text: Optional[str] = None) -> bool:
         if self.tok.kind == kind and (text is None or self.tok.text == text):
+            t = self.tok
             self.tok = self.lx.next_token()
+            self._last_tok = t
             return True
         return False
 
@@ -58,8 +80,8 @@ class Parser:
             name_tok = self._eat("NAME")
             self._eat("SYM", "=")
             expr = self.parse_expr()
-            self._eat("SYM", ";")
-            return Let(name_tok.text, expr, pos=kw.pos)
+            semi = self._eat("SYM", ";")
+            return self._attach_span(Let(name_tok.text, expr, pos=kw.pos), kw.start, semi.stop)
         if self.tok.kind == "KW" and self.tok.text == "print":
             kw = self._eat("KW", "print")
             self._eat("SYM", "(")
@@ -69,8 +91,8 @@ class Parser:
                 while self._accept("SYM", ","):
                     exprs.append(self.parse_expr())
             self._eat("SYM", ")")
-            self._eat("SYM", ";")
-            return Print(exprs, pos=kw.pos)
+            semi = self._eat("SYM", ";")
+            return self._attach_span(Print(exprs, pos=kw.pos), kw.start, semi.stop)
         if self.tok.kind == "KW" and self.tok.text == "if":
             kw = self._eat("KW", "if")
             self._eat("SYM", "(")
@@ -81,14 +103,14 @@ class Parser:
             if self.tok.kind == "KW" and self.tok.text == "else":
                 self._eat("KW", "else")
                 els = self.parse_block()
-            return If(cond, then, els, pos=kw.pos)
+            return self._attach_span(If(cond, then, els, pos=kw.pos), kw.start, self._last_tok.stop)
         if self.tok.kind == "KW" and self.tok.text == "while":
             kw = self._eat("KW", "while")
             self._eat("SYM", "(")
             cond = self.parse_expr()
             self._eat("SYM", ")")
             body = self.parse_block()
-            return While(cond, body, pos=kw.pos)
+            return self._attach_span(While(cond, body, pos=kw.pos), kw.start, self._last_tok.stop)
         if self.tok.kind == "KW" and self.tok.text == "try":
             kw = self._eat("KW", "try")
             body = self.parse_block()
@@ -100,7 +122,7 @@ class Parser:
             else:
                 err_name = self._eat("NAME").text
             handler = self.parse_block()
-            return TryCatch(body, err_name, handler, pos=kw.pos)
+            return self._attach_span(TryCatch(body, err_name, handler, pos=kw.pos), kw.start, self._last_tok.stop)
         if self.tok.kind == "KW" and self.tok.text == "import":
             kw = self._eat("KW", "import")
             module = self.parse_module_path()
@@ -108,8 +130,8 @@ class Parser:
             if self.tok.kind == "KW" and self.tok.text == "as":
                 self._eat("KW", "as")
                 alias = self._eat("NAME").text
-            self._eat("SYM", ";")
-            return Import(module, alias, pos=kw.pos)
+            semi = self._eat("SYM", ";")
+            return self._attach_span(Import(module, alias, pos=kw.pos), kw.start, semi.stop)
         if self.tok.kind == "KW" and self.tok.text == "namespace":
             kw = self._eat("KW", "namespace")
             name = self.parse_qualified_name()
@@ -130,19 +152,23 @@ class Parser:
                 self._eat("OP", ">")
                 return_type = self.parse_type_annotation()
             body = self.parse_block()
-            return Fn(
-                name_tok.text,
-                params,
-                body,
-                return_type=return_type,
-                is_async=is_async,
-                pos=fn_kw.pos,
+            return self._attach_span(
+                Fn(
+                    name_tok.text,
+                    params,
+                    body,
+                    return_type=return_type,
+                    is_async=is_async,
+                    pos=fn_kw.pos,
+                ),
+                fn_kw.start,
+                self._last_tok.stop,
             )
         if self.tok.kind == "KW" and self.tok.text == "return":
             kw = self._eat("KW", "return")
             expr = self.parse_expr()
-            self._eat("SYM", ";")
-            return Return(expr, pos=kw.pos)
+            semi = self._eat("SYM", ";")
+            return self._attach_span(Return(expr, pos=kw.pos), kw.start, semi.stop)
         if self.tok.kind == "KW" and self.tok.text == "type":
             kw = self._eat("KW", "type")
             name_tok = self._eat("NAME")
@@ -154,24 +180,24 @@ class Parser:
                 first_name_tok = self._eat("NAME")
                 if self._accept("SYM", ":"):
                     first_type = self._eat_name_or_kw().text
-                    self._eat("SYM", ";")
+                    semi = self._eat("SYM", ";")
                     fields: List[Tuple[str, str]] = [(first_name_tok.text, first_type)]
                     while not self._accept("SYM", "}"):
                         fname = self._eat("NAME").text
                         self._eat("SYM", ":")
                         ftype = self._eat_name_or_kw().text
-                        self._eat("SYM", ";")
+                        semi = self._eat("SYM", ";")
                         fields.append((fname, ftype))
-                    return TypeDef(name_tok.text, fields=fields, pos=kw.pos)
+                    return self._attach_span(TypeDef(name_tok.text, fields=fields, pos=kw.pos), kw.start, semi.stop)
                 # otherwise treat it as a variant name and fall through
                 variants.append(TypeVariant(first_name_tok.text, self.parse_variant_fields()))
-                self._eat("SYM", ";")
+                semi = self._eat("SYM", ";")
             while not self._accept("SYM", "}"):
                 vname = self._eat("NAME").text
                 vfields = self.parse_variant_fields()
-                self._eat("SYM", ";")
+                semi = self._eat("SYM", ";")
                 variants.append(TypeVariant(vname, vfields))
-            return TypeDef(name_tok.text, variants=variants, pos=kw.pos)
+            return self._attach_span(TypeDef(name_tok.text, variants=variants, pos=kw.pos), kw.start, self._last_tok.stop)
         if self.tok.kind == "KW" and self.tok.text == "class":
             kw = self._eat("KW", "class")
             cname_tok = self._eat("NAME")
@@ -218,7 +244,7 @@ class Parser:
                     self._eat("SYM", ";")
                     fields.append((fname, ftype))
             self._eat("SYM", "}")
-            return ClassDef(cname_tok.text, fields, methods, bases, pos=kw.pos)
+            return self._attach_span(ClassDef(cname_tok.text, fields, methods, bases, pos=kw.pos), kw.start, self._last_tok.stop)
         if self.tok.kind == "KW" and self.tok.text == "operator":
             kw = self._eat("KW", "operator")
             op_tok = self._eat("OP")
@@ -235,14 +261,16 @@ class Parser:
             self._eat("OP", ">")
             _ = self._eat("NAME").text  # return type (unused)
             body = self.parse_block()
-            return OpDef(op_tok.text, a_name, a_type, b_name, b_type, body, pos=kw.pos)
+            return self._attach_span(
+                OpDef(op_tok.text, a_name, a_type, b_name, b_type, body, pos=kw.pos), kw.start, self._last_tok.stop
+            )
         # destructuring or assignment/field assignment
         if self.tok.kind == "SYM" and self.tok.text == "{":
             names, start_pos = self.parse_destruct_names()
             self._eat("SYM", "=")
             expr = self.parse_expr()
-            self._eat("SYM", ";")
-            return DestructAssign(names, expr, pos=start_pos)
+            semi = self._eat("SYM", ";")
+            return self._attach_span(DestructAssign(names, expr, pos=start_pos), start_pos, semi.stop)
         if self.tok.kind == "NAME":
             # look ahead for field assignment or normal assignment/call
             name_tok = self.tok
@@ -251,21 +279,27 @@ class Parser:
                 field_name = self._eat_name_or_kw().text
                 if self._accept("SYM", "="):
                     expr = self.parse_expr()
-                    self._eat("SYM", ";")
-                    return FieldAssign(Var(name_tok.text, pos=name_tok.pos), field_name, expr, pos=name_tok.pos)
+                    semi = self._eat("SYM", ";")
+                    return self._attach_span(
+                        FieldAssign(Var(name_tok.text, pos=name_tok.pos), field_name, expr, pos=name_tok.pos),
+                        name_tok.start,
+                        semi.stop,
+                    )
                 # method call statement
                 args = self.parse_arg_list()
-                self._eat("SYM", ";")
-                return CallStmt(f"{name_tok.text}.{field_name}", args, pos=name_tok.pos)
+                semi = self._eat("SYM", ";")
+                return self._attach_span(
+                    CallStmt(f"{name_tok.text}.{field_name}", args, pos=name_tok.pos), name_tok.start, semi.stop
+                )
             if self._accept("SYM", "="):
                 expr = self.parse_expr()
-                self._eat("SYM", ";")
-                return Assign(name_tok.text, expr, pos=name_tok.pos)
+                semi = self._eat("SYM", ";")
+                return self._attach_span(Assign(name_tok.text, expr, pos=name_tok.pos), name_tok.start, semi.stop)
             # call statement on identifier
             if self.tok.kind == "SYM" and self.tok.text == "(":
                 args = self.parse_arg_list()
-                self._eat("SYM", ";")
-                return CallStmt(name_tok.text, args, pos=name_tok.pos)
+                semi = self._eat("SYM", ";")
+                return self._attach_span(CallStmt(name_tok.text, args, pos=name_tok.pos), name_tok.start, semi.stop)
             raise self._error("unexpected token after name", name_tok.pos, self._tok_span(name_tok))
         raise self._error(f"unexpected token {self.tok.kind}", self.tok.pos, self._tok_span(self.tok))
 
@@ -323,7 +357,7 @@ class Parser:
             op_tok = self.tok
             self._eat(self.tok.kind)
             right = self.parse_logic_and()
-            left = Bin("or", left, right, pos=op_tok.pos)
+            left = self._attach_span(Bin("or", left, right, pos=op_tok.pos), self._span_cover(left, right).start, self._span_cover(left, right).stop)
         return left
 
     def parse_logic_and(self) -> IR:
@@ -335,7 +369,8 @@ class Parser:
             op_tok = self.tok
             self._eat(self.tok.kind)
             right = self.parse_compare()
-            left = Bin("and", left, right, pos=op_tok.pos)
+            span = self._span_cover(left, right)
+            left = self._attach_span(Bin("and", left, right, pos=op_tok.pos), span.start, span.stop)
         return left
 
     def parse_compare(self) -> IR:
@@ -344,7 +379,8 @@ class Parser:
             op = self.tok.text
             op_tok = self._eat("OP")
             right = self.parse_term()
-            left = Bin(op, left, right, pos=op_tok.pos)
+            span = self._span_cover(left, right)
+            left = self._attach_span(Bin(op, left, right, pos=op_tok.pos), span.start, span.stop)
         return left
 
     def parse_term(self) -> IR:
@@ -353,7 +389,8 @@ class Parser:
             op = self.tok.text
             op_tok = self._eat("OP")
             right = self.parse_factor()
-            left = Bin(op, left, right, pos=op_tok.pos)
+            span = self._span_cover(left, right)
+            left = self._attach_span(Bin(op, left, right, pos=op_tok.pos), span.start, span.stop)
         return left
 
     def parse_factor(self) -> IR:
@@ -362,7 +399,8 @@ class Parser:
             op = self.tok.text
             op_tok = self._eat("OP")
             right = self.parse_power()
-            left = Bin(op, left, right, pos=op_tok.pos)
+            span = self._span_cover(left, right)
+            left = self._attach_span(Bin(op, left, right, pos=op_tok.pos), span.start, span.stop)
         return left
 
     def parse_power(self) -> IR:
@@ -370,19 +408,24 @@ class Parser:
         if self.tok.kind == "OP" and self.tok.text == "^":
             op_tok = self._eat("OP")
             right = self.parse_power()
-            return Bin("^", left, right, pos=op_tok.pos)
+            span = self._span_cover(left, right)
+            return self._attach_span(Bin("^", left, right, pos=op_tok.pos), span.start, span.stop)
         return left
 
     def parse_unary(self) -> IR:
         if self.tok.kind == "OP" and self.tok.text == "-":
             op_tok = self._eat("OP")
-            return Bin("-", Num("0", pos=op_tok.pos), self.parse_unary(), pos=op_tok.pos)
+            rhs = self.parse_unary()
+            span = self._span_cover(Num("0", pos=op_tok.pos), rhs)
+            return self._attach_span(Bin("-", Num("0", pos=op_tok.pos), rhs, pos=op_tok.pos), span.start, span.stop)
         if (self.tok.kind == "KW" and self.tok.text == "not") or (
             self.tok.kind == "OP" and self.tok.text == "!"
         ):
             op_tok = self.tok
             self._eat(self.tok.kind)
-            return Bin("not", Num("0", pos=op_tok.pos), self.parse_unary(), pos=op_tok.pos)
+            rhs = self.parse_unary()
+            span = self._span_cover(Num("0", pos=op_tok.pos), rhs)
+            return self._attach_span(Bin("not", Num("0", pos=op_tok.pos), rhs, pos=op_tok.pos), span.start, span.stop)
         return self.parse_postfix()
 
     def parse_postfix(self) -> IR:
@@ -393,9 +436,17 @@ class Parser:
                 name_tok = self._eat_name_or_kw()
                 if self.tok.kind == "SYM" and self.tok.text == "(":
                     args = self.parse_arg_list()
-                    expr = MethodCall(expr, name_tok.text, args, pos=dot_tok.pos)
+                    expr = self._attach_span(
+                        MethodCall(expr, name_tok.text, args, pos=dot_tok.pos),
+                        getattr(expr, "span", None).start if hasattr(expr, "span") else expr.pos,
+                        self._last_tok.stop,
+                    )
                 else:
-                    expr = Field(expr, name_tok.text, pos=dot_tok.pos)
+                    expr = self._attach_span(
+                        Field(expr, name_tok.text, pos=dot_tok.pos),
+                        getattr(expr, "span", None).start if hasattr(expr, "span") else expr.pos,
+                        name_tok.stop,
+                    )
                 continue
             break
         return expr
@@ -417,14 +468,14 @@ class Parser:
             pattern = self.parse_pattern()
             self._eat("SYM", ":")
             body = self.parse_expr()
-            self._eat("SYM", ";")
-            cases.append(MatchCase(pattern, body, pos=pattern.pos))
-        return Match(target, cases, pos=kw.pos)
+            semi = self._eat("SYM", ";")
+            cases.append(self._attach_span(MatchCase(pattern, body, pos=pattern.pos), pattern.pos, semi.stop))
+        return self._attach_span(Match(target, cases, pos=kw.pos), kw.start, self._last_tok.stop)
 
     def parse_pattern(self) -> Pattern:
         if self.tok.kind == "NAME" and self.tok.text == "_":
             tok = self._eat("NAME")
-            return WildcardPattern(name=None, pos=tok.pos)
+            return self._attach_span(WildcardPattern(name=None, pos=tok.pos), tok.start, tok.stop)
         if self.tok.kind != "NAME":
             raise self._error("expected pattern", self.tok.pos, self._tok_span(self.tok))
         vname_tok = self._eat("NAME")
@@ -441,7 +492,7 @@ class Parser:
                     break
                 if not (self._accept("SYM", ";") or self._accept("SYM", ",")):
                     raise self._error("expected field separator", self.tok.pos, self._tok_span(self.tok))
-        return VariantPattern(vname_tok.text, bindings, pos=vname_tok.pos)
+        return self._attach_span(VariantPattern(vname_tok.text, bindings, pos=vname_tok.pos), vname_tok.start, self._last_tok.stop)
 
     def parse_primary(self) -> IR:
         if self._accept("SYM", "("):
@@ -451,30 +502,31 @@ class Parser:
         if self.tok.kind == "KW" and self.tok.text == "await":
             kw = self._eat("KW", "await")
             expr = self.parse_expr()
-            return Await(expr, pos=kw.pos)
+            end = getattr(expr, "span", None).stop if hasattr(expr, "span") else getattr(expr, "pos")
+            return self._attach_span(Await(expr, pos=kw.pos), kw.start, end)
         if self.tok.kind == "KW" and self.tok.text == "match":
             return self.parse_match()
         if self.tok.kind == "NUMBER":
             t = self._eat("NUMBER")
-            return Num(t.text, pos=t.pos)
+            return self._attach_span(Num(t.text, pos=t.pos), t.start, t.stop)
         if self.tok.kind == "STRING":
             t = self._eat("STRING")
-            return Str(t.text, pos=t.pos)
+            return self._attach_span(Str(t.text, pos=t.pos), t.start, t.stop)
         if self.tok.kind == "KW" and self.tok.text in {"true", "false"}:
             kw = self.tok
             val = kw.text == "true"
             self._eat("KW")
-            return Bool(val, pos=kw.pos)
+            return self._attach_span(Bool(val, pos=kw.pos), kw.start, kw.stop)
         if self.tok.kind == "KW" and self.tok.text == "Null":
             kw = self._eat("KW")
-            return Null(pos=kw.pos)
+            return self._attach_span(Null(pos=kw.pos), kw.start, kw.stop)
         if self.tok.kind in {"NAME", "KW"}:
             name_tok = self._eat(self.tok.kind)
             name = name_tok.text
             if name == "spawn":
                 target = self._eat_name_or_kw().text
                 args = self.parse_arg_list()
-                return Spawn(target, args, pos=name_tok.pos)
+                return self._attach_span(Spawn(target, args, pos=name_tok.pos), name_tok.start, self._last_tok.stop)
             if name == "new" and self.tok.kind == "SYM" and self.tok.text == "[":
                 start_tok = self._eat("SYM", "[")
                 items: List[IR] = []
@@ -483,10 +535,10 @@ class Parser:
                     while self._accept("SYM", ","):
                         items.append(self.parse_expr())
                 self._eat("SYM", "]")
-                return NewLit(items, pos=start_tok.pos)
+                return self._attach_span(NewLit(items, pos=start_tok.pos), start_tok.start, self._last_tok.stop)
             if self.tok.kind == "SYM" and self.tok.text == "(":
                 args = self.parse_arg_list()
-                return Call(name, args, pos=name_tok.pos)
+                return self._attach_span(Call(name, args, pos=name_tok.pos), name_tok.start, self._last_tok.stop)
             if name == "new" and self.tok.kind == "NAME":
                 cname = self._eat("NAME").text
                 start_tok = self._eat("SYM", "{")
@@ -500,11 +552,11 @@ class Parser:
                         break
                     if not (self._accept("SYM", ";") or self._accept("SYM", ",")):
                         raise self._error("expected field separator", self.tok.pos, self._tok_span(self.tok))
-                return ClassNew(cname, init, pos=name_tok.pos)
+                return self._attach_span(ClassNew(cname, init, pos=name_tok.pos), name_tok.start, self._last_tok.stop)
             if self._allow_variant_ctor and self.tok.kind == "SYM" and self.tok.text == "{":
                 fields = self.parse_variant_init_fields()
-                return VariantCtor(name, fields, pos=name_tok.pos)
-            return Var(name, pos=name_tok.pos)
+                return self._attach_span(VariantCtor(name, fields, pos=name_tok.pos), name_tok.start, self._last_tok.stop)
+            return self._attach_span(Var(name, pos=name_tok.pos), name_tok.start, name_tok.stop)
         if self.tok.kind == "SYM" and self.tok.text == "{":
             start_tok = self._eat("SYM", "{")
             fields: List[Tuple[str, IR]] = []
@@ -517,7 +569,7 @@ class Parser:
                     break
                 if not (self._accept("SYM", ";") or self._accept("SYM", ",")):
                     raise self._error("expected field separator", self.tok.pos, self._tok_span(self.tok))
-            return ObjLit(fields, pos=start_tok.pos)
+            return self._attach_span(ObjLit(fields, pos=start_tok.pos), start_tok.start, self._last_tok.stop)
         raise self._error(f"unexpected token {self.tok.kind}", self.tok.pos, self._tok_span(self.tok))
 
     def parse_field_name(self) -> str:

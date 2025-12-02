@@ -1,3 +1,9 @@
+from typing import Dict, List, Optional, Set
+
+from tiny_errors import SourcePos
+from tiny_language_ast import *
+from tiny_language_preamble import TinyLangError, format_error
+
 # ----- Linter -----
 
 

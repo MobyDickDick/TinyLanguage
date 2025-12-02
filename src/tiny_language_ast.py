@@ -1,3 +1,8 @@
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Tuple
+
+from tiny_errors import SourcePos
+
 # ----- AST Nodes -----
 
 

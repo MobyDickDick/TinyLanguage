@@ -2,7 +2,7 @@
 
 TinyLanguage is a small Julia-inspired language with a Python interpreter. This README provides a StackEdit-style Markdown overview: syntax highlights, a compact tutorial, pointers to examples, common error messages, and the most important run/test commands.
 
-For interoperability guidance, see the cross-language compatibility notes in [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md). For concrete Rosetta Code–style ports from Python to TinyLanguage, walk through [`docs/rosetta_python_examples.md`](docs/rosetta_python_examples.md).
+For interoperability guidance, see the cross-language compatibility notes in [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md). For concrete Rosetta Code–style ports from Python to TinyLanguage, walk through [`docs/rosetta_python_examples.md`](docs/rosetta_python_examples.md). A kompakte Sprachreferenz mit Syntax, Typregeln und Operatorübersicht steht in [`docs/language_spec.md`](docs/language_spec.md).
 
 ## Transpiler roadmap (task list)
 - [x] **Expand the shared IR**: Ergänze neue Statement-/Expression-Typen (z. B. Kontrollflussknoten wie `IfElse` und `While`) und rüste die Hilfsfunktionen in [`tiny_language_transpilers.py`](tiny_language_transpilers.py) so auf, dass spätere Sprachen-Erweiterungen darauf aufbauen können.
@@ -380,8 +380,8 @@ Der „nativeCompiler“ wird separat geführt.
 - [x] **CLI-Wrapper**
   - Ein kleines Kommandozeilentool, das TinyLanguage-Dateien kompiliert/ausführt
     (z.B. `python -m tiny_lang_cli source.tiny` o.ä., abhängig von der Projektstruktur).
-- [ ] **Sprache dokumentieren**
-  - Kurze, stabile Sprachspezifikation (Syntax, Typregeln, „must use“-Regeln), damit das Verhalten klar bleibt.
+- [x] **Sprache dokumentieren**
+  - Kurze, stabile Sprachspezifikation (Syntax, Typregeln, „must use“-Regeln), damit das Verhalten klar bleibt. Siehe [`docs/language_spec.md`](docs/language_spec.md).
 
 ### 5. Native Compiler
 

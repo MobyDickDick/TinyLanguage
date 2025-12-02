@@ -14,6 +14,14 @@ For interoperability guidance, see the cross-language compatibility notes in [`d
 - [x] **Python-Interop-Demos ausbauen**: Zusätzliche `.tiny`-Programme bereitstellen, die die Anleitung in [`docs/python_interop.md`](docs/python_interop.md) konkret durchspielen, inklusive How-to-Run-Hinweisen und Tests.
 - [x] **Native-Compiler-Prototyp evaluieren**: Einen alternativen Backend-Pfad implementieren, der aus dem vorhandenen AST Bytecode oder native IR erzeugt und über eine kleine VM lauffähig ist. Iterativ über Smoke-Tests (Arithmetik, Branching, Funktionen) mit dem Interpreter abgleichen. Siehe [`docs/native_compiler.md`](docs/native_compiler.md) für CLI-Aufrufe, Regression-Tests und bekannte Grenzen.
 
+## Nächste sinnvolle Schritte
+- **Dokumentation vertiefen/aktualisieren (Startpunkt)**: Die bestehenden Guides in `docs/` gegeneinander abgleichen und auf den neuesten Stand bringen. Konkret:
+  - In [`docs/language_server_workflows.md`](docs/language_server_workflows.md) alle derzeit verfügbaren LSP-Methoden mit Beispiel-Requests/-Responses ergänzen und die Demo-Aufrufe aus der README-Sektion „Syntax and Features“ als kurze „So testest du es“-Abschnitte einfügen.
+  - In [`docs/python_interop.md`](docs/python_interop.md) mehr Durchstich-Beispiele aufnehmen, die modulare Imports, Namespaces und typisierte Funktionssignaturen gemeinsam demonstrieren; dabei die passenden `.tiny`-Demos aus `src_tiny/` verlinken und deren erwartete Ausgaben dokumentieren.
+  - In [`docs/native_compiler.md`](docs/native_compiler.md) den aktuellen CLI-Workflow und Grenzen der VM betonen und eine kleine Troubleshooting-Liste (häufige Fehlercodes, typisches Stacktrace-Beispiel) anhängen.
+- **Feature-Übersicht konsolidieren**: Aus den Beispielen in „Syntax and Features“ ein kompaktes Cheat Sheet bauen (kurze Code-Snippets + Verweise auf die vollständigen `.tiny`-Demos), damit Einsteiger zentrale Konstrukte schneller nachschlagen können.
+- **Test- und Run-Beispiele bündeln**: Die verstreuten CLI-Aufrufe (z. B. `python tiny_language.py src_tiny/class_demo.tiny`) zu einer Befehlsliste oder einem kleinen Skript zusammenführen, das alle Demos in einem Lauf startet; Fehlerausgaben können als Schnell-Regressionstest dienen.
+
 ## Syntax and Features
 
 ### Mini tutorial: variables, control flow, and functions

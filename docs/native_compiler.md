@@ -28,3 +28,28 @@ Dieser Entwurf steckt die Zielarchitektur für ein alternatives Backend ab, das 
 - **CLI-Schalter**: `python src/tiny_language.py --native-backend -e "print(1 + 2);"` führt ein Snippet ohne den AST-Interpreter aus.
 - **Datei-Ausführung**: `python src/tiny_language.py --native-backend path/to/program.tiny` lädt ein Programm und nutzt denselben Codegen/VM-Pfad.
 - **Regression-Tests**: `python -m pytest tests/test_native_codegen.py -q` vergleicht Interpreter- und Native-Backend-Ausgaben und stellt sicher, dass nicht unterstützte Konstrukte weiterhin als `NotImplementedError` sichtbar bleiben.
+
+## CLI-Workflow auf einen Blick
+
+1. **Smoke-Run mit Beispielprogramm**: `PYTHONPATH=src python src/tiny_language.py --native-backend src_tiny/demo.tiny` – prüft, ob Parser, Codegen und VM zusammenarbeiten.
+2. **Schneller Feature-Vergleich**: Führe denselben Befehl ohne `--native-backend` aus und vergleiche die Ausgabe, um Divergenzen einzukreisen.
+3. **Gezielte Funktionstests**: `python -m pytest tests/test_native_codegen.py -k while -q` zum Fokussieren auf einzelne Konstrukte wie `while`-Schleifen oder Funktionsaufrufe.
+
+## Grenzen und bekannte Lücken
+
+- Nicht alle Konstrukte sind bislang abgedeckt; Heap-Operationen, Klassen und Pattern Matching werden absichtlich als `NotImplementedError` gekennzeichnet.
+- Die VM erwartet einfache numerische/Boolean-Ausdrücke. Typannotationen werden akzeptiert, aber komplexe Typprüfungen erfolgen weiterhin im Interpreter.
+- `print` sammelt Ausgaben in der VM, unterstützt aber aktuell keine Formatierung oder Mehrfach-Delimiter wie der Interpreter.
+
+## Troubleshooting
+
+- **`NotImplementedError` beim Codegen**: Der Generator nennt meist den betroffenen AST-Knoten. Beispiel: `NotImplementedError: Call to Map.set not supported in native backend` – reduziere den Testfall auf einfache Arithmetik oder deaktiviere `--native-backend`.
+- **Stacktrace aus der VM**: Fehler werden mit Frame-Informationen ausgegeben, z. B.:
+  ```
+  Traceback (most recent call last):
+    at NativeVM.run_function(<main>)
+    at NativeVM._binary()
+  RuntimeError: division by zero
+  ```
+  Die Frames spiegeln die Bytecode-Ausführung wider und helfen, fehlerhafte Instruktionen zu lokalisieren.
+- **CLI-Parsing klappt nicht**: Stelle sicher, dass `--native-backend` vor `-e` oder dem Dateipfad steht; andernfalls interpretiert `argparse` das Flag als Programmargument.

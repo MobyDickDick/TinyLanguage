@@ -40,6 +40,64 @@ Outputs are JSON so they can be piped into tools or inspected visually. Example 
 ]
 ```
 
+## Supported methods and example payloads
+
+Each subcommand is a thin wrapper around an internal request/response pair and can be copy/pasted into JSON-RPC glue code:
+
+- **Completions** request for prefix `gr` (inline source):
+  ```bash
+  PYTHONPATH=src python src/language_server_cli.py --source $'fn greet() { return 1; }\ngreet();' completions --prefix gr
+  ```
+  Response:
+  ```json
+  [
+    { "label": "greet", "kind": "identifier" }
+  ]
+  ```
+- **Hover** request for the `Greeter` class in `src_tiny/class_demo.tiny`:
+  ```bash
+  PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny hover --symbol Greeter
+  ```
+  Response:
+  ```json
+  {
+    "symbol": "Greeter",
+    "detail": "TinyLanguage symbol",
+    "position": [10, 1]
+  }
+  ```
+- **Diagnostics** for an unused return value:
+  ```bash
+  PYTHONPATH=src python src/language_server_cli.py --source $'fn greet() -> string { return "hi"; }\ngreet();' diagnostics
+  ```
+  Response (trimmed):
+  ```json
+  [
+    {
+      "message": "[E011] call to greet returns a value that is ignored (line 2, col 1) ...",
+      "code": "E011",
+      "range": [2, 1, 2, 2]
+    }
+  ]
+  ```
+
+## "So testest du es" quick demos
+
+The example programs referenced in the README’s “Syntax and Features” section can be exercised via the same CLI to validate hover/completion/diagnostics end-to-end:
+
+- Hover over class names or methods in `src_tiny/class_demo.tiny`:
+  ```bash
+  PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny hover --symbol greeting
+  ```
+- List completions for the namespace utilities in `src_tiny/namespace_demo.tiny`:
+  ```bash
+  PYTHONPATH=src python src/language_server_cli.py --file src_tiny/namespace_demo.tiny completions --prefix To
+  ```
+- Capture diagnostics for the standard library walkthrough in `src_tiny/stdlib_io_random_demo.tiny` to ensure lints stay quiet:
+  ```bash
+  PYTHONPATH=src python src/language_server_cli.py --file src_tiny/stdlib_io_random_demo.tiny diagnostics
+  ```
+
 ## API surface
 
 The core dataclasses mirror the high-level Language Server Protocol structure:

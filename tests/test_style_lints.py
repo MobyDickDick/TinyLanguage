@@ -47,3 +47,17 @@ def test_unreachable_after_exhaustive_if_is_flagged():
     with pytest.raises(TinyLangError) as err:
         compile_and_run(src)
     assert "unreachable" in str(err.value).lower()
+
+
+def test_type_change_is_flagged_even_without_execution():
+    src = """
+    fn skipped() {
+        define i = 1;
+        i = "oops";
+    }
+    """
+
+    with pytest.raises(TinyLangError) as err:
+        compile_and_run(src)
+
+    assert "type change" in str(err.value)

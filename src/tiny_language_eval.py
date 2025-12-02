@@ -9,12 +9,13 @@
     def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) -> Any:
         try:
             if isinstance(s, Let):
-                env.values[s.name] = self.eval_expr(s.expr, env)
+                env.define(s.name, self.eval_expr(s.expr, env), s.pos)
             elif isinstance(s, Assign):
+                value = self.eval_expr(s.expr, env)
                 if env.contains(s.name):
-                    env.set(s.name, self.eval_expr(s.expr, env))
+                    env.assign(s.name, value, s.pos)
                 else:
-                    env.values[s.name] = self.eval_expr(s.expr, env)
+                    env.define(s.name, value, s.pos)
             elif isinstance(s, FieldAssign):
                 obj = self.eval_expr(s.obj, env)
                 val = self.eval_expr(s.expr, env)
@@ -42,14 +43,14 @@
                         return res
                 except TinyLangError as err:
                     if s.err_name:
-                        env.values[s.err_name] = self._error_value(self._ensure_error_has_stack(err))
+                        env.define(s.err_name, self._error_value(self._ensure_error_has_stack(err)), s.pos)
                     res = self.eval_block(s.handler, env, namespace)
                     if isinstance(res, ReturnSignal):
                         return res
             elif isinstance(s, Namespace):
                 qualified = self._qualify_name(s.name, namespace)
-                child_env = Environment(parent=env, namespace=qualified)
-                env.values[s.name] = NamespaceRef(self, qualified)
+                child_env = Environment(parent=env, namespace=qualified, runtime=self)
+                env.define(s.name, NamespaceRef(self, qualified), s.pos)
                 self.namespace_envs[qualified] = child_env
                 self.eval_block(s.body, child_env, qualified)
             elif isinstance(s, Import):
@@ -61,7 +62,7 @@
                     caller_path=self.current_module_path,
                     pos=s.pos,
                 )
-                env.values[binding] = ns_ref
+                env.define(binding, ns_ref, s.pos)
             elif isinstance(s, Fn):
                 s.namespace = namespace
                 fn_name = self._qualify_name(s.name, namespace)
@@ -81,7 +82,11 @@
             elif isinstance(s, DestructAssign):
                 val = self.eval_expr(s.expr, env)
                 for nm in s.names:
-                    env.values[nm] = val[str(nm)]
+                    extracted = val[str(nm)]
+                    if env.contains(nm):
+                        env.assign(nm, extracted, s.pos)
+                    else:
+                        env.define(nm, extracted, s.pos)
             elif isinstance(s, TypeDef):
                 self.register_type(s.name, s.fields, s.variants)
             elif isinstance(s, ClassDef):
@@ -261,10 +266,14 @@
 
 
 class Environment:
-    def __init__(self, parent: Optional["Environment"], namespace: Optional[str] = None):
+    def __init__(
+        self, parent: Optional["Environment"], namespace: Optional[str] = None, runtime: Optional["Runtime"] = None
+    ):
         self.parent = parent  # Outer lexical scope (if any)
         self.namespace = namespace  # Module/namespace name for namespacing lookups
+        self.runtime = runtime or (parent.runtime if parent else None)
         self.values: Dict[str, Any] = {}  # Local symbol table
+        self.types: Dict[str, str] = {}
 
     def get(self, name: str) -> Any:
         if name in self.values:
@@ -273,18 +282,37 @@ class Environment:
             return self.parent.get(name)
         raise RuntimeError(f"unknown variable {name}")
 
-    def set(self, name: str, value: Any) -> None:
-        if name in self.values:
-            self.values[name] = value  # Update local binding
-        elif self.parent is not None:
-            self.parent.set(name, value)  # Bubble up to parent scope
+    def define(self, name: str, value: Any, pos: SourcePos) -> None:
+        if self.runtime:
+            self.types[name] = self.runtime._value_type_name(value) or type(value).__name__
         else:
-            self.values[name] = value  # Create new binding when absent
+            self.types[name] = type(value).__name__
+        self.values[name] = value
+
+    def assign(self, name: str, value: Any, pos: SourcePos) -> None:
+        if name in self.values:
+            if self.runtime:
+                self.runtime._check_assignment_type(self, name, value, pos, local_only=True)
+                self.types[name] = self.runtime._value_type_name(value) or type(value).__name__
+            else:
+                self.types[name] = type(value).__name__
+            self.values[name] = value
+        elif self.parent is not None:
+            self.parent.assign(name, value, pos)
+        else:
+            self.define(name, value, pos)
 
     def contains(self, name: str) -> bool:
         if name in self.values:
             return True
         return self.parent.contains(name) if self.parent else False
+
+    def type_of(self, name: str, *, local_only: bool = False) -> Optional[str]:
+        if name in self.types:
+            return self.types[name]
+        if not local_only and self.parent is not None:
+            return self.parent.type_of(name)
+        return None
 
     def all_names(self) -> List[str]:
         names = list(self.values.keys())  # Start with current scope names

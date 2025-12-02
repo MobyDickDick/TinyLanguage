@@ -55,7 +55,7 @@ def compile_and_run(
     runtime.output.clear()  # Reset buffered program output
     runtime.error_messages.clear()  # Reset accumulated error messages
 
-    env = env or Environment(parent=None, namespace=module_namespace)  # Build module environment
+    env = env or Environment(parent=None, namespace=module_namespace, runtime=runtime)  # Build module environment
     if module_namespace:
         runtime.namespace_envs[module_namespace] = env  # Register namespace for imports
     runtime.global_env = env  # Keep a reference for the runtime
@@ -262,8 +262,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if args.repl:  # Interactive shell mode
         history_path = Path.home() / ".tiny_language_history"
-        env = Environment(parent=None, namespace=None)
         runtime = Runtime("")
+        env = Environment(parent=None, namespace=None, runtime=runtime)
         scope_provider = lambda: list(KEYWORDS | BUILTINS | set(env.all_names()))
         _configure_readline(history_path, scope_provider)
         read_fn = _resolve_read_fn()

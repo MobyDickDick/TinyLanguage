@@ -8,6 +8,8 @@ from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Tuple
+
+from tiny_errors import SourcePos
 import threading
 
 @dataclass
@@ -178,7 +180,7 @@ class _StdLibRegistrar:
 
     def _ensure_namespace(self, name: str) -> None:
         if name not in self.env.values:
-            self.env.values[name] = self.namespace_ref_cls(self.runtime, name)
+            self.env.define(name, self.namespace_ref_cls(self.runtime, name), SourcePos.origin())
 
     def _to_pointer(self, values: Iterable[Any]) -> int:
         items = list(values)
@@ -885,7 +887,7 @@ class _StdLibRegistrar:
 
         env = self.runtime.namespace_envs.get(namespace)
         if env is None:
-            env = Environment(parent=None, namespace=namespace)
+            env = Environment(parent=None, namespace=namespace, runtime=self.runtime)
             self.runtime.namespace_envs[namespace] = env
 
         for name in missing:
@@ -893,7 +895,7 @@ class _StdLibRegistrar:
             if callable(attr):
                 self.runtime.register_native(name, self._python_make_callable(py_module, name), namespace=namespace)
             else:
-                env.values[name] = self._python_from_host(attr)
+                env.define(name, self._python_from_host(attr), SourcePos.origin())
 
         return self.namespace_ref_cls(self.runtime, namespace)
 

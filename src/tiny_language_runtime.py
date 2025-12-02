@@ -102,7 +102,7 @@ class ModuleResolver:
                     )
                 self._in_progress.append(resolved_path)
                 try:
-                    module_env = Environment(parent=None, namespace=resolved_name)
+                    module_env = Environment(parent=None, namespace=resolved_name, runtime=runtime)
                     compile_and_run(
                         resolved_path.read_text(encoding="utf-8"),
                         env=module_env,
@@ -167,6 +167,7 @@ class Runtime:
     def __init__(self, source: str):
         self._lock = threading.RLock()
         self.heap: Dict[int, List[Any]] = {}
+        self.heap_cell_types: Dict[int, Dict[int, str]] = {}
         self.ptr_tags: Dict[int, str] = {}
         self.ops: Dict[Tuple[str, Optional[str], Optional[str]], Any] = {}
         self.methods: Dict[Tuple[str, str], MethodDef] = {}
@@ -281,6 +282,7 @@ class Runtime:
             p = self.next_ptr
             self.next_ptr += 1
             self.heap[p] = [0 for _ in range(int(n))]
+            self.heap_cell_types[p] = {}
             return p
 
     def delete(self, p: Any, pos: Optional[SourcePos] = None) -> Dict[str, Any]:
@@ -288,6 +290,7 @@ class Runtime:
             ip = int(p)
             with self._lock:
                 self.heap.pop(ip, None)
+                self.heap_cell_types.pop(ip, None)
                 self.ptr_tags.pop(ip, None)
             return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 0, "msg": ""}}
         except Exception as e:  # noqa: BLE001
@@ -321,8 +324,28 @@ class Runtime:
 
     def heap_set(self, p: Any, i: Any, v: Any, *, pos: Optional[SourcePos] = None) -> Dict[str, Any]:
         try:
+            ip = int(p)
+            idx = int(i)
+        except Exception:
+            self._record_error("heap access error: pointer or index is not numeric", pos)
+            return {
+                "__tag__": "Record",
+                "e": {"__tag__": "Error", "code": 1, "msg": "heap access error: pointer or index is not numeric"},
+            }
+
+        try:
             with self._lock:
-                self.heap[int(p)][int(i)] = v
+                expected = self.heap_cell_types.get(ip, {}).get(idx)
+                actual = self._value_type_name(v)
+                if expected is not None and expected != actual:
+                    message = f"heap type mismatch at {ip}[{idx}]: expected {expected} but got {actual}"
+                    self._record_error(message, pos, code="E014")
+                    return {
+                        "__tag__": "Record",
+                        "e": {"__tag__": "Error", "code": 1, "msg": message},
+                    }
+                self.heap[ip][idx] = v
+                self.heap_cell_types.setdefault(ip, {})[idx] = actual
             return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 0, "msg": ""}}
         except Exception as e:  # noqa: BLE001
             self._record_error(str(e), pos)
@@ -367,11 +390,28 @@ class Runtime:
             return "Null"
         if isinstance(value, bool):
             return "Bool"
-        if isinstance(value, (int, float)):
-            return "number"
+        if isinstance(value, int) and not isinstance(value, bool):
+            return "int"
+        if isinstance(value, float):
+            return "float"
         if isinstance(value, str):
             return "string"
         return type(value).__name__
+
+    def _check_assignment_type(
+        self, env: "Environment", name: str, value: Any, pos: SourcePos, *, local_only: bool = False
+    ) -> None:
+        expected = env.type_of(name, local_only=local_only)
+        if expected is None:
+            return
+        actual = self._value_type_name(value) or type(value).__name__
+        if expected != actual:
+            raise self._error(
+                f"type change for variable {name}: expected {expected} but got {actual}",
+                pos,
+                code="E014",
+                hint="Use a new variable or cast explicitly if a different type is required.",
+            )
 
     def _type_matches(self, expected: str, value: Any) -> bool:
         actual = self._value_type_name(value)
@@ -823,9 +863,9 @@ class Runtime:
 
     def register_operator(self, opdef: OpDef, env: "Environment") -> None:
         def impl(a_val: Any, b_val: Any) -> Any:
-            op_env = Environment(parent=env, namespace=env.namespace)
-            op_env.values[opdef.a_name] = a_val
-            op_env.values[opdef.b_name] = b_val
+            op_env = Environment(parent=env, namespace=env.namespace, runtime=self)
+            op_env.define(opdef.a_name, a_val, opdef.pos)
+            op_env.define(opdef.b_name, b_val, opdef.pos)
             res = self.eval_block(opdef.body, op_env, env.namespace)
             if isinstance(res, ReturnSignal):
                 return res.value
@@ -920,18 +960,18 @@ class Runtime:
         for case in m.cases:
             pattern = case.pattern
             if isinstance(pattern, WildcardPattern):
-                branch_env = Environment(parent=env, namespace=env.namespace)
+                branch_env = Environment(parent=env, namespace=env.namespace, runtime=self)
                 if pattern.name:
-                    branch_env.values[pattern.name] = value
+                    branch_env.define(pattern.name, value, pattern.pos)
                 return self.eval_expr(case.body, branch_env)
 
             if isinstance(pattern, VariantPattern) and pattern.variant == tag:
-                branch_env = Environment(parent=env, namespace=env.namespace)
+                branch_env = Environment(parent=env, namespace=env.namespace, runtime=self)
                 for fname, bind in pattern.bindings.items():
                     if not isinstance(value, dict) or fname not in value:
                         raise self._error(f"field {fname} missing for variant {pattern.variant}", pattern.pos)
                     if bind:
-                        branch_env.values[bind] = value[fname]
+                        branch_env.define(bind, value[fname], pattern.pos)
                 return self.eval_expr(case.body, branch_env)
 
         raise self._error(f"non-exhaustive match for tag {tag}", m.pos)
@@ -957,11 +997,11 @@ class Runtime:
         return True, native(*args)
 
     def _invoke_function(self, fn: Fn, args: List[Any]) -> Any:
-        call_env = Environment(parent=self.global_env, namespace=fn.namespace)
+        call_env = Environment(parent=self.global_env, namespace=fn.namespace, runtime=self)
         for param, arg in zip(fn.params, args):
             if param.type:
                 self._enforce_annotation(param.type, arg, label=f"parameter {param.name} in function {fn.name}", pos=fn.pos)
-            call_env.values[param.name] = arg
+            call_env.define(param.name, arg, fn.pos)
         frame = StackFrame(fn.name, fn.namespace, fn.pos)
         self.call_stack.append(frame)
         prev_namespace = self.current_module_namespace
@@ -1155,17 +1195,17 @@ class Runtime:
         md = self.find_method(start_class, name)
         if md is None:
             raise RuntimeError(f"no method {name} for class {start_class}")
-        env = Environment(parent=None)
+        env = Environment(parent=None, runtime=self)
         self_value: Any = target_obj
         if md.class_name != cname:
             self_value = BaseView(target_obj, md.class_name)
-        env.values[md.params[0].name] = self_value  # self
+        env.define(md.params[0].name, self_value, md.pos)  # self
         for base in self.class_mro(cname)[1:]:
-            env.values[base] = BaseView(target_obj, base)
+            env.define(base, BaseView(target_obj, base), md.pos)
         for param, arg in zip(md.params[1:], args):
             if param.type:
                 self._enforce_annotation(param.type, arg, label=f"parameter {param.name} in method {md.class_name}.{md.name}", pos=md.pos)
-            env.values[param.name] = arg
+            env.define(param.name, arg, md.pos)
         frame = StackFrame(f"{md.class_name}.{md.name}", md.namespace, md.pos)
         self.call_stack.append(frame)
         prev_namespace = self.current_module_namespace

@@ -102,6 +102,38 @@ tau fraction=0.499999999985709
 file=example.txt
 ```
 
+## Durchstich-Läufe Schritt für Schritt
+
+Nutze die vorhandenen `.tiny`-Programme als vollständige Referenzläufe, die modulare Python-Imports, Namespaces und (wo definiert) typisierte Signaturen kombinieren. Alle Beispiele lassen sich ohne weitere Assets direkt starten:
+
+- **Typed Namespace plus zwei Module** (`src_tiny/python_namespace_typed_demo.tiny`)
+  ```
+  PYTHONPATH=src python src/tiny_language.py src_tiny/python_namespace_typed_demo.tiny
+  # Zeigt: allowlistete math/os.path-Imports, gekapselt unter PyInterop.*, typisierte Wrapper
+  # Ausgabe
+  13.0
+  tau fraction=0.499999999985709
+  file=example.txt
+  ```
+- **JSON-Parsing und OS-Interop** (`src_tiny/python_json_demo.tiny`)
+  ```
+  PYTHONPATH=src python src/tiny_language.py src_tiny/python_json_demo.tiny
+  # Zeigt: modulare Imports mit getrennten Allowlists, Weitergabe eines Python-Proxy-Objekts
+  # Ausgabe
+  cwd=.../TinyLanguage
+  ok=True
+  payload={"ok": true}
+  ```
+- **Numerik mit knapper Allowlist** (`src_tiny/python_math_demo.tiny`)
+  ```
+  PYTHONPATH=src python src/tiny_language.py src_tiny/python_math_demo.tiny
+  # Zeigt: nummerische Rückgaben, Bool-Mapping und restriktive Attributfreigabe
+  # Ausgabe
+  13.0
+  tau=6.283185307179586
+  isfinite=true
+  ```
+
 Weitere Demo-Dateien in `src_tiny/` lassen sich kombinieren, um Namespaces (`namespace_demo.tiny`) oder komplexere Stdlib-Aufrufe (`stdlib_io_random_demo.tiny`) mit Python-FFI zu vergleichen. Dokumentiere beim Hinzufügen eigener Demos sowohl die erlaubten Attribute (Allowlist) als auch die erwarteten Ausgaben, damit Konsumenten sie als Regressionstests nutzen können.
 
 ## Mehr Beispiele mit erwarteten Ausgaben

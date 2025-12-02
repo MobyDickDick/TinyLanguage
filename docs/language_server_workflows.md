@@ -42,22 +42,23 @@ Outputs are JSON so they can be piped into tools or inspected visually. Example 
 
 ## Supported methods and example payloads
 
-Each subcommand is a thin wrapper around an internal request/response pair and can be copy/pasted into JSON-RPC glue code. The
-list below mirrors the currently available LSP-style helpers and shows the relevant request parameters and response shapes:
+Each subcommand is a thin wrapper around an internal request/response pair and can be copy/pasted into JSON-RPC glue code. Positions are zero-based and include namespace-qualified symbols (`Math.inc`, `Tools.double`, …). Currently exposed methods:
 
 - **Completions** (`textDocument/completion` equivalent)
   - Request payload: `{ "prefix": "gr" }`
-  - Response payload: `[ { "label": "greet", "kind": "identifier" }, ... ]`
-  - CLI demo for inline source:
+  - Response payload: sorted list of `{ "label": "greet", "kind": "identifier" }` entries that mix keywords, built-ins, and parsed symbols.
+  - CLI demo for inline source plus example output:
     ```bash
     PYTHONPATH=src python src/language_server_cli.py --source $'fn greet() { return 1; }\ngreet();' completions --prefix gr
+    # => [{"label": "greet", "kind": "identifier"}]
     ```
 - **Hover** (`textDocument/hover` equivalent)
   - Request payload: `{ "symbol": "Greeter" }`
   - Response payload: `{ "symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [10, 1] }`
-  - CLI demo for a file on disk:
+  - CLI demo for a file on disk with a resolved position:
     ```bash
     PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny hover --symbol Greeter
+    # => {"symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [0, 6]}
     ```
 - **Diagnostics** (`textDocument/diagnostic` equivalent)
   - Request payload: `{}` (uses the supplied source)
@@ -65,7 +66,10 @@ list below mirrors the currently available LSP-style helpers and shows the relev
   - CLI demo for an unused return value:
     ```bash
     PYTHONPATH=src python src/language_server_cli.py --source $'fn greet() -> string { return "hi"; }\ngreet();' diagnostics
+    # => [{"message": "[E011] function greet discards return value; assign or ignore explicitly", ...}]
     ```
+
+Not implemented yet: definition jumps, formatting, or workspace symbol searches. Those can be layered on later by extending the helper functions in [`src/language_server.py`](../src/language_server.py).
 
 ## "So testest du es" quick demos
 
@@ -83,7 +87,16 @@ The example programs referenced in the README’s “Syntax and Features” sect
   ```bash
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/stdlib_io_random_demo.tiny diagnostics
   ```
-
+- Inspect tagged-union coverage in `src_tiny/match_demo.tiny` via hover and completions to ensure ADT symbols are indexed:
+  ```bash
+  PYTHONPATH=src python src/language_server_cli.py --file src_tiny/match_demo.tiny hover --symbol Rectangle
+  PYTHONPATH=src python src/language_server_cli.py --file src_tiny/match_demo.tiny completions --prefix Cir
+  ```
+- Validate operator overloading docs with completions and diagnostics from `src_tiny/operator_overloading_demo.tiny`:
+  ```bash
+  PYTHONPATH=src python src/language_server_cli.py --file src_tiny/operator_overloading_demo.tiny completions --prefix oper
+  PYTHONPATH=src python src/language_server_cli.py --file src_tiny/operator_overloading_demo.tiny diagnostics
+  ```
 ## API surface
 
 The core dataclasses mirror the high-level Language Server Protocol structure:

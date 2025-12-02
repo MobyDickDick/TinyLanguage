@@ -35,6 +35,12 @@ Dieser Entwurf steckt die Zielarchitektur für ein alternatives Backend ab, das 
 2. **Schneller Feature-Vergleich**: Führe denselben Befehl ohne `--native-backend` aus und vergleiche die Ausgabe, um Divergenzen einzukreisen.
 3. **Gezielte Funktionstests**: `python -m pytest tests/test_native_codegen.py -k while -q` zum Fokussieren auf einzelne Konstrukte wie `while`-Schleifen oder Funktionsaufrufe.
 
+Typische Rückmeldungen vom CLI:
+
+- Erfolgreiche Läufe beenden den Prozess mit Exit-Code `0` und drucken die Ausgabe des VM-Stacks.
+- Nicht unterstützte Sprachkonstrukte lösen `NotImplementedError` aus und eignen sich als Marker für fehlende Lowerings.
+- Laufzeitfehler (z. B. Division durch Null) erscheinen als `RuntimeError` aus der VM und werden mit Stackframes annotiert (siehe Troubleshooting unten).
+
 ## Grenzen und bekannte Lücken
 
 - Nicht alle Konstrukte sind bislang abgedeckt; Heap-Operationen, Klassen und Pattern Matching werden absichtlich als `NotImplementedError` gekennzeichnet.

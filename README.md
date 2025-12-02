@@ -258,6 +258,7 @@ Detailed notes live in [`docs/stdlib_extensions.md`](docs/stdlib_extensions.md),
 ## Running programs and tests
 - **Run a program**: `./tiny_language <file.tiny>` executes a TinyLanguage program and exits with status 0 on success. Example: `./tiny_language src_tiny/demo.tiny`.
   - If you prefer per-file executability, add a shebang such as `#!/usr/bin/env -S ./tiny_language` to the top of your `.tiny` file, mark it executable (`chmod +x your_program.tiny`), and run it directly with `./your_program.tiny`.
+- **Python CLI wrapper**: `python -m tiny_lang_cli path/to/program.tiny` uses the same interpreter but can also switch backends with `--backend interpreter|python|native`. Inline snippets remain available via `--source "print(1+2);"`.
 - **Test suite**: `python -m pytest` runs all tests. Target individual files with commands like `python -m pytest tests/test_tiny_language.py -k class`.
 
 ### Optional type hints
@@ -368,7 +369,7 @@ Der „nativeCompiler“ wird separat geführt.
 
 ### 4. Tooling
 
-- [ ] **CLI-Wrapper**
+- [x] **CLI-Wrapper**
   - Ein kleines Kommandozeilentool, das TinyLanguage-Dateien kompiliert/ausführt
     (z.B. `python -m tiny_lang_cli source.tiny` o.ä., abhängig von der Projektstruktur).
 - [ ] **Sprache dokumentieren**

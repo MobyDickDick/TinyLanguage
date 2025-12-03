@@ -45,24 +45,42 @@ Outputs are JSON so they can be piped into tools or inspected visually. Example 
 Each subcommand is a thin wrapper around an internal request/response pair and can be copy/pasted into JSON-RPC glue code. Positions are zero-based and include namespace-qualified symbols (`Math.inc`, `Tools.double`, …). Currently exposed methods:
 
 - **Completions** (`textDocument/completion` equivalent)
-  - Request payload: `{ "prefix": "gr" }`
-  - Response payload: sorted list of `{ "label": "greet", "kind": "identifier" }` entries that mix keywords, built-ins, and parsed symbols.
+  - Request payload:
+    ```json
+    { "prefix": "gr" }
+    ```
+  - Response payload:
+    ```json
+    [{ "label": "greet", "kind": "identifier" }, { "label": "greeting", "kind": "keyword" }]
+    ```
   - CLI demo for inline source plus example output:
     ```bash
     PYTHONPATH=src python src/language_server_cli.py --source $'fn greet() { return 1; }\ngreet();' completions --prefix gr
     # => [{"label": "greet", "kind": "identifier"}, {"label": "greeting", "kind": "keyword"}, ...]
     ```
 - **Hover** (`textDocument/hover` equivalent)
-  - Request payload: `{ "symbol": "Greeter" }`
-  - Response payload: `{ "symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [10, 1] }`
+  - Request payload:
+    ```json
+    { "symbol": "Greeter" }
+    ```
+  - Response payload:
+    ```json
+    { "symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [10, 1] }
+    ```
   - CLI demo for a file on disk with a resolved position:
     ```bash
     PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny hover --symbol Greeter
     # => {"symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [0, 6]}
     ```
 - **Diagnostics** (`textDocument/diagnostic` equivalent)
-  - Request payload: `{}` (uses the supplied source)
-  - Response payload: list of `{ "message": "[E011] ...", "code": "E011", "range": [2, 1, 2, 2] }`
+  - Request payload:
+    ```json
+    {}
+    ```
+  - Response payload:
+    ```json
+    [{ "message": "[E011] ...", "code": "E011", "range": [2, 1, 2, 2] }]
+    ```
   - CLI demo for an unused return value:
     ```bash
     PYTHONPATH=src python src/language_server_cli.py --source $'fn greet() -> string { return "hi"; }\ngreet();' diagnostics
@@ -103,6 +121,18 @@ The example programs referenced in the README’s “Syntax and Features” sect
   # => [{"label": "operator +", "kind": "identifier"}, {"label": "operator ==", "kind": "identifier"}, ...]
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/operator_overloading_demo.tiny diagnostics
   # => [] (the demo should lint clean)
+  ```
+- Probe concurrency helpers from `src_tiny/concurrency_demo.tiny` to confirm that spawned functions are indexed:
+  ```bash
+  PYTHONPATH=src python src/language_server_cli.py --file src_tiny/concurrency_demo.tiny completions --prefix spawn
+  # => [{"label": "spawn", "kind": "keyword"}, {"label": "spawn label", "kind": "identifier"}, ...]
+  PYTHONPATH=src python src/language_server_cli.py --file src_tiny/concurrency_demo.tiny diagnostics
+  # => [] (tasks and joins should not emit lints)
+  ```
+- Walk through heap usage in `src_tiny/heap_pointer_demo.tiny` via diagnostics to catch common pointer mistakes:
+  ```bash
+  PYTHONPATH=src python src/language_server_cli.py --file src_tiny/heap_pointer_demo.tiny diagnostics
+  # => [] (the curated example should stay lint-clean; modify it to provoke heap errors during experiments)
   ```
 ## API surface
 

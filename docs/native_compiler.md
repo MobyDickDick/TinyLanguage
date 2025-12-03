@@ -29,6 +29,13 @@ Dieser Entwurf steckt die Zielarchitektur für ein alternatives Backend ab, das 
 - **Datei-Ausführung**: `python src/tiny_language.py --native-backend path/to/program.tiny` lädt ein Programm und nutzt denselben Codegen/VM-Pfad.
 - **Regression-Tests**: `python -m pytest tests/test_native_codegen.py -q` vergleicht Interpreter- und Native-Backend-Ausgaben und stellt sicher, dass nicht unterstützte Konstrukte weiterhin als `NotImplementedError` sichtbar bleiben.
 
+## Aktueller CLI-Workflow und VM-Grenzen
+
+- **A/B-Vergleich fest einplanen**: Jeder Lauf mit `--native-backend` sollte einmal ohne Flag wiederholt werden, um Divergenzen zum Interpreter sofort sichtbar zu machen.
+- **Begrenzter Sprachumfang**: Heap-Operationen, Klassen, Pattern Matching oder Deques sind derzeit nicht abgedeckt und lösen bewusst `NotImplementedError` aus. Verwende für diese Features den Interpreter-Pfad.
+- **Einheitliche Aufrufschablonen**: Sowohl das CLI (`src/tiny_language.py`) als auch `tiny_lang_cli` akzeptieren `--native-backend` vor `-e` oder dem Dateipfad. Die VM arbeitet ausschließlich auf Dateibasis oder Inline-Snippets; REPL und Formatter bleiben interpretergestützt.
+- **Ausgabeabgleich**: Die VM puffert `print`-Ausgaben zeilenweise; das erleichtert Vergleiche mit dem Interpreter, aber Mehrfach-Delimiter oder strukturierte Logs sind noch nicht implementiert.
+
 ## CLI-Workflow auf einen Blick
 
 1. **Smoke-Run mit Beispielprogramm**: `PYTHONPATH=src python src/tiny_language.py --native-backend src_tiny/demo.tiny` – prüft, ob Parser, Codegen und VM zusammenarbeiten.
@@ -65,7 +72,7 @@ Typische Rückmeldungen vom CLI:
 - **Ungültige Instruktion im Bytecode**: Falls die VM `RuntimeError: unknown opcode` meldet, ist der Bytecode vermutlich aus einer älteren Generator-Version. Lege den Bytecode neu an, indem du das Quellprogramm erneut mit `--native-backend` ausführst und alte Artefakte löschst.
 - **Interpreter/Nativ divergieren**: Nutze den A/B-Vergleich aus dem Workflow oben: einmal mit und einmal ohne `--native-backend` laufen lassen. Unterschiedliche Ausgaben deuten auf fehlende Lowerings hin und sollten als Regression dokumentiert werden.
 - **Timeouts in Test-Suites**: Lange Läufe können die VM blockieren. Begrenze Schleifen in `.tiny`-Fixtures oder verwende gezielte Test-Filter (`-k while`) und `-q`, um die Logmenge klein zu halten.
-- **Häufige Fehlercodes auf einen Blick**:
-  - `NotImplementedError`: Feature noch nicht im Codegen/VM abgedeckt (z. B. Heap, Klassen, Pattern Matching).
-  - `RuntimeError: division by zero` oder ähnliche VM-Laufzeitfehler: stammen aus den Bytecode-Instruktionen und zeigen ein Stacktrace mit `NativeVM.*`-Frames.
-  - `SystemExit 2`: tritt auf, wenn `argparse` das `--native-backend`-Flag an der falschen Position erhält; wiederhole den Aufruf mit dem Flag vor `-e` oder dem Pfad.
+- **Fehlercodes im Kurzüberblick**:
+  - `NotImplementedError`: Feature fehlt im Codegen/VM (z. B. Heap, Klassen, Pattern Matching).
+  - `RuntimeError: division by zero` (oder ähnlich): Laufzeitfehler während der Bytecode-Ausführung, Stacktrace zeigt `NativeVM.*`-Frames.
+  - `SystemExit 2`: `argparse`-Fehler durch falsch platziertes `--native-backend`.

@@ -247,38 +247,190 @@ def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None
 
 
 def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
-    defs: Dict[str, SourcePos] = {}
-    uses: Dict[str, int] = {}
+    unused: List[tuple[str, SourcePos]] = []
 
-    def collect_defs(block: List[IR]) -> None:
-        for idx, s in enumerate(block):
-            if isinstance(s, Let):
-                defs[s.name] = s.pos
-            elif isinstance(s, Import):
-                defs[_import_binding_name(s.module, s.alias)] = s.pos
-            elif isinstance(s, DestructAssign):
-                for nm in s.names:
-                    defs[nm] = s.pos
-            elif isinstance(s, TryCatch):
-                collect_defs(s.body)
-                if s.err_name:
-                    defs[s.err_name] = s.pos
-                collect_defs(s.handler)
-            elif isinstance(s, If):
-                collect_defs(s.then)
-                collect_defs(s.els)
-            elif isinstance(s, While):
-                collect_defs(s.body)
-            elif isinstance(s, Namespace):
-                collect_defs(s.body)
+    def names_in_expr(expr: IR) -> Set[str]:
+        reads: Dict[str, int] = {}
+        uses_in_expr(expr, reads)
+        return set(reads)
 
-    collect_defs(stmts)
-    for s in stmts:
-        lint_stmt_reads(s, uses)
-    unused = [n for n in defs if not n.startswith("_") and uses.get(n, 0) == 0]
+    def _mark_used(state: Dict[str, tuple[SourcePos, bool, bool]], name: str):
+        if name in state:
+            pos, _, _ = state[name]
+            state[name] = (pos, True, True)
+
+    def _mark_captured_uses(block: List[IR], state: Dict[str, tuple[SourcePos, bool, bool]]):
+        reads: Dict[str, int] = {}
+        for st in block:
+            lint_stmt_reads(st, reads)
+        for nm, (pos, used_all, used_any) in list(state.items()):
+            if nm in reads:
+                state[nm] = (pos, True, True)
+
+    def _merge_states(states: List[Dict[str, tuple[SourcePos, bool, bool]]]) -> List[Dict[str, tuple[SourcePos, bool, bool]]]:
+        if not states:
+            return []
+        merged: Dict[str, tuple[SourcePos, bool, bool]] = {}
+        for st in states:
+            for name, (pos, used_all, used_any) in st.items():
+                if name not in merged:
+                    merged[name] = (pos, used_all, used_any)
+                else:
+                    prev_pos, prev_all, prev_any = merged[name]
+                    merged[name] = (prev_pos, prev_all and used_all, prev_any or used_any)
+        return [merged]
+
+    def analyze_block(block: List[IR], initial_states: List[Dict[str, tuple[SourcePos, bool, bool]]]):
+        active_states = [dict(state) for state in initial_states]
+        terminated_states: List[Dict[str, tuple[SourcePos, bool, bool]]] = []
+
+        for st in block:
+            next_active: List[Dict[str, tuple[SourcePos, bool, bool]]] = []
+            for state in active_states:
+                if isinstance(st, Let):
+                    new_state = dict(state)
+                    for nm in names_in_expr(st.expr):
+                        _mark_used(new_state, nm)
+                    new_state[st.name] = (st.pos, False, False)
+                    next_active.append(new_state)
+                elif isinstance(st, Import):
+                    new_state = dict(state)
+                    new_state[_import_binding_name(st.module, st.alias)] = (st.pos, False, False)
+                    next_active.append(new_state)
+                elif isinstance(st, DestructAssign):
+                    new_state = dict(state)
+                    for nm in st.names:
+                        new_state[nm] = (st.pos, False, False)
+                    for nm in names_in_expr(st.expr):
+                        _mark_used(new_state, nm)
+                    next_active.append(new_state)
+                elif isinstance(st, Assign):
+                    new_state = dict(state)
+                    for nm in names_in_expr(st.expr):
+                        _mark_used(new_state, nm)
+                    next_active.append(new_state)
+                elif isinstance(st, FieldAssign):
+                    new_state = dict(state)
+                    for nm in names_in_expr(st.obj):
+                        _mark_used(new_state, nm)
+                    for nm in names_in_expr(st.expr):
+                        _mark_used(new_state, nm)
+                    next_active.append(new_state)
+                elif isinstance(st, Print):
+                    new_state = dict(state)
+                    for expr in st.exprs:
+                        for nm in names_in_expr(expr):
+                            _mark_used(new_state, nm)
+                    next_active.append(new_state)
+                elif isinstance(st, CallStmt):
+                    new_state = dict(state)
+                    for arg in st.args:
+                        for nm in names_in_expr(arg):
+                            _mark_used(new_state, nm)
+                    next_active.append(new_state)
+                elif isinstance(st, Return):
+                    new_state = dict(state)
+                    for nm in names_in_expr(st.expr):
+                        _mark_used(new_state, nm)
+                    terminated_states.append(new_state)
+                elif isinstance(st, If):
+                    cond_state = dict(state)
+                    for nm in names_in_expr(st.cond):
+                        _mark_used(cond_state, nm)
+                    then_active, then_term = analyze_block(st.then, [cond_state])
+                    else_active, else_term = analyze_block(st.els, [cond_state])
+                    for act in then_active + else_active:
+                        next_active.append(act)
+                    terminated_states.extend(then_term + else_term)
+                elif isinstance(st, While):
+                    cond_state = dict(state)
+                    for nm in names_in_expr(st.cond):
+                        _mark_used(cond_state, nm)
+                    body_active, body_term = analyze_block(st.body, [cond_state])
+                    if isinstance(st.cond, Bool) and not st.cond.value:
+                        next_active.extend(body_active)
+                        terminated_states.extend(body_term)
+                        next_active.append(cond_state)
+                    else:
+                        next_active.extend(body_active)
+                        terminated_states.extend(body_term)
+                elif isinstance(st, TryCatch):
+                    body_active, body_term = analyze_block(st.body, [dict(state)])
+                    handler_state = dict(state)
+                    if st.err_name:
+                        handler_state[st.err_name] = (st.pos, False, False)
+                    handler_active, handler_term = analyze_block(st.handler, [handler_state])
+                    next_active.extend(body_active + handler_active)
+                    terminated_states.extend(body_term + handler_term)
+                elif isinstance(st, Namespace):
+                    nested_state = dict(state)
+                    _mark_captured_uses(st.body, nested_state)
+                    lint_locals_used(st.body, source)
+                    next_active.append(nested_state)
+                elif isinstance(st, ClassDef):
+                    nested_state = dict(state)
+                    for m in st.methods:
+                        _mark_captured_uses(m.body, nested_state)
+                        lint_locals_used(m.body, source)
+                    next_active.append(nested_state)
+                elif isinstance(st, Fn):
+                    nested_state = dict(state)
+                    _mark_captured_uses(st.body, nested_state)
+                    lint_locals_used(st.body, source)
+                    next_active.append(nested_state)
+                elif isinstance(st, MethodDef):
+                    nested_state = dict(state)
+                    _mark_captured_uses(st.body, nested_state)
+                    lint_locals_used(st.body, source)
+                    next_active.append(nested_state)
+                else:
+                    next_active.append(dict(state))
+
+            active_states = _merge_states(next_active)
+
+        return _merge_states(active_states), _merge_states(terminated_states)
+
+    active, terminated = analyze_block(stmts, [dict()])
+    all_states = active + terminated
+
+    usage_summary: Dict[tuple[str, SourcePos], Dict[str, bool]] = {}
+
+    def _accumulate(states: List[Dict[str, tuple[SourcePos, bool, bool]]], key: str):
+        for state in states:
+            for name, (pos, used_all, used_any) in state.items():
+                entry = usage_summary.setdefault((name, pos), {
+                    "active_all": True,
+                    "active_any": False,
+                    "active_present": False,
+                    "term_any": False,
+                })
+                if key == "active":
+                    entry["active_all"] = entry["active_all"] and used_all
+                    entry["active_any"] = entry["active_any"] or used_any
+                    entry["active_present"] = True
+                else:
+                    entry["term_any"] = entry["term_any"] or used_any
+
+    _accumulate(active, "active")
+    _accumulate(terminated, "term")
+
+    for (name, pos), info in usage_summary.items():
+        if name.startswith("_") or name.startswith("ignored"):
+            continue
+
+        used_any = info["active_any"] or info["term_any"]
+        if not used_any:
+            unused.append((name, pos))
+            continue
+
+        if info["active_present"] and not info["active_all"]:
+            unused.append((name, pos))
+
     if unused:
-        pos = defs[unused[0]]
-        msg = f"unused local binding(s): {', '.join(unused)}"
+        # Preserve the previous behavior of reporting all unused bindings together
+        names = [name for name, _ in unused]
+        pos = unused[0][1]
+        msg = f"unused local binding(s): {', '.join(names)}"
         if source is None:
             raise RuntimeError(msg)
         raise _lint_error(source, pos, msg, code="E002", hint="Remove the unused binding or reference it.")

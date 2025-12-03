@@ -11,8 +11,8 @@ def _parse_and_lint(src: str) -> List[IR]:
     lint_import_style(stmts, src)
     lint_destruct_call_outputs(stmts, src)
     lint_no_consecutive_definitions(stmts)
-    lint_locals_used(stmts, src)
     lint_assignment_types(stmts, src)
+    lint_locals_used(stmts, src)
     lint_unreachable_code(stmts, src)
     signatures = _collect_function_signatures(stmts)
 

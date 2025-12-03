@@ -705,7 +705,7 @@ def test_error_message_for_missing_heap_index():
     """
 
     out = run_tiny(src)
-    assert re.search(r"heap access error: index 5 out of range for pointer 1( \(size 2\))? \(line 3, col \d+\)", out)
+    assert re.search(r"heap access error: index 5 out of range for pointer 1 \(size 2; valid indices: 0..1\) \(line 3, col \d+\)", out)
     assert "^" in out
 
 
@@ -718,7 +718,7 @@ def test_error_message_for_double_delete():
     """
 
     out = run_tiny(src)
-    assert re.search(r"heap delete error: pointer 1 was already freed \(line 4, col \d+\)", out)
+    assert re.search(r"heap delete error: pointer 1 was already freed \(size 1\) \(line 4, col \d+\)", out)
     assert "^" in out
 
 
@@ -729,7 +729,7 @@ def test_error_message_for_unknown_delete():
     """
 
     out = run_tiny(src)
-    assert re.search(r"heap delete error: unknown pointer 9 \(line 2, col \d+\)", out)
+    assert re.search(r"heap delete error: unknown pointer 9.*\(line 2, col \d+\)", out)
     assert "^" in out
 
 
@@ -748,7 +748,9 @@ def test_heap_leak_report_tracks_live_allocations():
     assert report["count"] == 1
     assert report["live"] == {2: 3}
     assert report["freed"] == [1]
+    assert report["freed_sizes"][1] == 2
     assert report["total_cells"] == 3
+    assert report["has_leaks"] is True
 
 
 def test_error_message_for_missing_field():

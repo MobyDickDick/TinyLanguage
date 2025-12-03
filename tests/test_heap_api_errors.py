@@ -17,14 +17,16 @@ def test_heap_access_errors_are_precise():
     result = rt.heap_set(ptr, 3, 1)
     assert result["e"]["code"] == 1
     assert "index 3 out of range" in rt.error_message
+    assert "valid indices: 0..1" in rt.error_message
 
     rt.delete(ptr)
     assert rt.heap_get(ptr, 0) is None
-    assert "was already freed" in rt.error_message
+    assert "was already freed (size 2)" in rt.error_message
 
     result = rt.heap_set(999, 0, 1)
     assert result["e"]["code"] == 1
     assert "unknown pointer 999" in rt.error_message
+    assert "freed" in rt.error_message
 
 
 def test_heap_delete_and_leak_report():
@@ -38,13 +40,17 @@ def test_heap_delete_and_leak_report():
     assert report["live"][second] == 3
     assert report["allocations"][first] == 1
     assert report["allocations"][second] == 3
+    assert report["has_leaks"] is True
 
     rt.delete(first)
     rt.delete(second)
     report = rt.heap_leak_report()
     assert report["count"] == 0
+    assert report["freed_sizes"][first] == 1
+    assert report["freed_sizes"][second] == 3
     assert first in report["freed"] and second in report["freed"]
     assert report["freed_count"] == 2
+    assert report["has_leaks"] is False
 
     result = rt.delete(second)
     assert result["e"]["code"] == 1

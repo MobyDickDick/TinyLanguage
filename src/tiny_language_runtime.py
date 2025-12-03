@@ -299,7 +299,7 @@ class Runtime:
         try:
             ip = int(p)
         except Exception:
-            message = f"heap {op} error: pointer is not numeric"
+            message = f"heap {op} error: pointer {p!r} is not numeric"
             self._record_error(message, pos)
             return None, None
 
@@ -333,7 +333,8 @@ class Runtime:
         try:
             idx = int(i)
         except Exception:
-            self._record_error("heap access error: pointer or index is not numeric", pos)
+            message = f"heap access error: index {i!r} is not numeric"
+            self._record_error(message, pos)
             return None
 
         ip, cells = self._resolve_ptr(p, pos, op="access")
@@ -352,7 +353,7 @@ class Runtime:
         try:
             idx = int(i)
         except Exception:
-            message = "heap access error: pointer or index is not numeric"
+            message = f"heap access error: index {i!r} is not numeric"
             self._record_error(message, pos)
             return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": message}}
 
@@ -386,7 +387,9 @@ class Runtime:
                 "live": live,
                 "count": len(live),
                 "total_cells": sum(live.values()),
+                "allocations": dict(self.allocations),
                 "freed": sorted(self.freed_ptrs),
+                "freed_count": len(self.freed_ptrs),
             }
 
     def tag(self, p: Any, typ: Any, *, pos: Optional[SourcePos] = None) -> Dict[str, Any]:

@@ -688,7 +688,7 @@ def test_error_message_for_missing_heap_index():
     """
 
     out = run_tiny(src)
-    assert re.search(r"heap access error: index 5 out of range for pointer 1 \(line 3, col \d+\)", out)
+    assert re.search(r"heap access error: index 5 out of range for pointer 1( \(size 2\))? \(line 3, col \d+\)", out)
     assert "^" in out
 
 

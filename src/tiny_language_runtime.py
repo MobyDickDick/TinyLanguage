@@ -289,32 +289,39 @@ class Runtime:
             self.freed_ptrs.discard(p)
             return p
 
-    def delete(self, p: Any, pos: Optional[SourcePos] = None) -> Dict[str, Any]:
+    def _resolve_ptr(self, p: Any, pos: Optional[SourcePos], *, op: str) -> Tuple[Optional[int], Optional[List[Any]]]:
+        """Validate and resolve a heap pointer for the requested operation.
+
+        Returns a tuple of `(pointer, cells)` where either entry may be `None` if
+        validation failed and an error was recorded.
+        """
+
         try:
             ip = int(p)
         except Exception:
-            message = "heap delete error: pointer is not numeric"
+            message = f"heap {op} error: pointer is not numeric"
             self._record_error(message, pos)
-            return {
-                "__tag__": "Record",
-                "e": {"__tag__": "Error", "code": 1, "msg": message},
-            }
+            return None, None
 
         with self._lock:
             if ip in self.freed_ptrs:
-                message = f"heap delete error: pointer {ip} was already freed"
+                message = f"heap {op} error: pointer {ip} was already freed"
                 self._record_error(message, pos)
-                return {
-                    "__tag__": "Record",
-                    "e": {"__tag__": "Error", "code": 1, "msg": message},
-                }
-            if ip not in self.heap:
-                message = f"heap delete error: unknown pointer {ip}"
+                return None, None
+            try:
+                cells = self.heap[ip]
+            except KeyError:
+                message = f"heap {op} error: unknown pointer {ip}"
                 self._record_error(message, pos)
-                return {
-                    "__tag__": "Record",
-                    "e": {"__tag__": "Error", "code": 1, "msg": message},
-                }
+                return None, None
+            return ip, cells
+
+    def delete(self, p: Any, pos: Optional[SourcePos] = None) -> Dict[str, Any]:
+        ip, _ = self._resolve_ptr(p, pos, op="delete")
+        if ip is None:
+            return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": self.error_message or ""}}
+
+        with self._lock:
             self.heap.pop(ip, None)
             self.heap_cell_types.pop(ip, None)
             self.ptr_tags.pop(ip, None)
@@ -324,68 +331,51 @@ class Runtime:
 
     def heap_get(self, p: Any, i: Any, *, pos: Optional[SourcePos] = None) -> Any:
         try:
-            ip = int(p)
             idx = int(i)
         except Exception:
             self._record_error("heap access error: pointer or index is not numeric", pos)
             return None
 
-        with self._lock:
-            try:
-                if ip in self.freed_ptrs:
-                    self._record_error(f"heap access error: pointer {ip} was deleted", pos)
-                    return None
-                arr = self.heap[ip]
-            except KeyError:
-                self._record_error(f"heap access error: unknown pointer {ip}", pos)
-                return None
+        ip, cells = self._resolve_ptr(p, pos, op="access")
+        if ip is None or cells is None:
+            return None
 
-            try:
-                return arr[idx]
-            except Exception:
-                self._record_error(
-                    f"heap access error: index {idx} out of range for pointer {ip}", pos
-                )
-                return None
+        size = len(cells)
+        if idx < 0 or idx >= size:
+            self._record_error(
+                f"heap access error: index {idx} out of range for pointer {ip} (size {size})", pos
+            )
+            return None
+        return cells[idx]
 
     def heap_set(self, p: Any, i: Any, v: Any, *, pos: Optional[SourcePos] = None) -> Dict[str, Any]:
         try:
-            ip = int(p)
             idx = int(i)
         except Exception:
-            self._record_error("heap access error: pointer or index is not numeric", pos)
-            return {
-                "__tag__": "Record",
-                "e": {"__tag__": "Error", "code": 1, "msg": "heap access error: pointer or index is not numeric"},
-            }
+            message = "heap access error: pointer or index is not numeric"
+            self._record_error(message, pos)
+            return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": message}}
 
-        try:
-            with self._lock:
-                if ip in self.freed_ptrs:
-                    message = f"heap access error: pointer {ip} was deleted"
-                    self._record_error(message, pos)
-                    return {
-                        "__tag__": "Record",
-                        "e": {"__tag__": "Error", "code": 1, "msg": message},
-                    }
-                expected = self.heap_cell_types.get(ip, {}).get(idx)
-                actual = self._value_type_name(v)
-                if expected is not None and expected != actual:
-                    message = f"heap type mismatch at {ip}[{idx}]: expected {expected} but got {actual}"
-                    self._record_error(message, pos, code="E014")
-                    return {
-                        "__tag__": "Record",
-                        "e": {"__tag__": "Error", "code": 1, "msg": message},
-                    }
-                self.heap[ip][idx] = v
-                self.heap_cell_types.setdefault(ip, {})[idx] = actual
-            return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 0, "msg": ""}}
-        except Exception as e:  # noqa: BLE001
-            self._record_error(str(e), pos)
-            return {
-                "__tag__": "Record",
-                "e": {"__tag__": "Error", "code": 1, "msg": str(e)},
-            }
+        ip, cells = self._resolve_ptr(p, pos, op="access")
+        if ip is None or cells is None:
+            return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": self.error_message or ""}}
+
+        size = len(cells)
+        if idx < 0 or idx >= size:
+            message = f"heap access error: index {idx} out of range for pointer {ip} (size {size})"
+            self._record_error(message, pos)
+            return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": message}}
+
+        with self._lock:
+            expected = self.heap_cell_types.get(ip, {}).get(idx)
+            actual = self._value_type_name(v)
+            if expected is not None and expected != actual:
+                message = f"heap type mismatch at {ip}[{idx}]: expected {expected} but got {actual}"
+                self._record_error(message, pos, code="E014")
+                return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": message}}
+            self.heap[ip][idx] = v
+            self.heap_cell_types.setdefault(ip, {})[idx] = actual
+        return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 0, "msg": ""}}
 
     def heap_leak_report(self) -> Dict[str, Any]:
         """Summarize live heap allocations for leak tracking in tests."""

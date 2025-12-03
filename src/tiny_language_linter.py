@@ -254,102 +254,89 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
         uses_in_expr(expr, reads)
         return set(reads)
 
-    def _mark_captured_uses(block: List[IR], state: Dict[str, tuple[SourcePos, bool]]):
+    def _mark_used(state: Dict[str, tuple[SourcePos, bool, bool]], name: str):
+        if name in state:
+            pos, _, _ = state[name]
+            state[name] = (pos, True, True)
+
+    def _mark_captured_uses(block: List[IR], state: Dict[str, tuple[SourcePos, bool, bool]]):
         reads: Dict[str, int] = {}
         for st in block:
             lint_stmt_reads(st, reads)
-        for nm, (pos, used) in list(state.items()):
+        for nm, (pos, used_all, used_any) in list(state.items()):
             if nm in reads:
-                state[nm] = (pos, True)
+                state[nm] = (pos, True, True)
 
-    def _merge_states(states: List[Dict[str, tuple[SourcePos, bool]]]) -> List[Dict[str, tuple[SourcePos, bool]]]:
+    def _merge_states(states: List[Dict[str, tuple[SourcePos, bool, bool]]]) -> List[Dict[str, tuple[SourcePos, bool, bool]]]:
         if not states:
             return []
-        merged: Dict[str, tuple[SourcePos, bool]] = {}
+        merged: Dict[str, tuple[SourcePos, bool, bool]] = {}
         for st in states:
-            for name, (pos, used) in st.items():
+            for name, (pos, used_all, used_any) in st.items():
                 if name not in merged:
-                    merged[name] = (pos, used)
+                    merged[name] = (pos, used_all, used_any)
                 else:
-                    prev_pos, prev_used = merged[name]
-                    merged[name] = (prev_pos, prev_used or used)
+                    prev_pos, prev_all, prev_any = merged[name]
+                    merged[name] = (prev_pos, prev_all and used_all, prev_any or used_any)
         return [merged]
 
-    def analyze_block(block: List[IR], initial_states: List[Dict[str, tuple[SourcePos, bool]]]):
+    def analyze_block(block: List[IR], initial_states: List[Dict[str, tuple[SourcePos, bool, bool]]]):
         active_states = [dict(state) for state in initial_states]
-        terminated_states: List[Dict[str, tuple[SourcePos, bool]]] = []
+        terminated_states: List[Dict[str, tuple[SourcePos, bool, bool]]] = []
 
         for st in block:
-            next_active: List[Dict[str, tuple[SourcePos, bool]]] = []
+            next_active: List[Dict[str, tuple[SourcePos, bool, bool]]] = []
             for state in active_states:
                 if isinstance(st, Let):
                     new_state = dict(state)
                     for nm in names_in_expr(st.expr):
-                        if nm in new_state:
-                            pos, _ = new_state[nm]
-                            new_state[nm] = (pos, True)
-                    new_state[st.name] = (st.pos, False)
+                        _mark_used(new_state, nm)
+                    new_state[st.name] = (st.pos, False, False)
                     next_active.append(new_state)
                 elif isinstance(st, Import):
                     new_state = dict(state)
-                    new_state[_import_binding_name(st.module, st.alias)] = (st.pos, False)
+                    new_state[_import_binding_name(st.module, st.alias)] = (st.pos, False, False)
                     next_active.append(new_state)
                 elif isinstance(st, DestructAssign):
                     new_state = dict(state)
                     for nm in st.names:
-                        new_state[nm] = (st.pos, False)
+                        new_state[nm] = (st.pos, False, False)
                     for nm in names_in_expr(st.expr):
-                        if nm in new_state:
-                            pos, _ = new_state[nm]
-                            new_state[nm] = (pos, True)
+                        _mark_used(new_state, nm)
                     next_active.append(new_state)
                 elif isinstance(st, Assign):
                     new_state = dict(state)
                     for nm in names_in_expr(st.expr):
-                        if nm in new_state:
-                            pos, _ = new_state[nm]
-                            new_state[nm] = (pos, True)
+                        _mark_used(new_state, nm)
                     next_active.append(new_state)
                 elif isinstance(st, FieldAssign):
                     new_state = dict(state)
                     for nm in names_in_expr(st.obj):
-                        if nm in new_state:
-                            pos, _ = new_state[nm]
-                            new_state[nm] = (pos, True)
+                        _mark_used(new_state, nm)
                     for nm in names_in_expr(st.expr):
-                        if nm in new_state:
-                            pos, _ = new_state[nm]
-                            new_state[nm] = (pos, True)
+                        _mark_used(new_state, nm)
                     next_active.append(new_state)
                 elif isinstance(st, Print):
                     new_state = dict(state)
                     for expr in st.exprs:
                         for nm in names_in_expr(expr):
-                            if nm in new_state:
-                                pos, _ = new_state[nm]
-                                new_state[nm] = (pos, True)
+                            _mark_used(new_state, nm)
                     next_active.append(new_state)
                 elif isinstance(st, CallStmt):
                     new_state = dict(state)
                     for arg in st.args:
                         for nm in names_in_expr(arg):
-                            if nm in new_state:
-                                pos, _ = new_state[nm]
-                                new_state[nm] = (pos, True)
+                            _mark_used(new_state, nm)
                     next_active.append(new_state)
                 elif isinstance(st, Return):
                     new_state = dict(state)
                     for nm in names_in_expr(st.expr):
-                        if nm in new_state:
-                            pos, _ = new_state[nm]
-                            new_state[nm] = (pos, True)
+                        _mark_used(new_state, nm)
                     terminated_states.append(new_state)
                 elif isinstance(st, If):
                     cond_state = dict(state)
                     for nm in names_in_expr(st.cond):
-                        if nm in cond_state:
-                            pos, _ = cond_state[nm]
-                            cond_state[nm] = (pos, True)
+                        _mark_used(cond_state, nm)
                     then_active, then_term = analyze_block(st.then, [cond_state])
                     else_active, else_term = analyze_block(st.els, [cond_state])
                     for act in then_active + else_active:
@@ -358,20 +345,20 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                 elif isinstance(st, While):
                     cond_state = dict(state)
                     for nm in names_in_expr(st.cond):
-                        if nm in cond_state:
-                            pos, _ = cond_state[nm]
-                            cond_state[nm] = (pos, True)
-                    # Consider a path where the loop body executes
+                        _mark_used(cond_state, nm)
                     body_active, body_term = analyze_block(st.body, [cond_state])
-                    next_active.extend(body_active)
-                    terminated_states.extend(body_term)
-                    # Also consider the loop condition evaluating to false immediately
-                    next_active.append(cond_state)
+                    if isinstance(st.cond, Bool) and not st.cond.value:
+                        next_active.extend(body_active)
+                        terminated_states.extend(body_term)
+                        next_active.append(cond_state)
+                    else:
+                        next_active.extend(body_active)
+                        terminated_states.extend(body_term)
                 elif isinstance(st, TryCatch):
                     body_active, body_term = analyze_block(st.body, [dict(state)])
                     handler_state = dict(state)
                     if st.err_name:
-                        handler_state[st.err_name] = (st.pos, False)
+                        handler_state[st.err_name] = (st.pos, False, False)
                     handler_active, handler_term = analyze_block(st.handler, [handler_state])
                     next_active.extend(body_active + handler_active)
                     terminated_states.extend(body_term + handler_term)
@@ -406,15 +393,37 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
     active, terminated = analyze_block(stmts, [dict()])
     all_states = active + terminated
 
-    # Track whether each binding was used on at least one path where it exists
-    usage_summary: Dict[tuple[str, SourcePos], bool] = {}
-    for state in all_states:
-        for name, (pos, used) in state.items():
-            key = (name, pos)
-            usage_summary[key] = usage_summary.get(key, False) or used
+    usage_summary: Dict[tuple[str, SourcePos], Dict[str, bool]] = {}
 
-    for (name, pos), used in usage_summary.items():
-        if not used and not name.startswith("_"):
+    def _accumulate(states: List[Dict[str, tuple[SourcePos, bool, bool]]], key: str):
+        for state in states:
+            for name, (pos, used_all, used_any) in state.items():
+                entry = usage_summary.setdefault((name, pos), {
+                    "active_all": True,
+                    "active_any": False,
+                    "active_present": False,
+                    "term_any": False,
+                })
+                if key == "active":
+                    entry["active_all"] = entry["active_all"] and used_all
+                    entry["active_any"] = entry["active_any"] or used_any
+                    entry["active_present"] = True
+                else:
+                    entry["term_any"] = entry["term_any"] or used_any
+
+    _accumulate(active, "active")
+    _accumulate(terminated, "term")
+
+    for (name, pos), info in usage_summary.items():
+        if name.startswith("_") or name.startswith("ignored"):
+            continue
+
+        used_any = info["active_any"] or info["term_any"]
+        if not used_any:
+            unused.append((name, pos))
+            continue
+
+        if info["active_present"] and not info["active_all"]:
             unused.append((name, pos))
 
     if unused:

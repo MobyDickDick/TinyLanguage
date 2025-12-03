@@ -254,6 +254,27 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
         uses_in_expr(expr, reads)
         return set(reads)
 
+    def _mark_captured_uses(block: List[IR], state: Dict[str, tuple[SourcePos, bool]]):
+        reads: Dict[str, int] = {}
+        for st in block:
+            lint_stmt_reads(st, reads)
+        for nm, (pos, used) in list(state.items()):
+            if nm in reads:
+                state[nm] = (pos, True)
+
+    def _merge_states(states: List[Dict[str, tuple[SourcePos, bool]]]) -> List[Dict[str, tuple[SourcePos, bool]]]:
+        if not states:
+            return []
+        merged: Dict[str, tuple[SourcePos, bool]] = {}
+        for st in states:
+            for name, (pos, used) in st.items():
+                if name not in merged:
+                    merged[name] = (pos, used)
+                else:
+                    prev_pos, prev_used = merged[name]
+                    merged[name] = (prev_pos, prev_used or used)
+        return [merged]
+
     def analyze_block(block: List[IR], initial_states: List[Dict[str, tuple[SourcePos, bool]]]):
         active_states = [dict(state) for state in initial_states]
         terminated_states: List[Dict[str, tuple[SourcePos, bool]]] = []
@@ -340,12 +361,12 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                         if nm in cond_state:
                             pos, _ = cond_state[nm]
                             cond_state[nm] = (pos, True)
-                    # Path where the loop body is skipped
-                    next_active.append(cond_state)
-                    # Path where the body executes once
+                    # Consider a path where the loop body executes
                     body_active, body_term = analyze_block(st.body, [cond_state])
                     next_active.extend(body_active)
                     terminated_states.extend(body_term)
+                    # Also consider the loop condition evaluating to false immediately
+                    next_active.append(cond_state)
                 elif isinstance(st, TryCatch):
                     body_active, body_term = analyze_block(st.body, [dict(state)])
                     handler_state = dict(state)
@@ -355,37 +376,42 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                     next_active.extend(body_active + handler_active)
                     terminated_states.extend(body_term + handler_term)
                 elif isinstance(st, Namespace):
+                    nested_state = dict(state)
+                    _mark_captured_uses(st.body, nested_state)
                     lint_locals_used(st.body, source)
-                    next_active.append(dict(state))
+                    next_active.append(nested_state)
                 elif isinstance(st, ClassDef):
+                    nested_state = dict(state)
                     for m in st.methods:
+                        _mark_captured_uses(m.body, nested_state)
                         lint_locals_used(m.body, source)
-                    next_active.append(dict(state))
+                    next_active.append(nested_state)
                 elif isinstance(st, Fn):
+                    nested_state = dict(state)
+                    _mark_captured_uses(st.body, nested_state)
                     lint_locals_used(st.body, source)
-                    next_active.append(dict(state))
+                    next_active.append(nested_state)
                 elif isinstance(st, MethodDef):
+                    nested_state = dict(state)
+                    _mark_captured_uses(st.body, nested_state)
                     lint_locals_used(st.body, source)
-                    next_active.append(dict(state))
+                    next_active.append(nested_state)
                 else:
                     next_active.append(dict(state))
 
-            active_states = next_active
+            active_states = _merge_states(next_active)
 
-        return active_states, terminated_states
+        return _merge_states(active_states), _merge_states(terminated_states)
 
     active, terminated = analyze_block(stmts, [dict()])
     all_states = active + terminated
 
-    # Track whether each binding was used on all paths where it exists
+    # Track whether each binding was used on at least one path where it exists
     usage_summary: Dict[tuple[str, SourcePos], bool] = {}
     for state in all_states:
         for name, (pos, used) in state.items():
             key = (name, pos)
-            if key not in usage_summary:
-                usage_summary[key] = used
-            else:
-                usage_summary[key] = usage_summary[key] and used
+            usage_summary[key] = usage_summary.get(key, False) or used
 
     for (name, pos), used in usage_summary.items():
         if not used and not name.startswith("_"):

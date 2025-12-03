@@ -31,10 +31,11 @@ def test_double_definition_error():
 def test_reassign_with_different_type_errors():
     expect_compile_error(
         """
-        define i = 5;
-        i = 0.5;
+        define msg = "hi";
+        msg = 0.5;
+        print(msg);
         """,
-        r"\[E014\] type change for variable i: expected int but got float",
+        r"\[E014\] type change for variable msg: expected string but got number",
     )
 
 

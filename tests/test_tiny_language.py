@@ -529,6 +529,61 @@ def test_unused_binding_in_nested_block_method():
     expect_compile_error(src, r"unused local binding\(s\): tmp")
 
 
+def test_unused_binding_must_be_used_on_all_paths():
+    src = """
+    define x = 1;
+    if (true) {
+        print(x);
+    } else {
+        print(0);
+    }
+    """
+
+    expect_compile_error(src, r"unused local binding\(s\): x")
+
+
+def test_binding_used_in_all_branches_is_ok():
+    src = """
+    fn demo(flag) {
+        define label = "hi";
+        if (flag) {
+            print(label);
+        } else {
+            print(label);
+        }
+        return 0;
+    }
+    print(demo(true));
+    """
+
+    out = run_tiny(src)
+    assert out == "hi\n0\n"
+
+
+def test_loop_skipped_counts_as_unused():
+    src = """
+    define msg = "once";
+    while (false) {
+        print(msg);
+    }
+    print(0);
+    """
+
+    expect_compile_error(src, r"unused local binding\(s\): msg")
+
+
+def test_unreachable_statement_after_return():
+    src = """
+    fn demo() {
+        return 1;
+        print(2);
+    }
+    demo();
+    """
+
+    expect_compile_error(src, r"unreachable statement after a return")
+
+
 def test_method_param_mutation_must_be_returned():
     src = """
     class Box {

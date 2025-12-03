@@ -357,7 +357,7 @@ Der „nativeCompiler“ wird separat geführt.
   - Einheitlicher Fehlertyp mit optionalem `SourceSpan`, der bei Ausgabe die betroffene Zeile und eine Unterstreichung zeigt.
   - Lexer, Parser und Linter sollen diesen Fehlertyp verwenden.
 
-- [ ] **Linter verfeinern**
+- [x] **Linter verfeinern**
   - „must use“-Regel über Kontrollfluss: eine Variable gilt nur als benutzt, wenn sie auf allen relevanten Pfaden verwendet wird.
   - Unreachable-Code-Warnungen (z.B. Code nach `return`).
 

@@ -247,38 +247,155 @@ def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None
 
 
 def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
-    defs: Dict[str, SourcePos] = {}
-    uses: Dict[str, int] = {}
+    unused: List[tuple[str, SourcePos]] = []
 
-    def collect_defs(block: List[IR]) -> None:
-        for idx, s in enumerate(block):
-            if isinstance(s, Let):
-                defs[s.name] = s.pos
-            elif isinstance(s, Import):
-                defs[_import_binding_name(s.module, s.alias)] = s.pos
-            elif isinstance(s, DestructAssign):
-                for nm in s.names:
-                    defs[nm] = s.pos
-            elif isinstance(s, TryCatch):
-                collect_defs(s.body)
-                if s.err_name:
-                    defs[s.err_name] = s.pos
-                collect_defs(s.handler)
-            elif isinstance(s, If):
-                collect_defs(s.then)
-                collect_defs(s.els)
-            elif isinstance(s, While):
-                collect_defs(s.body)
-            elif isinstance(s, Namespace):
-                collect_defs(s.body)
+    def names_in_expr(expr: IR) -> Set[str]:
+        reads: Dict[str, int] = {}
+        uses_in_expr(expr, reads)
+        return set(reads)
 
-    collect_defs(stmts)
-    for s in stmts:
-        lint_stmt_reads(s, uses)
-    unused = [n for n in defs if not n.startswith("_") and uses.get(n, 0) == 0]
+    def analyze_block(block: List[IR], initial_states: List[Dict[str, tuple[SourcePos, bool]]]):
+        active_states = [dict(state) for state in initial_states]
+        terminated_states: List[Dict[str, tuple[SourcePos, bool]]] = []
+
+        for st in block:
+            next_active: List[Dict[str, tuple[SourcePos, bool]]] = []
+            for state in active_states:
+                if isinstance(st, Let):
+                    new_state = dict(state)
+                    for nm in names_in_expr(st.expr):
+                        if nm in new_state:
+                            pos, _ = new_state[nm]
+                            new_state[nm] = (pos, True)
+                    new_state[st.name] = (st.pos, False)
+                    next_active.append(new_state)
+                elif isinstance(st, Import):
+                    new_state = dict(state)
+                    new_state[_import_binding_name(st.module, st.alias)] = (st.pos, False)
+                    next_active.append(new_state)
+                elif isinstance(st, DestructAssign):
+                    new_state = dict(state)
+                    for nm in st.names:
+                        new_state[nm] = (st.pos, False)
+                    for nm in names_in_expr(st.expr):
+                        if nm in new_state:
+                            pos, _ = new_state[nm]
+                            new_state[nm] = (pos, True)
+                    next_active.append(new_state)
+                elif isinstance(st, Assign):
+                    new_state = dict(state)
+                    for nm in names_in_expr(st.expr):
+                        if nm in new_state:
+                            pos, _ = new_state[nm]
+                            new_state[nm] = (pos, True)
+                    next_active.append(new_state)
+                elif isinstance(st, FieldAssign):
+                    new_state = dict(state)
+                    for nm in names_in_expr(st.obj):
+                        if nm in new_state:
+                            pos, _ = new_state[nm]
+                            new_state[nm] = (pos, True)
+                    for nm in names_in_expr(st.expr):
+                        if nm in new_state:
+                            pos, _ = new_state[nm]
+                            new_state[nm] = (pos, True)
+                    next_active.append(new_state)
+                elif isinstance(st, Print):
+                    new_state = dict(state)
+                    for expr in st.exprs:
+                        for nm in names_in_expr(expr):
+                            if nm in new_state:
+                                pos, _ = new_state[nm]
+                                new_state[nm] = (pos, True)
+                    next_active.append(new_state)
+                elif isinstance(st, CallStmt):
+                    new_state = dict(state)
+                    for arg in st.args:
+                        for nm in names_in_expr(arg):
+                            if nm in new_state:
+                                pos, _ = new_state[nm]
+                                new_state[nm] = (pos, True)
+                    next_active.append(new_state)
+                elif isinstance(st, Return):
+                    new_state = dict(state)
+                    for nm in names_in_expr(st.expr):
+                        if nm in new_state:
+                            pos, _ = new_state[nm]
+                            new_state[nm] = (pos, True)
+                    terminated_states.append(new_state)
+                elif isinstance(st, If):
+                    cond_state = dict(state)
+                    for nm in names_in_expr(st.cond):
+                        if nm in cond_state:
+                            pos, _ = cond_state[nm]
+                            cond_state[nm] = (pos, True)
+                    then_active, then_term = analyze_block(st.then, [cond_state])
+                    else_active, else_term = analyze_block(st.els, [cond_state])
+                    for act in then_active + else_active:
+                        next_active.append(act)
+                    terminated_states.extend(then_term + else_term)
+                elif isinstance(st, While):
+                    cond_state = dict(state)
+                    for nm in names_in_expr(st.cond):
+                        if nm in cond_state:
+                            pos, _ = cond_state[nm]
+                            cond_state[nm] = (pos, True)
+                    # Path where the loop body is skipped
+                    next_active.append(cond_state)
+                    # Path where the body executes once
+                    body_active, body_term = analyze_block(st.body, [cond_state])
+                    next_active.extend(body_active)
+                    terminated_states.extend(body_term)
+                elif isinstance(st, TryCatch):
+                    body_active, body_term = analyze_block(st.body, [dict(state)])
+                    handler_state = dict(state)
+                    if st.err_name:
+                        handler_state[st.err_name] = (st.pos, False)
+                    handler_active, handler_term = analyze_block(st.handler, [handler_state])
+                    next_active.extend(body_active + handler_active)
+                    terminated_states.extend(body_term + handler_term)
+                elif isinstance(st, Namespace):
+                    lint_locals_used(st.body, source)
+                    next_active.append(dict(state))
+                elif isinstance(st, ClassDef):
+                    for m in st.methods:
+                        lint_locals_used(m.body, source)
+                    next_active.append(dict(state))
+                elif isinstance(st, Fn):
+                    lint_locals_used(st.body, source)
+                    next_active.append(dict(state))
+                elif isinstance(st, MethodDef):
+                    lint_locals_used(st.body, source)
+                    next_active.append(dict(state))
+                else:
+                    next_active.append(dict(state))
+
+            active_states = next_active
+
+        return active_states, terminated_states
+
+    active, terminated = analyze_block(stmts, [dict()])
+    all_states = active + terminated
+
+    # Track whether each binding was used on all paths where it exists
+    usage_summary: Dict[tuple[str, SourcePos], bool] = {}
+    for state in all_states:
+        for name, (pos, used) in state.items():
+            key = (name, pos)
+            if key not in usage_summary:
+                usage_summary[key] = used
+            else:
+                usage_summary[key] = usage_summary[key] and used
+
+    for (name, pos), used in usage_summary.items():
+        if not used and not name.startswith("_"):
+            unused.append((name, pos))
+
     if unused:
-        pos = defs[unused[0]]
-        msg = f"unused local binding(s): {', '.join(unused)}"
+        # Preserve the previous behavior of reporting all unused bindings together
+        names = [name for name, _ in unused]
+        pos = unused[0][1]
+        msg = f"unused local binding(s): {', '.join(names)}"
         if source is None:
             raise RuntimeError(msg)
         raise _lint_error(source, pos, msg, code="E002", hint="Remove the unused binding or reference it.")

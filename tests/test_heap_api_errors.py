@@ -68,3 +68,19 @@ def test_heap_errors_show_offending_values():
     ptr = rt._Runtime__new(1)  # noqa: SLF001 - intentional for testing
     rt.heap_get(ptr, "nope")
     assert "nope" in (rt.error_message or "")
+
+
+def test_heap_rejects_fractional_pointers_and_indices():
+    rt = Runtime("")
+
+    assert rt.heap_get(1.5, 0) is None
+    assert "not an integer pointer" in (rt.error_message or "")
+
+    ptr = rt._Runtime__new(2)  # noqa: SLF001 - intentional for testing
+    rt.heap_get(ptr, 0.25)
+    assert "not an integer index" in (rt.error_message or "")
+
+    result = rt.heap_set(ptr, -1, 0)
+    assert result["e"]["code"] == 1
+    assert "out of range" in result["e"]["msg"]
+    assert "valid indices: 0..1" in result["e"]["msg"]

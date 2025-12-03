@@ -312,6 +312,18 @@ class Runtime:
             self._record_error(message, pos)
             return None, None
 
+        if isinstance(p, float) and not p.is_integer():
+            message = f"heap {op} error: pointer {self._pointer_label(p)} is not an integer pointer"
+            self._record_error(message, pos)
+            return None, None
+
+        if ip < 1:
+            message = (
+                f"heap {op} error: pointer {ip} is invalid (must refer to a live positive allocation)"
+            )
+            self._record_error(message, pos)
+            return None, None
+
         with self._lock:
             if ip in self.freed_ptrs:
                 size_part = self.freed_allocations.get(ip)
@@ -335,6 +347,23 @@ class Runtime:
                 return None, None
             return ip, cells
 
+    def _parse_heap_index(self, i: Any, pos: Optional[SourcePos]) -> Optional[int]:
+        """Parse an index argument and record helpful errors when invalid."""
+
+        try:
+            idx = int(i)
+        except Exception:
+            message = f"heap access error: index {i!r} is not numeric"
+            self._record_error(message, pos)
+            return None
+
+        if isinstance(i, float) and not i.is_integer():
+            message = f"heap access error: index {self._pointer_label(i)} is not an integer index"
+            self._record_error(message, pos)
+            return None
+
+        return idx
+
     def delete(self, p: Any, pos: Optional[SourcePos] = None) -> Dict[str, Any]:
         ip, _ = self._resolve_ptr(p, pos, op="delete")
         if ip is None:
@@ -351,11 +380,8 @@ class Runtime:
         return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 0, "msg": ""}}
 
     def heap_get(self, p: Any, i: Any, *, pos: Optional[SourcePos] = None) -> Any:
-        try:
-            idx = int(i)
-        except Exception:
-            message = f"heap access error: index {i!r} is not numeric"
-            self._record_error(message, pos)
+        idx = self._parse_heap_index(i, pos)
+        if idx is None:
             return None
 
         ip, cells = self._resolve_ptr(p, pos, op="access")
@@ -373,12 +399,10 @@ class Runtime:
         return cells[idx]
 
     def heap_set(self, p: Any, i: Any, v: Any, *, pos: Optional[SourcePos] = None) -> Dict[str, Any]:
-        try:
-            idx = int(i)
-        except Exception:
-            message = f"heap access error: index {i!r} is not numeric"
-            self._record_error(message, pos)
-            return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": message}}
+        idx = self._parse_heap_index(i, pos)
+        if idx is None:
+            msg = self.error_message or ""
+            return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": msg}}
 
         ip, cells = self._resolve_ptr(p, pos, op="access")
         if ip is None or cells is None:

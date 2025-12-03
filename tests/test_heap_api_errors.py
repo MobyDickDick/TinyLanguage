@@ -36,13 +36,29 @@ def test_heap_delete_and_leak_report():
     assert report["count"] == 2
     assert report["live"][first] == 1
     assert report["live"][second] == 3
+    assert report["allocations"][first] == 1
+    assert report["allocations"][second] == 3
 
     rt.delete(first)
     rt.delete(second)
     report = rt.heap_leak_report()
     assert report["count"] == 0
     assert first in report["freed"] and second in report["freed"]
+    assert report["freed_count"] == 2
 
     result = rt.delete(second)
     assert result["e"]["code"] == 1
     assert "was already freed" in rt.error_message
+
+
+def test_heap_errors_show_offending_values():
+    rt = Runtime("")
+
+    bad_pointer = rt.heap_set("not-a-pointer", 0, 1)
+    assert bad_pointer["e"]["code"] == 1
+    assert "not-a-pointer" in bad_pointer["e"]["msg"]
+    assert "not-a-pointer" in (rt.error_message or "")
+
+    ptr = rt._Runtime__new(1)  # noqa: SLF001 - intentional for testing
+    rt.heap_get(ptr, "nope")
+    assert "nope" in (rt.error_message or "")

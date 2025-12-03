@@ -28,6 +28,16 @@ def test_double_definition_error():
     )
 
 
+def test_reassign_with_different_type_errors():
+    expect_compile_error(
+        """
+        define i = 5;
+        i = 0.5;
+        """,
+        r"\[E014\] type change for variable i: expected int but got float",
+    )
+
+
 def test_lexer_basics_define():
     out = run_tiny(
         """

@@ -352,7 +352,7 @@ Der „nativeCompiler“ wird separat geführt.
 
 ### 1. Frontend / Sprache
 
-- [ ] **Fehlerpositionen und Fehlermeldungen verbessern**
+- [x] **Fehlerpositionen und Fehlermeldungen verbessern**
   - Tokens und AST-Knoten sollen konsistent Zeilen- und Spalteninformation tragen.
   - Einheitlicher Fehlertyp mit optionalem `SourceSpan`, der bei Ausgabe die betroffene Zeile und eine Unterstreichung zeigt.
   - Lexer, Parser und Linter sollen diesen Fehlertyp verwenden.

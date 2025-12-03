@@ -7,34 +7,17 @@ flow, simple functions, and `print`). Unsupported constructs raise
 ``NotImplementedError`` so gaps remain visible.
 """
 
-from dataclasses import dataclass
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, Optional
 
-
-class NativeInstruction(NamedTuple):
-    op: str
-    arg: Any = None
-
-
-@dataclass
-class FunctionCode:
-    name: str
-    params: List[str]
-    instructions: List[NativeInstruction]
-
-
-@dataclass
-class NativeProgram:
-    entry: List[NativeInstruction]
-    functions: Dict[str, FunctionCode]
+from native_ir import FunctionIR, Instruction, Opcode, ProgramIR
 
 
 class NativeCodeGenerator:
     """Convert TinyLanguage AST nodes into bytecode instructions."""
 
-    def compile_program(self, stmts: List["IR"]) -> NativeProgram:
-        functions: Dict[str, FunctionCode] = {}
-        entry_instructions: List[NativeInstruction] = []
+    def compile_program(self, stmts: List["IR"]) -> ProgramIR:
+        functions: Dict[str, FunctionIR] = {}
+        entry_instructions: List[Instruction] = []
 
         for stmt in stmts:
             if isinstance(stmt, Fn):
@@ -43,36 +26,36 @@ class NativeCodeGenerator:
                 raw = self._compile_stmt(stmt)
                 entry_instructions.extend(self._shift_labels(raw, len(entry_instructions)))
 
-        entry_instructions.append(NativeInstruction("RETURN"))
-        return NativeProgram(entry=entry_instructions, functions=functions)
+        entry_instructions.append(Instruction(Opcode.RETURN))
+        return ProgramIR(entry=entry_instructions, functions=functions)
 
-    def _compile_function(self, fn: "Fn") -> FunctionCode:
-        body_instrs: List[NativeInstruction] = []
+    def _compile_function(self, fn: "Fn") -> FunctionIR:
+        body_instrs: List[Instruction] = []
         for stmt in fn.body:
             raw = self._compile_stmt(stmt)
             body_instrs.extend(self._shift_labels(raw, len(body_instrs)))
-        body_instrs.append(NativeInstruction("RETURN"))
-        return FunctionCode(name=fn.name, params=[param.name for param in fn.params], instructions=body_instrs)
+        body_instrs.append(Instruction(Opcode.RETURN))
+        return FunctionIR(name=fn.name, params=[param.name for param in fn.params], instructions=body_instrs)
 
-    def _shift_labels(self, instructions: List[NativeInstruction], offset: int) -> List[NativeInstruction]:
-        shifted: List[NativeInstruction] = []
+    def _shift_labels(self, instructions: List[Instruction], offset: int) -> List[Instruction]:
+        shifted: List[Instruction] = []
         for instr in instructions:
-            if instr.op in {"JUMP", "JUMP_IF_FALSE"} and instr.arg is not None:
-                shifted.append(NativeInstruction(instr.op, instr.arg + offset))
+            if instr.op in {Opcode.JUMP, Opcode.JUMP_IF_FALSE} and instr.arg is not None:
+                shifted.append(Instruction(instr.op, instr.arg + offset))
             else:
                 shifted.append(instr)
         return shifted
 
-    def _compile_stmt(self, stmt: "IR") -> List[NativeInstruction]:
+    def _compile_stmt(self, stmt: "IR") -> List[Instruction]:
         if isinstance(stmt, Let):
             return self._compile_binding(stmt.name, stmt.expr)
         if isinstance(stmt, Assign):
             return self._compile_binding(stmt.name, stmt.expr)
         if isinstance(stmt, Print):
-            instructions: List[NativeInstruction] = []
+            instructions: List[Instruction] = []
             for expr in stmt.exprs:
                 instructions.extend(self._compile_expr(expr))
-            instructions.append(NativeInstruction("PRINT", len(stmt.exprs)))
+            instructions.append(Instruction(Opcode.PRINT, len(stmt.exprs)))
             return instructions
         if isinstance(stmt, If):
             return self._compile_if(stmt)
@@ -80,24 +63,24 @@ class NativeCodeGenerator:
             return self._compile_while(stmt)
         if isinstance(stmt, Return):
             instructions = self._compile_expr(stmt.expr)
-            instructions.append(NativeInstruction("RETURN"))
+            instructions.append(Instruction(Opcode.RETURN))
             return instructions
         if isinstance(stmt, CallStmt):
             instructions = self._compile_expr(Call(stmt.name, stmt.args, pos=stmt.pos))
-            instructions.append(NativeInstruction("POP"))
+            instructions.append(Instruction(Opcode.POP))
             return instructions
         raise NotImplementedError(f"native codegen does not yet support {type(stmt).__name__}")
 
     def _compile_if(self, stmt: "If") -> List[NativeInstruction]:
         instructions = self._compile_expr(stmt.cond)
         jump_false_index = len(instructions)
-        instructions.append(NativeInstruction("JUMP_IF_FALSE", None))
+        instructions.append(Instruction(Opcode.JUMP_IF_FALSE, None))
 
         then_block = []
         for inner in stmt.then:
             nested = self._compile_stmt(inner)
             then_block.extend(self._shift_labels(nested, len(instructions) + len(then_block)))
-        then_block.append(NativeInstruction("JUMP", None))
+        then_block.append(Instruction(Opcode.JUMP, None))
 
         else_block = []
         for inner in stmt.els:
@@ -105,10 +88,10 @@ class NativeCodeGenerator:
             else_block.extend(self._shift_labels(nested, len(instructions) + len(then_block) + len(else_block)))
 
         else_start = len(instructions) + len(then_block)
-        instructions[jump_false_index] = NativeInstruction("JUMP_IF_FALSE", else_start)
+        instructions[jump_false_index] = Instruction(Opcode.JUMP_IF_FALSE, else_start)
 
         end_of_then = len(instructions) + len(then_block) + len(else_block)
-        then_block[-1] = NativeInstruction("JUMP", end_of_then)
+        then_block[-1] = Instruction(Opcode.JUMP, end_of_then)
 
         instructions.extend(then_block)
         instructions.extend(else_block)
@@ -120,47 +103,47 @@ class NativeCodeGenerator:
         cond_instrs = self._compile_expr(stmt.cond)
         instructions.extend(cond_instrs)
         jump_out_index = len(instructions)
-        instructions.append(NativeInstruction("JUMP_IF_FALSE", None))
+        instructions.append(Instruction(Opcode.JUMP_IF_FALSE, None))
 
         body_instrs: List[NativeInstruction] = []
         for inner in stmt.body:
             nested = self._compile_stmt(inner)
             body_instrs.extend(self._shift_labels(nested, len(instructions) + len(body_instrs)))
-        body_instrs.append(NativeInstruction("JUMP", loop_start))
+        body_instrs.append(Instruction(Opcode.JUMP, loop_start))
 
         loop_exit = len(instructions) + len(body_instrs)
-        instructions[jump_out_index] = NativeInstruction("JUMP_IF_FALSE", loop_exit)
+        instructions[jump_out_index] = Instruction(Opcode.JUMP_IF_FALSE, loop_exit)
 
         instructions.extend(body_instrs)
         return instructions
 
-    def _compile_binding(self, name: str, expr: "IR") -> List[NativeInstruction]:
+    def _compile_binding(self, name: str, expr: "IR") -> List[Instruction]:
         instructions = self._compile_expr(expr)
-        instructions.append(NativeInstruction("STORE", name))
+        instructions.append(Instruction(Opcode.STORE, name))
         return instructions
 
-    def _compile_expr(self, expr: "IR") -> List[NativeInstruction]:
+    def _compile_expr(self, expr: "IR") -> List[Instruction]:
         if isinstance(expr, Num):
             value = float(expr.txt) if "." in expr.txt else int(expr.txt)
-            return [NativeInstruction("PUSH_CONST", value)]
+            return [Instruction(Opcode.PUSH_CONST, value)]
         if isinstance(expr, Str):
-            return [NativeInstruction("PUSH_CONST", expr.txt)]
+            return [Instruction(Opcode.PUSH_CONST, expr.txt)]
         if isinstance(expr, Bool):
-            return [NativeInstruction("PUSH_CONST", expr.value)]
+            return [Instruction(Opcode.PUSH_CONST, expr.value)]
         if isinstance(expr, Null):
-            return [NativeInstruction("PUSH_CONST", None)]
+            return [Instruction(Opcode.PUSH_CONST, None)]
         if isinstance(expr, Var):
-            return [NativeInstruction("LOAD", expr.name)]
+            return [Instruction(Opcode.LOAD, expr.name)]
         if isinstance(expr, Bin):
             instructions = self._compile_expr(expr.a)
             instructions.extend(self._compile_expr(expr.b))
-            instructions.append(NativeInstruction("BINARY", expr.op))
+            instructions.append(Instruction(Opcode.BINARY, expr.op))
             return instructions
         if isinstance(expr, Call):
-            instructions: List[NativeInstruction] = []
+            instructions: List[Instruction] = []
             for arg in expr.args:
                 instructions.extend(self._compile_expr(arg))
-            instructions.append(NativeInstruction("CALL", (expr.name, len(expr.args))))
+            instructions.append(Instruction(Opcode.CALL, (expr.name, len(expr.args))))
             return instructions
         raise NotImplementedError(f"native codegen does not yet support expression {type(expr).__name__}")
 
@@ -197,9 +180,9 @@ class NativeVM:
     def __init__(self) -> None:
         self.output: List[str] = []
         self.globals: Dict[str, Any] = {}
-        self.program: Optional[NativeProgram] = None
+        self.program: Optional[ProgramIR] = None
 
-    def run(self, program: NativeProgram) -> str:
+    def run(self, program: ProgramIR) -> str:
         self.program = program
         self._execute(_Frame(program.entry, self.globals))
         return "".join(self.output)
@@ -210,38 +193,38 @@ class NativeVM:
             instr = frame.instructions[frame.ip]
             frame.ip += 1
 
-            if instr.op == "PUSH_CONST":
+            if instr.op == Opcode.PUSH_CONST:
                 stack.append(instr.arg)
-            elif instr.op == "LOAD":
+            elif instr.op == Opcode.LOAD:
                 stack.append(self._load(frame.locals, instr.arg))
-            elif instr.op == "STORE":
+            elif instr.op == Opcode.STORE:
                 value = stack.pop()
                 frame.locals[instr.arg] = value
                 if frame.locals is self.globals:
                     self.globals[instr.arg] = value
-            elif instr.op == "BINARY":
+            elif instr.op == Opcode.BINARY:
                 right = stack.pop()
                 left = stack.pop()
                 op_fn = self._binary_ops.get(instr.arg)
                 if op_fn is None:
                     raise RuntimeError(f"unsupported operator {instr.arg}")
                 stack.append(op_fn(left, right))
-            elif instr.op == "PRINT":
+            elif instr.op == Opcode.PRINT:
                 values = [stack.pop() for _ in range(int(instr.arg))][::-1]
                 self.output.append(" ".join(self._format_value(v) for v in values) + "\n")
-            elif instr.op == "JUMP":
+            elif instr.op == Opcode.JUMP:
                 frame.ip = int(instr.arg)
-            elif instr.op == "JUMP_IF_FALSE":
+            elif instr.op == Opcode.JUMP_IF_FALSE:
                 cond = stack.pop()
                 if not cond:
                     frame.ip = int(instr.arg)
-            elif instr.op == "CALL":
+            elif instr.op == Opcode.CALL:
                 name, argc = instr.arg
                 args = [stack.pop() for _ in range(argc)][::-1]
                 stack.append(self._call(name, args))
-            elif instr.op == "POP":
+            elif instr.op == Opcode.POP:
                 stack.pop()
-            elif instr.op == "RETURN":
+            elif instr.op == Opcode.RETURN:
                 return stack.pop() if stack else None
             else:
                 raise RuntimeError(f"unknown opcode {instr.op}")

@@ -168,6 +168,7 @@ class Runtime:
         self._lock = threading.RLock()
         self.heap: Dict[int, List[Any]] = {}
         self.allocations: Dict[int, int] = {}
+        self.freed_allocations: Dict[int, int] = {}
         self.freed_ptrs: Set[int] = set()
         self.heap_cell_types: Dict[int, Dict[int, str]] = {}
         self.ptr_tags: Dict[int, str] = {}
@@ -285,9 +286,17 @@ class Runtime:
             self.next_ptr += 1
             self.heap[p] = [0 for _ in range(int(n))]
             self.allocations[p] = int(n)
+            self.freed_allocations.pop(p, None)
             self.heap_cell_types[p] = {}
             self.freed_ptrs.discard(p)
             return p
+
+    @staticmethod
+    def _pointer_label(p: Any) -> str:
+        type_name = type(p).__name__
+        if isinstance(p, (int, float)) and str(p).isnumeric():
+            return str(int(p))
+        return f"{p!r} ({type_name})"
 
     def _resolve_ptr(self, p: Any, pos: Optional[SourcePos], *, op: str) -> Tuple[Optional[int], Optional[List[Any]]]:
         """Validate and resolve a heap pointer for the requested operation.
@@ -299,19 +308,29 @@ class Runtime:
         try:
             ip = int(p)
         except Exception:
-            message = f"heap {op} error: pointer {p!r} is not numeric"
+            message = f"heap {op} error: pointer {self._pointer_label(p)} is not numeric"
             self._record_error(message, pos)
             return None, None
 
         with self._lock:
             if ip in self.freed_ptrs:
-                message = f"heap {op} error: pointer {ip} was already freed"
+                size_part = self.freed_allocations.get(ip)
+                size_hint = f" (size {size_part})" if size_part is not None else ""
+                message = f"heap {op} error: pointer {ip} was already freed{size_hint}"
                 self._record_error(message, pos)
                 return None, None
             try:
                 cells = self.heap[ip]
             except KeyError:
-                message = f"heap {op} error: unknown pointer {ip}"
+                live = sorted(self.heap.keys())
+                freed = sorted(self.freed_ptrs)
+                details: List[str] = []
+                if live:
+                    details.append(f"live: {live}")
+                if freed:
+                    details.append(f"freed: {freed}")
+                context = f" ({'; '.join(details)})" if details else ""
+                message = f"heap {op} error: unknown pointer {ip}{context}"
                 self._record_error(message, pos)
                 return None, None
             return ip, cells
@@ -325,7 +344,9 @@ class Runtime:
             self.heap.pop(ip, None)
             self.heap_cell_types.pop(ip, None)
             self.ptr_tags.pop(ip, None)
-            self.allocations.pop(ip, None)
+            size = self.allocations.pop(ip, None)
+            if size is not None:
+                self.freed_allocations[ip] = size
             self.freed_ptrs.add(ip)
         return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 0, "msg": ""}}
 
@@ -343,8 +364,10 @@ class Runtime:
 
         size = len(cells)
         if idx < 0 or idx >= size:
+            range_hint = "empty allocation" if size == 0 else f"valid indices: 0..{size - 1}"
             self._record_error(
-                f"heap access error: index {idx} out of range for pointer {ip} (size {size})", pos
+                f"heap access error: index {idx} out of range for pointer {ip} (size {size}; {range_hint})",
+                pos,
             )
             return None
         return cells[idx]
@@ -363,7 +386,8 @@ class Runtime:
 
         size = len(cells)
         if idx < 0 or idx >= size:
-            message = f"heap access error: index {idx} out of range for pointer {ip} (size {size})"
+            range_hint = "empty allocation" if size == 0 else f"valid indices: 0..{size - 1}"
+            message = f"heap access error: index {idx} out of range for pointer {ip} (size {size}; {range_hint})"
             self._record_error(message, pos)
             return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": message}}
 
@@ -383,13 +407,16 @@ class Runtime:
 
         with self._lock:
             live = {ptr: len(cells) for ptr, cells in self.heap.items()}
+            leak_count = len(live)
             return {
                 "live": live,
-                "count": len(live),
+                "count": leak_count,
                 "total_cells": sum(live.values()),
                 "allocations": dict(self.allocations),
+                "freed_sizes": dict(self.freed_allocations),
                 "freed": sorted(self.freed_ptrs),
                 "freed_count": len(self.freed_ptrs),
+                "has_leaks": leak_count > 0,
             }
 
     def tag(self, p: Any, typ: Any, *, pos: Optional[SourcePos] = None) -> Dict[str, Any]:

@@ -438,10 +438,7 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
 
 def _infer_expr_type(expr: IR, env: Dict[str, str]) -> Optional[str]:
     if isinstance(expr, Num):
-        txt = expr.txt.lower()
-        if "." in txt or "e" in txt:
-            return "float"
-        return "int"
+        return "number"
     if isinstance(expr, Str):
         return "string"
     if isinstance(expr, Bool):
@@ -451,6 +448,27 @@ def _infer_expr_type(expr: IR, env: Dict[str, str]) -> Optional[str]:
     if isinstance(expr, Var):
         return env.get(expr.name)
     return None
+
+
+def _types_match(expected: str, actual: str) -> bool:
+    expected_norm = expected.strip()
+    actual_norm = actual.strip()
+    optional = expected_norm.endswith("?")
+    base_expected = expected_norm[:-1].strip() if optional else expected_norm
+
+    if optional and actual_norm.lower() == "null":
+        return True
+    if base_expected.lower() == actual_norm.lower():
+        return True
+    if base_expected.lower() == "number" and actual_norm.lower() in {"number", "int", "float"}:
+        return True
+    if base_expected.lower() == "string" and actual_norm.lower() == "string":
+        return True
+    if base_expected.lower() in {"bool", "boolean"} and actual_norm.lower() in {"bool", "boolean"}:
+        return True
+    if optional and actual_norm.lower() != "null":
+        return _types_match(base_expected, actual)
+    return False
 
 
 def lint_assignment_types(stmts: List[IR], source: Optional[str] = None, env: Optional[Dict[str, str]] = None) -> None:
@@ -465,7 +483,7 @@ def lint_assignment_types(stmts: List[IR], source: Optional[str] = None, env: Op
             elif isinstance(st, Assign):
                 inferred = _infer_expr_type(st.expr, local_env)
                 expected = local_env.get(st.name)
-                if expected and inferred and expected != inferred:
+                if expected and inferred and not _types_match(expected, inferred):
                     msg = f"type change for variable {st.name}: expected {expected} but got {inferred}"
                     if source is None:
                         raise RuntimeError(msg)

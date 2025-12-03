@@ -443,14 +443,28 @@ class Runtime:
             return "string"
         return type(value).__name__
 
+    def _infer_type_name(self, value: Any) -> str:
+        """Return a broad type label for variables defined without annotations.
+
+        The runtime already tracks concrete types (e.g., distinguishing `int` from
+        `float`) for annotated parameters and return values. For unannotated
+        variables we allow a simple inference step so that numeric values start out
+        as the general "number" type, making later `int`/`float` updates valid
+        without counting as type changes. Other values keep their concrete name.
+        """
+
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return "number"
+        return self._value_type_name(value) or type(value).__name__
+
     def _check_assignment_type(
         self, env: "Environment", name: str, value: Any, pos: SourcePos, *, local_only: bool = False
     ) -> None:
         expected = env.type_of(name, local_only=local_only)
         if expected is None:
             return
-        actual = self._value_type_name(value) or type(value).__name__
-        if expected != actual:
+        if not self._type_matches(expected, value):
+            actual = self._value_type_name(value) or type(value).__name__
             raise self._error(
                 f"type change for variable {name}: expected {expected} but got {actual}",
                 pos,

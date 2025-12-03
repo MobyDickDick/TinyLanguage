@@ -367,7 +367,7 @@ Der „nativeCompiler“ wird separat geführt.
 - [x] **Keine impliziten Typänderungen**
   - Nach `define i = 5;` soll `i = 0.5;` ein Fehler sein, sofern nicht bewusst ein anderer Weg gewählt wird.
   - Typregeln einheitlich in Ausdrücken, Funktionen und Heap-Operationen anwenden.
-- [ ] (Optional) Einfache Typinferenz
+- [x] (Optional) Einfache Typinferenz
   - Z.B. `define x = 0;` ⇒ `x` ist vom Typ `number`, ohne explizite Annotation.
 
 ### 3. Runtime

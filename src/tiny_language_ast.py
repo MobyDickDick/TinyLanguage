@@ -74,6 +74,7 @@ class Fn(IR):
     body: List[IR]
     namespace: Optional[str] = None
     return_type: Optional[str] = None
+    inferred_return_type: Optional[str] = None
     is_async: bool = False
     pos: SourcePos = field(default_factory=SourcePos.origin)
 
@@ -85,6 +86,7 @@ class MethodDef(IR):
     params: List[Param]
     body: List[IR]
     return_type: Optional[str] = None
+    inferred_return_type: Optional[str] = None
     namespace: Optional[str] = None
     is_async: bool = False
     pos: SourcePos = field(default_factory=SourcePos.origin)

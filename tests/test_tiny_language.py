@@ -10,7 +10,7 @@ sys.path.append(str(PROJECT_ROOT / "src"))
 
 from tests.utils import run_tiny
 
-from tiny_language import compile_and_run, main, run_file
+from tiny_language import Runtime, compile_and_run, main, run_file
 
 
 def expect_compile_error(src: str, pattern: str) -> None:
@@ -689,6 +689,48 @@ def test_error_message_for_missing_heap_index():
     out = run_tiny(src)
     assert re.search(r"heap access error: index 5 out of range for pointer 1 \(line 3, col \d+\)", out)
     assert "^" in out
+
+
+def test_error_message_for_double_delete():
+    src = """
+    define p = new(1);
+    delete(p);
+    delete(p);
+    print(errorMessage);
+    """
+
+    out = run_tiny(src)
+    assert re.search(r"heap delete error: pointer 1 was already freed \(line 4, col \d+\)", out)
+    assert "^" in out
+
+
+def test_error_message_for_unknown_delete():
+    src = """
+    delete(9);
+    print(errorMessage);
+    """
+
+    out = run_tiny(src)
+    assert re.search(r"heap delete error: unknown pointer 9 \(line 2, col \d+\)", out)
+    assert "^" in out
+
+
+def test_heap_leak_report_tracks_live_allocations():
+    src = """
+    define first = new(2);
+    define second = new[1, 2, 3];
+    print(len(second));
+    delete(first);
+    """
+
+    runtime = Runtime(src)
+    compile_and_run(src, runtime=runtime)
+    report = runtime.heap_leak_report()
+
+    assert report["count"] == 1
+    assert report["live"] == {2: 3}
+    assert report["freed"] == [1]
+    assert report["total_cells"] == 3
 
 
 def test_error_message_for_missing_field():

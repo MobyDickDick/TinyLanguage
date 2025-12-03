@@ -167,6 +167,8 @@ class Runtime:
     def __init__(self, source: str):
         self._lock = threading.RLock()
         self.heap: Dict[int, List[Any]] = {}
+        self.allocations: Dict[int, int] = {}
+        self.freed_ptrs: Set[int] = set()
         self.heap_cell_types: Dict[int, Dict[int, str]] = {}
         self.ptr_tags: Dict[int, str] = {}
         self.ops: Dict[Tuple[str, Optional[str], Optional[str]], Any] = {}
@@ -282,22 +284,43 @@ class Runtime:
             p = self.next_ptr
             self.next_ptr += 1
             self.heap[p] = [0 for _ in range(int(n))]
+            self.allocations[p] = int(n)
             self.heap_cell_types[p] = {}
+            self.freed_ptrs.discard(p)
             return p
 
     def delete(self, p: Any, pos: Optional[SourcePos] = None) -> Dict[str, Any]:
         try:
             ip = int(p)
-            with self._lock:
-                self.heap.pop(ip, None)
-                self.heap_cell_types.pop(ip, None)
-                self.ptr_tags.pop(ip, None)
-            return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 0, "msg": ""}}
-        except Exception as e:  # noqa: BLE001
+        except Exception:
+            message = "heap delete error: pointer is not numeric"
+            self._record_error(message, pos)
             return {
                 "__tag__": "Record",
-                "e": {"__tag__": "Error", "code": 1, "msg": str(e)},
+                "e": {"__tag__": "Error", "code": 1, "msg": message},
             }
+
+        with self._lock:
+            if ip in self.freed_ptrs:
+                message = f"heap delete error: pointer {ip} was already freed"
+                self._record_error(message, pos)
+                return {
+                    "__tag__": "Record",
+                    "e": {"__tag__": "Error", "code": 1, "msg": message},
+                }
+            if ip not in self.heap:
+                message = f"heap delete error: unknown pointer {ip}"
+                self._record_error(message, pos)
+                return {
+                    "__tag__": "Record",
+                    "e": {"__tag__": "Error", "code": 1, "msg": message},
+                }
+            self.heap.pop(ip, None)
+            self.heap_cell_types.pop(ip, None)
+            self.ptr_tags.pop(ip, None)
+            self.allocations.pop(ip, None)
+            self.freed_ptrs.add(ip)
+        return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 0, "msg": ""}}
 
     def heap_get(self, p: Any, i: Any, *, pos: Optional[SourcePos] = None) -> Any:
         try:
@@ -309,6 +332,9 @@ class Runtime:
 
         with self._lock:
             try:
+                if ip in self.freed_ptrs:
+                    self._record_error(f"heap access error: pointer {ip} was deleted", pos)
+                    return None
                 arr = self.heap[ip]
             except KeyError:
                 self._record_error(f"heap access error: unknown pointer {ip}", pos)
@@ -335,6 +361,13 @@ class Runtime:
 
         try:
             with self._lock:
+                if ip in self.freed_ptrs:
+                    message = f"heap access error: pointer {ip} was deleted"
+                    self._record_error(message, pos)
+                    return {
+                        "__tag__": "Record",
+                        "e": {"__tag__": "Error", "code": 1, "msg": message},
+                    }
                 expected = self.heap_cell_types.get(ip, {}).get(idx)
                 actual = self._value_type_name(v)
                 if expected is not None and expected != actual:
@@ -352,6 +385,18 @@ class Runtime:
             return {
                 "__tag__": "Record",
                 "e": {"__tag__": "Error", "code": 1, "msg": str(e)},
+            }
+
+    def heap_leak_report(self) -> Dict[str, Any]:
+        """Summarize live heap allocations for leak tracking in tests."""
+
+        with self._lock:
+            live = {ptr: len(cells) for ptr, cells in self.heap.items()}
+            return {
+                "live": live,
+                "count": len(live),
+                "total_cells": sum(live.values()),
+                "freed": sorted(self.freed_ptrs),
             }
 
     def tag(self, p: Any, typ: Any, *, pos: Optional[SourcePos] = None) -> Dict[str, Any]:

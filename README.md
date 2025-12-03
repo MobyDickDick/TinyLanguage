@@ -372,10 +372,10 @@ Der „nativeCompiler“ wird separat geführt.
 
 ### 3. Runtime
 
-- [ ] **Heap-API robuster machen**
+- [x] **Heap-API robuster machen**
   - Präzisere Fehlermeldungen für ungültige Pointer, Out-of-Bounds, doppelte `delete` usw.
   - Einfaches Leak-Tracking (z.B. für Tests).
-- [ ] **Test-Suite erweitern**
+- [x] **Test-Suite erweitern**
   - Randfälle: verschachtelte Arrays, viele `new/delete`, tiefe Rekursion, Fehlerfälle der Heap-API.
 
 ### 4. Tooling

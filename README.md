@@ -338,7 +338,7 @@ Additional examples and expected diagnostics live in `tests/test_tiny_language.p
   - [x] Document common Python interop scenarios
 
 ## Further issues to explore
-- [ ] **Native compiler**: Investigate emitting bytecode or native code directly from the TinyLanguage AST instead of interpreting it.
+- [x] **Native compiler**: Investigate emitting bytecode or native code directly from the TinyLanguage AST instead of interpreting it.
 - [x] **Transpilers**: Prototype bidirectional translators to and from Python, Julia, JavaScript, and C++ while preserving semantics and idioms.
 - [x] **VS Code extension**: Ship syntax highlighting, formatting, REPL integration, and diagnostics as a Visual Studio Code marketplace extension.
 - [x] **Cross-language compatibility**: Document any constructs that do not map cleanly to other mainstream languages and propose portable alternatives.

@@ -3,6 +3,8 @@
 import ast
 from typing import List, Optional
 
+from native_vm import NativeVM
+
 
 def _parse_and_lint(src: str) -> List[IR]:
     parser = Parser(Lexer(src), src)

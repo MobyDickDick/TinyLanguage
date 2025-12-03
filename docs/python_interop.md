@@ -84,133 +84,38 @@ This draft describes how TinyLanguage can interact safely with Python functions 
   print(iso);
   ```
 
-## Durchstich-Beispiele: Module, Namespaces, Typing
+## Durchstich-Checkliste: Module, Namespaces, Typing
 
-Die Datei `src_tiny/python_namespace_typed_demo.tiny` bündelt mehrere Aspekte in einem Lauf:
-
-- **Modularer Import**: Das Script importiert `math` und `os.path` mit Allowlists (`new[...]`).
-- **Namespaces**: Die Funktionen in `namespace PyInterop` kapseln den Python-Zugriff.
-- **Typisierte Signaturen**: Parameter- und Rückgabewerte sind in den Wrappern annotiert.
-
-Ausführen und erwartete Ausgabe:
-
-```
-PYTHONPATH=src python src/tiny_language.py src_tiny/python_namespace_typed_demo.tiny
-# Erwartete Ausgabe
-13.0
-tau fraction=0.499999999985709
-file=example.txt
-```
-
-## Kombinierte Demo-Läufe (Module + Namespaces + Typing)
-
-Nutze die bestehenden `.tiny`-Beispiele als Checkliste, um modulare Imports, Namespaces und typisierte Signaturen zusammen zu prüfen. Jeder Lauf enthält ein kurzes Erwartungs-Snippet:
-
-- **Typed Namespace plus zwei Module** (`src_tiny/python_namespace_typed_demo.tiny`):
-  ```bash
-  PYTHONPATH=src python src/tiny_language.py src_tiny/python_namespace_typed_demo.tiny
-  # Erwartete Ausgabe
-  13.0
-  tau fraction=0.499999999985709
-  file=example.txt
-  ```
-  Zeigt kombinierte Allowlist-Imports (`math`, `os.path`), gekapselt unter `namespace PyInterop` mit typisierten Wrappern.
-
-- **JSON-Parsing und OS-Interop** (`src_tiny/python_json_demo.tiny`):
-  ```bash
-  PYTHONPATH=src python src/tiny_language.py src_tiny/python_json_demo.tiny
-  # Erwartete Ausgabe
-  cwd=.../TinyLanguage
-  ok=True
-  payload={"ok": true}
-  ```
-  Kombiniert zwei Module (`json`, `os`) mit getrennten Allowlists und zeigt, wie Python-Proxies (hier: `os.getcwd`) in nachfolgende Aufrufe übergeben werden.
-
-- **Numerik mit knapper Allowlist** (`src_tiny/python_math_demo.tiny`):
-  ```bash
-  PYTHONPATH=src python src/tiny_language.py src_tiny/python_math_demo.tiny
-  # Erwartete Ausgabe
-  13.0
-  tau=6.283185307179586
-  isfinite=true
-  ```
-  Demonstriert reines Zahlen- und Bool-Mapping plus einen restriktiven Zugriff auf einzelne `math`-Attribute.
-
-## Durchstich-Läufe Schritt für Schritt
-
-Nutze die vorhandenen `.tiny`-Programme als vollständige Referenzläufe, die modulare Python-Imports, Namespaces und (wo definiert) typisierte Signaturen kombinieren. Alle Beispiele lassen sich ohne weitere Assets direkt starten:
+Die wichtigsten `.tiny`-Demos kombinieren modulare Imports, Namespaces und (wo angegeben) typisierte Signaturen. Jeder Lauf enthält den genauen Befehl und eine Soll-Ausgabe als schneller Regressionstest:
 
 - **Typed Namespace plus zwei Module** (`src_tiny/python_namespace_typed_demo.tiny`)
-  ```
+  ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_namespace_typed_demo.tiny
-  # Zeigt: allowlistete math/os.path-Imports, gekapselt unter PyInterop.*, typisierte Wrapper
-  # Ausgabe
+  # Erwartete Ausgabe
   13.0
   tau fraction=0.499999999985709
   file=example.txt
   ```
+  Zeigt gekapselte Allowlist-Imports (`math`, `os.path`) unter `namespace PyInterop` mit annotierten Wrapper-Funktionen.
+
 - **JSON-Parsing und OS-Interop** (`src_tiny/python_json_demo.tiny`)
-  ```
+  ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_json_demo.tiny
-  # Zeigt: modulare Imports mit getrennten Allowlists, Weitergabe eines Python-Proxy-Objekts
-  # Ausgabe
+  # Erwartete Ausgabe
   cwd=.../TinyLanguage
   ok=True
   payload={"ok": true}
   ```
+  Kombiniert `Python.call` und `Python.import_module` mit getrennten Allowlists und demonstriert, wie ein Python-Proxy (`os.getcwd`) in weitere Python-Aufrufe geschleust werden kann.
+
 - **Numerik mit knapper Allowlist** (`src_tiny/python_math_demo.tiny`)
-  ```
-  PYTHONPATH=src python src/tiny_language.py src_tiny/python_math_demo.tiny
-  # Zeigt: nummerische Rückgaben, Bool-Mapping und restriktive Attributfreigabe
-  # Ausgabe
-  13.0
-  tau=6.283185307179586
-  isfinite=true
-  ```
-
-Weitere Demo-Dateien in `src_tiny/` lassen sich kombinieren, um Namespaces (`namespace_demo.tiny`) oder komplexere Stdlib-Aufrufe (`stdlib_io_random_demo.tiny`) mit Python-FFI zu vergleichen. Dokumentiere beim Hinzufügen eigener Demos sowohl die erlaubten Attribute (Allowlist) als auch die erwarteten Ausgaben, damit Konsumenten sie als Regressionstests nutzen können.
-
-## Mehr Beispiele mit erwarteten Ausgaben
-
-Die folgenden Runs decken häufige Kombinationen aus Allowlist, Namespace-Kapselung und typisierten Signaturen ab. Sie können 1:1 ausgeführt und mit den notierten Ausgaben abgeglichen werden:
-
-- **Stdlib-JSON plus `os.getcwd`** (`src_tiny/python_json_demo.tiny`):
-  ```
-  PYTHONPATH=src python src/tiny_language.py src_tiny/python_json_demo.tiny
-  # Erwartete Ausgabe
-  cwd=.../TinyLanguage
-  ok=True
-  payload={"ok": true}
-  ```
-  Die Allowlist beschränkt `json` auf `loads`/`dumps` und `os` auf `getcwd`, so dass das Beispiel ohne ungewollte Nebenwirkungen läuft.
-- **Numerik mit Allowlist** (`src_tiny/python_math_demo.tiny`):
-  ```
+  ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_math_demo.tiny
   # Erwartete Ausgabe
   13.0
   tau=6.283185307179586
   isfinite=true
   ```
-  Das Script zeigt, dass Python-`float`/`bool` sauber nach `number`/`Bool` abgebildet werden und dass nur die erlaubten Attribute (`sqrt`, `isfinite`, `tau`) verfügbar sind.
-- **Getypte Namespaces plus Dateipfade** (`src_tiny/python_namespace_typed_demo.tiny`):
-  ```
-  PYTHONPATH=src python src/tiny_language.py src_tiny/python_namespace_typed_demo.tiny
-  # Erwartete Ausgabe
-  13.0
-  tau fraction=0.499999999985709
-  file=example.txt
-  ```
-  Hier sind die Wrapper-Funktionen in `namespace PyInterop` mit Parameter- und Rückgabetypen annotiert. Die Ausgaben belegen, dass typisierte Signaturen, Namespaces und Python-Proxies gemeinsam funktionieren.
+  Zeigt den Rundtrip für Zahlen/Bools plus die restriktive Freigabe einzelner `math`-Attribute (`sqrt`, `isfinite`, `tau`).
 
-## Demo programmes zum Ausprobieren
-
-Die `.tiny`-Beispiele im Repository spiegeln die oben beschriebenen Flows wider und können direkt ausgeführt werden:
-
-- `src_tiny/python_math_demo.tiny`: lädt `math` mit einer Allowlist, ruft `sqrt`/`isfinite` auf und liest die Konstante `tau`.
-- `src_tiny/python_json_demo.tiny`: kombiniert einen direkten `Python.call` auf `os.getcwd` mit JSON-`loads`/`dumps` und zeigt, wie Listen aus Python als Heap-Pointer zurückkommen.
-
-Aufruf jeweils mit:
-
-```
-python src/tiny_language.py <pfad_zur_datei.tiny>
-```
+Alle drei Läufe dokumentieren modularen Import, Namespaces und typisierte Signaturen in einem Zug. Ergänze beim Hinzufügen neuer Demos stets die erlaubten Attribute und die erwartete Ausgabe, damit sie als belastbare Regressionstests dienen.

@@ -1,14 +1,35 @@
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
-from tiny_errors import SourcePos
 from tiny_language_ast import *
 from tiny_language_preamble import TinyLangError, format_error
+from tiny_errors import SourcePos, SourceSpan
 
 # ----- Linter -----
 
 
 def _param_names(params: List[Param]) -> List[str]:
     return [p.name for p in params]
+
+
+def _node_span(obj: Any) -> Optional[SourceSpan]:
+    if isinstance(obj, SourceSpan):
+        return obj
+    return getattr(obj, "span", None)
+
+
+def _node_pos(obj: Any) -> SourcePos:
+    if isinstance(obj, SourceSpan):
+        return obj.start
+    if isinstance(obj, SourcePos):
+        return obj
+    return getattr(obj, "pos", SourcePos.origin())
+
+
+def _lint_error(source: str, node: Any, message: str, *, code: str = "E000", hint: Optional[str] = None) -> TinyLangError:
+    span = _node_span(node)
+    pos = _node_pos(node)
+    rendered = format_error(source, span or pos, message, code=code, hint=hint)
+    return TinyLangError(rendered, pos, code=code, hint=hint, span=span)
 
 
 def _collect_names_in_expr(e: IR, names: Set[str]) -> None:
@@ -188,12 +209,7 @@ def lint_fn_params_used(fn: Fn, source: Optional[str] = None) -> None:
         msg = f"unused parameter(s) in function {fn.name}: {', '.join(unused)}"
         if source is None:
             raise RuntimeError(msg)
-        raise TinyLangError(
-            format_error(source, fn.pos, msg, code="E002", hint="Remove the unused parameter or reference it."),
-            fn.pos,
-            code="E002",
-            hint="Remove the unused parameter or reference it.",
-        )
+        raise _lint_error(source, fn, msg, code="E002", hint="Remove the unused parameter or reference it.")
     lint_param_mutations_returned(fn.body, set(param_names), fn.name, is_method=False, source=source, pos=fn.pos)
     lint_destruct_call_outputs(fn.body, source)
     lint_return_signatures(fn.body, fn.name, is_method=False, source=source, pos=fn.pos)
@@ -213,12 +229,7 @@ def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None
         msg = f"unused parameter(s) in method {md.class_name}.{md.name}: {', '.join(unused)}"
         if source is None:
             raise RuntimeError(msg)
-        raise TinyLangError(
-            format_error(source, md.pos, msg, code="E002", hint="Remove the unused parameter or reference it."),
-            md.pos,
-            code="E002",
-            hint="Remove the unused parameter or reference it.",
-        )
+        raise _lint_error(source, md, msg, code="E002", hint="Remove the unused parameter or reference it.")
     lint_param_mutations_returned(
         md.body, set(param_names), f"{md.class_name}.{md.name}", is_method=True, source=source, pos=md.pos
     )
@@ -270,12 +281,7 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
         msg = f"unused local binding(s): {', '.join(unused)}"
         if source is None:
             raise RuntimeError(msg)
-        raise TinyLangError(
-            format_error(source, pos, msg, code="E002", hint="Remove the unused binding or reference it."),
-            pos,
-            code="E002",
-            hint="Remove the unused binding or reference it.",
-        )
+        raise _lint_error(source, pos, msg, code="E002", hint="Remove the unused binding or reference it.")
 
 
 def _infer_expr_type(expr: IR, env: Dict[str, str]) -> Optional[str]:
@@ -311,15 +317,10 @@ def lint_assignment_types(stmts: List[IR], source: Optional[str] = None, env: Op
                     msg = f"type change for variable {st.name}: expected {expected} but got {inferred}"
                     if source is None:
                         raise RuntimeError(msg)
-                    raise TinyLangError(
-                        format_error(
-                            source,
-                            st.pos,
-                            msg,
-                            code="E014",
-                            hint="Use a new variable or cast explicitly if a different type is required.",
-                        ),
-                        st.pos,
+                    raise _lint_error(
+                        source,
+                        st,
+                        msg,
                         code="E014",
                         hint="Use a new variable or cast explicitly if a different type is required.",
                     )
@@ -397,12 +398,7 @@ def lint_bare_call_results(
                     msg = f"call to {st.name} returns a value that is ignored"
                     if source is None:
                         raise RuntimeError(msg)
-                    raise TinyLangError(
-                        format_error(source, st.pos, msg, code="E011", hint=hint),
-                        st.pos,
-                        code="E011",
-                        hint=hint,
-                    )
+                    raise _lint_error(source, st, msg, code="E011", hint=hint)
             if isinstance(st, If):
                 visit(st.then)
                 visit(st.els)
@@ -436,12 +432,7 @@ def lint_import_style(stmts: List[IR], source: Optional[str] = None) -> None:
         msg = "imports are not sorted alphabetically"
         if source is None:
             raise RuntimeError(msg)
-        raise TinyLangError(
-            format_error(source, first_misordered.pos, msg, code="E012", hint=hint),
-            first_misordered.pos,
-            code="E012",
-            hint=hint,
-        )
+        raise _lint_error(source, first_misordered, msg, code="E012", hint=hint)
 
     for st in stmts:
         if isinstance(st, Namespace):
@@ -524,7 +515,7 @@ def lint_return_signatures(
                     )
                     if source is None:
                         raise RuntimeError(msg)
-                    raise TinyLangError(format_error(source, st.pos, msg, code="E007", hint=hint), st.pos, code="E007", hint=hint)
+                    raise _lint_error(source, st, msg, code="E007", hint=hint)
             elif isinstance(st, If):
                 visit(st.then)
                 visit(st.els)
@@ -556,15 +547,10 @@ def lint_return_exhaustiveness(
     msg = f"not all paths in {kind} {fn_name} return a value for annotated type {expected_return}"
     if source is None:
         raise RuntimeError(msg)
-    raise TinyLangError(
-        format_error(
-            source,
-            pos,
-            msg,
-            code="E010",
-            hint="Add return statements for every branch or provide a default return to satisfy the annotation.",
-        ),
+    raise _lint_error(
+        source,
         pos,
+        msg,
         code="E010",
         hint="Add return statements for every branch or provide a default return to satisfy the annotation.",
     )
@@ -578,15 +564,10 @@ def lint_unreachable_code(stmts: List[IR], source: Optional[str] = None) -> None
                 msg = "unreachable statement after a return"
                 if source is None:
                     raise RuntimeError(msg)
-                raise TinyLangError(
-                    format_error(
-                        source,
-                        st.pos,
-                        msg,
-                        code="E013",
-                        hint="Remove the dead code or restructure control flow so it can be reached.",
-                    ),
-                    st.pos,
+                raise _lint_error(
+                    source,
+                    st,
+                    msg,
                     code="E013",
                     hint="Remove the dead code or restructure control flow so it can be reached.",
                 )
@@ -694,15 +675,10 @@ def check_destruct_call_expr(expr: IR, names: set[str], *, source: Optional[str]
         if missing:
             msg = f"destructuring call to {expr.name} must include output for argument(s): {', '.join(missing)}"
             if source:
-                raise TinyLangError(
-                    format_error(
-                        source,
-                        pos,
-                        msg,
-                        code="E006",
-                        hint="Add the missing binding(s) to the destructuring pattern so each referenced argument is captured.",
-                    ),
+                raise _lint_error(
+                    source,
                     pos,
+                    msg,
                     code="E006",
                     hint="Add the missing binding(s) to the destructuring pattern so each referenced argument is captured.",
                 )
@@ -712,15 +688,10 @@ def check_destruct_call_expr(expr: IR, names: set[str], *, source: Optional[str]
         if missing:
             msg = f"destructuring method call to {expr.name} must include output for argument(s): {', '.join(missing)}"
             if source:
-                raise TinyLangError(
-                    format_error(
-                        source,
-                        pos,
-                        msg,
-                        code="E006",
-                        hint="Add the missing binding(s) to the destructuring pattern so each referenced argument is captured.",
-                    ),
+                raise _lint_error(
+                    source,
                     pos,
+                    msg,
                     code="E006",
                     hint="Add the missing binding(s) to the destructuring pattern so each referenced argument is captured.",
                 )
@@ -767,9 +738,10 @@ def lint_param_mutations_returned(
         msg = f"mutated parameter(s) in {kind} {fn_name} must be returned: {', '.join(missing)}"
         if source is None:
             raise RuntimeError(msg)
-        raise TinyLangError(
-            format_error(source, pos, msg, code="E001", hint="Return the mutated parameters so callers receive the updates."),
+        raise _lint_error(
+            source,
             pos,
+            msg,
             code="E001",
             hint="Return the mutated parameters so callers receive the updates.",
         )

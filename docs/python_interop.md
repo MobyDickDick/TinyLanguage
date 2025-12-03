@@ -102,6 +102,40 @@ tau fraction=0.499999999985709
 file=example.txt
 ```
 
+## Kombinierte Demo-Läufe (Module + Namespaces + Typing)
+
+Nutze die bestehenden `.tiny`-Beispiele als Checkliste, um modulare Imports, Namespaces und typisierte Signaturen zusammen zu prüfen. Jeder Lauf enthält ein kurzes Erwartungs-Snippet:
+
+- **Typed Namespace plus zwei Module** (`src_tiny/python_namespace_typed_demo.tiny`):
+  ```bash
+  PYTHONPATH=src python src/tiny_language.py src_tiny/python_namespace_typed_demo.tiny
+  # Erwartete Ausgabe
+  13.0
+  tau fraction=0.499999999985709
+  file=example.txt
+  ```
+  Zeigt kombinierte Allowlist-Imports (`math`, `os.path`), gekapselt unter `namespace PyInterop` mit typisierten Wrappern.
+
+- **JSON-Parsing und OS-Interop** (`src_tiny/python_json_demo.tiny`):
+  ```bash
+  PYTHONPATH=src python src/tiny_language.py src_tiny/python_json_demo.tiny
+  # Erwartete Ausgabe
+  cwd=.../TinyLanguage
+  ok=True
+  payload={"ok": true}
+  ```
+  Kombiniert zwei Module (`json`, `os`) mit getrennten Allowlists und zeigt, wie Python-Proxies (hier: `os.getcwd`) in nachfolgende Aufrufe übergeben werden.
+
+- **Numerik mit knapper Allowlist** (`src_tiny/python_math_demo.tiny`):
+  ```bash
+  PYTHONPATH=src python src/tiny_language.py src_tiny/python_math_demo.tiny
+  # Erwartete Ausgabe
+  13.0
+  tau=6.283185307179586
+  isfinite=true
+  ```
+  Demonstriert reines Zahlen- und Bool-Mapping plus einen restriktiven Zugriff auf einzelne `math`-Attribute.
+
 ## Durchstich-Läufe Schritt für Schritt
 
 Nutze die vorhandenen `.tiny`-Programme als vollständige Referenzläufe, die modulare Python-Imports, Namespaces und (wo definiert) typisierte Signaturen kombinieren. Alle Beispiele lassen sich ohne weitere Assets direkt starten:

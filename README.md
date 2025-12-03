@@ -255,6 +255,7 @@ Detailed notes live in [`docs/stdlib_extensions.md`](docs/stdlib_extensions.md),
 ## Common errors
 - **Unused bindings**: Unused local variables or parameters raise errors (e.g., "unused parameter(s) in function f: b", "unused local binding(s): t").
 - **Mutated parameters not returned**: When parameters are mutated they must be included in the return value (e.g., "mutated parameter(s) in function bump must be returned: a").
+- **Type changes**: Reassigning a variable to a different inferred type raises `[E014] type change for variable ... expected <type> but got <type>`. Use a new variable or an explicit cast when switching types.
 
 ## Formatter, lints, and language server
 - **Formatter**: `python tiny_language.py --format file.tiny` enforces four-space indents, a single space around operators and after commas, and normalized import lines (`import path as alias;`). Comments are preserved.
@@ -363,7 +364,7 @@ Der „nativeCompiler“ wird separat geführt.
 
 ### 2. Typdisziplin
 
-- [ ] **Keine impliziten Typänderungen**
+- [x] **Keine impliziten Typänderungen**
   - Nach `define i = 5;` soll `i = 0.5;` ein Fehler sein, sofern nicht bewusst ein anderer Weg gewählt wird.
   - Typregeln einheitlich in Ausdrücken, Funktionen und Heap-Operationen anwenden.
 - [ ] (Optional) Einfache Typinferenz

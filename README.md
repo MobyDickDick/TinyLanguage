@@ -390,7 +390,7 @@ Der „nativeCompiler“ wird separat geführt.
 
 Der native Compiler wird in einem eigenen Branch (`nativeCompiler`) entwickelt.
 
-- [ ] Eigenes Native-IR definieren (stack-/registerbasiert).
+- [x] Eigenes Native-IR definieren (stack-/registerbasiert). Siehe [`docs/native_ir.md`](docs/native_ir.md) für Opcode-Übersicht und Beispiele.
 - [ ] Kleine VM, die dieses IR ausführt (Interpreter in Python oder als separates Modul).
 - [ ] Lowering: AST → Native-IR für Ausdrücke, Statements, Funktionen, Heap-API.
 - [ ] Optional: Backend auf C/LLVM oder „reinem Python-Bytecode“ zur Erzeugung nativen Codes.

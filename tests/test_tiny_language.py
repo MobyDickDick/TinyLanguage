@@ -39,6 +39,23 @@ def test_reassign_with_different_type_errors():
     )
 
 
+def test_inferred_return_type_stable_across_calls():
+    expect_compile_error(
+        """
+        fn pick(flag) {
+            if (flag) {
+                return 1;
+            }
+            return "oops";
+        }
+
+        print(pick(true));
+        print(pick(false));
+        """,
+        r"\[E014\] inferred return type for function pick changed: expected number but got string",
+    )
+
+
 def test_lexer_basics_define():
     out = run_tiny(
         """

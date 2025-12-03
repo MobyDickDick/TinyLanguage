@@ -499,6 +499,22 @@ class Runtime:
                 hint="Adjust the type annotation (use '?' to allow Null) or pass a compatible value to satisfy the hint.",
             )
 
+    def _enforce_inferred_return(self, owner: Any, value: Any, *, label: str, pos: SourcePos) -> None:
+        expected = getattr(owner, "inferred_return_type", None)
+        inferred = self._infer_type_name(value)
+        if expected is None:
+            owner.inferred_return_type = inferred
+            return
+        if self._type_matches(expected, value):
+            return
+        actual = self._value_type_name(value) or type(value).__name__
+        raise self._error(
+            f"inferred return type for {label} changed: expected {expected} but got {actual}",
+            pos,
+            code="E014",
+            hint="Add an explicit return type annotation or keep return values consistent to avoid implicit type changes.",
+        )
+
     @staticmethod
     def _number_fields(val: Any) -> Optional[Dict[str, Any]]:
         if isinstance(val, dict) and val.get("__tag__") == "Number":
@@ -1064,9 +1080,13 @@ class Runtime:
                 value = res.value
                 if fn.return_type:
                     self._enforce_annotation(fn.return_type, value, label=f"return value for function {fn.name}", pos=fn.pos)
+                else:
+                    self._enforce_inferred_return(fn, value, label=f"function {fn.name}", pos=fn.pos)
                 return value
             if fn.return_type:
                 self._enforce_annotation(fn.return_type, res, label=f"return value for function {fn.name}", pos=fn.pos)
+            else:
+                self._enforce_inferred_return(fn, res, label=f"function {fn.name}", pos=fn.pos)
             return res
         except TinyLangError as err:
             raise self._ensure_error_has_stack(err) from err
@@ -1268,9 +1288,13 @@ class Runtime:
                 value = res.value
                 if md.return_type:
                     self._enforce_annotation(md.return_type, value, label=f"return value for method {md.class_name}.{md.name}", pos=md.pos)
+                else:
+                    self._enforce_inferred_return(md, value, label=f"method {md.class_name}.{md.name}", pos=md.pos)
                 return value
             if md.return_type:
                 self._enforce_annotation(md.return_type, res, label=f"return value for method {md.class_name}.{md.name}", pos=md.pos)
+            else:
+                self._enforce_inferred_return(md, res, label=f"method {md.class_name}.{md.name}", pos=md.pos)
             return res
         except TinyLangError as err:
             raise self._ensure_error_has_stack(err) from err

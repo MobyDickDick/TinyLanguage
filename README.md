@@ -284,8 +284,19 @@ Detailed notes live in [`docs/stdlib_extensions.md`](docs/stdlib_extensions.md),
   {"name": "my_pkg", "version": "1.0.0", "entrypoint": "main.tiny", "dependencies": ["utils@^2.1.0"]}
   ```
 
-  Then validate locally with `python ../tiny_language.py main.tiny`; relative imports like `import .helpers;` work thanks to the module resolver.
+  Keep your sources in the same folder and resolve imports via the module path. A minimal scaffold:
+
+  ```
+  my_pkg/
+    module.json
+    main.tiny
+    helpers.tiny
+  ```
+
+  Validate locally with `python ../tiny_language.py main.tiny` or via the wrapper `python -m tiny_lang_cli --file main.tiny --backend interpreter`; relative imports like `import .helpers;` work thanks to the module resolver. To pin dependencies during local tests, set `TINYPATH=../deps` and place sibling modules in that folder.
 - **Publish**: Package the module sources plus `module.json`, e.g., `tar -czf my_pkg-1.0.0.tgz module.json *.tiny`, and upload to your target repository or artifact registry. Document version pins (e.g., `lib@1.4.2` or `lib@~1.4`) in the manifest to keep builds reproducible.
+
+  For a final smoke test before release, extract the tarball into a temp directory and run `python -m tiny_lang_cli --file main.tiny --backend native` to ensure both interpreter and native backends succeed without access to the original workspace.
 
 Note: On platforms without `readline` (e.g., Windows) the REPL history tests are automatically skipped (`1 skipped`). Other tests still run; the skip simply notes the optional dependency.
 

@@ -43,6 +43,15 @@ PYTHONPATH=src python src/language_server_cli.py --file src_tiny/namespace_demo.
 PYTHONPATH=src python src/language_server_cli.py --file src_tiny/stdlib_io_random_demo.tiny diagnostics
 ```
 
+## Module-Workflows
+```bash
+# Lokalen Modulbaum mit relativem Import prüfen
+python -m tiny_lang_cli --file my_pkg/main.tiny --backend interpreter
+
+# Mit optionalem Suchpfad und Native-Backend gegentesten
+TINYPATH=../deps python -m tiny_lang_cli --file my_pkg/main.tiny --backend native
+```
+
 ## Alles auf einmal
 Das Skript `run_all.py` führt eine repräsentative Auswahl der obigen Demos plus die Pytest-Suite aus:
 

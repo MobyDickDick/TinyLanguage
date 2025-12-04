@@ -42,13 +42,19 @@ Outputs are JSON so they can be piped into tools or inspected visually. Example 
 
 ## Supported methods and example payloads
 
-Each subcommand is a thin wrapper around an internal request/response pair and can be copy/pasted into JSON-RPC glue code. Positions are zero-based and include namespace-qualified symbols (`Math.inc`, `Tools.double`, …). Currently exposed methods:
+Each subcommand is a thin wrapper around an internal request/response pair and can be copy/pasted into JSON-RPC glue code. Positions are zero-based and include namespace-qualified symbols (`Math.inc`, `Tools.double`, …). Currently exposed methods (keep this table in sync with the helpers in `src/language_server.py`):
 
 | Method (LSP analog) | CLI subcommand | Request (JSON) | Response (JSON) | Notes |
 | --- | --- | --- | --- | --- |
 | `textDocument/completion` | `completions` | `{ "prefix": "gr" }` | `[{ "label": "greet", "kind": "identifier" }]` | Prefix-based lookup across user symbols, keywords, and stdlib names. |
 | `textDocument/hover` | `hover` | `{ "symbol": "Greeter" }` | `{ "symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [0, 6] }` | Returns the recorded zero-based position for the symbol. |
 | `textDocument/diagnostic` | `diagnostics` | `{}` | `[{ "message": "[E011] ...", "code": "E011", "range": [1, 0, 1, 1] }]` | Emits lint findings with machine-readable ranges. |
+
+**Request templates at a glance** (copy/paste into JSON-RPC envelopes):
+
+- Completion: `{ "method": "textDocument/completion", "params": { "prefix": "gr" } }`
+- Hover: `{ "method": "textDocument/hover", "params": { "symbol": "Greeter" } }`
+- Diagnostics: `{ "method": "textDocument/diagnostic", "params": {} }`
 
 - **Completions** (`textDocument/completion` equivalent)
   - Request payload:
@@ -98,6 +104,18 @@ Not implemented yet: definition jumps, formatting, or workspace symbol searches.
 ## "So testest du es" quick demos
 
 The example programs referenced in the README’s “Syntax and Features” section can be exercised via the same CLI to validate hover/completion/diagnostics end-to-end. Each snippet includes a short expectation so results can be compared quickly:
+
+- **Inline smoke test for the README quickstart snippet** (variables, functions, namespaces):
+  ```bash
+  # Copy the snippet from README.md → Syntax and Features → Mini tutorial
+  README_SNIPPET=$'define a = 7 + 5 * 2;\nprint(a);\nfn add(x, y) { return x + y; }\ndefine sum = add(a, 3);\nprint(sum);\nnamespace Math { fn inc(x) { return add(x, 1); } }\nprint(Math.inc(4));'
+  PYTHONPATH=src python src/language_server_cli.py --source "$README_SNIPPET" completions --prefix Ma
+  # => [{"label": "Math", "kind": "identifier"}, {"label": "Math.inc", "kind": "identifier"}, ...]
+  PYTHONPATH=src python src/language_server_cli.py --source "$README_SNIPPET" hover --symbol inc
+  # => {"symbol": "inc", "detail": "TinyLanguage symbol", "position": [5, 4]}
+  PYTHONPATH=src python src/language_server_cli.py --source "$README_SNIPPET" diagnostics
+  # => [] (the tutorial snippet should lint clean)
+  ```
 
 - Hover over class names or methods in `src_tiny/class_demo.tiny`:
   ```bash

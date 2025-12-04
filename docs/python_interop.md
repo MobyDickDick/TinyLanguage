@@ -129,3 +129,49 @@ Die wichtigsten `.tiny`-Demos kombinieren modulare Imports, Namespaces und (wo a
   Kombiniert zwei Python-Module in einem Namespace (`math`, `os.path`) plus eine typannotierte Helper-Funktion, die Python-Strings über `builtins.str` beisteuert.
 
 Alle vier Läufe dokumentieren modularen Import, Namespaces und typisierte Signaturen in einem Zug. Ergänze beim Hinzufügen neuer Demos stets die erlaubten Attribute und die erwartete Ausgabe, damit sie als belastbare Regressionstests dienen.
+
+## Weitere Durchstich-Demos mit kombiniertem Feature-Fokus
+
+Die folgenden Mini-Szenarien ergänzen die Liste oben und zeigen häufige Stolperfallen (Allowlist, Proxy-Pass, optionale Typen) in einem Rutsch:
+
+- **Kompakter Allowlist-Vergleich** (`src_tiny/python_json_demo.tiny` versus bewusst zu enge Allowlist):
+  ```bash
+  PYTHONPATH=src python src/tiny_language.py src_tiny/python_json_demo.tiny
+  # Erwartete Ausgabe
+  cwd=.../TinyLanguage
+  ok=True
+  payload={"ok": true}
+
+  # Engere Allowlist erzwingt Fehler; das ist ein guter Sicherheits-Regressionstest
+  PYTHONPATH=src python src/tiny_language.py --eval 'define json = Python.import_module("json", new["loads"]); json.dumps(new["x"]);'
+  # Erwartete Ausgabe
+  # [PYDENY] attribute dumps not allowlisted on module json
+  ```
+
+- **Proxy-Pipeline plus Namespace-Signaturen** (`src_tiny/python_proxy_pipeline_demo.tiny`):
+  ```bash
+  PYTHONPATH=src python src/tiny_language.py src_tiny/python_proxy_pipeline_demo.tiny
+  # Erwartete Ausgabe
+  81.0
+  /tmp/example.txt
+  {"area": 12}
+  ```
+  Zeigt den Transport eines Python-Proxys durch mehrere Namespaces und typannotierte Wrapper hinweg.
+
+- **Typannotationen plus modulare Imports im Verbund** (`src_tiny/python_namespace_typed_demo.tiny`):
+  ```bash
+  PYTHONPATH=src python src/tiny_language.py src_tiny/python_namespace_typed_demo.tiny
+  # Erwartete Ausgabe
+  13.0
+  tau fraction=0.499999999985709
+  file=example.txt
+  ```
+  Kombination aus Namespaces, Allowlists und strengen Rückgabetypen (Linter meldet fehlende Rückgaben sofort mit `[E010]`).
+
+- **Timeout- und Fehlercodes sichtbar machen** (bewusst lange HTTP-Anfrage):
+  ```bash
+  PYTHONPATH=src python src/tiny_language.py --eval 'Python.call("requests", "get", new["https://example.com"], { timeout_ms: 1 });'
+  # Erwartete Ausgabe
+  # [PYTIMEOUT] requests.get exceeded 1 ms
+  ```
+  Hilft, die deterministischen Fehlerpräfixe `[PYSEC]`, `[PYTIMEOUT]`, `[PYDENY]` im Auge zu behalten.

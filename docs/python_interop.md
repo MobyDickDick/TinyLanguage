@@ -84,94 +84,94 @@ This draft describes how TinyLanguage can interact safely with Python functions 
   print(iso);
   ```
 
-## Durchstich-Checkliste: Module, Namespaces, Typing
+## End-to-end checklist: modules, namespaces, typing
 
-Die wichtigsten `.tiny`-Demos kombinieren modulare Imports, Namespaces und (wo angegeben) typisierte Signaturen. Jeder Lauf enthält den genauen Befehl und eine Soll-Ausgabe als schneller Regressionstest:
+The most important `.tiny` demos combine modular imports, namespaces, and (where given) typed signatures. Each run lists the exact command and an expected output as a quick regression check:
 
-- **Typed Namespace plus zwei Module** (`src_tiny/python_namespace_typed_demo.tiny`)
+- **Typed namespace plus two modules** (`src_tiny/python_namespace_typed_demo.tiny`)
   ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_namespace_typed_demo.tiny
-  # Erwartete Ausgabe
+  # Expected output
   13.0
   tau fraction=0.499999999985709
   file=example.txt
   ```
-  Zeigt gekapselte Allowlist-Imports (`math`, `os.path`) unter `namespace PyInterop` mit annotierten Wrapper-Funktionen.
+  Shows encapsulated allowlist imports (`math`, `os.path`) under `namespace PyInterop` with annotated wrapper functions.
 
-- **JSON-Parsing und OS-Interop** (`src_tiny/python_json_demo.tiny`)
+- **JSON parsing and OS interop** (`src_tiny/python_json_demo.tiny`)
   ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_json_demo.tiny
-  # Erwartete Ausgabe
+  # Expected output
   cwd=.../TinyLanguage
   ok=True
   payload={"ok": true}
   ```
-  Kombiniert `Python.call` und `Python.import_module` mit getrennten Allowlists und demonstriert, wie ein Python-Proxy (`os.getcwd`) in weitere Python-Aufrufe geschleust werden kann.
+  Combines `Python.call` and `Python.import_module` with separate allowlists and demonstrates how a Python proxy (`os.getcwd`) can be threaded into further Python calls.
 
-- **Numerik mit knapper Allowlist** (`src_tiny/python_math_demo.tiny`)
+- **Numerics with a tight allowlist** (`src_tiny/python_math_demo.tiny`)
   ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_math_demo.tiny
-  # Erwartete Ausgabe
+  # Expected output
   13.0
   tau=6.283185307179586
   isfinite=true
   ```
-  Zeigt den Rundtrip für Zahlen/Bools plus die restriktive Freigabe einzelner `math`-Attribute (`sqrt`, `isfinite`, `tau`).
+  Shows the round trip for numbers/booleans plus the restricted exposure of selected `math` attributes (`sqrt`, `isfinite`, `tau`).
 
-- **Proxy-Pipeline mit Namespaces und Typannotationen** (`src_tiny/python_proxy_pipeline_demo.tiny`)
+- **Proxy pipeline with namespaces and type annotations** (`src_tiny/python_proxy_pipeline_demo.tiny`)
   ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_proxy_pipeline_demo.tiny
-  # Erwartete Ausgabe
+  # Expected output
   81.0
   /tmp/example.txt
   {"area": 12}
   ```
-  Kombiniert zwei Python-Module in einem Namespace (`math`, `os.path`) plus eine typannotierte Helper-Funktion, die Python-Strings über `builtins.str` beisteuert.
+  Combines two Python modules in one namespace (`math`, `os.path`) plus a typed helper function that supplies Python strings via `builtins.str`.
 
-Alle vier Läufe dokumentieren modularen Import, Namespaces und typisierte Signaturen in einem Zug. Ergänze beim Hinzufügen neuer Demos stets die erlaubten Attribute und die erwartete Ausgabe, damit sie als belastbare Regressionstests dienen.
+All four runs document modular import, namespaces, and typed signatures in one go. When adding new demos, always record the allowed attributes and expected output so they remain reliable regression tests.
 
-## Weitere Durchstich-Demos mit kombiniertem Feature-Fokus
+## Additional end-to-end demos with combined feature focus
 
-Die folgenden Mini-Szenarien ergänzen die Liste oben und zeigen häufige Stolperfallen (Allowlist, Proxy-Pass, optionale Typen) in einem Rutsch:
+The following mini-scenarios complement the list above and highlight common pitfalls (allowlist, proxy passing, optional types) in one sweep:
 
-- **Kompakter Allowlist-Vergleich** (`src_tiny/python_json_demo.tiny` versus bewusst zu enge Allowlist):
+- **Compact allowlist comparison** (`src_tiny/python_json_demo.tiny` versus an intentionally strict allowlist):
   ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_json_demo.tiny
-  # Erwartete Ausgabe
+  # Expected output
   cwd=.../TinyLanguage
   ok=True
   payload={"ok": true}
 
-  # Engere Allowlist erzwingt Fehler; das ist ein guter Sicherheits-Regressionstest
+  # A tighter allowlist forces an error; this is a good security regression test
   PYTHONPATH=src python src/tiny_language.py --eval 'define json = Python.import_module("json", new["loads"]); json.dumps(new["x"]);'
-  # Erwartete Ausgabe
+  # Expected output
   # [PYDENY] attribute dumps not allowlisted on module json
   ```
 
-- **Proxy-Pipeline plus Namespace-Signaturen** (`src_tiny/python_proxy_pipeline_demo.tiny`):
+  - **Proxy pipeline plus namespace signatures** (`src_tiny/python_proxy_pipeline_demo.tiny`):
   ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_proxy_pipeline_demo.tiny
-  # Erwartete Ausgabe
+  # Expected output
   81.0
   /tmp/example.txt
   {"area": 12}
   ```
-  Zeigt den Transport eines Python-Proxys durch mehrere Namespaces und typannotierte Wrapper hinweg.
+  Shows transporting a Python proxy across multiple namespaces and typed wrappers.
 
-- **Typannotationen plus modulare Imports im Verbund** (`src_tiny/python_namespace_typed_demo.tiny`):
+- **Type annotations plus modular imports together** (`src_tiny/python_namespace_typed_demo.tiny`):
   ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_namespace_typed_demo.tiny
-  # Erwartete Ausgabe
+  # Expected output
   13.0
   tau fraction=0.499999999985709
   file=example.txt
   ```
-  Kombination aus Namespaces, Allowlists und strengen Rückgabetypen (Linter meldet fehlende Rückgaben sofort mit `[E010]`).
+  Combination of namespaces, allowlists, and strict return types (the linter flags missing returns immediately with `[E010]`).
 
 - **Timeout- und Fehlercodes sichtbar machen** (bewusst lange HTTP-Anfrage):
   ```bash
   PYTHONPATH=src python src/tiny_language.py --eval 'Python.call("requests", "get", new["https://example.com"], { timeout_ms: 1 });'
-  # Erwartete Ausgabe
+  # Expected output
   # [PYTIMEOUT] requests.get exceeded 1 ms
   ```
-  Hilft, die deterministischen Fehlerpräfixe `[PYSEC]`, `[PYTIMEOUT]`, `[PYDENY]` im Auge zu behalten.
+  Helps keep the deterministic error prefixes `[PYSEC]`, `[PYTIMEOUT]`, `[PYDENY]` visible.

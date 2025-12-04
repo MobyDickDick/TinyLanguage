@@ -26,49 +26,49 @@ Diagnostics and formatting rely on the helper script in `vscode-extension/python
 
 ## Roadmap / TODO
 
-Dieser Abschnitt sammelt anstehende Aufgaben für TinyLanguage.  
-Grob unterteilt in: Frontend/Sprache, Typdisziplin, Runtime und Tooling.  
-Der „nativeCompiler“ wird separat geführt.
+This section gathers upcoming tasks for TinyLanguage.
+Roughly grouped into frontend/language, type discipline, runtime, and tooling.
+The “nativeCompiler” work is tracked separately.
 
-### 1. Frontend / Sprache
+### 1. Frontend / language
 
-- [ ] **Fehlerpositionen und Fehlermeldungen verbessern**
-  - Tokens und AST-Knoten sollen konsistent Zeilen- und Spalteninformation tragen.
-  - Einheitlicher Fehlertyp mit optionalem `SourceSpan`, der bei Ausgabe die betroffene Zeile und eine Unterstreichung zeigt.
-  - Parser und Linter sollen diesen Fehlertyp verwenden.
+- [ ] **Improve error positions and messages**
+  - Tokens and AST nodes should consistently carry line and column information.
+  - Unified error type with an optional `SourceSpan` that highlights the affected line when displayed.
+  - Parser and linter should use this error type.
 
-- [ ] **Linter verfeinern**
-  - „must use“-Regel über Kontrollfluss: eine Variable gilt nur als benutzt, wenn sie auf allen relevanten Pfaden verwendet wird.
-  - Unreachable-Code-Warnungen (z.B. Code nach `return`).
+- [ ] **Refine the linter**
+  - “must use” rule across control flow: a variable counts as used only when referenced on all relevant paths.
+  - Unreachable-code warnings (e.g., statements after `return`).
 
-### 2. Typdisziplin
+### 2. Type discipline
 
-- [ ] **Keine impliziten Typänderungen**
-  - Nach `define i = 5;` darf `i = 0.5;` ein Fehler sein (oder explizit über einen anderen Weg erzwungen werden).
-  - Typregeln einheitlich in Ausdrücken, Funktionen und Heap-Operationen anwenden.
-- [x] (Optional) Einfache Typinferenz
-  - Z.B. `define x = 0;` ⇒ `x` ist vom Typ `number`, ohne explizite Annotation.
+- [ ] **No implicit type changes**
+  - After `define i = 5;`, assigning `i = 0.5;` should be an error (or explicitly allowed via another mechanism).
+  - Apply type rules uniformly across expressions, functions, and heap operations.
+- [x] (Optional) Simple type inference
+  - Example: `define x = 0;` ⇒ `x` is of type `number` without an explicit annotation.
 
 ### 3. Runtime
 
-- [ ] **Heap-API robuster machen**
-  - Präzisere Fehlermeldungen für ungültige Pointer, Out-of-Bounds, doppelte `delete` usw.
-  - Einfaches Leak-Tracking (z.B. für Tests).
-- [ ] **Test-Suite erweitern**
-  - Randfälle: verschachtelte Arrays, viele `new/delete`, tiefe Rekursion, Fehlerfälle der Heap-API.
+- [ ] **Harden the heap API**
+  - More precise errors for invalid pointers, out-of-bounds, double `delete`, etc.
+  - Simple leak tracking (e.g., for tests).
+- [ ] **Expand the test suite**
+  - Edge cases: nested arrays, many `new/delete` pairs, deep recursion, heap-API error scenarios.
 
 ### 4. Tooling
 
-- [ ] **CLI-Wrapper**
-  - Ein kleines Kommandozeilentool, das TinyLanguage-Dateien kompiliert/ausführt (z.B. `julia --project=. tiny_cli.jl source.tiny`).
-- [ ] **Sprache dokumentieren**
-  - Kurze, stabile Sprachspezifikation (Syntax, Typregeln, „must use“-Regeln), damit das Verhalten klar bleibt.
+- [ ] **CLI wrapper**
+  - A small command-line tool that compiles/runs TinyLanguage files (e.g., `julia --project=. tiny_cli.jl source.tiny`).
+- [ ] **Document the language**
+  - Short, stable language specification (syntax, type rules, “must use” rules) to keep behavior clear.
 
 ### 5. Native Compiler
 
-Der native Compiler wird in einem eigenen Branch (`nativeCompiler`) entwickelt.
+The native compiler is developed in its own branch (`nativeCompiler`).
 
-- [ ] Eigenes Native-IR definieren (stack-/registerbasiert).
-- [ ] Kleine VM, die dieses IR ausführt (Interpreter in Julia).
-- [ ] Lowering: AST → Native-IR für Ausdrücke, Statements, Funktionen, Heap-API.
-- [ ] Optional: Backend auf LLVM oder „Plain Julia“ ohne Runtime-Wrapper zur Erzeugung nativen Codes.
+- [ ] Define a custom native IR (stack- or register-based).
+- [ ] Small VM that executes this IR (interpreter in Julia).
+- [ ] Lowering: AST → Native IR for expressions, statements, functions, heap API.
+- [ ] Optional: Backend targeting LLVM or “plain Julia” without a runtime wrapper to produce native code.

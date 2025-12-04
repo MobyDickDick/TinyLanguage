@@ -2,27 +2,27 @@
 
 TinyLanguage is a small Julia-inspired language with a Python interpreter. This README provides a StackEdit-style Markdown overview: syntax highlights, a compact tutorial, pointers to examples, common error messages, and the most important run/test commands.
 
-For interoperability guidance, see the cross-language compatibility notes in [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md). For concrete Rosetta Code–style ports from Python to TinyLanguage, walk through [`docs/rosetta_python_examples.md`](docs/rosetta_python_examples.md). A kompakte Sprachreferenz mit Syntax, Typregeln und Operatorübersicht steht in [`docs/language_spec.md`](docs/language_spec.md).
+For interoperability guidance, see the cross-language compatibility notes in [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md). For concrete Rosetta Code–style ports from Python to TinyLanguage, walk through [`docs/rosetta_python_examples.md`](docs/rosetta_python_examples.md). A compact language reference with syntax, type rules, and operator overview lives in [`docs/language_spec.md`](docs/language_spec.md).
 
 ## Transpiler roadmap (task list)
-- [x] **Expand the shared IR**: Ergänze neue Statement-/Expression-Typen (z. B. Kontrollflussknoten wie `IfElse` und `While`) und rüste die Hilfsfunktionen in [`tiny_language_transpilers.py`](tiny_language_transpilers.py) so auf, dass spätere Sprachen-Erweiterungen darauf aufbauen können.
-- [x] **Update language transpilers**: Ziehe die Parser/Renderer der `PythonTranspiler`, `JuliaTranspiler`, `JavaScriptTranspiler` und `CppTranspiler` nach, damit die neuen IR-Knoten korrekt hin- und zurückübersetzt werden.
-- [x] **Add tests**: Erweitere die Round-Trip-Tests (Quelle → IR → Quelle) für jede neue Sprachfunktion und ergänze Negativtests für nicht unterstützte Konstrukte.
+- [x] **Expand the shared IR**: Add new statement/expression types (e.g., control-flow nodes like `IfElse` and `While`) and update the helpers in [`tiny_language_transpilers.py`](tiny_language_transpilers.py) so future language extensions can build on them.
+- [x] **Update language transpilers**: Bring the parsers/renderers for `PythonTranspiler`, `JuliaTranspiler`, `JavaScriptTranspiler`, and `CppTranspiler` up to date so the new IR nodes round-trip correctly.
+- [x] **Add tests**: Extend the round-trip tests (source → IR → source) for every new language feature and add negative tests for unsupported constructs.
 
-## Offene Aufgaben
-- [x] **Language-Server-Workflows dokumentieren (gestartet)**: Eine kompakte Referenz für `TinyLanguageServer` schreiben, Beispiel-Requests/-Responses aufnehmen und die neuen CLI-Demos dokumentieren (siehe [`docs/language_server_workflows.md`](docs/language_server_workflows.md)). Ergänzend dazu Tests für Hover/Completion/Diagnostics hinzufügen, damit künftige Änderungen abgesichert sind.
-- [x] **Python-Interop-Demos ausbauen**: Zusätzliche `.tiny`-Programme bereitstellen, die die Anleitung in [`docs/python_interop.md`](docs/python_interop.md) konkret durchspielen, inklusive How-to-Run-Hinweisen und Tests.
-- [x] **Native-Compiler-Prototyp evaluieren**: Einen alternativen Backend-Pfad implementieren, der aus dem vorhandenen AST Bytecode oder native IR erzeugt und über eine kleine VM lauffähig ist. Iterativ über Smoke-Tests (Arithmetik, Branching, Funktionen) mit dem Interpreter abgleichen. Siehe [`docs/native_compiler.md`](docs/native_compiler.md) für CLI-Aufrufe, Regression-Tests und bekannte Grenzen.
+## Open tasks
+- [x] **Document language-server workflows (started)**: Write a compact reference for `TinyLanguageServer`, capture example requests/responses, and document the new CLI demos (see [`docs/language_server_workflows.md`](docs/language_server_workflows.md)). Add tests for hover/completion/diagnostics so future changes stay protected.
+- [x] **Expand Python interop demos**: Provide additional `.tiny` programs that walk through [`docs/python_interop.md`](docs/python_interop.md) step by step, including how-to-run notes and tests.
+- [x] **Evaluate the native-compiler prototype**: Implement an alternative backend path that emits bytecode or native IR from the existing AST and runs through a small VM. Compare against the interpreter via smoke tests (arithmetic, branching, functions). See [`docs/native_compiler.md`](docs/native_compiler.md) for CLI calls, regression tests, and known limits.
 
-## Nächste sinnvolle Schritte
-- [x] **Dokumentation vertiefen/aktualisieren (Startpunkt, erledigt)**: Die bestehenden Guides in `docs/` gegeneinander abgleichen und auf den neuesten Stand bringen. Konkret:
-  - In [`docs/language_server_workflows.md`](docs/language_server_workflows.md) alle derzeit verfügbaren LSP-Methoden mit Beispiel-Requests/-Responses ergänzen und die Demo-Aufrufe aus der README-Sektion „Syntax and Features“ als kurze „So testest du es“-Abschnitte einfügen.
-  - In [`docs/python_interop.md`](docs/python_interop.md) mehr Durchstich-Beispiele aufnehmen, die modulare Imports, Namespaces und typisierte Funktionssignaturen gemeinsam demonstrieren; dabei die passenden `.tiny`-Demos aus `src_tiny/` verlinken und deren erwartete Ausgaben dokumentieren.
-  - In [`docs/native_compiler.md`](docs/native_compiler.md) den aktuellen CLI-Workflow und Grenzen der VM betonen und eine kleine Troubleshooting-Liste (häufige Fehlercodes, typisches Stacktrace-Beispiel) anhängen.
+## Next practical steps
+- [x] **Deepen/update documentation (starting point, done)**: Cross-check the existing guides in `docs/` and bring them up to date. Specifically:
+  - In [`docs/language_server_workflows.md`](docs/language_server_workflows.md), list every available LSP method with example requests/responses and add short "how to test it" snippets for the demo calls from the README section "Syntax and Features."
+  - In [`docs/python_interop.md`](docs/python_interop.md), add more end-to-end examples that jointly demonstrate modular imports, namespaces, and typed function signatures; link the relevant `.tiny` demos in `src_tiny/` and document their expected outputs.
+  - In [`docs/native_compiler.md`](docs/native_compiler.md), highlight the current CLI workflow and VM boundaries and append a small troubleshooting list (common error codes, representative stack trace).
 
-## Neue Schnellreferenzen
-- **Feature Cheat Sheet**: [`docs/feature_cheat_sheet.md`](docs/feature_cheat_sheet.md) fasst die Kernkonstrukte mit kurzen Hinweisen zu den zugehörigen `.tiny`-Demos zusammen.
-- **Run-/Test-Befehle gebündelt**: [`docs/demo_run_commands.md`](docs/demo_run_commands.md) listet Interpreterläufe, Native-Backend-Vergleiche, Python-Interop-Demos und Language-Server-CLI-Checks auf. Als Komplettlauf eignet sich weiterhin `python run_all.py`.
+## New quick references
+- **Feature Cheat Sheet**: [`docs/feature_cheat_sheet.md`](docs/feature_cheat_sheet.md) summarizes the core constructs with short notes on the corresponding `.tiny` demos.
+- **Bundled run/test commands**: [`docs/demo_run_commands.md`](docs/demo_run_commands.md) lists interpreter runs, native-backend comparisons, Python interop demos, and language-server CLI checks. `python run_all.py` remains a good all-in-one run.
 
 ## Syntax and Features
 
@@ -358,50 +358,49 @@ Additional examples and expected diagnostics live in `tests/test_tiny_language.p
 
 ## Roadmap / TODO
 
-Dieser Abschnitt sammelt anstehende Aufgaben für TinyLanguage.
-Grob unterteilt in: Frontend/Sprache, Typdisziplin, Runtime und Tooling.
-Der „nativeCompiler“ wird separat geführt.
+This section gathers upcoming work for TinyLanguage.
+Roughly grouped into frontend/language, type discipline, runtime, and tooling.
+The “nativeCompiler” work is tracked separately.
 
-### 1. Frontend / Sprache
+### 1. Frontend / language
 
-- [x] **Fehlerpositionen und Fehlermeldungen verbessern**
-  - Tokens und AST-Knoten sollen konsistent Zeilen- und Spalteninformation tragen.
-  - Einheitlicher Fehlertyp mit optionalem `SourceSpan`, der bei Ausgabe die betroffene Zeile und eine Unterstreichung zeigt.
-  - Lexer, Parser und Linter sollen diesen Fehlertyp verwenden.
+- [x] **Improve error positions and messages**
+  - Tokens and AST nodes should consistently carry line and column information.
+  - Unified error type with an optional `SourceSpan` that highlights the affected line when displayed.
+  - Lexer, parser, and linter should all use this error type.
 
-- [x] **Linter verfeinern**
-  - „must use“-Regel über Kontrollfluss: eine Variable gilt nur als benutzt, wenn sie auf allen relevanten Pfaden verwendet wird.
-  - Unreachable-Code-Warnungen (z.B. Code nach `return`).
+- [x] **Refine the linter**
+  - “must use” rule across control flow: a variable counts as used only when referenced on all relevant paths.
+  - Unreachable-code warnings (e.g., statements after `return`).
 
-### 2. Typdisziplin
+### 2. Type discipline
 
-- [x] **Keine impliziten Typänderungen**
-  - Nach `define i = 5;` soll `i = 0.5;` ein Fehler sein, sofern nicht bewusst ein anderer Weg gewählt wird.
-  - Typregeln einheitlich in Ausdrücken, Funktionen und Heap-Operationen anwenden.
-- [x] (Optional) Einfache Typinferenz
-  - Z.B. `define x = 0;` ⇒ `x` ist vom Typ `number`, ohne explizite Annotation.
+- [x] **No implicit type changes**
+  - After `define i = 5;`, assigning `i = 0.5;` should be an error unless intentionally handled otherwise.
+  - Apply type rules uniformly across expressions, functions, and heap operations.
+- [x] (Optional) Simple type inference
+  - Example: `define x = 0;` ⇒ `x` is of type `number` without an explicit annotation.
 
 ### 3. Runtime
 
-- [x] **Heap-API robuster machen**
-  - Präzisere Fehlermeldungen für ungültige Pointer, Out-of-Bounds, doppelte `delete` usw.
-  - Einfaches Leak-Tracking (z.B. für Tests).
-- [x] **Test-Suite erweitern**
-  - Randfälle: verschachtelte Arrays, viele `new/delete`, tiefe Rekursion, Fehlerfälle der Heap-API.
+- [x] **Harden the heap API**
+  - More precise errors for invalid pointers, out-of-bounds, double `delete`, etc.
+  - Simple leak tracking (e.g., for tests).
+- [x] **Expand the test suite**
+  - Edge cases: nested arrays, many `new/delete` pairs, deep recursion, heap-API failure scenarios.
 
 ### 4. Tooling
 
-- [x] **CLI-Wrapper**
-  - Ein kleines Kommandozeilentool, das TinyLanguage-Dateien kompiliert/ausführt
-    (z.B. `python -m tiny_lang_cli source.tiny` o.ä., abhängig von der Projektstruktur).
-- [x] **Sprache dokumentieren**
-  - Kurze, stabile Sprachspezifikation (Syntax, Typregeln, „must use“-Regeln), damit das Verhalten klar bleibt. Siehe [`docs/language_spec.md`](docs/language_spec.md).
+- [x] **CLI wrapper**
+  - A small command-line tool that compiles/runs TinyLanguage files (e.g., `python -m tiny_lang_cli source.tiny`, depending on project layout).
+- [x] **Document the language**
+  - Short, stable language specification (syntax, type rules, “must use” rules) to keep behavior clear. See [`docs/language_spec.md`](docs/language_spec.md).
 
 ### 5. Native Compiler
 
-Der native Compiler wird in einem eigenen Branch (`nativeCompiler`) entwickelt.
+The native compiler is developed in its own branch (`nativeCompiler`).
 
-- [x] Eigenes Native-IR definieren (stack-/registerbasiert). Siehe [`docs/native_ir.md`](docs/native_ir.md) für Opcode-Übersicht und Beispiele.
-- [x] Kleine VM, die dieses IR ausführt (Interpreter in Python oder als separates Modul).
-- [x] Lowering: AST → Native-IR für Ausdrücke, Statements, Funktionen, Heap-API.
-- [x] Optional: Backend auf C/LLVM oder „reinem Python-Bytecode“ zur Erzeugung nativen Codes.
+- [x] Define a custom native IR (stack- or register-based). See [`docs/native_ir.md`](docs/native_ir.md) for opcode overview and examples.
+- [x] Small VM that executes this IR (interpreter in Python or as a separate module).
+- [x] Lowering: AST → Native IR for expressions, statements, functions, heap API.
+- [x] Optional: Backend targeting C/LLVM or “pure Python bytecode” to produce native code.

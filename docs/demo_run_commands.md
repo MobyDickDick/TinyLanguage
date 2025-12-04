@@ -1,6 +1,6 @@
-# Befehlsliste für Demos und Schnelltests
+# Command list for demos and quick checks
 
-Diese Liste bündelt häufige CLI-Aufrufe, um die wichtigsten Beispiele und Backends in einem Lauf zu verifizieren. Führe die Befehle aus dem Repository-Root aus; setze `PYTHONPATH=src` für die Python-Helferskripte.
+This list collects common CLI invocations to validate the most important examples and backends in a single pass. Run the commands from the repository root; set `PYTHONPATH=src` for the Python helper scripts.
 
 ## Interpreter-Demos
 ```bash
@@ -15,7 +15,7 @@ python src/tiny_language.py src_tiny/stdlib_io_random_demo.tiny
 python src/tiny_language.py src_tiny/stdlib_collections_demo.tiny
 ```
 
-## Concurrency- und Pipeline-Beispiele
+## Concurrency and pipeline examples
 ```bash
 python src/tiny_language.py src_tiny/concurrency_demo.tiny
 python src/tiny_language.py src_tiny/concurrency_pipeline.tiny
@@ -29,34 +29,34 @@ PYTHONPATH=src python src/tiny_language.py src_tiny/python_json_demo.tiny
 PYTHONPATH=src python src/tiny_language.py src_tiny/python_namespace_typed_demo.tiny
 ```
 
-## Native Backend im Vergleich
+## Native backend for comparison
 ```bash
 python src/tiny_language.py --native-backend src_tiny/all_features.tiny
 python src/tiny_language.py --native-backend src_tiny/match_demo.tiny
 python -m pytest tests/test_native_codegen.py -q
 ```
 
-## Language-Server-Helfer
+## Language-server helpers
 ```bash
 PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny hover --symbol Greeter
 PYTHONPATH=src python src/language_server_cli.py --file src_tiny/namespace_demo.tiny completions --prefix To
 PYTHONPATH=src python src/language_server_cli.py --file src_tiny/stdlib_io_random_demo.tiny diagnostics
 ```
 
-## Module-Workflows
+## Module workflows
 ```bash
-# Lokalen Modulbaum mit relativem Import prüfen
+# Check a local module tree with a relative import
 python -m tiny_lang_cli --file my_pkg/main.tiny --backend interpreter
 
-# Mit optionalem Suchpfad und Native-Backend gegentesten
+# Cross-check with an optional search path and the native backend
 TINYPATH=../deps python -m tiny_lang_cli --file my_pkg/main.tiny --backend native
 ```
 
-## Alles auf einmal
-Das Skript `run_all.py` führt eine repräsentative Auswahl der obigen Demos plus die Pytest-Suite aus:
+## Everything at once
+The script `run_all.py` runs a representative selection of the demos above plus the pytest suite:
 
 ```bash
 python run_all.py
 ```
 
-Fehlschläge führen zu einem non-zero Exitcode; so kann das Skript als schneller Regressionstest in CI oder Editor-Launchern dienen.
+Failures return a non-zero exit code, so the script works as a quick regression test in CI or editor launchers.

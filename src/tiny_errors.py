@@ -7,7 +7,7 @@ from typing import Optional
 @dataclass(frozen=True)
 class SourcePos:
     """
-    Repräsentiert eine Position im Quelltext (1-basiert).
+    Represents a position in the source text (1-based).
     """
 
     line: int
@@ -25,7 +25,7 @@ class SourcePos:
 @dataclass(frozen=True)
 class SourceSpan:
     """
-    Repräsentiert einen Bereich im Quelltext, von `start` bis `stop` (inklusive).
+    Represents a span in the source text from `start` to `stop` (inclusive).
     """
 
     start: SourcePos
@@ -35,11 +35,11 @@ class SourceSpan:
 @dataclass
 class TinyError(Exception):
     """
-    Einheitlicher Fehlertyp für Lexer/Parser/Typchecker/Linter.
+    Unified error type for lexer, parser, type checker, and linter.
 
-    - kind: z.B. "lex", "parse", "type", "linter"
-    - msg:  menschenlesbare Beschreibung
-    - span: optionaler Quellbereich
+    - kind: e.g., "lex", "parse", "type", "linter"
+    - msg: human-readable description
+    - span: optional source span
     """
 
     kind: str
@@ -57,8 +57,8 @@ def format_error(err: TinyError, source: str) -> str:
     """
     format_error(err, source) -> str
 
-    Formatiert einen TinyError mit Kontextzeile und Unterstreichung (falls span gesetzt).
-    `source` ist der komplette TinyLanguage-Quelltext.
+    Format a TinyError with a context line and underline (if a span is set).
+    `source` is the full TinyLanguage source text.
     """
 
     header = f"[{err.kind}] {err.msg}"

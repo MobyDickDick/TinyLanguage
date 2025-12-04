@@ -1,52 +1,52 @@
 # TinyLanguage Feature Cheat Sheet
 
-Kurzreferenz zu zentralen Sprachfeatures mit Verweisen auf die vollständigen `.tiny`-Demos. Alle Befehle gehen davon aus, dass du aus dem Repository-Root arbeitest und `PYTHONPATH=src` gesetzt ist, falls du die Python-Interop nutzt.
+Quick reference to core language features with links to the full `.tiny` demos. All commands assume you are running from the repository root and have set `PYTHONPATH=src` if you use the Python interop.
 
-## Schnellstart
-- Programm ausführen: `python src/tiny_language.py <pfad_zur_datei.tiny>`
-- Interpreter vs. Native-Backend vergleichen: füge `--native-backend` hinzu.
-- Formatieren: `python src/tiny_language.py --format <pfad>`
+## Quickstart
+- Run a program: `python src/tiny_language.py <path_to_file.tiny>`
+- Compare interpreter vs. native backend: add `--native-backend`.
+- Format: `python src/tiny_language.py --format <path>`
 
-## Fundamentale Bausteine
-- **Variablen & Arithmetik**: `src_tiny/demo.tiny` zeigt `define`, einfache Operatoren und `print`.
-- **Kontrollfluss**: `src_tiny/all_features.tiny` enthält `if`/`else`, `while`, `return`-Pflichten.
-- **Funktionen**: `src_tiny/all_features.tiny` definiert freie Funktionen und demonstriert Positionsargumente.
+## Core building blocks
+- **Variables & arithmetic**: `src_tiny/demo.tiny` shows `define`, basic operators, and `print`.
+- **Control flow**: `src_tiny/all_features.tiny` includes `if`/`else`, `while`, and required returns.
+- **Functions**: `src_tiny/all_features.tiny` defines free functions and demonstrates positional arguments.
 
-## Typen und Signaturen
-- **Annotierte Parameter & Rückgabewerte**: `src_tiny/typing_demo.tiny` prüft Gradual Typing und Exhaustiveness.
-- **Optionale Rückgaben**: `src_tiny/result_demo.tiny` illustriert `Result`-ähnliche Rückgabemuster.
+## Types and signatures
+- **Annotated parameters & returns**: `src_tiny/typing_demo.tiny` checks gradual typing and exhaustiveness.
+- **Optional returns**: `src_tiny/result_demo.tiny` illustrates `Result`-style return patterns.
 
-## Namespaces und Module
-- **Namespaces**: `src_tiny/namespace_demo.tiny` gruppiert Utilities und ruft sie qualifiziert auf.
-- **Importe & Stdlib**: `src_tiny/stdlib_io_random_demo.tiny` nutzt `import`, I/O und Zufallsfunktionen.
+## Namespaces and modules
+- **Namespaces**: `src_tiny/namespace_demo.tiny` groups utilities and calls them with qualification.
+- **Imports & stdlib**: `src_tiny/stdlib_io_random_demo.tiny` uses `import`, I/O, and randomness.
 
-## Klassen und Operatoren
-- **Klassen & Methoden**: `src_tiny/class_demo.tiny` definiert Felder, Konstruktor-Wrapper und Methoden.
-- **Operator-Overloading**: `src_tiny/operator_overloading_demo.tiny` überschreibt `+` und `==` für `Point`.
+## Classes and operators
+- **Classes & methods**: `src_tiny/class_demo.tiny` defines fields, constructor wrappers, and methods.
+- **Operator overloading**: `src_tiny/operator_overloading_demo.tiny` overrides `+` and `==` for `Point`.
 
-## Pattern Matching und ADTs
-- **Tagged Unions**: `src_tiny/match_demo.tiny` führt `type`-Definitionen ein und erzwingt Exhaustiveness in `match`.
+## Pattern matching and ADTs
+- **Tagged unions**: `src_tiny/match_demo.tiny` introduces `type` definitions and enforces exhaustiveness in `match`.
 
-## Heap, Arrays und Collections
-- **Pointer/Heap**: `src_tiny/heap_pointer_demo.tiny` demonstriert `new`, `heap_get`/`heap_set` und `delete`.
-- **Collections**: `src_tiny/stdlib_collections_demo.tiny` nutzt `Map`, `Set`, `Deque` und zeigt Mutationen.
+## Heap, arrays, and collections
+- **Pointers/heap**: `src_tiny/heap_pointer_demo.tiny` demonstrates `new`, `heap_get`/`heap_set`, and `delete`.
+- **Collections**: `src_tiny/stdlib_collections_demo.tiny` uses `Map`, `Set`, `Deque`, and shows mutations.
 
-## Nebenläufigkeit und Async
-- **Tasks & Pipelines**: `src_tiny/concurrency_demo.tiny` und `src_tiny/concurrency_pipeline.tiny` decken `spawn`, `join` und Token-Abbruch ab.
-- **Parallel Map**: `src_tiny/parallel_map.tiny` kombiniert Tasks mit Aggregation.
+## Concurrency and async
+- **Tasks & pipelines**: `src_tiny/concurrency_demo.tiny` and `src_tiny/concurrency_pipeline.tiny` cover `spawn`, `join`, and token cancellation.
+- **Parallel map**: `src_tiny/parallel_map.tiny` combines tasks with aggregation.
 
-## Interop mit Python
-- **FFI-Basics**: `src_tiny/python_math_demo.tiny` und `src_tiny/python_json_demo.tiny` zeigen `Python.import_module`/`Python.call` mit Allowlist.
-- **Namespaces + Typing**: `src_tiny/python_namespace_typed_demo.tiny` kapselt Python-Aufrufe in `namespace PyInterop` mit annotierten Signaturen.
+## Interop with Python
+- **FFI basics**: `src_tiny/python_math_demo.tiny` and `src_tiny/python_json_demo.tiny` show `Python.import_module`/`Python.call` with an allowlist.
+- **Namespaces + typing**: `src_tiny/python_namespace_typed_demo.tiny` wraps Python calls in `namespace PyInterop` with annotated signatures.
 
-## Native Backend
-- **Bytecode-Pfad ausprobieren**: Führe z. B. `python src/tiny_language.py --native-backend src_tiny/all_features.tiny` aus und vergleiche die Ausgabe mit dem Interpreterlauf ohne Flag.
-- **Smoke-Tests**: `python -m pytest tests/test_native_codegen.py -q` prüft, welche AST-Knoten bereits unterstützt sind.
+## Native backend
+- **Try the bytecode path**: Run `python src/tiny_language.py --native-backend src_tiny/all_features.tiny` and compare the output with an interpreter run without the flag.
+- **Smoke tests**: `python -m pytest tests/test_native_codegen.py -q` checks which AST nodes are supported already.
 
-## Fehlerbilder und Lints
-- **Unbenutzter Rückgabewert**: Ein Call ohne Zuweisung kann `[E011] function ... discards return value` auslösen (siehe `src_tiny/typing_demo.tiny`).
-- **Nicht erreichte Returns**: Fehlende Rückgaben in getypten Funktionen führen zu `[E010] not all paths return a value`.
+## Error patterns and lints
+- **Unused return value**: A call without assignment can trigger `[E011] function ... discards return value` (see `src_tiny/typing_demo.tiny`).
+- **Missing returns**: Missing returns in typed functions yield `[E010] not all paths return a value`.
 
-## Hilfreiche Kombos
-- **Formatter + Diagnostics**: Erst formatieren (`--format`), dann `python src/language_server_cli.py --file <file> diagnostics` nutzen, um klare Lints zu erhalten.
-- **Rosetta-Beispiele**: `src_tiny/rosetta_fibonacci.tiny` bietet ein kleines, selbständiges Programm zum Validieren von Recursion/Loops.
+## Helpful combos
+- **Formatter + diagnostics**: Format first (`--format`), then use `python src/language_server_cli.py --file <file> diagnostics` for clear lints.
+- **Rosetta examples**: `src_tiny/rosetta_fibonacci.tiny` offers a small standalone program to validate recursion/loops.

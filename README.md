@@ -24,6 +24,14 @@ For interoperability guidance, see the cross-language compatibility notes in [`d
 - **Feature Cheat Sheet**: [`docs/feature_cheat_sheet.md`](docs/feature_cheat_sheet.md) summarizes the core constructs with short notes on the corresponding `.tiny` demos.
 - **Bundled run/test commands**: [`docs/demo_run_commands.md`](docs/demo_run_commands.md) lists interpreter runs, native-backend comparisons, Python interop demos, and language-server CLI checks. `python run_all.py` remains a good all-in-one run.
 
+## Backlog: next possible tasks
+- **Prototype an LLVM backend**: Explore emitting LLVM IR (e.g., via `llvmlite`) for constants, variables, and arithmetic, with a CLI switch like `--emit-llvm` to generate IR or invoke `llc`/`clang`.
+- **Port project modules to TinyLanguage (self-hosting)**: Inventory interpreter/compiler modules, design Tiny-compatible library primitives, and port core components while keeping parallel Python/Tiny tests.
+- **Import and transpile Rosetta Code samples**: Store selected Rosetta Code tasks (FizzBuzz, Fibonacci, sorting, etc.) under `examples/rosetta/`, then build a translation pass that converts the Python versions into TinyLanguage variants with snapshot tests.
+- **Write a beginner-friendly tutorial**: Create `docs/tutorial.md` with setup, syntax, control flow, functions, modules, and tooling, linking runnable snippets and referencing them from `README.md`.
+- **Add English documentation across source files**: Sweep public functions/classes for docstrings and module headers that describe purpose, parameters, return values, and error scenarios; wire docstring checks (e.g., `ruff pydocstyle`) into CI.
+- **Additional ideas**: REPL with syntax highlighting, parser/evaluator fuzzing (Hypothesis), performance microbenchmarks, and LSP enhancements (autocomplete/hover for the VSCode extension).
+
 ## Syntax and Features
 
 ### Mini tutorial: variables, control flow, and functions

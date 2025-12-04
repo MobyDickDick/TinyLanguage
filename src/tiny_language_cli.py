@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+"""Command-line entrypoint for running TinyLanguage programs.
+
+The CLI intentionally mirrors the interpreter's public API so users can
+execute `.tiny` files or inline snippets with a choice of backends. Error
+formatting stays consistent with the library helpers to make debugging via
+stdin/stdout/stderr predictable in shell scripts and CI pipelines.
+"""
+
 import argparse
 import os
 import sys

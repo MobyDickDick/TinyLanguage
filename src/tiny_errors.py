@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+"""Shared error types and formatting helpers for TinyLanguage components.
+
+Parsing, linting, code generation, and runtime modules all rely on these
+definitions to report positions, spans, and user-facing messages consistently.
+The formatting helpers keep diagnostics readable whether they originate from the
+CLI, the REPL, or downstream tooling.
+"""
+
 from dataclasses import dataclass
 from typing import Optional
 

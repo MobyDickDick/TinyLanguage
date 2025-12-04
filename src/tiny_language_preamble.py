@@ -288,19 +288,38 @@ def format_error(
     if isinstance(pos, SourceSpan):
         start_line, start_col, _ = _line_info(source, pos.start)
         stop_line, stop_col, _ = _line_info(source, pos.stop)
-        end_col = stop_col if stop_line == start_line else start_col
         gutter_width = len(str(max(1, len(lines))))
-        start = max(1, start_line - 1)
-        end = min(len(lines), start_line + 1) if lines else start_line
-        context: List[str] = []
-        for ln in range(start, end + 1):
-            prefix = ">" if ln == start_line else " "
-            text = lines[ln - 1] if 0 <= ln - 1 < len(lines) else ""
-            context.append(f"{prefix} {ln:>{gutter_width}} | {text}")
-        underline = " " * (start_col - 1) + "^" * max(end_col - start_col + 1, 1)
-        pointer_line = f"  {' ' * gutter_width} | {underline}"
         header = f"[{code}] {message} (line {start_line}, col {start_col})"
-        lines_out = [header] + context + [pointer_line]
+        lines_out: List[str] = [header]
+
+        context_start = max(1, start_line - 1)
+        context_end = min(len(lines), stop_line + 1) if lines else stop_line
+
+        for ln in range(context_start, context_end + 1):
+            text = lines[ln - 1] if 0 <= ln - 1 < len(lines) else ""
+            prefix = ">" if ln == start_line else " "
+            lines_out.append(f"{prefix} {ln:>{gutter_width}} | {text}")
+
+            if ln < start_line or ln > stop_line:
+                continue
+
+            if ln == start_line and ln == stop_line:
+                underline_start = start_col
+                underline_end = stop_col
+            elif ln == start_line:
+                underline_start = start_col
+                underline_end = max(len(text), start_col)
+            elif ln == stop_line:
+                underline_start = 1
+                underline_end = stop_col
+            else:
+                underline_start = 1
+                underline_end = max(len(text), 1)
+
+            underline_len = max(underline_end - underline_start + 1, 1)
+            underline = " " * (underline_start - 1) + "^" * underline_len
+            lines_out.append(f"  {' ' * gutter_width} | {underline}")
+
         if hint:
             lines_out.append(f"  Hint: {hint}")
         return "\n".join(lines_out)

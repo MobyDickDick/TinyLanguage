@@ -14,7 +14,11 @@ from native_ir import Instruction, Opcode, ProgramIR
 
 
 class _Frame:
+    """Lightweight execution frame with its own instruction pointer."""
+
     def __init__(self, instructions: List[Instruction], locals_: Optional[Dict[str, Any]] = None) -> None:
+        """Initialise a frame with an instruction list and optional locals."""
+
         self.instructions = instructions
         self.locals = locals_ or {}
         self.ip = 0
@@ -48,11 +52,15 @@ class NativeVM:
         self.program: Optional[ProgramIR] = None
 
     def run(self, program: ProgramIR) -> str:
+        """Execute the program entry block and return captured output."""
+
         self.program = program
         self._execute(_Frame(program.entry, self.globals))
         return "".join(self.output)
 
     def _execute(self, frame: _Frame) -> Any:
+        """Interpret instructions inside the given frame until completion."""
+
         stack: List[Any] = []
         while frame.ip < len(frame.instructions):
             instr = frame.instructions[frame.ip]
@@ -96,6 +104,8 @@ class NativeVM:
         return None
 
     def _load(self, locals_: Dict[str, Any], name: str) -> Any:
+        """Resolve a variable name from locals or globals, raising on miss."""
+
         if name in locals_:
             return locals_[name]
         if name in self.globals:
@@ -103,6 +113,8 @@ class NativeVM:
         raise RuntimeError(f"unknown variable {name}")
 
     def _call(self, name: str, args: List[Any]) -> Any:
+        """Invoke a function declared in the program with positional args."""
+
         if self.program is None:
             raise RuntimeError("VM has no program loaded")
         target = self.program.functions.get(name)
@@ -114,6 +126,8 @@ class NativeVM:
         return self._execute(_Frame(target.instructions, locals_))
 
     def _format_value(self, value: Any) -> str:
+        """Render VM values into the textual form used by PRINT."""
+
         if value is None:
             return "null"
         if isinstance(value, bool):

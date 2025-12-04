@@ -1,10 +1,9 @@
 """Lightweight intermediate representation for the native backend.
 
-The native backend uses a compact stack-based IR to keep the code
-generator and VM loosely coupled. This module centralises the opcode
-definitions, container dataclasses, and a human-readable formatter so
-tests can assert against the emitted instructions without parsing
-private structures.
+The native backend uses a compact stack-based IR to keep the code generator
+and VM loosely coupled. This module centralises the opcode definitions,
+container dataclasses, and a human-readable formatter so tests can assert
+against the emitted instructions without parsing private structures.
 """
 
 from dataclasses import dataclass

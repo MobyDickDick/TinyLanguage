@@ -1,0 +1,23 @@
+namespace PyPipeline {
+    fn sqrt_then_square(x: number) -> number {
+        define math = Python.import_module("math", new["sqrt", "pow"]);
+        define root = math.sqrt(x);
+        return math.pow(root, 2);
+    }
+
+    fn normalize_path(path: string) -> string {
+        define os_path = Python.import_module("os.path", new["basename", "dirname"]);
+        define base = os_path.basename(path);
+        return os_path.dirname(path) + "/" + base;
+    }
+}
+
+fn describe_area(width: number, height: number) -> string {
+    define as_string = Python.call("builtins", "str", new[width * height]);
+    return "{\"area\": " + as_string + "}";
+}
+
+define squared = PyPipeline.sqrt_then_square(81);
+print(squared);
+print(PyPipeline.normalize_path("/tmp/example.txt"));
+print(describe_area(3, 4));

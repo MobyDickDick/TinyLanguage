@@ -60,6 +60,15 @@ Typische Rückmeldungen vom CLI:
 
 ## Troubleshooting
 
+Häufige Fehlersignaturen auf einen Blick:
+
+| Fehlerbild | Typische Ausgabe | Behebung |
+| --- | --- | --- |
+| Fehlendes Lowering | `NotImplementedError: Call to Map.set not supported in native backend` | Interpreter-Pfad nutzen oder Testfall auf Kernkonstrukte reduzieren. |
+| VM-Laufzeitfehler | `RuntimeError: division by zero` plus Stacktrace mit `NativeVM.*`-Frames | Eingaben/Division prüfen; der Stacktrace zeigt die konkrete Bytecode-Operation. |
+| Falsch platziertes Flag | `SystemExit 2` mit argparse-Hinweis | `--native-backend` vor `-e` oder Dateipfad setzen. |
+
+
 - **`NotImplementedError` beim Codegen**: Der Generator nennt meist den betroffenen AST-Knoten. Beispiel: `NotImplementedError: Call to Map.set not supported in native backend` – reduziere den Testfall auf einfache Arithmetik oder deaktiviere `--native-backend`.
 - **Stacktrace aus der VM**: Fehler werden mit Frame-Informationen ausgegeben, z. B.:
   ```

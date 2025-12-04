@@ -1,4 +1,11 @@
 # ----- Public API -----
+"""Convenience entrypoints for running, compiling, and interacting with TinyLanguage.
+
+This module intentionally collects the most user-facing helpers so external callers
+can import a single module when driving the interpreter, native backends, or the
+REPL. Functions here prefer descriptive error messages over raw tracebacks and try
+to keep a small, ergonomic surface area.
+"""
 
 import ast
 from typing import List, Optional
@@ -8,6 +15,13 @@ from native_python_bytecode import run_program_via_python_bytecode
 
 
 def _parse_and_lint(src: str) -> List[IR]:
+    """Return a parsed program after running all linter passes.
+
+    The helper centralizes parser creation and the sequence of lints so every entry
+    point (REPL, CLI, Python/native backends) benefits from the same validation
+    rules. It keeps the order aligned with the standalone linter for predictable
+    diagnostics.
+    """
     parser = Parser(Lexer(src), src)
     stmts = parser.parse()
 
@@ -45,6 +59,13 @@ def compile_and_run(
     module_path: Optional[Path] = None,
     module_resolver: Optional[ModuleResolver] = None,
 ) -> str:
+    """Compile and execute TinyLanguage source, returning concatenated output.
+
+    Parameters mirror the runtime's expectations so callers can opt into
+    preconfigured environments, namespace tracking for imports, or custom module
+    resolution strategies. Any error raised during execution is intentionally
+    allowed to propagate so the caller can render it with full context.
+    """
     stmts = _parse_and_lint(src)
     runtime = runtime or Runtime(src)  # Reuse an existing runtime or create a fresh one
     runtime.source_map[module_namespace] = src  # Track source text for later diagnostics
@@ -75,6 +96,7 @@ def compile_and_run(
 
 
 def run_file(path: str) -> str:
+    """Execute a TinyLanguage source file and return its printed output."""
     path_obj = Path(path)  # Accept strings or Path-like objects
     resolved = path_obj.resolve()  # Normalize to an absolute path
     try:
@@ -87,6 +109,7 @@ def run_file(path: str) -> str:
 
 
 def _format_error_for_source(source: str, err: TinyLangError) -> str:
+    """Format an error with source context when available."""
     if "(line " in err.message:
         return err.message
     location = err.span if err.span is not None else err.pos
@@ -94,16 +117,19 @@ def _format_error_for_source(source: str, err: TinyLangError) -> str:
 
 
 def compile_to_python_ast(src: str) -> ast.AST:
+    """Translate TinyLanguage code into an equivalent Python ``ast.AST`` module."""
     stmts = _parse_and_lint(src)
     return PythonCodeGenerator().module_for_program(stmts)
 
 
 def compile_to_python_source(src: str) -> str:
+    """Compile TinyLanguage code into runnable Python source text."""
     module = compile_to_python_ast(src)
     return PythonCodeGenerator().to_source(module)
 
 
 def run_with_python_backend(src: str) -> str:
+    """Execute TinyLanguage code by generating and running Python source."""
     module = compile_to_python_ast(src)
     namespace: dict = {}
     exec(compile(module, "<tiny_python_backend>", "exec"), namespace, namespace)
@@ -111,18 +137,21 @@ def run_with_python_backend(src: str) -> str:
 
 
 def run_with_native_backend(src: str) -> str:
+    """Run code through the experimental native bytecode backend and VM."""
     stmts = _parse_and_lint(src)
     program = NativeCodeGenerator().compile_program(stmts)
     return NativeVM().run(program)
 
 
 def run_with_python_bytecode_backend(src: str) -> str:
+    """Execute native IR by emitting Python bytecode instructions."""
     stmts = _parse_and_lint(src)
     program = NativeCodeGenerator().compile_program(stmts)
     return run_program_via_python_bytecode(program)
 
 
 def _is_incomplete_source(src: str) -> bool:
+    """Return True when the REPL buffer still has unclosed delimiters or strings."""
     balances = {"(": 0, "[": 0, "{": 0}
     in_string = False
     escape = False
@@ -152,6 +181,7 @@ def _is_incomplete_source(src: str) -> bool:
 def _configure_readline(
     history_path: Path, scope_provider: Callable[[], List[str]] = lambda: sorted(KEYWORDS | BUILTINS)
 ) -> None:
+    """Wire tab completion and history persistence for the REPL when available."""
     if readline is None:
         return  # Skip configuration if readline support is unavailable
     readline.set_completer_delims(" \t\n")  # Treat whitespace as completion delimiters
@@ -171,6 +201,7 @@ def _configure_readline(
 
 
 def _save_history(history_path: Path) -> None:
+    """Persist REPL history to disk when readline support exists."""
     if readline is None:
         return  # Nothing to do without readline support
     try:
@@ -182,6 +213,7 @@ def _save_history(history_path: Path) -> None:
 
 
 def _read_repl_command(read_fn) -> Optional[str]:
+    """Read a single REPL submission, allowing multiline input when needed."""
     buffer: List[str] = []  # Accumulate multi-line input until braces balance
     while True:
         prompt = "tiny> " if not buffer else "...> "  # Primary or continuation prompt
@@ -197,12 +229,14 @@ def _read_repl_command(read_fn) -> Optional[str]:
 
 
 def _resolve_read_fn():
+    """Choose the appropriate input function depending on readline availability."""
     if isinstance(readline, _FallbackReadline):
         return readline.readline  # Use the fallback implementation when available
     return input  # Otherwise rely on the built-in input()
 
 
 def main(argv: Optional[List[str]] = None) -> int:
+    """CLI entry point for running files, snippets, REPL sessions, or codegen."""
     parser = argparse.ArgumentParser(description="Run a TinyLanguage program from a file")
     mode_group = parser.add_mutually_exclusive_group()  # Eval and REPL are exclusive options
     mode_group.add_argument(

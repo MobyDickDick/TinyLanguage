@@ -44,6 +44,31 @@ Dieser Entwurf steckt die Zielarchitektur für ein alternatives Backend ab, das 
 3. **Gezielte Funktionstests**: `python -m pytest tests/test_native_codegen.py -k while -q` zum Fokussieren auf einzelne Konstrukte wie `while`-Schleifen oder Funktionsaufrufe.
 4. **Fallback-Pfad sichtbar halten**: Falls ein Programm noch nicht unterstützt wird, sollte derselbe Aufruf ohne `--native-backend` weiterhin funktionieren. Nutze den A/B-Vergleich, um Regressionen in den Interpreter-Pfaden früh zu erkennen.
 
+### Mini-Playbook mit erwarteter Ausgabe
+
+Diese Kommandos testen exakt die derzeit implementierten Konstrukte (Literals, Arithmetik, `if`/`while`, Funktionsaufrufe, `print`). Alles darüber hinaus sollte bewusst `NotImplementedError` werfen:
+
+- **Arithmetik und Funktionsaufruf inline** (sollte identisch zu Interpreter laufen):
+  ```bash
+  PYTHONPATH=src python src/tiny_language.py --native-backend -e 'fn add(x, y) { return x + y; } print(add(2, 3));'
+  # Erwartete Ausgabe
+  5
+  ```
+
+- **While/If-Pfadabdeckung**:
+  ```bash
+  PYTHONPATH=src python src/tiny_language.py --native-backend -e 'define i = 0; define out = 0; while (i < 3) { if (i == 1) { out = out + 10; } else { out = out + i; } i = i + 1; } print(out);'
+  # Erwartete Ausgabe
+  11
+  ```
+
+- **Nicht unterstützte Features sichtbar machen** (Heap-Operationen):
+  ```bash
+  PYTHONPATH=src python src/tiny_language.py --native-backend -e 'define p = new(1);'
+  # Erwartete Ausgabe
+  # NotImplementedError: Call to new not supported in native backend
+  ```
+
 Typische Rückmeldungen vom CLI:
 
 - Erfolgreiche Läufe beenden den Prozess mit Exit-Code `0` und drucken die Ausgabe des VM-Stacks.

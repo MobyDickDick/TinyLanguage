@@ -61,6 +61,7 @@ def _tokenize_with_comments(src: str) -> Iterator[_FmtToken]:
 
 
 def _needs_space(prev: _FmtToken | None, curr: _FmtToken) -> bool:
+    """Determine whether a space should separate two formatting tokens."""
     if prev is None:
         return False
 
@@ -96,6 +97,7 @@ def _needs_space(prev: _FmtToken | None, curr: _FmtToken) -> bool:
 
 
 def format_source(src: str, *, indent: int = 4) -> str:
+    """Return a normalized TinyLanguage source string with stable spacing/indentation."""
     tokens = list(_tokenize_with_comments(src))
     lines: List[str] = []
     current = ""
@@ -156,6 +158,7 @@ def format_source(src: str, *, indent: int = 4) -> str:
 
 
 def format_import(module: str, alias: str | None = None) -> str:
+    """Render a canonical import statement, optionally with an ``as`` alias."""
     parts: List[str] = ["import", module]
     if alias:
         parts.extend(["as", alias])

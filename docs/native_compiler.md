@@ -26,6 +26,7 @@ Dieser Entwurf steckt die Zielarchitektur für ein alternatives Backend ab, das 
 
 ## Nutzung
 - **CLI-Schalter**: `python src/tiny_language.py --native-backend -e "print(1 + 2);"` führt ein Snippet ohne den AST-Interpreter aus.
+- **Alternative Bytecode-Emission**: `python src/tiny_language.py --native-python-bytecode -e "print(1 + 2);"` baut denselben Native-IR und kompiliert ihn zu reinem Python-Bytecode.
 - **Datei-Ausführung**: `python src/tiny_language.py --native-backend path/to/program.tiny` lädt ein Programm und nutzt denselben Codegen/VM-Pfad.
 - **Regression-Tests**: `python -m pytest tests/test_native_codegen.py -q` vergleicht Interpreter- und Native-Backend-Ausgaben und stellt sicher, dass nicht unterstützte Konstrukte weiterhin als `NotImplementedError` sichtbar bleiben.
 

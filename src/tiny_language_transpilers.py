@@ -21,7 +21,7 @@ import ast
 import json
 import re
 from dataclasses import dataclass, field
-from typing import Iterable, List, Sequence
+from typing import Iterable, List, Sequence, Set
 
 
 # ----- Shared IR -----
@@ -274,6 +274,9 @@ class PythonTranspiler(LanguageTranspiler):
             if isinstance(node, ast.FunctionDef):
                 functions.append(self._function_from_ast(node))
             else:
+                if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant):
+                    # Skip module-level docstrings or bare constants.
+                    continue
                 body.append(self._stmt_from_ast(node))
         return ProgramIR(functions=functions, body=body)
 
@@ -709,6 +712,87 @@ class CppTranspiler(LanguageTranspiler):
             else:
                 raise ValueError(f"Unsupported statement: {stmt}")
         return rendered
+
+
+# ----- TinyLanguage -----
+
+
+class TinyLanguageTranspiler(LanguageTranspiler):
+    """Render the shared IR into TinyLanguage syntax.
+
+    This is intentionally minimal and only covers the constructs required for the
+    Rosetta-style examples and tests.
+    """
+
+    indent = "    "
+
+    def _render_literal(self, value: object) -> str:
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        if value is None:
+            return "null"
+        if isinstance(value, str):
+            return json.dumps(value)
+        return repr(value)
+
+    def to_source(self, program: ProgramIR) -> str:
+        chunks: List[str] = []
+        for index, fn in enumerate(program.functions):
+            chunks.append(self._render_function(fn))
+            if index < len(program.functions) - 1:
+                chunks.append("")
+        if program.body:
+            if chunks:
+                chunks.append("")
+            chunks.extend(self._render_statements(program.body, indent_level=0, defined=set()))
+        return self._lines(chunks)
+
+    def _render_function(self, fn: FunctionIR) -> str:
+        defined: Set[str] = set(fn.params)
+        header = f"fn {fn.name}({', '.join(fn.params)}) {{"
+        body_lines = self._render_statements(fn.body, indent_level=1, defined=defined) or [
+            self.indent + "// no-op"
+        ]
+        return "\n".join([header, *body_lines, "}"])
+
+    def _render_statements(self, statements: Sequence[Statement], indent_level: int, defined: Set[str]) -> List[str]:
+        rendered: List[str] = []
+        pad = self.indent * indent_level
+        local_defined = set(defined)
+        for stmt in statements:
+            if isinstance(stmt, Assign):
+                keyword = "define " if stmt.target not in local_defined else ""
+                rendered.append(f"{pad}{keyword}{stmt.target} = {self._render_expr(stmt.expr)};")
+                local_defined.add(stmt.target)
+            elif isinstance(stmt, Return):
+                rendered.append(f"{pad}return {self._render_expr(stmt.expr)};")
+            elif isinstance(stmt, ExprStmt):
+                rendered.append(f"{pad}{self._render_expr(stmt.expr)};")
+            elif isinstance(stmt, IfElse):
+                rendered.append(f"{pad}if ({self._render_expr(stmt.condition)}) {{")
+                rendered.extend(
+                    self._render_statements(stmt.then_body, indent_level + 1, defined=set(local_defined))
+                )
+                if stmt.else_body:
+                    rendered.append(f"{pad}}} else {{")
+                    rendered.extend(
+                        self._render_statements(stmt.else_body, indent_level + 1, defined=set(local_defined))
+                    )
+                    rendered.append(f"{pad}}}")
+                else:
+                    rendered.append(f"{pad}}}")
+            elif isinstance(stmt, While):
+                rendered.append(f"{pad}while ({self._render_expr(stmt.condition)}) {{")
+                rendered.extend(
+                    self._render_statements(stmt.body, indent_level + 1, defined=set(local_defined))
+                )
+                rendered.append(f"{pad}}}")
+            else:
+                raise ValueError(f"Unsupported statement: {stmt}")
+        return rendered
+
+    def from_source(self, code: str) -> ProgramIR:  # pragma: no cover - parser not yet implemented
+        raise NotImplementedError("Parsing TinyLanguage to the shared IR is not implemented yet.")
 
 
 # ----- Generic parsing -----

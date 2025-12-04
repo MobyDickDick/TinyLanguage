@@ -44,6 +44,12 @@ Outputs are JSON so they can be piped into tools or inspected visually. Example 
 
 Each subcommand is a thin wrapper around an internal request/response pair and can be copy/pasted into JSON-RPC glue code. Positions are zero-based and include namespace-qualified symbols (`Math.inc`, `Tools.double`, …). Currently exposed methods:
 
+| Method (LSP analog) | CLI subcommand | Request (JSON) | Response (JSON) | Notes |
+| --- | --- | --- | --- | --- |
+| `textDocument/completion` | `completions` | `{ "prefix": "gr" }` | `[{ "label": "greet", "kind": "identifier" }]` | Prefix-based lookup across user symbols, keywords, and stdlib names. |
+| `textDocument/hover` | `hover` | `{ "symbol": "Greeter" }` | `{ "symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [0, 6] }` | Returns the recorded zero-based position for the symbol. |
+| `textDocument/diagnostic` | `diagnostics` | `{}` | `[{ "message": "[E011] ...", "code": "E011", "range": [1, 0, 1, 1] }]` | Emits lint findings with machine-readable ranges. |
+
 - **Completions** (`textDocument/completion` equivalent)
   - Request payload:
     ```json

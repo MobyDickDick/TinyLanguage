@@ -118,4 +118,14 @@ Die wichtigsten `.tiny`-Demos kombinieren modulare Imports, Namespaces und (wo a
   ```
   Zeigt den Rundtrip für Zahlen/Bools plus die restriktive Freigabe einzelner `math`-Attribute (`sqrt`, `isfinite`, `tau`).
 
-Alle drei Läufe dokumentieren modularen Import, Namespaces und typisierte Signaturen in einem Zug. Ergänze beim Hinzufügen neuer Demos stets die erlaubten Attribute und die erwartete Ausgabe, damit sie als belastbare Regressionstests dienen.
+- **Proxy-Pipeline mit Namespaces und Typannotationen** (`src_tiny/python_proxy_pipeline_demo.tiny`)
+  ```bash
+  PYTHONPATH=src python src/tiny_language.py src_tiny/python_proxy_pipeline_demo.tiny
+  # Erwartete Ausgabe
+  81.0
+  /tmp/example.txt
+  {"area": 12}
+  ```
+  Kombiniert zwei Python-Module in einem Namespace (`math`, `os.path`) plus eine typannotierte Helper-Funktion, die Python-Strings über `builtins.str` beisteuert.
+
+Alle vier Läufe dokumentieren modularen Import, Namespaces und typisierte Signaturen in einem Zug. Ergänze beim Hinzufügen neuer Demos stets die erlaubten Attribute und die erwartete Ausgabe, damit sie als belastbare Regressionstests dienen.

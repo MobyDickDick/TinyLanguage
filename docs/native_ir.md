@@ -1,31 +1,31 @@
-# Native IR (stackbasiert)
+# Native IR (stack-based)
 
-Diese Kurzreferenz beschreibt das interne Bytecode-Format des Native-Backends. Es ist bewusst klein gehalten, damit Codegen und VM eng aufeinander abgestimmt bleiben und Tests die ausgegebenen Instruktionen leicht prüfen können.
+This quick reference describes the internal bytecode format of the native backend. It is intentionally small so codegen and the VM stay closely aligned and tests can easily assert emitted instructions.
 
-## Opcode-Übersicht
+## Opcode overview
 
-| Opcode | Operanden | Beschreibung |
+| Opcode | Operands | Description |
 | --- | --- | --- |
-| `PUSH_CONST` | Wert | Konstante auf den Stack legen. |
-| `LOAD` | Name | Lokale oder globale Variable laden. |
-| `STORE` | Name | Stack-Top in Variable speichern. |
-| `BINARY` | Operator (`+`, `-`, `*`, `/`, `%`, `^`, Vergleichsoperatoren, `&&`, `||`) | Zwei Werte vom Stack holen, Operator anwenden, Ergebnis zurück auf den Stack. |
-| `PRINT` | Anzahl | Angegebene Zahl von Stack-Werten nehmen, formatieren und mit Zeilenumbruch ausgeben. |
-| `JUMP` | Zielindex | Unbedingter Sprung innerhalb des aktuellen Frames. |
-| `JUMP_IF_FALSE` | Zielindex | Bedingter Sprung, wenn der Stack-Top falsy ist. |
-| `CALL` | `(Funktionsname, Arg-Anzahl)` | Argumente vom Stack sammeln und Funktion aufrufen. |
-| `POP` | – | Obersten Stack-Eintrag verwerfen (z. B. für Bare-Calls). |
-| `RETURN` | – | Funktion beenden; optional den obersten Stack-Wert als Ergebnis zurückgeben. |
+| `PUSH_CONST` | Value | Push a constant onto the stack. |
+| `LOAD` | Name | Load a local or global variable. |
+| `STORE` | Name | Store the stack top into a variable. |
+| `BINARY` | Operator (`+`, `-`, `*`, `/`, `%`, `^`, comparison operators, `&&`, `||`) | Pop two values, apply the operator, and push the result. |
+| `PRINT` | Count | Take the given number of stack values, format them, and print with a newline. |
+| `JUMP` | Target index | Unconditional jump within the current frame. |
+| `JUMP_IF_FALSE` | Target index | Conditional jump when the stack top is falsy. |
+| `CALL` | `(function name, arg count)` | Collect arguments from the stack and call a function. |
+| `POP` | – | Discard the top stack entry (e.g., for bare calls). |
+| `RETURN` | – | End the function; optionally return the top stack value. |
 
-## Container-Strukturen
+## Container structures
 
-`src/native_ir.py` bündelt die zugehörigen Dataklassen:
+`src/native_ir.py` collects the related data classes:
 
-- `Instruction`: Einzelne Opcode/Operand-Kombination.
-- `FunctionIR`: Bytecode und Parameterliste einer Funktion.
-- `ProgramIR`: Entry-Block und Funktions-Tabelle für das Programm.
+- `Instruction`: Single opcode/operand pair.
+- `FunctionIR`: Bytecode and parameter list of a function.
+- `ProgramIR`: Entry block and function table for the program.
 
-Ein Helfer `format_program(program)` gibt eine menschenlesbare Ansicht der Instruktionen aus und erleichtert Snapshot-Tests.
+The helper `format_program(program)` prints a human-friendly view of the instructions and simplifies snapshot tests.
 
 ## Beispiel
 
@@ -46,4 +46,4 @@ function add(x, y)
   add[03]: RETURN
 ```
 
-Der Ausschnitt oben entsteht z. B. für `print(add(1, 2));` und zeigt den Entry-Block sowie die kompilierten Instruktionen der Funktion `add`.
+The snippet above is produced for `print(add(1, 2));` and shows the entry block plus the compiled instructions for the function `add`.

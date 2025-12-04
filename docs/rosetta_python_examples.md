@@ -1,12 +1,12 @@
-# Rosetta-Code-Style: Python → TinyLanguage
+# Rosetta Code style: Python → TinyLanguage
 These examples start from common Python snippets on Rosetta Code and show a direct TinyLanguage translation. Each Tiny program is runnable with the interpreter:
 
 ```bash
 python src/tiny_language.py src_tiny/<file>.tiny
 ```
 
-## 1) FizzBuzz (Kontrollfluss und Modulo)
-**Python-Vorlage**
+## 1) FizzBuzz (control flow and modulo)
+**Python template**
 ```python
 for n in range(1, 16):
     if n % 15 == 0:
@@ -19,9 +19,9 @@ for n in range(1, 16):
         print(n)
 ```
 
-**TinyLanguage-Übersetzung** (`src_tiny/rosetta_fizzbuzz.tiny`)
-- Ersetze `for` durch eine `while`-Schleife und incrementiere manuell.
-- Da TinyLanguage kein `%`-Operator kennt, erledigt eine kleine Hilfsfunktion die Divisibilitätsprüfung per Subtraktion.
+**TinyLanguage translation** (`src_tiny/rosetta_fizzbuzz.tiny`)
+- Replace `for` with a `while` loop and increment manually.
+- TinyLanguage has no `%` operator, so a helper handles divisibility via subtraction.
 
 ```tiny
 fn is_divisible(n, divisor) {
@@ -50,8 +50,8 @@ fn fizzbuzz(limit) {
 define _ = fizzbuzz(16);
 ```
 
-## 2) Fakultät (Rekursion und Rückgabewerte)
-**Python-Vorlage**
+## 2) Factorial (recursion and return values)
+**Python template**
 ```python
 def fact(n):
     if n <= 1:
@@ -62,9 +62,9 @@ for i in range(1, 6):
     print(i, fact(i))
 ```
 
-**TinyLanguage-Übersetzung** (`src_tiny/rosetta_factorial.tiny`)
-- Funktionen und `return`-Pflicht sind identisch, nur Semikolons hinzufügen.
-- Die Schleife bleibt eine `while`, und `print` akzeptiert mehrere Argumente.
+**TinyLanguage translation** (`src_tiny/rosetta_factorial.tiny`)
+- Functions and return requirements are identical; just add semicolons.
+- The loop stays a `while`, and `print` accepts multiple arguments.
 
 ```tiny
 fn fact(n) {
@@ -79,8 +79,8 @@ while (i <= 5) {
 }
 ```
 
-## 3) Wortzählung (String.split + Map)
-**Python-Vorlage**
+## 3) Word count (String.split + Map)
+**Python template**
 ```python
 from collections import Counter
 
@@ -93,10 +93,10 @@ for word, freq in counts.items():
     print(word, freq)
 ```
 
-**TinyLanguage-Übersetzung** (`src_tiny/rosetta_word_count.tiny`)
-- Nutzt `String.lower`, `String.split` und die Map-Stdlib (`Map.new`, `Map.get`, `Map.set`).
-- Iteriere über die Wortliste mit `len(...)` und `heap_get(...)`, die auf dem Heap gespeicherte Arrays adressieren.
-- Drucke anschließend Wort/Frequenz-Paare aus den Map-Schlüsseln.
+**TinyLanguage translation** (`src_tiny/rosetta_word_count.tiny`)
+- Uses `String.lower`, `String.split`, and the Map stdlib (`Map.new`, `Map.get`, `Map.set`).
+- Iterate over the word list with `len(...)` and `heap_get(...)`, which address arrays stored on the heap.
+- Then print word/frequency pairs from the map keys.
 
 ```tiny
 fn word_counts(text) {

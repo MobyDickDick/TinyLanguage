@@ -1,65 +1,65 @@
-# TinyLanguage: Kurzreferenz und Semantik
+# TinyLanguage: Quick reference and semantics
 
-Diese Datei beschreibt die wichtigsten Sprachkonstrukte von TinyLanguage in komprimierter Form. Sie richtet sich an Leser, die die Syntax schnell nachschlagen und das Laufzeitverhalten verstehen wollen, ohne den Interpreter-Code durchgehen zu müssen.
+This file summarizes the most important TinyLanguage constructs. It is intended for readers who want to look up syntax and runtime behavior quickly without diving into the interpreter code.
 
-## Lexikalische Elemente
-- **Kommentare:** `//` leitet einen Kommentar bis zum Zeilenende ein. Blockkommentare werden nicht speziell behandelt.
-- **Semikolons:** Jedes Statement endet mit `;`. Der Formatter fügt fehlende Semikolons in einfachen Fällen automatisch hinzu, dennoch sollten Programme sie explizit setzen.
-- **Bezeichner und Literale:**
-  - Zahlen unterstützen Ganzzahlen und Dezimalzahlen (`1`, `3.14`, `0.5`). Wissenschaftliche Notation ist absichtlich nicht erlaubt (`1.2e2` schlägt fehl).
-  - Strings verwenden doppelte Anführungszeichen und erlauben einfache Escape-Sequenzen wie `\n`.
-  - Wahrheitswerte heißen `true` und `false`; `null` signalisiert das Fehlen eines Wertes.
+## Lexical elements
+- **Comments:** `//` starts a comment to the end of the line. Block comments have no special syntax.
+- **Semicolons:** Every statement ends with `;`. The formatter inserts missing semicolons in simple cases, but programs should include them explicitly.
+- **Identifiers and literals:**
+  - Numbers support integers and decimals (`1`, `3.14`, `0.5`). Scientific notation is intentionally disallowed (`1.2e2` fails).
+  - Strings use double quotes and allow basic escapes like `\n`.
+  - Booleans are `true` and `false`; `null` indicates the absence of a value.
 
-## Ausdrücke und Operatoren
-- **Arithmetik:** `+`, `-`, `*`, `/` sowie Potenzen `^` (der Exponent muss ganzzahlig sein). Division liefert Fließkommazahlen, Overflow wird abgefangen und als Fehler gemeldet.
-- **Vergleiche:** `==`, `!=`, `<`, `>`, `<=`, `>=` arbeiten auf Zahlen, Strings, Booleans und benutzerdefinierten Typen mit Operator-Overloads.
-- **Booleans:** Kurzschluss-Logik mit `&&` und `||`, Negation über `!expr`.
-- **Arrays und Heap:** `new[1, 2, 3]` erzeugt ein Array; `new(3)` reserviert Speicher mit drei Slots. Zugriff erfolgt über `heap_get(ptr, idx)` und `heap_set(ptr, idx, value)`. `tag(ptr, "Label")` versieht Pointer mit einem Typnamen, `delete(ptr)` gibt Speicher frei.
-- **Struct-Literale:** `{ a: 1, b: 2 }` baut ein anonymes Struct; Felder werden mit Punktnotation gelesen (`obj.a`).
+## Expressions and operators
+- **Arithmetic:** `+`, `-`, `*`, `/`, and exponentiation `^` (the exponent must be an integer). Division returns floating-point values; overflow is trapped and reported as an error.
+- **Comparisons:** `==`, `!=`, `<`, `>`, `<=`, `>=` work on numbers, strings, booleans, and user types with operator overloads.
+- **Booleans:** Short-circuit logic with `&&` and `||`, negation via `!expr`.
+- **Arrays and heap:** `new[1, 2, 3]` creates an array; `new(3)` reserves heap space with three slots. Access via `heap_get(ptr, idx)` and `heap_set(ptr, idx, value)`. `tag(ptr, "Label")` attaches a type tag, and `delete(ptr)` frees memory.
+- **Struct literals:** `{ a: 1, b: 2 }` builds an anonymous struct; fields are read with dot notation (`obj.a`).
 
-## Bindungen und Sichtbarkeit
-- **Definitionen:** `define x = expr;` legt eine neue Variable an. Nachträgliche Zuweisungen ohne `define` aktualisieren bestehende Bindungen und dürfen den Typ nicht heimlich wechseln, wenn Annotationen gesetzt sind.
-- **Gültigkeitsbereiche:** Funktionen, Namespaces und Match-Arme führen eigene Scopes ein. Importierte Module werden unter ihrem vollqualifizierten Namen registriert und können über Aliase erreichbar gemacht werden.
+## Bindings and visibility
+- **Definitions:** `define x = expr;` creates a new variable. Later assignments without `define` update existing bindings and must not silently change the type when annotations are present.
+- **Scopes:** Functions, namespaces, and match arms introduce their own scopes. Imported modules are registered under their fully qualified name and can be reached via aliases.
 
-## Kontrollfluss
-- **`if`/`while`:** Standardkontrollstrukturen mit runden Klammern um die Bedingung. Bedingungen müssen Boolean-Werte liefern; alle Pfade in getypten Funktionen müssen ein `return` besitzen.
-- **`match`:** Exhaustives Pattern-Matching für `type`-Varianten und Structs. Wildcards (`_`) und benannte Felder (`case Circle { radius: r }`) werden unterstützt; fehlende Fälle führen zu einem Fehler.
-- **Fehlerbehandlung:** `try { ... } catch(err) { ... }` fängt Laufzeitfehler ab und erlaubt alternative Rückgabewerte oder Logging.
+## Control flow
+- **`if`/`while`:** Standard control structures with parentheses around the condition. Conditions must yield booleans; all paths in typed functions must return a value.
+- **`match`:** Exhaustive pattern matching for `type` variants and structs. Wildcards (`_`) and named fields (`case Circle { radius: r }`) are supported; missing cases raise an error.
+- **Error handling:** `try { ... } catch(err) { ... }` catches runtime errors and allows alternative returns or logging.
 
-## Funktionen und Typen
-- **Deklaration:** `fn add(x: number, y: number) -> number { return x + y; }`. Parameter und Rückgabewerte sind optional typisiert; Typannotationen werden zur Laufzeit geprüft.
-- **Rückgabepflicht:** Annotierte Funktionen müssen auf allen Pfaden einen Wert liefern, sonst entsteht Fehler `E010`.
-- **Closures:** Funktionen sind First-Class-Werte und können als Rückgabewerte oder Argumente verwendet werden.
+## Functions and types
+- **Declaration:** `fn add(x: number, y: number) -> number { return x + y; }`. Parameters and return values are optionally typed; annotations are enforced at runtime.
+- **Return requirement:** Annotated functions must return a value on all paths, otherwise error `E010` is raised.
+- **Closures:** Functions are first-class and can be returned or passed as arguments.
 
-## Algebraische Datentypen und Pattern Matching
-- **`type`-Definitionen:**
+## Algebraic data types and pattern matching
+- **`type` definitions:**
   ```tiny
   type Shape {
     Circle { radius: number };
     Rectangle { width: number, height: number };
   }
   ```
-  Jede Variante wird automatisch zu einem Konstruktor (z. B. `Circle { radius: 2 }`).
-- **Exhaustive Matching:** `match`-Ausdrücke müssen alle Varianten abdecken; ansonsten wird ein Hinweis auf die fehlenden Fälle ausgegeben.
+  Each variant automatically becomes a constructor (e.g., `Circle { radius: 2 }`).
+- **Exhaustive matching:** `match` expressions must cover every variant; otherwise a hint about the missing cases is produced.
 
-## Klassen und Operator-Overloading
-- **Klassen:** Felder werden mit Typen deklariert (`name: string;`). Methoden verwenden denselben Funktionssyntax und erhalten `self` als erstes Argument. Konstruktorfunktionen können frei definiert werden (`fn Greeter(name) { return new Greeter { name: name }; }`).
-- **Mehrfachvererbung:** Klassen können mehrere Basistypen angeben; Methodenauflösung folgt einer linearen Reihenfolge, die Konflikte verhindert.
-- **Operatoren:** Beliebige Operatoren lassen sich über `operator + (a: Point, b: Point) -> Point { ... }` überladen. Vergleiche (`==`) und arithmetische Operatoren können damit eigene Logik erhalten.
+## Classes and operator overloading
+- **Classes:** Fields declare types (`name: string;`). Methods use the same function syntax and receive `self` as the first argument. Constructor functions can be defined freely (`fn Greeter(name) { return new Greeter { name: name }; }`).
+- **Multiple inheritance:** Classes can list multiple base types; method resolution follows a linear order that avoids conflicts.
+- **Operators:** Any operator can be overloaded, e.g., `operator + (a: Point, b: Point) -> Point { ... }`. Comparisons (`==`) and arithmetic operators can use custom logic.
 
-## Module und Namespaces
-- **Module laden:** `import math.trig;` lädt `math/trig.tiny`. Aliase sind möglich (`import utils.helpers as helpers;`). Wiederholte Importe eines Moduls liefern denselben Namespace, Zyklen werden erkannt und mit `E008` gemeldet.
-- **Namespaces:** `namespace Tools { ... }` fasst Funktionen und Konstanten zusammen. Felder werden mit Punktnotation referenziert (`Tools.double(5)`), auch aus anderen Modulen heraus.
+## Modules and namespaces
+- **Loading modules:** `import math.trig;` loads `math/trig.tiny`. Aliases are allowed (`import utils.helpers as helpers;`). Re-importing a module returns the same namespace; cycles are detected and reported with `E008`.
+- **Namespaces:** `namespace Tools { ... }` groups functions and constants. Fields are referenced with dot notation (`Tools.double(5)`), including across modules.
 
-## Nebenläufigkeit und Async-API
-- **Tasks:** `spawn f(1, 2)` startet `f` asynchron, `join(handle)` wartet und liefert das Ergebnis oder den Fehler weiter.
-- **Cancellation:** Über `Async.token()` wird ein Token erstellt, das mit `Async.cancel(token, "reason")` abgebrochen werden kann. Tasks können verknüpft werden (`Async.link(token, handle)`), um Abbrüche zu propagieren.
+## Concurrency and async API
+- **Tasks:** `spawn f(1, 2)` starts `f` asynchronously; `join(handle)` waits and forwards the result or error.
+- **Cancellation:** `Async.token()` creates a token that can be cancelled via `Async.cancel(token, "reason")`. Tasks can be linked (`Async.link(token, handle)`) to propagate cancellations.
 
-## Fehler und Diagnostik
-- **Fehlermeldungen:** Der Interpreter versieht Lexer-, Parser- und Laufzeitfehler mit Codes wie `E001` (Syntax), `E008` (Modulauflösung) oder `E009` (Typfehler). Wo möglich, wird ein `SourceSpan` mit Zeilen- und Spalteninformation ausgegeben, der die fehlerhafte Stelle unterstreicht.
-- **Linter:** Warnungen für ungenutzte Bindungen, Stilregeln (Semikolons, Spacing) und einfache „must use“-Prüfungen sind integriert und werden beim Formatieren bzw. beim LSP ausgegeben.
+## Errors and diagnostics
+- **Error messages:** The interpreter annotates lexer, parser, and runtime errors with codes like `E001` (syntax), `E008` (module resolution), or `E009` (type error). When possible, a `SourceSpan` with line/column information highlights the failing code.
+- **Linter:** Warnings for unused bindings, style rules (semicolons, spacing), and simple “must use” checks are integrated and reported during formatting or by the LSP.
 
-## Lauf und Tools
-- **Interpreter:** `python tiny_language.py <datei.tiny>` führt eine Quelle aus. Module werden relativ zur aufrufenden Datei, `TINYPATH` und dem Projektstamm gesucht.
-- **CLI-Demos:** Beispielprogramme liegen in `src_tiny/`; sie decken Klassen, Pattern Matching, Operatoren, Concurrency und Python-Interop ab.
-- **Language Server:** `python tiny_language_server.py --stdio` startet den LSP; eine Referenz der verfügbaren Methoden steht in [`docs/language_server_workflows.md`](language_server_workflows.md).
+## Running and tools
+- **Interpreter:** `python tiny_language.py <file.tiny>` executes a source file. Modules are resolved relative to the caller, `TINYPATH`, and the project root.
+- **CLI demos:** Example programs live in `src_tiny/`; they cover classes, pattern matching, operators, concurrency, and Python interop.
+- **Language server:** `python tiny_language_server.py --stdio` starts the LSP; a reference for available methods is in [`docs/language_server_workflows.md`](language_server_workflows.md).

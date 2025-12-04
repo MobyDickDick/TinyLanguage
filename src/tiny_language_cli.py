@@ -10,6 +10,7 @@ from tiny_language import (
     _format_error_for_source,
     compile_and_run,
     run_with_native_backend,
+    run_with_python_bytecode_backend,
     run_with_python_backend,
 )
 
@@ -37,6 +38,8 @@ def _execute(source: str, *, backend: str, module_path: Path | None) -> str:
         return run_with_python_backend(source)
     if backend == "native":
         return run_with_native_backend(source)
+    if backend == "native-python-bytecode":
+        return run_with_python_bytecode_backend(source)
     raise SystemExit(f"Unknown backend: {backend}")
 
 
@@ -48,9 +51,9 @@ def main(argv: list[str] | None = None) -> int:
     source_group.add_argument("--source", "-s", type=str, help="Inline TinyLanguage source code")
     parser.add_argument(
         "--backend",
-        choices=["interpreter", "python", "native"],
+        choices=["interpreter", "python", "native", "native-python-bytecode"],
         default="interpreter",
-        help="Execution backend (interpreter/python/native)",
+        help="Execution backend (interpreter/python/native/native-python-bytecode)",
     )
 
     args = parser.parse_args(argv)

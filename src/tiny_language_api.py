@@ -4,6 +4,7 @@ import ast
 from typing import List, Optional
 
 from native_vm import NativeVM
+from native_python_bytecode import run_program_via_python_bytecode
 
 
 def _parse_and_lint(src: str) -> List[IR]:
@@ -113,6 +114,12 @@ def run_with_native_backend(src: str) -> str:
     stmts = _parse_and_lint(src)
     program = NativeCodeGenerator().compile_program(stmts)
     return NativeVM().run(program)
+
+
+def run_with_python_bytecode_backend(src: str) -> str:
+    stmts = _parse_and_lint(src)
+    program = NativeCodeGenerator().compile_program(stmts)
+    return run_program_via_python_bytecode(program)
 
 
 def _is_incomplete_source(src: str) -> bool:
@@ -233,9 +240,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         action="store_true",
         help="Execute the program via the experimental native bytecode backend",
     )
+    backend_group.add_argument(
+        "--native-python-bytecode",
+        action="store_true",
+        help="Execute the program by compiling native IR to pure Python bytecode",
+    )
     args = parser.parse_args(argv)
 
-    if args.repl and (args.python_backend or args.native_backend):
+    if args.repl and (args.python_backend or args.native_backend or args.native_python_bytecode):
         parser.error("--native-backend/--python-backend cannot be combined with --repl")
 
     if args.format_file is not None:
@@ -249,6 +261,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         try:
             if args.native_backend:
                 runner = run_with_native_backend
+            elif args.native_python_bytecode:
+                runner = run_with_python_bytecode_backend
             elif args.python_backend:
                 runner = run_with_python_backend
             else:

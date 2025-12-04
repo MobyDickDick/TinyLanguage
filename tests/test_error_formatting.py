@@ -19,3 +19,22 @@ def test_format_error_includes_code_hint_and_span():
     assert "[E123] example failure" in formatted
     assert "Hint: Check the expression" in formatted
     assert "^^^^^" in formatted
+
+
+def test_multiline_span_highlights_each_line():
+    source = textwrap.dedent(
+        """
+        alpha beta gamma
+        second line here
+        tail
+        """
+    ).strip()
+    start = SourcePos(1, 7)
+    stop = SourcePos(2, 7)
+    err = TinyLangError("multi-line failure", start, code="E321", span=SourceSpan(start, stop))
+
+    formatted = _format_error_for_source(source, err)
+
+    assert "1 | alpha beta gamma" in formatted
+    assert "2 | second line here" in formatted
+    assert "^^^^^^^" in formatted  # at least the combined carets are rendered

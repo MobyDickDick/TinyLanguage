@@ -13,6 +13,7 @@ from typing import List, Optional
 
 from native_vm import NativeVM
 from native_python_bytecode import run_program_via_python_bytecode
+from tiny_language_codegen_llvm import LLVMCodeGenerator
 
 
 def _parse_and_lint(src: str) -> List[IR]:
@@ -127,6 +128,13 @@ def compile_to_python_source(src: str) -> str:
     """Compile TinyLanguage code into runnable Python source text."""
     module = compile_to_python_ast(src)
     return PythonCodeGenerator().to_source(module)
+
+
+def compile_to_llvm_ir(src: str) -> str:
+    """Emit textual LLVM IR for the subset supported by the native backend."""
+    stmts = _parse_and_lint(src)
+    program = NativeCodeGenerator().compile_program(stmts)
+    return LLVMCodeGenerator().compile_program(program)
 
 
 def run_with_python_backend(src: str) -> str:

@@ -1,4 +1,11 @@
 # ----- Runtime -----
+"""Runtime helpers: module resolution, heap management, and async utilities.
+
+This segment contains the import mechanics, concurrency primitives, and the core
+runtime container used by the evaluator. Docstrings focus on public-facing
+behaviors so integrators can navigate the stitched module without reading the
+entire implementation.
+"""
 
 
 class ReturnSignal(Exception):
@@ -27,6 +34,14 @@ def _import_binding_name(module: str, alias: Optional[str]) -> str:
 
 
 class ModuleResolver:
+    """Locate and load TinyLanguage modules from configurable search roots.
+
+    The resolver accepts optional search paths (including the ``TINYPATH``
+    environment variable) and memoizes successfully loaded modules so repeated
+    imports are cheap. It also guards against circular imports by tracking the
+    current resolution stack.
+    """
+
     def __init__(self, search_paths: Optional[List[Path]] = None):
         env_paths = os.environ.get("TINYPATH", "")
         configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
@@ -36,6 +51,12 @@ class ModuleResolver:
         self._in_progress: List[Path] = []
 
     def _resolve_name(self, raw: str, caller_namespace: Optional[str], pos: Optional[SourcePos]) -> str:
+        """Normalize relative import names against the caller's namespace.
+
+        A leading dot sequence (e.g. ``.foo`` or ``..bar.baz``) is expanded using
+        the caller's module namespace. Errors include source span information to
+        aid diagnostics in the parser and linter.
+        """
         leading = len(raw) - len(raw.lstrip("."))
         if leading == 0:
             return raw
@@ -64,6 +85,13 @@ class ModuleResolver:
         return ".".join(part for part in trimmed if part)
 
     def _candidate_paths(self, module_name: str, caller_path: Optional[Path]) -> List[Path]:
+        """Return possible filesystem paths for a module name.
+
+        The search order starts next to the caller's module (for relative
+        imports) before falling back to configured search roots. Each candidate
+        mirrors Python's ``pkg.subpkg.module`` to ``pkg/subpkg/module.tiny``
+        translation.
+        """
         rel_path = Path(*module_name.split("."))
         candidates: List[Path] = []
         roots: List[Path] = []
@@ -83,6 +111,7 @@ class ModuleResolver:
         caller_path: Optional[Path],
         pos: Optional[SourcePos] = None,
     ) -> NamespaceRef:
+        """Import a module, executing it if necessary and caching the namespace."""
         resolved_name = self._resolve_name(name, caller_namespace, pos)
         for candidate in self._candidate_paths(resolved_name, caller_path):
             resolved_path = candidate.resolve()
@@ -136,12 +165,15 @@ class SpawnHandle:
 
 @dataclass
 class CancellationToken:
+    """Coordinated cancellation primitive shared across spawned tasks."""
+
     cancelled: threading.Event = field(default_factory=threading.Event)
     reason: Optional[str] = None
     _linked: List[SpawnHandle] = field(default_factory=list)
     _lock: threading.Lock = field(default_factory=threading.Lock)
 
     def cancel(self, reason: Optional[str] = None) -> bool:
+        """Mark the token as cancelled and propagate to linked handles."""
         with self._lock:
             already = self.cancelled.is_set()
             if already:
@@ -153,6 +185,7 @@ class CancellationToken:
             return True
 
     def link_handle(self, handle: SpawnHandle) -> bool:
+        """Link a spawn handle so it reacts to future cancellations."""
         with self._lock:
             if handle in self._linked:
                 return False

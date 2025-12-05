@@ -23,6 +23,12 @@ def test_completion_offers_unqualified_members():
     assert "Tools.double" in [item.label for item in server.completions("Tools.")]
 
 
+def test_completion_includes_kinds():
+    server = TinyLanguageServer("fn alpha(a) { return a; }")
+    match = next(item for item in server.completions("al") if item.label == "alpha")
+    assert match.kind == "function"
+
+
 def test_hover_returns_position():
     server = TinyLanguageServer("fn ping() { return 1; }")
     hover = server.hover("ping")
@@ -30,6 +36,22 @@ def test_hover_returns_position():
     assert hover.symbol == "ping"
     assert isinstance(hover.position, tuple)
     assert all(isinstance(value, int) and value >= 0 for value in hover.position)
+
+
+def test_hover_includes_signature_detail():
+    source = "\n".join(
+        [
+            "fn add(x: number, y) -> number { return x + y; }",
+            "class Greeter { fn hello(self, name) { return name; } }",
+        ]
+    )
+    server = TinyLanguageServer(source)
+    hover = server.hover("add")
+    assert hover is not None
+    assert hover.detail.startswith("fn add(x: number, y) -> number")
+    class_hover = server.hover("Greeter.hello")
+    assert class_hover is not None
+    assert class_hover.detail.startswith("method hello(self, name)")
 
 
 def test_hover_missing_symbol_returns_none():

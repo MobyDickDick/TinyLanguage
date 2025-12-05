@@ -767,7 +767,13 @@ class TinyLanguageTranspiler(LanguageTranspiler):
             elif isinstance(stmt, Return):
                 rendered.append(f"{pad}return {self._render_expr(stmt.expr)};")
             elif isinstance(stmt, ExprStmt):
-                rendered.append(f"{pad}{self._render_expr(stmt.expr)};")
+                expr_source = self._render_expr(stmt.expr)
+                if isinstance(stmt.expr, Call) and indent_level == 0:
+                    keyword = "define " if "_" not in local_defined else ""
+                    rendered.append(f"{pad}{keyword}_ = {expr_source};")
+                    local_defined.add("_")
+                else:
+                    rendered.append(f"{pad}{expr_source};")
             elif isinstance(stmt, IfElse):
                 rendered.append(f"{pad}if ({self._render_expr(stmt.condition)}) {{")
                 rendered.extend(

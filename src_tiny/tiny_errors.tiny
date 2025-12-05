@@ -1,0 +1,85 @@
+// TinyLanguage-Port von src/tiny_errors.py
+// Enthält Position/Span-Strukturen sowie einfache Fehlerformatierung.
+
+class SourcePos {
+    line: number;
+    column: number;
+
+    fn col(self) {
+        return self.column;
+    }
+}
+
+fn SourcePos(line, column) {
+    return new SourcePos { line: line; column: column };
+}
+
+fn SourcePos_origin() {
+    return SourcePos(1, 1);
+}
+
+class SourceSpan {
+    start: SourcePos;
+    stop: SourcePos;
+}
+
+fn SourceSpan(start, stop) {
+    return new SourceSpan { start: start; stop: stop };
+}
+
+class TinyError {
+    kind: string;
+    msg: string;
+    span: SourceSpan;
+
+    fn to_string(self) {
+        if (self.span == Null) {
+            return "[" + self.kind + "] " + self.msg;
+        }
+        define s = self.span.start;
+        return "[" + self.kind + "] " + self.msg + " (line " + s.line + ", column " + s.column + ")";
+    }
+}
+
+fn TinyError(kind, msg, span) {
+    return new TinyError { kind: kind; msg: msg; span: span };
+}
+
+fn format_error(err: TinyError, source: string) {
+    define header = "[" + err.kind + "] " + err.msg;
+    if (err.span == Null) {
+        return header;
+    }
+
+    define lines = String.split(source, "\n");
+    define line_index = err.span.start.line - 1;
+    if (line_index < 0 || line_index >= Collections.len(lines)) {
+        return header;
+    }
+
+    define line_text = heap_get(lines, line_index);
+    define start_col = err.span.start.column;
+    define end_col = err.span.stop.column;
+
+    if (start_col < 1) {
+        start_col = 1;
+    }
+    if (end_col < start_col) {
+        end_col = start_col;
+    }
+
+    // Leerzeichen vor den Carets aufbauen
+    define prefix = "";
+    define idx = 1;
+    while (idx < start_col) {
+        prefix = prefix + " ";
+        idx = idx + 1;
+    }
+
+    define caret_len = end_col - start_col + 1;
+    define underline = prefix + String.repeat("^", caret_len);
+
+    return header
+        + "\nline " + err.span.start.line + ", column " + err.span.start.column + ":\n"
+        + line_text + "\n" + underline;
+}

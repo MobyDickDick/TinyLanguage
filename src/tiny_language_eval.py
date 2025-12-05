@@ -15,6 +15,7 @@
         return None
 
     def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) -> Any:
+        self._maybe_pause(s, env, namespace)
         try:
             if isinstance(s, Let):
                 env.define(s.name, self.eval_expr(s.expr, env), s.pos)

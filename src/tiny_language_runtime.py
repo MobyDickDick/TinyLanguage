@@ -6,6 +6,8 @@ behaviors so integrators can navigate the stitched module without reading the
 entire implementation.
 """
 
+from collections import defaultdict, deque
+
 # ----- Runtime -----
 
 
@@ -13,6 +15,100 @@ class ReturnSignal(Exception):
     def __init__(self, value: Any):
         super().__init__()
         self.value = value
+
+
+@dataclass
+class ScopeSnapshot:
+    values: Dict[str, Any]
+    types: Dict[str, str]
+
+
+@dataclass
+class DebugSnapshot:
+    pos: SourcePos
+    namespace: Optional[str]
+    call_stack: Tuple[StackFrame, ...]
+    scopes: List[ScopeSnapshot]
+
+
+@dataclass
+class StepRequest:
+    mode: str
+    depth: int
+
+
+class Debugger:
+    """Lightweight, synchronous debugger controller for stepping and breakpoints."""
+
+    VALID_COMMANDS = {"continue", "step_in", "step_over", "step_out"}
+
+    def __init__(self, on_pause: Optional[Callable[[DebugSnapshot], str]] = None):
+        self.breakpoints: Dict[Optional[str], Set[int]] = defaultdict(set)
+        self.on_pause = on_pause
+        self.command_queue: deque[str] = deque()
+        self.snapshots: List[DebugSnapshot] = []
+        self.pending_step: Optional[StepRequest] = None
+        self.last_location: Optional[Tuple[Optional[str], int]] = None
+
+    def set_breakpoints(self, namespace: Optional[str], lines: Set[int]) -> None:
+        """Register breakpoints for a namespace (or ``None`` for the active module)."""
+
+        self.breakpoints[namespace] = set(lines)
+
+    def enqueue_commands(self, *commands: str) -> None:
+        """Queue debugger commands to run in order as pauses are hit."""
+
+        for cmd in commands:
+            self._validate_command(cmd)
+            self.command_queue.append(cmd)
+
+    def should_pause(self, pos: SourcePos, namespace: Optional[str], depth: int) -> bool:
+        location = (namespace, pos.line)
+        if pos.line in self.breakpoints.get(namespace, set()) or pos.line in self.breakpoints.get(None, set()):
+            return True
+        return self._matches_step(location, depth)
+
+    def handle_pause(self, snapshot: DebugSnapshot, depth: int) -> None:
+        self.snapshots.append(snapshot)
+        self.last_location = (snapshot.namespace, snapshot.pos.line)
+        command = self._next_command(snapshot)
+        self.pending_step = self._step_for_command(command, depth)
+
+    def _next_command(self, snapshot: DebugSnapshot) -> str:
+        if self.on_pause is not None:
+            command = self.on_pause(snapshot)
+        elif self.command_queue:
+            command = self.command_queue.popleft()
+        else:
+            command = "continue"
+        self._validate_command(command)
+        return command
+
+    def _validate_command(self, command: str) -> None:
+        if command not in self.VALID_COMMANDS:
+            raise ValueError(f"invalid debugger command {command!r}; expected one of {sorted(self.VALID_COMMANDS)}")
+
+    def _step_for_command(self, command: str, depth: int) -> Optional[StepRequest]:
+        if command == "continue":
+            return None
+        if command == "step_in":
+            return StepRequest("step_in", depth)
+        if command == "step_over":
+            return StepRequest("step_over", depth)
+        if command == "step_out":
+            return StepRequest("step_out", max(0, depth - 1))
+        return None
+
+    def _matches_step(self, location: Tuple[Optional[str], int], depth: int) -> bool:
+        if self.pending_step is None:
+            return False
+        if self.pending_step.mode == "step_in":
+            return location != self.last_location
+        if self.pending_step.mode == "step_over":
+            return depth <= self.pending_step.depth and location != self.last_location
+        if self.pending_step.mode == "step_out":
+            return depth <= self.pending_step.depth and location != self.last_location
+        return False
 
 
 @dataclass
@@ -223,6 +319,7 @@ class Runtime:
         self.current_module_path: Optional[Path] = None
         self.current_module_namespace: Optional[str] = None
         self.call_stack: List[StackFrame] = []
+        self.debugger: Optional[Debugger] = None
 
     @staticmethod
     def _qualify_name(name: str, namespace: Optional[str]) -> str:
@@ -241,6 +338,28 @@ class Runtime:
         for frame in reversed(stack):
             lines.append(f"  at {frame.qualified_name} (line {frame.pos.line}, col {frame.pos.col})")
         return "\n".join(lines)
+
+    def _capture_scopes(self, env: "Environment") -> List[ScopeSnapshot]:
+        scopes: List[ScopeSnapshot] = []
+        current: Optional["Environment"] = env
+        while current:
+            scopes.append(ScopeSnapshot(values=dict(current.values), types=dict(current.types)))
+            current = current.parent
+        return scopes
+
+    def _maybe_pause(self, node: IR, env: "Environment", namespace: Optional[str]) -> None:
+        if self.debugger is None:
+            return
+        pos = getattr(node, "pos", SourcePos.origin()) or SourcePos.origin()
+        depth = len(self.call_stack)
+        if self.debugger.should_pause(pos, namespace, depth):
+            snapshot = DebugSnapshot(
+                pos=pos,
+                namespace=namespace,
+                call_stack=tuple(self.call_stack),
+                scopes=self._capture_scopes(env),
+            )
+            self.debugger.handle_pause(snapshot, depth)
 
     def _record_error(
         self,

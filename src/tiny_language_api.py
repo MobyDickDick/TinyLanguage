@@ -1,4 +1,3 @@
-# ----- Public API -----
 """Convenience entrypoints for running, compiling, and interacting with TinyLanguage.
 
 This module intentionally collects the most user-facing helpers so external callers
@@ -6,6 +5,8 @@ can import a single module when driving the interpreter, native backends, or the
 REPL. Functions here prefer descriptive error messages over raw tracebacks and try
 to keep a small, ergonomic surface area.
 """
+
+# ----- Public API -----
 
 import ast
 from typing import List, Optional

@@ -77,10 +77,10 @@ print(Math.inc(4));
 - **Cancellation tokens**: The `Async` namespace offers `token()`, `cancel(token, reason)`, `is_cancelled(token)`, `reason(token)`, and `link(token, handle)` so tasks can cooperate on structured cancellation. See [`docs/structured_concurrency.md`](docs/structured_concurrency.md) for the design sketch.
 
 #### Portability pitfalls
-- **Multiple inheritance and free operator overloading**: JavaScript/TypeScript lack multiple inheritance and C++ overload rules differ; prefer single inheritance plus helper functions or trait-like composition when targeting other runtimes. See the mitigation notes in [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md).
-- **Algebraic data types and `match`**: Exhaustive pattern matching and tagged unions require helper libraries or verbose switches in JS/TS/C++; keep variants simple or desugar to structs when porting.
-- **Manual heap primitives**: `new`/`heap_get`/`heap_set`/`tag`/`delete` have no direct equivalents in GC languages; use arrays, maps, or classes unless you are demonstrating the VM interface.
-- **Namespace semantics**: Namespace blocks do not map 1:1 to module systems; mirror them as modules/files to keep imports predictable across languages.
+- **Multiple inheritance and free operator overloading**: JavaScript/TypeScript lack multiple inheritance and C++ overload rules differ; prefer single inheritance plus composition and model overloads as named functions or protocol-style methods so all targets can express them (see [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md)).
+- **Algebraic data types and `match`**: Exhaustive pattern matching and tagged unions require helper libraries or verbose switches in JS/TS/C++; encode variants as structs/maps with a `tag`/`kind` field and replace `match` with a `switch`/`if` ladder that checks the tag and throws in the default branch.
+- **Manual heap primitives**: `new`/`heap_get`/`heap_set`/`tag`/`delete` have no direct equivalents in GC languages; map heap arrays to native lists/vectors, store tags as explicit fields, and rely on host lifetimes or RAII wrappers instead of manual deletion.
+- **Namespace semantics**: Namespace blocks do not map 1:1 to module systems; map them to module objects or static classes and ensure imports resolve to a single module instance, avoiding side effects on import by using explicit initialiser functions.
 
 ### Type hints and gradual typing
 - **Syntax**: Annotate parameters and return values: `fn label(x: string, times: number) -> string { return x * times; }`. Methods follow the same syntax.

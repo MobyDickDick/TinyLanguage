@@ -15,6 +15,7 @@ from language_server import CompletionItem, Diagnostic, HoverResult, TinyLanguag
 
 
 def _load_source(args: argparse.Namespace) -> str:
+    """Return inline source or contents of ``args.file``; exit if missing."""
     if args.source:
         return args.source
     if args.file:
@@ -23,6 +24,7 @@ def _load_source(args: argparse.Namespace) -> str:
 
 
 def _hover_dict(result: HoverResult) -> Dict[str, Any]:
+    """Convert ``HoverResult`` to a JSON-friendly mapping."""
     return {
         "symbol": result.symbol,
         "detail": result.detail,
@@ -31,10 +33,12 @@ def _hover_dict(result: HoverResult) -> Dict[str, Any]:
 
 
 def _completion_dict(item: CompletionItem) -> Dict[str, Any]:
+    """Convert ``CompletionItem`` to a JSON-friendly mapping."""
     return {"label": item.label, "kind": item.kind}
 
 
 def _diagnostic_dict(diag: Diagnostic) -> Dict[str, Any]:
+    """Convert ``Diagnostic`` to a JSON-friendly mapping."""
     return {
         "message": diag.message,
         "code": diag.code,
@@ -43,19 +47,23 @@ def _diagnostic_dict(diag: Diagnostic) -> Dict[str, Any]:
 
 
 def completions(server: TinyLanguageServer, prefix: str) -> List[Dict[str, Any]]:
+    """Return completion payloads for ``prefix`` using ``server``."""
     return [_completion_dict(item) for item in server.completions(prefix)]
 
 
 def hover(server: TinyLanguageServer, symbol: str) -> Dict[str, Any]:
+    """Return hover information for ``symbol`` or an empty dict."""
     result = server.hover(symbol)
     return _hover_dict(result) if result else {}
 
 
 def diagnostics(server: TinyLanguageServer) -> List[Dict[str, Any]]:
+    """Return diagnostics emitted by ``server`` in JSON-friendly form."""
     return [_diagnostic_dict(diag) for diag in server.diagnostics()]
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Create the CLI argument parser with subcommands."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--source",
@@ -79,6 +87,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
+    """Entrypoint for invoking the language-server utilities from the CLI."""
     parser = build_parser()
     args = parser.parse_args()
 

@@ -16,6 +16,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest
+          pip install pytest ruff
+      - name: Run docstring lint
+        run: ruff check --select D src/language_server.py src/language_server_cli.py
       - name: Run pytest suite
         run: python -m pytest

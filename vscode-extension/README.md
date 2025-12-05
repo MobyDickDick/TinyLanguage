@@ -61,8 +61,8 @@ The “nativeCompiler” work is tracked separately.
 
 - [ ] **CLI wrapper**
   - A small command-line tool that compiles/runs TinyLanguage files (e.g., `julia --project=. tiny_cli.jl source.tiny`).
-- [ ] **Document the language**
-  - Short, stable language specification (syntax, type rules, “must use” rules) to keep behavior clear.
+- [x] **Document the language**
+  - Short, stable language specification (syntax, type rules, “must use” rules) to keep behavior clear. See [`LANGUAGE_SPEC.md`](LANGUAGE_SPEC.md) for the stable reference used by the VS Code extension and other tooling.
 
 ### 5. Native Compiler
 

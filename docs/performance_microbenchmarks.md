@@ -9,6 +9,7 @@ The harness in [`benchmarks/microbenchmarks.py`](../benchmarks/microbenchmarks.p
 - `tight_loop`: a summation loop that stresses integer arithmetic and assignment.
 - `recursive_calls`: a naive Fibonacci implementation that highlights function-call overhead.
 - `heap_roundtrip`: repeated `heap_set`/`heap_get` calls over a small allocation to measure pointer validation and indexed writes.
+- `map_operations`: repeated `Map.set`/`Map.get` calls over sequential integer keys to exercise hash-map helpers.
 
 All built-in backends are supported:
 

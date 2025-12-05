@@ -42,7 +42,7 @@ TinyLanguage is a learning- and transpiler-focused playground rather than a prod
 - [x] **Write a beginner-friendly tutorial**: Create `docs/tutorial.md` with setup, syntax, control flow, functions, modules, and tooling, linking runnable snippets and referencing them from `README.md`.
 - [x] **Add English documentation across source files**: Sweep public functions/classes for docstrings and module headers that describe purpose, parameters, return values, and error scenarios; wire docstring checks (e.g., `ruff pydocstyle`) into CI.
 - [ ] **Additional ideas**
-  - [ ] REPL with syntax highlighting
+  - [x] REPL with syntax highlighting
   - [x] Parser/evaluator fuzzing (Hypothesis) to stress feature parity, now including match/ADT generators
   - [x] LSP enhancements (autocomplete/hover for the VSCode extension) via the VS Code helper commands
   - [x] Extend performance microbenchmarks with interpreter/runtime map operations (see [`benchmarks/microbenchmarks.py`](benchmarks/microbenchmarks.py)).
@@ -339,6 +339,7 @@ Note: On platforms without `readline` (e.g., Windows) the REPL history tests are
 ### Interactive REPL
 - Tab completion covers keywords, stdlib names, and bindings defined in the current session. Completion works even without the native `readline` library.
 - History is kept in memory and can be replayed via arrow keys or a simple reverse search (`Ctrl + R`). On exit it is persisted to `~/.tiny_language_history` when possible.
+- Syntax highlighting is available when [`pygments`](https://pygments.org/) is installed and the REPL is running on a TTY. Set `TINYL_REPL_HIGHLIGHT=0` to disable coloring for copy/paste workflows.
 
 Additional examples and expected diagnostics live in `tests/test_tiny_language.py` and the programs above.
 

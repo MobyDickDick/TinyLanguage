@@ -1,0 +1,130 @@
+// TinyLanguage translation of examples/rosetta/copy_rosetta_samples.py
+// Run with: python src/tiny_language.py src_tiny/from_python/copy_rosetta_samples.tiny DEST [--source DIR] [--limit N] [--delay SECONDS]
+
+use Map;
+
+// Python helpers
+define pathlib = Python.import_module("pathlib", new["Path"]);
+define shutil = Python.import_module("shutil", new["copy2"]);
+define time = Python.import_module("time", new["sleep"]);
+define sys = Python.import_module("sys", new["argv"]);
+define builtins = Python.import_module("builtins", new["list", "set", "sorted", "len", "int", "float"]);
+
+def list_missing(source_dir, dest_dir) {
+    define source_files = builtins.list(source_dir.glob("*.py"));
+    define dest_files = builtins.list(dest_dir.glob("*.py"));
+    define dest_stems = builtins.set();
+
+    define i = 0;
+    while (i < builtins.len(dest_files)) {
+        define path = heap_get(dest_files, i);
+        dest_stems.add(path.stem);
+        i = i + 1;
+    }
+
+    define missing = builtins.list();
+    i = 0;
+    while (i < builtins.len(source_files)) {
+        define path = heap_get(source_files, i);
+        if (!dest_stems.__contains__(path.stem)) {
+            missing.append(path);
+        }
+        i = i + 1;
+    }
+
+    return builtins.sorted(missing);
+}
+
+def copy_batch(files, dest_dir, limit, delay) {
+    define total = builtins.len(files);
+    define end = limit;
+    if (end > total) { end = total; }
+
+    define copied = builtins.list();
+    define idx = 0;
+    while (idx < end) {
+        define source_path = heap_get(files, idx);
+        define destination = dest_dir.joinpath(source_path.name);
+        shutil.copy2(source_path, destination);
+        print("copied", source_path.name, "->", destination);
+        copied.append(source_path);
+
+        if (idx + 1 < end) { time.sleep(delay); }
+        idx = idx + 1;
+    }
+
+    return copied;
+}
+
+def parse_args() {
+    define argv = sys.argv;
+    define argc = builtins.len(argv);
+
+    if (argc < 2) {
+        print("Usage: copy_rosetta_samples.tiny DEST [--source DIR] [--limit N] [--delay SECONDS]");
+        return Map.new();
+    }
+
+    define root = pathlib.Path(".").resolve();
+    define defaults = Map.from_entries(new[
+        new["source", root.joinpath("examples", "rosetta", "python")],
+        new["limit", 10],
+        new["delay", 10.0]
+    ]);
+
+    define options = Map.new();
+    Map.set(options, "dest", pathlib.Path(heap_get(argv, 1)));
+    Map.set(options, "source", Map.get(defaults, "source"));
+    Map.set(options, "limit", Map.get(defaults, "limit"));
+    Map.set(options, "delay", Map.get(defaults, "delay"));
+
+    define index = 2;
+    while (index < argc) {
+        define flag = heap_get(argv, index);
+        if (flag == "--source" && index + 1 < argc) {
+            Map.set(options, "source", pathlib.Path(heap_get(argv, index + 1)));
+            index = index + 2;
+        } else if (flag == "--limit" && index + 1 < argc) {
+            Map.set(options, "limit", builtins.int(heap_get(argv, index + 1)));
+            index = index + 2;
+        } else if (flag == "--delay" && index + 1 < argc) {
+            Map.set(options, "delay", builtins.float(heap_get(argv, index + 1)));
+            index = index + 2;
+        } else {
+            print("Ignoring unknown or incomplete flag:", flag);
+            index = index + 1;
+        }
+    }
+
+    return options;
+}
+
+def main() {
+    define args = parse_args();
+    if (Map.len(args) == 0) { return 1; }
+
+    define dest = Map.get(args, "dest");
+    define source = Map.get(args, "source");
+    define limit = Map.get(args, "limit");
+    define delay = Map.get(args, "delay");
+
+    if (!source.exists()) {
+        print("source directory does not exist:", source);
+        return 1;
+    }
+
+    dest.mkdir(511, true, true);
+    define missing = list_missing(source, dest);
+
+    if (builtins.len(missing) == 0) {
+        print("No missing Python scripts detected; nothing to copy.");
+        return 0;
+    }
+
+    define copied = copy_batch(missing, dest, limit, delay);
+    define remaining = builtins.len(missing) - builtins.len(copied);
+    print("Copied", builtins.len(copied), "file(s);", remaining, "still missing.");
+    return 0;
+}
+
+main();

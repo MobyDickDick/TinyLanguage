@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Command-line entrypoint for running TinyLanguage programs.
 
 The CLI intentionally mirrors the interpreter's public API so users can
@@ -7,6 +5,8 @@ execute `.tiny` files or inline snippets with a choice of backends. Error
 formatting stays consistent with the library helpers to make debugging via
 stdin/stdout/stderr predictable in shell scripts and CI pipelines.
 """
+
+from __future__ import annotations
 
 import argparse
 import os
@@ -39,6 +39,7 @@ def _module_namespace_for_path(path: Path) -> str:
 
 
 def _execute(source: str, *, backend: str, module_path: Path | None) -> str:
+    """Dispatch execution to the requested backend and return captured output."""
     if backend == "interpreter":
         namespace = _module_namespace_for_path(module_path) if module_path else None
         return compile_and_run(source, module_namespace=namespace, module_path=module_path)
@@ -52,6 +53,7 @@ def _execute(source: str, *, backend: str, module_path: Path | None) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Parse CLI arguments, run the requested program, and emit output/errors."""
     parser = argparse.ArgumentParser(description="Run TinyLanguage programs from the command line")
     parser.add_argument("path", nargs="?", type=Path, help="Path to a .tiny source file")
     source_group = parser.add_mutually_exclusive_group()

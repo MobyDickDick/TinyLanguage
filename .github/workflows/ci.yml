@@ -18,6 +18,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest ruff
       - name: Run docstring lint
-        run: ruff check --select D src/language_server.py src/language_server_cli.py
+        run: ruff check --select D \
+          src/language_server.py \
+          src/language_server_cli.py \
+          src/tiny_language_cli.py \
+          src/tiny_language_api.py \
+          src/tiny_errors.py
       - name: Run pytest suite
         run: python -m pytest

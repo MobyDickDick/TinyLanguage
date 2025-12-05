@@ -13,7 +13,9 @@
     "onCommand:tinylanguage.startRepl",
     "onCommand:tinylanguage.runFile",
     "onCommand:tinylanguage.formatDocument",
-    "onCommand:tinylanguage.refreshDiagnostics"
+    "onCommand:tinylanguage.refreshDiagnostics",
+    "onCommand:tinylanguage.getDebugAdapterExecutable",
+    "onDebugResolve:tinylanguage"
   ],
   "main": "./extension.js",
   "contributes": {
@@ -48,6 +50,10 @@
       {
         "command": "tinylanguage.refreshDiagnostics",
         "title": "TinyLanguage: Refresh Diagnostics"
+      },
+      {
+        "command": "tinylanguage.getDebugAdapterExecutable",
+        "title": "TinyLanguage: Debug Adapter (scaffolding)"
       }
     ],
     "configuration": {
@@ -74,6 +80,49 @@
         "id": "tinylanguage-icons",
         "label": "TinyLanguage File Icons",
         "path": "./icons/fileicons.json"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "tinylanguage",
+        "label": "TinyLanguage",
+        "languages": ["tinylanguage"],
+        "adapterExecutableCommand": "tinylanguage.getDebugAdapterExecutable",
+        "configurationAttributes": {
+          "launch": {
+            "required": ["program"],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "TinyLanguage source file to launch."
+              },
+              "runtime": {
+                "type": "string",
+                "description": "Path to tiny_language.py (used by the prototype adapter)."
+              },
+              "python": {
+                "type": "string",
+                "description": "Python executable to run the TinyLanguage interpreter."
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "default": false,
+                "description": "Reserved for future breakpoint support."
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "name": "TinyLanguage: Launch active file (prototype)",
+            "type": "tinylanguage",
+            "request": "launch",
+            "program": "${file}",
+            "runtime": "${config:tinylanguage.runtimePath}",
+            "python": "${config:tinylanguage.pythonPath}",
+            "stopOnEntry": false
+          }
+        ]
       }
     ]
   },

@@ -201,6 +201,57 @@ function registerRunFile(output) {
   });
 }
 
+function registerDebugAdapterExecutable(output) {
+  return vscode.commands.registerCommand('tinylanguage.getDebugAdapterExecutable', () => {
+    output.appendLine('[TinyLanguage] Debug adapter scaffolding requested (not implemented yet).');
+    vscode.window.showInformationMessage(
+      'TinyLanguage debugging uses prototype scaffolding only; full DAP support is not implemented yet.',
+    );
+    return undefined;
+  });
+}
+
+function registerDebugConfigurations(output) {
+  const type = 'tinylanguage';
+  const provider = {
+    provideDebugConfigurations(folder) {
+      const runtimePath = getRuntimePath() || '${workspaceFolder}/src/tiny_language.py';
+      return [
+        {
+          name: 'TinyLanguage: Launch active file (prototype)',
+          type,
+          request: 'launch',
+          program: '${file}',
+          runtime: runtimePath,
+          python: getPythonExecutable(),
+          stopOnEntry: false,
+        },
+      ];
+    },
+    resolveDebugConfiguration(folder, config) {
+      if (!config || config.type !== type) {
+        return config;
+      }
+      if (!config.program) {
+        vscode.window.showWarningMessage('No TinyLanguage file specified for debugging.');
+        return null;
+      }
+
+      const pythonExecutable = config.python || getPythonExecutable();
+      const runtimePath = config.runtime || getRuntimePath();
+      const terminal = vscode.window.createTerminal({ name: 'TinyLanguage Debug (prototype)' });
+      terminal.show(true);
+      terminal.sendText(`${pythonExecutable} ${runtimePath} ${config.program}`);
+      vscode.window.showWarningMessage(
+        'TinyLanguage debug adapter is not implemented yet; running the program in a terminal as a prototype.',
+      );
+      return null;
+    },
+  };
+
+  return vscode.debug.registerDebugConfigurationProvider(type, provider);
+}
+
 function registerRefreshDiagnostics(output, collection, refreshFn) {
   return vscode.commands.registerCommand('tinylanguage.refreshDiagnostics', () => {
     const editor = vscode.window.activeTextEditor;
@@ -220,6 +271,8 @@ function activate(context) {
   const hover = registerHover(output);
   const repl = registerRepl(output);
   const runFile = registerRunFile(output);
+  const debugAdapterCommand = registerDebugAdapterExecutable(output);
+  const debugConfigProvider = registerDebugConfigurations(output);
   const refreshCommand = registerRefreshDiagnostics(output, collection, refresh);
 
   context.subscriptions.push(
@@ -230,6 +283,8 @@ function activate(context) {
     hover,
     repl,
     runFile,
+    debugAdapterCommand,
+    debugConfigProvider,
     refreshCommand,
     ...disposables,
   );

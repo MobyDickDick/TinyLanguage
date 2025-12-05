@@ -14,6 +14,7 @@ from typing import List, Optional
 from native_vm import NativeVM
 from native_python_bytecode import run_program_via_python_bytecode
 from tiny_language_codegen_llvm import LLVMCodeGenerator
+from tiny_language_highlighting import PYGMENTS_AVAILABLE, highlight_source
 
 
 def _parse_and_lint(src: str) -> List[IR]:
@@ -325,6 +326,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         runtime = Runtime("")
         env = Environment(parent=None, namespace=None, runtime=runtime)
         scope_provider = lambda: list(KEYWORDS | BUILTINS | set(env.all_names()))
+        highlight_enabled = PYGMENTS_AVAILABLE and sys.stdout.isatty()
         _configure_readline(history_path, scope_provider)
         read_fn = _resolve_read_fn()
         try:
@@ -335,6 +337,10 @@ def main(argv: Optional[List[str]] = None) -> int:
                     break
                 if not src.strip():
                     continue  # Ignore blank submissions
+                if highlight_enabled:
+                    highlighted = highlight_source(src)
+                    if highlighted:
+                        print(highlighted, end="" if highlighted.endswith("\n") else "\n")
                 if readline is not None:
                     try:
                         readline.add_history(src)

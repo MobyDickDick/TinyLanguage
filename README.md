@@ -4,6 +4,9 @@ TinyLanguage is a small Julia-inspired language with a Python interpreter. This 
 
 For interoperability guidance, see the cross-language compatibility notes in [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md). For concrete Rosetta Code–style ports from Python to TinyLanguage, walk through [`docs/rosetta_python_examples.md`](docs/rosetta_python_examples.md). A compact language reference with syntax, type rules, and operator overview lives in [`docs/language_spec.md`](docs/language_spec.md).
 
+## Intended use
+TinyLanguage is a learning- and transpiler-focused playground rather than a production-ready toolchain. It exists to showcase syntax ideas, cross-language IR conversions, and runtime experiments (e.g., gradual typing and structured cancellation). The runnable demos and tests (`python run_all.py` or `python -m pytest`) are best treated as teaching materials for language design or interoperability, not as a polished SDK.
+
 ## Transpiler roadmap (task list)
 - [x] **Expand the shared IR**: Add new statement/expression types (e.g., control-flow nodes like `IfElse` and `While`) and update the helpers in [`tiny_language_transpilers.py`](tiny_language_transpilers.py) so future language extensions can build on them.
 - [x] **Update language transpilers**: Bring the parsers/renderers for `PythonTranspiler`, `JuliaTranspiler`, `JavaScriptTranspiler`, and `CppTranspiler` up to date so the new IR nodes round-trip correctly.
@@ -67,15 +70,27 @@ print(Math.inc(4));
 - **Comparisons and strings**: `>`, `>=`, `<`, `<=`, `==`, `!=` plus string concatenation with `+`. Scientific notation like `1.2e2` is not supported.
 - **Exponentiation**: The `^` operator only accepts integer exponents; for fractional exponents use `power(base, exponent)`.
 - **Heap and arrays**: `new(3)` creates a pointer with three slots, `new[1, 2, 3]` allocates an array on the heap. `heap_get`/`heap_set` read and write, `tag` adds type tags to pointers, `delete` removes them.
+  - Note: Manual heap primitives are primarily for VM/interop demos; beginners can stick to arrays/structs. Host languages with garbage collectors already handle most memory lifecycles. See [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md) for portable patterns.
 - **Destructuring**: Functions can return structs: `fn bump(a) { a = a + 1; return { a: a, e: 0 }; }` can be bound with `{ a, e } = bump(1);`.
 - **Classes and operators**: Classes have fields and methods and allow multiple inheritance. Operators can be overloaded, e.g. `operator + (a: Number, b: Number) -> Number { ... }`.
 - **Concurrency**: `spawn f(1, 2)` starts a task, `join` waits and returns its result.
 - **Cancellation tokens**: The `Async` namespace offers `token()`, `cancel(token, reason)`, `is_cancelled(token)`, `reason(token)`, and `link(token, handle)` so tasks can cooperate on structured cancellation. See [`docs/structured_concurrency.md`](docs/structured_concurrency.md) for the design sketch.
 
+#### Portability pitfalls
+- **Multiple inheritance and free operator overloading**: JavaScript/TypeScript lack multiple inheritance and C++ overload rules differ; prefer single inheritance plus helper functions or trait-like composition when targeting other runtimes. See the mitigation notes in [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md).
+- **Algebraic data types and `match`**: Exhaustive pattern matching and tagged unions require helper libraries or verbose switches in JS/TS/C++; keep variants simple or desugar to structs when porting.
+- **Manual heap primitives**: `new`/`heap_get`/`heap_set`/`tag`/`delete` have no direct equivalents in GC languages; use arrays, maps, or classes unless you are demonstrating the VM interface.
+- **Namespace semantics**: Namespace blocks do not map 1:1 to module systems; mirror them as modules/files to keep imports predictable across languages.
+
 ### Type hints and gradual typing
 - **Syntax**: Annotate parameters and return values: `fn label(x: string, times: number) -> string { return x * times; }`. Methods follow the same syntax.
 - **Gradual typing checks**: Annotated arguments and returns are validated at runtime. A call like `label(1, "x")` yields `[E009] type mismatch ... expected string/number ...`.
 - **Basic exhaustiveness checks**: Annotated functions must return a value on all paths. Missing `return` statements trigger `[E010] not all paths ... return a value ...` with hints about missing branch returns.
+
+#### What's unique
+- **Runtime gradual typing with exhaustiveness**: Type annotations are enforced at runtime, and functions must return on every path, making control-flow coverage explicit. See `tests/test_tiny_language.py` for return-coverage failures and [`docs/language_spec.md`](docs/language_spec.md) for rules.
+- **Structured cancellation tokens**: `Async.token`/`cancel`/`link` support cooperative cancellation across tasks as a teaching example for structured concurrency. Examples live in [`docs/structured_concurrency.md`](docs/structured_concurrency.md) and `src_tiny/concurrency_demo.tiny`.
+- **Always-return discipline**: Missing returns are flagged even without static types, encouraging clear exits; contrast with many dynamic languages where execution can silently fall through.
 
 ### Classes
 A minimal example with a constructor function and a method. The output was verified via `python tiny_language.py src_tiny/class_demo.tiny`.

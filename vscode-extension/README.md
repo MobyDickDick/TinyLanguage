@@ -4,6 +4,7 @@ This extension adds TinyLanguage editing support to Visual Studio Code:
 
 - Syntax highlighting powered by a TextMate grammar.
 - Formatting via the built-in TinyLanguage formatter.
+- Hover and completion suggestions sourced from the TinyLanguage language server helpers.
 - REPL and run commands backed by `tiny_language.py`.
 - On-the-fly diagnostics based on the TinyLanguage linters.
 

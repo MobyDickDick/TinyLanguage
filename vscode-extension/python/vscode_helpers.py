@@ -37,10 +37,44 @@ def diagnostics_command(source: str, file_path: str | None = None) -> int:
     return 0
 
 
+def completions_command(source: str, prefix: str) -> int:
+    server = TinyLanguageServer(source)
+    items = [
+        {
+            "label": item.label,
+            "kind": item.kind,
+        }
+        for item in server.completions(prefix)
+    ]
+    json.dump(items, sys.stdout)
+    return 0
+
+
+def hover_command(source: str, symbol: str) -> int:
+    server = TinyLanguageServer(source)
+    result = server.hover(symbol)
+    if result is None:
+        sys.stdout.write("null")
+        return 0
+    payload = {
+        "symbol": result.symbol,
+        "detail": result.detail,
+        "position": list(result.position),
+    }
+    json.dump(payload, sys.stdout)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="TinyLanguage VS Code helper")
-    parser.add_argument("command", choices=["format", "diagnostics"], help="Tooling command to execute")
+    parser.add_argument(
+        "command",
+        choices=["format", "diagnostics", "completions", "hover"],
+        help="Tooling command to execute",
+    )
     parser.add_argument("--path", dest="path", help="Path of the file being processed", default=None)
+    parser.add_argument("--prefix", dest="prefix", help="Completion prefix", default="")
+    parser.add_argument("--symbol", dest="symbol", help="Hover symbol", default="")
     args = parser.parse_args(argv)
 
     source = sys.stdin.read()
@@ -49,6 +83,10 @@ def main(argv: list[str] | None = None) -> int:
         return format_command(source)
     if args.command == "diagnostics":
         return diagnostics_command(source, args.path)
+    if args.command == "completions":
+        return completions_command(source, args.prefix)
+    if args.command == "hover":
+        return hover_command(source, args.symbol)
     return 1
 
 

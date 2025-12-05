@@ -44,7 +44,7 @@ Track progress in this table as modules are ported. An empty "Tiny parity" cell 
 | Module cluster | Python source | Tiny parity file | Notes |
 | --- | --- | --- | --- |
 | Lexer + parser | `src/tiny_language_lexer.py`, `src/tiny_language_parser.py` | _TBD_ | Convert token/AST structures first; validate with parser tests. |
-| AST + runtime | `src/tiny_language_ast.py`, `src/tiny_language_runtime.py`, `src/tiny_language_eval.py` | _TBD_ | Ensure built-ins (print, heap, math) behave identically. |
+| AST + runtime | `src/tiny_language_ast.py`, `src/tiny_language_runtime.py`, `src/tiny_language_eval.py` | `src_tiny/tiny_language_ast.tiny` (runtime pending) | Ensure built-ins (print, heap, math) behave identically. |
 | Linter | `src/tiny_language_linter.py` | _TBD_ | Must-use and unreachable-code rules should stay consistent. |
 | Transpilers | `src/tiny_language_transpilers.py` | _TBD_ | Target parity for Python/Julia/JS/C++ renderers. |
 | Native backend | `src/native_ir.py`, `src/tiny_language_codegen_native.py`, `src/native_vm.py` | _TBD_ | Keep opcode names and error messages stable. |

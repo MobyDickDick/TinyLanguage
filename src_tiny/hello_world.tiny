@@ -1,0 +1,2 @@
+// Smallest runnable TinyLanguage program: prints a greeting.
+print("Hello, TinyLanguage!");

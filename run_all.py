@@ -23,6 +23,7 @@ def run_step(name: str, args: list[str]) -> None:
 def main() -> None:
     tiny_language = ROOT / "src" / "tiny_language.py"
     demo_files = [
+        "hello_world.tiny",
         "demo.tiny",
         "all_features.tiny",
         "class_demo.tiny",

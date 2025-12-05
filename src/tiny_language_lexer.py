@@ -7,6 +7,10 @@ features can extend ``KEYWORDS`` and ``SYMBOLS`` without rewriting the core
 scanner.
 """
 
+from dataclasses import dataclass
+
+from tiny_errors import SourcePos
+
 # ----- Lexer -----
 
 KEYWORDS = {

@@ -203,11 +203,11 @@ function registerRunFile(output) {
 
 function registerDebugAdapterExecutable(output) {
   return vscode.commands.registerCommand('tinylanguage.getDebugAdapterExecutable', () => {
-    output.appendLine('[TinyLanguage] Debug adapter scaffolding requested (not implemented yet).');
-    vscode.window.showInformationMessage(
-      'TinyLanguage debugging uses prototype scaffolding only; full DAP support is not implemented yet.',
-    );
-    return undefined;
+    const pythonExecutable = getPythonExecutable();
+    const adapterPath = path.join(__dirname, 'python', 'tiny_debug_adapter.py');
+    const env = createToolEnv();
+    output.appendLine(`[TinyLanguage] Launching debug adapter via ${pythonExecutable} ${adapterPath}`);
+    return new vscode.DebugAdapterExecutable(pythonExecutable, [adapterPath], { env });
   });
 }
 
@@ -239,13 +239,14 @@ function registerDebugConfigurations(output) {
 
       const pythonExecutable = config.python || getPythonExecutable();
       const runtimePath = config.runtime || getRuntimePath();
-      const terminal = vscode.window.createTerminal({ name: 'TinyLanguage Debug (prototype)' });
-      terminal.show(true);
-      terminal.sendText(`${pythonExecutable} ${runtimePath} ${config.program}`);
-      vscode.window.showWarningMessage(
-        'TinyLanguage debug adapter is not implemented yet; running the program in a terminal as a prototype.',
-      );
-      return null;
+      const merged = {
+        ...config,
+        type,
+        python: pythonExecutable,
+        runtime: runtimePath,
+      };
+      output.appendLine(`[TinyLanguage] Starting debugger for ${merged.program}`);
+      return merged;
     },
   };
 

@@ -20,7 +20,7 @@ TinyLanguage is a learning- and transpiler-focused playground rather than a prod
 ## VS Code debugging roadmap
 - [x] **Seed launch configuration scaffolding**: Register a TinyLanguage debug configuration type with default `launch.json` snippets and a prototype resolver that currently shells out to the interpreter via a terminal. This keeps the UX stable while the real Debug Adapter Protocol (DAP) handler is built.
 - [x] **Add interpreter hooks for breakpoints/stepping**: Teach the Python runtime to pause at breakpoints, step through statements, and surface scopes/variables for the adapter.
-- [ ] **Implement a TinyLanguage debug adapter**: Wire a DAP server (Node or Python) that speaks to the instrumented interpreter, translating DAP requests into runtime actions.
+- [x] **Implement a TinyLanguage debug adapter**: Wire a DAP server (Node or Python) that speaks to the instrumented interpreter, translating DAP requests into runtime actions.
 - [ ] **Document and test the debugger flow**: Add README/extension docs plus integration tests so launch/attach scenarios remain stable.
 
 ## Next practical steps

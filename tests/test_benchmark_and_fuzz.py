@@ -439,10 +439,50 @@ if hypothesis_spec:  # pragma: no cover - optional
 
         return "\n".join(program_lines), [str(value) for value in outputs]
 
+    @st.composite
+    def _match_programs(draw):
+        operation_count = draw(st.integers(min_value=1, max_value=5))
+        operations = []
+        for _ in range(operation_count):
+            variant = draw(st.sampled_from(["Add", "Mul"]))
+            left = draw(st.integers(min_value=-4, max_value=4))
+            right = draw(st.integers(min_value=-4, max_value=4))
+            operations.append((variant, left, right))
+
+        lines = [
+            "type Pairing {",
+            "  Add { left: number, right: number };",
+            "  Mul { left: number, right: number };",
+            "}",
+        ]
+        outputs: list[str] = []
+
+        for idx, (variant, left, right) in enumerate(operations):
+            lines.append(f"define op{idx} = {variant} {{ left: {left}, right: {right} }};")
+            lines.append("print(match op{idx} {{".format(idx=idx))
+            lines.append("  case Add { left: l, right: r }: l + r;")
+            lines.append("  case Mul { left: l, right: r }: l * r;")
+            lines.append("});")
+
+            if variant == "Add":
+                outputs.append(str(left + right))
+            else:
+                outputs.append(str(left * right))
+
+        return "\n".join(lines), outputs
+
     @pytest.mark.skipif(not hypothesis_available, reason="hypothesis not installed")
     @settings(max_examples=10, deadline=1500)
     @given(_tiny_arithmetic_programs())
     def test_generated_programs_match_python_reference(program_and_outputs):
+        program, expected_outputs = program_and_outputs
+        actual_output = compile_and_run(program).splitlines()
+        assert actual_output == expected_outputs
+
+    @pytest.mark.skipif(not hypothesis_available, reason="hypothesis not installed")
+    @settings(max_examples=10, deadline=1500)
+    @given(_match_programs())
+    def test_match_programs_evaluate_expected_outputs(program_and_outputs):
         program, expected_outputs = program_and_outputs
         actual_output = compile_and_run(program).splitlines()
         assert actual_output == expected_outputs

@@ -34,7 +34,7 @@ TinyLanguage is a learning- and transpiler-focused playground rather than a prod
 - [x] **Import and transpile Rosetta Code samples**: Store selected Rosetta Code tasks (FizzBuzz, Fibonacci, sorting, etc.) under `examples/rosetta/`, then build a translation pass that converts the Python versions into TinyLanguage variants with snapshot tests.
 - [x] **Write a beginner-friendly tutorial**: Create `docs/tutorial.md` with setup, syntax, control flow, functions, modules, and tooling, linking runnable snippets and referencing them from `README.md`.
 - [x] **Add English documentation across source files**: Sweep public functions/classes for docstrings and module headers that describe purpose, parameters, return values, and error scenarios; wire docstring checks (e.g., `ruff pydocstyle`) into CI.
-- **Additional ideas**: REPL with syntax highlighting, parser/evaluator fuzzing (Hypothesis), performance microbenchmarks, and LSP enhancements (autocomplete/hover for the VSCode extension).
+- **Additional ideas**: REPL with syntax highlighting, parser/evaluator fuzzing (Hypothesis), LSP enhancements (autocomplete/hover for the VSCode extension), and performance microbenchmarks (see [`docs/performance_microbenchmarks.md`](docs/performance_microbenchmarks.md)).
 
 ## Syntax and Features
 

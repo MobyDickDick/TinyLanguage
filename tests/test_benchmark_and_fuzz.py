@@ -296,5 +296,37 @@ if hypothesis_spec:  # pragma: no cover - optional
 
         expected = eval(expr)  # Limited to safe literals/operators from _arithmetic_exprs
         assert float(output) == pytest.approx(float(expected))
+
+    def _printable_exprs() -> st.SearchStrategy[str]:
+        literals = st.one_of(st.booleans(), st.integers(min_value=-3, max_value=3)).map(
+            lambda value: "true" if value is True else "false" if value is False else str(value)
+        )
+
+        return st.recursive(
+            literals,
+            lambda children: st.one_of(
+                st.builds(lambda op, a, b: f"({a} {op} {b})", st.sampled_from(["+", "-", "*", "==", "&&", "||"]), children, children),
+                st.builds(lambda inner: f"-{inner}", children),
+            ),
+            max_leaves=6,
+        )
+
+    def _tiny_programs() -> st.SearchStrategy[str]:
+        def _define_and_print(name: str, expr: str) -> str:
+            return f"define {name} = {expr};\nprint({name});"
+
+        statement = st.one_of(
+            st.builds(_define_and_print, st.sampled_from(["a", "b", "c", "d"]), _printable_exprs()),
+            _printable_exprs().map(lambda expr: f"print({expr});"),
+        )
+
+        return st.lists(statement, min_size=1, max_size=5).map(lambda stmts: "\n".join(stmts))
+
+    @pytest.mark.skipif(not hypothesis_available, reason="hypothesis not installed")
+    @settings(max_examples=12, deadline=1500)
+    @given(_tiny_programs())
+    def test_generated_statements_execute_without_errors(program: str) -> None:
+        output = compile_and_run(program).strip()
+        assert output, "generated program did not produce any output"
 else:  # pragma: no cover - optional
     hypothesis_available = False

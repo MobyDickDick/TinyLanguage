@@ -264,6 +264,7 @@ The interpreter registers the built-in stdlib before running any program. Namesp
 Detailed notes live in [`docs/stdlib_extensions.md`](docs/stdlib_extensions.md), and ready-made snippets can be tried via [`stdlib_collections_demo.tiny`](src_tiny/stdlib_collections_demo.tiny) or [`stdlib_io_random_demo.tiny`](src_tiny/stdlib_io_random_demo.tiny).
 
 ## Example programs
+- [`hello_world.tiny`](src_tiny/hello_world.tiny): Minimal program that prints a single greeting—useful for smoke testing the interpreter setup.
 - [`demo.tiny`](src_tiny/demo.tiny): Small showcase for variables, loops, functions, classes, and heap operations. Runs sequentially and prints intermediate results.
 - [`rosetta_fibonacci.tiny`](src_tiny/rosetta_fibonacci.tiny): Classic Fibonacci implementation demonstrating function declarations and simple loops. Prints the first 10 Fibonacci numbers.
 - [`all_features.tiny`](src_tiny/all_features.tiny): Comprehensive feature tour with arrays, classes, and operator overloading—handy for exploring the language end-to-end.

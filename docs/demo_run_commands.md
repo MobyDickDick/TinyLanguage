@@ -4,6 +4,7 @@ This list collects common CLI invocations to validate the most important example
 
 ## Interpreter-Demos
 ```bash
+python src/tiny_language.py src_tiny/hello_world.tiny
 python src/tiny_language.py src_tiny/demo.tiny
 python src/tiny_language.py src_tiny/all_features.tiny
 python src/tiny_language.py src_tiny/class_demo.tiny

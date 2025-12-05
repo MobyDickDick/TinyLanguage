@@ -30,3 +30,7 @@ def test_fizzbuzz_snapshot():
 
 def test_fibonacci_snapshot():
     assert_snapshot("fibonacci")
+
+
+def test_factorial_snapshot():
+    assert_snapshot("factorial")

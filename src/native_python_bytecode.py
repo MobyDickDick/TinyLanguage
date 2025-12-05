@@ -16,6 +16,8 @@ from native_ir import ProgramIR
 
 
 def _format_instructions(program: ProgramIR) -> Dict[str, List[tuple]]:
+    """Return a serialisable view of the program's instruction streams."""
+
     return {
         "entry": [(instr.op.value, instr.arg) for instr in program.entry],
         "functions": {

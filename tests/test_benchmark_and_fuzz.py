@@ -328,5 +328,123 @@ if hypothesis_spec:  # pragma: no cover - optional
     def test_generated_statements_execute_without_errors(program: str) -> None:
         output = compile_and_run(program).strip()
         assert output, "generated program did not produce any output"
+
+    def _render_expr(expr) -> str:
+        if isinstance(expr, int):
+            return str(expr)
+
+        kind = expr[0]
+        if kind == "var":
+            return expr[1]
+        if kind == "neg":
+            return f"-{_render_expr(expr[1])}"
+
+        _, op, left, right = expr
+        rendered_left = _render_expr(left)
+        rendered_right = _render_expr(right)
+        return f"({rendered_left} {op} {rendered_right})"
+
+    def _eval_expr(expr, env: dict[str, int]) -> int:
+        if isinstance(expr, int):
+            return expr
+
+        kind = expr[0]
+        if kind == "var":
+            return env[expr[1]]
+        if kind == "neg":
+            return -_eval_expr(expr[1], env)
+
+        _, op, left, right = expr
+        a = _eval_expr(left, env)
+        b = _eval_expr(right, env)
+        if op == "+":
+            return a + b
+        if op == "-":
+            return a - b
+        if op == "*":
+            return a * b
+
+        raise ValueError(f"unsupported operator: {op}")
+
+    def _binary_expr(draw, env: dict[str, int], max_depth: int):
+        if max_depth <= 0:
+            return draw(_leaf_expr(env))
+
+        choice = draw(st.sampled_from(["leaf", "neg", "bin"]))
+        if choice == "leaf":
+            return draw(_leaf_expr(env))
+        if choice == "neg":
+            return ("neg", _binary_expr(draw, env, max_depth - 1))
+
+        op = draw(st.sampled_from(["+", "-", "*"]))
+        left = _binary_expr(draw, env, max_depth - 1)
+        right = _binary_expr(draw, env, max_depth - 1)
+        return ("bin", op, left, right)
+
+    def _leaf_expr(env: dict[str, int]):
+        options = [st.integers(min_value=-4, max_value=4)]
+        if env:
+            options.append(st.sampled_from(sorted(env)).map(lambda name: ("var", name)))
+        return st.one_of(options)
+
+    def _expr(draw, env: dict[str, int]):
+        return draw(_binary_expr(draw, env, max_depth=2))
+
+    @st.composite
+    def _tiny_arithmetic_programs(draw):
+        names = ["a", "b", "c", "d"]
+        env: dict[str, int] = {}
+        statements = []
+        outputs = []
+
+        statement_count = draw(st.integers(min_value=2, max_value=6))
+        for _ in range(statement_count):
+            if env:
+                action = draw(st.sampled_from(["define", "assign", "print"]))
+            else:
+                action = "define"
+
+            if action == "define":
+                name = draw(st.sampled_from(names))
+                expr = _expr(draw, env)
+                env[name] = _eval_expr(expr, env)
+                statements.append(("define", name, expr))
+                continue
+
+            if action == "assign":
+                name = draw(st.sampled_from(sorted(env)))
+                expr = _expr(draw, env)
+                env[name] = _eval_expr(expr, env)
+                statements.append(("assign", name, expr))
+                continue
+
+            expr = _expr(draw, env)
+            outputs.append(_eval_expr(expr, env))
+            statements.append(("print", None, expr))
+
+        if not outputs:
+            fallback = ("var", draw(st.sampled_from(sorted(env)))) if env else 0
+            outputs.append(_eval_expr(fallback, env))
+            statements.append(("print", None, fallback))
+
+        program_lines = []
+        for kind, name, expr in statements:
+            rendered = _render_expr(expr)
+            if kind == "define":
+                program_lines.append(f"define {name} = {rendered};")
+            elif kind == "assign":
+                program_lines.append(f"{name} = {rendered};")
+            else:
+                program_lines.append(f"print({rendered});")
+
+        return "\n".join(program_lines), [str(value) for value in outputs]
+
+    @pytest.mark.skipif(not hypothesis_available, reason="hypothesis not installed")
+    @settings(max_examples=10, deadline=1500)
+    @given(_tiny_arithmetic_programs())
+    def test_generated_programs_match_python_reference(program_and_outputs):
+        program, expected_outputs = program_and_outputs
+        actual_output = compile_and_run(program).splitlines()
+        assert actual_output == expected_outputs
 else:  # pragma: no cover - optional
     hypothesis_available = False

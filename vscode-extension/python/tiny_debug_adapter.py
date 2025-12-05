@@ -21,8 +21,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SRC_ROOT = REPO_ROOT.parent / "src"
 sys.path.insert(0, str(SRC_ROOT))
 
-from tiny_language_api import compile_and_run
-from tiny_language_runtime import Debugger
+from tiny_language import Debugger, compile_and_run
 
 
 @dataclass

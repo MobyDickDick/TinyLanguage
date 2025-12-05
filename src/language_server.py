@@ -83,6 +83,15 @@ class TinyLanguageServer:
     def completions(self, prefix: str = "") -> List[CompletionItem]:
         """Return completion items for keywords, builtins, and indexed symbols."""
         candidates: Set[str] = set(KEYWORDS) | set(BUILTINS) | set(self.symbols.keys())
+
+        # Provide both fully qualified and short forms for names nested in
+        # namespaces. This keeps completions useful in small files where users
+        # may type ``add`` before ``Math.add`` without losing access to scoped
+        # suggestions.
+        for symbol in list(self.symbols.keys()):
+            if "." in symbol:
+                candidates.add(symbol.split(".")[-1])
+
         filtered = sorted([c for c in candidates if c.startswith(prefix)])
         return [CompletionItem(label=c) for c in filtered]
 

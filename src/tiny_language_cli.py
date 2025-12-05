@@ -17,6 +17,7 @@ from tiny_language import (
     TinyLangError,
     _format_error_for_source,
     compile_and_run,
+    compile_to_llvm_ir,
     run_with_native_backend,
     run_with_python_bytecode_backend,
     run_with_python_backend,
@@ -65,6 +66,11 @@ def main(argv: list[str] | None = None) -> int:
         default="interpreter",
         help="Execution backend (interpreter/python/native/native-python-bytecode)",
     )
+    parser.add_argument(
+        "--emit-llvm",
+        action="store_true",
+        help="Compile the program to LLVM IR and print it instead of executing",
+    )
 
     args = parser.parse_args(argv)
     module_path: Path | None = None
@@ -77,6 +83,15 @@ def main(argv: list[str] | None = None) -> int:
         source = args.source
     else:
         parser.error("either provide a path argument, --file, or --source")
+
+    if args.emit_llvm:
+        try:
+            llvm_ir = compile_to_llvm_ir(source)
+        except TinyLangError as err:
+            sys.stderr.write(_format_error_for_source(source, err) + os.linesep)
+            return 1
+        sys.stdout.write(llvm_ir + os.linesep)
+        return 0
 
     try:
         output = _execute(source, backend=args.backend, module_path=module_path)

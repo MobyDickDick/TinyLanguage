@@ -4,10 +4,11 @@ This guide introduces a small harness for comparing TinyLanguage execution backe
 
 ## Benchmarks and backends
 
-The harness in [`benchmarks/microbenchmarks.py`](../benchmarks/microbenchmarks.py) ships with two representative programs:
+The harness in [`benchmarks/microbenchmarks.py`](../benchmarks/microbenchmarks.py) ships with three representative programs:
 
 - `tight_loop`: a summation loop that stresses integer arithmetic and assignment.
 - `recursive_calls`: a naive Fibonacci implementation that highlights function-call overhead.
+- `heap_roundtrip`: repeated `heap_set`/`heap_get` calls over a small allocation to measure pointer validation and indexed writes.
 
 All built-in backends are supported:
 
@@ -39,6 +40,13 @@ interpreter             avg=3.80ms min=3.75ms max=3.92ms
 python                  avg=0.75ms min=0.72ms max=0.81ms
 native                  avg=1.10ms min=1.05ms max=1.15ms
 native-python-bytecode  avg=0.98ms min=0.95ms max=1.00ms
+
+=== heap_roundtrip ===
+Heap writes/reads to exercise pointer and index checks
+interpreter             avg=7.55ms min=7.40ms max=7.68ms
+python                  avg=2.10ms min=2.04ms max=2.16ms
+native                  avg=2.95ms min=2.88ms max=3.01ms
+native-python-bytecode  avg=2.65ms min=2.60ms max=2.70ms
 ```
 
 Use these numbers for relative comparisons; absolute times will vary by hardware and interpreter version.

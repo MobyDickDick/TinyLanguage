@@ -78,6 +78,24 @@ print(fib({call_depth}));
 """
 
 
+def _heap_roundtrip(iterations: int, slots: int = 8) -> str:
+    return f"""
+// Repeated heap reads/writes to stress pointer checks and indexing.
+define ptr = new[{', '.join('0' for _ in range(slots))}];
+define i = 0;
+define idx = 0;
+while (i < {iterations}) {{
+    heap_set(ptr, idx, i);
+    // Touch the next slot to include heap_get in the mix.
+    heap_get(ptr, idx);
+    idx = idx + 1;
+    if (idx == {slots}) {{ idx = 0; }}
+    i = i + 1;
+}}
+print(heap_get(ptr, 0));
+"""
+
+
 BENCHMARKS: list[BenchmarkCase] = [
     BenchmarkCase(
         name="tight_loop",
@@ -88,6 +106,11 @@ BENCHMARKS: list[BenchmarkCase] = [
         name="recursive_calls",
         description="Naive Fibonacci to measure call overhead",
         source=_function_calls(call_depth=16),
+    ),
+    BenchmarkCase(
+        name="heap_roundtrip",
+        description="Heap writes/reads to exercise pointer and index checks",
+        source=_heap_roundtrip(iterations=4000),
     ),
 ]
 

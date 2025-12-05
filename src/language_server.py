@@ -33,6 +33,8 @@ from tiny_language import (
 
 @dataclass
 class HoverResult:
+    """Structured hover payload returned by ``TinyLanguageServer.hover``."""
+
     symbol: str
     detail: str
     position: Tuple[int, int]
@@ -40,12 +42,16 @@ class HoverResult:
 
 @dataclass
 class CompletionItem:
+    """Small completion entry with label and kind fields."""
+
     label: str
     kind: str = "identifier"
 
 
 @dataclass
 class Diagnostic:
+    """Single diagnostic emitted by the linters or parser."""
+
     message: str
     code: str
     range: Tuple[int, int, int, int]
@@ -55,6 +61,7 @@ class TinyLanguageServer:
     """Extremely small convenience wrapper around the parser and linters."""
 
     def __init__(self, source: str):
+        """Parse ``source`` and eagerly build symbol tables for lookups."""
         self.source = source
         self.parser = Parser(Lexer(source), source)
         self.stmts = self.parser.parse()
@@ -62,6 +69,7 @@ class TinyLanguageServer:
         self._index_symbols(self.stmts)
 
     def _index_symbols(self, stmts, prefix: str = "") -> None:
+        """Recursively collect symbol names with their source positions."""
         for st in stmts:
             if isinstance(st, Namespace):
                 nested = f"{prefix}.{st.name}" if prefix else st.name
@@ -73,17 +81,20 @@ class TinyLanguageServer:
                     self.symbols[qualified] = getattr(st, "pos", SourcePos.origin())
 
     def completions(self, prefix: str = "") -> List[CompletionItem]:
+        """Return completion items for keywords, builtins, and indexed symbols."""
         candidates: Set[str] = set(KEYWORDS) | set(BUILTINS) | set(self.symbols.keys())
         filtered = sorted([c for c in candidates if c.startswith(prefix)])
         return [CompletionItem(label=c) for c in filtered]
 
     def hover(self, symbol: str) -> Optional[HoverResult]:
+        """Produce hover info for ``symbol`` if the name is known."""
         if symbol not in self.symbols:
             return None
         pos = self.symbols[symbol]
         return HoverResult(symbol=symbol, detail="TinyLanguage symbol", position=(pos.line, pos.col))
 
     def diagnostics(self) -> List[Diagnostic]:
+        """Run linters and parser checks, returning any diagnostics."""
         diagnostics: List[Diagnostic] = []
 
         try:

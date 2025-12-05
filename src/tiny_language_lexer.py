@@ -1,3 +1,12 @@
+"""Tokenizer that emits TinyLanguage tokens with source positions.
+
+The lexer handles keywords, operators, literals, and comments, producing
+``Token`` instances that carry start/stop positions for detailed error
+reporting. It intentionally keeps the rules compact so additional language
+features can extend ``KEYWORDS`` and ``SYMBOLS`` without rewriting the core
+scanner.
+"""
+
 # ----- Lexer -----
 
 KEYWORDS = {

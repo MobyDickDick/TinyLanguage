@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Platform shims and interactive helpers shared across TinyLanguage tools.
 
 This module centralizes readline fallbacks, terminal capability detection, and
@@ -8,6 +6,8 @@ and CLI layers. The lightweight implementations are designed to degrade
 gracefully on platforms without ``termios`` support while still providing
 history and completion hooks when available.
 """
+
+from __future__ import annotations
 
 import argparse
 import difflib

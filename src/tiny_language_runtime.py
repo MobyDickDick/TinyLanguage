@@ -1,4 +1,3 @@
-# ----- Runtime -----
 """Runtime helpers: module resolution, heap management, and async utilities.
 
 This segment contains the import mechanics, concurrency primitives, and the core
@@ -6,6 +5,8 @@ runtime container used by the evaluator. Docstrings focus on public-facing
 behaviors so integrators can navigate the stitched module without reading the
 entire implementation.
 """
+
+# ----- Runtime -----
 
 
 class ReturnSignal(Exception):

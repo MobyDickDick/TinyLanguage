@@ -29,13 +29,16 @@ function createToolEnv() {
   return { ...process.env, PYTHONPATH: combined };
 }
 
-function runHelper(command, documentText, filePath, output) {
+function runHelper(command, documentText, filePath, output, extraArgs = []) {
   const helperPath = path.join(__dirname, 'python', 'vscode_helpers.py');
   const pythonExecutable = getPythonExecutable();
   const env = createToolEnv();
   const args = [helperPath, command];
   if (filePath) {
     args.push('--path', filePath);
+  }
+  if (extraArgs.length) {
+    args.push(...extraArgs);
   }
   const result = cp.spawnSync(pythonExecutable, args, {
     input: documentText,
@@ -104,6 +107,71 @@ function registerDiagnostics(output, collection) {
   return { refresh, disposables: [openListener, changeListener, saveListener] };
 }
 
+function wordPrefixAtPosition(document, position) {
+  const text = document.lineAt(position.line).text.substring(0, position.character);
+  const match = text.match(/([A-Za-z_\.][\w\.]*)$/);
+  return match ? match[1] : '';
+}
+
+function registerCompletions(output) {
+  const kindMap = {
+    function: vscode.CompletionItemKind.Function,
+    method: vscode.CompletionItemKind.Method,
+    class: vscode.CompletionItemKind.Class,
+    type: vscode.CompletionItemKind.Struct,
+    keyword: vscode.CompletionItemKind.Keyword,
+  };
+
+  return vscode.languages.registerCompletionItemProvider('tinylanguage', {
+    provideCompletionItems(document, position) {
+      const prefix = wordPrefixAtPosition(document, position);
+      const response = runHelper('completions', document.getText(), document.uri.fsPath, output, ['--prefix', prefix]);
+      if (!response.stdout) {
+        return [];
+      }
+      try {
+        const parsed = JSON.parse(response.stdout);
+        return parsed.map((item) => {
+          const completion = new vscode.CompletionItem(item.label, kindMap[item.kind] || vscode.CompletionItemKind.Text);
+          completion.insertText = item.label;
+          return completion;
+        });
+      } catch (err) {
+        output.appendLine(`[TinyLanguage] Failed to parse completions: ${err}`);
+        return [];
+      }
+    },
+  });
+}
+
+function registerHover(output) {
+  return vscode.languages.registerHoverProvider('tinylanguage', {
+    provideHover(document, position) {
+      const range = document.getWordRangeAtPosition(position, /[A-Za-z_\.]+/);
+      if (!range) {
+        return null;
+      }
+      const symbol = document.getText(range);
+      const response = runHelper('hover', document.getText(), document.uri.fsPath, output, ['--symbol', symbol]);
+      if (!response.stdout) {
+        return null;
+      }
+      try {
+        const parsed = JSON.parse(response.stdout);
+        if (!parsed) {
+          return null;
+        }
+        const markdown = new vscode.MarkdownString();
+        markdown.appendCodeblock(parsed.detail || parsed.symbol, 'tinylanguage');
+        return new vscode.Hover(markdown, range);
+      } catch (err) {
+        output.appendLine(`[TinyLanguage] Failed to parse hover payload: ${err}`);
+        return null;
+      }
+    },
+  });
+}
+
 function registerRepl(output) {
   return vscode.commands.registerCommand('tinylanguage.startRepl', () => {
     const pythonExecutable = getPythonExecutable();
@@ -148,11 +216,23 @@ function activate(context) {
   const collection = vscode.languages.createDiagnosticCollection('tinylanguage');
   const formatter = registerFormatter(output);
   const { refresh, disposables } = registerDiagnostics(output, collection);
+  const completions = registerCompletions(output);
+  const hover = registerHover(output);
   const repl = registerRepl(output);
   const runFile = registerRunFile(output);
   const refreshCommand = registerRefreshDiagnostics(output, collection, refresh);
 
-  context.subscriptions.push(output, collection, formatter, repl, runFile, refreshCommand, ...disposables);
+  context.subscriptions.push(
+    output,
+    collection,
+    formatter,
+    completions,
+    hover,
+    repl,
+    runFile,
+    refreshCommand,
+    ...disposables,
+  );
 }
 
 function deactivate() {}

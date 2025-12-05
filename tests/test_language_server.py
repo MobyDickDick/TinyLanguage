@@ -16,6 +16,13 @@ def test_completion_includes_keywords_and_namespaces():
     assert "while" in keyword_labels
 
 
+def test_completion_offers_unqualified_members():
+    server = TinyLanguageServer("namespace Tools { fn double(x) { return x * 2; } }")
+    labels = [item.label for item in server.completions("d")]
+    assert "double" in labels
+    assert "Tools.double" in [item.label for item in server.completions("Tools.")]
+
+
 def test_hover_returns_position():
     server = TinyLanguageServer("fn ping() { return 1; }")
     hover = server.hover("ping")

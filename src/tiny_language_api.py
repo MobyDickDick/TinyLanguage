@@ -9,6 +9,8 @@ to keep a small, ergonomic surface area.
 # ----- Public API -----
 
 import ast
+import os
+import sys
 from typing import List, Optional
 
 from native_vm import NativeVM
@@ -17,7 +19,7 @@ from tiny_language_codegen_llvm import LLVMCodeGenerator
 from tiny_language_highlighting import PYGMENTS_AVAILABLE, highlight_source
 
 
-def _parse_and_lint(src: str) -> List[IR]:
+def _parse_and_lint(src: str) -> List["IR"]:
     """Return a parsed program after running all linter passes.
 
     The helper centralizes parser creation and the sequence of lints so every entry
@@ -36,7 +38,7 @@ def _parse_and_lint(src: str) -> List[IR]:
     lint_unreachable_code(stmts, src)
     signatures = _collect_function_signatures(stmts)
 
-    def lint_nested(block: List[IR]) -> None:
+    def lint_nested(block: List["IR"]) -> None:
         for st in block:
             if isinstance(st, Fn):
                 lint_fn_params_used(st, src)
@@ -248,6 +250,19 @@ def _resolve_read_fn():
     return input  # Otherwise rely on the built-in input()
 
 
+def _repl_highlighting_enabled() -> bool:
+    """Return True when REPL syntax highlighting should be active."""
+
+    if not PYGMENTS_AVAILABLE:
+        return False  # Skip when pygments is not installed
+
+    env_flag = os.environ.get("TINYL_REPL_HIGHLIGHT", "").strip().lower()
+    if env_flag in {"0", "false", "off", "no"}:
+        return False  # Opt-out when users request it explicitly
+
+    return sys.stdout.isatty()  # Only highlight when writing to an interactive TTY
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     """CLI entry point for running files, snippets, REPL sessions, or codegen."""
     parser = argparse.ArgumentParser(description="Run a TinyLanguage program from a file")
@@ -329,7 +344,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         runtime = Runtime("")
         env = Environment(parent=None, namespace=None, runtime=runtime)
         scope_provider = lambda: list(KEYWORDS | BUILTINS | set(env.all_names()))
-        highlight_enabled = PYGMENTS_AVAILABLE and sys.stdout.isatty()
+        highlight_enabled = _repl_highlighting_enabled()
         _configure_readline(history_path, scope_provider)
         read_fn = _resolve_read_fn()
         try:

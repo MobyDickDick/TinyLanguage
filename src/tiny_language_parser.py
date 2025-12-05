@@ -1,3 +1,11 @@
+"""Parser that turns TinyLanguage tokens into AST nodes.
+
+The parser consumes tokens from ``Lexer`` and builds the lightweight IR objects
+defined in ``tiny_language_ast.py``. Error spans are attached eagerly so later
+stages (linter, runtime) can surface precise diagnostics without re-parsing the
+source text.
+"""
+
 # ----- Parser -----
 
 

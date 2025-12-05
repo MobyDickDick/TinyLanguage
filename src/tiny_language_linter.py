@@ -1,3 +1,11 @@
+"""Static checks for TinyLanguage programs prior to execution.
+
+The linter enforces style and safety rules such as unused bindings, consistent
+import ordering, and exhaustiveness expectations. It runs immediately after
+parsing so later stages can assume the IR has already been validated for common
+footguns.
+"""
+
 from typing import Any, Dict, List, Optional, Set
 
 from tiny_language_ast import *

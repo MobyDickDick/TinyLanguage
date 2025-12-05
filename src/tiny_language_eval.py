@@ -1,4 +1,12 @@
-# ----- Evaluation -----
+
+    # ----- Evaluation -----
+    # AST evaluator that executes statements against the runtime environment.
+    #
+    # These helpers interpret TinyLanguage IR directly, handling control flow,
+    # function calls, heap operations, and async primitives. They are stitched
+    # into the original monolithic interpreter so other modules can share the
+    # same execution semantics.
+
     def eval_block(self, stmts: List[IR], env: "Environment", namespace: Optional[str] = None) -> Any:
         for st in stmts:
             res = self.eval_stmt(st, env, namespace)

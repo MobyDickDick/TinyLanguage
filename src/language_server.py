@@ -15,10 +15,14 @@ from tiny_language import (
     BUILTINS,
     KEYWORDS,
     Lexer,
+    MethodDef,
     Namespace,
     Parser,
     SourcePos,
+    TypeDef,
     TinyLangError,
+    ClassDef,
+    Fn,
     _collect_function_signatures,
     _line_info,
     lint_bare_call_results,
@@ -66,7 +70,26 @@ class TinyLanguageServer:
         self.parser = Parser(Lexer(source), source)
         self.stmts = self.parser.parse()
         self.symbols: Dict[str, SourcePos] = {}
+        self.symbol_kinds: Dict[str, str] = {}
+        self.symbol_details: Dict[str, str] = {}
         self._index_symbols(self.stmts)
+
+    def _record_symbol(self, name: str, pos: SourcePos, kind: str, detail: Optional[str]) -> None:
+        """Store a symbol with supplemental metadata for hover/completion."""
+
+        self.symbols[name] = pos
+        self.symbol_kinds[name] = kind
+        if detail:
+            self.symbol_details[name] = detail
+
+    def _format_signature(self, name: str, params: List, return_type: Optional[str]) -> str:
+        parts = []
+        for param in params:
+            suffix = f": {param.type}" if getattr(param, "type", None) else ""
+            parts.append(f"{param.name}{suffix}")
+        signature = ", ".join(parts)
+        return_annotation = f" -> {return_type}" if return_type else ""
+        return f"{name}({signature}){return_annotation}".strip()
 
     def _index_symbols(self, stmts, prefix: str = "") -> None:
         """Recursively collect symbol names with their source positions."""
@@ -78,7 +101,25 @@ class TinyLanguageServer:
                 name = getattr(st, "name")
                 qualified = f"{prefix}.{name}" if prefix else name
                 if isinstance(name, str):
-                    self.symbols[qualified] = getattr(st, "pos", SourcePos.origin())
+                    pos = getattr(st, "pos", SourcePos.origin())
+                    kind = "identifier"
+                    detail: Optional[str] = None
+                    if isinstance(st, Fn):
+                        kind = "function"
+                        detail = f"fn {self._format_signature(name, st.params, st.return_type)}"
+                    elif isinstance(st, MethodDef):
+                        kind = "method"
+                        detail = f"method {self._format_signature(name, st.params, st.return_type)}"
+                    elif isinstance(st, ClassDef):
+                        kind = "class"
+                    elif isinstance(st, TypeDef):
+                        kind = "type"
+                    self._record_symbol(qualified, pos, kind, detail)
+                    if isinstance(st, ClassDef):
+                        for method in st.methods:
+                            method_name = f"{qualified}.{method.name}" if qualified else method.name
+                            method_detail = f"method {self._format_signature(method.name, method.params, method.return_type)}"
+                            self._record_symbol(method_name, getattr(method, "pos", pos), "method", method_detail)
 
     def completions(self, prefix: str = "") -> List[CompletionItem]:
         """Return completion items for keywords, builtins, and indexed symbols."""
@@ -93,14 +134,15 @@ class TinyLanguageServer:
                 candidates.add(symbol.split(".")[-1])
 
         filtered = sorted([c for c in candidates if c.startswith(prefix)])
-        return [CompletionItem(label=c) for c in filtered]
+        return [CompletionItem(label=c, kind=self.symbol_kinds.get(c, "identifier")) for c in filtered]
 
     def hover(self, symbol: str) -> Optional[HoverResult]:
         """Produce hover info for ``symbol`` if the name is known."""
         if symbol not in self.symbols:
             return None
         pos = self.symbols[symbol]
-        return HoverResult(symbol=symbol, detail="TinyLanguage symbol", position=(pos.line, pos.col))
+        detail = self.symbol_details.get(symbol, "TinyLanguage symbol")
+        return HoverResult(symbol=symbol, detail=detail, position=(pos.line, pos.col))
 
     def diagnostics(self) -> List[Diagnostic]:
         """Run linters and parser checks, returning any diagnostics."""

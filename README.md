@@ -17,6 +17,12 @@ TinyLanguage is a learning- and transpiler-focused playground rather than a prod
 - [x] **Expand Python interop demos**: Provide additional `.tiny` programs that walk through [`docs/python_interop.md`](docs/python_interop.md) step by step, including how-to-run notes and tests.
 - [x] **Evaluate the native-compiler prototype**: Implement an alternative backend path that emits bytecode or native IR from the existing AST and runs through a small VM. Compare against the interpreter via smoke tests (arithmetic, branching, functions). See [`docs/native_compiler.md`](docs/native_compiler.md) for CLI calls, regression tests, and known limits.
 
+## VS Code debugging roadmap
+- [x] **Seed launch configuration scaffolding**: Register a TinyLanguage debug configuration type with default `launch.json` snippets and a prototype resolver that currently shells out to the interpreter via a terminal. This keeps the UX stable while the real Debug Adapter Protocol (DAP) handler is built.
+- [ ] **Add interpreter hooks for breakpoints/stepping**: Teach the Python runtime to pause at breakpoints, step through statements, and surface scopes/variables for the adapter.
+- [ ] **Implement a TinyLanguage debug adapter**: Wire a DAP server (Node or Python) that speaks to the instrumented interpreter, translating DAP requests into runtime actions.
+- [ ] **Document and test the debugger flow**: Add README/extension docs plus integration tests so launch/attach scenarios remain stable.
+
 ## Next practical steps
 - [x] **Deepen/update documentation (starting point, done)**: Cross-check the existing guides in `docs/` and bring them up to date. Specifically:
   - In [`docs/language_server_workflows.md`](docs/language_server_workflows.md), list every available LSP method with example requests/responses and add short "how to test it" snippets for the demo calls from the README section "Syntax and Features."

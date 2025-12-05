@@ -96,6 +96,22 @@ print(heap_get(ptr, 0));
 """
 
 
+def _map_operations(iterations: int) -> str:
+    return f"""
+// Insert/update/get operations to stress hash maps and value writes.
+define map = Map.new();
+define i = 0;
+define last = 0;
+while (i < {iterations}) {{
+    _ = Map.set(map, i, i + 1);
+    // Read the value back to ensure lookups participate in timing.
+    last = Map.get(map, i);
+    i = i + 1;
+}}
+print(last);
+"""
+
+
 BENCHMARKS: list[BenchmarkCase] = [
     BenchmarkCase(
         name="tight_loop",
@@ -111,6 +127,11 @@ BENCHMARKS: list[BenchmarkCase] = [
         name="heap_roundtrip",
         description="Heap writes/reads to exercise pointer and index checks",
         source=_heap_roundtrip(iterations=4000),
+    ),
+    BenchmarkCase(
+        name="map_operations",
+        description="Hash map set/get workload to exercise Map helpers",
+        source=_map_operations(iterations=2000),
     ),
 ]
 

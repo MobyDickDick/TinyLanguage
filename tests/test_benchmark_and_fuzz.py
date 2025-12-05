@@ -268,5 +268,33 @@ if hypothesis_spec:  # pragma: no cover - optional
         except Exception as exc:
             record_property("runtime_error_seed", seed)
             pytest.fail(f"unexpected runtime error for seed {seed}: {exc}")
+
+    def _arithmetic_exprs() -> st.SearchStrategy[str]:
+        leafs = st.integers(min_value=-5, max_value=5).map(str)
+
+        def _exprs() -> st.SearchStrategy[str]:
+            return st.deferred(
+                lambda: st.one_of(
+                    leafs,
+                    st.builds(
+                        lambda op, left, right: f"({left} {op} {right})",
+                        st.sampled_from(["+", "-", "*"]),
+                        leafs,
+                        leafs,
+                    ),
+                )
+            )
+
+        return _exprs()
+
+    @pytest.mark.skipif(not hypothesis_available, reason="hypothesis not installed")
+    @settings(max_examples=15, deadline=1000)
+    @given(_arithmetic_exprs())
+    def test_arithmetic_round_trip_matches_python(expr: str) -> None:
+        program = f"print({expr});"
+        output = compile_and_run(program).strip()
+
+        expected = eval(expr)  # Limited to safe literals/operators from _arithmetic_exprs
+        assert float(output) == pytest.approx(float(expected))
 else:  # pragma: no cover - optional
     hypothesis_available = False

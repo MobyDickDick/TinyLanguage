@@ -16,9 +16,11 @@ TinyLanguage includes a small set of property-based fuzz tests to catch parser o
   ```
 - Property-based fuzzing with shrinking (requires Hypothesis):
   ```bash
-  python -m pytest tests/test_benchmark_and_fuzz.py -k "shrink_on_failure or round_trip_matches_python or generated_statements_execute"
+  python -m pytest tests/test_benchmark_and_fuzz.py -k "shrink_on_failure or round_trip_matches_python or generated_statements_execute or match_python_reference"
   ```
   These tests generate arithmetic and control-flow snippets, run them through `compile_and_run`, and rely on Hypothesis to shrink any failing seed.
+  The `match_python_reference` case additionally builds small programs with definitions, assignments, and `print` statements,
+  executes them both in TinyLanguage and a tiny Python reference evaluator, and checks that every emitted line matches.
 
 ## Tips
 - If a generated program times out, re-run the test with the recorded seed to reproduce locally and adjust `_run_program_with_timeout` in the test if your machine is unusually slow.

@@ -85,3 +85,17 @@ def test_debug_adapter_runs_and_surfaces_state(debug_server):
     variables_resp = _response(messages, "variables")
     rendered = {var["name"]: var["value"] for var in variables_resp["body"]["variables"]}
     assert rendered.get("result") == "5"
+
+
+def test_launch_without_program_returns_error(debug_server):
+    server, messages, _ = debug_server
+
+    server.handle_initialize({"seq": 1, "command": "initialize"})
+    server.handle_launch({"seq": 2, "command": "launch", "arguments": {}})
+
+    launch_resp = _response(messages, "launch")
+    assert launch_resp["success"] is False
+    assert "program" in launch_resp["message"]
+
+    output_events = [m for m in messages if m.get("type") == "event" and m.get("event") == "output"]
+    assert output_events

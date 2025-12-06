@@ -2,7 +2,7 @@
   "name": "tinylanguage-vscode",
   "displayName": "TinyLanguage",
   "description": "Syntax highlighting, formatting, REPL integration, and diagnostics for TinyLanguage programs.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "tinylanguage",
   "engines": {
     "vscode": "^1.85.0"
@@ -12,6 +12,8 @@
   ],
   "activationEvents": [
     "onLanguage:tinylanguage",
+    "onDebug",
+    "onDebugInitialConfigurations:tinylanguage",
     "onCommand:tinylanguage.startRepl",
     "onCommand:tinylanguage.runFile",
     "onCommand:tinylanguage.formatDocument",

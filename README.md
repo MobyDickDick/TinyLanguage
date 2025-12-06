@@ -48,6 +48,11 @@ TinyLanguage is a learning- and transpiler-focused playground rather than a prod
   - [x] LSP enhancements (autocomplete/hover for the VSCode extension) via the VS Code helper commands
   - [x] Extend performance microbenchmarks with interpreter/runtime map operations (see [`benchmarks/microbenchmarks.py`](benchmarks/microbenchmarks.py)).
 
+## Offene Aufgaben (aus der letzten Diskussion)
+- [ ] **LLVM-Emitter weiter ausbauen** (gestartet): Der experimentelle Pfad in `tiny_language_codegen_llvm.py` soll mehr Native-IR-Operationen abdecken und über CLI/API wählbar bleiben. Erste Schritte aus diesem Run: POP-Unterstützung und ein zusätzlicher Test, der das Verhalten absichert.
+- [ ] **Python-Bridge für Feature-Durchreichung**: Ein TinyLanguage-Modul und Python-Hilfen sollen die FFI vereinfachen (Import/Calls/Allowlist/Timeouts) und bidirektionale Aufrufe kapseln. Demos und Tests würden typische Datentyp-Mappings und Sandbox-Grenzen prüfen.
+- [ ] **Rosetta-Code-Sync für lokale Pfade**: Das bestehende Skript `examples/rosetta/copy_rosetta_samples.py` könnte konfigurierbare Pfade/Filter/Delays erhalten, um fehlende Python-Beispiele (z.B. `./examples/rosetta/python`) abzuholen und optional direkt den Transpiler anzustoßen.
+
 ## Syntax and Features
 
 ### Mini tutorial: variables, control flow, and functions

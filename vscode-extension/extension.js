@@ -203,10 +203,35 @@ function registerRunFile(output) {
 }
 
 function registerDebugAdapterExecutable(output) {
+  function probeDebugAdapter(pythonExecutable, adapterPath, env) {
+    const probe = cp.spawnSync(pythonExecutable, [adapterPath, '--self-test'], {
+      encoding: 'utf-8',
+      env,
+    });
+    if (probe.error) {
+      output.appendLine(`[TinyLanguage] Debug adapter self-test failed to start: ${probe.error.message}`);
+      return false;
+    }
+    if (probe.status !== 0) {
+      output.appendLine(
+        `[TinyLanguage] Debug adapter self-test exited with ${probe.status}: ${probe.stderr || probe.stdout || '<no output>'}`,
+      );
+      return false;
+    }
+    const message = probe.stdout?.trim() || 'ok';
+    output.appendLine(`[TinyLanguage] Debug adapter self-test succeeded: ${message}`);
+    return true;
+  }
+
   return vscode.commands.registerCommand('tinylanguage.getDebugAdapterExecutable', () => {
     const pythonExecutable = getPythonExecutable();
     const adapterPath = path.join(__dirname, 'python', 'tiny_debug_adapter.py');
     const env = createToolEnv();
+    const ok = probeDebugAdapter(pythonExecutable, adapterPath, env);
+    if (!ok) {
+      vscode.window.showWarningMessage('TinyLanguage debug adapter self-test failed. See output for details.');
+      return undefined;
+    }
     output.appendLine(`[TinyLanguage] Launching debug adapter via ${pythonExecutable} ${adapterPath}`);
     return new vscode.DebugAdapterExecutable(pythonExecutable, [adapterPath], { env });
   });

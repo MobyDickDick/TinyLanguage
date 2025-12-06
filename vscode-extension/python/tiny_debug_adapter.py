@@ -230,9 +230,31 @@ class DAPServer:
     def handle_launch(self, request: Dict[str, Any]) -> None:
         args = request.get("arguments", {})
         program = args.get("program")
+        if not program:
+            message = "Launch request is missing required 'program' path"
+            self._log(message)
+            self._send(
+                {
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "output",
+                    "body": {"category": "stderr", "output": message + "\n"},
+                }
+            )
+            response = {
+                "type": "response",
+                "seq": self._next_seq(),
+                "request_seq": request.get("seq", 0),
+                "command": "launch",
+                "success": False,
+                "message": message,
+                "body": {},
+            }
+            self._send(response)
+            return
         self._launch_received = True
         self._launch_args = args
-        self._program = Path(program) if program else None
+        self._program = Path(program)
         self._log(f"Launch request for {self._program}")
         self._start_program_thread("launch")
         response = {

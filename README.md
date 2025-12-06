@@ -313,6 +313,7 @@ Detailed notes live in [`docs/stdlib_extensions.md`](docs/stdlib_extensions.md),
   - If you prefer per-file executability, add a shebang such as `#!/usr/bin/env -S ./tiny_language` to the top of your `.tiny` file, mark it executable (`chmod +x your_program.tiny`), and run it directly with `./your_program.tiny`.
 - **Python CLI wrapper**: `python -m tiny_lang_cli path/to/program.tiny` uses the same interpreter but can also switch backends with `--backend interpreter|python|native`. Inline snippets remain available via `--source "print(1+2);"`. Add `--emit-llvm` to print a textual LLVM IR prototype for arithmetic-heavy snippets instead of executing them.
 - **Test suite**: `python -m pytest` runs all tests. Target individual files with commands like `python -m pytest tests/test_tiny_language.py -k class`.
+  - On PowerShell, avoid entering just `test` after activating the virtual environment; `test` is a shell built-in that immediately exits without running the project. Use the explicit `python -m pytest` invocation (or `python run_all.py` for a combined smoke test) from the repository root instead.
 
 ### Optional type hints
 - **Syntax**: Parameters and return types can be annotated with a trailing `?` (for example, `fn greet(name: string?) -> string?`). The suffix allows `Null` values in addition to the annotated type.

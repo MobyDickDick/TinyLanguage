@@ -13,6 +13,7 @@ import os
 import queue
 import sys
 import threading
+from datetime import datetime
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -39,9 +40,34 @@ class DAPServer:
         self._breakpoints: Dict[str, List[int]] = {}
         self._thread: Optional[threading.Thread] = None
         self._program: Optional[Path] = None
+        self._launch_args: Dict[str, Any] = {}
         self._namespace: Optional[str] = None
+        self._launch_received = False
+        self._configuration_done = False
         self._variable_handles: Dict[int, VariableHandle] = {}
         self._next_handle = 1
+        self._log_lock = threading.Lock()
+        self._log_handle = self._open_log_file()
+
+    def _open_log_file(self):
+        log_path = os.environ.get("TINYLANGUAGE_DAP_LOG")
+        if not log_path:
+            return None
+        try:
+            path = Path(log_path).expanduser()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            return path.open("a", encoding="utf-8")
+        except OSError as exc:  # pragma: no cover - logging opt-in
+            print(f"Failed to open debug log file {log_path}: {exc}", file=sys.stderr)
+            return None
+
+    def _log(self, message: str) -> None:
+        if not self._log_handle:
+            return
+        timestamp = datetime.utcnow().isoformat() + "Z"
+        with self._log_lock:
+            self._log_handle.write(f"[{timestamp}] {message}\n")
+            self._log_handle.flush()
 
     # ----- DAP plumbing -----
     def _read_message(self) -> Optional[Dict[str, Any]]:
@@ -61,11 +87,14 @@ class DAPServer:
         body = sys.stdin.buffer.read(length)
         if not body:
             return None
-        return json.loads(body.decode("utf-8"))
+        message = json.loads(body.decode("utf-8"))
+        self._log(f"<-- {message}")
+        return message
 
     def _send(self, payload: Dict[str, Any]) -> None:
         data = json.dumps(payload)
         message = f"Content-Length: {len(data)}\r\n\r\n{data}"
+        self._log(f"--> {payload}")
         sys.stdout.write(message)
         sys.stdout.flush()
 
@@ -85,6 +114,7 @@ class DAPServer:
     def _debugger(self):
         def on_pause(snapshot):
             self._paused_snapshot = snapshot
+            self._log("Paused at breakpoint")
             self._send({
                 "type": "event",
                 "seq": self._next_seq(),
@@ -95,6 +125,7 @@ class DAPServer:
                 command = self._command_queue.get(timeout=60.0)
             except queue.Empty:
                 command = "continue"
+            self._log(f"Dequeued command from client: {command}")
             return command
 
         dbg = Debugger(on_pause=on_pause)
@@ -103,6 +134,7 @@ class DAPServer:
         return dbg
 
     def _run_program(self, program: Path) -> None:
+        self._log(f"Starting program run: {program}")
         try:
             source = program.read_text(encoding="utf-8")
         except Exception as exc:  # pragma: no cover - I/O failure
@@ -118,6 +150,7 @@ class DAPServer:
         try:
             compile_and_run(source, module_namespace=self._namespace, module_path=program, debugger=debugger)
         except Exception as exc:  # pragma: no cover - surfaced via output event
+            self._log(f"Runtime error: {exc}")
             self._send({
                 "type": "event",
                 "seq": self._next_seq(),
@@ -132,6 +165,19 @@ class DAPServer:
         })
 
     # ----- Request handlers -----
+    def _start_program_thread(self, trigger: str) -> None:
+        if self._thread and self._thread.is_alive():
+            self._log(f"Start skipped; program already running (trigger={trigger})")
+            return
+        if not self._program:
+            self._log(f"Start skipped; no program set yet (trigger={trigger})")
+            return
+        if trigger == "launch" and not self._configuration_done:
+            self._log("Launch received before configurationDone; starting anyway")
+        self._log(f"Starting program thread (trigger={trigger})")
+        self._thread = threading.Thread(target=self._run_program, args=(self._program,), daemon=True)
+        self._thread.start()
+
     def handle_initialize(self, request: Dict[str, Any]) -> None:
         response = {
             "type": "response",
@@ -155,6 +201,7 @@ class DAPServer:
         if path:
             lines = [bp.get("line") for bp in args.get("breakpoints", []) if bp.get("line")]
             self._breakpoints[path] = lines
+            self._log(f"Updated breakpoints for {path}: {lines}")
             verified = [{"verified": True, "line": line} for line in lines]
         response = {
             "type": "response",
@@ -166,10 +213,28 @@ class DAPServer:
         }
         self._send(response)
 
+    def handle_set_exception_breakpoints(self, request: Dict[str, Any]) -> None:
+        # TinyLanguage does not currently differentiate exception types, but the
+        # VS Code client always sends this request during configuration. Reply
+        # with an empty set of breakpoints so the session can proceed.
+        response = {
+            "type": "response",
+            "seq": self._next_seq(),
+            "request_seq": request["seq"],
+            "command": "setExceptionBreakpoints",
+            "success": True,
+            "body": {"breakpoints": []},
+        }
+        self._send(response)
+
     def handle_launch(self, request: Dict[str, Any]) -> None:
         args = request.get("arguments", {})
         program = args.get("program")
+        self._launch_received = True
+        self._launch_args = args
         self._program = Path(program) if program else None
+        self._log(f"Launch request for {self._program}")
+        self._start_program_thread("launch")
         response = {
             "type": "response",
             "seq": self._next_seq(),
@@ -179,11 +244,10 @@ class DAPServer:
             "body": {},
         }
         self._send(response)
-        if self._program:
-            self._thread = threading.Thread(target=self._run_program, args=(self._program,), daemon=True)
-            self._thread.start()
 
     def handle_configuration_done(self, request: Dict[str, Any]) -> None:
+        self._configuration_done = True
+        self._start_program_thread("configurationDone")
         response = {
             "type": "response",
             "seq": self._next_seq(),
@@ -282,8 +346,25 @@ class DAPServer:
         }
         self._send(response)
 
+    def _handle_unknown(self, request: Dict[str, Any]) -> None:
+        # Respond to unexpected requests so the client does not hang waiting for
+        # a reply. Unknown commands are logged for easier diagnostics.
+        command = request.get("command", "<unknown>")
+        self._log(f"Received unsupported request: {command}")
+        if request.get("type") == "request":
+            response = {
+                "type": "response",
+                "seq": self._next_seq(),
+                "request_seq": request.get("seq", 0),
+                "command": command,
+                "success": False,
+                "message": f"Unsupported request: {command}",
+            }
+            self._send(response)
+
     def _enqueue(self, command: str) -> None:
         self._command_queue.put(command)
+        self._log(f"Enqueued command: {command}")
         response = {
             "type": "event",
             "seq": self._next_seq(),
@@ -323,6 +404,7 @@ class DAPServer:
         handlers = {
             "initialize": self.handle_initialize,
             "setBreakpoints": self.handle_set_breakpoints,
+            "setExceptionBreakpoints": self.handle_set_exception_breakpoints,
             "launch": self.handle_launch,
             "configurationDone": self.handle_configuration_done,
             "threads": self.handle_threads,
@@ -335,13 +417,17 @@ class DAPServer:
             "stepOut": lambda req: self.handle_continue(req, "step_out"),
             "disconnect": self.handle_disconnect,
         }
+        self._log("Debug adapter started")
         while True:
             message = self._read_message()
             if message is None:
+                self._log("No more messages; shutting down")
                 break
             command = message.get("command")
             if command in handlers:
                 handlers[command](message)
+            else:
+                self._handle_unknown(message)
 
 
 def _self_test() -> None:
@@ -363,7 +449,8 @@ if __name__ == "__main__":
         except Exception as exc:  # pragma: no cover - diagnostic path
             print(f"Self-test failed: {exc}", file=sys.stderr)
             sys.exit(1)
-        sys.exit(0)
-
-    server = DAPServer()
-    server.run()
+    else:
+        try:
+            DAPServer().run()
+        except KeyboardInterrupt:  # pragma: no cover - graceful shutdown
+            pass

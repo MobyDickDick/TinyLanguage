@@ -37,6 +37,27 @@ The TinyLanguage VS Code extension is distributed under the [Creative Commons At
 3. Start debugging via **Run and Debug → TinyLanguage: Launch active file (prototype)**. If the configuration list is empty, ensure the extension shows as enabled in **Extensions** and reload the window so VS Code picks up the `tinylanguage` debugger contribution.
 4. If VS Code reports `Couldn't find a debug adapter descriptor` for `tinylanguage`, update to version `0.1.1` (or newer) and reload the window so the debugger activation events are registered.
 
+#### Launch configuration reference
+
+The default launch entry should look like this (comments are allowed because VS Code treats `launch.json` as JSON with comments):
+
+```jsonc
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "TinyLanguage: Launch active file (prototype)",
+      "type": "tinylanguage",
+      "request": "launch",
+      "program": "${file}", // the active .tiny file
+      "runtime": "${workspaceFolder}/src/tiny_language.py" // Python interpreter path
+    }
+  ]
+}
+```
+
+The adapter starts the Python runtime shown in `runtime`. If the interpreter is not on your PATH or lives elsewhere, point `runtime` to the correct executable or virtual environment. When a launch fails, the extension writes activation issues to **Output → Log (Extension Host)** and adapter startup messages to **Output → TinyLanguage**, which helps pinpoint whether activation or runtime resolution failed.
+
 ## Roadmap / TODO
 
 This section gathers upcoming tasks for TinyLanguage.

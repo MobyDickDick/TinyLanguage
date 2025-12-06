@@ -240,7 +240,7 @@ function registerDebugAdapterExecutable(output) {
     return true;
   }
 
-  return vscode.commands.registerCommand('tinylanguage.getDebugAdapterExecutable', () => {
+  function createAdapterExecutable() {
     const pythonExecutable = getPythonExecutable();
     const adapterPath = path.join(__dirname, 'python', 'tiny_debug_adapter.py');
     const env = createToolEnv();
@@ -256,7 +256,16 @@ function registerDebugAdapterExecutable(output) {
     }
     output.appendLine(`[TinyLanguage] Launching debug adapter via ${pythonExecutable} ${adapterPath}`);
     return new vscode.DebugAdapterExecutable(pythonExecutable, [adapterPath], { env });
+  }
+
+  const command = vscode.commands.registerCommand('tinylanguage.getDebugAdapterExecutable', () => createAdapterExecutable());
+  const factory = vscode.debug.registerDebugAdapterDescriptorFactory('tinylanguage', {
+    createDebugAdapterDescriptor() {
+      return createAdapterExecutable();
+    },
   });
+
+  return [command, factory];
 }
 
 function registerDebugConfigurations(output) {
@@ -391,7 +400,7 @@ function activate(context) {
   const hover = registerHover(output);
   const repl = registerRepl(output);
   const runFile = registerRunFile(output);
-  const debugAdapterCommand = registerDebugAdapterExecutable(output);
+  const [debugAdapterCommand, debugAdapterFactory] = registerDebugAdapterExecutable(output);
   const debugConfigProvider = registerDebugConfigurations(output);
   const refreshCommand = registerRefreshDiagnostics(output, collection, refresh);
 
@@ -404,6 +413,7 @@ function activate(context) {
     repl,
     runFile,
     debugAdapterCommand,
+    debugAdapterFactory,
     debugConfigProvider,
     refreshCommand,
     ...disposables,

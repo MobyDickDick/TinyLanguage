@@ -239,6 +239,14 @@ function registerDebugConfigurations(output) {
 
       const pythonExecutable = config.python || getPythonExecutable();
       const runtimePath = config.runtime || getRuntimePath();
+      const workspaceRoot = folder?.uri.fsPath || 'unknown workspace';
+      output.appendLine(`[TinyLanguage] Resolving debug configuration for ${workspaceRoot}`);
+      output.appendLine(`[TinyLanguage]  • Program: ${config.program}`);
+      output.appendLine(`[TinyLanguage]  • Python executable: ${pythonExecutable}`);
+      output.appendLine(`[TinyLanguage]  • Runtime: ${runtimePath || '<not set>'}`);
+      if (!runtimePath) {
+        output.appendLine('[TinyLanguage] Warning: runtime path is empty; set tinylanguage.runtimePath in settings if a custom interpreter is required.');
+      }
       const merged = {
         ...config,
         type,

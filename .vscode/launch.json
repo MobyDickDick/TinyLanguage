@@ -2,13 +2,6 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "TinyLanguage: Launch active file (prototype)",
-      "type": "tinylanguage",
-      "request": "launch",
-      "program": "${file}", // aktuelles .tiny-File
-      "runtime": "${workspaceFolder}/src/tiny_language.py" // Interpreter-Pfad
-    },
-    {
       "name": "TinyLanguage: Debug all_features.tiny",
       "type": "tinylanguage",
       "request": "launch",

@@ -129,6 +129,6 @@
   "devDependencies": {},
   "repository": {
     "type": "git",
-    "url": "https://example.com/tinylanguage-vscode"
+    "url": "https://github.com/tinylanguage/TinyLanguage.git"
   }
 }

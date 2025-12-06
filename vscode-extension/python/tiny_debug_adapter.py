@@ -40,6 +40,7 @@ class DAPServer:
         self._breakpoints: Dict[str, List[int]] = {}
         self._thread: Optional[threading.Thread] = None
         self._program: Optional[Path] = None
+        self._launch_args: Dict[str, Any] = {}
         self._namespace: Optional[str] = None
         self._variable_handles: Dict[int, VariableHandle] = {}
         self._next_handle = 1
@@ -197,9 +198,24 @@ class DAPServer:
         }
         self._send(response)
 
+    def handle_set_exception_breakpoints(self, request: Dict[str, Any]) -> None:
+        # TinyLanguage does not currently differentiate exception types, but the
+        # VS Code client always sends this request during configuration. Reply
+        # with an empty set of breakpoints so the session can proceed.
+        response = {
+            "type": "response",
+            "seq": self._next_seq(),
+            "request_seq": request["seq"],
+            "command": "setExceptionBreakpoints",
+            "success": True,
+            "body": {"breakpoints": []},
+        }
+        self._send(response)
+
     def handle_launch(self, request: Dict[str, Any]) -> None:
         args = request.get("arguments", {})
         program = args.get("program")
+        self._launch_args = args
         self._program = Path(program) if program else None
         self._log(f"Launch request for {self._program}")
         response = {
@@ -211,11 +227,14 @@ class DAPServer:
             "body": {},
         }
         self._send(response)
-        if self._program:
-            self._thread = threading.Thread(target=self._run_program, args=(self._program,), daemon=True)
-            self._thread.start()
 
     def handle_configuration_done(self, request: Dict[str, Any]) -> None:
+        if self._program and (not self._thread or not self._thread.is_alive()):
+            self._log("Configuration complete; starting program thread")
+            self._thread = threading.Thread(target=self._run_program, args=(self._program,), daemon=True)
+            self._thread.start()
+        else:
+            self._log("Configuration complete; no program to start")
         response = {
             "type": "response",
             "seq": self._next_seq(),
@@ -314,6 +333,22 @@ class DAPServer:
         }
         self._send(response)
 
+    def _handle_unknown(self, request: Dict[str, Any]) -> None:
+        # Respond to unexpected requests so the client does not hang waiting for
+        # a reply. Unknown commands are logged for easier diagnostics.
+        command = request.get("command", "<unknown>")
+        self._log(f"Received unsupported request: {command}")
+        if request.get("type") == "request":
+            response = {
+                "type": "response",
+                "seq": self._next_seq(),
+                "request_seq": request.get("seq", 0),
+                "command": command,
+                "success": False,
+                "message": f"Unsupported request: {command}",
+            }
+            self._send(response)
+
     def _enqueue(self, command: str) -> None:
         self._command_queue.put(command)
         self._log(f"Enqueued command: {command}")
@@ -356,6 +391,7 @@ class DAPServer:
         handlers = {
             "initialize": self.handle_initialize,
             "setBreakpoints": self.handle_set_breakpoints,
+            "setExceptionBreakpoints": self.handle_set_exception_breakpoints,
             "launch": self.handle_launch,
             "configurationDone": self.handle_configuration_done,
             "threads": self.handle_threads,
@@ -377,6 +413,8 @@ class DAPServer:
             command = message.get("command")
             if command in handlers:
                 handlers[command](message)
+            else:
+                self._handle_unknown(message)
 
 
 def _self_test() -> None:

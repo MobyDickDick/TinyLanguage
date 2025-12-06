@@ -336,8 +336,18 @@ function registerDebugConfigurations(output) {
 
       const workspaceRoot = folder?.uri.fsPath || 'unknown workspace';
       const pythonExecutable = config.python || getPythonExecutable();
-      const runtimePath = config.runtime || getRuntimePath();
-      const runtimeExists = runtimePath ? fs.existsSync(runtimePath) : false;
+      let runtimePath = config.runtime || getRuntimePath();
+      let runtimeExists = runtimePath ? fs.existsSync(runtimePath) : false;
+      if (!runtimeExists) {
+        const bundledRuntime = path.join(__dirname, '..', 'src', 'tiny_language.py');
+        if (fs.existsSync(bundledRuntime)) {
+          output.appendLine(
+            `[TinyLanguage] Runtime not found at ${runtimePath || '<empty>'}; using bundled runtime ${bundledRuntime}.`,
+          );
+          runtimePath = bundledRuntime;
+          runtimeExists = true;
+        }
+      }
 
       if (!config.program) {
         vscode.window.showWarningMessage('No TinyLanguage file specified for debugging.');

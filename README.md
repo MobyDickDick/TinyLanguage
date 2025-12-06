@@ -34,6 +34,7 @@ TinyLanguage is a learning- and transpiler-focused playground rather than a prod
 - **Feature Cheat Sheet**: [`docs/feature_cheat_sheet.md`](docs/feature_cheat_sheet.md) summarizes the core constructs with short notes on the corresponding `.tiny` demos.
 - **Bundled run/test commands**: [`docs/demo_run_commands.md`](docs/demo_run_commands.md) lists interpreter runs, native-backend comparisons, Python interop demos, and language-server CLI checks. `python run_all.py` remains a good all-in-one run.
 - **Fuzzing guide**: [`docs/fuzzing.md`](docs/fuzzing.md) shows how to enable the optional Hypothesis-based fuzz tests and re-run failing seeds locally.
+- **Executable builds**: [`docs/building_executables.md`](docs/building_executables.md) explains how to bundle TinyLanguage into a standalone Windows `.exe` (and the POSIX variant) with PyInstaller, including the required `--add-data` flags.
 
 ## Backlog: next possible tasks
 - [x] **Prototype an LLVM backend**: Explore emitting LLVM IR (e.g., via `llvmlite`) for constants, variables, and arithmetic, with a CLI switch like `--emit-llvm` to generate IR or invoke `llc`/`clang`.

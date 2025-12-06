@@ -344,6 +344,26 @@ class DAPServer:
                 handlers[command](message)
 
 
+def _self_test() -> None:
+    details = {
+        "python": sys.executable,
+        "adapter": str(Path(__file__).resolve()),
+        "cwd": str(Path.cwd()),
+        "src_root": str(SRC_ROOT),
+        "src_root_exists": SRC_ROOT.exists(),
+        "tiny_language_loaded": Debugger is not None and compile_and_run is not None,
+    }
+    print(json.dumps(details, indent=2))
+
+
 if __name__ == "__main__":
+    if "--self-test" in sys.argv:
+        try:
+            _self_test()
+        except Exception as exc:  # pragma: no cover - diagnostic path
+            print(f"Self-test failed: {exc}", file=sys.stderr)
+            sys.exit(1)
+        sys.exit(0)
+
     server = DAPServer()
     server.run()

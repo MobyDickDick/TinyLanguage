@@ -398,7 +398,8 @@ if __name__ == "__main__":
         except Exception as exc:  # pragma: no cover - diagnostic path
             print(f"Self-test failed: {exc}", file=sys.stderr)
             sys.exit(1)
-        sys.exit(0)
-
-    server = DAPServer()
-    server.run()
+    else:
+        try:
+            DAPServer().run()
+        except KeyboardInterrupt:  # pragma: no cover - graceful shutdown
+            pass

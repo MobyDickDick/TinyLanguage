@@ -7,7 +7,9 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Programming Languages"],
+  "categories": [
+    "Programming Languages"
+  ],
   "activationEvents": [
     "onLanguage:tinylanguage",
     "onCommand:tinylanguage.startRepl",
@@ -22,8 +24,13 @@
     "languages": [
       {
         "id": "tinylanguage",
-        "aliases": ["TinyLanguage", "tinylanguage"],
-        "extensions": [".tiny"],
+        "aliases": [
+          "TinyLanguage",
+          "tinylanguage"
+        ],
+        "extensions": [
+          ".tiny"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
@@ -86,11 +93,15 @@
       {
         "type": "tinylanguage",
         "label": "TinyLanguage",
-        "languages": ["tinylanguage"],
+        "languages": [
+          "tinylanguage"
+        ],
         "adapterExecutableCommand": "tinylanguage.getDebugAdapterExecutable",
         "configurationAttributes": {
           "launch": {
-            "required": ["program"],
+            "required": [
+              "program"
+            ],
             "properties": {
               "program": {
                 "type": "string",
@@ -107,7 +118,7 @@
               "stopOnEntry": {
                 "type": "boolean",
                 "default": false,
-                "description": "Reserved for future breakpoint support."
+                "description": "Pause on the first line of the program before executing."
               }
             }
           }
@@ -123,6 +134,11 @@
             "stopOnEntry": false
           }
         ]
+      }
+    ],
+    "breakpoints": [
+      {
+        "language": "tinylanguage"
       }
     ]
   },

@@ -133,3 +133,20 @@ def test_breakpoints_follow_module_namespace(monkeypatch, tmp_path):
 
     assert captured
     assert captured[-1] == server._namespace_for_path(program)
+
+
+def test_program_output_is_forwarded(debug_server):
+    _, server, messages, program = debug_server
+
+    program.write_text("print(42);", encoding="utf-8")
+    server._command_queue.put("continue")
+
+    server.handle_initialize({"seq": 1, "command": "initialize"})
+    server.handle_launch({"seq": 2, "command": "launch", "arguments": {"program": str(program)}})
+    server.handle_configuration_done({"seq": 3, "command": "configurationDone"})
+
+    server._thread.join(timeout=5)
+    assert not server._thread.is_alive()
+
+    output_events = [m for m in messages if m.get("type") == "event" and m.get("event") == "output"]
+    assert any("42" in evt.get("body", {}).get("output", "") for evt in output_events)

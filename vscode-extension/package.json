@@ -11,6 +11,16 @@
     "Programming Languages"
   ],
   "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:tinylanguage",
+    "onCommand:tinylanguage.startRepl",
+    "onCommand:tinylanguage.runFile",
+    "onCommand:tinylanguage.formatDocument",
+    "onCommand:tinylanguage.refreshDiagnostics",
+    "onCommand:tinylanguage.getDebugAdapterExecutable",
+    "onDebugResolve:tinylanguage",
+    "onDebugInitialConfigurations"
+  ],
   "contributes": {
     "languages": [
       {

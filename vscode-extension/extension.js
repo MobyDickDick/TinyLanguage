@@ -214,6 +214,22 @@ function registerDebugAdapterExecutable(output) {
 
 function registerDebugConfigurations(output) {
   const type = 'tinylanguage';
+  function describePython(pythonExecutable) {
+    try {
+      const probe = cp.spawnSync(pythonExecutable, ['-c', 'import sys; print(sys.executable)'], {
+        encoding: 'utf-8',
+      });
+      if (probe.error) {
+        return `not found (${probe.error.message})`;
+      }
+      if (probe.status !== 0) {
+        return `unavailable (exit ${probe.status}: ${probe.stderr.trim()})`;
+      }
+      return probe.stdout.trim();
+    } catch (err) {
+      return `not found (${err.message})`;
+    }
+  }
   const provider = {
     provideDebugConfigurations(folder) {
       const runtimePath = getRuntimePath() || '${workspaceFolder}/src/tiny_language.py';
@@ -265,6 +281,7 @@ function registerDebugConfigurations(output) {
       const workspaceRoot = folder?.uri.fsPath || 'unknown workspace';
       const pythonExecutable = config.python || getPythonExecutable();
       const runtimePath = config.runtime || getRuntimePath();
+      const runtimeExists = runtimePath ? fs.existsSync(runtimePath) : false;
 
       if (!config.program) {
         vscode.window.showWarningMessage('No TinyLanguage file specified for debugging.');
@@ -276,11 +293,16 @@ function registerDebugConfigurations(output) {
 
       output.appendLine(`[TinyLanguage] Final debug configuration for ${workspaceRoot}`);
       output.appendLine(`[TinyLanguage]  • Program: ${config.program}${unresolvedTokens ? ' (contains unresolved variables)' : ''}${fileExists ? '' : ' (file not found)'}`);
-      output.appendLine(`[TinyLanguage]  • Python executable: ${pythonExecutable}`);
-      output.appendLine(`[TinyLanguage]  • Runtime: ${runtimePath || '<not set>'}`);
+      output.appendLine(`[TinyLanguage]  • Python executable: ${pythonExecutable} (${describePython(pythonExecutable)})`);
+      output.appendLine(`[TinyLanguage]  • Runtime: ${runtimePath || '<not set>'}${runtimePath && !runtimeExists ? ' (file not found)' : ''}`);
 
       if (!fileExists) {
         vscode.window.showWarningMessage(`TinyLanguage debug target not found: ${config.program}`);
+        return null;
+      }
+
+      if (runtimePath && !runtimeExists) {
+        vscode.window.showWarningMessage(`TinyLanguage runtime not found: ${runtimePath}`);
         return null;
       }
 

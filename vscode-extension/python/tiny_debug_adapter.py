@@ -129,8 +129,9 @@ class DAPServer:
             return command
 
         dbg = Debugger(on_pause=on_pause)
-        for _, lines in self._breakpoints.items():
-            dbg.set_breakpoints(None, set(lines))
+        for path, lines in self._breakpoints.items():
+            namespace = self._namespace_for_path(Path(path)) if path else self._namespace
+            dbg.set_breakpoints(namespace, set(lines))
         return dbg
 
     def _run_program(self, program: Path) -> None:
@@ -145,10 +146,15 @@ class DAPServer:
                 "body": {"category": "stderr", "output": f"Failed to read program: {exc}\n"},
             })
             return
-        debugger = self._debugger()
         self._namespace = self._namespace_for_path(program)
+        debugger = self._debugger()
         try:
-            compile_and_run(source, module_namespace=self._namespace, module_path=program, debugger=debugger)
+            output = compile_and_run(
+                source,
+                module_namespace=self._namespace,
+                module_path=program,
+                debugger=debugger,
+            )
         except Exception as exc:  # pragma: no cover - surfaced via output event
             self._log(f"Runtime error: {exc}")
             self._send({
@@ -157,6 +163,15 @@ class DAPServer:
                 "event": "output",
                 "body": {"category": "stderr", "output": f"Runtime error: {exc}\n"},
             })
+        else:
+            if output:
+                rendered = output if output.endswith("\n") else output + "\n"
+                self._send({
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "output",
+                    "body": {"category": "stdout", "output": rendered},
+                })
         self._send({
             "type": "event",
             "seq": self._next_seq(),

@@ -39,7 +39,7 @@ def debug_server(tmp_path):
         encoding="utf-8",
     )
     server._command_queue.put("continue")
-    return server, messages, program
+    return module, server, messages, program
 
 
 def _response(messages: list[Dict[str, Any]], command: str) -> Dict[str, Any]:
@@ -50,7 +50,7 @@ def _response(messages: list[Dict[str, Any]], command: str) -> Dict[str, Any]:
 
 
 def test_debug_adapter_runs_and_surfaces_state(debug_server):
-    server, messages, program = debug_server
+    _, server, messages, program = debug_server
 
     server.handle_initialize({"seq": 1, "command": "initialize"})
     server.handle_set_breakpoints(
@@ -88,7 +88,7 @@ def test_debug_adapter_runs_and_surfaces_state(debug_server):
 
 
 def test_launch_without_program_returns_error(debug_server):
-    server, messages, _ = debug_server
+    _, server, messages, _ = debug_server
 
     server.handle_initialize({"seq": 1, "command": "initialize"})
     server.handle_launch({"seq": 2, "command": "launch", "arguments": {}})
@@ -99,3 +99,54 @@ def test_launch_without_program_returns_error(debug_server):
 
     output_events = [m for m in messages if m.get("type") == "event" and m.get("event") == "output"]
     assert output_events
+
+
+def test_breakpoints_follow_module_namespace(monkeypatch, tmp_path):
+    module = load_adapter_module()
+    captured = []
+
+    class SpyDebugger(module.Debugger):  # type: ignore[misc]
+        def set_breakpoints(self, namespace, lines):  # type: ignore[override]
+            captured.append(namespace)
+            return super().set_breakpoints(namespace, lines)
+
+    monkeypatch.setattr(module, "Debugger", SpyDebugger)
+
+    server = module.DAPServer()
+    messages = []
+    server._send = messages.append  # type: ignore[assignment]
+    program = tmp_path / "pause.tiny"
+    program.write_text("print(1);", encoding="utf-8")
+    server._command_queue.put("continue")
+
+    server.handle_initialize({"seq": 1, "command": "initialize"})
+    server.handle_set_breakpoints(
+        {
+            "seq": 2,
+            "command": "setBreakpoints",
+            "arguments": {"source": {"path": str(program)}, "breakpoints": [{"line": 1}]},
+        }
+    )
+    server.handle_launch({"seq": 3, "command": "launch", "arguments": {"program": str(program)}})
+    server.handle_configuration_done({"seq": 4, "command": "configurationDone"})
+    server._thread.join(timeout=5)
+
+    assert captured
+    assert captured[-1] == server._namespace_for_path(program)
+
+
+def test_program_output_is_forwarded(debug_server):
+    _, server, messages, program = debug_server
+
+    program.write_text("print(42);", encoding="utf-8")
+    server._command_queue.put("continue")
+
+    server.handle_initialize({"seq": 1, "command": "initialize"})
+    server.handle_launch({"seq": 2, "command": "launch", "arguments": {"program": str(program)}})
+    server.handle_configuration_done({"seq": 3, "command": "configurationDone"})
+
+    server._thread.join(timeout=5)
+    assert not server._thread.is_alive()
+
+    output_events = [m for m in messages if m.get("type") == "event" and m.get("event") == "output"]
+    assert any("42" in evt.get("body", {}).get("output", "") for evt in output_events)

@@ -10,18 +10,17 @@
   "categories": [
     "Programming Languages"
   ],
+  "main": "./extension.js",
   "activationEvents": [
     "onLanguage:tinylanguage",
-    "onDebug",
-    "onDebugInitialConfigurations:tinylanguage",
     "onCommand:tinylanguage.startRepl",
     "onCommand:tinylanguage.runFile",
     "onCommand:tinylanguage.formatDocument",
     "onCommand:tinylanguage.refreshDiagnostics",
     "onCommand:tinylanguage.getDebugAdapterExecutable",
-    "onDebugResolve:tinylanguage"
+    "onDebugResolve:tinylanguage",
+    "onDebugInitialConfigurations"
   ],
-  "main": "./extension.js",
   "contributes": {
     "languages": [
       {
@@ -78,6 +77,11 @@
           "type": "string",
           "default": "${workspaceFolder}/src/tiny_language.py",
           "description": "Path to tiny_language.py for running the REPL or executing files."
+        },
+        "tinylanguage.debugLogPath": {
+          "type": "string",
+          "default": "${workspaceFolder}/.tinylanguage/debug-adapter.log",
+          "description": "Optional file path for a verbose TinyLanguage debug adapter log. Clear to disable logging."
         }
       }
     },
@@ -98,7 +102,6 @@
         "languages": [
           "tinylanguage"
         ],
-        "adapterExecutableCommand": "tinylanguage.getDebugAdapterExecutable",
         "configurationAttributes": {
           "launch": {
             "required": [

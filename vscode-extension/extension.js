@@ -25,10 +25,14 @@ function getRuntimePath() {
 function getDebugLogPath() {
   const config = vscode.workspace.getConfiguration('tinylanguage');
   const rawPath = config.get('debugLogPath') || '';
-  if (!rawPath) {
-    return '';
+  if (rawPath) {
+    return resolveWorkspacePath(rawPath);
   }
-  return resolveWorkspacePath(rawPath);
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (workspaceFolder) {
+    return path.join(workspaceFolder, '.tinylanguage', 'debug-adapter.log');
+  }
+  return '';
 }
 
 function createToolEnv() {

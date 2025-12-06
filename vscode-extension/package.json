@@ -81,8 +81,8 @@
         },
         "tinylanguage.debugLogPath": {
           "type": "string",
-          "default": "",
-          "description": "Optional file path for a verbose TinyLanguage debug adapter log. Uses ${workspaceFolder} when set."
+          "default": "${workspaceFolder}/.tinylanguage/debug-adapter.log",
+          "description": "Optional file path for a verbose TinyLanguage debug adapter log. Clear to disable logging."
         }
       }
     },

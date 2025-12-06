@@ -26,6 +26,10 @@ This extension adds TinyLanguage editing support to Visual Studio Code:
 
 Diagnostics and formatting rely on the helper script in `vscode-extension/python/vscode_helpers.py`, which imports `formatter.py` and `language_server.py`. If the sources live outside the workspace folder, adjust the `TinyLanguage › Python Path` and `TinyLanguage › Runtime Path` settings accordingly.
 
+## License
+
+The TinyLanguage VS Code extension is distributed under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](LICENSE.md). Commercial redistribution of the extension or derivative works is not permitted under this license.
+
 ### Debugging with the provided launch config
 
 1. Open **Run and Debug** in VS Code.

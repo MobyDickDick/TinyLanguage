@@ -71,22 +71,30 @@ class DAPServer:
 
     # ----- DAP plumbing -----
     def _read_message(self) -> Optional[Dict[str, Any]]:
+        """Read a single DAP message from stdin."""
+
         header = b""
         while True:
             line = sys.stdin.buffer.readline()
             if not line:
                 return None
-            if line == b"\r\n":
+            # Some clients terminate headers with "\n" instead of "\r\n". Treat any
+            # blank line (after stripping whitespace) as the separator so the
+            # adapter does not hang waiting for an exact CRLF match.
+            if line.strip() == b"":
                 break
             header += line
+
         headers = header.decode("utf-8").split("\r\n")
         length = 0
         for entry in headers:
             if entry.lower().startswith("content-length"):
                 length = int(entry.split(":", 1)[1].strip())
+
         body = sys.stdin.buffer.read(length)
         if not body:
             return None
+
         message = json.loads(body.decode("utf-8"))
         self._log(f"<-- {message}")
         return message

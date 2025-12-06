@@ -78,6 +78,11 @@
           "type": "string",
           "default": "${workspaceFolder}/src/tiny_language.py",
           "description": "Path to tiny_language.py for running the REPL or executing files."
+        },
+        "tinylanguage.debugLogPath": {
+          "type": "string",
+          "default": "",
+          "description": "Optional file path for a verbose TinyLanguage debug adapter log. Uses ${workspaceFolder} when set."
         }
       }
     },

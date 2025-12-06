@@ -40,6 +40,7 @@ class DAPServer:
         self._breakpoints: Dict[str, List[int]] = {}
         self._thread: Optional[threading.Thread] = None
         self._program: Optional[Path] = None
+        self._launch_args: Dict[str, Any] = {}
         self._namespace: Optional[str] = None
         self._variable_handles: Dict[int, VariableHandle] = {}
         self._next_handle = 1
@@ -214,6 +215,7 @@ class DAPServer:
     def handle_launch(self, request: Dict[str, Any]) -> None:
         args = request.get("arguments", {})
         program = args.get("program")
+        self._launch_args = args
         self._program = Path(program) if program else None
         self._log(f"Launch request for {self._program}")
         response = {
@@ -225,11 +227,14 @@ class DAPServer:
             "body": {},
         }
         self._send(response)
-        if self._program:
-            self._thread = threading.Thread(target=self._run_program, args=(self._program,), daemon=True)
-            self._thread.start()
 
     def handle_configuration_done(self, request: Dict[str, Any]) -> None:
+        if self._program and (not self._thread or not self._thread.is_alive()):
+            self._log("Configuration complete; starting program thread")
+            self._thread = threading.Thread(target=self._run_program, args=(self._program,), daemon=True)
+            self._thread.start()
+        else:
+            self._log("Configuration complete; no program to start")
         response = {
             "type": "response",
             "seq": self._next_seq(),

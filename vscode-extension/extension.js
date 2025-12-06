@@ -8,14 +8,31 @@ function getPythonExecutable() {
   return config.get('pythonPath') || 'python';
 }
 
-function getRuntimePath() {
-  const config = vscode.workspace.getConfiguration('tinylanguage');
+function resolveWorkspacePath(rawPath) {
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-  const rawPath = config.get('runtimePath') || '';
   if (workspaceFolder) {
     return rawPath.replace('${workspaceFolder}', workspaceFolder);
   }
   return rawPath;
+}
+
+function getRuntimePath() {
+  const config = vscode.workspace.getConfiguration('tinylanguage');
+  const rawPath = config.get('runtimePath') || '';
+  return resolveWorkspacePath(rawPath);
+}
+
+function getDebugLogPath() {
+  const config = vscode.workspace.getConfiguration('tinylanguage');
+  const rawPath = config.get('debugLogPath') || '';
+  if (rawPath) {
+    return resolveWorkspacePath(rawPath);
+  }
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (workspaceFolder) {
+    return path.join(workspaceFolder, '.tinylanguage', 'debug-adapter.log');
+  }
+  return '';
 }
 
 function createToolEnv() {
@@ -223,10 +240,15 @@ function registerDebugAdapterExecutable(output) {
     return true;
   }
 
-  return vscode.commands.registerCommand('tinylanguage.getDebugAdapterExecutable', () => {
+  function createAdapterExecutable() {
     const pythonExecutable = getPythonExecutable();
     const adapterPath = path.join(__dirname, 'python', 'tiny_debug_adapter.py');
     const env = createToolEnv();
+    const logPath = getDebugLogPath();
+    if (logPath) {
+      env.TINYLANGUAGE_DAP_LOG = logPath;
+      output.appendLine(`[TinyLanguage] Debug adapter logging enabled: ${logPath}`);
+    }
     const ok = probeDebugAdapter(pythonExecutable, adapterPath, env);
     if (!ok) {
       vscode.window.showWarningMessage('TinyLanguage debug adapter self-test failed. See output for details.');
@@ -234,7 +256,16 @@ function registerDebugAdapterExecutable(output) {
     }
     output.appendLine(`[TinyLanguage] Launching debug adapter via ${pythonExecutable} ${adapterPath}`);
     return new vscode.DebugAdapterExecutable(pythonExecutable, [adapterPath], { env });
+  }
+
+  const command = vscode.commands.registerCommand('tinylanguage.getDebugAdapterExecutable', () => createAdapterExecutable());
+  const factory = vscode.debug.registerDebugAdapterDescriptorFactory('tinylanguage', {
+    createDebugAdapterDescriptor() {
+      return createAdapterExecutable();
+    },
   });
+
+  return [command, factory];
 }
 
 function registerDebugConfigurations(output) {
@@ -369,7 +400,7 @@ function activate(context) {
   const hover = registerHover(output);
   const repl = registerRepl(output);
   const runFile = registerRunFile(output);
-  const debugAdapterCommand = registerDebugAdapterExecutable(output);
+  const [debugAdapterCommand, debugAdapterFactory] = registerDebugAdapterExecutable(output);
   const debugConfigProvider = registerDebugConfigurations(output);
   const refreshCommand = registerRefreshDiagnostics(output, collection, refresh);
 
@@ -382,6 +413,7 @@ function activate(context) {
     repl,
     runFile,
     debugAdapterCommand,
+    debugAdapterFactory,
     debugConfigProvider,
     refreshCommand,
     ...disposables,

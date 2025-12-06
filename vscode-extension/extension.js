@@ -1,6 +1,7 @@
 const vscode = require('vscode');
 const cp = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
 function getPythonExecutable() {
   const config = vscode.workspace.getConfiguration('tinylanguage');
@@ -239,6 +240,14 @@ function registerDebugConfigurations(output) {
 
       const pythonExecutable = config.python || getPythonExecutable();
       const runtimePath = config.runtime || getRuntimePath();
+      const workspaceRoot = folder?.uri.fsPath || 'unknown workspace';
+      output.appendLine(`[TinyLanguage] Resolving debug configuration for ${workspaceRoot}`);
+      output.appendLine(`[TinyLanguage]  • Program: ${config.program}`);
+      output.appendLine(`[TinyLanguage]  • Python executable: ${pythonExecutable}`);
+      output.appendLine(`[TinyLanguage]  • Runtime: ${runtimePath || '<not set>'}`);
+      if (!runtimePath) {
+        output.appendLine('[TinyLanguage] Warning: runtime path is empty; set tinylanguage.runtimePath in settings if a custom interpreter is required.');
+      }
       const merged = {
         ...config,
         type,
@@ -246,6 +255,47 @@ function registerDebugConfigurations(output) {
         runtime: runtimePath,
       };
       output.appendLine(`[TinyLanguage] Starting debugger for ${merged.program}`);
+      return merged;
+    },
+    resolveDebugConfigurationWithSubstitutedVariables(folder, config) {
+      if (!config || config.type !== type) {
+        return config;
+      }
+
+      const workspaceRoot = folder?.uri.fsPath || 'unknown workspace';
+      const pythonExecutable = config.python || getPythonExecutable();
+      const runtimePath = config.runtime || getRuntimePath();
+
+      if (!config.program) {
+        vscode.window.showWarningMessage('No TinyLanguage file specified for debugging.');
+        return null;
+      }
+
+      const fileExists = fs.existsSync(config.program);
+      const unresolvedTokens = /\$\{[^}]+\}/.test(config.program);
+
+      output.appendLine(`[TinyLanguage] Final debug configuration for ${workspaceRoot}`);
+      output.appendLine(`[TinyLanguage]  • Program: ${config.program}${unresolvedTokens ? ' (contains unresolved variables)' : ''}${fileExists ? '' : ' (file not found)'}`);
+      output.appendLine(`[TinyLanguage]  • Python executable: ${pythonExecutable}`);
+      output.appendLine(`[TinyLanguage]  • Runtime: ${runtimePath || '<not set>'}`);
+
+      if (!fileExists) {
+        vscode.window.showWarningMessage(`TinyLanguage debug target not found: ${config.program}`);
+        return null;
+      }
+
+      if (!runtimePath) {
+        output.appendLine('[TinyLanguage] Warning: runtime path is empty; set tinylanguage.runtimePath in settings if a custom interpreter is required.');
+      }
+
+      const merged = {
+        ...config,
+        type,
+        python: pythonExecutable,
+        runtime: runtimePath,
+      };
+
+      output.appendLine(`[TinyLanguage] Launching debug adapter with resolved configuration.`);
       return merged;
     },
   };

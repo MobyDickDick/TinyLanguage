@@ -78,7 +78,9 @@ class LLVMCodeGenerator:
             self._binary_op(instr.arg)
         elif instr.op == Opcode.PRINT:
             self._print_values(int(instr.arg))
-        elif instr.op in {Opcode.JUMP, Opcode.JUMP_IF_FALSE, Opcode.CALL, Opcode.POP}:
+        elif instr.op == Opcode.POP:
+            self._pop_value()
+        elif instr.op in {Opcode.JUMP, Opcode.JUMP_IF_FALSE, Opcode.CALL}:
             raise NotImplementedError(f"LLVM prototype does not yet support {instr.op.value}")
         elif instr.op == Opcode.RETURN:
             # The surrounding function emits a single final return, so intermediate
@@ -148,6 +150,11 @@ class LLVMCodeGenerator:
                 self._body.append(f"  call i32 (i8*, ...) @printf(i8* {fmt_ptr}, i64 {widened})")
             else:
                 self._body.append(f"  call i32 (i8*, ...) @printf(i8* {fmt_ptr}, {value.ty} {value.name})")
+
+    def _pop_value(self) -> None:
+        if not self._stack:
+            raise RuntimeError("cannot POP from an empty LLVM prototype stack")
+        self._stack.pop()
 
     # ----- Helpers -----
 

@@ -42,6 +42,8 @@ class DAPServer:
         self._program: Optional[Path] = None
         self._launch_args: Dict[str, Any] = {}
         self._namespace: Optional[str] = None
+        self._launch_received = False
+        self._configuration_done = False
         self._variable_handles: Dict[int, VariableHandle] = {}
         self._next_handle = 1
         self._log_lock = threading.Lock()
@@ -163,6 +165,19 @@ class DAPServer:
         })
 
     # ----- Request handlers -----
+    def _start_program_thread(self, trigger: str) -> None:
+        if self._thread and self._thread.is_alive():
+            self._log(f"Start skipped; program already running (trigger={trigger})")
+            return
+        if not self._program:
+            self._log(f"Start skipped; no program set yet (trigger={trigger})")
+            return
+        if trigger == "launch" and not self._configuration_done:
+            self._log("Launch received before configurationDone; starting anyway")
+        self._log(f"Starting program thread (trigger={trigger})")
+        self._thread = threading.Thread(target=self._run_program, args=(self._program,), daemon=True)
+        self._thread.start()
+
     def handle_initialize(self, request: Dict[str, Any]) -> None:
         response = {
             "type": "response",
@@ -215,9 +230,11 @@ class DAPServer:
     def handle_launch(self, request: Dict[str, Any]) -> None:
         args = request.get("arguments", {})
         program = args.get("program")
+        self._launch_received = True
         self._launch_args = args
         self._program = Path(program) if program else None
         self._log(f"Launch request for {self._program}")
+        self._start_program_thread("launch")
         response = {
             "type": "response",
             "seq": self._next_seq(),
@@ -229,12 +246,8 @@ class DAPServer:
         self._send(response)
 
     def handle_configuration_done(self, request: Dict[str, Any]) -> None:
-        if self._program and (not self._thread or not self._thread.is_alive()):
-            self._log("Configuration complete; starting program thread")
-            self._thread = threading.Thread(target=self._run_program, args=(self._program,), daemon=True)
-            self._thread.start()
-        else:
-            self._log("Configuration complete; no program to start")
+        self._configuration_done = True
+        self._start_program_thread("configurationDone")
         response = {
             "type": "response",
             "seq": self._next_seq(),

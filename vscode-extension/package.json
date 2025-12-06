@@ -148,5 +148,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/tinylanguage/TinyLanguage.git"
-  }
+  },
+  "license": "CC-BY-NC-SA-4.0"
 }

@@ -1,0 +1,4 @@
+{
+  "tinylanguage.runtimePath": "${workspaceFolder}/src/tiny_language.py",
+  "tinylanguage.pythonPath": "python3"
+}

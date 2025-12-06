@@ -24,13 +24,16 @@ from __future__ import annotations  # Enable postponed evaluation for annotation
 
 # Path handling is only needed while we stitch the module pieces together.
 from pathlib import Path as _Path  # Import Path with an alias to avoid polluting the public API.
+import sys  # Detect frozen executables (e.g., PyInstaller) so we can locate bundled sources.
 
 
 def _load_and_exec_all() -> None:
     """Concatenate the segmented TinyLanguage sources and execute them."""
 
     # Determine the directory that contains the segmented files so we can read them.
-    base = _Path(__file__).resolve().parent  # Resolve to an absolute path to be robust to CWD changes.
+    # When packaged with PyInstaller, the source files can be bundled as data alongside
+    # the executable; ``sys._MEIPASS`` points to that extraction directory.
+    base = _Path(getattr(sys, "_MEIPASS", _Path(__file__).resolve().parent))
 
     # Accumulate the textual contents of each segment in the correct order.
     parts = []  # Prepare a list that will hold each source fragment.

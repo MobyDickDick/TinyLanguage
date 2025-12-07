@@ -40,8 +40,9 @@ Code.
   events in the Debug Console. Check for messages prefixed with
   `Failed to read program:` or `Runtime error:` if execution ends early.
 - If a session appears stuck at a breakpoint, verify that stepping/continue
-  commands are being issued; the adapter waits for a command (continue/step
-  over/step in/step out) whenever the interpreter pauses.
+  commands are being issued; the adapter waits briefly for a command
+  (continue/step over/step in/step out) whenever the interpreter pauses and
+  then auto-continues so executions do not stall indefinitely.
 - Ensure the configured Python executable can import the repository's `src`
   directory; the default launcher prepends it to `sys.path` via the adapter
   script, but custom launchers should replicate that behavior.

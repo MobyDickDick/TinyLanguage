@@ -130,9 +130,10 @@ class DAPServer:
                 "body": {"reason": "breakpoint", "threadId": 1},
             })
             try:
-                command = self._command_queue.get(timeout=60.0)
+                command = self._command_queue.get(timeout=2.0)
             except queue.Empty:
                 command = "continue"
+                self._log("No client command received while paused; continuing automatically")
             self._log(f"Dequeued command from client: {command}")
             return command
 

@@ -45,3 +45,11 @@ Code.
 - Ensure the configured Python executable can import the repository's `src`
   directory; the default launcher prepends it to `sys.path` via the adapter
   script, but custom launchers should replicate that behavior.
+- When debugging the adapter itself, look for the startup handshake in the
+  DAP log. A healthy session starts with `initialize` → `initialized` events
+  (as in `Debug adapter started ... initialize ... initialized`). If the log
+  stops there, the VS Code client likely never sent a `launch` request—common
+  causes are a missing extension install, an unregistered `tinylanguage` debug
+  type, or an invalid `launch.json` entry. Reinstall the extension from
+  `vscode-extension/` and trigger a TinyLanguage launch configuration to ensure
+  the adapter receives `launch` followed by `configurationDone`.

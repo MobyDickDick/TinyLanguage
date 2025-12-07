@@ -13,6 +13,7 @@ import os
 import queue
 import sys
 import threading
+import time
 from datetime import datetime
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -48,6 +49,10 @@ class DAPServer:
         self._next_handle = 1
         self._log_lock = threading.Lock()
         self._log_handle = self._open_log_file()
+        self._initialized_sent = False
+        self._last_client_message = time.monotonic()
+        self._shutdown = False
+        self._watchdog_thread = threading.Thread(target=self._watchdog, daemon=True)
 
     def _open_log_file(self):
         log_path = os.environ.get("TINYLANGUAGE_DAP_LOG")
@@ -97,6 +102,7 @@ class DAPServer:
 
         message = json.loads(body.decode("utf-8"))
         self._log(f"<-- {message}")
+        self._last_client_message = time.monotonic()
         return message
 
     def _send(self, payload: Dict[str, Any]) -> None:
@@ -222,6 +228,9 @@ class DAPServer:
         }
         self._send(response)
         self._send({"type": "event", "seq": self._next_seq(), "event": "initialized"})
+        self._initialized_sent = True
+        if not self._watchdog_thread.is_alive():
+            self._watchdog_thread.start()
 
     def handle_set_breakpoints(self, request: Dict[str, Any]) -> None:
         args = request.get("arguments", {})
@@ -414,6 +423,41 @@ class DAPServer:
             }
             self._send(response)
 
+    def _watchdog(self) -> None:
+        # If the client never sends configuration or launch requests after the
+        # initialize handshake, provide a clear failure signal instead of
+        # letting the adapter sit idle forever.
+        while not self._shutdown:
+            time.sleep(0.5)
+            if not self._initialized_sent:
+                continue
+            if self._launch_received or self._configuration_done:
+                break
+            if time.monotonic() - self._last_client_message > 3.0:
+                warning = (
+                    "No launch/configuration requests received. "
+                    "Check the TinyLanguage output channel for configuration warnings."
+                )
+                self._log(warning)
+                self._send(
+                    {
+                        "type": "event",
+                        "seq": self._next_seq(),
+                        "event": "output",
+                        "body": {"category": "stderr", "output": warning + "\n"},
+                    }
+                )
+                self._send(
+                    {
+                        "type": "event",
+                        "seq": self._next_seq(),
+                        "event": "terminated",
+                        "body": {},
+                    }
+                )
+                self._shutdown = True
+                break
+
     def _enqueue(self, command: str) -> None:
         self._command_queue.put(command)
         self._log(f"Enqueued command: {command}")
@@ -472,7 +516,7 @@ class DAPServer:
         self._log("Debug adapter started")
         while True:
             message = self._read_message()
-            if message is None:
+            if message is None or self._shutdown:
                 self._log("No more messages; shutting down")
                 break
             command = message.get("command")

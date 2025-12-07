@@ -6,6 +6,9 @@ behaviors so integrators can navigate the stitched module without reading the
 entire implementation.
 """
 
+import logging
+import time
+
 from collections import defaultdict, deque
 
 # ----- Runtime -----
@@ -320,6 +323,14 @@ class Runtime:
         self.current_module_namespace: Optional[str] = None
         self.call_stack: List[StackFrame] = []
         self.debugger: Optional[Debugger] = None
+        self.trace_log_path: Optional[str] = os.environ.get("TINYLANG_TRACE_LOG")
+        self.trace_every_statement: bool = os.environ.get("TINYLANG_TRACE_EVERY_STATEMENT", "0") == "1"
+        self.trace_heartbeat_secs: float = float(os.environ.get("TINYLANG_TRACE_HEARTBEAT_SECS", "1.0"))
+        self._trace_logger: Optional[logging.Logger] = None
+        self._last_trace_time: float = 0.0
+        self._last_trace_location: Optional[Tuple[Optional[str], int]] = None
+        if self.trace_log_path:
+            self._setup_trace_logger()
 
     @staticmethod
     def _qualify_name(name: str, namespace: Optional[str]) -> str:
@@ -339,6 +350,41 @@ class Runtime:
             lines.append(f"  at {frame.qualified_name} (line {frame.pos.line}, col {frame.pos.col})")
         return "\n".join(lines)
 
+    def _setup_trace_logger(self) -> None:
+        Path(self.trace_log_path).parent.mkdir(parents=True, exist_ok=True)
+        logger = logging.getLogger(f"tiny_language.trace.{id(self)}")
+        logger.setLevel(logging.DEBUG)
+        logger.propagate = False
+        logger.handlers.clear()
+        handler = logging.FileHandler(self.trace_log_path, mode="w", encoding="utf-8")
+        handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+        logger.addHandler(handler)
+        self._trace_logger = logger
+
+    def _log_trace(self, node: IR, env: "Environment", namespace: Optional[str]) -> None:
+        if self._trace_logger is None:
+            return
+        now = time.time()
+        pos = getattr(node, "pos", SourcePos.origin()) or SourcePos.origin()
+        location = (namespace, pos.line)
+        should_log = self.trace_every_statement or now - self._last_trace_time >= self.trace_heartbeat_secs
+        if not should_log and location == self._last_trace_location:
+            return
+        self._last_trace_time = now if should_log else self._last_trace_time
+        self._last_trace_location = location
+        stack_overview = " > ".join(frame.qualified_name for frame in self.call_stack) or "<root>"
+        scope_keys = ", ".join(sorted(getattr(env, "values", {}).keys()))
+        self._trace_logger.debug(
+            "executing %s at %s:%d (col %d); depth=%d; stack=%s; env=%s",
+            node.__class__.__name__,
+            namespace or "<module>",
+            pos.line,
+            getattr(pos, "col", 0),
+            len(self.call_stack),
+            stack_overview,
+            scope_keys,
+        )
+
     def _capture_scopes(self, env: "Environment") -> List[ScopeSnapshot]:
         scopes: List[ScopeSnapshot] = []
         current: Optional["Environment"] = env
@@ -348,6 +394,7 @@ class Runtime:
         return scopes
 
     def _maybe_pause(self, node: IR, env: "Environment", namespace: Optional[str]) -> None:
+        self._log_trace(node, env, namespace)
         if self.debugger is None:
             return
         pos = getattr(node, "pos", SourcePos.origin()) or SourcePos.origin()
@@ -359,6 +406,15 @@ class Runtime:
                 call_stack=tuple(self.call_stack),
                 scopes=self._capture_scopes(env),
             )
+            if self._trace_logger is not None:
+                self._trace_logger.debug(
+                    "pause at %s:%d; depth=%d; pending_step=%s; breakpoints=%s",
+                    namespace or "<module>",
+                    pos.line,
+                    depth,
+                    getattr(self.debugger, "pending_step", None),
+                    self.debugger.breakpoints,
+                )
             self.debugger.handle_pause(snapshot, depth)
 
     def _record_error(

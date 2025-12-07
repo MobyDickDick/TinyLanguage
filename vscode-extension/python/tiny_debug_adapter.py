@@ -49,8 +49,11 @@ class DAPServer:
         self._next_handle = 1
         self._log_lock = threading.Lock()
         self._log_handle = self._open_log_file()
+        self._log_to_stderr = os.environ.get("TINYLANGUAGE_DAP_STDERR", "0") == "1"
         self._initialized_sent = False
         self._last_client_message = time.monotonic()
+        self._last_client_command: Optional[str] = None
+        self._session_started_at = self._last_client_message
         self._shutdown = False
         self._watchdog_thread = threading.Thread(target=self._watchdog, daemon=True)
 
@@ -67,12 +70,16 @@ class DAPServer:
             return None
 
     def _log(self, message: str) -> None:
-        if not self._log_handle:
-            return
         timestamp = datetime.utcnow().isoformat() + "Z"
+        if not self._log_handle:
+            if self._log_to_stderr:
+                print(f"[{timestamp}] {message}", file=sys.stderr)
+            return
         with self._log_lock:
             self._log_handle.write(f"[{timestamp}] {message}\n")
             self._log_handle.flush()
+            if self._log_to_stderr:
+                print(f"[{timestamp}] {message}", file=sys.stderr)
 
     # ----- DAP plumbing -----
     def _read_message(self) -> Optional[Dict[str, Any]]:
@@ -103,6 +110,7 @@ class DAPServer:
         message = json.loads(body.decode("utf-8"))
         self._log(f"<-- {message}")
         self._last_client_message = time.monotonic()
+        self._last_client_command = message.get("command")
         return message
 
     def _send(self, payload: Dict[str, Any]) -> None:
@@ -433,10 +441,19 @@ class DAPServer:
                 continue
             if self._launch_received or self._configuration_done:
                 break
-            if time.monotonic() - self._last_client_message > 3.0:
+            idle = time.monotonic() - self._last_client_message
+            if idle > 3.0:
+                last_cmd = self._last_client_command or "<none>"
+                elapsed = time.monotonic() - self._session_started_at
+                log_hint = " set TINYLANGUAGE_DAP_LOG=/tmp/tiny_dap.log" if not self._log_handle else ""
+                stderr_hint = " and TINYLANGUAGE_DAP_STDERR=1" if not self._log_to_stderr else ""
                 warning = (
                     "No launch/configuration requests received. "
-                    "Check the TinyLanguage output channel for configuration warnings."
+                    "VS Code should send 'launch' after 'initialize'; if it did not, "
+                    "ensure a TinyLanguage launch.json entry exists or use the "
+                    "'TinyLanguage: Launch active file (prototype)' command." +
+                    (" Enable adapter logging with" + log_hint + stderr_hint if (log_hint or stderr_hint) else "") +
+                    f" Last client command: {last_cmd}; idle for {idle:.1f}s (session {elapsed:.1f}s)."
                 )
                 self._log(warning)
                 self._send(

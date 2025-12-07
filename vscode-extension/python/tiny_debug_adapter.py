@@ -51,6 +51,8 @@ class DAPServer:
         self._log_handle = self._open_log_file()
         self._initialized_sent = False
         self._last_client_message = time.monotonic()
+        self._last_client_command: Optional[str] = None
+        self._session_started_at = self._last_client_message
         self._shutdown = False
         self._watchdog_thread = threading.Thread(target=self._watchdog, daemon=True)
 
@@ -103,6 +105,7 @@ class DAPServer:
         message = json.loads(body.decode("utf-8"))
         self._log(f"<-- {message}")
         self._last_client_message = time.monotonic()
+        self._last_client_command = message.get("command")
         return message
 
     def _send(self, payload: Dict[str, Any]) -> None:
@@ -433,10 +436,16 @@ class DAPServer:
                 continue
             if self._launch_received or self._configuration_done:
                 break
-            if time.monotonic() - self._last_client_message > 3.0:
+            idle = time.monotonic() - self._last_client_message
+            if idle > 3.0:
+                last_cmd = self._last_client_command or "<none>"
+                elapsed = time.monotonic() - self._session_started_at
                 warning = (
                     "No launch/configuration requests received. "
-                    "Check the TinyLanguage output channel for configuration warnings."
+                    "VS Code should send 'launch' after 'initialize'; if it did not, "
+                    "ensure a TinyLanguage launch.json entry exists or use the "
+                    "'TinyLanguage: Launch active file (prototype)' command. "
+                    f"Last client command: {last_cmd}; idle for {idle:.1f}s (session {elapsed:.1f}s)."
                 )
                 self._log(warning)
                 self._send(

@@ -37,6 +37,8 @@ The TinyLanguage VS Code extension is distributed under the [Creative Commons At
 3. Start debugging via **Run and Debug → TinyLanguage: Launch active file (prototype)**. If the configuration list is empty, ensure the extension shows as enabled in **Extensions** and reload the window so VS Code picks up the `tinylanguage` debugger contribution.
 4. If VS Code reports `Couldn't find a debug adapter descriptor` for `tinylanguage`, update to version `0.1.1` (or newer) and reload the window so the debugger activation events are registered.
 
+> TinyLanguage sessions do not use the built-in Python debugger. The adapter is a Python script (`vscode-extension/python/tiny_debug_adapter.py`) that drives the TinyLanguage interpreter. If VS Code starts a Python debug session instead of the TinyLanguage configuration above, check that your `launch.json` entry uses `"type": "tinylanguage"` and that the extension is enabled. To verify your environment, run `python vscode-extension/python/tiny_debug_adapter.py --self-test` inside the repo; the output should confirm the adapter can import the interpreter.
+
 #### Launch configuration reference
 
 The default launch entry should look like this (comments are allowed because VS Code treats `launch.json` as JSON with comments):

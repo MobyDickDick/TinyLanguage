@@ -153,6 +153,12 @@ class DAPServer:
                 "event": "output",
                 "body": {"category": "stderr", "output": f"Failed to read program: {exc}\n"},
             })
+            self._send({
+                "type": "event",
+                "seq": self._next_seq(),
+                "event": "terminated",
+                "body": {},
+            })
             return
         self._namespace = self._namespace_for_path(program)
         debugger = self._debugger()

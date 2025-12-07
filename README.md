@@ -29,6 +29,11 @@ TinyLanguage is a learning- and transpiler-focused playground rather than a prod
 - Combine these flags with your debugger workflow to understand why stepping or breakpoints are skipped—the trace records every statement the interpreter evaluates.
 - When diagnosing VS Code launch/attach issues, set `TINYLANGUAGE_DAP_LOG=/tmp/tiny_dap.log` to capture every Debug Adapter Protocol request/response and `TINYLANGUAGE_DAP_STDERR=1` to mirror the adapter log to stderr. Idle timeouts will also suggest these flags when no launch/configuration requests arrive so you can see what the client actually sent.
 
+### Expected debugger experience in VS Code
+- The TinyLanguage extension contributes its own debugger type (`tinylanguage`). You should see **TinyLanguage: Launch active file (prototype)** as the configuration name, not the built-in Python debugger. If VS Code starts a Python session instead, double-check that the `type` in `launch.json` is `tinylanguage` and that the extension is enabled.
+- The adapter is a Python script (see `vscode-extension/python/tiny_debug_adapter.py`) that runs the TinyLanguage interpreter; it is not the Python debugger itself. All stepping and breakpoints go through this adapter.
+- If no debug session starts after hitting **Run and Debug**, open **Output → TinyLanguage** to confirm the extension registered the configuration and launched the adapter. The adapter writes per-request logs to `TINYLANGUAGE_DAP_LOG` when set, and the `--self-test` mode (`python vscode-extension/python/tiny_debug_adapter.py --self-test`) verifies that Python can import the interpreter on your machine.
+
 ## Next practical steps
 - [x] **Deepen/update documentation (starting point, done)**: Cross-check the existing guides in `docs/` and bring them up to date. Specifically:
   - In [`docs/language_server_workflows.md`](docs/language_server_workflows.md), list every available LSP method with example requests/responses and add short "how to test it" snippets for the demo calls from the README section "Syntax and Features."

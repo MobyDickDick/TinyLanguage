@@ -62,6 +62,8 @@ The adapter starts the Python runtime shown in `runtime`. If the interpreter is 
 
 If you need a detailed trace of every Debug Adapter Protocol (DAP) message exchanged with VS Code, use **TinyLanguage › Debug Log Path**. By default the extension writes adapter traces to `${workspaceFolder}/.tinylanguage/debug-adapter.log` and mirrors the same content to **Output → TinyLanguage** so you can see the log even if file writes fail. You can point the setting elsewhere or clear it to disable file logging. The adapter records inbound and outbound DAP payloads, breakpoint updates, and stepping commands to the configured file/output.
 
+For stepping problems inside the interpreter itself, the extension now also seeds **TinyLanguage › Trace Log Path** (default `${workspaceFolder}/.tinylanguage/runtime-trace.log`) and forwards it as `TINYLANG_TRACE_LOG` to the runtime. Each statement the interpreter evaluates is logged with the namespace, position, call stack, and visible identifiers so you can see whether breakpoints and steps are being hit.
+
 To override the log destination or mirror it to the TinyLanguage output pane for easier inspection, add an `env` block to your `launch.json` entry and set `TINYLANGUAGE_DAP_LOG` or `TINYLANGUAGE_DAP_STDERR`:
 
 ```jsonc

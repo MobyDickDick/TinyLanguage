@@ -35,6 +35,19 @@ function getDebugLogPath() {
   return '';
 }
 
+function getTraceLogPath() {
+  const config = vscode.workspace.getConfiguration('tinylanguage');
+  const rawPath = config.get('traceLogPath') || '';
+  if (rawPath) {
+    return resolveWorkspacePath(rawPath);
+  }
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (workspaceFolder) {
+    return path.join(workspaceFolder, '.tinylanguage', 'runtime-trace.log');
+  }
+  return '';
+}
+
 function normalizeEnvValue(value) {
   if (value === undefined || value === null) {
     return value;
@@ -265,6 +278,9 @@ function registerDebugAdapterExecutable(output) {
     if (typeof normalizedConfigEnv.TINYLANGUAGE_DAP_LOG === 'string') {
       normalizedConfigEnv.TINYLANGUAGE_DAP_LOG = resolveWorkspacePath(normalizedConfigEnv.TINYLANGUAGE_DAP_LOG);
     }
+    if (typeof normalizedConfigEnv.TINYLANG_TRACE_LOG === 'string') {
+      normalizedConfigEnv.TINYLANG_TRACE_LOG = resolveWorkspacePath(normalizedConfigEnv.TINYLANG_TRACE_LOG);
+    }
     const env = createToolEnv(normalizedConfigEnv);
     const logPath = normalizedConfigEnv.TINYLANGUAGE_DAP_LOG || getDebugLogPath();
     if (logPath && !env.TINYLANGUAGE_DAP_LOG) {
@@ -272,6 +288,13 @@ function registerDebugAdapterExecutable(output) {
       output.appendLine(`[TinyLanguage] Debug adapter logging enabled: ${logPath}`);
     } else if (env.TINYLANGUAGE_DAP_LOG) {
       output.appendLine(`[TinyLanguage] Debug adapter logging enabled via launch env: ${env.TINYLANGUAGE_DAP_LOG}`);
+    }
+    const traceLogPath = normalizedConfigEnv.TINYLANG_TRACE_LOG || getTraceLogPath();
+    if (traceLogPath && !env.TINYLANG_TRACE_LOG) {
+      env.TINYLANG_TRACE_LOG = traceLogPath;
+      output.appendLine(`[TinyLanguage] Runtime trace logging enabled: ${traceLogPath}`);
+    } else if (env.TINYLANG_TRACE_LOG) {
+      output.appendLine(`[TinyLanguage] Runtime trace logging enabled via launch env: ${env.TINYLANG_TRACE_LOG}`);
     }
     const userWantsStderr = ['1', 1, true, 'true'].includes(env.TINYLANGUAGE_DAP_STDERR);
     const mirrorByDefault = Boolean(logPath) && normalizedConfigEnv.TINYLANGUAGE_DAP_STDERR === undefined;

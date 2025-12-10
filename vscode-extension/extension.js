@@ -278,6 +278,9 @@ function registerDebugAdapterExecutable(output) {
     if (logToStderr) {
       output.appendLine('[TinyLanguage] Debug adapter will mirror logs to stderr (TINYLANGUAGE_DAP_STDERR=1).');
     }
+    if (env.TINYLANGUAGE_DAP_STDERR === '1') {
+      output.appendLine('[TinyLanguage] Debug adapter will mirror logs to stderr (TINYLANGUAGE_DAP_STDERR=1).');
+    }
     const ok = probeDebugAdapter(pythonExecutable, adapterPath, env);
     if (!ok) {
       vscode.window.showWarningMessage('TinyLanguage debug adapter self-test failed. See output for details.');

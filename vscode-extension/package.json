@@ -124,6 +124,18 @@
                 "type": "boolean",
                 "default": false,
                 "description": "Pause on the first line of the program before executing."
+              },
+              "env": {
+                "type": "object",
+                "description": "Environment variables passed to the TinyLanguage debug adapter.",
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean"
+                  ]
+                },
+                "default": {}
               }
             }
           }

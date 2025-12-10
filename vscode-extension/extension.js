@@ -4,9 +4,13 @@ const path = require('path');
 const fs = require('fs');
 
 function logDebug(output, message) {
+  const formatted = `[TinyLanguage][debug] ${message}`;
   if (output?.appendLine) {
-    output.appendLine(`[TinyLanguage][debug] ${message}`);
+    output.appendLine(formatted);
   }
+  // Mirror debug logs to the extension host console so they are visible in the
+  // Extension Development Host debug output/terminal.
+  console.log(formatted); // eslint-disable-line no-console
 }
 
 function getPythonExecutable() {

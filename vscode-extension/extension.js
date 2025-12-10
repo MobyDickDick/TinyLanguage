@@ -273,12 +273,11 @@ function registerDebugAdapterExecutable(output) {
     } else if (env.TINYLANGUAGE_DAP_LOG) {
       output.appendLine(`[TinyLanguage] Debug adapter logging enabled via launch env: ${env.TINYLANGUAGE_DAP_LOG}`);
     }
-    const logToStderr = ['1', 1, true, 'true'].includes(env.TINYLANGUAGE_DAP_STDERR);
+    const userWantsStderr = ['1', 1, true, 'true'].includes(env.TINYLANGUAGE_DAP_STDERR);
+    const mirrorByDefault = Boolean(logPath) && normalizedConfigEnv.TINYLANGUAGE_DAP_STDERR === undefined;
+    const logToStderr = userWantsStderr || mirrorByDefault;
     env.TINYLANGUAGE_DAP_STDERR = logToStderr ? '1' : undefined;
     if (logToStderr) {
-      output.appendLine('[TinyLanguage] Debug adapter will mirror logs to stderr (TINYLANGUAGE_DAP_STDERR=1).');
-    }
-    if (env.TINYLANGUAGE_DAP_STDERR === '1') {
       output.appendLine('[TinyLanguage] Debug adapter will mirror logs to stderr (TINYLANGUAGE_DAP_STDERR=1).');
     }
     const ok = probeDebugAdapter(pythonExecutable, adapterPath, env);

@@ -55,6 +55,61 @@ Code.
   `vscode-extension/` and trigger a TinyLanguage launch configuration to ensure
   the adapter receives `launch` followed by `configurationDone`.
 
+### Reading the extension's debug logs
+- The extension prints a short summary when it resolves your `launch.json`
+  entry. Lines such as `Program: C:\\Users\\...\\src_tiny\\all_features.tiny` and
+  `Runtime: ...\\src\\tiny_language.py` mean that `${workspaceFolder}`
+  variables were expanded correctly and the adapter will invoke the TinyLanguage
+  interpreter with your program file.
+- The following block shows the Python executable the adapter will spawn. If the
+  executable path is **unexpected** (for example, a Microsoft Store shim on
+  Windows), set the `tinylanguage.pythonPath` setting or `python` field in the
+  launch configuration to point to your desired interpreter.
+- When `Debug adapter logging enabled` appears, the session is writing a full
+  DAP transcript to the indicated file (for example, `/tmp/tiny_dap.log` on
+  Linux). This is the best place to inspect protocol-level requests and
+  responses if you need to compare a "good" and "bad" launch side by side.
+- A self-test block follows and includes `tiny_language_loaded: true` when the
+  adapter successfully imported the TinyLanguage runtime module. If
+  `src_root_exists` is `false`, verify that the `vscode-extension/src`
+  directory exists in your extension install; a stale or corrupted extension
+  package can prevent the adapter from finding its helper modules.
+
+### Are generic VS Code extension host logs useful?
+- The `ExtensionService#_doActivateExtension ...` lines come from VS Code's
+  extension host and document which extensions activated during startup (for
+  example, `vscode.git` or `ms-python.python`). They are **informational** and
+  not specific to TinyLanguage. Use them to confirm that
+  `tinylanguage.tinylanguage-vscode` activated, but otherwise they do not affect
+  adapter behavior.
+- Activation warnings/errors unrelated to TinyLanguage (such as
+  `chatParticipant must be declared in package.json`) do not block the
+  TinyLanguage debugger. Investigate only if you see TinyLanguage-specific
+  failures; otherwise treat them as noise from other extensions.
+- If the extension host log shows `onDebugResolve:tinylanguage`, it means the
+  TinyLanguage configuration provider ran and prepared a debug configuration.
+  Combine this with the adapter's own debug log to trace a launch end to end:
+  the extension host log confirms VS Code activated the provider, while the
+  adapter log confirms the TinyLanguage runtime and debug adapter started
+  successfully.
+- Messages like `Persistent process ... was an orphan` are emitted by VS Code's
+  terminal reconnection logic when it reattaches to an existing integrated
+  terminal session after a window reload. They do **not** prevent the
+  TinyLanguage debug adapter from starting. If you see these alongside
+  `onDebugResolve:tinylanguage` but the TinyLanguage adapter never logs a
+  `launch` request, focus on the adapter log (`Debug adapter logging enabled`)
+  to confirm whether VS Code actually sent the `launch` and
+  `configurationDone` requests; missing requests indicate a misconfigured
+  `launch.json` entry or an uninstalled TinyLanguage extension rather than a
+  terminal reconnection issue.
+- Periodic `[AutoSync]` entries (for example, `Sync started.`, `No changes
+  found during synchronizing settings.`) come from VS Code's Settings Sync
+  service. They are unrelated to debugging and continue to run in the
+  background even when TinyLanguage sessions succeed. If the debugger fails to
+  start, ignore these and instead inspect whether the adapter log shows a
+  `launch` request and whether the Debug Console prints TinyLanguage runtime
+  output.
+
 ### Why Python debugging opens a `.venv` shell but TinyLanguage does not
 - The built-in VS Code Python launcher activates the selected interpreter
   (e.g., `.venv/Scripts/Activate.ps1` on Windows) in an integrated terminal and
@@ -65,6 +120,25 @@ Code.
   through the integrated terminal. You should not see an extra shell prompt
   because the adapter spawns the interpreter in the background and forwards all
   output to the Debug Console.
+
+### Interpreting "Window" log warnings and errors
+- The **Window** log (from the main VS Code process) often contains extension
+  warnings unrelated to TinyLanguage. Examples include duplicate setting
+  registrations (e.g., `twxs.cmake: Cannot register 'cmake.cmakePath'`),
+  deprecation notices (`punycode`), or experimental feature warnings (SQLite).
+  These are emitted by other extensions and do not block the TinyLanguage
+  adapter.
+- Errors such as `Failed to fetch MCP registry providers Server returned 404`
+  or `chatParticipant must be declared in package.json: claude-code` likewise
+  originate from other extensions. Treat them as background noise unless they
+  mention the `tinylanguage` debug type or the adapter script directly.
+- A `Scheme contains illegal characters` `UriError` typically arises when an
+  extension constructs an invalid URI. Unless the stack trace references
+  TinyLanguage files (for example, paths under `vscode-extension/` or
+  `tiny_language.py`), it will not prevent the TinyLanguage debugger from
+  launching. Continue to verify that the adapter log shows the `launch` and
+  `configurationDone` requests arriving after VS Code resolves the
+  `tinylanguage` configuration.
 - If you see the Python-style activation while trying to debug TinyLanguage,
   double-check that your `launch.json` uses `"type": "tinylanguage"` instead of
   the built-in Python configuration. That ensures stepping and breakpoints go

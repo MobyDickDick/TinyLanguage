@@ -81,6 +81,16 @@ To override the log destination or mirror it to the TinyLanguage output pane for
 
 VS Code now accepts the `env` block on TinyLanguage launch configurations, so you will no longer see `Property env is not allowed` when adding these environment variables.
 
+#### Interpreting the adapter self-test log
+
+Every TinyLanguage debug session performs a quick self-test before launching. The JSON payload printed to **Output → TinyLanguage** (and stored in your adapter log) confirms which Python executable is used and where the adapter loaded `tiny_language.py` from. Typical fields include:
+
+- `src_root` / `src_root_exists`: The adapter’s best guess at the bundled source tree. When installed from the marketplace the `src_root_exists` flag may be `false` because the sources live in your workspace instead of inside the extension package. This is informational only.
+- `tiny_language_module`: Absolute path to the loaded `tiny_language.py` module. This should point at your workspace copy (for example `${workspaceFolder}/src/tiny_language.py`). If it points somewhere unexpected, adjust **TinyLanguage › Python Path** or **TinyLanguage › Runtime Path**.
+- `sys_path_sample`: The first few entries of `sys.path`, which helps verify whether your workspace or virtual environment is being searched.
+
+If the self-test fails or shows the module being imported from the wrong location, ensure the configured Python interpreter can import your workspace’s `src/` directory and restart the debug session.
+
 ## Roadmap / TODO
 
 This section gathers upcoming tasks for TinyLanguage.

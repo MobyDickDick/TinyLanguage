@@ -14,6 +14,7 @@ import queue
 import sys
 import threading
 import time
+import inspect
 from datetime import datetime
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -547,12 +548,19 @@ class DAPServer:
 
 
 def _self_test() -> None:
+    try:
+        module_path = inspect.getfile(compile_and_run)
+    except Exception:  # pragma: no cover - diagnostic guardrail
+        module_path = "<unknown>"
+
     details = {
         "python": sys.executable,
         "adapter": str(Path(__file__).resolve()),
         "cwd": str(Path.cwd()),
         "src_root": str(SRC_ROOT),
         "src_root_exists": SRC_ROOT.exists(),
+        "tiny_language_module": module_path,
+        "sys_path_sample": sys.path[:5],
         "tiny_language_loaded": Debugger is not None and compile_and_run is not None,
     }
     print(json.dumps(details, indent=2))

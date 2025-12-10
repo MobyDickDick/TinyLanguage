@@ -35,7 +35,21 @@ function getDebugLogPath() {
   return '';
 }
 
-function createToolEnv() {
+function normalizeEnvValue(value) {
+  if (value === undefined || value === null) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  try {
+    return JSON.stringify(value);
+  } catch (err) {
+    return String(value);
+  }
+}
+
+function createToolEnv(extraEnv = {}) {
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   const repoSrc = path.join(__dirname, '..', 'src');
   const searchPaths = [];
@@ -44,7 +58,11 @@ function createToolEnv() {
   }
   searchPaths.push(repoSrc);
   const combined = searchPaths.concat(process.env.PYTHONPATH ? [process.env.PYTHONPATH] : []).join(path.delimiter);
-  return { ...process.env, PYTHONPATH: combined };
+  const normalizedExtraEnv = Object.entries(extraEnv).reduce((acc, [key, value]) => {
+    acc[key] = normalizeEnvValue(value);
+    return acc;
+  }, {});
+  return { ...process.env, ...normalizedExtraEnv, PYTHONPATH: combined };
 }
 
 function runHelper(command, documentText, filePath, output, extraArgs = []) {
@@ -240,14 +258,25 @@ function registerDebugAdapterExecutable(output) {
     return true;
   }
 
-  function createAdapterExecutable() {
+  function createAdapterExecutable(configurationEnv = {}) {
     const pythonExecutable = getPythonExecutable();
     const adapterPath = path.join(__dirname, 'python', 'tiny_debug_adapter.py');
-    const env = createToolEnv();
-    const logPath = getDebugLogPath();
-    if (logPath) {
+    const normalizedConfigEnv = { ...configurationEnv };
+    if (typeof normalizedConfigEnv.TINYLANGUAGE_DAP_LOG === 'string') {
+      normalizedConfigEnv.TINYLANGUAGE_DAP_LOG = resolveWorkspacePath(normalizedConfigEnv.TINYLANGUAGE_DAP_LOG);
+    }
+    const env = createToolEnv(normalizedConfigEnv);
+    const logPath = normalizedConfigEnv.TINYLANGUAGE_DAP_LOG || getDebugLogPath();
+    if (logPath && !env.TINYLANGUAGE_DAP_LOG) {
       env.TINYLANGUAGE_DAP_LOG = logPath;
       output.appendLine(`[TinyLanguage] Debug adapter logging enabled: ${logPath}`);
+    } else if (env.TINYLANGUAGE_DAP_LOG) {
+      output.appendLine(`[TinyLanguage] Debug adapter logging enabled via launch env: ${env.TINYLANGUAGE_DAP_LOG}`);
+    }
+    const logToStderr = ['1', 1, true, 'true'].includes(env.TINYLANGUAGE_DAP_STDERR);
+    env.TINYLANGUAGE_DAP_STDERR = logToStderr ? '1' : undefined;
+    if (logToStderr) {
+      output.appendLine('[TinyLanguage] Debug adapter will mirror logs to stderr (TINYLANGUAGE_DAP_STDERR=1).');
     }
     const ok = probeDebugAdapter(pythonExecutable, adapterPath, env);
     if (!ok) {
@@ -260,8 +289,9 @@ function registerDebugAdapterExecutable(output) {
 
   const command = vscode.commands.registerCommand('tinylanguage.getDebugAdapterExecutable', () => createAdapterExecutable());
   const factory = vscode.debug.registerDebugAdapterDescriptorFactory('tinylanguage', {
-    createDebugAdapterDescriptor() {
-      return createAdapterExecutable();
+    createDebugAdapterDescriptor(session) {
+      const configurationEnv = session?.configuration?.env || {};
+      return createAdapterExecutable(configurationEnv);
     },
   });
 

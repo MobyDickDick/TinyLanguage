@@ -4,7 +4,17 @@ The VS Code extension ships a prototype Debug Adapter Protocol (DAP) server that
 connects to the TinyLanguage interpreter. It exposes standard launch
 configurations plus a handful of adapter-specific behaviors so you can pause at
 breakpoints, inspect scopes, and step through TinyLanguage code directly from VS
-Code.
+Code. If you are unsure whether the adapter itself is healthy, start with the
+quick self-test below before chasing down editor log noise.
+
+## Quick adapter health check
+- Run `python vscode-extension/python/tiny_debug_adapter.py --self-test` from the
+  repository root. The final JSON block should report `"tiny_language_loaded":
+  true` and list the Python executable the adapter is using.
+- If that succeeds, the adapter can talk to the runtime; focus on the VS Code
+  launch configuration next (for example, ensure `"type": "tinylanguage"` in
+  `launch.json`). If it fails, fix the Python path or import errors surfaced in
+  the output before retrying VS Code.
 
 ## Launching the debugger
 1. Install the local VS Code extension contained in `vscode-extension/` (either

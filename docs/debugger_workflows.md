@@ -54,3 +54,32 @@ Code.
   type, or an invalid `launch.json` entry. Reinstall the extension from
   `vscode-extension/` and trigger a TinyLanguage launch configuration to ensure
   the adapter receives `launch` followed by `configurationDone`.
+
+### Why Python debugging opens a `.venv` shell but TinyLanguage does not
+- The built-in VS Code Python launcher activates the selected interpreter
+  (e.g., `.venv/Scripts/Activate.ps1` on Windows) in an integrated terminal and
+  then starts `debugpy`. That activation banner is expected and comes from the
+  Python extension setting up your environment before attaching the debugger.
+- The TinyLanguage debugger uses its own `tinylanguage` debug type, which
+  starts the Python-based adapter directly from the extension rather than
+  through the integrated terminal. You should not see an extra shell prompt
+  because the adapter spawns the interpreter in the background and forwards all
+  output to the Debug Console.
+- If you see the Python-style activation while trying to debug TinyLanguage,
+  double-check that your `launch.json` uses `"type": "tinylanguage"` instead of
+  the built-in Python configuration. That ensures stepping and breakpoints go
+  through the TinyLanguage adapter rather than `debugpy`.
+
+### Using a virtual environment with the TinyLanguage adapter
+- The adapter runs under whichever Python executable the extension is
+  configured to use. Set `tinylanguage.pythonPath` in VS Code settings (for
+  example, `"${workspaceFolder}/.venv/bin/python"` on POSIX or
+  `"${workspaceFolder}\\.venv\\Scripts\\python.exe"` on Windows) to force the
+  adapter and its helper tools to run inside your virtual environment.
+- You can also set `"python"` and `"runtime"` directly in the `launch.json`
+  entry for a specific configuration if you want one launch to use a particular
+  interpreter or runtime script.
+- If your workspace already selects a Python interpreter (status bar in VS
+  Code), reusing the same path for `tinylanguage.pythonPath` keeps linting,
+  formatter helpers, and the debug adapter aligned with the rest of your
+  tooling.

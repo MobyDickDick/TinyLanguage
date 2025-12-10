@@ -271,10 +271,10 @@ function registerDebugAdapterExecutable(output) {
     return true;
   }
 
-  function createAdapterExecutable(configurationEnv = {}) {
-    const pythonExecutable = getPythonExecutable();
+  function createAdapterExecutable(configuration = {}) {
+    const pythonExecutable = configuration.python || getPythonExecutable();
     const adapterPath = path.join(__dirname, 'python', 'tiny_debug_adapter.py');
-    const normalizedConfigEnv = { ...configurationEnv };
+    const normalizedConfigEnv = { ...(configuration.env || {}) };
     if (typeof normalizedConfigEnv.TINYLANGUAGE_DAP_LOG === 'string') {
       normalizedConfigEnv.TINYLANGUAGE_DAP_LOG = resolveWorkspacePath(normalizedConfigEnv.TINYLANGUAGE_DAP_LOG);
     }
@@ -315,8 +315,7 @@ function registerDebugAdapterExecutable(output) {
   const command = vscode.commands.registerCommand('tinylanguage.getDebugAdapterExecutable', () => createAdapterExecutable());
   const factory = vscode.debug.registerDebugAdapterDescriptorFactory('tinylanguage', {
     createDebugAdapterDescriptor(session) {
-      const configurationEnv = session?.configuration?.env || {};
-      return createAdapterExecutable(configurationEnv);
+      return createAdapterExecutable(session?.configuration);
     },
   });
 

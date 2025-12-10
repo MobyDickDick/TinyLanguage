@@ -60,7 +60,7 @@ The default launch entry should look like this (comments are allowed because VS 
 
 The adapter starts the Python runtime shown in `runtime`. If the interpreter is not on your PATH or lives elsewhere, point `runtime` to the correct executable or virtual environment. When a launch fails, the extension writes activation issues to **Output → Log (Extension Host)** and adapter startup messages to **Output → TinyLanguage**, which helps pinpoint whether activation or runtime resolution failed.
 
-If you need a detailed trace of every Debug Adapter Protocol (DAP) message exchanged with VS Code, use **TinyLanguage › Debug Log Path**. By default the extension writes adapter traces to `${workspaceFolder}/.tinylanguage/debug-adapter.log`; you can point the setting elsewhere or clear it to disable file logging. The adapter records inbound and outbound DAP payloads, breakpoint updates, and stepping commands to the configured file.
+If you need a detailed trace of every Debug Adapter Protocol (DAP) message exchanged with VS Code, use **TinyLanguage › Debug Log Path**. By default the extension writes adapter traces to `${workspaceFolder}/.tinylanguage/debug-adapter.log` and mirrors the same content to **Output → TinyLanguage** so you can see the log even if file writes fail. You can point the setting elsewhere or clear it to disable file logging. The adapter records inbound and outbound DAP payloads, breakpoint updates, and stepping commands to the configured file/output.
 
 To override the log destination or mirror it to the TinyLanguage output pane for easier inspection, add an `env` block to your `launch.json` entry and set `TINYLANGUAGE_DAP_LOG` or `TINYLANGUAGE_DAP_STDERR`:
 

@@ -1,5 +1,6 @@
 import json
 import sys
+import time
 from importlib import util
 from pathlib import Path
 from typing import Any, Dict
@@ -150,3 +151,34 @@ def test_program_output_is_forwarded(debug_server):
 
     output_events = [m for m in messages if m.get("type") == "event" and m.get("event") == "output"]
     assert any("42" in evt.get("body", {}).get("output", "") for evt in output_events)
+
+
+def test_watchdog_warns_without_terminating(debug_server):
+    _, server, messages, _ = debug_server
+
+    server.handle_initialize({"seq": 1, "command": "initialize"})
+    # Pretend the client has been idle for a while so the watchdog triggers quickly.
+    server._last_client_message = time.monotonic() - 10
+
+    warning = None
+    for _ in range(20):
+        if messages:
+            warning = next(
+                (
+                    m
+                    for m in messages
+                    if m.get("type") == "event"
+                    and m.get("event") == "output"
+                    and "No launch/configuration requests" in m.get("body", {}).get("output", "")
+                ),
+                None,
+            )
+        if warning:
+            break
+        time.sleep(0.1)
+
+    server._shutdown = True
+    server._watchdog_thread.join(timeout=1)
+
+    assert warning is not None, f"Watchdog warning not emitted: {messages!r}"
+    assert all(m.get("event") != "terminated" for m in messages)

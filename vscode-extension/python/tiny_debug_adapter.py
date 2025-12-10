@@ -143,11 +143,22 @@ class DAPServer:
                 "event": "stopped",
                 "body": {"reason": "breakpoint", "threadId": 1},
             })
-            try:
-                command = self._command_queue.get(timeout=2.0)
-            except queue.Empty:
-                command = "continue"
-                self._log("No client command received while paused; continuing automatically")
+            timeout = float(os.environ.get("TINYLANGUAGE_DAP_PAUSE_TIMEOUT", "30"))
+            deadline = None if timeout <= 0 else time.monotonic() + timeout
+            command = None
+            while command is None:
+                remaining = None if deadline is None else max(0.1, deadline - time.monotonic())
+                try:
+                    command = self._command_queue.get(timeout=remaining)
+                except queue.Empty:
+                    if deadline is None:
+                        self._log("Still waiting for client command while paused")
+                        continue
+                    if time.monotonic() >= deadline:
+                        command = "continue"
+                        self._log("No client command received while paused; continuing automatically after timeout")
+                    else:
+                        self._log("Still waiting for client command while paused")
             self._log(f"Dequeued command from client: {command}")
             return command
 

@@ -261,11 +261,22 @@ function registerDebugAdapterExecutable(output) {
   function createAdapterExecutable(configurationEnv = {}) {
     const pythonExecutable = getPythonExecutable();
     const adapterPath = path.join(__dirname, 'python', 'tiny_debug_adapter.py');
-    const env = createToolEnv(configurationEnv);
-    const logPath = configurationEnv.TINYLANGUAGE_DAP_LOG || getDebugLogPath();
+    const normalizedConfigEnv = { ...configurationEnv };
+    if (typeof normalizedConfigEnv.TINYLANGUAGE_DAP_LOG === 'string') {
+      normalizedConfigEnv.TINYLANGUAGE_DAP_LOG = resolveWorkspacePath(normalizedConfigEnv.TINYLANGUAGE_DAP_LOG);
+    }
+    const env = createToolEnv(normalizedConfigEnv);
+    const logPath = normalizedConfigEnv.TINYLANGUAGE_DAP_LOG || getDebugLogPath();
     if (logPath && !env.TINYLANGUAGE_DAP_LOG) {
       env.TINYLANGUAGE_DAP_LOG = logPath;
       output.appendLine(`[TinyLanguage] Debug adapter logging enabled: ${logPath}`);
+    } else if (env.TINYLANGUAGE_DAP_LOG) {
+      output.appendLine(`[TinyLanguage] Debug adapter logging enabled via launch env: ${env.TINYLANGUAGE_DAP_LOG}`);
+    }
+    const logToStderr = ['1', 1, true, 'true'].includes(env.TINYLANGUAGE_DAP_STDERR);
+    env.TINYLANGUAGE_DAP_STDERR = logToStderr ? '1' : undefined;
+    if (logToStderr) {
+      output.appendLine('[TinyLanguage] Debug adapter will mirror logs to stderr (TINYLANGUAGE_DAP_STDERR=1).');
     }
     if (env.TINYLANGUAGE_DAP_STDERR === '1') {
       output.appendLine('[TinyLanguage] Debug adapter will mirror logs to stderr (TINYLANGUAGE_DAP_STDERR=1).');

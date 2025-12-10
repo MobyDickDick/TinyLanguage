@@ -8,7 +8,11 @@
       "program": "${workspaceFolder}/src_tiny/all_features.tiny",
       "runtime": "${workspaceFolder}/src/tiny_language.py",
       "python": "${config:tinylanguage.pythonPath}",
-      "stopOnEntry": false
+      "stopOnEntry": false,
+      "env": {
+        "TINYLANGUAGE_DAP_LOG": "/tmp/tiny_dap.log",
+        "TINYLANGUAGE_DAP_STDERR": "1"
+      }
     },
     {
       "name": "Python: run_all.py",

@@ -56,6 +56,7 @@ class DAPServer:
         self._session_started_at = self._last_client_message
         self._shutdown = False
         self._watchdog_thread = threading.Thread(target=self._watchdog, daemon=True)
+        self._watchdog_warning_sent = False
 
     def _open_log_file(self):
         log_path = os.environ.get("TINYLANGUAGE_DAP_LOG")
@@ -453,7 +454,7 @@ class DAPServer:
             if self._launch_received or self._configuration_done:
                 break
             idle = time.monotonic() - self._last_client_message
-            if idle > 3.0:
+            if idle > 3.0 and not self._watchdog_warning_sent:
                 last_cmd = self._last_client_command or "<none>"
                 elapsed = time.monotonic() - self._session_started_at
                 log_hint = " set TINYLANGUAGE_DAP_LOG=/tmp/tiny_dap.log" if not self._log_handle else ""
@@ -475,16 +476,7 @@ class DAPServer:
                         "body": {"category": "stderr", "output": warning + "\n"},
                     }
                 )
-                self._send(
-                    {
-                        "type": "event",
-                        "seq": self._next_seq(),
-                        "event": "terminated",
-                        "body": {},
-                    }
-                )
-                self._shutdown = True
-                break
+                self._watchdog_warning_sent = True
 
     def _enqueue(self, command: str) -> None:
         self._command_queue.put(command)

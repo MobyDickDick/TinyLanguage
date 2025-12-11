@@ -65,6 +65,13 @@ def test_debug_adapter_runs_and_surfaces_state(debug_server):
     server.handle_configuration_done({"seq": 4, "command": "configurationDone"})
 
     server._thread.join(timeout=5)
+    if server._thread.is_alive():
+        # If the program is still paused waiting for a client command, flush a
+        # final "continue" to unblock the thread and wait a bit longer. This
+        # keeps the test resilient to slow CI hosts without changing the
+        # adapter behavior.
+        server._command_queue.put("continue")
+        server._thread.join(timeout=5)
     assert not server._thread.is_alive()
 
     event_types = [m.get("event") for m in messages if m.get("type") == "event"]

@@ -59,6 +59,20 @@ function getTraceLogPath() {
   return '';
 }
 
+function ensureDirectoryForFile(filePath, output, label) {
+  if (!filePath) {
+    return '';
+  }
+  const parentDir = path.dirname(filePath);
+  try {
+    fs.mkdirSync(parentDir, { recursive: true });
+    return filePath;
+  } catch (err) {
+    output.appendLine(`[TinyLanguage] ${label} could not create ${parentDir}: ${err.message}`);
+    return '';
+  }
+}
+
 function normalizeEnvValue(value) {
   if (value === undefined || value === null) {
     return value;
@@ -307,14 +321,22 @@ function registerDebugAdapterExecutable(output) {
       normalizedConfigEnv.TINYLANG_TRACE_LOG = resolveWorkspacePath(normalizedConfigEnv.TINYLANG_TRACE_LOG);
     }
     const env = createToolEnv(normalizedConfigEnv, output);
-    const logPath = normalizedConfigEnv.TINYLANGUAGE_DAP_LOG || getDebugLogPath();
+    const logPath = ensureDirectoryForFile(
+      normalizedConfigEnv.TINYLANGUAGE_DAP_LOG || getDebugLogPath(),
+      output,
+      'Debug adapter logging',
+    );
     if (logPath && !env.TINYLANGUAGE_DAP_LOG) {
       env.TINYLANGUAGE_DAP_LOG = logPath;
       output.appendLine(`[TinyLanguage] Debug adapter logging enabled: ${logPath}`);
     } else if (env.TINYLANGUAGE_DAP_LOG) {
       output.appendLine(`[TinyLanguage] Debug adapter logging enabled via launch env: ${env.TINYLANGUAGE_DAP_LOG}`);
     }
-    const traceLogPath = normalizedConfigEnv.TINYLANG_TRACE_LOG || getTraceLogPath();
+    const traceLogPath = ensureDirectoryForFile(
+      normalizedConfigEnv.TINYLANG_TRACE_LOG || getTraceLogPath(),
+      output,
+      'Runtime trace logging',
+    );
     if (traceLogPath && !env.TINYLANG_TRACE_LOG) {
       env.TINYLANG_TRACE_LOG = traceLogPath;
       output.appendLine(`[TinyLanguage] Runtime trace logging enabled: ${traceLogPath}`);

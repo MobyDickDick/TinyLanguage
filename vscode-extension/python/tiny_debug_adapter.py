@@ -651,6 +651,7 @@ class DAPServer:
         if self._thread and self._thread.is_alive():
             self._enqueue("continue")
             self._thread.join(timeout=1)
+        self._shutdown = True
         response = {
             "type": "response",
             "seq": self._next_seq(),
@@ -681,8 +682,11 @@ class DAPServer:
         }
         self._log("Debug adapter started")
         while True:
+            if self._shutdown:
+                self._log("Shutdown requested; shutting down")
+                break
             message = self._read_message()
-            if message is None or self._shutdown:
+            if message is None:
                 self._log("No more messages; shutting down")
                 break
             command = message.get("command")

@@ -404,11 +404,15 @@ class DAPServer:
         if self._thread and self._thread.is_alive():
             self._log(f"Start skipped; program already running (trigger={trigger})")
             return
+        if not self._launch_received:
+            self._log(f"Start skipped; launch not received yet (trigger={trigger})")
+            return
+        if not self._configuration_done:
+            self._log(f"Start deferred; waiting for configurationDone (trigger={trigger})")
+            return
         if not self._program:
             self._log(f"Start skipped; no program set yet (trigger={trigger})")
             return
-        if trigger == "launch" and not self._configuration_done:
-            self._log("Launch received before configurationDone; starting anyway")
         self._log(f"Starting program thread (trigger={trigger})")
         target = self._run_python_program if self._python_mode else self._run_program
         self._thread = threading.Thread(target=target, args=(self._program,), daemon=True)
@@ -496,7 +500,6 @@ class DAPServer:
         self._launch_args = args
         self._program = Path(program)
         self._log(f"Launch request for {self._program}")
-        self._start_program_thread("launch")
         response = {
             "type": "response",
             "seq": self._next_seq(),

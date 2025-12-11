@@ -231,6 +231,14 @@ class DAPServer:
                 "event": "output",
                 "body": {"category": "stderr", "output": f"Failed to read program: {exc}\n"},
             })
+            self._send(
+                {
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "exited",
+                    "body": {"exitCode": 1},
+                }
+            )
             self._send({
                 "type": "event",
                 "seq": self._next_seq(),
@@ -255,6 +263,14 @@ class DAPServer:
                 "event": "output",
                 "body": {"category": "stderr", "output": f"Runtime error: {exc}\n"},
             })
+            self._send(
+                {
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "exited",
+                    "body": {"exitCode": 1},
+                }
+            )
         else:
             if output:
                 rendered = output if output.endswith("\n") else output + "\n"
@@ -264,6 +280,14 @@ class DAPServer:
                     "event": "output",
                     "body": {"category": "stdout", "output": rendered},
                 })
+            self._send(
+                {
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "exited",
+                    "body": {"exitCode": 0},
+                }
+            )
         self._send({
             "type": "event",
             "seq": self._next_seq(),
@@ -304,9 +328,38 @@ class DAPServer:
             with redirect_stdout(stdout_buffer), redirect_stderr(stderr_buffer):
                 debugger.runctx(compiled, {}, {})
         except SystemExit:
-            pass
+            code_obj = sys.exc_info()[1]
+            try:
+                exit_code = int(code_obj.code)
+            except Exception:
+                exit_code = 0
+            self._send(
+                {
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "exited",
+                    "body": {"exitCode": exit_code},
+                }
+            )
         except Exception as exc:  # pragma: no cover - runtime failure
             stderr_buffer.write(f"Exception in Python program: {exc}\n")
+            self._send(
+                {
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "exited",
+                    "body": {"exitCode": 1},
+                }
+            )
+        else:
+            self._send(
+                {
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "exited",
+                    "body": {"exitCode": 0},
+                }
+            )
         stdout_value = stdout_buffer.getvalue()
         stderr_value = stderr_buffer.getvalue()
         if stdout_value:

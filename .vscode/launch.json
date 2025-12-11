@@ -15,6 +15,24 @@
       }
     },
     {
+      "name": "TinyLanguage: Launch active Python file (debug adapter test)",
+      "type": "tinylanguage",
+      "request": "launch",
+      "program": "${file}",
+      "runtime": "${workspaceFolder}/src/tiny_language.py",
+      "python": "${config:tinylanguage.pythonPath}",
+      "cwd": "${workspaceFolder}",
+      "stopOnEntry": false,
+      "env": {
+        "TINYLANGUAGE_DAP_LOG": "/tmp/tiny_dap.log",
+        "TINYLANGUAGE_DAP_STDERR": "1"
+      },
+      "presentation": {
+        "group": "TinyLanguage",
+        "order": 2
+      }
+    },
+    {
       "name": "Python: run_all.py",
       "type": "debugpy",
       "request": "launch",

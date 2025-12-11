@@ -104,11 +104,21 @@ class DAPServer:
                 break
             header += line
 
-        headers = header.decode("utf-8").split("\r\n")
         length = 0
-        for entry in headers:
-            if entry.lower().startswith("content-length"):
-                length = int(entry.split(":", 1)[1].strip())
+        for entry in header.decode("utf-8").splitlines():
+            if ":" not in entry:
+                continue
+            key, value = entry.split(":", 1)
+            if key.lower() == "content-length":
+                try:
+                    length = int(value.strip())
+                except ValueError:
+                    self._log(f"Invalid Content-Length header: {entry!r}")
+                    return None
+
+        if length <= 0:
+            self._log("Missing or zero Content-Length header in incoming message")
+            return None
 
         body = sys.stdin.buffer.read(length)
         if not body:

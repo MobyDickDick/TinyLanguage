@@ -325,6 +325,7 @@ function registerDebugAdapterExecutable(output) {
   function createAdapterExecutable(configuration = {}) {
     const pythonExecutable = configuration.python || getPythonExecutable();
     const adapterPath = path.join(__dirname, 'python', 'tiny_debug_adapter.py');
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     logDebug(output, `debugAdapter: preparing adapter using python='${pythonExecutable}' path='${adapterPath}'`);
     const normalizedConfigEnv = { ...(configuration.env || {}) };
     if (typeof normalizedConfigEnv.TINYLANGUAGE_DAP_LOG === 'string') {
@@ -368,8 +369,12 @@ function registerDebugAdapterExecutable(output) {
       vscode.window.showWarningMessage('TinyLanguage debug adapter self-test failed. See output for details.');
       return undefined;
     }
+    const launchCwd = configuration.cwd || workspaceFolder;
+    if (launchCwd) {
+      output.appendLine(`[TinyLanguage] Debug adapter working directory: ${launchCwd}`);
+    }
     output.appendLine(`[TinyLanguage] Launching debug adapter via ${pythonExecutable} ${adapterPath}`);
-    return new vscode.DebugAdapterExecutable(pythonExecutable, [adapterPath], { env });
+    return new vscode.DebugAdapterExecutable(pythonExecutable, [adapterPath], { env, cwd: launchCwd });
   }
 
   const command = vscode.commands.registerCommand('tinylanguage.getDebugAdapterExecutable', () => {

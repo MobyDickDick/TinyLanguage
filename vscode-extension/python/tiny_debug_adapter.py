@@ -52,8 +52,15 @@ class DAPServer:
         self._variable_handles: Dict[int, VariableHandle] = {}
         self._next_handle = 1
         self._log_lock = threading.Lock()
-        self._log_handle = self._open_log_file()
         self._log_to_stderr = os.environ.get("TINYLANGUAGE_DAP_STDERR", "0") == "1"
+        log_requested = os.environ.get("TINYLANGUAGE_DAP_LOG")
+        self._log_handle = self._open_log_file()
+        # If the user explicitly requested logging but the file could not be
+        # opened, fall back to stderr so logs are not silently dropped. This
+        # avoids "blocked" sessions where no diagnostics are recorded because
+        # the configured path was invalid or unwritable.
+        if log_requested and not self._log_handle:
+            self._log_to_stderr = True
         self._log("TinyLanguage debug adapter started (hello world)")
         self._initialized_sent = False
         self._last_client_message = time.monotonic()

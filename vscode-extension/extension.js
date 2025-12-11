@@ -59,6 +59,16 @@ function getTraceLogPath() {
   return '';
 }
 
+function findBundledRuntime() {
+  const runtimeCandidates = [
+    path.join(__dirname, '..', 'src', 'tiny_language.py'),
+    path.join(__dirname, '..', 'src', 'tiny_language_stitched.py'),
+    path.join(__dirname, 'src', 'tiny_language.py'),
+    path.join(__dirname, 'src', 'tiny_language_stitched.py'),
+  ];
+  return runtimeCandidates.find((candidate) => fs.existsSync(candidate)) || '';
+}
+
 function ensureDirectoryForFile(filePath, output, label) {
   if (!filePath) {
     return '';
@@ -89,12 +99,15 @@ function normalizeEnvValue(value) {
 
 function createToolEnv(extraEnv = {}, output) {
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-  const repoSrc = path.join(__dirname, '..', 'src');
+  const repoSrcCandidates = [path.join(__dirname, '..', 'src'), path.join(__dirname, 'src')];
+  const repoSrc = repoSrcCandidates.find((candidate) => fs.existsSync(candidate));
   const searchPaths = [];
   if (workspaceFolder) {
     searchPaths.push(path.join(workspaceFolder, 'src'));
   }
-  searchPaths.push(repoSrc);
+  if (repoSrc) {
+    searchPaths.push(repoSrc);
+  }
   const combined = searchPaths.concat(process.env.PYTHONPATH ? [process.env.PYTHONPATH] : []).join(path.delimiter);
   const normalizedExtraEnv = Object.entries(extraEnv).reduce((acc, [key, value]) => {
     acc[key] = normalizeEnvValue(value);
@@ -447,8 +460,8 @@ function registerDebugConfigurations(output) {
       let runtimeExists = runtimePath ? fs.existsSync(runtimePath) : false;
       logDebug(output, `debugConfig: resolveWithVariables start for ${workspaceRoot}`);
       if (!runtimeExists) {
-        const bundledRuntime = path.join(__dirname, '..', 'src', 'tiny_language.py');
-        if (fs.existsSync(bundledRuntime)) {
+        const bundledRuntime = findBundledRuntime();
+        if (bundledRuntime) {
           output.appendLine(
             `[TinyLanguage] Runtime not found at ${runtimePath || '<empty>'}; using bundled runtime ${bundledRuntime}.`,
           );

@@ -452,7 +452,14 @@ function registerDebugConfigurations(output) {
       output.appendLine(`[TinyLanguage]  • Program: ${config.program}`);
       output.appendLine(`[TinyLanguage]  • Python executable: ${pythonExecutable}`);
       output.appendLine(`[TinyLanguage]  • Runtime: ${runtimePath || '<not set>'}`);
-      output.appendLine(`[TinyLanguage]  • Python mode: ${config.pythonMode === true ? 'enabled' : 'disabled'}`);
+      const pythonModeEnabled =
+        config.pythonMode === true ||
+        (config.pythonMode === undefined && typeof config.program === 'string' && config.program.toLowerCase().endsWith('.py'));
+      if (pythonModeEnabled && config.pythonMode !== true) {
+        output.appendLine(`[TinyLanguage]  • Python mode: enabled automatically for Python file ${config.program}`);
+      } else {
+        output.appendLine(`[TinyLanguage]  • Python mode: ${pythonModeEnabled ? 'enabled' : 'disabled'}`);
+      }
       if (!runtimePath) {
         output.appendLine('[TinyLanguage] Warning: runtime path is empty; set tinylanguage.runtimePath in settings if a custom interpreter is required.');
       }
@@ -461,7 +468,7 @@ function registerDebugConfigurations(output) {
         type,
         python: pythonExecutable,
         runtime: runtimePath,
-        pythonMode: config.pythonMode === true,
+        pythonMode: pythonModeEnabled,
       };
       output.appendLine(`[TinyLanguage] Starting debugger for ${merged.program}`);
       return merged;
@@ -499,7 +506,14 @@ function registerDebugConfigurations(output) {
       output.appendLine(`[TinyLanguage]  • Program: ${config.program}${unresolvedTokens ? ' (contains unresolved variables)' : ''}${fileExists ? '' : ' (file not found)'}`);
       output.appendLine(`[TinyLanguage]  • Python executable: ${pythonExecutable} (${describePython(pythonExecutable)})`);
       output.appendLine(`[TinyLanguage]  • Runtime: ${runtimePath || '<not set>'}${runtimePath && !runtimeExists ? ' (file not found)' : ''}`);
-      output.appendLine(`[TinyLanguage]  • Python mode: ${config.pythonMode === true ? 'enabled' : 'disabled'}`);
+      const pythonModeEnabled =
+        config.pythonMode === true ||
+        (config.pythonMode === undefined && typeof config.program === 'string' && config.program.toLowerCase().endsWith('.py'));
+      if (pythonModeEnabled && config.pythonMode !== true) {
+        output.appendLine(`[TinyLanguage]  • Python mode: enabled automatically for Python file ${config.program}`);
+      } else {
+        output.appendLine(`[TinyLanguage]  • Python mode: ${pythonModeEnabled ? 'enabled' : 'disabled'}`);
+      }
 
       if (!fileExists) {
         vscode.window.showWarningMessage(`TinyLanguage debug target not found: ${config.program}`);
@@ -520,7 +534,7 @@ function registerDebugConfigurations(output) {
         type,
         python: pythonExecutable,
         runtime: runtimePath,
-        pythonMode: config.pythonMode === true,
+        pythonMode: pythonModeEnabled,
       };
 
       output.appendLine(`[TinyLanguage] Launching debug adapter with resolved configuration.`);

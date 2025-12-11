@@ -15,6 +15,9 @@ import sys
 import threading
 import time
 import inspect
+import bdb
+import io
+from contextlib import redirect_stdout, redirect_stderr
 from datetime import datetime
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -59,6 +62,7 @@ class DAPServer:
         self._shutdown = False
         self._watchdog_thread = threading.Thread(target=self._watchdog, daemon=True)
         self._watchdog_warning_sent = False
+        self._python_mode = False
 
     def _open_log_file(self):
         log_path = os.environ.get("TINYLANGUAGE_DAP_LOG")
@@ -146,30 +150,75 @@ class DAPServer:
                 "event": "stopped",
                 "body": {"reason": "breakpoint", "threadId": 1},
             })
-            timeout = float(os.environ.get("TINYLANGUAGE_DAP_PAUSE_TIMEOUT", "30"))
-            deadline = None if timeout <= 0 else time.monotonic() + timeout
-            command = None
-            while command is None:
-                remaining = None if deadline is None else max(0.1, deadline - time.monotonic())
-                try:
-                    command = self._command_queue.get(timeout=remaining)
-                except queue.Empty:
-                    if deadline is None:
-                        self._log("Still waiting for client command while paused")
-                        continue
-                    if time.monotonic() >= deadline:
-                        command = "continue"
-                        self._log("No client command received while paused; continuing automatically after timeout")
-                    else:
-                        self._log("Still waiting for client command while paused")
-            self._log(f"Dequeued command from client: {command}")
-            return command
+            return self._wait_for_command()
 
         dbg = Debugger(on_pause=on_pause)
         for path, lines in self._breakpoints.items():
             namespace = self._namespace_for_path(Path(path)) if path else self._namespace
             dbg.set_breakpoints(namespace, set(lines))
         return dbg
+
+    def _python_debugger(self, program: Path):
+        server = self
+
+        class _PythonDebugger(bdb.Bdb):
+            def user_line(self, frame):  # pragma: no cover - exercised via VS Code
+                filename = Path(frame.f_code.co_filename).resolve()
+                if filename != program.resolve():
+                    return
+                server._paused_snapshot = {
+                    "python": True,
+                    "frame": frame,
+                    "stack": inspect.getouterframes(frame),
+                }
+                server._log("Paused in Python program")
+                server._send(
+                    {
+                        "type": "event",
+                        "seq": server._next_seq(),
+                        "event": "stopped",
+                        "body": {"reason": "breakpoint", "threadId": 1},
+                    }
+                )
+                command = server._wait_for_command()
+                if command == "step_over":
+                    self.set_next(frame)
+                elif command == "step_in":
+                    self.set_step()
+                elif command == "step_out":
+                    self.set_return(frame)
+                else:
+                    self.set_continue()
+
+        dbg = _PythonDebugger()
+        for path, lines in self._breakpoints.items():
+            resolved = Path(path).resolve()
+            for line in lines:
+                try:
+                    dbg.set_break(str(resolved), line)
+                except Exception as exc:  # pragma: no cover - depends on source
+                    self._log(f"Failed to set Python breakpoint at {resolved}:{line}: {exc}")
+        return dbg
+
+    def _wait_for_command(self) -> str:
+        timeout = float(os.environ.get("TINYLANGUAGE_DAP_PAUSE_TIMEOUT", "30"))
+        deadline = None if timeout <= 0 else time.monotonic() + timeout
+        command = None
+        while command is None:
+            remaining = None if deadline is None else max(0.1, deadline - time.monotonic())
+            try:
+                command = self._command_queue.get(timeout=remaining)
+            except queue.Empty:
+                if deadline is None:
+                    self._log("Still waiting for client command while paused")
+                    continue
+                if time.monotonic() >= deadline:
+                    command = "continue"
+                    self._log("No client command received while paused; continuing automatically after timeout")
+                else:
+                    self._log("Still waiting for client command while paused")
+        self._log(f"Dequeued command from client: {command}")
+        return command
 
     def _run_program(self, program: Path) -> None:
         self._log(f"Starting program run: {program}")
@@ -222,6 +271,71 @@ class DAPServer:
             "body": {},
         })
 
+    def _run_python_program(self, program: Path) -> None:
+        self._log(f"Starting Python program run: {program}")
+        self._namespace = str(program)
+        debugger = self._python_debugger(program)
+        stdout_buffer = io.StringIO()
+        stderr_buffer = io.StringIO()
+        try:
+            with open(program, "r", encoding="utf-8") as handle:
+                code = handle.read()
+        except Exception as exc:  # pragma: no cover - I/O failure
+            self._send(
+                {
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "output",
+                    "body": {"category": "stderr", "output": f"Failed to read program: {exc}\n"},
+                }
+            )
+            self._send(
+                {
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "terminated",
+                    "body": {},
+                }
+            )
+            return
+
+        try:
+            compiled = compile(code, str(program), "exec")
+            with redirect_stdout(stdout_buffer), redirect_stderr(stderr_buffer):
+                debugger.runctx(compiled, {}, {})
+        except SystemExit:
+            pass
+        except Exception as exc:  # pragma: no cover - runtime failure
+            stderr_buffer.write(f"Exception in Python program: {exc}\n")
+        stdout_value = stdout_buffer.getvalue()
+        stderr_value = stderr_buffer.getvalue()
+        if stdout_value:
+            self._send(
+                {
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "output",
+                    "body": {"category": "stdout", "output": stdout_value},
+                }
+            )
+        if stderr_value:
+            self._send(
+                {
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "output",
+                    "body": {"category": "stderr", "output": stderr_value},
+                }
+            )
+        self._send(
+            {
+                "type": "event",
+                "seq": self._next_seq(),
+                "event": "terminated",
+                "body": {},
+            }
+        )
+
     # ----- Request handlers -----
     def _start_program_thread(self, trigger: str) -> None:
         if self._thread and self._thread.is_alive():
@@ -233,7 +347,8 @@ class DAPServer:
         if trigger == "launch" and not self._configuration_done:
             self._log("Launch received before configurationDone; starting anyway")
         self._log(f"Starting program thread (trigger={trigger})")
-        self._thread = threading.Thread(target=self._run_program, args=(self._program,), daemon=True)
+        target = self._run_python_program if self._python_mode else self._run_program
+        self._thread = threading.Thread(target=target, args=(self._program,), daemon=True)
         self._thread.start()
 
     def handle_initialize(self, request: Dict[str, Any]) -> None:
@@ -291,6 +406,7 @@ class DAPServer:
     def handle_launch(self, request: Dict[str, Any]) -> None:
         args = request.get("arguments", {})
         program = args.get("program")
+        self._python_mode = bool(args.get("pythonMode"))
         if not program:
             message = "Launch request is missing required 'program' path"
             self._log(message)
@@ -358,21 +474,34 @@ class DAPServer:
     def handle_stack_trace(self, request: Dict[str, Any]) -> None:
         frames = []
         if self._paused_snapshot:
-            for idx, frame in enumerate(reversed(self._paused_snapshot.call_stack)):
+            if isinstance(self._paused_snapshot, dict) and self._paused_snapshot.get("python"):
+                stack = self._paused_snapshot.get("stack") or []
+                for idx, frame_info in enumerate(stack):
+                    frames.append(
+                        {
+                            "id": idx + 1,
+                            "name": frame_info.function,
+                            "line": frame_info.lineno,
+                            "column": 1,
+                            "source": {"path": frame_info.filename},
+                        }
+                    )
+            else:
+                for idx, frame in enumerate(reversed(self._paused_snapshot.call_stack)):
+                    frames.append({
+                        "id": idx + 1,
+                        "name": frame.qualified_name,
+                        "line": frame.pos.line,
+                        "column": frame.pos.col,
+                        "source": {"path": self._frame_path()},
+                    })
                 frames.append({
-                    "id": idx + 1,
-                    "name": frame.qualified_name,
-                    "line": frame.pos.line,
-                    "column": frame.pos.col,
+                    "id": len(frames) + 1,
+                    "name": "<current>",
+                    "line": self._paused_snapshot.pos.line,
+                    "column": self._paused_snapshot.pos.col,
                     "source": {"path": self._frame_path()},
                 })
-            frames.append({
-                "id": len(frames) + 1,
-                "name": "<current>",
-                "line": self._paused_snapshot.pos.line,
-                "column": self._paused_snapshot.pos.col,
-                "source": {"path": self._frame_path()},
-            })
         response = {
             "type": "response",
             "seq": self._next_seq(),
@@ -386,17 +515,32 @@ class DAPServer:
     def handle_scopes(self, request: Dict[str, Any]) -> None:
         scopes = []
         if self._paused_snapshot:
-            for idx, scope in enumerate(self._paused_snapshot.scopes):
-                handle_id = self._next_handle
-                self._next_handle += 1
-                self._variable_handles[handle_id] = VariableHandle(
-                    label=f"scope_{idx}", values=scope.values
-                )
-                scopes.append({
-                    "name": f"Scope {idx}",
-                    "variablesReference": handle_id,
-                    "expensive": False,
-                })
+            if isinstance(self._paused_snapshot, dict) and self._paused_snapshot.get("python"):
+                frame = self._paused_snapshot.get("frame")
+                if frame:
+                    values = {**frame.f_globals, **frame.f_locals}
+                    handle_id = self._next_handle
+                    self._next_handle += 1
+                    self._variable_handles[handle_id] = VariableHandle(
+                        label="python_frame", values=values
+                    )
+                    scopes.append({
+                        "name": "Python Frame",
+                        "variablesReference": handle_id,
+                        "expensive": False,
+                    })
+            else:
+                for idx, scope in enumerate(self._paused_snapshot.scopes):
+                    handle_id = self._next_handle
+                    self._next_handle += 1
+                    self._variable_handles[handle_id] = VariableHandle(
+                        label=f"scope_{idx}", values=scope.values
+                    )
+                    scopes.append({
+                        "name": f"Scope {idx}",
+                        "variablesReference": handle_id,
+                        "expensive": False,
+                    })
         response = {
             "type": "response",
             "seq": self._next_seq(),

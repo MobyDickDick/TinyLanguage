@@ -95,6 +95,33 @@ def test_debug_adapter_runs_and_surfaces_state(debug_server):
     assert rendered.get("result") == "5"
 
 
+def test_launch_waits_for_configuration_done(debug_server):
+    _, server, messages, program = debug_server
+
+    server.handle_initialize({"seq": 1, "command": "initialize"})
+    server.handle_set_breakpoints(
+        {
+            "seq": 2,
+            "command": "setBreakpoints",
+            "arguments": {"source": {"path": str(program)}, "breakpoints": [{"line": 7}]},
+        }
+    )
+
+    server.handle_launch({"seq": 3, "command": "launch", "arguments": {"program": str(program)}})
+
+    assert server._thread is None or not server._thread.is_alive()
+
+    server.handle_configuration_done({"seq": 4, "command": "configurationDone"})
+
+    assert server._thread is not None
+    server._thread.join(timeout=5)
+    if server._thread.is_alive():
+        server._command_queue.put("continue")
+        server._thread.join(timeout=5)
+
+    assert not server._thread.is_alive()
+
+
 def test_launch_without_program_returns_error(debug_server):
     _, server, messages, _ = debug_server
 

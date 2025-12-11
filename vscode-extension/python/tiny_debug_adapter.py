@@ -51,6 +51,7 @@ class DAPServer:
         self._log_lock = threading.Lock()
         self._log_handle = self._open_log_file()
         self._log_to_stderr = os.environ.get("TINYLANGUAGE_DAP_STDERR", "0") == "1"
+        self._log("TinyLanguage debug adapter started (hello world)")
         self._initialized_sent = False
         self._last_client_message = time.monotonic()
         self._last_client_command: Optional[str] = None

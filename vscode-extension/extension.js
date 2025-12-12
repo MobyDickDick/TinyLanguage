@@ -354,6 +354,12 @@ function registerDebugAdapterExecutable(output) {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     logDebug(output, `debugAdapter: preparing adapter using python='${pythonExecutable}' path='${adapterPath}'`);
     const runtimePath = configuration.runtime || getRuntimePath();
+    const pythonMode = Boolean(configuration.pythonMode);
+    if (pythonMode) {
+      output.appendLine(
+        '[TinyLanguage] pythonMode=true uses Python\'s built-in debugger (bdb/pdb); use the VS Code Python extension for full debugpy-backed debugging.',
+      );
+    }
     const normalizedConfigEnv = { ...(configuration.env || {}) };
     if (typeof normalizedConfigEnv.TINYLANGUAGE_DAP_LOG === 'string') {
       normalizedConfigEnv.TINYLANGUAGE_DAP_LOG = resolveWorkspacePath(normalizedConfigEnv.TINYLANGUAGE_DAP_LOG);
@@ -401,6 +407,14 @@ function registerDebugAdapterExecutable(output) {
       terminal.sendText(
         `echo "[TinyLanguage] python=${pythonExecutable} runtime=${runtimePath || '<not set>'} cwd=${launchCwd || '<default>'}"`,
       );
+      terminal.sendText(
+        'echo "[TinyLanguage] Adapter uses tiny_debug_adapter.py (no debugpy launcher expected)"',
+      );
+      if (pythonMode) {
+        terminal.sendText(
+          'echo "[TinyLanguage] pythonMode uses stdlib bdb/pdb; use the VS Code Python debugger for full debugpy support"',
+        );
+      }
     }
     const ok = probeDebugAdapter(pythonExecutable, adapterPath, env);
     if (!ok) {

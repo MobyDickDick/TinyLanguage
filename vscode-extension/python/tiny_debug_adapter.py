@@ -507,6 +507,7 @@ class DAPServer:
         self._launch_args = args
         self._program = Path(program)
         self._log(f"Launch request for {self._program}")
+        self._start_program_thread("launch")
         response = {
             "type": "response",
             "seq": self._next_seq(),

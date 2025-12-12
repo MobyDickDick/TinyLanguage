@@ -122,6 +122,26 @@ def test_launch_waits_for_configuration_done(debug_server):
     assert not server._thread.is_alive()
 
 
+def test_launch_after_configuration_done_starts_program(debug_server):
+    _, server, messages, program = debug_server
+
+    server.handle_initialize({"seq": 1, "command": "initialize"})
+
+    # Some clients send configurationDone before launch. Once launch arrives,
+    # the adapter should start the program without waiting for another
+    # configurationDone.
+    server.handle_configuration_done({"seq": 2, "command": "configurationDone"})
+    server.handle_launch({"seq": 3, "command": "launch", "arguments": {"program": str(program)}})
+
+    server._thread.join(timeout=5)
+    if server._thread.is_alive():
+        server._command_queue.put("continue")
+        server._thread.join(timeout=5)
+
+    assert not server._thread.is_alive()
+    assert any(m.get("event") == "terminated" for m in messages)
+
+
 def test_launch_without_program_returns_error(debug_server):
     _, server, messages, _ = debug_server
 

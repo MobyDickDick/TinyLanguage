@@ -691,8 +691,38 @@ class DAPServer:
 
             if not self._initialized_sent:
                 continue
-            if self._launch_received or self._configuration_done:
+            if self._configuration_done:
                 break
+
+            if self._launch_received and not self._configuration_done:
+                if idle > 3.0 and not self._watchdog_warning_sent:
+                    last_cmd = self._last_client_command or "<none>"
+                    elapsed = time.monotonic() - self._session_started_at
+                    log_hint = " set TINYLANGUAGE_DAP_LOG=/tmp/tiny_dap.log" if not self._log_handle else ""
+                    stderr_hint = " and TINYLANGUAGE_DAP_STDERR=1" if not self._log_to_stderr else ""
+                    warning = (
+                        "Launch received but no configurationDone request. "
+                        "VS Code should send 'configurationDone' after setting breakpoints; "
+                        "if it did not, verify the TinyLanguage debug configuration is selected." +
+                        (" Enable adapter logging with" + log_hint + stderr_hint if (log_hint or stderr_hint) else "") +
+                        f" Last client command: {last_cmd}; idle for {idle:.1f}s (session {elapsed:.1f}s)."
+                    )
+                    self._log(warning)
+                    self._send(
+                        {
+                            "type": "event",
+                            "seq": self._next_seq(),
+                            "event": "output",
+                            "body": {"category": "stderr", "output": warning + "\n"},
+                        }
+                    )
+                    # Force the launch to start so the user is not stuck even if
+                    # the client failed to send configurationDone.
+                    self._configuration_done = True
+                    self._start_program_thread("watchdog")
+                    self._watchdog_warning_sent = True
+                continue
+
             if idle > 3.0 and not self._watchdog_warning_sent:
                 last_cmd = self._last_client_command or "<none>"
                 elapsed = time.monotonic() - self._session_started_at

@@ -89,6 +89,19 @@ class DAPServer:
         # blocking forever with no diagnostics.
         self._watchdog_thread.start()
 
+    def _emit_warning(self, message: str) -> None:
+        """Log a warning and surface it to the client output stream."""
+
+        self._log(message)
+        self._send(
+            {
+                "type": "event",
+                "seq": self._next_seq(),
+                "event": "output",
+                "body": {"category": "stderr", "output": message + "\n"},
+            }
+        )
+
     def _open_log_file(self):
         log_path = os.environ.get("TINYLANGUAGE_DAP_LOG")
         if not log_path:
@@ -731,7 +744,7 @@ class DAPServer:
                     (" and enable adapter logging with" + log_hint + stderr_hint if (log_hint or stderr_hint) else "") +
                     f". Idle for {idle:.1f}s (session {elapsed:.1f}s)."
                 )
-                self._log(warning)
+                self._emit_warning(warning)
                 self._watchdog_warning_sent = True
                 continue
 
@@ -753,15 +766,7 @@ class DAPServer:
                         (" Enable adapter logging with" + log_hint + stderr_hint if (log_hint or stderr_hint) else "") +
                         f" Last client command: {last_cmd}; idle for {idle:.1f}s (session {elapsed:.1f}s)."
                     )
-                    self._log(warning)
-                    self._send(
-                        {
-                            "type": "event",
-                            "seq": self._next_seq(),
-                            "event": "output",
-                            "body": {"category": "stderr", "output": warning + "\n"},
-                        }
-                    )
+                    self._emit_warning(warning)
                     # Force the launch to start so the user is not stuck even if
                     # the client failed to send configurationDone.
                     self._configuration_done = True
@@ -782,15 +787,7 @@ class DAPServer:
                     (" Enable adapter logging with" + log_hint + stderr_hint if (log_hint or stderr_hint) else "") +
                     f" Last client command: {last_cmd}; idle for {idle:.1f}s (session {elapsed:.1f}s)."
                 )
-                self._log(warning)
-                self._send(
-                    {
-                        "type": "event",
-                        "seq": self._next_seq(),
-                        "event": "output",
-                        "body": {"category": "stderr", "output": warning + "\n"},
-                    }
-                )
+                self._emit_warning(warning)
                 self._watchdog_warning_sent = True
 
     def _enqueue(self, command: str) -> None:

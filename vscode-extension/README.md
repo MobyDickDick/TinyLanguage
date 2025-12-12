@@ -93,6 +93,18 @@ Every TinyLanguage debug session performs a quick self-test before launching. Th
 
 If the self-test fails or shows the module being imported from the wrong location, ensure the configured Python interpreter can import your workspace’s `src/` directory and restart the debug session.
 
+#### Troubleshooting a stuck debug session
+
+If the TinyLanguage debug session seems to “hang” (no breakpoints hit, VS Code status bar shows “running” forever), try the following steps to pinpoint the failure:
+
+- Open **Output → TinyLanguage** and inspect the self-test JSON printed when the adapter starts. Confirm the `tiny_language_module` points at your workspace copy (for example `${workspaceFolder}/src/tiny_language.py`) and that `sys_path_sample` includes your repository `src` folder. If not, set **TinyLanguage › Python Path** and **TinyLanguage › Runtime Path** to the interpreter/virtual environment that can import the sources, then restart VS Code.
+- Enable a verbose adapter trace via **TinyLanguage › Debug Log Path** (or set `"TINYLANGUAGE_DAP_LOG": "${workspaceFolder}/.tinylanguage/debug-adapter.log"` in `launch.json`) and reproduce the issue. The resulting log shows every Debug Adapter Protocol request/response so you can see whether VS Code ever sent `configurationDone`, set any breakpoints, or issued a `continue` after the initial `stopped` event.
+- Verify the target file actually exists on disk after variable substitution. The adapter will refuse to launch if `program` cannot be resolved; the **Output → TinyLanguage** pane echoes the final absolute path so you can cross-check it.
+- On Windows, prefer launching the adapter with the same Python interpreter you use for running tests (for example from a virtual environment). You can override the executable in `launch.json` by adding `"python": "C:/path/to/venv/Scripts/python.exe"` so the adapter does not rely on the `python3` shim.
+- If you want to compare behavior with a known-good reference, the official VS Code [Mock Debug](https://github.com/microsoft/vscode-mock-debug) sample extension mirrors the same Debug Adapter Protocol lifecycle (initialize → setBreakpoints → launch → configurationDone → continue). You can run it in an Extension Development Host to see the expected requests and responses.
+
+These checks usually reveal why the runtime never starts or why execution pauses indefinitely while waiting for client commands.
+
 ## Roadmap / TODO
 
 This section gathers upcoming tasks for TinyLanguage.

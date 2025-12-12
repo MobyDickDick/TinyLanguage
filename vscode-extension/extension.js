@@ -6,6 +6,11 @@ const os = require('os');
 
 let debugTerminal;
 
+function isDebugTerminalEnabled() {
+  const config = vscode.workspace.getConfiguration('tinylanguage');
+  return Boolean(config.get('showDebugTerminal'));
+}
+
 function logDebug(output, message) {
   const formatted = `[TinyLanguage][debug] ${message}`;
   if (output?.appendLine) {
@@ -17,6 +22,10 @@ function logDebug(output, message) {
 }
 
 function getDebugTerminal(output) {
+  if (!isDebugTerminalEnabled()) {
+    logDebug(output, 'debugTerminal: skipped (disabled via configuration)');
+    return undefined;
+  }
   if (debugTerminal && !debugTerminal.exitStatus) {
     return debugTerminal;
   }

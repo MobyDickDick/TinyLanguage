@@ -22,6 +22,10 @@
       "runtime": "${workspaceFolder}/src/tiny_language.py",
       "python": "${config:tinylanguage.pythonPath}",
       "stopOnEntry": false,
+      "env": {
+        "TINYLANGUAGE_DAP_LOG": "/tmp/tiny_dap.log",
+        "TINYLANGUAGE_DAP_STDERR": "1"
+      },
       "presentation": {
         "group": "TinyLanguage",
         "order": 1,
@@ -53,7 +57,9 @@
       "request": "launch",
       "program": "${workspaceFolder}/run_all.py",
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run all_features.tiny",
@@ -63,7 +69,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/all_features.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run demo.tiny",
@@ -73,7 +81,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/demo.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run number_class.tiny",
@@ -83,7 +93,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/number_class.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run rosetta_fibonacci.tiny",
@@ -93,7 +105,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/rosetta_fibonacci.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run concurrency_demo.tiny",
@@ -103,7 +117,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/concurrency_demo.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run number_intervall.tiny",
@@ -113,7 +129,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/number_intervall.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run concurrency_pipeline.tiny",
@@ -123,7 +141,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/concurrency_pipeline.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run class_demo.tiny",
@@ -133,7 +153,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/class_demo.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run namespace_demo.tiny",
@@ -143,7 +165,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/namespace_demo.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run match_demo.tiny",
@@ -153,7 +177,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/match_demo.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run operator_overloading_demo.tiny",
@@ -163,7 +189,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/operator_overloading_demo.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run parallel_map.tiny",
@@ -173,7 +201,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/parallel_map.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run heap_pointer_demo.tiny",
@@ -183,7 +213,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/heap_pointer_demo.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run result_demo.tiny",
@@ -193,7 +225,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/result_demo.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run tests/logic_example.tiny",
@@ -203,7 +237,9 @@
       "args": [
         "${workspaceFolder}/tests/logic_example.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run .vscode/all_features.tiny",
@@ -213,7 +249,9 @@
       "args": [
         "${workspaceFolder}/.vscode/all_features.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run .vscode/rosetta_fibonacci.tiny",
@@ -223,7 +261,9 @@
       "args": [
         "${workspaceFolder}/.vscode/rosetta_fibonacci.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run try_catch_demo.tiny",
@@ -233,7 +273,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/try_catch_demo.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run stdlib_collections_demo.tiny",
@@ -243,7 +285,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/stdlib_collections_demo.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Run stdlib_io_random_demo.tiny",
@@ -253,7 +297,9 @@
       "args": [
         "${workspaceFolder}/src_tiny/stdlib_io_random_demo.tiny"
       ],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_tiny_language.py",
@@ -264,7 +310,9 @@
       "args": [
         "tests/test_tiny_language.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_number_class.py",
@@ -275,7 +323,9 @@
       "args": [
         "tests/test_number_class.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_number_intervall.py",
@@ -286,7 +336,9 @@
       "args": [
         "tests/test_number_intervall.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_stdlib.py (stdlib utilities)",
@@ -297,7 +349,9 @@
       "args": [
         "tests/test_stdlib.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_errors.py",
@@ -308,7 +362,9 @@
       "args": [
         "tests/test_errors.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_benchmark_and_fuzz.py",
@@ -319,7 +375,9 @@
       "args": [
         "tests/test_benchmark_and_fuzz.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_repl.py",
@@ -330,7 +388,9 @@
       "args": [
         "tests/test_repl.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_heap_pointer_demo.py",
@@ -341,7 +401,9 @@
       "args": [
         "tests/test_heap_pointer_demo.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_concurrency.py",
@@ -352,7 +414,9 @@
       "args": [
         "tests/test_concurrency.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_async_tokens.py",
@@ -363,7 +427,9 @@
       "args": [
         "tests/test_async_tokens.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_error_messages.py",
@@ -374,7 +440,9 @@
       "args": [
         "tests/test_error_messages.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_inheritance.py",
@@ -385,7 +453,9 @@
       "args": [
         "tests/test_inheritance.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_objects.py",
@@ -396,7 +466,9 @@
       "args": [
         "tests/test_objects.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_number_overflow.py",
@@ -407,7 +479,9 @@
       "args": [
         "tests/test_number_overflow.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_null.py",
@@ -418,7 +492,9 @@
       "args": [
         "tests/test_null.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_operator_overloading.py",
@@ -429,7 +505,9 @@
       "args": [
         "tests/test_operator_overloading.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_namespaces.py",
@@ -440,7 +518,9 @@
       "args": [
         "tests/test_namespaces.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_try_catch.py",
@@ -451,7 +531,9 @@
       "args": [
         "tests/test_try_catch.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_typing.py",
@@ -462,7 +544,9 @@
       "args": [
         "tests/test_typing.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: pytest - tests/test_modules.py",
@@ -473,7 +557,9 @@
       "args": [
         "tests/test_modules.py",
         "-q"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: utils helper module",
@@ -481,7 +567,9 @@
       "request": "launch",
       "program": "${workspaceFolder}/tests/utils.py",
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: tiny_language REPL",
@@ -492,7 +580,9 @@
         "--repl"
       ],
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: import_code helper",
@@ -500,7 +590,9 @@
       "request": "launch",
       "program": "${workspaceFolder}/.vscode/import_code.py",
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     },
     {
       "name": "Python: TinyLanguage Rosetta Fibonacci",
@@ -510,7 +602,9 @@
       "console": "integratedTerminal",
       "args": [
         "${workspaceFolder}/src_tiny/rosetta_fibonacci.tiny"
-      ]
+      ],
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
     }
   ],
   "compounds": [

@@ -82,6 +82,8 @@ class DAPServer:
         self._watchdog_thread = threading.Thread(target=self._watchdog, daemon=True)
         self._watchdog_warning_sent = False
         self._python_mode = False
+        self._process_event_sent = False
+        self._thread_event_sent = False
         # Start the watchdog immediately so that we can surface handshake issues
         # (e.g., VS Code never sending an initialize request) instead of
         # blocking forever with no diagnostics.
@@ -440,6 +442,16 @@ class DAPServer:
         target = self._run_python_program if self._python_mode else self._run_program
         self._thread = threading.Thread(target=target, args=(self._program,), daemon=True)
         self._thread.start()
+        if not self._thread_event_sent:
+            self._send(
+                {
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "thread",
+                    "body": {"reason": "started", "threadId": 1},
+                }
+            )
+            self._thread_event_sent = True
 
     def handle_initialize(self, request: Dict[str, Any]) -> None:
         response = {
@@ -521,6 +533,28 @@ class DAPServer:
         self._launch_args = args
         self._program = Path(program)
         self._log(f"Launch request for {self._program}")
+        if not self._process_event_sent:
+            try:
+                name = self._program.name
+                cwd = str(self._program.parent)
+            except Exception:
+                name = str(self._program)
+                cwd = None
+            self._send(
+                {
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "process",
+                    "body": {
+                        "name": name,
+                        "systemProcessId": os.getpid(),
+                        "isLocalProcess": True,
+                        "startMethod": "launch",
+                        "cwd": cwd,
+                    },
+                }
+            )
+            self._process_event_sent = True
         self._start_program_thread("launch")
         response = {
             "type": "response",

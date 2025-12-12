@@ -457,10 +457,15 @@ function registerDebugConfigurations(output) {
       output.appendLine(`[TinyLanguage]  • Program: ${config.program}`);
       output.appendLine(`[TinyLanguage]  • Python executable: ${pythonExecutable}`);
       output.appendLine(`[TinyLanguage]  • Runtime: ${runtimePath || '<not set>'}`);
-      const pythonModeEnabled =
-        config.pythonMode === true ||
-        (config.pythonMode === undefined && typeof config.program === 'string' && config.program.toLowerCase().endsWith('.py'));
-      if (pythonModeEnabled && config.pythonMode !== true) {
+      const programHasTokens = typeof config.program === 'string' && /\$\{[^}]+\}/.test(config.program);
+      const programLooksPython =
+        typeof config.program === 'string' && config.program.toLowerCase().endsWith('.py') && !programHasTokens;
+      const pythonModeExplicit = config.pythonMode;
+      const pythonModeAuto = pythonModeExplicit === undefined && programLooksPython;
+      const pythonModeEnabled = pythonModeExplicit === true || pythonModeAuto;
+      if (config.pythonMode === undefined && programHasTokens) {
+        output.appendLine('[TinyLanguage]  • Python mode: deferred until variables are substituted');
+      } else if (pythonModeEnabled && config.pythonMode !== true) {
         output.appendLine(`[TinyLanguage]  • Python mode: enabled automatically for Python file ${config.program}`);
       } else {
         output.appendLine(`[TinyLanguage]  • Python mode: ${pythonModeEnabled ? 'enabled' : 'disabled'}`);
@@ -473,7 +478,12 @@ function registerDebugConfigurations(output) {
         type,
         python: pythonExecutable,
         runtime: runtimePath,
-        pythonMode: pythonModeEnabled,
+        pythonMode:
+          pythonModeExplicit !== undefined
+            ? pythonModeEnabled
+            : programHasTokens
+              ? undefined
+              : pythonModeEnabled,
       };
       output.appendLine(`[TinyLanguage] Starting debugger for ${merged.program}`);
       return merged;

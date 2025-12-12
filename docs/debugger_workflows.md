@@ -129,7 +129,10 @@ quick self-test below before chasing down editor log noise.
   starts the Python-based adapter directly from the extension rather than
   through the integrated terminal. You should not see an extra shell prompt
   because the adapter spawns the interpreter in the background and forwards all
-  output to the Debug Console.
+  output to the Debug Console. If you want to see the adapter's terminal log for
+  troubleshooting, enable `tinylanguage.showDebugTerminal` (off by default);
+  otherwise the extension keeps the extra terminal hidden so Python environment
+  auto-activation scripts do not steal focus during launch.
 
 ### Interpreting "Window" log warnings and errors
 - The **Window** log (from the main VS Code process) often contains extension

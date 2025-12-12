@@ -87,6 +87,11 @@
           "type": "string",
           "default": "${workspaceFolder}/.tinylanguage/runtime-trace.log",
           "description": "Optional file path for interpreter trace logs while debugging. Clear to disable logging."
+        },
+        "tinylanguage.showDebugTerminal": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show the TinyLanguage Debug Log terminal when launching the adapter (useful for troubleshooting)."
         }
       }
     },

@@ -236,3 +236,15 @@ def test_watchdog_warns_without_terminating(debug_server):
 
     assert warning is not None, f"Watchdog warning not emitted: {messages!r}"
     assert all(m.get("event") != "terminated" for m in messages)
+
+
+def test_env_var_truthy_parsing(monkeypatch):
+    module = load_adapter_module()
+
+    monkeypatch.setenv("TINYLANGUAGE_DAP_STDERR", "true")
+    server = module.DAPServer()
+    assert server._log_to_stderr is True
+
+    monkeypatch.setenv("TINYLANGUAGE_DAP_STDERR", "0")
+    server_disabled = module.DAPServer()
+    assert server_disabled._log_to_stderr is False

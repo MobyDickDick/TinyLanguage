@@ -30,6 +30,18 @@ sys.path.insert(0, str(SRC_ROOT))
 from tiny_language import Debugger, compile_and_run
 
 
+def _env_var_truthy(name: str) -> bool:
+    """Return True when the environment variable is set to a truthy value."""
+
+    value = os.environ.get(name)
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return value
+    normalized = str(value).strip().lower()
+    return normalized in {"1", "true", "yes", "on"}
+
+
 @dataclass
 class VariableHandle:
     label: str
@@ -52,7 +64,7 @@ class DAPServer:
         self._variable_handles: Dict[int, VariableHandle] = {}
         self._next_handle = 1
         self._log_lock = threading.Lock()
-        self._log_to_stderr = os.environ.get("TINYLANGUAGE_DAP_STDERR", "0") == "1"
+        self._log_to_stderr = _env_var_truthy("TINYLANGUAGE_DAP_STDERR")
         log_requested = os.environ.get("TINYLANGUAGE_DAP_LOG")
         self._log_handle = self._open_log_file()
         # If the user explicitly requested logging but the file could not be

@@ -41,6 +41,8 @@ If you need to verify that the debug adapter wiring works at all, the **TinyLang
 
 > TinyLanguage sessions do not use the built-in Python debugger. The adapter is a Python script (`vscode-extension/python/tiny_debug_adapter.py`) that drives the TinyLanguage interpreter. You will not see `DEBUGPY_LOG_DIR` or a `debugpy` launcher command in the debug terminal because the adapter runs directly without `debugpy`. If VS Code starts a Python debug session instead of the TinyLanguage configuration above, check that your `launch.json` entry uses `"type": "tinylanguage"` and that the extension is enabled. To verify your environment, run `python vscode-extension/python/tiny_debug_adapter.py --self-test` inside the repo; the output should confirm the adapter can import the interpreter.
 
+> Want to debug a normal Python file? Use the VS Code Python extension (which bundles `debugpy`) instead of the TinyLanguage launch types. The TinyLanguage adapter's Python stepping mode is only a lightweight self-test built on Python's standard `bdb`/`pdb` hooks and does not provide the full feature set or reliability of `debugpy`. Create a standard Python debug configuration for real Python debugging and reserve `"type": "tinylanguage"` for TinyLanguage programs or adapter diagnostics.
+
 #### Launch configuration reference
 
 The default launch entry should look like this (comments are allowed because VS Code treats `launch.json` as JSON with comments):

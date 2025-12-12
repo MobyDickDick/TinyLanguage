@@ -401,6 +401,9 @@ function registerDebugAdapterExecutable(output) {
       terminal.sendText(
         `echo "[TinyLanguage] python=${pythonExecutable} runtime=${runtimePath || '<not set>'} cwd=${launchCwd || '<default>'}"`,
       );
+      terminal.sendText(
+        'echo "[TinyLanguage] Adapter uses tiny_debug_adapter.py (no debugpy launcher expected)"',
+      );
     }
     const ok = probeDebugAdapter(pythonExecutable, adapterPath, env);
     if (!ok) {

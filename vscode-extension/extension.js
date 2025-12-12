@@ -306,10 +306,15 @@ function registerDebugAdapterExecutable(output) {
     const probe = cp.spawnSync(pythonExecutable, [adapterPath, '--self-test'], {
       encoding: 'utf-8',
       env,
+      timeout: 5000,
     });
     if (probe.error) {
       output.appendLine(`[TinyLanguage] Debug adapter self-test failed to start: ${probe.error.message}`);
       return false;
+    }
+    if (probe.timedOut) {
+      output.appendLine('[TinyLanguage] Debug adapter self-test timed out after 5s; continuing without probe.');
+      return true;
     }
     if (probe.status !== 0) {
       output.appendLine(

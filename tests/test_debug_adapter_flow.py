@@ -238,6 +238,35 @@ def test_watchdog_warns_without_terminating(debug_server):
     assert all(m.get("event") != "terminated" for m in messages)
 
 
+def test_watchdog_surfaces_initialize_timeout(debug_server):
+    _, server, messages, _ = debug_server
+
+    # Simulate a client that never sends "initialize" so the adapter explains the idle state.
+    server._last_client_message = time.monotonic() - 10
+
+    warning = None
+    for _ in range(20):
+        if messages:
+            warning = next(
+                (
+                    m
+                    for m in messages
+                    if m.get("type") == "event"
+                    and m.get("event") == "output"
+                    and "waiting for 'initialize'" in m.get("body", {}).get("output", "")
+                ),
+                None,
+            )
+        if warning:
+            break
+        time.sleep(0.1)
+
+    server._shutdown = True
+    server._watchdog_thread.join(timeout=1)
+
+    assert warning is not None, f"Initialize watchdog warning not emitted: {messages!r}"
+
+
 def test_env_var_truthy_parsing(monkeypatch):
     module = load_adapter_module()
 

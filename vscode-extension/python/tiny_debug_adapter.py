@@ -70,6 +70,10 @@ class DAPServer:
         self._watchdog_thread = threading.Thread(target=self._watchdog, daemon=True)
         self._watchdog_warning_sent = False
         self._python_mode = False
+        # Start the watchdog immediately so that we can surface handshake issues
+        # (e.g., VS Code never sending an initialize request) instead of
+        # blocking forever with no diagnostics.
+        self._watchdog_thread.start()
 
     def _open_log_file(self):
         log_path = os.environ.get("TINYLANGUAGE_DAP_LOG")
@@ -440,8 +444,6 @@ class DAPServer:
         self._send(response)
         self._send({"type": "event", "seq": self._next_seq(), "event": "initialized"})
         self._initialized_sent = True
-        if not self._watchdog_thread.is_alive():
-            self._watchdog_thread.start()
 
     def handle_set_breakpoints(self, request: Dict[str, Any]) -> None:
         args = request.get("arguments", {})
@@ -669,11 +671,28 @@ class DAPServer:
         # letting the adapter sit idle forever.
         while not self._shutdown:
             time.sleep(0.5)
+            idle = time.monotonic() - self._last_client_message
+
+            # If the client never initiates the DAP handshake, emit a warning so
+            # the user understands why the session appears stuck.
+            if not self._initialized_sent and idle > 3.0 and not self._watchdog_warning_sent:
+                elapsed = time.monotonic() - self._session_started_at
+                log_hint = " set TINYLANGUAGE_DAP_LOG=/tmp/tiny_dap.log" if not self._log_handle else ""
+                stderr_hint = " and TINYLANGUAGE_DAP_STDERR=1" if not self._log_to_stderr else ""
+                warning = (
+                    "No messages received from VS Code (waiting for 'initialize'). "
+                    "If the session does not start, verify the TinyLanguage debug configuration is selected" +
+                    (" and enable adapter logging with" + log_hint + stderr_hint if (log_hint or stderr_hint) else "") +
+                    f". Idle for {idle:.1f}s (session {elapsed:.1f}s)."
+                )
+                self._log(warning)
+                self._watchdog_warning_sent = True
+                continue
+
             if not self._initialized_sent:
                 continue
             if self._launch_received or self._configuration_done:
                 break
-            idle = time.monotonic() - self._last_client_message
             if idle > 3.0 and not self._watchdog_warning_sent:
                 last_cmd = self._last_client_command or "<none>"
                 elapsed = time.monotonic() - self._session_started_at

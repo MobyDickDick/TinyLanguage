@@ -1,0 +1,25 @@
+// Demonstration of product and sum types with match expressions
+type Point = product { x: Number; y: Number; }
+type Shape = sum {
+  Circle(radius: Number);
+  Rect(width: Number, height: Number);
+  Unit;
+}
+
+fn describe(shape) {
+  return match(shape) {
+    case Circle(r) => 3 * r * r;
+    case Rect(w, h) => w * h;
+    case _ => 0;
+  };
+}
+
+define p = Point(3, 4);
+define s1 = Circle(2);
+define s2 = Rect(2, 5);
+define s3 = Unit();
+
+print(p.x);
+print(describe(s1));
+print(describe(s2));
+print(describe(s3));

@@ -386,9 +386,11 @@ function registerDebugAdapterExecutable(output) {
     const terminal = getDebugTerminal(output);
     if (terminal) {
       terminal.show(true);
-      terminal.sendText(`echo [TinyLanguage] Debug adapter starting for ${configuration.program || '<unknown>'}`);
       terminal.sendText(
-        `echo [TinyLanguage] python=${pythonExecutable} runtime=${runtimePath || '<not set>'} cwd=${launchCwd || '<default>'}`,
+        `echo "[TinyLanguage] Debug adapter starting for ${configuration.program || '<unknown>'}"`,
+      );
+      terminal.sendText(
+        `echo "[TinyLanguage] python=${pythonExecutable} runtime=${runtimePath || '<not set>'} cwd=${launchCwd || '<default>'}"`,
       );
     }
     const ok = probeDebugAdapter(pythonExecutable, adapterPath, env);

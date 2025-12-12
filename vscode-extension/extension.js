@@ -4,6 +4,8 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
+let debugTerminal;
+
 function logDebug(output, message) {
   const formatted = `[TinyLanguage][debug] ${message}`;
   if (output?.appendLine) {
@@ -12,6 +14,15 @@ function logDebug(output, message) {
   // Mirror debug logs to the extension host console so they are visible in the
   // Extension Development Host debug output/terminal.
   console.log(formatted); // eslint-disable-line no-console
+}
+
+function getDebugTerminal(output) {
+  if (debugTerminal && !debugTerminal.exitStatus) {
+    return debugTerminal;
+  }
+  debugTerminal = vscode.window.createTerminal({ name: 'TinyLanguage Debug Log' });
+  logDebug(output, 'debugTerminal: created TinyLanguage Debug Log terminal');
+  return debugTerminal;
 }
 
 function getPythonExecutable() {
@@ -333,6 +344,7 @@ function registerDebugAdapterExecutable(output) {
     const adapterPath = path.join(__dirname, 'python', 'tiny_debug_adapter.py');
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     logDebug(output, `debugAdapter: preparing adapter using python='${pythonExecutable}' path='${adapterPath}'`);
+    const runtimePath = configuration.runtime || getRuntimePath();
     const normalizedConfigEnv = { ...(configuration.env || {}) };
     if (typeof normalizedConfigEnv.TINYLANGUAGE_DAP_LOG === 'string') {
       normalizedConfigEnv.TINYLANGUAGE_DAP_LOG = resolveWorkspacePath(normalizedConfigEnv.TINYLANGUAGE_DAP_LOG);
@@ -370,6 +382,15 @@ function registerDebugAdapterExecutable(output) {
     if (logToStderr) {
       output.appendLine('[TinyLanguage] Debug adapter will mirror logs to stderr (TINYLANGUAGE_DAP_STDERR=1).');
     }
+    const launchCwd = configuration.cwd || workspaceFolder;
+    const terminal = getDebugTerminal(output);
+    if (terminal) {
+      terminal.show(true);
+      terminal.sendText(`echo [TinyLanguage] Debug adapter starting for ${configuration.program || '<unknown>'}`);
+      terminal.sendText(
+        `echo [TinyLanguage] python=${pythonExecutable} runtime=${runtimePath || '<not set>'} cwd=${launchCwd || '<default>'}`,
+      );
+    }
     const ok = probeDebugAdapter(pythonExecutable, adapterPath, env);
     if (!ok) {
       const hint = env.TINYLANGUAGE_DAP_LOG
@@ -380,7 +401,6 @@ function registerDebugAdapterExecutable(output) {
       );
       return undefined;
     }
-    const launchCwd = configuration.cwd || workspaceFolder;
     if (launchCwd) {
       output.appendLine(`[TinyLanguage] Debug adapter working directory: ${launchCwd}`);
     }

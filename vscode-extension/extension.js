@@ -2,6 +2,7 @@ const vscode = require('vscode');
 const cp = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 function logDebug(output, message) {
   const formatted = `[TinyLanguage][debug] ${message}`;
@@ -43,7 +44,7 @@ function getDebugLogPath() {
   if (workspaceFolder) {
     return path.join(workspaceFolder, '.tinylanguage', 'debug-adapter.log');
   }
-  return '';
+  return path.join(os.tmpdir(), 'tinylanguage', 'debug-adapter.log');
 }
 
 function getTraceLogPath() {
@@ -371,7 +372,12 @@ function registerDebugAdapterExecutable(output) {
     }
     const ok = probeDebugAdapter(pythonExecutable, adapterPath, env);
     if (!ok) {
-      vscode.window.showWarningMessage('TinyLanguage debug adapter self-test failed. See output for details.');
+      const hint = env.TINYLANGUAGE_DAP_LOG
+        ? ` See ${env.TINYLANGUAGE_DAP_LOG} for details.`
+        : '';
+      vscode.window.showWarningMessage(
+        `TinyLanguage debug adapter self-test failed.${hint} Check the TinyLanguage output channel for more information.`,
+      );
       return undefined;
     }
     const launchCwd = configuration.cwd || workspaceFolder;

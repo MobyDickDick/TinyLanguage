@@ -404,6 +404,7 @@ function registerDebugAdapterExecutable(output) {
 
 function registerDebugConfigurations(output) {
   const type = 'tinylanguage';
+  const supportedExtensions = new Set(['.tiny', '.py']);
   function describePython(pythonExecutable) {
     try {
       const probe = cp.spawnSync(pythonExecutable, ['-c', 'import sys; print(sys.executable)'], {
@@ -522,6 +523,16 @@ function registerDebugConfigurations(output) {
 
       const fileExists = fs.existsSync(config.program);
       const unresolvedTokens = /\$\{[^}]+\}/.test(config.program);
+
+      const ext = path.extname(config.program || '').toLowerCase();
+      const supportedProgram = supportedExtensions.has(ext);
+      if (fileExists && !supportedProgram) {
+        const message =
+          'TinyLanguage debugging only supports .tiny (TinyLanguage) or .py (Python) files. Open the file you want to debug and try again.';
+        output.appendLine(`[TinyLanguage] ${message}`);
+        vscode.window.showWarningMessage(message);
+        return null;
+      }
 
       output.appendLine(`[TinyLanguage] Final debug configuration for ${workspaceRoot}`);
       output.appendLine(`[TinyLanguage]  • Program: ${config.program}${unresolvedTokens ? ' (contains unresolved variables)' : ''}${fileExists ? '' : ' (file not found)'}`);

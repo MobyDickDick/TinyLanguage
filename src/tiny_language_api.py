@@ -76,6 +76,7 @@ def compile_and_run(
     stmts = _parse_and_lint(src)
     runtime = runtime or Runtime(src)  # Reuse an existing runtime or create a fresh one
     runtime.stream_output = stream_output
+    runtime.streamed_output = False
     if debugger is not None:
         runtime.debugger = debugger
     runtime.source_map[module_namespace] = src  # Track source text for later diagnostics
@@ -114,13 +115,18 @@ def run_file(path: str, *, stream_output: bool = True) -> str:
         namespace = ".".join(rel.with_suffix("").parts)
     except Exception:  # noqa: BLE001
         namespace = resolved.stem  # Fall back to filename when relative resolution fails
+    runtime = Runtime(path_obj.read_text(encoding="utf-8"))
     with open(path, "r", encoding="utf-8") as f:
-        return compile_and_run(
+        output = compile_and_run(
             f.read(),
+            runtime=runtime,
             module_namespace=namespace,
             module_path=resolved,
             stream_output=stream_output,
         )
+    if stream_output and not runtime.streamed_output:
+        print(output, end="")
+    return output
 
 
 def _format_error_for_source(source: str, err: TinyLangError) -> str:
@@ -330,16 +336,16 @@ def main(argv: Optional[List[str]] = None) -> int:
         try:
             streamed = False
             if args.native_backend:
-                runner = run_with_native_backend
+                output = run_with_native_backend(args.eval)
             elif args.native_python_bytecode:
-                runner = run_with_python_bytecode_backend
+                output = run_with_python_bytecode_backend(args.eval)
             elif args.python_backend:
-                runner = run_with_python_backend
+                output = run_with_python_backend(args.eval)
             else:
-                runner = lambda src: compile_and_run(src, stream_output=True)
-                streamed = True
+                runtime = Runtime(args.eval)
+                output = compile_and_run(args.eval, runtime=runtime, stream_output=True)
+                streamed = runtime.streamed_output
 
-            output = runner(args.eval)
             if not streamed:
                 print(output, end="")
             return 0

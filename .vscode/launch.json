@@ -57,7 +57,6 @@
       "program": "${file}",
       "runtime": "${workspaceFolder}/src/tiny_language.py",
       "python": "${config:tinylanguage.pythonPath}",
-      "cwd": "${workspaceFolder}",
       "stopOnEntry": false,
       "env": {
         "TINYLANGUAGE_DAP_LOG": "/tmp/tiny_dap.log",
@@ -75,8 +74,7 @@
       "request": "launch",
       "program": "${workspaceFolder}/run_all.py",
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -88,7 +86,7 @@
         "${workspaceFolder}/src_tiny/all_features.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -97,8 +95,7 @@
       "request": "launch",
       "program": "${workspaceFolder}/src/simpelst_Python_program.py",
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -110,7 +107,7 @@
         "${workspaceFolder}/src_tiny/demo.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -122,7 +119,7 @@
         "${workspaceFolder}/src_tiny/number_class.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -134,7 +131,7 @@
         "${workspaceFolder}/src_tiny/rosetta_fibonacci.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -146,7 +143,7 @@
         "${workspaceFolder}/src_tiny/concurrency_demo.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -158,7 +155,7 @@
         "${workspaceFolder}/src_tiny/number_intervall.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -170,7 +167,7 @@
         "${workspaceFolder}/src_tiny/concurrency_pipeline.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -182,7 +179,7 @@
         "${workspaceFolder}/src_tiny/class_demo.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -194,7 +191,7 @@
         "${workspaceFolder}/src_tiny/namespace_demo.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -206,7 +203,7 @@
         "${workspaceFolder}/src_tiny/match_demo.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -218,7 +215,7 @@
         "${workspaceFolder}/src_tiny/operator_overloading_demo.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -230,7 +227,7 @@
         "${workspaceFolder}/src_tiny/parallel_map.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -242,7 +239,7 @@
         "${workspaceFolder}/src_tiny/heap_pointer_demo.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -254,7 +251,7 @@
         "${workspaceFolder}/src_tiny/result_demo.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -266,7 +263,7 @@
         "${workspaceFolder}/tests/logic_example.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -278,7 +275,7 @@
         "${workspaceFolder}/.vscode/all_features.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -290,7 +287,7 @@
         "${workspaceFolder}/.vscode/rosetta_fibonacci.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -302,7 +299,7 @@
         "${workspaceFolder}/src_tiny/try_catch_demo.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -314,7 +311,7 @@
         "${workspaceFolder}/src_tiny/stdlib_collections_demo.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -326,7 +323,7 @@
         "${workspaceFolder}/src_tiny/stdlib_io_random_demo.tiny"
       ],
       "console": "integratedTerminal",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -339,7 +336,7 @@
         "tests/test_tiny_language.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -352,7 +349,7 @@
         "tests/test_number_class.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -365,7 +362,7 @@
         "tests/test_number_intervall.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -378,7 +375,7 @@
         "tests/test_stdlib.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -391,7 +388,7 @@
         "tests/test_errors.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -404,7 +401,7 @@
         "tests/test_benchmark_and_fuzz.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -417,7 +414,7 @@
         "tests/test_repl.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -430,7 +427,7 @@
         "tests/test_heap_pointer_demo.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -443,7 +440,7 @@
         "tests/test_concurrency.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -456,7 +453,7 @@
         "tests/test_async_tokens.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -469,7 +466,7 @@
         "tests/test_error_messages.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -482,7 +479,7 @@
         "tests/test_inheritance.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -495,7 +492,7 @@
         "tests/test_objects.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -508,7 +505,7 @@
         "tests/test_number_overflow.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -521,7 +518,7 @@
         "tests/test_null.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -534,7 +531,7 @@
         "tests/test_operator_overloading.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -547,7 +544,7 @@
         "tests/test_namespaces.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -560,7 +557,7 @@
         "tests/test_try_catch.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -573,7 +570,7 @@
         "tests/test_typing.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -586,7 +583,7 @@
         "tests/test_modules.py",
         "-q"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -595,8 +592,7 @@
       "request": "launch",
       "program": "${workspaceFolder}/tests/utils.py",
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -608,8 +604,7 @@
         "--repl"
       ],
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -618,8 +613,7 @@
       "request": "launch",
       "program": "${workspaceFolder}/.vscode/import_code.py",
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}",
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     },
     {
@@ -631,7 +625,7 @@
       "args": [
         "${workspaceFolder}/src_tiny/rosetta_fibonacci.tiny"
       ],
-      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "logToFile": true,
       "justMyCode": false
     }
   ],

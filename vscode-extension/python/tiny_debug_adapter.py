@@ -783,6 +783,36 @@ class DAPServer:
         }
         self._send(response)
 
+    def handle_evaluate(self, request: Dict[str, Any]) -> None:
+        args = request.get("arguments", {})
+        expr = args.get("expression", "")
+        result: Optional[str] = None
+        if self._paused_snapshot:
+            if isinstance(self._paused_snapshot, dict) and self._paused_snapshot.get("python"):
+                frame = self._paused_snapshot.get("frame")
+                if frame:
+                    values = {**frame.f_globals, **frame.f_locals}
+                    try:
+                        result = repr(eval(expr, values, values))  # noqa: S307 - trusted pause context
+                    except Exception as exc:  # pragma: no cover - depends on expression
+                        result = f"Evaluation error: {exc}"
+            else:
+                for scope in self._paused_snapshot.scopes:
+                    if expr in scope.values:
+                        result = repr(scope.values[expr])
+                        break
+                if result is None:
+                    result = "<unknown>"
+        response = {
+            "type": "response",
+            "seq": self._next_seq(),
+            "request_seq": request.get("seq", 0),
+            "command": "evaluate",
+            "success": True,
+            "body": {"result": result or "<not paused>", "variablesReference": 0},
+        }
+        self._send(response)
+
     def _handle_unknown(self, request: Dict[str, Any]) -> None:
         # Respond to unexpected requests so the client does not hang waiting for
         # a reply. Unknown commands are logged for easier diagnostics.
@@ -934,6 +964,7 @@ class DAPServer:
             "stackTrace": self.handle_stack_trace,
             "scopes": self.handle_scopes,
             "variables": self.handle_variables,
+            "evaluate": self.handle_evaluate,
             "continue": self.handle_continue,
             "pause": self.handle_pause,
             "next": lambda req: self.handle_continue(req, "step_over"),

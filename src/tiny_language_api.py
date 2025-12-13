@@ -105,7 +105,7 @@ def compile_and_run(
     return "".join(runtime.output)
 
 
-def run_file(path: str) -> str:
+def run_file(path: str, *, stream_output: bool = True) -> str:
     """Execute a TinyLanguage source file and return its printed output."""
     path_obj = Path(path)  # Accept strings or Path-like objects
     resolved = path_obj.resolve()  # Normalize to an absolute path
@@ -115,7 +115,12 @@ def run_file(path: str) -> str:
     except Exception:  # noqa: BLE001
         namespace = resolved.stem  # Fall back to filename when relative resolution fails
     with open(path, "r", encoding="utf-8") as f:
-        return compile_and_run(f.read(), module_namespace=namespace, module_path=resolved)
+        return compile_and_run(
+            f.read(),
+            module_namespace=namespace,
+            module_path=resolved,
+            stream_output=stream_output,
+        )
 
 
 def _format_error_for_source(source: str, err: TinyLangError) -> str:
@@ -323,6 +328,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if args.eval is not None:
         try:
+            streamed = False
             if args.native_backend:
                 runner = run_with_native_backend
             elif args.native_python_bytecode:
@@ -330,9 +336,12 @@ def main(argv: Optional[List[str]] = None) -> int:
             elif args.python_backend:
                 runner = run_with_python_backend
             else:
-                runner = compile_and_run
+                runner = lambda src: compile_and_run(src, stream_output=True)
+                streamed = True
+
             output = runner(args.eval)
-            print(output, end="")
+            if not streamed:
+                print(output, end="")
             return 0
         except TinyLangError as err:
             print(_format_error_for_source(args.eval, err), file=sys.stderr)
@@ -367,9 +376,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                     except Exception:
                         pass  # History persistence failures should not crash the REPL
                 try:
-                    output = compile_and_run(src, env=env, runtime=runtime)
-                    if output:
-                        print(output, end="")
+                    compile_and_run(src, env=env, runtime=runtime, stream_output=True)
                 except TinyLangError as err:
                     print(_format_error_for_source(src, err), file=sys.stderr)
                 except Exception as exc:  # pragma: no cover - unexpected errors
@@ -392,13 +399,17 @@ def main(argv: Optional[List[str]] = None) -> int:
     if not args.file:
         parser.error("the following arguments are required: file")  # Align with argparse behavior
 
+    streamed = False
     if args.native_backend:
         output = run_with_native_backend(Path(args.file).read_text(encoding="utf-8"))
     elif args.python_backend:
         output = run_with_python_backend(Path(args.file).read_text(encoding="utf-8"))
     else:
-        output = run_file(args.file)
-    print(output, end="")
+        output = run_file(args.file, stream_output=True)
+        streamed = True
+
+    if not streamed:
+        print(output, end="")
     return 0
 
 

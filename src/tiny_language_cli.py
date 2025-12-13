@@ -39,22 +39,30 @@ def _module_namespace_for_path(path: Path) -> str:
         return path.stem
 
 
-def _execute(source: str, *, backend: str, module_path: Path | None) -> str:
-    """Dispatch execution to the requested backend and return captured output."""
+def _execute(
+    source: str, *, backend: str, module_path: Path | None, stream_output: bool = True
+) -> tuple[str, bool]:
+    """Dispatch execution to the requested backend and return captured output.
+
+    The boolean return value signals whether output was already streamed to stdout
+    during execution. When streaming is enabled we avoid reprinting the buffered
+    output in ``main`` to prevent duplicate lines.
+    """
     if backend == "interpreter":
         namespace = _module_namespace_for_path(module_path) if module_path else None
-        return compile_and_run(
+        output = compile_and_run(
             source,
             module_namespace=namespace,
             module_path=module_path,
-            stream_output=False,
+            stream_output=stream_output,
         )
+        return output, stream_output
     if backend == "python":
-        return run_with_python_backend(source)
+        return run_with_python_backend(source), False
     if backend == "native":
-        return run_with_native_backend(source)
+        return run_with_native_backend(source), False
     if backend == "native-python-bytecode":
-        return run_with_python_bytecode_backend(source)
+        return run_with_python_bytecode_backend(source), False
     raise SystemExit(f"Unknown backend: {backend}")
 
 
@@ -99,12 +107,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     try:
-        output = _execute(source, backend=args.backend, module_path=module_path)
+        output, streamed = _execute(
+            source, backend=args.backend, module_path=module_path, stream_output=True
+        )
     except TinyLangError as err:
         sys.stderr.write(_format_error_for_source(source, err) + os.linesep)
         return 1
 
-    sys.stdout.write(output)
+    if not streamed:
+        sys.stdout.write(output)
     return 0
 
 

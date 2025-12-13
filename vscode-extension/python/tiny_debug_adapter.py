@@ -117,6 +117,7 @@ class DAPServer:
     def __init__(self) -> None:
         self._seq = 0
         self._lock = threading.Lock()
+        self._send_lock = threading.Lock()
         self._paused_snapshot = None
         self._command_queue: "queue.Queue[str]" = queue.Queue()
         self._breakpoints: Dict[str, List[int]] = {}
@@ -267,8 +268,9 @@ class DAPServer:
         data = json.dumps(payload)
         message = f"Content-Length: {len(data)}\r\n\r\n{data}".encode("utf-8")
         self._log(f"--> {payload}")
-        sys.stdout.buffer.write(message)
-        sys.stdout.buffer.flush()
+        with self._send_lock:
+            sys.stdout.buffer.write(message)
+            sys.stdout.buffer.flush()
 
     def _next_seq(self) -> int:
         with self._lock:

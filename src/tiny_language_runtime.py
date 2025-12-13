@@ -327,6 +327,7 @@ class Runtime:
         self.trace_log_path: Optional[str] = os.environ.get("TINYLANG_TRACE_LOG")
         self.trace_every_statement: bool = os.environ.get("TINYLANG_TRACE_EVERY_STATEMENT", "0") == "1"
         self.trace_heartbeat_secs: float = float(os.environ.get("TINYLANG_TRACE_HEARTBEAT_SECS", "1.0"))
+        self.trace_to_stdout: bool = os.environ.get("TINYLANG_TRACE_STDOUT", "0") not in {"0", "", "false", "False"}
         self._trace_logger: Optional[logging.Logger] = None
         self._last_trace_time: float = 0.0
         self._last_trace_location: Optional[Tuple[Optional[str], int]] = None
@@ -360,6 +361,10 @@ class Runtime:
         handler = logging.FileHandler(self.trace_log_path, mode="w", encoding="utf-8")
         handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
         logger.addHandler(handler)
+        if self.trace_to_stdout:
+            stream_handler = logging.StreamHandler()
+            stream_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+            logger.addHandler(stream_handler)
         self._trace_logger = logger
 
     def _log_trace(self, node: IR, env: "Environment", namespace: Optional[str]) -> None:

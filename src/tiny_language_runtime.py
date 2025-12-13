@@ -95,6 +95,11 @@ class Debugger:
         # Preserve explicit pause requests (e.g. pause-on-entry) while clearing
         # any stale pause flags inherited from previous runs.
         self.force_pause = self._requested_pause
+        # Pause requests should apply only to the next run. After carrying the
+        # request into ``force_pause`` for the new session, clear the flag so a
+        # single pause-on-entry request does not force every subsequent run to
+        # halt immediately.
+        self._requested_pause = False
 
     def should_pause(self, pos: SourcePos, namespace: Optional[str], depth: int) -> bool:
         location = (namespace, pos.line)

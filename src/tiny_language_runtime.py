@@ -1135,6 +1135,25 @@ class Runtime:
                 "variants": variant_map,
             }
 
+        def _register_constructor(target_name: str, field_defs: Dict[str, str]) -> None:
+            field_order = list(field_defs.keys())
+
+            def _ctor(*args: Any) -> Dict[str, Any]:
+                if len(args) != len(field_order):
+                    raise RuntimeError(
+                        f"{target_name} expects {len(field_order)} argument(s); got {len(args)}"
+                    )
+                init = dict(zip(field_order, args))
+                return self.instantiate_variant(target_name, init, type_name=name)
+
+            self.register_native(target_name, _ctor)
+
+        if variants:
+            for vname, fields_map in variant_map.items():
+                _register_constructor(vname, fields_map)
+        elif fields is not None:
+            _register_constructor(name, variant_map.get(name, {}))
+
     def _type_variants(self, name: str) -> Optional[Dict[str, Dict[str, str]]]:
         with self._lock:
             tinfo = self.types.get(name)
@@ -1256,6 +1275,7 @@ class Runtime:
         else:
             type_name = self.variant_to_type.get(tag)
 
+        variants: Optional[Dict[str, Dict[str, str]]] = None
         expected: Optional[Set[str]] = None
         if type_name:
             variants = self._type_variants(str(type_name))
@@ -1272,15 +1292,18 @@ class Runtime:
                     raise self._error(f"duplicate case {case.pattern.variant}", case.pattern.pos)
                 seen.add(case.pattern.variant)
                 if expected is not None and case.pattern.variant not in expected:
+                    missing_case = case.pattern.variant
                     raise self._error(
-                        f"unexpected case {case.pattern.variant} for type {type_name}", case.pattern.pos
+                        f"unknown case(s) for sum type {type_name}: {missing_case} (unexpected case {missing_case} for type {type_name})",
+                        case.pattern.pos,
                     )
 
         if expected is not None and not has_wildcard:
             missing = expected - seen
             if missing:
+                missing_list = ", ".join(sorted(missing))
                 raise self._error(
-                    f"non-exhaustive match; missing cases: {', '.join(sorted(missing))}",
+                    f"non-exhaustive match for {type_name}: missing {missing_list} (missing cases: {missing_list})",
                     m.pos,
                     hint="Add the missing branches or a trailing '_' catch-all case.",
                 )
@@ -1295,6 +1318,33 @@ class Runtime:
 
             if isinstance(pattern, VariantPattern) and pattern.variant == tag:
                 branch_env = Environment(parent=env, namespace=env.namespace, runtime=self)
+                if pattern.positional_bindings:
+                    # Map positional bindings onto the declared variant fields so
+                    # ``case Circle(r) =>`` can bind ``r`` to the first field of
+                    # ``Circle`` without requiring explicit ``field: value``
+                    # syntax in the pattern.
+                    field_order: List[str] = []
+                    if variants and pattern.variant in variants:
+                        field_order = list(variants[pattern.variant].keys())
+                    elif isinstance(value, dict):
+                        field_order = [k for k in value.keys() if k not in {"__tag__", "__type__"}]
+                    if not field_order:
+                        raise self._error(
+                            f"cannot bind positional pattern for {pattern.variant} without type information",
+                            pattern.pos,
+                        )
+                    if len(pattern.positional_bindings) > len(field_order):
+                        raise self._error(
+                            f"positional pattern for {pattern.variant} has too many fields",
+                            pattern.pos,
+                        )
+                    for idx, bind in enumerate(pattern.positional_bindings):
+                        if not bind:
+                            continue
+                        fname = field_order[idx]
+                        if not isinstance(value, dict) or fname not in value:
+                            raise self._error(f"field {fname} missing for variant {pattern.variant}", pattern.pos)
+                        branch_env.define(bind, value[fname], pattern.pos)
                 for fname, bind in pattern.bindings.items():
                     if not isinstance(value, dict) or fname not in value:
                         raise self._error(f"field {fname} missing for variant {pattern.variant}", pattern.pos)

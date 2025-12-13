@@ -15,6 +15,24 @@
       }
     },
     {
+      "name": "TinyLanguage: Debug simpelst_Python_program.py",
+      "type": "tinylanguage",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/simpelst_Python_program.py",
+      "runtime": "${workspaceFolder}/src/tiny_language.py",
+      "python": "${config:tinylanguage.pythonPath}",
+      "stopOnEntry": false,
+      "env": {
+        "TINYLANGUAGE_DAP_LOG": "/tmp/tiny_dap.log",
+        "TINYLANGUAGE_DAP_STDERR": "1"
+      },
+      "presentation": {
+        "group": "TinyLanguage",
+        "order": 1,
+        "hidden": false
+      }
+    },
+    {
       "name": "TinyLanguage: Launch active file (prototype)",
       "type": "tinylanguage",
       "request": "launch",
@@ -70,6 +88,16 @@
         "${workspaceFolder}/src_tiny/all_features.tiny"
       ],
       "console": "integratedTerminal",
+      "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
+      "justMyCode": false
+    },
+    {
+      "name": "Python: simpelst_Python_program.py",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/simpelst_Python_program.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
       "logToFile": "${workspaceFolder}/.vscode/debugpy.log",
       "justMyCode": false
     },

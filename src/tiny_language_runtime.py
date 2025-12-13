@@ -58,6 +58,10 @@ class Debugger:
         self.pending_step: Optional[StepRequest] = None
         self.last_location: Optional[Tuple[Optional[str], int]] = None
         self.force_pause: bool = False
+        # Track whether the pause was explicitly requested (e.g. pause-on-entry)
+        # so session resets can preserve intentional pauses while clearing stale
+        # state such as previous step requests.
+        self._requested_pause: bool = False
         # When False, the runtime will avoid mirroring program output to
         # ``stdout`` while debugging. This is useful for DAP transports that use
         # stdout for the protocol stream and expect program output to be emitted
@@ -80,6 +84,17 @@ class Debugger:
         """Force the debugger to pause at the next opportunity."""
 
         self.force_pause = True
+        self._requested_pause = True
+
+    def reset_session(self) -> None:
+        """Clear transient state between program runs while keeping breakpoints."""
+
+        self.snapshots.clear()
+        self.pending_step = None
+        self.last_location = None
+        # Preserve explicit pause requests (e.g. pause-on-entry) while clearing
+        # any stale pause flags inherited from previous runs.
+        self.force_pause = self._requested_pause
 
     def should_pause(self, pos: SourcePos, namespace: Optional[str], depth: int) -> bool:
         location = (namespace, pos.line)
@@ -94,6 +109,7 @@ class Debugger:
         self.last_location = (snapshot.namespace, snapshot.pos.line)
         # Clear any pending forced pause now that we've yielded control.
         self.force_pause = False
+        self._requested_pause = False
         command = self._next_command(snapshot)
         self.pending_step = self._step_for_command(command, depth)
 

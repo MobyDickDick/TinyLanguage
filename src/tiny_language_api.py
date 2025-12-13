@@ -77,8 +77,10 @@ def compile_and_run(
     runtime = runtime or Runtime(src)  # Reuse an existing runtime or create a fresh one
     runtime.stream_output = stream_output
     runtime.streamed_output = False
-    if debugger is not None:
-        runtime.debugger = debugger
+    active_debugger = debugger if debugger is not None else runtime.debugger
+    runtime.debugger = active_debugger
+    if active_debugger is not None:
+        active_debugger.reset_session()
     runtime.source_map[module_namespace] = src  # Track source text for later diagnostics
     prev_source = runtime.source  # Remember previous source to restore after module execution
     runtime.source = src  # Swap in the new source for this run

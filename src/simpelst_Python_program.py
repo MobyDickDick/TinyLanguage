@@ -1,9 +1,4 @@
-"""Minimal hello-world style Python program for VS Code launch configs."""
-
-def main() -> None:
-    message = "Hallo, TinyLanguage debug world!"
-    print(message)
-
-
-if __name__ == "__main__":
-    main()
+i = 0
+while True:
+    print("This is a simple Test", i)
+    i = (i + 1) % 10_000_000

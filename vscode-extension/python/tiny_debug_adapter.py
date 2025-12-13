@@ -149,6 +149,8 @@ class DAPServer:
         self._python_mode = False
         self._process_event_sent = False
         self._thread_event_sent = False
+        self._debugger_instance = None
+        self._pause_requested = False
         # Start the watchdog immediately so that we can surface handshake issues
         # (e.g., VS Code never sending an initialize request) instead of
         # blocking forever with no diagnostics.
@@ -257,15 +259,18 @@ class DAPServer:
         def on_pause(snapshot):
             self._paused_snapshot = snapshot
             self._log("Paused at breakpoint")
+            reason = "pause" if self._pause_requested else "breakpoint"
             self._send({
                 "type": "event",
                 "seq": self._next_seq(),
                 "event": "stopped",
-                "body": {"reason": "breakpoint", "threadId": 1},
+                "body": {"reason": reason, "threadId": 1},
             })
+            self._pause_requested = False
             return self._wait_for_command()
 
         dbg = Debugger(on_pause=on_pause, mirror_stdout=False)
+        self._debugger_instance = dbg
         for path, lines in self._breakpoints.items():
             namespace = self._namespace_for_path(Path(path)) if path else self._namespace
             dbg.set_breakpoints(namespace, set(lines))
@@ -285,14 +290,16 @@ class DAPServer:
                     "stack": inspect.getouterframes(frame),
                 }
                 server._log("Paused in Python program")
+                reason = "pause" if server._pause_requested else "breakpoint"
                 server._send(
                     {
                         "type": "event",
                         "seq": server._next_seq(),
                         "event": "stopped",
-                        "body": {"reason": "breakpoint", "threadId": 1},
+                        "body": {"reason": reason, "threadId": 1},
                     }
                 )
+                server._pause_requested = False
                 command = server._wait_for_command()
                 if command == "step_over":
                     self.set_next(frame)
@@ -304,6 +311,7 @@ class DAPServer:
                     self.set_continue()
 
         dbg = _PythonDebugger()
+        self._debugger_instance = dbg
         for path, lines in self._breakpoints.items():
             resolved = Path(path).resolve()
             for line in lines:
@@ -541,6 +549,7 @@ class DAPServer:
             "success": True,
             "body": {
                 "supportsConfigurationDoneRequest": True,
+                "supportsPauseRequest": True,
                 "supportsSetVariable": False,
             },
         }
@@ -867,6 +876,25 @@ class DAPServer:
         }
         self._send(response)
 
+    def handle_pause(self, request: Dict[str, Any]) -> None:
+        self._pause_requested = True
+        debugger = self._debugger_instance
+        if debugger is not None:
+            request_pause = getattr(debugger, "request_pause", None)
+            if callable(request_pause):
+                request_pause()
+            elif hasattr(debugger, "set_step"):
+                debugger.set_step()
+        response = {
+            "type": "response",
+            "seq": self._next_seq(),
+            "request_seq": request["seq"],
+            "command": "pause",
+            "success": True,
+            "body": {},
+        }
+        self._send(response)
+
     def handle_continue(self, request: Dict[str, Any], command: str = "continue") -> None:
         self._enqueue(command)
         response = {
@@ -907,6 +935,7 @@ class DAPServer:
             "scopes": self.handle_scopes,
             "variables": self.handle_variables,
             "continue": self.handle_continue,
+            "pause": self.handle_pause,
             "next": lambda req: self.handle_continue(req, "step_over"),
             "stepIn": lambda req: self.handle_continue(req, "step_in"),
             "stepOut": lambda req: self.handle_continue(req, "step_out"),

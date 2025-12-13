@@ -43,7 +43,7 @@ class StepRequest:
 class Debugger:
     """Lightweight, synchronous debugger controller for stepping and breakpoints."""
 
-    VALID_COMMANDS = {"continue", "step_in", "step_over", "step_out"}
+    VALID_COMMANDS = {"continue", "step_in", "step_over", "step_out", "pause"}
 
     def __init__(
         self,
@@ -57,6 +57,7 @@ class Debugger:
         self.snapshots: List[DebugSnapshot] = []
         self.pending_step: Optional[StepRequest] = None
         self.last_location: Optional[Tuple[Optional[str], int]] = None
+        self.force_pause: bool = False
         # When False, the runtime will avoid mirroring program output to
         # ``stdout`` while debugging. This is useful for DAP transports that use
         # stdout for the protocol stream and expect program output to be emitted
@@ -75,8 +76,15 @@ class Debugger:
             self._validate_command(cmd)
             self.command_queue.append(cmd)
 
+    def request_pause(self) -> None:
+        """Force the debugger to pause at the next opportunity."""
+
+        self.force_pause = True
+
     def should_pause(self, pos: SourcePos, namespace: Optional[str], depth: int) -> bool:
         location = (namespace, pos.line)
+        if self.force_pause:
+            return True
         if pos.line in self.breakpoints.get(namespace, set()) or pos.line in self.breakpoints.get(None, set()):
             return True
         return self._matches_step(location, depth)
@@ -84,6 +92,8 @@ class Debugger:
     def handle_pause(self, snapshot: DebugSnapshot, depth: int) -> None:
         self.snapshots.append(snapshot)
         self.last_location = (snapshot.namespace, snapshot.pos.line)
+        # Clear any pending forced pause now that we've yielded control.
+        self.force_pause = False
         command = self._next_command(snapshot)
         self.pending_step = self._step_for_command(command, depth)
 

@@ -17,6 +17,7 @@ import time
 import inspect
 import bdb
 import io
+import importlib.util
 from contextlib import redirect_stdout, redirect_stderr
 from datetime import datetime
 from dataclasses import dataclass, field
@@ -25,9 +26,73 @@ from typing import Any, Dict, List, Optional, Tuple
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SRC_ROOT = REPO_ROOT.parent / "src"
-sys.path.insert(0, str(SRC_ROOT))
+if SRC_ROOT.exists():
+    sys.path.insert(0, str(SRC_ROOT))
 
-from tiny_language import Debugger, compile_and_run
+# These globals are populated by _load_tiny_language().
+Debugger = None
+compile_and_run = None
+
+
+def _load_module_from_path(path: Path):
+    """Attempt to load the TinyLanguage module from an explicit file path."""
+
+    if not path.exists():
+        return None
+
+    spec = importlib.util.spec_from_file_location("tiny_language", path)
+    if not spec or not spec.loader:  # pragma: no cover - defensive guardrail
+        return None
+
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+    except Exception:  # pragma: no cover - import failure
+        return None
+    return module
+
+
+def _load_tiny_language() -> None:
+    """Populate Debugger/compile_and_run with a best-effort runtime import."""
+
+    global Debugger, compile_and_run
+
+    runtime_hint = os.environ.get("TINYLANGUAGE_RUNTIME")
+    candidates = []
+    if runtime_hint:
+        hint_path = Path(runtime_hint)
+        # Accept either a direct file path or a directory containing the runtime.
+        if hint_path.is_dir():
+            candidates.append(hint_path / "tiny_language.py")
+            candidates.append(hint_path / "tiny_language_stitched.py")
+        else:
+            candidates.append(hint_path)
+    if SRC_ROOT.exists():
+        candidates.append(SRC_ROOT / "tiny_language.py")
+        candidates.append(SRC_ROOT / "tiny_language_stitched.py")
+
+    module = None
+    for candidate in candidates:
+        module = _load_module_from_path(candidate)
+        if module:
+            break
+
+    if module is None:
+        try:
+            module = __import__("tiny_language")
+        except Exception as exc:  # pragma: no cover - diagnostic guardrail
+            message = (
+                "TinyLanguage runtime could not be loaded. Set tinylanguage.runtimePath "
+                "to a valid tiny_language.py or install the extension from the repository. "
+                f"Last error: {exc}"
+            )
+            raise ImportError(message) from exc
+
+    Debugger = getattr(module, "Debugger", None)
+    compile_and_run = getattr(module, "compile_and_run", None)
+
+
+_load_tiny_language()
 
 
 def _env_var_truthy(name: str) -> bool:

@@ -430,7 +430,18 @@ function registerDebugAdapterExecutable(output) {
       output.appendLine(`[TinyLanguage] Debug adapter working directory: ${launchCwd}`);
     }
     output.appendLine(`[TinyLanguage] Launching debug adapter via ${pythonExecutable} ${adapterPath}`);
-    return new vscode.DebugAdapterExecutable(pythonExecutable, [adapterPath], { env, cwd: launchCwd });
+    const adapterEnv = {
+      ...env,
+      // Provide the runtime path to the adapter explicitly so it can load the
+      // TinyLanguage interpreter even when the extension is installed without
+      // the repository source tree available alongside it.
+      TINYLANGUAGE_RUNTIME: runtimePath,
+    };
+
+    return new vscode.DebugAdapterExecutable(pythonExecutable, [adapterPath], {
+      env: adapterEnv,
+      cwd: launchCwd,
+    });
   }
 
   const command = vscode.commands.registerCommand('tinylanguage.getDebugAdapterExecutable', () => {

@@ -207,6 +207,23 @@ def test_program_output_is_forwarded(debug_server):
     assert any("42" in evt.get("body", {}).get("output", "") for evt in output_events)
 
 
+def test_pause_on_entry_without_breakpoints(debug_server):
+    _, server, messages, program = debug_server
+
+    server.handle_initialize({"seq": 1, "command": "initialize"})
+    server.handle_launch({"seq": 2, "command": "launch", "arguments": {"program": str(program)}})
+    server.handle_configuration_done({"seq": 3, "command": "configurationDone"})
+
+    server._thread.join(timeout=5)
+    if server._thread.is_alive():
+        server._command_queue.put("continue")
+        server._thread.join(timeout=5)
+
+    stopped_events = [m for m in messages if m.get("type") == "event" and m.get("event") == "stopped"]
+    assert stopped_events
+    assert any(evt.get("body", {}).get("reason") == "pause" for evt in stopped_events)
+
+
 def test_watchdog_warns_without_terminating(debug_server):
     _, server, messages, _ = debug_server
 

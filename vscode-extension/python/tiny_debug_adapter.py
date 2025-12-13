@@ -367,6 +367,7 @@ class DAPServer:
                 module_namespace=self._namespace,
                 module_path=program,
                 debugger=debugger,
+                stream_output=False,
             )
         except Exception as exc:  # pragma: no cover - surfaced via output event
             self._log(f"Runtime error: {exc}")

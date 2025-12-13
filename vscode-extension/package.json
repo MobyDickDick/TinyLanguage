@@ -92,6 +92,11 @@
           "type": "boolean",
           "default": false,
           "description": "Show the TinyLanguage Debug Log terminal when launching the adapter (useful for troubleshooting)."
+        },
+        "tinylanguage.preferPythonExtensionDebugger": {
+          "type": "boolean",
+          "default": true,
+          "description": "When debugging Python files, delegate to the VS Code Python extension (debugpy) instead of the built-in TinyLanguage adapter."
         }
       }
     },

@@ -373,6 +373,14 @@ class DAPServer:
 
     def _run_program(self, program: Path) -> None:
         self._log(f"Starting program run: {program}")
+        # Clear any stale pause state from earlier runs so variable scopes and
+        # watch expressions reflect the current execution. VS Code can launch
+        # repeatedly without restarting the adapter, which otherwise leaves
+        # the previous snapshot and handles cached.
+        self._paused_snapshot = None
+        self._variable_handles.clear()
+        self._next_handle = 1
+        self._pause_requested = False
         try:
             source = program.read_text(encoding="utf-8")
         except Exception as exc:  # pragma: no cover - I/O failure

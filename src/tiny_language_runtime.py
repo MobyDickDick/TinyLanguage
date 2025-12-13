@@ -81,6 +81,14 @@ class Debugger:
 
         self.force_pause = True
 
+    def reset_session(self) -> None:
+        """Clear transient state between program runs while keeping breakpoints."""
+
+        self.snapshots.clear()
+        self.pending_step = None
+        self.last_location = None
+        self.force_pause = False
+
     def should_pause(self, pos: SourcePos, namespace: Optional[str], depth: int) -> bool:
         location = (namespace, pos.line)
         if self.force_pause:

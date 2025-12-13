@@ -18,6 +18,7 @@ from tiny_language import (
     _format_error_for_source,
     compile_and_run,
     compile_to_llvm_ir,
+    Runtime,
     run_with_native_backend,
     run_with_python_bytecode_backend,
     run_with_python_backend,
@@ -50,13 +51,15 @@ def _execute(
     """
     if backend == "interpreter":
         namespace = _module_namespace_for_path(module_path) if module_path else None
+        runtime = Runtime(source)
         output = compile_and_run(
             source,
+            runtime=runtime,
             module_namespace=namespace,
             module_path=module_path,
             stream_output=stream_output,
         )
-        return output, stream_output
+        return output, runtime.streamed_output
     if backend == "python":
         return run_with_python_backend(source), False
     if backend == "native":

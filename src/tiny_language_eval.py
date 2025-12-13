@@ -34,6 +34,11 @@
                 text = " ".join(self.format_value(v) for v in vals)
                 with self._lock:
                     self.output.append(f"{text}\n")
+                    if self.debugger is not None:
+                        import sys
+
+                        sys.stdout.write(f"{text}\n")
+                        sys.stdout.flush()
             elif isinstance(s, If):
                 cond = self.eval_expr(s.cond, env)
                 branch = s.then if self._is_truthy(cond) else s.els

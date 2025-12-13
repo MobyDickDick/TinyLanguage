@@ -51,6 +51,23 @@ TinyLanguage is a learning- and transpiler-focused playground rather than a prod
 - **Executable builds**: [`docs/building_executables.md`](docs/building_executables.md) explains how to bundle TinyLanguage into a standalone Windows `.exe` (and the POSIX variant) with PyInstaller, including the required `--add-data` flags.
 - **Git conflict troubleshooting**: [`docs/git_conflict_troubleshooting.md`](docs/git_conflict_troubleshooting.md) explains VS Code's "has conflicts" badge and how to rebase/merge to clear it.
 
+## Quick start: run a program and see its output
+
+1. Activate your virtual environment (PowerShell example: `./.venv/Scripts/Activate.ps1`).
+2. Run any `.tiny` file with the CLI entrypoint and pass the file path from the repository root:
+
+   ```powershell
+   python -m tiny_language src_tiny/class_demo.tiny
+   ```
+
+3. The interpreter writes the program output to the terminal. For the example above you should see:
+
+   ```
+   Hello, TinyLanguage!
+   ```
+
+If no text appears, verify that you are running the command from the repository root (so `src/tiny_language.py` is discoverable) and that you passed a `.tiny` file path. Invoking `python -m tiny_language` without a file exits immediately after showing the argument error message.
+
 ## Backlog: next possible tasks
 - [x] **Prototype an LLVM backend**: Explore emitting LLVM IR (e.g., via `llvmlite`) for constants, variables, and arithmetic, with a CLI switch like `--emit-llvm` to generate IR or invoke `llc`/`clang`.
 - [x] **Port project modules to TinyLanguage (self-hosting)**: Inventory interpreter/compiler modules, design Tiny-compatible library primitives, and port core components while keeping parallel Python/Tiny tests. See [`docs/self_hosting_port_plan.md`](docs/self_hosting_port_plan.md) for the current module inventory and migration plan.

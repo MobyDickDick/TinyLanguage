@@ -323,6 +323,7 @@ class Runtime:
         self.current_module_namespace: Optional[str] = None
         self.call_stack: List[StackFrame] = []
         self.debugger: Optional[Debugger] = None
+        self.stream_output: bool = True
         self.trace_log_path: Optional[str] = os.environ.get("TINYLANG_TRACE_LOG")
         self.trace_every_statement: bool = os.environ.get("TINYLANG_TRACE_EVERY_STATEMENT", "0") == "1"
         self.trace_heartbeat_secs: float = float(os.environ.get("TINYLANG_TRACE_HEARTBEAT_SECS", "1.0"))

@@ -43,7 +43,12 @@ def _execute(source: str, *, backend: str, module_path: Path | None) -> str:
     """Dispatch execution to the requested backend and return captured output."""
     if backend == "interpreter":
         namespace = _module_namespace_for_path(module_path) if module_path else None
-        return compile_and_run(source, module_namespace=namespace, module_path=module_path)
+        return compile_and_run(
+            source,
+            module_namespace=namespace,
+            module_path=module_path,
+            stream_output=False,
+        )
     if backend == "python":
         return run_with_python_backend(source)
     if backend == "native":

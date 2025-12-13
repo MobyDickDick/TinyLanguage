@@ -397,6 +397,12 @@ class DAPServer:
             return
         self._namespace = self._namespace_for_path(program)
         debugger = self._debugger()
+        # Stop at the first statement so clients can step from the program start
+        # even when no breakpoints are set. This mirrors common "stop on entry"
+        # behavior in other debug adapters.
+        self._pause_requested = True
+        if hasattr(debugger, "request_pause"):
+            debugger.request_pause()
         stdout_stream = self._dap_stream("stdout")
         stderr_stream = self._dap_stream("stderr")
         try:

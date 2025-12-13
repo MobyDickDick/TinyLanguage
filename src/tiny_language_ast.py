@@ -355,6 +355,7 @@ class VariantPattern(Pattern):
 
     variant: str
     bindings: Dict[str, Optional[str]]
+    positional_bindings: Optional[List[Optional[str]]] = None
     pos: SourcePos = field(default_factory=SourcePos.origin)
 
 

@@ -26,6 +26,7 @@ TinyLanguage is a learning- and transpiler-focused playground rather than a prod
 ### Runtime trace logging for stepping issues
 - Set `TINYLANG_TRACE_LOG=/tmp/tiny_trace.log` (or any path) to emit a detailed execution trace while a program runs. The file includes the current namespace, line/column number, call stack, and visible names in the active scope.
 - Use `TINYLANG_TRACE_HEARTBEAT_SECS=1.0` to control how often repeated locations are logged. Setting `TINYLANG_TRACE_EVERY_STATEMENT=1` forces a line-by-line dump even inside tight loops.
+- Add `TINYLANG_TRACE_STDOUT=1` to mirror the trace log to the terminal while still writing the log file.
 - Combine these flags with your debugger workflow to understand why stepping or breakpoints are skipped—the trace records every statement the interpreter evaluates.
 - The VS Code extension now enables runtime tracing automatically during debug sessions, writing to `${workspaceFolder}/.tinylanguage/runtime-trace.log` unless you override `tinylanguage.traceLogPath` or `TINYLANG_TRACE_LOG` in `launch.json`.
 - When diagnosing VS Code launch/attach issues, set `TINYLANGUAGE_DAP_LOG=/tmp/tiny_dap.log` to capture every Debug Adapter Protocol request/response and `TINYLANGUAGE_DAP_STDERR=1` to mirror the adapter log to stderr. Idle timeouts will also suggest these flags when no launch/configuration requests arrive so you can see what the client actually sent.

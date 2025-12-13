@@ -235,10 +235,10 @@ class DAPServer:
 
     def _send(self, payload: Dict[str, Any]) -> None:
         data = json.dumps(payload)
-        message = f"Content-Length: {len(data)}\r\n\r\n{data}"
+        message = f"Content-Length: {len(data)}\r\n\r\n{data}".encode("utf-8")
         self._log(f"--> {payload}")
-        sys.stdout.write(message)
-        sys.stdout.flush()
+        sys.stdout.buffer.write(message)
+        sys.stdout.buffer.flush()
 
     def _next_seq(self) -> int:
         with self._lock:

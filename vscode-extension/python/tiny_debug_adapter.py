@@ -265,7 +265,7 @@ class DAPServer:
             })
             return self._wait_for_command()
 
-        dbg = Debugger(on_pause=on_pause)
+        dbg = Debugger(on_pause=on_pause, mirror_stdout=False)
         for path, lines in self._breakpoints.items():
             namespace = self._namespace_for_path(Path(path)) if path else self._namespace
             dbg.set_breakpoints(namespace, set(lines))

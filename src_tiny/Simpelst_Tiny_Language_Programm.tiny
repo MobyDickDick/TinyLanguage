@@ -1,0 +1,10 @@
+// Endlosschleife, die eine Zählvariable ausgibt und bei zehn Millionen wieder bei 0 beginnt.
+define i = 0;
+while (true) {
+  print("This is a simple Test");
+  print(i);
+  i = i + 1;
+  if (i == 10000000) {
+    i = 0;
+  }
+}

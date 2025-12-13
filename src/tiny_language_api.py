@@ -64,6 +64,7 @@ def compile_and_run(
     module_path: Optional[Path] = None,
     module_resolver: Optional[ModuleResolver] = None,
     debugger: Optional[Debugger] = None,
+    stream_output: bool = True,
 ) -> str:
     """Compile and execute TinyLanguage source, returning concatenated output.
 
@@ -74,6 +75,7 @@ def compile_and_run(
     """
     stmts = _parse_and_lint(src)
     runtime = runtime or Runtime(src)  # Reuse an existing runtime or create a fresh one
+    runtime.stream_output = stream_output
     if debugger is not None:
         runtime.debugger = debugger
     runtime.source_map[module_namespace] = src  # Track source text for later diagnostics

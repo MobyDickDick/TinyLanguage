@@ -28,6 +28,28 @@ def test_double_definition_error():
     )
 
 
+def test_prints_and_returns(capsys):
+    runtime = Runtime("")
+
+    out = compile_and_run(
+        """
+        fn greet(name) {
+            print("hi", name);
+            return "ok";
+        }
+
+        print(greet("tiny"));
+        """,
+        runtime=runtime,
+        stream_output=False,
+    )
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert out == "hi tiny\nok\n"
+    assert runtime.output == ["hi tiny\n", "ok\n"]
+
+
 def test_reassign_with_different_type_errors():
     expect_compile_error(
         """

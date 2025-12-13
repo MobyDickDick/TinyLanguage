@@ -45,13 +45,23 @@ class Debugger:
 
     VALID_COMMANDS = {"continue", "step_in", "step_over", "step_out"}
 
-    def __init__(self, on_pause: Optional[Callable[[DebugSnapshot], str]] = None):
+    def __init__(
+        self,
+        on_pause: Optional[Callable[[DebugSnapshot], str]] = None,
+        *,
+        mirror_stdout: bool = True,
+    ):
         self.breakpoints: Dict[Optional[str], Set[int]] = defaultdict(set)
         self.on_pause = on_pause
         self.command_queue: deque[str] = deque()
         self.snapshots: List[DebugSnapshot] = []
         self.pending_step: Optional[StepRequest] = None
         self.last_location: Optional[Tuple[Optional[str], int]] = None
+        # When False, the runtime will avoid mirroring program output to
+        # ``stdout`` while debugging. This is useful for DAP transports that use
+        # stdout for the protocol stream and expect program output to be emitted
+        # via explicit ``output`` events instead of direct writes.
+        self.mirror_stdout = mirror_stdout
 
     def set_breakpoints(self, namespace: Optional[str], lines: Set[int]) -> None:
         """Register breakpoints for a namespace (or ``None`` for the active module)."""

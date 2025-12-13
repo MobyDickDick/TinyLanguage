@@ -34,7 +34,8 @@
                 text = " ".join(self.format_value(v) for v in vals)
                 with self._lock:
                     self.output.append(f"{text}\n")
-                    if self.stream_output or self.debugger is not None:
+                    mirror_stdout = bool(getattr(self.debugger, "mirror_stdout", False))
+                    if self.stream_output or mirror_stdout:
                         import sys
 
                         sys.stdout.write(f"{text}\n")

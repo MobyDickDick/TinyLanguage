@@ -430,10 +430,10 @@ function registerDebugAdapterExecutable(output) {
       const hint = env.TINYLANGUAGE_DAP_LOG
         ? ` See ${env.TINYLANGUAGE_DAP_LOG} for details.`
         : '';
-      vscode.window.showWarningMessage(
-        `TinyLanguage debug adapter self-test failed.${hint} Check the TinyLanguage output channel for more information.`,
-      );
-      return undefined;
+      const message =
+        `TinyLanguage debug adapter self-test failed.${hint} Continuing to launch anyway; check Output → TinyLanguage for details.`;
+      output.appendLine(`[TinyLanguage] ${message}`);
+      vscode.window.showWarningMessage(message);
     }
     if (launchCwd) {
       output.appendLine(`[TinyLanguage] Debug adapter working directory: ${launchCwd}`);

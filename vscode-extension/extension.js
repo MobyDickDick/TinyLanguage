@@ -54,6 +54,15 @@ function getRuntimePath() {
   return resolveWorkspacePath(rawPath);
 }
 
+function shouldDelegatePythonDebugging(config) {
+  const setting = vscode.workspace.getConfiguration('tinylanguage');
+  if (config.usePythonExtension !== undefined) {
+    return Boolean(config.usePythonExtension);
+  }
+  const preferPython = setting.get('preferPythonExtensionDebugger');
+  return preferPython !== undefined ? Boolean(preferPython) : true;
+}
+
 function getDebugLogPath() {
   const config = vscode.workspace.getConfiguration('tinylanguage');
   const rawPath = config.get('debugLogPath') || '';
@@ -601,6 +610,29 @@ function registerDebugConfigurations(output) {
         output.appendLine(`[TinyLanguage]  • Python mode: enabled automatically for Python file ${config.program}`);
       } else {
         output.appendLine(`[TinyLanguage]  • Python mode: ${pythonModeEnabled ? 'enabled' : 'disabled'}`);
+      }
+
+      if (pythonModeEnabled && shouldDelegatePythonDebugging(config)) {
+        const pythonExtension = vscode.extensions.getExtension('ms-python.python');
+        if (!pythonExtension) {
+          output.appendLine('[TinyLanguage]  • Python extension not installed; using built-in adapter instead.');
+        } else {
+          const delegated = {
+            name: config.name || 'TinyLanguage (Python via VS Code Python)',
+            type: 'python',
+            request: 'launch',
+            program: config.program,
+            python: pythonExecutable,
+            console: config.console || 'integratedTerminal',
+            cwd: config.cwd || folder?.uri.fsPath,
+            env: config.env,
+            args: config.args,
+            justMyCode: config.justMyCode ?? false,
+          };
+          output.appendLine('[TinyLanguage] Redirecting Python debugging to the VS Code Python extension (debugpy).');
+          output.appendLine('[TinyLanguage] Set "tinylanguage.preferPythonExtensionDebugger" or launch.json "usePythonExtension": false to use the built-in adapter.');
+          return delegated;
+        }
       }
 
       if (!fileExists) {

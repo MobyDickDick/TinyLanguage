@@ -35,7 +35,8 @@
                 with self._lock:
                     self.output.append(f"{text}\n")
                     mirror_stdout = bool(getattr(self.debugger, "mirror_stdout", False))
-                    if self.stream_output or mirror_stdout:
+                    trace_to_stdout = bool(getattr(self, "trace_to_stdout", False))
+                    if self.stream_output or mirror_stdout or trace_to_stdout:
                         import sys
 
                         sys.stdout.write(f"{text}\n")

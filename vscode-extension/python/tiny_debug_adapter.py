@@ -169,6 +169,34 @@ class DAPServer:
             }
         )
 
+    class _DAPStream(io.StringIO):
+        """File-like stream that forwards writes as DAP output events."""
+
+        def __init__(self, server: "DAPServer", category: str):
+            super().__init__()
+            self._server = server
+            self._category = category
+
+        def write(self, s: str) -> int:  # noqa: D401 - standard stream signature
+            if not s:
+                return 0
+            self._server._send(
+                {
+                    "type": "event",
+                    "seq": self._server._next_seq(),
+                    "event": "output",
+                    "body": {"category": self._category, "output": s},
+                }
+            )
+            return len(s)
+
+        def writelines(self, lines) -> None:  # noqa: D401 - standard stream signature
+            for line in lines:
+                self.write(line)
+
+    def _dap_stream(self, category: str) -> "DAPServer._DAPStream":
+        return self._DAPStream(self, category)
+
     def _open_log_file(self):
         log_path = os.environ.get("TINYLANGUAGE_DAP_LOG")
         if not log_path:
@@ -369,14 +397,17 @@ class DAPServer:
             return
         self._namespace = self._namespace_for_path(program)
         debugger = self._debugger()
+        stdout_stream = self._dap_stream("stdout")
+        stderr_stream = self._dap_stream("stderr")
         try:
-            output = compile_and_run(
-                source,
-                module_namespace=self._namespace,
-                module_path=program,
-                debugger=debugger,
-                stream_output=False,
-            )
+            with redirect_stdout(stdout_stream), redirect_stderr(stderr_stream):
+                output = compile_and_run(
+                    source,
+                    module_namespace=self._namespace,
+                    module_path=program,
+                    debugger=debugger,
+                    stream_output=True,
+                )
         except Exception as exc:  # pragma: no cover - surfaced via output event
             self._log(f"Runtime error: {exc}")
             self._send({
@@ -396,12 +427,7 @@ class DAPServer:
         else:
             if output:
                 rendered = output if output.endswith("\n") else output + "\n"
-                self._send({
-                    "type": "event",
-                    "seq": self._next_seq(),
-                    "event": "output",
-                    "body": {"category": "stdout", "output": rendered},
-                })
+                stdout_stream.write(rendered)
             self._send(
                 {
                     "type": "event",
@@ -421,8 +447,8 @@ class DAPServer:
         self._log(f"Starting Python program run: {program}")
         self._namespace = str(program)
         debugger = self._python_debugger(program)
-        stdout_buffer = io.StringIO()
-        stderr_buffer = io.StringIO()
+        stdout_stream = self._dap_stream("stdout")
+        stderr_stream = self._dap_stream("stderr")
         try:
             with open(program, "r", encoding="utf-8") as handle:
                 code = handle.read()
@@ -447,7 +473,7 @@ class DAPServer:
 
         try:
             compiled = compile(code, str(program), "exec")
-            with redirect_stdout(stdout_buffer), redirect_stderr(stderr_buffer):
+            with redirect_stdout(stdout_stream), redirect_stderr(stderr_stream):
                 debugger.runctx(compiled, {}, {})
         except SystemExit:
             code_obj = sys.exc_info()[1]
@@ -464,7 +490,7 @@ class DAPServer:
                 }
             )
         except Exception as exc:  # pragma: no cover - runtime failure
-            stderr_buffer.write(f"Exception in Python program: {exc}\n")
+            stderr_stream.write(f"Exception in Python program: {exc}\n")
             self._send(
                 {
                     "type": "event",
@@ -480,26 +506,6 @@ class DAPServer:
                     "seq": self._next_seq(),
                     "event": "exited",
                     "body": {"exitCode": 0},
-                }
-            )
-        stdout_value = stdout_buffer.getvalue()
-        stderr_value = stderr_buffer.getvalue()
-        if stdout_value:
-            self._send(
-                {
-                    "type": "event",
-                    "seq": self._next_seq(),
-                    "event": "output",
-                    "body": {"category": "stdout", "output": stdout_value},
-                }
-            )
-        if stderr_value:
-            self._send(
-                {
-                    "type": "event",
-                    "seq": self._next_seq(),
-                    "event": "output",
-                    "body": {"category": "stderr", "output": stderr_value},
                 }
             )
         self._send(
@@ -551,6 +557,7 @@ class DAPServer:
                 "supportsConfigurationDoneRequest": True,
                 "supportsPauseRequest": True,
                 "supportsSetVariable": False,
+                "supportsEvaluateForHovers": True,
             },
         }
         self._send(response)
@@ -797,12 +804,18 @@ class DAPServer:
                     except Exception as exc:  # pragma: no cover - depends on expression
                         result = f"Evaluation error: {exc}"
             else:
+                merged: Dict[str, Any] = {}
                 for scope in self._paused_snapshot.scopes:
-                    if expr in scope.values:
-                        result = repr(scope.values[expr])
-                        break
-                if result is None:
-                    result = "<unknown>"
+                    merged.update(scope.values)
+                try:
+                    result = repr(eval(expr, {}, merged))  # noqa: S307 - debugging context
+                except Exception:
+                    for scope in self._paused_snapshot.scopes:
+                        if expr in scope.values:
+                            result = repr(scope.values[expr])
+                            break
+                    if result is None:
+                        result = "<unknown>"
         response = {
             "type": "response",
             "seq": self._next_seq(),

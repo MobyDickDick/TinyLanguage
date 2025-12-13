@@ -24,7 +24,9 @@
       "stopOnEntry": false,
       "env": {
         "TINYLANGUAGE_DAP_LOG": "/tmp/tiny_dap.log",
-        "TINYLANGUAGE_DAP_STDERR": "1"
+        "TINYLANGUAGE_DAP_STDERR": "1",
+        "TINYLANG_TRACE_STDOUT": "1",
+        "TINYLANG_TRACE_HEARTBEAT_SECS": "1.0"
       },
       "presentation": {
         "group": "TinyLanguage",

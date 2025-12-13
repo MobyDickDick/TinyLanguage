@@ -15,6 +15,24 @@
       }
     },
     {
+      "name": "TinyLanguage: Debug Simpelst_Tiny_Language_Programm.tiny",
+      "type": "tinylanguage",
+      "request": "launch",
+      "program": "${workspaceFolder}/src_tiny/Simpelst_Tiny_Language_Programm.tiny",
+      "runtime": "${workspaceFolder}/src/tiny_language.py",
+      "python": "${config:tinylanguage.pythonPath}",
+      "stopOnEntry": false,
+      "env": {
+        "TINYLANGUAGE_DAP_LOG": "/tmp/tiny_dap.log",
+        "TINYLANGUAGE_DAP_STDERR": "1"
+      },
+      "presentation": {
+        "group": "TinyLanguage",
+        "order": 1,
+        "hidden": false
+      }
+    },
+    {
       "name": "TinyLanguage: Debug simpelst_Python_program.py",
       "type": "tinylanguage",
       "request": "launch",
@@ -84,6 +102,18 @@
       "program": "${workspaceFolder}/src/tiny_language.py",
       "args": [
         "${workspaceFolder}/src_tiny/all_features.tiny"
+      ],
+      "console": "integratedTerminal",
+      "logToFile": true,
+      "justMyCode": false
+    },
+    {
+      "name": "Run Simpelst_Tiny_Language_Programm.tiny",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/tiny_language.py",
+      "args": [
+        "${workspaceFolder}/src_tiny/Simpelst_Tiny_Language_Programm.tiny"
       ],
       "console": "integratedTerminal",
       "logToFile": true,

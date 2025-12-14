@@ -118,6 +118,10 @@ class DAPServer:
         self._seq = 0
         self._lock = threading.Lock()
         self._send_lock = threading.Lock()
+        # Preserve the original stdout used for the Debug Adapter Protocol so
+        # runtime output redirection (e.g., redirect_stdout while a program
+        # runs) cannot accidentally replace the transport stream.
+        self._client_stdout = sys.stdout.buffer
         self._paused_snapshot = None
         self._command_queue: "queue.Queue[str]" = queue.Queue()
         self._breakpoints: Dict[str, List[int]] = {}
@@ -287,8 +291,8 @@ class DAPServer:
         message = f"Content-Length: {len(data)}\r\n\r\n{data}".encode("utf-8")
         self._log(f"--> {payload}")
         with self._send_lock:
-            sys.stdout.buffer.write(message)
-            sys.stdout.buffer.flush()
+            self._client_stdout.write(message)
+            self._client_stdout.flush()
 
     def _next_seq(self) -> int:
         with self._lock:

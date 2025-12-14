@@ -214,7 +214,21 @@ class DAPServer:
             print(f"Failed to open debug log file {log_path}: {exc}", file=sys.stderr)
             return None
 
-    def _log(self, message: str) -> None:
+    def _log(self, message: str, *args: object) -> None:
+        """Write a diagnostic message to the log output.
+
+        Some call sites use printf-style placeholders; accept optional positional
+        arguments so existing callers do not raise ``TypeError`` when providing
+        formatting values. When arguments are provided, interpolate them before
+        emitting the message.
+        """
+
+        if args:
+            try:
+                message = message % args
+            except Exception:
+                message = " ".join([message, *map(str, args)])
+
         timestamp = datetime.utcnow().isoformat() + "Z"
         if not self._log_handle:
             if self._log_to_stderr:

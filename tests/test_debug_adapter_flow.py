@@ -156,6 +156,28 @@ def test_launch_without_program_returns_error(debug_server):
     assert output_events
 
 
+def test_command_queue_logs_stale_entries(tmp_path, monkeypatch):
+    module = load_adapter_module()
+    server = module.DAPServer()
+
+    # Capture log messages instead of writing to a file/stdout.
+    logs: list[str] = []
+    server._log = lambda msg, *args: logs.append(msg % args if args else msg)  # type: ignore[assignment]
+
+    # Pretend a previous run left a command in the queue with an old generation.
+    server._active_run_generation = 2
+    server._current_run_generation = 2
+    server._command_queue.put((1, "continue"))
+    server._command_queue.put((2, "next"))
+
+    with monkeypatch.context() as m:
+        m.setenv("TINYLANGUAGE_DAP_PAUSE_TIMEOUT", "1")
+        command = server._wait_for_command()
+
+    assert command == "next"
+    assert any("Discarding stale command" in entry for entry in logs)
+
+
 def test_breakpoints_follow_module_namespace(monkeypatch, tmp_path):
     module = load_adapter_module()
     captured = []

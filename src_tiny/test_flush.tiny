@@ -1,11 +1,9 @@
-// Tet flushdefine n = 10;
+// Print a sequence of numbers to verify basic TinyLanguage output.
+define n = 10;
 
 define i = 0;
-define e = Null;
 
-while(i<100 && e==Null){
-
+while (i < n) {
     print(i);
-    e = flush();
-
+    i = i + 1;
 }

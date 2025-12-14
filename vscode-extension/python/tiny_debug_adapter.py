@@ -403,13 +403,6 @@ class DAPServer:
         self._paused_snapshot = None
         self._variable_handles.clear()
         self._next_handle = 1
-        # Remove any commands queued by earlier sessions so a previous "continue"
-        # request does not skip the initial pause for new launches.
-        while not self._command_queue.empty():
-            try:
-                self._command_queue.get_nowait()
-            except queue.Empty:  # pragma: no cover - race with empty()
-                break
         self._stop_on_entry_pending = bool(self._stop_on_entry)
         self._pause_requested = bool(self._stop_on_entry)
         try:
@@ -490,6 +483,16 @@ class DAPServer:
             "event": "terminated",
             "body": {},
         })
+        # Clear any commands queued during this run so earlier client requests
+        # (e.g., a late "continue" while shutting down) do not leak into the
+        # next launch. This still preserves any commands queued *before* the
+        # run started so clients can pre-buffer actions like the initial
+        # "continue" used in the regression tests.
+        while not self._command_queue.empty():
+            try:
+                self._command_queue.get_nowait()
+            except queue.Empty:  # pragma: no cover - race with empty()
+                break
 
     def _run_python_program(self, program: Path) -> None:
         self._log(f"Starting Python program run: {program}")
@@ -564,6 +567,14 @@ class DAPServer:
                 "body": {},
             }
         )
+        # Ensure commands sent during this run do not leak into future launches,
+        # but leave any pre-launch commands intact so clients can queue actions
+        # (like a "continue") before starting the debugger.
+        while not self._command_queue.empty():
+            try:
+                self._command_queue.get_nowait()
+            except queue.Empty:  # pragma: no cover - race with empty()
+                break
 
     # ----- Request handlers -----
     def _start_program_thread(self, trigger: str) -> None:

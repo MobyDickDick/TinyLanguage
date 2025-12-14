@@ -153,6 +153,7 @@ class DAPServer:
         self._debugger_instance = None
         self._pause_requested = False
         self._stop_on_entry = False
+        self._stop_on_entry_pending = False
         # Start the watchdog immediately so that we can surface handshake issues
         # (e.g., VS Code never sending an initialize request) instead of
         # blocking forever with no diagnostics.
@@ -289,8 +290,17 @@ class DAPServer:
     def _debugger(self):
         def on_pause(snapshot):
             self._paused_snapshot = snapshot
-            self._log("Paused at breakpoint")
-            reason = "pause" if self._pause_requested else "breakpoint"
+            if self._stop_on_entry_pending:
+                reason = "entry"
+                log_msg = "Paused on entry"
+            elif self._pause_requested:
+                reason = "pause"
+                log_msg = "Paused after pause request"
+            else:
+                reason = "breakpoint"
+                log_msg = "Paused at breakpoint"
+            self._stop_on_entry_pending = False
+            self._log(log_msg)
             self._send({
                 "type": "event",
                 "seq": self._next_seq(),
@@ -320,8 +330,17 @@ class DAPServer:
                     "frame": frame,
                     "stack": inspect.getouterframes(frame),
                 }
-                server._log("Paused in Python program")
-                reason = "pause" if server._pause_requested else "breakpoint"
+                if server._stop_on_entry_pending:
+                    reason = "entry"
+                    log_msg = "Paused on entry"
+                elif server._pause_requested:
+                    reason = "pause"
+                    log_msg = "Paused after pause request"
+                else:
+                    reason = "breakpoint"
+                    log_msg = "Paused at breakpoint"
+                server._stop_on_entry_pending = False
+                server._log(log_msg)
                 server._send(
                     {
                         "type": "event",
@@ -384,6 +403,7 @@ class DAPServer:
         self._paused_snapshot = None
         self._variable_handles.clear()
         self._next_handle = 1
+        self._stop_on_entry_pending = bool(self._stop_on_entry)
         self._pause_requested = bool(self._stop_on_entry)
         try:
             source = program.read_text(encoding="utf-8")

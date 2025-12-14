@@ -224,6 +224,53 @@ def test_pause_on_entry_without_breakpoints(debug_server):
     assert any(evt.get("body", {}).get("reason") == "pause" for evt in stopped_events)
 
 
+def test_command_queue_is_cleared_between_launches(debug_server):
+    _, server, messages, program = debug_server
+
+    server.handle_initialize({"seq": 1, "command": "initialize"})
+    server.handle_launch({"seq": 2, "command": "launch", "arguments": {"program": str(program)}})
+    server.handle_configuration_done({"seq": 3, "command": "configurationDone"})
+
+    server._thread.join(timeout=5)
+    if server._thread.is_alive():
+        server._command_queue.put("continue")
+        server._thread.join(timeout=5)
+
+    assert not server._thread.is_alive()
+
+    messages.clear()
+    # Inject a stale command to mimic a previous session leaving behind a
+    # continue request. The adapter should drop this before the next launch so
+    # stop-on-entry still pauses.
+    server._command_queue.put("continue")
+
+    server.handle_launch({"seq": 4, "command": "launch", "arguments": {"program": str(program)}})
+    server.handle_configuration_done({"seq": 5, "command": "configurationDone"})
+
+    paused_event = None
+    for _ in range(20):
+        paused_event = next(
+            (
+                m
+                for m in messages
+                if m.get("type") == "event"
+                and m.get("event") == "stopped"
+                and m.get("body", {}).get("reason") == "pause"
+            ),
+            None,
+        )
+        if paused_event:
+            break
+        time.sleep(0.1)
+
+    assert paused_event is not None, f"stopped event missing: {messages!r}"
+
+    server._command_queue.put("continue")
+    server._thread.join(timeout=5)
+
+    assert not server._thread.is_alive()
+
+
 def test_watchdog_warns_without_terminating(debug_server):
     _, server, messages, _ = debug_server
 

@@ -19,6 +19,7 @@ class Opcode(str, Enum):
     STORE = "STORE"
     BINARY = "BINARY"
     PRINT = "PRINT"
+    FLUSH = "FLUSH"
     JUMP = "JUMP"
     JUMP_IF_FALSE = "JUMP_IF_FALSE"
     CALL = "CALL"

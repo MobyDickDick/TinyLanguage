@@ -141,7 +141,7 @@
               },
               "stopOnEntry": {
                 "type": "boolean",
-                "default": false,
+                "default": true,
                 "description": "Pause on the first line of the program before executing."
               },
               "env": {
@@ -167,7 +167,7 @@
             "program": "${file}",
             "runtime": "${config:tinylanguage.runtimePath}",
             "python": "${config:tinylanguage.pythonPath}",
-            "stopOnEntry": false
+            "stopOnEntry": true
           }
         ]
       }

@@ -152,6 +152,7 @@ class DAPServer:
         self._thread_event_sent = False
         self._debugger_instance = None
         self._pause_requested = False
+        self._stop_on_entry = False
         # Start the watchdog immediately so that we can surface handshake issues
         # (e.g., VS Code never sending an initialize request) instead of
         # blocking forever with no diagnostics.
@@ -372,7 +373,10 @@ class DAPServer:
         return command
 
     def _run_program(self, program: Path) -> None:
-        self._log(f"Starting program run: {program}")
+        self._log(
+            "Starting program run: %s (stop_on_entry=%s, breakpoints=%s)"
+            % (program, self._stop_on_entry, {k: v for k, v in self._breakpoints.items() if v})
+        )
         # Clear any stale pause state from earlier runs so variable scopes and
         # watch expressions reflect the current execution. VS Code can launch
         # repeatedly without restarting the adapter, which otherwise leaves
@@ -380,7 +384,7 @@ class DAPServer:
         self._paused_snapshot = None
         self._variable_handles.clear()
         self._next_handle = 1
-        self._pause_requested = False
+        self._pause_requested = bool(self._stop_on_entry)
         try:
             source = program.read_text(encoding="utf-8")
         except Exception as exc:  # pragma: no cover - I/O failure
@@ -410,9 +414,10 @@ class DAPServer:
         # Stop at the first statement so clients can step from the program start
         # even when no breakpoints are set. This mirrors common "stop on entry"
         # behavior in other debug adapters.
-        self._pause_requested = True
-        if hasattr(debugger, "request_pause"):
-            debugger.request_pause()
+        if self._stop_on_entry:
+            self._log("Requesting initial pause (stopOnEntry enabled)")
+            if hasattr(debugger, "request_pause"):
+                debugger.request_pause()
         stdout_stream = self._dap_stream("stdout")
         stderr_stream = self._dap_stream("stderr")
         try:
@@ -618,6 +623,16 @@ class DAPServer:
         args = request.get("arguments", {})
         program = args.get("program")
         self._python_mode = bool(args.get("pythonMode"))
+        stop_on_entry_arg = args.get("stopOnEntry")
+        # Default to pausing on entry when not explicitly disabled so clients
+        # can step from the start of the program even without breakpoints. This
+        # matches the expectations of the existing test suite and keeps the
+        # legacy behavior where sessions pause immediately unless the user
+        # opts out via launch arguments.
+        self._stop_on_entry = True if stop_on_entry_arg is None else bool(stop_on_entry_arg)
+        env_stop_on_entry = _env_var_truthy("TINYLANGUAGE_DAP_STOP_ON_ENTRY")
+        if env_stop_on_entry:
+            self._stop_on_entry = True
         if not program:
             message = "Launch request is missing required 'program' path"
             self._log(message)
@@ -643,7 +658,25 @@ class DAPServer:
         self._launch_received = True
         self._launch_args = args
         self._program = Path(program)
-        self._log(f"Launch request for {self._program}")
+        program_exists = self._program.exists()
+        self._log(
+            "Launch request for %s (exists=%s, pythonMode=%s, stopOnEntry=%s, args=%s)"
+            % (self._program, program_exists, self._python_mode, self._stop_on_entry, args)
+        )
+        if not program_exists:
+            message = f"Program path does not exist: {self._program}"
+            self._emit_warning(message)
+            response = {
+                "type": "response",
+                "seq": self._next_seq(),
+                "request_seq": request.get("seq", 0),
+                "command": "launch",
+                "success": False,
+                "message": message,
+                "body": {},
+            }
+            self._send(response)
+            return
         if not self._process_event_sent:
             try:
                 name = self._program.name
@@ -679,6 +712,7 @@ class DAPServer:
 
     def handle_configuration_done(self, request: Dict[str, Any]) -> None:
         self._configuration_done = True
+        self._log("configurationDone received; attempting to start program")
         self._start_program_thread("configurationDone")
         response = {
             "type": "response",
@@ -782,6 +816,8 @@ class DAPServer:
             "success": True,
             "body": {"scopes": scopes},
         }
+        if not scopes:
+            self._log("Scopes requested while not paused; returning empty result")
         self._send(response)
 
     def handle_variables(self, request: Dict[str, Any]) -> None:
@@ -804,6 +840,11 @@ class DAPServer:
             "success": True,
             "body": {"variables": variables},
         }
+        if not handle:
+            self._log(
+                "Variables requested for unknown handle %s; paused=%s; known_handles=%s"
+                % (handle_id, bool(self._paused_snapshot), list(self._variable_handles.keys()))
+            )
         self._send(response)
 
     def handle_evaluate(self, request: Dict[str, Any]) -> None:
@@ -840,6 +881,10 @@ class DAPServer:
             "success": True,
             "body": {"result": result or "<not paused>", "variablesReference": 0},
         }
+        if self._paused_snapshot is None:
+            self._log(
+                "Evaluate requested while not paused (expr=%s); returning placeholder" % expr
+            )
         self._send(response)
 
     def _handle_unknown(self, request: Dict[str, Any]) -> None:

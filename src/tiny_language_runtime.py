@@ -7,9 +7,13 @@ entire implementation.
 """
 
 import logging
+import os
 import time
 
 from collections import defaultdict, deque
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple
 
 # ----- Runtime -----
 
@@ -50,6 +54,7 @@ class Debugger:
         on_pause: Optional[Callable[[DebugSnapshot], str]] = None,
         *,
         mirror_stdout: bool = True,
+        debug_log_path: Optional[str] = None,
     ):
         self.breakpoints: Dict[Optional[str], Set[int]] = defaultdict(set)
         self.on_pause = on_pause
@@ -67,10 +72,19 @@ class Debugger:
         # stdout for the protocol stream and expect program output to be emitted
         # via explicit ``output`` events instead of direct writes.
         self.mirror_stdout = mirror_stdout
+        # Optional logger for mirroring debugger activity to a file for offline
+        # inspection when stdout is reserved for the Debug Adapter Protocol.
+        self._debug_log_path = debug_log_path or os.environ.get("TINYLANG_DEBUGGER_LOG")
+        self._debug_logger: Optional[logging.Logger] = None
+        if self._debug_log_path:
+            self._setup_debug_logger()
 
     def set_breakpoints(self, namespace: Optional[str], lines: Set[int]) -> None:
         """Register breakpoints for a namespace (or ``None`` for the active module)."""
 
+        self._log_debugger(
+            "set breakpoints in %s: %s", namespace or "<module>", sorted(lines)
+        )
         self.breakpoints[namespace] = set(lines)
 
     def enqueue_commands(self, *commands: str) -> None:
@@ -79,12 +93,15 @@ class Debugger:
         for cmd in commands:
             self._validate_command(cmd)
             self.command_queue.append(cmd)
+        if commands:
+            self._log_debugger("queued commands: %s", list(commands))
 
     def request_pause(self) -> None:
         """Force the debugger to pause at the next opportunity."""
 
         self.force_pause = True
         self._requested_pause = True
+        self._log_debugger("pause requested")
 
     def reset_session(self) -> None:
         """Clear transient state between program runs while keeping breakpoints."""
@@ -100,12 +117,25 @@ class Debugger:
         # single pause-on-entry request does not force every subsequent run to
         # halt immediately.
         self._requested_pause = False
+        self._log_debugger("session reset (force_pause=%s)", self.force_pause)
 
     def should_pause(self, pos: SourcePos, namespace: Optional[str], depth: int) -> bool:
         location = (namespace, pos.line)
         if self.force_pause:
+            self._log_debugger(
+                "pausing because force_pause is set at %s:%d (depth=%d)",
+                namespace or "<module>",
+                pos.line,
+                depth,
+            )
             return True
         if pos.line in self.breakpoints.get(namespace, set()) or pos.line in self.breakpoints.get(None, set()):
+            self._log_debugger(
+                "pausing because breakpoint hit at %s:%d (depth=%d)",
+                namespace or "<module>",
+                pos.line,
+                depth,
+            )
             return True
         return self._matches_step(location, depth)
 
@@ -117,6 +147,14 @@ class Debugger:
         self._requested_pause = False
         command = self._next_command(snapshot)
         self.pending_step = self._step_for_command(command, depth)
+        self._log_debugger(
+            "pause handled at %s:%d (depth=%d); next command=%s; pending_step=%s",
+            snapshot.namespace or "<module>",
+            snapshot.pos.line,
+            depth,
+            command,
+            self.pending_step,
+        )
 
     def _next_command(self, snapshot: DebugSnapshot) -> str:
         if self.on_pause is not None:
@@ -153,6 +191,23 @@ class Debugger:
         if self.pending_step.mode == "step_out":
             return depth <= self.pending_step.depth and location != self.last_location
         return False
+
+    def _setup_debug_logger(self) -> None:
+        path = Path(self._debug_log_path).expanduser()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        logger = logging.getLogger(f"tiny_language.debugger.{id(self)}")
+        logger.setLevel(logging.DEBUG)
+        logger.handlers.clear()
+        logger.propagate = False
+        handler = logging.FileHandler(path, mode="w", encoding="utf-8")
+        handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+        logger.addHandler(handler)
+        self._debug_logger = logger
+
+    def _log_debugger(self, msg: str, *args: Any) -> None:
+        if self._debug_logger is None:
+            return
+        self._debug_logger.debug(msg, *args)
 
 
 @dataclass

@@ -59,10 +59,12 @@
       "program": "${file}",
       "runtime": "${workspaceFolder}/src/tiny_language.py",
       "python": "${config:tinylanguage.pythonPath}",
-      "stopOnEntry": false,
+      "cwd": "${workspaceFolder}",
+      "stopOnEntry": true,
       "env": {
-        "TINYLANGUAGE_DAP_LOG": "/tmp/tiny_dap.log",
-        "TINYLANGUAGE_DAP_STDERR": "1"
+        "TINYLANGUAGE_DAP_LOG": "${workspaceFolder}/.tinylanguage/debug-adapter.log",
+        "TINYLANGUAGE_DAP_STDERR": "1",
+        "TINYLANG_TRACE_LOG": "${workspaceFolder}/.tinylanguage/runtime-trace.log"
       },
       "presentation": {
         "group": "TinyLanguage",

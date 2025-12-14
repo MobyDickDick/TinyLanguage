@@ -151,6 +151,7 @@ class DAPServer:
         self._thread_event_sent = False
         self._debugger_instance = None
         self._pause_requested = False
+        self._streaming_output = False
         # Start the watchdog immediately so that we can surface handshake issues
         # (e.g., VS Code never sending an initialize request) instead of
         # blocking forever with no diagnostics.
@@ -270,6 +271,15 @@ class DAPServer:
             return self._wait_for_command()
 
         dbg = Debugger(on_pause=on_pause, mirror_stdout=False)
+        dbg.on_output = lambda text: self._send(
+            {
+                "type": "event",
+                "seq": self._next_seq(),
+                "event": "output",
+                "body": {"category": "stdout", "output": text},
+            }
+        )
+        self._streaming_output = True
         self._debugger_instance = dbg
         for path, lines in self._breakpoints.items():
             namespace = self._namespace_for_path(Path(path)) if path else self._namespace
@@ -368,6 +378,7 @@ class DAPServer:
             })
             return
         self._namespace = self._namespace_for_path(program)
+        self._streaming_output = False
         debugger = self._debugger()
         try:
             output = compile_and_run(
@@ -394,7 +405,7 @@ class DAPServer:
                 }
             )
         else:
-            if output:
+            if output and not self._streaming_output:
                 rendered = output if output.endswith("\n") else output + "\n"
                 self._send({
                     "type": "event",

@@ -352,6 +352,7 @@ class Runtime:
         self._trace_logger: Optional[logging.Logger] = None
         self._last_trace_time: float = 0.0
         self._last_trace_location: Optional[Tuple[Optional[str], int]] = None
+        self._last_emitted_output_idx: int = 0
         if self.trace_log_path:
             self._setup_trace_logger()
 
@@ -364,6 +365,20 @@ class Runtime:
             mirror_stdout = bool(getattr(self.debugger, "mirror_stdout", False))
             if self.stream_output or mirror_stdout or self.trace_to_stdout:
                 sys.stdout.flush()
+
+            self._emit_output_to_debugger()
+
+    def _emit_output_to_debugger(self) -> None:
+        handler = getattr(self.debugger, "on_output", None)
+        if handler is None:
+            return
+
+        new_output = "".join(self.output[self._last_emitted_output_idx :])
+        if not new_output:
+            return
+
+        self._last_emitted_output_idx = len(self.output)
+        handler(new_output)
 
     @staticmethod
     def _qualify_name(name: str, namespace: Optional[str]) -> str:

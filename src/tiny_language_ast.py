@@ -55,6 +55,13 @@ class Print(IR):
 
 
 @dataclass
+class Flush(IR):
+    """Flush buffered output streams."""
+
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
 class If(IR):
     """Conditional branch with optional else body."""
 

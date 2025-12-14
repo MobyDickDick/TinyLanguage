@@ -403,6 +403,13 @@ class DAPServer:
         self._paused_snapshot = None
         self._variable_handles.clear()
         self._next_handle = 1
+        # Remove any commands queued by earlier sessions so a previous "continue"
+        # request does not skip the initial pause for new launches.
+        while not self._command_queue.empty():
+            try:
+                self._command_queue.get_nowait()
+            except queue.Empty:  # pragma: no cover - race with empty()
+                break
         self._stop_on_entry_pending = bool(self._stop_on_entry)
         self._pause_requested = bool(self._stop_on_entry)
         try:

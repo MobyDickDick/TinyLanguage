@@ -623,7 +623,13 @@ class DAPServer:
         args = request.get("arguments", {})
         program = args.get("program")
         self._python_mode = bool(args.get("pythonMode"))
-        self._stop_on_entry = bool(args.get("stopOnEntry"))
+        stop_on_entry_arg = args.get("stopOnEntry")
+        # Default to pausing on entry when not explicitly disabled so clients
+        # can step from the start of the program even without breakpoints. This
+        # matches the expectations of the existing test suite and keeps the
+        # legacy behavior where sessions pause immediately unless the user
+        # opts out via launch arguments.
+        self._stop_on_entry = True if stop_on_entry_arg is None else bool(stop_on_entry_arg)
         env_stop_on_entry = _env_var_truthy("TINYLANGUAGE_DAP_STOP_ON_ENTRY")
         if env_stop_on_entry:
             self._stop_on_entry = True

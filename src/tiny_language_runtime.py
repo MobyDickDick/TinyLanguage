@@ -355,6 +355,16 @@ class Runtime:
         if self.trace_log_path:
             self._setup_trace_logger()
 
+    def flush_streams(self) -> None:
+        """Flush any mirrored stdout streams when streaming is enabled."""
+
+        with self._lock:
+            import sys
+
+            mirror_stdout = bool(getattr(self.debugger, "mirror_stdout", False))
+            if self.stream_output or mirror_stdout or self.trace_to_stdout:
+                sys.stdout.flush()
+
     @staticmethod
     def _qualify_name(name: str, namespace: Optional[str]) -> str:
         return f"{namespace}.{name}" if namespace else name

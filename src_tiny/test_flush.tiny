@@ -1,0 +1,11 @@
+// Tet flushdefine n = 10;
+
+define i = 0;
+define e = Null;
+
+while(i<100 && e==Null){
+
+    print(i);
+    e = flush();
+
+}

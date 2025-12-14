@@ -154,6 +154,8 @@ class DAPServer:
         self._pause_requested = False
         self._stop_on_entry = False
         self._stop_on_entry_pending = False
+        self._current_run_generation = 1
+        self._active_run_generation: Optional[int] = None
         # Start the watchdog immediately so that we can surface handshake issues
         # (e.g., VS Code never sending an initialize request) instead of
         # blocking forever with no diagnostics.
@@ -378,7 +380,20 @@ class DAPServer:
         while command is None:
             remaining = None if deadline is None else max(0.1, deadline - time.monotonic())
             try:
-                command = self._command_queue.get(timeout=remaining)
+                queued = self._command_queue.get(timeout=remaining)
+                if isinstance(queued, tuple):
+                    generation, command = queued
+                    if self._active_run_generation is not None and generation != self._active_run_generation:
+                        self._log(
+                            "Discarding stale command %s from generation %s (active=%s)",
+                            command,
+                            generation,
+                            self._active_run_generation,
+                        )
+                        command = None
+                        continue
+                else:
+                    command = queued
             except queue.Empty:
                 if deadline is None:
                     self._log("Still waiting for client command while paused")
@@ -396,6 +411,7 @@ class DAPServer:
             "Starting program run: %s (stop_on_entry=%s, breakpoints=%s)"
             % (program, self._stop_on_entry, {k: v for k, v in self._breakpoints.items() if v})
         )
+        run_generation = self._active_run_generation or self._current_run_generation
         # Clear any stale pause state from earlier runs so variable scopes and
         # watch expressions reflect the current execution. VS Code can launch
         # repeatedly without restarting the adapter, which otherwise leaves
@@ -428,6 +444,9 @@ class DAPServer:
                 "event": "terminated",
                 "body": {},
             })
+            self._clear_command_queue_for_run(run_generation)
+            self._active_run_generation = None
+            self._current_run_generation = max(self._current_run_generation, run_generation) + 1
             return
         self._namespace = self._namespace_for_path(program)
         debugger = self._debugger()
@@ -483,20 +502,14 @@ class DAPServer:
             "event": "terminated",
             "body": {},
         })
-        # Clear any commands queued during this run so earlier client requests
-        # (e.g., a late "continue" while shutting down) do not leak into the
-        # next launch. This still preserves any commands queued *before* the
-        # run started so clients can pre-buffer actions like the initial
-        # "continue" used in the regression tests.
-        while not self._command_queue.empty():
-            try:
-                self._command_queue.get_nowait()
-            except queue.Empty:  # pragma: no cover - race with empty()
-                break
+        self._clear_command_queue_for_run(run_generation)
+        self._active_run_generation = None
+        self._current_run_generation = max(self._current_run_generation, run_generation) + 1
 
     def _run_python_program(self, program: Path) -> None:
         self._log(f"Starting Python program run: {program}")
         self._namespace = str(program)
+        run_generation = self._active_run_generation or self._current_run_generation
         debugger = self._python_debugger(program)
         stdout_stream = self._dap_stream("stdout")
         stderr_stream = self._dap_stream("stderr")
@@ -520,6 +533,9 @@ class DAPServer:
                     "body": {},
                 }
             )
+            self._clear_command_queue_for_run(run_generation)
+            self._active_run_generation = None
+            self._current_run_generation = max(self._current_run_generation, run_generation) + 1
             return
 
         try:
@@ -567,14 +583,27 @@ class DAPServer:
                 "body": {},
             }
         )
-        # Ensure commands sent during this run do not leak into future launches,
-        # but leave any pre-launch commands intact so clients can queue actions
-        # (like a "continue") before starting the debugger.
+        self._clear_command_queue_for_run(run_generation)
+        self._active_run_generation = None
+        self._current_run_generation = max(self._current_run_generation, run_generation) + 1
+
+    def _clear_command_queue_for_run(self, run_generation: int) -> None:
+        """Remove commands issued for the given run, preserving future runs."""
+
+        preserved: list[tuple[int, str]] = []
         while not self._command_queue.empty():
             try:
-                self._command_queue.get_nowait()
+                queued = self._command_queue.get_nowait()
             except queue.Empty:  # pragma: no cover - race with empty()
                 break
+            if isinstance(queued, tuple):
+                generation, command = queued
+            else:
+                generation, command = run_generation, queued
+            if generation != run_generation:
+                preserved.append((generation, command))
+        for generation, command in preserved:
+            self._command_queue.put((generation, command))
 
     # ----- Request handlers -----
     def _start_program_thread(self, trigger: str) -> None:
@@ -592,6 +621,7 @@ class DAPServer:
             return
         self._log(f"Starting program thread (trigger={trigger})")
         target = self._run_python_program if self._python_mode else self._run_program
+        self._active_run_generation = self._current_run_generation
         self._thread = threading.Thread(target=target, args=(self._program,), daemon=True)
         self._thread.start()
         if not self._thread_event_sent:
@@ -1008,7 +1038,8 @@ class DAPServer:
                 self._watchdog_warning_sent = True
 
     def _enqueue(self, command: str) -> None:
-        self._command_queue.put(command)
+        generation = self._active_run_generation or self._current_run_generation
+        self._command_queue.put((generation, command))
         self._log(f"Enqueued command: {command}")
         response = {
             "type": "event",

@@ -132,8 +132,6 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
     elif isinstance(s, Print):
         for expr in s.exprs:
             uses_in_expr(expr, reads)
-    elif isinstance(s, Flush):
-        pass
     elif isinstance(s, If):
         uses_in_expr(s.cond, reads)
         for t in s.then:
@@ -332,8 +330,6 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                         for nm in names_in_expr(expr):
                             _mark_used(new_state, nm)
                     next_active.append(new_state)
-                elif isinstance(st, Flush):
-                    next_active.append(dict(state))
                 elif isinstance(st, CallStmt):
                     new_state = dict(state)
                     for arg in st.args:

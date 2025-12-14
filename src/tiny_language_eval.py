@@ -42,8 +42,6 @@
                         sys.stdout.write(f"{text}\n")
                         sys.stdout.flush()
                         self.streamed_output = True
-            elif isinstance(s, Flush):
-                self.flush_streams()
             elif isinstance(s, If):
                 cond = self.eval_expr(s.cond, env)
                 branch = s.then if self._is_truthy(cond) else s.els

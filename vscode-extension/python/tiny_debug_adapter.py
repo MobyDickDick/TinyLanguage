@@ -117,11 +117,6 @@ class DAPServer:
     def __init__(self) -> None:
         self._seq = 0
         self._lock = threading.Lock()
-        self._send_lock = threading.Lock()
-        # Preserve the original stdout used for the Debug Adapter Protocol so
-        # runtime output redirection (e.g., redirect_stdout while a program
-        # runs) cannot accidentally replace the transport stream.
-        self._client_stdout = sys.stdout.buffer
         self._paused_snapshot = None
         self._command_queue: "queue.Queue[str]" = queue.Queue()
         self._breakpoints: Dict[str, List[int]] = {}
@@ -156,10 +151,6 @@ class DAPServer:
         self._thread_event_sent = False
         self._debugger_instance = None
         self._pause_requested = False
-        self._stop_on_entry = False
-        self._stop_on_entry_pending = False
-        self._current_run_generation = 1
-        self._active_run_generation: Optional[int] = None
         # Start the watchdog immediately so that we can surface handshake issues
         # (e.g., VS Code never sending an initialize request) instead of
         # blocking forever with no diagnostics.
@@ -178,34 +169,6 @@ class DAPServer:
             }
         )
 
-    class _DAPStream(io.StringIO):
-        """File-like stream that forwards writes as DAP output events."""
-
-        def __init__(self, server: "DAPServer", category: str):
-            super().__init__()
-            self._server = server
-            self._category = category
-
-        def write(self, s: str) -> int:  # noqa: D401 - standard stream signature
-            if not s:
-                return 0
-            self._server._send(
-                {
-                    "type": "event",
-                    "seq": self._server._next_seq(),
-                    "event": "output",
-                    "body": {"category": self._category, "output": s},
-                }
-            )
-            return len(s)
-
-        def writelines(self, lines) -> None:  # noqa: D401 - standard stream signature
-            for line in lines:
-                self.write(line)
-
-    def _dap_stream(self, category: str) -> "DAPServer._DAPStream":
-        return self._DAPStream(self, category)
-
     def _open_log_file(self):
         log_path = os.environ.get("TINYLANGUAGE_DAP_LOG")
         if not log_path:
@@ -218,21 +181,7 @@ class DAPServer:
             print(f"Failed to open debug log file {log_path}: {exc}", file=sys.stderr)
             return None
 
-    def _log(self, message: str, *args: object) -> None:
-        """Write a diagnostic message to the log output.
-
-        Some call sites use printf-style placeholders; accept optional positional
-        arguments so existing callers do not raise ``TypeError`` when providing
-        formatting values. When arguments are provided, interpolate them before
-        emitting the message.
-        """
-
-        if args:
-            try:
-                message = message % args
-            except Exception:
-                message = " ".join([message, *map(str, args)])
-
+    def _log(self, message: str) -> None:
         timestamp = datetime.utcnow().isoformat() + "Z"
         if not self._log_handle:
             if self._log_to_stderr:
@@ -290,9 +239,8 @@ class DAPServer:
         data = json.dumps(payload)
         message = f"Content-Length: {len(data)}\r\n\r\n{data}".encode("utf-8")
         self._log(f"--> {payload}")
-        with self._send_lock:
-            self._client_stdout.write(message)
-            self._client_stdout.flush()
+        sys.stdout.buffer.write(message)
+        sys.stdout.buffer.flush()
 
     def _next_seq(self) -> int:
         with self._lock:
@@ -310,17 +258,8 @@ class DAPServer:
     def _debugger(self):
         def on_pause(snapshot):
             self._paused_snapshot = snapshot
-            if self._stop_on_entry_pending:
-                reason = "pause"
-                log_msg = "Paused on entry"
-            elif self._pause_requested:
-                reason = "pause"
-                log_msg = "Paused after pause request"
-            else:
-                reason = "breakpoint"
-                log_msg = "Paused at breakpoint"
-            self._stop_on_entry_pending = False
-            self._log(log_msg)
+            self._log("Paused at breakpoint")
+            reason = "pause" if self._pause_requested else "breakpoint"
             self._send({
                 "type": "event",
                 "seq": self._next_seq(),
@@ -350,17 +289,8 @@ class DAPServer:
                     "frame": frame,
                     "stack": inspect.getouterframes(frame),
                 }
-                if server._stop_on_entry_pending:
-                    reason = "pause"
-                    log_msg = "Paused on entry"
-                elif server._pause_requested:
-                    reason = "pause"
-                    log_msg = "Paused after pause request"
-                else:
-                    reason = "breakpoint"
-                    log_msg = "Paused at breakpoint"
-                server._stop_on_entry_pending = False
-                server._log(log_msg)
+                server._log("Paused in Python program")
+                reason = "pause" if server._pause_requested else "breakpoint"
                 server._send(
                     {
                         "type": "event",
@@ -398,20 +328,7 @@ class DAPServer:
         while command is None:
             remaining = None if deadline is None else max(0.1, deadline - time.monotonic())
             try:
-                queued = self._command_queue.get(timeout=remaining)
-                if isinstance(queued, tuple):
-                    generation, command = queued
-                    if self._active_run_generation is not None and generation != self._active_run_generation:
-                        self._log(
-                            "Discarding stale command %s from generation %s (active=%s)",
-                            command,
-                            generation,
-                            self._active_run_generation,
-                        )
-                        command = None
-                        continue
-                else:
-                    command = queued
+                command = self._command_queue.get(timeout=remaining)
             except queue.Empty:
                 if deadline is None:
                     self._log("Still waiting for client command while paused")
@@ -425,20 +342,7 @@ class DAPServer:
         return command
 
     def _run_program(self, program: Path) -> None:
-        self._log(
-            "Starting program run: %s (stop_on_entry=%s, breakpoints=%s)"
-            % (program, self._stop_on_entry, {k: v for k, v in self._breakpoints.items() if v})
-        )
-        run_generation = self._active_run_generation or self._current_run_generation
-        # Clear any stale pause state from earlier runs so variable scopes and
-        # watch expressions reflect the current execution. VS Code can launch
-        # repeatedly without restarting the adapter, which otherwise leaves
-        # the previous snapshot and handles cached.
-        self._paused_snapshot = None
-        self._variable_handles.clear()
-        self._next_handle = 1
-        self._stop_on_entry_pending = bool(self._stop_on_entry)
-        self._pause_requested = bool(self._stop_on_entry)
+        self._log(f"Starting program run: {program}")
         try:
             source = program.read_text(encoding="utf-8")
         except Exception as exc:  # pragma: no cover - I/O failure
@@ -462,30 +366,17 @@ class DAPServer:
                 "event": "terminated",
                 "body": {},
             })
-            self._clear_command_queue_for_run(run_generation)
-            self._active_run_generation = None
-            self._current_run_generation = max(self._current_run_generation, run_generation) + 1
             return
         self._namespace = self._namespace_for_path(program)
         debugger = self._debugger()
-        # Stop at the first statement so clients can step from the program start
-        # even when no breakpoints are set. This mirrors common "stop on entry"
-        # behavior in other debug adapters.
-        if self._stop_on_entry:
-            self._log("Requesting initial pause (stopOnEntry enabled)")
-            if hasattr(debugger, "request_pause"):
-                debugger.request_pause()
-        stdout_stream = self._dap_stream("stdout")
-        stderr_stream = self._dap_stream("stderr")
         try:
-            with redirect_stdout(stdout_stream), redirect_stderr(stderr_stream):
-                output = compile_and_run(
-                    source,
-                    module_namespace=self._namespace,
-                    module_path=program,
-                    debugger=debugger,
-                    stream_output=True,
-                )
+            output = compile_and_run(
+                source,
+                module_namespace=self._namespace,
+                module_path=program,
+                debugger=debugger,
+                stream_output=False,
+            )
         except Exception as exc:  # pragma: no cover - surfaced via output event
             self._log(f"Runtime error: {exc}")
             self._send({
@@ -505,7 +396,12 @@ class DAPServer:
         else:
             if output:
                 rendered = output if output.endswith("\n") else output + "\n"
-                stdout_stream.write(rendered)
+                self._send({
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "output",
+                    "body": {"category": "stdout", "output": rendered},
+                })
             self._send(
                 {
                     "type": "event",
@@ -520,17 +416,13 @@ class DAPServer:
             "event": "terminated",
             "body": {},
         })
-        self._clear_command_queue_for_run(run_generation)
-        self._active_run_generation = None
-        self._current_run_generation = max(self._current_run_generation, run_generation) + 1
 
     def _run_python_program(self, program: Path) -> None:
         self._log(f"Starting Python program run: {program}")
         self._namespace = str(program)
-        run_generation = self._active_run_generation or self._current_run_generation
         debugger = self._python_debugger(program)
-        stdout_stream = self._dap_stream("stdout")
-        stderr_stream = self._dap_stream("stderr")
+        stdout_buffer = io.StringIO()
+        stderr_buffer = io.StringIO()
         try:
             with open(program, "r", encoding="utf-8") as handle:
                 code = handle.read()
@@ -551,14 +443,11 @@ class DAPServer:
                     "body": {},
                 }
             )
-            self._clear_command_queue_for_run(run_generation)
-            self._active_run_generation = None
-            self._current_run_generation = max(self._current_run_generation, run_generation) + 1
             return
 
         try:
             compiled = compile(code, str(program), "exec")
-            with redirect_stdout(stdout_stream), redirect_stderr(stderr_stream):
+            with redirect_stdout(stdout_buffer), redirect_stderr(stderr_buffer):
                 debugger.runctx(compiled, {}, {})
         except SystemExit:
             code_obj = sys.exc_info()[1]
@@ -575,7 +464,7 @@ class DAPServer:
                 }
             )
         except Exception as exc:  # pragma: no cover - runtime failure
-            stderr_stream.write(f"Exception in Python program: {exc}\n")
+            stderr_buffer.write(f"Exception in Python program: {exc}\n")
             self._send(
                 {
                     "type": "event",
@@ -593,6 +482,26 @@ class DAPServer:
                     "body": {"exitCode": 0},
                 }
             )
+        stdout_value = stdout_buffer.getvalue()
+        stderr_value = stderr_buffer.getvalue()
+        if stdout_value:
+            self._send(
+                {
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "output",
+                    "body": {"category": "stdout", "output": stdout_value},
+                }
+            )
+        if stderr_value:
+            self._send(
+                {
+                    "type": "event",
+                    "seq": self._next_seq(),
+                    "event": "output",
+                    "body": {"category": "stderr", "output": stderr_value},
+                }
+            )
         self._send(
             {
                 "type": "event",
@@ -601,27 +510,6 @@ class DAPServer:
                 "body": {},
             }
         )
-        self._clear_command_queue_for_run(run_generation)
-        self._active_run_generation = None
-        self._current_run_generation = max(self._current_run_generation, run_generation) + 1
-
-    def _clear_command_queue_for_run(self, run_generation: int) -> None:
-        """Remove commands issued for the given run, preserving future runs."""
-
-        preserved: list[tuple[int, str]] = []
-        while not self._command_queue.empty():
-            try:
-                queued = self._command_queue.get_nowait()
-            except queue.Empty:  # pragma: no cover - race with empty()
-                break
-            if isinstance(queued, tuple):
-                generation, command = queued
-            else:
-                generation, command = run_generation, queued
-            if generation != run_generation:
-                preserved.append((generation, command))
-        for generation, command in preserved:
-            self._command_queue.put((generation, command))
 
     # ----- Request handlers -----
     def _start_program_thread(self, trigger: str) -> None:
@@ -639,7 +527,6 @@ class DAPServer:
             return
         self._log(f"Starting program thread (trigger={trigger})")
         target = self._run_python_program if self._python_mode else self._run_program
-        self._active_run_generation = self._current_run_generation
         self._thread = threading.Thread(target=target, args=(self._program,), daemon=True)
         self._thread.start()
         if not self._thread_event_sent:
@@ -664,7 +551,6 @@ class DAPServer:
                 "supportsConfigurationDoneRequest": True,
                 "supportsPauseRequest": True,
                 "supportsSetVariable": False,
-                "supportsEvaluateForHovers": True,
             },
         }
         self._send(response)
@@ -709,16 +595,6 @@ class DAPServer:
         args = request.get("arguments", {})
         program = args.get("program")
         self._python_mode = bool(args.get("pythonMode"))
-        stop_on_entry_arg = args.get("stopOnEntry")
-        # Default to pausing on entry when not explicitly disabled so clients
-        # can step from the start of the program even without breakpoints. This
-        # matches the expectations of the existing test suite and keeps the
-        # legacy behavior where sessions pause immediately unless the user
-        # opts out via launch arguments.
-        self._stop_on_entry = True if stop_on_entry_arg is None else bool(stop_on_entry_arg)
-        env_stop_on_entry = _env_var_truthy("TINYLANGUAGE_DAP_STOP_ON_ENTRY")
-        if env_stop_on_entry:
-            self._stop_on_entry = True
         if not program:
             message = "Launch request is missing required 'program' path"
             self._log(message)
@@ -744,25 +620,7 @@ class DAPServer:
         self._launch_received = True
         self._launch_args = args
         self._program = Path(program)
-        program_exists = self._program.exists()
-        self._log(
-            "Launch request for %s (exists=%s, pythonMode=%s, stopOnEntry=%s, args=%s)"
-            % (self._program, program_exists, self._python_mode, self._stop_on_entry, args)
-        )
-        if not program_exists:
-            message = f"Program path does not exist: {self._program}"
-            self._emit_warning(message)
-            response = {
-                "type": "response",
-                "seq": self._next_seq(),
-                "request_seq": request.get("seq", 0),
-                "command": "launch",
-                "success": False,
-                "message": message,
-                "body": {},
-            }
-            self._send(response)
-            return
+        self._log(f"Launch request for {self._program}")
         if not self._process_event_sent:
             try:
                 name = self._program.name
@@ -798,7 +656,6 @@ class DAPServer:
 
     def handle_configuration_done(self, request: Dict[str, Any]) -> None:
         self._configuration_done = True
-        self._log("configurationDone received; attempting to start program")
         self._start_program_thread("configurationDone")
         response = {
             "type": "response",
@@ -902,8 +759,6 @@ class DAPServer:
             "success": True,
             "body": {"scopes": scopes},
         }
-        if not scopes:
-            self._log("Scopes requested while not paused; returning empty result")
         self._send(response)
 
     def handle_variables(self, request: Dict[str, Any]) -> None:
@@ -926,11 +781,6 @@ class DAPServer:
             "success": True,
             "body": {"variables": variables},
         }
-        if not handle:
-            self._log(
-                "Variables requested for unknown handle %s; paused=%s; known_handles=%s"
-                % (handle_id, bool(self._paused_snapshot), list(self._variable_handles.keys()))
-            )
         self._send(response)
 
     def handle_evaluate(self, request: Dict[str, Any]) -> None:
@@ -947,18 +797,12 @@ class DAPServer:
                     except Exception as exc:  # pragma: no cover - depends on expression
                         result = f"Evaluation error: {exc}"
             else:
-                merged: Dict[str, Any] = {}
                 for scope in self._paused_snapshot.scopes:
-                    merged.update(scope.values)
-                try:
-                    result = repr(eval(expr, {}, merged))  # noqa: S307 - debugging context
-                except Exception:
-                    for scope in self._paused_snapshot.scopes:
-                        if expr in scope.values:
-                            result = repr(scope.values[expr])
-                            break
-                    if result is None:
-                        result = "<unknown>"
+                    if expr in scope.values:
+                        result = repr(scope.values[expr])
+                        break
+                if result is None:
+                    result = "<unknown>"
         response = {
             "type": "response",
             "seq": self._next_seq(),
@@ -967,10 +811,6 @@ class DAPServer:
             "success": True,
             "body": {"result": result or "<not paused>", "variablesReference": 0},
         }
-        if self._paused_snapshot is None:
-            self._log(
-                "Evaluate requested while not paused (expr=%s); returning placeholder" % expr
-            )
         self._send(response)
 
     def _handle_unknown(self, request: Dict[str, Any]) -> None:
@@ -1056,8 +896,7 @@ class DAPServer:
                 self._watchdog_warning_sent = True
 
     def _enqueue(self, command: str) -> None:
-        generation = self._active_run_generation or self._current_run_generation
-        self._command_queue.put((generation, command))
+        self._command_queue.put(command)
         self._log(f"Enqueued command: {command}")
         response = {
             "type": "event",

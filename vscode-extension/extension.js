@@ -498,7 +498,7 @@ function registerDebugConfigurations(output) {
           program: '${file}',
           runtime: runtimePath,
           python: getPythonExecutable(),
-          stopOnEntry: true,
+          stopOnEntry: false,
         },
         {
           name: 'TinyLanguage: Launch active Python file (debug adapter test)',
@@ -507,7 +507,7 @@ function registerDebugConfigurations(output) {
           program: '${file}',
           runtime: runtimePath,
           python: getPythonExecutable(),
-          stopOnEntry: true,
+          stopOnEntry: false,
           pythonMode: true,
         },
       ];
@@ -517,11 +517,6 @@ function registerDebugConfigurations(output) {
         return config;
       }
       logDebug(output, `debugConfig: resolve requested for program=${config.program || '<none>'}`);
-      // Default to pausing on entry so the debug toolbar stays visible while
-      // the adapter initializes and the user can step from the first line.
-      if (config.stopOnEntry === undefined) {
-        config.stopOnEntry = true;
-      }
       if (!config.program) {
         vscode.window.showWarningMessage('No TinyLanguage file specified for debugging.');
         return null;

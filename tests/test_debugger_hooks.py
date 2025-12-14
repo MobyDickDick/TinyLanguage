@@ -62,25 +62,3 @@ def test_stepping_sequences_follow_depth_changes():
 
     inner_scope = debugger.snapshots[2].scopes[0]
     assert inner_scope.values["tmp"] == 5
-
-
-def test_debugger_resets_stale_pause_flags():
-    program = textwrap.dedent(
-        """\
-        define n = 1;
-        print(n);
-        """
-    )
-
-    runtime = Runtime(program)
-    debugger = Debugger()
-    debugger.force_pause = True  # Simulate a left-over pause request from a prior session
-    runtime.debugger = debugger
-
-    output = compile_and_run(program, runtime=runtime)
-
-    assert output.strip() == "1"
-    assert debugger.snapshots == []
-    assert debugger.pending_step is None
-    assert debugger.last_location is None
-    assert debugger.force_pause is False

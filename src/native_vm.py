@@ -85,10 +85,6 @@ class NativeVM:
             elif instr.op == Opcode.PRINT:
                 values = [stack.pop() for _ in range(int(instr.arg))][::-1]
                 self.output.append(" ".join(self._format_value(v) for v in values) + "\n")
-            elif instr.op == Opcode.FLUSH:
-                import sys
-
-                sys.stdout.flush()
             elif instr.op == Opcode.JUMP:
                 frame.ip = int(instr.arg)
             elif instr.op == Opcode.JUMP_IF_FALSE:

@@ -33,7 +33,6 @@ KEYWORDS = {
     "await",
     "true",
     "false",
-    "flush",
     "and",
     "or",
     "not",

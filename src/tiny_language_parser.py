@@ -101,12 +101,6 @@ class Parser:
             self._eat("SYM", ")")
             semi = self._eat("SYM", ";")
             return self._attach_span(Print(exprs, pos=kw.pos), kw.start, semi.stop)
-        if self.tok.kind == "KW" and self.tok.text == "flush":
-            kw = self._eat("KW", "flush")
-            self._eat("SYM", "(")
-            self._eat("SYM", ")")
-            semi = self._eat("SYM", ";")
-            return self._attach_span(Flush(pos=kw.pos), kw.start, semi.stop)
         if self.tok.kind == "KW" and self.tok.text == "if":
             kw = self._eat("KW", "if")
             self._eat("SYM", "(")

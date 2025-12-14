@@ -135,13 +135,9 @@
                 "type": "string",
                 "description": "Python executable to run the TinyLanguage interpreter."
               },
-              "cwd": {
-                "type": "string",
-                "description": "Working directory for the launched program (defaults to the workspace folder)."
-              },
               "stopOnEntry": {
                 "type": "boolean",
-                "default": true,
+                "default": false,
                 "description": "Pause on the first line of the program before executing."
               },
               "env": {
@@ -167,7 +163,7 @@
             "program": "${file}",
             "runtime": "${config:tinylanguage.runtimePath}",
             "python": "${config:tinylanguage.pythonPath}",
-            "stopOnEntry": true
+            "stopOnEntry": false
           }
         ]
       }

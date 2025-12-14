@@ -275,16 +275,6 @@ class PythonCodeGenerator:
                     )
                 ),
             ]
-        if isinstance(stmt, Flush):
-            return [
-                ast.Expr(
-                    value=ast.Call(
-                        func=ast.Attribute(value=ast.Name(id="runtime", ctx=ast.Load()), attr="flush_streams", ctx=ast.Load()),
-                        args=[],
-                        keywords=[],
-                    )
-                )
-            ]
         if isinstance(stmt, If):
             return [
                 ast.If(
@@ -370,5 +360,5 @@ class PythonCodeGenerator:
 
 
 if TYPE_CHECKING:  # pragma: no cover - only used for type checking
-    from tiny_language_ast import Bin, Bool, Call, CallStmt, Flush, Fn, IR, Let, NewLit, Null, Num, ObjLit, Print, Return, Str, Var, While, If
+    from tiny_language_ast import Bin, Bool, Call, CallStmt, Fn, IR, Let, NewLit, Null, Num, ObjLit, Return, Str, Var, While, If
 

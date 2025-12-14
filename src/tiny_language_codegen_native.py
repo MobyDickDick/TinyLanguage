@@ -57,8 +57,6 @@ class NativeCodeGenerator:
                 instructions.extend(self._compile_expr(expr))
             instructions.append(Instruction(Opcode.PRINT, len(stmt.exprs)))
             return instructions
-        if isinstance(stmt, Flush):
-            return [Instruction(Opcode.FLUSH)]
         if isinstance(stmt, If):
             return self._compile_if(stmt)
         if isinstance(stmt, While):

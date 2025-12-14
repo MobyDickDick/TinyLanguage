@@ -291,7 +291,7 @@ class DAPServer:
         def on_pause(snapshot):
             self._paused_snapshot = snapshot
             if self._stop_on_entry_pending:
-                reason = "entry"
+                reason = "pause"
                 log_msg = "Paused on entry"
             elif self._pause_requested:
                 reason = "pause"
@@ -331,7 +331,7 @@ class DAPServer:
                     "stack": inspect.getouterframes(frame),
                 }
                 if server._stop_on_entry_pending:
-                    reason = "entry"
+                    reason = "pause"
                     log_msg = "Paused on entry"
                 elif server._pause_requested:
                     reason = "pause"

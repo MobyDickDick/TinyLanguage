@@ -135,6 +135,10 @@
                 "type": "string",
                 "description": "Python executable to run the TinyLanguage interpreter."
               },
+              "cwd": {
+                "type": "string",
+                "description": "Working directory for the launched program (defaults to the workspace folder)."
+              },
               "stopOnEntry": {
                 "type": "boolean",
                 "default": false,

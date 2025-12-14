@@ -90,6 +90,7 @@ def compile_and_run(
         runtime.module_resolver = module_resolver  # Override resolver when running imports
     runtime.output.clear()  # Reset buffered program output
     runtime.error_messages.clear()  # Reset accumulated error messages
+    runtime._last_emitted_output_idx = 0  # Clear debugger streaming cursor
 
     env = env or Environment(parent=None, namespace=module_namespace, runtime=runtime)  # Build module environment
     if module_namespace:

@@ -119,6 +119,22 @@ def test_launch_waits_for_configuration_done(debug_server):
         server._command_queue.put("continue")
         server._thread.join(timeout=5)
 
+
+def test_output_events_stream_from_runtime(debug_server):
+    _, server, messages, program = debug_server
+
+    server.handle_initialize({"seq": 1, "command": "initialize"})
+    server.handle_launch({"seq": 2, "command": "launch", "arguments": {"program": str(program)}})
+    server.handle_configuration_done({"seq": 3, "command": "configurationDone"})
+
+    server._thread.join(timeout=5)
+    if server._thread.is_alive():
+        server._command_queue.put("continue")
+        server._thread.join(timeout=5)
+
+    outputs = [msg for msg in messages if msg.get("event") == "output"]
+    assert any(event.get("body", {}).get("output") == "5\n" for event in outputs)
+
     assert not server._thread.is_alive()
 
 

@@ -42,6 +42,8 @@
                         sys.stdout.write(f"{text}\n")
                         sys.stdout.flush()
                         self.streamed_output = True
+                    else:
+                        self._emit_output_to_debugger()
             elif isinstance(s, Flush):
                 self.flush_streams()
             elif isinstance(s, If):

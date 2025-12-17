@@ -1,4 +1,5 @@
 import json
+import queue
 import sys
 import time
 from importlib import util
@@ -221,6 +222,76 @@ def test_program_output_is_forwarded(debug_server):
 
     output_events = [m for m in messages if m.get("type") == "event" and m.get("event") == "output"]
     assert any("42" in evt.get("body", {}).get("output", "") for evt in output_events)
+
+
+def test_breakpoints_can_be_added_after_launch(tmp_path):
+    module = load_adapter_module()
+    server = module.DAPServer()
+    messages = []
+    server._send = messages.append  # type: ignore[assignment]
+    program = tmp_path / "midrun.tiny"
+    program.write_text(
+        "\n".join(
+            [
+                "define x = 0;",
+                "print(x);",
+                "define x = 1;",
+                "print(x);",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    # Start with an empty queue so the program pauses and waits for commands.
+    server._command_queue = queue.Queue()
+
+    server.handle_initialize({"seq": 1, "command": "initialize"})
+    server.handle_set_breakpoints(
+        {
+            "seq": 2,
+            "command": "setBreakpoints",
+            "arguments": {"source": {"path": str(program)}, "breakpoints": [{"line": 2}]},
+        }
+    )
+    server.handle_launch({"seq": 3, "command": "launch", "arguments": {"program": str(program)}})
+    server.handle_configuration_done({"seq": 4, "command": "configurationDone"})
+
+    # Wait for the first breakpoint to pause the program.
+    for _ in range(50):
+        if any(m.get("event") == "stopped" for m in messages):
+            break
+        time.sleep(0.1)
+    else:
+        raise AssertionError(f"Program did not pause: {messages!r}")
+
+    # Add a new breakpoint while the program is paused and continue.
+    server.handle_set_breakpoints(
+        {
+            "seq": 5,
+            "command": "setBreakpoints",
+            "arguments": {"source": {"path": str(program)}, "breakpoints": [{"line": 4}]},
+        }
+    )
+    server.handle_continue({"seq": 6, "command": "continue"})
+
+    # Wait for the newly added breakpoint to be hit.
+    for _ in range(50):
+        stopped_events = [m for m in messages if m.get("event") == "stopped"]
+        if len(stopped_events) >= 2:
+            break
+        time.sleep(0.1)
+    else:
+        raise AssertionError(f"Second pause not observed: {messages!r}")
+
+    server.handle_stack_trace({"seq": 7, "command": "stackTrace"})
+    stack_resp = _response(messages, "stackTrace")
+    assert stack_resp["body"]["stackFrames"][-1]["line"] == 4
+
+    server.handle_continue({"seq": 8, "command": "continue"})
+    server._thread.join(timeout=5)
+    if server._thread.is_alive():
+        server._command_queue.put("continue")
+        server._thread.join(timeout=5)
 
 
 def test_watchdog_warns_without_terminating(debug_server):

@@ -281,9 +281,7 @@ class DAPServer:
         )
         self._streaming_output = True
         self._debugger_instance = dbg
-        for path, lines in self._breakpoints.items():
-            namespace = self._namespace_for_path(Path(path)) if path else self._namespace
-            dbg.set_breakpoints(namespace, set(lines))
+        self._sync_all_breakpoints()
         return dbg
 
     def _python_debugger(self, program: Path):
@@ -322,14 +320,41 @@ class DAPServer:
 
         dbg = _PythonDebugger()
         self._debugger_instance = dbg
-        for path, lines in self._breakpoints.items():
+        self._sync_all_breakpoints()
+        return dbg
+
+    def _apply_breakpoints(self, path: Optional[str], lines: List[int]) -> None:
+        debugger = self._debugger_instance
+        if debugger is None:
+            return
+
+        # Python-mode debugging uses the standard library bdb hooks.
+        if isinstance(debugger, bdb.Bdb):
+            if not path:
+                return
             resolved = Path(path).resolve()
+            try:
+                debugger.clear_all_file_breaks(str(resolved))
+            except Exception as exc:  # pragma: no cover - depends on source
+                self._log(f"Failed to clear Python breakpoints for {resolved}: {exc}")
             for line in lines:
                 try:
-                    dbg.set_break(str(resolved), line)
+                    debugger.set_break(str(resolved), line)
                 except Exception as exc:  # pragma: no cover - depends on source
                     self._log(f"Failed to set Python breakpoint at {resolved}:{line}: {exc}")
-        return dbg
+            return
+
+        namespace = self._namespace_for_path(Path(path)) if path else self._namespace
+        try:
+            debugger.set_breakpoints(namespace, set(lines))
+        except Exception as exc:  # pragma: no cover - defensive guardrail
+            self._log(f"Failed to set breakpoints for {path or '<module>'}: {exc}")
+
+    def _sync_all_breakpoints(self) -> None:
+        if not self._debugger_instance:
+            return
+        for path, lines in self._breakpoints.items():
+            self._apply_breakpoints(path, lines)
 
     def _wait_for_command(self) -> str:
         timeout = float(os.environ.get("TINYLANGUAGE_DAP_PAUSE_TIMEOUT", "30"))
@@ -577,6 +602,7 @@ class DAPServer:
             lines = [bp.get("line") for bp in args.get("breakpoints", []) if bp.get("line")]
             self._breakpoints[path] = lines
             self._log(f"Updated breakpoints for {path}: {lines}")
+            self._apply_breakpoints(path, lines)
             verified = [{"verified": True, "line": line} for line in lines]
         response = {
             "type": "response",

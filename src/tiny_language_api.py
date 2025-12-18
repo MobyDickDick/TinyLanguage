@@ -19,6 +19,11 @@ from tiny_language_codegen_llvm import LLVMCodeGenerator
 from tiny_language_highlighting import PYGMENTS_AVAILABLE, highlight_source
 
 
+def _copy_on_call_default() -> bool:
+    env_flag = os.environ.get("TINYLANG_COPY_ON_CALL", "").strip().lower()
+    return env_flag in {"1", "true", "yes", "on"}
+
+
 def _parse_and_lint(src: str) -> List["IR"]:
     """Return a parsed program after running all linter passes.
 
@@ -65,6 +70,7 @@ def compile_and_run(
     module_resolver: Optional[ModuleResolver] = None,
     debugger: Optional[Debugger] = None,
     stream_output: bool = True,
+    copy_on_call: Optional[bool] = None,
 ) -> str:
     """Compile and execute TinyLanguage source, returning concatenated output.
 
@@ -75,6 +81,8 @@ def compile_and_run(
     """
     stmts = _parse_and_lint(src)
     runtime = runtime or Runtime(src)  # Reuse an existing runtime or create a fresh one
+    if copy_on_call is not None:
+        runtime.copy_on_call = copy_on_call
     runtime.stream_output = stream_output
     runtime.streamed_output = False
     if debugger is not None:
@@ -107,7 +115,7 @@ def compile_and_run(
     return "".join(runtime.output)
 
 
-def run_file(path: str, *, stream_output: bool = True) -> str:
+def run_file(path: str, *, stream_output: bool = True, copy_on_call: Optional[bool] = None) -> str:
     """Execute a TinyLanguage source file and return its printed output."""
     path_obj = Path(path)  # Accept strings or Path-like objects
     resolved = path_obj.resolve()  # Normalize to an absolute path
@@ -124,6 +132,7 @@ def run_file(path: str, *, stream_output: bool = True) -> str:
             module_namespace=namespace,
             module_path=resolved,
             stream_output=stream_output,
+            copy_on_call=copy_on_call,
         )
     if stream_output and not runtime.streamed_output:
         print(output, end="")
@@ -321,6 +330,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         action="store_true",
         help="Execute the program by compiling native IR to pure Python bytecode",
     )
+    parser.add_argument(
+        "--copy-on-call",
+        action=argparse.BooleanOptionalAction,
+        default=_copy_on_call_default(),
+        help="Deep-copy non-escaping mutable arguments before calls (env: TINYLANG_COPY_ON_CALL)",
+    )
     args = parser.parse_args(argv)
 
     if args.repl and (args.python_backend or args.native_backend or args.native_python_bytecode):
@@ -344,7 +359,10 @@ def main(argv: Optional[List[str]] = None) -> int:
                 output = run_with_python_backend(args.eval)
             else:
                 runtime = Runtime(args.eval)
-                output = compile_and_run(args.eval, runtime=runtime, stream_output=True)
+                runtime.copy_on_call = args.copy_on_call
+                output = compile_and_run(
+                    args.eval, runtime=runtime, stream_output=True, copy_on_call=args.copy_on_call
+                )
                 streamed = runtime.streamed_output
 
             if not streamed:
@@ -360,6 +378,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.repl:  # Interactive shell mode
         history_path = Path.home() / ".tiny_language_history"
         runtime = Runtime("")
+        runtime.copy_on_call = args.copy_on_call
         env = Environment(parent=None, namespace=None, runtime=runtime)
         scope_provider = lambda: list(KEYWORDS | BUILTINS | set(env.all_names()))
         highlight_enabled = _repl_highlighting_enabled()
@@ -383,7 +402,13 @@ def main(argv: Optional[List[str]] = None) -> int:
                     except Exception:
                         pass  # History persistence failures should not crash the REPL
                 try:
-                    compile_and_run(src, env=env, runtime=runtime, stream_output=True)
+                    compile_and_run(
+                        src,
+                        env=env,
+                        runtime=runtime,
+                        stream_output=True,
+                        copy_on_call=args.copy_on_call,
+                    )
                 except TinyLangError as err:
                     print(_format_error_for_source(src, err), file=sys.stderr)
                 except Exception as exc:  # pragma: no cover - unexpected errors
@@ -412,7 +437,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     elif args.python_backend:
         output = run_with_python_backend(Path(args.file).read_text(encoding="utf-8"))
     else:
-        output = run_file(args.file, stream_output=True)
+        output = run_file(args.file, stream_output=True, copy_on_call=args.copy_on_call)
         streamed = True
 
     if not streamed:

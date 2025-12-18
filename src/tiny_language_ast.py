@@ -7,7 +7,7 @@ compilation stages.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from tiny_errors import SourcePos
 
@@ -105,6 +105,7 @@ class Fn(IR):
     name: str
     params: List[Param]
     body: List[IR]
+    return_param_names: Set[str] = field(default_factory=set)
     namespace: Optional[str] = None
     return_type: Optional[str] = None
     inferred_return_type: Optional[str] = None
@@ -120,6 +121,7 @@ class MethodDef(IR):
     name: str
     params: List[Param]
     body: List[IR]
+    return_param_names: Set[str] = field(default_factory=set)
     return_type: Optional[str] = None
     inferred_return_type: Optional[str] = None
     namespace: Optional[str] = None
@@ -391,5 +393,4 @@ class VariantCtor(IR):
     fields: List[Tuple[str, IR]]
     type_name: Optional[str] = None
     pos: SourcePos = field(default_factory=SourcePos.origin)
-
 

@@ -19,7 +19,7 @@ import bdb
 import io
 import importlib.util
 from contextlib import redirect_stdout, redirect_stderr
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -183,7 +183,7 @@ class DAPServer:
             return None
 
     def _log(self, message: str) -> None:
-        timestamp = datetime.utcnow().isoformat() + "Z"
+        timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         if not self._log_handle:
             if self._log_to_stderr:
                 print(f"[{timestamp}] {message}", file=sys.stderr)

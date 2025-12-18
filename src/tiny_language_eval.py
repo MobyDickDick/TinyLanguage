@@ -28,7 +28,7 @@
             elif isinstance(s, FieldAssign):
                 obj = self.eval_expr(s.obj, env)
                 val = self.eval_expr(s.expr, env)
-                self.field_set(obj, s.name, val)
+                self.field_set(obj, s.name, val, pos=s.pos)
             elif isinstance(s, Print):
                 vals = [self.eval_expr(expr, env) for expr in s.exprs]
                 text = " ".join(self.format_value(v) for v in vals)
@@ -340,5 +340,4 @@ class Environment:
         if self.parent:
             names.extend(self.parent.all_names())  # Include ancestors
         return names
-
 

@@ -40,6 +40,17 @@ class StepRequest:
     depth: int
 
 
+@dataclass
+class ParameterBinding:
+    name: str
+    original: Any
+    escaped: bool
+    copied: bool
+
+
+ParamKey = Tuple[str, int]
+
+
 class Debugger:
     """Lightweight, synchronous debugger controller for stepping and breakpoints."""
 
@@ -345,6 +356,9 @@ class Runtime:
         self.debugger: Optional[Debugger] = None
         self.stream_output: bool = True
         self.streamed_output: bool = False
+        env_copy_flag = os.environ.get("TINYLANG_COPY_ON_CALL", "").strip().lower()
+        self.copy_on_call: bool = env_copy_flag in {"1", "true", "yes", "on"}
+        self._parameter_binding_stack: threading.local = threading.local()
         self.trace_log_path: Optional[str] = os.environ.get("TINYLANG_TRACE_LOG")
         self.trace_every_statement: bool = os.environ.get("TINYLANG_TRACE_EVERY_STATEMENT", "0") == "1"
         self.trace_heartbeat_secs: float = float(os.environ.get("TINYLANG_TRACE_HEARTBEAT_SECS", "1.0"))
@@ -355,6 +369,190 @@ class Runtime:
         self._last_emitted_output_idx: int = 0
         if self.trace_log_path:
             self._setup_trace_logger()
+
+    def _binding_stack(self) -> List[Dict[ParamKey, ParameterBinding]]:
+        stack = getattr(self._parameter_binding_stack, "stack", None)
+        if stack is None:
+            stack = []
+            self._parameter_binding_stack.stack = stack
+        return stack
+
+    def _push_parameter_scope(self, bindings: Dict[ParamKey, ParameterBinding]) -> None:
+        self._binding_stack().append(bindings)
+
+    def _pop_parameter_scope(self) -> None:
+        stack = self._binding_stack()
+        if stack:
+            stack.pop()
+
+    def _binding_key(self, value: Any) -> Optional[ParamKey]:
+        if isinstance(value, BaseView):
+            return self._binding_key(value.obj)
+        if self._is_heap_pointer(value):
+            return ("ptr", int(value))
+        if isinstance(value, dict):
+            return ("obj", id(value))
+        if isinstance(value, list):
+            return ("list", id(value))
+        return None
+
+    def _is_heap_pointer(self, value: Any) -> bool:
+        if isinstance(value, bool):
+            return False
+        try:
+            iv = int(value)
+        except Exception:
+            return False
+        if isinstance(value, float) and not value.is_integer():
+            return False
+        with self._lock:
+            return iv in self.heap
+
+    def _is_mutable_argument(self, value: Any) -> bool:
+        if self._is_heap_pointer(value):
+            return True
+        if isinstance(value, BaseView):
+            return self._is_mutable_argument(value.obj)
+        if isinstance(value, (dict, list)):
+            return True
+        return False
+
+    def _deep_copy_value(
+        self,
+        value: Any,
+        *,
+        memo: Optional[Dict[int, Any]] = None,
+        ptr_memo: Optional[Dict[int, Any]] = None,
+        protected_keys: Optional[Set[ParamKey]] = None,
+    ) -> Any:
+        memo = memo or {}
+        ptr_memo = ptr_memo or {}
+        if protected_keys is not None:
+            key = self._binding_key(value)
+            if key:
+                protected_keys.add(key)
+
+        if isinstance(value, BaseView):
+            copied_obj = self._deep_copy_value(value.obj, memo=memo, ptr_memo=ptr_memo, protected_keys=protected_keys)
+            return BaseView(copied_obj, value.class_name)
+
+        if self._is_heap_pointer(value):
+            ip = int(value)
+            if ip in ptr_memo:
+                return ptr_memo[ip]
+            with self._lock:
+                cells = list(self.heap.get(ip, []))
+                cell_types = dict(self.heap_cell_types.get(ip, {}))
+                tag = self.ptr_tags.get(ip)
+            new_ptr = self.__new(len(cells))
+            ptr_memo[ip] = new_ptr
+            for idx, cell in enumerate(cells):
+                copied_cell = self._deep_copy_value(
+                    cell, memo=memo, ptr_memo=ptr_memo, protected_keys=protected_keys
+                )
+                self.heap_set(new_ptr, idx, copied_cell)
+                if idx in cell_types:
+                    with self._lock:
+                        self.heap_cell_types.setdefault(new_ptr, {})[idx] = cell_types[idx]
+            if tag:
+                with self._lock:
+                    self.ptr_tags[new_ptr] = tag
+            return new_ptr
+
+        if isinstance(value, dict):
+            obj_id = id(value)
+            if obj_id in memo:
+                return memo[obj_id]
+            copied: Dict[str, Any] = {}
+            memo[obj_id] = copied
+            for key, val in value.items():
+                if key == "__fields__" and isinstance(val, dict):
+                    copied_fields: Dict[str, Dict[str, Any]] = {}
+                    copied[key] = copied_fields
+                    for cls, fmap in val.items():
+                        copied_fields[cls] = {
+                            fname: self._deep_copy_value(fval, memo=memo, ptr_memo=ptr_memo, protected_keys=protected_keys)
+                            for fname, fval in fmap.items()
+                        }
+                else:
+                    copied[key] = self._deep_copy_value(
+                        val, memo=memo, ptr_memo=ptr_memo, protected_keys=protected_keys
+                    )
+            return copied
+
+        if isinstance(value, list):
+            list_id = id(value)
+            if list_id in memo:
+                return memo[list_id]
+            copied_list: List[Any] = []
+            memo[list_id] = copied_list
+            copied_list.extend(
+                self._deep_copy_value(item, memo=memo, ptr_memo=ptr_memo, protected_keys=protected_keys)
+                for item in value
+            )
+            return copied_list
+
+        if isinstance(value, tuple):
+            return tuple(
+                self._deep_copy_value(item, memo=memo, ptr_memo=ptr_memo, protected_keys=protected_keys)
+                for item in value
+            )
+
+        return value
+
+    def _lookup_protected_binding(self, target: Any) -> Optional[ParameterBinding]:
+        key = self._binding_key(target)
+        if key is None:
+            return None
+        for scope in reversed(self._binding_stack()):
+            binding = scope.get(key)
+            if binding:
+                return binding
+        return None
+
+    def _guard_protected_mutation(self, target: Any, pos: Optional[SourcePos]) -> None:
+        if not self.copy_on_call:
+            return
+        binding = self._lookup_protected_binding(target)
+        if binding is None or binding.escaped:
+            return
+        raise self._error(
+            f"mutation of protected parameter {binding.name} is not allowed while copy-on-call is enabled",
+            pos or SourcePos.origin(),
+            hint="Return the argument or disable --copy-on-call to mutate caller-owned data.",
+        )
+
+    def _bind_parameters_to_env(
+        self,
+        params: List[Param],
+        args: List[Any],
+        env: "Environment",
+        *,
+        escaped_params: Set[str],
+        pos: SourcePos,
+        type_label: str,
+        force_escaped: Optional[Set[str]] = None,
+    ) -> Dict[ParamKey, ParameterBinding]:
+        bindings: Dict[ParamKey, ParameterBinding] = {}
+        memo: Dict[int, Any] = {}
+        ptr_memo: Dict[int, Any] = {}
+        forced = force_escaped or set()
+        for param, arg in zip(params, args):
+            if param.type:
+                self._enforce_annotation(param.type, arg, label=f"parameter {param.name} in {type_label}", pos=pos)
+            should_escape = param.name in escaped_params or param.name in forced
+            is_mutable = self._is_mutable_argument(arg)
+            protected_keys: Set[ParamKey] = set()
+            bound_val = arg
+            if self.copy_on_call and is_mutable and not should_escape:
+                bound_val = self._deep_copy_value(
+                    arg, memo=memo, ptr_memo=ptr_memo, protected_keys=protected_keys
+                )
+            env.define(param.name, bound_val, pos)
+            if self.copy_on_call and is_mutable and not should_escape:
+                for key in protected_keys:
+                    bindings[key] = ParameterBinding(param.name, arg, escaped=False, copied=bound_val is not arg)
+        return bindings
 
     def flush_streams(self) -> None:
         """Flush any mirrored stdout streams when streaming is enabled."""
@@ -675,6 +873,8 @@ class Runtime:
             message = f"heap access error: index {idx} out of range for pointer {ip} (size {size}; {range_hint})"
             self._record_error(message, pos)
             return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": message}}
+
+        self._guard_protected_mutation(ip, pos)
 
         with self._lock:
             expected = self.heap_cell_types.get(ip, {}).get(idx)
@@ -1158,9 +1358,10 @@ class Runtime:
             self._record_error(f"unknown field {key}", pos)
             return None
 
-    def field_set(self, obj: Any, key: str, val: Any) -> None:
+    def field_set(self, obj: Any, key: str, val: Any, *, pos: Optional[SourcePos] = None) -> None:
         target_obj = obj.obj if isinstance(obj, BaseView) else obj
         owner_hint = obj.class_name if isinstance(obj, BaseView) else None
+        self._guard_protected_mutation(target_obj, pos)
         if isinstance(target_obj, dict) and "__fields__" in target_obj:
             fmap = self._resolve_field_storage(target_obj, key, owner_hint, target_obj["__tag__"], allow_write=True)
             fmap[key] = val
@@ -1428,14 +1629,19 @@ class Runtime:
 
     def _invoke_function(self, fn: Fn, args: List[Any]) -> Any:
         call_env = Environment(parent=self.global_env, namespace=fn.namespace, runtime=self)
-        for param, arg in zip(fn.params, args):
-            if param.type:
-                self._enforce_annotation(param.type, arg, label=f"parameter {param.name} in function {fn.name}", pos=fn.pos)
-            call_env.define(param.name, arg, fn.pos)
+        param_bindings = self._bind_parameters_to_env(
+            fn.params,
+            args,
+            call_env,
+            escaped_params=getattr(fn, "return_param_names", set()),
+            pos=fn.pos,
+            type_label=f"function {fn.name}",
+        )
         frame = StackFrame(fn.name, fn.namespace, fn.pos)
         self.call_stack.append(frame)
         prev_namespace = self.current_module_namespace
         self.current_module_namespace = fn.namespace or prev_namespace
+        self._push_parameter_scope(param_bindings)
         try:
             res = self.eval_block(fn.body, call_env, fn.namespace)
             if isinstance(res, ReturnSignal):
@@ -1453,6 +1659,7 @@ class Runtime:
         except TinyLangError as err:
             raise self._ensure_error_has_stack(err) from err
         finally:
+            self._pop_parameter_scope()
             self.call_stack.pop()
             self.current_module_namespace = prev_namespace
 
@@ -1633,17 +1840,24 @@ class Runtime:
         self_value: Any = target_obj
         if md.class_name != cname:
             self_value = BaseView(target_obj, md.class_name)
-        env.define(md.params[0].name, self_value, md.pos)  # self
+        method_args = [self_value] + args
+        forced_escape = {md.params[0].name} if md.params else set()
+        param_bindings = self._bind_parameters_to_env(
+            md.params,
+            method_args,
+            env,
+            escaped_params=getattr(md, "return_param_names", set()),
+            pos=md.pos,
+            type_label=f"method {md.class_name}.{md.name}",
+            force_escaped=forced_escape,
+        )
         for base in self.class_mro(cname)[1:]:
             env.define(base, BaseView(target_obj, base), md.pos)
-        for param, arg in zip(md.params[1:], args):
-            if param.type:
-                self._enforce_annotation(param.type, arg, label=f"parameter {param.name} in method {md.class_name}.{md.name}", pos=md.pos)
-            env.define(param.name, arg, md.pos)
         frame = StackFrame(f"{md.class_name}.{md.name}", md.namespace, md.pos)
         self.call_stack.append(frame)
         prev_namespace = self.current_module_namespace
         self.current_module_namespace = md.namespace or prev_namespace
+        self._push_parameter_scope(param_bindings)
         try:
             res = self.eval_block(md.body, env)
             if isinstance(res, ReturnSignal):
@@ -1661,6 +1875,7 @@ class Runtime:
         except TinyLangError as err:
             raise self._ensure_error_has_stack(err) from err
         finally:
+            self._pop_parameter_scope()
             self.call_stack.pop()
             self.current_module_namespace = prev_namespace
 

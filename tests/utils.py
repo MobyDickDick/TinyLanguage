@@ -28,7 +28,9 @@ def run_tiny(src: str) -> str:
     return compile_and_run(src)
 
 
-def execute_tiny_program(source: str, *, timeout: float | None = None) -> ExecutionResult:
+def execute_tiny_program(
+    source: str, *, timeout: float | None = None, args: list[str] | None = None, env: dict[str, str] | None = None
+) -> ExecutionResult:
     """Execute a TinyLanguage program via the CLI.
 
     The source text is written to a temporary ``.tiny`` file, executed with
@@ -45,13 +47,14 @@ def execute_tiny_program(source: str, *, timeout: float | None = None) -> Execut
             tmp_path = pathlib.Path(tmp.name)
 
         proc = subprocess.run(
-            [sys.executable, "-m", "tiny_language", str(tmp_path)],
+            [sys.executable, "-m", "tiny_language", str(tmp_path), *(args or [])],
             capture_output=True,
             text=True,
             timeout=timeout,
             cwd=PROJECT_ROOT,
             env={
                 **os.environ,
+                **(env or {}),
                 "PYTHONPATH": os.pathsep.join(
                     filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
                 ),

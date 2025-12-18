@@ -25,6 +25,11 @@ from tiny_language import (
 )
 
 
+def _default_copy_on_call() -> bool:
+    flag = os.environ.get("TINYLANG_COPY_ON_CALL", "").strip().lower()
+    return flag in {"1", "true", "yes", "on"}
+
+
 def _read_source_from_file(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
@@ -41,7 +46,12 @@ def _module_namespace_for_path(path: Path) -> str:
 
 
 def _execute(
-    source: str, *, backend: str, module_path: Path | None, stream_output: bool = True
+    source: str,
+    *,
+    backend: str,
+    module_path: Path | None,
+    stream_output: bool = True,
+    copy_on_call: bool | None = None,
 ) -> tuple[str, bool]:
     """Dispatch execution to the requested backend and return captured output.
 
@@ -52,12 +62,15 @@ def _execute(
     if backend == "interpreter":
         namespace = _module_namespace_for_path(module_path) if module_path else None
         runtime = Runtime(source)
+        if copy_on_call is not None:
+            runtime.copy_on_call = copy_on_call
         output = compile_and_run(
             source,
             runtime=runtime,
             module_namespace=namespace,
             module_path=module_path,
             stream_output=stream_output,
+            copy_on_call=copy_on_call,
         )
         return output, runtime.streamed_output
     if backend == "python":
@@ -87,6 +100,12 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Compile the program to LLVM IR and print it instead of executing",
     )
+    parser.add_argument(
+        "--copy-on-call",
+        action=argparse.BooleanOptionalAction,
+        default=_default_copy_on_call(),
+        help="Deep-copy non-escaping mutable arguments before calls (env: TINYLANG_COPY_ON_CALL)",
+    )
 
     args = parser.parse_args(argv)
     module_path: Path | None = None
@@ -111,7 +130,11 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         output, streamed = _execute(
-            source, backend=args.backend, module_path=module_path, stream_output=True
+            source,
+            backend=args.backend,
+            module_path=module_path,
+            stream_output=True,
+            copy_on_call=args.copy_on_call,
         )
     except TinyLangError as err:
         sys.stderr.write(_format_error_for_source(source, err) + os.linesep)

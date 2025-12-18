@@ -31,6 +31,22 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 - **Return requirement:** Annotated functions must return a value on all paths, otherwise error `E010` is raised.
 - **Closures:** Functions are first-class and can be returned or passed as arguments.
 
+## Argument-Kapselung
+- **Opt-in Flag:** `--copy-on-call` (oder `TINYLANG_COPY_ON_CALL=1`) aktiviert defensive Kopier-Semantik für Funktions- und Methodenaufrufe.
+- **Wann kopiert wird:** Nicht-escaped, mutierbare Argumente (Heap-Pointer, Struct-/Variant-Maps, Klasseninstanzen) werden vor dem Binden tief kopiert. Parameter, die in einem `return`-Pfad vorkommen, gelten als escaped und behalten ihre Identität.
+- **Schreibschutz:** Versuche, über andere Aliasse auf einen geschützten Parameter zu schreiben, schlagen mit einem Laufzeitfehler fehl, um Außenwirkungen zu verhindern.
+- **Performance:** Das Kopieren ist zyklenfest, kann aber bei großen Objektgraphen merklich mehr Zeit und Speicher kosten.
+- **Beispiel:**
+  ```tiny
+  fn bump(buf) {
+      heap_set(buf, 0, 99);
+  }
+
+  define data = new(1);
+  heap_set(data, 0, 1);
+  bump(data); // mit --copy-on-call bleibt data[0] == 1
+  ```
+
 ## Algebraic data types and pattern matching
 - **`type` definitions:**
   ```tiny

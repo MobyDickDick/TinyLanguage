@@ -1,0 +1,31 @@
+/// Demonstriert, wie zurückgegebene Parameter sichtbar gemacht werden können.
+/// Der Aufruf liefert sowohl die mutierte Struktur als auch eine Liste der
+/// Parameter, die in der Rückgabe enthalten sind.
+
+fn skaliere_status(status, faktor) {
+    // Mutation, die nur sichtbar bleibt, wenn der Parameter zurückgegeben wird.
+    status.level = status.level * faktor;
+
+    return {
+        status: status;
+        returned_params: new["status", "faktor"];
+    };
+}
+
+// Ausgangsdaten, die an die Funktion übergeben werden.
+define laufstatus = { label: "start"; level: 2; };
+
+print("Vor dem Aufruf:");
+print(laufstatus.level);
+
+// Der Rückgabewert enthält die identisch referenzierten Parameter.
+define ergebnis = skaliere_status(laufstatus, 3);
+
+print("Zurückgegebene Parameter (Namen):");
+print(String.join(ergebnis.returned_params, ", "));
+
+print("Wert aus der Rückgabe:");
+print(ergebnis.status.level);
+
+print("Original teilt sich den Wert:");
+print(laufstatus.level);

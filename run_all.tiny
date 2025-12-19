@@ -114,4 +114,4 @@ fn run_all() {
     import src.sum_product_match as _;
 }
 
-run_all();
+define _ = run_all();

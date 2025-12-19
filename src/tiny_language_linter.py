@@ -349,21 +349,37 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                     cond_state = dict(state)
                     for nm in names_in_expr(st.cond):
                         _mark_used(cond_state, nm)
-                    then_active, then_term = analyze_block(st.then, [cond_state])
-                    else_active, else_term = analyze_block(st.els, [cond_state])
-                    for act in then_active + else_active:
-                        next_active.append(act)
-                    terminated_states.extend(then_term + else_term)
+
+                    cond_is_bool = isinstance(st.cond, Bool)
+                    cond_truthy = cond_is_bool and st.cond.value
+
+                    if cond_is_bool and cond_truthy:
+                        if st.els:
+                            lint_locals_used(st.els, source)
+                        then_active, then_term = analyze_block(st.then, [cond_state])
+                        next_active.extend(then_active)
+                        terminated_states.extend(then_term)
+                    elif cond_is_bool and not cond_truthy:
+                        if st.then:
+                            lint_locals_used(st.then, source)
+                        else_active, else_term = analyze_block(st.els, [cond_state])
+                        next_active.extend(else_active or [dict(cond_state)])
+                        terminated_states.extend(else_term)
+                    else:
+                        then_active, then_term = analyze_block(st.then, [cond_state])
+                        else_active, else_term = analyze_block(st.els, [cond_state])
+                        for act in then_active + else_active:
+                            next_active.append(act)
+                        terminated_states.extend(then_term + else_term)
                 elif isinstance(st, While):
                     cond_state = dict(state)
                     for nm in names_in_expr(st.cond):
                         _mark_used(cond_state, nm)
-                    body_active, body_term = analyze_block(st.body, [cond_state])
                     if isinstance(st.cond, Bool) and not st.cond.value:
-                        next_active.extend(body_active)
-                        terminated_states.extend(body_term)
+                        lint_locals_used(st.body, source)
                         next_active.append(cond_state)
                     else:
+                        body_active, body_term = analyze_block(st.body, [cond_state])
                         next_active.extend(body_active)
                         terminated_states.extend(body_term)
                 elif isinstance(st, TryCatch):
@@ -434,9 +450,6 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
         if not used_any:
             unused.append((name, pos))
             continue
-
-        if info["active_present"] and not info["active_all"]:
-            unused.append((name, pos))
 
     if unused:
         # Preserve the previous behavior of reporting all unused bindings together

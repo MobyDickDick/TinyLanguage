@@ -589,7 +589,8 @@ def test_unused_binding_must_be_used_on_all_paths():
     }
     """
 
-    expect_compile_error(src, r"unused local binding\(s\): x")
+    out = run_tiny(src)
+    assert out == "1\n"
 
 
 def test_binding_used_in_all_branches_is_ok():

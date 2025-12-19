@@ -261,6 +261,10 @@ class ModuleResolver:
                         code="E008",
                     )
                 self._in_progress.append(resolved_path)
+                module_frame: Optional[StackFrame] = None
+                if runtime.debugger is not None:
+                    module_frame = StackFrame(resolved_name or "<module>", resolved_name, pos or SourcePos.origin())
+                    runtime.call_stack.append(module_frame)
                 try:
                     module_env = Environment(parent=None, namespace=resolved_name, runtime=runtime)
                     compile_and_run(
@@ -275,6 +279,8 @@ class ModuleResolver:
                     self.cache[resolved_path] = ns_ref
                     return ns_ref
                 finally:
+                    if module_frame is not None:
+                        runtime.call_stack.pop()
                     self._in_progress.remove(resolved_path)
         raise TinyLangError(
             format_error(

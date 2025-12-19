@@ -1,6 +1,6 @@
 import textwrap
 
-from tiny_language import Debugger, Runtime, compile_and_run
+from tiny_language import Debugger, ModuleResolver, Runtime, compile_and_run
 
 
 def _lines(snapshot_list):
@@ -62,3 +62,47 @@ def test_stepping_sequences_follow_depth_changes():
 
     inner_scope = debugger.snapshots[2].scopes[0]
     assert inner_scope.values["tmp"] == 5
+
+
+def test_step_over_skips_imported_module_body(tmp_path):
+    helper = tmp_path / "helper.tiny"
+    helper.write_text(
+        textwrap.dedent(
+            """\
+            print("helper start");
+            print("helper end");
+            """
+        )
+    )
+
+    program = textwrap.dedent(
+        """\
+        fn runner() {
+            import helper as _;
+            print("after import");
+        }
+
+        define _ = runner();
+        """
+    )
+
+    debugger = Debugger()
+    debugger.set_breakpoints("main", {2})
+    debugger.enqueue_commands("step_over", "continue")
+
+    runtime = Runtime(program)
+    runtime.debugger = debugger
+    resolver = ModuleResolver(search_paths=[tmp_path])
+
+    output = compile_and_run(
+        program,
+        runtime=runtime,
+        module_namespace="main",
+        module_resolver=resolver,
+    )
+
+    assert "helper start" in output
+    assert "helper end" in output
+    assert "after import" in output
+    assert [snap.namespace for snap in debugger.snapshots] == ["main", "main"]
+    assert _lines(debugger.snapshots) == [2, 3]

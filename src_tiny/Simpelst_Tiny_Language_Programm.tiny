@@ -1,10 +1,8 @@
-// Endlosschleife, die eine Zählvariable ausgibt und bei zehn Millionen wieder bei 0 beginnt.
+// Gibt eine Zählvariable einige Male aus, damit der Runner nicht hängen bleibt.
+define max_iterations = 10;
 define i = 0;
-while (true) {
+while (i < max_iterations) {
   print("This is a simple Test");
   print(i);
   i = i + 1;
-  if (i == 1000) {
-    i = 0;
-  }
 }

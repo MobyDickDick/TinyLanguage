@@ -1,0 +1,117 @@
+// Führt alle TinyLanguage-Beispiele im Repository aus.
+// Jeder Import führt die jeweilige Datei aus; die Ausgaben erscheinen sequenziell.
+
+fn run_all() {
+    print("== src_tiny/Simpelst_Tiny_Language_Programm.tiny ==");
+    import src_tiny.Simpelst_Tiny_Language_Programm;
+
+    print("== src_tiny/all_features.tiny ==");
+    import src_tiny.all_features;
+
+    print("== src_tiny/class_demo.tiny ==");
+    import src_tiny.class_demo;
+
+    print("== src_tiny/concurrency_demo.tiny ==");
+    import src_tiny.concurrency_demo;
+
+    print("== src_tiny/concurrency_pipeline.tiny ==");
+    import src_tiny.concurrency_pipeline;
+
+    print("== src_tiny/demo.tiny ==");
+    import src_tiny.demo;
+
+    print("== src_tiny/heap_pointer_demo.tiny ==");
+    import src_tiny.heap_pointer_demo;
+
+    print("== src_tiny/hello_world.tiny ==");
+    import src_tiny.hello_world;
+
+    print("== src_tiny/match_demo.tiny ==");
+    import src_tiny.match_demo;
+
+    print("== src_tiny/namespace_demo.tiny ==");
+    import src_tiny.namespace_demo;
+
+    print("== src_tiny/number_class.tiny ==");
+    import src_tiny.number_class;
+
+    print("== src_tiny/number_intervall.tiny ==");
+    import src_tiny.number_intervall;
+
+    print("== src_tiny/operator_overloading_demo.tiny ==");
+    import src_tiny.operator_overloading_demo;
+
+    print("== src_tiny/parallel_map.tiny ==");
+    import src_tiny.parallel_map;
+
+    print("== src_tiny/python_json_demo.tiny ==");
+    import src_tiny.python_json_demo;
+
+    print("== src_tiny/python_math_demo.tiny ==");
+    import src_tiny.python_math_demo;
+
+    print("== src_tiny/python_namespace_typed_demo.tiny ==");
+    import src_tiny.python_namespace_typed_demo;
+
+    print("== src_tiny/python_proxy_pipeline_demo.tiny ==");
+    import src_tiny.python_proxy_pipeline_demo;
+
+    print("== src_tiny/result_demo.tiny ==");
+    import src_tiny.result_demo;
+
+    print("== src_tiny/rosetta_factorial.tiny ==");
+    import src_tiny.rosetta_factorial;
+
+    print("== src_tiny/rosetta_fibonacci.tiny ==");
+    import src_tiny.rosetta_fibonacci;
+
+    print("== src_tiny/rosetta_fizzbuzz.tiny ==");
+    import src_tiny.rosetta_fizzbuzz;
+
+    print("== src_tiny/rosetta_word_count.tiny ==");
+    import src_tiny.rosetta_word_count;
+
+    print("== src_tiny/stdlib_collections_demo.tiny ==");
+    import src_tiny.stdlib_collections_demo;
+
+    print("== src_tiny/stdlib_io_random_demo.tiny ==");
+    import src_tiny.stdlib_io_random_demo;
+
+    print("== src_tiny/test_flush.tiny ==");
+    import src_tiny.test_flush;
+
+    print("== src_tiny/tiny_errors.tiny ==");
+    import src_tiny.tiny_errors;
+
+    print("== src_tiny/tiny_language_ast.tiny ==");
+    import src_tiny.tiny_language_ast;
+
+    print("== src_tiny/try_catch_demo.tiny ==");
+    import src_tiny.try_catch_demo;
+
+    print("== src_tiny/from_python/factorial.tiny ==");
+    import src_tiny.from_python.factorial;
+
+    print("== src_tiny/from_python/fibonacci.tiny ==");
+    import src_tiny.from_python.fibonacci;
+
+    print("== src_tiny/from_python/fizzbuzz.tiny ==");
+    import src_tiny.from_python.fizzbuzz;
+
+    print("== src_tiny/from_python/copy_rosetta_samples.tiny ==");
+    import src_tiny.from_python.copy_rosetta_samples;
+
+    print("== src_tiny/from_python/transpile_rosetta.tiny ==");
+    import src_tiny.from_python.transpile_rosetta;
+
+    print("== str_tiny/returned_params_demo.tiny ==");
+    import str_tiny.returned_params_demo;
+
+    print("== tests/logic_example.tiny ==");
+    import tests.logic_example;
+
+    print("== src/sum_product_match.tiny ==");
+    import src.sum_product_match;
+}
+
+run_all();

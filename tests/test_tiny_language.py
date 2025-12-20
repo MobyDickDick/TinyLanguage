@@ -539,6 +539,12 @@ def test_console_read_line_handles_eof(monkeypatch):
 
     assert out == "\n"
 
+def test_console_read_line_blocked_when_dap_disables_stdin(monkeypatch):
+    monkeypatch.setenv("TINYLANGUAGE_DAP_DISABLE_STDIN", "1")
+
+    with pytest.raises(Exception, match="Console\\.read_line is disabled"):
+        run_tiny("print(Console.read_line());")
+
 
 def test_must_use_unused_local_binding_function():
     src = """

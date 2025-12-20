@@ -425,6 +425,8 @@ class DAPServer:
         self._namespace = self._namespace_for_path(program)
         self._streaming_output = False
         debugger = self._debugger()
+        previous_stdin_guard = os.environ.get("TINYLANGUAGE_DAP_DISABLE_STDIN")
+        os.environ["TINYLANGUAGE_DAP_DISABLE_STDIN"] = "1"
         try:
             output = compile_and_run(
                 source,
@@ -466,12 +468,17 @@ class DAPServer:
                     "body": {"exitCode": 0},
                 }
             )
-        self._send({
-            "type": "event",
-            "seq": self._next_seq(),
-            "event": "terminated",
-            "body": {},
-        })
+        finally:
+            if previous_stdin_guard is None:
+                os.environ.pop("TINYLANGUAGE_DAP_DISABLE_STDIN", None)
+            else:
+                os.environ["TINYLANGUAGE_DAP_DISABLE_STDIN"] = previous_stdin_guard
+            self._send({
+                "type": "event",
+                "seq": self._next_seq(),
+                "event": "terminated",
+                "body": {},
+            })
 
     def _run_python_program(self, program: Path) -> None:
         self._log(f"Starting Python program run: {program}")

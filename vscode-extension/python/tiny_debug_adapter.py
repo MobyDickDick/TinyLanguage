@@ -371,10 +371,30 @@ class DAPServer:
                 if time.monotonic() >= deadline:
                     command = "continue"
                     self._log("No client command received while paused; continuing automatically after timeout")
+                    self._clear_breakpoints_after_timeout()
                 else:
                     self._log("Still waiting for client command while paused")
         self._log(f"Dequeued command from client: {command}")
         return command
+
+    def _clear_breakpoints_after_timeout(self) -> None:
+        """Drop all configured breakpoints after a pause timeout.
+
+        When no client commands arrive before ``TINYLANGUAGE_DAP_PAUSE_TIMEOUT``
+        elapses, the adapter auto-continues. Clearing breakpoints in that
+        situation prevents the runtime from immediately pausing again on the
+        next loop iteration, which would otherwise make headless runs appear
+        stuck even though a timeout was reached.
+        """
+
+        if not self._breakpoints:
+            return
+
+        self._log("Clearing breakpoints after pause timeout")
+        paths = list(self._breakpoints.keys())
+        for path in paths:
+            self._breakpoints[path] = []
+            self._apply_breakpoints(path, [])
 
     def _run_program(self, program: Path) -> None:
         self._log(f"Starting program run: {program}")

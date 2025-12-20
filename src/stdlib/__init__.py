@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import json
 import math
+import os
 import random
 from collections import deque
 from dataclasses import dataclass
@@ -723,6 +724,12 @@ class _StdLibRegistrar:
         return len(seq)
 
     def _console_read_line(self, prompt: Any | None = None) -> str:
+        if os.environ.get("TINYLANGUAGE_DAP_DISABLE_STDIN") and not os.environ.get("TINYLANGUAGE_DAP_ALLOW_STDIN"):
+            raise RuntimeError(
+                "Console.read_line is disabled while running under the TinyLanguage debug adapter "
+                "because stdin/stdout carry the protocol stream. Run the program from a terminal or "
+                "set TINYLANGUAGE_DAP_ALLOW_STDIN=1 to bypass this guard (not recommended)."
+            )
         try:
             return input("" if prompt is None else str(prompt))
         except EOFError:

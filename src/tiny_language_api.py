@@ -309,11 +309,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Path to the TinyLanguage source file to execute",
     )
     parser.add_argument(
-        "program_args",
-        nargs=argparse.REMAINDER,
-        help="Arguments forwarded to the TinyLanguage program (use '--' to separate)",
-    )
-    parser.add_argument(
         "--emit-python",
         dest="emit_python",
         metavar="FILE",
@@ -341,7 +336,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         default=_copy_on_call_default(),
         help="Deep-copy non-escaping mutable arguments before calls (env: TINYLANG_COPY_ON_CALL)",
     )
-    args = parser.parse_args(argv)
+    args, remaining = parser.parse_known_args(argv)
+    args.program_args = remaining
+    if args.program_args and args.program_args[0] == "--":
+        args.program_args = args.program_args[1:]
 
     if args.repl and (args.python_backend or args.native_backend or args.native_python_bytecode):
         parser.error("--native-backend/--python-backend cannot be combined with --repl")

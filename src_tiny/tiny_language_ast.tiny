@@ -69,26 +69,26 @@ fn TryCatch(body, err_name, handler, pos) { return new TryCatch { body: body; er
 
 class Param {
     name: string;
-    type: string;
+    type_hint: string;
 }
-fn Param(name, type_hint) { return new Param { name: name; type: type_hint }; }
+fn Param(name, type_hint) { return new Param { name: name; type_hint: type_hint }; }
 
 class Fn {
     name: string;
     params: Pointer;
     body: Pointer;
-    namespace: string;
+    namespace_name: string;
     return_type: string;
     inferred_return_type: string;
     is_async: Bool;
     pos: SourcePos;
 }
-fn Fn(name, params, body, namespace, return_type, inferred_return_type, is_async, pos) {
+fn Fn(name, params, body, namespace_name, return_type, inferred_return_type, is_async, pos) {
     return new Fn {
         name: name;
         params: params;
         body: body;
-        namespace: namespace;
+        namespace_name: namespace_name;
         return_type: return_type;
         inferred_return_type: inferred_return_type;
         is_async: is_async;
@@ -103,11 +103,11 @@ class MethodDef {
     body: Pointer;
     return_type: string;
     inferred_return_type: string;
-    namespace: string;
+    namespace_name: string;
     is_async: Bool;
     pos: SourcePos;
 }
-fn MethodDef(class_name, name, params, body, return_type, inferred_return_type, namespace, is_async, pos) {
+fn MethodDef(class_name, name, params, body, return_type, inferred_return_type, namespace_name, is_async, pos) {
     return new MethodDef {
         class_name: class_name;
         name: name;
@@ -115,7 +115,7 @@ fn MethodDef(class_name, name, params, body, return_type, inferred_return_type, 
         body: body;
         return_type: return_type;
         inferred_return_type: inferred_return_type;
-        namespace: namespace;
+        namespace_name: namespace_name;
         is_async: is_async;
         pos: _pos_or_default(pos)
     };

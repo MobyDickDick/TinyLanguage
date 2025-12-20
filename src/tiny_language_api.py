@@ -336,7 +336,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         default=_copy_on_call_default(),
         help="Deep-copy non-escaping mutable arguments before calls (env: TINYLANG_COPY_ON_CALL)",
     )
-    args = parser.parse_args(argv)
+    args, remaining = parser.parse_known_args(argv)
+    args.program_args = remaining
+    if args.program_args and args.program_args[0] == "--":
+        args.program_args = args.program_args[1:]
 
     if args.repl and (args.python_backend or args.native_backend or args.native_python_bytecode):
         parser.error("--native-backend/--python-backend cannot be combined with --repl")
@@ -431,14 +434,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     if not args.file:
         parser.error("the following arguments are required: file")  # Align with argparse behavior
 
+    program_argv = [args.file] + list(args.program_args)
     streamed = False
-    if args.native_backend:
-        output = run_with_native_backend(Path(args.file).read_text(encoding="utf-8"))
-    elif args.python_backend:
-        output = run_with_python_backend(Path(args.file).read_text(encoding="utf-8"))
-    else:
-        output = run_file(args.file, stream_output=True, copy_on_call=args.copy_on_call)
-        streamed = True
+    original_argv = sys.argv[:]
+    sys.argv = program_argv
+    try:
+        if args.native_backend:
+            output = run_with_native_backend(Path(args.file).read_text(encoding="utf-8"))
+        elif args.python_backend:
+            output = run_with_python_backend(Path(args.file).read_text(encoding="utf-8"))
+        else:
+            output = run_file(args.file, stream_output=True, copy_on_call=args.copy_on_call)
+            streamed = True
+    finally:
+        sys.argv = original_argv
 
     if not streamed:
         print(output, end="")

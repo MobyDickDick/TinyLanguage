@@ -309,6 +309,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Path to the TinyLanguage source file to execute",
     )
     parser.add_argument(
+        "program_args",
+        nargs=argparse.REMAINDER,
+        help="Arguments forwarded to the TinyLanguage program (use '--' to separate)",
+    )
+    parser.add_argument(
         "--emit-python",
         dest="emit_python",
         metavar="FILE",
@@ -431,14 +436,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     if not args.file:
         parser.error("the following arguments are required: file")  # Align with argparse behavior
 
+    program_argv = [args.file] + list(args.program_args)
     streamed = False
-    if args.native_backend:
-        output = run_with_native_backend(Path(args.file).read_text(encoding="utf-8"))
-    elif args.python_backend:
-        output = run_with_python_backend(Path(args.file).read_text(encoding="utf-8"))
-    else:
-        output = run_file(args.file, stream_output=True, copy_on_call=args.copy_on_call)
-        streamed = True
+    original_argv = sys.argv[:]
+    sys.argv = program_argv
+    try:
+        if args.native_backend:
+            output = run_with_native_backend(Path(args.file).read_text(encoding="utf-8"))
+        elif args.python_backend:
+            output = run_with_python_backend(Path(args.file).read_text(encoding="utf-8"))
+        else:
+            output = run_file(args.file, stream_output=True, copy_on_call=args.copy_on_call)
+            streamed = True
+    finally:
+        sys.argv = original_argv
 
     if not streamed:
         print(output, end="")

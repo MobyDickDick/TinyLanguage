@@ -1,24 +1,26 @@
 // TinyLanguage translation of examples/rosetta/copy_rosetta_samples.py
 // Run with: python src/tiny_language.py src_tiny/from_python/copy_rosetta_samples.tiny DEST [--source DIR] [--limit N] [--delay SECONDS]
 
-use Map;
-
 // Python helpers
-define pathlib = Python.import_module("pathlib", new["Path"]);
+define os = Python.import_module("os", new["makedirs"]);
+define os_path = Python.import_module("os.path", new["abspath", "join", "exists", "basename", "splitext"]);
+define glob = Python.import_module("glob", new["glob"]);
 define shutil = Python.import_module("shutil", new["copy2"]);
 define time = Python.import_module("time", new["sleep"]);
 define sys = Python.import_module("sys", new["argv"]);
 define builtins = Python.import_module("builtins", new["list", "set", "sorted", "len", "int", "float"]);
+define _import_refs = new[shutil, time, os, os_path, glob]; // mark Python helpers as used for the linter
 
-def list_missing(source_dir, dest_dir) {
-    define source_files = builtins.list(source_dir.glob("*.py"));
-    define dest_files = builtins.list(dest_dir.glob("*.py"));
-    define dest_stems = builtins.set();
+fn list_missing(source_dir, dest_dir) {
+    define source_files = builtins.list(glob.glob(os_path.join(source_dir, "*.py")));
+    define dest_files = builtins.list(glob.glob(os_path.join(dest_dir, "*.py")));
+    define dest_stems = Set.new();
 
     define i = 0;
     while (i < builtins.len(dest_files)) {
         define path = heap_get(dest_files, i);
-        dest_stems.add(path.stem);
+        define stem = heap_get(os_path.splitext(os_path.basename(path)), 0);
+        define _added_dest = Set.add(dest_stems, stem);
         i = i + 1;
     }
 
@@ -26,8 +28,9 @@ def list_missing(source_dir, dest_dir) {
     i = 0;
     while (i < builtins.len(source_files)) {
         define path = heap_get(source_files, i);
-        if (!dest_stems.__contains__(path.stem)) {
-            missing.append(path);
+        define stem = heap_get(os_path.splitext(os_path.basename(path)), 0);
+        if (!Set.has(dest_stems, stem)) {
+            define _added_missing = Collections.push(missing, path);
         }
         i = i + 1;
     }
@@ -35,7 +38,7 @@ def list_missing(source_dir, dest_dir) {
     return builtins.sorted(missing);
 }
 
-def copy_batch(files, dest_dir, limit, delay) {
+fn copy_batch(files, dest_dir, limit, delay) {
     define total = builtins.len(files);
     define end = limit;
     if (end > total) { end = total; }
@@ -44,10 +47,10 @@ def copy_batch(files, dest_dir, limit, delay) {
     define idx = 0;
     while (idx < end) {
         define source_path = heap_get(files, idx);
-        define destination = dest_dir.joinpath(source_path.name);
-        shutil.copy2(source_path, destination);
-        print("copied", source_path.name, "->", destination);
-        copied.append(source_path);
+        define destination = os_path.join(dest_dir, os_path.basename(source_path));
+        define _copy_result = shutil.copy2(source_path, destination);
+        print("copied", os_path.basename(source_path), "->", destination);
+        define _copied_entry = Collections.push(copied, source_path);
 
         if (idx + 1 < end) { time.sleep(delay); }
         idx = idx + 1;
@@ -56,7 +59,7 @@ def copy_batch(files, dest_dir, limit, delay) {
     return copied;
 }
 
-def parse_args() {
+fn parse_args() {
     define argv = sys.argv;
     define argc = builtins.len(argv);
 
@@ -65,41 +68,45 @@ def parse_args() {
         return Map.new();
     }
 
-    define root = pathlib.Path(".").resolve();
+    define root = os_path.abspath(".");
     define defaults = Map.from_entries(new[
-        new["source", root.joinpath("examples", "rosetta", "python")],
+        new["source", os_path.join(root, "examples", "rosetta", "python")],
         new["limit", 10],
         new["delay", 10.0]
     ]);
 
     define options = Map.new();
-    Map.set(options, "dest", pathlib.Path(heap_get(argv, 1)));
-    Map.set(options, "source", Map.get(defaults, "source"));
-    Map.set(options, "limit", Map.get(defaults, "limit"));
-    Map.set(options, "delay", Map.get(defaults, "delay"));
+    define _set_dest = Map.set(options, "dest", os_path.abspath(heap_get(argv, 1)));
+    define _set_source = Map.set(options, "source", Map.get(defaults, "source"));
+    define _set_limit = Map.set(options, "limit", Map.get(defaults, "limit"));
+    define _set_delay = Map.set(options, "delay", Map.get(defaults, "delay"));
 
     define index = 2;
     while (index < argc) {
         define flag = heap_get(argv, index);
         if (flag == "--source" && index + 1 < argc) {
-            Map.set(options, "source", pathlib.Path(heap_get(argv, index + 1)));
-            index = index + 2;
-        } else if (flag == "--limit" && index + 1 < argc) {
-            Map.set(options, "limit", builtins.int(heap_get(argv, index + 1)));
-            index = index + 2;
-        } else if (flag == "--delay" && index + 1 < argc) {
-            Map.set(options, "delay", builtins.float(heap_get(argv, index + 1)));
+            define _updated_source = Map.set(options, "source", os_path.abspath(heap_get(argv, index + 1)));
             index = index + 2;
         } else {
-            print("Ignoring unknown or incomplete flag:", flag);
-            index = index + 1;
+            if (flag == "--limit" && index + 1 < argc) {
+                define _updated_limit = Map.set(options, "limit", builtins.int(heap_get(argv, index + 1)));
+                index = index + 2;
+            } else {
+                if (flag == "--delay" && index + 1 < argc) {
+                    define _updated_delay = Map.set(options, "delay", builtins.float(heap_get(argv, index + 1)));
+                    index = index + 2;
+                } else {
+                    print("Ignoring unknown or incomplete flag:", flag);
+                    index = index + 1;
+                }
+            }
         }
     }
 
     return options;
 }
 
-def main() {
+fn main() {
     define args = parse_args();
     if (Map.len(args) == 0) { return 1; }
 
@@ -108,12 +115,12 @@ def main() {
     define limit = Map.get(args, "limit");
     define delay = Map.get(args, "delay");
 
-    if (!source.exists()) {
+    if (!os_path.exists(source)) {
         print("source directory does not exist:", source);
         return 1;
     }
 
-    dest.mkdir(511, true, true);
+    if (!os_path.exists(dest)) { define _created_dest = os.makedirs(dest); }
     define missing = list_missing(source, dest);
 
     if (builtins.len(missing) == 0) {
@@ -127,4 +134,4 @@ def main() {
     return 0;
 }
 
-main();
+define _ = main();

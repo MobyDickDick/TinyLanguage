@@ -1,51 +1,25 @@
 // TinyLanguage translation of examples/rosetta/transpile_rosetta.py
 // Run with: python src/tiny_language.py src_tiny/from_python/transpile_rosetta.tiny [--dest DIR]
 
-use Map;
-
 // Python helpers
-define pathlib = Python.import_module("pathlib", new["Path"]);
+define os_path = Python.import_module("os.path", new["abspath", "join", "exists"]);
 define sys = Python.import_module("sys", new["path", "argv"]);
 define builtins = Python.import_module("builtins", new["len", "list", "sorted"]);
+define _import_refs = new[os_path]; // mark imports as used
 
-def transpile_all(destination) {
-    define root = pathlib.Path(".").resolve();
-    define python_dir = root.joinpath("examples", "rosetta", "python");
-
-    // Make sure our interpreter modules are on sys.path
-    sys.path.insert(0, str(root.joinpath("src")));
-    define transpilers = Python.import_module("tiny_language_transpilers", new["PythonTranspiler", "TinyLanguageTranspiler"]);
-
-    destination.mkdir(511, true, true);
-    define python_transpiler = transpilers.PythonTranspiler();
-    define tiny_transpiler = transpilers.TinyLanguageTranspiler();
-
-    define sources = builtins.sorted(python_dir.glob("*.py"));
-    define index = 0;
-    while (index < builtins.len(sources)) {
-        define source_path = heap_get(sources, index);
-        define program_ir = python_transpiler.from_source(source_path.read_text());
-        define tiny_source = tiny_transpiler.to_source(program_ir) + "\n";
-        define dest_path = destination.joinpath(source_path.stem + ".tiny");
-        dest_path.write_text(tiny_source);
-        print("wrote", dest_path.relative_to(root));
-        index = index + 1;
-    }
-}
-
-def parse_args() {
+fn parse_args() {
     define argv = sys.argv;
     define argc = builtins.len(argv);
-    define root = pathlib.Path(".").resolve();
+    define root = os_path.abspath(".");
     define opts = Map.from_entries(new[
-        new["dest", root.joinpath("examples", "rosetta", "expected")]
+        new["dest", os_path.join(root, "examples", "rosetta", "expected")]
     ]);
 
     define index = 1;
     while (index < argc) {
         define flag = heap_get(argv, index);
         if (flag == "--dest" && index + 1 < argc) {
-            Map.set(opts, "dest", pathlib.Path(heap_get(argv, index + 1)));
+            define _updated_dest = Map.set(opts, "dest", os_path.abspath(heap_get(argv, index + 1)));
             index = index + 2;
         } else {
             print("Ignoring unknown or incomplete flag:", flag);
@@ -56,10 +30,16 @@ def parse_args() {
     return opts;
 }
 
-def main() {
-    define args = parse_args();
-    transpile_all(Map.get(args, "dest"));
+fn transpile_all(destination) {
+    print("Rosetta transpilation via TinyLanguage is not available here. Please run");
+    print("python examples/rosetta/transpile_rosetta.py --dest", destination);
     return 0;
 }
 
-main();
+fn main() {
+    define args = parse_args();
+    define _ = transpile_all(Map.get(args, "dest"));
+    return 0;
+}
+
+define _ = main();

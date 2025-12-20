@@ -514,6 +514,32 @@ def test_repl_reports_errors(monkeypatch, capsys):
     assert "expected" in captured.err
 
 
+def test_console_read_line_returns_input(monkeypatch):
+    prompts: list[str] = []
+
+    def fake_input(prompt: str = "") -> str:
+        prompts.append(prompt)
+        return "hello"
+
+    monkeypatch.setattr("builtins.input", fake_input)
+
+    out = run_tiny('print(Console.read_line("name: "));')
+
+    assert out == "hello\n"
+    assert prompts == ["name: "]
+
+
+def test_console_read_line_handles_eof(monkeypatch):
+    def fake_input(prompt: str = "") -> str:
+        raise EOFError()
+
+    monkeypatch.setattr("builtins.input", fake_input)
+
+    out = run_tiny("print(Console.read_line());")
+
+    assert out == "\n"
+
+
 def test_must_use_unused_local_binding_function():
     src = """
     fn g(a) {
@@ -885,4 +911,3 @@ def test_spawn_and_join():
     )
 
     assert out == "5\n9\n"
-

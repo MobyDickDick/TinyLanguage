@@ -77,6 +77,7 @@ class _StdLibRegistrar:
         self._ensure_namespace("Set")
         self._ensure_namespace("Deque")
         self._ensure_namespace("Random")
+        self._ensure_namespace("Console")
         self._ensure_namespace("File")
         self._ensure_namespace("JSON")
         self._ensure_namespace("Async")
@@ -149,6 +150,8 @@ class _StdLibRegistrar:
         self.runtime.register_native("randint", self._random_randint, namespace="Random")
         self.runtime.register_native("choice", self._random_choice, namespace="Random")
         self.runtime.register_native("shuffle", self._random_shuffle, namespace="Random")
+
+        self.runtime.register_native("read_line", self._console_read_line, namespace="Console")
 
         self.runtime.register_native("read", self._file_read, namespace="File")
         self.runtime.register_native("write", self._file_write, namespace="File")
@@ -718,6 +721,12 @@ class _StdLibRegistrar:
         seq = self._resolve_sequence(values)
         random.shuffle(seq)
         return len(seq)
+
+    def _console_read_line(self, prompt: Any | None = None) -> str:
+        try:
+            return input("" if prompt is None else str(prompt))
+        except EOFError:
+            return ""
 
     def _coerce_path(self, path: Any) -> Path:
         path_str = str(path)

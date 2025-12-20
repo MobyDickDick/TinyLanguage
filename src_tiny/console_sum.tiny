@@ -1,12 +1,33 @@
 // Lese zwei Zahlen aus der Konsole, addiere sie und gib das Ergebnis aus.
-print("Erste Zahl:");
-define first_input = Console.read_line();
+//
+// Die Eingaben kommen als Strings; JSON.parse wandelt numerische Eingaben in
+// Zahlen um. Damit das Programm auch auf leere Eingaben oder Tippfehler
+// vorbereitet ist, wird die Eingabe validiert und ggf. erneut abgefragt.
+//
+// Hinweis: Console.read_line gibt bei EOF einen leeren String zurück.
+fn read_number(prompt) {
+  while (true) {
+    print(prompt);
+    define raw = Console.read_line();
+    define text = String.trim(raw);
 
-print("Zweite Zahl:");
-define second_input = Console.read_line();
+    if (text == "") {
+      // Bei leerer Eingabe (z.B. EOF) die Schleife verlassen und 0 zurückgeben.
+      print("Keine Eingabe erkannt, verwende 0.");
+      return 0;
+    }
 
-// Die Eingaben kommen als Strings; JSON.parse wandelt numerische Eingaben in Zahlen um.
-define a = JSON.parse(first_input);
-define b = JSON.parse(second_input);
+    try {
+      return JSON.parse(text);
+    } catch(err) {
+      // err.code enthält z.B. "E000" aus der Runtime; wird genutzt, um den
+      // Catch-Parameter nicht ungenutzt zu lassen.
+      print("Bitte eine gültige Zahl eingeben.", err.code);
+    }
+  }
+}
+
+define a = read_number("Erste Zahl:");
+define b = read_number("Zweite Zahl:");
 
 print("Summe:", a + b);

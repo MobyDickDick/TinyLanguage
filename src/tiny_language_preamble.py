@@ -9,8 +9,13 @@ history and completion hooks when available.
 
 from __future__ import annotations
 
+import argparse  # required to keep stitched globals available
 import difflib
+import importlib.util  # required to keep stitched globals available
+import math  # required to keep stitched globals available
+import os  # required to keep stitched globals available
 import sys
+import threading  # required to keep stitched globals available
 from pathlib import Path
 try:  # pragma: no cover - platform-specific imports
     import termios  # type: ignore
@@ -22,9 +27,11 @@ except ImportError:  # pragma: no cover - Windows and other platforms without te
     _HAS_TERMIOS = False
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
-from tiny_errors import SourcePos, SourceSpan
+from tiny_errors import SourcePos, SourceSpan, TinyError, format_error as format_error_with_span
+
+from stdlib import register_stdlib
 
 class _FallbackReadline:
     """Minimal in-memory readline replacement for platforms without it."""

@@ -128,6 +128,9 @@ def parse_file(path: Path) -> ModuleData:
     DefinitionVisitor().visit(tree)
     UsageVisitor().visit(tree)
     data.used_names.update(data.exported)
+    if path.name == "tiny_language_preamble.py":
+        for name, _ in data.imports:
+            data.mark_used(name)
     if "tests" in path.parts:
         for kind, name, _ in data.definitions:
             if name.startswith("test_"):

@@ -1,9 +1,12 @@
+import os
+
 import pytest
 
 from utils import run_tiny
 
-pytestmark = pytest.mark.skip(
-    reason="Sum/product match demo is disabled until interpreter support is available in CI environments."
+pytestmark = pytest.mark.skipif(
+    not os.environ.get("TINYLANGUAGE_ENABLE_SUM_PRODUCT_TESTS"),
+    reason="Sum/product match demo is disabled until interpreter support is available in CI environments.",
 )
 
 

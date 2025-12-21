@@ -1,4 +1,6 @@
+import io
 import json
+import os
 import queue
 import sys
 import time
@@ -364,3 +366,31 @@ def test_env_var_truthy_parsing(monkeypatch):
     monkeypatch.setenv("TINYLANGUAGE_DAP_STDERR", "0")
     server_disabled = module.DAPServer()
     assert server_disabled._log_to_stderr is False
+
+
+def test_tcp_transport_does_not_disable_stdin(monkeypatch, tmp_path):
+    module = load_adapter_module()
+
+    # Use port 0 so the OS picks an ephemeral port without needing a real client.
+    monkeypatch.setenv("TINYLANGUAGE_DAP_TCP_PORT", "0")
+    monkeypatch.setenv("TINYLANGUAGE_DAP_TCP_HOST", "127.0.0.1")
+
+    captured_env: dict[str, str | None] = {}
+
+    def fake_compile_and_run(*_args, **_kwargs):
+        captured_env["stdin_disabled"] = os.environ.get("TINYLANGUAGE_DAP_DISABLE_STDIN")
+        return ""
+
+    monkeypatch.setattr(module, "compile_and_run", fake_compile_and_run)
+
+    program = tmp_path / "noop.tiny"
+    program.write_text("print(1);", encoding="utf-8")
+
+    server = module.DAPServer()
+    server._writer = io.BytesIO()  # Prevent attempts to write to a real socket
+    try:
+        server._run_program(program)
+    finally:
+        server._close_transport()
+
+    assert captured_env.get("stdin_disabled") != "1"

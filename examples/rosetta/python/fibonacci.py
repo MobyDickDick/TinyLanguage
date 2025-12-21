@@ -1,3 +1,5 @@
+"""Rosetta example computing the nth Fibonacci number iteratively and printing a sample."""
+
 def fibonacci(n):
     if n <= 1:
         return n

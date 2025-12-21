@@ -1,3 +1,5 @@
+"""Rosetta example implementing FizzBuzz with a simple counting loop."""
+
 def fizzbuzz(n):
     i = 1
     while i <= n:

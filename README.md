@@ -85,6 +85,11 @@ If no text appears, verify that you are running the command from the repository 
 - [ ] **Python-Bridge für Feature-Durchreichung**: Ein TinyLanguage-Modul und Python-Hilfen sollen die FFI vereinfachen (Import/Calls/Allowlist/Timeouts) und bidirektionale Aufrufe kapseln. Demos und Tests würden typische Datentyp-Mappings und Sandbox-Grenzen prüfen.
 - [ ] **Rosetta-Code-Sync für lokale Pfade**: Das bestehende Skript `examples/rosetta/copy_rosetta_samples.py` könnte konfigurierbare Pfade/Filter/Delays erhalten, um fehlende Python-Beispiele (z.B. `./examples/rosetta/python`) abzuholen und optional direkt den Transpiler anzustoßen.
 
+### Neu priorisierte Aufgaben
+1. **LLVM-Emitter präzisieren**: Vergleichs- und Modulo-Operationen in `tiny_language_codegen_llvm.py` abbilden, die CLI-Option `--emit-llvm` funktionsfähig halten und Regressionstests ergänzen, die den erweiterten IR-Pfad prüfen.
+2. **Python↔TinyLanguage-Bridge entwerfen**: Eine kleine FFI-Schicht (Allowlist/Timeouts) plus passende Tiny/Python-Demos erstellen, um häufige Datentyp-Mappings zu zeigen; Tests in `tests/` sollen beide Richtungen abdecken.
+3. **Rosetta-Sync konfigurierbar machen**: Dem Skript `examples/rosetta/copy_rosetta_samples.py` Parameter für Zielpfade, Filter und optionale Pausen geben, die Bedienung in einer Kurz-README dokumentieren und einen Dry-Run/Regressionstest hinzufügen.
+
 ## Syntax and Features
 
 ### Mini tutorial: variables, control flow, and functions

@@ -59,3 +59,23 @@ def test_pop_is_ignored_in_llvm_codegen() -> None:
     assert "call i32 (i8*, ...) @printf" in ir
     assert "i64 2" in ir
     assert "i64 1" not in ir  # popped value should not reach the output
+
+
+def test_llvm_codegen_handles_modulo_operation() -> None:
+    source = "define value = 5 % 2; print(value);"
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "srem i64" in llvm_ir
+    assert "@.fmt_i64" in llvm_ir
+
+
+def test_llvm_codegen_emits_integer_and_float_comparisons() -> None:
+    source = "define a = 3 > 1; define b = 2.0 <= 4.0; print(a, b);"
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "icmp sgt i64" in llvm_ir
+    assert "fcmp ole double" in llvm_ir
+    # bool prints are widened to i64 in the printf call
+    assert "zext i1" in llvm_ir

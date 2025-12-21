@@ -112,3 +112,12 @@ def test_cli_emits_llvm_ir_for_comparisons(tmp_path) -> None:
     assert "icmp eq i64" in result.stdout
     assert "fcmp one double" in result.stdout
     assert "@.fmt_i64" in result.stdout
+
+
+def test_llvm_codegen_emits_flush_calls() -> None:
+    source = "print(1); flush(); print(2);"
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "call i32 @fflush(i8* null)" in llvm_ir
+    assert llvm_ir.count("call i32 (i8*, ...) @printf") == 2

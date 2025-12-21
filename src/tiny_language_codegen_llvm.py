@@ -80,6 +80,8 @@ class LLVMCodeGenerator:
             self._print_values(int(instr.arg))
         elif instr.op == Opcode.POP:
             self._pop_value()
+        elif instr.op == Opcode.FLUSH:
+            self._flush_output()
         elif instr.op in {Opcode.JUMP, Opcode.JUMP_IF_FALSE, Opcode.CALL}:
             raise NotImplementedError(f"LLVM prototype does not yet support {instr.op.value}")
         elif instr.op == Opcode.RETURN:
@@ -194,6 +196,9 @@ class LLVMCodeGenerator:
             raise RuntimeError("cannot POP from an empty LLVM prototype stack")
         self._stack.pop()
 
+    def _flush_output(self) -> None:
+        self._body.append("  call i32 @fflush(i8* null)")
+
     # ----- Helpers -----
 
     def _next_tmp(self) -> str:
@@ -212,4 +217,5 @@ class LLVMCodeGenerator:
             "@.fmt_i64 = private unnamed_addr constant [4 x i8] c\"%ld\\0A\\00\"",
             "@.fmt_double = private unnamed_addr constant [4 x i8] c\"%f\\0A\\00\"",
             "declare i32 @printf(i8*, ...)",
+            "declare i32 @fflush(i8*)",
         ]

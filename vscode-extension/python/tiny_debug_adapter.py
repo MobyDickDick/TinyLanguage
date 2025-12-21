@@ -14,6 +14,7 @@ import queue
 import sys
 import threading
 import time
+import tempfile
 import inspect
 import bdb
 import io
@@ -152,6 +153,7 @@ class DAPServer:
         self._debugger_instance = None
         self._pause_requested = False
         self._streaming_output = False
+        self._console_pipe: Optional[Path] = None
         # Start the watchdog immediately so that we can surface handshake issues
         # (e.g., VS Code never sending an initialize request) instead of
         # blocking forever with no diagnostics.
@@ -396,6 +398,56 @@ class DAPServer:
             self._breakpoints[path] = []
             self._apply_breakpoints(path, [])
 
+    def _maybe_setup_console_pipe(self) -> None:
+        """Create a named pipe for Console.read_line if requested/possible.
+
+        Stdin/stdout carry DAP traffic, so interactive input would collide with the
+        protocol stream. When running on POSIX, expose a FIFO path via
+        TINYLANGUAGE_DAP_STDIN_PIPE so users can write input from a terminal
+        (e.g., ``cat > /tmp/...``) while the debugger stays attached.
+        """
+
+        if self._console_pipe or os.environ.get("TINYLANGUAGE_DAP_STDIN_PIPE"):
+            # A pipe was already provided or created earlier in the session.
+            existing = os.environ.get("TINYLANGUAGE_DAP_STDIN_PIPE")
+            if existing:
+                self._console_pipe = Path(existing)
+            return
+
+        if os.name == "nt":  # pragma: no cover - FIFO not available on Windows
+            self._log("Console pipe request skipped: named pipes via mkfifo require POSIX")
+            return
+
+        pipe_dir = Path(tempfile.gettempdir()) / f"tiny_dap_console_{os.getpid()}"
+        pipe_dir.mkdir(parents=True, exist_ok=True)
+        pipe_path = pipe_dir / "stdin.fifo"
+        try:
+            os.mkfifo(pipe_path)
+        except FileExistsError:
+            pass
+        except OSError as exc:  # pragma: no cover - FIFO creation failure
+            self._log(f"Failed to create console pipe {pipe_path}: {exc}")
+            return
+
+        self._console_pipe = pipe_path
+        os.environ["TINYLANGUAGE_DAP_STDIN_PIPE"] = str(pipe_path)
+        self._send(
+            {
+                "type": "event",
+                "seq": self._next_seq(),
+                "event": "output",
+                "body": {
+                    "category": "console",
+                    "output": (
+                        f"TinyLanguage console input is available via FIFO: {pipe_path}\n"
+                        "Write lines into this pipe from a terminal (e.g., `cat > "
+                        f"{pipe_path}`) to satisfy Console.read_line while debugging.\n"
+                    ),
+                },
+            }
+        )
+        self._log(f"Console pipe ready at {pipe_path}")
+
     def _run_program(self, program: Path) -> None:
         self._log(f"Starting program run: {program}")
         try:
@@ -425,6 +477,7 @@ class DAPServer:
         self._namespace = self._namespace_for_path(program)
         self._streaming_output = False
         debugger = self._debugger()
+        self._maybe_setup_console_pipe()
         previous_stdin_guard = os.environ.get("TINYLANGUAGE_DAP_DISABLE_STDIN")
         os.environ["TINYLANGUAGE_DAP_DISABLE_STDIN"] = "1"
         try:

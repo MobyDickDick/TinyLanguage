@@ -135,9 +135,7 @@ class LLVMCodeGenerator:
         ty = left.ty
         dest = self._next_tmp()
         if ty == "double":
-            instr = {"+": "fadd", "-": "fsub", "*": "fmul", "/": "fdiv"}.get(op)
-            if op == "%":
-                instr = None  # double modulo not supported for now
+            instr = {"+": "fadd", "-": "fsub", "*": "fmul", "/": "fdiv", "%": "frem"}.get(op)
         else:
             instr = {"+": "add", "-": "sub", "*": "mul", "/": "sdiv", "%": "srem"}.get(op)
         if instr is None:

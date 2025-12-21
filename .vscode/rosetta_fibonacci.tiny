@@ -8,13 +8,9 @@ define b = 1;
 
 while (i < n) {
     print(a);
-    define e = fflush();
-    if(e != Null){
-        define next = a + b;
-        a = b;
-        b = next;
-        i = i + 1;
-    }else{
-        i = n;
-    }
+    flush();
+    define next = a + b;
+    a = b;
+    b = next;
+    i = i + 1;
 }

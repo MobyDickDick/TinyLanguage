@@ -5,7 +5,7 @@ import sys
 import tempfile
 from dataclasses import dataclass
 
-PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
+PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]
 SRC_ROOT = PROJECT_ROOT / "src"
 sys.path.append(str(SRC_ROOT))
 

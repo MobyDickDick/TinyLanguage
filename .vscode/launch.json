@@ -103,7 +103,7 @@
       "name": "Python: run_all.py",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/run_all.py",
+      "program": "${workspaceFolder}/src/run_all.py",
       "console": "integratedTerminal",
       "logToFile": true,
       "justMyCode": false

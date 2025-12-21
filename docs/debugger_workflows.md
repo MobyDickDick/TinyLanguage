@@ -8,6 +8,7 @@ Code. If you are unsure whether the adapter itself is healthy, start with the
 quick self-test below before chasing down editor log noise.
 
 ## Quick adapter health check
+
 - Run `python vscode-extension/python/tiny_debug_adapter.py --self-test` from the
   repository root. The final JSON block should report `"tiny_language_loaded":
   true` and list the Python executable the adapter is using.
@@ -17,6 +18,7 @@ quick self-test below before chasing down editor log noise.
   the output before retrying VS Code.
 
 ## Launching the debugger
+
 1. Install the local VS Code extension contained in `vscode-extension/` (either
    with `code --install-extension` while pointing at the packaged `.vsix` or by
    running the extension in a dev window).
@@ -31,6 +33,7 @@ quick self-test below before chasing down editor log noise.
    the interpreter before execution begins.
 
 ## Supported controls
+
 - **Breakpoints**: Any line breakpoint in a TinyLanguage source file will pause
   execution. Breakpoints are forwarded through the adapter and installed on the
   interpreter-side debugger before the program starts.
@@ -46,6 +49,7 @@ quick self-test below before chasing down editor log noise.
   the file path to keep module names stable across workspaces.
 
 ## Troubleshooting
+
 - The adapter reports file read errors and runtime exceptions through `output`
   events in the Debug Console. Check for messages prefixed with
   `Failed to read program:` or `Runtime error:` if execution ends early.
@@ -66,6 +70,7 @@ quick self-test below before chasing down editor log noise.
   the adapter receives `launch` followed by `configurationDone`.
 
 ### Reading the extension's debug logs
+
 - The extension prints a short summary when it resolves your `launch.json`
   entry. Lines such as `Program: C:\\Users\\...\\src_tiny\\all_features.tiny` and
   `Runtime: ...\\src\\tiny_language.py` mean that `${workspaceFolder}`
@@ -86,6 +91,7 @@ quick self-test below before chasing down editor log noise.
   package can prevent the adapter from finding its helper modules.
 
 ### Are generic VS Code extension host logs useful?
+
 - The `ExtensionService#_doActivateExtension ...` lines come from VS Code's
   extension host and document which extensions activated during startup (for
   example, `vscode.git` or `ms-python.python`). They are **informational** and
@@ -121,6 +127,7 @@ quick self-test below before chasing down editor log noise.
   output.
 
 ### Why Python debugging opens a `.venv` shell but TinyLanguage does not
+
 - The built-in VS Code Python launcher activates the selected interpreter
   (e.g., `.venv/Scripts/Activate.ps1` on Windows) in an integrated terminal and
   then starts `debugpy`. That activation banner is expected and comes from the
@@ -135,6 +142,7 @@ quick self-test below before chasing down editor log noise.
   auto-activation scripts do not steal focus during launch.
 
 ### Interpreting "Window" log warnings and errors
+
 - The **Window** log (from the main VS Code process) often contains extension
   warnings unrelated to TinyLanguage. Examples include duplicate setting
   registrations (e.g., `twxs.cmake: Cannot register 'cmake.cmakePath'`),
@@ -158,6 +166,7 @@ quick self-test below before chasing down editor log noise.
   through the TinyLanguage adapter rather than `debugpy`.
 
 ### Using a virtual environment with the TinyLanguage adapter
+
 - The adapter runs under whichever Python executable the extension is
   configured to use. Set `tinylanguage.pythonPath` in VS Code settings (for
   example, `"${workspaceFolder}/.venv/bin/python"` on POSIX or

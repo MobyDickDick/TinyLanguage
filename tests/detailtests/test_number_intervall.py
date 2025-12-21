@@ -3,11 +3,11 @@ import pathlib
 
 
 def load_number_intervall() -> str:
-    return (pathlib.Path(__file__).resolve().parents[1] / "src_tiny" / "number_intervall.tiny").read_text()
+    return (pathlib.Path(__file__).resolve().parents[2] / "src_tiny" / "number_intervall.tiny").read_text()
 
 
 def load_number_class() -> str:
-    return (pathlib.Path(__file__).resolve().parents[1] / "src_tiny" / "number_class.tiny").read_text()
+    return (pathlib.Path(__file__).resolve().parents[2] / "src_tiny" / "number_class.tiny").read_text()
 
 
 def test_basic_interval_operations_and_formatting(run_tiny_source):

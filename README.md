@@ -83,12 +83,12 @@ If no text appears, verify that you are running the command from the repository 
 ## Offene Aufgaben (aus der letzten Diskussion)
 - [ ] **LLVM-Emitter weiter ausbauen** (gestartet): Der experimentelle Pfad in `tiny_language_codegen_llvm.py` soll mehr Native-IR-Operationen abdecken und über CLI/API wählbar bleiben. Erste Schritte aus diesem Run: POP-Unterstützung und ein zusätzlicher Test, der das Verhalten absichert.
 - [ ] **Python-Bridge für Feature-Durchreichung**: Ein TinyLanguage-Modul und Python-Hilfen sollen die FFI vereinfachen (Import/Calls/Allowlist/Timeouts) und bidirektionale Aufrufe kapseln. Demos und Tests würden typische Datentyp-Mappings und Sandbox-Grenzen prüfen.
-- [ ] **Rosetta-Code-Sync für lokale Pfade**: Das bestehende Skript `examples/rosetta/copy_rosetta_samples.py` könnte konfigurierbare Pfade/Filter/Delays erhalten, um fehlende Python-Beispiele (z.B. `./examples/rosetta/python`) abzuholen und optional direkt den Transpiler anzustoßen.
+- [x] **Rosetta-Code-Sync für lokale Pfade**: Das Skript `examples/rosetta/copy_rosetta_samples.py` bietet jetzt konfigurierbare Pfade/Filter/Delays, einen Dry-Run-Schalter und kann den Transpiler direkt anstoßen.
 
 ### Neu priorisierte Aufgaben
 1. **LLVM-Emitter präzisieren**: Vergleichs- und Modulo-Operationen in `tiny_language_codegen_llvm.py` abbilden, die CLI-Option `--emit-llvm` funktionsfähig halten und Regressionstests ergänzen, die den erweiterten IR-Pfad prüfen.
 2. **Python↔TinyLanguage-Bridge entwerfen**: Eine kleine FFI-Schicht (Allowlist/Timeouts) plus passende Tiny/Python-Demos erstellen, um häufige Datentyp-Mappings zu zeigen; Tests in `tests/` sollen beide Richtungen abdecken.
-3. **Rosetta-Sync konfigurierbar machen**: Dem Skript `examples/rosetta/copy_rosetta_samples.py` Parameter für Zielpfade, Filter und optionale Pausen geben, die Bedienung in einer Kurz-README dokumentieren und einen Dry-Run/Regressionstest hinzufügen.
+3. **Rosetta-Sync konfigurierbar machen** ✅: `examples/rosetta/copy_rosetta_samples.py` ist jetzt filterbar, bietet Dry-Run/Transpile-Optionen und dokumentierte Bedienung inkl. Regressionstest.
 
 ## Syntax and Features
 

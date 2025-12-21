@@ -53,6 +53,21 @@ def _response(messages: list[Dict[str, Any]], command: str) -> Dict[str, Any]:
     raise AssertionError(f"response for {command} not found in {json.dumps(messages, indent=2)}")
 
 
+def _debug_context(server: Any, messages: list[Dict[str, Any]], note: str | None = None) -> str:
+    thread_alive = getattr(getattr(server, "_thread", None), "is_alive", lambda: False)()
+    watchdog_alive = getattr(getattr(server, "_watchdog_thread", None), "is_alive", lambda: False)()
+    queue_size = getattr(getattr(server, "_command_queue", None), "qsize", lambda: "unknown")()
+    summary = {
+        "note": note,
+        "thread_alive": thread_alive,
+        "watchdog_alive": watchdog_alive,
+        "command_queue_size": queue_size,
+        "events_seen": [m.get("event") for m in messages if m.get("type") == "event"],
+        "last_messages": messages[-5:],
+    }
+    return json.dumps(summary, indent=2)
+
+
 def test_debug_adapter_runs_and_surfaces_state(debug_server):
     _, server, messages, program = debug_server
 
@@ -75,7 +90,7 @@ def test_debug_adapter_runs_and_surfaces_state(debug_server):
         # adapter behavior.
         server._command_queue.put("continue")
         server._thread.join(timeout=5)
-    assert not server._thread.is_alive()
+    assert not server._thread.is_alive(), _debug_context(server, messages, note="adapter run did not finish")
 
     event_types = [m.get("event") for m in messages if m.get("type") == "event"]
     assert "stopped" in event_types
@@ -121,6 +136,7 @@ def test_launch_waits_for_configuration_done(debug_server):
     if server._thread.is_alive():
         server._command_queue.put("continue")
         server._thread.join(timeout=5)
+    assert not server._thread.is_alive(), _debug_context(server, messages, note="launch/configuration sequencing")
 
 
 def test_output_events_stream_from_runtime(debug_server):
@@ -138,7 +154,7 @@ def test_output_events_stream_from_runtime(debug_server):
     outputs = [msg for msg in messages if msg.get("event") == "output"]
     assert any(event.get("body", {}).get("output") == "5\n" for event in outputs)
 
-    assert not server._thread.is_alive()
+    assert not server._thread.is_alive(), _debug_context(server, messages, note="runtime did not terminate")
 
 
 def test_launch_after_configuration_done_starts_program(debug_server):
@@ -157,7 +173,7 @@ def test_launch_after_configuration_done_starts_program(debug_server):
         server._command_queue.put("continue")
         server._thread.join(timeout=5)
 
-    assert not server._thread.is_alive()
+    assert not server._thread.is_alive(), _debug_context(server, messages, note="configurationDone before launch flow")
     assert any(m.get("event") == "terminated" for m in messages)
 
 
@@ -207,6 +223,7 @@ def test_breakpoints_follow_module_namespace(monkeypatch, tmp_path):
 
     assert captured
     assert captured[-1] == server._namespace_for_path(program)
+    assert not server._thread.is_alive(), _debug_context(server, messages, note="namespace breakpoint thread alive")
 
 
 def test_program_output_is_forwarded(debug_server):
@@ -220,7 +237,7 @@ def test_program_output_is_forwarded(debug_server):
     server.handle_configuration_done({"seq": 3, "command": "configurationDone"})
 
     server._thread.join(timeout=5)
-    assert not server._thread.is_alive()
+    assert not server._thread.is_alive(), _debug_context(server, messages, note="program output forwarding thread alive")
 
     output_events = [m for m in messages if m.get("type") == "event" and m.get("event") == "output"]
     assert any("42" in evt.get("body", {}).get("output", "") for evt in output_events)
@@ -294,6 +311,7 @@ def test_breakpoints_can_be_added_after_launch(tmp_path):
     if server._thread.is_alive():
         server._command_queue.put("continue")
         server._thread.join(timeout=5)
+    assert not server._thread.is_alive(), _debug_context(server, messages, note="post-breakpoint-continue thread alive")
 
 
 def test_watchdog_warns_without_terminating(debug_server):

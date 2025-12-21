@@ -136,6 +136,36 @@ class TinyLanguageServer:
         filtered = sorted([c for c in candidates if c.startswith(prefix)])
         return [CompletionItem(label=c, kind=self.symbol_kinds.get(c, "identifier")) for c in filtered]
 
+    def definition(self, symbol: str, position: Optional[Tuple[int, int]] = None) -> Optional[SourcePos]:
+        """Return the recorded ``SourcePos`` for ``symbol`` if known.
+
+        The lookup prefers exact matches but will also fall back to unqualified
+        names (e.g., ``add``) when a symbol is defined in a namespace
+        (e.g., ``Math.add``). If multiple candidates are present, the closest
+        symbol to ``position`` is chosen; otherwise the earliest occurrence is
+        returned for stability.
+        """
+
+        def _score(candidate: SourcePos) -> Tuple[int, int]:
+            if position is None:
+                return (candidate.line, candidate.col)
+            line, col = position
+            return (abs(candidate.line - line), abs(candidate.col - col))
+
+        if symbol in self.symbols:
+            return self.symbols[symbol]
+
+        matches: List[Tuple[str, SourcePos]] = []
+        for name, pos in self.symbols.items():
+            if name == symbol or name.split(".")[-1] == symbol:
+                matches.append((name, pos))
+
+        if not matches:
+            return None
+
+        best = min(matches, key=lambda item: (_score(item[1]), item[0]))
+        return best[1]
+
     def hover(self, symbol: str) -> Optional[HoverResult]:
         """Produce hover info for ``symbol`` if the name is known."""
         if symbol not in self.symbols:

@@ -59,6 +59,15 @@ def test_hover_missing_symbol_returns_none():
     assert server.hover("pong") is None
 
 
+def test_definition_returns_source_position():
+    source = "namespace Math { fn add(x, y) { return x + y; } }\nfn main() { return Math.add(1, 2); }"
+    server = TinyLanguageServer(source)
+    pos = server.definition("Math.add")
+    assert pos is not None
+    assert pos.line == 1
+    assert pos.col >= 1
+
+
 def test_diagnostics_from_lints():
     server = TinyLanguageServer("fn greet() -> string { return \"hi\"; }\ngreet();")
     diags = server.diagnostics()

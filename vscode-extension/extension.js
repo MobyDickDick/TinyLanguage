@@ -301,6 +301,41 @@ function registerHover(output) {
   });
 }
 
+function registerDefinitions(output) {
+  return vscode.languages.registerDefinitionProvider('tinylanguage', {
+    provideDefinition(document, position) {
+      const range = document.getWordRangeAtPosition(position, /[A-Za-z_\.]+/);
+      if (!range) {
+        return null;
+      }
+      const symbol = document.getText(range);
+      const cursor = `${position.line + 1}:${position.character + 1}`;
+      logDebug(output, `definition: symbol='${symbol}' at ${document.uri.fsPath}:${cursor}`);
+      const response = runHelper('definitions', document.getText(), document.uri.fsPath, output, [
+        '--symbol',
+        symbol,
+        '--position',
+        cursor,
+      ]);
+      if (!response.stdout) {
+        return null;
+      }
+      try {
+        const parsed = JSON.parse(response.stdout);
+        if (!parsed) {
+          return null;
+        }
+        const targetUri = document.uri;
+        const targetPosition = new vscode.Position(Math.max(0, parsed.line - 1), Math.max(0, parsed.column - 1));
+        return new vscode.Location(targetUri, targetPosition);
+      } catch (err) {
+        output.appendLine(`[TinyLanguage] Failed to parse definition payload: ${err}`);
+        return null;
+      }
+    },
+  });
+}
+
 function registerRepl(output) {
   return vscode.commands.registerCommand('tinylanguage.startRepl', () => {
     const pythonExecutable = getPythonExecutable();
@@ -747,6 +782,7 @@ function activate(context) {
   const { refresh, disposables } = registerDiagnostics(output, collection);
   const completions = registerCompletions(output);
   const hover = registerHover(output);
+  const definitions = registerDefinitions(output);
   const repl = registerRepl(output);
   const runFile = registerRunFile(output);
   const [debugAdapterCommand, debugAdapterFactory] = registerDebugAdapterExecutable(output);
@@ -759,6 +795,7 @@ function activate(context) {
     formatter,
     completions,
     hover,
+    definitions,
     repl,
     runFile,
     debugAdapterCommand,

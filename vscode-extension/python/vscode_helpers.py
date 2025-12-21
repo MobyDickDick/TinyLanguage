@@ -65,16 +65,36 @@ def hover_command(source: str, symbol: str) -> int:
     return 0
 
 
+def definitions_command(source: str, symbol: str, position: tuple[int, int] | None = None) -> int:
+    server = TinyLanguageServer(source)
+    result = server.definition(symbol, position)
+    if result is None:
+        sys.stdout.write("null")
+        return 0
+    payload = {
+        "line": result.line,
+        "column": result.col,
+    }
+    json.dump(payload, sys.stdout)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="TinyLanguage VS Code helper")
     parser.add_argument(
         "command",
-        choices=["format", "diagnostics", "completions", "hover"],
+        choices=["format", "diagnostics", "completions", "hover", "definitions"],
         help="Tooling command to execute",
     )
     parser.add_argument("--path", dest="path", help="Path of the file being processed", default=None)
     parser.add_argument("--prefix", dest="prefix", help="Completion prefix", default="")
     parser.add_argument("--symbol", dest="symbol", help="Hover symbol", default="")
+    parser.add_argument(
+        "--position",
+        dest="position",
+        help="Cursor position as 'line:column' (1-based)",
+        default="",
+    )
     args = parser.parse_args(argv)
 
     source = sys.stdin.read()
@@ -87,6 +107,15 @@ def main(argv: list[str] | None = None) -> int:
         return completions_command(source, args.prefix)
     if args.command == "hover":
         return hover_command(source, args.symbol)
+    if args.command == "definitions":
+        position = None
+        if args.position:
+            try:
+                line_str, col_str = args.position.split(":")
+                position = (int(line_str), int(col_str))
+            except ValueError:
+                pass
+        return definitions_command(source, args.symbol, position)
     return 1
 
 

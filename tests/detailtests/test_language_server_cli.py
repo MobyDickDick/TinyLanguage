@@ -4,6 +4,7 @@ import pathlib
 import subprocess
 import sys
 from typing import List
+from textwrap import dedent
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
 SRC_ROOT = PROJECT_ROOT / "src"
@@ -16,15 +17,44 @@ def run_cli(command: List[str]):
             filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
         ),
     }
-    proc = subprocess.run(
-        [sys.executable, "src/language_server_cli.py", *command],
-        capture_output=True,
-        text=True,
-        cwd=PROJECT_ROOT,
-        env=env,
-        check=True,
-    )
-    return json.loads(proc.stdout)
+    cmdline = [sys.executable, "src/language_server_cli.py", *command]
+    try:
+        proc = subprocess.run(
+            cmdline,
+            capture_output=True,
+            text=True,
+            cwd=PROJECT_ROOT,
+            env=env,
+            check=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        debug = dedent(
+            f"""
+            Command: {exc.cmd}
+            Return code: {exc.returncode}
+            --- STDOUT ---
+            {exc.stdout}
+            --- STDERR ---
+            {exc.stderr}
+            --- ENV (PYTHONPATH only) ---
+            {env.get("PYTHONPATH")}
+            """
+        )
+        raise AssertionError(f"CLI invocation failed.\n{debug}") from exc
+
+    try:
+        return json.loads(proc.stdout)
+    except json.JSONDecodeError as exc:
+        debug = dedent(
+            f"""
+            Command: {cmdline}
+            --- RAW STDOUT ---
+            {proc.stdout}
+            --- RAW STDERR ---
+            {proc.stderr}
+            """
+        )
+        raise AssertionError(f"Failed to parse CLI JSON output.\n{debug}") from exc
 
 
 def test_cli_completions_emit_labels():

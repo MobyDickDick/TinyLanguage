@@ -1,3 +1,5 @@
+"""Console helper that reads two numbers from stdin and prints their sum with JSON parsing."""
+
 import json
 
 def read_number(prompt: str) -> float:

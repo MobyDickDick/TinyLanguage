@@ -1,0 +1,8 @@
+// Demonstration of boolean literals, logical operators, and variadic print
+print(true);
+print(false);
+print(not false);
+print(true and false);
+print(true or false);
+print(false || (1 < 2));
+print("values", 1 < 2, len("abc"));

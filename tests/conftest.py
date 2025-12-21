@@ -1,12 +1,6 @@
-import sys
-from pathlib import Path
-
 import pytest
 
-TESTS_ROOT = Path(__file__).resolve().parent
-sys.path.append(str(TESTS_ROOT))
-
-from utils import execute_tiny_program, run_tiny
+from tests.utils import execute_tiny_program, run_tiny
 
 
 @pytest.fixture

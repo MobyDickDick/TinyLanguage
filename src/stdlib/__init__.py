@@ -724,6 +724,22 @@ class _StdLibRegistrar:
         return len(seq)
 
     def _console_read_line(self, prompt: Any | None = None) -> str:
+        pipe_path = os.environ.get("TINYLANGUAGE_DAP_STDIN_PIPE")
+        if pipe_path:
+            try:
+                with open(pipe_path, "r", encoding="utf-8") as handle:
+                    line = handle.readline()
+            except FileNotFoundError:
+                raise RuntimeError(
+                    f"Console.read_line pipe does not exist: {pipe_path}. "
+                    "Re-run the debugger or recreate the FIFO."
+                )
+            except Exception as exc:  # pragma: no cover - unexpected FIFO error
+                raise RuntimeError(f"Console.read_line failed to read pipe {pipe_path}: {exc}")
+            if line == "":
+                return ""
+            return line.rstrip("\n")
+
         if os.environ.get("TINYLANGUAGE_DAP_DISABLE_STDIN") and not os.environ.get("TINYLANGUAGE_DAP_ALLOW_STDIN"):
             raise RuntimeError(
                 "Console.read_line is disabled while running under the TinyLanguage debug adapter "

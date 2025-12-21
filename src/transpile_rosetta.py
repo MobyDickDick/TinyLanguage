@@ -12,7 +12,7 @@ PYTHON_DIR = ROOT / "examples" / "rosetta" / "python"
 DEFAULT_DEST = ROOT / "examples" / "rosetta" / "expected"
 
 
-def transpile_all(destination: Path) -> None:
+def transpile_all(destination: Path, *, source_dir: Path = PYTHON_DIR) -> None:
     """Translate every Python sample under ``examples/rosetta/python``."""
 
     sys.path.insert(0, str(ROOT / "src"))
@@ -22,7 +22,7 @@ def transpile_all(destination: Path) -> None:
     python_transpiler = PythonTranspiler()
     tiny_transpiler = TinyLanguageTranspiler()
 
-    for source_path in sorted(PYTHON_DIR.glob("*.py")):
+    for source_path in sorted(source_dir.glob("*.py")):
         program_ir = python_transpiler.from_source(source_path.read_text())
         tiny_source = tiny_transpiler.to_source(program_ir) + "\n"
         dest_path = destination / f"{source_path.stem}.tiny"
@@ -39,8 +39,14 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_DEST,
         help="Where to write translated TinyLanguage files (default: expected snapshots).",
     )
+    parser.add_argument(
+        "--source",
+        type=Path,
+        default=PYTHON_DIR,
+        help="Where to read Rosetta Python samples from (default: examples/rosetta/python).",
+    )
     args = parser.parse_args(argv)
-    transpile_all(args.dest)
+    transpile_all(args.dest, source_dir=args.source)
     return 0
 
 

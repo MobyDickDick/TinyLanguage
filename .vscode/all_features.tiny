@@ -28,16 +28,16 @@ print(e);
 
 // Heap operations (new, new[], heap_set/get, tag, delete).
 define arr_ptr = new(3);
-{ e } = heap_set(arr_ptr, 0, 10); print(e.code);
-{ e } = heap_set(arr_ptr, 1, 20); print(e.code);
-{ e } = heap_set(arr_ptr, 2, 30); print(e.code);
+define heap_status = heap_set(arr_ptr, 0, 10); print(heap_status.e.code);
+heap_status = heap_set(arr_ptr, 1, 20); print(heap_status.e.code);
+heap_status = heap_set(arr_ptr, 2, 30); print(heap_status.e.code);
 print(heap_get(arr_ptr, 2));
-{ e } = tag(arr_ptr, Arr); print(e.code);
-{ e } = delete(arr_ptr); print(e.code);
+heap_status = tag(arr_ptr, Arr); print(heap_status.e.code);
+heap_status = delete(arr_ptr); print(heap_status.e.code);
 
 define literal_ptr = new[7, 8, 9];
 print(heap_get(literal_ptr, 1));
-{ e } = delete(literal_ptr); print(e.code);
+heap_status = delete(literal_ptr); print(heap_status.e.code);
 
 // Object literal.
 define settings = { greeting: "hi"; count: a; };

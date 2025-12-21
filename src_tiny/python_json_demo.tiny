@@ -2,7 +2,7 @@
 // Run with: python src/tiny_language.py src_tiny/python_json_demo.tiny
 
 // Direct one-off call with allowlist baked into opts.
-define cwd = Python.call("os", "getcwd");
+define cwd = Python.call("os", "getcwd", Null, { allow: new["getcwd"] });
 print("CWD from Python os:");
 print(cwd);
 

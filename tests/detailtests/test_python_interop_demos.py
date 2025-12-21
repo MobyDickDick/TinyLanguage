@@ -56,3 +56,49 @@ def test_allowlist_violation_is_reported():
 
     assert lines[0] == "3.0"
     assert any("[PYDENY] attribute sin not allowed" in line for line in lines[1:])
+
+
+def test_python_call_requires_allowlist():
+    source = """
+    try {
+      define ignored = Python.call("math", "sqrt", new[9]);
+    } catch(err) {
+      print(err.message);
+    }
+    """
+
+    output = compile_and_run(source)
+    lines = [line for line in output.splitlines() if line]
+
+    assert any("[PYDENY] attribute sqrt not allowed" in line for line in lines)
+
+
+def test_banned_python_modules_are_blocked():
+    source = """
+    try {
+      define forbidden = Python.import_module("subprocess");
+      print(forbidden);
+    } catch(err) {
+      print(err.message);
+    }
+    """
+
+    output = compile_and_run(source)
+    lines = [line for line in output.splitlines() if line]
+
+    assert any("[PYSEC] module subprocess denied" in line for line in lines)
+
+
+def test_python_call_honors_timeout_option():
+    source = """
+    try {
+      define ignored = Python.call("time", "sleep", new[0.05], { allow: new["sleep"], timeout_ms: 1 });
+    } catch(err) {
+      print(err.message);
+    }
+    """
+
+    output = compile_and_run(source)
+    lines = [line for line in output.splitlines() if line]
+
+    assert any("[PYTIMEOUT]" in line for line in lines)

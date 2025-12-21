@@ -13,7 +13,7 @@ namespace PyPipeline {
 }
 
 fn describe_area(width: number, height: number) -> string {
-    define as_string = Python.call("builtins", "str", new[width * height]);
+    define as_string = Python.call("builtins", "str", new[width * height], { allow: new["str"] });
     return "{\"area\": " + as_string + "}";
 }
 

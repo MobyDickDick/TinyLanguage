@@ -11,8 +11,8 @@ This draft describes how TinyLanguage can interact safely with Python functions 
 
 ## FFI API and type mapping
 
-- **Import**: `define os = Python.import_module("os", new["getcwd", "listdir"]);` loads a Python module and returns a namespace object. The optional allowlist (heap array) restricts accessible attributes (see security).
-- **Direct function call**: `define now = Python.call("time", "time");` loads the module if needed and invokes the function. Extra options like `timeout_ms` are supported: `Python.call("requests", "get", new["https://example.com"], { timeout_ms: 500 });`.
+- **Import**: `define os = Python.import_module("os", new["getcwd", "listdir"]);` loads a Python module and returns a namespace object. The allowlist (heap array) restricts accessible attributes (see security).
+- **Direct function call**: `define now = Python.call("time", "time", Null, { allow: new["time"] });` loads the module if needed and invokes the function. Extra options like `timeout_ms` are supported: `Python.call("requests", "get", new["https://example.com"], { allow: new["status_code", "text"], timeout_ms: 500 });`.
 - **Bound functions**: `define sqrt = Python.fn("math", "sqrt"); define nine = sqrt(81);` creates a TinyLanguage wrapper that can be called like a regular function.
 - **Exceptions**: Python exceptions propagate as TinyLanguage errors and keep the Python error type in the message (`[PYERR] ValueError: ...`).
 
@@ -43,8 +43,9 @@ This draft describes how TinyLanguage can interact safely with Python functions 
 ## Security and sandboxing
 
 - **Per-module allowlist**: `new[...]` explicitly defines which attributes/functions of a module are available. The default is an empty allowlist entry that blocks everything.
-- **Global bans**: Certain modules are always denied (`subprocess`, `socket`, `multiprocessing`, `ctypes`, `sys.modules` mutations). Attempts to load them raise `[PYSEC] module denied`.
+- **Global bans**: Certain modules are always denied (`subprocess`, `socket`, `multiprocessing`, `ctypes`, `ssl`, `sys`). Attempts to load them raise `[PYSEC] module denied`.
 - **Timeouts**: Every call supports `timeout_ms`; exceeding it yields `[PYTIMEOUT]` and aborts the Python call.
+- **Allowlist enforcement**: Calls without an explicit allowlist rely on the attributes registered through `Python.import_module`; without one, the call is denied with `[PYDENY]`.
 - **Side-effect sandbox**: Filesystem access is allowed only when the module and function are allowlisted and do not escape the working directory. Network access is disabled by default.
 - **Isolation**: Proxy objects returned from Python do not allow attribute access unless explicitly freed via `allow` (`Python.import_module("pathlib", new["Path.name"])`). This prevents injecting arbitrary Python code through dynamic attributes.
 - **Deterministic error codes**: Security violations, timeouts, and missing allowlist entries produce clear, distinct error prefixes (`[PYSEC]`, `[PYTIMEOUT]`, `[PYDENY]`).
@@ -91,7 +92,7 @@ This draft describes how TinyLanguage can interact safely with Python functions 
   define datetime = Python.import_module("datetime", new["datetime"]);
   define now = datetime.datetime.utcnow(); // returns proxy
   // Proxy can only be forwarded into other Python calls
-  define iso = Python.call("datetime", "datetime.isoformat", new[now]);
+  define iso = Python.call("datetime", "datetime.isoformat", new[now], { allow: new["datetime"] });
   print(iso);
   ```
 
@@ -195,7 +196,7 @@ The following mini-scenarios complement the list above and highlight common pitf
 - **Timeout- und Fehlercodes sichtbar machen** (bewusst lange HTTP-Anfrage):
 
   ```bash
-  PYTHONPATH=src python src/tiny_language.py --eval 'Python.call("requests", "get", new["https://example.com"], { timeout_ms: 1 });'
+  PYTHONPATH=src python src/tiny_language.py --eval 'Python.call("requests", "get", new["https://example.com"], { allow: new["status_code", "text"], timeout_ms: 1 });'
   # Expected output
   # [PYTIMEOUT] requests.get exceeded 1 ms
   ```

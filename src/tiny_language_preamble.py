@@ -9,13 +9,8 @@ history and completion hooks when available.
 
 from __future__ import annotations
 
-import argparse
 import difflib
-import importlib.util
-import math
-import os
 import sys
-import threading
 from pathlib import Path
 try:  # pragma: no cover - platform-specific imports
     import termios  # type: ignore
@@ -27,11 +22,9 @@ except ImportError:  # pragma: no cover - Windows and other platforms without te
     _HAS_TERMIOS = False
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
-from tiny_errors import SourcePos, SourceSpan, TinyError, format_error as format_error_with_span
-
-from stdlib import register_stdlib
+from tiny_errors import SourcePos, SourceSpan
 
 class _FallbackReadline:
     """Minimal in-memory readline replacement for platforms without it."""
@@ -379,4 +372,3 @@ def _classify_error(msg: str, candidates: Optional[List[str]] = None) -> Tuple[s
     if "not all paths" in lower_msg and "return" in lower_msg:
         return "E010", "Add return statements for every branch or supply a default return value."
     return "E000", None
-

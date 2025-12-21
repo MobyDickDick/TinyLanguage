@@ -26,8 +26,19 @@ from pathlib import Path
 import socket
 from typing import Any, Dict, List, Optional, Tuple
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-SRC_ROOT = REPO_ROOT.parent / "src"
+
+def _discover_repo_root(start: Path) -> Path:
+    """Return the repository root regardless of how this file is vendored."""
+
+    for candidate in [start, *start.parents]:
+        if (candidate / "src" / "tiny_language.py").exists():
+            return candidate
+    # Fall back to the previous heuristic (two levels up from the adapter).
+    return start.parent.parent
+
+
+REPO_ROOT = _discover_repo_root(Path(__file__).resolve())
+SRC_ROOT = REPO_ROOT / "src"
 if SRC_ROOT.exists():
     sys.path.insert(0, str(SRC_ROOT))
 

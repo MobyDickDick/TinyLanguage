@@ -12,7 +12,21 @@ import pytest
 
 
 def load_adapter_module():
-    adapter_path = Path(__file__).resolve().parent.parent / "vscode-extension" / "python" / "tiny_debug_adapter.py"
+    tests_root = Path(__file__).resolve().parent.parent
+    candidates = [
+        tests_root / "vscode-extension" / "python" / "tiny_debug_adapter.py",
+        # Some platforms (notably Windows) may not materialize the symlink at
+        # tests/vscode-extension. Fall back to the repository-level copy so the
+        # tests can still locate the adapter module.
+        tests_root.parent / "vscode-extension" / "python" / "tiny_debug_adapter.py",
+    ]
+
+    for adapter_path in candidates:
+        if adapter_path.exists():
+            break
+    else:  # pragma: no cover - defensive guardrail
+        raise FileNotFoundError("tiny_debug_adapter.py not found in expected locations")
+
     spec = util.spec_from_file_location("tiny_debug_adapter", adapter_path)
     module = util.module_from_spec(spec)
     assert spec and spec.loader

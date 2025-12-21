@@ -5,7 +5,7 @@
       "name": "Python: debug console_sum",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/.vscode/console_sum.py",
+      "program": "${workspaceFolder}/src/console_sum.py",
       "console": "integratedTerminal",
       "logToFile": true,
       "justMyCode": false

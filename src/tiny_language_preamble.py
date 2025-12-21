@@ -9,13 +9,13 @@ history and completion hooks when available.
 
 from __future__ import annotations
 
-import argparse
+import argparse  # required to keep stitched globals available
 import difflib
-import importlib.util
-import math
-import os
+import importlib.util  # required to keep stitched globals available
+import math  # required to keep stitched globals available
+import os  # required to keep stitched globals available
 import sys
-import threading
+import threading  # required to keep stitched globals available
 from pathlib import Path
 try:  # pragma: no cover - platform-specific imports
     import termios  # type: ignore
@@ -379,4 +379,3 @@ def _classify_error(msg: str, candidates: Optional[List[str]] = None) -> Tuple[s
     if "not all paths" in lower_msg and "return" in lower_msg:
         return "E010", "Add return statements for every branch or supply a default return value."
     return "E000", None
-

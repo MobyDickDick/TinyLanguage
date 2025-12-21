@@ -7,7 +7,7 @@ flow, simple functions, and `print`). Unsupported constructs raise
 ``NotImplementedError`` so gaps remain visible.
 """
 
-from typing import Any, Dict, List
+from typing import Dict, List
 
 from native_ir import FunctionIR, Instruction, Opcode, ProgramIR
 
@@ -148,5 +148,4 @@ class NativeCodeGenerator:
             instructions.append(Instruction(Opcode.CALL, (expr.name, len(expr.args))))
             return instructions
         raise NotImplementedError(f"native codegen does not yet support expression {type(expr).__name__}")
-
 

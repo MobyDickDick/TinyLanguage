@@ -155,11 +155,6 @@ def _expr_to_source(expr: Expression, render_literal) -> str:
         return f"{expr.func}({args})"
     raise ValueError(f"Unsupported expression for rendering: {expr}")
 
-
-def _expr_to_python(expr: Expression) -> str:
-    return _expr_to_source(expr, repr)
-
-
 def _sanitize_for_python(expr_text: str) -> str:
     sanitized = expr_text
     sanitized = sanitized.replace("&&", " and ").replace("||", " or ")
@@ -175,28 +170,6 @@ def _parse_expression(expr_text: str) -> Expression:
     sanitized = _sanitize_for_python(expr_text.strip())
     node = ast.parse(sanitized, mode="eval").body
     return _expr_from_ast(node)
-
-
-def _indent_lines(lines: Iterable[str], indent: str) -> List[str]:
-    return [f"{indent}{line}" for line in lines]
-
-
-def _render_block(statements: Sequence[Statement], render_expr, line_suffix: str = "") -> List[str]:
-    rendered: List[str] = []
-    for stmt in statements:
-        if isinstance(stmt, Assign):
-            rendered.append(f"{stmt.target} = {render_expr(stmt.expr)}{line_suffix}")
-        elif isinstance(stmt, Return):
-            rendered.append(f"return {render_expr(stmt.expr)}{line_suffix}")
-        elif isinstance(stmt, ExprStmt):
-            rendered.append(f"{render_expr(stmt.expr)}{line_suffix}")
-        elif isinstance(stmt, IfElse):
-            raise ValueError("If/else rendering requires language-specific handling (not yet implemented).")
-        elif isinstance(stmt, While):
-            raise ValueError("While-loop rendering requires language-specific handling (not yet implemented).")
-        else:
-            raise ValueError(f"Unsupported statement: {stmt}")
-    return rendered
 
 
 # ----- Base class -----

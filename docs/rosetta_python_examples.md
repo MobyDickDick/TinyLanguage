@@ -1,4 +1,5 @@
 # Rosetta Code style: Python → TinyLanguage
+
 These examples start from common Python snippets on Rosetta Code and show a direct TinyLanguage translation. Each Tiny program is runnable with the interpreter:
 
 ```bash
@@ -6,7 +7,9 @@ python src/tiny_language.py src_tiny/<file>.tiny
 ```
 
 ## 1) FizzBuzz (control flow and modulo)
-**Python template**
+
+### Python template of fizzBuzz
+
 ```python
 for n in range(1, 16):
     if n % 15 == 0:
@@ -20,6 +23,7 @@ for n in range(1, 16):
 ```
 
 **TinyLanguage translation** (`src_tiny/rosetta_fizzbuzz.tiny`)
+
 - Replace `for` with a `while` loop and increment manually.
 - TinyLanguage has no `%` operator, so a helper handles divisibility via subtraction.
 
@@ -51,7 +55,9 @@ define _ = fizzbuzz(16);
 ```
 
 ## 2) Factorial (recursion and return values)
-**Python template**
+
+### Python template of factorial function
+
 ```python
 def fact(n):
     if n <= 1:
@@ -62,7 +68,8 @@ for i in range(1, 6):
     print(i, fact(i))
 ```
 
-**TinyLanguage translation** (`src_tiny/rosetta_factorial.tiny`)
+### TinyLanguage translation (`src_tiny/rosetta_factorial.tiny`)
+
 - Functions and return requirements are identical; just add semicolons.
 - The loop stays a `while`, and `print` accepts multiple arguments.
 
@@ -80,7 +87,9 @@ while (i <= 5) {
 ```
 
 ## 3) Word count (String.split + Map)
-**Python template**
+
+### Python template of word count template
+
 ```python
 from collections import Counter
 
@@ -94,6 +103,7 @@ for word, freq in counts.items():
 ```
 
 **TinyLanguage translation** (`src_tiny/rosetta_word_count.tiny`)
+
 - Uses `String.lower`, `String.split`, and the Map stdlib (`Map.new`, `Map.get`, `Map.set`).
 - Iterate over the word list with `len(...)` and `heap_get(...)`, which address arrays stored on the heap.
 - Then print word/frequency pairs from the map keys.
@@ -131,6 +141,7 @@ while (i < len(keys)) {
 ```
 
 ## Automatisches Kopieren und Transpilieren neuer Rosetta-Skripts
+
 - Nutze `examples/rosetta/copy_rosetta_samples.py`, um fehlende Rosetta-Code-Python-Dateien in ein Zielverzeichnis zu kopieren. Beispiel: `python examples/rosetta/copy_rosetta_samples.py ~/rosetta_import --limit 10 --delay 10`. Das Skript vergleicht Dateinamen im Standardquellordner `examples/rosetta/python` mit dem Ziel und kopiert die nächsten fehlenden 10 Dateien mit einer Pause von 10 Sekunden zwischen den Kopien.
 - Anschließend kannst du die kopierten Dateien mit dem vorhandenen Transpiler nach TinyLanguage übersetzen: `python examples/rosetta/transpile_rosetta.py --dest examples/rosetta/expected`. Passe `--dest` an, falls die TinyLanguage-Dateien in einem anderen Ordner landen sollen.
 - Eine bereits erzeugte Sammlung der vorhandenen Python-Beispiele liegt unter `src_tiny/from_python/` – sie wurde per `python examples/rosetta/transpile_rosetta.py --dest $(pwd)/src_tiny/from_python` generiert und kann direkt mit `python src/tiny_language.py src_tiny/from_python/<name>.tiny` ausgeführt werden.

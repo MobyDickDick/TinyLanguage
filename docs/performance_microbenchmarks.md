@@ -34,7 +34,7 @@ Key flags:
 
 Sample output:
 
-```
+``` (Python)
 === tight_loop ===
 Summation loop with predictable arithmetic
 interpreter             avg=3.80ms min=3.75ms max=3.92ms

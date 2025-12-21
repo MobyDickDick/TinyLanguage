@@ -58,42 +58,59 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
 
 - **Completions** (`textDocument/completion` equivalent)
   - Request payload:
+  
     ```json
     { "prefix": "gr" }
     ```
+  
   - Response payload:
+  
     ```json
     [{ "label": "greet", "kind": "identifier" }, { "label": "greeting", "kind": "keyword" }]
     ```
+  
   - CLI demo for inline source plus example output:
+  
     ```bash
     PYTHONPATH=src python src/language_server_cli.py --source $'fn greet() { return 1; }\ngreet();' completions --prefix gr
     # => [{"label": "greet", "kind": "identifier"}, {"label": "greeting", "kind": "keyword"}, ...]
     ```
+
 - **Hover** (`textDocument/hover` equivalent)
   - Request payload:
+
     ```json
     { "symbol": "Greeter" }
     ```
+
   - Response payload:
+
     ```json
     { "symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [10, 1] }
     ```
+
   - CLI demo for a file on disk with a resolved position:
+
     ```bash
     PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny hover --symbol Greeter
     # => {"symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [0, 6]}
     ```
+
 - **Diagnostics** (`textDocument/diagnostic` equivalent)
   - Request payload:
+
     ```json
     {}
     ```
+
   - Response payload:
+
     ```json
     [{ "message": "[E011] ...", "code": "E011", "range": [2, 1, 2, 2] }]
     ```
+
   - CLI demo for an unused return value:
+
     ```bash
     PYTHONPATH=src python src/language_server_cli.py --source $'fn greet() -> string { return "hi"; }\ngreet();' diagnostics
     # => [{"message": "[E011] function greet discards return value; assign or ignore explicitly", "code": "E011", "range": [1, 0, 1, 1]}]
@@ -106,6 +123,7 @@ Not implemented yet: definition jumps, formatting, or workspace symbol searches.
 The example programs referenced in the README’s “Syntax and Features” section can be exercised via the same CLI to validate hover/completion/diagnostics end-to-end. Each snippet includes a short expectation so results can be compared quickly:
 
 - **Inline smoke test for the README quickstart snippet** (variables, functions, namespaces):
+
   ```bash
   # Copy the snippet from README.md → Syntax and Features → Mini tutorial
   README_SNIPPET=$'define a = 7 + 5 * 2;\nprint(a);\nfn add(x, y) { return x + y; }\ndefine sum = add(a, 3);\nprint(sum);\nnamespace Math { fn inc(x) { return add(x, 1); } }\nprint(Math.inc(4));'
@@ -118,46 +136,60 @@ The example programs referenced in the README’s “Syntax and Features” sect
   ```
 
 - Hover over class names or methods in `src_tiny/class_demo.tiny`:
+
   ```bash
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny hover --symbol greeting
   # => {"symbol": "greeting", "detail": "TinyLanguage symbol", "position": [4, 7]}
   ```
+
 - List completions for the namespace utilities in `src_tiny/namespace_demo.tiny`:
+
   ```bash
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/namespace_demo.tiny completions --prefix To
   # => [{"label": "Tools", "kind": "identifier"}, {"label": "Tools.double", "kind": "identifier"}, ...]
   ```
+
 - Capture diagnostics for the standard library walkthrough in `src_tiny/stdlib_io_random_demo.tiny` to ensure lints stay quiet:
+
   ```bash
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/stdlib_io_random_demo.tiny diagnostics
   # => [] (no diagnostics expected when examples stay lint-clean)
   ```
+
 - Inspect tagged-union coverage in `src_tiny/match_demo.tiny` via hover and completions to ensure ADT symbols are indexed:
+
   ```bash
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/match_demo.tiny hover --symbol Rectangle
   # => {"symbol": "Rectangle", "detail": "TinyLanguage symbol", "position": [5, 2]}
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/match_demo.tiny completions --prefix Cir
   # => [{"label": "Circle", "kind": "identifier"}, {"label": "Circle.radius", "kind": "identifier"}, ...]
   ```
+
 - Validate operator overloading docs with completions and diagnostics from `src_tiny/operator_overloading_demo.tiny`:
+
   ```bash
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/operator_overloading_demo.tiny completions --prefix oper
   # => [{"label": "operator +", "kind": "identifier"}, {"label": "operator ==", "kind": "identifier"}, ...]
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/operator_overloading_demo.tiny diagnostics
   # => [] (the demo should lint clean)
   ```
+
 - Probe concurrency helpers from `src_tiny/concurrency_demo.tiny` to confirm that spawned functions are indexed:
+
   ```bash
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/concurrency_demo.tiny completions --prefix spawn
   # => [{"label": "spawn", "kind": "keyword"}, {"label": "spawn label", "kind": "identifier"}, ...]
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/concurrency_demo.tiny diagnostics
   # => [] (tasks and joins should not emit lints)
   ```
+
 - Walk through heap usage in `src_tiny/heap_pointer_demo.tiny` via diagnostics to catch common pointer mistakes:
+
   ```bash
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/heap_pointer_demo.tiny diagnostics
   # => [] (the curated example should stay lint-clean; modify it to provoke heap errors during experiments)
   ```
+
 ## API surface
 
 The core dataclasses mirror the high-level Language Server Protocol structure:

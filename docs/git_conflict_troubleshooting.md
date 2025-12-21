@@ -3,10 +3,12 @@
 When VS Code shows a status bar message like `TinyLanguage#103 has conflicts`, it means the branch or pull request you opened cannot be merged cleanly with the target branch (usually `main`). VS Code surfaces this via its GitHub Pull Request or built-in source control integration.
 
 ## Why it happens
+
 - The target branch advanced after your branch was created (new commits on `main`).
 - Both branches edited the same files or nearby lines, so Git cannot auto-merge.
 
 ## How to resolve
+
 1. **Update your branch with the latest target branch**
    - In VS Code: open the Source Control view, click `...` → **Pull** (or **Pull from...** to ensure `origin/main`).
    - CLI equivalent: `git fetch origin` then `git rebase origin/main` (or `git merge origin/main`).

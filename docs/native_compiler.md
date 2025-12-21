@@ -3,16 +3,19 @@
 This draft outlines the target architecture for an alternative backend that executes TinyLanguage programs without the AST interpreter. The emphasis is on a fast feedback loop: small, inspectable building blocks that can be checked against the existing interpreter tests.
 
 ## Goals
+
 - **Emit bytecode/IR from the existing AST**: We do not want to maintain a second parser pipeline. The generator should operate directly on the nodes from `tiny_language_ast.py`.
 - **Simple VM layer**: A compact, stack-based VM with jump/call instructions is sufficient for the first experiments. It must be deterministic and easy to test.
 - **Feature flag in the CLI**: The alternative path should sit alongside the interpreter and Python backend (`--native-backend`) so functional comparisons stay straightforward.
 
 ## High-level architecture
+
 1. **Codegen pass (`NativeCodeGenerator`)**: Traverses the AST and emits linear bytecode per function plus an entry sequence for top-level statements. Unsupported constructs raise `NotImplementedError`.
 2. **VM (`NativeVM`)**: Executes the bytecode via frames with simple local/global lookups and collects output in `output`. Core instructions include `PUSH_CONST`, `LOAD`, `STORE`, `BINARY`, `PRINT`, `JUMP`, `JUMP_IF_FALSE`, `CALL`, and `RETURN`.
 3. **API/CLI hooks**: `tiny_language_api.py` exposes `run_with_native_backend`; `tiny_language.py` loads the generator as a module segment; the CLI accepts `--native-backend` for `--eval` and file execution (the REPL currently stays interpreter-driven).
 
 ## Minimum coverage for the first iteration
+
 - Literals (`Num`, `Str`, `Bool`, `Null`)
 - Variable binding and assignment (`Let`, `Assign`)
 - Arithmetic and comparison operators via `Bin`
@@ -21,10 +24,12 @@ This draft outlines the target architecture for an alternative backend that exec
 - Output via `print` statements (multiple arguments separated by spaces)
 
 ## Proof points and tests
+
 - **Smoke tests** compare interpreter and native-backend output for arithmetic, branching, and functions.
 - The VM is intentionally small so later expansions (arrays, objects, pattern matching) remain measurable.
 
 ## Usage
+
 - **CLI switch**: `python src/tiny_language.py --native-backend -e "print(1 + 2);"` runs a snippet without the AST interpreter.
 - **Alternative bytecode emission**: `python src/tiny_language.py --native-python-bytecode -e "print(1 + 2);"` builds the same native IR and compiles it to pure Python bytecode.
 - **File execution**: `python src/tiny_language.py --native-backend path/to/program.tiny` loads a program and uses the same codegen/VM path.
@@ -49,6 +54,7 @@ This draft outlines the target architecture for an alternative backend that exec
 These commands exercise exactly the constructs implemented today (literals, arithmetic, `if`/`while`, function calls, `print`). Anything beyond that should deliberately raise `NotImplementedError`:
 
 - **Arithmetic and function call inline** (should mirror the interpreter):
+
   ```bash
   PYTHONPATH=src python src/tiny_language.py --native-backend -e 'fn add(x, y) { return x + y; } print(add(2, 3));'
   # Expected output
@@ -56,6 +62,7 @@ These commands exercise exactly the constructs implemented today (literals, arit
   ```
 
 - **While/if path coverage**:
+
   ```bash
   PYTHONPATH=src python src/tiny_language.py --native-backend -e 'define i = 0; define out = 0; while (i < 3) { if (i == 1) { out = out + 10; } else { out = out + i; } i = i + 1; } print(out);'
   # Expected output
@@ -63,6 +70,7 @@ These commands exercise exactly the constructs implemented today (literals, arit
   ```
 
 - **Make unsupported features visible** (heap operations):
+
   ```bash
   PYTHONPATH=src python src/tiny_language.py --native-backend -e 'define p = new(1);'
   # Expected output
@@ -95,12 +103,14 @@ Common error signatures at a glance:
 
 - **`NotImplementedError` during codegen**: The generator usually names the affected AST node. Example: `NotImplementedError: Call to Map.set not supported in native backend`—reduce the test to basic arithmetic or drop `--native-backend`.
 - **Stack trace from the VM**: Errors are emitted with frame information, e.g.:
-  ```
+
+  ``` (Python)
   Traceback (most recent call last):
     at NativeVM.run_function(<main>)
     at NativeVM._binary()
   RuntimeError: division by zero
   ```
+
   The frames mirror bytecode execution and help locate faulty instructions.
 - **CLI parsing fails**: Ensure `--native-backend` appears before `-e` or the file path; otherwise `argparse` treats the flag as a program argument.
 - **Invalid instruction in bytecode**: If the VM reports `RuntimeError: unknown opcode`, the bytecode is likely from an older generator version. Regenerate it by rerunning the source with `--native-backend` and deleting old artifacts.

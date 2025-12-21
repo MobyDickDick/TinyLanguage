@@ -9,7 +9,7 @@ This quick reference describes the internal bytecode format of the native backen
 | `PUSH_CONST` | Value | Push a constant onto the stack. |
 | `LOAD` | Name | Load a local or global variable. |
 | `STORE` | Name | Store the stack top into a variable. |
-| `BINARY` | Operator (`+`, `-`, `*`, `/`, `%`, `^`, comparison operators, `&&`, `||`) | Pop two values, apply the operator, and push the result. |
+| `BINARY` | Operator (`+`, `-`, `*`, `/`, `%`, `^`, comparison operators, `&&`, `\|\|`) | Pop two values, apply the operator, and push the result. |
 | `PRINT` | Count | Take the given number of stack values, format them, and print with a newline. |
 | `JUMP` | Target index | Unconditional jump within the current frame. |
 | `JUMP_IF_FALSE` | Target index | Conditional jump when the stack top is falsy. |

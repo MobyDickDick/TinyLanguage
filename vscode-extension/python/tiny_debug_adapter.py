@@ -155,6 +155,8 @@ class DAPServer:
         self._pause_requested = False
         self._streaming_output = False
         self._console_pipe: Optional[Path] = None
+        self._pipe_was_set = False
+        self._previous_console_pipe = os.environ.get("TINYLANGUAGE_DAP_STDIN_PIPE")
         self._reader = sys.stdin.buffer
         self._writer = sys.stdout.buffer
         self._transport = "stdio"
@@ -293,6 +295,31 @@ class DAPServer:
                 self._tcp_server.close()
             finally:
                 self._tcp_server = None
+
+    def _cleanup_console_pipe(self) -> None:
+        """Remove any console FIFO that was created for this adapter instance."""
+
+        if not getattr(self, "_pipe_was_set", False):
+            return
+
+        try:
+            if self._console_pipe and self._console_pipe.exists():
+                self._console_pipe.unlink(missing_ok=True)
+                try:
+                    self._console_pipe.parent.rmdir()
+                except OSError:
+                    pass
+        finally:
+            if self._previous_console_pipe is None:
+                os.environ.pop("TINYLANGUAGE_DAP_STDIN_PIPE", None)
+            else:
+                os.environ["TINYLANGUAGE_DAP_STDIN_PIPE"] = self._previous_console_pipe
+
+    def __del__(self) -> None:
+        try:
+            self._cleanup_console_pipe()
+        except Exception:
+            pass
 
     # ----- DAP plumbing -----
     def _read_message(self) -> Optional[Dict[str, Any]]:
@@ -533,6 +560,7 @@ class DAPServer:
             return
 
         self._console_pipe = pipe_path
+        self._pipe_was_set = True
         os.environ["TINYLANGUAGE_DAP_STDIN_PIPE"] = str(pipe_path)
         self._send(
             {
@@ -1214,6 +1242,7 @@ class DAPServer:
             else:
                 self._handle_unknown(message)
         self._close_transport()
+        self._cleanup_console_pipe()
 
 
 def _self_test() -> None:

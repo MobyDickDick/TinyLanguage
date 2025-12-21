@@ -73,7 +73,7 @@ def test_native_cli_flag_executes_program(tmp_path):
     src_file.write_text(script)
 
     result = subprocess.run(
-        [sys.executable, str(Path(__file__).parents[1] / "src" / "tiny_language.py"), "--native-backend", str(src_file)],
+        [sys.executable, str(Path(__file__).parents[2] / "src" / "tiny_language.py"), "--native-backend", str(src_file)],
         capture_output=True,
         text=True,
         check=False,

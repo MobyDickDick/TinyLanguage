@@ -6,7 +6,7 @@ import sys
 from typing import List
 from textwrap import dedent
 
-PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
+PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]
 SRC_ROOT = PROJECT_ROOT / "src"
 
 

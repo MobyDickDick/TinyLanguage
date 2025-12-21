@@ -2,7 +2,7 @@ import pathlib
 import re
 import sys
 
-PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
+PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.append(str(PROJECT_ROOT / "src"))
 
 from tiny_language import compile_and_run

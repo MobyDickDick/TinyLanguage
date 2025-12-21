@@ -2,7 +2,7 @@ import pathlib
 
 
 def load_number_class() -> str:
-    return (pathlib.Path(__file__).resolve().parents[1] / "src_tiny" / "number_class.tiny").read_text()
+    return (pathlib.Path(__file__).resolve().parents[2] / "src_tiny" / "number_class.tiny").read_text()
 
 
 def test_subtraction_infinities_and_overflow(run_tiny_source):

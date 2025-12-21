@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1] / "src"))
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[2] / "src"))
 
 from tiny_language import compile_and_run
 

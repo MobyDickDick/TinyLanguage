@@ -25,7 +25,9 @@ def test_cli_emits_llvm_ir(tmp_path) -> None:
     script.write_text(source, encoding="utf-8")
 
     env = dict(os.environ)
-    env["PYTHONPATH"] = os.pathsep.join([env.get("PYTHONPATH", ""), str(Path(__file__).resolve().parents[1] / "src")]).strip(os.pathsep)
+    env["PYTHONPATH"] = os.pathsep.join(
+        [env.get("PYTHONPATH", ""), str(Path(__file__).resolve().parents[2] / "src")]
+    ).strip(os.pathsep)
 
     result = subprocess.run(
         [sys.executable, "-m", "tiny_language_cli", "--file", str(script), "--emit-llvm"],

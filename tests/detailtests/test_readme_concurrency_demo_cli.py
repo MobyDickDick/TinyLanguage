@@ -2,7 +2,7 @@ import pathlib
 import subprocess
 import sys
 
-PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
+PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 
 def test_readme_concurrency_demo_output_matches():

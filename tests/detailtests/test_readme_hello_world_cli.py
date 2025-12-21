@@ -2,7 +2,8 @@ import pathlib
 import subprocess
 import sys
 
-PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
+PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]
+
 
 def test_readme_hello_world_cli_output_matches():
     hello_world = PROJECT_ROOT / "src_tiny" / "hello_world.tiny"

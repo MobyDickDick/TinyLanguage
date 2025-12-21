@@ -5,7 +5,7 @@ import pytest
 from tiny_language_transpilers import PythonTranspiler, TinyLanguageTranspiler
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 PYTHON_DIR = ROOT / "examples" / "rosetta" / "python"
 EXPECTED_DIR = ROOT / "examples" / "rosetta" / "expected"
 

@@ -1,11 +1,20 @@
 from pathlib import Path
 
+import pytest
+
 from tiny_language_transpilers import PythonTranspiler, TinyLanguageTranspiler
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PYTHON_DIR = ROOT / "examples" / "rosetta" / "python"
 EXPECTED_DIR = ROOT / "examples" / "rosetta" / "expected"
+
+# Skip this suite when the Rosetta samples are not available (e.g., in slimmed CI checkouts).
+if not PYTHON_DIR.exists() or not EXPECTED_DIR.exists():  # pragma: no cover - guardrail
+    pytest.skip(
+        "Rosetta samples are unavailable; skipping transpiler snapshot tests.",
+        allow_module_level=True,
+    )
 
 
 def translate_python_to_tiny(path: Path) -> str:

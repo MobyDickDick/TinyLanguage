@@ -1,0 +1,17 @@
+fn fibonacci(n) {
+    if (n <= 1) {
+        return n;
+    }
+    define a = 0;
+    define b = 1;
+    define i = 2;
+    while (i <= n) {
+        define temp = a + b;
+        a = b;
+        b = temp;
+        i = i + 1;
+    }
+    return b;
+}
+
+define _ = print(fibonacci(6));

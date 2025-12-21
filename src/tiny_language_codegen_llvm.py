@@ -123,16 +123,56 @@ class LLVMCodeGenerator:
         if left.ty != right.ty:
             raise NotImplementedError("mixed-type arithmetic is not yet supported in LLVM prototype")
 
+        if op in {"+", "-", "*", "/", "%"}:
+            self._emit_arithmetic_op(op, left, right)
+            return
+        if op in {"==", "!=", "<", ">", "<=", ">="}:
+            self._emit_comparison(op, left, right)
+            return
+        raise NotImplementedError(f"operator {op} not supported in LLVM prototype")
+
+    def _emit_arithmetic_op(self, op: str, left: _StackValue, right: _StackValue) -> None:
         ty = left.ty
         dest = self._next_tmp()
         if ty == "double":
             instr = {"+": "fadd", "-": "fsub", "*": "fmul", "/": "fdiv"}.get(op)
+            if op == "%":
+                instr = None  # double modulo not supported for now
         else:
-            instr = {"+": "add", "-": "sub", "*": "mul", "/": "sdiv"}.get(op)
+            instr = {"+": "add", "-": "sub", "*": "mul", "/": "sdiv", "%": "srem"}.get(op)
         if instr is None:
-            raise NotImplementedError(f"operator {op} not supported in LLVM prototype")
+            raise NotImplementedError(f"operator {op} not supported for type {ty} in LLVM prototype")
         self._body.append(f"  {dest} = {instr} {ty} {left.name}, {right.name}")
         self._stack.append(_StackValue(name=dest, ty=ty))
+
+    def _emit_comparison(self, op: str, left: _StackValue, right: _StackValue) -> None:
+        ty = left.ty
+        dest = self._next_tmp()
+        if ty == "double":
+            predicate = {
+                "==": "oeq",
+                "!=": "one",
+                "<": "olt",
+                ">": "ogt",
+                "<=": "ole",
+                ">=": "oge",
+            }.get(op)
+            if predicate is None:
+                raise NotImplementedError(f"comparison {op} not supported for type {ty} in LLVM prototype")
+            self._body.append(f"  {dest} = fcmp {predicate} {ty} {left.name}, {right.name}")
+        else:
+            predicate = {
+                "==": "eq",
+                "!=": "ne",
+                "<": "slt",
+                ">": "sgt",
+                "<=": "sle",
+                ">=": "sge",
+            }.get(op)
+            if predicate is None:
+                raise NotImplementedError(f"comparison {op} not supported for type {ty} in LLVM prototype")
+            self._body.append(f"  {dest} = icmp {predicate} {ty} {left.name}, {right.name}")
+        self._stack.append(_StackValue(name=dest, ty="i1"))
 
     def _print_values(self, count: int) -> None:
         if count <= 0:
@@ -175,4 +215,3 @@ class LLVMCodeGenerator:
             "@.fmt_double = private unnamed_addr constant [4 x i8] c\"%f\\0A\\00\"",
             "declare i32 @printf(i8*, ...)",
         ]
-

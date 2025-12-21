@@ -148,7 +148,7 @@ class Lexer:
                 self.col += 2
                 stop = SourcePos(start_line, start_col + 1)
                 return Token("OP", c + "=", pos, stop)
-        if c in "+-*/><^!":
+        if c in "+-*/><^!%":
             self._advance()
             return Token("OP", c, pos, SourcePos(start_line, start_col))
         if c in "(){}[];,=:.,?":
@@ -198,5 +198,4 @@ class Lexer:
         raise TinyLangError(
             format_error(self.s, span, "unterminated string literal"), pos0, span=span
         )
-
 

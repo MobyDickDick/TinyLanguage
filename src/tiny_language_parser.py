@@ -529,7 +529,7 @@ class Parser:
 
     def parse_factor(self) -> IR:
         left = self.parse_power()
-        while self.tok.kind == "OP" and self.tok.text in ("*", "/"):
+        while self.tok.kind == "OP" and self.tok.text in ("*", "/", "%"):
             op = self.tok.text
             op_tok = self._eat("OP")
             right = self.parse_power()

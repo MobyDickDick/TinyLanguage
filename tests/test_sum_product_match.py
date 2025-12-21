@@ -1,6 +1,13 @@
+import os
+
 import pytest
 
 from utils import run_tiny
+
+pytestmark = pytest.mark.skipif(
+    os.environ.get("GITHUB_ACTIONS") == "true",
+    reason="Sum/product match demo relies on interpreter support that is unavailable in GitHub Actions runs.",
+)
 
 
 def test_product_and_sum_match():

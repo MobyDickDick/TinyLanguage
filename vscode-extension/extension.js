@@ -3,6 +3,7 @@ const cp = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const net = require('net');
 
 let debugTerminal;
 
@@ -357,7 +358,29 @@ function registerDebugAdapterExecutable(output) {
     return true;
   }
 
-  function createAdapterExecutable(configuration = {}) {
+  function findAvailablePort(host) {
+    return new Promise((resolve, reject) => {
+      const server = net.createServer();
+      server.unref();
+      server.on('error', reject);
+      server.listen(0, host, () => {
+        const address = server.address();
+        if (!address || typeof address === 'string') {
+          reject(new Error('Failed to allocate TCP port for debug adapter'));
+          return;
+        }
+        server.close((closeErr) => {
+          if (closeErr) {
+            reject(closeErr);
+          } else {
+            resolve(address.port);
+          }
+        });
+      });
+    });
+  }
+
+  async function createAdapterExecutable(configuration = {}) {
     const pythonExecutable = configuration.python || getPythonExecutable();
     const adapterPath = path.join(__dirname, 'python', 'tiny_debug_adapter.py');
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
@@ -438,19 +461,59 @@ function registerDebugAdapterExecutable(output) {
     if (launchCwd) {
       output.appendLine(`[TinyLanguage] Debug adapter working directory: ${launchCwd}`);
     }
-    output.appendLine(`[TinyLanguage] Launching debug adapter via ${pythonExecutable} ${adapterPath}`);
+    const host = '127.0.0.1';
+    let port;
+    try {
+      port = await findAvailablePort(host);
+    } catch (err) {
+      const reason = err?.message || err;
+      output.appendLine(`[TinyLanguage] Failed to reserve TCP port for debug adapter: ${reason}`);
+      return new vscode.DebugAdapterExecutable(pythonExecutable, [adapterPath], {
+        env: {
+          ...env,
+          TINYLANGUAGE_RUNTIME: runtimePath,
+        },
+        cwd: launchCwd,
+      });
+    }
+
     const adapterEnv = {
       ...env,
       // Provide the runtime path to the adapter explicitly so it can load the
       // TinyLanguage interpreter even when the extension is installed without
       // the repository source tree available alongside it.
       TINYLANGUAGE_RUNTIME: runtimePath,
+      TINYLANGUAGE_DAP_TCP_PORT: String(port),
+      TINYLANGUAGE_DAP_TCP_HOST: host,
     };
 
-    return new vscode.DebugAdapterExecutable(pythonExecutable, [adapterPath], {
+    output.appendLine(
+      `[TinyLanguage] Launching debug adapter on ${host}:${port} via ${pythonExecutable} ${adapterPath}`,
+    );
+    const child = cp.spawn(pythonExecutable, [adapterPath], {
       env: adapterEnv,
       cwd: launchCwd,
+      stdio: 'pipe',
     });
+
+    child.on('exit', (code, signal) => {
+      const reason = signal ? `signal ${signal}` : `exit ${code}`;
+      output.appendLine(`[TinyLanguage] Debug adapter exited (${reason})`);
+    });
+    child.stdout?.on('data', (chunk) => {
+      const text = chunk.toString().trim();
+      if (text) {
+        output.appendLine(`[TinyLanguage][adapter stdout] ${text}`);
+      }
+    });
+    child.stderr?.on('data', (chunk) => {
+      const text = chunk.toString().trim();
+      if (text) {
+        output.appendLine(`[TinyLanguage][adapter stderr] ${text}`);
+      }
+    });
+
+    return new vscode.DebugAdapterServer(port, host);
   }
 
   const command = vscode.commands.registerCommand('tinylanguage.getDebugAdapterExecutable', () => {

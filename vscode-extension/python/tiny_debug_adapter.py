@@ -23,6 +23,7 @@ from contextlib import redirect_stdout, redirect_stderr
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from pathlib import Path
+import socket
 from typing import Any, Dict, List, Optional, Tuple
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -154,6 +155,14 @@ class DAPServer:
         self._pause_requested = False
         self._streaming_output = False
         self._console_pipe: Optional[Path] = None
+        self._reader = sys.stdin.buffer
+        self._writer = sys.stdout.buffer
+        self._transport = "stdio"
+        self._tcp_server: Optional[socket.socket] = None
+        self._tcp_client: Optional[socket.socket] = None
+        self._tcp_host: Optional[str] = None
+        self._tcp_port: Optional[int] = None
+        self._configure_transport()
         # Start the watchdog immediately so that we can surface handshake issues
         # (e.g., VS Code never sending an initialize request) instead of
         # blocking forever with no diagnostics.
@@ -196,13 +205,105 @@ class DAPServer:
             if self._log_to_stderr:
                 print(f"[{timestamp}] {message}", file=sys.stderr)
 
+    def _configure_transport(self) -> None:
+        """Initialize the DAP transport (stdio by default, TCP when requested)."""
+
+        port_value = os.environ.get("TINYLANGUAGE_DAP_TCP_PORT")
+        if not port_value:
+            self._transport = "stdio"
+            self._reader = sys.stdin.buffer
+            self._writer = sys.stdout.buffer
+            return
+
+        try:
+            port = int(str(port_value).strip())
+        except ValueError:
+            self._emit_warning(f"Invalid TINYLANGUAGE_DAP_TCP_PORT value: {port_value!r}")
+            self._transport = "stdio"
+            self._reader = sys.stdin.buffer
+            self._writer = sys.stdout.buffer
+            return
+
+        host = os.environ.get("TINYLANGUAGE_DAP_TCP_HOST", "127.0.0.1")
+        try:
+            self._tcp_server = socket.create_server((host, port), backlog=1)
+        except Exception as exc:  # pragma: no cover - socket binding failure
+            self._emit_warning(f"Failed to bind debug adapter TCP server on {host}:{port}: {exc}")
+            self._transport = "stdio"
+            self._reader = sys.stdin.buffer
+            self._writer = sys.stdout.buffer
+            return
+
+        self._tcp_server.settimeout(15)
+        bound_host, bound_port = self._tcp_server.getsockname()
+        self._tcp_host = str(bound_host)
+        self._tcp_port = int(bound_port)
+        self._transport = "tcp"
+        self._reader = None
+        self._writer = None
+        self._log(f"Debug adapter listening on TCP {self._tcp_host}:{self._tcp_port}")
+
+    def _await_client(self) -> bool:
+        """Accept a TCP client when the transport uses sockets."""
+
+        if self._transport != "tcp":
+            return True
+        if self._tcp_client:
+            return True
+        if self._tcp_server is None:
+            self._emit_warning("TCP transport requested but no server socket is available")
+            return False
+        try:
+            self._log("Waiting for VS Code to connect to the debug adapter socket")
+            client, addr = self._tcp_server.accept()
+        except socket.timeout:
+            self._emit_warning("Timed out waiting for VS Code to connect to the debug adapter socket")
+            return False
+        except Exception as exc:  # pragma: no cover - unexpected accept failure
+            self._emit_warning(f"Failed to accept debug adapter client: {exc}")
+            return False
+        self._tcp_client = client
+        self._reader = client.makefile("rb")
+        self._writer = client.makefile("wb")
+        self._log(f"VS Code connected from {addr}")
+        return True
+
+    def _close_transport(self) -> None:
+        """Tear down any active transport connections."""
+
+        try:
+            if self._reader and self._reader is not sys.stdin.buffer:
+                self._reader.close()
+        finally:
+            self._reader = None
+
+        try:
+            if self._writer and self._writer is not sys.stdout.buffer:
+                self._writer.close()
+        finally:
+            self._writer = None
+
+        if self._tcp_client:
+            try:
+                self._tcp_client.close()
+            finally:
+                self._tcp_client = None
+        if self._tcp_server:
+            try:
+                self._tcp_server.close()
+            finally:
+                self._tcp_server = None
+
     # ----- DAP plumbing -----
     def _read_message(self) -> Optional[Dict[str, Any]]:
-        """Read a single DAP message from stdin."""
+        """Read a single DAP message from the configured transport."""
+
+        if self._reader is None:
+            return None
 
         header = b""
         while True:
-            line = sys.stdin.buffer.readline()
+            line = self._reader.readline()
             if not line:
                 return None
             # Some clients terminate headers with "\n" instead of "\r\n". Treat any
@@ -228,7 +329,7 @@ class DAPServer:
             self._log("Missing or zero Content-Length header in incoming message")
             return None
 
-        body = sys.stdin.buffer.read(length)
+        body = self._reader.read(length)
         if not body:
             return None
 
@@ -242,8 +343,10 @@ class DAPServer:
         data = json.dumps(payload)
         message = f"Content-Length: {len(data)}\r\n\r\n{data}".encode("utf-8")
         self._log(f"--> {payload}")
-        sys.stdout.buffer.write(message)
-        sys.stdout.buffer.flush()
+        if self._writer is None:
+            return
+        self._writer.write(message)
+        self._writer.flush()
 
     def _next_seq(self) -> int:
         with self._lock:
@@ -477,9 +580,11 @@ class DAPServer:
         self._namespace = self._namespace_for_path(program)
         self._streaming_output = False
         debugger = self._debugger()
-        self._maybe_setup_console_pipe()
+        if self._transport == "stdio":
+            self._maybe_setup_console_pipe()
         previous_stdin_guard = os.environ.get("TINYLANGUAGE_DAP_DISABLE_STDIN")
-        os.environ["TINYLANGUAGE_DAP_DISABLE_STDIN"] = "1"
+        if self._transport == "stdio":
+            os.environ["TINYLANGUAGE_DAP_DISABLE_STDIN"] = "1"
         try:
             output = compile_and_run(
                 source,
@@ -522,10 +627,11 @@ class DAPServer:
                 }
             )
         finally:
-            if previous_stdin_guard is None:
-                os.environ.pop("TINYLANGUAGE_DAP_DISABLE_STDIN", None)
-            else:
-                os.environ["TINYLANGUAGE_DAP_DISABLE_STDIN"] = previous_stdin_guard
+            if self._transport == "stdio":
+                if previous_stdin_guard is None:
+                    os.environ.pop("TINYLANGUAGE_DAP_DISABLE_STDIN", None)
+                else:
+                    os.environ["TINYLANGUAGE_DAP_DISABLE_STDIN"] = previous_stdin_guard
             self._send({
                 "type": "event",
                 "seq": self._next_seq(),
@@ -1090,6 +1196,10 @@ class DAPServer:
             "disconnect": self.handle_disconnect,
         }
         self._log("Debug adapter started")
+        if not self._await_client():
+            self._log("Shutting down: no client connection established")
+            self._close_transport()
+            return
         while True:
             if self._shutdown:
                 self._log("Shutdown requested; shutting down")
@@ -1103,6 +1213,7 @@ class DAPServer:
                 handlers[command](message)
             else:
                 self._handle_unknown(message)
+        self._close_transport()
 
 
 def _self_test() -> None:

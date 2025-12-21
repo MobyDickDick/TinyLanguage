@@ -7,13 +7,22 @@ import json
 import math
 import os
 import random
+import threading
 from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Tuple
 
 from tiny_errors import SourcePos
-import threading
+
+_BANNED_PYTHON_MODULES = {
+    "subprocess",
+    "socket",
+    "multiprocessing",
+    "ctypes",
+    "ssl",
+    "sys",
+}
 
 @dataclass
 class _Variant:
@@ -903,18 +912,16 @@ class _StdLibRegistrar:
     # --- Python interop helpers ---
     def _python_import_module(self, module: str, allow: Any | None = None) -> "NamespaceRef":
         module_name = str(module)
+        self._python_ensure_module_allowed(module_name)
         allowed = self._python_normalize_allowlist(allow)
         py_module = importlib.import_module(module_name)
         namespace = f"Python.{module_name}"
 
         existing = self._python_namespaces.get(namespace, set())
-        requested = set(allowed or [])
+        requested = set(allowed)
         missing = requested - existing
 
-        if missing:
-            self._python_namespaces[namespace] = existing | requested
-        else:
-            self._python_namespaces.setdefault(namespace, existing)
+        self._python_namespaces[namespace] = existing | requested
 
         # Lazily create an environment so constants can be accessed via field lookups.
         from tiny_language import Environment  # Imported lazily to avoid circular imports
@@ -934,12 +941,16 @@ class _StdLibRegistrar:
         return self.namespace_ref_cls(self.runtime, namespace)
 
     def _python_call(self, module: str, attr: str, args: Any | None = None, opts: Any | None = None) -> Any:
-        allow = self._python_normalize_allowlist(opts)
-        allowed_attrs = set(allow) if allow is not None else None
+        module_name = str(module)
+        self._python_ensure_module_allowed(module_name)
+        allowed_attrs = self._python_resolve_allowlist(module_name, opts)
+        if allowed_attrs is None:
+            allowed_attrs = set()
+        timeout_ms = self._python_normalize_timeout(opts)
 
-        py_module = importlib.import_module(str(module))
+        py_module = importlib.import_module(module_name)
         attr_name = str(attr)
-        if allowed_attrs is not None and attr_name not in allowed_attrs:
+        if attr_name not in allowed_attrs:
             raise RuntimeError(f"[PYDENY] attribute {attr_name} not allowed")
 
         func = getattr(py_module, attr_name, None)
@@ -948,17 +959,40 @@ class _StdLibRegistrar:
 
         arg_list = self._python_normalize_args(args)
         py_args = [self._python_to_host(val) for val in arg_list]
-        return self._python_from_host(func(*py_args))
+        result: Dict[str, Any] = {}
+        error: Dict[str, BaseException] = {}
+
+        def _invoke() -> None:
+            try:
+                result["value"] = func(*py_args)
+            except Exception as exc:  # noqa: BLE001
+                error["exc"] = exc
+
+        if timeout_ms is None:
+            _invoke()
+        else:
+            thread = threading.Thread(target=_invoke, daemon=True)
+            thread.start()
+            thread.join(timeout_ms / 1000.0)
+            if thread.is_alive():
+                raise RuntimeError(f"[PYTIMEOUT] {module_name}.{attr_name} exceeded {timeout_ms} ms")
+        if error:
+            raise RuntimeError(f"[PYERR] {error['exc']}")
+        return self._python_from_host(result.get("value"))
 
     def _python_fn(self, module: str, attr: str, opts: Any | None = None) -> str:
         alias = attr
         if isinstance(opts, dict) and "as" in opts:
             alias = str(opts["as"])
 
-        allow = self._python_normalize_allowlist(opts)
-        py_module = importlib.import_module(str(module))
+        module_name = str(module)
+        self._python_ensure_module_allowed(module_name)
+        allowed_attrs = self._python_resolve_allowlist(module_name, opts)
+        if allowed_attrs is None:
+            allowed_attrs = set()
+        py_module = importlib.import_module(module_name)
         attr_name = str(attr)
-        if allow is not None and attr_name not in set(allow):
+        if attr_name not in allowed_attrs:
             raise RuntimeError(f"[PYDENY] attribute {attr_name} not allowed")
 
         func = getattr(py_module, attr_name, None)
@@ -976,18 +1010,43 @@ class _StdLibRegistrar:
 
         return _callable
 
-    def _python_normalize_allowlist(self, value: Any | None) -> list[str] | None:
+    def _python_normalize_allowlist(self, value: Any | None) -> list[str]:
         allow_source = value
         if isinstance(value, dict):
             allow_source = value.get("allow")
         if allow_source is None:
-            return None
+            return []
         if isinstance(allow_source, int) and allow_source in self.runtime.heap:
             allow_source = self.runtime.heap[allow_source]
         try:
             return [str(v) for v in list(allow_source)]
         except Exception as exc:  # noqa: BLE001
             raise RuntimeError("[PYERR] allowlist must be iterable") from exc
+
+    def _python_normalize_timeout(self, opts: Any | None) -> int | None:
+        if not isinstance(opts, dict):
+            return None
+        if "timeout_ms" not in opts:
+            return None
+        try:
+            timeout = int(opts["timeout_ms"])
+        except Exception:  # noqa: BLE001
+            raise RuntimeError("[PYERR] timeout_ms must be an integer")
+        if timeout < 0:
+            raise RuntimeError("[PYERR] timeout_ms must be non-negative")
+        return timeout
+
+    def _python_ensure_module_allowed(self, module: str) -> None:
+        base = module.split(".")[0]
+        if base in _BANNED_PYTHON_MODULES or module in _BANNED_PYTHON_MODULES:
+            raise RuntimeError(f"[PYSEC] module {module} denied")
+
+    def _python_resolve_allowlist(self, module: str, opts: Any | None) -> set[str] | None:
+        if isinstance(opts, dict) and "allow" in opts:
+            return set(self._python_normalize_allowlist(opts))
+        if opts is not None and not isinstance(opts, dict):
+            return set(self._python_normalize_allowlist(opts))
+        return self._python_namespaces.get(f"Python.{module}")
 
     def _python_normalize_args(self, args: Any | None) -> list[Any]:
         if args is None:

@@ -156,9 +156,9 @@ def eval_expr(self, e: IR, env: "Environment") -> Any:
             if e.name == "__type_field_type":
                 return self.type_field_type(str(self.eval_expr(e.args[0], env)), str(self.eval_expr(e.args[1], env)))
             if e.name == "__new":
-                return self.__new(int(self.eval_expr(e.args[0], env)))
+                return self._Runtime__new(int(self.eval_expr(e.args[0], env)))
             if e.name == "new":
-                return self.__new(int(self.eval_expr(e.args[0], env)))
+                return self._Runtime__new(int(self.eval_expr(e.args[0], env)))
             if e.name == "heap_get":
                 return self.heap_get(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env), pos=e.pos)
             if e.name == "heap_set":
@@ -237,9 +237,9 @@ def eval_expr(self, e: IR, env: "Environment") -> Any:
             handle = self.eval_expr(e.expr, env)
             return self.join_handle(handle)
         if isinstance(e, New):
-            return self.__new(int(self.eval_expr(e.size, env)))
+            return self._Runtime__new(int(self.eval_expr(e.size, env)))
         if isinstance(e, NewLit):
-            p = self.__new(len(e.items))
+            p = self._Runtime__new(len(e.items))
             for idx, item in enumerate(e.items):
                 self.heap_set(p, idx, self.eval_expr(item, env), pos=e.pos)
             return p
@@ -256,7 +256,7 @@ def eval_expr(self, e: IR, env: "Environment") -> Any:
                 return bool(self._is_truthy(self.eval_expr(e.b, env)))
             if e.op == "not":
                 return not self._is_truthy(self.eval_expr(e.b, env))
-            return self.__binop(e.op, self.eval_expr(e.a, env), self.eval_expr(e.b, env))
+            return self._Runtime__binop(e.op, self.eval_expr(e.a, env), self.eval_expr(e.b, env))
         if isinstance(e, ObjLit):
             obj: Dict[str, Any] = {"__tag__": "Struct"}
             for k, v in e.fields:

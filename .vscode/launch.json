@@ -448,6 +448,24 @@
       "justMyCode": false
     },
     {
+      "name": "Python: pytest - tests/detailtests/test_debug_adapter_flow.py (DAP logging)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/detailtests/test_debug_adapter_flow.py",
+        "-vv",
+        "-s"
+      ],
+      "env": {
+        "TINYLANGUAGE_DAP_LOG": "${workspaceFolder}/.tinylanguage/debug-adapter.log",
+        "TINYLANGUAGE_DAP_STDERR": "1"
+      },
+      "logToFile": true,
+      "justMyCode": false
+    },
+    {
       "name": "Python: pytest - tests/test_repl.py",
       "type": "debugpy",
       "request": "launch",

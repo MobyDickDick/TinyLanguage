@@ -1,0 +1,22 @@
+// TinyLanguage-Port-Skelett von src/tiny_language_parser.py
+// Platzhalter, der die geplanten Parser-Einstiegspunkte skizziert.
+// Die echte Umsetzung soll die Lexer-Tokens in AST-Knoten aus tiny_language_ast.tiny umwandeln.
+
+class Parser {
+    source: string;
+
+    fn parse(self) {
+        // TODO: Parser-Logik folgt; bis dahin geben wir eine leere Statement-Liste zurück.
+        return new[];
+    }
+}
+
+fn Parser_new(source) {
+    return new Parser { source: source };
+}
+
+fn parse_program(source) {
+    // Hilfsfunktion für zukünftige Aufrufer, damit die Signatur früh feststeht.
+    define parser = Parser_new(source);
+    return parser.parse();
+}

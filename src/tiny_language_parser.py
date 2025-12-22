@@ -89,7 +89,10 @@ class Parser:
             self._eat("SYM", "=")
             expr = self.parse_expr()
             semi = self._eat("SYM", ";")
-            return self._attach_span(Let(name_tok.text, expr, pos=kw.pos), kw.start, semi.stop)
+            name_span = self._tok_span(name_tok)
+            return self._attach_span(
+                Let(name_tok.text, expr, pos=kw.pos, name_span=name_span), kw.start, semi.stop
+            )
         if self.tok.kind == "KW" and self.tok.text == "print":
             kw = self._eat("KW", "print")
             self._eat("SYM", "(")
@@ -139,18 +142,31 @@ class Parser:
             return self._attach_span(TryCatch(body, err_name, handler, pos=kw.pos), kw.start, self._last_tok.stop)
         if self.tok.kind == "KW" and self.tok.text == "import":
             kw = self._eat("KW", "import")
-            module = self.parse_module_path()
+            module, module_span = self.parse_module_path()
             alias: Optional[str] = None
+            binding_span = module_span
             if self.tok.kind == "KW" and self.tok.text == "as":
                 self._eat("KW", "as")
-                alias = self._eat("NAME").text
+                alias_tok = self._eat("NAME")
+                alias = alias_tok.text
+                binding_span = self._tok_span(alias_tok)
             semi = self._eat("SYM", ";")
-            return self._attach_span(Import(module, alias, pos=kw.pos), kw.start, semi.stop)
+            return self._attach_span(
+                Import(
+                    module,
+                    alias,
+                    pos=kw.pos,
+                    module_span=module_span,
+                    binding_span=binding_span,
+                ),
+                kw.start,
+                semi.stop,
+            )
         if self.tok.kind == "KW" and self.tok.text == "namespace":
             kw = self._eat("KW", "namespace")
             name = self.parse_qualified_name()
             body = self.parse_block()
-            return Namespace(name, body, pos=kw.pos)
+            return self._attach_span(Namespace(name, body, pos=kw.pos), kw.start, self._last_tok.stop)
         if self.tok.kind == "KW" and self.tok.text in {"fn", "async"}:
             is_async = False
             if self.tok.text == "async":
@@ -319,11 +335,13 @@ class Parser:
             )
         # destructuring or assignment/field assignment
         if self.tok.kind == "SYM" and self.tok.text == "{":
-            names, start_pos = self.parse_destruct_names()
+            names, start_pos, name_spans = self.parse_destruct_names()
             self._eat("SYM", "=")
             expr = self.parse_expr()
             semi = self._eat("SYM", ";")
-            return self._attach_span(DestructAssign(names, expr, pos=start_pos), start_pos, semi.stop)
+            return self._attach_span(
+                DestructAssign(names, expr, pos=start_pos, name_spans=name_spans), start_pos, semi.stop
+            )
         if self.tok.kind == "NAME":
             # look ahead for field assignment or normal assignment/call
             name_tok = self.tok
@@ -347,7 +365,10 @@ class Parser:
             if self._accept("SYM", "="):
                 expr = self.parse_expr()
                 semi = self._eat("SYM", ";")
-                return self._attach_span(Assign(name_tok.text, expr, pos=name_tok.pos), name_tok.start, semi.stop)
+                name_span = self._tok_span(name_tok)
+                return self._attach_span(
+                    Assign(name_tok.text, expr, pos=name_tok.pos, name_span=name_span), name_tok.start, semi.stop
+                )
             # call statement on identifier
             if self.tok.kind == "SYM" and self.tok.text == "(":
                 args = self.parse_arg_list()
@@ -470,13 +491,19 @@ class Parser:
         self._eat("SYM", ")")
         return args
 
-    def parse_destruct_names(self) -> Tuple[List[str], SourcePos]:
-        start_pos = self._eat("SYM", "{").pos
-        names = [self._eat("NAME").text]
+    def parse_destruct_names(self) -> Tuple[List[str], SourcePos, List[SourceSpan]]:
+        start_tok = self._eat("SYM", "{")
+        names: List[str] = []
+        spans: List[SourceSpan] = []
+        first = self._eat("NAME")
+        names.append(first.text)
+        spans.append(self._tok_span(first))
         while self._accept("SYM", ","):
-            names.append(self._eat("NAME").text)
+            name_tok = self._eat("NAME")
+            names.append(name_tok.text)
+            spans.append(self._tok_span(name_tok))
         self._eat("SYM", "}")
-        return names, start_pos
+        return names, start_tok.pos, spans
 
     # expression parsing with precedence
     def parse_expr(self) -> IR:
@@ -762,16 +789,23 @@ class Parser:
                 raise self._error("expected field separator", self.tok.pos, self._tok_span(self.tok))
         return fields
 
-    def parse_module_path(self) -> str:
+    def parse_module_path(self) -> Tuple[str, SourceSpan]:
         prefix = ""
+        start_tok: Optional[Token] = None
         while self._accept("SYM", "."):
+            start_tok = start_tok or self._last_tok
             prefix += "."
         if self.tok.kind != "NAME":
             raise self._error("expected NAME", self.tok.pos, self._tok_span(self.tok))
-        parts = [self._eat("NAME").text]
+        first_tok = self._eat("NAME")
+        parts = [first_tok.text]
+        last_tok = first_tok
         while self._accept("SYM", "."):
-            parts.append(self._eat("NAME").text)
-        return prefix + ".".join(parts)
+            last_tok = self._eat("NAME")
+            parts.append(last_tok.text)
+        start = (start_tok or first_tok).start
+        span = SourceSpan(start, last_tok.stop)
+        return prefix + ".".join(parts), span
 
     def parse_qualified_name(self) -> str:
         parts = [self._eat("NAME").text]

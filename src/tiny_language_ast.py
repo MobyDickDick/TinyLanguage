@@ -9,7 +9,7 @@ compilation stages.
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
-from tiny_errors import SourcePos
+from tiny_errors import SourcePos, SourceSpan
 
 # ----- AST Nodes -----
 
@@ -25,6 +25,7 @@ class Let(IR):
     name: str
     expr: IR
     pos: SourcePos = field(default_factory=SourcePos.origin)
+    name_span: Optional[SourceSpan] = None
 
 
 @dataclass
@@ -34,6 +35,7 @@ class Assign(IR):
     name: str
     expr: IR
     pos: SourcePos = field(default_factory=SourcePos.origin)
+    name_span: Optional[SourceSpan] = None
 
 
 @dataclass
@@ -153,6 +155,8 @@ class Import(IR):
     module: str
     alias: Optional[str] = None
     pos: SourcePos = field(default_factory=SourcePos.origin)
+    module_span: Optional[SourceSpan] = None
+    binding_span: Optional[SourceSpan] = None
 
 
 @dataclass
@@ -184,6 +188,7 @@ class DestructAssign(IR):
     names: List[str]
     expr: IR
     pos: SourcePos = field(default_factory=SourcePos.origin)
+    name_spans: List[SourceSpan] = field(default_factory=list)
 
 
 @dataclass
@@ -393,4 +398,3 @@ class VariantCtor(IR):
     fields: List[Tuple[str, IR]]
     type_name: Optional[str] = None
     pos: SourcePos = field(default_factory=SourcePos.origin)
-

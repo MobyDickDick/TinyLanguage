@@ -1,7 +1,43 @@
-// TinyLanguage-Port-Skelett von src/tiny_language_lexer.py
-// Enthält Token-Struktur, Keyword-/Builtin-Sets und einen Platzhalter-Lexer,
-// damit die Self-Hosting-Plan-Tabelle auf eine konkrete Tiny-Datei verweisen kann.
+// TinyLanguage-Port des Lexers aus src/tiny_language_lexer.py.
+// Enthält Token-Struktur, Keyword-/Builtin-Sets und die vollständige Tokenisierung.
 
+// Position + Spans ------------------------------------------------------------
+class SourcePos {
+    line: number;
+    column: number;
+
+    fn col(self) { return self.column; }
+}
+
+fn SourcePos(line, column) {
+    return new SourcePos { line: line; column: column };
+}
+
+fn SourcePos_origin() {
+    return SourcePos(1, 1);
+}
+
+class SourceSpan {
+    start: SourcePos;
+    stop: SourcePos;
+}
+
+fn SourceSpan(start, stop) {
+    return new SourceSpan { start: start; stop: stop };
+}
+
+// Fehlerformatierung via Python-Interop, damit wir RuntimeErrors wie der Python-Port werfen können.
+define __PY_EXEC_ALLOW = new["exec"];
+define __PY_REPR_ALLOW = new["repr"];
+
+fn __raise_runtime_error(msg) {
+    define safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
+    define stmt = "raise RuntimeError(" + safe + ")";
+    // Rückgabewert ist irrelevant – der Aufruf löst eine Exception aus.
+    return Python.call("builtins", "exec", new[stmt], __PY_EXEC_ALLOW);
+}
+
+// Tokens ----------------------------------------------------------------------
 class Token {
     kind: string;
     text: string;
@@ -26,8 +62,299 @@ define KEYWORDS = Set.from_list(new[
 
 define BUILTINS = Set.from_list(new["Collections", "Math", "String", "len", "print"]);
 
+// Lexer -----------------------------------------------------------------------
+define __PY_LIST_ALLOW = new["list"];
+
+fn __is_alpha(c) {
+    return (c >= "a" && c <= "z") || (c >= "A" && c <= "Z");
+}
+
+fn __is_digit(c) {
+    return c >= "0" && c <= "9";
+}
+
+fn __is_alnum_or_underscore(c) {
+    if (__is_alpha(c)) { return true; }
+    if (__is_digit(c)) { return true; }
+    return c == "_";
+}
+
+fn __peek(chars, n, idx) {
+    if (idx < n) { return heap_get(chars, idx); }
+    return "";
+}
+
+fn __peek_at(chars, n, idx, offset) {
+    define target = idx + offset;
+    if (target < n) { return heap_get(chars, target); }
+    return "";
+}
+
+fn __advance_state(chars, i, n, line, col, count) {
+    define steps = count;
+    if (steps == Null) { steps = 1; }
+    define idx = i;
+    define l = line;
+    define c = col;
+    while (steps > 0) {
+        if (idx < n && heap_get(chars, idx) == "\n") {
+            l = l + 1;
+            c = 1;
+        } else {
+            c = c + 1;
+        }
+        idx = idx + 1;
+        steps = steps - 1;
+    }
+    return new[idx, l, c];
+}
+
+fn __slice_text(chars, start_idx, end_idx) {
+    define segment = Collections.slice(chars, start_idx, end_idx);
+    return String.join(segment, "");
+}
+
+fn __read_string(chars, n, i, line, col) {
+    define start_line = line;
+    define start_col = col;
+    define pos0 = SourcePos(start_line, start_col);
+    define buf = "";
+
+    define adv_open = __advance_state(chars, i, n, line, col, 1);
+    i = heap_get(adv_open, 0);
+    line = heap_get(adv_open, 1);
+    col = heap_get(adv_open, 2);
+
+    define done = false;
+    while (i < n && done == false) {
+        define c = __peek(chars, n, i);
+        if (c == "\"") {
+            define adv_end = __advance_state(chars, i, n, line, col, 1);
+            i = heap_get(adv_end, 0);
+            line = heap_get(adv_end, 1);
+            col = heap_get(adv_end, 2);
+            define stop = SourcePos(start_line, col - 1);
+            define tok = Token("STRING", buf, pos0, stop);
+            return new[tok, i, line, col];
+        }
+
+        if (c == "\\") {
+            define adv_slash = __advance_state(chars, i, n, line, col, 1);
+            i = heap_get(adv_slash, 0);
+            line = heap_get(adv_slash, 1);
+            col = heap_get(adv_slash, 2);
+
+            if (i >= n) { __raise_runtime_error("unterminated escape in string"); }
+
+            define esc = __peek(chars, n, i);
+            define adv_esc = __advance_state(chars, i, n, line, col, 1);
+            i = heap_get(adv_esc, 0);
+            line = heap_get(adv_esc, 1);
+            col = heap_get(adv_esc, 2);
+
+            if (esc == "n") {
+                buf = buf + "\n";
+            } else {
+                if (esc == "t") {
+                    buf = buf + "\t";
+                } else {
+                    if (esc == "r") {
+                        buf = buf + "\r";
+                    } else {
+                        if (esc == "\"") {
+                            buf = buf + "\"";
+                        } else {
+                            if (esc == "\\") {
+                                buf = buf + "\\";
+                            } else {
+                                buf = buf + "\\" + esc;
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            buf = buf + c;
+            define adv_char = __advance_state(chars, i, n, line, col, 1);
+            i = heap_get(adv_char, 0);
+            line = heap_get(adv_char, 1);
+            col = heap_get(adv_char, 2);
+        }
+    }
+
+    __raise_runtime_error("unterminated string literal");
+    define fallback = Token("STRING", buf, pos0, pos0);
+    return new[fallback, i, line, col];
+}
+
 fn lex(source) {
-    // TODO: Port der Lexer-Logik folgt; solange liefern wir eine leere Token-Liste.
-    // Dieser Stub hilft dabei, den Self-Hosting-Port zu verankern und Tests/Docs auf die Datei zu verweisen.
-    return new[];
+    define tokens = new[];
+    define chars = Python.call("builtins", "list", new[source], __PY_LIST_ALLOW);
+    define n = len(chars);
+    define i = 0;
+    define line = 1;
+    define col = 1;
+    define finished = false;
+
+    while (finished == false) {
+        // Whitespace und Kommentare überspringen.
+        define skipping = true;
+        while (i < n && skipping) {
+            define c = __peek(chars, n, i);
+            if (c == " " || c == "\t" || c == "\r" || c == "\n") {
+                define adv_ws = __advance_state(chars, i, n, line, col, 1);
+                i = heap_get(adv_ws, 0);
+                line = heap_get(adv_ws, 1);
+                col = heap_get(adv_ws, 2);
+            } else {
+                if (c == "/" && __peek_at(chars, n, i, 1) == "/") {
+                    define adv_comment = __advance_state(chars, i, n, line, col, 2);
+                    i = heap_get(adv_comment, 0);
+                    line = heap_get(adv_comment, 1);
+                    col = heap_get(adv_comment, 2);
+                    while (i < n && __peek(chars, n, i) != "\n") {
+                        define adv_comment_body = __advance_state(chars, i, n, line, col, 1);
+                        i = heap_get(adv_comment_body, 0);
+                        line = heap_get(adv_comment_body, 1);
+                        col = heap_get(adv_comment_body, 2);
+                    }
+                } else {
+                    skipping = false;
+                }
+            }
+        }
+
+        if (i >= n) {
+            define pos = SourcePos(line, col);
+            define _push_eof = Collections.push(tokens, Token("EOF", "", pos, pos));
+            finished = true;
+        } else {
+            define c = __peek(chars, n, i);
+            define start_line = line;
+            define start_col = col;
+            define pos = SourcePos(start_line, start_col);
+            define handled = false;
+
+            if (c == "&" && __peek_at(chars, n, i, 1) == "&") {
+                define adv_and = __advance_state(chars, i, n, line, col, 2);
+                i = heap_get(adv_and, 0);
+                line = heap_get(adv_and, 1);
+                col = heap_get(adv_and, 2);
+                define stop = SourcePos(start_line, start_col + 1);
+                define _push_and = Collections.push(tokens, Token("OP", "&&", pos, stop));
+                handled = true;
+            } else {
+                if (c == "|" && __peek_at(chars, n, i, 1) == "|") {
+                    define adv_or = __advance_state(chars, i, n, line, col, 2);
+                    i = heap_get(adv_or, 0);
+                    line = heap_get(adv_or, 1);
+                    col = heap_get(adv_or, 2);
+                    define stop_or = SourcePos(start_line, start_col + 1);
+                    define _push_or = Collections.push(tokens, Token("OP", "||", pos, stop_or));
+                    handled = true;
+                } else {
+                    if (c == "\"") {
+                        define res = __read_string(chars, n, i, line, col);
+                        define tok = heap_get(res, 0);
+                        i = heap_get(res, 1);
+                        line = heap_get(res, 2);
+                        col = heap_get(res, 3);
+                        define _push_str = Collections.push(tokens, tok);
+                        handled = true;
+                    } else {
+                        if (__is_alpha(c) || c == "_") {
+                            define j = i + 1;
+                            define keep = true;
+                            while (j < n && keep) {
+                                define cj = heap_get(chars, j);
+                                if (__is_alnum_or_underscore(cj)) {
+                                    j = j + 1;
+                                } else {
+                                    keep = false;
+                                }
+                            }
+                            define txt = __slice_text(chars, i, j);
+                            define consumed = j - i;
+                            define adv_name = __advance_state(chars, i, n, line, col, consumed);
+                            i = heap_get(adv_name, 0);
+                            line = heap_get(adv_name, 1);
+                            col = heap_get(adv_name, 2);
+                            define kind = "NAME";
+                            if (Set.has(KEYWORDS, txt)) { kind = "KW"; }
+                            // BUILTINS werden aktuell nicht gesondert getaggt, aber die Abfrage
+                            // hält die Definition aktiv (und ermöglicht zukünftiges Highlighting).
+                            if (Set.has(BUILTINS, txt)) { kind = kind; }
+                            define stop_name = SourcePos(start_line, start_col + consumed - 1);
+                            define _push_name = Collections.push(tokens, Token(kind, txt, pos, stop_name));
+                            handled = true;
+                        } else {
+                            if (__is_digit(c)) {
+                                define jnum = i + 1;
+                                define hasdot = false;
+                                define keep_num = true;
+                                while (jnum < n && keep_num) {
+                                    define cjnum = heap_get(chars, jnum);
+                                    if (cjnum == "." && hasdot == false) {
+                                        hasdot = true;
+                                        jnum = jnum + 1;
+                                    } else {
+                                        if (__is_digit(cjnum)) {
+                                            jnum = jnum + 1;
+                                        } else {
+                                            keep_num = false;
+                                        }
+                                    }
+                                }
+                                define txtnum = __slice_text(chars, i, jnum);
+                                define consumed_num = jnum - i;
+                                define adv_num = __advance_state(chars, i, n, line, col, consumed_num);
+                                i = heap_get(adv_num, 0);
+                                line = heap_get(adv_num, 1);
+                                col = heap_get(adv_num, 2);
+                                define stop_num = SourcePos(start_line, start_col + consumed_num - 1);
+                                define _push_num = Collections.push(tokens, Token("NUMBER", txtnum, pos, stop_num));
+                                handled = true;
+                            } else {
+                                if (c == ">" || c == "<" || c == "=" || c == "!") {
+                                    if (__peek_at(chars, n, i, 1) == "=") {
+                                        define adv_cmp = __advance_state(chars, i, n, line, col, 2);
+                                        i = heap_get(adv_cmp, 0);
+                                        line = heap_get(adv_cmp, 1);
+                                        col = heap_get(adv_cmp, 2);
+                                        define stop_cmp = SourcePos(start_line, start_col + 1);
+                                        define _push_cmp = Collections.push(tokens, Token("OP", c + "=", pos, stop_cmp));
+                                        handled = true;
+                                    }
+                                }
+                                if (handled == false && (c == "+" || c == "-" || c == "*" || c == "/" || c == ">" || c == "<" || c == "^" || c == "!" || c == "%")) {
+                                    define adv_op = __advance_state(chars, i, n, line, col, 1);
+                                    i = heap_get(adv_op, 0);
+                                    line = heap_get(adv_op, 1);
+                                    col = heap_get(adv_op, 2);
+                                    define _push_op = Collections.push(tokens, Token("OP", c, pos, SourcePos(start_line, start_col)));
+                                    handled = true;
+                                } else {
+                                    if (handled == false && (c == "(" || c == ")" || c == "{" || c == "}" || c == "[" || c == "]"
+                                        || c == ";" || c == "," || c == "=" || c == ":" || c == "." || c == "?")) {
+                                        define adv_sym = __advance_state(chars, i, n, line, col, 1);
+                                        i = heap_get(adv_sym, 0);
+                                        line = heap_get(adv_sym, 1);
+                                        col = heap_get(adv_sym, 2);
+                                        define _push_sym = Collections.push(tokens, Token("SYM", c, pos, SourcePos(start_line, start_col)));
+                                        handled = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (handled == false) {
+                __raise_runtime_error("lexing error: unexpected character '" + c + "'");
+                finished = true;
+            }
+        }
+    }
+    return tokens;
 }

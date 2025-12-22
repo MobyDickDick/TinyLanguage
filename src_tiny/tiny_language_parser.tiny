@@ -1,22 +1,1050 @@
-// TinyLanguage-Port-Skelett von src/tiny_language_parser.py
-// Platzhalter, der die geplanten Parser-Einstiegspunkte skizziert.
-// Die echte Umsetzung soll die Lexer-Tokens in AST-Knoten aus tiny_language_ast.tiny umwandeln.
+// TinyLanguage-Port des Parsers aus src/tiny_language_parser.py
+// Konsumiert Tokens aus tiny_language_lexer.tiny und erzeugt AST-Knoten aus tiny_language_ast.tiny.
+
+// Fehlerausgabe via Python-Runtime, damit die Meldungen den Python-Port spiegeln.
+define __PARSER_EXEC_ALLOW = new["exec"];
+define __PARSER_REPR_ALLOW = new["repr"];
+define __PARSER_TYPE_ALLOW = new["type"];
+define __PARSER_GETATTR_ALLOW = new["getattr"];
+define __PARSER_STR_ALLOW = new["str"];
+
+fn __parser_raise(msg) {
+    define safe = Python.call("builtins", "repr", new[msg], __PARSER_REPR_ALLOW);
+    define stmt = "raise RuntimeError(" + safe + ")";
+    return Python.call("builtins", "exec", new[stmt], __PARSER_EXEC_ALLOW);
+}
+
+fn __parser_tag(value) {
+    define typ = Python.call("builtins", "type", new[value], __PARSER_TYPE_ALLOW);
+    return Python.call("builtins", "getattr", new[typ, "__name__"], __PARSER_GETATTR_ALLOW);
+}
+
+fn __keep(param, value) -> any {
+    return heap_get(new[value, param], 0);
+}
+
+fn __render_parse_error(source, span, message) {
+    define pos = span.start;
+    define lines = String.split(source, "\n");
+    define idx = pos.line - 1;
+    define line_txt = Python.call("builtins", "str", new[pos.line], __PARSER_STR_ALLOW);
+    define col_txt = Python.call("builtins", "str", new[pos.column], __PARSER_STR_ALLOW);
+    define header = message + " (line " + line_txt + ", col " + col_txt + ")";
+    if (idx < 0 || idx >= len(lines)) { return header; }
+    define line_text = heap_get(lines, idx);
+    define start_col = pos.column;
+    define end_col = span.stop.column;
+    if (end_col < start_col) { end_col = start_col; }
+    define prefix = "";
+    define i = 1;
+    while (i < start_col) {
+        prefix = prefix + " ";
+        i = i + 1;
+    }
+    define underline = prefix + String.repeat("^", end_col - start_col + 1);
+    return header + "\n" + line_text + "\n" + underline;
+}
 
 class Parser {
+    tokens: Pointer;
+    index: number;
     source: string;
+    tok: Token;
+    _last_tok: Token;
+    _allow_variant_ctor: Bool;
 
-    fn parse(self) {
-        // TODO: Parser-Logik folgt; bis dahin geben wir eine leere Statement-Liste zurück.
-        return new[];
+    fn _next_token(self) -> any {
+        if (self.index < len(self.tokens)) {
+            define tok = heap_get(self.tokens, self.index);
+            self.index = self.index + 1;
+            self._last_tok = tok;
+            return __keep(self, tok);
+        }
+        if (len(self.tokens) == 0) {
+            define pos = SourcePos_origin();
+            define fake = Token("EOF", "", pos, pos);
+            self._last_tok = fake;
+            return __keep(self, fake);
+        }
+        define last = heap_get(self.tokens, len(self.tokens) - 1);
+        self._last_tok = last;
+        return __keep(self, last);
+    }
+
+    fn _tok_span(self, tok) -> any {
+        define _keep_self = self;
+        return SourceSpan(tok.start, tok.stop);
+    }
+
+    fn _attach_span(self, node, start, stop) -> any {
+        define _keep_self = self;
+        node.span = SourceSpan(start, stop);
+        if (node.pos == Null || (node.pos.line == 1 && node.pos.column == 1)) {
+            node.pos = start;
+        }
+        return node;
+    }
+
+    fn _span_cover(self, a, b) -> any {
+        define _keep_self = self;
+        define start = a.span.start;
+        if (start == Null) { start = a.pos; }
+        define stop = b.span.stop;
+        if (stop == Null) { stop = b.pos; }
+        return SourceSpan(start, stop);
+    }
+
+    fn _error(self, message, pos, span) -> any {
+        define use_span = span;
+        if (use_span == Null) { use_span = SourceSpan(pos, pos); }
+        define rendered = __render_parse_error(self.source, use_span, message);
+        return __parser_raise(rendered);
+    }
+
+    fn _eat(self, kind, text) -> any {
+        if (!(self.tok.kind == kind && (text == Null || self.tok.text == text))) {
+            if (text == Null) {
+                return self._error("expected " + kind, self.tok.start, self._tok_span(self.tok));
+            } else {
+                return self._error("expected " + kind + " " + text, self.tok.start, self._tok_span(self.tok));
+            }
+        }
+        define t = self.tok;
+        self.tok = self._next_token();
+        return __keep(self, t);
+    }
+
+    fn _eat_name_or_kw(self) -> any {
+        if (self.tok.kind == "NAME" || self.tok.kind == "KW") {
+            define t = self.tok;
+            self.tok = self._next_token();
+            return __keep(self, t);
+        }
+        return __keep(self, self._error("expected NAME", self.tok.start, self._tok_span(self.tok)));
+    }
+
+    fn _accept(self, kind, text) -> any {
+        if (self.tok.kind == kind && (text == Null || self.tok.text == text)) {
+            self._last_tok = self.tok;
+            self.tok = self._next_token();
+            return __keep(self, true);
+        }
+        return __keep(self, false);
+    }
+
+    fn parse(self) -> any {
+        define stmts = new[];
+        while (!(self.tok.kind == "EOF")) {
+            define st = self.parse_stmt();
+            define _push = Collections.push(stmts, st);
+        }
+        return stmts;
+    }
+
+    fn parse_block(self) -> any {
+        define _open = self._eat("SYM", "{");
+        define stmts = new[];
+        while (!(self.tok.kind == "SYM" && self.tok.text == "}")) {
+            define st = self.parse_stmt();
+            define _push = Collections.push(stmts, st);
+        }
+        define _close = self._eat("SYM", "}");
+        return stmts;
+    }
+
+    fn parse_stmt(self) -> any {
+        if (self.tok.kind == "KW" && self.tok.text == "define") {
+            define kw = self._eat("KW", "define");
+            define name_tok = self._eat("NAME", Null);
+            define _eq = self._eat("SYM", "=");
+            define expr = self.parse_expr();
+            define semi = self._eat("SYM", ";");
+            define name_span = self._tok_span(name_tok);
+            return self._attach_span(Let(name_tok.text, expr, kw.start, Null, name_span), kw.start, semi.stop);
+        }
+        if (self.tok.kind == "KW" && self.tok.text == "print") {
+            define kw = self._eat("KW", "print");
+            define _open = self._eat("SYM", "(");
+            define exprs = new[];
+            if (!(self.tok.kind == "SYM" && self.tok.text == ")")) {
+                define first = self.parse_expr();
+                define _p1 = Collections.push(exprs, first);
+                while (self._accept("SYM", ",", Null)) {
+                    define nxt = self.parse_expr();
+                    define _p2 = Collections.push(exprs, nxt);
+                }
+            }
+            define _close = self._eat("SYM", ")");
+            define semi = self._eat("SYM", ";");
+            return self._attach_span(Print(exprs, kw.start, Null), kw.start, semi.stop);
+        }
+        if (self.tok.kind == "KW" && self.tok.text == "flush") {
+            define kw = self._eat("KW", "flush");
+            define _open = self._eat("SYM", "(");
+            define _close = self._eat("SYM", ")");
+            define semi = self._eat("SYM", ";");
+            return self._attach_span(Flush(kw.start, Null), kw.start, semi.stop);
+        }
+        if (self.tok.kind == "KW" && self.tok.text == "if") {
+            define kw = self._eat("KW", "if");
+            define _open = self._eat("SYM", "(");
+            define cond = self.parse_expr();
+            define _close = self._eat("SYM", ")");
+            define then_block = self.parse_block();
+            define els = new[];
+            if (self.tok.kind == "KW" && self.tok.text == "else") {
+                define _else = self._eat("KW", "else");
+                els = self.parse_block();
+            }
+            return self._attach_span(If(cond, then_block, els, kw.start, Null), kw.start, self._last_tok.stop);
+        }
+        if (self.tok.kind == "KW" && self.tok.text == "while") {
+            define kw = self._eat("KW", "while");
+            define _open = self._eat("SYM", "(");
+            define cond = self.parse_expr();
+            define _close = self._eat("SYM", ")");
+            define body = self.parse_block();
+            return self._attach_span(While(cond, body, kw.start, Null), kw.start, self._last_tok.stop);
+        }
+        if (self.tok.kind == "KW" && self.tok.text == "try") {
+            define kw = self._eat("KW", "try");
+            define body = self.parse_block();
+            define _catch = self._eat("KW", "catch");
+            define err_name = Null;
+            if (self._accept("SYM", "(", Null)) {
+                define name_tok = self._eat("NAME", Null);
+                err_name = name_tok.text;
+                define _close_paren = self._eat("SYM", ")");
+            } else {
+                define name_tok = self._eat("NAME", Null);
+                err_name = name_tok.text;
+            }
+            define handler = self.parse_block();
+            return self._attach_span(TryCatch(body, err_name, handler, kw.start, Null), kw.start, self._last_tok.stop);
+        }
+        if (self.tok.kind == "KW" && self.tok.text == "import") {
+            define kw = self._eat("KW", "import");
+            define module_data = self.parse_module_path();
+            define module = heap_get(module_data, 0);
+            define module_span = heap_get(module_data, 1);
+            define alias = Null;
+            define binding_span = module_span;
+            if (self.tok.kind == "KW" && self.tok.text == "as") {
+                define _as = self._eat("KW", "as");
+                define alias_tok = self._eat("NAME", Null);
+                alias = alias_tok.text;
+                binding_span = self._tok_span(alias_tok);
+            }
+            define semi = self._eat("SYM", ";");
+            return self._attach_span(Import(module, alias, kw.start, Null, module_span, binding_span), kw.start, semi.stop);
+        }
+        if (self.tok.kind == "KW" && self.tok.text == "namespace") {
+            define kw = self._eat("KW", "namespace");
+            define name = self.parse_qualified_name();
+            define body = self.parse_block();
+            return self._attach_span(Namespace(name, body, kw.start, Null), kw.start, self._last_tok.stop);
+        }
+        if (self.tok.kind == "KW" && (self.tok.text == "fn" || self.tok.text == "async")) {
+            define is_async = false;
+            define fn_kw = self._eat("KW", self.tok.text);
+            if (fn_kw.text == "async") {
+                is_async = true;
+                fn_kw = self._eat("KW", "fn");
+            }
+            define name_tok = self._eat("NAME", Null);
+            define params = self.parse_param_list();
+            define return_type = Null;
+            if (self._accept("OP", "-", Null)) {
+                define _gt = self._eat("OP", ">");
+                return_type = self.parse_type_annotation();
+            }
+            define body = self.parse_block();
+            define return_params = self._collect_return_param_usage(body, params);
+            return self._attach_span(
+                Fn(name_tok.text, params, body, return_params, Null, return_type, Null, is_async, fn_kw.start, Null),
+                fn_kw.start,
+                self._last_tok.stop
+            );
+        }
+        if (self.tok.kind == "KW" && self.tok.text == "return") {
+            define kw = self._eat("KW", "return");
+            define expr = self.parse_expr();
+            define semi = self._eat("SYM", ";");
+            return self._attach_span(Return(expr, kw.start, Null), kw.start, semi.stop);
+        }
+        if (self.tok.kind == "KW" && self.tok.text == "type") {
+            define kw = self._eat("KW", "type");
+            define name_tok = self._eat("NAME", Null);
+            if (self._accept("SYM", "=", Null)) {
+                define kind_tok = self._eat_name_or_kw();
+                define kind = kind_tok.text;
+                if (kind == "product") {
+                    define pair = self._parse_product_fields();
+                    define fields = heap_get(pair, 0);
+                    define semi = heap_get(pair, 1);
+                    return self._attach_span(TypeDef(name_tok.text, fields, Null, kw.start, Null), kw.start, semi.stop);
+                }
+                if (kind == "sum") {
+                    define triple = self._parse_sum_variants();
+                    define variants = heap_get(triple, 0);
+                    define semi = heap_get(triple, 1);
+                    define legacy_fields = heap_get(triple, 2);
+                    if (legacy_fields != Null) {
+                        return self._attach_span(TypeDef(name_tok.text, legacy_fields, Null, kw.start, Null), kw.start, semi.stop);
+                    }
+                    return self._attach_span(TypeDef(name_tok.text, Null, variants, kw.start, Null), kw.start, self._last_tok.stop);
+                }
+                return self._error("unknown type kind " + kind, kind_tok.start, self._tok_span(kind_tok));
+            }
+            define parsed = self._parse_sum_variants();
+            define variants = heap_get(parsed, 0);
+            define semi = heap_get(parsed, 1);
+            define legacy = heap_get(parsed, 2);
+            if (legacy != Null) {
+                return self._attach_span(TypeDef(name_tok.text, legacy, Null, kw.start, Null), kw.start, semi.stop);
+            }
+            return self._attach_span(TypeDef(name_tok.text, Null, variants, kw.start, Null), kw.start, self._last_tok.stop);
+        }
+        if (self.tok.kind == "KW" && self.tok.text == "class") {
+            define kw = self._eat("KW", "class");
+            define cname_tok = self._eat("NAME", Null);
+            define bases = new[];
+            if (self._accept("SYM", ":", Null)) {
+                define base_tok = self._eat("NAME", Null);
+                define _push_base = Collections.push(bases, base_tok.text);
+                while (self._accept("SYM", ",", Null)) {
+                    define more_base = self._eat("NAME", Null);
+                    define _pb = Collections.push(bases, more_base.text);
+                }
+            }
+            define _open_class = self._eat("SYM", "{");
+            define fields = new[];
+            define methods = new[];
+            while (!(self.tok.kind == "SYM" && self.tok.text == "}")) {
+                if (self.tok.kind == "KW" && (self.tok.text == "fn" || self.tok.text == "async")) {
+                    define is_async = false;
+                    define fn_kw = self._eat("KW", self.tok.text);
+                    if (fn_kw.text == "async") {
+                        is_async = true;
+                        fn_kw = self._eat("KW", "fn");
+                    }
+                    define mname_tok = self._eat_name_or_kw();
+                    define params = self.parse_param_list();
+                    define return_type = Null;
+                    if (self._accept("OP", "-", Null)) {
+                        define _gt2 = self._eat("OP", ">");
+                        return_type = self.parse_type_annotation();
+                    }
+                    define body = self.parse_block();
+                    define return_params = self._collect_return_param_usage(body, params);
+                    define _pm = Collections.push(
+                        methods,
+                        MethodDef(cname_tok.text, mname_tok.text, params, body, return_params, return_type, Null, cname_tok.text, is_async, fn_kw.start, Null)
+                    );
+                } else {
+                    define fname = self._eat("NAME", Null).text;
+                    define _colon = self._eat("SYM", ":");
+                    define ftype = self._eat("NAME", Null).text;
+                    define _semi = self._eat("SYM", ";");
+                    define _pf = Collections.push(fields, new[fname, ftype]);
+                }
+            }
+            define _close_class = self._eat("SYM", "}");
+            return self._attach_span(ClassDef(cname_tok.text, fields, methods, bases, kw.start, Null), kw.start, self._last_tok.stop);
+        }
+        if (self.tok.kind == "KW" && self.tok.text == "operator") {
+            define kw = self._eat("KW", "operator");
+            define op_tok = self._eat("OP", Null);
+            define _open = self._eat("SYM", "(");
+            define a_tok = self._eat("NAME", Null);
+            define _colon_a = self._eat("SYM", ":");
+            define a_type_tok = self._eat("NAME", Null);
+            define _comma = self._eat("SYM", ",");
+            define b_tok = self._eat("NAME", Null);
+            define _colon_b = self._eat("SYM", ":");
+            define b_type_tok = self._eat("NAME", Null);
+            define _close = self._eat("SYM", ")");
+            define _dash = self._eat("OP", "-");
+            define _gt = self._eat("OP", ">");
+            define _return_type = self._eat("NAME", Null);
+            define body = self.parse_block();
+            return self._attach_span(OpDef(op_tok.text, a_tok.text, a_type_tok.text, b_tok.text, b_type_tok.text, body, kw.start, Null), kw.start, self._last_tok.stop);
+        }
+        if (self.tok.kind == "SYM" && self.tok.text == "{") {
+            define data = self.parse_destruct_names();
+            define names = heap_get(data, 0);
+            define start_pos = heap_get(data, 1);
+            define name_spans = heap_get(data, 2);
+            define _eq = self._eat("SYM", "=");
+            define expr = self.parse_expr();
+            define semi = self._eat("SYM", ";");
+            return self._attach_span(DestructAssign(names, expr, start_pos, Null, name_spans), start_pos, semi.stop);
+        }
+        if (self.tok.kind == "NAME") {
+            define name_tok = self._eat("NAME", Null);
+            if (self._accept("SYM", ".", Null)) {
+                define field_name = self._eat_name_or_kw().text;
+                if (self._accept("SYM", "=", Null)) {
+                    define expr = self.parse_expr();
+                    define semi = self._eat("SYM", ";");
+                    return self._attach_span(FieldAssign(Var(name_tok.text, name_tok.start, Null), field_name, expr, name_tok.start, Null), name_tok.start, semi.stop);
+                }
+                define args = self.parse_arg_list();
+                define semi = self._eat("SYM", ";");
+                return self._attach_span(CallStmt(name_tok.text + "." + field_name, args, name_tok.start, Null), name_tok.start, semi.stop);
+            }
+            if (self._accept("SYM", "=", Null)) {
+                define expr = self.parse_expr();
+                define semi = self._eat("SYM", ";");
+                define name_span = self._tok_span(name_tok);
+                return self._attach_span(Assign(name_tok.text, expr, name_tok.start, Null, name_span), name_tok.start, semi.stop);
+            }
+            if (self.tok.kind == "SYM" && self.tok.text == "(") {
+                define args = self.parse_arg_list();
+                define semi = self._eat("SYM", ";");
+                return self._attach_span(CallStmt(name_tok.text, args, name_tok.start, Null), name_tok.start, semi.stop);
+            }
+            return self._error("unexpected token after name", name_tok.start, self._tok_span(name_tok));
+        }
+        return self._error("unexpected token " + self.tok.kind, self.tok.start, self._tok_span(self.tok));
+    }
+
+    fn parse_param(self) -> any {
+        define name_tok = self._eat("NAME", Null);
+        define annotation = Null;
+        if (self._accept("SYM", ":", Null)) {
+            annotation = self.parse_type_annotation();
+        }
+        return Param(name_tok.text, annotation);
+    }
+
+    fn parse_param_list(self) -> any {
+        define _open = self._eat("SYM", "(");
+        define params = new[];
+        if (!(self.tok.kind == "SYM" && self.tok.text == ")")) {
+            define first = self.parse_param();
+            define _p = Collections.push(params, first);
+            while (self._accept("SYM", ",", Null)) {
+                define nxt = self.parse_param();
+                define _p2 = Collections.push(params, nxt);
+            }
+        }
+        define _close = self._eat("SYM", ")");
+        return params;
+    }
+
+    fn _collect_return_param_usage(self, stmts, params) -> any {
+        define names_set = Set.new();
+        define idx = 0;
+        while (idx < len(params)) {
+            define p = heap_get(params, idx);
+            define _ = Set.add(names_set, p.name);
+            idx = idx + 1;
+        }
+        define used = Set.new();
+
+        fn visit_expr(expr) {
+            if (expr == Null) { return Null; }
+            if (expr.__tag__ == "Var") {
+                if (Set.has(names_set, expr.name)) { define _a = Set.add(used, expr.name); }
+                return Null;
+            }
+            if (expr.__tag__ == "Field") { return visit_expr(expr.obj); }
+            if (expr.__tag__ == "MethodCall") {
+                define i = 0;
+                define _vobj = visit_expr(expr.obj);
+                while (i < len(expr.args)) { define _va = visit_expr(heap_get(expr.args, i)); i = i + 1; }
+                return Null;
+            }
+            if (expr.__tag__ == "Call") {
+                if (Set.has(names_set, expr.name)) { define _b = Set.add(used, expr.name); }
+                define i = 0;
+                while (i < len(expr.args)) { define _vc = visit_expr(heap_get(expr.args, i)); i = i + 1; }
+                return Null;
+            }
+            if (expr.__tag__ == "Spawn") {
+                define i = 0;
+                while (i < len(expr.args)) { define _vd = visit_expr(heap_get(expr.args, i)); i = i + 1; }
+                return Null;
+            }
+            if (expr.__tag__ == "Await") { return visit_expr(expr.expr); }
+            if (expr.__tag__ == "Bin") {
+                define _va = visit_expr(expr.a);
+                define _vb = visit_expr(expr.b);
+                return Null;
+            }
+            if (expr.__tag__ == "ObjLit") {
+                define i = 0;
+                while (i < len(expr.fields)) {
+                    define pair = heap_get(expr.fields, i);
+                    define _vf = visit_expr(heap_get(pair, 1));
+                    i = i + 1;
+                }
+                return Null;
+            }
+            if (expr.__tag__ == "VariantCtor") {
+                define i = 0;
+                while (i < len(expr.fields)) {
+                    define pair = heap_get(expr.fields, i);
+                    define _vg = visit_expr(heap_get(pair, 1));
+                    i = i + 1;
+                }
+                return Null;
+            }
+            if (expr.__tag__ == "ClassNew") {
+                define i = 0;
+                while (i < len(expr.init)) {
+                    define pair = heap_get(expr.init, i);
+                    define _vh = visit_expr(heap_get(pair, 1));
+                    i = i + 1;
+                }
+                return Null;
+            }
+            if (expr.__tag__ == "NewLit") {
+                define i = 0;
+                while (i < len(expr.items)) {
+                    define _vi = visit_expr(heap_get(expr.items, i));
+                    i = i + 1;
+                }
+                return Null;
+            }
+            if (expr.__tag__ == "Match") {
+                define _ve = visit_expr(expr.expr);
+                define i = 0;
+                while (i < len(expr.cases)) {
+                    define mc = heap_get(expr.cases, i);
+                    define _vbdy = visit_expr(mc.body);
+                    i = i + 1;
+                }
+                return Null;
+            }
+            return Null;
+        }
+
+        fn visit_stmt(stmt) {
+            if (stmt.__tag__ == "Return") { return visit_expr(stmt.expr); }
+            if (stmt.__tag__ == "If") {
+                define i = 0;
+                while (i < len(stmt.then)) { define _vt = visit_stmt(heap_get(stmt.then, i)); i = i + 1; }
+                i = 0;
+                while (i < len(stmt.els)) { define _ve = visit_stmt(heap_get(stmt.els, i)); i = i + 1; }
+                return Null;
+            }
+            if (stmt.__tag__ == "While") {
+                define i = 0;
+                while (i < len(stmt.body)) { define _vw = visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
+                return Null;
+            }
+            if (stmt.__tag__ == "TryCatch") {
+                define i = 0;
+                while (i < len(stmt.body)) { define _vtr = visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
+                i = 0;
+                while (i < len(stmt.handler)) { define _vth = visit_stmt(heap_get(stmt.handler, i)); i = i + 1; }
+                return Null;
+            }
+            if (stmt.__tag__ == "Namespace") {
+                define i = 0;
+                while (i < len(stmt.body)) { define _vn = visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
+                return Null;
+            }
+            if (stmt.__tag__ == "Fn" || stmt.__tag__ == "MethodDef") { return Null; }
+            return Null;
+        }
+
+        define i = 0;
+        while (i < len(stmts)) {
+            define _vs = visit_stmt(heap_get(stmts, i));
+            i = i + 1;
+        }
+        return Set.to_list(used);
+    }
+
+    fn parse_type_annotation(self) -> any {
+        define name = self._eat_name_or_kw().text;
+        if (self._accept("SYM", "?", Null)) { return name + "?"; }
+        return name;
+    }
+
+    fn parse_arg_list(self) -> any {
+        define _open = self._eat("SYM", "(");
+        define args = new[];
+        if (!(self.tok.kind == "SYM" && self.tok.text == ")")) {
+            define first = self.parse_expr();
+            define _p = Collections.push(args, first);
+            while (self._accept("SYM", ",", Null)) {
+                define nxt = self.parse_expr();
+                define _p2 = Collections.push(args, nxt);
+            }
+        }
+        define _close = self._eat("SYM", ")");
+        return args;
+    }
+
+    fn parse_destruct_names(self) -> any {
+        define start_tok = self._eat("SYM", "{");
+        define names = new[];
+        define spans = new[];
+        define first = self._eat("NAME", Null);
+        define _p = Collections.push(names, first.text);
+        define _s = Collections.push(spans, self._tok_span(first));
+        while (self._accept("SYM", ",", Null)) {
+            define name_tok = self._eat("NAME", Null);
+            define _p2 = Collections.push(names, name_tok.text);
+            define _s2 = Collections.push(spans, self._tok_span(name_tok));
+        }
+        define _close = self._eat("SYM", "}");
+        return new[names, start_tok.start, spans];
+    }
+
+    fn parse_expr(self) -> any { return self.parse_logic_or(); }
+
+    fn parse_logic_or(self) -> any {
+        define left = self.parse_logic_and();
+        while ((self.tok.kind == "KW" && self.tok.text == "or") || (self.tok.kind == "OP" && self.tok.text == "||")) {
+            define op_tok = self.tok;
+            define _eat_tok = self._eat(self.tok.kind, Null);
+            define right = self.parse_logic_and();
+            define span = self._span_cover(left, right);
+            left = self._attach_span(Bin("or", left, right, op_tok.start, Null), span.start, span.stop);
+        }
+        return left;
+    }
+
+    fn parse_logic_and(self) -> any {
+        define left = self.parse_compare();
+        while ((self.tok.kind == "KW" && self.tok.text == "and") || (self.tok.kind == "OP" && self.tok.text == "&&")) {
+            define op_tok = self.tok;
+            define _eat_tok = self._eat(self.tok.kind, Null);
+            define right = self.parse_compare();
+            define span = self._span_cover(left, right);
+            left = self._attach_span(Bin("and", left, right, op_tok.start, Null), span.start, span.stop);
+        }
+        return left;
+    }
+
+    fn parse_compare(self) -> any {
+        define left = self.parse_term();
+        while (self.tok.kind == "OP" && (self.tok.text == ">" || self.tok.text == ">=" || self.tok.text == "<" || self.tok.text == "<=" || self.tok.text == "==" || self.tok.text == "!=")) {
+            define op_tok = self._eat("OP", Null);
+            define right = self.parse_term();
+            define span = self._span_cover(left, right);
+            left = self._attach_span(Bin(op_tok.text, left, right, op_tok.start, Null), span.start, span.stop);
+        }
+        return left;
+    }
+
+    fn parse_term(self) -> any {
+        define left = self.parse_factor();
+        while (self.tok.kind == "OP" && (self.tok.text == "+" || self.tok.text == "-")) {
+            define op_tok = self._eat("OP", Null);
+            define right = self.parse_factor();
+            define span = self._span_cover(left, right);
+            left = self._attach_span(Bin(op_tok.text, left, right, op_tok.start, Null), span.start, span.stop);
+        }
+        return left;
+    }
+
+    fn parse_factor(self) -> any {
+        define left = self.parse_power();
+        while (self.tok.kind == "OP" && (self.tok.text == "*" || self.tok.text == "/" || self.tok.text == "%")) {
+            define op_tok = self._eat("OP", Null);
+            define right = self.parse_power();
+            define span = self._span_cover(left, right);
+            left = self._attach_span(Bin(op_tok.text, left, right, op_tok.start, Null), span.start, span.stop);
+        }
+        return left;
+    }
+
+    fn parse_power(self) -> any {
+        define left = self.parse_unary();
+        if (self.tok.kind == "OP" && self.tok.text == "^") {
+            define op_tok = self._eat("OP", Null);
+            define right = self.parse_power();
+            define span = self._span_cover(left, right);
+            return self._attach_span(Bin("^", left, right, op_tok.start, Null), span.start, span.stop);
+        }
+        return left;
+    }
+
+    fn parse_unary(self) -> any {
+        if (self.tok.kind == "OP" && self.tok.text == "-") {
+            define op_tok = self._eat("OP", Null);
+            define rhs = self.parse_unary();
+            define zero = Num("0", op_tok.start, Null);
+            define span = self._span_cover(zero, rhs);
+            return self._attach_span(Bin("-", zero, rhs, op_tok.start, Null), span.start, span.stop);
+        }
+        if ((self.tok.kind == "KW" && self.tok.text == "not") || (self.tok.kind == "OP" && self.tok.text == "!")) {
+            define op_tok = self._eat(self.tok.kind, Null);
+            define rhs = self.parse_unary();
+            define zero = Num("0", op_tok.start, Null);
+            define span = self._span_cover(zero, rhs);
+            return self._attach_span(Bin("not", zero, rhs, op_tok.start, Null), span.start, span.stop);
+        }
+        return self.parse_postfix();
+    }
+
+    fn parse_postfix(self) -> any {
+        define expr = self.parse_primary();
+        define looping = true;
+        while (looping) {
+            if (self.tok.kind == "SYM" && self.tok.text == ".") {
+                define dot_tok = self._eat("SYM", ".");
+                define name_tok = self._eat_name_or_kw();
+                if (self.tok.kind == "SYM" && self.tok.text == "(") {
+                    define args = self.parse_arg_list();
+                    expr = self._attach_span(MethodCall(expr, name_tok.text, args, dot_tok.start, Null), expr.span.start, self._last_tok.stop);
+                } else {
+                    expr = self._attach_span(Field(expr, name_tok.text, dot_tok.start, Null), expr.span.start, name_tok.stop);
+                }
+                looping = true;
+            } else {
+                looping = false;
+            }
+        }
+        return expr;
+    }
+
+    fn parse_match(self) -> any {
+        define kw = self._eat("KW", "match");
+        define prev_allow = self._allow_variant_ctor;
+        self._allow_variant_ctor = false;
+        define target = self.parse_expr();
+        self._allow_variant_ctor = prev_allow;
+        define _open = self._eat("SYM", "{");
+        define cases = new[];
+        while (!self._accept("SYM", "}", Null)) {
+            if (!(self.tok.kind == "KW" && self.tok.text == "case")) {
+                return self._error("expected case", self.tok.start, self._tok_span(self.tok));
+            }
+            define _case = self._eat("KW", "case");
+            define pattern = self.parse_pattern();
+            if (self._accept("SYM", ":", Null)) { define _noop = 1; }
+            else {
+                if (self._accept("SYM", "=", Null)) {
+                    if (!self._accept("OP", ">", Null)) { return self._error("expected '=>'", self.tok.start, self._tok_span(self.tok)); }
+                } else {
+                    return self._error("expected ':' or '=>'", self.tok.start, self._tok_span(self.tok));
+                }
+            }
+            define body = self.parse_expr();
+            define semi = self._eat("SYM", ";");
+            define _push_case = Collections.push(cases, self._attach_span(MatchCase(pattern, body, pattern.pos, Null), pattern.pos, semi.stop));
+        }
+        return __keep(self, self._attach_span(Match(target, cases, kw.start, Null), kw.start, self._last_tok.stop));
+    }
+
+    fn parse_pattern(self) -> any {
+        if (self.tok.kind == "NAME" && self.tok.text == "_") {
+            define tok = self._eat("NAME", Null);
+            return self._attach_span(WildcardPattern(Null, tok.start, Null), tok.start, tok.stop);
+        }
+        if (!(self.tok.kind == "NAME")) { return self._error("expected pattern", self.tok.start, self._tok_span(self.tok)); }
+        define vname_tok = self._eat("NAME", Null);
+        define bindings = Map.new();
+        define positional = Null;
+        if (self._accept("SYM", "{", Null)) {
+            define done = false;
+            while (!done) {
+                if (self._accept("SYM", "}", Null)) { done = true; }
+                else {
+                    define fname = self._eat("NAME", Null).text;
+                    define bind_name = fname;
+                    if (self._accept("SYM", ":", Null)) {
+                        define bind_tok = self._eat_name_or_kw();
+                        if (bind_tok.text == "_") { bind_name = Null; }
+                        else { bind_name = bind_tok.text; }
+                    }
+                    define _set = Map.set(bindings, fname, bind_name);
+                    if (self._accept("SYM", "}", Null)) { done = true; }
+                    else {
+                        if (!(self._accept("SYM", ";", Null) || self._accept("SYM", ",", Null))) {
+                            return self._error("expected field separator", self.tok.start, self._tok_span(self.tok));
+                        }
+                    }
+                }
+            }
+        } else {
+            if (self._accept("SYM", "(", Null)) {
+                positional = new[];
+                define done_pos = false;
+                while (!done_pos) {
+                    if (self._accept("SYM", ")", Null)) { done_pos = true; }
+                    else {
+                        define bind_tok = self._eat_name_or_kw();
+                        if (bind_tok.text == "_") { define _p = Collections.push(positional, Null); }
+                        else { define _p = Collections.push(positional, bind_tok.text); }
+                        if (self._accept("SYM", ")", Null)) { done_pos = true; }
+                        else {
+                            if (!(self._accept("SYM", ",", Null) || self._accept("SYM", ";", Null))) {
+                                return self._error("expected field separator", self.tok.start, self._tok_span(self.tok));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return self._attach_span(VariantPattern(vname_tok.text, bindings, positional, vname_tok.start, Null), vname_tok.start, self._last_tok.stop);
+    }
+
+    fn parse_primary(self) -> any {
+        if (self._accept("SYM", "(", Null)) {
+            define inner = self.parse_expr();
+            define _close = self._eat("SYM", ")");
+            return inner;
+        }
+        if (self.tok.kind == "KW" && self.tok.text == "await") {
+            define kw = self._eat("KW", "await");
+            define expr = self.parse_expr();
+            define end_pos = expr.pos;
+            if (expr.span != Null) { end_pos = expr.span.stop; }
+            return self._attach_span(Await(expr, kw.start, Null), kw.start, end_pos);
+        }
+        if (self.tok.kind == "KW" && self.tok.text == "match") { return self.parse_match(); }
+        if (self.tok.kind == "NUMBER") {
+            define t = self._eat("NUMBER", Null);
+            return self._attach_span(Num(t.text, t.start, Null), t.start, t.stop);
+        }
+        if (self.tok.kind == "STRING") {
+            define t = self._eat("STRING", Null);
+            return self._attach_span(Str(t.text, t.start, Null), t.start, t.stop);
+        }
+        if (self.tok.kind == "KW" && (self.tok.text == "true" || self.tok.text == "false")) {
+            define kw = self._eat("KW", Null);
+            define val = kw.text == "true";
+            return self._attach_span(Bool(val, kw.start, Null), kw.start, kw.stop);
+        }
+        if (self.tok.kind == "KW" && self.tok.text == "Null") {
+            define kw = self._eat("KW", Null);
+            return self._attach_span(NullLit(kw.start, Null), kw.start, kw.stop);
+        }
+        if (self.tok.kind == "NAME" || self.tok.kind == "KW") {
+            define name_tok = self._eat(self.tok.kind, Null);
+            define name = name_tok.text;
+            if (name == "spawn") {
+                define target = self._eat_name_or_kw().text;
+                define args = self.parse_arg_list();
+                return self._attach_span(Spawn(target, args, name_tok.start, Null), name_tok.start, self._last_tok.stop);
+            }
+            if (name == "new" && self.tok.kind == "SYM" && self.tok.text == "[") {
+                define start_tok = self._eat("SYM", "[");
+                define items = new[];
+                if (!(self.tok.kind == "SYM" && self.tok.text == "]")) {
+                    define first = self.parse_expr();
+                    define _p = Collections.push(items, first);
+                    while (self._accept("SYM", ",", Null)) {
+                        define nxt = self.parse_expr();
+                        define _p2 = Collections.push(items, nxt);
+                    }
+                }
+                define _close = self._eat("SYM", "]");
+                return self._attach_span(NewLit(items, start_tok.start, Null), start_tok.start, self._last_tok.stop);
+            }
+            if (self.tok.kind == "SYM" && self.tok.text == "(") {
+                define args = self.parse_arg_list();
+                return self._attach_span(Call(name, args, name_tok.start, Null), name_tok.start, self._last_tok.stop);
+            }
+            if (name == "new" && self.tok.kind == "NAME") {
+                define cname = self._eat("NAME", Null).text;
+                define start_tok = self._eat("SYM", "{");
+                define init = new[];
+                define init_done = false;
+                while (!init_done) {
+                    if (self._accept("SYM", "}", Null)) { init_done = true; }
+                    else {
+                        define fname = self.parse_field_name();
+                        define _colon = self._eat("SYM", ":");
+                        define fexpr = self.parse_expr();
+                        define _p = Collections.push(init, new[fname, fexpr]);
+                        if (self._accept("SYM", "}", Null)) { init_done = true; }
+                        else {
+                            if (!(self._accept("SYM", ";", Null) || self._accept("SYM", ",", Null))) {
+                                return self._error("expected field separator", self.tok.start, self._tok_span(self.tok));
+                            }
+                        }
+                    }
+                }
+                return self._attach_span(ClassNew(cname, init, name_tok.start, Null), name_tok.start, self._last_tok.stop);
+            }
+            if (self._allow_variant_ctor && self.tok.kind == "SYM" && self.tok.text == "{") {
+                define fields = self.parse_variant_init_fields();
+                return self._attach_span(VariantCtor(name, fields, Null, name_tok.start, Null), name_tok.start, self._last_tok.stop);
+            }
+            return self._attach_span(Var(name, name_tok.start, Null), name_tok.start, name_tok.stop);
+        }
+        if (self.tok.kind == "SYM" && self.tok.text == "{") {
+            define start_tok = self._eat("SYM", "{");
+            define fields = new[];
+            define obj_done = false;
+            while (!obj_done) {
+                if (self._accept("SYM", "}", Null)) { obj_done = true; }
+                else {
+                    define fname = self.parse_field_name();
+                    define _colon = self._eat("SYM", ":");
+                    define fexpr = self.parse_expr();
+                    define _p = Collections.push(fields, new[fname, fexpr]);
+                    if (self._accept("SYM", "}", Null)) { obj_done = true; }
+                    else {
+                        if (!(self._accept("SYM", ";", Null) || self._accept("SYM", ",", Null))) {
+                            return self._error("expected field separator", self.tok.start, self._tok_span(self.tok));
+                        }
+                    }
+                }
+            }
+            return self._attach_span(ObjLit(fields, start_tok.start, Null), start_tok.start, self._last_tok.stop);
+        }
+        return self._error("unexpected token " + self.tok.kind, self.tok.start, self._tok_span(self.tok));
+    }
+
+    fn parse_field_name(self) -> any {
+        define name = self._eat("NAME", Null).text;
+        if (self._accept("SYM", ".", Null)) {
+            define sub = self._eat("NAME", Null).text;
+            return name + "." + sub;
+        }
+        return name;
+    }
+
+    fn parse_variant_fields(self) -> any {
+        define fields = new[];
+        if (self._accept("SYM", "{", Null) || self._accept("SYM", "(", Null)) {
+            define closing = "}";
+            if (self._last_tok.text == "(") { closing = ")"; }
+            define done = false;
+            while (!done) {
+                if (self._accept("SYM", closing, Null)) { done = true; }
+                else {
+                    define fname = self._eat("NAME", Null).text;
+                    define _colon = self._eat("SYM", ":");
+                    define ftype = self._eat_name_or_kw().text;
+                    define _p = Collections.push(fields, new[fname, ftype]);
+                    if (self._accept("SYM", closing, Null)) { done = true; }
+                    else {
+                        if (!(self._accept("SYM", ";", Null) || self._accept("SYM", ",", Null))) {
+                            return self._error("expected field separator", self.tok.start, self._tok_span(self.tok));
+                        }
+                    }
+                }
+            }
+        }
+        return fields;
+    }
+
+    fn parse_variant_init_fields(self) -> any {
+        define _start_tok = self._eat("SYM", "{");
+        define fields = new[];
+        define done = false;
+        while (!done) {
+            if (self._accept("SYM", "}", Null)) { done = true; }
+            else {
+                define fname = self._eat("NAME", Null).text;
+                define _colon = self._eat("SYM", ":");
+                define fexpr = self.parse_expr();
+                define _p = Collections.push(fields, new[fname, fexpr]);
+                if (self._accept("SYM", "}", Null)) { done = true; }
+                else {
+                    if (!(self._accept("SYM", ";", Null) || self._accept("SYM", ",", Null))) {
+                        return self._error("expected field separator", self.tok.start, self._tok_span(self.tok));
+                    }
+                }
+            }
+        }
+        return fields;
+    }
+
+    fn parse_module_path(self) -> any {
+        define prefix = "";
+        define start_tok = Null;
+        while (self._accept("SYM", ".", Null)) {
+            if (start_tok == Null) { start_tok = self._last_tok; }
+            prefix = prefix + ".";
+        }
+        if (!(self.tok.kind == "NAME")) {
+            define err = self._error("expected NAME", self.tok.start, self._tok_span(self.tok));
+            return new[err, err];
+        }
+        define first_tok = self._eat("NAME", Null);
+        define parts = new[first_tok.text];
+        define last_tok = first_tok;
+        while (self._accept("SYM", ".", Null)) {
+            last_tok = self._eat("NAME", Null);
+            define _p = Collections.push(parts, last_tok.text);
+        }
+        define start = first_tok.start;
+        if (start_tok != Null) { start = start_tok.start; }
+        define span = SourceSpan(start, last_tok.stop);
+        return new[prefix + String.join(parts, "."), span];
+    }
+
+    fn parse_qualified_name(self) -> any {
+        define parts = new[self._eat("NAME", Null).text];
+        while (self._accept("SYM", ".", Null)) {
+            define _p = Collections.push(parts, self._eat("NAME", Null).text);
+        }
+        return String.join(parts, ".");
+    }
+
+    fn _parse_product_fields(self) -> any {
+        define _open = self._eat("SYM", "{");
+        define fields = new[];
+        define semi = self._last_tok;
+        while (!self._accept("SYM", "}", Null)) {
+            define fname = self._eat("NAME", Null).text;
+            define _colon = self._eat("SYM", ":");
+            define ftype = self._eat_name_or_kw().text;
+            semi = self._eat("SYM", ";");
+            define _p = Collections.push(fields, new[fname, ftype]);
+        }
+        return new[fields, semi];
+    }
+
+    fn _parse_sum_variants(self) -> any {
+        define _open = self._eat("SYM", "{");
+        define variants = new[];
+        define semi = self._last_tok;
+        if (self.tok.kind == "NAME") {
+            define first_name_tok = self._eat("NAME", Null);
+            if (self._accept("SYM", ":", Null)) {
+                define first_type = self._eat_name_or_kw().text;
+                semi = self._eat("SYM", ";");
+                define fields = new[new[first_name_tok.text, first_type]];
+                while (!self._accept("SYM", "}", Null)) {
+                    define fname = self._eat("NAME", Null).text;
+                    define _colon = self._eat("SYM", ":");
+                    define ftype = self._eat_name_or_kw().text;
+                    semi = self._eat("SYM", ";");
+                    define _p = Collections.push(fields, new[fname, ftype]);
+                }
+                return new[variants, semi, fields];
+            }
+            define _vpush = Collections.push(variants, TypeVariant(first_name_tok.text, self.parse_variant_fields()));
+            semi = self._eat("SYM", ";");
+        }
+        while (!self._accept("SYM", "}", Null)) {
+            define vname = self._eat("NAME", Null).text;
+            define vfields = self.parse_variant_fields();
+            semi = self._eat("SYM", ";");
+            define _p = Collections.push(variants, TypeVariant(vname, vfields));
+        }
+        return new[variants, semi, Null];
     }
 }
 
 fn Parser_new(source) {
-    return new Parser { source: source };
+    define tokens = lex(source);
+    define start_tok = heap_get(tokens, 0);
+    define parser = new Parser {
+        tokens: tokens;
+        index: 1;
+        source: source;
+        tok: start_tok;
+        _last_tok: Token("<start>", "", SourcePos_origin(), SourcePos_origin());
+        _allow_variant_ctor: true
+    };
+    return parser;
 }
 
 fn parse_program(source) {
-    // Hilfsfunktion für zukünftige Aufrufer, damit die Signatur früh feststeht.
     define parser = Parser_new(source);
     return parser.parse();
 }

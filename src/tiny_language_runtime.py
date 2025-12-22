@@ -181,20 +181,22 @@ class ModuleResolver:
         self.cache: Dict[Path, NamespaceRef] = {}
         self._in_progress: List[Path] = []
 
-    def _resolve_name(self, raw: str, caller_namespace: Optional[str], pos: Optional[SourcePos]) -> str:
+    def _resolve_name(self, raw: str, caller_namespace: Optional[str], pos: Optional[Any]) -> str:
         """Normalize relative import names against the caller's namespace.
 
         A leading dot sequence (e.g. ``.foo`` or ``..bar.baz``) is expanded using
         the caller's module namespace. Errors include source span information to
         aid diagnostics in the parser and linter.
         """
+        pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
+        location = pos if pos is not None else pos_for_error
         leading = len(raw) - len(raw.lstrip("."))
         if leading == 0:
             return raw
         if not caller_namespace:
             raise TinyLangError(
-                format_error("", pos or SourcePos.origin(), "relative import outside a module", code="E008"),
-                pos or SourcePos.origin(),
+                format_error("", location or SourcePos.origin(), "relative import outside a module", code="E008"),
+                pos_for_error or SourcePos.origin(),
                 code="E008",
             )
         base = caller_namespace.split(".")
@@ -202,11 +204,11 @@ class ModuleResolver:
             raise TinyLangError(
                 format_error(
                     "",
-                    pos or SourcePos.origin(),
+                    location or SourcePos.origin(),
                     "relative import traverses beyond module root",
                     code="E008",
                 ),
-                pos or SourcePos.origin(),
+                pos_for_error or SourcePos.origin(),
                 code="E008",
             )
         trimmed = base[: len(base) - leading]
@@ -240,10 +242,13 @@ class ModuleResolver:
         *,
         caller_namespace: Optional[str],
         caller_path: Optional[Path],
-        pos: Optional[SourcePos] = None,
+        pos: Optional[Any] = None,
     ) -> NamespaceRef:
         """Import a module, executing it if necessary and caching the namespace."""
         resolved_name = self._resolve_name(name, caller_namespace, pos)
+        pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
+        frame_pos = pos_for_error or SourcePos.origin()
+        location = pos if pos is not None else pos_for_error
         for candidate in self._candidate_paths(resolved_name, caller_path):
             resolved_path = candidate.resolve()
             if resolved_path in self.cache:
@@ -253,17 +258,17 @@ class ModuleResolver:
                     raise TinyLangError(
                         format_error(
                             "",
-                            pos or SourcePos.origin(),
+                            location or SourcePos.origin(),
                             f"circular import involving {resolved_path}",
                             code="E008",
                         ),
-                        pos or SourcePos.origin(),
+                        pos_for_error or SourcePos.origin(),
                         code="E008",
                     )
                 self._in_progress.append(resolved_path)
                 module_frame: Optional[StackFrame] = None
                 if runtime.debugger is not None:
-                    module_frame = StackFrame(resolved_name or "<module>", resolved_name, pos or SourcePos.origin())
+                    module_frame = StackFrame(resolved_name or "<module>", resolved_name, frame_pos)
                     runtime.call_stack.append(module_frame)
                 try:
                     module_env = Environment(parent=None, namespace=resolved_name, runtime=runtime)
@@ -516,7 +521,7 @@ class Runtime:
                 return binding
         return None
 
-    def _guard_protected_mutation(self, target: Any, pos: Optional[SourcePos]) -> None:
+    def _guard_protected_mutation(self, target: Any, pos: Optional[Any]) -> None:
         if not self.copy_on_call:
             return
         binding = self._lookup_protected_binding(target)
@@ -673,18 +678,45 @@ class Runtime:
                 )
             self.debugger.handle_pause(snapshot, depth)
 
+    @staticmethod
+    def _pos_and_span(location: Optional[Any], span_override: Optional[SourceSpan] = None) -> Tuple[Optional[SourcePos], Optional[SourceSpan]]:
+        resolved_span = span_override
+        if resolved_span is None:
+            if isinstance(location, SourceSpan):
+                resolved_span = location
+            elif location is not None:
+                resolved_span = getattr(location, "span", None)
+        if isinstance(location, SourcePos):
+            resolved_pos = location
+        elif location is not None:
+            resolved_pos = getattr(location, "pos", None)
+        else:
+            resolved_pos = None
+        if resolved_pos is None and resolved_span is not None:
+            resolved_pos = resolved_span.start
+        return resolved_pos, resolved_span
+
+    @staticmethod
+    def _format_location(pos: Optional[SourcePos], span: Optional[SourceSpan]) -> Optional[Union[SourcePos, SourceSpan]]:
+        if pos is not None:
+            return pos
+        return span
+
     def _record_error(
         self,
         msg: str,
-        pos: Optional[SourcePos] = None,
+        pos: Optional[Any] = None,
         *,
         code: str = "E000",
         hint: Optional[str] = None,
         formatted: Optional[str] = None,
+        span: Optional[SourceSpan] = None,
     ) -> None:
+        resolved_pos, resolved_span = self._pos_and_span(pos, span)
+        location = self._format_location(resolved_pos, resolved_span)
         if formatted is None:
-            source = self._source_for_namespace(self.current_module_namespace if pos is not None else None)
-            base = format_error(source, pos, msg, code=code, hint=hint) if pos is not None else msg
+            source = self._source_for_namespace(self.current_module_namespace if location is not None else None)
+            base = format_error(source, location, msg, code=code, hint=hint) if location is not None else msg
             stack_part = self._format_stacktrace(self.call_stack)
             formatted = f"{base}\n{stack_part}" if stack_part else base
         with self._lock:
@@ -695,22 +727,25 @@ class Runtime:
     def _error(
         self,
         msg: str,
-        pos: SourcePos,
+        pos: Any,
         *,
         code: Optional[str] = None,
         hint: Optional[str] = None,
         candidates: Optional[List[str]] = None,
+        span: Optional[SourceSpan] = None,
         ) -> TinyLangError:
+        resolved_pos, resolved_span = self._pos_and_span(pos, span)
+        location = self._format_location(resolved_pos, resolved_span) or resolved_pos or SourcePos.origin()
         derived_code, derived_hint = _classify_error(msg, candidates)
         code = code or derived_code
         hint = hint or derived_hint
         source = self._source_for_namespace(self.current_module_namespace)
-        formatted = format_error(source, pos, msg, code=code, hint=hint)
+        formatted = format_error(source, location, msg, code=code, hint=hint)
         stack = tuple(self.call_stack)
         if stack:
             formatted = f"{formatted}\n{self._format_stacktrace(stack)}"
-        self._record_error(msg, pos, code=code, hint=hint, formatted=formatted)
-        return TinyLangError(formatted, pos, code=code, hint=hint, stack=stack)
+        self._record_error(msg, resolved_pos, code=code, hint=hint, formatted=formatted, span=resolved_span)
+        return TinyLangError(formatted, resolved_pos or SourcePos.origin(), code=code, hint=hint, stack=stack, span=resolved_span)
 
     def _ensure_error_has_stack(self, err: TinyLangError) -> TinyLangError:
         if err.stack:
@@ -763,7 +798,7 @@ class Runtime:
             return str(int(p))
         return f"{p!r} ({type_name})"
 
-    def _resolve_ptr(self, p: Any, pos: Optional[SourcePos], *, op: str) -> Tuple[Optional[int], Optional[List[Any]]]:
+    def _resolve_ptr(self, p: Any, pos: Optional[Any], *, op: str) -> Tuple[Optional[int], Optional[List[Any]]]:
         """Validate and resolve a heap pointer for the requested operation.
 
         Returns a tuple of `(pointer, cells)` where either entry may be `None` if
@@ -812,7 +847,7 @@ class Runtime:
                 return None, None
             return ip, cells
 
-    def _parse_heap_index(self, i: Any, pos: Optional[SourcePos]) -> Optional[int]:
+    def _parse_heap_index(self, i: Any, pos: Optional[Any]) -> Optional[int]:
         """Parse an index argument and record helpful errors when invalid."""
 
         try:
@@ -829,7 +864,7 @@ class Runtime:
 
         return idx
 
-    def delete(self, p: Any, pos: Optional[SourcePos] = None) -> Dict[str, Any]:
+    def delete(self, p: Any, pos: Optional[Any] = None) -> Dict[str, Any]:
         ip, _ = self._resolve_ptr(p, pos, op="delete")
         if ip is None:
             return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": self.error_message or ""}}
@@ -844,7 +879,7 @@ class Runtime:
             self.freed_ptrs.add(ip)
         return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 0, "msg": ""}}
 
-    def heap_get(self, p: Any, i: Any, *, pos: Optional[SourcePos] = None) -> Any:
+    def heap_get(self, p: Any, i: Any, *, pos: Optional[Any] = None) -> Any:
         idx = self._parse_heap_index(i, pos)
         if idx is None:
             return None
@@ -863,7 +898,7 @@ class Runtime:
             return None
         return cells[idx]
 
-    def heap_set(self, p: Any, i: Any, v: Any, *, pos: Optional[SourcePos] = None) -> Dict[str, Any]:
+    def heap_set(self, p: Any, i: Any, v: Any, *, pos: Optional[Any] = None) -> Dict[str, Any]:
         idx = self._parse_heap_index(i, pos)
         if idx is None:
             msg = self.error_message or ""
@@ -910,7 +945,7 @@ class Runtime:
                 "has_leaks": leak_count > 0,
             }
 
-    def tag(self, p: Any, typ: Any, *, pos: Optional[SourcePos] = None) -> Dict[str, Any]:
+    def tag(self, p: Any, typ: Any, *, pos: Optional[Any] = None) -> Dict[str, Any]:
         try:
             with self._lock:
                 self.ptr_tags[int(p)] = str(typ)
@@ -969,7 +1004,7 @@ class Runtime:
         return self._value_type_name(value) or type(value).__name__
 
     def _check_assignment_type(
-        self, env: "Environment", name: str, value: Any, pos: SourcePos, *, local_only: bool = False
+        self, env: "Environment", name: str, value: Any, pos: Any, *, local_only: bool = False
     ) -> None:
         expected = env.type_of(name, local_only=local_only)
         if expected is None:
@@ -1007,7 +1042,7 @@ class Runtime:
             return self._type_matches(base_expected, value)
         return False
 
-    def _enforce_annotation(self, expected: str, value: Any, *, label: str, pos: SourcePos) -> None:
+    def _enforce_annotation(self, expected: str, value: Any, *, label: str, pos: Any) -> None:
         if not self._type_matches(expected, value):
             actual = self._value_type_name(value) or type(value).__name__
             raise self._error(
@@ -1336,7 +1371,7 @@ class Runtime:
             return a != b
         raise RuntimeError(f"unsupported op {op}")
 
-    def field_get(self, obj: Any, key: str, *, pos: Optional[SourcePos] = None) -> Any:
+    def field_get(self, obj: Any, key: str, *, pos: Optional[Any] = None) -> Any:
         target_obj = obj.obj if isinstance(obj, BaseView) else obj
         owner_hint = obj.class_name if isinstance(obj, BaseView) else None
         if isinstance(target_obj, NamespaceRef):
@@ -1364,7 +1399,7 @@ class Runtime:
             self._record_error(f"unknown field {key}", pos)
             return None
 
-    def field_set(self, obj: Any, key: str, val: Any, *, pos: Optional[SourcePos] = None) -> None:
+    def field_set(self, obj: Any, key: str, val: Any, *, pos: Optional[Any] = None) -> None:
         target_obj = obj.obj if isinstance(obj, BaseView) else obj
         owner_hint = obj.class_name if isinstance(obj, BaseView) else None
         self._guard_protected_mutation(target_obj, pos)
@@ -1426,7 +1461,7 @@ class Runtime:
         return None
 
     def instantiate_variant(
-        self, variant: str, init: Dict[str, Any], *, type_name: Optional[str] = None, pos: Optional[SourcePos] = None
+        self, variant: str, init: Dict[str, Any], *, type_name: Optional[str] = None, pos: Optional[Any] = None
     ) -> Dict[str, Any]:
         inferred_type = type_name or self.variant_to_type.get(variant)
         if inferred_type is None:
@@ -1526,7 +1561,7 @@ class Runtime:
     def eval_match(self, m: Match, value: Any, env: "Environment") -> Any:
         tag = self.__get_tag(value)
         if tag is None:
-            raise self._error("match target is not tagged", m.pos)
+            raise self._error("match target is not tagged", m)
 
         type_name = None
         if isinstance(value, dict):
@@ -1548,13 +1583,13 @@ class Runtime:
                 has_wildcard = True
             elif isinstance(case.pattern, VariantPattern):
                 if case.pattern.variant in seen:
-                    raise self._error(f"duplicate case {case.pattern.variant}", case.pattern.pos)
+                    raise self._error(f"duplicate case {case.pattern.variant}", case.pattern)
                 seen.add(case.pattern.variant)
                 if expected is not None and case.pattern.variant not in expected:
                     missing_case = case.pattern.variant
                     raise self._error(
                         f"unknown case(s) for sum type {type_name}: {missing_case} (unexpected case {missing_case} for type {type_name})",
-                        case.pattern.pos,
+                        case.pattern,
                     )
 
         if expected is not None and not has_wildcard:
@@ -1563,7 +1598,7 @@ class Runtime:
                 missing_list = ", ".join(sorted(missing))
                 raise self._error(
                     f"non-exhaustive match for {type_name}: missing {missing_list} (missing cases: {missing_list})",
-                    m.pos,
+                    m,
                     hint="Add the missing branches or a trailing '_' catch-all case.",
                 )
 
@@ -1590,28 +1625,28 @@ class Runtime:
                     if not field_order:
                         raise self._error(
                             f"cannot bind positional pattern for {pattern.variant} without type information",
-                            pattern.pos,
+                            pattern,
                         )
                     if len(pattern.positional_bindings) > len(field_order):
                         raise self._error(
                             f"positional pattern for {pattern.variant} has too many fields",
-                            pattern.pos,
+                            pattern,
                         )
                     for idx, bind in enumerate(pattern.positional_bindings):
                         if not bind:
                             continue
                         fname = field_order[idx]
                         if not isinstance(value, dict) or fname not in value:
-                            raise self._error(f"field {fname} missing for variant {pattern.variant}", pattern.pos)
+                            raise self._error(f"field {fname} missing for variant {pattern.variant}", pattern)
                         branch_env.define(bind, value[fname], pattern.pos)
                 for fname, bind in pattern.bindings.items():
                     if not isinstance(value, dict) or fname not in value:
-                        raise self._error(f"field {fname} missing for variant {pattern.variant}", pattern.pos)
+                        raise self._error(f"field {fname} missing for variant {pattern.variant}", pattern)
                     if bind:
                         branch_env.define(bind, value[fname], pattern.pos)
                 return self.eval_expr(case.body, branch_env)
 
-        raise self._error(f"non-exhaustive match for tag {tag}", m.pos)
+        raise self._error(f"non-exhaustive match for tag {tag}", m)
 
     def _resolve_function(self, name: str, env: "Environment") -> Tuple[Optional[str], Optional[Fn]]:
         with self._lock:

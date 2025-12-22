@@ -18,17 +18,17 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
     self._maybe_pause(s, env, namespace)
     try:
         if isinstance(s, Let):
-            env.define(s.name, self.eval_expr(s.expr, env), s.pos)
+            env.define(s.name, self.eval_expr(s.expr, env), getattr(s, "span", s.pos))
         elif isinstance(s, Assign):
             value = self.eval_expr(s.expr, env)
             if env.contains(s.name):
-                env.assign(s.name, value, s.pos)
+                env.assign(s.name, value, getattr(s, "span", s.pos))
             else:
-                env.define(s.name, value, s.pos)
+                env.define(s.name, value, getattr(s, "span", s.pos))
         elif isinstance(s, FieldAssign):
             obj = self.eval_expr(s.obj, env)
             val = self.eval_expr(s.expr, env)
-            self.field_set(obj, s.name, val, pos=s.pos)
+            self.field_set(obj, s.name, val, pos=getattr(s, "span", s.pos))
         elif isinstance(s, Print):
             vals = [self.eval_expr(expr, env) for expr in s.exprs]
             text = " ".join(self.format_value(v) for v in vals)
@@ -71,7 +71,7 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
         elif isinstance(s, Namespace):
             qualified = self._qualify_name(s.name, namespace)
             child_env = Environment(parent=env, namespace=qualified, runtime=self)
-            env.define(s.name, NamespaceRef(self, qualified), s.pos)
+            env.define(s.name, NamespaceRef(self, qualified), getattr(s, "span", s.pos))
             self.namespace_envs[qualified] = child_env
             self.eval_block(s.body, child_env, qualified)
         elif isinstance(s, Import):
@@ -81,9 +81,9 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
                 self,
                 caller_namespace=namespace or env.namespace,
                 caller_path=self.current_module_path,
-                pos=s.pos,
+                pos=getattr(s, "span", s.pos),
             )
-            env.define(binding, ns_ref, s.pos)
+            env.define(binding, ns_ref, getattr(s, "span", s.pos))
         elif isinstance(s, Fn):
             s.namespace = namespace
             fn_name = self._qualify_name(s.name, namespace)
@@ -105,9 +105,9 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
             for nm in s.names:
                 extracted = val[str(nm)]
                 if env.contains(nm):
-                    env.assign(nm, extracted, s.pos)
+                    env.assign(nm, extracted, getattr(s, "span", s.pos))
                 else:
-                    env.define(nm, extracted, s.pos)
+                    env.define(nm, extracted, getattr(s, "span", s.pos))
         elif isinstance(s, TypeDef):
             self.register_type(s.name, s.fields, s.variants)
         elif isinstance(s, ClassDef):
@@ -125,7 +125,7 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
     except (ReturnSignal, TinyLangError):
         raise
     except Exception as exc:  # noqa: BLE001
-        raise self._error(str(exc), getattr(s, "pos", SourcePos.origin())) from exc
+        raise self._error(str(exc), s) from exc
 
 def eval_expr(self, e: IR, env: "Environment") -> Any:
     try:
@@ -149,7 +149,7 @@ def eval_expr(self, e: IR, env: "Environment") -> Any:
                 return e.name
             raise self._error(
                 f"unknown variable {e.name}",
-                e.pos,
+                e,
                 candidates=env.all_names(),
             )
         if isinstance(e, Call):
@@ -160,18 +160,18 @@ def eval_expr(self, e: IR, env: "Environment") -> Any:
             if e.name == "new":
                 return self._Runtime__new(int(self.eval_expr(e.args[0], env)))
             if e.name == "heap_get":
-                return self.heap_get(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env), pos=e.pos)
+                return self.heap_get(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env), pos=e)
             if e.name == "heap_set":
                 return self.heap_set(
                     self.eval_expr(e.args[0], env),
                     self.eval_expr(e.args[1], env),
                     self.eval_expr(e.args[2], env),
-                    pos=e.pos,
+                    pos=e,
                 )
             if e.name == "delete":
-                return self.delete(self.eval_expr(e.args[0], env), pos=e.pos)
+                return self.delete(self.eval_expr(e.args[0], env), pos=e)
             if e.name == "tag":
-                return self.tag(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env), pos=e.pos)
+                return self.tag(self.eval_expr(e.args[0], env), self.eval_expr(e.args[1], env), pos=e)
             if e.name == "join":
                 if not (1 <= len(e.args) <= 3):
                     raise RuntimeError("join expects between 1 and 3 arguments")
@@ -241,7 +241,7 @@ def eval_expr(self, e: IR, env: "Environment") -> Any:
         if isinstance(e, NewLit):
             p = self._Runtime__new(len(e.items))
             for idx, item in enumerate(e.items):
-                self.heap_set(p, idx, self.eval_expr(item, env), pos=e.pos)
+                self.heap_set(p, idx, self.eval_expr(item, env), pos=e)
             return p
         if isinstance(e, Bin):
             if e.op == "and":
@@ -264,13 +264,13 @@ def eval_expr(self, e: IR, env: "Environment") -> Any:
             return obj
         if isinstance(e, VariantCtor):
             init = {k: self.eval_expr(v, env) for k, v in e.fields}
-            return self.instantiate_variant(e.variant, init, type_name=e.type_name, pos=e.pos)
+            return self.instantiate_variant(e.variant, init, type_name=e.type_name, pos=e)
         if isinstance(e, Match):
             val = self.eval_expr(e.expr, env)
             return self.eval_match(e, val, env)
         if isinstance(e, Field):
             obj = self.eval_expr(e.obj, env)
-            return self.field_get(obj, e.name, pos=e.pos)
+            return self.field_get(obj, e.name, pos=e)
         if isinstance(e, MethodCall):
             obj = self.eval_expr(e.obj, env)
             args = [self.eval_expr(a, env) for a in e.args]
@@ -283,7 +283,7 @@ def eval_expr(self, e: IR, env: "Environment") -> Any:
     except TinyLangError:
         raise
     except Exception as exc:  # noqa: BLE001
-        raise self._error(str(exc), getattr(e, "pos", SourcePos.origin())) from exc
+        raise self._error(str(exc), e) from exc
 
 
 Runtime.eval_block = eval_block
@@ -308,14 +308,14 @@ class Environment:
             return self.parent.get(name)
         raise RuntimeError(f"unknown variable {name}")
 
-    def define(self, name: str, value: Any, pos: SourcePos) -> None:
+    def define(self, name: str, value: Any, pos: Union[SourcePos, SourceSpan]) -> None:
         if self.runtime:
             self.types[name] = self.runtime._infer_type_name(value)
         else:
             self.types[name] = "number" if isinstance(value, (int, float)) and not isinstance(value, bool) else type(value).__name__
         self.values[name] = value
 
-    def assign(self, name: str, value: Any, pos: SourcePos) -> None:
+    def assign(self, name: str, value: Any, pos: Union[SourcePos, SourceSpan]) -> None:
         if name in self.values:
             if self.runtime:
                 self.runtime._check_assignment_type(self, name, value, pos, local_only=True)

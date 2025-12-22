@@ -1023,6 +1023,8 @@ class Runtime:
         if actual is None:
             return False
         expected_norm = expected.strip()
+        if expected_norm.lower() == "any":
+            return True
         optional = expected_norm.endswith("?")
         base_expected = expected_norm[:-1].strip() if optional else expected_norm
         actual_norm = actual.strip() if isinstance(actual, str) else str(actual)
@@ -1877,7 +1879,7 @@ class Runtime:
         md = self.find_method(start_class, name)
         if md is None:
             raise RuntimeError(f"no method {name} for class {start_class}")
-        env = Environment(parent=None, runtime=self)
+        env = Environment(parent=self.global_env, runtime=self)
         self_value: Any = target_obj
         if md.class_name != cname:
             self_value = BaseView(target_obj, md.class_name)

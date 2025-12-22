@@ -9,63 +9,116 @@ class SourcePos {
 fn SourcePos(line, column) { return new SourcePos { line: line; column: column }; }
 fn SourcePos_origin() { return SourcePos(1, 1); }
 
+class SourceSpan {
+    start: SourcePos;
+    stop: SourcePos;
+}
+fn SourceSpan(start, stop) { return new SourceSpan { start: start; stop: stop }; }
+
 fn _pos_or_default(pos) {
     if (pos == Null) { return SourcePos_origin(); }
     return pos;
 }
 
-class IR { pos: SourcePos; }
+fn _span_or_default(span, pos) {
+    if (span == Null) { return SourceSpan(_pos_or_default(pos), _pos_or_default(pos)); }
+    return span;
+}
+
+class IR { pos: SourcePos; span: SourceSpan; }
 
 class Let {
     name: string;
     expr: IR;
     pos: SourcePos;
+    span: SourceSpan;
+    name_span: SourceSpan;
 }
-fn Let(name, expr, pos) { return new Let { name: name; expr: expr; pos: _pos_or_default(pos) }; }
+fn Let(name, expr, pos, span, name_span) {
+    return new Let {
+        name: name;
+        expr: expr;
+        pos: _pos_or_default(pos);
+        span: _span_or_default(span, pos);
+        name_span: name_span
+    };
+}
 
 class Assign {
     name: string;
     expr: IR;
     pos: SourcePos;
+    span: SourceSpan;
+    name_span: SourceSpan;
 }
-fn Assign(name, expr, pos) { return new Assign { name: name; expr: expr; pos: _pos_or_default(pos) }; }
+fn Assign(name, expr, pos, span, name_span) {
+    return new Assign {
+        name: name;
+        expr: expr;
+        pos: _pos_or_default(pos);
+        span: _span_or_default(span, pos);
+        name_span: name_span
+    };
+}
 
 class FieldAssign {
     obj: IR;
     name: string;
     expr: IR;
     pos: SourcePos;
+    span: SourceSpan;
 }
-fn FieldAssign(obj, name, expr, pos) { return new FieldAssign { obj: obj; name: name; expr: expr; pos: _pos_or_default(pos) }; }
+fn FieldAssign(obj, name, expr, pos, span) {
+    return new FieldAssign {
+        obj: obj;
+        name: name;
+        expr: expr;
+        pos: _pos_or_default(pos);
+        span: _span_or_default(span, pos)
+    };
+}
 
-class Print {
-    exprs: Pointer;
-    pos: SourcePos;
-}
-fn Print(exprs, pos) { return new Print { exprs: exprs; pos: _pos_or_default(pos) }; }
+class Print { exprs: Pointer; pos: SourcePos; span: SourceSpan; }
+fn Print(exprs, pos, span) { return new Print { exprs: exprs; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
+
+class Flush { pos: SourcePos; span: SourceSpan; }
+fn Flush(pos, span) { return new Flush { pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
 class If {
     cond: IR;
     then: Pointer;
     els: Pointer;
     pos: SourcePos;
+    span: SourceSpan;
 }
-fn If(cond, then, els, pos) { return new If { cond: cond; then: then; els: els; pos: _pos_or_default(pos) }; }
+fn If(cond, then, els, pos, span) {
+    return new If { cond: cond; then: then; els: els; pos: _pos_or_default(pos); span: _span_or_default(span, pos) };
+}
 
 class While {
     cond: IR;
     body: Pointer;
     pos: SourcePos;
+    span: SourceSpan;
 }
-fn While(cond, body, pos) { return new While { cond: cond; body: body; pos: _pos_or_default(pos) }; }
+fn While(cond, body, pos, span) { return new While { cond: cond; body: body; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
 class TryCatch {
     body: Pointer;
     err_name: string;
     handler: Pointer;
     pos: SourcePos;
+    span: SourceSpan;
 }
-fn TryCatch(body, err_name, handler, pos) { return new TryCatch { body: body; err_name: err_name; handler: handler; pos: _pos_or_default(pos) }; }
+fn TryCatch(body, err_name, handler, pos, span) {
+    return new TryCatch {
+        body: body;
+        err_name: err_name;
+        handler: handler;
+        pos: _pos_or_default(pos);
+        span: _span_or_default(span, pos)
+    };
+}
 
 class Param {
     name: string;
@@ -77,22 +130,26 @@ class Fn {
     name: string;
     params: Pointer;
     body: Pointer;
+    return_param_names: Pointer;
     namespace_name: string;
     return_type: string;
     inferred_return_type: string;
     is_async: Bool;
     pos: SourcePos;
+    span: SourceSpan;
 }
-fn Fn(name, params, body, namespace_name, return_type, inferred_return_type, is_async, pos) {
+fn Fn(name, params, body, return_param_names, namespace_name, return_type, inferred_return_type, is_async, pos, span) {
     return new Fn {
         name: name;
         params: params;
         body: body;
+        return_param_names: return_param_names;
         namespace_name: namespace_name;
         return_type: return_type;
         inferred_return_type: inferred_return_type;
         is_async: is_async;
-        pos: _pos_or_default(pos)
+        pos: _pos_or_default(pos);
+        span: _span_or_default(span, pos)
     };
 }
 
@@ -101,23 +158,27 @@ class MethodDef {
     name: string;
     params: Pointer;
     body: Pointer;
+    return_param_names: Pointer;
     return_type: string;
     inferred_return_type: string;
     namespace_name: string;
     is_async: Bool;
     pos: SourcePos;
+    span: SourceSpan;
 }
-fn MethodDef(class_name, name, params, body, return_type, inferred_return_type, namespace_name, is_async, pos) {
+fn MethodDef(class_name, name, params, body, return_param_names, return_type, inferred_return_type, namespace_name, is_async, pos, span) {
     return new MethodDef {
         class_name: class_name;
         name: name;
         params: params;
         body: body;
+        return_param_names: return_param_names;
         return_type: return_type;
         inferred_return_type: inferred_return_type;
         namespace_name: namespace_name;
         is_async: is_async;
-        pos: _pos_or_default(pos)
+        pos: _pos_or_default(pos);
+        span: _span_or_default(span, pos)
     };
 }
 
@@ -125,41 +186,76 @@ class Namespace {
     name: string;
     body: Pointer;
     pos: SourcePos;
+    span: SourceSpan;
 }
-fn Namespace(name, body, pos) { return new Namespace { name: name; body: body; pos: _pos_or_default(pos) }; }
+fn Namespace(name, body, pos, span) { return new Namespace { name: name; body: body; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
-class Return {
-    expr: IR;
-    pos: SourcePos;
-}
-fn Return(expr, pos) { return new Return { expr: expr; pos: _pos_or_default(pos) }; }
+class Return { expr: IR; pos: SourcePos; span: SourceSpan; }
+fn Return(expr, pos, span) { return new Return { expr: expr; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
 class Import {
     module: string;
     alias: string;
     pos: SourcePos;
+    span: SourceSpan;
+    module_span: SourceSpan;
+    binding_span: SourceSpan;
 }
-fn Import(module, alias, pos) { return new Import { module: module; alias: alias; pos: _pos_or_default(pos) }; }
+fn Import(module, alias, pos, span, module_span, binding_span) {
+    return new Import {
+        module: module;
+        alias: alias;
+        pos: _pos_or_default(pos);
+        span: _span_or_default(span, pos);
+        module_span: module_span;
+        binding_span: binding_span
+    };
+}
 
-class CallStmt {
-    name: string;
-    args: Pointer;
-    pos: SourcePos;
-}
-fn CallStmt(name, args, pos) { return new CallStmt { name: name; args: args; pos: _pos_or_default(pos) }; }
+class CallStmt { name: string; args: Pointer; pos: SourcePos; span: SourceSpan; }
+fn CallStmt(name, args, pos, span) { return new CallStmt { name: name; args: args; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
 class OpDef {
     op: string;
-    params: Pointer;
+    a_name: string;
+    a_type: string;
+    b_name: string;
+    b_type: string;
     body: Pointer;
     pos: SourcePos;
+    span: SourceSpan;
 }
-fn OpDef(op, params, body, pos) { return new OpDef { op: op; params: params; body: body; pos: _pos_or_default(pos) }; }
+fn OpDef(op, a_name, a_type, b_name, b_type, body, pos, span) {
+    return new OpDef {
+        op: op;
+        a_name: a_name;
+        a_type: a_type;
+        b_name: b_name;
+        b_type: b_type;
+        body: body;
+        pos: _pos_or_default(pos);
+        span: _span_or_default(span, pos)
+    };
+}
 
-class TypeVariant {
-    name: string;
-    fields: Pointer;
+class DestructAssign {
+    names: Pointer;
+    expr: IR;
+    pos: SourcePos;
+    span: SourceSpan;
+    name_spans: Pointer;
 }
+fn DestructAssign(names, expr, pos, span, name_spans) {
+    return new DestructAssign {
+        names: names;
+        expr: expr;
+        pos: _pos_or_default(pos);
+        span: _span_or_default(span, pos);
+        name_spans: name_spans
+    };
+}
+
+class TypeVariant { name: string; fields: Pointer; }
 fn TypeVariant(name, fields) { return new TypeVariant { name: name; fields: fields }; }
 
 class TypeDef {
@@ -167,8 +263,17 @@ class TypeDef {
     fields: Pointer;
     variants: Pointer;
     pos: SourcePos;
+    span: SourceSpan;
 }
-fn TypeDef(name, fields, variants, pos) { return new TypeDef { name: name; fields: fields; variants: variants; pos: _pos_or_default(pos) }; }
+fn TypeDef(name, fields, variants, pos, span) {
+    return new TypeDef {
+        name: name;
+        fields: fields;
+        variants: variants;
+        pos: _pos_or_default(pos);
+        span: _span_or_default(span, pos)
+    };
+}
 
 class ClassDef {
     name: string;
@@ -176,114 +281,119 @@ class ClassDef {
     methods: Pointer;
     bases: Pointer;
     pos: SourcePos;
+    span: SourceSpan;
 }
-fn ClassDef(name, fields, methods, bases, pos) { return new ClassDef { name: name; fields: fields; methods: methods; bases: bases; pos: _pos_or_default(pos) }; }
+fn ClassDef(name, fields, methods, bases, pos, span) {
+    return new ClassDef {
+        name: name;
+        fields: fields;
+        methods: methods;
+        bases: bases;
+        pos: _pos_or_default(pos);
+        span: _span_or_default(span, pos)
+    };
+}
 
-class Num { txt: string; pos: SourcePos; }
-fn Num(txt, pos) { return new Num { txt: txt; pos: _pos_or_default(pos) }; }
+class Num { txt: string; pos: SourcePos; span: SourceSpan; }
+fn Num(txt, pos, span) { return new Num { txt: txt; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
-class Str { txt: string; pos: SourcePos; }
-fn Str(txt, pos) { return new Str { txt: txt; pos: _pos_or_default(pos) }; }
+class Str { txt: string; pos: SourcePos; span: SourceSpan; }
+fn Str(txt, pos, span) { return new Str { txt: txt; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
-class BoolLit { value: Bool; pos: SourcePos; }
-fn BoolLit(value, pos) { return new BoolLit { value: value; pos: _pos_or_default(pos) }; }
-
-class NullLit { pos: SourcePos; }
-fn NullLit(pos) { return new NullLit { pos: _pos_or_default(pos) }; }
-
-class Var { name: string; pos: SourcePos; }
-fn Var(name, pos) { return new Var { name: name; pos: _pos_or_default(pos) }; }
-
-class Call {
-    name: string;
-    args: Pointer;
+class Bool {
+    value: Bool;
     pos: SourcePos;
+    span: SourceSpan;
 }
-fn Call(name, args, pos) { return new Call { name: name; args: args; pos: _pos_or_default(pos) }; }
+fn Bool(value, pos, span) { return new Bool { value: value; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
-class New { size: IR; pos: SourcePos; }
-fn New(size, pos) { return new New { size: size; pos: _pos_or_default(pos) }; }
+class NullLit {
+    pos: SourcePos;
+    span: SourceSpan;
+}
+fn NullLit(pos, span) { return new NullLit { pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
-class NewLit { items: Pointer; pos: SourcePos; }
-fn NewLit(items, pos) { return new NewLit { items: items; pos: _pos_or_default(pos) }; }
+class Var { name: string; pos: SourcePos; span: SourceSpan; }
+fn Var(name, pos, span) { return new Var { name: name; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
+
+class Call { name: string; args: Pointer; pos: SourcePos; span: SourceSpan; }
+fn Call(name, args, pos, span) { return new Call { name: name; args: args; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
+
+class New { size: IR; pos: SourcePos; span: SourceSpan; }
+fn New(size, pos, span) { return new New { size: size; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
+
+class NewLit { items: Pointer; pos: SourcePos; span: SourceSpan; }
+fn NewLit(items, pos, span) { return new NewLit { items: items; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
 class Bin {
     op: string;
     a: IR;
     b: IR;
     pos: SourcePos;
+    span: SourceSpan;
 }
-fn Bin(op, a, b, pos) { return new Bin { op: op; a: a; b: b; pos: _pos_or_default(pos) }; }
+fn Bin(op, a, b, pos, span) { return new Bin { op: op; a: a; b: b; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
-class ObjLit { fields: Pointer; pos: SourcePos; }
-fn ObjLit(fields, pos) { return new ObjLit { fields: fields; pos: _pos_or_default(pos) }; }
+class ObjLit { fields: Pointer; pos: SourcePos; span: SourceSpan; }
+fn ObjLit(fields, pos, span) { return new ObjLit { fields: fields; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
-class Field {
-    obj: IR;
-    name: string;
-    pos: SourcePos;
-}
-fn Field(obj, name, pos) { return new Field { obj: obj; name: name; pos: _pos_or_default(pos) }; }
+class Field { obj: IR; name: string; pos: SourcePos; span: SourceSpan; }
+fn Field(obj, name, pos, span) { return new Field { obj: obj; name: name; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
-class MethodCall {
-    obj: IR;
-    name: string;
-    args: Pointer;
-    pos: SourcePos;
-}
-fn MethodCall(obj, name, args, pos) { return new MethodCall { obj: obj; name: name; args: args; pos: _pos_or_default(pos) }; }
+class MethodCall { obj: IR; name: string; args: Pointer; pos: SourcePos; span: SourceSpan; }
+fn MethodCall(obj, name, args, pos, span) { return new MethodCall { obj: obj; name: name; args: args; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
-class ClassNew {
-    name: string;
-    init: Pointer;
-    pos: SourcePos;
-}
-fn ClassNew(name, init, pos) { return new ClassNew { name: name; init: init; pos: _pos_or_default(pos) }; }
+class ClassNew { name: string; init: Pointer; pos: SourcePos; span: SourceSpan; }
+fn ClassNew(name, init, pos, span) { return new ClassNew { name: name; init: init; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
-class Await { expr: IR; pos: SourcePos; }
-fn Await(expr, pos) { return new Await { expr: expr; pos: _pos_or_default(pos) }; }
+class Spawn { name: string; args: Pointer; pos: SourcePos; span: SourceSpan; }
+fn Spawn(name, args, pos, span) { return new Spawn { name: name; args: args; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
-class MatchCase {
-    pattern: IR;
-    body: IR;
-    pos: SourcePos;
-}
-fn MatchCase(pattern, body, pos) { return new MatchCase { pattern: pattern; body: body; pos: _pos_or_default(pos) }; }
+class Await { expr: IR; pos: SourcePos; span: SourceSpan; }
+fn Await(expr, pos, span) { return new Await { expr: expr; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
-class Pattern { pos: SourcePos; }
-fn Pattern(pos) { return new Pattern { pos: _pos_or_default(pos) }; }
+class MatchCase { pattern: IR; body: IR; pos: SourcePos; span: SourceSpan; }
+fn MatchCase(pattern, body, pos, span) { return new MatchCase { pattern: pattern; body: body; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
+
+class Pattern { pos: SourcePos; span: SourceSpan; }
+fn Pattern(pos, span) { return new Pattern { pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
 class VariantPattern {
     variant: string;
     bindings: Map;
+    positional_bindings: Pointer;
     pos: SourcePos;
+    span: SourceSpan;
 }
-fn VariantPattern(variant, bindings, pos) { return new VariantPattern { variant: variant; bindings: bindings; pos: _pos_or_default(pos) }; }
+fn VariantPattern(variant, bindings, positional_bindings, pos, span) {
+    return new VariantPattern {
+        variant: variant;
+        bindings: bindings;
+        positional_bindings: positional_bindings;
+        pos: _pos_or_default(pos);
+        span: _span_or_default(span, pos)
+    };
+}
 
-class WildcardPattern {
-    name: string;
-    pos: SourcePos;
-}
-fn WildcardPattern(name, pos) { return new WildcardPattern { name: name; pos: _pos_or_default(pos) }; }
+class WildcardPattern { name: string; pos: SourcePos; span: SourceSpan; }
+fn WildcardPattern(name, pos, span) { return new WildcardPattern { name: name; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
-class Match {
-    expr: IR;
-    cases: Pointer;
-    pos: SourcePos;
-}
-fn Match(expr, cases, pos) { return new Match { expr: expr; cases: cases; pos: _pos_or_default(pos) }; }
+class Match { expr: IR; cases: Pointer; pos: SourcePos; span: SourceSpan; }
+fn Match(expr, cases, pos, span) { return new Match { expr: expr; cases: cases; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
 class VariantCtor {
     variant: string;
     fields: Pointer;
     type_name: string;
     pos: SourcePos;
+    span: SourceSpan;
 }
-fn VariantCtor(variant, fields, type_name, pos) {
+fn VariantCtor(variant, fields, type_name, pos, span) {
     return new VariantCtor {
         variant: variant;
         fields: fields;
         type_name: type_name;
-        pos: _pos_or_default(pos)
+        pos: _pos_or_default(pos);
+        span: _span_or_default(span, pos)
     };
 }

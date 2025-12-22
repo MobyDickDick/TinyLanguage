@@ -214,7 +214,7 @@ def lint_fn_params_used(fn: Fn, source: Optional[str] = None) -> None:
     for st in fn.body:
         lint_stmt_reads(st, reads)
     param_names = _param_names(fn.params)
-    unused = [p for p in param_names if not p.startswith("_") and reads.get(p, 0) == 0]
+    unused = [p for p in param_names if p != "self" and not p.startswith("_") and reads.get(p, 0) == 0]
     if unused:
         msg = f"unused parameter(s) in function {fn.name}: {', '.join(unused)}"
         if source is None:
@@ -234,7 +234,7 @@ def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None
     for st in md.body:
         lint_stmt_reads(st, reads)
     param_names = _param_names(md.params)
-    unused = [p for p in param_names if not p.startswith("_") and reads.get(p, 0) == 0]
+    unused = [p for p in param_names if p != "self" and not p.startswith("_") and reads.get(p, 0) == 0]
     if unused:
         msg = f"unused parameter(s) in method {md.class_name}.{md.name}: {', '.join(unused)}"
         if source is None:

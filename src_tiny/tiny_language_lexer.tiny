@@ -1,0 +1,33 @@
+// TinyLanguage-Port-Skelett von src/tiny_language_lexer.py
+// Enthält Token-Struktur, Keyword-/Builtin-Sets und einen Platzhalter-Lexer,
+// damit die Self-Hosting-Plan-Tabelle auf eine konkrete Tiny-Datei verweisen kann.
+
+class Token {
+    kind: string;
+    text: string;
+    start: SourcePos;
+    stop: SourcePos;
+
+    fn pos(self) {
+        return self.start;
+    }
+}
+
+fn Token(kind, text, start, stop) {
+    return new Token { kind: kind; text: text; start: start; stop: stop };
+}
+
+define KEYWORDS = Set.from_list(new[
+    "define", "print", "if", "else", "while", "fn", "import", "return",
+    "operator", "new", "type", "class", "namespace", "as", "spawn",
+    "async", "await", "true", "false", "flush", "and", "or", "not",
+    "Null", "try", "catch", "match", "case"
+]);
+
+define BUILTINS = Set.from_list(new["Collections", "Math", "String", "len", "print"]);
+
+fn lex(source) {
+    // TODO: Port der Lexer-Logik folgt; solange liefern wir eine leere Token-Liste.
+    // Dieser Stub hilft dabei, den Self-Hosting-Port zu verankern und Tests/Docs auf die Datei zu verweisen.
+    return new[];
+}

@@ -43,11 +43,20 @@ Track progress in this table as modules are ported. An empty "Tiny parity" cell 
 
 | Module cluster | Python source | Tiny parity file | Notes |
 | --- | --- | --- | --- |
-| Lexer + parser | `src/tiny_language_lexer.py`, `src/tiny_language_parser.py` | _TBD_ | Convert token/AST structures first; validate with parser tests. |
+| Lexer + parser | `src/tiny_language_lexer.py`, `src/tiny_language_parser.py` | `src_tiny/tiny_language_lexer.tiny`, `src_tiny/tiny_language_parser.tiny` | Convert token/AST structures first; validate with parser tests. |
 | AST + runtime | `src/tiny_language_ast.py`, `src/tiny_language_runtime.py`, `src/tiny_language_eval.py` | `src_tiny/tiny_language_ast.tiny` (runtime pending) | Ensure built-ins (print, heap, math) behave identically. |
 | Linter | `src/tiny_language_linter.py` | _TBD_ | Must-use and unreachable-code rules should stay consistent. |
 | Transpilers | `src/tiny_language_transpilers.py` | _TBD_ | Target parity for Python/Julia/JS/C++ renderers. |
 | Native backend | `src/native_ir.py`, `src/tiny_language_codegen_native.py`, `src/native_vm.py` | _TBD_ | Keep opcode names and error messages stable. |
 | CLI / LSP | `src/tiny_language_cli.py`, `src/tiny_lang_cli.py`, `src/language_server.py`, `src/language_server_cli.py` | _TBD_ | Align CLI flags and LSP capabilities once core runtime is ready. |
+
+### Lexer + parser parity notes
+
+- The Tiny scaffolding now lives in `src_tiny/tiny_language_lexer.tiny` and `src_tiny/tiny_language_parser.tiny`. Both files mirror the public entry points (token container, keyword/builtin sets, parser shell) so future ports can plug in logic without reshuffling signatures.
+- Porting steps to complete parity:
+  - Translate the lexer’s tokenization rules, including multi-character operators (`&&`, `||`, `<=`, `>=`, `!=`) and escape handling inside strings.
+  - Map keyword detection to the Tiny `Set` helpers already used for `KEYWORDS`/`BUILTINS`; keep `SourcePos` increments identical to the Python version for error spans.
+  - Recreate the recursive-descent parser with the same statement/expr split as `Parser.parse_stmt`/`parse_expr`, ensuring `_attach_span` produces spans compatible with `tiny_language_ast.tiny`.
+  - Validate with the existing parser and interpreter tests by swapping in the Tiny implementations once the runtime accepts Tiny modules.
 
 As each Tiny module lands, update the table and link the implementation path under `src_tiny/` for quick navigation.

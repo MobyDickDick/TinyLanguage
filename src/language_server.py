@@ -19,6 +19,7 @@ from tiny_language import (
     Namespace,
     Parser,
     SourcePos,
+    SourceSpan,
     TypeDef,
     TinyLangError,
     ClassDef,
@@ -192,9 +193,30 @@ class TinyLanguageServer:
                     else:
                         lint_fn_params_used(st, self.source)
         except TinyLangError as err:
-            line, col, _ = _line_info(self.source, err.pos)
-            diagnostics.append(Diagnostic(message=str(err), code=err.code, range=(line, col, line, col + 1)))
+            diagnostics.append(
+                Diagnostic(message=str(err), code=err.code, range=_diagnostic_range(err, self.source))
+            )
         return diagnostics
+
+
+def _diagnostic_range(err: TinyLangError, source: str) -> Tuple[int, int, int, int]:
+    """Convert a ``TinyLangError`` to a 1-based diagnostic range.
+
+    When the error carries a ``span`` we underline the full start→stop region.
+    Otherwise we fall back to a single-character marker at ``err.pos``.
+    """
+
+    span: Optional[SourceSpan] = getattr(err, "span", None)
+    if span is not None:
+        start_line, start_col, _ = _line_info(source, span.start)
+        stop_line, stop_col, _ = _line_info(source, span.stop)
+        end_col = stop_col + 1  # Make the end position exclusive for VS Code ranges.
+        if stop_line == start_line:
+            end_col = max(end_col, start_col + 1)
+        return (start_line, start_col, stop_line, end_col)
+
+    line, col, _ = _line_info(source, err.pos)
+    return (line, col, line, col + 1)
 
 
 __all__ = ["TinyLanguageServer", "HoverResult", "CompletionItem", "Diagnostic"]

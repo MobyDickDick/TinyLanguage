@@ -85,3 +85,22 @@ def test_diagnostics_include_source_range_and_code():
     assert isinstance(diag.range, tuple)
     assert len(diag.range) == 4
     assert all(isinstance(value, int) for value in diag.range)
+
+
+def test_diagnostics_use_span_when_available():
+    source = "\n".join(
+        [
+            "fn describe(x: number) -> number {",
+            "    if (x > 0) {",
+            "        return x;",
+            "    }",
+            "}",
+        ]
+    )
+    server = TinyLanguageServer(source)
+    diags = server.diagnostics()
+    assert diags
+    start_line, start_col, end_line, end_col = diags[0].range
+    assert start_line == 1
+    assert end_line > start_line  # Span should cover the closing brace.
+    assert end_col >= 2  # Exclusive column should advance beyond the brace.

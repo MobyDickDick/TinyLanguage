@@ -1,11 +1,12 @@
 // TinyLanguage-Port des Linters aus src/tiny_language_linter.py.
-// Aktueller Stand: Gerüst mit API-Signaturen und RuntimeError-Hinweisen, damit
-// die Tiny-Selbsthosting-Pipeline frühzeitig nachvollziehbar bleibt. Die
-// eigentliche Regel-Logik (Must-Use, Unreachable, Typwechsel usw.) wird
-// schrittweise ergänzt und behält die Python-Fehlermeldungen bei.
+// Deckt Must-Use-Regeln, Typwechsel, Return-Exhaustiveness und
+// Import-/Destructuring-Checks ab. Die Fehlermeldungen spiegeln die Python-
+// Version (inkl. Fehlercodes) so exakt wie möglich.
 
 define __PY_REPR_ALLOW = new["repr"];
 define __PY_EXEC_ALLOW = new["exec"];
+define __PY_STR_ALLOW = new["str"];
+define __PY_LIST_ALLOW = new["list"];
 
 fn __raise_runtime_error(msg) {
     define safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
@@ -14,25 +15,1262 @@ fn __raise_runtime_error(msg) {
     return Python.call("builtins", "exec", new[stmt], __PY_EXEC_ALLOW);
 }
 
-fn __todo(feature) {
-    __raise_runtime_error("Tiny linter port pending: " + feature);
+fn __to_str(value) {
+    return Python.call("builtins", "str", new[value], __PY_STR_ALLOW);
 }
 
-// --- API-Signaturen ---------------------------------------------------------
-// Die Funktionen spiegeln die Python-Version und werden nach und nach
-// implementiert. Signaturen bleiben stabil, damit vorhandene Aufrufer nichts
-// anpassen müssen, sobald die Portierung fortschreitet.
+fn __copy_state(state) {
+    define keys = Map.keys(state);
+    define new_state = Map.new();
+    define i = 0;
+    while (i < len(keys)) {
+        define k = heap_get(keys, i);
+        define _ = Map.set(new_state, k, Map.get(state, k));
+        i = i + 1;
+    }
+    return new_state;
+}
 
-fn lint_fn_params_used(fn, source) { __todo("lint_fn_params_used"); }
-fn lint_method_params_used(md, source) { __todo("lint_method_params_used"); }
-fn lint_locals_used(stmts, source) { __todo("lint_locals_used"); }
-fn lint_assignment_types(stmts, source, env) { __todo("lint_assignment_types"); }
-fn lint_bare_call_results(stmts, signatures, source) { __todo("lint_bare_call_results"); }
-fn lint_import_style(stmts, source) { __todo("lint_import_style"); }
-fn lint_destruct_call_outputs(stmts, source) { __todo("lint_destruct_call_outputs"); }
-fn lint_return_signatures(stmts, fn_name, is_method, source, pos) { __todo("lint_return_signatures"); }
-fn lint_return_exhaustiveness(stmts, fn_name, expected_return, is_method, source, location) { __todo("lint_return_exhaustiveness"); }
-fn lint_unreachable_code(stmts, source) { __todo("lint_unreachable_code"); }
-fn lint_no_consecutive_definitions(stmts) { __todo("lint_no_consecutive_definitions"); }
-fn check_destruct_call_expr(expr, names, source, pos) { __todo("check_destruct_call_expr"); }
-fn lint_param_mutations_returned(stmts, params, fn_name, is_method, source, pos) { __todo("lint_param_mutations_returned"); }
+fn _import_binding_name(module, alias) {
+    if (alias != Null) { return alias; }
+    define chars = Python.call("builtins", "list", new[module], __PY_LIST_ALLOW);
+    define idx = 0;
+    while (idx < len(chars) && heap_get(chars, idx) == ".") { idx = idx + 1; }
+    if (idx >= len(chars)) { return module; }
+    define trimmed = String.join(Collections.slice(chars, idx, len(chars)), "");
+    define parts = String.split(trimmed, ".");
+    if (len(parts) == 0) { return trimmed; }
+    return heap_get(parts, len(parts) - 1);
+}
+
+fn __starts_with_underscore(name) {
+    if (name == Null) { return false; }
+    if (String.len(name) == 0) { return false; }
+    return heap_get(Python.call("builtins", "list", new[name], __PY_LIST_ALLOW), 0) == "_";
+}
+
+fn __pad_left(num, width) {
+    define txt = __to_str(num);
+    while (String.len(txt) < width) { txt = " " + txt; }
+    return txt;
+}
+
+fn __line_info(source, pos) {
+    define lines = String.split(source, "\n");
+    if (pos.__tag__ == "SourceSpan") { pos = pos.start; }
+    if (pos.__tag__ == "SourcePos") {
+        define line = pos.line;
+        define col = pos.column;
+        if (line < 1) { line = 1; }
+        if (line > len(lines)) { line = len(lines); }
+        define line_text = "";
+        if (len(lines) > 0) {
+            define idx = line - 1;
+            if (idx >= 0 && idx < len(lines)) { line_text = heap_get(lines, idx); }
+        }
+        if (String.len(line_text) > 0) {
+            define max_col = String.len(line_text) + 1;
+            if (col > max_col) { col = max_col; }
+        }
+        return new[line, col, line_text];
+    }
+    return new[1, 1, ""];
+}
+
+fn __format_error(source, pos, message, code, hint) {
+    define lines = String.split(source, "\n");
+    if (pos.__tag__ == "SourceSpan") {
+        define start_info = __line_info(source, pos.start);
+        define stop_info = __line_info(source, pos.stop);
+        define start_line = heap_get(start_info, 0);
+        define start_col = heap_get(start_info, 1);
+        define stop_line = heap_get(stop_info, 0);
+        define stop_col = heap_get(stop_info, 1);
+        define gutter_width = String.len(__to_str(len(lines) > 0 ? len(lines) : 1));
+        define lines_out = new[];
+        define header = "[" + code + "] " + message + " (line " + __to_str(start_line) + ", col " + __to_str(start_col) + ")";
+        define _hpush = Collections.push(lines_out, header);
+        define context_start = start_line - 1;
+        if (context_start < 1) { context_start = 1; }
+        define context_end = stop_line + 1;
+        if (context_end > len(lines)) { context_end = len(lines); }
+        define ln = context_start;
+        while (ln <= context_end) {
+            define text = "";
+            if (len(lines) > 0 && ln - 1 >= 0 && ln - 1 < len(lines)) {
+                text = heap_get(lines, ln - 1);
+            }
+            define prefix = " ";
+            if (ln == start_line) { prefix = ">"; }
+            define padded = __pad_left(ln, gutter_width);
+            define _lpush = Collections.push(lines_out, prefix + " " + padded + " | " + text);
+
+            if (!(ln >= start_line && ln <= stop_line)) {
+                ln = ln + 1;
+                continue;
+            }
+
+            define underline_start = 1;
+            define underline_end = String.len(text);
+            if (ln == start_line) {
+                underline_start = start_col;
+                underline_end = start_col;
+                if (ln == stop_line) { underline_end = stop_col; }
+                else if (underline_end < start_col) { underline_end = start_col; }
+            } else if (ln == stop_line) {
+                underline_start = 1;
+                underline_end = stop_col;
+            }
+            if (underline_end < underline_start) { underline_end = underline_start; }
+            define underline_len = underline_end - underline_start + 1;
+            define prefix_spaces = "";
+            define i = 1;
+            while (i < underline_start) { prefix_spaces = prefix_spaces + " "; i = i + 1; }
+            define underline = prefix_spaces + String.repeat("^", underline_len);
+            define _upush = Collections.push(lines_out, "  " + String.repeat(" ", gutter_width) + " | " + underline);
+            ln = ln + 1;
+        }
+        if (hint != Null && hint != "") {
+            define _h = Collections.push(lines_out, "  Hint: " + hint);
+        }
+        return String.join(lines_out, "\n");
+    }
+    define info = __line_info(source, pos);
+    define line = heap_get(info, 0);
+    define col = heap_get(info, 1);
+    define line_text = heap_get(info, 2);
+    define gutter_width = String.len(__to_str(len(lines) > 0 ? len(lines) : 1));
+    define start = line - 1;
+    if (start < 1) { start = 1; }
+    define end = line + 1;
+    if (end > len(lines)) { end = len(lines); }
+    define lines_out = new[];
+    define header = "[" + code + "] " + message + " (line " + __to_str(line) + ", col " + __to_str(col) + ")";
+    define _ph = Collections.push(lines_out, header);
+    define ln = start;
+    while (ln <= end) {
+        define text = "";
+        if (len(lines) > 0 && ln - 1 >= 0 && ln - 1 < len(lines)) { text = heap_get(lines, ln - 1); }
+        define prefix = " ";
+        if (ln == line) { prefix = ">"; }
+        define padded = __pad_left(ln, gutter_width);
+        define _l = Collections.push(lines_out, prefix + " " + padded + " | " + text);
+        if (ln == line) {
+            define spaces = String.repeat(" ", col - 1);
+            define caret = String.repeat("^", 1);
+            define _u = Collections.push(lines_out, "  " + String.repeat(" ", gutter_width) + " | " + spaces + caret);
+        }
+        ln = ln + 1;
+    }
+    if (hint != Null && hint != "") {
+        define _hint = Collections.push(lines_out, "  Hint: " + hint);
+    }
+    return String.join(lines_out, "\n");
+}
+
+fn _node_span(obj) {
+    if (obj == Null) { return Null; }
+    if (obj.__tag__ == "SourceSpan") { return obj; }
+    if (obj.span != Null) { return obj.span; }
+    return Null;
+}
+
+fn _node_pos(obj) {
+    if (obj == Null) { return SourcePos_origin(); }
+    if (obj.__tag__ == "SourceSpan") { return obj.start; }
+    if (obj.__tag__ == "SourcePos") { return obj; }
+    if (obj.pos != Null) { return obj.pos; }
+    return SourcePos_origin();
+}
+
+fn _lint_error(source, node, message, code, hint) {
+    define span = _node_span(node);
+    define pos = _node_pos(node);
+    define rendered = __format_error(source, span == Null ? pos : span, message, code, hint);
+    return __raise_runtime_error(rendered);
+}
+
+fn _param_names(params) {
+    define names = new[];
+    define i = 0;
+    while (i < len(params)) {
+        define p = heap_get(params, i);
+        define _ = Collections.push(names, p.name);
+        i = i + 1;
+    }
+    return names;
+}
+
+fn _collect_names_in_expr(e, names) {
+    if (e == Null) { return Null; }
+    if (e.__tag__ == "Var") { define _ = Set.add(names, e.name); return Null; }
+    if (e.__tag__ == "Bin") { _collect_names_in_expr(e.a, names); _collect_names_in_expr(e.b, names); return Null; }
+    if (e.__tag__ == "Call") {
+        define i = 0;
+        while (i < len(e.args)) { _collect_names_in_expr(heap_get(e.args, i), names); i = i + 1; }
+        return Null;
+    }
+    if (e.__tag__ == "Spawn") {
+        define i = 0;
+        while (i < len(e.args)) { _collect_names_in_expr(heap_get(e.args, i), names); i = i + 1; }
+        return Null;
+    }
+    if (e.__tag__ == "Await") { _collect_names_in_expr(e.expr, names); return Null; }
+    if (e.__tag__ == "New") { _collect_names_in_expr(e.size, names); return Null; }
+    if (e.__tag__ == "NewLit") {
+        define i = 0;
+        while (i < len(e.items)) { _collect_names_in_expr(heap_get(e.items, i), names); i = i + 1; }
+        return Null;
+    }
+    if (e.__tag__ == "Field") { _collect_names_in_expr(e.obj, names); return Null; }
+    if (e.__tag__ == "MethodCall") {
+        _collect_names_in_expr(e.obj, names);
+        define i = 0;
+        while (i < len(e.args)) { _collect_names_in_expr(heap_get(e.args, i), names); i = i + 1; }
+        return Null;
+    }
+    if (e.__tag__ == "ClassNew") {
+        define i = 0;
+        while (i < len(e.init)) { _collect_names_in_expr(heap_get(heap_get(e.init, i), 1), names); i = i + 1; }
+        return Null;
+    }
+    if (e.__tag__ == "ObjLit") {
+        define i = 0;
+        while (i < len(e.fields)) { _collect_names_in_expr(heap_get(heap_get(e.fields, i), 1), names); i = i + 1; }
+        return Null;
+    }
+    if (e.__tag__ == "Match") {
+        _collect_names_in_expr(e.expr, names);
+        define i = 0;
+        while (i < len(e.cases)) { _collect_names_in_expr(heap_get(e.cases, i).body, names); i = i + 1; }
+        return Null;
+    }
+    if (e.__tag__ == "VariantCtor") {
+        define i = 0;
+        while (i < len(e.fields)) { _collect_names_in_expr(heap_get(heap_get(e.fields, i), 1), names); i = i + 1; }
+        return Null;
+    }
+    return Null;
+}
+
+fn uses_in_expr(e, reads) {
+    if (e == Null) { return Null; }
+    if (e.__tag__ == "Var") {
+        define prev = Map.get(reads, e.name, 0);
+        define _ = Map.set(reads, e.name, prev + 1);
+        return Null;
+    }
+    if (e.__tag__ == "Bin") { uses_in_expr(e.a, reads); uses_in_expr(e.b, reads); return Null; }
+    if (e.__tag__ == "Call") {
+        define i = 0;
+        while (i < len(e.args)) { uses_in_expr(heap_get(e.args, i), reads); i = i + 1; }
+        return Null;
+    }
+    if (e.__tag__ == "Spawn") {
+        define i = 0;
+        while (i < len(e.args)) { uses_in_expr(heap_get(e.args, i), reads); i = i + 1; }
+        return Null;
+    }
+    if (e.__tag__ == "Await") { uses_in_expr(e.expr, reads); return Null; }
+    if (e.__tag__ == "New") { uses_in_expr(e.size, reads); return Null; }
+    if (e.__tag__ == "NewLit") {
+        define i = 0;
+        while (i < len(e.items)) { uses_in_expr(heap_get(e.items, i), reads); i = i + 1; }
+        return Null;
+    }
+    if (e.__tag__ == "Field") { uses_in_expr(e.obj, reads); return Null; }
+    if (e.__tag__ == "MethodCall") {
+        uses_in_expr(e.obj, reads);
+        define i = 0;
+        while (i < len(e.args)) { uses_in_expr(heap_get(e.args, i), reads); i = i + 1; }
+        return Null;
+    }
+    if (e.__tag__ == "ClassNew") {
+        define i = 0;
+        while (i < len(e.init)) { uses_in_expr(heap_get(heap_get(e.init, i), 1), reads); i = i + 1; }
+        return Null;
+    }
+    if (e.__tag__ == "ObjLit") {
+        define i = 0;
+        while (i < len(e.fields)) { uses_in_expr(heap_get(heap_get(e.fields, i), 1), reads); i = i + 1; }
+        return Null;
+    }
+    if (e.__tag__ == "Match") {
+        uses_in_expr(e.expr, reads);
+        define i = 0;
+        while (i < len(e.cases)) {
+            define tmp_reads = Map.new();
+            uses_in_expr(heap_get(e.cases, i).body, tmp_reads);
+            define keys = Map.keys(tmp_reads);
+            define j = 0;
+            while (j < len(keys)) {
+                define name = heap_get(keys, j);
+                define count = Map.get(tmp_reads, name, 0);
+                define prev = Map.get(reads, name, 0);
+                if (count > prev) { define _ = Map.set(reads, name, count); }
+                j = j + 1;
+            }
+            i = i + 1;
+        }
+        return Null;
+    }
+    if (e.__tag__ == "VariantCtor") {
+        define i = 0;
+        while (i < len(e.fields)) { uses_in_expr(heap_get(heap_get(e.fields, i), 1), reads); i = i + 1; }
+        return Null;
+    }
+    return Null;
+}
+
+fn lint_stmt_reads(s, reads) {
+    if (s.__tag__ == "Let" || s.__tag__ == "Assign") { uses_in_expr(s.expr, reads); return Null; }
+    if (s.__tag__ == "FieldAssign") { uses_in_expr(s.obj, reads); uses_in_expr(s.expr, reads); return Null; }
+    if (s.__tag__ == "Print") {
+        define i = 0;
+        while (i < len(s.exprs)) { uses_in_expr(heap_get(s.exprs, i), reads); i = i + 1; }
+        return Null;
+    }
+    if (s.__tag__ == "Flush") { return Null; }
+    if (s.__tag__ == "If") {
+        uses_in_expr(s.cond, reads);
+        define i = 0;
+        while (i < len(s.then)) { lint_stmt_reads(heap_get(s.then, i), reads); i = i + 1; }
+        i = 0;
+        while (i < len(s.els)) { lint_stmt_reads(heap_get(s.els, i), reads); i = i + 1; }
+        return Null;
+    }
+    if (s.__tag__ == "While") { uses_in_expr(s.cond, reads); define i = 0; while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), reads); i = i + 1; } return Null; }
+    if (s.__tag__ == "TryCatch") {
+        define i = 0;
+        while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), reads); i = i + 1; }
+        define handler_reads = Map.new();
+        i = 0;
+        while (i < len(s.handler)) { lint_stmt_reads(heap_get(s.handler, i), handler_reads); i = i + 1; }
+        if (s.err_name != Null) { if (Map.get(handler_reads, s.err_name, 0) == 0) { define _ = Map.set(handler_reads, s.err_name, 0); } }
+        define keys = Map.keys(handler_reads);
+        i = 0;
+        while (i < len(keys)) {
+            define name = heap_get(keys, i);
+            define count = Map.get(handler_reads, name, 0);
+            define prev = Map.get(reads, name, 0);
+            if (count > prev) { define _ = Map.set(reads, name, count); }
+            i = i + 1;
+        }
+        return Null;
+    }
+    if (s.__tag__ == "Return") { uses_in_expr(s.expr, reads); return Null; }
+    if (s.__tag__ == "OpDef") {
+        define tmp = Map.new();
+        define i = 0;
+        while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), tmp); i = i + 1; }
+        define miss = new[];
+        if (!__starts_with_underscore(s.a_name) && Map.get(tmp, s.a_name, 0) == 0) { define _ = Collections.push(miss, s.a_name); }
+        if (!__starts_with_underscore(s.b_name) && Map.get(tmp, s.b_name, 0) == 0) { define _ = Collections.push(miss, s.b_name); }
+        if (len(miss) > 0) {
+            define msg = "unused operator parameter(s) in op " + s.op + ": " + String.join(miss, ", ");
+            __raise_runtime_error(msg);
+        }
+        define keys = Map.keys(tmp);
+        i = 0;
+        while (i < len(keys)) {
+            define name = heap_get(keys, i);
+            if (name == s.a_name || name == s.b_name) { i = i + 1; continue; }
+            define count = Map.get(tmp, name, 0);
+            define prev = Map.get(reads, name, 0);
+            if (count > prev) { define _ = Map.set(reads, name, count); }
+            i = i + 1;
+        }
+        return Null;
+    }
+    if (s.__tag__ == "DestructAssign") { uses_in_expr(s.expr, reads); return Null; }
+    if (s.__tag__ == "MethodDef") {
+        define tmp = Map.new();
+        define i = 0;
+        while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), tmp); i = i + 1; }
+        define param_names = _param_names(s.params);
+        define miss = new[];
+        i = 0;
+        while (i < len(param_names)) {
+            define p = heap_get(param_names, i);
+            if (p != "self" && !__starts_with_underscore(p)) {
+                if (Map.get(tmp, p, 0) == 0) { define _ = Collections.push(miss, p); }
+            }
+            i = i + 1;
+        }
+        if (len(miss) > 0) {
+            __raise_runtime_error("unused parameter(s) in method " + s.class_name + "." + s.name + ": " + String.join(miss, ", "));
+        }
+        define keys = Map.keys(tmp);
+        i = 0;
+        while (i < len(keys)) {
+            define name = heap_get(keys, i);
+            define skip = false;
+            define j = 0;
+            while (j < len(param_names)) { if (name == heap_get(param_names, j)) { skip = true; } j = j + 1; }
+            if (!skip) {
+                define count = Map.get(tmp, name, 0);
+                define prev = Map.get(reads, name, 0);
+                if (count > prev) { define _ = Map.set(reads, name, count); }
+            }
+            i = i + 1;
+        }
+        return Null;
+    }
+    if (s.__tag__ == "Fn") {
+        define tmp = Map.new();
+        define i = 0;
+        while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), tmp); i = i + 1; }
+        define param_names = _param_names(s.params);
+        define keys = Map.keys(tmp);
+        i = 0;
+        while (i < len(keys)) {
+            define name = heap_get(keys, i);
+            define skip = false;
+            define j = 0;
+            while (j < len(param_names)) { if (name == heap_get(param_names, j)) { skip = true; } j = j + 1; }
+            if (!skip) {
+                define count = Map.get(tmp, name, 0);
+                define prev = Map.get(reads, name, 0);
+                if (count > prev) { define _ = Map.set(reads, name, count); }
+            }
+            i = i + 1;
+        }
+        return Null;
+    }
+    if (s.__tag__ == "ClassDef") {
+        define i = 0;
+        while (i < len(s.methods)) { lint_stmt_reads(heap_get(s.methods, i), reads); i = i + 1; }
+        return Null;
+    }
+    if (s.__tag__ == "Namespace") {
+        define i = 0;
+        while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), reads); i = i + 1; }
+        return Null;
+    }
+    if (s.__tag__ == "CallStmt") {
+        define i = 0;
+        while (i < len(s.args)) { uses_in_expr(heap_get(s.args, i), reads); i = i + 1; }
+        return Null;
+    }
+    return Null;
+}
+
+fn lint_fn_params_used(fn, source) {
+    define reads = Map.new();
+    define i = 0;
+    while (i < len(fn.body)) { lint_stmt_reads(heap_get(fn.body, i), reads); i = i + 1; }
+    define param_names = _param_names(fn.params);
+    define unused = new[];
+        i = 0;
+        while (i < len(param_names)) {
+            define p = heap_get(param_names, i);
+            if (!(p == "self" || __starts_with_underscore(p))) {
+                if (Map.get(reads, p, 0) == 0) { define _ = Collections.push(unused, p); }
+            }
+            i = i + 1;
+        }
+    if (len(unused) > 0) {
+        define msg = "unused parameter(s) in function " + fn.name + ": " + String.join(unused, ", ");
+        if (source == Null) { __raise_runtime_error(msg); }
+        else { _lint_error(source, fn, msg, "E002", "Remove the unused parameter or reference it."); }
+    }
+    lint_param_mutations_returned(fn.body, Set.from_list(param_names), fn.name, false, source, fn.pos);
+    lint_destruct_call_outputs(fn.body, source);
+    lint_return_signatures(fn.body, fn.name, false, source, fn.pos);
+    lint_return_exhaustiveness(fn.body, fn.name, fn.return_type, false, source, fn);
+    lint_locals_used(fn.body, source);
+}
+
+fn lint_method_params_used(md, source) {
+    define reads = Map.new();
+    define i = 0;
+    while (i < len(md.body)) { lint_stmt_reads(heap_get(md.body, i), reads); i = i + 1; }
+    define param_names = _param_names(md.params);
+    define unused = new[];
+        i = 0;
+        while (i < len(param_names)) {
+            define p = heap_get(param_names, i);
+            if (!(p == "self" || __starts_with_underscore(p))) {
+                if (Map.get(reads, p, 0) == 0) { define _ = Collections.push(unused, p); }
+            }
+            i = i + 1;
+        }
+    if (len(unused) > 0) {
+        define msg = "unused parameter(s) in method " + md.class_name + "." + md.name + ": " + String.join(unused, ", ");
+        if (source == Null) { __raise_runtime_error(msg); }
+        else { _lint_error(source, md, msg, "E002", "Remove the unused parameter or reference it."); }
+    }
+    lint_param_mutations_returned(md.body, Set.from_list(param_names), md.class_name + "." + md.name, true, source, md.pos);
+    lint_destruct_call_outputs(md.body, source);
+    lint_return_signatures(md.body, md.class_name + "." + md.name, true, source, md.pos);
+    lint_return_exhaustiveness(md.body, md.class_name + "." + md.name, md.return_type, true, source, md);
+    lint_locals_used(md.body, source);
+}
+
+fn lint_locals_used(stmts, source) {
+    define unused = new[];
+
+    fn names_in_expr(expr) {
+        define reads = Map.new();
+        uses_in_expr(expr, reads);
+        return Map.keys(reads);
+    }
+
+    fn _mark_used(state, name) {
+        define entry = Map.get(state, name, Null);
+        if (entry != Null) {
+            define pos = heap_get(entry, 0);
+            define _ = Map.set(state, name, new[pos, true, true]);
+        }
+    }
+
+    fn _mark_captured_uses(block, state) {
+        define reads = Map.new();
+        define i = 0;
+        while (i < len(block)) { lint_stmt_reads(heap_get(block, i), reads); i = i + 1; }
+        define keys = Map.keys(reads);
+        i = 0;
+        while (i < len(keys)) {
+            define nm = heap_get(keys, i);
+            if (Map.get(state, nm, Null) != Null) { _mark_used(state, nm); }
+            i = i + 1;
+        }
+    }
+
+    fn _merge_states(states) {
+        if (len(states) == 0) { return states; }
+        define merged = Map.new();
+        define i = 0;
+        while (i < len(states)) {
+            define st = heap_get(states, i);
+            define keys = Map.keys(st);
+            define j = 0;
+            while (j < len(keys)) {
+                define name = heap_get(keys, j);
+                define entry = Map.get(st, name);
+                define pos = heap_get(entry, 0);
+                define used_all = heap_get(entry, 1);
+                define used_any = heap_get(entry, 2);
+                define prev = Map.get(merged, name, Null);
+                if (prev == Null) {
+                    define _ = Map.set(merged, name, new[pos, used_all, used_any]);
+                } else {
+                    define prev_pos = heap_get(prev, 0);
+                    define prev_all = heap_get(prev, 1);
+                    define prev_any = heap_get(prev, 2);
+                    define _u = Map.set(merged, name, new[prev_pos, prev_all && used_all, prev_any || used_any]);
+                }
+                j = j + 1;
+            }
+            i = i + 1;
+        }
+        return new[merged];
+    }
+
+    fn analyze_block(block, initial_states) {
+        define active_states = new[];
+        define i = 0;
+        while (i < len(initial_states)) { define _p = Collections.push(active_states, __copy_state(heap_get(initial_states, i))); i = i + 1; }
+        define terminated_states = new[];
+        define idx = 0;
+        while (idx < len(block)) {
+            define st = heap_get(block, idx);
+            define next_active = new[];
+            define ai = 0;
+            while (ai < len(active_states)) {
+                define state = heap_get(active_states, ai);
+                if (st.__tag__ == "Let") {
+                    define new_state = __copy_state(state);
+                    define names = names_in_expr(st.expr);
+                    define ni = 0;
+                    while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
+                    define decl_pos = st.name_span;
+                    if (decl_pos == Null) { decl_pos = st.pos; }
+                    define _ = Map.set(new_state, st.name, new[decl_pos, false, false]);
+                    define _p2 = Collections.push(next_active, new_state);
+                } else if (st.__tag__ == "Import") {
+                    define new_state = __copy_state(state);
+                    define bind = _import_binding_name(st.module, st.alias);
+                    define decl_pos = st.binding_span;
+                    if (decl_pos == Null) { decl_pos = st.pos; }
+                    define _ = Map.set(new_state, bind, new[decl_pos, false, false]);
+                    define _p3 = Collections.push(next_active, new_state);
+                } else if (st.__tag__ == "DestructAssign") {
+                    define new_state = __copy_state(state);
+                    define ni = 0;
+                    while (ni < len(st.names)) { define span = heap_get(st.name_spans, ni); define _ = Map.set(new_state, heap_get(st.names, ni), new[span, false, false]); ni = ni + 1; }
+                    define names = names_in_expr(st.expr);
+                    ni = 0;
+                    while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
+                    define _p4 = Collections.push(next_active, new_state);
+                } else if (st.__tag__ == "Assign") {
+                    define new_state = __copy_state(state);
+                    define names = names_in_expr(st.expr);
+                    define ni = 0;
+                    while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
+                    define _p5 = Collections.push(next_active, new_state);
+                } else if (st.__tag__ == "FieldAssign") {
+                    define new_state = __copy_state(state);
+                    define names = names_in_expr(st.obj);
+                    define ni = 0;
+                    while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
+                    names = names_in_expr(st.expr);
+                    ni = 0;
+                    while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
+                    define _p6 = Collections.push(next_active, new_state);
+                } else if (st.__tag__ == "Print") {
+                    define new_state = __copy_state(state);
+                    define ei = 0;
+                    while (ei < len(st.exprs)) {
+                        define names = names_in_expr(heap_get(st.exprs, ei));
+                        define ni = 0;
+                        while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
+                        ei = ei + 1;
+                    }
+                    define _p7 = Collections.push(next_active, new_state);
+                } else if (st.__tag__ == "Flush") {
+                    define _p8 = Collections.push(next_active, __copy_state(state));
+                } else if (st.__tag__ == "CallStmt") {
+                    define new_state = __copy_state(state);
+                    define ai2 = 0;
+                    while (ai2 < len(st.args)) {
+                        define names = names_in_expr(heap_get(st.args, ai2));
+                        define ni = 0;
+                        while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
+                        ai2 = ai2 + 1;
+                    }
+                    define _p9 = Collections.push(next_active, new_state);
+                } else if (st.__tag__ == "Return") {
+                    define new_state = __copy_state(state);
+                    define names = names_in_expr(st.expr);
+                    define ni = 0;
+                    while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
+                    define _pt = Collections.push(terminated_states, new_state);
+                } else if (st.__tag__ == "If") {
+                    define cond_state = __copy_state(state);
+                    define cond_names = names_in_expr(st.cond);
+                    define ci = 0;
+                    while (ci < len(cond_names)) { _mark_used(cond_state, heap_get(cond_names, ci)); ci = ci + 1; }
+                    define then_res = analyze_block(st.then, new[cond_state]);
+                    define then_active = heap_get(then_res, 0);
+                    define then_term = heap_get(then_res, 1);
+                    define else_res = analyze_block(st.els, new[cond_state]);
+                    define else_active = heap_get(else_res, 0);
+                    define else_term = heap_get(else_res, 1);
+                    define ti = 0;
+                    while (ti < len(then_active)) { define _p10 = Collections.push(next_active, heap_get(then_active, ti)); ti = ti + 1; }
+                    ti = 0;
+                    while (ti < len(else_active)) { define _p11 = Collections.push(next_active, heap_get(else_active, ti)); ti = ti + 1; }
+                    ti = 0;
+                    while (ti < len(then_term)) { define _pt1 = Collections.push(terminated_states, heap_get(then_term, ti)); ti = ti + 1; }
+                    ti = 0;
+                    while (ti < len(else_term)) { define _pt2 = Collections.push(terminated_states, heap_get(else_term, ti)); ti = ti + 1; }
+                } else if (st.__tag__ == "While") {
+                    define cond_state = __copy_state(state);
+                    define cond_names = names_in_expr(st.cond);
+                    define ci = 0;
+                    while (ci < len(cond_names)) { _mark_used(cond_state, heap_get(cond_names, ci)); ci = ci + 1; }
+                    define body_res = analyze_block(st.body, new[cond_state]);
+                    define body_active = heap_get(body_res, 0);
+                    define body_term = heap_get(body_res, 1);
+                    define bi = 0;
+                    while (bi < len(body_active)) { define _p12 = Collections.push(next_active, heap_get(body_active, bi)); bi = bi + 1; }
+                    bi = 0;
+                    while (bi < len(body_term)) { define _pt3 = Collections.push(terminated_states, heap_get(body_term, bi)); bi = bi + 1; }
+                } else if (st.__tag__ == "TryCatch") {
+                    define body_res = analyze_block(st.body, new[__copy_state(state)]);
+                    define handler_state = __copy_state(state);
+                    if (st.err_name != Null) { define _ = Map.set(handler_state, st.err_name, new[st.pos, false, false]); }
+                    define handler_res = analyze_block(st.handler, new[handler_state]);
+                    define body_active = heap_get(body_res, 0);
+                    define handler_active = heap_get(handler_res, 0);
+                    define body_term = heap_get(body_res, 1);
+                    define handler_term = heap_get(handler_res, 1);
+                    define bi = 0;
+                    while (bi < len(body_active)) { define _p13 = Collections.push(next_active, heap_get(body_active, bi)); bi = bi + 1; }
+                    bi = 0;
+                    while (bi < len(handler_active)) { define _p14 = Collections.push(next_active, heap_get(handler_active, bi)); bi = bi + 1; }
+                    bi = 0;
+                    while (bi < len(body_term)) { define _pt4 = Collections.push(terminated_states, heap_get(body_term, bi)); bi = bi + 1; }
+                    bi = 0;
+                    while (bi < len(handler_term)) { define _pt5 = Collections.push(terminated_states, heap_get(handler_term, bi)); bi = bi + 1; }
+                } else if (st.__tag__ == "Namespace") {
+                    define nested_state = __copy_state(state);
+                    _mark_captured_uses(st.body, nested_state);
+                    lint_locals_used(st.body, source);
+                    define _p15 = Collections.push(next_active, nested_state);
+                } else if (st.__tag__ == "ClassDef") {
+                    define nested_state = __copy_state(state);
+                    define mi = 0;
+                    while (mi < len(st.methods)) { _mark_captured_uses(heap_get(st.methods, mi).body, nested_state); lint_locals_used(heap_get(st.methods, mi).body, source); mi = mi + 1; }
+                    define _p16 = Collections.push(next_active, nested_state);
+                } else if (st.__tag__ == "Fn") {
+                    define nested_state = __copy_state(state);
+                    _mark_captured_uses(st.body, nested_state);
+                    lint_locals_used(st.body, source);
+                    define _p17 = Collections.push(next_active, nested_state);
+                } else if (st.__tag__ == "MethodDef") {
+                    define nested_state = __copy_state(state);
+                    _mark_captured_uses(st.body, nested_state);
+                    lint_locals_used(st.body, source);
+                    define _p18 = Collections.push(next_active, nested_state);
+                } else {
+                    define _p19 = Collections.push(next_active, __copy_state(state));
+                }
+                ai = ai + 1;
+            }
+            active_states = _merge_states(next_active);
+            idx = idx + 1;
+        }
+        return new[_merge_states(active_states), _merge_states(terminated_states)];
+    }
+
+    define res = analyze_block(stmts, new[Map.new()]);
+    define active = heap_get(res, 0);
+    define terminated = heap_get(res, 1);
+    define all_states = new[];
+    define i = 0;
+    while (i < len(active)) { define _ = Collections.push(all_states, heap_get(active, i)); i = i + 1; }
+    i = 0;
+    while (i < len(terminated)) { define _ = Collections.push(all_states, heap_get(terminated, i)); i = i + 1; }
+
+    define usage_summary = Map.new();
+
+    fn _accumulate(states, key) {
+        define si = 0;
+        while (si < len(states)) {
+            define st = heap_get(states, si);
+            define keys = Map.keys(st);
+            define ki = 0;
+            while (ki < len(keys)) {
+                define name = heap_get(keys, ki);
+                define entry = Map.get(st, name);
+                define pos = heap_get(entry, 0);
+                define used_all = heap_get(entry, 1);
+                define used_any = heap_get(entry, 2);
+                define prev = Map.get(usage_summary, name + "@" + __to_str(pos.line) + ":" + __to_str(pos.column), Null);
+                if (prev == Null) {
+                    define _ = Map.set(usage_summary, name + "@" + __to_str(pos.line) + ":" + __to_str(pos.column), Map.from_entries(new[["pos", pos], ["active_all", true], ["active_any", false], ["active_present", false], ["term_any", false]]));
+                    prev = Map.get(usage_summary, name + "@" + __to_str(pos.line) + ":" + __to_str(pos.column));
+                }
+                if (key == "active") {
+                    define _ = Map.set(prev, "active_all", Map.get(prev, "active_all") && used_all);
+                    define _a = Map.set(prev, "active_any", Map.get(prev, "active_any") || used_any);
+                    define _p = Map.set(prev, "active_present", true);
+                } else {
+                    define _t = Map.set(prev, "term_any", Map.get(prev, "term_any") || used_any);
+                }
+                ki = ki + 1;
+            }
+            si = si + 1;
+        }
+    }
+
+    _accumulate(active, "active");
+    _accumulate(terminated, "term");
+
+    define summary_keys = Map.keys(usage_summary);
+    define si = 0;
+    while (si < len(summary_keys)) {
+        define key = heap_get(summary_keys, si);
+        define info = Map.get(usage_summary, key);
+        define name_parts = String.split(key, "@");
+        define name = heap_get(name_parts, 0);
+        if (__starts_with_underscore(name) || String.contains(name, "ignored")) { si = si + 1; continue; }
+        define used_any = Map.get(info, "active_any") || Map.get(info, "term_any");
+        if (!used_any) {
+            define pos = Map.get(info, "pos");
+            define _ = Collections.push(unused, new[name, pos]);
+        }
+        si = si + 1;
+    }
+
+    if (len(unused) > 0) {
+        define names = new[];
+        define pos = heap_get(heap_get(unused, 0), 1);
+        define ui = 0;
+        while (ui < len(unused)) { define _ = Collections.push(names, heap_get(heap_get(unused, ui), 0)); ui = ui + 1; }
+        define msg = "unused local binding(s): " + String.join(names, ", ");
+        if (source == Null) { __raise_runtime_error(msg); }
+        else { _lint_error(source, pos, msg, "E002", "Remove the unused binding or reference it."); }
+    }
+}
+
+fn __trim(text) {
+    if (text == Null) { return ""; }
+    define chars = Python.call("builtins", "list", new[text], __PY_LIST_ALLOW);
+    define start = 0;
+    while (start < len(chars) && heap_get(chars, start) == " ") { start = start + 1; }
+    define stop = len(chars) - 1;
+    while (stop >= start && heap_get(chars, stop) == " ") { stop = stop - 1; }
+    define buf = new[];
+    define i = start;
+    while (i <= stop) { define _ = Collections.push(buf, heap_get(chars, i)); i = i + 1; }
+    return String.join(buf, "");
+}
+
+fn _infer_expr_type(expr, env) {
+    if (expr.__tag__ == "Num") { return "number"; }
+    if (expr.__tag__ == "Str") { return "string"; }
+    if (expr.__tag__ == "Bool") { return "Bool"; }
+    if (expr.__tag__ == "NullLit") { return "Null"; }
+    if (expr.__tag__ == "Var") { return Map.get(env, expr.name, Null); }
+    return Null;
+}
+
+fn __last_char(text) {
+    define chars = Python.call("builtins", "list", new[text], __PY_LIST_ALLOW);
+    if (len(chars) == 0) { return ""; }
+    return heap_get(chars, len(chars) - 1);
+}
+
+fn _types_match(expected, actual) {
+    define expected_norm = __trim(expected);
+    define actual_norm = __trim(actual);
+    define optional = __last_char(expected_norm) == "?";
+    define base_expected = expected_norm;
+    if (optional && String.len(expected_norm) > 0) { base_expected = String.join(Collections.slice(Python.call("builtins", "list", new[expected_norm], __PY_LIST_ALLOW), 0, len(Python.call("builtins", "list", new[expected_norm], __PY_LIST_ALLOW)) - 1), ""); }
+    define expected_lower = String.lower(base_expected);
+    define actual_lower = String.lower(actual_norm);
+    if (optional && actual_lower == "null") { return true; }
+    if (expected_lower == actual_lower) { return true; }
+    if (expected_lower == "number" && (actual_lower == "number" || actual_lower == "int" || actual_lower == "float")) { return true; }
+    if (expected_lower == "string" && actual_lower == "string") { return true; }
+    if ((expected_lower == "bool" || expected_lower == "boolean") && (actual_lower == "bool" || actual_lower == "boolean")) { return true; }
+    if (optional && actual_lower != "null") { return _types_match(base_expected, actual); }
+    return false;
+}
+
+fn lint_assignment_types(stmts, source, env) {
+    define base_env = Map.new();
+    if (env != Null) {
+        define keys = Map.keys(env);
+        define i = 0;
+        while (i < len(keys)) { define k = heap_get(keys, i); define _ = Map.set(base_env, k, Map.get(env, k)); i = i + 1; }
+    }
+
+    fn check_block(block, local_env) {
+        define i = 0;
+        while (i < len(block)) {
+            define st = heap_get(block, i);
+            if (st.__tag__ == "Let") {
+                define inferred = _infer_expr_type(st.expr, local_env);
+                if (inferred != Null) { define _ = Map.set(local_env, st.name, inferred); }
+            } else if (st.__tag__ == "Assign") {
+                define inferred = _infer_expr_type(st.expr, local_env);
+                define expected = Map.get(local_env, st.name, Null);
+                if (expected != Null && inferred != Null && !_types_match(expected, inferred)) {
+                    define msg = "type change for variable " + st.name + ": expected " + expected + " but got " + inferred;
+                    if (source == Null) { __raise_runtime_error(msg); }
+                    else { _lint_error(source, st, msg, "E014", "Use a new variable or cast explicitly if a different type is required."); }
+                }
+                if (inferred != Null) { define _ = Map.set(local_env, st.name, inferred); }
+            } else if (st.__tag__ == "DestructAssign") {
+                define inferred = _infer_expr_type(st.expr, local_env);
+                if (inferred != Null) {
+                    define ni = 0;
+                    while (ni < len(st.names)) { define _ = Map.set(local_env, heap_get(st.names, ni), inferred); ni = ni + 1; }
+                }
+            } else if (st.__tag__ == "If") {
+                define then_env = check_block(st.then, __copy_state(local_env));
+                define else_env = check_block(st.els, __copy_state(local_env));
+                define keys = Map.keys(local_env);
+                define ki = 0;
+                while (ki < len(keys)) {
+                    define name = heap_get(keys, ki);
+                    if (Map.get(then_env, name, Null) != Null && Map.get(else_env, name, Null) != Null && Map.get(then_env, name) == Map.get(else_env, name)) {
+                        define _ = Map.set(local_env, name, Map.get(then_env, name));
+                    }
+                    ki = ki + 1;
+                }
+            } else if (st.__tag__ == "While") {
+                define _ = check_block(st.body, __copy_state(local_env));
+            } else if (st.__tag__ == "TryCatch") {
+                define body_env = check_block(st.body, __copy_state(local_env));
+                define handler_env = __copy_state(local_env);
+                if (st.err_name != Null) { define _ = Map.set(handler_env, st.err_name, "Error"); }
+                handler_env = check_block(st.handler, handler_env);
+                define keys = Map.keys(local_env);
+                define ki = 0;
+                while (ki < len(keys)) {
+                    define name = heap_get(keys, ki);
+                    if (Map.get(body_env, name, Null) != Null && Map.get(handler_env, name, Null) != Null && Map.get(body_env, name) == Map.get(handler_env, name)) {
+                        define _ = Map.set(local_env, name, Map.get(body_env, name));
+                    }
+                    ki = ki + 1;
+                }
+            } else if (st.__tag__ == "Namespace") {
+                check_block(st.body, Map.new());
+            } else if (st.__tag__ == "Fn") {
+                define fn_env = Map.new();
+                define pi = 0;
+                while (pi < len(st.params)) { define p = heap_get(st.params, pi); if (p.type_hint != Null) { define _ = Map.set(fn_env, p.name, p.type_hint); } pi = pi + 1; }
+                check_block(st.body, fn_env);
+            } else if (st.__tag__ == "MethodDef") {
+                define method_env = Map.new();
+                define pi = 0;
+                while (pi < len(st.params)) { define p = heap_get(st.params, pi); if (p.type_hint != Null) { define _ = Map.set(method_env, p.name, p.type_hint); } pi = pi + 1; }
+                check_block(st.body, method_env);
+            } else if (st.__tag__ == "ClassDef") {
+                define mi = 0;
+                while (mi < len(st.methods)) {
+                    define method_env = Map.new();
+                    define pi = 0;
+                    define m = heap_get(st.methods, mi);
+                    while (pi < len(m.params)) { define p = heap_get(m.params, pi); if (p.type_hint != Null) { define _ = Map.set(method_env, p.name, p.type_hint); } pi = pi + 1; }
+                    check_block(m.body, method_env);
+                    mi = mi + 1;
+                }
+            } else if (st.__tag__ == "CallStmt") {
+                define ai = 0;
+                while (ai < len(st.args)) {
+                    define arg = heap_get(st.args, ai);
+                    define inferred = _infer_expr_type(arg, local_env);
+                    if (arg.__tag__ == "Var" && inferred != Null) { define _ = Map.set(local_env, arg.name, inferred); }
+                    ai = ai + 1;
+                }
+            }
+            i = i + 1;
+        }
+        return local_env;
+    }
+
+    check_block(stmts, base_env);
+}
+
+fn _collect_function_signatures(stmts, prefix) {
+    define sigs = Map.new();
+    fn qualify(name) { if (prefix == Null || prefix == "") { return name; } return prefix + "." + name; }
+    define i = 0;
+    while (i < len(stmts)) {
+        define st = heap_get(stmts, i);
+        if (st.__tag__ == "Fn") { define _ = Map.set(sigs, qualify(st.name), st.return_type); }
+        else if (st.__tag__ == "Namespace") { define nested = _collect_function_signatures(st.body, qualify(st.name)); define keys = Map.keys(nested); define j = 0; while (j < len(keys)) { define k = heap_get(keys, j); define _ = Map.set(sigs, k, Map.get(nested, k)); j = j + 1; } }
+        i = i + 1;
+    }
+    return sigs;
+}
+
+fn lint_bare_call_results(stmts, signatures, source) {
+    define disallowed = Set.new();
+    define keys = Map.keys(signatures);
+    define i = 0;
+    while (i < len(keys)) {
+        define name = heap_get(keys, i);
+        define ret = Map.get(signatures, name, Null);
+        if (!(ret == Null || ret == "Null")) { define _ = Set.add(disallowed, name); }
+        i = i + 1;
+    }
+
+    fn visit(block) {
+        define bi = 0;
+        while (bi < len(block)) {
+            define st = heap_get(block, bi);
+            if (st.__tag__ == "CallStmt") {
+                if (Set.has(disallowed, st.name)) {
+                    define msg = "call to " + st.name + " returns a value that is ignored";
+                    define hint = "Assign the return value or explicitly acknowledge it with `_ = ...;`.";
+                    if (source == Null) { __raise_runtime_error(msg); }
+                    else { _lint_error(source, st, msg, "E011", hint); }
+                }
+            }
+            if (st.__tag__ == "If") { visit(st.then); visit(st.els); }
+            else if (st.__tag__ == "While") { visit(st.body); }
+            else if (st.__tag__ == "TryCatch") { visit(st.body); visit(st.handler); }
+            else if (st.__tag__ == "Namespace") { visit(st.body); }
+            else if (st.__tag__ == "ClassDef") {
+                define mi = 0;
+                while (mi < len(st.methods)) { visit(heap_get(st.methods, mi).body); mi = mi + 1; }
+            }
+            bi = bi + 1;
+        }
+    }
+
+    visit(stmts);
+}
+
+fn __import_sort_key(imp) {
+    define alias = imp.alias == Null ? "" : imp.alias;
+    return imp.module + "::" + alias;
+}
+
+fn __sorted_imports(imports) {
+    define arr = new[];
+    define i = 0;
+    while (i < len(imports)) { define _ = Collections.push(arr, heap_get(imports, i)); i = i + 1; }
+    define n = len(arr);
+    define a = 0;
+    while (a < n) {
+        define b = a + 1;
+        while (b < n) {
+            define ia = heap_get(arr, a);
+            define ib = heap_get(arr, b);
+            if (__import_sort_key(ib) < __import_sort_key(ia)) {
+                define tmp = ia;
+                arr[a] = ib;
+                arr[b] = tmp;
+            }
+            b = b + 1;
+        }
+        a = a + 1;
+    }
+    return arr;
+}
+
+fn lint_import_style(stmts, source) {
+    define imports = new[];
+    define i = 0;
+    while (i < len(stmts)) {
+        define st = heap_get(stmts, i);
+        if (st.__tag__ == "Import") { define _ = Collections.push(imports, st); }
+        else { break; }
+        i = i + 1;
+    }
+
+    define ordered = __sorted_imports(imports);
+    if (len(imports) > 0) {
+        define mismatch = false;
+        define idx = 0;
+        while (idx < len(imports)) {
+            define imp = heap_get(imports, idx);
+            define ord = heap_get(ordered, idx);
+            define alias_imp = imp.alias == Null ? Null : imp.alias;
+            define alias_ord = ord.alias == Null ? Null : ord.alias;
+            if (!(imp.module == ord.module && alias_imp == alias_ord)) { mismatch = true; break; }
+            idx = idx + 1;
+        }
+        if (mismatch) {
+            define first_misordered = heap_get(imports, 0);
+            define msg = "imports are not sorted alphabetically";
+            define hint = "Sort the leading import block alphabetically to keep module headers consistent.";
+            if (source == Null) { __raise_runtime_error(msg); }
+            else { _lint_error(source, first_misordered, msg, "E012", hint); }
+        }
+    }
+
+    define j = 0;
+    while (j < len(stmts)) {
+        define st = heap_get(stmts, j);
+        if (st.__tag__ == "Namespace") { lint_import_style(st.body, source); }
+        j = j + 1;
+    }
+}
+
+fn lint_destruct_call_outputs(stmts, source) {
+    define i = 0;
+    while (i < len(stmts)) { lint_destruct_call_outputs_stmt(heap_get(stmts, i), source); i = i + 1; }
+}
+
+fn _return_signature(expr) {
+    if (expr.__tag__ == "ObjLit") {
+        define names = new[];
+        define i = 0;
+        while (i < len(expr.fields)) { define pair = heap_get(expr.fields, i); define _ = Collections.push(names, heap_get(pair, 0)); i = i + 1; }
+        return names;
+    }
+    if (expr.__tag__ == "NewLit") {
+        define sig = new[];
+        define i = 0;
+        while (i < len(expr.items)) { define _ = Collections.push(sig, __to_str(i)); i = i + 1; }
+        return sig;
+    }
+    return new["<scalar>"];
+}
+
+fn __sig_equal(a, b) {
+    if (len(a) != len(b)) { return false; }
+    define i = 0;
+    while (i < len(a)) { if (heap_get(a, i) != heap_get(b, i)) { return false; } i = i + 1; }
+    return true;
+}
+
+fn _format_signature(sig) {
+    if (len(sig) == 1 && heap_get(sig, 0) == "<scalar>") { return "single value"; }
+    return "{" + String.join(sig, ", ") + "}";
+}
+
+fn _is_optional_annotation(annotation) {
+    return annotation != Null && __last_char(annotation) == "?";
+}
+
+fn _block_guarantees_return(stmts) {
+    define i = 0;
+    while (i < len(stmts)) {
+        define st = heap_get(stmts, i);
+        if (st.__tag__ == "Return") { return true; }
+        if (st.__tag__ == "If") { if (_block_guarantees_return(st.then) && _block_guarantees_return(st.els)) { return true; } }
+        if (st.__tag__ == "TryCatch") { if (_block_guarantees_return(st.body) && _block_guarantees_return(st.handler)) { return true; } }
+        else if (st.__tag__ == "While") { /* ignore */ }
+        else if (st.__tag__ == "Fn" || st.__tag__ == "MethodDef" || st.__tag__ == "ClassDef" || st.__tag__ == "Namespace") { /* ignore */ }
+        i = i + 1;
+    }
+    return false;
+}
+
+fn _stmt_guarantees_exit(st) {
+    if (st.__tag__ == "Return") { return true; }
+    if (st.__tag__ == "If") { return _block_guarantees_return(st.then) && _block_guarantees_return(st.els); }
+    if (st.__tag__ == "TryCatch") { return _block_guarantees_return(st.body) && _block_guarantees_return(st.handler); }
+    return false;
+}
+
+fn lint_return_signatures(stmts, fn_name, is_method, source, pos) {
+    define expected = Null;
+    define hint = "Ensure every return statement uses the same tuple/record structure (fields and order).";
+
+    fn visit(block) {
+        define i = 0;
+        while (i < len(block)) {
+            define st = heap_get(block, i);
+            if (st.__tag__ == "Return") {
+                define sig = _return_signature(st.expr);
+                if (expected == Null) { expected = sig; }
+                else if (!__sig_equal(sig, expected)) {
+                    define kind = is_method ? "method" : "function";
+                    define msg = "inconsistent return signature in " + kind + " " + fn_name + ": expected " + _format_signature(expected) + " but found " + _format_signature(sig);
+                    if (source == Null) { __raise_runtime_error(msg); }
+                    else { _lint_error(source, st, msg, "E007", hint); }
+                }
+            } else if (st.__tag__ == "If") { visit(st.then); visit(st.els); }
+            else if (st.__tag__ == "While") { visit(st.body); }
+            else if (st.__tag__ == "TryCatch") { visit(st.body); visit(st.handler); }
+            i = i + 1;
+        }
+    }
+
+    visit(stmts);
+}
+
+fn lint_return_exhaustiveness(stmts, fn_name, expected_return, is_method, source, location) {
+    if (expected_return == Null) { return Null; }
+    if (_is_optional_annotation(expected_return)) { return Null; }
+    if (_block_guarantees_return(stmts)) { return Null; }
+    define kind = is_method ? "method" : "function";
+    define msg = "not all paths in " + kind + " " + fn_name + " return a value for annotated type " + expected_return;
+    if (source == Null) { __raise_runtime_error(msg); }
+    else { _lint_error(source, location, msg, "E010", "Add return statements for every branch or provide a default return to satisfy the annotation."); }
+}
+
+fn lint_unreachable_code(stmts, source) {
+    fn visit_block(block) {
+        define terminated = false;
+        define i = 0;
+        while (i < len(block)) {
+            define st = heap_get(block, i);
+            if (terminated) {
+                define msg = "unreachable statement after a return";
+                if (source == Null) { __raise_runtime_error(msg); }
+                else { _lint_error(source, st, msg, "E013", "Remove the dead code or restructure control flow so it can be reached."); }
+            }
+            if (st.__tag__ == "If") { visit_block(st.then); visit_block(st.els); }
+            else if (st.__tag__ == "While") { visit_block(st.body); }
+            else if (st.__tag__ == "TryCatch") { visit_block(st.body); visit_block(st.handler); }
+            else if (st.__tag__ == "Fn") { visit_block(st.body); }
+            else if (st.__tag__ == "MethodDef") { visit_block(st.body); }
+            else if (st.__tag__ == "ClassDef") { define mi = 0; while (mi < len(st.methods)) { visit_block(heap_get(st.methods, mi).body); mi = mi + 1; } }
+            else if (st.__tag__ == "Namespace") { visit_block(st.body); }
+            if (_stmt_guarantees_exit(st)) { terminated = true; }
+            i = i + 1;
+        }
+    }
+
+    visit_block(stmts);
+}
+
+fn lint_no_consecutive_definitions(stmts) {
+    define prev = Null;
+
+    fn check_block(block) {
+        prev = Null;
+        define i = 0;
+        while (i < len(block)) {
+            define st = heap_get(block, i);
+            if (st.__tag__ == "If" || st.__tag__ == "While") {
+                lint_no_consecutive_definitions(st.__tag__ == "If" ? st.then : st.body);
+                if (st.__tag__ == "If") { lint_no_consecutive_definitions(st.els); }
+                prev = Null; i = i + 1; continue;
+            }
+            if (st.__tag__ == "Fn") { lint_no_consecutive_definitions(st.body); prev = Null; i = i + 1; continue; }
+            if (st.__tag__ == "MethodDef") { lint_no_consecutive_definitions(st.body); prev = Null; i = i + 1; continue; }
+            if (st.__tag__ == "ClassDef") { define mi = 0; while (mi < len(st.methods)) { lint_no_consecutive_definitions(heap_get(st.methods, mi).body); mi = mi + 1; } prev = Null; i = i + 1; continue; }
+            if (st.__tag__ == "Namespace") { lint_no_consecutive_definitions(st.body); prev = Null; i = i + 1; continue; }
+            if (st.__tag__ == "TryCatch") { lint_no_consecutive_definitions(st.body); lint_no_consecutive_definitions(st.handler); prev = Null; i = i + 1; continue; }
+            define current = Null;
+            if (st.__tag__ == "Let") { current = st.name; }
+            if (current != Null && prev == current) { __raise_runtime_error("variable " + current + " defined twice in a row"); }
+            prev = current;
+            i = i + 1;
+        }
+    }
+
+    check_block(stmts);
+}
+
+fn lint_destruct_call_outputs_stmt(st, source) {
+    if (st.__tag__ == "DestructAssign") { check_destruct_call_expr(st.expr, Set.from_list(st.names), source, st.pos); }
+    else if (st.__tag__ == "If") { lint_destruct_call_outputs(st.then, source); lint_destruct_call_outputs(st.els, source); }
+    else if (st.__tag__ == "While") { lint_destruct_call_outputs(st.body, source); }
+    else if (st.__tag__ == "Fn") { lint_destruct_call_outputs(st.body, source); }
+    else if (st.__tag__ == "MethodDef") { lint_destruct_call_outputs(st.body, source); }
+    else if (st.__tag__ == "ClassDef") { define mi = 0; while (mi < len(st.methods)) { lint_destruct_call_outputs_stmt(heap_get(st.methods, mi), source); mi = mi + 1; } }
+    else if (st.__tag__ == "Namespace") { lint_destruct_call_outputs(st.body, source); }
+    else if (st.__tag__ == "TryCatch") { lint_destruct_call_outputs(st.body, source); lint_destruct_call_outputs(st.handler, source); }
+}
+
+fn check_destruct_call_expr(expr, names, source, pos) {
+    if (expr.__tag__ == "Call") {
+        define skip = Set.from_list(new["heap_set", "heap_get", "delete", "tag", "__new", "new"]);
+        if (Set.has(skip, expr.name)) { return Null; }
+        define missing = new[];
+        define i = 0;
+        while (i < len(expr.args)) {
+            define arg = heap_get(expr.args, i);
+            if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { define _ = Collections.push(missing, arg.name); }
+            i = i + 1;
+        }
+        if (len(missing) > 0) {
+            define msg = "destructuring call to " + expr.name + " must include output for argument(s): " + String.join(missing, ", ");
+            if (source != Null) { _lint_error(source, pos, msg, "E006", "Add the missing binding(s) to the destructuring pattern so each referenced argument is captured."); }
+            else { __raise_runtime_error(msg); }
+        }
+    } else if (expr.__tag__ == "MethodCall") {
+        define missing = new[];
+        define i = 0;
+        while (i < len(expr.args)) {
+            define arg = heap_get(expr.args, i);
+            if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { define _ = Collections.push(missing, arg.name); }
+            i = i + 1;
+        }
+        if (len(missing) > 0) {
+            define msg = "destructuring method call to " + expr.name + " must include output for argument(s): " + String.join(missing, ", ");
+            if (source != Null) { _lint_error(source, pos, msg, "E006", "Add the missing binding(s) to the destructuring pattern so each referenced argument is captured."); }
+            else { __raise_runtime_error(msg); }
+        }
+    }
+}
+
+fn lint_param_mutations_returned(stmts, params, fn_name, is_method, source, pos) {
+    define mutated = Set.new();
+    define returned = Set.new();
+
+    fn visit(st) {
+        if (st.__tag__ == "Assign" && Set.has(params, st.name)) { define _ = Set.add(mutated, st.name); }
+        else if (st.__tag__ == "FieldAssign" && st.obj.__tag__ == "Var" && Set.has(params, st.obj.name)) { define _ = Set.add(mutated, st.obj.name); }
+        else if (st.__tag__ == "DestructAssign") { define i = 0; while (i < len(st.names)) { define nm = heap_get(st.names, i); if (Set.has(params, nm)) { define _ = Set.add(mutated, nm); } i = i + 1; } }
+        else if (st.__tag__ == "Return") { define reads = Map.new(); uses_in_expr(st.expr, reads); define keys = Map.keys(reads); define i = 0; while (i < len(keys)) { define n = heap_get(keys, i); if (Set.has(params, n)) { define _ = Set.add(returned, n); } i = i + 1; } }
+        else if (st.__tag__ == "If") { define i = 0; while (i < len(st.then)) { visit(heap_get(st.then, i)); i = i + 1; } i = 0; while (i < len(st.els)) { visit(heap_get(st.els, i)); i = i + 1; } }
+        else if (st.__tag__ == "TryCatch") { define i = 0; while (i < len(st.body)) { visit(heap_get(st.body, i)); i = i + 1; } i = 0; while (i < len(st.handler)) { visit(heap_get(st.handler, i)); i = i + 1; } }
+        else if (st.__tag__ == "While") { define i = 0; while (i < len(st.body)) { visit(heap_get(st.body, i)); i = i + 1; } }
+    }
+
+    define i = 0;
+    while (i < len(stmts)) { visit(heap_get(stmts, i)); i = i + 1; }
+
+    define missing = Set.to_list(Set.difference(mutated, returned));
+    if (len(missing) > 0) {
+        define kind = is_method ? "method" : "function";
+        define msg = "mutated parameter(s) in " + kind + " " + fn_name + " must be returned: " + String.join(missing, ", ");
+        if (source == Null) { __raise_runtime_error(msg); }
+        else { _lint_error(source, pos, msg, "E001", "Return the mutated parameters so callers receive the updates."); }
+    }
+}

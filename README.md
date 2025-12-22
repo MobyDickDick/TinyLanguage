@@ -74,7 +74,7 @@ If no text appears, verify that you are running the command from the repository 
 - [x] **Import and transpile Rosetta Code samples**: Store selected Rosetta Code tasks (FizzBuzz, Fibonacci, sorting, etc.) under `examples/rosetta/`, then build a translation pass that converts the Python versions into TinyLanguage variants with snapshot tests.
 - [x] **Write a beginner-friendly tutorial**: Create `docs/tutorial.md` with setup, syntax, control flow, functions, modules, and tooling, linking runnable snippets and referencing them from `README.md`.
 - [x] **Add English documentation across source files**: Sweep public functions/classes for docstrings and module headers that describe purpose, parameters, return values, and error scenarios; wire docstring checks (e.g., `ruff pydocstyle`) into CI.
-- [ ] **Additional ideas**
+- [x] **Additional ideas**
   - [x] REPL with syntax highlighting
   - [x] Parser/evaluator fuzzing (Hypothesis) to stress feature parity, now including match/ADT generators
   - [x] LSP enhancements (autocomplete/hover for the VSCode extension) via the VS Code helper commands

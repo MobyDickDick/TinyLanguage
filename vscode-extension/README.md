@@ -115,18 +115,18 @@ The “nativeCompiler” work is tracked separately.
 
 ### 1. Frontend / language
 
-- [ ] **Improve error positions and messages**
+- [x] **Improve error positions and messages**
   - Tokens and AST nodes should consistently carry line and column information.
   - Unified error type with an optional `SourceSpan` that highlights the affected line when displayed.
   - Parser and linter should use this error type.
 
-- [ ] **Refine the linter**
+- [x] **Refine the linter**
   - “must use” rule across control flow: a variable counts as used only when referenced on all relevant paths.
   - Unreachable-code warnings (e.g., statements after `return`).
 
 ### 2. Type discipline
 
-- [ ] **No implicit type changes**
+- [x] **No implicit type changes**
   - After `define i = 5;`, assigning `i = 0.5;` should be an error (or explicitly allowed via another mechanism).
   - Apply type rules uniformly across expressions, functions, and heap operations.
 - [x] (Optional) Simple type inference
@@ -134,16 +134,16 @@ The “nativeCompiler” work is tracked separately.
 
 ### 3. Runtime
 
-- [ ] **Harden the heap API**
+- [x] **Harden the heap API**
   - More precise errors for invalid pointers, out-of-bounds, double `delete`, etc.
   - Simple leak tracking (e.g., for tests).
-- [ ] **Expand the test suite**
+- [x] **Expand the test suite**
   - Edge cases: nested arrays, many `new/delete` pairs, deep recursion, heap-API error scenarios.
 
 ### 4. Tooling
 
-- [ ] **CLI wrapper**
-  - A small command-line tool that compiles/runs TinyLanguage files (e.g., `julia --project=. tiny_cli.jl source.tiny`).
+- [x] **CLI wrapper**
+  - A small command-line tool that compiles/runs TinyLanguage files (for example `python -m tiny_language_cli demo.tiny` or `python -m tiny_lang_cli --source "print(1+2);"`).
 - [x] **Document the language**
   - Short, stable language specification (syntax, type rules, “must use” rules) to keep behavior clear. See [`LANGUAGE_SPEC.md`](LANGUAGE_SPEC.md) for the stable reference used by the VS Code extension and other tooling.
 
@@ -151,7 +151,7 @@ The “nativeCompiler” work is tracked separately.
 
 The native compiler is developed in its own branch (`nativeCompiler`).
 
-- [ ] Define a custom native IR (stack- or register-based).
-- [ ] Small VM that executes this IR (interpreter in Julia).
-- [ ] Lowering: AST → Native IR for expressions, statements, functions, heap API.
-- [ ] Optional: Backend targeting LLVM or “plain Julia” without a runtime wrapper to produce native code.
+- [x] Define a custom native IR (stack- or register-based).
+- [x] Small VM that executes this IR (prototype interpreter in Python mirroring the Julia sketch).
+- [x] Lowering: AST → Native IR for expressions, statements, functions, heap API.
+- [x] Optional: Backend targeting LLVM or “plain Julia” without a runtime wrapper to produce native code.

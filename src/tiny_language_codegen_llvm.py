@@ -207,15 +207,15 @@ class LLVMCodeGenerator:
 
     def _format_for_type(self, ty: str) -> tuple[str, int]:
         if ty == "double":
-            return ".fmt_double", 4
+            return ".fmt_double", 5
         if ty in {"i64", "i1"}:
-            return ".fmt_i64", 4
+            return ".fmt_i64", 5
         raise NotImplementedError(f"printing values of type {ty} not supported in LLVM prototype")
 
     def _header(self) -> List[str]:
         return [
-            "@.fmt_i64 = private unnamed_addr constant [4 x i8] c\"%ld\\0A\\00\"",
-            "@.fmt_double = private unnamed_addr constant [4 x i8] c\"%f\\0A\\00\"",
+            "@.fmt_i64 = private unnamed_addr constant [5 x i8] c\"%ld\\0A\\00\"",
+            "@.fmt_double = private unnamed_addr constant [5 x i8] c\"%f\\0A\\00\"",
             "declare i32 @printf(i8*, ...)",
             "declare i32 @fflush(i8*)",
         ]

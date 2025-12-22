@@ -81,12 +81,12 @@ If no text appears, verify that you are running the command from the repository 
   - [x] Extend performance microbenchmarks with interpreter/runtime map operations (see [`benchmarks/microbenchmarks.py`](benchmarks/microbenchmarks.py)).
 
 ## Offene Aufgaben (aus der letzten Diskussion)
-- [ ] **LLVM-Emitter weiter ausbauen** (gestartet): Der experimentelle Pfad in `tiny_language_codegen_llvm.py` soll mehr Native-IR-Operationen abdecken und über CLI/API wählbar bleiben. Erste Schritte aus diesem Run: POP-Unterstützung und ein zusätzlicher Test, der das Verhalten absichert.
+- [x] **LLVM-Emitter weiter ausbauen** (gestartet): Der experimentelle Pfad in `tiny_language_codegen_llvm.py` soll mehr Native-IR-Operationen abdecken und über CLI/API wählbar bleiben. Erste Schritte aus diesem Run: POP-Unterstützung und ein zusätzlicher Test, der das Verhalten absichert.
 - [x] **Python-Bridge für Feature-Durchreichung**: Ein TinyLanguage-Modul und Python-Hilfen sollen die FFI vereinfachen (Import/Calls/Allowlist/Timeouts) und bidirektionale Aufrufe kapseln. Demos und Tests würden typische Datentyp-Mappings und Sandbox-Grenzen prüfen.
 - [x] **Rosetta-Code-Sync für lokale Pfade**: Das Skript `examples/rosetta/copy_rosetta_samples.py` bietet jetzt konfigurierbare Pfade/Filter/Delays, einen Dry-Run-Schalter und kann den Transpiler direkt anstoßen.
 
 ### Neu priorisierte Aufgaben
-1. **LLVM-Emitter präzisieren**: Vergleichs- und Modulo-Operationen in `tiny_language_codegen_llvm.py` abbilden, die CLI-Option `--emit-llvm` funktionsfähig halten und Regressionstests ergänzen, die den erweiterten IR-Pfad prüfen.
+1. **LLVM-Emitter präzisieren** ✅: Vergleichs- und Modulo-Operationen in `tiny_language_codegen_llvm.py` abbilden, die CLI-Option `--emit-llvm` funktionsfähig halten und Regressionstests ergänzen, die den erweiterten IR-Pfad prüfen.
 2. **Python↔TinyLanguage-Bridge entwerfen** ✅: Eine kleine FFI-Schicht (Allowlist/Timeouts) plus passende Tiny/Python-Demos erstellen, um häufige Datentyp-Mappings zu zeigen; Tests in `tests/` sollen beide Richtungen abdecken.
 3. **Rosetta-Sync konfigurierbar machen** ✅: `examples/rosetta/copy_rosetta_samples.py` ist jetzt filterbar, bietet Dry-Run/Transpile-Optionen und dokumentierte Bedienung inkl. Regressionstest.
 

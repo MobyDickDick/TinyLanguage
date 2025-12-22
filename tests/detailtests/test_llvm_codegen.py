@@ -43,6 +43,17 @@ def test_cli_emits_llvm_ir(tmp_path) -> None:
     assert "@.fmt_i64" in result.stdout
 
 
+def test_llvm_codegen_emits_full_format_string_lengths() -> None:
+    source = "print(1); print(2.0);"
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert '@.fmt_i64 = private unnamed_addr constant [5 x i8] c"%ld\\0A\\00"' in llvm_ir
+    assert '@.fmt_double = private unnamed_addr constant [5 x i8] c"%f\\0A\\00"' in llvm_ir
+    assert "getelementptr inbounds [5 x i8], [5 x i8]* @.fmt_i64" in llvm_ir
+    assert "getelementptr inbounds [5 x i8], [5 x i8]* @.fmt_double" in llvm_ir
+
+
 def test_pop_is_ignored_in_llvm_codegen() -> None:
     program = ProgramIR(
         entry=[
@@ -112,6 +123,31 @@ def test_cli_emits_llvm_ir_for_comparisons(tmp_path) -> None:
     assert "icmp eq i64" in result.stdout
     assert "fcmp one double" in result.stdout
     assert "@.fmt_i64" in result.stdout
+
+
+def test_cli_emits_llvm_ir_for_modulo(tmp_path) -> None:
+    source = "define a = 9 % 4; define b = 7.5 % 2.5; print(a, b);"
+    script = tmp_path / "program.tiny"
+    script.write_text(source, encoding="utf-8")
+
+    env = dict(os.environ)
+    env["PYTHONPATH"] = os.pathsep.join(
+        [env.get("PYTHONPATH", ""), str(Path(__file__).resolve().parents[2] / "src")]
+    ).strip(os.pathsep)
+
+    result = subprocess.run(
+        [sys.executable, "-m", "tiny_language_cli", "--file", str(script), "--emit-llvm"],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+
+    assert result.returncode == 0
+    assert "srem i64" in result.stdout
+    assert "frem double" in result.stdout
+    assert "@.fmt_i64" in result.stdout
+    assert "@.fmt_double" in result.stdout
 
 
 def test_llvm_codegen_emits_flush_calls() -> None:

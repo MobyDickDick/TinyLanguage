@@ -1,0 +1,38 @@
+// TinyLanguage-Port des Linters aus src/tiny_language_linter.py.
+// Aktueller Stand: Gerüst mit API-Signaturen und RuntimeError-Hinweisen, damit
+// die Tiny-Selbsthosting-Pipeline frühzeitig nachvollziehbar bleibt. Die
+// eigentliche Regel-Logik (Must-Use, Unreachable, Typwechsel usw.) wird
+// schrittweise ergänzt und behält die Python-Fehlermeldungen bei.
+
+define __PY_REPR_ALLOW = new["repr"];
+define __PY_EXEC_ALLOW = new["exec"];
+
+fn __raise_runtime_error(msg) {
+    define safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
+    define stmt = "raise RuntimeError(" + safe + ")";
+    // Rückgabewert ist irrelevant – der Aufruf löst eine Exception aus.
+    return Python.call("builtins", "exec", new[stmt], __PY_EXEC_ALLOW);
+}
+
+fn __todo(feature) {
+    __raise_runtime_error("Tiny linter port pending: " + feature);
+}
+
+// --- API-Signaturen ---------------------------------------------------------
+// Die Funktionen spiegeln die Python-Version und werden nach und nach
+// implementiert. Signaturen bleiben stabil, damit vorhandene Aufrufer nichts
+// anpassen müssen, sobald die Portierung fortschreitet.
+
+fn lint_fn_params_used(fn, source) { __todo("lint_fn_params_used"); }
+fn lint_method_params_used(md, source) { __todo("lint_method_params_used"); }
+fn lint_locals_used(stmts, source) { __todo("lint_locals_used"); }
+fn lint_assignment_types(stmts, source, env) { __todo("lint_assignment_types"); }
+fn lint_bare_call_results(stmts, signatures, source) { __todo("lint_bare_call_results"); }
+fn lint_import_style(stmts, source) { __todo("lint_import_style"); }
+fn lint_destruct_call_outputs(stmts, source) { __todo("lint_destruct_call_outputs"); }
+fn lint_return_signatures(stmts, fn_name, is_method, source, pos) { __todo("lint_return_signatures"); }
+fn lint_return_exhaustiveness(stmts, fn_name, expected_return, is_method, source, location) { __todo("lint_return_exhaustiveness"); }
+fn lint_unreachable_code(stmts, source) { __todo("lint_unreachable_code"); }
+fn lint_no_consecutive_definitions(stmts) { __todo("lint_no_consecutive_definitions"); }
+fn check_destruct_call_expr(expr, names, source, pos) { __todo("check_destruct_call_expr"); }
+fn lint_param_mutations_returned(stmts, params, fn_name, is_method, source, pos) { __todo("lint_param_mutations_returned"); }

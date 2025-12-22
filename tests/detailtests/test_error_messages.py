@@ -52,7 +52,7 @@ def test_unused_binding_reports_hint():
 
     assert (
         str(excinfo.value)
-        == "[E002] unused local binding(s): unused (line 1, col 1)\n> 1 | define unused = 1;\n    | ^\n  Hint: Remove the unused binding or reference it."
+        == "[E002] unused local binding(s): unused (line 1, col 8)\n> 1 | define unused = 1;\n    |        ^^^^^^\n  Hint: Remove the unused binding or reference it."
     )
 
 

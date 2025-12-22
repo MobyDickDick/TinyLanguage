@@ -6,7 +6,7 @@ parsing so later stages can assume the IR has already been validated for common
 footguns.
 """
 
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Union
 
 from tiny_language_ast import *
 from tiny_language_preamble import TinyLangError, format_error
@@ -224,7 +224,7 @@ def lint_fn_params_used(fn: Fn, source: Optional[str] = None) -> None:
     lint_destruct_call_outputs(fn.body, source)
     lint_return_signatures(fn.body, fn.name, is_method=False, source=source, pos=fn.pos)
     lint_return_exhaustiveness(
-        fn.body, fn.name, expected_return=fn.return_type, is_method=False, source=source, pos=fn.pos
+        fn.body, fn.name, expected_return=fn.return_type, is_method=False, source=source, location=fn
     )
     lint_locals_used(fn.body, source)
 
@@ -251,7 +251,7 @@ def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None
         expected_return=md.return_type,
         is_method=True,
         source=source,
-        pos=md.pos,
+        location=md,
     )
     lint_locals_used(md.body, source)
 
@@ -730,7 +730,7 @@ def lint_return_exhaustiveness(
     expected_return: Optional[str],
     is_method: bool,
     source: Optional[str],
-    pos: SourcePos,
+    location: Union[IR, SourcePos, SourceSpan],
 ) -> None:
     if expected_return is None:
         return
@@ -744,7 +744,7 @@ def lint_return_exhaustiveness(
         raise RuntimeError(msg)
     raise _lint_error(
         source,
-        pos,
+        location,
         msg,
         code="E010",
         hint="Add return statements for every branch or provide a default return to satisfy the annotation.",
@@ -940,5 +940,3 @@ def lint_param_mutations_returned(
             code="E001",
             hint="Return the mutated parameters so callers receive the updates.",
         )
-
-

@@ -257,19 +257,20 @@ def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None
 
 
 def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
-    unused: List[tuple[str, SourcePos]] = []
+    Location = Union[SourcePos, SourceSpan]
+    unused: List[tuple[str, Location]] = []
 
     def names_in_expr(expr: IR) -> Set[str]:
         reads: Dict[str, int] = {}
         uses_in_expr(expr, reads)
         return set(reads)
 
-    def _mark_used(state: Dict[str, tuple[SourcePos, bool, bool]], name: str):
+    def _mark_used(state: Dict[str, tuple[Location, bool, bool]], name: str):
         if name in state:
             pos, _, _ = state[name]
             state[name] = (pos, True, True)
 
-    def _mark_captured_uses(block: List[IR], state: Dict[str, tuple[SourcePos, bool, bool]]):
+    def _mark_captured_uses(block: List[IR], state: Dict[str, tuple[Location, bool, bool]]):
         reads: Dict[str, int] = {}
         for st in block:
             lint_stmt_reads(st, reads)
@@ -277,10 +278,10 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
             if nm in reads:
                 state[nm] = (pos, True, True)
 
-    def _merge_states(states: List[Dict[str, tuple[SourcePos, bool, bool]]]) -> List[Dict[str, tuple[SourcePos, bool, bool]]]:
+    def _merge_states(states: List[Dict[str, tuple[Location, bool, bool]]]) -> List[Dict[str, tuple[Location, bool, bool]]]:
         if not states:
             return []
-        merged: Dict[str, tuple[SourcePos, bool, bool]] = {}
+        merged: Dict[str, tuple[Location, bool, bool]] = {}
         for st in states:
             for name, (pos, used_all, used_any) in st.items():
                 if name not in merged:
@@ -290,27 +291,27 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                     merged[name] = (prev_pos, prev_all and used_all, prev_any or used_any)
         return [merged]
 
-    def analyze_block(block: List[IR], initial_states: List[Dict[str, tuple[SourcePos, bool, bool]]]):
+    def analyze_block(block: List[IR], initial_states: List[Dict[str, tuple[Location, bool, bool]]]):
         active_states = [dict(state) for state in initial_states]
-        terminated_states: List[Dict[str, tuple[SourcePos, bool, bool]]] = []
+        terminated_states: List[Dict[str, tuple[Location, bool, bool]]] = []
 
         for st in block:
-            next_active: List[Dict[str, tuple[SourcePos, bool, bool]]] = []
+            next_active: List[Dict[str, tuple[Location, bool, bool]]] = []
             for state in active_states:
                 if isinstance(st, Let):
                     new_state = dict(state)
                     for nm in names_in_expr(st.expr):
                         _mark_used(new_state, nm)
-                    new_state[st.name] = (st.pos, False, False)
+                    new_state[st.name] = (st.name_span or st.pos, False, False)
                     next_active.append(new_state)
                 elif isinstance(st, Import):
                     new_state = dict(state)
-                    new_state[_import_binding_name(st.module, st.alias)] = (st.pos, False, False)
+                    new_state[_import_binding_name(st.module, st.alias)] = (st.binding_span or st.pos, False, False)
                     next_active.append(new_state)
                 elif isinstance(st, DestructAssign):
                     new_state = dict(state)
-                    for nm in st.names:
-                        new_state[nm] = (st.pos, False, False)
+                    for nm, span in zip(st.names, st.name_spans):
+                        new_state[nm] = (span, False, False)
                     for nm in names_in_expr(st.expr):
                         _mark_used(new_state, nm)
                     next_active.append(new_state)
@@ -421,9 +422,9 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
     active, terminated = analyze_block(stmts, [dict()])
     all_states = active + terminated
 
-    usage_summary: Dict[tuple[str, SourcePos], Dict[str, bool]] = {}
+    usage_summary: Dict[tuple[str, Location], Dict[str, bool]] = {}
 
-    def _accumulate(states: List[Dict[str, tuple[SourcePos, bool, bool]]], key: str):
+    def _accumulate(states: List[Dict[str, tuple[Location, bool, bool]]], key: str):
         for state in states:
             for name, (pos, used_all, used_any) in state.items():
                 entry = usage_summary.setdefault((name, pos), {

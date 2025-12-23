@@ -8,6 +8,8 @@ For interoperability guidance, see the cross-language compatibility notes in [`d
 
 - **IR (Intermediate Representation)**: An internal *intermediate representation* of a program between the AST and the final backend output (e.g., interpreter execution, native VM bytecode, or emitted code). The IR is designed to be simpler than the surface syntax and easier to transform, validate, and round-trip across languages.
 
+- **Regression test**: A targeted test that ensures a previously fixed bug or behavior does not break again. In TinyLanguage this often means capturing a minimal snippet that used to fail (parser/IR/runtime) and asserting the expected AST/IR shape, output, or error message—so future refactors can’t reintroduce the same issue unnoticed.
+
 - **Smoke test**: A fast “does it basically work?” end-to-end check. In TinyLanguage this usually means: parse/compile a tiny program, run it, and verify a minimal expected result (e.g., arithmetic, a branch, a function call). Smoke tests are intentionally small and coarse—they catch broken pipelines early after refactors.
 
 ## Intended use

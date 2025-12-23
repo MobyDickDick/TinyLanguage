@@ -4,6 +4,12 @@ TinyLanguage is a small Julia-inspired language with a Python interpreter. This 
 
 For interoperability guidance, see the cross-language compatibility notes in [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md). For concrete Rosetta Code–style ports from Python to TinyLanguage, walk through [`docs/rosetta_python_examples.md`](docs/rosetta_python_examples.md). A compact language reference with syntax, type rules, and operator overview lives in [`docs/language_spec.md`](docs/language_spec.md).
 
+### Quick glossary
+
+- **IR (Intermediate Representation)**: An internal *intermediate representation* of a program between the AST and the final backend output (e.g., interpreter execution, native VM bytecode, or emitted code). The IR is designed to be simpler than the surface syntax and easier to transform, validate, and round-trip across languages.
+
+- **Smoke test**: A fast “does it basically work?” end-to-end check. In TinyLanguage this usually means: parse/compile a tiny program, run it, and verify a minimal expected result (e.g., arithmetic, a branch, a function call). Smoke tests are intentionally small and coarse—they catch broken pipelines early after refactors.
+
 ## Intended use
 TinyLanguage is a learning- and transpiler-focused playground rather than a production-ready toolchain. It exists to showcase syntax ideas, cross-language IR conversions, and runtime experiments (e.g., gradual typing and structured cancellation). The runnable demos and tests (`python run_all.py` or `python -m pytest`) are best treated as teaching materials for language design or interoperability, not as a polished SDK.
 

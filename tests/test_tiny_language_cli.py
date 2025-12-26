@@ -7,13 +7,15 @@ PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
 SRC_ROOT = PROJECT_ROOT / "src"
 
 
-def run_cli(command):
+def run_cli(command, extra_env=None):
     env = {
         **os.environ,
         "PYTHONPATH": os.pathsep.join(
             filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
         ),
     }
+    if extra_env:
+        env.update(extra_env)
     return subprocess.run(
         [sys.executable, "src/tiny_language_cli.py", *command],
         capture_output=True,
@@ -81,4 +83,20 @@ def test_cli_supports_positional_path(tmp_path):
 
     assert proc.returncode == 0
     assert proc.stdout == "20\n"
+    assert proc.stderr == ""
+
+
+def test_cli_respects_copy_on_call_env():
+    program = (
+        "fn mutate(a) { heap_set(a, 0, 9); }\n"
+        "define xs = new(1);\n"
+        "heap_set(xs, 0, 1);\n"
+        "define _ = mutate(xs);\n"
+        "print(heap_get(xs, 0));"
+    )
+
+    proc = run_cli(["--source", program], extra_env={"TINYLANG_COPY_ON_CALL": "1"})
+
+    assert proc.returncode == 0
+    assert proc.stdout == "1\n"
     assert proc.stderr == ""

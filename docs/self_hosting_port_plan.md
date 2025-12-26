@@ -47,7 +47,7 @@ Track progress in this table as modules are ported. An empty "Tiny parity" cell 
 | AST + runtime | `src/tiny_language_ast.py`, `src/tiny_language_runtime.py`, `src/tiny_language_eval.py` | `src_tiny/tiny_language_ast.tiny` (runtime pending) | Ensure built-ins (print, heap, math) behave identically. |
 | Linter | `src/tiny_language_linter.py` | `src_tiny/tiny_language_linter.tiny` | Scaffolded; port Must-use and unreachable-code rules with identical messages. |
 | Transpilers | `src/tiny_language_transpilers.py` | `src_tiny/tiny_language_transpilers.tiny` | Renderers/parsers mirrored for Python/Julia/JS/C++; Tiny parity tests cover renderer output. |
-| Native backend | `src/native_ir.py`, `src/tiny_language_codegen_native.py`, `src/native_vm.py` | _TBD_ | Keep opcode names and error messages stable. |
+| Native backend | `src/native_ir.py`, `src/tiny_language_codegen_native.py`, `src/native_vm.py` | `src_tiny/native_ir.tiny`, `src_tiny/tiny_language_codegen_native.tiny`, `src_tiny/native_vm.tiny` | Keep opcode names and error messages stable. |
 | CLI / LSP | `src/tiny_language_cli.py`, `src/tiny_lang_cli.py`, `src/language_server.py`, `src/language_server_cli.py` | _TBD_ | Align CLI flags and LSP capabilities once core runtime is ready. |
 
 ### Lexer + parser parity notes

@@ -1,0 +1,104 @@
+// TinyLanguage-Port von src/native_ir.py
+// Lightweight intermediate representation for the native backend.
+
+class Instruction {
+    op: string;
+    arg: any;
+}
+
+fn Instruction(op, arg) {
+    return new Instruction { op: op; arg: arg };
+}
+
+class FunctionIR {
+    name: string;
+    params: Pointer;
+    instructions: Pointer;
+}
+
+fn FunctionIR(name, params, instructions) {
+    return new FunctionIR { name: name; params: params; instructions: instructions };
+}
+
+class ProgramIR {
+    entry: Pointer;
+    functions: any;
+}
+
+fn ProgramIR(entry, functions) {
+    return new ProgramIR { entry: entry; functions: functions };
+}
+
+define OPCODE_PUSH_CONST = "PUSH_CONST";
+define OPCODE_LOAD = "LOAD";
+define OPCODE_STORE = "STORE";
+define OPCODE_BINARY = "BINARY";
+define OPCODE_PRINT = "PRINT";
+define OPCODE_FLUSH = "FLUSH";
+define OPCODE_JUMP = "JUMP";
+define OPCODE_JUMP_IF_FALSE = "JUMP_IF_FALSE";
+define OPCODE_CALL = "CALL";
+define OPCODE_POP = "POP";
+define OPCODE_RETURN = "RETURN";
+
+// Python interop helpers for formatting
+
+define __PY_STR_ALLOW = new["str"];
+
+define __PY_REPR_ALLOW = new["repr"];
+
+define __PY_EXEC_ALLOW = new["exec"];
+
+fn __to_str(value) {
+    return Python.call("builtins", "str", new[value], __PY_STR_ALLOW);
+}
+
+fn __raise_runtime_error(msg) {
+    define safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
+    define stmt = "raise RuntimeError(" + safe + ")";
+    return Python.call("builtins", "exec", new[stmt], __PY_EXEC_ALLOW);
+}
+
+fn format_program(program) {
+    if (program == Null) { return ""; }
+
+    fn _fmt_index(idx) {
+        if (idx < 10) { return "0" + __to_str(idx); }
+        return __to_str(idx);
+    }
+
+    fn _fmt_block(label, instrs) {
+        define lines = new[];
+        define idx = 0;
+        while (idx < len(instrs)) {
+            define instr = heap_get(instrs, idx);
+            define suffix = "";
+            if (instr.arg != Null) { suffix = " " + __to_str(instr.arg); }
+            define line = label + "[" + _fmt_index(idx) + "]: " + instr.op + suffix;
+            define _ = Collections.push(lines, line);
+            idx = idx + 1;
+        }
+        return lines;
+    }
+
+    define lines = _fmt_block("entry", program.entry);
+    define keys = Map.keys(program.functions);
+    define i = 0;
+    while (i < len(keys)) {
+        define name = heap_get(keys, i);
+        define func = Map.get(program.functions, name);
+        if (func == Null) {
+            define _ = __raise_runtime_error("missing function " + __to_str(name));
+        }
+        define header = "function " + func.name + "(" + String.join(func.params, ", ") + ")";
+        define _h = Collections.push(lines, header);
+        define block = _fmt_block("  " + func.name, func.instructions);
+        define j = 0;
+        while (j < len(block)) {
+            define _ = Collections.push(lines, heap_get(block, j));
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    return String.join(lines, "\n");
+}

@@ -117,12 +117,18 @@ The lexer lives in [`src/tiny_language_lexer.py`](../src/tiny_language_lexer.py)
 
 | Category | Tokens |
 | --- | --- |
-| Grouping/structure | `(` `)` `{` `}` `[` `]` `,` `;` `.` `:` |
+| Grouping/structure | `(` `)` `{` `}` `[` `]` `,` `;` `.` `:` `?` |
 | Assignment | `=` |
 | Arithmetic | `+` `-` `*` `/` `^` `%` |
 | Comparison | `==` `!=` `<` `<=` `>` `>=` |
 | Boolean | `&&` `||` `!` |
 | Arrow | `->` |
+| Comments | `//` (line comment) |
+
+Literals:
+
+- **Numbers:** digits with an optional fractional part (e.g., `42`, `3.14`).
+- **Strings:** double-quoted with escapes for `\n`, `\t`, `\r`, `\"`, `\\` (unknown escapes are preserved).
 
 ```ebnf
 program         ::= stmt* EOF ;
@@ -240,3 +246,4 @@ NAME_or_kw      ::= NAME | KW ;
 - [x] Add a dedicated grammar test suite that parses the EBNF samples above and ensures parser parity with `tiny_language_parser.py`.
 - [x] Document reserved keywords vs. identifiers with examples for `NAME_or_kw` usage (e.g., method names that are keywords).
 - [x] Expand the grammar section with a concise lexer/token table (operators, symbols, literal forms) and link to the lexer source.
+- [x] Document comment syntax and string escape sequences in the lexer/token reference.

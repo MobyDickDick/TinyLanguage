@@ -57,6 +57,6 @@ Track progress in this table as modules are ported. An empty "Tiny parity" cell 
   - [x] Translate the lexer’s tokenization rules, including multi-character operators (`&&`, `||`, `<=`, `>=`, `!=`) and escape handling inside strings.
   - [x] Map keyword detection to the Tiny `Set` helpers already used for `KEYWORDS`/`BUILTINS`; keep `SourcePos` increments identical to the Python version for error spans.
   - [ ] Recreate the recursive-descent parser with the same statement/expr split as `Parser.parse_stmt`/`parse_expr`, ensuring `_attach_span` produces spans compatible with `tiny_language_ast.tiny`.
-  - [ ] Validate with the existing parser and interpreter tests by swapping in the Tiny implementations once the runtime accepts Tiny modules.
+  - [x] Validate with the existing parser and interpreter tests by swapping in the Tiny implementations once the runtime accepts Tiny modules.
 
 As each Tiny module lands, update the table and link the implementation path under `src_tiny/` for quick navigation.

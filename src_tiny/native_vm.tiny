@@ -1,0 +1,201 @@
+// TinyLanguage-Port von src/native_vm.py
+// Runtime for executing TinyLanguage native bytecode.
+
+// Opcode + IR definitions are expected from native_ir.tiny
+
+define __PY_STR_ALLOW = new["str"];
+define __PY_BOOL_ALLOW = new["bool"];
+define __PY_POW_ALLOW = new["pow"];
+define __PY_EXEC_ALLOW = new["exec"];
+define __PY_REPR_ALLOW = new["repr"];
+
+fn __to_str(value) {
+    return Python.call("builtins", "str", new[value], __PY_STR_ALLOW);
+}
+
+fn __to_bool(value) {
+    return Python.call("builtins", "bool", new[value], __PY_BOOL_ALLOW);
+}
+
+fn __raise_runtime_error(msg) {
+    define safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
+    define stmt = "raise RuntimeError(" + safe + ")";
+    return Python.call("builtins", "exec", new[stmt], __PY_EXEC_ALLOW);
+}
+
+fn __reverse_list(items) {
+    define out = new[];
+    define i = len(items) - 1;
+    while (i >= 0) {
+        define _ = Collections.push(out, heap_get(items, i));
+        i = i - 1;
+    }
+    return out;
+}
+
+fn __pop_args(stack, count) {
+    define raw = new[];
+    define i = 0;
+    while (i < count) {
+        define val = Collections.pop(stack);
+        define _ = Collections.push(raw, val);
+        i = i + 1;
+    }
+    return __reverse_list(raw);
+}
+
+fn __format_value(value) {
+    if (value == Null) { return "null"; }
+    if (value == true) { return "true"; }
+    if (value == false) { return "false"; }
+    return __to_str(value);
+}
+
+fn __binary_apply(op, left, right) {
+    if (op == "+") { return left + right; }
+    if (op == "-") { return left - right; }
+    if (op == "*") { return left * right; }
+    if (op == "/") { return left / right; }
+    if (op == "%") { return left % right; }
+    if (op == "^") { return Python.call("builtins", "pow", new[left, right], __PY_POW_ALLOW); }
+    if (op == "==") { return left == right; }
+    if (op == "!=") { return left != right; }
+    if (op == "<") { return left < right; }
+    if (op == ">") { return left > right; }
+    if (op == "<=") { return left <= right; }
+    if (op == ">=") { return left >= right; }
+    if (op == "&&" || op == "and") { return __to_bool(left) && __to_bool(right); }
+    if (op == "||" || op == "or") { return __to_bool(left) || __to_bool(right); }
+    define _ = __raise_runtime_error("unsupported operator " + op);
+    return Null;
+}
+
+class _Frame {
+    instructions: Pointer;
+    locals: any;
+    ip: number;
+}
+
+fn _Frame(instructions, locals) {
+    define locals_map = locals;
+    if (locals_map == Null) { locals_map = Map.new(); }
+    return new _Frame { instructions: instructions; locals: locals_map; ip: 0 };
+}
+
+class NativeVM {
+    output: Pointer;
+    globals: any;
+    program: any;
+
+    fn run(self, program) {
+        self.program = program;
+        self.output = new[];
+        self.globals = Map.new();
+        define _ = _vm_execute(self, _Frame(program.entry, self.globals));
+        return String.join(self.output, "");
+    }
+}
+
+fn NativeVM() {
+    return new NativeVM { output: new[]; globals: Map.new(); program: Null };
+}
+
+fn _vm_load(vm, locals, name) {
+    if (Map.has(locals, name)) { return Map.get(locals, name); }
+    if (Map.has(vm.globals, name)) { return Map.get(vm.globals, name); }
+    define _ = __raise_runtime_error("unknown variable " + name);
+    return Null;
+}
+
+fn _vm_call(vm, name, args) {
+    if (vm.program == Null) { define _ = __raise_runtime_error("VM has no program loaded"); }
+    define target = Map.get(vm.program.functions, name);
+    if (target == Null) { define _ = __raise_runtime_error("unknown function " + name); }
+    if (len(args) != len(target.params)) {
+        define _ = __raise_runtime_error("function " + name + " expects " + __to_str(len(target.params)) + " args, got " + __to_str(len(args)));
+    }
+    define locals = Map.new();
+    define i = 0;
+    while (i < len(target.params)) {
+        define param = heap_get(target.params, i);
+        define arg = heap_get(args, i);
+        define _ = Map.set(locals, param, arg);
+        i = i + 1;
+    }
+    return _vm_execute(vm, _Frame(target.instructions, locals));
+}
+
+fn _vm_execute(vm, frame) {
+    define stack = new[];
+    define ip = frame.ip;
+    define instructions = frame.instructions;
+    define locals = frame.locals;
+    while (ip < len(instructions)) {
+        define instr = heap_get(instructions, ip);
+        ip = ip + 1;
+
+        if (instr.op == OPCODE_PUSH_CONST) {
+            define _ = Collections.push(stack, instr.arg);
+        } else {
+            if (instr.op == OPCODE_LOAD) {
+                define _ = Collections.push(stack, _vm_load(vm, locals, instr.arg));
+            } else {
+                if (instr.op == OPCODE_STORE) {
+                    define value = Collections.pop(stack);
+                    define _ = Map.set(locals, instr.arg, value);
+                    if (locals == vm.globals) { define _g = Map.set(vm.globals, instr.arg, value); }
+                } else {
+                    if (instr.op == OPCODE_BINARY) {
+                        define right = Collections.pop(stack);
+                        define left = Collections.pop(stack);
+                        define _ = Collections.push(stack, __binary_apply(instr.arg, left, right));
+                    } else {
+                        if (instr.op == OPCODE_PRINT) {
+                            define values = __pop_args(stack, instr.arg);
+                            define rendered = new[];
+                            define i = 0;
+                            while (i < len(values)) {
+                                define _ = Collections.push(rendered, __format_value(heap_get(values, i)));
+                                i = i + 1;
+                            }
+                            define line = String.join(rendered, " ") + "\n";
+                            define _ = Collections.push(vm.output, line);
+                        } else {
+                            if (instr.op == OPCODE_FLUSH) {
+                                // No-op in Tiny runtime; output is buffered in memory.
+                            } else {
+                                if (instr.op == OPCODE_JUMP) {
+                                    ip = instr.arg;
+                                } else {
+                                    if (instr.op == OPCODE_JUMP_IF_FALSE) {
+                                        define cond = Collections.pop(stack);
+                                        if (!__to_bool(cond)) { ip = instr.arg; }
+                                    } else {
+                                        if (instr.op == OPCODE_CALL) {
+                                            define name = heap_get(instr.arg, 0);
+                                            define argc = heap_get(instr.arg, 1);
+                                            define args = __pop_args(stack, argc);
+                                            define _ = Collections.push(stack, _vm_call(vm, name, args));
+                                        } else {
+                                            if (instr.op == OPCODE_POP) {
+                                                define _ = Collections.pop(stack);
+                                            } else {
+                                                if (instr.op == OPCODE_RETURN) {
+                                                    if (len(stack) == 0) { return Null; }
+                                                    return Collections.pop(stack);
+                                                } else {
+                                                    define _ = __raise_runtime_error("unknown opcode " + instr.op);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return Null;
+}

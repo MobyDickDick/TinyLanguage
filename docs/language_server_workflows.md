@@ -21,6 +21,7 @@ The subcommands mirror common LSP request/response pairs:
 
 - `completions --prefix <text>` filters all known symbols, keywords, and built-ins by the provided prefix.
 - `hover --symbol <name>` locates a symbol and emits its name, a generic detail string, and a zero-based `(line, column)` position tuple.
+- `definition --symbol <name>` resolves a symbol to its definition location (optionally disambiguated with `--line`/`--col`).
 - `diagnostics` runs the built-in lints and surfaces the first encountered error with a four-tuple range `(start_line, start_col, end_line, end_col)`.
 
 Outputs are JSON so they can be piped into tools or inspected visually. Example diagnostics output:
@@ -48,12 +49,14 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
 | --- | --- | --- | --- | --- |
 | `textDocument/completion` | `completions` | `{ "prefix": "gr" }` | `[{ "label": "greet", "kind": "identifier" }]` | Prefix-based lookup across user symbols, keywords, and stdlib names. |
 | `textDocument/hover` | `hover` | `{ "symbol": "Greeter" }` | `{ "symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [0, 6] }` | Returns the recorded zero-based position for the symbol. |
+| `textDocument/definition` | `definition` | `{ "symbol": "greet" }` | `{ "symbol": "greet", "position": [0, 3] }` | Resolves a symbol to its definition position. |
 | `textDocument/diagnostic` | `diagnostics` | `{}` | `[{ "message": "[E011] ...", "code": "E011", "range": [1, 0, 1, 1] }]` | Emits lint findings with machine-readable ranges. |
 
 **Request templates at a glance** (copy/paste into JSON-RPC envelopes):
 
 - Completion: `{ "method": "textDocument/completion", "params": { "prefix": "gr" } }`
 - Hover: `{ "method": "textDocument/hover", "params": { "symbol": "Greeter" } }`
+- Definition: `{ "method": "textDocument/definition", "params": { "symbol": "greet" } }`
 - Diagnostics: `{ "method": "textDocument/diagnostic", "params": {} }`
 
 - **Completions** (`textDocument/completion` equivalent)
@@ -96,6 +99,26 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
     # => {"symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [0, 6]}
     ```
 
+- **Definition** (`textDocument/definition` equivalent)
+  - Request payload:
+
+    ```json
+    { "symbol": "greet" }
+    ```
+
+  - Response payload:
+
+    ```json
+    { "symbol": "greet", "position": [0, 3] }
+    ```
+
+  - CLI demo for a definition lookup:
+
+    ```bash
+    PYTHONPATH=src python src/language_server_cli.py --source "fn greet() { return 1; }\ngreet();" definition --symbol greet
+    # => {"symbol": "greet", "position": [0, 3]}
+    ```
+
 - **Diagnostics** (`textDocument/diagnostic` equivalent)
   - Request payload:
 
@@ -116,7 +139,7 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
     # => [{"message": "[E011] function greet discards return value; assign or ignore explicitly", "code": "E011", "range": [1, 0, 1, 1]}]
     ```
 
-Not implemented yet: definition jumps, formatting, or workspace symbol searches. Those can be layered on later by extending the helper functions in [`src/language_server.py`](../src/language_server.py).
+Not implemented yet: formatting or workspace symbol searches. Those can be layered on later by extending the helper functions in [`src/language_server.py`](../src/language_server.py).
 
 ## "So testest du es" quick demos
 
@@ -195,6 +218,7 @@ The example programs referenced in the README’s “Syntax and Features” sect
 The core dataclasses mirror the high-level Language Server Protocol structure:
 
 - `HoverResult`: `{ symbol: str, detail: str, position: (line, column) }`
+- `DefinitionResult`: `{ symbol: str, position: (line, column) }`
 - `CompletionItem`: `{ label: str, kind: "identifier" }`
 - `Diagnostic`: `{ message: str, code: str, range: (start_line, start_col, end_line, end_col) }` (1-based)
   where `range` reflects the full source span if the parser/linter provided one.

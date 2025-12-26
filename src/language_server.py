@@ -62,6 +62,14 @@ class Diagnostic:
     range: Tuple[int, int, int, int]
 
 
+@dataclass
+class DefinitionResult:
+    """Definition location returned by ``TinyLanguageServer.definition``."""
+
+    symbol: str
+    position: Tuple[int, int]
+
+
 class TinyLanguageServer:
     """Extremely small convenience wrapper around the parser and linters."""
 
@@ -137,8 +145,10 @@ class TinyLanguageServer:
         filtered = sorted([c for c in candidates if c.startswith(prefix)])
         return [CompletionItem(label=c, kind=self.symbol_kinds.get(c, "identifier")) for c in filtered]
 
-    def definition(self, symbol: str, position: Optional[Tuple[int, int]] = None) -> Optional[SourcePos]:
-        """Return the recorded ``SourcePos`` for ``symbol`` if known.
+    def definition(
+        self, symbol: str, position: Optional[Tuple[int, int]] = None
+    ) -> Optional[DefinitionResult]:
+        """Return the recorded definition for ``symbol`` if known.
 
         The lookup prefers exact matches but will also fall back to unqualified
         names (e.g., ``add``) when a symbol is defined in a namespace
@@ -154,7 +164,8 @@ class TinyLanguageServer:
             return (abs(candidate.line - line), abs(candidate.col - col))
 
         if symbol in self.symbols:
-            return self.symbols[symbol]
+            pos = self.symbols[symbol]
+            return DefinitionResult(symbol=symbol, position=(pos.line, pos.col))
 
         matches: List[Tuple[str, SourcePos]] = []
         for name, pos in self.symbols.items():
@@ -165,7 +176,8 @@ class TinyLanguageServer:
             return None
 
         best = min(matches, key=lambda item: (_score(item[1]), item[0]))
-        return best[1]
+        name, pos = best
+        return DefinitionResult(symbol=name, position=(pos.line, pos.col))
 
     def hover(self, symbol: str) -> Optional[HoverResult]:
         """Produce hover info for ``symbol`` if the name is known."""
@@ -243,12 +255,25 @@ def diagnostics_for_source(source: str) -> List[Dict[str, Any]]:
     ]
 
 
+def definition_for_source(
+    source: str, symbol: str, position: Optional[Tuple[int, int]] = None
+) -> Dict[str, Any]:
+    """Return definition details for ``symbol`` in ``source`` as JSON-friendly dict."""
+    server = TinyLanguageServer(source)
+    result = server.definition(symbol, position=position)
+    if result is None:
+        return {}
+    return {"symbol": result.symbol, "position": list(result.position)}
+
+
 __all__ = [
     "TinyLanguageServer",
     "HoverResult",
     "CompletionItem",
     "Diagnostic",
+    "DefinitionResult",
     "completions_for_source",
+    "definition_for_source",
     "hover_for_source",
     "diagnostics_for_source",
 ]

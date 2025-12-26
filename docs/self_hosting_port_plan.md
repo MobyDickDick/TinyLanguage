@@ -37,6 +37,13 @@ The repository splits the interpreter and tooling into a handful of focused modu
 - Native backend smoke tests: reuse `run_all.py` scenarios to compare interpreter vs. native execution paths.
 - Language server: record sample `initialize`, `textDocument/hover`, and `textDocument/completion` exchanges using both hosts.
 
+## Next tasks
+
+- **AST + runtime parity:** finish aligning `src_tiny/tiny_language_ast.tiny`, `src_tiny/tiny_language_runtime.tiny`, and `src_tiny/tiny_language_eval.tiny` with their Python counterparts, including built-in behaviors and error messages.
+- **Native backend parity:** mirror `src/native_ir.py`, `src/tiny_language_codegen_native.py`, and `src/native_vm.py` into their `src_tiny/` equivalents, keeping opcode names and error formatting identical.
+- **Transpiler + CLI parity:** ensure `src_tiny/tiny_language_transpilers.tiny`, `src_tiny/tiny_language_cli.tiny`, and `src_tiny/tiny_lang_cli.tiny` match Python outputs/flags; add snapshot parity checks alongside existing tests.
+- **Validation updates:** add parity notes and progress to the status table below as each cluster lands.
+
 ## Status tracking
 
 Track progress in this table as modules are ported. An empty "Tiny parity" cell means work is still pending.

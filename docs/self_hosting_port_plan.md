@@ -44,7 +44,7 @@ Track progress in this table as modules are ported. An empty "Tiny parity" cell 
 | Module cluster | Python source | Tiny parity file | Notes |
 | --- | --- | --- | --- |
 | Lexer + parser | `src/tiny_language_lexer.py`, `src/tiny_language_parser.py` | `src_tiny/tiny_language_lexer.tiny`, `src_tiny/tiny_language_parser.tiny` | Convert token/AST structures first; validate with parser tests. |
-| AST + runtime | `src/tiny_language_ast.py`, `src/tiny_language_runtime.py`, `src/tiny_language_eval.py` | `src_tiny/tiny_language_ast.tiny` (runtime pending) | Ensure built-ins (print, heap, math) behave identically. |
+| AST + runtime | `src/tiny_language_ast.py`, `src/tiny_language_runtime.py`, `src/tiny_language_eval.py` | `src_tiny/tiny_language_ast.tiny`, `src_tiny/tiny_language_runtime.tiny`, `src_tiny/tiny_language_eval.tiny` | Runtime/eval wrappers delegate to the stitched Python module for now; keep built-ins (print, heap, math) behavior aligned. |
 | Linter | `src/tiny_language_linter.py` | `src_tiny/tiny_language_linter.tiny` | Scaffolded; port Must-use and unreachable-code rules with identical messages. |
 | Transpilers | `src/tiny_language_transpilers.py` | `src_tiny/tiny_language_transpilers.tiny` | Renderers/parsers mirrored for Python/Julia/JS/C++; Tiny parity tests cover renderer output. |
 | Native backend | `src/native_ir.py`, `src/tiny_language_codegen_native.py`, `src/native_vm.py` | `src_tiny/native_ir.tiny`, `src_tiny/tiny_language_codegen_native.tiny`, `src_tiny/native_vm.tiny` | Keep opcode names and error messages stable. |

@@ -10,6 +10,18 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
   - Numbers support integers and decimals (`1`, `3.14`, `0.5`). Scientific notation is intentionally disallowed (`1.2e2` fails).
   - Strings use double quotes and allow basic escapes like `\n`.
   - Booleans are `true` and `false`; `null` indicates the absence of a value.
+- **Reserved keywords vs. identifiers:** Keywords are reserved in declaration positions (e.g., `define if = 1;` is invalid), but the grammar explicitly allows keywords in some identifier slots via `NAME_or_kw`. Use this when you need a keyword-named method or member:
+  - Keywords today include: `define`, `print`, `if`, `else`, `while`, `fn`, `import`, `return`, `operator`, `new`, `type`, `class`, `namespace`, `as`, `spawn`, `async`, `await`, `true`, `false`, `flush`, `and`, `or`, `not`, `Null`, `try`, `catch`, `match`, `case`.
+  - `NAME_or_kw` appears in member access, method declarations, and type annotations, so keywords can be used there without being treated as control flow.
+
+  ```tiny
+  class KeywordDemo {
+      fn match(self) { return "ok"; } // method name uses a keyword
+  }
+
+  define demo = new KeywordDemo {};
+  print(demo.match()); // member access accepts NAME_or_kw
+  ```
 
 ## Expressions and operators
 
@@ -98,6 +110,19 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 ## Grammar (BNF/EBNF)
 
 This grammar is derived from the current lexer/parser implementation and mirrors the statement and expression split in `tiny_language_parser.py`.
+
+## Lexer/token reference
+
+The lexer lives in [`src/tiny_language_lexer.py`](../src/tiny_language_lexer.py). It recognizes keywords, identifiers (`NAME`), literals, and the following symbols/operators.
+
+| Category | Tokens |
+| --- | --- |
+| Grouping/structure | `(` `)` `{` `}` `[` `]` `,` `;` `.` `:` |
+| Assignment | `=` |
+| Arithmetic | `+` `-` `*` `/` `^` `%` |
+| Comparison | `==` `!=` `<` `<=` `>` `>=` |
+| Boolean | `&&` `||` `!` |
+| Arrow | `->` |
 
 ```ebnf
 program         ::= stmt* EOF ;
@@ -213,5 +238,5 @@ NAME_or_kw      ::= NAME | KW ;
 ## Next steps (documentation tasks)
 
 - [x] Add a dedicated grammar test suite that parses the EBNF samples above and ensures parser parity with `tiny_language_parser.py`.
-- [ ] Document reserved keywords vs. identifiers with examples for `NAME_or_kw` usage (e.g., method names that are keywords).
-- [ ] Expand the grammar section with a concise lexer/token table (operators, symbols, literal forms) and link to the lexer source.
+- [x] Document reserved keywords vs. identifiers with examples for `NAME_or_kw` usage (e.g., method names that are keywords).
+- [x] Expand the grammar section with a concise lexer/token table (operators, symbols, literal forms) and link to the lexer source.

@@ -1,0 +1,149 @@
+// TinyLanguage-Port des Transpiler-Moduls aus src/tiny_language_transpilers.py.
+// Enthält die gemeinsame IR-Struktur und Platzhalter für Sprach-Transpiler.
+// Die eigentliche Übersetzung wird in späteren Schritten ergänzt.
+
+define __PY_EXEC_ALLOW = new["exec"];
+define __PY_REPR_ALLOW = new["repr"];
+
+define __PY_STR_ALLOW = new["str"];
+
+fn __raise_runtime_error(msg) {
+    define safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
+    define stmt = "raise RuntimeError(" + safe + ")";
+    return Python.call("builtins", "exec", new[stmt], __PY_EXEC_ALLOW);
+}
+
+fn __to_str(value) {
+    return Python.call("builtins", "str", new[value], __PY_STR_ALLOW);
+}
+
+fn __list_or_empty(items) {
+    if (items == Null) { return new[]; }
+    return items;
+}
+
+// ----- Gemeinsames IR -----
+
+class Expression {}
+
+class Name {
+    identifier: string;
+}
+fn Name(identifier) {
+    return new Name { identifier: identifier };
+}
+
+class Literal {
+    value: any;
+}
+fn Literal(value) {
+    return new Literal { value: value };
+}
+
+class BinaryOp {
+    op: string;
+    left: Expression;
+    right: Expression;
+}
+fn BinaryOp(op, left, right) {
+    return new BinaryOp { op: op; left: left; right: right };
+}
+
+class Call {
+    func: string;
+    args: Pointer;
+}
+fn Call(func, args) {
+    return new Call { func: func; args: __list_or_empty(args) };
+}
+
+class Statement {}
+
+class Assign {
+    target: string;
+    expr: Expression;
+}
+fn Assign(target, expr) {
+    return new Assign { target: target; expr: expr };
+}
+
+class Return {
+    expr: Expression;
+}
+fn Return(expr) {
+    return new Return { expr: expr };
+}
+
+class ExprStmt {
+    expr: Expression;
+}
+fn ExprStmt(expr) {
+    return new ExprStmt { expr: expr };
+}
+
+class IfElse {
+    condition: Expression;
+    then_body: Pointer;
+    else_body: Pointer;
+}
+fn IfElse(condition, then_body, else_body) {
+    return new IfElse {
+        condition: condition;
+        then_body: __list_or_empty(then_body);
+        else_body: __list_or_empty(else_body)
+    };
+}
+
+class While {
+    condition: Expression;
+    body: Pointer;
+}
+fn While(condition, body) {
+    return new While { condition: condition; body: __list_or_empty(body) };
+}
+
+class FunctionIR {
+    name: string;
+    params: Pointer;
+    body: Pointer;
+}
+fn FunctionIR(name, params, body) {
+    return new FunctionIR {
+        name: name;
+        params: __list_or_empty(params);
+        body: __list_or_empty(body)
+    };
+}
+
+class ProgramIR {
+    functions: Pointer;
+    body: Pointer;
+}
+fn ProgramIR(functions, body) {
+    return new ProgramIR {
+        functions: __list_or_empty(functions);
+        body: __list_or_empty(body)
+    };
+}
+
+// ----- Basisklasse -----
+
+class LanguageTranspiler {
+    indent: string;
+
+    fn _render_literal(self, value) {
+        return __to_str(value);
+    }
+
+    fn to_source(self, program) {
+        return __raise_runtime_error("Transpiler-Unterstützung ist noch nicht implementiert.");
+    }
+
+    fn from_source(self, code) {
+        return __raise_runtime_error("Transpiler-Unterstützung ist noch nicht implementiert.");
+    }
+}
+
+fn LanguageTranspiler() {
+    return new LanguageTranspiler { indent: "    " };
+}

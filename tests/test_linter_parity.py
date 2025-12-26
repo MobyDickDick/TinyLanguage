@@ -101,6 +101,9 @@ def run_tiny_linter(source: str) -> str | None:
         pytest.param("fn bump(x) { x = x + 1; return 0; }", id="must_return_mutations"),
         pytest.param("fn unreachable() { return 1; print(\"never\"); }", id="unreachable_statement"),
         pytest.param('define msg = "hi";\nmsg = 0.5;\nprint(msg);', id="type_change"),
+        pytest.param("define unused = 1;", id="unused_local_top_level"),
+        pytest.param("fn f(a, b) { return a; }", id="unused_parameter"),
+        pytest.param("fn returns(): number { return 1; }\nreturns();", id="bare_call_result"),
     ],
 )
 def test_python_and_tiny_linter_outputs_match(source: str):

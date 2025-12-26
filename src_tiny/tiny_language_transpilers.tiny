@@ -17,6 +17,10 @@ fn __to_str(value) {
     return Python.call("builtins", "str", new[value], __PY_STR_ALLOW);
 }
 
+fn __to_repr(value) {
+    return Python.call("builtins", "repr", new[value], __PY_REPR_ALLOW);
+}
+
 fn __list_or_empty(items) {
     if (items == Null) { return new[]; }
     return items;
@@ -132,7 +136,29 @@ class LanguageTranspiler {
     indent: string;
 
     fn _render_literal(self, value) {
-        return __to_str(value);
+        return __to_repr(value);
+    }
+
+    fn _render_expr(self, expr) {
+        if (expr.__tag__ == "Name") { return expr.identifier; }
+        if (expr.__tag__ == "Literal") { return self._render_literal(expr.value); }
+        if (expr.__tag__ == "BinaryOp") {
+            return self._render_expr(expr.left) + " " + expr.op + " " + self._render_expr(expr.right);
+        }
+        if (expr.__tag__ == "Call") {
+            define rendered_args = new[];
+            define i = 0;
+            while (i < len(expr.args)) {
+                define _ = Collections.push(rendered_args, self._render_expr(heap_get(expr.args, i)));
+                i = i + 1;
+            }
+            return expr.func + "(" + String.join(rendered_args, ", ") + ")";
+        }
+        return __raise_runtime_error("Unsupported expression for rendering: " + __to_str(expr));
+    }
+
+    fn _lines(self, lines) {
+        return String.join(lines, "\n");
     }
 
     fn to_source(self, program) {
@@ -146,4 +172,110 @@ class LanguageTranspiler {
 
 fn LanguageTranspiler() {
     return new LanguageTranspiler { indent: "    " };
+}
+
+// ----- Python -----
+
+class PythonTranspiler: LanguageTranspiler {
+    fn to_source(self, program) {
+        define chunks = new[];
+        define i = 0;
+        while (i < len(program.functions)) {
+            define _ = Collections.push(chunks, self._render_function(heap_get(program.functions, i)));
+            i = i + 1;
+        }
+        if (len(program.body) > 0) {
+            define rendered = self._render_statements(program.body, 0);
+            define j = 0;
+            while (j < len(rendered)) {
+                define _ = Collections.push(chunks, heap_get(rendered, j));
+                j = j + 1;
+            }
+        }
+        return self._lines(chunks);
+    }
+
+    fn _render_function(self, fn_ir) {
+        define header = "def " + fn_ir.name + "(" + String.join(fn_ir.params, ", ") + "):";
+        define lines = new[header];
+        define body_lines = self._render_statements(fn_ir.body, 1);
+        if (len(body_lines) == 0) {
+            define _ = Collections.push(lines, self.indent + "pass");
+        } else {
+            define i = 0;
+            while (i < len(body_lines)) {
+                define _ = Collections.push(lines, heap_get(body_lines, i));
+                i = i + 1;
+            }
+        }
+        return self._lines(lines);
+    }
+
+    fn _render_statements(self, statements, indent_level) {
+        define rendered = new[];
+        define pad = String.repeat(self.indent, indent_level);
+        define i = 0;
+        while (i < len(statements)) {
+            define stmt = heap_get(statements, i);
+            define handled = false;
+            if (!handled && stmt.__tag__ == "Assign") {
+                define line = pad + stmt.target + " = " + self._render_expr(stmt.expr);
+                define _ = Collections.push(rendered, line);
+                handled = true;
+            }
+            if (!handled && stmt.__tag__ == "Return") {
+                define line = pad + "return " + self._render_expr(stmt.expr);
+                define _ = Collections.push(rendered, line);
+                handled = true;
+            }
+            if (!handled && stmt.__tag__ == "ExprStmt") {
+                define line = pad + self._render_expr(stmt.expr);
+                define _ = Collections.push(rendered, line);
+                handled = true;
+            }
+            if (!handled && stmt.__tag__ == "IfElse") {
+                define header = pad + "if " + self._render_expr(stmt.condition) + ":";
+                define _ = Collections.push(rendered, header);
+                define then_body = self._render_statements(stmt.then_body, indent_level + 1);
+                if (len(then_body) == 0) {
+                    define _tp = Collections.push(rendered, pad + self.indent + "pass");
+                } else {
+                    define ti = 0;
+                    while (ti < len(then_body)) { define _ = Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; }
+                }
+                if (len(stmt.else_body) > 0) {
+                    define _ = Collections.push(rendered, pad + "else:");
+                    define else_body = self._render_statements(stmt.else_body, indent_level + 1);
+                    if (len(else_body) == 0) {
+                        define _ep = Collections.push(rendered, pad + self.indent + "pass");
+                    } else {
+                        define ei = 0;
+                        while (ei < len(else_body)) { define _ = Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; }
+                    }
+                }
+                handled = true;
+            }
+            if (!handled && stmt.__tag__ == "While") {
+                define header = pad + "while " + self._render_expr(stmt.condition) + ":";
+                define _ = Collections.push(rendered, header);
+                define body = self._render_statements(stmt.body, indent_level + 1);
+                if (len(body) == 0) {
+                    define _bp = Collections.push(rendered, pad + self.indent + "pass");
+                } else {
+                    define bi = 0;
+                    while (bi < len(body)) { define _ = Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; }
+                }
+                handled = true;
+            }
+            if (!handled) {
+                return __raise_runtime_error("Unsupported statement: " + __to_str(stmt));
+            }
+            i = i + 1;
+        }
+        return rendered;
+    }
+}
+
+fn PythonTranspiler() {
+    return new PythonTranspiler { indent: "    " };
 }

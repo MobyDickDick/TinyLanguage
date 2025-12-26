@@ -871,6 +871,28 @@ fn lint_locals_used(stmts, source) {
 
     define usage_summary = Map.new();
 
+    fn __usage_key(name, pos) {
+        if (pos == Null) { return name + "@pos:0:0"; }
+        if (pos.__tag__ == "SourceSpan") {
+            define start = pos.start;
+            define stop = pos.stop;
+            return name
+                + "@span:"
+                + __to_str(start.line)
+                + ":"
+                + __to_str(start.column)
+                + "-"
+                + __to_str(stop.line)
+                + ":"
+                + __to_str(stop.column);
+        }
+        if (pos.__tag__ == "SourcePos") {
+            return name + "@pos:" + __to_str(pos.line) + ":" + __to_str(pos.column);
+        }
+        define fallback = _node_pos(pos);
+        return name + "@pos:" + __to_str(fallback.line) + ":" + __to_str(fallback.column);
+    }
+
     fn _accumulate(states, key) {
         define si = 0;
         while (si < len(states)) {
@@ -881,8 +903,7 @@ fn lint_locals_used(stmts, source) {
                 define name = heap_get(keys, ki);
                 define entry = Map.get(st, name);
                 define pos = heap_get(entry, 0);
-                define base_pos = _node_pos(pos);
-                define map_key = name + "@" + __to_str(base_pos.line) + ":" + __to_str(base_pos.column);
+                define map_key = __usage_key(name, pos);
                 define used_all = heap_get(entry, 1);
                 define used_any = heap_get(entry, 2);
                 define prev = Map.get(usage_summary, map_key, Null);

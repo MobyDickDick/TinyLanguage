@@ -113,6 +113,16 @@ def run_tiny_linter(source: str) -> str | None:
             id="sorted_destruct_missing_outputs",
         ),
         pytest.param("define x = 1; if (false) { print(x); }", id="unused_in_unreachable_branch"),
+        pytest.param("import b;\nimport a;\nprint(1);", id="import_ordering"),
+        pytest.param(
+            "fn f() { if (true) { return { a: 1 }; } return { b: 2 }; }",
+            id="return_signature_mismatch",
+        ),
+        pytest.param(
+            "fn f() -> number { if (true) { return 1; } }",
+            id="return_exhaustiveness",
+        ),
+        pytest.param("define x = 1;\ndefine x = 2;", id="consecutive_definitions"),
     ],
 )
 def test_python_and_tiny_linter_outputs_match(source: str):

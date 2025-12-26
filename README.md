@@ -24,6 +24,10 @@ TinyLanguage is a learning- and transpiler-focused playground rather than a prod
 - [x] **Document language-server workflows (started)**: Write a compact reference for `TinyLanguageServer`, capture example requests/responses, and document the new CLI demos (see [`docs/language_server_workflows.md`](docs/language_server_workflows.md)). Add tests for hover/completion/diagnostics so future changes stay protected.
 - [x] **Expand Python interop demos**: Provide additional `.tiny` programs that walk through [`docs/python_interop.md`](docs/python_interop.md) step by step, including how-to-run notes and tests.
 - [x] **Evaluate the native-compiler prototype**: Implement an alternative backend path that emits bytecode or native IR from the existing AST and runs through a small VM. Compare against the interpreter via smoke tests (arithmetic, branching, functions). See [`docs/native_compiler.md`](docs/native_compiler.md) for CLI calls, regression tests, and known limits.
+- [x] **List the Python proxy pipeline demo command**: Add the `python_proxy_pipeline_demo.tiny` invocation to [`docs/demo_run_commands.md`](docs/demo_run_commands.md) so the Python-interop command list covers the proxy pipeline workflow.
+- [x] **Add the Rosetta copy demo command**: Include `copy_rosetta_samples.tiny` in [`docs/demo_run_commands.md`](docs/demo_run_commands.md) so the interpreter demo list covers the Rosetta import workflow.
+- [x] **Add the Rosetta transpile demo command**: Include `transpile_rosetta.tiny` in [`docs/demo_run_commands.md`](docs/demo_run_commands.md) so the interpreter demo list covers the Rosetta transpile workflow.
+- [x] **Add the try/catch demo command**: Include `try_catch_demo.tiny` in [`docs/demo_run_commands.md`](docs/demo_run_commands.md) so the interpreter demo list covers error-handling workflows.
 
 ## VS Code debugging roadmap
 - [x] **Seed launch configuration scaffolding**: Register a TinyLanguage debug configuration type with default `launch.json` snippets and a prototype resolver that currently shells out to the interpreter via a terminal. This keeps the UX stable while the real Debug Adapter Protocol (DAP) handler is built.

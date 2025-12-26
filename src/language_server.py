@@ -62,6 +62,8 @@ class Diagnostic:
     range: Tuple[int, int, int, int]
 
 
+
+
 class TinyLanguageServer:
     """Extremely small convenience wrapper around the parser and linters."""
 
@@ -137,7 +139,9 @@ class TinyLanguageServer:
         filtered = sorted([c for c in candidates if c.startswith(prefix)])
         return [CompletionItem(label=c, kind=self.symbol_kinds.get(c, "identifier")) for c in filtered]
 
-    def definition(self, symbol: str, position: Optional[Tuple[int, int]] = None) -> Optional[SourcePos]:
+    def definition(
+        self, symbol: str, position: Optional[Tuple[int, int]] = None
+    ) -> Optional[SourcePos]:
         """Return the recorded ``SourcePos`` for ``symbol`` if known.
 
         The lookup prefers exact matches but will also fall back to unqualified
@@ -243,12 +247,24 @@ def diagnostics_for_source(source: str) -> List[Dict[str, Any]]:
     ]
 
 
+def definition_for_source(
+    source: str, symbol: str, position: Optional[Tuple[int, int]] = None
+) -> Dict[str, Any]:
+    """Return definition details for ``symbol`` in ``source`` as JSON-friendly dict."""
+    server = TinyLanguageServer(source)
+    result = server.definition(symbol, position=position)
+    if result is None:
+        return {}
+    return {"symbol": symbol, "position": [result.line, result.col]}
+
+
 __all__ = [
     "TinyLanguageServer",
     "HoverResult",
     "CompletionItem",
     "Diagnostic",
     "completions_for_source",
+    "definition_for_source",
     "hover_for_source",
     "diagnostics_for_source",
 ]

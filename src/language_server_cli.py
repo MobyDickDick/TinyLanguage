@@ -9,7 +9,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 from language_server import CompletionItem, Diagnostic, HoverResult, TinyLanguageServer
 
@@ -62,6 +62,16 @@ def diagnostics(server: TinyLanguageServer) -> List[Dict[str, Any]]:
     return [_diagnostic_dict(diag) for diag in server.diagnostics()]
 
 
+def definition(
+    server: TinyLanguageServer, symbol: str, position: Optional[Tuple[int, int]]
+) -> Dict[str, Any]:
+    """Return definition information for ``symbol`` or an empty dict."""
+    result = server.definition(symbol, position=position)
+    if not result:
+        return {}
+    return {"symbol": symbol, "position": [result.line, result.col]}
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Create the CLI argument parser with subcommands."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -81,6 +91,15 @@ def build_parser() -> argparse.ArgumentParser:
     hover_parser = subparsers.add_parser("hover", help="Show hover information for a symbol")
     hover_parser.add_argument("--symbol", required=True, help="Symbol name to inspect")
 
+    definition_parser = subparsers.add_parser("definition", help="Locate a symbol definition")
+    definition_parser.add_argument("--symbol", required=True, help="Symbol name to resolve")
+    definition_parser.add_argument(
+        "--line", type=int, help="Optional 0-based line used to disambiguate symbols"
+    )
+    definition_parser.add_argument(
+        "--col", type=int, help="Optional 0-based column used to disambiguate symbols"
+    )
+
     subparsers.add_parser("diagnostics", help="List diagnostics for the source")
 
     return parser
@@ -98,6 +117,11 @@ def main() -> None:
         payload = completions(server, args.prefix)
     elif args.command == "hover":
         payload = hover(server, args.symbol)
+    elif args.command == "definition":
+        if (args.line is None) != (args.col is None):
+            raise SystemExit("Provide both --line and --col or neither")
+        position = None if args.line is None else (args.line, args.col)
+        payload = definition(server, args.symbol, position)
     elif args.command == "diagnostics":
         payload = diagnostics(server)
     else:

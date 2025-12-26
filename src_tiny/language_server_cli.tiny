@@ -1,0 +1,97 @@
+// TinyLanguage port of src/language_server_cli.py.
+// Invokes the TinyLanguage language server helpers and outputs JSON.
+
+define py_server = Python.import_module(
+    "language_server",
+    new["completions_for_source", "hover_for_source", "diagnostics_for_source"]
+);
+define os = Python.import_module("os", new["getenv"]);
+
+fn __argv_from_env(os_module) {
+    define raw = os_module.getenv("TINYLANG_ARGS", "");
+    define payload = "[]";
+    if (raw != Null && len(raw) > 0) { payload = raw; }
+    define parsed = JSON.parse(payload);
+    return Collections.slice(parsed, 0, len(parsed));
+}
+
+fn __parse_args(argv) {
+    define args = Map.new();
+    define _ = Map.set(args, "source", Null);
+    define _f = Map.set(args, "file", Null);
+    define _c = Map.set(args, "command", Null);
+    define _p = Map.set(args, "prefix", "");
+    define _s = Map.set(args, "symbol", Null);
+
+    define i = 0;
+    while (i < len(argv)) {
+        define arg = heap_get(argv, i);
+        if (arg == "--source" && i + 1 < len(argv)) {
+            define _set = Map.set(args, "source", heap_get(argv, i + 1));
+            i = i + 2;
+        } else {
+            if (arg == "--file" && i + 1 < len(argv)) {
+                define _setf = Map.set(args, "file", heap_get(argv, i + 1));
+                i = i + 2;
+            } else {
+                if (arg == "--prefix" && i + 1 < len(argv)) {
+                    define _setp = Map.set(args, "prefix", heap_get(argv, i + 1));
+                    i = i + 2;
+                } else {
+                    if (arg == "--symbol" && i + 1 < len(argv)) {
+                        define _sets = Map.set(args, "symbol", heap_get(argv, i + 1));
+                        i = i + 2;
+                    } else {
+                        if (arg == "completions" || arg == "hover" || arg == "diagnostics") {
+                            define _setc = Map.set(args, "command", arg);
+                            i = i + 1;
+                        } else {
+                            i = i + 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return args;
+}
+
+fn __load_source(args) {
+    define source = Map.get(args, "source");
+    if (source != Null) { return source; }
+    define file_path = Map.get(args, "file");
+    if (file_path != Null) { return File.read(file_path); }
+    return Null;
+}
+
+fn run() {
+    define argv = __argv_from_env(os);
+    define args = __parse_args(argv);
+    define source = __load_source(args);
+    if (source == Null) {
+        print("Provide --source or --file to supply TinyLanguage code");
+        return 1;
+    }
+
+    define command = Map.get(args, "command");
+    if (command == Null) {
+        print("Provide a command: completions, hover, or diagnostics");
+        return 1;
+    }
+
+    if (command == "completions") {
+        define completions = py_server.completions_for_source(source, Map.get(args, "prefix"));
+        print(JSON.stringify(completions));
+        return 0;
+    }
+    if (command == "hover") {
+        define hover = py_server.hover_for_source(source, Map.get(args, "symbol"));
+        print(JSON.stringify(hover));
+        return 0;
+    }
+    define diagnostics = py_server.diagnostics_for_source(source);
+    print(JSON.stringify(diagnostics));
+    return 0;
+}
+
+define _ = run();

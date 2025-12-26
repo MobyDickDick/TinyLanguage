@@ -272,14 +272,18 @@ class ModuleResolver:
                     runtime.call_stack.append(module_frame)
                 try:
                     module_env = Environment(parent=None, namespace=resolved_name, runtime=runtime)
-                    compile_and_run(
-                        resolved_path.read_text(encoding="utf-8"),
-                        env=module_env,
-                        runtime=runtime,
-                        module_namespace=resolved_name,
-                        module_path=resolved_path,
-                        module_resolver=self,
-                    )
+                    previous_global_env = runtime.global_env
+                    try:
+                        compile_and_run(
+                            resolved_path.read_text(encoding="utf-8"),
+                            env=module_env,
+                            runtime=runtime,
+                            module_namespace=resolved_name,
+                            module_path=resolved_path,
+                            module_resolver=self,
+                        )
+                    finally:
+                        runtime.global_env = previous_global_env
                     ns_ref = NamespaceRef(runtime, resolved_name)
                     self.cache[resolved_path] = ns_ref
                     return ns_ref
@@ -1671,7 +1675,10 @@ class Runtime:
         return True, native(*args)
 
     def _invoke_function(self, fn: Fn, args: List[Any]) -> Any:
-        call_env = Environment(parent=self.global_env, namespace=fn.namespace, runtime=self)
+        parent_env = self.global_env
+        if fn.namespace and fn.namespace in self.namespace_envs:
+            parent_env = self.namespace_envs[fn.namespace]
+        call_env = Environment(parent=parent_env, namespace=fn.namespace, runtime=self)
         param_bindings = self._bind_parameters_to_env(
             fn.params,
             args,

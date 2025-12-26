@@ -1,0 +1,18 @@
+// TinyLanguage wrapper mirroring src/tiny_lang_cli.py.
+
+import tiny_language_cli;
+
+define os = Python.import_module("os", new["getenv"]);
+
+fn __argv_from_env() {
+    define raw = os.getenv("TINYLANG_ARGS", "");
+    define payload = "[]";
+    if (raw != Null && len(raw) > 0) { payload = raw; }
+    return JSON.parse(payload);
+}
+
+fn run() {
+    return tiny_language_cli.main(__argv_from_env());
+}
+
+define _ = run();

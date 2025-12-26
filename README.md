@@ -88,20 +88,21 @@ If no text appears, verify that you are running the command from the repository 
   - [x] LSP enhancements (autocomplete/hover for the VSCode extension) via the VS Code helper commands
   - [x] Extend performance microbenchmarks with interpreter/runtime map operations (see [`benchmarks/microbenchmarks.py`](benchmarks/microbenchmarks.py)).
 
-## Selbst-Hosting-Parität: offene Schritte
-- [ ] **Linter nach Tiny portieren (gestartet)**: Parität zu `src/tiny_language_linter.py` herstellen (Must-Use, unreachable code, Typwechsel), Tiny-Gegenstück unter `src_tiny/tiny_language_linter.tiny` ausbauen und Tests zum Vergleich Python↔Tiny ergänzen. Siehe Fortschritts-Tabelle in [`docs/self_hosting_port_plan.md`](docs/self_hosting_port_plan.md).
-- [ ] **Transpiler nach Tiny übertragen**: `src/tiny_language_transpilers.py` nach Tiny spiegeln (Python/Julia/JS/C++-Renderer) und Roundtrip-Tests gegen AST/IR ausführen.
-- [ ] **Native-Backend-Port**: Opcode-IR, Codegen und VM (`src/native_ir.py`, `src/tiny_language_codegen_native.py`, `src/native_vm.py`) als Tiny-Varianten bereitstellen und Smoke-Tests Interpreter vs. VM laufen lassen.
-- [ ] **CLI- und LSP-Parität**: Tiny-Umsetzungen für `tiny_language_cli.py`, `tiny_lang_cli.py`, `language_server.py` und `language_server_cli.py` liefern, inklusive Flag-Handling und LSP-Capabilities, plus End-to-End-Tests.
+## Self-hosting parity: open steps
+- [ ] **Port the linter to Tiny (in progress)**: Reach parity with `src/tiny_language_linter.py` (must-use, unreachable code, type changes), expand the Tiny counterpart under `src_tiny/tiny_language_linter.tiny`, and add Python↔Tiny comparison tests. See the progress table in [`docs/self_hosting_port_plan.md`](docs/self_hosting_port_plan.md).
+  - [x] **Parity test for unused `catch` bindings**: Added a comparison case so Python and Tiny linters report consistent errors.
+- [ ] **Port the transpiler to Tiny**: Mirror `src/tiny_language_transpilers.py` in Tiny (Python/Julia/JS/C++ renderers) and run AST/IR round-trip tests.
+- [ ] **Native backend port**: Provide Tiny variants of opcode IR, codegen, and VM (`src/native_ir.py`, `src/tiny_language_codegen_native.py`, `src/native_vm.py`) and run interpreter vs. VM smoke tests.
+- [ ] **CLI and LSP parity**: Deliver Tiny implementations of `tiny_language_cli.py`, `tiny_lang_cli.py`, `language_server.py`, and `language_server_cli.py`, including flag handling and LSP capabilities, plus end-to-end tests.
 
 ## Offene Aufgaben (aus der letzten Diskussion)
-- [x] **LLVM-Emitter weiter ausbauen** (gestartet): Der experimentelle Pfad in `tiny_language_codegen_llvm.py` soll mehr Native-IR-Operationen abdecken und über CLI/API wählbar bleiben. Erste Schritte aus diesem Run: POP-Unterstützung und ein zusätzlicher Test, der das Verhalten absichert.
-- [x] **Python-Bridge für Feature-Durchreichung**: Ein TinyLanguage-Modul und Python-Hilfen sollen die FFI vereinfachen (Import/Calls/Allowlist/Timeouts) und bidirektionale Aufrufe kapseln. Demos und Tests würden typische Datentyp-Mappings und Sandbox-Grenzen prüfen.
-- [x] **Rosetta-Code-Sync für lokale Pfade**: Das Skript `examples/rosetta/copy_rosetta_samples.py` bietet jetzt konfigurierbare Pfade/Filter/Delays, einen Dry-Run-Schalter und kann den Transpiler direkt anstoßen.
+- [x] **Extend the LLVM emitter** (in progress): The experimental path in `tiny_language_codegen_llvm.py` should cover more native IR operations and remain selectable via CLI/API. Initial steps from this run: POP support and an extra test to lock in the behavior.
+- [x] **Python bridge for feature pass-through**: A TinyLanguage module and Python helpers should simplify the FFI (imports/calls/allowlists/timeouts) and wrap bidirectional calls. Demos and tests would cover common datatype mappings and sandbox boundaries.
+- [x] **Rosetta sync for local paths**: The script `examples/rosetta/copy_rosetta_samples.py` now offers configurable paths/filters/delays, a dry-run flag, and can trigger the transpiler directly.
 
 ### Neu priorisierte Aufgaben
-1. **LLVM-Emitter präzisieren** ✅: Vergleichs- und Modulo-Operationen in `tiny_language_codegen_llvm.py` abbilden, die CLI-Option `--emit-llvm` funktionsfähig halten und Regressionstests ergänzen, die den erweiterten IR-Pfad prüfen.
-2. **Python↔TinyLanguage-Bridge entwerfen** ✅: Eine kleine FFI-Schicht (Allowlist/Timeouts) plus passende Tiny/Python-Demos erstellen, um häufige Datentyp-Mappings zu zeigen; Tests in `tests/` sollen beide Richtungen abdecken.
+1. **Refine the LLVM emitter** ✅: Implement comparison and modulo operations in `tiny_language_codegen_llvm.py`, keep the `--emit-llvm` CLI option functional, and add regression tests that cover the expanded IR path.
+2. **Design a Python↔TinyLanguage bridge** ✅: Create a small FFI layer (allowlists/timeouts) plus matching Tiny/Python demos to show common datatype mappings; tests in `tests/` should cover both directions.
 3. **Rosetta-Sync konfigurierbar machen** ✅: `examples/rosetta/copy_rosetta_samples.py` ist jetzt filterbar, bietet Dry-Run/Transpile-Optionen und dokumentierte Bedienung inkl. Regressionstest.
 
 ## Syntax and Features

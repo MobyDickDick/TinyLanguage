@@ -1,7 +1,7 @@
-// TinyLanguage-Port des Linters aus src/tiny_language_linter.py.
-// Deckt Must-Use-Regeln, Typwechsel, Return-Exhaustiveness und
-// Import-/Destructuring-Checks ab. Die Fehlermeldungen spiegeln die Python-
-// Version (inkl. Fehlercodes) so exakt wie möglich.
+// TinyLanguage port of the linter from src/tiny_language_linter.py.
+// Covers must-use rules, type changes, return exhaustiveness, and
+// import/destructuring checks. Error messages mirror the Python
+// version (including error codes) as closely as possible.
 
 define __PY_REPR_ALLOW = new["repr"];
 define __PY_EXEC_ALLOW = new["exec"];
@@ -24,7 +24,7 @@ fn __starts_with(text, prefix) {
 fn __raise_runtime_error(msg) {
     define safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
     define stmt = "raise RuntimeError(" + safe + ")";
-    // Rückgabewert ist irrelevant – der Aufruf löst eine Exception aus.
+    // Return value is irrelevant — the call raises an exception.
     return Python.call("builtins", "exec", new[stmt], __PY_EXEC_ALLOW);
 }
 

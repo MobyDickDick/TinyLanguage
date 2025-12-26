@@ -1,5 +1,5 @@
 // TinyLanguage-Port des Lexers aus src/tiny_language_lexer.py.
-// Enthält Token-Struktur, Keyword-/Builtin-Sets und die vollständige Tokenisierung.
+// Contains the token structure, keyword/builtin sets, and the full tokenization.
 
 // Position + Spans ------------------------------------------------------------
 class SourcePos {
@@ -26,14 +26,14 @@ fn SourceSpan(start, stop) {
     return new SourceSpan { start: start; stop: stop };
 }
 
-// Fehlerformatierung via Python-Interop, damit wir RuntimeErrors wie der Python-Port werfen können.
+// Error formatting via Python interop so we can raise RuntimeErrors like the Python port.
 define __PY_EXEC_ALLOW = new["exec"];
 define __PY_REPR_ALLOW = new["repr"];
 
 fn __raise_runtime_error(msg) {
     define safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
     define stmt = "raise RuntimeError(" + safe + ")";
-    // Rückgabewert ist irrelevant – der Aufruf löst eine Exception aus.
+    // Return value is irrelevant — the call raises an exception.
     return Python.call("builtins", "exec", new[stmt], __PY_EXEC_ALLOW);
 }
 
@@ -197,7 +197,7 @@ fn lex(source) {
     define finished = false;
 
     while (finished == false) {
-        // Whitespace und Kommentare überspringen.
+        // Skip whitespace and comments.
         define skipping = true;
         while (i < n && skipping) {
             define c = __peek(chars, n, i);
@@ -282,7 +282,7 @@ fn lex(source) {
                             define kind = "NAME";
                             if (Set.has(KEYWORDS, txt)) { kind = "KW"; }
                             // BUILTINS werden aktuell nicht gesondert getaggt, aber die Abfrage
-                            // hält die Definition aktiv (und ermöglicht zukünftiges Highlighting).
+                            // Keeps the definition active (and enables future highlighting).
                             if (Set.has(BUILTINS, txt)) { kind = kind; }
                             define stop_name = SourcePos(start_line, start_col + consumed - 1);
                             define _push_name = Collections.push(tokens, Token(kind, txt, pos, stop_name));

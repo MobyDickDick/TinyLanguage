@@ -132,6 +132,10 @@ def run_tiny_linter(source: str) -> str | None:
             "define { a } = box.split(a, b);",
             id="destructured_method_missing_outputs",
         ),
+        pytest.param(
+            "try { print(\"ok\"); } catch err { print(\"fail\"); }",
+            id="unused_catch_binding",
+        ),
     ],
 )
 def test_python_and_tiny_linter_outputs_match(source: str):

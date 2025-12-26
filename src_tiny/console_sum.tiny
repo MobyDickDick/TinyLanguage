@@ -4,7 +4,7 @@
 // Zahlen um. Damit das Programm auch auf leere Eingaben oder Tippfehler
 // vorbereitet ist, wird die Eingabe validiert und ggf. erneut abgefragt.
 //
-// Hinweis: Console.read_line gibt bei EOF einen leeren String zurück.
+// Note: Console.read_line returns an empty string on EOF.
 fn read_number(prompt) {
   while (true) {
     print(prompt);
@@ -12,7 +12,7 @@ fn read_number(prompt) {
     define text = String.trim(raw);
 
     if (text == "") {
-      // Bei leerer Eingabe (z.B. EOF) die Schleife verlassen und 0 zurückgeben.
+      // Exit the loop and return 0 on empty input (e.g. EOF).
       print("Keine Eingabe erkannt, verwende 0.");
       return 0;
     }
@@ -20,9 +20,9 @@ fn read_number(prompt) {
     try {
       return JSON.parse(text);
     } catch(err) {
-      // err.code enthält z.B. "E000" aus der Runtime; wird genutzt, um den
+      // err.code contains values like "E000" from the runtime; used to
       // Catch-Parameter nicht ungenutzt zu lassen.
-      print("Bitte eine gültige Zahl eingeben.", err.code);
+      print("Please enter a valid number.", err.code);
     }
   }
 }

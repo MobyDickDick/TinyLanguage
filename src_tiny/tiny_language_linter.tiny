@@ -32,6 +32,41 @@ fn __to_str(value) {
     return Python.call("builtins", "str", new[value], __PY_STR_ALLOW);
 }
 
+fn __sorted_strings(items) {
+    define arr = new[];
+    define i = 0;
+    while (i < len(items)) { define _ = Collections.push(arr, heap_get(items, i)); i = i + 1; }
+    define n = len(arr);
+    define a = 0;
+    fn _swap(list, idx_a, idx_b) {
+        define out = new[];
+        define si = 0;
+        while (si < len(list)) {
+            if (si == idx_a) {
+                define _ = Collections.push(out, heap_get(list, idx_b));
+            } else {
+                if (si == idx_b) { define _ = Collections.push(out, heap_get(list, idx_a)); }
+                else { define _ = Collections.push(out, heap_get(list, si)); }
+            }
+            si = si + 1;
+        }
+        return out;
+    }
+    while (a < n) {
+        define b = a + 1;
+        while (b < n) {
+            define ia = heap_get(arr, a);
+            define ib = heap_get(arr, b);
+            if (ib < ia) {
+                arr = _swap(arr, a, b);
+            }
+            b = b + 1;
+        }
+        a = a + 1;
+    }
+    return arr;
+}
+
 fn __copy_state(state) {
     define keys = Map.keys(state);
     define new_state = Map.new();
@@ -1408,13 +1443,14 @@ fn check_destruct_call_expr(expr, names, source, pos) {
     if (expr.__tag__ == "Call") {
         define skip = Set.from_list(new["heap_set", "heap_get", "delete", "tag", "__new", "new"]);
         if (Set.has(skip, expr.name)) { return Null; }
-        define missing = new[];
+        define missing_set = Set.new();
         define i = 0;
         while (i < len(expr.args)) {
             define arg = heap_get(expr.args, i);
-            if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { define _ = Collections.push(missing, arg.name); }
+            if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { define _ = Set.add(missing_set, arg.name); }
             i = i + 1;
         }
+        define missing = __sorted_strings(Set.to_list(missing_set));
         if (len(missing) > 0) {
             define msg = "destructuring call to " + expr.name + " must include output for argument(s): " + String.join(missing, ", ");
             if (source != Null) { _lint_error(source, pos, msg, "E006", "Add the missing binding(s) to the destructuring pattern so each referenced argument is captured."); }
@@ -1422,13 +1458,14 @@ fn check_destruct_call_expr(expr, names, source, pos) {
         }
     } else {
         if (expr.__tag__ == "MethodCall") {
-            define missing = new[];
+            define missing_set = Set.new();
             define i = 0;
             while (i < len(expr.args)) {
                 define arg = heap_get(expr.args, i);
-                if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { define _ = Collections.push(missing, arg.name); }
+                if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { define _ = Set.add(missing_set, arg.name); }
                 i = i + 1;
             }
+            define missing = __sorted_strings(Set.to_list(missing_set));
             if (len(missing) > 0) {
                 define msg = "destructuring method call to " + expr.name + " must include output for argument(s): " + String.join(missing, ", ");
                 if (source != Null) { _lint_error(source, pos, msg, "E006", "Add the missing binding(s) to the destructuring pattern so each referenced argument is captured."); }
@@ -1462,7 +1499,7 @@ fn lint_param_mutations_returned(stmts, params, fn_name, is_method, source, pos)
     define i = 0;
     while (i < len(stmts)) { visit(heap_get(stmts, i)); i = i + 1; }
 
-    define missing = Set.to_list(Set.difference(mutated, returned));
+    define missing = __sorted_strings(Set.to_list(Set.difference(mutated, returned)));
     if (len(missing) > 0) {
         define kind = "function";
         if (is_method) { kind = "method"; }

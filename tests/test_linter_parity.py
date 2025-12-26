@@ -99,11 +99,19 @@ def run_tiny_linter(source: str) -> str | None:
     "source",
     [
         pytest.param("fn bump(x) { x = x + 1; return 0; }", id="must_return_mutations"),
+        pytest.param(
+            "fn bump(b, a, c) { b = b + 1; a = a + 1; return c; }",
+            id="sorted_mutation_missing_outputs",
+        ),
         pytest.param("fn unreachable() { return 1; print(\"never\"); }", id="unreachable_statement"),
         pytest.param('define msg = "hi";\nmsg = 0.5;\nprint(msg);', id="type_change"),
         pytest.param("define unused = 1;", id="unused_local_top_level"),
         pytest.param("fn f(a, b) { return a; }", id="unused_parameter"),
         pytest.param("fn returns(): number { return 1; }\nreturns();", id="bare_call_result"),
+        pytest.param(
+            "fn f(a, b) { return { a: a, b: b }; }\ndefine { a } = f(c, b);",
+            id="sorted_destruct_missing_outputs",
+        ),
         pytest.param("define x = 1; if (false) { print(x); }", id="unused_in_unreachable_branch"),
     ],
 )

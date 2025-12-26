@@ -275,10 +275,8 @@ fn lex(source) {
                             }
                             define txt = __slice_text(chars, i, j);
                             define consumed = j - i;
-                            define adv_name = __advance_state(chars, i, n, line, col, consumed);
-                            i = heap_get(adv_name, 0);
-                            line = heap_get(adv_name, 1);
-                            col = heap_get(adv_name, 2);
+                            i = j;
+                            col = col + consumed;
                             define kind = "NAME";
                             if (Set.has(KEYWORDS, txt)) { kind = "KW"; }
                             // BUILTINS werden aktuell nicht gesondert getaggt, aber die Abfrage
@@ -307,10 +305,8 @@ fn lex(source) {
                                 }
                                 define txtnum = __slice_text(chars, i, jnum);
                                 define consumed_num = jnum - i;
-                                define adv_num = __advance_state(chars, i, n, line, col, consumed_num);
-                                i = heap_get(adv_num, 0);
-                                line = heap_get(adv_num, 1);
-                                col = heap_get(adv_num, 2);
+                                i = jnum;
+                                col = col + consumed_num;
                                 define stop_num = SourcePos(start_line, start_col + consumed_num - 1);
                                 define _push_num = Collections.push(tokens, Token("NUMBER", txtnum, pos, stop_num));
                                 handled = true;

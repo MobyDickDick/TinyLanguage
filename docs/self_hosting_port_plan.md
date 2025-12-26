@@ -55,7 +55,7 @@ Track progress in this table as modules are ported. An empty "Tiny parity" cell 
 - The Tiny scaffolding now lives in `src_tiny/tiny_language_lexer.tiny` and `src_tiny/tiny_language_parser.tiny`. Both files mirror the public entry points (token container, keyword/builtin sets, parser shell) so future ports can plug in logic without reshuffling signatures.
 - Porting steps to complete parity:
   - [x] Translate the lexer’s tokenization rules, including multi-character operators (`&&`, `||`, `<=`, `>=`, `!=`) and escape handling inside strings.
-  - [ ] Map keyword detection to the Tiny `Set` helpers already used for `KEYWORDS`/`BUILTINS`; keep `SourcePos` increments identical to the Python version for error spans.
+  - [x] Map keyword detection to the Tiny `Set` helpers already used for `KEYWORDS`/`BUILTINS`; keep `SourcePos` increments identical to the Python version for error spans.
   - [ ] Recreate the recursive-descent parser with the same statement/expr split as `Parser.parse_stmt`/`parse_expr`, ensuring `_attach_span` produces spans compatible with `tiny_language_ast.tiny`.
   - [ ] Validate with the existing parser and interpreter tests by swapping in the Tiny implementations once the runtime accepts Tiny modules.
 

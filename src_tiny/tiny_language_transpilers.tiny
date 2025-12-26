@@ -1,11 +1,15 @@
 // TinyLanguage-Port des Transpiler-Moduls aus src/tiny_language_transpilers.py.
-// Contains the shared IR structure and placeholders for language transpilers.
-// The actual translation will be added in later steps.
+// Contains the shared IR structure and language transpilers for Python/Julia/JS/C++/Tiny.
+// Parsing support mirrors the Python implementation for the constrained IR.
 
 define __PY_EXEC_ALLOW = new["exec"];
 define __PY_REPR_ALLOW = new["repr"];
-
 define __PY_STR_ALLOW = new["str"];
+define __PY_LIST_ALLOW = new["list"];
+define __PY_INT_ALLOW = new["int"];
+define __PY_FLOAT_ALLOW = new["float"];
+define __PY_AST_ALLOW = new["literal_eval"];
+define __PY_JSON_ALLOW = new["dumps"];
 
 fn __raise_runtime_error(msg) {
     define safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
@@ -21,9 +25,703 @@ fn __to_repr(value) {
     return Python.call("builtins", "repr", new[value], __PY_REPR_ALLOW);
 }
 
+fn __json_dump(value) {
+    return Python.call("json", "dumps", new[value], __PY_JSON_ALLOW);
+}
+
+fn __chars(text) {
+    return Python.call("builtins", "list", new[text], __PY_LIST_ALLOW);
+}
+
+fn __is_space(ch) {
+    return ch == " " || ch == "\t" || ch == "\n" || ch == "\r";
+}
+
+fn __strip(text) {
+    if (text == Null) { return ""; }
+    define chars = __chars(text);
+    define start = 0;
+    define end = len(chars) - 1;
+    while (start < len(chars) && __is_space(heap_get(chars, start))) { start = start + 1; }
+    while (end >= start && __is_space(heap_get(chars, end))) { end = end - 1; }
+    if (end < start) { return ""; }
+    return String.join(Collections.slice(chars, start, end + 1), "");
+}
+
+fn __starts_with(text, prefix) {
+    if (text == Null || prefix == Null) { return false; }
+    define text_chars = __chars(text);
+    define prefix_chars = __chars(prefix);
+    if (len(prefix_chars) > len(text_chars)) { return false; }
+    define i = 0;
+    while (i < len(prefix_chars)) {
+        if (heap_get(text_chars, i) != heap_get(prefix_chars, i)) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+fn __ends_with(text, suffix) {
+    if (text == Null || suffix == Null) { return false; }
+    define text_chars = __chars(text);
+    define suffix_chars = __chars(suffix);
+    if (len(suffix_chars) > len(text_chars)) { return false; }
+    define offset = len(text_chars) - len(suffix_chars);
+    define i = 0;
+    while (i < len(suffix_chars)) {
+        if (heap_get(text_chars, offset + i) != heap_get(suffix_chars, i)) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+fn __strip_suffix(text, suffix) {
+    if (!__ends_with(text, suffix)) { return text; }
+    define chars = __chars(text);
+    define keep = len(chars) - String.len(suffix);
+    if (keep < 0) { keep = 0; }
+    return String.join(Collections.slice(chars, 0, keep), "");
+}
+
+fn __strip_prefix(text, prefix) {
+    if (!__starts_with(text, prefix)) { return text; }
+    define chars = __chars(text);
+    define skip = String.len(prefix);
+    if (skip < 0) { skip = 0; }
+    return String.join(Collections.slice(chars, skip, len(chars)), "");
+}
+
+fn __first_char(text) {
+    if (text == Null) { return ""; }
+    define chars = __chars(text);
+    if (len(chars) == 0) { return ""; }
+    return heap_get(chars, 0);
+}
+
+fn __find_char(text, target) {
+    define chars = __chars(text);
+    define i = 0;
+    while (i < len(chars)) {
+        if (heap_get(chars, i) == target) { return i; }
+        i = i + 1;
+    }
+    return -1;
+}
+
+fn __copy_map(map) {
+    define keys = Map.keys(map);
+    define out = Map.new();
+    define i = 0;
+    while (i < len(keys)) {
+        define k = heap_get(keys, i);
+        define _ = Map.set(out, k, Map.get(map, k));
+        i = i + 1;
+    }
+    return out;
+}
+
 fn __list_or_empty(items) {
     if (items == Null) { return new[]; }
     return items;
+}
+
+fn __extend(list, items) {
+    define i = 0;
+    while (i < len(items)) {
+        define _ = Collections.push(list, heap_get(items, i));
+        i = i + 1;
+    }
+    return list;
+}
+
+fn __split_params(text) {
+    define trimmed = __strip(text);
+    if (String.len(trimmed) == 0) { return new[]; }
+    define parts = String.split(trimmed, ",");
+    define params = new[];
+    define i = 0;
+    while (i < len(parts)) {
+        define part = __strip(heap_get(parts, i));
+        if (String.len(part) > 0) { define _ = Collections.push(params, part); }
+        i = i + 1;
+    }
+    return params;
+}
+
+fn __split_by_braces(line) {
+    define parts = new[];
+    define current = "";
+    define chars = __chars(line);
+    define i = 0;
+    while (i < len(chars)) {
+        define ch = heap_get(chars, i);
+        if (ch == "{" || ch == "}") {
+            if (String.len(__strip(current)) > 0) {
+                define _ = Collections.push(parts, __strip(current));
+            }
+            define _b = Collections.push(parts, ch);
+            current = "";
+        } else {
+            current = current + ch;
+        }
+        i = i + 1;
+    }
+    if (String.len(__strip(current)) > 0) {
+        define _ = Collections.push(parts, __strip(current));
+    }
+    return parts;
+}
+
+fn __strip_trailing_semicolon(text) {
+    define trimmed = __strip(text);
+    if (__ends_with(trimmed, ";")) {
+        return __strip_suffix(trimmed, ";");
+    }
+    return trimmed;
+}
+
+fn __is_digit(ch) { return ch >= "0" && ch <= "9"; }
+
+fn __is_identifier_start(ch) {
+    return (ch >= "a" && ch <= "z") || (ch >= "A" && ch <= "Z") || ch == "_";
+}
+
+fn __is_identifier_char(ch) {
+    return __is_identifier_start(ch) || __is_digit(ch);
+}
+
+fn __tokenize_expr(text) {
+    define tokens = new[];
+    define chars = __chars(text);
+    define i = 0;
+    while (i < len(chars)) {
+        define ch = heap_get(chars, i);
+        define handled = false;
+        if (__is_space(ch)) {
+            i = i + 1;
+            handled = true;
+        }
+        if (!handled && (ch == "\"" || ch == "'")) {
+            define quote = ch;
+            define start = i;
+            i = i + 1;
+            define done = false;
+            while (i < len(chars) && !done) {
+                define curr = heap_get(chars, i);
+                if (curr == "\\") {
+                    i = i + 2;
+                } else {
+                    if (curr == quote) {
+                        i = i + 1;
+                        done = true;
+                    } else {
+                        i = i + 1;
+                    }
+                }
+            }
+            define token_chars = Collections.slice(chars, start, i);
+            define token = String.join(token_chars, "");
+            define _ = Collections.push(tokens, token);
+            handled = true;
+        }
+        if (!handled && __is_digit(ch)) {
+            define start = i;
+            define saw_dot = false;
+            define done = false;
+            while (i < len(chars) && !done) {
+                define curr = heap_get(chars, i);
+                if (curr == "." && !saw_dot) {
+                    saw_dot = true;
+                    i = i + 1;
+                } else {
+                    if (!__is_digit(curr)) {
+                        done = true;
+                    } else {
+                        i = i + 1;
+                    }
+                }
+            }
+            define token = String.join(Collections.slice(chars, start, i), "");
+            define _ = Collections.push(tokens, token);
+            handled = true;
+        }
+        if (!handled && __is_identifier_start(ch)) {
+            define start = i;
+            i = i + 1;
+            while (i < len(chars) && __is_identifier_char(heap_get(chars, i))) { i = i + 1; }
+            define token = String.join(Collections.slice(chars, start, i), "");
+            define _ = Collections.push(tokens, token);
+            handled = true;
+        }
+        if (!handled && i + 1 < len(chars)) {
+            define two = heap_get(chars, i) + heap_get(chars, i + 1);
+            if (two == "==" || two == "!=" || two == "<=" || two == ">=" || two == "**") {
+                define _ = Collections.push(tokens, two);
+                i = i + 2;
+                handled = true;
+            }
+        }
+        if (!handled) {
+            define _ = Collections.push(tokens, ch);
+            i = i + 1;
+        }
+    }
+    return tokens;
+}
+
+fn __parse_number(token) {
+    if (String.contains(token, ".")) {
+        return Python.call("builtins", "float", new[token], __PY_FLOAT_ALLOW);
+    }
+    return Python.call("builtins", "int", new[token], __PY_INT_ALLOW);
+}
+
+fn __parse_literal(token) {
+    if (token == "true" || token == "True") { return true; }
+    if (token == "false" || token == "False") { return false; }
+    if (token == "null" || token == "None" || token == "nothing" || token == "nullptr") { return Null; }
+    if (__starts_with(token, "\"") || __starts_with(token, "'")) {
+        return Python.call("ast", "literal_eval", new[token], __PY_AST_ALLOW);
+    }
+    return __parse_number(token);
+}
+
+fn __is_repr_string(value) {
+    define repr = __to_repr(value);
+    return __starts_with(repr, "'") || __starts_with(repr, "\"");
+}
+
+fn __parse_expression(text) {
+    define tokens = __tokenize_expr(text);
+    define idx = 0;
+
+    fn peek() {
+        if (idx >= len(tokens)) { return Null; }
+        return heap_get(tokens, idx);
+    }
+
+    fn consume() {
+        define token = peek();
+        idx = idx + 1;
+        return token;
+    }
+
+    fn parse_primary() {
+        define token = consume();
+        if (token == "(") {
+            define expr = parse_comparison();
+            if (peek() == ")") { define _ = consume(); }
+            return expr;
+        }
+        if (token == Null) { return __raise_runtime_error("Unexpected end of expression"); }
+        define first = __first_char(token);
+        define next = peek();
+        if (__is_identifier_start(first) && next == "(") {
+            define _open = consume();
+            define args = new[];
+            if (peek() != ")") {
+                define done = false;
+                while (!done) {
+                    define arg_expr = parse_comparison();
+                    define _ = Collections.push(args, arg_expr);
+                    if (peek() == ",") { define _c = consume(); }
+                    else { done = true; }
+                }
+            }
+            if (peek() == ")") { define _close = consume(); }
+            return Call(token, args);
+        }
+        if (__is_identifier_start(first)) {
+            if (token == "true" || token == "false" || token == "null" || token == "None" || token == "nothing" || token == "nullptr") {
+                return Literal(__parse_literal(token));
+            }
+            return Name(token);
+        }
+        if (token == "+" || token == "-" || token == "*" || token == "/" || token == "%" || token == "**" || token == "==" || token == "!=" || token == "<" || token == ">" || token == "<=" || token == ">=") {
+            return __raise_runtime_error("Unexpected operator token: " + token);
+        }
+        return Literal(__parse_literal(token));
+    }
+
+    fn parse_power() {
+        define left = parse_primary();
+        if (peek() == "**") {
+            define _ = consume();
+            define right = parse_power();
+            return BinaryOp("**", left, right);
+        }
+        return left;
+    }
+
+    fn parse_mul() {
+        define expr = parse_power();
+        define done = false;
+        while (!done) {
+            define op = peek();
+            if (op == "*" || op == "/" || op == "%") {
+                define _ = consume();
+                define rhs = parse_power();
+                expr = BinaryOp(op, expr, rhs);
+            } else {
+                done = true;
+            }
+        }
+        return expr;
+    }
+
+    fn parse_add() {
+        define expr = parse_mul();
+        define done = false;
+        while (!done) {
+            define op = peek();
+            if (op == "+" || op == "-") {
+                define _ = consume();
+                define rhs = parse_mul();
+                expr = BinaryOp(op, expr, rhs);
+            } else {
+                done = true;
+            }
+        }
+        return expr;
+    }
+
+    fn parse_comparison() {
+        define expr = parse_add();
+        define op = peek();
+        if (op == "==" || op == "!=" || op == "<" || op == ">" || op == "<=" || op == ">=") {
+            define _ = consume();
+            define rhs = parse_add();
+            return BinaryOp(op, expr, rhs);
+        }
+        return expr;
+    }
+
+    return parse_comparison();
+}
+
+fn __split_assignment(line) {
+    define chars = __chars(line);
+    define depth = 0;
+    define quote = Null;
+    define i = 0;
+    while (i < len(chars)) {
+        define ch = heap_get(chars, i);
+        if (quote != Null) {
+            if (ch == "\\") {
+                i = i + 2;
+            } else {
+                if (ch == quote) { quote = Null; }
+                i = i + 1;
+            }
+        } else {
+            if (ch == "\"" || ch == "'") {
+                quote = ch;
+                i = i + 1;
+            } else {
+                if (ch == "(") {
+                    depth = depth + 1;
+                    i = i + 1;
+                } else {
+                    if (ch == ")") {
+                        depth = depth - 1;
+                        i = i + 1;
+                    } else {
+                        if (ch == "=" && depth == 0) {
+                            define prev = "";
+                            define next = "";
+                            if (i > 0) { prev = heap_get(chars, i - 1); }
+                            if (i + 1 < len(chars)) { next = heap_get(chars, i + 1); }
+                            if (prev == "=" || prev == "!" || prev == "<" || prev == ">" || next == "=") {
+                                i = i + 1;
+                            } else {
+                                define left = String.join(Collections.slice(chars, 0, i), "");
+                                define right = String.join(Collections.slice(chars, i + 1, len(chars)), "");
+                                return new[left, right];
+                            }
+                        } else {
+                            i = i + 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return Null;
+}
+
+fn __parse_statement(line) {
+    define trimmed = __strip_trailing_semicolon(line);
+    if (__starts_with(trimmed, "return ")) {
+        define expr = __strip_prefix(trimmed, "return ");
+        return Return(__parse_expression(expr));
+    }
+    if (__starts_with(trimmed, "const ") || __starts_with(trimmed, "let ") || __starts_with(trimmed, "var ") || __starts_with(trimmed, "auto ")) {
+        trimmed = __strip(trimmed);
+        if (__starts_with(trimmed, "const ")) { trimmed = __strip_prefix(trimmed, "const "); }
+        if (__starts_with(trimmed, "let ")) { trimmed = __strip_prefix(trimmed, "let "); }
+        if (__starts_with(trimmed, "var ")) { trimmed = __strip_prefix(trimmed, "var "); }
+        if (__starts_with(trimmed, "auto ")) { trimmed = __strip_prefix(trimmed, "auto "); }
+        trimmed = __strip(trimmed);
+    }
+    define split = __split_assignment(trimmed);
+    if (split != Null) {
+        define target = __strip(heap_get(split, 0));
+        define expr = __strip(heap_get(split, 1));
+        return Assign(target, __parse_expression(expr));
+    }
+    return ExprStmt(__parse_expression(trimmed));
+}
+
+fn __line_indent(line) {
+    define chars = __chars(line);
+    define i = 0;
+    while (i < len(chars) && heap_get(chars, i) == " ") { i = i + 1; }
+    return i;
+}
+
+fn __python_tokenize_lines(code) {
+    define raw_lines = String.split(code, "\n");
+    define lines = new[];
+    define i = 0;
+    while (i < len(raw_lines)) {
+        define raw = heap_get(raw_lines, i);
+        define text = __strip(raw);
+        if (String.len(text) > 0) {
+            define indent = __line_indent(raw);
+            define _ = Collections.push(lines, new[indent, text]);
+        }
+        i = i + 1;
+    }
+    return lines;
+}
+
+fn __python_parse_signature(line) {
+    define trimmed = __strip(line);
+    define signature = __strip_prefix(trimmed, "def ");
+    signature = __strip_suffix(signature, ":");
+    define open = __find_char(signature, "(");
+    define close = __find_char(signature, ")");
+    if (open < 0 || close < 0 || close < open) { return __raise_runtime_error("Invalid Python function signature: " + line); }
+    define name = __strip(String.join(Collections.slice(__chars(signature), 0, open), ""));
+    define params_text = String.join(Collections.slice(__chars(signature), open + 1, close), "");
+    return new[name, __split_params(params_text)];
+}
+
+fn __python_parse_block(lines, start_index, indent_level) {
+    define stmts = new[];
+    define i = start_index;
+    while (i < len(lines)) {
+        define entry = heap_get(lines, i);
+        define indent = heap_get(entry, 0);
+        define text = heap_get(entry, 1);
+        if (indent < indent_level) { return new[stmts, i]; }
+        if (indent > indent_level) { return __raise_runtime_error("Unexpected indentation: " + text); }
+        if (text == "else:") { return new[stmts, i]; }
+        define handled = false;
+        if (__starts_with(text, "if ")) {
+            define condition = __strip_suffix(__strip_prefix(text, "if "), ":");
+            define then_info = __python_parse_block(lines, i + 1, indent_level + 4);
+            define then_body = heap_get(then_info, 0);
+            define j = heap_get(then_info, 1);
+            define else_body = new[];
+            if (j < len(lines)) {
+                define next_entry = heap_get(lines, j);
+                if (heap_get(next_entry, 0) == indent_level && heap_get(next_entry, 1) == "else:") {
+                    define else_info = __python_parse_block(lines, j + 1, indent_level + 4);
+                    else_body = heap_get(else_info, 0);
+                    j = heap_get(else_info, 1);
+                }
+            }
+            define _ = Collections.push(stmts, IfElse(__parse_expression(condition), then_body, else_body));
+            i = j;
+            handled = true;
+        }
+        if (!handled && __starts_with(text, "while ")) {
+            define condition = __strip_suffix(__strip_prefix(text, "while "), ":");
+            define body_info = __python_parse_block(lines, i + 1, indent_level + 4);
+            define body = heap_get(body_info, 0);
+            define j = heap_get(body_info, 1);
+            define _ = Collections.push(stmts, While(__parse_expression(condition), body));
+            i = j;
+            handled = true;
+        }
+        if (!handled) {
+            define _ = Collections.push(stmts, __parse_statement(text));
+            i = i + 1;
+        }
+    }
+    return new[stmts, i];
+}
+
+fn __julia_lines(code) {
+    define raw = String.split(code, "\n");
+    define lines = new[];
+    define i = 0;
+    while (i < len(raw)) {
+        define line = __strip(heap_get(raw, i));
+        if (String.len(line) > 0) { define _ = Collections.push(lines, line); }
+        i = i + 1;
+    }
+    return lines;
+}
+
+fn __julia_parse_signature(line) {
+    define signature = __strip_prefix(line, "function ");
+    define open = __find_char(signature, "(");
+    define close = __find_char(signature, ")");
+    if (open < 0 || close < 0 || close < open) { return __raise_runtime_error("Invalid Julia function signature: " + line); }
+    define name = __strip(String.join(Collections.slice(__chars(signature), 0, open), ""));
+    define params_text = String.join(Collections.slice(__chars(signature), open + 1, close), "");
+    return new[name, __split_params(params_text)];
+}
+
+fn __julia_parse_block(lines, start_index) {
+    define stmts = new[];
+    define i = start_index;
+    while (i < len(lines)) {
+        define line = heap_get(lines, i);
+        if (line == "end" || line == "else") { return new[stmts, i]; }
+        define handled = false;
+        if (__starts_with(line, "if ")) {
+            define condition = __strip_prefix(line, "if ");
+            define then_info = __julia_parse_block(lines, i + 1);
+            define then_body = heap_get(then_info, 0);
+            define j = heap_get(then_info, 1);
+            define else_body = new[];
+            if (j < len(lines) && heap_get(lines, j) == "else") {
+                define else_info = __julia_parse_block(lines, j + 1);
+                else_body = heap_get(else_info, 0);
+                j = heap_get(else_info, 1);
+            }
+            if (j >= len(lines) || heap_get(lines, j) != "end") {
+                return __raise_runtime_error("Unterminated Julia if/else block");
+            }
+            define _ = Collections.push(stmts, IfElse(__parse_expression(condition), then_body, else_body));
+            i = j + 1;
+            handled = true;
+        }
+        if (!handled && __starts_with(line, "while ")) {
+            define condition = __strip_prefix(line, "while ");
+            define body_info = __julia_parse_block(lines, i + 1);
+            define body = heap_get(body_info, 0);
+            define j = heap_get(body_info, 1);
+            if (j >= len(lines) || heap_get(lines, j) != "end") {
+                return __raise_runtime_error("Unterminated Julia while block");
+            }
+            define _ = Collections.push(stmts, While(__parse_expression(condition), body));
+            i = j + 1;
+            handled = true;
+        }
+        if (!handled) {
+            define _ = Collections.push(stmts, __parse_statement(line));
+            i = i + 1;
+        }
+    }
+    return new[stmts, i];
+}
+
+fn __tokenize_brace_lines(code) {
+    define raw_lines = String.split(code, "\n");
+    define tokens = new[];
+    define i = 0;
+    while (i < len(raw_lines)) {
+        define line = __strip(heap_get(raw_lines, i));
+        if (String.len(line) > 0) {
+            define parts = __split_by_braces(line);
+            define j = 0;
+            while (j < len(parts)) {
+                define part = __strip_trailing_semicolon(heap_get(parts, j));
+                if (String.len(part) > 0) { define _ = Collections.push(tokens, part); }
+                j = j + 1;
+            }
+        }
+        i = i + 1;
+    }
+    return tokens;
+}
+
+fn __block_start_index(lines, index, line, label) {
+    define trimmed = __strip(line);
+    if (__ends_with(trimmed, "{")) { return index + 1; }
+    if (index + 1 < len(lines) && heap_get(lines, index + 1) == "{") { return index + 2; }
+    return __raise_runtime_error(label + " must open with '{'");
+}
+
+fn __extract_paren_content(line, keyword) {
+    define chars = __chars(line);
+    define open = -1;
+    define close = -1;
+    define i = 0;
+    define found_open = false;
+    while (i < len(chars) && !found_open) {
+        if (heap_get(chars, i) == "(") {
+            open = i;
+            found_open = true;
+        } else {
+            i = i + 1;
+        }
+    }
+    if (open < 0) { return __raise_runtime_error("Invalid " + keyword + " syntax: " + line); }
+    i = len(chars) - 1;
+    define found_close = false;
+    while (i >= 0 && !found_close) {
+        if (heap_get(chars, i) == ")") {
+            close = i;
+            found_close = true;
+        } else {
+            i = i - 1;
+        }
+    }
+    if (close < 0 || close <= open) { return __raise_runtime_error("Invalid " + keyword + " syntax: " + line); }
+    return String.join(Collections.slice(chars, open + 1, close), "");
+}
+
+fn __parse_brace_block(lines, start_index, label) {
+    define stmts = new[];
+    define i = start_index;
+    while (i < len(lines)) {
+        define line = heap_get(lines, i);
+        if (line == "}") { return new[stmts, i]; }
+        if (line == "else") { return new[stmts, i]; }
+        define handled = false;
+        if (__starts_with(line, "if")) {
+            define condition = __extract_paren_content(line, label + " if");
+            define body_start = __block_start_index(lines, i, line, label + " if");
+            define then_info = __parse_brace_block(lines, body_start, label);
+            define then_body = heap_get(then_info, 0);
+            define j = heap_get(then_info, 1);
+            if (j >= len(lines) || heap_get(lines, j) != "}") { return __raise_runtime_error("Unterminated " + label + " if block"); }
+            j = j + 1;
+            define else_body = new[];
+            if (j < len(lines) && __starts_with(heap_get(lines, j), "else")) {
+                define else_start = __block_start_index(lines, j, heap_get(lines, j), label + " else");
+                define else_info = __parse_brace_block(lines, else_start, label);
+                else_body = heap_get(else_info, 0);
+                j = heap_get(else_info, 1);
+                if (j >= len(lines) || heap_get(lines, j) != "}") { return __raise_runtime_error("Unterminated " + label + " else block"); }
+                j = j + 1;
+            }
+            define _ = Collections.push(stmts, IfElse(__parse_expression(condition), then_body, else_body));
+            i = j;
+            handled = true;
+        }
+        if (!handled && __starts_with(line, "while")) {
+            define condition = __extract_paren_content(line, label + " while");
+            define body_start = __block_start_index(lines, i, line, label + " while");
+            define body_info = __parse_brace_block(lines, body_start, label);
+            define body = heap_get(body_info, 0);
+            define j = heap_get(body_info, 1);
+            if (j >= len(lines) || heap_get(lines, j) != "}") { return __raise_runtime_error("Unterminated " + label + " while block"); }
+            define _ = Collections.push(stmts, While(__parse_expression(condition), body));
+            i = j + 1;
+            handled = true;
+        }
+        if (!handled) {
+            define _ = Collections.push(stmts, __parse_statement(line));
+            i = i + 1;
+        }
+    }
+    return new[stmts, i];
 }
 
 // ----- Gemeinsames IR -----
@@ -31,67 +729,76 @@ fn __list_or_empty(items) {
 class Expression {}
 
 class Name {
+    kind: string;
     identifier: string;
 }
 fn Name(identifier) {
-    return new Name { identifier: identifier };
+    return new Name { kind: "Name"; identifier: identifier };
 }
 
 class Literal {
+    kind: string;
     value: any;
 }
 fn Literal(value) {
-    return new Literal { value: value };
+    return new Literal { kind: "Literal"; value: value };
 }
 
 class BinaryOp {
+    kind: string;
     op: string;
     left: Expression;
     right: Expression;
 }
 fn BinaryOp(op, left, right) {
-    return new BinaryOp { op: op; left: left; right: right };
+    return new BinaryOp { kind: "BinaryOp"; op: op; left: left; right: right };
 }
 
 class Call {
+    kind: string;
     func: string;
     args: Pointer;
 }
 fn Call(func, args) {
-    return new Call { func: func; args: __list_or_empty(args) };
+    return new Call { kind: "Call"; func: func; args: __list_or_empty(args) };
 }
 
 class Statement {}
 
 class Assign {
+    kind: string;
     target: string;
     expr: Expression;
 }
 fn Assign(target, expr) {
-    return new Assign { target: target; expr: expr };
+    return new Assign { kind: "Assign"; target: target; expr: expr };
 }
 
 class Return {
+    kind: string;
     expr: Expression;
 }
 fn Return(expr) {
-    return new Return { expr: expr };
+    return new Return { kind: "Return"; expr: expr };
 }
 
 class ExprStmt {
+    kind: string;
     expr: Expression;
 }
 fn ExprStmt(expr) {
-    return new ExprStmt { expr: expr };
+    return new ExprStmt { kind: "ExprStmt"; expr: expr };
 }
 
 class IfElse {
+    kind: string;
     condition: Expression;
     then_body: Pointer;
     else_body: Pointer;
 }
 fn IfElse(condition, then_body, else_body) {
     return new IfElse {
+        kind: "IfElse";
         condition: condition;
         then_body: __list_or_empty(then_body);
         else_body: __list_or_empty(else_body)
@@ -99,20 +806,23 @@ fn IfElse(condition, then_body, else_body) {
 }
 
 class While {
+    kind: string;
     condition: Expression;
     body: Pointer;
 }
 fn While(condition, body) {
-    return new While { condition: condition; body: __list_or_empty(body) };
+    return new While { kind: "While"; condition: condition; body: __list_or_empty(body) };
 }
 
 class FunctionIR {
+    kind: string;
     name: string;
     params: Pointer;
     body: Pointer;
 }
 fn FunctionIR(name, params, body) {
     return new FunctionIR {
+        kind: "FunctionIR";
         name: name;
         params: __list_or_empty(params);
         body: __list_or_empty(body)
@@ -120,11 +830,13 @@ fn FunctionIR(name, params, body) {
 }
 
 class ProgramIR {
+    kind: string;
     functions: Pointer;
     body: Pointer;
 }
 fn ProgramIR(functions, body) {
     return new ProgramIR {
+        kind: "ProgramIR";
         functions: __list_or_empty(functions);
         body: __list_or_empty(body)
     };
@@ -140,12 +852,12 @@ class LanguageTranspiler {
     }
 
     fn _render_expr(self, expr) {
-        if (expr.__tag__ == "Name") { return expr.identifier; }
-        if (expr.__tag__ == "Literal") { return self._render_literal(expr.value); }
-        if (expr.__tag__ == "BinaryOp") {
+        if (expr.kind == "Name") { return expr.identifier; }
+        if (expr.kind == "Literal") { return self._render_literal(expr.value); }
+        if (expr.kind == "BinaryOp") {
             return self._render_expr(expr.left) + " " + expr.op + " " + self._render_expr(expr.right);
         }
-        if (expr.__tag__ == "Call") {
+        if (expr.kind == "Call") {
             define rendered_args = new[];
             define i = 0;
             while (i < len(expr.args)) {
@@ -218,22 +930,22 @@ class PythonTranspiler: LanguageTranspiler {
         while (i < len(statements)) {
             define stmt = heap_get(statements, i);
             define handled = false;
-            if (!handled && stmt.__tag__ == "Assign") {
+            if (!handled && stmt.kind == "Assign") {
                 define line = pad + stmt.target + " = " + self._render_expr(stmt.expr);
                 define _ = Collections.push(rendered, line);
                 handled = true;
             }
-            if (!handled && stmt.__tag__ == "Return") {
+            if (!handled && stmt.kind == "Return") {
                 define line = pad + "return " + self._render_expr(stmt.expr);
                 define _ = Collections.push(rendered, line);
                 handled = true;
             }
-            if (!handled && stmt.__tag__ == "ExprStmt") {
+            if (!handled && stmt.kind == "ExprStmt") {
                 define line = pad + self._render_expr(stmt.expr);
                 define _ = Collections.push(rendered, line);
                 handled = true;
             }
-            if (!handled && stmt.__tag__ == "IfElse") {
+            if (!handled && stmt.kind == "IfElse") {
                 define header = pad + "if " + self._render_expr(stmt.condition) + ":";
                 define _ = Collections.push(rendered, header);
                 define then_body = self._render_statements(stmt.then_body, indent_level + 1);
@@ -255,7 +967,7 @@ class PythonTranspiler: LanguageTranspiler {
                 }
                 handled = true;
             }
-            if (!handled && stmt.__tag__ == "While") {
+            if (!handled && stmt.kind == "While") {
                 define header = pad + "while " + self._render_expr(stmt.condition) + ":";
                 define _ = Collections.push(rendered, header);
                 define body = self._render_statements(stmt.body, indent_level + 1);
@@ -274,8 +986,505 @@ class PythonTranspiler: LanguageTranspiler {
         }
         return rendered;
     }
+
+    fn from_source(self, code) {
+        define lines = __python_tokenize_lines(code);
+        define functions = new[];
+        define body = new[];
+        define i = 0;
+        while (i < len(lines)) {
+            define entry = heap_get(lines, i);
+            define indent = heap_get(entry, 0);
+            define text = heap_get(entry, 1);
+            if (indent != 0) { return __raise_runtime_error("Unexpected indentation: " + text); }
+            if (__starts_with(text, "def ")) {
+                define signature = __python_parse_signature(text);
+                define fn_body_info = __python_parse_block(lines, i + 1, 4);
+                define fn_body = heap_get(fn_body_info, 0);
+                define next_index = heap_get(fn_body_info, 1);
+                define _ = Collections.push(functions, FunctionIR(heap_get(signature, 0), heap_get(signature, 1), fn_body));
+                i = next_index;
+            } else {
+                define block_info = __python_parse_block(lines, i, 0);
+                define block = heap_get(block_info, 0);
+                define next_index = heap_get(block_info, 1);
+                define _ = __extend(body, block);
+                i = next_index;
+            }
+        }
+        return ProgramIR(functions, body);
+    }
 }
 
 fn PythonTranspiler() {
     return new PythonTranspiler { indent: "    " };
+}
+
+// ----- Julia -----
+
+class JuliaTranspiler: LanguageTranspiler {
+    fn _render_literal(self, value) {
+        if (value == true) { return "true"; }
+        if (value == false) { return "false"; }
+        if (value == Null) { return "nothing"; }
+        if (__is_repr_string(value)) { return __json_dump(value); }
+        return __to_repr(value);
+    }
+
+    fn to_source(self, program) {
+        define chunks = new[];
+        define i = 0;
+        while (i < len(program.functions)) {
+            define fn_ir = heap_get(program.functions, i);
+            define header = "function " + fn_ir.name + "(" + String.join(fn_ir.params, ", ") + ")";
+            define body_lines = self._render_statements(fn_ir.body, 1);
+            define lines = new[header];
+            define j = 0;
+            while (j < len(body_lines)) { define _ = Collections.push(lines, heap_get(body_lines, j)); j = j + 1; }
+            define _ = Collections.push(lines, "end");
+            define _c = Collections.push(chunks, self._lines(lines));
+            i = i + 1;
+        }
+        if (len(program.body) > 0) {
+            define rendered = self._render_statements(program.body, 0);
+            define k = 0;
+            while (k < len(rendered)) { define _ = Collections.push(chunks, heap_get(rendered, k)); k = k + 1; }
+        }
+        return self._lines(chunks);
+    }
+
+    fn _render_statements(self, statements, indent_level) {
+        define rendered = new[];
+        define pad = String.repeat(self.indent, indent_level);
+        define i = 0;
+        while (i < len(statements)) {
+            define stmt = heap_get(statements, i);
+            if (stmt.kind == "Assign") {
+                define _ = Collections.push(rendered, pad + stmt.target + " = " + self._render_expr(stmt.expr));
+            } else {
+                if (stmt.kind == "Return") {
+                    define _ = Collections.push(rendered, pad + "return " + self._render_expr(stmt.expr));
+                } else {
+                    if (stmt.kind == "ExprStmt") {
+                        define _ = Collections.push(rendered, pad + self._render_expr(stmt.expr));
+                    } else {
+                        if (stmt.kind == "IfElse") {
+                            define _ = Collections.push(rendered, pad + "if " + self._render_expr(stmt.condition));
+                            define then_body = self._render_statements(stmt.then_body, indent_level + 1);
+                            if (len(then_body) == 0) { define _tp = Collections.push(rendered, pad + self.indent + "nothing"); }
+                            else { define ti = 0; while (ti < len(then_body)) { define _ = Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; } }
+                            if (len(stmt.else_body) > 0) {
+                                define _ = Collections.push(rendered, pad + "else");
+                                define else_body = self._render_statements(stmt.else_body, indent_level + 1);
+                                if (len(else_body) == 0) { define _ep = Collections.push(rendered, pad + self.indent + "nothing"); }
+                                else { define ei = 0; while (ei < len(else_body)) { define _ = Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; } }
+                            }
+                            define _ = Collections.push(rendered, pad + "end");
+                        } else {
+                            if (stmt.kind == "While") {
+                                define _ = Collections.push(rendered, pad + "while " + self._render_expr(stmt.condition));
+                                define body = self._render_statements(stmt.body, indent_level + 1);
+                                if (len(body) == 0) { define _bp = Collections.push(rendered, pad + self.indent + "nothing"); }
+                                else { define bi = 0; while (bi < len(body)) { define _ = Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; } }
+                                define _ = Collections.push(rendered, pad + "end");
+                            } else {
+                                return __raise_runtime_error("Unsupported statement: " + __to_str(stmt));
+                            }
+                        }
+                    }
+                }
+            }
+            i = i + 1;
+        }
+        return rendered;
+    }
+
+    fn from_source(self, code) {
+        define lines = __julia_lines(code);
+        define functions = new[];
+        define body = new[];
+        define i = 0;
+        while (i < len(lines)) {
+            define line = heap_get(lines, i);
+            if (__starts_with(line, "function ")) {
+                define signature = __julia_parse_signature(line);
+                define fn_info = __julia_parse_block(lines, i + 1);
+                define fn_body = heap_get(fn_info, 0);
+                define j = heap_get(fn_info, 1);
+                if (j >= len(lines) || heap_get(lines, j) != "end") { return __raise_runtime_error("Unterminated Julia function body"); }
+                define _ = Collections.push(functions, FunctionIR(heap_get(signature, 0), heap_get(signature, 1), fn_body));
+                i = j + 1;
+            } else {
+                define block_info = __julia_parse_block(lines, i);
+                define block = heap_get(block_info, 0);
+                define j = heap_get(block_info, 1);
+                define _ = __extend(body, block);
+                i = j;
+            }
+        }
+        return ProgramIR(functions, body);
+    }
+}
+
+fn JuliaTranspiler() {
+    return new JuliaTranspiler { indent: "    " };
+}
+
+// ----- JavaScript -----
+
+class JavaScriptTranspiler: LanguageTranspiler {
+    fn _render_literal(self, value) {
+        if (value == true) { return "true"; }
+        if (value == false) { return "false"; }
+        if (value == Null) { return "null"; }
+        if (__is_repr_string(value)) { return __json_dump(value); }
+        return __to_repr(value);
+    }
+
+    fn to_source(self, program) {
+        define chunks = new[];
+        define i = 0;
+        while (i < len(program.functions)) {
+            define fn_ir = heap_get(program.functions, i);
+            define header = "function " + fn_ir.name + "(" + String.join(fn_ir.params, ", ") + ") {";
+            define body_lines = self._render_statements(fn_ir.body, 1);
+            define lines = new[header];
+            define j = 0;
+            while (j < len(body_lines)) { define _ = Collections.push(lines, heap_get(body_lines, j)); j = j + 1; }
+            define _ = Collections.push(lines, "}");
+            define _c = Collections.push(chunks, self._lines(lines));
+            i = i + 1;
+        }
+        if (len(program.body) > 0) {
+            define rendered = self._render_statements(program.body, 0);
+            define k = 0;
+            while (k < len(rendered)) { define _ = Collections.push(chunks, heap_get(rendered, k)); k = k + 1; }
+        }
+        return self._lines(chunks);
+    }
+
+    fn _render_statements(self, statements, indent_level) {
+        define rendered = new[];
+        define pad = String.repeat(self.indent, indent_level);
+        define i = 0;
+        while (i < len(statements)) {
+            define stmt = heap_get(statements, i);
+            if (stmt.kind == "Assign") {
+                define _ = Collections.push(rendered, pad + stmt.target + " = " + self._render_expr(stmt.expr) + ";");
+            } else {
+                if (stmt.kind == "Return") {
+                    define _ = Collections.push(rendered, pad + "return " + self._render_expr(stmt.expr) + ";");
+                } else {
+                    if (stmt.kind == "ExprStmt") {
+                        define _ = Collections.push(rendered, pad + self._render_expr(stmt.expr) + ";");
+                    } else {
+                        if (stmt.kind == "IfElse") {
+                            define _ = Collections.push(rendered, pad + "if (" + self._render_expr(stmt.condition) + ") {");
+                            define then_body = self._render_statements(stmt.then_body, indent_level + 1);
+                            define ti = 0;
+                            while (ti < len(then_body)) { define _ = Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; }
+                            define _ = Collections.push(rendered, pad + "}");
+                            if (len(stmt.else_body) > 0) {
+                                define _ = Collections.push(rendered, pad + "else {");
+                                define else_body = self._render_statements(stmt.else_body, indent_level + 1);
+                                define ei = 0;
+                                while (ei < len(else_body)) { define _ = Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; }
+                                define _ = Collections.push(rendered, pad + "}");
+                            }
+                        } else {
+                            if (stmt.kind == "While") {
+                                define _ = Collections.push(rendered, pad + "while (" + self._render_expr(stmt.condition) + ") {");
+                                define body = self._render_statements(stmt.body, indent_level + 1);
+                                define bi = 0;
+                                while (bi < len(body)) { define _ = Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; }
+                                define _ = Collections.push(rendered, pad + "}");
+                            } else {
+                                return __raise_runtime_error("Unsupported statement: " + __to_str(stmt));
+                            }
+                        }
+                    }
+                }
+            }
+            i = i + 1;
+        }
+        return rendered;
+    }
+
+    fn from_source(self, code) {
+        define lines = __tokenize_brace_lines(code);
+        define functions = new[];
+        define body = new[];
+        define i = 0;
+        while (i < len(lines)) {
+            define line = heap_get(lines, i);
+            if (__starts_with(line, "function ")) {
+                define signature = __strip_prefix(line, "function ");
+                define open = __find_char(signature, "(");
+                define close = __find_char(signature, ")");
+                if (open < 0 || close < 0 || close < open) { return __raise_runtime_error("Invalid JavaScript function signature: " + line); }
+                define name = __strip(String.join(Collections.slice(__chars(signature), 0, open), ""));
+                define params_text = String.join(Collections.slice(__chars(signature), open + 1, close), "");
+                define body_start = __block_start_index(lines, i, line, "JavaScript function");
+                define fn_info = __parse_brace_block(lines, body_start, "JavaScript");
+                define fn_body = heap_get(fn_info, 0);
+                define j = heap_get(fn_info, 1);
+                if (j >= len(lines) || heap_get(lines, j) != "}") { return __raise_runtime_error("Unterminated JavaScript function body"); }
+                define _ = Collections.push(functions, FunctionIR(name, __split_params(params_text), fn_body));
+                i = j + 1;
+            } else {
+                define block_info = __parse_brace_block(lines, i, "JavaScript");
+                define block = heap_get(block_info, 0);
+                define j = heap_get(block_info, 1);
+                define _ = __extend(body, block);
+                i = j;
+            }
+        }
+        return ProgramIR(functions, body);
+    }
+}
+
+fn JavaScriptTranspiler() {
+    return new JavaScriptTranspiler { indent: "  " };
+}
+
+// ----- C++ -----
+
+class CppTranspiler: LanguageTranspiler {
+    fn _render_literal(self, value) {
+        if (value == true) { return "true"; }
+        if (value == false) { return "false"; }
+        if (value == Null) { return "nullptr"; }
+        if (__is_repr_string(value)) { return __json_dump(value); }
+        return __to_repr(value);
+    }
+
+    fn to_source(self, program) {
+        define chunks = new[];
+        define i = 0;
+        while (i < len(program.functions)) {
+            define fn_ir = heap_get(program.functions, i);
+            define param_parts = new[];
+            define pi = 0;
+            while (pi < len(fn_ir.params)) {
+                define _ = Collections.push(param_parts, "auto " + heap_get(fn_ir.params, pi));
+                pi = pi + 1;
+            }
+            define header = "auto " + fn_ir.name + "(" + String.join(param_parts, ", ") + ") {";
+            define body_lines = self._render_statements(fn_ir.body, 1);
+            define lines = new[header];
+            define j = 0;
+            while (j < len(body_lines)) { define _ = Collections.push(lines, heap_get(body_lines, j)); j = j + 1; }
+            define _ = Collections.push(lines, "}");
+            define _c = Collections.push(chunks, self._lines(lines));
+            i = i + 1;
+        }
+        if (len(program.body) > 0) {
+            define rendered = self._render_statements(program.body, 0);
+            define k = 0;
+            while (k < len(rendered)) { define _ = Collections.push(chunks, heap_get(rendered, k)); k = k + 1; }
+        }
+        return self._lines(chunks);
+    }
+
+    fn _render_statements(self, statements, indent_level) {
+        define rendered = new[];
+        define pad = String.repeat(self.indent, indent_level);
+        define i = 0;
+        while (i < len(statements)) {
+            define stmt = heap_get(statements, i);
+            if (stmt.kind == "Assign") {
+                define _ = Collections.push(rendered, pad + stmt.target + " = " + self._render_expr(stmt.expr) + ";");
+            } else {
+                if (stmt.kind == "Return") {
+                    define _ = Collections.push(rendered, pad + "return " + self._render_expr(stmt.expr) + ";");
+                } else {
+                    if (stmt.kind == "ExprStmt") {
+                        define _ = Collections.push(rendered, pad + self._render_expr(stmt.expr) + ";");
+                    } else {
+                        if (stmt.kind == "IfElse") {
+                            define _ = Collections.push(rendered, pad + "if (" + self._render_expr(stmt.condition) + ") {");
+                            define then_body = self._render_statements(stmt.then_body, indent_level + 1);
+                            define ti = 0;
+                            while (ti < len(then_body)) { define _ = Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; }
+                            define _ = Collections.push(rendered, pad + "}");
+                            if (len(stmt.else_body) > 0) {
+                                define _ = Collections.push(rendered, pad + "else {");
+                                define else_body = self._render_statements(stmt.else_body, indent_level + 1);
+                                define ei = 0;
+                                while (ei < len(else_body)) { define _ = Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; }
+                                define _ = Collections.push(rendered, pad + "}");
+                            }
+                        } else {
+                            if (stmt.kind == "While") {
+                                define _ = Collections.push(rendered, pad + "while (" + self._render_expr(stmt.condition) + ") {");
+                                define body = self._render_statements(stmt.body, indent_level + 1);
+                                define bi = 0;
+                                while (bi < len(body)) { define _ = Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; }
+                                define _ = Collections.push(rendered, pad + "}");
+                            } else {
+                                return __raise_runtime_error("Unsupported statement: " + __to_str(stmt));
+                            }
+                        }
+                    }
+                }
+            }
+            i = i + 1;
+        }
+        return rendered;
+    }
+
+    fn from_source(self, code) {
+        define lines = __tokenize_brace_lines(code);
+        define functions = new[];
+        define body = new[];
+        define i = 0;
+        while (i < len(lines)) {
+            define line = heap_get(lines, i);
+            if (__starts_with(line, "auto ")) {
+                define signature = __strip_prefix(line, "auto ");
+                define open = __find_char(signature, "(");
+                define close = __find_char(signature, ")");
+                if (open < 0 || close < 0 || close < open) { return __raise_runtime_error("Invalid C++ function signature: " + line); }
+                define name = __strip(String.join(Collections.slice(__chars(signature), 0, open), ""));
+                define params_text = String.join(Collections.slice(__chars(signature), open + 1, close), "");
+                define raw_params = __split_params(params_text);
+                define params = new[];
+                define pi = 0;
+                while (pi < len(raw_params)) {
+                    define param = __strip(heap_get(raw_params, pi));
+                    if (__starts_with(param, "auto ")) { param = __strip_prefix(param, "auto "); }
+                    define _ = Collections.push(params, param);
+                    pi = pi + 1;
+                }
+                define body_start = __block_start_index(lines, i, line, "C++ function");
+                define fn_info = __parse_brace_block(lines, body_start, "C++");
+                define fn_body = heap_get(fn_info, 0);
+                define j = heap_get(fn_info, 1);
+                if (j >= len(lines) || heap_get(lines, j) != "}") { return __raise_runtime_error("Unterminated C++ function body"); }
+                define _ = Collections.push(functions, FunctionIR(name, params, fn_body));
+                i = j + 1;
+            } else {
+                define block_info = __parse_brace_block(lines, i, "C++");
+                define block = heap_get(block_info, 0);
+                define j = heap_get(block_info, 1);
+                define _ = __extend(body, block);
+                i = j;
+            }
+        }
+        return ProgramIR(functions, body);
+    }
+}
+
+fn CppTranspiler() {
+    return new CppTranspiler { indent: "  " };
+}
+
+// ----- TinyLanguage -----
+
+class TinyLanguageTranspiler: LanguageTranspiler {
+    indent: string;
+
+    fn _render_literal(self, value) {
+        if (value == true) { return "true"; }
+        if (value == false) { return "false"; }
+        if (value == Null) { return "null"; }
+        if (__is_repr_string(value)) { return __json_dump(value); }
+        return __to_repr(value);
+    }
+
+    fn to_source(self, program) {
+        define chunks = new[];
+        define idx = 0;
+        while (idx < len(program.functions)) {
+            define _ = Collections.push(chunks, self._render_function(heap_get(program.functions, idx)));
+            if (idx < len(program.functions) - 1) { define _blank = Collections.push(chunks, ""); }
+            idx = idx + 1;
+        }
+        if (len(program.body) > 0) {
+            if (len(chunks) > 0) { define _blank2 = Collections.push(chunks, ""); }
+            define body_lines = self._render_statements(program.body, 0, Map.new());
+            define bi = 0;
+            while (bi < len(body_lines)) { define _ = Collections.push(chunks, heap_get(body_lines, bi)); bi = bi + 1; }
+        }
+        return self._lines(chunks);
+    }
+
+    fn _render_function(self, fn_ir) {
+        define defined = Map.new();
+        define i = 0;
+        while (i < len(fn_ir.params)) { define _ = Map.set(defined, heap_get(fn_ir.params, i), true); i = i + 1; }
+        define header = "fn " + fn_ir.name + "(" + String.join(fn_ir.params, ", ") + ") {";
+        define body_lines = self._render_statements(fn_ir.body, 1, defined);
+        if (len(body_lines) == 0) { body_lines = new[self.indent + "// no-op"]; }
+        define lines = new[header];
+        define j = 0;
+        while (j < len(body_lines)) { define _ = Collections.push(lines, heap_get(body_lines, j)); j = j + 1; }
+        define _ = Collections.push(lines, "}");
+        return self._lines(lines);
+    }
+
+    fn _render_statements(self, statements, indent_level, defined) {
+        define rendered = new[];
+        define pad = String.repeat(self.indent, indent_level);
+        define i = 0;
+        while (i < len(statements)) {
+            define stmt = heap_get(statements, i);
+            if (stmt.kind == "Assign") {
+                define keyword = "";
+                if (Map.get(defined, stmt.target) == Null) { keyword = "define "; }
+                define _ = Collections.push(rendered, pad + keyword + stmt.target + " = " + self._render_expr(stmt.expr) + ";");
+                define _set = Map.set(defined, stmt.target, true);
+            } else {
+                if (stmt.kind == "Return") {
+                    define _ = Collections.push(rendered, pad + "return " + self._render_expr(stmt.expr) + ";");
+                } else {
+                    if (stmt.kind == "ExprStmt") {
+                        define expr_source = self._render_expr(stmt.expr);
+                        if (stmt.expr.kind == "Call" && indent_level == 0 && Map.get(defined, "_") == Null) {
+                            define _set2 = Map.set(defined, "_", true);
+                            define _ = Collections.push(rendered, pad + "define _ = " + expr_source + ";");
+                        } else {
+                            define _ = Collections.push(rendered, pad + expr_source + ";");
+                        }
+                    } else {
+                        if (stmt.kind == "IfElse") {
+                            define _ = Collections.push(rendered, pad + "if (" + self._render_expr(stmt.condition) + ") {");
+                            define then_body = self._render_statements(stmt.then_body, indent_level + 1, __copy_map(defined));
+                            define ti = 0;
+                            while (ti < len(then_body)) { define _ = Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; }
+                            if (len(stmt.else_body) > 0) {
+                                define _ = Collections.push(rendered, pad + "} else {");
+                                define else_body = self._render_statements(stmt.else_body, indent_level + 1, __copy_map(defined));
+                                define ei = 0;
+                                while (ei < len(else_body)) { define _ = Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; }
+                                define _ = Collections.push(rendered, pad + "}");
+                            } else {
+                                define _ = Collections.push(rendered, pad + "}");
+                            }
+                        } else {
+                            if (stmt.kind == "While") {
+                                define _ = Collections.push(rendered, pad + "while (" + self._render_expr(stmt.condition) + ") {");
+                                define body = self._render_statements(stmt.body, indent_level + 1, __copy_map(defined));
+                                define bi = 0;
+                                while (bi < len(body)) { define _ = Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; }
+                                define _ = Collections.push(rendered, pad + "}");
+                            } else {
+                                return __raise_runtime_error("Unsupported statement: " + __to_str(stmt));
+                            }
+                        }
+                    }
+                }
+            }
+            i = i + 1;
+        }
+        return rendered;
+    }
+
+    fn from_source(self, code) {
+        return __raise_runtime_error("Parsing TinyLanguage to the shared IR is not implemented yet.");
+    }
+}
+
+fn TinyLanguageTranspiler() {
+    return new TinyLanguageTranspiler { indent: "    " };
 }

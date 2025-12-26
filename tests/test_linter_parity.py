@@ -123,6 +123,15 @@ def run_tiny_linter(source: str) -> str | None:
             id="return_exhaustiveness",
         ),
         pytest.param("define x = 1;\ndefine x = 2;", id="consecutive_definitions"),
+        pytest.param("import math as m;\nprint(1);", id="unused_import_alias"),
+        pytest.param(
+            "class Box { fn split(self, a, b) { return { a: a, b: b }; } }\n"
+            "define box = Box();\n"
+            "define a = 1;\n"
+            "define b = 2;\n"
+            "define { a } = box.split(a, b);",
+            id="destructured_method_missing_outputs",
+        ),
     ],
 )
 def test_python_and_tiny_linter_outputs_match(source: str):

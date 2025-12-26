@@ -1,4 +1,4 @@
-// Gibt eine Zählvariable einige Male aus, damit der Runner nicht hängen bleibt.
+// Prints a counter variable a few times so the runner does not hang.
 define max_iterations = 10;
 define i = 0;
 while (i < max_iterations) {

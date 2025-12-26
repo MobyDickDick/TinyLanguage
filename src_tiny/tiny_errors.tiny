@@ -1,5 +1,5 @@
 // TinyLanguage-Port von src/tiny_errors.py
-// Enthält Position/Span-Strukturen sowie einfache Fehlerformatierung.
+// Contains position/span structures along with basic error formatting.
 
 class SourcePos {
     line: number;

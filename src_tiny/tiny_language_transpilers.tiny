@@ -1,6 +1,6 @@
 // TinyLanguage-Port des Transpiler-Moduls aus src/tiny_language_transpilers.py.
-// Enthält die gemeinsame IR-Struktur und Platzhalter für Sprach-Transpiler.
-// Die eigentliche Übersetzung wird in späteren Schritten ergänzt.
+// Contains the shared IR structure and placeholders for language transpilers.
+// The actual translation will be added in later steps.
 
 define __PY_EXEC_ALLOW = new["exec"];
 define __PY_REPR_ALLOW = new["repr"];
@@ -162,11 +162,11 @@ class LanguageTranspiler {
     }
 
     fn to_source(self, program) {
-        return __raise_runtime_error("Transpiler-Unterstützung ist noch nicht implementiert.");
+        return __raise_runtime_error("Transpiler support is not implemented yet.");
     }
 
     fn from_source(self, code) {
-        return __raise_runtime_error("Transpiler-Unterstützung ist noch nicht implementiert.");
+        return __raise_runtime_error("Transpiler support is not implemented yet.");
     }
 }
 

@@ -38,10 +38,10 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 
 ## Argument-Kapselung
 
-- **Opt-in Flag:** `--copy-on-call` (oder `TINYLANG_COPY_ON_CALL=1`) aktiviert defensive Kopier-Semantik für Funktions- und Methodenaufrufe.
-- **Wann kopiert wird:** Nicht-escaped, mutierbare Argumente (Heap-Pointer, Struct-/Variant-Maps, Klasseninstanzen) werden vor dem Binden tief kopiert. Parameter, die in einem `return`-Pfad vorkommen, gelten als escaped und behalten ihre Identität.
-- **Schreibschutz:** Versuche, über andere Aliasse auf einen geschützten Parameter zu schreiben, schlagen mit einem Laufzeitfehler fehl, um Außenwirkungen zu verhindern.
-- **Performance:** Das Kopieren ist zyklenfest, kann aber bei großen Objektgraphen merklich mehr Zeit und Speicher kosten.
+- **Opt-in flag:** `--copy-on-call` (or `TINYLANG_COPY_ON_CALL=1`) enables defensive copy semantics for function and method calls.
+- **When copying happens:** Non-escaped, mutable arguments (heap pointers, struct/variant maps, class instances) are deep-copied before binding. Parameters that appear on a `return` path are treated as escaped and keep their identity.
+- **Write protection:** Attempts to write to a protected parameter through other aliases fail with a runtime error to avoid side effects.
+- **Performance:** Copying is cycle-safe but can cost noticeably more time and memory for large object graphs.
 - **Beispiel:**
 
   ```tiny

@@ -1,5 +1,5 @@
 // TinyLanguage-Port von src/tiny_language_ast.py
-// Enthält die zentralen AST-Knoten als einfache Klassen mit Konstruktorfunktionen.
+// Contains the core AST nodes as simple classes with constructor functions.
 
 class SourcePos {
     line: number;

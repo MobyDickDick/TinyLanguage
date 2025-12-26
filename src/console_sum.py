@@ -12,7 +12,7 @@ def read_number(prompt: str) -> float:
         try:
             return json.loads(text)
         except Exception:
-            print("Bitte eine gültige Zahl eingeben.")
+            print("Please enter a valid number.")
 
 a = read_number("Erste Zahl: ")
 b = read_number("Zweite Zahl: ")

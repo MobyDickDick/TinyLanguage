@@ -1,61 +1,6 @@
 // TinyLanguage-Port des Parsers aus src/tiny_language_parser.py
 // Konsumiert Tokens aus tiny_language_lexer.tiny und erzeugt AST-Knoten aus tiny_language_ast.tiny.
 
-import tiny_language_ast;
-import tiny_language_lexer;
-
-define Assign = tiny_language_ast.Assign;
-define Await = tiny_language_ast.Await;
-define Bin = tiny_language_ast.Bin;
-define Bool = tiny_language_ast.Bool;
-define Call = tiny_language_ast.Call;
-define CallStmt = tiny_language_ast.CallStmt;
-define ClassDef = tiny_language_ast.ClassDef;
-define ClassNew = tiny_language_ast.ClassNew;
-define DestructAssign = tiny_language_ast.DestructAssign;
-define Field = tiny_language_ast.Field;
-define FieldAssign = tiny_language_ast.FieldAssign;
-define Flush = tiny_language_ast.Flush;
-define Fn = tiny_language_ast.Fn;
-define If = tiny_language_ast.If;
-define Import = tiny_language_ast.Import;
-define Let = tiny_language_ast.Let;
-define Match = tiny_language_ast.Match;
-define MatchCase = tiny_language_ast.MatchCase;
-define MethodCall = tiny_language_ast.MethodCall;
-define MethodDef = tiny_language_ast.MethodDef;
-define Namespace = tiny_language_ast.Namespace;
-define NewLit = tiny_language_ast.NewLit;
-define NullLit = tiny_language_ast.NullLit;
-define Num = tiny_language_ast.Num;
-define ObjLit = tiny_language_ast.ObjLit;
-define OpDef = tiny_language_ast.OpDef;
-define Param = tiny_language_ast.Param;
-define Print = tiny_language_ast.Print;
-define Return = tiny_language_ast.Return;
-define SourceSpan = tiny_language_ast.SourceSpan;
-define Spawn = tiny_language_ast.Spawn;
-define Str = tiny_language_ast.Str;
-define TryCatch = tiny_language_ast.TryCatch;
-define TypeDef = tiny_language_ast.TypeDef;
-define TypeVariant = tiny_language_ast.TypeVariant;
-define Var = tiny_language_ast.Var;
-define VariantCtor = tiny_language_ast.VariantCtor;
-define VariantPattern = tiny_language_ast.VariantPattern;
-define While = tiny_language_ast.While;
-define WildcardPattern = tiny_language_ast.WildcardPattern;
-
-define Token = tiny_language_lexer.Token;
-define SourcePos_origin = tiny_language_lexer.SourcePos_origin;
-define lex = tiny_language_lexer.lex;
-
-define _import_refs = new[
-    Assign, Await, Bin, Bool, Call, CallStmt, ClassDef, ClassNew, DestructAssign, Field, FieldAssign, Flush,
-    Fn, If, Import, Let, Match, MatchCase, MethodCall, MethodDef, Namespace, NewLit, NullLit, Num, ObjLit,
-    OpDef, Param, Print, Return, SourceSpan, Spawn, Str, TryCatch, TypeDef, TypeVariant, Var, VariantCtor,
-    VariantPattern, While, WildcardPattern, Token, SourcePos_origin, lex
-];
-
 // Fehlerausgabe via Python-Runtime, damit die Meldungen den Python-Port spiegeln.
 define __PARSER_EXEC_ALLOW = new["exec"];
 define __PARSER_REPR_ALLOW = new["repr"];

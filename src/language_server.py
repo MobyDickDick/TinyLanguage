@@ -62,12 +62,6 @@ class Diagnostic:
     range: Tuple[int, int, int, int]
 
 
-@dataclass
-class DefinitionResult:
-    """Definition location returned by ``TinyLanguageServer.definition``."""
-
-    symbol: str
-    position: Tuple[int, int]
 
 
 class TinyLanguageServer:
@@ -147,8 +141,8 @@ class TinyLanguageServer:
 
     def definition(
         self, symbol: str, position: Optional[Tuple[int, int]] = None
-    ) -> Optional[DefinitionResult]:
-        """Return the recorded definition for ``symbol`` if known.
+    ) -> Optional[SourcePos]:
+        """Return the recorded ``SourcePos`` for ``symbol`` if known.
 
         The lookup prefers exact matches but will also fall back to unqualified
         names (e.g., ``add``) when a symbol is defined in a namespace
@@ -164,8 +158,7 @@ class TinyLanguageServer:
             return (abs(candidate.line - line), abs(candidate.col - col))
 
         if symbol in self.symbols:
-            pos = self.symbols[symbol]
-            return DefinitionResult(symbol=symbol, position=(pos.line, pos.col))
+            return self.symbols[symbol]
 
         matches: List[Tuple[str, SourcePos]] = []
         for name, pos in self.symbols.items():
@@ -176,8 +169,7 @@ class TinyLanguageServer:
             return None
 
         best = min(matches, key=lambda item: (_score(item[1]), item[0]))
-        name, pos = best
-        return DefinitionResult(symbol=name, position=(pos.line, pos.col))
+        return best[1]
 
     def hover(self, symbol: str) -> Optional[HoverResult]:
         """Produce hover info for ``symbol`` if the name is known."""
@@ -263,7 +255,7 @@ def definition_for_source(
     result = server.definition(symbol, position=position)
     if result is None:
         return {}
-    return {"symbol": result.symbol, "position": list(result.position)}
+    return {"symbol": symbol, "position": [result.line, result.col]}
 
 
 __all__ = [
@@ -271,7 +263,6 @@ __all__ = [
     "HoverResult",
     "CompletionItem",
     "Diagnostic",
-    "DefinitionResult",
     "completions_for_source",
     "definition_for_source",
     "hover_for_source",

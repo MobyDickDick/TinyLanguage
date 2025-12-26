@@ -218,7 +218,6 @@ The example programs referenced in the README’s “Syntax and Features” sect
 The core dataclasses mirror the high-level Language Server Protocol structure:
 
 - `HoverResult`: `{ symbol: str, detail: str, position: (line, column) }`
-- `DefinitionResult`: `{ symbol: str, position: (line, column) }`
 - `CompletionItem`: `{ label: str, kind: "identifier" }`
 - `Diagnostic`: `{ message: str, code: str, range: (start_line, start_col, end_line, end_col) }` (1-based)
   where `range` reflects the full source span if the parser/linter provided one.

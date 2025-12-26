@@ -11,13 +11,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from language_server import (
-    CompletionItem,
-    DefinitionResult,
-    Diagnostic,
-    HoverResult,
-    TinyLanguageServer,
-)
+from language_server import CompletionItem, Diagnostic, HoverResult, TinyLanguageServer
 
 
 def _load_source(args: argparse.Namespace) -> str:
@@ -52,10 +46,6 @@ def _diagnostic_dict(diag: Diagnostic) -> Dict[str, Any]:
     }
 
 
-def _definition_dict(result: DefinitionResult) -> Dict[str, Any]:
-    """Convert ``DefinitionResult`` to a JSON-friendly mapping."""
-    return {"symbol": result.symbol, "position": list(result.position)}
-
 def completions(server: TinyLanguageServer, prefix: str) -> List[Dict[str, Any]]:
     """Return completion payloads for ``prefix`` using ``server``."""
     return [_completion_dict(item) for item in server.completions(prefix)]
@@ -77,7 +67,9 @@ def definition(
 ) -> Dict[str, Any]:
     """Return definition information for ``symbol`` or an empty dict."""
     result = server.definition(symbol, position=position)
-    return _definition_dict(result) if result else {}
+    if not result:
+        return {}
+    return {"symbol": symbol, "position": [result.line, result.col]}
 
 
 def build_parser() -> argparse.ArgumentParser:

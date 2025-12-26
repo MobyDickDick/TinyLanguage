@@ -11,7 +11,10 @@ to keep a small, ergonomic surface area.
 import ast
 import json
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
 from functools import lru_cache
 from pathlib import Path
 from typing import Callable, List, Optional
@@ -603,6 +606,34 @@ def compile_to_llvm_ir(src: str) -> str:
     return LLVMCodeGenerator().compile_program(program)
 
 
+def compile_to_executable(
+    src: str,
+    output_path: Path | str,
+    *,
+    compiler: str = "clang",
+    extra_args: Optional[List[str]] = None,
+) -> Path:
+    """Compile TinyLanguage to a native executable via LLVM IR and a system compiler."""
+    compiler_path = shutil.which(compiler)
+    if compiler_path is None:
+        raise RuntimeError(f"compiler '{compiler}' not found on PATH (set --compiler or install clang)")
+    llvm_ir = compile_to_llvm_ir(src)
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ll_path = Path(tmpdir) / "tiny_program.ll"
+        ll_path.write_text(llvm_ir, encoding="utf-8")
+        cmd = [compiler_path, str(ll_path), "-o", str(output_path)]
+        if extra_args:
+            cmd.extend(extra_args)
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as exc:  # pragma: no cover - depends on external toolchain
+            stderr = exc.stderr.strip() if exc.stderr else "unknown compiler error"
+            raise RuntimeError(f"failed to compile executable via {compiler}: {stderr}") from exc
+    return output_path
+
+
 def run_with_python_backend(src: str) -> str:
     """Execute TinyLanguage code by generating and running Python source."""
     module = compile_to_python_ast(src)
@@ -751,6 +782,23 @@ def main(argv: Optional[List[str]] = None) -> int:
         metavar="FILE",
         help="Emit Python code generated from TinyLanguage and write it to FILE (use '-' for stdout)",
     )
+    parser.add_argument(
+        "--emit-llvm",
+        dest="emit_llvm",
+        metavar="FILE",
+        help="Emit LLVM IR for the native backend subset and write it to FILE (use '-' for stdout)",
+    )
+    parser.add_argument(
+        "--emit-exe",
+        dest="emit_exe",
+        metavar="FILE",
+        help="Compile a native executable via LLVM IR and write it to FILE",
+    )
+    parser.add_argument(
+        "--compiler",
+        default=os.environ.get("TINYLANG_COMPILER", "clang"),
+        help="System compiler to use with --emit-exe (default: clang, env: TINYLANG_COMPILER)",
+    )
     backend_group = parser.add_mutually_exclusive_group()
     backend_group.add_argument(
         "--python-backend",
@@ -868,6 +916,28 @@ def main(argv: Optional[List[str]] = None) -> int:
             Path(args.emit_python).write_text(generated, encoding="utf-8")
         return 0
 
+    if args.emit_llvm:
+        if not args.file:
+            parser.error("--emit-llvm requires a source file")
+        source_text = Path(args.file).read_text(encoding="utf-8")
+        llvm_ir = compile_to_llvm_ir(source_text)
+        if args.emit_llvm == "-":
+            print(llvm_ir)
+        else:
+            Path(args.emit_llvm).write_text(llvm_ir, encoding="utf-8")
+        return 0
+
+    if args.emit_exe:
+        if not args.file:
+            parser.error("--emit-exe requires a source file")
+        source_text = Path(args.file).read_text(encoding="utf-8")
+        try:
+            compile_to_executable(source_text, Path(args.emit_exe), compiler=args.compiler)
+        except RuntimeError as err:
+            print(str(err), file=sys.stderr)
+            return 1
+        return 0
+
     if not args.file:
         parser.error("the following arguments are required: file")  # Align with argparse behavior
 
@@ -897,10 +967,13 @@ if __name__ == "__main__":
 
 __all__ = [
     "compile_and_run",
+    "compile_to_executable",
+    "compile_to_llvm_ir",
     "compile_to_python_ast",
     "compile_to_python_source",
     "run_with_python_backend",
     "run_with_native_backend",
+    "run_with_python_bytecode_backend",
     "run_file",
     "main",
     "ModuleResolver",

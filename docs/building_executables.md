@@ -2,6 +2,25 @@
 
 This guide shows how to bundle the TinyLanguage interpreter into a standalone executable, with a Windows-focused PyInstaller recipe. The same approach works on macOS/Linux with minor flag adjustments.
 
+## Native executable via LLVM (experimental)
+
+If you want a true native binary compiled from TinyLanguage source (no Python interpreter bundled), use the LLVM prototype backend and a system compiler like `clang`. This is **experimental** and only supports the LLVM subset (numeric literals, assignments, basic arithmetic/comparisons, and `print`).
+
+```bash
+python src/tiny_language.py --emit-exe hello_native src_tiny/demo.tiny
+```
+
+To inspect the LLVM IR first:
+
+```bash
+python src/tiny_language.py --emit-llvm - src_tiny/demo.tiny
+```
+
+Notes:
+
+- Requires `clang` to be available on `PATH` (override with `--compiler` if needed).
+- User-defined functions, control flow, and heap types are **not** supported in this LLVM prototype yet.
+
 ## Prerequisites
 
 - Python 3.10+ with pip

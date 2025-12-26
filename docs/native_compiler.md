@@ -7,6 +7,7 @@ This draft outlines the target architecture for an alternative backend that exec
 - **Emit bytecode/IR from the existing AST**: We do not want to maintain a second parser pipeline. The generator should operate directly on the nodes from `tiny_language_ast.py`.
 - **Simple VM layer**: A compact, stack-based VM with jump/call instructions is sufficient for the first experiments. It must be deterministic and easy to test.
 - **Feature flag in the CLI**: The alternative path should sit alongside the interpreter and Python backend (`--native-backend`) so functional comparisons stay straightforward.
+- **Executable compiler path**: Emit LLVM IR from the native IR and feed it into a system compiler (`clang`) to produce a binary for supported constructs.
 
 ## High-level architecture
 
@@ -33,6 +34,8 @@ This draft outlines the target architecture for an alternative backend that exec
 - **CLI switch**: `python src/tiny_language.py --native-backend -e "print(1 + 2);"` runs a snippet without the AST interpreter.
 - **Alternative bytecode emission**: `python src/tiny_language.py --native-python-bytecode -e "print(1 + 2);"` builds the same native IR and compiles it to pure Python bytecode.
 - **File execution**: `python src/tiny_language.py --native-backend path/to/program.tiny` loads a program and uses the same codegen/VM path.
+- **Emit LLVM IR**: `python src/tiny_language.py --emit-llvm out.ll path/to/program.tiny` writes the LLVM IR for the native backend subset.
+- **Build executable**: `python src/tiny_language.py --emit-exe out path/to/program.tiny` compiles a native binary via `clang` (only the LLVM-prototype subset is supported).
 - **Regression tests**: `python -m pytest tests/test_native_codegen.py -q` compares interpreter and native-backend output and ensures unsupported constructs remain visible as `NotImplementedError`.
 
 ## Current CLI workflow and VM boundaries
@@ -41,6 +44,7 @@ This draft outlines the target architecture for an alternative backend that exec
 - **Limited language surface**: Heap operations, classes, pattern matching, or deques are not covered yet and deliberately raise `NotImplementedError`. Use the interpreter path for those features.
 - **Consistent invocation shapes**: Both the CLI (`src/tiny_language.py`) and `tiny_lang_cli` accept `--native-backend` before `-e` or the file path. The VM only works on files or inline snippets; the REPL and formatter remain interpreter-backed.
 - **Output comparison**: The VM buffers `print` output line by line; that keeps comparisons with the interpreter simple, but multi-delimiters or structured logs are not implemented yet.
+- **LLVM executable scope**: The LLVM backend is intentionally narrow (no user-defined functions or control flow). Expect `NotImplementedError` for anything outside straight-line numeric code and `print`.
 
 ## CLI workflow at a glance
 

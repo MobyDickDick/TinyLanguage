@@ -93,7 +93,7 @@ If no text appears, verify that you are running the command from the repository 
   - [x] **Parity test for unused `catch` bindings**: Added a comparison case so Python and Tiny linters report consistent errors.
 - [x] **Port the transpiler to Tiny**: Mirror `src/tiny_language_transpilers.py` in Tiny (Python/Julia/JS/C++ renderers) and run AST/IR round-trip tests.
 - [x] **Native backend port**: Provide Tiny variants of opcode IR, codegen, and VM (`src/native_ir.py`, `src/tiny_language_codegen_native.py`, `src/native_vm.py`) and run interpreter vs. VM smoke tests.
-- [ ] **CLI and LSP parity**: Deliver Tiny implementations of `tiny_language_cli.py`, `tiny_lang_cli.py`, `language_server.py`, and `language_server_cli.py`, including flag handling and LSP capabilities, plus end-to-end tests.
+- [x] **CLI and LSP parity**: Deliver Tiny implementations of `tiny_language_cli.py`, `tiny_lang_cli.py`, `language_server.py`, and `language_server_cli.py`, including flag handling and LSP capabilities, plus end-to-end tests.
 
 ## Offene Aufgaben (aus der letzten Diskussion)
 - [x] **Extend the LLVM emitter** (in progress): The experimental path in `tiny_language_codegen_llvm.py` should cover more native IR operations and remain selectable via CLI/API. Initial steps from this run: POP support and an extra test to lock in the behavior.

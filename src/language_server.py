@@ -9,7 +9,7 @@ lightweight Python interface.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from tiny_language import (
     BUILTINS,
@@ -219,4 +219,36 @@ def _diagnostic_range(err: TinyLangError, source: str) -> Tuple[int, int, int, i
     return (line, col, line, col + 1)
 
 
-__all__ = ["TinyLanguageServer", "HoverResult", "CompletionItem", "Diagnostic"]
+def completions_for_source(source: str, prefix: str = "") -> List[Dict[str, Any]]:
+    """Return completion dicts for ``source`` filtered by ``prefix``."""
+    server = TinyLanguageServer(source)
+    return [{"label": item.label, "kind": item.kind} for item in server.completions(prefix)]
+
+
+def hover_for_source(source: str, symbol: str) -> Dict[str, Any]:
+    """Return hover details for ``symbol`` in ``source`` as a JSON-friendly dict."""
+    server = TinyLanguageServer(source)
+    result = server.hover(symbol)
+    if result is None:
+        return {}
+    return {"symbol": result.symbol, "detail": result.detail, "position": list(result.position)}
+
+
+def diagnostics_for_source(source: str) -> List[Dict[str, Any]]:
+    """Return diagnostics for ``source`` as JSON-friendly dicts."""
+    server = TinyLanguageServer(source)
+    return [
+        {"message": diag.message, "code": diag.code, "range": list(diag.range)}
+        for diag in server.diagnostics()
+    ]
+
+
+__all__ = [
+    "TinyLanguageServer",
+    "HoverResult",
+    "CompletionItem",
+    "Diagnostic",
+    "completions_for_source",
+    "hover_for_source",
+    "diagnostics_for_source",
+]

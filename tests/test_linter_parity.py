@@ -104,7 +104,7 @@ def run_tiny_linter(source: str) -> str | None:
         pytest.param("define unused = 1;", id="unused_local_top_level"),
         pytest.param("fn f(a, b) { return a; }", id="unused_parameter"),
         pytest.param("fn returns(): number { return 1; }\nreturns();", id="bare_call_result"),
-        pytest.param("define x = 1; if (true) { print(x); } else { }", id="unused_on_some_paths"),
+        pytest.param("define x = 1; if (false) { print(x); }", id="unused_in_unreachable_branch"),
     ],
 )
 def test_python_and_tiny_linter_outputs_match(source: str):

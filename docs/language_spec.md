@@ -94,3 +94,124 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 - **Interpreter:** `python tiny_language.py <file.tiny>` executes a source file. Modules are resolved relative to the caller, `TINYPATH`, and the project root.
 - **CLI demos:** Example programs live in `src_tiny/`; they cover classes, pattern matching, operators, concurrency, and Python interop.
 - **Language server:** `python tiny_language_server.py --stdio` starts the LSP; a reference for available methods is in [`docs/language_server_workflows.md`](language_server_workflows.md).
+
+## Grammar (BNF/EBNF)
+
+This grammar is derived from the current lexer/parser implementation and mirrors the statement and expression split in `tiny_language_parser.py`.
+
+```ebnf
+program         ::= stmt* EOF ;
+
+stmt            ::= "define" NAME "=" expr ";"
+                  | "print" "(" [expr ("," expr)*] ")" ";"
+                  | "flush" "(" ")" ";"
+                  | "if" "(" expr ")" block ["else" block]
+                  | "while" "(" expr ")" block
+                  | "try" block "catch" ["(" NAME ")"] NAME? block
+                  | "import" module_path ["as" NAME] ";"
+                  | "namespace" qualified_name block
+                  | ("async" "fn" | "fn") NAME param_list ["-" ">" type_annotation] block
+                  | "return" expr ";"
+                  | "type" NAME [ "=" ("product" | "sum") ] type_body
+                  | "class" NAME [ ":" NAME ("," NAME)* ] class_body
+                  | "operator" OP "(" NAME ":" NAME "," NAME ":" NAME ")" "-" ">" NAME block
+                  | "{" destruct_names "}" "=" expr ";"
+                  | NAME stmt_suffix
+                  ;
+
+stmt_suffix     ::= "." NAME_or_kw ("=" expr ";" | arg_list ";")
+                  | "=" expr ";"
+                  | arg_list ";"
+                  ;
+
+block           ::= "{" stmt* "}" ;
+
+param_list      ::= "(" [param ("," param)*] ")" ;
+param           ::= NAME [":" type_annotation] ;
+
+type_annotation ::= NAME_or_kw ["?"] ;
+
+expr            ::= logic_or ;
+logic_or        ::= logic_and (("or" | "||") logic_and)* ;
+logic_and       ::= compare (("and" | "&&") compare)* ;
+compare         ::= term ((">" | ">=" | "<" | "<=" | "==" | "!=") term)* ;
+term            ::= factor (("+" | "-") factor)* ;
+factor          ::= power (("*" | "/" | "%") power)* ;
+power           ::= unary ["^" power] ;
+unary           ::= "-" unary
+                  | ("not" | "!") unary
+                  | postfix ;
+
+postfix         ::= primary ( "." NAME_or_kw [arg_list]? )* ;
+
+primary         ::= "(" expr ")"
+                  | "await" expr
+                  | "match" match_expr
+                  | NUMBER
+                  | STRING
+                  | "true" | "false"
+                  | "Null"
+                  | NAME_or_kw primary_suffix
+                  | obj_lit
+                  ;
+
+primary_suffix  ::= arg_list
+                  | ("new" "[" [expr ("," expr)*] "]")
+                  | ("new" NAME "{" class_init_fields "}")
+                  | variant_ctor
+                  | /* empty -> Var */
+                  ;
+
+arg_list        ::= "(" [expr ("," expr)*] ")" ;
+
+obj_lit         ::= "{" obj_fields "}" ;
+obj_fields      ::= [field_init ((","|";") field_init)*] ;
+field_init      ::= field_name ":" expr ;
+
+field_name      ::= NAME ["." NAME] ;
+
+destruct_names  ::= NAME ("," NAME)* ;
+
+match_expr      ::= expr "{" match_case* "}" ;
+match_case      ::= "case" pattern (":" | "=>") expr ";" ;
+
+pattern         ::= "_" 
+                  | NAME pattern_bindings? ;
+
+pattern_bindings::= "{" pattern_fields "}"
+                  | "(" pattern_args ")"
+                  ;
+
+pattern_fields  ::= pattern_field ((","|";") pattern_field)* ;
+pattern_field   ::= NAME [":" (NAME_or_kw | "_")] ;
+
+pattern_args    ::= (NAME_or_kw | "_") ((","|";") (NAME_or_kw | "_"))* ;
+
+variant_ctor    ::= "{" variant_init_fields "}" ;
+variant_init_fields ::= field_init ((","|";") field_init)* ;
+
+module_path     ::= ("."*) NAME ("." NAME)* ;
+qualified_name  ::= NAME ("." NAME)* ;
+
+class_body      ::= "{" class_member* "}" ;
+class_member    ::= ("async" "fn" | "fn") NAME_or_kw param_list ["-" ">" type_annotation] block
+                  | NAME ":" NAME ";" ;
+
+type_body       ::= "{" type_variant_list "}" ;
+type_variant_list ::= variant_def (";" variant_def)* ";"?
+                   | field_def (";" field_def)* ";"? ;
+
+variant_def     ::= NAME variant_fields ;
+variant_fields  ::= ("{" variant_field_list "}" | "(" variant_field_list ")")? ;
+variant_field_list ::= field_def ((","|";") field_def)* ;
+
+field_def       ::= NAME ":" NAME_or_kw ;
+
+NAME_or_kw      ::= NAME | KW ;
+```
+
+## Next steps (documentation tasks)
+
+- [ ] Add a dedicated grammar test suite that parses the EBNF samples above and ensures parser parity with `tiny_language_parser.py`.
+- [ ] Document reserved keywords vs. identifiers with examples for `NAME_or_kw` usage (e.g., method names that are keywords).
+- [ ] Expand the grammar section with a concise lexer/token table (operators, symbols, literal forms) and link to the lexer source.

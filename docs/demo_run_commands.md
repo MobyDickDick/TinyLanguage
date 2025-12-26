@@ -13,6 +13,9 @@ python src/tiny_language.py src_tiny/namespace_demo.tiny
 python src/tiny_language.py src_tiny/match_demo.tiny
 python src/tiny_language.py src_tiny/operator_overloading_demo.tiny
 python src/tiny_language.py src_tiny/heap_pointer_demo.tiny
+python src/tiny_language.py src_tiny/try_catch_demo.tiny
+python src/tiny_language.py src_tiny/copy_rosetta_samples.tiny
+python src/tiny_language.py src_tiny/transpile_rosetta.tiny
 python src/tiny_language.py src_tiny/stdlib_io_random_demo.tiny
 python src/tiny_language.py src_tiny/stdlib_collections_demo.tiny
 ```
@@ -31,6 +34,7 @@ python src/tiny_language.py src_tiny/parallel_map.tiny
 PYTHONPATH=src python src/tiny_language.py src_tiny/python_math_demo.tiny
 PYTHONPATH=src python src/tiny_language.py src_tiny/python_json_demo.tiny
 PYTHONPATH=src python src/tiny_language.py src_tiny/python_namespace_typed_demo.tiny
+PYTHONPATH=src python src/tiny_language.py src_tiny/python_proxy_pipeline_demo.tiny
 ```
 
 ## Native backend for comparison

@@ -99,6 +99,7 @@ If no text appears, verify that you are running the command from the repository 
 - [x] **Extend the LLVM emitter** (in progress): The experimental path in `tiny_language_codegen_llvm.py` should cover more native IR operations and remain selectable via CLI/API. Initial steps from this run: POP support and an extra test to lock in the behavior.
 - [x] **Python bridge for feature pass-through**: A TinyLanguage module and Python helpers should simplify the FFI (imports/calls/allowlists/timeouts) and wrap bidirectional calls. Demos and tests would cover common datatype mappings and sandbox boundaries.
 - [x] **Rosetta sync for local paths**: The script `examples/rosetta/copy_rosetta_samples.py` now offers configurable paths/filters/delays, a dry-run flag, and can trigger the transpiler directly.
+- [x] **CLI copy-on-call env regression**: Added a CLI regression test to ensure `TINYLANG_COPY_ON_CALL` defaults are honored when running inline source.
 
 ### Neu priorisierte Aufgaben
 1. **Refine the LLVM emitter** ✅: Implement comparison and modulo operations in `tiny_language_codegen_llvm.py`, keep the `--emit-llvm` CLI option functional, and add regression tests that cover the expanded IR path.

@@ -9,9 +9,12 @@ to keep a small, ergonomic surface area.
 # ----- Public API -----
 
 import ast
+import json
 import os
 import sys
-from typing import List, Optional
+from functools import lru_cache
+from pathlib import Path
+from typing import Callable, List, Optional
 
 from native_vm import NativeVM
 from native_python_bytecode import run_program_via_python_bytecode
@@ -24,7 +27,438 @@ def _copy_on_call_default() -> bool:
     return env_flag in {"1", "true", "yes", "on"}
 
 
-def _parse_and_lint(src: str) -> List["IR"]:
+def _use_tiny_parser(preferred: Optional[bool] = None) -> bool:
+    if preferred is not None:
+        return preferred
+    env_flag = os.environ.get("TINYLANG_USE_TINY_PARSER", "").strip().lower()
+    return env_flag in {"1", "true", "yes", "on"}
+
+
+def _find_repo_root(start: Path) -> Path:
+    for parent in [start] + list(start.parents):
+        if (parent / "src_tiny").is_dir():
+            return parent
+    raise FileNotFoundError("unable to locate src_tiny directory for TinyLanguage parser bootstrap")
+
+
+@lru_cache(maxsize=1)
+def _tiny_parser_bootstrap_source() -> str:
+    root = _find_repo_root(Path(__file__).resolve())
+    tiny_root = root / "src_tiny"
+    ast_src = (tiny_root / "tiny_language_ast.tiny").read_text(encoding="utf-8")
+    lexer_src = (tiny_root / "tiny_language_lexer.tiny").read_text(encoding="utf-8")
+    parser_src = (tiny_root / "tiny_language_parser.tiny").read_text(encoding="utf-8")
+    return "\n\n".join([ast_src, lexer_src, parser_src])
+
+
+def _tiny_heap_value(runtime: "Runtime", value: object) -> object:
+    if isinstance(value, int) and value in runtime.heap:
+        return runtime.heap[value]
+    return value
+
+
+def _tiny_get_field(runtime: "Runtime", obj: object, name: str) -> object:
+    if isinstance(obj, dict):
+        fields = obj.get("__fields__")
+        if isinstance(fields, dict):
+            for field_map in fields.values():
+                if name in field_map:
+                    return field_map[name]
+        if name in obj:
+            return obj[name]
+    return None
+
+
+def _tiny_to_pos(runtime: "Runtime", value: object) -> SourcePos:
+    if isinstance(value, SourcePos):
+        return value
+    if isinstance(value, dict) and value.get("__tag__") == "SourcePos":
+        line = _tiny_get_field(runtime, value, "line")
+        column = _tiny_get_field(runtime, value, "column")
+        return SourcePos(int(line or 1), int(column or 1))
+    return SourcePos.origin()
+
+
+def _tiny_to_span(runtime: "Runtime", value: object) -> Optional[SourceSpan]:
+    if value is None:
+        return None
+    if isinstance(value, SourceSpan):
+        return value
+    if isinstance(value, dict) and value.get("__tag__") == "SourceSpan":
+        start = _tiny_to_pos(runtime, _tiny_get_field(runtime, value, "start"))
+        stop = _tiny_to_pos(runtime, _tiny_get_field(runtime, value, "stop"))
+        return SourceSpan(start, stop)
+    return None
+
+
+def _tiny_to_list(runtime: "Runtime", value: object) -> List[object]:
+    if value is None:
+        return []
+    resolved = _tiny_heap_value(runtime, value)
+    if isinstance(resolved, list):
+        return list(resolved)
+    if isinstance(resolved, tuple):
+        return list(resolved)
+    return []
+
+
+def _tiny_to_set(runtime: "Runtime", value: object) -> set:
+    if value is None:
+        return set()
+    resolved = _tiny_heap_value(runtime, value)
+    if isinstance(resolved, set):
+        return set(resolved)
+    if isinstance(resolved, list):
+        return set(resolved)
+    return set()
+
+
+def _tiny_to_dict(runtime: "Runtime", value: object) -> dict:
+    if value is None:
+        return {}
+    resolved = _tiny_heap_value(runtime, value)
+    if isinstance(resolved, dict):
+        return dict(resolved)
+    return {}
+
+
+def _tiny_to_pairs(runtime: "Runtime", value: object, value_converter: Callable[[object], object]) -> List[tuple]:
+    pairs = []
+    for entry in _tiny_to_list(runtime, value):
+        resolved = _tiny_heap_value(runtime, entry)
+        if isinstance(resolved, list) and len(resolved) == 2:
+            pairs.append((resolved[0], value_converter(resolved[1])))
+    return pairs
+
+
+def _tiny_to_python_ast(runtime: "Runtime", node: object) -> object:
+    if isinstance(node, IR):
+        return node
+    if not isinstance(node, dict) or "__tag__" not in node:
+        return node
+
+    tag = node["__tag__"]
+    span = _tiny_to_span(runtime, _tiny_get_field(runtime, node, "span"))
+
+    def apply_span(obj: IR) -> IR:
+        if span is not None:
+            obj.span = span
+        return obj
+
+    if tag == "Let":
+        name = _tiny_get_field(runtime, node, "name")
+        expr = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "expr"))
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        name_span = _tiny_to_span(runtime, _tiny_get_field(runtime, node, "name_span"))
+        return apply_span(Let(name, expr, pos=pos, name_span=name_span))
+    if tag == "Assign":
+        name = _tiny_get_field(runtime, node, "name")
+        expr = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "expr"))
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        name_span = _tiny_to_span(runtime, _tiny_get_field(runtime, node, "name_span"))
+        return apply_span(Assign(name, expr, pos=pos, name_span=name_span))
+    if tag == "FieldAssign":
+        obj = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "obj"))
+        name = _tiny_get_field(runtime, node, "name")
+        expr = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "expr"))
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(FieldAssign(obj, name, expr, pos=pos))
+    if tag == "Print":
+        exprs = [_tiny_to_python_ast(runtime, item) for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "exprs"))]
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(Print(exprs, pos=pos))
+    if tag == "Flush":
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(Flush(pos=pos))
+    if tag == "If":
+        cond = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "cond"))
+        then = [_tiny_to_python_ast(runtime, item) for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "then"))]
+        els = [_tiny_to_python_ast(runtime, item) for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "els"))]
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(If(cond, then, els, pos=pos))
+    if tag == "While":
+        cond = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "cond"))
+        body = [_tiny_to_python_ast(runtime, item) for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "body"))]
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(While(cond, body, pos=pos))
+    if tag == "TryCatch":
+        body = [_tiny_to_python_ast(runtime, item) for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "body"))]
+        handler = [
+            _tiny_to_python_ast(runtime, item)
+            for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "handler"))
+        ]
+        err_name = _tiny_get_field(runtime, node, "err_name")
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(TryCatch(body, err_name, handler, pos=pos))
+    if tag == "Param":
+        name = _tiny_get_field(runtime, node, "name")
+        type_hint = _tiny_get_field(runtime, node, "type_hint")
+        return Param(name, type_hint or None)
+    if tag == "Fn":
+        name = _tiny_get_field(runtime, node, "name")
+        params = [
+            _tiny_to_python_ast(runtime, item)
+            for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "params"))
+        ]
+        body = [_tiny_to_python_ast(runtime, item) for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "body"))]
+        return_params = _tiny_to_set(runtime, _tiny_get_field(runtime, node, "return_param_names"))
+        namespace = _tiny_get_field(runtime, node, "namespace_name") or None
+        return_type = _tiny_get_field(runtime, node, "return_type") or None
+        inferred_return_type = _tiny_get_field(runtime, node, "inferred_return_type") or None
+        is_async = bool(_tiny_get_field(runtime, node, "is_async"))
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(
+            Fn(
+                name,
+                params,
+                body,
+                return_param_names=set(return_params),
+                namespace=namespace,
+                return_type=return_type,
+                inferred_return_type=inferred_return_type,
+                is_async=is_async,
+                pos=pos,
+            )
+        )
+    if tag == "MethodDef":
+        class_name = _tiny_get_field(runtime, node, "class_name")
+        name = _tiny_get_field(runtime, node, "name")
+        params = [
+            _tiny_to_python_ast(runtime, item)
+            for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "params"))
+        ]
+        body = [_tiny_to_python_ast(runtime, item) for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "body"))]
+        return_params = _tiny_to_set(runtime, _tiny_get_field(runtime, node, "return_param_names"))
+        return_type = _tiny_get_field(runtime, node, "return_type") or None
+        inferred_return_type = _tiny_get_field(runtime, node, "inferred_return_type") or None
+        namespace = _tiny_get_field(runtime, node, "namespace_name") or None
+        is_async = bool(_tiny_get_field(runtime, node, "is_async"))
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(
+            MethodDef(
+                class_name,
+                name,
+                params,
+                body,
+                return_param_names=set(return_params),
+                return_type=return_type,
+                inferred_return_type=inferred_return_type,
+                namespace=namespace,
+                is_async=is_async,
+                pos=pos,
+            )
+        )
+    if tag == "Namespace":
+        name = _tiny_get_field(runtime, node, "name")
+        body = [_tiny_to_python_ast(runtime, item) for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "body"))]
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(Namespace(name, body, pos=pos))
+    if tag == "Return":
+        expr = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "expr"))
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(Return(expr, pos=pos))
+    if tag == "Import":
+        module = _tiny_get_field(runtime, node, "module")
+        alias = _tiny_get_field(runtime, node, "alias") or None
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        module_span = _tiny_to_span(runtime, _tiny_get_field(runtime, node, "module_span"))
+        binding_span = _tiny_to_span(runtime, _tiny_get_field(runtime, node, "binding_span"))
+        return apply_span(
+            Import(module, alias, pos=pos, module_span=module_span, binding_span=binding_span)
+        )
+    if tag == "CallStmt":
+        name = _tiny_get_field(runtime, node, "name")
+        args = [
+            _tiny_to_python_ast(runtime, item)
+            for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "args"))
+        ]
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(CallStmt(name, args, pos=pos))
+    if tag == "OpDef":
+        op = _tiny_get_field(runtime, node, "op")
+        a_name = _tiny_get_field(runtime, node, "a_name")
+        a_type = _tiny_get_field(runtime, node, "a_type")
+        b_name = _tiny_get_field(runtime, node, "b_name")
+        b_type = _tiny_get_field(runtime, node, "b_type")
+        body = [_tiny_to_python_ast(runtime, item) for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "body"))]
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(OpDef(op, a_name, a_type, b_name, b_type, body, pos=pos))
+    if tag == "DestructAssign":
+        names = [item for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "names"))]
+        expr = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "expr"))
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        name_spans = [
+            _tiny_to_span(runtime, item) for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "name_spans"))
+        ]
+        return apply_span(DestructAssign(names, expr, pos=pos, name_spans=[ns for ns in name_spans if ns is not None]))
+    if tag == "TypeVariant":
+        name = _tiny_get_field(runtime, node, "name")
+        fields = _tiny_to_pairs(runtime, _tiny_get_field(runtime, node, "fields"), lambda v: v)
+        return TypeVariant(name, fields)
+    if tag == "TypeDef":
+        name = _tiny_get_field(runtime, node, "name")
+        fields_value = _tiny_get_field(runtime, node, "fields")
+        variants_value = _tiny_get_field(runtime, node, "variants")
+        fields = (
+            _tiny_to_pairs(runtime, fields_value, lambda v: v)
+            if fields_value is not None
+            else None
+        )
+        variants = (
+            [
+                _tiny_to_python_ast(runtime, item)
+                for item in _tiny_to_list(runtime, variants_value)
+            ]
+            if variants_value is not None
+            else None
+        )
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(TypeDef(name, fields=fields, variants=variants, pos=pos))
+    if tag == "ClassDef":
+        name = _tiny_get_field(runtime, node, "name")
+        fields = _tiny_to_pairs(runtime, _tiny_get_field(runtime, node, "fields"), lambda v: v)
+        methods = [
+            _tiny_to_python_ast(runtime, item)
+            for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "methods"))
+        ]
+        bases = [item for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "bases"))]
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(ClassDef(name, fields, methods, bases, pos=pos))
+    if tag == "Num":
+        txt = _tiny_get_field(runtime, node, "txt")
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(Num(txt, pos=pos))
+    if tag == "Str":
+        txt = _tiny_get_field(runtime, node, "txt")
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(Str(txt, pos=pos))
+    if tag == "Bool":
+        value = bool(_tiny_get_field(runtime, node, "value"))
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(Bool(value, pos=pos))
+    if tag == "NullLit":
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(Null(pos=pos))
+    if tag == "Var":
+        name = _tiny_get_field(runtime, node, "name")
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(Var(name, pos=pos))
+    if tag == "Call":
+        name = _tiny_get_field(runtime, node, "name")
+        args = [
+            _tiny_to_python_ast(runtime, item)
+            for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "args"))
+        ]
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(Call(name, args, pos=pos))
+    if tag == "Spawn":
+        name = _tiny_get_field(runtime, node, "name")
+        args = [
+            _tiny_to_python_ast(runtime, item)
+            for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "args"))
+        ]
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(Spawn(name, args, pos=pos))
+    if tag == "Await":
+        expr = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "expr"))
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(Await(expr, pos=pos))
+    if tag == "New":
+        size = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "size"))
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(New(size, pos=pos))
+    if tag == "NewLit":
+        items = [
+            _tiny_to_python_ast(runtime, item)
+            for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "items"))
+        ]
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(NewLit(items, pos=pos))
+    if tag == "Bin":
+        op = _tiny_get_field(runtime, node, "op")
+        a = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "a"))
+        b = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "b"))
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(Bin(op, a, b, pos=pos))
+    if tag == "ObjLit":
+        fields = _tiny_to_pairs(runtime, _tiny_get_field(runtime, node, "fields"), lambda v: _tiny_to_python_ast(runtime, v))
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(ObjLit(fields, pos=pos))
+    if tag == "Field":
+        obj = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "obj"))
+        name = _tiny_get_field(runtime, node, "name")
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(Field(obj, name, pos=pos))
+    if tag == "MethodCall":
+        obj = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "obj"))
+        name = _tiny_get_field(runtime, node, "name")
+        args = [
+            _tiny_to_python_ast(runtime, item)
+            for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "args"))
+        ]
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(MethodCall(obj, name, args, pos=pos))
+    if tag == "ClassNew":
+        name = _tiny_get_field(runtime, node, "name")
+        init = _tiny_to_pairs(runtime, _tiny_get_field(runtime, node, "init"), lambda v: _tiny_to_python_ast(runtime, v))
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(ClassNew(name, init, pos=pos))
+    if tag == "MatchCase":
+        pattern = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "pattern"))
+        body = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "body"))
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(MatchCase(pattern, body, pos=pos))
+    if tag == "VariantPattern":
+        variant = _tiny_get_field(runtime, node, "variant")
+        bindings = _tiny_to_dict(runtime, _tiny_get_field(runtime, node, "bindings"))
+        positional = _tiny_get_field(runtime, node, "positional_bindings")
+        positional_bindings = (
+            [item for item in _tiny_to_list(runtime, positional)] if positional is not None else None
+        )
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(VariantPattern(variant, bindings, positional_bindings, pos=pos))
+    if tag == "WildcardPattern":
+        name = _tiny_get_field(runtime, node, "name") or None
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(WildcardPattern(name, pos=pos))
+    if tag == "Match":
+        expr = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "expr"))
+        cases = [
+            _tiny_to_python_ast(runtime, item)
+            for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "cases"))
+        ]
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(Match(expr, cases, pos=pos))
+    if tag == "VariantCtor":
+        variant = _tiny_get_field(runtime, node, "variant")
+        fields = _tiny_to_pairs(runtime, _tiny_get_field(runtime, node, "fields"), lambda v: _tiny_to_python_ast(runtime, v))
+        type_name = _tiny_get_field(runtime, node, "type_name") or None
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(VariantCtor(variant, fields, type_name=type_name, pos=pos))
+    return node
+
+
+def _parse_with_tiny_parser(src: str) -> List["IR"]:
+    program = _tiny_parser_bootstrap_source()
+    program = f"{program}\n\ndefine __tiny_ast = parse_program({json.dumps(src)});\n"
+    parser = Parser(Lexer(program), program)
+    stmts = parser.parse()
+    runtime = Runtime(program)
+    runtime.stream_output = False
+    runtime._check_assignment_type = lambda *args, **kwargs: None  # type: ignore[assignment]
+    env = Environment(parent=None, namespace=None, runtime=runtime)
+    runtime.global_env = env
+    register_stdlib(runtime, env, NamespaceRef)
+    for stmt in stmts:
+        runtime.eval_stmt(stmt, env)
+    tiny_ast = env.get("__tiny_ast")
+    return [
+        _tiny_to_python_ast(runtime, stmt)
+        for stmt in _tiny_to_list(runtime, tiny_ast)
+    ]
+
+
+def _parse_and_lint(src: str, *, use_tiny_parser: Optional[bool] = None) -> List["IR"]:
     """Return a parsed program after running all linter passes.
 
     The helper centralizes parser creation and the sequence of lints so every entry
@@ -32,8 +466,11 @@ def _parse_and_lint(src: str) -> List["IR"]:
     rules. It keeps the order aligned with the standalone linter for predictable
     diagnostics.
     """
-    parser = Parser(Lexer(src), src)
-    stmts = parser.parse()
+    if _use_tiny_parser(use_tiny_parser):
+        stmts = _parse_with_tiny_parser(src)
+    else:
+        parser = Parser(Lexer(src), src)
+        stmts = parser.parse()
 
     lint_import_style(stmts, src)
     lint_destruct_call_outputs(stmts, src)

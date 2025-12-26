@@ -212,6 +212,6 @@ NAME_or_kw      ::= NAME | KW ;
 
 ## Next steps (documentation tasks)
 
-- [ ] Add a dedicated grammar test suite that parses the EBNF samples above and ensures parser parity with `tiny_language_parser.py`.
+- [x] Add a dedicated grammar test suite that parses the EBNF samples above and ensures parser parity with `tiny_language_parser.py`.
 - [ ] Document reserved keywords vs. identifiers with examples for `NAME_or_kw` usage (e.g., method names that are keywords).
 - [ ] Expand the grammar section with a concise lexer/token table (operators, symbols, literal forms) and link to the lexer source.

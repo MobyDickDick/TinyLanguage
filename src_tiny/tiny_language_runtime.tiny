@@ -1,0 +1,32 @@
+// TinyLanguage wrapper for src/tiny_language_runtime.py.
+// Delegates Runtime helpers to the stitched Python module for parity.
+
+define __PY_ALLOW = new[
+    "Runtime",
+    "ModuleResolver",
+    "Debugger",
+    "NamespaceRef",
+    "ReturnSignal",
+    "TinyLangError",
+    "format_error",
+    "register_stdlib",
+    "SourcePos",
+    "SourceSpan",
+    "DebugSnapshot",
+    "StepRequest"
+];
+
+define __PY = Python.import_module("tiny_language", __PY_ALLOW);
+
+define Runtime = __PY.Runtime;
+define ModuleResolver = __PY.ModuleResolver;
+define Debugger = __PY.Debugger;
+define NamespaceRef = __PY.NamespaceRef;
+define ReturnSignal = __PY.ReturnSignal;
+define TinyLangError = __PY.TinyLangError;
+define format_error = __PY.format_error;
+define register_stdlib = __PY.register_stdlib;
+define SourcePos = __PY.SourcePos;
+define SourceSpan = __PY.SourceSpan;
+define DebugSnapshot = __PY.DebugSnapshot;
+define StepRequest = __PY.StepRequest;

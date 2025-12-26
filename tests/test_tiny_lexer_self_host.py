@@ -64,3 +64,49 @@ while (i < len(tokens)) {{
     assert lines[4] == "pos NUMBER 10 1 13 1 14"
     assert lines[7] == "pos KW print 1 19 1 23"
     assert lines[-1].startswith("pos EOF")  # EOF should come last
+
+
+def test_tiny_lexer_handles_ops_and_escaped_strings():
+    source_literal = json.dumps(
+        'if (a == b && c != d || e >= f && g <= h) { print("slash: \\\\"); }'
+    )
+    body = f"""
+define tokens = lex({source_literal});
+define i = 0;
+while (i < len(tokens)) {{
+    define tok = heap_get(tokens, i);
+    print(tok.kind + ":" + tok.text);
+    i = i + 1;
+}}
+"""
+
+    output = _run_lexer_program(body).strip().splitlines()
+
+    assert output == [
+        "KW:if",
+        "SYM:(",
+        "NAME:a",
+        "OP:==",
+        "NAME:b",
+        "OP:&&",
+        "NAME:c",
+        "OP:!=",
+        "NAME:d",
+        "OP:||",
+        "NAME:e",
+        "OP:>=",
+        "NAME:f",
+        "OP:&&",
+        "NAME:g",
+        "OP:<=",
+        "NAME:h",
+        "SYM:)",
+        "SYM:{",
+        "KW:print",
+        "SYM:(",
+        "STRING:slash: \\",
+        "SYM:)",
+        "SYM:;",
+        "SYM:}",
+        "EOF:",
+    ]

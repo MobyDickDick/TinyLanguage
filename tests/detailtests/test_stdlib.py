@@ -52,6 +52,22 @@ def test_collections_pop_errors_on_empty(run_tiny_source):
         )
 
 
+def test_tl_stdlib_math_module_import(run_tiny_source):
+    out = run_tiny_source(
+        """
+        import stdlib.math;
+        print(math.round_digits(math.pi, 3));
+        print(math.round_digits(math.tau, 2));
+        print(math.round_digits(math.e, 3));
+        print(math.sqrt(9));
+        print(math.clamp(12, 0, 10));
+        print(math.sign(-5));
+        """,
+    )
+
+    assert out == "3.142\n6.28\n2.718\n3\n10\n-1\n"
+
+
 def test_string_repeat_validates_count(run_tiny_source):
     with pytest.raises(Exception, match=r"repeat count must be non-negative"):
         run_tiny_source('print(String.repeat("x", -1));')

@@ -535,7 +535,7 @@ The native compiler is developed in its own branch (`nativeCompiler`).
 
 ### 6. Codegen / interop
 
-- [ ] **Tiny → C → LLVM pipeline**
+- [x] **Tiny → C → LLVM pipeline**
   - Add a CLI flag that emits LLVM IR by translating TinyLanguage to C and invoking clang.
   - Include a small regression test that validates the emitted `.ll` output exists.
 - [ ] **Python library imports**
@@ -543,6 +543,11 @@ The native compiler is developed in its own branch (`nativeCompiler`).
   - Add examples/tests demonstrating Python library usage.
 - [ ] **Backend feature matrix**
   - Document which language features are supported by the interpreter, C backend, and LLVM backend.
+
+### 7. Debugging / IDEs
+
+- [ ] **LLVM-first debugging in VS Code**
+  - Extend the VS Code workflow so that LLVM-native executables can be debugged directly when the LLVM pipeline is used.
 
 - [x] Define a custom native IR (stack- or register-based). See [`docs/native_ir.md`](docs/native_ir.md) for opcode overview and examples.
 - [x] Small VM that executes this IR (interpreter in Python or as a separate module).

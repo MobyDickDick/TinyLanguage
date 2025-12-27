@@ -177,6 +177,9 @@ class ModuleResolver:
         env_paths = os.environ.get("TINYPATH", "")
         configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
         default_roots = [Path.cwd(), Path(__file__).parent]
+        stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
+        if stdlib_root.exists():
+            default_roots.append(stdlib_root)
         self.search_paths: List[Path] = search_paths or configured_paths + default_roots
         self.cache: Dict[Path, NamespaceRef] = {}
         self._in_progress: List[Path] = []

@@ -1,0 +1,50 @@
+// TinyLanguage stdlib: math module (Python-style subset)
+
+define pi = 3.141592653589793;
+define tau = 6.283185307179586;
+define e = 2.718281828459045;
+define _ = pi + tau + e;
+
+fn fabs(x) {
+  return Math.abs(x);
+}
+
+fn sqrt(x) {
+  return Math.sqrt(x);
+}
+
+fn pow(x, y) {
+  return Math.pow(x, y);
+}
+
+fn floor(x) {
+  return Math.floor(x);
+}
+
+fn ceil(x) {
+  return Math.ceil(x);
+}
+
+fn round(x) {
+  return Math.round(x);
+}
+
+fn round_digits(x, digits) {
+  return Math.round(x, digits);
+}
+
+fn clamp(value, lower, upper) {
+  return Math.clamp(value, lower, upper);
+}
+
+fn sign(x) {
+  return Math.sign(x);
+}
+
+fn max(a, b) {
+  return Math.max(a, b);
+}
+
+fn min(a, b) {
+  return Math.min(a, b);
+}

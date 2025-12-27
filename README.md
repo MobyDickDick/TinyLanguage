@@ -15,6 +15,9 @@ For interoperability guidance, see the cross-language compatibility notes in [`d
 ## Intended use
 TinyLanguage is a learning- and transpiler-focused playground rather than a production-ready toolchain. It exists to showcase syntax ideas, cross-language IR conversions, and runtime experiments (e.g., gradual typing and structured cancellation). The runnable demos and tests (`python run_all.py` or `python -m pytest`) are best treated as teaching materials for language design or interoperability, not as a polished SDK.
 
+## Testing notes
+- Direct test coverage is missing for `src/tiny_language_preamble.py` (no dedicated test references it today).
+
 ## Transpiler roadmap (task list)
 - [x] **Expand the shared IR**: Add new statement/expression types (e.g., control-flow nodes like `IfElse` and `While`) and update the helpers in [`tiny_language_transpilers.py`](tiny_language_transpilers.py) so future language extensions can build on them.
 - [x] **Update language transpilers**: Bring the parsers/renderers for `PythonTranspiler`, `JuliaTranspiler`, `JavaScriptTranspiler`, and `CppTranspiler` up to date so the new IR nodes round-trip correctly.
@@ -100,9 +103,9 @@ Minimal end-to-end examples (Hello World and a function return) live under `exam
 ## Backlog: next possible tasks
 - [x] **Prototype an LLVM backend**: Explore emitting LLVM IR (e.g., via `llvmlite`) for constants, variables, and arithmetic, with a CLI switch like `--emit-llvm` to generate IR or invoke `llc`/`clang`.
   - **Nächste Schritte**
-    - [ ] Control-Flow (`if`/`while`) im LLVM-Emitter abbilden; aktuell nur straight-line code.
-    - [ ] Funktionen und Calls unterstützen; bis dahin explizite `NotImplementedError` belassen.
-    - [ ] Heap/Strings abdecken (mindestens `print` mit Strings, einfache Heap-Reads/Writes).
+    - [x] Control-Flow (`if`/`while`) im LLVM-Emitter abbilden; aktuell nur straight-line code.
+    - [x] Funktionen und Calls unterstützen; bis dahin explizite `NotImplementedError` belassen.
+    - [x] Heap/Strings abdecken (mindestens `print` mit Strings, einfache Heap-Reads/Writes).
     - [ ] Fehlerberichte verbessern (klarer Hinweis auf nicht unterstützte AST-Knoten/IR-OpCodes).
 - [x] **Port project modules to TinyLanguage (self-hosting)**: Inventory interpreter/compiler modules, design Tiny-compatible library primitives, and port core components while keeping parallel Python/Tiny tests. See [`docs/self_hosting_port_plan.md`](docs/self_hosting_port_plan.md) for the current module inventory and migration plan.
 - [x] **Import and transpile Rosetta Code samples**: Store selected Rosetta Code tasks (FizzBuzz, Fibonacci, sorting, etc.) under `examples/rosetta/`, then build a translation pass that converts the Python versions into TinyLanguage variants with snapshot tests.
@@ -124,9 +127,9 @@ Minimal end-to-end examples (Hello World and a function return) live under `exam
 ## Open tasks
 - [x] **Extend the LLVM emitter** (in progress): The experimental path in `tiny_language_codegen_llvm.py` should cover more native IR operations and remain selectable via CLI/API. Initial steps from this run: POP support and an extra test to lock in the behavior.
   - **Nächste Schritte**
-    - [ ] Kontrollfluss-Lowering für `If`/`While` ergänzen (derzeit `NotImplementedError` für Branches).
-    - [ ] Funktions-Frames und Aufrufe (Call/Return) im LLVM-Emitter nachziehen.
-    - [ ] String/Heap-Handling skizzieren (Strings, `new`, `heap_get`/`heap_set`).
+    - [x] Kontrollfluss-Lowering für `If`/`While` ergänzen (derzeit `NotImplementedError` für Branches).
+    - [x] Funktions-Frames und Aufrufe (Call/Return) im LLVM-Emitter nachziehen.
+    - [x] String/Heap-Handling skizzieren (Strings, `new`, `heap_get`/`heap_set`).
     - [ ] Diagnostik: fehlende Lowerings mit präzisen Fehlermeldungen kennzeichnen.
 - [x] **Python bridge for feature pass-through**: A TinyLanguage module and Python helpers should simplify the FFI (imports/calls/allowlists/timeouts) and wrap bidirectional calls. Demos and tests would cover common datatype mappings and sandbox boundaries.
 - [x] **Rosetta sync for local paths**: The script `examples/rosetta/copy_rosetta_samples.py` now offers configurable paths/filters/delays, a dry-run flag, and can trigger the transpiler directly.

@@ -185,6 +185,26 @@ if (i == 2) {
     assert "block" in llvm_ir
 
 
+def test_llvm_codegen_emits_string_prints() -> None:
+    source = 'print("hello");'
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert '@.str0 = private unnamed_addr constant [6 x i8] c"hello\\00"' in llvm_ir
+    assert "@.fmt_str" in llvm_ir
+    assert "call i32 (i8*, ...) @printf" in llvm_ir
+
+
+def test_llvm_codegen_emits_heap_calls() -> None:
+    source = "define ptr = new(1); heap_set(ptr, 0, 42); print(heap_get(ptr, 0));"
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "call i64 @new(i64 1)" in llvm_ir
+    assert "call i64 @heap_set(i64" in llvm_ir
+    assert "call i64 @heap_get(i64" in llvm_ir
+
+
 def test_llvm_codegen_emits_branches_for_jump_ops() -> None:
     program = ProgramIR(
         entry=[

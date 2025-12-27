@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import textwrap
 from pathlib import Path
 
 from tiny_language import (
@@ -12,6 +13,7 @@ from tiny_language import (
     _format_error_for_source,
     compile_to_c_executable,
     compile_to_c_source,
+    compile_to_llvm_bitcode_via_c,
     compile_to_llvm_ir_via_c,
 )
 
@@ -28,21 +30,37 @@ def _read_source(path: Path) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Compile TinyLanguage programs with the C backend")
+    parser = argparse.ArgumentParser(
+        description="Compile TinyLanguage programs with the C backend",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=textwrap.dedent(
+            """\
+            Examples:
+              tinyc_cli.py program.tiny --emit-llvm program.ll
+              tinyc_cli.py program.tiny --emit-bc build/program.bc
+            """
+        ),
+    )
     parser.add_argument("path", type=Path, help="Path to a .tiny source file")
-    parser.add_argument(
+    emit_group = parser.add_mutually_exclusive_group()
+    emit_group.add_argument(
         "--emit-c",
         nargs="?",
         const="-",
         metavar="PATH",
         help="Emit generated C source (default: stdout when flag is set without PATH)",
     )
-    parser.add_argument(
+    emit_group.add_argument(
         "--emit-llvm",
         nargs="?",
         const="-",
         metavar="PATH",
         help="Emit LLVM IR via clang from generated C source (default: stdout when flag is set without PATH)",
+    )
+    emit_group.add_argument(
+        "--emit-bc",
+        metavar="PATH",
+        help="Emit LLVM bitcode via clang from generated C source",
     )
     parser.add_argument(
         "-o",
@@ -57,8 +75,6 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     args = parser.parse_args(argv)
-    if args.emit_c is not None and args.emit_llvm is not None:
-        parser.error("choose only one of --emit-c or --emit-llvm")
     source = _read_source(args.path)
 
     try:
@@ -79,6 +95,12 @@ def main(argv: list[str] | None = None) -> int:
                 out_path = Path(args.emit_llvm)
                 out_path.parent.mkdir(parents=True, exist_ok=True)
                 out_path.write_text(llvm_ir, encoding="utf-8")
+            return 0
+        if args.emit_bc is not None:
+            bitcode = compile_to_llvm_bitcode_via_c(source, compiler=args.compiler)
+            out_path = Path(args.emit_bc)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_bytes(bitcode)
             return 0
         compile_to_c_executable(source, args.output, compiler=args.compiler)
         return 0

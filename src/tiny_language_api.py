@@ -694,6 +694,32 @@ def compile_to_c_source(src: str) -> str:
     return CCodeGenerator().compile_program(program)
 
 
+def compile_to_llvm_ir_via_c(
+    src: str,
+    *,
+    compiler: str = "clang",
+    extra_args: Optional[List[str]] = None,
+) -> str:
+    """Emit LLVM IR by translating TinyLanguage to C and invoking clang."""
+    compiler_path = shutil.which(compiler)
+    if compiler_path is None:
+        raise RuntimeError(f"compiler '{compiler}' not found on PATH (set --compiler or install clang)")
+    c_source = compile_to_c_source(src)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        c_path = Path(tmpdir) / "tiny_program.c"
+        ll_path = Path(tmpdir) / "tiny_program.ll"
+        c_path.write_text(c_source, encoding="utf-8")
+        cmd = [compiler_path, "-S", "-emit-llvm", str(c_path), "-o", str(ll_path)]
+        if extra_args:
+            cmd.extend(extra_args)
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as exc:  # pragma: no cover - depends on external toolchain
+            stderr = exc.stderr.strip() if exc.stderr else "unknown compiler error"
+            raise RuntimeError(f"failed to emit LLVM IR via {compiler}: {stderr}") from exc
+        return ll_path.read_text(encoding="utf-8")
+
+
 def compile_to_c_executable(
     src: str,
     output_path: Path | str,
@@ -1089,6 +1115,7 @@ __all__ = [
     "compile_to_c_source",
     "compile_to_executable",
     "compile_to_llvm_ir",
+    "compile_to_llvm_ir_via_c",
     "compile_to_python_ast",
     "compile_to_python_source",
     "run_with_python_backend",

@@ -12,6 +12,7 @@ from tiny_language import (
     _format_error_for_source,
     compile_to_c_executable,
     compile_to_c_source,
+    compile_to_llvm_ir_via_c,
 )
 
 
@@ -37,6 +38,13 @@ def main(argv: list[str] | None = None) -> int:
         help="Emit generated C source (default: stdout when flag is set without PATH)",
     )
     parser.add_argument(
+        "--emit-llvm",
+        nargs="?",
+        const="-",
+        metavar="PATH",
+        help="Emit LLVM IR via clang from generated C source (default: stdout when flag is set without PATH)",
+    )
+    parser.add_argument(
         "-o",
         "--output",
         default="a.out",
@@ -49,6 +57,8 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     args = parser.parse_args(argv)
+    if args.emit_c is not None and args.emit_llvm is not None:
+        parser.error("choose only one of --emit-c or --emit-llvm")
     source = _read_source(args.path)
 
     try:
@@ -60,6 +70,15 @@ def main(argv: list[str] | None = None) -> int:
                 out_path = Path(args.emit_c)
                 out_path.parent.mkdir(parents=True, exist_ok=True)
                 out_path.write_text(c_source, encoding="utf-8")
+            return 0
+        if args.emit_llvm is not None:
+            llvm_ir = compile_to_llvm_ir_via_c(source, compiler=args.compiler)
+            if args.emit_llvm == "-":
+                sys.stdout.write(llvm_ir + os.linesep)
+            else:
+                out_path = Path(args.emit_llvm)
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                out_path.write_text(llvm_ir, encoding="utf-8")
             return 0
         compile_to_c_executable(source, args.output, compiler=args.compiler)
         return 0

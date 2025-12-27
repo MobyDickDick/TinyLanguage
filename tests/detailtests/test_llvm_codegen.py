@@ -3,6 +3,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from native_ir import Instruction, Opcode, ProgramIR
 from tiny_language import compile_to_llvm_ir
 from tiny_language_codegen_llvm import LLVMCodeGenerator
@@ -226,3 +228,22 @@ def test_llvm_codegen_emits_branches_for_jump_ops() -> None:
     assert "block0:" in llvm_ir
     assert "block2:" in llvm_ir
     assert "block4:" in llvm_ir
+
+
+def test_llvm_codegen_reports_missing_lowering_with_context() -> None:
+    program = ProgramIR(
+        entry=[
+            Instruction(Opcode.PUSH_CONST, 1),
+            Instruction(Opcode.PUSH_CONST, 2),
+            Instruction(Opcode.BINARY, "**"),
+            Instruction(Opcode.PRINT, 1),
+        ],
+        functions={},
+    )
+
+    with pytest.raises(
+        NotImplementedError,
+        match=r"LLVM prototype missing lowering: operator \*\* not supported "
+        r"\(instruction: BINARY '\*\*'\)",
+    ):
+        LLVMCodeGenerator().compile_program(program)

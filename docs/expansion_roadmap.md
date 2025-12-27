@@ -10,6 +10,12 @@ so formuliert, dass sie nach und nach abgearbeitet werden können.
 - **CLI-Unterstützung**: `--emit-llvm` (LLVM-IR ausgeben) und `--emit-exe` (Binary bauen).
 - **Erster Zielumfang**: arithmetische Ausdrücke, Variablen, `print`, einfache Kontrollflüsse.
 - **Toolchain**: `clang`/`llc` für den ersten End-to-End-Flow.
+- **Aufgabenliste (statusfähig, aktueller Prototyp)**:
+  - [x] Straight-line code (arithmetische Ausdrücke, Variablen, `print`) abbilden.
+  - [ ] Kontrollfluss (`if`/`while`) im LLVM-Emitter ergänzen; aktuell `NotImplementedError` für Branches.
+  - [ ] Funktionen und Calls unterstützen; aktuell `NotImplementedError` für Funktionsaufrufe.
+  - [ ] Heap/Strings (z. B. `new`, `heap_get`/`heap_set`, String-Print) im LLVM-Pfad skizzieren.
+  - [ ] Fehlermeldungen präzisieren, wenn ein IR-OpCode nicht unterstützt ist.
 
 ## 2) Python-Standardbibliothek portieren
 

@@ -104,7 +104,9 @@ class NativeVM:
             elif instr.op == Opcode.RETURN:
                 return stack.pop() if stack else None
             else:
-                raise RuntimeError(f"unknown opcode {instr.op}")
+                op_name = instr.op.value if isinstance(instr.op, Opcode) else str(instr.op)
+                supported = ", ".join(op.value for op in Opcode)
+                raise RuntimeError(f"unknown opcode {op_name}. Supported opcodes: {supported}.")
         return None
 
     def _load(self, locals_: Dict[str, Any], name: str) -> Any:

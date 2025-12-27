@@ -44,6 +44,18 @@ class CCodeGenerator:
         lines.extend(self._emit_main())
         return "\n".join(lines)
 
+    def _format_opcode(self, op: Opcode) -> str:
+        return op.value if isinstance(op, Opcode) else str(op)
+
+    def _supported_opcodes(self) -> str:
+        return ", ".join(self._format_opcode(op) for op in Opcode)
+
+    def _unsupported_opcode(self, instr: Instruction) -> None:
+        op_name = self._format_opcode(instr.op)
+        raise NotImplementedError(
+            f"C backend does not support opcode {op_name}. Supported opcodes: {self._supported_opcodes()}."
+        )
+
     def _collect_program(self, program: ProgramIR) -> _ProgramLayout:
         functions = [
             _FunctionBlock(name=fn.name, params=list(fn.params), instructions=list(fn.instructions))
@@ -529,7 +541,7 @@ class CCodeGenerator:
             return "{OP_POP, ARG_NONE_VALUE}"
         if instr.op == Opcode.RETURN:
             return "{OP_RETURN, ARG_NONE_VALUE}"
-        raise NotImplementedError(f"unsupported opcode {instr.op}")
+        self._unsupported_opcode(instr)
 
     def _arg_int(self, value: int) -> str:
         return f"ARG_INT_VALUE({value})"

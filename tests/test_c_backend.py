@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from tiny_language import compile_to_c_executable
+from tiny_language import compile_to_c_executable, compile_to_llvm_ir_via_c
 
 
 def _find_compiler() -> str | None:
@@ -16,6 +16,14 @@ def _find_compiler() -> str | None:
     for candidate in candidates:
         if not candidate:
             continue
+        if shutil.which(candidate):
+            return candidate
+    return None
+
+
+def _find_clang() -> str | None:
+    candidates = ["clang"]
+    for candidate in candidates:
         if shutil.which(candidate):
             return candidate
     return None
@@ -39,3 +47,14 @@ def test_c_backend_examples(tmp_path: Path, source_path: Path, expected: str) ->
 
     result = subprocess.check_output([str(output_path)], text=True)
     assert result == expected
+
+
+def test_emit_llvm_ir_via_c() -> None:
+    compiler = _find_clang()
+    if compiler is None:
+        pytest.skip("clang not available for LLVM IR emission")
+
+    source = "print(1 + 2);"
+    llvm_ir = compile_to_llvm_ir_via_c(source, compiler=compiler)
+
+    assert "define" in llvm_ir

@@ -21,6 +21,7 @@ from typing import Callable, List, Optional
 
 from native_vm import NativeVM
 from native_python_bytecode import run_program_via_python_bytecode
+from tiny_language_codegen_c import CCodeGenerator
 from tiny_language_codegen_llvm import LLVMCodeGenerator
 from tiny_language_highlighting import PYGMENTS_AVAILABLE, highlight_source
 
@@ -606,6 +607,41 @@ def compile_to_llvm_ir(src: str) -> str:
     return LLVMCodeGenerator().compile_program(program)
 
 
+def compile_to_c_source(src: str) -> str:
+    """Emit C source for the subset supported by the native backend."""
+    stmts = _parse_and_lint(src)
+    program = NativeCodeGenerator().compile_program(stmts)
+    return CCodeGenerator().compile_program(program)
+
+
+def compile_to_c_executable(
+    src: str,
+    output_path: Path | str,
+    *,
+    compiler: str = "cc",
+    extra_args: Optional[List[str]] = None,
+) -> Path:
+    """Compile TinyLanguage to a native executable via the C backend."""
+    compiler_path = shutil.which(compiler)
+    if compiler_path is None:
+        raise RuntimeError(f"compiler '{compiler}' not found on PATH (set --compiler or install clang/gcc)")
+    c_source = compile_to_c_source(src)
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        c_path = Path(tmpdir) / "tiny_program.c"
+        c_path.write_text(c_source, encoding="utf-8")
+        cmd = [compiler_path, str(c_path), "-o", str(output_path)]
+        if extra_args:
+            cmd.extend(extra_args)
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as exc:  # pragma: no cover - depends on external toolchain
+            stderr = exc.stderr.strip() if exc.stderr else "unknown compiler error"
+            raise RuntimeError(f"failed to compile C executable via {compiler}: {stderr}") from exc
+    return output_path
+
+
 def compile_to_executable(
     src: str,
     output_path: Path | str,
@@ -967,6 +1003,8 @@ if __name__ == "__main__":
 
 __all__ = [
     "compile_and_run",
+    "compile_to_c_executable",
+    "compile_to_c_source",
     "compile_to_executable",
     "compile_to_llvm_ir",
     "compile_to_python_ast",

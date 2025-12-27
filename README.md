@@ -80,6 +80,23 @@ TinyLanguage is a learning- and transpiler-focused playground rather than a prod
 
 If no text appears, verify that you are running the command from the repository root (so `src/tiny_language.py` is discoverable) and that you passed a `.tiny` file path. Invoking `python -m tiny_language` without a file exits immediately after showing the argument error message.
 
+## Compile to a native executable (C backend)
+
+The C backend emits a small C VM plus your TinyLanguage bytecode, then invokes a system compiler (`cc`, `clang`, or `gcc`) to build a native executable. Install a C compiler and ensure it is on your `PATH` (or set `TINYLANG_C_COMPILER`).
+
+```bash
+python -m tinyc_cli examples/c_backend/hello_world.tiny -o hello_world
+./hello_world
+```
+
+To inspect the generated C instead of compiling it, pass `--emit-c`:
+
+```bash
+python -m tinyc_cli examples/c_backend/hello_world.tiny --emit-c > hello_world.c
+```
+
+Minimal end-to-end examples (Hello World and a function return) live under `examples/c_backend/` and are exercised by the C-backend tests when a compiler is available.
+
 ## Backlog: next possible tasks
 - [x] **Prototype an LLVM backend**: Explore emitting LLVM IR (e.g., via `llvmlite`) for constants, variables, and arithmetic, with a CLI switch like `--emit-llvm` to generate IR or invoke `llc`/`clang`.
 - [x] **Port project modules to TinyLanguage (self-hosting)**: Inventory interpreter/compiler modules, design Tiny-compatible library primitives, and port core components while keeping parallel Python/Tiny tests. See [`docs/self_hosting_port_plan.md`](docs/self_hosting_port_plan.md) for the current module inventory and migration plan.

@@ -1,0 +1,6 @@
+fn add(a, b) {
+    return a + b;
+}
+
+define result = add(2, 3);
+print(result);

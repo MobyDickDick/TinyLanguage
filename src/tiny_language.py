@@ -44,6 +44,7 @@ def _load_and_exec_all() -> None:
         "tiny_language_parser.py",  # source-to-AST parser
         "tiny_language_codegen_py.py",  # experimental Python code generator
         "tiny_language_codegen_native.py",  # experimental native bytecode backend
+        "tiny_language_codegen_c.py",  # experimental C backend
         "tiny_language_codegen_llvm.py",  # experimental LLVM text backend
         "tiny_language_linter.py",  # static analysis passes
         "tiny_language_runtime.py",  # execution runtime structures

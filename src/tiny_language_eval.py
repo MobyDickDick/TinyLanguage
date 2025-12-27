@@ -7,6 +7,54 @@
 # into the original monolithic interpreter so other modules can share the
 # same execution semantics.
 
+from typing import Any, List, Optional
+
+if "IR" not in globals():
+    from tiny_language_ast import (
+        Assign,
+        Await,
+        Bin,
+        Bool,
+        Call,
+        CallStmt,
+        ClassDef,
+        ClassNew,
+        DestructAssign,
+        Field,
+        FieldAssign,
+        Flush,
+        Fn,
+        If,
+        Import,
+        IR,
+        Let,
+        Match,
+        MethodCall,
+        MethodDef,
+        Namespace,
+        New,
+        NewLit,
+        Null,
+        Num,
+        ObjLit,
+        OpDef,
+        Print,
+        Return,
+        Spawn,
+        Str,
+        TryCatch,
+        TypeDef,
+        Var,
+        VariantCtor,
+        While,
+    )
+
+if "Runtime" not in globals():
+    from tiny_language_runtime import NamespaceRef, ReturnSignal, Runtime
+
+if "TinyLangError" not in globals():
+    from tiny_language_preamble import TinyLangError
+
 def eval_block(self, stmts: List[IR], env: "Environment", namespace: Optional[str] = None) -> Any:
     for st in stmts:
         res = self.eval_stmt(st, env, namespace)

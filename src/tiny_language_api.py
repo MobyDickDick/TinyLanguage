@@ -21,9 +21,89 @@ from typing import Callable, List, Optional
 
 from native_vm import NativeVM
 from native_python_bytecode import run_program_via_python_bytecode
+from stdlib import register_stdlib
+from tiny_errors import SourcePos, SourceSpan
 from tiny_language_codegen_c import CCodeGenerator
 from tiny_language_codegen_llvm import LLVMCodeGenerator
 from tiny_language_highlighting import PYGMENTS_AVAILABLE, highlight_source
+
+if "IR" not in globals():
+    from tiny_language_ast import (
+        Await,
+        Bin,
+        Bool,
+        Call,
+        CallStmt,
+        ClassDef,
+        ClassNew,
+        DestructAssign,
+        Field,
+        FieldAssign,
+        Flush,
+        Fn,
+        If,
+        Import,
+        IR,
+        Let,
+        Match,
+        MatchCase,
+        MethodCall,
+        MethodDef,
+        Namespace,
+        New,
+        NewLit,
+        Null,
+        Num,
+        ObjLit,
+        OpDef,
+        Param,
+        Print,
+        Return,
+        Spawn,
+        Str,
+        TryCatch,
+        TypeDef,
+        TypeVariant,
+        Var,
+        VariantCtor,
+        VariantPattern,
+        While,
+        WildcardPattern,
+    )
+
+if "Environment" not in globals():
+    from tiny_language_eval import Environment
+
+if "Lexer" not in globals():
+    from tiny_language_lexer import Lexer
+
+if "Parser" not in globals():
+    from tiny_language_parser import Parser
+
+if "Runtime" not in globals():
+    from tiny_language_runtime import Debugger, ModuleResolver, NamespaceRef, Runtime
+
+if "TinyLangError" not in globals():
+    from tiny_language_preamble import BUILTINS, KEYWORDS, TinyLangError, format_error
+
+if "lint_import_style" not in globals():
+    from tiny_language_linter import (
+        lint_assignment_types,
+        lint_bare_call_results,
+        lint_destruct_call_outputs,
+        lint_fn_params_used,
+        lint_import_style,
+        lint_locals_used,
+        lint_method_params_used,
+        lint_no_consecutive_definitions,
+        lint_unreachable_code,
+    )
+
+if "PythonCodeGenerator" not in globals():
+    from tiny_language_codegen_py import PythonCodeGenerator
+
+if "NativeCodeGenerator" not in globals():
+    from tiny_language_codegen_native import NativeCodeGenerator
 
 
 def _copy_on_call_default() -> bool:
@@ -632,8 +712,10 @@ def compile_to_c_executable(
         c_path = Path(tmpdir) / "tiny_program.c"
         c_path.write_text(c_source, encoding="utf-8")
         cmd = [compiler_path, str(c_path), "-o", str(output_path)]
-        if extra_args:
-            cmd.extend(extra_args)
+        args = list(extra_args) if extra_args else []
+        if "-lm" not in args:
+            args.append("-lm")
+        cmd.extend(args)
         try:
             subprocess.run(cmd, check=True, capture_output=True, text=True)
         except subprocess.CalledProcessError as exc:  # pragma: no cover - depends on external toolchain

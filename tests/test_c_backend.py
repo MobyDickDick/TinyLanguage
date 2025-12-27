@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from tiny_language_api import compile_to_c_executable
+from tiny_language import compile_to_c_executable
 
 
 def _find_compiler() -> str | None:

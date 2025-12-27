@@ -79,7 +79,7 @@ class CCodeGenerator:
         ]
 
     def _emit_runtime(self) -> List[str]:
-        runtime = """
+        runtime = r"""
         typedef enum {
             OP_PUSH_CONST,
             OP_LOAD,

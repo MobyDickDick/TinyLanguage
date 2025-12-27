@@ -683,7 +683,7 @@ def compile_to_python_source(src: str) -> str:
 def compile_to_llvm_ir(src: str) -> str:
     """Emit textual LLVM IR for the subset supported by the native backend."""
     stmts = _parse_and_lint(src)
-    program = NativeCodeGenerator().compile_program(stmts)
+    program = NativeCodeGenerator(allow_heap=True).compile_program(stmts)
     return LLVMCodeGenerator().compile_program(program)
 
 

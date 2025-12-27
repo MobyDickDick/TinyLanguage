@@ -15,6 +15,10 @@ from native_ir import FunctionIR, Instruction, Opcode, ProgramIR
 class NativeCodeGenerator:
     """Convert TinyLanguage AST nodes into bytecode instructions."""
 
+    def __init__(self, *, allow_heap: bool = False) -> None:
+        self._allow_heap = allow_heap
+        self._tmp_index = 0
+
     def compile_program(self, stmts: List["IR"]) -> ProgramIR:
         functions: Dict[str, FunctionIR] = {}
         entry_instructions: List[Instruction] = []
@@ -134,6 +138,29 @@ class NativeCodeGenerator:
             return [Instruction(Opcode.PUSH_CONST, expr.value)]
         if isinstance(expr, Null):
             return [Instruction(Opcode.PUSH_CONST, None)]
+        if isinstance(expr, New):
+            if not self._allow_heap:
+                raise NotImplementedError("native codegen does not yet support heap allocations")
+            instructions = self._compile_expr(expr.size)
+            instructions.append(Instruction(Opcode.CALL, ("__new", 1)))
+            return instructions
+        if isinstance(expr, NewLit):
+            if not self._allow_heap:
+                raise NotImplementedError("native codegen does not yet support heap allocations")
+            temp_name = self._next_tmp()
+            instructions: List[Instruction] = [
+                Instruction(Opcode.PUSH_CONST, len(expr.items)),
+                Instruction(Opcode.CALL, ("__new", 1)),
+                Instruction(Opcode.STORE, temp_name),
+            ]
+            for idx, item in enumerate(expr.items):
+                instructions.append(Instruction(Opcode.LOAD, temp_name))
+                instructions.append(Instruction(Opcode.PUSH_CONST, idx))
+                instructions.extend(self._compile_expr(item))
+                instructions.append(Instruction(Opcode.CALL, ("heap_set", 3)))
+                instructions.append(Instruction(Opcode.POP))
+            instructions.append(Instruction(Opcode.LOAD, temp_name))
+            return instructions
         if isinstance(expr, Var):
             return [Instruction(Opcode.LOAD, expr.name)]
         if isinstance(expr, Bin):
@@ -149,3 +176,6 @@ class NativeCodeGenerator:
             return instructions
         raise NotImplementedError(f"native codegen does not yet support expression {type(expr).__name__}")
 
+    def _next_tmp(self) -> str:
+        self._tmp_index += 1
+        return f"__tmp_heap_{self._tmp_index}"

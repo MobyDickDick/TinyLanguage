@@ -56,6 +56,19 @@ class LLVMCodeGenerator:
         self._function_signatures: Dict[str, _ResolvedFunctionSignature] = {}
         self._current_return_type: Optional[str] = None
 
+    def _format_opcode(self, op: Opcode) -> str:
+        return op.value if isinstance(op, Opcode) else str(op)
+
+    def _supported_opcodes(self) -> str:
+        return ", ".join(self._format_opcode(op) for op in Opcode)
+
+    def _unsupported_opcode(self, instr: Instruction) -> None:
+        op_name = self._format_opcode(instr.op)
+        raise NotImplementedError(
+            "LLVM prototype does not support opcode "
+            f"{op_name}. Supported opcodes: {self._supported_opcodes()}."
+        )
+
     def compile_program(self, program: ProgramIR) -> str:
         """Return LLVM IR for the given native ``ProgramIR``.
 
@@ -254,7 +267,7 @@ class LLVMCodeGenerator:
             # returns are ignored for now.
             return
         else:
-            raise NotImplementedError(f"unhandled opcode {instr.op}")
+            self._unsupported_opcode(instr)
 
     def _push_const(self, value: object) -> None:
         if isinstance(value, bool):
@@ -593,7 +606,7 @@ class LLVMCodeGenerator:
                         set_return_type(value.ty)
                 stack.clear()
             else:
-                raise NotImplementedError(f"unhandled opcode {instr.op}")
+                self._unsupported_opcode(instr)
 
         return changed
 

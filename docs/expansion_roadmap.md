@@ -15,7 +15,7 @@ they can be tackled incrementally.
   - [x] Add control flow (`if`/`while`) to the LLVM emitter.
   - [x] Support functions and calls in the LLVM prototype.
   - [x] Sketch heap/strings (e.g. `new`, `heap_get`/`heap_set`, string print) in the LLVM path.
-  - [ ] Refine error messages when an IR opcode is not supported.
+  - [x] Refine error messages when an IR opcode is not supported.
 
 ## 2) Port the Python standard library
 

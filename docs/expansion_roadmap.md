@@ -34,3 +34,7 @@ they can be tackled incrementally.
 - **Keep scope small**: e.g. `Statistics` or simple linear algebra.
 - **PoC modules**: First functions (e.g. `mean`, `std`) with tests.
 - **API notes**: Document differences to Julia.
+
+## 5) Debugging & IDEs
+
+- **LLVM-first VS Code debugging**: Enable a direct debugging workflow in VS Code for LLVM-native executables produced by the LLVM pipeline.

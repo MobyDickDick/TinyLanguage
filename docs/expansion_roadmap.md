@@ -1,36 +1,36 @@
-# Ausbau-Roadmap
+# Expansion Roadmap
 
-Diese Roadmap sammelt die groben Aufgabenpakete, die TinyLanguage in Richtung
-Compiler, Bibliotheken und Transpiler erweitern sollen. Die Punkte sind bewusst
-so formuliert, dass sie nach und nach abgearbeitet werden können.
+This roadmap collects the high-level work packages that will extend TinyLanguage
+towards compiler, library, and transpiler capabilities. The items are phrased so
+they can be tackled incrementally.
 
-## 1) Native Compiler (ausführbare Dateien)
+## 1) Native compiler (executables)
 
-- **LLVM-basierte Pipeline**: TinyLanguage → Native IR → LLVM IR → Binärdatei.
-- **CLI-Unterstützung**: `--emit-llvm` (LLVM-IR ausgeben) und `--emit-exe` (Binary bauen).
-- **Erster Zielumfang**: arithmetische Ausdrücke, Variablen, `print`, einfache Kontrollflüsse.
-- **Toolchain**: `clang`/`llc` für den ersten End-to-End-Flow.
-- **Aufgabenliste (statusfähig, aktueller Prototyp)**:
-  - [x] Straight-line code (arithmetische Ausdrücke, Variablen, `print`) abbilden.
-  - [x] Kontrollfluss (`if`/`while`) im LLVM-Emitter ergänzen.
-  - [ ] Funktionen und Calls unterstützen; aktuell `NotImplementedError` für Funktionsaufrufe.
-  - [ ] Heap/Strings (z. B. `new`, `heap_get`/`heap_set`, String-Print) im LLVM-Pfad skizzieren.
-  - [ ] Fehlermeldungen präzisieren, wenn ein IR-OpCode nicht unterstützt ist.
+- **LLVM-based pipeline**: TinyLanguage → Native IR → LLVM IR → binary.
+- **CLI support**: `--emit-llvm` (dump LLVM IR) and `--emit-exe` (build binary).
+- **First target scope**: arithmetic expressions, variables, `print`, simple control flow.
+- **Toolchain**: `clang`/`llc` for the first end-to-end flow.
+- **Task list (statusable, current prototype)**:
+  - [x] Map straight-line code (arithmetic expressions, variables, `print`).
+  - [x] Add control flow (`if`/`while`) to the LLVM emitter.
+  - [x] Support functions and calls in the LLVM prototype.
+  - [ ] Sketch heap/strings (e.g. `new`, `heap_get`/`heap_set`, string print) in the LLVM path.
+  - [ ] Refine error messages when an IR opcode is not supported.
 
-## 2) Python-Standardbibliothek portieren
+## 2) Port the Python standard library
 
-- **Priorisierte Module**: `math`, `random`, `string`, `datetime` (schrittweise).
-- **Ziel**: TL-Stdlib-Module mit ähnlicher API wie Python bereitstellen.
-- **Tests**: Kleine Vergleichstests gegen Python-Ergebnisse (wo sinnvoll).
+- **Prioritised modules**: `math`, `random`, `string`, `datetime` (incrementally).
+- **Goal**: Provide TL stdlib modules with a similar API to Python.
+- **Tests**: Small comparison tests against Python results (where sensible).
 
-## 3) Rosetta-Code-Aufgaben
+## 3) Rosetta Code tasks
 
-- **Konsistentes Aufgabenlayout** ✅: `examples/rosetta/<task>/`.
-- **Erste Welle**: Einsteiger-Aufgaben (z. B. Hello World, Fibonacci, Sortierung).
-- **Transpiler-Checks**: Prüfen, welche Sprachfeatures TL noch braucht.
+- **Consistent task layout** ✅: `examples/rosetta/<task>/`.
+- **First wave**: Beginner tasks (e.g. Hello World, Fibonacci, sorting).
+- **Transpiler checks**: Verify which language features TL still needs.
 
-## 4) Julia-Subset übertragen
+## 4) Port a Julia subset
 
-- **Scope klein halten**: z. B. `Statistics` oder einfache Lineare Algebra.
-- **PoC-Module**: erste Funktionen (z. B. `mean`, `std`) mit Tests.
-- **API-Notizen**: Unterschiede zu Julia dokumentieren.
+- **Keep scope small**: e.g. `Statistics` or simple linear algebra.
+- **PoC modules**: First functions (e.g. `mean`, `std`) with tests.
+- **API notes**: Document differences to Julia.

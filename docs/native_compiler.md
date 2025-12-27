@@ -44,7 +44,7 @@ This draft outlines the target architecture for an alternative backend that exec
 - **Limited language surface**: Heap operations, classes, pattern matching, or deques are not covered yet and deliberately raise `NotImplementedError`. Use the interpreter path for those features.
 - **Consistent invocation shapes**: Both the CLI (`src/tiny_language.py`) and `tiny_lang_cli` accept `--native-backend` before `-e` or the file path. The VM only works on files or inline snippets; the REPL and formatter remain interpreter-backed.
 - **Output comparison**: The VM buffers `print` output line by line; that keeps comparisons with the interpreter simple, but multi-delimiters or structured logs are not implemented yet.
-- **LLVM executable scope**: The LLVM backend is intentionally narrow (no user-defined functions or control flow). Expect `NotImplementedError` for anything outside straight-line numeric code and `print`.
+- **LLVM executable scope**: The LLVM backend is intentionally narrow (numeric values, basic control flow, simple functions, and `print`). Expect `NotImplementedError` for anything outside that subset.
   For a concise list of open gaps and next steps in the LLVM emitter, see the checklist under **LLVM-basierte Pipeline** in [`docs/expansion_roadmap.md`](expansion_roadmap.md).
 
 ## CLI workflow at a glance

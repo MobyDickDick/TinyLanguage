@@ -157,3 +157,26 @@ def test_llvm_codegen_emits_flush_calls() -> None:
 
     assert "call i32 @fflush(i8* null)" in llvm_ir
     assert llvm_ir.count("call i32 (i8*, ...) @printf") == 2
+
+
+def test_llvm_codegen_emits_branches_for_jump_ops() -> None:
+    program = ProgramIR(
+        entry=[
+            Instruction(Opcode.PUSH_CONST, 0),
+            Instruction(Opcode.JUMP_IF_FALSE, 4),
+            Instruction(Opcode.PUSH_CONST, 1),
+            Instruction(Opcode.PRINT, 1),
+            Instruction(Opcode.PUSH_CONST, 2),
+            Instruction(Opcode.PRINT, 1),
+            Instruction(Opcode.RETURN),
+        ],
+        functions={},
+    )
+
+    llvm_ir = LLVMCodeGenerator().compile_program(program)
+
+    assert "icmp ne i64" in llvm_ir
+    assert "br i1" in llvm_ir
+    assert "block0:" in llvm_ir
+    assert "block2:" in llvm_ir
+    assert "block4:" in llvm_ir

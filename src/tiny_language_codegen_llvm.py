@@ -51,19 +51,88 @@ class LLVMCodeGenerator:
         self._prologue.clear()
         self._body.clear()
 
-        for instr in program.entry:
-            self._emit_instruction(instr)
+        instructions = program.entry
+        block_starts = self._collect_block_starts(instructions)
+        label_map = self._label_map(block_starts)
+        self._emit_blocks(instructions, block_starts, label_map)
 
         lines: List[str] = []
         lines.extend(self._header())
         lines.append("define i32 @tiny_main() {")
         lines.append("entry:")
         lines.extend(self._prologue)
+        lines.append(f"  br label %{label_map[0]}")
         lines.extend(self._body)
+        lines.append("exit:")
         lines.append("  ret i32 0")
         lines.append("}")
 
         return "\n".join(lines)
+
+    def _collect_block_starts(self, instructions: List[Instruction]) -> List[int]:
+        starts = {0}
+        for idx, instr in enumerate(instructions):
+            if instr.op == Opcode.JUMP:
+                if instr.arg is not None:
+                    target = int(instr.arg)
+                    if target != len(instructions):
+                        starts.add(target)
+            elif instr.op == Opcode.JUMP_IF_FALSE:
+                if instr.arg is not None:
+                    target = int(instr.arg)
+                    if target != len(instructions):
+                        starts.add(target)
+                if idx + 1 < len(instructions):
+                    starts.add(idx + 1)
+        return sorted(starts)
+
+    def _label_map(self, block_starts: List[int]) -> Dict[int, str]:
+        return {start: f"block{start}" for start in block_starts}
+
+    def _emit_blocks(
+        self, instructions: List[Instruction], block_starts: List[int], label_map: Dict[int, str]
+    ) -> None:
+        for index, start in enumerate(block_starts):
+            if self._stack:
+                raise NotImplementedError("LLVM prototype cannot carry stack values across basic blocks")
+            self._body.append(f"{label_map[start]}:")
+            end = block_starts[index + 1] if index + 1 < len(block_starts) else len(instructions)
+            terminated = self._emit_block_body(instructions, start, end, label_map)
+            if not terminated:
+                if self._stack:
+                    raise NotImplementedError("LLVM prototype cannot carry stack values across basic blocks")
+                next_label = label_map[block_starts[index + 1]] if index + 1 < len(block_starts) else "exit"
+                self._body.append(f"  br label %{next_label}")
+
+    def _emit_block_body(
+        self,
+        instructions: List[Instruction],
+        start: int,
+        end: int,
+        label_map: Dict[int, str],
+    ) -> bool:
+        self._stack.clear()
+        for idx in range(start, end):
+            instr = instructions[idx]
+            if instr.op == Opcode.JUMP:
+                if self._stack:
+                    raise NotImplementedError("LLVM prototype cannot carry stack values across basic blocks")
+                target = int(instr.arg)
+                target_label = "exit" if target == len(instructions) else label_map[target]
+                self._body.append(f"  br label %{target_label}")
+                return True
+            if instr.op == Opcode.JUMP_IF_FALSE:
+                cond_name = self._pop_condition()
+                if self._stack:
+                    raise NotImplementedError("LLVM prototype cannot carry stack values across basic blocks")
+                target = int(instr.arg)
+                target_label = "exit" if target == len(instructions) else label_map[target]
+                fallthrough = idx + 1
+                fallthrough_label = "exit" if fallthrough == len(instructions) else label_map[fallthrough]
+                self._body.append(f"  br i1 {cond_name}, label %{fallthrough_label}, label %{target_label}")
+                return True
+            self._emit_instruction(instr)
+        return False
 
     # ----- Instruction handlers -----
 
@@ -82,7 +151,7 @@ class LLVMCodeGenerator:
             self._pop_value()
         elif instr.op == Opcode.FLUSH:
             self._flush_output()
-        elif instr.op in {Opcode.JUMP, Opcode.JUMP_IF_FALSE, Opcode.CALL}:
+        elif instr.op == Opcode.CALL:
             raise NotImplementedError(f"LLVM prototype does not yet support {instr.op.value}")
         elif instr.op == Opcode.RETURN:
             # The surrounding function emits a single final return, so intermediate
@@ -200,6 +269,22 @@ class LLVMCodeGenerator:
         self._body.append("  call i32 @fflush(i8* null)")
 
     # ----- Helpers -----
+
+    def _pop_condition(self) -> str:
+        if not self._stack:
+            raise RuntimeError("branch requested with empty stack")
+        cond = self._stack.pop()
+        if cond.ty == "i1":
+            return cond.name
+        if cond.ty == "i64":
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = icmp ne i64 {cond.name}, 0")
+            return dest
+        if cond.ty == "double":
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = fcmp one double {cond.name}, 0.0")
+            return dest
+        raise NotImplementedError(f"conditional branches for type {cond.ty} not supported in LLVM prototype")
 
     def _next_tmp(self) -> str:
         self._tmp_index += 1

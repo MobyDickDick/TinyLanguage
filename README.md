@@ -121,7 +121,7 @@ Minimal end-to-end examples (Hello World and a function return) live under `exam
 - [x] **Native backend port**: Provide Tiny variants of opcode IR, codegen, and VM (`src/native_ir.py`, `src/tiny_language_codegen_native.py`, `src/native_vm.py`) and run interpreter vs. VM smoke tests.
 - [x] **CLI and LSP parity**: Deliver Tiny implementations of `tiny_language_cli.py`, `tiny_lang_cli.py`, `language_server.py`, and `language_server_cli.py`, including flag handling and LSP capabilities, plus end-to-end tests.
 
-## Offene Aufgaben (aus der letzten Diskussion)
+## Open tasks
 - [x] **Extend the LLVM emitter** (in progress): The experimental path in `tiny_language_codegen_llvm.py` should cover more native IR operations and remain selectable via CLI/API. Initial steps from this run: POP support and an extra test to lock in the behavior.
   - **Nächste Schritte**
     - [ ] Kontrollfluss-Lowering für `If`/`While` ergänzen (derzeit `NotImplementedError` für Branches).
@@ -132,7 +132,7 @@ Minimal end-to-end examples (Hello World and a function return) live under `exam
 - [x] **Rosetta sync for local paths**: The script `examples/rosetta/copy_rosetta_samples.py` now offers configurable paths/filters/delays, a dry-run flag, and can trigger the transpiler directly.
 - [x] **CLI copy-on-call env regression**: Added a CLI regression test to ensure `TINYLANG_COPY_ON_CALL` defaults are honored when running inline source.
 
-### Neu priorisierte Aufgaben
+### Newly prioritized tasks
 1. **Refine the LLVM emitter** ✅: Implement comparison and modulo operations in `tiny_language_codegen_llvm.py`, keep the `--emit-llvm` CLI option functional, and add regression tests that cover the expanded IR path.
 2. **Design a Python↔TinyLanguage bridge** ✅: Create a small FFI layer (allowlists/timeouts) plus matching Tiny/Python demos to show common datatype mappings; tests in `tests/` should cover both directions.
 3. **Rosetta-Sync konfigurierbar machen** ✅: `examples/rosetta/copy_rosetta_samples.py` ist jetzt filterbar, bietet Dry-Run/Transpile-Optionen und dokumentierte Bedienung inkl. Regressionstest.

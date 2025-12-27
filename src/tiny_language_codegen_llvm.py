@@ -10,9 +10,9 @@ production-grade code generation.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple
 
-from native_ir import Instruction, Opcode, ProgramIR
+from native_ir import FunctionIR, Instruction, Opcode, ProgramIR
 
 
 @dataclass
@@ -21,6 +21,24 @@ class _StackValue:
 
     name: str
     ty: str
+
+
+@dataclass(frozen=True)
+class _ResolvedFunctionSignature:
+    param_types: Dict[str, str]
+    return_type: str
+
+
+@dataclass
+class _FunctionSignature:
+    param_types: Dict[str, Optional[str]]
+    return_type: Optional[str]
+
+
+@dataclass
+class _TypeValue:
+    ty: Optional[str]
+    source: Optional[str] = None
 
 
 class LLVMCodeGenerator:
@@ -33,32 +51,41 @@ class LLVMCodeGenerator:
         self._var_types: Dict[str, str] = {}
         self._prologue: List[str] = []
         self._body: List[str] = []
+        self._function_signatures: Dict[str, _ResolvedFunctionSignature] = {}
+        self._current_return_type: Optional[str] = None
 
     def compile_program(self, program: ProgramIR) -> str:
         """Return LLVM IR for the given native ``ProgramIR``.
 
-        Only the entry block is supported for now. Control flow via jumps is
-        supported, while user-defined functions and complex types remain out of
+        The LLVM prototype supports top-level code plus simple user-defined
+        functions and calls over the numeric subset. Complex types remain out of
         scope so gaps stay visible during experimentation.
         """
 
-        if program.functions:
-            raise NotImplementedError("LLVM prototype only handles top-level code without functions")
+        self._function_signatures = self._infer_signatures(program)
 
+        lines: List[str] = []
+        lines.extend(self._header())
+        for func in program.functions.values():
+            lines.extend(self._compile_function(func, self._function_signatures[func.name]))
+
+        lines.extend(self._compile_entry(program.entry))
+        return "\n".join(lines)
+
+    def _compile_entry(self, instructions: List[Instruction]) -> List[str]:
         self._tmp_index = 0
         self._stack.clear()
         self._allocas.clear()
         self._var_types.clear()
         self._prologue.clear()
         self._body.clear()
+        self._current_return_type = None
 
-        instructions = program.entry
         block_starts = self._collect_block_starts(instructions)
         label_map = self._label_map(block_starts)
-        self._emit_blocks(instructions, block_starts, label_map)
+        self._emit_blocks(instructions, block_starts, label_map, allow_return=False, exit_label="exit")
 
         lines: List[str] = []
-        lines.extend(self._header())
         lines.append("define i32 @tiny_main() {")
         lines.append("entry:")
         lines.extend(self._prologue)
@@ -67,8 +94,50 @@ class LLVMCodeGenerator:
         lines.append("exit:")
         lines.append("  ret i32 0")
         lines.append("}")
+        return lines
 
-        return "\n".join(lines)
+    def _compile_function(self, func: FunctionIR, signature: _ResolvedFunctionSignature) -> List[str]:
+        self._tmp_index = 0
+        self._stack.clear()
+        self._allocas.clear()
+        self._var_types.clear()
+        self._prologue.clear()
+        self._body.clear()
+        self._current_return_type = signature.return_type
+
+        params: List[Tuple[str, str]] = [(name, signature.param_types[name]) for name in func.params]
+        for name, ty in params:
+            addr_name = f"{name}.addr"
+            arg_name = f"{name}.arg"
+            self._allocas[name] = addr_name
+            self._var_types[name] = ty
+            self._prologue.append(f"  %{addr_name} = alloca {ty}")
+            self._prologue.append(f"  store {ty} %{arg_name}, {ty}* %{addr_name}")
+
+        block_starts = self._collect_block_starts(func.instructions)
+        label_map = self._label_map(block_starts)
+        self._emit_blocks(func.instructions, block_starts, label_map, allow_return=True, exit_label="exit")
+
+        param_sig = ", ".join(f"{ty} %{name}.arg" for name, ty in params)
+        lines: List[str] = []
+        lines.append(f"define {signature.return_type} @{func.name}({param_sig}) {{")
+        lines.append("entry:")
+        lines.extend(self._prologue)
+        lines.append(f"  br label %{label_map[0]}")
+        lines.extend(self._body)
+        lines.append("exit:")
+        lines.append(f"  ret {signature.return_type} {self._zero_value(signature.return_type)}")
+        lines.append("}")
+        return lines
+
+    def _zero_value(self, ty: str) -> str:
+        if ty == "double":
+            return "0.0"
+        if ty == "i1":
+            return "0"
+        if ty == "i64":
+            return "0"
+        raise NotImplementedError(f"zero literal not supported for type {ty}")
 
     def _collect_block_starts(self, instructions: List[Instruction]) -> List[int]:
         starts = {0}
@@ -91,18 +160,25 @@ class LLVMCodeGenerator:
         return {start: f"block{start}" for start in block_starts}
 
     def _emit_blocks(
-        self, instructions: List[Instruction], block_starts: List[int], label_map: Dict[int, str]
+        self,
+        instructions: List[Instruction],
+        block_starts: List[int],
+        label_map: Dict[int, str],
+        allow_return: bool,
+        exit_label: str,
     ) -> None:
         for index, start in enumerate(block_starts):
             if self._stack:
                 raise NotImplementedError("LLVM prototype cannot carry stack values across basic blocks")
             self._body.append(f"{label_map[start]}:")
             end = block_starts[index + 1] if index + 1 < len(block_starts) else len(instructions)
-            terminated = self._emit_block_body(instructions, start, end, label_map)
+            terminated = self._emit_block_body(instructions, start, end, label_map, allow_return, exit_label)
             if not terminated:
                 if self._stack:
                     raise NotImplementedError("LLVM prototype cannot carry stack values across basic blocks")
-                next_label = label_map[block_starts[index + 1]] if index + 1 < len(block_starts) else "exit"
+                next_label = (
+                    label_map[block_starts[index + 1]] if index + 1 < len(block_starts) else exit_label
+                )
                 self._body.append(f"  br label %{next_label}")
 
     def _emit_block_body(
@@ -111,6 +187,8 @@ class LLVMCodeGenerator:
         start: int,
         end: int,
         label_map: Dict[int, str],
+        allow_return: bool,
+        exit_label: str,
     ) -> bool:
         self._stack.clear()
         for idx in range(start, end):
@@ -127,10 +205,18 @@ class LLVMCodeGenerator:
                 if self._stack:
                     raise NotImplementedError("LLVM prototype cannot carry stack values across basic blocks")
                 target = int(instr.arg)
-                target_label = "exit" if target == len(instructions) else label_map[target]
+                target_label = exit_label if target == len(instructions) else label_map[target]
                 fallthrough = idx + 1
-                fallthrough_label = "exit" if fallthrough == len(instructions) else label_map[fallthrough]
+                fallthrough_label = exit_label if fallthrough == len(instructions) else label_map[fallthrough]
                 self._body.append(f"  br i1 {cond_name}, label %{fallthrough_label}, label %{target_label}")
+                return True
+            if instr.op == Opcode.RETURN:
+                if not allow_return:
+                    continue
+                if not self._stack:
+                    raise NotImplementedError("LLVM prototype requires a return value")
+                value = self._stack.pop()
+                self._body.append(f"  ret {value.ty} {value.name}")
                 return True
             self._emit_instruction(instr)
         return False
@@ -153,7 +239,7 @@ class LLVMCodeGenerator:
         elif instr.op == Opcode.FLUSH:
             self._flush_output()
         elif instr.op == Opcode.CALL:
-            raise NotImplementedError(f"LLVM prototype does not yet support {instr.op.value}")
+            self._call_function(instr.arg)
         elif instr.op == Opcode.RETURN:
             # The surrounding function emits a single final return, so intermediate
             # returns are ignored for now.
@@ -269,6 +355,28 @@ class LLVMCodeGenerator:
     def _flush_output(self) -> None:
         self._body.append("  call i32 @fflush(i8* null)")
 
+    def _call_function(self, call_spec: Tuple[str, int]) -> None:
+        name, argc = call_spec
+        if name not in self._function_signatures:
+            raise NotImplementedError(f"unknown function {name} in LLVM prototype")
+        signature = self._function_signatures[name]
+        if argc != len(signature.param_types):
+            raise NotImplementedError(
+                f"function {name} expects {len(signature.param_types)} args, got {argc}"
+            )
+        args = [self._stack.pop() for _ in range(argc)][::-1]
+        rendered_args: List[str] = []
+        for (param_name, param_type), arg in zip(signature.param_types.items(), args):
+            if arg.ty != param_type:
+                raise NotImplementedError(
+                    f"argument for {name}.{param_name} expected {param_type}, got {arg.ty}"
+                )
+            rendered_args.append(f"{param_type} {arg.name}")
+        dest = self._next_tmp()
+        args_text = ", ".join(rendered_args)
+        self._body.append(f"  {dest} = call {signature.return_type} @{name}({args_text})")
+        self._stack.append(_StackValue(name=dest, ty=signature.return_type))
+
     # ----- Helpers -----
 
     def _pop_condition(self) -> str:
@@ -305,3 +413,149 @@ class LLVMCodeGenerator:
             "declare i32 @printf(i8*, ...)",
             "declare i32 @fflush(i8*)",
         ]
+
+    def _infer_signatures(self, program: ProgramIR) -> Dict[str, _ResolvedFunctionSignature]:
+        signatures: Dict[str, _FunctionSignature] = {}
+        for func in program.functions.values():
+            signatures[func.name] = _FunctionSignature(
+                param_types={name: None for name in func.params},
+                return_type=None,
+            )
+        if not signatures:
+            return {}
+
+        for _ in range(len(signatures) + 1):
+            changed = False
+            for func in program.functions.values():
+                if self._infer_function_signature(func, signatures):
+                    changed = True
+            if not changed:
+                break
+
+        resolved: Dict[str, _ResolvedFunctionSignature] = {}
+        for name, signature in signatures.items():
+            param_types = {param: ty or "i64" for param, ty in signature.param_types.items()}
+            return_type = signature.return_type or "i64"
+            resolved[name] = _ResolvedFunctionSignature(param_types=param_types, return_type=return_type)
+        return resolved
+
+    def _infer_function_signature(
+        self, func: FunctionIR, signatures: Dict[str, _FunctionSignature]
+    ) -> bool:
+        changed = False
+        stack: List[_TypeValue] = []
+        locals_types: Dict[str, Optional[str]] = {}
+        signature = signatures[func.name]
+
+        def set_param_type(param_name: str, ty: str) -> None:
+            nonlocal changed
+            existing = signature.param_types.get(param_name)
+            if existing is None:
+                signature.param_types[param_name] = ty
+                changed = True
+            elif existing != ty:
+                raise NotImplementedError(
+                    f"mixed-type parameter {param_name} in LLVM prototype: {existing} vs {ty}"
+                )
+
+        def set_return_type(ty: str) -> None:
+            nonlocal changed
+            if signature.return_type is None:
+                signature.return_type = ty
+                changed = True
+            elif signature.return_type != ty:
+                raise NotImplementedError(
+                    f"mixed-type return in LLVM prototype: {signature.return_type} vs {ty}"
+                )
+
+        for instr in func.instructions:
+            if instr.op == Opcode.PUSH_CONST:
+                if isinstance(instr.arg, bool):
+                    stack.append(_TypeValue("i1"))
+                elif isinstance(instr.arg, int):
+                    stack.append(_TypeValue("i64"))
+                elif isinstance(instr.arg, float):
+                    stack.append(_TypeValue("double"))
+                else:
+                    raise NotImplementedError(
+                        f"constants of type {type(instr.arg).__name__} are not supported in LLVM prototype"
+                    )
+            elif instr.op == Opcode.LOAD:
+                name = instr.arg
+                if name in locals_types:
+                    stack.append(_TypeValue(locals_types[name]))
+                elif name in signature.param_types:
+                    stack.append(_TypeValue(signature.param_types[name], source=name))
+                else:
+                    raise NotImplementedError(f"unknown variable {name} in LLVM prototype")
+            elif instr.op == Opcode.STORE:
+                value = stack.pop()
+                ty = value.ty
+                if ty is None and value.source:
+                    ty = signature.param_types[value.source]
+                locals_types[instr.arg] = ty
+            elif instr.op == Opcode.BINARY:
+                right = stack.pop()
+                left = stack.pop()
+                left_ty = left.ty
+                right_ty = right.ty
+                if left_ty and right_ty and left_ty != right_ty:
+                    raise NotImplementedError("mixed-type arithmetic is not yet supported in LLVM prototype")
+                known_ty = left_ty or right_ty
+                if left_ty is None and left.source and known_ty:
+                    set_param_type(left.source, known_ty)
+                    left_ty = known_ty
+                if right_ty is None and right.source and known_ty:
+                    set_param_type(right.source, known_ty)
+                    right_ty = known_ty
+                op = instr.arg
+                if op in {"+", "-", "*", "/", "%"}:
+                    stack.append(_TypeValue(known_ty))
+                elif op in {"==", "!=", "<", ">", "<=", ">="}:
+                    stack.append(_TypeValue("i1"))
+                else:
+                    raise NotImplementedError(f"operator {op} not supported in LLVM prototype")
+            elif instr.op == Opcode.PRINT:
+                for _ in range(int(instr.arg)):
+                    stack.pop()
+            elif instr.op == Opcode.FLUSH:
+                continue
+            elif instr.op == Opcode.POP:
+                stack.pop()
+            elif instr.op == Opcode.JUMP:
+                stack.clear()
+            elif instr.op == Opcode.JUMP_IF_FALSE:
+                if stack:
+                    stack.pop()
+                stack.clear()
+            elif instr.op == Opcode.CALL:
+                name, argc = instr.arg
+                args = [stack.pop() for _ in range(argc)][::-1]
+                callee = signatures.get(name)
+                if callee is None:
+                    raise NotImplementedError(f"unknown function {name} in LLVM prototype")
+                for param_name, arg in zip(callee.param_types.keys(), args):
+                    expected = callee.param_types[param_name]
+                    if expected is None and arg.ty:
+                        callee.param_types[param_name] = arg.ty
+                        changed = True
+                    if arg.ty is None and arg.source and expected:
+                        set_param_type(arg.source, expected)
+                    if expected and arg.ty and expected != arg.ty:
+                        raise NotImplementedError(
+                            f"argument type mismatch for {name}.{param_name}: {expected} vs {arg.ty}"
+                        )
+                stack.append(_TypeValue(callee.return_type))
+            elif instr.op == Opcode.RETURN:
+                if stack:
+                    value = stack.pop()
+                    if value.ty is None and value.source and signature.return_type:
+                        set_param_type(value.source, signature.return_type)
+                        value = _TypeValue(signature.return_type)
+                    if value.ty:
+                        set_return_type(value.ty)
+                stack.clear()
+            else:
+                raise NotImplementedError(f"unhandled opcode {instr.op}")
+
+        return changed

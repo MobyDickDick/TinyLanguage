@@ -54,6 +54,15 @@ def test_llvm_codegen_emits_full_format_string_lengths() -> None:
     assert "getelementptr inbounds [5 x i8], [5 x i8]* @.fmt_double" in llvm_ir
 
 
+def test_llvm_codegen_supports_function_calls() -> None:
+    source = "fn add(x, y) { return x + y; } print(add(2, 3));"
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "define i64 @add(i64 %x.arg, i64 %y.arg)" in llvm_ir
+    assert "call i64 @add(i64 2, i64 3)" in llvm_ir
+
+
 def test_pop_is_ignored_in_llvm_codegen() -> None:
     program = ProgramIR(
         entry=[

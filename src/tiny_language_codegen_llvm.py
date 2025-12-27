@@ -55,6 +55,7 @@ class LLVMCodeGenerator:
         self._string_defs: List[str] = []
         self._function_signatures: Dict[str, _ResolvedFunctionSignature] = {}
         self._current_return_type: Optional[str] = None
+        self._current_instruction: Optional[Instruction] = None
 
     def _format_opcode(self, op: Opcode) -> str:
         return op.value if isinstance(op, Opcode) else str(op)
@@ -62,11 +63,23 @@ class LLVMCodeGenerator:
     def _supported_opcodes(self) -> str:
         return ", ".join(self._format_opcode(op) for op in Opcode)
 
+    def _instruction_context(self, instr: Optional[Instruction] = None) -> str:
+        if instr is None:
+            return ""
+        op_name = self._format_opcode(instr.op)
+        if instr.arg is None:
+            return f" (instruction: {op_name})"
+        return f" (instruction: {op_name} {instr.arg!r})"
+
+    def _lowering_error(self, reason: str, instr: Optional[Instruction] = None) -> None:
+        context = self._instruction_context(instr or self._current_instruction)
+        raise NotImplementedError(f"LLVM prototype missing lowering: {reason}{context}")
+
     def _unsupported_opcode(self, instr: Instruction) -> None:
         op_name = self._format_opcode(instr.op)
-        raise NotImplementedError(
-            "LLVM prototype does not support opcode "
-            f"{op_name}. Supported opcodes: {self._supported_opcodes()}."
+        self._lowering_error(
+            f"opcode {op_name} not supported. Supported opcodes: {self._supported_opcodes()}.",
+            instr,
         )
 
     def compile_program(self, program: ProgramIR) -> str:
@@ -215,6 +228,7 @@ class LLVMCodeGenerator:
         self._stack.clear()
         for idx in range(start, end):
             instr = instructions[idx]
+            self._current_instruction = instr
             if instr.op == Opcode.JUMP:
                 if self._stack:
                     raise NotImplementedError("LLVM prototype cannot carry stack values across basic blocks")
@@ -284,7 +298,9 @@ class LLVMCodeGenerator:
             )
             self._stack.append(_StackValue(name=dest, ty="i8*"))
         else:
-            raise NotImplementedError(f"constants of type {type(value).__name__} are not supported in LLVM prototype")
+            self._lowering_error(
+                f"constants of type {type(value).__name__} are not supported",
+            )
 
     def _load_var(self, name: str) -> None:
         ty = self._var_types.get(name)
@@ -316,7 +332,7 @@ class LLVMCodeGenerator:
         if op in {"==", "!=", "<", ">", "<=", ">="}:
             self._emit_comparison(op, left, right)
             return
-        raise NotImplementedError(f"operator {op} not supported in LLVM prototype")
+        self._lowering_error(f"operator {op} not supported")
 
     def _emit_arithmetic_op(self, op: str, left: _StackValue, right: _StackValue) -> None:
         ty = left.ty
@@ -326,7 +342,7 @@ class LLVMCodeGenerator:
         else:
             instr = {"+": "add", "-": "sub", "*": "mul", "/": "sdiv", "%": "srem"}.get(op)
         if instr is None:
-            raise NotImplementedError(f"operator {op} not supported for type {ty} in LLVM prototype")
+            self._lowering_error(f"operator {op} not supported for type {ty}")
         self._body.append(f"  {dest} = {instr} {ty} {left.name}, {right.name}")
         self._stack.append(_StackValue(name=dest, ty=ty))
 
@@ -343,7 +359,7 @@ class LLVMCodeGenerator:
                 ">=": "oge",
             }.get(op)
             if predicate is None:
-                raise NotImplementedError(f"comparison {op} not supported for type {ty} in LLVM prototype")
+                self._lowering_error(f"comparison {op} not supported for type {ty}")
             self._body.append(f"  {dest} = fcmp {predicate} {ty} {left.name}, {right.name}")
         else:
             predicate = {
@@ -355,7 +371,7 @@ class LLVMCodeGenerator:
                 ">=": "sge",
             }.get(op)
             if predicate is None:
-                raise NotImplementedError(f"comparison {op} not supported for type {ty} in LLVM prototype")
+                self._lowering_error(f"comparison {op} not supported for type {ty}")
             self._body.append(f"  {dest} = icmp {predicate} {ty} {left.name}, {right.name}")
         self._stack.append(_StackValue(name=dest, ty="i1"))
 
@@ -424,7 +440,7 @@ class LLVMCodeGenerator:
             dest = self._next_tmp()
             self._body.append(f"  {dest} = fcmp one double {cond.name}, 0.0")
             return dest
-        raise NotImplementedError(f"conditional branches for type {cond.ty} not supported in LLVM prototype")
+        self._lowering_error(f"conditional branches for type {cond.ty} not supported")
 
     def _next_tmp(self) -> str:
         self._tmp_index += 1
@@ -437,7 +453,7 @@ class LLVMCodeGenerator:
             return ".fmt_i64", 5
         if ty == "i8*":
             return ".fmt_str", 4
-        raise NotImplementedError(f"printing values of type {ty} not supported in LLVM prototype")
+        self._lowering_error(f"printing values of type {ty} not supported")
 
     def _header(self) -> List[str]:
         return [

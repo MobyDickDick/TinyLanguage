@@ -538,7 +538,7 @@ The native compiler is developed in its own branch (`nativeCompiler`).
 - [x] **Tiny → C → LLVM pipeline**
   - Add a CLI flag that emits LLVM IR by translating TinyLanguage to C and invoking clang.
   - Include a small regression test that validates the emitted `.ll` output exists.
-- [ ] **Python library imports**
+- [x] **Python library imports**
   - Provide a TinyLanguage-facing API (or syntax) that maps to `importlib` for loading Python modules.
   - Add examples/tests demonstrating Python library usage.
 - [x] **Backend feature matrix**

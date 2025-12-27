@@ -110,3 +110,11 @@ def test_proxy_pipeline_demo_runs_end_to_end():
 
     lines = [line.strip() for line in output.splitlines() if line.strip()]
     assert lines == ["81.0", "/tmp/example.txt", '{"area": 12}']
+
+
+def test_python_fn_demo_runs_end_to_end():
+    program = PROJECT_ROOT / "src_tiny" / "python_fn_demo.tiny"
+    output = compile_and_run(program.read_text())
+
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+    assert lines == ["sqrt via Python.fn:", "9.0", "ceil via Python.fn:", "5"]

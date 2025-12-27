@@ -3,6 +3,13 @@
 Utilities for keeping Rosetta Code samples in sync and translating them to
 TinyLanguage.
 
+## Task layout
+
+Each Rosetta task now has a dedicated folder under `examples/rosetta/<task>/`
+that co-locates the Python source and the translated TinyLanguage snapshot.
+This keeps related artifacts together while the shared `python/` and `expected/`
+folders remain the canonical inputs for the transpiler.
+
 ## Copy missing Python samples
 
 `copy_rosetta_samples.py` pulls Python scripts from a source directory (default:

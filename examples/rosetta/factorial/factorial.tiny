@@ -1,0 +1,11 @@
+fn factorial(n) {
+    define result = 1;
+    define i = 2;
+    while (i <= n) {
+        result = result * i;
+        i = i + 1;
+    }
+    return result;
+}
+
+define _ = print(factorial(5));

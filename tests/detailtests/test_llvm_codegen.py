@@ -247,3 +247,22 @@ def test_llvm_codegen_reports_missing_lowering_with_context() -> None:
         r"\(instruction: BINARY '\*\*'\)",
     ):
         LLVMCodeGenerator().compile_program(program)
+
+
+def test_llvm_codegen_reports_mixed_type_arithmetic_with_context() -> None:
+    program = ProgramIR(
+        entry=[
+            Instruction(Opcode.PUSH_CONST, 1),
+            Instruction(Opcode.PUSH_CONST, 1.5),
+            Instruction(Opcode.BINARY, "+"),
+            Instruction(Opcode.PRINT, 1),
+        ],
+        functions={},
+    )
+
+    with pytest.raises(
+        NotImplementedError,
+        match=r"LLVM prototype missing lowering: mixed-type arithmetic not supported "
+        r"\(i64 vs double\) \(instruction: BINARY '\+'\)",
+    ):
+        LLVMCodeGenerator().compile_program(program)

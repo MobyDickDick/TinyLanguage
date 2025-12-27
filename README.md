@@ -106,8 +106,9 @@ Minimal end-to-end examples (Hello World and a function return) live under `exam
     - [x] Control-Flow (`if`/`while`) im LLVM-Emitter abbilden; aktuell nur straight-line code.
     - [x] Funktionen und Calls unterstützen; bis dahin explizite `NotImplementedError` belassen.
     - [x] Heap/Strings abdecken (mindestens `print` mit Strings, einfache Heap-Reads/Writes).
-    - [ ] Fehlerberichte verbessern (klarer Hinweis auf nicht unterstützte AST-Knoten/IR-OpCodes).
+    - [x] Fehlerberichte verbessern (klarer Hinweis auf nicht unterstützte AST-Knoten/IR-OpCodes).
 - [x] **Port project modules to TinyLanguage (self-hosting)**: Inventory interpreter/compiler modules, design Tiny-compatible library primitives, and port core components while keeping parallel Python/Tiny tests. See [`docs/self_hosting_port_plan.md`](docs/self_hosting_port_plan.md) for the current module inventory and migration plan.
+- [ ] **Port remaining Python sources once LLVM builds are direct**: After TinyLanguage can build directly via the LLVM pipeline, convert the remaining Python implementation files into TinyLanguage equivalents to push toward full self-hosting.
 - [x] **Import and transpile Rosetta Code samples**: Store selected Rosetta Code tasks (FizzBuzz, Fibonacci, sorting, etc.) under `examples/rosetta/`, then build a translation pass that converts the Python versions into TinyLanguage variants with snapshot tests.
 - [x] **Write a beginner-friendly tutorial**: Create `docs/tutorial.md` with setup, syntax, control flow, functions, modules, and tooling, linking runnable snippets and referencing them from `README.md`.
 - [x] **Add English documentation across source files**: Sweep public functions/classes for docstrings and module headers that describe purpose, parameters, return values, and error scenarios; wire docstring checks (e.g., `ruff pydocstyle`) into CI.
@@ -130,7 +131,7 @@ Minimal end-to-end examples (Hello World and a function return) live under `exam
     - [x] Kontrollfluss-Lowering für `If`/`While` ergänzen (derzeit `NotImplementedError` für Branches).
     - [x] Funktions-Frames und Aufrufe (Call/Return) im LLVM-Emitter nachziehen.
     - [x] String/Heap-Handling skizzieren (Strings, `new`, `heap_get`/`heap_set`).
-    - [ ] Diagnostik: fehlende Lowerings mit präzisen Fehlermeldungen kennzeichnen.
+    - [x] Diagnostik: fehlende Lowerings mit präzisen Fehlermeldungen kennzeichnen.
 - [x] **Python bridge for feature pass-through**: A TinyLanguage module and Python helpers should simplify the FFI (imports/calls/allowlists/timeouts) and wrap bidirectional calls. Demos and tests would cover common datatype mappings and sandbox boundaries.
 - [x] **Rosetta sync for local paths**: The script `examples/rosetta/copy_rosetta_samples.py` now offers configurable paths/filters/delays, a dry-run flag, and can trigger the transpiler directly.
 - [x] **CLI copy-on-call env regression**: Added a CLI regression test to ensure `TINYLANG_COPY_ON_CALL` defaults are honored when running inline source.

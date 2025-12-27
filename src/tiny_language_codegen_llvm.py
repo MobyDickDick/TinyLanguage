@@ -231,7 +231,7 @@ class LLVMCodeGenerator:
             self._current_instruction = instr
             if instr.op == Opcode.JUMP:
                 if self._stack:
-                    raise NotImplementedError("LLVM prototype cannot carry stack values across basic blocks")
+                    self._lowering_error("cannot carry stack values across basic blocks", instr)
                 target = int(instr.arg)
                 target_label = "exit" if target == len(instructions) else label_map[target]
                 self._body.append(f"  br label %{target_label}")
@@ -239,7 +239,7 @@ class LLVMCodeGenerator:
             if instr.op == Opcode.JUMP_IF_FALSE:
                 cond_name = self._pop_condition()
                 if self._stack:
-                    raise NotImplementedError("LLVM prototype cannot carry stack values across basic blocks")
+                    self._lowering_error("cannot carry stack values across basic blocks", instr)
                 target = int(instr.arg)
                 target_label = exit_label if target == len(instructions) else label_map[target]
                 fallthrough = idx + 1
@@ -250,7 +250,7 @@ class LLVMCodeGenerator:
                 if not allow_return:
                     continue
                 if not self._stack:
-                    raise NotImplementedError("LLVM prototype requires a return value")
+                    self._lowering_error("return requires a value", instr)
                 value = self._stack.pop()
                 self._body.append(f"  ret {value.ty} {value.name}")
                 return True
@@ -305,7 +305,7 @@ class LLVMCodeGenerator:
     def _load_var(self, name: str) -> None:
         ty = self._var_types.get(name)
         if ty is None:
-            raise NotImplementedError(f"unknown variable {name} in LLVM prototype")
+            self._lowering_error(f"unknown variable {name}")
         dest = self._next_tmp()
         self._body.append(f"  {dest} = load {ty}, {ty}* %{self._allocas[name]}")
         self._stack.append(_StackValue(name=dest, ty=ty))
@@ -324,7 +324,9 @@ class LLVMCodeGenerator:
         right = self._stack.pop()
         left = self._stack.pop()
         if left.ty != right.ty:
-            raise NotImplementedError("mixed-type arithmetic is not yet supported in LLVM prototype")
+            self._lowering_error(
+                f"mixed-type arithmetic not supported ({left.ty} vs {right.ty})"
+            )
 
         if op in {"+", "-", "*", "/", "%"}:
             self._emit_arithmetic_op(op, left, right)
@@ -406,16 +408,14 @@ class LLVMCodeGenerator:
         if signature is None:
             signature = self._builtin_signature(name)
         if signature is None:
-            raise NotImplementedError(f"unknown function {name} in LLVM prototype")
+            self._lowering_error(f"unknown function {name}")
         if argc != len(signature.param_types):
-            raise NotImplementedError(
-                f"function {name} expects {len(signature.param_types)} args, got {argc}"
-            )
+            self._lowering_error(f"function {name} expects {len(signature.param_types)} args, got {argc}")
         args = [self._stack.pop() for _ in range(argc)][::-1]
         rendered_args: List[str] = []
         for (param_name, param_type), arg in zip(signature.param_types.items(), args):
             if arg.ty != param_type:
-                raise NotImplementedError(
+                self._lowering_error(
                     f"argument for {name}.{param_name} expected {param_type}, got {arg.ty}"
                 )
             rendered_args.append(f"{param_type} {arg.name}")

@@ -51,6 +51,8 @@ class LLVMCodeGenerator:
         self._var_types: Dict[str, str] = {}
         self._prologue: List[str] = []
         self._body: List[str] = []
+        self._string_constants: Dict[str, Tuple[str, int]] = {}
+        self._string_defs: List[str] = []
         self._function_signatures: Dict[str, _ResolvedFunctionSignature] = {}
         self._current_return_type: Optional[str] = None
 
@@ -63,13 +65,20 @@ class LLVMCodeGenerator:
         """
 
         self._function_signatures = self._infer_signatures(program)
+        self._string_constants.clear()
+        self._string_defs.clear()
+
+        function_blocks: List[List[str]] = []
+        for func in program.functions.values():
+            function_blocks.append(self._compile_function(func, self._function_signatures[func.name]))
+        entry_block = self._compile_entry(program.entry)
 
         lines: List[str] = []
         lines.extend(self._header())
-        for func in program.functions.values():
-            lines.extend(self._compile_function(func, self._function_signatures[func.name]))
-
-        lines.extend(self._compile_entry(program.entry))
+        lines.extend(self._string_defs)
+        for block in function_blocks:
+            lines.extend(block)
+        lines.extend(entry_block)
         return "\n".join(lines)
 
     def _compile_entry(self, instructions: List[Instruction]) -> List[str]:
@@ -254,6 +263,13 @@ class LLVMCodeGenerator:
             self._stack.append(_StackValue(name=str(value), ty="i64"))
         elif isinstance(value, float):
             self._stack.append(_StackValue(name=f"{value:.6e}", ty="double"))
+        elif isinstance(value, str):
+            name, length = self._string_constant(value)
+            dest = self._next_tmp()
+            self._body.append(
+                f"  {dest} = getelementptr inbounds [{length} x i8], [{length} x i8]* @{name}, i32 0, i32 0"
+            )
+            self._stack.append(_StackValue(name=dest, ty="i8*"))
         else:
             raise NotImplementedError(f"constants of type {type(value).__name__} are not supported in LLVM prototype")
 
@@ -357,9 +373,11 @@ class LLVMCodeGenerator:
 
     def _call_function(self, call_spec: Tuple[str, int]) -> None:
         name, argc = call_spec
-        if name not in self._function_signatures:
+        signature = self._function_signatures.get(name)
+        if signature is None:
+            signature = self._builtin_signature(name)
+        if signature is None:
             raise NotImplementedError(f"unknown function {name} in LLVM prototype")
-        signature = self._function_signatures[name]
         if argc != len(signature.param_types):
             raise NotImplementedError(
                 f"function {name} expects {len(signature.param_types)} args, got {argc}"
@@ -404,14 +422,22 @@ class LLVMCodeGenerator:
             return ".fmt_double", 5
         if ty in {"i64", "i1"}:
             return ".fmt_i64", 5
+        if ty == "i8*":
+            return ".fmt_str", 4
         raise NotImplementedError(f"printing values of type {ty} not supported in LLVM prototype")
 
     def _header(self) -> List[str]:
         return [
             "@.fmt_i64 = private unnamed_addr constant [5 x i8] c\"%ld\\0A\\00\"",
             "@.fmt_double = private unnamed_addr constant [5 x i8] c\"%f\\0A\\00\"",
+            "@.fmt_str = private unnamed_addr constant [4 x i8] c\"%s\\0A\\00\"",
             "declare i32 @printf(i8*, ...)",
             "declare i32 @fflush(i8*)",
+            "declare i64 @__new(i64)",
+            "declare i64 @new(i64)",
+            "declare i64 @heap_get(i64, i64)",
+            "declare i64 @heap_set(i64, i64, i64)",
+            "declare i64 @delete(i64)",
         ]
 
     def _infer_signatures(self, program: ProgramIR) -> Dict[str, _ResolvedFunctionSignature]:
@@ -476,6 +502,8 @@ class LLVMCodeGenerator:
                     stack.append(_TypeValue("i64"))
                 elif isinstance(instr.arg, float):
                     stack.append(_TypeValue("double"))
+                elif isinstance(instr.arg, str):
+                    stack.append(_TypeValue("i8*"))
                 else:
                     raise NotImplementedError(
                         f"constants of type {type(instr.arg).__name__} are not supported in LLVM prototype"
@@ -533,7 +561,16 @@ class LLVMCodeGenerator:
                 args = [stack.pop() for _ in range(argc)][::-1]
                 callee = signatures.get(name)
                 if callee is None:
-                    raise NotImplementedError(f"unknown function {name} in LLVM prototype")
+                    builtin = self._builtin_signature(name)
+                    if builtin is None:
+                        raise NotImplementedError(f"unknown function {name} in LLVM prototype")
+                    for param_ty, arg in zip(builtin.param_types.values(), args):
+                        if param_ty and arg.ty and param_ty != arg.ty:
+                            raise NotImplementedError(
+                                f"argument type mismatch for {name}: {param_ty} vs {arg.ty}"
+                            )
+                    stack.append(_TypeValue(builtin.return_type))
+                    continue
                 for param_name, arg in zip(callee.param_types.keys(), args):
                     expected = callee.param_types[param_name]
                     if expected is None and arg.ty:
@@ -559,3 +596,37 @@ class LLVMCodeGenerator:
                 raise NotImplementedError(f"unhandled opcode {instr.op}")
 
         return changed
+
+    def _builtin_signature(self, name: str) -> Optional[_ResolvedFunctionSignature]:
+        if name in {"__new", "new"}:
+            return _ResolvedFunctionSignature(param_types={"size": "i64"}, return_type="i64")
+        if name == "heap_get":
+            return _ResolvedFunctionSignature(param_types={"ptr": "i64", "idx": "i64"}, return_type="i64")
+        if name == "heap_set":
+            return _ResolvedFunctionSignature(
+                param_types={"ptr": "i64", "idx": "i64", "value": "i64"}, return_type="i64"
+            )
+        if name == "delete":
+            return _ResolvedFunctionSignature(param_types={"ptr": "i64"}, return_type="i64")
+        return None
+
+    def _string_constant(self, value: str) -> Tuple[str, int]:
+        cached = self._string_constants.get(value)
+        if cached:
+            return cached
+        encoded = value.encode("utf-8")
+        escaped = "".join(self._escape_byte(byte) for byte in encoded)
+        length = len(encoded) + 1
+        name = f".str{len(self._string_constants)}"
+        self._string_constants[value] = (name, length)
+        self._string_defs.append(
+            f"@{name} = private unnamed_addr constant [{length} x i8] c\"{escaped}\\00\""
+        )
+        return name, length
+
+    def _escape_byte(self, value: int) -> str:
+        if value in {0x5C, 0x22}:
+            return f"\\{value:02X}"
+        if 0x20 <= value <= 0x7E:
+            return chr(value)
+        return f"\\{value:02X}"

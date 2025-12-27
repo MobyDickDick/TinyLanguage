@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -58,3 +59,29 @@ def test_emit_llvm_ir_via_c() -> None:
     llvm_ir = compile_to_llvm_ir_via_c(source, compiler=compiler)
 
     assert "define" in llvm_ir
+
+
+def test_emit_llvm_ir_via_c_cli(tmp_path: Path) -> None:
+    compiler = _find_clang()
+    if compiler is None:
+        pytest.skip("clang not available for LLVM IR emission")
+
+    source_path = tmp_path / "sample.tiny"
+    source_path.write_text("print(1 + 2);", encoding="utf-8")
+    out_path = tmp_path / "sample.ll"
+
+    subprocess.check_call(
+        [
+            sys.executable,
+            "-m",
+            "tiny_language_compiler_cli",
+            str(source_path),
+            "--emit-llvm",
+            str(out_path),
+            "--compiler",
+            compiler,
+        ]
+    )
+
+    assert out_path.exists()
+    assert "define" in out_path.read_text(encoding="utf-8")

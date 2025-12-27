@@ -12,7 +12,7 @@ so formuliert, dass sie nach und nach abgearbeitet werden können.
 - **Toolchain**: `clang`/`llc` für den ersten End-to-End-Flow.
 - **Aufgabenliste (statusfähig, aktueller Prototyp)**:
   - [x] Straight-line code (arithmetische Ausdrücke, Variablen, `print`) abbilden.
-  - [ ] Kontrollfluss (`if`/`while`) im LLVM-Emitter ergänzen; aktuell `NotImplementedError` für Branches.
+  - [x] Kontrollfluss (`if`/`while`) im LLVM-Emitter ergänzen.
   - [ ] Funktionen und Calls unterstützen; aktuell `NotImplementedError` für Funktionsaufrufe.
   - [ ] Heap/Strings (z. B. `new`, `heap_get`/`heap_set`, String-Print) im LLVM-Pfad skizzieren.
   - [ ] Fehlermeldungen präzisieren, wenn ein IR-OpCode nicht unterstützt ist.

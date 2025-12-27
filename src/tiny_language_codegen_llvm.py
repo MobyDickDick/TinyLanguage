@@ -2,10 +2,11 @@
 
 The goal of this prototype is to expose a minimal code path that can translate
 the native stack-based IR into a textual LLVM module. It intentionally supports
-only the constructs needed for the tutorial-style examples (numeric literals,
-assignments, arithmetic, and `print`) and will raise ``NotImplementedError`` for
-everything else. The output is meant for inspection or piping into external
-tools like ``llc`` rather than for production-grade code generation.
+the constructs needed for the tutorial-style examples (numeric literals,
+assignments, arithmetic, comparisons, simple control flow, and `print`) and
+will raise ``NotImplementedError`` for everything else. The output is meant for
+inspection or piping into external tools like ``llc`` rather than for
+production-grade code generation.
 """
 
 from dataclasses import dataclass
@@ -36,9 +37,9 @@ class LLVMCodeGenerator:
     def compile_program(self, program: ProgramIR) -> str:
         """Return LLVM IR for the given native ``ProgramIR``.
 
-        Only straight-line code in the entry block is supported for now. Control
-        flow, user-defined functions, and complex types remain out of scope for
-        this prototype so gaps stay visible during experimentation.
+        Only the entry block is supported for now. Control flow via jumps is
+        supported, while user-defined functions and complex types remain out of
+        scope so gaps stay visible during experimentation.
         """
 
         if program.functions:

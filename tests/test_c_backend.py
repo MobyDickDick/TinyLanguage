@@ -71,7 +71,8 @@ def test_emit_llvm_ir_via_c_cli(tmp_path: Path) -> None:
     out_path = tmp_path / "sample.ll"
     env = os.environ.copy()
     repo_root = Path(__file__).resolve().parents[1]
-    env["PYTHONPATH"] = os.pathsep.join(filter(None, [str(repo_root), env.get("PYTHONPATH")]))
+    module_paths = [repo_root / "src", repo_root, env.get("PYTHONPATH")]
+    env["PYTHONPATH"] = os.pathsep.join(filter(None, map(str, module_paths)))
 
     subprocess.check_call(
         [

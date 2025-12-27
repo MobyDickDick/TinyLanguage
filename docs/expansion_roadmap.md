@@ -19,7 +19,7 @@ so formuliert, dass sie nach und nach abgearbeitet werden können.
 
 ## 3) Rosetta-Code-Aufgaben
 
-- **Konsistentes Aufgabenlayout**: `examples/rosetta/<task>/`.
+- **Konsistentes Aufgabenlayout** ✅: `examples/rosetta/<task>/`.
 - **Erste Welle**: Einsteiger-Aufgaben (z. B. Hello World, Fibonacci, Sortierung).
 - **Transpiler-Checks**: Prüfen, welche Sprachfeatures TL noch braucht.
 

@@ -159,6 +159,23 @@ def test_llvm_codegen_emits_flush_calls() -> None:
     assert llvm_ir.count("call i32 (i8*, ...) @printf") == 2
 
 
+def test_llvm_codegen_handles_if_and_while_control_flow() -> None:
+    source = """
+define i = 0;
+while (i < 2) {
+    i = i + 1;
+}
+if (i == 2) {
+    print(i);
+}
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert llvm_ir.count("br i1") == 2
+    assert "block" in llvm_ir
+
+
 def test_llvm_codegen_emits_branches_for_jump_ops() -> None:
     program = ProgramIR(
         entry=[

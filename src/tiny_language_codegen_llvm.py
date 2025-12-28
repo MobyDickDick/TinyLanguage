@@ -21,6 +21,8 @@ class _StackValue:
 
     name: str
     ty: str
+    source: Optional[str] = None
+    literal: Optional[int] = None
 
 
 @dataclass(frozen=True)
@@ -39,6 +41,7 @@ class _FunctionSignature:
 class _TypeValue:
     ty: Optional[str]
     source: Optional[str] = None
+    literal: Optional[int] = None
 
 
 class LLVMCodeGenerator:
@@ -49,6 +52,7 @@ class LLVMCodeGenerator:
         self._stack: List[_StackValue] = []
         self._allocas: Dict[str, str] = {}
         self._var_types: Dict[str, str] = {}
+        self._var_literals: Dict[str, int] = {}
         self._prologue: List[str] = []
         self._body: List[str] = []
         self._string_constants: Dict[str, Tuple[str, int]] = {}
@@ -56,6 +60,7 @@ class LLVMCodeGenerator:
         self._function_signatures: Dict[str, _ResolvedFunctionSignature] = {}
         self._current_return_type: Optional[str] = None
         self._current_instruction: Optional[Instruction] = None
+        self._heap_cell_types: Dict[Tuple[str, int], str] = {}
         self._target_triple = target_triple
         self._data_layout = data_layout
 
@@ -114,9 +119,11 @@ class LLVMCodeGenerator:
         self._stack.clear()
         self._allocas.clear()
         self._var_types.clear()
+        self._var_literals.clear()
         self._prologue.clear()
         self._body.clear()
         self._current_return_type = None
+        self._heap_cell_types.clear()
 
         block_starts = self._collect_block_starts(instructions)
         label_map = self._label_map(block_starts)
@@ -138,9 +145,11 @@ class LLVMCodeGenerator:
         self._stack.clear()
         self._allocas.clear()
         self._var_types.clear()
+        self._var_literals.clear()
         self._prologue.clear()
         self._body.clear()
         self._current_return_type = signature.return_type
+        self._heap_cell_types.clear()
 
         params: List[Tuple[str, str]] = [(name, signature.param_types[name]) for name in func.params]
         for name, ty in params:
@@ -289,7 +298,7 @@ class LLVMCodeGenerator:
         if isinstance(value, bool):
             self._stack.append(_StackValue(name="1" if value else "0", ty="i1"))
         elif isinstance(value, int):
-            self._stack.append(_StackValue(name=str(value), ty="i64"))
+            self._stack.append(_StackValue(name=str(value), ty="i64", literal=value))
         elif isinstance(value, float):
             self._stack.append(_StackValue(name=f"{value:.6e}", ty="double"))
         elif isinstance(value, str):
@@ -310,7 +319,8 @@ class LLVMCodeGenerator:
             self._lowering_error(f"unknown variable {name}")
         dest = self._next_tmp()
         self._body.append(f"  {dest} = load {ty}, {ty}* %{self._allocas[name]}")
-        self._stack.append(_StackValue(name=dest, ty=ty))
+        literal = self._var_literals.get(name)
+        self._stack.append(_StackValue(name=dest, ty=ty, source=name, literal=literal))
 
     def _store_var(self, name: str) -> None:
         if not self._stack:
@@ -320,6 +330,10 @@ class LLVMCodeGenerator:
             self._allocas[name] = name
             self._var_types[name] = value.ty
             self._prologue.append(f"  %{name} = alloca {value.ty}")
+        if value.ty == "i64" and value.literal is not None:
+            self._var_literals[name] = value.literal
+        else:
+            self._var_literals.pop(name, None)
         self._body.append(f"  store {value.ty} {value.name}, {value.ty}* %{self._allocas[name]}")
 
     def _binary_op(self, op: str) -> None:
@@ -406,25 +420,35 @@ class LLVMCodeGenerator:
 
     def _call_function(self, call_spec: Tuple[str, int]) -> None:
         name, argc = call_spec
-        signature = self._function_signatures.get(name)
-        if signature is None:
-            signature = self._builtin_signature(name)
-        if signature is None:
-            self._lowering_error(f"unknown function {name}")
-        if argc != len(signature.param_types):
-            self._lowering_error(f"function {name} expects {len(signature.param_types)} args, got {argc}")
         args = [self._stack.pop() for _ in range(argc)][::-1]
+        resolved_name = name
+        if name == "heap_set":
+            resolved_name = self._resolve_heap_set_name(args)
+        elif name == "heap_get":
+            resolved_name = self._resolve_heap_get_name(args)
+
+        signature = self._function_signatures.get(resolved_name)
+        if signature is None:
+            signature = self._builtin_signature(resolved_name)
+        if signature is None:
+            self._lowering_error(f"unknown function {resolved_name}")
+        if argc != len(signature.param_types):
+            self._lowering_error(
+                f"function {resolved_name} expects {len(signature.param_types)} args, got {argc}"
+            )
         rendered_args: List[str] = []
         for (param_name, param_type), arg in zip(signature.param_types.items(), args):
             if arg.ty != param_type:
                 self._lowering_error(
-                    f"argument for {name}.{param_name} expected {param_type}, got {arg.ty}"
+                    f"argument for {resolved_name}.{param_name} expected {param_type}, got {arg.ty}"
                 )
             rendered_args.append(f"{param_type} {arg.name}")
         dest = self._next_tmp()
         args_text = ", ".join(rendered_args)
-        self._body.append(f"  {dest} = call {signature.return_type} @{name}({args_text})")
+        self._body.append(f"  {dest} = call {signature.return_type} @{resolved_name}({args_text})")
         self._stack.append(_StackValue(name=dest, ty=signature.return_type))
+        if name == "heap_set":
+            self._record_heap_cell_type(args)
 
     # ----- Helpers -----
 
@@ -474,6 +498,12 @@ class LLVMCodeGenerator:
             "declare i64 @new(i64)",
             "declare i64 @heap_get(i64, i64)",
             "declare i64 @heap_set(i64, i64, i64)",
+            "declare i8* @heap_get_str(i64, i64)",
+            "declare double @heap_get_double(i64, i64)",
+            "declare i1 @heap_get_bool(i64, i64)",
+            "declare i64 @heap_set_str(i64, i64, i8*)",
+            "declare i64 @heap_set_double(i64, i64, double)",
+            "declare i64 @heap_set_bool(i64, i64, i1)",
             "declare i64 @delete(i64)",
             ]
         )
@@ -510,6 +540,8 @@ class LLVMCodeGenerator:
         changed = False
         stack: List[_TypeValue] = []
         locals_types: Dict[str, Optional[str]] = {}
+        locals_literals: Dict[str, int] = {}
+        heap_cell_types: Dict[Tuple[str, int], str] = {}
         signature = signatures[func.name]
 
         def set_param_type(param_name: str, ty: str) -> None:
@@ -538,7 +570,7 @@ class LLVMCodeGenerator:
                 if isinstance(instr.arg, bool):
                     stack.append(_TypeValue("i1"))
                 elif isinstance(instr.arg, int):
-                    stack.append(_TypeValue("i64"))
+                    stack.append(_TypeValue("i64", literal=instr.arg))
                 elif isinstance(instr.arg, float):
                     stack.append(_TypeValue("double"))
                 elif isinstance(instr.arg, str):
@@ -550,7 +582,8 @@ class LLVMCodeGenerator:
             elif instr.op == Opcode.LOAD:
                 name = instr.arg
                 if name in locals_types:
-                    stack.append(_TypeValue(locals_types[name]))
+                    literal = locals_literals.get(name)
+                    stack.append(_TypeValue(locals_types[name], source=name, literal=literal))
                 elif name in signature.param_types:
                     stack.append(_TypeValue(signature.param_types[name], source=name))
                 else:
@@ -561,6 +594,10 @@ class LLVMCodeGenerator:
                 if ty is None and value.source:
                     ty = signature.param_types[value.source]
                 locals_types[instr.arg] = ty
+                if ty == "i64" and value.literal is not None:
+                    locals_literals[instr.arg] = value.literal
+                else:
+                    locals_literals.pop(instr.arg, None)
             elif instr.op == Opcode.BINARY:
                 right = stack.pop()
                 left = stack.pop()
@@ -598,6 +635,14 @@ class LLVMCodeGenerator:
             elif instr.op == Opcode.CALL:
                 name, argc = instr.arg
                 args = [stack.pop() for _ in range(argc)][::-1]
+                if name == "heap_set":
+                    self._record_heap_cell_type_inference(args, heap_cell_types)
+                    stack.append(_TypeValue("i64"))
+                    continue
+                if name == "heap_get":
+                    known = self._heap_cell_type_from_inference(args, heap_cell_types)
+                    stack.append(_TypeValue(known or "i64"))
+                    continue
                 callee = signatures.get(name)
                 if callee is None:
                     builtin = self._builtin_signature(name)
@@ -641,13 +686,98 @@ class LLVMCodeGenerator:
             return _ResolvedFunctionSignature(param_types={"size": "i64"}, return_type="i64")
         if name == "heap_get":
             return _ResolvedFunctionSignature(param_types={"ptr": "i64", "idx": "i64"}, return_type="i64")
+        if name == "heap_get_str":
+            return _ResolvedFunctionSignature(param_types={"ptr": "i64", "idx": "i64"}, return_type="i8*")
+        if name == "heap_get_double":
+            return _ResolvedFunctionSignature(param_types={"ptr": "i64", "idx": "i64"}, return_type="double")
+        if name == "heap_get_bool":
+            return _ResolvedFunctionSignature(param_types={"ptr": "i64", "idx": "i64"}, return_type="i1")
         if name == "heap_set":
             return _ResolvedFunctionSignature(
                 param_types={"ptr": "i64", "idx": "i64", "value": "i64"}, return_type="i64"
             )
+        if name == "heap_set_str":
+            return _ResolvedFunctionSignature(
+                param_types={"ptr": "i64", "idx": "i64", "value": "i8*"}, return_type="i64"
+            )
+        if name == "heap_set_double":
+            return _ResolvedFunctionSignature(
+                param_types={"ptr": "i64", "idx": "i64", "value": "double"}, return_type="i64"
+            )
+        if name == "heap_set_bool":
+            return _ResolvedFunctionSignature(
+                param_types={"ptr": "i64", "idx": "i64", "value": "i1"}, return_type="i64"
+            )
         if name == "delete":
             return _ResolvedFunctionSignature(param_types={"ptr": "i64"}, return_type="i64")
         return None
+
+    def _resolve_heap_set_name(self, args: List[_StackValue]) -> str:
+        if len(args) != 3:
+            return "heap_set"
+        value = args[2]
+        if value.ty == "i8*":
+            return "heap_set_str"
+        if value.ty == "double":
+            return "heap_set_double"
+        if value.ty == "i1":
+            return "heap_set_bool"
+        return "heap_set"
+
+    def _resolve_heap_get_name(self, args: List[_StackValue]) -> str:
+        if len(args) != 2:
+            return "heap_get"
+        ptr = args[0]
+        idx = args[1]
+        key = self._heap_cell_key(ptr, idx)
+        if key is None:
+            return "heap_get"
+        cell_type = self._heap_cell_types.get(key)
+        if cell_type == "i8*":
+            return "heap_get_str"
+        if cell_type == "double":
+            return "heap_get_double"
+        if cell_type == "i1":
+            return "heap_get_bool"
+        return "heap_get"
+
+    def _heap_cell_key(self, ptr: _StackValue, idx: _StackValue) -> Optional[Tuple[str, int]]:
+        if ptr.source is None:
+            return None
+        if idx.ty != "i64" or idx.literal is None:
+            return None
+        return (ptr.source, idx.literal)
+
+    def _record_heap_cell_type(self, args: List[_StackValue]) -> None:
+        if len(args) != 3:
+            return
+        ptr, idx, value = args
+        key = self._heap_cell_key(ptr, idx)
+        if key is None:
+            return
+        self._heap_cell_types[key] = value.ty
+
+    def _record_heap_cell_type_inference(
+        self, args: List[_TypeValue], heap_cell_types: Dict[Tuple[str, int], str]
+    ) -> None:
+        if len(args) != 3:
+            return
+        ptr, idx, value = args
+        if ptr.source is None or idx.literal is None:
+            return
+        if idx.ty != "i64" or value.ty is None:
+            return
+        heap_cell_types[(ptr.source, idx.literal)] = value.ty
+
+    def _heap_cell_type_from_inference(
+        self, args: List[_TypeValue], heap_cell_types: Dict[Tuple[str, int], str]
+    ) -> Optional[str]:
+        if len(args) != 2:
+            return None
+        ptr, idx = args
+        if ptr.source is None or idx.literal is None or idx.ty != "i64":
+            return None
+        return heap_cell_types.get((ptr.source, idx.literal))
 
     def _string_constant(self, value: str) -> Tuple[str, int]:
         cached = self._string_constants.get(value)

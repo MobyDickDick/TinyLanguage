@@ -132,12 +132,12 @@ def run_tiny_linter(source: str) -> str | None:
             "define { a } = box.split(a, b);",
             id="destructured_method_missing_outputs",
         ),
-        pytest.param(
-            "try { print(\"ok\"); } catch err { print(\"fail\"); }",
-            id="unused_catch_binding",
-        ),
-    ],
-)
+            pytest.param(
+                "try { print(\"ok\"); } catch err { print(\"fail\"); }",
+                id="unused_catch_binding",
+            ),
+        ],
+    )
 def test_python_and_tiny_linter_outputs_match(source: str):
     python_msg = run_python_linter(source)
     tiny_msg = run_tiny_linter(source)
@@ -145,3 +145,9 @@ def test_python_and_tiny_linter_outputs_match(source: str):
     assert python_msg is not None, "Python linter unexpectedly succeeded"
     assert tiny_msg is not None, "Tiny linter unexpectedly succeeded"
     assert tiny_msg == python_msg
+
+
+def test_python_and_tiny_linter_allow_switch_returns() -> None:
+    source = "fn f(x) -> number { switch (x) { case 1: { return 1; } default: { return 0; } } }"
+    assert run_python_linter(source) is None
+    assert run_tiny_linter(source) is None

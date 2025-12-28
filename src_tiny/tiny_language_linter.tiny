@@ -1017,7 +1017,7 @@ fn _infer_expr_type(expr, env) {
     if (expr.__tag__ == "Num") { return "number"; }
     if (expr.__tag__ == "Str") { return "string"; }
     if (expr.__tag__ == "Bool") { return "Bool"; }
-    if (expr.__tag__ == "Null") { return "Null"; }
+    if (expr.__tag__ == "NullLit") { return "Null"; }
     if (expr.__tag__ == "Var") { return Map.get(env, expr.name, Null); }
     return Null;
 }

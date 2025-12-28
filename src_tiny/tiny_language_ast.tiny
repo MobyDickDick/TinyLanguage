@@ -327,11 +327,11 @@ class Bool {
 }
 fn Bool(value, pos, span) { return new Bool { value: value; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
-class Null {
+class NullLit {
     pos: SourcePos;
     span: SourceSpan;
 }
-fn Null(pos, span) { return new Null { pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
+fn NullLit(pos, span) { return new NullLit { pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
 class Var { name: string; pos: SourcePos; span: SourceSpan; }
 fn Var(name, pos, span) { return new Var { name: name; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }

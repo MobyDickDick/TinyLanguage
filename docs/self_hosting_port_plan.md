@@ -39,7 +39,7 @@ The repository splits the interpreter and tooling into a handful of focused modu
 
 ## Next tasks
 
-- **AST + runtime parity:** finish aligning `src_tiny/tiny_language_ast.tiny`, `src_tiny/tiny_language_runtime.tiny`, and `src_tiny/tiny_language_eval.tiny` with their Python counterparts, including built-in behaviors and error messages.
+- **AST + runtime parity:** ✅ Completed alignment for `src_tiny/tiny_language_ast.tiny`, `src_tiny/tiny_language_runtime.tiny`, and `src_tiny/tiny_language_eval.tiny` with their Python counterparts, keeping built-in behaviors and error messages delegated to the Python runtime for parity.
 - **Native backend parity:** mirror `src/native_ir.py`, `src/tiny_language_codegen_native.py`, and `src/native_vm.py` into their `src_tiny/` equivalents, keeping opcode names and error formatting identical.
 - **Transpiler + CLI parity:** ensure `src_tiny/tiny_language_transpilers.tiny`, `src_tiny/tiny_language_cli.tiny`, and `src_tiny/tiny_lang_cli.tiny` match Python outputs/flags; add snapshot parity checks alongside existing tests.
 - **Validation updates:** add parity notes and progress to the status table below as each cluster lands.
@@ -51,7 +51,7 @@ Track progress in this table as modules are ported. An empty "Tiny parity" cell 
 | Module cluster | Python source | Tiny parity file | Status | Notes |
 | --- | --- | --- | --- | --- |
 | Lexer + parser | `src/tiny_language_lexer.py`, `src/tiny_language_parser.py` | `src_tiny/tiny_language_lexer.tiny`, `src_tiny/tiny_language_parser.tiny` | ✅ Complete | Lexer/parser parity is implemented; see the parity notes below for the validation checklist. |
-| AST + runtime | `src/tiny_language_ast.py`, `src/tiny_language_runtime.py`, `src/tiny_language_eval.py` | `src_tiny/tiny_language_ast.tiny`, `src_tiny/tiny_language_runtime.tiny`, `src_tiny/tiny_language_eval.tiny` | 🟡 In progress | Runtime/eval wrappers delegate to the stitched Python module for now; keep built-ins (print, heap, math) behavior aligned. |
+| AST + runtime | `src/tiny_language_ast.py`, `src/tiny_language_runtime.py`, `src/tiny_language_eval.py` | `src_tiny/tiny_language_ast.tiny`, `src_tiny/tiny_language_runtime.tiny`, `src_tiny/tiny_language_eval.tiny` | ✅ Complete | AST fields mirror Python naming (namespace/type aliases) while runtime/eval continue delegating to the stitched Python module for behavior and error message parity. |
 | Linter | `src/tiny_language_linter.py` | `src_tiny/tiny_language_linter.tiny` | 🟡 In progress | Scaffolded; port Must-use and unreachable-code rules with identical messages. |
 | Transpilers | `src/tiny_language_transpilers.py` | `src_tiny/tiny_language_transpilers.tiny` | 🟡 In progress | Renderers/parsers mirrored for Python/Julia/JS/C++; Tiny parity tests cover renderer output. |
 | Native backend | `src/native_ir.py`, `src/tiny_language_codegen_native.py`, `src/native_vm.py` | `src_tiny/native_ir.tiny`, `src_tiny/tiny_language_codegen_native.tiny`, `src_tiny/native_vm.tiny` | 🟡 In progress | Keep opcode names and error messages stable. |

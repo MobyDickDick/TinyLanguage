@@ -142,15 +142,23 @@ fn TryCatch(body, err_name, handler, pos, span) {
 
 class Param {
     name: string;
+    type: string;
     type_hint: string;
 }
-fn Param(name, type_hint) { return new Param { name: name; type_hint: type_hint }; }
+fn Param(name, type_hint) {
+    return new Param {
+        name: name;
+        type: type_hint;
+        type_hint: type_hint
+    };
+}
 
 class Fn {
     name: string;
     params: Pointer;
     body: Pointer;
     return_param_names: Pointer;
+    namespace: string;
     namespace_name: string;
     return_type: string;
     inferred_return_type: string;
@@ -164,6 +172,7 @@ fn Fn(name, params, body, return_param_names, namespace_name, return_type, infer
         params: params;
         body: body;
         return_param_names: return_param_names;
+        namespace: namespace_name;
         namespace_name: namespace_name;
         return_type: return_type;
         inferred_return_type: inferred_return_type;
@@ -181,6 +190,7 @@ class MethodDef {
     return_param_names: Pointer;
     return_type: string;
     inferred_return_type: string;
+    namespace: string;
     namespace_name: string;
     is_async: Bool;
     pos: SourcePos;
@@ -195,6 +205,7 @@ fn MethodDef(class_name, name, params, body, return_param_names, return_type, in
         return_param_names: return_param_names;
         return_type: return_type;
         inferred_return_type: inferred_return_type;
+        namespace: namespace_name;
         namespace_name: namespace_name;
         is_async: is_async;
         pos: _pos_or_default(pos);

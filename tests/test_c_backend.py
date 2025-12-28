@@ -69,10 +69,6 @@ def test_emit_llvm_ir_via_c_cli(tmp_path: Path) -> None:
     source_path = tmp_path / "sample.tiny"
     source_path.write_text("print(1 + 2);", encoding="utf-8")
     out_path = tmp_path / "sample.ll"
-    env = os.environ.copy()
-    repo_root = Path(__file__).resolve().parents[1]
-    module_paths = [repo_root / "src", repo_root, env.get("PYTHONPATH")]
-    env["PYTHONPATH"] = os.pathsep.join(filter(None, map(str, module_paths)))
 
     subprocess.check_call(
         [
@@ -84,8 +80,7 @@ def test_emit_llvm_ir_via_c_cli(tmp_path: Path) -> None:
             str(out_path),
             "--compiler",
             compiler,
-        ],
-        env=env,
+        ]
     )
 
     assert out_path.exists()

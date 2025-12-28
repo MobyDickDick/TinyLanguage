@@ -68,6 +68,22 @@ def test_tl_stdlib_math_module_import(run_tiny_source):
     assert out == "3.142\n6.28\n2.718\n3\n10\n-1\n"
 
 
+def test_tl_stdlib_random_module_import(run_tiny_source):
+    random.seed(1)
+    out = run_tiny_source(
+        """
+        import stdlib.random;
+        print(random.randint(1, 6));
+        print(random.choice(new["rot", "gruen", "blau"]));
+        define items = new["a", "b", "c"];
+        print(random.shuffle(items));
+        print(String.join(items, ""));
+        """,
+    )
+
+    assert out == "2\nblau\n3\ncba\n"
+
+
 def test_string_repeat_validates_count(run_tiny_source):
     with pytest.raises(Exception, match=r"repeat count must be non-negative"):
         run_tiny_source('print(String.repeat("x", -1));')

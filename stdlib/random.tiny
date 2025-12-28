@@ -1,0 +1,17 @@
+// TinyLanguage stdlib: random module (Python-style subset)
+
+fn random() {
+  return Random.random();
+}
+
+fn randint(lower, upper) {
+  return Random.randint(lower, upper);
+}
+
+fn choice(seq) {
+  return Random.choice(seq);
+}
+
+fn shuffle(seq) {
+  return Random.shuffle(seq);
+}

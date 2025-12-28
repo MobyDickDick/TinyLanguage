@@ -28,15 +28,17 @@ The standard library consists of two layers:
 
 The `stdlib/` directory is the permanent home for TL modules that wrap the native API in a Python-like module shape.
 
-## 4) First module: `stdlib.math`
-The first TinyLanguage module is **`stdlib.math`**, with a Python-like API subset.
+## 4) First modules: `stdlib.math`, `stdlib.random`
+The first TinyLanguage modules are **`stdlib.math`** and **`stdlib.random`**, each with a Python-like API subset.
 
 Import and usage:
 
 ```tiny
 import stdlib.math;
+import stdlib.random;
 print(math.sqrt(9));
 print(math.round_digits(math.pi, 3));
+print(random.randint(1, 6));
 ```
 
 ## 5) API deviations from Python

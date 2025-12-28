@@ -9,6 +9,9 @@ to keep a small, ergonomic surface area.
 # ----- Public API -----
 
 import ast
+import ctypes
+import importlib
+import importlib.util
 import json
 import os
 import shutil
@@ -837,6 +840,50 @@ def run_with_native_backend(src: str) -> str:
     return NativeVM().run(program)
 
 
+def _load_llvmlite_binding():
+    if importlib.util.find_spec("llvmlite") is None:
+        raise RuntimeError("llvmlite is not installed (install it to enable the LLVM JIT backend)")
+    return importlib.import_module("llvmlite.binding")
+
+
+def _register_llvm_symbols(llvm_binding) -> None:
+    llvm_binding.load_library_permanently(None)
+    libc = ctypes.CDLL(None)
+    llvm_binding.add_symbol("printf", ctypes.cast(libc.printf, ctypes.c_void_p).value)
+    llvm_binding.add_symbol("fflush", ctypes.cast(libc.fflush, ctypes.c_void_p).value)
+
+
+def _create_llvm_engine(llvm_binding):
+    llvm_binding.initialize()
+    llvm_binding.initialize_native_target()
+    llvm_binding.initialize_native_asmprinter()
+    target = llvm_binding.Target.from_default_triple()
+    target_machine = target.create_target_machine()
+    backing_mod = llvm_binding.parse_assembly("")
+    return llvm_binding.create_mcjit_compiler(backing_mod, target_machine)
+
+
+def run_with_llvm_jit(src: str) -> str:
+    """Execute TinyLanguage code via the LLVM IR JIT (requires llvmlite)."""
+    stmts = _parse_and_lint(src)
+    program = NativeCodeGenerator(allow_heap=False).compile_program(stmts)
+    llvm_ir = LLVMCodeGenerator().compile_program(program)
+    llvm_binding = _load_llvmlite_binding()
+    _register_llvm_symbols(llvm_binding)
+    engine = _create_llvm_engine(llvm_binding)
+    module = llvm_binding.parse_assembly(llvm_ir)
+    module.verify()
+    engine.add_module(module)
+    engine.finalize_object()
+    engine.run_static_constructors()
+    func_addr = engine.get_function_address("tiny_main")
+    if not func_addr:
+        raise RuntimeError("LLVM JIT failed to locate tiny_main")
+    cfunc = ctypes.CFUNCTYPE(ctypes.c_int32)(func_addr)
+    cfunc()
+    return ""
+
+
 def run_with_python_bytecode_backend(src: str) -> str:
     """Execute native IR by emitting Python bytecode instructions."""
     stmts = _parse_and_lint(src)
@@ -1003,6 +1050,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         action="store_true",
         help="Execute the program by compiling native IR to pure Python bytecode",
     )
+    backend_group.add_argument(
+        "--llvm-jit",
+        action="store_true",
+        help="Execute the program via the experimental LLVM JIT backend (requires llvmlite)",
+    )
     parser.add_argument(
         "--copy-on-call",
         action=argparse.BooleanOptionalAction,
@@ -1014,7 +1066,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.program_args and args.program_args[0] == "--":
         args.program_args = args.program_args[1:]
 
-    if args.repl and (args.python_backend or args.native_backend or args.native_python_bytecode):
+    if args.repl and (
+        args.python_backend or args.native_backend or args.native_python_bytecode or args.llvm_jit
+    ):
         parser.error("--native-backend/--python-backend cannot be combined with --repl")
 
     if args.format_file is not None:
@@ -1033,6 +1087,9 @@ def main(argv: Optional[List[str]] = None) -> int:
                 output = run_with_python_bytecode_backend(args.eval)
             elif args.python_backend:
                 output = run_with_python_backend(args.eval)
+            elif args.llvm_jit:
+                output = run_with_llvm_jit(args.eval)
+                streamed = True
             else:
                 runtime = Runtime(args.eval)
                 runtime.copy_on_call = args.copy_on_call
@@ -1138,6 +1195,9 @@ def main(argv: Optional[List[str]] = None) -> int:
             output = run_with_native_backend(Path(args.file).read_text(encoding="utf-8"))
         elif args.python_backend:
             output = run_with_python_backend(Path(args.file).read_text(encoding="utf-8"))
+        elif args.llvm_jit:
+            output = run_with_llvm_jit(Path(args.file).read_text(encoding="utf-8"))
+            streamed = True
         else:
             output = run_file(args.file, stream_output=True, copy_on_call=args.copy_on_call)
             streamed = True
@@ -1165,6 +1225,7 @@ __all__ = [
     "compile_to_python_source",
     "run_with_python_backend",
     "run_with_native_backend",
+    "run_with_llvm_jit",
     "run_with_python_bytecode_backend",
     "run_file",
     "main",

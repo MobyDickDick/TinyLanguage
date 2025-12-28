@@ -103,6 +103,16 @@ def main(argv: list[str] | None = None) -> int:
         help="Compile the program to LLVM IR and write it to FILE (use '-' for stdout)",
     )
     parser.add_argument(
+        "--llvm-target-triple",
+        dest="llvm_target_triple",
+        help="Override the LLVM target triple for --emit-llvm",
+    )
+    parser.add_argument(
+        "--llvm-data-layout",
+        dest="llvm_data_layout",
+        help="Override the LLVM data layout for --emit-llvm",
+    )
+    parser.add_argument(
         "--copy-on-call",
         action=argparse.BooleanOptionalAction,
         default=_default_copy_on_call(),
@@ -123,7 +133,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.emit_llvm is not None:
         try:
-            llvm_ir = compile_to_llvm_ir(source)
+            llvm_ir = compile_to_llvm_ir(
+                source,
+                target_triple=args.llvm_target_triple,
+                data_layout=args.llvm_data_layout,
+            )
         except TinyLangError as err:
             sys.stderr.write(_format_error_for_source(source, err) + os.linesep)
             return 1

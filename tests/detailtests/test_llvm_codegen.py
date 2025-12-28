@@ -21,6 +21,20 @@ def test_compile_to_llvm_ir_emits_arithmetic_ir() -> None:
     assert "@.fmt_i64" in llvm_ir
 
 
+def test_compile_to_llvm_ir_includes_target_metadata() -> None:
+    source = "define a = 1; print(a);"
+
+    llvm_ir = compile_to_llvm_ir(
+        source,
+        target_triple="x86_64-unknown-linux-gnu",
+        data_layout="e-m:e-i64:64-f80:128-n8:16:32:64-S128",
+    )
+
+    lines = llvm_ir.splitlines()
+    assert lines[0] == 'target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"'
+    assert lines[1] == 'target triple = "x86_64-unknown-linux-gnu"'
+
+
 def test_cli_emits_llvm_ir(tmp_path) -> None:
     source = "define value = 5 * 2; print(value);"
     script = tmp_path / "program.tiny"

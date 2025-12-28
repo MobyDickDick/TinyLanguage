@@ -847,8 +847,11 @@ def _load_llvmlite_binding():
 
 
 def _register_llvm_symbols(llvm_binding) -> None:
-    llvm_binding.load_library_permanently(None)
-    libc = ctypes.CDLL(None)
+    if sys.platform == "win32":
+        libc = ctypes.CDLL("msvcrt")
+    else:
+        llvm_binding.load_library_permanently(None)
+        libc = ctypes.CDLL(None)
     llvm_binding.add_symbol("printf", ctypes.cast(libc.printf, ctypes.c_void_p).value)
     llvm_binding.add_symbol("fflush", ctypes.cast(libc.fflush, ctypes.c_void_p).value)
 

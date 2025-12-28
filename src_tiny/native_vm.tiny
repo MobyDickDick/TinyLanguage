@@ -70,6 +70,23 @@ fn __binary_apply(op, left, right) {
     return Null;
 }
 
+fn __supported_opcodes() {
+    define items = new[
+        OPCODE_PUSH_CONST,
+        OPCODE_LOAD,
+        OPCODE_STORE,
+        OPCODE_BINARY,
+        OPCODE_PRINT,
+        OPCODE_FLUSH,
+        OPCODE_JUMP,
+        OPCODE_JUMP_IF_FALSE,
+        OPCODE_CALL,
+        OPCODE_POP,
+        OPCODE_RETURN
+    ];
+    return String.join(items, ", ");
+}
+
 class _Frame {
     instructions: Pointer;
     locals: any;
@@ -184,7 +201,8 @@ fn _vm_execute(vm, frame) {
                                                     if (len(stack) == 0) { return Null; }
                                                     return Collections.pop(stack);
                                                 } else {
-                                                    define _ = __raise_runtime_error("unknown opcode " + instr.op);
+                                                    define msg = "unknown opcode " + instr.op + ". Supported opcodes: " + __supported_opcodes() + ".";
+                                                    define _ = __raise_runtime_error(msg);
                                                 }
                                             }
                                         }

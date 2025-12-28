@@ -41,6 +41,9 @@ fn __extend(target, items) {
 }
 
 class NativeCodeGenerator {
+    allow_heap: bool;
+    tmp_index: number;
+
     fn compile_program(self, stmts) {
         define functions = Map.new();
         define entry = new[];
@@ -254,30 +257,66 @@ class NativeCodeGenerator {
                         result = new[Instruction(OPCODE_PUSH_CONST, Null)];
                         handled = true;
                     } else {
-                        if (tag == "Var") {
-                            result = new[Instruction(OPCODE_LOAD, expr.name)];
+                        if (tag == "New") {
+                            if (!self.allow_heap) {
+                                define _unsupported = __raise_not_implemented("native codegen does not yet support heap allocations");
+                            }
+                            define instructions = self._compile_expr(expr.size);
+                            define _ = Collections.push(instructions, Instruction(OPCODE_CALL, new["__new", 1]));
+                            result = instructions;
                             handled = true;
                         } else {
-                            if (tag == "Bin") {
-                                define instructions = self._compile_expr(expr.a);
-                                define rhs = self._compile_expr(expr.b);
-                                define _ = __extend(instructions, rhs);
-                                define _b = Collections.push(instructions, Instruction(OPCODE_BINARY, expr.op));
+                            if (tag == "NewLit") {
+                                if (!self.allow_heap) {
+                                    define _unsupported = __raise_not_implemented("native codegen does not yet support heap allocations");
+                                }
+                                define temp_name = self._next_tmp();
+                                define instructions = new[
+                                    Instruction(OPCODE_PUSH_CONST, len(expr.items)),
+                                    Instruction(OPCODE_CALL, new["__new", 1]),
+                                    Instruction(OPCODE_STORE, temp_name)
+                                ];
+                                define i = 0;
+                                while (i < len(expr.items)) {
+                                    define item = heap_get(expr.items, i);
+                                    define _l = Collections.push(instructions, Instruction(OPCODE_LOAD, temp_name));
+                                    define _p = Collections.push(instructions, Instruction(OPCODE_PUSH_CONST, i));
+                                    define part = self._compile_expr(item);
+                                    define _ = __extend(instructions, part);
+                                    define _c = Collections.push(instructions, Instruction(OPCODE_CALL, new["heap_set", 3]));
+                                    define _d = Collections.push(instructions, Instruction(OPCODE_POP, Null));
+                                    i = i + 1;
+                                }
+                                define _r = Collections.push(instructions, Instruction(OPCODE_LOAD, temp_name));
                                 result = instructions;
                                 handled = true;
                             } else {
-                                if (tag == "Call") {
-                                    define instructions = new[];
-                                    define i = 0;
-                                    while (i < len(expr.args)) {
-                                        define arg = heap_get(expr.args, i);
-                                        define part = self._compile_expr(arg);
-                                        define _ = __extend(instructions, part);
-                                        i = i + 1;
-                                    }
-                                    define _ = Collections.push(instructions, Instruction(OPCODE_CALL, new[expr.name, len(expr.args)]));
-                                    result = instructions;
+                                if (tag == "Var") {
+                                    result = new[Instruction(OPCODE_LOAD, expr.name)];
                                     handled = true;
+                                } else {
+                                    if (tag == "Bin") {
+                                        define instructions = self._compile_expr(expr.a);
+                                        define rhs = self._compile_expr(expr.b);
+                                        define _ = __extend(instructions, rhs);
+                                        define _b = Collections.push(instructions, Instruction(OPCODE_BINARY, expr.op));
+                                        result = instructions;
+                                        handled = true;
+                                    } else {
+                                        if (tag == "Call") {
+                                            define instructions = new[];
+                                            define i = 0;
+                                            while (i < len(expr.args)) {
+                                                define arg = heap_get(expr.args, i);
+                                                define part = self._compile_expr(arg);
+                                                define _ = __extend(instructions, part);
+                                                i = i + 1;
+                                            }
+                                            define _ = Collections.push(instructions, Instruction(OPCODE_CALL, new[expr.name, len(expr.args)]));
+                                            result = instructions;
+                                            handled = true;
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -291,8 +330,13 @@ class NativeCodeGenerator {
         }
         return result;
     }
+
+    fn _next_tmp(self) {
+        self.tmp_index = self.tmp_index + 1;
+        return "__tmp_heap_" + __to_str(self.tmp_index);
+    }
 }
 
 fn NativeCodeGenerator() {
-    return new NativeCodeGenerator {};
+    return new NativeCodeGenerator { allow_heap: false; tmp_index: 0 };
 }

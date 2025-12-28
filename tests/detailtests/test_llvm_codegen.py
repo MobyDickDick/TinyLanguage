@@ -51,7 +51,7 @@ def test_llvm_codegen_emits_full_format_string_lengths() -> None:
     llvm_ir = compile_to_llvm_ir(source)
 
     assert '@.fmt_i64 = private unnamed_addr constant [5 x i8] c"%ld\\0A\\00"' in llvm_ir
-    assert '@.fmt_double = private unnamed_addr constant [5 x i8] c"%f\\0A\\00"' in llvm_ir
+    assert '@.fmt_double = private unnamed_addr constant [5 x i8] c"%lf\\0A\\00"' in llvm_ir
     assert "getelementptr inbounds [5 x i8], [5 x i8]* @.fmt_i64" in llvm_ir
     assert "getelementptr inbounds [5 x i8], [5 x i8]* @.fmt_double" in llvm_ir
 

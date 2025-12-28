@@ -103,6 +103,26 @@ class While {
 }
 fn While(cond, body, pos, span) { return new While { cond: cond; body: body; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
+class SwitchCase {
+    value: IR;
+    body: Pointer;
+    pos: SourcePos;
+    span: SourceSpan;
+}
+fn SwitchCase(value, body, pos, span) {
+    return new SwitchCase { value: value; body: body; pos: _pos_or_default(pos); span: _span_or_default(span, pos) };
+}
+
+class Switch {
+    expr: IR;
+    cases: Pointer;
+    pos: SourcePos;
+    span: SourceSpan;
+}
+fn Switch(expr, cases, pos, span) {
+    return new Switch { expr: expr; cases: cases; pos: _pos_or_default(pos); span: _span_or_default(span, pos) };
+}
+
 class TryCatch {
     body: Pointer;
     err_name: string;
@@ -307,11 +327,11 @@ class Bool {
 }
 fn Bool(value, pos, span) { return new Bool { value: value; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
-class NullLit {
+class Null {
     pos: SourcePos;
     span: SourceSpan;
 }
-fn NullLit(pos, span) { return new NullLit { pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
+fn Null(pos, span) { return new Null { pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
 class Var { name: string; pos: SourcePos; span: SourceSpan; }
 fn Var(name, pos, span) { return new Var { name: name; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
@@ -352,11 +372,11 @@ fn Spawn(name, args, pos, span) { return new Spawn { name: name; args: args; pos
 class Await { expr: IR; pos: SourcePos; span: SourceSpan; }
 fn Await(expr, pos, span) { return new Await { expr: expr; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
-class MatchCase { pattern: IR; body: IR; pos: SourcePos; span: SourceSpan; }
-fn MatchCase(pattern, body, pos, span) { return new MatchCase { pattern: pattern; body: body; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
-
 class Pattern { pos: SourcePos; span: SourceSpan; }
 fn Pattern(pos, span) { return new Pattern { pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
+
+class MatchCase { pattern: Pattern; body: IR; pos: SourcePos; span: SourceSpan; }
+fn MatchCase(pattern, body, pos, span) { return new MatchCase { pattern: pattern; body: body; pos: _pos_or_default(pos); span: _span_or_default(span, pos) }; }
 
 class VariantPattern {
     variant: string;

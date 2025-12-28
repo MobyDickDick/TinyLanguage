@@ -206,6 +206,45 @@ class Parser {
             define body = self.parse_block();
             return self._attach_span(While(cond, body, kw.start, Null), kw.start, self._last_tok.stop);
         }
+        if (self.tok.kind == "KW" && self.tok.text == "switch") {
+            define kw = self._eat("KW", "switch");
+            define _open = self._eat("SYM", "(");
+            define target = self.parse_expr();
+            define _close = self._eat("SYM", ")");
+            define _open_block = self._eat("SYM", "{");
+            define cases = new[];
+            define has_default = false;
+            while (!(self.tok.kind == "SYM" && self.tok.text == "}")) {
+                if (self.tok.kind == "KW" && self.tok.text == "case") {
+                    define case_kw = self._eat("KW", "case");
+                    define value = self.parse_expr();
+                    define _colon = self._eat("SYM", ":");
+                    define body = self.parse_block();
+                    define _push_case = Collections.push(
+                        cases,
+                        self._attach_span(SwitchCase(value, body, case_kw.start, Null), case_kw.start, self._last_tok.stop)
+                    );
+                } else {
+                    if (self.tok.kind == "KW" && self.tok.text == "default") {
+                        define default_kw = self._eat("KW", "default");
+                        if (has_default) {
+                            return self._error("duplicate default case", default_kw.start, self._tok_span(default_kw));
+                        }
+                        has_default = true;
+                        define _colon2 = self._eat("SYM", ":");
+                        define body = self.parse_block();
+                        define _push_default = Collections.push(
+                            cases,
+                            self._attach_span(SwitchCase(Null, body, default_kw.start, Null), default_kw.start, self._last_tok.stop)
+                        );
+                    } else {
+                        return self._error("expected case or default", self.tok.start, self._tok_span(self.tok));
+                    }
+                }
+            }
+            define _close_block = self._eat("SYM", "}");
+            return self._attach_span(Switch(target, cases, kw.start, Null), kw.start, self._last_tok.stop);
+        }
         if (self.tok.kind == "KW" && self.tok.text == "try") {
             define kw = self._eat("KW", "try");
             define body = self.parse_block();
@@ -816,7 +855,7 @@ class Parser {
         }
         if (self.tok.kind == "KW" && self.tok.text == "Null") {
             define kw = self._eat("KW", Null);
-            return self._attach_span(NullLit(kw.start, Null), kw.start, kw.stop);
+            return self._attach_span(Null(kw.start, Null), kw.start, kw.stop);
         }
         if (self.tok.kind == "NAME" || self.tok.kind == "KW") {
             define name_tok = self._eat(self.tok.kind, Null);

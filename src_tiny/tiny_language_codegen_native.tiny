@@ -250,7 +250,7 @@ class NativeCodeGenerator {
                     result = new[Instruction(OPCODE_PUSH_CONST, expr.value)];
                     handled = true;
                 } else {
-                    if (tag == "NullLit") {
+                    if (tag == "Null") {
                         result = new[Instruction(OPCODE_PUSH_CONST, Null)];
                         handled = true;
                     } else {

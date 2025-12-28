@@ -411,6 +411,18 @@ fn lint_stmt_reads(s, reads) {
         return Null;
     }
     if (s.__tag__ == "While") { uses_in_expr(s.cond, reads); define i = 0; while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), reads); i = i + 1; } return Null; }
+    if (s.__tag__ == "Switch") {
+        uses_in_expr(s.expr, reads);
+        define i = 0;
+        while (i < len(s.cases)) {
+            define case = heap_get(s.cases, i);
+            if (case.value != Null) { uses_in_expr(case.value, reads); }
+            define bi = 0;
+            while (bi < len(case.body)) { lint_stmt_reads(heap_get(case.body, bi), reads); bi = bi + 1; }
+            i = i + 1;
+        }
+        return Null;
+    }
     if (s.__tag__ == "TryCatch") {
         define i = 0;
         while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), reads); i = i + 1; }
@@ -802,6 +814,33 @@ fn lint_locals_used(stmts, source) {
                     }
                     handled = true;
                 }
+                if (!handled && st.__tag__ == "Switch") {
+                    define switch_state = __copy_state(state);
+                    define switch_names = names_in_expr(st.expr);
+                    define si = 0;
+                    while (si < len(switch_names)) { _mark_used(switch_state, heap_get(switch_names, si)); si = si + 1; }
+                    define has_default = false;
+                    define ci = 0;
+                    while (ci < len(st.cases)) {
+                        define case = heap_get(st.cases, ci);
+                        if (case.value == Null) { has_default = true; }
+                        else {
+                            define case_names = names_in_expr(case.value);
+                            define ni = 0;
+                            while (ni < len(case_names)) { _mark_used(switch_state, heap_get(case_names, ni)); ni = ni + 1; }
+                        }
+                        define case_res = analyze_block(case.body, new[__copy_state(switch_state)]);
+                        define case_active = heap_get(case_res, 0);
+                        define case_term = heap_get(case_res, 1);
+                        define ai = 0;
+                        while (ai < len(case_active)) { define _pa = Collections.push(next_active, heap_get(case_active, ai)); ai = ai + 1; }
+                        ai = 0;
+                        while (ai < len(case_term)) { define _pt = Collections.push(terminated_states, heap_get(case_term, ai)); ai = ai + 1; }
+                        ci = ci + 1;
+                    }
+                    if (!has_default) { define _p = Collections.push(next_active, __copy_state(switch_state)); }
+                    handled = true;
+                }
                 if (!handled && st.__tag__ == "TryCatch") {
                     define body_res = analyze_block(st.body, new[__copy_state(state)]);
                     define handler_state = __copy_state(state);
@@ -978,7 +1017,7 @@ fn _infer_expr_type(expr, env) {
     if (expr.__tag__ == "Num") { return "number"; }
     if (expr.__tag__ == "Str") { return "string"; }
     if (expr.__tag__ == "Bool") { return "Bool"; }
-    if (expr.__tag__ == "NullLit") { return "Null"; }
+    if (expr.__tag__ == "Null") { return "Null"; }
     if (expr.__tag__ == "Var") { return Map.get(env, expr.name, Null); }
     return Null;
 }
@@ -1059,6 +1098,51 @@ fn lint_assignment_types(stmts, source, env) {
             }
             if (!handled && st.__tag__ == "While") {
                 define _ = check_block(st.body, __copy_state(local_env));
+                handled = true;
+            }
+            if (!handled && st.__tag__ == "Switch") {
+                define case_envs = new[];
+                define ci = 0;
+                while (ci < len(st.cases)) {
+                    define case = heap_get(st.cases, ci);
+                    define env_copy = check_block(case.body, __copy_state(local_env));
+                    define _ = Collections.push(case_envs, env_copy);
+                    ci = ci + 1;
+                }
+                define has_default = false;
+                ci = 0;
+                while (ci < len(st.cases)) {
+                    define case = heap_get(st.cases, ci);
+                    if (case.value == Null) { has_default = true; }
+                    ci = ci + 1;
+                }
+                if (!has_default) { define _ = Collections.push(case_envs, __copy_state(local_env)); }
+                define keys = Map.keys(local_env);
+                define ki = 0;
+                while (ki < len(keys)) {
+                    define name = heap_get(keys, ki);
+                    define all_have = true;
+                    define distinct = new[];
+                    define ei = 0;
+                    while (ei < len(case_envs)) {
+                        define env_case = heap_get(case_envs, ei);
+                        define value = Map.get(env_case, name, Null);
+                        if (value == Null) { all_have = false; }
+                        else { define _ = Collections.push(distinct, value); }
+                        ei = ei + 1;
+                    }
+                    if (all_have && len(distinct) > 0) {
+                        define first = heap_get(distinct, 0);
+                        define all_same = true;
+                        define di = 1;
+                        while (di < len(distinct)) {
+                            if (heap_get(distinct, di) != first) { all_same = false; }
+                            di = di + 1;
+                        }
+                        if (all_same) { define _ = Map.set(local_env, name, first); }
+                    }
+                    ki = ki + 1;
+                }
                 handled = true;
             }
             if (!handled && st.__tag__ == "TryCatch") {
@@ -1326,6 +1410,18 @@ fn _block_guarantees_return(stmts) {
         define st = heap_get(stmts, i);
         if (st.__tag__ == "Return") { return true; }
         if (st.__tag__ == "If") { if (_block_guarantees_return(st.then) && _block_guarantees_return(st.els)) { return true; } }
+        if (st.__tag__ == "Switch") {
+            define has_default = false;
+            define all_return = true;
+            define ci = 0;
+            while (ci < len(st.cases)) {
+                define case = heap_get(st.cases, ci);
+                if (case.value == Null) { has_default = true; }
+                if (!_block_guarantees_return(case.body)) { all_return = false; }
+                ci = ci + 1;
+            }
+            if (has_default && all_return) { return true; }
+        }
         if (st.__tag__ == "TryCatch") { if (_block_guarantees_return(st.body) && _block_guarantees_return(st.handler)) { return true; } }
         i = i + 1;
     }
@@ -1335,6 +1431,18 @@ fn _block_guarantees_return(stmts) {
 fn _stmt_guarantees_exit(st) {
     if (st.__tag__ == "Return") { return true; }
     if (st.__tag__ == "If") { return _block_guarantees_return(st.then) && _block_guarantees_return(st.els); }
+    if (st.__tag__ == "Switch") {
+        define has_default = false;
+        define all_return = true;
+        define ci = 0;
+        while (ci < len(st.cases)) {
+            define case = heap_get(st.cases, ci);
+            if (case.value == Null) { has_default = true; }
+            if (!_block_guarantees_return(case.body)) { all_return = false; }
+            ci = ci + 1;
+        }
+        return has_default && all_return;
+    }
     if (st.__tag__ == "TryCatch") { return _block_guarantees_return(st.body) && _block_guarantees_return(st.handler); }
     return false;
 }
@@ -1364,6 +1472,11 @@ fn lint_return_signatures(stmts, fn_name, is_method, source, _pos) {
             }
             if (!handled && st.__tag__ == "If") { visit(st.then); visit(st.els); handled = true; }
             if (!handled && st.__tag__ == "While") { visit(st.body); handled = true; }
+            if (!handled && st.__tag__ == "Switch") {
+                define ci = 0;
+                while (ci < len(st.cases)) { visit(heap_get(st.cases, ci).body); ci = ci + 1; }
+                handled = true;
+            }
             if (!handled && st.__tag__ == "TryCatch") { visit(st.body); visit(st.handler); }
             i = i + 1;
         }
@@ -1397,6 +1510,11 @@ fn lint_unreachable_code(stmts, source) {
             define handled = false;
             if (!handled && st.__tag__ == "If") { visit_block(st.then); visit_block(st.els); handled = true; }
             if (!handled && st.__tag__ == "While") { visit_block(st.body); handled = true; }
+            if (!handled && st.__tag__ == "Switch") {
+                define ci = 0;
+                while (ci < len(st.cases)) { visit_block(heap_get(st.cases, ci).body); ci = ci + 1; }
+                handled = true;
+            }
             if (!handled && st.__tag__ == "TryCatch") { visit_block(st.body); visit_block(st.handler); handled = true; }
             if (!handled && st.__tag__ == "Fn") { visit_block(st.body); handled = true; }
             if (!handled && st.__tag__ == "MethodDef") { visit_block(st.body); handled = true; }
@@ -1419,9 +1537,15 @@ fn lint_no_consecutive_definitions(stmts) {
         while (i < len(block)) {
             define st = heap_get(block, i);
             define handled = false;
-            if (!handled && (st.__tag__ == "If" || st.__tag__ == "While")) {
+            if (!handled && (st.__tag__ == "If" || st.__tag__ == "While" || st.__tag__ == "Switch")) {
                 if (st.__tag__ == "If") { lint_no_consecutive_definitions(st.then); lint_no_consecutive_definitions(st.els); }
-                else { lint_no_consecutive_definitions(st.body); }
+                else {
+                    if (st.__tag__ == "While") { lint_no_consecutive_definitions(st.body); }
+                    else {
+                        define ci = 0;
+                        while (ci < len(st.cases)) { lint_no_consecutive_definitions(heap_get(st.cases, ci).body); ci = ci + 1; }
+                    }
+                }
                 prev = Null;
                 handled = true;
             }
@@ -1453,6 +1577,11 @@ fn lint_destruct_call_outputs_stmt(st, source) {
     if (!handled && st.__tag__ == "DestructAssign") { check_destruct_call_expr(st.expr, Set.from_list(st.names), source, st.pos); handled = true; }
     if (!handled && st.__tag__ == "If") { lint_destruct_call_outputs(st.then, source); lint_destruct_call_outputs(st.els, source); handled = true; }
     if (!handled && st.__tag__ == "While") { lint_destruct_call_outputs(st.body, source); handled = true; }
+    if (!handled && st.__tag__ == "Switch") {
+        define ci = 0;
+        while (ci < len(st.cases)) { lint_destruct_call_outputs(heap_get(st.cases, ci).body, source); ci = ci + 1; }
+        handled = true;
+    }
     if (!handled && st.__tag__ == "Fn") { lint_destruct_call_outputs(st.body, source); handled = true; }
     if (!handled && st.__tag__ == "MethodDef") { lint_destruct_call_outputs(st.body, source); handled = true; }
     if (!handled && st.__tag__ == "ClassDef") { define mi = 0; while (mi < len(st.methods)) { lint_destruct_call_outputs_stmt(heap_get(st.methods, mi), source); mi = mi + 1; } handled = true; }
@@ -1515,6 +1644,15 @@ fn lint_param_mutations_returned(stmts, params, fn_name, is_method, source, pos)
         if (!handled && st.__tag__ == "If") { define i = 0; while (i < len(st.then)) { visit(heap_get(st.then, i)); i = i + 1; } i = 0; while (i < len(st.els)) { visit(heap_get(st.els, i)); i = i + 1; } handled = true; }
         if (!handled && st.__tag__ == "TryCatch") { define i = 0; while (i < len(st.body)) { visit(heap_get(st.body, i)); i = i + 1; } i = 0; while (i < len(st.handler)) { visit(heap_get(st.handler, i)); i = i + 1; } handled = true; }
         if (!handled && st.__tag__ == "While") { define i = 0; while (i < len(st.body)) { visit(heap_get(st.body, i)); i = i + 1; } }
+        if (!handled && st.__tag__ == "Switch") {
+            define ci = 0;
+            while (ci < len(st.cases)) {
+                define case = heap_get(st.cases, ci);
+                define bi = 0;
+                while (bi < len(case.body)) { visit(heap_get(case.body, bi)); bi = bi + 1; }
+                ci = ci + 1;
+            }
+        }
     }
 
     define i = 0;

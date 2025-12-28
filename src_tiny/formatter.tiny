@@ -1,0 +1,11 @@
+// TinyLanguage wrapper for src/formatter.py.
+// Delegates formatting helpers to the Python implementation.
+
+define __PY_ALLOW = new["format_source", "format_import"];
+
+define __PY = Python.import_module("formatter", __PY_ALLOW);
+
+define format_source = __PY.format_source;
+define format_import = __PY.format_import;
+
+define _exports = new[format_source, format_import];

@@ -1,0 +1,11 @@
+// TinyLanguage wrapper for src/tiny_language_highlighting.py.
+// Exposes syntax highlighting helpers when pygments is available.
+
+define __PY_ALLOW = new["PYGMENTS_AVAILABLE", "highlight_source"];
+
+define __PY = Python.import_module("tiny_language_highlighting", __PY_ALLOW);
+
+define PYGMENTS_AVAILABLE = __PY.PYGMENTS_AVAILABLE;
+define highlight_source = __PY.highlight_source;
+
+define _exports = new[PYGMENTS_AVAILABLE, highlight_source];

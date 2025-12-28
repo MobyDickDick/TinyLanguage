@@ -1,0 +1,8 @@
+// TinyLanguage equivalent of src/simpelst_Python_program.py.
+// Minimal endless loop used for stdout performance demos.
+
+define i = 0;
+while (true) {
+    print("This is a simple Test", i);
+    i = (i + 1) % 10000000;
+}

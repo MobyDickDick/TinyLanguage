@@ -706,11 +706,15 @@ def compile_to_llvm_ir(
     *,
     target_triple: Optional[str] = None,
     data_layout: Optional[str] = None,
+    llvm_opt: bool = False,
 ) -> str:
     """Emit textual LLVM IR for the subset supported by the native backend."""
     stmts = _parse_and_lint(src)
     program = NativeCodeGenerator(allow_heap=True).compile_program(stmts)
-    return LLVMCodeGenerator(target_triple=target_triple, data_layout=data_layout).compile_program(program)
+    llvm_ir = LLVMCodeGenerator(target_triple=target_triple, data_layout=data_layout).compile_program(program)
+    if llvm_opt:
+        llvm_ir = _optimize_llvm_ir(llvm_ir)
+    return llvm_ir
 
 
 def compile_to_c_source(src: str) -> str:
@@ -810,12 +814,18 @@ def compile_to_executable(
     extra_args: Optional[List[str]] = None,
     target_triple: Optional[str] = None,
     data_layout: Optional[str] = None,
+    llvm_opt: bool = False,
 ) -> Path:
     """Compile TinyLanguage to a native executable via LLVM IR and a system compiler."""
     compiler_path = shutil.which(compiler)
     if compiler_path is None:
         raise RuntimeError(f"compiler '{compiler}' not found on PATH (set --compiler or install clang)")
-    llvm_ir = compile_to_llvm_ir(src, target_triple=target_triple, data_layout=data_layout)
+    llvm_ir = compile_to_llvm_ir(
+        src,
+        target_triple=target_triple,
+        data_layout=data_layout,
+        llvm_opt=llvm_opt,
+    )
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -897,6 +907,21 @@ def _format_llvm_debug_context(step: str, llvm_binding=None) -> str:
 def _raise_llvm_jit_error(step: str, exc: Exception, llvm_binding=None) -> None:
     context = _format_llvm_debug_context(step, llvm_binding)
     raise RuntimeError(f"LLVM JIT failed during {step}: {exc} ({context})") from exc
+
+
+def _optimize_llvm_module(llvm_binding, module) -> None:
+    pass_manager = llvm_binding.create_module_pass_manager()
+    pass_manager.add_promote_memory_to_register_pass()
+    pass_manager.add_instruction_combining_pass()
+    pass_manager.run(module)
+
+
+def _optimize_llvm_ir(llvm_ir: str) -> str:
+    llvm_binding = _load_llvmlite_binding()
+    module = llvm_binding.parse_assembly(llvm_ir)
+    module.verify()
+    _optimize_llvm_module(llvm_binding, module)
+    return str(module)
 
 
 class _CaptureCStdout:
@@ -1002,6 +1027,7 @@ def run_with_llvm_jit(
     *,
     target_triple: Optional[str] = None,
     data_layout: Optional[str] = None,
+    llvm_opt: bool = False,
 ) -> str:
     """Execute TinyLanguage code via the LLVM IR JIT (requires llvmlite)."""
     try:
@@ -1044,6 +1070,11 @@ def run_with_llvm_jit(
         module.verify()
     except Exception as exc:
         _raise_llvm_jit_error("verify-module", exc, llvm_binding)
+    if llvm_opt:
+        try:
+            _optimize_llvm_module(llvm_binding, module)
+        except Exception as exc:
+            _raise_llvm_jit_error("optimize-module", exc, llvm_binding)
     try:
         engine.add_module(module)
         engine.finalize_object()
@@ -1174,6 +1205,7 @@ def _print_optional_dependency_instructions() -> None:
     lines = [
         "Optional dependencies:",
         "- LLVM JIT backend: pip install llvmlite",
+        "- LLVM optimization passes (--llvm-opt): pip install llvmlite",
         "- Native executable emission: install clang (or set --compiler to a compatible tool)",
     ]
     print("\n".join(lines))
@@ -1234,6 +1266,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         dest="llvm_data_layout",
         help="Override the LLVM data layout for --emit-llvm/--emit-exe/--llvm-jit",
     )
+    parser.add_argument(
+        "--llvm-opt",
+        action="store_true",
+        help="Run basic LLVM optimization passes (mem2reg, instcombine) on emitted IR",
+    )
     backend_group = parser.add_mutually_exclusive_group()
     backend_group.add_argument(
         "--python-backend",
@@ -1292,6 +1329,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                     args.eval,
                     target_triple=args.llvm_target_triple,
                     data_layout=args.llvm_data_layout,
+                    llvm_opt=args.llvm_opt,
                 )
                 streamed = True
             else:
@@ -1376,6 +1414,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             source_text,
             target_triple=args.llvm_target_triple,
             data_layout=args.llvm_data_layout,
+            llvm_opt=args.llvm_opt,
         )
         if args.emit_llvm == "-":
             print(llvm_ir)
@@ -1394,6 +1433,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 compiler=args.compiler,
                 target_triple=args.llvm_target_triple,
                 data_layout=args.llvm_data_layout,
+                llvm_opt=args.llvm_opt,
             )
         except RuntimeError as err:
             print(str(err), file=sys.stderr)
@@ -1417,6 +1457,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 Path(args.file).read_text(encoding="utf-8"),
                 target_triple=args.llvm_target_triple,
                 data_layout=args.llvm_data_layout,
+                llvm_opt=args.llvm_opt,
             )
             streamed = True
         else:

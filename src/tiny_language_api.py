@@ -904,7 +904,7 @@ class _CaptureCStdout:
             self._msvcrt._dup2.restype = ctypes.c_int
             self._msvcrt._close.argtypes = [ctypes.c_int]
             self._msvcrt._close.restype = ctypes.c_int
-            self._msvcrt._open_osfhandle.argtypes = [ctypes.c_intptr, ctypes.c_int]
+            self._msvcrt._open_osfhandle.argtypes = [ctypes.c_void_p, ctypes.c_int]
             self._msvcrt._open_osfhandle.restype = ctypes.c_int
             self._kernel32.GetCurrentProcess.restype = ctypes.wintypes.HANDLE
             self._kernel32.DuplicateHandle.argtypes = [

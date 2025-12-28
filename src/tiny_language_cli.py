@@ -113,6 +113,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Override the LLVM data layout for --emit-llvm",
     )
     parser.add_argument(
+        "--llvm-opt",
+        action="store_true",
+        help="Run basic LLVM optimization passes (mem2reg, instcombine) on emitted IR",
+    )
+    parser.add_argument(
         "--copy-on-call",
         action=argparse.BooleanOptionalAction,
         default=_default_copy_on_call(),
@@ -137,6 +142,7 @@ def main(argv: list[str] | None = None) -> int:
                 source,
                 target_triple=args.llvm_target_triple,
                 data_layout=args.llvm_data_layout,
+                llvm_opt=args.llvm_opt,
             )
         except TinyLangError as err:
             sys.stderr.write(_format_error_for_source(source, err) + os.linesep)

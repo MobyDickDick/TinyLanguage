@@ -20,7 +20,7 @@ they can be tackled incrementally.
   - [x] Allow `tiny_language_cli.py --emit-llvm [FILE|-]` to write LLVM IR to a file or stdout.
   - [x] Add an optional `llvmlite` JIT runner to execute the LLVM prototype without invoking `clang`.
   - [x] Thread target triple/data layout through the LLVM emitter and expose CLI flags to override them.
-  - [ ] Add basic optimization passes (mem2reg, instcombine) behind a `--llvm-opt` flag.
+  - [x] Add basic optimization passes (mem2reg, instcombine) behind a `--llvm-opt` flag.
   - [ ] Extend the LLVM runtime ABI with heap/string helpers so non-numeric types can be lowered.
 
 ## 2) Port the Python standard library

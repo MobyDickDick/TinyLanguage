@@ -16,6 +16,12 @@ they can be tackled incrementally.
   - [x] Support functions and calls in the LLVM prototype.
   - [x] Sketch heap/strings (e.g. `new`, `heap_get`/`heap_set`, string print) in the LLVM path.
   - [x] Refine error messages when an IR opcode is not supported.
+- **LLVM integration tasks (Julia-style, incremental)**:
+  - [x] Allow `tiny_language_cli.py --emit-llvm [FILE|-]` to write LLVM IR to a file or stdout.
+  - [ ] Add an optional `llvmlite` JIT runner to execute the LLVM prototype without invoking `clang`.
+  - [ ] Thread target triple/data layout through the LLVM emitter and expose CLI flags to override them.
+  - [ ] Add basic optimization passes (mem2reg, instcombine) behind a `--llvm-opt` flag.
+  - [ ] Extend the LLVM runtime ABI with heap/string helpers so non-numeric types can be lowered.
 
 ## 2) Port the Python standard library
 

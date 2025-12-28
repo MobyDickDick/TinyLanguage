@@ -97,8 +97,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--emit-llvm",
-        action="store_true",
-        help="Compile the program to LLVM IR and print it instead of executing",
+        nargs="?",
+        const="-",
+        metavar="FILE",
+        help="Compile the program to LLVM IR and write it to FILE (use '-' for stdout)",
     )
     parser.add_argument(
         "--copy-on-call",
@@ -119,13 +121,17 @@ def main(argv: list[str] | None = None) -> int:
     else:
         parser.error("either provide a path argument, --file, or --source")
 
-    if args.emit_llvm:
+    if args.emit_llvm is not None:
         try:
             llvm_ir = compile_to_llvm_ir(source)
         except TinyLangError as err:
             sys.stderr.write(_format_error_for_source(source, err) + os.linesep)
             return 1
-        sys.stdout.write(llvm_ir + os.linesep)
+        if args.emit_llvm == "-":
+            sys.stdout.write(llvm_ir + os.linesep)
+        else:
+            out_path = Path(args.emit_llvm)
+            out_path.write_text(llvm_ir + os.linesep, encoding="utf-8")
         return 0
 
     try:

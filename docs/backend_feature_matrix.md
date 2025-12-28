@@ -12,7 +12,7 @@ Legend:
 
 | Feature | Interpreter | Native VM (`--native-backend`) | C/LLVM pipeline (`--emit-llvm`, `--emit-exe`) |
 | --- | --- | --- | --- |
-| Literals (`number`, `string`, `bool`, `null`) | ✅ | ✅ | ⚠️ Numeric + strings only (subset) |
+| Literals (`number`, `string`, `bool`, `null`) | ✅ | ✅ | ⚠️ Numeric + strings + bools only (subset) |
 | Variables (`define`, assignment) | ✅ | ✅ | ✅ (numeric subset) |
 | Arithmetic (`+`, `-`, `*`, `/`) | ✅ | ✅ | ✅ (numeric subset) |
 | Comparisons (`==`, `<`, `>`, etc.) | ✅ | ✅ | ✅ (numeric/boolean subset) |
@@ -26,7 +26,7 @@ Legend:
 
 | Feature | Interpreter | Native VM (`--native-backend`) | C/LLVM pipeline (`--emit-llvm`, `--emit-exe`) |
 | --- | --- | --- | --- |
-| Heap (`new`, `heap_get`, `heap_set`, `delete`) | ✅ | ❌ (optional internal flag only) | ❌ |
+| Heap (`new`, `heap_get`, `heap_set`, `delete`) | ✅ | ❌ (optional internal flag only) | ⚠️ Basic heap ops (no runtime safety checks) |
 | Array literals (`[a, b, c]`) | ✅ | ❌ | ❌ |
 | Classes / methods | ✅ | ❌ | ❌ |
 | Operator overloading | ✅ | ❌ | ❌ |

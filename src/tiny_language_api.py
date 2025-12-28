@@ -871,6 +871,8 @@ def _register_llvm_symbols(llvm_binding) -> None:
         libc = ctypes.CDLL(None)
     llvm_binding.add_symbol("printf", ctypes.cast(libc.printf, ctypes.c_void_p).value)
     llvm_binding.add_symbol("fflush", ctypes.cast(libc.fflush, ctypes.c_void_p).value)
+    llvm_binding.add_symbol("calloc", ctypes.cast(libc.calloc, ctypes.c_void_p).value)
+    llvm_binding.add_symbol("free", ctypes.cast(libc.free, ctypes.c_void_p).value)
 
 
 def _create_llvm_engine(llvm_binding, *, target_triple: Optional[str] = None):
@@ -1035,7 +1037,7 @@ def run_with_llvm_jit(
     except Exception as exc:
         _raise_llvm_jit_error("parse", exc)
     try:
-        program = NativeCodeGenerator(allow_heap=False).compile_program(stmts)
+        program = NativeCodeGenerator(allow_heap=True).compile_program(stmts)
     except Exception as exc:
         _raise_llvm_jit_error("native-codegen", exc)
     try:

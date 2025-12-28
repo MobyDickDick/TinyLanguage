@@ -230,6 +230,23 @@ def test_llvm_codegen_emits_heap_string_helpers() -> None:
     assert "call i8* @heap_get_str(i64" in llvm_ir
 
 
+def test_llvm_codegen_defines_heap_runtime_helpers() -> None:
+    source = "define ptr = new(1); heap_set(ptr, 0, 1); print(heap_get(ptr, 0));"
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "define i64 @__new(i64 %size)" in llvm_ir
+    assert "define i64 @heap_get(i64 %ptr, i64 %idx)" in llvm_ir
+    assert "define i64 @heap_set(i64 %ptr, i64 %idx, i64 %value)" in llvm_ir
+    assert "define i8* @heap_get_str(i64 %ptr, i64 %idx)" in llvm_ir
+    assert "define double @heap_get_double(i64 %ptr, i64 %idx)" in llvm_ir
+    assert "define i1 @heap_get_bool(i64 %ptr, i64 %idx)" in llvm_ir
+    assert "define i64 @heap_set_str(i64 %ptr, i64 %idx, i8* %value)" in llvm_ir
+    assert "define i64 @heap_set_double(i64 %ptr, i64 %idx, double %value)" in llvm_ir
+    assert "define i64 @heap_set_bool(i64 %ptr, i64 %idx, i1 %value)" in llvm_ir
+    assert "define i64 @delete(i64 %ptr)" in llvm_ir
+
+
 def test_llvm_codegen_emits_branches_for_jump_ops() -> None:
     program = ProgramIR(
         entry=[

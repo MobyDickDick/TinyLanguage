@@ -19,7 +19,7 @@ python src/tiny_language.py --emit-llvm - src_tiny/demo.tiny
 Notes:
 
 - Requires `clang` to be available on `PATH` (override with `--compiler` if needed).
-- User-defined functions, control flow, and heap types are **not** supported in this LLVM prototype yet.
+- The LLVM prototype supports basic control flow, functions, and heap helpers (`new`, `heap_get`, `heap_set`, `delete`), but does not include the interpreter-style safety checks for invalid pointers or indices.
 
 ## Prerequisites
 

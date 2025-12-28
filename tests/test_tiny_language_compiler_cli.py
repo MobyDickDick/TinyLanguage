@@ -46,3 +46,12 @@ def test_emit_llvm_bitcode_creates_artifact(tmp_path: pathlib.Path) -> None:
     assert result.returncode == 0
     assert output_path.exists()
     assert output_path.stat().st_size > 0
+
+
+def test_emit_c_accepts_debug_flag() -> None:
+    program_path = FIXTURES_ROOT / "hello_world.tiny"
+
+    result = _run_compiler_cli([str(program_path), "--emit-c", "--debug"])
+
+    assert result.returncode == 0
+    assert "int main" in result.stdout

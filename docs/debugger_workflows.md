@@ -32,6 +32,53 @@ quick self-test below before chasing down editor log noise.
    `tinylanguage.getDebugAdapterExecutable` command and wires breakpoints into
    the interpreter before execution begins.
 
+## Debugging LLVM-native executables in VS Code
+
+TinyLanguage can also compile Tiny code to a native executable via the C/LLVM
+pipeline. To debug those executables in VS Code, generate a build with debug
+symbols and then use the C/C++ or CodeLLDB debugger to launch the resulting
+binary.
+
+1. Compile with debug symbols enabled:
+
+   ```bash
+   python -m tinyc_cli examples/c_backend/hello_world.tiny -o build/hello_world --debug
+   ```
+
+2. Create a `launch.json` entry that points at the compiled binary. The
+   following example uses the C/C++ extension (`cppdbg`) with LLDB on macOS; use
+   `gdb` on Linux or switch to the CodeLLDB extension if you prefer:
+
+   ```jsonc
+   {
+     "name": "TinyLanguage: Debug LLVM executable",
+     "type": "cppdbg",
+     "request": "launch",
+     "program": "${workspaceFolder}/build/hello_world",
+     "args": [],
+     "cwd": "${workspaceFolder}",
+     "stopAtEntry": false,
+     "MIMode": "lldb"
+   }
+   ```
+
+   For CodeLLDB, swap the type to `lldb`:
+
+   ```jsonc
+   {
+     "name": "TinyLanguage: Debug LLVM executable (CodeLLDB)",
+     "type": "lldb",
+     "request": "launch",
+     "program": "${workspaceFolder}/build/hello_world",
+     "args": [],
+     "cwd": "${workspaceFolder}"
+   }
+   ```
+
+3. Start debugging with the chosen configuration. You can set breakpoints in
+   the generated C source (if you emitted it with `--emit-c`) or in the
+   executable's symbolized functions as reported by your debugger.
+
 ## Supported controls
 
 - **Breakpoints**: Any line breakpoint in a TinyLanguage source file will pause

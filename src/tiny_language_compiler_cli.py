@@ -69,6 +69,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Output executable path (default: a.out)",
     )
     parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Include debug symbols and disable optimizations (passes -g -O0 to the compiler)",
+    )
+    parser.add_argument(
         "--compiler",
         default=_default_compiler(),
         help="C compiler to invoke (default: cc, env: TINYLANG_C_COMPILER)",
@@ -76,6 +81,7 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     source = _read_source(args.path)
+    extra_args = ["-g", "-O0"] if args.debug else None
 
     try:
         if args.emit_c is not None:
@@ -88,7 +94,7 @@ def main(argv: list[str] | None = None) -> int:
                 out_path.write_text(c_source, encoding="utf-8")
             return 0
         if args.emit_llvm is not None:
-            llvm_ir = compile_to_llvm_ir_via_c(source, compiler=args.compiler)
+            llvm_ir = compile_to_llvm_ir_via_c(source, compiler=args.compiler, extra_args=extra_args)
             if args.emit_llvm == "-":
                 sys.stdout.write(llvm_ir + os.linesep)
             else:
@@ -97,12 +103,12 @@ def main(argv: list[str] | None = None) -> int:
                 out_path.write_text(llvm_ir, encoding="utf-8")
             return 0
         if args.emit_bc is not None:
-            bitcode = compile_to_llvm_bitcode_via_c(source, compiler=args.compiler)
+            bitcode = compile_to_llvm_bitcode_via_c(source, compiler=args.compiler, extra_args=extra_args)
             out_path = Path(args.emit_bc)
             out_path.parent.mkdir(parents=True, exist_ok=True)
             out_path.write_bytes(bitcode)
             return 0
-        compile_to_c_executable(source, args.output, compiler=args.compiler)
+        compile_to_c_executable(source, args.output, compiler=args.compiler, extra_args=extra_args)
         return 0
     except TinyLangError as err:
         sys.stderr.write(_format_error_for_source(source, err) + os.linesep)

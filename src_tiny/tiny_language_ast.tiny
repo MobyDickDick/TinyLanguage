@@ -144,7 +144,12 @@ class Param {
     name: string;
     type_hint: string;
 }
-fn Param(name, type_hint) { return new Param { name: name; type_hint: type_hint }; }
+fn Param(name, type_hint) {
+    return new Param {
+        name: name;
+        type_hint: type_hint
+    };
+}
 
 class Fn {
     name: string;

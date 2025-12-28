@@ -3,6 +3,7 @@
 
 define tiny_cli = Python.import_module("tiny_language_cli", new["main"]);
 define os = Python.import_module("os", new["getenv"]);
+define builtins = Python.import_module("builtins", new["exit"]);
 
 fn __argv_from_env() {
     define raw = os.getenv("TINYLANG_ARGS", "");
@@ -17,7 +18,7 @@ fn main(argv) {
 
 fn run() {
     define code = tiny_cli.main(__argv_from_env());
-    return code;
+    define _ = builtins.exit(code);
 }
 
 define _ = run();

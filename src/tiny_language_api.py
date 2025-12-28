@@ -901,6 +901,7 @@ class _CaptureCStdout:
             self._msvcrt._close.argtypes = [ctypes.c_int]
             self._msvcrt._close.restype = ctypes.c_int
             self._original_fd = self._msvcrt._dup(1)
+            os.dup2(self._temp.fileno(), 1)
             self._msvcrt._dup2(self._temp.fileno(), 1)
         else:
             self._original_fd = os.dup(1)
@@ -909,6 +910,7 @@ class _CaptureCStdout:
 
     def __exit__(self, exc_type, exc, tb) -> None:
         if sys.platform == "win32":
+            os.dup2(self._original_fd, 1)
             self._msvcrt._dup2(self._original_fd, 1)
             self._msvcrt._close(self._original_fd)
         else:

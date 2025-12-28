@@ -221,6 +221,15 @@ def test_llvm_codegen_emits_heap_calls() -> None:
     assert "call i64 @heap_get(i64" in llvm_ir
 
 
+def test_llvm_codegen_emits_heap_string_helpers() -> None:
+    source = 'define ptr = new(1); heap_set(ptr, 0, "hello"); print(heap_get(ptr, 0));'
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "call i64 @heap_set_str(i64" in llvm_ir
+    assert "call i8* @heap_get_str(i64" in llvm_ir
+
+
 def test_llvm_codegen_emits_branches_for_jump_ops() -> None:
     program = ProgramIR(
         entry=[

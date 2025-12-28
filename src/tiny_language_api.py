@@ -61,6 +61,8 @@ if "IR" not in globals():
         Return,
         Spawn,
         Str,
+        Switch,
+        SwitchCase,
         TryCatch,
         TypeDef,
         TypeVariant,
@@ -265,6 +267,14 @@ def _tiny_to_python_ast(runtime: "Runtime", node: object) -> object:
         body = [_tiny_to_python_ast(runtime, item) for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "body"))]
         pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
         return apply_span(While(cond, body, pos=pos))
+    if tag == "Switch":
+        expr = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "expr"))
+        cases = [
+            _tiny_to_python_ast(runtime, item)
+            for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "cases"))
+        ]
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(Switch(expr, cases, pos=pos))
     if tag == "TryCatch":
         body = [_tiny_to_python_ast(runtime, item) for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "body"))]
         handler = [
@@ -492,6 +502,14 @@ def _tiny_to_python_ast(runtime: "Runtime", node: object) -> object:
         body = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "body"))
         pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
         return apply_span(MatchCase(pattern, body, pos=pos))
+    if tag == "SwitchCase":
+        value = _tiny_to_python_ast(runtime, _tiny_get_field(runtime, node, "value"))
+        body = [
+            _tiny_to_python_ast(runtime, item)
+            for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "body"))
+        ]
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(SwitchCase(value, body, pos=pos))
     if tag == "VariantPattern":
         variant = _tiny_get_field(runtime, node, "variant")
         bindings = _tiny_to_dict(runtime, _tiny_get_field(runtime, node, "bindings"))

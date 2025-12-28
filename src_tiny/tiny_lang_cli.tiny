@@ -1,8 +1,8 @@
 // TinyLanguage wrapper mirroring src/tiny_lang_cli.py.
 
-import tiny_language_cli;
-
+define tiny_cli = Python.import_module("tiny_language_cli", new["main"]);
 define os = Python.import_module("os", new["getenv"]);
+define builtins = Python.import_module("builtins", new["exit"]);
 
 fn __argv_from_env() {
     define raw = os.getenv("TINYLANG_ARGS", "");
@@ -12,7 +12,8 @@ fn __argv_from_env() {
 }
 
 fn run() {
-    return tiny_language_cli.main(__argv_from_env());
+    define code = tiny_cli.main(__argv_from_env());
+    define _ = builtins.exit(code);
 }
 
 define _ = run();

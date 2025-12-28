@@ -144,6 +144,13 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
         uses_in_expr(s.cond, reads)
         for t in s.body:
             lint_stmt_reads(t, reads)
+    elif isinstance(s, Switch):
+        uses_in_expr(s.expr, reads)
+        for case in s.cases:
+            if case.value is not None:
+                uses_in_expr(case.value, reads)
+            for t in case.body:
+                lint_stmt_reads(t, reads)
     elif isinstance(s, TryCatch):
         for t in s.body:
             lint_stmt_reads(t, reads)
@@ -383,6 +390,21 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                         body_active, body_term = analyze_block(st.body, [cond_state])
                         next_active.extend(body_active)
                         terminated_states.extend(body_term)
+                elif isinstance(st, Switch):
+                    switch_state = dict(state)
+                    for nm in names_in_expr(st.expr):
+                        _mark_used(switch_state, nm)
+                    for case in st.cases:
+                        if case.value is not None:
+                            for nm in names_in_expr(case.value):
+                                _mark_used(switch_state, nm)
+                    has_default = any(case.value is None for case in st.cases)
+                    for case in st.cases:
+                        body_active, body_term = analyze_block(case.body, [dict(switch_state)])
+                        next_active.extend(body_active)
+                        terminated_states.extend(body_term)
+                    if not has_default:
+                        next_active.append(dict(switch_state))
                 elif isinstance(st, TryCatch):
                     body_active, body_term = analyze_block(st.body, [dict(state)])
                     handler_state = dict(state)
@@ -535,6 +557,17 @@ def lint_assignment_types(stmts: List[IR], source: Optional[str] = None, env: Op
                         local_env[name] = then_env[name]
             elif isinstance(st, While):
                 _ = check_block(list(st.body), dict(local_env))
+            elif isinstance(st, Switch):
+                case_envs: List[Dict[str, str]] = []
+                for case in st.cases:
+                    case_envs.append(check_block(list(case.body), dict(local_env)))
+                if not any(case.value is None for case in st.cases):
+                    case_envs.append(dict(local_env))
+                for name in list(local_env.keys()):
+                    if case_envs and all(name in env for env in case_envs):
+                        distinct = {env[name] for env in case_envs}
+                        if len(distinct) == 1:
+                            local_env[name] = distinct.pop()
             elif isinstance(st, TryCatch):
                 body_env = check_block(list(st.body), dict(local_env))
                 handler_env = dict(local_env)
@@ -600,6 +633,9 @@ def lint_bare_call_results(
                 visit(st.els)
             elif isinstance(st, While):
                 visit(st.body)
+            elif isinstance(st, Switch):
+                for case in st.cases:
+                    visit(case.body)
             elif isinstance(st, TryCatch):
                 visit(st.body)
                 visit(st.handler)
@@ -665,6 +701,10 @@ def _block_guarantees_return(stmts: List[IR]) -> bool:
         if isinstance(st, If):
             if _block_guarantees_return(st.then) and _block_guarantees_return(st.els):
                 return True
+        if isinstance(st, Switch):
+            has_default = any(case.value is None for case in st.cases)
+            if has_default and all(_block_guarantees_return(case.body) for case in st.cases):
+                return True
         if isinstance(st, TryCatch):
             if _block_guarantees_return(st.body) and _block_guarantees_return(st.handler):
                 return True
@@ -680,6 +720,9 @@ def _stmt_guarantees_exit(st: IR) -> bool:
         return True
     if isinstance(st, If):
         return _block_guarantees_return(st.then) and _block_guarantees_return(st.els)
+    if isinstance(st, Switch):
+        has_default = any(case.value is None for case in st.cases)
+        return has_default and all(_block_guarantees_return(case.body) for case in st.cases)
     if isinstance(st, TryCatch):
         return _block_guarantees_return(st.body) and _block_guarantees_return(st.handler)
     return False
@@ -717,6 +760,9 @@ def lint_return_signatures(
                 visit(st.els)
             elif isinstance(st, While):
                 visit(st.body)
+            elif isinstance(st, Switch):
+                for case in st.cases:
+                    visit(case.body)
             elif isinstance(st, TryCatch):
                 visit(st.body)
                 visit(st.handler)
@@ -773,6 +819,9 @@ def lint_unreachable_code(stmts: List[IR], source: Optional[str] = None) -> None
                 visit_block(st.els)
             elif isinstance(st, While):
                 visit_block(st.body)
+            elif isinstance(st, Switch):
+                for case in st.cases:
+                    visit_block(case.body)
             elif isinstance(st, TryCatch):
                 visit_block(st.body)
                 visit_block(st.handler)
@@ -799,10 +848,15 @@ def lint_no_consecutive_definitions(stmts: List[IR]) -> None:
         nonlocal prev
         prev = None
         for st in block:
-            if isinstance(st, (If, While)):
-                lint_no_consecutive_definitions(st.then if isinstance(st, If) else st.body)
+            if isinstance(st, (If, While, Switch)):
                 if isinstance(st, If):
+                    lint_no_consecutive_definitions(st.then)
                     lint_no_consecutive_definitions(st.els)
+                elif isinstance(st, While):
+                    lint_no_consecutive_definitions(st.body)
+                else:
+                    for case in st.cases:
+                        lint_no_consecutive_definitions(case.body)
                 prev = None
                 continue
             if isinstance(st, Fn):
@@ -848,6 +902,9 @@ def lint_destruct_call_outputs_stmt(st: IR, source: Optional[str]) -> None:
         lint_destruct_call_outputs(st.els, source)
     elif isinstance(st, While):
         lint_destruct_call_outputs(st.body, source)
+    elif isinstance(st, Switch):
+        for case in st.cases:
+            lint_destruct_call_outputs(case.body, source)
     elif isinstance(st, Fn):
         lint_destruct_call_outputs(st.body, source)
     elif isinstance(st, MethodDef):
@@ -924,6 +981,10 @@ def lint_param_mutations_returned(
         elif isinstance(st, While):
             for body_stmt in st.body:
                 visit(body_stmt)
+        elif isinstance(st, Switch):
+            for case in st.cases:
+                for body_stmt in case.body:
+                    visit(body_stmt)
 
     for st in stmts:
         visit(st)

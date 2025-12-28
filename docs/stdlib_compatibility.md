@@ -1,37 +1,37 @@
-# TL-Stdlib: Kompatibilitätsziel & Struktur
+# TL-Stdlib: Compatibility Goals & Structure
 
-## 1) API-Kompatibilitätsziel
-Für die erste Ausbaustufe orientiert sich die TL-Stdlib an diesen Python-Modulen:
+## 1) API compatibility target
+For the initial milestone, the TL stdlib aligns with these Python modules:
 
-- `math` (numerische Grundfunktionen)
-- `random` (Zufall)
-- `string` (String-Utilities, z. B. Split/Join)
-- `datetime` (geplant, noch nicht umgesetzt)
+- `math` (numeric core functions)
+- `random` (randomness)
+- `string` (string utilities, e.g. split/join)
+- `datetime` (planned, not implemented yet)
 
-**Status heute:** Die Kern-Namensräume `Math`, `Random` und `String` sind nativ implementiert. Darüber hinaus existieren `Collections`, `Map`, `Set`, `Deque`, `File`, `JSON`, `Async` und `Result`.
+**Current status:** The core namespaces `Math`, `Random`, and `String` are implemented natively. Additionally, `Collections`, `Map`, `Set`, `Deque`, `File`, `JSON`, `Async`, and `Result` are available.
 
-## 2) FFI/Runtime-Strategie
-Standardmäßig werden die TL-Stdlib-Funktionen **nativ** in der Runtime implementiert (siehe `src/stdlib/__init__.py`).
+## 2) FFI/runtime strategy
+By default, TL stdlib functions are implemented **natively** in the runtime (see `src/stdlib/__init__.py`).
 
-Für Spezialfälle oder Erweiterungen kann optional die Python-Bridge genutzt werden:
+For special cases or extensions, the Python bridge can be used optionally:
 
-- `Python.import_module("...")` lädt ein Python-Modul (mit Allowlist).
-- `Python.call(...)` bzw. `Python.fn(...)` rufen Funktionen auf.
+- `Python.import_module("...")` loads a Python module (with an allowlist).
+- `Python.call(...)` or `Python.fn(...)` invokes functions.
 
-Damit bleibt die Standardbibliothek deterministisch und kontrollierbar, während erweiterte Features über den Bridge-Mechanismus möglich sind.
+This keeps the standard library deterministic and controlled, while advanced features can be accessed via the bridge mechanism.
 
-## 3) Struktur der TL-Stdlib
-Die Standardbibliothek besteht aus zwei Schichten:
+## 3) TL stdlib structure
+The standard library consists of two layers:
 
-- **Native Runtime-Implementierung:** `src/stdlib/__init__.py`
-- **TinyLanguage-Module:** `stdlib/` (TinyLanguage-Quellen, per `import` nutzbar)
+- **Native runtime implementation:** `src/stdlib/__init__.py`
+- **TinyLanguage modules:** `stdlib/` (TinyLanguage sources, available via `import`)
 
-Das Verzeichnis `stdlib/` ist das feste Zuhause für TL-Module, die die native API in eine Python-ähnliche Modulform gießen.
+The `stdlib/` directory is the permanent home for TL modules that wrap the native API in a Python-like module shape.
 
-## 4) Erstes Modul: `stdlib.math`
-Das erste TinyLanguage-Modul ist **`stdlib.math`** mit einem Python-ähnlichen API-Ausschnitt.
+## 4) First module: `stdlib.math`
+The first TinyLanguage module is **`stdlib.math`**, with a Python-like API subset.
 
-Import und Nutzung:
+Import and usage:
 
 ```tiny
 import stdlib.math;
@@ -39,10 +39,10 @@ print(math.sqrt(9));
 print(math.round_digits(math.pi, 3));
 ```
 
-## 5) API-Abweichungen gegenüber Python
-- `math.round_digits(value, digits)` ersetzt das optionale `round(x, ndigits)`.
-- Die Funktionen sind auf die in TL verfügbaren Math-Operationen begrenzt.
-- `string`-Utilities leben im `String`-Namespace (nicht als separates Modul).
-- `datetime` ist aktuell nur ein Kompatibilitätsziel.
+## 5) API deviations from Python
+- `math.round_digits(value, digits)` replaces the optional `round(x, ndigits)`.
+- Functions are limited to the math operations available in TL.
+- `string` utilities live in the `String` namespace (not as a separate module).
+- `datetime` is currently only a compatibility target.
 
-Weitere Erweiterungen werden in der stdlib erweitert, sobald die Runtime-Funktionen existieren.
+Further extensions will arrive in the stdlib once the corresponding runtime functions exist.

@@ -4,6 +4,39 @@ TinyLanguage is a small Julia-inspired language with a Python interpreter. This 
 
 For interoperability guidance, see the cross-language compatibility notes in [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md). For concrete Rosetta Code–style ports from Python to TinyLanguage, walk through [`docs/rosetta_python_examples.md`](docs/rosetta_python_examples.md). A compact language reference with syntax, type rules, and operator overview lives in [`docs/language_spec.md`](docs/language_spec.md).
 
+## Documentation index
+
+### Getting started and tutorials
+- **Beginner tutorial**: [`docs/tutorial.md`](docs/tutorial.md) walks through setup, runnable demos, and the core language constructs.
+- **Feature cheat sheet**: [`docs/feature_cheat_sheet.md`](docs/feature_cheat_sheet.md) summarizes the core constructs with short notes on the corresponding `.tiny` demos.
+- **Demo run commands**: [`docs/demo_run_commands.md`](docs/demo_run_commands.md) lists interpreter runs, native-backend comparisons, Python interop demos, and language-server CLI checks.
+
+### Language and standard library references
+- **Language spec**: [`docs/language_spec.md`](docs/language_spec.md) is the compact syntax/type/operator reference.
+- **Standard library compatibility**: [`docs/stdlib_compatibility.md`](docs/stdlib_compatibility.md) explains the TL-stdlib goals and API deviations.
+- **Standard library extensions**: [`docs/stdlib_extensions.md`](docs/stdlib_extensions.md) lists TinyLanguage-specific stdlib additions.
+
+### Interop and ecosystem guides
+- **Cross-language compatibility**: [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md) outlines portability limits and mappings.
+- **Python interop**: [`docs/python_interop.md`](docs/python_interop.md) shows FFI usage with demos and expected outputs.
+- **Rosetta Python examples**: [`docs/rosetta_python_examples.md`](docs/rosetta_python_examples.md) compares Python and TinyLanguage tasks.
+
+### Tooling, workflows, and debugging
+- **Language server workflows**: [`docs/language_server_workflows.md`](docs/language_server_workflows.md) covers LSP requests and demos.
+- **Debugger workflows**: [`docs/debugger_workflows.md`](docs/debugger_workflows.md) documents VS Code launch/step flows.
+- **Git conflict troubleshooting**: [`docs/git_conflict_troubleshooting.md`](docs/git_conflict_troubleshooting.md) is the merge/rebase checklist.
+
+### Compiler/runtime internals and performance
+- **Native compiler**: [`docs/native_compiler.md`](docs/native_compiler.md) covers the C-backend workflow and limits.
+- **Native IR**: [`docs/native_ir.md`](docs/native_ir.md) documents the IR used by the native backend.
+- **Backend feature matrix**: [`docs/backend_feature_matrix.md`](docs/backend_feature_matrix.md) compares interpreter, native, and transpiler coverage.
+- **Performance microbenchmarks**: [`docs/performance_microbenchmarks.md`](docs/performance_microbenchmarks.md) explains the benchmark suite.
+- **Structured concurrency**: [`docs/structured_concurrency.md`](docs/structured_concurrency.md) details cancellation/token design.
+
+### Roadmaps and planning
+- **Expansion roadmap**: [`docs/expansion_roadmap.md`](docs/expansion_roadmap.md) tracks feature growth.
+- **Self-hosting port plan**: [`docs/self_hosting_port_plan.md`](docs/self_hosting_port_plan.md) logs the migration from Python to TinyLanguage.
+
 ### Quick glossary
 
 - **IR (Intermediate Representation)**: An internal *intermediate representation* of a program between the AST and the final backend output (e.g., interpreter execution, native VM bytecode, or emitted code). The IR is designed to be simpler than the surface syntax and easier to transform, validate, and round-trip across languages.
@@ -102,11 +135,11 @@ Minimal end-to-end examples (Hello World and a function return) live under `exam
 
 ## Backlog: next possible tasks
 - [x] **Prototype an LLVM backend**: Explore emitting LLVM IR (e.g., via `llvmlite`) for constants, variables, and arithmetic, with a CLI switch like `--emit-llvm` to generate IR or invoke `llc`/`clang`.
-  - **Nächste Schritte**
-    - [x] Control-Flow (`if`/`while`) im LLVM-Emitter abbilden; aktuell nur straight-line code.
-    - [x] Funktionen und Calls unterstützen; bis dahin explizite `NotImplementedError` belassen.
-    - [x] Heap/Strings abdecken (mindestens `print` mit Strings, einfache Heap-Reads/Writes).
-    - [x] Fehlerberichte verbessern (klarer Hinweis auf nicht unterstützte AST-Knoten/IR-OpCodes).
+  - **Next steps**
+    - [x] Model control flow (`if`/`while`) in the LLVM emitter; currently straight-line code only.
+    - [x] Support functions and calls; until then, keep explicit `NotImplementedError` markers.
+    - [x] Cover heap/strings (at least `print` with strings, basic heap reads/writes).
+    - [x] Improve error reporting (clear hints for unsupported AST nodes/IR opcodes).
 - [x] **Port project modules to TinyLanguage (self-hosting)**: Inventory interpreter/compiler modules, design Tiny-compatible library primitives, and port core components while keeping parallel Python/Tiny tests. See [`docs/self_hosting_port_plan.md`](docs/self_hosting_port_plan.md) for the current module inventory and migration plan.
 - [x] **Port remaining Python sources once LLVM builds are direct**: After TinyLanguage can build directly via the LLVM pipeline, convert the remaining Python implementation files into TinyLanguage equivalents to push toward full self-hosting.
 - [x] **Import and transpile Rosetta Code samples**: Store selected Rosetta Code tasks (FizzBuzz, Fibonacci, sorting, etc.) under `examples/rosetta/`, then build a translation pass that converts the Python versions into TinyLanguage variants with snapshot tests.
@@ -127,11 +160,11 @@ Minimal end-to-end examples (Hello World and a function return) live under `exam
 
 ## Open tasks
 - [x] **Extend the LLVM emitter** (in progress): The experimental path in `tiny_language_codegen_llvm.py` should cover more native IR operations and remain selectable via CLI/API. Initial steps from this run: POP support and an extra test to lock in the behavior.
-  - **Nächste Schritte**
-    - [x] Kontrollfluss-Lowering für `If`/`While` ergänzen (derzeit `NotImplementedError` für Branches).
-    - [x] Funktions-Frames und Aufrufe (Call/Return) im LLVM-Emitter nachziehen.
-    - [x] String/Heap-Handling skizzieren (Strings, `new`, `heap_get`/`heap_set`).
-    - [x] Diagnostik: fehlende Lowerings mit präzisen Fehlermeldungen kennzeichnen.
+  - **Next steps**
+    - [x] Fill in control-flow lowering for `If`/`While` (currently `NotImplementedError` for branches).
+    - [x] Add function frames and call/return support in the LLVM emitter.
+    - [x] Sketch string/heap handling (strings, `new`, `heap_get`/`heap_set`).
+    - [x] Add diagnostics for missing lowerings with precise error messages.
 - [x] **Python bridge for feature pass-through**: A TinyLanguage module and Python helpers should simplify the FFI (imports/calls/allowlists/timeouts) and wrap bidirectional calls. Demos and tests would cover common datatype mappings and sandbox boundaries.
 - [x] **Rosetta sync for local paths**: The script `examples/rosetta/copy_rosetta_samples.py` now offers configurable paths/filters/delays, a dry-run flag, and can trigger the transpiler directly.
 - [x] **CLI copy-on-call env regression**: Added a CLI regression test to ensure `TINYLANG_COPY_ON_CALL` defaults are honored when running inline source.
@@ -139,7 +172,7 @@ Minimal end-to-end examples (Hello World and a function return) live under `exam
 ### Newly prioritized tasks
 1. **Refine the LLVM emitter** ✅: Implement comparison and modulo operations in `tiny_language_codegen_llvm.py`, keep the `--emit-llvm` CLI option functional, and add regression tests that cover the expanded IR path.
 2. **Design a Python↔TinyLanguage bridge** ✅: Create a small FFI layer (allowlists/timeouts) plus matching Tiny/Python demos to show common datatype mappings; tests in `tests/` should cover both directions.
-3. **Rosetta-Sync konfigurierbar machen** ✅: `examples/rosetta/copy_rosetta_samples.py` ist jetzt filterbar, bietet Dry-Run/Transpile-Optionen und dokumentierte Bedienung inkl. Regressionstest.
+3. **Make Rosetta sync configurable** ✅: `examples/rosetta/copy_rosetta_samples.py` is now filterable, offers dry-run/transpile options, and documents usage with a regression test.
 
 ## Syntax and Features
 

@@ -547,17 +547,7 @@ The native compiler is developed in its own branch (`nativeCompiler`).
 ### 7. Debugging / IDEs
 
 - [x] **LLVM-first debugging in VS Code**
-  - The C/LLVM compiler CLI now supports `--debug` (adds `-g -O0`) and the debugger guide shows how to use VS Code's C/C++ or CodeLLDB launch configurations to step through the resulting native executable. See [`docs/debugger_workflows.md`](docs/debugger_workflows.md).
-
-### 7. Debugging / IDEs
-
-- [ ] **LLVM-first debugging in VS Code**
-  - Extend the VS Code workflow so that LLVM-native executables can be debugged directly when the LLVM pipeline is used.
-
-### 7. Debugging / IDEs
-
-- [ ] **LLVM-first debugging in VS Code**
-  - Extend the VS Code workflow so that LLVM-native executables can be debugged directly when the LLVM pipeline is used.
+  - The C/LLVM compiler CLI now supports `--debug` (adds `-g -O0`) and the debugger guide shows how to use VS Code's C/C++ or CodeLLDB launch configurations to step through the resulting native executable. The guide also documents the LLVM pipeline workflow when using `--emit-exe`. See [`docs/debugger_workflows.md`](docs/debugger_workflows.md).
 
 - [x] Define a custom native IR (stack- or register-based). See [`docs/native_ir.md`](docs/native_ir.md) for opcode overview and examples.
 - [x] Small VM that executes this IR (interpreter in Python or as a separate module).

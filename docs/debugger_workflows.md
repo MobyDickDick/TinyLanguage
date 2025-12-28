@@ -79,6 +79,26 @@ binary.
    the generated C source (if you emitted it with `--emit-c`) or in the
    executable's symbolized functions as reported by your debugger.
 
+### Debugging the LLVM pipeline (`--emit-exe`) builds
+
+If you are using the LLVM text backend directly (via `--emit-exe` on
+`src/tiny_language.py`), follow the same VS Code launch patterns but ensure the
+binary is compiled with debug symbols:
+
+1. Build the executable with debug info:
+
+   ```bash
+   python src/tiny_language.py --emit-exe build/hello_world --debug examples/c_backend/hello_world.tiny
+   ```
+
+2. Point a C/C++ (`cppdbg`) or CodeLLDB (`lldb`) `launch.json` entry at the new
+   binary. The configuration from the previous section works as-is; update the
+   `program` path to `build/hello_world`.
+
+3. Start debugging. If you also need LLVM IR output for inspection, add a
+   separate `--emit-llvm build/hello_world.ll` run; the debug executable remains
+   the one produced by `--emit-exe --debug`.
+
 ## Supported controls
 
 - **Breakpoints**: Any line breakpoint in a TinyLanguage source file will pause

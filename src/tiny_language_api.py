@@ -893,16 +893,50 @@ class _CaptureCStdout:
     def __enter__(self) -> "_CaptureCStdout":
         self._temp = tempfile.TemporaryFile(mode="w+b")
         if sys.platform == "win32":
+            import ctypes.wintypes
+            import msvcrt
+
             self._msvcrt = ctypes.CDLL("msvcrt")
+            self._kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
             self._msvcrt._dup.argtypes = [ctypes.c_int]
             self._msvcrt._dup.restype = ctypes.c_int
             self._msvcrt._dup2.argtypes = [ctypes.c_int, ctypes.c_int]
             self._msvcrt._dup2.restype = ctypes.c_int
             self._msvcrt._close.argtypes = [ctypes.c_int]
             self._msvcrt._close.restype = ctypes.c_int
+            self._msvcrt._open_osfhandle.argtypes = [ctypes.c_void_p, ctypes.c_int]
+            self._msvcrt._open_osfhandle.restype = ctypes.c_int
+            self._kernel32.GetCurrentProcess.restype = ctypes.wintypes.HANDLE
+            self._kernel32.DuplicateHandle.argtypes = [
+                ctypes.wintypes.HANDLE,
+                ctypes.wintypes.HANDLE,
+                ctypes.wintypes.HANDLE,
+                ctypes.POINTER(ctypes.wintypes.HANDLE),
+                ctypes.wintypes.DWORD,
+                ctypes.wintypes.BOOL,
+                ctypes.wintypes.DWORD,
+            ]
+            self._kernel32.DuplicateHandle.restype = ctypes.wintypes.BOOL
+            source_handle = msvcrt.get_osfhandle(self._temp.fileno())
+            current_process = self._kernel32.GetCurrentProcess()
+            duplicated_handle = ctypes.wintypes.HANDLE()
+            if not self._kernel32.DuplicateHandle(
+                current_process,
+                ctypes.wintypes.HANDLE(source_handle),
+                current_process,
+                ctypes.byref(duplicated_handle),
+                0,
+                True,
+                2,
+            ):
+                raise OSError(ctypes.get_last_error(), "DuplicateHandle failed")
+            self._temp_fd = self._msvcrt._open_osfhandle(duplicated_handle.value, os.O_RDWR)
+            if self._temp_fd == -1:
+                raise OSError("failed to open duplicated stdout handle")
             self._original_fd = self._msvcrt._dup(1)
+            self._python_fd = os.dup(1)
+            self._msvcrt._dup2(self._temp_fd, 1)
             os.dup2(self._temp.fileno(), 1)
-            self._msvcrt._dup2(self._temp.fileno(), 1)
         else:
             self._original_fd = os.dup(1)
             os.dup2(self._temp.fileno(), 1)
@@ -910,9 +944,11 @@ class _CaptureCStdout:
 
     def __exit__(self, exc_type, exc, tb) -> None:
         if sys.platform == "win32":
-            os.dup2(self._original_fd, 1)
+            os.dup2(self._python_fd, 1)
+            os.close(self._python_fd)
             self._msvcrt._dup2(self._original_fd, 1)
             self._msvcrt._close(self._original_fd)
+            self._msvcrt._close(self._temp_fd)
         else:
             os.dup2(self._original_fd, 1)
             os.close(self._original_fd)

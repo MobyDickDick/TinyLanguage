@@ -889,6 +889,46 @@ def _raise_llvm_jit_error(step: str, exc: Exception, llvm_binding=None) -> None:
     raise RuntimeError(f"LLVM JIT failed during {step}: {exc} ({context})") from exc
 
 
+class _CaptureCStdout:
+    def __enter__(self) -> "_CaptureCStdout":
+        self._temp = tempfile.TemporaryFile(mode="w+b")
+        if sys.platform == "win32":
+            self._msvcrt = ctypes.CDLL("msvcrt")
+            self._msvcrt._dup.argtypes = [ctypes.c_int]
+            self._msvcrt._dup.restype = ctypes.c_int
+            self._msvcrt._dup2.argtypes = [ctypes.c_int, ctypes.c_int]
+            self._msvcrt._dup2.restype = ctypes.c_int
+            self._msvcrt._close.argtypes = [ctypes.c_int]
+            self._msvcrt._close.restype = ctypes.c_int
+            self._original_fd = self._msvcrt._dup(1)
+            self._msvcrt._dup2(self._temp.fileno(), 1)
+        else:
+            self._original_fd = os.dup(1)
+            os.dup2(self._temp.fileno(), 1)
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        if sys.platform == "win32":
+            self._msvcrt._dup2(self._original_fd, 1)
+            self._msvcrt._close(self._original_fd)
+        else:
+            os.dup2(self._original_fd, 1)
+            os.close(self._original_fd)
+        self._temp.seek(0)
+        data = self._temp.read()
+        self._temp.close()
+        encoding = sys.stdout.encoding or "utf-8"
+        self.output = data.decode(encoding, errors="replace")
+
+
+def _flush_c_stdout() -> None:
+    if sys.platform == "win32":
+        libc = ctypes.CDLL("msvcrt")
+    else:
+        libc = ctypes.CDLL(None)
+    libc.fflush(None)
+
+
 def run_with_llvm_jit(src: str) -> str:
     """Execute TinyLanguage code via the LLVM IR JIT (requires llvmlite)."""
     try:
@@ -932,7 +972,11 @@ def run_with_llvm_jit(src: str) -> str:
             f"LLVM JIT failed to locate tiny_main ({_format_llvm_debug_context('locate-tiny_main', llvm_binding)})"
         )
     cfunc = ctypes.CFUNCTYPE(ctypes.c_int32)(func_addr)
-    cfunc()
+    with _CaptureCStdout() as capture:
+        cfunc()
+        _flush_c_stdout()
+    if capture.output:
+        print(capture.output, end="")
     return ""
 
 

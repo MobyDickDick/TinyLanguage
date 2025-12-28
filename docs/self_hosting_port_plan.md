@@ -40,7 +40,7 @@ The repository splits the interpreter and tooling into a handful of focused modu
 ## Next tasks
 
 - **AST + runtime parity:** ✅ Completed alignment for `src_tiny/tiny_language_ast.tiny`, `src_tiny/tiny_language_runtime.tiny`, and `src_tiny/tiny_language_eval.tiny` with their Python counterparts, keeping built-in behaviors and error messages delegated to the Python runtime for parity.
-- **Native backend parity:** mirror `src/native_ir.py`, `src/tiny_language_codegen_native.py`, and `src/native_vm.py` into their `src_tiny/` equivalents, keeping opcode names and error formatting identical.
+- **Native backend parity:** ✅ Mirrored `src/native_ir.py`, `src/tiny_language_codegen_native.py`, and `src/native_vm.py` into their `src_tiny/` equivalents, keeping opcode names, formatting, and error messages aligned.
 - **Transpiler + CLI parity:** ensure `src_tiny/tiny_language_transpilers.tiny`, `src_tiny/tiny_language_cli.tiny`, and `src_tiny/tiny_lang_cli.tiny` match Python outputs/flags; add snapshot parity checks alongside existing tests.
 - **Validation updates:** add parity notes and progress to the status table below as each cluster lands.
 
@@ -54,7 +54,7 @@ Track progress in this table as modules are ported. An empty "Tiny parity" cell 
 | AST + runtime | `src/tiny_language_ast.py`, `src/tiny_language_runtime.py`, `src/tiny_language_eval.py` | `src_tiny/tiny_language_ast.tiny`, `src_tiny/tiny_language_runtime.tiny`, `src_tiny/tiny_language_eval.tiny` | ✅ Complete | Runtime/eval continue delegating to the stitched Python module for behavior and error message parity. |
 | Linter | `src/tiny_language_linter.py` | `src_tiny/tiny_language_linter.tiny` | 🟡 In progress | Scaffolded; port Must-use and unreachable-code rules with identical messages. |
 | Transpilers | `src/tiny_language_transpilers.py` | `src_tiny/tiny_language_transpilers.tiny` | 🟡 In progress | Renderers/parsers mirrored for Python/Julia/JS/C++; Tiny parity tests cover renderer output. |
-| Native backend | `src/native_ir.py`, `src/tiny_language_codegen_native.py`, `src/native_vm.py` | `src_tiny/native_ir.tiny`, `src_tiny/tiny_language_codegen_native.tiny`, `src_tiny/native_vm.tiny` | 🟡 In progress | Keep opcode names and error messages stable. |
+| Native backend | `src/native_ir.py`, `src/tiny_language_codegen_native.py`, `src/native_vm.py` | `src_tiny/native_ir.tiny`, `src_tiny/tiny_language_codegen_native.tiny`, `src_tiny/native_vm.tiny` | ✅ Complete | Opcode names, formatting, and error messages match the Python backend outputs. |
 | CLI / LSP | `src/tiny_language_cli.py`, `src/tiny_lang_cli.py`, `src/language_server.py`, `src/language_server_cli.py` | `src_tiny/tiny_language_cli.tiny`, `src_tiny/tiny_lang_cli.tiny`, `src_tiny/language_server.tiny`, `src_tiny/language_server_cli.tiny` | 🟡 In progress | Tiny CLI wrappers delegate to the Python entrypoints; the Tiny language server module mirrors hover/completion/diagnostic APIs, while the Tiny CLI delegates to Python helper functions for now. |
 
 ### Lexer + parser parity notes

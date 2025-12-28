@@ -847,14 +847,21 @@ def _load_llvmlite_binding():
 
 
 def _register_llvm_symbols(llvm_binding) -> None:
-    llvm_binding.load_library_permanently(None)
-    libc = ctypes.CDLL(None)
+    if sys.platform == "win32":
+        libc = ctypes.CDLL("msvcrt")
+    else:
+        llvm_binding.load_library_permanently(None)
+        libc = ctypes.CDLL(None)
     llvm_binding.add_symbol("printf", ctypes.cast(libc.printf, ctypes.c_void_p).value)
     llvm_binding.add_symbol("fflush", ctypes.cast(libc.fflush, ctypes.c_void_p).value)
 
 
 def _create_llvm_engine(llvm_binding):
-    llvm_binding.initialize()
+    try:
+        llvm_binding.initialize()
+    except RuntimeError as exc:
+        if "deprecated" not in str(exc).lower():
+            raise
     llvm_binding.initialize_native_target()
     llvm_binding.initialize_native_asmprinter()
     target = llvm_binding.Target.from_default_triple()
@@ -863,22 +870,67 @@ def _create_llvm_engine(llvm_binding):
     return llvm_binding.create_mcjit_compiler(backing_mod, target_machine)
 
 
+def _format_llvm_debug_context(step: str, llvm_binding=None) -> str:
+    details = [f"LLVM JIT step: {step}", f"platform={sys.platform}", f"python={sys.version.split()[0]}"]
+    if llvm_binding is not None:
+        try:
+            details.append(f"llvmlite={llvm_binding.__version__}")
+        except AttributeError:
+            pass
+        try:
+            details.append(f"triple={llvm_binding.get_default_triple()}")
+        except Exception:
+            pass
+    return " | ".join(details)
+
+
+def _raise_llvm_jit_error(step: str, exc: Exception, llvm_binding=None) -> None:
+    context = _format_llvm_debug_context(step, llvm_binding)
+    raise RuntimeError(f"LLVM JIT failed during {step}: {exc} ({context})") from exc
+
+
 def run_with_llvm_jit(src: str) -> str:
     """Execute TinyLanguage code via the LLVM IR JIT (requires llvmlite)."""
-    stmts = _parse_and_lint(src)
-    program = NativeCodeGenerator(allow_heap=False).compile_program(stmts)
-    llvm_ir = LLVMCodeGenerator().compile_program(program)
-    llvm_binding = _load_llvmlite_binding()
-    _register_llvm_symbols(llvm_binding)
-    engine = _create_llvm_engine(llvm_binding)
-    module = llvm_binding.parse_assembly(llvm_ir)
-    module.verify()
-    engine.add_module(module)
-    engine.finalize_object()
-    engine.run_static_constructors()
+    try:
+        stmts = _parse_and_lint(src)
+    except Exception as exc:
+        _raise_llvm_jit_error("parse", exc)
+    try:
+        program = NativeCodeGenerator(allow_heap=False).compile_program(stmts)
+    except Exception as exc:
+        _raise_llvm_jit_error("native-codegen", exc)
+    try:
+        llvm_ir = LLVMCodeGenerator().compile_program(program)
+    except Exception as exc:
+        _raise_llvm_jit_error("llvm-ir-codegen", exc)
+    try:
+        llvm_binding = _load_llvmlite_binding()
+    except Exception as exc:
+        _raise_llvm_jit_error("llvmlite-load", exc)
+    try:
+        _register_llvm_symbols(llvm_binding)
+    except Exception as exc:
+        _raise_llvm_jit_error("register-symbols", exc, llvm_binding)
+    try:
+        engine = _create_llvm_engine(llvm_binding)
+    except Exception as exc:
+        _raise_llvm_jit_error("create-engine", exc, llvm_binding)
+    try:
+        module = llvm_binding.parse_assembly(llvm_ir)
+        module.verify()
+    except Exception as exc:
+        _raise_llvm_jit_error("verify-module", exc, llvm_binding)
+    try:
+        engine.add_module(module)
+        engine.finalize_object()
+        engine.run_static_constructors()
+    except Exception as exc:
+        _raise_llvm_jit_error("finalize", exc, llvm_binding)
     func_addr = engine.get_function_address("tiny_main")
     if not func_addr:
-        raise RuntimeError("LLVM JIT failed to locate tiny_main")
+        raise RuntimeError(
+            f"LLVM JIT failed to locate tiny_main ({_format_llvm_debug_context('locate-tiny_main', llvm_binding)})"
+        )
     cfunc = ctypes.CFUNCTYPE(ctypes.c_int32)(func_addr)
     cfunc()
     return ""
@@ -987,6 +1039,16 @@ def _repl_highlighting_enabled() -> bool:
         return False  # Opt-out when users request it explicitly
 
     return sys.stdout.isatty()  # Only highlight when writing to an interactive TTY
+
+
+def _print_optional_dependency_instructions() -> None:
+    """Print installation hints for optional LLVM-related dependencies."""
+    lines = [
+        "Optional dependencies:",
+        "- LLVM JIT backend: pip install llvmlite",
+        "- Native executable emission: install clang (or set --compiler to a compatible tool)",
+    ]
+    print("\n".join(lines))
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -1125,6 +1187,9 @@ def main(argv: Optional[List[str]] = None) -> int:
                     break
                 if not src.strip():
                     continue  # Ignore blank submissions
+                if src.strip().lower() == "s":
+                    _print_optional_dependency_instructions()
+                    continue
                 if highlight_enabled:
                     highlighted = highlight_source(src)
                     if highlighted:

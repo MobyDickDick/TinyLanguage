@@ -53,6 +53,10 @@ fn __to_str(value) {
     return Python.call("builtins", "str", new[value], __PY_STR_ALLOW);
 }
 
+fn __to_repr(value) {
+    return Python.call("builtins", "repr", new[value], __PY_REPR_ALLOW);
+}
+
 fn __raise_runtime_error(msg) {
     define safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
     define stmt = "raise RuntimeError(" + safe + ")";
@@ -73,7 +77,15 @@ fn format_program(program) {
         while (idx < len(instrs)) {
             define instr = heap_get(instrs, idx);
             define suffix = "";
-            if (instr.arg != Null) { suffix = " " + __to_str(instr.arg); }
+            if (instr.arg != Null) {
+                if (instr.op == OPCODE_CALL) {
+                    define name = heap_get(instr.arg, 0);
+                    define argc = heap_get(instr.arg, 1);
+                    suffix = " (" + __to_repr(name) + ", " + __to_str(argc) + ")";
+                } else {
+                    suffix = " " + __to_str(instr.arg);
+                }
+            }
             define line = label + "[" + _fmt_index(idx) + "]: " + instr.op + suffix;
             define _ = Collections.push(lines, line);
             idx = idx + 1;

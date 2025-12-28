@@ -415,10 +415,10 @@ fn lint_stmt_reads(s, reads) {
         uses_in_expr(s.expr, reads);
         define i = 0;
         while (i < len(s.cases)) {
-            define case = heap_get(s.cases, i);
-            if (case.value != Null) { uses_in_expr(case.value, reads); }
+            define case_node = heap_get(s.cases, i);
+            if (case_node.value != Null) { uses_in_expr(case_node.value, reads); }
             define bi = 0;
-            while (bi < len(case.body)) { lint_stmt_reads(heap_get(case.body, bi), reads); bi = bi + 1; }
+            while (bi < len(case_node.body)) { lint_stmt_reads(heap_get(case_node.body, bi), reads); bi = bi + 1; }
             i = i + 1;
         }
         return Null;
@@ -822,14 +822,14 @@ fn lint_locals_used(stmts, source) {
                     define has_default = false;
                     define ci = 0;
                     while (ci < len(st.cases)) {
-                        define case = heap_get(st.cases, ci);
-                        if (case.value == Null) { has_default = true; }
+                        define case_node = heap_get(st.cases, ci);
+                        if (case_node.value == Null) { has_default = true; }
                         else {
-                            define case_names = names_in_expr(case.value);
+                            define case_names = names_in_expr(case_node.value);
                             define ni = 0;
                             while (ni < len(case_names)) { _mark_used(switch_state, heap_get(case_names, ni)); ni = ni + 1; }
                         }
-                        define case_res = analyze_block(case.body, new[__copy_state(switch_state)]);
+                        define case_res = analyze_block(case_node.body, new[__copy_state(switch_state)]);
                         define case_active = heap_get(case_res, 0);
                         define case_term = heap_get(case_res, 1);
                         define ai = 0;
@@ -1104,16 +1104,16 @@ fn lint_assignment_types(stmts, source, env) {
                 define case_envs = new[];
                 define ci = 0;
                 while (ci < len(st.cases)) {
-                    define case = heap_get(st.cases, ci);
-                    define env_copy = check_block(case.body, __copy_state(local_env));
+                    define case_node = heap_get(st.cases, ci);
+                    define env_copy = check_block(case_node.body, __copy_state(local_env));
                     define _ = Collections.push(case_envs, env_copy);
                     ci = ci + 1;
                 }
                 define has_default = false;
                 ci = 0;
                 while (ci < len(st.cases)) {
-                    define case = heap_get(st.cases, ci);
-                    if (case.value == Null) { has_default = true; }
+                    define case_node = heap_get(st.cases, ci);
+                    if (case_node.value == Null) { has_default = true; }
                     ci = ci + 1;
                 }
                 if (!has_default) { define _ = Collections.push(case_envs, __copy_state(local_env)); }
@@ -1415,9 +1415,9 @@ fn _block_guarantees_return(stmts) {
             define all_return = true;
             define ci = 0;
             while (ci < len(st.cases)) {
-                define case = heap_get(st.cases, ci);
-                if (case.value == Null) { has_default = true; }
-                if (!_block_guarantees_return(case.body)) { all_return = false; }
+                define case_node = heap_get(st.cases, ci);
+                if (case_node.value == Null) { has_default = true; }
+                if (!_block_guarantees_return(case_node.body)) { all_return = false; }
                 ci = ci + 1;
             }
             if (has_default && all_return) { return true; }
@@ -1436,9 +1436,9 @@ fn _stmt_guarantees_exit(st) {
         define all_return = true;
         define ci = 0;
         while (ci < len(st.cases)) {
-            define case = heap_get(st.cases, ci);
-            if (case.value == Null) { has_default = true; }
-            if (!_block_guarantees_return(case.body)) { all_return = false; }
+            define case_node = heap_get(st.cases, ci);
+            if (case_node.value == Null) { has_default = true; }
+            if (!_block_guarantees_return(case_node.body)) { all_return = false; }
             ci = ci + 1;
         }
         return has_default && all_return;
@@ -1647,9 +1647,9 @@ fn lint_param_mutations_returned(stmts, params, fn_name, is_method, source, pos)
         if (!handled && st.__tag__ == "Switch") {
             define ci = 0;
             while (ci < len(st.cases)) {
-                define case = heap_get(st.cases, ci);
+                define case_node = heap_get(st.cases, ci);
                 define bi = 0;
-                while (bi < len(case.body)) { visit(heap_get(case.body, bi)); bi = bi + 1; }
+                while (bi < len(case_node.body)) { visit(heap_get(case_node.body, bi)); bi = bi + 1; }
                 ci = ci + 1;
             }
         }

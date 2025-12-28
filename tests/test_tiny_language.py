@@ -179,6 +179,25 @@ def test_len_and_variadic_print():
     assert out == "4\n3\nvalues true 4\n"
 
 
+def test_switch_statement():
+    out = run_tiny(
+        """
+        define value = 2;
+        switch (value) {
+            case 1: { print("one"); }
+            case 2: { print("two"); }
+            default: { print("other"); }
+        }
+        switch (value + 1) {
+            case 3: { print("three"); }
+            default: { print("fallback"); }
+        }
+        """
+    )
+
+    assert out == "two\nthree\n"
+
+
 def test_function_return_call():
     out = run_tiny(
         """

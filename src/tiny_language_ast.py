@@ -83,6 +83,24 @@ class While(IR):
 
 
 @dataclass
+class SwitchCase:
+    """Single case within a switch statement."""
+
+    value: Optional[IR]
+    body: List[IR]
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
+class Switch(IR):
+    """Switch statement that dispatches based on value equality."""
+
+    expr: IR
+    cases: List[SwitchCase]
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
 class TryCatch(IR):
     """Exception handling block with optional error binding."""
 

@@ -128,6 +128,45 @@ class Parser:
             self._eat("SYM", ")")
             body = self.parse_block()
             return self._attach_span(While(cond, body, pos=kw.pos), kw.start, self._last_tok.stop)
+        if self.tok.kind == "KW" and self.tok.text == "switch":
+            kw = self._eat("KW", "switch")
+            self._eat("SYM", "(")
+            target = self.parse_expr()
+            self._eat("SYM", ")")
+            self._eat("SYM", "{")
+            cases: List[SwitchCase] = []
+            has_default = False
+            while not self._accept("SYM", "}"):
+                if self.tok.kind == "KW" and self.tok.text == "case":
+                    case_kw = self._eat("KW", "case")
+                    value = self.parse_expr()
+                    self._eat("SYM", ":")
+                    body = self.parse_block()
+                    cases.append(
+                        self._attach_span(
+                            SwitchCase(value, body, pos=case_kw.pos),
+                            case_kw.start,
+                            self._last_tok.stop,
+                        )
+                    )
+                    continue
+                if self.tok.kind == "KW" and self.tok.text == "default":
+                    default_kw = self._eat("KW", "default")
+                    if has_default:
+                        raise self._error("duplicate default case", default_kw.pos, self._tok_span(default_kw))
+                    has_default = True
+                    self._eat("SYM", ":")
+                    body = self.parse_block()
+                    cases.append(
+                        self._attach_span(
+                            SwitchCase(None, body, pos=default_kw.pos),
+                            default_kw.start,
+                            self._last_tok.stop,
+                        )
+                    )
+                    continue
+                raise self._error("expected case or default", self.tok.pos, self._tok_span(self.tok))
+            return self._attach_span(Switch(target, cases, pos=kw.pos), kw.start, self._last_tok.stop)
         if self.tok.kind == "KW" and self.tok.text == "try":
             kw = self._eat("KW", "try")
             body = self.parse_block()
@@ -460,6 +499,13 @@ class Parser:
             elif isinstance(stmt, While):
                 for child in stmt.body:
                     visit_stmt(child)
+            elif isinstance(stmt, Switch):
+                visit_expr(stmt.expr)
+                for case in stmt.cases:
+                    if case.value is not None:
+                        visit_expr(case.value)
+                    for child in case.body:
+                        visit_stmt(child)
             elif isinstance(stmt, TryCatch):
                 for child in stmt.body:
                     visit_stmt(child)

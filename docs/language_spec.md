@@ -11,7 +11,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
   - Strings use double quotes and allow basic escapes like `\n`.
   - Booleans are `true` and `false`; `null` indicates the absence of a value.
 - **Reserved keywords vs. identifiers:** Keywords are reserved in declaration positions (e.g., `define if = 1;` is invalid), but the grammar explicitly allows keywords in some identifier slots via `NAME_or_kw`. Use this when you need a keyword-named method or member:
-  - Keywords today include: `define`, `print`, `if`, `else`, `while`, `fn`, `import`, `return`, `operator`, `new`, `type`, `class`, `namespace`, `as`, `spawn`, `async`, `await`, `true`, `false`, `flush`, `and`, `or`, `not`, `Null`, `try`, `catch`, `match`, `case`.
+  - Keywords today include: `define`, `print`, `if`, `else`, `while`, `switch`, `default`, `fn`, `import`, `return`, `operator`, `new`, `type`, `class`, `namespace`, `as`, `spawn`, `async`, `await`, `true`, `false`, `flush`, `and`, `or`, `not`, `Null`, `try`, `catch`, `match`, `case`.
   - `NAME_or_kw` appears in member access, method declarations, and type annotations, so keywords can be used there without being treated as control flow.
 
   ```tiny
@@ -39,6 +39,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 ## Control flow
 
 - **`if`/`while`:** Standard control structures with parentheses around the condition. Conditions must yield booleans; all paths in typed functions must return a value.
+- **`switch`:** Compares a target expression against each case expression using equality; the first match runs its block, otherwise the optional `default` block runs. Each case is isolated (no fallthrough).
 - **`match`:** Exhaustive pattern matching for `type` variants and structs. Wildcards (`_`) and named fields (`case Circle { radius: r }`) are supported; missing cases raise an error.
 - **Error handling:** `try { ... } catch(err) { ... }` catches runtime errors and allows alternative returns or logging.
 
@@ -138,6 +139,7 @@ stmt            ::= "define" NAME "=" expr ";"
                   | "flush" "(" ")" ";"
                   | "if" "(" expr ")" block ["else" block]
                   | "while" "(" expr ")" block
+                  | "switch" "(" expr ")" "{" switch_case* "}"
                   | "try" block "catch" ["(" NAME ")"] NAME? block
                   | "import" module_path ["as" NAME] ";"
                   | "namespace" qualified_name block
@@ -205,6 +207,10 @@ destruct_names  ::= NAME ("," NAME)* ;
 
 match_expr      ::= expr "{" match_case* "}" ;
 match_case      ::= "case" pattern (":" | "=>") expr ";" ;
+
+switch_case     ::= "case" expr ":" block
+                  | "default" ":" block
+                  ;
 
 pattern         ::= "_" 
                   | NAME pattern_bindings? ;

@@ -19,6 +19,8 @@ KEYWORDS = {
     "if",
     "else",
     "while",
+    "switch",
+    "default",
     "fn",
     "import",
     "return",
@@ -198,4 +200,3 @@ class Lexer:
         raise TinyLangError(
             format_error(self.s, span, "unterminated string literal"), pos0, span=span
         )
-

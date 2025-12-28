@@ -42,6 +42,7 @@ if "IR" not in globals():
         Return,
         Spawn,
         Str,
+        Switch,
         TryCatch,
         TypeDef,
         Var,
@@ -103,6 +104,26 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
         elif isinstance(s, While):
             while self._is_truthy(self.eval_expr(s.cond, env)):
                 res = self.eval_block(s.body, env, namespace)
+                if isinstance(res, ReturnSignal):
+                    return res
+        elif isinstance(s, Switch):
+            target = self.eval_expr(s.expr, env)
+            default_case = None
+            matched = False
+            for case in s.cases:
+                if case.value is None:
+                    default_case = case
+                    continue
+                case_value = self.eval_expr(case.value, env)
+                is_match = self._Runtime__binop("==", target, case_value)
+                if self._is_truthy(is_match):
+                    matched = True
+                    res = self.eval_block(case.body, env, namespace)
+                    if isinstance(res, ReturnSignal):
+                        return res
+                    break
+            if not matched and default_case is not None:
+                res = self.eval_block(default_case.body, env, namespace)
                 if isinstance(res, ReturnSignal):
                     return res
         elif isinstance(s, TryCatch):

@@ -151,14 +151,14 @@ The “nativeCompiler” work is tracked separately.
 
 ### 6. Codegen / interop
 
-- [ ] **Tiny → C → LLVM pipeline**
+- [x] **Tiny → C → LLVM pipeline**
   - Add a CLI flag that emits LLVM IR by translating TinyLanguage to C and invoking clang.
-  - Include a small regression test that validates the emitted `.ll` output exists.
-- [ ] **Python library imports**
+  - Include a small regression test that validates the emitted `.ll` output exists. See [`README.md`](../README.md#compile-to-a-native-executable-c-backend).
+- [x] **Python library imports**
   - Provide a TinyLanguage-facing API (or syntax) that maps to `importlib` for loading Python modules.
-  - Add examples/tests demonstrating Python library usage.
-- [ ] **Backend feature matrix**
-  - Document which language features are supported by the interpreter, C backend, and LLVM backend.
+  - Add examples/tests demonstrating Python library usage. See [`README.md`](../README.md#6-codegen--interop).
+- [x] **Backend feature matrix**
+  - Document which language features are supported by the interpreter, C backend, and LLVM backend. See [`docs/backend_feature_matrix.md`](../docs/backend_feature_matrix.md).
 
 The native compiler is developed in its own branch (`nativeCompiler`).
 

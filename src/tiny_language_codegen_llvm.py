@@ -44,7 +44,7 @@ class _TypeValue:
 class LLVMCodeGenerator:
     """Translate ``ProgramIR`` instructions into textual LLVM IR."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, target_triple: Optional[str] = None, data_layout: Optional[str] = None) -> None:
         self._tmp_index = 0
         self._stack: List[_StackValue] = []
         self._allocas: Dict[str, str] = {}
@@ -56,6 +56,8 @@ class LLVMCodeGenerator:
         self._function_signatures: Dict[str, _ResolvedFunctionSignature] = {}
         self._current_return_type: Optional[str] = None
         self._current_instruction: Optional[Instruction] = None
+        self._target_triple = target_triple
+        self._data_layout = data_layout
 
     def _format_opcode(self, op: Opcode) -> str:
         return op.value if isinstance(op, Opcode) else str(op)
@@ -456,7 +458,13 @@ class LLVMCodeGenerator:
         self._lowering_error(f"printing values of type {ty} not supported")
 
     def _header(self) -> List[str]:
-        return [
+        lines: List[str] = []
+        if self._data_layout:
+            lines.append(f'target datalayout = "{self._data_layout}"')
+        if self._target_triple:
+            lines.append(f'target triple = "{self._target_triple}"')
+        lines.extend(
+            [
             "@.fmt_i64 = private unnamed_addr constant [5 x i8] c\"%ld\\0A\\00\"",
             "@.fmt_double = private unnamed_addr constant [5 x i8] c\"%lf\\0A\\00\"",
             "@.fmt_str = private unnamed_addr constant [4 x i8] c\"%s\\0A\\00\"",
@@ -467,7 +475,9 @@ class LLVMCodeGenerator:
             "declare i64 @heap_get(i64, i64)",
             "declare i64 @heap_set(i64, i64, i64)",
             "declare i64 @delete(i64)",
-        ]
+            ]
+        )
+        return lines
 
     def _infer_signatures(self, program: ProgramIR) -> Dict[str, _ResolvedFunctionSignature]:
         signatures: Dict[str, _FunctionSignature] = {}

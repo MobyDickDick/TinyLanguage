@@ -20,7 +20,7 @@ import sys
 import tempfile
 from functools import lru_cache
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Tuple
 
 from native_vm import NativeVM
 from native_python_bytecode import run_program_via_python_bytecode
@@ -701,11 +701,16 @@ def compile_to_python_source(src: str) -> str:
     return PythonCodeGenerator().to_source(module)
 
 
-def compile_to_llvm_ir(src: str) -> str:
+def compile_to_llvm_ir(
+    src: str,
+    *,
+    target_triple: Optional[str] = None,
+    data_layout: Optional[str] = None,
+) -> str:
     """Emit textual LLVM IR for the subset supported by the native backend."""
     stmts = _parse_and_lint(src)
     program = NativeCodeGenerator(allow_heap=True).compile_program(stmts)
-    return LLVMCodeGenerator().compile_program(program)
+    return LLVMCodeGenerator(target_triple=target_triple, data_layout=data_layout).compile_program(program)
 
 
 def compile_to_c_source(src: str) -> str:
@@ -803,12 +808,14 @@ def compile_to_executable(
     *,
     compiler: str = "clang",
     extra_args: Optional[List[str]] = None,
+    target_triple: Optional[str] = None,
+    data_layout: Optional[str] = None,
 ) -> Path:
     """Compile TinyLanguage to a native executable via LLVM IR and a system compiler."""
     compiler_path = shutil.which(compiler)
     if compiler_path is None:
         raise RuntimeError(f"compiler '{compiler}' not found on PATH (set --compiler or install clang)")
-    llvm_ir = compile_to_llvm_ir(src)
+    llvm_ir = compile_to_llvm_ir(src, target_triple=target_triple, data_layout=data_layout)
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -856,7 +863,7 @@ def _register_llvm_symbols(llvm_binding) -> None:
     llvm_binding.add_symbol("fflush", ctypes.cast(libc.fflush, ctypes.c_void_p).value)
 
 
-def _create_llvm_engine(llvm_binding):
+def _create_llvm_engine(llvm_binding, *, target_triple: Optional[str] = None):
     try:
         llvm_binding.initialize()
     except RuntimeError as exc:
@@ -864,7 +871,10 @@ def _create_llvm_engine(llvm_binding):
             raise
     llvm_binding.initialize_native_target()
     llvm_binding.initialize_native_asmprinter()
-    target = llvm_binding.Target.from_default_triple()
+    if target_triple:
+        target = llvm_binding.Target.from_triple(target_triple)
+    else:
+        target = llvm_binding.Target.from_default_triple()
     target_machine = target.create_target_machine()
     backing_mod = llvm_binding.parse_assembly("")
     return llvm_binding.create_mcjit_compiler(backing_mod, target_machine)
@@ -967,7 +977,32 @@ def _flush_c_stdout() -> None:
     libc.fflush(None)
 
 
-def run_with_llvm_jit(src: str) -> str:
+def _resolve_llvm_target_info(
+    llvm_binding, *, target_triple: Optional[str] = None, data_layout: Optional[str] = None
+) -> Tuple[Optional[str], Optional[str]]:
+    resolved_triple = target_triple
+    resolved_layout = data_layout
+    if resolved_triple is not None and resolved_layout is not None:
+        return resolved_triple, resolved_layout
+    try:
+        base_triple = resolved_triple or llvm_binding.get_default_triple()
+        target = llvm_binding.Target.from_triple(base_triple)
+        target_machine = target.create_target_machine()
+        if resolved_triple is None:
+            resolved_triple = target_machine.triple
+        if resolved_layout is None:
+            resolved_layout = str(target_machine.target_data)
+    except Exception:
+        return resolved_triple, resolved_layout
+    return resolved_triple, resolved_layout
+
+
+def run_with_llvm_jit(
+    src: str,
+    *,
+    target_triple: Optional[str] = None,
+    data_layout: Optional[str] = None,
+) -> str:
     """Execute TinyLanguage code via the LLVM IR JIT (requires llvmlite)."""
     try:
         stmts = _parse_and_lint(src)
@@ -978,19 +1013,30 @@ def run_with_llvm_jit(src: str) -> str:
     except Exception as exc:
         _raise_llvm_jit_error("native-codegen", exc)
     try:
-        llvm_ir = LLVMCodeGenerator().compile_program(program)
-    except Exception as exc:
-        _raise_llvm_jit_error("llvm-ir-codegen", exc)
-    try:
         llvm_binding = _load_llvmlite_binding()
     except Exception as exc:
         _raise_llvm_jit_error("llvmlite-load", exc)
+    try:
+        resolved_triple, resolved_layout = _resolve_llvm_target_info(
+            llvm_binding,
+            target_triple=target_triple,
+            data_layout=data_layout,
+        )
+    except Exception as exc:
+        _raise_llvm_jit_error("target-info", exc, llvm_binding)
+    try:
+        llvm_ir = LLVMCodeGenerator(
+            target_triple=resolved_triple,
+            data_layout=resolved_layout,
+        ).compile_program(program)
+    except Exception as exc:
+        _raise_llvm_jit_error("llvm-ir-codegen", exc)
     try:
         _register_llvm_symbols(llvm_binding)
     except Exception as exc:
         _raise_llvm_jit_error("register-symbols", exc, llvm_binding)
     try:
-        engine = _create_llvm_engine(llvm_binding)
+        engine = _create_llvm_engine(llvm_binding, target_triple=resolved_triple)
     except Exception as exc:
         _raise_llvm_jit_error("create-engine", exc, llvm_binding)
     try:
@@ -1178,6 +1224,16 @@ def main(argv: Optional[List[str]] = None) -> int:
         default=os.environ.get("TINYLANG_COMPILER", "clang"),
         help="System compiler to use with --emit-exe (default: clang, env: TINYLANG_COMPILER)",
     )
+    parser.add_argument(
+        "--llvm-target-triple",
+        dest="llvm_target_triple",
+        help="Override the LLVM target triple for --emit-llvm/--emit-exe/--llvm-jit",
+    )
+    parser.add_argument(
+        "--llvm-data-layout",
+        dest="llvm_data_layout",
+        help="Override the LLVM data layout for --emit-llvm/--emit-exe/--llvm-jit",
+    )
     backend_group = parser.add_mutually_exclusive_group()
     backend_group.add_argument(
         "--python-backend",
@@ -1232,7 +1288,11 @@ def main(argv: Optional[List[str]] = None) -> int:
             elif args.python_backend:
                 output = run_with_python_backend(args.eval)
             elif args.llvm_jit:
-                output = run_with_llvm_jit(args.eval)
+                output = run_with_llvm_jit(
+                    args.eval,
+                    target_triple=args.llvm_target_triple,
+                    data_layout=args.llvm_data_layout,
+                )
                 streamed = True
             else:
                 runtime = Runtime(args.eval)
@@ -1312,7 +1372,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         if not args.file:
             parser.error("--emit-llvm requires a source file")
         source_text = Path(args.file).read_text(encoding="utf-8")
-        llvm_ir = compile_to_llvm_ir(source_text)
+        llvm_ir = compile_to_llvm_ir(
+            source_text,
+            target_triple=args.llvm_target_triple,
+            data_layout=args.llvm_data_layout,
+        )
         if args.emit_llvm == "-":
             print(llvm_ir)
         else:
@@ -1324,7 +1388,13 @@ def main(argv: Optional[List[str]] = None) -> int:
             parser.error("--emit-exe requires a source file")
         source_text = Path(args.file).read_text(encoding="utf-8")
         try:
-            compile_to_executable(source_text, Path(args.emit_exe), compiler=args.compiler)
+            compile_to_executable(
+                source_text,
+                Path(args.emit_exe),
+                compiler=args.compiler,
+                target_triple=args.llvm_target_triple,
+                data_layout=args.llvm_data_layout,
+            )
         except RuntimeError as err:
             print(str(err), file=sys.stderr)
             return 1
@@ -1343,7 +1413,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         elif args.python_backend:
             output = run_with_python_backend(Path(args.file).read_text(encoding="utf-8"))
         elif args.llvm_jit:
-            output = run_with_llvm_jit(Path(args.file).read_text(encoding="utf-8"))
+            output = run_with_llvm_jit(
+                Path(args.file).read_text(encoding="utf-8"),
+                target_triple=args.llvm_target_triple,
+                data_layout=args.llvm_data_layout,
+            )
             streamed = True
         else:
             output = run_file(args.file, stream_output=True, copy_on_call=args.copy_on_call)

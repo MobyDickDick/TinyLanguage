@@ -1,0 +1,10 @@
+// TinyLanguage wrapper for src/tiny_language_codegen_c.py.
+// Exposes the C backend code generator via Python interop.
+
+define __PY_ALLOW = new["CCodeGenerator"];
+
+define __PY = Python.import_module("tiny_language_codegen_c", __PY_ALLOW);
+
+define CCodeGenerator = __PY.CCodeGenerator;
+
+define _exports = new[CCodeGenerator];

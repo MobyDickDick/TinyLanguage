@@ -1,0 +1,14 @@
+// TinyLanguage wrapper for src/run_all.py.
+// Runs the full TinyLanguage demo/test suite via the Python script.
+
+define __PY_ALLOW = new["main"];
+
+define __PY = Python.import_module("run_all", __PY_ALLOW);
+
+define main = __PY.main;
+
+fn run() {
+    return main();
+}
+
+define _ = run();

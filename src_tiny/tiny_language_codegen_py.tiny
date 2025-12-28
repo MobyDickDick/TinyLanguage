@@ -1,0 +1,10 @@
+// TinyLanguage wrapper for src/tiny_language_codegen_py.py.
+// Exposes the Python code generator via Python interop.
+
+define __PY_ALLOW = new["PythonCodeGenerator"];
+
+define __PY = Python.import_module("tiny_language_codegen_py", __PY_ALLOW);
+
+define PythonCodeGenerator = __PY.PythonCodeGenerator;
+
+define _exports = new[PythonCodeGenerator];

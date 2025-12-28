@@ -847,8 +847,11 @@ def _load_llvmlite_binding():
 
 
 def _register_llvm_symbols(llvm_binding) -> None:
-    llvm_binding.load_library_permanently(None)
-    libc = ctypes.CDLL(None)
+    if sys.platform == "win32":
+        libc = ctypes.CDLL("msvcrt")
+    else:
+        llvm_binding.load_library_permanently(None)
+        libc = ctypes.CDLL(None)
     llvm_binding.add_symbol("printf", ctypes.cast(libc.printf, ctypes.c_void_p).value)
     llvm_binding.add_symbol("fflush", ctypes.cast(libc.fflush, ctypes.c_void_p).value)
 
@@ -989,6 +992,16 @@ def _repl_highlighting_enabled() -> bool:
     return sys.stdout.isatty()  # Only highlight when writing to an interactive TTY
 
 
+def _print_optional_dependency_instructions() -> None:
+    """Print installation hints for optional LLVM-related dependencies."""
+    lines = [
+        "Optional dependencies:",
+        "- LLVM JIT backend: pip install llvmlite",
+        "- Native executable emission: install clang (or set --compiler to a compatible tool)",
+    ]
+    print("\n".join(lines))
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     """CLI entry point for running files, snippets, REPL sessions, or codegen."""
     parser = argparse.ArgumentParser(description="Run a TinyLanguage program from a file")
@@ -1125,6 +1138,9 @@ def main(argv: Optional[List[str]] = None) -> int:
                     break
                 if not src.strip():
                     continue  # Ignore blank submissions
+                if src.strip().lower() == "s":
+                    _print_optional_dependency_instructions()
+                    continue
                 if highlight_enabled:
                     highlighted = highlight_source(src)
                     if highlighted:

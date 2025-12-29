@@ -49,7 +49,7 @@ For interoperability guidance, see the cross-language compatibility notes in [`d
 TinyLanguage is a learning- and transpiler-focused playground rather than a production-ready toolchain. It exists to showcase syntax ideas, cross-language IR conversions, and runtime experiments (e.g., gradual typing and structured cancellation). The runnable demos and tests (`python run_all.py` or `python -m pytest`) are best treated as teaching materials for language design or interoperability, not as a polished SDK.
 
 ## Testing notes
-- Direct test coverage is missing for `src/tiny_language_preamble.py` (no dedicated test references it today).
+- Direct test coverage includes `src/tiny_language_preamble.py` via `tests/test_tiny_language_preamble.py`.
 
 ## Transpiler roadmap (task list)
 - [x] **Expand the shared IR**: Add new statement/expression types (e.g., control-flow nodes like `IfElse` and `While`) and update the helpers in [`tiny_language_transpilers.py`](tiny_language_transpilers.py) so future language extensions can build on them.

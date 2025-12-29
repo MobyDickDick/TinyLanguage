@@ -72,6 +72,14 @@ def test_heap_roundtrip_matches_interpreter():
     _assert_native_matches(source)
 
 
+def test_array_literal_roundtrip_matches_interpreter():
+    source = """
+    define p = new[7, 8, 9];
+    print(heap_get(p, 0), heap_get(p, 2));
+    """
+    _assert_native_matches(source)
+
+
 def test_native_cli_flag_executes_program(tmp_path):
     script = """
     define x = 2;

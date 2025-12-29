@@ -27,7 +27,7 @@ Legend:
 | Feature | Interpreter | Native VM (`--native-backend`) | C/LLVM pipeline (`--emit-llvm`, `--emit-exe`) |
 | --- | --- | --- | --- |
 | Heap (`new`, `heap_get`, `heap_set`, `delete`) | ✅ | ✅ | ⚠️ Basic heap ops (no runtime safety checks) |
-| Array literals (`[a, b, c]`) | ✅ | ❌ | ❌ |
+| Array literals (`new[ a, b, c ]`) | ✅ | ✅ | ❌ |
 | Classes / methods | ✅ | ❌ | ❌ |
 | Operator overloading | ✅ | ❌ | ❌ |
 | Pattern matching + ADTs | ✅ | ❌ | ❌ |
@@ -58,10 +58,10 @@ These task lists capture the remaining feature gaps for the non-interpreter back
   - [x] Implement `new`, `heap_get`, `heap_set`, and `delete` in the native VM runtime.
   - [x] Add runtime safety checks for double-free and out-of-bounds access.
   - [x] Extend native IR lowering to emit heap operations with typed offsets.
-- [ ] Array literals
-  - [ ] Represent array literals in native IR and lower them in the VM interpreter loop.
-  - [ ] Add bounds checking and length metadata in the runtime heap model.
-  - [ ] Wire array operations into standard library helpers (where applicable).
+- [x] Array literals
+  - [x] Represent array literals in native IR and lower them in the VM interpreter loop.
+  - [x] Add bounds checking and length metadata in the runtime heap model.
+  - [x] Wire array operations into standard library helpers (where applicable).
 - [ ] Classes and methods
   - [ ] Define object layout metadata for class instances in the native runtime.
   - [ ] Lower method dispatch to vtable lookups or direct offsets in native IR.

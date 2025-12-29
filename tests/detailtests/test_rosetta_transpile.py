@@ -43,3 +43,7 @@ def test_fibonacci_snapshot():
 
 def test_factorial_snapshot():
     assert_snapshot("factorial")
+
+
+def test_hello_world_snapshot():
+    assert_snapshot("hello_world")

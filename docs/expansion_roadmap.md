@@ -38,7 +38,7 @@ they can be tackled incrementally.
   - [x] Fibonacci.
   - [x] FizzBuzz.
   - [x] Factorial.
-  - [ ] Sorting.
+  - [x] Sorting.
 - **Transpiler checks**: Verify which language features TL still needs.
 
 ## 4) Port a Julia subset

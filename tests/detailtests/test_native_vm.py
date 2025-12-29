@@ -40,3 +40,24 @@ def test_vm_executes_function_calls_and_locals():
     output = NativeVM().run(program)
 
     assert output == "12\n"
+
+
+def test_vm_heap_safety_checks():
+    vm = NativeVM()
+
+    ptr = vm._call("__new", [2])
+    result_ok = vm._call("heap_set", [ptr, 0, 42])
+    assert result_ok["e"]["code"] == 0
+
+    result_oob = vm._call("heap_set", [ptr, 5, 99])
+    assert result_oob["e"]["code"] == 1
+    assert vm.error_message
+    assert "out of range" in vm.error_message
+
+    result_delete = vm._call("delete", [ptr])
+    assert result_delete["e"]["code"] == 0
+
+    result_double = vm._call("delete", [ptr])
+    assert result_double["e"]["code"] == 1
+    assert vm.error_message
+    assert "already freed" in vm.error_message

@@ -169,6 +169,8 @@ class NativeCodeGenerator:
             instructions.append(Instruction(Opcode.BINARY, expr.op))
             return instructions
         if isinstance(expr, Call):
+            if expr.name in {"__new", "new", "heap_get", "heap_set", "delete"} and not self._allow_heap:
+                raise NotImplementedError("native codegen does not yet support heap allocations")
             instructions: List[Instruction] = []
             for arg in expr.args:
                 instructions.extend(self._compile_expr(arg))

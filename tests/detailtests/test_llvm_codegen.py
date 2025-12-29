@@ -211,6 +211,16 @@ def test_llvm_codegen_emits_string_prints() -> None:
     assert "call i32 (i8*, ...) @printf" in llvm_ir
 
 
+def test_llvm_codegen_supports_null_literal_prints() -> None:
+    source = "print(Null);"
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert 'c"Null\\00"' in llvm_ir
+    assert "icmp eq i8* null, null" in llvm_ir
+    assert "@.fmt_str" in llvm_ir
+
+
 def test_llvm_codegen_emits_heap_calls() -> None:
     source = "define ptr = new(1); heap_set(ptr, 0, 42); print(heap_get(ptr, 0));"
 

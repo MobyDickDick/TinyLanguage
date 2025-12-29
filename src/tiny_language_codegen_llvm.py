@@ -49,6 +49,7 @@ class LLVMCodeGenerator:
 
     def __init__(self, *, target_triple: Optional[str] = None, data_layout: Optional[str] = None) -> None:
         self._tmp_index = 0
+        self._label_index = 0
         self._stack: List[_StackValue] = []
         self._allocas: Dict[str, str] = {}
         self._var_types: Dict[str, str] = {}
@@ -116,6 +117,7 @@ class LLVMCodeGenerator:
 
     def _compile_entry(self, instructions: List[Instruction]) -> List[str]:
         self._tmp_index = 0
+        self._label_index = 0
         self._stack.clear()
         self._allocas.clear()
         self._var_types.clear()
@@ -142,6 +144,7 @@ class LLVMCodeGenerator:
 
     def _compile_function(self, func: FunctionIR, signature: _ResolvedFunctionSignature) -> List[str]:
         self._tmp_index = 0
+        self._label_index = 0
         self._stack.clear()
         self._allocas.clear()
         self._var_types.clear()
@@ -295,7 +298,9 @@ class LLVMCodeGenerator:
             self._unsupported_opcode(instr)
 
     def _push_const(self, value: object) -> None:
-        if isinstance(value, bool):
+        if value is None:
+            self._stack.append(_StackValue(name="null", ty="i8*"))
+        elif isinstance(value, bool):
             self._stack.append(_StackValue(name="1" if value else "0", ty="i1"))
         elif isinstance(value, int):
             self._stack.append(_StackValue(name=str(value), ty="i64", literal=value))
@@ -407,6 +412,25 @@ class LLVMCodeGenerator:
                 widened = self._next_tmp()
                 self._body.append(f"  {widened} = zext i1 {value.name} to i64")
                 self._body.append(f"  call i32 (i8*, ...) @printf(i8* {fmt_ptr}, i64 {widened})")
+            elif value.ty == "i8*":
+                is_null = self._next_tmp()
+                null_label = self._next_label("print.null")
+                value_label = self._next_label("print.str")
+                done_label = self._next_label("print.done")
+                self._body.append(f"  {is_null} = icmp eq i8* {value.name}, null")
+                self._body.append(f"  br i1 {is_null}, label %{null_label}, label %{value_label}")
+                self._body.append(f"{null_label}:")
+                null_name, null_len = self._string_constant("Null")
+                null_ptr = self._next_tmp()
+                self._body.append(
+                    f"  {null_ptr} = getelementptr inbounds [{null_len} x i8], [{null_len} x i8]* @{null_name}, i32 0, i32 0"
+                )
+                self._body.append(f"  call i32 (i8*, ...) @printf(i8* {fmt_ptr}, i8* {null_ptr})")
+                self._body.append(f"  br label %{done_label}")
+                self._body.append(f"{value_label}:")
+                self._body.append(f"  call i32 (i8*, ...) @printf(i8* {fmt_ptr}, i8* {value.name})")
+                self._body.append(f"  br label %{done_label}")
+                self._body.append(f"{done_label}:")
             else:
                 self._body.append(f"  call i32 (i8*, ...) @printf(i8* {fmt_ptr}, {value.ty} {value.name})")
 
@@ -471,6 +495,10 @@ class LLVMCodeGenerator:
     def _next_tmp(self) -> str:
         self._tmp_index += 1
         return f"%t{self._tmp_index}"
+
+    def _next_label(self, prefix: str) -> str:
+        self._label_index += 1
+        return f"{prefix}.{self._label_index}"
 
     def _format_for_type(self, ty: str) -> tuple[str, int]:
         if ty == "double":
@@ -630,7 +658,9 @@ class LLVMCodeGenerator:
 
         for instr in func.instructions:
             if instr.op == Opcode.PUSH_CONST:
-                if isinstance(instr.arg, bool):
+                if instr.arg is None:
+                    stack.append(_TypeValue("i8*"))
+                elif isinstance(instr.arg, bool):
                     stack.append(_TypeValue("i1"))
                 elif isinstance(instr.arg, int):
                     stack.append(_TypeValue("i64", literal=instr.arg))

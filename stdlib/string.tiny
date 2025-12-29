@@ -1,0 +1,29 @@
+// TinyLanguage stdlib: string module (Python-style subset)
+
+fn split(text, sep) {
+  return String.split(text, sep);
+}
+
+fn join(items, sep) {
+  return String.join(items, sep);
+}
+
+fn contains(text, needle) {
+  return String.contains(text, needle);
+}
+
+fn upper(text) {
+  return String.upper(text);
+}
+
+fn lower(text) {
+  return String.lower(text);
+}
+
+fn trim(text) {
+  return String.trim(text);
+}
+
+fn repeat(text, count) {
+  return String.repeat(text, count);
+}

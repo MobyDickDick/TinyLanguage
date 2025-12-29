@@ -8,7 +8,7 @@ For the initial milestone, the TL stdlib aligns with these Python modules:
 - `string` (string utilities, e.g. split/join)
 - `datetime` (planned, not implemented yet)
 
-**Current status:** The core namespaces `Math`, `Random`, and `String` are implemented natively. Additionally, `Collections`, `Map`, `Set`, `Deque`, `File`, `JSON`, `Async`, and `Result` are available.
+**Current status:** The core namespaces `Math`, `Random`, and `String` are implemented natively. Additionally, `Collections`, `Map`, `Set`, `Deque`, `File`, `JSON`, `Async`, and `Result` are available. Wrapper modules for `math`, `random`, and `string` live in `stdlib/`.
 
 ## 2) FFI/runtime strategy
 By default, TL stdlib functions are implemented **natively** in the runtime (see `src/stdlib/__init__.py`).
@@ -28,23 +28,25 @@ The standard library consists of two layers:
 
 The `stdlib/` directory is the permanent home for TL modules that wrap the native API in a Python-like module shape.
 
-## 4) First modules: `stdlib.math`, `stdlib.random`
-The first TinyLanguage modules are **`stdlib.math`** and **`stdlib.random`**, each with a Python-like API subset.
+## 4) First modules: `stdlib.math`, `stdlib.random`, `stdlib.string`
+The first TinyLanguage modules are **`stdlib.math`**, **`stdlib.random`**, and **`stdlib.string`**, each with a Python-like API subset.
 
 Import and usage:
 
 ```tiny
 import stdlib.math;
 import stdlib.random;
+import stdlib.string;
 print(math.sqrt(9));
 print(math.round_digits(math.pi, 3));
 print(random.randint(1, 6));
+print(string.upper("hello"));
 ```
 
 ## 5) API deviations from Python
 - `math.round_digits(value, digits)` replaces the optional `round(x, ndigits)`.
 - Functions are limited to the math operations available in TL.
-- `string` utilities live in the `String` namespace (not as a separate module).
+- `string` utilities are also exposed via the `String` namespace (with the `stdlib.string` module wrapping it).
 - `datetime` is currently only a compatibility target.
 
 Further extensions will arrive in the stdlib once the corresponding runtime functions exist.

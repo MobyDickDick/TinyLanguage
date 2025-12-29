@@ -1,6 +1,24 @@
+// ----------------------------------------------
+// Example: Function definition + call + output
+// ----------------------------------------------
+//
+// This program demonstrates three core Tiny features:
+//
+// 1) Defining a function with parameters
+// 2) Returning a computed value
+// 3) Binding the result to a name and printing it
+//
+// Expected output:
+//   5
+//
+
+// add(a, b) returns the sum of its two arguments.
 fn add(a, b) {
     return a + b;
 }
 
+// Call add(2, 3) and bind the returned value to `result`.
 define result = add(2, 3);
+
+// Print the value of `result`.
 print(result);

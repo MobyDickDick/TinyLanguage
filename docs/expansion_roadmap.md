@@ -33,6 +33,12 @@ they can be tackled incrementally.
 
 - **Consistent task layout** ✅: `examples/rosetta/<task>/`.
 - **First wave**: Beginner tasks (e.g. Hello World, Fibonacci, sorting).
+- **First wave checklist**:
+  - [x] Hello World.
+  - [x] Fibonacci.
+  - [x] FizzBuzz.
+  - [x] Factorial.
+  - [ ] Sorting.
 - **Transpiler checks**: Verify which language features TL still needs.
 
 ## 4) Port a Julia subset

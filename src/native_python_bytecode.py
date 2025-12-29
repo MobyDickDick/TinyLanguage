@@ -43,6 +43,12 @@ def generate_python_source(program: ProgramIR) -> str:
 from typing import Any, Dict, List
 
 instructions = {state}
+heap: Dict[int, List[Any]] = {}
+next_ptr = 1
+freed_ptrs: set[int] = set()
+freed_allocations: Dict[int, int] = {}
+heap_cell_types: Dict[int, Dict[int, str]] = {}
+error_message: Any = None
 
 
 def _binary(op: str, left: Any, right: Any) -> Any:
@@ -85,6 +91,162 @@ def _format_value(value: Any) -> str:
     return str(value)
 
 
+def _record_error(message: str) -> None:
+    global error_message
+    error_message = message
+
+
+def _pointer_label(pointer: Any) -> str:
+    type_name = type(pointer).__name__
+    if isinstance(pointer, (int, float)) and str(pointer).isnumeric():
+        return str(int(pointer))
+    return f"{pointer!r} ({type_name})"
+
+
+def _parse_heap_index(index: Any) -> Any:
+    try:
+        idx = int(index)
+    except Exception:
+        message = f"heap access error: index {index!r} is not numeric"
+        _record_error(message)
+        return None
+    if isinstance(index, float) and not index.is_integer():
+        message = f"heap access error: index {_pointer_label(index)} is not an integer index"
+        _record_error(message)
+        return None
+    return idx
+
+
+def _resolve_ptr(pointer: Any, op: str) -> Any:
+    try:
+        ip = int(pointer)
+    except Exception:
+        message = f"heap {op} error: pointer {_pointer_label(pointer)} is not numeric"
+        _record_error(message)
+        return None
+    if isinstance(pointer, float) and not pointer.is_integer():
+        message = f"heap {op} error: pointer {_pointer_label(pointer)} is not an integer pointer"
+        _record_error(message)
+        return None
+    if ip < 1:
+        message = f"heap {op} error: pointer {ip} is invalid (must refer to a live positive allocation)"
+        _record_error(message)
+        return None
+    if ip in freed_ptrs:
+        size_part = freed_allocations.get(ip)
+        size_hint = f" (size {size_part})" if size_part is not None else ""
+        message = f"heap {op} error: pointer {ip} was already freed{size_hint}"
+        _record_error(message)
+        return None
+    cells = heap.get(ip)
+    if cells is None:
+        live = sorted(heap.keys())
+        freed = sorted(freed_ptrs)
+        details: List[str] = []
+        if live:
+            details.append(f"live: {live}")
+        if freed:
+            details.append(f"freed: {freed}")
+        context = f" ({'; '.join(details)})" if details else ""
+        message = f"heap {op} error: unknown pointer {ip}{context}"
+        _record_error(message)
+        return None
+    return ip, cells
+
+
+def _heap_new(size: Any) -> int:
+    global next_ptr
+    count = int(size)
+    if count < 0:
+        raise RuntimeError("alloc error: negative size")
+    ptr = next_ptr
+    next_ptr += 1
+    heap[ptr] = [0 for _ in range(count)]
+    freed_ptrs.discard(ptr)
+    freed_allocations.pop(ptr, None)
+    heap_cell_types.pop(ptr, None)
+    return ptr
+
+
+def _value_type_name(value: Any) -> str:
+    if isinstance(value, dict) and "__type__" in value:
+        return str(value.get("__type__"))
+    if value is None:
+        return "Null"
+    if isinstance(value, bool):
+        return "Bool"
+    if isinstance(value, int) and not isinstance(value, bool):
+        return "int"
+    if isinstance(value, float):
+        return "float"
+    if isinstance(value, str):
+        return "string"
+    return type(value).__name__
+
+
+def _heap_ok_record() -> Dict[str, Any]:
+    return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 0, "msg": ""}}
+
+
+def _heap_error_record(message: str) -> Dict[str, Any]:
+    return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": message}}
+
+
+def _heap_delete(pointer: Any) -> Dict[str, Any]:
+    resolved = _resolve_ptr(pointer, "delete")
+    if resolved is None:
+        return _heap_error_record(error_message or "")
+    ip, cells = resolved
+    size = len(cells)
+    heap.pop(ip, None)
+    heap_cell_types.pop(ip, None)
+    freed_ptrs.add(ip)
+    freed_allocations[ip] = size
+    return _heap_ok_record()
+
+
+def _heap_get(pointer: Any, index: Any) -> Any:
+    idx = _parse_heap_index(index)
+    if idx is None:
+        return None
+    resolved = _resolve_ptr(pointer, "access")
+    if resolved is None:
+        return None
+    ip, cells = resolved
+    size = len(cells)
+    if idx < 0 or idx >= size:
+        range_hint = "empty allocation" if size == 0 else f"valid indices: 0..{size - 1}"
+        message = f"heap access error: index {idx} out of range for pointer {ip} (size {size}; {range_hint})"
+        _record_error(message)
+        return None
+    return cells[idx]
+
+
+def _heap_set(pointer: Any, index: Any, value: Any) -> Dict[str, Any]:
+    idx = _parse_heap_index(index)
+    if idx is None:
+        return _heap_error_record(error_message or "")
+    resolved = _resolve_ptr(pointer, "access")
+    if resolved is None:
+        return _heap_error_record(error_message or "")
+    ip, cells = resolved
+    size = len(cells)
+    if idx < 0 or idx >= size:
+        range_hint = "empty allocation" if size == 0 else f"valid indices: 0..{size - 1}"
+        message = f"heap access error: index {idx} out of range for pointer {ip} (size {size}; {range_hint})"
+        _record_error(message)
+        return _heap_error_record(message)
+    expected = heap_cell_types.get(ip, {}).get(idx)
+    actual = _value_type_name(value)
+    if expected is not None and expected != actual:
+        message = f"heap type mismatch at {ip}[{idx}]: expected {expected} but got {actual}"
+        _record_error(message)
+        return _heap_error_record(message)
+    cells[idx] = value
+    heap_cell_types.setdefault(ip, {})[idx] = actual
+    return _heap_ok_record()
+
+
 def _execute(instrs: List, locals_: Dict[str, Any], globals_: Dict[str, Any]) -> Any:
     stack: List[Any] = []
     ip = 0
@@ -94,7 +256,9 @@ def _execute(instrs: List, locals_: Dict[str, Any], globals_: Dict[str, Any]) ->
         if op == "PUSH_CONST":
             stack.append(arg)
         elif op == "LOAD":
-            if arg in locals_:
+            if arg == "errorMessage":
+                stack.append(error_message)
+            elif arg in locals_:
                 stack.append(locals_[arg])
             elif arg in globals_:
                 stack.append(globals_[arg])
@@ -121,13 +285,30 @@ def _execute(instrs: List, locals_: Dict[str, Any], globals_: Dict[str, Any]) ->
         elif op == "CALL":
             name, argc = arg
             args = [stack.pop() for _ in range(argc)][::-1]
-            fn = instructions["functions"].get(name)
-            if fn is None:
-                raise RuntimeError(f"unknown function {{name}}")
-            if len(args) != len(fn["params"]):
-                raise RuntimeError(f"function {{name}} expects {{len(fn['params'])}} args, got {{len(args)}}")
-            locals_child = dict(zip(fn["params"], args))
-            stack.append(_execute(fn["instructions"], locals_child, globals_))
+            if name in ("__new", "new"):
+                if len(args) != 1:
+                    raise RuntimeError(f"{{name}} expects 1 arg, got {{len(args)}}")
+                stack.append(_heap_new(args[0]))
+            elif name == "heap_get":
+                if len(args) != 2:
+                    raise RuntimeError(f"heap_get expects 2 args, got {{len(args)}}")
+                stack.append(_heap_get(args[0], args[1]))
+            elif name == "heap_set":
+                if len(args) != 3:
+                    raise RuntimeError(f"heap_set expects 3 args, got {{len(args)}}")
+                stack.append(_heap_set(args[0], args[1], args[2]))
+            elif name == "delete":
+                if len(args) != 1:
+                    raise RuntimeError(f"delete expects 1 arg, got {{len(args)}}")
+                stack.append(_heap_delete(args[0]))
+            else:
+                fn = instructions["functions"].get(name)
+                if fn is None:
+                    raise RuntimeError(f"unknown function {{name}}")
+                if len(args) != len(fn["params"]):
+                    raise RuntimeError(f"function {{name}} expects {{len(fn['params'])}} args, got {{len(args)}}")
+                locals_child = dict(zip(fn["params"], args))
+                stack.append(_execute(fn["instructions"], locals_child, globals_))
         elif op == "POP":
             stack.pop()
         elif op == "RETURN":

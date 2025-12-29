@@ -26,7 +26,7 @@ Legend:
 
 | Feature | Interpreter | Native VM (`--native-backend`) | C/LLVM pipeline (`--emit-llvm`, `--emit-exe`) |
 | --- | --- | --- | --- |
-| Heap (`new`, `heap_get`, `heap_set`, `delete`) | ✅ | ❌ (optional internal flag only) | ⚠️ Basic heap ops (no runtime safety checks) |
+| Heap (`new`, `heap_get`, `heap_set`, `delete`) | ✅ | ✅ | ⚠️ Basic heap ops (no runtime safety checks) |
 | Array literals (`[a, b, c]`) | ✅ | ❌ | ❌ |
 | Classes / methods | ✅ | ❌ | ❌ |
 | Operator overloading | ✅ | ❌ | ❌ |
@@ -54,10 +54,10 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 
 ### Native VM (`--native-backend`)
 
-- [ ] Heap operations
-  - [ ] Implement `new`, `heap_get`, `heap_set`, and `delete` in the native VM runtime.
-  - [ ] Add runtime safety checks for double-free and out-of-bounds access.
-  - [ ] Extend native IR lowering to emit heap operations with typed offsets.
+- [x] Heap operations
+  - [x] Implement `new`, `heap_get`, `heap_set`, and `delete` in the native VM runtime.
+  - [x] Add runtime safety checks for double-free and out-of-bounds access.
+  - [x] Extend native IR lowering to emit heap operations with typed offsets.
 - [ ] Array literals
   - [ ] Represent array literals in native IR and lower them in the VM interpreter loop.
   - [ ] Add bounds checking and length metadata in the runtime heap model.

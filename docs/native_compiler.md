@@ -74,12 +74,12 @@ These commands exercise exactly the constructs implemented today (literals, arit
   11
   ```
 
-- **Make unsupported features visible** (heap operations):
+- **Heap operations now supported**:
 
   ```bash
-  PYTHONPATH=src python src/tiny_language.py --native-backend -e 'define p = new(1);'
+  PYTHONPATH=src python src/tiny_language.py --native-backend -e 'define p = new(1); heap_set(p, 0, 42); print(heap_get(p, 0));'
   # Expected output
-  # NotImplementedError: Call to new not supported in native backend
+  42
   ```
 
 Typical CLI responses:
@@ -90,11 +90,11 @@ Typical CLI responses:
 
 ## Limitations and known gaps
 
-- Not all constructs are covered yet; heap operations, classes, and pattern matching are intentionally marked as `NotImplementedError`.
+- Not all constructs are covered yet; classes and pattern matching are intentionally marked as `NotImplementedError`.
 - The VM expects simple numeric/Boolean expressions. Type annotations are accepted, but complex type checks still happen in the interpreter.
 - `print` collects output inside the VM but currently does not support formatting or multi-delimiters like the interpreter.
 - Backend flags apply per invocation: the REPL and formatter still use the interpreter path; only `--native-backend` in `tiny_language.py` or `tiny_lang_cli` enables the VM.
-- No heap or object model: pointers, arrays, and classes are not yet represented in bytecode. Tests needing those features should run against the interpreter for now.
+- No object model yet: classes are not yet represented in bytecode. Tests needing those features should run against the interpreter for now.
 
 ## Troubleshooting
 

@@ -62,6 +62,16 @@ def test_boolean_formatting_matches_interpreter():
     assert native_output == interpreter_output
 
 
+def test_heap_roundtrip_matches_interpreter():
+    source = """
+    define p = new(2);
+    heap_set(p, 0, 10);
+    heap_set(p, 1, 20);
+    print(heap_get(p, 0), heap_get(p, 1));
+    """
+    _assert_native_matches(source)
+
+
 def test_native_cli_flag_executes_program(tmp_path):
     script = """
     define x = 2;

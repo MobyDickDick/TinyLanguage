@@ -858,7 +858,7 @@ def run_with_python_backend(src: str) -> str:
 def run_with_native_backend(src: str) -> str:
     """Run code through the experimental native bytecode backend and VM."""
     stmts = _parse_and_lint(src)
-    program = NativeCodeGenerator().compile_program(stmts)
+    program = NativeCodeGenerator(allow_heap=True).compile_program(stmts)
     return NativeVM().run(program)
 
 
@@ -1105,7 +1105,7 @@ def run_with_llvm_jit(
 def run_with_python_bytecode_backend(src: str) -> str:
     """Execute native IR by emitting Python bytecode instructions."""
     stmts = _parse_and_lint(src)
-    program = NativeCodeGenerator().compile_program(stmts)
+    program = NativeCodeGenerator(allow_heap=True).compile_program(stmts)
     return run_program_via_python_bytecode(program)
 
 

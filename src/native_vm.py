@@ -50,6 +50,12 @@ class NativeVM:
         self.output: List[str] = []
         self.globals: Dict[str, Any] = {}
         self.program: Optional[ProgramIR] = None
+        self.heap: Dict[int, List[Any]] = {}
+        self.next_ptr = 1
+        self.freed_ptrs: set[int] = set()
+        self.freed_allocations: Dict[int, int] = {}
+        self.heap_cell_types: Dict[int, Dict[int, str]] = {}
+        self.error_message: Optional[str] = None
 
     def run(self, program: ProgramIR) -> str:
         """Execute the program entry block and return captured output."""
@@ -112,6 +118,8 @@ class NativeVM:
     def _load(self, locals_: Dict[str, Any], name: str) -> Any:
         """Resolve a variable name from locals or globals, raising on miss."""
 
+        if name == "errorMessage":
+            return self.error_message
         if name in locals_:
             return locals_[name]
         if name in self.globals:
@@ -121,6 +129,22 @@ class NativeVM:
     def _call(self, name: str, args: List[Any]) -> Any:
         """Invoke a function declared in the program with positional args."""
 
+        if name in {"__new", "new"}:
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            return self._heap_new(args[0])
+        if name == "heap_get":
+            if len(args) != 2:
+                raise RuntimeError(f"heap_get expects 2 args, got {len(args)}")
+            return self._heap_get(args[0], args[1])
+        if name == "heap_set":
+            if len(args) != 3:
+                raise RuntimeError(f"heap_set expects 3 args, got {len(args)}")
+            return self._heap_set(args[0], args[1], args[2])
+        if name == "delete":
+            if len(args) != 1:
+                raise RuntimeError(f"delete expects 1 arg, got {len(args)}")
+            return self._heap_delete(args[0])
         if self.program is None:
             raise RuntimeError("VM has no program loaded")
         target = self.program.functions.get(name)
@@ -139,3 +163,149 @@ class NativeVM:
         if isinstance(value, bool):
             return "true" if value else "false"
         return str(value)
+
+    def _record_error(self, message: str) -> None:
+        self.error_message = message
+
+    @staticmethod
+    def _pointer_label(pointer: Any) -> str:
+        type_name = type(pointer).__name__
+        if isinstance(pointer, (int, float)) and str(pointer).isnumeric():
+            return str(int(pointer))
+        return f"{pointer!r} ({type_name})"
+
+    def _parse_heap_index(self, index: Any) -> Optional[int]:
+        try:
+            idx = int(index)
+        except Exception:
+            message = f"heap access error: index {index!r} is not numeric"
+            self._record_error(message)
+            return None
+        if isinstance(index, float) and not index.is_integer():
+            message = f"heap access error: index {self._pointer_label(index)} is not an integer index"
+            self._record_error(message)
+            return None
+        return idx
+
+    def _resolve_ptr(self, pointer: Any, *, op: str) -> Optional[tuple[int, List[Any]]]:
+        try:
+            ip = int(pointer)
+        except Exception:
+            message = f"heap {op} error: pointer {self._pointer_label(pointer)} is not numeric"
+            self._record_error(message)
+            return None
+        if isinstance(pointer, float) and not pointer.is_integer():
+            message = f"heap {op} error: pointer {self._pointer_label(pointer)} is not an integer pointer"
+            self._record_error(message)
+            return None
+        if ip < 1:
+            message = f"heap {op} error: pointer {ip} is invalid (must refer to a live positive allocation)"
+            self._record_error(message)
+            return None
+        if ip in self.freed_ptrs:
+            size_part = self.freed_allocations.get(ip)
+            size_hint = f" (size {size_part})" if size_part is not None else ""
+            message = f"heap {op} error: pointer {ip} was already freed{size_hint}"
+            self._record_error(message)
+            return None
+        try:
+            cells = self.heap[ip]
+        except KeyError:
+            live = sorted(self.heap.keys())
+            freed = sorted(self.freed_ptrs)
+            details: List[str] = []
+            if live:
+                details.append(f"live: {live}")
+            if freed:
+                details.append(f"freed: {freed}")
+            context = f" ({'; '.join(details)})" if details else ""
+            message = f"heap {op} error: unknown pointer {ip}{context}"
+            self._record_error(message)
+            return None
+        return ip, cells
+
+    def _heap_new(self, size: Any) -> int:
+        count = int(size)
+        if count < 0:
+            raise RuntimeError("alloc error: negative size")
+        ptr = self.next_ptr
+        self.next_ptr += 1
+        self.heap[ptr] = [0 for _ in range(count)]
+        self.freed_ptrs.discard(ptr)
+        self.freed_allocations.pop(ptr, None)
+        self.heap_cell_types.pop(ptr, None)
+        return ptr
+
+    def _value_type_name(self, value: Any) -> str:
+        if isinstance(value, dict) and "__type__" in value:
+            return str(value.get("__type__"))
+        if value is None:
+            return "Null"
+        if isinstance(value, bool):
+            return "Bool"
+        if isinstance(value, int) and not isinstance(value, bool):
+            return "int"
+        if isinstance(value, float):
+            return "float"
+        if isinstance(value, str):
+            return "string"
+        return type(value).__name__
+
+    @staticmethod
+    def _heap_ok_record() -> Dict[str, Any]:
+        return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 0, "msg": ""}}
+
+    def _heap_error_record(self, message: str) -> Dict[str, Any]:
+        return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": message}}
+
+    def _heap_delete(self, pointer: Any) -> Dict[str, Any]:
+        resolved = self._resolve_ptr(pointer, op="delete")
+        if resolved is None:
+            return self._heap_error_record(self.error_message or "")
+        ip, cells = resolved
+        size = len(cells)
+        self.heap.pop(ip, None)
+        self.heap_cell_types.pop(ip, None)
+        self.freed_ptrs.add(ip)
+        self.freed_allocations[ip] = size
+        return self._heap_ok_record()
+
+    def _heap_get(self, pointer: Any, index: Any) -> Any:
+        idx = self._parse_heap_index(index)
+        if idx is None:
+            return None
+        resolved = self._resolve_ptr(pointer, op="access")
+        if resolved is None:
+            return None
+        ip, cells = resolved
+        size = len(cells)
+        if idx < 0 or idx >= size:
+            range_hint = "empty allocation" if size == 0 else f"valid indices: 0..{size - 1}"
+            message = f"heap access error: index {idx} out of range for pointer {ip} (size {size}; {range_hint})"
+            self._record_error(message)
+            return None
+        return cells[idx]
+
+    def _heap_set(self, pointer: Any, index: Any, value: Any) -> Dict[str, Any]:
+        idx = self._parse_heap_index(index)
+        if idx is None:
+            return self._heap_error_record(self.error_message or "")
+        resolved = self._resolve_ptr(pointer, op="access")
+        if resolved is None:
+            return self._heap_error_record(self.error_message or "")
+        ip, cells = resolved
+        size = len(cells)
+        if idx < 0 or idx >= size:
+            range_hint = "empty allocation" if size == 0 else f"valid indices: 0..{size - 1}"
+            message = f"heap access error: index {idx} out of range for pointer {ip} (size {size}; {range_hint})"
+            self._record_error(message)
+            return self._heap_error_record(message)
+        expected = self.heap_cell_types.get(ip, {}).get(idx)
+        actual = self._value_type_name(value)
+        if expected is not None and expected != actual:
+            message = f"heap type mismatch at {ip}[{idx}]: expected {expected} but got {actual}"
+            self._record_error(message)
+            return self._heap_error_record(message)
+        cells[idx] = value
+        self.heap_cell_types.setdefault(ip, {})[idx] = actual
+        return self._heap_ok_record()

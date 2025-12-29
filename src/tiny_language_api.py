@@ -66,6 +66,7 @@ if "IR" not in globals():
         Str,
         Switch,
         SwitchCase,
+        TaskBlock,
         TryCatch,
         TypeDef,
         TypeVariant,
@@ -287,6 +288,10 @@ def _tiny_to_python_ast(runtime: "Runtime", node: object) -> object:
         err_name = _tiny_get_field(runtime, node, "err_name")
         pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
         return apply_span(TryCatch(body, err_name, handler, pos=pos))
+    if tag == "TaskBlock":
+        body = [_tiny_to_python_ast(runtime, item) for item in _tiny_to_list(runtime, _tiny_get_field(runtime, node, "body"))]
+        pos = _tiny_to_pos(runtime, _tiny_get_field(runtime, node, "pos"))
+        return apply_span(TaskBlock(body, pos=pos))
     if tag == "Param":
         name = _tiny_get_field(runtime, node, "name")
         type_hint = _tiny_get_field(runtime, node, "type_hint")

@@ -111,6 +111,14 @@ class TryCatch(IR):
 
 
 @dataclass
+class TaskBlock(IR):
+    """Structured concurrency block that scopes spawned tasks."""
+
+    body: List[IR]
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+
+
+@dataclass
 class Param:
     """Function or method parameter with an optional type hint."""
 

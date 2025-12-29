@@ -345,6 +345,17 @@ class CancellationToken:
             return True
 
 
+@dataclass
+class TaskScope:
+    """Track spawned handles that must resolve before exiting a task block."""
+
+    handles: List[SpawnHandle] = field(default_factory=list)
+
+    def add_handle(self, handle: SpawnHandle) -> None:
+        if handle not in self.handles:
+            self.handles.append(handle)
+
+
 class Runtime:
     def __init__(self, source: str):
         self._lock = threading.RLock()
@@ -385,6 +396,8 @@ class Runtime:
         self._last_trace_time: float = 0.0
         self._last_trace_location: Optional[Tuple[Optional[str], int]] = None
         self._last_emitted_output_idx: int = 0
+        self._task_scopes: List[TaskScope] = []
+        self.task_scope_timeout_ms: float = float(os.environ.get("TINYLANG_TASK_SCOPE_TIMEOUT_MS", "50"))
         if self.trace_log_path:
             self._setup_trace_logger()
 
@@ -394,6 +407,22 @@ class Runtime:
             stack = []
             self._parameter_binding_stack.stack = stack
         return stack
+
+    def _push_task_scope(self) -> TaskScope:
+        scope = TaskScope()
+        self._task_scopes.append(scope)
+        return scope
+
+    def _pop_task_scope(self) -> None:
+        if not self._task_scopes:
+            return
+        scope = self._task_scopes.pop()
+        for handle in scope.handles:
+            self.join_handle(handle, timeout_ms=self.task_scope_timeout_ms, cancel_on_timeout=True)
+
+    def _register_task_handle(self, handle: SpawnHandle) -> None:
+        if self._task_scopes:
+            self._task_scopes[-1].add_handle(handle)
 
     def _push_parameter_scope(self, bindings: Dict[ParamKey, ParameterBinding]) -> None:
         self._binding_stack().append(bindings)
@@ -1743,6 +1772,7 @@ class Runtime:
         worker = threading.Thread(target=run_task)
         handle.thread = worker
         worker.start()
+        self._register_task_handle(handle)
         return handle
 
     def _join_status(self, handle: SpawnHandle, *, done: bool) -> Dict[str, Any]:

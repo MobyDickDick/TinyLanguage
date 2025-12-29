@@ -85,7 +85,9 @@ fn run() {
         return 0;
     }
     if (command == "hover") {
-        define hover = py_server.hover_for_source(source, Map.get(args, "symbol"));
+        define symbol = Map.get(args, "symbol");
+        if (symbol == Null) { print("Provide --symbol for hover"); return 1; }
+        define hover = py_server.hover_for_source(source, symbol);
         print(JSON.stringify(hover));
         return 0;
     }

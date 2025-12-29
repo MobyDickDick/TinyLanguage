@@ -261,6 +261,11 @@ class Parser {
             define handler = self.parse_block();
             return self._attach_span(TryCatch(body, err_name, handler, kw.start, Null), kw.start, self._last_tok.stop);
         }
+        if (self.tok.kind == "KW" && self.tok.text == "task") {
+            define kw = self._eat("KW", "task");
+            define body = self.parse_block();
+            return self._attach_span(TaskBlock(body, kw.start, Null), kw.start, self._last_tok.stop);
+        }
         if (self.tok.kind == "KW" && self.tok.text == "import") {
             define kw = self._eat("KW", "import");
             define module_data = self.parse_module_path();
@@ -579,6 +584,11 @@ class Parser {
                 while (i < len(stmt.body)) { define _vtr = visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
                 i = 0;
                 while (i < len(stmt.handler)) { define _vth = visit_stmt(heap_get(stmt.handler, i)); i = i + 1; }
+                return Null;
+            }
+            if (stmt.__tag__ == "TaskBlock") {
+                define i = 0;
+                while (i < len(stmt.body)) { define _vtask = visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
                 return Null;
             }
             if (stmt.__tag__ == "Namespace") {

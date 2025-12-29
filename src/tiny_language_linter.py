@@ -163,6 +163,9 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
                 handler_reads[s.err_name] = 0
         for name, count in handler_reads.items():
             reads[name] = max(reads.get(name, 0), count)
+    elif isinstance(s, TaskBlock):
+        for t in s.body:
+            lint_stmt_reads(t, reads)
     elif isinstance(s, Return):
         uses_in_expr(s.expr, reads)
     elif isinstance(s, OpDef):
@@ -413,6 +416,10 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                     handler_active, handler_term = analyze_block(st.handler, [handler_state])
                     next_active.extend(body_active + handler_active)
                     terminated_states.extend(body_term + handler_term)
+                elif isinstance(st, TaskBlock):
+                    body_active, body_term = analyze_block(st.body, [dict(state)])
+                    next_active.extend(body_active)
+                    terminated_states.extend(body_term)
                 elif isinstance(st, Namespace):
                     nested_state = dict(state)
                     _mark_captured_uses(st.body, nested_state)
@@ -577,6 +584,8 @@ def lint_assignment_types(stmts: List[IR], source: Optional[str] = None, env: Op
                 for name in list(local_env.keys()):
                     if name in body_env and name in handler_env and body_env[name] == handler_env[name]:
                         local_env[name] = body_env[name]
+            elif isinstance(st, TaskBlock):
+                local_env = check_block(list(st.body), local_env)
             elif isinstance(st, Namespace):
                 check_block(list(st.body), {})
             elif isinstance(st, Fn):
@@ -639,6 +648,10 @@ def lint_bare_call_results(
             elif isinstance(st, TryCatch):
                 visit(st.body)
                 visit(st.handler)
+            elif isinstance(st, TaskBlock):
+                visit(st.body)
+            elif isinstance(st, TaskBlock):
+                visit(st.body)
             elif isinstance(st, Namespace):
                 visit(st.body)
             elif isinstance(st, ClassDef):
@@ -708,6 +721,9 @@ def _block_guarantees_return(stmts: List[IR]) -> bool:
         if isinstance(st, TryCatch):
             if _block_guarantees_return(st.body) and _block_guarantees_return(st.handler):
                 return True
+        if isinstance(st, TaskBlock):
+            if _block_guarantees_return(st.body):
+                return True
         elif isinstance(st, While):
             continue
         elif isinstance(st, (Fn, MethodDef, ClassDef, Namespace)):
@@ -725,6 +741,8 @@ def _stmt_guarantees_exit(st: IR) -> bool:
         return has_default and all(_block_guarantees_return(case.body) for case in st.cases)
     if isinstance(st, TryCatch):
         return _block_guarantees_return(st.body) and _block_guarantees_return(st.handler)
+    if isinstance(st, TaskBlock):
+        return _block_guarantees_return(st.body)
     return False
 
 
@@ -825,6 +843,8 @@ def lint_unreachable_code(stmts: List[IR], source: Optional[str] = None) -> None
             elif isinstance(st, TryCatch):
                 visit_block(st.body)
                 visit_block(st.handler)
+            elif isinstance(st, TaskBlock):
+                visit_block(st.body)
             elif isinstance(st, Fn):
                 visit_block(st.body)
             elif isinstance(st, MethodDef):
@@ -881,6 +901,10 @@ def lint_no_consecutive_definitions(stmts: List[IR]) -> None:
                 lint_no_consecutive_definitions(st.handler)
                 prev = None
                 continue
+            if isinstance(st, TaskBlock):
+                lint_no_consecutive_definitions(st.body)
+                prev = None
+                continue
 
             current: Optional[str] = None
             if isinstance(st, Let):
@@ -917,6 +941,8 @@ def lint_destruct_call_outputs_stmt(st: IR, source: Optional[str]) -> None:
     elif isinstance(st, TryCatch):
         lint_destruct_call_outputs(st.body, source)
         lint_destruct_call_outputs(st.handler, source)
+    elif isinstance(st, TaskBlock):
+        lint_destruct_call_outputs(st.body, source)
 
 
 def check_destruct_call_expr(expr: IR, names: set[str], *, source: Optional[str], pos: SourcePos) -> None:
@@ -978,6 +1004,9 @@ def lint_param_mutations_returned(
                 visit(branch_stmt)
             for branch_stmt in st.handler:
                 visit(branch_stmt)
+        elif isinstance(st, TaskBlock):
+            for body_stmt in st.body:
+                visit(body_stmt)
         elif isinstance(st, While):
             for body_stmt in st.body:
                 visit(body_stmt)

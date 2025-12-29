@@ -179,6 +179,10 @@ class Parser:
                 err_name = self._eat("NAME").text
             handler = self.parse_block()
             return self._attach_span(TryCatch(body, err_name, handler, pos=kw.pos), kw.start, self._last_tok.stop)
+        if self.tok.kind == "KW" and self.tok.text == "task":
+            kw = self._eat("KW", "task")
+            body = self.parse_block()
+            return self._attach_span(TaskBlock(body, pos=kw.pos), kw.start, self._last_tok.stop)
         if self.tok.kind == "KW" and self.tok.text == "import":
             kw = self._eat("KW", "import")
             module, module_span = self.parse_module_path()
@@ -510,6 +514,9 @@ class Parser:
                 for child in stmt.body:
                     visit_stmt(child)
                 for child in stmt.handler:
+                    visit_stmt(child)
+            elif isinstance(stmt, TaskBlock):
+                for child in stmt.body:
                     visit_stmt(child)
             elif isinstance(stmt, Namespace):
                 for child in stmt.body:

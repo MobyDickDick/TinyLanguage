@@ -33,6 +33,7 @@ KEYWORDS = {
     "spawn",
     "async",
     "await",
+    "task",
     "true",
     "false",
     "flush",

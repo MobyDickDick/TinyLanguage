@@ -140,6 +140,19 @@ fn TryCatch(body, err_name, handler, pos, span) {
     };
 }
 
+class TaskBlock {
+    body: Pointer;
+    pos: SourcePos;
+    span: SourceSpan;
+}
+fn TaskBlock(body, pos, span) {
+    return new TaskBlock {
+        body: body;
+        pos: _pos_or_default(pos);
+        span: _span_or_default(span, pos)
+    };
+}
+
 class Param {
     name: string;
     type_hint: string;

@@ -43,6 +43,7 @@ if "IR" not in globals():
         Spawn,
         Str,
         Switch,
+        TaskBlock,
         TryCatch,
         TypeDef,
         Var,
@@ -137,6 +138,25 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
                 res = self.eval_block(s.handler, env, namespace)
                 if isinstance(res, ReturnSignal):
                     return res
+        elif isinstance(s, TaskBlock):
+            res = None
+            err: Optional[BaseException] = None
+            self._push_task_scope()
+            try:
+                res = self.eval_block(s.body, env, namespace)
+            except Exception as exc:  # noqa: BLE001
+                err = exc
+            finally:
+                try:
+                    self._pop_task_scope()
+                except Exception as cleanup_exc:  # noqa: BLE001
+                    if err is None:
+                        raise
+                    raise err from cleanup_exc
+            if err is not None:
+                raise err
+            if isinstance(res, ReturnSignal):
+                return res
         elif isinstance(s, Namespace):
             qualified = self._qualify_name(s.name, namespace)
             child_env = Environment(parent=env, namespace=qualified, runtime=self)

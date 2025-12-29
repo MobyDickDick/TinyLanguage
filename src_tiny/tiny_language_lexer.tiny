@@ -55,7 +55,7 @@ fn Token(kind, text, start, stop) {
 
 define KEYWORDS = Set.from_list(new[
     "define", "print", "if", "else", "while", "switch", "default", "fn", "import", "return",
-    "operator", "new", "type", "class", "namespace", "as", "spawn",
+    "operator", "new", "type", "class", "namespace", "as", "spawn", "task",
     "async", "await", "true", "false", "flush", "and", "or", "not",
     "Null", "try", "catch", "match", "case"
 ]);

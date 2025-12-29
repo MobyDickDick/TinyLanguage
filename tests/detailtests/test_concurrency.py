@@ -97,3 +97,25 @@ def test_join_timeout_can_cancel(run_tiny_source):
     )
 
     assert out == "status false false\ncancelled? false true\nfinal 3 true true\n"
+
+
+def test_task_block_cancels_pending_spawns(run_tiny_source, monkeypatch):
+    monkeypatch.setenv("TINYLANG_TASK_SCOPE_TIMEOUT_MS", "0")
+    out = run_tiny_source(
+        """
+        fn slow(value) {
+            define i = 0;
+            while (i < 200000) { i = i + 1; }
+            return value;
+        }
+
+        task {
+            define handle = spawn slow(9);
+        }
+
+        define status = join(handle, 0);
+        print("status", status.done, status.cancelled);
+        """,
+    )
+
+    assert out == "status false true\n"

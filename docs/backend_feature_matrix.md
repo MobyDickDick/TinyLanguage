@@ -88,7 +88,7 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 ### C/LLVM pipeline (`--emit-llvm`, `--emit-exe`)
 
 - [ ] Full literal and type coverage
-  - [ ] Add `null` lowering and a runtime sentinel representation.
+  - [x] Add `null` lowering and a runtime sentinel representation.
   - [ ] Support non-numeric variables and assignments beyond the numeric subset.
 - [ ] Heap operations
   - [ ] Port heap op lowering from the native IR into LLVM IR.

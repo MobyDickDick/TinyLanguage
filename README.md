@@ -47,6 +47,8 @@ For interoperability guidance, see the cross-language compatibility notes in [`d
 
 - **Smoke test**: A fast “does it basically work?” end-to-end check. In TinyLanguage this usually means: parse/compile a tiny program, run it, and verify a minimal expected result (e.g., arithmetic, a branch, a function call). Smoke tests are intentionally small and coarse—they catch broken pipelines early after refactors.
 
+- **TL**: This is just the abbreviation for "TinyLanguage". 
+
 ## Intended use
 TinyLanguage is a learning- and transpiler-focused playground rather than a production-ready toolchain. It exists to showcase syntax ideas, cross-language IR conversions, and runtime experiments (e.g., gradual typing and structured cancellation). The runnable demos and tests (`python run_all.py` or `python -m pytest`) are best treated as teaching materials for language design or interoperability, not as a polished SDK.
 

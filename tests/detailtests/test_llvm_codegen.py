@@ -211,6 +211,19 @@ def test_llvm_codegen_emits_string_prints() -> None:
     assert "call i32 (i8*, ...) @printf" in llvm_ir
 
 
+def test_llvm_codegen_supports_non_numeric_variables() -> None:
+    source = 'define greeting = "hi"; define ok = true; print(greeting, ok);'
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert '@.str0 = private unnamed_addr constant [3 x i8] c"hi\\00"' in llvm_ir
+    assert "alloca i8*" in llvm_ir
+    assert "alloca i1" in llvm_ir
+    assert "store i8*" in llvm_ir
+    assert "store i1 1" in llvm_ir
+    assert "zext i1" in llvm_ir
+
+
 def test_llvm_codegen_supports_null_literal_prints() -> None:
     source = "print(Null);"
 

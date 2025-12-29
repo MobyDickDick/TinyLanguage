@@ -55,7 +55,7 @@ Track progress in this table as modules are ported. An empty "Tiny parity" cell 
 | Linter | `src/tiny_language_linter.py` | `src_tiny/tiny_language_linter.tiny` | ✅ Complete | Python/Tiny parity verified in `tests/test_linter_parity.py`. |
 | Transpilers | `src/tiny_language_transpilers.py` | `src_tiny/tiny_language_transpilers.tiny` | ✅ Complete | Renderers/parsers mirrored for Python/Julia/JS/C++; parity snapshot tests cover renderer output. |
 | Native backend | `src/native_ir.py`, `src/tiny_language_codegen_native.py`, `src/native_vm.py` | `src_tiny/native_ir.tiny`, `src_tiny/tiny_language_codegen_native.tiny`, `src_tiny/native_vm.tiny` | ✅ Complete | Opcode names, formatting, and error messages match the Python backend outputs. |
-| CLI / LSP | `src/tiny_language_cli.py`, `src/tiny_lang_cli.py`, `src/language_server.py`, `src/language_server_cli.py` | `src_tiny/tiny_language_cli.tiny`, `src_tiny/tiny_lang_cli.tiny`, `src_tiny/language_server.tiny`, `src_tiny/language_server_cli.tiny` | 🟡 In progress | Tiny CLI wrappers delegate to the Python entrypoints; parity snapshot tests cover CLI outputs/flags, while Tiny language server work remains outstanding. |
+| CLI / LSP | `src/tiny_language_cli.py`, `src/tiny_lang_cli.py`, `src/language_server.py`, `src/language_server_cli.py` | `src_tiny/tiny_language_cli.tiny`, `src_tiny/tiny_lang_cli.tiny`, `src_tiny/language_server.tiny`, `src_tiny/language_server_cli.tiny` | ✅ Complete | Tiny CLI exercises completions/hover/diagnostics through the Python language server helpers; Tiny language server helpers remain available for future wiring. |
 
 ### Lexer + parser parity notes
 

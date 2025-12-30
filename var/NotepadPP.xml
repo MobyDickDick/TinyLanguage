@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="Windows-1252" ?>
+<NotepadPlus>
+  <UserLang name="TinyLanguage" ext="tiny tl tinylang" udlVersion="2.1">
+    <Settings>
+      <Global caseIgnored="no" allowFoldOfComments="yes" foldCompact="no" forcePureLC="0" decimalSeparator="0" />
+      <Prefix Keywords1="no" Keywords2="no" Keywords3="no" Keywords4="no" Keywords5="no" Keywords6="no" Keywords7="no" Keywords8="no" />
+    </Settings>
+
+    <KeywordLists>
+      <!-- Leave delimiters default-ish; UDL is fairly permissive -->
+      <Keywords name="Delimiters">00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F</Keywords>
+
+      <!-- Keywords -->
+      <Keywords name="Keywords1">define fn return if else while</Keywords>
+
+      <!-- Builtins / statements / stdlib-ish functions -->
+      <Keywords name="Keywords2">print new heap_get heap_set tag delete box unbox operator</Keywords>
+
+      <!-- Types / schema shorthands -->
+      <Keywords name="Keywords3">number string bool any</Keywords>
+
+      <!-- Constants -->
+      <Keywords name="Keywords4">true false null</Keywords>
+
+      <!-- Unused keyword groups -->
+      <Keywords name="Keywords5"></Keywords>
+      <Keywords name="Keywords6"></Keywords>
+      <Keywords name="Keywords7"></Keywords>
+      <Keywords name="Keywords8"></Keywords>
+
+      <!-- Comments -->
+      <Keywords name="Comments">00// 01 02/* 03*/</Keywords>
+
+      <!-- Strings: double quotes, allow escapes -->
+      <Keywords name="Strings">00" 01 02\ 03</Keywords>
+
+      <!-- Numbers (UDL does not do numeric lexing; handled via styles) -->
+      <Keywords name="Numbers, prefix1"></Keywords>
+      <Keywords name="Numbers, prefix2"></Keywords>
+    </KeywordLists>
+
+    <Styles>
+      <WordsStyle name="DEFAULT" fgColor="000000" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="COMMENTS" fgColor="008000" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="LINE COMMENTS" fgColor="008000" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="NUMBER" fgColor="800000" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="KEYWORDS1" fgColor="0000FF" bgColor="FFFFFF" fontName="Consolas" fontStyle="1" nesting="0" />
+      <WordsStyle name="KEYWORDS2" fgColor="6A3D9A" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="KEYWORDS3" fgColor="1F78B4" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="KEYWORDS4" fgColor="B15928" bgColor="FFFFFF" fontName="Consolas" fontStyle="1" nesting="0" />
+      <WordsStyle name="KEYWORDS5" fgColor="000000" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="KEYWORDS6" fgColor="000000" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="KEYWORDS7" fgColor="000000" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="KEYWORDS8" fgColor="000000" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="OPERATORS" fgColor="AA0000" bgColor="FFFFFF" fontName="Consolas" fontStyle="1" nesting="0" />
+      <WordsStyle name="FOLDER IN CODE1" fgColor="000000" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="FOLDER IN CODE2" fgColor="000000" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="FOLDER IN COMMENT" fgColor="008000" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="DELIMITERS1" fgColor="7F007F" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="DELIMITERS2" fgColor="7F007F" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="DELIMITERS3" fgColor="7F007F" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="DELIMITERS4" fgColor="7F007F" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="DELIMITERS5" fgColor="7F007F" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="DELIMITERS6" fgColor="7F007F" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="DELIMITERS7" fgColor="7F007F" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+      <WordsStyle name="DELIMITERS8" fgColor="7F007F" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" nesting="0" />
+    </Styles>
+
+    <Rules>
+      <!-- Operators -->
+      <Operators1>+ - * / == &gt; &gt;= &lt; &lt;= = . : , ; ( ) { } [ ]</Operators1>
+      <Operators2></Operators2>
+
+      <!-- Folding -->
+      <FolderSymbols>
+        <FolderSymbol name="Folder open" begin="{" end="}" />
+        <FolderSymbol name="Folder open" begin="/*" end="*/" />
+      </FolderSymbols>
+    </Rules>
+  </UserLang>
+</NotepadPlus>

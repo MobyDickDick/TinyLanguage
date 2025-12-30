@@ -3,11 +3,52 @@
 // import/destructuring checks. Error messages mirror the Python
 // version (including error codes) as closely as possible.
 
+// ===========================================================================
+// TINY LANGUAGE LINTER (Tiny implementation)
+// ===========================================================================
+// OVERVIEW
+//   This file is a TinyLanguage-native port of the Python linter. It runs as
+//   part of the toolchain to enforce project-wide rules and to provide clear,
+//   testable diagnostics (including stable error codes).
+//
+//   The linter focuses on a few strong guarantees that keep Tiny programs
+//   easy to reason about and friendly to compilation targets:
+//     - 'Must-use' discipline for bindings, parameters, and call results
+//     - Basic type-change warnings (developer feedback, not a full type system)
+//     - Return correctness (signatures + exhaustiveness across branches)
+//     - Import and destructuring checks
+//
+// IMPORTANT CONVENTIONS
+//   - Names starting with '_' are treated as intentionally unused in many rules.
+//   - Some checks perform simple control-flow path analysis by tracking multiple
+//     'usage states' and merging them at join points.
+//   - Diagnostics aim to mirror the Python reference implementation closely.
+//
+// RUNTIME / INTEROP NOTES
+//   This file uses stdlib namespaces such as Map/Set/Deque/Collections and
+//   Python interop for small helpers (e.g. stable repr/str behavior).
+//   These calls are guarded by allowlists to keep the interop surface explicit.
+// ===========================================================================
+
 define __PY_REPR_ALLOW = new["repr"];
 define __PY_EXEC_ALLOW = new["exec"];
 define __PY_STR_ALLOW = new["str"];
 define __PY_LIST_ALLOW = new["list"];
 
+// ---------------------------------------------------------------------------
+// __starts_with(text, prefix)
+// ---------------------------------------------------------------------------
+// Return true iff `text` starts with `prefix`.
+//
+// Implementation: uses Python interop (`builtins.list`) to compare characters, because TinyLanguage does not (yet) expose a direct slice/prefix primitive.
+//
+// Args:
+//   - text: (Tiny value) See implementation for expected shape.
+//   - prefix: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn __starts_with(text, prefix) {
     if (text == Null || prefix == Null) { return false; }
     define text_chars = Python.call("builtins", "list", new[text], __PY_LIST_ALLOW);
@@ -21,6 +62,19 @@ fn __starts_with(text, prefix) {
     return true;
 }
 
+// ---------------------------------------------------------------------------
+// __raise_runtime_error(msg)
+// ---------------------------------------------------------------------------
+// Abort linting by raising a runtime error.
+//
+// The linter is often used as a pre-flight check; failing fast is acceptable and keeps error messages close to the Python reference implementation.
+//
+// Args:
+//   - msg: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn __raise_runtime_error(msg) {
     define safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
     define stmt = "raise RuntimeError(" + safe + ")";
@@ -28,16 +82,57 @@ fn __raise_runtime_error(msg) {
     return Python.call("builtins", "exec", new[stmt], __PY_EXEC_ALLOW);
 }
 
+// ---------------------------------------------------------------------------
+// __to_str(value)
+// ---------------------------------------------------------------------------
+// Convert an arbitrary value to a string for diagnostics.
+//
+// Uses a conservative conversion strategy so messages are stable and predictable across backends.
+//
+// Args:
+//   - value: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn __to_str(value) {
     return Python.call("builtins", "str", new[value], __PY_STR_ALLOW);
 }
 
+// ---------------------------------------------------------------------------
+// __sorted_strings(items)
+// ---------------------------------------------------------------------------
+// Return a new list containing the given strings sorted lexicographically.
+//
+// Used to keep output deterministic (tests, CI).
+//
+// Args:
+//   - items: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn __sorted_strings(items) {
     define arr = new[];
     define i = 0;
     while (i < len(items)) { define _ = Collections.push(arr, heap_get(items, i)); i = i + 1; }
     define n = len(arr);
     define a = 0;
+    // ---------------------------------------------------------------------------
+    // _swap(list, idx_a, idx_b)
+    // ---------------------------------------------------------------------------
+    // Helper function used by the linter.
+    //
+    // This function is part of the TinyLanguage linter port and is not intended as a public API.
+    //
+    // Args:
+    //   - list: (Tiny value) See implementation for expected shape.
+    //   - idx_a: (Tiny value) See implementation for expected shape.
+    //   - idx_b: (Tiny value) See implementation for expected shape.
+    //
+    // Returns:
+    //   A Tiny value (type depends on operation).
+    // ---------------------------------------------------------------------------
     fn _swap(list, idx_a, idx_b) {
         define out = new[];
         define si = 0;
@@ -67,6 +162,19 @@ fn __sorted_strings(items) {
     return arr;
 }
 
+// ---------------------------------------------------------------------------
+// __copy_state(state)
+// ---------------------------------------------------------------------------
+// Deep-ish copy of a usage-tracking state map.
+//
+// The must-use analysis uses multiple concurrent states (branching control-flow). States must not alias each other, so we copy before modifying.
+//
+// Args:
+//   - state: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn __copy_state(state) {
     define keys = Map.keys(state);
     define new_state = Map.new();
@@ -79,6 +187,20 @@ fn __copy_state(state) {
     return new_state;
 }
 
+// ---------------------------------------------------------------------------
+// _import_binding_name(module, alias)
+// ---------------------------------------------------------------------------
+// Helper function used by the linter.
+//
+// This function is part of the TinyLanguage linter port and is not intended as a public API.
+//
+// Args:
+//   - module: (Tiny value) See implementation for expected shape.
+//   - alias: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn _import_binding_name(module, alias) {
     if (alias != Null) { return alias; }
     define chars = Python.call("builtins", "list", new[module], __PY_LIST_ALLOW);
@@ -91,18 +213,59 @@ fn _import_binding_name(module, alias) {
     return heap_get(parts, len(parts) - 1);
 }
 
+// ---------------------------------------------------------------------------
+// __starts_with_underscore(name)
+// ---------------------------------------------------------------------------
+// Internal helper used by the linter.
+//
+// Names starting with `__` are intentionally private and may change without notice.
+//
+// Args:
+//   - name: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn __starts_with_underscore(name) {
     if (name == Null) { return false; }
     if (String.len(name) == 0) { return false; }
     return heap_get(Python.call("builtins", "list", new[name], __PY_LIST_ALLOW), 0) == "_";
 }
 
+// ---------------------------------------------------------------------------
+// __pad_left(num, width)
+// ---------------------------------------------------------------------------
+// Internal helper used by the linter.
+//
+// Names starting with `__` are intentionally private and may change without notice.
+//
+// Args:
+//   - num: (Tiny value) See implementation for expected shape.
+//   - width: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn __pad_left(num, width) {
     define txt = __to_str(num);
     while (String.len(txt) < width) { txt = " " + txt; }
     return txt;
 }
 
+// ---------------------------------------------------------------------------
+// __line_info(source, pos)
+// ---------------------------------------------------------------------------
+// Internal helper used by the linter.
+//
+// Names starting with `__` are intentionally private and may change without notice.
+//
+// Args:
+//   - source: (Tiny value) See implementation for expected shape.
+//   - pos: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn __line_info(source, pos) {
     define target_pos = pos;
     define lines = String.split(source, "\n");
@@ -139,6 +302,23 @@ fn __line_info(source, pos) {
     return new[line, col, line_text];
 }
 
+// ---------------------------------------------------------------------------
+// __format_error(source, pos, message, code, hint)
+// ---------------------------------------------------------------------------
+// Internal helper used by the linter.
+//
+// Names starting with `__` are intentionally private and may change without notice.
+//
+// Args:
+//   - source: (Tiny value) See implementation for expected shape.
+//   - pos: (Tiny value) See implementation for expected shape.
+//   - message: (Tiny value) See implementation for expected shape.
+//   - code: (Tiny value) See implementation for expected shape.
+//   - hint: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn __format_error(source, pos, message, code, hint) {
     if (pos.__tag__ == "SourceSpan") {
         define start_info = __line_info(source, pos.start);
@@ -237,6 +417,19 @@ fn __format_error(source, pos, message, code, hint) {
     return String.join(lines_out, "\n");
 }
 
+// ---------------------------------------------------------------------------
+// _node_span(obj)
+// ---------------------------------------------------------------------------
+// Helper function used by the linter.
+//
+// This function is part of the TinyLanguage linter port and is not intended as a public API.
+//
+// Args:
+//   - obj: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn _node_span(obj) {
     if (obj == Null) { return Null; }
     if (obj.__tag__ == "SourceSpan") { return obj; }
@@ -244,6 +437,19 @@ fn _node_span(obj) {
     return Null;
 }
 
+// ---------------------------------------------------------------------------
+// _node_pos(obj)
+// ---------------------------------------------------------------------------
+// Helper function used by the linter.
+//
+// This function is part of the TinyLanguage linter port and is not intended as a public API.
+//
+// Args:
+//   - obj: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn _node_pos(obj) {
     if (obj == Null) { return SourcePos_origin(); }
     if (obj.__tag__ == "SourceSpan") { return obj.start; }
@@ -252,6 +458,23 @@ fn _node_pos(obj) {
     return SourcePos_origin();
 }
 
+// ---------------------------------------------------------------------------
+// _lint_error(source, node, message, code, hint)
+// ---------------------------------------------------------------------------
+// Helper function used by the linter.
+//
+// This function is part of the TinyLanguage linter port and is not intended as a public API.
+//
+// Args:
+//   - source: (Tiny value) See implementation for expected shape.
+//   - node: (Tiny value) See implementation for expected shape.
+//   - message: (Tiny value) See implementation for expected shape.
+//   - code: (Tiny value) See implementation for expected shape.
+//   - hint: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn _lint_error(source, node, message, code, hint) {
     define span = _node_span(node);
     define pos = _node_pos(node);
@@ -261,6 +484,19 @@ fn _lint_error(source, node, message, code, hint) {
     return __raise_runtime_error(rendered);
 }
 
+// ---------------------------------------------------------------------------
+// _param_names(params)
+// ---------------------------------------------------------------------------
+// Helper function used by the linter.
+//
+// This function is part of the TinyLanguage linter port and is not intended as a public API.
+//
+// Args:
+//   - params: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn _param_names(params) {
     define names = new[];
     define i = 0;
@@ -272,6 +508,20 @@ fn _param_names(params) {
     return names;
 }
 
+// ---------------------------------------------------------------------------
+// _collect_names_in_expr(e, names)
+// ---------------------------------------------------------------------------
+// Collect variable names referenced by an expression into a Set.
+//
+// Used as a building block for various must-use and data-flow checks.
+//
+// Args:
+//   - e: (Tiny value) See implementation for expected shape.
+//   - names: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn _collect_names_in_expr(e, names) {
     if (e == Null) { return Null; }
     if (e.__tag__ == "Var") { define _ = Set.add(names, e.name); return Null; }
@@ -324,6 +574,20 @@ fn _collect_names_in_expr(e, names) {
     return Null;
 }
 
+// ---------------------------------------------------------------------------
+// uses_in_expr(e, reads)
+// ---------------------------------------------------------------------------
+// Record variable reads performed by an expression.
+//
+// Populates a Map from name -> read-count, used to detect unused locals/params and to handle special cases (underscore names).
+//
+// Args:
+//   - e: (Tiny value) See implementation for expected shape.
+//   - reads: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn uses_in_expr(e, reads) {
     if (e == Null) { return Null; }
     if (e.__tag__ == "Var") {
@@ -393,6 +657,20 @@ fn uses_in_expr(e, reads) {
     return Null;
 }
 
+// ---------------------------------------------------------------------------
+// lint_stmt_reads(s, reads)
+// ---------------------------------------------------------------------------
+// Collect reads inside a statement (and nested expressions).
+//
+// This is a lightweight read-only traversal used by several lint rules.
+//
+// Args:
+//   - s: (Tiny value) See implementation for expected shape.
+//   - reads: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn lint_stmt_reads(s, reads) {
     if (s.__tag__ == "Let" || s.__tag__ == "Assign") { uses_in_expr(s.expr, reads); return Null; }
     if (s.__tag__ == "FieldAssign") { uses_in_expr(s.obj, reads); uses_in_expr(s.expr, reads); return Null; }
@@ -539,6 +817,20 @@ fn lint_stmt_reads(s, reads) {
     return Null;
 }
 
+// ---------------------------------------------------------------------------
+// lint_fn_params_used(fn_node, source)
+// ---------------------------------------------------------------------------
+// Must-use rule: ensure every function parameter is used.
+//
+// Parameters starting with '_' are considered intentionally unused and are ignored.
+//
+// Args:
+//   - fn_node: (Tiny value) See implementation for expected shape.
+//   - source: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn lint_fn_params_used(fn_node, source) {
     define reads = Map.new();
     define i = 0;
@@ -565,6 +857,20 @@ fn lint_fn_params_used(fn_node, source) {
     lint_locals_used(fn_node.body, source);
 }
 
+// ---------------------------------------------------------------------------
+// lint_method_params_used(md, source)
+// ---------------------------------------------------------------------------
+// Must-use rule for method definitions (like operators / methods).
+//
+// Mirrors `lint_fn_params_used` but follows the method AST shape.
+//
+// Args:
+//   - md: (Tiny value) See implementation for expected shape.
+//   - source: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn lint_method_params_used(md, source) {
     define reads = Map.new();
     define i = 0;
@@ -591,15 +897,56 @@ fn lint_method_params_used(md, source) {
     lint_locals_used(md.body, source);
 }
 
+// ---------------------------------------------------------------------------
+// lint_locals_used(stmts, source)
+// ---------------------------------------------------------------------------
+// Must-use rule: ensure every local binding is used.
+//
+// Tracks locals across control-flow (if/else/while/return) and reports unused bindings with source spans.
+//
+// Args:
+//   - stmts: (Tiny value) See implementation for expected shape.
+//   - source: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn lint_locals_used(stmts, source) {
     define unused = new[];
 
+    // ---------------------------------------------------------------------------
+    // names_in_expr(expr)
+    // ---------------------------------------------------------------------------
+    // Helper function used by the linter.
+    //
+    // This function is part of the TinyLanguage linter port and is not intended as a public API.
+    //
+    // Args:
+    //   - expr: (Tiny value) See implementation for expected shape.
+    //
+    // Returns:
+    //   A Tiny value (type depends on operation).
+    // ---------------------------------------------------------------------------
     fn names_in_expr(expr) {
         define reads = Map.new();
         uses_in_expr(expr, reads);
         return Map.keys(reads);
     }
 
+    // ---------------------------------------------------------------------------
+    // _mark_used(state, name)
+    // ---------------------------------------------------------------------------
+    // Helper function used by the linter.
+    //
+    // This function is part of the TinyLanguage linter port and is not intended as a public API.
+    //
+    // Args:
+    //   - state: (Tiny value) See implementation for expected shape.
+    //   - name: (Tiny value) See implementation for expected shape.
+    //
+    // Returns:
+    //   A Tiny value (type depends on operation).
+    // ---------------------------------------------------------------------------
     fn _mark_used(state, name) {
         define entry = Map.get(state, name, Null);
         if (entry != Null) {
@@ -608,6 +955,20 @@ fn lint_locals_used(stmts, source) {
         }
     }
 
+    // ---------------------------------------------------------------------------
+    // _mark_captured_uses(block, state)
+    // ---------------------------------------------------------------------------
+    // Helper function used by the linter.
+    //
+    // This function is part of the TinyLanguage linter port and is not intended as a public API.
+    //
+    // Args:
+    //   - block: (Tiny value) See implementation for expected shape.
+    //   - state: (Tiny value) See implementation for expected shape.
+    //
+    // Returns:
+    //   A Tiny value (type depends on operation).
+    // ---------------------------------------------------------------------------
     fn _mark_captured_uses(block, state) {
         define reads = Map.new();
         define i = 0;
@@ -621,6 +982,19 @@ fn lint_locals_used(stmts, source) {
         }
     }
 
+    // ---------------------------------------------------------------------------
+    // _merge_states(states)
+    // ---------------------------------------------------------------------------
+    // Helper function used by the linter.
+    //
+    // This function is part of the TinyLanguage linter port and is not intended as a public API.
+    //
+    // Args:
+    //   - states: (Tiny value) See implementation for expected shape.
+    //
+    // Returns:
+    //   A Tiny value (type depends on operation).
+    // ---------------------------------------------------------------------------
     fn _merge_states(states) {
         if (len(states) == 0) { return states; }
         define merged = Map.new();
@@ -651,6 +1025,22 @@ fn lint_locals_used(stmts, source) {
         return new[merged];
     }
 
+    // ---------------------------------------------------------------------------
+    // analyze_block(block, initial_states)
+    // ---------------------------------------------------------------------------
+    // Core must-use data-flow engine.
+    //
+    // This function walks a statement block while tracking multiple possible usage states, merging states at joins (e.g. after if/else) and marking variables as used when read.
+    //
+    // It is designed to be deterministic and to match the behavior/error wording of the Python reference linter.
+    //
+    // Args:
+    //   - block: (Tiny value) See implementation for expected shape.
+    //   - initial_states: (Tiny value) See implementation for expected shape.
+    //
+    // Returns:
+    //   A Tiny value (type depends on operation).
+    // ---------------------------------------------------------------------------
     fn analyze_block(block, initial_states) {
         define active_states = new[];
         define i = 0;
@@ -910,6 +1300,20 @@ fn lint_locals_used(stmts, source) {
 
     define usage_summary = Map.new();
 
+    // ---------------------------------------------------------------------------
+    // __usage_key(name, pos)
+    // ---------------------------------------------------------------------------
+    // Internal helper used by the linter.
+    //
+    // Names starting with `__` are intentionally private and may change without notice.
+    //
+    // Args:
+    //   - name: (Tiny value) See implementation for expected shape.
+    //   - pos: (Tiny value) See implementation for expected shape.
+    //
+    // Returns:
+    //   A Tiny value (type depends on operation).
+    // ---------------------------------------------------------------------------
     fn __usage_key(name, pos) {
         if (pos == Null) { return name + "@pos:0:0"; }
         if (pos.__tag__ == "SourceSpan") {
@@ -932,6 +1336,20 @@ fn lint_locals_used(stmts, source) {
         return name + "@pos:" + __to_str(fallback.line) + ":" + __to_str(fallback.column);
     }
 
+    // ---------------------------------------------------------------------------
+    // _accumulate(states, key)
+    // ---------------------------------------------------------------------------
+    // Helper function used by the linter.
+    //
+    // This function is part of the TinyLanguage linter port and is not intended as a public API.
+    //
+    // Args:
+    //   - states: (Tiny value) See implementation for expected shape.
+    //   - key: (Tiny value) See implementation for expected shape.
+    //
+    // Returns:
+    //   A Tiny value (type depends on operation).
+    // ---------------------------------------------------------------------------
     fn _accumulate(states, key) {
         define si = 0;
         while (si < len(states)) {
@@ -1000,6 +1418,19 @@ fn lint_locals_used(stmts, source) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// __trim(text)
+// ---------------------------------------------------------------------------
+// Internal helper used by the linter.
+//
+// Names starting with `__` are intentionally private and may change without notice.
+//
+// Args:
+//   - text: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn __trim(text) {
     if (text == Null) { return ""; }
     define chars = Python.call("builtins", "list", new[text], __PY_LIST_ALLOW);
@@ -1013,6 +1444,20 @@ fn __trim(text) {
     return String.join(buf, "");
 }
 
+// ---------------------------------------------------------------------------
+// _infer_expr_type(expr, env)
+// ---------------------------------------------------------------------------
+// Infer the (approximate) type of an expression.
+//
+// Used by type-change/compatibility lint rules. The goal is *developer feedback*, not a sound static type system.
+//
+// Args:
+//   - expr: (Tiny value) See implementation for expected shape.
+//   - env: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn _infer_expr_type(expr, env) {
     if (expr.__tag__ == "Num") { return "number"; }
     if (expr.__tag__ == "Str") { return "string"; }
@@ -1022,12 +1467,39 @@ fn _infer_expr_type(expr, env) {
     return Null;
 }
 
+// ---------------------------------------------------------------------------
+// __last_char(text)
+// ---------------------------------------------------------------------------
+// Internal helper used by the linter.
+//
+// Names starting with `__` are intentionally private and may change without notice.
+//
+// Args:
+//   - text: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn __last_char(text) {
     define chars = Python.call("builtins", "list", new[text], __PY_LIST_ALLOW);
     if (len(chars) == 0) { return ""; }
     return heap_get(chars, len(chars) - 1);
 }
 
+// ---------------------------------------------------------------------------
+// _types_match(expected, actual)
+// ---------------------------------------------------------------------------
+// Helper function used by the linter.
+//
+// This function is part of the TinyLanguage linter port and is not intended as a public API.
+//
+// Args:
+//   - expected: (Tiny value) See implementation for expected shape.
+//   - actual: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn _types_match(expected, actual) {
     define expected_norm = __trim(expected);
     define actual_norm = __trim(actual);
@@ -1045,6 +1517,21 @@ fn _types_match(expected, actual) {
     return false;
 }
 
+// ---------------------------------------------------------------------------
+// lint_assignment_types(stmts, source, env)
+// ---------------------------------------------------------------------------
+// Type-change rule: detect suspicious assignments that change the inferred type of a variable.
+//
+// Helps catch bugs like reusing the same name for unrelated values.
+//
+// Args:
+//   - stmts: (Tiny value) See implementation for expected shape.
+//   - source: (Tiny value) See implementation for expected shape.
+//   - env: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn lint_assignment_types(stmts, source, env) {
     define base_env = Map.new();
     if (env != Null) {
@@ -1053,6 +1540,20 @@ fn lint_assignment_types(stmts, source, env) {
         while (i < len(keys)) { define k = heap_get(keys, i); define _ = Map.set(base_env, k, Map.get(env, k)); i = i + 1; }
     }
 
+    // ---------------------------------------------------------------------------
+    // check_block(block, local_env)
+    // ---------------------------------------------------------------------------
+    // Helper function used by the linter.
+    //
+    // This function is part of the TinyLanguage linter port and is not intended as a public API.
+    //
+    // Args:
+    //   - block: (Tiny value) See implementation for expected shape.
+    //   - local_env: (Tiny value) See implementation for expected shape.
+    //
+    // Returns:
+    //   A Tiny value (type depends on operation).
+    // ---------------------------------------------------------------------------
     fn check_block(block, local_env) {
         define i = 0;
         while (i < len(block)) {
@@ -1209,10 +1710,37 @@ fn lint_assignment_types(stmts, source, env) {
     check_block(stmts, base_env);
 }
 
+// ---------------------------------------------------------------------------
+// _collect_function_signatures(stmts, prefix)
+// ---------------------------------------------------------------------------
+// Helper function used by the linter.
+//
+// This function is part of the TinyLanguage linter port and is not intended as a public API.
+//
+// Args:
+//   - stmts: (Tiny value) See implementation for expected shape.
+//   - prefix: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn _collect_function_signatures(stmts, prefix) {
     define base_prefix = prefix;
     if (base_prefix == Null) { base_prefix = ""; }
     define sigs = Map.new();
+    // ---------------------------------------------------------------------------
+    // qualify(name)
+    // ---------------------------------------------------------------------------
+    // Helper function used by the linter.
+    //
+    // This function is part of the TinyLanguage linter port and is not intended as a public API.
+    //
+    // Args:
+    //   - name: (Tiny value) See implementation for expected shape.
+    //
+    // Returns:
+    //   A Tiny value (type depends on operation).
+    // ---------------------------------------------------------------------------
     fn qualify(name) { if (base_prefix == Null || base_prefix == "") { return name; } return base_prefix + "." + name; }
     define i = 0;
     while (i < len(stmts)) {
@@ -1234,6 +1762,21 @@ fn _collect_function_signatures(stmts, prefix) {
     return sigs;
 }
 
+// ---------------------------------------------------------------------------
+// lint_bare_call_results(stmts, signatures, source)
+// ---------------------------------------------------------------------------
+// Must-use rule: forbid bare call statements.
+//
+// In TinyLanguage every call result must be used (bound, returned, or otherwise consumed). This lint flags call statements whose return value is ignored.
+//
+// Args:
+//   - stmts: (Tiny value) See implementation for expected shape.
+//   - signatures: (Tiny value) See implementation for expected shape.
+//   - source: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn lint_bare_call_results(stmts, signatures, source) {
     define disallowed = Set.new();
     define keys = Map.keys(signatures);
@@ -1245,6 +1788,19 @@ fn lint_bare_call_results(stmts, signatures, source) {
         i = i + 1;
     }
 
+    // ---------------------------------------------------------------------------
+    // visit(block)
+    // ---------------------------------------------------------------------------
+    // Helper function used by the linter.
+    //
+    // This function is part of the TinyLanguage linter port and is not intended as a public API.
+    //
+    // Args:
+    //   - block: (Tiny value) See implementation for expected shape.
+    //
+    // Returns:
+    //   A Tiny value (type depends on operation).
+    // ---------------------------------------------------------------------------
     fn visit(block) {
         define bi = 0;
         while (bi < len(block)) {
@@ -1274,18 +1830,59 @@ fn lint_bare_call_results(stmts, signatures, source) {
     visit(stmts);
 }
 
+// ---------------------------------------------------------------------------
+// __import_sort_key(imp)
+// ---------------------------------------------------------------------------
+// Internal helper used by the linter.
+//
+// Names starting with `__` are intentionally private and may change without notice.
+//
+// Args:
+//   - imp: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn __import_sort_key(imp) {
     define alias = "";
     if (imp.alias != Null) { alias = imp.alias; }
     return imp.module + "::" + alias;
 }
 
+// ---------------------------------------------------------------------------
+// __sorted_imports(imports)
+// ---------------------------------------------------------------------------
+// Internal helper used by the linter.
+//
+// Names starting with `__` are intentionally private and may change without notice.
+//
+// Args:
+//   - imports: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn __sorted_imports(imports) {
     define arr = new[];
     define i = 0;
     while (i < len(imports)) { define _ = Collections.push(arr, heap_get(imports, i)); i = i + 1; }
     define n = len(arr);
     define a = 0;
+    // ---------------------------------------------------------------------------
+    // _swap(list, idx_a, idx_b)
+    // ---------------------------------------------------------------------------
+    // Helper function used by the linter.
+    //
+    // This function is part of the TinyLanguage linter port and is not intended as a public API.
+    //
+    // Args:
+    //   - list: (Tiny value) See implementation for expected shape.
+    //   - idx_a: (Tiny value) See implementation for expected shape.
+    //   - idx_b: (Tiny value) See implementation for expected shape.
+    //
+    // Returns:
+    //   A Tiny value (type depends on operation).
+    // ---------------------------------------------------------------------------
     fn _swap(list, idx_a, idx_b) {
         define out = new[];
         define si = 0;
@@ -1315,6 +1912,20 @@ fn __sorted_imports(imports) {
     return arr;
 }
 
+// ---------------------------------------------------------------------------
+// lint_import_style(stmts, source)
+// ---------------------------------------------------------------------------
+// Import style rule: enforce consistent import forms and naming.
+//
+// Also validates aliasing rules and produces stable, testable error codes/messages.
+//
+// Args:
+//   - stmts: (Tiny value) See implementation for expected shape.
+//   - source: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn lint_import_style(stmts, source) {
     define imports = new[];
     define i = 0;
@@ -1364,11 +1975,38 @@ fn lint_import_style(stmts, source) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// lint_destruct_call_outputs(stmts, source)
+// ---------------------------------------------------------------------------
+// Destructuring rule: ensure destructuring matches the shape of the produced value.
+//
+// In particular, destructuring of call results must bind all produced fields/names, mirroring the project's 'must-use' philosophy.
+//
+// Args:
+//   - stmts: (Tiny value) See implementation for expected shape.
+//   - source: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn lint_destruct_call_outputs(stmts, source) {
     define i = 0;
     while (i < len(stmts)) { lint_destruct_call_outputs_stmt(heap_get(stmts, i), source); i = i + 1; }
 }
 
+// ---------------------------------------------------------------------------
+// _return_signature(expr)
+// ---------------------------------------------------------------------------
+// Helper function used by the linter.
+//
+// This function is part of the TinyLanguage linter port and is not intended as a public API.
+//
+// Args:
+//   - expr: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn _return_signature(expr) {
     define result = new["<scalar>"];
     if (expr.__tag__ == "ObjLit") {
@@ -1385,6 +2023,20 @@ fn _return_signature(expr) {
     return result;
 }
 
+// ---------------------------------------------------------------------------
+// __sig_equal(a, b)
+// ---------------------------------------------------------------------------
+// Internal helper used by the linter.
+//
+// Names starting with `__` are intentionally private and may change without notice.
+//
+// Args:
+//   - a: (Tiny value) See implementation for expected shape.
+//   - b: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn __sig_equal(a, b) {
     if (len(a) != len(b)) { return false; }
     define i = 0;
@@ -1392,11 +2044,37 @@ fn __sig_equal(a, b) {
     return true;
 }
 
+// ---------------------------------------------------------------------------
+// _format_signature(sig)
+// ---------------------------------------------------------------------------
+// Helper function used by the linter.
+//
+// This function is part of the TinyLanguage linter port and is not intended as a public API.
+//
+// Args:
+//   - sig: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn _format_signature(sig) {
     if (len(sig) == 1 && heap_get(sig, 0) == "<scalar>") { return "single value"; }
     return "{" + String.join(sig, ", ") + "}";
 }
 
+// ---------------------------------------------------------------------------
+// _is_optional_annotation(annotation)
+// ---------------------------------------------------------------------------
+// Helper function used by the linter.
+//
+// This function is part of the TinyLanguage linter port and is not intended as a public API.
+//
+// Args:
+//   - annotation: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn _is_optional_annotation(annotation) {
     if (annotation == Null) { return false; }
     define trimmed = __trim(annotation);
@@ -1404,6 +2082,19 @@ fn _is_optional_annotation(annotation) {
     return __last_char(trimmed) == "?";
 }
 
+// ---------------------------------------------------------------------------
+// _block_guarantees_return(stmts)
+// ---------------------------------------------------------------------------
+// Helper function used by the linter.
+//
+// This function is part of the TinyLanguage linter port and is not intended as a public API.
+//
+// Args:
+//   - stmts: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn _block_guarantees_return(stmts) {
     define i = 0;
     while (i < len(stmts)) {
@@ -1428,6 +2119,19 @@ fn _block_guarantees_return(stmts) {
     return false;
 }
 
+// ---------------------------------------------------------------------------
+// _stmt_guarantees_exit(st)
+// ---------------------------------------------------------------------------
+// Helper function used by the linter.
+//
+// This function is part of the TinyLanguage linter port and is not intended as a public API.
+//
+// Args:
+//   - st: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn _stmt_guarantees_exit(st) {
     if (st.__tag__ == "Return") { return true; }
     if (st.__tag__ == "If") { return _block_guarantees_return(st.then) && _block_guarantees_return(st.els); }
@@ -1447,10 +2151,40 @@ fn _stmt_guarantees_exit(st) {
     return false;
 }
 
+// ---------------------------------------------------------------------------
+// lint_return_signatures(stmts, fn_name, is_method, source, _pos)
+// ---------------------------------------------------------------------------
+// Return rule: ensure return statements are compatible with declared/expected return types.
+//
+// Also checks return placement and expression presence according to the TinyLanguage AST conventions.
+//
+// Args:
+//   - stmts: (Tiny value) See implementation for expected shape.
+//   - fn_name: (Tiny value) See implementation for expected shape.
+//   - is_method: (Tiny value) See implementation for expected shape.
+//   - source: (Tiny value) See implementation for expected shape.
+//   - _pos: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn lint_return_signatures(stmts, fn_name, is_method, source, _pos) {
     define expected = Null;
     define hint = "Ensure every return statement uses the same tuple/record structure (fields and order).";
 
+    // ---------------------------------------------------------------------------
+    // visit(block)
+    // ---------------------------------------------------------------------------
+    // Helper function used by the linter.
+    //
+    // This function is part of the TinyLanguage linter port and is not intended as a public API.
+    //
+    // Args:
+    //   - block: (Tiny value) See implementation for expected shape.
+    //
+    // Returns:
+    //   A Tiny value (type depends on operation).
+    // ---------------------------------------------------------------------------
     fn visit(block) {
         define i = 0;
         while (i < len(block)) {
@@ -1485,6 +2219,24 @@ fn lint_return_signatures(stmts, fn_name, is_method, source, _pos) {
     visit(stmts);
 }
 
+// ---------------------------------------------------------------------------
+// lint_return_exhaustiveness(stmts, fn_name, expected_return, is_method, source, location)
+// ---------------------------------------------------------------------------
+// Return exhaustiveness: ensure all control-flow paths return a value when required.
+//
+// This mirrors the Python linter's path analysis for functions with non-void return expectations.
+//
+// Args:
+//   - stmts: (Tiny value) See implementation for expected shape.
+//   - fn_name: (Tiny value) See implementation for expected shape.
+//   - expected_return: (Tiny value) See implementation for expected shape.
+//   - is_method: (Tiny value) See implementation for expected shape.
+//   - source: (Tiny value) See implementation for expected shape.
+//   - location: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn lint_return_exhaustiveness(stmts, fn_name, expected_return, is_method, source, location) {
     if (expected_return == Null) { return Null; }
     if (_is_optional_annotation(expected_return)) { return Null; }
@@ -1496,7 +2248,34 @@ fn lint_return_exhaustiveness(stmts, fn_name, expected_return, is_method, source
     else { _lint_error(source, location, msg, "E010", "Add return statements for every branch or provide a default return to satisfy the annotation."); }
 }
 
+// ---------------------------------------------------------------------------
+// lint_unreachable_code(stmts, source)
+// ---------------------------------------------------------------------------
+// Detect unreachable statements after a guaranteed-terminating statement (e.g. `return`).
+//
+// This improves code clarity and helps catch dead code left behind after refactors.
+//
+// Args:
+//   - stmts: (Tiny value) See implementation for expected shape.
+//   - source: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn lint_unreachable_code(stmts, source) {
+    // ---------------------------------------------------------------------------
+    // visit_block(block)
+    // ---------------------------------------------------------------------------
+    // Helper function used by the linter.
+    //
+    // This function is part of the TinyLanguage linter port and is not intended as a public API.
+    //
+    // Args:
+    //   - block: (Tiny value) See implementation for expected shape.
+    //
+    // Returns:
+    //   A Tiny value (type depends on operation).
+    // ---------------------------------------------------------------------------
     fn visit_block(block) {
         define terminated = false;
         define i = 0;
@@ -1528,9 +2307,35 @@ fn lint_unreachable_code(stmts, source) {
     visit_block(stmts);
 }
 
+// ---------------------------------------------------------------------------
+// lint_no_consecutive_definitions(stmts)
+// ---------------------------------------------------------------------------
+// Style rule: avoid consecutive `define` statements when they could be combined or simplified.
+//
+// Keeps Tiny examples/tutorials more readable; may be relaxed depending on project direction.
+//
+// Args:
+//   - stmts: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn lint_no_consecutive_definitions(stmts) {
     define prev = Null;
 
+    // ---------------------------------------------------------------------------
+    // check_block(block)
+    // ---------------------------------------------------------------------------
+    // Helper function used by the linter.
+    //
+    // This function is part of the TinyLanguage linter port and is not intended as a public API.
+    //
+    // Args:
+    //   - block: (Tiny value) See implementation for expected shape.
+    //
+    // Returns:
+    //   A Tiny value (type depends on operation).
+    // ---------------------------------------------------------------------------
     fn check_block(block) {
         prev = Null;
         define i = 0;
@@ -1572,6 +2377,20 @@ fn lint_no_consecutive_definitions(stmts) {
     check_block(stmts);
 }
 
+// ---------------------------------------------------------------------------
+// lint_destruct_call_outputs_stmt(st, source)
+// ---------------------------------------------------------------------------
+// Statement-level helper for destructuring-output lint.
+//
+// Separates statement traversal concerns from expression-specific checks.
+//
+// Args:
+//   - st: (Tiny value) See implementation for expected shape.
+//   - source: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn lint_destruct_call_outputs_stmt(st, source) {
     define handled = false;
     if (!handled && st.__tag__ == "DestructAssign") { check_destruct_call_expr(st.expr, Set.from_list(st.names), source, st.pos); handled = true; }
@@ -1589,6 +2408,22 @@ fn lint_destruct_call_outputs_stmt(st, source) {
     if (!handled && st.__tag__ == "TryCatch") { lint_destruct_call_outputs(st.body, source); lint_destruct_call_outputs(st.handler, source); }
 }
 
+// ---------------------------------------------------------------------------
+// check_destruct_call_expr(expr, names, source, pos)
+// ---------------------------------------------------------------------------
+// Helper function used by the linter.
+//
+// This function is part of the TinyLanguage linter port and is not intended as a public API.
+//
+// Args:
+//   - expr: (Tiny value) See implementation for expected shape.
+//   - names: (Tiny value) See implementation for expected shape.
+//   - source: (Tiny value) See implementation for expected shape.
+//   - pos: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn check_destruct_call_expr(expr, names, source, pos) {
     if (expr.__tag__ == "Call") {
         define skip = Set.from_list(new["heap_set", "heap_get", "delete", "tag", "__new", "new"]);
@@ -1625,10 +2460,41 @@ fn check_destruct_call_expr(expr, names, source, pos) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// lint_param_mutations_returned(stmts, params, fn_name, is_method, source, pos)
+// ---------------------------------------------------------------------------
+// Mutation rule: ensure mutated parameters are returned when the API expects it.
+//
+// This enforces a design where functions that mutate inputs make that mutation observable to the caller (important with the project's 'must-use' discipline).
+//
+// Args:
+//   - stmts: (Tiny value) See implementation for expected shape.
+//   - params: (Tiny value) See implementation for expected shape.
+//   - fn_name: (Tiny value) See implementation for expected shape.
+//   - is_method: (Tiny value) See implementation for expected shape.
+//   - source: (Tiny value) See implementation for expected shape.
+//   - pos: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
 fn lint_param_mutations_returned(stmts, params, fn_name, is_method, source, pos) {
     define mutated = Set.new();
     define returned = Set.new();
 
+    // ---------------------------------------------------------------------------
+    // visit(st)
+    // ---------------------------------------------------------------------------
+    // Helper function used by the linter.
+    //
+    // This function is part of the TinyLanguage linter port and is not intended as a public API.
+    //
+    // Args:
+    //   - st: (Tiny value) See implementation for expected shape.
+    //
+    // Returns:
+    //   A Tiny value (type depends on operation).
+    // ---------------------------------------------------------------------------
     fn visit(st) {
         define handled = false;
         if (!handled && st.__tag__ == "Assign" && Set.has(params, st.name)) { define _ = Set.add(mutated, st.name); handled = true; }

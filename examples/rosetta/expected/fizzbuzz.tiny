@@ -1,21 +1,74 @@
+// ------------------------------------------------------------
+// Example: FizzBuzz (1..n)
+// ------------------------------------------------------------
+//
+// Purpose:
+//   Print the classic "FizzBuzz" sequence from 1 up to n.
+//
+// Rules:
+//   - If a number is divisible by 3, print "Fizz".
+//   - If a number is divisible by 5, print "Buzz".
+//   - If a number is divisible by both 3 and 5, print "FizzBuzz".
+//   - Otherwise, print the number itself.
+//
+// What it demonstrates:
+//   - Function definition with `fn`
+//   - A `while` loop and integer increment
+//   - Modulo operator `%` and equality checks `==`
+//   - Nested `if / else` control flow
+//   - Printing strings vs. numbers
+//
+// Implementation note:
+//   - We check divisibility by 15 first (3*5) so the "both" case is handled
+//     before the individual cases.
+//
+// Expected output for n = 16:
+//   1
+//   2
+//   Fizz
+//   4
+//   Buzz
+//   Fizz
+//   7
+//   8
+//   Fizz
+//   Buzz
+//   11
+//   Fizz
+//   13
+//   14
+//   FizzBuzz
+//   16
+//
+
 fn fizzbuzz(n) {
+    // Start at 1 and count upward.
     define i = 1;
+
     while (i <= n) {
+        // Divisible by both 3 and 5:
         if (i % 15 == 0) {
             print("FizzBuzz");
         } else {
+            // Divisible by 3 only:
             if (i % 3 == 0) {
                 print("Fizz");
             } else {
+                // Divisible by 5 only:
                 if (i % 5 == 0) {
                     print("Buzz");
                 } else {
+                    // Neither: print the number.
                     print(i);
                 }
             }
         }
+
+        // Advance the loop counter.
         i = i + 1;
     }
 }
 
+// Run fizzbuzz and bind the return value to `_` to satisfy the
+// “no bare call statements” / “must-use” rule.
 define _ = fizzbuzz(16);

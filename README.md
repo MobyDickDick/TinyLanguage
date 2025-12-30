@@ -3,11 +3,11 @@
 TinyLanguage is a small Julia-inspired language with a Python implementation (interpreter + tooling) and multiple experimental backends (native/C, LLVM prototype, transpilers). The project is primarily a **learning playground** for language design, IR experiments, and cross-language interoperability—not a production SDK.
 
 If you want a compact reference first:
-- Language spec: `docs/language_spec.md`
-- Tutorial: `docs/tutorial.md`
-- Demo commands: `docs/demo_run_commands.md`
-- Python interop (FFI): `docs/python_interop.md`
-- Backend coverage: `docs/backend_feature_matrix.md`
+- Language spec: [docs/language_spec.md](docs/language_spec.md)
+- Tutorial: [docs/tutorial.md](docs/tutorial.md)
+- Demo commands: [docs/demo_run_commands.md](docs/demo_run_commands.md)
+- Python interop (FFI): [docs/python_interop.md](docs/python_interop.md)
+- Backend coverage: [docs/backend_feature_matrix.md](docs/backend_feature_matrix.md)
 
 ---
 
@@ -30,7 +30,7 @@ If you want a compact reference first:
 ### Run a `.tiny` program
 
 1. (Optional) Activate your virtual environment.
-2. From the repository root, run any `.tiny` file:
+2. From the repository root, run any `.tiny` file (for example: [src_tiny/class_demo.tiny](src_tiny/class_demo.tiny)):
 
 ```bash
 python -m tiny_language src_tiny/class_demo.tiny
@@ -106,15 +106,15 @@ print(Math.inc(4));
 
 ### Demos worth running
 
-Each demo is runnable and has expected output documented in the README and/or `docs/`:
+Each demo is runnable and has expected output documented in the README and/or [docs/](docs/):
 
-- Classes: `src_tiny/class_demo.tiny`
-- Operator overloading: `src_tiny/operator_overloading_demo.tiny`
-- Namespaces: `src_tiny/namespace_demo.tiny`
-- Pattern matching / ADTs: `src_tiny/match_demo.tiny`
-- Imports/modules: see `docs/tutorial.md` and `docs/demo_run_commands.md`
-- Concurrency: `src_tiny/concurrency_demo.tiny`
-- Heap pointers: `src_tiny/heap_pointer_demo.tiny`
+- Classes: [src_tiny/class_demo.tiny](src_tiny/class_demo.tiny)
+- Operator overloading: [src_tiny/operator_overloading_demo.tiny](src_tiny/operator_overloading_demo.tiny)
+- Namespaces: [src_tiny/namespace_demo.tiny](src_tiny/namespace_demo.tiny)
+- Pattern matching / ADTs: [src_tiny/match_demo.tiny](src_tiny/match_demo.tiny)
+- Imports/modules: see [docs/tutorial.md](docs/tutorial.md) and [docs/demo_run_commands.md](docs/demo_run_commands.md)
+- Concurrency: [src_tiny/concurrency_demo.tiny](src_tiny/concurrency_demo.tiny)
+- Heap pointers: [src_tiny/heap_pointer_demo.tiny](src_tiny/heap_pointer_demo.tiny)
 
 ---
 
@@ -144,55 +144,55 @@ python -m tinyc_cli examples/c_backend/hello_world.tiny --emit-c > hello_world.c
 
 ### Microbenchmarks
 
-See `benchmarks/microbenchmarks.py` and `docs/performance_microbenchmarks.md` for deterministic short-running benchmarks that compare backends.
+See [benchmarks/microbenchmarks.py](benchmarks/microbenchmarks.py) and [docs/performance_microbenchmarks.md](docs/performance_microbenchmarks.md) for deterministic short-running benchmarks that compare backends.
 
 ---
 
 ## Documentation map
 
 ### Getting started and tutorials
-- `docs/tutorial.md` — setup + runnable demos + core constructs
-- `docs/feature_cheat_sheet.md` — condensed feature reference
-- `docs/demo_run_commands.md` — copy/paste command list
+- [docs/tutorial.md](docs/tutorial.md) — setup + runnable demos + core constructs
+- [docs/feature_cheat_sheet.md](docs/feature_cheat_sheet.md) — condensed feature reference
+- [docs/demo_run_commands.md](docs/demo_run_commands.md) — copy/paste command list
 
 ### Language and stdlib references
-- `docs/language_spec.md` — syntax/type/operator reference
-- `docs/stdlib_compatibility.md` — stdlib goals + deviations
-- `docs/stdlib_extensions.md` — TinyLanguage-specific additions
+- [docs/language_spec.md](docs/language_spec.md) — syntax/type/operator reference
+- [docs/stdlib_compatibility.md](docs/stdlib_compatibility.md) — stdlib goals + deviations
+- [docs/stdlib_extensions.md](docs/stdlib_extensions.md) — TinyLanguage-specific additions
 
 ### Interop
-- `docs/python_interop.md` — FFI usage with demos and expected outputs
-- `docs/cross_language_compatibility.md` — portability notes + mappings
-- `docs/rosetta_python_examples.md` — Rosetta Code–style ports
+- [docs/python_interop.md](docs/python_interop.md) — FFI usage with demos and expected outputs
+- [docs/cross_language_compatibility.md](docs/cross_language_compatibility.md) — portability notes + mappings
+- [docs/rosetta_python_examples.md](docs/rosetta_python_examples.md) — Rosetta Code–style ports
 
 ### Tooling and debugging
-- `docs/language_server_workflows.md` — LSP workflows and demo calls
-- `docs/debugger_workflows.md` — VS Code stepping/launch guide
-- `docs/fuzzing.md` — Hypothesis-based fuzz tests
-- `docs/building_executables.md` — PyInstaller notes
-- `docs/git_conflict_troubleshooting.md` — practical merge/rebase checklist
+- [docs/language_server_workflows.md](docs/language_server_workflows.md) — LSP workflows and demo calls
+- [docs/debugger_workflows.md](docs/debugger_workflows.md) — VS Code stepping/launch guide
+- [docs/fuzzing.md](docs/fuzzing.md) — Hypothesis-based fuzz tests
+- [docs/building_executables.md](docs/building_executables.md) — PyInstaller notes
+- [docs/git_conflict_troubleshooting.md](docs/git_conflict_troubleshooting.md) — practical merge/rebase checklist
 
 ### Internals and performance
-- `docs/native_compiler.md` — native backend workflow + limits
-- `docs/native_ir.md` — native backend IR
-- `docs/backend_feature_matrix.md` — feature coverage by backend
-- `docs/structured_concurrency.md` — cancellation/token design
+- [docs/native_compiler.md](docs/native_compiler.md) — native backend workflow + limits
+- [docs/native_ir.md](docs/native_ir.md) — native backend IR
+- [docs/backend_feature_matrix.md](docs/backend_feature_matrix.md) — feature coverage by backend
+- [docs/structured_concurrency.md](docs/structured_concurrency.md) — cancellation/token design
 
 ### Planning
-- `docs/expansion_roadmap.md`
-- `docs/self_hosting_port_plan.md`
+- [docs/expansion_roadmap.md](docs/expansion_roadmap.md)
+- [docs/self_hosting_port_plan.md](docs/self_hosting_port_plan.md)
 
 ---
 
 ## Repository layout
 
-- `src/` — Python implementation (parser, interpreter, tooling)
-- `src_tiny/` — TinyLanguage programs (demos + self-hosting prototypes)
-- `stdlib/` — standard library sources
-- `tests/` — unit and regression tests
-- `benchmarks/` — microbenchmarks and performance helpers
-- `docs/` — documentation
-- `vscode-extension/` — VS Code extension + debug adapter prototype
+- [src/](src/) — Python implementation (parser, interpreter, tooling)
+- [src_tiny/](src_tiny/) — TinyLanguage programs (demos + self-hosting prototypes)
+- [stdlib/](stdlib/) — standard library sources
+- [tests/](tests/) — unit and regression tests
+- [benchmarks/](benchmarks/) — microbenchmarks and performance helpers
+- [docs/](docs/) — documentation
+- [vscode-extension/](vscode-extension/) — VS Code extension + debug adapter prototype
 
 ---
 
@@ -230,14 +230,14 @@ For VS Code debug adapter logging:
 
 ## Status and closed tasks
 
-To keep the README focused, the previously long “Open tasks” checklists have been **collapsed into a short “closed/archived tasks” summary**. For ongoing work, see the [Roadmap](#roadmap) and `docs/*_roadmap*.md`.
+To keep the README focused, the previously long “Open tasks” checklists have been **collapsed into a short “closed/archived tasks” summary**. For ongoing work, see the [Roadmap](#roadmap) and the planning docs under [docs/](docs/).
 
 ### Closed / archived tasks (from prior README checklists)
 
 - [x] Document language-server workflows and demo commands (LSP reference + how-to-test snippets).
 - [x] Expand Python interop demos (step-by-step `.tiny` programs with expected outputs).
 - [x] Evaluate and document the native compiler prototype (smoke tests + limitations).
-- [x] Add missing demo commands to `docs/demo_run_commands.md` (proxy pipeline, Rosetta copy/transpile, try/catch).
+- [x] Add missing demo commands to [docs/demo_run_commands.md](docs/demo_run_commands.md) (proxy pipeline, Rosetta copy/transpile, try/catch).
 - [x] Extend the LLVM emitter baseline (POP support + regression test locking behavior).
 - [x] Add LLVM emitter follow-ups (control-flow lowering, frames/calls, string/heap sketch, diagnostics).
 - [x] Python↔Tiny bridge layer (allowlists/timeouts + bidirectional demos + tests).
@@ -267,7 +267,7 @@ This section remains the *future-looking* plan. Roughly grouped into frontend/la
 - Formatter + lints + stable language-server workflows.
 
 ### Native backends
-- Keep the C backend stable and documented (`docs/native_compiler.md`).
+- Keep the C backend stable and documented (see [docs/native_compiler.md](docs/native_compiler.md)).
 - Continue LLVM emission experiments as a separate track.
 
 ---

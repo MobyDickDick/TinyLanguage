@@ -5,8 +5,8 @@ It is intended as a *practical* reference: syntax, runtime behavior, and
 common pitfalls, without requiring readers to inspect the interpreter code.
 
 If you are looking for “how to run demos”, see:
-- [`docs/tutorial.md`](#docs/tutorial.md)
-- [`docs/demo_run_commands.md`](#docs/demo_run_commands.md)
+- [`docs/tutorial.md`](docs/tutorial.md)
+- [`docs/demo_run_commands.md`](docs/demo_run_commands.md)
 
 ---
 

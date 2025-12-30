@@ -1,186 +1,69 @@
 # TinyLanguage
 
-TinyLanguage is a small Julia-inspired language with a Python interpreter. This README provides a StackEdit-style Markdown overview: syntax highlights, a compact tutorial, pointers to examples, common error messages, and the most important run/test commands.
+TinyLanguage is a small Julia-inspired language with a Python implementation (interpreter + tooling) and multiple experimental backends (native/C, LLVM prototype, transpilers). The project is primarily a **learning playground** for language design, IR experiments, and cross-language interoperability—not a production SDK.
 
-For interoperability guidance, see the cross-language compatibility notes in [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md). For concrete Rosetta Code–style ports from Python to TinyLanguage, walk through [`docs/rosetta_python_examples.md`](docs/rosetta_python_examples.md). A compact language reference with syntax, type rules, and operator overview lives in [`docs/language_spec.md`](docs/language_spec.md).
+If you want a compact reference first:
+- Language spec: `docs/language_spec.md`
+- Tutorial: `docs/tutorial.md`
+- Demo commands: `docs/demo_run_commands.md`
+- Python interop (FFI): `docs/python_interop.md`
+- Backend coverage: `docs/backend_feature_matrix.md`
 
-## Documentation index
+---
 
-### Getting started and tutorials
-- **Beginner tutorial**: [`docs/tutorial.md`](docs/tutorial.md) walks through setup, runnable demos, and the core language constructs.
-- **Feature cheat sheet**: [`docs/feature_cheat_sheet.md`](docs/feature_cheat_sheet.md) summarizes the core constructs with short notes on the corresponding `.tiny` demos.
-- **Demo run commands**: [`docs/demo_run_commands.md`](docs/demo_run_commands.md) lists interpreter runs, native-backend comparisons, Python interop demos, and language-server CLI checks.
+## Table of contents
 
-### Language and standard library references
-- **Language spec**: [`docs/language_spec.md`](docs/language_spec.md) is the compact syntax/type/operator reference.
-- **Standard library compatibility**: [`docs/stdlib_compatibility.md`](docs/stdlib_compatibility.md) explains the TL-stdlib goals and API deviations.
-- **Standard library extensions**: [`docs/stdlib_extensions.md`](docs/stdlib_extensions.md) lists TinyLanguage-specific stdlib additions.
+- [Quick start](#quick-start)
+- [Language tour](#language-tour)
+- [Backends](#backends)
+- [Documentation map](#documentation-map)
+- [Repository layout](#repository-layout)
+- [Development](#development)
+- [Status and closed tasks](#status-and-closed-tasks)
+- [Roadmap](#roadmap)
+- [Glossary](#glossary)
 
-### Interop and ecosystem guides
-- **Cross-language compatibility**: [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md) outlines portability limits and mappings.
-- **Python interop**: [`docs/python_interop.md`](docs/python_interop.md) shows FFI usage with demos and expected outputs.
-- **Rosetta Python examples**: [`docs/rosetta_python_examples.md`](docs/rosetta_python_examples.md) compares Python and TinyLanguage tasks.
+---
 
-### Tooling, workflows, and debugging
-- **Language server workflows**: [`docs/language_server_workflows.md`](docs/language_server_workflows.md) covers LSP requests and demos.
-- **Debugger workflows**: [`docs/debugger_workflows.md`](docs/debugger_workflows.md) documents VS Code launch/step flows.
-- **Git conflict troubleshooting**: [`docs/git_conflict_troubleshooting.md`](docs/git_conflict_troubleshooting.md) is the merge/rebase checklist.
+## Quick start
 
-### Compiler/runtime internals and performance
-- **Native compiler**: [`docs/native_compiler.md`](docs/native_compiler.md) covers the C-backend workflow and limits.
-- **Native IR**: [`docs/native_ir.md`](docs/native_ir.md) documents the IR used by the native backend.
-- **Backend feature matrix**: [`docs/backend_feature_matrix.md`](docs/backend_feature_matrix.md) compares interpreter, native, and transpiler coverage.
-- **Performance microbenchmarks**: [`docs/performance_microbenchmarks.md`](docs/performance_microbenchmarks.md) explains the benchmark suite.
-- **Structured concurrency**: [`docs/structured_concurrency.md`](docs/structured_concurrency.md) details cancellation/token design.
+### Run a `.tiny` program
 
-### Roadmaps and planning
-- **Expansion roadmap**: [`docs/expansion_roadmap.md`](docs/expansion_roadmap.md) tracks feature growth.
-- **Self-hosting port plan**: [`docs/self_hosting_port_plan.md`](docs/self_hosting_port_plan.md) logs the migration from Python to TinyLanguage.
-
-### Quick glossary
-
-- **FFI (Foreign Function Interface)**: FFI (Foreign Function Interface) is a mechanism that lets a program written in one language call functions and use data structures from another language, often across different runtimes or binary boundaries.
-
-- **IR (Intermediate Representation)**: An internal *intermediate representation* of a program between the AST and the final backend output (e.g., interpreter execution, native VM bytecode, or emitted code). The IR is designed to be simpler than the surface syntax and easier to transform, validate, and round-trip across languages.
-
-- **Regression test**: A targeted test that ensures a previously fixed bug or behavior does not break again. In TinyLanguage this often means capturing a minimal snippet that used to fail (parser/IR/runtime) and asserting the expected AST/IR shape, output, or error message—so future refactors can’t reintroduce the same issue unnoticed.
-
-- **Smoke test**: A fast “does it basically work?” end-to-end check. In TinyLanguage this usually means: parse/compile a tiny program, run it, and verify a minimal expected result (e.g., arithmetic, a branch, a function call). Smoke tests are intentionally small and coarse—they catch broken pipelines early after refactors.
-
-- **TL**: This is just the abbreviation for "TinyLanguage". 
-
-## Intended use
-TinyLanguage is a learning- and transpiler-focused playground rather than a production-ready toolchain. It exists to showcase syntax ideas, cross-language IR conversions, and runtime experiments (e.g., gradual typing and structured cancellation). The runnable demos and tests (`python run_all.py` or `python -m pytest`) are best treated as teaching materials for language design or interoperability, not as a polished SDK.
-
-## Testing notes
-- Direct test coverage includes `src/tiny_language_preamble.py` via `tests/test_tiny_language_preamble.py`.
-
-## Transpiler roadmap (task list)
-- [x] **Expand the shared IR**: Add new statement/expression types (e.g., control-flow nodes like `IfElse` and `While`) and update the helpers in [`tiny_language_transpilers.py`](tiny_language_transpilers.py) so future language extensions can build on them.
-- [x] **Update language transpilers**: Bring the parsers/renderers for `PythonTranspiler`, `JuliaTranspiler`, `JavaScriptTranspiler`, and `CppTranspiler` up to date so the new IR nodes round-trip correctly.
-- [x] **Add tests**: Extend the round-trip tests (source → IR → source) for every new language feature and add negative tests for unsupported constructs.
-
-## Open tasks
-- [x] **Document language-server workflows (started)**: Write a compact reference for `TinyLanguageServer`, capture example requests/responses, and document the new CLI demos (see [`docs/language_server_workflows.md`](docs/language_server_workflows.md)). Add tests for hover/completion/diagnostics so future changes stay protected.
-- [x] **Expand Python interop demos**: Provide additional `.tiny` programs that walk through [`docs/python_interop.md`](docs/python_interop.md) step by step, including how-to-run notes and tests.
-- [x] **Evaluate the native-compiler prototype**: Implement an alternative backend path that emits bytecode or native IR from the existing AST and runs through a small VM. Compare against the interpreter via smoke tests (arithmetic, branching, functions). See [`docs/native_compiler.md`](docs/native_compiler.md) for CLI calls, regression tests, and known limits.
-- [x] **List the Python proxy pipeline demo command**: Add the `python_proxy_pipeline_demo.tiny` invocation to [`docs/demo_run_commands.md`](docs/demo_run_commands.md) so the Python-interop command list covers the proxy pipeline workflow.
-- [x] **Add the Rosetta copy demo command**: Include `copy_rosetta_samples.tiny` in [`docs/demo_run_commands.md`](docs/demo_run_commands.md) so the interpreter demo list covers the Rosetta import workflow.
-- [x] **Add the Rosetta transpile demo command**: Include `transpile_rosetta.tiny` in [`docs/demo_run_commands.md`](docs/demo_run_commands.md) so the interpreter demo list covers the Rosetta transpile workflow.
-- [x] **Add the try/catch demo command**: Include `try_catch_demo.tiny` in [`docs/demo_run_commands.md`](docs/demo_run_commands.md) so the interpreter demo list covers error-handling workflows.
-
-## VS Code debugging roadmap
-- [x] **Seed launch configuration scaffolding**: Register a TinyLanguage debug configuration type with default `launch.json` snippets and a prototype resolver that currently shells out to the interpreter via a terminal. This keeps the UX stable while the real Debug Adapter Protocol (DAP) handler is built.
-- [x] **Add interpreter hooks for breakpoints/stepping**: Teach the Python runtime to pause at breakpoints, step through statements, and surface scopes/variables for the adapter.
-- [x] **Implement a TinyLanguage debug adapter**: Wire a DAP server (Node or Python) that speaks to the instrumented interpreter, translating DAP requests into runtime actions.
-- [x] **Document and test the debugger flow**: Add README/extension docs plus integration tests so launch/attach scenarios remain stable. See [`docs/debugger_workflows.md`](docs/debugger_workflows.md) for the VS Code launch/stepping guide and the debugger adapter integration tests.
-
-### Runtime trace logging for stepping issues
-- Set `TINYLANG_TRACE_LOG=/tmp/tiny_trace.log` (or any path) to emit a detailed execution trace while a program runs. The file includes the current namespace, line/column number, call stack, and visible names in the active scope.
-- Use `TINYLANG_TRACE_HEARTBEAT_SECS=1.0` to control how often repeated locations are logged. Setting `TINYLANG_TRACE_EVERY_STATEMENT=1` forces a line-by-line dump even inside tight loops.
-- Add `TINYLANG_TRACE_STDOUT=1` to mirror the trace log to the terminal while still writing the log file.
-- Combine these flags with your debugger workflow to understand why stepping or breakpoints are skipped—the trace records every statement the interpreter evaluates.
-- The VS Code extension now enables runtime tracing automatically during debug sessions, writing to `${workspaceFolder}/.tinylanguage/runtime-trace.log` unless you override `tinylanguage.traceLogPath` or `TINYLANG_TRACE_LOG` in `launch.json`.
-- When diagnosing VS Code launch/attach issues, set `TINYLANGUAGE_DAP_LOG=/tmp/tiny_dap.log` to capture every Debug Adapter Protocol request/response and `TINYLANGUAGE_DAP_STDERR=1` to mirror the adapter log to stderr. Idle timeouts will also suggest these flags when no launch/configuration requests arrive so you can see what the client actually sent.
-- The TinyLanguage VS Code extension now forwards the `env` block from your `launch.json` to the debug adapter itself. You can enable adapter logging by adding `"env": { "TINYLANGUAGE_DAP_LOG": "/tmp/tiny_dap.log", "TINYLANGUAGE_DAP_STDERR": "1" }` to your TinyLanguage configuration—no extra global shell exports required. `${workspaceFolder}` inside `TINYLANGUAGE_DAP_LOG` is resolved for you, and `TINYLANGUAGE_DAP_STDERR` accepts `"1"`, `1`, `true`, or `"true"`.
-
-### Expected debugger experience in VS Code
-- The TinyLanguage extension contributes its own debugger type (`tinylanguage`). You should see **TinyLanguage: Launch active file (prototype)** as the configuration name, not the built-in Python debugger. If VS Code starts a Python session instead, double-check that the `type` in `launch.json` is `tinylanguage` and that the extension is enabled.
-- The adapter is a Python script (see `vscode-extension/python/tiny_debug_adapter.py`) that runs the TinyLanguage interpreter; it is not the Python debugger itself. All stepping and breakpoints go through this adapter.
-- If no debug session starts after hitting **Run and Debug**, open **Output → TinyLanguage** to confirm the extension registered the configuration and launched the adapter. The adapter writes per-request logs to `TINYLANGUAGE_DAP_LOG` when set, and the `--self-test` mode (`python vscode-extension/python/tiny_debug_adapter.py --self-test`) verifies that Python can import the interpreter on your machine.
-
-## Next practical steps
-- [x] **Deepen/update documentation (starting point, done)**: Cross-check the existing guides in `docs/` and bring them up to date. Specifically:
-  - In [`docs/language_server_workflows.md`](docs/language_server_workflows.md), list every available LSP method with example requests/responses and add short "how to test it" snippets for the demo calls from the README section "Syntax and Features."
-  - In [`docs/python_interop.md`](docs/python_interop.md), add more end-to-end examples that jointly demonstrate modular imports, namespaces, and typed function signatures; link the relevant `.tiny` demos in `src_tiny/` and document their expected outputs.
-  - In [`docs/native_compiler.md`](docs/native_compiler.md), highlight the current CLI workflow and VM boundaries and append a small troubleshooting list (common error codes, representative stack trace).
-
-## New quick references
-- **Beginner tutorial**: [`docs/tutorial.md`](docs/tutorial.md) walks through setup, runnable demos, and the core language constructs.
-- **Feature Cheat Sheet**: [`docs/feature_cheat_sheet.md`](docs/feature_cheat_sheet.md) summarizes the core constructs with short notes on the corresponding `.tiny` demos.
-- **Bundled run/test commands**: [`docs/demo_run_commands.md`](docs/demo_run_commands.md) lists interpreter runs, native-backend comparisons, Python interop demos, and language-server CLI checks. `python run_all.py` remains a good all-in-one run.
-- **Fuzzing guide**: [`docs/fuzzing.md`](docs/fuzzing.md) shows how to enable the optional Hypothesis-based fuzz tests and re-run failing seeds locally.
-- **Executable builds**: [`docs/building_executables.md`](docs/building_executables.md) explains how to bundle TinyLanguage into a standalone Windows `.exe` (and the POSIX variant) with PyInstaller, including the required `--add-data` flags.
-- **Git conflict troubleshooting**: [`docs/git_conflict_troubleshooting.md`](docs/git_conflict_troubleshooting.md) explains VS Code's "has conflicts" badge and how to rebase/merge to clear it.
-
-## Quick start: run a program and see its output
-
-1. Activate your virtual environment (PowerShell example: `./.venv/Scripts/Activate.ps1`).
-2. Run any `.tiny` file with the CLI entrypoint and pass the file path from the repository root:
-
-   ```powershell
-   python -m tiny_language src_tiny/class_demo.tiny
-   ```
-
-3. The interpreter writes the program output to the terminal. For the example above you should see:
-
-   ```
-   Hello, TinyLanguage!
-   ```
-
-If no text appears, verify that you are running the command from the repository root (so `src/tiny_language.py` is discoverable) and that you passed a `.tiny` file path. Invoking `python -m tiny_language` without a file exits immediately after showing the argument error message.
-
-## Compile to a native executable (C backend)
-
-The C backend emits a small C VM plus your TinyLanguage bytecode, then invokes a system compiler (`cc`, `clang`, or `gcc`) to build a native executable. Install a C compiler and ensure it is on your `PATH` (or set `TINYLANG_C_COMPILER`).
+1. (Optional) Activate your virtual environment.
+2. From the repository root, run any `.tiny` file:
 
 ```bash
-python -m tinyc_cli examples/c_backend/hello_world.tiny -o hello_world
-./hello_world
+python -m tiny_language src_tiny/class_demo.tiny
 ```
 
-To inspect the generated C instead of compiling it, pass `--emit-c`:
+You should see:
+
+```text
+Hello, TinyLanguage!
+```
+
+If nothing appears, double-check you are running from the repository root and that you passed a `.tiny` file path.
+
+### Run tests
 
 ```bash
-python -m tinyc_cli examples/c_backend/hello_world.tiny --emit-c > hello_world.c
+python -m pytest
 ```
 
-Minimal end-to-end examples (Hello World and a function return) live under `examples/c_backend/` and are exercised by the C-backend tests when a compiler is available.
+### Run the “everything” runner
 
-## Backlog: next possible tasks
-- [x] **Prototype an LLVM backend**: Explore emitting LLVM IR (e.g., via `llvmlite`) for constants, variables, and arithmetic, with a CLI switch like `--emit-llvm` to generate IR or invoke `llc`/`clang`.
-  - **Next steps**
-    - [x] Model control flow (`if`/`while`) in the LLVM emitter; currently straight-line code only.
-    - [x] Support functions and calls; until then, keep explicit `NotImplementedError` markers.
-    - [x] Cover heap/strings (at least `print` with strings, basic heap reads/writes).
-    - [x] Improve error reporting (clear hints for unsupported AST nodes/IR opcodes).
-- [x] **Port project modules to TinyLanguage (self-hosting)**: Inventory interpreter/compiler modules, design Tiny-compatible library primitives, and port core components while keeping parallel Python/Tiny tests. See [`docs/self_hosting_port_plan.md`](docs/self_hosting_port_plan.md) for the current module inventory and migration plan.
-- [x] **Port remaining Python sources once LLVM builds are direct**: After TinyLanguage can build directly via the LLVM pipeline, convert the remaining Python implementation files into TinyLanguage equivalents to push toward full self-hosting.
-- [x] **Import and transpile Rosetta Code samples**: Store selected Rosetta Code tasks (FizzBuzz, Fibonacci, sorting, etc.) under `examples/rosetta/`, then build a translation pass that converts the Python versions into TinyLanguage variants with snapshot tests.
-- [x] **Write a beginner-friendly tutorial**: Create `docs/tutorial.md` with setup, syntax, control flow, functions, modules, and tooling, linking runnable snippets and referencing them from `README.md`.
-- [x] **Add English documentation across source files**: Sweep public functions/classes for docstrings and module headers that describe purpose, parameters, return values, and error scenarios; wire docstring checks (e.g., `ruff pydocstyle`) into CI.
-- [x] **Additional ideas**
-  - [x] REPL with syntax highlighting
-  - [x] Parser/evaluator fuzzing (Hypothesis) to stress feature parity, now including match/ADT generators
-  - [x] LSP enhancements (autocomplete/hover for the VSCode extension) via the VS Code helper commands
-  - [x] Extend performance microbenchmarks with interpreter/runtime map operations (see [`benchmarks/microbenchmarks.py`](benchmarks/microbenchmarks.py)).
+If you want a broad smoke test across demos and tools:
 
-## Self-hosting parity: open steps
-- [x] **Port the linter to Tiny**: Reach parity with `src/tiny_language_linter.py` (must-use, unreachable code, type changes), expand the Tiny counterpart under `src_tiny/tiny_language_linter.tiny`, and add Python↔Tiny comparison tests. See the progress table in [`docs/self_hosting_port_plan.md`](docs/self_hosting_port_plan.md).
-  - [x] **Parity test for unused `catch` bindings**: Added a comparison case so Python and Tiny linters report consistent errors.
-- [x] **Port the transpiler to Tiny**: Mirror `src/tiny_language_transpilers.py` in Tiny (Python/Julia/JS/C++ renderers) and run AST/IR round-trip tests.
-- [x] **Native backend port**: Provide Tiny variants of opcode IR, codegen, and VM (`src/native_ir.py`, `src/tiny_language_codegen_native.py`, `src/native_vm.py`) and run interpreter vs. VM smoke tests.
-- [x] **CLI and LSP parity**: Deliver Tiny implementations of `tiny_language_cli.py`, `tiny_lang_cli.py`, `language_server.py`, and `language_server_cli.py`, including flag handling and LSP capabilities, plus end-to-end tests.
+```bash
+python run_all.py
+```
 
-## Open tasks
-- [x] **Extend the LLVM emitter** (in progress): The experimental path in `tiny_language_codegen_llvm.py` should cover more native IR operations and remain selectable via CLI/API. Initial steps from this run: POP support and an extra test to lock in the behavior.
-  - **Next steps**
-    - [x] Fill in control-flow lowering for `If`/`While` (currently `NotImplementedError` for branches).
-    - [x] Add function frames and call/return support in the LLVM emitter.
-    - [x] Sketch string/heap handling (strings, `new`, `heap_get`/`heap_set`).
-    - [x] Add diagnostics for missing lowerings with precise error messages.
-- [x] **Python bridge for feature pass-through**: A TinyLanguage module and Python helpers should simplify the FFI (imports/calls/allowlists/timeouts) and wrap bidirectional calls. Demos and tests would cover common datatype mappings and sandbox boundaries.
-- [x] **Rosetta sync for local paths**: The script `examples/rosetta/copy_rosetta_samples.py` now offers configurable paths/filters/delays, a dry-run flag, and can trigger the transpiler directly.
-- [x] **CLI copy-on-call env regression**: Added a CLI regression test to ensure `TINYLANG_COPY_ON_CALL` defaults are honored when running inline source.
+---
 
-### Newly prioritized tasks
-1. **Refine the LLVM emitter** ✅: Implement comparison and modulo operations in `tiny_language_codegen_llvm.py`, keep the `--emit-llvm` CLI option functional, and add regression tests that cover the expanded IR path.
-2. **Design a Python↔TinyLanguage bridge** ✅: Create a small FFI layer (allowlists/timeouts) plus matching Tiny/Python demos to show common datatype mappings; tests in `tests/` should cover both directions.
-3. **Make Rosetta sync configurable** ✅: `examples/rosetta/copy_rosetta_samples.py` is now filterable, offers dry-run/transpile options, and documents usage with a regression test.
-
-## Syntax and Features
+## Language tour
 
 ### Mini tutorial: variables, control flow, and functions
+
 ```tiny
 // Variables, arithmetic, printing
 define a = 7 + 5 * 2;
@@ -209,384 +92,191 @@ print(Math.inc(4));
 ```
 
 ### More building blocks
-- **Comparisons and strings**: `>`, `>=`, `<`, `<=`, `==`, `!=` plus string concatenation with `+`. Scientific notation like `1.2e2` is not supported.
-- **Exponentiation**: The `^` operator only accepts integer exponents; for fractional exponents use `power(base, exponent)`.
-- **Heap and arrays**: `new(3)` creates a pointer with three slots, `new[1, 2, 3]` allocates an array on the heap. `heap_get`/`heap_set` read and write, `tag` adds type tags to pointers, `delete` removes them.
-  - Note: Manual heap primitives are primarily for VM/interop demos; beginners can stick to arrays/structs. Host languages with garbage collectors already handle most memory lifecycles. See [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md) for portable patterns.
-- **Destructuring**: Functions can return structs: `fn bump(a) { a = a + 1; return { a: a, e: 0 }; }` can be bound with `{ a, e } = bump(1);`.
-- **Classes and operators**: Classes have fields and methods and allow multiple inheritance. Operators can be overloaded, e.g. `operator + (a: Number, b: Number) -> Number { ... }`.
-- **Concurrency**: `spawn f(1, 2)` starts a task, `join` waits and returns its result.
-- **Cancellation tokens**: The `Async` namespace offers `token()`, `cancel(token, reason)`, `is_cancelled(token)`, `reason(token)`, and `link(token, handle)` so tasks can cooperate on structured cancellation. See [`docs/structured_concurrency.md`](docs/structured_concurrency.md) for the design sketch.
 
-#### Portability pitfalls
-- **Multiple inheritance and free operator overloading**: JavaScript/TypeScript lack multiple inheritance and C++ overload rules differ; prefer single inheritance plus composition and model overloads as named functions or protocol-style methods so all targets can express them (see [`docs/cross_language_compatibility.md`](docs/cross_language_compatibility.md)).
-- **Algebraic data types and `match`**: Exhaustive pattern matching and tagged unions require helper libraries or verbose switches in JS/TS/C++; encode variants as structs/maps with a `tag`/`kind` field and replace `match` with a `switch`/`if` ladder that checks the tag and throws in the default branch.
-- **Manual heap primitives**: `new`/`heap_get`/`heap_set`/`tag`/`delete` have no direct equivalents in GC languages; map heap arrays to native lists/vectors, store tags as explicit fields, and rely on host lifetimes or RAII wrappers instead of manual deletion.
-- **Namespace semantics**: Namespace blocks do not map 1:1 to module systems; map them to module objects or static classes and ensure imports resolve to a single module instance, avoiding side effects on import by using explicit initialiser functions.
+- Comparisons and strings: `>`, `>=`, `<`, `<=`, `==`, `!=` and string concatenation with `+`.
+- Exponentiation: `^` accepts **integer exponents only**; for fractional exponents use `power(base, exponent)`.
+- Heap and arrays:
+  - `new(3)` allocates a pointer with three slots.
+  - `new[1, 2, 3]` allocates an array on the heap.
+  - `heap_get` / `heap_set` read and write.
+  - `tag(ptr, "Type")` adds a runtime tag; `delete(ptr)` deletes the allocation.
+- Destructuring: functions can return structs and callers can bind them with `{a, b} = f();` (all bindings must be used).
+- Classes and operators: classes have fields/methods; operators can be overloaded.
+- Concurrency: `spawn f(...)` starts a task; `join(task)` waits and returns the result.
 
-### Type hints and gradual typing
-- **Syntax**: Annotate parameters and return values: `fn label(x: string, times: number) -> string { return x * times; }`. Methods follow the same syntax.
-- **Gradual typing checks**: Annotated arguments and returns are validated at runtime. A call like `label(1, "x")` yields `[E009] type mismatch ... expected string/number ...`.
-- **Basic exhaustiveness checks**: Annotated functions must return a value on all paths. Missing `return` statements trigger `[E010] not all paths ... return a value ...` with hints about missing branch returns.
+### Demos worth running
 
-#### What's unique
-- **Runtime gradual typing with exhaustiveness**: Type annotations are enforced at runtime, and functions must return on every path, making control-flow coverage explicit. See `tests/test_tiny_language.py` for return-coverage failures and [`docs/language_spec.md`](docs/language_spec.md) for rules.
-- **Structured cancellation tokens**: `Async.token`/`cancel`/`link` support cooperative cancellation across tasks as a teaching example for structured concurrency. Examples live in [`docs/structured_concurrency.md`](docs/structured_concurrency.md) and `src_tiny/concurrency_demo.tiny`.
-- **Always-return discipline**: Missing returns are flagged even without static types, encouraging clear exits; contrast with many dynamic languages where execution can silently fall through.
+Each demo is runnable and has expected output documented in the README and/or `docs/`:
 
-### Classes
-A minimal example with a constructor function and a method. The output was verified via `python tiny_language.py src_tiny/class_demo.tiny`.
+- Classes: `src_tiny/class_demo.tiny`
+- Operator overloading: `src_tiny/operator_overloading_demo.tiny`
+- Namespaces: `src_tiny/namespace_demo.tiny`
+- Pattern matching / ADTs: `src_tiny/match_demo.tiny`
+- Imports/modules: see `docs/tutorial.md` and `docs/demo_run_commands.md`
+- Concurrency: `src_tiny/concurrency_demo.tiny`
+- Heap pointers: `src_tiny/heap_pointer_demo.tiny`
 
-```tiny
-class Greeter {
-    name: string;
+---
 
-    fn greeting(self) {
-        return "Hello, " + self.name + "!";
-    }
-}
+## Backends
 
-fn Greeter(name) { return new Greeter { name: name }; }
+TinyLanguage currently ships multiple execution routes:
 
-define greeter = Greeter("TinyLanguage");
-print(greeter.greeting());
+- **Interpreter** (default): parse → AST/IR → execute in Python
+- **Python backend**: alternative execution path for comparison/testing
+- **Native (C backend)**: emit a small C VM + bytecode, compile via `cc/clang/gcc`
+- **LLVM prototype**: optional IR emission path (experimental)
+
+### Compile to a native executable (C backend)
+
+Install a C compiler and ensure it is on your `PATH` (or set `TINYLANG_C_COMPILER`).
+
+```bash
+python -m tinyc_cli examples/c_backend/hello_world.tiny -o hello_world
+./hello_world
 ```
 
-Expected output:
+To inspect the generated C without compiling:
 
-```
-Hello, TinyLanguage!
-```
-
-See [`class_demo.tiny`](src_tiny/class_demo.tiny) for the full program.
-
-### Operator overloading
-A `Point` type overrides `+` and `==`. Verified via `python tiny_language.py src_tiny/operator_overloading_demo.tiny`.
-
-```tiny
-class Point {
-    x: number; y: number;
-    fn to_tuple(self) { return new[self.x, self.y]; }
-}
-
-fn Point(x, y) { return new Point { x: x; y: y }; }
-operator + (a: Point, b: Point) -> Point { return Point(a.x + b.x, a.y + b.y); }
-operator == (left: Point, right: Point) -> Bool { return left.x == right.x && left.y == right.y; }
-
-define p = Point(1, 2);
-define q = Point(3, 4);
-define sum = p + q;
-print(heap_get(sum.to_tuple(), 0));
-print(heap_get(sum.to_tuple(), 1));
-print(p == sum);
+```bash
+python -m tinyc_cli examples/c_backend/hello_world.tiny --emit-c > hello_world.c
 ```
 
-Expected output:
+### Microbenchmarks
 
-```
-4
-6
-false
-```
+See `benchmarks/microbenchmarks.py` and `docs/performance_microbenchmarks.md` for deterministic short-running benchmarks that compare backends.
 
-Full program: [`operator_overloading_demo.tiny`](src_tiny/operator_overloading_demo.tiny).
+---
 
-### Namespaces
-Namespaces help group related functions. Run with `python tiny_language.py src_tiny/namespace_demo.tiny`.
+## Documentation map
 
-```tiny
-namespace Tools {
-    fn double(x) { return x * 2; }
-    fn label(x) { return "#" + x; }
-}
+### Getting started and tutorials
+- `docs/tutorial.md` — setup + runnable demos + core constructs
+- `docs/feature_cheat_sheet.md` — condensed feature reference
+- `docs/demo_run_commands.md` — copy/paste command list
 
-define value = Tools.double(5);
-print(value);
-print(Tools.label("done"));
-```
+### Language and stdlib references
+- `docs/language_spec.md` — syntax/type/operator reference
+- `docs/stdlib_compatibility.md` — stdlib goals + deviations
+- `docs/stdlib_extensions.md` — TinyLanguage-specific additions
 
-Expected output:
+### Interop
+- `docs/python_interop.md` — FFI usage with demos and expected outputs
+- `docs/cross_language_compatibility.md` — portability notes + mappings
+- `docs/rosetta_python_examples.md` — Rosetta Code–style ports
 
-```
-10
-#done
-```
+### Tooling and debugging
+- `docs/language_server_workflows.md` — LSP workflows and demo calls
+- `docs/debugger_workflows.md` — VS Code stepping/launch guide
+- `docs/fuzzing.md` — Hypothesis-based fuzz tests
+- `docs/building_executables.md` — PyInstaller notes
+- `docs/git_conflict_troubleshooting.md` — practical merge/rebase checklist
 
-More context in [`namespace_demo.tiny`](src_tiny/namespace_demo.tiny).
+### Internals and performance
+- `docs/native_compiler.md` — native backend workflow + limits
+- `docs/native_ir.md` — native backend IR
+- `docs/backend_feature_matrix.md` — feature coverage by backend
+- `docs/structured_concurrency.md` — cancellation/token design
 
-### Pattern matching and algebraic data types
-Define tagged unions with `type` and handle variants via `match` with named bindings or wildcards. Constructors are available as
-functions, so `Circle { radius: 2 }` builds a `Shape` value. Match expressions must be exhaustive: missing cases or unknown
-variants raise descriptive errors. Example (see [`match_demo.tiny`](src_tiny/match_demo.tiny)):
+### Planning
+- `docs/expansion_roadmap.md`
+- `docs/self_hosting_port_plan.md`
 
-```tiny
-type Shape {
-  Circle { radius: number };
-  Rectangle { width: number, height: number };
-}
+---
 
-fn area(shape) {
-  return match shape {
-    case Circle { radius: r }: 3.14 * r * r;
-    case Rectangle { width: w, height: h }: w * h;
-  };
-}
+## Repository layout
 
-print(area(Circle { radius: 2 }));
-print(area(Rectangle { width: 3, height: 4 }));
-```
+- `src/` — Python implementation (parser, interpreter, tooling)
+- `src_tiny/` — TinyLanguage programs (demos + self-hosting prototypes)
+- `stdlib/` — standard library sources
+- `tests/` — unit and regression tests
+- `benchmarks/` — microbenchmarks and performance helpers
+- `docs/` — documentation
+- `vscode-extension/` — VS Code extension + debug adapter prototype
 
-Expected output:
+---
 
-```
-12.56
-12
-```
+## Development
 
-### Importing modules
-- **Syntax**: `import math.trig;` loads `math/trig.tiny` and binds it under the last path segment (`trig`). Optional aliasing works too: `import utils.helpers as helpers;` or relative imports from inside modules: `import .shared as shared;`.
-- **Namespacing**: Every imported file is registered under its fully qualified module name (e.g. `pkg.core`), so functions and constants are accessible as namespace fields (`core.helper_fn()` or `core.value`).
-- **Search path**: The resolver checks the caller directory, entries from `TINYPATH` (colon-separated), then the current working directory and the directory containing `tiny_language.py`. Missing modules or cyclic imports raise `E008`.
-- **Caching**: Each module file executes only once per runtime; repeated imports return the same namespace reference and avoid duplicate side effects.
+### Helpful commands
 
-### Concurrency
-`spawn` and `join` mix tasks and results. Output from `python tiny_language.py src_tiny/concurrency_demo.tiny`:
+```bash
+# Run one file
+python -m tiny_language path/to/program.tiny
 
-```tiny
-fn label(prefix, word) { return prefix + "=" + word; }
+# Run with the Python CLI wrapper (switch backends)
+python -m tiny_lang_cli --file path/to/program.tiny --backend interpreter
+python -m tiny_lang_cli --source "print(1+2);" --backend interpreter
 
-define keywords = String.split("spawn,join,string,interop", ",");
-define first = spawn label("first", heap_get(keywords, 0));
-define second = spawn label("second", heap_get(keywords, 1));
-define third = spawn label("third", heap_get(keywords, 2));
-define fourth = spawn label("fourth", heap_get(keywords, 3));
-
-print("labels");
-print(String.join(new[join(first), join(second), join(third), join(fourth)], " | "));
+# Run tests
+python -m pytest
 ```
 
-Expected output:
+### Debugging and tracing
 
-```
-labels
-first=spawn | second=join | third=string | fourth=interop
-```
+If you suspect stepping/breakpoints or interpreter flow issues, environment variables enable trace logging:
 
-The full version with another split/join lives in [`concurrency_demo.tiny`](src_tiny/concurrency_demo.tiny).
+- `TINYLANG_TRACE_LOG=/tmp/tiny_trace.log`
+- `TINYLANG_TRACE_HEARTBEAT_SECS=1.0`
+- `TINYLANG_TRACE_EVERY_STATEMENT=1`
+- `TINYLANG_TRACE_STDOUT=1`
 
-### Heap/pointer operations
-`new[...]` allocates arrays, `heap_get`/`heap_set` read and write, `delete` cleans up. Output from `python tiny_language.py src_tiny/heap_pointer_demo.tiny`.
+For VS Code debug adapter logging:
 
-```tiny
-define pointer = new[1, 2, 3];
-print(heap_get(pointer, 1));
-heap_set(pointer, 1, 5);
-print(heap_get(pointer, 1));
-delete(pointer);
-```
+- `TINYLANGUAGE_DAP_LOG=/tmp/tiny_dap.log`
+- `TINYLANGUAGE_DAP_STDERR=1`
 
-Expected output:
+---
 
-```
-2
-5
-```
+## Status and closed tasks
 
-See [`heap_pointer_demo.tiny`](src_tiny/heap_pointer_demo.tiny) for more examples and failure scenarios.
+To keep the README focused, the previously long “Open tasks” checklists have been **collapsed into a short “closed/archived tasks” summary**. For ongoing work, see the [Roadmap](#roadmap) and `docs/*_roadmap*.md`.
 
-### Standard library
-The interpreter registers the built-in stdlib before running any program. Namespaces include:
+### Closed / archived tasks (from prior README checklists)
 
-- **Math**: `Math.abs(x)`, `Math.pow(base, exp)`, `Math.sqrt(x)` for basics. New helpers `Math.max(a, b)`, `Math.min(a, b)`, and `Math.clamp(value, lower, upper)` make comparisons and clamping easier. Additional helpers: `Math.round(value, digits?)` rounds to decimal places, `Math.floor`/`Math.ceil` round down/up, and `Math.sign(x)` returns -1/0/1 based on the sign. Example: `print(Math.clamp(Math.max(-2, 10), 0, 5));` prints `5`.
-- **String**: `String.split(text, sep)` returns a heap pointer to an array of substrings; `String.join(items, sep)` joins a list/pointer; `String.contains(text, needle)` checks for substrings. Extra helpers `String.upper(text)`, `String.lower(text)`, `String.trim(text)`, and `String.repeat(text, count)` handle casing, trimming, and repetition. Example: `print(String.upper(String.trim("  tiny "))); print(String.repeat("ha", 3));` prints `TINY` and `hahaha`.
-- **Collections**: `Collections.len(x)` measures the length of heap pointers or Python lists, `Collections.push(target, value)` appends and returns the new length, and `Collections.pop(target)` removes the last element or raises on empty collections. New helpers `Collections.slice(target, start, end)` and `Collections.contains(target, value)` support slicing and lookups: `define mid = Collections.slice(new[1, 2, 3], 1, 3); print(Collections.contains(mid, 2));` prints `true`. There is also a dedicated `Map` API (`Map.new`, `Map.set`, `Map.get`, `Map.keys`, etc.), a `Set` namespace (`Set.add`, `Set.delete`, `Set.to_list`), and doubly linked queues via `Deque` (`Deque.push_left/right`, `Deque.pop_left/right`, `Deque.peek_left/right`).
-- **Random**: Random helpers `Random.random()`, `Random.randint(lower, upper)`, `Random.choice(seq)`, and `Random.shuffle(seq)` for quick sampling.
-- **File/JSON**: `File.read`/`File.write`/`File.exists`/`File.remove` handle UTF-8 files. `JSON.parse(text)` converts strings to lists/maps/numerics/null, and `JSON.stringify(value)` builds a JSON string from compatible structures.
-- **TL modules**: `stdlib/` hosts TinyLanguage stdlib modules; for example `import stdlib.math; print(math.sqrt(9));`.
-Detailed notes live in [`docs/stdlib_extensions.md`](docs/stdlib_extensions.md) and [`docs/stdlib_compatibility.md`](docs/stdlib_compatibility.md). Ready-made snippets can be tried via [`stdlib_collections_demo.tiny`](src_tiny/stdlib_collections_demo.tiny) or [`stdlib_io_random_demo.tiny`](src_tiny/stdlib_io_random_demo.tiny).
+- [x] Document language-server workflows and demo commands (LSP reference + how-to-test snippets).
+- [x] Expand Python interop demos (step-by-step `.tiny` programs with expected outputs).
+- [x] Evaluate and document the native compiler prototype (smoke tests + limitations).
+- [x] Add missing demo commands to `docs/demo_run_commands.md` (proxy pipeline, Rosetta copy/transpile, try/catch).
+- [x] Extend the LLVM emitter baseline (POP support + regression test locking behavior).
+- [x] Add LLVM emitter follow-ups (control-flow lowering, frames/calls, string/heap sketch, diagnostics).
+- [x] Python↔Tiny bridge layer (allowlists/timeouts + bidirectional demos + tests).
+- [x] Rosetta sync improvements (local path support, filters/delays, dry-run, optional transpile trigger).
+- [x] CLI env regression for `TINYLANG_COPY_ON_CALL`.
 
-## Example programs
-- [`hello_world.tiny`](src_tiny/hello_world.tiny): Minimal program that prints a single greeting—useful for smoke testing the interpreter setup.
-- [`demo.tiny`](src_tiny/demo.tiny): Small showcase for variables, loops, functions, classes, and heap operations. Runs sequentially and prints intermediate results.
-- [`rosetta_fibonacci.tiny`](src_tiny/rosetta_fibonacci.tiny): Classic Fibonacci implementation demonstrating function declarations and simple loops. Prints the first 10 Fibonacci numbers.
-- [`all_features.tiny`](src_tiny/all_features.tiny): Comprehensive feature tour with arrays, classes, and operator overloading—handy for exploring the language end-to-end.
-- [`class_demo.tiny`](src_tiny/class_demo.tiny): Minimal constructor + method that prints a personalized greeting.
-- [`operator_overloading_demo.tiny`](src_tiny/operator_overloading_demo.tiny): Lean point class that overrides `+` and `==` and prints intermediate results.
-- [`number_class.tiny`](src_tiny/number_class.tiny): Demonstrates the `Number` class and the overloaded `+` operator; instantiates objects, calls methods, and prints the result.
-- [`number_intervall.tiny`](src_tiny/number_intervall.tiny): Example for numeric interval calculations and bounds checking.
-- [`namespace_demo.tiny`](src_tiny/namespace_demo.tiny): A small `Tools` namespace with `double` and `label` helpers.
-- [`concurrency_demo.tiny`](src_tiny/concurrency_demo.tiny): Starts multiple tasks with `spawn`, collects them via `join`, and combines them with `String.split`/`String.join` into a single output.
-- [`heap_pointer_demo.tiny`](src_tiny/heap_pointer_demo.tiny): Safe heap handling with `new`, `heap_get`/`heap_set`, and `delete`, plus typical error messages for out-of-bounds or field access mistakes.
-- [`stdlib_collections_demo.tiny`](src_tiny/stdlib_collections_demo.tiny): Map/Set/Deque examples from the Collections API.
-- [`stdlib_io_random_demo.tiny`](src_tiny/stdlib_io_random_demo.tiny): Random helpers plus JSON parsing and file I/O working together.
+---
 
-## Common errors
-- **Unused bindings**: Unused local variables or parameters raise errors (e.g., "unused parameter(s) in function f: b", "unused local binding(s): t").
-- **Mutated parameters not returned**: When parameters are mutated they must be included in the return value (e.g., "mutated parameter(s) in function bump must be returned: a").
-- **Type changes**: Reassigning a variable to a different inferred type raises `[E014] type change for variable ... expected <type> but got <type>`. Use a new variable or an explicit cast when switching types.
+## Roadmap
 
-## Formatter, lints, and language server
-- **Formatter**: `python tiny_language.py --format file.tiny` enforces four-space indents, a single space around operators and after commas, and normalized import lines (`import path as alias;`). Comments are preserved.
-- **Linter style rules**: Unused bindings can be intentionally suppressed with a leading `_`. Import statements must appear sorted before the rest of the code (`E012`). Function calls with return types must not be silently ignored (`E011`); either bind the result or explicitly discard it with `_ = fn();`).
-- **Language server prototype**: The `language_server.py` module exposes a small API for hover, completions, and diagnostics—handy for experimenting with LSP ideas without writing a JSON-RPC server. See [`docs/language_server_workflows.md`](docs/language_server_workflows.md) for a quickstart with example CLI commands and structured JSON outputs.
-- **Incomplete destructuring**: All fields of a returned struct must be bound ("destructuring call to f must include output for argument(s): a"), and every binding must be used.
-- **Bare calls**: Function calls cannot stand alone as statements ("bare call statements are not allowed"); print or assign the result instead.
-- **Arithmetic limits**: The `^` operator accepts only integer exponents ("exponent for ^ must be an integer"); use `power` for fractional exponents.
-- **Heap/field access**: Out-of-bounds or missing fields raise runtime errors (e.g., "heap access error: index 5 out of range ...", "unknown field missing"). `errorMessage` stores the last runtime error.
+This section remains the *future-looking* plan. Roughly grouped into frontend/language, type discipline, runtime, tooling, and native backends.
 
-## Running programs and tests
-- **Run a program**: `./tiny_language <file.tiny>` executes a TinyLanguage program and exits with status 0 on success. Example: `./tiny_language src_tiny/demo.tiny`.
-  - If you prefer per-file executability, add a shebang such as `#!/usr/bin/env -S ./tiny_language` to the top of your `.tiny` file, mark it executable (`chmod +x your_program.tiny`), and run it directly with `./your_program.tiny`.
-- **Python CLI wrapper**: `python -m tiny_lang_cli path/to/program.tiny` uses the same interpreter but can also switch backends with `--backend interpreter|python|native`. Inline snippets remain available via `--source "print(1+2);"`. Add `--emit-llvm` to print a textual LLVM IR prototype for arithmetic-heavy snippets instead of executing them.
-- **Test suite**: `python -m pytest` runs all tests. Target individual files with commands like `python -m pytest tests/test_tiny_language.py -k class`.
-  - On PowerShell, avoid entering just `test` after activating the virtual environment; `test` is a shell built-in that immediately exits without running the project. Use the explicit `python -m pytest` invocation (or `python run_all.py` for a combined smoke test) from the repository root instead.
+### Frontend / language
+- Improve error positions and messages (carry line/column through tokens + AST nodes; unify error type with optional `SourceSpan`).
+- Refine the linter (“must-use” across control flow, unreachable-code warnings).
 
-### Optional type hints
-- **Syntax**: Parameters and return types can be annotated with a trailing `?` (for example, `fn greet(name: string?) -> string?`). The suffix allows `Null` values in addition to the annotated type.
-- **Gradual checks**: Type hints remain optional, but when provided the runtime enforces them on call boundaries and returns. Non-optional annotations still require every control-flow path to return a value.
-- **Diagnostics**: Type errors surface with code `E009` and mention that `?` can be used to permit `Null` when desired.
+### Type discipline
+- No implicit type changes (uniform rules across expressions/functions/heap ops).
+- (Optional) simple type inference.
 
-### CLI: module init and publish
-- **Init**: Create a new module directory (`mkdir my_pkg && cd my_pkg`), add an entry point such as `main.tiny`, and optionally maintain a `module.json` with metadata:
+### Runtime
+- Harden the heap API (invalid pointer diagnostics, out-of-bounds details, double-delete detection, simple leak tracking).
+- Expand the test suite (nested arrays, many `new/delete` pairs, deep recursion, heap failure scenarios).
 
-  ```json
-  {"name": "my_pkg", "version": "1.0.0", "entrypoint": "main.tiny", "dependencies": ["utils@^2.1.0"]}
-  ```
+### Tooling
+- CLI wrapper ergonomics and documentation.
+- Formatter + lints + stable language-server workflows.
 
-  Keep your sources in the same folder and resolve imports via the module path. A minimal scaffold:
+### Native backends
+- Keep the C backend stable and documented (`docs/native_compiler.md`).
+- Continue LLVM emission experiments as a separate track.
 
-  ```
-  my_pkg/
-    module.json
-    main.tiny
-    helpers.tiny
-  ```
+---
 
-  Validate locally with `python ../tiny_language.py main.tiny` or via the wrapper `python -m tiny_lang_cli --file main.tiny --backend interpreter`; relative imports like `import .helpers;` work thanks to the module resolver. To pin dependencies during local tests, set `TINYPATH=../deps` and place sibling modules in that folder.
-- **Publish**: Package the module sources plus `module.json`, e.g., `tar -czf my_pkg-1.0.0.tgz module.json *.tiny`, and upload to your target repository or artifact registry. Document version pins (e.g., `lib@1.4.2` or `lib@~1.4`) in the manifest to keep builds reproducible.
+## Glossary
 
-  For a final smoke test before release, extract the tarball into a temp directory and run `python -m tiny_lang_cli --file main.tiny --backend native` to ensure both interpreter and native backends succeed without access to the original workspace.
-
-Note: On platforms without `readline` (e.g., Windows) the REPL history tests are automatically skipped (`1 skipped`). Other tests still run; the skip simply notes the optional dependency.
-
-### Interactive REPL
-- Tab completion covers keywords, stdlib names, and bindings defined in the current session. Completion works even without the native `readline` library.
-- History is kept in memory and can be replayed via arrow keys or a simple reverse search (`Ctrl + R`). On exit it is persisted to `~/.tiny_language_history` when possible.
-- Syntax highlighting is available when [`pygments`](https://pygments.org/) is installed and the REPL is running on a TTY. Set `TINYL_REPL_HIGHLIGHT=0` to disable coloring for copy/paste workflows.
-
-Additional examples and expected diagnostics live in `tests/test_tiny_language.py` and the programs above.
-
-### Error handling
-- **Try/catch blocks**: Wrap risky code in `try { ... } catch(err) { ... }` to intercept runtime failures. The `err`
-  object carries a `code`, human-readable `message`, optional `hint`, and a `stack` array with the formatted call chain.
-- **Result helpers**: The stdlib exposes a lightweight `Result` type with `Result.ok(value)` and `Result.err(error)` helpers
-  plus `Result.is_ok`/`Result.is_err` and `Result.unwrap_or`. Use it to thread success/failure through pipelines without
-  throwing.
-- **Stack traces**: Unhandled runtime errors include stack traces in their messages by default, and caught errors preserve
-  the same information for logging or conversion into `Result.Err` values.
-
-## Ideas for future extensions
-- [x] **Pattern matching and algebraic data types**
-  - [x] Design syntax for sum/product types and match expressions
-  - [x] Implement exhaustiveness checks in the parser/interpreter
-  - [x] Add example programs and tests for missing/extra cases
-- [x] **Modules/packages**
-  - [x] Define module loading semantics (namespacing, relative imports, search path)
-  - [x] Extend the interpreter with a module resolver and caching
-  - [x] Describe CLI workflow for module init/publish (version pins optional)
-- [x] **Optional type hints**
-  - [x] Specify syntax for optional type annotations on functions, parameters, and return values
-  - [x] Implement gradual typing checks and simple exhaustiveness checks
-  - [x] Extend error messages and docs with type hints
-- [x] **Better error handling**
-  - [x] Design `try/catch` blocks or a `Result` type
-  - [x] Show stack traces in error messages
-  - [x] Add example programs/tests for error paths without aborting execution
-- [x] **Tooling**
-  - [x] Specify and implement a minimal formatter (spacing, semicolons, imports)
-  - [x] Define lints for unused bindings, bare calls, and style rules
-  - [x] Sketch a language-server prototype with hover/completion/diagnostics
-- [x] **Parallelism**
-  - [x] Design `async/await` or channel-based structured concurrency
-  - [x] Add cancellation tokens and safe abort paths to the runtime model
-  - [x] Create deterministic, race-free test cases
-- [x] **Stdlib expansion**
-  - [x] Design and implement core Collections APIs (maps, sets, deques)
-  - [x] Add Math/Random extensions plus file/JSON utilities
-  - [x] Document and demo new stdlib components
-- [x] **Interop** (see [`docs/python_interop.md`](docs/python_interop.md) for the design)
-  - [x] Define an FFI to Python functions/modules (argument/return mapping)
-  - [x] Specify security and sandboxing mechanisms
-  - [x] Document common Python interop scenarios
-
-## Further issues to explore
-- [x] **Native compiler**: Investigate emitting bytecode or native code directly from the TinyLanguage AST instead of interpreting it.
-- [x] **Transpilers**: Prototype bidirectional translators to and from Python, Julia, JavaScript, and C++ while preserving semantics and idioms.
-- [x] **VS Code extension**: Ship syntax highlighting, formatting, REPL integration, and diagnostics as a Visual Studio Code marketplace extension.
-- [x] **Cross-language compatibility**: Document any constructs that do not map cleanly to other mainstream languages and propose portable alternatives.
-- [x] **Full inline commentary**: Add exhaustive line-by-line comments across TinyLanguage source and sample programs for learners.
-
-## Roadmap / TODO
-
-This section gathers upcoming work for TinyLanguage.
-Roughly grouped into frontend/language, type discipline, runtime, and tooling.
-The “nativeCompiler” work is tracked separately.
-
-### 1. Frontend / language
-
-- [x] **Improve error positions and messages**
-  - Tokens and AST nodes should consistently carry line and column information.
-  - Unified error type with an optional `SourceSpan` that highlights the affected line when displayed.
-  - Lexer, parser, and linter should all use this error type.
-
-- [x] **Refine the linter**
-  - “must use” rule across control flow: a variable counts as used only when referenced on all relevant paths.
-  - Unreachable-code warnings (e.g., statements after `return`).
-
-### 2. Type discipline
-
-- [x] **No implicit type changes**
-  - After `define i = 5;`, assigning `i = 0.5;` should be an error unless intentionally handled otherwise.
-  - Apply type rules uniformly across expressions, functions, and heap operations.
-- [x] (Optional) Simple type inference
-  - Example: `define x = 0;` ⇒ `x` is of type `number` without an explicit annotation.
-
-### 3. Runtime
-
-- [x] **Harden the heap API**
-  - More precise errors for invalid pointers, out-of-bounds, double `delete`, etc.
-  - Simple leak tracking (e.g., for tests).
-- [x] **Expand the test suite**
-  - Edge cases: nested arrays, many `new/delete` pairs, deep recursion, heap-API failure scenarios.
-
-### 4. Tooling
-
-- [x] **CLI wrapper**
-  - A small command-line tool that compiles/runs TinyLanguage files (e.g., `python -m tiny_lang_cli source.tiny`, depending on project layout).
-- [x] **Document the language**
-  - Short, stable language specification (syntax, type rules, “must use” rules) to keep behavior clear. See [`docs/language_spec.md`](docs/language_spec.md).
-
-### 5. Native Compiler
-
-The native compiler is developed in its own branch (`nativeCompiler`).
-
-### 6. Codegen / interop
-
-- [x] **Tiny → C → LLVM pipeline**
-  - Add a CLI flag that emits LLVM IR by translating TinyLanguage to C and invoking clang.
-  - Include a small regression test that validates the emitted `.ll` output exists.
-- [x] **Python library imports**
-  - Provide a TinyLanguage-facing API (or syntax) that maps to `importlib` for loading Python modules.
-  - Add examples/tests demonstrating Python library usage.
-- [x] **Backend feature matrix**
-  - Document which language features are supported by the interpreter, C backend, and LLVM backend. See [`docs/backend_feature_matrix.md`](docs/backend_feature_matrix.md).
-
-### 7. Debugging / IDEs
-
-- [x] **LLVM-first debugging in VS Code**
-  - The C/LLVM compiler CLI now supports `--debug` (adds `-g -O0`) and the debugger guide shows how to use VS Code's C/C++ or CodeLLDB launch configurations to step through the resulting native executable. The guide also documents the LLVM pipeline workflow when using `--emit-exe`. See [`docs/debugger_workflows.md`](docs/debugger_workflows.md).
-
-- [x] Define a custom native IR (stack- or register-based). See [`docs/native_ir.md`](docs/native_ir.md) for opcode overview and examples.
-- [x] Small VM that executes this IR (interpreter in Python or as a separate module).
-- [x] Lowering: AST → Native IR for expressions, statements, functions, heap API.
-- [x] Optional: Backend targeting C/LLVM or “pure Python bytecode” to produce native code.
+- **FFI (Foreign Function Interface)**: A mechanism that lets code in one language call functions and use data structures from another language, across different runtimes or binary boundaries.
+- **IR (Intermediate Representation)**: An internal representation between the AST and a backend output (interpreter execution, native VM bytecode, emitted code). Designed to be simpler than surface syntax and easier to transform/validate.
+- **POP**: “Pop from stack.” A VM/bytecode instruction that removes the top value from the evaluation stack (often to discard an unused expression result).
+- **Regression test**: A targeted test that ensures a previously fixed bug or behavior does not break again (often a minimal snippet asserting a stable output/error).
+- **Smoke test**: A fast end-to-end check that the main pipeline basically works (parse → run → verify a small expected result).
+- **TL**: Abbreviation for “TinyLanguage”.

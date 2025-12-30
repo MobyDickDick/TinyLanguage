@@ -11,7 +11,7 @@ For the initial milestone, the TL stdlib aligns with these Python modules:
 **Current status:** The core namespaces `Math`, `Random`, and `String` are implemented natively. Additionally, `Collections`, `Map`, `Set`, `Deque`, `File`, `JSON`, `Async`, and `Result` are available. Wrapper modules for `math`, `random`, and `string` live in `stdlib/`.
 
 ## 2) FFI/runtime strategy
-By default, TL stdlib functions are implemented **natively** in the runtime (see `src/stdlib/__init__.py`).
+By default, TL stdlib functions are implemented **natively** in the runtime (see [src/stdlib/__init__.py](src/stdlib/__init__.py)).
 
 For special cases or extensions, the Python bridge can be used optionally:
 
@@ -23,7 +23,7 @@ This keeps the standard library deterministic and controlled, while advanced fea
 ## 3) TL stdlib structure
 The standard library consists of two layers:
 
-- **Native runtime implementation:** `src/stdlib/__init__.py`
+- **Native runtime implementation:** [src/stdlib/__init__.py](src/stdlib/__init__.py)
 - **TinyLanguage modules:** `stdlib/` (TinyLanguage sources, available via `import`)
 
 The `stdlib/` directory is the permanent home for TL modules that wrap the native API in a Python-like module shape.

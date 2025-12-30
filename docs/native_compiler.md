@@ -31,27 +31,27 @@ This draft outlines the target architecture for an alternative backend that exec
 
 ## Usage
 
-- **CLI switch**: `python src/tiny_language.py --native-backend -e "print(1 + 2);"` runs a snippet without the AST interpreter.
-- **Alternative bytecode emission**: `python src/tiny_language.py --native-python-bytecode -e "print(1 + 2);"` builds the same native IR and compiles it to pure Python bytecode.
-- **File execution**: `python src/tiny_language.py --native-backend path/to/program.tiny` loads a program and uses the same codegen/VM path.
-- **Emit LLVM IR**: `python src/tiny_language.py --emit-llvm out.ll path/to/program.tiny` writes the LLVM IR for the native backend subset.
-- **Build executable**: `python src/tiny_language.py --emit-exe out path/to/program.tiny` compiles a native binary via `clang` (only the LLVM-prototype subset is supported).
-- **Regression tests**: `python -m pytest tests/test_native_codegen.py -q` compares interpreter and native-backend output and ensures unsupported constructs remain visible as `NotImplementedError`.
+- **CLI switch**: `python [src/tiny_language.py](src/tiny_language.py) --native-backend -e "print(1 + 2);"` runs a snippet without the AST interpreter.
+- **Alternative bytecode emission**: `python [src/tiny_language.py](src/tiny_language.py) --native-python-bytecode -e "print(1 + 2);"` builds the same native IR and compiles it to pure Python bytecode.
+- **File execution**: `python [src/tiny_language.py](src/tiny_language.py) --native-backend path/to/program.tiny` loads a program and uses the same codegen/VM path.
+- **Emit LLVM IR**: `python [src/tiny_language.py](src/tiny_language.py) --emit-llvm out.ll path/to/program.tiny` writes the LLVM IR for the native backend subset.
+- **Build executable**: `python [src/tiny_language.py](src/tiny_language.py) --emit-exe out path/to/program.tiny` compiles a native binary via `clang` (only the LLVM-prototype subset is supported).
+- **Regression tests**: `python -m pytest [tests/test_native_codegen.py](tests/test_native_codegen.py) -q` compares interpreter and native-backend output and ensures unsupported constructs remain visible as `NotImplementedError`.
 
 ## Current CLI workflow and VM boundaries
 
 - **Plan for A/B comparisons**: Every run with `--native-backend` should be repeated once without the flag to surface divergences from the interpreter immediately.
 - **Limited language surface**: Heap operations, classes, pattern matching, or deques are not covered yet and deliberately raise `NotImplementedError`. Use the interpreter path for those features.
-- **Consistent invocation shapes**: Both the CLI (`src/tiny_language.py`) and `tiny_lang_cli` accept `--native-backend` before `-e` or the file path. The VM only works on files or inline snippets; the REPL and formatter remain interpreter-backed.
+- **Consistent invocation shapes**: Both the CLI ([src/tiny_language.py](src/tiny_language.py)) and `tiny_lang_cli` accept `--native-backend` before `-e` or the file path. The VM only works on files or inline snippets; the REPL and formatter remain interpreter-backed.
 - **Output comparison**: The VM buffers `print` output line by line; that keeps comparisons with the interpreter simple, but multi-delimiters or structured logs are not implemented yet.
 - **LLVM executable scope**: The LLVM backend is intentionally narrow (numeric values, basic control flow, simple functions, and `print`). Expect `NotImplementedError` for anything outside that subset.
-  For a concise list of open gaps and next steps in the LLVM emitter, see the checklist under **LLVM-basierte Pipeline** in [`docs/expansion_roadmap.md`](expansion_roadmap.md).
+  For a concise list of open gaps and next steps in the LLVM emitter, see the checklist under **LLVM-basierte Pipeline** in [[docs/expansion_roadmap.md](docs/expansion_roadmap.md)](expansion_roadmap.md).
 
 ## CLI workflow at a glance
 
-1. **Smoke run with an example program**: `PYTHONPATH=src python src/tiny_language.py --native-backend src_tiny/demo.tiny` checks whether parser, codegen, and VM cooperate.
+1. **Smoke run with an example program**: `PYTHONPATH=src python [src/tiny_language.py](src/tiny_language.py) --native-backend [src_tiny/demo.tiny](src_tiny/demo.tiny)` checks whether parser, codegen, and VM cooperate.
 2. **Quick feature comparison**: Run the same command without `--native-backend` and compare the output to pinpoint divergences.
-3. **Targeted function tests**: `python -m pytest tests/test_native_codegen.py -k while -q` focuses on specific constructs like `while` loops or function calls.
+3. **Targeted function tests**: `python -m pytest [tests/test_native_codegen.py](tests/test_native_codegen.py) -k while -q` focuses on specific constructs like `while` loops or function calls.
 4. **Keep the fallback path visible**: If a program is not supported yet, the same call without `--native-backend` should still work. Use the A/B comparison to catch interpreter regressions early.
 
 ### Mini playbook with expected output

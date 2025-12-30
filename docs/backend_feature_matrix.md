@@ -46,7 +46,7 @@ Legend:
 
 - The native VM and LLVM prototype intentionally target the tutorial-style subset. Unsupported constructs raise `NotImplementedError` so gaps remain visible.
 - The LLVM/C pipeline lowers the native IR; if a feature is not in the native VM subset, it is also unavailable in the LLVM output.
-- For the most up-to-date subset details, see `docs/native_compiler.md` and the code generator headers in `src/tiny_language_codegen_native.py` and `src/tiny_language_codegen_llvm.py`.
+- For the most up-to-date subset details, see [docs/native_compiler.md](docs/native_compiler.md) and the code generator headers in [src/tiny_language_codegen_native.py](src/tiny_language_codegen_native.py) and [src/tiny_language_codegen_llvm.py](src/tiny_language_codegen_llvm.py).
 
 ## Open backend work items (by feature)
 

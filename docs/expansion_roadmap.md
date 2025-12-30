@@ -49,4 +49,4 @@ they can be tackled incrementally.
 
 ## 5) Debugging & IDEs
 
-- [x] **LLVM-first VS Code debugging**: Enable a direct debugging workflow in VS Code for LLVM-native executables produced by the LLVM pipeline (see `docs/debugger_workflows.md`).
+- [x] **LLVM-first VS Code debugging**: Enable a direct debugging workflow in VS Code for LLVM-native executables produced by the LLVM pipeline (see [docs/debugger_workflows.md](docs/debugger_workflows.md)).

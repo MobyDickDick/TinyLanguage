@@ -19,7 +19,7 @@ This quick reference describes the internal bytecode format of the native backen
 
 ## Container structures
 
-`src/native_ir.py` collects the related data classes:
+[src/native_ir.py](src/native_ir.py) collects the related data classes:
 
 - `Instruction`: Single opcode/operand pair.
 - `FunctionIR`: Bytecode and parameter list of a function.
@@ -27,7 +27,7 @@ This quick reference describes the internal bytecode format of the native backen
 
 The helper `format_program(program)` prints a human-friendly view of the instructions and simplifies snapshot tests.
 
-## Beispiel
+## Example
 
 ```text
 entry[00]: PUSH_CONST 1

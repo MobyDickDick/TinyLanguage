@@ -55,7 +55,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 - **When copying happens:** Non-escaped, mutable arguments (heap pointers, struct/variant maps, class instances) are deep-copied before binding. Parameters that appear on a `return` path are treated as escaped and keep their identity.
 - **Write protection:** Attempts to write to a protected parameter through other aliases fail with a runtime error to avoid side effects.
 - **Performance:** Copying is cycle-safe but can cost noticeably more time and memory for large object graphs.
-- **Beispiel:**
+- **Example:**
 
   ```tiny
   fn bump(buf) {
@@ -64,7 +64,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 
   define data = new(1);
   heap_set(data, 0, 1);
-  bump(data); // mit --copy-on-call bleibt data[0] == 1
+  bump(data); // with --copy-on-call, data[0] remains == 1
   ```
 
 ## Algebraic data types and pattern matching
@@ -106,7 +106,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 
 - **Interpreter:** `python tiny_language.py <file.tiny>` executes a source file. Modules are resolved relative to the caller, `TINYPATH`, and the project root.
 - **CLI demos:** Example programs live in `src_tiny/`; they cover classes, pattern matching, operators, concurrency, and Python interop.
-- **Language server:** `python tiny_language_server.py --stdio` starts the LSP; a reference for available methods is in [`docs/language_server_workflows.md`](language_server_workflows.md).
+- **Language server:** `python tiny_language_server.py --stdio` starts the LSP; a reference for available methods is in [[docs/language_server_workflows.md](docs/language_server_workflows.md)](language_server_workflows.md).
 
 ## Grammar (BNF/EBNF)
 
@@ -114,7 +114,7 @@ This grammar is derived from the current lexer/parser implementation and mirrors
 
 ## Lexer/token reference
 
-The lexer lives in [`src/tiny_language_lexer.py`](../src/tiny_language_lexer.py). It recognizes keywords, identifiers (`NAME`), literals, and the following symbols/operators.
+The lexer lives in [[src/tiny_language_lexer.py](src/tiny_language_lexer.py)](../[[src/tiny_language_lexer.py](src/tiny_language_lexer.py)]([src/tiny_language_lexer.py](src/tiny_language_lexer.py))). It recognizes keywords, identifiers (`NAME`), literals, and the following symbols/operators.
 
 | Category | Tokens |
 | --- | --- |

@@ -9,7 +9,7 @@ quick self-test below before chasing down editor log noise.
 
 ## Quick adapter health check
 
-- Run `python vscode-extension/python/tiny_debug_adapter.py --self-test` from the
+- Run `python [vscode-extension/python/tiny_debug_adapter.py](vscode-extension/python/tiny_debug_adapter.py) --self-test` from the
   repository root. The final JSON block should report `"tiny_language_loaded":
   true` and list the Python executable the adapter is using.
 - If that succeeds, the adapter can talk to the runtime; focus on the VS Code
@@ -26,7 +26,7 @@ quick self-test below before chasing down editor log noise.
    "TinyLanguage: Launch active file (prototype)" configuration. The extension's
    configuration provider auto-fills the `type`, `request`, `program` (defaults
    to the active editor file), and `runtime` (defaults to
-   `${workspaceFolder}/src/tiny_language.py`).
+   `${workspaceFolder}/[src/tiny_language.py](src/tiny_language.py)`).
 3. Hit **Run and Debug → TinyLanguage: Launch active file (prototype)**. The
    extension starts the Python-based debug adapter via the
    `tinylanguage.getDebugAdapterExecutable` command and wires breakpoints into
@@ -82,7 +82,7 @@ binary.
 ### Debugging the LLVM pipeline (`--emit-exe`) builds
 
 If you are using the LLVM text backend directly (via `--emit-exe` on
-`src/tiny_language.py`), follow the same VS Code launch patterns but ensure the
+[src/tiny_language.py](src/tiny_language.py)), follow the same VS Code launch patterns but ensure the
 binary is compiled with debug symbols:
 
 1. Build the executable with debug info:

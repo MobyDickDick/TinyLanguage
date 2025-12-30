@@ -4,7 +4,7 @@ This guide introduces a small harness for comparing TinyLanguage execution backe
 
 ## Benchmarks and backends
 
-The harness in [`benchmarks/microbenchmarks.py`](../benchmarks/microbenchmarks.py) ships with three representative programs:
+The harness in [[benchmarks/microbenchmarks.py](benchmarks/microbenchmarks.py)](../[[benchmarks/microbenchmarks.py](benchmarks/microbenchmarks.py)]([benchmarks/microbenchmarks.py](benchmarks/microbenchmarks.py))) ships with three representative programs:
 
 - `tight_loop`: a summation loop that stresses integer arithmetic and assignment.
 - `recursive_calls`: a naive Fibonacci implementation that highlights function-call overhead.

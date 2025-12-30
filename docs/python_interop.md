@@ -100,7 +100,7 @@ This draft describes how TinyLanguage can interact safely with Python functions 
 
 The most important `.tiny` demos combine modular imports, namespaces, and (where given) typed signatures. Each run lists the exact command and an expected output as a quick regression check:
 
-- **Typed namespace plus two modules** (`src_tiny/python_namespace_typed_demo.tiny`)
+- **Typed namespace plus two modules** ([src_tiny/python_namespace_typed_demo.tiny](src_tiny/python_namespace_typed_demo.tiny))
 
   ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_namespace_typed_demo.tiny
@@ -112,7 +112,7 @@ The most important `.tiny` demos combine modular imports, namespaces, and (where
 
   Shows encapsulated allowlist imports (`math`, `os.path`) under `namespace PyInterop` with annotated wrapper functions.
 
-- **JSON parsing and OS interop** (`src_tiny/python_json_demo.tiny`)
+- **JSON parsing and OS interop** ([src_tiny/python_json_demo.tiny](src_tiny/python_json_demo.tiny))
 
   ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_json_demo.tiny
@@ -124,7 +124,7 @@ The most important `.tiny` demos combine modular imports, namespaces, and (where
 
   Combines `Python.call` and `Python.import_module` with separate allowlists and demonstrates how a Python proxy (`os.getcwd`) can be threaded into further Python calls.
 
-- **Numerics with a tight allowlist** (`src_tiny/python_math_demo.tiny`)
+- **Numerics with a tight allowlist** ([src_tiny/python_math_demo.tiny](src_tiny/python_math_demo.tiny))
 
   ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_math_demo.tiny
@@ -136,7 +136,7 @@ The most important `.tiny` demos combine modular imports, namespaces, and (where
 
   Shows the round trip for numbers/booleans plus the restricted exposure of selected `math` attributes (`sqrt`, `isfinite`, `tau`).
 
-- **Proxy pipeline with namespaces and type annotations** (`src_tiny/python_proxy_pipeline_demo.tiny`)
+- **Proxy pipeline with namespaces and type annotations** ([src_tiny/python_proxy_pipeline_demo.tiny](src_tiny/python_proxy_pipeline_demo.tiny))
 
   ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_proxy_pipeline_demo.tiny
@@ -154,7 +154,7 @@ All four runs document modular import, namespaces, and typed signatures in one g
 
 The following mini-scenarios complement the list above and highlight common pitfalls (allowlist, proxy passing, optional types) in one sweep:
 
-- **Compact allowlist comparison** (`src_tiny/python_json_demo.tiny` versus an intentionally strict allowlist):
+- **Compact allowlist comparison** ([src_tiny/python_json_demo.tiny](src_tiny/python_json_demo.tiny) versus an intentionally strict allowlist):
 
   ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_json_demo.tiny
@@ -169,7 +169,7 @@ The following mini-scenarios complement the list above and highlight common pitf
   # [PYDENY] attribute dumps not allowlisted on module json
   ```
 
-  - **Proxy pipeline plus namespace signatures** (`src_tiny/python_proxy_pipeline_demo.tiny`):
+  - **Proxy pipeline plus namespace signatures** ([src_tiny/python_proxy_pipeline_demo.tiny](src_tiny/python_proxy_pipeline_demo.tiny)):
 
   ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_proxy_pipeline_demo.tiny
@@ -181,7 +181,7 @@ The following mini-scenarios complement the list above and highlight common pitf
 
   Shows transporting a Python proxy across multiple namespaces and typed wrappers.
 
-- **Type annotations plus modular imports together** (`src_tiny/python_namespace_typed_demo.tiny`):
+- **Type annotations plus modular imports together** ([src_tiny/python_namespace_typed_demo.tiny](src_tiny/python_namespace_typed_demo.tiny)):
 
   ```bash
   PYTHONPATH=src python src/tiny_language.py src_tiny/python_namespace_typed_demo.tiny
@@ -193,7 +193,7 @@ The following mini-scenarios complement the list above and highlight common pitf
 
   Combination of namespaces, allowlists, and strict return types (the linter flags missing returns immediately with `[E010]`).
 
-- **Timeout- und Fehlercodes sichtbar machen** (bewusst lange HTTP-Anfrage):
+- **Make timeouts and error codes visible** (intentionally long HTTP request):
 
   ```bash
   PYTHONPATH=src python src/tiny_language.py --eval 'Python.call("requests", "get", new["https://example.com"], { allow: new["status_code", "text"], timeout_ms: 1 });'

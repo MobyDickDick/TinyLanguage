@@ -22,7 +22,7 @@ for n in range(1, 16):
         print(n)
 ```
 
-**TinyLanguage translation** (`src_tiny/rosetta_fizzbuzz.tiny`)
+**TinyLanguage translation** ([src_tiny/rosetta_fizzbuzz.tiny](src_tiny/rosetta_fizzbuzz.tiny))
 
 - Replace `for` with a `while` loop and increment manually.
 - TinyLanguage has no `%` operator, so a helper handles divisibility via subtraction.
@@ -68,7 +68,7 @@ for i in range(1, 6):
     print(i, fact(i))
 ```
 
-### TinyLanguage translation (`src_tiny/rosetta_factorial.tiny`)
+### TinyLanguage translation ([src_tiny/rosetta_factorial.tiny](src_tiny/rosetta_factorial.tiny))
 
 - Functions and return requirements are identical; just add semicolons.
 - The loop stays a `while`, and `print` accepts multiple arguments.
@@ -102,7 +102,7 @@ for word, freq in counts.items():
     print(word, freq)
 ```
 
-**TinyLanguage translation** (`src_tiny/rosetta_word_count.tiny`)
+**TinyLanguage translation** ([src_tiny/rosetta_word_count.tiny](src_tiny/rosetta_word_count.tiny))
 
 - Uses `String.lower`, `String.split`, and the Map stdlib (`Map.new`, `Map.get`, `Map.set`).
 - Iterate over the word list with `len(...)` and `heap_get(...)`, which address arrays stored on the heap.
@@ -140,9 +140,9 @@ while (i < len(keys)) {
 }
 ```
 
-## Automatisches Kopieren und Transpilieren neuer Rosetta-Skripts
+## Automatically copying and transpiling new Rosetta scripts
 
-- Use `examples/rosetta/copy_rosetta_samples.py` to copy missing Rosetta Code Python files into a target directory. Example with filter and dry-run: `python examples/rosetta/copy_rosetta_samples.py ~/rosetta_import --include fib --include fizz --limit 5 --delay 0 --dry-run`. The script compares filenames in the default source folder `examples/rosetta/python` with the destination, offers prefix filters for subsets, and optionally waits between copy operations.
-- With `--transpile`, the script automatically kicks off translation after copying. Destination and source can be customized, e.g.: `python examples/rosetta/copy_rosetta_samples.py examples/rosetta/python --transpile --transpile-dest examples/rosetta/expected`.
+- Use [examples/rosetta/copy_rosetta_samples.py](examples/rosetta/copy_rosetta_samples.py) to copy missing Rosetta Code Python files into a target directory. Example with filter and dry-run: `python [examples/rosetta/copy_rosetta_samples.py](examples/rosetta/copy_rosetta_samples.py) ~/rosetta_import --include fib --include fizz --limit 5 --delay 0 --dry-run`. The script compares filenames in the default source folder `examples/rosetta/python` with the destination, offers prefix filters for subsets, and optionally waits between copy operations.
+- With `--transpile`, the script automatically kicks off translation after copying. Destination and source can be customized, e.g.: `python [examples/rosetta/copy_rosetta_samples.py](examples/rosetta/copy_rosetta_samples.py) examples/rosetta/python --transpile --transpile-dest examples/rosetta/expected`.
 - You can also run transpilation directly: `python -m transpile_rosetta --source examples/rosetta/python --dest examples/rosetta/expected`. Adjust `--dest` if the TinyLanguage files should land in a different folder.
-- A pre-generated collection of the existing Python examples lives under `src_tiny/from_python/` — it was created via `python -m transpile_rosetta --dest $(pwd)/src_tiny/from_python` and can be run directly with `python src/tiny_language.py src_tiny/from_python/<name>.tiny`.
+- A pre-generated collection of the existing Python examples lives under `src_tiny/from_python/` — it was created via `python -m transpile_rosetta --dest $(pwd)/src_tiny/from_python` and can be run directly with `python [src/tiny_language.py](src/tiny_language.py) src_tiny/from_python/<name>.tiny`.

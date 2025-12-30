@@ -5,7 +5,7 @@ This tutorial shows how to get TinyLanguage running locally, walk through the co
 ## 1. Setup
 
 - Install Python 3 and clone the repository.
-- From the repo root, you can run the interpreter directly with `python [src/tiny_language.py](src/tiny_language.py)`.
+- From the repo root, you can run the interpreter directly with `python src/tiny_language.py`.
 - The bundled demos live in `src_tiny/`; they work without additional dependencies.
 
 ## 2. Your first TinyLanguage program
@@ -70,10 +70,10 @@ python src/tiny_language.py --native-backend basics.tiny
 
 Once you are comfortable with the basics, explore the feature-specific demos:
 
-- Type hints and exhaustiveness checks: `python [src/tiny_language.py](src/tiny_language.py) [src_tiny/all_features.tiny](src_tiny/all_features.tiny)`
-- Pattern matching and algebraic data types: `python [src/tiny_language.py](src/tiny_language.py) [src_tiny/match_demo.tiny](src_tiny/match_demo.tiny)`
-- Classes and methods: `python [src/tiny_language.py](src/tiny_language.py) [src_tiny/class_demo.tiny](src_tiny/class_demo.tiny)`
-- Namespaces and modular structure: `python [src/tiny_language.py](src/tiny_language.py) [src_tiny/namespace_demo.tiny](src_tiny/namespace_demo.tiny)`
+- Type hints and exhaustiveness checks: `python src/tiny_language.py src_tiny/all_features.tiny`
+- Pattern matching and algebraic data types: `python src/tiny_language.py src_tiny/match_demo.tiny`
+- Classes and methods: `python src/tiny_language.py src_tiny/class_demo.tiny`
+- Namespaces and modular structure: `python src/tiny_language.py src_tiny/namespace_demo.tiny`
 
 Each file prints its expected output and doubles as a runnable reference.
 
@@ -86,12 +86,12 @@ python -m tiny_lang_cli --file my_pkg/main.tiny --backend interpreter
 TINYPATH=../deps python -m tiny_lang_cli --file my_pkg/main.tiny --backend native
 ```
 
-The `module.json` file in a package declares entry points and dependencies; see the module workflows in [docs/demo_run_commands.md](docs/demo_run_commands.md) for more examples.
+The `module.json` file in a package declares entry points and dependencies; see the module workflows in `docs/demo_run_commands.md` for more examples.
 
 ## 6. Tooling and tests
 
 - Run a focused example set and the pytest suite together with `python run_all.py`.
-- Call the language-server helper for hover, completions, or diagnostics, e.g. `PYTHONPATH=src python [src/language_server_cli.py](src/language_server_cli.py) --file [src_tiny/class_demo.tiny](src_tiny/class_demo.tiny) hover --symbol Greeter`.
-- Compare interpreter vs. native backend output with `python [src/tiny_language.py](src/tiny_language.py) --native-backend [src_tiny/all_features.tiny](src_tiny/all_features.tiny)`.
+- Call the language-server helper for hover, completions, or diagnostics, e.g. `PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny hover --symbol Greeter`.
+- Compare interpreter vs. native backend output with `python src/tiny_language.py --native-backend src_tiny/all_features.tiny`.
 
 These commands give quick feedback loops for experimenting with new code or validating changes.

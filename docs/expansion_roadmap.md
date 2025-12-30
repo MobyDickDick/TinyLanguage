@@ -11,11 +11,37 @@ they can be tackled incrementally.
 - **First target scope**: arithmetic expressions, variables, `print`, simple control flow.
 - **Toolchain**: `clang`/`llc` for the first end-to-end flow.
 - **Task list (statusable, current prototype)**:
+### Open tasks
 
-> Note: Task checklists have been consolidated at the end of this document under **Tasks**.
+_None_
 
+### Closed tasks
+
+  - [x] Map straight-line code (arithmetic expressions, variables, `print`).
+
+  - [x] Add control flow (`if`/`while`) to the LLVM emitter.
+
+  - [x] Support functions and calls in the LLVM prototype.
+
+  - [x] Sketch heap/strings (e.g. `new`, `heap_get`/`heap_set`, string print) in the LLVM path.
+
+  - [x] Refine error messages when an IR opcode is not supported.
 - **LLVM integration tasks (Julia-style, incremental)**:
+### Open tasks
 
+_None_
+
+### Closed tasks
+
+  - [x] Allow `tiny_language_cli.py --emit-llvm [FILE|-]` to write LLVM IR to a file or stdout.
+
+  - [x] Add an optional `llvmlite` JIT runner to execute the LLVM prototype without invoking `clang`.
+
+  - [x] Thread target triple/data layout through the LLVM emitter and expose CLI flags to override them.
+
+  - [x] Add basic optimization passes (mem2reg, instcombine) behind a `--llvm-opt` flag.
+
+  - [x] Extend the LLVM runtime ABI with heap/string helpers so non-numeric types can be lowered.
 ## 2) Port the Python standard library
 
 - **Prioritised modules**: `math`, `random`, `string`, `datetime` (incrementally).
@@ -27,6 +53,21 @@ they can be tackled incrementally.
 - **Consistent task layout** ✅: `examples/rosetta/<task>/`.
 - **First wave**: Beginner tasks (e.g. Hello World, Fibonacci, sorting).
 - **First wave checklist**:
+### Open tasks
+
+_None_
+
+### Closed tasks
+
+  - [x] Hello World.
+
+  - [x] Fibonacci.
+
+  - [x] FizzBuzz.
+
+  - [x] Factorial.
+
+  - [x] Sorting.
 - **Transpiler checks**: Verify which language features TL still needs.
 
 ## 4) Port a Julia subset
@@ -37,27 +78,10 @@ they can be tackled incrementally.
 
 ## 5) Debugging & IDEs
 
-## Tasks
-
 ### Open tasks
 
 _None_
 
 ### Closed tasks
 
-  - [x] Map straight-line code (arithmetic expressions, variables, `print`).
-  - [x] Add control flow (`if`/`while`) to the LLVM emitter.
-  - [x] Support functions and calls in the LLVM prototype.
-  - [x] Sketch heap/strings (e.g. `new`, `heap_get`/`heap_set`, string print) in the LLVM path.
-  - [x] Refine error messages when an IR opcode is not supported.
-  - [x] Allow `tiny_language_cli.py --emit-llvm [FILE|-]` to write LLVM IR to a file or stdout.
-  - [x] Add an optional `llvmlite` JIT runner to execute the LLVM prototype without invoking `clang`.
-  - [x] Thread target triple/data layout through the LLVM emitter and expose CLI flags to override them.
-  - [x] Add basic optimization passes (mem2reg, instcombine) behind a `--llvm-opt` flag.
-  - [x] Extend the LLVM runtime ABI with heap/string helpers so non-numeric types can be lowered.
-  - [x] Hello World.
-  - [x] Fibonacci.
-  - [x] FizzBuzz.
-  - [x] Factorial.
-  - [x] Sorting.
-- [x] **LLVM-first VS Code debugging**: Enable a direct debugging workflow in VS Code for LLVM-native executables produced by the LLVM pipeline (see [docs/debugger_workflows.md](docs/debugger_workflows.md)).
+- [x] **LLVM-first VS Code debugging**: Enable a direct debugging workflow in VS Code for LLVM-native executables produced by the LLVM pipeline (see `docs/debugger_workflows.md`).

@@ -76,7 +76,7 @@ If you prefer to keep the extracted bundle (instead of the single-file executabl
     src/tiny_language.py
   ```
 
-- The runtime extraction directory detected via `sys._MEIPASS` is supported automatically (see [src/tiny_language.py](src/tiny_language.py)), so no code changes are needed across platforms.
+- The runtime extraction directory detected via `sys._MEIPASS` is supported automatically (see `src/tiny_language.py`), so no code changes are needed across platforms.
 
 ## Troubleshooting
 

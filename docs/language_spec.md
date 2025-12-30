@@ -49,13 +49,13 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 - **Return requirement:** Annotated functions must return a value on all paths, otherwise error `E010` is raised.
 - **Closures:** Functions are first-class and can be returned or passed as arguments.
 
-## Argument encapsulation
+## Argument-Kapselung
 
 - **Opt-in flag:** `--copy-on-call` (or `TINYLANG_COPY_ON_CALL=1`) enables defensive copy semantics for function and method calls.
 - **When copying happens:** Non-escaped, mutable arguments (heap pointers, struct/variant maps, class instances) are deep-copied before binding. Parameters that appear on a `return` path are treated as escaped and keep their identity.
 - **Write protection:** Attempts to write to a protected parameter through other aliases fail with a runtime error to avoid side effects.
 - **Performance:** Copying is cycle-safe but can cost noticeably more time and memory for large object graphs.
-- **Example:**
+- **Beispiel:**
 
   ```tiny
   fn bump(buf) {
@@ -64,7 +64,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 
   define data = new(1);
   heap_set(data, 0, 1);
-  bump(data); // with --copy-on-call, data[0] remains == 1
+  bump(data); // mit --copy-on-call bleibt data[0] == 1
   ```
 
 ## Algebraic data types and pattern matching
@@ -106,7 +106,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 
 - **Interpreter:** `python tiny_language.py <file.tiny>` executes a source file. Modules are resolved relative to the caller, `TINYPATH`, and the project root.
 - **CLI demos:** Example programs live in `src_tiny/`; they cover classes, pattern matching, operators, concurrency, and Python interop.
-- **Language server:** `python tiny_language_server.py --stdio` starts the LSP; a reference for available methods is in [[docs/language_server_workflows.md](docs/language_server_workflows.md)](language_server_workflows.md).
+- **Language server:** `python tiny_language_server.py --stdio` starts the LSP; a reference for available methods is in [`docs/language_server_workflows.md`](language_server_workflows.md).
 
 ## Grammar (BNF/EBNF)
 
@@ -114,7 +114,7 @@ This grammar is derived from the current lexer/parser implementation and mirrors
 
 ## Lexer/token reference
 
-The lexer lives in [[src/tiny_language_lexer.py](src/tiny_language_lexer.py)](../[[src/tiny_language_lexer.py](src/tiny_language_lexer.py)]([src/tiny_language_lexer.py](src/tiny_language_lexer.py))). It recognizes keywords, identifiers (`NAME`), literals, and the following symbols/operators.
+The lexer lives in [`src/tiny_language_lexer.py`](../src/tiny_language_lexer.py). It recognizes keywords, identifiers (`NAME`), literals, and the following symbols/operators.
 
 | Category | Tokens |
 | --- | --- |
@@ -249,11 +249,6 @@ NAME_or_kw      ::= NAME | KW ;
 
 ## Next steps (documentation tasks)
 
-
-> Note: Task checklists have been consolidated at the end of this document under **Tasks**.
-
-## Tasks
-
 ### Open tasks
 
 _None_
@@ -261,6 +256,9 @@ _None_
 ### Closed tasks
 
 - [x] Add a dedicated grammar test suite that parses the EBNF samples above and ensures parser parity with `tiny_language_parser.py`.
+
 - [x] Document reserved keywords vs. identifiers with examples for `NAME_or_kw` usage (e.g., method names that are keywords).
+
 - [x] Expand the grammar section with a concise lexer/token table (operators, symbols, literal forms) and link to the lexer source.
+
 - [x] Document comment syntax and string escape sequences in the lexer/token reference.

@@ -1,6 +1,6 @@
 # Fuzzing TinyLanguage programs
 
-TinyLanguage includes a small set of property-based fuzz tests to catch parser or runtime crashes early. The tests live in [[tests/test_benchmark_and_fuzz.py](tests/test_benchmark_and_fuzz.py)](../[[tests/test_benchmark_and_fuzz.py](tests/test_benchmark_and_fuzz.py)]([tests/test_benchmark_and_fuzz.py](tests/test_benchmark_and_fuzz.py))) and are optional by design so they can be enabled locally without slowing down every CI run.
+TinyLanguage includes a small set of property-based fuzz tests to catch parser or runtime crashes early. The tests live in [`tests/test_benchmark_and_fuzz.py`](../tests/test_benchmark_and_fuzz.py) and are optional by design so they can be enabled locally without slowing down every CI run.
 
 ## Prerequisites
 

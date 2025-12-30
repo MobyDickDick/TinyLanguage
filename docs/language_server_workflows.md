@@ -1,6 +1,6 @@
 # Language server workflows
 
-This note bundles a quickstart for the `TinyLanguageServer` helper that lives in [[src/language_server.py](src/language_server.py)](../[[src/language_server.py](src/language_server.py)]([src/language_server.py](src/language_server.py))). The goal is to give a lightweight, JSON-style interface for experiments with hover, completion, and diagnostics without implementing JSON-RPC wiring.
+This note bundles a quickstart for the `TinyLanguageServer` helper that lives in [`src/language_server.py`](../src/language_server.py). The goal is to give a lightweight, JSON-style interface for experiments with hover, completion, and diagnostics without implementing JSON-RPC wiring.
 
 ## Quickstart: CLI demos
 
@@ -43,7 +43,7 @@ Outputs are JSON so they can be piped into tools or inspected visually. Example 
 
 ## Supported methods and example payloads
 
-Each subcommand is a thin wrapper around an internal request/response pair and can be copy/pasted into JSON-RPC glue code. Positions are zero-based and include namespace-qualified symbols (`Math.inc`, `Tools.double`, …). Currently exposed methods (keep this table in sync with the helpers in [src/language_server.py](src/language_server.py)):
+Each subcommand is a thin wrapper around an internal request/response pair and can be copy/pasted into JSON-RPC glue code. Positions are zero-based and include namespace-qualified symbols (`Math.inc`, `Tools.double`, …). Currently exposed methods (keep this table in sync with the helpers in `src/language_server.py`):
 
 | Method (LSP analog) | CLI subcommand | Request (JSON) | Response (JSON) | Notes |
 | --- | --- | --- | --- | --- |
@@ -139,7 +139,7 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
     # => [{"message": "[E011] function greet discards return value; assign or ignore explicitly", "code": "E011", "range": [1, 0, 1, 1]}]
     ```
 
-Not implemented yet: formatting or workspace symbol searches. Those can be layered on later by extending the helper functions in [[src/language_server.py](src/language_server.py)](../[[src/language_server.py](src/language_server.py)]([src/language_server.py](src/language_server.py))).
+Not implemented yet: formatting or workspace symbol searches. Those can be layered on later by extending the helper functions in [`src/language_server.py`](../src/language_server.py).
 
 ## "So testest du es" quick demos
 
@@ -158,28 +158,28 @@ The example programs referenced in the README’s “Syntax and Features” sect
   # => [] (the tutorial snippet should lint clean)
   ```
 
-- Hover over class names or methods in [src_tiny/class_demo.tiny](src_tiny/class_demo.tiny):
+- Hover over class names or methods in `src_tiny/class_demo.tiny`:
 
   ```bash
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny hover --symbol greeting
   # => {"symbol": "greeting", "detail": "TinyLanguage symbol", "position": [4, 7]}
   ```
 
-- List completions for the namespace utilities in [src_tiny/namespace_demo.tiny](src_tiny/namespace_demo.tiny):
+- List completions for the namespace utilities in `src_tiny/namespace_demo.tiny`:
 
   ```bash
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/namespace_demo.tiny completions --prefix To
   # => [{"label": "Tools", "kind": "identifier"}, {"label": "Tools.double", "kind": "identifier"}, ...]
   ```
 
-- Capture diagnostics for the standard library walkthrough in [src_tiny/stdlib_io_random_demo.tiny](src_tiny/stdlib_io_random_demo.tiny) to ensure lints stay quiet:
+- Capture diagnostics for the standard library walkthrough in `src_tiny/stdlib_io_random_demo.tiny` to ensure lints stay quiet:
 
   ```bash
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/stdlib_io_random_demo.tiny diagnostics
   # => [] (no diagnostics expected when examples stay lint-clean)
   ```
 
-- Inspect tagged-union coverage in [src_tiny/match_demo.tiny](src_tiny/match_demo.tiny) via hover and completions to ensure ADT symbols are indexed:
+- Inspect tagged-union coverage in `src_tiny/match_demo.tiny` via hover and completions to ensure ADT symbols are indexed:
 
   ```bash
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/match_demo.tiny hover --symbol Rectangle
@@ -188,7 +188,7 @@ The example programs referenced in the README’s “Syntax and Features” sect
   # => [{"label": "Circle", "kind": "identifier"}, {"label": "Circle.radius", "kind": "identifier"}, ...]
   ```
 
-- Validate operator overloading docs with completions and diagnostics from [src_tiny/operator_overloading_demo.tiny](src_tiny/operator_overloading_demo.tiny):
+- Validate operator overloading docs with completions and diagnostics from `src_tiny/operator_overloading_demo.tiny`:
 
   ```bash
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/operator_overloading_demo.tiny completions --prefix oper
@@ -197,7 +197,7 @@ The example programs referenced in the README’s “Syntax and Features” sect
   # => [] (the demo should lint clean)
   ```
 
-- Probe concurrency helpers from [src_tiny/concurrency_demo.tiny](src_tiny/concurrency_demo.tiny) to confirm that spawned functions are indexed:
+- Probe concurrency helpers from `src_tiny/concurrency_demo.tiny` to confirm that spawned functions are indexed:
 
   ```bash
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/concurrency_demo.tiny completions --prefix spawn
@@ -206,7 +206,7 @@ The example programs referenced in the README’s “Syntax and Features” sect
   # => [] (tasks and joins should not emit lints)
   ```
 
-- Walk through heap usage in [src_tiny/heap_pointer_demo.tiny](src_tiny/heap_pointer_demo.tiny) via diagnostics to catch common pointer mistakes:
+- Walk through heap usage in `src_tiny/heap_pointer_demo.tiny` via diagnostics to catch common pointer mistakes:
 
   ```bash
   PYTHONPATH=src python src/language_server_cli.py --file src_tiny/heap_pointer_demo.tiny diagnostics

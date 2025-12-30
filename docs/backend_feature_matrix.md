@@ -54,14 +54,16 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 
 ### Native VM (`--native-backend`)
 
-- [x] Heap operations
-  - [x] Implement `new`, `heap_get`, `heap_set`, and `delete` in the native VM runtime.
-  - [x] Add runtime safety checks for double-free and out-of-bounds access.
-  - [x] Extend native IR lowering to emit heap operations with typed offsets.
-- [x] Array literals
-  - [x] Represent array literals in native IR and lower them in the VM interpreter loop.
-  - [x] Add bounds checking and length metadata in the runtime heap model.
-  - [x] Wire array operations into standard library helpers (where applicable).
+
+> Note: Task checklists have been consolidated at the end of this document under **Tasks**.
+
+
+### C/LLVM pipeline (`--emit-llvm`, `--emit-exe`)
+
+## Tasks
+
+### Open tasks
+
 - [ ] Classes and methods
   - [ ] Define object layout metadata for class instances in the native runtime.
   - [ ] Lower method dispatch to vtable lookups or direct offsets in native IR.
@@ -84,12 +86,7 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 - [ ] Python interop
   - [ ] Define native VM bridges for `Python.import_module` and `Python.call`.
   - [ ] Validate argument/return marshalling in the VM runtime.
-
-### C/LLVM pipeline (`--emit-llvm`, `--emit-exe`)
-
 - [ ] Full literal and type coverage
-  - [x] Add `null` lowering and a runtime sentinel representation.
-  - [x] Support non-numeric variables and assignments beyond the numeric subset.
 - [ ] Heap operations
   - [ ] Port heap op lowering from the native IR into LLVM IR.
   - [ ] Implement runtime safety checks and error reporting in the C/LLVM runtime helpers.
@@ -117,3 +114,16 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 - [ ] Python interop
   - [ ] Define a C/LLVM FFI bridge for Python interop APIs.
   - [ ] Stabilize argument conversion and reference lifetime management.
+
+### Closed tasks
+
+- [x] Heap operations
+  - [x] Implement `new`, `heap_get`, `heap_set`, and `delete` in the native VM runtime.
+  - [x] Add runtime safety checks for double-free and out-of-bounds access.
+  - [x] Extend native IR lowering to emit heap operations with typed offsets.
+- [x] Array literals
+  - [x] Represent array literals in native IR and lower them in the VM interpreter loop.
+  - [x] Add bounds checking and length metadata in the runtime heap model.
+  - [x] Wire array operations into standard library helpers (where applicable).
+  - [x] Add `null` lowering and a runtime sentinel representation.
+  - [x] Support non-numeric variables and assignments beyond the numeric subset.

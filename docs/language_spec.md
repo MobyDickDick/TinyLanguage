@@ -49,7 +49,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 - **Return requirement:** Annotated functions must return a value on all paths, otherwise error `E010` is raised.
 - **Closures:** Functions are first-class and can be returned or passed as arguments.
 
-## Argument-Kapselung
+## Argument encapsulation
 
 - **Opt-in flag:** `--copy-on-call` (or `TINYLANG_COPY_ON_CALL=1`) enables defensive copy semantics for function and method calls.
 - **When copying happens:** Non-escaped, mutable arguments (heap pointers, struct/variant maps, class instances) are deep-copied before binding. Parameters that appear on a `return` path are treated as escaped and keep their identity.

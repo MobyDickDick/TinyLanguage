@@ -90,17 +90,17 @@ def main() -> int:
                         PYTHON,
                         "-c",
                         (
-                            "import os, runpy, sys, traceback; "
-                            "print('sys.executable:', sys.executable); "
-                            "print('sys.path:', sys.path); "
-                            "print('PYTHONNOUSERSITE:', os.environ.get('PYTHONNOUSERSITE')); "
-                            "for module in ('pip', 'pytest'): "
-                            "    try: "
-                            "        print(f'runpy {module}:'); "
-                            "        runpy.run_module(module, run_name='__main__'); "
-                            "    except Exception as exc: "
-                            "        print(f'{module} error:', repr(exc)); "
-                            "        traceback.print_exc()"
+                            "import os, runpy, sys, traceback\n"
+                            "print('sys.executable:', sys.executable)\n"
+                            "print('sys.path:', sys.path)\n"
+                            "print('PYTHONNOUSERSITE:', os.environ.get('PYTHONNOUSERSITE'))\n"
+                            "for module in ('pip', 'pytest'):\n"
+                            "    try:\n"
+                            "        print(f'runpy {module}:')\n"
+                            "        runpy.run_module(module, run_name='__main__')\n"
+                            "    except Exception as exc:\n"
+                            "        print(f'{module} error:', repr(exc))\n"
+                            "        traceback.print_exc()\n"
                         ),
                     ],
                 ),

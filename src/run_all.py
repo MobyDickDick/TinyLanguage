@@ -98,9 +98,29 @@ def main() -> int:
                             "    try:\n"
                             "        print(f'runpy {module}:')\n"
                             "        runpy.run_module(module, run_name='__main__')\n"
+                            "    except SystemExit as exc:\n"
+                            "        print(f'{module} SystemExit:', exc)\n"
                             "    except Exception as exc:\n"
                             "        print(f'{module} error:', repr(exc))\n"
                             "        traceback.print_exc()\n"
+                        ),
+                    ],
+                ),
+                (
+                    "python runpy pytest --version",
+                    [
+                        PYTHON,
+                        "-c",
+                        (
+                            "import runpy, sys, traceback\n"
+                            "sys.argv = ['pytest', '--version']\n"
+                            "try:\n"
+                            "    runpy.run_module('pytest', run_name='__main__')\n"
+                            "except SystemExit as exc:\n"
+                            "    print('pytest SystemExit:', exc)\n"
+                            "except Exception as exc:\n"
+                            "    print('pytest error:', repr(exc))\n"
+                            "    traceback.print_exc()\n"
                         ),
                     ],
                 ),
@@ -142,16 +162,34 @@ def main() -> int:
                 if probe_proc.stderr:
                     print(probe_proc.stderr.rstrip())
             print("--- End debug: pytest resolution ---")
-        proc = subprocess.run(
-            cmd,
-            cwd=PROJECT_ROOT,
-            env={
-                **os.environ,
-                "PYTHONPATH": os.pathsep.join(
-                    filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
-                ),
-            },
-        )  # Execute the command inside the repo
+        if name == "pytest (full suite)":
+            proc = subprocess.run(
+                cmd,
+                cwd=PROJECT_ROOT,
+                env={
+                    **os.environ,
+                    "PYTHONPATH": os.pathsep.join(
+                        filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
+                    ),
+                },
+                capture_output=True,
+                text=True,
+            )
+            if proc.stdout:
+                print(proc.stdout.rstrip())
+            if proc.stderr:
+                print(proc.stderr.rstrip())
+        else:
+            proc = subprocess.run(
+                cmd,
+                cwd=PROJECT_ROOT,
+                env={
+                    **os.environ,
+                    "PYTHONPATH": os.pathsep.join(
+                        filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
+                    ),
+                },
+            )  # Execute the command inside the repo
         if proc.returncode != 0:  # Non-zero exit signals a failure
             failures.append(name)  # Record the failing entry for summary output
             # Continue so we can see all failures in one pass instead of stopping early

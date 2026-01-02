@@ -1,1 +1,3 @@
+// Rosetta example printing a greeting.
+
 define _ = print("Hello, World!");

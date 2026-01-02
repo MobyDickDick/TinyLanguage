@@ -1,3 +1,5 @@
+// Rosetta example calculating a factorial iteratively and printing the result.
+
 fn factorial(n) {
     define result = 1;
     define i = 2;

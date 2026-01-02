@@ -72,12 +72,20 @@ def main() -> int:
                         PYTHON,
                         "-c",
                         (
-                            "import sys, site, os; "
+                            "import json, os, site, sys, sysconfig, importlib.util; "
                             "print('sys.executable:', sys.executable); "
                             "print('sys.path:', sys.path); "
                             "print('site-packages:', site.getsitepackages()); "
                             "print('user-site:', site.getusersitepackages()); "
-                            "print('PYTHONNOUSERSITE:', os.environ.get('PYTHONNOUSERSITE'))"
+                            "print('PYTHONNOUSERSITE:', os.environ.get('PYTHONNOUSERSITE')); "
+                            "print('pip spec:', importlib.util.find_spec('pip')); "
+                            "print('pytest spec:', importlib.util.find_spec('pytest')); "
+                            "print('sysconfig paths:', json.dumps(sysconfig.get_paths(), indent=2)); "
+                            "print('env PYTHONHOME:', os.environ.get('PYTHONHOME')); "
+                            "print('env PYTHONPATH:', os.environ.get('PYTHONPATH')); "
+                            "print('env PYTHONUSERBASE:', os.environ.get('PYTHONUSERBASE')); "
+                            "print('env VIRTUAL_ENV:', os.environ.get('VIRTUAL_ENV')); "
+                            "print('env PATH:', os.environ.get('PATH'))"
                         ),
                     ],
                 ),

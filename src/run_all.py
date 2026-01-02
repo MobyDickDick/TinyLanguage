@@ -6,6 +6,7 @@ that everything still works with a single command or debug session.
 from __future__ import annotations  # Keep annotations as strings for forward references
 
 import os  # Augment environment with src/ on PYTHONPATH
+import site  # Report Python site-package locations for debugging
 import subprocess  # Run external processes for demos and tests
 import sys  # Discover the current Python interpreter path
 from pathlib import Path  # Resolve project-relative paths
@@ -39,6 +40,16 @@ COMMANDS: list[tuple[str, list[str]]] = [
 
 def main() -> int:
     """Run each configured command and report which ones fail."""
+
+    print("\n=== Debug environment (run_all.py) ===")
+    print("Python executable:", sys.executable)
+    print("sys.path:")
+    for entry in sys.path:
+        print(" -", entry)
+    print("site-packages:", site.getsitepackages())
+    print("user-site:", site.getusersitepackages())
+    print("PYTHONPATH:", os.environ.get("PYTHONPATH"))
+    print("=====================================")
 
     failures: list[str] = []  # Collect human-friendly names for failing runs
 

@@ -3,7 +3,7 @@
 ,
  
   "python.analysis.extraPaths": [
-    "c:\\Users\\marku\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages"
+    "C:\\Users\\marku\\AppData\\Local\\Python\\pythoncore-3.14-64\\Scripts"
   ],
   "tinylanguage.runtimePath": "${workspaceFolder}/src/tiny_language.py",
   "tinylanguage.pythonPath": "python",

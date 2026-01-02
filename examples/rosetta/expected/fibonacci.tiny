@@ -1,61 +1,17 @@
-// ------------------------------------------------------------
-// Example: Fibonacci (iterative)
-// ------------------------------------------------------------
-//
-// Purpose:
-//   Compute the n-th Fibonacci number using an iterative loop.
-//
-// Definition:
-//   fib(0) = 0
-//   fib(1) = 1
-//   fib(n) = fib(n-1) + fib(n-2)  for n >= 2
-//
-// What it demonstrates:
-//   - `if` with early `return` (base cases)
-//   - Local bindings via `define`
-//   - A `while` loop for efficient iteration (no recursion)
-//   - Variable updates (assignment) to carry state forward
-//   - Printing the result while respecting the “must-use” rule
-//
-// Complexity:
-//   - Time: O(n)
-//   - Space: O(1)
-//
-// Notes / corner cases:
-//   - For n <= 1, this function returns n immediately.
-//   - For negative n, the condition (n <= 1) is true, so the function
-//     returns n (e.g. fib(-3) == -3). If you want to forbid negative
-//     inputs, add a guard like:
-//       if (n < 0) { return 0; }   // or raise an error, depending on your design
-//
-// Expected output for the demo call:
-//   fibonacci(6) = 8
-//
-
 fn fibonacci(n) {
-    // Base cases: fib(0)=0, fib(1)=1
     if (n <= 1) {
         return n;
     }
-
-    // Invariant before the loop:
-    //   a == fib(i-2), b == fib(i-1)
-    define a = 0; // fib(0)
-    define b = 1; // fib(1)
+    define a = 0;
+    define b = 1;
     define i = 2;
-
-    // Advance i from 2 up to n, updating (a,b) each step.
     while (i <= n) {
-        define temp = a + b; // temp == fib(i)
-        a = b;               // shift forward: a becomes fib(i-1)
-        b = temp;            // b becomes fib(i)
+        define temp = a + b;
+        a = b;
+        b = temp;
         i = i + 1;
     }
-
-    // After the loop, b == fib(n).
     return b;
 }
 
-// Print fibonacci(6). Bind the return value to `_` to satisfy the
-// “no bare call statements” / “must-use” rule.
 define _ = print(fibonacci(6));

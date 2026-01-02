@@ -1,16 +1,1 @@
-// ----------------------------------------------
-// Hello World (TinyLanguage)
-// ----------------------------------------------
-//
-// Purpose:
-//   Minimal program to verify that the TinyLanguage toolchain runs and that
-//   stdout output works.
-//
-// What it demonstrates:
-//   - A single statement (`print`) that writes a string to standard output.
-//   - String literals using double quotes.
-//
-// Expected output:
-//   Hello World
-//
-define _ = print("Hello World");
+define _ = print("Hello, World!");

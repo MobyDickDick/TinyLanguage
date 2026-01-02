@@ -73,14 +73,14 @@ def test_emit_llvm_ir_via_c_cli(tmp_path: Path) -> None:
     src_path = str(Path(__file__).resolve().parents[1] / "src")
     env["PYTHONPATH"] = os.pathsep.join(filter(None, [src_path, env.get("PYTHONPATH")]))
 
-        subprocess.check_call(
-            [
-                sys.executable,
-                str(Path(__file__).resolve().parents[1] / "src" / "tiny_language_compiler_cli.py"),
-                str(source_path),
-                "--emit-llvm",
-                str(out_path),
-                "--compiler",
+    subprocess.check_call(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "src" / "tiny_language_compiler_cli.py"),
+            str(source_path),
+            "--emit-llvm",
+            str(out_path),
+            "--compiler",
             compiler,
         ],
         env=env,

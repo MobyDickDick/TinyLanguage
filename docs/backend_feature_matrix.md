@@ -100,10 +100,6 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 
 ### Open tasks
 
-- [ ] Full literal and type coverage
-  - [x] Add `null` lowering and a runtime sentinel representation.
-  - [x] Support non-numeric variables and assignments beyond the numeric subset.
-
 - [ ] Heap operations
   - [ ] Port heap op lowering from the native IR into LLVM IR.
   - [ ] Implement runtime safety checks and error reporting in the C/LLVM runtime helpers.
@@ -142,4 +138,6 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 
 ### Closed tasks
 
-_None_
+- [x] Full literal and type coverage
+  - [x] Add `null` lowering and a runtime sentinel representation.
+  - [x] Support non-numeric variables and assignments beyond the numeric subset.

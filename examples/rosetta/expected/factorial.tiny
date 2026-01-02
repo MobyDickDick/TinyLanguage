@@ -1,46 +1,13 @@
-// ------------------------------------------------------------
-// Example: Factorial (iterative)
-// ------------------------------------------------------------
-//
-// Purpose:
-//   Compute the factorial n! = 1 * 2 * 3 * ... * n.
-//
-// What it demonstrates:
-//   - Defining a function with `fn ... { ... }`
-//   - Local bindings via `define`
-//   - A `while` loop with a comparison (`<=`)
-//   - Updating variables (assignment)
-//   - Returning a value with `return`
-//   - Calling a function and printing the result
-//
-// Semantics / notes:
-//   - This implementation uses an iterative loop (no recursion).
-//   - For n < 2, the loop body is skipped and the function returns 1.
-//   - For negative n, the loop condition `i <= n` is false initially,
-//     so the function also returns 1 (this is a *behavioral choice*;
-//     if you want factorial to reject negative numbers, add an `if` guard).
-//
-// Expected output:
-//   120
-//
+// Rosetta example calculating a factorial iteratively and printing the result.
 
-// Compute factorial(n) iteratively.
 fn factorial(n) {
-    // Accumulator for the product.
     define result = 1;
-
-    // Start multiplying at 2 (multiplying by 1 is unnecessary).
     define i = 2;
-
-    // Multiply result by each integer i from 2 up to n.
     while (i <= n) {
         result = result * i;
         i = i + 1;
     }
-
     return result;
 }
 
-// Print factorial(5). We bind the return value of `print(...)` to `_`
-// to satisfy the "no bare call statements" / "must-use" rule.
 define _ = print(factorial(5));

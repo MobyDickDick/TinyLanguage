@@ -94,12 +94,14 @@ class FunctionIR:
     name: str
     params: List[str]
     body: List[Statement] = field(default_factory=list)
+    docstring: str | None = None
 
 
 @dataclass(eq=True)
 class ProgramIR:
     functions: List[FunctionIR]
     body: List[Statement] = field(default_factory=list)
+    docstring: str | None = None
 
 
 # ----- Helpers -----
@@ -241,6 +243,7 @@ class PythonTranspiler(LanguageTranspiler):
 
     def from_source(self, code: str) -> ProgramIR:
         module = ast.parse(code)
+        module_docstring = ast.get_docstring(module)
         functions: List[FunctionIR] = []
         body: List[Statement] = []
         for node in module.body:
@@ -251,16 +254,17 @@ class PythonTranspiler(LanguageTranspiler):
                     # Skip module-level docstrings or bare constants.
                     continue
                 body.append(self._stmt_from_ast(node))
-        return ProgramIR(functions=functions, body=body)
+        return ProgramIR(functions=functions, body=body, docstring=module_docstring)
 
     def _function_from_ast(self, node: ast.FunctionDef) -> FunctionIR:
         params = [arg.arg for arg in node.args.args]
+        docstring = ast.get_docstring(node)
         stmts = [
             self._stmt_from_ast(stmt)
             for stmt in node.body
             if not isinstance(stmt, ast.Expr) or not isinstance(stmt.value, ast.Constant)
         ]
-        return FunctionIR(name=node.name, params=params, body=stmts)
+        return FunctionIR(name=node.name, params=params, body=stmts, docstring=docstring)
 
     def _stmt_from_ast(self, node: ast.AST) -> Statement:
         if isinstance(node, ast.Assign):
@@ -710,12 +714,15 @@ class TinyLanguageTranspiler(LanguageTranspiler):
 
     def to_source(self, program: ProgramIR) -> str:
         chunks: List[str] = []
+        if program.docstring:
+            chunks.extend(self._render_comment_block(program.docstring))
+            chunks.append("")
         for index, fn in enumerate(program.functions):
             chunks.append(self._render_function(fn))
             if index < len(program.functions) - 1:
                 chunks.append("")
         if program.body:
-            if chunks:
+            if chunks and chunks[-1] != "":
                 chunks.append("")
             chunks.extend(self._render_statements(program.body, indent_level=0, defined=set()))
         return self._lines(chunks)
@@ -723,10 +730,24 @@ class TinyLanguageTranspiler(LanguageTranspiler):
     def _render_function(self, fn: FunctionIR) -> str:
         defined: Set[str] = set(fn.params)
         header = f"fn {fn.name}({', '.join(fn.params)}) {{"
-        body_lines = self._render_statements(fn.body, indent_level=1, defined=defined) or [
-            self.indent + "// no-op"
-        ]
+        body_lines: List[str] = []
+        if fn.docstring:
+            body_lines.extend(self._render_comment_block(fn.docstring, indent_level=1))
+        body_lines.extend(self._render_statements(fn.body, indent_level=1, defined=defined))
+        if not body_lines:
+            body_lines.append(self.indent + "// no-op")
         return "\n".join([header, *body_lines, "}"])
+
+    def _render_comment_block(self, docstring: str, indent_level: int = 0) -> List[str]:
+        pad = self.indent * indent_level
+        lines = docstring.splitlines() or [""]
+        rendered: List[str] = []
+        for line in lines:
+            if line.strip():
+                rendered.append(f"{pad}// {line}")
+            else:
+                rendered.append(f"{pad}//")
+        return rendered
 
     def _render_statements(self, statements: Sequence[Statement], indent_level: int, defined: Set[str]) -> List[str]:
         rendered: List[str] = []

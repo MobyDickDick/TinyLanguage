@@ -85,6 +85,26 @@ def main() -> int:
                     ],
                 ),
                 (
+                    "python runpy pip/pytest",
+                    [
+                        PYTHON,
+                        "-c",
+                        (
+                            "import os, runpy, sys, traceback; "
+                            "print('sys.executable:', sys.executable); "
+                            "print('sys.path:', sys.path); "
+                            "print('PYTHONNOUSERSITE:', os.environ.get('PYTHONNOUSERSITE')); "
+                            "for module in ('pip', 'pytest'): "
+                            "    try: "
+                            "        print(f'runpy {module}:'); "
+                            "        runpy.run_module(module, run_name='__main__'); "
+                            "    except Exception as exc: "
+                            "        print(f'{module} error:', repr(exc)); "
+                            "        traceback.print_exc()"
+                        ),
+                    ],
+                ),
+                (
                     "python site config",
                     [
                         PYTHON,

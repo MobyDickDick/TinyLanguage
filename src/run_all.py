@@ -56,6 +56,46 @@ def main() -> int:
     for name, cmd in COMMANDS:  # Iterate through each demo/test pair
         print(f"\n=== Running {name} ===")  # Banner to make output scannable
         print("Command:", " ".join(cmd))  # Show the exact invocation
+        if name == "pytest (full suite)":
+            print("\n--- Debug: pytest resolution ---")
+            probe_env = {
+                **os.environ,
+                "PYTHONPATH": os.pathsep.join(
+                    filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
+                ),
+            }
+            probe_cmds = [
+                ("pip show pytest", [PYTHON, "-m", "pip", "show", "pytest"]),
+                (
+                    "python site config",
+                    [
+                        PYTHON,
+                        "-c",
+                        (
+                            "import sys, site, os; "
+                            "print('sys.executable:', sys.executable); "
+                            "print('sys.path:', sys.path); "
+                            "print('site-packages:', site.getsitepackages()); "
+                            "print('user-site:', site.getusersitepackages()); "
+                            "print('PYTHONNOUSERSITE:', os.environ.get('PYTHONNOUSERSITE'))"
+                        ),
+                    ],
+                ),
+            ]
+            for label, probe in probe_cmds:
+                print(f"Probe command ({label}):", " ".join(probe))
+                probe_proc = subprocess.run(
+                    probe,
+                    cwd=PROJECT_ROOT,
+                    env=probe_env,
+                    capture_output=True,
+                    text=True,
+                )
+                if probe_proc.stdout:
+                    print(probe_proc.stdout.rstrip())
+                if probe_proc.stderr:
+                    print(probe_proc.stderr.rstrip())
+            print("--- End debug: pytest resolution ---")
         proc = subprocess.run(
             cmd,
             cwd=PROJECT_ROOT,

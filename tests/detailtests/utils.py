@@ -47,7 +47,7 @@ def execute_tiny_program(
             tmp_path = pathlib.Path(tmp.name)
 
         proc = subprocess.run(
-            [sys.executable, "-m", "tiny_language", str(tmp_path), *(args or [])],
+            [sys.executable, str(SRC_ROOT / "tiny_language.py"), str(tmp_path), *(args or [])],
             capture_output=True,
             text=True,
             timeout=timeout,

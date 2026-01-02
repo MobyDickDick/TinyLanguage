@@ -76,8 +76,7 @@ def test_emit_llvm_ir_via_c_cli(tmp_path: Path) -> None:
     subprocess.check_call(
         [
             sys.executable,
-            "-m",
-            "tiny_language_compiler_cli",
+            str(Path(__file__).resolve().parents[1] / "src" / "tiny_language_compiler_cli.py"),
             str(source_path),
             "--emit-llvm",
             str(out_path),

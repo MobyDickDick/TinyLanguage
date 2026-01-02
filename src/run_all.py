@@ -5,9 +5,7 @@ that everything still works with a single command or debug session.
 """
 from __future__ import annotations  # Keep annotations as strings for forward references
 
-import importlib.util  # Check for optional pytest availability
 import os  # Augment environment with src/ on PYTHONPATH
-import shutil  # Locate alternative Python executables
 import subprocess  # Run external processes for demos and tests
 import sys  # Discover the current Python interpreter path
 from pathlib import Path  # Resolve project-relative paths
@@ -17,28 +15,9 @@ SRC_ROOT = PROJECT_ROOT / "src"
 DEMO_ROOT = PROJECT_ROOT / "src_tiny"
 PYTHON = sys.executable  # Absolute path to the active Python executable
 
-
-def resolve_pytest_command() -> list[str]:
-    """Return the best pytest invocation for the current environment."""
-
-    if importlib.util.find_spec("pytest") is not None:
-        return [PYTHON, "-m", "pytest"]
-
-    launcher: str | None = None
-    if os.name == "nt":
-        for candidate in ("python", "py"):
-            if shutil.which(candidate):
-                launcher = candidate
-                break
-    else:
-        launcher = shutil.which("python")
-
-    return [launcher or PYTHON, "-m", "pytest"]
-
-
 # Pairs of human-friendly names and the commands they represent.
 INTERPRETER = SRC_ROOT / "tiny_language.py"
-PYTEST_COMMAND = resolve_pytest_command()
+PYTEST_COMMAND = [PYTHON, "-m", "pytest"]
 COMMANDS: list[tuple[str, list[str]]] = [
     ("pytest (full suite)", PYTEST_COMMAND),  # Run all Python tests
     ("demo.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "demo.tiny")]),  # Showcase basics

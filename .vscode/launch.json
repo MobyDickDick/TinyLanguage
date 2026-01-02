@@ -1,7 +1,7 @@
 {
   "version": "0.2.0",
   "configurations": [
-     {
+    {
       "name": "Python: debug console_sum",
       "type": "debugpy",
       "request": "launch",
@@ -10,7 +10,6 @@
       "logToFile": true,
       "justMyCode": false
     },
-
     {
       "name": "TinyLanguage: Debug all_features.tiny",
       "type": "tinylanguage",
@@ -73,7 +72,7 @@
       "env": {
         "TINYLANGUAGE_DAP_LOG": "/tmp/tiny_dap.log",
         "TINYLANGUAGE_DAP_STDERR": "1",
-        "TINYLANGUAGE_DAP_ALLOW_STDIN" : "1"
+        "TINYLANGUAGE_DAP_ALLOW_STDIN": "1"
       },
       "presentation": {
         "group": "TinyLanguage",
@@ -380,7 +379,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_number_class.py",
@@ -393,7 +395,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_number_intervall.py",
@@ -406,7 +411,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_stdlib.py (stdlib utilities)",
@@ -419,7 +427,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_errors.py",
@@ -432,7 +443,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_benchmark_and_fuzz.py",
@@ -445,7 +459,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/detailtests/test_debug_adapter_flow.py (DAP logging)",
@@ -460,7 +477,8 @@
       ],
       "env": {
         "TINYLANGUAGE_DAP_LOG": "${workspaceFolder}/.tinylanguage/debug-adapter.log",
-        "TINYLANGUAGE_DAP_STDERR": "1"
+        "TINYLANGUAGE_DAP_STDERR": "1",
+        "PYTHONPATH": "${workspaceFolder}/src"
       },
       "logToFile": true,
       "justMyCode": false
@@ -476,7 +494,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_heap_pointer_demo.py",
@@ -489,7 +510,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_concurrency.py",
@@ -502,7 +526,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_async_tokens.py",
@@ -515,7 +542,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_error_messages.py",
@@ -528,7 +558,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_inheritance.py",
@@ -541,7 +574,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_objects.py",
@@ -554,7 +590,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_number_overflow.py",
@@ -567,7 +606,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_null.py",
@@ -580,7 +622,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_operator_overloading.py",
@@ -593,7 +638,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_namespaces.py",
@@ -606,7 +654,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_try_catch.py",
@@ -619,7 +670,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_typing.py",
@@ -632,7 +686,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: pytest - tests/test_modules.py",
@@ -645,7 +702,10 @@
         "-q"
       ],
       "logToFile": true,
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     },
     {
       "name": "Python: utils helper module",

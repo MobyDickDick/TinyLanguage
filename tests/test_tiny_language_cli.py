@@ -33,7 +33,7 @@ def run_cli_module(command):
         ),
     }
     return subprocess.run(
-        [sys.executable, "-m", "tiny_lang_cli", *command],
+        [sys.executable, "src/tiny_lang_cli.py", *command],
         capture_output=True,
         text=True,
         cwd=PROJECT_ROOT,

@@ -46,7 +46,7 @@ def test_cli_emits_llvm_ir(tmp_path) -> None:
     ).strip(os.pathsep)
 
     result = subprocess.run(
-        [sys.executable, "-m", "tiny_language_cli", "--file", str(script), "--emit-llvm"],
+        [sys.executable, str(Path(__file__).resolve().parents[2] / "src" / "tiny_language_cli.py"), "--file", str(script), "--emit-llvm"],
         capture_output=True,
         text=True,
         check=False,
@@ -137,7 +137,7 @@ def test_cli_emits_llvm_ir_for_comparisons(tmp_path) -> None:
     ).strip(os.pathsep)
 
     result = subprocess.run(
-        [sys.executable, "-m", "tiny_language_cli", "--file", str(script), "--emit-llvm"],
+        [sys.executable, str(Path(__file__).resolve().parents[2] / "src" / "tiny_language_cli.py"), "--file", str(script), "--emit-llvm"],
         capture_output=True,
         text=True,
         check=False,
@@ -161,7 +161,7 @@ def test_cli_emits_llvm_ir_for_modulo(tmp_path) -> None:
     ).strip(os.pathsep)
 
     result = subprocess.run(
-        [sys.executable, "-m", "tiny_language_cli", "--file", str(script), "--emit-llvm"],
+        [sys.executable, str(Path(__file__).resolve().parents[2] / "src" / "tiny_language_cli.py"), "--file", str(script), "--emit-llvm"],
         capture_output=True,
         text=True,
         check=False,

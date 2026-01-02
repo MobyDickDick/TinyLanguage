@@ -67,6 +67,24 @@ def main() -> int:
             probe_cmds = [
                 ("pip show pytest", [PYTHON, "-m", "pip", "show", "pytest"]),
                 (
+                    "python import pip/pytest",
+                    [
+                        PYTHON,
+                        "-c",
+                        (
+                            "import os, site, sys; "
+                            "print('sys.executable:', sys.executable); "
+                            "print('sys.prefix:', sys.prefix); "
+                            "print('sys.base_prefix:', sys.base_prefix); "
+                            "print('site.ENABLE_USER_SITE:', site.ENABLE_USER_SITE); "
+                            "import pip, pytest; "
+                            "print('pip file:', pip.__file__); "
+                            "print('pytest file:', pytest.__file__); "
+                            "print('PYTHONNOUSERSITE:', os.environ.get('PYTHONNOUSERSITE'))"
+                        ),
+                    ],
+                ),
+                (
                     "python site config",
                     [
                         PYTHON,

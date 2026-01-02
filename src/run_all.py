@@ -51,6 +51,12 @@ def main() -> int:
     print("PYTHONPATH:", os.environ.get("PYTHONPATH"))
     print("=====================================")
 
+    probe_log_path = PROJECT_ROOT / "pytest_debug.log"
+    probe_lines: list[str] = []
+
+    def log_probe(line: str) -> None:
+        probe_lines.append(line)
+
     failures: list[str] = []  # Collect human-friendly names for failing runs
 
     for name, cmd in COMMANDS:  # Iterate through each demo/test pair
@@ -58,6 +64,7 @@ def main() -> int:
         print("Command:", " ".join(cmd))  # Show the exact invocation
         if name == "pytest (full suite)":
             print("\n--- Debug: pytest resolution ---")
+            log_probe("=== Debug: pytest resolution ===")
             probe_env = {
                 **os.environ,
                 "PYTHONPATH": os.pathsep.join(
@@ -150,6 +157,7 @@ def main() -> int:
             ]
             for label, probe in probe_cmds:
                 print(f"Probe command ({label}):", " ".join(probe))
+                log_probe(f"\n>>> Probe command ({label}): {' '.join(probe)}")
                 probe_proc = subprocess.run(
                     probe,
                     cwd=PROJECT_ROOT,
@@ -158,10 +166,17 @@ def main() -> int:
                     text=True,
                 )
                 if probe_proc.stdout:
-                    print(probe_proc.stdout.rstrip())
+                    stdout = probe_proc.stdout.rstrip()
+                    print(stdout)
+                    log_probe(stdout)
                 if probe_proc.stderr:
-                    print(probe_proc.stderr.rstrip())
+                    stderr = probe_proc.stderr.rstrip()
+                    print(stderr)
+                    log_probe(stderr)
             print("--- End debug: pytest resolution ---")
+            log_probe("=== End debug: pytest resolution ===")
+            probe_log_path.write_text("\n".join(probe_lines), encoding="utf-8")
+            print(f"Debug log written to: {probe_log_path}")
         if name == "pytest (full suite)":
             proc = subprocess.run(
                 cmd,
@@ -176,9 +191,16 @@ def main() -> int:
                 text=True,
             )
             if proc.stdout:
-                print(proc.stdout.rstrip())
+                stdout = proc.stdout.rstrip()
+                print(stdout)
+                log_probe("\n>>> pytest stdout")
+                log_probe(stdout)
             if proc.stderr:
-                print(proc.stderr.rstrip())
+                stderr = proc.stderr.rstrip()
+                print(stderr)
+                log_probe("\n>>> pytest stderr")
+                log_probe(stderr)
+            probe_log_path.write_text("\n".join(probe_lines), encoding="utf-8")
         else:
             proc = subprocess.run(
                 cmd,

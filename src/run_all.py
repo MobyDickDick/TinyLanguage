@@ -6,7 +6,6 @@ that everything still works with a single command or debug session.
 from __future__ import annotations  # Keep annotations as strings for forward references
 
 import os  # Augment environment with src/ on PYTHONPATH
-import site  # Report Python site-package locations for debugging
 import subprocess  # Run external processes for demos and tests
 import sys  # Discover the current Python interpreter path
 from pathlib import Path  # Resolve project-relative paths
@@ -41,142 +40,11 @@ COMMANDS: list[tuple[str, list[str]]] = [
 def main() -> int:
     """Run each configured command and report which ones fail."""
 
-    print("\n=== Debug environment (run_all.py) ===")
-    print("Python executable:", sys.executable)
-    print("sys.path:")
-    for entry in sys.path:
-        print(" -", entry)
-    print("site-packages:", site.getsitepackages())
-    print("user-site:", site.getusersitepackages())
-    print("PYTHONPATH:", os.environ.get("PYTHONPATH"))
-    print("=====================================")
-
-    probe_log_path = PROJECT_ROOT / "pytest_debug.log"
-    probe_lines: list[str] = []
-
-    def log_probe(line: str) -> None:
-        probe_lines.append(line)
-
     failures: list[str] = []  # Collect human-friendly names for failing runs
 
     for name, cmd in COMMANDS:  # Iterate through each demo/test pair
         print(f"\n=== Running {name} ===")  # Banner to make output scannable
         print("Command:", " ".join(cmd))  # Show the exact invocation
-        if name == "pytest (full suite)":
-            print("\n--- Debug: pytest resolution ---")
-            log_probe("=== Debug: pytest resolution ===")
-            probe_env = {
-                **os.environ,
-                "PYTHONPATH": os.pathsep.join(
-                    filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
-                ),
-            }
-            probe_cmds = [
-                ("pip show pytest", [PYTHON, "-m", "pip", "show", "pytest"]),
-                (
-                    "python import pip/pytest",
-                    [
-                        PYTHON,
-                        "-c",
-                        (
-                            "import os, site, sys; "
-                            "print('sys.executable:', sys.executable); "
-                            "print('sys.prefix:', sys.prefix); "
-                            "print('sys.base_prefix:', sys.base_prefix); "
-                            "print('site.ENABLE_USER_SITE:', site.ENABLE_USER_SITE); "
-                            "import pip, pytest; "
-                            "print('pip file:', pip.__file__); "
-                            "print('pytest file:', pytest.__file__); "
-                            "print('PYTHONNOUSERSITE:', os.environ.get('PYTHONNOUSERSITE'))"
-                        ),
-                    ],
-                ),
-                (
-                    "python runpy pip/pytest",
-                    [
-                        PYTHON,
-                        "-c",
-                        (
-                            "import os, runpy, sys, traceback\n"
-                            "print('sys.executable:', sys.executable)\n"
-                            "print('sys.path:', sys.path)\n"
-                            "print('PYTHONNOUSERSITE:', os.environ.get('PYTHONNOUSERSITE'))\n"
-                            "for module in ('pip', 'pytest'):\n"
-                            "    try:\n"
-                            "        print(f'runpy {module}:')\n"
-                            "        runpy.run_module(module, run_name='__main__')\n"
-                            "    except SystemExit as exc:\n"
-                            "        print(f'{module} SystemExit:', exc)\n"
-                            "    except Exception as exc:\n"
-                            "        print(f'{module} error:', repr(exc))\n"
-                            "        traceback.print_exc()\n"
-                        ),
-                    ],
-                ),
-                (
-                    "python runpy pytest --version",
-                    [
-                        PYTHON,
-                        "-c",
-                        (
-                            "import runpy, sys, traceback\n"
-                            "sys.argv = ['pytest', '--version']\n"
-                            "try:\n"
-                            "    runpy.run_module('pytest', run_name='__main__')\n"
-                            "except SystemExit as exc:\n"
-                            "    print('pytest SystemExit:', exc)\n"
-                            "except Exception as exc:\n"
-                            "    print('pytest error:', repr(exc))\n"
-                            "    traceback.print_exc()\n"
-                        ),
-                    ],
-                ),
-                (
-                    "python site config",
-                    [
-                        PYTHON,
-                        "-c",
-                        (
-                            "import json, os, site, sys, sysconfig, importlib.util; "
-                            "print('sys.executable:', sys.executable); "
-                            "print('sys.path:', sys.path); "
-                            "print('site-packages:', site.getsitepackages()); "
-                            "print('user-site:', site.getusersitepackages()); "
-                            "print('PYTHONNOUSERSITE:', os.environ.get('PYTHONNOUSERSITE')); "
-                            "print('pip spec:', importlib.util.find_spec('pip')); "
-                            "print('pytest spec:', importlib.util.find_spec('pytest')); "
-                            "print('sysconfig paths:', json.dumps(sysconfig.get_paths(), indent=2)); "
-                            "print('env PYTHONHOME:', os.environ.get('PYTHONHOME')); "
-                            "print('env PYTHONPATH:', os.environ.get('PYTHONPATH')); "
-                            "print('env PYTHONUSERBASE:', os.environ.get('PYTHONUSERBASE')); "
-                            "print('env VIRTUAL_ENV:', os.environ.get('VIRTUAL_ENV')); "
-                            "print('env PATH:', os.environ.get('PATH'))"
-                        ),
-                    ],
-                ),
-            ]
-            for label, probe in probe_cmds:
-                print(f"Probe command ({label}):", " ".join(probe))
-                log_probe(f"\n>>> Probe command ({label}): {' '.join(probe)}")
-                probe_proc = subprocess.run(
-                    probe,
-                    cwd=PROJECT_ROOT,
-                    env=probe_env,
-                    capture_output=True,
-                    text=True,
-                )
-                if probe_proc.stdout:
-                    stdout = probe_proc.stdout.rstrip()
-                    print(stdout)
-                    log_probe(stdout)
-                if probe_proc.stderr:
-                    stderr = probe_proc.stderr.rstrip()
-                    print(stderr)
-                    log_probe(stderr)
-            print("--- End debug: pytest resolution ---")
-            log_probe("=== End debug: pytest resolution ===")
-            probe_log_path.write_text("\n".join(probe_lines), encoding="utf-8")
-            print(f"Debug log written to: {probe_log_path}")
         if name == "pytest (full suite)":
             proc = subprocess.run(
                 cmd,
@@ -193,14 +61,9 @@ def main() -> int:
             if proc.stdout:
                 stdout = proc.stdout.rstrip()
                 print(stdout)
-                log_probe("\n>>> pytest stdout")
-                log_probe(stdout)
             if proc.stderr:
                 stderr = proc.stderr.rstrip()
                 print(stderr)
-                log_probe("\n>>> pytest stderr")
-                log_probe(stderr)
-            probe_log_path.write_text("\n".join(probe_lines), encoding="utf-8")
         else:
             proc = subprocess.run(
                 cmd,

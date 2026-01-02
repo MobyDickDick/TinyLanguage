@@ -6,6 +6,7 @@ that everything still works with a single command or debug session.
 from __future__ import annotations  # Keep annotations as strings for forward references
 
 import os  # Augment environment with src/ on PYTHONPATH
+import site  # Report Python site-package locations for debugging
 import subprocess  # Run external processes for demos and tests
 import sys  # Discover the current Python interpreter path
 from pathlib import Path  # Resolve project-relative paths
@@ -40,11 +41,107 @@ COMMANDS: list[tuple[str, list[str]]] = [
 def main() -> int:
     """Run each configured command and report which ones fail."""
 
+    print("\n=== Debug environment (run_all.py) ===")
+    print("Python executable:", sys.executable)
+    print("sys.path:")
+    for entry in sys.path:
+        print(" -", entry)
+    print("site-packages:", site.getsitepackages())
+    print("user-site:", site.getusersitepackages())
+    print("PYTHONPATH:", os.environ.get("PYTHONPATH"))
+    print("=====================================")
+
     failures: list[str] = []  # Collect human-friendly names for failing runs
 
     for name, cmd in COMMANDS:  # Iterate through each demo/test pair
         print(f"\n=== Running {name} ===")  # Banner to make output scannable
         print("Command:", " ".join(cmd))  # Show the exact invocation
+        if name == "pytest (full suite)":
+            print("\n--- Debug: pytest resolution ---")
+            probe_env = {
+                **os.environ,
+                "PYTHONPATH": os.pathsep.join(
+                    filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
+                ),
+            }
+            probe_cmds = [
+                ("pip show pytest", [PYTHON, "-m", "pip", "show", "pytest"]),
+                (
+                    "python import pip/pytest",
+                    [
+                        PYTHON,
+                        "-c",
+                        (
+                            "import os, site, sys; "
+                            "print('sys.executable:', sys.executable); "
+                            "print('sys.prefix:', sys.prefix); "
+                            "print('sys.base_prefix:', sys.base_prefix); "
+                            "print('site.ENABLE_USER_SITE:', site.ENABLE_USER_SITE); "
+                            "import pip, pytest; "
+                            "print('pip file:', pip.__file__); "
+                            "print('pytest file:', pytest.__file__); "
+                            "print('PYTHONNOUSERSITE:', os.environ.get('PYTHONNOUSERSITE'))"
+                        ),
+                    ],
+                ),
+                (
+                    "python runpy pip/pytest",
+                    [
+                        PYTHON,
+                        "-c",
+                        (
+                            "import os, runpy, sys, traceback; "
+                            "print('sys.executable:', sys.executable); "
+                            "print('sys.path:', sys.path); "
+                            "print('PYTHONNOUSERSITE:', os.environ.get('PYTHONNOUSERSITE')); "
+                            "for module in ('pip', 'pytest'): "
+                            "    try: "
+                            "        print(f'runpy {module}:'); "
+                            "        runpy.run_module(module, run_name='__main__'); "
+                            "    except Exception as exc: "
+                            "        print(f'{module} error:', repr(exc)); "
+                            "        traceback.print_exc()"
+                        ),
+                    ],
+                ),
+                (
+                    "python site config",
+                    [
+                        PYTHON,
+                        "-c",
+                        (
+                            "import json, os, site, sys, sysconfig, importlib.util; "
+                            "print('sys.executable:', sys.executable); "
+                            "print('sys.path:', sys.path); "
+                            "print('site-packages:', site.getsitepackages()); "
+                            "print('user-site:', site.getusersitepackages()); "
+                            "print('PYTHONNOUSERSITE:', os.environ.get('PYTHONNOUSERSITE')); "
+                            "print('pip spec:', importlib.util.find_spec('pip')); "
+                            "print('pytest spec:', importlib.util.find_spec('pytest')); "
+                            "print('sysconfig paths:', json.dumps(sysconfig.get_paths(), indent=2)); "
+                            "print('env PYTHONHOME:', os.environ.get('PYTHONHOME')); "
+                            "print('env PYTHONPATH:', os.environ.get('PYTHONPATH')); "
+                            "print('env PYTHONUSERBASE:', os.environ.get('PYTHONUSERBASE')); "
+                            "print('env VIRTUAL_ENV:', os.environ.get('VIRTUAL_ENV')); "
+                            "print('env PATH:', os.environ.get('PATH'))"
+                        ),
+                    ],
+                ),
+            ]
+            for label, probe in probe_cmds:
+                print(f"Probe command ({label}):", " ".join(probe))
+                probe_proc = subprocess.run(
+                    probe,
+                    cwd=PROJECT_ROOT,
+                    env=probe_env,
+                    capture_output=True,
+                    text=True,
+                )
+                if probe_proc.stdout:
+                    print(probe_proc.stdout.rstrip())
+                if probe_proc.stderr:
+                    print(probe_proc.stderr.rstrip())
+            print("--- End debug: pytest resolution ---")
         proc = subprocess.run(
             cmd,
             cwd=PROJECT_ROOT,

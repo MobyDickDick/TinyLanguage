@@ -15,7 +15,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent  # Root directory of the r
 SRC_ROOT = PROJECT_ROOT / "src"
 DEMO_ROOT = PROJECT_ROOT / "src_tiny"
 PYTHON = sys.executable  # Absolute path to the active Python executable
-PYTEST_FALLBACK_ENV = "C:\\Users\\marku\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe"
+PYTEST_FALLBACK_ENV = "TINYLANGUAGE_PYTHON_FALLBACK"
 
 # Pairs of human-friendly names and the commands they represent.
 INTERPRETER = SRC_ROOT / "tiny_language.py"
@@ -66,6 +66,8 @@ def _run_pytest(cmd: list[str], env: dict[str, str]) -> subprocess.CompletedProc
         capture_output=True,
         text=True,
     )
+    if proc.returncode == 0:
+        return proc
     missing_pytest = bool(
         re.search(
             r"No module named ['\"]?pytest['\"]?",
@@ -76,6 +78,7 @@ def _run_pytest(cmd: list[str], env: dict[str, str]) -> subprocess.CompletedProc
         fallback = _candidate_pytest_fallback()
         print("fallback:", fallback)
         if fallback and fallback != cmd[0]:
+            print("fallback:", fallback)
             retry_cmd = [fallback, "-m", "pytest"]
             print("Retrying pytest with:", " ".join(retry_cmd))
             return subprocess.run(

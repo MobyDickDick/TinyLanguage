@@ -225,7 +225,7 @@ def _candidate_pytest_fallback() -> str | None:
         local_app_data = os.environ.get("LOCALAPPDATA")
         if not local_app_data:
             return None
-        candidate = Path(local_app_data) / "Python" / "pythoncore-3.14-64" / "python.exe"
+        candidate = Path(local_app_data) / "Python" / "bin" / "python.exe"
         if candidate.exists():
             return str(candidate)
     return None

@@ -66,7 +66,7 @@ def _run_pytest(cmd: list[str], env: dict[str, str]) -> subprocess.CompletedProc
         capture_output=True,
         text=True,
     )
-    if proc.returncode == 0:
+    if proc.returncode and proc.stderr == "":
         return proc
     missing_pytest = bool(
         re.search(

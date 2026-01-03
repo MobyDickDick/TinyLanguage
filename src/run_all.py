@@ -88,6 +88,17 @@ def _run_pytest(cmd: list[str], env: dict[str, str]) -> subprocess.CompletedProc
                 capture_output=True,
                 text=True,
             )
+        if fallback == cmd[0]:
+            print(
+                "pytest is missing from the current interpreter. "
+                "Install it or set TINYLANGUAGE_PYTHON_FALLBACK to a Python "
+                "that includes pytest."
+            )
+        elif not fallback:
+            print(
+                "No fallback interpreter found. Set TINYLANGUAGE_PYTHON_FALLBACK "
+                "to a Python that includes pytest."
+            )
     return proc
 
 

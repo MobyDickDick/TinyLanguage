@@ -14,6 +14,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent  # Root directory of the r
 SRC_ROOT = PROJECT_ROOT / "src"
 DEMO_ROOT = PROJECT_ROOT / "src_tiny"
 PYTHON = sys.executable  # Absolute path to the active Python executable
+PYTEST_FALLBACK_ENV = "TINYLANGUAGE_PYTHON_FALLBACK"
 
 # Pairs of human-friendly names and the commands they represent.
 INTERPRETER = SRC_ROOT / "tiny_language.py"
@@ -38,6 +39,49 @@ COMMANDS: list[tuple[str, list[str]]] = [
 ]
 
 
+def _candidate_pytest_fallback() -> str | None:
+    """Return an alternate Python path for pytest when configured or discoverable."""
+    fallback = os.environ.get(PYTEST_FALLBACK_ENV)
+    if fallback:
+        return fallback
+    if os.name == "nt":
+        local_app_data = os.environ.get("LOCALAPPDATA")
+        if not local_app_data:
+            return None
+        candidate = (
+            Path(local_app_data) / "Python" / "pythoncore-3.14-64" / "python.exe"
+        )
+        if candidate.exists():
+            return str(candidate)
+    return None
+
+
+def _run_pytest(cmd: list[str], env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    """Run pytest and retry with a fallback interpreter if needed."""
+    proc = subprocess.run(
+        cmd,
+        cwd=PROJECT_ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode == 0:
+        return proc
+    if proc.stderr and "No module named pytest" in proc.stderr:
+        fallback = _candidate_pytest_fallback()
+        if fallback and fallback != cmd[0]:
+            retry_cmd = [fallback, "-m", "pytest"]
+            print("Retrying pytest with:", " ".join(retry_cmd))
+            return subprocess.run(
+                retry_cmd,
+                cwd=PROJECT_ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+    return proc
+
+
 def main() -> int:
     """Run each configured command and report which ones fail."""
 
@@ -47,18 +91,13 @@ def main() -> int:
         print(f"\n=== Running {name} ===")  # Banner to make output scannable
         print("Command:", " ".join(cmd))  # Show the exact invocation
         if name == "pytest (full suite)":
-            proc = subprocess.run(
-                cmd,
-                cwd=PROJECT_ROOT,
-                env={
-                    **os.environ,
-                    "PYTHONPATH": os.pathsep.join(
-                        filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
-                    ),
-                },
-                capture_output=True,
-                text=True,
-            )
+            env = {
+                **os.environ,
+                "PYTHONPATH": os.pathsep.join(
+                    filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
+                ),
+            }
+            proc = _run_pytest(cmd, env)
             if proc.stdout:
                 stdout = proc.stdout.rstrip()
                 print(stdout)

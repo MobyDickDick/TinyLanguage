@@ -68,8 +68,13 @@ def _run_pytest(cmd: list[str], env: dict[str, str]) -> subprocess.CompletedProc
     )
     if proc.returncode == 0:
         return proc
-    if proc.stderr and "No module named pytest" in proc.stderr:
+    missing_pytest = (
+        ("No module named pytest" in (proc.stderr or ""))
+        or ("No module named pytest" in (proc.stdout or ""))
+    )
+    if missing_pytest:
         fallback = _candidate_pytest_fallback()
+        print("fallback:", fallback)
         if fallback and fallback != cmd[0]:
             retry_cmd = [fallback, "-m", "pytest"]
             print("Retrying pytest with:", " ".join(retry_cmd))

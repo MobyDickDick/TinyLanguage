@@ -42,6 +42,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
 def _candidate_pytest_fallback() -> str | None:
     """Return an alternate Python path for pytest when configured or discoverable."""
     fallback = os.environ.get(PYTEST_FALLBACK_ENV)
+    print("fallback:", fallback)
     if fallback:
         return fallback
     if os.name == "nt":

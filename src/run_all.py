@@ -76,6 +76,7 @@ def _run_pytest(cmd: list[str], env: dict[str, str]) -> subprocess.CompletedProc
     )
     if missing_pytest:
         fallback = _candidate_pytest_fallback()
+        print("fallback:", fallback)
         if fallback and fallback != cmd[0]:
             print("fallback:", fallback)
             retry_cmd = [fallback, "-m", "pytest"]

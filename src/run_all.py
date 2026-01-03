@@ -6,6 +6,7 @@ that everything still works with a single command or debug session.
 from __future__ import annotations  # Keep annotations as strings for forward references
 
 import os  # Augment environment with src/ on PYTHONPATH
+import re  # Match pytest import errors across outputs
 import subprocess  # Run external processes for demos and tests
 import sys  # Discover the current Python interpreter path
 from pathlib import Path  # Resolve project-relative paths
@@ -42,7 +43,6 @@ COMMANDS: list[tuple[str, list[str]]] = [
 def _candidate_pytest_fallback() -> str | None:
     """Return an alternate Python path for pytest when configured or discoverable."""
     fallback = os.environ.get(PYTEST_FALLBACK_ENV)
-    print("fallback:", fallback)
     if fallback:
         return fallback
     if os.name == "nt":
@@ -68,8 +68,15 @@ def _run_pytest(cmd: list[str], env: dict[str, str]) -> subprocess.CompletedProc
     )
     if proc.returncode == 0:
         return proc
-    if proc.stderr and "No module named pytest" in proc.stderr:
+    missing_pytest = bool(
+        re.search(
+            r"No module named ['\"]?pytest['\"]?",
+            (proc.stderr or "") + (proc.stdout or ""),
+        )
+    )
+    if missing_pytest:
         fallback = _candidate_pytest_fallback()
+        print("fallback:", fallback)
         if fallback and fallback != cmd[0]:
             retry_cmd = [fallback, "-m", "pytest"]
             print("Retrying pytest with:", " ".join(retry_cmd))

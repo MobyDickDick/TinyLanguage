@@ -15,7 +15,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent  # Root directory of the r
 SRC_ROOT = PROJECT_ROOT / "src"
 DEMO_ROOT = PROJECT_ROOT / "src_tiny"
 PYTHON = sys.executable  # Absolute path to the active Python executable
+PYTHON_ENV = "TINYLANGUAGE_PYTHON"
 PYTEST_FALLBACK_ENV = "TINYLANGUAGE_PYTHON_FALLBACK"
+
+if os.environ.get(PYTHON_ENV):
+    PYTHON = os.environ[PYTHON_ENV]
 
 # Pairs of human-friendly names and the commands they represent.
 INTERPRETER = SRC_ROOT / "tiny_language.py"
@@ -66,14 +70,14 @@ def _run_pytest(cmd: list[str], env: dict[str, str]) -> subprocess.CompletedProc
         capture_output=True,
         text=True,
     )
-    if proc.returncode and proc.stderr == "":
-        return proc
     missing_pytest = bool(
         re.search(
             r"No module named ['\"]?pytest['\"]?",
             (proc.stderr or "") + (proc.stdout or ""),
         )
     )
+    if not missing_pytest and proc.returncode == 0:
+        return proc
     if missing_pytest:
         fallback = _candidate_pytest_fallback()
         print("fallback:", fallback)
@@ -106,6 +110,8 @@ def main() -> int:
     """Run each configured command and report which ones fail."""
 
     failures: list[str] = []  # Collect human-friendly names for failing runs
+    if os.environ.get(PYTHON_ENV):
+        print(f"Using {PYTHON_ENV}:", PYTHON)
 
     for name, cmd in COMMANDS:  # Iterate through each demo/test pair
         print(f"\n=== Running {name} ===")  # Banner to make output scannable

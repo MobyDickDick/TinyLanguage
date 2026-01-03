@@ -6,6 +6,7 @@ that everything still works with a single command or debug session.
 from __future__ import annotations  # Keep annotations as strings for forward references
 
 import os  # Augment environment with src/ on PYTHONPATH
+import re  # Match pytest import errors across outputs
 import subprocess  # Run external processes for demos and tests
 import sys  # Discover the current Python interpreter path
 from pathlib import Path  # Resolve project-relative paths
@@ -14,7 +15,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent  # Root directory of the r
 SRC_ROOT = PROJECT_ROOT / "src"
 DEMO_ROOT = PROJECT_ROOT / "src_tiny"
 PYTHON = sys.executable  # Absolute path to the active Python executable
-PYTEST_FALLBACK_ENV = "C:\\Users\\marku\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe"
+PYTHON_ENV = "TINYLANGUAGE_PYTHON"
+PYTEST_FALLBACK_ENV = "TINYLANGUAGE_PYTHON_FALLBACK"
+
+if os.environ.get(PYTHON_ENV):
+    PYTHON = os.environ[PYTHON_ENV]
 
 # Pairs of human-friendly names and the commands they represent.
 INTERPRETER = SRC_ROOT / "tiny_language.py"
@@ -42,7 +47,6 @@ COMMANDS: list[tuple[str, list[str]]] = [
 def _candidate_pytest_fallback() -> str | None:
     """Return an alternate Python path for pytest when configured or discoverable."""
     fallback = os.environ.get(PYTEST_FALLBACK_ENV)
-    print("fallback:", fallback)
     if fallback:
         return fallback
     if os.name == "nt":
@@ -66,11 +70,18 @@ def _run_pytest(cmd: list[str], env: dict[str, str]) -> subprocess.CompletedProc
         capture_output=True,
         text=True,
     )
-    if proc.returncode == 0:
+    missing_pytest = bool(
+        re.search(
+            r"No module named ['\"]?pytest['\"]?",
+            (proc.stderr or "") + (proc.stdout or ""),
+        )
+    )
+    if not missing_pytest and proc.returncode == 0:
         return proc
-    if proc.stderr and "No module named pytest" in proc.stderr:
+    if missing_pytest:
         fallback = _candidate_pytest_fallback()
         if fallback and fallback != cmd[0]:
+            print("fallback:", fallback)
             retry_cmd = [fallback, "-m", "pytest"]
             print("Retrying pytest with:", " ".join(retry_cmd))
             return subprocess.run(
@@ -80,6 +91,17 @@ def _run_pytest(cmd: list[str], env: dict[str, str]) -> subprocess.CompletedProc
                 capture_output=True,
                 text=True,
             )
+        if fallback == cmd[0]:
+            print(
+                "pytest is missing from the current interpreter. "
+                "Install it or set TINYLANGUAGE_PYTHON_FALLBACK to a Python "
+                "that includes pytest."
+            )
+        elif not fallback:
+            print(
+                "No fallback interpreter found. Set TINYLANGUAGE_PYTHON_FALLBACK "
+                "to a Python that includes pytest."
+            )
     return proc
 
 
@@ -87,6 +109,8 @@ def main() -> int:
     """Run each configured command and report which ones fail."""
 
     failures: list[str] = []  # Collect human-friendly names for failing runs
+    if os.environ.get(PYTHON_ENV):
+        print(f"Using {PYTHON_ENV}:", PYTHON)
 
     for name, cmd in COMMANDS:  # Iterate through each demo/test pair
         print(f"\n=== Running {name} ===")  # Banner to make output scannable

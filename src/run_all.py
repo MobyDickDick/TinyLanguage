@@ -14,7 +14,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent  # Root directory of the r
 SRC_ROOT = PROJECT_ROOT / "src"
 DEMO_ROOT = PROJECT_ROOT / "src_tiny"
 PYTHON = sys.executable  # Absolute path to the active Python executable
-PYTEST_FALLBACK_ENV = "TINYLANGUAGE_PYTHON_FALLBACK"
+PYTEST_FALLBACK_ENV = "C:\\Users\\marku\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe"
 
 # Pairs of human-friendly names and the commands they represent.
 INTERPRETER = SRC_ROOT / "tiny_language.py"

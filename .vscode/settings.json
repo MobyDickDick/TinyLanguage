@@ -1,12 +1,14 @@
 {
   "python.defaultInterpreterPath": "c:\\Users\\marku\\AppData\\Local\\Python\\bin\\python.exe"
 ,
+
  
+
   "python.analysis.extraPaths": [
     "C:\\Users\\marku\\AppData\\Local\\Python\\pythoncore-3.14-64\\Scripts"
   ],
   "tinylanguage.runtimePath": "${workspaceFolder}/src/tiny_language.py",
-  "tinylanguage.pythonPath": "python",
+ "tinylanguage.pythonPath": "C:\\Users\\marku\\AppData\\Local\\Python\\bin\\python.exe",
   "python.terminal.launchArgs": [
     
   ],

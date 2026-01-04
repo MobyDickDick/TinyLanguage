@@ -24,6 +24,12 @@ VENV_ROOTS = [
 
 def resolve_pytest_python() -> str:
     """Prefer the repository .ven virtualenv for pytest when available."""
+    debug = os.environ.get("TINYLANGUAGE_DEBUG_PYTEST") == "1"
+    if debug:
+        print("TINYLANGUAGE_DEBUG_PYTEST=1 (debugging pytest interpreter selection)")
+        print("Candidate venv roots:")
+        for venv_root in VENV_ROOTS:
+            print(f" - {venv_root}")
     for venv_root in VENV_ROOTS:
         if not venv_root:
             continue
@@ -34,8 +40,14 @@ def resolve_pytest_python() -> str:
             venv_root / "bin" / "python.exe",
         ]
         for candidate in candidates:
+            if debug:
+                print(f"Checking candidate: {candidate}")
             if candidate.exists():
+                if debug:
+                    print(f"Selected pytest interpreter: {candidate}")
                 return str(candidate)
+    if debug:
+        print(f"Falling back to sys.executable: {PYTHON}")
     return PYTHON
 
 INTERPRETER = SRC_ROOT / "tiny_language.py"

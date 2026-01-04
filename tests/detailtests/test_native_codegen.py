@@ -101,10 +101,31 @@ def test_native_cli_flag_executes_program(tmp_path):
     assert result.stdout.strip() == "5"
 
 
+def test_class_methods_roundtrip_matches_interpreter():
+    source = """
+    class Point {
+        x: number;
+        y: number;
+        fn sum(self) { return self.x + self.y; }
+        fn move(self, dx, dy) {
+            self.x = self.x + dx;
+            self.y = self.y + dy;
+            return self.sum();
+        }
+    }
+
+    define p = new Point { x: 2; y: 3 };
+    print(p.sum());
+    print(p.move(1, 2));
+    print(p.x, p.y);
+    """
+    _assert_native_matches(source)
+
+
 def test_unsupported_constructs_signal_not_implemented():
     source = """
-    class Example { value: number; }
-    print(Example);
+    define x = { a: 1 };
+    print(x);
     """
 
     with pytest.raises(NotImplementedError):

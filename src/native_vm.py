@@ -56,11 +56,16 @@ class NativeVM:
         self.freed_allocations: Dict[int, int] = {}
         self.heap_cell_types: Dict[int, Dict[int, str]] = {}
         self.error_message: Optional[str] = None
+        self.class_defs: Dict[str, Dict[str, Any]] = {}
 
     def run(self, program: ProgramIR) -> str:
         """Execute the program entry block and return captured output."""
 
         self.program = program
+        self.class_defs = {
+            name: {"fields": list(class_def.fields), "bases": list(class_def.bases)}
+            for name, class_def in program.classes.items()
+        }
         self._execute(_Frame(program.entry, self.globals))
         return "".join(self.output)
 
@@ -145,6 +150,20 @@ class NativeVM:
             if len(args) != 1:
                 raise RuntimeError(f"delete expects 1 arg, got {len(args)}")
             return self._heap_delete(args[0])
+        if name == "__class_new":
+            return self._class_new(args)
+        if name == "__field_get":
+            if len(args) != 2:
+                raise RuntimeError(f"__field_get expects 2 args, got {len(args)}")
+            return self._field_get(args[0], args[1])
+        if name == "__field_set":
+            if len(args) != 3:
+                raise RuntimeError(f"__field_set expects 3 args, got {len(args)}")
+            return self._field_set(args[0], args[1], args[2])
+        if name == "__method_call":
+            if len(args) < 2:
+                raise RuntimeError("__method_call expects at least 2 args")
+            return self._method_call(args[0], args[1], args[2:])
         if self.program is None:
             raise RuntimeError("VM has no program loaded")
         target = self.program.functions.get(name)
@@ -309,3 +328,124 @@ class NativeVM:
         cells[idx] = value
         self.heap_cell_types.setdefault(ip, {})[idx] = actual
         return self._heap_ok_record()
+
+    def _class_mro(self, name: str) -> List[str]:
+        info = self.class_defs.get(name)
+        if info is None:
+            raise RuntimeError(f"unknown class {name}")
+        bases = list(info.get("bases", []))
+        mro: List[str] = [name]
+        for base in bases:
+            if base not in self.class_defs:
+                raise RuntimeError(f"unknown base class {base} for {name}")
+            for ancestor in self._class_mro(base):
+                if ancestor not in mro:
+                    mro.append(ancestor)
+        return mro
+
+    def _class_field_map(self, name: str) -> Dict[str, Dict[str, Any]]:
+        mro = self._class_mro(name)
+        fields: Dict[str, Dict[str, Any]] = {}
+        for cls in mro:
+            class_info = self.class_defs.get(cls)
+            if class_info is None:
+                raise RuntimeError(f"unknown class {cls}")
+            field_names = class_info.get("fields", [])
+            fields[cls] = {fname: None for fname in field_names}
+        return fields
+
+    @staticmethod
+    def _split_field_name(field_name: str) -> tuple[Optional[str], str]:
+        if "." in field_name:
+            owner, rest = field_name.split(".", 1)
+            return owner, rest
+        return None, field_name
+
+    def _resolve_field_storage(
+        self, obj: Dict[str, Any], field_name: str, owner_hint: Optional[str], *, allow_write: bool
+    ) -> Dict[str, Any]:
+        current_class = obj.get("__tag__")
+        if current_class is None:
+            raise RuntimeError("field access on untagged value")
+        mro = self._class_mro(str(current_class))
+        matches: List[tuple[str, Dict[str, Any]]] = []
+        for cls in mro:
+            fmap = obj["__fields__"].get(cls, {})
+            if field_name in fmap:
+                matches.append((cls, fmap))
+
+        if owner_hint:
+            for cls, fmap in matches:
+                if cls == owner_hint:
+                    return fmap
+            raise RuntimeError(f"unknown field {field_name} for base class {owner_hint}")
+
+        if matches:
+            primary_class = mro[0]
+            for cls, fmap in matches:
+                if cls == primary_class:
+                    return fmap
+
+        if len(matches) == 1:
+            return matches[0][1]
+        if len(matches) > 1:
+            action = "assign" if allow_write else "access"
+            raise RuntimeError(
+                f"ambiguous field {field_name} during {action}; please qualify with a base class name"
+            )
+        raise RuntimeError(f"unknown field {field_name} for class {current_class}")
+
+    def _class_new(self, args: List[Any]) -> Dict[str, Any]:
+        if not args:
+            raise RuntimeError("__class_new expects at least 1 arg")
+        class_name = str(args[0])
+        if class_name not in self.class_defs:
+            raise RuntimeError(f"unknown class {class_name}")
+        if (len(args) - 1) % 2 != 0:
+            raise RuntimeError("__class_new expects field name/value pairs")
+        obj: Dict[str, Any] = {"__tag__": class_name, "__fields__": self._class_field_map(class_name)}
+        for index in range(1, len(args), 2):
+            raw_name = str(args[index])
+            value = args[index + 1]
+            owner_hint, field_name = self._split_field_name(raw_name)
+            fmap = self._resolve_field_storage(obj, field_name, owner_hint, allow_write=True)
+            fmap[field_name] = value
+        return obj
+
+    def _field_get(self, obj: Any, field_name: Any) -> Any:
+        if not isinstance(obj, dict) or "__fields__" not in obj:
+            raise RuntimeError("field access on non-class value")
+        owner_hint, fname = self._split_field_name(str(field_name))
+        fmap = self._resolve_field_storage(obj, fname, owner_hint, allow_write=False)
+        return fmap[fname]
+
+    def _field_set(self, obj: Any, field_name: Any, value: Any) -> Any:
+        if not isinstance(obj, dict) or "__fields__" not in obj:
+            raise RuntimeError("field access on non-class value")
+        owner_hint, fname = self._split_field_name(str(field_name))
+        fmap = self._resolve_field_storage(obj, fname, owner_hint, allow_write=True)
+        fmap[fname] = value
+        return value
+
+    def _method_call(self, obj: Any, method_name: Any, args: List[Any]) -> Any:
+        if self.program is None:
+            raise RuntimeError("VM has no program loaded")
+        if not isinstance(obj, dict) or "__fields__" not in obj:
+            raise RuntimeError("method call on non-class value")
+        class_name = obj.get("__tag__")
+        if class_name is None:
+            raise RuntimeError("method call on untagged value")
+        method_name = str(method_name)
+        for cls in self._class_mro(str(class_name)):
+            target_name = f"{cls}.{method_name}"
+            target = self.program.functions.get(target_name)
+            if target is None:
+                continue
+            method_args = [obj] + list(args)
+            if len(method_args) != len(target.params):
+                raise RuntimeError(
+                    f"method {target_name} expects {len(target.params)} args, got {len(method_args)}"
+                )
+            locals_ = dict(zip(target.params, method_args))
+            return self._execute(_Frame(target.instructions, locals_))
+        raise RuntimeError(f"no method {method_name} for class {class_name}")

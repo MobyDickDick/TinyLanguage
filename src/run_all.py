@@ -127,59 +127,10 @@ COMMANDS: list[tuple[str, list[str]]] = [
 def run_pytest(failures: list[str]) -> None:
     """Run the Python test suite and record failures."""
     name = "pytest (full suite)"
-    debug = os.environ.get("TINYLANGUAGE_DEBUG_PYTEST") == "1"
     pytest_env = build_pytest_env()
     pytest_command = resolve_pytest_command(pytest_env)
     print(f"\n=== Running {name} ===")  # Banner to make output scannable
     print("Command:", " ".join(pytest_command))  # Show the exact invocation
-    if debug:
-        if pytest_command != PYTEST_COMMAND:
-            print("Resolved pytest entrypoint:", pytest_command[-1])
-        print("=== Debug: validating pytest availability ===")
-        validation = subprocess.run(
-            [
-                PYTEST_PYTHON,
-                "-c",
-                (
-                    "import sys, pytest; "
-                    "print('pytest module:', pytest.__file__); "
-                    "print('sys.executable:', sys.executable)"
-                ),
-            ],
-            cwd=PROJECT_ROOT,
-            env=pytest_env,
-            capture_output=True,
-            text=True,
-        )
-        if validation.stdout:
-            print(validation.stdout.rstrip())
-        if validation.stderr:
-            print(validation.stderr.rstrip())
-        print("=== Debug: python environment details ===")
-        env_details = subprocess.run(
-            [
-                PYTEST_PYTHON,
-                "-c",
-                (
-                    "import os, sys; "
-                    "print('sys.executable:', sys.executable); "
-                    "print('sys.prefix:', sys.prefix); "
-                    "print('sys.base_prefix:', sys.base_prefix); "
-                    "print('PYTHONHOME:', os.environ.get('PYTHONHOME')); "
-                    "print('PYTHONPATH:', os.environ.get('PYTHONPATH')); "
-                    "print('VIRTUAL_ENV:', os.environ.get('VIRTUAL_ENV')); "
-                    "print('sys.path:', sys.path)"
-                ),
-            ],
-            cwd=PROJECT_ROOT,
-            env=pytest_env,
-            capture_output=True,
-            text=True,
-        )
-        if env_details.stdout:
-            print(env_details.stdout.rstrip())
-        if env_details.stderr:
-            print(env_details.stderr.rstrip())
     proc = subprocess.run(
         pytest_command,
         cwd=PROJECT_ROOT,

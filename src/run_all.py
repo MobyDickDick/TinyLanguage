@@ -128,21 +128,8 @@ def run_pytest(failures: list[str]) -> None:
     proc = subprocess.run(
         PYTEST_COMMAND,
         cwd=PROJECT_ROOT,
-        env={
-            **os.environ,
-            "PYTHONPATH": os.pathsep.join(
-                filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
-            ),
-        },
-        capture_output=True,
-        text=True,
+        env=os.environ.copy(),
     )
-    if proc.stdout:
-        stdout = proc.stdout.rstrip()
-        print(stdout)
-    if proc.stderr:
-        stderr = proc.stderr.rstrip()
-        print(stderr)
     if proc.returncode != 0:  # Non-zero exit signals a failure
         failures.append(name)  # Record the failing entry for summary output
 

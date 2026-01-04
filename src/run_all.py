@@ -77,6 +77,29 @@ def build_pytest_env() -> dict[str, str]:
     env.setdefault("PYTHONNOUSERSITE", "1")
     return env
 
+
+def resolve_pytest_command(pytest_env: dict[str, str]) -> list[str]:
+    """Resolve pytest to an absolute entrypoint path when available."""
+    probe = subprocess.run(
+        [
+            PYTEST_PYTHON,
+            "-c",
+            (
+                "import pathlib, pytest; "
+                "print(pathlib.Path(pytest.__file__).resolve().with_name('__main__.py'))"
+            ),
+        ],
+        cwd=PROJECT_ROOT,
+        env=pytest_env,
+        capture_output=True,
+        text=True,
+    )
+    if probe.returncode == 0:
+        candidate = probe.stdout.strip()
+        if candidate:
+            return [PYTEST_PYTHON, candidate]
+    return PYTEST_COMMAND
+
 INTERPRETER = SRC_ROOT / "tiny_language.py"
 REPO_PYTHON = resolve_repo_python()
 PYTEST_PYTHON = REPO_PYTHON
@@ -106,9 +129,12 @@ def run_pytest(failures: list[str]) -> None:
     name = "pytest (full suite)"
     debug = os.environ.get("TINYLANGUAGE_DEBUG_PYTEST") == "1"
     pytest_env = build_pytest_env()
+    pytest_command = resolve_pytest_command(pytest_env)
     print(f"\n=== Running {name} ===")  # Banner to make output scannable
-    print("Command:", " ".join(PYTEST_COMMAND))  # Show the exact invocation
+    print("Command:", " ".join(pytest_command))  # Show the exact invocation
     if debug:
+        if pytest_command != PYTEST_COMMAND:
+            print("Resolved pytest entrypoint:", pytest_command[-1])
         print("=== Debug: validating pytest availability ===")
         validation = subprocess.run(
             [
@@ -155,7 +181,7 @@ def run_pytest(failures: list[str]) -> None:
         if env_details.stderr:
             print(env_details.stderr.rstrip())
     proc = subprocess.run(
-        PYTEST_COMMAND,
+        pytest_command,
         cwd=PROJECT_ROOT,
         env=pytest_env,
     )

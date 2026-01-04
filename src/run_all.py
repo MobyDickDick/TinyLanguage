@@ -51,6 +51,32 @@ def resolve_repo_python() -> str:
         print(f"Falling back to sys.executable: {PYTHON}")
     return PYTHON
 
+
+def build_pytest_env() -> dict[str, str]:
+    """Build a clean environment for pytest that prioritizes the repo venv."""
+    env = os.environ.copy()
+    env.pop("PYTHONHOME", None)
+    env.pop("PYTHONPATH", None)
+    venv_root = Path(PYTEST_PYTHON).resolve().parent
+    if venv_root.name.lower() in {"scripts", "bin"}:
+        venv_root = venv_root.parent
+    env["VIRTUAL_ENV"] = str(venv_root)
+    script_dirs = [venv_root / "Scripts", venv_root / "bin"]
+    existing_path = env.get("PATH", "")
+    path_entries = [str(path) for path in script_dirs if path.exists()]
+    if existing_path:
+        path_entries.append(existing_path)
+    env["PATH"] = os.pathsep.join(path_entries)
+    site_packages = [
+        venv_root / "Lib" / "site-packages",
+        venv_root / "lib" / f"python{sys.version_info.major}.{sys.version_info.minor}" / "site-packages",
+    ]
+    pythonpath_entries = [str(path) for path in site_packages if path.exists()]
+    if pythonpath_entries:
+        env["PYTHONPATH"] = os.pathsep.join(pythonpath_entries)
+    env.setdefault("PYTHONNOUSERSITE", "1")
+    return env
+
 INTERPRETER = SRC_ROOT / "tiny_language.py"
 REPO_PYTHON = resolve_repo_python()
 PYTEST_PYTHON = REPO_PYTHON
@@ -79,6 +105,7 @@ def run_pytest(failures: list[str]) -> None:
     """Run the Python test suite and record failures."""
     name = "pytest (full suite)"
     debug = os.environ.get("TINYLANGUAGE_DEBUG_PYTEST") == "1"
+    pytest_env = build_pytest_env()
     print(f"\n=== Running {name} ===")  # Banner to make output scannable
     print("Command:", " ".join(PYTEST_COMMAND))  # Show the exact invocation
     if debug:
@@ -94,6 +121,7 @@ def run_pytest(failures: list[str]) -> None:
                 ),
             ],
             cwd=PROJECT_ROOT,
+            env=pytest_env,
             capture_output=True,
             text=True,
         )
@@ -118,6 +146,7 @@ def run_pytest(failures: list[str]) -> None:
                 ),
             ],
             cwd=PROJECT_ROOT,
+            env=pytest_env,
             capture_output=True,
             text=True,
         )
@@ -128,7 +157,7 @@ def run_pytest(failures: list[str]) -> None:
     proc = subprocess.run(
         PYTEST_COMMAND,
         cwd=PROJECT_ROOT,
-        env=os.environ.copy(),
+        env=pytest_env,
     )
     if proc.returncode != 0:  # Non-zero exit signals a failure
         failures.append(name)  # Record the failing entry for summary output

@@ -79,11 +79,32 @@ def main() -> int:
     """Run each configured command and report which ones fail."""
 
     failures: list[str] = []  # Collect human-friendly names for failing runs
+    debug = os.environ.get("TINYLANGUAGE_DEBUG_PYTEST") == "1"
 
     for name, cmd in COMMANDS:  # Iterate through each demo/test pair
         print(f"\n=== Running {name} ===")  # Banner to make output scannable
         print("Command:", " ".join(cmd))  # Show the exact invocation
         if name == "pytest (full suite)":
+            if debug:
+                print("=== Debug: validating pytest availability ===")
+                validation = subprocess.run(
+                    [
+                        PYTEST_PYTHON,
+                        "-c",
+                        (
+                            "import sys, pytest; "
+                            "print('pytest module:', pytest.__file__); "
+                            "print('sys.executable:', sys.executable)"
+                        ),
+                    ],
+                    cwd=PROJECT_ROOT,
+                    capture_output=True,
+                    text=True,
+                )
+                if validation.stdout:
+                    print(validation.stdout.rstrip())
+                if validation.stderr:
+                    print(validation.stderr.rstrip())
             proc = subprocess.run(
                 cmd,
                 cwd=PROJECT_ROOT,

@@ -104,6 +104,9 @@
       "request": "launch",
       "program": "${workspaceFolder}/src/run_all.py",
       "console": "integratedTerminal",
+      "env": {
+        "TINYLANGUAGE_DEBUG_PYTEST": "1"
+      },
       "logToFile": true,
       "justMyCode": false
     },

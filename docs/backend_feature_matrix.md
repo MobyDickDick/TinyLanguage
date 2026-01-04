@@ -56,11 +56,6 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 
 ### Open tasks
 
-- [ ] Classes and methods
-  - [ ] Define object layout metadata for class instances in the native runtime.
-  - [ ] Lower method dispatch to vtable lookups or direct offsets in native IR.
-  - [ ] Support `this` binding and field access in the VM execution loop.
-
 - [ ] Operator overloading
   - [ ] Extend native IR to carry operator overload resolution results.
   - [ ] Map overloaded operators to runtime method calls in the VM.
@@ -86,6 +81,11 @@ These task lists capture the remaining feature gaps for the non-interpreter back
   - [ ] Validate argument/return marshalling in the VM runtime.
 
 ### Closed tasks
+
+- [x] Classes and methods
+  - [x] Define object layout metadata for class instances in the native runtime.
+  - [x] Lower method dispatch to vtable lookups or direct offsets in native IR.
+  - [x] Support `this` binding and field access in the VM execution loop.
 
 - [x] Heap operations
   - [x] Implement `new`, `heap_get`, `heap_set`, and `delete` in the native VM runtime.

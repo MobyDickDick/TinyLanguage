@@ -9,7 +9,7 @@ flow, simple functions, and `print`). Unsupported constructs raise
 
 from typing import Dict, List
 
-from native_ir import FunctionIR, Instruction, Opcode, ProgramIR
+from native_ir import ClassIR, FunctionIR, Instruction, Opcode, ProgramIR
 
 
 class NativeCodeGenerator:
@@ -22,16 +22,24 @@ class NativeCodeGenerator:
     def compile_program(self, stmts: List["IR"]) -> ProgramIR:
         functions: Dict[str, FunctionIR] = {}
         entry_instructions: List[Instruction] = []
+        classes: Dict[str, ClassIR] = {}
 
         for stmt in stmts:
             if isinstance(stmt, Fn):
                 functions[stmt.name] = self._compile_function(stmt)
+            elif isinstance(stmt, ClassDef):
+                self._register_class(stmt, classes)
+                for method in stmt.methods:
+                    functions[self._method_name(method.class_name, method.name)] = self._compile_method(method)
+            elif isinstance(stmt, MethodDef):
+                self._register_method_class(stmt, classes)
+                functions[self._method_name(stmt.class_name, stmt.name)] = self._compile_method(stmt)
             else:
                 raw = self._compile_stmt(stmt)
                 entry_instructions.extend(self._shift_labels(raw, len(entry_instructions)))
 
         entry_instructions.append(Instruction(Opcode.RETURN))
-        return ProgramIR(entry=entry_instructions, functions=functions)
+        return ProgramIR(entry=entry_instructions, functions=functions, classes=classes)
 
     def _compile_function(self, fn: "Fn") -> FunctionIR:
         body_instrs: List[Instruction] = []
@@ -40,6 +48,18 @@ class NativeCodeGenerator:
             body_instrs.extend(self._shift_labels(raw, len(body_instrs)))
         body_instrs.append(Instruction(Opcode.RETURN))
         return FunctionIR(name=fn.name, params=[param.name for param in fn.params], instructions=body_instrs)
+
+    def _compile_method(self, md: "MethodDef") -> FunctionIR:
+        body_instrs: List[Instruction] = []
+        for stmt in md.body:
+            raw = self._compile_stmt(stmt)
+            body_instrs.extend(self._shift_labels(raw, len(body_instrs)))
+        body_instrs.append(Instruction(Opcode.RETURN))
+        return FunctionIR(
+            name=self._method_name(md.class_name, md.name),
+            params=[param.name for param in md.params],
+            instructions=body_instrs,
+        )
 
     def _shift_labels(self, instructions: List[Instruction], offset: int) -> List[Instruction]:
         shifted: List[Instruction] = []
@@ -72,7 +92,19 @@ class NativeCodeGenerator:
             instructions.append(Instruction(Opcode.RETURN))
             return instructions
         if isinstance(stmt, CallStmt):
-            instructions = self._compile_expr(Call(stmt.name, stmt.args, pos=stmt.pos))
+            if "." in stmt.name:
+                obj_name, method_name = stmt.name.split(".", 1)
+                expr = MethodCall(Var(obj_name, pos=stmt.pos), method_name, stmt.args, pos=stmt.pos)
+            else:
+                expr = Call(stmt.name, stmt.args, pos=stmt.pos)
+            instructions = self._compile_expr(expr)
+            instructions.append(Instruction(Opcode.POP))
+            return instructions
+        if isinstance(stmt, FieldAssign):
+            instructions = self._compile_expr(stmt.obj)
+            instructions.append(Instruction(Opcode.PUSH_CONST, stmt.name))
+            instructions.extend(self._compile_expr(stmt.expr))
+            instructions.append(Instruction(Opcode.CALL, ("__field_set", 3)))
             instructions.append(Instruction(Opcode.POP))
             return instructions
         raise NotImplementedError(f"native codegen does not yet support {type(stmt).__name__}")
@@ -163,6 +195,25 @@ class NativeCodeGenerator:
             return instructions
         if isinstance(expr, Var):
             return [Instruction(Opcode.LOAD, expr.name)]
+        if isinstance(expr, Field):
+            instructions = self._compile_expr(expr.obj)
+            instructions.append(Instruction(Opcode.PUSH_CONST, expr.name))
+            instructions.append(Instruction(Opcode.CALL, ("__field_get", 2)))
+            return instructions
+        if isinstance(expr, MethodCall):
+            instructions = self._compile_expr(expr.obj)
+            instructions.append(Instruction(Opcode.PUSH_CONST, expr.name))
+            for arg in expr.args:
+                instructions.extend(self._compile_expr(arg))
+            instructions.append(Instruction(Opcode.CALL, ("__method_call", 2 + len(expr.args))))
+            return instructions
+        if isinstance(expr, ClassNew):
+            instructions: List[Instruction] = [Instruction(Opcode.PUSH_CONST, expr.name)]
+            for name, value in expr.init:
+                instructions.append(Instruction(Opcode.PUSH_CONST, name))
+                instructions.extend(self._compile_expr(value))
+            instructions.append(Instruction(Opcode.CALL, ("__class_new", 1 + 2 * len(expr.init))))
+            return instructions
         if isinstance(expr, Bin):
             instructions = self._compile_expr(expr.a)
             instructions.extend(self._compile_expr(expr.b))
@@ -181,3 +232,26 @@ class NativeCodeGenerator:
     def _next_tmp(self) -> str:
         self._tmp_index += 1
         return f"__tmp_heap_{self._tmp_index}"
+
+    @staticmethod
+    def _method_name(class_name: str, method_name: str) -> str:
+        return f"{class_name}.{method_name}"
+
+    def _register_class(self, stmt: "ClassDef", classes: Dict[str, ClassIR]) -> None:
+        if stmt.name in classes:
+            existing = classes[stmt.name]
+            for fname, _ in stmt.fields:
+                if fname not in existing.fields:
+                    existing.fields.append(fname)
+            if stmt.bases:
+                existing.bases = list(stmt.bases)
+            return
+        classes[stmt.name] = ClassIR(
+            name=stmt.name,
+            fields=[fname for fname, _ in stmt.fields],
+            bases=list(stmt.bases),
+        )
+
+    def _register_method_class(self, stmt: "MethodDef", classes: Dict[str, ClassIR]) -> None:
+        if stmt.class_name not in classes:
+            classes[stmt.class_name] = ClassIR(name=stmt.class_name, fields=[])

@@ -6,7 +6,7 @@ container dataclasses, and a human-readable formatter so tests can assert
 against the emitted instructions without parsing private structures.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List
 
@@ -50,6 +50,16 @@ class ProgramIR:
 
     entry: List[Instruction]
     functions: Dict[str, FunctionIR]
+    classes: Dict[str, "ClassIR"] = field(default_factory=dict)
+
+
+@dataclass
+class ClassIR:
+    """Class metadata for native VM runtime support."""
+
+    name: str
+    fields: List[str]
+    bases: List[str] = field(default_factory=list)
 
 
 def format_program(program: ProgramIR) -> str:
@@ -63,6 +73,10 @@ def format_program(program: ProgramIR) -> str:
         return lines
 
     lines = _fmt_block("entry", program.entry)
+    for class_def in program.classes.values():
+        bases = f": {', '.join(class_def.bases)}" if class_def.bases else ""
+        fields = ", ".join(class_def.fields)
+        lines.append(f"class {class_def.name}{bases} {{ {fields} }}")
     for func in program.functions.values():
         header = f"function {func.name}({', '.join(func.params)})"
         lines.append(header)

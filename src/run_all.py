@@ -24,6 +24,7 @@ def resolve_pytest_python() -> str:
         VENV_ROOT / "bin" / "python",
     ]
     for candidate in candidates:
+        print("candidate:", candidate)
         if candidate.exists():
             return str(candidate)
     return PYTHON

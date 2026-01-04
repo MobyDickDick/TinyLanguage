@@ -106,6 +106,30 @@ def main() -> int:
                     print(validation.stdout.rstrip())
                 if validation.stderr:
                     print(validation.stderr.rstrip())
+                print("=== Debug: python environment details ===")
+                env_details = subprocess.run(
+                    [
+                        PYTEST_PYTHON,
+                        "-c",
+                        (
+                            "import os, sys; "
+                            "print('sys.executable:', sys.executable); "
+                            "print('sys.prefix:', sys.prefix); "
+                            "print('sys.base_prefix:', sys.base_prefix); "
+                            "print('PYTHONHOME:', os.environ.get('PYTHONHOME')); "
+                            "print('PYTHONPATH:', os.environ.get('PYTHONPATH')); "
+                            "print('VIRTUAL_ENV:', os.environ.get('VIRTUAL_ENV')); "
+                            "print('sys.path:', sys.path)"
+                        ),
+                    ],
+                    cwd=PROJECT_ROOT,
+                    capture_output=True,
+                    text=True,
+                )
+                if env_details.stdout:
+                    print(env_details.stdout.rstrip())
+                if env_details.stderr:
+                    print(env_details.stderr.rstrip())
             proc = subprocess.run(
                 cmd,
                 cwd=PROJECT_ROOT,

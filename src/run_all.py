@@ -57,7 +57,6 @@ PYTEST_PYTHON = REPO_PYTHON
 PYTEST_COMMAND = [PYTEST_PYTHON, "-m", "pytest"]
 # Pairs of human-friendly names and the commands they represent.
 COMMANDS: list[tuple[str, list[str]]] = [
-    ("pytest (full suite)", PYTEST_COMMAND),  # Run all Python tests
     ("demo.tiny", [REPO_PYTHON, str(INTERPRETER), str(DEMO_ROOT / "demo.tiny")]),  # Showcase basics
     ("class_demo.tiny", [REPO_PYTHON, str(INTERPRETER), str(DEMO_ROOT / "class_demo.tiny")]),  # Class walkthrough
     ("all_features.tiny", [REPO_PYTHON, str(INTERPRETER), str(DEMO_ROOT / "all_features.tiny")]),  # Feature tour
@@ -76,89 +75,97 @@ COMMANDS: list[tuple[str, list[str]]] = [
 ]
 
 
+def run_pytest(failures: list[str]) -> None:
+    """Run the Python test suite and record failures."""
+    name = "pytest (full suite)"
+    debug = os.environ.get("TINYLANGUAGE_DEBUG_PYTEST") == "1"
+    print(f"\n=== Running {name} ===")  # Banner to make output scannable
+    print("Command:", " ".join(PYTEST_COMMAND))  # Show the exact invocation
+    if debug:
+        print("=== Debug: validating pytest availability ===")
+        validation = subprocess.run(
+            [
+                PYTEST_PYTHON,
+                "-c",
+                (
+                    "import sys, pytest; "
+                    "print('pytest module:', pytest.__file__); "
+                    "print('sys.executable:', sys.executable)"
+                ),
+            ],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+        )
+        if validation.stdout:
+            print(validation.stdout.rstrip())
+        if validation.stderr:
+            print(validation.stderr.rstrip())
+        print("=== Debug: python environment details ===")
+        env_details = subprocess.run(
+            [
+                PYTEST_PYTHON,
+                "-c",
+                (
+                    "import os, sys; "
+                    "print('sys.executable:', sys.executable); "
+                    "print('sys.prefix:', sys.prefix); "
+                    "print('sys.base_prefix:', sys.base_prefix); "
+                    "print('PYTHONHOME:', os.environ.get('PYTHONHOME')); "
+                    "print('PYTHONPATH:', os.environ.get('PYTHONPATH')); "
+                    "print('VIRTUAL_ENV:', os.environ.get('VIRTUAL_ENV')); "
+                    "print('sys.path:', sys.path)"
+                ),
+            ],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+        )
+        if env_details.stdout:
+            print(env_details.stdout.rstrip())
+        if env_details.stderr:
+            print(env_details.stderr.rstrip())
+    proc = subprocess.run(
+        PYTEST_COMMAND,
+        cwd=PROJECT_ROOT,
+        env={
+            **os.environ,
+            "PYTHONPATH": os.pathsep.join(
+                filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
+            ),
+        },
+        capture_output=True,
+        text=True,
+    )
+    if proc.stdout:
+        stdout = proc.stdout.rstrip()
+        print(stdout)
+    if proc.stderr:
+        stderr = proc.stderr.rstrip()
+        print(stderr)
+    if proc.returncode != 0:  # Non-zero exit signals a failure
+        failures.append(name)  # Record the failing entry for summary output
+
+
 def main() -> int:
     """Run each configured command and report which ones fail."""
 
     failures: list[str] = []  # Collect human-friendly names for failing runs
-    debug = os.environ.get("TINYLANGUAGE_DEBUG_PYTEST") == "1"
+    run_pytest(failures)
 
     for name, cmd in COMMANDS:  # Iterate through each demo/test pair
         print(f"\n=== Running {name} ===")  # Banner to make output scannable
         print("Command:", " ".join(cmd))  # Show the exact invocation
-        if name == "pytest (full suite)":
-            if debug:
-                print("=== Debug: validating pytest availability ===")
-                validation = subprocess.run(
-                    [
-                        PYTEST_PYTHON,
-                        "-c",
-                        (
-                            "import sys, pytest; "
-                            "print('pytest module:', pytest.__file__); "
-                            "print('sys.executable:', sys.executable)"
-                        ),
-                    ],
-                    cwd=PROJECT_ROOT,
-                    capture_output=True,
-                    text=True,
-                )
-                if validation.stdout:
-                    print(validation.stdout.rstrip())
-                if validation.stderr:
-                    print(validation.stderr.rstrip())
-                print("=== Debug: python environment details ===")
-                env_details = subprocess.run(
-                    [
-                        PYTEST_PYTHON,
-                        "-c",
-                        (
-                            "import os, sys; "
-                            "print('sys.executable:', sys.executable); "
-                            "print('sys.prefix:', sys.prefix); "
-                            "print('sys.base_prefix:', sys.base_prefix); "
-                            "print('PYTHONHOME:', os.environ.get('PYTHONHOME')); "
-                            "print('PYTHONPATH:', os.environ.get('PYTHONPATH')); "
-                            "print('VIRTUAL_ENV:', os.environ.get('VIRTUAL_ENV')); "
-                            "print('sys.path:', sys.path)"
-                        ),
-                    ],
-                    cwd=PROJECT_ROOT,
-                    capture_output=True,
-                    text=True,
-                )
-                if env_details.stdout:
-                    print(env_details.stdout.rstrip())
-                if env_details.stderr:
-                    print(env_details.stderr.rstrip())
-            proc = subprocess.run(
-                cmd,
-                cwd=PROJECT_ROOT,
-                env={
-                    **os.environ,
-                    "PYTHONPATH": os.pathsep.join(
-                        filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
-                    ),
-                },
-                capture_output=True,
-                text=True,
-            )
-            if proc.stdout:
-                stdout = proc.stdout.rstrip()
-                print(stdout)
-            if proc.stderr:
-                stderr = proc.stderr.rstrip()
-                print(stderr)
-        else:
-            proc = subprocess.run(
-                cmd,
-                cwd=PROJECT_ROOT,
-                env={
-                    **os.environ,
-                    "PYTHONPATH": os.pathsep.join(
-                        filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
-                    ),
-                },
-            )  # Execute the command inside the repo
+        proc = subprocess.run(
+            cmd,
+            cwd=PROJECT_ROOT,
+            env={
+                **os.environ,
+                "PYTHONPATH": os.pathsep.join(
+                    filter(None, [str(SRC_ROOT), os.environ.get("PYTHONPATH")])
+                ),
+            },
+        )  # Execute the command inside the repo
         if proc.returncode != 0:  # Non-zero exit signals a failure
             failures.append(name)  # Record the failing entry for summary output
             # Continue so we can see all failures in one pass instead of stopping early

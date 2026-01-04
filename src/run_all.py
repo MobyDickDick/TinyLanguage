@@ -10,6 +10,7 @@ import subprocess  # Run external processes for demos and tests
 import sys  # Discover the current Python interpreter path
 from pathlib import Path  # Resolve project-relative paths
 
+TINYLANGUAGE_DEBUG_PYTEST=1
 PROJECT_ROOT = Path(__file__).resolve().parent.parent  # Root directory of the repository
 SRC_ROOT = PROJECT_ROOT / "src"
 DEMO_ROOT = PROJECT_ROOT / "src_tiny"

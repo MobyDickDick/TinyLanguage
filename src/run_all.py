@@ -14,10 +14,24 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent  # Root directory of the r
 SRC_ROOT = PROJECT_ROOT / "src"
 DEMO_ROOT = PROJECT_ROOT / "src_tiny"
 PYTHON = sys.executable  # Absolute path to the active Python executable
+VENV_ROOT = PROJECT_ROOT / ".ven"
 
-# Pairs of human-friendly names and the commands they represent.
+
+def resolve_pytest_python() -> str:
+    """Prefer the repository .ven virtualenv for pytest when available."""
+    candidates = [
+        VENV_ROOT / "Scripts" / "python.exe",
+        VENV_ROOT / "bin" / "python",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return str(candidate)
+    return PYTHON
+
 INTERPRETER = SRC_ROOT / "tiny_language.py"
-PYTEST_COMMAND = [PYTHON, "-m", "pytest"]
+PYTEST_PYTHON = resolve_pytest_python()
+PYTEST_COMMAND = [PYTEST_PYTHON, "-m", "pytest"]
+# Pairs of human-friendly names and the commands they represent.
 COMMANDS: list[tuple[str, list[str]]] = [
     ("pytest (full suite)", PYTEST_COMMAND),  # Run all Python tests
     ("demo.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "demo.tiny")]),  # Showcase basics

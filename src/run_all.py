@@ -23,12 +23,12 @@ VENV_ROOTS = [
 ]
 
 
-def resolve_pytest_python() -> str:
-    """Prefer the repository .ven virtualenv for pytest when available."""
+def resolve_repo_python() -> str:
+    """Prefer the repository virtualenv when available."""
     debug = os.environ.get("TINYLANGUAGE_DEBUG_PYTEST") == "1"
     if debug:
-        print("TINYLANGUAGE_DEBUG_PYTEST=1 (debugging pytest interpreter selection)")
-        print("Candidate venv roots:")
+        print("TINYLANGUAGE_DEBUG_PYTEST=1 (debugging interpreter selection)")
+        print("Candidate venv roots (in order):")
         for venv_root in VENV_ROOTS:
             print(f" - {venv_root}")
     for venv_root in VENV_ROOTS:
@@ -45,33 +45,34 @@ def resolve_pytest_python() -> str:
                 print(f"Checking candidate: {candidate}")
             if candidate.exists():
                 if debug:
-                    print(f"Selected pytest interpreter: {candidate}")
+                    print(f"Selected interpreter: {candidate}")
                 return str(candidate)
     if debug:
         print(f"Falling back to sys.executable: {PYTHON}")
     return PYTHON
 
 INTERPRETER = SRC_ROOT / "tiny_language.py"
-PYTEST_PYTHON = resolve_pytest_python()
+REPO_PYTHON = resolve_repo_python()
+PYTEST_PYTHON = REPO_PYTHON
 PYTEST_COMMAND = [PYTEST_PYTHON, "-m", "pytest"]
 # Pairs of human-friendly names and the commands they represent.
 COMMANDS: list[tuple[str, list[str]]] = [
     ("pytest (full suite)", PYTEST_COMMAND),  # Run all Python tests
-    ("demo.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "demo.tiny")]),  # Showcase basics
-    ("class_demo.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "class_demo.tiny")]),  # Class walkthrough
-    ("all_features.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "all_features.tiny")]),  # Feature tour
-    ("number_class.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "number_class.tiny")]),  # Number class demo
-    ("number_intervall.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "number_intervall.tiny")]),  # Interval arithmetic
-    ("rosetta_fibonacci.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "rosetta_fibonacci.tiny")]),  # Rosetta Fibonacci sample
-    ("concurrency_demo.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "concurrency_demo.tiny")]),  # Spawn/join example
-    ("concurrency_pipeline.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "concurrency_pipeline.tiny")]),  # Pipeline concurrency
-    ("parallel_map.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "parallel_map.tiny")]),  # Parallel map helper
-    ("heap_pointer_demo.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "heap_pointer_demo.tiny")]),  # Heap safety showcase
-    ("namespace_demo.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "namespace_demo.tiny")]),  # Namespaces walkthrough
-    ("operator_overloading_demo.tiny", [PYTHON, str(INTERPRETER), str(DEMO_ROOT / "operator_overloading_demo.tiny")]),  # Operator overloads
-    ("tests/logic_example.tiny", [PYTHON, str(INTERPRETER), "tests/logic_example.tiny"]),  # Logic test sample
-    (".vscode/all_features.tiny", [PYTHON, str(INTERPRETER), ".vscode/all_features.tiny"]),  # VS Code tutorial copy
-    (".vscode/rosetta_fibonacci.tiny", [PYTHON, str(INTERPRETER), ".vscode/rosetta_fibonacci.tiny"]),  # VS Code Fib copy
+    ("demo.tiny", [REPO_PYTHON, str(INTERPRETER), str(DEMO_ROOT / "demo.tiny")]),  # Showcase basics
+    ("class_demo.tiny", [REPO_PYTHON, str(INTERPRETER), str(DEMO_ROOT / "class_demo.tiny")]),  # Class walkthrough
+    ("all_features.tiny", [REPO_PYTHON, str(INTERPRETER), str(DEMO_ROOT / "all_features.tiny")]),  # Feature tour
+    ("number_class.tiny", [REPO_PYTHON, str(INTERPRETER), str(DEMO_ROOT / "number_class.tiny")]),  # Number class demo
+    ("number_intervall.tiny", [REPO_PYTHON, str(INTERPRETER), str(DEMO_ROOT / "number_intervall.tiny")]),  # Interval arithmetic
+    ("rosetta_fibonacci.tiny", [REPO_PYTHON, str(INTERPRETER), str(DEMO_ROOT / "rosetta_fibonacci.tiny")]),  # Rosetta Fibonacci sample
+    ("concurrency_demo.tiny", [REPO_PYTHON, str(INTERPRETER), str(DEMO_ROOT / "concurrency_demo.tiny")]),  # Spawn/join example
+    ("concurrency_pipeline.tiny", [REPO_PYTHON, str(INTERPRETER), str(DEMO_ROOT / "concurrency_pipeline.tiny")]),  # Pipeline concurrency
+    ("parallel_map.tiny", [REPO_PYTHON, str(INTERPRETER), str(DEMO_ROOT / "parallel_map.tiny")]),  # Parallel map helper
+    ("heap_pointer_demo.tiny", [REPO_PYTHON, str(INTERPRETER), str(DEMO_ROOT / "heap_pointer_demo.tiny")]),  # Heap safety showcase
+    ("namespace_demo.tiny", [REPO_PYTHON, str(INTERPRETER), str(DEMO_ROOT / "namespace_demo.tiny")]),  # Namespaces walkthrough
+    ("operator_overloading_demo.tiny", [REPO_PYTHON, str(INTERPRETER), str(DEMO_ROOT / "operator_overloading_demo.tiny")]),  # Operator overloads
+    ("tests/logic_example.tiny", [REPO_PYTHON, str(INTERPRETER), "tests/logic_example.tiny"]),  # Logic test sample
+    (".vscode/all_features.tiny", [REPO_PYTHON, str(INTERPRETER), ".vscode/all_features.tiny"]),  # VS Code tutorial copy
+    (".vscode/rosetta_fibonacci.tiny", [REPO_PYTHON, str(INTERPRETER), ".vscode/rosetta_fibonacci.tiny"]),  # VS Code Fib copy
 ]
 
 

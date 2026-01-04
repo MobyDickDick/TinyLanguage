@@ -14,19 +14,28 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent  # Root directory of the r
 SRC_ROOT = PROJECT_ROOT / "src"
 DEMO_ROOT = PROJECT_ROOT / "src_tiny"
 PYTHON = sys.executable  # Absolute path to the active Python executable
-VENV_ROOT = PROJECT_ROOT / ".ven"
+VENV_ROOTS = [
+    Path(path) for path in [os.environ.get("TINYLANGUAGE_VENV"), os.environ.get("VIRTUAL_ENV")] if path
+] + [
+    PROJECT_ROOT / ".ven",
+    PROJECT_ROOT / ".venv",
+]
 
 
 def resolve_pytest_python() -> str:
     """Prefer the repository .ven virtualenv for pytest when available."""
-    candidates = [
-        VENV_ROOT / "Scripts" / "python.exe",
-        VENV_ROOT / "bin" / "python",
-    ]
-    for candidate in candidates:
-        print("candidate:", candidate)
-        if candidate.exists():
-            return str(candidate)
+    for venv_root in VENV_ROOTS:
+        if not venv_root:
+            continue
+        candidates = [
+            venv_root / "Scripts" / "python.exe",
+            venv_root / "Scripts" / "python",
+            venv_root / "bin" / "python",
+            venv_root / "bin" / "python.exe",
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                return str(candidate)
     return PYTHON
 
 INTERPRETER = SRC_ROOT / "tiny_language.py"

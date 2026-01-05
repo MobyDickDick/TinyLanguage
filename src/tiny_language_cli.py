@@ -76,7 +76,12 @@ def _execute(
     if backend == "python":
         return run_with_python_backend(source), False
     if backend == "native":
-        return run_with_native_backend(source), False
+        namespace = _module_namespace_for_path(module_path) if module_path else None
+        return run_with_native_backend(
+            source,
+            module_namespace=namespace,
+            module_path=module_path,
+        ), False
     if backend == "native-python-bytecode":
         return run_with_python_bytecode_backend(source), False
     raise SystemExit(f"Unknown backend: {backend}")

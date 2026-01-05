@@ -8,19 +8,32 @@ compare interpreter and native results easily.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from native_ir import Instruction, Opcode, ProgramIR
 
 
+@dataclass(frozen=True)
+class NamespaceRef:
+    name: str
+
+
 class _Frame:
     """Lightweight execution frame with its own instruction pointer."""
 
-    def __init__(self, instructions: List[Instruction], locals_: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self,
+        instructions: List[Instruction],
+        locals_: Optional[Dict[str, Any]] = None,
+        globals_: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """Initialise a frame with an instruction list and optional locals."""
 
         self.instructions = instructions
-        self.locals = locals_ or {}
+        self.locals = locals_ if locals_ is not None else {}
+        self.globals = globals_ if globals_ is not None else self.locals
         self.ip = 0
 
 
@@ -46,7 +59,13 @@ class NativeVM:
         "or": lambda a, b: bool(a) or bool(b),
     }
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        module_resolver: Optional[Any] = None,
+        module_namespace: Optional[str] = None,
+        module_path: Optional[Path] = None,
+    ) -> None:
         self.output: List[str] = []
         self.globals: Dict[str, Any] = {}
         self.program: Optional[ProgramIR] = None
@@ -58,6 +77,11 @@ class NativeVM:
         self.error_message: Optional[str] = None
         self.class_defs: Dict[str, Dict[str, Any]] = {}
         self.operator_overloads: Dict[tuple[str, str, str], str] = {}
+        self.module_resolver = module_resolver
+        self.module_envs: Dict[str, Dict[str, Any]] = {}
+        self.module_programs: Dict[str, ProgramIR] = {}
+        self.current_module_namespace = module_namespace
+        self.current_module_path = module_path
 
     def run(self, program: ProgramIR) -> str:
         """Execute the program entry block and return captured output."""
@@ -71,7 +95,7 @@ class NativeVM:
             (overload.op, overload.a_type, overload.b_type): overload.func_name
             for overload in program.operator_overloads
         }
-        self._execute(_Frame(program.entry, self.globals))
+        self._execute(_Frame(program.entry, self.globals, self.globals))
         return "".join(self.output)
 
     def _execute(self, frame: _Frame) -> Any:
@@ -85,7 +109,7 @@ class NativeVM:
             if instr.op == Opcode.PUSH_CONST:
                 stack.append(instr.arg)
             elif instr.op == Opcode.LOAD:
-                stack.append(self._load(frame.locals, instr.arg))
+                stack.append(self._load(frame.locals, frame.globals, instr.arg))
             elif instr.op == Opcode.STORE:
                 value = stack.pop()
                 frame.locals[instr.arg] = value
@@ -134,20 +158,24 @@ class NativeVM:
                 raise RuntimeError(f"unknown opcode {op_name}. Supported opcodes: {supported}.")
         return None
 
-    def _load(self, locals_: Dict[str, Any], name: str) -> Any:
+    def _load(self, locals_: Dict[str, Any], globals_: Dict[str, Any], name: str) -> Any:
         """Resolve a variable name from locals or globals, raising on miss."""
 
         if name == "errorMessage":
             return self.error_message
         if name in locals_:
             return locals_[name]
-        if name in self.globals:
-            return self.globals[name]
+        if name in globals_:
+            return globals_[name]
         raise RuntimeError(f"unknown variable {name}")
 
     def _call(self, name: str, args: List[Any]) -> Any:
         """Invoke a function declared in the program with positional args."""
 
+        if name == "__import":
+            if len(args) != 1:
+                raise RuntimeError(f"__import expects 1 arg, got {len(args)}")
+            return self._import_module(args[0])
         if name in {"__new", "new"}:
             if len(args) != 1:
                 raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
@@ -186,7 +214,7 @@ class NativeVM:
         if len(args) != len(target.params):
             raise RuntimeError(f"function {name} expects {len(target.params)} args, got {len(args)}")
         locals_ = dict(zip(target.params, args))
-        return self._execute(_Frame(target.instructions, locals_))
+        return self._execute(_Frame(target.instructions, locals_, self._globals_for_function(name)))
 
     def _format_value(self, value: Any) -> str:
         """Render VM values into the textual form used by PRINT."""
@@ -199,6 +227,50 @@ class NativeVM:
 
     def _record_error(self, message: str) -> None:
         self.error_message = message
+
+    def _globals_for_function(self, name: str) -> Dict[str, Any]:
+        module_name = self._module_namespace_for_function(name)
+        if module_name:
+            return self.module_envs[module_name]
+        return self.globals
+
+    def _module_namespace_for_function(self, name: str) -> Optional[str]:
+        if not self.module_envs or "." not in name:
+            return None
+        candidates = [ns for ns in self.module_envs if name.startswith(f"{ns}.")]
+        if not candidates:
+            return None
+        return max(candidates, key=len)
+
+    def _import_module(self, name: Any) -> NamespaceRef:
+        if self.module_resolver is None:
+            raise RuntimeError("module resolver not configured for native backend")
+        return self.module_resolver.import_module(
+            str(name),
+            self,
+            caller_namespace=self.current_module_namespace,
+            caller_path=self.current_module_path,
+        )
+
+    def load_module(self, name: str, program: ProgramIR, module_env: Dict[str, Any], module_path: Path | None) -> None:
+        if self.program is None:
+            raise RuntimeError("VM has no program loaded")
+        self.program.functions.update(program.functions)
+        self.program.classes.update(program.classes)
+        self.program.operator_overloads.extend(program.operator_overloads)
+        for overload in program.operator_overloads:
+            self.operator_overloads[(overload.op, overload.a_type, overload.b_type)] = overload.func_name
+        self.module_envs[name] = module_env
+        self.module_programs[name] = program
+        previous_namespace = self.current_module_namespace
+        previous_path = self.current_module_path
+        try:
+            self.current_module_namespace = name
+            self.current_module_path = module_path
+            self._execute(_Frame(program.entry, module_env, module_env))
+        finally:
+            self.current_module_namespace = previous_namespace
+            self.current_module_path = previous_path
 
     @staticmethod
     def _pointer_label(pointer: Any) -> str:
@@ -430,6 +502,14 @@ class NativeVM:
         return obj
 
     def _field_get(self, obj: Any, field_name: Any) -> Any:
+        if isinstance(obj, NamespaceRef):
+            module_env = self.module_envs.get(obj.name)
+            if module_env is None:
+                raise RuntimeError(f"unknown module {obj.name}")
+            field = str(field_name)
+            if field in module_env:
+                return module_env[field]
+            raise RuntimeError(f"unknown field {field}")
         if not isinstance(obj, dict) or "__fields__" not in obj:
             raise RuntimeError("field access on non-class value")
         owner_hint, fname = self._split_field_name(str(field_name))
@@ -437,6 +517,8 @@ class NativeVM:
         return fmap[fname]
 
     def _field_set(self, obj: Any, field_name: Any, value: Any) -> Any:
+        if isinstance(obj, NamespaceRef):
+            raise RuntimeError("field access on module namespace")
         if not isinstance(obj, dict) or "__fields__" not in obj:
             raise RuntimeError("field access on non-class value")
         owner_hint, fname = self._split_field_name(str(field_name))
@@ -447,6 +529,9 @@ class NativeVM:
     def _method_call(self, obj: Any, method_name: Any, args: List[Any]) -> Any:
         if self.program is None:
             raise RuntimeError("VM has no program loaded")
+        if isinstance(obj, NamespaceRef):
+            qualified = f"{obj.name}.{method_name}"
+            return self._call(qualified, list(args))
         if not isinstance(obj, dict) or "__fields__" not in obj:
             raise RuntimeError("method call on non-class value")
         class_name = obj.get("__tag__")

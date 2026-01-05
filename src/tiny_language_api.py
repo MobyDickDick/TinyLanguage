@@ -20,9 +20,9 @@ import sys
 import tempfile
 from functools import lru_cache
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
-from native_vm import NativeVM
+from native_vm import NamespaceRef as NativeNamespaceRef, NativeVM
 from native_python_bytecode import run_program_via_python_bytecode
 from stdlib import register_stdlib
 from tiny_errors import SourcePos, SourceSpan
@@ -607,6 +607,110 @@ def _parse_and_lint(src: str, *, use_tiny_parser: Optional[bool] = None) -> List
     return stmts
 
 
+class NativeModuleResolver:
+    """Resolve TinyLanguage modules for the native backend."""
+
+    def __init__(self, search_paths: Optional[List[Path]] = None) -> None:
+        env_paths = os.environ.get("TINYPATH", "")
+        configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
+        default_roots = [Path.cwd(), Path(__file__).parent]
+        stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
+        if stdlib_root.exists():
+            default_roots.append(stdlib_root)
+        self.search_paths: List[Path] = search_paths or configured_paths + default_roots
+        self.cache: dict[Path, NativeNamespaceRef] = {}
+        self._in_progress: List[Path] = []
+
+    def _resolve_name(self, raw: str, caller_namespace: Optional[str], pos: Optional[Any]) -> str:
+        pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
+        location = pos if pos is not None else pos_for_error
+        leading = len(raw) - len(raw.lstrip("."))
+        if leading == 0:
+            return raw
+        if not caller_namespace:
+            raise TinyLangError(
+                format_error("", location or SourcePos.origin(), "relative import outside a module", code="E008"),
+                pos_for_error or SourcePos.origin(),
+                code="E008",
+            )
+        base = caller_namespace.split(".")
+        if leading > len(base):
+            raise TinyLangError(
+                format_error(
+                    "",
+                    location or SourcePos.origin(),
+                    "relative import traverses beyond module root",
+                    code="E008",
+                ),
+                pos_for_error or SourcePos.origin(),
+                code="E008",
+            )
+        trimmed = base[: len(base) - leading]
+        remainder = raw.lstrip(".")
+        if remainder:
+            trimmed.append(remainder)
+        return ".".join(part for part in trimmed if part)
+
+    def _candidate_paths(self, module_name: str, caller_path: Optional[Path]) -> List[Path]:
+        rel_path = Path(*module_name.split("."))
+        candidates: List[Path] = []
+        roots: List[Path] = []
+        if caller_path:
+            roots.append(caller_path.parent)
+        roots.extend(self.search_paths)
+        for root in roots:
+            candidates.append((root / rel_path).with_suffix(".tiny"))
+        return candidates
+
+    def import_module(
+        self,
+        name: str,
+        vm: NativeVM,
+        *,
+        caller_namespace: Optional[str],
+        caller_path: Optional[Path],
+        pos: Optional[Any] = None,
+    ) -> NativeNamespaceRef:
+        resolved_name = self._resolve_name(name, caller_namespace, pos)
+        pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
+        location = pos if pos is not None else pos_for_error
+        for candidate in self._candidate_paths(resolved_name, caller_path):
+            resolved_path = candidate.resolve()
+            cached = self.cache.get(resolved_path)
+            if cached is not None:
+                return cached
+            if resolved_path.exists():
+                if resolved_path in self._in_progress:
+                    raise TinyLangError(
+                        format_error(
+                            "",
+                            location or SourcePos.origin(),
+                            f"circular import involving {resolved_path}",
+                            code="E008",
+                        ),
+                        pos_for_error or SourcePos.origin(),
+                        code="E008",
+                    )
+                self._in_progress.append(resolved_path)
+                try:
+                    module_env: dict[str, Any] = {}
+                    stmts = _parse_and_lint(resolved_path.read_text(encoding="utf-8"))
+                    program = NativeCodeGenerator(allow_heap=True, module_namespace=resolved_name).compile_program(
+                        stmts
+                    )
+                    vm.load_module(resolved_name, program, module_env, resolved_path)
+                    ns_ref = NativeNamespaceRef(resolved_name)
+                    self.cache[resolved_path] = ns_ref
+                    return ns_ref
+                finally:
+                    self._in_progress.remove(resolved_path)
+        raise TinyLangError(
+            format_error("", pos or SourcePos.origin(), f"module '{name}' not found on search path", code="E008"),
+            pos or SourcePos.origin(),
+            code="E008",
+        )
+
+
 def compile_and_run(
     src: str,
     env: Optional[Environment] = None,
@@ -855,11 +959,19 @@ def run_with_python_backend(src: str) -> str:
     return namespace["tiny_main"]()
 
 
-def run_with_native_backend(src: str) -> str:
+def run_with_native_backend(
+    src: str,
+    *,
+    module_namespace: Optional[str] = None,
+    module_path: Optional[Path] = None,
+    module_resolver: Optional[NativeModuleResolver] = None,
+) -> str:
     """Run code through the experimental native bytecode backend and VM."""
     stmts = _parse_and_lint(src)
-    program = NativeCodeGenerator(allow_heap=True).compile_program(stmts)
-    return NativeVM().run(program)
+    program = NativeCodeGenerator(allow_heap=True, module_namespace=module_namespace).compile_program(stmts)
+    resolver = module_resolver or NativeModuleResolver()
+    vm = NativeVM(module_resolver=resolver, module_namespace=module_namespace, module_path=module_path)
+    return vm.run(program)
 
 
 def _load_llvmlite_binding():
@@ -1499,4 +1611,5 @@ __all__ = [
     "run_file",
     "main",
     "ModuleResolver",
+    "NativeModuleResolver",
 ]

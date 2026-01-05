@@ -68,10 +68,6 @@ These task lists capture the remaining feature gaps for the non-interpreter back
   - [ ] Define a VM scheduling model for concurrent tasks.
   - [ ] Implement token synchronization primitives in the native runtime.
 
-- [ ] Module imports
-  - [ ] Add module loader support for native VM execution.
-  - [ ] Cache and reuse module initialization across runs.
-
 - [ ] Python interop
   - [ ] Define native VM bridges for `Python.import_module` and `Python.call`.
   - [ ] Validate argument/return marshalling in the VM runtime.
@@ -96,6 +92,10 @@ These task lists capture the remaining feature gaps for the non-interpreter back
   - [x] Represent array literals in native IR and lower them in the VM interpreter loop.
   - [x] Add bounds checking and length metadata in the runtime heap model.
   - [x] Wire array operations into standard library helpers (where applicable).
+
+- [x] Module imports
+  - [x] Add module loader support for native VM execution.
+  - [x] Cache and reuse module initialization across runs.
 ### C/LLVM pipeline (`--emit-llvm`, `--emit-exe`)
 
 ### Open tasks

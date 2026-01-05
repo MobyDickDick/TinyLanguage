@@ -101,6 +101,35 @@ def test_native_cli_flag_executes_program(tmp_path):
     assert result.stdout.strip() == "5"
 
 
+def test_native_backend_supports_module_imports(tmp_path):
+    module_src = """
+    define value = 7;
+    fn add(a, b) { return a + b; }
+    fn get_value() { return value; }
+    """
+    main_src = """
+    import helpers;
+    print(helpers.add(2, 3));
+    print(helpers.value);
+    """
+    module_path = tmp_path / "helpers.tiny"
+    module_path.write_text(module_src)
+    main_path = tmp_path / "main.tiny"
+    main_path.write_text(main_src)
+
+    interpreter_output = compile_and_run(
+        main_path.read_text(),
+        module_path=main_path,
+        module_namespace="main",
+    )
+    native_output = run_with_native_backend(
+        main_path.read_text(),
+        module_path=main_path,
+        module_namespace="main",
+    )
+    assert native_output == interpreter_output
+
+
 def test_class_methods_roundtrip_matches_interpreter():
     source = """
     class Point {

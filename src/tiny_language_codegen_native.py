@@ -15,8 +15,9 @@ from native_ir import ClassIR, FunctionIR, Instruction, Opcode, OperatorOverload
 class NativeCodeGenerator:
     """Convert TinyLanguage AST nodes into bytecode instructions."""
 
-    def __init__(self, *, allow_heap: bool = False) -> None:
+    def __init__(self, *, allow_heap: bool = False, module_namespace: str | None = None) -> None:
         self._allow_heap = allow_heap
+        self._module_namespace = module_namespace
         self._tmp_index = 0
 
     def compile_program(self, stmts: List["IR"]) -> ProgramIR:
@@ -27,7 +28,7 @@ class NativeCodeGenerator:
 
         for stmt in stmts:
             if isinstance(stmt, Fn):
-                functions[stmt.name] = self._compile_function(stmt)
+                functions[self._qualify_name(stmt.name)] = self._compile_function(stmt)
             elif isinstance(stmt, OpDef):
                 overload_name = self._operator_name(stmt)
                 functions[overload_name] = self._compile_operator(stmt, overload_name)
@@ -61,7 +62,11 @@ class NativeCodeGenerator:
             raw = self._compile_stmt(stmt)
             body_instrs.extend(self._shift_labels(raw, len(body_instrs)))
         body_instrs.append(Instruction(Opcode.RETURN))
-        return FunctionIR(name=fn.name, params=[param.name for param in fn.params], instructions=body_instrs)
+        return FunctionIR(
+            name=self._qualify_name(fn.name),
+            params=[param.name for param in fn.params],
+            instructions=body_instrs,
+        )
 
     def _compile_method(self, md: "MethodDef") -> FunctionIR:
         body_instrs: List[Instruction] = []
@@ -97,6 +102,13 @@ class NativeCodeGenerator:
             return self._compile_binding(stmt.name, stmt.expr)
         if isinstance(stmt, Assign):
             return self._compile_binding(stmt.name, stmt.expr)
+        if isinstance(stmt, Import):
+            binding = self._import_binding_name(stmt.module, stmt.alias)
+            return [
+                Instruction(Opcode.PUSH_CONST, stmt.module),
+                Instruction(Opcode.CALL, ("__import", 1)),
+                Instruction(Opcode.STORE, binding),
+            ]
         if isinstance(stmt, Print):
             instructions: List[Instruction] = []
             for expr in stmt.exprs:
@@ -118,7 +130,7 @@ class NativeCodeGenerator:
                 obj_name, method_name = stmt.name.split(".", 1)
                 expr = MethodCall(Var(obj_name, pos=stmt.pos), method_name, stmt.args, pos=stmt.pos)
             else:
-                expr = Call(stmt.name, stmt.args, pos=stmt.pos)
+                expr = Call(self._qualify_name(stmt.name), stmt.args, pos=stmt.pos)
             instructions = self._compile_expr(expr)
             instructions.append(Instruction(Opcode.POP))
             return instructions
@@ -244,10 +256,11 @@ class NativeCodeGenerator:
         if isinstance(expr, Call):
             if expr.name in {"__new", "new", "heap_get", "heap_set", "delete"} and not self._allow_heap:
                 raise NotImplementedError("native codegen does not yet support heap allocations")
+            call_name = self._qualify_name(expr.name)
             instructions: List[Instruction] = []
             for arg in expr.args:
                 instructions.extend(self._compile_expr(arg))
-            instructions.append(Instruction(Opcode.CALL, (expr.name, len(expr.args))))
+            instructions.append(Instruction(Opcode.CALL, (call_name, len(expr.args))))
             return instructions
         raise NotImplementedError(f"native codegen does not yet support expression {type(expr).__name__}")
 
@@ -255,13 +268,24 @@ class NativeCodeGenerator:
         self._tmp_index += 1
         return f"__tmp_heap_{self._tmp_index}"
 
+    def _qualify_name(self, name: str) -> str:
+        if not self._module_namespace or "." in name:
+            return name
+        return f"{self._module_namespace}.{name}"
+
+    @staticmethod
+    def _import_binding_name(module: str, alias: str | None) -> str:
+        if alias:
+            return alias
+        stripped = module.lstrip(".") or module
+        return stripped.split(".")[-1]
+
     @staticmethod
     def _method_name(class_name: str, method_name: str) -> str:
         return f"{class_name}.{method_name}"
 
-    @staticmethod
-    def _operator_name(opdef: "OpDef") -> str:
-        return f"__op_{opdef.op}_{opdef.a_type}_{opdef.b_type}"
+    def _operator_name(self, opdef: "OpDef") -> str:
+        return self._qualify_name(f"__op_{opdef.op}_{opdef.a_type}_{opdef.b_type}")
 
     def _register_class(self, stmt: "ClassDef", classes: Dict[str, ClassIR]) -> None:
         if stmt.name in classes:

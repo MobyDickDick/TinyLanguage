@@ -339,6 +339,10 @@ class LLVMCodeGenerator:
             self._var_literals[name] = value.literal
         else:
             self._var_literals.pop(name, None)
+        if value.source and value.source != name:
+            for (ptr_name, idx), cell_ty in list(self._heap_cell_types.items()):
+                if ptr_name == value.source:
+                    self._heap_cell_types[(name, idx)] = cell_ty
         self._body.append(f"  store {value.ty} {value.name}, {value.ty}* %{self._allocas[name]}")
 
     def _binary_op(self, op: str) -> None:
@@ -727,6 +731,10 @@ class LLVMCodeGenerator:
                     locals_literals[instr.arg] = value.literal
                 else:
                     locals_literals.pop(instr.arg, None)
+                if value.source and value.source != instr.arg:
+                    for (ptr_name, idx), cell_ty in list(heap_cell_types.items()):
+                        if ptr_name == value.source:
+                            heap_cell_types[(instr.arg, idx)] = cell_ty
             elif instr.op == Opcode.BINARY:
                 right = stack.pop()
                 left = stack.pop()

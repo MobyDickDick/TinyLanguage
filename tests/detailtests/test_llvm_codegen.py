@@ -271,6 +271,16 @@ def test_llvm_codegen_emits_heap_string_helpers() -> None:
     assert "call i8* @heap_get_str(i64" in llvm_ir
 
 
+def test_llvm_codegen_emits_array_literal_heap_helpers() -> None:
+    source = 'define ptr = new["hello", "world"]; print(heap_get(ptr, 1));'
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "call i64 @__new(i64 2)" in llvm_ir
+    assert "call i64 @heap_set_str(i64" in llvm_ir
+    assert "call i8* @heap_get_str(i64" in llvm_ir
+
+
 def test_llvm_codegen_defines_heap_runtime_helpers() -> None:
     source = "define ptr = new(1); heap_set(ptr, 0, 1); print(heap_get(ptr, 0));"
 

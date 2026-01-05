@@ -27,7 +27,7 @@ Legend:
 | Feature | Interpreter | Native VM (`--native-backend`) | C/LLVM pipeline (`--emit-llvm`, `--emit-exe`) |
 | --- | --- | --- | --- |
 | Heap (`new`, `heap_get`, `heap_set`, `delete`) | ✅ | ✅ | ⚠️ Basic heap ops (no runtime safety checks) |
-| Array literals (`new[ a, b, c ]`) | ✅ | ✅ | ❌ |
+| Array literals (`new[ a, b, c ]`) | ✅ | ✅ | ✅ |
 | Classes / methods | ✅ | ❌ | ❌ |
 | Operator overloading | ✅ | ✅ | ❌ |
 | Pattern matching + ADTs | ✅ | ❌ | ❌ |
@@ -100,10 +100,6 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 
 ### Open tasks
 
-- [ ] Array literals
-  - [ ] Introduce array allocation helpers in the LLVM runtime ABI.
-  - [ ] Lower array literals to runtime calls and wire bounds checks.
-
 - [ ] Classes and methods
   - [ ] Define class layouts in the LLVM runtime and generate constructors.
   - [ ] Emit method dispatch (vtable or direct) in the LLVM IR.
@@ -133,6 +129,10 @@ These task lists capture the remaining feature gaps for the non-interpreter back
   - [ ] Stabilize argument conversion and reference lifetime management.
 
 ### Closed tasks
+
+- [x] Array literals
+  - [x] Introduce array allocation helpers in the LLVM runtime ABI.
+  - [x] Lower array literals to runtime calls and wire bounds checks.
 
 - [x] Full literal and type coverage
   - [x] Add `null` lowering and a runtime sentinel representation.

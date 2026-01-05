@@ -100,10 +100,6 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 
 ### Open tasks
 
-- [ ] Heap operations
-  - [ ] Port heap op lowering from the native IR into LLVM IR.
-  - [ ] Implement runtime safety checks and error reporting in the C/LLVM runtime helpers.
-
 - [ ] Array literals
   - [ ] Introduce array allocation helpers in the LLVM runtime ABI.
   - [ ] Lower array literals to runtime calls and wire bounds checks.
@@ -141,3 +137,7 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 - [x] Full literal and type coverage
   - [x] Add `null` lowering and a runtime sentinel representation.
   - [x] Support non-numeric variables and assignments beyond the numeric subset.
+
+- [x] Heap operations
+  - [x] Port heap op lowering from the native IR into LLVM IR.
+  - [x] Implement runtime safety checks and error reporting in the C/LLVM runtime helpers.

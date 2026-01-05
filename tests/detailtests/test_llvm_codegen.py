@@ -10,6 +10,21 @@ from tiny_language import compile_to_llvm_ir
 from tiny_language_codegen_llvm import LLVMCodeGenerator
 
 
+def _tiny_main_body(llvm_ir: str) -> str:
+    lines = llvm_ir.splitlines()
+    start = None
+    for idx, line in enumerate(lines):
+        if line.startswith("define i32 @tiny_main()"):
+            start = idx + 1
+            break
+    if start is None:
+        raise AssertionError("tiny_main function not found in LLVM IR")
+    for end in range(start, len(lines)):
+        if lines[end] == "}":
+            return "\n".join(lines[start:end])
+    raise AssertionError("tiny_main function did not terminate as expected")
+
+
 def test_compile_to_llvm_ir_emits_arithmetic_ir() -> None:
     source = "define a = 1 + 2; print(a);"
 
@@ -91,10 +106,11 @@ def test_pop_is_ignored_in_llvm_codegen() -> None:
     )
 
     ir = LLVMCodeGenerator().compile_program(program)
+    main_ir = _tiny_main_body(ir)
 
-    assert "call i32 (i8*, ...) @printf" in ir
-    assert "i64 2" in ir
-    assert "i64 1" not in ir  # popped value should not reach the output
+    assert "call i32 (i8*, ...) @printf" in main_ir
+    assert "i64 2" in main_ir
+    assert "i64 1" not in main_ir  # popped value should not reach the output
 
 
 def test_llvm_codegen_handles_modulo_operation() -> None:
@@ -179,9 +195,10 @@ def test_llvm_codegen_emits_flush_calls() -> None:
     source = "print(1); flush(); print(2);"
 
     llvm_ir = compile_to_llvm_ir(source)
+    main_ir = _tiny_main_body(llvm_ir)
 
-    assert "call i32 @fflush(i8* null)" in llvm_ir
-    assert llvm_ir.count("call i32 (i8*, ...) @printf") == 2
+    assert "call i32 @fflush(i8* null)" in main_ir
+    assert main_ir.count("call i32 (i8*, ...) @printf") == 2
 
 
 def test_llvm_codegen_handles_if_and_while_control_flow() -> None:
@@ -196,9 +213,10 @@ if (i == 2) {
 """
 
     llvm_ir = compile_to_llvm_ir(source)
+    main_ir = _tiny_main_body(llvm_ir)
 
-    assert llvm_ir.count("br i1") == 2
-    assert "block" in llvm_ir
+    assert main_ir.count("br i1") == 2
+    assert "block" in main_ir
 
 
 def test_llvm_codegen_emits_string_prints() -> None:
@@ -268,6 +286,16 @@ def test_llvm_codegen_defines_heap_runtime_helpers() -> None:
     assert "define i64 @heap_set_double(i64 %ptr, i64 %idx, double %value)" in llvm_ir
     assert "define i64 @heap_set_bool(i64 %ptr, i64 %idx, i1 %value)" in llvm_ir
     assert "define i64 @delete(i64 %ptr)" in llvm_ir
+
+
+def test_llvm_codegen_emits_heap_bounds_checks() -> None:
+    source = "define ptr = new(2); heap_set(ptr, 1, 1); print(heap_get(ptr, 1));"
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "define i64 @__heap_bounds_error(i64 %idx, i64 %size)" in llvm_ir
+    assert "add i64 %size, 1" in llvm_ir
+    assert "getelementptr i64, i64* %data, i64 -1" in llvm_ir
 
 
 def test_llvm_codegen_emits_branches_for_jump_ops() -> None:

@@ -8,9 +8,10 @@ compare interpreter and native results easily.
 
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from native_ir import Instruction, Opcode, ProgramIR
 
@@ -69,7 +70,7 @@ class NativeVM:
         self.output: List[str] = []
         self.globals: Dict[str, Any] = {}
         self.program: Optional[ProgramIR] = None
-        self.heap: Dict[int, List[Any]] = {}
+        self.heap: Dict[int, Any] = {}
         self.next_ptr = 1
         self.freed_ptrs: set[int] = set()
         self.freed_allocations: Dict[int, int] = {}
@@ -82,6 +83,12 @@ class NativeVM:
         self.module_programs: Dict[str, ProgramIR] = {}
         self.current_module_namespace = module_namespace
         self.current_module_path = module_path
+        self._stdlib_namespaces = {
+            "Map": NamespaceRef("Map"),
+            "Set": NamespaceRef("Set"),
+            "Deque": NamespaceRef("Deque"),
+        }
+        self._inject_stdlib(self.globals)
 
     def run(self, program: ProgramIR) -> str:
         """Execute the program entry block and return captured output."""
@@ -176,6 +183,12 @@ class NativeVM:
             if len(args) != 1:
                 raise RuntimeError(f"__import expects 1 arg, got {len(args)}")
             return self._import_module(args[0])
+        if name.startswith("Map."):
+            return self._map_call(name, args)
+        if name.startswith("Set."):
+            return self._set_call(name, args)
+        if name.startswith("Deque."):
+            return self._deque_call(name, args)
         if name in {"__new", "new"}:
             if len(args) != 1:
                 raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
@@ -260,6 +273,7 @@ class NativeVM:
         self.program.operator_overloads.extend(program.operator_overloads)
         for overload in program.operator_overloads:
             self.operator_overloads[(overload.op, overload.a_type, overload.b_type)] = overload.func_name
+        self._inject_stdlib(module_env)
         self.module_envs[name] = module_env
         self.module_programs[name] = program
         previous_namespace = self.current_module_namespace
@@ -292,7 +306,7 @@ class NativeVM:
             return None
         return idx
 
-    def _resolve_ptr(self, pointer: Any, *, op: str) -> Optional[tuple[int, List[Any]]]:
+    def _resolve_ptr(self, pointer: Any, *, op: str) -> Optional[tuple[int, Any]]:
         try:
             ip = int(pointer)
         except Exception:
@@ -341,6 +355,18 @@ class NativeVM:
         self.heap_cell_types.pop(ptr, None)
         return ptr
 
+    def _alloc_heap_value(self, value: Any) -> int:
+        ptr = self.next_ptr
+        self.next_ptr += 1
+        self.heap[ptr] = value
+        self.freed_ptrs.discard(ptr)
+        self.freed_allocations.pop(ptr, None)
+        self.heap_cell_types.pop(ptr, None)
+        return ptr
+
+    def _to_pointer(self, values: Iterable[Any]) -> int:
+        return self._alloc_heap_value(list(values))
+
     def _value_type_name(self, value: Any) -> str:
         if isinstance(value, dict):
             if "__type__" in value:
@@ -386,6 +412,10 @@ class NativeVM:
         if resolved is None:
             return None
         ip, cells = resolved
+        if not isinstance(cells, list):
+            message = f"heap access error: pointer {ip} does not refer to a list allocation"
+            self._record_error(message)
+            return None
         size = len(cells)
         if idx < 0 or idx >= size:
             range_hint = "empty allocation" if size == 0 else f"valid indices: 0..{size - 1}"
@@ -402,6 +432,10 @@ class NativeVM:
         if resolved is None:
             return self._heap_error_record(self.error_message or "")
         ip, cells = resolved
+        if not isinstance(cells, list):
+            message = f"heap access error: pointer {ip} does not refer to a list allocation"
+            self._record_error(message)
+            return self._heap_error_record(message)
         size = len(cells)
         if idx < 0 or idx >= size:
             range_hint = "empty allocation" if size == 0 else f"valid indices: 0..{size - 1}"
@@ -417,6 +451,42 @@ class NativeVM:
         cells[idx] = value
         self.heap_cell_types.setdefault(ip, {})[idx] = actual
         return self._heap_ok_record()
+
+    def _resolve_sequence(self, target: Any) -> List[Any]:
+        if isinstance(target, int) and target in self.heap:
+            maybe = self.heap[target]
+            if isinstance(maybe, list):
+                return maybe
+        if isinstance(target, list):
+            return target
+        raise RuntimeError("collections operation expects a heap pointer or list")
+
+    def _resolve_map(self, target: Any) -> Dict[Any, Any]:
+        if isinstance(target, int) and target in self.heap:
+            maybe = self.heap[target]
+            if isinstance(maybe, dict):
+                return maybe
+        if isinstance(target, dict):
+            return target
+        raise RuntimeError("map operation expects a heap pointer or dict")
+
+    def _resolve_set(self, target: Any) -> set:
+        if isinstance(target, int) and target in self.heap:
+            maybe = self.heap[target]
+            if isinstance(maybe, set):
+                return maybe
+        if isinstance(target, set):
+            return target
+        raise RuntimeError("set operation expects a heap pointer or set")
+
+    def _resolve_deque(self, target: Any) -> deque:
+        if isinstance(target, int) and target in self.heap:
+            maybe = self.heap[target]
+            if isinstance(maybe, deque):
+                return maybe
+        if isinstance(target, deque):
+            return target
+        raise RuntimeError("deque operation expects a heap pointer or deque")
 
     def _class_mro(self, name: str) -> List[str]:
         info = self.class_defs.get(name)
@@ -551,3 +621,168 @@ class NativeVM:
             locals_ = dict(zip(target.params, method_args))
             return self._execute(_Frame(target.instructions, locals_))
         raise RuntimeError(f"no method {method_name} for class {class_name}")
+
+    def _inject_stdlib(self, env: Dict[str, Any]) -> None:
+        for name, ref in self._stdlib_namespaces.items():
+            env.setdefault(name, ref)
+
+    def _map_call(self, name: str, args: List[Any]) -> Any:
+        method = name.split(".", 1)[1]
+        if method == "new":
+            if args:
+                raise RuntimeError(f"{name} expects 0 args, got {len(args)}")
+            return self._alloc_heap_value({})
+        if method == "from_entries":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            seq = self._resolve_sequence(args[0])
+            result: Dict[Any, Any] = {}
+            for pair in seq:
+                pair_val = pair
+                if isinstance(pair, int) and pair in self.heap:
+                    pair_val = self.heap[pair]
+                if not isinstance(pair_val, (list, tuple)) or len(pair_val) != 2:
+                    raise RuntimeError("from_entries expects [key, value] pairs")
+                key, val = pair_val
+                result[key] = val
+            return self._alloc_heap_value(result)
+        if method == "len":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            return len(self._resolve_map(args[0]))
+        if method == "get":
+            if len(args) not in {2, 3}:
+                raise RuntimeError(f"{name} expects 2 or 3 args, got {len(args)}")
+            default = args[2] if len(args) == 3 else None
+            return self._resolve_map(args[0]).get(args[1], default)
+        if method == "set":
+            if len(args) != 3:
+                raise RuntimeError(f"{name} expects 3 args, got {len(args)}")
+            target = self._resolve_map(args[0])
+            target[args[1]] = args[2]
+            return args[2]
+        if method == "delete":
+            if len(args) != 2:
+                raise RuntimeError(f"{name} expects 2 args, got {len(args)}")
+            target = self._resolve_map(args[0])
+            if args[1] in target:
+                del target[args[1]]
+                return True
+            return False
+        if method == "has":
+            if len(args) != 2:
+                raise RuntimeError(f"{name} expects 2 args, got {len(args)}")
+            return args[1] in self._resolve_map(args[0])
+        if method == "keys":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            return self._to_pointer(self._resolve_map(args[0]).keys())
+        if method == "values":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            return self._to_pointer(self._resolve_map(args[0]).values())
+        if method == "entries":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            items = [[k, v] for k, v in self._resolve_map(args[0]).items()]
+            return self._to_pointer(items)
+        raise RuntimeError(f"unknown Map method {method}")
+
+    def _set_call(self, name: str, args: List[Any]) -> Any:
+        method = name.split(".", 1)[1]
+        if method == "new":
+            if args:
+                raise RuntimeError(f"{name} expects 0 args, got {len(args)}")
+            return self._alloc_heap_value(set())
+        if method == "from_list":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            seq = self._resolve_sequence(args[0])
+            return self._alloc_heap_value(set(seq))
+        if method == "len":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            return len(self._resolve_set(args[0]))
+        if method == "add":
+            if len(args) != 2:
+                raise RuntimeError(f"{name} expects 2 args, got {len(args)}")
+            target = self._resolve_set(args[0])
+            before = len(target)
+            target.add(args[1])
+            return len(target) > before
+        if method == "delete":
+            if len(args) != 2:
+                raise RuntimeError(f"{name} expects 2 args, got {len(args)}")
+            target = self._resolve_set(args[0])
+            if args[1] in target:
+                target.remove(args[1])
+                return True
+            return False
+        if method == "has":
+            if len(args) != 2:
+                raise RuntimeError(f"{name} expects 2 args, got {len(args)}")
+            return args[1] in self._resolve_set(args[0])
+        if method == "to_list":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            return self._to_pointer(list(self._resolve_set(args[0])))
+        raise RuntimeError(f"unknown Set method {method}")
+
+    def _deque_call(self, name: str, args: List[Any]) -> Any:
+        method = name.split(".", 1)[1]
+        if method == "new":
+            if len(args) > 1:
+                raise RuntimeError(f"{name} expects 0 or 1 args, got {len(args)}")
+            if not args:
+                return self._alloc_heap_value(deque())
+            seq = self._resolve_sequence(args[0])
+            return self._alloc_heap_value(deque(seq))
+        if method == "len":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            return len(self._resolve_deque(args[0]))
+        if method == "push_left":
+            if len(args) != 2:
+                raise RuntimeError(f"{name} expects 2 args, got {len(args)}")
+            target = self._resolve_deque(args[0])
+            target.appendleft(args[1])
+            return len(target)
+        if method == "push_right":
+            if len(args) != 2:
+                raise RuntimeError(f"{name} expects 2 args, got {len(args)}")
+            target = self._resolve_deque(args[0])
+            target.append(args[1])
+            return len(target)
+        if method == "pop_left":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            target = self._resolve_deque(args[0])
+            if not target:
+                raise RuntimeError("pop from empty deque")
+            return target.popleft()
+        if method == "pop_right":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            target = self._resolve_deque(args[0])
+            if not target:
+                raise RuntimeError("pop from empty deque")
+            return target.pop()
+        if method == "peek_left":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            target = self._resolve_deque(args[0])
+            if not target:
+                raise RuntimeError("peek from empty deque")
+            return target[0]
+        if method == "peek_right":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            target = self._resolve_deque(args[0])
+            if not target:
+                raise RuntimeError("peek from empty deque")
+            return target[-1]
+        if method == "to_list":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            return self._to_pointer(list(self._resolve_deque(args[0])))
+        raise RuntimeError(f"unknown Deque method {method}")

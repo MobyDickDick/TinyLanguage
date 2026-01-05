@@ -60,10 +60,6 @@ These task lists capture the remaining feature gaps for the non-interpreter back
   - [ ] Encode ADT constructors in native IR and allocate tagged values in the runtime.
   - [ ] Implement match dispatch on tags with destructuring.
 
-- [ ] Collections (`Map`, `Set`, `Deque`)
-  - [ ] Port collection runtime implementations into the native VM.
-  - [ ] Expose collection constructors and methods through the VM call interface.
-
 - [ ] Concurrency (`spawn`, `join`, tokens)
   - [ ] Define a VM scheduling model for concurrent tasks.
   - [ ] Implement token synchronization primitives in the native runtime.
@@ -96,6 +92,10 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 - [x] Module imports
   - [x] Add module loader support for native VM execution.
   - [x] Cache and reuse module initialization across runs.
+
+- [x] Collections (`Map`, `Set`, `Deque`)
+  - [x] Port collection runtime implementations into the native VM.
+  - [x] Expose collection constructors and methods through the VM call interface.
 ### C/LLVM pipeline (`--emit-llvm`, `--emit-exe`)
 
 ### Open tasks

@@ -80,6 +80,28 @@ def test_array_literal_roundtrip_matches_interpreter():
     _assert_native_matches(source)
 
 
+def test_collections_roundtrip_matches_interpreter():
+    source = """
+    define m = Map.new();
+    define set_a = Map.set(m, "a", 1);
+    define set_b = Map.set(m, "b", 2);
+    print(Map.get(m, "a", 0));
+    print(Map.has(m, "c"));
+    define keys = Map.keys(m);
+    print(heap_get(keys, 0));
+
+    define s = Set.new();
+    print(Set.add(s, "x"));
+    print(Set.has(s, "x"));
+
+    define q = Deque.new(new[1, 2]);
+    define pushed = Deque.push_left(q, 0);
+    print(Deque.pop_right(q));
+    print(set_a, set_b, pushed);
+    """
+    _assert_native_matches(source)
+
+
 def test_native_cli_flag_executes_program(tmp_path):
     script = """
     define x = 2;

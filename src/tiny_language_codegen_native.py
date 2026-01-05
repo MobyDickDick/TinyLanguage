@@ -9,7 +9,7 @@ flow, simple functions, and `print`). Unsupported constructs raise
 
 from typing import Dict, List
 
-from native_ir import ClassIR, FunctionIR, Instruction, Opcode, ProgramIR
+from native_ir import ClassIR, FunctionIR, Instruction, Opcode, OperatorOverloadIR, ProgramIR
 
 
 class NativeCodeGenerator:
@@ -23,10 +23,19 @@ class NativeCodeGenerator:
         functions: Dict[str, FunctionIR] = {}
         entry_instructions: List[Instruction] = []
         classes: Dict[str, ClassIR] = {}
+        operator_overloads: List[OperatorOverloadIR] = []
 
         for stmt in stmts:
             if isinstance(stmt, Fn):
                 functions[stmt.name] = self._compile_function(stmt)
+            elif isinstance(stmt, OpDef):
+                overload_name = self._operator_name(stmt)
+                functions[overload_name] = self._compile_operator(stmt, overload_name)
+                operator_overloads.append(
+                    OperatorOverloadIR(
+                        op=stmt.op, a_type=stmt.a_type, b_type=stmt.b_type, func_name=overload_name
+                    )
+                )
             elif isinstance(stmt, ClassDef):
                 self._register_class(stmt, classes)
                 for method in stmt.methods:
@@ -39,7 +48,12 @@ class NativeCodeGenerator:
                 entry_instructions.extend(self._shift_labels(raw, len(entry_instructions)))
 
         entry_instructions.append(Instruction(Opcode.RETURN))
-        return ProgramIR(entry=entry_instructions, functions=functions, classes=classes)
+        return ProgramIR(
+            entry=entry_instructions,
+            functions=functions,
+            classes=classes,
+            operator_overloads=operator_overloads,
+        )
 
     def _compile_function(self, fn: "Fn") -> FunctionIR:
         body_instrs: List[Instruction] = []
@@ -60,6 +74,14 @@ class NativeCodeGenerator:
             params=[param.name for param in md.params],
             instructions=body_instrs,
         )
+
+    def _compile_operator(self, opdef: "OpDef", name: str) -> FunctionIR:
+        body_instrs: List[Instruction] = []
+        for stmt in opdef.body:
+            raw = self._compile_stmt(stmt)
+            body_instrs.extend(self._shift_labels(raw, len(body_instrs)))
+        body_instrs.append(Instruction(Opcode.RETURN))
+        return FunctionIR(name=name, params=[opdef.a_name, opdef.b_name], instructions=body_instrs)
 
     def _shift_labels(self, instructions: List[Instruction], offset: int) -> List[Instruction]:
         shifted: List[Instruction] = []
@@ -236,6 +258,10 @@ class NativeCodeGenerator:
     @staticmethod
     def _method_name(class_name: str, method_name: str) -> str:
         return f"{class_name}.{method_name}"
+
+    @staticmethod
+    def _operator_name(opdef: "OpDef") -> str:
+        return f"__op_{opdef.op}_{opdef.a_type}_{opdef.b_type}"
 
     def _register_class(self, stmt: "ClassDef", classes: Dict[str, ClassIR]) -> None:
         if stmt.name in classes:

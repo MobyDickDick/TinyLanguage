@@ -122,6 +122,35 @@ def test_class_methods_roundtrip_matches_interpreter():
     _assert_native_matches(source)
 
 
+def test_operator_overloads_roundtrip_matches_interpreter():
+    source = """
+    class Counter {
+        total: number;
+        tag: string;
+    }
+
+    operator + (a: Counter, b: Counter) -> Counter {
+        return new Counter { total: a.total + b.total; tag: a.tag + "+" + b.tag };
+    }
+
+    operator == (a: Counter, b: Counter) -> Bool {
+        return a.total == b.total && a.tag == b.tag;
+    }
+
+    define left = new Counter { total: 2; tag: "L" };
+    define right = new Counter { total: 3; tag: "R" };
+    define combined = left + right;
+    print(combined.total, combined.tag);
+
+    if (left == right) {
+        print("equal");
+    } else {
+        print("diff");
+    }
+    """
+    _assert_native_matches(source)
+
+
 def test_unsupported_constructs_signal_not_implemented():
     source = """
     define x = { a: 1 };

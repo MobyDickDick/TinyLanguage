@@ -29,7 +29,7 @@ Legend:
 | Heap (`new`, `heap_get`, `heap_set`, `delete`) | ✅ | ✅ | ⚠️ Basic heap ops (no runtime safety checks) |
 | Array literals (`new[ a, b, c ]`) | ✅ | ✅ | ❌ |
 | Classes / methods | ✅ | ❌ | ❌ |
-| Operator overloading | ✅ | ❌ | ❌ |
+| Operator overloading | ✅ | ✅ | ❌ |
 | Pattern matching + ADTs | ✅ | ❌ | ❌ |
 | Collections (`Map`, `Set`, `Deque`) | ✅ | ❌ | ❌ |
 | Concurrency (`spawn`, `join`, tokens) | ✅ | ❌ | ❌ |
@@ -56,10 +56,6 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 
 ### Open tasks
 
-- [ ] Operator overloading
-  - [ ] Extend native IR to carry operator overload resolution results.
-  - [ ] Map overloaded operators to runtime method calls in the VM.
-
 - [ ] Pattern matching + ADTs
   - [ ] Encode ADT constructors in native IR and allocate tagged values in the runtime.
   - [ ] Implement match dispatch on tags with destructuring.
@@ -81,6 +77,10 @@ These task lists capture the remaining feature gaps for the non-interpreter back
   - [ ] Validate argument/return marshalling in the VM runtime.
 
 ### Closed tasks
+
+- [x] Operator overloading
+  - [x] Extend native IR to carry operator overload resolution results.
+  - [x] Map overloaded operators to runtime method calls in the VM.
 
 - [x] Classes and methods
   - [x] Define object layout metadata for class instances in the native runtime.

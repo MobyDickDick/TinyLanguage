@@ -94,6 +94,19 @@ def test_llvm_codegen_supports_function_calls() -> None:
     assert "call i64 @add(i64 2, i64 3)" in llvm_ir
 
 
+def test_llvm_codegen_emits_operator_overload_calls() -> None:
+    source = """
+operator + (a: number, b: number) -> number { return a - b; }
+define total = 2 + 3;
+print(total);
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+    main_ir = _tiny_main_body(llvm_ir)
+
+    assert "call i64 @__op_+_number_number" in main_ir
+
+
 def test_pop_is_ignored_in_llvm_codegen() -> None:
     program = ProgramIR(
         entry=[

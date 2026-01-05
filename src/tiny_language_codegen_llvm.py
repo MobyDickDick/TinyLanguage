@@ -12,7 +12,7 @@ production-grade code generation.
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
-from native_ir import FunctionIR, Instruction, Opcode, ProgramIR
+from native_ir import FunctionIR, Instruction, Opcode, OperatorOverloadIR, ProgramIR
 
 
 @dataclass
@@ -64,6 +64,7 @@ class LLVMCodeGenerator:
         self._heap_cell_types: Dict[Tuple[str, int], str] = {}
         self._target_triple = target_triple
         self._data_layout = data_layout
+        self._operator_overloads: Dict[Tuple[str, str, str], str] = {}
 
     def _format_opcode(self, op: Opcode) -> str:
         return op.value if isinstance(op, Opcode) else str(op)
@@ -98,6 +99,7 @@ class LLVMCodeGenerator:
         scope so gaps stay visible during experimentation.
         """
 
+        self._operator_overloads = self._register_operator_overloads(program.operator_overloads)
         self._function_signatures = self._infer_signatures(program)
         self._string_constants.clear()
         self._string_defs.clear()
@@ -352,6 +354,28 @@ class LLVMCodeGenerator:
             self._lowering_error(
                 f"mixed-type arithmetic not supported ({left.ty} vs {right.ty})"
             )
+
+        overload_name = self._operator_overloads.get((op, left.ty, right.ty))
+        if overload_name is not None:
+            signature = self._function_signatures.get(overload_name)
+            if signature is None:
+                self._lowering_error(f"unknown operator overload {overload_name}")
+            if len(signature.param_types) != 2:
+                self._lowering_error(
+                    f"operator overload {overload_name} expects 2 args, got {len(signature.param_types)}"
+                )
+            rendered_args: List[str] = []
+            for (param_name, param_type), arg in zip(signature.param_types.items(), (left, right)):
+                if arg.ty != param_type:
+                    self._lowering_error(
+                        f"argument for {overload_name}.{param_name} expected {param_type}, got {arg.ty}"
+                    )
+                rendered_args.append(f"{param_type} {arg.name}")
+            dest = self._next_tmp()
+            args_text = ", ".join(rendered_args)
+            self._body.append(f"  {dest} = call {signature.return_type} @{overload_name}({args_text})")
+            self._stack.append(_StackValue(name=dest, ty=signature.return_type))
+            return
 
         if op in {"+", "-", "*", "/", "%"}:
             self._emit_arithmetic_op(op, left, right)
@@ -647,6 +671,19 @@ class LLVMCodeGenerator:
                 param_types={name: None for name in func.params},
                 return_type=None,
             )
+        for overload in program.operator_overloads:
+            func = program.functions.get(overload.func_name)
+            if func is None or len(func.params) != 2:
+                continue
+            signature = signatures.get(overload.func_name)
+            if signature is None:
+                continue
+            a_ty = self._llvm_type_from_annotation(overload.a_type)
+            b_ty = self._llvm_type_from_annotation(overload.b_type)
+            if a_ty and signature.param_types.get(func.params[0]) is None:
+                signature.param_types[func.params[0]] = a_ty
+            if b_ty and signature.param_types.get(func.params[1]) is None:
+                signature.param_types[func.params[1]] = b_ty
         if not signatures:
             return {}
 
@@ -750,6 +787,15 @@ class LLVMCodeGenerator:
                     set_param_type(right.source, known_ty)
                     right_ty = known_ty
                 op = instr.arg
+                overload_name = None
+                if known_ty is not None:
+                    overload_name = self._operator_overloads.get((op, known_ty, known_ty))
+                if overload_name is not None:
+                    overload_sig = signatures.get(overload_name)
+                    if overload_sig is None:
+                        raise NotImplementedError(f"unknown operator overload {overload_name}")
+                    stack.append(_TypeValue(overload_sig.return_type))
+                    continue
                 if op in {"+", "-", "*", "/", "%"}:
                     stack.append(_TypeValue(known_ty))
                 elif op in {"==", "!=", "<", ">", "<=", ">="}:
@@ -847,6 +893,32 @@ class LLVMCodeGenerator:
             )
         if name == "delete":
             return _ResolvedFunctionSignature(param_types={"ptr": "i64"}, return_type="i64")
+        return None
+
+    def _register_operator_overloads(
+        self, overloads: List[OperatorOverloadIR]
+    ) -> Dict[Tuple[str, str, str], str]:
+        registered: Dict[Tuple[str, str, str], str] = {}
+        for overload in overloads:
+            a_ty = self._llvm_type_from_annotation(overload.a_type)
+            b_ty = self._llvm_type_from_annotation(overload.b_type)
+            if a_ty is None or b_ty is None:
+                continue
+            registered[(overload.op, a_ty, b_ty)] = overload.func_name
+        return registered
+
+    def _llvm_type_from_annotation(self, name: str) -> Optional[str]:
+        normalized = name.lower()
+        if normalized in {"number", "int", "integer"}:
+            return "i64"
+        if normalized in {"float", "double"}:
+            return "double"
+        if normalized in {"bool", "boolean"}:
+            return "i1"
+        if normalized in {"string", "str"}:
+            return "i8*"
+        if normalized == "null":
+            return "i8*"
         return None
 
     def _resolve_heap_set_name(self, args: List[_StackValue]) -> str:

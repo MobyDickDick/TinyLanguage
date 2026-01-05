@@ -57,6 +57,7 @@ class NativeVM:
         self.heap_cell_types: Dict[int, Dict[int, str]] = {}
         self.error_message: Optional[str] = None
         self.class_defs: Dict[str, Dict[str, Any]] = {}
+        self.operator_overloads: Dict[tuple[str, str, str], str] = {}
 
     def run(self, program: ProgramIR) -> str:
         """Execute the program entry block and return captured output."""
@@ -65,6 +66,10 @@ class NativeVM:
         self.class_defs = {
             name: {"fields": list(class_def.fields), "bases": list(class_def.bases)}
             for name, class_def in program.classes.items()
+        }
+        self.operator_overloads = {
+            (overload.op, overload.a_type, overload.b_type): overload.func_name
+            for overload in program.operator_overloads
         }
         self._execute(_Frame(program.entry, self.globals))
         return "".join(self.output)
@@ -89,10 +94,19 @@ class NativeVM:
             elif instr.op == Opcode.BINARY:
                 right = stack.pop()
                 left = stack.pop()
-                op_fn = self._binary_ops.get(instr.arg)
-                if op_fn is None:
-                    raise RuntimeError(f"unsupported operator {instr.arg}")
-                stack.append(op_fn(left, right))
+                overload_key = (
+                    instr.arg,
+                    self._value_type_name(left),
+                    self._value_type_name(right),
+                )
+                overload_name = self.operator_overloads.get(overload_key)
+                if overload_name is not None:
+                    stack.append(self._call(overload_name, [left, right]))
+                else:
+                    op_fn = self._binary_ops.get(instr.arg)
+                    if op_fn is None:
+                        raise RuntimeError(f"unsupported operator {instr.arg}")
+                    stack.append(op_fn(left, right))
             elif instr.op == Opcode.PRINT:
                 values = [stack.pop() for _ in range(int(instr.arg))][::-1]
                 self.output.append(" ".join(self._format_value(v) for v in values) + "\n")
@@ -256,8 +270,11 @@ class NativeVM:
         return ptr
 
     def _value_type_name(self, value: Any) -> str:
-        if isinstance(value, dict) and "__type__" in value:
-            return str(value.get("__type__"))
+        if isinstance(value, dict):
+            if "__type__" in value:
+                return str(value.get("__type__"))
+            if "__tag__" in value:
+                return str(value.get("__tag__"))
         if value is None:
             return "Null"
         if isinstance(value, bool):

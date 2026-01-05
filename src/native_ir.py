@@ -45,12 +45,23 @@ class FunctionIR:
 
 
 @dataclass
+class OperatorOverloadIR:
+    """Operator overload mapping stored in the native IR."""
+
+    op: str
+    a_type: str
+    b_type: str
+    func_name: str
+
+
+@dataclass
 class ProgramIR:
     """Entry sequence and function table for the VM."""
 
     entry: List[Instruction]
     functions: Dict[str, FunctionIR]
     classes: Dict[str, "ClassIR"] = field(default_factory=dict)
+    operator_overloads: List[OperatorOverloadIR] = field(default_factory=list)
 
 
 @dataclass
@@ -73,6 +84,10 @@ def format_program(program: ProgramIR) -> str:
         return lines
 
     lines = _fmt_block("entry", program.entry)
+    for overload in program.operator_overloads:
+        lines.append(
+            f"operator {overload.op} ({overload.a_type}, {overload.b_type}) -> {overload.func_name}"
+        )
     for class_def in program.classes.values():
         bases = f": {', '.join(class_def.bases)}" if class_def.bases else ""
         fields = ", ".join(class_def.fields)

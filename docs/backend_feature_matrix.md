@@ -29,7 +29,7 @@ Legend:
 | Heap (`new`, `heap_get`, `heap_set`, `delete`) | ✅ | ✅ | ⚠️ Basic heap ops (no runtime safety checks) |
 | Array literals (`new[ a, b, c ]`) | ✅ | ✅ | ✅ |
 | Classes / methods | ✅ | ❌ | ❌ |
-| Operator overloading | ✅ | ✅ | ❌ |
+| Operator overloading | ✅ | ✅ | ⚠️ Numeric-only overloads |
 | Pattern matching + ADTs | ✅ | ❌ | ❌ |
 | Collections (`Map`, `Set`, `Deque`) | ✅ | ❌ | ❌ |
 | Concurrency (`spawn`, `join`, tokens) | ✅ | ❌ | ❌ |
@@ -104,10 +104,6 @@ These task lists capture the remaining feature gaps for the non-interpreter back
   - [ ] Define class layouts in the LLVM runtime and generate constructors.
   - [ ] Emit method dispatch (vtable or direct) in the LLVM IR.
 
-- [ ] Operator overloading
-  - [ ] Emit overloaded operator calls in the LLVM IR.
-  - [ ] Ensure overloaded operators link against runtime helpers.
-
 - [ ] Pattern matching + ADTs
   - [ ] Represent ADTs with tagged unions in LLVM.
   - [ ] Lower `match` into tag dispatch + payload extraction.
@@ -129,6 +125,10 @@ These task lists capture the remaining feature gaps for the non-interpreter back
   - [ ] Stabilize argument conversion and reference lifetime management.
 
 ### Closed tasks
+
+- [x] Operator overloading
+  - [x] Emit overloaded operator calls in the LLVM IR.
+  - [x] Ensure overloaded operators link against runtime helpers.
 
 - [x] Array literals
   - [x] Introduce array allocation helpers in the LLVM runtime ABI.

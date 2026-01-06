@@ -64,10 +64,6 @@ These task lists capture the remaining feature gaps for the non-interpreter back
   - [ ] Define a VM scheduling model for concurrent tasks.
   - [ ] Implement token synchronization primitives in the native runtime.
 
-- [ ] Python interop
-  - [ ] Define native VM bridges for `Python.import_module` and `Python.call`.
-  - [ ] Validate argument/return marshalling in the VM runtime.
-
 ### Closed tasks
 
 - [x] Operator overloading
@@ -96,6 +92,10 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 - [x] Collections (`Map`, `Set`, `Deque`)
   - [x] Port collection runtime implementations into the native VM.
   - [x] Expose collection constructors and methods through the VM call interface.
+
+- [x] Python interop
+  - [x] Define native VM bridges for `Python.import_module` and `Python.call`.
+  - [x] Validate argument/return marshalling in the VM runtime.
 ### C/LLVM pipeline (`--emit-llvm`, `--emit-exe`)
 
 ### Open tasks

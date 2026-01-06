@@ -8,12 +8,24 @@ compare interpreter and native results easily.
 
 from __future__ import annotations
 
+import importlib
+import threading
 from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 from native_ir import Instruction, Opcode, ProgramIR
+
+
+_BANNED_PYTHON_MODULES = {
+    "subprocess",
+    "socket",
+    "multiprocessing",
+    "ctypes",
+    "ssl",
+    "sys",
+}
 
 
 @dataclass(frozen=True)
@@ -83,10 +95,14 @@ class NativeVM:
         self.module_programs: Dict[str, ProgramIR] = {}
         self.current_module_namespace = module_namespace
         self.current_module_path = module_path
+        self._python_namespaces: Dict[str, set[str]] = {}
+        self._python_pointers: set[int] = set()
+        self._python_scalar_ints: set[int] = set()
         self._stdlib_namespaces = {
             "Map": NamespaceRef("Map"),
             "Set": NamespaceRef("Set"),
             "Deque": NamespaceRef("Deque"),
+            "Python": NamespaceRef("Python"),
         }
         self._inject_stdlib(self.globals)
 
@@ -183,6 +199,21 @@ class NativeVM:
             if len(args) != 1:
                 raise RuntimeError(f"__import expects 1 arg, got {len(args)}")
             return self._import_module(args[0])
+        if name == "Python.import_module":
+            if len(args) not in {1, 2}:
+                raise RuntimeError(f"Python.import_module expects 1 or 2 args, got {len(args)}")
+            allow = args[1] if len(args) == 2 else None
+            return self._python_import_module(args[0], allow)
+        if name == "Python.call":
+            if len(args) < 2 or len(args) > 4:
+                raise RuntimeError(f"Python.call expects 2 to 4 args, got {len(args)}")
+            call_args = args[2] if len(args) >= 3 else None
+            opts = args[3] if len(args) == 4 else None
+            return self._python_call(args[0], args[1], call_args, opts)
+        if name.startswith("Python."):
+            module_name, attr_name = self._python_split_qualified(name)
+            if module_name is not None:
+                return self._python_call(module_name, attr_name, args, None)
         if name.startswith("Map."):
             return self._map_call(name, args)
         if name.startswith("Set."):
@@ -625,6 +656,206 @@ class NativeVM:
     def _inject_stdlib(self, env: Dict[str, Any]) -> None:
         for name, ref in self._stdlib_namespaces.items():
             env.setdefault(name, ref)
+
+    def _python_split_qualified(self, name: str) -> tuple[Optional[str], Optional[str]]:
+        if not name.startswith("Python.") or name in {"Python.import_module", "Python.call"}:
+            return None, None
+        dotted = name[len("Python.") :]
+        if "." not in dotted:
+            return None, None
+        module_name, attr_name = dotted.rsplit(".", 1)
+        return module_name, attr_name
+
+    def _python_import_module(self, module: Any, allow: Any | None = None) -> NamespaceRef:
+        module_name = str(module)
+        self._python_ensure_module_allowed(module_name)
+        allowed = self._python_normalize_allowlist(allow)
+        py_module = importlib.import_module(module_name)
+        namespace = f"Python.{module_name}"
+
+        existing = self._python_namespaces.get(namespace, set())
+        requested = set(allowed)
+        missing = requested - existing
+        self._python_namespaces[namespace] = existing | requested
+
+        module_env = self.module_envs.setdefault(namespace, {})
+        for name in missing:
+            attr = getattr(py_module, name, None)
+            if callable(attr):
+                continue
+            module_env[name] = self._python_from_host(attr)
+
+        return NamespaceRef(namespace)
+
+    def _python_call(self, module: Any, attr: Any, args: Any | None, opts: Any | None) -> Any:
+        module_name = str(module)
+        self._python_ensure_module_allowed(module_name)
+        allowed_attrs = self._python_resolve_allowlist(module_name, opts)
+        if allowed_attrs is None:
+            allowed_attrs = set()
+        timeout_ms = self._python_normalize_timeout(opts)
+
+        py_module = importlib.import_module(module_name)
+        attr_name = str(attr)
+        if attr_name not in allowed_attrs:
+            raise RuntimeError(f"[PYDENY] attribute {attr_name} not allowed")
+
+        func = getattr(py_module, attr_name, None)
+        if not callable(func):
+            raise RuntimeError(f"[PYERR] attribute {attr_name} is not callable")
+
+        arg_list = self._python_normalize_args(args)
+        py_args = [self._python_to_host(val) for val in arg_list]
+        result: Dict[str, Any] = {}
+        error: Dict[str, BaseException] = {}
+
+        def _invoke() -> None:
+            try:
+                result["value"] = func(*py_args)
+            except Exception as exc:  # noqa: BLE001
+                error["exc"] = exc
+
+        if timeout_ms is None:
+            _invoke()
+        else:
+            thread = threading.Thread(target=_invoke, daemon=True)
+            thread.start()
+            thread.join(timeout_ms / 1000.0)
+            if thread.is_alive():
+                raise RuntimeError(f"[PYTIMEOUT] {module_name}.{attr_name} exceeded {timeout_ms} ms")
+        if error:
+            raise RuntimeError(f"[PYERR] {error['exc']}")
+        return self._python_from_host(result.get("value"))
+
+    def _python_normalize_allowlist(self, value: Any | None) -> list[str]:
+        allow_source = value
+        if isinstance(value, dict):
+            allow_source = value.get("allow")
+        if allow_source is None:
+            return []
+        if isinstance(allow_source, int) and allow_source in self.heap:
+            allow_source = self.heap[allow_source]
+        try:
+            return [str(v) for v in list(allow_source)]
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError("[PYERR] allowlist must be iterable") from exc
+
+    def _python_resolve_allowlist(self, module: str, opts: Any | None) -> set[str] | None:
+        if isinstance(opts, dict) and "allow" in opts:
+            return set(self._python_normalize_allowlist(opts))
+        if opts is not None and not isinstance(opts, dict):
+            return set(self._python_normalize_allowlist(opts))
+        return self._python_namespaces.get(f"Python.{module}")
+
+    def _python_normalize_timeout(self, opts: Any | None) -> int | None:
+        if not isinstance(opts, dict):
+            return None
+        if "timeout_ms" not in opts:
+            return None
+        try:
+            timeout = int(opts["timeout_ms"])
+        except Exception:  # noqa: BLE001
+            raise RuntimeError("[PYERR] timeout_ms must be an integer")
+        if timeout < 0:
+            raise RuntimeError("[PYERR] timeout_ms must be non-negative")
+        return timeout
+
+    def _python_normalize_args(self, args: Any | None) -> list[Any]:
+        if args is None:
+            return []
+        if isinstance(args, int) and args in self.heap:
+            seq = self.heap[args]
+            if isinstance(seq, list):
+                return list(seq)
+        if isinstance(args, list):
+            return args
+        return [args]
+
+    def _python_ensure_module_allowed(self, module: str) -> None:
+        base = module.split(".")[0]
+        if base in _BANNED_PYTHON_MODULES or module in _BANNED_PYTHON_MODULES:
+            raise RuntimeError(f"[PYSEC] module {module} denied")
+
+    def _python_to_host(self, value: Any, _seen: set[int] | None = None) -> Any:
+        seen = _seen or set()
+
+        def _mark(obj: Any) -> bool:
+            try:
+                obj_id = id(obj)
+            except Exception:  # noqa: BLE001
+                return False
+            if obj_id in seen:
+                return True
+            seen.add(obj_id)
+            return False
+
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (str, float)) or value is None:
+            return value
+        if isinstance(value, int) and value in self._python_scalar_ints:
+            return value
+        if isinstance(value, int) and value in self.heap:
+            stored = self.heap[value]
+            if _mark(stored):
+                return stored
+            if isinstance(stored, list):
+                return [self._python_to_host(v, seen) for v in stored]
+            if isinstance(stored, dict):
+                return {k: self._python_to_host(v, seen) for k, v in stored.items()}
+            if isinstance(stored, set):
+                return {self._python_to_host(v, seen) for v in stored}
+            if isinstance(stored, deque):
+                return deque(self._python_to_host(v, seen) for v in stored)
+            return stored
+        if isinstance(value, dict) and "__fields__" in value:
+            if _mark(value):
+                return value
+            return {k: self._python_to_host(v, seen) for k, v in value.get("__fields__", {}).items()}
+        if isinstance(value, list):
+            if _mark(value):
+                return value
+            return [self._python_to_host(v, seen) for v in value]
+        if isinstance(value, dict):
+            if _mark(value):
+                return value
+            return {k: self._python_to_host(v, seen) for k, v in value.items()}
+        return value
+
+    def _python_from_host(self, value: Any) -> Any:
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+        if isinstance(value, list):
+            converted: List[Any] = []
+            for v in value:
+                converted_val = self._python_from_host(v)
+                if isinstance(v, int) and not isinstance(v, bool):
+                    self._python_scalar_ints.add(v)
+                converted.append(converted_val)
+            if self.next_ptr < 100000:
+                self.next_ptr = 100000
+            ptr = self._alloc_heap_value(converted)
+            self._python_pointers.add(ptr)
+            return ptr
+        if isinstance(value, tuple):
+            converted: List[Any] = []
+            for v in list(value):
+                converted_val = self._python_from_host(v)
+                if isinstance(v, int) and not isinstance(v, bool):
+                    self._python_scalar_ints.add(v)
+                converted.append(converted_val)
+            if self.next_ptr < 100000:
+                self.next_ptr = 100000
+            ptr = self._alloc_heap_value(converted)
+            self._python_pointers.add(ptr)
+            return ptr
+        if isinstance(value, dict):
+            return {k: self._python_from_host(v) for k, v in value.items()}
+        if isinstance(value, set):
+            return {self._python_from_host(v) for v in value}
+        if isinstance(value, deque):
+            return deque(self._python_from_host(v) for v in value)
+        return {"__py_object__": repr(value)}
 
     def _map_call(self, name: str, args: List[Any]) -> Any:
         method = name.split(".", 1)[1]

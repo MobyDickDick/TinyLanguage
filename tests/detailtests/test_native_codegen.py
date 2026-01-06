@@ -202,6 +202,27 @@ def test_operator_overloads_roundtrip_matches_interpreter():
     _assert_native_matches(source)
 
 
+def test_python_interop_roundtrip_matches_interpreter():
+    source = """
+    define math = Python.import_module("math", new["sqrt", "tau"]);
+    print(math.sqrt(9));
+    print(math.tau);
+    define chars = Python.call("builtins", "list", new["ab"], new["list"]);
+    print(heap_get(chars, 0));
+    """
+    _assert_native_matches(source)
+
+
+def test_python_call_requires_allowlist_in_native_backend():
+    source = """
+    define value = Python.call("math", "sqrt", new[9]);
+    print(value);
+    """
+
+    with pytest.raises(RuntimeError):
+        run_with_native_backend(source)
+
+
 def test_unsupported_constructs_signal_not_implemented():
     source = """
     define x = { a: 1 };

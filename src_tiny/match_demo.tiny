@@ -12,7 +12,7 @@ fn area(shape) {
   };
 }
 
-define c = Circle { radius: 2 };
-define r = Rectangle { width: 3, height: 4 };
+def c = Circle { radius: 2 };
+def r = Rectangle { width: 3, height: 4 };
 print(area(c));
 print(area(r));

@@ -10,8 +10,8 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
   - Numbers support integers and decimals (`1`, `3.14`, `0.5`). Scientific notation is intentionally disallowed (`1.2e2` fails).
   - Strings use double quotes and allow basic escapes like `\n`.
   - Booleans are `true` and `false`; `null` indicates the absence of a value.
-- **Reserved keywords vs. identifiers:** Keywords are reserved in declaration positions (e.g., `define if = 1;` is invalid), but the grammar explicitly allows keywords in some identifier slots via `NAME_or_kw`. Use this when you need a keyword-named method or member:
-  - Keywords today include: `define`, `print`, `if`, `else`, `while`, `switch`, `default`, `fn`, `import`, `return`, `operator`, `new`, `type`, `class`, `namespace`, `as`, `spawn`, `async`, `await`, `true`, `false`, `flush`, `and`, `or`, `not`, `Null`, `try`, `catch`, `match`, `case`.
+- **Reserved keywords vs. identifiers:** Keywords are reserved in declaration positions (e.g., `def if = 1;` is invalid), but the grammar explicitly allows keywords in some identifier slots via `NAME_or_kw`. Use this when you need a keyword-named method or member:
+  - Keywords today include: `def`, `print`, `if`, `else`, `while`, `switch`, `default`, `fn`, `import`, `return`, `operator`, `new`, `type`, `class`, `namespace`, `as`, `spawn`, `async`, `await`, `true`, `false`, `flush`, `and`, `or`, `not`, `Null`, `try`, `catch`, `match`, `case`.
   - `NAME_or_kw` appears in member access, method declarations, and type annotations, so keywords can be used there without being treated as control flow.
 
   ```tiny
@@ -19,7 +19,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
       fn match(self) { return "ok"; } // method name uses a keyword
   }
 
-  define demo = new KeywordDemo {};
+  def demo = new KeywordDemo {};
   print(demo.match()); // member access accepts NAME_or_kw
   ```
 
@@ -33,7 +33,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 
 ## Bindings and visibility
 
-- **Definitions:** `define x = expr;` creates a new variable. Later assignments without `define` update existing bindings and must not silently change the type when annotations are present.
+- **Definitions:** `def x = expr;` creates a new variable. Later assignments without `def` update existing bindings and must not silently change the type when annotations are present.
 - **Scopes:** Functions, namespaces, and match arms introduce their own scopes. Imported modules are registered under their fully qualified name and can be reached via aliases.
 
 ## Control flow
@@ -62,7 +62,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
       heap_set(buf, 0, 99);
   }
 
-  define data = new(1);
+  def data = new(1);
   heap_set(data, 0, 1);
   bump(data); // mit --copy-on-call bleibt data[0] == 1
   ```
@@ -134,7 +134,7 @@ Literals:
 ```ebnf
 program         ::= stmt* EOF ;
 
-stmt            ::= "define" NAME "=" expr ";"
+stmt            ::= "def" NAME "=" expr ";"
                   | "print" "(" [expr ("," expr)*] ")" ";"
                   | "flush" "(" ")" ";"
                   | "if" "(" expr ")" block ["else" block]

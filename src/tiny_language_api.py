@@ -550,7 +550,7 @@ def _tiny_to_python_ast(runtime: "Runtime", node: object) -> object:
 
 def _parse_with_tiny_parser(src: str) -> List["IR"]:
     program = _tiny_parser_bootstrap_source()
-    program = f"{program}\n\ndefine __tiny_ast = parse_program({json.dumps(src)});\n"
+    program = f"{program}\n\ndef __tiny_ast = parse_program({json.dumps(src)});\n"
     parser = Parser(Lexer(program), program)
     stmts = parser.parse()
     runtime = Runtime(program)

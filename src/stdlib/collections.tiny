@@ -20,16 +20,16 @@
 // angekettete Queues fuer schnelle Einfuegungen am Kopf und Ende.
 //
 // Beispiel:
-// define arr = new[1, 2, 3, 4];
-// define mid = Collections.slice(arr, 1, 3);
+// def arr = new[1, 2, 3, 4];
+// def mid = Collections.slice(arr, 1, 3);
 // print(Collections.contains(mid, 2));
 // print(Collections.len(mid));
 //
-// define map = Map.new();
+// def map = Map.new();
 // Map.set(map, "a", 1);
 // print(Map.get(map, "a", 0));
 // print(heap_get(Map.keys(map), 0));
 //
-// define queue = Deque.new(new[1, 2]);
+// def queue = Deque.new(new[1, 2]);
 // Deque.push_left(queue, 0);
 // print(Deque.pop_right(queue));

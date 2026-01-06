@@ -4,11 +4,11 @@ fn fibonacci(n) {
     if (n <= 1) {
         return n;
     }
-    define a = 0;
-    define b = 1;
-    define i = 2;
+    def a = 0;
+    def b = 1;
+    def i = 2;
     while (i <= n) {
-        define temp = a + b;
+        def temp = a + b;
         a = b;
         b = temp;
         i = i + 1;
@@ -16,4 +16,4 @@ fn fibonacci(n) {
     return b;
 }
 
-define _ = print(fibonacci(6));
+def _ = print(fibonacci(6));

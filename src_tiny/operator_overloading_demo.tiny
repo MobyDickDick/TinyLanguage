@@ -20,10 +20,10 @@ operator == (left: Point, right: Point) -> Bool { // Overloads == for structural
     return left.x == right.x && left.y == right.y; // Points are equal when both coordinates match.
 }
 
-define p = Point(1, 2); // Create a point at (1, 2).
-define q = Point(3, 4); // Create a second point at (3, 4).
+def p = Point(1, 2); // Create a point at (1, 2).
+def q = Point(3, 4); // Create a second point at (3, 4).
 
-define sum = p + q; // Use the overloaded addition to form the sum.
+def sum = p + q; // Use the overloaded addition to form the sum.
 print(heap_get(sum.to_tuple(), 0)); // 4 // Print the x component of the sum point.
 print(heap_get(sum.to_tuple(), 1)); // 6 // Print the y component of the sum point.
 print(p == sum); // false // Comparing the original point with the sum yields false.

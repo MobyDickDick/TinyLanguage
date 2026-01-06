@@ -1,11 +1,11 @@
 // TinyLanguage wrapper for src/tiny_language_eval.py.
 // Exposes evaluator hooks and Environment via the stitched Python module.
 
-define __PY_ALLOW = new["eval_block", "eval_stmt", "eval_expr", "Environment"];
+def __PY_ALLOW = new["eval_block", "eval_stmt", "eval_expr", "Environment"];
 
-define __PY = Python.import_module("tiny_language", __PY_ALLOW);
+def __PY = Python.import_module("tiny_language", __PY_ALLOW);
 
-define eval_block = __PY.eval_block;
-define eval_stmt = __PY.eval_stmt;
-define eval_expr = __PY.eval_expr;
-define Environment = __PY.Environment;
+def eval_block = __PY.eval_block;
+def eval_stmt = __PY.eval_stmt;
+def eval_expr = __PY.eval_expr;
+def Environment = __PY.Environment;

@@ -6,12 +6,12 @@ print(Random.choice(new["rot", "gruen", "blau"]));
 
 // JSON roundtrip
 
-define json_text = "{\"title\":\"Tiny\", \"numbers\":[1,2,3]}";
-define data = JSON.parse(json_text);
-define _ = Map.set(data, "rand", Random.random());
+def json_text = "{\"title\":\"Tiny\", \"numbers\":[1,2,3]}";
+def data = JSON.parse(json_text);
+def _ = Map.set(data, "rand", Random.random());
 
-define tmp = "tmp/demo.json";
-define _write = File.write(tmp, JSON.stringify(data));
+def tmp = "tmp/demo.json";
+def _write = File.write(tmp, JSON.stringify(data));
 print(File.exists(tmp));
 print(String.contains(File.read(tmp), "\"numbers\""));
-define _remove = File.remove(tmp);
+def _remove = File.remove(tmp);

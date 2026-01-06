@@ -2,24 +2,24 @@
 // Run with: python src/tiny_language.py src_tiny/from_python/transpile_rosetta.tiny [--dest DIR]
 
 // Python helpers
-define os_path = Python.import_module("os.path", new["abspath", "join", "exists"]);
-define sys = Python.import_module("sys", new["path", "argv"]);
-define builtins = Python.import_module("builtins", new["len", "list", "sorted"]);
-define _import_refs = new[os_path]; // mark imports as used
+def os_path = Python.import_module("os.path", new["abspath", "join", "exists"]);
+def sys = Python.import_module("sys", new["path", "argv"]);
+def builtins = Python.import_module("builtins", new["len", "list", "sorted"]);
+def _import_refs = new[os_path]; // mark imports as used
 
 fn parse_args() {
-    define argv = sys.argv;
-    define argc = builtins.len(argv);
-    define root = os_path.abspath(".");
-    define opts = Map.from_entries(new[
+    def argv = sys.argv;
+    def argc = builtins.len(argv);
+    def root = os_path.abspath(".");
+    def opts = Map.from_entries(new[
         new["dest", os_path.join(root, "examples", "rosetta", "expected")]
     ]);
 
-    define index = 1;
+    def index = 1;
     while (index < argc) {
-        define flag = heap_get(argv, index);
+        def flag = heap_get(argv, index);
         if (flag == "--dest" && index + 1 < argc) {
-            define _updated_dest = Map.set(opts, "dest", os_path.abspath(heap_get(argv, index + 1)));
+            def _updated_dest = Map.set(opts, "dest", os_path.abspath(heap_get(argv, index + 1)));
             index = index + 2;
         } else {
             print("Ignoring unknown or incomplete flag:", flag);
@@ -37,9 +37,9 @@ fn transpile_all(destination) {
 }
 
 fn main() {
-    define args = parse_args();
-    define _ = transpile_all(Map.get(args, "dest"));
+    def args = parse_args();
+    def _ = transpile_all(Map.get(args, "dest"));
     return 0;
 }
 
-define _ = main();
+def _ = main();

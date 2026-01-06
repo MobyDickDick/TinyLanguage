@@ -34,7 +34,7 @@ The snippet below shows the most common constructs together. Save it as `basics.
 
 ```tiny
 // Variables, arithmetic, printing
-define a = 7 + 5 * 2;
+def a = 7 + 5 * 2;
 print(a);                // -> 17
 
 // Declare and call functions
@@ -42,11 +42,11 @@ fn add(x, y) {
     return x + y;
 }
 
-define sum = add(a, 3);
+def sum = add(a, 3);
 print(sum);
 
 // If/while and mutation
-define i = 0;
+def i = 0;
 while (i < 3) {
     if (i == 1) { print("in the middle"); }
     i = i + 1;

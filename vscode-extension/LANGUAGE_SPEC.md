@@ -5,7 +5,7 @@ This guide provides a concise, implementation-stable reference for TinyLanguage.
 ## Core syntax
 
 - **Statements**: end with semicolons (`;`). Blocks are delimited by `{ ... }`.
-- **Bindings**: `define name = expression;` declares immutable bindings. Use simple expressions, function calls, or struct literals on the right-hand side.
+- **Bindings**: `def name = expression;` declares immutable bindings. Use simple expressions, function calls, or struct literals on the right-hand side.
 - **Functions**: `fn name(params) { ... }` declares a function. Methods follow the same syntax and live inside classes or namespaces.
 - **Control flow**: `if (cond) { ... } else { ... }` and `while (cond) { ... }` mirror the examples in `src_tiny/demo.tiny` and `src_tiny/namespace_demo.tiny`.
 - **Imports**: `import path.to.module;` loads another `.tiny` file. Optional aliasing uses `import path.to.module as alias;`.
@@ -22,7 +22,7 @@ This guide provides a concise, implementation-stable reference for TinyLanguage.
 ## Must-use and lints
 
 - **Unused bindings**: Unused locals or parameters trigger diagnostics unless prefixed with `_` (e.g., `_unused`).
-- **Ignored return values**: Functions with return annotations must have their results used. Bare calls to such functions raise `E011` (use `define _ = f();` to discard explicitly).
+- **Ignored return values**: Functions with return annotations must have their results used. Bare calls to such functions raise `E011` (use `def _ = f();` to discard explicitly).
 - **Imports before code**: Import statements must be grouped before other statements to satisfy formatter/linter expectations.
 
 ## Error handling

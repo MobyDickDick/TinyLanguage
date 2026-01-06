@@ -7,11 +7,11 @@ def test_async_functions_can_be_awaited(run_tiny_source):
             """
             async fn compute(x) { return x + 2; }
 
-            define res = await compute(5);
+            def res = await compute(5);
             print("res", res);
 
-            define first = compute(1);
-            define second = compute(2);
+            def first = compute(1);
+            def second = compute(2);
             print("order", await second, await first);
             """
         )
@@ -26,20 +26,20 @@ def test_channels_block_and_close_cleanly(run_tiny_source):
             """
             fn push(chan, value) { return Async.send(chan, value); }
 
-            define chan = Async.channel(1);
-            define sent_first = Async.send(chan, 1);
-            define pushing = spawn push(chan, 2);
+            def chan = Async.channel(1);
+            def sent_first = Async.send(chan, 1);
+            def pushing = spawn push(chan, 2);
 
-            define status_pending = join(pushing, 0, false);
+            def status_pending = join(pushing, 0, false);
             print("pending", status_pending.done, status_pending.cancelled);
 
-            define first = Async.recv(chan);
-            define status_done = join(pushing, 1000, false);
-            define second = Async.recv(chan);
+            def first = Async.recv(chan);
+            def status_done = join(pushing, 1000, false);
+            def second = Async.recv(chan);
 
-            define closed_once = Async.close(chan);
-            define closed_twice = Async.close(chan);
-            define drained = Async.recv(chan);
+            def closed_once = Async.close(chan);
+            def closed_twice = Async.close(chan);
+            def drained = Async.recv(chan);
 
             print("results", sent_first, first, second, status_done.done, closed_once, closed_twice, drained == Null);
             """

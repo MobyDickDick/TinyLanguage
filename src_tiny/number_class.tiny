@@ -10,8 +10,8 @@ class Number {
 }
 
 // Python float boundaries for overflow detection.
-define PYTHON_FLOAT_MAX = 1.7976931348623157 * 10 ^ 308;
-define PYTHON_FLOAT_MIN = -1.7976931348623157 * 10 ^ 308;
+def PYTHON_FLOAT_MAX = 1.7976931348623157 * 10 ^ 308;
+def PYTHON_FLOAT_MIN = -1.7976931348623157 * 10 ^ 308;
 
 fn __number_with_error(code) {
   return new Number { value: 0, error: code };
@@ -35,8 +35,8 @@ fn __overflowed(v) {
 }
 
 operator + (a: Number, b: Number) -> Number {
-  define result = a.value + b.value;
-  define ov = __overflowed(result);
+  def result = a.value + b.value;
+  def ov = __overflowed(result);
   if (ov == "normal") { return __number_from_value(result); }
   return __number_with_error(ov);
 }
@@ -56,8 +56,8 @@ operator - (a: Number, b: Number) -> Number {
   if (__is_error(a, "minus_infinity")) { return __number_with_error("minus_infinity"); }
   if (__is_error(b, "plus_infinity")) { return __number_with_error("minus_infinity"); }
 
-  define result = a.value - b.value;
-  define ov = __overflowed(result);
+  def result = a.value - b.value;
+  def ov = __overflowed(result);
   if (ov == "normal") { return __number_from_value(result); }
   return __number_with_error(ov);
 }
@@ -66,12 +66,12 @@ operator * (a: Number, b: Number) -> Number {
   if (__is_error(a, "any_number")) { return __number_with_error("any_number"); }
   if (__is_error(b, "any_number")) { return __number_with_error("any_number"); }
 
-  define a_inf = __is_normal(a) == false;
-  define b_inf = __is_normal(b) == false;
+  def a_inf = __is_normal(a) == false;
+  def b_inf = __is_normal(b) == false;
 
   if (a_inf) {
     if (b_inf) {
-      define sign = 1;
+      def sign = 1;
       if (__is_error(a, "minus_infinity")) { sign = -sign; }
       if (__is_error(b, "minus_infinity")) { sign = -sign; }
       if (sign > 0) { return __number_with_error("plus_infinity"); }
@@ -81,7 +81,7 @@ operator * (a: Number, b: Number) -> Number {
     if (__is_normal(b)) {
       if (b.value == 0) { return __number_with_error("any_number"); }
     }
-    define sign = 1;
+    def sign = 1;
     if (__is_error(a, "minus_infinity")) { sign = -sign; }
     if (__is_normal(b)) {
       if (b.value < 0) { sign = -sign; }
@@ -94,7 +94,7 @@ operator * (a: Number, b: Number) -> Number {
     if (__is_normal(a)) {
       if (a.value == 0) { return __number_with_error("any_number"); }
     }
-    define sign = 1;
+    def sign = 1;
     if (__is_normal(a)) {
       if (a.value < 0) { sign = -sign; }
     }
@@ -103,8 +103,8 @@ operator * (a: Number, b: Number) -> Number {
     return __number_with_error("minus_infinity");
   }
 
-  define result = a.value * b.value;
-  define ov = __overflowed(result);
+  def result = a.value * b.value;
+  def ov = __overflowed(result);
   if (ov == "normal") { return __number_from_value(result); }
   return __number_with_error(ov);
 }
@@ -141,20 +141,20 @@ operator / (a: Number, b: Number) -> Number {
     return __number_with_error("plus_infinity");
   }
 
-  define result = a.value / b.value;
-  define ov = __overflowed(result);
+  def result = a.value / b.value;
+  def ov = __overflowed(result);
   if (ov == "normal") { return __number_from_value(result); }
   return __number_with_error(ov);
 }
 
 // Sample calculations.
-define a = Number(5);
-define b = Number(7.5);
+def a = Number(5);
+def b = Number(7.5);
 
-define c = a + b;
-define d = a - b;
-define e = a * b;
-define f = a / b;
+def c = a + b;
+def d = a - b;
+def e = a * b;
+def f = a / b;
 
 print(c.to_string());
 print(d.to_string());

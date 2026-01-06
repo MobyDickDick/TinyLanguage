@@ -42,7 +42,7 @@
     },
     "keywords": {
       "name": "keyword.control.tiny",
-      "match": "\\b(define|print|if|else|while|fn|import|return|operator|new|type|class|namespace|as|spawn|async|await|true|false|and|or|not|Null|try|catch|match|case)\\b"
+      "match": "\\b(def|print|if|else|while|fn|import|return|operator|new|type|class|namespace|as|spawn|async|await|true|false|and|or|not|Null|try|catch|match|case)\\b"
     },
     "types": {
       "name": "support.type.tiny",

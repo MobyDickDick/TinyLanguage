@@ -2,13 +2,13 @@
 // Run with: python src/tiny_language.py src_tiny/python_math_demo.tiny
 
 // Allowlist only the math attributes we need.
-define math = Python.import_module("math", new["sqrt", "isfinite", "tau"]);
+def math = Python.import_module("math", new["sqrt", "isfinite", "tau"]);
 
 // Prepare a small heap array to feed Python.
-define numbers = new[81, 144];
+def numbers = new[81, 144];
 
-define root_a = math.sqrt(heap_get(numbers, 0));
-define root_b = math.sqrt(heap_get(numbers, 1));
+def root_a = math.sqrt(heap_get(numbers, 0));
+def root_b = math.sqrt(heap_get(numbers, 1));
 
 print("Square roots via Python math:");
 print(root_a);

@@ -18,12 +18,12 @@ def _run_parser_program(body: str) -> list[str]:
 
 
 def test_tiny_parser_builds_basic_ast_nodes():
-    source_literal = json.dumps("define value = 7; print(value);")
+    source_literal = json.dumps("def value = 7; print(value);")
     body = f"""
-define ast = parse_program({source_literal});
+def ast = parse_program({source_literal});
 print(len(ast));
-define first = heap_get(ast, 0);
-define second = heap_get(ast, 1);
+def first = heap_get(ast, 0);
+def second = heap_get(ast, 1);
 print(Python.call("builtins", "repr", new[first], new["repr"]));
 print(Python.call("builtins", "repr", new[second], new["repr"]));
 """
@@ -41,7 +41,7 @@ def test_tiny_parser_reports_span_context():
             AST_SRC,
             LEXER_SRC,
             PARSER_SRC,
-            'define _ = parse_program("define a = ;");',
+            'def _ = parse_program("def a = ;");',
         ]
     )
 

@@ -9,14 +9,14 @@ from tiny_language import TinyLangError, compile_and_run
 
 
 def test_parser_error_includes_context():
-    source = "define a = 1;\nprint(a;\n"
+    source = "def a = 1;\nprint(a;\n"
 
     with pytest.raises(Exception) as excinfo:
         compile_and_run(source)
 
     assert (
         str(excinfo.value)
-        == "[E000] expected SYM ) (line 2, col 8)\n  1 | define a = 1;\n> 2 | print(a;\n    |        ^"
+        == "[E000] expected SYM ) (line 2, col 8)\n  1 | def a = 1;\n> 2 | print(a;\n    |        ^"
     )
 
 
@@ -28,31 +28,31 @@ def test_runtime_error_includes_context():
 
     assert (
         str(excinfo.value)
-        == "[E001] call with return value must be bound; bare call statements are not allowed (offending call: callme()) (line 1, col 1)\n> 1 | callme();\n    | ^\n  Hint: Bind the return value, e.g. `define result = call();`, or add a return that includes the mutated data."
+        == "[E001] call with return value must be bound; bare call statements are not allowed (offending call: callme()) (line 1, col 1)\n> 1 | callme();\n    | ^\n  Hint: Bind the return value, e.g. `def result = call();`, or add a return that includes the mutated data."
     )
 
 
 def test_unknown_variable_suggests_name():
-    source = "define value = 1;\nprint(value + val);\n"
+    source = "def value = 1;\nprint(value + val);\n"
 
     with pytest.raises(Exception) as excinfo:
         compile_and_run(source)
 
     assert (
         str(excinfo.value)
-        == "[E003] unknown variable val (line 2, col 15)\n  1 | define value = 1;\n> 2 | print(value + val);\n    |               ^\n  Hint: Did you mean `value`? Declare the variable first, e.g. `define name = ...;`."
+        == "[E003] unknown variable val (line 2, col 15)\n  1 | def value = 1;\n> 2 | print(value + val);\n    |               ^\n  Hint: Did you mean `value`? Declare the variable first, e.g. `def name = ...;`."
     )
 
 
 def test_unused_binding_reports_hint():
-    source = "define unused = 1;\n"
+    source = "def unused = 1;\n"
 
     with pytest.raises(Exception) as excinfo:
         compile_and_run(source)
 
     assert (
         str(excinfo.value)
-        == "[E002] unused local binding(s): unused (line 1, col 8)\n> 1 | define unused = 1;\n    |        ^^^^^^\n  Hint: Remove the unused binding or reference it."
+        == "[E002] unused local binding(s): unused (line 1, col 8)\n> 1 | def unused = 1;\n    |        ^^^^^^\n  Hint: Remove the unused binding or reference it."
     )
 
 
@@ -69,7 +69,7 @@ def test_mutated_param_requires_return():
 
 
 def test_parser_error_exposes_code_and_location():
-    source = "define a = 1\n"
+    source = "def a = 1\n"
 
     with pytest.raises(TinyLangError) as excinfo:
         compile_and_run(source)
@@ -79,11 +79,11 @@ def test_parser_error_exposes_code_and_location():
     assert err.hint is None
     assert err.pos.line == 2
     assert err.pos.col == 1
-    assert str(err) == "[E000] expected SYM ; (line 1, col 1)\n> 1 | define a = 1\n    | ^"
+    assert str(err) == "[E000] expected SYM ; (line 1, col 1)\n> 1 | def a = 1\n    | ^"
 
 
 def test_unknown_variable_error_includes_hint():
-    source = "define value = 1;\nprint(value + vale);\n"
+    source = "def value = 1;\nprint(value + vale);\n"
 
     with pytest.raises(TinyLangError) as excinfo:
         compile_and_run(source)
@@ -92,11 +92,11 @@ def test_unknown_variable_error_includes_hint():
     assert err.code == "E003"
     assert (
         err.hint
-        == "Did you mean `value`? Declare the variable first, e.g. `define name = ...;`."
+        == "Did you mean `value`? Declare the variable first, e.g. `def name = ...;`."
     )
     assert err.pos.line == 2
     assert err.pos.col == 15
     assert (
         str(err)
-        == "[E003] unknown variable vale (line 2, col 15)\n  1 | define value = 1;\n> 2 | print(value + vale);\n    |               ^\n  Hint: Did you mean `value`? Declare the variable first, e.g. `define name = ...;`."
+        == "[E003] unknown variable vale (line 2, col 15)\n  1 | def value = 1;\n> 2 | print(value + vale);\n    |               ^\n  Hint: Did you mean `value`? Declare the variable first, e.g. `def name = ...;`."
     )

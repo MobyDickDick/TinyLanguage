@@ -19,8 +19,8 @@ def test_sum_type_match_and_bindings():
           };
         }
 
-        define a = Some { value: 3 };
-        define b = None {};
+        def a = Some { value: 3 };
+        def b = None {};
         print(describe(a));
         print(describe(b));
         """
@@ -44,7 +44,7 @@ def test_match_requires_exhaustive_cases():
               };
             }
 
-            define a = Some { value: 7 };
+            def a = Some { value: 7 };
             print(describe(a));
             """
         )
@@ -67,7 +67,7 @@ def test_match_rejects_unknown_case():
               };
             }
 
-            define a = Some { value: 2 };
+            def a = Some { value: 2 };
             print(describe(a));
             """
         )

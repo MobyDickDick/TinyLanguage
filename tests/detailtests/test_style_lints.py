@@ -4,7 +4,7 @@ from tiny_language import TinyLangError, compile_and_run
 
 
 def test_unused_binding_prefixed_with_underscore_is_ignored():
-    assert compile_and_run("define _unused = 1;") == ""
+    assert compile_and_run("def _unused = 1;") == ""
 
 
 def test_bare_call_to_returning_function_fails():
@@ -18,7 +18,7 @@ def test_bare_call_to_returning_function_fails():
 
 def test_imports_must_precede_code():
     src = """
-    define a = 1;
+    def a = 1;
     import tools;
     """
     with pytest.raises(TinyLangError):
@@ -29,7 +29,7 @@ def test_unreachable_after_return_is_flagged():
     src = """
     fn unreachable() {
         return 1;
-        define x = 2;
+        def x = 2;
     }
     """
     with pytest.raises(TinyLangError) as err:
@@ -52,7 +52,7 @@ def test_unreachable_after_exhaustive_if_is_flagged():
 def test_type_change_is_flagged_even_without_execution():
     src = """
     fn skipped() {
-        define i = 1;
+        def i = 1;
         i = "oops";
     }
     """

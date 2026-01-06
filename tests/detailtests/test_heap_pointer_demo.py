@@ -27,5 +27,5 @@ def test_heap_pointer_demo_outputs_errors_and_hints():
     assert len(re.findall(r"\[E000\] heap access error: index 5 out of range", output)) == 1
     assert len(re.findall(r"\[E000\] unknown field missing", output)) == 1
 
-    assert re.search(r"> 39 \| define ignored_oob = heap_get\(too_short, 5\); // Runtime error is recorded.", output)
-    assert re.search(r"> 51 \| define ignored_missing = record\.missing; // Reports \"unknown field missing\".", output)
+    assert re.search(r"> 39 \| def ignored_oob = heap_get\(too_short, 5\); // Runtime error is recorded.", output)
+    assert re.search(r"> 51 \| def ignored_missing = record\.missing; // Reports \"unknown field missing\".", output)

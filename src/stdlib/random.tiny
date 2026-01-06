@@ -7,6 +7,6 @@
 // Random.shuffle(seq) -> Mischt Liste/Heap-Pointer in-place, liefert neue Laenge
 //
 // Beispiel:
-// define numbers = new[1, 2, 3, 4];
+// def numbers = new[1, 2, 3, 4];
 // Random.shuffle(numbers);
 // print(Random.choice(numbers));

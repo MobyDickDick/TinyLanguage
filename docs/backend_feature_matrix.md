@@ -13,7 +13,7 @@ Legend:
 | Feature | Interpreter | Native VM (`--native-backend`) | C/LLVM pipeline (`--emit-llvm`, `--emit-exe`) |
 | --- | --- | --- | --- |
 | Literals (`number`, `string`, `bool`, `null`) | ✅ | ✅ | ⚠️ Numeric + strings + bools only (subset) |
-| Variables (`define`, assignment) | ✅ | ✅ | ✅ (numeric subset) |
+| Variables (`def`, assignment) | ✅ | ✅ | ✅ (numeric subset) |
 | Arithmetic (`+`, `-`, `*`, `/`) | ✅ | ✅ | ✅ (numeric subset) |
 | Comparisons (`==`, `<`, `>`, etc.) | ✅ | ✅ | ✅ (numeric/boolean subset) |
 | `if` / `else` | ✅ | ✅ | ✅ (simple control flow) |

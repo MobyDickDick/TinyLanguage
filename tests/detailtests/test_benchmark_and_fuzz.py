@@ -130,7 +130,7 @@ def _random_statement(rng: random.Random, defined_vars: List[str], used_vars: se
         defined_vars.append(new_var)
         value = _random_expression(rng, defined_vars, used_vars)
         used_vars.add(new_var)
-        return f"define {new_var} = {value}; print({new_var});"
+        return f"def {new_var} = {value}; print({new_var});"
     if choice < 0.5:
         target = _random_expression(rng, defined_vars, used_vars)
         return f"print({target});"
@@ -158,7 +158,7 @@ def _random_statement(rng: random.Random, defined_vars: List[str], used_vars: se
 
         return "\n".join(
             [
-                f"define {loop_var} = 0;",
+                f"def {loop_var} = 0;",
                 f"while ({loop_var} < {limit}) {{",
                 f"    {body}",
                 "}",
@@ -313,7 +313,7 @@ if hypothesis_spec:  # pragma: no cover - optional
 
     def _tiny_programs() -> st.SearchStrategy[str]:
         def _define_and_print(name: str, expr: str) -> str:
-            return f"define {name} = {expr};\nprint({name});"
+            return f"def {name} = {expr};\nprint({name});"
 
         statement = st.one_of(
             st.builds(_define_and_print, st.sampled_from(["a", "b", "c", "d"]), _printable_exprs()),
@@ -400,15 +400,15 @@ if hypothesis_spec:  # pragma: no cover - optional
         statement_count = draw(st.integers(min_value=2, max_value=6))
         for _ in range(statement_count):
             if env:
-                action = draw(st.sampled_from(["define", "assign", "print"]))
+                action = draw(st.sampled_from(["def", "assign", "print"]))
             else:
-                action = "define"
+                action = "def"
 
-            if action == "define":
+            if action == "def":
                 name = draw(st.sampled_from(names))
                 expr = _expr(draw, env)
                 env[name] = _eval_expr(expr, env)
-                statements.append(("define", name, expr))
+                statements.append(("def", name, expr))
                 continue
 
             if action == "assign":
@@ -430,8 +430,8 @@ if hypothesis_spec:  # pragma: no cover - optional
         program_lines = []
         for kind, name, expr in statements:
             rendered = _render_expr(expr)
-            if kind == "define":
-                program_lines.append(f"define {name} = {rendered};")
+            if kind == "def":
+                program_lines.append(f"def {name} = {rendered};")
             elif kind == "assign":
                 program_lines.append(f"{name} = {rendered};")
             else:
@@ -458,7 +458,7 @@ if hypothesis_spec:  # pragma: no cover - optional
         outputs: list[str] = []
 
         for idx, (variant, left, right) in enumerate(operations):
-            lines.append(f"define op{idx} = {variant} {{ left: {left}, right: {right} }};")
+            lines.append(f"def op{idx} = {variant} {{ left: {left}, right: {right} }};")
             lines.append("print(match op{idx} {{".format(idx=idx))
             lines.append("  case Add { left: l, right: r }: l + r;")
             lines.append("  case Mul { left: l, right: r }: l * r;")

@@ -7,7 +7,7 @@ def test_tiny_language_api_wrapper_compile_and_run() -> None:
     source = """
 import src_tiny.tiny_language_api as api;
 
-define output = api.compile_and_run("print(1);");
+def output = api.compile_and_run("print(1);");
 print(output);
 """
     result = run_tiny(source)

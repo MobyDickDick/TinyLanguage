@@ -1,8 +1,8 @@
 // Python interop demo: binding functions via Python.fn
 // Run with: python src/tiny_language.py src_tiny/python_fn_demo.tiny
 
-define _sqrt = Python.fn("math", "sqrt", { allow: new["sqrt"] });
-define _ceil = Python.fn("math", "ceil", { allow: new["ceil"] });
+def _sqrt = Python.fn("math", "sqrt", { allow: new["sqrt"] });
+def _ceil = Python.fn("math", "ceil", { allow: new["ceil"] });
 
 print("sqrt via Python.fn:");
 print(sqrt(81));

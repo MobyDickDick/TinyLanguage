@@ -69,7 +69,7 @@ These commands exercise exactly the constructs implemented today (literals, arit
 - **While/if path coverage**:
 
   ```bash
-  PYTHONPATH=src python src/tiny_language.py --native-backend -e 'define i = 0; define out = 0; while (i < 3) { if (i == 1) { out = out + 10; } else { out = out + i; } i = i + 1; } print(out);'
+  PYTHONPATH=src python src/tiny_language.py --native-backend -e 'def i = 0; def out = 0; while (i < 3) { if (i == 1) { out = out + 10; } else { out = out + i; } i = i + 1; } print(out);'
   # Expected output
   11
   ```
@@ -77,7 +77,7 @@ These commands exercise exactly the constructs implemented today (literals, arit
 - **Heap operations now supported**:
 
   ```bash
-  PYTHONPATH=src python src/tiny_language.py --native-backend -e 'define p = new(1); heap_set(p, 0, 42); print(heap_get(p, 0));'
+  PYTHONPATH=src python src/tiny_language.py --native-backend -e 'def p = new(1); heap_set(p, 0, 42); print(heap_get(p, 0));'
   # Expected output
   42
   ```

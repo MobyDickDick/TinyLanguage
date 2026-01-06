@@ -755,7 +755,7 @@ class TinyLanguageTranspiler(LanguageTranspiler):
         local_defined = set(defined)
         for stmt in statements:
             if isinstance(stmt, Assign):
-                keyword = "define " if stmt.target not in local_defined else ""
+                keyword = "def " if stmt.target not in local_defined else ""
                 rendered.append(f"{pad}{keyword}{stmt.target} = {self._render_expr(stmt.expr)};")
                 local_defined.add(stmt.target)
             elif isinstance(stmt, Return):
@@ -763,7 +763,7 @@ class TinyLanguageTranspiler(LanguageTranspiler):
             elif isinstance(stmt, ExprStmt):
                 expr_source = self._render_expr(stmt.expr)
                 if isinstance(stmt.expr, Call) and indent_level == 0:
-                    keyword = "define " if "_" not in local_defined else ""
+                    keyword = "def " if "_" not in local_defined else ""
                     rendered.append(f"{pad}{keyword}_ = {expr_source};")
                     local_defined.add("_")
                 else:

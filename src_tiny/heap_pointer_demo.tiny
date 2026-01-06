@@ -4,11 +4,11 @@
 print("=== Safe heap usage ==="); // Heading for the safe section.
 
 // 1) Create a pointer and add a tag to document the contents.
-define buffer = new(3); // Reserves three slots on the heap.
+def buffer = new(3); // Reserves three slots on the heap.
 tag(buffer, Buffer); // Marks the pointer so its type is explicit.
 
 // Write values: check bounds first, then write.
-define buffer_len = Collections.len(buffer); // Ask for the buffer length.
+def buffer_len = Collections.len(buffer); // Ask for the buffer length.
 if (buffer_len >= 3) { // Ensure three positions are available.
     heap_set(buffer, 0, 10); // Store 10 at position 0.
     heap_set(buffer, 1, 20); // Store 20 at position 1.
@@ -18,9 +18,9 @@ if (buffer_len >= 3) { // Ensure three positions are available.
 }
 
 // Safe reads: check bounds first, then read.
-define read_index = 2; // Index to read.
+def read_index = 2; // Index to read.
 if (read_index < buffer_len) { // Confirm the index is within range.
-    define safe_value = heap_get(buffer, read_index); // Read the value when allowed.
+    def safe_value = heap_get(buffer, read_index); // Read the value when allowed.
     print("Read value for index:"); // Label for the next output.
     print(read_index); // Show the index.
     print(safe_value); // Show the value read from the heap.
@@ -35,22 +35,22 @@ print("\n=== Common pitfalls ==="); // Heading for the error section.
 print("The next errors are triggered on purpose; the program still continues and exits successfully.\n"); // Reader note.
 
 // 2) Error case: demonstrate an out-of-bounds access.
-define too_short = new[1, 2]; // Create a short array.
-define ignored_oob = heap_get(too_short, 5); // Runtime error is recorded.
+def too_short = new[1, 2]; // Create a short array.
+def ignored_oob = heap_get(too_short, 5); // Runtime error is recorded.
 if (false) { print(ignored_oob); } // Suppress printing so execution keeps going.
 
 // Cache the error string immediately to avoid rebuilding it later.
-define oob_error = errorMessage;             // Store the most recent error.
+def oob_error = errorMessage;             // Store the most recent error.
 print("Recorded out-of-bounds message:"); // Label for the error message.
 print(oob_error);                            // "heap access error: index 5 out of range ..."
 
 delete(too_short); // Clean up after errors too.
 
 // 3) Error case: access a missing field.
-define record = { existing: 1; }; // Simple object with one field.
-define ignored_missing = record.missing; // Reports "unknown field missing".
+def record = { existing: 1; }; // Simple object with one field.
+def ignored_missing = record.missing; // Reports "unknown field missing".
 if (false) { print(ignored_missing); } // Suppress output so the error is only logged.
 
-define missing_error = errorMessage;     // Capture only the latest error message.
+def missing_error = errorMessage;     // Capture only the latest error message.
 print("Recorded missing-field message:"); // Label for the next output.
 print(missing_error); // Print the stored message.

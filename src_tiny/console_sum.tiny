@@ -8,8 +8,8 @@
 fn read_number(prompt) {
   while (true) {
     print(prompt);
-    define raw = Console.read_line();
-    define text = String.trim(raw);
+    def raw = Console.read_line();
+    def text = String.trim(raw);
 
     if (text == "") {
       // Exit the loop and return 0 on empty input (e.g. EOF).
@@ -27,7 +27,7 @@ fn read_number(prompt) {
   }
 }
 
-define a = read_number("Erste Zahl:");
-define b = read_number("Zweite Zahl:");
+def a = read_number("Erste Zahl:");
+def b = read_number("Zweite Zahl:");
 
 print("Summe:", a + b);

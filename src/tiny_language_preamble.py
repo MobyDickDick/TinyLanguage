@@ -359,12 +359,12 @@ def _closest_match(name: str, candidates: List[str]) -> Optional[str]:
 def _classify_error(msg: str, candidates: Optional[List[str]] = None) -> Tuple[str, Optional[str]]:
     lower_msg = msg.lower()
     if "return value must be bound" in lower_msg or "must be returned" in lower_msg:
-        return "E001", "Bind the return value, e.g. `define result = call();`, or add a return that includes the mutated data."
+        return "E001", "Bind the return value, e.g. `def result = call();`, or add a return that includes the mutated data."
     if lower_msg.startswith("unused"):
         return "E002", "Remove the unused binding or reference it so it is clearly consumed (prefix with '_' to silence)."
     if "unknown variable" in lower_msg:
         suggestion = _closest_match(msg.split()[-1], candidates or []) if candidates is not None else None
-        base_hint = "Declare the variable first, e.g. `define name = ...;`."
+        base_hint = "Declare the variable first, e.g. `def name = ...;`."
         if suggestion:
             return "E003", f"Did you mean `{suggestion}`? {base_hint}"
         return "E003", base_hint

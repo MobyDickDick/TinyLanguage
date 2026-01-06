@@ -6,7 +6,7 @@ from tiny_language import SourcePos, SourceSpan, TinyLangError, _format_error_fo
 def test_format_error_includes_code_hint_and_span():
     source = textwrap.dedent(
         """
-        define value = 1 + 2;
+        def value = 1 + 2;
         print(value);
         """
     ).strip()

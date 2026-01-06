@@ -30,10 +30,10 @@
 //   These calls are guarded by allowlists to keep the interop surface explicit.
 // ===========================================================================
 
-define __PY_REPR_ALLOW = new["repr"];
-define __PY_EXEC_ALLOW = new["exec"];
-define __PY_STR_ALLOW = new["str"];
-define __PY_LIST_ALLOW = new["list"];
+def __PY_REPR_ALLOW = new["repr"];
+def __PY_EXEC_ALLOW = new["exec"];
+def __PY_STR_ALLOW = new["str"];
+def __PY_LIST_ALLOW = new["list"];
 
 // ---------------------------------------------------------------------------
 // __starts_with(text, prefix)
@@ -51,10 +51,10 @@ define __PY_LIST_ALLOW = new["list"];
 // ---------------------------------------------------------------------------
 fn __starts_with(text, prefix) {
     if (text == Null || prefix == Null) { return false; }
-    define text_chars = Python.call("builtins", "list", new[text], __PY_LIST_ALLOW);
-    define prefix_chars = Python.call("builtins", "list", new[prefix], __PY_LIST_ALLOW);
+    def text_chars = Python.call("builtins", "list", new[text], __PY_LIST_ALLOW);
+    def prefix_chars = Python.call("builtins", "list", new[prefix], __PY_LIST_ALLOW);
     if (len(prefix_chars) > len(text_chars)) { return false; }
-    define i = 0;
+    def i = 0;
     while (i < len(prefix_chars)) {
         if (heap_get(prefix_chars, i) != heap_get(text_chars, i)) { return false; }
         i = i + 1;
@@ -76,8 +76,8 @@ fn __starts_with(text, prefix) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn __raise_runtime_error(msg) {
-    define safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
-    define stmt = "raise RuntimeError(" + safe + ")";
+    def safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
+    def stmt = "raise RuntimeError(" + safe + ")";
     // Return value is irrelevant — the call raises an exception.
     return Python.call("builtins", "exec", new[stmt], __PY_EXEC_ALLOW);
 }
@@ -113,11 +113,11 @@ fn __to_str(value) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn __sorted_strings(items) {
-    define arr = new[];
-    define i = 0;
-    while (i < len(items)) { define _ = Collections.push(arr, heap_get(items, i)); i = i + 1; }
-    define n = len(arr);
-    define a = 0;
+    def arr = new[];
+    def i = 0;
+    while (i < len(items)) { def _ = Collections.push(arr, heap_get(items, i)); i = i + 1; }
+    def n = len(arr);
+    def a = 0;
     // ---------------------------------------------------------------------------
     // _swap(list, idx_a, idx_b)
     // ---------------------------------------------------------------------------
@@ -134,24 +134,24 @@ fn __sorted_strings(items) {
     //   A Tiny value (type depends on operation).
     // ---------------------------------------------------------------------------
     fn _swap(list, idx_a, idx_b) {
-        define out = new[];
-        define si = 0;
+        def out = new[];
+        def si = 0;
         while (si < len(list)) {
             if (si == idx_a) {
-                define _ = Collections.push(out, heap_get(list, idx_b));
+                def _ = Collections.push(out, heap_get(list, idx_b));
             } else {
-                if (si == idx_b) { define _ = Collections.push(out, heap_get(list, idx_a)); }
-                else { define _ = Collections.push(out, heap_get(list, si)); }
+                if (si == idx_b) { def _ = Collections.push(out, heap_get(list, idx_a)); }
+                else { def _ = Collections.push(out, heap_get(list, si)); }
             }
             si = si + 1;
         }
         return out;
     }
     while (a < n) {
-        define b = a + 1;
+        def b = a + 1;
         while (b < n) {
-            define ia = heap_get(arr, a);
-            define ib = heap_get(arr, b);
+            def ia = heap_get(arr, a);
+            def ib = heap_get(arr, b);
             if (ib < ia) {
                 arr = _swap(arr, a, b);
             }
@@ -176,12 +176,12 @@ fn __sorted_strings(items) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn __copy_state(state) {
-    define keys = Map.keys(state);
-    define new_state = Map.new();
-    define i = 0;
+    def keys = Map.keys(state);
+    def new_state = Map.new();
+    def i = 0;
     while (i < len(keys)) {
-        define k = heap_get(keys, i);
-        define _ = Map.set(new_state, k, Map.get(state, k));
+        def k = heap_get(keys, i);
+        def _ = Map.set(new_state, k, Map.get(state, k));
         i = i + 1;
     }
     return new_state;
@@ -203,12 +203,12 @@ fn __copy_state(state) {
 // ---------------------------------------------------------------------------
 fn _import_binding_name(module, alias) {
     if (alias != Null) { return alias; }
-    define chars = Python.call("builtins", "list", new[module], __PY_LIST_ALLOW);
-    define idx = 0;
+    def chars = Python.call("builtins", "list", new[module], __PY_LIST_ALLOW);
+    def idx = 0;
     while (idx < len(chars) && heap_get(chars, idx) == ".") { idx = idx + 1; }
     if (idx >= len(chars)) { return module; }
-    define trimmed = String.join(Collections.slice(chars, idx, len(chars)), "");
-    define parts = String.split(trimmed, ".");
+    def trimmed = String.join(Collections.slice(chars, idx, len(chars)), "");
+    def parts = String.split(trimmed, ".");
     if (len(parts) == 0) { return trimmed; }
     return heap_get(parts, len(parts) - 1);
 }
@@ -247,7 +247,7 @@ fn __starts_with_underscore(name) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn __pad_left(num, width) {
-    define txt = __to_str(num);
+    def txt = __to_str(num);
     while (String.len(txt) < width) { txt = " " + txt; }
     return txt;
 }
@@ -267,28 +267,28 @@ fn __pad_left(num, width) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn __line_info(source, pos) {
-    define target_pos = pos;
-    define lines = String.split(source, "\n");
+    def target_pos = pos;
+    def lines = String.split(source, "\n");
     if (target_pos.__tag__ == "SourceSpan") { target_pos = target_pos.start; }
     if (target_pos.__tag__ == "SourcePos") {
-        define line = target_pos.line;
+        def line = target_pos.line;
         if (line < 1) { line = 1; }
         if (line > len(lines) && len(lines) > 0) { line = len(lines); }
-        define line_text = "";
+        def line_text = "";
         if (len(lines) > 0 && line - 1 >= 0 && line - 1 < len(lines)) { line_text = heap_get(lines, line - 1); }
-        define col = target_pos.column;
-        define max_col = String.len(line_text) + 1;
+        def col = target_pos.column;
+        def max_col = String.len(line_text) + 1;
         if (max_col > 0 && col > max_col) { col = max_col; }
         if (col < 1) { col = 1; }
         return new[line, col, line_text];
     }
-    define idx = target_pos;
+    def idx = target_pos;
     if (idx < 0) { idx = 0; }
     if (idx > String.len(source)) { idx = String.len(source); }
-    define chars = Python.call("builtins", "list", new[source], __PY_LIST_ALLOW);
-    define line = 1;
-    define last_nl = -1;
-    define i = 0;
+    def chars = Python.call("builtins", "list", new[source], __PY_LIST_ALLOW);
+    def line = 1;
+    def last_nl = -1;
+    def i = 0;
     while (i < idx) {
         if (heap_get(chars, i) == "\n") {
             line = line + 1;
@@ -296,8 +296,8 @@ fn __line_info(source, pos) {
         }
         i = i + 1;
     }
-    define col = idx - last_nl;
-    define line_text = "";
+    def col = idx - last_nl;
+    def line_text = "";
     if (len(lines) > 0 && line - 1 >= 0 && line - 1 < len(lines)) { line_text = heap_get(lines, line - 1); }
     return new[line, col, line_text];
 }
@@ -321,37 +321,37 @@ fn __line_info(source, pos) {
 // ---------------------------------------------------------------------------
 fn __format_error(source, pos, message, code, hint) {
     if (pos.__tag__ == "SourceSpan") {
-        define start_info = __line_info(source, pos.start);
-        define stop_info = __line_info(source, pos.stop);
-        define start_line = heap_get(start_info, 0);
-        define start_col = heap_get(start_info, 1);
-        define stop_line = heap_get(stop_info, 0);
-        define stop_col = heap_get(stop_info, 1);
-        define lines = String.split(source, "\n");
-        define line_count = len(lines);
+        def start_info = __line_info(source, pos.start);
+        def stop_info = __line_info(source, pos.stop);
+        def start_line = heap_get(start_info, 0);
+        def start_col = heap_get(start_info, 1);
+        def stop_line = heap_get(stop_info, 0);
+        def stop_col = heap_get(stop_info, 1);
+        def lines = String.split(source, "\n");
+        def line_count = len(lines);
         if (line_count < 1) { line_count = 1; }
-        define gutter_width = String.len(__to_str(line_count));
-        define lines_out = new[];
-        define header = "[" + code + "] " + message + " (line " + __to_str(start_line) + ", col " + __to_str(start_col) + ")";
-        define _hpush = Collections.push(lines_out, header);
-        define context_start = start_line - 1; if (context_start < 1) { context_start = 1; }
-        define context_end = stop_line + 1;
+        def gutter_width = String.len(__to_str(line_count));
+        def lines_out = new[];
+        def header = "[" + code + "] " + message + " (line " + __to_str(start_line) + ", col " + __to_str(start_col) + ")";
+        def _hpush = Collections.push(lines_out, header);
+        def context_start = start_line - 1; if (context_start < 1) { context_start = 1; }
+        def context_end = stop_line + 1;
         if (len(lines) == 0) { context_end = stop_line; }
         if (len(lines) > 0 && context_end > len(lines)) { context_end = len(lines); }
-        define ln = context_start;
+        def ln = context_start;
         while (ln <= context_end) {
-            define text = "";
+            def text = "";
             if (len(lines) > 0 && ln - 1 >= 0 && ln - 1 < len(lines)) {
                 text = heap_get(lines, ln - 1);
             }
-            define prefix = " ";
+            def prefix = " ";
             if (ln == start_line) { prefix = ">"; }
-            define padded = __pad_left(ln, gutter_width);
-            define _lpush = Collections.push(lines_out, prefix + " " + padded + " | " + text);
+            def padded = __pad_left(ln, gutter_width);
+            def _lpush = Collections.push(lines_out, prefix + " " + padded + " | " + text);
 
             if (ln >= start_line && ln <= stop_line) {
-                define underline_start = 1;
-                define underline_end = String.len(text);
+                def underline_start = 1;
+                def underline_end = String.len(text);
                 if (ln == start_line && ln == stop_line) {
                     underline_start = start_col;
                     underline_end = stop_col;
@@ -368,51 +368,51 @@ fn __format_error(source, pos, message, code, hint) {
                         }
                     }
                 }
-                define underline_len = underline_end - underline_start + 1;
+                def underline_len = underline_end - underline_start + 1;
                 if (underline_len < 1) { underline_len = 1; }
-                define prefix_spaces = "";
-                define i = 1;
+                def prefix_spaces = "";
+                def i = 1;
                 while (i < underline_start) { prefix_spaces = prefix_spaces + " "; i = i + 1; }
-                define underline = prefix_spaces + String.repeat("^", underline_len);
-                define _upush = Collections.push(lines_out, "  " + String.repeat(" ", gutter_width) + " | " + underline);
+                def underline = prefix_spaces + String.repeat("^", underline_len);
+                def _upush = Collections.push(lines_out, "  " + String.repeat(" ", gutter_width) + " | " + underline);
             }
             ln = ln + 1;
         }
         if (hint != Null && hint != "") {
-            define _h = Collections.push(lines_out, "  Hint: " + hint);
+            def _h = Collections.push(lines_out, "  Hint: " + hint);
         }
         return String.join(lines_out, "\n");
     }
-    define lines = String.split(source, "\n");
-    define line_count = len(lines);
+    def lines = String.split(source, "\n");
+    def line_count = len(lines);
     if (line_count < 1) { line_count = 1; }
-    define info = __line_info(source, pos);
-    define line = heap_get(info, 0);
-    define col = heap_get(info, 1);
-    define gutter_width = String.len(__to_str(line_count));
-    define start = line - 1; if (start < 1) { start = 1; }
-    define end = line + 1;
+    def info = __line_info(source, pos);
+    def line = heap_get(info, 0);
+    def col = heap_get(info, 1);
+    def gutter_width = String.len(__to_str(line_count));
+    def start = line - 1; if (start < 1) { start = 1; }
+    def end = line + 1;
     if (len(lines) > 0 && end > len(lines)) { end = len(lines); }
-    define lines_out = new[];
-    define header = "[" + code + "] " + message + " (line " + __to_str(line) + ", col " + __to_str(col) + ")";
-    define _ph = Collections.push(lines_out, header);
-    define ln = start;
+    def lines_out = new[];
+    def header = "[" + code + "] " + message + " (line " + __to_str(line) + ", col " + __to_str(col) + ")";
+    def _ph = Collections.push(lines_out, header);
+    def ln = start;
     while (ln <= end) {
-        define text = "";
+        def text = "";
         if (len(lines) > 0 && ln - 1 >= 0 && ln - 1 < len(lines)) { text = heap_get(lines, ln - 1); }
-        define prefix = " ";
+        def prefix = " ";
         if (ln == line) { prefix = ">"; }
-        define padded = __pad_left(ln, gutter_width);
-        define _l = Collections.push(lines_out, prefix + " " + padded + " | " + text);
+        def padded = __pad_left(ln, gutter_width);
+        def _l = Collections.push(lines_out, prefix + " " + padded + " | " + text);
         if (ln == line) {
-            define spaces = String.repeat(" ", col - 1);
-            define caret = String.repeat("^", 1);
-            define _u = Collections.push(lines_out, "  " + String.repeat(" ", gutter_width) + " | " + spaces + caret);
+            def spaces = String.repeat(" ", col - 1);
+            def caret = String.repeat("^", 1);
+            def _u = Collections.push(lines_out, "  " + String.repeat(" ", gutter_width) + " | " + spaces + caret);
         }
         ln = ln + 1;
     }
     if (hint != Null && hint != "") {
-        define _hint = Collections.push(lines_out, "  Hint: " + hint);
+        def _hint = Collections.push(lines_out, "  Hint: " + hint);
     }
     return String.join(lines_out, "\n");
 }
@@ -476,11 +476,11 @@ fn _node_pos(obj) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn _lint_error(source, node, message, code, hint) {
-    define span = _node_span(node);
-    define pos = _node_pos(node);
-    define location = pos;
+    def span = _node_span(node);
+    def pos = _node_pos(node);
+    def location = pos;
     if (span != Null) { location = span; }
-    define rendered = __format_error(source, location, message, code, hint);
+    def rendered = __format_error(source, location, message, code, hint);
     return __raise_runtime_error(rendered);
 }
 
@@ -498,11 +498,11 @@ fn _lint_error(source, node, message, code, hint) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn _param_names(params) {
-    define names = new[];
-    define i = 0;
+    def names = new[];
+    def i = 0;
     while (i < len(params)) {
-        define p = heap_get(params, i);
-        define _ = Collections.push(names, p.name);
+        def p = heap_get(params, i);
+        def _ = Collections.push(names, p.name);
         i = i + 1;
     }
     return names;
@@ -524,50 +524,50 @@ fn _param_names(params) {
 // ---------------------------------------------------------------------------
 fn _collect_names_in_expr(e, names) {
     if (e == Null) { return Null; }
-    if (e.__tag__ == "Var") { define _ = Set.add(names, e.name); return Null; }
+    if (e.__tag__ == "Var") { def _ = Set.add(names, e.name); return Null; }
     if (e.__tag__ == "Bin") { _collect_names_in_expr(e.a, names); _collect_names_in_expr(e.b, names); return Null; }
     if (e.__tag__ == "Call") {
-        define i = 0;
+        def i = 0;
         while (i < len(e.args)) { _collect_names_in_expr(heap_get(e.args, i), names); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "Spawn") {
-        define i = 0;
+        def i = 0;
         while (i < len(e.args)) { _collect_names_in_expr(heap_get(e.args, i), names); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "Await") { _collect_names_in_expr(e.expr, names); return Null; }
     if (e.__tag__ == "New") { _collect_names_in_expr(e.size, names); return Null; }
     if (e.__tag__ == "NewLit") {
-        define i = 0;
+        def i = 0;
         while (i < len(e.items)) { _collect_names_in_expr(heap_get(e.items, i), names); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "Field") { _collect_names_in_expr(e.obj, names); return Null; }
     if (e.__tag__ == "MethodCall") {
         _collect_names_in_expr(e.obj, names);
-        define i = 0;
+        def i = 0;
         while (i < len(e.args)) { _collect_names_in_expr(heap_get(e.args, i), names); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "ClassNew") {
-        define i = 0;
+        def i = 0;
         while (i < len(e.init)) { _collect_names_in_expr(heap_get(heap_get(e.init, i), 1), names); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "ObjLit") {
-        define i = 0;
+        def i = 0;
         while (i < len(e.fields)) { _collect_names_in_expr(heap_get(heap_get(e.fields, i), 1), names); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "Match") {
         _collect_names_in_expr(e.expr, names);
-        define i = 0;
+        def i = 0;
         while (i < len(e.cases)) { _collect_names_in_expr(heap_get(e.cases, i).body, names); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "VariantCtor") {
-        define i = 0;
+        def i = 0;
         while (i < len(e.fields)) { _collect_names_in_expr(heap_get(heap_get(e.fields, i), 1), names); i = i + 1; }
         return Null;
     }
@@ -591,58 +591,58 @@ fn _collect_names_in_expr(e, names) {
 fn uses_in_expr(e, reads) {
     if (e == Null) { return Null; }
     if (e.__tag__ == "Var") {
-        define prev = Map.get(reads, e.name, 0);
-        define _ = Map.set(reads, e.name, prev + 1);
+        def prev = Map.get(reads, e.name, 0);
+        def _ = Map.set(reads, e.name, prev + 1);
         return Null;
     }
     if (e.__tag__ == "Bin") { uses_in_expr(e.a, reads); uses_in_expr(e.b, reads); return Null; }
     if (e.__tag__ == "Call") {
-        define i = 0;
+        def i = 0;
         while (i < len(e.args)) { uses_in_expr(heap_get(e.args, i), reads); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "Spawn") {
-        define i = 0;
+        def i = 0;
         while (i < len(e.args)) { uses_in_expr(heap_get(e.args, i), reads); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "Await") { uses_in_expr(e.expr, reads); return Null; }
     if (e.__tag__ == "New") { uses_in_expr(e.size, reads); return Null; }
     if (e.__tag__ == "NewLit") {
-        define i = 0;
+        def i = 0;
         while (i < len(e.items)) { uses_in_expr(heap_get(e.items, i), reads); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "Field") { uses_in_expr(e.obj, reads); return Null; }
     if (e.__tag__ == "MethodCall") {
         uses_in_expr(e.obj, reads);
-        define i = 0;
+        def i = 0;
         while (i < len(e.args)) { uses_in_expr(heap_get(e.args, i), reads); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "ClassNew") {
-        define i = 0;
+        def i = 0;
         while (i < len(e.init)) { uses_in_expr(heap_get(heap_get(e.init, i), 1), reads); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "ObjLit") {
-        define i = 0;
+        def i = 0;
         while (i < len(e.fields)) { uses_in_expr(heap_get(heap_get(e.fields, i), 1), reads); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "Match") {
         uses_in_expr(e.expr, reads);
-        define i = 0;
+        def i = 0;
         while (i < len(e.cases)) {
-            define tmp_reads = Map.new();
+            def tmp_reads = Map.new();
             uses_in_expr(heap_get(e.cases, i).body, tmp_reads);
-            define keys = Map.keys(tmp_reads);
-            define j = 0;
+            def keys = Map.keys(tmp_reads);
+            def j = 0;
             while (j < len(keys)) {
-                define name = heap_get(keys, j);
-                define count = Map.get(tmp_reads, name, 0);
-                define prev = Map.get(reads, name, 0);
-                if (count > prev) { define _ = Map.set(reads, name, count); }
+                def name = heap_get(keys, j);
+                def count = Map.get(tmp_reads, name, 0);
+                def prev = Map.get(reads, name, 0);
+                if (count > prev) { def _ = Map.set(reads, name, count); }
                 j = j + 1;
             }
             i = i + 1;
@@ -650,7 +650,7 @@ fn uses_in_expr(e, reads) {
         return Null;
     }
     if (e.__tag__ == "VariantCtor") {
-        define i = 0;
+        def i = 0;
         while (i < len(e.fields)) { uses_in_expr(heap_get(heap_get(e.fields, i), 1), reads); i = i + 1; }
         return Null;
     }
@@ -675,70 +675,70 @@ fn lint_stmt_reads(s, reads) {
     if (s.__tag__ == "Let" || s.__tag__ == "Assign") { uses_in_expr(s.expr, reads); return Null; }
     if (s.__tag__ == "FieldAssign") { uses_in_expr(s.obj, reads); uses_in_expr(s.expr, reads); return Null; }
     if (s.__tag__ == "Print") {
-        define i = 0;
+        def i = 0;
         while (i < len(s.exprs)) { uses_in_expr(heap_get(s.exprs, i), reads); i = i + 1; }
         return Null;
     }
     if (s.__tag__ == "Flush") { return Null; }
     if (s.__tag__ == "If") {
         uses_in_expr(s.cond, reads);
-        define i = 0;
+        def i = 0;
         while (i < len(s.then)) { lint_stmt_reads(heap_get(s.then, i), reads); i = i + 1; }
         i = 0;
         while (i < len(s.els)) { lint_stmt_reads(heap_get(s.els, i), reads); i = i + 1; }
         return Null;
     }
-    if (s.__tag__ == "While") { uses_in_expr(s.cond, reads); define i = 0; while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), reads); i = i + 1; } return Null; }
+    if (s.__tag__ == "While") { uses_in_expr(s.cond, reads); def i = 0; while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), reads); i = i + 1; } return Null; }
     if (s.__tag__ == "Switch") {
         uses_in_expr(s.expr, reads);
-        define i = 0;
+        def i = 0;
         while (i < len(s.cases)) {
-            define case_node = heap_get(s.cases, i);
+            def case_node = heap_get(s.cases, i);
             if (case_node.value != Null) { uses_in_expr(case_node.value, reads); }
-            define bi = 0;
+            def bi = 0;
             while (bi < len(case_node.body)) { lint_stmt_reads(heap_get(case_node.body, bi), reads); bi = bi + 1; }
             i = i + 1;
         }
         return Null;
     }
     if (s.__tag__ == "TryCatch") {
-        define i = 0;
+        def i = 0;
         while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), reads); i = i + 1; }
-        define handler_reads = Map.new();
+        def handler_reads = Map.new();
         i = 0;
         while (i < len(s.handler)) { lint_stmt_reads(heap_get(s.handler, i), handler_reads); i = i + 1; }
-        if (s.err_name != Null) { if (Map.get(handler_reads, s.err_name, 0) == 0) { define _ = Map.set(handler_reads, s.err_name, 0); } }
-        define keys = Map.keys(handler_reads);
+        if (s.err_name != Null) { if (Map.get(handler_reads, s.err_name, 0) == 0) { def _ = Map.set(handler_reads, s.err_name, 0); } }
+        def keys = Map.keys(handler_reads);
         i = 0;
         while (i < len(keys)) {
-            define name = heap_get(keys, i);
-            define count = Map.get(handler_reads, name, 0);
-            define prev = Map.get(reads, name, 0);
-            if (count > prev) { define _ = Map.set(reads, name, count); }
+            def name = heap_get(keys, i);
+            def count = Map.get(handler_reads, name, 0);
+            def prev = Map.get(reads, name, 0);
+            if (count > prev) { def _ = Map.set(reads, name, count); }
             i = i + 1;
         }
         return Null;
     }
     if (s.__tag__ == "Return") { uses_in_expr(s.expr, reads); return Null; }
     if (s.__tag__ == "OpDef") {
-        define tmp = Map.new();
-        define i = 0;
+        def tmp = Map.new();
+        def i = 0;
         while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), tmp); i = i + 1; }
-        define miss = new[];
-        if (!__starts_with_underscore(s.a_name) && Map.get(tmp, s.a_name, 0) == 0) { define _ = Collections.push(miss, s.a_name); }
-        if (!__starts_with_underscore(s.b_name) && Map.get(tmp, s.b_name, 0) == 0) { define _ = Collections.push(miss, s.b_name); }
+        def miss = new[];
+        if (!__starts_with_underscore(s.a_name) && Map.get(tmp, s.a_name, 0) == 0) { def _ = Collections.push(miss, s.a_name); }
+        if (!__starts_with_underscore(s.b_name) && Map.get(tmp, s.b_name, 0) == 0) { def _ = Collections.push(miss, s.b_name); }
         if (len(miss) > 0) {
-            define msg = "unused operator parameter(s) in op " + s.op + ": " + String.join(miss, ", ");
+            def msg = "unused operator parameter(s) in op " + s.op + ": " + String.join(miss, ", ");
             __raise_runtime_error(msg);
         }
-        define keys = Map.keys(tmp);
+        def keys = Map.keys(tmp);
         i = 0;
         while (i < len(keys)) {
-            define name = heap_get(keys, i);
+            def name = heap_get(keys, i);
             if (!(name == s.a_name || name == s.b_name)) {
-                define count = Map.get(tmp, name, 0);
-                define prev = Map.get(reads, name, 0);
-                if (count > prev) { define _ = Map.set(reads, name, count); }
+                def count = Map.get(tmp, name, 0);
+                def prev = Map.get(reads, name, 0);
+                if (count > prev) { def _ = Map.set(reads, name, count); }
             }
             i = i + 1;
         }
@@ -746,71 +746,71 @@ fn lint_stmt_reads(s, reads) {
     }
     if (s.__tag__ == "DestructAssign") { uses_in_expr(s.expr, reads); return Null; }
     if (s.__tag__ == "MethodDef") {
-        define tmp = Map.new();
-        define i = 0;
+        def tmp = Map.new();
+        def i = 0;
         while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), tmp); i = i + 1; }
-        define param_names = _param_names(s.params);
-        define miss = new[];
+        def param_names = _param_names(s.params);
+        def miss = new[];
         i = 0;
         while (i < len(param_names)) {
-            define p = heap_get(param_names, i);
+            def p = heap_get(param_names, i);
             if (p != "self" && !__starts_with_underscore(p)) {
-                if (Map.get(tmp, p, 0) == 0) { define _ = Collections.push(miss, p); }
+                if (Map.get(tmp, p, 0) == 0) { def _ = Collections.push(miss, p); }
             }
             i = i + 1;
         }
         if (len(miss) > 0) {
             __raise_runtime_error("unused parameter(s) in method " + s.class_name + "." + s.name + ": " + String.join(miss, ", "));
         }
-        define keys = Map.keys(tmp);
+        def keys = Map.keys(tmp);
         i = 0;
         while (i < len(keys)) {
-            define name = heap_get(keys, i);
-            define skip = false;
-            define j = 0;
+            def name = heap_get(keys, i);
+            def skip = false;
+            def j = 0;
             while (j < len(param_names)) { if (name == heap_get(param_names, j)) { skip = true; } j = j + 1; }
             if (!skip) {
-                define count = Map.get(tmp, name, 0);
-                define prev = Map.get(reads, name, 0);
-                if (count > prev) { define _ = Map.set(reads, name, count); }
+                def count = Map.get(tmp, name, 0);
+                def prev = Map.get(reads, name, 0);
+                if (count > prev) { def _ = Map.set(reads, name, count); }
             }
             i = i + 1;
         }
         return Null;
     }
     if (s.__tag__ == "Fn") {
-        define tmp = Map.new();
-        define i = 0;
+        def tmp = Map.new();
+        def i = 0;
         while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), tmp); i = i + 1; }
-        define param_names = _param_names(s.params);
-        define keys = Map.keys(tmp);
+        def param_names = _param_names(s.params);
+        def keys = Map.keys(tmp);
         i = 0;
         while (i < len(keys)) {
-            define name = heap_get(keys, i);
-            define skip = false;
-            define j = 0;
+            def name = heap_get(keys, i);
+            def skip = false;
+            def j = 0;
             while (j < len(param_names)) { if (name == heap_get(param_names, j)) { skip = true; } j = j + 1; }
             if (!skip) {
-                define count = Map.get(tmp, name, 0);
-                define prev = Map.get(reads, name, 0);
-                if (count > prev) { define _ = Map.set(reads, name, count); }
+                def count = Map.get(tmp, name, 0);
+                def prev = Map.get(reads, name, 0);
+                if (count > prev) { def _ = Map.set(reads, name, count); }
             }
             i = i + 1;
         }
         return Null;
     }
     if (s.__tag__ == "ClassDef") {
-        define i = 0;
+        def i = 0;
         while (i < len(s.methods)) { lint_stmt_reads(heap_get(s.methods, i), reads); i = i + 1; }
         return Null;
     }
     if (s.__tag__ == "Namespace") {
-        define i = 0;
+        def i = 0;
         while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), reads); i = i + 1; }
         return Null;
     }
     if (s.__tag__ == "CallStmt") {
-        define i = 0;
+        def i = 0;
         while (i < len(s.args)) { uses_in_expr(heap_get(s.args, i), reads); i = i + 1; }
         return Null;
     }
@@ -832,21 +832,21 @@ fn lint_stmt_reads(s, reads) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_fn_params_used(fn_node, source) {
-    define reads = Map.new();
-    define i = 0;
+    def reads = Map.new();
+    def i = 0;
     while (i < len(fn_node.body)) { lint_stmt_reads(heap_get(fn_node.body, i), reads); i = i + 1; }
-    define param_names = _param_names(fn_node.params);
-    define unused = new[];
+    def param_names = _param_names(fn_node.params);
+    def unused = new[];
         i = 0;
         while (i < len(param_names)) {
-            define p = heap_get(param_names, i);
+            def p = heap_get(param_names, i);
             if (!(p == "self" || __starts_with_underscore(p))) {
-                if (Map.get(reads, p, 0) == 0) { define _ = Collections.push(unused, p); }
+                if (Map.get(reads, p, 0) == 0) { def _ = Collections.push(unused, p); }
             }
             i = i + 1;
         }
     if (len(unused) > 0) {
-        define msg = "unused parameter(s) in function " + fn_node.name + ": " + String.join(unused, ", ");
+        def msg = "unused parameter(s) in function " + fn_node.name + ": " + String.join(unused, ", ");
         if (source == Null) { __raise_runtime_error(msg); }
         else { _lint_error(source, fn_node, msg, "E002", "Remove the unused parameter or reference it."); }
     }
@@ -872,21 +872,21 @@ fn lint_fn_params_used(fn_node, source) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_method_params_used(md, source) {
-    define reads = Map.new();
-    define i = 0;
+    def reads = Map.new();
+    def i = 0;
     while (i < len(md.body)) { lint_stmt_reads(heap_get(md.body, i), reads); i = i + 1; }
-    define param_names = _param_names(md.params);
-    define unused = new[];
+    def param_names = _param_names(md.params);
+    def unused = new[];
         i = 0;
         while (i < len(param_names)) {
-            define p = heap_get(param_names, i);
+            def p = heap_get(param_names, i);
             if (!(p == "self" || __starts_with_underscore(p))) {
-                if (Map.get(reads, p, 0) == 0) { define _ = Collections.push(unused, p); }
+                if (Map.get(reads, p, 0) == 0) { def _ = Collections.push(unused, p); }
             }
             i = i + 1;
         }
     if (len(unused) > 0) {
-        define msg = "unused parameter(s) in method " + md.class_name + "." + md.name + ": " + String.join(unused, ", ");
+        def msg = "unused parameter(s) in method " + md.class_name + "." + md.name + ": " + String.join(unused, ", ");
         if (source == Null) { __raise_runtime_error(msg); }
         else { _lint_error(source, md, msg, "E002", "Remove the unused parameter or reference it."); }
     }
@@ -912,7 +912,7 @@ fn lint_method_params_used(md, source) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_locals_used(stmts, source) {
-    define unused = new[];
+    def unused = new[];
 
     // ---------------------------------------------------------------------------
     // names_in_expr(expr)
@@ -928,7 +928,7 @@ fn lint_locals_used(stmts, source) {
     //   A Tiny value (type depends on operation).
     // ---------------------------------------------------------------------------
     fn names_in_expr(expr) {
-        define reads = Map.new();
+        def reads = Map.new();
         uses_in_expr(expr, reads);
         return Map.keys(reads);
     }
@@ -948,10 +948,10 @@ fn lint_locals_used(stmts, source) {
     //   A Tiny value (type depends on operation).
     // ---------------------------------------------------------------------------
     fn _mark_used(state, name) {
-        define entry = Map.get(state, name, Null);
+        def entry = Map.get(state, name, Null);
         if (entry != Null) {
-            define pos = heap_get(entry, 0);
-            define _ = Map.set(state, name, new[pos, true, true]);
+            def pos = heap_get(entry, 0);
+            def _ = Map.set(state, name, new[pos, true, true]);
         }
     }
 
@@ -970,13 +970,13 @@ fn lint_locals_used(stmts, source) {
     //   A Tiny value (type depends on operation).
     // ---------------------------------------------------------------------------
     fn _mark_captured_uses(block, state) {
-        define reads = Map.new();
-        define i = 0;
+        def reads = Map.new();
+        def i = 0;
         while (i < len(block)) { lint_stmt_reads(heap_get(block, i), reads); i = i + 1; }
-        define keys = Map.keys(reads);
+        def keys = Map.keys(reads);
         i = 0;
         while (i < len(keys)) {
-            define nm = heap_get(keys, i);
+            def nm = heap_get(keys, i);
             if (Map.get(state, nm, Null) != Null) { _mark_used(state, nm); }
             i = i + 1;
         }
@@ -997,26 +997,26 @@ fn lint_locals_used(stmts, source) {
     // ---------------------------------------------------------------------------
     fn _merge_states(states) {
         if (len(states) == 0) { return states; }
-        define merged = Map.new();
-        define i = 0;
+        def merged = Map.new();
+        def i = 0;
         while (i < len(states)) {
-            define st = heap_get(states, i);
-            define keys = Map.keys(st);
-            define j = 0;
+            def st = heap_get(states, i);
+            def keys = Map.keys(st);
+            def j = 0;
             while (j < len(keys)) {
-                define name = heap_get(keys, j);
-                define entry = Map.get(st, name);
-                define pos = heap_get(entry, 0);
-                define used_all = heap_get(entry, 1);
-                define used_any = heap_get(entry, 2);
-                define prev = Map.get(merged, name, Null);
+                def name = heap_get(keys, j);
+                def entry = Map.get(st, name);
+                def pos = heap_get(entry, 0);
+                def used_all = heap_get(entry, 1);
+                def used_any = heap_get(entry, 2);
+                def prev = Map.get(merged, name, Null);
                 if (prev == Null) {
-                    define _ = Map.set(merged, name, new[pos, used_all, used_any]);
+                    def _ = Map.set(merged, name, new[pos, used_all, used_any]);
                 } else {
-                    define prev_pos = heap_get(prev, 0);
-                    define prev_all = heap_get(prev, 1);
-                    define prev_any = heap_get(prev, 2);
-                    define _u = Map.set(merged, name, new[prev_pos, prev_all && used_all, prev_any || used_any]);
+                    def prev_pos = heap_get(prev, 0);
+                    def prev_all = heap_get(prev, 1);
+                    def prev_any = heap_get(prev, 2);
+                    def _u = Map.set(merged, name, new[prev_pos, prev_all && used_all, prev_any || used_any]);
                 }
                 j = j + 1;
             }
@@ -1042,244 +1042,244 @@ fn lint_locals_used(stmts, source) {
     //   A Tiny value (type depends on operation).
     // ---------------------------------------------------------------------------
     fn analyze_block(block, initial_states) {
-        define active_states = new[];
-        define i = 0;
-        while (i < len(initial_states)) { define _p = Collections.push(active_states, __copy_state(heap_get(initial_states, i))); i = i + 1; }
-        define terminated_states = new[];
-        define idx = 0;
+        def active_states = new[];
+        def i = 0;
+        while (i < len(initial_states)) { def _p = Collections.push(active_states, __copy_state(heap_get(initial_states, i))); i = i + 1; }
+        def terminated_states = new[];
+        def idx = 0;
         while (idx < len(block)) {
-            define st = heap_get(block, idx);
-            define next_active = new[];
-            define ai = 0;
+            def st = heap_get(block, idx);
+            def next_active = new[];
+            def ai = 0;
             while (ai < len(active_states)) {
-                define state = heap_get(active_states, ai);
-                define handled = false;
+                def state = heap_get(active_states, ai);
+                def handled = false;
                 if (!handled && st.__tag__ == "Let") {
-                    define new_state = __copy_state(state);
-                    define names = names_in_expr(st.expr);
-                    define ni = 0;
+                    def new_state = __copy_state(state);
+                    def names = names_in_expr(st.expr);
+                    def ni = 0;
                     while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
-                    define decl_pos = st.name_span;
+                    def decl_pos = st.name_span;
                     if (decl_pos == Null) { decl_pos = st.pos; }
-                    define _ = Map.set(new_state, st.name, new[decl_pos, false, false]);
-                    define _p2 = Collections.push(next_active, new_state);
+                    def _ = Map.set(new_state, st.name, new[decl_pos, false, false]);
+                    def _p2 = Collections.push(next_active, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "Import") {
-                    define new_state = __copy_state(state);
-                    define bind = _import_binding_name(st.module, st.alias);
-                    define decl_pos = st.binding_span;
+                    def new_state = __copy_state(state);
+                    def bind = _import_binding_name(st.module, st.alias);
+                    def decl_pos = st.binding_span;
                     if (decl_pos == Null) { decl_pos = st.pos; }
-                    define _ = Map.set(new_state, bind, new[decl_pos, false, false]);
-                    define _p3 = Collections.push(next_active, new_state);
+                    def _ = Map.set(new_state, bind, new[decl_pos, false, false]);
+                    def _p3 = Collections.push(next_active, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "DestructAssign") {
-                    define new_state = __copy_state(state);
-                    define ni = 0;
-                    while (ni < len(st.names)) { define span = heap_get(st.name_spans, ni); define _ = Map.set(new_state, heap_get(st.names, ni), new[span, false, false]); ni = ni + 1; }
-                    define names = names_in_expr(st.expr);
+                    def new_state = __copy_state(state);
+                    def ni = 0;
+                    while (ni < len(st.names)) { def span = heap_get(st.name_spans, ni); def _ = Map.set(new_state, heap_get(st.names, ni), new[span, false, false]); ni = ni + 1; }
+                    def names = names_in_expr(st.expr);
                     ni = 0;
                     while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
-                    define _p4 = Collections.push(next_active, new_state);
+                    def _p4 = Collections.push(next_active, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "Assign") {
-                    define new_state = __copy_state(state);
-                    define names = names_in_expr(st.expr);
-                    define ni = 0;
+                    def new_state = __copy_state(state);
+                    def names = names_in_expr(st.expr);
+                    def ni = 0;
                     while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
-                    define _p5 = Collections.push(next_active, new_state);
+                    def _p5 = Collections.push(next_active, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "FieldAssign") {
-                    define new_state = __copy_state(state);
-                    define names = names_in_expr(st.obj);
-                    define ni = 0;
+                    def new_state = __copy_state(state);
+                    def names = names_in_expr(st.obj);
+                    def ni = 0;
                     while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
                     names = names_in_expr(st.expr);
                     ni = 0;
                     while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
-                    define _p6 = Collections.push(next_active, new_state);
+                    def _p6 = Collections.push(next_active, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "Print") {
-                    define new_state = __copy_state(state);
-                    define ei = 0;
+                    def new_state = __copy_state(state);
+                    def ei = 0;
                     while (ei < len(st.exprs)) {
-                        define names = names_in_expr(heap_get(st.exprs, ei));
-                        define ni = 0;
+                        def names = names_in_expr(heap_get(st.exprs, ei));
+                        def ni = 0;
                         while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
                         ei = ei + 1;
                     }
-                    define _p7 = Collections.push(next_active, new_state);
+                    def _p7 = Collections.push(next_active, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "Flush") {
-                    define _p8 = Collections.push(next_active, __copy_state(state));
+                    def _p8 = Collections.push(next_active, __copy_state(state));
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "CallStmt") {
-                    define new_state = __copy_state(state);
-                    define ai2 = 0;
+                    def new_state = __copy_state(state);
+                    def ai2 = 0;
                     while (ai2 < len(st.args)) {
-                        define names = names_in_expr(heap_get(st.args, ai2));
-                        define ni = 0;
+                        def names = names_in_expr(heap_get(st.args, ai2));
+                        def ni = 0;
                         while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
                         ai2 = ai2 + 1;
                     }
-                    define _p9 = Collections.push(next_active, new_state);
+                    def _p9 = Collections.push(next_active, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "Return") {
-                    define new_state = __copy_state(state);
-                    define names = names_in_expr(st.expr);
-                    define ni = 0;
+                    def new_state = __copy_state(state);
+                    def names = names_in_expr(st.expr);
+                    def ni = 0;
                     while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
-                    define _pt = Collections.push(terminated_states, new_state);
+                    def _pt = Collections.push(terminated_states, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "If") {
-                    define cond_state = __copy_state(state);
-                    define cond_names = names_in_expr(st.cond);
-                    define ci = 0;
+                    def cond_state = __copy_state(state);
+                    def cond_names = names_in_expr(st.cond);
+                    def ci = 0;
                     while (ci < len(cond_names)) { _mark_used(cond_state, heap_get(cond_names, ci)); ci = ci + 1; }
-                    define cond_is_bool = st.cond.__tag__ == "Bool";
-                    define cond_truthy = cond_is_bool && st.cond.value;
+                    def cond_is_bool = st.cond.__tag__ == "Bool";
+                    def cond_truthy = cond_is_bool && st.cond.value;
                     if (cond_is_bool && cond_truthy) {
                         if (len(st.els) > 0) { lint_locals_used(st.els, source); }
-                        define then_res = analyze_block(st.then, new[cond_state]);
-                        define then_active = heap_get(then_res, 0);
-                        define then_term = heap_get(then_res, 1);
-                        define ti = 0;
-                        while (ti < len(then_active)) { define _p10 = Collections.push(next_active, heap_get(then_active, ti)); ti = ti + 1; }
+                        def then_res = analyze_block(st.then, new[cond_state]);
+                        def then_active = heap_get(then_res, 0);
+                        def then_term = heap_get(then_res, 1);
+                        def ti = 0;
+                        while (ti < len(then_active)) { def _p10 = Collections.push(next_active, heap_get(then_active, ti)); ti = ti + 1; }
                         ti = 0;
-                        while (ti < len(then_term)) { define _pt1 = Collections.push(terminated_states, heap_get(then_term, ti)); ti = ti + 1; }
+                        while (ti < len(then_term)) { def _pt1 = Collections.push(terminated_states, heap_get(then_term, ti)); ti = ti + 1; }
                     } else {
                         if (cond_is_bool && !cond_truthy) {
                             if (len(st.then) > 0) { lint_locals_used(st.then, source); }
-                            define else_res = analyze_block(st.els, new[cond_state]);
-                            define else_active = heap_get(else_res, 0);
-                            define else_term = heap_get(else_res, 1);
-                            if (len(else_active) == 0) { define _p11 = Collections.push(next_active, cond_state); }
-                            define ti = 0;
-                            while (ti < len(else_active)) { define _p12 = Collections.push(next_active, heap_get(else_active, ti)); ti = ti + 1; }
+                            def else_res = analyze_block(st.els, new[cond_state]);
+                            def else_active = heap_get(else_res, 0);
+                            def else_term = heap_get(else_res, 1);
+                            if (len(else_active) == 0) { def _p11 = Collections.push(next_active, cond_state); }
+                            def ti = 0;
+                            while (ti < len(else_active)) { def _p12 = Collections.push(next_active, heap_get(else_active, ti)); ti = ti + 1; }
                             ti = 0;
-                            while (ti < len(else_term)) { define _pt2 = Collections.push(terminated_states, heap_get(else_term, ti)); ti = ti + 1; }
+                            while (ti < len(else_term)) { def _pt2 = Collections.push(terminated_states, heap_get(else_term, ti)); ti = ti + 1; }
                         } else {
-                            define then_res = analyze_block(st.then, new[cond_state]);
-                            define then_active = heap_get(then_res, 0);
-                            define then_term = heap_get(then_res, 1);
-                            define else_res = analyze_block(st.els, new[cond_state]);
-                            define else_active = heap_get(else_res, 0);
-                            define else_term = heap_get(else_res, 1);
-                            define ti = 0;
-                            while (ti < len(then_active)) { define _p13 = Collections.push(next_active, heap_get(then_active, ti)); ti = ti + 1; }
+                            def then_res = analyze_block(st.then, new[cond_state]);
+                            def then_active = heap_get(then_res, 0);
+                            def then_term = heap_get(then_res, 1);
+                            def else_res = analyze_block(st.els, new[cond_state]);
+                            def else_active = heap_get(else_res, 0);
+                            def else_term = heap_get(else_res, 1);
+                            def ti = 0;
+                            while (ti < len(then_active)) { def _p13 = Collections.push(next_active, heap_get(then_active, ti)); ti = ti + 1; }
                             ti = 0;
-                            while (ti < len(else_active)) { define _p14 = Collections.push(next_active, heap_get(else_active, ti)); ti = ti + 1; }
+                            while (ti < len(else_active)) { def _p14 = Collections.push(next_active, heap_get(else_active, ti)); ti = ti + 1; }
                             ti = 0;
-                            while (ti < len(then_term)) { define _pt3 = Collections.push(terminated_states, heap_get(then_term, ti)); ti = ti + 1; }
+                            while (ti < len(then_term)) { def _pt3 = Collections.push(terminated_states, heap_get(then_term, ti)); ti = ti + 1; }
                             ti = 0;
-                            while (ti < len(else_term)) { define _pt4 = Collections.push(terminated_states, heap_get(else_term, ti)); ti = ti + 1; }
+                            while (ti < len(else_term)) { def _pt4 = Collections.push(terminated_states, heap_get(else_term, ti)); ti = ti + 1; }
                         }
                     }
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "While") {
-                    define cond_state = __copy_state(state);
-                    define cond_names = names_in_expr(st.cond);
-                    define ci = 0;
+                    def cond_state = __copy_state(state);
+                    def cond_names = names_in_expr(st.cond);
+                    def ci = 0;
                     while (ci < len(cond_names)) { _mark_used(cond_state, heap_get(cond_names, ci)); ci = ci + 1; }
                     if (st.cond.__tag__ == "Bool" && !st.cond.value) {
                         lint_locals_used(st.body, source);
-                        define _p15 = Collections.push(next_active, cond_state);
+                        def _p15 = Collections.push(next_active, cond_state);
                     } else {
-                        define body_res = analyze_block(st.body, new[cond_state]);
-                        define body_active = heap_get(body_res, 0);
-                        define body_term = heap_get(body_res, 1);
-                        define bi = 0;
-                        while (bi < len(body_active)) { define _p16 = Collections.push(next_active, heap_get(body_active, bi)); bi = bi + 1; }
+                        def body_res = analyze_block(st.body, new[cond_state]);
+                        def body_active = heap_get(body_res, 0);
+                        def body_term = heap_get(body_res, 1);
+                        def bi = 0;
+                        while (bi < len(body_active)) { def _p16 = Collections.push(next_active, heap_get(body_active, bi)); bi = bi + 1; }
                         bi = 0;
-                        while (bi < len(body_term)) { define _pt5 = Collections.push(terminated_states, heap_get(body_term, bi)); bi = bi + 1; }
+                        while (bi < len(body_term)) { def _pt5 = Collections.push(terminated_states, heap_get(body_term, bi)); bi = bi + 1; }
                     }
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "Switch") {
-                    define switch_state = __copy_state(state);
-                    define switch_names = names_in_expr(st.expr);
-                    define si = 0;
+                    def switch_state = __copy_state(state);
+                    def switch_names = names_in_expr(st.expr);
+                    def si = 0;
                     while (si < len(switch_names)) { _mark_used(switch_state, heap_get(switch_names, si)); si = si + 1; }
-                    define has_default = false;
-                    define ci = 0;
+                    def has_default = false;
+                    def ci = 0;
                     while (ci < len(st.cases)) {
-                        define case_node = heap_get(st.cases, ci);
+                        def case_node = heap_get(st.cases, ci);
                         if (case_node.value == Null) { has_default = true; }
                         else {
-                            define case_names = names_in_expr(case_node.value);
-                            define ni = 0;
+                            def case_names = names_in_expr(case_node.value);
+                            def ni = 0;
                             while (ni < len(case_names)) { _mark_used(switch_state, heap_get(case_names, ni)); ni = ni + 1; }
                         }
-                        define case_res = analyze_block(case_node.body, new[__copy_state(switch_state)]);
-                        define case_active = heap_get(case_res, 0);
-                        define case_term = heap_get(case_res, 1);
-                        define ai = 0;
-                        while (ai < len(case_active)) { define _pa = Collections.push(next_active, heap_get(case_active, ai)); ai = ai + 1; }
+                        def case_res = analyze_block(case_node.body, new[__copy_state(switch_state)]);
+                        def case_active = heap_get(case_res, 0);
+                        def case_term = heap_get(case_res, 1);
+                        def ai = 0;
+                        while (ai < len(case_active)) { def _pa = Collections.push(next_active, heap_get(case_active, ai)); ai = ai + 1; }
                         ai = 0;
-                        while (ai < len(case_term)) { define _pt = Collections.push(terminated_states, heap_get(case_term, ai)); ai = ai + 1; }
+                        while (ai < len(case_term)) { def _pt = Collections.push(terminated_states, heap_get(case_term, ai)); ai = ai + 1; }
                         ci = ci + 1;
                     }
-                    if (!has_default) { define _p = Collections.push(next_active, __copy_state(switch_state)); }
+                    if (!has_default) { def _p = Collections.push(next_active, __copy_state(switch_state)); }
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "TryCatch") {
-                    define body_res = analyze_block(st.body, new[__copy_state(state)]);
-                    define handler_state = __copy_state(state);
-                    if (st.err_name != Null) { define _ = Map.set(handler_state, st.err_name, new[st.pos, false, false]); }
-                    define handler_res = analyze_block(st.handler, new[handler_state]);
-                    define body_active = heap_get(body_res, 0);
-                    define handler_active = heap_get(handler_res, 0);
-                    define body_term = heap_get(body_res, 1);
-                    define handler_term = heap_get(handler_res, 1);
-                    define bi = 0;
-                    while (bi < len(body_active)) { define _p13 = Collections.push(next_active, heap_get(body_active, bi)); bi = bi + 1; }
+                    def body_res = analyze_block(st.body, new[__copy_state(state)]);
+                    def handler_state = __copy_state(state);
+                    if (st.err_name != Null) { def _ = Map.set(handler_state, st.err_name, new[st.pos, false, false]); }
+                    def handler_res = analyze_block(st.handler, new[handler_state]);
+                    def body_active = heap_get(body_res, 0);
+                    def handler_active = heap_get(handler_res, 0);
+                    def body_term = heap_get(body_res, 1);
+                    def handler_term = heap_get(handler_res, 1);
+                    def bi = 0;
+                    while (bi < len(body_active)) { def _p13 = Collections.push(next_active, heap_get(body_active, bi)); bi = bi + 1; }
                     bi = 0;
-                    while (bi < len(handler_active)) { define _p14 = Collections.push(next_active, heap_get(handler_active, bi)); bi = bi + 1; }
+                    while (bi < len(handler_active)) { def _p14 = Collections.push(next_active, heap_get(handler_active, bi)); bi = bi + 1; }
                     bi = 0;
-                    while (bi < len(body_term)) { define _pt4 = Collections.push(terminated_states, heap_get(body_term, bi)); bi = bi + 1; }
+                    while (bi < len(body_term)) { def _pt4 = Collections.push(terminated_states, heap_get(body_term, bi)); bi = bi + 1; }
                     bi = 0;
-                    while (bi < len(handler_term)) { define _pt5 = Collections.push(terminated_states, heap_get(handler_term, bi)); bi = bi + 1; }
+                    while (bi < len(handler_term)) { def _pt5 = Collections.push(terminated_states, heap_get(handler_term, bi)); bi = bi + 1; }
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "Namespace") {
-                    define nested_state = __copy_state(state);
+                    def nested_state = __copy_state(state);
                     _mark_captured_uses(st.body, nested_state);
                     lint_locals_used(st.body, source);
-                    define _p15 = Collections.push(next_active, nested_state);
+                    def _p15 = Collections.push(next_active, nested_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "ClassDef") {
-                    define nested_state = __copy_state(state);
-                    define mi = 0;
+                    def nested_state = __copy_state(state);
+                    def mi = 0;
                     while (mi < len(st.methods)) { _mark_captured_uses(heap_get(st.methods, mi).body, nested_state); lint_locals_used(heap_get(st.methods, mi).body, source); mi = mi + 1; }
-                    define _p16 = Collections.push(next_active, nested_state);
+                    def _p16 = Collections.push(next_active, nested_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "Fn") {
-                    define nested_state = __copy_state(state);
+                    def nested_state = __copy_state(state);
                     _mark_captured_uses(st.body, nested_state);
                     lint_locals_used(st.body, source);
-                    define _p17 = Collections.push(next_active, nested_state);
+                    def _p17 = Collections.push(next_active, nested_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "MethodDef") {
-                    define nested_state = __copy_state(state);
+                    def nested_state = __copy_state(state);
                     _mark_captured_uses(st.body, nested_state);
                     lint_locals_used(st.body, source);
-                    define _p18 = Collections.push(next_active, nested_state);
+                    def _p18 = Collections.push(next_active, nested_state);
                     handled = true;
                 }
                 if (!handled) {
-                    define _p19 = Collections.push(next_active, __copy_state(state));
+                    def _p19 = Collections.push(next_active, __copy_state(state));
                 }
                 ai = ai + 1;
             }
@@ -1289,16 +1289,16 @@ fn lint_locals_used(stmts, source) {
         return new[_merge_states(active_states), _merge_states(terminated_states)];
     }
 
-    define res = analyze_block(stmts, new[Map.new()]);
-    define active = heap_get(res, 0);
-    define terminated = heap_get(res, 1);
-    define all_states = new[];
-    define i = 0;
-    while (i < len(active)) { define _ = Collections.push(all_states, heap_get(active, i)); i = i + 1; }
+    def res = analyze_block(stmts, new[Map.new()]);
+    def active = heap_get(res, 0);
+    def terminated = heap_get(res, 1);
+    def all_states = new[];
+    def i = 0;
+    while (i < len(active)) { def _ = Collections.push(all_states, heap_get(active, i)); i = i + 1; }
     i = 0;
-    while (i < len(terminated)) { define _ = Collections.push(all_states, heap_get(terminated, i)); i = i + 1; }
+    while (i < len(terminated)) { def _ = Collections.push(all_states, heap_get(terminated, i)); i = i + 1; }
 
-    define usage_summary = Map.new();
+    def usage_summary = Map.new();
 
     // ---------------------------------------------------------------------------
     // __usage_key(name, pos)
@@ -1317,8 +1317,8 @@ fn lint_locals_used(stmts, source) {
     fn __usage_key(name, pos) {
         if (pos == Null) { return name + "@pos:0:0"; }
         if (pos.__tag__ == "SourceSpan") {
-            define start = pos.start;
-            define stop = pos.stop;
+            def start = pos.start;
+            def stop = pos.stop;
             return name
                 + "@span:"
                 + __to_str(start.line)
@@ -1332,7 +1332,7 @@ fn lint_locals_used(stmts, source) {
         if (pos.__tag__ == "SourcePos") {
             return name + "@pos:" + __to_str(pos.line) + ":" + __to_str(pos.column);
         }
-        define fallback = _node_pos(pos);
+        def fallback = _node_pos(pos);
         return name + "@pos:" + __to_str(fallback.line) + ":" + __to_str(fallback.column);
     }
 
@@ -1351,35 +1351,35 @@ fn lint_locals_used(stmts, source) {
     //   A Tiny value (type depends on operation).
     // ---------------------------------------------------------------------------
     fn _accumulate(states, key) {
-        define si = 0;
+        def si = 0;
         while (si < len(states)) {
-            define st = heap_get(states, si);
-            define keys = Map.keys(st);
-            define ki = 0;
+            def st = heap_get(states, si);
+            def keys = Map.keys(st);
+            def ki = 0;
             while (ki < len(keys)) {
-                define name = heap_get(keys, ki);
-                define entry = Map.get(st, name);
-                define pos = heap_get(entry, 0);
-                define map_key = __usage_key(name, pos);
-                define used_all = heap_get(entry, 1);
-                define used_any = heap_get(entry, 2);
-                define prev = Map.get(usage_summary, map_key, Null);
+                def name = heap_get(keys, ki);
+                def entry = Map.get(st, name);
+                def pos = heap_get(entry, 0);
+                def map_key = __usage_key(name, pos);
+                def used_all = heap_get(entry, 1);
+                def used_any = heap_get(entry, 2);
+                def prev = Map.get(usage_summary, map_key, Null);
                 if (prev == Null) {
-                    define fresh = Map.new();
-                    define _p1 = Map.set(fresh, "pos", pos);
-                    define _p2 = Map.set(fresh, "active_all", true);
-                    define _p3 = Map.set(fresh, "active_any", false);
-                    define _p4 = Map.set(fresh, "active_present", false);
-                    define _p5 = Map.set(fresh, "term_any", false);
-                    define _ = Map.set(usage_summary, map_key, fresh);
+                    def fresh = Map.new();
+                    def _p1 = Map.set(fresh, "pos", pos);
+                    def _p2 = Map.set(fresh, "active_all", true);
+                    def _p3 = Map.set(fresh, "active_any", false);
+                    def _p4 = Map.set(fresh, "active_present", false);
+                    def _p5 = Map.set(fresh, "term_any", false);
+                    def _ = Map.set(usage_summary, map_key, fresh);
                     prev = fresh;
                 }
                 if (key == "active") {
-                    define _ = Map.set(prev, "active_all", Map.get(prev, "active_all") && used_all);
-                    define _a = Map.set(prev, "active_any", Map.get(prev, "active_any") || used_any);
-                    define _p = Map.set(prev, "active_present", true);
+                    def _ = Map.set(prev, "active_all", Map.get(prev, "active_all") && used_all);
+                    def _a = Map.set(prev, "active_any", Map.get(prev, "active_any") || used_any);
+                    def _p = Map.set(prev, "active_present", true);
                 } else {
-                    define _t = Map.set(prev, "term_any", Map.get(prev, "term_any") || used_any);
+                    def _t = Map.set(prev, "term_any", Map.get(prev, "term_any") || used_any);
                 }
                 ki = ki + 1;
             }
@@ -1390,29 +1390,29 @@ fn lint_locals_used(stmts, source) {
     _accumulate(active, "active");
     _accumulate(terminated, "term");
 
-    define summary_keys = Map.keys(usage_summary);
-    define si = 0;
+    def summary_keys = Map.keys(usage_summary);
+    def si = 0;
     while (si < len(summary_keys)) {
-        define key = heap_get(summary_keys, si);
-        define info = Map.get(usage_summary, key);
-        define name_parts = String.split(key, "@");
-        define name = heap_get(name_parts, 0);
+        def key = heap_get(summary_keys, si);
+        def info = Map.get(usage_summary, key);
+        def name_parts = String.split(key, "@");
+        def name = heap_get(name_parts, 0);
         if (!(__starts_with_underscore(name) || __starts_with(name, "ignored"))) {
-            define used_any = Map.get(info, "active_any") || Map.get(info, "term_any");
+            def used_any = Map.get(info, "active_any") || Map.get(info, "term_any");
             if (!used_any) {
-                define pos = Map.get(info, "pos");
-                define _ = Collections.push(unused, new[name, pos]);
+                def pos = Map.get(info, "pos");
+                def _ = Collections.push(unused, new[name, pos]);
             }
         }
         si = si + 1;
     }
 
     if (len(unused) > 0) {
-        define names = new[];
-        define pos = heap_get(heap_get(unused, 0), 1);
-        define ui = 0;
-        while (ui < len(unused)) { define _ = Collections.push(names, heap_get(heap_get(unused, ui), 0)); ui = ui + 1; }
-        define msg = "unused local binding(s): " + String.join(names, ", ");
+        def names = new[];
+        def pos = heap_get(heap_get(unused, 0), 1);
+        def ui = 0;
+        while (ui < len(unused)) { def _ = Collections.push(names, heap_get(heap_get(unused, ui), 0)); ui = ui + 1; }
+        def msg = "unused local binding(s): " + String.join(names, ", ");
         if (source == Null) { __raise_runtime_error(msg); }
         else { _lint_error(source, pos, msg, "E002", "Remove the unused binding or reference it."); }
     }
@@ -1433,14 +1433,14 @@ fn lint_locals_used(stmts, source) {
 // ---------------------------------------------------------------------------
 fn __trim(text) {
     if (text == Null) { return ""; }
-    define chars = Python.call("builtins", "list", new[text], __PY_LIST_ALLOW);
-    define start = 0;
+    def chars = Python.call("builtins", "list", new[text], __PY_LIST_ALLOW);
+    def start = 0;
     while (start < len(chars) && heap_get(chars, start) == " ") { start = start + 1; }
-    define stop = len(chars) - 1;
+    def stop = len(chars) - 1;
     while (stop >= start && heap_get(chars, stop) == " ") { stop = stop - 1; }
-    define buf = new[];
-    define i = start;
-    while (i <= stop) { define _ = Collections.push(buf, heap_get(chars, i)); i = i + 1; }
+    def buf = new[];
+    def i = start;
+    while (i <= stop) { def _ = Collections.push(buf, heap_get(chars, i)); i = i + 1; }
     return String.join(buf, "");
 }
 
@@ -1481,7 +1481,7 @@ fn _infer_expr_type(expr, env) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn __last_char(text) {
-    define chars = Python.call("builtins", "list", new[text], __PY_LIST_ALLOW);
+    def chars = Python.call("builtins", "list", new[text], __PY_LIST_ALLOW);
     if (len(chars) == 0) { return ""; }
     return heap_get(chars, len(chars) - 1);
 }
@@ -1501,13 +1501,13 @@ fn __last_char(text) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn _types_match(expected, actual) {
-    define expected_norm = __trim(expected);
-    define actual_norm = __trim(actual);
-    define optional = __last_char(expected_norm) == "?";
-    define base_expected = expected_norm;
+    def expected_norm = __trim(expected);
+    def actual_norm = __trim(actual);
+    def optional = __last_char(expected_norm) == "?";
+    def base_expected = expected_norm;
     if (optional && String.len(expected_norm) > 0) { base_expected = String.join(Collections.slice(Python.call("builtins", "list", new[expected_norm], __PY_LIST_ALLOW), 0, len(Python.call("builtins", "list", new[expected_norm], __PY_LIST_ALLOW)) - 1), ""); }
-    define expected_lower = String.lower(base_expected);
-    define actual_lower = String.lower(actual_norm);
+    def expected_lower = String.lower(base_expected);
+    def actual_lower = String.lower(actual_norm);
     if (optional && actual_lower == "null") { return true; }
     if (expected_lower == actual_lower) { return true; }
     if (expected_lower == "number" && (actual_lower == "number" || actual_lower == "int" || actual_lower == "float")) { return true; }
@@ -1533,11 +1533,11 @@ fn _types_match(expected, actual) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_assignment_types(stmts, source, env) {
-    define base_env = Map.new();
+    def base_env = Map.new();
     if (env != Null) {
-        define keys = Map.keys(env);
-        define i = 0;
-        while (i < len(keys)) { define k = heap_get(keys, i); define _ = Map.set(base_env, k, Map.get(env, k)); i = i + 1; }
+        def keys = Map.keys(env);
+        def i = 0;
+        while (i < len(keys)) { def k = heap_get(keys, i); def _ = Map.set(base_env, k, Map.get(env, k)); i = i + 1; }
     }
 
     // ---------------------------------------------------------------------------
@@ -1555,108 +1555,108 @@ fn lint_assignment_types(stmts, source, env) {
     //   A Tiny value (type depends on operation).
     // ---------------------------------------------------------------------------
     fn check_block(block, local_env) {
-        define i = 0;
+        def i = 0;
         while (i < len(block)) {
-            define st = heap_get(block, i);
-            define handled = false;
+            def st = heap_get(block, i);
+            def handled = false;
             if (!handled && st.__tag__ == "Let") {
-                define inferred = _infer_expr_type(st.expr, local_env);
-                if (inferred != Null) { define _ = Map.set(local_env, st.name, inferred); }
+                def inferred = _infer_expr_type(st.expr, local_env);
+                if (inferred != Null) { def _ = Map.set(local_env, st.name, inferred); }
                 handled = true;
             }
             if (!handled && st.__tag__ == "Assign") {
-                define inferred = _infer_expr_type(st.expr, local_env);
-                define expected = Map.get(local_env, st.name, Null);
+                def inferred = _infer_expr_type(st.expr, local_env);
+                def expected = Map.get(local_env, st.name, Null);
                 if (expected != Null && inferred != Null && !_types_match(expected, inferred)) {
-                    define msg = "type change for variable " + st.name + ": expected " + expected + " but got " + inferred;
+                    def msg = "type change for variable " + st.name + ": expected " + expected + " but got " + inferred;
                     if (source == Null) { __raise_runtime_error(msg); }
                     else { _lint_error(source, st, msg, "E014", "Use a new variable or cast explicitly if a different type is required."); }
                 }
-                if (inferred != Null) { define _ = Map.set(local_env, st.name, inferred); }
+                if (inferred != Null) { def _ = Map.set(local_env, st.name, inferred); }
                 handled = true;
             }
             if (!handled && st.__tag__ == "DestructAssign") {
-                define inferred = _infer_expr_type(st.expr, local_env);
+                def inferred = _infer_expr_type(st.expr, local_env);
                 if (inferred != Null) {
-                    define ni = 0;
-                    while (ni < len(st.names)) { define _ = Map.set(local_env, heap_get(st.names, ni), inferred); ni = ni + 1; }
+                    def ni = 0;
+                    while (ni < len(st.names)) { def _ = Map.set(local_env, heap_get(st.names, ni), inferred); ni = ni + 1; }
                 }
                 handled = true;
             }
             if (!handled && st.__tag__ == "If") {
-                define then_env = check_block(st.then, __copy_state(local_env));
-                define else_env = check_block(st.els, __copy_state(local_env));
-                define keys = Map.keys(local_env);
-                define ki = 0;
+                def then_env = check_block(st.then, __copy_state(local_env));
+                def else_env = check_block(st.els, __copy_state(local_env));
+                def keys = Map.keys(local_env);
+                def ki = 0;
                 while (ki < len(keys)) {
-                    define name = heap_get(keys, ki);
+                    def name = heap_get(keys, ki);
                     if (Map.get(then_env, name, Null) != Null && Map.get(else_env, name, Null) != Null && Map.get(then_env, name) == Map.get(else_env, name)) {
-                        define _ = Map.set(local_env, name, Map.get(then_env, name));
+                        def _ = Map.set(local_env, name, Map.get(then_env, name));
                     }
                     ki = ki + 1;
                 }
                 handled = true;
             }
             if (!handled && st.__tag__ == "While") {
-                define _ = check_block(st.body, __copy_state(local_env));
+                def _ = check_block(st.body, __copy_state(local_env));
                 handled = true;
             }
             if (!handled && st.__tag__ == "Switch") {
-                define case_envs = new[];
-                define ci = 0;
+                def case_envs = new[];
+                def ci = 0;
                 while (ci < len(st.cases)) {
-                    define case_node = heap_get(st.cases, ci);
-                    define env_copy = check_block(case_node.body, __copy_state(local_env));
-                    define _ = Collections.push(case_envs, env_copy);
+                    def case_node = heap_get(st.cases, ci);
+                    def env_copy = check_block(case_node.body, __copy_state(local_env));
+                    def _ = Collections.push(case_envs, env_copy);
                     ci = ci + 1;
                 }
-                define has_default = false;
+                def has_default = false;
                 ci = 0;
                 while (ci < len(st.cases)) {
-                    define case_node = heap_get(st.cases, ci);
+                    def case_node = heap_get(st.cases, ci);
                     if (case_node.value == Null) { has_default = true; }
                     ci = ci + 1;
                 }
-                if (!has_default) { define _ = Collections.push(case_envs, __copy_state(local_env)); }
-                define keys = Map.keys(local_env);
-                define ki = 0;
+                if (!has_default) { def _ = Collections.push(case_envs, __copy_state(local_env)); }
+                def keys = Map.keys(local_env);
+                def ki = 0;
                 while (ki < len(keys)) {
-                    define name = heap_get(keys, ki);
-                    define all_have = true;
-                    define distinct = new[];
-                    define ei = 0;
+                    def name = heap_get(keys, ki);
+                    def all_have = true;
+                    def distinct = new[];
+                    def ei = 0;
                     while (ei < len(case_envs)) {
-                        define env_case = heap_get(case_envs, ei);
-                        define value = Map.get(env_case, name, Null);
+                        def env_case = heap_get(case_envs, ei);
+                        def value = Map.get(env_case, name, Null);
                         if (value == Null) { all_have = false; }
-                        else { define _ = Collections.push(distinct, value); }
+                        else { def _ = Collections.push(distinct, value); }
                         ei = ei + 1;
                     }
                     if (all_have && len(distinct) > 0) {
-                        define first = heap_get(distinct, 0);
-                        define all_same = true;
-                        define di = 1;
+                        def first = heap_get(distinct, 0);
+                        def all_same = true;
+                        def di = 1;
                         while (di < len(distinct)) {
                             if (heap_get(distinct, di) != first) { all_same = false; }
                             di = di + 1;
                         }
-                        if (all_same) { define _ = Map.set(local_env, name, first); }
+                        if (all_same) { def _ = Map.set(local_env, name, first); }
                     }
                     ki = ki + 1;
                 }
                 handled = true;
             }
             if (!handled && st.__tag__ == "TryCatch") {
-                define body_env = check_block(st.body, __copy_state(local_env));
-                define handler_env = __copy_state(local_env);
-                if (st.err_name != Null) { define _ = Map.set(handler_env, st.err_name, "Error"); }
+                def body_env = check_block(st.body, __copy_state(local_env));
+                def handler_env = __copy_state(local_env);
+                if (st.err_name != Null) { def _ = Map.set(handler_env, st.err_name, "Error"); }
                 handler_env = check_block(st.handler, handler_env);
-                define keys = Map.keys(local_env);
-                define ki = 0;
+                def keys = Map.keys(local_env);
+                def ki = 0;
                 while (ki < len(keys)) {
-                    define name = heap_get(keys, ki);
+                    def name = heap_get(keys, ki);
                     if (Map.get(body_env, name, Null) != Null && Map.get(handler_env, name, Null) != Null && Map.get(body_env, name) == Map.get(handler_env, name)) {
-                        define _ = Map.set(local_env, name, Map.get(body_env, name));
+                        def _ = Map.set(local_env, name, Map.get(body_env, name));
                     }
                     ki = ki + 1;
                 }
@@ -1667,37 +1667,37 @@ fn lint_assignment_types(stmts, source, env) {
                 handled = true;
             }
             if (!handled && st.__tag__ == "Fn") {
-                define fn_env = Map.new();
-                define pi = 0;
-                while (pi < len(st.params)) { define p = heap_get(st.params, pi); if (p.type_hint != Null) { define _ = Map.set(fn_env, p.name, p.type_hint); } pi = pi + 1; }
+                def fn_env = Map.new();
+                def pi = 0;
+                while (pi < len(st.params)) { def p = heap_get(st.params, pi); if (p.type_hint != Null) { def _ = Map.set(fn_env, p.name, p.type_hint); } pi = pi + 1; }
                 check_block(st.body, fn_env);
                 handled = true;
             }
             if (!handled && st.__tag__ == "MethodDef") {
-                define method_env = Map.new();
-                define pi = 0;
-                while (pi < len(st.params)) { define p = heap_get(st.params, pi); if (p.type_hint != Null) { define _ = Map.set(method_env, p.name, p.type_hint); } pi = pi + 1; }
+                def method_env = Map.new();
+                def pi = 0;
+                while (pi < len(st.params)) { def p = heap_get(st.params, pi); if (p.type_hint != Null) { def _ = Map.set(method_env, p.name, p.type_hint); } pi = pi + 1; }
                 check_block(st.body, method_env);
                 handled = true;
             }
             if (!handled && st.__tag__ == "ClassDef") {
-                define mi = 0;
+                def mi = 0;
                 while (mi < len(st.methods)) {
-                    define method_env = Map.new();
-                    define pi = 0;
-                    define m = heap_get(st.methods, mi);
-                    while (pi < len(m.params)) { define p = heap_get(m.params, pi); if (p.type_hint != Null) { define _ = Map.set(method_env, p.name, p.type_hint); } pi = pi + 1; }
+                    def method_env = Map.new();
+                    def pi = 0;
+                    def m = heap_get(st.methods, mi);
+                    while (pi < len(m.params)) { def p = heap_get(m.params, pi); if (p.type_hint != Null) { def _ = Map.set(method_env, p.name, p.type_hint); } pi = pi + 1; }
                     check_block(m.body, method_env);
                     mi = mi + 1;
                 }
                 handled = true;
             }
             if (!handled && st.__tag__ == "CallStmt") {
-                define ai = 0;
+                def ai = 0;
                 while (ai < len(st.args)) {
-                    define arg = heap_get(st.args, ai);
-                    define inferred = _infer_expr_type(arg, local_env);
-                    if (arg.__tag__ == "Var" && inferred != Null) { define _ = Map.set(local_env, arg.name, inferred); }
+                    def arg = heap_get(st.args, ai);
+                    def inferred = _infer_expr_type(arg, local_env);
+                    if (arg.__tag__ == "Var" && inferred != Null) { def _ = Map.set(local_env, arg.name, inferred); }
                     ai = ai + 1;
                 }
                 handled = true;
@@ -1725,9 +1725,9 @@ fn lint_assignment_types(stmts, source, env) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn _collect_function_signatures(stmts, prefix) {
-    define base_prefix = prefix;
+    def base_prefix = prefix;
     if (base_prefix == Null) { base_prefix = ""; }
-    define sigs = Map.new();
+    def sigs = Map.new();
     // ---------------------------------------------------------------------------
     // qualify(name)
     // ---------------------------------------------------------------------------
@@ -1742,19 +1742,19 @@ fn _collect_function_signatures(stmts, prefix) {
     //   A Tiny value (type depends on operation).
     // ---------------------------------------------------------------------------
     fn qualify(name) { if (base_prefix == Null || base_prefix == "") { return name; } return base_prefix + "." + name; }
-    define i = 0;
+    def i = 0;
     while (i < len(stmts)) {
-        define st = heap_get(stmts, i);
-        define handled = false;
+        def st = heap_get(stmts, i);
+        def handled = false;
         if (!handled && st.__tag__ == "Fn") {
-            define _ = Map.set(sigs, qualify(st.name), st.return_type);
+            def _ = Map.set(sigs, qualify(st.name), st.return_type);
             handled = true;
         }
         if (!handled && st.__tag__ == "Namespace") {
-            define nested = _collect_function_signatures(st.body, qualify(st.name));
-            define keys = Map.keys(nested);
-            define j = 0;
-            while (j < len(keys)) { define k = heap_get(keys, j); define _ = Map.set(sigs, k, Map.get(nested, k)); j = j + 1; }
+            def nested = _collect_function_signatures(st.body, qualify(st.name));
+            def keys = Map.keys(nested);
+            def j = 0;
+            while (j < len(keys)) { def k = heap_get(keys, j); def _ = Map.set(sigs, k, Map.get(nested, k)); j = j + 1; }
             handled = true;
         }
         i = i + 1;
@@ -1778,13 +1778,13 @@ fn _collect_function_signatures(stmts, prefix) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_bare_call_results(stmts, signatures, source) {
-    define disallowed = Set.new();
-    define keys = Map.keys(signatures);
-    define i = 0;
+    def disallowed = Set.new();
+    def keys = Map.keys(signatures);
+    def i = 0;
     while (i < len(keys)) {
-        define name = heap_get(keys, i);
-        define ret = Map.get(signatures, name, Null);
-        if (!(ret == Null || ret == "Null")) { define _ = Set.add(disallowed, name); }
+        def name = heap_get(keys, i);
+        def ret = Map.get(signatures, name, Null);
+        if (!(ret == Null || ret == "Null")) { def _ = Set.add(disallowed, name); }
         i = i + 1;
     }
 
@@ -1802,14 +1802,14 @@ fn lint_bare_call_results(stmts, signatures, source) {
     //   A Tiny value (type depends on operation).
     // ---------------------------------------------------------------------------
     fn visit(block) {
-        define bi = 0;
+        def bi = 0;
         while (bi < len(block)) {
-            define st = heap_get(block, bi);
-            define handled = false;
+            def st = heap_get(block, bi);
+            def handled = false;
             if (!handled && st.__tag__ == "CallStmt") {
                 if (Set.has(disallowed, st.name)) {
-                    define msg = "call to " + st.name + " returns a value that is ignored";
-                    define hint = "Assign the return value or explicitly acknowledge it with `_ = ...;`.";
+                    def msg = "call to " + st.name + " returns a value that is ignored";
+                    def hint = "Assign the return value or explicitly acknowledge it with `_ = ...;`.";
                     if (source == Null) { __raise_runtime_error(msg); }
                     else { _lint_error(source, st, msg, "E011", hint); }
                 }
@@ -1820,7 +1820,7 @@ fn lint_bare_call_results(stmts, signatures, source) {
             if (!handled && st.__tag__ == "TryCatch") { visit(st.body); visit(st.handler); handled = true; }
             if (!handled && st.__tag__ == "Namespace") { visit(st.body); handled = true; }
             if (!handled && st.__tag__ == "ClassDef") {
-                define mi = 0;
+                def mi = 0;
                 while (mi < len(st.methods)) { visit(heap_get(st.methods, mi).body); mi = mi + 1; }
             }
             bi = bi + 1;
@@ -1844,7 +1844,7 @@ fn lint_bare_call_results(stmts, signatures, source) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn __import_sort_key(imp) {
-    define alias = "";
+    def alias = "";
     if (imp.alias != Null) { alias = imp.alias; }
     return imp.module + "::" + alias;
 }
@@ -1863,11 +1863,11 @@ fn __import_sort_key(imp) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn __sorted_imports(imports) {
-    define arr = new[];
-    define i = 0;
-    while (i < len(imports)) { define _ = Collections.push(arr, heap_get(imports, i)); i = i + 1; }
-    define n = len(arr);
-    define a = 0;
+    def arr = new[];
+    def i = 0;
+    while (i < len(imports)) { def _ = Collections.push(arr, heap_get(imports, i)); i = i + 1; }
+    def n = len(arr);
+    def a = 0;
     // ---------------------------------------------------------------------------
     // _swap(list, idx_a, idx_b)
     // ---------------------------------------------------------------------------
@@ -1884,24 +1884,24 @@ fn __sorted_imports(imports) {
     //   A Tiny value (type depends on operation).
     // ---------------------------------------------------------------------------
     fn _swap(list, idx_a, idx_b) {
-        define out = new[];
-        define si = 0;
+        def out = new[];
+        def si = 0;
         while (si < len(list)) {
             if (si == idx_a) {
-                define _ = Collections.push(out, heap_get(list, idx_b));
+                def _ = Collections.push(out, heap_get(list, idx_b));
             } else {
-                if (si == idx_b) { define _ = Collections.push(out, heap_get(list, idx_a)); }
-                else { define _ = Collections.push(out, heap_get(list, si)); }
+                if (si == idx_b) { def _ = Collections.push(out, heap_get(list, idx_a)); }
+                else { def _ = Collections.push(out, heap_get(list, si)); }
             }
             si = si + 1;
         }
         return out;
     }
     while (a < n) {
-        define b = a + 1;
+        def b = a + 1;
         while (b < n) {
-            define ia = heap_get(arr, a);
-            define ib = heap_get(arr, b);
+            def ia = heap_get(arr, a);
+            def ib = heap_get(arr, b);
             if (__import_sort_key(ib) < __import_sort_key(ia)) {
                 arr = _swap(arr, a, b);
             }
@@ -1927,28 +1927,28 @@ fn __sorted_imports(imports) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_import_style(stmts, source) {
-    define imports = new[];
-    define i = 0;
-    define collecting = true;
+    def imports = new[];
+    def i = 0;
+    def collecting = true;
     while (i < len(stmts) && collecting) {
-        define st = heap_get(stmts, i);
+        def st = heap_get(stmts, i);
         if (st.__tag__ == "Import") {
-            define _ = Collections.push(imports, st);
+            def _ = Collections.push(imports, st);
             i = i + 1;
         } else {
             collecting = false;
         }
     }
 
-    define ordered = __sorted_imports(imports);
+    def ordered = __sorted_imports(imports);
     if (len(imports) > 0) {
-        define mismatch = false;
-        define idx = 0;
+        def mismatch = false;
+        def idx = 0;
         while (idx < len(imports)) {
-            define imp = heap_get(imports, idx);
-            define ord = heap_get(ordered, idx);
-            define alias_imp = Null;
-            define alias_ord = Null;
+            def imp = heap_get(imports, idx);
+            def ord = heap_get(ordered, idx);
+            def alias_imp = Null;
+            def alias_ord = Null;
             if (imp.alias != Null) { alias_imp = imp.alias; }
             if (ord.alias != Null) { alias_ord = ord.alias; }
             if (!(imp.module == ord.module && alias_imp == alias_ord)) {
@@ -1959,17 +1959,17 @@ fn lint_import_style(stmts, source) {
             }
         }
         if (mismatch) {
-            define first_misordered = heap_get(imports, 0);
-            define msg = "imports are not sorted alphabetically";
-            define hint = "Sort the leading import block alphabetically to keep module headers consistent.";
+            def first_misordered = heap_get(imports, 0);
+            def msg = "imports are not sorted alphabetically";
+            def hint = "Sort the leading import block alphabetically to keep module headers consistent.";
             if (source == Null) { __raise_runtime_error(msg); }
             else { _lint_error(source, first_misordered, msg, "E012", hint); }
         }
     }
 
-    define j = 0;
+    def j = 0;
     while (j < len(stmts)) {
-        define st = heap_get(stmts, j);
+        def st = heap_get(stmts, j);
         if (st.__tag__ == "Namespace") { lint_import_style(st.body, source); }
         j = j + 1;
     }
@@ -1990,7 +1990,7 @@ fn lint_import_style(stmts, source) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_destruct_call_outputs(stmts, source) {
-    define i = 0;
+    def i = 0;
     while (i < len(stmts)) { lint_destruct_call_outputs_stmt(heap_get(stmts, i), source); i = i + 1; }
 }
 
@@ -2008,16 +2008,16 @@ fn lint_destruct_call_outputs(stmts, source) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn _return_signature(expr) {
-    define result = new["<scalar>"];
+    def result = new["<scalar>"];
     if (expr.__tag__ == "ObjLit") {
         result = new[];
-        define i = 0;
-        while (i < len(expr.fields)) { define pair = heap_get(expr.fields, i); define _ = Collections.push(result, heap_get(pair, 0)); i = i + 1; }
+        def i = 0;
+        while (i < len(expr.fields)) { def pair = heap_get(expr.fields, i); def _ = Collections.push(result, heap_get(pair, 0)); i = i + 1; }
     } else {
         if (expr.__tag__ == "NewLit") {
             result = new[];
-            define i = 0;
-            while (i < len(expr.items)) { define _ = Collections.push(result, __to_str(i)); i = i + 1; }
+            def i = 0;
+            while (i < len(expr.items)) { def _ = Collections.push(result, __to_str(i)); i = i + 1; }
         }
     }
     return result;
@@ -2039,7 +2039,7 @@ fn _return_signature(expr) {
 // ---------------------------------------------------------------------------
 fn __sig_equal(a, b) {
     if (len(a) != len(b)) { return false; }
-    define i = 0;
+    def i = 0;
     while (i < len(a)) { if (heap_get(a, i) != heap_get(b, i)) { return false; } i = i + 1; }
     return true;
 }
@@ -2077,7 +2077,7 @@ fn _format_signature(sig) {
 // ---------------------------------------------------------------------------
 fn _is_optional_annotation(annotation) {
     if (annotation == Null) { return false; }
-    define trimmed = __trim(annotation);
+    def trimmed = __trim(annotation);
     if (trimmed == "") { return false; }
     return __last_char(trimmed) == "?";
 }
@@ -2096,17 +2096,17 @@ fn _is_optional_annotation(annotation) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn _block_guarantees_return(stmts) {
-    define i = 0;
+    def i = 0;
     while (i < len(stmts)) {
-        define st = heap_get(stmts, i);
+        def st = heap_get(stmts, i);
         if (st.__tag__ == "Return") { return true; }
         if (st.__tag__ == "If") { if (_block_guarantees_return(st.then) && _block_guarantees_return(st.els)) { return true; } }
         if (st.__tag__ == "Switch") {
-            define has_default = false;
-            define all_return = true;
-            define ci = 0;
+            def has_default = false;
+            def all_return = true;
+            def ci = 0;
             while (ci < len(st.cases)) {
-                define case_node = heap_get(st.cases, ci);
+                def case_node = heap_get(st.cases, ci);
                 if (case_node.value == Null) { has_default = true; }
                 if (!_block_guarantees_return(case_node.body)) { all_return = false; }
                 ci = ci + 1;
@@ -2136,11 +2136,11 @@ fn _stmt_guarantees_exit(st) {
     if (st.__tag__ == "Return") { return true; }
     if (st.__tag__ == "If") { return _block_guarantees_return(st.then) && _block_guarantees_return(st.els); }
     if (st.__tag__ == "Switch") {
-        define has_default = false;
-        define all_return = true;
-        define ci = 0;
+        def has_default = false;
+        def all_return = true;
+        def ci = 0;
         while (ci < len(st.cases)) {
-            define case_node = heap_get(st.cases, ci);
+            def case_node = heap_get(st.cases, ci);
             if (case_node.value == Null) { has_default = true; }
             if (!_block_guarantees_return(case_node.body)) { all_return = false; }
             ci = ci + 1;
@@ -2169,8 +2169,8 @@ fn _stmt_guarantees_exit(st) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_return_signatures(stmts, fn_name, is_method, source, _pos) {
-    define expected = Null;
-    define hint = "Ensure every return statement uses the same tuple/record structure (fields and order).";
+    def expected = Null;
+    def hint = "Ensure every return statement uses the same tuple/record structure (fields and order).";
 
     // ---------------------------------------------------------------------------
     // visit(block)
@@ -2186,18 +2186,18 @@ fn lint_return_signatures(stmts, fn_name, is_method, source, _pos) {
     //   A Tiny value (type depends on operation).
     // ---------------------------------------------------------------------------
     fn visit(block) {
-        define i = 0;
+        def i = 0;
         while (i < len(block)) {
-            define st = heap_get(block, i);
-            define handled = false;
+            def st = heap_get(block, i);
+            def handled = false;
             if (!handled && st.__tag__ == "Return") {
-                define sig = _return_signature(st.expr);
+                def sig = _return_signature(st.expr);
                 if (expected == Null) { expected = sig; }
                 else {
                     if (!__sig_equal(sig, expected)) {
-                        define kind = "function";
+                        def kind = "function";
                         if (is_method) { kind = "method"; }
-                        define msg = "inconsistent return signature in " + kind + " " + fn_name + ": expected " + _format_signature(expected) + " but found " + _format_signature(sig);
+                        def msg = "inconsistent return signature in " + kind + " " + fn_name + ": expected " + _format_signature(expected) + " but found " + _format_signature(sig);
                         if (source == Null) { __raise_runtime_error(msg); }
                         else { _lint_error(source, st, msg, "E007", hint); }
                     }
@@ -2207,7 +2207,7 @@ fn lint_return_signatures(stmts, fn_name, is_method, source, _pos) {
             if (!handled && st.__tag__ == "If") { visit(st.then); visit(st.els); handled = true; }
             if (!handled && st.__tag__ == "While") { visit(st.body); handled = true; }
             if (!handled && st.__tag__ == "Switch") {
-                define ci = 0;
+                def ci = 0;
                 while (ci < len(st.cases)) { visit(heap_get(st.cases, ci).body); ci = ci + 1; }
                 handled = true;
             }
@@ -2241,9 +2241,9 @@ fn lint_return_exhaustiveness(stmts, fn_name, expected_return, is_method, source
     if (expected_return == Null) { return Null; }
     if (_is_optional_annotation(expected_return)) { return Null; }
     if (_block_guarantees_return(stmts)) { return Null; }
-    define kind = "function";
+    def kind = "function";
     if (is_method) { kind = "method"; }
-    define msg = "not all paths in " + kind + " " + fn_name + " return a value for annotated type " + expected_return;
+    def msg = "not all paths in " + kind + " " + fn_name + " return a value for annotated type " + expected_return;
     if (source == Null) { __raise_runtime_error(msg); }
     else { _lint_error(source, location, msg, "E010", "Add return statements for every branch or provide a default return to satisfy the annotation."); }
 }
@@ -2277,27 +2277,27 @@ fn lint_unreachable_code(stmts, source) {
     //   A Tiny value (type depends on operation).
     // ---------------------------------------------------------------------------
     fn visit_block(block) {
-        define terminated = false;
-        define i = 0;
+        def terminated = false;
+        def i = 0;
         while (i < len(block)) {
-            define st = heap_get(block, i);
+            def st = heap_get(block, i);
             if (terminated) {
-                define msg = "unreachable statement after a return";
+                def msg = "unreachable statement after a return";
                 if (source == Null) { __raise_runtime_error(msg); }
                 else { _lint_error(source, st, msg, "E013", "Remove the dead code or restructure control flow so it can be reached."); }
             }
-            define handled = false;
+            def handled = false;
             if (!handled && st.__tag__ == "If") { visit_block(st.then); visit_block(st.els); handled = true; }
             if (!handled && st.__tag__ == "While") { visit_block(st.body); handled = true; }
             if (!handled && st.__tag__ == "Switch") {
-                define ci = 0;
+                def ci = 0;
                 while (ci < len(st.cases)) { visit_block(heap_get(st.cases, ci).body); ci = ci + 1; }
                 handled = true;
             }
             if (!handled && st.__tag__ == "TryCatch") { visit_block(st.body); visit_block(st.handler); handled = true; }
             if (!handled && st.__tag__ == "Fn") { visit_block(st.body); handled = true; }
             if (!handled && st.__tag__ == "MethodDef") { visit_block(st.body); handled = true; }
-            if (!handled && st.__tag__ == "ClassDef") { define mi = 0; while (mi < len(st.methods)) { visit_block(heap_get(st.methods, mi).body); mi = mi + 1; } handled = true; }
+            if (!handled && st.__tag__ == "ClassDef") { def mi = 0; while (mi < len(st.methods)) { visit_block(heap_get(st.methods, mi).body); mi = mi + 1; } handled = true; }
             if (!handled && st.__tag__ == "Namespace") { visit_block(st.body); }
             if (_stmt_guarantees_exit(st)) { terminated = true; }
             i = i + 1;
@@ -2310,7 +2310,7 @@ fn lint_unreachable_code(stmts, source) {
 // ---------------------------------------------------------------------------
 // lint_no_consecutive_definitions(stmts)
 // ---------------------------------------------------------------------------
-// Style rule: avoid consecutive `define` statements when they could be combined or simplified.
+// Style rule: avoid consecutive `def` statements when they could be combined or simplified.
 //
 // Keeps Tiny examples/tutorials more readable; may be relaxed depending on project direction.
 //
@@ -2321,7 +2321,7 @@ fn lint_unreachable_code(stmts, source) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_no_consecutive_definitions(stmts) {
-    define prev = Null;
+    def prev = Null;
 
     // ---------------------------------------------------------------------------
     // check_block(block)
@@ -2338,16 +2338,16 @@ fn lint_no_consecutive_definitions(stmts) {
     // ---------------------------------------------------------------------------
     fn check_block(block) {
         prev = Null;
-        define i = 0;
+        def i = 0;
         while (i < len(block)) {
-            define st = heap_get(block, i);
-            define handled = false;
+            def st = heap_get(block, i);
+            def handled = false;
             if (!handled && (st.__tag__ == "If" || st.__tag__ == "While" || st.__tag__ == "Switch")) {
                 if (st.__tag__ == "If") { lint_no_consecutive_definitions(st.then); lint_no_consecutive_definitions(st.els); }
                 else {
                     if (st.__tag__ == "While") { lint_no_consecutive_definitions(st.body); }
                     else {
-                        define ci = 0;
+                        def ci = 0;
                         while (ci < len(st.cases)) { lint_no_consecutive_definitions(heap_get(st.cases, ci).body); ci = ci + 1; }
                     }
                 }
@@ -2357,7 +2357,7 @@ fn lint_no_consecutive_definitions(stmts) {
             if (!handled && st.__tag__ == "Fn") { lint_no_consecutive_definitions(st.body); prev = Null; handled = true; }
             if (!handled && st.__tag__ == "MethodDef") { lint_no_consecutive_definitions(st.body); prev = Null; handled = true; }
             if (!handled && st.__tag__ == "ClassDef") {
-                define mi = 0;
+                def mi = 0;
                 while (mi < len(st.methods)) { lint_no_consecutive_definitions(heap_get(st.methods, mi).body); mi = mi + 1; }
                 prev = Null;
                 handled = true;
@@ -2365,7 +2365,7 @@ fn lint_no_consecutive_definitions(stmts) {
             if (!handled && st.__tag__ == "Namespace") { lint_no_consecutive_definitions(st.body); prev = Null; handled = true; }
             if (!handled && st.__tag__ == "TryCatch") { lint_no_consecutive_definitions(st.body); lint_no_consecutive_definitions(st.handler); prev = Null; handled = true; }
             if (!handled) {
-                define current = Null;
+                def current = Null;
                 if (st.__tag__ == "Let") { current = st.name; }
                 if (current != Null && prev == current) { __raise_runtime_error("variable " + current + " defined twice in a row"); }
                 prev = current;
@@ -2392,18 +2392,18 @@ fn lint_no_consecutive_definitions(stmts) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_destruct_call_outputs_stmt(st, source) {
-    define handled = false;
+    def handled = false;
     if (!handled && st.__tag__ == "DestructAssign") { check_destruct_call_expr(st.expr, Set.from_list(st.names), source, st.pos); handled = true; }
     if (!handled && st.__tag__ == "If") { lint_destruct_call_outputs(st.then, source); lint_destruct_call_outputs(st.els, source); handled = true; }
     if (!handled && st.__tag__ == "While") { lint_destruct_call_outputs(st.body, source); handled = true; }
     if (!handled && st.__tag__ == "Switch") {
-        define ci = 0;
+        def ci = 0;
         while (ci < len(st.cases)) { lint_destruct_call_outputs(heap_get(st.cases, ci).body, source); ci = ci + 1; }
         handled = true;
     }
     if (!handled && st.__tag__ == "Fn") { lint_destruct_call_outputs(st.body, source); handled = true; }
     if (!handled && st.__tag__ == "MethodDef") { lint_destruct_call_outputs(st.body, source); handled = true; }
-    if (!handled && st.__tag__ == "ClassDef") { define mi = 0; while (mi < len(st.methods)) { lint_destruct_call_outputs_stmt(heap_get(st.methods, mi), source); mi = mi + 1; } handled = true; }
+    if (!handled && st.__tag__ == "ClassDef") { def mi = 0; while (mi < len(st.methods)) { lint_destruct_call_outputs_stmt(heap_get(st.methods, mi), source); mi = mi + 1; } handled = true; }
     if (!handled && st.__tag__ == "Namespace") { lint_destruct_call_outputs(st.body, source); handled = true; }
     if (!handled && st.__tag__ == "TryCatch") { lint_destruct_call_outputs(st.body, source); lint_destruct_call_outputs(st.handler, source); }
 }
@@ -2426,33 +2426,33 @@ fn lint_destruct_call_outputs_stmt(st, source) {
 // ---------------------------------------------------------------------------
 fn check_destruct_call_expr(expr, names, source, pos) {
     if (expr.__tag__ == "Call") {
-        define skip = Set.from_list(new["heap_set", "heap_get", "delete", "tag", "__new", "new"]);
+        def skip = Set.from_list(new["heap_set", "heap_get", "delete", "tag", "__new", "new"]);
         if (Set.has(skip, expr.name)) { return Null; }
-        define missing_set = Set.new();
-        define i = 0;
+        def missing_set = Set.new();
+        def i = 0;
         while (i < len(expr.args)) {
-            define arg = heap_get(expr.args, i);
-            if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { define _ = Set.add(missing_set, arg.name); }
+            def arg = heap_get(expr.args, i);
+            if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { def _ = Set.add(missing_set, arg.name); }
             i = i + 1;
         }
-        define missing = __sorted_strings(Set.to_list(missing_set));
+        def missing = __sorted_strings(Set.to_list(missing_set));
         if (len(missing) > 0) {
-            define msg = "destructuring call to " + expr.name + " must include output for argument(s): " + String.join(missing, ", ");
+            def msg = "destructuring call to " + expr.name + " must include output for argument(s): " + String.join(missing, ", ");
             if (source != Null) { _lint_error(source, pos, msg, "E006", "Add the missing binding(s) to the destructuring pattern so each referenced argument is captured."); }
             else { __raise_runtime_error(msg); }
         }
     } else {
         if (expr.__tag__ == "MethodCall") {
-            define missing_set = Set.new();
-            define i = 0;
+            def missing_set = Set.new();
+            def i = 0;
             while (i < len(expr.args)) {
-                define arg = heap_get(expr.args, i);
-                if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { define _ = Set.add(missing_set, arg.name); }
+                def arg = heap_get(expr.args, i);
+                if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { def _ = Set.add(missing_set, arg.name); }
                 i = i + 1;
             }
-            define missing = __sorted_strings(Set.to_list(missing_set));
+            def missing = __sorted_strings(Set.to_list(missing_set));
             if (len(missing) > 0) {
-                define msg = "destructuring method call to " + expr.name + " must include output for argument(s): " + String.join(missing, ", ");
+                def msg = "destructuring method call to " + expr.name + " must include output for argument(s): " + String.join(missing, ", ");
                 if (source != Null) { _lint_error(source, pos, msg, "E006", "Add the missing binding(s) to the destructuring pattern so each referenced argument is captured."); }
                 else { __raise_runtime_error(msg); }
             }
@@ -2479,8 +2479,8 @@ fn check_destruct_call_expr(expr, names, source, pos) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_param_mutations_returned(stmts, params, fn_name, is_method, source, pos) {
-    define mutated = Set.new();
-    define returned = Set.new();
+    def mutated = Set.new();
+    def returned = Set.new();
 
     // ---------------------------------------------------------------------------
     // visit(st)
@@ -2496,39 +2496,39 @@ fn lint_param_mutations_returned(stmts, params, fn_name, is_method, source, pos)
     //   A Tiny value (type depends on operation).
     // ---------------------------------------------------------------------------
     fn visit(st) {
-        define handled = false;
-        if (!handled && st.__tag__ == "Assign" && Set.has(params, st.name)) { define _ = Set.add(mutated, st.name); handled = true; }
-        if (!handled && st.__tag__ == "FieldAssign" && st.obj.__tag__ == "Var" && Set.has(params, st.obj.name)) { define _ = Set.add(mutated, st.obj.name); handled = true; }
-        if (!handled && st.__tag__ == "DestructAssign") { define i = 0; while (i < len(st.names)) { define nm = heap_get(st.names, i); if (Set.has(params, nm)) { define _ = Set.add(mutated, nm); } i = i + 1; } handled = true; }
+        def handled = false;
+        if (!handled && st.__tag__ == "Assign" && Set.has(params, st.name)) { def _ = Set.add(mutated, st.name); handled = true; }
+        if (!handled && st.__tag__ == "FieldAssign" && st.obj.__tag__ == "Var" && Set.has(params, st.obj.name)) { def _ = Set.add(mutated, st.obj.name); handled = true; }
+        if (!handled && st.__tag__ == "DestructAssign") { def i = 0; while (i < len(st.names)) { def nm = heap_get(st.names, i); if (Set.has(params, nm)) { def _ = Set.add(mutated, nm); } i = i + 1; } handled = true; }
         if (!handled && st.__tag__ == "Return") {
-            define reads = Map.new(); uses_in_expr(st.expr, reads);
-            define keys = Map.keys(reads);
-            define i = 0;
-            while (i < len(keys)) { define n = heap_get(keys, i); if (Set.has(params, n)) { define _ = Set.add(returned, n); } i = i + 1; }
+            def reads = Map.new(); uses_in_expr(st.expr, reads);
+            def keys = Map.keys(reads);
+            def i = 0;
+            while (i < len(keys)) { def n = heap_get(keys, i); if (Set.has(params, n)) { def _ = Set.add(returned, n); } i = i + 1; }
             handled = true;
         }
-        if (!handled && st.__tag__ == "If") { define i = 0; while (i < len(st.then)) { visit(heap_get(st.then, i)); i = i + 1; } i = 0; while (i < len(st.els)) { visit(heap_get(st.els, i)); i = i + 1; } handled = true; }
-        if (!handled && st.__tag__ == "TryCatch") { define i = 0; while (i < len(st.body)) { visit(heap_get(st.body, i)); i = i + 1; } i = 0; while (i < len(st.handler)) { visit(heap_get(st.handler, i)); i = i + 1; } handled = true; }
-        if (!handled && st.__tag__ == "While") { define i = 0; while (i < len(st.body)) { visit(heap_get(st.body, i)); i = i + 1; } }
+        if (!handled && st.__tag__ == "If") { def i = 0; while (i < len(st.then)) { visit(heap_get(st.then, i)); i = i + 1; } i = 0; while (i < len(st.els)) { visit(heap_get(st.els, i)); i = i + 1; } handled = true; }
+        if (!handled && st.__tag__ == "TryCatch") { def i = 0; while (i < len(st.body)) { visit(heap_get(st.body, i)); i = i + 1; } i = 0; while (i < len(st.handler)) { visit(heap_get(st.handler, i)); i = i + 1; } handled = true; }
+        if (!handled && st.__tag__ == "While") { def i = 0; while (i < len(st.body)) { visit(heap_get(st.body, i)); i = i + 1; } }
         if (!handled && st.__tag__ == "Switch") {
-            define ci = 0;
+            def ci = 0;
             while (ci < len(st.cases)) {
-                define case_node = heap_get(st.cases, ci);
-                define bi = 0;
+                def case_node = heap_get(st.cases, ci);
+                def bi = 0;
                 while (bi < len(case_node.body)) { visit(heap_get(case_node.body, bi)); bi = bi + 1; }
                 ci = ci + 1;
             }
         }
     }
 
-    define i = 0;
+    def i = 0;
     while (i < len(stmts)) { visit(heap_get(stmts, i)); i = i + 1; }
 
-    define missing = __sorted_strings(Set.to_list(Set.difference(mutated, returned)));
+    def missing = __sorted_strings(Set.to_list(Set.difference(mutated, returned)));
     if (len(missing) > 0) {
-        define kind = "function";
+        def kind = "function";
         if (is_method) { kind = "method"; }
-        define msg = "mutated parameter(s) in " + kind + " " + fn_name + " must be returned: " + String.join(missing, ", ");
+        def msg = "mutated parameter(s) in " + kind + " " + fn_name + " must be returned: " + String.join(missing, ", ");
         if (source == Null) { __raise_runtime_error(msg); }
         else { _lint_error(source, pos, msg, "E001", "Return the mutated parameters so callers receive the updates."); }
     }

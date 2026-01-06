@@ -17,7 +17,7 @@ fn safe_call() {
   }
 }
 
-define res = safe_call();
+def res = safe_call();
 print(res);
 print(Result.is_ok(res));
 print(Result.is_err(res));

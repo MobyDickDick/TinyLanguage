@@ -26,7 +26,7 @@ def _tiny_main_body(llvm_ir: str) -> str:
 
 
 def test_compile_to_llvm_ir_emits_arithmetic_ir() -> None:
-    source = "define a = 1 + 2; print(a);"
+    source = "def a = 1 + 2; print(a);"
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -37,7 +37,7 @@ def test_compile_to_llvm_ir_emits_arithmetic_ir() -> None:
 
 
 def test_compile_to_llvm_ir_includes_target_metadata() -> None:
-    source = "define a = 1; print(a);"
+    source = "def a = 1; print(a);"
 
     llvm_ir = compile_to_llvm_ir(
         source,
@@ -51,7 +51,7 @@ def test_compile_to_llvm_ir_includes_target_metadata() -> None:
 
 
 def test_cli_emits_llvm_ir(tmp_path) -> None:
-    source = "define value = 5 * 2; print(value);"
+    source = "def value = 5 * 2; print(value);"
     script = tmp_path / "program.tiny"
     script.write_text(source, encoding="utf-8")
 
@@ -97,7 +97,7 @@ def test_llvm_codegen_supports_function_calls() -> None:
 def test_llvm_codegen_emits_operator_overload_calls() -> None:
     source = """
 operator + (a: number, b: number) -> number { return a - b; }
-define total = 2 + 3;
+def total = 2 + 3;
 print(total);
 """
 
@@ -127,7 +127,7 @@ def test_pop_is_ignored_in_llvm_codegen() -> None:
 
 
 def test_llvm_codegen_handles_modulo_operation() -> None:
-    source = "define value = 5 % 2; print(value);"
+    source = "def value = 5 % 2; print(value);"
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -136,7 +136,7 @@ def test_llvm_codegen_handles_modulo_operation() -> None:
 
 
 def test_llvm_codegen_handles_float_modulo_operation() -> None:
-    source = "define value = 5.0 % 2.0; print(value);"
+    source = "def value = 5.0 % 2.0; print(value);"
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -145,7 +145,7 @@ def test_llvm_codegen_handles_float_modulo_operation() -> None:
 
 
 def test_llvm_codegen_emits_integer_and_float_comparisons() -> None:
-    source = "define a = 3 > 1; define b = 2.0 <= 4.0; print(a, b);"
+    source = "def a = 3 > 1; def b = 2.0 <= 4.0; print(a, b);"
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -156,7 +156,7 @@ def test_llvm_codegen_emits_integer_and_float_comparisons() -> None:
 
 
 def test_cli_emits_llvm_ir_for_comparisons(tmp_path) -> None:
-    source = "define a = 2 == 2; define b = 1.5 != 3.0; print(a, b);"
+    source = "def a = 2 == 2; def b = 1.5 != 3.0; print(a, b);"
     script = tmp_path / "program.tiny"
     script.write_text(source, encoding="utf-8")
 
@@ -180,7 +180,7 @@ def test_cli_emits_llvm_ir_for_comparisons(tmp_path) -> None:
 
 
 def test_cli_emits_llvm_ir_for_modulo(tmp_path) -> None:
-    source = "define a = 9 % 4; define b = 7.5 % 2.5; print(a, b);"
+    source = "def a = 9 % 4; def b = 7.5 % 2.5; print(a, b);"
     script = tmp_path / "program.tiny"
     script.write_text(source, encoding="utf-8")
 
@@ -216,7 +216,7 @@ def test_llvm_codegen_emits_flush_calls() -> None:
 
 def test_llvm_codegen_handles_if_and_while_control_flow() -> None:
     source = """
-define i = 0;
+def i = 0;
 while (i < 2) {
     i = i + 1;
 }
@@ -243,7 +243,7 @@ def test_llvm_codegen_emits_string_prints() -> None:
 
 
 def test_llvm_codegen_supports_non_numeric_variables() -> None:
-    source = 'define greeting = "hi"; define ok = true; print(greeting, ok);'
+    source = 'def greeting = "hi"; def ok = true; print(greeting, ok);'
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -266,7 +266,7 @@ def test_llvm_codegen_supports_null_literal_prints() -> None:
 
 
 def test_llvm_codegen_emits_heap_calls() -> None:
-    source = "define ptr = new(1); heap_set(ptr, 0, 42); print(heap_get(ptr, 0));"
+    source = "def ptr = new(1); heap_set(ptr, 0, 42); print(heap_get(ptr, 0));"
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -276,7 +276,7 @@ def test_llvm_codegen_emits_heap_calls() -> None:
 
 
 def test_llvm_codegen_emits_heap_string_helpers() -> None:
-    source = 'define ptr = new(1); heap_set(ptr, 0, "hello"); print(heap_get(ptr, 0));'
+    source = 'def ptr = new(1); heap_set(ptr, 0, "hello"); print(heap_get(ptr, 0));'
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -285,7 +285,7 @@ def test_llvm_codegen_emits_heap_string_helpers() -> None:
 
 
 def test_llvm_codegen_emits_array_literal_heap_helpers() -> None:
-    source = 'define ptr = new["hello", "world"]; print(heap_get(ptr, 1));'
+    source = 'def ptr = new["hello", "world"]; print(heap_get(ptr, 1));'
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -295,7 +295,7 @@ def test_llvm_codegen_emits_array_literal_heap_helpers() -> None:
 
 
 def test_llvm_codegen_defines_heap_runtime_helpers() -> None:
-    source = "define ptr = new(1); heap_set(ptr, 0, 1); print(heap_get(ptr, 0));"
+    source = "def ptr = new(1); heap_set(ptr, 0, 1); print(heap_get(ptr, 0));"
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -312,7 +312,7 @@ def test_llvm_codegen_defines_heap_runtime_helpers() -> None:
 
 
 def test_llvm_codegen_emits_heap_bounds_checks() -> None:
-    source = "define ptr = new(2); heap_set(ptr, 1, 1); print(heap_get(ptr, 1));"
+    source = "def ptr = new(2); heap_set(ptr, 1, 1); print(heap_get(ptr, 1));"
 
     llvm_ir = compile_to_llvm_ir(source)
 

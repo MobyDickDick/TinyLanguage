@@ -46,7 +46,7 @@ def test_counter_and_fancy_counter_hierarchy():
           fn total(self) { return Counter.value + self.bonus; }
         }
 
-        define fc = new FancyCounter { bonus: 0; label: "temp"; value: 0; };
+        def fc = new FancyCounter { bonus: 0; label: "temp"; value: 0; };
         fc = fc.init(3, "fancy", 7);
         fc = fc.bump(2);
         print(fc.total());

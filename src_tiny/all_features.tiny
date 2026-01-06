@@ -22,7 +22,7 @@ fn bump(a) {
 }
 
 // Start with a number and demonstrate destructuring assignment plus printing.
-define a = 5; // Seed value for the demo.
+def a = 5; // Seed value for the demo.
 { a, e } = bump(a); // Destructure the returned object into `a` and `e`.
 print("bumped a"); // Announce what is being printed next.
 print(a); // Show the incremented value.
@@ -30,26 +30,26 @@ print("bump error"); // Introduce the companion error code.
 print(e); // Print the error field from the bump call.
 
 // Allocate an empty heap array and mutate it through the standard heap helpers.
-define arr_ptr = new(3); // Reserve three slots on the heap and capture the pointer.
-define heap_status = heap_set(arr_ptr, 0, 10); print(heap_status.e.code); // Store 10 in slot 0 and print the status code.
+def arr_ptr = new(3); // Reserve three slots on the heap and capture the pointer.
+def heap_status = heap_set(arr_ptr, 0, 10); print(heap_status.e.code); // Store 10 in slot 0 and print the status code.
 heap_status = heap_set(arr_ptr, 1, 20); print(heap_status.e.code); // Store 20 in slot 1 and print the status code.
 heap_status = heap_set(arr_ptr, 2, 30); print(heap_status.e.code); // Store 30 in slot 2 and print the status code.
 print(heap_get(arr_ptr, 2)); // Read back the final slot to prove the values landed.
 heap_status = tag(arr_ptr, Arr); print(heap_status.e.code); // Tag the pointer with an Arr type tag and display the result.
 heap_status = delete(arr_ptr); print(heap_status.e.code); // Release the allocation and show the deletion status.
 
-define literal_ptr = new[7, 8, 9]; // Allocate and initialize a heap array literal in one expression.
+def literal_ptr = new[7, 8, 9]; // Allocate and initialize a heap array literal in one expression.
 print(heap_get(literal_ptr, 1)); // Read the second element to demonstrate indexed access.
 heap_status = delete(literal_ptr); print(heap_status.e.code); // Free the literal-backed array and print the status code.
 
 // Build an object literal to show field initialization and access.
-define settings = { greeting: "hi"; count: a; }; // Create a tiny record with a greeting and the current count.
+def settings = { greeting: "hi"; count: a; }; // Create a tiny record with a greeting and the current count.
 print(settings.greeting); // Output the greeting string.
 print(settings.count); // Output the numeric field to prove the record stored it.
 
 // Demonstrate control flow with a loop, a branch, and mutation.
-define i = 0; // Loop counter starting at zero.
-define sum = 0; // Accumulator that will collect the counters.
+def i = 0; // Loop counter starting at zero.
+def sum = 0; // Accumulator that will collect the counters.
 while (i < 3) { // Continue looping while the counter is below three.
   if (i == 1) { // Special-case the midpoint of the loop.
     print("midpoint"); // Print a message when the counter hits one.
@@ -99,21 +99,21 @@ class FancyCounter: Counter { // Subclass that inherits fields and behavior from
 }
 
 // Instantiate counters and exercise their methods to show mutation and method chaining.
-define c = new Counter { value: 0; label: "basic"; }; // Allocate a Counter with initial values.
+def c = new Counter { value: 0; label: "basic"; }; // Allocate a Counter with initial values.
 c = c.init(1, "basic"); // Run the initializer to set the starting state.
 c = c.bump(4); // Increase by four using the bump method.
 print(c.read()); // Print the resulting value.
 
-define fc = new FancyCounter { bonus: 0; label: "temp"; value: 0; }; // Allocate a FancyCounter placeholder.
+def fc = new FancyCounter { bonus: 0; label: "temp"; value: 0; }; // Allocate a FancyCounter placeholder.
 fc = fc.init(3, "fancy", 7); // Initialize with a start value, label, and bonus.
 fc = fc.bump(2); // Apply a delta to the inherited value.
 print(fc.total()); // Show the computed total including the bonus.
 print(fc.read()); // Show the raw inherited value stored on the base class.
 
 // Exercise the Box overloads to verify the operator implementations above.
-define boxed_a = box(2); // Wrap the number 2 in a Box.
-define boxed_b = box(3); // Wrap the number 3 in another Box.
-define boxed_sum = boxed_a + boxed_b; // Add the boxes using the overloaded + operator.
+def boxed_a = box(2); // Wrap the number 2 in a Box.
+def boxed_b = box(3); // Wrap the number 3 in another Box.
+def boxed_sum = boxed_a + boxed_b; // Add the boxes using the overloaded + operator.
 print(unbox(boxed_sum)); // Unbox and print the resulting sum.
 if (boxed_a == boxed_b) { // Compare boxes using the overloaded == operator.
   print("boxed equality: true"); // Report when boxes are equal.

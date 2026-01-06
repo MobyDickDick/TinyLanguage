@@ -2,23 +2,23 @@
 // Run with: python src/tiny_language.py src_tiny/python_json_demo.tiny
 
 // Direct one-off call with allowlist baked into opts.
-define cwd = Python.call("os", "getcwd", Null, { allow: new["getcwd"] });
+def cwd = Python.call("os", "getcwd", Null, { allow: new["getcwd"] });
 print("CWD from Python os:");
 print(cwd);
 
 // Import json helpers and round-trip a map with a nested list.
-define json = Python.import_module("json", new["loads", "dumps"]);
+def json = Python.import_module("json", new["loads", "dumps"]);
 
-define parsed = json.loads("{\"ok\": true, \"numbers\": [1, 2, 3]}");
+def parsed = json.loads("{\"ok\": true, \"numbers\": [1, 2, 3]}");
 print("parsed ok flag:");
 print(Map.get(parsed, "ok"));
 
 // The list from Python becomes a heap pointer; extract the middle element.
-define nums = Map.get(parsed, "numbers");
+def nums = Map.get(parsed, "numbers");
 print("middle number:");
 print(heap_get(nums, 1));
 
 // Dump the structure back to a string.
-define serialized = json.dumps(parsed);
+def serialized = json.dumps(parsed);
 print("round-tripped JSON:");
 print(serialized);

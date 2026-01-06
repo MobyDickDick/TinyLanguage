@@ -10,8 +10,8 @@ def _lines(snapshot_list):
 def test_breakpoint_records_scopes_and_stack():
     program = textwrap.dedent(
         """\
-        define x = 1;
-        define y = 2;
+        def x = 1;
+        def y = 2;
         print(x + y);
         """
     )
@@ -39,11 +39,11 @@ def test_stepping_sequences_follow_depth_changes():
     program = textwrap.dedent(
         """\
         fn add(a, b) {
-            define tmp = a + b;
+            def tmp = a + b;
             return tmp;
         }
 
-        define result = add(2, 3);
+        def result = add(2, 3);
         print(result);
         """
     )
@@ -82,7 +82,7 @@ def test_step_over_skips_imported_module_body(tmp_path):
             print("after import");
         }
 
-        define _ = runner();
+        def _ = runner();
         """
     )
 

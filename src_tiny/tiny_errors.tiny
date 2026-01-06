@@ -36,7 +36,7 @@ class TinyError {
         if (self.span == Null) {
             return "[" + self.kind + "] " + self.msg;
         }
-        define s = self.span.start;
+        def s = self.span.start;
         return "[" + self.kind + "] " + self.msg + " (line " + s.line + ", column " + s.column + ")";
     }
 }
@@ -46,20 +46,20 @@ fn TinyError(kind, msg, span) {
 }
 
 fn format_error(err: TinyError, source: string) {
-    define header = "[" + err.kind + "] " + err.msg;
+    def header = "[" + err.kind + "] " + err.msg;
     if (err.span == Null) {
         return header;
     }
 
-    define lines = String.split(source, "\n");
-    define line_index = err.span.start.line - 1;
+    def lines = String.split(source, "\n");
+    def line_index = err.span.start.line - 1;
     if (line_index < 0 || line_index >= Collections.len(lines)) {
         return header;
     }
 
-    define line_text = heap_get(lines, line_index);
-    define start_col = err.span.start.column;
-    define end_col = err.span.stop.column;
+    def line_text = heap_get(lines, line_index);
+    def start_col = err.span.start.column;
+    def end_col = err.span.stop.column;
 
     if (start_col < 1) {
         start_col = 1;
@@ -69,15 +69,15 @@ fn format_error(err: TinyError, source: string) {
     }
 
     // Leerzeichen vor den Carets aufbauen
-    define prefix = "";
-    define idx = 1;
+    def prefix = "";
+    def idx = 1;
     while (idx < start_col) {
         prefix = prefix + " ";
         idx = idx + 1;
     }
 
-    define caret_len = end_col - start_col + 1;
-    define underline = prefix + String.repeat("^", caret_len);
+    def caret_len = end_col - start_col + 1;
+    def underline = prefix + String.repeat("^", caret_len);
 
     return header
         + "\nline " + err.span.start.line + ", column " + err.span.start.column + ":\n"

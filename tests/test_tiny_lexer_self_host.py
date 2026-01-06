@@ -16,12 +16,12 @@ def _run_lexer_program(body: str) -> str:
 
 
 def test_tiny_lexer_emits_expected_token_stream():
-    source_literal = json.dumps('define a = 7;\nprint("hi"); // comment')
+    source_literal = json.dumps('def a = 7;\nprint("hi"); // comment')
     body = f"""
-define tokens = lex({source_literal});
-define i = 0;
+def tokens = lex({source_literal});
+def i = 0;
 while (i < len(tokens)) {{
-    define tok = heap_get(tokens, i);
+    def tok = heap_get(tokens, i);
     print(tok.kind + ":" + tok.text);
     i = i + 1;
 }}
@@ -30,7 +30,7 @@ while (i < len(tokens)) {{
     output = _run_lexer_program(body).strip().splitlines()
 
     assert output == [
-        "KW:define",
+        "KW:def",
         "NAME:a",
         "SYM:=",
         "NUMBER:7",
@@ -47,10 +47,10 @@ while (i < len(tokens)) {{
 def test_tiny_lexer_tracks_source_positions():
     source_literal = json.dumps('while (x <= 10) { print(x); }')
     body = f"""
-define tokens = lex({source_literal});
-define i = 0;
+def tokens = lex({source_literal});
+def i = 0;
 while (i < len(tokens)) {{
-    define tok = heap_get(tokens, i);
+    def tok = heap_get(tokens, i);
     print("pos", tok.kind, tok.text, tok.start.line, tok.start.column, tok.stop.line, tok.stop.column);
     i = i + 1;
 }}
@@ -71,10 +71,10 @@ def test_tiny_lexer_handles_ops_and_escaped_strings():
         'if (a == b && c != d || e >= f && g <= h) { print("slash: \\\\"); }'
     )
     body = f"""
-define tokens = lex({source_literal});
-define i = 0;
+def tokens = lex({source_literal});
+def i = 0;
 while (i < len(tokens)) {{
-    define tok = heap_get(tokens, i);
+    def tok = heap_get(tokens, i);
     print(tok.kind + ":" + tok.text);
     i = i + 1;
 }}

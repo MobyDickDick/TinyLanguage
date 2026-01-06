@@ -13,15 +13,15 @@ def load_number_class() -> str:
 def test_basic_interval_operations_and_formatting(run_tiny_source):
     interval_def = load_number_intervall()
     extra = """
-    define a = NumberIntervall(0, 1);
-    define b = NumberIntervall(1, 2);
-    define div_base = NumberIntervall(2, 4);
-    define divisor = NumberIntervall(1, 2);
+    def a = NumberIntervall(0, 1);
+    def b = NumberIntervall(1, 2);
+    def div_base = NumberIntervall(2, 4);
+    def divisor = NumberIntervall(1, 2);
 
-    define sum = a + b;
-    define diff = b - a;
-    define prod = a * b;
-    define quot = div_base / divisor;
+    def sum = a + b;
+    def diff = b - a;
+    def prod = a * b;
+    def quot = div_base / divisor;
 
     print(sum.to_string());
     print(diff.to_string());
@@ -37,12 +37,12 @@ def test_basic_interval_operations_and_formatting(run_tiny_source):
 def test_wrapped_intervals_and_zero_division_expand_to_wrapped_result(run_tiny_source):
     interval_def = load_number_intervall()
     extra = """
-    define wrapped = NumberIntervall(1, 0);
-    define normal = NumberIntervall(2, 3);
-    define with_zero = NumberIntervall(-1, 1);
+    def wrapped = NumberIntervall(1, 0);
+    def normal = NumberIntervall(2, 3);
+    def with_zero = NumberIntervall(-1, 1);
 
-    define wrap_sum = wrapped + normal;
-    define division_issue = normal / with_zero;
+    def wrap_sum = wrapped + normal;
+    def division_issue = normal / with_zero;
 
     print(wrapped.to_string());
     print(wrap_sum.to_string());
@@ -58,9 +58,9 @@ def test_interval_number_uses_neighboring_floats(run_tiny_source):
     interval_def = load_number_intervall()
 
     extra = """
-    define around_five = interval_number(5);
-    define around_negative = interval_number(-2.5);
-    define around_zero = interval_number(0);
+    def around_five = interval_number(5);
+    def around_negative = interval_number(-2.5);
+    def around_zero = interval_number(0);
 
     print(around_five.to_string());
     print(around_negative.to_string());
@@ -87,9 +87,9 @@ def test_dividing_infinities_by_zero_spanning_interval_yields_any_number(run_tin
     interval_def = load_number_intervall()
 
     extra = """
-    define plus_inf = __intervall_with_error("plus_infinity");
-    define minus_inf = __intervall_with_error("minus_infinity");
-    define crosses_zero = NumberIntervall(-2, 3);
+    def plus_inf = __intervall_with_error("plus_infinity");
+    def minus_inf = __intervall_with_error("minus_infinity");
+    def crosses_zero = NumberIntervall(-2, 3);
 
     print((plus_inf / crosses_zero).to_string());
     print((minus_inf / crosses_zero).to_string());
@@ -104,8 +104,8 @@ def test_dividing_zero_spanning_intervals_yields_wrapped_interval(run_tiny_sourc
     interval_def = load_number_intervall()
 
     extra = """
-    define numerator = NumberIntervall(-2, 3);
-    define denominator = NumberIntervall(-5, 0.5);
+    def numerator = NumberIntervall(-2, 3);
+    def denominator = NumberIntervall(-5, 0.5);
 
     print((numerator / denominator).to_string());
     """
@@ -119,14 +119,14 @@ def test_division_results_with_infinite_bounds(run_tiny_source):
     interval_def = load_number_intervall()
 
     extra = """
-    define base = NumberIntervall(1, 1);
-    define crosses_zero = NumberIntervall(-1, 1);
-    define touches_zero_positive = NumberIntervall(0, 1);
-    define touches_zero_negative = NumberIntervall(-1, 0);
+    def base = NumberIntervall(1, 1);
+    def crosses_zero = NumberIntervall(-1, 1);
+    def touches_zero_positive = NumberIntervall(0, 1);
+    def touches_zero_negative = NumberIntervall(-1, 0);
 
-    define upper_inf = base / touches_zero_positive;
-    define lower_inf = base / touches_zero_negative;
-    define wrapped_denominator = NumberIntervall(1, -1);
+    def upper_inf = base / touches_zero_positive;
+    def lower_inf = base / touches_zero_negative;
+    def wrapped_denominator = NumberIntervall(1, -1);
 
     print((base / crosses_zero).to_string());
     print(upper_inf.to_string());
@@ -146,10 +146,10 @@ def test_python_numbers_promote_to_intervals(run_tiny_source):
     number_def = load_number_class()
 
     extra = """
-    define a = Number(5);
-    define b = NumberIntervall(6, 7);
-    define c = 42 * a;
-    define d = (9 * c) * b;
+    def a = Number(5);
+    def b = NumberIntervall(6, 7);
+    def c = 42 * a;
+    def d = (9 * c) * b;
 
     print(c.to_string());
     print(d.to_string());

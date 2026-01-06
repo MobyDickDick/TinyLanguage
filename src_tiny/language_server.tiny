@@ -5,20 +5,20 @@ import tiny_language_lexer;
 import tiny_language_linter;
 import tiny_language_parser;
 
-define __PY_SORT_ALLOW = new["sorted"];
-define __PY_INT_ALLOW = new["int"];
-define __PY_LIST_ALLOW = new["list"];
+def __PY_SORT_ALLOW = new["sorted"];
+def __PY_INT_ALLOW = new["int"];
+def __PY_LIST_ALLOW = new["list"];
 
-define __KEYWORDS = tiny_language_lexer.KEYWORDS;
-define __BUILTINS = tiny_language_lexer.BUILTINS;
+def __KEYWORDS = tiny_language_lexer.KEYWORDS;
+def __BUILTINS = tiny_language_lexer.BUILTINS;
 
 fn __starts_with(text, prefix) {
     if (prefix == Null) { return true; }
     if (text == Null) { return false; }
-    define text_chars = Python.call("builtins", "list", new[text], new["list"]);
-    define prefix_chars = Python.call("builtins", "list", new[prefix], new["list"]);
+    def text_chars = Python.call("builtins", "list", new[text], new["list"]);
+    def prefix_chars = Python.call("builtins", "list", new[prefix], new["list"]);
     if (len(prefix_chars) > len(text_chars)) { return false; }
-    define i = 0;
+    def i = 0;
     while (i < len(prefix_chars)) {
         if (heap_get(text_chars, i) != heap_get(prefix_chars, i)) { return false; }
         i = i + 1;
@@ -27,19 +27,19 @@ fn __starts_with(text, prefix) {
 }
 
 fn __format_signature(name, params, return_type) {
-    define parts = new[];
-    define i = 0;
+    def parts = new[];
+    def i = 0;
     while (i < len(params)) {
-        define param = heap_get(params, i);
-        define suffix = "";
+        def param = heap_get(params, i);
+        def suffix = "";
         if (param.type_hint != Null && len(param.type_hint) > 0) {
             suffix = ": " + param.type_hint;
         }
-        define _ = Collections.push(parts, param.name + suffix);
+        def _ = Collections.push(parts, param.name + suffix);
         i = i + 1;
     }
-    define signature = String.join(parts, ", ");
-    define return_annotation = "";
+    def signature = String.join(parts, ", ");
+    def return_annotation = "";
     if (return_type != Null && len(return_type) > 0) {
         return_annotation = " -> " + return_type;
     }
@@ -47,29 +47,29 @@ fn __format_signature(name, params, return_type) {
 }
 
 fn __line_info(source, pos) {
-    define target_pos = pos;
-    define lines = String.split(source, "\n");
+    def target_pos = pos;
+    def lines = String.split(source, "\n");
     if (target_pos == Null) { return new[1, 1, ""]; }
     if (target_pos.__tag__ == "SourceSpan") { target_pos = target_pos.start; }
     if (target_pos.__tag__ == "SourcePos") {
-        define line = target_pos.line;
+        def line = target_pos.line;
         if (line < 1) { line = 1; }
         if (line > len(lines) && len(lines) > 0) { line = len(lines); }
-        define line_text = "";
+        def line_text = "";
         if (len(lines) > 0 && line - 1 >= 0 && line - 1 < len(lines)) { line_text = heap_get(lines, line - 1); }
-        define col = target_pos.column;
-        define max_col = String.len(line_text) + 1;
+        def col = target_pos.column;
+        def max_col = String.len(line_text) + 1;
         if (max_col > 0 && col > max_col) { col = max_col; }
         if (col < 1) { col = 1; }
         return new[line, col, line_text];
     }
-    define idx = target_pos;
+    def idx = target_pos;
     if (idx < 0) { idx = 0; }
     if (idx > String.len(source)) { idx = String.len(source); }
-    define chars = Python.call("builtins", "list", new[source], __PY_LIST_ALLOW);
-    define line = 1;
-    define last_nl = -1;
-    define i = 0;
+    def chars = Python.call("builtins", "list", new[source], __PY_LIST_ALLOW);
+    def line = 1;
+    def last_nl = -1;
+    def i = 0;
     while (i < idx) {
         if (heap_get(chars, i) == "\n") {
             line = line + 1;
@@ -77,37 +77,37 @@ fn __line_info(source, pos) {
         }
         i = i + 1;
     }
-    define col = idx - last_nl;
-    define line_text = "";
+    def col = idx - last_nl;
+    def line_text = "";
     if (len(lines) > 0 && line - 1 >= 0 && line - 1 < len(lines)) { line_text = heap_get(lines, line - 1); }
     return new[line, col, line_text];
 }
 
 fn __record_symbol(server, name, pos, kind, detail) {
-    define symbols = Map.get(server, "symbols");
-    define kinds = Map.get(server, "symbol_kinds");
-    define details = Map.get(server, "symbol_details");
-    define _ = Map.set(symbols, name, pos);
-    define _k = Map.set(kinds, name, kind);
-    if (detail != Null) { define _d = Map.set(details, name, detail); }
+    def symbols = Map.get(server, "symbols");
+    def kinds = Map.get(server, "symbol_kinds");
+    def details = Map.get(server, "symbol_details");
+    def _ = Map.set(symbols, name, pos);
+    def _k = Map.set(kinds, name, kind);
+    if (detail != Null) { def _d = Map.set(details, name, detail); }
     return Null;
 }
 
 fn __index_symbols(server, stmts, prefix) {
-    define i = 0;
+    def i = 0;
     while (i < len(stmts)) {
-        define st = heap_get(stmts, i);
+        def st = heap_get(stmts, i);
         if (st.__tag__ == "Namespace") {
-            define nested = st.name;
+            def nested = st.name;
             if (len(prefix) > 0) { nested = prefix + "." + st.name; }
             __index_symbols(server, st.body, nested);
         }
 
         if (st.__tag__ == "Fn" || st.__tag__ == "MethodDef" || st.__tag__ == "ClassDef" || st.__tag__ == "TypeDef" || st.__tag__ == "Namespace") {
-            define qualified = st.name;
+            def qualified = st.name;
             if (len(prefix) > 0) { qualified = prefix + "." + st.name; }
-            define kind = "identifier";
-            define detail = Null;
+            def kind = "identifier";
+            def detail = Null;
             if (st.__tag__ == "Fn") {
                 kind = "function";
                 detail = "fn " + __format_signature(st.name, st.params, st.return_type);
@@ -123,11 +123,11 @@ fn __index_symbols(server, stmts, prefix) {
             __record_symbol(server, qualified, st.pos, kind, detail);
 
             if (st.__tag__ == "ClassDef") {
-                define m = 0;
+                def m = 0;
                 while (m < len(st.methods)) {
-                    define method = heap_get(st.methods, m);
-                    define method_name = qualified + "." + method.name;
-                    define method_detail = "method " + __format_signature(method.name, method.params, method.return_type);
+                    def method = heap_get(st.methods, m);
+                    def method_name = qualified + "." + method.name;
+                    def method_detail = "method " + __format_signature(method.name, method.params, method.return_type);
                     __record_symbol(server, method_name, method.pos, "method", method_detail);
                     m = m + 1;
                 }
@@ -139,92 +139,92 @@ fn __index_symbols(server, stmts, prefix) {
 }
 
 fn TinyLanguageServer(source) {
-    define stmts = tiny_language_parser.parse_program(source);
-    define server = Map.new();
-    define _ = Map.set(server, "source", source);
-    define _s = Map.set(server, "stmts", stmts);
-    define _sym = Map.set(server, "symbols", Map.new());
-    define _k = Map.set(server, "symbol_kinds", Map.new());
-    define _d = Map.set(server, "symbol_details", Map.new());
+    def stmts = tiny_language_parser.parse_program(source);
+    def server = Map.new();
+    def _ = Map.set(server, "source", source);
+    def _s = Map.set(server, "stmts", stmts);
+    def _sym = Map.set(server, "symbols", Map.new());
+    def _k = Map.set(server, "symbol_kinds", Map.new());
+    def _d = Map.set(server, "symbol_details", Map.new());
     __index_symbols(server, stmts, "");
     return server;
 }
 
 fn completions(server, prefix) {
-    define candidates = Set.new();
-    define kw = Set.to_list(__KEYWORDS);
-    define bi = Set.to_list(__BUILTINS);
-    define i = 0;
-    while (i < len(kw)) { define _ = Set.add(candidates, heap_get(kw, i)); i = i + 1; }
+    def candidates = Set.new();
+    def kw = Set.to_list(__KEYWORDS);
+    def bi = Set.to_list(__BUILTINS);
+    def i = 0;
+    while (i < len(kw)) { def _ = Set.add(candidates, heap_get(kw, i)); i = i + 1; }
     i = 0;
-    while (i < len(bi)) { define _ = Set.add(candidates, heap_get(bi, i)); i = i + 1; }
+    while (i < len(bi)) { def _ = Set.add(candidates, heap_get(bi, i)); i = i + 1; }
 
-    define symbols = Map.get(server, "symbols");
-    define keys = Map.keys(symbols);
+    def symbols = Map.get(server, "symbols");
+    def keys = Map.keys(symbols);
     i = 0;
     while (i < len(keys)) {
-        define name = heap_get(keys, i);
-        define _ = Set.add(candidates, name);
+        def name = heap_get(keys, i);
+        def _ = Set.add(candidates, name);
         if (String.contains(name, ".")) {
-            define parts = String.split(name, ".");
-            define short = heap_get(parts, len(parts) - 1);
-            define _s = Set.add(candidates, short);
+            def parts = String.split(name, ".");
+            def short = heap_get(parts, len(parts) - 1);
+            def _s = Set.add(candidates, short);
         }
         i = i + 1;
     }
 
-    define filtered = new[];
-    define all_items = Set.to_list(candidates);
+    def filtered = new[];
+    def all_items = Set.to_list(candidates);
     i = 0;
     while (i < len(all_items)) {
-        define item = heap_get(all_items, i);
-        if (__starts_with(item, prefix)) { define _ = Collections.push(filtered, item); }
+        def item = heap_get(all_items, i);
+        if (__starts_with(item, prefix)) { def _ = Collections.push(filtered, item); }
         i = i + 1;
     }
 
-    define sorted_items = Python.call("builtins", "sorted", new[filtered], __PY_SORT_ALLOW);
-    define out = new[];
+    def sorted_items = Python.call("builtins", "sorted", new[filtered], __PY_SORT_ALLOW);
+    def out = new[];
     i = 0;
     while (i < len(sorted_items)) {
-        define label = heap_get(sorted_items, i);
-        define kind = Map.get(Map.get(server, "symbol_kinds"), label);
+        def label = heap_get(sorted_items, i);
+        def kind = Map.get(Map.get(server, "symbol_kinds"), label);
         if (kind == Null) { kind = "identifier"; }
-        define entry = Map.new();
-        define _l = Map.set(entry, "label", label);
-        define _k = Map.set(entry, "kind", kind);
-        define _ = Collections.push(out, entry);
+        def entry = Map.new();
+        def _l = Map.set(entry, "label", label);
+        def _k = Map.set(entry, "kind", kind);
+        def _ = Collections.push(out, entry);
         i = i + 1;
     }
     return out;
 }
 
 fn definition(server, symbol, position) {
-    define symbols = Map.get(server, "symbols");
+    def symbols = Map.get(server, "symbols");
     if (Map.has(symbols, symbol)) { return Map.get(symbols, symbol); }
 
-    define matches = new[];
-    define keys = Map.keys(symbols);
-    define i = 0;
+    def matches = new[];
+    def keys = Map.keys(symbols);
+    def i = 0;
     while (i < len(keys)) {
-        define name = heap_get(keys, i);
+        def name = heap_get(keys, i);
         if (name == symbol || (String.contains(name, ".") && heap_get(String.split(name, "."), len(String.split(name, ".")) - 1) == symbol)) {
-            define _ = Collections.push(matches, new[name, Map.get(symbols, name)]);
+            def _ = Collections.push(matches, new[name, Map.get(symbols, name)]);
         }
         i = i + 1;
     }
     if (len(matches) == 0) { return Null; }
 
-    define best = heap_get(matches, 0);
-    define best_score = new[999999, 999999];
-    define idx = 0;
+    def best = heap_get(matches, 0);
+    def best_score = new[999999, 999999];
+    def idx = 0;
     while (idx < len(matches)) {
-        define candidate = heap_get(matches, idx);
-        define pos = heap_get(candidate, 1);
-        define score = new[pos.line, pos.column];
+        def candidate = heap_get(matches, idx);
+        def pos = heap_get(candidate, 1);
+        def score = new[pos.line, pos.column];
         if (position != Null) {
-            define line_delta = pos.line - heap_get(position, 0);
+            def line_delta = pos.line - heap_get(position, 0);
             if (line_delta < 0) { line_delta = 0 - line_delta; }
-            define col_delta = pos.column - heap_get(position, 1);
+            def col_delta = pos.column - heap_get(position, 1);
             if (col_delta < 0) { col_delta = 0 - col_delta; }
             score = new[line_delta, col_delta];
         }
@@ -238,36 +238,36 @@ fn definition(server, symbol, position) {
 }
 
 fn hover(server, symbol) {
-    define symbols = Map.get(server, "symbols");
+    def symbols = Map.get(server, "symbols");
     if (!Map.has(symbols, symbol)) { return Null; }
-    define pos = Map.get(symbols, symbol);
-    define detail = Map.get(Map.get(server, "symbol_details"), symbol);
+    def pos = Map.get(symbols, symbol);
+    def detail = Map.get(Map.get(server, "symbol_details"), symbol);
     if (detail == Null) { detail = "TinyLanguage symbol"; }
-    define result = Map.new();
-    define _s = Map.set(result, "symbol", symbol);
-    define _d = Map.set(result, "detail", detail);
-    define _p = Map.set(result, "position", new[pos.line, pos.column]);
+    def result = Map.new();
+    def _s = Map.set(result, "symbol", symbol);
+    def _d = Map.set(result, "detail", detail);
+    def _p = Map.set(result, "position", new[pos.line, pos.column]);
     return result;
 }
 
 fn __diagnostic_range_from_message(message) {
-    define range = new[1, 1, 1, 1];
+    def range = new[1, 1, 1, 1];
     if (message == Null) { return range; }
     if (String.contains(message, "line ") && String.contains(message, "col ")) {
-        define line_parts = String.split(message, "line ");
+        def line_parts = String.split(message, "line ");
         if (len(line_parts) >= 2) {
-            define after_line = heap_get(line_parts, 1);
-            define line_split = String.split(after_line, ",");
+            def after_line = heap_get(line_parts, 1);
+            def line_split = String.split(after_line, ",");
             if (len(line_split) >= 1) {
-                define line_text = String.trim(heap_get(line_split, 0));
-                define line = Python.call("builtins", "int", new[line_text], __PY_INT_ALLOW);
+                def line_text = String.trim(heap_get(line_split, 0));
+                def line = Python.call("builtins", "int", new[line_text], __PY_INT_ALLOW);
 
-                define col_parts = String.split(after_line, "col ");
+                def col_parts = String.split(after_line, "col ");
                 if (len(col_parts) >= 2) {
-                    define col_tail = heap_get(col_parts, 1);
-                    define col_split = String.split(col_tail, ")");
-                    define col_text = String.trim(heap_get(col_split, 0));
-                    define col = Python.call("builtins", "int", new[col_text], __PY_INT_ALLOW);
+                    def col_tail = heap_get(col_parts, 1);
+                    def col_split = String.split(col_tail, ")");
+                    def col_text = String.trim(heap_get(col_split, 0));
+                    def col = Python.call("builtins", "int", new[col_text], __PY_INT_ALLOW);
                     range = new[line, col, line, col + 1];
                 }
             }
@@ -278,27 +278,27 @@ fn __diagnostic_range_from_message(message) {
 
 fn __diagnostic_range(err, source) {
     if (err != Null) {
-        define span = err.span;
+        def span = err.span;
         if (span != Null) {
-            define start_info = __line_info(source, span.start);
-            define stop_info = __line_info(source, span.stop);
-            define start_line = heap_get(start_info, 0);
-            define start_col = heap_get(start_info, 1);
-            define stop_line = heap_get(stop_info, 0);
-            define stop_col = heap_get(stop_info, 1);
-            define end_col = stop_col + 1;
+            def start_info = __line_info(source, span.start);
+            def stop_info = __line_info(source, span.stop);
+            def start_line = heap_get(start_info, 0);
+            def start_col = heap_get(start_info, 1);
+            def stop_line = heap_get(stop_info, 0);
+            def stop_col = heap_get(stop_info, 1);
+            def end_col = stop_col + 1;
             if (stop_line == start_line && end_col < start_col + 1) { end_col = start_col + 1; }
             return new[start_line, start_col, stop_line, end_col];
         }
-        define pos = err.pos;
+        def pos = err.pos;
         if (pos != Null) {
-            define info = __line_info(source, pos);
-            define line = heap_get(info, 0);
-            define col = heap_get(info, 1);
+            def info = __line_info(source, pos);
+            def line = heap_get(info, 0);
+            def col = heap_get(info, 1);
             return new[line, col, line, col + 1];
         }
-        define message = err.message;
-        define parsed = __diagnostic_range_from_message(message);
+        def message = err.message;
+        def parsed = __diagnostic_range_from_message(message);
         return new[
             heap_get(parsed, 0),
             heap_get(parsed, 1),
@@ -312,36 +312,36 @@ fn __diagnostic_range(err, source) {
 fn __extract_code(message) {
     if (message == Null) { return Null; }
     if (!String.contains(message, "[")) { return Null; }
-    define split_open = String.split(message, "[");
+    def split_open = String.split(message, "[");
     if (len(split_open) < 2) { return Null; }
-    define tail = heap_get(split_open, 1);
-    define split_close = String.split(tail, "]");
+    def tail = heap_get(split_open, 1);
+    def split_close = String.split(tail, "]");
     if (len(split_close) < 1) { return Null; }
-    define code = heap_get(split_close, 0);
+    def code = heap_get(split_close, 0);
     if (code == Null || len(code) == 0) { return Null; }
     return code;
 }
 
 fn diagnostics(server) {
-    define diagnostics = new[];
-    define stmts = Map.get(server, "stmts");
-    define source = Map.get(server, "source");
+    def diagnostics = new[];
+    def stmts = Map.get(server, "stmts");
+    def source = Map.get(server, "source");
     try {
         tiny_language_linter.lint_destruct_call_outputs(stmts, source);
         tiny_language_linter.lint_no_consecutive_definitions(stmts);
         tiny_language_linter.lint_import_style(stmts, source);
         tiny_language_linter.lint_locals_used(stmts, source);
-        define signatures = tiny_language_linter._collect_function_signatures(stmts, "");
+        def signatures = tiny_language_linter._collect_function_signatures(stmts, "");
         tiny_language_linter.lint_bare_call_results(stmts, signatures, source);
-        define i = 0;
+        def i = 0;
         while (i < len(stmts)) {
-            define st = heap_get(stmts, i);
+            def st = heap_get(stmts, i);
             if (st.__tag__ == "Fn") { tiny_language_linter.lint_fn_params_used(st, source); }
             if (st.__tag__ == "MethodDef") { tiny_language_linter.lint_method_params_used(st, source); }
             if (st.__tag__ == "ClassDef") {
-                define m = 0;
+                def m = 0;
                 while (m < len(st.methods)) {
-                    define md = heap_get(st.methods, m);
+                    def md = heap_get(st.methods, m);
                     tiny_language_linter.lint_method_params_used(md, source);
                     m = m + 1;
                 }
@@ -349,41 +349,41 @@ fn diagnostics(server) {
             i = i + 1;
         }
     } catch(err) {
-        define diag = Map.new();
-        define message = err.message;
-        define code = err.code;
+        def diag = Map.new();
+        def message = err.message;
+        def code = err.code;
         if (code == Null) { code = __extract_code(message); }
-        define _m = Map.set(diag, "message", message);
-        define _c = Map.set(diag, "code", code);
-        define _r = Map.set(diag, "range", __diagnostic_range(err, source));
-        define _ = Collections.push(diagnostics, diag);
+        def _m = Map.set(diag, "message", message);
+        def _c = Map.set(diag, "code", code);
+        def _r = Map.set(diag, "range", __diagnostic_range(err, source));
+        def _ = Collections.push(diagnostics, diag);
     }
     return diagnostics;
 }
 
 fn completions_for_source(source, prefix) {
-    define server = TinyLanguageServer(source);
+    def server = TinyLanguageServer(source);
     return completions(server, prefix);
 }
 
 fn hover_for_source(source, symbol) {
-    define server = TinyLanguageServer(source);
-    define result = hover(server, symbol);
+    def server = TinyLanguageServer(source);
+    def result = hover(server, symbol);
     if (result == Null) { return Map.new(); }
     return result;
 }
 
 fn diagnostics_for_source(source) {
-    define server = TinyLanguageServer(source);
+    def server = TinyLanguageServer(source);
     return diagnostics(server);
 }
 
 fn definition_for_source(source, symbol, position) {
-    define server = TinyLanguageServer(source);
-    define result = definition(server, symbol, position);
+    def server = TinyLanguageServer(source);
+    def result = definition(server, symbol, position);
     if (result == Null) { return Map.new(); }
-    define out = Map.new();
-    define _s = Map.set(out, "symbol", symbol);
-    define _p = Map.set(out, "position", new[result.line, result.column]);
+    def out = Map.new();
+    def _s = Map.set(out, "symbol", symbol);
+    def _p = Map.set(out, "position", new[result.line, result.column]);
     return out;
 }

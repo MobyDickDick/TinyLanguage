@@ -19,7 +19,7 @@ def test_null_literal_prints():
 def test_null_is_falsy_and_zero_like_in_arithmetic():
     out = run_tiny(
         """
-        define a = Null;
+        def a = Null;
         if (a) { print(1); } else { print(2); }
         print(a + 5);
         print(3 + Null);
@@ -31,7 +31,7 @@ def test_null_is_falsy_and_zero_like_in_arithmetic():
 def test_null_can_be_compared():
     out = run_tiny(
         """
-        define val = Null;
+        def val = Null;
         print(val == Null);
         print(val == 0);
         """,

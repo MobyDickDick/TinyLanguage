@@ -26,8 +26,8 @@ LINTER_SRC = (PROJECT_ROOT / "src_tiny" / "tiny_language_linter.tiny").read_text
 
 TINY_LINTER_DRIVER = """
 fn __run_lints(src) {
-    define parser = Parser_new(src);
-    define stmts = parser.parse();
+    def parser = Parser_new(src);
+    def stmts = parser.parse();
     lint_import_style(stmts, src);
     lint_destruct_call_outputs(stmts, src);
     lint_no_consecutive_definitions(stmts);
@@ -35,15 +35,15 @@ fn __run_lints(src) {
     lint_locals_used(stmts, src);
     lint_unreachable_code(stmts, src);
 
-    define sigs = _collect_function_signatures(stmts, "");
+    def sigs = _collect_function_signatures(stmts, "");
     fn lint_nested(block) {
-        define i = 0;
+        def i = 0;
         while (i < len(block)) {
-            define st = heap_get(block, i);
+            def st = heap_get(block, i);
             if (st.__tag__ == "Fn") { lint_fn_params_used(st, src); }
             if (st.__tag__ == "MethodDef") { lint_method_params_used(st, src); }
             if (st.__tag__ == "ClassDef") {
-                define mi = 0;
+                def mi = 0;
                 while (mi < len(st.methods)) { lint_method_params_used(heap_get(st.methods, mi), src); mi = mi + 1; }
             }
             if (st.__tag__ == "Namespace") { lint_nested(st.body); }
@@ -104,15 +104,15 @@ def run_tiny_linter(source: str) -> str | None:
             id="sorted_mutation_missing_outputs",
         ),
         pytest.param("fn unreachable() { return 1; print(\"never\"); }", id="unreachable_statement"),
-        pytest.param('define msg = "hi";\nmsg = 0.5;\nprint(msg);', id="type_change"),
-        pytest.param("define unused = 1;", id="unused_local_top_level"),
+        pytest.param('def msg = "hi";\nmsg = 0.5;\nprint(msg);', id="type_change"),
+        pytest.param("def unused = 1;", id="unused_local_top_level"),
         pytest.param("fn f(a, b) { return a; }", id="unused_parameter"),
         pytest.param("fn returns(): number { return 1; }\nreturns();", id="bare_call_result"),
         pytest.param(
             "fn f(a, b) { return { a: a, b: b }; }\ndefine { a } = f(c, b);",
             id="sorted_destruct_missing_outputs",
         ),
-        pytest.param("define x = 1; if (false) { print(x); }", id="unused_in_unreachable_branch"),
+        pytest.param("def x = 1; if (false) { print(x); }", id="unused_in_unreachable_branch"),
         pytest.param("import b;\nimport a;\nprint(1);", id="import_ordering"),
         pytest.param(
             "fn f() { if (true) { return { a: 1 }; } return { b: 2 }; }",
@@ -122,14 +122,14 @@ def run_tiny_linter(source: str) -> str | None:
             "fn f() -> number { if (true) { return 1; } }",
             id="return_exhaustiveness",
         ),
-        pytest.param("define x = 1;\ndefine x = 2;", id="consecutive_definitions"),
+        pytest.param("def x = 1;\ndefine x = 2;", id="consecutive_definitions"),
         pytest.param("import math as m;\nprint(1);", id="unused_import_alias"),
         pytest.param(
             "class Box { fn split(self, a, b) { return { a: a, b: b }; } }\n"
-            "define box = Box();\n"
-            "define a = 1;\n"
-            "define b = 2;\n"
-            "define { a } = box.split(a, b);",
+            "def box = Box();\n"
+            "def a = 1;\n"
+            "def b = 2;\n"
+            "def { a } = box.split(a, b);",
             id="destructured_method_missing_outputs",
         ),
             pytest.param(

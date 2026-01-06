@@ -11,5 +11,5 @@ fn Greeter(name) { // Factory function that builds a new instance with a name.
     return new Greeter { name: name }; // Initializes the field and returns the object.
 }
 
-define greeter = Greeter("TinyLanguage"); // Create a Greeter for "TinyLanguage".
+def greeter = Greeter("TinyLanguage"); // Create a Greeter for "TinyLanguage".
 print(greeter.greeting()); // Call the method and print the greeting.

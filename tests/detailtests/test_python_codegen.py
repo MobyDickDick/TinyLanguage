@@ -7,7 +7,7 @@ def test_python_backend_executes_basic_program():
         return x + y;
     }
 
-    define total = add(2, 3);
+    def total = add(2, 3);
     print(total);
     """
 

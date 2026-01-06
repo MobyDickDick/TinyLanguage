@@ -149,7 +149,7 @@ The example programs referenced in the README’s “Syntax and Features” sect
 
   ```bash
   # Copy the snippet from README.md → Syntax and Features → Mini tutorial
-  README_SNIPPET=$'define a = 7 + 5 * 2;\nprint(a);\nfn add(x, y) { return x + y; }\ndefine sum = add(a, 3);\nprint(sum);\nnamespace Math { fn inc(x) { return add(x, 1); } }\nprint(Math.inc(4));'
+  README_SNIPPET=$'def a = 7 + 5 * 2;\nprint(a);\nfn add(x, y) { return x + y; }\ndefine sum = add(a, 3);\nprint(sum);\nnamespace Math { fn inc(x) { return add(x, 1); } }\nprint(Math.inc(4));'
   PYTHONPATH=src python src/language_server_cli.py --source "$README_SNIPPET" completions --prefix Ma
   # => [{"label": "Math", "kind": "identifier"}, {"label": "Math.inc", "kind": "identifier"}, ...]
   PYTHONPATH=src python src/language_server_cli.py --source "$README_SNIPPET" hover --symbol inc

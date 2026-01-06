@@ -23,28 +23,28 @@ fn __intervall_from_bounds(l, u) {
 }
 
 fn __expand_bounds_outwards(lo, hi) {
-  define lower_neighbor = __nextafter(lo, lo - 1);
-  define upper_neighbor = __nextafter(hi, hi + 1);
+  def lower_neighbor = __nextafter(lo, lo - 1);
+  def upper_neighbor = __nextafter(hi, hi + 1);
 
-  define lo_neighbor_ov = __overflowed(lower_neighbor);
+  def lo_neighbor_ov = __overflowed(lower_neighbor);
   if (lo_neighbor_ov != "normal") { return __intervall_with_error(lo_neighbor_ov); }
 
-  define hi_neighbor_ov = __overflowed(upper_neighbor);
+  def hi_neighbor_ov = __overflowed(upper_neighbor);
   if (hi_neighbor_ov != "normal") { return __intervall_with_error(hi_neighbor_ov); }
 
-  define delta_lower = lo - lower_neighbor;
-  define delta_upper = upper_neighbor - hi;
+  def delta_lower = lo - lower_neighbor;
+  def delta_upper = upper_neighbor - hi;
 
-  define delta = delta_lower;
+  def delta = delta_lower;
   if (delta_upper > delta) { delta = delta_upper; }
 
-  define expanded_lower = lo - delta;
-  define expanded_upper = hi + delta;
+  def expanded_lower = lo - delta;
+  def expanded_upper = hi + delta;
 
-  define lo_ov = __overflowed(expanded_lower);
+  def lo_ov = __overflowed(expanded_lower);
   if (lo_ov != "normal") { return __intervall_with_error(lo_ov); }
 
-  define hi_ov = __overflowed(expanded_upper);
+  def hi_ov = __overflowed(expanded_upper);
   if (hi_ov != "normal") { return __intervall_with_error(hi_ov); }
 
   return __intervall_from_bounds(expanded_lower, expanded_upper);
@@ -56,14 +56,14 @@ fn NumberIntervall(l, u) {
 
 fn interval_number(v) {
   if (v == v) {
-    define ov = __overflowed(v);
+    def ov = __overflowed(v);
     if (ov == "normal") {
-      define lower = __nextafter(v, v - 1);
-      define upper = __nextafter(v, v + 1);
+      def lower = __nextafter(v, v - 1);
+      def upper = __nextafter(v, v + 1);
 
-      define lo_ov = __overflowed(lower);
+      def lo_ov = __overflowed(lower);
       if (lo_ov == "normal") {
-        define hi_ov = __overflowed(upper);
+        def hi_ov = __overflowed(upper);
         if (hi_ov == "normal") { return __intervall_from_bounds(lower, upper); }
         return __intervall_with_error(hi_ov);
       }
@@ -97,22 +97,22 @@ fn __overflowed(v) {
 }
 
 fn __check_products(p1, p2, p3, p4) {
-  define plus = 0;
-  define minus = 0;
+  def plus = 0;
+  def minus = 0;
 
-  define ov1 = __overflowed(p1);
+  def ov1 = __overflowed(p1);
   if (ov1 == "plus_infinity") { plus = 1; }
   if (ov1 == "minus_infinity") { minus = 1; }
 
-  define ov2 = __overflowed(p2);
+  def ov2 = __overflowed(p2);
   if (ov2 == "plus_infinity") { plus = 1; }
   if (ov2 == "minus_infinity") { minus = 1; }
 
-  define ov3 = __overflowed(p3);
+  def ov3 = __overflowed(p3);
   if (ov3 == "plus_infinity") { plus = 1; }
   if (ov3 == "minus_infinity") { minus = 1; }
 
-  define ov4 = __overflowed(p4);
+  def ov4 = __overflowed(p4);
   if (ov4 == "plus_infinity") { plus = 1; }
   if (ov4 == "minus_infinity") { minus = 1; }
 
@@ -125,8 +125,8 @@ fn __check_products(p1, p2, p3, p4) {
 }
 
 operator + (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
-  define a_err = a.error;
-  define b_err = b.error;
+  def a_err = a.error;
+  def b_err = b.error;
 
   if (a_err == "any_number") { return __intervall_with_error("any_number"); }
   if (b_err == "any_number") { return __intervall_with_error("any_number"); }
@@ -147,11 +147,11 @@ operator + (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
   if (a.lower > a.upper) { return __intervall_with_error("any_number"); }
   if (b.lower > b.upper) { return __intervall_with_error("any_number"); }
 
-  define lo = a.lower + b.lower;
-  define hi = a.upper + b.upper;
+  def lo = a.lower + b.lower;
+  def hi = a.upper + b.upper;
 
-  define lo_ov = __overflowed(lo);
-  define hi_ov = __overflowed(hi);
+  def lo_ov = __overflowed(lo);
+  def hi_ov = __overflowed(hi);
   if (lo_ov == "normal") {
     if (hi_ov == "normal") {
     } else {
@@ -167,8 +167,8 @@ operator + (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
 }
 
 operator - (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
-  define a_err = a.error;
-  define b_err = b.error;
+  def a_err = a.error;
+  def b_err = b.error;
 
   if (a_err == "any_number") { return __intervall_with_error("any_number"); }
   if (b_err == "any_number") { return __intervall_with_error("any_number"); }
@@ -189,11 +189,11 @@ operator - (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
   if (a.lower > a.upper) { return __intervall_with_error("any_number"); }
   if (b.lower > b.upper) { return __intervall_with_error("any_number"); }
 
-  define lo = a.lower - b.upper;
-  define hi = a.upper - b.lower;
+  def lo = a.lower - b.upper;
+  def hi = a.upper - b.lower;
 
-  define lo_ov = __overflowed(lo);
-  define hi_ov = __overflowed(hi);
+  def lo_ov = __overflowed(lo);
+  def hi_ov = __overflowed(hi);
   if (lo_ov == "normal") {
     if (hi_ov == "normal") {
     } else {
@@ -218,7 +218,7 @@ operator * (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
         if (b.upper >= 0) { return __intervall_with_error("any_number"); }
       }
     }
-    define sign = 1;
+    def sign = 1;
     if (__is_normal(b)) {
       if (b.upper < 0) { sign = -sign; }
     }
@@ -232,7 +232,7 @@ operator * (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
         if (b.upper >= 0) { return __intervall_with_error("any_number"); }
       }
     }
-    define sign = -1;
+    def sign = -1;
     if (__is_normal(b)) {
       if (b.upper < 0) { sign = -sign; }
     }
@@ -246,7 +246,7 @@ operator * (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
         if (a.upper >= 0) { return __intervall_with_error("any_number"); }
       }
     }
-    define sign = 1;
+    def sign = 1;
     if (__is_normal(a)) {
       if (a.upper < 0) { sign = -sign; }
     }
@@ -260,7 +260,7 @@ operator * (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
         if (a.upper >= 0) { return __intervall_with_error("any_number"); }
       }
     }
-    define sign = -1;
+    def sign = -1;
     if (__is_normal(a)) {
       if (a.upper < 0) { sign = -sign; }
     }
@@ -271,23 +271,23 @@ operator * (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
   if (a.lower > a.upper) { return __intervall_with_error("any_number"); }
   if (b.lower > b.upper) { return __intervall_with_error("any_number"); }
 
-  define p1 = a.lower * b.lower;
-  define p2 = a.lower * b.upper;
-  define p3 = a.upper * b.lower;
-  define p4 = a.upper * b.upper;
+  def p1 = a.lower * b.lower;
+  def p2 = a.lower * b.upper;
+  def p3 = a.upper * b.lower;
+  def p4 = a.upper * b.upper;
 
-  define ov = __check_products(p1, p2, p3, p4);
+  def ov = __check_products(p1, p2, p3, p4);
   if (ov == "normal") {
   } else {
     return __intervall_with_error(ov);
   }
 
-  define lo = p1;
+  def lo = p1;
   if (p2 < lo) { lo = p2; }
   if (p3 < lo) { lo = p3; }
   if (p4 < lo) { lo = p4; }
 
-  define hi = p1;
+  def hi = p1;
   if (p2 > hi) { hi = p2; }
   if (p3 > hi) { hi = p3; }
   if (p4 > hi) { hi = p4; }
@@ -305,11 +305,11 @@ operator / (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
   if (__is_upper_infinity(b)) {
     if (b.lower == 0) { return __intervall_with_error("any_number"); }
 
-    define lower = a.lower / b.lower;
-    define upper = a.upper / b.lower;
+    def lower = a.lower / b.lower;
+    def upper = a.upper / b.lower;
 
     if (lower > upper) {
-      define tmp = lower;
+      def tmp = lower;
       lower = upper;
       upper = tmp;
     }
@@ -322,11 +322,11 @@ operator / (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
   if (__is_lower_infinity(b)) {
     if (b.upper == 0) { return __intervall_with_error("any_number"); }
 
-    define lower = a.lower / b.upper;
-    define upper = a.upper / b.upper;
+    def lower = a.lower / b.upper;
+    def upper = a.upper / b.upper;
 
     if (lower > upper) {
-      define tmp = lower;
+      def tmp = lower;
       lower = upper;
       upper = tmp;
     }
@@ -361,17 +361,17 @@ operator / (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
   if (__is_wrapped(a)) { return __intervall_with_error("any_number"); }
 
   if (__is_wrapped(b)) {
-    define r1 = a.lower / b.lower;
-    define r2 = a.upper / b.lower;
-    define r3 = a.lower / b.upper;
-    define r4 = a.upper / b.upper;
+    def r1 = a.lower / b.lower;
+    def r2 = a.upper / b.lower;
+    def r3 = a.lower / b.upper;
+    def r4 = a.upper / b.upper;
 
-    define lo_wrap = r1;
+    def lo_wrap = r1;
     if (r2 < lo_wrap) { lo_wrap = r2; }
     if (r3 < lo_wrap) { lo_wrap = r3; }
     if (r4 < lo_wrap) { lo_wrap = r4; }
 
-    define hi_wrap = r1;
+    def hi_wrap = r1;
     if (r2 > hi_wrap) { hi_wrap = r2; }
     if (r3 > hi_wrap) { hi_wrap = r3; }
     if (r4 > hi_wrap) { hi_wrap = r4; }
@@ -383,10 +383,10 @@ operator / (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
     if (b.upper == 0) { return __intervall_with_error("any_number"); }
 
     if (b.upper > 0) {
-      define q1 = a.lower / b.upper;
-      define q2 = a.upper / b.upper;
+      def q1 = a.lower / b.upper;
+      def q2 = a.upper / b.upper;
 
-      define lo = q1;
+      def lo = q1;
       if (q2 < lo) { lo = q2; }
 
       return __intervall_with_bounds_and_error(lo, q2, "upper_bound_is_plus_infinity");
@@ -395,10 +395,10 @@ operator / (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
 
   if (b.upper == 0) {
     if (b.lower < 0) {
-      define q1 = a.lower / b.lower;
-      define q2 = a.upper / b.lower;
+      def q1 = a.lower / b.lower;
+      def q2 = a.upper / b.lower;
 
-      define hi = q1;
+      def hi = q1;
       if (q2 > hi) { hi = q2; }
 
       return __intervall_with_bounds_and_error(q1, hi, "lower_bound_is_minus_infinity");
@@ -407,17 +407,17 @@ operator / (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
 
   if (b.lower < 0) {
     if (b.upper > 0) {
-      define r1 = a.lower / b.lower;
-      define r2 = a.lower / b.upper;
-      define r3 = a.upper / b.lower;
-      define r4 = a.upper / b.upper;
+      def r1 = a.lower / b.lower;
+      def r2 = a.lower / b.upper;
+      def r3 = a.upper / b.lower;
+      def r4 = a.upper / b.upper;
 
-      define lo_gap = r1;
+      def lo_gap = r1;
       if (r2 < lo_gap) { lo_gap = r2; }
       if (r3 < lo_gap) { lo_gap = r3; }
       if (r4 < lo_gap) { lo_gap = r4; }
 
-      define hi_gap = r1;
+      def hi_gap = r1;
       if (r2 > hi_gap) { hi_gap = r2; }
       if (r3 > hi_gap) { hi_gap = r3; }
       if (r4 > hi_gap) { hi_gap = r4; }
@@ -426,23 +426,23 @@ operator / (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
     }
   }
 
-  define q1 = a.lower / b.lower;
-  define q2 = a.lower / b.upper;
-  define q3 = a.upper / b.lower;
-  define q4 = a.upper / b.upper;
+  def q1 = a.lower / b.lower;
+  def q2 = a.lower / b.upper;
+  def q3 = a.upper / b.lower;
+  def q4 = a.upper / b.upper;
 
-  define ov = __check_products(q1, q2, q3, q4);
+  def ov = __check_products(q1, q2, q3, q4);
   if (ov == "normal") {
   } else {
     return __intervall_with_error(ov);
   }
 
-  define lo = q1;
+  def lo = q1;
   if (q2 < lo) { lo = q2; }
   if (q3 < lo) { lo = q3; }
   if (q4 < lo) { lo = q4; }
 
-  define hi = q1;
+  def hi = q1;
   if (q2 > hi) { hi = q2; }
   if (q3 > hi) { hi = q3; }
   if (q4 > hi) { hi = q4; }

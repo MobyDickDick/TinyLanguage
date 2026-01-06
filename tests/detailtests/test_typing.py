@@ -74,7 +74,7 @@ print(maybe_label(-2));
 
 def test_inferred_number_accepts_int_and_float():
     source = """
-define x = 0;
+def x = 0;
 x = 1.5;
 print(x);
 """
@@ -84,7 +84,7 @@ print(x);
 
 def test_inferred_type_still_prevents_unrelated_changes():
     source = """
-define msg = "hello";
+def msg = "hello";
 msg = 123;
 """
 

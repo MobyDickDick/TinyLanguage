@@ -5,33 +5,33 @@ def test_number_error_propagation_and_printing(run_tiny_source):
     number_def = (pathlib.Path(__file__).resolve().parents[2] / "src_tiny" / "number_class.tiny").read_text()
 
     extra = """
-    define big = Number(PYTHON_FLOAT_MAX);
-    define overflow = big + big;
+    def big = Number(PYTHON_FLOAT_MAX);
+    def overflow = big + big;
     print(overflow.to_string());
 
-    define inf = __number_with_error("plus_infinity");
-    define propagate = inf + big;
+    def inf = __number_with_error("plus_infinity");
+    def propagate = inf + big;
     print(propagate.to_string());
 
-    define divpos = Number(5) / Number(0);
-    define divneg = Number(-5) / Number(0);
-    define divzero = Number(0) / Number(0);
-    define finite = Number(10) / __number_with_error("plus_infinity");
+    def divpos = Number(5) / Number(0);
+    def divneg = Number(-5) / Number(0);
+    def divzero = Number(0) / Number(0);
+    def finite = Number(10) / __number_with_error("plus_infinity");
 
     print(divpos.to_string());
     print(divneg.to_string());
     print(divzero.to_string());
     print(finite.to_string());
 
-    define any = inf - Number(3);
+    def any = inf - Number(3);
     print(any.to_string());
 
-    define minf = __number_with_error("minus_infinity");
-    define any2 = minf + Number(3);
+    def minf = __number_with_error("minus_infinity");
+    def any2 = minf + Number(3);
     print(any2.to_string());
 
-    define mul_same = inf * inf;
-    define mul_neg = minf * inf;
+    def mul_same = inf * inf;
+    def mul_neg = minf * inf;
     print(mul_same.to_string());
     print(mul_neg.to_string());
 

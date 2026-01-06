@@ -1,2 +1,2 @@
-define a = 1;
+def a = 1;
 {b} = foo(a);

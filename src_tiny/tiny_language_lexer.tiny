@@ -27,12 +27,12 @@ fn SourceSpan(start, stop) {
 }
 
 // Error formatting via Python interop so we can raise RuntimeErrors like the Python port.
-define __PY_EXEC_ALLOW = new["exec"];
-define __PY_REPR_ALLOW = new["repr"];
+def __PY_EXEC_ALLOW = new["exec"];
+def __PY_REPR_ALLOW = new["repr"];
 
 fn __raise_runtime_error(msg) {
-    define safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
-    define stmt = "raise RuntimeError(" + safe + ")";
+    def safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
+    def stmt = "raise RuntimeError(" + safe + ")";
     // Return value is irrelevant — the call raises an exception.
     return Python.call("builtins", "exec", new[stmt], __PY_EXEC_ALLOW);
 }
@@ -53,17 +53,17 @@ fn Token(kind, text, start, stop) {
     return new Token { kind: kind; text: text; start: start; stop: stop };
 }
 
-define KEYWORDS = Set.from_list(new[
-    "define", "print", "if", "else", "while", "switch", "default", "fn", "import", "return",
+def KEYWORDS = Set.from_list(new[
+    "def", "print", "if", "else", "while", "switch", "default", "fn", "import", "return",
     "operator", "new", "type", "class", "namespace", "as", "spawn", "task",
     "async", "await", "true", "false", "flush", "and", "or", "not",
     "Null", "try", "catch", "match", "case"
 ]);
 
-define BUILTINS = Set.from_list(new["Collections", "Math", "String", "len", "print"]);
+def BUILTINS = Set.from_list(new["Collections", "Math", "String", "len", "print"]);
 
 // Lexer -----------------------------------------------------------------------
-define __PY_LIST_ALLOW = new["list"];
+def __PY_LIST_ALLOW = new["list"];
 
 fn __is_alpha(c) {
     return (c >= "a" && c <= "z") || (c >= "A" && c <= "Z");
@@ -85,17 +85,17 @@ fn __peek(chars, n, idx) {
 }
 
 fn __peek_at(chars, n, idx, offset) {
-    define target = idx + offset;
+    def target = idx + offset;
     if (target < n) { return heap_get(chars, target); }
     return "";
 }
 
 fn __advance_state(chars, i, n, line, col, count) {
-    define steps = count;
+    def steps = count;
     if (steps == Null) { steps = 1; }
-    define idx = i;
-    define l = line;
-    define c = col;
+    def idx = i;
+    def l = line;
+    def c = col;
     while (steps > 0) {
         if (idx < n && heap_get(chars, idx) == "\n") {
             l = l + 1;
@@ -110,44 +110,44 @@ fn __advance_state(chars, i, n, line, col, count) {
 }
 
 fn __slice_text(chars, start_idx, end_idx) {
-    define segment = Collections.slice(chars, start_idx, end_idx);
+    def segment = Collections.slice(chars, start_idx, end_idx);
     return String.join(segment, "");
 }
 
 fn __read_string(chars, n, i, line, col) {
-    define start_line = line;
-    define start_col = col;
-    define pos0 = SourcePos(start_line, start_col);
-    define buf = "";
+    def start_line = line;
+    def start_col = col;
+    def pos0 = SourcePos(start_line, start_col);
+    def buf = "";
 
-    define adv_open = __advance_state(chars, i, n, line, col, 1);
+    def adv_open = __advance_state(chars, i, n, line, col, 1);
     i = heap_get(adv_open, 0);
     line = heap_get(adv_open, 1);
     col = heap_get(adv_open, 2);
 
-    define done = false;
+    def done = false;
     while (i < n && done == false) {
-        define c = __peek(chars, n, i);
+        def c = __peek(chars, n, i);
         if (c == "\"") {
-            define adv_end = __advance_state(chars, i, n, line, col, 1);
+            def adv_end = __advance_state(chars, i, n, line, col, 1);
             i = heap_get(adv_end, 0);
             line = heap_get(adv_end, 1);
             col = heap_get(adv_end, 2);
-            define stop = SourcePos(start_line, col - 1);
-            define tok = Token("STRING", buf, pos0, stop);
+            def stop = SourcePos(start_line, col - 1);
+            def tok = Token("STRING", buf, pos0, stop);
             return new[tok, i, line, col];
         }
 
         if (c == "\\") {
-            define adv_slash = __advance_state(chars, i, n, line, col, 1);
+            def adv_slash = __advance_state(chars, i, n, line, col, 1);
             i = heap_get(adv_slash, 0);
             line = heap_get(adv_slash, 1);
             col = heap_get(adv_slash, 2);
 
             if (i >= n) { __raise_runtime_error("unterminated escape in string"); }
 
-            define esc = __peek(chars, n, i);
-            define adv_esc = __advance_state(chars, i, n, line, col, 1);
+            def esc = __peek(chars, n, i);
+            def adv_esc = __advance_state(chars, i, n, line, col, 1);
             i = heap_get(adv_esc, 0);
             line = heap_get(adv_esc, 1);
             col = heap_get(adv_esc, 2);
@@ -175,7 +175,7 @@ fn __read_string(chars, n, i, line, col) {
             }
         } else {
             buf = buf + c;
-            define adv_char = __advance_state(chars, i, n, line, col, 1);
+            def adv_char = __advance_state(chars, i, n, line, col, 1);
             i = heap_get(adv_char, 0);
             line = heap_get(adv_char, 1);
             col = heap_get(adv_char, 2);
@@ -183,37 +183,37 @@ fn __read_string(chars, n, i, line, col) {
     }
 
     __raise_runtime_error("unterminated string literal");
-    define fallback = Token("STRING", buf, pos0, pos0);
+    def fallback = Token("STRING", buf, pos0, pos0);
     return new[fallback, i, line, col];
 }
 
 fn lex(source) {
-    define tokens = new[];
-    define chars = Python.call("builtins", "list", new[source], __PY_LIST_ALLOW);
-    define n = len(chars);
-    define i = 0;
-    define line = 1;
-    define col = 1;
-    define finished = false;
+    def tokens = new[];
+    def chars = Python.call("builtins", "list", new[source], __PY_LIST_ALLOW);
+    def n = len(chars);
+    def i = 0;
+    def line = 1;
+    def col = 1;
+    def finished = false;
 
     while (finished == false) {
         // Skip whitespace and comments.
-        define skipping = true;
+        def skipping = true;
         while (i < n && skipping) {
-            define c = __peek(chars, n, i);
+            def c = __peek(chars, n, i);
             if (c == " " || c == "\t" || c == "\r" || c == "\n") {
-                define adv_ws = __advance_state(chars, i, n, line, col, 1);
+                def adv_ws = __advance_state(chars, i, n, line, col, 1);
                 i = heap_get(adv_ws, 0);
                 line = heap_get(adv_ws, 1);
                 col = heap_get(adv_ws, 2);
             } else {
                 if (c == "/" && __peek_at(chars, n, i, 1) == "/") {
-                    define adv_comment = __advance_state(chars, i, n, line, col, 2);
+                    def adv_comment = __advance_state(chars, i, n, line, col, 2);
                     i = heap_get(adv_comment, 0);
                     line = heap_get(adv_comment, 1);
                     col = heap_get(adv_comment, 2);
                     while (i < n && __peek(chars, n, i) != "\n") {
-                        define adv_comment_body = __advance_state(chars, i, n, line, col, 1);
+                        def adv_comment_body = __advance_state(chars, i, n, line, col, 1);
                         i = heap_get(adv_comment_body, 0);
                         line = heap_get(adv_comment_body, 1);
                         col = heap_get(adv_comment_body, 2);
@@ -225,73 +225,73 @@ fn lex(source) {
         }
 
         if (i >= n) {
-            define pos = SourcePos(line, col);
-            define _push_eof = Collections.push(tokens, Token("EOF", "", pos, pos));
+            def pos = SourcePos(line, col);
+            def _push_eof = Collections.push(tokens, Token("EOF", "", pos, pos));
             finished = true;
         } else {
-            define c = __peek(chars, n, i);
-            define start_line = line;
-            define start_col = col;
-            define pos = SourcePos(start_line, start_col);
-            define handled = false;
+            def c = __peek(chars, n, i);
+            def start_line = line;
+            def start_col = col;
+            def pos = SourcePos(start_line, start_col);
+            def handled = false;
 
             if (c == "&" && __peek_at(chars, n, i, 1) == "&") {
-                define adv_and = __advance_state(chars, i, n, line, col, 2);
+                def adv_and = __advance_state(chars, i, n, line, col, 2);
                 i = heap_get(adv_and, 0);
                 line = heap_get(adv_and, 1);
                 col = heap_get(adv_and, 2);
-                define stop = SourcePos(start_line, start_col + 1);
-                define _push_and = Collections.push(tokens, Token("OP", "&&", pos, stop));
+                def stop = SourcePos(start_line, start_col + 1);
+                def _push_and = Collections.push(tokens, Token("OP", "&&", pos, stop));
                 handled = true;
             } else {
                 if (c == "|" && __peek_at(chars, n, i, 1) == "|") {
-                    define adv_or = __advance_state(chars, i, n, line, col, 2);
+                    def adv_or = __advance_state(chars, i, n, line, col, 2);
                     i = heap_get(adv_or, 0);
                     line = heap_get(adv_or, 1);
                     col = heap_get(adv_or, 2);
-                    define stop_or = SourcePos(start_line, start_col + 1);
-                    define _push_or = Collections.push(tokens, Token("OP", "||", pos, stop_or));
+                    def stop_or = SourcePos(start_line, start_col + 1);
+                    def _push_or = Collections.push(tokens, Token("OP", "||", pos, stop_or));
                     handled = true;
                 } else {
                     if (c == "\"") {
-                        define res = __read_string(chars, n, i, line, col);
-                        define tok = heap_get(res, 0);
+                        def res = __read_string(chars, n, i, line, col);
+                        def tok = heap_get(res, 0);
                         i = heap_get(res, 1);
                         line = heap_get(res, 2);
                         col = heap_get(res, 3);
-                        define _push_str = Collections.push(tokens, tok);
+                        def _push_str = Collections.push(tokens, tok);
                         handled = true;
                     } else {
                         if (__is_alpha(c) || c == "_") {
-                            define j = i + 1;
-                            define keep = true;
+                            def j = i + 1;
+                            def keep = true;
                             while (j < n && keep) {
-                                define cj = heap_get(chars, j);
+                                def cj = heap_get(chars, j);
                                 if (__is_alnum_or_underscore(cj)) {
                                     j = j + 1;
                                 } else {
                                     keep = false;
                                 }
                             }
-                            define txt = __slice_text(chars, i, j);
-                            define consumed = j - i;
+                            def txt = __slice_text(chars, i, j);
+                            def consumed = j - i;
                             i = j;
                             col = col + consumed;
-                            define kind = "NAME";
+                            def kind = "NAME";
                             if (Set.has(KEYWORDS, txt)) { kind = "KW"; }
                             // BUILTINS werden aktuell nicht gesondert getaggt, aber die Abfrage
                             // Keeps the definition active (and enables future highlighting).
                             if (Set.has(BUILTINS, txt)) { kind = kind; }
-                            define stop_name = SourcePos(start_line, start_col + consumed - 1);
-                            define _push_name = Collections.push(tokens, Token(kind, txt, pos, stop_name));
+                            def stop_name = SourcePos(start_line, start_col + consumed - 1);
+                            def _push_name = Collections.push(tokens, Token(kind, txt, pos, stop_name));
                             handled = true;
                         } else {
                             if (__is_digit(c)) {
-                                define jnum = i + 1;
-                                define hasdot = false;
-                                define keep_num = true;
+                                def jnum = i + 1;
+                                def hasdot = false;
+                                def keep_num = true;
                                 while (jnum < n && keep_num) {
-                                    define cjnum = heap_get(chars, jnum);
+                                    def cjnum = heap_get(chars, jnum);
                                     if (cjnum == "." && hasdot == false) {
                                         hasdot = true;
                                         jnum = jnum + 1;
@@ -303,40 +303,40 @@ fn lex(source) {
                                         }
                                     }
                                 }
-                                define txtnum = __slice_text(chars, i, jnum);
-                                define consumed_num = jnum - i;
+                                def txtnum = __slice_text(chars, i, jnum);
+                                def consumed_num = jnum - i;
                                 i = jnum;
                                 col = col + consumed_num;
-                                define stop_num = SourcePos(start_line, start_col + consumed_num - 1);
-                                define _push_num = Collections.push(tokens, Token("NUMBER", txtnum, pos, stop_num));
+                                def stop_num = SourcePos(start_line, start_col + consumed_num - 1);
+                                def _push_num = Collections.push(tokens, Token("NUMBER", txtnum, pos, stop_num));
                                 handled = true;
                             } else {
                                 if (c == ">" || c == "<" || c == "=" || c == "!") {
                                     if (__peek_at(chars, n, i, 1) == "=") {
-                                        define adv_cmp = __advance_state(chars, i, n, line, col, 2);
+                                        def adv_cmp = __advance_state(chars, i, n, line, col, 2);
                                         i = heap_get(adv_cmp, 0);
                                         line = heap_get(adv_cmp, 1);
                                         col = heap_get(adv_cmp, 2);
-                                        define stop_cmp = SourcePos(start_line, start_col + 1);
-                                        define _push_cmp = Collections.push(tokens, Token("OP", c + "=", pos, stop_cmp));
+                                        def stop_cmp = SourcePos(start_line, start_col + 1);
+                                        def _push_cmp = Collections.push(tokens, Token("OP", c + "=", pos, stop_cmp));
                                         handled = true;
                                     }
                                 }
                                 if (handled == false && (c == "+" || c == "-" || c == "*" || c == "/" || c == ">" || c == "<" || c == "^" || c == "!" || c == "%")) {
-                                    define adv_op = __advance_state(chars, i, n, line, col, 1);
+                                    def adv_op = __advance_state(chars, i, n, line, col, 1);
                                     i = heap_get(adv_op, 0);
                                     line = heap_get(adv_op, 1);
                                     col = heap_get(adv_op, 2);
-                                    define _push_op = Collections.push(tokens, Token("OP", c, pos, SourcePos(start_line, start_col)));
+                                    def _push_op = Collections.push(tokens, Token("OP", c, pos, SourcePos(start_line, start_col)));
                                     handled = true;
                                 } else {
                                     if (handled == false && (c == "(" || c == ")" || c == "{" || c == "}" || c == "[" || c == "]"
                                         || c == ";" || c == "," || c == "=" || c == ":" || c == "." || c == "?")) {
-                                        define adv_sym = __advance_state(chars, i, n, line, col, 1);
+                                        def adv_sym = __advance_state(chars, i, n, line, col, 1);
                                         i = heap_get(adv_sym, 0);
                                         line = heap_get(adv_sym, 1);
                                         col = heap_get(adv_sym, 2);
-                                        define _push_sym = Collections.push(tokens, Token("SYM", c, pos, SourcePos(start_line, start_col)));
+                                        def _push_sym = Collections.push(tokens, Token("SYM", c, pos, SourcePos(start_line, start_col)));
                                         handled = true;
                                     }
                                 }

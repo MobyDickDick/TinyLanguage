@@ -1,13 +1,13 @@
 // TinyLanguage wrapper for src/tiny_language_cli.py.
 // Delegates CLI handling to the Python implementation for parity.
 
-define tiny_cli = Python.import_module("tiny_language_cli", new["main"]);
-define os = Python.import_module("os", new["getenv"]);
-define builtins = Python.import_module("builtins", new["exit"]);
+def tiny_cli = Python.import_module("tiny_language_cli", new["main"]);
+def os = Python.import_module("os", new["getenv"]);
+def builtins = Python.import_module("builtins", new["exit"]);
 
 fn __argv_from_env() {
-    define raw = os.getenv("TINYLANG_ARGS", "");
-    define payload = "[]";
+    def raw = os.getenv("TINYLANG_ARGS", "");
+    def payload = "[]";
     if (raw != Null && len(raw) > 0) { payload = raw; }
     return JSON.parse(payload);
 }
@@ -17,8 +17,8 @@ fn main(argv) {
 }
 
 fn run() {
-    define code = tiny_cli.main(__argv_from_env());
-    define _ = builtins.exit(code);
+    def code = tiny_cli.main(__argv_from_env());
+    def _ = builtins.exit(code);
 }
 
-define _ = run();
+def _ = run();

@@ -23,36 +23,36 @@ TINY_TRANSPILER_SRC = (PROJECT_ROOT / "src_tiny" / "tiny_language_transpilers.ti
 
 TINY_TRANSPILER_DRIVER = """
 fn __build_program() {
-    define body = new[
+    def body = new[
         Assign("total", BinaryOp("+", Name("a"), Name("b"))),
         Return(Name("total"))
     ];
-    define fn_ir = FunctionIR("add", new["a", "b"], body);
+    def fn_ir = FunctionIR("add", new["a", "b"], body);
     return ProgramIR(new[fn_ir], new[]);
 }
 
 fn __render_all() {
-    define program = __build_program();
-    define py = PythonTranspiler();
-    define ju = JuliaTranspiler();
-    define js = JavaScriptTranspiler();
-    define cpp = CppTranspiler();
-    define outputs = new[
+    def program = __build_program();
+    def py = PythonTranspiler();
+    def ju = JuliaTranspiler();
+    def js = JavaScriptTranspiler();
+    def cpp = CppTranspiler();
+    def outputs = new[
         py.to_source(program),
         ju.to_source(program),
         js.to_source(program),
         cpp.to_source(program)
     ];
-    define quoted = new[];
-    define i = 0;
+    def quoted = new[];
+    def i = 0;
     while (i < len(outputs)) {
-        define _ = Collections.push(quoted, __json_dump(heap_get(outputs, i)));
+        def _ = Collections.push(quoted, __json_dump(heap_get(outputs, i)));
         i = i + 1;
     }
     return "[" + String.join(quoted, ",") + "]";
 }
 
-define __OUTPUTS = __render_all();
+def __OUTPUTS = __render_all();
 """
 
 

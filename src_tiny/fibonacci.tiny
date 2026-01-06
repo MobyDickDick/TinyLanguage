@@ -1,14 +1,14 @@
 fn fibonacci(count) {
-    define a = 0;
-    define b = 1;
-    define i = 0;
+    def a = 0;
+    def b = 1;
+    def i = 0;
     while (i < count) {
         print(a);
-        define temp = a + b;
+        def temp = a + b;
         a = b;
         b = temp;
         i = i + 1;
     }
 }
 
-define _ = fibonacci(10);
+def _ = fibonacci(10);

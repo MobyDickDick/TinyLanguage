@@ -1,1 +1,1 @@
-define _ = print("Hello, World!");
+def _ = print("Hello, World!");

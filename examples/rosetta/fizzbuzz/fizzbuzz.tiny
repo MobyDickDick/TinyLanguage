@@ -1,5 +1,5 @@
 fn fizzbuzz(n) {
-    define i = 1;
+    def i = 1;
     while (i <= n) {
         if (i % 15 == 0) {
             print("FizzBuzz");
@@ -18,4 +18,4 @@ fn fizzbuzz(n) {
     }
 }
 
-define _ = fizzbuzz(16);
+def _ = fizzbuzz(16);

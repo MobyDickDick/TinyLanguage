@@ -11,7 +11,7 @@
 // String.repeat(text, count) -> Wiederholt den Text count-mal
 //
 // Beispiel:
-// define parts = String.split(" a,b ,c ", ",");
+// def parts = String.split(" a,b ,c ", ",");
 // print(String.trim(heap_get(parts, 0)));
 // print(String.upper(String.join(parts, "-")));
 // print(String.repeat("ha", 3));

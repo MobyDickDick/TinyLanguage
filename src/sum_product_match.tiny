@@ -14,10 +14,10 @@ fn describe(shape) {
   };
 }
 
-define p = Point(3, 4);
-define s1 = Circle(2);
-define s2 = Rect(2, 5);
-define s3 = Unit();
+def p = Point(3, 4);
+def s1 = Circle(2);
+def s2 = Rect(2, 5);
+def s3 = Unit();
 
 print(p.x);
 print(describe(s1));

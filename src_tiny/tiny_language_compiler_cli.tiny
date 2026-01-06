@@ -1,15 +1,15 @@
 // TinyLanguage wrapper for src/tiny_language_compiler_cli.py.
 // Delegates compiler CLI handling to the Python implementation.
 
-define tinyc_cli = Python.import_module("tiny_language_compiler_cli", new["main"]);
-define os = Python.import_module("os", new["getenv"]);
+def tinyc_cli = Python.import_module("tiny_language_compiler_cli", new["main"]);
+def os = Python.import_module("os", new["getenv"]);
 
-define __PY_JSON_ALLOW = new["loads"];
-define json = Python.import_module("json", __PY_JSON_ALLOW);
+def __PY_JSON_ALLOW = new["loads"];
+def json = Python.import_module("json", __PY_JSON_ALLOW);
 
 fn __argv_from_env() {
-    define raw = os.getenv("TINYLANG_ARGS", "");
-    define payload = "[]";
+    def raw = os.getenv("TINYLANG_ARGS", "");
+    def payload = "[]";
     if (raw != Null && len(raw) > 0) { payload = raw; }
     return json.loads(payload);
 }
@@ -19,8 +19,8 @@ fn main(argv) {
 }
 
 fn run() {
-    define code = tinyc_cli.main(__argv_from_env());
+    def code = tinyc_cli.main(__argv_from_env());
     return code;
 }
 
-define _ = run();
+def _ = run();

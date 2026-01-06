@@ -76,7 +76,7 @@ def test_tiny_cli_parity_file_and_backend(tmp_path):
 
 
 def test_tiny_cli_parity_errors(tmp_path):
-    program = "define x = 1; @"
+    program = "def x = 1; @"
     file_path = tmp_path / "bad.tiny"
     file_path.write_text(program, encoding="utf-8")
 

@@ -19,7 +19,7 @@ fn bump(a) {
 }
 
 // Basic arithmetic, destructuring, and printing.
-define a = 5;
+def a = 5;
 { a, e } = bump(a);
 print("bumped a");
 print(a);
@@ -27,26 +27,26 @@ print("bump error");
 print(e);
 
 // Heap operations (new, new[], heap_set/get, tag, delete).
-define arr_ptr = new(3);
-define heap_status = heap_set(arr_ptr, 0, 10); print(heap_status.e.code);
+def arr_ptr = new(3);
+def heap_status = heap_set(arr_ptr, 0, 10); print(heap_status.e.code);
 heap_status = heap_set(arr_ptr, 1, 20); print(heap_status.e.code);
 heap_status = heap_set(arr_ptr, 2, 30); print(heap_status.e.code);
 print(heap_get(arr_ptr, 2));
 heap_status = tag(arr_ptr, Arr); print(heap_status.e.code);
 heap_status = delete(arr_ptr); print(heap_status.e.code);
 
-define literal_ptr = new[7, 8, 9];
+def literal_ptr = new[7, 8, 9];
 print(heap_get(literal_ptr, 1));
 heap_status = delete(literal_ptr); print(heap_status.e.code);
 
 // Object literal.
-define settings = { greeting: "hi"; count: a; };
+def settings = { greeting: "hi"; count: a; };
 print(settings.greeting);
 print(settings.count);
 
 // Control flow (while, if/else) and assignments.
-define i = 0;
-define sum = 0;
+def i = 0;
+def sum = 0;
 while (i < 3) {
   if (i == 1) {
     print("midpoint");
@@ -96,21 +96,21 @@ class FancyCounter: Counter {
 }
 
 // Instantiate classes and call methods (including chained returns).
-define c = new Counter { value: 0; label: "basic"; };
+def c = new Counter { value: 0; label: "basic"; };
 c = c.init(1, "basic");
 c = c.bump(4);
 print(c.read());
 
-define fc = new FancyCounter { bonus: 0; label: "temp"; value: 0; };
+def fc = new FancyCounter { bonus: 0; label: "temp"; value: 0; };
 fc = fc.init(3, "fancy", 7);
 fc = fc.bump(2);
 print(fc.total());
 print(fc.read());
 
 // Operator overloads for Box.
-define boxed_a = box(2);
-define boxed_b = box(3);
-define boxed_sum = boxed_a + boxed_b;
+def boxed_a = box(2);
+def boxed_b = box(3);
+def boxed_sum = boxed_a + boxed_b;
 print(unbox(boxed_sum));
 if (boxed_a == boxed_b) {
   print("boxed equality: true");

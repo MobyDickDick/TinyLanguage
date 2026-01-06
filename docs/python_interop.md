@@ -11,9 +11,9 @@ This draft describes how TinyLanguage can interact safely with Python functions 
 
 ## FFI API and type mapping
 
-- **Import**: `define os = Python.import_module("os", new["getcwd", "listdir"]);` loads a Python module and returns a namespace object. The allowlist (heap array) restricts accessible attributes (see security).
-- **Direct function call**: `define now = Python.call("time", "time", Null, { allow: new["time"] });` loads the module if needed and invokes the function. Extra options like `timeout_ms` are supported: `Python.call("requests", "get", new["https://example.com"], { allow: new["status_code", "text"], timeout_ms: 500 });`.
-- **Bound functions**: `define sqrt = Python.fn("math", "sqrt"); define nine = sqrt(81);` creates a TinyLanguage wrapper that can be called like a regular function.
+- **Import**: `def os = Python.import_module("os", new["getcwd", "listdir"]);` loads a Python module and returns a namespace object. The allowlist (heap array) restricts accessible attributes (see security).
+- **Direct function call**: `def now = Python.call("time", "time", Null, { allow: new["time"] });` loads the module if needed and invokes the function. Extra options like `timeout_ms` are supported: `Python.call("requests", "get", new["https://example.com"], { allow: new["status_code", "text"], timeout_ms: 500 });`.
+- **Bound functions**: `def sqrt = Python.fn("math", "sqrt"); def nine = sqrt(81);` creates a TinyLanguage wrapper that can be called like a regular function.
 - **Exceptions**: Python exceptions propagate as TinyLanguage errors and keep the Python error type in the message (`[PYERR] ValueError: ...`).
 
 ### Type mapping TinyLanguage → Python
@@ -55,17 +55,17 @@ This draft describes how TinyLanguage can interact safely with Python functions 
 - **Read file info**
 
   ```tiny
-  define os = Python.import_module("os", new["getcwd", "stat"]);
-  define cwd = os.getcwd();
-  define info = os.stat("./src_tiny/demo.tiny");
+  def os = Python.import_module("os", new["getcwd", "stat"]);
+  def cwd = os.getcwd();
+  def info = os.stat("./src_tiny/demo.tiny");
   print(info.st_size);
   ```
 
 - **Parse JSON via the Python stdlib** (as an alternative to the built-in `JSON` namespace)
 
   ```tiny
-  define json = Python.import_module("json", new["loads", "dumps"]);
-  define data = json.loads("{\"ok\": true}"); // Map from Python dict
+  def json = Python.import_module("json", new["loads", "dumps"]);
+  def data = json.loads("{\"ok\": true}"); // Map from Python dict
   print(data["ok"]);
   print(json.dumps(data));
   ```
@@ -73,8 +73,8 @@ This draft describes how TinyLanguage can interact safely with Python functions 
 - **Numerics with `math`**
 
   ```tiny
-  define math = Python.import_module("math", new["sqrt", "isfinite"]);
-  define root = math.sqrt(144);
+  def math = Python.import_module("math", new["sqrt", "isfinite"]);
+  def root = math.sqrt(144);
   print(root);
   print(math.isfinite(root));
   ```
@@ -82,17 +82,17 @@ This draft describes how TinyLanguage can interact safely with Python functions 
 - **HTTP call with timeout**
 
   ```tiny
-  define response = Python.call("requests", "get", new["https://example.com"], { allow: new["status_code", "text"], timeout_ms: 300 });
+  def response = Python.call("requests", "get", new["https://example.com"], { allow: new["status_code", "text"], timeout_ms: 300 });
   print(response.status_code);
   ```
 
 - **Proxy pass-through** (without field access)
 
   ```tiny
-  define datetime = Python.import_module("datetime", new["datetime"]);
-  define now = datetime.datetime.utcnow(); // returns proxy
+  def datetime = Python.import_module("datetime", new["datetime"]);
+  def now = datetime.datetime.utcnow(); // returns proxy
   // Proxy can only be forwarded into other Python calls
-  define iso = Python.call("datetime", "datetime.isoformat", new[now], { allow: new["datetime"] });
+  def iso = Python.call("datetime", "datetime.isoformat", new[now], { allow: new["datetime"] });
   print(iso);
   ```
 
@@ -164,7 +164,7 @@ The following mini-scenarios complement the list above and highlight common pitf
   payload={"ok": true}
 
   # A tighter allowlist forces an error; this is a good security regression test
-  PYTHONPATH=src python src/tiny_language.py --eval 'define json = Python.import_module("json", new["loads"]); json.dumps(new["x"]);'
+  PYTHONPATH=src python src/tiny_language.py --eval 'def json = Python.import_module("json", new["loads"]); json.dumps(new["x"]);'
   # Expected output
   # [PYDENY] attribute dumps not allowlisted on module json
   ```

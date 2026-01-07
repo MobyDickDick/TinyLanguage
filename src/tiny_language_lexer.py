@@ -14,6 +14,7 @@ from tiny_errors import SourcePos
 # ----- Lexer -----
 
 KEYWORDS = {
+    "define",
     "def",
     "print",
     "if",

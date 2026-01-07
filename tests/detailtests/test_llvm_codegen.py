@@ -90,7 +90,7 @@ def test_llvm_codegen_supports_function_calls() -> None:
 
     llvm_ir = compile_to_llvm_ir(source)
 
-    assert "define i64 @add(i64 %x.arg, i64 %y.arg)" in llvm_ir
+    assert "def i64 @add(i64 %x.arg, i64 %y.arg)" in llvm_ir
     assert "call i64 @add(i64 2, i64 3)" in llvm_ir
 
 
@@ -299,16 +299,16 @@ def test_llvm_codegen_defines_heap_runtime_helpers() -> None:
 
     llvm_ir = compile_to_llvm_ir(source)
 
-    assert "define i64 @__new(i64 %size)" in llvm_ir
-    assert "define i64 @heap_get(i64 %ptr, i64 %idx)" in llvm_ir
-    assert "define i64 @heap_set(i64 %ptr, i64 %idx, i64 %value)" in llvm_ir
-    assert "define i8* @heap_get_str(i64 %ptr, i64 %idx)" in llvm_ir
-    assert "define double @heap_get_double(i64 %ptr, i64 %idx)" in llvm_ir
-    assert "define i1 @heap_get_bool(i64 %ptr, i64 %idx)" in llvm_ir
-    assert "define i64 @heap_set_str(i64 %ptr, i64 %idx, i8* %value)" in llvm_ir
-    assert "define i64 @heap_set_double(i64 %ptr, i64 %idx, double %value)" in llvm_ir
-    assert "define i64 @heap_set_bool(i64 %ptr, i64 %idx, i1 %value)" in llvm_ir
-    assert "define i64 @delete(i64 %ptr)" in llvm_ir
+    assert "def i64 @__new(i64 %size)" in llvm_ir
+    assert "def i64 @heap_get(i64 %ptr, i64 %idx)" in llvm_ir
+    assert "def i64 @heap_set(i64 %ptr, i64 %idx, i64 %value)" in llvm_ir
+    assert "def i8* @heap_get_str(i64 %ptr, i64 %idx)" in llvm_ir
+    assert "def double @heap_get_double(i64 %ptr, i64 %idx)" in llvm_ir
+    assert "def i1 @heap_get_bool(i64 %ptr, i64 %idx)" in llvm_ir
+    assert "def i64 @heap_set_str(i64 %ptr, i64 %idx, i8* %value)" in llvm_ir
+    assert "def i64 @heap_set_double(i64 %ptr, i64 %idx, double %value)" in llvm_ir
+    assert "def i64 @heap_set_bool(i64 %ptr, i64 %idx, i1 %value)" in llvm_ir
+    assert "def i64 @delete(i64 %ptr)" in llvm_ir
 
 
 def test_llvm_codegen_emits_heap_bounds_checks() -> None:
@@ -316,7 +316,7 @@ def test_llvm_codegen_emits_heap_bounds_checks() -> None:
 
     llvm_ir = compile_to_llvm_ir(source)
 
-    assert "define i64 @__heap_bounds_error(i64 %idx, i64 %size)" in llvm_ir
+    assert "def i64 @__heap_bounds_error(i64 %idx, i64 %size)" in llvm_ir
     assert "add i64 %size, 1" in llvm_ir
     assert "getelementptr i64, i64* %data, i64 -1" in llvm_ir
 

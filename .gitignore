@@ -7,3 +7,4 @@ dist/*
 __pycache__
 *.pyc
 vscode-extension/tinylanguage-vscode-0.1.0.vsix
+/vscode-extension/node_modules

@@ -41,9 +41,9 @@ def test_tiny_parser_reports_span_context():
             AST_SRC,
             LEXER_SRC,
             PARSER_SRC,
-            'def _ = parse_program("define a = ;");',
+            'def _ = parse_program("def a = ;");',
         ]
     )
 
-    with pytest.raises(Exception, match=r"unexpected token SYM \(line 1, col 12\)"):
+    with pytest.raises(Exception, match=r"unexpected token SYM \(line 1, col 9\)"):
         compile_and_run(program)

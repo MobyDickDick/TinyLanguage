@@ -4,16 +4,16 @@ from tiny_language import Lexer, Parser
 
 
 def test_let_statement_span_tracks_semicolon():
-    src = "define value = 1 + 2;"
+    src = "def value = 1 + 2;"
     stmts = Parser(Lexer(src), src).parse()
     define_stmt = stmts[0]
 
     assert define_stmt.span.start.line == 1
     assert define_stmt.span.start.column == 1
-    assert define_stmt.span.stop.column == 21
+    assert define_stmt.span.stop.column == 18
     # expression span should cover the arithmetic part
-    assert define_stmt.expr.span.start.column == 16
-    assert define_stmt.expr.span.stop.column == 20
+    assert define_stmt.expr.span.start.column == 13
+    assert define_stmt.expr.span.stop.column == 17
 
 
 def test_print_statement_span_includes_trailing_semicolon():

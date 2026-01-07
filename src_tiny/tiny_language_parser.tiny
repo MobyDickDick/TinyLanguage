@@ -153,8 +153,8 @@ class Parser {
     }
 
     fn parse_stmt(self) -> any {
-        if ((self.tok.kind == "KW" || self.tok.kind == "NAME") && (self.tok.text == "def" || self.tok.text == "define")) {
-            def kw = self._eat(self.tok.kind, self.tok.text);
+        if (self.tok.kind == "KW" && self.tok.text == "def") {
+            def kw = self._eat("KW", "def");
             def name_tok = self._eat("NAME", Null);
             def _eq = self._eat("SYM", "=");
             def expr = self.parse_expr();

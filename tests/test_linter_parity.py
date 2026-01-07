@@ -76,7 +76,7 @@ def run_python_linter(source: str) -> str | None:
 
 
 def run_tiny_linter(source: str) -> str | None:
-    program = TINY_LINTER_BASE + "\ndefine _unused = __run_lints(" + json.dumps(source) + ");\n"
+    program = TINY_LINTER_BASE + "\ndef _unused = __run_lints(" + json.dumps(source) + ");\n"
     parser = Parser(Lexer(program), program)
     stmts = parser.parse()
     runtime = Runtime(program)
@@ -109,7 +109,7 @@ def run_tiny_linter(source: str) -> str | None:
         pytest.param("fn f(a, b) { return a; }", id="unused_parameter"),
         pytest.param("fn returns(): number { return 1; }\nreturns();", id="bare_call_result"),
         pytest.param(
-            "fn f(a, b) { return { a: a, b: b }; }\ndefine { a } = f(c, b);",
+            "fn f(a, b) { return { a: a, b: b }; }\ndef { a } = f(c, b);",
             id="sorted_destruct_missing_outputs",
         ),
         pytest.param("def x = 1; if (false) { print(x); }", id="unused_in_unreachable_branch"),
@@ -122,7 +122,7 @@ def run_tiny_linter(source: str) -> str | None:
             "fn f() -> number { if (true) { return 1; } }",
             id="return_exhaustiveness",
         ),
-        pytest.param("def x = 1;\ndefine x = 2;", id="consecutive_definitions"),
+        pytest.param("def x = 1;\ndef x = 2;", id="consecutive_definitions"),
         pytest.param("import math as m;\nprint(1);", id="unused_import_alias"),
         pytest.param(
             "class Box { fn split(self, a, b) { return { a: a, b: b }; } }\n"

@@ -840,7 +840,7 @@ def test_error_message_for_missing_field():
 
 
 def test_parser_error_reports_context():
-    expect_compile_error("def a = ;", r"unexpected token SYM \(line 1, col 12\)")
+    expect_compile_error("define a = ;", r"unexpected token SYM \(line 1, col 12\)")
 
 
 def test_runtime_error_reports_context():

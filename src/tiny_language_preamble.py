@@ -361,7 +361,7 @@ def _classify_error(msg: str, candidates: Optional[List[str]] = None) -> Tuple[s
     if "return value must be bound" in lower_msg or "must be returned" in lower_msg:
         return "E001", "Bind the return value, e.g. `def result = call();`, or add a return that includes the mutated data."
     if lower_msg.startswith("unused"):
-        return "E002", "Remove the unused binding or reference it so it is clearly consumed (prefix with '_' to silence)."
+        return "E002", "Remove the unused binding or reference it."
     if "unknown variable" in lower_msg:
         suggestion = _closest_match(msg.split()[-1], candidates or []) if candidates is not None else None
         base_hint = "Declare the variable first, e.g. `def name = ...;`."

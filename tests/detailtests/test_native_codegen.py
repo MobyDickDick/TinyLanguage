@@ -173,6 +173,28 @@ def test_class_methods_roundtrip_matches_interpreter():
     _assert_native_matches(source)
 
 
+def test_match_and_variants_roundtrip_matches_interpreter():
+    source = """
+    type Result = sum {
+        Ok(value: Number);
+        Err(msg: String);
+    }
+
+    fn unwrap(result) {
+        return match(result) {
+            case Ok(v) => v;
+            case Err(_) => 0;
+        };
+    }
+
+    def ok = Ok { value: 7 };
+    def err = Err { msg: "oops" };
+    print(unwrap(ok));
+    print(unwrap(err));
+    """
+    _assert_native_matches(source)
+
+
 def test_operator_overloads_roundtrip_matches_interpreter():
     source = """
     class Counter {

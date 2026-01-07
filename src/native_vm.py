@@ -89,6 +89,8 @@ class NativeVM:
         self.heap_cell_types: Dict[int, Dict[int, str]] = {}
         self.error_message: Optional[str] = None
         self.class_defs: Dict[str, Dict[str, Any]] = {}
+        self.type_defs: Dict[str, Any] = {}
+        self.variant_to_type: Dict[str, str] = {}
         self.operator_overloads: Dict[tuple[str, str, str], str] = {}
         self.module_resolver = module_resolver
         self.module_envs: Dict[str, Dict[str, Any]] = {}
@@ -114,6 +116,9 @@ class NativeVM:
             name: {"fields": list(class_def.fields), "bases": list(class_def.bases)}
             for name, class_def in program.classes.items()
         }
+        self.type_defs = {}
+        self.variant_to_type = {}
+        self._register_types(program)
         self.operator_overloads = {
             (overload.op, overload.a_type, overload.b_type): overload.func_name
             for overload in program.operator_overloads
@@ -238,6 +243,20 @@ class NativeVM:
             return self._heap_delete(args[0])
         if name == "__class_new":
             return self._class_new(args)
+        if name == "__variant_new":
+            return self._variant_new(args)
+        if name == "__variant_tag":
+            if len(args) != 1:
+                raise RuntimeError(f"__variant_tag expects 1 arg, got {len(args)}")
+            return self._variant_tag(args[0])
+        if name == "__variant_get":
+            if len(args) != 2:
+                raise RuntimeError(f"__variant_get expects 2 args, got {len(args)}")
+            return self._variant_get(args[0], args[1])
+        if name == "__match_error":
+            if len(args) != 1:
+                raise RuntimeError(f"__match_error expects 1 arg, got {len(args)}")
+            self._match_error(args[0])
         if name == "__field_get":
             if len(args) != 2:
                 raise RuntimeError(f"__field_get expects 2 args, got {len(args)}")
@@ -301,6 +320,8 @@ class NativeVM:
             raise RuntimeError("VM has no program loaded")
         self.program.functions.update(program.functions)
         self.program.classes.update(program.classes)
+        self.program.types.update(program.types)
+        self._register_types(program)
         self.program.operator_overloads.extend(program.operator_overloads)
         for overload in program.operator_overloads:
             self.operator_overloads[(overload.op, overload.a_type, overload.b_type)] = overload.func_name
@@ -601,6 +622,73 @@ class NativeVM:
             fmap = self._resolve_field_storage(obj, field_name, owner_hint, allow_write=True)
             fmap[field_name] = value
         return obj
+
+    def _register_types(self, program: ProgramIR) -> None:
+        for type_name, type_def in program.types.items():
+            self.type_defs[type_name] = type_def
+            variants = type_def.variants
+            if variants is None:
+                fields = type_def.fields or []
+                variants = {type_name: fields}
+            for variant_name in variants:
+                self.variant_to_type[variant_name] = type_name
+
+    def _type_variants(self, type_name: str) -> Optional[Dict[str, List[tuple[str, str]]]]:
+        type_def = self.type_defs.get(type_name)
+        if type_def is None:
+            return None
+        if type_def.variants is not None:
+            return type_def.variants
+        if type_def.fields is not None:
+            return {type_def.name: type_def.fields}
+        return None
+
+    def _variant_new(self, args: List[Any]) -> Dict[str, Any]:
+        if len(args) < 2:
+            raise RuntimeError("__variant_new expects at least 2 args (variant, type_name)")
+        variant = str(args[0])
+        type_name = args[1]
+        inferred_type = str(type_name) if type_name is not None else self.variant_to_type.get(variant)
+        if inferred_type is None:
+            raise RuntimeError(f"unknown variant {variant}")
+        variants = self._type_variants(inferred_type)
+        if variants is None or variant not in variants:
+            raise RuntimeError(f"variant {variant} not allowed for type {inferred_type}")
+        if (len(args) - 2) % 2 != 0:
+            raise RuntimeError("__variant_new expects field name/value pairs")
+        expected_fields = {name for name, _ in variants.get(variant, [])}
+        init: Dict[str, Any] = {}
+        for index in range(2, len(args), 2):
+            field_name = str(args[index])
+            init[field_name] = args[index + 1]
+        missing = sorted(expected_fields - init.keys())
+        extra = sorted(init.keys() - expected_fields)
+        if missing:
+            raise RuntimeError(f"missing field(s) for variant {variant}: {', '.join(missing)}")
+        if extra:
+            raise RuntimeError(f"unknown field(s) for variant {variant}: {', '.join(extra)}")
+        value = {"__tag__": variant, "__type__": inferred_type}
+        value.update(init)
+        return value
+
+    @staticmethod
+    def _variant_tag(value: Any) -> str:
+        if not isinstance(value, dict) or "__tag__" not in value:
+            raise RuntimeError("match target is not tagged")
+        return str(value.get("__tag__"))
+
+    @staticmethod
+    def _variant_get(value: Any, field: Any) -> Any:
+        if not isinstance(value, dict) or "__tag__" not in value:
+            raise RuntimeError("match target is not tagged")
+        fname = str(field)
+        if fname not in value:
+            raise RuntimeError(f"field {fname} missing for variant {value.get('__tag__')}")
+        return value[fname]
+
+    def _match_error(self, value: Any) -> None:
+        tag = self._variant_tag(value)
+        raise RuntimeError(f"non-exhaustive match for tag {tag}")
 
     def _field_get(self, obj: Any, field_name: Any) -> Any:
         if isinstance(obj, NamespaceRef):

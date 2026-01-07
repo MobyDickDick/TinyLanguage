@@ -55,12 +55,22 @@ class OperatorOverloadIR:
 
 
 @dataclass
+class TypeIR:
+    """Record type or algebraic data type metadata for the native VM."""
+
+    name: str
+    fields: List[tuple[str, str]] | None = None
+    variants: Dict[str, List[tuple[str, str]]] | None = None
+
+
+@dataclass
 class ProgramIR:
     """Entry sequence and function table for the VM."""
 
     entry: List[Instruction]
     functions: Dict[str, FunctionIR]
     classes: Dict[str, "ClassIR"] = field(default_factory=dict)
+    types: Dict[str, TypeIR] = field(default_factory=dict)
     operator_overloads: List[OperatorOverloadIR] = field(default_factory=list)
 
 
@@ -88,6 +98,16 @@ def format_program(program: ProgramIR) -> str:
         lines.append(
             f"operator {overload.op} ({overload.a_type}, {overload.b_type}) -> {overload.func_name}"
         )
+    for type_def in program.types.values():
+        if type_def.variants:
+            variants = []
+            for vname, fields in type_def.variants.items():
+                field_text = ", ".join(f"{fname}: {ftype}" for fname, ftype in fields)
+                variants.append(f"{vname}({field_text})" if field_text else vname)
+            lines.append(f"type {type_def.name} {{ {'; '.join(variants)} }}")
+        elif type_def.fields is not None:
+            field_text = ", ".join(f"{fname}: {ftype}" for fname, ftype in type_def.fields)
+            lines.append(f"type {type_def.name} {{ {field_text} }}")
     for class_def in program.classes.values():
         bases = f": {', '.join(class_def.bases)}" if class_def.bases else ""
         fields = ", ".join(class_def.fields)

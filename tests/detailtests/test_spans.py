@@ -4,7 +4,7 @@ from tiny_language import Lexer, Parser
 
 
 def test_let_statement_span_tracks_semicolon():
-    src = "def value = 1 + 2;"
+    src = "define value = 1 + 2;"
     stmts = Parser(Lexer(src), src).parse()
     define_stmt = stmts[0]
 

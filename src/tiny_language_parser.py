@@ -83,10 +83,8 @@ class Parser:
         return stmts
 
     def parse_stmt(self) -> IR:
-        if self.tok.text in {"def", "define"} and self.tok.kind in {"KW", "NAME"}:
-            kw_text = self.tok.text
-            kw_kind = self.tok.kind
-            kw = self._eat(kw_kind, kw_text)
+        if self.tok.kind == "KW" and self.tok.text == "def":
+            kw = self._eat("KW", "def")
             name_tok = self._eat("NAME")
             self._eat("SYM", "=")
             expr = self.parse_expr()

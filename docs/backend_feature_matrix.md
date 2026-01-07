@@ -56,15 +56,15 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 
 ### Open tasks
 
-- [ ] Pattern matching + ADTs
-  - [ ] Encode ADT constructors in native IR and allocate tagged values in the runtime.
-  - [ ] Implement match dispatch on tags with destructuring.
-
 - [ ] Concurrency (`spawn`, `join`, tokens)
   - [ ] Define a VM scheduling model for concurrent tasks.
   - [ ] Implement token synchronization primitives in the native runtime.
 
 ### Closed tasks
+
+- [x] Pattern matching + ADTs
+  - [x] Encode ADT constructors in native IR and allocate tagged values in the runtime.
+  - [x] Implement match dispatch on tags with destructuring.
 
 - [x] Operator overloading
   - [x] Extend native IR to carry operator overload resolution results.

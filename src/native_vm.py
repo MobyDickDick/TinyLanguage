@@ -9,9 +9,10 @@ compare interpreter and native results easily.
 from __future__ import annotations
 
 import importlib
+import os
 import threading
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -48,6 +49,53 @@ class _Frame:
         self.locals = locals_ if locals_ is not None else {}
         self.globals = globals_ if globals_ is not None else self.locals
         self.ip = 0
+
+
+@dataclass
+class SpawnHandle:
+    thread: threading.Thread
+    done: threading.Event
+    cancelled: threading.Event
+    result: Any = None
+    error: Optional[BaseException] = None
+
+
+@dataclass
+class CancellationToken:
+    cancelled: threading.Event = field(default_factory=threading.Event)
+    reason: Optional[str] = None
+    _linked: List[SpawnHandle] = field(default_factory=list)
+    _lock: threading.Lock = field(default_factory=threading.Lock)
+
+    def cancel(self, reason: Optional[str] = None) -> bool:
+        with self._lock:
+            already = self.cancelled.is_set()
+            if already:
+                return False
+            self.reason = reason
+            self.cancelled.set()
+            for handle in list(self._linked):
+                handle.cancelled.set()
+            return True
+
+    def link_handle(self, handle: SpawnHandle) -> bool:
+        with self._lock:
+            if handle in self._linked:
+                return False
+            if self.cancelled.is_set():
+                handle.cancelled.set()
+                return False
+            self._linked.append(handle)
+            return True
+
+
+@dataclass
+class TaskScope:
+    handles: List[SpawnHandle]
+
+    def add_handle(self, handle: SpawnHandle) -> None:
+        if handle not in self.handles:
+            self.handles.append(handle)
 
 
 class NativeVM:
@@ -104,8 +152,11 @@ class NativeVM:
             "Map": NamespaceRef("Map"),
             "Set": NamespaceRef("Set"),
             "Deque": NamespaceRef("Deque"),
+            "Async": NamespaceRef("Async"),
             "Python": NamespaceRef("Python"),
         }
+        self._task_scopes: List[TaskScope] = []
+        self.task_scope_timeout_ms: float = float(os.environ.get("TINYLANG_TASK_SCOPE_TIMEOUT_MS", "50"))
         self._inject_stdlib(self.globals)
 
     def run(self, program: ProgramIR) -> str:
@@ -225,6 +276,43 @@ class NativeVM:
             return self._set_call(name, args)
         if name.startswith("Deque."):
             return self._deque_call(name, args)
+        if name.startswith("Async."):
+            return self._async_call(name, args)
+        if name == "__spawn":
+            if not args:
+                raise RuntimeError("__spawn expects at least 1 arg")
+            target = args[0]
+            return self._spawn_call(target, args[1:])
+        if name == "join":
+            if not (1 <= len(args) <= 3):
+                raise RuntimeError("join expects between 1 and 3 arguments")
+            handle = args[0]
+            if len(args) == 1:
+                return self.join_handle(handle)
+            timeout_ms = self._join_timeout_ms(args[1])
+            cancel_on_timeout = False
+            if len(args) == 3:
+                cancel_on_timeout = bool(args[2])
+            return self.join_handle(
+                handle,
+                timeout_ms=timeout_ms,
+                cancel_on_timeout=cancel_on_timeout,
+                want_status=True,
+            )
+        if name == "cancel":
+            if len(args) != 1:
+                raise RuntimeError("cancel expects 1 argument")
+            return self.cancel_handle(args[0])
+        if name == "__task_scope_enter":
+            if args:
+                raise RuntimeError("__task_scope_enter expects 0 arguments")
+            self._push_task_scope()
+            return None
+        if name == "__task_scope_exit":
+            if args:
+                raise RuntimeError("__task_scope_exit expects 0 arguments")
+            self._pop_task_scope()
+            return None
         if name in {"__new", "new"}:
             if len(args) != 1:
                 raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
@@ -278,6 +366,136 @@ class NativeVM:
             raise RuntimeError(f"function {name} expects {len(target.params)} args, got {len(args)}")
         locals_ = dict(zip(target.params, args))
         return self._execute(_Frame(target.instructions, locals_, self._globals_for_function(name)))
+
+    def _push_task_scope(self) -> TaskScope:
+        scope = TaskScope(handles=[])
+        self._task_scopes.append(scope)
+        return scope
+
+    def _pop_task_scope(self) -> None:
+        if not self._task_scopes:
+            return
+        scope = self._task_scopes.pop()
+        for handle in scope.handles:
+            self.join_handle(handle, timeout_ms=self.task_scope_timeout_ms, cancel_on_timeout=True)
+
+    def _register_task_handle(self, handle: SpawnHandle) -> None:
+        if self._task_scopes:
+            self._task_scopes[-1].add_handle(handle)
+
+    def _run_spawn(self, name: str, args: List[Any], handle: SpawnHandle) -> None:
+        try:
+            if handle.cancelled.is_set():
+                handle.error = RuntimeError("spawn cancelled")
+                return
+            result = self._call(name, args)
+            if handle.cancelled.is_set():
+                handle.error = RuntimeError("spawn cancelled")
+            else:
+                handle.result = result
+        except Exception as exc:  # noqa: BLE001
+            handle.error = exc
+        finally:
+            handle.done.set()
+
+    def _start_task(self, name: str, args: List[Any]) -> SpawnHandle:
+        done = threading.Event()
+        cancelled = threading.Event()
+        placeholder_thread = threading.Thread(target=lambda: None)
+        handle = SpawnHandle(thread=placeholder_thread, done=done, cancelled=cancelled)
+
+        def run_task() -> None:
+            self._run_spawn(name, args, handle)
+
+        worker = threading.Thread(target=run_task)
+        handle.thread = worker
+        worker.start()
+        self._register_task_handle(handle)
+        return handle
+
+    def _spawn_call(self, target: Any, args: List[Any]) -> SpawnHandle:
+        name = str(target)
+        return self._start_task(name, args)
+
+    def _join_status(self, handle: SpawnHandle, *, done: bool) -> Dict[str, Any]:
+        return {
+            "__tag__": "JoinStatus",
+            "done": done,
+            "cancelled": handle.cancelled.is_set(),
+            "error": str(handle.error) if handle.error else None,
+            "result": None if handle.error or not done or handle.cancelled.is_set() else handle.result,
+        }
+
+    def _join_timeout_ms(self, value: Any) -> float:
+        try:
+            return float(value)
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError("join timeout must be numeric") from exc
+
+    def join_handle(
+        self,
+        handle: Any,
+        *,
+        timeout_ms: Optional[float] = None,
+        cancel_on_timeout: bool = False,
+        want_status: bool = False,
+    ) -> Any:
+        if not isinstance(handle, SpawnHandle):
+            raise RuntimeError("join expects a spawn handle")
+
+        timeout = None if timeout_ms is None else max(0.0, timeout_ms / 1000.0)
+        finished = handle.done.wait(timeout)
+        if not finished:
+            if cancel_on_timeout:
+                self.cancel_handle(handle)
+            if want_status:
+                return self._join_status(handle, done=False)
+            return None
+
+        handle.thread.join()
+        if handle.cancelled.is_set():
+            if want_status:
+                return self._join_status(handle, done=True)
+            raise handle.error or RuntimeError("join cancelled")
+        if handle.error:
+            if want_status:
+                return self._join_status(handle, done=True)
+            raise handle.error
+        if want_status:
+            return self._join_status(handle, done=True)
+        return handle.result
+
+    def cancel_handle(self, handle: Any) -> bool:
+        if not isinstance(handle, SpawnHandle):
+            raise RuntimeError("cancel expects a spawn handle")
+        already = handle.cancelled.is_set()
+        handle.cancelled.set()
+        return not already
+
+    def make_cancellation_token(self) -> CancellationToken:
+        return CancellationToken()
+
+    def cancel_token(self, token: Any, reason: Optional[str] = None) -> bool:
+        if not isinstance(token, CancellationToken):
+            raise RuntimeError("cancel_token expects a cancellation token")
+        return token.cancel(reason)
+
+    def token_cancelled(self, token: Any) -> bool:
+        if not isinstance(token, CancellationToken):
+            raise RuntimeError("token_cancelled expects a cancellation token")
+        return token.cancelled.is_set()
+
+    def token_reason(self, token: Any) -> Optional[str]:
+        if not isinstance(token, CancellationToken):
+            raise RuntimeError("token_reason expects a cancellation token")
+        return token.reason
+
+    def link_token(self, token: Any, handle: Any) -> bool:
+        if not isinstance(token, CancellationToken):
+            raise RuntimeError("link_token expects a cancellation token")
+        if not isinstance(handle, SpawnHandle):
+            raise RuntimeError("link_token expects a spawn handle")
+        return token.link_handle(handle)
 
     def _format_value(self, value: Any) -> str:
         """Render VM values into the textual form used by PRINT."""
@@ -1105,3 +1323,28 @@ class NativeVM:
                 raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
             return self._to_pointer(list(self._resolve_deque(args[0])))
         raise RuntimeError(f"unknown Deque method {method}")
+
+    def _async_call(self, name: str, args: List[Any]) -> Any:
+        method = name.split(".", 1)[1]
+        if method == "token":
+            if args:
+                raise RuntimeError("Async.token expects 0 args")
+            return self.make_cancellation_token()
+        if method == "cancel":
+            if len(args) not in {1, 2}:
+                raise RuntimeError("Async.cancel expects 1 or 2 args")
+            reason = args[1] if len(args) == 2 else None
+            return self.cancel_token(args[0], None if reason is None else str(reason))
+        if method == "is_cancelled":
+            if len(args) != 1:
+                raise RuntimeError("Async.is_cancelled expects 1 arg")
+            return self.token_cancelled(args[0])
+        if method == "reason":
+            if len(args) != 1:
+                raise RuntimeError("Async.reason expects 1 arg")
+            return self.token_reason(args[0])
+        if method == "link":
+            if len(args) != 2:
+                raise RuntimeError("Async.link expects 2 args")
+            return self.link_token(args[0], args[1])
+        raise RuntimeError(f"unknown Async method {method}")

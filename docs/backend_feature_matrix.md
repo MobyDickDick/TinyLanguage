@@ -32,7 +32,7 @@ Legend:
 | Operator overloading | ✅ | ✅ | ⚠️ Numeric-only overloads |
 | Pattern matching + ADTs | ✅ | ❌ | ❌ |
 | Collections (`Map`, `Set`, `Deque`) | ✅ | ❌ | ❌ |
-| Concurrency (`spawn`, `join`, tokens) | ✅ | ❌ | ❌ |
+| Concurrency (`spawn`, `join`, tokens) | ✅ | ✅ | ❌ |
 
 ## Interop and tooling
 
@@ -56,11 +56,13 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 
 ### Open tasks
 
-- [ ] Concurrency (`spawn`, `join`, tokens)
-  - [ ] Define a VM scheduling model for concurrent tasks.
-  - [ ] Implement token synchronization primitives in the native runtime.
+_None_
 
 ### Closed tasks
+
+- [x] Concurrency (`spawn`, `join`, tokens)
+  - [x] Define a VM scheduling model for concurrent tasks.
+  - [x] Implement token synchronization primitives in the native runtime.
 
 - [x] Pattern matching + ADTs
   - [x] Encode ADT constructors in native IR and allocate tagged values in the runtime.

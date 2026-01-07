@@ -27,6 +27,8 @@ class NativeCodeGenerator:
         self._module_namespace = module_namespace
         self._tmp_index = 0
         self._variant_fields: Dict[str, List[str]] = {}
+        self._async_functions: set[str] = set()
+        self._task_scope_depth = 0
 
     def compile_program(self, stmts: List["IR"]) -> ProgramIR:
         functions: Dict[str, FunctionIR] = {}
@@ -34,6 +36,10 @@ class NativeCodeGenerator:
         classes: Dict[str, ClassIR] = {}
         types: Dict[str, TypeIR] = {}
         operator_overloads: List[OperatorOverloadIR] = []
+        self._async_functions = {
+            self._qualify_name(stmt.name) for stmt in stmts if isinstance(stmt, Fn) and stmt.is_async
+        }
+        self._task_scope_depth = 0
 
         for stmt in stmts:
             if isinstance(stmt, Fn):
@@ -72,6 +78,7 @@ class NativeCodeGenerator:
 
     def _compile_function(self, fn: "Fn") -> FunctionIR:
         body_instrs: List[Instruction] = []
+        self._task_scope_depth = 0
         for stmt in fn.body:
             raw = self._compile_stmt(stmt)
             body_instrs.extend(self._shift_labels(raw, len(body_instrs)))
@@ -84,6 +91,7 @@ class NativeCodeGenerator:
 
     def _compile_method(self, md: "MethodDef") -> FunctionIR:
         body_instrs: List[Instruction] = []
+        self._task_scope_depth = 0
         for stmt in md.body:
             raw = self._compile_stmt(stmt)
             body_instrs.extend(self._shift_labels(raw, len(body_instrs)))
@@ -96,6 +104,7 @@ class NativeCodeGenerator:
 
     def _compile_operator(self, opdef: "OpDef", name: str) -> FunctionIR:
         body_instrs: List[Instruction] = []
+        self._task_scope_depth = 0
         for stmt in opdef.body:
             raw = self._compile_stmt(stmt)
             body_instrs.extend(self._shift_labels(raw, len(body_instrs)))
@@ -136,7 +145,10 @@ class NativeCodeGenerator:
         if isinstance(stmt, While):
             return self._compile_while(stmt)
         if isinstance(stmt, Return):
-            instructions = self._compile_expr(stmt.expr)
+            instructions: List[Instruction] = []
+            instructions.extend(self._compile_expr(stmt.expr))
+            if self._task_scope_depth:
+                instructions.extend(self._task_scope_exit_instrs())
             instructions.append(Instruction(Opcode.RETURN))
             return instructions
         if isinstance(stmt, CallStmt):
@@ -154,6 +166,15 @@ class NativeCodeGenerator:
             instructions.extend(self._compile_expr(stmt.expr))
             instructions.append(Instruction(Opcode.CALL, ("__field_set", 3)))
             instructions.append(Instruction(Opcode.POP))
+            return instructions
+        if isinstance(stmt, TaskBlock):
+            instructions: List[Instruction] = [Instruction(Opcode.CALL, ("__task_scope_enter", 0))]
+            self._task_scope_depth += 1
+            for inner in stmt.body:
+                nested = self._compile_stmt(inner)
+                instructions.extend(self._shift_labels(nested, len(instructions)))
+            self._task_scope_depth -= 1
+            instructions.append(Instruction(Opcode.CALL, ("__task_scope_exit", 0)))
             return instructions
         raise NotImplementedError(f"native codegen does not yet support {type(stmt).__name__}")
 
@@ -270,6 +291,12 @@ class NativeCodeGenerator:
             if not self._allow_match:
                 raise NotImplementedError("native codegen does not yet support match expressions")
             return self._compile_match(expr)
+        if isinstance(expr, Spawn):
+            return self._compile_spawn(self._qualify_name(expr.name), expr.args)
+        if isinstance(expr, Await):
+            instructions = self._compile_expr(expr.expr)
+            instructions.append(Instruction(Opcode.CALL, ("join", 1)))
+            return instructions
         if isinstance(expr, Bin):
             instructions = self._compile_expr(expr.a)
             instructions.extend(self._compile_expr(expr.b))
@@ -279,6 +306,8 @@ class NativeCodeGenerator:
             if expr.name in {"__new", "new", "heap_get", "heap_set", "delete"} and not self._allow_heap:
                 raise NotImplementedError("native codegen does not yet support heap allocations")
             call_name = self._qualify_name(expr.name)
+            if call_name in self._async_functions:
+                return self._compile_spawn(call_name, expr.args)
             instructions: List[Instruction] = []
             for arg in expr.args:
                 instructions.extend(self._compile_expr(arg))
@@ -299,6 +328,13 @@ class NativeCodeGenerator:
             instructions.append(Instruction(Opcode.PUSH_CONST, name))
             instructions.extend(self._compile_expr(value))
         instructions.append(Instruction(Opcode.CALL, ("__variant_new", 2 + 2 * len(expr.fields))))
+        return instructions
+
+    def _compile_spawn(self, name: str, args: List["IR"]) -> List[Instruction]:
+        instructions: List[Instruction] = [Instruction(Opcode.PUSH_CONST, name)]
+        for arg in args:
+            instructions.extend(self._compile_expr(arg))
+        instructions.append(Instruction(Opcode.CALL, ("__spawn", 1 + len(args))))
         return instructions
 
     def _compile_match(self, expr: "Match") -> List[Instruction]:
@@ -420,3 +456,6 @@ class NativeCodeGenerator:
 
     def _variant_field_order(self, variant: str) -> List[str] | None:
         return self._variant_fields.get(variant)
+
+    def _task_scope_exit_instrs(self) -> List[Instruction]:
+        return [Instruction(Opcode.CALL, ("__task_scope_exit", 0)) for _ in range(self._task_scope_depth)]

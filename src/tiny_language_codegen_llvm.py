@@ -346,7 +346,7 @@ class LLVMCodeGenerator:
             )
 
     def _load_var(self, name: str) -> None:
-        if name in {"Map", "Set", "Deque"}:
+        if name in {"Map", "Set", "Deque", "Async"}:
             self._stack.append(_StackValue(name=name, ty="i64", class_name=name))
             return
         ty = self._var_types.get(name)
@@ -618,6 +618,59 @@ class LLVMCodeGenerator:
         self._body.append(f"  {dest} = call {handle.ty} @{wrapper}({handle.ty} {handle.name})")
         self._stack.append(_StackValue(name=dest, ty=handle.ty))
 
+    def _emit_async_token(self, args: List[_StackValue]) -> None:
+        if args:
+            self._lowering_error("Async.token expects 0 args")
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i64 @__async_token()")
+        self._stack.append(_StackValue(name=dest, ty="i64"))
+
+    def _emit_async_cancel(self, args: List[_StackValue]) -> None:
+        if len(args) not in {1, 2}:
+            self._lowering_error("Async.cancel expects 1 or 2 args")
+        token = args[0]
+        if token.ty != "i64":
+            self._lowering_error("Async.cancel expects a token handle")
+        reason = "null"
+        if len(args) == 2:
+            if args[1].ty != "i8*":
+                self._lowering_error("Async.cancel reason must be a string or Null")
+            reason = args[1].name
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i1 @__async_cancel(i64 {token.name}, i8* {reason})")
+        self._stack.append(_StackValue(name=dest, ty="i1"))
+
+    def _emit_async_is_cancelled(self, args: List[_StackValue]) -> None:
+        if len(args) != 1:
+            self._lowering_error("Async.is_cancelled expects 1 arg")
+        token = args[0]
+        if token.ty != "i64":
+            self._lowering_error("Async.is_cancelled expects a token handle")
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i1 @__async_is_cancelled(i64 {token.name})")
+        self._stack.append(_StackValue(name=dest, ty="i1"))
+
+    def _emit_async_reason(self, args: List[_StackValue]) -> None:
+        if len(args) != 1:
+            self._lowering_error("Async.reason expects 1 arg")
+        token = args[0]
+        if token.ty != "i64":
+            self._lowering_error("Async.reason expects a token handle")
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i8* @__async_reason(i64 {token.name})")
+        self._stack.append(_StackValue(name=dest, ty="i8*"))
+
+    def _emit_async_link(self, args: List[_StackValue]) -> None:
+        if len(args) != 2:
+            self._lowering_error("Async.link expects 2 args")
+        token = args[0]
+        if token.ty != "i64":
+            self._lowering_error("Async.link expects a token handle")
+        payload = self._value_payload(args[1])
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i1 @__async_link(i64 {token.name}, i64 {payload})")
+        self._stack.append(_StackValue(name=dest, ty="i1"))
+
     def _call_function(self, call_spec: Tuple[str, int]) -> None:
         name, argc = call_spec
         args = [self._stack.pop() for _ in range(argc)][::-1]
@@ -626,6 +679,21 @@ class LLVMCodeGenerator:
             return
         if name == "join":
             self._emit_join_call(args)
+            return
+        if name == "Async.token":
+            self._emit_async_token(args)
+            return
+        if name == "Async.cancel":
+            self._emit_async_cancel(args)
+            return
+        if name == "Async.is_cancelled":
+            self._emit_async_is_cancelled(args)
+            return
+        if name == "Async.reason":
+            self._emit_async_reason(args)
+            return
+        if name == "Async.link":
+            self._emit_async_link(args)
             return
         if name.startswith("Map."):
             self._emit_map_call(name, args)
@@ -969,6 +1037,24 @@ class LLVMCodeGenerator:
             self._lowering_error("__method_call expects at least 2 args")
         obj, method_name, *rest = args
         class_name = obj.class_name
+        if class_name == "Async":
+            method_literal = self._literal_string(method_name, context="__method_call")
+            if method_literal == "token":
+                self._emit_async_token(rest)
+                return
+            if method_literal == "cancel":
+                self._emit_async_cancel(rest)
+                return
+            if method_literal == "is_cancelled":
+                self._emit_async_is_cancelled(rest)
+                return
+            if method_literal == "reason":
+                self._emit_async_reason(rest)
+                return
+            if method_literal == "link":
+                self._emit_async_link(rest)
+                return
+            self._lowering_error(f"unknown Async method {method_literal}")
         if class_name in {"Map", "Set", "Deque"}:
             method_literal = self._literal_string(method_name, context="__method_call")
             if class_name == "Map":
@@ -1381,6 +1467,46 @@ class LLVMCodeGenerator:
             "define i8* @__join_str(i8* %value) {",
             "entry:",
             "  ret i8* %value",
+            "}",
+            "define i64 @__async_token() {",
+            "entry:",
+            "  %token = call i64 @__new(i64 2)",
+            "  %_ignored0 = call i64 @heap_set(i64 %token, i64 0, i64 0)",
+            "  %_ignored1 = call i64 @heap_set(i64 %token, i64 1, i64 0)",
+            "  ret i64 %token",
+            "}",
+            "define i1 @__async_is_cancelled(i64 %token) {",
+            "entry:",
+            "  %flag = call i64 @heap_get(i64 %token, i64 0)",
+            "  %is_set = icmp ne i64 %flag, 0",
+            "  ret i1 %is_set",
+            "}",
+            "define i1 @__async_cancel(i64 %token, i8* %reason) {",
+            "entry:",
+            "  %flag = call i64 @heap_get(i64 %token, i64 0)",
+            "  %already = icmp ne i64 %flag, 0",
+            "  br i1 %already, label %done, label %set",
+            "set:",
+            "  %_set_flag = call i64 @heap_set(i64 %token, i64 0, i64 1)",
+            "  %reason_int = ptrtoint i8* %reason to i64",
+            "  %_set_reason = call i64 @heap_set(i64 %token, i64 1, i64 %reason_int)",
+            "  br label %done",
+            "done:",
+            "  %res = phi i1 [false, %entry], [true, %set]",
+            "  ret i1 %res",
+            "}",
+            "define i8* @__async_reason(i64 %token) {",
+            "entry:",
+            "  %raw = call i64 @heap_get(i64 %token, i64 1)",
+            "  %ptr = inttoptr i64 %raw to i8*",
+            "  ret i8* %ptr",
+            "}",
+            "define i1 @__async_link(i64 %token, i64 %handle) {",
+            "entry:",
+            "  %flag = call i64 @heap_get(i64 %token, i64 0)",
+            "  %cancelled = icmp ne i64 %flag, 0",
+            "  %linked = xor i1 %cancelled, true",
+            "  ret i1 %linked",
             "}",
             "define void @__match_error(i64 %ptr) {",
             "entry:",

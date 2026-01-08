@@ -102,8 +102,6 @@ _None_
 
 ### Open tasks
 
-- [ ] Cancellation tokens (`Async.token`, `Async.cancel`, `Async.is_cancelled`, `Async.reason`, `Async.link`)
-
 - [ ] Module imports
   - [ ] Generate per-module initialization functions in LLVM IR.
   - [ ] Emit a module loader in the runtime and link it into executables.
@@ -113,6 +111,8 @@ _None_
   - [ ] Stabilize argument conversion and reference lifetime management.
 
 ### Closed tasks
+
+- [x] Cancellation tokens (`Async.token`, `Async.cancel`, `Async.is_cancelled`, `Async.reason`, `Async.link`)
 
 - [x] Concurrency (`spawn`, `join`) (synchronous, no tokens)
   - [x] Define C runtime entry points for task scheduling.

@@ -111,6 +111,34 @@ print(result);
     assert "call i64 @__join_i64" in main_ir
 
 
+def test_llvm_codegen_supports_async_tokens() -> None:
+    source = """
+fn quick() { return 1; }
+
+def token = Async.token();
+def handle = spawn quick();
+def linked = Async.link(token, handle);
+def cancelled = Async.cancel(token, "stop");
+print(Async.is_cancelled(token));
+print(Async.reason(token));
+print(linked, cancelled);
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+    main_ir = _tiny_main_body(llvm_ir)
+
+    assert "define i64 @__async_token" in llvm_ir
+    assert "define i1 @__async_cancel" in llvm_ir
+    assert "define i1 @__async_is_cancelled" in llvm_ir
+    assert "define i8* @__async_reason" in llvm_ir
+    assert "define i1 @__async_link" in llvm_ir
+    assert "call i64 @__async_token" in main_ir
+    assert "call i1 @__async_cancel" in main_ir
+    assert "call i1 @__async_is_cancelled" in main_ir
+    assert "call i8* @__async_reason" in main_ir
+    assert "call i1 @__async_link" in main_ir
+
+
 def test_llvm_codegen_supports_class_methods() -> None:
     source = """
 class Point {

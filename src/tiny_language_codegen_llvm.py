@@ -23,6 +23,8 @@ class _StackValue:
     ty: str
     source: Optional[str] = None
     literal: Optional[int] = None
+    literal_str: Optional[str] = None
+    class_name: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -42,6 +44,8 @@ class _TypeValue:
     ty: Optional[str]
     source: Optional[str] = None
     literal: Optional[int] = None
+    literal_str: Optional[str] = None
+    class_name: Optional[str] = None
 
 
 class LLVMCodeGenerator:
@@ -54,6 +58,7 @@ class LLVMCodeGenerator:
         self._allocas: Dict[str, str] = {}
         self._var_types: Dict[str, str] = {}
         self._var_literals: Dict[str, int] = {}
+        self._var_classes: Dict[str, str] = {}
         self._prologue: List[str] = []
         self._body: List[str] = []
         self._string_constants: Dict[str, Tuple[str, int]] = {}
@@ -62,6 +67,11 @@ class LLVMCodeGenerator:
         self._current_return_type: Optional[str] = None
         self._current_instruction: Optional[Instruction] = None
         self._heap_cell_types: Dict[Tuple[str, int], str] = {}
+        self._class_layouts: Dict[str, List[Tuple[str, str]]] = {}
+        self._class_mros: Dict[str, List[str]] = {}
+        self._class_ids: Dict[str, int] = {}
+        self._class_methods: Dict[str, Dict[str, str]] = {}
+        self._class_field_types: Dict[Tuple[str, int], str] = {}
         self._target_triple = target_triple
         self._data_layout = data_layout
         self._operator_overloads: Dict[Tuple[str, str, str], str] = {}
@@ -99,7 +109,9 @@ class LLVMCodeGenerator:
         scope so gaps stay visible during experimentation.
         """
 
+        self._register_class_metadata(program)
         self._operator_overloads = self._register_operator_overloads(program.operator_overloads)
+        self._class_field_types.clear()
         self._function_signatures = self._infer_signatures(program)
         self._string_constants.clear()
         self._string_defs.clear()
@@ -124,6 +136,7 @@ class LLVMCodeGenerator:
         self._allocas.clear()
         self._var_types.clear()
         self._var_literals.clear()
+        self._var_classes.clear()
         self._prologue.clear()
         self._body.clear()
         self._current_return_type = None
@@ -151,6 +164,7 @@ class LLVMCodeGenerator:
         self._allocas.clear()
         self._var_types.clear()
         self._var_literals.clear()
+        self._var_classes.clear()
         self._prologue.clear()
         self._body.clear()
         self._current_return_type = signature.return_type
@@ -164,6 +178,8 @@ class LLVMCodeGenerator:
             self._var_types[name] = ty
             self._prologue.append(f"  %{addr_name} = alloca {ty}")
             self._prologue.append(f"  store {ty} %{arg_name}, {ty}* %{addr_name}")
+        if "." in func.name and func.params:
+            self._var_classes[func.params[0]] = func.name.split(".", 1)[0]
 
         block_starts = self._collect_block_starts(func.instructions)
         label_map = self._label_map(block_starts)
@@ -314,7 +330,7 @@ class LLVMCodeGenerator:
             self._body.append(
                 f"  {dest} = getelementptr inbounds [{length} x i8], [{length} x i8]* @{name}, i32 0, i32 0"
             )
-            self._stack.append(_StackValue(name=dest, ty="i8*"))
+            self._stack.append(_StackValue(name=dest, ty="i8*", literal_str=value))
         else:
             self._lowering_error(
                 f"constants of type {type(value).__name__} are not supported",
@@ -327,7 +343,8 @@ class LLVMCodeGenerator:
         dest = self._next_tmp()
         self._body.append(f"  {dest} = load {ty}, {ty}* %{self._allocas[name]}")
         literal = self._var_literals.get(name)
-        self._stack.append(_StackValue(name=dest, ty=ty, source=name, literal=literal))
+        class_name = self._var_classes.get(name)
+        self._stack.append(_StackValue(name=dest, ty=ty, source=name, literal=literal, class_name=class_name))
 
     def _store_var(self, name: str) -> None:
         if not self._stack:
@@ -341,6 +358,10 @@ class LLVMCodeGenerator:
             self._var_literals[name] = value.literal
         else:
             self._var_literals.pop(name, None)
+        if value.class_name:
+            self._var_classes[name] = value.class_name
+        else:
+            self._var_classes.pop(name, None)
         if value.source and value.source != name:
             for (ptr_name, idx), cell_ty in list(self._heap_cell_types.items()):
                 if ptr_name == value.source:
@@ -473,6 +494,18 @@ class LLVMCodeGenerator:
     def _call_function(self, call_spec: Tuple[str, int]) -> None:
         name, argc = call_spec
         args = [self._stack.pop() for _ in range(argc)][::-1]
+        if name == "__class_new":
+            self._emit_class_new(args)
+            return
+        if name == "__field_get":
+            self._emit_field_get(args)
+            return
+        if name == "__field_set":
+            self._emit_field_set(args)
+            return
+        if name == "__method_call":
+            self._emit_method_call(args)
+            return
         resolved_name = name
         if name == "heap_set":
             resolved_name = self._resolve_heap_set_name(args)
@@ -502,6 +535,88 @@ class LLVMCodeGenerator:
         if name == "heap_set":
             self._record_heap_cell_type(args)
 
+    def _emit_class_new(self, args: List[_StackValue]) -> None:
+        if not args:
+            self._lowering_error("__class_new expects at least 1 arg")
+        class_name = self._literal_string(args[0], context="__class_new")
+        layout = self._class_layouts.get(class_name)
+        if layout is None:
+            self._lowering_error(f"unknown class {class_name}")
+        if (len(args) - 1) % 2 != 0:
+            self._lowering_error("__class_new expects field name/value pairs")
+        size = len(layout) + 1
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i64 @__new(i64 {size})")
+        ptr = _StackValue(name=dest, ty="i64", source=dest, class_name=class_name)
+        class_id = self._class_ids[class_name]
+        self._emit_heap_set(ptr, 0, self._const_i64(class_id))
+        for index in range(1, len(args), 2):
+            field_name = self._literal_string(args[index], context="__class_new")
+            value = args[index + 1]
+            field_index = self._class_field_index(class_name, field_name)
+            self._emit_heap_set(ptr, field_index, value)
+            self._class_field_types[(class_name, field_index)] = value.ty
+        self._stack.append(_StackValue(name=dest, ty="i64", source=dest, class_name=class_name))
+
+    def _emit_field_get(self, args: List[_StackValue]) -> None:
+        if len(args) != 2:
+            self._lowering_error("__field_get expects 2 args")
+        obj, field_name = args
+        class_name = obj.class_name
+        if class_name is None:
+            self._lowering_error("field access on unknown class value")
+        field_literal = self._literal_string(field_name, context="__field_get")
+        field_index = self._class_field_index(class_name, field_literal)
+        resolved_name = self._resolve_class_heap_get_name(class_name, field_index)
+        dest = self._next_tmp()
+        arg_text = f"i64 {obj.name}, i64 {field_index}"
+        self._body.append(f"  {dest} = call {self._heap_get_return_type(resolved_name)} @{resolved_name}({arg_text})")
+        self._stack.append(
+            _StackValue(name=dest, ty=self._heap_get_return_type(resolved_name))
+        )
+
+    def _emit_field_set(self, args: List[_StackValue]) -> None:
+        if len(args) != 3:
+            self._lowering_error("__field_set expects 3 args")
+        obj, field_name, value = args
+        class_name = obj.class_name
+        if class_name is None:
+            self._lowering_error("field access on unknown class value")
+        field_literal = self._literal_string(field_name, context="__field_set")
+        field_index = self._class_field_index(class_name, field_literal)
+        self._emit_heap_set(obj, field_index, value)
+        self._class_field_types[(class_name, field_index)] = value.ty
+        self._stack.append(value)
+
+    def _emit_method_call(self, args: List[_StackValue]) -> None:
+        if len(args) < 2:
+            self._lowering_error("__method_call expects at least 2 args")
+        obj, method_name, *rest = args
+        class_name = obj.class_name
+        if class_name is None:
+            self._lowering_error("method call on unknown class value")
+        method_literal = self._literal_string(method_name, context="__method_call")
+        target_name = self._resolve_method_target(class_name, method_literal)
+        signature = self._function_signatures.get(target_name)
+        if signature is None:
+            self._lowering_error(f"unknown function {target_name}")
+        call_args = [obj] + list(rest)
+        if len(call_args) != len(signature.param_types):
+            self._lowering_error(
+                f"function {target_name} expects {len(signature.param_types)} args, got {len(call_args)}"
+            )
+        rendered_args: List[str] = []
+        for (param_name, param_type), arg in zip(signature.param_types.items(), call_args):
+            if arg.ty != param_type:
+                self._lowering_error(
+                    f"argument for {target_name}.{param_name} expected {param_type}, got {arg.ty}"
+                )
+            rendered_args.append(f"{param_type} {arg.name}")
+        dest = self._next_tmp()
+        args_text = ", ".join(rendered_args)
+        self._body.append(f"  {dest} = call {signature.return_type} @{target_name}({args_text})")
+        self._stack.append(_StackValue(name=dest, ty=signature.return_type))
+
     # ----- Helpers -----
 
     def _pop_condition(self) -> str:
@@ -519,6 +634,95 @@ class LLVMCodeGenerator:
             self._body.append(f"  {dest} = fcmp one double {cond.name}, 0.0")
             return dest
         self._lowering_error(f"conditional branches for type {cond.ty} not supported")
+
+    def _literal_string(self, value: _StackValue, *, context: str) -> str:
+        if value.literal_str is None:
+            self._lowering_error(f"{context} expects a string literal")
+        return value.literal_str
+
+    def _const_i64(self, value: int) -> _StackValue:
+        return _StackValue(name=str(value), ty="i64", literal=value)
+
+    def _emit_heap_set(self, ptr: _StackValue, idx: int, value: _StackValue) -> None:
+        idx_value = self._const_i64(idx)
+        args = [ptr, idx_value, value]
+        resolved_name = self._resolve_heap_set_name(args)
+        signature = self._builtin_signature(resolved_name)
+        if signature is None:
+            self._lowering_error(f"unknown function {resolved_name}")
+        rendered_args: List[str] = []
+        for (param_name, param_type), arg in zip(signature.param_types.items(), args):
+            if arg.ty != param_type:
+                self._lowering_error(
+                    f"argument for {resolved_name}.{param_name} expected {param_type}, got {arg.ty}"
+                )
+            rendered_args.append(f"{param_type} {arg.name}")
+        dest = self._next_tmp()
+        args_text = ", ".join(rendered_args)
+        self._body.append(f"  {dest} = call {signature.return_type} @{resolved_name}({args_text})")
+        self._record_heap_cell_type(args)
+
+    def _resolve_class_heap_get_name(self, class_name: str, field_index: int) -> str:
+        cell_type = self._class_field_types.get((class_name, field_index))
+        if cell_type == "i8*":
+            return "heap_get_str"
+        if cell_type == "double":
+            return "heap_get_double"
+        if cell_type == "i1":
+            return "heap_get_bool"
+        return "heap_get"
+
+    def _heap_get_return_type(self, name: str) -> str:
+        if name == "heap_get_str":
+            return "i8*"
+        if name == "heap_get_double":
+            return "double"
+        if name == "heap_get_bool":
+            return "i1"
+        return "i64"
+
+    def _split_field_name(self, field_name: str) -> Tuple[Optional[str], str]:
+        if "." in field_name:
+            owner, rest = field_name.split(".", 1)
+            return owner, rest
+        return None, field_name
+
+    def _class_field_index(self, class_name: str, field_name: str) -> int:
+        layout = self._class_layouts.get(class_name)
+        if layout is None:
+            self._lowering_error(f"unknown class {class_name}")
+        owner_hint, raw_name = self._split_field_name(field_name)
+        matches = [
+            (idx, owner)
+            for idx, (owner, fname) in enumerate(layout)
+            if fname == raw_name
+        ]
+        if owner_hint:
+            for idx, owner in matches:
+                if owner == owner_hint:
+                    return idx + 1
+            self._lowering_error(f"unknown field {raw_name} for base class {owner_hint}")
+        if matches:
+            for idx, owner in matches:
+                if owner == class_name:
+                    return idx + 1
+            if len(matches) == 1:
+                return matches[0][0] + 1
+            self._lowering_error(f"ambiguous field {raw_name} on class {class_name}")
+        self._lowering_error(f"unknown field {raw_name} for class {class_name}")
+        raise RuntimeError("unreachable")
+
+    def _resolve_method_target(self, class_name: str, method_name: str) -> str:
+        mro = self._class_mros.get(class_name)
+        if mro is None:
+            self._lowering_error(f"unknown class {class_name}")
+        for cls in mro:
+            methods = self._class_methods.get(cls, {})
+            target = methods.get(method_name)
+            if target is not None:
+                return target
+        self._lowering_error(f"no method {method_name} for class {class_name}")
+        raise RuntimeError("unreachable")
 
     def _next_tmp(self) -> str:
         self._tmp_index += 1
@@ -664,6 +868,52 @@ class LLVMCodeGenerator:
             "}",
         ]
 
+    def _register_class_metadata(self, program: ProgramIR) -> None:
+        self._class_layouts.clear()
+        self._class_mros.clear()
+        self._class_ids.clear()
+        self._class_methods.clear()
+
+        for func_name in program.functions:
+            if "." not in func_name:
+                continue
+            class_name, method_name = func_name.split(".", 1)
+            self._class_methods.setdefault(class_name, {})[method_name] = func_name
+
+        def build_mro(name: str) -> List[str]:
+            cached = self._class_mros.get(name)
+            if cached is not None:
+                return cached
+            class_def = program.classes.get(name)
+            if class_def is None:
+                self._class_mros[name] = [name]
+                return [name]
+            mro: List[str] = [name]
+            for base in class_def.bases:
+                if base not in program.classes:
+                    self._lowering_error(f"unknown base class {base} for {name}")
+                for ancestor in build_mro(base):
+                    if ancestor not in mro:
+                        mro.append(ancestor)
+            self._class_mros[name] = mro
+            return mro
+
+        for class_name in program.classes:
+            build_mro(class_name)
+
+        for class_name, mro in self._class_mros.items():
+            layout: List[Tuple[str, str]] = []
+            for cls in mro:
+                class_def = program.classes.get(cls)
+                if class_def is None:
+                    continue
+                for field in class_def.fields:
+                    layout.append((cls, field))
+            self._class_layouts[class_name] = layout
+
+        for idx, class_name in enumerate(sorted(program.classes.keys()), start=1):
+            self._class_ids[class_name] = idx
+
     def _infer_signatures(self, program: ProgramIR) -> Dict[str, _ResolvedFunctionSignature]:
         signatures: Dict[str, _FunctionSignature] = {}
         for func in program.functions.values():
@@ -709,8 +959,11 @@ class LLVMCodeGenerator:
         stack: List[_TypeValue] = []
         locals_types: Dict[str, Optional[str]] = {}
         locals_literals: Dict[str, int] = {}
+        locals_classes: Dict[str, str] = {}
         heap_cell_types: Dict[Tuple[str, int], str] = {}
         signature = signatures[func.name]
+        if "." in func.name and func.params:
+            locals_classes[func.params[0]] = func.name.split(".", 1)[0]
 
         def set_param_type(param_name: str, ty: str) -> None:
             nonlocal changed
@@ -744,7 +997,7 @@ class LLVMCodeGenerator:
                 elif isinstance(instr.arg, float):
                     stack.append(_TypeValue("double"))
                 elif isinstance(instr.arg, str):
-                    stack.append(_TypeValue("i8*"))
+                    stack.append(_TypeValue("i8*", literal_str=instr.arg))
                 else:
                     raise NotImplementedError(
                         f"constants of type {type(instr.arg).__name__} are not supported in LLVM prototype"
@@ -753,9 +1006,22 @@ class LLVMCodeGenerator:
                 name = instr.arg
                 if name in locals_types:
                     literal = locals_literals.get(name)
-                    stack.append(_TypeValue(locals_types[name], source=name, literal=literal))
+                    stack.append(
+                        _TypeValue(
+                            locals_types[name],
+                            source=name,
+                            literal=literal,
+                            class_name=locals_classes.get(name),
+                        )
+                    )
                 elif name in signature.param_types:
-                    stack.append(_TypeValue(signature.param_types[name], source=name))
+                    stack.append(
+                        _TypeValue(
+                            signature.param_types[name],
+                            source=name,
+                            class_name=locals_classes.get(name),
+                        )
+                    )
                 else:
                     raise NotImplementedError(f"unknown variable {name} in LLVM prototype")
             elif instr.op == Opcode.STORE:
@@ -768,6 +1034,10 @@ class LLVMCodeGenerator:
                     locals_literals[instr.arg] = value.literal
                 else:
                     locals_literals.pop(instr.arg, None)
+                if value.class_name:
+                    locals_classes[instr.arg] = value.class_name
+                else:
+                    locals_classes.pop(instr.arg, None)
                 if value.source and value.source != instr.arg:
                     for (ptr_name, idx), cell_ty in list(heap_cell_types.items()):
                         if ptr_name == value.source:
@@ -818,6 +1088,89 @@ class LLVMCodeGenerator:
             elif instr.op == Opcode.CALL:
                 name, argc = instr.arg
                 args = [stack.pop() for _ in range(argc)][::-1]
+                if name == "__class_new":
+                    if not args:
+                        raise NotImplementedError("__class_new expects at least 1 arg")
+                    class_name_value = args[0].literal_str
+                    if class_name_value is None:
+                        raise NotImplementedError("__class_new expects a string literal class name")
+                    if (len(args) - 1) % 2 != 0:
+                        raise NotImplementedError("__class_new expects field name/value pairs")
+                    for index in range(1, len(args), 2):
+                        field_name = args[index].literal_str
+                        if field_name is None:
+                            raise NotImplementedError("__class_new expects string literal field names")
+                        value = args[index + 1]
+                        if value.ty is not None:
+                            field_index = self._class_field_index(class_name_value, field_name)
+                            existing = self._class_field_types.get((class_name_value, field_index))
+                            if existing is None:
+                                self._class_field_types[(class_name_value, field_index)] = value.ty
+                                changed = True
+                            elif existing != value.ty:
+                                raise NotImplementedError(
+                                    f"mixed-type field {class_name_value}.{field_name} in LLVM prototype"
+                                )
+                    stack.append(_TypeValue("i64", class_name=class_name_value))
+                    continue
+                if name == "__field_get":
+                    if len(args) != 2:
+                        raise NotImplementedError("__field_get expects 2 args")
+                    obj, field_name = args
+                    class_name_value = obj.class_name
+                    field_literal = field_name.literal_str
+                    if class_name_value is None or field_literal is None:
+                        raise NotImplementedError("__field_get expects class value and field name literal")
+                    field_index = self._class_field_index(class_name_value, field_literal)
+                    field_type = self._class_field_types.get((class_name_value, field_index), "i64")
+                    stack.append(_TypeValue(field_type))
+                    continue
+                if name == "__field_set":
+                    if len(args) != 3:
+                        raise NotImplementedError("__field_set expects 3 args")
+                    obj, field_name, value = args
+                    class_name_value = obj.class_name
+                    field_literal = field_name.literal_str
+                    if class_name_value is None or field_literal is None:
+                        raise NotImplementedError("__field_set expects class value and field name literal")
+                    field_index = self._class_field_index(class_name_value, field_literal)
+                    if value.ty is not None:
+                        existing = self._class_field_types.get((class_name_value, field_index))
+                        if existing is None:
+                            self._class_field_types[(class_name_value, field_index)] = value.ty
+                            changed = True
+                        elif existing != value.ty:
+                            raise NotImplementedError(
+                                f"mixed-type field {class_name_value}.{field_literal} in LLVM prototype"
+                            )
+                    stack.append(value)
+                    continue
+                if name == "__method_call":
+                    if len(args) < 2:
+                        raise NotImplementedError("__method_call expects at least 2 args")
+                    obj, method_name, *rest = args
+                    class_name_value = obj.class_name
+                    method_literal = method_name.literal_str
+                    if class_name_value is None or method_literal is None:
+                        raise NotImplementedError("__method_call expects class value and method name literal")
+                    target_name = self._resolve_method_target(class_name_value, method_literal)
+                    callee = signatures.get(target_name)
+                    if callee is None:
+                        raise NotImplementedError(f"unknown function {target_name}")
+                    method_args = [obj] + list(rest)
+                    for param_name, arg in zip(callee.param_types.keys(), method_args):
+                        expected = callee.param_types[param_name]
+                        if expected is None and arg.ty:
+                            callee.param_types[param_name] = arg.ty
+                            changed = True
+                        if arg.ty is None and arg.source and expected:
+                            set_param_type(arg.source, expected)
+                        if expected and arg.ty and expected != arg.ty:
+                            raise NotImplementedError(
+                                f"argument type mismatch for {target_name}.{param_name}: {expected} vs {arg.ty}"
+                            )
+                    stack.append(_TypeValue(callee.return_type))
+                    continue
                 if name == "heap_set":
                     self._record_heap_cell_type_inference(args, heap_cell_types)
                     stack.append(_TypeValue("i64"))

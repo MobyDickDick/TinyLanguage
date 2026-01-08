@@ -31,7 +31,7 @@ Legend:
 | Classes / methods | ✅ | ❌ | ❌ |
 | Operator overloading | ✅ | ✅ | ⚠️ Numeric-only overloads |
 | Pattern matching + ADTs | ✅ | ❌ | ❌ |
-| Collections (`Map`, `Set`, `Deque`) | ✅ | ❌ | ❌ |
+| Collections (`Map`, `Set`, `Deque`) | ✅ | ❌ | ⚠️ Heap-backed collections (linear search, untyped payloads) |
 | Concurrency (`spawn`, `join`, tokens) | ✅ | ✅ | ❌ |
 
 ## Interop and tooling
@@ -102,10 +102,6 @@ _None_
 
 ### Open tasks
 
-- [ ] Collections (`Map`, `Set`, `Deque`)
-  - [ ] Port collection runtime to C/LLVM helpers.
-  - [ ] Generate bindings for collection methods in the LLVM IR.
-
 - [ ] Concurrency (`spawn`, `join`, tokens)
   - [ ] Define C runtime entry points for task scheduling.
   - [ ] Lower spawn/join operations to runtime calls.
@@ -119,6 +115,10 @@ _None_
   - [ ] Stabilize argument conversion and reference lifetime management.
 
 ### Closed tasks
+
+- [x] Collections (`Map`, `Set`, `Deque`)
+  - [x] Port collection runtime to C/LLVM helpers.
+  - [x] Generate bindings for collection methods in the LLVM IR.
 
 - [x] Pattern matching + ADTs
   - [x] Represent ADTs with tagged unions in LLVM.

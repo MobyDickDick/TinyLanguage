@@ -335,6 +335,32 @@ def test_llvm_codegen_defines_heap_runtime_helpers() -> None:
     assert "define i64 @delete(i64 %ptr)" in llvm_ir
 
 
+def test_llvm_codegen_emits_collection_helpers() -> None:
+    source = """
+def m = Map.new();
+def _ = Map.set(m, 1, 2);
+print(Map.get(m, 1, 0));
+
+def s = Set.new();
+print(Set.add(s, 5));
+
+def q = Deque.new();
+def _p = Deque.push_right(q, 9);
+print(Deque.pop_left(q));
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "call i64 @__map_new()" in llvm_ir
+    assert "call i64 @__map_set" in llvm_ir
+    assert "call i64 @__map_get" in llvm_ir
+    assert "call i64 @__set_new()" in llvm_ir
+    assert "call i1 @__set_add" in llvm_ir
+    assert "call i64 @__deque_new()" in llvm_ir
+    assert "call i64 @__deque_push_right" in llvm_ir
+    assert "call i64 @__deque_pop_left" in llvm_ir
+
+
 def test_llvm_codegen_emits_heap_bounds_checks() -> None:
     source = "def ptr = new(2); heap_set(ptr, 1, 1); print(heap_get(ptr, 1));"
 

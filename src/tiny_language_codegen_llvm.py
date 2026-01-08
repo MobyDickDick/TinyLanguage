@@ -346,6 +346,9 @@ class LLVMCodeGenerator:
             )
 
     def _load_var(self, name: str) -> None:
+        if name in {"Map", "Set", "Deque"}:
+            self._stack.append(_StackValue(name=name, ty="i64", class_name=name))
+            return
         ty = self._var_types.get(name)
         if ty is None:
             self._lowering_error(f"unknown variable {name}")
@@ -519,9 +522,50 @@ class LLVMCodeGenerator:
     def _flush_output(self) -> None:
         self._body.append("  call i32 @fflush(i8* null)")
 
+    def _value_payload(self, value: _StackValue) -> str:
+        if value.ty == "i64":
+            return value.name
+        dest = self._next_tmp()
+        if value.ty == "i1":
+            self._body.append(f"  {dest} = zext i1 {value.name} to i64")
+            return dest
+        if value.ty == "double":
+            self._body.append(f"  {dest} = bitcast double {value.name} to i64")
+            return dest
+        if value.ty == "i8*":
+            self._body.append(f"  {dest} = ptrtoint i8* {value.name} to i64")
+            return dest
+        self._lowering_error(f"cannot lower payload for type {value.ty}")
+        return dest
+
+    def _payload_to_value(self, payload: str, target_ty: str) -> _StackValue:
+        if target_ty == "i64":
+            return _StackValue(name=payload, ty="i64")
+        dest = self._next_tmp()
+        if target_ty == "i1":
+            self._body.append(f"  {dest} = trunc i64 {payload} to i1")
+            return _StackValue(name=dest, ty="i1")
+        if target_ty == "double":
+            self._body.append(f"  {dest} = bitcast i64 {payload} to double")
+            return _StackValue(name=dest, ty="double")
+        if target_ty == "i8*":
+            self._body.append(f"  {dest} = inttoptr i64 {payload} to i8*")
+            return _StackValue(name=dest, ty="i8*")
+        self._lowering_error(f"cannot unbox payload for type {target_ty}")
+        return _StackValue(name=payload, ty=target_ty)
+
     def _call_function(self, call_spec: Tuple[str, int]) -> None:
         name, argc = call_spec
         args = [self._stack.pop() for _ in range(argc)][::-1]
+        if name.startswith("Map."):
+            self._emit_map_call(name, args)
+            return
+        if name.startswith("Set."):
+            self._emit_set_call(name, args)
+            return
+        if name.startswith("Deque."):
+            self._emit_deque_call(name, args)
+            return
         if name == "__variant_assume":
             if len(args) != 2:
                 self._lowering_error("__variant_assume expects 2 args")
@@ -592,6 +636,230 @@ class LLVMCodeGenerator:
         if name == "heap_set":
             self._record_heap_cell_type(args)
 
+    def _emit_map_call(self, name: str, args: List[_StackValue]) -> None:
+        method = name.split(".", 1)[1]
+        if method == "new":
+            if args:
+                self._lowering_error("Map.new expects 0 args")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__map_new()")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "len":
+            if len(args) != 1:
+                self._lowering_error("Map.len expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__map_len(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "set":
+            if len(args) != 3:
+                self._lowering_error("Map.set expects 3 args")
+            key_payload = self._value_payload(args[1])
+            value_payload = self._value_payload(args[2])
+            self._body.append(
+                f"  call i64 @__map_set(i64 {args[0].name}, i64 {key_payload}, i64 {value_payload})"
+            )
+            self._stack.append(args[2])
+            return
+        if method == "get":
+            if len(args) not in {2, 3}:
+                self._lowering_error("Map.get expects 2 or 3 args")
+            key_payload = self._value_payload(args[1])
+            default_ty = args[2].ty if len(args) == 3 else "i64"
+            default_payload = self._value_payload(args[2]) if len(args) == 3 else "0"
+            dest = self._next_tmp()
+            self._body.append(
+                f"  {dest} = call i64 @__map_get(i64 {args[0].name}, i64 {key_payload}, i64 {default_payload})"
+            )
+            self._stack.append(self._payload_to_value(dest, default_ty))
+            return
+        if method == "has":
+            if len(args) != 2:
+                self._lowering_error("Map.has expects 2 args")
+            key_payload = self._value_payload(args[1])
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i1 @__map_has(i64 {args[0].name}, i64 {key_payload})")
+            self._stack.append(_StackValue(name=dest, ty="i1"))
+            return
+        if method == "delete":
+            if len(args) != 2:
+                self._lowering_error("Map.delete expects 2 args")
+            key_payload = self._value_payload(args[1])
+            dest = self._next_tmp()
+            self._body.append(
+                f"  {dest} = call i1 @__map_delete(i64 {args[0].name}, i64 {key_payload})"
+            )
+            self._stack.append(_StackValue(name=dest, ty="i1"))
+            return
+        if method == "keys":
+            if len(args) != 1:
+                self._lowering_error("Map.keys expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__map_keys(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "values":
+            if len(args) != 1:
+                self._lowering_error("Map.values expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__map_values(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "entries":
+            if len(args) != 1:
+                self._lowering_error("Map.entries expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__map_entries(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "from_entries":
+            if len(args) != 1:
+                self._lowering_error("Map.from_entries expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__map_from_entries(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        self._lowering_error(f"unknown Map method {method}")
+
+    def _emit_set_call(self, name: str, args: List[_StackValue]) -> None:
+        method = name.split(".", 1)[1]
+        if method == "new":
+            if args:
+                self._lowering_error("Set.new expects 0 args")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__set_new()")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "from_list":
+            if len(args) != 1:
+                self._lowering_error("Set.from_list expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__set_from_list(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "len":
+            if len(args) != 1:
+                self._lowering_error("Set.len expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__set_len(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "add":
+            if len(args) != 2:
+                self._lowering_error("Set.add expects 2 args")
+            value_payload = self._value_payload(args[1])
+            dest = self._next_tmp()
+            self._body.append(
+                f"  {dest} = call i1 @__set_add(i64 {args[0].name}, i64 {value_payload})"
+            )
+            self._stack.append(_StackValue(name=dest, ty="i1"))
+            return
+        if method == "delete":
+            if len(args) != 2:
+                self._lowering_error("Set.delete expects 2 args")
+            value_payload = self._value_payload(args[1])
+            dest = self._next_tmp()
+            self._body.append(
+                f"  {dest} = call i1 @__set_delete(i64 {args[0].name}, i64 {value_payload})"
+            )
+            self._stack.append(_StackValue(name=dest, ty="i1"))
+            return
+        if method == "has":
+            if len(args) != 2:
+                self._lowering_error("Set.has expects 2 args")
+            value_payload = self._value_payload(args[1])
+            dest = self._next_tmp()
+            self._body.append(
+                f"  {dest} = call i1 @__set_has(i64 {args[0].name}, i64 {value_payload})"
+            )
+            self._stack.append(_StackValue(name=dest, ty="i1"))
+            return
+        if method == "to_list":
+            if len(args) != 1:
+                self._lowering_error("Set.to_list expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__set_to_list(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        self._lowering_error(f"unknown Set method {method}")
+
+    def _emit_deque_call(self, name: str, args: List[_StackValue]) -> None:
+        method = name.split(".", 1)[1]
+        if method == "new":
+            if len(args) > 1:
+                self._lowering_error("Deque.new expects 0 or 1 args")
+            dest = self._next_tmp()
+            if args:
+                self._body.append(f"  {dest} = call i64 @__deque_from_list(i64 {args[0].name})")
+            else:
+                self._body.append(f"  {dest} = call i64 @__deque_new()")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "len":
+            if len(args) != 1:
+                self._lowering_error("Deque.len expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__deque_len(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "push_left":
+            if len(args) != 2:
+                self._lowering_error("Deque.push_left expects 2 args")
+            value_payload = self._value_payload(args[1])
+            dest = self._next_tmp()
+            self._body.append(
+                f"  {dest} = call i64 @__deque_push_left(i64 {args[0].name}, i64 {value_payload})"
+            )
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "push_right":
+            if len(args) != 2:
+                self._lowering_error("Deque.push_right expects 2 args")
+            value_payload = self._value_payload(args[1])
+            dest = self._next_tmp()
+            self._body.append(
+                f"  {dest} = call i64 @__deque_push_right(i64 {args[0].name}, i64 {value_payload})"
+            )
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "pop_left":
+            if len(args) != 1:
+                self._lowering_error("Deque.pop_left expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__deque_pop_left(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "pop_right":
+            if len(args) != 1:
+                self._lowering_error("Deque.pop_right expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__deque_pop_right(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "peek_left":
+            if len(args) != 1:
+                self._lowering_error("Deque.peek_left expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__deque_peek_left(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "peek_right":
+            if len(args) != 1:
+                self._lowering_error("Deque.peek_right expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__deque_peek_right(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "to_list":
+            if len(args) != 1:
+                self._lowering_error("Deque.to_list expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__deque_to_list(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        self._lowering_error(f"unknown Deque method {method}")
+
     def _emit_class_new(self, args: List[_StackValue]) -> None:
         if not args:
             self._lowering_error("__class_new expects at least 1 arg")
@@ -650,6 +918,15 @@ class LLVMCodeGenerator:
             self._lowering_error("__method_call expects at least 2 args")
         obj, method_name, *rest = args
         class_name = obj.class_name
+        if class_name in {"Map", "Set", "Deque"}:
+            method_literal = self._literal_string(method_name, context="__method_call")
+            if class_name == "Map":
+                self._emit_map_call(f"Map.{method_literal}", rest)
+            elif class_name == "Set":
+                self._emit_set_call(f"Set.{method_literal}", rest)
+            else:
+                self._emit_deque_call(f"Deque.{method_literal}", rest)
+            return
         if class_name is None:
             self._lowering_error("method call on unknown class value")
         method_literal = self._literal_string(method_name, context="__method_call")
@@ -901,6 +1178,7 @@ class LLVMCodeGenerator:
             "@.fmt_str = private unnamed_addr constant [4 x i8] c\"%s\\0A\\00\"",
             "@.heap_bounds_err = private unnamed_addr constant [54 x i8] c\"heap access error: index %ld out of range (size %ld)\\0A\\00\"",
             "@.match_error_fmt = private unnamed_addr constant [33 x i8] c\"non-exhaustive match for tag %s\\0A\\00\"",
+            "@.deque_empty_err = private unnamed_addr constant [16 x i8] c\"deque is empty\\0A\\00\"",
             "declare i32 @printf(i8*, ...)",
             "declare i32 @fflush(i8*)",
             "declare i8* @calloc(i64, i64)",
@@ -1006,6 +1284,13 @@ class LLVMCodeGenerator:
             "  %_ignored = call i64 @heap_set(i64 %ptr, i64 %idx, i64 %cast)",
             "  ret i64 0",
             "}",
+            "define i64 @heap_len(i64 %ptr) {",
+            "entry:",
+            "  %data = inttoptr i64 %ptr to i64*",
+            "  %base = getelementptr i64, i64* %data, i64 -1",
+            "  %size = load i64, i64* %base",
+            "  ret i64 %size",
+            "}",
             "define i64 @delete(i64 %ptr) {",
             "entry:",
             "  %data = inttoptr i64 %ptr to i64*",
@@ -1022,6 +1307,586 @@ class LLVMCodeGenerator:
             "  %_flushed = call i32 @fflush(i8* null)",
             "  call void @exit(i32 1)",
             "  ret void",
+            "}",
+            "define void @__deque_empty_error() {",
+            "entry:",
+            "  %fmt = getelementptr [16 x i8], [16 x i8]* @.deque_empty_err, i64 0, i64 0",
+            "  %_printed = call i32 (i8*, ...) @printf(i8* %fmt)",
+            "  %_flushed = call i32 @fflush(i8* null)",
+            "  call void @exit(i32 1)",
+            "  ret void",
+            "}",
+            "define i64 @__map_new() {",
+            "entry:",
+            "  %map = call i64 @__new(i64 2)",
+            "  %entries = call i64 @__new(i64 0)",
+            "  %_ignored0 = call i64 @heap_set(i64 %map, i64 0, i64 0)",
+            "  %_ignored1 = call i64 @heap_set(i64 %map, i64 1, i64 %entries)",
+            "  ret i64 %map",
+            "}",
+            "define i64 @__map_len(i64 %map) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %map, i64 0)",
+            "  ret i64 %len",
+            "}",
+            "define i64 @__map_find(i64 %entries, i64 %len, i64 %key) {",
+            "entry:",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %next_loop]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %not_found, label %check",
+            "check:",
+            "  %idx = mul i64 %i, 2",
+            "  %cur = call i64 @heap_get(i64 %entries, i64 %idx)",
+            "  %eq = icmp eq i64 %cur, %key",
+            "  br i1 %eq, label %found, label %next_loop",
+            "next_loop:",
+            "  %next = add i64 %i, 1",
+            "  br label %loop",
+            "found:",
+            "  ret i64 %i",
+            "not_found:",
+            "  ret i64 -1",
+            "}",
+            "define i64 @__map_get(i64 %map, i64 %key, i64 %default) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %map, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %map, i64 1)",
+            "  %idx = call i64 @__map_find(i64 %entries, i64 %len, i64 %key)",
+            "  %found = icmp sge i64 %idx, 0",
+            "  br i1 %found, label %ok, label %missing",
+            "ok:",
+            "  %pos = mul i64 %idx, 2",
+            "  %val_idx = add i64 %pos, 1",
+            "  %val = call i64 @heap_get(i64 %entries, i64 %val_idx)",
+            "  ret i64 %val",
+            "missing:",
+            "  ret i64 %default",
+            "}",
+            "define i1 @__map_has(i64 %map, i64 %key) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %map, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %map, i64 1)",
+            "  %idx = call i64 @__map_find(i64 %entries, i64 %len, i64 %key)",
+            "  %found = icmp sge i64 %idx, 0",
+            "  ret i1 %found",
+            "}",
+            "define i1 @__map_delete(i64 %map, i64 %key) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %map, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %map, i64 1)",
+            "  %idx = call i64 @__map_find(i64 %entries, i64 %len, i64 %key)",
+            "  %found = icmp sge i64 %idx, 0",
+            "  br i1 %found, label %do_delete, label %not_found",
+            "do_delete:",
+            "  %new_len = sub i64 %len, 1",
+            "  %new_size = mul i64 %new_len, 2",
+            "  %new_entries = call i64 @__new(i64 %new_size)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %do_delete], [%next, %copy_next]",
+            "  %write = phi i64 [0, %do_delete], [%write_next, %copy_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %copied, label %check",
+            "check:",
+            "  %skip = icmp eq i64 %i, %idx",
+            "  br i1 %skip, label %skip_entry, label %copy_entry",
+            "skip_entry:",
+            "  %next = add i64 %i, 1",
+            "  %write_next = add i64 %write, 0",
+            "  br label %copy_next",
+            "copy_entry:",
+            "  %src_pos = mul i64 %i, 2",
+            "  %src_val = add i64 %src_pos, 1",
+            "  %key_val = call i64 @heap_get(i64 %entries, i64 %src_pos)",
+            "  %val_val = call i64 @heap_get(i64 %entries, i64 %src_val)",
+            "  %dst_pos = mul i64 %write, 2",
+            "  %dst_val = add i64 %dst_pos, 1",
+            "  %_k = call i64 @heap_set(i64 %new_entries, i64 %dst_pos, i64 %key_val)",
+            "  %_v = call i64 @heap_set(i64 %new_entries, i64 %dst_val, i64 %val_val)",
+            "  %next = add i64 %i, 1",
+            "  %write_next = add i64 %write, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  br label %copy",
+            "copied:",
+            "  %_l = call i64 @heap_set(i64 %map, i64 0, i64 %new_len)",
+            "  %_e = call i64 @heap_set(i64 %map, i64 1, i64 %new_entries)",
+            "  ret i1 1",
+            "not_found:",
+            "  ret i1 0",
+            "}",
+            "define i64 @__map_set(i64 %map, i64 %key, i64 %value) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %map, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %map, i64 1)",
+            "  %idx = call i64 @__map_find(i64 %entries, i64 %len, i64 %key)",
+            "  %found = icmp sge i64 %idx, 0",
+            "  br i1 %found, label %update, label %extend",
+            "update:",
+            "  %pos = mul i64 %idx, 2",
+            "  %val_idx = add i64 %pos, 1",
+            "  %_u = call i64 @heap_set(i64 %entries, i64 %val_idx, i64 %value)",
+            "  ret i64 %value",
+            "extend:",
+            "  %new_len = add i64 %len, 1",
+            "  %new_size = mul i64 %new_len, 2",
+            "  %new_entries = call i64 @__new(i64 %new_size)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %extend], [%next, %copy_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %copied, label %copy_body",
+            "copy_body:",
+            "  %src_pos = mul i64 %i, 2",
+            "  %src_val = add i64 %src_pos, 1",
+            "  %key_val = call i64 @heap_get(i64 %entries, i64 %src_pos)",
+            "  %val_val = call i64 @heap_get(i64 %entries, i64 %src_val)",
+            "  %_k = call i64 @heap_set(i64 %new_entries, i64 %src_pos, i64 %key_val)",
+            "  %_v = call i64 @heap_set(i64 %new_entries, i64 %src_val, i64 %val_val)",
+            "  %next = add i64 %i, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  br label %copy",
+            "copied:",
+            "  %key_pos = mul i64 %len, 2",
+            "  %val_pos = add i64 %key_pos, 1",
+            "  %_nk = call i64 @heap_set(i64 %new_entries, i64 %key_pos, i64 %key)",
+            "  %_nv = call i64 @heap_set(i64 %new_entries, i64 %val_pos, i64 %value)",
+            "  %_l = call i64 @heap_set(i64 %map, i64 0, i64 %new_len)",
+            "  %_e = call i64 @heap_set(i64 %map, i64 1, i64 %new_entries)",
+            "  ret i64 %value",
+            "}",
+            "define i64 @__map_keys(i64 %map) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %map, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %map, i64 1)",
+            "  %keys = call i64 @__new(i64 %len)",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %loop_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %done_block, label %body",
+            "body:",
+            "  %src = mul i64 %i, 2",
+            "  %key_val = call i64 @heap_get(i64 %entries, i64 %src)",
+            "  %_k = call i64 @heap_set(i64 %keys, i64 %i, i64 %key_val)",
+            "  %next = add i64 %i, 1",
+            "  br label %loop_next",
+            "loop_next:",
+            "  br label %loop",
+            "done_block:",
+            "  ret i64 %keys",
+            "}",
+            "define i64 @__map_values(i64 %map) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %map, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %map, i64 1)",
+            "  %values = call i64 @__new(i64 %len)",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %loop_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %done_block, label %body",
+            "body:",
+            "  %src = mul i64 %i, 2",
+            "  %val_idx = add i64 %src, 1",
+            "  %val = call i64 @heap_get(i64 %entries, i64 %val_idx)",
+            "  %_v = call i64 @heap_set(i64 %values, i64 %i, i64 %val)",
+            "  %next = add i64 %i, 1",
+            "  br label %loop_next",
+            "loop_next:",
+            "  br label %loop",
+            "done_block:",
+            "  ret i64 %values",
+            "}",
+            "define i64 @__map_entries(i64 %map) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %map, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %map, i64 1)",
+            "  %out = call i64 @__new(i64 %len)",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %loop_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %done_block, label %body",
+            "body:",
+            "  %src = mul i64 %i, 2",
+            "  %val_idx = add i64 %src, 1",
+            "  %key_val = call i64 @heap_get(i64 %entries, i64 %src)",
+            "  %val = call i64 @heap_get(i64 %entries, i64 %val_idx)",
+            "  %pair = call i64 @__new(i64 2)",
+            "  %_k = call i64 @heap_set(i64 %pair, i64 0, i64 %key_val)",
+            "  %_v = call i64 @heap_set(i64 %pair, i64 1, i64 %val)",
+            "  %_o = call i64 @heap_set(i64 %out, i64 %i, i64 %pair)",
+            "  %next = add i64 %i, 1",
+            "  br label %loop_next",
+            "loop_next:",
+            "  br label %loop",
+            "done_block:",
+            "  ret i64 %out",
+            "}",
+            "define i64 @__map_from_entries(i64 %entries_list) {",
+            "entry:",
+            "  %map = call i64 @__map_new()",
+            "  %len = call i64 @heap_len(i64 %entries_list)",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %loop_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %done_block, label %body",
+            "body:",
+            "  %pair = call i64 @heap_get(i64 %entries_list, i64 %i)",
+            "  %key_val = call i64 @heap_get(i64 %pair, i64 0)",
+            "  %val_val = call i64 @heap_get(i64 %pair, i64 1)",
+            "  %_ignored = call i64 @__map_set(i64 %map, i64 %key_val, i64 %val_val)",
+            "  %next = add i64 %i, 1",
+            "  br label %loop_next",
+            "loop_next:",
+            "  br label %loop",
+            "done_block:",
+            "  ret i64 %map",
+            "}",
+            "define i64 @__set_new() {",
+            "entry:",
+            "  %set = call i64 @__new(i64 2)",
+            "  %entries = call i64 @__new(i64 0)",
+            "  %_ignored0 = call i64 @heap_set(i64 %set, i64 0, i64 0)",
+            "  %_ignored1 = call i64 @heap_set(i64 %set, i64 1, i64 %entries)",
+            "  ret i64 %set",
+            "}",
+            "define i64 @__set_len(i64 %set) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %set, i64 0)",
+            "  ret i64 %len",
+            "}",
+            "define i64 @__set_find(i64 %entries, i64 %len, i64 %value) {",
+            "entry:",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %next_loop]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %not_found, label %check",
+            "check:",
+            "  %cur = call i64 @heap_get(i64 %entries, i64 %i)",
+            "  %eq = icmp eq i64 %cur, %value",
+            "  br i1 %eq, label %found, label %next_loop",
+            "next_loop:",
+            "  %next = add i64 %i, 1",
+            "  br label %loop",
+            "found:",
+            "  ret i64 %i",
+            "not_found:",
+            "  ret i64 -1",
+            "}",
+            "define i1 @__set_has(i64 %set, i64 %value) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %set, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %set, i64 1)",
+            "  %idx = call i64 @__set_find(i64 %entries, i64 %len, i64 %value)",
+            "  %found = icmp sge i64 %idx, 0",
+            "  ret i1 %found",
+            "}",
+            "define i1 @__set_add(i64 %set, i64 %value) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %set, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %set, i64 1)",
+            "  %idx = call i64 @__set_find(i64 %entries, i64 %len, i64 %value)",
+            "  %found = icmp sge i64 %idx, 0",
+            "  br i1 %found, label %already, label %extend",
+            "already:",
+            "  ret i1 0",
+            "extend:",
+            "  %new_len = add i64 %len, 1",
+            "  %new_entries = call i64 @__new(i64 %new_len)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %extend], [%next, %copy_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %copied, label %copy_body",
+            "copy_body:",
+            "  %cur = call i64 @heap_get(i64 %entries, i64 %i)",
+            "  %_c = call i64 @heap_set(i64 %new_entries, i64 %i, i64 %cur)",
+            "  %next = add i64 %i, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  br label %copy",
+            "copied:",
+            "  %_n = call i64 @heap_set(i64 %new_entries, i64 %len, i64 %value)",
+            "  %_l = call i64 @heap_set(i64 %set, i64 0, i64 %new_len)",
+            "  %_e = call i64 @heap_set(i64 %set, i64 1, i64 %new_entries)",
+            "  ret i1 1",
+            "}",
+            "define i1 @__set_delete(i64 %set, i64 %value) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %set, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %set, i64 1)",
+            "  %idx = call i64 @__set_find(i64 %entries, i64 %len, i64 %value)",
+            "  %found = icmp sge i64 %idx, 0",
+            "  br i1 %found, label %do_delete, label %not_found",
+            "do_delete:",
+            "  %new_len = sub i64 %len, 1",
+            "  %new_entries = call i64 @__new(i64 %new_len)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %do_delete], [%next, %copy_next]",
+            "  %write = phi i64 [0, %do_delete], [%write_next, %copy_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %copied, label %check",
+            "check:",
+            "  %skip = icmp eq i64 %i, %idx",
+            "  br i1 %skip, label %skip_entry, label %copy_entry",
+            "skip_entry:",
+            "  %next = add i64 %i, 1",
+            "  %write_next = add i64 %write, 0",
+            "  br label %copy_next",
+            "copy_entry:",
+            "  %cur = call i64 @heap_get(i64 %entries, i64 %i)",
+            "  %_c = call i64 @heap_set(i64 %new_entries, i64 %write, i64 %cur)",
+            "  %next = add i64 %i, 1",
+            "  %write_next = add i64 %write, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  br label %copy",
+            "copied:",
+            "  %_l = call i64 @heap_set(i64 %set, i64 0, i64 %new_len)",
+            "  %_e = call i64 @heap_set(i64 %set, i64 1, i64 %new_entries)",
+            "  ret i1 1",
+            "not_found:",
+            "  ret i1 0",
+            "}",
+            "define i64 @__set_to_list(i64 %set) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %set, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %set, i64 1)",
+            "  %out = call i64 @__new(i64 %len)",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %loop_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %done_block, label %body",
+            "body:",
+            "  %cur = call i64 @heap_get(i64 %entries, i64 %i)",
+            "  %_c = call i64 @heap_set(i64 %out, i64 %i, i64 %cur)",
+            "  %next = add i64 %i, 1",
+            "  br label %loop_next",
+            "loop_next:",
+            "  br label %loop",
+            "done_block:",
+            "  ret i64 %out",
+            "}",
+            "define i64 @__set_from_list(i64 %list) {",
+            "entry:",
+            "  %set = call i64 @__set_new()",
+            "  %len = call i64 @heap_len(i64 %list)",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %loop_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %done_block, label %body",
+            "body:",
+            "  %val = call i64 @heap_get(i64 %list, i64 %i)",
+            "  %_ignored = call i1 @__set_add(i64 %set, i64 %val)",
+            "  %next = add i64 %i, 1",
+            "  br label %loop_next",
+            "loop_next:",
+            "  br label %loop",
+            "done_block:",
+            "  ret i64 %set",
+            "}",
+            "define i64 @__deque_new() {",
+            "entry:",
+            "  %deque = call i64 @__new(i64 2)",
+            "  %entries = call i64 @__new(i64 0)",
+            "  %_ignored0 = call i64 @heap_set(i64 %deque, i64 0, i64 0)",
+            "  %_ignored1 = call i64 @heap_set(i64 %deque, i64 1, i64 %entries)",
+            "  ret i64 %deque",
+            "}",
+            "define i64 @__deque_from_list(i64 %list) {",
+            "entry:",
+            "  %deque = call i64 @__new(i64 2)",
+            "  %len = call i64 @heap_len(i64 %list)",
+            "  %entries = call i64 @__new(i64 %len)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %entry], [%next, %copy_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %copied, label %copy_body",
+            "copy_body:",
+            "  %val = call i64 @heap_get(i64 %list, i64 %i)",
+            "  %_c = call i64 @heap_set(i64 %entries, i64 %i, i64 %val)",
+            "  %next = add i64 %i, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  br label %copy",
+            "copied:",
+            "  %_l = call i64 @heap_set(i64 %deque, i64 0, i64 %len)",
+            "  %_e = call i64 @heap_set(i64 %deque, i64 1, i64 %entries)",
+            "  ret i64 %deque",
+            "}",
+            "define i64 @__deque_len(i64 %deque) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %deque, i64 0)",
+            "  ret i64 %len",
+            "}",
+            "define i64 @__deque_push_left(i64 %deque, i64 %value) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %deque, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %deque, i64 1)",
+            "  %new_len = add i64 %len, 1",
+            "  %new_entries = call i64 @__new(i64 %new_len)",
+            "  %_v = call i64 @heap_set(i64 %new_entries, i64 0, i64 %value)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %entry], [%next, %copy_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %copied, label %copy_body",
+            "copy_body:",
+            "  %val = call i64 @heap_get(i64 %entries, i64 %i)",
+            "  %dst = add i64 %i, 1",
+            "  %_c = call i64 @heap_set(i64 %new_entries, i64 %dst, i64 %val)",
+            "  %next = add i64 %i, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  br label %copy",
+            "copied:",
+            "  %_l = call i64 @heap_set(i64 %deque, i64 0, i64 %new_len)",
+            "  %_e = call i64 @heap_set(i64 %deque, i64 1, i64 %new_entries)",
+            "  ret i64 %new_len",
+            "}",
+            "define i64 @__deque_push_right(i64 %deque, i64 %value) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %deque, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %deque, i64 1)",
+            "  %new_len = add i64 %len, 1",
+            "  %new_entries = call i64 @__new(i64 %new_len)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %entry], [%next, %copy_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %copied, label %copy_body",
+            "copy_body:",
+            "  %val = call i64 @heap_get(i64 %entries, i64 %i)",
+            "  %_c = call i64 @heap_set(i64 %new_entries, i64 %i, i64 %val)",
+            "  %next = add i64 %i, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  br label %copy",
+            "copied:",
+            "  %_v = call i64 @heap_set(i64 %new_entries, i64 %len, i64 %value)",
+            "  %_l = call i64 @heap_set(i64 %deque, i64 0, i64 %new_len)",
+            "  %_e = call i64 @heap_set(i64 %deque, i64 1, i64 %new_entries)",
+            "  ret i64 %new_len",
+            "}",
+            "define i64 @__deque_pop_left(i64 %deque) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %deque, i64 0)",
+            "  %empty = icmp eq i64 %len, 0",
+            "  br i1 %empty, label %err, label %ok",
+            "err:",
+            "  call void @__deque_empty_error()",
+            "  ret i64 0",
+            "ok:",
+            "  %entries = call i64 @heap_get(i64 %deque, i64 1)",
+            "  %val = call i64 @heap_get(i64 %entries, i64 0)",
+            "  %new_len = sub i64 %len, 1",
+            "  %new_entries = call i64 @__new(i64 %new_len)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %ok], [%next, %copy_next]",
+            "  %done = icmp sge i64 %i, %new_len",
+            "  br i1 %done, label %copied, label %copy_body",
+            "copy_body:",
+            "  %src = add i64 %i, 1",
+            "  %cur = call i64 @heap_get(i64 %entries, i64 %src)",
+            "  %_c = call i64 @heap_set(i64 %new_entries, i64 %i, i64 %cur)",
+            "  %next = add i64 %i, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  br label %copy",
+            "copied:",
+            "  %_l = call i64 @heap_set(i64 %deque, i64 0, i64 %new_len)",
+            "  %_e = call i64 @heap_set(i64 %deque, i64 1, i64 %new_entries)",
+            "  ret i64 %val",
+            "}",
+            "define i64 @__deque_pop_right(i64 %deque) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %deque, i64 0)",
+            "  %empty = icmp eq i64 %len, 0",
+            "  br i1 %empty, label %err, label %ok",
+            "err:",
+            "  call void @__deque_empty_error()",
+            "  ret i64 0",
+            "ok:",
+            "  %entries = call i64 @heap_get(i64 %deque, i64 1)",
+            "  %last = sub i64 %len, 1",
+            "  %val = call i64 @heap_get(i64 %entries, i64 %last)",
+            "  %new_len = sub i64 %len, 1",
+            "  %new_entries = call i64 @__new(i64 %new_len)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %ok], [%next, %copy_next]",
+            "  %done = icmp sge i64 %i, %new_len",
+            "  br i1 %done, label %copied, label %copy_body",
+            "copy_body:",
+            "  %cur = call i64 @heap_get(i64 %entries, i64 %i)",
+            "  %_c = call i64 @heap_set(i64 %new_entries, i64 %i, i64 %cur)",
+            "  %next = add i64 %i, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  br label %copy",
+            "copied:",
+            "  %_l = call i64 @heap_set(i64 %deque, i64 0, i64 %new_len)",
+            "  %_e = call i64 @heap_set(i64 %deque, i64 1, i64 %new_entries)",
+            "  ret i64 %val",
+            "}",
+            "define i64 @__deque_peek_left(i64 %deque) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %deque, i64 0)",
+            "  %empty = icmp eq i64 %len, 0",
+            "  br i1 %empty, label %err, label %ok",
+            "err:",
+            "  call void @__deque_empty_error()",
+            "  ret i64 0",
+            "ok:",
+            "  %entries = call i64 @heap_get(i64 %deque, i64 1)",
+            "  %val = call i64 @heap_get(i64 %entries, i64 0)",
+            "  ret i64 %val",
+            "}",
+            "define i64 @__deque_peek_right(i64 %deque) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %deque, i64 0)",
+            "  %empty = icmp eq i64 %len, 0",
+            "  br i1 %empty, label %err, label %ok",
+            "err:",
+            "  call void @__deque_empty_error()",
+            "  ret i64 0",
+            "ok:",
+            "  %entries = call i64 @heap_get(i64 %deque, i64 1)",
+            "  %last = sub i64 %len, 1",
+            "  %val = call i64 @heap_get(i64 %entries, i64 %last)",
+            "  ret i64 %val",
+            "}",
+            "define i64 @__deque_to_list(i64 %deque) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %deque, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %deque, i64 1)",
+            "  %out = call i64 @__new(i64 %len)",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %loop_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %done_block, label %body",
+            "body:",
+            "  %cur = call i64 @heap_get(i64 %entries, i64 %i)",
+            "  %_c = call i64 @heap_set(i64 %out, i64 %i, i64 %cur)",
+            "  %next = add i64 %i, 1",
+            "  br label %loop_next",
+            "loop_next:",
+            "  br label %loop",
+            "done_block:",
+            "  ret i64 %out",
             "}",
         ]
 
@@ -1402,6 +2267,37 @@ class LLVMCodeGenerator:
                     method_literal = method_name.literal_str
                     if class_name_value is None or method_literal is None:
                         raise NotImplementedError("__method_call expects class value and method name literal")
+                    if class_name_value in {"Map", "Set", "Deque"}:
+                        call_name = f"{class_name_value}.{method_literal}"
+                        args = rest
+                        name = call_name
+                        if name.startswith("Map."):
+                            method = name.split(".", 1)[1]
+                            if method == "set" and len(args) >= 3:
+                                stack.append(_TypeValue(args[2].ty))
+                            elif method == "get" and len(args) == 3:
+                                stack.append(_TypeValue(args[2].ty))
+                            elif method in {"has", "delete"}:
+                                stack.append(_TypeValue("i1"))
+                            elif method in {"len"}:
+                                stack.append(_TypeValue("i64"))
+                            elif method in {"new", "keys", "values", "entries", "from_entries"}:
+                                stack.append(_TypeValue("i64"))
+                            else:
+                                stack.append(_TypeValue("i64"))
+                            continue
+                        if name.startswith("Set."):
+                            method = name.split(".", 1)[1]
+                            if method in {"add", "delete", "has"}:
+                                stack.append(_TypeValue("i1"))
+                            elif method in {"new", "from_list", "to_list"}:
+                                stack.append(_TypeValue("i64"))
+                            else:
+                                stack.append(_TypeValue("i64"))
+                            continue
+                        if name.startswith("Deque."):
+                            stack.append(_TypeValue("i64"))
+                            continue
                     target_name = self._resolve_method_target(class_name_value, method_literal)
                     callee = signatures.get(target_name)
                     if callee is None:
@@ -1419,6 +2315,39 @@ class LLVMCodeGenerator:
                                 f"argument type mismatch for {target_name}.{param_name}: {expected} vs {arg.ty}"
                             )
                     stack.append(_TypeValue(callee.return_type))
+                    continue
+                if name.startswith("Map."):
+                    method = name.split(".", 1)[1]
+                    if method == "set" and len(args) >= 3:
+                        stack.append(_TypeValue(args[2].ty))
+                    elif method == "get" and len(args) == 3:
+                        stack.append(_TypeValue(args[2].ty))
+                    elif method in {"has", "delete"}:
+                        stack.append(_TypeValue("i1"))
+                    elif method in {"len"}:
+                        stack.append(_TypeValue("i64"))
+                    elif method in {"new", "keys", "values", "entries", "from_entries"}:
+                        stack.append(_TypeValue("i64"))
+                    else:
+                        stack.append(_TypeValue("i64"))
+                    continue
+                if name.startswith("Set."):
+                    method = name.split(".", 1)[1]
+                    if method in {"add", "delete", "has"}:
+                        stack.append(_TypeValue("i1"))
+                    elif method in {"new", "from_list", "to_list"}:
+                        stack.append(_TypeValue("i64"))
+                    else:
+                        stack.append(_TypeValue("i64"))
+                    continue
+                if name.startswith("Deque."):
+                    method = name.split(".", 1)[1]
+                    if method in {"new", "from_list", "to_list", "len", "push_left", "push_right"}:
+                        stack.append(_TypeValue("i64"))
+                    elif method in {"pop_left", "pop_right", "peek_left", "peek_right"}:
+                        stack.append(_TypeValue("i64"))
+                    else:
+                        stack.append(_TypeValue("i64"))
                     continue
                 if name == "heap_set":
                     self._record_heap_cell_type_inference(args, heap_cell_types)

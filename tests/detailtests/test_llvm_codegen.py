@@ -109,6 +109,24 @@ def test_llvm_codegen_supports_module_imports(tmp_path) -> None:
     assert "call i64 @helper.add(i64 1, i64 2)" in main_ir
 
 
+def test_llvm_codegen_supports_python_interop() -> None:
+    source = """
+def math = Python.import_module("math", new["sqrt"]);
+def value = Python.call("math", "sqrt", new[9]);
+def other = math.sqrt(16);
+print(value);
+print(other);
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+    main_ir = _tiny_main_body(llvm_ir)
+
+    assert "declare i64 @__py_import_module(i8*, i64)" in llvm_ir
+    assert "declare i64 @__py_call(i8*, i8*, i64, i64, i64)" in llvm_ir
+    assert "call i64 @__py_import_module" in main_ir
+    assert "call i64 @__py_call" in main_ir
+
+
 def test_llvm_codegen_supports_spawn_and_join() -> None:
     source = """
 async fn add(x, y) { return x + y; }

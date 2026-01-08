@@ -88,6 +88,7 @@ class LLVMCodeGenerator:
         self._data_layout = data_layout
         self._operator_overloads: Dict[Tuple[str, str, str], str] = {}
         self._module_inits: Dict[str, str] = module_inits or {}
+        self._python_modules: set[str] = set()
 
     def _format_opcode(self, op: Opcode) -> str:
         return op.value if isinstance(op, Opcode) else str(op)
@@ -126,6 +127,7 @@ class LLVMCodeGenerator:
         self._register_class_metadata(program)
         self._operator_overloads = self._register_operator_overloads(program.operator_overloads)
         self._class_field_types.clear()
+        self._python_modules.clear()
         self._function_signatures = self._infer_signatures(program)
         self._string_constants.clear()
         self._string_defs.clear()
@@ -353,7 +355,7 @@ class LLVMCodeGenerator:
             )
 
     def _load_var(self, name: str) -> None:
-        if name in {"Map", "Set", "Deque", "Async"}:
+        if name in {"Map", "Set", "Deque", "Async", "Python"}:
             self._stack.append(_StackValue(name=name, ty="i64", class_name=name))
             return
         ty = self._var_types.get(name)
@@ -714,6 +716,13 @@ class LLVMCodeGenerator:
         if name.startswith("Deque."):
             self._emit_deque_call(name, args)
             return
+        if name.startswith("Python.") and name not in {"Python.import_module", "Python.call"}:
+            dotted = name[len("Python.") :]
+            if "." not in dotted:
+                self._lowering_error("Python call expects a module-qualified name")
+            module_name, attr_name = dotted.rsplit(".", 1)
+            self._emit_python_direct_call(module_name, attr_name, args)
+            return
         if name == "__variant_assume":
             if len(args) != 2:
                 self._lowering_error("__variant_assume expects 2 args")
@@ -739,6 +748,12 @@ class LLVMCodeGenerator:
             return
         if name == "__variant_get":
             self._emit_variant_get(args)
+            return
+        if name == "Python.import_module":
+            self._emit_python_import(args)
+            return
+        if name == "Python.call":
+            self._emit_python_call(args)
             return
         if name == "__match_error":
             self._emit_match_error(args)
@@ -1032,6 +1047,115 @@ class LLVMCodeGenerator:
         )
         self._stack.append(_StackValue(name=dest, ty="i8*", literal_str=module_name, class_name=module_name))
 
+    def _emit_python_import(self, args: List[_StackValue]) -> None:
+        if len(args) not in {1, 2}:
+            self._lowering_error("Python.import_module expects 1 or 2 args")
+        module_name = self._literal_string(args[0], context="Python.import_module")
+        allowlist = args[1] if len(args) == 2 else None
+        if allowlist is None or (allowlist.ty == "i8*" and allowlist.name == "null"):
+            allow_ptr = "0"
+        else:
+            allow_ptr = allowlist.name
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i64 @__py_import_module(i8* {args[0].name}, i64 {allow_ptr})")
+        self._python_modules.add(module_name)
+        self._stack.append(_StackValue(name=dest, ty="i64", class_name=module_name))
+
+    def _emit_python_call(
+        self,
+        args: List[_StackValue],
+        *,
+        module_name_override: Optional[str] = None,
+    ) -> None:
+        if len(args) < 2 or len(args) > 4:
+            self._lowering_error("Python.call expects 2 to 4 args")
+        module_arg = args[0]
+        attr_arg = args[1]
+        module_name = module_name_override or self._literal_string(module_arg, context="Python.call")
+        attr_name = self._literal_string(attr_arg, context="Python.call")
+        call_args = args[2] if len(args) >= 3 else None
+        opts = args[3] if len(args) == 4 else None
+        if opts is None or (opts.ty == "i8*" and opts.name == "null"):
+            allow_ptr = "0"
+        else:
+            allow_ptr = opts.name
+        if call_args is None or (call_args.ty == "i8*" and call_args.name == "null"):
+            args_ptr = "0"
+            types_ptr = "0"
+        else:
+            args_ptr = call_args.name
+            types_ptr = self._emit_python_arg_types(call_args)
+        name, length = self._string_constant(module_name)
+        module_ptr = self._next_tmp()
+        self._body.append(
+            f"  {module_ptr} = getelementptr inbounds [{length} x i8], [{length} x i8]* @{name}, i32 0, i32 0"
+        )
+        attr_name_const, attr_len = self._string_constant(attr_name)
+        attr_ptr = self._next_tmp()
+        self._body.append(
+            f"  {attr_ptr} = getelementptr inbounds [{attr_len} x i8], [{attr_len} x i8]* @{attr_name_const}, i32 0, i32 0"
+        )
+        dest = self._next_tmp()
+        self._body.append(
+            f"  {dest} = call i64 @__py_call(i8* {module_ptr}, i8* {attr_ptr}, i64 {args_ptr}, i64 {types_ptr}, i64 {allow_ptr})"
+        )
+        self._stack.append(_StackValue(name=dest, ty="i64"))
+
+    def _emit_python_direct_call(
+        self,
+        module_name: str,
+        attr_name: str,
+        args: List[_StackValue],
+    ) -> None:
+        if args:
+            size = len(args)
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__new(i64 {size})")
+            ptr = _StackValue(name=dest, ty="i64", source=dest)
+            for index, value in enumerate(args):
+                self._emit_heap_set(ptr, index, value)
+            arg_list = ptr
+        else:
+            arg_list = _StackValue(name="null", ty="i8*")
+        self._emit_python_call(
+            [
+                _StackValue(name="null", ty="i8*", literal_str=module_name),
+                _StackValue(name="null", ty="i8*", literal_str=attr_name),
+                arg_list,
+            ],
+            module_name_override=module_name,
+        )
+
+    def _emit_python_arg_types(self, args_list: _StackValue) -> str:
+        if args_list.source is None:
+            return "0"
+        size = self._heap_list_length(args_list.source)
+        if size is None:
+            return "0"
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i64 @__new(i64 {size})")
+        ptr = _StackValue(name=dest, ty="i64", source=dest)
+        for index in range(size):
+            tag = self._python_type_tag(args_list.source, index)
+            self._emit_heap_set(ptr, index, self._const_i64(tag))
+        return dest
+
+    def _heap_list_length(self, ptr_name: str) -> Optional[int]:
+        candidates = [idx for (name, idx) in self._heap_cell_types.keys() if name == ptr_name]
+        if not candidates:
+            return None
+        return max(candidates) + 1
+
+    def _python_type_tag(self, ptr_name: str, idx: int) -> int:
+        ty = self._heap_cell_types.get((ptr_name, idx))
+        if ty == "double":
+            return 1
+        if ty == "i1":
+            return 2
+        if ty == "i8*":
+            return 3
+        return 0
+
     def _emit_field_get(self, args: List[_StackValue]) -> None:
         if len(args) != 2:
             self._lowering_error("__field_get expects 2 args")
@@ -1087,6 +1211,15 @@ class LLVMCodeGenerator:
                 self._emit_async_link(rest)
                 return
             self._lowering_error(f"unknown Async method {method_literal}")
+        if class_name == "Python":
+            method_literal = self._literal_string(method_name, context="__method_call")
+            if method_literal == "import_module":
+                self._emit_python_import(rest)
+                return
+            if method_literal == "call":
+                self._emit_python_call(rest)
+                return
+            self._lowering_error(f"unknown Python method {method_literal}")
         if class_name in {"Map", "Set", "Deque"}:
             method_literal = self._literal_string(method_name, context="__method_call")
             if class_name == "Map":
@@ -1095,6 +1228,17 @@ class LLVMCodeGenerator:
                 self._emit_set_call(f"Set.{method_literal}", rest)
             else:
                 self._emit_deque_call(f"Deque.{method_literal}", rest)
+            return
+        if class_name in self._python_modules:
+            method_literal = self._literal_string(method_name, context="__method_call")
+            self._emit_python_call(
+                [
+                    _StackValue(name=obj.name, ty=obj.ty, class_name=class_name, literal_str=class_name),
+                    _StackValue(name=method_name.name, ty=method_name.ty, literal_str=method_literal),
+                    *rest,
+                ],
+                module_name_override=class_name,
+            )
             return
         if class_name in self._module_inits:
             method_literal = self._literal_string(method_name, context="__method_call")
@@ -1375,6 +1519,8 @@ class LLVMCodeGenerator:
             "declare i8* @calloc(i64, i64)",
             "declare void @free(i8*)",
             "declare void @exit(i32)",
+            "declare i64 @__py_import_module(i8*, i64)",
+            "declare i64 @__py_call(i8*, i8*, i64, i64, i64)",
             ]
         )
         lines.extend(self._runtime_helpers())
@@ -2420,6 +2566,23 @@ class LLVMCodeGenerator:
                         raise NotImplementedError("__import expects a string literal module name")
                     stack.append(_TypeValue("i8*", literal_str=module_name, class_name=module_name))
                     continue
+                if name == "Python.import_module":
+                    if len(args) not in {1, 2}:
+                        raise NotImplementedError("Python.import_module expects 1 or 2 args")
+                    module_name = args[0].literal_str
+                    if module_name is None:
+                        raise NotImplementedError("Python.import_module expects a string literal module name")
+                    self._python_modules.add(module_name)
+                    stack.append(_TypeValue("i64", class_name=module_name))
+                    continue
+                if name == "Python.call":
+                    if len(args) < 2 or len(args) > 4:
+                        raise NotImplementedError("Python.call expects 2 to 4 args")
+                    stack.append(_TypeValue("i64"))
+                    continue
+                if name.startswith("Python.") and name not in {"Python.import_module", "Python.call"}:
+                    stack.append(_TypeValue("i64"))
+                    continue
                 if name == "__spawn":
                     if not args:
                         raise NotImplementedError("__spawn expects at least 1 arg")
@@ -2581,6 +2744,24 @@ class LLVMCodeGenerator:
                     method_literal = method_name.literal_str
                     if class_name_value is None or method_literal is None:
                         raise NotImplementedError("__method_call expects class value and method name literal")
+                    if class_name_value == "Python":
+                        if method_literal == "import_module":
+                            if len(rest) not in {1, 2}:
+                                raise NotImplementedError("Python.import_module expects 1 or 2 args")
+                            module_name = rest[0].literal_str
+                            if module_name is None:
+                                raise NotImplementedError(
+                                    "Python.import_module expects a string literal module name"
+                                )
+                            self._python_modules.add(module_name)
+                            stack.append(_TypeValue("i64", class_name=module_name))
+                            continue
+                        if method_literal == "call":
+                            if len(rest) < 2 or len(rest) > 4:
+                                raise NotImplementedError("Python.call expects 2 to 4 args")
+                            stack.append(_TypeValue("i64"))
+                            continue
+                        raise NotImplementedError(f"unknown Python method {method_literal}")
                     if class_name_value in {"Map", "Set", "Deque"}:
                         call_name = f"{class_name_value}.{method_literal}"
                         args = rest
@@ -2612,6 +2793,9 @@ class LLVMCodeGenerator:
                         if name.startswith("Deque."):
                             stack.append(_TypeValue("i64"))
                             continue
+                    if class_name_value in self._python_modules:
+                        stack.append(_TypeValue("i64"))
+                        continue
                     if class_name_value in self._module_inits:
                         target_name = f"{class_name_value}.{method_literal}"
                         signature = signatures.get(target_name)

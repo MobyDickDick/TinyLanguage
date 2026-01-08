@@ -94,6 +94,23 @@ def test_llvm_codegen_supports_function_calls() -> None:
     assert "call i64 @add(i64 2, i64 3)" in llvm_ir
 
 
+def test_llvm_codegen_supports_spawn_and_join() -> None:
+    source = """
+async fn add(x, y) { return x + y; }
+def handle = spawn add(2, 3);
+def result = await handle;
+print(result);
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+    main_ir = _tiny_main_body(llvm_ir)
+
+    assert "define i64 @__spawn_i64" in llvm_ir
+    assert "define i64 @__join_i64" in llvm_ir
+    assert "call i64 @__spawn_i64" in main_ir
+    assert "call i64 @__join_i64" in main_ir
+
+
 def test_llvm_codegen_supports_class_methods() -> None:
     source = """
 class Point {

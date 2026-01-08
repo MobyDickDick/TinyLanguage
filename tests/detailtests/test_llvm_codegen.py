@@ -94,6 +94,30 @@ def test_llvm_codegen_supports_function_calls() -> None:
     assert "call i64 @add(i64 2, i64 3)" in llvm_ir
 
 
+def test_llvm_codegen_supports_class_methods() -> None:
+    source = """
+class Point {
+  x: number;
+  y: number;
+
+  fn sum(self) {
+    return self.x + self.y;
+  }
+}
+
+def p = new Point { x: 1; y: 2; };
+print(p.sum());
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+    main_ir = _tiny_main_body(llvm_ir)
+
+    assert "define i64 @Point.sum" in llvm_ir
+    assert "call i64 @__new(i64 3)" in main_ir
+    assert "call i64 @Point.sum" in main_ir
+    assert "call i64 @heap_get" in llvm_ir
+
+
 def test_llvm_codegen_emits_operator_overload_calls() -> None:
     source = """
 operator + (a: number, b: number) -> number { return a - b; }

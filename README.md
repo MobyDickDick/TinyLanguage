@@ -2,6 +2,8 @@
 
 TinyLanguage is a small Julia-inspired language with a Python implementation (interpreter + tooling) and multiple experimental backends (native/C, LLVM prototype, transpilers). The project is primarily a **learning playground** for language design, IR experiments, and cross-language interoperability—not a production SDK.
 
+Note: The ideas largely come from me, but the code was generated with ChatGPT.
+
 If you want a compact reference first:
 - Language spec: [docs/language_spec.md](docs/language_spec.md)
 - Tutorial: [docs/tutorial.md](docs/tutorial.md)

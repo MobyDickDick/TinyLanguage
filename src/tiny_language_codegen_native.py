@@ -341,6 +341,7 @@ class NativeCodeGenerator:
         instructions = self._compile_expr(expr.expr)
         tmp_name = self._next_tmp()
         instructions.append(Instruction(Opcode.STORE, tmp_name))
+        result_tmp = self._next_tmp()
 
         end_jump_indices: List[int] = []
         for case in expr.cases:
@@ -352,8 +353,13 @@ class NativeCodeGenerator:
                 instructions.append(Instruction(Opcode.BINARY, "=="))
                 jump_false_index = len(instructions)
                 instructions.append(Instruction(Opcode.JUMP_IF_FALSE, None))
+                instructions.append(Instruction(Opcode.LOAD, tmp_name))
+                instructions.append(Instruction(Opcode.PUSH_CONST, pattern.variant))
+                instructions.append(Instruction(Opcode.CALL, ("__variant_assume", 2)))
+                instructions.append(Instruction(Opcode.STORE, tmp_name))
                 instructions.extend(self._compile_pattern_bindings(pattern, tmp_name))
                 instructions.extend(self._compile_expr(case.body))
+                instructions.append(Instruction(Opcode.STORE, result_tmp))
                 end_jump_indices.append(len(instructions))
                 instructions.append(Instruction(Opcode.JUMP, None))
                 instructions[jump_false_index] = Instruction(Opcode.JUMP_IF_FALSE, len(instructions))
@@ -362,6 +368,7 @@ class NativeCodeGenerator:
                     instructions.append(Instruction(Opcode.LOAD, tmp_name))
                     instructions.append(Instruction(Opcode.STORE, pattern.name))
                 instructions.extend(self._compile_expr(case.body))
+                instructions.append(Instruction(Opcode.STORE, result_tmp))
                 end_jump_indices.append(len(instructions))
                 instructions.append(Instruction(Opcode.JUMP, None))
             else:
@@ -373,6 +380,7 @@ class NativeCodeGenerator:
         end_index = len(instructions)
         for jump_index in end_jump_indices:
             instructions[jump_index] = Instruction(Opcode.JUMP, end_index)
+        instructions.append(Instruction(Opcode.LOAD, result_tmp))
         return instructions
 
     def _compile_pattern_bindings(self, pattern: "VariantPattern", tmp_name: str) -> List[Instruction]:

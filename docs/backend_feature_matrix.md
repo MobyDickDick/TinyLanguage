@@ -102,10 +102,6 @@ _None_
 
 ### Open tasks
 
-- [ ] Classes and methods
-  - [ ] Define class layouts in the LLVM runtime and generate constructors.
-  - [ ] Emit method dispatch (vtable or direct) in the LLVM IR.
-
 - [ ] Pattern matching + ADTs
   - [ ] Represent ADTs with tagged unions in LLVM.
   - [ ] Lower `match` into tag dispatch + payload extraction.
@@ -127,6 +123,10 @@ _None_
   - [ ] Stabilize argument conversion and reference lifetime management.
 
 ### Closed tasks
+
+- [x] Classes and methods
+  - [x] Define class layouts in the LLVM runtime and generate constructors.
+  - [x] Emit method dispatch (vtable or direct) in the LLVM IR.
 
 - [x] Operator overloading
   - [x] Emit overloaded operator calls in the LLVM IR.

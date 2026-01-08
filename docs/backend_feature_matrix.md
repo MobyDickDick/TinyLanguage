@@ -32,7 +32,7 @@ Legend:
 | Operator overloading | ✅ | ✅ | ⚠️ Numeric-only overloads |
 | Pattern matching + ADTs | ✅ | ❌ | ❌ |
 | Collections (`Map`, `Set`, `Deque`) | ✅ | ❌ | ⚠️ Heap-backed collections (linear search, untyped payloads) |
-| Concurrency (`spawn`, `join`, tokens) | ✅ | ✅ | ❌ |
+| Concurrency (`spawn`, `join`, tokens) | ✅ | ✅ | ⚠️ Spawn/join only (synchronous) |
 
 ## Interop and tooling
 
@@ -102,9 +102,7 @@ _None_
 
 ### Open tasks
 
-- [ ] Concurrency (`spawn`, `join`, tokens)
-  - [ ] Define C runtime entry points for task scheduling.
-  - [ ] Lower spawn/join operations to runtime calls.
+- [ ] Cancellation tokens (`Async.token`, `Async.cancel`, `Async.is_cancelled`, `Async.reason`, `Async.link`)
 
 - [ ] Module imports
   - [ ] Generate per-module initialization functions in LLVM IR.
@@ -115,6 +113,10 @@ _None_
   - [ ] Stabilize argument conversion and reference lifetime management.
 
 ### Closed tasks
+
+- [x] Concurrency (`spawn`, `join`) (synchronous, no tokens)
+  - [x] Define C runtime entry points for task scheduling.
+  - [x] Lower spawn/join operations to runtime calls.
 
 - [x] Collections (`Map`, `Set`, `Deque`)
   - [x] Port collection runtime to C/LLVM helpers.

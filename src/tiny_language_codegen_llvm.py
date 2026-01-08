@@ -554,9 +554,79 @@ class LLVMCodeGenerator:
         self._lowering_error(f"cannot unbox payload for type {target_ty}")
         return _StackValue(name=payload, ty=target_ty)
 
+    def _spawn_wrapper_name(self, ty: str) -> str:
+        wrappers = {
+            "i64": "__spawn_i64",
+            "double": "__spawn_double",
+            "i1": "__spawn_bool",
+            "i8*": "__spawn_str",
+        }
+        if ty not in wrappers:
+            self._lowering_error(f"spawn not supported for type {ty}")
+        return wrappers[ty]
+
+    def _join_wrapper_name(self, ty: str) -> str:
+        wrappers = {
+            "i64": "__join_i64",
+            "double": "__join_double",
+            "i1": "__join_bool",
+            "i8*": "__join_str",
+        }
+        if ty not in wrappers:
+            self._lowering_error(f"join not supported for type {ty}")
+        return wrappers[ty]
+
+    def _emit_direct_call(self, resolved_name: str, args: List[_StackValue]) -> _StackValue:
+        signature = self._function_signatures.get(resolved_name)
+        if signature is None:
+            signature = self._builtin_signature(resolved_name)
+        if signature is None:
+            self._lowering_error(f"unknown function {resolved_name}")
+        if len(args) != len(signature.param_types):
+            self._lowering_error(
+                f"function {resolved_name} expects {len(signature.param_types)} args, got {len(args)}"
+            )
+        rendered_args: List[str] = []
+        for (param_name, param_type), arg in zip(signature.param_types.items(), args):
+            if arg.ty != param_type:
+                self._lowering_error(
+                    f"argument for {resolved_name}.{param_name} expected {param_type}, got {arg.ty}"
+                )
+            rendered_args.append(f"{param_type} {arg.name}")
+        dest = self._next_tmp()
+        args_text = ", ".join(rendered_args)
+        self._body.append(f"  {dest} = call {signature.return_type} @{resolved_name}({args_text})")
+        return _StackValue(name=dest, ty=signature.return_type)
+
+    def _emit_spawn_call(self, args: List[_StackValue]) -> None:
+        if not args:
+            self._lowering_error("__spawn expects at least 1 arg")
+        target_name = self._literal_string(args[0], context="__spawn")
+        call_args = args[1:]
+        result = self._emit_direct_call(target_name, call_args)
+        wrapper = self._spawn_wrapper_name(result.ty)
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call {result.ty} @{wrapper}({result.ty} {result.name})")
+        self._stack.append(_StackValue(name=dest, ty=result.ty))
+
+    def _emit_join_call(self, args: List[_StackValue]) -> None:
+        if len(args) not in {1, 2, 3}:
+            self._lowering_error("join expects between 1 and 3 args")
+        handle = args[0]
+        wrapper = self._join_wrapper_name(handle.ty)
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call {handle.ty} @{wrapper}({handle.ty} {handle.name})")
+        self._stack.append(_StackValue(name=dest, ty=handle.ty))
+
     def _call_function(self, call_spec: Tuple[str, int]) -> None:
         name, argc = call_spec
         args = [self._stack.pop() for _ in range(argc)][::-1]
+        if name == "__spawn":
+            self._emit_spawn_call(args)
+            return
+        if name == "join":
+            self._emit_join_call(args)
+            return
         if name.startswith("Map."):
             self._emit_map_call(name, args)
             return
@@ -612,27 +682,8 @@ class LLVMCodeGenerator:
             resolved_name = self._resolve_heap_set_name(args)
         elif name == "heap_get":
             resolved_name = self._resolve_heap_get_name(args)
-
-        signature = self._function_signatures.get(resolved_name)
-        if signature is None:
-            signature = self._builtin_signature(resolved_name)
-        if signature is None:
-            self._lowering_error(f"unknown function {resolved_name}")
-        if argc != len(signature.param_types):
-            self._lowering_error(
-                f"function {resolved_name} expects {len(signature.param_types)} args, got {argc}"
-            )
-        rendered_args: List[str] = []
-        for (param_name, param_type), arg in zip(signature.param_types.items(), args):
-            if arg.ty != param_type:
-                self._lowering_error(
-                    f"argument for {resolved_name}.{param_name} expected {param_type}, got {arg.ty}"
-                )
-            rendered_args.append(f"{param_type} {arg.name}")
-        dest = self._next_tmp()
-        args_text = ", ".join(rendered_args)
-        self._body.append(f"  {dest} = call {signature.return_type} @{resolved_name}({args_text})")
-        self._stack.append(_StackValue(name=dest, ty=signature.return_type))
+        result = self._emit_direct_call(resolved_name, args)
+        self._stack.append(result)
         if name == "heap_set":
             self._record_heap_cell_type(args)
 
@@ -1298,6 +1349,38 @@ class LLVMCodeGenerator:
             "  %raw = bitcast i64* %base to i8*",
             "  call void @free(i8* %raw)",
             "  ret i64 0",
+            "}",
+            "define i64 @__spawn_i64(i64 %value) {",
+            "entry:",
+            "  ret i64 %value",
+            "}",
+            "define double @__spawn_double(double %value) {",
+            "entry:",
+            "  ret double %value",
+            "}",
+            "define i1 @__spawn_bool(i1 %value) {",
+            "entry:",
+            "  ret i1 %value",
+            "}",
+            "define i8* @__spawn_str(i8* %value) {",
+            "entry:",
+            "  ret i8* %value",
+            "}",
+            "define i64 @__join_i64(i64 %value) {",
+            "entry:",
+            "  ret i64 %value",
+            "}",
+            "define double @__join_double(double %value) {",
+            "entry:",
+            "  ret double %value",
+            "}",
+            "define i1 @__join_bool(i1 %value) {",
+            "entry:",
+            "  ret i1 %value",
+            "}",
+            "define i8* @__join_str(i8* %value) {",
+            "entry:",
+            "  ret i8* %value",
             "}",
             "define void @__match_error(i64 %ptr) {",
             "entry:",
@@ -2149,6 +2232,43 @@ class LLVMCodeGenerator:
             elif instr.op == Opcode.CALL:
                 name, argc = instr.arg
                 args = [stack.pop() for _ in range(argc)][::-1]
+                if name == "__spawn":
+                    if not args:
+                        raise NotImplementedError("__spawn expects at least 1 arg")
+                    target_name = args[0].literal_str
+                    if target_name is None:
+                        raise NotImplementedError("__spawn expects a string literal target name")
+                    call_args = args[1:]
+                    callee = signatures.get(target_name)
+                    if callee is None:
+                        builtin = self._builtin_signature(target_name)
+                        if builtin is None:
+                            raise NotImplementedError(f"unknown function {target_name} in LLVM prototype")
+                        for param_ty, arg in zip(builtin.param_types.values(), call_args):
+                            if param_ty and arg.ty and param_ty != arg.ty:
+                                raise NotImplementedError(
+                                    f"argument type mismatch for {target_name}: {param_ty} vs {arg.ty}"
+                                )
+                        stack.append(_TypeValue(builtin.return_type))
+                        continue
+                    for param_name, arg in zip(callee.param_types.keys(), call_args):
+                        expected = callee.param_types[param_name]
+                        if expected is None and arg.ty:
+                            callee.param_types[param_name] = arg.ty
+                            changed = True
+                        if arg.ty is None and arg.source and expected:
+                            set_param_type(arg.source, expected)
+                        if expected and arg.ty and expected != arg.ty:
+                            raise NotImplementedError(
+                                f"argument type mismatch for {target_name}.{param_name}: {expected} vs {arg.ty}"
+                            )
+                    stack.append(_TypeValue(callee.return_type))
+                    continue
+                if name == "join":
+                    if len(args) not in {1, 2, 3}:
+                        raise NotImplementedError("join expects between 1 and 3 args")
+                    stack.append(_TypeValue(args[0].ty))
+                    continue
                 if name == "__variant_assume":
                     if len(args) != 2:
                         raise NotImplementedError("__variant_assume expects 2 args")

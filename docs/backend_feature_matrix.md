@@ -39,7 +39,7 @@ Legend:
 | Feature | Interpreter | Native VM (`--native-backend`) | C/LLVM pipeline (`--emit-llvm`, `--emit-exe`) |
 | --- | --- | --- | --- |
 | Module imports (`import`, namespaces) | ✅ | ❌ | ❌ |
-| Python interop (`Python.import_module`, `Python.call`) | ✅ | ❌ | ❌ |
+| Python interop (`Python.import_module`, `Python.call`) | ✅ | ❌ | ⚠️ Basic allowlist-aware calls (numeric/string args, numeric return) |
 | Formatter / lints | ✅ | ✅ (shared frontend) | ✅ (shared frontend) |
 
 ## Notes
@@ -102,9 +102,7 @@ _None_
 
 ### Open tasks
 
-- [ ] Python interop
-  - [ ] Define a C/LLVM FFI bridge for Python interop APIs.
-  - [ ] Stabilize argument conversion and reference lifetime management.
+_None_
 
 ### Closed tasks
 
@@ -137,6 +135,10 @@ _None_
 - [x] Array literals
   - [x] Introduce array allocation helpers in the LLVM runtime ABI.
   - [x] Lower array literals to runtime calls and wire bounds checks.
+
+- [x] Python interop
+  - [x] Define a C/LLVM FFI bridge for Python interop APIs.
+  - [x] Stabilize argument conversion and reference lifetime management.
 
 - [x] Full literal and type coverage
   - [x] Add `null` lowering and a runtime sentinel representation.

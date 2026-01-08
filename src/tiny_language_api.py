@@ -15,6 +15,7 @@ import importlib.util
 import json
 import os
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
@@ -1181,6 +1182,108 @@ def _register_llvm_symbols(llvm_binding) -> None:
     llvm_binding.add_symbol("fflush", ctypes.cast(libc.fflush, ctypes.c_void_p).value)
     llvm_binding.add_symbol("calloc", ctypes.cast(libc.calloc, ctypes.c_void_p).value)
     llvm_binding.add_symbol("free", ctypes.cast(libc.free, ctypes.c_void_p).value)
+    llvm_binding.add_symbol(
+        "__py_import_module", ctypes.cast(_LLVM_PYTHON_INTEROP.import_module, ctypes.c_void_p).value
+    )
+    llvm_binding.add_symbol(
+        "__py_call", ctypes.cast(_LLVM_PYTHON_INTEROP.call, ctypes.c_void_p).value
+    )
+
+
+class _LLVMPythonInterop:
+    def __init__(self) -> None:
+        self._namespaces: dict[str, set[str]] = {}
+        self._buffers: list[ctypes.Array] = []
+        self.import_module = ctypes.CFUNCTYPE(ctypes.c_longlong, ctypes.c_void_p, ctypes.c_longlong)(
+            self._import_module
+        )
+        self.call = ctypes.CFUNCTYPE(
+            ctypes.c_longlong,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_longlong,
+            ctypes.c_longlong,
+            ctypes.c_longlong,
+        )(self._call)
+
+    def _decode_str(self, ptr: int) -> str:
+        if ptr == 0:
+            return ""
+        value = ctypes.cast(ptr, ctypes.c_char_p).value
+        if value is None:
+            return ""
+        return value.decode("utf-8")
+
+    def _read_heap_list(self, ptr: int) -> list[int]:
+        if ptr == 0:
+            return []
+        data_ptr = ctypes.cast(ptr, ctypes.POINTER(ctypes.c_longlong))
+        size = data_ptr[-1]
+        if size <= 0:
+            return []
+        return [int(data_ptr[i]) for i in range(size)]
+
+    def _read_allowlist(self, ptr: int) -> set[str]:
+        return {self._decode_str(value) for value in self._read_heap_list(ptr) if value != 0}
+
+    def _decode_args(self, args_ptr: int, types_ptr: int) -> list[Any]:
+        raw_args = self._read_heap_list(args_ptr)
+        if not raw_args:
+            return []
+        tags = self._read_heap_list(types_ptr) if types_ptr != 0 else []
+        if len(tags) != len(raw_args):
+            tags = [0] * len(raw_args)
+        decoded: list[Any] = []
+        for value, tag in zip(raw_args, tags):
+            if tag == 1:
+                decoded.append(struct.unpack("d", struct.pack("q", value))[0])
+            elif tag == 2:
+                decoded.append(bool(value))
+            elif tag == 3:
+                decoded.append(self._decode_str(value))
+            else:
+                decoded.append(int(value))
+        return decoded
+
+    def _import_module(self, module_ptr: int, allow_ptr: int) -> int:
+        try:
+            module_name = self._decode_str(module_ptr)
+            allowlist = self._read_allowlist(allow_ptr)
+            if module_name:
+                self._namespaces.setdefault(module_name, set()).update(allowlist)
+            return 0
+        except Exception:
+            return 0
+
+    def _call(self, module_ptr: int, attr_ptr: int, args_ptr: int, types_ptr: int, allow_ptr: int) -> int:
+        try:
+            module_name = self._decode_str(module_ptr)
+            attr_name = self._decode_str(attr_ptr)
+            allowlist = self._read_allowlist(allow_ptr)
+            if not allowlist:
+                allowlist = self._namespaces.get(module_name, set())
+            if allowlist and attr_name not in allowlist:
+                return 0
+            module = importlib.import_module(module_name)
+            func = getattr(module, attr_name)
+            args = self._decode_args(args_ptr, types_ptr)
+            result = func(*args)
+            if isinstance(result, bool):
+                return int(result)
+            if isinstance(result, int):
+                return int(result)
+            if isinstance(result, float):
+                return int(result)
+            if isinstance(result, str):
+                buf = ctypes.create_string_buffer(result.encode("utf-8"))
+                self._buffers.append(buf)
+                return ctypes.cast(buf, ctypes.c_void_p).value
+            return 0
+        except Exception:
+            return 0
+
+
+_LLVM_PYTHON_INTEROP = _LLVMPythonInterop()
 
 
 def _create_llvm_engine(llvm_binding, *, target_triple: Optional[str] = None):

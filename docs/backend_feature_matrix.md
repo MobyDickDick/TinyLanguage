@@ -102,10 +102,6 @@ _None_
 
 ### Open tasks
 
-- [ ] Pattern matching + ADTs
-  - [ ] Represent ADTs with tagged unions in LLVM.
-  - [ ] Lower `match` into tag dispatch + payload extraction.
-
 - [ ] Collections (`Map`, `Set`, `Deque`)
   - [ ] Port collection runtime to C/LLVM helpers.
   - [ ] Generate bindings for collection methods in the LLVM IR.
@@ -123,6 +119,10 @@ _None_
   - [ ] Stabilize argument conversion and reference lifetime management.
 
 ### Closed tasks
+
+- [x] Pattern matching + ADTs
+  - [x] Represent ADTs with tagged unions in LLVM.
+  - [x] Lower `match` into tag dispatch + payload extraction.
 
 - [x] Classes and methods
   - [x] Define class layouts in the LLVM runtime and generate constructors.

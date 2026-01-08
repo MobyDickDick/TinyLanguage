@@ -25,6 +25,7 @@ class _StackValue:
     literal: Optional[int] = None
     literal_str: Optional[str] = None
     class_name: Optional[str] = None
+    variant_name: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -46,6 +47,7 @@ class _TypeValue:
     literal: Optional[int] = None
     literal_str: Optional[str] = None
     class_name: Optional[str] = None
+    variant_name: Optional[str] = None
 
 
 class LLVMCodeGenerator:
@@ -59,6 +61,7 @@ class LLVMCodeGenerator:
         self._var_types: Dict[str, str] = {}
         self._var_literals: Dict[str, int] = {}
         self._var_classes: Dict[str, str] = {}
+        self._var_variants: Dict[str, str] = {}
         self._prologue: List[str] = []
         self._body: List[str] = []
         self._string_constants: Dict[str, Tuple[str, int]] = {}
@@ -72,6 +75,9 @@ class LLVMCodeGenerator:
         self._class_ids: Dict[str, int] = {}
         self._class_methods: Dict[str, Dict[str, str]] = {}
         self._class_field_types: Dict[Tuple[str, int], str] = {}
+        self._variant_fields: Dict[str, List[str]] = {}
+        self._variant_field_types: Dict[Tuple[str, str], str] = {}
+        self._variant_to_type: Dict[str, str] = {}
         self._target_triple = target_triple
         self._data_layout = data_layout
         self._operator_overloads: Dict[Tuple[str, str, str], str] = {}
@@ -109,6 +115,7 @@ class LLVMCodeGenerator:
         scope so gaps stay visible during experimentation.
         """
 
+        self._register_type_metadata(program)
         self._register_class_metadata(program)
         self._operator_overloads = self._register_operator_overloads(program.operator_overloads)
         self._class_field_types.clear()
@@ -137,6 +144,7 @@ class LLVMCodeGenerator:
         self._var_types.clear()
         self._var_literals.clear()
         self._var_classes.clear()
+        self._var_variants.clear()
         self._prologue.clear()
         self._body.clear()
         self._current_return_type = None
@@ -165,6 +173,7 @@ class LLVMCodeGenerator:
         self._var_types.clear()
         self._var_literals.clear()
         self._var_classes.clear()
+        self._var_variants.clear()
         self._prologue.clear()
         self._body.clear()
         self._current_return_type = signature.return_type
@@ -344,7 +353,17 @@ class LLVMCodeGenerator:
         self._body.append(f"  {dest} = load {ty}, {ty}* %{self._allocas[name]}")
         literal = self._var_literals.get(name)
         class_name = self._var_classes.get(name)
-        self._stack.append(_StackValue(name=dest, ty=ty, source=name, literal=literal, class_name=class_name))
+        variant_name = self._var_variants.get(name)
+        self._stack.append(
+            _StackValue(
+                name=dest,
+                ty=ty,
+                source=name,
+                literal=literal,
+                class_name=class_name,
+                variant_name=variant_name,
+            )
+        )
 
     def _store_var(self, name: str) -> None:
         if not self._stack:
@@ -362,6 +381,10 @@ class LLVMCodeGenerator:
             self._var_classes[name] = value.class_name
         else:
             self._var_classes.pop(name, None)
+        if value.variant_name:
+            self._var_variants[name] = value.variant_name
+        else:
+            self._var_variants.pop(name, None)
         if value.source and value.source != name:
             for (ptr_name, idx), cell_ty in list(self._heap_cell_types.items()):
                 if ptr_name == value.source:
@@ -433,6 +456,11 @@ class LLVMCodeGenerator:
             if predicate is None:
                 self._lowering_error(f"comparison {op} not supported for type {ty}")
             self._body.append(f"  {dest} = fcmp {predicate} {ty} {left.name}, {right.name}")
+        elif ty == "i8*":
+            predicate = {"==": "eq", "!=": "ne"}.get(op)
+            if predicate is None:
+                self._lowering_error(f"comparison {op} not supported for type {ty}")
+            self._body.append(f"  {dest} = icmp {predicate} {ty} {left.name}, {right.name}")
         else:
             predicate = {
                 "==": "eq",
@@ -494,6 +522,35 @@ class LLVMCodeGenerator:
     def _call_function(self, call_spec: Tuple[str, int]) -> None:
         name, argc = call_spec
         args = [self._stack.pop() for _ in range(argc)][::-1]
+        if name == "__variant_assume":
+            if len(args) != 2:
+                self._lowering_error("__variant_assume expects 2 args")
+            variant_name = self._literal_string(args[1], context="__variant_assume")
+            value = args[0]
+            self._stack.append(
+                _StackValue(
+                    name=value.name,
+                    ty=value.ty,
+                    source=value.source,
+                    literal=value.literal,
+                    literal_str=value.literal_str,
+                    class_name=value.class_name,
+                    variant_name=variant_name,
+                )
+            )
+            return
+        if name == "__variant_new":
+            self._emit_variant_new(args)
+            return
+        if name == "__variant_tag":
+            self._emit_variant_tag(args)
+            return
+        if name == "__variant_get":
+            self._emit_variant_get(args)
+            return
+        if name == "__match_error":
+            self._emit_match_error(args)
+            return
         if name == "__class_new":
             self._emit_class_new(args)
             return
@@ -617,6 +674,69 @@ class LLVMCodeGenerator:
         self._body.append(f"  {dest} = call {signature.return_type} @{target_name}({args_text})")
         self._stack.append(_StackValue(name=dest, ty=signature.return_type))
 
+    def _emit_variant_new(self, args: List[_StackValue]) -> None:
+        if len(args) < 2:
+            self._lowering_error("__variant_new expects at least 2 args (variant, type_name)")
+        variant_name = self._literal_string(args[0], context="__variant_new")
+        type_name = args[1].literal_str
+        if type_name is None:
+            type_name = self._variant_to_type.get(variant_name)
+        fields = self._variant_fields.get(variant_name)
+        if fields is None:
+            self._lowering_error(f"unknown variant {variant_name}")
+        if (len(args) - 2) % 2 != 0:
+            self._lowering_error("__variant_new expects field name/value pairs")
+        provided_fields = {}
+        for index in range(2, len(args), 2):
+            field_name = self._literal_string(args[index], context="__variant_new")
+            provided_fields[field_name] = args[index + 1]
+        missing = sorted(set(fields) - set(provided_fields.keys()))
+        extra = sorted(set(provided_fields.keys()) - set(fields))
+        if missing:
+            self._lowering_error(f"missing field(s) for variant {variant_name}: {', '.join(missing)}")
+        if extra:
+            self._lowering_error(f"unknown field(s) for variant {variant_name}: {', '.join(extra)}")
+        size = len(fields) + 1
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i64 @__new(i64 {size})")
+        ptr = _StackValue(name=dest, ty="i64", source=dest, variant_name=variant_name)
+        self._emit_heap_set(ptr, 0, _StackValue(name=args[0].name, ty="i8*", literal_str=variant_name))
+        for idx, field_name in enumerate(fields, start=1):
+            value = provided_fields[field_name]
+            self._emit_heap_set(ptr, idx, value)
+        if type_name is not None:
+            self._variant_to_type.setdefault(variant_name, type_name)
+        self._stack.append(_StackValue(name=dest, ty="i64", variant_name=variant_name))
+
+    def _emit_variant_tag(self, args: List[_StackValue]) -> None:
+        if len(args) != 1:
+            self._lowering_error("__variant_tag expects 1 arg")
+        value = args[0]
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i8* @heap_get_str(i64 {value.name}, i64 0)")
+        self._stack.append(_StackValue(name=dest, ty="i8*", literal_str=value.variant_name))
+
+    def _emit_variant_get(self, args: List[_StackValue]) -> None:
+        if len(args) != 2:
+            self._lowering_error("__variant_get expects 2 args")
+        value, field_name_value = args
+        field_name = self._literal_string(field_name_value, context="__variant_get")
+        variant_name = self._resolve_variant_name(value)
+        if variant_name is None:
+            self._lowering_error("variant access on unknown tagged value")
+        field_index = self._variant_field_index(variant_name, field_name)
+        field_type = self._variant_field_type(variant_name, field_name)
+        resolved_name = self._resolve_variant_heap_get_name(field_type)
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call {field_type} @{resolved_name}(i64 {value.name}, i64 {field_index})")
+        self._stack.append(_StackValue(name=dest, ty=field_type))
+
+    def _emit_match_error(self, args: List[_StackValue]) -> None:
+        if len(args) != 1:
+            self._lowering_error("__match_error expects 1 arg")
+        arg = args[0]
+        self._body.append(f"  call void @__match_error(i64 {arg.name})")
+
     # ----- Helpers -----
 
     def _pop_condition(self) -> str:
@@ -634,6 +754,13 @@ class LLVMCodeGenerator:
             self._body.append(f"  {dest} = fcmp one double {cond.name}, 0.0")
             return dest
         self._lowering_error(f"conditional branches for type {cond.ty} not supported")
+
+    def _resolve_variant_name(self, value: _StackValue) -> Optional[str]:
+        if value.variant_name:
+            return value.variant_name
+        if value.source:
+            return self._var_variants.get(value.source)
+        return None
 
     def _literal_string(self, value: _StackValue, *, context: str) -> str:
         if value.literal_str is None:
@@ -680,6 +807,26 @@ class LLVMCodeGenerator:
         if name == "heap_get_bool":
             return "i1"
         return "i64"
+
+    def _resolve_variant_heap_get_name(self, field_type: str) -> str:
+        if field_type == "i8*":
+            return "heap_get_str"
+        if field_type == "double":
+            return "heap_get_double"
+        if field_type == "i1":
+            return "heap_get_bool"
+        return "heap_get"
+
+    def _variant_field_index(self, variant_name: str, field_name: str) -> int:
+        fields = self._variant_fields.get(variant_name)
+        if fields is None:
+            self._lowering_error(f"unknown variant {variant_name}")
+        if field_name not in fields:
+            self._lowering_error(f"field {field_name} missing for variant {variant_name}")
+        return fields.index(field_name) + 1
+
+    def _variant_field_type(self, variant_name: str, field_name: str) -> str:
+        return self._variant_field_types.get((variant_name, field_name), "i64")
 
     def _split_field_name(self, field_name: str) -> Tuple[Optional[str], str]:
         if "." in field_name:
@@ -753,6 +900,7 @@ class LLVMCodeGenerator:
             "@.fmt_double = private unnamed_addr constant [5 x i8] c\"%lf\\0A\\00\"",
             "@.fmt_str = private unnamed_addr constant [4 x i8] c\"%s\\0A\\00\"",
             "@.heap_bounds_err = private unnamed_addr constant [54 x i8] c\"heap access error: index %ld out of range (size %ld)\\0A\\00\"",
+            "@.match_error_fmt = private unnamed_addr constant [33 x i8] c\"non-exhaustive match for tag %s\\0A\\00\"",
             "declare i32 @printf(i8*, ...)",
             "declare i32 @fflush(i8*)",
             "declare i8* @calloc(i64, i64)",
@@ -866,7 +1014,37 @@ class LLVMCodeGenerator:
             "  call void @free(i8* %raw)",
             "  ret i64 0",
             "}",
+            "define void @__match_error(i64 %ptr) {",
+            "entry:",
+            "  %tag = call i8* @heap_get_str(i64 %ptr, i64 0)",
+            "  %fmt = getelementptr [33 x i8], [33 x i8]* @.match_error_fmt, i64 0, i64 0",
+            "  %_printed = call i32 (i8*, ...) @printf(i8* %fmt, i8* %tag)",
+            "  %_flushed = call i32 @fflush(i8* null)",
+            "  call void @exit(i32 1)",
+            "  ret void",
+            "}",
         ]
+
+    def _register_type_metadata(self, program: ProgramIR) -> None:
+        self._variant_fields.clear()
+        self._variant_field_types.clear()
+        self._variant_to_type.clear()
+
+        for type_name, type_def in program.types.items():
+            if type_def.variants:
+                for variant_name, fields in type_def.variants.items():
+                    self._variant_to_type[variant_name] = type_name
+                    self._variant_fields[variant_name] = [fname for fname, _ in fields]
+                    for fname, ftype in fields:
+                        llvm_type = self._llvm_type_from_annotation(ftype) or "i64"
+                        self._variant_field_types[(variant_name, fname)] = llvm_type
+            elif type_def.fields is not None:
+                variant_name = type_def.name
+                self._variant_to_type[variant_name] = type_name
+                self._variant_fields[variant_name] = [fname for fname, _ in type_def.fields]
+                for fname, ftype in type_def.fields:
+                    llvm_type = self._llvm_type_from_annotation(ftype) or "i64"
+                    self._variant_field_types[(variant_name, fname)] = llvm_type
 
     def _register_class_metadata(self, program: ProgramIR) -> None:
         self._class_layouts.clear()
@@ -960,6 +1138,7 @@ class LLVMCodeGenerator:
         locals_types: Dict[str, Optional[str]] = {}
         locals_literals: Dict[str, int] = {}
         locals_classes: Dict[str, str] = {}
+        locals_variants: Dict[str, str] = {}
         heap_cell_types: Dict[Tuple[str, int], str] = {}
         signature = signatures[func.name]
         if "." in func.name and func.params:
@@ -985,6 +1164,13 @@ class LLVMCodeGenerator:
                 raise NotImplementedError(
                     f"mixed-type return in LLVM prototype: {signature.return_type} vs {ty}"
                 )
+
+        def resolve_variant_name(value: _TypeValue) -> Optional[str]:
+            if value.variant_name:
+                return value.variant_name
+            if value.source:
+                return locals_variants.get(value.source)
+            return None
 
         for instr in func.instructions:
             if instr.op == Opcode.PUSH_CONST:
@@ -1012,6 +1198,7 @@ class LLVMCodeGenerator:
                             source=name,
                             literal=literal,
                             class_name=locals_classes.get(name),
+                            variant_name=locals_variants.get(name),
                         )
                     )
                 elif name in signature.param_types:
@@ -1020,6 +1207,7 @@ class LLVMCodeGenerator:
                             signature.param_types[name],
                             source=name,
                             class_name=locals_classes.get(name),
+                            variant_name=locals_variants.get(name),
                         )
                     )
                 else:
@@ -1027,7 +1215,7 @@ class LLVMCodeGenerator:
             elif instr.op == Opcode.STORE:
                 value = stack.pop()
                 ty = value.ty
-                if ty is None and value.source:
+                if ty is None and value.source and value.source in signature.param_types:
                     ty = signature.param_types[value.source]
                 locals_types[instr.arg] = ty
                 if ty == "i64" and value.literal is not None:
@@ -1038,6 +1226,10 @@ class LLVMCodeGenerator:
                     locals_classes[instr.arg] = value.class_name
                 else:
                     locals_classes.pop(instr.arg, None)
+                if value.variant_name:
+                    locals_variants[instr.arg] = value.variant_name
+                else:
+                    locals_variants.pop(instr.arg, None)
                 if value.source and value.source != instr.arg:
                     for (ptr_name, idx), cell_ty in list(heap_cell_types.items()):
                         if ptr_name == value.source:
@@ -1088,6 +1280,63 @@ class LLVMCodeGenerator:
             elif instr.op == Opcode.CALL:
                 name, argc = instr.arg
                 args = [stack.pop() for _ in range(argc)][::-1]
+                if name == "__variant_assume":
+                    if len(args) != 2:
+                        raise NotImplementedError("__variant_assume expects 2 args")
+                    variant_name = args[1].literal_str
+                    if variant_name is None:
+                        raise NotImplementedError("__variant_assume expects a string literal variant name")
+                    value = args[0]
+                    stack.append(
+                        _TypeValue(
+                            value.ty,
+                            source=value.source,
+                            literal=value.literal,
+                            literal_str=value.literal_str,
+                            class_name=value.class_name,
+                            variant_name=variant_name,
+                        )
+                    )
+                    continue
+                if name == "__variant_new":
+                    if len(args) < 2:
+                        raise NotImplementedError("__variant_new expects at least 2 args")
+                    variant_name = args[0].literal_str
+                    if variant_name is None:
+                        raise NotImplementedError("__variant_new expects a string literal variant name")
+                    stack.append(_TypeValue("i64", variant_name=variant_name))
+                    continue
+                if name == "__variant_tag":
+                    if len(args) != 1:
+                        raise NotImplementedError("__variant_tag expects 1 arg")
+                    stack.append(_TypeValue("i8*", literal_str=args[0].variant_name))
+                    continue
+                if name == "__variant_get":
+                    if len(args) != 2:
+                        raise NotImplementedError("__variant_get expects 2 args")
+                    field_name = args[1].literal_str
+                    if field_name is None:
+                        raise NotImplementedError("__variant_get expects a string literal field name")
+                    variant_name = resolve_variant_name(args[0])
+                    if variant_name is None:
+                        field_type = None
+                        for (candidate_variant, candidate_field), ty in self._variant_field_types.items():
+                            if candidate_field == field_name:
+                                if field_type is None:
+                                    field_type = ty
+                                elif field_type != ty:
+                                    raise NotImplementedError(
+                                        f"ambiguous field {field_name} across variants in LLVM prototype"
+                                    )
+                        stack.append(_TypeValue(field_type or "i64"))
+                    else:
+                        field_type = self._variant_field_types.get((variant_name, field_name), "i64")
+                        stack.append(_TypeValue(field_type))
+                    continue
+                if name == "__match_error":
+                    if len(args) != 1:
+                        raise NotImplementedError("__match_error expects 1 arg")
+                    continue
                 if name == "__class_new":
                     if not args:
                         raise NotImplementedError("__class_new expects at least 1 arg")

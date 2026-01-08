@@ -821,7 +821,7 @@ def compile_to_llvm_ir(
 ) -> str:
     """Emit textual LLVM IR for the subset supported by the native backend."""
     stmts = _parse_and_lint(src)
-    program = NativeCodeGenerator(allow_heap=True, allow_match=False).compile_program(stmts)
+    program = NativeCodeGenerator(allow_heap=True, allow_match=True).compile_program(stmts)
     llvm_ir = LLVMCodeGenerator(target_triple=target_triple, data_layout=data_layout).compile_program(program)
     if llvm_opt:
         llvm_ir = _optimize_llvm_ir(llvm_ir)

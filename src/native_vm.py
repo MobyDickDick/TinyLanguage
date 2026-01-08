@@ -341,6 +341,10 @@ class NativeVM:
             if len(args) != 2:
                 raise RuntimeError(f"__variant_get expects 2 args, got {len(args)}")
             return self._variant_get(args[0], args[1])
+        if name == "__variant_assume":
+            if len(args) != 2:
+                raise RuntimeError(f"__variant_assume expects 2 args, got {len(args)}")
+            return args[0]
         if name == "__match_error":
             if len(args) != 1:
                 raise RuntimeError(f"__match_error expects 1 arg, got {len(args)}")

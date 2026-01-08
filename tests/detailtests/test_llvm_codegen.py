@@ -404,3 +404,29 @@ def test_llvm_codegen_reports_mixed_type_arithmetic_with_context() -> None:
         r"\(i64 vs double\) \(instruction: BINARY '\+'\)",
     ):
         LLVMCodeGenerator().compile_program(program)
+
+
+def test_llvm_codegen_supports_match_and_variants() -> None:
+    source = """
+type Shape {
+  Circle { radius: number };
+  Rectangle { width: number, height: number };
+}
+
+fn area(shape) {
+  return match shape {
+    case Circle { radius: r }: r;
+    case Rectangle { width: w, height: h }: w + h;
+  };
+}
+
+def c = Circle { radius: 2 };
+print(area(c));
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "call i64 @__new(i64 2)" in llvm_ir
+    assert "call i64 @heap_set_str" in llvm_ir
+    assert "call i8* @heap_get_str" in llvm_ir
+    assert "icmp eq i8*" in llvm_ir

@@ -53,7 +53,13 @@ class _TypeValue:
 class LLVMCodeGenerator:
     """Translate ``ProgramIR`` instructions into textual LLVM IR."""
 
-    def __init__(self, *, target_triple: Optional[str] = None, data_layout: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        *,
+        target_triple: Optional[str] = None,
+        data_layout: Optional[str] = None,
+        module_inits: Optional[Dict[str, str]] = None,
+    ) -> None:
         self._tmp_index = 0
         self._label_index = 0
         self._stack: List[_StackValue] = []
@@ -81,6 +87,7 @@ class LLVMCodeGenerator:
         self._target_triple = target_triple
         self._data_layout = data_layout
         self._operator_overloads: Dict[Tuple[str, str, str], str] = {}
+        self._module_inits: Dict[str, str] = module_inits or {}
 
     def _format_opcode(self, op: Opcode) -> str:
         return op.value if isinstance(op, Opcode) else str(op)
@@ -674,6 +681,9 @@ class LLVMCodeGenerator:
     def _call_function(self, call_spec: Tuple[str, int]) -> None:
         name, argc = call_spec
         args = [self._stack.pop() for _ in range(argc)][::-1]
+        if name == "__import":
+            self._emit_import_call(args)
+            return
         if name == "__spawn":
             self._emit_spawn_call(args)
             return
@@ -1002,6 +1012,26 @@ class LLVMCodeGenerator:
             self._class_field_types[(class_name, field_index)] = value.ty
         self._stack.append(_StackValue(name=dest, ty="i64", source=dest, class_name=class_name))
 
+    def _emit_import_call(self, args: List[_StackValue]) -> None:
+        if len(args) != 1:
+            self._lowering_error("__import expects 1 arg")
+        module_name = self._literal_string(args[0], context="__import")
+        init_name = self._module_inits.get(module_name)
+        if init_name is None:
+            self._lowering_error(f"unknown module {module_name}")
+        init_signature = self._function_signatures.get(init_name)
+        if init_signature is None:
+            self._lowering_error(f"missing module init function {init_name}")
+        if init_signature.param_types:
+            self._lowering_error(f"module init {init_name} expects no args")
+        self._body.append(f"  {self._next_tmp()} = call {init_signature.return_type} @{init_name}()")
+        name, length = self._string_constant(module_name)
+        dest = self._next_tmp()
+        self._body.append(
+            f"  {dest} = getelementptr inbounds [{length} x i8], [{length} x i8]* @{name}, i32 0, i32 0"
+        )
+        self._stack.append(_StackValue(name=dest, ty="i8*", literal_str=module_name, class_name=module_name))
+
     def _emit_field_get(self, args: List[_StackValue]) -> None:
         if len(args) != 2:
             self._lowering_error("__field_get expects 2 args")
@@ -1009,6 +1039,8 @@ class LLVMCodeGenerator:
         class_name = obj.class_name
         if class_name is None:
             self._lowering_error("field access on unknown class value")
+        if class_name in self._module_inits:
+            self._lowering_error("field access on module values is not supported yet")
         field_literal = self._literal_string(field_name, context="__field_get")
         field_index = self._class_field_index(class_name, field_literal)
         resolved_name = self._resolve_class_heap_get_name(class_name, field_index)
@@ -1063,6 +1095,28 @@ class LLVMCodeGenerator:
                 self._emit_set_call(f"Set.{method_literal}", rest)
             else:
                 self._emit_deque_call(f"Deque.{method_literal}", rest)
+            return
+        if class_name in self._module_inits:
+            method_literal = self._literal_string(method_name, context="__method_call")
+            target_name = f"{class_name}.{method_literal}"
+            signature = self._function_signatures.get(target_name)
+            if signature is None:
+                self._lowering_error(f"unknown function {target_name}")
+            if len(rest) != len(signature.param_types):
+                self._lowering_error(
+                    f"function {target_name} expects {len(signature.param_types)} args, got {len(rest)}"
+                )
+            rendered_args: List[str] = []
+            for (param_name, param_type), arg in zip(signature.param_types.items(), rest):
+                if arg.ty != param_type:
+                    self._lowering_error(
+                        f"argument for {target_name}.{param_name} expected {param_type}, got {arg.ty}"
+                    )
+                rendered_args.append(f"{param_type} {arg.name}")
+            dest = self._next_tmp()
+            args_text = ", ".join(rendered_args)
+            self._body.append(f"  {dest} = call {signature.return_type} @{target_name}({args_text})")
+            self._stack.append(_StackValue(name=dest, ty=signature.return_type))
             return
         if class_name is None:
             self._lowering_error("method call on unknown class value")
@@ -2358,6 +2412,14 @@ class LLVMCodeGenerator:
             elif instr.op == Opcode.CALL:
                 name, argc = instr.arg
                 args = [stack.pop() for _ in range(argc)][::-1]
+                if name == "__import":
+                    if len(args) != 1:
+                        raise NotImplementedError("__import expects 1 arg")
+                    module_name = args[0].literal_str
+                    if module_name is None:
+                        raise NotImplementedError("__import expects a string literal module name")
+                    stack.append(_TypeValue("i8*", literal_str=module_name, class_name=module_name))
+                    continue
                 if name == "__spawn":
                     if not args:
                         raise NotImplementedError("__spawn expects at least 1 arg")
@@ -2485,6 +2547,8 @@ class LLVMCodeGenerator:
                     field_literal = field_name.literal_str
                     if class_name_value is None or field_literal is None:
                         raise NotImplementedError("__field_get expects class value and field name literal")
+                    if class_name_value in self._module_inits:
+                        raise NotImplementedError("module field access is not yet supported in LLVM prototype")
                     field_index = self._class_field_index(class_name_value, field_literal)
                     field_type = self._class_field_types.get((class_name_value, field_index), "i64")
                     stack.append(_TypeValue(field_type))
@@ -2548,6 +2612,28 @@ class LLVMCodeGenerator:
                         if name.startswith("Deque."):
                             stack.append(_TypeValue("i64"))
                             continue
+                    if class_name_value in self._module_inits:
+                        target_name = f"{class_name_value}.{method_literal}"
+                        signature = signatures.get(target_name)
+                        if signature is None:
+                            raise NotImplementedError(f"unknown function {target_name} in LLVM prototype")
+                        if len(rest) != len(signature.param_types):
+                            raise NotImplementedError(
+                                f"function {target_name} expects {len(signature.param_types)} args, got {len(rest)}"
+                            )
+                        for param_name, arg in zip(signature.param_types.keys(), rest):
+                            expected = signature.param_types[param_name]
+                            if expected is None and arg.ty:
+                                signature.param_types[param_name] = arg.ty
+                                changed = True
+                            if arg.ty is None and arg.source and expected:
+                                set_param_type(arg.source, expected)
+                            if expected and arg.ty and expected != arg.ty:
+                                raise NotImplementedError(
+                                    f"argument type mismatch for {target_name}.{param_name}: {expected} vs {arg.ty}"
+                                )
+                        stack.append(_TypeValue(signature.return_type))
+                        continue
                     target_name = self._resolve_method_target(class_name_value, method_literal)
                     callee = signatures.get(target_name)
                     if callee is None:

@@ -148,6 +148,7 @@ def main(argv: list[str] | None = None) -> int:
                 target_triple=args.llvm_target_triple,
                 data_layout=args.llvm_data_layout,
                 llvm_opt=args.llvm_opt,
+                module_path=module_path,
             )
         except TinyLangError as err:
             sys.stderr.write(_format_error_for_source(source, err) + os.linesep)

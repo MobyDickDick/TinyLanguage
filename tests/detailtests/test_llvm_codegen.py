@@ -94,6 +94,21 @@ def test_llvm_codegen_supports_function_calls() -> None:
     assert "call i64 @add(i64 2, i64 3)" in llvm_ir
 
 
+def test_llvm_codegen_supports_module_imports(tmp_path) -> None:
+    helper = tmp_path / "helper.tiny"
+    helper.write_text("fn add(x, y) { return x + y; }", encoding="utf-8")
+    main = tmp_path / "main.tiny"
+    main.write_text("import helper; print(helper.add(1, 2));", encoding="utf-8")
+
+    llvm_ir = compile_to_llvm_ir(main.read_text(encoding="utf-8"), module_path=main)
+    main_ir = _tiny_main_body(llvm_ir)
+
+    assert "define i64 @helper.add(i64 %x.arg, i64 %y.arg)" in llvm_ir
+    assert "define i64 @helper.__init()" in llvm_ir
+    assert "call i64 @helper.__init()" in main_ir
+    assert "call i64 @helper.add(i64 1, i64 2)" in main_ir
+
+
 def test_llvm_codegen_supports_spawn_and_join() -> None:
     source = """
 async fn add(x, y) { return x + y; }

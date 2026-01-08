@@ -102,15 +102,15 @@ _None_
 
 ### Open tasks
 
-- [ ] Module imports
-  - [ ] Generate per-module initialization functions in LLVM IR.
-  - [ ] Emit a module loader in the runtime and link it into executables.
-
 - [ ] Python interop
   - [ ] Define a C/LLVM FFI bridge for Python interop APIs.
   - [ ] Stabilize argument conversion and reference lifetime management.
 
 ### Closed tasks
+
+- [x] Module imports
+  - [x] Generate per-module initialization functions in LLVM IR.
+  - [x] Emit a module loader in the runtime and link it into executables.
 
 - [x] Cancellation tokens (`Async.token`, `Async.cancel`, `Async.is_cancelled`, `Async.reason`, `Async.link`)
 

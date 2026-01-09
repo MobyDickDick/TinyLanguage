@@ -194,8 +194,12 @@ class Lexer:
             if c == "\\":
                 self._advance()
                 if self.i >= self.n:
+                    esc_pos = SourcePos(self.line, max(self.col - 1, 1))
+                    span = SourceSpan(esc_pos, esc_pos)
                     raise TinyLangError(
-                        format_error(self.s, pos0, "unterminated escape in string"), pos0
+                        format_error(self.s, span, "unterminated escape in string"),
+                        esc_pos,
+                        span=span,
                     )
                 esc = self.s[self.i]
                 self._advance()
@@ -215,6 +219,10 @@ class Lexer:
                 buf.append(c)
                 self._advance()
         span = SourceSpan(pos0, pos0)
+        if self.i >= self.n:
+            end_line = self.line
+            end_col = max(self.col - 1, 1)
+            span = SourceSpan(pos0, SourcePos(end_line, end_col))
         raise TinyLangError(
             format_error(self.s, span, "unterminated string literal"), pos0, span=span
         )

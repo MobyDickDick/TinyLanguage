@@ -29,7 +29,7 @@ except ImportError:  # pragma: no cover - Windows and other platforms without te
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
-from tiny_errors import SourcePos, SourceSpan, TinyError, format_error as format_error_with_span
+from tiny_errors import SourcePos, SourceSpan
 
 from stdlib import register_stdlib
 

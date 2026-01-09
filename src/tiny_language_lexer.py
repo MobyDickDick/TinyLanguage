@@ -139,6 +139,23 @@ class Lexer:
                     j += 1
                     continue
                 break
+            if j < self.n and self.s[j] in "eE":
+                exp_start = j
+                k = j + 1
+                if k < self.n and self.s[k] in "+-":
+                    k += 1
+                exp_digits = k
+                while k < self.n and self.s[k].isdigit():
+                    k += 1
+                if k == exp_digits:
+                    exp_pos = SourcePos(start_line, start_col + (exp_start - self.i))
+                    span = SourceSpan(exp_pos, exp_pos)
+                    raise TinyLangError(
+                        format_error(self.s, span, "invalid exponent in number literal"),
+                        exp_pos,
+                        span=span,
+                    )
+                j = k
             txt = self.s[self.i:j]
             consumed = j - self.i
             self.i = j

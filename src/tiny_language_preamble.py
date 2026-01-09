@@ -370,6 +370,8 @@ def _classify_error(msg: str, candidates: Optional[List[str]] = None) -> Tuple[s
         return "E003", base_hint
     if "exponent for ^ must be an integer" in lower_msg:
         return "E004", "Use an integer exponent (cast with `int(...)` if necessary) when using the ^ operator."
+    if "fractional exponent for ^ requires a non-negative base" in lower_msg:
+        return "E004", "Use a non-negative base or an integer exponent when using the ^ operator."
     if "len expects a sized value" in lower_msg:
         return "E005", "Pass a list, string, heap pointer, or other sized value to `len`."
     if "destructuring call" in lower_msg and "must include output" in lower_msg:

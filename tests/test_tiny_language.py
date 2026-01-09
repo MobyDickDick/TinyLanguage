@@ -108,12 +108,21 @@ def test_power_operator():
     assert out == "8\n512\n"
 
 
-def test_power_operator_requires_integer_exponent():
-    expect_compile_error(
+def test_power_operator_allows_fractional_exponent():
+    out = run_tiny(
         """
         print(2 ^ 0.5);
+        """
+    )
+    assert out == "1.4142135623730951\n"
+
+
+def test_power_operator_rejects_fractional_negative_base():
+    expect_compile_error(
+        """
+        print((-1) ^ 0.5);
         """,
-        r"exponent for \^ must be an integer",
+        r"fractional exponent for \^ requires a non-negative base",
     )
 
 
@@ -127,13 +136,14 @@ def test_power_function_allows_fractional_exponent():
     assert out == "9\n1.4142135623730951\n"
 
 
-def test_scientific_notation_not_supported():
-    expect_compile_error(
+def test_scientific_notation_supported():
+    out = run_tiny(
         """
         print(1.2e2);
-        """,
-        r"expected SYM \)"
+        print(1e3);
+        """
     )
+    assert out == "120.0\n1000\n"
 
 
 def test_comparisons():

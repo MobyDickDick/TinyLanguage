@@ -22,8 +22,8 @@ def test_exponent_requires_integer_hint():
 
     err = excinfo.value
     assert err.code == "E004"
-    assert "exponent for ^ must be an integer" in str(err)
-    assert err.hint == "Use an integer exponent (cast with `int(...)` if necessary) when using the ^ operator."
+    assert "fractional exponent for ^ requires a non-negative base" in str(err)
+    assert err.hint == "Use a non-negative base or an integer exponent when using the ^ operator."
 
 
 def test_len_reports_unsized_value():

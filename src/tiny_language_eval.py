@@ -219,7 +219,12 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
 def eval_expr(self, e: IR, env: "Environment") -> Any:
     try:
         if isinstance(e, Num):
-            return float(e.txt) if "." in e.txt else int(e.txt)
+            if "." in e.txt or "e" in e.txt or "E" in e.txt:
+                value = float(e.txt)
+                if ("e" in e.txt or "E" in e.txt) and "." not in e.txt and value.is_integer():
+                    return int(value)
+                return value
+            return int(e.txt)
         if isinstance(e, Str):
             return e.txt
         if isinstance(e, Bool):

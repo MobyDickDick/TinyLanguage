@@ -231,7 +231,12 @@ class NativeCodeGenerator:
 
     def _compile_expr(self, expr: "IR") -> List[Instruction]:
         if isinstance(expr, Num):
-            value = float(expr.txt) if "." in expr.txt else int(expr.txt)
+            if "." in expr.txt or "e" in expr.txt or "E" in expr.txt:
+                value = float(expr.txt)
+                if ("e" in expr.txt or "E" in expr.txt) and "." not in expr.txt and value.is_integer():
+                    value = int(value)
+            else:
+                value = int(expr.txt)
             return [Instruction(Opcode.PUSH_CONST, value)]
         if isinstance(expr, Str):
             return [Instruction(Opcode.PUSH_CONST, expr.txt)]

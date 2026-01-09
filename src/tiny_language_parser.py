@@ -29,9 +29,19 @@ class Parser:
         return node
 
     @staticmethod
-    def _span_cover(a: IR, b: IR) -> SourceSpan:
-        start = getattr(a, "span", None).start if hasattr(a, "span") else getattr(a, "pos")
-        stop = getattr(b, "span", None).stop if hasattr(b, "span") else getattr(b, "pos")
+    def _node_start(node: IR) -> SourcePos:
+        span = getattr(node, "span", None)
+        return span.start if span is not None else getattr(node, "pos")
+
+    @staticmethod
+    def _node_stop(node: IR) -> SourcePos:
+        span = getattr(node, "span", None)
+        return span.stop if span is not None else getattr(node, "pos")
+
+    @classmethod
+    def _span_cover(cls, a: IR, b: IR) -> SourceSpan:
+        start = cls._node_start(a)
+        stop = cls._node_stop(b)
         return SourceSpan(start, stop)
 
     def _error(self, message: str, pos: SourcePos, span: Optional[SourceSpan] = None) -> TinyLangError:
@@ -652,13 +662,13 @@ class Parser:
                     args = self.parse_arg_list()
                     expr = self._attach_span(
                         MethodCall(expr, name_tok.text, args, pos=dot_tok.pos),
-                        getattr(expr, "span", None).start if hasattr(expr, "span") else expr.pos,
+                        self._node_start(expr),
                         self._last_tok.stop,
                     )
                 else:
                     expr = self._attach_span(
                         Field(expr, name_tok.text, pos=dot_tok.pos),
-                        getattr(expr, "span", None).start if hasattr(expr, "span") else expr.pos,
+                        self._node_start(expr),
                         name_tok.stop,
                     )
                 continue
@@ -736,7 +746,7 @@ class Parser:
         if self.tok.kind == "KW" and self.tok.text == "await":
             kw = self._eat("KW", "await")
             expr = self.parse_expr()
-            end = getattr(expr, "span", None).stop if hasattr(expr, "span") else getattr(expr, "pos")
+            end = self._node_stop(expr)
             return self._attach_span(Await(expr, pos=kw.pos), kw.start, end)
         if self.tok.kind == "KW" and self.tok.text == "match":
             return self.parse_match()

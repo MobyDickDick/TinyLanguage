@@ -9,7 +9,8 @@ scanner.
 
 from dataclasses import dataclass
 
-from tiny_errors import SourcePos
+from tiny_errors import SourcePos, SourceSpan
+from tiny_language_preamble import TinyLangError, format_error
 
 # ----- Lexer -----
 
@@ -60,6 +61,10 @@ class Token:
     @property
     def pos(self) -> SourcePos:
         return self.start
+
+    @property
+    def span(self) -> SourceSpan:
+        return SourceSpan(self.start, self.stop)
 
 
 class Lexer:

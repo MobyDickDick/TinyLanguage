@@ -33,10 +33,23 @@ def _node_pos(obj: Any) -> SourcePos:
     return getattr(obj, "pos", SourcePos.origin())
 
 
-def _lint_error(source: str, node: Any, message: str, *, code: str = "E000", hint: Optional[str] = None) -> TinyLangError:
+def _lint_error(
+    source: Optional[str],
+    node: Any,
+    message: str,
+    *,
+    code: str = "E000",
+    hint: Optional[str] = None,
+) -> TinyLangError:
     span = _node_span(node)
     pos = _node_pos(node)
-    rendered = format_error(source, span or pos, message, code=code, hint=hint)
+    if source is None:
+        loc = span.start if span is not None else pos
+        rendered = f"[{code}] {message} (line {loc.line}, col {loc.col})"
+        if hint:
+            rendered = f"{rendered}\n  Hint: {hint}"
+    else:
+        rendered = format_error(source, span or pos, message, code=code, hint=hint)
     return TinyLangError(rendered, pos, code=code, hint=hint, span=span)
 
 
@@ -123,7 +136,7 @@ def uses_in_expr(e: IR, reads: Dict[str, int]) -> None:
             uses_in_expr(v, reads)
 
 
-def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
+def lint_stmt_reads(s: IR, reads: Dict[str, int], source: Optional[str] = None) -> None:
     if isinstance(s, (Let, Assign)):
         uses_in_expr(s.expr, reads)
     elif isinstance(s, FieldAssign):
@@ -137,26 +150,26 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
     elif isinstance(s, If):
         uses_in_expr(s.cond, reads)
         for t in s.then:
-            lint_stmt_reads(t, reads)
+            lint_stmt_reads(t, reads, source)
         for t in s.els:
-            lint_stmt_reads(t, reads)
+            lint_stmt_reads(t, reads, source)
     elif isinstance(s, While):
         uses_in_expr(s.cond, reads)
         for t in s.body:
-            lint_stmt_reads(t, reads)
+            lint_stmt_reads(t, reads, source)
     elif isinstance(s, Switch):
         uses_in_expr(s.expr, reads)
         for case in s.cases:
             if case.value is not None:
                 uses_in_expr(case.value, reads)
             for t in case.body:
-                lint_stmt_reads(t, reads)
+                lint_stmt_reads(t, reads, source)
     elif isinstance(s, TryCatch):
         for t in s.body:
-            lint_stmt_reads(t, reads)
+            lint_stmt_reads(t, reads, source)
         handler_reads: Dict[str, int] = {}
         for t in s.handler:
-            lint_stmt_reads(t, handler_reads)
+            lint_stmt_reads(t, handler_reads, source)
         if s.err_name:
             # Mark the catch binding as referenced if it is consumed inside the handler
             if handler_reads.get(s.err_name, 0) == 0:
@@ -165,20 +178,26 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
             reads[name] = max(reads.get(name, 0), count)
     elif isinstance(s, TaskBlock):
         for t in s.body:
-            lint_stmt_reads(t, reads)
+            lint_stmt_reads(t, reads, source)
     elif isinstance(s, Return):
         uses_in_expr(s.expr, reads)
     elif isinstance(s, OpDef):
         tmp: Dict[str, int] = {}
         for t in s.body:
-            lint_stmt_reads(t, tmp)
+            lint_stmt_reads(t, tmp, source)
         miss = []
         if not s.a_name.startswith("_") and tmp.get(s.a_name, 0) == 0:
             miss.append(s.a_name)
         if not s.b_name.startswith("_") and tmp.get(s.b_name, 0) == 0:
             miss.append(s.b_name)
         if miss:
-            raise RuntimeError(f"unused operator parameter(s) in op {s.op}: {', '.join(miss)}")
+            raise _lint_error(
+                source,
+                s,
+                f"unused operator parameter(s) in op {s.op}: {', '.join(miss)}",
+                code="E002",
+                hint="Remove the unused parameters or reference them in the operator body.",
+            )
         for name, count in tmp.items():
             if name in {s.a_name, s.b_name}:
                 continue
@@ -188,12 +207,16 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
     elif isinstance(s, MethodDef):
         tmp: Dict[str, int] = {}
         for t in s.body:
-            lint_stmt_reads(t, tmp)
+            lint_stmt_reads(t, tmp, source)
         param_names = _param_names(s.params)
         miss = [p for p in param_names if not p.startswith("_") and tmp.get(p, 0) == 0]
         if miss:
-            raise RuntimeError(
-                f"unused parameter(s) in method {s.class_name}.{s.name}: {', '.join(miss)}"
+            raise _lint_error(
+                source,
+                s,
+                f"unused parameter(s) in method {s.class_name}.{s.name}: {', '.join(miss)}",
+                code="E002",
+                hint="Remove the unused parameter or reference it.",
             )
         for name, count in tmp.items():
             if name in set(param_names):
@@ -202,7 +225,7 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
     elif isinstance(s, Fn):
         tmp: Dict[str, int] = {}
         for t in s.body:
-            lint_stmt_reads(t, tmp)
+            lint_stmt_reads(t, tmp, source)
         param_names = _param_names(s.params)
         for name, count in tmp.items():
             if name in set(param_names):
@@ -210,10 +233,10 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
             reads[name] = max(reads.get(name, 0), count)
     elif isinstance(s, ClassDef):
         for m in s.methods:
-            lint_stmt_reads(m, reads)
+            lint_stmt_reads(m, reads, source)
     elif isinstance(s, Namespace):
         for t in s.body:
-            lint_stmt_reads(t, reads)
+            lint_stmt_reads(t, reads, source)
     elif isinstance(s, CallStmt):
         for arg in s.args:
             uses_in_expr(arg, reads)
@@ -222,13 +245,11 @@ def lint_stmt_reads(s: IR, reads: Dict[str, int]) -> None:
 def lint_fn_params_used(fn: Fn, source: Optional[str] = None) -> None:
     reads: Dict[str, int] = {}
     for st in fn.body:
-        lint_stmt_reads(st, reads)
+        lint_stmt_reads(st, reads, source)
     param_names = _param_names(fn.params)
     unused = [p for p in param_names if p != "self" and not p.startswith("_") and reads.get(p, 0) == 0]
     if unused:
         msg = f"unused parameter(s) in function {fn.name}: {', '.join(unused)}"
-        if source is None:
-            raise RuntimeError(msg)
         raise _lint_error(source, fn, msg, code="E002", hint="Remove the unused parameter or reference it.")
     lint_param_mutations_returned(fn.body, set(param_names), fn.name, is_method=False, source=source, pos=fn.pos)
     lint_destruct_call_outputs(fn.body, source)
@@ -242,13 +263,11 @@ def lint_fn_params_used(fn: Fn, source: Optional[str] = None) -> None:
 def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None:
     reads: Dict[str, int] = {}
     for st in md.body:
-        lint_stmt_reads(st, reads)
+        lint_stmt_reads(st, reads, source)
     param_names = _param_names(md.params)
     unused = [p for p in param_names if p != "self" and not p.startswith("_") and reads.get(p, 0) == 0]
     if unused:
         msg = f"unused parameter(s) in method {md.class_name}.{md.name}: {', '.join(unused)}"
-        if source is None:
-            raise RuntimeError(msg)
         raise _lint_error(source, md, msg, code="E002", hint="Remove the unused parameter or reference it.")
     lint_param_mutations_returned(
         md.body, set(param_names), f"{md.class_name}.{md.name}", is_method=True, source=source, pos=md.pos
@@ -283,7 +302,7 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
     def _mark_captured_uses(block: List[IR], state: Dict[str, tuple[Location, bool, bool]]):
         reads: Dict[str, int] = {}
         for st in block:
-            lint_stmt_reads(st, reads)
+            lint_stmt_reads(st, reads, source)
         for nm, (pos, used_all, used_any) in list(state.items()):
             if nm in reads:
                 state[nm] = (pos, True, True)
@@ -486,8 +505,6 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
         names = [name for name, _ in unused]
         pos = unused[0][1]
         msg = f"unused local binding(s): {', '.join(names)}"
-        if source is None:
-            raise RuntimeError(msg)
         raise _lint_error(source, pos, msg, code="E002", hint="Remove the unused binding or reference it.")
 
 
@@ -540,8 +557,6 @@ def lint_assignment_types(stmts: List[IR], source: Optional[str] = None, env: Op
                 expected = local_env.get(st.name)
                 if expected and inferred and not _types_match(expected, inferred):
                     msg = f"type change for variable {st.name}: expected {expected} but got {inferred}"
-                    if source is None:
-                        raise RuntimeError(msg)
                     raise _lint_error(
                         source,
                         st,
@@ -634,8 +649,6 @@ def lint_bare_call_results(
                 if st.name in disallowed:
                     hint = "Assign the return value or explicitly acknowledge it with `_ = ...;`."
                     msg = f"call to {st.name} returns a value that is ignored"
-                    if source is None:
-                        raise RuntimeError(msg)
                     raise _lint_error(source, st, msg, code="E011", hint=hint)
             if isinstance(st, If):
                 visit(st.then)
@@ -675,8 +688,6 @@ def lint_import_style(stmts: List[IR], source: Optional[str] = None) -> None:
         first_misordered = imports[0]
         hint = "Sort the leading import block alphabetically to keep module headers consistent."
         msg = "imports are not sorted alphabetically"
-        if source is None:
-            raise RuntimeError(msg)
         raise _lint_error(source, first_misordered, msg, code="E012", hint=hint)
 
     for st in stmts:
@@ -770,8 +781,6 @@ def lint_return_signatures(
                         f"inconsistent return signature in {kind} {fn_name}: "
                         f"expected {_format_signature(expected)} but found {_format_signature(sig)}"
                     )
-                    if source is None:
-                        raise RuntimeError(msg)
                     raise _lint_error(source, st, msg, code="E007", hint=hint)
             elif isinstance(st, If):
                 visit(st.then)
@@ -805,8 +814,6 @@ def lint_return_exhaustiveness(
         return
     kind = "method" if is_method else "function"
     msg = f"not all paths in {kind} {fn_name} return a value for annotated type {expected_return}"
-    if source is None:
-        raise RuntimeError(msg)
     raise _lint_error(
         source,
         location,
@@ -822,8 +829,6 @@ def lint_unreachable_code(stmts: List[IR], source: Optional[str] = None) -> None
         for st in block:
             if terminated:
                 msg = "unreachable statement after a return"
-                if source is None:
-                    raise RuntimeError(msg)
                 raise _lint_error(
                     source,
                     st,
@@ -861,7 +866,7 @@ def lint_unreachable_code(stmts: List[IR], source: Optional[str] = None) -> None
     visit_block(stmts)
 
 
-def lint_no_consecutive_definitions(stmts: List[IR]) -> None:
+def lint_no_consecutive_definitions(stmts: List[IR], source: Optional[str] = None) -> None:
     prev: Optional[str] = None
 
     def check_block(block: List[IR]) -> None:
@@ -870,39 +875,39 @@ def lint_no_consecutive_definitions(stmts: List[IR]) -> None:
         for st in block:
             if isinstance(st, (If, While, Switch)):
                 if isinstance(st, If):
-                    lint_no_consecutive_definitions(st.then)
-                    lint_no_consecutive_definitions(st.els)
+                    lint_no_consecutive_definitions(st.then, source)
+                    lint_no_consecutive_definitions(st.els, source)
                 elif isinstance(st, While):
-                    lint_no_consecutive_definitions(st.body)
+                    lint_no_consecutive_definitions(st.body, source)
                 else:
                     for case in st.cases:
-                        lint_no_consecutive_definitions(case.body)
+                        lint_no_consecutive_definitions(case.body, source)
                 prev = None
                 continue
             if isinstance(st, Fn):
-                lint_no_consecutive_definitions(st.body)
+                lint_no_consecutive_definitions(st.body, source)
                 prev = None
                 continue
             if isinstance(st, MethodDef):
-                lint_no_consecutive_definitions(st.body)
+                lint_no_consecutive_definitions(st.body, source)
                 prev = None
                 continue
             if isinstance(st, ClassDef):
                 for m in st.methods:
-                    lint_no_consecutive_definitions(m.body)
+                    lint_no_consecutive_definitions(m.body, source)
                 prev = None
                 continue
             if isinstance(st, Namespace):
-                lint_no_consecutive_definitions(st.body)
+                lint_no_consecutive_definitions(st.body, source)
                 prev = None
                 continue
             if isinstance(st, TryCatch):
-                lint_no_consecutive_definitions(st.body)
-                lint_no_consecutive_definitions(st.handler)
+                lint_no_consecutive_definitions(st.body, source)
+                lint_no_consecutive_definitions(st.handler, source)
                 prev = None
                 continue
             if isinstance(st, TaskBlock):
-                lint_no_consecutive_definitions(st.body)
+                lint_no_consecutive_definitions(st.body, source)
                 prev = None
                 continue
 
@@ -911,7 +916,13 @@ def lint_no_consecutive_definitions(stmts: List[IR]) -> None:
                 current = st.name
 
             if current is not None and prev == current:
-                raise RuntimeError(f"variable {current} defined twice in a row")
+                raise _lint_error(
+                    source,
+                    st,
+                    f"variable {current} defined twice in a row",
+                    code="E015",
+                    hint="Rename the second binding or merge the declarations.",
+                )
 
             prev = current if current is not None else None
 
@@ -953,28 +964,24 @@ def check_destruct_call_expr(expr: IR, names: set[str], *, source: Optional[str]
         missing = sorted({arg.name for arg in expr.args if isinstance(arg, Var) and arg.name not in names})
         if missing:
             msg = f"destructuring call to {expr.name} must include output for argument(s): {', '.join(missing)}"
-            if source:
-                raise _lint_error(
-                    source,
-                    pos,
-                    msg,
-                    code="E006",
-                    hint="Add the missing binding(s) to the destructuring pattern so each referenced argument is captured.",
-                )
-            raise RuntimeError(msg)
+            raise _lint_error(
+                source,
+                pos,
+                msg,
+                code="E006",
+                hint="Add the missing binding(s) to the destructuring pattern so each referenced argument is captured.",
+            )
     elif isinstance(expr, MethodCall):
         missing = sorted({arg.name for arg in expr.args if isinstance(arg, Var) and arg.name not in names})
         if missing:
             msg = f"destructuring method call to {expr.name} must include output for argument(s): {', '.join(missing)}"
-            if source:
-                raise _lint_error(
-                    source,
-                    pos,
-                    msg,
-                    code="E006",
-                    hint="Add the missing binding(s) to the destructuring pattern so each referenced argument is captured.",
-                )
-            raise RuntimeError(msg)
+            raise _lint_error(
+                source,
+                pos,
+                msg,
+                code="E006",
+                hint="Add the missing binding(s) to the destructuring pattern so each referenced argument is captured.",
+            )
 
 
 def lint_param_mutations_returned(
@@ -1022,8 +1029,6 @@ def lint_param_mutations_returned(
     if missing:
         kind = "method" if is_method else "function"
         msg = f"mutated parameter(s) in {kind} {fn_name} must be returned: {', '.join(missing)}"
-        if source is None:
-            raise RuntimeError(msg)
         raise _lint_error(
             source,
             pos,

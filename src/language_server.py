@@ -185,7 +185,7 @@ class TinyLanguageServer:
 
         try:
             lint_destruct_call_outputs(self.stmts, self.source)
-            lint_no_consecutive_definitions(self.stmts)
+            lint_no_consecutive_definitions(self.stmts, self.source)
             lint_import_style(self.stmts, self.source)
             lint_locals_used(self.stmts, self.source)
             signatures = _collect_function_signatures(self.stmts)

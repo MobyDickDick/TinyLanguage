@@ -7,7 +7,7 @@
 # into the original monolithic interpreter so other modules can share the
 # same execution semantics.
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 if "IR" not in globals():
     from tiny_language_ast import (
@@ -57,6 +57,15 @@ if "Runtime" not in globals():
 if "TinyLangError" not in globals():
     from tiny_language_preamble import TinyLangError
 
+if "SourcePos" not in globals():
+    from tiny_errors import SourcePos, SourceSpan
+
+def _span_or_pos(node: IR) -> Union[SourcePos, SourceSpan]:
+    span = getattr(node, "span", None)
+    if span is not None:
+        return span
+    return getattr(node, "pos", SourcePos.origin())
+
 def eval_block(self, stmts: List[IR], env: "Environment", namespace: Optional[str] = None) -> Any:
     for st in stmts:
         res = self.eval_stmt(st, env, namespace)
@@ -68,17 +77,17 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
     self._maybe_pause(s, env, namespace)
     try:
         if isinstance(s, Let):
-            env.define(s.name, self.eval_expr(s.expr, env), getattr(s, "span", s.pos))
+            env.define(s.name, self.eval_expr(s.expr, env), _span_or_pos(s))
         elif isinstance(s, Assign):
             value = self.eval_expr(s.expr, env)
             if env.contains(s.name):
-                env.assign(s.name, value, getattr(s, "span", s.pos))
+                env.assign(s.name, value, _span_or_pos(s))
             else:
-                env.define(s.name, value, getattr(s, "span", s.pos))
+                env.define(s.name, value, _span_or_pos(s))
         elif isinstance(s, FieldAssign):
             obj = self.eval_expr(s.obj, env)
             val = self.eval_expr(s.expr, env)
-            self.field_set(obj, s.name, val, pos=getattr(s, "span", s.pos))
+            self.field_set(obj, s.name, val, pos=_span_or_pos(s))
         elif isinstance(s, Print):
             vals = [self.eval_expr(expr, env) for expr in s.exprs]
             text = " ".join(self.format_value(v) for v in vals)
@@ -160,7 +169,7 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
         elif isinstance(s, Namespace):
             qualified = self._qualify_name(s.name, namespace)
             child_env = Environment(parent=env, namespace=qualified, runtime=self)
-            env.define(s.name, NamespaceRef(self, qualified), getattr(s, "span", s.pos))
+            env.define(s.name, NamespaceRef(self, qualified), _span_or_pos(s))
             self.namespace_envs[qualified] = child_env
             self.eval_block(s.body, child_env, qualified)
         elif isinstance(s, Import):
@@ -170,9 +179,9 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
                 self,
                 caller_namespace=namespace or env.namespace,
                 caller_path=self.current_module_path,
-                pos=getattr(s, "span", s.pos),
+                pos=_span_or_pos(s),
             )
-            env.define(binding, ns_ref, getattr(s, "span", s.pos))
+            env.define(binding, ns_ref, _span_or_pos(s))
         elif isinstance(s, Fn):
             s.namespace = namespace
             fn_name = self._qualify_name(s.name, namespace)
@@ -194,9 +203,9 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
             for nm in s.names:
                 extracted = val[str(nm)]
                 if env.contains(nm):
-                    env.assign(nm, extracted, getattr(s, "span", s.pos))
+                    env.assign(nm, extracted, _span_or_pos(s))
                 else:
-                    env.define(nm, extracted, getattr(s, "span", s.pos))
+                    env.define(nm, extracted, _span_or_pos(s))
         elif isinstance(s, TypeDef):
             self.register_type(s.name, s.fields, s.variants)
         elif isinstance(s, ClassDef):

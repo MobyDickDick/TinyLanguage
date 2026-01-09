@@ -17,6 +17,9 @@ from tiny_errors import SourcePos, SourceSpan
 class IR:
     """Base class for all TinyLanguage AST nodes."""
 
+    pos: SourcePos
+    span: Optional[SourceSpan] = None
+
 
 @dataclass
 class Let(IR):

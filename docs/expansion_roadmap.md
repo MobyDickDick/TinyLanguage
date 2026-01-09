@@ -92,9 +92,11 @@ _None_
 - **Task list (statusable)**:
 ### Open tasks
 
-  - [ ] Add `String.is_digit(text)` to validate numeric-only strings (document in `src/stdlib/string.tiny`).
+_None_
 
 ### Closed tasks
+
+  - [x] Add `String.is_digit(text)` to validate numeric-only strings (document in `src/stdlib/string.tiny`).
 
   - [x] Add `String.starts_with(text, prefix)` + `String.ends_with(text, suffix)` with tests in `tests/detailtests/test_stdlib.py`.
 

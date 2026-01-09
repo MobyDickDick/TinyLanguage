@@ -267,6 +267,8 @@ class _StdLibRegistrar:
         self.runtime.register_native("trim", self._string_trim, namespace="String")
         self.runtime.register_native("repeat", self._string_repeat, namespace="String")
         self.runtime.register_native("replace", self._string_replace, namespace="String")
+        self.runtime.register_native("starts_with", self._string_starts_with, namespace="String")
+        self.runtime.register_native("ends_with", self._string_ends_with, namespace="String")
 
         # ------------------------- Collections ------------------------------
         # Generic helpers for sequences (heap list pointers or Python lists).
@@ -772,6 +774,14 @@ class _StdLibRegistrar:
     def _string_replace(self, text: Any, old: Any, new: Any) -> str:
         """Replace occurrences of `old` in `text` with `new`."""
         return str(text).replace(str(old), str(new))
+
+    def _string_starts_with(self, text: Any, prefix: Any) -> bool:
+        """Return True if text starts with prefix."""
+        return str(text).startswith(str(prefix))
+
+    def _string_ends_with(self, text: Any, suffix: Any) -> bool:
+        """Return True if text ends with suffix."""
+        return str(text).endswith(str(suffix))
 
     # -----------------------------------------------------------------------
     # Collections namespace

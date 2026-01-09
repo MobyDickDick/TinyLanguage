@@ -20,6 +20,8 @@ def test_stdlib_functions_cover_math_string_and_collections(run_tiny_source):
         print(String.replace("tiny language", " ", "_"));
         print(String.starts_with("tiny language", "tiny"));
         print(String.ends_with("tiny language", "age"));
+        print(String.is_digit("12345"));
+        print(String.is_digit("12a"));
         print(String.upper("Hello"));
         print(String.lower("Hello"));
         print(String.trim("  padded  "));
@@ -40,7 +42,7 @@ def test_stdlib_functions_cover_math_string_and_collections(run_tiny_source):
 
     assert (
         out
-        == "5\n8\n3\n10\n-2\n10\na\na-b-c\ntrue\ntiny_language\ntrue\ntrue\nHELLO\nhello\npadded\nhahaha\n2\n3\n3\n3\n2\n20\ntrue\nfalse\n"
+        == "5\n8\n3\n10\n-2\n10\na\na-b-c\ntrue\ntiny_language\ntrue\ntrue\ntrue\nfalse\nHELLO\nhello\npadded\nhahaha\n2\n3\n3\n3\n2\n20\ntrue\nfalse\n"
     )
 
 

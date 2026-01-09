@@ -269,6 +269,7 @@ class _StdLibRegistrar:
         self.runtime.register_native("replace", self._string_replace, namespace="String")
         self.runtime.register_native("starts_with", self._string_starts_with, namespace="String")
         self.runtime.register_native("ends_with", self._string_ends_with, namespace="String")
+        self.runtime.register_native("is_digit", self._string_is_digit, namespace="String")
 
         # ------------------------- Collections ------------------------------
         # Generic helpers for sequences (heap list pointers or Python lists).
@@ -782,6 +783,10 @@ class _StdLibRegistrar:
     def _string_ends_with(self, text: Any, suffix: Any) -> bool:
         """Return True if text ends with suffix."""
         return str(text).endswith(str(suffix))
+
+    def _string_is_digit(self, text: Any) -> bool:
+        """Return True if text contains only digit characters."""
+        return str(text).isdigit()
 
     # -----------------------------------------------------------------------
     # Collections namespace

@@ -9,9 +9,11 @@
 // String.lower(text) -> Kleinbuchstaben
 // String.trim(text) -> Trimt Leerzeichen links und rechts
 // String.repeat(text, count) -> Wiederholt den Text count-mal
+// String.replace(text, old, new) -> Ersetzt Teilstrings
 //
 // Beispiel:
 // def parts = String.split(" a,b ,c ", ",");
 // print(String.trim(heap_get(parts, 0)));
 // print(String.upper(String.join(parts, "-")));
 // print(String.repeat("ha", 3));
+// print(String.replace("tiny language", " ", "_"));

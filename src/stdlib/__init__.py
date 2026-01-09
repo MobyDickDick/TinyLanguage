@@ -266,6 +266,7 @@ class _StdLibRegistrar:
         self.runtime.register_native("lower", self._string_lower, namespace="String")
         self.runtime.register_native("trim", self._string_trim, namespace="String")
         self.runtime.register_native("repeat", self._string_repeat, namespace="String")
+        self.runtime.register_native("replace", self._string_replace, namespace="String")
 
         # ------------------------- Collections ------------------------------
         # Generic helpers for sequences (heap list pointers or Python lists).
@@ -767,6 +768,10 @@ class _StdLibRegistrar:
         if times < 0:
             raise RuntimeError("repeat count must be non-negative")
         return str(text) * times
+
+    def _string_replace(self, text: Any, old: Any, new: Any) -> str:
+        """Replace occurrences of `old` in `text` with `new`."""
+        return str(text).replace(str(old), str(new))
 
     # -----------------------------------------------------------------------
     # Collections namespace

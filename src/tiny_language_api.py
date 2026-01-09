@@ -587,7 +587,7 @@ def _parse_and_lint(src: str, *, use_tiny_parser: Optional[bool] = None) -> List
 
     lint_import_style(stmts, src)
     lint_destruct_call_outputs(stmts, src)
-    lint_no_consecutive_definitions(stmts)
+    lint_no_consecutive_definitions(stmts, src)
     lint_assignment_types(stmts, src)
     lint_locals_used(stmts, src)
     lint_unreachable_code(stmts, src)

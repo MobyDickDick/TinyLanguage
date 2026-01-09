@@ -37,7 +37,7 @@ if PYGMENTS_AVAILABLE:  # pragma: no cover - exercised when pygments is installe
                 (r'"(\\\\.|[^"\\\\])*"', String.Double),
                 (_keyword_pattern, Keyword),
                 (_builtin_pattern, Name.Builtin),
-                (r"[0-9]+(?:\\.[0-9]+)?", Number),
+                (r"[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?", Number),
                 (r"[+\-*/^%=!<>:&|]+", Operator),
                 (r"[{}\\[\\]();,.]", Punctuation),
                 (r"[A-Za-z_][A-Za-z0-9_]*", Name),

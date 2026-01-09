@@ -1207,9 +1207,10 @@ class Runtime:
             if not isinstance(val_b, (int, float)):
                 return mk("any_number")
             if isinstance(val_b, float):
-                if not val_b.is_integer():
+                if not val_b.is_integer() and val_a < 0:
                     return mk("any_number")
-                val_b = int(val_b)
+                if val_b.is_integer():
+                    val_b = int(val_b)
             try:
                 res = val_a**val_b
             except Exception:
@@ -1348,6 +1349,8 @@ class Runtime:
         if err_a != "normal" or err_b != "normal":
             return mk("any_number")
         try:
+            if isinstance(val_b, float) and not val_b.is_integer() and val_a < 0:
+                return mk("any_number")
             res = val_a**val_b
         except Exception:
             return mk("any_number")
@@ -1389,9 +1392,10 @@ class Runtime:
             return a / b
         if op == "^":
             if isinstance(b, float):
-                if not b.is_integer():
-                    raise RuntimeError("exponent for ^ must be an integer")
-                b = int(b)
+                if not b.is_integer() and a < 0:
+                    raise RuntimeError("fractional exponent for ^ requires a non-negative base")
+                if b.is_integer():
+                    b = int(b)
             elif not isinstance(b, int):
                 raise RuntimeError("exponent for ^ must be an integer")
             return a**b

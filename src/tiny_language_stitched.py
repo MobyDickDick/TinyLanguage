@@ -6424,7 +6424,7 @@ parsing so later stages can assume the IR has already been validated for common
 footguns.
 """
 
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, TypeAlias, Union
 
 from tiny_language_ast import *
 from tiny_language_preamble import TinyLangError, format_error
@@ -6449,6 +6449,9 @@ def _node_pos(obj: Any) -> SourcePos:
     if isinstance(obj, SourcePos):
         return obj
     return getattr(obj, "pos", SourcePos.origin())
+
+
+Location: TypeAlias = Union[SourcePos, SourceSpan]
 
 
 def _lint_error(
@@ -6704,7 +6707,6 @@ def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None
 
 
 def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
-    Location = Union[SourcePos, SourceSpan]
     unused: List[tuple[str, Location]] = []
 
     def names_in_expr(expr: IR) -> Set[str]:

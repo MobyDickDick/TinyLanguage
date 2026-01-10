@@ -423,7 +423,7 @@ class Environment:
         if self.runtime:
             self.types[name] = self.runtime._infer_type_name(value)
         else:
-            self.types[name] = "number" if isinstance(value, (int, float)) and not isinstance(value, bool) else type(value).__name__
+            self.types[name] = type(value).__name__
         self.values[name] = value
 
     def assign(self, name: str, value: Any, pos: Union[SourcePos, SourceSpan]) -> None:
@@ -432,7 +432,7 @@ class Environment:
                 self.runtime._check_assignment_type(self, name, value, pos, local_only=True)
                 self.types[name] = self.runtime._infer_type_name(value)
             else:
-                self.types[name] = "number" if isinstance(value, (int, float)) and not isinstance(value, bool) else type(value).__name__
+                self.types[name] = type(value).__name__
             self.values[name] = value
         elif self.parent is not None:
             self.parent.assign(name, value, pos)

@@ -1017,17 +1017,12 @@ class Runtime:
         return type(value).__name__
 
     def _infer_type_name(self, value: Any) -> str:
-        """Return a broad type label for variables defined without annotations.
+        """Return a concrete type label for variables defined without annotations.
 
-        The runtime already tracks concrete types (e.g., distinguishing `int` from
-        `float`) for annotated parameters and return values. For unannotated
-        variables we allow a simple inference step so that numeric values start out
-        as the general "number" type, making later `int`/`float` updates valid
-        without counting as type changes. Other values keep their concrete name.
+        Keeping concrete `int` versus `float` types prevents implicit changes
+        unless the author opts into broader annotations like `number`.
         """
 
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            return "number"
         return self._value_type_name(value) or type(value).__name__
 
     def _check_assignment_type(

@@ -725,7 +725,9 @@ class Runtime:
     @staticmethod
     def _format_location(pos: Optional[SourcePos], span: Optional[SourceSpan]) -> Optional[Union[SourcePos, SourceSpan]]:
         if span is not None:
-            if pos is None or span.start.line != span.stop.line:
+            if pos is None:
+                return span
+            if span.start.line != span.stop.line:
                 return span
         return pos
 

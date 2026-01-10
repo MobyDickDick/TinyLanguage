@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from typing import Iterable, List
 
 from native_ir import Instruction, Opcode, ProgramIR
+from tiny_errors import SourcePos, TinyLangError, format_error
 
 
 @dataclass
@@ -31,6 +32,9 @@ class _ProgramLayout:
 
 class CCodeGenerator:
     """Translate ``ProgramIR`` into C source with an embedded VM."""
+
+    def __init__(self, *, source: str | None = None) -> None:
+        self._source = source
 
     def compile_program(self, program: ProgramIR) -> str:
         layout = self._collect_program(program)
@@ -52,9 +56,18 @@ class CCodeGenerator:
 
     def _unsupported_opcode(self, instr: Instruction) -> None:
         op_name = self._format_opcode(instr.op)
-        raise NotImplementedError(
+        message = (
             f"C backend does not support opcode {op_name}. Supported opcodes: {self._supported_opcodes()}."
         )
+        raise self._error(message, instr)
+
+    def _error(self, message: str, instr: Instruction) -> TinyLangError:
+        span = instr.span
+        pos = span.start if span is not None else SourcePos.origin()
+        rendered = message
+        if self._source is not None:
+            rendered = format_error(self._source, span or pos, message)
+        return TinyLangError(rendered, pos, span=span)
 
     def _collect_program(self, program: ProgramIR) -> _ProgramLayout:
         functions = [

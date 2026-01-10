@@ -688,9 +688,13 @@ class NativeModuleResolver:
                 self._in_progress.append(resolved_path)
                 try:
                     module_env: dict[str, Any] = {}
-                    stmts = _parse_and_lint(resolved_path.read_text(encoding="utf-8"))
+                    source = resolved_path.read_text(encoding="utf-8")
+                    stmts = _parse_and_lint(source)
                     program = NativeCodeGenerator(
-                        allow_heap=True, allow_match=True, module_namespace=resolved_name
+                        allow_heap=True,
+                        allow_match=True,
+                        module_namespace=resolved_name,
+                        source=source,
                     ).compile_program(
                         stmts
                     )
@@ -791,7 +795,8 @@ class LLVMModuleResolver:
                     )
                 self._in_progress.append(resolved_path)
                 try:
-                    stmts = _parse_and_lint(resolved_path.read_text(encoding="utf-8"))
+                    source = resolved_path.read_text(encoding="utf-8")
+                    stmts = _parse_and_lint(source)
                     for stmt in stmts:
                         if isinstance(stmt, Import):
                             self.import_module(
@@ -801,7 +806,10 @@ class LLVMModuleResolver:
                                 pos=stmt.module_span,
                             )
                     program = NativeCodeGenerator(
-                        allow_heap=True, allow_match=True, module_namespace=resolved_name
+                        allow_heap=True,
+                        allow_match=True,
+                        module_namespace=resolved_name,
+                        source=source,
                     ).compile_program(stmts)
                     module_info = LLVMModuleInfo(resolved_name, resolved_path, program)
                     self.cache[resolved_path] = module_info
@@ -979,7 +987,10 @@ def compile_to_llvm_ir(
                 pos=stmt.module_span,
             )
     program = NativeCodeGenerator(
-        allow_heap=True, allow_match=True, module_namespace=module_namespace
+        allow_heap=True,
+        allow_match=True,
+        module_namespace=module_namespace,
+        source=src,
     ).compile_program(stmts)
     modules = list(resolver.cache.values())
     if modules:
@@ -987,7 +998,10 @@ def compile_to_llvm_ir(
     else:
         module_inits = {}
     llvm_ir = LLVMCodeGenerator(
-        target_triple=target_triple, data_layout=data_layout, module_inits=module_inits
+        target_triple=target_triple,
+        data_layout=data_layout,
+        module_inits=module_inits,
+        source=src,
     ).compile_program(program)
     if llvm_opt:
         llvm_ir = _optimize_llvm_ir(llvm_ir)
@@ -997,8 +1011,8 @@ def compile_to_llvm_ir(
 def compile_to_c_source(src: str) -> str:
     """Emit C source for the subset supported by the native backend."""
     stmts = _parse_and_lint(src)
-    program = NativeCodeGenerator(allow_match=False).compile_program(stmts)
-    return CCodeGenerator().compile_program(program)
+    program = NativeCodeGenerator(allow_match=False, source=src).compile_program(stmts)
+    return CCodeGenerator(source=src).compile_program(program)
 
 
 def compile_to_llvm_ir_via_c(
@@ -1143,7 +1157,10 @@ def run_with_native_backend(
     """Run code through the experimental native bytecode backend and VM."""
     stmts = _parse_and_lint(src)
     program = NativeCodeGenerator(
-        allow_heap=True, allow_match=True, module_namespace=module_namespace
+        allow_heap=True,
+        allow_match=True,
+        module_namespace=module_namespace,
+        source=src,
     ).compile_program(stmts)
     resolver = module_resolver or NativeModuleResolver()
     vm = NativeVM(
@@ -1437,7 +1454,7 @@ def run_with_llvm_jit(
     except Exception as exc:
         _raise_llvm_jit_error("parse", exc)
     try:
-        program = NativeCodeGenerator(allow_heap=True, allow_match=False).compile_program(stmts)
+        program = NativeCodeGenerator(allow_heap=True, allow_match=False, source=src).compile_program(stmts)
     except Exception as exc:
         _raise_llvm_jit_error("native-codegen", exc)
     try:
@@ -1456,6 +1473,7 @@ def run_with_llvm_jit(
         llvm_ir = LLVMCodeGenerator(
             target_triple=resolved_triple,
             data_layout=resolved_layout,
+            source=src,
         ).compile_program(program)
     except Exception as exc:
         _raise_llvm_jit_error("llvm-ir-codegen", exc)
@@ -1500,7 +1518,7 @@ def run_with_llvm_jit(
 def run_with_python_bytecode_backend(src: str) -> str:
     """Execute native IR by emitting Python bytecode instructions."""
     stmts = _parse_and_lint(src)
-    program = NativeCodeGenerator(allow_heap=True, allow_match=False).compile_program(stmts)
+    program = NativeCodeGenerator(allow_heap=True, allow_match=False, source=src).compile_program(stmts)
     return run_program_via_python_bytecode(program)
 
 

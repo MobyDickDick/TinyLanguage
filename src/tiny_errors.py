@@ -7,6 +7,8 @@ to report positions, spans, and formatted error messages consistently.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import os
+import sys
 from typing import List, Optional, Tuple, Union
 
 
@@ -80,12 +82,25 @@ def _line_info(source: str, pos: Union[int, SourcePos, SourceSpan]) -> Tuple[int
 def format_error(
     source: str, pos: Union[int, SourcePos, SourceSpan], message: str, *, code: str = "E000", hint: Optional[str] = None
 ) -> str:
+    if os.environ.get("TINYLANG_DEBUG_ERRORS"):
+        sys.stderr.write(
+            f"[tiny_errors] format_error code={code} message={message!r} pos_type={type(pos).__name__}\n"
+        )
     lines = source.splitlines()
     if isinstance(pos, SourceSpan):
         start_line, start_col, _ = _line_info(source, pos.start)
         stop_line, stop_col, _ = _line_info(source, pos.stop)
         gutter_width = len(str(max(1, len(lines))))
         header = f"[{code}] {message} (line {start_line}, col {start_col})"
+        if start_line != stop_line:
+            header = (
+                f"[{code}] {message} (line {start_line}, col {start_col} to line {stop_line}, col {stop_col})"
+            )
+            header = f"[{code}] {message} (line {start_line}, col {start_col})"
+        else:
+            header = (
+                f"[{code}] {message} (line {start_line}, col {start_col} to line {stop_line}, col {stop_col})"
+            )
         lines_out: List[str] = [header]
 
         context_start = max(1, start_line - 1)

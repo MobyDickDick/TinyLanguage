@@ -26,6 +26,7 @@ from __future__ import annotations  # Enable postponed evaluation for annotation
 from pathlib import Path as _Path  # Import Path with an alias to avoid polluting the public API.
 import os
 import sys  # Detect frozen executables (e.g., PyInstaller) so we can locate bundled sources.
+import tokenize
 
 
 def _load_and_exec_all() -> None:
@@ -55,7 +56,8 @@ def _load_and_exec_all() -> None:
     ]
     for name in segment_names:
         path = base / name  # Construct the absolute path for the current segment file.
-        segment = path.read_text(encoding="utf-8")  # Read the file contents using UTF-8 to preserve symbols.
+        with tokenize.open(path) as handle:
+            segment = handle.read()  # Respect encoding cookies if present.
         segment = segment.replace("\r\n", "\n").replace("\r", "\n")
         segment = segment.lstrip("\ufeff")
         if not segment.endswith("\n"):
@@ -101,7 +103,22 @@ def _load_and_exec_all() -> None:
             for name, segment in segments:
                 segment_path = base / name
                 exec(compile(segment, str(segment_path), "exec"), globals(), globals())
-        except SyntaxError:
+        except SyntaxError as seg_exc:
+            lineno = seg_exc.lineno or 0
+            segment_lines = segment.splitlines()
+            if lineno > 0 and lineno <= len(segment_lines):
+                window_start = max(lineno - 3, 1)
+                window_end = lineno + 3
+                snippet = "\n".join(
+                    f"{idx:5d}: {segment_lines[idx - 1]}"
+                    for idx in range(window_start, min(window_end, len(segment_lines)) + 1)
+                )
+                sys.stderr.write(
+                    f"[tiny_language stitch] Segment {name} SyntaxError near line {lineno}:\n{snippet}\n"
+                )
+                sys.stderr.write(
+                    f"[tiny_language stitch] repr(line {lineno}): {segment_lines[lineno - 1]!r}\n"
+                )
             raise
         return
 

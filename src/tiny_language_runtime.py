@@ -1016,19 +1016,23 @@ class Runtime:
             return "string"
         return type(value).__name__
 
+    # Return a broad type label for variables defined without annotations.
+    # Unannotated numerics start as "number" so int/float changes are allowed.
     def _infer_type_name(self, value: Any) -> str:
-        """Return a broad type label for variables defined without annotations.
+        return (
+            "number"
+            if isinstance(value, (int, float)) and not isinstance(value, bool)
+            else self._value_type_name(value) or type(value).__name__
+        )
 
-        The runtime already tracks concrete types (e.g., distinguishing `int` from
-        `float`) for annotated parameters and return values. For unannotated
-        variables we allow a simple inference step so that numeric values start out
-        as the general "number" type, making later `int`/`float` updates valid
-        without counting as type changes. Other values keep their concrete name.
-        """
-
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
+    @staticmethod
+    def _normalize_numeric_type(type_name: Optional[str]) -> Optional[str]:
+        if type_name is None:
+            return None
+        lowered = type_name.lower()
+        if lowered in {"int", "float"}:
             return "number"
-        return self._value_type_name(value) or type(value).__name__
+        return type_name
 
     def _check_assignment_type(
         self, env: "Environment", name: str, value: Any, pos: Any, *, local_only: bool = False
@@ -1083,15 +1087,18 @@ class Runtime:
 
     def _enforce_inferred_return(self, owner: Any, value: Any, *, label: str, pos: SourcePos) -> None:
         expected = getattr(owner, "inferred_return_type", None)
-        inferred = self._infer_type_name(value)
+        inferred = self._normalize_numeric_type(self._infer_type_name(value))
         if expected is None:
             owner.inferred_return_type = inferred
             return
-        if self._type_matches(expected, value):
+        expected_norm = self._normalize_numeric_type(expected)
+        if expected_norm != expected:
+            owner.inferred_return_type = expected_norm
+        if self._type_matches(expected_norm, value):
             return
         actual = self._value_type_name(value) or type(value).__name__
         raise self._error(
-            f"inferred return type for {label} changed: expected {expected} but got {actual}",
+            f"inferred return type for {label} changed: expected {expected_norm} but got {actual}",
             pos,
             code="E014",
             hint="Add an explicit return type annotation or keep return values consistent to avoid implicit type changes.",

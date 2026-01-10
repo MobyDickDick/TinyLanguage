@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 from native_ir import FunctionIR, Instruction, Opcode, OperatorOverloadIR, ProgramIR
-from tiny_errors import SourcePos, TinyLangError, format_error
+from tiny_errors import format_error
 
 
 @dataclass
@@ -110,15 +110,9 @@ class LLVMCodeGenerator:
     def _lowering_error(self, reason: str, instr: Optional[Instruction] = None) -> None:
         context = self._instruction_context(instr or self._current_instruction)
         message = f"LLVM prototype missing lowering: {reason}{context}"
-        raise self._error(message, instr or self._current_instruction)
-
-    def _error(self, message: str, instr: Optional[Instruction]) -> TinyLangError:
-        span = instr.span if instr is not None else None
-        pos = span.start if span is not None else SourcePos.origin()
-        rendered = message
-        if self._source is not None:
-            rendered = format_error(self._source, span or pos, message)
-        return TinyLangError(rendered, pos, span=span)
+        if self._source is not None and instr is not None and instr.span is not None:
+            message = format_error(self._source, instr.span, message)
+        raise NotImplementedError(message)
 
     def _unsupported_opcode(self, instr: Instruction) -> None:
         op_name = self._format_opcode(instr.op)

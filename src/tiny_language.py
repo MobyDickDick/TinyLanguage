@@ -37,7 +37,7 @@ def _load_and_exec_all() -> None:
 
     # Accumulate the textual contents of each segment in the correct order.
     parts = []  # Prepare a list that will hold each source fragment.
-    for name in [
+    segment_names = [
         "tiny_language_preamble.py",  # shared definitions and constants
         "tiny_language_lexer.py",  # tokenization logic
         "tiny_language_ast.py",  # abstract syntax tree node definitions
@@ -50,13 +50,16 @@ def _load_and_exec_all() -> None:
         "tiny_language_runtime.py",  # execution runtime structures
         "tiny_language_eval.py",  # AST evaluator
         "tiny_language_api.py",  # public API and CLI entrypoints
-    ]:
+    ]
+    for name in segment_names:
         path = base / name  # Construct the absolute path for the current segment file.
         parts.append(path.read_text(encoding="utf-8"))  # Read the file contents using UTF-8 to preserve symbols.
 
     full_source = "".join(parts)  # Join the individual source strings into a single Python module body.
+    stitched_path = base / "tiny_language_stitched.py"
+    stitched_path.write_text(full_source, encoding="utf-8")
 
-    code = compile(full_source, str(base / "tiny_language_stitched.py"), "exec")  # Compile so tracebacks reference the stitched file.
+    code = compile(full_source, str(stitched_path), "exec")  # Compile so tracebacks reference the stitched file.
 
     exec(code, globals(), globals())  # Execute the compiled module in this file's global namespace.
 

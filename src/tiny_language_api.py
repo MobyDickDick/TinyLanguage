@@ -1146,7 +1146,12 @@ def run_with_native_backend(
         allow_heap=True, allow_match=True, module_namespace=module_namespace
     ).compile_program(stmts)
     resolver = module_resolver or NativeModuleResolver()
-    vm = NativeVM(module_resolver=resolver, module_namespace=module_namespace, module_path=module_path)
+    vm = NativeVM(
+        module_resolver=resolver,
+        module_namespace=module_namespace,
+        module_path=module_path,
+        source=src,
+    )
     return vm.run(program)
 
 

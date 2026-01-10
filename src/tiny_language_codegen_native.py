@@ -7,9 +7,10 @@ flow, simple functions, and `print`). Unsupported constructs raise
 ``NotImplementedError`` so gaps remain visible.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from native_ir import ClassIR, FunctionIR, Instruction, Opcode, OperatorOverloadIR, ProgramIR, TypeIR
+from tiny_errors import SourcePos, SourceSpan
 
 
 class NativeCodeGenerator:
@@ -67,7 +68,7 @@ class NativeCodeGenerator:
                 raw = self._compile_stmt(stmt)
                 entry_instructions.extend(self._shift_labels(raw, len(entry_instructions)))
 
-        entry_instructions.append(Instruction(Opcode.RETURN))
+        entry_instructions.append(self._instr(Opcode.RETURN))
         return ProgramIR(
             entry=entry_instructions,
             functions=functions,
@@ -82,7 +83,7 @@ class NativeCodeGenerator:
         for stmt in fn.body:
             raw = self._compile_stmt(stmt)
             body_instrs.extend(self._shift_labels(raw, len(body_instrs)))
-        body_instrs.append(Instruction(Opcode.RETURN))
+        body_instrs.append(self._instr(Opcode.RETURN, node=fn))
         return FunctionIR(
             name=self._qualify_name(fn.name),
             params=[param.name for param in fn.params],
@@ -95,7 +96,7 @@ class NativeCodeGenerator:
         for stmt in md.body:
             raw = self._compile_stmt(stmt)
             body_instrs.extend(self._shift_labels(raw, len(body_instrs)))
-        body_instrs.append(Instruction(Opcode.RETURN))
+        body_instrs.append(self._instr(Opcode.RETURN, node=md))
         return FunctionIR(
             name=self._method_name(md.class_name, md.name),
             params=[param.name for param in md.params],
@@ -108,38 +109,38 @@ class NativeCodeGenerator:
         for stmt in opdef.body:
             raw = self._compile_stmt(stmt)
             body_instrs.extend(self._shift_labels(raw, len(body_instrs)))
-        body_instrs.append(Instruction(Opcode.RETURN))
+        body_instrs.append(self._instr(Opcode.RETURN, node=opdef))
         return FunctionIR(name=name, params=[opdef.a_name, opdef.b_name], instructions=body_instrs)
 
     def _shift_labels(self, instructions: List[Instruction], offset: int) -> List[Instruction]:
         shifted: List[Instruction] = []
         for instr in instructions:
             if instr.op in {Opcode.JUMP, Opcode.JUMP_IF_FALSE} and instr.arg is not None:
-                shifted.append(Instruction(instr.op, instr.arg + offset))
+                shifted.append(Instruction(instr.op, instr.arg + offset, span=instr.span))
             else:
                 shifted.append(instr)
         return shifted
 
     def _compile_stmt(self, stmt: "IR") -> List[Instruction]:
         if isinstance(stmt, Let):
-            return self._compile_binding(stmt.name, stmt.expr)
+            return self._compile_binding(stmt.name, stmt.expr, stmt)
         if isinstance(stmt, Assign):
-            return self._compile_binding(stmt.name, stmt.expr)
+            return self._compile_binding(stmt.name, stmt.expr, stmt)
         if isinstance(stmt, Import):
             binding = self._import_binding_name(stmt.module, stmt.alias)
             return [
-                Instruction(Opcode.PUSH_CONST, stmt.module),
-                Instruction(Opcode.CALL, ("__import", 1)),
-                Instruction(Opcode.STORE, binding),
+                self._instr(Opcode.PUSH_CONST, stmt.module, stmt),
+                self._instr(Opcode.CALL, ("__import", 1), stmt),
+                self._instr(Opcode.STORE, binding, stmt),
             ]
         if isinstance(stmt, Print):
             instructions: List[Instruction] = []
             for expr in stmt.exprs:
                 instructions.extend(self._compile_expr(expr))
-            instructions.append(Instruction(Opcode.PRINT, len(stmt.exprs)))
+            instructions.append(self._instr(Opcode.PRINT, len(stmt.exprs), stmt))
             return instructions
         if isinstance(stmt, Flush):
-            return [Instruction(Opcode.FLUSH)]
+            return [self._instr(Opcode.FLUSH, node=stmt)]
         if isinstance(stmt, If):
             return self._compile_if(stmt)
         if isinstance(stmt, While):
@@ -149,7 +150,7 @@ class NativeCodeGenerator:
             instructions.extend(self._compile_expr(stmt.expr))
             if self._task_scope_depth:
                 instructions.extend(self._task_scope_exit_instrs())
-            instructions.append(Instruction(Opcode.RETURN))
+            instructions.append(self._instr(Opcode.RETURN, node=stmt))
             return instructions
         if isinstance(stmt, CallStmt):
             if "." in stmt.name:
@@ -158,36 +159,36 @@ class NativeCodeGenerator:
             else:
                 expr = Call(self._qualify_name(stmt.name), stmt.args, pos=stmt.pos)
             instructions = self._compile_expr(expr)
-            instructions.append(Instruction(Opcode.POP))
+            instructions.append(self._instr(Opcode.POP, node=stmt))
             return instructions
         if isinstance(stmt, FieldAssign):
             instructions = self._compile_expr(stmt.obj)
-            instructions.append(Instruction(Opcode.PUSH_CONST, stmt.name))
+            instructions.append(self._instr(Opcode.PUSH_CONST, stmt.name, stmt))
             instructions.extend(self._compile_expr(stmt.expr))
-            instructions.append(Instruction(Opcode.CALL, ("__field_set", 3)))
-            instructions.append(Instruction(Opcode.POP))
+            instructions.append(self._instr(Opcode.CALL, ("__field_set", 3), stmt))
+            instructions.append(self._instr(Opcode.POP, node=stmt))
             return instructions
         if isinstance(stmt, TaskBlock):
-            instructions: List[Instruction] = [Instruction(Opcode.CALL, ("__task_scope_enter", 0))]
+            instructions: List[Instruction] = [self._instr(Opcode.CALL, ("__task_scope_enter", 0), stmt)]
             self._task_scope_depth += 1
             for inner in stmt.body:
                 nested = self._compile_stmt(inner)
                 instructions.extend(self._shift_labels(nested, len(instructions)))
             self._task_scope_depth -= 1
-            instructions.append(Instruction(Opcode.CALL, ("__task_scope_exit", 0)))
+            instructions.append(self._instr(Opcode.CALL, ("__task_scope_exit", 0), stmt))
             return instructions
         raise NotImplementedError(f"native codegen does not yet support {type(stmt).__name__}")
 
     def _compile_if(self, stmt: "If") -> List[Instruction]:
         instructions = self._compile_expr(stmt.cond)
         jump_false_index = len(instructions)
-        instructions.append(Instruction(Opcode.JUMP_IF_FALSE, None))
+        instructions.append(self._instr(Opcode.JUMP_IF_FALSE, None, stmt))
 
         then_block = []
         for inner in stmt.then:
             nested = self._compile_stmt(inner)
             then_block.extend(self._shift_labels(nested, len(instructions) + len(then_block)))
-        then_block.append(Instruction(Opcode.JUMP, None))
+        then_block.append(self._instr(Opcode.JUMP, None, stmt))
 
         else_block = []
         for inner in stmt.els:
@@ -195,10 +196,12 @@ class NativeCodeGenerator:
             else_block.extend(self._shift_labels(nested, len(instructions) + len(then_block) + len(else_block)))
 
         else_start = len(instructions) + len(then_block)
-        instructions[jump_false_index] = Instruction(Opcode.JUMP_IF_FALSE, else_start)
+        instructions[jump_false_index] = Instruction(
+            Opcode.JUMP_IF_FALSE, else_start, span=instructions[jump_false_index].span
+        )
 
         end_of_then = len(instructions) + len(then_block) + len(else_block)
-        then_block[-1] = Instruction(Opcode.JUMP, end_of_then)
+        then_block[-1] = Instruction(Opcode.JUMP, end_of_then, span=then_block[-1].span)
 
         instructions.extend(then_block)
         instructions.extend(else_block)
@@ -210,23 +213,25 @@ class NativeCodeGenerator:
         cond_instrs = self._compile_expr(stmt.cond)
         instructions.extend(cond_instrs)
         jump_out_index = len(instructions)
-        instructions.append(Instruction(Opcode.JUMP_IF_FALSE, None))
+        instructions.append(self._instr(Opcode.JUMP_IF_FALSE, None, stmt))
 
         body_instrs: List[Instruction] = []
         for inner in stmt.body:
             nested = self._compile_stmt(inner)
             body_instrs.extend(self._shift_labels(nested, len(instructions) + len(body_instrs)))
-        body_instrs.append(Instruction(Opcode.JUMP, loop_start))
+        body_instrs.append(self._instr(Opcode.JUMP, loop_start, stmt))
 
         loop_exit = len(instructions) + len(body_instrs)
-        instructions[jump_out_index] = Instruction(Opcode.JUMP_IF_FALSE, loop_exit)
+        instructions[jump_out_index] = Instruction(
+            Opcode.JUMP_IF_FALSE, loop_exit, span=instructions[jump_out_index].span
+        )
 
         instructions.extend(body_instrs)
         return instructions
 
-    def _compile_binding(self, name: str, expr: "IR") -> List[Instruction]:
+    def _compile_binding(self, name: str, expr: "IR", node: Optional["IR"] = None) -> List[Instruction]:
         instructions = self._compile_expr(expr)
-        instructions.append(Instruction(Opcode.STORE, name))
+        instructions.append(self._instr(Opcode.STORE, name, node or expr))
         return instructions
 
     def _compile_expr(self, expr: "IR") -> List[Instruction]:
@@ -237,56 +242,56 @@ class NativeCodeGenerator:
                     value = int(value)
             else:
                 value = int(expr.txt)
-            return [Instruction(Opcode.PUSH_CONST, value)]
+            return [self._instr(Opcode.PUSH_CONST, value, expr)]
         if isinstance(expr, Str):
-            return [Instruction(Opcode.PUSH_CONST, expr.txt)]
+            return [self._instr(Opcode.PUSH_CONST, expr.txt, expr)]
         if isinstance(expr, Bool):
-            return [Instruction(Opcode.PUSH_CONST, expr.value)]
+            return [self._instr(Opcode.PUSH_CONST, expr.value, expr)]
         if isinstance(expr, Null):
-            return [Instruction(Opcode.PUSH_CONST, None)]
+            return [self._instr(Opcode.PUSH_CONST, None, expr)]
         if isinstance(expr, New):
             if not self._allow_heap:
                 raise NotImplementedError("native codegen does not yet support heap allocations")
             instructions = self._compile_expr(expr.size)
-            instructions.append(Instruction(Opcode.CALL, ("__new", 1)))
+            instructions.append(self._instr(Opcode.CALL, ("__new", 1), expr))
             return instructions
         if isinstance(expr, NewLit):
             if not self._allow_heap:
                 raise NotImplementedError("native codegen does not yet support heap allocations")
             temp_name = self._next_tmp()
             instructions: List[Instruction] = [
-                Instruction(Opcode.PUSH_CONST, len(expr.items)),
-                Instruction(Opcode.CALL, ("__new", 1)),
-                Instruction(Opcode.STORE, temp_name),
+                self._instr(Opcode.PUSH_CONST, len(expr.items), expr),
+                self._instr(Opcode.CALL, ("__new", 1), expr),
+                self._instr(Opcode.STORE, temp_name, expr),
             ]
             for idx, item in enumerate(expr.items):
-                instructions.append(Instruction(Opcode.LOAD, temp_name))
-                instructions.append(Instruction(Opcode.PUSH_CONST, idx))
+                instructions.append(self._instr(Opcode.LOAD, temp_name, item))
+                instructions.append(self._instr(Opcode.PUSH_CONST, idx, item))
                 instructions.extend(self._compile_expr(item))
-                instructions.append(Instruction(Opcode.CALL, ("heap_set", 3)))
-                instructions.append(Instruction(Opcode.POP))
-            instructions.append(Instruction(Opcode.LOAD, temp_name))
+                instructions.append(self._instr(Opcode.CALL, ("heap_set", 3), item))
+                instructions.append(self._instr(Opcode.POP, node=item))
+            instructions.append(self._instr(Opcode.LOAD, temp_name, expr))
             return instructions
         if isinstance(expr, Var):
-            return [Instruction(Opcode.LOAD, expr.name)]
+            return [self._instr(Opcode.LOAD, expr.name, expr)]
         if isinstance(expr, Field):
             instructions = self._compile_expr(expr.obj)
-            instructions.append(Instruction(Opcode.PUSH_CONST, expr.name))
-            instructions.append(Instruction(Opcode.CALL, ("__field_get", 2)))
+            instructions.append(self._instr(Opcode.PUSH_CONST, expr.name, expr))
+            instructions.append(self._instr(Opcode.CALL, ("__field_get", 2), expr))
             return instructions
         if isinstance(expr, MethodCall):
             instructions = self._compile_expr(expr.obj)
-            instructions.append(Instruction(Opcode.PUSH_CONST, expr.name))
+            instructions.append(self._instr(Opcode.PUSH_CONST, expr.name, expr))
             for arg in expr.args:
                 instructions.extend(self._compile_expr(arg))
-            instructions.append(Instruction(Opcode.CALL, ("__method_call", 2 + len(expr.args))))
+            instructions.append(self._instr(Opcode.CALL, ("__method_call", 2 + len(expr.args)), expr))
             return instructions
         if isinstance(expr, ClassNew):
-            instructions: List[Instruction] = [Instruction(Opcode.PUSH_CONST, expr.name)]
+            instructions: List[Instruction] = [self._instr(Opcode.PUSH_CONST, expr.name, expr)]
             for name, value in expr.init:
-                instructions.append(Instruction(Opcode.PUSH_CONST, name))
+                instructions.append(self._instr(Opcode.PUSH_CONST, name, expr))
                 instructions.extend(self._compile_expr(value))
-            instructions.append(Instruction(Opcode.CALL, ("__class_new", 1 + 2 * len(expr.init))))
+            instructions.append(self._instr(Opcode.CALL, ("__class_new", 1 + 2 * len(expr.init)), expr))
             return instructions
         if isinstance(expr, VariantCtor):
             if not self._allow_match:
@@ -297,26 +302,26 @@ class NativeCodeGenerator:
                 raise NotImplementedError("native codegen does not yet support match expressions")
             return self._compile_match(expr)
         if isinstance(expr, Spawn):
-            return self._compile_spawn(self._qualify_name(expr.name), expr.args)
+            return self._compile_spawn(self._qualify_name(expr.name), expr.args, node=expr)
         if isinstance(expr, Await):
             instructions = self._compile_expr(expr.expr)
-            instructions.append(Instruction(Opcode.CALL, ("join", 1)))
+            instructions.append(self._instr(Opcode.CALL, ("join", 1), expr))
             return instructions
         if isinstance(expr, Bin):
             instructions = self._compile_expr(expr.a)
             instructions.extend(self._compile_expr(expr.b))
-            instructions.append(Instruction(Opcode.BINARY, expr.op))
+            instructions.append(self._instr(Opcode.BINARY, expr.op, expr))
             return instructions
         if isinstance(expr, Call):
             if expr.name in {"__new", "new", "heap_get", "heap_set", "delete"} and not self._allow_heap:
                 raise NotImplementedError("native codegen does not yet support heap allocations")
             call_name = self._qualify_name(expr.name)
             if call_name in self._async_functions:
-                return self._compile_spawn(call_name, expr.args)
+                return self._compile_spawn(call_name, expr.args, node=expr)
             instructions: List[Instruction] = []
             for arg in expr.args:
                 instructions.extend(self._compile_expr(arg))
-            instructions.append(Instruction(Opcode.CALL, (call_name, len(expr.args))))
+            instructions.append(self._instr(Opcode.CALL, (call_name, len(expr.args)), expr))
             return instructions
         raise NotImplementedError(f"native codegen does not yet support expression {type(expr).__name__}")
 
@@ -326,66 +331,68 @@ class NativeCodeGenerator:
 
     def _compile_variant_ctor(self, expr: "VariantCtor") -> List[Instruction]:
         instructions: List[Instruction] = [
-            Instruction(Opcode.PUSH_CONST, expr.variant),
-            Instruction(Opcode.PUSH_CONST, expr.type_name),
+            self._instr(Opcode.PUSH_CONST, expr.variant, expr),
+            self._instr(Opcode.PUSH_CONST, expr.type_name, expr),
         ]
         for name, value in expr.fields:
-            instructions.append(Instruction(Opcode.PUSH_CONST, name))
+            instructions.append(self._instr(Opcode.PUSH_CONST, name, expr))
             instructions.extend(self._compile_expr(value))
-        instructions.append(Instruction(Opcode.CALL, ("__variant_new", 2 + 2 * len(expr.fields))))
+        instructions.append(self._instr(Opcode.CALL, ("__variant_new", 2 + 2 * len(expr.fields)), expr))
         return instructions
 
-    def _compile_spawn(self, name: str, args: List["IR"]) -> List[Instruction]:
-        instructions: List[Instruction] = [Instruction(Opcode.PUSH_CONST, name)]
+    def _compile_spawn(self, name: str, args: List["IR"], *, node: Optional["IR"] = None) -> List[Instruction]:
+        instructions: List[Instruction] = [self._instr(Opcode.PUSH_CONST, name, node)]
         for arg in args:
             instructions.extend(self._compile_expr(arg))
-        instructions.append(Instruction(Opcode.CALL, ("__spawn", 1 + len(args))))
+        instructions.append(self._instr(Opcode.CALL, ("__spawn", 1 + len(args)), node))
         return instructions
 
     def _compile_match(self, expr: "Match") -> List[Instruction]:
         instructions = self._compile_expr(expr.expr)
         tmp_name = self._next_tmp()
-        instructions.append(Instruction(Opcode.STORE, tmp_name))
+        instructions.append(self._instr(Opcode.STORE, tmp_name, expr))
         result_tmp = self._next_tmp()
 
         end_jump_indices: List[int] = []
         for case in expr.cases:
             pattern = case.pattern
             if isinstance(pattern, VariantPattern):
-                instructions.append(Instruction(Opcode.LOAD, tmp_name))
-                instructions.append(Instruction(Opcode.CALL, ("__variant_tag", 1)))
-                instructions.append(Instruction(Opcode.PUSH_CONST, pattern.variant))
-                instructions.append(Instruction(Opcode.BINARY, "=="))
+                instructions.append(self._instr(Opcode.LOAD, tmp_name, case))
+                instructions.append(self._instr(Opcode.CALL, ("__variant_tag", 1), case))
+                instructions.append(self._instr(Opcode.PUSH_CONST, pattern.variant, pattern))
+                instructions.append(self._instr(Opcode.BINARY, "==", case))
                 jump_false_index = len(instructions)
-                instructions.append(Instruction(Opcode.JUMP_IF_FALSE, None))
-                instructions.append(Instruction(Opcode.LOAD, tmp_name))
-                instructions.append(Instruction(Opcode.PUSH_CONST, pattern.variant))
-                instructions.append(Instruction(Opcode.CALL, ("__variant_assume", 2)))
-                instructions.append(Instruction(Opcode.STORE, tmp_name))
+                instructions.append(self._instr(Opcode.JUMP_IF_FALSE, None, case))
+                instructions.append(self._instr(Opcode.LOAD, tmp_name, case))
+                instructions.append(self._instr(Opcode.PUSH_CONST, pattern.variant, pattern))
+                instructions.append(self._instr(Opcode.CALL, ("__variant_assume", 2), case))
+                instructions.append(self._instr(Opcode.STORE, tmp_name, case))
                 instructions.extend(self._compile_pattern_bindings(pattern, tmp_name))
                 instructions.extend(self._compile_expr(case.body))
-                instructions.append(Instruction(Opcode.STORE, result_tmp))
+                instructions.append(self._instr(Opcode.STORE, result_tmp, case))
                 end_jump_indices.append(len(instructions))
-                instructions.append(Instruction(Opcode.JUMP, None))
-                instructions[jump_false_index] = Instruction(Opcode.JUMP_IF_FALSE, len(instructions))
+                instructions.append(self._instr(Opcode.JUMP, None, case))
+                instructions[jump_false_index] = Instruction(
+                    Opcode.JUMP_IF_FALSE, len(instructions), span=instructions[jump_false_index].span
+                )
             elif isinstance(pattern, WildcardPattern):
                 if pattern.name:
-                    instructions.append(Instruction(Opcode.LOAD, tmp_name))
-                    instructions.append(Instruction(Opcode.STORE, pattern.name))
+                    instructions.append(self._instr(Opcode.LOAD, tmp_name, case))
+                    instructions.append(self._instr(Opcode.STORE, pattern.name, case))
                 instructions.extend(self._compile_expr(case.body))
-                instructions.append(Instruction(Opcode.STORE, result_tmp))
+                instructions.append(self._instr(Opcode.STORE, result_tmp, case))
                 end_jump_indices.append(len(instructions))
-                instructions.append(Instruction(Opcode.JUMP, None))
+                instructions.append(self._instr(Opcode.JUMP, None, case))
             else:
                 raise NotImplementedError(f"native codegen does not yet support {type(pattern).__name__} patterns")
 
-        instructions.append(Instruction(Opcode.LOAD, tmp_name))
-        instructions.append(Instruction(Opcode.CALL, ("__match_error", 1)))
+        instructions.append(self._instr(Opcode.LOAD, tmp_name, expr))
+        instructions.append(self._instr(Opcode.CALL, ("__match_error", 1), expr))
 
         end_index = len(instructions)
         for jump_index in end_jump_indices:
-            instructions[jump_index] = Instruction(Opcode.JUMP, end_index)
-        instructions.append(Instruction(Opcode.LOAD, result_tmp))
+            instructions[jump_index] = Instruction(Opcode.JUMP, end_index, span=instructions[jump_index].span)
+        instructions.append(self._instr(Opcode.LOAD, result_tmp, expr))
         return instructions
 
     def _compile_pattern_bindings(self, pattern: "VariantPattern", tmp_name: str) -> List[Instruction]:
@@ -404,17 +411,17 @@ class NativeCodeGenerator:
             for index, bind in enumerate(pattern.positional_bindings):
                 if bind is None:
                     continue
-                instructions.append(Instruction(Opcode.LOAD, tmp_name))
-                instructions.append(Instruction(Opcode.PUSH_CONST, field_names[index]))
-                instructions.append(Instruction(Opcode.CALL, ("__variant_get", 2)))
-                instructions.append(Instruction(Opcode.STORE, bind))
+                instructions.append(self._instr(Opcode.LOAD, tmp_name, pattern))
+                instructions.append(self._instr(Opcode.PUSH_CONST, field_names[index], pattern))
+                instructions.append(self._instr(Opcode.CALL, ("__variant_get", 2), pattern))
+                instructions.append(self._instr(Opcode.STORE, bind, pattern))
         for fname, bind in pattern.bindings.items():
             if bind is None:
                 continue
-            instructions.append(Instruction(Opcode.LOAD, tmp_name))
-            instructions.append(Instruction(Opcode.PUSH_CONST, fname))
-            instructions.append(Instruction(Opcode.CALL, ("__variant_get", 2)))
-            instructions.append(Instruction(Opcode.STORE, bind))
+            instructions.append(self._instr(Opcode.LOAD, tmp_name, pattern))
+            instructions.append(self._instr(Opcode.PUSH_CONST, fname, pattern))
+            instructions.append(self._instr(Opcode.CALL, ("__variant_get", 2), pattern))
+            instructions.append(self._instr(Opcode.STORE, bind, pattern))
         return instructions
 
     def _qualify_name(self, name: str) -> str:
@@ -471,4 +478,17 @@ class NativeCodeGenerator:
         return self._variant_fields.get(variant)
 
     def _task_scope_exit_instrs(self) -> List[Instruction]:
-        return [Instruction(Opcode.CALL, ("__task_scope_exit", 0)) for _ in range(self._task_scope_depth)]
+        return [self._instr(Opcode.CALL, ("__task_scope_exit", 0)) for _ in range(self._task_scope_depth)]
+
+    @staticmethod
+    def _span_for(node: "IR") -> Optional[SourceSpan]:
+        span = getattr(node, "span", None)
+        if span is not None:
+            return span
+        pos = getattr(node, "pos", None)
+        if isinstance(pos, SourcePos):
+            return SourceSpan(pos, pos)
+        return None
+
+    def _instr(self, op: Opcode, arg: object | None = None, node: Optional["IR"] = None) -> Instruction:
+        return Instruction(op, arg, span=self._span_for(node) if node is not None else None)

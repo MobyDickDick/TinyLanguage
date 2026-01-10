@@ -66,6 +66,13 @@ def _span_or_pos(node: IR) -> Union[SourcePos, SourceSpan]:
         return span
     return getattr(node, "pos", SourcePos.origin())
 
+
+def _prefer_named_span(node: IR, attr: str) -> Union[SourcePos, SourceSpan]:
+    span = getattr(node, attr, None)
+    if span is not None:
+        return span
+    return _span_or_pos(node)
+
 def eval_block(self, stmts: List[IR], env: "Environment", namespace: Optional[str] = None) -> Any:
     for st in stmts:
         res = self.eval_stmt(st, env, namespace)
@@ -77,13 +84,13 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
     self._maybe_pause(s, env, namespace)
     try:
         if isinstance(s, Let):
-            env.define(s.name, self.eval_expr(s.expr, env), _span_or_pos(s))
+            env.define(s.name, self.eval_expr(s.expr, env), _prefer_named_span(s, "name_span"))
         elif isinstance(s, Assign):
             value = self.eval_expr(s.expr, env)
             if env.contains(s.name):
-                env.assign(s.name, value, _span_or_pos(s))
+                env.assign(s.name, value, _prefer_named_span(s, "name_span"))
             else:
-                env.define(s.name, value, _span_or_pos(s))
+                env.define(s.name, value, _prefer_named_span(s, "name_span"))
         elif isinstance(s, FieldAssign):
             obj = self.eval_expr(s.obj, env)
             val = self.eval_expr(s.expr, env)
@@ -179,9 +186,9 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
                 self,
                 caller_namespace=namespace or env.namespace,
                 caller_path=self.current_module_path,
-                pos=_span_or_pos(s),
+                pos=_prefer_named_span(s, "module_span"),
             )
-            env.define(binding, ns_ref, _span_or_pos(s))
+            env.define(binding, ns_ref, _prefer_named_span(s, "binding_span"))
         elif isinstance(s, Fn):
             s.namespace = namespace
             fn_name = self._qualify_name(s.name, namespace)
@@ -200,12 +207,13 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
             self.register_operator(s, env)
         elif isinstance(s, DestructAssign):
             val = self.eval_expr(s.expr, env)
-            for nm in s.names:
+            for nm, span in zip(s.names, s.name_spans or []):
                 extracted = val[str(nm)]
+                pos = span or _span_or_pos(s)
                 if env.contains(nm):
-                    env.assign(nm, extracted, _span_or_pos(s))
+                    env.assign(nm, extracted, pos)
                 else:
-                    env.define(nm, extracted, _span_or_pos(s))
+                    env.define(nm, extracted, pos)
         elif isinstance(s, TypeDef):
             self.register_type(s.name, s.fields, s.variants)
         elif isinstance(s, ClassDef):

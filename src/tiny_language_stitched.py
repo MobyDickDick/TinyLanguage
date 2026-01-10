@@ -6704,7 +6704,7 @@ def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None
 
 
 def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
-    Location = Union[SourcePos, SourceSpan]
+    Location : Union[SourcePos, SourceSpan]
     unused: List[tuple[str, Location]] = []
 
     def names_in_expr(expr: IR) -> Set[str]:

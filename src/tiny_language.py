@@ -24,7 +24,10 @@ from __future__ import annotations  # Enable postponed evaluation for annotation
 
 # Path handling is only needed while we stitch the module pieces together.
 from pathlib import Path as _Path  # Import Path with an alias to avoid polluting the public API.
+import os
 import sys  # Detect frozen executables (e.g., PyInstaller) so we can locate bundled sources.
+import hashlib
+import tokenize
 
 
 def _load_and_exec_all() -> None:
@@ -37,7 +40,8 @@ def _load_and_exec_all() -> None:
 
     # Accumulate the textual contents of each segment in the correct order.
     parts = []  # Prepare a list that will hold each source fragment.
-    for name in [
+    segments = []  # Track raw segments for fallback execution if stitching fails.
+    segment_names = [
         "tiny_language_preamble.py",  # shared definitions and constants
         "tiny_language_lexer.py",  # tokenization logic
         "tiny_language_ast.py",  # abstract syntax tree node definitions
@@ -50,13 +54,111 @@ def _load_and_exec_all() -> None:
         "tiny_language_runtime.py",  # execution runtime structures
         "tiny_language_eval.py",  # AST evaluator
         "tiny_language_api.py",  # public API and CLI entrypoints
-    ]:
+    ]
+    for name in segment_names:
         path = base / name  # Construct the absolute path for the current segment file.
-        parts.append(path.read_text(encoding="utf-8"))  # Read the file contents using UTF-8 to preserve symbols.
+        with tokenize.open(path) as handle:
+            segment = handle.read()  # Respect encoding cookies if present.
+        segment_hash = hashlib.sha256(segment.encode("utf-8", errors="replace")).hexdigest()
+        normalized = segment.replace("\r\n", "\n").replace("\r", "\n")
+        normalized = normalized.lstrip("\ufeff")
+        if not normalized.endswith("\n"):
+            normalized += "\n"
+        parts.append(f"# --- segment: {name} ---\n{normalized}")  # Include a separator to avoid accidental merges.
+        segments.append((name, segment, segment_hash))
 
-    full_source = "".join(parts)  # Join the individual source strings into a single Python module body.
+    full_source = "\n".join(parts)
+    stitched_path = base / "tiny_language_stitched.py"
+    temp_path = stitched_path.with_suffix(".py.tmp")
+    temp_path.write_text(full_source, encoding="utf-8")
+    temp_path.replace(stitched_path)
 
-    code = compile(full_source, str(base / "tiny_language_stitched.py"), "exec")  # Compile so tracebacks reference the stitched file.
+    try:
+        code = compile(full_source, str(stitched_path), "exec")  # Compile so tracebacks reference the stitched file.
+    except SyntaxError as exc:
+        lineno = exc.lineno or 0
+        context_lines = full_source.splitlines()
+        if lineno > 0:
+            window_start = max(lineno - 3, 1)
+            window_end = lineno + 3
+            snippet = "\n".join(
+                f"{idx:5d}: {context_lines[idx - 1]}"
+                for idx in range(window_start, min(window_end, len(context_lines)) + 1)
+            )
+            sys.stderr.write(
+                f"[tiny_language stitch] SyntaxError near line {lineno}:\n{snippet}\n"
+            )
+            sys.stderr.write(
+                f"[tiny_language stitch] repr(line {lineno}): {context_lines[lineno - 1]!r}\n"
+            )
+        sys.stderr.write(
+            f"[tiny_language stitch] total lines={len(context_lines)} "
+            f"bytes={len(full_source.encode('utf-8'))}\n"
+        )
+        sys.stderr.write(
+            f"[tiny_language stitch] segment names: {', '.join(segment_names)}\n"
+        )
+        sys.stderr.write(
+            "[tiny_language stitch] Falling back to per-segment execution.\n"
+        )
+        try:
+            for name, segment, segment_hash in segments:
+                segment_path = base / name
+                exec(compile(segment, str(segment_path), "exec"), globals(), globals())
+        except SyntaxError as seg_exc:
+            lineno = seg_exc.lineno or 0
+            segment_lines = segment.splitlines()
+            if lineno > 0 and lineno <= len(segment_lines):
+                window_start = max(lineno - 3, 1)
+                window_end = lineno + 3
+                snippet = "\n".join(
+                    f"{idx:5d}: {segment_lines[idx - 1]}"
+                    for idx in range(window_start, min(window_end, len(segment_lines)) + 1)
+                )
+                sys.stderr.write(
+                    f"[tiny_language stitch] Segment {name} SyntaxError near line {lineno}:\n{snippet}\n"
+                )
+                sys.stderr.write(
+                    f"[tiny_language stitch] repr(line {lineno}): {segment_lines[lineno - 1]!r}\n"
+                )
+            sys.stderr.write(
+                f"[tiny_language stitch] segment={name} sha256={segment_hash} "
+                f"bytes={len(segment.encode('utf-8', errors='replace'))} "
+                f"lines={len(segment_lines)}\n"
+            )
+            if segment_lines:
+                sys.stderr.write(
+                    f"[tiny_language stitch] segment={name} last_line: {segment_lines[-1]!r}\n"
+                )
+            triple_quote_count = segment.count('"""')
+            sys.stderr.write(
+                f"[tiny_language stitch] segment={name} triple_quotes={triple_quote_count}\n"
+            )
+            if triple_quote_count % 2:
+                quote_lines = [
+                    idx + 1
+                    for idx, line in enumerate(segment_lines)
+                    if '"""' in line
+                ]
+                tail_quote_lines = quote_lines[-10:] if quote_lines else []
+                sys.stderr.write(
+                    f"[tiny_language stitch] segment={name} triple_quote_lines_tail={tail_quote_lines}\n"
+                )
+            if segment_lines:
+                tail_lines = segment_lines[-5:]
+                sys.stderr.write(
+                    f"[tiny_language stitch] segment={name} tail_lines={tail_lines!r}\n"
+                )
+            raise
+        return
+
+    if os.getenv("TINYLANG_STITCH_DEBUG"):
+        sys.stderr.write(
+            f"[tiny_language stitch] Wrote {stitched_path} with {full_source.count(chr(10)) + 1} lines\n"
+        )
+        sys.stderr.write(
+            f"[tiny_language stitch] segment names: {', '.join(segment_names)}\n"
+        )
 
     exec(code, globals(), globals())  # Execute the compiled module in this file's global namespace.
 

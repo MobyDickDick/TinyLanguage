@@ -412,6 +412,19 @@ class Environment:
         self.values: Dict[str, Any] = {}  # Local symbol table
         self.types: Dict[str, str] = {}
 
+    @staticmethod
+    def _fallback_type_name(value: Any) -> str:
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return "number"
+        return type(value).__name__
+
+    @staticmethod
+    def _normalize_numeric_type(type_name: str) -> str:
+        lowered = type_name.lower()
+        if lowered in {"int", "float"}:
+            return "number"
+        return type_name
+
     def get(self, name: str) -> Any:
         if name in self.values:
             return self.values[name]
@@ -421,18 +434,20 @@ class Environment:
 
     def define(self, name: str, value: Any, pos: Union[SourcePos, SourceSpan]) -> None:
         if self.runtime:
-            self.types[name] = self.runtime._infer_type_name(value)
+            inferred = self.runtime._infer_type_name(value)
+            self.types[name] = self._normalize_numeric_type(inferred)
         else:
-            self.types[name] = "number" if isinstance(value, (int, float)) and not isinstance(value, bool) else type(value).__name__
+            self.types[name] = self._fallback_type_name(value)
         self.values[name] = value
 
     def assign(self, name: str, value: Any, pos: Union[SourcePos, SourceSpan]) -> None:
         if name in self.values:
             if self.runtime:
                 self.runtime._check_assignment_type(self, name, value, pos, local_only=True)
-                self.types[name] = self.runtime._infer_type_name(value)
+                inferred = self.runtime._infer_type_name(value)
+                self.types[name] = self._normalize_numeric_type(inferred)
             else:
-                self.types[name] = "number" if isinstance(value, (int, float)) and not isinstance(value, bool) else type(value).__name__
+                self.types[name] = self._fallback_type_name(value)
             self.values[name] = value
         elif self.parent is not None:
             self.parent.assign(name, value, pos)

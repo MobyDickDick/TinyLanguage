@@ -1016,19 +1016,14 @@ class Runtime:
             return "string"
         return type(value).__name__
 
+    # Return a broad type label for variables defined without annotations.
+    # Unannotated numerics start as "number" so int/float changes are allowed.
     def _infer_type_name(self, value: Any) -> str:
-    @staticmethod
-    def _normalize_numeric_type(type_name: Optional[str]) -> Optional[str]:
-        if type_name is None:
-            return None
-        lowered = type_name.lower()
-        if lowered in {"int", "float"}:
-            return "number"
-        return type_name
-
-        """Return a concrete type label for variables defined without annotations.
-
-        Keeping concrete `int` versus `float` types prevents implicit changes
+        return (
+            "number"
+            if isinstance(value, (int, float)) and not isinstance(value, bool)
+            else self._value_type_name(value) or type(value).__name__
+        )
         unless the author opts into broader annotations like `number`.
         """
 

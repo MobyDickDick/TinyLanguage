@@ -91,6 +91,11 @@ def format_error(
             header = (
                 f"[{code}] {message} (line {start_line}, col {start_col} to line {stop_line}, col {stop_col})"
             )
+            header = f"[{code}] {message} (line {start_line}, col {start_col})"
+        else:
+            header = (
+                f"[{code}] {message} (line {start_line}, col {start_col} to line {stop_line}, col {stop_col})"
+            )
         lines_out: List[str] = [header]
 
         context_start = max(1, start_line - 1)

@@ -38,7 +38,7 @@ def test_format_error_with_span_and_hint():
     span = SourceSpan(SourcePos(line=1, column=2), SourcePos(line=2, column=3))
     output = format_error(source, span, "bad span", code="E777", hint="fix it")
 
-    assert "[E777] bad span (line 1, col 2)" in output
+    assert "[E777] bad span (line 1, col 2 to line 2, col 3)" in output
     assert "Hint: fix it" in output
     assert "^" in output
 

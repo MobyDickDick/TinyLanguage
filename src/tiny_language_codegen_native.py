@@ -4,13 +4,13 @@ This module translates a subset of the AST into a small stack-based
 bytecode and executes it with a tiny VM. It is intentionally scoped to
 cover the tutorial-style examples first (literals, arithmetic, control
 flow, simple functions, and `print`). Unsupported constructs raise
-``TinyLangError`` so gaps remain visible with precise source positions.
+``NotImplementedError`` so gaps remain visible with precise source positions.
 """
 
 from typing import Dict, List, Optional
 
 from native_ir import ClassIR, FunctionIR, Instruction, Opcode, OperatorOverloadIR, ProgramIR, TypeIR
-from tiny_errors import SourcePos, SourceSpan, TinyLangError, format_error
+from tiny_errors import SourcePos, SourceSpan, format_error
 
 
 class NativeCodeGenerator:
@@ -495,13 +495,13 @@ class NativeCodeGenerator:
         *,
         node: Optional["IR"] = None,
         span: Optional[SourceSpan] = None,
-    ) -> TinyLangError:
+    ) -> NotImplementedError:
         resolved_span = span or getattr(node, "span", None)
         pos = resolved_span.start if resolved_span is not None else getattr(node, "pos", SourcePos.origin())
         rendered = message
         if self._source is not None:
             rendered = format_error(self._source, resolved_span or pos, message)
-        return TinyLangError(rendered, pos, span=resolved_span)
+        return NotImplementedError(rendered)
 
     @staticmethod
     def _span_for(node: "IR") -> Optional[SourceSpan]:

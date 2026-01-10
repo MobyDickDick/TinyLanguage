@@ -55,6 +55,7 @@ def _load_and_exec_all() -> None:
         path = base / name  # Construct the absolute path for the current segment file.
         segment = path.read_text(encoding="utf-8")  # Read the file contents using UTF-8 to preserve symbols.
         segment = segment.replace("\r\n", "\n").replace("\r", "\n")
+        segment = segment.lstrip("\ufeff")
         if not segment.endswith("\n"):
             segment += "\n"
         parts.append(f"# --- segment: {name} ---\n{segment}")  # Include a separator to avoid accidental merges.

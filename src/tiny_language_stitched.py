@@ -482,7 +482,7 @@ class Lexer:
             c = self.s[self.i]
             if c == '"':
                 self._advance()
-                stop = SourcePos(start_line, self.col - 1)
+                stop = SourcePos(self.line, self.col - 1)
                 return Token("STRING", "".join(buf), pos0, stop)
             if c == "\\":
                 slash_pos = SourcePos(self.line, self.col)

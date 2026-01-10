@@ -110,3 +110,15 @@ while (i < len(tokens)) {{
         "SYM:}",
         "EOF:",
     ]
+
+
+def test_tiny_lexer_multiline_string_span_tracks_end_line():
+    source_literal = "\"\\\"a\\nb\\\"\""
+    body = f"""
+def tokens = lex({source_literal});
+def tok = heap_get(tokens, 0);
+print("pos", tok.kind, tok.start.line, tok.start.column, tok.stop.line, tok.stop.column);
+"""
+
+    output = _run_lexer_program(body).strip().splitlines()
+    assert output == ["pos STRING 1 1 2 2"]

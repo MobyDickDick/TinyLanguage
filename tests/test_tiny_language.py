@@ -11,6 +11,7 @@ sys.path.append(str(PROJECT_ROOT / "src"))
 from tests.utils import run_tiny
 
 from tiny_language import Runtime, compile_and_run, main, run_file
+from tiny_language_lexer import Lexer
 
 
 def expect_compile_error(src: str, pattern: str) -> None:
@@ -86,6 +87,15 @@ def test_lexer_basics_define():
         """
     )
     assert out == "7\n"
+
+
+def test_lexer_multiline_string_span_tracks_end_line():
+    source = "\"a\nb\""
+    lexer = Lexer(source)
+    token = lexer.next_token()
+    assert token.kind == "STRING"
+    assert (token.start.line, token.start.column) == (1, 1)
+    assert (token.stop.line, token.stop.column) == (2, 2)
 
 
 def test_arithmetic_and_print_with_define():

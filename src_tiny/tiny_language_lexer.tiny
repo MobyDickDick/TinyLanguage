@@ -133,7 +133,7 @@ fn __read_string(chars, n, i, line, col) {
             i = heap_get(adv_end, 0);
             line = heap_get(adv_end, 1);
             col = heap_get(adv_end, 2);
-            def stop = SourcePos(start_line, col - 1);
+            def stop = SourcePos(line, col - 1);
             def tok = Token("STRING", buf, pos0, stop);
             return new[tok, i, line, col];
         }

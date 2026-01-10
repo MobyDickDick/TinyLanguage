@@ -4,13 +4,13 @@ This module translates a subset of the AST into a small stack-based
 bytecode and executes it with a tiny VM. It is intentionally scoped to
 cover the tutorial-style examples first (literals, arithmetic, control
 flow, simple functions, and `print`). Unsupported constructs raise
-``NotImplementedError`` so gaps remain visible.
+``TinyLangError`` so gaps remain visible with precise source positions.
 """
 
 from typing import Dict, List, Optional
 
 from native_ir import ClassIR, FunctionIR, Instruction, Opcode, OperatorOverloadIR, ProgramIR, TypeIR
-from tiny_errors import SourcePos, SourceSpan
+from tiny_errors import SourcePos, SourceSpan, TinyLangError, format_error
 
 
 class NativeCodeGenerator:
@@ -22,6 +22,7 @@ class NativeCodeGenerator:
         allow_heap: bool = False,
         allow_match: bool = False,
         module_namespace: str | None = None,
+        source: str | None = None,
     ) -> None:
         self._allow_heap = allow_heap
         self._allow_match = allow_match
@@ -30,6 +31,7 @@ class NativeCodeGenerator:
         self._variant_fields: Dict[str, List[str]] = {}
         self._async_functions: set[str] = set()
         self._task_scope_depth = 0
+        self._source = source
 
     def compile_program(self, stmts: List["IR"]) -> ProgramIR:
         functions: Dict[str, FunctionIR] = {}
@@ -62,7 +64,7 @@ class NativeCodeGenerator:
                 functions[self._method_name(stmt.class_name, stmt.name)] = self._compile_method(stmt)
             elif isinstance(stmt, TypeDef):
                 if not self._allow_match:
-                    raise NotImplementedError("native codegen does not yet support type definitions")
+                    raise self._error("native codegen does not yet support type definitions", node=stmt)
                 self._register_type(stmt, types)
             else:
                 raw = self._compile_stmt(stmt)
@@ -177,7 +179,7 @@ class NativeCodeGenerator:
             self._task_scope_depth -= 1
             instructions.append(self._instr(Opcode.CALL, ("__task_scope_exit", 0), stmt))
             return instructions
-        raise NotImplementedError(f"native codegen does not yet support {type(stmt).__name__}")
+        raise self._error(f"native codegen does not yet support {type(stmt).__name__}", node=stmt)
 
     def _compile_if(self, stmt: "If") -> List[Instruction]:
         instructions = self._compile_expr(stmt.cond)
@@ -251,13 +253,13 @@ class NativeCodeGenerator:
             return [self._instr(Opcode.PUSH_CONST, None, expr)]
         if isinstance(expr, New):
             if not self._allow_heap:
-                raise NotImplementedError("native codegen does not yet support heap allocations")
+                raise self._error("native codegen does not yet support heap allocations", node=expr)
             instructions = self._compile_expr(expr.size)
             instructions.append(self._instr(Opcode.CALL, ("__new", 1), expr))
             return instructions
         if isinstance(expr, NewLit):
             if not self._allow_heap:
-                raise NotImplementedError("native codegen does not yet support heap allocations")
+                raise self._error("native codegen does not yet support heap allocations", node=expr)
             temp_name = self._next_tmp()
             instructions: List[Instruction] = [
                 self._instr(Opcode.PUSH_CONST, len(expr.items), expr),
@@ -295,11 +297,11 @@ class NativeCodeGenerator:
             return instructions
         if isinstance(expr, VariantCtor):
             if not self._allow_match:
-                raise NotImplementedError("native codegen does not yet support variant constructors")
+                raise self._error("native codegen does not yet support variant constructors", node=expr)
             return self._compile_variant_ctor(expr)
         if isinstance(expr, Match):
             if not self._allow_match:
-                raise NotImplementedError("native codegen does not yet support match expressions")
+                raise self._error("native codegen does not yet support match expressions", node=expr)
             return self._compile_match(expr)
         if isinstance(expr, Spawn):
             return self._compile_spawn(self._qualify_name(expr.name), expr.args, node=expr)
@@ -314,7 +316,7 @@ class NativeCodeGenerator:
             return instructions
         if isinstance(expr, Call):
             if expr.name in {"__new", "new", "heap_get", "heap_set", "delete"} and not self._allow_heap:
-                raise NotImplementedError("native codegen does not yet support heap allocations")
+                raise self._error("native codegen does not yet support heap allocations", node=expr)
             call_name = self._qualify_name(expr.name)
             if call_name in self._async_functions:
                 return self._compile_spawn(call_name, expr.args, node=expr)
@@ -323,7 +325,10 @@ class NativeCodeGenerator:
                 instructions.extend(self._compile_expr(arg))
             instructions.append(self._instr(Opcode.CALL, (call_name, len(expr.args)), expr))
             return instructions
-        raise NotImplementedError(f"native codegen does not yet support expression {type(expr).__name__}")
+        raise self._error(
+            f"native codegen does not yet support expression {type(expr).__name__}",
+            node=expr,
+        )
 
     def _next_tmp(self) -> str:
         self._tmp_index += 1
@@ -384,7 +389,10 @@ class NativeCodeGenerator:
                 end_jump_indices.append(len(instructions))
                 instructions.append(self._instr(Opcode.JUMP, None, case))
             else:
-                raise NotImplementedError(f"native codegen does not yet support {type(pattern).__name__} patterns")
+                raise self._error(
+                    f"native codegen does not yet support {type(pattern).__name__} patterns",
+                    node=pattern,
+                )
 
         instructions.append(self._instr(Opcode.LOAD, tmp_name, expr))
         instructions.append(self._instr(Opcode.CALL, ("__match_error", 1), expr))
@@ -401,8 +409,9 @@ class NativeCodeGenerator:
         if pattern.positional_bindings is not None:
             field_names = self._variant_field_order(pattern.variant)
             if field_names is None:
-                raise NotImplementedError(
-                    f"native codegen requires type information for positional pattern {pattern.variant}"
+                raise self._error(
+                    f"native codegen requires type information for positional pattern {pattern.variant}",
+                    node=pattern,
                 )
             if len(pattern.positional_bindings) > len(field_names):
                 raise RuntimeError(
@@ -479,6 +488,20 @@ class NativeCodeGenerator:
 
     def _task_scope_exit_instrs(self) -> List[Instruction]:
         return [self._instr(Opcode.CALL, ("__task_scope_exit", 0)) for _ in range(self._task_scope_depth)]
+
+    def _error(
+        self,
+        message: str,
+        *,
+        node: Optional["IR"] = None,
+        span: Optional[SourceSpan] = None,
+    ) -> TinyLangError:
+        resolved_span = span or getattr(node, "span", None)
+        pos = resolved_span.start if resolved_span is not None else getattr(node, "pos", SourcePos.origin())
+        rendered = message
+        if self._source is not None:
+            rendered = format_error(self._source, resolved_span or pos, message)
+        return TinyLangError(rendered, pos, span=resolved_span)
 
     @staticmethod
     def _span_for(node: "IR") -> Optional[SourceSpan]:

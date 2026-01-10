@@ -4,7 +4,7 @@ The goal of this prototype is to expose a minimal code path that can translate
 the native stack-based IR into a textual LLVM module. It intentionally supports
 the constructs needed for the tutorial-style examples (numeric literals,
 assignments, arithmetic, comparisons, simple control flow, and `print`) and
-will raise ``NotImplementedError`` for everything else. The output is meant for
+will raise ``TinyLangError`` for everything else. The output is meant for
 inspection or piping into external tools like ``llc`` rather than for
 production-grade code generation.
 """
@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 from native_ir import FunctionIR, Instruction, Opcode, OperatorOverloadIR, ProgramIR
+from tiny_errors import SourcePos, TinyLangError, format_error
 
 
 @dataclass
@@ -59,6 +60,7 @@ class LLVMCodeGenerator:
         target_triple: Optional[str] = None,
         data_layout: Optional[str] = None,
         module_inits: Optional[Dict[str, str]] = None,
+        source: Optional[str] = None,
     ) -> None:
         self._tmp_index = 0
         self._label_index = 0
@@ -89,6 +91,7 @@ class LLVMCodeGenerator:
         self._operator_overloads: Dict[Tuple[str, str, str], str] = {}
         self._module_inits: Dict[str, str] = module_inits or {}
         self._python_modules: set[str] = set()
+        self._source = source
 
     def _format_opcode(self, op: Opcode) -> str:
         return op.value if isinstance(op, Opcode) else str(op)
@@ -106,7 +109,16 @@ class LLVMCodeGenerator:
 
     def _lowering_error(self, reason: str, instr: Optional[Instruction] = None) -> None:
         context = self._instruction_context(instr or self._current_instruction)
-        raise NotImplementedError(f"LLVM prototype missing lowering: {reason}{context}")
+        message = f"LLVM prototype missing lowering: {reason}{context}"
+        raise self._error(message, instr or self._current_instruction)
+
+    def _error(self, message: str, instr: Optional[Instruction]) -> TinyLangError:
+        span = instr.span if instr is not None else None
+        pos = span.start if span is not None else SourcePos.origin()
+        rendered = message
+        if self._source is not None:
+            rendered = format_error(self._source, span or pos, message)
+        return TinyLangError(rendered, pos, span=span)
 
     def _unsupported_opcode(self, instr: Instruction) -> None:
         op_name = self._format_opcode(instr.op)

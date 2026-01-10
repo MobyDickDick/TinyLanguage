@@ -729,8 +729,6 @@ class Runtime:
                 return span
             if span.start.line != span.stop.line:
                 return span
-            if span.start.col != span.stop.col:
-                return span
         return pos
 
     def _record_error(

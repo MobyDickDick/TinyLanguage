@@ -58,11 +58,11 @@ def _load_and_exec_all() -> None:
         path = base / name  # Construct the absolute path for the current segment file.
         with tokenize.open(path) as handle:
             segment = handle.read()  # Respect encoding cookies if present.
-        segment = segment.replace("\r\n", "\n").replace("\r", "\n")
-        segment = segment.lstrip("\ufeff")
-        if not segment.endswith("\n"):
-            segment += "\n"
-        parts.append(f"# --- segment: {name} ---\n{segment}")  # Include a separator to avoid accidental merges.
+        normalized = segment.replace("\r\n", "\n").replace("\r", "\n")
+        normalized = normalized.lstrip("\ufeff")
+        if not normalized.endswith("\n"):
+            normalized += "\n"
+        parts.append(f"# --- segment: {name} ---\n{normalized}")  # Include a separator to avoid accidental merges.
         segments.append((name, segment))
 
     full_source = "\n".join(parts)

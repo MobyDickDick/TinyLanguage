@@ -153,11 +153,13 @@ class Lexer:
                 while k < self.n and self.s[k].isdigit():
                     k += 1
                 if k == exp_digits:
-                    exp_pos = SourcePos(start_line, start_col + (exp_start - self.i))
-                    span = SourceSpan(exp_pos, exp_pos)
+                    exp_end = max(exp_digits - 1, exp_start)
+                    exp_start_pos = SourcePos(start_line, start_col + (exp_start - self.i))
+                    exp_stop_pos = SourcePos(start_line, start_col + (exp_end - self.i))
+                    span = SourceSpan(exp_start_pos, exp_stop_pos)
                     raise TinyLangError(
                         format_error(self.s, span, "invalid exponent in number literal"),
-                        exp_pos,
+                        exp_start_pos,
                         span=span,
                     )
                 j = k
@@ -197,13 +199,13 @@ class Lexer:
                 stop = SourcePos(start_line, self.col - 1)
                 return Token("STRING", "".join(buf), pos0, stop)
             if c == "\\":
+                slash_pos = SourcePos(self.line, self.col)
                 self._advance()
                 if self.i >= self.n:
-                    esc_pos = SourcePos(self.line, max(self.col - 1, 1))
-                    span = SourceSpan(esc_pos, esc_pos)
+                    span = SourceSpan(slash_pos, slash_pos)
                     raise TinyLangError(
                         format_error(self.s, span, "unterminated escape in string"),
-                        esc_pos,
+                        slash_pos,
                         span=span,
                     )
                 esc = self.s[self.i]

@@ -71,10 +71,10 @@ def _load_and_exec_all() -> None:
         code = compile(full_source, str(stitched_path), "exec")  # Compile so tracebacks reference the stitched file.
     except SyntaxError as exc:
         lineno = exc.lineno or 0
+        context_lines = full_source.splitlines()
         if lineno > 0:
             window_start = max(lineno - 3, 1)
             window_end = lineno + 3
-            context_lines = full_source.splitlines()
             snippet = "\n".join(
                 f"{idx:5d}: {context_lines[idx - 1]}"
                 for idx in range(window_start, min(window_end, len(context_lines)) + 1)
@@ -82,11 +82,24 @@ def _load_and_exec_all() -> None:
             sys.stderr.write(
                 f"[tiny_language stitch] SyntaxError near line {lineno}:\n{snippet}\n"
             )
+            sys.stderr.write(
+                f"[tiny_language stitch] repr(line {lineno}): {context_lines[lineno - 1]!r}\n"
+            )
+        sys.stderr.write(
+            f"[tiny_language stitch] total lines={len(context_lines)} "
+            f"bytes={len(full_source.encode('utf-8'))}\n"
+        )
+        sys.stderr.write(
+            f"[tiny_language stitch] segment names: {', '.join(segment_names)}\n"
+        )
         raise
 
     if os.getenv("TINYLANG_STITCH_DEBUG"):
         sys.stderr.write(
             f"[tiny_language stitch] Wrote {stitched_path} with {full_source.count(chr(10)) + 1} lines\n"
+        )
+        sys.stderr.write(
+            f"[tiny_language stitch] segment names: {', '.join(segment_names)}\n"
         )
 
     exec(code, globals(), globals())  # Execute the compiled module in this file's global namespace.

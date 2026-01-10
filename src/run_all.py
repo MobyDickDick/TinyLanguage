@@ -134,10 +134,44 @@ def run_pytest(failures: list[str]) -> None:
     proc = subprocess.run(
         pytest_command,
         cwd=PROJECT_ROOT,
-        env=pytest_env,
+        env=env,
+        capture_output=True,
+        text=True,
     )
-    if proc.returncode != 0:  # Non-zero exit signals a failure
-        failures.append(name)  # Record the failing entry for summary output
+    missing_pytest = bool(
+        re.search(
+            r"No module named ['\"]?pytest['\"]?",
+            (proc.stderr or "") + (proc.stdout or ""),
+        )
+    )
+    if not missing_pytest and proc.returncode == 0:
+        return proc
+    if missing_pytest:
+        fallback = _candidate_pytest_fallback()
+        print("fallback:", fallback)
+        if fallback and fallback != cmd[0]:
+            print("fallback:", fallback)
+            retry_cmd = [fallback, "-m", "pytest"]
+            print("Retrying pytest with:", " ".join(retry_cmd))
+            return subprocess.run(
+                retry_cmd,
+                cwd=PROJECT_ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+        if fallback == cmd[0]:
+            print(
+                "pytest is missing from the current interpreter. "
+                "Install it or set TINYLANGUAGE_PYTHON_FALLBACK to a Python "
+                "that includes pytest."
+            )
+        elif not fallback:
+            print(
+                "No fallback interpreter found. Set TINYLANGUAGE_PYTHON_FALLBACK "
+                "to a Python that includes pytest."
+            )
+    return proc
 
 
 def main() -> int:

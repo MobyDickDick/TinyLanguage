@@ -17,6 +17,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 from native_ir import Instruction, Opcode, ProgramIR
+from tiny_errors import SourcePos, SourceSpan
+from tiny_language_preamble import TinyLangError, format_error
 
 
 _BANNED_PYTHON_MODULES = {
@@ -126,6 +128,7 @@ class NativeVM:
         module_resolver: Optional[Any] = None,
         module_namespace: Optional[str] = None,
         module_path: Optional[Path] = None,
+        source: Optional[str] = None,
     ) -> None:
         self.output: List[str] = []
         self.globals: Dict[str, Any] = {}
@@ -145,6 +148,7 @@ class NativeVM:
         self.module_programs: Dict[str, ProgramIR] = {}
         self.current_module_namespace = module_namespace
         self.current_module_path = module_path
+        self.source = source
         self._python_namespaces: Dict[str, set[str]] = {}
         self._python_pointers: set[int] = set()
         self._python_scalar_ints: set[int] = set()
@@ -184,58 +188,81 @@ class NativeVM:
         while frame.ip < len(frame.instructions):
             instr = frame.instructions[frame.ip]
             frame.ip += 1
+            try:
+                if instr.op == Opcode.PUSH_CONST:
+                    stack.append(instr.arg)
+                elif instr.op == Opcode.LOAD:
+                    stack.append(self._load(frame.locals, frame.globals, instr.arg))
+                elif instr.op == Opcode.STORE:
+                    value = stack.pop()
+                    frame.locals[instr.arg] = value
+                    if frame.locals is self.globals:
+                        self.globals[instr.arg] = value
+                elif instr.op == Opcode.BINARY:
+                    right = stack.pop()
+                    left = stack.pop()
+                    overload_key = (
+                        instr.arg,
+                        self._value_type_name(left),
+                        self._value_type_name(right),
+                    )
+                    overload_name = self.operator_overloads.get(overload_key)
+                    if overload_name is not None:
+                        stack.append(self._call(overload_name, [left, right]))
+                    else:
+                        op_fn = self._binary_ops.get(instr.arg)
+                        if op_fn is None:
+                            raise RuntimeError(f"unsupported operator {instr.arg}")
+                        stack.append(op_fn(left, right))
+                elif instr.op == Opcode.PRINT:
+                    values = [stack.pop() for _ in range(int(instr.arg))][::-1]
+                    self.output.append(" ".join(self._format_value(v) for v in values) + "\n")
+                elif instr.op == Opcode.FLUSH:
+                    import sys
 
-            if instr.op == Opcode.PUSH_CONST:
-                stack.append(instr.arg)
-            elif instr.op == Opcode.LOAD:
-                stack.append(self._load(frame.locals, frame.globals, instr.arg))
-            elif instr.op == Opcode.STORE:
-                value = stack.pop()
-                frame.locals[instr.arg] = value
-                if frame.locals is self.globals:
-                    self.globals[instr.arg] = value
-            elif instr.op == Opcode.BINARY:
-                right = stack.pop()
-                left = stack.pop()
-                overload_key = (
-                    instr.arg,
-                    self._value_type_name(left),
-                    self._value_type_name(right),
-                )
-                overload_name = self.operator_overloads.get(overload_key)
-                if overload_name is not None:
-                    stack.append(self._call(overload_name, [left, right]))
-                else:
-                    op_fn = self._binary_ops.get(instr.arg)
-                    if op_fn is None:
-                        raise RuntimeError(f"unsupported operator {instr.arg}")
-                    stack.append(op_fn(left, right))
-            elif instr.op == Opcode.PRINT:
-                values = [stack.pop() for _ in range(int(instr.arg))][::-1]
-                self.output.append(" ".join(self._format_value(v) for v in values) + "\n")
-            elif instr.op == Opcode.FLUSH:
-                import sys
-
-                sys.stdout.flush()
-            elif instr.op == Opcode.JUMP:
-                frame.ip = int(instr.arg)
-            elif instr.op == Opcode.JUMP_IF_FALSE:
-                cond = stack.pop()
-                if not cond:
+                    sys.stdout.flush()
+                elif instr.op == Opcode.JUMP:
                     frame.ip = int(instr.arg)
-            elif instr.op == Opcode.CALL:
-                name, argc = instr.arg
-                args = [stack.pop() for _ in range(argc)][::-1]
-                stack.append(self._call(name, args))
-            elif instr.op == Opcode.POP:
-                stack.pop()
-            elif instr.op == Opcode.RETURN:
-                return stack.pop() if stack else None
-            else:
-                op_name = instr.op.value if isinstance(instr.op, Opcode) else str(instr.op)
-                supported = ", ".join(op.value for op in Opcode)
-                raise RuntimeError(f"unknown opcode {op_name}. Supported opcodes: {supported}.")
+                elif instr.op == Opcode.JUMP_IF_FALSE:
+                    cond = stack.pop()
+                    if not cond:
+                        frame.ip = int(instr.arg)
+                elif instr.op == Opcode.CALL:
+                    name, argc = instr.arg
+                    args = [stack.pop() for _ in range(argc)][::-1]
+                    stack.append(self._call(name, args))
+                elif instr.op == Opcode.POP:
+                    stack.pop()
+                elif instr.op == Opcode.RETURN:
+                    return stack.pop() if stack else None
+                else:
+                    op_name = instr.op.value if isinstance(instr.op, Opcode) else str(instr.op)
+                    supported = ", ".join(op.value for op in Opcode)
+                    raise RuntimeError(f"unknown opcode {op_name}. Supported opcodes: {supported}.")
+            except TinyLangError:
+                raise
+            except Exception as exc:  # noqa: BLE001
+                raise self._error(str(exc), instr) from exc
         return None
+
+    def _error(self, message: str, location: Optional[object]) -> TinyLangError:
+        span = None
+        pos = None
+        if isinstance(location, SourceSpan):
+            span = location
+        elif isinstance(location, SourcePos):
+            pos = location
+        elif location is not None:
+            span = getattr(location, "span", None)
+            pos = getattr(location, "pos", None)
+        if pos is None and span is not None:
+            pos = span.start
+        if span is not None or pos is not None:
+            formatted = format_error(self.source or "", span or pos, message)
+        else:
+            formatted = message
+        self._record_error(formatted)
+        return TinyLangError(formatted, pos or SourcePos.origin(), span=span)
 
     def _load(self, locals_: Dict[str, Any], globals_: Dict[str, Any], name: str) -> Any:
         """Resolve a variable name from locals or globals, raising on miss."""

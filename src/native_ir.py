@@ -8,7 +8,9 @@ against the emitted instructions without parsing private structures.
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+
+from tiny_errors import SourceSpan
 
 
 class Opcode(str, Enum):
@@ -33,6 +35,7 @@ class Instruction:
 
     op: Opcode
     arg: Any = None
+    span: Optional[SourceSpan] = None
 
 
 @dataclass

@@ -53,9 +53,10 @@ def _load_and_exec_all() -> None:
     ]
     for name in segment_names:
         path = base / name  # Construct the absolute path for the current segment file.
-        parts.append(path.read_text(encoding="utf-8"))  # Read the file contents using UTF-8 to preserve symbols.
+        segment = path.read_text(encoding="utf-8")  # Read the file contents using UTF-8 to preserve symbols.
+        parts.append(f"# --- segment: {name} ---\n{segment.rstrip()}")  # Include a separator to avoid accidental merges.
 
-    full_source = "\n".join(part.rstrip("\n") for part in parts) + "\n"
+    full_source = "\n\n".join(parts) + "\n"
     full_source = full_source.replace("\r\n", "\n").replace("\r", "\n")
     stitched_path = base / "tiny_language_stitched.py"
     stitched_path.write_text(full_source, encoding="utf-8")

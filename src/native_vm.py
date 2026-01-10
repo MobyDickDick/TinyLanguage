@@ -242,8 +242,28 @@ class NativeVM:
             except TinyLangError:
                 raise
             except Exception as exc:  # noqa: BLE001
+                if isinstance(exc, RuntimeError):
+                    formatted = self._format_error_message(str(exc), instr)
+                    self._record_error(formatted)
+                    raise RuntimeError(formatted) from exc
                 raise self._error(str(exc), instr) from exc
         return None
+
+    def _format_error_message(self, message: str, location: Optional[object]) -> str:
+        span = None
+        pos = None
+        if isinstance(location, SourceSpan):
+            span = location
+        elif isinstance(location, SourcePos):
+            pos = location
+        elif location is not None:
+            span = getattr(location, "span", None)
+            pos = getattr(location, "pos", None)
+        if pos is None and span is not None:
+            pos = span.start
+        if span is not None or pos is not None:
+            return format_error(self.source or "", span or pos, message)
+        return message
 
     def _error(self, message: str, location: Optional[object]) -> TinyLangError:
         span = None
@@ -257,10 +277,7 @@ class NativeVM:
             pos = getattr(location, "pos", None)
         if pos is None and span is not None:
             pos = span.start
-        if span is not None or pos is not None:
-            formatted = format_error(self.source or "", span or pos, message)
-        else:
-            formatted = message
+        formatted = self._format_error_message(message, location)
         self._record_error(formatted)
         return TinyLangError(formatted, pos or SourcePos.origin(), span=span)
 

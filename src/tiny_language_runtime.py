@@ -1024,15 +1024,10 @@ class Runtime:
             if isinstance(value, (int, float)) and not isinstance(value, bool)
             else self._value_type_name(value) or type(value).__name__
         )
+        unless the author opts into broader annotations like `number`.
+        """
 
-    @staticmethod
-    def _normalize_numeric_type(type_name: Optional[str]) -> Optional[str]:
-        if type_name is None:
-            return None
-        lowered = type_name.lower()
-        if lowered in {"int", "float"}:
-            return "number"
-        return type_name
+        return self._value_type_name(value) or type(value).__name__
 
     def _check_assignment_type(
         self, env: "Environment", name: str, value: Any, pos: Any, *, local_only: bool = False

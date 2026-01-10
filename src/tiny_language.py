@@ -134,21 +134,6 @@ def _load_and_exec_all() -> None:
             sys.stderr.write(
                 f"[tiny_language stitch] segment={name} triple_quotes={triple_quote_count}\n"
             )
-            if triple_quote_count % 2:
-                quote_lines = [
-                    idx + 1
-                    for idx, line in enumerate(segment_lines)
-                    if '"""' in line
-                ]
-                tail_quote_lines = quote_lines[-10:] if quote_lines else []
-                sys.stderr.write(
-                    f"[tiny_language stitch] segment={name} triple_quote_lines_tail={tail_quote_lines}\n"
-                )
-            if segment_lines:
-                tail_lines = segment_lines[-5:]
-                sys.stderr.write(
-                    f"[tiny_language stitch] segment={name} tail_lines={tail_lines!r}\n"
-                )
             raise
         return
 

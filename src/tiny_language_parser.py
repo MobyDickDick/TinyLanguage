@@ -54,9 +54,19 @@ class Parser:
     def _tok_span(tok: Token) -> SourceSpan:
         return SourceSpan(tok.start, tok.stop)
 
+    @staticmethod
+    def _token_description(tok: Token) -> str:
+        if tok.kind == "EOF":
+            return "EOF"
+        if tok.text:
+            return f"{tok.kind} {tok.text}"
+        return tok.kind
+
     def _eat(self, kind: str, text: Optional[str] = None) -> Token:
         if self.tok.kind != kind or (text is not None and self.tok.text != text):
-            raise self._error(f"expected {kind}{' '+text if text else ''}", self.tok.pos, self._tok_span(self.tok))
+            expected = f"{kind}{' '+text if text else ''}"
+            got = self._token_description(self.tok)
+            raise self._error(f"expected {expected}, got {got}", self.tok.pos, self._tok_span(self.tok))
         t = self.tok
         self.tok = self.lx.next_token()
         self._last_tok = t
@@ -68,7 +78,8 @@ class Parser:
             self.tok = self.lx.next_token()
             self._last_tok = t
             return t
-        raise self._error("expected NAME", self.tok.pos, self._tok_span(self.tok))
+        got = self._token_description(self.tok)
+        raise self._error(f"expected NAME, got {got}", self.tok.pos, self._tok_span(self.tok))
 
     def _accept(self, kind: str, text: Optional[str] = None) -> bool:
         if self.tok.kind == kind and (text is None or self.tok.text == text):

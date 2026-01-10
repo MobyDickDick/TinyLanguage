@@ -1017,6 +1017,15 @@ class Runtime:
         return type(value).__name__
 
     def _infer_type_name(self, value: Any) -> str:
+    @staticmethod
+    def _normalize_numeric_type(type_name: Optional[str]) -> Optional[str]:
+        if type_name is None:
+            return None
+        lowered = type_name.lower()
+        if lowered in {"int", "float"}:
+            return "number"
+        return type_name
+
         """Return a concrete type label for variables defined without annotations.
 
         Keeping concrete `int` versus `float` types prevents implicit changes
@@ -1078,15 +1087,18 @@ class Runtime:
 
     def _enforce_inferred_return(self, owner: Any, value: Any, *, label: str, pos: SourcePos) -> None:
         expected = getattr(owner, "inferred_return_type", None)
-        inferred = self._infer_type_name(value)
+        inferred = self._normalize_numeric_type(self._infer_type_name(value))
         if expected is None:
             owner.inferred_return_type = inferred
             return
-        if self._type_matches(expected, value):
+        expected_norm = self._normalize_numeric_type(expected)
+        if expected_norm != expected:
+            owner.inferred_return_type = expected_norm
+        if self._type_matches(expected_norm, value):
             return
         actual = self._value_type_name(value) or type(value).__name__
         raise self._error(
-            f"inferred return type for {label} changed: expected {expected} but got {actual}",
+            f"inferred return type for {label} changed: expected {expected_norm} but got {actual}",
             pos,
             code="E014",
             hint="Add an explicit return type annotation or keep return values consistent to avoid implicit type changes.",

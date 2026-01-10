@@ -6,11 +6,11 @@ that everything still works with a single command or debug session.
 from __future__ import annotations  # Keep annotations as strings for forward references
 
 import os  # Augment environment with src/ on PYTHONPATH
+import re  # Match missing pytest errors for fallback handling
 import subprocess  # Run external processes for demos and tests
 import sys  # Discover the current Python interpreter path
 from pathlib import Path  # Resolve project-relative paths
 
-TINYLANGUAGE_DEBUG_PYTEST=1
 PROJECT_ROOT = Path(__file__).resolve().parent.parent  # Root directory of the repository
 SRC_ROOT = PROJECT_ROOT / "src"
 DEMO_ROOT = PROJECT_ROOT / "src_tiny"
@@ -100,6 +100,14 @@ def resolve_pytest_command(pytest_env: dict[str, str]) -> list[str]:
             return [PYTEST_PYTHON, candidate]
     return PYTEST_COMMAND
 
+
+def _candidate_pytest_fallback() -> str | None:
+    """Return a fallback interpreter for pytest when the primary one lacks it."""
+    fallback = os.environ.get("TINYLANGUAGE_PYTHON_FALLBACK")
+    if fallback:
+        return fallback
+    return None
+
 INTERPRETER = SRC_ROOT / "tiny_language.py"
 REPO_PYTHON = resolve_repo_python()
 PYTEST_PYTHON = REPO_PYTHON
@@ -134,7 +142,7 @@ def run_pytest(failures: list[str]) -> None:
     proc = subprocess.run(
         pytest_command,
         cwd=PROJECT_ROOT,
-        env=env,
+        env=pytest_env,
         capture_output=True,
         text=True,
     )
@@ -148,19 +156,17 @@ def run_pytest(failures: list[str]) -> None:
         return proc
     if missing_pytest:
         fallback = _candidate_pytest_fallback()
-        print("fallback:", fallback)
-        if fallback and fallback != cmd[0]:
-            print("fallback:", fallback)
+        if fallback and fallback != pytest_command[0]:
             retry_cmd = [fallback, "-m", "pytest"]
             print("Retrying pytest with:", " ".join(retry_cmd))
             return subprocess.run(
                 retry_cmd,
                 cwd=PROJECT_ROOT,
-                env=env,
+                env=pytest_env,
                 capture_output=True,
                 text=True,
             )
-        if fallback == cmd[0]:
+        if fallback == pytest_command[0]:
             print(
                 "pytest is missing from the current interpreter. "
                 "Install it or set TINYLANGUAGE_PYTHON_FALLBACK to a Python "

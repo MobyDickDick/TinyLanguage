@@ -418,6 +418,13 @@ class Environment:
             return "number"
         return type(value).__name__
 
+    @staticmethod
+    def _normalize_numeric_type(type_name: str) -> str:
+        lowered = type_name.lower()
+        if lowered in {"int", "float"}:
+            return "number"
+        return type_name
+
     def get(self, name: str) -> Any:
         if name in self.values:
             return self.values[name]
@@ -427,7 +434,8 @@ class Environment:
 
     def define(self, name: str, value: Any, pos: Union[SourcePos, SourceSpan]) -> None:
         if self.runtime:
-            self.types[name] = self.runtime._infer_type_name(value)
+            inferred = self.runtime._infer_type_name(value)
+            self.types[name] = self._normalize_numeric_type(inferred)
         else:
             self.types[name] = self._fallback_type_name(value)
         self.values[name] = value
@@ -436,7 +444,8 @@ class Environment:
         if name in self.values:
             if self.runtime:
                 self.runtime._check_assignment_type(self, name, value, pos, local_only=True)
-                self.types[name] = self.runtime._infer_type_name(value)
+                inferred = self.runtime._infer_type_name(value)
+                self.types[name] = self._normalize_numeric_type(inferred)
             else:
                 self.types[name] = self._fallback_type_name(value)
             self.values[name] = value

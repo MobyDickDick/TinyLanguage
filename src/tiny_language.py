@@ -26,6 +26,7 @@ from __future__ import annotations  # Enable postponed evaluation for annotation
 from pathlib import Path as _Path  # Import Path with an alias to avoid polluting the public API.
 import os
 import sys  # Detect frozen executables (e.g., PyInstaller) so we can locate bundled sources.
+import hashlib
 import tokenize
 
 
@@ -58,12 +59,13 @@ def _load_and_exec_all() -> None:
         path = base / name  # Construct the absolute path for the current segment file.
         with tokenize.open(path) as handle:
             segment = handle.read()  # Respect encoding cookies if present.
+        segment_hash = hashlib.sha256(segment.encode("utf-8", errors="replace")).hexdigest()
         normalized = segment.replace("\r\n", "\n").replace("\r", "\n")
         normalized = normalized.lstrip("\ufeff")
         if not normalized.endswith("\n"):
             normalized += "\n"
         parts.append(f"# --- segment: {name} ---\n{normalized}")  # Include a separator to avoid accidental merges.
-        segments.append((name, segment))
+        segments.append((name, segment, segment_hash))
 
     full_source = "\n".join(parts)
     stitched_path = base / "tiny_language_stitched.py"
@@ -100,7 +102,7 @@ def _load_and_exec_all() -> None:
             "[tiny_language stitch] Falling back to per-segment execution.\n"
         )
         try:
-            for name, segment in segments:
+            for name, segment, segment_hash in segments:
                 segment_path = base / name
                 exec(compile(segment, str(segment_path), "exec"), globals(), globals())
         except SyntaxError as seg_exc:
@@ -119,6 +121,19 @@ def _load_and_exec_all() -> None:
                 sys.stderr.write(
                     f"[tiny_language stitch] repr(line {lineno}): {segment_lines[lineno - 1]!r}\n"
                 )
+            sys.stderr.write(
+                f"[tiny_language stitch] segment={name} sha256={segment_hash} "
+                f"bytes={len(segment.encode('utf-8', errors='replace'))} "
+                f"lines={len(segment_lines)}\n"
+            )
+            if segment_lines:
+                sys.stderr.write(
+                    f"[tiny_language stitch] segment={name} last_line: {segment_lines[-1]!r}\n"
+                )
+            triple_quote_count = segment.count('"""')
+            sys.stderr.write(
+                f"[tiny_language stitch] segment={name} triple_quotes={triple_quote_count}\n"
+            )
             raise
         return
 

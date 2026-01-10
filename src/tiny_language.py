@@ -55,7 +55,7 @@ def _load_and_exec_all() -> None:
         path = base / name  # Construct the absolute path for the current segment file.
         parts.append(path.read_text(encoding="utf-8"))  # Read the file contents using UTF-8 to preserve symbols.
 
-    full_source = "".join(parts)  # Join the individual source strings into a single Python module body.
+    full_source = "\n".join(part.rstrip("\n") for part in parts) + "\n"
     stitched_path = base / "tiny_language_stitched.py"
     stitched_path.write_text(full_source, encoding="utf-8")
 

@@ -12,7 +12,7 @@ production-grade code generation.
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
-from native_ir import FunctionIR, Instruction, Opcode, ProgramIR
+from native_ir import FunctionIR, Instruction, Opcode, OperatorOverloadIR, ProgramIR
 
 
 @dataclass
@@ -23,6 +23,9 @@ class _StackValue:
     ty: str
     source: Optional[str] = None
     literal: Optional[int] = None
+    literal_str: Optional[str] = None
+    class_name: Optional[str] = None
+    variant_name: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -42,18 +45,29 @@ class _TypeValue:
     ty: Optional[str]
     source: Optional[str] = None
     literal: Optional[int] = None
+    literal_str: Optional[str] = None
+    class_name: Optional[str] = None
+    variant_name: Optional[str] = None
 
 
 class LLVMCodeGenerator:
     """Translate ``ProgramIR`` instructions into textual LLVM IR."""
 
-    def __init__(self, *, target_triple: Optional[str] = None, data_layout: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        *,
+        target_triple: Optional[str] = None,
+        data_layout: Optional[str] = None,
+        module_inits: Optional[Dict[str, str]] = None,
+    ) -> None:
         self._tmp_index = 0
         self._label_index = 0
         self._stack: List[_StackValue] = []
         self._allocas: Dict[str, str] = {}
         self._var_types: Dict[str, str] = {}
         self._var_literals: Dict[str, int] = {}
+        self._var_classes: Dict[str, str] = {}
+        self._var_variants: Dict[str, str] = {}
         self._prologue: List[str] = []
         self._body: List[str] = []
         self._string_constants: Dict[str, Tuple[str, int]] = {}
@@ -62,8 +76,19 @@ class LLVMCodeGenerator:
         self._current_return_type: Optional[str] = None
         self._current_instruction: Optional[Instruction] = None
         self._heap_cell_types: Dict[Tuple[str, int], str] = {}
+        self._class_layouts: Dict[str, List[Tuple[str, str]]] = {}
+        self._class_mros: Dict[str, List[str]] = {}
+        self._class_ids: Dict[str, int] = {}
+        self._class_methods: Dict[str, Dict[str, str]] = {}
+        self._class_field_types: Dict[Tuple[str, int], str] = {}
+        self._variant_fields: Dict[str, List[str]] = {}
+        self._variant_field_types: Dict[Tuple[str, str], str] = {}
+        self._variant_to_type: Dict[str, str] = {}
         self._target_triple = target_triple
         self._data_layout = data_layout
+        self._operator_overloads: Dict[Tuple[str, str, str], str] = {}
+        self._module_inits: Dict[str, str] = module_inits or {}
+        self._python_modules: set[str] = set()
 
     def _format_opcode(self, op: Opcode) -> str:
         return op.value if isinstance(op, Opcode) else str(op)
@@ -98,6 +123,11 @@ class LLVMCodeGenerator:
         scope so gaps stay visible during experimentation.
         """
 
+        self._register_type_metadata(program)
+        self._register_class_metadata(program)
+        self._operator_overloads = self._register_operator_overloads(program.operator_overloads)
+        self._class_field_types.clear()
+        self._python_modules.clear()
         self._function_signatures = self._infer_signatures(program)
         self._string_constants.clear()
         self._string_defs.clear()
@@ -122,6 +152,8 @@ class LLVMCodeGenerator:
         self._allocas.clear()
         self._var_types.clear()
         self._var_literals.clear()
+        self._var_classes.clear()
+        self._var_variants.clear()
         self._prologue.clear()
         self._body.clear()
         self._current_return_type = None
@@ -149,6 +181,8 @@ class LLVMCodeGenerator:
         self._allocas.clear()
         self._var_types.clear()
         self._var_literals.clear()
+        self._var_classes.clear()
+        self._var_variants.clear()
         self._prologue.clear()
         self._body.clear()
         self._current_return_type = signature.return_type
@@ -162,6 +196,8 @@ class LLVMCodeGenerator:
             self._var_types[name] = ty
             self._prologue.append(f"  %{addr_name} = alloca {ty}")
             self._prologue.append(f"  store {ty} %{arg_name}, {ty}* %{addr_name}")
+        if "." in func.name and func.params:
+            self._var_classes[func.params[0]] = func.name.split(".", 1)[0]
 
         block_starts = self._collect_block_starts(func.instructions)
         label_map = self._label_map(block_starts)
@@ -312,20 +348,34 @@ class LLVMCodeGenerator:
             self._body.append(
                 f"  {dest} = getelementptr inbounds [{length} x i8], [{length} x i8]* @{name}, i32 0, i32 0"
             )
-            self._stack.append(_StackValue(name=dest, ty="i8*"))
+            self._stack.append(_StackValue(name=dest, ty="i8*", literal_str=value))
         else:
             self._lowering_error(
                 f"constants of type {type(value).__name__} are not supported",
             )
 
     def _load_var(self, name: str) -> None:
+        if name in {"Map", "Set", "Deque", "Async", "Python"}:
+            self._stack.append(_StackValue(name=name, ty="i64", class_name=name))
+            return
         ty = self._var_types.get(name)
         if ty is None:
             self._lowering_error(f"unknown variable {name}")
         dest = self._next_tmp()
         self._body.append(f"  {dest} = load {ty}, {ty}* %{self._allocas[name]}")
         literal = self._var_literals.get(name)
-        self._stack.append(_StackValue(name=dest, ty=ty, source=name, literal=literal))
+        class_name = self._var_classes.get(name)
+        variant_name = self._var_variants.get(name)
+        self._stack.append(
+            _StackValue(
+                name=dest,
+                ty=ty,
+                source=name,
+                literal=literal,
+                class_name=class_name,
+                variant_name=variant_name,
+            )
+        )
 
     def _store_var(self, name: str) -> None:
         if not self._stack:
@@ -339,6 +389,18 @@ class LLVMCodeGenerator:
             self._var_literals[name] = value.literal
         else:
             self._var_literals.pop(name, None)
+        if value.class_name:
+            self._var_classes[name] = value.class_name
+        else:
+            self._var_classes.pop(name, None)
+        if value.variant_name:
+            self._var_variants[name] = value.variant_name
+        else:
+            self._var_variants.pop(name, None)
+        if value.source and value.source != name:
+            for (ptr_name, idx), cell_ty in list(self._heap_cell_types.items()):
+                if ptr_name == value.source:
+                    self._heap_cell_types[(name, idx)] = cell_ty
         self._body.append(f"  store {value.ty} {value.name}, {value.ty}* %{self._allocas[name]}")
 
     def _binary_op(self, op: str) -> None:
@@ -348,6 +410,28 @@ class LLVMCodeGenerator:
             self._lowering_error(
                 f"mixed-type arithmetic not supported ({left.ty} vs {right.ty})"
             )
+
+        overload_name = self._operator_overloads.get((op, left.ty, right.ty))
+        if overload_name is not None:
+            signature = self._function_signatures.get(overload_name)
+            if signature is None:
+                self._lowering_error(f"unknown operator overload {overload_name}")
+            if len(signature.param_types) != 2:
+                self._lowering_error(
+                    f"operator overload {overload_name} expects 2 args, got {len(signature.param_types)}"
+                )
+            rendered_args: List[str] = []
+            for (param_name, param_type), arg in zip(signature.param_types.items(), (left, right)):
+                if arg.ty != param_type:
+                    self._lowering_error(
+                        f"argument for {overload_name}.{param_name} expected {param_type}, got {arg.ty}"
+                    )
+                rendered_args.append(f"{param_type} {arg.name}")
+            dest = self._next_tmp()
+            args_text = ", ".join(rendered_args)
+            self._body.append(f"  {dest} = call {signature.return_type} @{overload_name}({args_text})")
+            self._stack.append(_StackValue(name=dest, ty=signature.return_type))
+            return
 
         if op in {"+", "-", "*", "/", "%"}:
             self._emit_arithmetic_op(op, left, right)
@@ -384,6 +468,11 @@ class LLVMCodeGenerator:
             if predicate is None:
                 self._lowering_error(f"comparison {op} not supported for type {ty}")
             self._body.append(f"  {dest} = fcmp {predicate} {ty} {left.name}, {right.name}")
+        elif ty == "i8*":
+            predicate = {"==": "eq", "!=": "ne"}.get(op)
+            if predicate is None:
+                self._lowering_error(f"comparison {op} not supported for type {ty}")
+            self._body.append(f"  {dest} = icmp {predicate} {ty} {left.name}, {right.name}")
         else:
             predicate = {
                 "==": "eq",
@@ -442,23 +531,69 @@ class LLVMCodeGenerator:
     def _flush_output(self) -> None:
         self._body.append("  call i32 @fflush(i8* null)")
 
-    def _call_function(self, call_spec: Tuple[str, int]) -> None:
-        name, argc = call_spec
-        args = [self._stack.pop() for _ in range(argc)][::-1]
-        resolved_name = name
-        if name == "heap_set":
-            resolved_name = self._resolve_heap_set_name(args)
-        elif name == "heap_get":
-            resolved_name = self._resolve_heap_get_name(args)
+    def _value_payload(self, value: _StackValue) -> str:
+        if value.ty == "i64":
+            return value.name
+        dest = self._next_tmp()
+        if value.ty == "i1":
+            self._body.append(f"  {dest} = zext i1 {value.name} to i64")
+            return dest
+        if value.ty == "double":
+            self._body.append(f"  {dest} = bitcast double {value.name} to i64")
+            return dest
+        if value.ty == "i8*":
+            self._body.append(f"  {dest} = ptrtoint i8* {value.name} to i64")
+            return dest
+        self._lowering_error(f"cannot lower payload for type {value.ty}")
+        return dest
 
+    def _payload_to_value(self, payload: str, target_ty: str) -> _StackValue:
+        if target_ty == "i64":
+            return _StackValue(name=payload, ty="i64")
+        dest = self._next_tmp()
+        if target_ty == "i1":
+            self._body.append(f"  {dest} = trunc i64 {payload} to i1")
+            return _StackValue(name=dest, ty="i1")
+        if target_ty == "double":
+            self._body.append(f"  {dest} = bitcast i64 {payload} to double")
+            return _StackValue(name=dest, ty="double")
+        if target_ty == "i8*":
+            self._body.append(f"  {dest} = inttoptr i64 {payload} to i8*")
+            return _StackValue(name=dest, ty="i8*")
+        self._lowering_error(f"cannot unbox payload for type {target_ty}")
+        return _StackValue(name=payload, ty=target_ty)
+
+    def _spawn_wrapper_name(self, ty: str) -> str:
+        wrappers = {
+            "i64": "__spawn_i64",
+            "double": "__spawn_double",
+            "i1": "__spawn_bool",
+            "i8*": "__spawn_str",
+        }
+        if ty not in wrappers:
+            self._lowering_error(f"spawn not supported for type {ty}")
+        return wrappers[ty]
+
+    def _join_wrapper_name(self, ty: str) -> str:
+        wrappers = {
+            "i64": "__join_i64",
+            "double": "__join_double",
+            "i1": "__join_bool",
+            "i8*": "__join_str",
+        }
+        if ty not in wrappers:
+            self._lowering_error(f"join not supported for type {ty}")
+        return wrappers[ty]
+
+    def _emit_direct_call(self, resolved_name: str, args: List[_StackValue]) -> _StackValue:
         signature = self._function_signatures.get(resolved_name)
         if signature is None:
             signature = self._builtin_signature(resolved_name)
         if signature is None:
             self._lowering_error(f"unknown function {resolved_name}")
-        if argc != len(signature.param_types):
+        if len(args) != len(signature.param_types):
             self._lowering_error(
-                f"function {resolved_name} expects {len(signature.param_types)} args, got {argc}"
+                f"function {resolved_name} expects {len(signature.param_types)} args, got {len(args)}"
             )
         rendered_args: List[str] = []
         for (param_name, param_type), arg in zip(signature.param_types.items(), args):
@@ -470,9 +605,749 @@ class LLVMCodeGenerator:
         dest = self._next_tmp()
         args_text = ", ".join(rendered_args)
         self._body.append(f"  {dest} = call {signature.return_type} @{resolved_name}({args_text})")
-        self._stack.append(_StackValue(name=dest, ty=signature.return_type))
+        return _StackValue(name=dest, ty=signature.return_type)
+
+    def _emit_spawn_call(self, args: List[_StackValue]) -> None:
+        if not args:
+            self._lowering_error("__spawn expects at least 1 arg")
+        target_name = self._literal_string(args[0], context="__spawn")
+        call_args = args[1:]
+        result = self._emit_direct_call(target_name, call_args)
+        wrapper = self._spawn_wrapper_name(result.ty)
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call {result.ty} @{wrapper}({result.ty} {result.name})")
+        self._stack.append(_StackValue(name=dest, ty=result.ty))
+
+    def _emit_join_call(self, args: List[_StackValue]) -> None:
+        if len(args) not in {1, 2, 3}:
+            self._lowering_error("join expects between 1 and 3 args")
+        handle = args[0]
+        wrapper = self._join_wrapper_name(handle.ty)
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call {handle.ty} @{wrapper}({handle.ty} {handle.name})")
+        self._stack.append(_StackValue(name=dest, ty=handle.ty))
+
+    def _emit_async_token(self, args: List[_StackValue]) -> None:
+        if args:
+            self._lowering_error("Async.token expects 0 args")
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i64 @__async_token()")
+        self._stack.append(_StackValue(name=dest, ty="i64"))
+
+    def _emit_async_cancel(self, args: List[_StackValue]) -> None:
+        if len(args) not in {1, 2}:
+            self._lowering_error("Async.cancel expects 1 or 2 args")
+        token = args[0]
+        if token.ty != "i64":
+            self._lowering_error("Async.cancel expects a token handle")
+        reason = "null"
+        if len(args) == 2:
+            if args[1].ty != "i8*":
+                self._lowering_error("Async.cancel reason must be a string or Null")
+            reason = args[1].name
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i1 @__async_cancel(i64 {token.name}, i8* {reason})")
+        self._stack.append(_StackValue(name=dest, ty="i1"))
+
+    def _emit_async_is_cancelled(self, args: List[_StackValue]) -> None:
+        if len(args) != 1:
+            self._lowering_error("Async.is_cancelled expects 1 arg")
+        token = args[0]
+        if token.ty != "i64":
+            self._lowering_error("Async.is_cancelled expects a token handle")
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i1 @__async_is_cancelled(i64 {token.name})")
+        self._stack.append(_StackValue(name=dest, ty="i1"))
+
+    def _emit_async_reason(self, args: List[_StackValue]) -> None:
+        if len(args) != 1:
+            self._lowering_error("Async.reason expects 1 arg")
+        token = args[0]
+        if token.ty != "i64":
+            self._lowering_error("Async.reason expects a token handle")
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i8* @__async_reason(i64 {token.name})")
+        self._stack.append(_StackValue(name=dest, ty="i8*"))
+
+    def _emit_async_link(self, args: List[_StackValue]) -> None:
+        if len(args) != 2:
+            self._lowering_error("Async.link expects 2 args")
+        token = args[0]
+        if token.ty != "i64":
+            self._lowering_error("Async.link expects a token handle")
+        payload = self._value_payload(args[1])
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i1 @__async_link(i64 {token.name}, i64 {payload})")
+        self._stack.append(_StackValue(name=dest, ty="i1"))
+
+    def _call_function(self, call_spec: Tuple[str, int]) -> None:
+        name, argc = call_spec
+        args = [self._stack.pop() for _ in range(argc)][::-1]
+        if name == "__import":
+            self._emit_import_call(args)
+            return
+        if name == "__spawn":
+            self._emit_spawn_call(args)
+            return
+        if name == "join":
+            self._emit_join_call(args)
+            return
+        if name == "Async.token":
+            self._emit_async_token(args)
+            return
+        if name == "Async.cancel":
+            self._emit_async_cancel(args)
+            return
+        if name == "Async.is_cancelled":
+            self._emit_async_is_cancelled(args)
+            return
+        if name == "Async.reason":
+            self._emit_async_reason(args)
+            return
+        if name == "Async.link":
+            self._emit_async_link(args)
+            return
+        if name.startswith("Map."):
+            self._emit_map_call(name, args)
+            return
+        if name.startswith("Set."):
+            self._emit_set_call(name, args)
+            return
+        if name.startswith("Deque."):
+            self._emit_deque_call(name, args)
+            return
+        if name.startswith("Python.") and name not in {"Python.import_module", "Python.call"}:
+            dotted = name[len("Python.") :]
+            if "." not in dotted:
+                self._lowering_error("Python call expects a module-qualified name")
+            module_name, attr_name = dotted.rsplit(".", 1)
+            self._emit_python_direct_call(module_name, attr_name, args)
+            return
+        if name == "__variant_assume":
+            if len(args) != 2:
+                self._lowering_error("__variant_assume expects 2 args")
+            variant_name = self._literal_string(args[1], context="__variant_assume")
+            value = args[0]
+            self._stack.append(
+                _StackValue(
+                    name=value.name,
+                    ty=value.ty,
+                    source=value.source,
+                    literal=value.literal,
+                    literal_str=value.literal_str,
+                    class_name=value.class_name,
+                    variant_name=variant_name,
+                )
+            )
+            return
+        if name == "__variant_new":
+            self._emit_variant_new(args)
+            return
+        if name == "__variant_tag":
+            self._emit_variant_tag(args)
+            return
+        if name == "__variant_get":
+            self._emit_variant_get(args)
+            return
+        if name == "Python.import_module":
+            self._emit_python_import(args)
+            return
+        if name == "Python.call":
+            self._emit_python_call(args)
+            return
+        if name == "__match_error":
+            self._emit_match_error(args)
+            return
+        if name == "__class_new":
+            self._emit_class_new(args)
+            return
+        if name == "__field_get":
+            self._emit_field_get(args)
+            return
+        if name == "__field_set":
+            self._emit_field_set(args)
+            return
+        if name == "__method_call":
+            self._emit_method_call(args)
+            return
+        resolved_name = name
+        if name == "heap_set":
+            resolved_name = self._resolve_heap_set_name(args)
+        elif name == "heap_get":
+            resolved_name = self._resolve_heap_get_name(args)
+        result = self._emit_direct_call(resolved_name, args)
+        self._stack.append(result)
         if name == "heap_set":
             self._record_heap_cell_type(args)
+
+    def _emit_map_call(self, name: str, args: List[_StackValue]) -> None:
+        method = name.split(".", 1)[1]
+        if method == "new":
+            if args:
+                self._lowering_error("Map.new expects 0 args")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__map_new()")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "len":
+            if len(args) != 1:
+                self._lowering_error("Map.len expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__map_len(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "set":
+            if len(args) != 3:
+                self._lowering_error("Map.set expects 3 args")
+            key_payload = self._value_payload(args[1])
+            value_payload = self._value_payload(args[2])
+            self._body.append(
+                f"  call i64 @__map_set(i64 {args[0].name}, i64 {key_payload}, i64 {value_payload})"
+            )
+            self._stack.append(args[2])
+            return
+        if method == "get":
+            if len(args) not in {2, 3}:
+                self._lowering_error("Map.get expects 2 or 3 args")
+            key_payload = self._value_payload(args[1])
+            default_ty = args[2].ty if len(args) == 3 else "i64"
+            default_payload = self._value_payload(args[2]) if len(args) == 3 else "0"
+            dest = self._next_tmp()
+            self._body.append(
+                f"  {dest} = call i64 @__map_get(i64 {args[0].name}, i64 {key_payload}, i64 {default_payload})"
+            )
+            self._stack.append(self._payload_to_value(dest, default_ty))
+            return
+        if method == "has":
+            if len(args) != 2:
+                self._lowering_error("Map.has expects 2 args")
+            key_payload = self._value_payload(args[1])
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i1 @__map_has(i64 {args[0].name}, i64 {key_payload})")
+            self._stack.append(_StackValue(name=dest, ty="i1"))
+            return
+        if method == "delete":
+            if len(args) != 2:
+                self._lowering_error("Map.delete expects 2 args")
+            key_payload = self._value_payload(args[1])
+            dest = self._next_tmp()
+            self._body.append(
+                f"  {dest} = call i1 @__map_delete(i64 {args[0].name}, i64 {key_payload})"
+            )
+            self._stack.append(_StackValue(name=dest, ty="i1"))
+            return
+        if method == "keys":
+            if len(args) != 1:
+                self._lowering_error("Map.keys expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__map_keys(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "values":
+            if len(args) != 1:
+                self._lowering_error("Map.values expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__map_values(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "entries":
+            if len(args) != 1:
+                self._lowering_error("Map.entries expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__map_entries(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "from_entries":
+            if len(args) != 1:
+                self._lowering_error("Map.from_entries expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__map_from_entries(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        self._lowering_error(f"unknown Map method {method}")
+
+    def _emit_set_call(self, name: str, args: List[_StackValue]) -> None:
+        method = name.split(".", 1)[1]
+        if method == "new":
+            if args:
+                self._lowering_error("Set.new expects 0 args")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__set_new()")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "from_list":
+            if len(args) != 1:
+                self._lowering_error("Set.from_list expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__set_from_list(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "len":
+            if len(args) != 1:
+                self._lowering_error("Set.len expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__set_len(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "add":
+            if len(args) != 2:
+                self._lowering_error("Set.add expects 2 args")
+            value_payload = self._value_payload(args[1])
+            dest = self._next_tmp()
+            self._body.append(
+                f"  {dest} = call i1 @__set_add(i64 {args[0].name}, i64 {value_payload})"
+            )
+            self._stack.append(_StackValue(name=dest, ty="i1"))
+            return
+        if method == "delete":
+            if len(args) != 2:
+                self._lowering_error("Set.delete expects 2 args")
+            value_payload = self._value_payload(args[1])
+            dest = self._next_tmp()
+            self._body.append(
+                f"  {dest} = call i1 @__set_delete(i64 {args[0].name}, i64 {value_payload})"
+            )
+            self._stack.append(_StackValue(name=dest, ty="i1"))
+            return
+        if method == "has":
+            if len(args) != 2:
+                self._lowering_error("Set.has expects 2 args")
+            value_payload = self._value_payload(args[1])
+            dest = self._next_tmp()
+            self._body.append(
+                f"  {dest} = call i1 @__set_has(i64 {args[0].name}, i64 {value_payload})"
+            )
+            self._stack.append(_StackValue(name=dest, ty="i1"))
+            return
+        if method == "to_list":
+            if len(args) != 1:
+                self._lowering_error("Set.to_list expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__set_to_list(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        self._lowering_error(f"unknown Set method {method}")
+
+    def _emit_deque_call(self, name: str, args: List[_StackValue]) -> None:
+        method = name.split(".", 1)[1]
+        if method == "new":
+            if len(args) > 1:
+                self._lowering_error("Deque.new expects 0 or 1 args")
+            dest = self._next_tmp()
+            if args:
+                self._body.append(f"  {dest} = call i64 @__deque_from_list(i64 {args[0].name})")
+            else:
+                self._body.append(f"  {dest} = call i64 @__deque_new()")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "len":
+            if len(args) != 1:
+                self._lowering_error("Deque.len expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__deque_len(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "push_left":
+            if len(args) != 2:
+                self._lowering_error("Deque.push_left expects 2 args")
+            value_payload = self._value_payload(args[1])
+            dest = self._next_tmp()
+            self._body.append(
+                f"  {dest} = call i64 @__deque_push_left(i64 {args[0].name}, i64 {value_payload})"
+            )
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "push_right":
+            if len(args) != 2:
+                self._lowering_error("Deque.push_right expects 2 args")
+            value_payload = self._value_payload(args[1])
+            dest = self._next_tmp()
+            self._body.append(
+                f"  {dest} = call i64 @__deque_push_right(i64 {args[0].name}, i64 {value_payload})"
+            )
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "pop_left":
+            if len(args) != 1:
+                self._lowering_error("Deque.pop_left expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__deque_pop_left(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "pop_right":
+            if len(args) != 1:
+                self._lowering_error("Deque.pop_right expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__deque_pop_right(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "peek_left":
+            if len(args) != 1:
+                self._lowering_error("Deque.peek_left expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__deque_peek_left(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "peek_right":
+            if len(args) != 1:
+                self._lowering_error("Deque.peek_right expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__deque_peek_right(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        if method == "to_list":
+            if len(args) != 1:
+                self._lowering_error("Deque.to_list expects 1 arg")
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__deque_to_list(i64 {args[0].name})")
+            self._stack.append(_StackValue(name=dest, ty="i64"))
+            return
+        self._lowering_error(f"unknown Deque method {method}")
+
+    def _emit_class_new(self, args: List[_StackValue]) -> None:
+        if not args:
+            self._lowering_error("__class_new expects at least 1 arg")
+        class_name = self._literal_string(args[0], context="__class_new")
+        layout = self._class_layouts.get(class_name)
+        if layout is None:
+            self._lowering_error(f"unknown class {class_name}")
+        if (len(args) - 1) % 2 != 0:
+            self._lowering_error("__class_new expects field name/value pairs")
+        size = len(layout) + 1
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i64 @__new(i64 {size})")
+        ptr = _StackValue(name=dest, ty="i64", source=dest, class_name=class_name)
+        class_id = self._class_ids[class_name]
+        self._emit_heap_set(ptr, 0, self._const_i64(class_id))
+        for index in range(1, len(args), 2):
+            field_name = self._literal_string(args[index], context="__class_new")
+            value = args[index + 1]
+            field_index = self._class_field_index(class_name, field_name)
+            self._emit_heap_set(ptr, field_index, value)
+            self._class_field_types[(class_name, field_index)] = value.ty
+        self._stack.append(_StackValue(name=dest, ty="i64", source=dest, class_name=class_name))
+
+    def _emit_import_call(self, args: List[_StackValue]) -> None:
+        if len(args) != 1:
+            self._lowering_error("__import expects 1 arg")
+        module_name = self._literal_string(args[0], context="__import")
+        init_name = self._module_inits.get(module_name)
+        if init_name is None:
+            self._lowering_error(f"unknown module {module_name}")
+        init_signature = self._function_signatures.get(init_name)
+        if init_signature is None:
+            self._lowering_error(f"missing module init function {init_name}")
+        if init_signature.param_types:
+            self._lowering_error(f"module init {init_name} expects no args")
+        self._body.append(f"  {self._next_tmp()} = call {init_signature.return_type} @{init_name}()")
+        name, length = self._string_constant(module_name)
+        dest = self._next_tmp()
+        self._body.append(
+            f"  {dest} = getelementptr inbounds [{length} x i8], [{length} x i8]* @{name}, i32 0, i32 0"
+        )
+        self._stack.append(_StackValue(name=dest, ty="i8*", literal_str=module_name, class_name=module_name))
+
+    def _emit_python_import(self, args: List[_StackValue]) -> None:
+        if len(args) not in {1, 2}:
+            self._lowering_error("Python.import_module expects 1 or 2 args")
+        module_name = self._literal_string(args[0], context="Python.import_module")
+        allowlist = args[1] if len(args) == 2 else None
+        if allowlist is None or (allowlist.ty == "i8*" and allowlist.name == "null"):
+            allow_ptr = "0"
+        else:
+            allow_ptr = allowlist.name
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i64 @__py_import_module(i8* {args[0].name}, i64 {allow_ptr})")
+        self._python_modules.add(module_name)
+        self._stack.append(_StackValue(name=dest, ty="i64", class_name=module_name))
+
+    def _emit_python_call(
+        self,
+        args: List[_StackValue],
+        *,
+        module_name_override: Optional[str] = None,
+    ) -> None:
+        if len(args) < 2 or len(args) > 4:
+            self._lowering_error("Python.call expects 2 to 4 args")
+        module_arg = args[0]
+        attr_arg = args[1]
+        module_name = module_name_override or self._literal_string(module_arg, context="Python.call")
+        attr_name = self._literal_string(attr_arg, context="Python.call")
+        call_args = args[2] if len(args) >= 3 else None
+        opts = args[3] if len(args) == 4 else None
+        if opts is None or (opts.ty == "i8*" and opts.name == "null"):
+            allow_ptr = "0"
+        else:
+            allow_ptr = opts.name
+        if call_args is None or (call_args.ty == "i8*" and call_args.name == "null"):
+            args_ptr = "0"
+            types_ptr = "0"
+        else:
+            args_ptr = call_args.name
+            types_ptr = self._emit_python_arg_types(call_args)
+        name, length = self._string_constant(module_name)
+        module_ptr = self._next_tmp()
+        self._body.append(
+            f"  {module_ptr} = getelementptr inbounds [{length} x i8], [{length} x i8]* @{name}, i32 0, i32 0"
+        )
+        attr_name_const, attr_len = self._string_constant(attr_name)
+        attr_ptr = self._next_tmp()
+        self._body.append(
+            f"  {attr_ptr} = getelementptr inbounds [{attr_len} x i8], [{attr_len} x i8]* @{attr_name_const}, i32 0, i32 0"
+        )
+        dest = self._next_tmp()
+        self._body.append(
+            f"  {dest} = call i64 @__py_call(i8* {module_ptr}, i8* {attr_ptr}, i64 {args_ptr}, i64 {types_ptr}, i64 {allow_ptr})"
+        )
+        self._stack.append(_StackValue(name=dest, ty="i64"))
+
+    def _emit_python_direct_call(
+        self,
+        module_name: str,
+        attr_name: str,
+        args: List[_StackValue],
+    ) -> None:
+        if args:
+            size = len(args)
+            dest = self._next_tmp()
+            self._body.append(f"  {dest} = call i64 @__new(i64 {size})")
+            ptr = _StackValue(name=dest, ty="i64", source=dest)
+            for index, value in enumerate(args):
+                self._emit_heap_set(ptr, index, value)
+            arg_list = ptr
+        else:
+            arg_list = _StackValue(name="null", ty="i8*")
+        self._emit_python_call(
+            [
+                _StackValue(name="null", ty="i8*", literal_str=module_name),
+                _StackValue(name="null", ty="i8*", literal_str=attr_name),
+                arg_list,
+            ],
+            module_name_override=module_name,
+        )
+
+    def _emit_python_arg_types(self, args_list: _StackValue) -> str:
+        if args_list.source is None:
+            return "0"
+        size = self._heap_list_length(args_list.source)
+        if size is None:
+            return "0"
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i64 @__new(i64 {size})")
+        ptr = _StackValue(name=dest, ty="i64", source=dest)
+        for index in range(size):
+            tag = self._python_type_tag(args_list.source, index)
+            self._emit_heap_set(ptr, index, self._const_i64(tag))
+        return dest
+
+    def _heap_list_length(self, ptr_name: str) -> Optional[int]:
+        candidates = [idx for (name, idx) in self._heap_cell_types.keys() if name == ptr_name]
+        if not candidates:
+            return None
+        return max(candidates) + 1
+
+    def _python_type_tag(self, ptr_name: str, idx: int) -> int:
+        ty = self._heap_cell_types.get((ptr_name, idx))
+        if ty == "double":
+            return 1
+        if ty == "i1":
+            return 2
+        if ty == "i8*":
+            return 3
+        return 0
+
+    def _emit_field_get(self, args: List[_StackValue]) -> None:
+        if len(args) != 2:
+            self._lowering_error("__field_get expects 2 args")
+        obj, field_name = args
+        class_name = obj.class_name
+        if class_name is None:
+            self._lowering_error("field access on unknown class value")
+        if class_name in self._module_inits:
+            self._lowering_error("field access on module values is not supported yet")
+        field_literal = self._literal_string(field_name, context="__field_get")
+        field_index = self._class_field_index(class_name, field_literal)
+        resolved_name = self._resolve_class_heap_get_name(class_name, field_index)
+        dest = self._next_tmp()
+        arg_text = f"i64 {obj.name}, i64 {field_index}"
+        self._body.append(f"  {dest} = call {self._heap_get_return_type(resolved_name)} @{resolved_name}({arg_text})")
+        self._stack.append(
+            _StackValue(name=dest, ty=self._heap_get_return_type(resolved_name))
+        )
+
+    def _emit_field_set(self, args: List[_StackValue]) -> None:
+        if len(args) != 3:
+            self._lowering_error("__field_set expects 3 args")
+        obj, field_name, value = args
+        class_name = obj.class_name
+        if class_name is None:
+            self._lowering_error("field access on unknown class value")
+        field_literal = self._literal_string(field_name, context="__field_set")
+        field_index = self._class_field_index(class_name, field_literal)
+        self._emit_heap_set(obj, field_index, value)
+        self._class_field_types[(class_name, field_index)] = value.ty
+        self._stack.append(value)
+
+    def _emit_method_call(self, args: List[_StackValue]) -> None:
+        if len(args) < 2:
+            self._lowering_error("__method_call expects at least 2 args")
+        obj, method_name, *rest = args
+        class_name = obj.class_name
+        if class_name == "Async":
+            method_literal = self._literal_string(method_name, context="__method_call")
+            if method_literal == "token":
+                self._emit_async_token(rest)
+                return
+            if method_literal == "cancel":
+                self._emit_async_cancel(rest)
+                return
+            if method_literal == "is_cancelled":
+                self._emit_async_is_cancelled(rest)
+                return
+            if method_literal == "reason":
+                self._emit_async_reason(rest)
+                return
+            if method_literal == "link":
+                self._emit_async_link(rest)
+                return
+            self._lowering_error(f"unknown Async method {method_literal}")
+        if class_name == "Python":
+            method_literal = self._literal_string(method_name, context="__method_call")
+            if method_literal == "import_module":
+                self._emit_python_import(rest)
+                return
+            if method_literal == "call":
+                self._emit_python_call(rest)
+                return
+            self._lowering_error(f"unknown Python method {method_literal}")
+        if class_name in {"Map", "Set", "Deque"}:
+            method_literal = self._literal_string(method_name, context="__method_call")
+            if class_name == "Map":
+                self._emit_map_call(f"Map.{method_literal}", rest)
+            elif class_name == "Set":
+                self._emit_set_call(f"Set.{method_literal}", rest)
+            else:
+                self._emit_deque_call(f"Deque.{method_literal}", rest)
+            return
+        if class_name in self._python_modules:
+            method_literal = self._literal_string(method_name, context="__method_call")
+            self._emit_python_call(
+                [
+                    _StackValue(name=obj.name, ty=obj.ty, class_name=class_name, literal_str=class_name),
+                    _StackValue(name=method_name.name, ty=method_name.ty, literal_str=method_literal),
+                    *rest,
+                ],
+                module_name_override=class_name,
+            )
+            return
+        if class_name in self._module_inits:
+            method_literal = self._literal_string(method_name, context="__method_call")
+            target_name = f"{class_name}.{method_literal}"
+            signature = self._function_signatures.get(target_name)
+            if signature is None:
+                self._lowering_error(f"unknown function {target_name}")
+            if len(rest) != len(signature.param_types):
+                self._lowering_error(
+                    f"function {target_name} expects {len(signature.param_types)} args, got {len(rest)}"
+                )
+            rendered_args: List[str] = []
+            for (param_name, param_type), arg in zip(signature.param_types.items(), rest):
+                if arg.ty != param_type:
+                    self._lowering_error(
+                        f"argument for {target_name}.{param_name} expected {param_type}, got {arg.ty}"
+                    )
+                rendered_args.append(f"{param_type} {arg.name}")
+            dest = self._next_tmp()
+            args_text = ", ".join(rendered_args)
+            self._body.append(f"  {dest} = call {signature.return_type} @{target_name}({args_text})")
+            self._stack.append(_StackValue(name=dest, ty=signature.return_type))
+            return
+        if class_name is None:
+            self._lowering_error("method call on unknown class value")
+        method_literal = self._literal_string(method_name, context="__method_call")
+        target_name = self._resolve_method_target(class_name, method_literal)
+        signature = self._function_signatures.get(target_name)
+        if signature is None:
+            self._lowering_error(f"unknown function {target_name}")
+        call_args = [obj] + list(rest)
+        if len(call_args) != len(signature.param_types):
+            self._lowering_error(
+                f"function {target_name} expects {len(signature.param_types)} args, got {len(call_args)}"
+            )
+        rendered_args: List[str] = []
+        for (param_name, param_type), arg in zip(signature.param_types.items(), call_args):
+            if arg.ty != param_type:
+                self._lowering_error(
+                    f"argument for {target_name}.{param_name} expected {param_type}, got {arg.ty}"
+                )
+            rendered_args.append(f"{param_type} {arg.name}")
+        dest = self._next_tmp()
+        args_text = ", ".join(rendered_args)
+        self._body.append(f"  {dest} = call {signature.return_type} @{target_name}({args_text})")
+        self._stack.append(_StackValue(name=dest, ty=signature.return_type))
+
+    def _emit_variant_new(self, args: List[_StackValue]) -> None:
+        if len(args) < 2:
+            self._lowering_error("__variant_new expects at least 2 args (variant, type_name)")
+        variant_name = self._literal_string(args[0], context="__variant_new")
+        type_name = args[1].literal_str
+        if type_name is None:
+            type_name = self._variant_to_type.get(variant_name)
+        fields = self._variant_fields.get(variant_name)
+        if fields is None:
+            self._lowering_error(f"unknown variant {variant_name}")
+        if (len(args) - 2) % 2 != 0:
+            self._lowering_error("__variant_new expects field name/value pairs")
+        provided_fields = {}
+        for index in range(2, len(args), 2):
+            field_name = self._literal_string(args[index], context="__variant_new")
+            provided_fields[field_name] = args[index + 1]
+        missing = sorted(set(fields) - set(provided_fields.keys()))
+        extra = sorted(set(provided_fields.keys()) - set(fields))
+        if missing:
+            self._lowering_error(f"missing field(s) for variant {variant_name}: {', '.join(missing)}")
+        if extra:
+            self._lowering_error(f"unknown field(s) for variant {variant_name}: {', '.join(extra)}")
+        size = len(fields) + 1
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i64 @__new(i64 {size})")
+        ptr = _StackValue(name=dest, ty="i64", source=dest, variant_name=variant_name)
+        self._emit_heap_set(ptr, 0, _StackValue(name=args[0].name, ty="i8*", literal_str=variant_name))
+        for idx, field_name in enumerate(fields, start=1):
+            value = provided_fields[field_name]
+            self._emit_heap_set(ptr, idx, value)
+        if type_name is not None:
+            self._variant_to_type.setdefault(variant_name, type_name)
+        self._stack.append(_StackValue(name=dest, ty="i64", variant_name=variant_name))
+
+    def _emit_variant_tag(self, args: List[_StackValue]) -> None:
+        if len(args) != 1:
+            self._lowering_error("__variant_tag expects 1 arg")
+        value = args[0]
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call i8* @heap_get_str(i64 {value.name}, i64 0)")
+        self._stack.append(_StackValue(name=dest, ty="i8*", literal_str=value.variant_name))
+
+    def _emit_variant_get(self, args: List[_StackValue]) -> None:
+        if len(args) != 2:
+            self._lowering_error("__variant_get expects 2 args")
+        value, field_name_value = args
+        field_name = self._literal_string(field_name_value, context="__variant_get")
+        variant_name = self._resolve_variant_name(value)
+        if variant_name is None:
+            self._lowering_error("variant access on unknown tagged value")
+        field_index = self._variant_field_index(variant_name, field_name)
+        field_type = self._variant_field_type(variant_name, field_name)
+        resolved_name = self._resolve_variant_heap_get_name(field_type)
+        dest = self._next_tmp()
+        self._body.append(f"  {dest} = call {field_type} @{resolved_name}(i64 {value.name}, i64 {field_index})")
+        self._stack.append(_StackValue(name=dest, ty=field_type))
+
+    def _emit_match_error(self, args: List[_StackValue]) -> None:
+        if len(args) != 1:
+            self._lowering_error("__match_error expects 1 arg")
+        arg = args[0]
+        self._body.append(f"  call void @__match_error(i64 {arg.name})")
 
     # ----- Helpers -----
 
@@ -491,6 +1366,122 @@ class LLVMCodeGenerator:
             self._body.append(f"  {dest} = fcmp one double {cond.name}, 0.0")
             return dest
         self._lowering_error(f"conditional branches for type {cond.ty} not supported")
+
+    def _resolve_variant_name(self, value: _StackValue) -> Optional[str]:
+        if value.variant_name:
+            return value.variant_name
+        if value.source:
+            return self._var_variants.get(value.source)
+        return None
+
+    def _literal_string(self, value: _StackValue, *, context: str) -> str:
+        if value.literal_str is None:
+            self._lowering_error(f"{context} expects a string literal")
+        return value.literal_str
+
+    def _const_i64(self, value: int) -> _StackValue:
+        return _StackValue(name=str(value), ty="i64", literal=value)
+
+    def _emit_heap_set(self, ptr: _StackValue, idx: int, value: _StackValue) -> None:
+        idx_value = self._const_i64(idx)
+        args = [ptr, idx_value, value]
+        resolved_name = self._resolve_heap_set_name(args)
+        signature = self._builtin_signature(resolved_name)
+        if signature is None:
+            self._lowering_error(f"unknown function {resolved_name}")
+        rendered_args: List[str] = []
+        for (param_name, param_type), arg in zip(signature.param_types.items(), args):
+            if arg.ty != param_type:
+                self._lowering_error(
+                    f"argument for {resolved_name}.{param_name} expected {param_type}, got {arg.ty}"
+                )
+            rendered_args.append(f"{param_type} {arg.name}")
+        dest = self._next_tmp()
+        args_text = ", ".join(rendered_args)
+        self._body.append(f"  {dest} = call {signature.return_type} @{resolved_name}({args_text})")
+        self._record_heap_cell_type(args)
+
+    def _resolve_class_heap_get_name(self, class_name: str, field_index: int) -> str:
+        cell_type = self._class_field_types.get((class_name, field_index))
+        if cell_type == "i8*":
+            return "heap_get_str"
+        if cell_type == "double":
+            return "heap_get_double"
+        if cell_type == "i1":
+            return "heap_get_bool"
+        return "heap_get"
+
+    def _heap_get_return_type(self, name: str) -> str:
+        if name == "heap_get_str":
+            return "i8*"
+        if name == "heap_get_double":
+            return "double"
+        if name == "heap_get_bool":
+            return "i1"
+        return "i64"
+
+    def _resolve_variant_heap_get_name(self, field_type: str) -> str:
+        if field_type == "i8*":
+            return "heap_get_str"
+        if field_type == "double":
+            return "heap_get_double"
+        if field_type == "i1":
+            return "heap_get_bool"
+        return "heap_get"
+
+    def _variant_field_index(self, variant_name: str, field_name: str) -> int:
+        fields = self._variant_fields.get(variant_name)
+        if fields is None:
+            self._lowering_error(f"unknown variant {variant_name}")
+        if field_name not in fields:
+            self._lowering_error(f"field {field_name} missing for variant {variant_name}")
+        return fields.index(field_name) + 1
+
+    def _variant_field_type(self, variant_name: str, field_name: str) -> str:
+        return self._variant_field_types.get((variant_name, field_name), "i64")
+
+    def _split_field_name(self, field_name: str) -> Tuple[Optional[str], str]:
+        if "." in field_name:
+            owner, rest = field_name.split(".", 1)
+            return owner, rest
+        return None, field_name
+
+    def _class_field_index(self, class_name: str, field_name: str) -> int:
+        layout = self._class_layouts.get(class_name)
+        if layout is None:
+            self._lowering_error(f"unknown class {class_name}")
+        owner_hint, raw_name = self._split_field_name(field_name)
+        matches = [
+            (idx, owner)
+            for idx, (owner, fname) in enumerate(layout)
+            if fname == raw_name
+        ]
+        if owner_hint:
+            for idx, owner in matches:
+                if owner == owner_hint:
+                    return idx + 1
+            self._lowering_error(f"unknown field {raw_name} for base class {owner_hint}")
+        if matches:
+            for idx, owner in matches:
+                if owner == class_name:
+                    return idx + 1
+            if len(matches) == 1:
+                return matches[0][0] + 1
+            self._lowering_error(f"ambiguous field {raw_name} on class {class_name}")
+        self._lowering_error(f"unknown field {raw_name} for class {class_name}")
+        raise RuntimeError("unreachable")
+
+    def _resolve_method_target(self, class_name: str, method_name: str) -> str:
+        mro = self._class_mros.get(class_name)
+        if mro is None:
+            self._lowering_error(f"unknown class {class_name}")
+        for cls in mro:
+            methods = self._class_methods.get(cls, {})
+            target = methods.get(method_name)
+            if target is not None:
+                return target
+        self._lowering_error(f"no method {method_name} for class {class_name}")
+        raise RuntimeError("unreachable")
 
     def _next_tmp(self) -> str:
         self._tmp_index += 1
@@ -520,10 +1511,16 @@ class LLVMCodeGenerator:
             "@.fmt_i64 = private unnamed_addr constant [5 x i8] c\"%ld\\0A\\00\"",
             "@.fmt_double = private unnamed_addr constant [5 x i8] c\"%lf\\0A\\00\"",
             "@.fmt_str = private unnamed_addr constant [4 x i8] c\"%s\\0A\\00\"",
+            "@.heap_bounds_err = private unnamed_addr constant [54 x i8] c\"heap access error: index %ld out of range (size %ld)\\0A\\00\"",
+            "@.match_error_fmt = private unnamed_addr constant [33 x i8] c\"non-exhaustive match for tag %s\\0A\\00\"",
+            "@.deque_empty_err = private unnamed_addr constant [16 x i8] c\"deque is empty\\0A\\00\"",
             "declare i32 @printf(i8*, ...)",
             "declare i32 @fflush(i8*)",
             "declare i8* @calloc(i64, i64)",
             "declare void @free(i8*)",
+            "declare void @exit(i32)",
+            "declare i64 @__py_import_module(i8*, i64)",
+            "declare i64 @__py_call(i8*, i8*, i64, i64, i64)",
             ]
         )
         lines.extend(self._runtime_helpers())
@@ -533,8 +1530,12 @@ class LLVMCodeGenerator:
         return [
             "define i64 @__new(i64 %size) {",
             "entry:",
-            "  %ptr = call i8* @calloc(i64 %size, i64 8)",
-            "  %int = ptrtoint i8* %ptr to i64",
+            "  %alloc_size = add i64 %size, 1",
+            "  %ptr = call i8* @calloc(i64 %alloc_size, i64 8)",
+            "  %base = bitcast i8* %ptr to i64*",
+            "  store i64 %size, i64* %base",
+            "  %data = getelementptr i64, i64* %base, i64 1",
+            "  %int = ptrtoint i64* %data to i64",
             "  ret i64 %int",
             "}",
             "define i64 @new(i64 %size) {",
@@ -542,17 +1543,45 @@ class LLVMCodeGenerator:
             "  %ptr = call i64 @__new(i64 %size)",
             "  ret i64 %ptr",
             "}",
+            "define i64 @__heap_bounds_error(i64 %idx, i64 %size) {",
+            "entry:",
+            "  %fmt = getelementptr [54 x i8], [54 x i8]* @.heap_bounds_err, i64 0, i64 0",
+            "  %_printed = call i32 (i8*, ...) @printf(i8* %fmt, i64 %idx, i64 %size)",
+            "  %_flushed = call i32 @fflush(i8* null)",
+            "  call void @exit(i32 1)",
+            "  ret i64 0",
+            "}",
             "define i64 @heap_get(i64 %ptr, i64 %idx) {",
             "entry:",
-            "  %base = inttoptr i64 %ptr to i64*",
-            "  %offset = getelementptr i64, i64* %base, i64 %idx",
+            "  %data = inttoptr i64 %ptr to i64*",
+            "  %base = getelementptr i64, i64* %data, i64 -1",
+            "  %size = load i64, i64* %base",
+            "  %neg = icmp slt i64 %idx, 0",
+            "  %oob = icmp sge i64 %idx, %size",
+            "  %bad = or i1 %neg, %oob",
+            "  br i1 %bad, label %err, label %ok",
+            "err:",
+            "  %_ignored = call i64 @__heap_bounds_error(i64 %idx, i64 %size)",
+            "  ret i64 0",
+            "ok:",
+            "  %offset = getelementptr i64, i64* %data, i64 %idx",
             "  %value = load i64, i64* %offset",
             "  ret i64 %value",
             "}",
             "define i64 @heap_set(i64 %ptr, i64 %idx, i64 %value) {",
             "entry:",
-            "  %base = inttoptr i64 %ptr to i64*",
-            "  %offset = getelementptr i64, i64* %base, i64 %idx",
+            "  %data = inttoptr i64 %ptr to i64*",
+            "  %base = getelementptr i64, i64* %data, i64 -1",
+            "  %size = load i64, i64* %base",
+            "  %neg = icmp slt i64 %idx, 0",
+            "  %oob = icmp sge i64 %idx, %size",
+            "  %bad = or i1 %neg, %oob",
+            "  br i1 %bad, label %err, label %ok",
+            "err:",
+            "  %_ignored = call i64 @__heap_bounds_error(i64 %idx, i64 %size)",
+            "  ret i64 0",
+            "ok:",
+            "  %offset = getelementptr i64, i64* %data, i64 %idx",
             "  store i64 %value, i64* %offset",
             "  ret i64 0",
             "}",
@@ -592,13 +1621,754 @@ class LLVMCodeGenerator:
             "  %_ignored = call i64 @heap_set(i64 %ptr, i64 %idx, i64 %cast)",
             "  ret i64 0",
             "}",
+            "define i64 @heap_len(i64 %ptr) {",
+            "entry:",
+            "  %data = inttoptr i64 %ptr to i64*",
+            "  %base = getelementptr i64, i64* %data, i64 -1",
+            "  %size = load i64, i64* %base",
+            "  ret i64 %size",
+            "}",
             "define i64 @delete(i64 %ptr) {",
             "entry:",
-            "  %base = inttoptr i64 %ptr to i8*",
-            "  call void @free(i8* %base)",
+            "  %data = inttoptr i64 %ptr to i64*",
+            "  %base = getelementptr i64, i64* %data, i64 -1",
+            "  %raw = bitcast i64* %base to i8*",
+            "  call void @free(i8* %raw)",
             "  ret i64 0",
             "}",
+            "define i64 @__spawn_i64(i64 %value) {",
+            "entry:",
+            "  ret i64 %value",
+            "}",
+            "define double @__spawn_double(double %value) {",
+            "entry:",
+            "  ret double %value",
+            "}",
+            "define i1 @__spawn_bool(i1 %value) {",
+            "entry:",
+            "  ret i1 %value",
+            "}",
+            "define i8* @__spawn_str(i8* %value) {",
+            "entry:",
+            "  ret i8* %value",
+            "}",
+            "define i64 @__join_i64(i64 %value) {",
+            "entry:",
+            "  ret i64 %value",
+            "}",
+            "define double @__join_double(double %value) {",
+            "entry:",
+            "  ret double %value",
+            "}",
+            "define i1 @__join_bool(i1 %value) {",
+            "entry:",
+            "  ret i1 %value",
+            "}",
+            "define i8* @__join_str(i8* %value) {",
+            "entry:",
+            "  ret i8* %value",
+            "}",
+            "define i64 @__async_token() {",
+            "entry:",
+            "  %token = call i64 @__new(i64 2)",
+            "  %_ignored0 = call i64 @heap_set(i64 %token, i64 0, i64 0)",
+            "  %_ignored1 = call i64 @heap_set(i64 %token, i64 1, i64 0)",
+            "  ret i64 %token",
+            "}",
+            "define i1 @__async_is_cancelled(i64 %token) {",
+            "entry:",
+            "  %flag = call i64 @heap_get(i64 %token, i64 0)",
+            "  %is_set = icmp ne i64 %flag, 0",
+            "  ret i1 %is_set",
+            "}",
+            "define i1 @__async_cancel(i64 %token, i8* %reason) {",
+            "entry:",
+            "  %flag = call i64 @heap_get(i64 %token, i64 0)",
+            "  %already = icmp ne i64 %flag, 0",
+            "  br i1 %already, label %done, label %set",
+            "set:",
+            "  %_set_flag = call i64 @heap_set(i64 %token, i64 0, i64 1)",
+            "  %reason_int = ptrtoint i8* %reason to i64",
+            "  %_set_reason = call i64 @heap_set(i64 %token, i64 1, i64 %reason_int)",
+            "  br label %done",
+            "done:",
+            "  %res = phi i1 [false, %entry], [true, %set]",
+            "  ret i1 %res",
+            "}",
+            "define i8* @__async_reason(i64 %token) {",
+            "entry:",
+            "  %raw = call i64 @heap_get(i64 %token, i64 1)",
+            "  %ptr = inttoptr i64 %raw to i8*",
+            "  ret i8* %ptr",
+            "}",
+            "define i1 @__async_link(i64 %token, i64 %handle) {",
+            "entry:",
+            "  %flag = call i64 @heap_get(i64 %token, i64 0)",
+            "  %cancelled = icmp ne i64 %flag, 0",
+            "  %linked = xor i1 %cancelled, true",
+            "  ret i1 %linked",
+            "}",
+            "define void @__match_error(i64 %ptr) {",
+            "entry:",
+            "  %tag = call i8* @heap_get_str(i64 %ptr, i64 0)",
+            "  %fmt = getelementptr [33 x i8], [33 x i8]* @.match_error_fmt, i64 0, i64 0",
+            "  %_printed = call i32 (i8*, ...) @printf(i8* %fmt, i8* %tag)",
+            "  %_flushed = call i32 @fflush(i8* null)",
+            "  call void @exit(i32 1)",
+            "  ret void",
+            "}",
+            "define void @__deque_empty_error() {",
+            "entry:",
+            "  %fmt = getelementptr [16 x i8], [16 x i8]* @.deque_empty_err, i64 0, i64 0",
+            "  %_printed = call i32 (i8*, ...) @printf(i8* %fmt)",
+            "  %_flushed = call i32 @fflush(i8* null)",
+            "  call void @exit(i32 1)",
+            "  ret void",
+            "}",
+            "define i64 @__map_new() {",
+            "entry:",
+            "  %map = call i64 @__new(i64 2)",
+            "  %entries = call i64 @__new(i64 0)",
+            "  %_ignored0 = call i64 @heap_set(i64 %map, i64 0, i64 0)",
+            "  %_ignored1 = call i64 @heap_set(i64 %map, i64 1, i64 %entries)",
+            "  ret i64 %map",
+            "}",
+            "define i64 @__map_len(i64 %map) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %map, i64 0)",
+            "  ret i64 %len",
+            "}",
+            "define i64 @__map_find(i64 %entries, i64 %len, i64 %key) {",
+            "entry:",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %next_loop]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %not_found, label %check",
+            "check:",
+            "  %idx = mul i64 %i, 2",
+            "  %cur = call i64 @heap_get(i64 %entries, i64 %idx)",
+            "  %eq = icmp eq i64 %cur, %key",
+            "  br i1 %eq, label %found, label %next_loop",
+            "next_loop:",
+            "  %next = add i64 %i, 1",
+            "  br label %loop",
+            "found:",
+            "  ret i64 %i",
+            "not_found:",
+            "  ret i64 -1",
+            "}",
+            "define i64 @__map_get(i64 %map, i64 %key, i64 %default) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %map, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %map, i64 1)",
+            "  %idx = call i64 @__map_find(i64 %entries, i64 %len, i64 %key)",
+            "  %found = icmp sge i64 %idx, 0",
+            "  br i1 %found, label %ok, label %missing",
+            "ok:",
+            "  %pos = mul i64 %idx, 2",
+            "  %val_idx = add i64 %pos, 1",
+            "  %val = call i64 @heap_get(i64 %entries, i64 %val_idx)",
+            "  ret i64 %val",
+            "missing:",
+            "  ret i64 %default",
+            "}",
+            "define i1 @__map_has(i64 %map, i64 %key) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %map, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %map, i64 1)",
+            "  %idx = call i64 @__map_find(i64 %entries, i64 %len, i64 %key)",
+            "  %found = icmp sge i64 %idx, 0",
+            "  ret i1 %found",
+            "}",
+            "define i1 @__map_delete(i64 %map, i64 %key) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %map, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %map, i64 1)",
+            "  %idx = call i64 @__map_find(i64 %entries, i64 %len, i64 %key)",
+            "  %found = icmp sge i64 %idx, 0",
+            "  br i1 %found, label %do_delete, label %not_found",
+            "do_delete:",
+            "  %new_len = sub i64 %len, 1",
+            "  %new_size = mul i64 %new_len, 2",
+            "  %new_entries = call i64 @__new(i64 %new_size)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %do_delete], [%next, %copy_next]",
+            "  %write = phi i64 [0, %do_delete], [%write_next, %copy_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %copied, label %check",
+            "check:",
+            "  %skip = icmp eq i64 %i, %idx",
+            "  br i1 %skip, label %skip_entry, label %copy_entry",
+            "skip_entry:",
+            "  %next_skip = add i64 %i, 1",
+            "  %write_keep = add i64 %write, 0",
+            "  br label %copy_next",
+            "copy_entry:",
+            "  %src_pos = mul i64 %i, 2",
+            "  %src_val = add i64 %src_pos, 1",
+            "  %key_val = call i64 @heap_get(i64 %entries, i64 %src_pos)",
+            "  %val_val = call i64 @heap_get(i64 %entries, i64 %src_val)",
+            "  %dst_pos = mul i64 %write, 2",
+            "  %dst_val = add i64 %dst_pos, 1",
+            "  %_k = call i64 @heap_set(i64 %new_entries, i64 %dst_pos, i64 %key_val)",
+            "  %_v = call i64 @heap_set(i64 %new_entries, i64 %dst_val, i64 %val_val)",
+            "  %next_copy = add i64 %i, 1",
+            "  %write_adv = add i64 %write, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  %next = phi i64 [%next_skip, %skip_entry], [%next_copy, %copy_entry]",
+            "  %write_next = phi i64 [%write_keep, %skip_entry], [%write_adv, %copy_entry]",
+            "  br label %copy",
+            "copied:",
+            "  %_l = call i64 @heap_set(i64 %map, i64 0, i64 %new_len)",
+            "  %_e = call i64 @heap_set(i64 %map, i64 1, i64 %new_entries)",
+            "  ret i1 1",
+            "not_found:",
+            "  ret i1 0",
+            "}",
+            "define i64 @__map_set(i64 %map, i64 %key, i64 %value) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %map, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %map, i64 1)",
+            "  %idx = call i64 @__map_find(i64 %entries, i64 %len, i64 %key)",
+            "  %found = icmp sge i64 %idx, 0",
+            "  br i1 %found, label %update, label %extend",
+            "update:",
+            "  %pos = mul i64 %idx, 2",
+            "  %val_idx = add i64 %pos, 1",
+            "  %_u = call i64 @heap_set(i64 %entries, i64 %val_idx, i64 %value)",
+            "  ret i64 %value",
+            "extend:",
+            "  %new_len = add i64 %len, 1",
+            "  %new_size = mul i64 %new_len, 2",
+            "  %new_entries = call i64 @__new(i64 %new_size)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %extend], [%next, %copy_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %copied, label %copy_body",
+            "copy_body:",
+            "  %src_pos = mul i64 %i, 2",
+            "  %src_val = add i64 %src_pos, 1",
+            "  %key_val = call i64 @heap_get(i64 %entries, i64 %src_pos)",
+            "  %val_val = call i64 @heap_get(i64 %entries, i64 %src_val)",
+            "  %_k = call i64 @heap_set(i64 %new_entries, i64 %src_pos, i64 %key_val)",
+            "  %_v = call i64 @heap_set(i64 %new_entries, i64 %src_val, i64 %val_val)",
+            "  %next = add i64 %i, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  br label %copy",
+            "copied:",
+            "  %key_pos = mul i64 %len, 2",
+            "  %val_pos = add i64 %key_pos, 1",
+            "  %_nk = call i64 @heap_set(i64 %new_entries, i64 %key_pos, i64 %key)",
+            "  %_nv = call i64 @heap_set(i64 %new_entries, i64 %val_pos, i64 %value)",
+            "  %_l = call i64 @heap_set(i64 %map, i64 0, i64 %new_len)",
+            "  %_e = call i64 @heap_set(i64 %map, i64 1, i64 %new_entries)",
+            "  ret i64 %value",
+            "}",
+            "define i64 @__map_keys(i64 %map) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %map, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %map, i64 1)",
+            "  %keys = call i64 @__new(i64 %len)",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %loop_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %done_block, label %body",
+            "body:",
+            "  %src = mul i64 %i, 2",
+            "  %key_val = call i64 @heap_get(i64 %entries, i64 %src)",
+            "  %_k = call i64 @heap_set(i64 %keys, i64 %i, i64 %key_val)",
+            "  %next = add i64 %i, 1",
+            "  br label %loop_next",
+            "loop_next:",
+            "  br label %loop",
+            "done_block:",
+            "  ret i64 %keys",
+            "}",
+            "define i64 @__map_values(i64 %map) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %map, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %map, i64 1)",
+            "  %values = call i64 @__new(i64 %len)",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %loop_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %done_block, label %body",
+            "body:",
+            "  %src = mul i64 %i, 2",
+            "  %val_idx = add i64 %src, 1",
+            "  %val = call i64 @heap_get(i64 %entries, i64 %val_idx)",
+            "  %_v = call i64 @heap_set(i64 %values, i64 %i, i64 %val)",
+            "  %next = add i64 %i, 1",
+            "  br label %loop_next",
+            "loop_next:",
+            "  br label %loop",
+            "done_block:",
+            "  ret i64 %values",
+            "}",
+            "define i64 @__map_entries(i64 %map) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %map, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %map, i64 1)",
+            "  %out = call i64 @__new(i64 %len)",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %loop_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %done_block, label %body",
+            "body:",
+            "  %src = mul i64 %i, 2",
+            "  %val_idx = add i64 %src, 1",
+            "  %key_val = call i64 @heap_get(i64 %entries, i64 %src)",
+            "  %val = call i64 @heap_get(i64 %entries, i64 %val_idx)",
+            "  %pair = call i64 @__new(i64 2)",
+            "  %_k = call i64 @heap_set(i64 %pair, i64 0, i64 %key_val)",
+            "  %_v = call i64 @heap_set(i64 %pair, i64 1, i64 %val)",
+            "  %_o = call i64 @heap_set(i64 %out, i64 %i, i64 %pair)",
+            "  %next = add i64 %i, 1",
+            "  br label %loop_next",
+            "loop_next:",
+            "  br label %loop",
+            "done_block:",
+            "  ret i64 %out",
+            "}",
+            "define i64 @__map_from_entries(i64 %entries_list) {",
+            "entry:",
+            "  %map = call i64 @__map_new()",
+            "  %len = call i64 @heap_len(i64 %entries_list)",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %loop_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %done_block, label %body",
+            "body:",
+            "  %pair = call i64 @heap_get(i64 %entries_list, i64 %i)",
+            "  %key_val = call i64 @heap_get(i64 %pair, i64 0)",
+            "  %val_val = call i64 @heap_get(i64 %pair, i64 1)",
+            "  %_ignored = call i64 @__map_set(i64 %map, i64 %key_val, i64 %val_val)",
+            "  %next = add i64 %i, 1",
+            "  br label %loop_next",
+            "loop_next:",
+            "  br label %loop",
+            "done_block:",
+            "  ret i64 %map",
+            "}",
+            "define i64 @__set_new() {",
+            "entry:",
+            "  %set = call i64 @__new(i64 2)",
+            "  %entries = call i64 @__new(i64 0)",
+            "  %_ignored0 = call i64 @heap_set(i64 %set, i64 0, i64 0)",
+            "  %_ignored1 = call i64 @heap_set(i64 %set, i64 1, i64 %entries)",
+            "  ret i64 %set",
+            "}",
+            "define i64 @__set_len(i64 %set) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %set, i64 0)",
+            "  ret i64 %len",
+            "}",
+            "define i64 @__set_find(i64 %entries, i64 %len, i64 %value) {",
+            "entry:",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %next_loop]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %not_found, label %check",
+            "check:",
+            "  %cur = call i64 @heap_get(i64 %entries, i64 %i)",
+            "  %eq = icmp eq i64 %cur, %value",
+            "  br i1 %eq, label %found, label %next_loop",
+            "next_loop:",
+            "  %next = add i64 %i, 1",
+            "  br label %loop",
+            "found:",
+            "  ret i64 %i",
+            "not_found:",
+            "  ret i64 -1",
+            "}",
+            "define i1 @__set_has(i64 %set, i64 %value) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %set, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %set, i64 1)",
+            "  %idx = call i64 @__set_find(i64 %entries, i64 %len, i64 %value)",
+            "  %found = icmp sge i64 %idx, 0",
+            "  ret i1 %found",
+            "}",
+            "define i1 @__set_add(i64 %set, i64 %value) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %set, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %set, i64 1)",
+            "  %idx = call i64 @__set_find(i64 %entries, i64 %len, i64 %value)",
+            "  %found = icmp sge i64 %idx, 0",
+            "  br i1 %found, label %already, label %extend",
+            "already:",
+            "  ret i1 0",
+            "extend:",
+            "  %new_len = add i64 %len, 1",
+            "  %new_entries = call i64 @__new(i64 %new_len)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %extend], [%next, %copy_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %copied, label %copy_body",
+            "copy_body:",
+            "  %cur = call i64 @heap_get(i64 %entries, i64 %i)",
+            "  %_c = call i64 @heap_set(i64 %new_entries, i64 %i, i64 %cur)",
+            "  %next = add i64 %i, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  br label %copy",
+            "copied:",
+            "  %_n = call i64 @heap_set(i64 %new_entries, i64 %len, i64 %value)",
+            "  %_l = call i64 @heap_set(i64 %set, i64 0, i64 %new_len)",
+            "  %_e = call i64 @heap_set(i64 %set, i64 1, i64 %new_entries)",
+            "  ret i1 1",
+            "}",
+            "define i1 @__set_delete(i64 %set, i64 %value) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %set, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %set, i64 1)",
+            "  %idx = call i64 @__set_find(i64 %entries, i64 %len, i64 %value)",
+            "  %found = icmp sge i64 %idx, 0",
+            "  br i1 %found, label %do_delete, label %not_found",
+            "do_delete:",
+            "  %new_len = sub i64 %len, 1",
+            "  %new_entries = call i64 @__new(i64 %new_len)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %do_delete], [%next, %copy_next]",
+            "  %write = phi i64 [0, %do_delete], [%write_next, %copy_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %copied, label %check",
+            "check:",
+            "  %skip = icmp eq i64 %i, %idx",
+            "  br i1 %skip, label %skip_entry, label %copy_entry",
+            "skip_entry:",
+            "  %next_skip = add i64 %i, 1",
+            "  %write_keep = add i64 %write, 0",
+            "  br label %copy_next",
+            "copy_entry:",
+            "  %cur = call i64 @heap_get(i64 %entries, i64 %i)",
+            "  %_c = call i64 @heap_set(i64 %new_entries, i64 %write, i64 %cur)",
+            "  %next_copy = add i64 %i, 1",
+            "  %write_adv = add i64 %write, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  %next = phi i64 [%next_skip, %skip_entry], [%next_copy, %copy_entry]",
+            "  %write_next = phi i64 [%write_keep, %skip_entry], [%write_adv, %copy_entry]",
+            "  br label %copy",
+            "copied:",
+            "  %_l = call i64 @heap_set(i64 %set, i64 0, i64 %new_len)",
+            "  %_e = call i64 @heap_set(i64 %set, i64 1, i64 %new_entries)",
+            "  ret i1 1",
+            "not_found:",
+            "  ret i1 0",
+            "}",
+            "define i64 @__set_to_list(i64 %set) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %set, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %set, i64 1)",
+            "  %out = call i64 @__new(i64 %len)",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %loop_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %done_block, label %body",
+            "body:",
+            "  %cur = call i64 @heap_get(i64 %entries, i64 %i)",
+            "  %_c = call i64 @heap_set(i64 %out, i64 %i, i64 %cur)",
+            "  %next = add i64 %i, 1",
+            "  br label %loop_next",
+            "loop_next:",
+            "  br label %loop",
+            "done_block:",
+            "  ret i64 %out",
+            "}",
+            "define i64 @__set_from_list(i64 %list) {",
+            "entry:",
+            "  %set = call i64 @__set_new()",
+            "  %len = call i64 @heap_len(i64 %list)",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %loop_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %done_block, label %body",
+            "body:",
+            "  %val = call i64 @heap_get(i64 %list, i64 %i)",
+            "  %_ignored = call i1 @__set_add(i64 %set, i64 %val)",
+            "  %next = add i64 %i, 1",
+            "  br label %loop_next",
+            "loop_next:",
+            "  br label %loop",
+            "done_block:",
+            "  ret i64 %set",
+            "}",
+            "define i64 @__deque_new() {",
+            "entry:",
+            "  %deque = call i64 @__new(i64 2)",
+            "  %entries = call i64 @__new(i64 0)",
+            "  %_ignored0 = call i64 @heap_set(i64 %deque, i64 0, i64 0)",
+            "  %_ignored1 = call i64 @heap_set(i64 %deque, i64 1, i64 %entries)",
+            "  ret i64 %deque",
+            "}",
+            "define i64 @__deque_from_list(i64 %list) {",
+            "entry:",
+            "  %deque = call i64 @__new(i64 2)",
+            "  %len = call i64 @heap_len(i64 %list)",
+            "  %entries = call i64 @__new(i64 %len)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %entry], [%next, %copy_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %copied, label %copy_body",
+            "copy_body:",
+            "  %val = call i64 @heap_get(i64 %list, i64 %i)",
+            "  %_c = call i64 @heap_set(i64 %entries, i64 %i, i64 %val)",
+            "  %next = add i64 %i, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  br label %copy",
+            "copied:",
+            "  %_l = call i64 @heap_set(i64 %deque, i64 0, i64 %len)",
+            "  %_e = call i64 @heap_set(i64 %deque, i64 1, i64 %entries)",
+            "  ret i64 %deque",
+            "}",
+            "define i64 @__deque_len(i64 %deque) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %deque, i64 0)",
+            "  ret i64 %len",
+            "}",
+            "define i64 @__deque_push_left(i64 %deque, i64 %value) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %deque, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %deque, i64 1)",
+            "  %new_len = add i64 %len, 1",
+            "  %new_entries = call i64 @__new(i64 %new_len)",
+            "  %_v = call i64 @heap_set(i64 %new_entries, i64 0, i64 %value)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %entry], [%next, %copy_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %copied, label %copy_body",
+            "copy_body:",
+            "  %val = call i64 @heap_get(i64 %entries, i64 %i)",
+            "  %dst = add i64 %i, 1",
+            "  %_c = call i64 @heap_set(i64 %new_entries, i64 %dst, i64 %val)",
+            "  %next = add i64 %i, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  br label %copy",
+            "copied:",
+            "  %_l = call i64 @heap_set(i64 %deque, i64 0, i64 %new_len)",
+            "  %_e = call i64 @heap_set(i64 %deque, i64 1, i64 %new_entries)",
+            "  ret i64 %new_len",
+            "}",
+            "define i64 @__deque_push_right(i64 %deque, i64 %value) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %deque, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %deque, i64 1)",
+            "  %new_len = add i64 %len, 1",
+            "  %new_entries = call i64 @__new(i64 %new_len)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %entry], [%next, %copy_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %copied, label %copy_body",
+            "copy_body:",
+            "  %val = call i64 @heap_get(i64 %entries, i64 %i)",
+            "  %_c = call i64 @heap_set(i64 %new_entries, i64 %i, i64 %val)",
+            "  %next = add i64 %i, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  br label %copy",
+            "copied:",
+            "  %_v = call i64 @heap_set(i64 %new_entries, i64 %len, i64 %value)",
+            "  %_l = call i64 @heap_set(i64 %deque, i64 0, i64 %new_len)",
+            "  %_e = call i64 @heap_set(i64 %deque, i64 1, i64 %new_entries)",
+            "  ret i64 %new_len",
+            "}",
+            "define i64 @__deque_pop_left(i64 %deque) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %deque, i64 0)",
+            "  %empty = icmp eq i64 %len, 0",
+            "  br i1 %empty, label %err, label %ok",
+            "err:",
+            "  call void @__deque_empty_error()",
+            "  ret i64 0",
+            "ok:",
+            "  %entries = call i64 @heap_get(i64 %deque, i64 1)",
+            "  %val = call i64 @heap_get(i64 %entries, i64 0)",
+            "  %new_len = sub i64 %len, 1",
+            "  %new_entries = call i64 @__new(i64 %new_len)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %ok], [%next, %copy_next]",
+            "  %done = icmp sge i64 %i, %new_len",
+            "  br i1 %done, label %copied, label %copy_body",
+            "copy_body:",
+            "  %src = add i64 %i, 1",
+            "  %cur = call i64 @heap_get(i64 %entries, i64 %src)",
+            "  %_c = call i64 @heap_set(i64 %new_entries, i64 %i, i64 %cur)",
+            "  %next = add i64 %i, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  br label %copy",
+            "copied:",
+            "  %_l = call i64 @heap_set(i64 %deque, i64 0, i64 %new_len)",
+            "  %_e = call i64 @heap_set(i64 %deque, i64 1, i64 %new_entries)",
+            "  ret i64 %val",
+            "}",
+            "define i64 @__deque_pop_right(i64 %deque) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %deque, i64 0)",
+            "  %empty = icmp eq i64 %len, 0",
+            "  br i1 %empty, label %err, label %ok",
+            "err:",
+            "  call void @__deque_empty_error()",
+            "  ret i64 0",
+            "ok:",
+            "  %entries = call i64 @heap_get(i64 %deque, i64 1)",
+            "  %last = sub i64 %len, 1",
+            "  %val = call i64 @heap_get(i64 %entries, i64 %last)",
+            "  %new_len = sub i64 %len, 1",
+            "  %new_entries = call i64 @__new(i64 %new_len)",
+            "  br label %copy",
+            "copy:",
+            "  %i = phi i64 [0, %ok], [%next, %copy_next]",
+            "  %done = icmp sge i64 %i, %new_len",
+            "  br i1 %done, label %copied, label %copy_body",
+            "copy_body:",
+            "  %cur = call i64 @heap_get(i64 %entries, i64 %i)",
+            "  %_c = call i64 @heap_set(i64 %new_entries, i64 %i, i64 %cur)",
+            "  %next = add i64 %i, 1",
+            "  br label %copy_next",
+            "copy_next:",
+            "  br label %copy",
+            "copied:",
+            "  %_l = call i64 @heap_set(i64 %deque, i64 0, i64 %new_len)",
+            "  %_e = call i64 @heap_set(i64 %deque, i64 1, i64 %new_entries)",
+            "  ret i64 %val",
+            "}",
+            "define i64 @__deque_peek_left(i64 %deque) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %deque, i64 0)",
+            "  %empty = icmp eq i64 %len, 0",
+            "  br i1 %empty, label %err, label %ok",
+            "err:",
+            "  call void @__deque_empty_error()",
+            "  ret i64 0",
+            "ok:",
+            "  %entries = call i64 @heap_get(i64 %deque, i64 1)",
+            "  %val = call i64 @heap_get(i64 %entries, i64 0)",
+            "  ret i64 %val",
+            "}",
+            "define i64 @__deque_peek_right(i64 %deque) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %deque, i64 0)",
+            "  %empty = icmp eq i64 %len, 0",
+            "  br i1 %empty, label %err, label %ok",
+            "err:",
+            "  call void @__deque_empty_error()",
+            "  ret i64 0",
+            "ok:",
+            "  %entries = call i64 @heap_get(i64 %deque, i64 1)",
+            "  %last = sub i64 %len, 1",
+            "  %val = call i64 @heap_get(i64 %entries, i64 %last)",
+            "  ret i64 %val",
+            "}",
+            "define i64 @__deque_to_list(i64 %deque) {",
+            "entry:",
+            "  %len = call i64 @heap_get(i64 %deque, i64 0)",
+            "  %entries = call i64 @heap_get(i64 %deque, i64 1)",
+            "  %out = call i64 @__new(i64 %len)",
+            "  br label %loop",
+            "loop:",
+            "  %i = phi i64 [0, %entry], [%next, %loop_next]",
+            "  %done = icmp sge i64 %i, %len",
+            "  br i1 %done, label %done_block, label %body",
+            "body:",
+            "  %cur = call i64 @heap_get(i64 %entries, i64 %i)",
+            "  %_c = call i64 @heap_set(i64 %out, i64 %i, i64 %cur)",
+            "  %next = add i64 %i, 1",
+            "  br label %loop_next",
+            "loop_next:",
+            "  br label %loop",
+            "done_block:",
+            "  ret i64 %out",
+            "}",
         ]
+
+    def _register_type_metadata(self, program: ProgramIR) -> None:
+        self._variant_fields.clear()
+        self._variant_field_types.clear()
+        self._variant_to_type.clear()
+
+        for type_name, type_def in program.types.items():
+            if type_def.variants:
+                for variant_name, fields in type_def.variants.items():
+                    self._variant_to_type[variant_name] = type_name
+                    self._variant_fields[variant_name] = [fname for fname, _ in fields]
+                    for fname, ftype in fields:
+                        llvm_type = self._llvm_type_from_annotation(ftype) or "i64"
+                        self._variant_field_types[(variant_name, fname)] = llvm_type
+            elif type_def.fields is not None:
+                variant_name = type_def.name
+                self._variant_to_type[variant_name] = type_name
+                self._variant_fields[variant_name] = [fname for fname, _ in type_def.fields]
+                for fname, ftype in type_def.fields:
+                    llvm_type = self._llvm_type_from_annotation(ftype) or "i64"
+                    self._variant_field_types[(variant_name, fname)] = llvm_type
+
+    def _register_class_metadata(self, program: ProgramIR) -> None:
+        self._class_layouts.clear()
+        self._class_mros.clear()
+        self._class_ids.clear()
+        self._class_methods.clear()
+
+        for func_name in program.functions:
+            if "." not in func_name:
+                continue
+            class_name, method_name = func_name.split(".", 1)
+            self._class_methods.setdefault(class_name, {})[method_name] = func_name
+
+        def build_mro(name: str) -> List[str]:
+            cached = self._class_mros.get(name)
+            if cached is not None:
+                return cached
+            class_def = program.classes.get(name)
+            if class_def is None:
+                self._class_mros[name] = [name]
+                return [name]
+            mro: List[str] = [name]
+            for base in class_def.bases:
+                if base not in program.classes:
+                    self._lowering_error(f"unknown base class {base} for {name}")
+                for ancestor in build_mro(base):
+                    if ancestor not in mro:
+                        mro.append(ancestor)
+            self._class_mros[name] = mro
+            return mro
+
+        for class_name in program.classes:
+            build_mro(class_name)
+
+        for class_name, mro in self._class_mros.items():
+            layout: List[Tuple[str, str]] = []
+            for cls in mro:
+                class_def = program.classes.get(cls)
+                if class_def is None:
+                    continue
+                for field in class_def.fields:
+                    layout.append((cls, field))
+            self._class_layouts[class_name] = layout
+
+        for idx, class_name in enumerate(sorted(program.classes.keys()), start=1):
+            self._class_ids[class_name] = idx
 
     def _infer_signatures(self, program: ProgramIR) -> Dict[str, _ResolvedFunctionSignature]:
         signatures: Dict[str, _FunctionSignature] = {}
@@ -607,6 +2377,19 @@ class LLVMCodeGenerator:
                 param_types={name: None for name in func.params},
                 return_type=None,
             )
+        for overload in program.operator_overloads:
+            func = program.functions.get(overload.func_name)
+            if func is None or len(func.params) != 2:
+                continue
+            signature = signatures.get(overload.func_name)
+            if signature is None:
+                continue
+            a_ty = self._llvm_type_from_annotation(overload.a_type)
+            b_ty = self._llvm_type_from_annotation(overload.b_type)
+            if a_ty and signature.param_types.get(func.params[0]) is None:
+                signature.param_types[func.params[0]] = a_ty
+            if b_ty and signature.param_types.get(func.params[1]) is None:
+                signature.param_types[func.params[1]] = b_ty
         if not signatures:
             return {}
 
@@ -632,8 +2415,12 @@ class LLVMCodeGenerator:
         stack: List[_TypeValue] = []
         locals_types: Dict[str, Optional[str]] = {}
         locals_literals: Dict[str, int] = {}
+        locals_classes: Dict[str, str] = {}
+        locals_variants: Dict[str, str] = {}
         heap_cell_types: Dict[Tuple[str, int], str] = {}
         signature = signatures[func.name]
+        if "." in func.name and func.params:
+            locals_classes[func.params[0]] = func.name.split(".", 1)[0]
 
         def set_param_type(param_name: str, ty: str) -> None:
             nonlocal changed
@@ -656,6 +2443,13 @@ class LLVMCodeGenerator:
                     f"mixed-type return in LLVM prototype: {signature.return_type} vs {ty}"
                 )
 
+        def resolve_variant_name(value: _TypeValue) -> Optional[str]:
+            if value.variant_name:
+                return value.variant_name
+            if value.source:
+                return locals_variants.get(value.source)
+            return None
+
         for instr in func.instructions:
             if instr.op == Opcode.PUSH_CONST:
                 if instr.arg is None:
@@ -667,7 +2461,7 @@ class LLVMCodeGenerator:
                 elif isinstance(instr.arg, float):
                     stack.append(_TypeValue("double"))
                 elif isinstance(instr.arg, str):
-                    stack.append(_TypeValue("i8*"))
+                    stack.append(_TypeValue("i8*", literal_str=instr.arg))
                 else:
                     raise NotImplementedError(
                         f"constants of type {type(instr.arg).__name__} are not supported in LLVM prototype"
@@ -676,21 +2470,48 @@ class LLVMCodeGenerator:
                 name = instr.arg
                 if name in locals_types:
                     literal = locals_literals.get(name)
-                    stack.append(_TypeValue(locals_types[name], source=name, literal=literal))
+                    stack.append(
+                        _TypeValue(
+                            locals_types[name],
+                            source=name,
+                            literal=literal,
+                            class_name=locals_classes.get(name),
+                            variant_name=locals_variants.get(name),
+                        )
+                    )
                 elif name in signature.param_types:
-                    stack.append(_TypeValue(signature.param_types[name], source=name))
+                    stack.append(
+                        _TypeValue(
+                            signature.param_types[name],
+                            source=name,
+                            class_name=locals_classes.get(name),
+                            variant_name=locals_variants.get(name),
+                        )
+                    )
                 else:
                     raise NotImplementedError(f"unknown variable {name} in LLVM prototype")
             elif instr.op == Opcode.STORE:
                 value = stack.pop()
                 ty = value.ty
-                if ty is None and value.source:
+                if ty is None and value.source and value.source in signature.param_types:
                     ty = signature.param_types[value.source]
                 locals_types[instr.arg] = ty
                 if ty == "i64" and value.literal is not None:
                     locals_literals[instr.arg] = value.literal
                 else:
                     locals_literals.pop(instr.arg, None)
+                if value.class_name:
+                    locals_classes[instr.arg] = value.class_name
+                else:
+                    locals_classes.pop(instr.arg, None)
+                if value.variant_name:
+                    locals_variants[instr.arg] = value.variant_name
+                else:
+                    locals_variants.pop(instr.arg, None)
+                if value.source and value.source != instr.arg:
+                    for (ptr_name, idx), cell_ty in list(heap_cell_types.items()):
+                        if ptr_name == value.source:
+                            heap_cell_types[(instr.arg, idx)] = cell_ty
             elif instr.op == Opcode.BINARY:
                 right = stack.pop()
                 left = stack.pop()
@@ -706,6 +2527,15 @@ class LLVMCodeGenerator:
                     set_param_type(right.source, known_ty)
                     right_ty = known_ty
                 op = instr.arg
+                overload_name = None
+                if known_ty is not None:
+                    overload_name = self._operator_overloads.get((op, known_ty, known_ty))
+                if overload_name is not None:
+                    overload_sig = signatures.get(overload_name)
+                    if overload_sig is None:
+                        raise NotImplementedError(f"unknown operator overload {overload_name}")
+                    stack.append(_TypeValue(overload_sig.return_type))
+                    continue
                 if op in {"+", "-", "*", "/", "%"}:
                     stack.append(_TypeValue(known_ty))
                 elif op in {"==", "!=", "<", ">", "<=", ">="}:
@@ -728,6 +2558,317 @@ class LLVMCodeGenerator:
             elif instr.op == Opcode.CALL:
                 name, argc = instr.arg
                 args = [stack.pop() for _ in range(argc)][::-1]
+                if name == "__import":
+                    if len(args) != 1:
+                        raise NotImplementedError("__import expects 1 arg")
+                    module_name = args[0].literal_str
+                    if module_name is None:
+                        raise NotImplementedError("__import expects a string literal module name")
+                    stack.append(_TypeValue("i8*", literal_str=module_name, class_name=module_name))
+                    continue
+                if name == "Python.import_module":
+                    if len(args) not in {1, 2}:
+                        raise NotImplementedError("Python.import_module expects 1 or 2 args")
+                    module_name = args[0].literal_str
+                    if module_name is None:
+                        raise NotImplementedError("Python.import_module expects a string literal module name")
+                    self._python_modules.add(module_name)
+                    stack.append(_TypeValue("i64", class_name=module_name))
+                    continue
+                if name == "Python.call":
+                    if len(args) < 2 or len(args) > 4:
+                        raise NotImplementedError("Python.call expects 2 to 4 args")
+                    stack.append(_TypeValue("i64"))
+                    continue
+                if name.startswith("Python.") and name not in {"Python.import_module", "Python.call"}:
+                    stack.append(_TypeValue("i64"))
+                    continue
+                if name == "__spawn":
+                    if not args:
+                        raise NotImplementedError("__spawn expects at least 1 arg")
+                    target_name = args[0].literal_str
+                    if target_name is None:
+                        raise NotImplementedError("__spawn expects a string literal target name")
+                    call_args = args[1:]
+                    callee = signatures.get(target_name)
+                    if callee is None:
+                        builtin = self._builtin_signature(target_name)
+                        if builtin is None:
+                            raise NotImplementedError(f"unknown function {target_name} in LLVM prototype")
+                        for param_ty, arg in zip(builtin.param_types.values(), call_args):
+                            if param_ty and arg.ty and param_ty != arg.ty:
+                                raise NotImplementedError(
+                                    f"argument type mismatch for {target_name}: {param_ty} vs {arg.ty}"
+                                )
+                        stack.append(_TypeValue(builtin.return_type))
+                        continue
+                    for param_name, arg in zip(callee.param_types.keys(), call_args):
+                        expected = callee.param_types[param_name]
+                        if expected is None and arg.ty:
+                            callee.param_types[param_name] = arg.ty
+                            changed = True
+                        if arg.ty is None and arg.source and expected:
+                            set_param_type(arg.source, expected)
+                        if expected and arg.ty and expected != arg.ty:
+                            raise NotImplementedError(
+                                f"argument type mismatch for {target_name}.{param_name}: {expected} vs {arg.ty}"
+                            )
+                    stack.append(_TypeValue(callee.return_type))
+                    continue
+                if name == "join":
+                    if len(args) not in {1, 2, 3}:
+                        raise NotImplementedError("join expects between 1 and 3 args")
+                    stack.append(_TypeValue(args[0].ty))
+                    continue
+                if name == "__variant_assume":
+                    if len(args) != 2:
+                        raise NotImplementedError("__variant_assume expects 2 args")
+                    variant_name = args[1].literal_str
+                    if variant_name is None:
+                        raise NotImplementedError("__variant_assume expects a string literal variant name")
+                    value = args[0]
+                    stack.append(
+                        _TypeValue(
+                            value.ty,
+                            source=value.source,
+                            literal=value.literal,
+                            literal_str=value.literal_str,
+                            class_name=value.class_name,
+                            variant_name=variant_name,
+                        )
+                    )
+                    continue
+                if name == "__variant_new":
+                    if len(args) < 2:
+                        raise NotImplementedError("__variant_new expects at least 2 args")
+                    variant_name = args[0].literal_str
+                    if variant_name is None:
+                        raise NotImplementedError("__variant_new expects a string literal variant name")
+                    stack.append(_TypeValue("i64", variant_name=variant_name))
+                    continue
+                if name == "__variant_tag":
+                    if len(args) != 1:
+                        raise NotImplementedError("__variant_tag expects 1 arg")
+                    stack.append(_TypeValue("i8*", literal_str=args[0].variant_name))
+                    continue
+                if name == "__variant_get":
+                    if len(args) != 2:
+                        raise NotImplementedError("__variant_get expects 2 args")
+                    field_name = args[1].literal_str
+                    if field_name is None:
+                        raise NotImplementedError("__variant_get expects a string literal field name")
+                    variant_name = resolve_variant_name(args[0])
+                    if variant_name is None:
+                        field_type = None
+                        for (candidate_variant, candidate_field), ty in self._variant_field_types.items():
+                            if candidate_field == field_name:
+                                if field_type is None:
+                                    field_type = ty
+                                elif field_type != ty:
+                                    raise NotImplementedError(
+                                        f"ambiguous field {field_name} across variants in LLVM prototype"
+                                    )
+                        stack.append(_TypeValue(field_type or "i64"))
+                    else:
+                        field_type = self._variant_field_types.get((variant_name, field_name), "i64")
+                        stack.append(_TypeValue(field_type))
+                    continue
+                if name == "__match_error":
+                    if len(args) != 1:
+                        raise NotImplementedError("__match_error expects 1 arg")
+                    continue
+                if name == "__class_new":
+                    if not args:
+                        raise NotImplementedError("__class_new expects at least 1 arg")
+                    class_name_value = args[0].literal_str
+                    if class_name_value is None:
+                        raise NotImplementedError("__class_new expects a string literal class name")
+                    if (len(args) - 1) % 2 != 0:
+                        raise NotImplementedError("__class_new expects field name/value pairs")
+                    for index in range(1, len(args), 2):
+                        field_name = args[index].literal_str
+                        if field_name is None:
+                            raise NotImplementedError("__class_new expects string literal field names")
+                        value = args[index + 1]
+                        if value.ty is not None:
+                            field_index = self._class_field_index(class_name_value, field_name)
+                            existing = self._class_field_types.get((class_name_value, field_index))
+                            if existing is None:
+                                self._class_field_types[(class_name_value, field_index)] = value.ty
+                                changed = True
+                            elif existing != value.ty:
+                                raise NotImplementedError(
+                                    f"mixed-type field {class_name_value}.{field_name} in LLVM prototype"
+                                )
+                    stack.append(_TypeValue("i64", class_name=class_name_value))
+                    continue
+                if name == "__field_get":
+                    if len(args) != 2:
+                        raise NotImplementedError("__field_get expects 2 args")
+                    obj, field_name = args
+                    class_name_value = obj.class_name
+                    field_literal = field_name.literal_str
+                    if class_name_value is None or field_literal is None:
+                        raise NotImplementedError("__field_get expects class value and field name literal")
+                    if class_name_value in self._module_inits:
+                        raise NotImplementedError("module field access is not yet supported in LLVM prototype")
+                    field_index = self._class_field_index(class_name_value, field_literal)
+                    field_type = self._class_field_types.get((class_name_value, field_index), "i64")
+                    stack.append(_TypeValue(field_type))
+                    continue
+                if name == "__field_set":
+                    if len(args) != 3:
+                        raise NotImplementedError("__field_set expects 3 args")
+                    obj, field_name, value = args
+                    class_name_value = obj.class_name
+                    field_literal = field_name.literal_str
+                    if class_name_value is None or field_literal is None:
+                        raise NotImplementedError("__field_set expects class value and field name literal")
+                    field_index = self._class_field_index(class_name_value, field_literal)
+                    if value.ty is not None:
+                        existing = self._class_field_types.get((class_name_value, field_index))
+                        if existing is None:
+                            self._class_field_types[(class_name_value, field_index)] = value.ty
+                            changed = True
+                        elif existing != value.ty:
+                            raise NotImplementedError(
+                                f"mixed-type field {class_name_value}.{field_literal} in LLVM prototype"
+                            )
+                    stack.append(value)
+                    continue
+                if name == "__method_call":
+                    if len(args) < 2:
+                        raise NotImplementedError("__method_call expects at least 2 args")
+                    obj, method_name, *rest = args
+                    class_name_value = obj.class_name
+                    method_literal = method_name.literal_str
+                    if class_name_value is None or method_literal is None:
+                        raise NotImplementedError("__method_call expects class value and method name literal")
+                    if class_name_value == "Python":
+                        if method_literal == "import_module":
+                            if len(rest) not in {1, 2}:
+                                raise NotImplementedError("Python.import_module expects 1 or 2 args")
+                            module_name = rest[0].literal_str
+                            if module_name is None:
+                                raise NotImplementedError(
+                                    "Python.import_module expects a string literal module name"
+                                )
+                            self._python_modules.add(module_name)
+                            stack.append(_TypeValue("i64", class_name=module_name))
+                            continue
+                        if method_literal == "call":
+                            if len(rest) < 2 or len(rest) > 4:
+                                raise NotImplementedError("Python.call expects 2 to 4 args")
+                            stack.append(_TypeValue("i64"))
+                            continue
+                        raise NotImplementedError(f"unknown Python method {method_literal}")
+                    if class_name_value in {"Map", "Set", "Deque"}:
+                        call_name = f"{class_name_value}.{method_literal}"
+                        args = rest
+                        name = call_name
+                        if name.startswith("Map."):
+                            method = name.split(".", 1)[1]
+                            if method == "set" and len(args) >= 3:
+                                stack.append(_TypeValue(args[2].ty))
+                            elif method == "get" and len(args) == 3:
+                                stack.append(_TypeValue(args[2].ty))
+                            elif method in {"has", "delete"}:
+                                stack.append(_TypeValue("i1"))
+                            elif method in {"len"}:
+                                stack.append(_TypeValue("i64"))
+                            elif method in {"new", "keys", "values", "entries", "from_entries"}:
+                                stack.append(_TypeValue("i64"))
+                            else:
+                                stack.append(_TypeValue("i64"))
+                            continue
+                        if name.startswith("Set."):
+                            method = name.split(".", 1)[1]
+                            if method in {"add", "delete", "has"}:
+                                stack.append(_TypeValue("i1"))
+                            elif method in {"new", "from_list", "to_list"}:
+                                stack.append(_TypeValue("i64"))
+                            else:
+                                stack.append(_TypeValue("i64"))
+                            continue
+                        if name.startswith("Deque."):
+                            stack.append(_TypeValue("i64"))
+                            continue
+                    if class_name_value in self._python_modules:
+                        stack.append(_TypeValue("i64"))
+                        continue
+                    if class_name_value in self._module_inits:
+                        target_name = f"{class_name_value}.{method_literal}"
+                        signature = signatures.get(target_name)
+                        if signature is None:
+                            raise NotImplementedError(f"unknown function {target_name} in LLVM prototype")
+                        if len(rest) != len(signature.param_types):
+                            raise NotImplementedError(
+                                f"function {target_name} expects {len(signature.param_types)} args, got {len(rest)}"
+                            )
+                        for param_name, arg in zip(signature.param_types.keys(), rest):
+                            expected = signature.param_types[param_name]
+                            if expected is None and arg.ty:
+                                signature.param_types[param_name] = arg.ty
+                                changed = True
+                            if arg.ty is None and arg.source and expected:
+                                set_param_type(arg.source, expected)
+                            if expected and arg.ty and expected != arg.ty:
+                                raise NotImplementedError(
+                                    f"argument type mismatch for {target_name}.{param_name}: {expected} vs {arg.ty}"
+                                )
+                        stack.append(_TypeValue(signature.return_type))
+                        continue
+                    target_name = self._resolve_method_target(class_name_value, method_literal)
+                    callee = signatures.get(target_name)
+                    if callee is None:
+                        raise NotImplementedError(f"unknown function {target_name}")
+                    method_args = [obj] + list(rest)
+                    for param_name, arg in zip(callee.param_types.keys(), method_args):
+                        expected = callee.param_types[param_name]
+                        if expected is None and arg.ty:
+                            callee.param_types[param_name] = arg.ty
+                            changed = True
+                        if arg.ty is None and arg.source and expected:
+                            set_param_type(arg.source, expected)
+                        if expected and arg.ty and expected != arg.ty:
+                            raise NotImplementedError(
+                                f"argument type mismatch for {target_name}.{param_name}: {expected} vs {arg.ty}"
+                            )
+                    stack.append(_TypeValue(callee.return_type))
+                    continue
+                if name.startswith("Map."):
+                    method = name.split(".", 1)[1]
+                    if method == "set" and len(args) >= 3:
+                        stack.append(_TypeValue(args[2].ty))
+                    elif method == "get" and len(args) == 3:
+                        stack.append(_TypeValue(args[2].ty))
+                    elif method in {"has", "delete"}:
+                        stack.append(_TypeValue("i1"))
+                    elif method in {"len"}:
+                        stack.append(_TypeValue("i64"))
+                    elif method in {"new", "keys", "values", "entries", "from_entries"}:
+                        stack.append(_TypeValue("i64"))
+                    else:
+                        stack.append(_TypeValue("i64"))
+                    continue
+                if name.startswith("Set."):
+                    method = name.split(".", 1)[1]
+                    if method in {"add", "delete", "has"}:
+                        stack.append(_TypeValue("i1"))
+                    elif method in {"new", "from_list", "to_list"}:
+                        stack.append(_TypeValue("i64"))
+                    else:
+                        stack.append(_TypeValue("i64"))
+                    continue
+                if name.startswith("Deque."):
+                    method = name.split(".", 1)[1]
+                    if method in {"new", "from_list", "to_list", "len", "push_left", "push_right"}:
+                        stack.append(_TypeValue("i64"))
+                    elif method in {"pop_left", "pop_right", "peek_left", "peek_right"}:
+                        stack.append(_TypeValue("i64"))
+                    else:
+                        stack.append(_TypeValue("i64"))
+                    continue
                 if name == "heap_set":
                     self._record_heap_cell_type_inference(args, heap_cell_types)
                     stack.append(_TypeValue("i64"))
@@ -803,6 +2944,32 @@ class LLVMCodeGenerator:
             )
         if name == "delete":
             return _ResolvedFunctionSignature(param_types={"ptr": "i64"}, return_type="i64")
+        return None
+
+    def _register_operator_overloads(
+        self, overloads: List[OperatorOverloadIR]
+    ) -> Dict[Tuple[str, str, str], str]:
+        registered: Dict[Tuple[str, str, str], str] = {}
+        for overload in overloads:
+            a_ty = self._llvm_type_from_annotation(overload.a_type)
+            b_ty = self._llvm_type_from_annotation(overload.b_type)
+            if a_ty is None or b_ty is None:
+                continue
+            registered[(overload.op, a_ty, b_ty)] = overload.func_name
+        return registered
+
+    def _llvm_type_from_annotation(self, name: str) -> Optional[str]:
+        normalized = name.lower()
+        if normalized in {"number", "int", "integer"}:
+            return "i64"
+        if normalized in {"float", "double"}:
+            return "double"
+        if normalized in {"bool", "boolean"}:
+            return "i1"
+        if normalized in {"string", "str"}:
+            return "i8*"
+        if normalized == "null":
+            return "i8*"
         return None
 
     def _resolve_heap_set_name(self, args: List[_StackValue]) -> str:

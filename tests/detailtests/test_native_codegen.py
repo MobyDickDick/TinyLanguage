@@ -15,8 +15,8 @@ def _assert_native_matches(source: str) -> None:
 
 def test_arithmetic_and_print_roundtrip():
     source = """
-    define a = 1 + 2 * 3;
-    define b = (a - 2) / 2;
+    def a = 1 + 2 * 3;
+    def b = (a - 2) / 2;
     print(a, b);
     """
     _assert_native_matches(source)
@@ -38,8 +38,8 @@ def test_function_calls_and_recursion():
 
 def test_control_flow_and_assignment():
     source = """
-    define i = 0;
-    define acc = 0;
+    def i = 0;
+    def acc = 0;
 
     while (i < 4) {
         if (i == 2) { acc = acc + 3; } else { acc = acc + i; }
@@ -53,8 +53,8 @@ def test_control_flow_and_assignment():
 
 def test_boolean_formatting_matches_interpreter():
     source = """
-    define a = true;
-    define b = false;
+    def a = true;
+    def b = false;
     print(a, b, a && b, a || b);
     """
     interpreter_output = compile_and_run(source)
@@ -64,7 +64,7 @@ def test_boolean_formatting_matches_interpreter():
 
 def test_heap_roundtrip_matches_interpreter():
     source = """
-    define p = new(2);
+    def p = new(2);
     heap_set(p, 0, 10);
     heap_set(p, 1, 20);
     print(heap_get(p, 0), heap_get(p, 1));
@@ -74,16 +74,38 @@ def test_heap_roundtrip_matches_interpreter():
 
 def test_array_literal_roundtrip_matches_interpreter():
     source = """
-    define p = new[7, 8, 9];
+    def p = new[7, 8, 9];
     print(heap_get(p, 0), heap_get(p, 2));
+    """
+    _assert_native_matches(source)
+
+
+def test_collections_roundtrip_matches_interpreter():
+    source = """
+    def m = Map.new();
+    def set_a = Map.set(m, "a", 1);
+    def set_b = Map.set(m, "b", 2);
+    print(Map.get(m, "a", 0));
+    print(Map.has(m, "c"));
+    def keys = Map.keys(m);
+    print(heap_get(keys, 0));
+
+    def s = Set.new();
+    print(Set.add(s, "x"));
+    print(Set.has(s, "x"));
+
+    def q = Deque.new(new[1, 2]);
+    def pushed = Deque.push_left(q, 0);
+    print(Deque.pop_right(q));
+    print(set_a, set_b, pushed);
     """
     _assert_native_matches(source)
 
 
 def test_native_cli_flag_executes_program(tmp_path):
     script = """
-    define x = 2;
-    define y = 3;
+    def x = 2;
+    def y = 3;
     fn add(a, b) { return a + b; }
     print(add(x, y));
     """
@@ -101,10 +123,132 @@ def test_native_cli_flag_executes_program(tmp_path):
     assert result.stdout.strip() == "5"
 
 
+def test_native_backend_supports_module_imports(tmp_path):
+    module_src = """
+    def value = 7;
+    fn add(a, b) { return a + b; }
+    fn get_value() { return value; }
+    """
+    main_src = """
+    import helpers;
+    print(helpers.add(2, 3));
+    print(helpers.value);
+    """
+    module_path = tmp_path / "helpers.tiny"
+    module_path.write_text(module_src)
+    main_path = tmp_path / "main.tiny"
+    main_path.write_text(main_src)
+
+    interpreter_output = compile_and_run(
+        main_path.read_text(),
+        module_path=main_path,
+        module_namespace="main",
+    )
+    native_output = run_with_native_backend(
+        main_path.read_text(),
+        module_path=main_path,
+        module_namespace="main",
+    )
+    assert native_output == interpreter_output
+
+
+def test_class_methods_roundtrip_matches_interpreter():
+    source = """
+    class Point {
+        x: number;
+        y: number;
+        fn sum(self) { return self.x + self.y; }
+        fn move(self, dx, dy) {
+            self.x = self.x + dx;
+            self.y = self.y + dy;
+            return self.sum();
+        }
+    }
+
+    def p = new Point { x: 2; y: 3 };
+    print(p.sum());
+    print(p.move(1, 2));
+    print(p.x, p.y);
+    """
+    _assert_native_matches(source)
+
+
+def test_match_and_variants_roundtrip_matches_interpreter():
+    source = """
+    type Result = sum {
+        Ok(value: Number);
+        Err(msg: String);
+    }
+
+    fn unwrap(result) {
+        return match(result) {
+            case Ok(v) => v;
+            case Err(_) => 0;
+        };
+    }
+
+    def ok = Ok { value: 7 };
+    def err = Err { msg: "oops" };
+    print(unwrap(ok));
+    print(unwrap(err));
+    """
+    _assert_native_matches(source)
+
+
+def test_operator_overloads_roundtrip_matches_interpreter():
+    source = """
+    class Counter {
+        total: number;
+        tag: string;
+    }
+
+    operator + (a: Counter, b: Counter) -> Counter {
+        return new Counter { total: a.total + b.total; tag: a.tag + "+" + b.tag };
+    }
+
+    operator == (a: Counter, b: Counter) -> Bool {
+        return a.total == b.total && a.tag == b.tag;
+    }
+
+    def left = new Counter { total: 2; tag: "L" };
+    def right = new Counter { total: 3; tag: "R" };
+    def combined = left + right;
+    print(combined.total, combined.tag);
+
+    if (left == right) {
+        print("equal");
+    } else {
+        print("diff");
+    }
+    """
+    _assert_native_matches(source)
+
+
+def test_python_interop_roundtrip_matches_interpreter():
+    source = """
+    def math = Python.import_module("math", new["sqrt", "tau"]);
+    print(math.sqrt(9));
+    print(math.tau);
+    def chars = Python.call("builtins", "list", new["ab"], new["list"]);
+    print(heap_get(chars, 0));
+    """
+    _assert_native_matches(source)
+
+
+def test_python_call_requires_allowlist_in_native_backend():
+    source = """
+    def value = Python.call("math", "sqrt", new[9]);
+    print(value);
+    """
+
+    with pytest.raises(RuntimeError):
+        run_with_native_backend(source)
+
+
 def test_unsupported_constructs_signal_not_implemented():
     source = """
-    class Example { value: number; }
-    print(Example);
+    def x = { a: 1 };
+    print(x);
     """
 
     with pytest.raises(NotImplementedError):

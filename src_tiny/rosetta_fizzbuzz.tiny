@@ -3,7 +3,7 @@
 
 fn is_divisible(n, divisor) {
     // TinyLanguage does not expose the `%` operator, so use repeated subtraction.
-    define remainder = n;
+    def remainder = n;
     while (remainder >= divisor) {
         remainder = remainder - divisor;
     }
@@ -11,7 +11,7 @@ fn is_divisible(n, divisor) {
 }
 
 fn fizzbuzz(limit) {
-    define n = 1;
+    def n = 1;
     while (n <= limit) {
         if (is_divisible(n, 15)) { print("FizzBuzz"); }
         else {
@@ -25,4 +25,4 @@ fn fizzbuzz(limit) {
     }
 }
 
-define _ = fizzbuzz(16);
+def _ = fizzbuzz(16);

@@ -10,7 +10,7 @@ Quick reference to core language features with links to the full `.tiny` demos. 
 
 ## Core building blocks
 
-- **Variables & arithmetic**: `src_tiny/demo.tiny` shows `define`, basic operators, and `print`.
+- **Variables & arithmetic**: `src_tiny/demo.tiny` shows `def`, basic operators, and `print`.
 - **Control flow**: `src_tiny/all_features.tiny` includes `if`/`else`, `while`, and required returns.
 - **Functions**: `src_tiny/all_features.tiny` defines free functions and demonstrates positional arguments.
 

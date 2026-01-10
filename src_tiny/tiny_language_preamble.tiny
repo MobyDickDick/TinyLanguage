@@ -1,13 +1,13 @@
 // TinyLanguage wrapper for src/tiny_language_preamble.py.
 // Exposes shared constants and error formatting helpers via Python interop.
 
-define __PY_ALLOW = new["BUILTINS", "KEYWORDS", "TinyLangError", "format_error"];
+def __PY_ALLOW = new["BUILTINS", "KEYWORDS", "TinyLangError", "format_error"];
 
-define __PY = Python.import_module("tiny_language_preamble", __PY_ALLOW);
+def __PY = Python.import_module("tiny_language_preamble", __PY_ALLOW);
 
-define BUILTINS = __PY.BUILTINS;
-define KEYWORDS = __PY.KEYWORDS;
-define TinyLangError = __PY.TinyLangError;
-define format_error = __PY.format_error;
+def BUILTINS = __PY.BUILTINS;
+def KEYWORDS = __PY.KEYWORDS;
+def TinyLangError = __PY.TinyLangError;
+def format_error = __PY.format_error;
 
-define _exports = new[BUILTINS, KEYWORDS, TinyLangError, format_error];
+def _exports = new[BUILTINS, KEYWORDS, TinyLangError, format_error];

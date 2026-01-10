@@ -17,15 +17,15 @@ def test_tiny_native_backend_smoke() -> None:
             CODEGEN_SRC,
             NATIVE_VM_SRC,
             """
-define stmts = new[
+def stmts = new[
     Let("a", Num("3", Null, Null), Null, Null, Null),
     Print(new[Var("a", Null, Null)], Null, Null)
 ];
 
-define codegen = NativeCodeGenerator();
-define program = codegen.compile_program(stmts);
-define vm = NativeVM();
-define out = vm.run(program);
+def codegen = NativeCodeGenerator();
+def program = codegen.compile_program(stmts);
+def vm = NativeVM();
+def out = vm.run(program);
 print(out);
 """,
         ]

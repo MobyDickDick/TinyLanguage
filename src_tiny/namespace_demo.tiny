@@ -4,6 +4,6 @@ namespace Tools { // Begin namespace block.
     fn label(x) { return "#" + x; } // Prefixes a string with a hash symbol.
 }
 
-define value = Tools.double(5); // Call the namespaced function.
+def value = Tools.double(5); // Call the namespaced function.
 print(value); // Print the doubled result.
 print(Tools.label("done")); // Show the label function inside the namespace.

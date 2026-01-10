@@ -10,7 +10,7 @@
 // JSON.stringify(value) -> JSON-String aus Listen, Maps, Strings, Zahlen usw.
 //
 // Beispiel:
-// define path = "tmp/data.json";
+// def path = "tmp/data.json";
 // File.write(path, "{\\"x\\": [1, 2, 3]}");
-// define data = JSON.parse(File.read(path));
+// def data = JSON.parse(File.read(path));
 // print(Map.get(data, "x", Null));

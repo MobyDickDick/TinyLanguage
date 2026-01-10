@@ -46,11 +46,11 @@ def debug_server(tmp_path):
         "\n".join(
             [
                 "fn add(a, b) {",
-                "    define tmp = a + b;",
+                "    def tmp = a + b;",
                 "    return tmp;",
                 "}",
                 "",
-                "define result = add(2, 3);",
+                "def result = add(2, 3);",
                 "print(result);",
             ]
         ),
@@ -266,9 +266,9 @@ def test_breakpoints_can_be_added_after_launch(tmp_path):
     program.write_text(
         "\n".join(
             [
-                "define x = 0;",
+                "def x = 0;",
                 "print(x);",
-                "define x = 1;",
+                "def x = 1;",
                 "print(x);",
             ]
         ),

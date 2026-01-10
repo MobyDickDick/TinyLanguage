@@ -1,7 +1,7 @@
 // TinyLanguage wrapper for src/tiny_language.py.
 // Exposes stitched TinyLanguage API through Python interop.
 
-define __PY_ALLOW = new[
+def __PY_ALLOW = new[
     "Lexer",
     "Parser",
     "Runtime",
@@ -27,16 +27,16 @@ define __PY_ALLOW = new[
     "main"
 ];
 
-define __PY = Python.import_module("tiny_language", __PY_ALLOW);
+def __PY = Python.import_module("tiny_language", __PY_ALLOW);
 
-define Lexer = __PY.Lexer;
-define Parser = __PY.Parser;
-define Runtime = __PY.Runtime;
-define Environment = __PY.Environment;
-define TinyLangError = __PY.TinyLangError;
-define BUILTINS = __PY.BUILTINS;
-define KEYWORDS = __PY.KEYWORDS;
-define format_error = __PY.format_error;
+def Lexer = __PY.Lexer;
+def Parser = __PY.Parser;
+def Runtime = __PY.Runtime;
+def Environment = __PY.Environment;
+def TinyLangError = __PY.TinyLangError;
+def BUILTINS = __PY.BUILTINS;
+def KEYWORDS = __PY.KEYWORDS;
+def format_error = __PY.format_error;
 fn compile_and_run(src) {
     return __PY.compile_and_run(src);
 }
@@ -88,12 +88,12 @@ fn run_with_python_bytecode_backend(src) {
 fn run_file(path) {
     return __PY.run_file(path);
 }
-define ModuleResolver = __PY.ModuleResolver;
+def ModuleResolver = __PY.ModuleResolver;
 fn main(argv) {
     return __PY.main(argv);
 }
 
-define _exports = new[
+def _exports = new[
     Lexer,
     Parser,
     Runtime,

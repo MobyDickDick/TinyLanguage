@@ -21,8 +21,8 @@ def expect_compile_error(src: str, pattern: str) -> None:
 def test_double_definition_error():
     expect_compile_error(
         """
-        define a = 2 + 3;
-        define a = 4 + 5;
+        def a = 2 + 3;
+        def a = 4 + 5;
         """,
         r"variable a defined twice in a row",
     )
@@ -53,7 +53,7 @@ def test_prints_and_returns(capsys):
 def test_reassign_with_different_type_errors():
     expect_compile_error(
         """
-        define msg = "hi";
+        def msg = "hi";
         msg = 0.5;
         print(msg);
         """,
@@ -81,7 +81,7 @@ def test_inferred_return_type_stable_across_calls():
 def test_lexer_basics_define():
     out = run_tiny(
         """
-        define a = 7;
+        def a = 7;
         print(a);
         """
     )
@@ -91,7 +91,7 @@ def test_lexer_basics_define():
 def test_arithmetic_and_print_with_define():
     out = run_tiny(
         """
-        define a = 7 + 5 * 2;
+        def a = 7 + 5 * 2;
         print(a);
         """
     )
@@ -108,12 +108,21 @@ def test_power_operator():
     assert out == "8\n512\n"
 
 
-def test_power_operator_requires_integer_exponent():
-    expect_compile_error(
+def test_power_operator_allows_fractional_exponent():
+    out = run_tiny(
         """
         print(2 ^ 0.5);
+        """
+    )
+    assert out == "1.4142135623730951\n"
+
+
+def test_power_operator_rejects_fractional_negative_base():
+    expect_compile_error(
+        """
+        print((-1) ^ 0.5);
         """,
-        r"exponent for \^ must be an integer",
+        r"fractional exponent for \^ requires a non-negative base",
     )
 
 
@@ -127,13 +136,14 @@ def test_power_function_allows_fractional_exponent():
     assert out == "9\n1.4142135623730951\n"
 
 
-def test_scientific_notation_not_supported():
-    expect_compile_error(
+def test_scientific_notation_supported():
+    out = run_tiny(
         """
         print(1.2e2);
-        """,
-        r"expected SYM \)"
+        print(1e3);
+        """
     )
+    assert out == "120.0\n1000\n"
 
 
 def test_comparisons():
@@ -169,7 +179,7 @@ def test_boolean_literals_and_logic():
 def test_len_and_variadic_print():
     out = run_tiny(
         """
-        define arr = new[1, 2, 3, 4];
+        def arr = new[1, 2, 3, 4];
         print(len(arr));
         print(len("hi!"));
         print("values", 1 < 2, len(arr));
@@ -182,7 +192,7 @@ def test_len_and_variadic_print():
 def test_switch_statement():
     out = run_tiny(
         """
-        define value = 2;
+        def value = 2;
         switch (value) {
             case 1: { print("one"); }
             case 2: { print("two"); }
@@ -205,7 +215,7 @@ def test_function_return_call():
             print(a);     // beide Parameter werden verwendet
             return a + b;
         }
-        define r = add(10, 5);
+        def r = add(10, 5);
         print(r);
         """
     )
@@ -236,14 +246,14 @@ def test_namespaced_functions_and_scoping():
 def test_while_if_else():
     out = run_tiny(
         """
-        define i = 0;
-        define s = 0;
+        def i = 0;
+        def s = 0;
         while (i < 4) {
             if (i == 2) {
-                define t = 100;
+                def t = 100;
                 print(t);
             } else {
-                define u = 1;
+                def u = 1;
                 print(u);
             }
             s = s + 1;
@@ -258,7 +268,7 @@ def test_while_if_else():
 def test_heap_ops_and_tag():
     out = run_tiny(
         """
-        define p = new(3);
+        def p = new(3);
 
         { e } = heap_set(p, 0, 11); print(e.code);
         { e } = heap_set(p, 1, 22); print(e.code);
@@ -280,7 +290,7 @@ def test_pointer_of_arrays():
     out = run_tiny(
         """
         // flat init
-        define p = new(3);
+        def p = new(3);
         { e } = heap_set(p, 0, 11); print(e.code);
         { e } = heap_set(p, 1, 22); print(e.code);
         { e } = heap_set(p, 2, 33); print(e.code);
@@ -289,16 +299,16 @@ def test_pointer_of_arrays():
         print(heap_get(p, 2));
 
         // literal init
-        define q = new[7, 8, 9];
+        def q = new[7, 8, 9];
         print(heap_get(q, 0));
         print(heap_get(q, 1));
         print(heap_get(q, 2));
 
         // nested: array of pointers
-        define a = new[1, 2, 3];
-        define b = new[4, 5];
+        def a = new[1, 2, 3];
+        def b = new[4, 5];
 
-        define r = new(2);
+        def r = new(2);
         { e } = heap_set(r, 0, a); print(e.code);
         { e } = heap_set(r, 1, b); print(e.code);
 
@@ -337,7 +347,7 @@ def test_classes_fields_methods():
             fn sum(self) { return self.x + self.y; }
         }
 
-        define p = new Point { x: 0; y: 0; };
+        def p = new Point { x: 0; y: 0; };
         p = p.init(2, 3);
         p = p.move(1, -1);
         print(p.x);
@@ -387,7 +397,7 @@ def test_class_inheritance_with_conflicting_fields_and_methods():
             fn base_calls(self) { return BaseOne.get() + BaseTwo.get() + 0 * self.myProperty; }
         }
 
-        define d = new Derived { };
+        def d = new Derived { };
         d = d.init(1, 2, 3);
         print(d.totals());
         print(d.base_calls());
@@ -409,7 +419,7 @@ def test_must_use_unused_param_function():
 
 def test_call_stmt_counts_param_usage():
     src = """
-    define p = new(1);
+    def p = new(1);
 
     fn init(ptr) {
         heap_set(ptr, 0, 99);
@@ -467,7 +477,7 @@ def test_inconsistent_return_signature_in_function():
 
 def test_must_use_unused_local_binding_top_level():
     src = """
-    define x = 1;
+    def x = 1;
     print(42);
     """
     expect_compile_error(src, r"unused local binding\(s\): x")
@@ -477,7 +487,7 @@ def test_run_file_executes_source(tmp_path):
     src_file = tmp_path / "prog.tiny"
     src_file.write_text(
         """
-        define x = 5;
+        def x = 5;
         print(x + 1);
         """
     )
@@ -504,7 +514,7 @@ def test_main_eval_executes_snippet(capsys):
 
 
 def test_main_eval_reports_error(capsys):
-    exit_code = main(["--eval", "define x = ;"])
+    exit_code = main(["--eval", "def x = ;"])
     captured = capsys.readouterr()
 
     assert exit_code == 1
@@ -523,7 +533,7 @@ def test_repl_executes_lines(monkeypatch, capsys):
 
 
 def test_repl_reports_errors(monkeypatch, capsys):
-    monkeypatch.setattr("sys.stdin", io.StringIO("define y = ;\n"))
+    monkeypatch.setattr("sys.stdin", io.StringIO("def y = ;\n"))
 
     exit_code = main(["--repl"])
     captured = capsys.readouterr()
@@ -568,7 +578,7 @@ def test_console_read_line_blocked_when_dap_disables_stdin(monkeypatch):
 def test_must_use_unused_local_binding_function():
     src = """
     fn g(a) {
-        define t = 123;
+        def t = 123;
         print(a);
         return a;
     }
@@ -608,7 +618,7 @@ def test_unused_binding_in_nested_block_function():
     src = """
     fn g(a) {
         if (true) {
-            define t = 99;
+            def t = 99;
         }
         return a;
     }
@@ -621,7 +631,7 @@ def test_unused_binding_in_nested_block_method():
     class Box {
         fn touch(self, v) {
             while (false) {
-                define tmp = v;
+                def tmp = v;
             }
             return self;
         }
@@ -632,7 +642,7 @@ def test_unused_binding_in_nested_block_method():
 
 def test_unused_binding_must_be_used_on_all_paths():
     src = """
-    define x = 1;
+    def x = 1;
     if (true) {
         print(x);
     } else {
@@ -647,7 +657,7 @@ def test_unused_binding_must_be_used_on_all_paths():
 def test_binding_used_in_all_branches_is_ok():
     src = """
     fn demo(flag) {
-        define label = "hi";
+        def label = "hi";
         if (flag) {
             print(label);
         } else {
@@ -664,7 +674,7 @@ def test_binding_used_in_all_branches_is_ok():
 
 def test_loop_skipped_counts_as_unused():
     src = """
-    define msg = "once";
+    def msg = "once";
     while (false) {
         print(msg);
     }
@@ -733,7 +743,7 @@ def test_ok_function_call_as_argument():
 def test_destructure_requires_all_call_args():
     src = """
     fn f(a) { return { a: a + 1, e: 0 }; }
-    define a = 3;
+    def a = 3;
     { a, e } = f(a);
     print(a);
     print(e);
@@ -745,7 +755,7 @@ def test_destructure_requires_all_call_args():
 def test_destructure_missing_input_variable_fails():
     src = """
     fn f(a) { return { a: a + 1, e: 0 }; }
-    define a = 3;
+    def a = 3;
     { b, e } = f(a);
     """
     expect_compile_error(src, r"destructuring call to f must include output for argument\(s\): a")
@@ -762,7 +772,7 @@ def test_method_param_mutation_returned_allows_change():
         }
     }
 
-    define b = new Box { value: 1; };
+    def b = new Box { value: 1; };
     b = b.set(5);
     print(b.value);
     """
@@ -773,7 +783,7 @@ def test_method_param_mutation_returned_allows_change():
 
 def test_error_message_for_missing_heap_index():
     src = """
-    define a = new[1, 2];
+    def a = new[1, 2];
     print(heap_get(a, 5));
     print(errorMessage);
     """
@@ -785,7 +795,7 @@ def test_error_message_for_missing_heap_index():
 
 def test_error_message_for_double_delete():
     src = """
-    define p = new(1);
+    def p = new(1);
     delete(p);
     delete(p);
     print(errorMessage);
@@ -809,8 +819,8 @@ def test_error_message_for_unknown_delete():
 
 def test_heap_leak_report_tracks_live_allocations():
     src = """
-    define first = new(2);
-    define second = new[1, 2, 3];
+    def first = new(2);
+    def second = new[1, 2, 3];
     print(len(second));
     delete(first);
     """
@@ -829,7 +839,7 @@ def test_heap_leak_report_tracks_live_allocations():
 
 def test_error_message_for_missing_field():
     src = """
-    define o = { existing: 1; };
+    def o = { existing: 1; };
     print(o.missing);
     print(errorMessage);
     """
@@ -840,7 +850,7 @@ def test_error_message_for_missing_field():
 
 
 def test_parser_error_reports_context():
-    expect_compile_error("define a = ;", r"unexpected token SYM \(line 1, col 12\)")
+    expect_compile_error("def a = ;", r"unexpected token SYM \(line 1, col 9\)")
 
 
 def test_runtime_error_reports_context():
@@ -901,13 +911,13 @@ def test_number_class_with_operator_overloads():
     operator * (a: Number, b: Number) -> Number { return Number(a.value * b.value); }
     operator / (a: Number, b: Number) -> Number { return Number(a.value / b.value); }
 
-    define a = Number(5);
-    define b = Number(7.5);
+    def a = Number(5);
+    def b = Number(7.5);
 
-    define c = a + b;
-    define d = a - b;
-    define e = a * b;
-    define f = a / b;
+    def c = a + b;
+    def d = a - b;
+    def e = a * b;
+    def f = a / b;
 
     print(c.value);
     print(d.value);
@@ -927,8 +937,8 @@ def test_spawn_and_join():
             return x + y;
         }
 
-        define first = spawn add(2, 3);
-        define second = spawn add(4, 5);
+        def first = spawn add(2, 3);
+        def second = spawn add(4, 5);
 
         print(join(first));
         print(join(second));

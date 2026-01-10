@@ -19,13 +19,13 @@ def test_class_operator_overloads_with_numbers(run_tiny_source):
     tag(20, "number");
     tag(3, "number");
 
-    define base = Counter(10, "base");
+    def base = Counter(10, "base");
 
-    define added_right = base + 5;
-    define added_left = 5 + base;
+    def added_right = base + 5;
+    def added_left = 5 + base;
 
-    define sub_right = base - 3;
-    define sub_left = 20 - base;
+    def sub_right = base - 3;
+    def sub_left = 20 - base;
 
     print(added_right.total);
     print(added_right.tag);
@@ -36,9 +36,9 @@ def test_class_operator_overloads_with_numbers(run_tiny_source):
     print(sub_left.total);
     print(sub_left.tag);
 
-    define same_value_and_tag = Counter(15, "base+n");
-    define same_value_diff_tag = Counter(15, "other");
-    define diff_value = Counter(14, "base+n");
+    def same_value_and_tag = Counter(15, "base+n");
+    def same_value_diff_tag = Counter(15, "other");
+    def diff_value = Counter(14, "base+n");
 
     print(added_right == same_value_and_tag);
     print(added_right == same_value_diff_tag);

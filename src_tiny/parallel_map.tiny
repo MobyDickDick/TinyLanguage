@@ -2,25 +2,25 @@
 
 fn slow_square(value) {
     // Simple busy loop to simulate work.
-    define i = 0;
+    def i = 0;
     while (i < 100000) { i = i + 1; }
     return value * value;
 }
 
-define tasks = new(3);
+def tasks = new(3);
 heap_set(tasks, 0, spawn slow_square(2));
 heap_set(tasks, 1, spawn slow_square(3));
 heap_set(tasks, 2, spawn slow_square(4));
 
-define first = join(heap_get(tasks, 0), 1, true); // cancel if it doesn't finish immediately
+def first = join(heap_get(tasks, 0), 1, true); // cancel if it doesn't finish immediately
 print("first done?", first.done, first.cancelled);
 
-define second = join(heap_get(tasks, 1), 0); // poll without blocking
+def second = join(heap_get(tasks, 1), 0); // poll without blocking
 print("second running?", second.done, second.cancelled);
 
 // Finish outstanding work, allowing cancelled tasks to report their state without raising errors.
-define second_result = join(heap_get(tasks, 1));
-define third_status = join(heap_get(tasks, 2), 100);
+def second_result = join(heap_get(tasks, 1));
+def third_status = join(heap_get(tasks, 2), 100);
 print("results", join(heap_get(tasks, 0), 0).cancelled, second_result, third_status.result);
 
 // Output:

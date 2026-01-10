@@ -76,7 +76,12 @@ def _execute(
     if backend == "python":
         return run_with_python_backend(source), False
     if backend == "native":
-        return run_with_native_backend(source), False
+        namespace = _module_namespace_for_path(module_path) if module_path else None
+        return run_with_native_backend(
+            source,
+            module_namespace=namespace,
+            module_path=module_path,
+        ), False
     if backend == "native-python-bytecode":
         return run_with_python_bytecode_backend(source), False
     raise SystemExit(f"Unknown backend: {backend}")
@@ -143,6 +148,7 @@ def main(argv: list[str] | None = None) -> int:
                 target_triple=args.llvm_target_triple,
                 data_layout=args.llvm_data_layout,
                 llvm_opt=args.llvm_opt,
+                module_path=module_path,
             )
         except TinyLangError as err:
             sys.stderr.write(_format_error_for_source(source, err) + os.linesep)

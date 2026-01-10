@@ -87,4 +87,4 @@ def test_emit_llvm_ir_via_c_cli(tmp_path: Path) -> None:
     )
 
     assert out_path.exists()
-    assert "define" in out_path.read_text(encoding="utf-8")
+    assert "def" in out_path.read_text(encoding="utf-8")

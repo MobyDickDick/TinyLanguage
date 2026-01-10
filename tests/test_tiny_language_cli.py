@@ -62,7 +62,7 @@ def test_cli_supports_inline_source_and_backends():
 
 
 def test_cli_renders_spans_on_errors(tmp_path):
-    program = "define x = 1; @"
+    program = "def x = 1; @"
     file_path = tmp_path / "bad.tiny"
     file_path.write_text(program, encoding="utf-8")
 
@@ -89,9 +89,9 @@ def test_cli_supports_positional_path(tmp_path):
 def test_cli_respects_copy_on_call_env():
     program = (
         "fn mutate(a) { heap_set(a, 0, 9); }\n"
-        "define xs = new(1);\n"
+        "def xs = new(1);\n"
         "heap_set(xs, 0, 1);\n"
-        "define _ = mutate(xs);\n"
+        "def _ = mutate(xs);\n"
         "print(heap_get(xs, 0));"
     )
 

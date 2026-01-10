@@ -13,7 +13,7 @@ Legend:
 | Feature | Interpreter | Native VM (`--native-backend`) | C/LLVM pipeline (`--emit-llvm`, `--emit-exe`) |
 | --- | --- | --- | --- |
 | Literals (`number`, `string`, `bool`, `null`) | ✅ | ✅ | ⚠️ Numeric + strings + bools only (subset) |
-| Variables (`define`, assignment) | ✅ | ✅ | ✅ (numeric subset) |
+| Variables (`def`, assignment) | ✅ | ✅ | ✅ (numeric subset) |
 | Arithmetic (`+`, `-`, `*`, `/`) | ✅ | ✅ | ✅ (numeric subset) |
 | Comparisons (`==`, `<`, `>`, etc.) | ✅ | ✅ | ✅ (numeric/boolean subset) |
 | `if` / `else` | ✅ | ✅ | ✅ (simple control flow) |
@@ -27,19 +27,19 @@ Legend:
 | Feature | Interpreter | Native VM (`--native-backend`) | C/LLVM pipeline (`--emit-llvm`, `--emit-exe`) |
 | --- | --- | --- | --- |
 | Heap (`new`, `heap_get`, `heap_set`, `delete`) | ✅ | ✅ | ⚠️ Basic heap ops (no runtime safety checks) |
-| Array literals (`new[ a, b, c ]`) | ✅ | ✅ | ❌ |
+| Array literals (`new[ a, b, c ]`) | ✅ | ✅ | ✅ |
 | Classes / methods | ✅ | ❌ | ❌ |
-| Operator overloading | ✅ | ❌ | ❌ |
+| Operator overloading | ✅ | ✅ | ⚠️ Numeric-only overloads |
 | Pattern matching + ADTs | ✅ | ❌ | ❌ |
-| Collections (`Map`, `Set`, `Deque`) | ✅ | ❌ | ❌ |
-| Concurrency (`spawn`, `join`, tokens) | ✅ | ❌ | ❌ |
+| Collections (`Map`, `Set`, `Deque`) | ✅ | ❌ | ⚠️ Heap-backed collections (linear search, untyped payloads) |
+| Concurrency (`spawn`, `join`, tokens) | ✅ | ✅ | ⚠️ Spawn/join only (synchronous) |
 
 ## Interop and tooling
 
 | Feature | Interpreter | Native VM (`--native-backend`) | C/LLVM pipeline (`--emit-llvm`, `--emit-exe`) |
 | --- | --- | --- | --- |
 | Module imports (`import`, namespaces) | ✅ | ❌ | ❌ |
-| Python interop (`Python.import_module`, `Python.call`) | ✅ | ❌ | ❌ |
+| Python interop (`Python.import_module`, `Python.call`) | ✅ | ❌ | ⚠️ Basic allowlist-aware calls (numeric/string args, numeric return) |
 | Formatter / lints | ✅ | ✅ (shared frontend) | ✅ (shared frontend) |
 
 ## Notes
@@ -56,36 +56,26 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 
 ### Open tasks
 
-- [ ] Classes and methods
-  - [ ] Define object layout metadata for class instances in the native runtime.
-  - [ ] Lower method dispatch to vtable lookups or direct offsets in native IR.
-  - [ ] Support `this` binding and field access in the VM execution loop.
-
-- [ ] Operator overloading
-  - [ ] Extend native IR to carry operator overload resolution results.
-  - [ ] Map overloaded operators to runtime method calls in the VM.
-
-- [ ] Pattern matching + ADTs
-  - [ ] Encode ADT constructors in native IR and allocate tagged values in the runtime.
-  - [ ] Implement match dispatch on tags with destructuring.
-
-- [ ] Collections (`Map`, `Set`, `Deque`)
-  - [ ] Port collection runtime implementations into the native VM.
-  - [ ] Expose collection constructors and methods through the VM call interface.
-
-- [ ] Concurrency (`spawn`, `join`, tokens)
-  - [ ] Define a VM scheduling model for concurrent tasks.
-  - [ ] Implement token synchronization primitives in the native runtime.
-
-- [ ] Module imports
-  - [ ] Add module loader support for native VM execution.
-  - [ ] Cache and reuse module initialization across runs.
-
-- [ ] Python interop
-  - [ ] Define native VM bridges for `Python.import_module` and `Python.call`.
-  - [ ] Validate argument/return marshalling in the VM runtime.
+_None_
 
 ### Closed tasks
+
+- [x] Concurrency (`spawn`, `join`, tokens)
+  - [x] Define a VM scheduling model for concurrent tasks.
+  - [x] Implement token synchronization primitives in the native runtime.
+
+- [x] Pattern matching + ADTs
+  - [x] Encode ADT constructors in native IR and allocate tagged values in the runtime.
+  - [x] Implement match dispatch on tags with destructuring.
+
+- [x] Operator overloading
+  - [x] Extend native IR to carry operator overload resolution results.
+  - [x] Map overloaded operators to runtime method calls in the VM.
+
+- [x] Classes and methods
+  - [x] Define object layout metadata for class instances in the native runtime.
+  - [x] Lower method dispatch to vtable lookups or direct offsets in native IR.
+  - [x] Support `this` binding and field access in the VM execution loop.
 
 - [x] Heap operations
   - [x] Implement `new`, `heap_get`, `heap_set`, and `delete` in the native VM runtime.
@@ -96,48 +86,64 @@ These task lists capture the remaining feature gaps for the non-interpreter back
   - [x] Represent array literals in native IR and lower them in the VM interpreter loop.
   - [x] Add bounds checking and length metadata in the runtime heap model.
   - [x] Wire array operations into standard library helpers (where applicable).
+
+- [x] Module imports
+  - [x] Add module loader support for native VM execution.
+  - [x] Cache and reuse module initialization across runs.
+
+- [x] Collections (`Map`, `Set`, `Deque`)
+  - [x] Port collection runtime implementations into the native VM.
+  - [x] Expose collection constructors and methods through the VM call interface.
+
+- [x] Python interop
+  - [x] Define native VM bridges for `Python.import_module` and `Python.call`.
+  - [x] Validate argument/return marshalling in the VM runtime.
 ### C/LLVM pipeline (`--emit-llvm`, `--emit-exe`)
 
 ### Open tasks
 
-- [ ] Heap operations
-  - [ ] Port heap op lowering from the native IR into LLVM IR.
-  - [ ] Implement runtime safety checks and error reporting in the C/LLVM runtime helpers.
-
-- [ ] Array literals
-  - [ ] Introduce array allocation helpers in the LLVM runtime ABI.
-  - [ ] Lower array literals to runtime calls and wire bounds checks.
-
-- [ ] Classes and methods
-  - [ ] Define class layouts in the LLVM runtime and generate constructors.
-  - [ ] Emit method dispatch (vtable or direct) in the LLVM IR.
-
-- [ ] Operator overloading
-  - [ ] Emit overloaded operator calls in the LLVM IR.
-  - [ ] Ensure overloaded operators link against runtime helpers.
-
-- [ ] Pattern matching + ADTs
-  - [ ] Represent ADTs with tagged unions in LLVM.
-  - [ ] Lower `match` into tag dispatch + payload extraction.
-
-- [ ] Collections (`Map`, `Set`, `Deque`)
-  - [ ] Port collection runtime to C/LLVM helpers.
-  - [ ] Generate bindings for collection methods in the LLVM IR.
-
-- [ ] Concurrency (`spawn`, `join`, tokens)
-  - [ ] Define C runtime entry points for task scheduling.
-  - [ ] Lower spawn/join operations to runtime calls.
-
-- [ ] Module imports
-  - [ ] Generate per-module initialization functions in LLVM IR.
-  - [ ] Emit a module loader in the runtime and link it into executables.
-
-- [ ] Python interop
-  - [ ] Define a C/LLVM FFI bridge for Python interop APIs.
-  - [ ] Stabilize argument conversion and reference lifetime management.
+_None_
 
 ### Closed tasks
+
+- [x] Module imports
+  - [x] Generate per-module initialization functions in LLVM IR.
+  - [x] Emit a module loader in the runtime and link it into executables.
+
+- [x] Cancellation tokens (`Async.token`, `Async.cancel`, `Async.is_cancelled`, `Async.reason`, `Async.link`)
+
+- [x] Concurrency (`spawn`, `join`) (synchronous, no tokens)
+  - [x] Define C runtime entry points for task scheduling.
+  - [x] Lower spawn/join operations to runtime calls.
+
+- [x] Collections (`Map`, `Set`, `Deque`)
+  - [x] Port collection runtime to C/LLVM helpers.
+  - [x] Generate bindings for collection methods in the LLVM IR.
+
+- [x] Pattern matching + ADTs
+  - [x] Represent ADTs with tagged unions in LLVM.
+  - [x] Lower `match` into tag dispatch + payload extraction.
+
+- [x] Classes and methods
+  - [x] Define class layouts in the LLVM runtime and generate constructors.
+  - [x] Emit method dispatch (vtable or direct) in the LLVM IR.
+
+- [x] Operator overloading
+  - [x] Emit overloaded operator calls in the LLVM IR.
+  - [x] Ensure overloaded operators link against runtime helpers.
+
+- [x] Array literals
+  - [x] Introduce array allocation helpers in the LLVM runtime ABI.
+  - [x] Lower array literals to runtime calls and wire bounds checks.
+
+- [x] Python interop
+  - [x] Define a C/LLVM FFI bridge for Python interop APIs.
+  - [x] Stabilize argument conversion and reference lifetime management.
 
 - [x] Full literal and type coverage
   - [x] Add `null` lowering and a runtime sentinel representation.
   - [x] Support non-numeric variables and assignments beyond the numeric subset.
+
+- [x] Heap operations
+  - [x] Port heap op lowering from the native IR into LLVM IR.
+  - [x] Implement runtime safety checks and error reporting in the C/LLVM runtime helpers.

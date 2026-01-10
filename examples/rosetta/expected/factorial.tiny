@@ -1,8 +1,8 @@
 // Rosetta example calculating a factorial iteratively and printing the result.
 
 fn factorial(n) {
-    define result = 1;
-    define i = 2;
+    def result = 1;
+    def i = 2;
     while (i <= n) {
         result = result * i;
         i = i + 1;
@@ -10,4 +10,4 @@ fn factorial(n) {
     return result;
 }
 
-define _ = print(factorial(5));
+def _ = print(factorial(5));

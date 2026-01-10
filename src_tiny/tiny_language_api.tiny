@@ -1,7 +1,7 @@
 // TinyLanguage wrapper for src/tiny_language_api.py.
 // Exposes public API helpers via Python interop for parity.
 
-define __PY_ALLOW = new[
+def __PY_ALLOW = new[
     "compile_and_run",
     "compile_to_c_executable",
     "compile_to_c_source",
@@ -19,7 +19,7 @@ define __PY_ALLOW = new[
     "ModuleResolver"
 ];
 
-define __PY = Python.import_module("tiny_language", __PY_ALLOW);
+def __PY = Python.import_module("tiny_language", __PY_ALLOW);
 
 fn compile_and_run(src) {
     return __PY.compile_and_run(src);
@@ -76,6 +76,6 @@ fn run_file(path) {
 fn main(argv) {
     return __PY.main(argv);
 }
-define ModuleResolver = __PY.ModuleResolver;
+def ModuleResolver = __PY.ModuleResolver;
 
-define _ = ModuleResolver;
+def _ = ModuleResolver;

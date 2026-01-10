@@ -13,22 +13,27 @@ def test_stdlib_functions_cover_math_string_and_collections(run_tiny_source):
         print(Math.min(-2, 10));
         print(Math.clamp(42, 0, 10));
 
-        define parts = String.split("a,b,c", ",");
+        def parts = String.split("a,b,c", ",");
         print(heap_get(parts, 0));
         print(String.join(parts, "-"));
         print(String.contains("tiny language", "lang"));
+        print(String.replace("tiny language", " ", "_"));
+        print(String.starts_with("tiny language", "tiny"));
+        print(String.ends_with("tiny language", "age"));
+        print(String.is_digit("12345"));
+        print(String.is_digit("12a"));
         print(String.upper("Hello"));
         print(String.lower("Hello"));
         print(String.trim("  padded  "));
         print(String.repeat("ha", 3));
 
-        define arr = new[1, 2];
+        def arr = new[1, 2];
         print(Collections.len(arr));
         print(Collections.push(arr, 3));
         print(heap_get(arr, 2));
         print(Collections.pop(arr));
         print(Collections.len(arr));
-        define sliced = Collections.slice(new[10, 20, 30, 40], 1, 3);
+        def sliced = Collections.slice(new[10, 20, 30, 40], 1, 3);
         print(heap_get(sliced, 0));
         print(Collections.contains(sliced, 30));
         print(Collections.contains(sliced, 99));
@@ -37,7 +42,7 @@ def test_stdlib_functions_cover_math_string_and_collections(run_tiny_source):
 
     assert (
         out
-        == "5\n8\n3\n10\n-2\n10\na\na-b-c\ntrue\nHELLO\nhello\npadded\nhahaha\n2\n3\n3\n3\n2\n20\ntrue\nfalse\n"
+        == "5\n8\n3\n10\n-2\n10\na\na-b-c\ntrue\ntiny_language\ntrue\ntrue\ntrue\nfalse\nHELLO\nhello\npadded\nhahaha\n2\n3\n3\n3\n2\n20\ntrue\nfalse\n"
     )
 
 
@@ -45,7 +50,7 @@ def test_collections_pop_errors_on_empty(run_tiny_source):
     with pytest.raises(Exception, match=r"pop from empty collection"):
         run_tiny_source(
             """
-            define arr = new[1];
+            def arr = new[1];
             print(Collections.pop(arr));
             print(Collections.pop(arr));
             """,
@@ -75,7 +80,7 @@ def test_tl_stdlib_random_module_import(run_tiny_source):
         import stdlib.random;
         print(random.randint(1, 6));
         print(random.choice(new["rot", "gruen", "blau"]));
-        define items = new["a", "b", "c"];
+        def items = new["a", "b", "c"];
         print(random.shuffle(items));
         print(String.join(items, ""));
         """,
@@ -95,24 +100,24 @@ def test_string_repeat_validates_count(run_tiny_source):
 def test_map_set_and_deque_helpers(run_tiny_source):
     out = run_tiny_source(
         """
-        define capitals = Map.from_entries(new[
+        def capitals = Map.from_entries(new[
             new["DE", "Berlin"],
             new["AT", "Wien"]
         ]);
         print(Map.get(capitals, "DE", "?"));
         print(Map.has(capitals, "CH"));
-        define _ = Map.set(capitals, "CH", "Bern");
+        def _ = Map.set(capitals, "CH", "Bern");
         print(Map.len(capitals));
         print(Map.get(capitals, "CH", "?"));
         print(heap_get(Map.keys(capitals), 1));
 
-        define features = Set.from_list(String.split("map,set,deque", ","));
+        def features = Set.from_list(String.split("map,set,deque", ","));
         print(Set.add(features, "json"));
         print(Set.len(features));
         print(Set.has(features, "map"));
 
-        define todo = Deque.new(String.split("a,b", ","));
-        define _dq = Deque.push_left(todo, "start");
+        def todo = Deque.new(String.split("a,b", ","));
+        def _dq = Deque.push_left(todo, "start");
         print(Deque.peek_right(todo));
         print(Deque.pop_left(todo));
         print(String.join(Deque.to_list(todo), "|"));
@@ -130,15 +135,15 @@ def test_random_file_and_json_helpers(run_tiny_source, tmp_path):
         print(Random.randint(1, 10));
         print(Random.choice(new["rot", "gruen", "blau"]));
 
-        define data = JSON.parse("{{\\"n\\": [1, 2], \\"flag\\": true}}");
-        define _ = Map.set(data, "extra", 5);
-        define path = "{file_path.as_posix()}";
-        define _write = File.write(path, JSON.stringify(data));
+        def data = JSON.parse("{{\\"n\\": [1, 2], \\"flag\\": true}}");
+        def _ = Map.set(data, "extra", 5);
+        def path = "{file_path.as_posix()}";
+        def _write = File.write(path, JSON.stringify(data));
         print(File.exists(path));
-        define text = File.read(path);
+        def text = File.read(path);
         print(String.contains(text, "flag"));
         print(Map.get(JSON.parse(text), "flag", false));
-        define _rm = File.remove(path);
+        def _rm = File.remove(path);
         print(File.exists(path));
         """
     )

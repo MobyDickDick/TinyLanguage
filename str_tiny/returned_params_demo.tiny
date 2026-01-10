@@ -13,13 +13,13 @@ fn skaliere_status(status, faktor) {
 }
 
 // Ausgangsdaten, die an die Funktion übergeben werden.
-define laufstatus = { label: "start"; level: 2; };
+def laufstatus = { label: "start"; level: 2; };
 
 print("Vor dem Aufruf:");
 print(laufstatus.level);
 
 // Der Rückgabewert enthält die identisch referenzierten Parameter.
-define ergebnis = skaliere_status(laufstatus, 3);
+def ergebnis = skaliere_status(laufstatus, 3);
 
 print("Zurückgegebene Parameter (Namen):");
 print(String.join(ergebnis.returned_params, ", "));

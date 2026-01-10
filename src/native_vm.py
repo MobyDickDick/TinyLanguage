@@ -8,20 +8,96 @@ compare interpreter and native results easily.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+import importlib
+import os
+import threading
+from collections import deque
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional
 
 from native_ir import Instruction, Opcode, ProgramIR
+from tiny_errors import SourcePos, SourceSpan
+from tiny_language_preamble import TinyLangError, format_error
+
+
+_BANNED_PYTHON_MODULES = {
+    "subprocess",
+    "socket",
+    "multiprocessing",
+    "ctypes",
+    "ssl",
+    "sys",
+}
+
+
+@dataclass(frozen=True)
+class NamespaceRef:
+    name: str
 
 
 class _Frame:
     """Lightweight execution frame with its own instruction pointer."""
 
-    def __init__(self, instructions: List[Instruction], locals_: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self,
+        instructions: List[Instruction],
+        locals_: Optional[Dict[str, Any]] = None,
+        globals_: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """Initialise a frame with an instruction list and optional locals."""
 
         self.instructions = instructions
-        self.locals = locals_ or {}
+        self.locals = locals_ if locals_ is not None else {}
+        self.globals = globals_ if globals_ is not None else self.locals
         self.ip = 0
+
+
+@dataclass
+class SpawnHandle:
+    thread: threading.Thread
+    done: threading.Event
+    cancelled: threading.Event
+    result: Any = None
+    error: Optional[BaseException] = None
+
+
+@dataclass
+class CancellationToken:
+    cancelled: threading.Event = field(default_factory=threading.Event)
+    reason: Optional[str] = None
+    _linked: List[SpawnHandle] = field(default_factory=list)
+    _lock: threading.Lock = field(default_factory=threading.Lock)
+
+    def cancel(self, reason: Optional[str] = None) -> bool:
+        with self._lock:
+            already = self.cancelled.is_set()
+            if already:
+                return False
+            self.reason = reason
+            self.cancelled.set()
+            for handle in list(self._linked):
+                handle.cancelled.set()
+            return True
+
+    def link_handle(self, handle: SpawnHandle) -> bool:
+        with self._lock:
+            if handle in self._linked:
+                return False
+            if self.cancelled.is_set():
+                handle.cancelled.set()
+                return False
+            self._linked.append(handle)
+            return True
+
+
+@dataclass
+class TaskScope:
+    handles: List[SpawnHandle]
+
+    def add_handle(self, handle: SpawnHandle) -> None:
+        if handle not in self.handles:
+            self.handles.append(handle)
 
 
 class NativeVM:
@@ -46,22 +122,63 @@ class NativeVM:
         "or": lambda a, b: bool(a) or bool(b),
     }
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        module_resolver: Optional[Any] = None,
+        module_namespace: Optional[str] = None,
+        module_path: Optional[Path] = None,
+        source: Optional[str] = None,
+    ) -> None:
         self.output: List[str] = []
         self.globals: Dict[str, Any] = {}
         self.program: Optional[ProgramIR] = None
-        self.heap: Dict[int, List[Any]] = {}
+        self.heap: Dict[int, Any] = {}
         self.next_ptr = 1
         self.freed_ptrs: set[int] = set()
         self.freed_allocations: Dict[int, int] = {}
         self.heap_cell_types: Dict[int, Dict[int, str]] = {}
         self.error_message: Optional[str] = None
+        self.class_defs: Dict[str, Dict[str, Any]] = {}
+        self.type_defs: Dict[str, Any] = {}
+        self.variant_to_type: Dict[str, str] = {}
+        self.operator_overloads: Dict[tuple[str, str, str], str] = {}
+        self.module_resolver = module_resolver
+        self.module_envs: Dict[str, Dict[str, Any]] = {}
+        self.module_programs: Dict[str, ProgramIR] = {}
+        self.current_module_namespace = module_namespace
+        self.current_module_path = module_path
+        self.source = source
+        self._python_namespaces: Dict[str, set[str]] = {}
+        self._python_pointers: set[int] = set()
+        self._python_scalar_ints: set[int] = set()
+        self._stdlib_namespaces = {
+            "Map": NamespaceRef("Map"),
+            "Set": NamespaceRef("Set"),
+            "Deque": NamespaceRef("Deque"),
+            "Async": NamespaceRef("Async"),
+            "Python": NamespaceRef("Python"),
+        }
+        self._task_scopes: List[TaskScope] = []
+        self.task_scope_timeout_ms: float = float(os.environ.get("TINYLANG_TASK_SCOPE_TIMEOUT_MS", "50"))
+        self._inject_stdlib(self.globals)
 
     def run(self, program: ProgramIR) -> str:
         """Execute the program entry block and return captured output."""
 
         self.program = program
-        self._execute(_Frame(program.entry, self.globals))
+        self.class_defs = {
+            name: {"fields": list(class_def.fields), "bases": list(class_def.bases)}
+            for name, class_def in program.classes.items()
+        }
+        self.type_defs = {}
+        self.variant_to_type = {}
+        self._register_types(program)
+        self.operator_overloads = {
+            (overload.op, overload.a_type, overload.b_type): overload.func_name
+            for overload in program.operator_overloads
+        }
+        self._execute(_Frame(program.entry, self.globals, self.globals))
         return "".join(self.output)
 
     def _execute(self, frame: _Frame) -> Any:
@@ -71,64 +188,175 @@ class NativeVM:
         while frame.ip < len(frame.instructions):
             instr = frame.instructions[frame.ip]
             frame.ip += 1
+            try:
+                if instr.op == Opcode.PUSH_CONST:
+                    stack.append(instr.arg)
+                elif instr.op == Opcode.LOAD:
+                    stack.append(self._load(frame.locals, frame.globals, instr.arg))
+                elif instr.op == Opcode.STORE:
+                    value = stack.pop()
+                    frame.locals[instr.arg] = value
+                    if frame.locals is self.globals:
+                        self.globals[instr.arg] = value
+                elif instr.op == Opcode.BINARY:
+                    right = stack.pop()
+                    left = stack.pop()
+                    overload_key = (
+                        instr.arg,
+                        self._value_type_name(left),
+                        self._value_type_name(right),
+                    )
+                    overload_name = self.operator_overloads.get(overload_key)
+                    if overload_name is not None:
+                        stack.append(self._call(overload_name, [left, right]))
+                    else:
+                        op_fn = self._binary_ops.get(instr.arg)
+                        if op_fn is None:
+                            raise RuntimeError(f"unsupported operator {instr.arg}")
+                        stack.append(op_fn(left, right))
+                elif instr.op == Opcode.PRINT:
+                    values = [stack.pop() for _ in range(int(instr.arg))][::-1]
+                    self.output.append(" ".join(self._format_value(v) for v in values) + "\n")
+                elif instr.op == Opcode.FLUSH:
+                    import sys
 
-            if instr.op == Opcode.PUSH_CONST:
-                stack.append(instr.arg)
-            elif instr.op == Opcode.LOAD:
-                stack.append(self._load(frame.locals, instr.arg))
-            elif instr.op == Opcode.STORE:
-                value = stack.pop()
-                frame.locals[instr.arg] = value
-                if frame.locals is self.globals:
-                    self.globals[instr.arg] = value
-            elif instr.op == Opcode.BINARY:
-                right = stack.pop()
-                left = stack.pop()
-                op_fn = self._binary_ops.get(instr.arg)
-                if op_fn is None:
-                    raise RuntimeError(f"unsupported operator {instr.arg}")
-                stack.append(op_fn(left, right))
-            elif instr.op == Opcode.PRINT:
-                values = [stack.pop() for _ in range(int(instr.arg))][::-1]
-                self.output.append(" ".join(self._format_value(v) for v in values) + "\n")
-            elif instr.op == Opcode.FLUSH:
-                import sys
-
-                sys.stdout.flush()
-            elif instr.op == Opcode.JUMP:
-                frame.ip = int(instr.arg)
-            elif instr.op == Opcode.JUMP_IF_FALSE:
-                cond = stack.pop()
-                if not cond:
+                    sys.stdout.flush()
+                elif instr.op == Opcode.JUMP:
                     frame.ip = int(instr.arg)
-            elif instr.op == Opcode.CALL:
-                name, argc = instr.arg
-                args = [stack.pop() for _ in range(argc)][::-1]
-                stack.append(self._call(name, args))
-            elif instr.op == Opcode.POP:
-                stack.pop()
-            elif instr.op == Opcode.RETURN:
-                return stack.pop() if stack else None
-            else:
-                op_name = instr.op.value if isinstance(instr.op, Opcode) else str(instr.op)
-                supported = ", ".join(op.value for op in Opcode)
-                raise RuntimeError(f"unknown opcode {op_name}. Supported opcodes: {supported}.")
+                elif instr.op == Opcode.JUMP_IF_FALSE:
+                    cond = stack.pop()
+                    if not cond:
+                        frame.ip = int(instr.arg)
+                elif instr.op == Opcode.CALL:
+                    name, argc = instr.arg
+                    args = [stack.pop() for _ in range(argc)][::-1]
+                    stack.append(self._call(name, args))
+                elif instr.op == Opcode.POP:
+                    stack.pop()
+                elif instr.op == Opcode.RETURN:
+                    return stack.pop() if stack else None
+                else:
+                    op_name = instr.op.value if isinstance(instr.op, Opcode) else str(instr.op)
+                    supported = ", ".join(op.value for op in Opcode)
+                    raise RuntimeError(f"unknown opcode {op_name}. Supported opcodes: {supported}.")
+            except TinyLangError:
+                raise
+            except Exception as exc:  # noqa: BLE001
+                if isinstance(exc, RuntimeError):
+                    formatted = self._format_error_message(str(exc), instr)
+                    self._record_error(formatted)
+                    raise RuntimeError(formatted) from exc
+                raise self._error(str(exc), instr) from exc
         return None
 
-    def _load(self, locals_: Dict[str, Any], name: str) -> Any:
+    def _format_error_message(self, message: str, location: Optional[object]) -> str:
+        span = None
+        pos = None
+        if isinstance(location, SourceSpan):
+            span = location
+        elif isinstance(location, SourcePos):
+            pos = location
+        elif location is not None:
+            span = getattr(location, "span", None)
+            pos = getattr(location, "pos", None)
+        if pos is None and span is not None:
+            pos = span.start
+        if span is not None or pos is not None:
+            return format_error(self.source or "", span or pos, message)
+        return message
+
+    def _error(self, message: str, location: Optional[object]) -> TinyLangError:
+        span = None
+        pos = None
+        if isinstance(location, SourceSpan):
+            span = location
+        elif isinstance(location, SourcePos):
+            pos = location
+        elif location is not None:
+            span = getattr(location, "span", None)
+            pos = getattr(location, "pos", None)
+        if pos is None and span is not None:
+            pos = span.start
+        formatted = self._format_error_message(message, location)
+        self._record_error(formatted)
+        return TinyLangError(formatted, pos or SourcePos.origin(), span=span)
+
+    def _load(self, locals_: Dict[str, Any], globals_: Dict[str, Any], name: str) -> Any:
         """Resolve a variable name from locals or globals, raising on miss."""
 
         if name == "errorMessage":
             return self.error_message
         if name in locals_:
             return locals_[name]
-        if name in self.globals:
-            return self.globals[name]
+        if name in globals_:
+            return globals_[name]
         raise RuntimeError(f"unknown variable {name}")
 
     def _call(self, name: str, args: List[Any]) -> Any:
         """Invoke a function declared in the program with positional args."""
 
+        if name == "__import":
+            if len(args) != 1:
+                raise RuntimeError(f"__import expects 1 arg, got {len(args)}")
+            return self._import_module(args[0])
+        if name == "Python.import_module":
+            if len(args) not in {1, 2}:
+                raise RuntimeError(f"Python.import_module expects 1 or 2 args, got {len(args)}")
+            allow = args[1] if len(args) == 2 else None
+            return self._python_import_module(args[0], allow)
+        if name == "Python.call":
+            if len(args) < 2 or len(args) > 4:
+                raise RuntimeError(f"Python.call expects 2 to 4 args, got {len(args)}")
+            call_args = args[2] if len(args) >= 3 else None
+            opts = args[3] if len(args) == 4 else None
+            return self._python_call(args[0], args[1], call_args, opts)
+        if name.startswith("Python."):
+            module_name, attr_name = self._python_split_qualified(name)
+            if module_name is not None:
+                return self._python_call(module_name, attr_name, args, None)
+        if name.startswith("Map."):
+            return self._map_call(name, args)
+        if name.startswith("Set."):
+            return self._set_call(name, args)
+        if name.startswith("Deque."):
+            return self._deque_call(name, args)
+        if name.startswith("Async."):
+            return self._async_call(name, args)
+        if name == "__spawn":
+            if not args:
+                raise RuntimeError("__spawn expects at least 1 arg")
+            target = args[0]
+            return self._spawn_call(target, args[1:])
+        if name == "join":
+            if not (1 <= len(args) <= 3):
+                raise RuntimeError("join expects between 1 and 3 arguments")
+            handle = args[0]
+            if len(args) == 1:
+                return self.join_handle(handle)
+            timeout_ms = self._join_timeout_ms(args[1])
+            cancel_on_timeout = False
+            if len(args) == 3:
+                cancel_on_timeout = bool(args[2])
+            return self.join_handle(
+                handle,
+                timeout_ms=timeout_ms,
+                cancel_on_timeout=cancel_on_timeout,
+                want_status=True,
+            )
+        if name == "cancel":
+            if len(args) != 1:
+                raise RuntimeError("cancel expects 1 argument")
+            return self.cancel_handle(args[0])
+        if name == "__task_scope_enter":
+            if args:
+                raise RuntimeError("__task_scope_enter expects 0 arguments")
+            self._push_task_scope()
+            return None
+        if name == "__task_scope_exit":
+            if args:
+                raise RuntimeError("__task_scope_exit expects 0 arguments")
+            self._pop_task_scope()
+            return None
         if name in {"__new", "new"}:
             if len(args) != 1:
                 raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
@@ -145,6 +373,38 @@ class NativeVM:
             if len(args) != 1:
                 raise RuntimeError(f"delete expects 1 arg, got {len(args)}")
             return self._heap_delete(args[0])
+        if name == "__class_new":
+            return self._class_new(args)
+        if name == "__variant_new":
+            return self._variant_new(args)
+        if name == "__variant_tag":
+            if len(args) != 1:
+                raise RuntimeError(f"__variant_tag expects 1 arg, got {len(args)}")
+            return self._variant_tag(args[0])
+        if name == "__variant_get":
+            if len(args) != 2:
+                raise RuntimeError(f"__variant_get expects 2 args, got {len(args)}")
+            return self._variant_get(args[0], args[1])
+        if name == "__variant_assume":
+            if len(args) != 2:
+                raise RuntimeError(f"__variant_assume expects 2 args, got {len(args)}")
+            return args[0]
+        if name == "__match_error":
+            if len(args) != 1:
+                raise RuntimeError(f"__match_error expects 1 arg, got {len(args)}")
+            self._match_error(args[0])
+        if name == "__field_get":
+            if len(args) != 2:
+                raise RuntimeError(f"__field_get expects 2 args, got {len(args)}")
+            return self._field_get(args[0], args[1])
+        if name == "__field_set":
+            if len(args) != 3:
+                raise RuntimeError(f"__field_set expects 3 args, got {len(args)}")
+            return self._field_set(args[0], args[1], args[2])
+        if name == "__method_call":
+            if len(args) < 2:
+                raise RuntimeError("__method_call expects at least 2 args")
+            return self._method_call(args[0], args[1], args[2:])
         if self.program is None:
             raise RuntimeError("VM has no program loaded")
         target = self.program.functions.get(name)
@@ -153,7 +413,137 @@ class NativeVM:
         if len(args) != len(target.params):
             raise RuntimeError(f"function {name} expects {len(target.params)} args, got {len(args)}")
         locals_ = dict(zip(target.params, args))
-        return self._execute(_Frame(target.instructions, locals_))
+        return self._execute(_Frame(target.instructions, locals_, self._globals_for_function(name)))
+
+    def _push_task_scope(self) -> TaskScope:
+        scope = TaskScope(handles=[])
+        self._task_scopes.append(scope)
+        return scope
+
+    def _pop_task_scope(self) -> None:
+        if not self._task_scopes:
+            return
+        scope = self._task_scopes.pop()
+        for handle in scope.handles:
+            self.join_handle(handle, timeout_ms=self.task_scope_timeout_ms, cancel_on_timeout=True)
+
+    def _register_task_handle(self, handle: SpawnHandle) -> None:
+        if self._task_scopes:
+            self._task_scopes[-1].add_handle(handle)
+
+    def _run_spawn(self, name: str, args: List[Any], handle: SpawnHandle) -> None:
+        try:
+            if handle.cancelled.is_set():
+                handle.error = RuntimeError("spawn cancelled")
+                return
+            result = self._call(name, args)
+            if handle.cancelled.is_set():
+                handle.error = RuntimeError("spawn cancelled")
+            else:
+                handle.result = result
+        except Exception as exc:  # noqa: BLE001
+            handle.error = exc
+        finally:
+            handle.done.set()
+
+    def _start_task(self, name: str, args: List[Any]) -> SpawnHandle:
+        done = threading.Event()
+        cancelled = threading.Event()
+        placeholder_thread = threading.Thread(target=lambda: None)
+        handle = SpawnHandle(thread=placeholder_thread, done=done, cancelled=cancelled)
+
+        def run_task() -> None:
+            self._run_spawn(name, args, handle)
+
+        worker = threading.Thread(target=run_task)
+        handle.thread = worker
+        worker.start()
+        self._register_task_handle(handle)
+        return handle
+
+    def _spawn_call(self, target: Any, args: List[Any]) -> SpawnHandle:
+        name = str(target)
+        return self._start_task(name, args)
+
+    def _join_status(self, handle: SpawnHandle, *, done: bool) -> Dict[str, Any]:
+        return {
+            "__tag__": "JoinStatus",
+            "done": done,
+            "cancelled": handle.cancelled.is_set(),
+            "error": str(handle.error) if handle.error else None,
+            "result": None if handle.error or not done or handle.cancelled.is_set() else handle.result,
+        }
+
+    def _join_timeout_ms(self, value: Any) -> float:
+        try:
+            return float(value)
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError("join timeout must be numeric") from exc
+
+    def join_handle(
+        self,
+        handle: Any,
+        *,
+        timeout_ms: Optional[float] = None,
+        cancel_on_timeout: bool = False,
+        want_status: bool = False,
+    ) -> Any:
+        if not isinstance(handle, SpawnHandle):
+            raise RuntimeError("join expects a spawn handle")
+
+        timeout = None if timeout_ms is None else max(0.0, timeout_ms / 1000.0)
+        finished = handle.done.wait(timeout)
+        if not finished:
+            if cancel_on_timeout:
+                self.cancel_handle(handle)
+            if want_status:
+                return self._join_status(handle, done=False)
+            return None
+
+        handle.thread.join()
+        if handle.cancelled.is_set():
+            if want_status:
+                return self._join_status(handle, done=True)
+            raise handle.error or RuntimeError("join cancelled")
+        if handle.error:
+            if want_status:
+                return self._join_status(handle, done=True)
+            raise handle.error
+        if want_status:
+            return self._join_status(handle, done=True)
+        return handle.result
+
+    def cancel_handle(self, handle: Any) -> bool:
+        if not isinstance(handle, SpawnHandle):
+            raise RuntimeError("cancel expects a spawn handle")
+        already = handle.cancelled.is_set()
+        handle.cancelled.set()
+        return not already
+
+    def make_cancellation_token(self) -> CancellationToken:
+        return CancellationToken()
+
+    def cancel_token(self, token: Any, reason: Optional[str] = None) -> bool:
+        if not isinstance(token, CancellationToken):
+            raise RuntimeError("cancel_token expects a cancellation token")
+        return token.cancel(reason)
+
+    def token_cancelled(self, token: Any) -> bool:
+        if not isinstance(token, CancellationToken):
+            raise RuntimeError("token_cancelled expects a cancellation token")
+        return token.cancelled.is_set()
+
+    def token_reason(self, token: Any) -> Optional[str]:
+        if not isinstance(token, CancellationToken):
+            raise RuntimeError("token_reason expects a cancellation token")
+        return token.reason
+
+    def link_token(self, token: Any, handle: Any) -> bool:
+        if not isinstance(token, CancellationToken):
+            raise RuntimeError("link_token expects a cancellation token")
+        if not isinstance(handle, SpawnHandle):
+            raise RuntimeError("link_token expects a spawn handle")
+        return token.link_handle(handle)
 
     def _format_value(self, value: Any) -> str:
         """Render VM values into the textual form used by PRINT."""
@@ -166,6 +556,53 @@ class NativeVM:
 
     def _record_error(self, message: str) -> None:
         self.error_message = message
+
+    def _globals_for_function(self, name: str) -> Dict[str, Any]:
+        module_name = self._module_namespace_for_function(name)
+        if module_name:
+            return self.module_envs[module_name]
+        return self.globals
+
+    def _module_namespace_for_function(self, name: str) -> Optional[str]:
+        if not self.module_envs or "." not in name:
+            return None
+        candidates = [ns for ns in self.module_envs if name.startswith(f"{ns}.")]
+        if not candidates:
+            return None
+        return max(candidates, key=len)
+
+    def _import_module(self, name: Any) -> NamespaceRef:
+        if self.module_resolver is None:
+            raise RuntimeError("module resolver not configured for native backend")
+        return self.module_resolver.import_module(
+            str(name),
+            self,
+            caller_namespace=self.current_module_namespace,
+            caller_path=self.current_module_path,
+        )
+
+    def load_module(self, name: str, program: ProgramIR, module_env: Dict[str, Any], module_path: Path | None) -> None:
+        if self.program is None:
+            raise RuntimeError("VM has no program loaded")
+        self.program.functions.update(program.functions)
+        self.program.classes.update(program.classes)
+        self.program.types.update(program.types)
+        self._register_types(program)
+        self.program.operator_overloads.extend(program.operator_overloads)
+        for overload in program.operator_overloads:
+            self.operator_overloads[(overload.op, overload.a_type, overload.b_type)] = overload.func_name
+        self._inject_stdlib(module_env)
+        self.module_envs[name] = module_env
+        self.module_programs[name] = program
+        previous_namespace = self.current_module_namespace
+        previous_path = self.current_module_path
+        try:
+            self.current_module_namespace = name
+            self.current_module_path = module_path
+            self._execute(_Frame(program.entry, module_env, module_env))
+        finally:
+            self.current_module_namespace = previous_namespace
+            self.current_module_path = previous_path
 
     @staticmethod
     def _pointer_label(pointer: Any) -> str:
@@ -187,7 +624,7 @@ class NativeVM:
             return None
         return idx
 
-    def _resolve_ptr(self, pointer: Any, *, op: str) -> Optional[tuple[int, List[Any]]]:
+    def _resolve_ptr(self, pointer: Any, *, op: str) -> Optional[tuple[int, Any]]:
         try:
             ip = int(pointer)
         except Exception:
@@ -236,9 +673,24 @@ class NativeVM:
         self.heap_cell_types.pop(ptr, None)
         return ptr
 
+    def _alloc_heap_value(self, value: Any) -> int:
+        ptr = self.next_ptr
+        self.next_ptr += 1
+        self.heap[ptr] = value
+        self.freed_ptrs.discard(ptr)
+        self.freed_allocations.pop(ptr, None)
+        self.heap_cell_types.pop(ptr, None)
+        return ptr
+
+    def _to_pointer(self, values: Iterable[Any]) -> int:
+        return self._alloc_heap_value(list(values))
+
     def _value_type_name(self, value: Any) -> str:
-        if isinstance(value, dict) and "__type__" in value:
-            return str(value.get("__type__"))
+        if isinstance(value, dict):
+            if "__type__" in value:
+                return str(value.get("__type__"))
+            if "__tag__" in value:
+                return str(value.get("__tag__"))
         if value is None:
             return "Null"
         if isinstance(value, bool):
@@ -278,6 +730,10 @@ class NativeVM:
         if resolved is None:
             return None
         ip, cells = resolved
+        if not isinstance(cells, list):
+            message = f"heap access error: pointer {ip} does not refer to a list allocation"
+            self._record_error(message)
+            return None
         size = len(cells)
         if idx < 0 or idx >= size:
             range_hint = "empty allocation" if size == 0 else f"valid indices: 0..{size - 1}"
@@ -294,6 +750,10 @@ class NativeVM:
         if resolved is None:
             return self._heap_error_record(self.error_message or "")
         ip, cells = resolved
+        if not isinstance(cells, list):
+            message = f"heap access error: pointer {ip} does not refer to a list allocation"
+            self._record_error(message)
+            return self._heap_error_record(message)
         size = len(cells)
         if idx < 0 or idx >= size:
             range_hint = "empty allocation" if size == 0 else f"valid indices: 0..{size - 1}"
@@ -309,3 +769,630 @@ class NativeVM:
         cells[idx] = value
         self.heap_cell_types.setdefault(ip, {})[idx] = actual
         return self._heap_ok_record()
+
+    def _resolve_sequence(self, target: Any) -> List[Any]:
+        if isinstance(target, int) and target in self.heap:
+            maybe = self.heap[target]
+            if isinstance(maybe, list):
+                return maybe
+        if isinstance(target, list):
+            return target
+        raise RuntimeError("collections operation expects a heap pointer or list")
+
+    def _resolve_map(self, target: Any) -> Dict[Any, Any]:
+        if isinstance(target, int) and target in self.heap:
+            maybe = self.heap[target]
+            if isinstance(maybe, dict):
+                return maybe
+        if isinstance(target, dict):
+            return target
+        raise RuntimeError("map operation expects a heap pointer or dict")
+
+    def _resolve_set(self, target: Any) -> set:
+        if isinstance(target, int) and target in self.heap:
+            maybe = self.heap[target]
+            if isinstance(maybe, set):
+                return maybe
+        if isinstance(target, set):
+            return target
+        raise RuntimeError("set operation expects a heap pointer or set")
+
+    def _resolve_deque(self, target: Any) -> deque:
+        if isinstance(target, int) and target in self.heap:
+            maybe = self.heap[target]
+            if isinstance(maybe, deque):
+                return maybe
+        if isinstance(target, deque):
+            return target
+        raise RuntimeError("deque operation expects a heap pointer or deque")
+
+    def _class_mro(self, name: str) -> List[str]:
+        info = self.class_defs.get(name)
+        if info is None:
+            raise RuntimeError(f"unknown class {name}")
+        bases = list(info.get("bases", []))
+        mro: List[str] = [name]
+        for base in bases:
+            if base not in self.class_defs:
+                raise RuntimeError(f"unknown base class {base} for {name}")
+            for ancestor in self._class_mro(base):
+                if ancestor not in mro:
+                    mro.append(ancestor)
+        return mro
+
+    def _class_field_map(self, name: str) -> Dict[str, Dict[str, Any]]:
+        mro = self._class_mro(name)
+        fields: Dict[str, Dict[str, Any]] = {}
+        for cls in mro:
+            class_info = self.class_defs.get(cls)
+            if class_info is None:
+                raise RuntimeError(f"unknown class {cls}")
+            field_names = class_info.get("fields", [])
+            fields[cls] = {fname: None for fname in field_names}
+        return fields
+
+    @staticmethod
+    def _split_field_name(field_name: str) -> tuple[Optional[str], str]:
+        if "." in field_name:
+            owner, rest = field_name.split(".", 1)
+            return owner, rest
+        return None, field_name
+
+    def _resolve_field_storage(
+        self, obj: Dict[str, Any], field_name: str, owner_hint: Optional[str], *, allow_write: bool
+    ) -> Dict[str, Any]:
+        current_class = obj.get("__tag__")
+        if current_class is None:
+            raise RuntimeError("field access on untagged value")
+        mro = self._class_mro(str(current_class))
+        matches: List[tuple[str, Dict[str, Any]]] = []
+        for cls in mro:
+            fmap = obj["__fields__"].get(cls, {})
+            if field_name in fmap:
+                matches.append((cls, fmap))
+
+        if owner_hint:
+            for cls, fmap in matches:
+                if cls == owner_hint:
+                    return fmap
+            raise RuntimeError(f"unknown field {field_name} for base class {owner_hint}")
+
+        if matches:
+            primary_class = mro[0]
+            for cls, fmap in matches:
+                if cls == primary_class:
+                    return fmap
+
+        if len(matches) == 1:
+            return matches[0][1]
+        if len(matches) > 1:
+            action = "assign" if allow_write else "access"
+            raise RuntimeError(
+                f"ambiguous field {field_name} during {action}; please qualify with a base class name"
+            )
+        raise RuntimeError(f"unknown field {field_name} for class {current_class}")
+
+    def _class_new(self, args: List[Any]) -> Dict[str, Any]:
+        if not args:
+            raise RuntimeError("__class_new expects at least 1 arg")
+        class_name = str(args[0])
+        if class_name not in self.class_defs:
+            raise RuntimeError(f"unknown class {class_name}")
+        if (len(args) - 1) % 2 != 0:
+            raise RuntimeError("__class_new expects field name/value pairs")
+        obj: Dict[str, Any] = {"__tag__": class_name, "__fields__": self._class_field_map(class_name)}
+        for index in range(1, len(args), 2):
+            raw_name = str(args[index])
+            value = args[index + 1]
+            owner_hint, field_name = self._split_field_name(raw_name)
+            fmap = self._resolve_field_storage(obj, field_name, owner_hint, allow_write=True)
+            fmap[field_name] = value
+        return obj
+
+    def _register_types(self, program: ProgramIR) -> None:
+        for type_name, type_def in program.types.items():
+            self.type_defs[type_name] = type_def
+            variants = type_def.variants
+            if variants is None:
+                fields = type_def.fields or []
+                variants = {type_name: fields}
+            for variant_name in variants:
+                self.variant_to_type[variant_name] = type_name
+
+    def _type_variants(self, type_name: str) -> Optional[Dict[str, List[tuple[str, str]]]]:
+        type_def = self.type_defs.get(type_name)
+        if type_def is None:
+            return None
+        if type_def.variants is not None:
+            return type_def.variants
+        if type_def.fields is not None:
+            return {type_def.name: type_def.fields}
+        return None
+
+    def _variant_new(self, args: List[Any]) -> Dict[str, Any]:
+        if len(args) < 2:
+            raise RuntimeError("__variant_new expects at least 2 args (variant, type_name)")
+        variant = str(args[0])
+        type_name = args[1]
+        inferred_type = str(type_name) if type_name is not None else self.variant_to_type.get(variant)
+        if inferred_type is None:
+            raise RuntimeError(f"unknown variant {variant}")
+        variants = self._type_variants(inferred_type)
+        if variants is None or variant not in variants:
+            raise RuntimeError(f"variant {variant} not allowed for type {inferred_type}")
+        if (len(args) - 2) % 2 != 0:
+            raise RuntimeError("__variant_new expects field name/value pairs")
+        expected_fields = {name for name, _ in variants.get(variant, [])}
+        init: Dict[str, Any] = {}
+        for index in range(2, len(args), 2):
+            field_name = str(args[index])
+            init[field_name] = args[index + 1]
+        missing = sorted(expected_fields - init.keys())
+        extra = sorted(init.keys() - expected_fields)
+        if missing:
+            raise RuntimeError(f"missing field(s) for variant {variant}: {', '.join(missing)}")
+        if extra:
+            raise RuntimeError(f"unknown field(s) for variant {variant}: {', '.join(extra)}")
+        value = {"__tag__": variant, "__type__": inferred_type}
+        value.update(init)
+        return value
+
+    @staticmethod
+    def _variant_tag(value: Any) -> str:
+        if not isinstance(value, dict) or "__tag__" not in value:
+            raise RuntimeError("match target is not tagged")
+        return str(value.get("__tag__"))
+
+    @staticmethod
+    def _variant_get(value: Any, field: Any) -> Any:
+        if not isinstance(value, dict) or "__tag__" not in value:
+            raise RuntimeError("match target is not tagged")
+        fname = str(field)
+        if fname not in value:
+            raise RuntimeError(f"field {fname} missing for variant {value.get('__tag__')}")
+        return value[fname]
+
+    def _match_error(self, value: Any) -> None:
+        tag = self._variant_tag(value)
+        raise RuntimeError(f"non-exhaustive match for tag {tag}")
+
+    def _field_get(self, obj: Any, field_name: Any) -> Any:
+        if isinstance(obj, NamespaceRef):
+            module_env = self.module_envs.get(obj.name)
+            if module_env is None:
+                raise RuntimeError(f"unknown module {obj.name}")
+            field = str(field_name)
+            if field in module_env:
+                return module_env[field]
+            raise RuntimeError(f"unknown field {field}")
+        if not isinstance(obj, dict) or "__fields__" not in obj:
+            raise RuntimeError("field access on non-class value")
+        owner_hint, fname = self._split_field_name(str(field_name))
+        fmap = self._resolve_field_storage(obj, fname, owner_hint, allow_write=False)
+        return fmap[fname]
+
+    def _field_set(self, obj: Any, field_name: Any, value: Any) -> Any:
+        if isinstance(obj, NamespaceRef):
+            raise RuntimeError("field access on module namespace")
+        if not isinstance(obj, dict) or "__fields__" not in obj:
+            raise RuntimeError("field access on non-class value")
+        owner_hint, fname = self._split_field_name(str(field_name))
+        fmap = self._resolve_field_storage(obj, fname, owner_hint, allow_write=True)
+        fmap[fname] = value
+        return value
+
+    def _method_call(self, obj: Any, method_name: Any, args: List[Any]) -> Any:
+        if self.program is None:
+            raise RuntimeError("VM has no program loaded")
+        if isinstance(obj, NamespaceRef):
+            qualified = f"{obj.name}.{method_name}"
+            return self._call(qualified, list(args))
+        if not isinstance(obj, dict) or "__fields__" not in obj:
+            raise RuntimeError("method call on non-class value")
+        class_name = obj.get("__tag__")
+        if class_name is None:
+            raise RuntimeError("method call on untagged value")
+        method_name = str(method_name)
+        for cls in self._class_mro(str(class_name)):
+            target_name = f"{cls}.{method_name}"
+            target = self.program.functions.get(target_name)
+            if target is None:
+                continue
+            method_args = [obj] + list(args)
+            if len(method_args) != len(target.params):
+                raise RuntimeError(
+                    f"method {target_name} expects {len(target.params)} args, got {len(method_args)}"
+                )
+            locals_ = dict(zip(target.params, method_args))
+            return self._execute(_Frame(target.instructions, locals_))
+        raise RuntimeError(f"no method {method_name} for class {class_name}")
+
+    def _inject_stdlib(self, env: Dict[str, Any]) -> None:
+        for name, ref in self._stdlib_namespaces.items():
+            env.setdefault(name, ref)
+
+    def _python_split_qualified(self, name: str) -> tuple[Optional[str], Optional[str]]:
+        if not name.startswith("Python.") or name in {"Python.import_module", "Python.call"}:
+            return None, None
+        dotted = name[len("Python.") :]
+        if "." not in dotted:
+            return None, None
+        module_name, attr_name = dotted.rsplit(".", 1)
+        return module_name, attr_name
+
+    def _python_import_module(self, module: Any, allow: Any | None = None) -> NamespaceRef:
+        module_name = str(module)
+        self._python_ensure_module_allowed(module_name)
+        allowed = self._python_normalize_allowlist(allow)
+        py_module = importlib.import_module(module_name)
+        namespace = f"Python.{module_name}"
+
+        existing = self._python_namespaces.get(namespace, set())
+        requested = set(allowed)
+        missing = requested - existing
+        self._python_namespaces[namespace] = existing | requested
+
+        module_env = self.module_envs.setdefault(namespace, {})
+        for name in missing:
+            attr = getattr(py_module, name, None)
+            if callable(attr):
+                continue
+            module_env[name] = self._python_from_host(attr)
+
+        return NamespaceRef(namespace)
+
+    def _python_call(self, module: Any, attr: Any, args: Any | None, opts: Any | None) -> Any:
+        module_name = str(module)
+        self._python_ensure_module_allowed(module_name)
+        allowed_attrs = self._python_resolve_allowlist(module_name, opts)
+        if allowed_attrs is None:
+            allowed_attrs = set()
+        timeout_ms = self._python_normalize_timeout(opts)
+
+        py_module = importlib.import_module(module_name)
+        attr_name = str(attr)
+        if attr_name not in allowed_attrs:
+            raise RuntimeError(f"[PYDENY] attribute {attr_name} not allowed")
+
+        func = getattr(py_module, attr_name, None)
+        if not callable(func):
+            raise RuntimeError(f"[PYERR] attribute {attr_name} is not callable")
+
+        arg_list = self._python_normalize_args(args)
+        py_args = [self._python_to_host(val) for val in arg_list]
+        result: Dict[str, Any] = {}
+        error: Dict[str, BaseException] = {}
+
+        def _invoke() -> None:
+            try:
+                result["value"] = func(*py_args)
+            except Exception as exc:  # noqa: BLE001
+                error["exc"] = exc
+
+        if timeout_ms is None:
+            _invoke()
+        else:
+            thread = threading.Thread(target=_invoke, daemon=True)
+            thread.start()
+            thread.join(timeout_ms / 1000.0)
+            if thread.is_alive():
+                raise RuntimeError(f"[PYTIMEOUT] {module_name}.{attr_name} exceeded {timeout_ms} ms")
+        if error:
+            raise RuntimeError(f"[PYERR] {error['exc']}")
+        return self._python_from_host(result.get("value"))
+
+    def _python_normalize_allowlist(self, value: Any | None) -> list[str]:
+        allow_source = value
+        if isinstance(value, dict):
+            allow_source = value.get("allow")
+        if allow_source is None:
+            return []
+        if isinstance(allow_source, int) and allow_source in self.heap:
+            allow_source = self.heap[allow_source]
+        try:
+            return [str(v) for v in list(allow_source)]
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError("[PYERR] allowlist must be iterable") from exc
+
+    def _python_resolve_allowlist(self, module: str, opts: Any | None) -> set[str] | None:
+        if isinstance(opts, dict) and "allow" in opts:
+            return set(self._python_normalize_allowlist(opts))
+        if opts is not None and not isinstance(opts, dict):
+            return set(self._python_normalize_allowlist(opts))
+        return self._python_namespaces.get(f"Python.{module}")
+
+    def _python_normalize_timeout(self, opts: Any | None) -> int | None:
+        if not isinstance(opts, dict):
+            return None
+        if "timeout_ms" not in opts:
+            return None
+        try:
+            timeout = int(opts["timeout_ms"])
+        except Exception:  # noqa: BLE001
+            raise RuntimeError("[PYERR] timeout_ms must be an integer")
+        if timeout < 0:
+            raise RuntimeError("[PYERR] timeout_ms must be non-negative")
+        return timeout
+
+    def _python_normalize_args(self, args: Any | None) -> list[Any]:
+        if args is None:
+            return []
+        if isinstance(args, int) and args in self.heap:
+            seq = self.heap[args]
+            if isinstance(seq, list):
+                return list(seq)
+        if isinstance(args, list):
+            return args
+        return [args]
+
+    def _python_ensure_module_allowed(self, module: str) -> None:
+        base = module.split(".")[0]
+        if base in _BANNED_PYTHON_MODULES or module in _BANNED_PYTHON_MODULES:
+            raise RuntimeError(f"[PYSEC] module {module} denied")
+
+    def _python_to_host(self, value: Any, _seen: set[int] | None = None) -> Any:
+        seen = _seen or set()
+
+        def _mark(obj: Any) -> bool:
+            try:
+                obj_id = id(obj)
+            except Exception:  # noqa: BLE001
+                return False
+            if obj_id in seen:
+                return True
+            seen.add(obj_id)
+            return False
+
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (str, float)) or value is None:
+            return value
+        if isinstance(value, int) and value in self._python_scalar_ints:
+            return value
+        if isinstance(value, int) and value in self.heap:
+            stored = self.heap[value]
+            if _mark(stored):
+                return stored
+            if isinstance(stored, list):
+                return [self._python_to_host(v, seen) for v in stored]
+            if isinstance(stored, dict):
+                return {k: self._python_to_host(v, seen) for k, v in stored.items()}
+            if isinstance(stored, set):
+                return {self._python_to_host(v, seen) for v in stored}
+            if isinstance(stored, deque):
+                return deque(self._python_to_host(v, seen) for v in stored)
+            return stored
+        if isinstance(value, dict) and "__fields__" in value:
+            if _mark(value):
+                return value
+            return {k: self._python_to_host(v, seen) for k, v in value.get("__fields__", {}).items()}
+        if isinstance(value, list):
+            if _mark(value):
+                return value
+            return [self._python_to_host(v, seen) for v in value]
+        if isinstance(value, dict):
+            if _mark(value):
+                return value
+            return {k: self._python_to_host(v, seen) for k, v in value.items()}
+        return value
+
+    def _python_from_host(self, value: Any) -> Any:
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+        if isinstance(value, list):
+            converted: List[Any] = []
+            for v in value:
+                converted_val = self._python_from_host(v)
+                if isinstance(v, int) and not isinstance(v, bool):
+                    self._python_scalar_ints.add(v)
+                converted.append(converted_val)
+            if self.next_ptr < 100000:
+                self.next_ptr = 100000
+            ptr = self._alloc_heap_value(converted)
+            self._python_pointers.add(ptr)
+            return ptr
+        if isinstance(value, tuple):
+            converted: List[Any] = []
+            for v in list(value):
+                converted_val = self._python_from_host(v)
+                if isinstance(v, int) and not isinstance(v, bool):
+                    self._python_scalar_ints.add(v)
+                converted.append(converted_val)
+            if self.next_ptr < 100000:
+                self.next_ptr = 100000
+            ptr = self._alloc_heap_value(converted)
+            self._python_pointers.add(ptr)
+            return ptr
+        if isinstance(value, dict):
+            return {k: self._python_from_host(v) for k, v in value.items()}
+        if isinstance(value, set):
+            return {self._python_from_host(v) for v in value}
+        if isinstance(value, deque):
+            return deque(self._python_from_host(v) for v in value)
+        return {"__py_object__": repr(value)}
+
+    def _map_call(self, name: str, args: List[Any]) -> Any:
+        method = name.split(".", 1)[1]
+        if method == "new":
+            if args:
+                raise RuntimeError(f"{name} expects 0 args, got {len(args)}")
+            return self._alloc_heap_value({})
+        if method == "from_entries":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            seq = self._resolve_sequence(args[0])
+            result: Dict[Any, Any] = {}
+            for pair in seq:
+                pair_val = pair
+                if isinstance(pair, int) and pair in self.heap:
+                    pair_val = self.heap[pair]
+                if not isinstance(pair_val, (list, tuple)) or len(pair_val) != 2:
+                    raise RuntimeError("from_entries expects [key, value] pairs")
+                key, val = pair_val
+                result[key] = val
+            return self._alloc_heap_value(result)
+        if method == "len":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            return len(self._resolve_map(args[0]))
+        if method == "get":
+            if len(args) not in {2, 3}:
+                raise RuntimeError(f"{name} expects 2 or 3 args, got {len(args)}")
+            default = args[2] if len(args) == 3 else None
+            return self._resolve_map(args[0]).get(args[1], default)
+        if method == "set":
+            if len(args) != 3:
+                raise RuntimeError(f"{name} expects 3 args, got {len(args)}")
+            target = self._resolve_map(args[0])
+            target[args[1]] = args[2]
+            return args[2]
+        if method == "delete":
+            if len(args) != 2:
+                raise RuntimeError(f"{name} expects 2 args, got {len(args)}")
+            target = self._resolve_map(args[0])
+            if args[1] in target:
+                del target[args[1]]
+                return True
+            return False
+        if method == "has":
+            if len(args) != 2:
+                raise RuntimeError(f"{name} expects 2 args, got {len(args)}")
+            return args[1] in self._resolve_map(args[0])
+        if method == "keys":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            return self._to_pointer(self._resolve_map(args[0]).keys())
+        if method == "values":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            return self._to_pointer(self._resolve_map(args[0]).values())
+        if method == "entries":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            items = [[k, v] for k, v in self._resolve_map(args[0]).items()]
+            return self._to_pointer(items)
+        raise RuntimeError(f"unknown Map method {method}")
+
+    def _set_call(self, name: str, args: List[Any]) -> Any:
+        method = name.split(".", 1)[1]
+        if method == "new":
+            if args:
+                raise RuntimeError(f"{name} expects 0 args, got {len(args)}")
+            return self._alloc_heap_value(set())
+        if method == "from_list":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            seq = self._resolve_sequence(args[0])
+            return self._alloc_heap_value(set(seq))
+        if method == "len":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            return len(self._resolve_set(args[0]))
+        if method == "add":
+            if len(args) != 2:
+                raise RuntimeError(f"{name} expects 2 args, got {len(args)}")
+            target = self._resolve_set(args[0])
+            before = len(target)
+            target.add(args[1])
+            return len(target) > before
+        if method == "delete":
+            if len(args) != 2:
+                raise RuntimeError(f"{name} expects 2 args, got {len(args)}")
+            target = self._resolve_set(args[0])
+            if args[1] in target:
+                target.remove(args[1])
+                return True
+            return False
+        if method == "has":
+            if len(args) != 2:
+                raise RuntimeError(f"{name} expects 2 args, got {len(args)}")
+            return args[1] in self._resolve_set(args[0])
+        if method == "to_list":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            return self._to_pointer(list(self._resolve_set(args[0])))
+        raise RuntimeError(f"unknown Set method {method}")
+
+    def _deque_call(self, name: str, args: List[Any]) -> Any:
+        method = name.split(".", 1)[1]
+        if method == "new":
+            if len(args) > 1:
+                raise RuntimeError(f"{name} expects 0 or 1 args, got {len(args)}")
+            if not args:
+                return self._alloc_heap_value(deque())
+            seq = self._resolve_sequence(args[0])
+            return self._alloc_heap_value(deque(seq))
+        if method == "len":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            return len(self._resolve_deque(args[0]))
+        if method == "push_left":
+            if len(args) != 2:
+                raise RuntimeError(f"{name} expects 2 args, got {len(args)}")
+            target = self._resolve_deque(args[0])
+            target.appendleft(args[1])
+            return len(target)
+        if method == "push_right":
+            if len(args) != 2:
+                raise RuntimeError(f"{name} expects 2 args, got {len(args)}")
+            target = self._resolve_deque(args[0])
+            target.append(args[1])
+            return len(target)
+        if method == "pop_left":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            target = self._resolve_deque(args[0])
+            if not target:
+                raise RuntimeError("pop from empty deque")
+            return target.popleft()
+        if method == "pop_right":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            target = self._resolve_deque(args[0])
+            if not target:
+                raise RuntimeError("pop from empty deque")
+            return target.pop()
+        if method == "peek_left":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            target = self._resolve_deque(args[0])
+            if not target:
+                raise RuntimeError("peek from empty deque")
+            return target[0]
+        if method == "peek_right":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            target = self._resolve_deque(args[0])
+            if not target:
+                raise RuntimeError("peek from empty deque")
+            return target[-1]
+        if method == "to_list":
+            if len(args) != 1:
+                raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
+            return self._to_pointer(list(self._resolve_deque(args[0])))
+        raise RuntimeError(f"unknown Deque method {method}")
+
+    def _async_call(self, name: str, args: List[Any]) -> Any:
+        method = name.split(".", 1)[1]
+        if method == "token":
+            if args:
+                raise RuntimeError("Async.token expects 0 args")
+            return self.make_cancellation_token()
+        if method == "cancel":
+            if len(args) not in {1, 2}:
+                raise RuntimeError("Async.cancel expects 1 or 2 args")
+            reason = args[1] if len(args) == 2 else None
+            return self.cancel_token(args[0], None if reason is None else str(reason))
+        if method == "is_cancelled":
+            if len(args) != 1:
+                raise RuntimeError("Async.is_cancelled expects 1 arg")
+            return self.token_cancelled(args[0])
+        if method == "reason":
+            if len(args) != 1:
+                raise RuntimeError("Async.reason expects 1 arg")
+            return self.token_reason(args[0])
+        if method == "link":
+            if len(args) != 2:
+                raise RuntimeError("Async.link expects 2 args")
+            return self.link_token(args[0], args[1])
+        raise RuntimeError(f"unknown Async method {method}")

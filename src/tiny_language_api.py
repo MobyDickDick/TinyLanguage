@@ -15,14 +15,17 @@ import importlib.util
 import json
 import os
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
-from native_vm import NativeVM
+from native_ir import FunctionIR, Instruction, Opcode, ProgramIR
+from native_vm import NamespaceRef as NativeNamespaceRef, NativeVM
 from native_python_bytecode import run_program_via_python_bytecode
 from stdlib import register_stdlib
 from tiny_errors import SourcePos, SourceSpan
@@ -550,7 +553,7 @@ def _tiny_to_python_ast(runtime: "Runtime", node: object) -> object:
 
 def _parse_with_tiny_parser(src: str) -> List["IR"]:
     program = _tiny_parser_bootstrap_source()
-    program = f"{program}\n\ndefine __tiny_ast = parse_program({json.dumps(src)});\n"
+    program = f"{program}\n\ndef __tiny_ast = parse_program({json.dumps(src)});\n"
     parser = Parser(Lexer(program), program)
     stmts = parser.parse()
     runtime = Runtime(program)
@@ -584,7 +587,7 @@ def _parse_and_lint(src: str, *, use_tiny_parser: Optional[bool] = None) -> List
 
     lint_import_style(stmts, src)
     lint_destruct_call_outputs(stmts, src)
-    lint_no_consecutive_definitions(stmts)
+    lint_no_consecutive_definitions(stmts, src)
     lint_assignment_types(stmts, src)
     lint_locals_used(stmts, src)
     lint_unreachable_code(stmts, src)
@@ -605,6 +608,212 @@ def _parse_and_lint(src: str, *, use_tiny_parser: Optional[bool] = None) -> List
     lint_nested(stmts)
     lint_bare_call_results(stmts, signatures, src)
     return stmts
+
+
+class NativeModuleResolver:
+    """Resolve TinyLanguage modules for the native backend."""
+
+    def __init__(self, search_paths: Optional[List[Path]] = None) -> None:
+        env_paths = os.environ.get("TINYPATH", "")
+        configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
+        default_roots = [Path.cwd(), Path(__file__).parent]
+        stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
+        if stdlib_root.exists():
+            default_roots.append(stdlib_root)
+        self.search_paths: List[Path] = search_paths or configured_paths + default_roots
+        self.cache: dict[Path, NativeNamespaceRef] = {}
+        self._in_progress: List[Path] = []
+
+    def _resolve_name(self, raw: str, caller_namespace: Optional[str], pos: Optional[Any]) -> str:
+        pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
+        leading = len(raw) - len(raw.lstrip("."))
+        if leading == 0:
+            return raw
+        if not caller_namespace:
+            raise TinyLangError(
+                "relative import outside a module",
+                pos_for_error or SourcePos.origin(),
+                code="E008",
+                span=pos if isinstance(pos, SourceSpan) else None,
+            )
+        base = caller_namespace.split(".")
+        if leading > len(base):
+            raise TinyLangError(
+                "relative import traverses beyond module root",
+                pos_for_error or SourcePos.origin(),
+                code="E008",
+                span=pos if isinstance(pos, SourceSpan) else None,
+            )
+        trimmed = base[: len(base) - leading]
+        remainder = raw.lstrip(".")
+        if remainder:
+            trimmed.append(remainder)
+        return ".".join(part for part in trimmed if part)
+
+    def _candidate_paths(self, module_name: str, caller_path: Optional[Path]) -> List[Path]:
+        rel_path = Path(*module_name.split("."))
+        candidates: List[Path] = []
+        roots: List[Path] = []
+        if caller_path:
+            roots.append(caller_path.parent)
+        roots.extend(self.search_paths)
+        for root in roots:
+            candidates.append((root / rel_path).with_suffix(".tiny"))
+        return candidates
+
+    def import_module(
+        self,
+        name: str,
+        vm: NativeVM,
+        *,
+        caller_namespace: Optional[str],
+        caller_path: Optional[Path],
+        pos: Optional[Any] = None,
+    ) -> NativeNamespaceRef:
+        resolved_name = self._resolve_name(name, caller_namespace, pos)
+        pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
+        for candidate in self._candidate_paths(resolved_name, caller_path):
+            resolved_path = candidate.resolve()
+            cached = self.cache.get(resolved_path)
+            if cached is not None:
+                return cached
+            if resolved_path.exists():
+                if resolved_path in self._in_progress:
+                    raise TinyLangError(
+                        f"circular import involving {resolved_path}",
+                        pos_for_error or SourcePos.origin(),
+                        code="E008",
+                        span=pos if isinstance(pos, SourceSpan) else None,
+                    )
+                self._in_progress.append(resolved_path)
+                try:
+                    module_env: dict[str, Any] = {}
+                    stmts = _parse_and_lint(resolved_path.read_text(encoding="utf-8"))
+                    program = NativeCodeGenerator(
+                        allow_heap=True, allow_match=True, module_namespace=resolved_name
+                    ).compile_program(
+                        stmts
+                    )
+                    vm.load_module(resolved_name, program, module_env, resolved_path)
+                    ns_ref = NativeNamespaceRef(resolved_name)
+                    self.cache[resolved_path] = ns_ref
+                    return ns_ref
+                finally:
+                    self._in_progress.remove(resolved_path)
+        raise TinyLangError(
+            f"module '{name}' not found on search path",
+            pos or SourcePos.origin(),
+            code="E008",
+            span=pos if isinstance(pos, SourceSpan) else None,
+        )
+
+
+@dataclass(frozen=True)
+class LLVMModuleInfo:
+    name: str
+    path: Path
+    program: ProgramIR
+
+
+class LLVMModuleResolver:
+    """Resolve TinyLanguage modules for the LLVM backend."""
+
+    def __init__(self, search_paths: Optional[List[Path]] = None) -> None:
+        env_paths = os.environ.get("TINYPATH", "")
+        configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
+        default_roots = [Path.cwd(), Path(__file__).parent]
+        stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
+        if stdlib_root.exists():
+            default_roots.append(stdlib_root)
+        self.search_paths: List[Path] = search_paths or configured_paths + default_roots
+        self.cache: dict[Path, LLVMModuleInfo] = {}
+        self._in_progress: List[Path] = []
+
+    def _resolve_name(self, raw: str, caller_namespace: Optional[str], pos: Optional[Any]) -> str:
+        pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
+        leading = len(raw) - len(raw.lstrip("."))
+        if leading == 0:
+            return raw
+        if not caller_namespace:
+            raise TinyLangError(
+                "relative import outside a module",
+                pos_for_error or SourcePos.origin(),
+                code="E008",
+                span=pos if isinstance(pos, SourceSpan) else None,
+            )
+        base = caller_namespace.split(".")
+        if leading > len(base):
+            raise TinyLangError(
+                "relative import traverses beyond module root",
+                pos_for_error or SourcePos.origin(),
+                code="E008",
+                span=pos if isinstance(pos, SourceSpan) else None,
+            )
+        trimmed = base[: len(base) - leading]
+        remainder = raw.lstrip(".")
+        if remainder:
+            trimmed.append(remainder)
+        return ".".join(part for part in trimmed if part)
+
+    def _candidate_paths(self, module_name: str, caller_path: Optional[Path]) -> List[Path]:
+        rel_path = Path(*module_name.split("."))
+        candidates: List[Path] = []
+        roots: List[Path] = []
+        if caller_path:
+            roots.append(caller_path.parent)
+        roots.extend(self.search_paths)
+        for root in roots:
+            candidates.append((root / rel_path).with_suffix(".tiny"))
+        return candidates
+
+    def import_module(
+        self,
+        name: str,
+        *,
+        caller_namespace: Optional[str],
+        caller_path: Optional[Path],
+        pos: Optional[Any] = None,
+    ) -> LLVMModuleInfo:
+        resolved_name = self._resolve_name(name, caller_namespace, pos)
+        pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
+        for candidate in self._candidate_paths(resolved_name, caller_path):
+            resolved_path = candidate.resolve()
+            cached = self.cache.get(resolved_path)
+            if cached is not None:
+                return cached
+            if resolved_path.exists():
+                if resolved_path in self._in_progress:
+                    raise TinyLangError(
+                        f"circular import involving {resolved_path}",
+                        pos_for_error or SourcePos.origin(),
+                        code="E008",
+                        span=pos if isinstance(pos, SourceSpan) else None,
+                    )
+                self._in_progress.append(resolved_path)
+                try:
+                    stmts = _parse_and_lint(resolved_path.read_text(encoding="utf-8"))
+                    for stmt in stmts:
+                        if isinstance(stmt, Import):
+                            self.import_module(
+                                stmt.module,
+                                caller_namespace=resolved_name,
+                                caller_path=resolved_path,
+                                pos=stmt.module_span,
+                            )
+                    program = NativeCodeGenerator(
+                        allow_heap=True, allow_match=True, module_namespace=resolved_name
+                    ).compile_program(stmts)
+                    module_info = LLVMModuleInfo(resolved_name, resolved_path, program)
+                    self.cache[resolved_path] = module_info
+                    return module_info
+                finally:
+                    self._in_progress.remove(resolved_path)
+        raise TinyLangError(
+            f"module '{name}' not found on search path",
+            pos or SourcePos.origin(),
+            code="E008",
+            span=pos if isinstance(pos, SourceSpan) else None,
+        )
 
 
 def compile_and_run(
@@ -706,17 +915,80 @@ def compile_to_python_source(src: str) -> str:
     return PythonCodeGenerator().to_source(module)
 
 
+def _module_namespace_for_path(path: Path) -> str:
+    try:
+        rel = path.resolve().relative_to(Path.cwd())
+        return ".".join(rel.with_suffix("").parts)
+    except Exception:  # noqa: BLE001 - fall back if relative resolution fails
+        return path.stem
+
+
+def _merge_llvm_programs(
+    program: ProgramIR,
+    modules: List[LLVMModuleInfo],
+) -> tuple[ProgramIR, dict[str, str]]:
+    functions = dict(program.functions)
+    classes = dict(program.classes)
+    types = dict(program.types)
+    operator_overloads = list(program.operator_overloads)
+    module_inits: dict[str, str] = {}
+    for module in modules:
+        init_name = f"{module.name}.__init"
+        module_inits[module.name] = init_name
+        init_instrs = list(module.program.entry)
+        if init_instrs and init_instrs[-1].op == Opcode.RETURN:
+            init_instrs = init_instrs[:-1]
+        init_instrs.append(Instruction(Opcode.PUSH_CONST, 0))
+        init_instrs.append(Instruction(Opcode.RETURN))
+        functions[init_name] = FunctionIR(name=init_name, params=[], instructions=init_instrs)
+        functions.update(module.program.functions)
+        classes.update(module.program.classes)
+        types.update(module.program.types)
+        operator_overloads.extend(module.program.operator_overloads)
+    merged = ProgramIR(
+        entry=program.entry,
+        functions=functions,
+        classes=classes,
+        types=types,
+        operator_overloads=operator_overloads,
+    )
+    return merged, module_inits
+
+
 def compile_to_llvm_ir(
     src: str,
     *,
     target_triple: Optional[str] = None,
     data_layout: Optional[str] = None,
     llvm_opt: bool = False,
+    module_namespace: Optional[str] = None,
+    module_path: Optional[Path] = None,
+    module_resolver: Optional[LLVMModuleResolver] = None,
 ) -> str:
     """Emit textual LLVM IR for the subset supported by the native backend."""
     stmts = _parse_and_lint(src)
-    program = NativeCodeGenerator(allow_heap=True).compile_program(stmts)
-    llvm_ir = LLVMCodeGenerator(target_triple=target_triple, data_layout=data_layout).compile_program(program)
+    if module_path and module_namespace is None:
+        module_namespace = _module_namespace_for_path(module_path)
+    resolver = module_resolver or LLVMModuleResolver()
+    for stmt in stmts:
+        if isinstance(stmt, Import):
+            resolver.import_module(
+                stmt.module,
+                caller_namespace=module_namespace,
+                caller_path=module_path,
+                pos=stmt.module_span,
+            )
+    program = NativeCodeGenerator(
+        allow_heap=True, allow_match=True, module_namespace=module_namespace
+    ).compile_program(stmts)
+    modules = list(resolver.cache.values())
+    if modules:
+        program, module_inits = _merge_llvm_programs(program, modules)
+    else:
+        module_inits = {}
+    llvm_ir = LLVMCodeGenerator(
+        target_triple=target_triple, data_layout=data_layout, module_inits=module_inits
+    ).compile_program(program)
     if llvm_opt:
         llvm_ir = _optimize_llvm_ir(llvm_ir)
     return llvm_ir
@@ -725,7 +997,7 @@ def compile_to_llvm_ir(
 def compile_to_c_source(src: str) -> str:
     """Emit C source for the subset supported by the native backend."""
     stmts = _parse_and_lint(src)
-    program = NativeCodeGenerator().compile_program(stmts)
+    program = NativeCodeGenerator(allow_match=False).compile_program(stmts)
     return CCodeGenerator().compile_program(program)
 
 
@@ -820,6 +1092,9 @@ def compile_to_executable(
     target_triple: Optional[str] = None,
     data_layout: Optional[str] = None,
     llvm_opt: bool = False,
+    module_namespace: Optional[str] = None,
+    module_path: Optional[Path] = None,
+    module_resolver: Optional[LLVMModuleResolver] = None,
 ) -> Path:
     """Compile TinyLanguage to a native executable via LLVM IR and a system compiler."""
     compiler_path = shutil.which(compiler)
@@ -830,6 +1105,9 @@ def compile_to_executable(
         target_triple=target_triple,
         data_layout=data_layout,
         llvm_opt=llvm_opt,
+        module_namespace=module_namespace,
+        module_path=module_path,
+        module_resolver=module_resolver,
     )
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -855,11 +1133,26 @@ def run_with_python_backend(src: str) -> str:
     return namespace["tiny_main"]()
 
 
-def run_with_native_backend(src: str) -> str:
+def run_with_native_backend(
+    src: str,
+    *,
+    module_namespace: Optional[str] = None,
+    module_path: Optional[Path] = None,
+    module_resolver: Optional[NativeModuleResolver] = None,
+) -> str:
     """Run code through the experimental native bytecode backend and VM."""
     stmts = _parse_and_lint(src)
-    program = NativeCodeGenerator(allow_heap=True).compile_program(stmts)
-    return NativeVM().run(program)
+    program = NativeCodeGenerator(
+        allow_heap=True, allow_match=True, module_namespace=module_namespace
+    ).compile_program(stmts)
+    resolver = module_resolver or NativeModuleResolver()
+    vm = NativeVM(
+        module_resolver=resolver,
+        module_namespace=module_namespace,
+        module_path=module_path,
+        source=src,
+    )
+    return vm.run(program)
 
 
 def _load_llvmlite_binding():
@@ -878,6 +1171,108 @@ def _register_llvm_symbols(llvm_binding) -> None:
     llvm_binding.add_symbol("fflush", ctypes.cast(libc.fflush, ctypes.c_void_p).value)
     llvm_binding.add_symbol("calloc", ctypes.cast(libc.calloc, ctypes.c_void_p).value)
     llvm_binding.add_symbol("free", ctypes.cast(libc.free, ctypes.c_void_p).value)
+    llvm_binding.add_symbol(
+        "__py_import_module", ctypes.cast(_LLVM_PYTHON_INTEROP.import_module, ctypes.c_void_p).value
+    )
+    llvm_binding.add_symbol(
+        "__py_call", ctypes.cast(_LLVM_PYTHON_INTEROP.call, ctypes.c_void_p).value
+    )
+
+
+class _LLVMPythonInterop:
+    def __init__(self) -> None:
+        self._namespaces: dict[str, set[str]] = {}
+        self._buffers: list[ctypes.Array] = []
+        self.import_module = ctypes.CFUNCTYPE(ctypes.c_longlong, ctypes.c_void_p, ctypes.c_longlong)(
+            self._import_module
+        )
+        self.call = ctypes.CFUNCTYPE(
+            ctypes.c_longlong,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_longlong,
+            ctypes.c_longlong,
+            ctypes.c_longlong,
+        )(self._call)
+
+    def _decode_str(self, ptr: int) -> str:
+        if ptr == 0:
+            return ""
+        value = ctypes.cast(ptr, ctypes.c_char_p).value
+        if value is None:
+            return ""
+        return value.decode("utf-8")
+
+    def _read_heap_list(self, ptr: int) -> list[int]:
+        if ptr == 0:
+            return []
+        data_ptr = ctypes.cast(ptr, ctypes.POINTER(ctypes.c_longlong))
+        size = data_ptr[-1]
+        if size <= 0:
+            return []
+        return [int(data_ptr[i]) for i in range(size)]
+
+    def _read_allowlist(self, ptr: int) -> set[str]:
+        return {self._decode_str(value) for value in self._read_heap_list(ptr) if value != 0}
+
+    def _decode_args(self, args_ptr: int, types_ptr: int) -> list[Any]:
+        raw_args = self._read_heap_list(args_ptr)
+        if not raw_args:
+            return []
+        tags = self._read_heap_list(types_ptr) if types_ptr != 0 else []
+        if len(tags) != len(raw_args):
+            tags = [0] * len(raw_args)
+        decoded: list[Any] = []
+        for value, tag in zip(raw_args, tags):
+            if tag == 1:
+                decoded.append(struct.unpack("d", struct.pack("q", value))[0])
+            elif tag == 2:
+                decoded.append(bool(value))
+            elif tag == 3:
+                decoded.append(self._decode_str(value))
+            else:
+                decoded.append(int(value))
+        return decoded
+
+    def _import_module(self, module_ptr: int, allow_ptr: int) -> int:
+        try:
+            module_name = self._decode_str(module_ptr)
+            allowlist = self._read_allowlist(allow_ptr)
+            if module_name:
+                self._namespaces.setdefault(module_name, set()).update(allowlist)
+            return 0
+        except Exception:
+            return 0
+
+    def _call(self, module_ptr: int, attr_ptr: int, args_ptr: int, types_ptr: int, allow_ptr: int) -> int:
+        try:
+            module_name = self._decode_str(module_ptr)
+            attr_name = self._decode_str(attr_ptr)
+            allowlist = self._read_allowlist(allow_ptr)
+            if not allowlist:
+                allowlist = self._namespaces.get(module_name, set())
+            if allowlist and attr_name not in allowlist:
+                return 0
+            module = importlib.import_module(module_name)
+            func = getattr(module, attr_name)
+            args = self._decode_args(args_ptr, types_ptr)
+            result = func(*args)
+            if isinstance(result, bool):
+                return int(result)
+            if isinstance(result, int):
+                return int(result)
+            if isinstance(result, float):
+                return int(result)
+            if isinstance(result, str):
+                buf = ctypes.create_string_buffer(result.encode("utf-8"))
+                self._buffers.append(buf)
+                return ctypes.cast(buf, ctypes.c_void_p).value
+            return 0
+        except Exception:
+            return 0
+
+
+_LLVM_PYTHON_INTEROP = _LLVMPythonInterop()
 
 
 def _create_llvm_engine(llvm_binding, *, target_triple: Optional[str] = None):
@@ -1042,7 +1437,7 @@ def run_with_llvm_jit(
     except Exception as exc:
         _raise_llvm_jit_error("parse", exc)
     try:
-        program = NativeCodeGenerator(allow_heap=True).compile_program(stmts)
+        program = NativeCodeGenerator(allow_heap=True, allow_match=False).compile_program(stmts)
     except Exception as exc:
         _raise_llvm_jit_error("native-codegen", exc)
     try:
@@ -1105,7 +1500,7 @@ def run_with_llvm_jit(
 def run_with_python_bytecode_backend(src: str) -> str:
     """Execute native IR by emitting Python bytecode instructions."""
     stmts = _parse_and_lint(src)
-    program = NativeCodeGenerator(allow_heap=True).compile_program(stmts)
+    program = NativeCodeGenerator(allow_heap=True, allow_match=False).compile_program(stmts)
     return run_program_via_python_bytecode(program)
 
 
@@ -1422,6 +1817,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             target_triple=args.llvm_target_triple,
             data_layout=args.llvm_data_layout,
             llvm_opt=args.llvm_opt,
+            module_path=Path(args.file),
         )
         if args.emit_llvm == "-":
             print(llvm_ir)
@@ -1441,6 +1837,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 target_triple=args.llvm_target_triple,
                 data_layout=args.llvm_data_layout,
                 llvm_opt=args.llvm_opt,
+                module_path=Path(args.file),
             )
         except RuntimeError as err:
             print(str(err), file=sys.stderr)
@@ -1499,4 +1896,6 @@ __all__ = [
     "run_file",
     "main",
     "ModuleResolver",
+    "NativeModuleResolver",
+    "LLVMModuleResolver",
 ]

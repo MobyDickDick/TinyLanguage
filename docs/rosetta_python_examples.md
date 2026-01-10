@@ -29,7 +29,7 @@ for n in range(1, 16):
 
 ```tiny
 fn is_divisible(n, divisor) {
-    define remainder = n;
+    def remainder = n;
     while (remainder >= divisor) {
         remainder = remainder - divisor;
     }
@@ -37,7 +37,7 @@ fn is_divisible(n, divisor) {
 }
 
 fn fizzbuzz(limit) {
-    define n = 1;
+    def n = 1;
     while (n <= limit) {
         if (is_divisible(n, 15)) { print("FizzBuzz"); }
         else {
@@ -51,7 +51,7 @@ fn fizzbuzz(limit) {
     }
 }
 
-define _ = fizzbuzz(16);
+def _ = fizzbuzz(16);
 ```
 
 ## 2) Factorial (recursion and return values)
@@ -79,7 +79,7 @@ fn fact(n) {
     return n * fact(n - 1);
 }
 
-define i = 1;
+def i = 1;
 while (i <= 5) {
     print(i, fact(i));
     i = i + 1;
@@ -110,31 +110,31 @@ for word, freq in counts.items():
 
 ```tiny
 fn word_counts(text) {
-    define normalized = String.lower(text);
-    define words = String.split(normalized, " ");
-    define counts = Map.new();
+    def normalized = String.lower(text);
+    def words = String.split(normalized, " ");
+    def counts = Map.new();
 
-    define index = 0;
-    define total = len(words);
+    def index = 0;
+    def total = len(words);
     while (index < total) {
-        define word = heap_get(words, index);
-        define seen = Map.get(counts, word, 0);
-        define _ = Map.set(counts, word, seen + 1);
+        def word = heap_get(words, index);
+        def seen = Map.get(counts, word, 0);
+        def _ = Map.set(counts, word, seen + 1);
         index = index + 1;
     }
 
     return counts;
 }
 
-define counts = word_counts("To be or not to be");
+def counts = word_counts("To be or not to be");
 print("unique words", Map.len(counts));
 
-define keys = Map.keys(counts);
+def keys = Map.keys(counts);
 
-define i = 0;
+def i = 0;
 while (i < len(keys)) {
-    define word = heap_get(keys, i);
-    define freq = Map.get(counts, word, 0);
+    def word = heap_get(keys, i);
+    def freq = Map.get(counts, word, 0);
     print(word, freq);
     i = i + 1;
 }

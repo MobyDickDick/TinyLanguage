@@ -323,10 +323,12 @@ class PythonCodeGenerator:
 
     def _emit_expr(self, expr: "IR", *, env_name: str) -> ast.expr:
         if isinstance(expr, Num):
-            try:
-                value: object = int(expr.txt)
-            except ValueError:
+            if "." in expr.txt or "e" in expr.txt or "E" in expr.txt:
                 value = float(expr.txt)
+                if ("e" in expr.txt or "E" in expr.txt) and "." not in expr.txt and value.is_integer():
+                    value = int(value)
+            else:
+                value = int(expr.txt)
             return ast.Constant(value=value)
         if isinstance(expr, Str):
             return ast.Constant(value=expr.txt)
@@ -390,4 +392,3 @@ if TYPE_CHECKING:  # pragma: no cover - only used for type checking
         While,
         If,
     )
-

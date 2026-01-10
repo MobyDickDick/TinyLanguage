@@ -24,16 +24,16 @@ operator == (x: Box, y: Box) -> Bool {
 
 // default numerics
 // Compute a simple arithmetic expression using built-in operators.
-define a = 7 + 5 * 2;
+def a = 7 + 5 * 2;
 // Compare the result against a threshold and print the Boolean outcome.
 print(a >= 17);       // true
 
 // object overloading
 // Create two boxed numbers to demonstrate the overloaded operators.
-define x = box(10);
-define y = box(32);
+def x = box(10);
+def y = box(32);
 // Use the overloaded `+` to combine the boxes.
-define z = x + y;
+def z = x + y;
 // Print the unboxed sum to confirm the overload behavior.
 print(unbox(z));      // 42
 // Show that distinct boxes with different values are not equal.
@@ -41,8 +41,8 @@ print(x == y);        // false
 
 // heap & tags (new(size))
 // Allocate a new pointer-sized array on the heap.
-define n = 3;
-define p = new(n);
+def n = 3;
+def p = new(n);
 // Tag the pointer to mark it as an Arr for debugging/runtime checks.
 tag(p, Arr);
 // Populate each slot with incremental numbers.
@@ -56,7 +56,7 @@ delete(p);
 
 // array literal via new[ ... ]
 // Allocate and initialize an array literal in one expression.
-define q = new[10, 20, 12];
+def q = new[10, 20, 12];
 // Print each element to demonstrate literal indexing.
 print(heap_get(q, 0)); // 10
 print(heap_get(q, 1)); // 20
@@ -66,7 +66,7 @@ delete(q);
 
 // strings
 // Declare a number to mix numeric and string output.
-define a2 = 17;
+def a2 = 17;
 // Print a greeting string.
 print("Hallo");
 // Print a label followed by the numeric value.
@@ -75,14 +75,14 @@ print(a2);
 
 // while + if/else + assignments
 // Initialize loop counter and accumulator variables.
-define i = 0;
-define s = 0;
+def i = 0;
+def s = 0;
 // Loop five times to demonstrate control flow and mutation.
 while (i < 5) {
   // Branch when the counter reaches 3 to highlight conditional execution.
   if (i == 3) {
     // Compute and print a temporary value derived from the counter.
-    define tmp = i * 10;
+    def tmp = i * 10;
     print(tmp);
   } else {
     // Otherwise just print the current counter.

@@ -127,10 +127,10 @@ The “nativeCompiler” work is tracked separately.
 ### 2. Type discipline
 
 - [x] **No implicit type changes**
-  - After `define i = 5;`, assigning `i = 0.5;` should be an error (or explicitly allowed via another mechanism).
+  - After `def i = 5;`, assigning `i = 0.5;` should be an error (or explicitly allowed via another mechanism).
   - Apply type rules uniformly across expressions, functions, and heap operations.
 - [x] (Optional) Simple type inference
-  - Example: `define x = 0;` ⇒ `x` is of type `number` without an explicit annotation.
+  - Example: `def x = 0;` ⇒ `x` is of type `number` without an explicit annotation.
 
 ### 3. Runtime
 

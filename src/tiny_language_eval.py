@@ -7,7 +7,7 @@
 # into the original monolithic interpreter so other modules can share the
 # same execution semantics.
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 if "IR" not in globals():
     from tiny_language_ast import (
@@ -57,6 +57,22 @@ if "Runtime" not in globals():
 if "TinyLangError" not in globals():
     from tiny_language_preamble import TinyLangError
 
+if "SourcePos" not in globals():
+    from tiny_errors import SourcePos, SourceSpan
+
+def _span_or_pos(node: IR) -> Union[SourcePos, SourceSpan]:
+    span = getattr(node, "span", None)
+    if span is not None:
+        return span
+    return getattr(node, "pos", SourcePos.origin())
+
+
+def _prefer_named_span(node: IR, attr: str) -> Union[SourcePos, SourceSpan]:
+    span = getattr(node, attr, None)
+    if span is not None:
+        return span
+    return _span_or_pos(node)
+
 def eval_block(self, stmts: List[IR], env: "Environment", namespace: Optional[str] = None) -> Any:
     for st in stmts:
         res = self.eval_stmt(st, env, namespace)
@@ -68,17 +84,17 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
     self._maybe_pause(s, env, namespace)
     try:
         if isinstance(s, Let):
-            env.define(s.name, self.eval_expr(s.expr, env), getattr(s, "span", s.pos))
+            env.define(s.name, self.eval_expr(s.expr, env), _prefer_named_span(s, "name_span"))
         elif isinstance(s, Assign):
             value = self.eval_expr(s.expr, env)
             if env.contains(s.name):
-                env.assign(s.name, value, getattr(s, "span", s.pos))
+                env.assign(s.name, value, _prefer_named_span(s, "name_span"))
             else:
-                env.define(s.name, value, getattr(s, "span", s.pos))
+                env.define(s.name, value, _prefer_named_span(s, "name_span"))
         elif isinstance(s, FieldAssign):
             obj = self.eval_expr(s.obj, env)
             val = self.eval_expr(s.expr, env)
-            self.field_set(obj, s.name, val, pos=getattr(s, "span", s.pos))
+            self.field_set(obj, s.name, val, pos=_span_or_pos(s))
         elif isinstance(s, Print):
             vals = [self.eval_expr(expr, env) for expr in s.exprs]
             text = " ".join(self.format_value(v) for v in vals)
@@ -160,7 +176,7 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
         elif isinstance(s, Namespace):
             qualified = self._qualify_name(s.name, namespace)
             child_env = Environment(parent=env, namespace=qualified, runtime=self)
-            env.define(s.name, NamespaceRef(self, qualified), getattr(s, "span", s.pos))
+            env.define(s.name, NamespaceRef(self, qualified), _span_or_pos(s))
             self.namespace_envs[qualified] = child_env
             self.eval_block(s.body, child_env, qualified)
         elif isinstance(s, Import):
@@ -170,9 +186,9 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
                 self,
                 caller_namespace=namespace or env.namespace,
                 caller_path=self.current_module_path,
-                pos=getattr(s, "span", s.pos),
+                pos=_prefer_named_span(s, "module_span"),
             )
-            env.define(binding, ns_ref, getattr(s, "span", s.pos))
+            env.define(binding, ns_ref, _prefer_named_span(s, "binding_span"))
         elif isinstance(s, Fn):
             s.namespace = namespace
             fn_name = self._qualify_name(s.name, namespace)
@@ -191,12 +207,13 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
             self.register_operator(s, env)
         elif isinstance(s, DestructAssign):
             val = self.eval_expr(s.expr, env)
-            for nm in s.names:
+            for nm, span in zip(s.names, s.name_spans or []):
                 extracted = val[str(nm)]
+                pos = span or _span_or_pos(s)
                 if env.contains(nm):
-                    env.assign(nm, extracted, getattr(s, "span", s.pos))
+                    env.assign(nm, extracted, pos)
                 else:
-                    env.define(nm, extracted, getattr(s, "span", s.pos))
+                    env.define(nm, extracted, pos)
         elif isinstance(s, TypeDef):
             self.register_type(s.name, s.fields, s.variants)
         elif isinstance(s, ClassDef):
@@ -219,7 +236,12 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
 def eval_expr(self, e: IR, env: "Environment") -> Any:
     try:
         if isinstance(e, Num):
-            return float(e.txt) if "." in e.txt else int(e.txt)
+            if "." in e.txt or "e" in e.txt or "E" in e.txt:
+                value = float(e.txt)
+                if ("e" in e.txt or "E" in e.txt) and "." not in e.txt and value.is_integer():
+                    return int(value)
+                return value
+            return int(e.txt)
         if isinstance(e, Str):
             return e.txt
         if isinstance(e, Bool):
@@ -390,6 +412,19 @@ class Environment:
         self.values: Dict[str, Any] = {}  # Local symbol table
         self.types: Dict[str, str] = {}
 
+    @staticmethod
+    def _fallback_type_name(value: Any) -> str:
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return "number"
+        return type(value).__name__
+
+    @staticmethod
+    def _normalize_numeric_type(type_name: str) -> str:
+        lowered = type_name.lower()
+        if lowered in {"int", "float"}:
+            return "number"
+        return type_name
+
     def get(self, name: str) -> Any:
         if name in self.values:
             return self.values[name]
@@ -399,18 +434,20 @@ class Environment:
 
     def define(self, name: str, value: Any, pos: Union[SourcePos, SourceSpan]) -> None:
         if self.runtime:
-            self.types[name] = self.runtime._infer_type_name(value)
+            inferred = self.runtime._infer_type_name(value)
+            self.types[name] = self._normalize_numeric_type(inferred)
         else:
-            self.types[name] = "number" if isinstance(value, (int, float)) and not isinstance(value, bool) else type(value).__name__
+            self.types[name] = self._fallback_type_name(value)
         self.values[name] = value
 
     def assign(self, name: str, value: Any, pos: Union[SourcePos, SourceSpan]) -> None:
         if name in self.values:
             if self.runtime:
                 self.runtime._check_assignment_type(self, name, value, pos, local_only=True)
-                self.types[name] = self.runtime._infer_type_name(value)
+                inferred = self.runtime._infer_type_name(value)
+                self.types[name] = self._normalize_numeric_type(inferred)
             else:
-                self.types[name] = "number" if isinstance(value, (int, float)) and not isinstance(value, bool) else type(value).__name__
+                self.types[name] = self._fallback_type_name(value)
             self.values[name] = value
         elif self.parent is not None:
             self.parent.assign(name, value, pos)

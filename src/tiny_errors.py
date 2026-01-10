@@ -1,15 +1,13 @@
-"""Shared error types and formatting helpers for TinyLanguage components.
+"""Shared error and location types for TinyLanguage components.
 
-Parsing, linting, code generation, and runtime modules all rely on these
-definitions to report positions, spans, and user-facing messages consistently.
-The formatting helpers keep diagnostics readable whether they originate from the
-CLI, the REPL, or downstream tooling.
+Parsing, linting, code generation, and runtime modules rely on these definitions
+to report positions, spans, and formatted error messages consistently.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import List, Optional, Tuple, Union
 
 
 @dataclass(frozen=True)
@@ -38,55 +36,101 @@ class SourceSpan:
     stop: SourcePos
 
 
+@dataclass(frozen=True)
+class StackFrame:
+    name: str
+    namespace: Optional[str]
+    pos: SourcePos
+
+    @property
+    def qualified_name(self) -> str:
+        return f"{self.namespace}.{self.name}" if self.namespace else self.name
+
+
 @dataclass
-class TinyError(Exception):
-    """Unified error type for lexer, parser, type checker, and linter.
-
-    Attributes:
-        kind: Short identifier such as "lex", "parse", "type", or "linter".
-        msg: Human-readable description of the error condition.
-        span: Optional source span used to highlight the error location.
-
-    """
-
-    kind: str
-    msg: str
+class TinyLangError(Exception):
+    message: str
+    pos: SourcePos = field(default_factory=SourcePos.origin)
+    code: str = "E000"
+    hint: Optional[str] = None
+    stack: Tuple[StackFrame, ...] = field(default_factory=tuple)
     span: Optional[SourceSpan] = None
 
-    def __str__(self) -> str:  # Fallback, falls format_error nicht benutzt wird
-        """Render a concise textual representation for fallback error formatting."""
-        if self.span is None:
-            return f"[{self.kind}] {self.msg}"
-        s = self.span.start
-        return f"[{self.kind}] {self.msg} (line {s.line}, column {s.column})"
+    def __str__(self) -> str:  # pragma: no cover - Exception already stringifies message
+        return self.message
 
 
-def format_error(err: TinyError, source: str) -> str:
-    """Format a TinyError with source context and underline markers."""
-    header = f"[{err.kind}] {err.msg}"
-    span = err.span
-    if span is None:
-        return header
+def _line_info(source: str, pos: Union[int, SourcePos, SourceSpan]) -> Tuple[int, int, str]:
+    lines = source.splitlines()
+    if isinstance(pos, SourceSpan):
+        pos = pos.start
+    if isinstance(pos, SourcePos):
+        line = max(1, min(pos.line, len(lines) or 1))
+        line_text = lines[line - 1] if 0 <= line - 1 < len(lines) else ""
+        col = max(1, min(pos.col, len(line_text) + 1)) if line_text else pos.col
+        return line, col, line_text
+    idx = max(0, min(len(source), pos))
+    line = source.count("\n", 0, idx) + 1
+    last_nl = source.rfind("\n", 0, idx)
+    col = idx - (last_nl + 1) + 1
+    line_text = lines[line - 1] if lines else ""
+    return line, col, line_text
 
-    # Zeilen 0-basiert
-    lines = source.splitlines(keepends=False)
-    line_index = span.start.line - 1
 
-    # Fallback, falls die gespeicherte Position nicht mehr passt
-    if not (0 <= line_index < len(lines)):
-        return header
+def format_error(
+    source: str, pos: Union[int, SourcePos, SourceSpan], message: str, *, code: str = "E000", hint: Optional[str] = None
+) -> str:
+    lines = source.splitlines()
+    if isinstance(pos, SourceSpan):
+        start_line, start_col, _ = _line_info(source, pos.start)
+        stop_line, stop_col, _ = _line_info(source, pos.stop)
+        gutter_width = len(str(max(1, len(lines))))
+        header = f"[{code}] {message} (line {start_line}, col {start_col})"
+        lines_out: List[str] = [header]
 
-    line_text = lines[line_index]
+        context_start = max(1, start_line - 1)
+        context_end = min(len(lines), stop_line + 1) if lines else stop_line
 
-    # Start/Ende innerhalb der Zeile clampen
-    start_col = max(span.start.column, 1)
-    end_col = max(span.stop.column, start_col)
+        for ln in range(context_start, context_end + 1):
+            text = lines[ln - 1] if 0 <= ln - 1 < len(lines) else ""
+            prefix = ">" if ln == start_line else " "
+            lines_out.append(f"{prefix} {ln:>{gutter_width}} | {text}")
 
-    underline = " " * (start_col - 1) + "^" * max(end_col - start_col + 1, 1)
+            if ln < start_line or ln > stop_line:
+                continue
 
-    return (
-        f"{header}\n"
-        f"line {span.start.line}, column {span.start.column}:\n"
-        f"{line_text}\n"
-        f"{underline}"
-    )
+            if ln == start_line and ln == stop_line:
+                underline_start = start_col
+                underline_end = stop_col
+            elif ln == start_line:
+                underline_start = start_col
+                underline_end = max(len(text), start_col)
+            elif ln == stop_line:
+                underline_start = 1
+                underline_end = stop_col
+            else:
+                underline_start = 1
+                underline_end = max(len(text), 1)
+
+            underline_len = max(underline_end - underline_start + 1, 1)
+            underline = " " * (underline_start - 1) + "^" * underline_len
+            lines_out.append(f"  {' ' * gutter_width} | {underline}")
+
+        if hint:
+            lines_out.append(f"  Hint: {hint}")
+        return "\n".join(lines_out)
+    line, col, _ = _line_info(source, pos)
+    gutter_width = len(str(max(1, len(lines))))
+    start = max(1, line - 1)
+    end = min(len(lines), line + 1) if lines else line
+    context: List[str] = []
+    for ln in range(start, end + 1):
+        prefix = ">" if ln == line else " "
+        text = lines[ln - 1] if 0 <= ln - 1 < len(lines) else ""
+        context.append(f"{prefix} {ln:>{gutter_width}} | {text}")
+    pointer_line = f"  {' ' * gutter_width} | {' ' * (col - 1)}^"
+    header = f"[{code}] {message} (line {line}, col {col})"
+    lines_out = [header] + context + [pointer_line]
+    if hint:
+        lines_out.append(f"  Hint: {hint}")
+    return "\n".join(lines_out)

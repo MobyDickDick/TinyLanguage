@@ -1,19 +1,19 @@
 // Demo: Map/Set/Deque der Stdlib
 
-define capitals = Map.from_entries(new[
+def capitals = Map.from_entries(new[
     new["DE", "Berlin"],
     new["AT", "Wien"]
 ]);
 print(Map.get(capitals, "DE", "?"));
 print(Map.has(capitals, "CH"));
-define _ = Map.set(capitals, "CH", "Bern");
+def _ = Map.set(capitals, "CH", "Bern");
 print(Map.len(capitals));
 
 print(String.join(Map.values(capitals), ","));
 
 // Sets
 
-define features = Set.from_list(String.split("map,set,deque", ","));
+def features = Set.from_list(String.split("map,set,deque", ","));
 print(Set.has(features, "map"));
 print(Set.add(features, "json"));
 print(Set.len(features));
@@ -21,9 +21,9 @@ print(String.join(Set.to_list(features), "+"));
 
 // Deques
 
-define todo = Deque.new(String.split("parse,transform,emit", ","));
+def todo = Deque.new(String.split("parse,transform,emit", ","));
 print(Deque.peek_left(todo));
-define _dq = Deque.push_left(todo, "read");
+def _dq = Deque.push_left(todo, "read");
 print(Deque.pop_right(todo));
 print(Deque.len(todo));
 print(String.join(Deque.to_list(todo), " -> "));

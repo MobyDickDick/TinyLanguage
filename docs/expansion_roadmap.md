@@ -85,3 +85,19 @@ _None_
 ### Closed tasks
 
 - [x] **LLVM-first VS Code debugging**: Enable a direct debugging workflow in VS Code for LLVM-native executables produced by the LLVM pipeline (see `docs/debugger_workflows.md`).
+
+## 6) Stdlib string ergonomics
+
+- **Goal**: Round out everyday string helpers so TL scripts mirror common Python-style workflows.
+- **Task list (statusable)**:
+### Open tasks
+
+_None_
+
+### Closed tasks
+
+  - [x] Add `String.is_digit(text)` to validate numeric-only strings (document in `src/stdlib/string.tiny`).
+
+  - [x] Add `String.starts_with(text, prefix)` + `String.ends_with(text, suffix)` with tests in `tests/detailtests/test_stdlib.py`.
+
+  - [x] Add `String.replace(text, old, new)` with coverage in `tests/detailtests/test_stdlib.py`.

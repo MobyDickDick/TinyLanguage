@@ -192,8 +192,8 @@ def _loop_body(loop_bound: int) -> str:
     """
     return f"""
 // Tight arithmetic loop to stress integer operations and assignment.
-define sum = 0;
-define i = 0;
+def sum = 0;
+def i = 0;
 while (i < {loop_bound}) {{
     sum = sum + i;
     i = i + 1;
@@ -244,9 +244,9 @@ def _heap_roundtrip(iterations: int, slots: int = 8) -> str:
     initial_items = ", ".join("0" for _ in range(slots))
     return f"""
 // Repeated heap reads/writes to stress pointer checks and indexing.
-define ptr = new[{initial_items}];
-define i = 0;
-define idx = 0;
+def ptr = new[{initial_items}];
+def i = 0;
+def idx = 0;
 while (i < {iterations}) {{
     heap_set(ptr, idx, i);
     // Touch the next slot to include heap_get in the mix.
@@ -273,9 +273,9 @@ def _map_operations(iterations: int) -> str:
     """
     return f"""
 // Insert/update/get operations to stress hash maps and value writes.
-define map = Map.new();
-define i = 0;
-define last = 0;
+def map = Map.new();
+def i = 0;
+def last = 0;
 while (i < {iterations}) {{
     _ = Map.set(map, i, i + 1);
     // Read the value back to ensure lookups participate in timing.

@@ -192,27 +192,23 @@ class ModuleResolver:
         aid diagnostics in the parser and linter.
         """
         pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
-        location = pos if pos is not None else pos_for_error
         leading = len(raw) - len(raw.lstrip("."))
         if leading == 0:
             return raw
         if not caller_namespace:
             raise TinyLangError(
-                format_error("", location or SourcePos.origin(), "relative import outside a module", code="E008"),
+                "relative import outside a module",
                 pos_for_error or SourcePos.origin(),
                 code="E008",
+                span=pos if isinstance(pos, SourceSpan) else None,
             )
         base = caller_namespace.split(".")
         if leading > len(base):
             raise TinyLangError(
-                format_error(
-                    "",
-                    location or SourcePos.origin(),
-                    "relative import traverses beyond module root",
-                    code="E008",
-                ),
+                "relative import traverses beyond module root",
                 pos_for_error or SourcePos.origin(),
                 code="E008",
+                span=pos if isinstance(pos, SourceSpan) else None,
             )
         trimmed = base[: len(base) - leading]
         remainder = raw.lstrip(".")
@@ -251,7 +247,6 @@ class ModuleResolver:
         resolved_name = self._resolve_name(name, caller_namespace, pos)
         pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
         frame_pos = pos_for_error or SourcePos.origin()
-        location = pos if pos is not None else pos_for_error
         for candidate in self._candidate_paths(resolved_name, caller_path):
             resolved_path = candidate.resolve()
             if resolved_path in self.cache:
@@ -259,14 +254,10 @@ class ModuleResolver:
             if resolved_path.exists():
                 if resolved_path in self._in_progress:
                     raise TinyLangError(
-                        format_error(
-                            "",
-                            location or SourcePos.origin(),
-                            f"circular import involving {resolved_path}",
-                            code="E008",
-                        ),
+                        f"circular import involving {resolved_path}",
                         pos_for_error or SourcePos.origin(),
                         code="E008",
+                        span=pos if isinstance(pos, SourceSpan) else None,
                     )
                 self._in_progress.append(resolved_path)
                 module_frame: Optional[StackFrame] = None
@@ -295,11 +286,10 @@ class ModuleResolver:
                         runtime.call_stack.pop()
                     self._in_progress.remove(resolved_path)
         raise TinyLangError(
-            format_error(
-                "", pos or SourcePos.origin(), f"module '{name}' not found on search path", code="E008"
-            ),
+            f"module '{name}' not found on search path",
             pos or SourcePos.origin(),
             code="E008",
+            span=pos if isinstance(pos, SourceSpan) else None,
         )
 
 
@@ -734,9 +724,10 @@ class Runtime:
 
     @staticmethod
     def _format_location(pos: Optional[SourcePos], span: Optional[SourceSpan]) -> Optional[Union[SourcePos, SourceSpan]]:
-        if pos is not None:
-            return pos
-        return span
+        if span is not None:
+            if pos is None or span.start.line != span.stop.line:
+                return span
+        return pos
 
     def _record_error(
         self,
@@ -1025,19 +1016,23 @@ class Runtime:
             return "string"
         return type(value).__name__
 
+    # Return a broad type label for variables defined without annotations.
+    # Unannotated numerics start as "number" so int/float changes are allowed.
     def _infer_type_name(self, value: Any) -> str:
-        """Return a broad type label for variables defined without annotations.
+        return (
+            "number"
+            if isinstance(value, (int, float)) and not isinstance(value, bool)
+            else self._value_type_name(value) or type(value).__name__
+        )
 
-        The runtime already tracks concrete types (e.g., distinguishing `int` from
-        `float`) for annotated parameters and return values. For unannotated
-        variables we allow a simple inference step so that numeric values start out
-        as the general "number" type, making later `int`/`float` updates valid
-        without counting as type changes. Other values keep their concrete name.
-        """
-
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
+    @staticmethod
+    def _normalize_numeric_type(type_name: Optional[str]) -> Optional[str]:
+        if type_name is None:
+            return None
+        lowered = type_name.lower()
+        if lowered in {"int", "float"}:
             return "number"
-        return self._value_type_name(value) or type(value).__name__
+        return type_name
 
     def _check_assignment_type(
         self, env: "Environment", name: str, value: Any, pos: Any, *, local_only: bool = False
@@ -1092,15 +1087,18 @@ class Runtime:
 
     def _enforce_inferred_return(self, owner: Any, value: Any, *, label: str, pos: SourcePos) -> None:
         expected = getattr(owner, "inferred_return_type", None)
-        inferred = self._infer_type_name(value)
+        inferred = self._normalize_numeric_type(self._infer_type_name(value))
         if expected is None:
             owner.inferred_return_type = inferred
             return
-        if self._type_matches(expected, value):
+        expected_norm = self._normalize_numeric_type(expected)
+        if expected_norm != expected:
+            owner.inferred_return_type = expected_norm
+        if self._type_matches(expected_norm, value):
             return
         actual = self._value_type_name(value) or type(value).__name__
         raise self._error(
-            f"inferred return type for {label} changed: expected {expected} but got {actual}",
+            f"inferred return type for {label} changed: expected {expected_norm} but got {actual}",
             pos,
             code="E014",
             hint="Add an explicit return type annotation or keep return values consistent to avoid implicit type changes.",
@@ -1207,9 +1205,10 @@ class Runtime:
             if not isinstance(val_b, (int, float)):
                 return mk("any_number")
             if isinstance(val_b, float):
-                if not val_b.is_integer():
+                if not val_b.is_integer() and val_a < 0:
                     return mk("any_number")
-                val_b = int(val_b)
+                if val_b.is_integer():
+                    val_b = int(val_b)
             try:
                 res = val_a**val_b
             except Exception:
@@ -1348,6 +1347,8 @@ class Runtime:
         if err_a != "normal" or err_b != "normal":
             return mk("any_number")
         try:
+            if isinstance(val_b, float) and not val_b.is_integer() and val_a < 0:
+                return mk("any_number")
             res = val_a**val_b
         except Exception:
             return mk("any_number")
@@ -1389,9 +1390,10 @@ class Runtime:
             return a / b
         if op == "^":
             if isinstance(b, float):
-                if not b.is_integer():
-                    raise RuntimeError("exponent for ^ must be an integer")
-                b = int(b)
+                if not b.is_integer() and a < 0:
+                    raise RuntimeError("fractional exponent for ^ requires a non-negative base")
+                if b.is_integer():
+                    b = int(b)
             elif not isinstance(b, int):
                 raise RuntimeError("exponent for ^ must be an integer")
             return a**b

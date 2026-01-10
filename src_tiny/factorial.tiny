@@ -1,5 +1,5 @@
 fn factorial(n) {
-    define result = 1;
+    def result = 1;
     while (n > 1) {
         result = result * n;
         n = n - 1;
@@ -7,4 +7,4 @@ fn factorial(n) {
     return result;
 }
 
-define _ = print(factorial(5));
+def _ = print(factorial(5));

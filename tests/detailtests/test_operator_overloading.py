@@ -16,9 +16,9 @@ def test_box_addition_and_equality():
         operator + (a: Box, b: Box) -> Box { return box(unbox(a) + unbox(b)); }
         operator == (a: Box, b: Box) -> Bool { return unbox(a) == unbox(b); }
 
-        define left = box(2);
-        define right = box(3);
-        define summed = left + right;
+        def left = box(2);
+        def right = box(3);
+        def summed = left + right;
         print(unbox(summed));
 
         if (left == right) {

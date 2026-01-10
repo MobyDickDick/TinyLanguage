@@ -3,23 +3,23 @@ namespace PyInterop {
     fn math_module() { return Python.import_module("math", new["sqrt", "tau"]); }
 
     fn hypotenuse(a: number, b: number) -> number {
-        define math = math_module();
+        def math = math_module();
         return math.sqrt(a * a + b * b);
     }
 
     fn normalize(angle: number) -> string {
-        define math = math_module();
-        define fraction = Python.call("builtins", "str", new[angle / math.tau], { allow: new["str"] });
+        def math = math_module();
+        def fraction = Python.call("builtins", "str", new[angle / math.tau], { allow: new["str"] });
         return "tau fraction=" + fraction;
     }
 }
 
 fn module_label(path: string) -> string {
-    define basename = Python.call("os.path", "basename", new[path], { allow: new["basename"] });
+    def basename = Python.call("os.path", "basename", new[path], { allow: new["basename"] });
     return "file=" + basename;
 }
 
-define length = PyInterop.hypotenuse(5, 12);
+def length = PyInterop.hypotenuse(5, 12);
 print(length);
 print(PyInterop.normalize(3.1415926535));
 print(module_label("/tmp/example.txt"));

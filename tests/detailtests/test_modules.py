@@ -7,7 +7,7 @@ def test_import_caching_and_binding(tmp_path):
     module_file = pkg / "counter.tiny"
     module_file.write_text(
         """
-        define load_count = 1;
+        def load_count = 1;
         print("loaded " + String.repeat("!", load_count));
         """,
         encoding="utf-8",
@@ -39,7 +39,7 @@ def test_relative_import_uses_caller_namespace(tmp_path):
     util_file = pkg / "util.tiny"
     util_file.write_text(
         """
-        define label = "from util";
+        def label = "from util";
         print(label);
         """,
         encoding="utf-8",

@@ -6,8 +6,8 @@ def test_format_program_lists_entry_and_functions():
     source = """
     fn add(x, y) { return x + y; }
 
-    define a = 1;
-    define b = 2;
+    def a = 1;
+    def b = 2;
     print(add(a, b));
     """
 

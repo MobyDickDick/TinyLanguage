@@ -11,9 +11,9 @@ def test_non_escaped_parameter_is_copied_by_default():
         heap_set(buf, 0, 99);
     }
 
-    define data = new(1);
+    def data = new(1);
     heap_set(data, 0, 1);
-    define _ = bump(data);
+    def _ = bump(data);
     print(heap_get(data, 0));
     """
 
@@ -29,9 +29,9 @@ def test_escaped_parameter_mutations_propagate():
         return buf;
     }
 
-    define data = new(1);
+    def data = new(1);
     heap_set(data, 0, 7);
-    define alias = passthrough(data);
+    def alias = passthrough(data);
     print(heap_get(data, 0));
     print(heap_get(alias, 0));
     """
@@ -47,9 +47,9 @@ def test_legacy_behavior_when_copy_on_call_disabled():
         heap_set(buf, 0, 99);
     }
 
-    define data = new(1);
+    def data = new(1);
     heap_set(data, 0, 1);
-    define _ = bump(data);
+    def _ = bump(data);
     print(heap_get(data, 0));
     """
 
@@ -60,7 +60,7 @@ def test_legacy_behavior_when_copy_on_call_disabled():
 
 def test_mutating_protected_argument_raises():
     source = """
-    define shared = new(1);
+    def shared = new(1);
 
     fn mutate_through_alias(p) {
         if (p == p) {
@@ -68,7 +68,7 @@ def test_mutating_protected_argument_raises():
         }
     }
 
-    define _ = mutate_through_alias(shared);
+    def _ = mutate_through_alias(shared);
     """
 
     with pytest.raises(TinyLangError) as excinfo:
@@ -83,9 +83,9 @@ def test_cli_flag_enables_copy_on_call():
         heap_set(buf, 0, 99);
     }
 
-    define data = new(1);
+    def data = new(1);
     heap_set(data, 0, 1);
-    define _ = bump(data);
+    def _ = bump(data);
     print(heap_get(data, 0));
     """
 

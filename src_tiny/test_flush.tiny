@@ -1,7 +1,7 @@
 // Print a sequence of numbers to verify basic TinyLanguage output.
-define n = 10;
+def n = 10;
 
-define i = 0;
+def i = 0;
 
 while (i < n) {
     print(i);

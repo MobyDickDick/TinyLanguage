@@ -9,9 +9,17 @@
 // String.lower(text) -> Kleinbuchstaben
 // String.trim(text) -> Trimt Leerzeichen links und rechts
 // String.repeat(text, count) -> Wiederholt den Text count-mal
+// String.replace(text, old, new) -> Ersetzt Teilstrings
+// String.starts_with(text, prefix) -> Bool
+// String.ends_with(text, suffix) -> Bool
+// String.is_digit(text) -> Bool
 //
 // Beispiel:
-// define parts = String.split(" a,b ,c ", ",");
+// def parts = String.split(" a,b ,c ", ",");
 // print(String.trim(heap_get(parts, 0)));
 // print(String.upper(String.join(parts, "-")));
 // print(String.repeat("ha", 3));
+// print(String.replace("tiny language", " ", "_"));
+// print(String.starts_with("tiny language", "tiny"));
+// print(String.ends_with("tiny language", "age"));
+// print(String.is_digit("12345"));

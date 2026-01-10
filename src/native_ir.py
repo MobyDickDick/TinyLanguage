@@ -6,9 +6,11 @@ container dataclasses, and a human-readable formatter so tests can assert
 against the emitted instructions without parsing private structures.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+
+from tiny_errors import SourceSpan
 
 
 class Opcode(str, Enum):
@@ -33,6 +35,7 @@ class Instruction:
 
     op: Opcode
     arg: Any = None
+    span: Optional[SourceSpan] = None
 
 
 @dataclass
@@ -45,11 +48,42 @@ class FunctionIR:
 
 
 @dataclass
+class OperatorOverloadIR:
+    """Operator overload mapping stored in the native IR."""
+
+    op: str
+    a_type: str
+    b_type: str
+    func_name: str
+
+
+@dataclass
+class TypeIR:
+    """Record type or algebraic data type metadata for the native VM."""
+
+    name: str
+    fields: List[tuple[str, str]] | None = None
+    variants: Dict[str, List[tuple[str, str]]] | None = None
+
+
+@dataclass
 class ProgramIR:
     """Entry sequence and function table for the VM."""
 
     entry: List[Instruction]
     functions: Dict[str, FunctionIR]
+    classes: Dict[str, "ClassIR"] = field(default_factory=dict)
+    types: Dict[str, TypeIR] = field(default_factory=dict)
+    operator_overloads: List[OperatorOverloadIR] = field(default_factory=list)
+
+
+@dataclass
+class ClassIR:
+    """Class metadata for native VM runtime support."""
+
+    name: str
+    fields: List[str]
+    bases: List[str] = field(default_factory=list)
 
 
 def format_program(program: ProgramIR) -> str:
@@ -63,6 +97,24 @@ def format_program(program: ProgramIR) -> str:
         return lines
 
     lines = _fmt_block("entry", program.entry)
+    for overload in program.operator_overloads:
+        lines.append(
+            f"operator {overload.op} ({overload.a_type}, {overload.b_type}) -> {overload.func_name}"
+        )
+    for type_def in program.types.values():
+        if type_def.variants:
+            variants = []
+            for vname, fields in type_def.variants.items():
+                field_text = ", ".join(f"{fname}: {ftype}" for fname, ftype in fields)
+                variants.append(f"{vname}({field_text})" if field_text else vname)
+            lines.append(f"type {type_def.name} {{ {'; '.join(variants)} }}")
+        elif type_def.fields is not None:
+            field_text = ", ".join(f"{fname}: {ftype}" for fname, ftype in type_def.fields)
+            lines.append(f"type {type_def.name} {{ {field_text} }}")
+    for class_def in program.classes.values():
+        bases = f": {', '.join(class_def.bases)}" if class_def.bases else ""
+        fields = ", ".join(class_def.fields)
+        lines.append(f"class {class_def.name}{bases} {{ {fields} }}")
     for func in program.functions.values():
         header = f"function {func.name}({', '.join(func.params)})"
         lines.append(header)

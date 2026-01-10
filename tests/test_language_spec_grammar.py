@@ -13,11 +13,11 @@ from tiny_language import Lexer, Parser, _parse_with_tiny_parser
 
 GRAMMAR_SAMPLES = [
     pytest.param(
-        "define value = 1 + 2 * 3 ^ 2;\nprint(value, 4);\nflush();",
+        "def value = 1 + 2 * 3 ^ 2;\nprint(value, 4);\nflush();",
         id="define_print_flush",
     ),
     pytest.param(
-        "define n = 0;\n"
+        "def n = 0;\n"
         "while (n < 3) { n = n + 1; }\n"
         "if (n >= 3) { print(n); } else { print(0); }\n"
         "try { print(\"ok\"); } catch (err) { print(err); }",
@@ -46,21 +46,21 @@ GRAMMAR_SAMPLES = [
     ),
     pytest.param(
         "type Shape { Circle { radius: number }; }\n"
-        "define shape = Circle { radius: 2 };\n"
-        "define size = match shape { case Circle { radius: r } => r; };",
+        "def shape = Circle { radius: 2 };\n"
+        "def size = match shape { case Circle { radius: r } => r; };",
         id="match_variant",
     ),
     pytest.param(
         "async fn job() { return 1; }\n"
         "fn run() { return await job(); }\n"
-        "define buf = new[1, 2, 3];\n"
-        "define obj = { a: 1, b: 2 };\n"
-        "define empty = Null;",
+        "def buf = new[1, 2, 3];\n"
+        "def obj = { a: 1, b: 2 };\n"
+        "def empty = Null;",
         id="async_await_new",
     ),
     pytest.param(
         "class Box { value: number; }\n"
-        "define box = new Box { value: 5 };",
+        "def box = new Box { value: 5 };",
         id="class_new",
     ),
     pytest.param(

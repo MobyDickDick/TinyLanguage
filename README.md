@@ -2,6 +2,8 @@
 
 TinyLanguage is a small Julia-inspired language with a Python implementation (interpreter + tooling) and multiple experimental backends (native/C, LLVM prototype, transpilers). The project is primarily a **learning playground** for language design, IR experiments, and cross-language interoperability—not a production SDK.
 
+Note: The ideas largely come from me, but the code was generated with ChatGPT.
+
 If you want a compact reference first:
 - Language spec: [docs/language_spec.md](docs/language_spec.md)
 - Tutorial: [docs/tutorial.md](docs/tutorial.md)
@@ -66,7 +68,7 @@ python run_all.py
 
 ```tiny
 // Variables, arithmetic, printing
-define a = 7 + 5 * 2;
+def a = 7 + 5 * 2;
 print(a);                // -> 17
 
 // Declare and call functions
@@ -74,11 +76,11 @@ fn add(x, y) {
     return x + y;
 }
 
-define sum = add(a, 3);
+def sum = add(a, 3);
 print(sum);
 
 // If/while and mutation
-define i = 0;
+def i = 0;
 while (i < 3) {
     if (i == 1) { print("in the middle"); }
     i = i + 1;
@@ -250,6 +252,7 @@ To keep the README focused, the previously long “Open tasks” checklists have
 ## Roadmap
 
 This section remains the *future-looking* plan. Roughly grouped into frontend/language, type discipline, runtime, tooling, and native backends.
+For a detailed checklist of open items, see [docs/open_tasks.md](docs/open_tasks.md).
 
 ### Frontend / language
 - Improve error positions and messages (carry line/column through tokens + AST nodes; unify error type with optional `SourceSpan`).

@@ -41,10 +41,10 @@ def test_json_demo_round_trips_and_maps_list_entries():
 
 def test_allowlist_violation_is_reported():
     source = """
-    define math = Python.import_module("math", new["sqrt"]);
+    def math = Python.import_module("math", new["sqrt"]);
     print(math.sqrt(9));
     try {
-      define ignored = Python.call("math", "sin", Null, { allow: new["sqrt"] });
+      def ignored = Python.call("math", "sin", Null, { allow: new["sqrt"] });
       print(ignored);
     } catch(err) {
       print(err.message);
@@ -61,7 +61,7 @@ def test_allowlist_violation_is_reported():
 def test_python_call_requires_allowlist():
     source = """
     try {
-      define ignored = Python.call("math", "sqrt", new[9]);
+      def ignored = Python.call("math", "sqrt", new[9]);
     } catch(err) {
       print(err.message);
     }
@@ -76,7 +76,7 @@ def test_python_call_requires_allowlist():
 def test_banned_python_modules_are_blocked():
     source = """
     try {
-      define forbidden = Python.import_module("subprocess");
+      def forbidden = Python.import_module("subprocess");
       print(forbidden);
     } catch(err) {
       print(err.message);
@@ -92,7 +92,7 @@ def test_banned_python_modules_are_blocked():
 def test_python_call_honors_timeout_option():
     source = """
     try {
-      define ignored = Python.call("time", "sleep", new[0.05], { allow: new["sleep"], timeout_ms: 1 });
+      def ignored = Python.call("time", "sleep", new[0.05], { allow: new["sleep"], timeout_ms: 1 });
     } catch(err) {
       print(err.message);
     }

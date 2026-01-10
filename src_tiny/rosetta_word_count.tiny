@@ -3,31 +3,31 @@
 // Run with: python src/tiny_language.py src_tiny/rosetta_word_count.tiny
 
 fn word_counts(text) {
-    define normalized = String.lower(text);
-    define words = String.split(normalized, " ");
-    define counts = Map.new();
+    def normalized = String.lower(text);
+    def words = String.split(normalized, " ");
+    def counts = Map.new();
 
-    define index = 0;
-    define total = len(words);
+    def index = 0;
+    def total = len(words);
     while (index < total) {
-        define word = heap_get(words, index);
-        define seen = Map.get(counts, word, 0);
-        define _ = Map.set(counts, word, seen + 1);
+        def word = heap_get(words, index);
+        def seen = Map.get(counts, word, 0);
+        def _ = Map.set(counts, word, seen + 1);
         index = index + 1;
     }
 
     return counts;
 }
 
-define counts = word_counts("To be or not to be");
+def counts = word_counts("To be or not to be");
 print("unique words", Map.len(counts));
 
-define keys = Map.keys(counts);
+def keys = Map.keys(counts);
 
-define i = 0;
+def i = 0;
 while (i < len(keys)) {
-    define word = heap_get(keys, i);
-    define freq = Map.get(counts, word, 0);
+    def word = heap_get(keys, i);
+    def freq = Map.get(counts, word, 0);
     print(word, freq);
     i = i + 1;
 }

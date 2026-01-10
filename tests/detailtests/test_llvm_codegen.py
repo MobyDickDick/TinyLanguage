@@ -10,8 +10,23 @@ from tiny_language import compile_to_llvm_ir
 from tiny_language_codegen_llvm import LLVMCodeGenerator
 
 
+def _tiny_main_body(llvm_ir: str) -> str:
+    lines = llvm_ir.splitlines()
+    start = None
+    for idx, line in enumerate(lines):
+        if line.startswith("define i32 @tiny_main()"):
+            start = idx + 1
+            break
+    if start is None:
+        raise AssertionError("tiny_main function not found in LLVM IR")
+    for end in range(start, len(lines)):
+        if lines[end] == "}":
+            return "\n".join(lines[start:end])
+    raise AssertionError("tiny_main function did not terminate as expected")
+
+
 def test_compile_to_llvm_ir_emits_arithmetic_ir() -> None:
-    source = "define a = 1 + 2; print(a);"
+    source = "def a = 1 + 2; print(a);"
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -22,7 +37,7 @@ def test_compile_to_llvm_ir_emits_arithmetic_ir() -> None:
 
 
 def test_compile_to_llvm_ir_includes_target_metadata() -> None:
-    source = "define a = 1; print(a);"
+    source = "def a = 1; print(a);"
 
     llvm_ir = compile_to_llvm_ir(
         source,
@@ -36,7 +51,7 @@ def test_compile_to_llvm_ir_includes_target_metadata() -> None:
 
 
 def test_cli_emits_llvm_ir(tmp_path) -> None:
-    source = "define value = 5 * 2; print(value);"
+    source = "def value = 5 * 2; print(value);"
     script = tmp_path / "program.tiny"
     script.write_text(source, encoding="utf-8")
 
@@ -79,6 +94,121 @@ def test_llvm_codegen_supports_function_calls() -> None:
     assert "call i64 @add(i64 2, i64 3)" in llvm_ir
 
 
+def test_llvm_codegen_supports_module_imports(tmp_path) -> None:
+    helper = tmp_path / "helper.tiny"
+    helper.write_text("fn add(x, y) { return x + y; }", encoding="utf-8")
+    main = tmp_path / "main.tiny"
+    main.write_text("import helper; print(helper.add(1, 2));", encoding="utf-8")
+
+    llvm_ir = compile_to_llvm_ir(main.read_text(encoding="utf-8"), module_path=main)
+    main_ir = _tiny_main_body(llvm_ir)
+
+    assert "define i64 @helper.add(i64 %x.arg, i64 %y.arg)" in llvm_ir
+    assert "define i64 @helper.__init()" in llvm_ir
+    assert "call i64 @helper.__init()" in main_ir
+    assert "call i64 @helper.add(i64 1, i64 2)" in main_ir
+
+
+def test_llvm_codegen_supports_python_interop() -> None:
+    source = """
+def math = Python.import_module("math", new["sqrt"]);
+def value = Python.call("math", "sqrt", new[9]);
+def other = math.sqrt(16);
+print(value);
+print(other);
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+    main_ir = _tiny_main_body(llvm_ir)
+
+    assert "declare i64 @__py_import_module(i8*, i64)" in llvm_ir
+    assert "declare i64 @__py_call(i8*, i8*, i64, i64, i64)" in llvm_ir
+    assert "call i64 @__py_import_module" in main_ir
+    assert "call i64 @__py_call" in main_ir
+
+
+def test_llvm_codegen_supports_spawn_and_join() -> None:
+    source = """
+async fn add(x, y) { return x + y; }
+def handle = spawn add(2, 3);
+def result = await handle;
+print(result);
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+    main_ir = _tiny_main_body(llvm_ir)
+
+    assert "define i64 @__spawn_i64" in llvm_ir
+    assert "define i64 @__join_i64" in llvm_ir
+    assert "call i64 @__spawn_i64" in main_ir
+    assert "call i64 @__join_i64" in main_ir
+
+
+def test_llvm_codegen_supports_async_tokens() -> None:
+    source = """
+fn quick() { return 1; }
+
+def token = Async.token();
+def handle = spawn quick();
+def linked = Async.link(token, handle);
+def cancelled = Async.cancel(token, "stop");
+print(Async.is_cancelled(token));
+print(Async.reason(token));
+print(linked, cancelled);
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+    main_ir = _tiny_main_body(llvm_ir)
+
+    assert "define i64 @__async_token" in llvm_ir
+    assert "define i1 @__async_cancel" in llvm_ir
+    assert "define i1 @__async_is_cancelled" in llvm_ir
+    assert "define i8* @__async_reason" in llvm_ir
+    assert "define i1 @__async_link" in llvm_ir
+    assert "call i64 @__async_token" in main_ir
+    assert "call i1 @__async_cancel" in main_ir
+    assert "call i1 @__async_is_cancelled" in main_ir
+    assert "call i8* @__async_reason" in main_ir
+    assert "call i1 @__async_link" in main_ir
+
+
+def test_llvm_codegen_supports_class_methods() -> None:
+    source = """
+class Point {
+  x: number;
+  y: number;
+
+  fn sum(self) {
+    return self.x + self.y;
+  }
+}
+
+def p = new Point { x: 1; y: 2; };
+print(p.sum());
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+    main_ir = _tiny_main_body(llvm_ir)
+
+    assert "define i64 @Point.sum" in llvm_ir
+    assert "call i64 @__new(i64 3)" in main_ir
+    assert "call i64 @Point.sum" in main_ir
+    assert "call i64 @heap_get" in llvm_ir
+
+
+def test_llvm_codegen_emits_operator_overload_calls() -> None:
+    source = """
+operator + (a: number, b: number) -> number { return a - b; }
+def total = 2 + 3;
+print(total);
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+    main_ir = _tiny_main_body(llvm_ir)
+
+    assert "call i64 @__op_+_number_number" in main_ir
+
+
 def test_pop_is_ignored_in_llvm_codegen() -> None:
     program = ProgramIR(
         entry=[
@@ -91,14 +221,15 @@ def test_pop_is_ignored_in_llvm_codegen() -> None:
     )
 
     ir = LLVMCodeGenerator().compile_program(program)
+    main_ir = _tiny_main_body(ir)
 
-    assert "call i32 (i8*, ...) @printf" in ir
-    assert "i64 2" in ir
-    assert "i64 1" not in ir  # popped value should not reach the output
+    assert "call i32 (i8*, ...) @printf" in main_ir
+    assert "i64 2" in main_ir
+    assert "i64 1" not in main_ir  # popped value should not reach the output
 
 
 def test_llvm_codegen_handles_modulo_operation() -> None:
-    source = "define value = 5 % 2; print(value);"
+    source = "def value = 5 % 2; print(value);"
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -107,7 +238,7 @@ def test_llvm_codegen_handles_modulo_operation() -> None:
 
 
 def test_llvm_codegen_handles_float_modulo_operation() -> None:
-    source = "define value = 5.0 % 2.0; print(value);"
+    source = "def value = 5.0 % 2.0; print(value);"
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -116,7 +247,7 @@ def test_llvm_codegen_handles_float_modulo_operation() -> None:
 
 
 def test_llvm_codegen_emits_integer_and_float_comparisons() -> None:
-    source = "define a = 3 > 1; define b = 2.0 <= 4.0; print(a, b);"
+    source = "def a = 3 > 1; def b = 2.0 <= 4.0; print(a, b);"
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -127,7 +258,7 @@ def test_llvm_codegen_emits_integer_and_float_comparisons() -> None:
 
 
 def test_cli_emits_llvm_ir_for_comparisons(tmp_path) -> None:
-    source = "define a = 2 == 2; define b = 1.5 != 3.0; print(a, b);"
+    source = "def a = 2 == 2; def b = 1.5 != 3.0; print(a, b);"
     script = tmp_path / "program.tiny"
     script.write_text(source, encoding="utf-8")
 
@@ -151,7 +282,7 @@ def test_cli_emits_llvm_ir_for_comparisons(tmp_path) -> None:
 
 
 def test_cli_emits_llvm_ir_for_modulo(tmp_path) -> None:
-    source = "define a = 9 % 4; define b = 7.5 % 2.5; print(a, b);"
+    source = "def a = 9 % 4; def b = 7.5 % 2.5; print(a, b);"
     script = tmp_path / "program.tiny"
     script.write_text(source, encoding="utf-8")
 
@@ -179,14 +310,15 @@ def test_llvm_codegen_emits_flush_calls() -> None:
     source = "print(1); flush(); print(2);"
 
     llvm_ir = compile_to_llvm_ir(source)
+    main_ir = _tiny_main_body(llvm_ir)
 
-    assert "call i32 @fflush(i8* null)" in llvm_ir
-    assert llvm_ir.count("call i32 (i8*, ...) @printf") == 2
+    assert "call i32 @fflush(i8* null)" in main_ir
+    assert main_ir.count("call i32 (i8*, ...) @printf") == 2
 
 
 def test_llvm_codegen_handles_if_and_while_control_flow() -> None:
     source = """
-define i = 0;
+def i = 0;
 while (i < 2) {
     i = i + 1;
 }
@@ -196,9 +328,10 @@ if (i == 2) {
 """
 
     llvm_ir = compile_to_llvm_ir(source)
+    main_ir = _tiny_main_body(llvm_ir)
 
-    assert llvm_ir.count("br i1") == 2
-    assert "block" in llvm_ir
+    assert main_ir.count("br i1") == 2
+    assert "block" in main_ir
 
 
 def test_llvm_codegen_emits_string_prints() -> None:
@@ -212,7 +345,7 @@ def test_llvm_codegen_emits_string_prints() -> None:
 
 
 def test_llvm_codegen_supports_non_numeric_variables() -> None:
-    source = 'define greeting = "hi"; define ok = true; print(greeting, ok);'
+    source = 'def greeting = "hi"; def ok = true; print(greeting, ok);'
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -235,7 +368,7 @@ def test_llvm_codegen_supports_null_literal_prints() -> None:
 
 
 def test_llvm_codegen_emits_heap_calls() -> None:
-    source = "define ptr = new(1); heap_set(ptr, 0, 42); print(heap_get(ptr, 0));"
+    source = "def ptr = new(1); heap_set(ptr, 0, 42); print(heap_get(ptr, 0));"
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -245,7 +378,7 @@ def test_llvm_codegen_emits_heap_calls() -> None:
 
 
 def test_llvm_codegen_emits_heap_string_helpers() -> None:
-    source = 'define ptr = new(1); heap_set(ptr, 0, "hello"); print(heap_get(ptr, 0));'
+    source = 'def ptr = new(1); heap_set(ptr, 0, "hello"); print(heap_get(ptr, 0));'
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -253,8 +386,18 @@ def test_llvm_codegen_emits_heap_string_helpers() -> None:
     assert "call i8* @heap_get_str(i64" in llvm_ir
 
 
+def test_llvm_codegen_emits_array_literal_heap_helpers() -> None:
+    source = 'def ptr = new["hello", "world"]; print(heap_get(ptr, 1));'
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "call i64 @__new(i64 2)" in llvm_ir
+    assert "call i64 @heap_set_str(i64" in llvm_ir
+    assert "call i8* @heap_get_str(i64" in llvm_ir
+
+
 def test_llvm_codegen_defines_heap_runtime_helpers() -> None:
-    source = "define ptr = new(1); heap_set(ptr, 0, 1); print(heap_get(ptr, 0));"
+    source = "def ptr = new(1); heap_set(ptr, 0, 1); print(heap_get(ptr, 0));"
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -268,6 +411,42 @@ def test_llvm_codegen_defines_heap_runtime_helpers() -> None:
     assert "define i64 @heap_set_double(i64 %ptr, i64 %idx, double %value)" in llvm_ir
     assert "define i64 @heap_set_bool(i64 %ptr, i64 %idx, i1 %value)" in llvm_ir
     assert "define i64 @delete(i64 %ptr)" in llvm_ir
+
+
+def test_llvm_codegen_emits_collection_helpers() -> None:
+    source = """
+def m = Map.new();
+def _ = Map.set(m, 1, 2);
+print(Map.get(m, 1, 0));
+
+def s = Set.new();
+print(Set.add(s, 5));
+
+def q = Deque.new();
+def _p = Deque.push_right(q, 9);
+print(Deque.pop_left(q));
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "call i64 @__map_new()" in llvm_ir
+    assert "call i64 @__map_set" in llvm_ir
+    assert "call i64 @__map_get" in llvm_ir
+    assert "call i64 @__set_new()" in llvm_ir
+    assert "call i1 @__set_add" in llvm_ir
+    assert "call i64 @__deque_new()" in llvm_ir
+    assert "call i64 @__deque_push_right" in llvm_ir
+    assert "call i64 @__deque_pop_left" in llvm_ir
+
+
+def test_llvm_codegen_emits_heap_bounds_checks() -> None:
+    source = "def ptr = new(2); heap_set(ptr, 1, 1); print(heap_get(ptr, 1));"
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "define i64 @__heap_bounds_error(i64 %idx, i64 %size)" in llvm_ir
+    assert "add i64 %size, 1" in llvm_ir
+    assert "getelementptr i64, i64* %data, i64 -1" in llvm_ir
 
 
 def test_llvm_codegen_emits_branches_for_jump_ops() -> None:
@@ -329,3 +508,29 @@ def test_llvm_codegen_reports_mixed_type_arithmetic_with_context() -> None:
         r"\(i64 vs double\) \(instruction: BINARY '\+'\)",
     ):
         LLVMCodeGenerator().compile_program(program)
+
+
+def test_llvm_codegen_supports_match_and_variants() -> None:
+    source = """
+type Shape {
+  Circle { radius: number };
+  Rectangle { width: number, height: number };
+}
+
+fn area(shape) {
+  return match shape {
+    case Circle { radius: r }: r;
+    case Rectangle { width: w, height: h }: w + h;
+  };
+}
+
+def c = Circle { radius: 2 };
+print(area(c));
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "call i64 @__new(i64 2)" in llvm_ir
+    assert "call i64 @heap_set_str" in llvm_ir
+    assert "call i8* @heap_get_str" in llvm_ir
+    assert "icmp eq i8*" in llvm_ir

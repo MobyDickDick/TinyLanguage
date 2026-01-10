@@ -38,6 +38,7 @@ def _load_and_exec_all() -> None:
 
     # Accumulate the textual contents of each segment in the correct order.
     parts = []  # Prepare a list that will hold each source fragment.
+    segments = []  # Track raw segments for fallback execution if stitching fails.
     segment_names = [
         "tiny_language_preamble.py",  # shared definitions and constants
         "tiny_language_lexer.py",  # tokenization logic
@@ -60,6 +61,7 @@ def _load_and_exec_all() -> None:
         if not segment.endswith("\n"):
             segment += "\n"
         parts.append(f"# --- segment: {name} ---\n{segment}")  # Include a separator to avoid accidental merges.
+        segments.append((name, segment))
 
     full_source = "\n".join(parts)
     stitched_path = base / "tiny_language_stitched.py"
@@ -92,7 +94,16 @@ def _load_and_exec_all() -> None:
         sys.stderr.write(
             f"[tiny_language stitch] segment names: {', '.join(segment_names)}\n"
         )
-        raise
+        sys.stderr.write(
+            "[tiny_language stitch] Falling back to per-segment execution.\n"
+        )
+        try:
+            for name, segment in segments:
+                segment_path = base / name
+                exec(compile(segment, str(segment_path), "exec"), globals(), globals())
+        except SyntaxError:
+            raise
+        return
 
     if os.getenv("TINYLANG_STITCH_DEBUG"):
         sys.stderr.write(

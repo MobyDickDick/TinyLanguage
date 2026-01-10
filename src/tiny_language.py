@@ -24,6 +24,7 @@ from __future__ import annotations  # Enable postponed evaluation for annotation
 
 # Path handling is only needed while we stitch the module pieces together.
 from pathlib import Path as _Path  # Import Path with an alias to avoid polluting the public API.
+import os
 import sys  # Detect frozen executables (e.g., PyInstaller) so we can locate bundled sources.
 
 
@@ -66,7 +67,27 @@ def _load_and_exec_all() -> None:
         stitched_path.unlink()
     stitched_path.write_text(full_source, encoding="utf-8")
 
-    code = compile(full_source, str(stitched_path), "exec")  # Compile so tracebacks reference the stitched file.
+    try:
+        code = compile(full_source, str(stitched_path), "exec")  # Compile so tracebacks reference the stitched file.
+    except SyntaxError as exc:
+        lineno = exc.lineno or 0
+        if lineno > 0:
+            window_start = max(lineno - 3, 1)
+            window_end = lineno + 3
+            context_lines = full_source.splitlines()
+            snippet = "\n".join(
+                f"{idx:5d}: {context_lines[idx - 1]}"
+                for idx in range(window_start, min(window_end, len(context_lines)) + 1)
+            )
+            sys.stderr.write(
+                f"[tiny_language stitch] SyntaxError near line {lineno}:\n{snippet}\n"
+            )
+        raise
+
+    if os.getenv("TINYLANG_STITCH_DEBUG"):
+        sys.stderr.write(
+            f"[tiny_language stitch] Wrote {stitched_path} with {full_source.count(chr(10)) + 1} lines\n"
+        )
 
     exec(code, globals(), globals())  # Execute the compiled module in this file's global namespace.
 

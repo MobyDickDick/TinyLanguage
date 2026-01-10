@@ -626,27 +626,23 @@ class NativeModuleResolver:
 
     def _resolve_name(self, raw: str, caller_namespace: Optional[str], pos: Optional[Any]) -> str:
         pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
-        location = pos if pos is not None else pos_for_error
         leading = len(raw) - len(raw.lstrip("."))
         if leading == 0:
             return raw
         if not caller_namespace:
             raise TinyLangError(
-                format_error("", location or SourcePos.origin(), "relative import outside a module", code="E008"),
+                "relative import outside a module",
                 pos_for_error or SourcePos.origin(),
                 code="E008",
+                span=pos if isinstance(pos, SourceSpan) else None,
             )
         base = caller_namespace.split(".")
         if leading > len(base):
             raise TinyLangError(
-                format_error(
-                    "",
-                    location or SourcePos.origin(),
-                    "relative import traverses beyond module root",
-                    code="E008",
-                ),
+                "relative import traverses beyond module root",
                 pos_for_error or SourcePos.origin(),
                 code="E008",
+                span=pos if isinstance(pos, SourceSpan) else None,
             )
         trimmed = base[: len(base) - leading]
         remainder = raw.lstrip(".")
@@ -676,7 +672,6 @@ class NativeModuleResolver:
     ) -> NativeNamespaceRef:
         resolved_name = self._resolve_name(name, caller_namespace, pos)
         pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
-        location = pos if pos is not None else pos_for_error
         for candidate in self._candidate_paths(resolved_name, caller_path):
             resolved_path = candidate.resolve()
             cached = self.cache.get(resolved_path)
@@ -685,14 +680,10 @@ class NativeModuleResolver:
             if resolved_path.exists():
                 if resolved_path in self._in_progress:
                     raise TinyLangError(
-                        format_error(
-                            "",
-                            location or SourcePos.origin(),
-                            f"circular import involving {resolved_path}",
-                            code="E008",
-                        ),
+                        f"circular import involving {resolved_path}",
                         pos_for_error or SourcePos.origin(),
                         code="E008",
+                        span=pos if isinstance(pos, SourceSpan) else None,
                     )
                 self._in_progress.append(resolved_path)
                 try:
@@ -710,9 +701,10 @@ class NativeModuleResolver:
                 finally:
                     self._in_progress.remove(resolved_path)
         raise TinyLangError(
-            format_error("", pos or SourcePos.origin(), f"module '{name}' not found on search path", code="E008"),
+            f"module '{name}' not found on search path",
             pos or SourcePos.origin(),
             code="E008",
+            span=pos if isinstance(pos, SourceSpan) else None,
         )
 
 
@@ -739,27 +731,23 @@ class LLVMModuleResolver:
 
     def _resolve_name(self, raw: str, caller_namespace: Optional[str], pos: Optional[Any]) -> str:
         pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
-        location = pos if pos is not None else pos_for_error
         leading = len(raw) - len(raw.lstrip("."))
         if leading == 0:
             return raw
         if not caller_namespace:
             raise TinyLangError(
-                format_error("", location or SourcePos.origin(), "relative import outside a module", code="E008"),
+                "relative import outside a module",
                 pos_for_error or SourcePos.origin(),
                 code="E008",
+                span=pos if isinstance(pos, SourceSpan) else None,
             )
         base = caller_namespace.split(".")
         if leading > len(base):
             raise TinyLangError(
-                format_error(
-                    "",
-                    location or SourcePos.origin(),
-                    "relative import traverses beyond module root",
-                    code="E008",
-                ),
+                "relative import traverses beyond module root",
                 pos_for_error or SourcePos.origin(),
                 code="E008",
+                span=pos if isinstance(pos, SourceSpan) else None,
             )
         trimmed = base[: len(base) - leading]
         remainder = raw.lstrip(".")
@@ -788,7 +776,6 @@ class LLVMModuleResolver:
     ) -> LLVMModuleInfo:
         resolved_name = self._resolve_name(name, caller_namespace, pos)
         pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
-        location = pos if pos is not None else pos_for_error
         for candidate in self._candidate_paths(resolved_name, caller_path):
             resolved_path = candidate.resolve()
             cached = self.cache.get(resolved_path)
@@ -797,14 +784,10 @@ class LLVMModuleResolver:
             if resolved_path.exists():
                 if resolved_path in self._in_progress:
                     raise TinyLangError(
-                        format_error(
-                            "",
-                            location or SourcePos.origin(),
-                            f"circular import involving {resolved_path}",
-                            code="E008",
-                        ),
+                        f"circular import involving {resolved_path}",
                         pos_for_error or SourcePos.origin(),
                         code="E008",
+                        span=pos if isinstance(pos, SourceSpan) else None,
                     )
                 self._in_progress.append(resolved_path)
                 try:
@@ -826,9 +809,10 @@ class LLVMModuleResolver:
                 finally:
                     self._in_progress.remove(resolved_path)
         raise TinyLangError(
-            format_error("", pos or SourcePos.origin(), f"module '{name}' not found on search path", code="E008"),
+            f"module '{name}' not found on search path",
             pos or SourcePos.origin(),
             code="E008",
+            span=pos if isinstance(pos, SourceSpan) else None,
         )
 
 

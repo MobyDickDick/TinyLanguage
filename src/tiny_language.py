@@ -62,6 +62,8 @@ def _load_and_exec_all() -> None:
 
     full_source = "\n".join(parts)
     stitched_path = base / "tiny_language_stitched.py"
+    if stitched_path.exists():
+        stitched_path.unlink()
     stitched_path.write_text(full_source, encoding="utf-8")
 
     code = compile(full_source, str(stitched_path), "exec")  # Compile so tracebacks reference the stitched file.

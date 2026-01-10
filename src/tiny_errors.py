@@ -85,7 +85,12 @@ def format_error(
         start_line, start_col, _ = _line_info(source, pos.start)
         stop_line, stop_col, _ = _line_info(source, pos.stop)
         gutter_width = len(str(max(1, len(lines))))
-        header = f"[{code}] {message} (line {start_line}, col {start_col})"
+        if start_line == stop_line and start_col == stop_col:
+            header = f"[{code}] {message} (line {start_line}, col {start_col})"
+        else:
+            header = (
+                f"[{code}] {message} (line {start_line}, col {start_col} to line {stop_line}, col {stop_col})"
+            )
         lines_out: List[str] = [header]
 
         context_start = max(1, start_line - 1)

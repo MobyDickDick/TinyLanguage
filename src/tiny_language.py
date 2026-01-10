@@ -56,6 +56,7 @@ def _load_and_exec_all() -> None:
         parts.append(path.read_text(encoding="utf-8"))  # Read the file contents using UTF-8 to preserve symbols.
 
     full_source = "\n".join(part.rstrip("\n") for part in parts) + "\n"
+    full_source = full_source.replace("\r\n", "\n").replace("\r", "\n")
     stitched_path = base / "tiny_language_stitched.py"
     stitched_path.write_text(full_source, encoding="utf-8")
 

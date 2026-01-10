@@ -2233,13 +2233,13 @@ This module translates a subset of the AST into a small stack-based
 bytecode and executes it with a tiny VM. It is intentionally scoped to
 cover the tutorial-style examples first (literals, arithmetic, control
 flow, simple functions, and `print`). Unsupported constructs raise
-``NotImplementedError`` so gaps remain visible.
+``NotImplementedError`` so gaps remain visible with precise source positions.
 """
 
 from typing import Dict, List, Optional
 
 from native_ir import ClassIR, FunctionIR, Instruction, Opcode, OperatorOverloadIR, ProgramIR, TypeIR
-from tiny_errors import SourcePos, SourceSpan
+from tiny_errors import SourcePos, SourceSpan, format_error
 
 
 class NativeCodeGenerator:
@@ -2251,6 +2251,7 @@ class NativeCodeGenerator:
         allow_heap: bool = False,
         allow_match: bool = False,
         module_namespace: str | None = None,
+        source: str | None = None,
     ) -> None:
         self._allow_heap = allow_heap
         self._allow_match = allow_match
@@ -2259,6 +2260,7 @@ class NativeCodeGenerator:
         self._variant_fields: Dict[str, List[str]] = {}
         self._async_functions: set[str] = set()
         self._task_scope_depth = 0
+        self._source = source
 
     def compile_program(self, stmts: List["IR"]) -> ProgramIR:
         functions: Dict[str, FunctionIR] = {}
@@ -2291,7 +2293,7 @@ class NativeCodeGenerator:
                 functions[self._method_name(stmt.class_name, stmt.name)] = self._compile_method(stmt)
             elif isinstance(stmt, TypeDef):
                 if not self._allow_match:
-                    raise NotImplementedError("native codegen does not yet support type definitions")
+                    raise self._error("native codegen does not yet support type definitions", node=stmt)
                 self._register_type(stmt, types)
             else:
                 raw = self._compile_stmt(stmt)
@@ -2406,7 +2408,7 @@ class NativeCodeGenerator:
             self._task_scope_depth -= 1
             instructions.append(self._instr(Opcode.CALL, ("__task_scope_exit", 0), stmt))
             return instructions
-        raise NotImplementedError(f"native codegen does not yet support {type(stmt).__name__}")
+        raise self._error(f"native codegen does not yet support {type(stmt).__name__}", node=stmt)
 
     def _compile_if(self, stmt: "If") -> List[Instruction]:
         instructions = self._compile_expr(stmt.cond)
@@ -2480,13 +2482,13 @@ class NativeCodeGenerator:
             return [self._instr(Opcode.PUSH_CONST, None, expr)]
         if isinstance(expr, New):
             if not self._allow_heap:
-                raise NotImplementedError("native codegen does not yet support heap allocations")
+                raise self._error("native codegen does not yet support heap allocations", node=expr)
             instructions = self._compile_expr(expr.size)
             instructions.append(self._instr(Opcode.CALL, ("__new", 1), expr))
             return instructions
         if isinstance(expr, NewLit):
             if not self._allow_heap:
-                raise NotImplementedError("native codegen does not yet support heap allocations")
+                raise self._error("native codegen does not yet support heap allocations", node=expr)
             temp_name = self._next_tmp()
             instructions: List[Instruction] = [
                 self._instr(Opcode.PUSH_CONST, len(expr.items), expr),
@@ -2524,11 +2526,11 @@ class NativeCodeGenerator:
             return instructions
         if isinstance(expr, VariantCtor):
             if not self._allow_match:
-                raise NotImplementedError("native codegen does not yet support variant constructors")
+                raise self._error("native codegen does not yet support variant constructors", node=expr)
             return self._compile_variant_ctor(expr)
         if isinstance(expr, Match):
             if not self._allow_match:
-                raise NotImplementedError("native codegen does not yet support match expressions")
+                raise self._error("native codegen does not yet support match expressions", node=expr)
             return self._compile_match(expr)
         if isinstance(expr, Spawn):
             return self._compile_spawn(self._qualify_name(expr.name), expr.args, node=expr)
@@ -2543,7 +2545,7 @@ class NativeCodeGenerator:
             return instructions
         if isinstance(expr, Call):
             if expr.name in {"__new", "new", "heap_get", "heap_set", "delete"} and not self._allow_heap:
-                raise NotImplementedError("native codegen does not yet support heap allocations")
+                raise self._error("native codegen does not yet support heap allocations", node=expr)
             call_name = self._qualify_name(expr.name)
             if call_name in self._async_functions:
                 return self._compile_spawn(call_name, expr.args, node=expr)
@@ -2552,7 +2554,10 @@ class NativeCodeGenerator:
                 instructions.extend(self._compile_expr(arg))
             instructions.append(self._instr(Opcode.CALL, (call_name, len(expr.args)), expr))
             return instructions
-        raise NotImplementedError(f"native codegen does not yet support expression {type(expr).__name__}")
+        raise self._error(
+            f"native codegen does not yet support expression {type(expr).__name__}",
+            node=expr,
+        )
 
     def _next_tmp(self) -> str:
         self._tmp_index += 1
@@ -2613,7 +2618,10 @@ class NativeCodeGenerator:
                 end_jump_indices.append(len(instructions))
                 instructions.append(self._instr(Opcode.JUMP, None, case))
             else:
-                raise NotImplementedError(f"native codegen does not yet support {type(pattern).__name__} patterns")
+                raise self._error(
+                    f"native codegen does not yet support {type(pattern).__name__} patterns",
+                    node=pattern,
+                )
 
         instructions.append(self._instr(Opcode.LOAD, tmp_name, expr))
         instructions.append(self._instr(Opcode.CALL, ("__match_error", 1), expr))
@@ -2630,8 +2638,9 @@ class NativeCodeGenerator:
         if pattern.positional_bindings is not None:
             field_names = self._variant_field_order(pattern.variant)
             if field_names is None:
-                raise NotImplementedError(
-                    f"native codegen requires type information for positional pattern {pattern.variant}"
+                raise self._error(
+                    f"native codegen requires type information for positional pattern {pattern.variant}",
+                    node=pattern,
                 )
             if len(pattern.positional_bindings) > len(field_names):
                 raise RuntimeError(
@@ -2709,6 +2718,20 @@ class NativeCodeGenerator:
     def _task_scope_exit_instrs(self) -> List[Instruction]:
         return [self._instr(Opcode.CALL, ("__task_scope_exit", 0)) for _ in range(self._task_scope_depth)]
 
+    def _error(
+        self,
+        message: str,
+        *,
+        node: Optional["IR"] = None,
+        span: Optional[SourceSpan] = None,
+    ) -> NotImplementedError:
+        resolved_span = span or getattr(node, "span", None)
+        pos = resolved_span.start if resolved_span is not None else getattr(node, "pos", SourcePos.origin())
+        rendered = message
+        if self._source is not None:
+            rendered = format_error(self._source, resolved_span or pos, message)
+        return NotImplementedError(rendered)
+
     @staticmethod
     def _span_for(node: "IR") -> Optional[SourceSpan]:
         span = getattr(node, "span", None)
@@ -2738,6 +2761,7 @@ from dataclasses import dataclass, field
 from typing import Iterable, List
 
 from native_ir import Instruction, Opcode, ProgramIR
+from tiny_errors import SourcePos, TinyLangError, format_error
 
 
 @dataclass
@@ -2756,6 +2780,9 @@ class _ProgramLayout:
 
 class CCodeGenerator:
     """Translate ``ProgramIR`` into C source with an embedded VM."""
+
+    def __init__(self, *, source: str | None = None) -> None:
+        self._source = source
 
     def compile_program(self, program: ProgramIR) -> str:
         layout = self._collect_program(program)
@@ -2777,9 +2804,18 @@ class CCodeGenerator:
 
     def _unsupported_opcode(self, instr: Instruction) -> None:
         op_name = self._format_opcode(instr.op)
-        raise NotImplementedError(
+        message = (
             f"C backend does not support opcode {op_name}. Supported opcodes: {self._supported_opcodes()}."
         )
+        raise self._error(message, instr)
+
+    def _error(self, message: str, instr: Instruction) -> TinyLangError:
+        span = instr.span
+        pos = span.start if span is not None else SourcePos.origin()
+        rendered = message
+        if self._source is not None:
+            rendered = format_error(self._source, span or pos, message)
+        return TinyLangError(rendered, pos, span=span)
 
     def _collect_program(self, program: ProgramIR) -> _ProgramLayout:
         functions = [
@@ -3317,7 +3353,7 @@ The goal of this prototype is to expose a minimal code path that can translate
 the native stack-based IR into a textual LLVM module. It intentionally supports
 the constructs needed for the tutorial-style examples (numeric literals,
 assignments, arithmetic, comparisons, simple control flow, and `print`) and
-will raise ``NotImplementedError`` for everything else. The output is meant for
+will raise ``TinyLangError`` for everything else. The output is meant for
 inspection or piping into external tools like ``llc`` rather than for
 production-grade code generation.
 """
@@ -3326,6 +3362,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 from native_ir import FunctionIR, Instruction, Opcode, OperatorOverloadIR, ProgramIR
+from tiny_errors import format_error
 
 
 @dataclass
@@ -3372,6 +3409,7 @@ class LLVMCodeGenerator:
         target_triple: Optional[str] = None,
         data_layout: Optional[str] = None,
         module_inits: Optional[Dict[str, str]] = None,
+        source: Optional[str] = None,
     ) -> None:
         self._tmp_index = 0
         self._label_index = 0
@@ -3402,6 +3440,7 @@ class LLVMCodeGenerator:
         self._operator_overloads: Dict[Tuple[str, str, str], str] = {}
         self._module_inits: Dict[str, str] = module_inits or {}
         self._python_modules: set[str] = set()
+        self._source = source
 
     def _format_opcode(self, op: Opcode) -> str:
         return op.value if isinstance(op, Opcode) else str(op)
@@ -3419,7 +3458,10 @@ class LLVMCodeGenerator:
 
     def _lowering_error(self, reason: str, instr: Optional[Instruction] = None) -> None:
         context = self._instruction_context(instr or self._current_instruction)
-        raise NotImplementedError(f"LLVM prototype missing lowering: {reason}{context}")
+        message = f"LLVM prototype missing lowering: {reason}{context}"
+        if self._source is not None and instr is not None and instr.span is not None:
+            message = format_error(self._source, instr.span, message)
+        raise NotImplementedError(message)
 
     def _unsupported_opcode(self, instr: Instruction) -> None:
         op_name = self._format_opcode(instr.op)
@@ -10649,9 +10691,13 @@ class NativeModuleResolver:
                 self._in_progress.append(resolved_path)
                 try:
                     module_env: dict[str, Any] = {}
-                    stmts = _parse_and_lint(resolved_path.read_text(encoding="utf-8"))
+                    source = resolved_path.read_text(encoding="utf-8")
+                    stmts = _parse_and_lint(source)
                     program = NativeCodeGenerator(
-                        allow_heap=True, allow_match=True, module_namespace=resolved_name
+                        allow_heap=True,
+                        allow_match=True,
+                        module_namespace=resolved_name,
+                        source=source,
                     ).compile_program(
                         stmts
                     )
@@ -10752,7 +10798,8 @@ class LLVMModuleResolver:
                     )
                 self._in_progress.append(resolved_path)
                 try:
-                    stmts = _parse_and_lint(resolved_path.read_text(encoding="utf-8"))
+                    source = resolved_path.read_text(encoding="utf-8")
+                    stmts = _parse_and_lint(source)
                     for stmt in stmts:
                         if isinstance(stmt, Import):
                             self.import_module(
@@ -10762,7 +10809,10 @@ class LLVMModuleResolver:
                                 pos=stmt.module_span,
                             )
                     program = NativeCodeGenerator(
-                        allow_heap=True, allow_match=True, module_namespace=resolved_name
+                        allow_heap=True,
+                        allow_match=True,
+                        module_namespace=resolved_name,
+                        source=source,
                     ).compile_program(stmts)
                     module_info = LLVMModuleInfo(resolved_name, resolved_path, program)
                     self.cache[resolved_path] = module_info
@@ -10940,7 +10990,10 @@ def compile_to_llvm_ir(
                 pos=stmt.module_span,
             )
     program = NativeCodeGenerator(
-        allow_heap=True, allow_match=True, module_namespace=module_namespace
+        allow_heap=True,
+        allow_match=True,
+        module_namespace=module_namespace,
+        source=src,
     ).compile_program(stmts)
     modules = list(resolver.cache.values())
     if modules:
@@ -10948,7 +11001,10 @@ def compile_to_llvm_ir(
     else:
         module_inits = {}
     llvm_ir = LLVMCodeGenerator(
-        target_triple=target_triple, data_layout=data_layout, module_inits=module_inits
+        target_triple=target_triple,
+        data_layout=data_layout,
+        module_inits=module_inits,
+        source=src,
     ).compile_program(program)
     if llvm_opt:
         llvm_ir = _optimize_llvm_ir(llvm_ir)
@@ -10958,8 +11014,8 @@ def compile_to_llvm_ir(
 def compile_to_c_source(src: str) -> str:
     """Emit C source for the subset supported by the native backend."""
     stmts = _parse_and_lint(src)
-    program = NativeCodeGenerator(allow_match=False).compile_program(stmts)
-    return CCodeGenerator().compile_program(program)
+    program = NativeCodeGenerator(allow_match=False, source=src).compile_program(stmts)
+    return CCodeGenerator(source=src).compile_program(program)
 
 
 def compile_to_llvm_ir_via_c(
@@ -11104,7 +11160,10 @@ def run_with_native_backend(
     """Run code through the experimental native bytecode backend and VM."""
     stmts = _parse_and_lint(src)
     program = NativeCodeGenerator(
-        allow_heap=True, allow_match=True, module_namespace=module_namespace
+        allow_heap=True,
+        allow_match=True,
+        module_namespace=module_namespace,
+        source=src,
     ).compile_program(stmts)
     resolver = module_resolver or NativeModuleResolver()
     vm = NativeVM(
@@ -11398,7 +11457,7 @@ def run_with_llvm_jit(
     except Exception as exc:
         _raise_llvm_jit_error("parse", exc)
     try:
-        program = NativeCodeGenerator(allow_heap=True, allow_match=False).compile_program(stmts)
+        program = NativeCodeGenerator(allow_heap=True, allow_match=False, source=src).compile_program(stmts)
     except Exception as exc:
         _raise_llvm_jit_error("native-codegen", exc)
     try:
@@ -11417,6 +11476,7 @@ def run_with_llvm_jit(
         llvm_ir = LLVMCodeGenerator(
             target_triple=resolved_triple,
             data_layout=resolved_layout,
+            source=src,
         ).compile_program(program)
     except Exception as exc:
         _raise_llvm_jit_error("llvm-ir-codegen", exc)
@@ -11461,7 +11521,7 @@ def run_with_llvm_jit(
 def run_with_python_bytecode_backend(src: str) -> str:
     """Execute native IR by emitting Python bytecode instructions."""
     stmts = _parse_and_lint(src)
-    program = NativeCodeGenerator(allow_heap=True, allow_match=False).compile_program(stmts)
+    program = NativeCodeGenerator(allow_heap=True, allow_match=False, source=src).compile_program(stmts)
     return run_program_via_python_bytecode(program)
 
 

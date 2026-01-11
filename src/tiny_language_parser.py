@@ -95,7 +95,10 @@ class Parser:
     def parse_stmt(self) -> IR:
         if self.tok.kind == "KW" and self.tok.text == "def":
             kw = self._eat("KW", "def")
-            name_tok = self._eat("NAME")
+            if self.tok.kind == "KW":
+                name_tok = self._eat("KW")
+            else:
+                name_tok = self._eat("NAME")
             self._eat("SYM", "=")
             expr = self.parse_expr()
             semi = self._eat("SYM", ";")

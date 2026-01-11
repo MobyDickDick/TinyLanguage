@@ -18,32 +18,32 @@ fn __argv_from_env(os_module) {
 fn __parse_args(argv) {
     def args = Map.new();
     def unused1 = Map.set(args, "source", Null);
-    def f = Map.set(args, "file", Null);
-    def c = Map.set(args, "command", Null);
-    def p = Map.set(args, "prefix", "");
-    def s = Map.set(args, "symbol", Null);
+    def unused2 = Map.set(args, "file", Null);
+    def unused3 = Map.set(args, "command", Null);
+    def unused4 = Map.set(args, "prefix", "");
+    def unused5 = Map.set(args, "symbol", Null);
 
     def i = 0;
     while (i < len(argv)) {
         def arg = heap_get(argv, i);
         if (arg == "--source" && i + 1 < len(argv)) {
-            def set = Map.set(args, "source", heap_get(argv, i + 1));
+            def unused6 = Map.set(args, "source", heap_get(argv, i + 1));
             i = i + 2;
         } else {
             if (arg == "--file" && i + 1 < len(argv)) {
-                def setf = Map.set(args, "file", heap_get(argv, i + 1));
+                def unused7 = Map.set(args, "file", heap_get(argv, i + 1));
                 i = i + 2;
             } else {
                 if (arg == "--prefix" && i + 1 < len(argv)) {
-                    def setp = Map.set(args, "prefix", heap_get(argv, i + 1));
+                    def unused8 = Map.set(args, "prefix", heap_get(argv, i + 1));
                     i = i + 2;
                 } else {
                     if (arg == "--symbol" && i + 1 < len(argv)) {
-                        def sets = Map.set(args, "symbol", heap_get(argv, i + 1));
+                        def unused9 = Map.set(args, "symbol", heap_get(argv, i + 1));
                         i = i + 2;
                     } else {
                         if (arg == "completions" || arg == "hover" || arg == "diagnostics") {
-                            def setc = Map.set(args, "command", arg);
+                            def unused10 = Map.set(args, "command", arg);
                             i = i + 1;
                         } else {
                             i = i + 1;

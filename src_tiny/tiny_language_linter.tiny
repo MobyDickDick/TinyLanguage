@@ -334,7 +334,7 @@ fn __format_error(source, pos, message, code, hint) {
         def gutter_width = String.len(__to_str(line_count));
         def lines_out = new[];
         def header = "[" + code + "] " + message + " (line " + __to_str(start_line) + ", col " + __to_str(start_col) + ")";
-        def hpush = Collections.push(lines_out, header);
+        Collections.push(lines_out, header);
         def context_start = start_line - 1; if (context_start < 1) { context_start = 1; }
         def context_end = stop_line + 1;
         if (len(lines) == 0) { context_end = stop_line; }
@@ -348,7 +348,7 @@ fn __format_error(source, pos, message, code, hint) {
             def prefix = " ";
             if (ln == start_line) { prefix = ">"; }
             def padded = __pad_left(ln, gutter_width);
-            def lpush = Collections.push(lines_out, prefix + " " + padded + " | " + text);
+            Collections.push(lines_out, prefix + " " + padded + " | " + text);
 
             if (ln >= start_line && ln <= stop_line) {
                 def underline_start = 1;
@@ -375,12 +375,12 @@ fn __format_error(source, pos, message, code, hint) {
                 def i = 1;
                 while (i < underline_start) { prefix_spaces = prefix_spaces + " "; i = i + 1; }
                 def underline = prefix_spaces + String.repeat("^", underline_len);
-                def upush = Collections.push(lines_out, "  " + String.repeat(" ", gutter_width) + " | " + underline);
+                Collections.push(lines_out, "  " + String.repeat(" ", gutter_width) + " | " + underline);
             }
             ln = ln + 1;
         }
         if (hint != Null && hint != "") {
-            def h = Collections.push(lines_out, "  Hint: " + hint);
+            Collections.push(lines_out, "  Hint: " + hint);
         }
         return String.join(lines_out, "\n");
     }
@@ -396,7 +396,7 @@ fn __format_error(source, pos, message, code, hint) {
     if (len(lines) > 0 && end > len(lines)) { end = len(lines); }
     def lines_out = new[];
     def header = "[" + code + "] " + message + " (line " + __to_str(line) + ", col " + __to_str(col) + ")";
-    def ph = Collections.push(lines_out, header);
+    Collections.push(lines_out, header);
     def ln = start;
     while (ln <= end) {
         def text = "";
@@ -404,16 +404,16 @@ fn __format_error(source, pos, message, code, hint) {
         def prefix = " ";
         if (ln == line) { prefix = ">"; }
         def padded = __pad_left(ln, gutter_width);
-        def l = Collections.push(lines_out, prefix + " " + padded + " | " + text);
+        Collections.push(lines_out, prefix + " " + padded + " | " + text);
         if (ln == line) {
             def spaces = String.repeat(" ", col - 1);
             def caret = String.repeat("^", 1);
-            def u2 = Collections.push(lines_out, "  " + String.repeat(" ", gutter_width) + " | " + spaces + caret);
+            Collections.push(lines_out, "  " + String.repeat(" ", gutter_width) + " | " + spaces + caret);
         }
         ln = ln + 1;
     }
     if (hint != Null && hint != "") {
-        def hint = Collections.push(lines_out, "  Hint: " + hint);
+        Collections.push(lines_out, "  Hint: " + hint);
     }
     return String.join(lines_out, "\n");
 }
@@ -598,11 +598,15 @@ fn uses_in_expr(e, reads) {
     }
     if (e.__tag__ == "Bin") { def unused24 = uses_in_expr(e.a, reads); def unused25 = uses_in_expr(e.b, reads); return Null; }
     if (e.__tag__ == "Call") {
+        def prev_call = Map.get(reads, e.name, 0);
+        def unused_call = Map.set(reads, e.name, prev_call + 1);
         def i = 0;
         while (i < len(e.args)) { def unused26 = uses_in_expr(heap_get(e.args, i), reads); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "Spawn") {
+        def prev_spawn = Map.get(reads, e.name, 0);
+        def unused_spawn = Map.set(reads, e.name, prev_spawn + 1);
         def i = 0;
         while (i < len(e.args)) { def unused27 = uses_in_expr(heap_get(e.args, i), reads); i = i + 1; }
         return Null;
@@ -1051,7 +1055,7 @@ fn lint_locals_used(stmts, source) {
     fn analyze_block(block, initial_states) {
         def active_states = new[];
         def i = 0;
-        while (i < len(initial_states)) { def p17 = Collections.push(active_states, __copy_state(heap_get(initial_states, i))); i = i + 1; }
+        while (i < len(initial_states)) { Collections.push(active_states, __copy_state(heap_get(initial_states, i))); i = i + 1; }
         def terminated_states = new[];
         def idx = 0;
         while (idx < len(block)) {
@@ -1069,7 +1073,7 @@ fn lint_locals_used(stmts, source) {
                     def decl_pos = st.name_span;
                     if (decl_pos == Null) { decl_pos = st.pos; }
                     def unused96 = Map.set(new_state, st.name, new[decl_pos, false, false]);
-                    def p22 = Collections.push(next_active, new_state);
+                    Collections.push(next_active, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "Import") {
@@ -1078,7 +1082,7 @@ fn lint_locals_used(stmts, source) {
                     def decl_pos = st.binding_span;
                     if (decl_pos == Null) { decl_pos = st.pos; }
                     def unused97 = Map.set(new_state, bind, new[decl_pos, false, false]);
-                    def p32 = Collections.push(next_active, new_state);
+                    Collections.push(next_active, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "DestructAssign") {
@@ -1088,7 +1092,7 @@ fn lint_locals_used(stmts, source) {
                     def names = names_in_expr(st.expr);
                     ni = 0;
                     while (ni < len(names)) { def unused99 = _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
-                    def p42 = Collections.push(next_active, new_state);
+                    Collections.push(next_active, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "Assign") {
@@ -1096,7 +1100,7 @@ fn lint_locals_used(stmts, source) {
                     def names = names_in_expr(st.expr);
                     def ni = 0;
                     while (ni < len(names)) { def unused100 = _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
-                    def p5 = Collections.push(next_active, new_state);
+                    Collections.push(next_active, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "FieldAssign") {
@@ -1107,7 +1111,7 @@ fn lint_locals_used(stmts, source) {
                     names = names_in_expr(st.expr);
                     ni = 0;
                     while (ni < len(names)) { def unused102 = _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
-                    def p6 = Collections.push(next_active, new_state);
+                    Collections.push(next_active, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "Print") {
@@ -1119,11 +1123,11 @@ fn lint_locals_used(stmts, source) {
                         while (ni < len(names)) { def unused103 = _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
                         ei = ei + 1;
                     }
-                    def p7 = Collections.push(next_active, new_state);
+                    Collections.push(next_active, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "Flush") {
-                    def p8 = Collections.push(next_active, __copy_state(state));
+                    Collections.push(next_active, __copy_state(state));
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "CallStmt") {
@@ -1135,7 +1139,7 @@ fn lint_locals_used(stmts, source) {
                         while (ni < len(names)) { def unused104 = _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
                         ai2 = ai2 + 1;
                     }
-                    def p9 = Collections.push(next_active, new_state);
+                    Collections.push(next_active, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "Return") {
@@ -1143,7 +1147,7 @@ fn lint_locals_used(stmts, source) {
                     def names = names_in_expr(st.expr);
                     def ni = 0;
                     while (ni < len(names)) { def unused105 = _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
-                    def pt6 = Collections.push(terminated_states, new_state);
+                    Collections.push(terminated_states, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "If") {
@@ -1159,20 +1163,20 @@ fn lint_locals_used(stmts, source) {
                         def then_active = heap_get(then_res, 0);
                         def then_term = heap_get(then_res, 1);
                         def ti = 0;
-                        while (ti < len(then_active)) { def p10 = Collections.push(next_active, heap_get(then_active, ti)); ti = ti + 1; }
+                        while (ti < len(then_active)) { Collections.push(next_active, heap_get(then_active, ti)); ti = ti + 1; }
                         ti = 0;
-                        while (ti < len(then_term)) { def pt1 = Collections.push(terminated_states, heap_get(then_term, ti)); ti = ti + 1; }
+                        while (ti < len(then_term)) { Collections.push(terminated_states, heap_get(then_term, ti)); ti = ti + 1; }
                     } else {
                         if (cond_is_bool && !cond_truthy) {
                             if (len(st.then) > 0) { def unused108 = lint_locals_used(st.then, source); }
                             def else_res = analyze_block(st.els, new[cond_state]);
                             def else_active = heap_get(else_res, 0);
                             def else_term = heap_get(else_res, 1);
-                            if (len(else_active) == 0) { def p11 = Collections.push(next_active, cond_state); }
+                            if (len(else_active) == 0) { Collections.push(next_active, cond_state); }
                             def ti = 0;
-                            while (ti < len(else_active)) { def p12 = Collections.push(next_active, heap_get(else_active, ti)); ti = ti + 1; }
+                            while (ti < len(else_active)) { Collections.push(next_active, heap_get(else_active, ti)); ti = ti + 1; }
                             ti = 0;
-                            while (ti < len(else_term)) { def pt2 = Collections.push(terminated_states, heap_get(else_term, ti)); ti = ti + 1; }
+                            while (ti < len(else_term)) { Collections.push(terminated_states, heap_get(else_term, ti)); ti = ti + 1; }
                         } else {
                             def then_res = analyze_block(st.then, new[cond_state]);
                             def then_active = heap_get(then_res, 0);
@@ -1181,13 +1185,13 @@ fn lint_locals_used(stmts, source) {
                             def else_active = heap_get(else_res, 0);
                             def else_term = heap_get(else_res, 1);
                             def ti = 0;
-                            while (ti < len(then_active)) { def p132 = Collections.push(next_active, heap_get(then_active, ti)); ti = ti + 1; }
+                            while (ti < len(then_active)) { Collections.push(next_active, heap_get(then_active, ti)); ti = ti + 1; }
                             ti = 0;
-                            while (ti < len(else_active)) { def p142 = Collections.push(next_active, heap_get(else_active, ti)); ti = ti + 1; }
+                            while (ti < len(else_active)) { Collections.push(next_active, heap_get(else_active, ti)); ti = ti + 1; }
                             ti = 0;
-                            while (ti < len(then_term)) { def pt3 = Collections.push(terminated_states, heap_get(then_term, ti)); ti = ti + 1; }
+                            while (ti < len(then_term)) { Collections.push(terminated_states, heap_get(then_term, ti)); ti = ti + 1; }
                             ti = 0;
-                            while (ti < len(else_term)) { def pt42 = Collections.push(terminated_states, heap_get(else_term, ti)); ti = ti + 1; }
+                            while (ti < len(else_term)) { Collections.push(terminated_states, heap_get(else_term, ti)); ti = ti + 1; }
                         }
                     }
                     handled = true;
@@ -1199,15 +1203,15 @@ fn lint_locals_used(stmts, source) {
                     while (ci < len(cond_names)) { def unused109 = _mark_used(cond_state, heap_get(cond_names, ci)); ci = ci + 1; }
                     if (st.cond.__tag__ == "Bool" && !st.cond.value) {
                         def unused110 = lint_locals_used(st.body, source);
-                        def p152 = Collections.push(next_active, cond_state);
+                        Collections.push(next_active, cond_state);
                     } else {
                         def body_res = analyze_block(st.body, new[cond_state]);
                         def body_active = heap_get(body_res, 0);
                         def body_term = heap_get(body_res, 1);
                         def bi = 0;
-                        while (bi < len(body_active)) { def p162 = Collections.push(next_active, heap_get(body_active, bi)); bi = bi + 1; }
+                        while (bi < len(body_active)) { Collections.push(next_active, heap_get(body_active, bi)); bi = bi + 1; }
                         bi = 0;
-                        while (bi < len(body_term)) { def pt52 = Collections.push(terminated_states, heap_get(body_term, bi)); bi = bi + 1; }
+                        while (bi < len(body_term)) { Collections.push(terminated_states, heap_get(body_term, bi)); bi = bi + 1; }
                     }
                     handled = true;
                 }
@@ -1230,12 +1234,12 @@ fn lint_locals_used(stmts, source) {
                         def case_active = heap_get(case_res, 0);
                         def case_term = heap_get(case_res, 1);
                         def ai = 0;
-                        while (ai < len(case_active)) { def pa = Collections.push(next_active, heap_get(case_active, ai)); ai = ai + 1; }
+                        while (ai < len(case_active)) { Collections.push(next_active, heap_get(case_active, ai)); ai = ai + 1; }
                         ai = 0;
-                        while (ai < len(case_term)) { def pt6 = Collections.push(terminated_states, heap_get(case_term, ai)); ai = ai + 1; }
+                        while (ai < len(case_term)) { Collections.push(terminated_states, heap_get(case_term, ai)); ai = ai + 1; }
                         ci = ci + 1;
                     }
-                    if (!has_default) { def p17 = Collections.push(next_active, __copy_state(switch_state)); }
+                    if (!has_default) { Collections.push(next_active, __copy_state(switch_state)); }
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "TryCatch") {
@@ -1248,45 +1252,45 @@ fn lint_locals_used(stmts, source) {
                     def body_term = heap_get(body_res, 1);
                     def handler_term = heap_get(handler_res, 1);
                     def bi = 0;
-                    while (bi < len(body_active)) { def p132 = Collections.push(next_active, heap_get(body_active, bi)); bi = bi + 1; }
+                    while (bi < len(body_active)) { Collections.push(next_active, heap_get(body_active, bi)); bi = bi + 1; }
                     bi = 0;
-                    while (bi < len(handler_active)) { def p142 = Collections.push(next_active, heap_get(handler_active, bi)); bi = bi + 1; }
+                    while (bi < len(handler_active)) { Collections.push(next_active, heap_get(handler_active, bi)); bi = bi + 1; }
                     bi = 0;
-                    while (bi < len(body_term)) { def pt42 = Collections.push(terminated_states, heap_get(body_term, bi)); bi = bi + 1; }
+                    while (bi < len(body_term)) { Collections.push(terminated_states, heap_get(body_term, bi)); bi = bi + 1; }
                     bi = 0;
-                    while (bi < len(handler_term)) { def pt52 = Collections.push(terminated_states, heap_get(handler_term, bi)); bi = bi + 1; }
+                    while (bi < len(handler_term)) { Collections.push(terminated_states, heap_get(handler_term, bi)); bi = bi + 1; }
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "Namespace") {
                     def nested_state = __copy_state(state);
                     def unused114 = _mark_captured_uses(st.body, nested_state);
                     def unused115 = lint_locals_used(st.body, source);
-                    def p152 = Collections.push(next_active, nested_state);
+                    Collections.push(next_active, nested_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "ClassDef") {
                     def nested_state = __copy_state(state);
                     def mi = 0;
                     while (mi < len(st.methods)) { def unused116 = _mark_captured_uses(heap_get(st.methods, mi).body, nested_state); def unused117 = lint_locals_used(heap_get(st.methods, mi).body, source); mi = mi + 1; }
-                    def p162 = Collections.push(next_active, nested_state);
+                    Collections.push(next_active, nested_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "Fn") {
                     def nested_state = __copy_state(state);
                     def unused118 = _mark_captured_uses(st.body, nested_state);
                     def unused119 = lint_locals_used(st.body, source);
-                    def p172 = Collections.push(next_active, nested_state);
+                    Collections.push(next_active, nested_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "MethodDef") {
                     def nested_state = __copy_state(state);
                     def unused120 = _mark_captured_uses(st.body, nested_state);
                     def unused121 = lint_locals_used(st.body, source);
-                    def p18 = Collections.push(next_active, nested_state);
+                    Collections.push(next_active, nested_state);
                     handled = true;
                 }
                 if (!handled) {
-                    def p19 = Collections.push(next_active, __copy_state(state));
+                    Collections.push(next_active, __copy_state(state));
                 }
                 ai = ai + 1;
             }

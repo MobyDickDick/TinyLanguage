@@ -30,7 +30,7 @@ fn list_missing(source_dir, dest_dir) {
         def path = heap_get(source_files, i);
         def stem = heap_get(os_path.splitext(os_path.basename(path)), 0);
         if (!Set.has(dest_stems, stem)) {
-            def added_missing = Collections.push(missing, path);
+            Collections.push(missing, path);
         }
         i = i + 1;
     }
@@ -50,7 +50,7 @@ fn copy_batch(files, dest_dir, limit, delay) {
         def destination = os_path.join(dest_dir, os_path.basename(source_path));
         def copy_result = shutil.copy2(source_path, destination);
         print("copied", os_path.basename(source_path), "->", destination);
-        def copied_entry = Collections.push(copied, source_path);
+        Collections.push(copied, source_path);
 
         if (idx + 1 < end) { def unused2 = time.sleep(delay); }
         idx = idx + 1;

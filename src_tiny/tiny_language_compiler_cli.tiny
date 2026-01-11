@@ -23,4 +23,4 @@ fn run() {
     return code;
 }
 
-run();
+def _ = run();

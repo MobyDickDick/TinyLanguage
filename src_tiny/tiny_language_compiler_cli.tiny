@@ -23,4 +23,4 @@ fn run() {
     return code;
 }
 
-def _unused1 = run();
+def __unused1 = run();

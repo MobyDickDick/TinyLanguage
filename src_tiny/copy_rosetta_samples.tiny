@@ -9,7 +9,7 @@ def shutil = Python.import_module("shutil", new["copy2"]);
 def time = Python.import_module("time", new["sleep"]);
 def sys = Python.import_module("sys", new["argv"]);
 def builtins = Python.import_module("builtins", new["list", "set", "sorted", "len", "int", "float"]);
-def _import_refs = new[shutil, time, os, os_path, glob]; // mark Python helpers as used for the linter
+def import_refs = new[shutil, time, os, os_path, glob]; // mark Python helpers as used for the linter
 
 fn list_missing(source_dir, dest_dir) {
     def source_files = builtins.list(glob.glob(os_path.join(source_dir, "*.py")));
@@ -20,7 +20,7 @@ fn list_missing(source_dir, dest_dir) {
     while (i < builtins.len(dest_files)) {
         def path = heap_get(dest_files, i);
         def stem = heap_get(os_path.splitext(os_path.basename(path)), 0);
-        def _added_dest = Set.add(dest_stems, stem);
+        def added_dest = Set.add(dest_stems, stem);
         i = i + 1;
     }
 
@@ -30,7 +30,7 @@ fn list_missing(source_dir, dest_dir) {
         def path = heap_get(source_files, i);
         def stem = heap_get(os_path.splitext(os_path.basename(path)), 0);
         if (!Set.has(dest_stems, stem)) {
-            def _added_missing = Collections.push(missing, path);
+            def added_missing = Collections.push(missing, path);
         }
         i = i + 1;
     }
@@ -48,11 +48,11 @@ fn copy_batch(files, dest_dir, limit, delay) {
     while (idx < end) {
         def source_path = heap_get(files, idx);
         def destination = os_path.join(dest_dir, os_path.basename(source_path));
-        def _copy_result = shutil.copy2(source_path, destination);
+        def copy_result = shutil.copy2(source_path, destination);
         print("copied", os_path.basename(source_path), "->", destination);
-        def _copied_entry = Collections.push(copied, source_path);
+        def copied_entry = Collections.push(copied, source_path);
 
-        if (idx + 1 < end) { def _unused2 = time.sleep(delay); }
+        if (idx + 1 < end) { def unused2 = time.sleep(delay); }
         idx = idx + 1;
     }
 
@@ -76,24 +76,24 @@ fn parse_args() {
     ]);
 
     def options = Map.new();
-    def _set_dest = Map.set(options, "dest", os_path.abspath(heap_get(argv, 1)));
-    def _set_source = Map.set(options, "source", Map.get(defaults, "source"));
-    def _set_limit = Map.set(options, "limit", Map.get(defaults, "limit"));
-    def _set_delay = Map.set(options, "delay", Map.get(defaults, "delay"));
+    def set_dest = Map.set(options, "dest", os_path.abspath(heap_get(argv, 1)));
+    def set_source = Map.set(options, "source", Map.get(defaults, "source"));
+    def set_limit = Map.set(options, "limit", Map.get(defaults, "limit"));
+    def set_delay = Map.set(options, "delay", Map.get(defaults, "delay"));
 
     def index = 2;
     while (index < argc) {
         def flag = heap_get(argv, index);
         if (flag == "--source" && index + 1 < argc) {
-            def _updated_source = Map.set(options, "source", os_path.abspath(heap_get(argv, index + 1)));
+            def updated_source = Map.set(options, "source", os_path.abspath(heap_get(argv, index + 1)));
             index = index + 2;
         } else {
             if (flag == "--limit" && index + 1 < argc) {
-                def _updated_limit = Map.set(options, "limit", builtins.int(heap_get(argv, index + 1)));
+                def updated_limit = Map.set(options, "limit", builtins.int(heap_get(argv, index + 1)));
                 index = index + 2;
             } else {
                 if (flag == "--delay" && index + 1 < argc) {
-                    def _updated_delay = Map.set(options, "delay", builtins.float(heap_get(argv, index + 1)));
+                    def updated_delay = Map.set(options, "delay", builtins.float(heap_get(argv, index + 1)));
                     index = index + 2;
                 } else {
                     print("Ignoring unknown or incomplete flag:", flag);
@@ -120,7 +120,7 @@ fn main() {
         return 1;
     }
 
-    if (!os_path.exists(dest)) { def _created_dest = os.makedirs(dest); }
+    if (!os_path.exists(dest)) { def created_dest = os.makedirs(dest); }
     def missing = list_missing(source, dest);
 
     if (builtins.len(missing) == 0) {
@@ -134,4 +134,4 @@ fn main() {
     return 0;
 }
 
-def _unused7 = main();
+def unused7 = main();

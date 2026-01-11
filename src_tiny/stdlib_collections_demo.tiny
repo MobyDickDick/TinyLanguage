@@ -6,7 +6,7 @@ def capitals = Map.from_entries(new[
 ]);
 print(Map.get(capitals, "DE", "?"));
 print(Map.has(capitals, "CH"));
-def _unused3 = Map.set(capitals, "CH", "Bern");
+def unused3 = Map.set(capitals, "CH", "Bern");
 print(Map.len(capitals));
 
 print(String.join(Map.values(capitals), ","));
@@ -23,7 +23,7 @@ print(String.join(Set.to_list(features), "+"));
 
 def todo = Deque.new(String.split("parse,transform,emit", ","));
 print(Deque.peek_left(todo));
-def _dq = Deque.push_left(todo, "read");
+def dq = Deque.push_left(todo, "read");
 print(Deque.pop_right(todo));
 print(Deque.len(todo));
 print(String.join(Deque.to_list(todo), " -> "));

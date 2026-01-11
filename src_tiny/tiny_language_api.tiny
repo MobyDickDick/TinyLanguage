@@ -1,7 +1,7 @@
 // TinyLanguage wrapper for src/tiny_language_api.py.
 // Exposes public API helpers via Python interop for parity.
 
-def __PY_ALLOW = new[
+def PY_ALLOW = new[
     "compile_and_run",
     "compile_to_c_executable",
     "compile_to_c_source",
@@ -19,63 +19,63 @@ def __PY_ALLOW = new[
     "ModuleResolver"
 ];
 
-def __PY = Python.import_module("tiny_language", __PY_ALLOW);
+def PY = Python.import_module("tiny_language", PY_ALLOW);
 
 fn compile_and_run(src) {
-    return __PY.compile_and_run(src);
+    return PY.compile_and_run(src);
 }
 
 fn compile_to_c_executable(src, output_path) {
-    return __PY.compile_to_c_executable(src, output_path);
+    return PY.compile_to_c_executable(src, output_path);
 }
 
 fn compile_to_c_source(src) {
-    return __PY.compile_to_c_source(src);
+    return PY.compile_to_c_source(src);
 }
 
 fn compile_to_executable(src, output_path) {
-    return __PY.compile_to_executable(src, output_path);
+    return PY.compile_to_executable(src, output_path);
 }
 
 fn compile_to_llvm_ir(src) {
-    return __PY.compile_to_llvm_ir(src);
+    return PY.compile_to_llvm_ir(src);
 }
 
 fn compile_to_llvm_bitcode_via_c(src) {
-    return __PY.compile_to_llvm_bitcode_via_c(src);
+    return PY.compile_to_llvm_bitcode_via_c(src);
 }
 
 fn compile_to_llvm_ir_via_c(src) {
-    return __PY.compile_to_llvm_ir_via_c(src);
+    return PY.compile_to_llvm_ir_via_c(src);
 }
 
 fn compile_to_python_ast(src) {
-    return __PY.compile_to_python_ast(src);
+    return PY.compile_to_python_ast(src);
 }
 
 fn compile_to_python_source(src) {
-    return __PY.compile_to_python_source(src);
+    return PY.compile_to_python_source(src);
 }
 
 fn run_with_python_backend(src) {
-    return __PY.run_with_python_backend(src);
+    return PY.run_with_python_backend(src);
 }
 
 fn run_with_native_backend(src) {
-    return __PY.run_with_native_backend(src);
+    return PY.run_with_native_backend(src);
 }
 
 fn run_with_python_bytecode_backend(src) {
-    return __PY.run_with_python_bytecode_backend(src);
+    return PY.run_with_python_bytecode_backend(src);
 }
 
 fn run_file(path) {
-    return __PY.run_file(path);
+    return PY.run_file(path);
 }
 
 fn main(argv) {
-    return __PY.main(argv);
+    return PY.main(argv);
 }
-def ModuleResolver = __PY.ModuleResolver;
+def ModuleResolver = PY.ModuleResolver;
 
-def _unused_module_resolver = ModuleResolver;
+def unused_module_resolver = ModuleResolver;

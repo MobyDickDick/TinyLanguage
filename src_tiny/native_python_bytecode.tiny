@@ -1,16 +1,16 @@
 // TinyLanguage wrapper for src/native_python_bytecode.py.
 // Exposes helpers to generate/run Python bytecode from native IR.
 
-def __PY_ALLOW = new[
+def PY_ALLOW = new[
     "generate_python_source",
     "compile_python_bytecode",
     "run_program_via_python_bytecode"
 ];
 
-def __PY = Python.import_module("native_python_bytecode", __PY_ALLOW);
+def PY = Python.import_module("native_python_bytecode", PY_ALLOW);
 
-def generate_python_source = __PY.generate_python_source;
-def compile_python_bytecode = __PY.compile_python_bytecode;
-def run_program_via_python_bytecode = __PY.run_program_via_python_bytecode;
+def generate_python_source = PY.generate_python_source;
+def compile_python_bytecode = PY.compile_python_bytecode;
+def run_program_via_python_bytecode = PY.run_program_via_python_bytecode;
 
-def _exports = new[generate_python_source, compile_python_bytecode, run_program_via_python_bytecode];
+def exports = new[generate_python_source, compile_python_bytecode, run_program_via_python_bytecode];

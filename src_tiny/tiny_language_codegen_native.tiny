@@ -3,27 +3,27 @@
 
 // Opcode + IR definitions are expected from native_ir.tiny
 
-def __PY_EXEC_ALLOW = new["exec"];
-def __PY_REPR_ALLOW = new["repr"];
-def __PY_FLOAT_ALLOW = new["float"];
-def __PY_INT_ALLOW = new["int"];
-def __PY_STR_ALLOW = new["str"];
+def PY_EXEC_ALLOW = new["exec"];
+def PY_REPR_ALLOW = new["repr"];
+def PY_FLOAT_ALLOW = new["float"];
+def PY_INT_ALLOW = new["int"];
+def PY_STR_ALLOW = new["str"];
 
 fn __to_str(value) {
-    return Python.call("builtins", "str", new[value], __PY_STR_ALLOW);
+    return Python.call("builtins", "str", new[value], PY_STR_ALLOW);
 }
 
 fn __raise_not_implemented(msg) {
-    def safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
+    def safe = Python.call("builtins", "repr", new[msg], PY_REPR_ALLOW);
     def stmt = "raise NotImplementedError(" + safe + ")";
-    return Python.call("builtins", "exec", new[stmt], __PY_EXEC_ALLOW);
+    return Python.call("builtins", "exec", new[stmt], PY_EXEC_ALLOW);
 }
 
 fn __parse_number(txt) {
     if (String.contains(txt, ".")) {
-        return Python.call("builtins", "float", new[txt], __PY_FLOAT_ALLOW);
+        return Python.call("builtins", "float", new[txt], PY_FLOAT_ALLOW);
     }
-    return Python.call("builtins", "int", new[txt], __PY_INT_ALLOW);
+    return Python.call("builtins", "int", new[txt], PY_INT_ALLOW);
 }
 
 fn __tag_of(value) {
@@ -34,7 +34,7 @@ fn __tag_of(value) {
 fn __extend(target, items) {
     def i = 0;
     while (i < len(items)) {
-        def _unused1 = Collections.push(target, heap_get(items, i));
+        def unused1 = Collections.push(target, heap_get(items, i));
         i = i + 1;
     }
     return target;
@@ -53,7 +53,7 @@ class NativeCodeGenerator {
             def stmt = heap_get(stmts, i);
             if (stmt.__tag__ == "Fn") {
                 def fn_ir = self._compile_function(stmt);
-                def _unused2 = Map.set(functions, stmt.name, fn_ir);
+                def unused2 = Map.set(functions, stmt.name, fn_ir);
             } else {
                 def raw = self._compile_stmt(stmt);
                 def shifted = self._shift_labels(raw, len(entry));
@@ -62,7 +62,7 @@ class NativeCodeGenerator {
             i = i + 1;
         }
 
-        def _unused4 = Collections.push(entry, Instruction(OPCODE_RETURN, Null));
+        def unused4 = Collections.push(entry, Instruction(OPCODE_RETURN, Null));
         return ProgramIR(entry, functions);
     }
 
@@ -76,13 +76,13 @@ class NativeCodeGenerator {
             def ignored_body = __extend(body, shifted);
             i = i + 1;
         }
-        def _unused6 = Collections.push(body, Instruction(OPCODE_RETURN, Null));
+        def unused6 = Collections.push(body, Instruction(OPCODE_RETURN, Null));
 
         def params = new[];
         def j = 0;
         while (j < len(fn_node.params)) {
             def param = heap_get(fn_node.params, j);
-            def _unused7 = Collections.push(params, param.name);
+            def unused7 = Collections.push(params, param.name);
             j = j + 1;
         }
         return FunctionIR(fn_node.name, params, body);
@@ -94,9 +94,9 @@ class NativeCodeGenerator {
         while (i < len(instructions)) {
             def instr = heap_get(instructions, i);
             if ((instr.op == OPCODE_JUMP || instr.op == OPCODE_JUMP_IF_FALSE) && instr.arg != Null) {
-                def _unused8 = Collections.push(shifted, Instruction(instr.op, instr.arg + offset));
+                def unused8 = Collections.push(shifted, Instruction(instr.op, instr.arg + offset));
             } else {
-                def _unused9 = Collections.push(shifted, instr);
+                def unused9 = Collections.push(shifted, instr);
             }
             i = i + 1;
         }
@@ -124,13 +124,13 @@ class NativeCodeGenerator {
                         def ignored_part = __extend(instructions, part);
                         i = i + 1;
                     }
-                    def _unused11 = Collections.push(instructions, Instruction(OPCODE_PRINT, len(stmt.exprs)));
+                    def unused11 = Collections.push(instructions, Instruction(OPCODE_PRINT, len(stmt.exprs)));
                     result = instructions;
                     handled = true;
                 } else {
                     if (tag == "Flush") {
                         def instructions = new[];
-                        def _unused12 = Collections.push(instructions, Instruction(OPCODE_FLUSH, Null));
+                        def unused12 = Collections.push(instructions, Instruction(OPCODE_FLUSH, Null));
                         result = instructions;
                         handled = true;
                     } else {
@@ -144,13 +144,13 @@ class NativeCodeGenerator {
                             } else {
                                 if (tag == "Return") {
                                     def instructions = self._compile_expr(stmt.expr);
-                                    def _unused13 = Collections.push(instructions, Instruction(OPCODE_RETURN, Null));
+                                    def unused13 = Collections.push(instructions, Instruction(OPCODE_RETURN, Null));
                                     result = instructions;
                                     handled = true;
                                 } else {
                                     if (tag == "CallStmt") {
                                         def instructions = self._compile_expr(Call(stmt.name, stmt.args, stmt.pos, stmt.span));
-                                        def _unused14 = Collections.push(instructions, Instruction(OPCODE_POP, Null));
+                                        def unused14 = Collections.push(instructions, Instruction(OPCODE_POP, Null));
                                         result = instructions;
                                         handled = true;
                                     }
@@ -163,7 +163,7 @@ class NativeCodeGenerator {
         }
 
         if (!handled) {
-            def __unsupported = __raise_not_implemented("native codegen does not yet support " + __to_str(tag));
+            def unsupported2 = __raise_not_implemented("native codegen does not yet support " + __to_str(tag));
         }
         return result;
     }
@@ -171,7 +171,7 @@ class NativeCodeGenerator {
     fn _compile_if(self, stmt) {
         def instructions = self._compile_expr(stmt.cond);
         def jump_false_index = len(instructions);
-        def _unused15 = Collections.push(instructions, Instruction(OPCODE_JUMP_IF_FALSE, Null));
+        def unused15 = Collections.push(instructions, Instruction(OPCODE_JUMP_IF_FALSE, Null));
 
         def then_block = new[];
         def i = 0;
@@ -182,7 +182,7 @@ class NativeCodeGenerator {
             def ignored_then = __extend(then_block, shifted);
             i = i + 1;
         }
-        def _unused17 = Collections.push(then_block, Instruction(OPCODE_JUMP, Null));
+        def unused17 = Collections.push(then_block, Instruction(OPCODE_JUMP, Null));
 
         def else_block = new[];
         def j = 0;
@@ -213,7 +213,7 @@ class NativeCodeGenerator {
         def cond_instrs = self._compile_expr(stmt.cond);
         def ignored_cond = __extend(instructions, cond_instrs);
         def jump_out_index = len(instructions);
-        def _j = Collections.push(instructions, Instruction(OPCODE_JUMP_IF_FALSE, Null));
+        def j = Collections.push(instructions, Instruction(OPCODE_JUMP_IF_FALSE, Null));
 
         def body_instrs = new[];
         def i = 0;
@@ -224,7 +224,7 @@ class NativeCodeGenerator {
             def ignored_body_shifted = __extend(body_instrs, shifted);
             i = i + 1;
         }
-        def _unused24 = Collections.push(body_instrs, Instruction(OPCODE_JUMP, loop_start));
+        def unused24 = Collections.push(body_instrs, Instruction(OPCODE_JUMP, loop_start));
 
         def loop_exit = len(instructions) + len(body_instrs);
         def loop_status = heap_set(instructions, jump_out_index, Instruction(OPCODE_JUMP_IF_FALSE, loop_exit));
@@ -236,7 +236,7 @@ class NativeCodeGenerator {
 
     fn _compile_binding(self, name, expr) {
         def instructions = self._compile_expr(expr);
-        def _unused26 = Collections.push(instructions, Instruction(OPCODE_STORE, name));
+        def unused26 = Collections.push(instructions, Instruction(OPCODE_STORE, name));
         return instructions;
     }
 
@@ -262,16 +262,16 @@ class NativeCodeGenerator {
                     } else {
                         if (tag == "New") {
                             if (!self.allow_heap) {
-                                def __unsupported = __raise_not_implemented("native codegen does not yet support heap allocations");
+                                def unsupported2 = __raise_not_implemented("native codegen does not yet support heap allocations");
                             }
                             def instructions = self._compile_expr(expr.size);
-                            def _unused27 = Collections.push(instructions, Instruction(OPCODE_CALL, new["__new", 1]));
+                            def unused27 = Collections.push(instructions, Instruction(OPCODE_CALL, new["__new", 1]));
                             result = instructions;
                             handled = true;
                         } else {
                             if (tag == "NewLit") {
                                 if (!self.allow_heap) {
-                                    def __unsupported = __raise_not_implemented("native codegen does not yet support heap allocations");
+                                    def unsupported2 = __raise_not_implemented("native codegen does not yet support heap allocations");
                                 }
                                 def temp_name = self._next_tmp();
                                 def instructions = new[
@@ -282,15 +282,15 @@ class NativeCodeGenerator {
                                 def i = 0;
                                 while (i < len(expr.items)) {
                                     def item = heap_get(expr.items, i);
-                                    def _l = Collections.push(instructions, Instruction(OPCODE_LOAD, temp_name));
-                                    def _p = Collections.push(instructions, Instruction(OPCODE_PUSH_CONST, i));
+                                    def l = Collections.push(instructions, Instruction(OPCODE_LOAD, temp_name));
+                                    def p = Collections.push(instructions, Instruction(OPCODE_PUSH_CONST, i));
                                     def part = self._compile_expr(item);
                                     def ignored_new_part = __extend(instructions, part);
-                                    def _c = Collections.push(instructions, Instruction(OPCODE_CALL, new["heap_set", 3]));
-                                    def _d = Collections.push(instructions, Instruction(OPCODE_POP, Null));
+                                    def c = Collections.push(instructions, Instruction(OPCODE_CALL, new["heap_set", 3]));
+                                    def d = Collections.push(instructions, Instruction(OPCODE_POP, Null));
                                     i = i + 1;
                                 }
-                                def _r = Collections.push(instructions, Instruction(OPCODE_LOAD, temp_name));
+                                def r = Collections.push(instructions, Instruction(OPCODE_LOAD, temp_name));
                                 result = instructions;
                                 handled = true;
                             } else {
@@ -302,7 +302,7 @@ class NativeCodeGenerator {
                                         def instructions = self._compile_expr(expr.a);
                                         def rhs = self._compile_expr(expr.b);
                                         def ignored_rhs = __extend(instructions, rhs);
-                                        def _b = Collections.push(instructions, Instruction(OPCODE_BINARY, expr.op));
+                                        def b = Collections.push(instructions, Instruction(OPCODE_BINARY, expr.op));
                                         result = instructions;
                                         handled = true;
                                     } else {
@@ -315,7 +315,7 @@ class NativeCodeGenerator {
                                                 def ignored_call_part = __extend(instructions, part);
                                                 i = i + 1;
                                             }
-                                            def _unused31 = Collections.push(instructions, Instruction(OPCODE_CALL, new[expr.name, len(expr.args)]));
+                                            def unused31 = Collections.push(instructions, Instruction(OPCODE_CALL, new[expr.name, len(expr.args)]));
                                             result = instructions;
                                             handled = true;
                                         }
@@ -329,7 +329,7 @@ class NativeCodeGenerator {
         }
 
         if (!handled) {
-            def __unsupported = __raise_not_implemented("native codegen does not yet support expression " + __to_str(tag));
+            def unsupported2 = __raise_not_implemented("native codegen does not yet support expression " + __to_str(tag));
         }
         return result;
     }

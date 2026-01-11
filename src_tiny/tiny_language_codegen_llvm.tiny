@@ -1,10 +1,10 @@
 // TinyLanguage wrapper for src/tiny_language_codegen_llvm.py.
 // Exposes the LLVM IR code generator via Python interop.
 
-def __PY_ALLOW = new["LLVMCodeGenerator"];
+def PY_ALLOW = new["LLVMCodeGenerator"];
 
-def __PY = Python.import_module("tiny_language_codegen_llvm", __PY_ALLOW);
+def PY = Python.import_module("tiny_language_codegen_llvm", PY_ALLOW);
 
-def LLVMCodeGenerator = __PY.LLVMCodeGenerator;
+def LLVMCodeGenerator = PY.LLVMCodeGenerator;
 
-def _exports = new[LLVMCodeGenerator];
+def exports = new[LLVMCodeGenerator];

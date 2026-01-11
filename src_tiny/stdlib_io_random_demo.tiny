@@ -8,10 +8,10 @@ print(Random.choice(new["rot", "gruen", "blau"]));
 
 def json_text = "{\"title\":\"Tiny\", \"numbers\":[1,2,3]}";
 def data = JSON.parse(json_text);
-def _unused3 = Map.set(data, "rand", Random.random());
+def unused3 = Map.set(data, "rand", Random.random());
 
 def tmp = "tmp/demo.json";
-def _write = File.write(tmp, JSON.stringify(data));
+def write = File.write(tmp, JSON.stringify(data));
 print(File.exists(tmp));
 print(String.contains(File.read(tmp), "\"numbers\""));
-def _remove = File.remove(tmp);
+def remove = File.remove(tmp);

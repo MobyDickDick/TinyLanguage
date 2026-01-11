@@ -5,12 +5,12 @@ import tiny_language_lexer;
 import tiny_language_linter;
 import tiny_language_parser;
 
-def __PY_SORT_ALLOW = new["sorted"];
-def __PY_INT_ALLOW = new["int"];
-def __PY_LIST_ALLOW = new["list"];
+def PY_SORT_ALLOW = new["sorted"];
+def PY_INT_ALLOW = new["int"];
+def PY_LIST_ALLOW = new["list"];
 
-def __KEYWORDS = tiny_language_lexer.KEYWORDS;
-def __BUILTINS = tiny_language_lexer.BUILTINS;
+def KEYWORDS = tiny_language_lexer.KEYWORDS;
+def BUILTINS = tiny_language_lexer.BUILTINS;
 
 fn __starts_with(text, prefix) {
     if (prefix == Null) { return true; }
@@ -35,7 +35,7 @@ fn __format_signature(name, params, return_type) {
         if (param.type_hint != Null && len(param.type_hint) > 0) {
             suffix = ": " + param.type_hint;
         }
-        def _unused1 = Collections.push(parts, param.name + suffix);
+        def unused1 = Collections.push(parts, param.name + suffix);
         i = i + 1;
     }
     def signature = String.join(parts, ", ");
@@ -66,7 +66,7 @@ fn __line_info(source, pos) {
     def idx = target_pos;
     if (idx < 0) { idx = 0; }
     if (idx > String.len(source)) { idx = String.len(source); }
-    def chars = Python.call("builtins", "list", new[source], __PY_LIST_ALLOW);
+    def chars = Python.call("builtins", "list", new[source], PY_LIST_ALLOW);
     def line = 1;
     def last_nl = -1;
     def i = 0;
@@ -87,9 +87,9 @@ fn __record_symbol(server, name, pos, kind, detail) {
     def symbols = Map.get(server, "symbols");
     def kinds = Map.get(server, "symbol_kinds");
     def details = Map.get(server, "symbol_details");
-    def _unused2 = Map.set(symbols, name, pos);
-    def _k = Map.set(kinds, name, kind);
-    if (detail != Null) { def _d = Map.set(details, name, detail); }
+    def unused2 = Map.set(symbols, name, pos);
+    def k = Map.set(kinds, name, kind);
+    if (detail != Null) { def d = Map.set(details, name, detail); }
     return Null;
 }
 
@@ -100,7 +100,7 @@ fn __index_symbols(server, stmts, prefix) {
         if (st.__tag__ == "Namespace") {
             def nested = st.name;
             if (len(prefix) > 0) { nested = prefix + "." + st.name; }
-            def _unused3 = __index_symbols(server, st.body, nested);
+            def unused3 = __index_symbols(server, st.body, nested);
         }
 
         if (st.__tag__ == "Fn" || st.__tag__ == "MethodDef" || st.__tag__ == "ClassDef" || st.__tag__ == "TypeDef" || st.__tag__ == "Namespace") {
@@ -120,7 +120,7 @@ fn __index_symbols(server, stmts, prefix) {
                     if (st.__tag__ == "TypeDef") { kind = "type"; }
                 }
             }
-            def _unused4 = __record_symbol(server, qualified, st.pos, kind, detail);
+            def unused4 = __record_symbol(server, qualified, st.pos, kind, detail);
 
             if (st.__tag__ == "ClassDef") {
                 def m = 0;
@@ -128,7 +128,7 @@ fn __index_symbols(server, stmts, prefix) {
                     def method = heap_get(st.methods, m);
                     def method_name = qualified + "." + method.name;
                     def method_detail = "method " + __format_signature(method.name, method.params, method.return_type);
-                    def _unused5 = __record_symbol(server, method_name, method.pos, "method", method_detail);
+                    def unused5 = __record_symbol(server, method_name, method.pos, "method", method_detail);
                     m = m + 1;
                 }
             }
@@ -141,34 +141,34 @@ fn __index_symbols(server, stmts, prefix) {
 fn TinyLanguageServer(source) {
     def stmts = tiny_language_parser.parse_program(source);
     def server = Map.new();
-    def _unused6 = Map.set(server, "source", source);
-    def _s = Map.set(server, "stmts", stmts);
-    def _sym = Map.set(server, "symbols", Map.new());
-    def _k = Map.set(server, "symbol_kinds", Map.new());
-    def _d = Map.set(server, "symbol_details", Map.new());
-    def _unused7 = __index_symbols(server, stmts, "");
+    def unused6 = Map.set(server, "source", source);
+    def s2 = Map.set(server, "stmts", stmts);
+    def sym = Map.set(server, "symbols", Map.new());
+    def k = Map.set(server, "symbol_kinds", Map.new());
+    def d = Map.set(server, "symbol_details", Map.new());
+    def unused7 = __index_symbols(server, stmts, "");
     return server;
 }
 
 fn completions(server, prefix) {
     def candidates = Set.new();
-    def kw = Set.to_list(__KEYWORDS);
-    def bi = Set.to_list(__BUILTINS);
+    def kw = Set.to_list(KEYWORDS);
+    def bi = Set.to_list(BUILTINS);
     def i = 0;
-    while (i < len(kw)) { def _unused8 = Set.add(candidates, heap_get(kw, i)); i = i + 1; }
+    while (i < len(kw)) { def unused8 = Set.add(candidates, heap_get(kw, i)); i = i + 1; }
     i = 0;
-    while (i < len(bi)) { def _unused9 = Set.add(candidates, heap_get(bi, i)); i = i + 1; }
+    while (i < len(bi)) { def unused9 = Set.add(candidates, heap_get(bi, i)); i = i + 1; }
 
     def symbols = Map.get(server, "symbols");
     def keys = Map.keys(symbols);
     i = 0;
     while (i < len(keys)) {
         def name = heap_get(keys, i);
-        def _unused10 = Set.add(candidates, name);
+        def unused10 = Set.add(candidates, name);
         if (String.contains(name, ".")) {
             def parts = String.split(name, ".");
             def short = heap_get(parts, len(parts) - 1);
-            def _s = Set.add(candidates, short);
+            def s2 = Set.add(candidates, short);
         }
         i = i + 1;
     }
@@ -178,11 +178,11 @@ fn completions(server, prefix) {
     i = 0;
     while (i < len(all_items)) {
         def item = heap_get(all_items, i);
-        if (__starts_with(item, prefix)) { def _unused11 = Collections.push(filtered, item); }
+        if (__starts_with(item, prefix)) { def unused11 = Collections.push(filtered, item); }
         i = i + 1;
     }
 
-    def sorted_items = Python.call("builtins", "sorted", new[filtered], __PY_SORT_ALLOW);
+    def sorted_items = Python.call("builtins", "sorted", new[filtered], PY_SORT_ALLOW);
     def out = new[];
     i = 0;
     while (i < len(sorted_items)) {
@@ -190,9 +190,9 @@ fn completions(server, prefix) {
         def kind = Map.get(Map.get(server, "symbol_kinds"), label);
         if (kind == Null) { kind = "identifier"; }
         def entry = Map.new();
-        def _l = Map.set(entry, "label", label);
-        def _k = Map.set(entry, "kind", kind);
-        def _unused12 = Collections.push(out, entry);
+        def l = Map.set(entry, "label", label);
+        def k = Map.set(entry, "kind", kind);
+        def unused12 = Collections.push(out, entry);
         i = i + 1;
     }
     return out;
@@ -208,7 +208,7 @@ fn definition(server, symbol, position) {
     while (i < len(keys)) {
         def name = heap_get(keys, i);
         if (name == symbol || (String.contains(name, ".") && heap_get(String.split(name, "."), len(String.split(name, ".")) - 1) == symbol)) {
-            def _unused13 = Collections.push(matches, new[name, Map.get(symbols, name)]);
+            def unused13 = Collections.push(matches, new[name, Map.get(symbols, name)]);
         }
         i = i + 1;
     }
@@ -244,9 +244,9 @@ fn hover(server, symbol) {
     def detail = Map.get(Map.get(server, "symbol_details"), symbol);
     if (detail == Null) { detail = "TinyLanguage symbol"; }
     def result = Map.new();
-    def _s = Map.set(result, "symbol", symbol);
-    def _d = Map.set(result, "detail", detail);
-    def _p = Map.set(result, "position", new[pos.line, pos.column]);
+    def s2 = Map.set(result, "symbol", symbol);
+    def d = Map.set(result, "detail", detail);
+    def p2 = Map.set(result, "position", new[pos.line, pos.column]);
     return result;
 }
 
@@ -260,14 +260,14 @@ fn __diagnostic_range_from_message(message) {
             def line_split = String.split(after_line, ",");
             if (len(line_split) >= 1) {
                 def line_text = String.trim(heap_get(line_split, 0));
-                def line = Python.call("builtins", "int", new[line_text], __PY_INT_ALLOW);
+                def line = Python.call("builtins", "int", new[line_text], PY_INT_ALLOW);
 
                 def col_parts = String.split(after_line, "col ");
                 if (len(col_parts) >= 2) {
                     def col_tail = heap_get(col_parts, 1);
                     def col_split = String.split(col_tail, ")");
                     def col_text = String.trim(heap_get(col_split, 0));
-                    def col = Python.call("builtins", "int", new[col_text], __PY_INT_ALLOW);
+                    def col = Python.call("builtins", "int", new[col_text], PY_INT_ALLOW);
                     range = new[line, col, line, col + 1];
                 }
             }
@@ -327,23 +327,23 @@ fn diagnostics(server) {
     def stmts = Map.get(server, "stmts");
     def source = Map.get(server, "source");
     try {
-        def _unused14 = tiny_language_linter.lint_destruct_call_outputs(stmts, source);
-        def _unused15 = tiny_language_linter.lint_no_consecutive_definitions(stmts);
-        def _unused16 = tiny_language_linter.lint_no_underscore_bindings(stmts, source);
-        def _unused17 = tiny_language_linter.lint_import_style(stmts, source);
-        def _unused18 = tiny_language_linter.lint_locals_used(stmts, source);
+        def unused14 = tiny_language_linter.lint_destruct_call_outputs(stmts, source);
+        def unused15 = tiny_language_linter.lint_no_consecutive_definitions(stmts);
+        def unused16 = tiny_language_linter.lint_no_underscore_bindings(stmts, source);
+        def unused17 = tiny_language_linter.lint_import_style(stmts, source);
+        def unused18 = tiny_language_linter.lint_locals_used(stmts, source);
         def signatures = tiny_language_linter._collect_function_signatures(stmts, "");
-        def _unused19 = tiny_language_linter.lint_bare_call_results(stmts, signatures, source);
+        def unused19 = tiny_language_linter.lint_bare_call_results(stmts, signatures, source);
         def i = 0;
         while (i < len(stmts)) {
             def st = heap_get(stmts, i);
-            if (st.__tag__ == "Fn") { def _unused20 = tiny_language_linter.lint_fn_params_used(st, source); }
-            if (st.__tag__ == "MethodDef") { def _unused21 = tiny_language_linter.lint_method_params_used(st, source); }
+            if (st.__tag__ == "Fn") { def unused20 = tiny_language_linter.lint_fn_params_used(st, source); }
+            if (st.__tag__ == "MethodDef") { def unused21 = tiny_language_linter.lint_method_params_used(st, source); }
             if (st.__tag__ == "ClassDef") {
                 def m = 0;
                 while (m < len(st.methods)) {
                     def md = heap_get(st.methods, m);
-                    def _unused22 = tiny_language_linter.lint_method_params_used(md, source);
+                    def unused222 = tiny_language_linter.lint_method_params_used(md, source);
                     m = m + 1;
                 }
             }
@@ -354,10 +354,10 @@ fn diagnostics(server) {
         def message = err.message;
         def code = err.code;
         if (code == Null) { code = __extract_code(message); }
-        def _m = Map.set(diag, "message", message);
-        def _c = Map.set(diag, "code", code);
-        def _r = Map.set(diag, "range", __diagnostic_range(err, source));
-        def _unused22 = Collections.push(diagnostics, diag);
+        def m = Map.set(diag, "message", message);
+        def c = Map.set(diag, "code", code);
+        def r = Map.set(diag, "range", __diagnostic_range(err, source));
+        def unused222 = Collections.push(diagnostics, diag);
     }
     return diagnostics;
 }
@@ -384,7 +384,7 @@ fn definition_for_source(source, symbol, position) {
     def result = definition(server, symbol, position);
     if (result == Null) { return Map.new(); }
     def out = Map.new();
-    def _s = Map.set(out, "symbol", symbol);
-    def _p = Map.set(out, "position", new[result.line, result.column]);
+    def s2 = Map.set(out, "symbol", symbol);
+    def p2 = Map.set(out, "position", new[result.line, result.column]);
     return out;
 }

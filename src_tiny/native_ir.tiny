@@ -43,24 +43,24 @@ def OPCODE_RETURN = "RETURN";
 
 // Python interop helpers for formatting
 
-def __PY_STR_ALLOW = new["str"];
+def PY_STR_ALLOW = new["str"];
 
-def __PY_REPR_ALLOW = new["repr"];
+def PY_REPR_ALLOW = new["repr"];
 
-def __PY_EXEC_ALLOW = new["exec"];
+def PY_EXEC_ALLOW = new["exec"];
 
 fn __to_str(value) {
-    return Python.call("builtins", "str", new[value], __PY_STR_ALLOW);
+    return Python.call("builtins", "str", new[value], PY_STR_ALLOW);
 }
 
 fn __to_repr(value) {
-    return Python.call("builtins", "repr", new[value], __PY_REPR_ALLOW);
+    return Python.call("builtins", "repr", new[value], PY_REPR_ALLOW);
 }
 
 fn __raise_runtime_error(msg) {
-    def safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
+    def safe = Python.call("builtins", "repr", new[msg], PY_REPR_ALLOW);
     def stmt = "raise RuntimeError(" + safe + ")";
-    return Python.call("builtins", "exec", new[stmt], __PY_EXEC_ALLOW);
+    return Python.call("builtins", "exec", new[stmt], PY_EXEC_ALLOW);
 }
 
 fn format_program(program) {
@@ -87,7 +87,7 @@ fn format_program(program) {
                 }
             }
             def line = label + "[" + _fmt_index(idx) + "]: " + instr.op + suffix;
-            def _unused1 = Collections.push(lines, line);
+            def unused1 = Collections.push(lines, line);
             idx = idx + 1;
         }
         return lines;
@@ -100,14 +100,14 @@ fn format_program(program) {
         def name = heap_get(keys, i);
         def func = Map.get(program.functions, name);
         if (func == Null) {
-            def _unused2 = __raise_runtime_error("missing function " + __to_str(name));
+            def unused2 = __raise_runtime_error("missing function " + __to_str(name));
         }
         def header = "function " + func.name + "(" + String.join(func.params, ", ") + ")";
-        def _h = Collections.push(lines, header);
+        def h = Collections.push(lines, header);
         def block = _fmt_block("  " + func.name, func.instructions);
         def j = 0;
         while (j < len(block)) {
-            def _unused3 = Collections.push(lines, heap_get(block, j));
+            def unused3 = Collections.push(lines, heap_get(block, j));
             j = j + 1;
         }
         i = i + 1;

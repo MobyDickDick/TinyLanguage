@@ -134,18 +134,26 @@ COMMANDS: list[tuple[str, list[str]]] = [
 
 def run_pytest(failures: list[str]) -> None:
     """Run the Python test suite and record failures."""
+    def run_and_echo(command: list[str], pytest_env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+        proc = subprocess.run(
+            command,
+            cwd=PROJECT_ROOT,
+            env=pytest_env,
+            capture_output=True,
+            text=True,
+        )
+        if proc.stdout:
+            print(proc.stdout, end="")
+        if proc.stderr:
+            print(proc.stderr, end="", file=sys.stderr)
+        return proc
+
     name = "pytest (full suite)"
     pytest_env = build_pytest_env()
     pytest_command = resolve_pytest_command(pytest_env)
     print(f"\n=== Running {name} ===")  # Banner to make output scannable
     print("Command:", " ".join(pytest_command))  # Show the exact invocation
-    proc = subprocess.run(
-        pytest_command,
-        cwd=PROJECT_ROOT,
-        env=pytest_env,
-        capture_output=True,
-        text=True,
-    )
+    proc = run_and_echo(pytest_command, pytest_env)
     missing_pytest = bool(
         re.search(
             r"No module named ['\"]?pytest['\"]?",
@@ -159,13 +167,7 @@ def run_pytest(failures: list[str]) -> None:
         if fallback and fallback != pytest_command[0]:
             retry_cmd = [fallback, "-m", "pytest"]
             print("Retrying pytest with:", " ".join(retry_cmd))
-            return subprocess.run(
-                retry_cmd,
-                cwd=PROJECT_ROOT,
-                env=pytest_env,
-                capture_output=True,
-                text=True,
-            )
+            return run_and_echo(retry_cmd, pytest_env)
         if fallback == pytest_command[0]:
             print(
                 "pytest is missing from the current interpreter. "

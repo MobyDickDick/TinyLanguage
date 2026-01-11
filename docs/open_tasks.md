@@ -10,7 +10,7 @@ are grouped by area and can be tackled independently.
 
 ## Type discipline
 
-- [ ] Prevent implicit type changes (e.g., `def i = 5; i = 0.5;` ⇒ error unless explicitly allowed).
+- [x] Prevent implicit type changes (e.g., `def i = 5; i = 0.5;` ⇒ error unless explicitly allowed).
 - [ ] Add optional simple type inference (e.g., `def x = 0;` ⇒ `number`).
 
 ## Runtime

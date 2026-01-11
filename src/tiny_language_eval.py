@@ -414,15 +414,22 @@ class Environment:
 
     @staticmethod
     def _fallback_type_name(value: Any) -> str:
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            return "number"
+        if isinstance(value, dict) and "__type__" in value:
+            return str(value.get("__type__"))
+        if value is None:
+            return "Null"
+        if isinstance(value, bool):
+            return "Bool"
+        if isinstance(value, int) and not isinstance(value, bool):
+            return "int"
+        if isinstance(value, float):
+            return "float"
+        if isinstance(value, str):
+            return "string"
         return type(value).__name__
 
     @staticmethod
     def _normalize_numeric_type(type_name: str) -> str:
-        lowered = type_name.lower()
-        if lowered in {"int", "float"}:
-            return "number"
         return type_name
 
     def get(self, name: str) -> Any:

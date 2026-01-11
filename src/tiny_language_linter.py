@@ -527,7 +527,15 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
 
 def _infer_expr_type(expr: IR, env: Dict[str, str]) -> Optional[str]:
     if isinstance(expr, Num):
-        return "number"
+        if "." in expr.txt or "e" in expr.txt or "E" in expr.txt:
+            try:
+                value = float(expr.txt)
+            except ValueError:
+                return "float"
+            if ("e" in expr.txt or "E" in expr.txt) and "." not in expr.txt and value.is_integer():
+                return "int"
+            return "float"
+        return "int"
     if isinstance(expr, Str):
         return "string"
     if isinstance(expr, Bool):

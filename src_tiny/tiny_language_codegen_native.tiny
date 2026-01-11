@@ -57,7 +57,7 @@ class NativeCodeGenerator {
             } else {
                 def raw = self._compile_stmt(stmt);
                 def shifted = self._shift_labels(raw, len(entry));
-                def __unused3 = __extend(entry, shifted);
+                __extend(entry, shifted);
             }
             i = i + 1;
         }
@@ -73,7 +73,7 @@ class NativeCodeGenerator {
             def stmt = heap_get(fn_node.body, i);
             def raw = self._compile_stmt(stmt);
             def shifted = self._shift_labels(raw, len(body));
-            def __unused5 = __extend(body, shifted);
+            __extend(body, shifted);
             i = i + 1;
         }
         def _unused6 = Collections.push(body, Instruction(OPCODE_RETURN, Null));
@@ -121,7 +121,7 @@ class NativeCodeGenerator {
                     while (i < len(stmt.exprs)) {
                         def expr = heap_get(stmt.exprs, i);
                         def part = self._compile_expr(expr);
-                        def __unused10 = __extend(instructions, part);
+                        __extend(instructions, part);
                         i = i + 1;
                     }
                     def _unused11 = Collections.push(instructions, Instruction(OPCODE_PRINT, len(stmt.exprs)));
@@ -179,7 +179,7 @@ class NativeCodeGenerator {
             def inner = heap_get(stmt.then, i);
             def nested = self._compile_stmt(inner);
             def shifted = self._shift_labels(nested, len(instructions) + len(then_block));
-            def __unused16 = __extend(then_block, shifted);
+            __extend(then_block, shifted);
             i = i + 1;
         }
         def _unused17 = Collections.push(then_block, Instruction(OPCODE_JUMP, Null));
@@ -190,7 +190,7 @@ class NativeCodeGenerator {
             def inner = heap_get(stmt.els, j);
             def nested = self._compile_stmt(inner);
             def shifted = self._shift_labels(nested, len(instructions) + len(then_block) + len(else_block));
-            def __unused18 = __extend(else_block, shifted);
+            __extend(else_block, shifted);
             j = j + 1;
         }
 
@@ -202,8 +202,8 @@ class NativeCodeGenerator {
         def end_status = heap_set(then_block, len(then_block) - 1, Instruction(OPCODE_JUMP, end_of_then));
         if (end_status.e.code != 0) { def _ = __raise_runtime_error(end_status.e.msg); }
 
-        def __unused21 = __extend(instructions, then_block);
-        def __unused22 = __extend(instructions, else_block);
+        __extend(instructions, then_block);
+        __extend(instructions, else_block);
         return instructions;
     }
 
@@ -211,7 +211,7 @@ class NativeCodeGenerator {
         def instructions = new[];
         def loop_start = 0;
         def cond_instrs = self._compile_expr(stmt.cond);
-        def __unused22 = __extend(instructions, cond_instrs);
+        __extend(instructions, cond_instrs);
         def jump_out_index = len(instructions);
         def _j = Collections.push(instructions, Instruction(OPCODE_JUMP_IF_FALSE, Null));
 
@@ -221,7 +221,7 @@ class NativeCodeGenerator {
             def inner = heap_get(stmt.body, i);
             def nested = self._compile_stmt(inner);
             def shifted = self._shift_labels(nested, len(instructions) + len(body_instrs));
-            def __unused23 = __extend(body_instrs, shifted);
+            __extend(body_instrs, shifted);
             i = i + 1;
         }
         def _unused24 = Collections.push(body_instrs, Instruction(OPCODE_JUMP, loop_start));
@@ -230,7 +230,7 @@ class NativeCodeGenerator {
         def loop_status = heap_set(instructions, jump_out_index, Instruction(OPCODE_JUMP_IF_FALSE, loop_exit));
         if (loop_status.e.code != 0) { def _ = __raise_runtime_error(loop_status.e.msg); }
 
-        def __unused26 = __extend(instructions, body_instrs);
+        __extend(instructions, body_instrs);
         return instructions;
     }
 
@@ -285,7 +285,7 @@ class NativeCodeGenerator {
                                     def _l = Collections.push(instructions, Instruction(OPCODE_LOAD, temp_name));
                                     def _p = Collections.push(instructions, Instruction(OPCODE_PUSH_CONST, i));
                                     def part = self._compile_expr(item);
-                                    def __unused28 = __extend(instructions, part);
+                                    __extend(instructions, part);
                                     def _c = Collections.push(instructions, Instruction(OPCODE_CALL, new["heap_set", 3]));
                                     def _d = Collections.push(instructions, Instruction(OPCODE_POP, Null));
                                     i = i + 1;
@@ -301,7 +301,7 @@ class NativeCodeGenerator {
                                     if (tag == "Bin") {
                                         def instructions = self._compile_expr(expr.a);
                                         def rhs = self._compile_expr(expr.b);
-                                        def __unused29 = __extend(instructions, rhs);
+                                        __extend(instructions, rhs);
                                         def _b = Collections.push(instructions, Instruction(OPCODE_BINARY, expr.op));
                                         result = instructions;
                                         handled = true;
@@ -312,7 +312,7 @@ class NativeCodeGenerator {
                                             while (i < len(expr.args)) {
                                                 def arg = heap_get(expr.args, i);
                                                 def part = self._compile_expr(arg);
-                                                def __unused30 = __extend(instructions, part);
+                                                __extend(instructions, part);
                                                 i = i + 1;
                                             }
                                             def _unused31 = Collections.push(instructions, Instruction(OPCODE_CALL, new[expr.name, len(expr.args)]));

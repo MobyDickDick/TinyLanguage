@@ -1008,7 +1008,7 @@ class PythonTranspiler: LanguageTranspiler {
                 def block_info = __python_parse_block(lines, i, 0);
                 def block = heap_get(block_info, 0);
                 def next_index = heap_get(block_info, 1);
-                def __unused44 = __extend(body, block);
+                __extend(body, block);
                 i = next_index;
             }
         }
@@ -1118,7 +1118,7 @@ class JuliaTranspiler: LanguageTranspiler {
                 def block_info = __julia_parse_block(lines, i);
                 def block = heap_get(block_info, 0);
                 def j = heap_get(block_info, 1);
-                def __unused60 = __extend(body, block);
+                __extend(body, block);
                 i = j;
             }
         }
@@ -1235,7 +1235,7 @@ class JavaScriptTranspiler: LanguageTranspiler {
                 def block_info = __parse_brace_block(lines, i, "JavaScript");
                 def block = heap_get(block_info, 0);
                 def j = heap_get(block_info, 1);
-                def __unused74 = __extend(body, block);
+                __extend(body, block);
                 i = j;
             }
         }
@@ -1367,7 +1367,7 @@ class CppTranspiler: LanguageTranspiler {
                 def block_info = __parse_brace_block(lines, i, "C++");
                 def block = heap_get(block_info, 0);
                 def j = heap_get(block_info, 1);
-                def __unused90 = __extend(body, block);
+                __extend(body, block);
                 i = j;
             }
         }

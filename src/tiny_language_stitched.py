@@ -7154,7 +7154,8 @@ def lint_bare_call_results(
 ) -> None:
     del signatures
     returns_value = _collect_function_return_values(stmts)
-    allowed_call_stmts = {"heap_set", "heap_get", "delete", "tag", "join", "parse_program"}
+    returns_value.update({"heap_set": True, "heap_get": True})
+    allowed_call_stmts = {"delete", "tag", "join", "parse_program"}
     allowed_call_prefixes = (
         "Collections.",
         "Map.",
@@ -7186,7 +7187,7 @@ def lint_bare_call_results(
     def _binding_discarded(name: str) -> bool:
         if name == "_" or name.startswith("__"):
             return False
-        return name.startswith("_") or name.startswith("ignored")
+        return name.startswith("_")
 
     def visit(block: List[IR]) -> None:
         for st in block:

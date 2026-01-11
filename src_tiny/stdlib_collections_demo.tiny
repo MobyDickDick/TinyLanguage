@@ -6,7 +6,7 @@ def capitals = Map.from_entries(new[
 ]);
 print(Map.get(capitals, "DE", "?"));
 print(Map.has(capitals, "CH"));
-def unused3 = Map.set(capitals, "CH", "Bern");
+Map.set(capitals, "CH", "Bern");
 print(Map.len(capitals));
 
 print(String.join(Map.values(capitals), ","));

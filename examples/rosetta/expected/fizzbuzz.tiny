@@ -20,4 +20,4 @@ fn fizzbuzz(n) {
     }
 }
 
-def _ = fizzbuzz(16);
+def ignored1 = fizzbuzz(16);

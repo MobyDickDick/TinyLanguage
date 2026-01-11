@@ -525,6 +525,56 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
         )
 
 
+def lint_no_underscore_bindings(stmts: List[IR], source: Optional[str] = None) -> None:
+    def check_name(name: str, node: Any) -> None:
+        if name != "_":
+            return
+        raise _lint_error(
+            source,
+            node,
+            "binding name '_' is reserved and cannot be declared",
+            code="E016",
+            hint="Rename the binding to something descriptive; '_' cannot be used as a binding name.",
+        )
+
+    def visit(block: List[IR]) -> None:
+        for st in block:
+            if isinstance(st, Let):
+                check_name(st.name, st.name_span or st)
+            elif isinstance(st, Assign):
+                check_name(st.name, st.name_span or st)
+            elif isinstance(st, DestructAssign):
+                for name, span in zip(st.names, st.name_spans):
+                    check_name(name, span or st)
+            elif isinstance(st, Import):
+                binding = _import_binding_name(st.module, st.alias)
+                check_name(binding, st.binding_span or st)
+            elif isinstance(st, If):
+                visit(st.then)
+                visit(st.els)
+            elif isinstance(st, While):
+                visit(st.body)
+            elif isinstance(st, Switch):
+                for case in st.cases:
+                    visit(case.body)
+            elif isinstance(st, TryCatch):
+                visit(st.body)
+                visit(st.handler)
+            elif isinstance(st, TaskBlock):
+                visit(st.body)
+            elif isinstance(st, Namespace):
+                visit(st.body)
+            elif isinstance(st, ClassDef):
+                for method in st.methods:
+                    visit(method.body)
+            elif isinstance(st, Fn):
+                visit(st.body)
+            elif isinstance(st, MethodDef):
+                visit(st.body)
+
+    visit(stmts)
+
+
 def _infer_expr_type(expr: IR, env: Dict[str, str]) -> Optional[str]:
     if isinstance(expr, Num):
         if "." in expr.txt or "e" in expr.txt or "E" in expr.txt:

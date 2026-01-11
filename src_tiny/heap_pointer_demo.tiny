@@ -37,7 +37,7 @@ print("\n=== Common pitfalls ==="); // Heading for the error section.
 print("The next errors are triggered on purpose; the program still continues and exits successfully.\n"); // Reader note.
 def too_short = new[1, 2]; // Create a short array.
 def ignored_oob = heap_get(too_short, 5); // Runtime error is recorded.
-def _ = ignored_oob;
+def ignored1 = ignored_oob;
 def oob_error = errorMessage;             // Store the most recent error.
 print("Recorded out-of-bounds message:"); // Label for the error message.
 print(oob_error);                            // "heap access error: index 5 out of range ..."

@@ -16,4 +16,4 @@ fn run() {
     def _unused1 = builtins.exit(code);
 }
 
-def _ = run();
+def ignored1 = run();

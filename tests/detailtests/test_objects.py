@@ -15,9 +15,9 @@ def test_class_operator_overloads_with_numbers(run_tiny_source):
     operator - (a: number, b: Counter) -> Counter { return Counter(a - b.total, "n-" + b.tag); }
     operator == (a: Counter, b: Counter) -> bool { return a.total == b.total and a.tag == b.tag; }
 
-    tag(5, "number");
-    tag(20, "number");
-    tag(3, "number");
+    def _unused1 = tag(5, "number");
+    def _unused2 = tag(20, "number");
+    def _unused3 = tag(3, "number");
 
     def base = Counter(10, "base");
 

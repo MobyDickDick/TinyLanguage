@@ -11,4 +11,4 @@ fn run() {
     return main();
 }
 
-run();
+def _unused1 = run();

@@ -39,7 +39,7 @@ def test_typed_function_requires_all_paths_return():
 fn maybe(x: number) -> number {
     if (x > 0) { return x; }
 }
-maybe(1);
+def _unused2 = maybe(1);
 """
 
     with pytest.raises(TinyLangError) as excinfo:

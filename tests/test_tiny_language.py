@@ -432,7 +432,7 @@ def test_call_stmt_counts_param_usage():
     def p = new(1);
 
     fn init(ptr) {
-        heap_set(ptr, 0, 99);
+        def _unused77 = heap_set(ptr, 0, 99);
         return 0;
     }
 
@@ -476,7 +476,7 @@ def test_inconsistent_return_signature_in_function():
         return { a: a + 2, e: 1, extra: 99 };
     }
 
-    f(1);
+    def _unused81 = f(1);
     """
 
     expect_compile_error(
@@ -599,7 +599,7 @@ def test_must_use_unused_local_binding_function():
 def test_must_use_bare_call_forbidden():
     src = """
     fn h() { return 1; }
-    h();
+    def _unused85 = h();
     """
     expect_compile_error(src, r"bare call statements are not allowed")
 
@@ -700,7 +700,7 @@ def test_unreachable_statement_after_return():
         return 1;
         print(2);
     }
-    demo();
+    def _unused97 = demo();
     """
 
     expect_compile_error(src, r"unreachable statement after a guaranteed exit")
@@ -714,7 +714,7 @@ def test_unreachable_statement_after_infinite_loop():
         }
         print(2);
     }
-    demo();
+    def _unused100 = demo();
     """
 
     expect_compile_error(src, r"unreachable statement after a guaranteed exit")
@@ -820,8 +820,8 @@ def test_error_message_for_missing_heap_index():
 def test_error_message_for_double_delete():
     src = """
     def p = new(1);
-    delete(p);
-    delete(p);
+    def _unused107 = delete(p);
+    def _unused108 = delete(p);
     print(errorMessage);
     """
 
@@ -832,7 +832,7 @@ def test_error_message_for_double_delete():
 
 def test_error_message_for_unknown_delete():
     src = """
-    delete(9);
+    def _unused110 = delete(9);
     print(errorMessage);
     """
 
@@ -846,7 +846,7 @@ def test_heap_leak_report_tracks_live_allocations():
     def first = new(2);
     def second = new[1, 2, 3];
     print(len(second));
-    delete(first);
+    def _unused113 = delete(first);
     """
 
     runtime = Runtime(src)

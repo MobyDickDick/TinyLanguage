@@ -7066,6 +7066,51 @@ def lint_assignment_types(stmts: List[IR], source: Optional[str] = None, env: Op
     check_block(stmts, env)
 
 
+def _collect_function_signatures(stmts: List[IR], prefix: str = "") -> Dict[str, Optional[str]]:
+    sigs: Dict[str, Optional[str]] = {}
+
+    def qualify(name: str) -> str:
+        return f"{prefix}.{name}" if prefix else name
+
+    for st in stmts:
+        if isinstance(st, Fn):
+            sigs[qualify(st.name)] = st.return_type
+        elif isinstance(st, Namespace):
+            nested_prefix = qualify(st.name)
+            sigs.update(_collect_function_signatures(st.body, prefix=nested_prefix))
+    return sigs
+
+
+def lint_bare_call_results(
+    stmts: List[IR], signatures: Dict[str, Optional[str]], source: Optional[str] = None
+) -> None:
+    def visit(block: List[IR]) -> None:
+        for st in block:
+            if isinstance(st, CallStmt):
+                hint = "Bind the return value, e.g. `def result = call();`, or add a return that includes the mutated data."
+                msg = "call with return value must be bound; bare call statements are not allowed"
+                raise _lint_error(source, st, msg, code="E001", hint=hint)
+            if isinstance(st, If):
+                visit(st.then)
+                visit(st.els)
+            elif isinstance(st, While):
+                visit(st.body)
+            elif isinstance(st, Switch):
+                for case in st.cases:
+                    visit(case.body)
+            elif isinstance(st, TryCatch):
+                visit(st.body)
+                visit(st.handler)
+            elif isinstance(st, TaskBlock):
+                visit(st.body)
+            elif isinstance(st, Namespace):
+                visit(st.body)
+            elif isinstance(st, ClassDef):
+                for method in st.methods:
+                    visit(method.body)
+
+    visit(stmts)
+
 
 def lint_import_style(stmts: List[IR], source: Optional[str] = None) -> None:
     imports: List[Import] = []
@@ -10074,7 +10119,9 @@ if "TinyLangError" not in globals():
 
 if "lint_import_style" not in globals():
     from tiny_language_linter import (
+        _collect_function_signatures,
         lint_assignment_types,
+        lint_bare_call_results,
         lint_destruct_call_outputs,
         lint_fn_params_used,
         lint_import_style,
@@ -10567,6 +10614,7 @@ def _parse_and_lint(src: str, *, use_tiny_parser: Optional[bool] = None) -> List
     lint_assignment_types(stmts, src)
     lint_locals_used(stmts, src)
     lint_unreachable_code(stmts, src)
+    signatures = _collect_function_signatures(stmts)
 
     def lint_nested(block: List["IR"]) -> None:
         for st in block:
@@ -10581,6 +10629,7 @@ def _parse_and_lint(src: str, *, use_tiny_parser: Optional[bool] = None) -> List
                 lint_nested(st.body)
 
     lint_nested(stmts)
+    lint_bare_call_results(stmts, signatures, src)
     return stmts
 
 

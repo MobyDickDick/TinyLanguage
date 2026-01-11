@@ -88,7 +88,7 @@ def test_cli_supports_positional_path(tmp_path):
 
 def test_cli_respects_copy_on_call_env():
     program = (
-        "fn mutate(a) { heap_set(a, 0, 9); }\n"
+        "fn mutate(a) { def _unused1 = heap_set(a, 0, 9); }\n"
         "def xs = new(1);\n"
         "heap_set(xs, 0, 1);\n"
         "mutate(xs);\n"

@@ -23,4 +23,4 @@ fn main() {
     return code;
 }
 
-main();
+def _unused1 = main();

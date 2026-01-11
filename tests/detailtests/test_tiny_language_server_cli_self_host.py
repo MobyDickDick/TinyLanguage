@@ -52,7 +52,7 @@ def test_tiny_language_server_diagnostics():
     diagnostics = run_tiny_language_server(
         [
             "--source",
-            "fn greet() -> string { return \"hi\"; }\ngreet();",
+            "fn greet() -> string { return \"hi\"; }\ndef _ = greet();",
             "diagnostics",
         ]
     )

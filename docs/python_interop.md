@@ -164,7 +164,7 @@ The following mini-scenarios complement the list above and highlight common pitf
   payload={"ok": true}
 
   # A tighter allowlist forces an error; this is a good security regression test
-  PYTHONPATH=src python src/tiny_language.py --eval 'def json = Python.import_module("json", new["loads"]); json.dumps(new["x"]);'
+  PYTHONPATH=src python src/tiny_language.py --eval 'def json = Python.import_module("json", new["loads"]); def _unused8 = json.dumps(new["x"]);'
   # Expected output
   # [PYDENY] attribute dumps not allowlisted on module json
   ```

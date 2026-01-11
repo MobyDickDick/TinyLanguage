@@ -24,7 +24,9 @@ from tiny_language import (
     TinyLangError,
     ClassDef,
     Fn,
+    _collect_function_signatures,
     _line_info,
+    lint_bare_call_results,
     lint_destruct_call_outputs,
     lint_fn_params_used,
     lint_import_style,
@@ -186,6 +188,8 @@ class TinyLanguageServer:
             lint_no_consecutive_definitions(self.stmts, self.source)
             lint_import_style(self.stmts, self.source)
             lint_locals_used(self.stmts, self.source)
+            signatures = _collect_function_signatures(self.stmts)
+            lint_bare_call_results(self.stmts, signatures, self.source)
             for st in self.stmts:
                 if hasattr(st, "params"):
                     if hasattr(st, "class_name"):

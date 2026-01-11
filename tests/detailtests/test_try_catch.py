@@ -10,7 +10,7 @@ from tiny_language import TinyLangError, compile_and_run
 
 def test_stacktrace_includes_call_chain():
     source = """
-fn leaf() { missing(); }
+fn leaf() { def _unused1 = missing(); }
 fn middle() { return leaf(); }
 fn top() { return middle(); }
 
@@ -48,11 +48,11 @@ print(wrapper());
 
 def test_try_catch_keeps_program_running():
     source = """
-fn explode() { missing(); }
+fn explode() { def _unused5 = missing(); }
 
 print("before");
 try {
-  explode();
+  def _unused7 = explode();
   print("unreachable");
 } catch(err) {
   print(err.code);

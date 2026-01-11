@@ -54,8 +54,8 @@ fn bubble_sort(values) {
 
             // Swap if out of order.
             if (left > right) {
-                heap_set(values, j, right);
-                heap_set(values, j + 1, left);
+                def _unused1 = heap_set(values, j, right);
+                def _unused2 = heap_set(values, j + 1, left);
             }
 
             j = j + 1;
@@ -84,4 +84,4 @@ def sorted_numbers = bubble_sort(numbers);
 
 // Print result. Bind return value to `_` to satisfy the
 // “no bare call statements” / “must-use” rule.
-print_list(sorted_numbers);
+def _unused4 = print_list(sorted_numbers);

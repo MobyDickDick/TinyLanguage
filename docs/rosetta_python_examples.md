@@ -51,7 +51,7 @@ fn fizzbuzz(limit) {
     }
 }
 
-fizzbuzz(16);
+def _unused5 = fizzbuzz(16);
 ```
 
 ## 2) Factorial (recursion and return values)
@@ -119,7 +119,7 @@ fn word_counts(text) {
     while (index < total) {
         def word = heap_get(words, index);
         def seen = Map.get(counts, word, 0);
-        Map.set(counts, word, seen + 1);
+        def _unused7 = Map.set(counts, word, seen + 1);
         index = index + 1;
     }
 

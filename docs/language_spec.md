@@ -59,12 +59,12 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 
   ```tiny
   fn bump(buf) {
-      heap_set(buf, 0, 99);
+      def _unused2 = heap_set(buf, 0, 99);
   }
 
   def data = new(1);
-  heap_set(data, 0, 1);
-  bump(data); // mit --copy-on-call bleibt data[0] == 1
+  def _unused3 = heap_set(data, 0, 1);
+  def _unused4 = bump(data); // mit --copy-on-call bleibt data[0] == 1
   ```
 
 ## Algebraic data types and pattern matching

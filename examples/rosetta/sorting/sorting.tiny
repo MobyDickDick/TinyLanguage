@@ -7,8 +7,8 @@ fn bubble_sort(values) {
             def left = heap_get(values, j);
             def right = heap_get(values, j + 1);
             if (left > right) {
-                heap_set(values, j, right);
-                heap_set(values, j + 1, left);
+                def _unused1 = heap_set(values, j, right);
+                def _unused2 = heap_set(values, j + 1, left);
             }
             j = j + 1;
         }
@@ -27,4 +27,4 @@ fn print_list(values) {
 
 def numbers = new[5, 1, 4, 2, 8];
 def sorted_numbers = bubble_sort(numbers);
-print_list(sorted_numbers);
+def _unused4 = print_list(sorted_numbers);

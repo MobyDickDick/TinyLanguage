@@ -1,8 +1,8 @@
 // Demonstration of product and sum types with match expressions
 type Point = product { x: Number; y: Number; }
 type Shape = sum {
-  Circle(radius: Number);
-  Rect(width: Number, height: Number);
+  def _unused1 = Circle(radius: Number);
+  def _unused2 = Rect(width: Number, height: Number);
   Unit;
 }
 

@@ -8,12 +8,12 @@ from tests.utils import execute_tiny_program
 def test_non_escaped_parameter_is_copied_by_default():
     source = """
     fn bump(buf) {
-        heap_set(buf, 0, 99);
+        def _unused1 = heap_set(buf, 0, 99);
     }
 
     def data = new(1);
-    heap_set(data, 0, 1);
-    bump(data);
+    def _unused2 = heap_set(data, 0, 1);
+    def _unused3 = bump(data);
     print(heap_get(data, 0));
     """
 
@@ -25,12 +25,12 @@ def test_non_escaped_parameter_is_copied_by_default():
 def test_escaped_parameter_mutations_propagate():
     source = """
     fn passthrough(buf) {
-        heap_set(buf, 0, 42);
+        def _unused5 = heap_set(buf, 0, 42);
         return buf;
     }
 
     def data = new(1);
-    heap_set(data, 0, 7);
+    def _unused6 = heap_set(data, 0, 7);
     def alias = passthrough(data);
     print(heap_get(data, 0));
     print(heap_get(alias, 0));
@@ -44,12 +44,12 @@ def test_escaped_parameter_mutations_propagate():
 def test_legacy_behavior_when_copy_on_call_disabled():
     source = """
     fn bump(buf) {
-        heap_set(buf, 0, 99);
+        def _unused9 = heap_set(buf, 0, 99);
     }
 
     def data = new(1);
-    heap_set(data, 0, 1);
-    bump(data);
+    def _unused10 = heap_set(data, 0, 1);
+    def _unused11 = bump(data);
     print(heap_get(data, 0));
     """
 
@@ -64,11 +64,11 @@ def test_mutating_protected_argument_raises():
 
     fn mutate_through_alias(p) {
         if (p == p) {
-            heap_set(shared, 0, 5);
+            def _unused13 = heap_set(shared, 0, 5);
         }
     }
 
-    mutate_through_alias(shared);
+    def _unused14 = mutate_through_alias(shared);
     """
 
     with pytest.raises(TinyLangError) as excinfo:
@@ -80,12 +80,12 @@ def test_mutating_protected_argument_raises():
 def test_cli_flag_enables_copy_on_call():
     source = """
     fn bump(buf) {
-        heap_set(buf, 0, 99);
+        def _unused15 = heap_set(buf, 0, 99);
     }
 
     def data = new(1);
-    heap_set(data, 0, 1);
-    bump(data);
+    def _unused16 = heap_set(data, 0, 1);
+    def _unused17 = bump(data);
     print(heap_get(data, 0));
     """
 

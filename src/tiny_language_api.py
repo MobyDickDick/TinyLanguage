@@ -97,7 +97,9 @@ if "TinyLangError" not in globals():
 
 if "lint_import_style" not in globals():
     from tiny_language_linter import (
+        _collect_function_signatures,
         lint_assignment_types,
+        lint_bare_call_results,
         lint_destruct_call_outputs,
         lint_fn_params_used,
         lint_import_style,
@@ -590,6 +592,7 @@ def _parse_and_lint(src: str, *, use_tiny_parser: Optional[bool] = None) -> List
     lint_assignment_types(stmts, src)
     lint_locals_used(stmts, src)
     lint_unreachable_code(stmts, src)
+    signatures = _collect_function_signatures(stmts)
 
     def lint_nested(block: List["IR"]) -> None:
         for st in block:
@@ -604,6 +607,7 @@ def _parse_and_lint(src: str, *, use_tiny_parser: Optional[bool] = None) -> List
                 lint_nested(st.body)
 
     lint_nested(stmts)
+    lint_bare_call_results(stmts, signatures, src)
     return stmts
 
 

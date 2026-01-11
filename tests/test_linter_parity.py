@@ -28,31 +28,31 @@ TINY_LINTER_DRIVER = """
 fn __run_lints(src) {
     def parser = Parser_new(src);
     def stmts = parser.parse();
-    lint_import_style(stmts, src);
-    lint_destruct_call_outputs(stmts, src);
-    lint_no_consecutive_definitions(stmts);
-    lint_assignment_types(stmts, src, Null);
-    lint_locals_used(stmts, src);
-    lint_unreachable_code(stmts, src);
+    def _unused1 = lint_import_style(stmts, src);
+    def _unused2 = lint_destruct_call_outputs(stmts, src);
+    def _unused3 = lint_no_consecutive_definitions(stmts);
+    def _unused4 = lint_assignment_types(stmts, src, Null);
+    def _unused5 = lint_locals_used(stmts, src);
+    def _unused6 = lint_unreachable_code(stmts, src);
 
     def sigs = _collect_function_signatures(stmts, "");
     fn lint_nested(block) {
         def i = 0;
         while (i < len(block)) {
             def st = heap_get(block, i);
-            if (st.__tag__ == "Fn") { lint_fn_params_used(st, src); }
-            if (st.__tag__ == "MethodDef") { lint_method_params_used(st, src); }
+            if (st.__tag__ == "Fn") { def _unused7 = lint_fn_params_used(st, src); }
+            if (st.__tag__ == "MethodDef") { def _unused8 = lint_method_params_used(st, src); }
             if (st.__tag__ == "ClassDef") {
                 def mi = 0;
-                while (mi < len(st.methods)) { lint_method_params_used(heap_get(st.methods, mi), src); mi = mi + 1; }
+                while (mi < len(st.methods)) { def _unused9 = lint_method_params_used(heap_get(st.methods, mi), src); mi = mi + 1; }
             }
-            if (st.__tag__ == "Namespace") { lint_nested(st.body); }
+            if (st.__tag__ == "Namespace") { def _unused10 = lint_nested(st.body); }
             i = i + 1;
         }
     }
 
-    lint_nested(stmts);
-    lint_bare_call_results(stmts, sigs, src);
+    def _unused11 = lint_nested(stmts);
+    def _unused12 = lint_bare_call_results(stmts, sigs, src);
 }
 """
 

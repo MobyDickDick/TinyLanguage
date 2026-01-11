@@ -106,7 +106,7 @@ def test_map_set_and_deque_helpers(run_tiny_source):
         ]);
         print(Map.get(capitals, "DE", "?"));
         print(Map.has(capitals, "CH"));
-        Map.set(capitals, "CH", "Bern");
+        def _unused41 = Map.set(capitals, "CH", "Bern");
         print(Map.len(capitals));
         print(Map.get(capitals, "CH", "?"));
         print(heap_get(Map.keys(capitals), 1));
@@ -136,7 +136,7 @@ def test_random_file_and_json_helpers(run_tiny_source, tmp_path):
         print(Random.choice(new["rot", "gruen", "blau"]));
 
         def data = JSON.parse("{{\\"n\\": [1, 2], \\"flag\\": true}}");
-        Map.set(data, "extra", 5);
+        def _unused53 = Map.set(data, "extra", 5);
         def path = "{file_path.as_posix()}";
         def _write = File.write(path, JSON.stringify(data));
         print(File.exists(path));

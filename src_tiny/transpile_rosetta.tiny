@@ -38,8 +38,8 @@ fn transpile_all(destination) {
 
 fn main() {
     def args = parse_args();
-    transpile_all(Map.get(args, "dest"));
+    def _unused4 = transpile_all(Map.get(args, "dest"));
     return 0;
 }
 
-main();
+def _unused5 = main();

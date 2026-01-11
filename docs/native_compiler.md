@@ -77,7 +77,7 @@ These commands exercise exactly the constructs implemented today (literals, arit
 - **Heap operations now supported**:
 
   ```bash
-  PYTHONPATH=src python src/tiny_language.py --native-backend -e 'def p = new(1); heap_set(p, 0, 42); print(heap_get(p, 0));'
+  PYTHONPATH=src python src/tiny_language.py --native-backend -e 'def p = new(1); def _unused1 = heap_set(p, 0, 42); print(heap_get(p, 0));'
   # Expected output
   42
   ```

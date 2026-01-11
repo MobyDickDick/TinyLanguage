@@ -329,20 +329,21 @@ fn diagnostics(server) {
     try {
         def _unused14 = tiny_language_linter.lint_destruct_call_outputs(stmts, source);
         def _unused15 = tiny_language_linter.lint_no_consecutive_definitions(stmts);
-        def _unused16 = tiny_language_linter.lint_import_style(stmts, source);
-        def _unused17 = tiny_language_linter.lint_locals_used(stmts, source);
+        def _unused16 = tiny_language_linter.lint_no_underscore_bindings(stmts, source);
+        def _unused17 = tiny_language_linter.lint_import_style(stmts, source);
+        def _unused18 = tiny_language_linter.lint_locals_used(stmts, source);
         def signatures = tiny_language_linter._collect_function_signatures(stmts, "");
-        def _unused18 = tiny_language_linter.lint_bare_call_results(stmts, signatures, source);
+        def _unused19 = tiny_language_linter.lint_bare_call_results(stmts, signatures, source);
         def i = 0;
         while (i < len(stmts)) {
             def st = heap_get(stmts, i);
-            if (st.__tag__ == "Fn") { def _unused19 = tiny_language_linter.lint_fn_params_used(st, source); }
-            if (st.__tag__ == "MethodDef") { def _unused20 = tiny_language_linter.lint_method_params_used(st, source); }
+            if (st.__tag__ == "Fn") { def _unused20 = tiny_language_linter.lint_fn_params_used(st, source); }
+            if (st.__tag__ == "MethodDef") { def _unused21 = tiny_language_linter.lint_method_params_used(st, source); }
             if (st.__tag__ == "ClassDef") {
                 def m = 0;
                 while (m < len(st.methods)) {
                     def md = heap_get(st.methods, m);
-                    def _unused21 = tiny_language_linter.lint_method_params_used(md, source);
+                    def _unused22 = tiny_language_linter.lint_method_params_used(md, source);
                     m = m + 1;
                 }
             }

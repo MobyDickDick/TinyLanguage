@@ -709,7 +709,7 @@ class TinyLanguageTranspiler(LanguageTranspiler):
     def _next_unused(self, defined: Set[str]) -> str:
         while True:
             self._unused_counter += 1
-            name = f"__unused{self._unused_counter}"
+            name = f"ignored{self._unused_counter}"
             if name not in defined:
                 return name
 

@@ -108,7 +108,7 @@ class NativeVM {
         self.program = program;
         self.output = new[];
         self.globals = Map.new();
-        def __unused4 = _vm_execute(self, _Frame(program.entry, self.globals));
+        def ignored_run = _vm_execute(self, _Frame(program.entry, self.globals));
         return String.join(self.output, "");
     }
 }

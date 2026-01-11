@@ -1383,6 +1383,15 @@ fn CppTranspiler() {
 
 class TinyLanguageTranspiler: LanguageTranspiler {
     indent: string;
+    unused_counter: number;
+
+    fn _next_unused(self, defined) {
+        while (true) {
+            self.unused_counter = self.unused_counter + 1;
+            def name = "_unused" + __to_str(self.unused_counter);
+            if (Map.get(defined, name) == Null) { return name; }
+        }
+    }
 
     fn _render_literal(self, value) {
         if (value == true) { return "true"; }
@@ -1393,6 +1402,7 @@ class TinyLanguageTranspiler: LanguageTranspiler {
     }
 
     fn to_source(self, program) {
+        self.unused_counter = 0;
         def chunks = new[];
         def idx = 0;
         while (idx < len(program.functions)) {
@@ -1440,9 +1450,14 @@ class TinyLanguageTranspiler: LanguageTranspiler {
                 } else {
                     if (stmt.kind == "ExprStmt") {
                         def expr_source = self._render_expr(stmt.expr);
-                        if (stmt.expr.kind == "Call" && indent_level == 0 && Map.get(defined, "_") == Null) {
-                            def _set2 = Map.set(defined, "_", true);
-                            Collections.push(rendered, pad + "" + expr_source + ";");
+                        if (stmt.expr.kind == "Call") {
+                            def unused_name = self._next_unused(defined);
+                            if (stmt.expr.func == "print") {
+                                Collections.push(rendered, pad + expr_source + ";");
+                            } else {
+                                Collections.push(rendered, pad + "def " + unused_name + " = " + expr_source + ";");
+                                def _set2 = Map.set(defined, unused_name, true);
+                            }
                         } else {
                             Collections.push(rendered, pad + expr_source + ";");
                         }

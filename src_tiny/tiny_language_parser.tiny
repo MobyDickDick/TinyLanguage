@@ -1068,8 +1068,22 @@ class Parser {
             }
             def _vpush = Collections.push(variants, TypeVariant(first_name_tok.text, self.parse_variant_fields()));
             semi = self._eat("SYM", ";");
+        } else {
+            if (self.tok.kind == "KW" && self.tok.text == "def") {
+                def _def = self._eat("KW", "def");
+                def _ignored = self._eat("NAME", Null);
+                def _eq = self._eat("SYM", "=");
+                def vname = self._eat("NAME", Null).text;
+                def vfields = self.parse_variant_fields();
+                semi = self._eat("SYM", ";");
+                def _p = Collections.push(variants, TypeVariant(vname, vfields));
+            }
         }
         while (!self._accept("SYM", "}", Null)) {
+            if (self._accept("KW", "def", Null)) {
+                def _ignored = self._eat("NAME", Null);
+                def _eq = self._eat("SYM", "=");
+            }
             def vname = self._eat("NAME", Null).text;
             def vfields = self.parse_variant_fields();
             semi = self._eat("SYM", ";");

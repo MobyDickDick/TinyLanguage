@@ -292,7 +292,18 @@ class Parser:
                     # otherwise treat it as a variant name and fall through
                     variants.append(TypeVariant(first_name_tok.text, self.parse_variant_fields()))
                     semi = self._eat("SYM", ";")
+                elif self.tok.kind == "KW" and self.tok.text == "def":
+                    self._eat("KW", "def")
+                    self._eat("NAME")
+                    self._eat("SYM", "=")
+                    vname = self._eat("NAME").text
+                    vfields = self.parse_variant_fields()
+                    semi = self._eat("SYM", ";")
+                    variants.append(TypeVariant(vname, vfields))
                 while not self._accept("SYM", "}"):
+                    if self._accept("KW", "def"):
+                        self._eat("NAME")
+                        self._eat("SYM", "=")
                     vname = self._eat("NAME").text
                     vfields = self.parse_variant_fields()
                     semi = self._eat("SYM", ";")

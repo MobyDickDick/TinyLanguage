@@ -703,6 +703,16 @@ class TinyLanguageTranspiler(LanguageTranspiler):
 
     indent = "    "
 
+    def __init__(self) -> None:
+        self._unused_counter = 0
+
+    def _next_unused(self, defined: Set[str]) -> str:
+        while True:
+            self._unused_counter += 1
+            name = f"_unused{self._unused_counter}"
+            if name not in defined:
+                return name
+
     def _render_literal(self, value: object) -> str:
         if isinstance(value, bool):
             return "true" if value else "false"
@@ -762,10 +772,13 @@ class TinyLanguageTranspiler(LanguageTranspiler):
                 rendered.append(f"{pad}return {self._render_expr(stmt.expr)};")
             elif isinstance(stmt, ExprStmt):
                 expr_source = self._render_expr(stmt.expr)
-                if isinstance(stmt.expr, Call) and indent_level == 0:
-                    keyword = "def " if "_" not in local_defined else ""
-                    rendered.append(f"{pad}{keyword}_ = {expr_source};")
-                    local_defined.add("_")
+                if isinstance(stmt.expr, Call):
+                    unused_name = self._next_unused(local_defined)
+                    if stmt.expr.func == "print":
+                        rendered.append(f"{pad}{expr_source};")
+                    else:
+                        rendered.append(f"{pad}def {unused_name} = {expr_source};")
+                        local_defined.add(unused_name)
                 else:
                     rendered.append(f"{pad}{expr_source};")
             elif isinstance(stmt, IfElse):

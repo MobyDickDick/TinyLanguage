@@ -315,6 +315,10 @@ class NativeCodeGenerator:
             instructions.append(self._instr(Opcode.BINARY, expr.op, expr))
             return instructions
         if isinstance(expr, Call):
+            if expr.name == "flush":
+                if expr.args:
+                    raise self._error("flush expects no arguments", node=expr)
+                return [self._instr(Opcode.FLUSH, None, expr), self._instr(Opcode.PUSH_CONST, None, expr)]
             if expr.name in {"__new", "new", "heap_get", "heap_set", "delete"} and not self._allow_heap:
                 raise self._error("native codegen does not yet support heap allocations", node=expr)
             call_name = self._qualify_name(expr.name)

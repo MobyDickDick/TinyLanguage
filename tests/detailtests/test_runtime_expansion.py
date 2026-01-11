@@ -35,7 +35,7 @@ def total = 0;
 def i = 0;
 while (i < 5) {
     def ptr = new(1);
-    def _unused7 = heap_set(ptr, 0, i);
+    def _ = heap_set(ptr, 0, i);
     total = total + heap_get(ptr, 0);
     def _unused8 = delete(ptr);
     i = i + 1;
@@ -54,7 +54,7 @@ def total = 0;
 def i = 0;
 while (i < 20) {
     def ptr = new(1);
-    def _unused10 = heap_set(ptr, 0, i);
+    def _ = heap_set(ptr, 0, i);
     total = total + heap_get(ptr, 0);
     def _unused11 = delete(ptr);
     i = i + 1;

@@ -46,9 +46,12 @@ def p = new(n);
 // Tag the pointer to mark it as an Arr for debugging/runtime checks.
 def _unused4 = tag(p, Arr);
 // Populate each slot with incremental numbers.
-def _unused5 = heap_set(p, 0, 1);
-def _unused6 = heap_set(p, 1, 2);
-def _unused7 = heap_set(p, 2, 3);
+def status5 = heap_set(p, 0, 1);
+if (status5.e.code != 0) { print(status5.e.msg); }
+def status6 = heap_set(p, 1, 2);
+if (status6.e.code != 0) { print(status6.e.msg); }
+def status7 = heap_set(p, 2, 3);
+if (status7.e.code != 0) { print(status7.e.msg); }
 // Read back the last element to verify storage.
 print(heap_get(p, 2)); // 3
 // Release the heap allocation to avoid leaks.

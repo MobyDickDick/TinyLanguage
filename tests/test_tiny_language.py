@@ -432,7 +432,7 @@ def test_call_stmt_counts_param_usage():
     def p = new(1);
 
     fn init(ptr) {
-        def _unused77 = heap_set(ptr, 0, 99);
+        def _ = heap_set(ptr, 0, 99);
         return 0;
     }
 

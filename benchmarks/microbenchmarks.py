@@ -248,9 +248,11 @@ def ptr = new[{initial_items}];
 def i = 0;
 def idx = 0;
 while (i < {iterations}) {{
-    def _unused2 = heap_set(ptr, idx, i);
+    def set_status = heap_set(ptr, idx, i);
+    if (set_status.e.code != 0) {{ print(set_status.e.msg); }}
     // Touch the next slot to include heap_get in the mix.
-    def _unused3 = heap_get(ptr, idx);
+    def value = heap_get(ptr, idx);
+    if (value == Null) {{ print("heap_get failed"); }}
     idx = idx + 1;
     if (idx == {slots}) {{ idx = 0; }}
     i = i + 1;

@@ -368,7 +368,7 @@ def test_llvm_codegen_supports_null_literal_prints() -> None:
 
 
 def test_llvm_codegen_emits_heap_calls() -> None:
-    source = "def ptr = new(1); def _unused22 = heap_set(ptr, 0, 42); print(heap_get(ptr, 0));"
+    source = "def ptr = new(1); def _ = heap_set(ptr, 0, 42); print(heap_get(ptr, 0));"
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -378,7 +378,7 @@ def test_llvm_codegen_emits_heap_calls() -> None:
 
 
 def test_llvm_codegen_emits_heap_string_helpers() -> None:
-    source = 'def ptr = new(1); def _unused23 = heap_set(ptr, 0, "hello"); print(heap_get(ptr, 0));'
+    source = 'def ptr = new(1); def _ = heap_set(ptr, 0, "hello"); print(heap_get(ptr, 0));'
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -397,7 +397,7 @@ def test_llvm_codegen_emits_array_literal_heap_helpers() -> None:
 
 
 def test_llvm_codegen_defines_heap_runtime_helpers() -> None:
-    source = "def ptr = new(1); def _unused25 = heap_set(ptr, 0, 1); print(heap_get(ptr, 0));"
+    source = "def ptr = new(1); def _ = heap_set(ptr, 0, 1); print(heap_get(ptr, 0));"
 
     llvm_ir = compile_to_llvm_ir(source)
 
@@ -440,7 +440,7 @@ print(Deque.pop_left(q));
 
 
 def test_llvm_codegen_emits_heap_bounds_checks() -> None:
-    source = "def ptr = new(2); def _unused30 = heap_set(ptr, 1, 1); print(heap_get(ptr, 1));"
+    source = "def ptr = new(2); def _ = heap_set(ptr, 1, 1); print(heap_get(ptr, 1));"
 
     llvm_ir = compile_to_llvm_ir(source)
 

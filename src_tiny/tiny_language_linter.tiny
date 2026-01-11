@@ -1914,9 +1914,11 @@ fn __collect_function_return_values(stmts, prefix) {
 fn lint_bare_call_results(stmts, signatures, source) {
     def _unused_signatures = signatures;
     def returns_value = __collect_function_return_values(stmts, "");
+    def _unused_heap_set = Map.set(returns_value, "heap_set", true);
+    def _unused_heap_get = Map.set(returns_value, "heap_get", true);
 
     fn __is_allowed_call_stmt(name) {
-        if (name == "heap_set" || name == "heap_get" || name == "delete" || name == "tag" || name == "join" || name == "parse_program") { return true; }
+        if (name == "delete" || name == "tag" || name == "join" || name == "parse_program") { return true; }
         if (__starts_with(name, "Collections.")) { return true; }
         if (__starts_with(name, "Map.")) { return true; }
         if (__starts_with(name, "Set.")) { return true; }

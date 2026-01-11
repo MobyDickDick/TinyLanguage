@@ -8,9 +8,12 @@ fn slow_square(value) {
 }
 
 def tasks = new(3);
-def _unused1 = heap_set(tasks, 0, spawn slow_square(2));
-def _unused2 = heap_set(tasks, 1, spawn slow_square(3));
-def _unused3 = heap_set(tasks, 2, spawn slow_square(4));
+def status1 = heap_set(tasks, 0, spawn slow_square(2));
+if (status1.e.code != 0) { print(status1.e.msg); }
+def status2 = heap_set(tasks, 1, spawn slow_square(3));
+if (status2.e.code != 0) { print(status2.e.msg); }
+def status3 = heap_set(tasks, 2, spawn slow_square(4));
+if (status3.e.code != 0) { print(status3.e.msg); }
 
 def first = join(heap_get(tasks, 0), 1, true); // cancel if it doesn't finish immediately
 print("first done?", first.done, first.cancelled);

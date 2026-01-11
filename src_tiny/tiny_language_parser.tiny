@@ -789,7 +789,7 @@ class Parser {
             return self._attach_span(WildcardPattern(Null, tok.start, Null), tok.start, tok.stop);
         }
         if (!(self.tok.kind == "NAME")) { return self._error("expected pattern", self.tok.start, self._tok_span(self.tok)); }
-        def unused_vname_tok = self._eat("NAME", Null);
+        def vname_tok = self._eat("NAME", Null);
         def bindings = Map.new();
         def positional = Null;
         if (self._accept("SYM", "{", Null)) {

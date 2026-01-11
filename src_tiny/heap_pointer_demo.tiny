@@ -33,21 +33,18 @@ if (read_index < buffer_len) { // Confirm the index is within range.
 
 // Release the pointer when it is no longer needed.
 def _unused11 = delete(buffer); // Return heap memory.
-
 print("\n=== Common pitfalls ==="); // Heading for the error section.
 print("The next errors are triggered on purpose; the program still continues and exits successfully.\n"); // Reader note.
-
-// 2) Error case: demonstrate an out-of-bounds access.
 def too_short = new[1, 2]; // Create a short array.
-def oob_value = heap_get(too_short, 5); // Runtime error is recorded.
-def _ = oob_value;
-
-// Cache the error string immediately to avoid rebuilding it later.
+def ignored_oob = heap_get(too_short, 5); // Runtime error is recorded.
+def _ = ignored_oob;
 def oob_error = errorMessage;             // Store the most recent error.
 print("Recorded out-of-bounds message:"); // Label for the error message.
 print(oob_error);                            // "heap access error: index 5 out of range ..."
 
 def _unused16 = delete(too_short); // Clean up after errors too.
+
+
 
 // 3) Error case: access a missing field.
 def record = { existing: 1; }; // Simple object with one field.

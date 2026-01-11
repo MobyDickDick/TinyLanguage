@@ -754,7 +754,7 @@ def lint_bare_call_results(
     def _binding_discarded(name: str) -> bool:
         if name == "_" or name.startswith("__"):
             return False
-        return name.startswith("_") or name.startswith("ignored")
+        return name.startswith("_")
 
     def visit(block: List[IR]) -> None:
         for st in block:

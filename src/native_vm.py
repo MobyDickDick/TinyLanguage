@@ -965,21 +965,29 @@ class NativeVM:
             if field in module_env:
                 return module_env[field]
             raise RuntimeError(f"unknown field {field}")
-        if not isinstance(obj, dict) or "__fields__" not in obj:
-            raise RuntimeError("field access on non-class value")
-        owner_hint, fname = self._split_field_name(str(field_name))
-        fmap = self._resolve_field_storage(obj, fname, owner_hint, allow_write=False)
-        return fmap[fname]
+        if isinstance(obj, dict) and "__fields__" in obj:
+            owner_hint, fname = self._split_field_name(str(field_name))
+            fmap = self._resolve_field_storage(obj, fname, owner_hint, allow_write=False)
+            return fmap[fname]
+        if isinstance(obj, dict):
+            field = str(field_name)
+            if field in obj:
+                return obj[field]
+            raise RuntimeError(f"unknown field {field}")
+        raise RuntimeError("field access on non-class value")
 
     def _field_set(self, obj: Any, field_name: Any, value: Any) -> Any:
         if isinstance(obj, NamespaceRef):
             raise RuntimeError("field access on module namespace")
-        if not isinstance(obj, dict) or "__fields__" not in obj:
-            raise RuntimeError("field access on non-class value")
-        owner_hint, fname = self._split_field_name(str(field_name))
-        fmap = self._resolve_field_storage(obj, fname, owner_hint, allow_write=True)
-        fmap[fname] = value
-        return value
+        if isinstance(obj, dict) and "__fields__" in obj:
+            owner_hint, fname = self._split_field_name(str(field_name))
+            fmap = self._resolve_field_storage(obj, fname, owner_hint, allow_write=True)
+            fmap[fname] = value
+            return value
+        if isinstance(obj, dict):
+            obj[str(field_name)] = value
+            return value
+        raise RuntimeError("field access on non-class value")
 
     def _method_call(self, obj: Any, method_name: Any, args: List[Any]) -> Any:
         if self.program is None:

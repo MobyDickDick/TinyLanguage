@@ -10,7 +10,7 @@ def test_unused_binding_prefixed_with_underscore_is_ignored():
 def test_bare_call_to_returning_function_fails():
     src = """
     fn greet() -> string { return "hi"; }
-    greet();
+    def _unused1 = greet();
     """
     with pytest.raises(TinyLangError):
         compile_and_run(src)

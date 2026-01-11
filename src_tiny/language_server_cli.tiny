@@ -17,7 +17,7 @@ fn __argv_from_env(os_module) {
 
 fn __parse_args(argv) {
     def args = Map.new();
-    def _ = Map.set(args, "source", Null);
+    def _unused1 = Map.set(args, "source", Null);
     def _f = Map.set(args, "file", Null);
     def _c = Map.set(args, "command", Null);
     def _p = Map.set(args, "prefix", "");
@@ -96,4 +96,4 @@ fn run() {
     return 0;
 }
 
-def _ = run();
+def _unused8 = run();

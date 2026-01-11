@@ -482,7 +482,7 @@ class Parser {
         def idx = 0;
         while (idx < len(params)) {
             def p = heap_get(params, idx);
-            def _ = Set.add(names_set, p.name);
+            def _unused1 = Set.add(names_set, p.name);
             idx = idx + 1;
         }
         def used = Set.new();

@@ -13,7 +13,7 @@ fn __argv_from_env() {
 
 fn run() {
     def code = tiny_cli.main(__argv_from_env());
-    def _ = builtins.exit(code);
+    def _unused1 = builtins.exit(code);
 }
 
-def _ = run();
+def _unused2 = run();

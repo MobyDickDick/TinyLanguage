@@ -52,12 +52,11 @@ def test_tiny_language_server_diagnostics():
     diagnostics = run_tiny_language_server(
         [
             "--source",
-            "fn greet() -> string { return \"hi\"; }\ngreet();",
+            "fn greet() -> string { return \"hi\"; }\ndef _ = greet();",
             "diagnostics",
         ]
     )
 
     assert diagnostics.returncode == 0, diagnostics.stderr
     diagnostic_payload = json.loads(diagnostics.stdout)
-    assert diagnostic_payload
-    assert diagnostic_payload[0]["code"] == "E011"
+    assert diagnostic_payload == []

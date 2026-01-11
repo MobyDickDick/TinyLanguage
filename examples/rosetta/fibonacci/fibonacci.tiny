@@ -14,4 +14,4 @@ fn fibonacci(n) {
     return b;
 }
 
-def _ = print(fibonacci(6));
+print(fibonacci(6));

@@ -97,6 +97,7 @@ if "TinyLangError" not in globals():
 
 if "lint_import_style" not in globals():
     from tiny_language_linter import (
+        _collect_function_signatures,
         lint_assignment_types,
         lint_bare_call_results,
         lint_destruct_call_outputs,

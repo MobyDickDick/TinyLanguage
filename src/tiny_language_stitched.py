@@ -7084,15 +7084,12 @@ def _collect_function_signatures(stmts: List[IR], prefix: str = "") -> Dict[str,
 def lint_bare_call_results(
     stmts: List[IR], signatures: Dict[str, Optional[str]], source: Optional[str] = None
 ) -> None:
-    disallowed: set[str] = {name for name, ret in signatures.items() if ret not in {None, "Null"}}
-
     def visit(block: List[IR]) -> None:
         for st in block:
             if isinstance(st, CallStmt):
-                if st.name in disallowed:
-                    hint = "Assign the return value or explicitly acknowledge it with `_ = ...;`."
-                    msg = f"call to {st.name} returns a value that is ignored"
-                    raise _lint_error(source, st, msg, code="E011", hint=hint)
+                hint = "Bind the return value, e.g. `def result = call();`, or add a return that includes the mutated data."
+                msg = "call with return value must be bound; bare call statements are not allowed"
+                raise _lint_error(source, st, msg, code="E001", hint=hint)
             if isinstance(st, If):
                 visit(st.then)
                 visit(st.els)
@@ -7104,8 +7101,6 @@ def lint_bare_call_results(
             elif isinstance(st, TryCatch):
                 visit(st.body)
                 visit(st.handler)
-            elif isinstance(st, TaskBlock):
-                visit(st.body)
             elif isinstance(st, TaskBlock):
                 visit(st.body)
             elif isinstance(st, Namespace):
@@ -10124,6 +10119,7 @@ if "TinyLangError" not in globals():
 
 if "lint_import_style" not in globals():
     from tiny_language_linter import (
+        _collect_function_signatures,
         lint_assignment_types,
         lint_bare_call_results,
         lint_destruct_call_outputs,

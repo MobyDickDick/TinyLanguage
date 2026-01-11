@@ -69,7 +69,7 @@ python run_all.py
 ```tiny
 // Variables, arithmetic, printing
 def a = 7 + 5 * 2;
-print(a);                // -> 17
+def _unused1 = print(a);                // -> 17
 
 // Declare and call functions
 fn add(x, y) {
@@ -77,12 +77,12 @@ fn add(x, y) {
 }
 
 def sum = add(a, 3);
-print(sum);
+def _unused2 = print(sum);
 
 // If/while and mutation
 def i = 0;
 while (i < 3) {
-    if (i == 1) { print("in the middle"); }
+    if (i == 1) { def _unused3 = print("in the middle"); }
     i = i + 1;
 }
 
@@ -90,7 +90,7 @@ while (i < 3) {
 namespace Math {
     fn inc(x) { return add(x, 1); }
 }
-print(Math.inc(4));
+def _unused4 = print(Math.inc(4));
 ```
 
 ### More building blocks

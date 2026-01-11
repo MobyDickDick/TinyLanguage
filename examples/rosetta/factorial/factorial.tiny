@@ -43,4 +43,4 @@ fn factorial(n) {
 
 // Print factorial(5). We bind the return value of `print(...)` to `_`
 // to satisfy the "no bare call statements" / "must-use" rule.
-def _ = print(factorial(5));
+print(factorial(5));

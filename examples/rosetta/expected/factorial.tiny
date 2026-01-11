@@ -10,4 +10,4 @@ fn factorial(n) {
     return result;
 }
 
-def _ = print(factorial(5));
+print(factorial(5));

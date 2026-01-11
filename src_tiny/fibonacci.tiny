@@ -11,4 +11,4 @@ fn fibonacci(count) {
     }
 }
 
-def _ = fibonacci(10);
+def _unused2 = fibonacci(10);

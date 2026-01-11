@@ -22,7 +22,6 @@ This guide provides a concise, implementation-stable reference for TinyLanguage.
 ## Must-use and lints
 
 - **Unused bindings**: Unused locals or parameters trigger diagnostics unless prefixed with `_` (e.g., `_unused`).
-- **Ignored return values**: Functions with return annotations must have their results used. Bare calls to such functions raise `E011` (use `def _ = f();` to discard explicitly).
 - **Imports before code**: Import statements must be grouped before other statements to satisfy formatter/linter expectations.
 
 ## Error handling

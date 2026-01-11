@@ -20,4 +20,4 @@ fn fizzbuzz(n) {
     }
 }
 
-def _ = fizzbuzz(16);
+def _unused5 = fizzbuzz(16);

@@ -78,4 +78,4 @@ fn main(argv) {
 }
 def ModuleResolver = __PY.ModuleResolver;
 
-def _ = ModuleResolver;
+def _unused_module_resolver = ModuleResolver;

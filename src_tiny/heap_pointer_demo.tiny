@@ -10,9 +10,12 @@ def _unused2 = tag(buffer, Buffer); // Marks the pointer so its type is explicit
 // Write values: check bounds first, then write.
 def buffer_len = Collections.len(buffer); // Ask for the buffer length.
 if (buffer_len >= 3) { // Ensure three positions are available.
-    def _unused3 = heap_set(buffer, 0, 10); // Store 10 at position 0.
-    def _unused4 = heap_set(buffer, 1, 20); // Store 20 at position 1.
-    def _unused5 = heap_set(buffer, 2, 30); // Store 30 at position 2.
+    def status1 = heap_set(buffer, 0, 10); // Store 10 at position 0.
+    if (status1.e.code != 0) { print(status1.e.msg); }
+    def status2 = heap_set(buffer, 1, 20); // Store 20 at position 1.
+    if (status2.e.code != 0) { print(status2.e.msg); }
+    def status3 = heap_set(buffer, 2, 30); // Store 30 at position 2.
+    if (status3.e.code != 0) { print(status3.e.msg); }
 } else { // If the length is insufficient ...
     print("Buffer too small, skipping writes"); // ... skip writing.
 }

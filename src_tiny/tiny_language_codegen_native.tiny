@@ -195,10 +195,12 @@ class NativeCodeGenerator {
         }
 
         def else_start = len(instructions) + len(then_block);
-        def _unused19 = heap_set(instructions, jump_false_index, Instruction(OPCODE_JUMP_IF_FALSE, else_start));
+        def jump_status = heap_set(instructions, jump_false_index, Instruction(OPCODE_JUMP_IF_FALSE, else_start));
+        if (jump_status.e.code != 0) { def _unused19 = __raise_runtime_error(jump_status.e.msg); }
 
         def end_of_then = len(instructions) + len(then_block) + len(else_block);
-        def _unused20 = heap_set(then_block, len(then_block) - 1, Instruction(OPCODE_JUMP, end_of_then));
+        def end_status = heap_set(then_block, len(then_block) - 1, Instruction(OPCODE_JUMP, end_of_then));
+        if (end_status.e.code != 0) { def _unused20 = __raise_runtime_error(end_status.e.msg); }
 
         def __unused21 = __extend(instructions, then_block);
         def __unused22 = __extend(instructions, else_block);
@@ -225,7 +227,8 @@ class NativeCodeGenerator {
         def _unused24 = Collections.push(body_instrs, Instruction(OPCODE_JUMP, loop_start));
 
         def loop_exit = len(instructions) + len(body_instrs);
-        def _unused25 = heap_set(instructions, jump_out_index, Instruction(OPCODE_JUMP_IF_FALSE, loop_exit));
+        def loop_status = heap_set(instructions, jump_out_index, Instruction(OPCODE_JUMP_IF_FALSE, loop_exit));
+        if (loop_status.e.code != 0) { def _unused25 = __raise_runtime_error(loop_status.e.msg); }
 
         def __unused26 = __extend(instructions, body_instrs);
         return instructions;

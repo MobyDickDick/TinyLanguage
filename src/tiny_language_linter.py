@@ -721,7 +721,8 @@ def lint_bare_call_results(
 ) -> None:
     del signatures
     returns_value = _collect_function_return_values(stmts)
-    allowed_call_stmts = {"heap_set", "heap_get", "delete", "tag", "join", "parse_program"}
+    returns_value.update({"heap_set": True, "heap_get": True})
+    allowed_call_stmts = {"delete", "tag", "join", "parse_program"}
     allowed_call_prefixes = (
         "Collections.",
         "Map.",

@@ -1049,7 +1049,10 @@ class Parser:
     def parse_stmt(self) -> IR:
         if self.tok.kind == "KW" and self.tok.text == "def":
             kw = self._eat("KW", "def")
-            name_tok = self._eat("NAME")
+            if self.tok.kind == "KW":
+                name_tok = self._eat("KW")
+            else:
+                name_tok = self._eat("NAME")
             self._eat("SYM", "=")
             expr = self.parse_expr()
             semi = self._eat("SYM", ";")
@@ -6926,7 +6929,7 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
     _accumulate(terminated, active_state=False)
 
     for (name, pos), info in usage_summary.items():
-        if name.startswith("_") or name.startswith("ignored"):
+        if name.startswith("_") or name.startswith("ignored") or (name.startswith("unused") and name != "unused"):
             continue
 
         used_any = info["used_any"]

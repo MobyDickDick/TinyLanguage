@@ -11,13 +11,13 @@ def test_cancellation_token_stops_linked_spawn(run_tiny_source):
                     if (Async.is_cancelled(token)) { return "cancelled"; }
                     i = i + 1;
                 }
-                def _unused1 = heap_set(ptr, 0, 1);
+                def _ = heap_set(ptr, 0, 1);
                 return "done";
             }
 
             def token = Async.token();
             def ptr = new(1);
-            def _unused2 = heap_set(ptr, 0, 0);
+            def _ = heap_set(ptr, 0, 0);
 
             def handle = spawn worker(token, ptr);
             def linked = Async.link(token, handle);

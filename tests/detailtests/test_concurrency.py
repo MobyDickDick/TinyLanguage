@@ -4,19 +4,19 @@ def test_spawn_results_applied_in_join_order(run_tiny_source):
         fn compute(value) { return value; }
 
         def counter = new(1);
-        def _unused1 = heap_set(counter, 0, 0);
+            def _ = heap_set(counter, 0, 0);
 
         def first = spawn compute(1);
         def second = spawn compute(2);
 
         def current = heap_get(counter, 0);
         current = current + join(first);
-        def _unused2 = heap_set(counter, 0, current);
+            def _ = heap_set(counter, 0, current);
         print("after first", heap_get(counter, 0));
 
         current = heap_get(counter, 0);
         current = current + join(second);
-        def _unused4 = heap_set(counter, 0, current);
+            def _ = heap_set(counter, 0, current);
         print("after second", heap_get(counter, 0));
 
         print("final", heap_get(counter, 0));
@@ -34,7 +34,7 @@ def test_join_waits_for_spawned_heap_update(run_tiny_source):
             def target = ptr;
             def position = idx;
             def stored = value;
-            def _unused7 = heap_set(target, position, stored);
+            def _ = heap_set(target, position, stored);
             return stored + heap_get(target, position) - stored;
         }
 

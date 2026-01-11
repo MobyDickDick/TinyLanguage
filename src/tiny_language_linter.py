@@ -473,26 +473,36 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
 
     usage_summary: Dict[tuple[str, Location], Dict[str, bool]] = {}
 
-    def _accumulate(states: List[Dict[str, tuple[Location, bool, bool]]]) -> None:
+    def _accumulate(states: List[Dict[str, tuple[Location, bool, bool]]], *, active_state: bool) -> None:
         for state in states:
             for name, (pos, used_all, used_any) in state.items():
-                entry = usage_summary.setdefault((name, pos), {"used_any": False, "used_all": True})
+                entry = usage_summary.setdefault(
+                    (name, pos),
+                    {
+                        "used_any": False,
+                        "active_all": True,
+                        "active_present": False,
+                    },
+                )
                 entry["used_any"] = entry["used_any"] or used_any
-                entry["used_all"] = entry["used_all"] and used_all
+                if active_state:
+                    entry["active_all"] = entry["active_all"] and used_all
+                    entry["active_present"] = True
 
-    _accumulate(active)
-    _accumulate(terminated)
+    _accumulate(active, active_state=True)
+    _accumulate(terminated, active_state=False)
 
     for (name, pos), info in usage_summary.items():
         if name.startswith("_") or name.startswith("ignored"):
             continue
 
         used_any = info["used_any"]
-        used_all = info["used_all"]
+        active_all = info["active_all"]
+        active_present = info["active_present"]
         if not used_any:
             unused.append((name, pos))
             continue
-        if not used_all:
+        if active_present and not active_all:
             partial.append((name, pos))
             continue
 

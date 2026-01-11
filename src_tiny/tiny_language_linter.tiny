@@ -1338,7 +1338,7 @@ fn lint_locals_used(stmts, source) {
     }
 
     // ---------------------------------------------------------------------------
-    // _accumulate(states)
+    // _accumulate(states, active_state)
     // ---------------------------------------------------------------------------
     // Helper function used by the linter.
     //
@@ -1346,10 +1346,11 @@ fn lint_locals_used(stmts, source) {
     //
     // Args:
     //   - states: (Tiny value) See implementation for expected shape.
+    //   - active_state: (Tiny value) See implementation for expected shape.
     // Returns:
     //   A Tiny value (type depends on operation).
     // ---------------------------------------------------------------------------
-    fn _accumulate(states) {
+    fn _accumulate(states, active_state) {
         def si = 0;
         while (si < len(states)) {
             def st = heap_get(states, si);
@@ -1367,20 +1368,24 @@ fn lint_locals_used(stmts, source) {
                     def fresh = Map.new();
                     def _p1 = Map.set(fresh, "pos", pos);
                     def _p2 = Map.set(fresh, "used_any", false);
-                    def _p3 = Map.set(fresh, "used_all", true);
+                    def _p3 = Map.set(fresh, "active_all", true);
+                    def _p4 = Map.set(fresh, "active_present", false);
                     def _ = Map.set(usage_summary, map_key, fresh);
                     prev = fresh;
                 }
                 def _ = Map.set(prev, "used_any", Map.get(prev, "used_any") || used_any);
-                def _a = Map.set(prev, "used_all", Map.get(prev, "used_all") && used_all);
+                if (active_state) {
+                    def _a = Map.set(prev, "active_all", Map.get(prev, "active_all") && used_all);
+                    def _b = Map.set(prev, "active_present", true);
+                }
                 ki = ki + 1;
             }
             si = si + 1;
         }
     }
 
-    _accumulate(active);
-    _accumulate(terminated);
+    _accumulate(active, true);
+    _accumulate(terminated, false);
 
     def summary_keys = Map.keys(usage_summary);
     def si = 0;
@@ -1391,12 +1396,13 @@ fn lint_locals_used(stmts, source) {
         def name = heap_get(name_parts, 0);
         if (!(__starts_with_underscore(name) || __starts_with(name, "ignored"))) {
             def used_any = Map.get(info, "used_any");
-            def used_all = Map.get(info, "used_all");
+            def active_all = Map.get(info, "active_all");
+            def active_present = Map.get(info, "active_present");
             if (!used_any) {
                 def pos = Map.get(info, "pos");
                 def _ = Collections.push(unused, new[name, pos]);
             } else {
-                if (!used_all) {
+                if (active_present && !active_all) {
                     def pos = Map.get(info, "pos");
                     def _ = Collections.push(partial, new[name, pos]);
                 }

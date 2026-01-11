@@ -160,7 +160,7 @@ fn _vm_execute(vm, frame) {
                 if (instr.op == OPCODE_STORE) {
                     def value = Collections.pop(stack);
                     def unused12 = Map.set(locals, instr.arg, value);
-                    if (locals == vm.globals) { def g = Map.set(vm.globals, instr.arg, value); }
+                    if (locals == vm.globals) { Map.set(vm.globals, instr.arg, value); }
                 } else {
                     if (instr.op == OPCODE_BINARY) {
                         def right = Collections.pop(stack);

@@ -6536,9 +6536,11 @@ def uses_in_expr(e: IR, reads: Dict[str, int]) -> None:
         uses_in_expr(e.a, reads)
         uses_in_expr(e.b, reads)
     elif isinstance(e, Call):
+        reads[e.name] = reads.get(e.name, 0) + 1
         for a in e.args:
             uses_in_expr(a, reads)
     elif isinstance(e, Spawn):
+        reads[e.name] = reads.get(e.name, 0) + 1
         for a in e.args:
             uses_in_expr(a, reads)
     elif isinstance(e, Await):

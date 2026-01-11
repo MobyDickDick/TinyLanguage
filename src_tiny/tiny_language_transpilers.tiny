@@ -159,7 +159,7 @@ fn __split_by_braces(line) {
             if (String.len(__strip(current)) > 0) {
                 def unused4 = Collections.push(parts, __strip(current));
             }
-            def b = Collections.push(parts, ch);
+            Collections.push(parts, ch);
             current = "";
         } else {
             current = current + ch;
@@ -950,7 +950,7 @@ class PythonTranspiler: LanguageTranspiler {
                 def unused37 = Collections.push(rendered, header);
                 def then_body = self._render_statements(stmt.then_body, indent_level + 1);
                 if (len(then_body) == 0) {
-                    def tp2 = Collections.push(rendered, pad + self.indent + "pass");
+                    Collections.push(rendered, pad + self.indent + "pass");
                 } else {
                     def ti = 0;
                     while (ti < len(then_body)) { def unused38 = Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; }
@@ -959,7 +959,7 @@ class PythonTranspiler: LanguageTranspiler {
                     def unused39 = Collections.push(rendered, pad + "else:");
                     def else_body = self._render_statements(stmt.else_body, indent_level + 1);
                     if (len(else_body) == 0) {
-                        def ep2 = Collections.push(rendered, pad + self.indent + "pass");
+                        Collections.push(rendered, pad + self.indent + "pass");
                     } else {
                         def ei = 0;
                         while (ei < len(else_body)) { def unused40 = Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; }
@@ -972,7 +972,7 @@ class PythonTranspiler: LanguageTranspiler {
                 def unused41 = Collections.push(rendered, header);
                 def body = self._render_statements(stmt.body, indent_level + 1);
                 if (len(body) == 0) {
-                    def bp2 = Collections.push(rendered, pad + self.indent + "pass");
+                    Collections.push(rendered, pad + self.indent + "pass");
                 } else {
                     def bi = 0;
                     while (bi < len(body)) { def unused42 = Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; }
@@ -1042,7 +1042,7 @@ class JuliaTranspiler: LanguageTranspiler {
             def j = 0;
             while (j < len(body_lines)) { def unused45 = Collections.push(lines, heap_get(body_lines, j)); j = j + 1; }
             def unused46 = Collections.push(lines, "end");
-            def c2 = Collections.push(chunks, self._lines(lines));
+            Collections.push(chunks, self._lines(lines));
             i = i + 1;
         }
         if (len(program.body) > 0) {
@@ -1071,12 +1071,12 @@ class JuliaTranspiler: LanguageTranspiler {
                         if (stmt.kind == "IfElse") {
                             def unused51 = Collections.push(rendered, pad + "if " + self._render_expr(stmt.condition));
                             def then_body = self._render_statements(stmt.then_body, indent_level + 1);
-                            if (len(then_body) == 0) { def tp2 = Collections.push(rendered, pad + self.indent + "nothing"); }
+                            if (len(then_body) == 0) { Collections.push(rendered, pad + self.indent + "nothing"); }
                             else { def ti = 0; while (ti < len(then_body)) { def unused52 = Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; } }
                             if (len(stmt.else_body) > 0) {
                                 def unused53 = Collections.push(rendered, pad + "else");
                                 def else_body = self._render_statements(stmt.else_body, indent_level + 1);
-                                if (len(else_body) == 0) { def ep2 = Collections.push(rendered, pad + self.indent + "nothing"); }
+                                if (len(else_body) == 0) { Collections.push(rendered, pad + self.indent + "nothing"); }
                                 else { def ei = 0; while (ei < len(else_body)) { def unused54 = Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; } }
                             }
                             def unused55 = Collections.push(rendered, pad + "end");
@@ -1084,7 +1084,7 @@ class JuliaTranspiler: LanguageTranspiler {
                             if (stmt.kind == "While") {
                                 def unused56 = Collections.push(rendered, pad + "while " + self._render_expr(stmt.condition));
                                 def body = self._render_statements(stmt.body, indent_level + 1);
-                                if (len(body) == 0) { def bp2 = Collections.push(rendered, pad + self.indent + "nothing"); }
+                                if (len(body) == 0) { Collections.push(rendered, pad + self.indent + "nothing"); }
                                 else { def bi = 0; while (bi < len(body)) { def unused57 = Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; } }
                                 def unused58 = Collections.push(rendered, pad + "end");
                             } else {
@@ -1152,7 +1152,7 @@ class JavaScriptTranspiler: LanguageTranspiler {
             def j = 0;
             while (j < len(body_lines)) { def unused61 = Collections.push(lines, heap_get(body_lines, j)); j = j + 1; }
             def unused62 = Collections.push(lines, "}");
-            def c2 = Collections.push(chunks, self._lines(lines));
+            Collections.push(chunks, self._lines(lines));
             i = i + 1;
         }
         if (len(program.body) > 0) {
@@ -1275,7 +1275,7 @@ class CppTranspiler: LanguageTranspiler {
             def j = 0;
             while (j < len(body_lines)) { def unused76 = Collections.push(lines, heap_get(body_lines, j)); j = j + 1; }
             def unused77 = Collections.push(lines, "}");
-            def c2 = Collections.push(chunks, self._lines(lines));
+            Collections.push(chunks, self._lines(lines));
             i = i + 1;
         }
         if (len(program.body) > 0) {
@@ -1407,11 +1407,11 @@ class TinyLanguageTranspiler: LanguageTranspiler {
         def idx = 0;
         while (idx < len(program.functions)) {
             def unused91 = Collections.push(chunks, self._render_function(heap_get(program.functions, idx)));
-            if (idx < len(program.functions) - 1) { def blank = Collections.push(chunks, ""); }
+            if (idx < len(program.functions) - 1) { Collections.push(chunks, ""); }
             idx = idx + 1;
         }
         if (len(program.body) > 0) {
-            if (len(chunks) > 0) { def blank2 = Collections.push(chunks, ""); }
+            if (len(chunks) > 0) { Collections.push(chunks, ""); }
             def body_lines = self._render_statements(program.body, 0, Map.new());
             def bi = 0;
             while (bi < len(body_lines)) { def unused92 = Collections.push(chunks, heap_get(body_lines, bi)); bi = bi + 1; }

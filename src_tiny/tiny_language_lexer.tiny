@@ -226,7 +226,7 @@ fn lex(source) {
 
         if (i >= n) {
             def pos = SourcePos(line, col);
-            def push_eof = Collections.push(tokens, Token("EOF", "", pos, pos));
+            Collections.push(tokens, Token("EOF", "", pos, pos));
             finished = true;
         } else {
             def c = __peek(chars, n, i);
@@ -241,7 +241,7 @@ fn lex(source) {
                 line = heap_get(adv_and, 1);
                 col = heap_get(adv_and, 2);
                 def stop = SourcePos(start_line, start_col + 1);
-                def push_and = Collections.push(tokens, Token("OP", "&&", pos, stop));
+                Collections.push(tokens, Token("OP", "&&", pos, stop));
                 handled = true;
             } else {
                 if (c == "|" && __peek_at(chars, n, i, 1) == "|") {
@@ -250,7 +250,7 @@ fn lex(source) {
                     line = heap_get(adv_or, 1);
                     col = heap_get(adv_or, 2);
                     def stop_or = SourcePos(start_line, start_col + 1);
-                    def push_or = Collections.push(tokens, Token("OP", "||", pos, stop_or));
+                    Collections.push(tokens, Token("OP", "||", pos, stop_or));
                     handled = true;
                 } else {
                     if (c == "\"") {
@@ -259,7 +259,7 @@ fn lex(source) {
                         i = heap_get(res, 1);
                         line = heap_get(res, 2);
                         col = heap_get(res, 3);
-                        def push_str = Collections.push(tokens, tok);
+                        Collections.push(tokens, tok);
                         handled = true;
                     } else {
                         if (__is_alpha(c) || c == "_") {
@@ -283,7 +283,7 @@ fn lex(source) {
                             // Keeps the definition active (and enables future highlighting).
                             if (Set.has(BUILTINS, txt)) { kind = kind; }
                             def stop_name = SourcePos(start_line, start_col + consumed - 1);
-                            def push_name = Collections.push(tokens, Token(kind, txt, pos, stop_name));
+                            Collections.push(tokens, Token(kind, txt, pos, stop_name));
                             handled = true;
                         } else {
                             if (__is_digit(c)) {
@@ -308,7 +308,7 @@ fn lex(source) {
                                 i = jnum;
                                 col = col + consumed_num;
                                 def stop_num = SourcePos(start_line, start_col + consumed_num - 1);
-                                def push_num = Collections.push(tokens, Token("NUMBER", txtnum, pos, stop_num));
+                                Collections.push(tokens, Token("NUMBER", txtnum, pos, stop_num));
                                 handled = true;
                             } else {
                                 if (c == ">" || c == "<" || c == "=" || c == "!") {
@@ -318,7 +318,7 @@ fn lex(source) {
                                         line = heap_get(adv_cmp, 1);
                                         col = heap_get(adv_cmp, 2);
                                         def stop_cmp = SourcePos(start_line, start_col + 1);
-                                        def push_cmp = Collections.push(tokens, Token("OP", c + "=", pos, stop_cmp));
+                                        Collections.push(tokens, Token("OP", c + "=", pos, stop_cmp));
                                         handled = true;
                                     }
                                 }
@@ -327,7 +327,7 @@ fn lex(source) {
                                     i = heap_get(adv_op, 0);
                                     line = heap_get(adv_op, 1);
                                     col = heap_get(adv_op, 2);
-                                    def push_op = Collections.push(tokens, Token("OP", c, pos, SourcePos(start_line, start_col)));
+                                    Collections.push(tokens, Token("OP", c, pos, SourcePos(start_line, start_col)));
                                     handled = true;
                                 } else {
                                     if (handled == false && (c == "(" || c == ")" || c == "{" || c == "}" || c == "[" || c == "]"
@@ -336,7 +336,7 @@ fn lex(source) {
                                         i = heap_get(adv_sym, 0);
                                         line = heap_get(adv_sym, 1);
                                         col = heap_get(adv_sym, 2);
-                                        def push_sym = Collections.push(tokens, Token("SYM", c, pos, SourcePos(start_line, start_col)));
+                                        Collections.push(tokens, Token("SYM", c, pos, SourcePos(start_line, start_col)));
                                         handled = true;
                                     }
                                 }

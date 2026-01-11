@@ -25,4 +25,4 @@ fn fizzbuzz(limit) {
     }
 }
 
-def _unused5 = fizzbuzz(16);
+def unused5 = fizzbuzz(16);

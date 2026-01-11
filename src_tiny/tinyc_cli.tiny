@@ -4,8 +4,8 @@
 def tinyc_cli = Python.import_module("tinyc_cli", new["run"]);
 def os = Python.import_module("os", new["getenv"]);
 
-def __PY_JSON_ALLOW = new["loads"];
-def json = Python.import_module("json", __PY_JSON_ALLOW);
+def PY_JSON_ALLOW = new["loads"];
+def json = Python.import_module("json", PY_JSON_ALLOW);
 
 fn __argv_from_env() {
     def raw = os.getenv("TINYLANG_ARGS", "");
@@ -23,4 +23,4 @@ fn main() {
     return code;
 }
 
-def _unused1 = main();
+def unused1 = main();

@@ -1,7 +1,7 @@
 // TinyLanguage wrapper for src/tiny_language_runtime.py.
 // Delegates Runtime helpers to the stitched Python module for parity.
 
-def __PY_ALLOW = new[
+def PY_ALLOW = new[
     "Runtime",
     "ModuleResolver",
     "Debugger",
@@ -16,17 +16,17 @@ def __PY_ALLOW = new[
     "StepRequest"
 ];
 
-def __PY = Python.import_module("tiny_language", __PY_ALLOW);
+def PY = Python.import_module("tiny_language", PY_ALLOW);
 
-def Runtime = __PY.Runtime;
-def ModuleResolver = __PY.ModuleResolver;
-def Debugger = __PY.Debugger;
-def NamespaceRef = __PY.NamespaceRef;
-def ReturnSignal = __PY.ReturnSignal;
-def TinyLangError = __PY.TinyLangError;
-def format_error = __PY.format_error;
-def register_stdlib = __PY.register_stdlib;
-def SourcePos = __PY.SourcePos;
-def SourceSpan = __PY.SourceSpan;
-def DebugSnapshot = __PY.DebugSnapshot;
-def StepRequest = __PY.StepRequest;
+def Runtime = PY.Runtime;
+def ModuleResolver = PY.ModuleResolver;
+def Debugger = PY.Debugger;
+def NamespaceRef = PY.NamespaceRef;
+def ReturnSignal = PY.ReturnSignal;
+def TinyLangError = PY.TinyLangError;
+def format_error = PY.format_error;
+def register_stdlib = PY.register_stdlib;
+def SourcePos = PY.SourcePos;
+def SourceSpan = PY.SourceSpan;
+def DebugSnapshot = PY.DebugSnapshot;
+def StepRequest = PY.StepRequest;

@@ -27,14 +27,14 @@ fn SourceSpan(start, stop) {
 }
 
 // Error formatting via Python interop so we can raise RuntimeErrors like the Python port.
-def __PY_EXEC_ALLOW = new["exec"];
-def __PY_REPR_ALLOW = new["repr"];
+def PY_EXEC_ALLOW = new["exec"];
+def PY_REPR_ALLOW = new["repr"];
 
 fn __raise_runtime_error(msg) {
-    def safe = Python.call("builtins", "repr", new[msg], __PY_REPR_ALLOW);
+    def safe = Python.call("builtins", "repr", new[msg], PY_REPR_ALLOW);
     def stmt = "raise RuntimeError(" + safe + ")";
     // Return value is irrelevant — the call raises an exception.
-    return Python.call("builtins", "exec", new[stmt], __PY_EXEC_ALLOW);
+    return Python.call("builtins", "exec", new[stmt], PY_EXEC_ALLOW);
 }
 
 // Tokens ----------------------------------------------------------------------
@@ -63,7 +63,7 @@ def KEYWORDS = Set.from_list(new[
 def BUILTINS = Set.from_list(new["Collections", "Math", "String", "len", "print"]);
 
 // Lexer -----------------------------------------------------------------------
-def __PY_LIST_ALLOW = new["list"];
+def PY_LIST_ALLOW = new["list"];
 
 fn __is_alpha(c) {
     return (c >= "a" && c <= "z") || (c >= "A" && c <= "Z");
@@ -144,7 +144,7 @@ fn __read_string(chars, n, i, line, col) {
             line = heap_get(adv_slash, 1);
             col = heap_get(adv_slash, 2);
 
-            if (i >= n) { def _unused1 = __raise_runtime_error("unterminated escape in string"); }
+            if (i >= n) { def unused1 = __raise_runtime_error("unterminated escape in string"); }
 
             def esc = __peek(chars, n, i);
             def adv_esc = __advance_state(chars, i, n, line, col, 1);
@@ -182,14 +182,14 @@ fn __read_string(chars, n, i, line, col) {
         }
     }
 
-    def _unused2 = __raise_runtime_error("unterminated string literal");
+    def unused2 = __raise_runtime_error("unterminated string literal");
     def fallback = Token("STRING", buf, pos0, pos0);
     return new[fallback, i, line, col];
 }
 
 fn lex(source) {
     def tokens = new[];
-    def chars = Python.call("builtins", "list", new[source], __PY_LIST_ALLOW);
+    def chars = Python.call("builtins", "list", new[source], PY_LIST_ALLOW);
     def n = len(chars);
     def i = 0;
     def line = 1;
@@ -226,7 +226,7 @@ fn lex(source) {
 
         if (i >= n) {
             def pos = SourcePos(line, col);
-            def _push_eof = Collections.push(tokens, Token("EOF", "", pos, pos));
+            def push_eof = Collections.push(tokens, Token("EOF", "", pos, pos));
             finished = true;
         } else {
             def c = __peek(chars, n, i);
@@ -241,7 +241,7 @@ fn lex(source) {
                 line = heap_get(adv_and, 1);
                 col = heap_get(adv_and, 2);
                 def stop = SourcePos(start_line, start_col + 1);
-                def _push_and = Collections.push(tokens, Token("OP", "&&", pos, stop));
+                def push_and = Collections.push(tokens, Token("OP", "&&", pos, stop));
                 handled = true;
             } else {
                 if (c == "|" && __peek_at(chars, n, i, 1) == "|") {
@@ -250,7 +250,7 @@ fn lex(source) {
                     line = heap_get(adv_or, 1);
                     col = heap_get(adv_or, 2);
                     def stop_or = SourcePos(start_line, start_col + 1);
-                    def _push_or = Collections.push(tokens, Token("OP", "||", pos, stop_or));
+                    def push_or = Collections.push(tokens, Token("OP", "||", pos, stop_or));
                     handled = true;
                 } else {
                     if (c == "\"") {
@@ -259,7 +259,7 @@ fn lex(source) {
                         i = heap_get(res, 1);
                         line = heap_get(res, 2);
                         col = heap_get(res, 3);
-                        def _push_str = Collections.push(tokens, tok);
+                        def push_str = Collections.push(tokens, tok);
                         handled = true;
                     } else {
                         if (__is_alpha(c) || c == "_") {
@@ -283,7 +283,7 @@ fn lex(source) {
                             // Keeps the definition active (and enables future highlighting).
                             if (Set.has(BUILTINS, txt)) { kind = kind; }
                             def stop_name = SourcePos(start_line, start_col + consumed - 1);
-                            def _push_name = Collections.push(tokens, Token(kind, txt, pos, stop_name));
+                            def push_name = Collections.push(tokens, Token(kind, txt, pos, stop_name));
                             handled = true;
                         } else {
                             if (__is_digit(c)) {
@@ -308,7 +308,7 @@ fn lex(source) {
                                 i = jnum;
                                 col = col + consumed_num;
                                 def stop_num = SourcePos(start_line, start_col + consumed_num - 1);
-                                def _push_num = Collections.push(tokens, Token("NUMBER", txtnum, pos, stop_num));
+                                def push_num = Collections.push(tokens, Token("NUMBER", txtnum, pos, stop_num));
                                 handled = true;
                             } else {
                                 if (c == ">" || c == "<" || c == "=" || c == "!") {
@@ -318,7 +318,7 @@ fn lex(source) {
                                         line = heap_get(adv_cmp, 1);
                                         col = heap_get(adv_cmp, 2);
                                         def stop_cmp = SourcePos(start_line, start_col + 1);
-                                        def _push_cmp = Collections.push(tokens, Token("OP", c + "=", pos, stop_cmp));
+                                        def push_cmp = Collections.push(tokens, Token("OP", c + "=", pos, stop_cmp));
                                         handled = true;
                                     }
                                 }
@@ -327,7 +327,7 @@ fn lex(source) {
                                     i = heap_get(adv_op, 0);
                                     line = heap_get(adv_op, 1);
                                     col = heap_get(adv_op, 2);
-                                    def _push_op = Collections.push(tokens, Token("OP", c, pos, SourcePos(start_line, start_col)));
+                                    def push_op = Collections.push(tokens, Token("OP", c, pos, SourcePos(start_line, start_col)));
                                     handled = true;
                                 } else {
                                     if (handled == false && (c == "(" || c == ")" || c == "{" || c == "}" || c == "[" || c == "]"
@@ -336,7 +336,7 @@ fn lex(source) {
                                         i = heap_get(adv_sym, 0);
                                         line = heap_get(adv_sym, 1);
                                         col = heap_get(adv_sym, 2);
-                                        def _push_sym = Collections.push(tokens, Token("SYM", c, pos, SourcePos(start_line, start_col)));
+                                        def push_sym = Collections.push(tokens, Token("SYM", c, pos, SourcePos(start_line, start_col)));
                                         handled = true;
                                     }
                                 }
@@ -347,7 +347,7 @@ fn lex(source) {
             }
 
             if (handled == false) {
-                def _unused3 = __raise_runtime_error("lexing error: unexpected character '" + c + "'");
+                def unused3 = __raise_runtime_error("lexing error: unexpected character '" + c + "'");
                 finished = true;
             }
         }

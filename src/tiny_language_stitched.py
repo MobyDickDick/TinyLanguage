@@ -6945,7 +6945,15 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
 
 def _infer_expr_type(expr: IR, env: Dict[str, str]) -> Optional[str]:
     if isinstance(expr, Num):
-        return "number"
+        if "." in expr.txt or "e" in expr.txt or "E" in expr.txt:
+            try:
+                value = float(expr.txt)
+            except ValueError:
+                return "float"
+            if ("e" in expr.txt or "E" in expr.txt) and "." not in expr.txt and value.is_integer():
+                return "int"
+            return "float"
+        return "int"
     if isinstance(expr, Str):
         return "string"
     if isinstance(expr, Bool):
@@ -8497,22 +8505,11 @@ class Runtime:
         return type(value).__name__
 
     def _infer_type_name(self, value: Any) -> str:
-        """Return a broad type label for variables defined without annotations.
-
-        Unannotated numerics start as "number" so int/float changes are allowed
-        unless the author opts into narrower annotations like `int` or `float`.
-        """
-        return (
-            "number"
-            if isinstance(value, (int, float)) and not isinstance(value, bool)
-            else self._value_type_name(value) or type(value).__name__
-        )
+        """Return a type label for variables defined without annotations."""
+        return self._value_type_name(value) or type(value).__name__
 
     @staticmethod
     def _normalize_numeric_type(type_name: str) -> str:
-        lowered = type_name.lower()
-        if lowered in {"int", "float"}:
-            return "number"
         return type_name
 
     def _check_assignment_type(
@@ -9962,15 +9959,22 @@ class Environment:
 
     @staticmethod
     def _fallback_type_name(value: Any) -> str:
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            return "number"
+        if isinstance(value, dict) and "__type__" in value:
+            return str(value.get("__type__"))
+        if value is None:
+            return "Null"
+        if isinstance(value, bool):
+            return "Bool"
+        if isinstance(value, int) and not isinstance(value, bool):
+            return "int"
+        if isinstance(value, float):
+            return "float"
+        if isinstance(value, str):
+            return "string"
         return type(value).__name__
 
     @staticmethod
     def _normalize_numeric_type(type_name: str) -> str:
-        lowered = type_name.lower()
-        if lowered in {"int", "float"}:
-            return "number"
         return type_name
 
     def get(self, name: str) -> Any:

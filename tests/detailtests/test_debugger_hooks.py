@@ -30,8 +30,8 @@ def test_breakpoint_records_scopes_and_stack():
     scope = debugger.snapshots[0].scopes[0]
     assert scope.values["x"] == 1
     assert scope.values["y"] == 2
-    assert scope.types["x"] == "number"
-    assert scope.types["y"] == "number"
+    assert scope.types["x"] == "int"
+    assert scope.types["y"] == "int"
     assert debugger.snapshots[0].call_stack == ()
 
 

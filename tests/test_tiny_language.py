@@ -58,7 +58,7 @@ def test_reassign_with_different_type_errors():
         msg = 0.5;
         print(msg);
         """,
-        r"\[E014\] type change for variable msg: expected string but got number",
+        r"\[E014\] type change for variable msg: expected string but got float",
     )
 
 
@@ -75,7 +75,7 @@ def test_inferred_return_type_stable_across_calls():
         print(pick(true));
         print(pick(false));
         """,
-        r"\[E014\] inferred return type for function pick changed: expected number but got string",
+        r"\[E014\] inferred return type for function pick changed: expected int but got string",
     )
 
 

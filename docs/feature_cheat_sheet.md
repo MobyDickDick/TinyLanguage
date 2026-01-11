@@ -55,7 +55,6 @@ Quick reference to core language features with links to the full `.tiny` demos. 
 
 ## Error patterns and lints
 
-- **Unused return value**: A call without assignment can trigger `[E011] function ... discards return value` (see `src_tiny/typing_demo.tiny`).
 - **Missing returns**: Missing returns in typed functions yield `[E010] not all paths return a value`.
 
 ## Helpful combos

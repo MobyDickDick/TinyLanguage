@@ -13,7 +13,7 @@ def test_non_escaped_parameter_is_copied_by_default():
 
     def data = new(1);
     heap_set(data, 0, 1);
-    def _ = bump(data);
+    bump(data);
     print(heap_get(data, 0));
     """
 
@@ -49,7 +49,7 @@ def test_legacy_behavior_when_copy_on_call_disabled():
 
     def data = new(1);
     heap_set(data, 0, 1);
-    def _ = bump(data);
+    bump(data);
     print(heap_get(data, 0));
     """
 
@@ -68,7 +68,7 @@ def test_mutating_protected_argument_raises():
         }
     }
 
-    def _ = mutate_through_alias(shared);
+    mutate_through_alias(shared);
     """
 
     with pytest.raises(TinyLangError) as excinfo:
@@ -85,7 +85,7 @@ def test_cli_flag_enables_copy_on_call():
 
     def data = new(1);
     heap_set(data, 0, 1);
-    def _ = bump(data);
+    bump(data);
     print(heap_get(data, 0));
     """
 

@@ -86,8 +86,7 @@ def test_cli_reports_diagnostics():
     payload = run_cli(
         ["--source", "fn greet() -> string { return \"hi\"; }\ngreet();", "diagnostics"]
     )
-    assert payload
-    assert payload[0]["code"] == "E011"
+    assert payload == []
 
 
 def test_cli_reports_diagnostics_from_file(tmp_path):

@@ -134,4 +134,4 @@ fn main() {
     return 0;
 }
 
-def _ = main();
+main();

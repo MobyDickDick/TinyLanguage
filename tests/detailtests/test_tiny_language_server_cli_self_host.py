@@ -59,5 +59,4 @@ def test_tiny_language_server_diagnostics():
 
     assert diagnostics.returncode == 0, diagnostics.stderr
     diagnostic_payload = json.loads(diagnostics.stdout)
-    assert diagnostic_payload
-    assert diagnostic_payload[0]["code"] == "E011"
+    assert diagnostic_payload == []

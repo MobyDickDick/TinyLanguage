@@ -41,7 +41,7 @@ def test_tiny_parser_reports_span_context():
             AST_SRC,
             LEXER_SRC,
             PARSER_SRC,
-            'def _ = parse_program("def a = ;");',
+            'parse_program("def a = ;");',
         ]
     )
 

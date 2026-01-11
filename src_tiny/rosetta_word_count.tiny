@@ -12,7 +12,7 @@ fn word_counts(text) {
     while (index < total) {
         def word = heap_get(words, index);
         def seen = Map.get(counts, word, 0);
-        def _ = Map.set(counts, word, seen + 1);
+        Map.set(counts, word, seen + 1);
         index = index + 1;
     }
 

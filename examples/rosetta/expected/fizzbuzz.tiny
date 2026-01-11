@@ -20,4 +20,4 @@ fn fizzbuzz(n) {
     }
 }
 
-def _ = fizzbuzz(16);
+fizzbuzz(16);

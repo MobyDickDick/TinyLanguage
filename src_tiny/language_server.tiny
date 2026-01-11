@@ -35,7 +35,7 @@ fn __format_signature(name, params, return_type) {
         if (param.type_hint != Null && len(param.type_hint) > 0) {
             suffix = ": " + param.type_hint;
         }
-        def _ = Collections.push(parts, param.name + suffix);
+        Collections.push(parts, param.name + suffix);
         i = i + 1;
     }
     def signature = String.join(parts, ", ");
@@ -87,7 +87,7 @@ fn __record_symbol(server, name, pos, kind, detail) {
     def symbols = Map.get(server, "symbols");
     def kinds = Map.get(server, "symbol_kinds");
     def details = Map.get(server, "symbol_details");
-    def _ = Map.set(symbols, name, pos);
+    Map.set(symbols, name, pos);
     def _k = Map.set(kinds, name, kind);
     if (detail != Null) { def _d = Map.set(details, name, detail); }
     return Null;
@@ -141,7 +141,7 @@ fn __index_symbols(server, stmts, prefix) {
 fn TinyLanguageServer(source) {
     def stmts = tiny_language_parser.parse_program(source);
     def server = Map.new();
-    def _ = Map.set(server, "source", source);
+    Map.set(server, "source", source);
     def _s = Map.set(server, "stmts", stmts);
     def _sym = Map.set(server, "symbols", Map.new());
     def _k = Map.set(server, "symbol_kinds", Map.new());
@@ -155,16 +155,16 @@ fn completions(server, prefix) {
     def kw = Set.to_list(__KEYWORDS);
     def bi = Set.to_list(__BUILTINS);
     def i = 0;
-    while (i < len(kw)) { def _ = Set.add(candidates, heap_get(kw, i)); i = i + 1; }
+    while (i < len(kw)) { Set.add(candidates, heap_get(kw, i)); i = i + 1; }
     i = 0;
-    while (i < len(bi)) { def _ = Set.add(candidates, heap_get(bi, i)); i = i + 1; }
+    while (i < len(bi)) { Set.add(candidates, heap_get(bi, i)); i = i + 1; }
 
     def symbols = Map.get(server, "symbols");
     def keys = Map.keys(symbols);
     i = 0;
     while (i < len(keys)) {
         def name = heap_get(keys, i);
-        def _ = Set.add(candidates, name);
+        Set.add(candidates, name);
         if (String.contains(name, ".")) {
             def parts = String.split(name, ".");
             def short = heap_get(parts, len(parts) - 1);
@@ -178,7 +178,7 @@ fn completions(server, prefix) {
     i = 0;
     while (i < len(all_items)) {
         def item = heap_get(all_items, i);
-        if (__starts_with(item, prefix)) { def _ = Collections.push(filtered, item); }
+        if (__starts_with(item, prefix)) { Collections.push(filtered, item); }
         i = i + 1;
     }
 
@@ -192,7 +192,7 @@ fn completions(server, prefix) {
         def entry = Map.new();
         def _l = Map.set(entry, "label", label);
         def _k = Map.set(entry, "kind", kind);
-        def _ = Collections.push(out, entry);
+        Collections.push(out, entry);
         i = i + 1;
     }
     return out;
@@ -208,7 +208,7 @@ fn definition(server, symbol, position) {
     while (i < len(keys)) {
         def name = heap_get(keys, i);
         if (name == symbol || (String.contains(name, ".") && heap_get(String.split(name, "."), len(String.split(name, ".")) - 1) == symbol)) {
-            def _ = Collections.push(matches, new[name, Map.get(symbols, name)]);
+            Collections.push(matches, new[name, Map.get(symbols, name)]);
         }
         i = i + 1;
     }
@@ -331,8 +331,6 @@ fn diagnostics(server) {
         tiny_language_linter.lint_no_consecutive_definitions(stmts);
         tiny_language_linter.lint_import_style(stmts, source);
         tiny_language_linter.lint_locals_used(stmts, source);
-        def signatures = tiny_language_linter._collect_function_signatures(stmts, "");
-        tiny_language_linter.lint_bare_call_results(stmts, signatures, source);
         def i = 0;
         while (i < len(stmts)) {
             def st = heap_get(stmts, i);
@@ -356,7 +354,7 @@ fn diagnostics(server) {
         def _m = Map.set(diag, "message", message);
         def _c = Map.set(diag, "code", code);
         def _r = Map.set(diag, "range", __diagnostic_range(err, source));
-        def _ = Collections.push(diagnostics, diag);
+        Collections.push(diagnostics, diag);
     }
     return diagnostics;
 }

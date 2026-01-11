@@ -115,7 +115,7 @@ fn __to_str(value) {
 fn __sorted_strings(items) {
     def arr = new[];
     def i = 0;
-    while (i < len(items)) { def _ = Collections.push(arr, heap_get(items, i)); i = i + 1; }
+    while (i < len(items)) { Collections.push(arr, heap_get(items, i)); i = i + 1; }
     def n = len(arr);
     def a = 0;
     // ---------------------------------------------------------------------------
@@ -138,10 +138,10 @@ fn __sorted_strings(items) {
         def si = 0;
         while (si < len(list)) {
             if (si == idx_a) {
-                def _ = Collections.push(out, heap_get(list, idx_b));
+                Collections.push(out, heap_get(list, idx_b));
             } else {
-                if (si == idx_b) { def _ = Collections.push(out, heap_get(list, idx_a)); }
-                else { def _ = Collections.push(out, heap_get(list, si)); }
+                if (si == idx_b) { Collections.push(out, heap_get(list, idx_a)); }
+                else { Collections.push(out, heap_get(list, si)); }
             }
             si = si + 1;
         }
@@ -181,7 +181,7 @@ fn __copy_state(state) {
     def i = 0;
     while (i < len(keys)) {
         def k = heap_get(keys, i);
-        def _ = Map.set(new_state, k, Map.get(state, k));
+        Map.set(new_state, k, Map.get(state, k));
         i = i + 1;
     }
     return new_state;
@@ -502,7 +502,7 @@ fn _param_names(params) {
     def i = 0;
     while (i < len(params)) {
         def p = heap_get(params, i);
-        def _ = Collections.push(names, p.name);
+        Collections.push(names, p.name);
         i = i + 1;
     }
     return names;
@@ -524,7 +524,7 @@ fn _param_names(params) {
 // ---------------------------------------------------------------------------
 fn _collect_names_in_expr(e, names) {
     if (e == Null) { return Null; }
-    if (e.__tag__ == "Var") { def _ = Set.add(names, e.name); return Null; }
+    if (e.__tag__ == "Var") { Set.add(names, e.name); return Null; }
     if (e.__tag__ == "Bin") { _collect_names_in_expr(e.a, names); _collect_names_in_expr(e.b, names); return Null; }
     if (e.__tag__ == "Call") {
         def i = 0;
@@ -592,7 +592,7 @@ fn uses_in_expr(e, reads) {
     if (e == Null) { return Null; }
     if (e.__tag__ == "Var") {
         def prev = Map.get(reads, e.name, 0);
-        def _ = Map.set(reads, e.name, prev + 1);
+        Map.set(reads, e.name, prev + 1);
         return Null;
     }
     if (e.__tag__ == "Bin") { uses_in_expr(e.a, reads); uses_in_expr(e.b, reads); return Null; }
@@ -642,7 +642,7 @@ fn uses_in_expr(e, reads) {
                 def name = heap_get(keys, j);
                 def count = Map.get(tmp_reads, name, 0);
                 def prev = Map.get(reads, name, 0);
-                if (count > prev) { def _ = Map.set(reads, name, count); }
+                if (count > prev) { Map.set(reads, name, count); }
                 j = j + 1;
             }
             i = i + 1;
@@ -707,14 +707,14 @@ fn lint_stmt_reads(s, reads) {
         def handler_reads = Map.new();
         i = 0;
         while (i < len(s.handler)) { lint_stmt_reads(heap_get(s.handler, i), handler_reads); i = i + 1; }
-        if (s.err_name != Null) { if (Map.get(handler_reads, s.err_name, 0) == 0) { def _ = Map.set(handler_reads, s.err_name, 0); } }
+        if (s.err_name != Null) { if (Map.get(handler_reads, s.err_name, 0) == 0) { Map.set(handler_reads, s.err_name, 0); } }
         def keys = Map.keys(handler_reads);
         i = 0;
         while (i < len(keys)) {
             def name = heap_get(keys, i);
             def count = Map.get(handler_reads, name, 0);
             def prev = Map.get(reads, name, 0);
-            if (count > prev) { def _ = Map.set(reads, name, count); }
+            if (count > prev) { Map.set(reads, name, count); }
             i = i + 1;
         }
         return Null;
@@ -725,8 +725,8 @@ fn lint_stmt_reads(s, reads) {
         def i = 0;
         while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), tmp); i = i + 1; }
         def miss = new[];
-        if (!__starts_with_underscore(s.a_name) && Map.get(tmp, s.a_name, 0) == 0) { def _ = Collections.push(miss, s.a_name); }
-        if (!__starts_with_underscore(s.b_name) && Map.get(tmp, s.b_name, 0) == 0) { def _ = Collections.push(miss, s.b_name); }
+        if (!__starts_with_underscore(s.a_name) && Map.get(tmp, s.a_name, 0) == 0) { Collections.push(miss, s.a_name); }
+        if (!__starts_with_underscore(s.b_name) && Map.get(tmp, s.b_name, 0) == 0) { Collections.push(miss, s.b_name); }
         if (len(miss) > 0) {
             def msg = "unused operator parameter(s) in op " + s.op + ": " + String.join(miss, ", ");
             __raise_runtime_error(msg);
@@ -738,7 +738,7 @@ fn lint_stmt_reads(s, reads) {
             if (!(name == s.a_name || name == s.b_name)) {
                 def count = Map.get(tmp, name, 0);
                 def prev = Map.get(reads, name, 0);
-                if (count > prev) { def _ = Map.set(reads, name, count); }
+                if (count > prev) { Map.set(reads, name, count); }
             }
             i = i + 1;
         }
@@ -755,7 +755,7 @@ fn lint_stmt_reads(s, reads) {
         while (i < len(param_names)) {
             def p = heap_get(param_names, i);
             if (p != "self" && !__starts_with_underscore(p)) {
-                if (Map.get(tmp, p, 0) == 0) { def _ = Collections.push(miss, p); }
+                if (Map.get(tmp, p, 0) == 0) { Collections.push(miss, p); }
             }
             i = i + 1;
         }
@@ -772,7 +772,7 @@ fn lint_stmt_reads(s, reads) {
             if (!skip) {
                 def count = Map.get(tmp, name, 0);
                 def prev = Map.get(reads, name, 0);
-                if (count > prev) { def _ = Map.set(reads, name, count); }
+                if (count > prev) { Map.set(reads, name, count); }
             }
             i = i + 1;
         }
@@ -793,7 +793,7 @@ fn lint_stmt_reads(s, reads) {
             if (!skip) {
                 def count = Map.get(tmp, name, 0);
                 def prev = Map.get(reads, name, 0);
-                if (count > prev) { def _ = Map.set(reads, name, count); }
+                if (count > prev) { Map.set(reads, name, count); }
             }
             i = i + 1;
         }
@@ -841,7 +841,7 @@ fn lint_fn_params_used(fn_node, source) {
         while (i < len(param_names)) {
             def p = heap_get(param_names, i);
             if (!(p == "self" || __starts_with_underscore(p))) {
-                if (Map.get(reads, p, 0) == 0) { def _ = Collections.push(unused, p); }
+                if (Map.get(reads, p, 0) == 0) { Collections.push(unused, p); }
             }
             i = i + 1;
         }
@@ -881,7 +881,7 @@ fn lint_method_params_used(md, source) {
         while (i < len(param_names)) {
             def p = heap_get(param_names, i);
             if (!(p == "self" || __starts_with_underscore(p))) {
-                if (Map.get(reads, p, 0) == 0) { def _ = Collections.push(unused, p); }
+                if (Map.get(reads, p, 0) == 0) { Collections.push(unused, p); }
             }
             i = i + 1;
         }
@@ -952,7 +952,7 @@ fn lint_locals_used(stmts, source) {
         def entry = Map.get(state, name, Null);
         if (entry != Null) {
             def pos = heap_get(entry, 0);
-            def _ = Map.set(state, name, new[pos, true, true]);
+            Map.set(state, name, new[pos, true, true]);
         }
     }
 
@@ -1012,7 +1012,7 @@ fn lint_locals_used(stmts, source) {
                 def used_any = heap_get(entry, 2);
                 def prev = Map.get(merged, name, Null);
                 if (prev == Null) {
-                    def _ = Map.set(merged, name, new[pos, used_all, used_any]);
+                    Map.set(merged, name, new[pos, used_all, used_any]);
                 } else {
                     def prev_pos = heap_get(prev, 0);
                     def prev_all = heap_get(prev, 1);
@@ -1062,7 +1062,7 @@ fn lint_locals_used(stmts, source) {
                     while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
                     def decl_pos = st.name_span;
                     if (decl_pos == Null) { decl_pos = st.pos; }
-                    def _ = Map.set(new_state, st.name, new[decl_pos, false, false]);
+                    Map.set(new_state, st.name, new[decl_pos, false, false]);
                     def _p2 = Collections.push(next_active, new_state);
                     handled = true;
                 }
@@ -1071,14 +1071,14 @@ fn lint_locals_used(stmts, source) {
                     def bind = _import_binding_name(st.module, st.alias);
                     def decl_pos = st.binding_span;
                     if (decl_pos == Null) { decl_pos = st.pos; }
-                    def _ = Map.set(new_state, bind, new[decl_pos, false, false]);
+                    Map.set(new_state, bind, new[decl_pos, false, false]);
                     def _p3 = Collections.push(next_active, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "DestructAssign") {
                     def new_state = __copy_state(state);
                     def ni = 0;
-                    while (ni < len(st.names)) { def span = heap_get(st.name_spans, ni); def _ = Map.set(new_state, heap_get(st.names, ni), new[span, false, false]); ni = ni + 1; }
+                    while (ni < len(st.names)) { def span = heap_get(st.name_spans, ni); Map.set(new_state, heap_get(st.names, ni), new[span, false, false]); ni = ni + 1; }
                     def names = names_in_expr(st.expr);
                     ni = 0;
                     while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
@@ -1235,7 +1235,7 @@ fn lint_locals_used(stmts, source) {
                 if (!handled && st.__tag__ == "TryCatch") {
                     def body_res = analyze_block(st.body, new[__copy_state(state)]);
                     def handler_state = __copy_state(state);
-                    if (st.err_name != Null) { def _ = Map.set(handler_state, st.err_name, new[st.pos, false, false]); }
+                    if (st.err_name != Null) { Map.set(handler_state, st.err_name, new[st.pos, false, false]); }
                     def handler_res = analyze_block(st.handler, new[handler_state]);
                     def body_active = heap_get(body_res, 0);
                     def handler_active = heap_get(handler_res, 0);
@@ -1295,9 +1295,9 @@ fn lint_locals_used(stmts, source) {
     def terminated = heap_get(res, 1);
     def all_states = new[];
     def i = 0;
-    while (i < len(active)) { def _ = Collections.push(all_states, heap_get(active, i)); i = i + 1; }
+    while (i < len(active)) { Collections.push(all_states, heap_get(active, i)); i = i + 1; }
     i = 0;
-    while (i < len(terminated)) { def _ = Collections.push(all_states, heap_get(terminated, i)); i = i + 1; }
+    while (i < len(terminated)) { Collections.push(all_states, heap_get(terminated, i)); i = i + 1; }
 
     def usage_summary = Map.new();
 
@@ -1370,10 +1370,10 @@ fn lint_locals_used(stmts, source) {
                     def _p2 = Map.set(fresh, "used_any", false);
                     def _p3 = Map.set(fresh, "active_all", true);
                     def _p4 = Map.set(fresh, "active_present", false);
-                    def _ = Map.set(usage_summary, map_key, fresh);
+                    Map.set(usage_summary, map_key, fresh);
                     prev = fresh;
                 }
-                def _ = Map.set(prev, "used_any", Map.get(prev, "used_any") || used_any);
+                Map.set(prev, "used_any", Map.get(prev, "used_any") || used_any);
                 if (active_state) {
                     def _a = Map.set(prev, "active_all", Map.get(prev, "active_all") && used_all);
                     def _b = Map.set(prev, "active_present", true);
@@ -1400,11 +1400,11 @@ fn lint_locals_used(stmts, source) {
             def active_present = Map.get(info, "active_present");
             if (!used_any) {
                 def pos = Map.get(info, "pos");
-                def _ = Collections.push(unused, new[name, pos]);
+                Collections.push(unused, new[name, pos]);
             } else {
                 if (active_present && !active_all) {
                     def pos = Map.get(info, "pos");
-                    def _ = Collections.push(partial, new[name, pos]);
+                    Collections.push(partial, new[name, pos]);
                 }
             }
         }
@@ -1415,7 +1415,7 @@ fn lint_locals_used(stmts, source) {
         def names = new[];
         def pos = heap_get(heap_get(unused, 0), 1);
         def ui = 0;
-        while (ui < len(unused)) { def _ = Collections.push(names, heap_get(heap_get(unused, ui), 0)); ui = ui + 1; }
+        while (ui < len(unused)) { Collections.push(names, heap_get(heap_get(unused, ui), 0)); ui = ui + 1; }
         def msg = "unused local binding(s): " + String.join(names, ", ");
         if (source == Null) { __raise_runtime_error(msg); }
         else { _lint_error(source, pos, msg, "E002", "Remove the unused binding or reference it."); }
@@ -1424,7 +1424,7 @@ fn lint_locals_used(stmts, source) {
         def names = new[];
         def pos = heap_get(heap_get(partial, 0), 1);
         def ui = 0;
-        while (ui < len(partial)) { def _ = Collections.push(names, heap_get(heap_get(partial, ui), 0)); ui = ui + 1; }
+        while (ui < len(partial)) { Collections.push(names, heap_get(heap_get(partial, ui), 0)); ui = ui + 1; }
         def msg = "local binding(s) must be used on all control-flow paths: " + String.join(names, ", ");
         if (source == Null) { __raise_runtime_error(msg); }
         else { _lint_error(source, pos, msg, "E002", "Ensure the binding is referenced on every path or remove it."); }
@@ -1453,7 +1453,7 @@ fn __trim(text) {
     while (stop >= start && heap_get(chars, stop) == " ") { stop = stop - 1; }
     def buf = new[];
     def i = start;
-    while (i <= stop) { def _ = Collections.push(buf, heap_get(chars, i)); i = i + 1; }
+    while (i <= stop) { Collections.push(buf, heap_get(chars, i)); i = i + 1; }
     return String.join(buf, "");
 }
 
@@ -1550,7 +1550,7 @@ fn lint_assignment_types(stmts, source, env) {
     if (env != Null) {
         def keys = Map.keys(env);
         def i = 0;
-        while (i < len(keys)) { def k = heap_get(keys, i); def _ = Map.set(base_env, k, Map.get(env, k)); i = i + 1; }
+        while (i < len(keys)) { def k = heap_get(keys, i); Map.set(base_env, k, Map.get(env, k)); i = i + 1; }
     }
 
     // ---------------------------------------------------------------------------
@@ -1574,7 +1574,7 @@ fn lint_assignment_types(stmts, source, env) {
             def handled = false;
             if (!handled && st.__tag__ == "Let") {
                 def inferred = _infer_expr_type(st.expr, local_env);
-                if (inferred != Null) { def _ = Map.set(local_env, st.name, inferred); }
+                if (inferred != Null) { Map.set(local_env, st.name, inferred); }
                 handled = true;
             }
             if (!handled && st.__tag__ == "Assign") {
@@ -1585,14 +1585,14 @@ fn lint_assignment_types(stmts, source, env) {
                     if (source == Null) { __raise_runtime_error(msg); }
                     else { _lint_error(source, st, msg, "E014", "Use a new variable or cast explicitly if a different type is required."); }
                 }
-                if (inferred != Null) { def _ = Map.set(local_env, st.name, inferred); }
+                if (inferred != Null) { Map.set(local_env, st.name, inferred); }
                 handled = true;
             }
             if (!handled && st.__tag__ == "DestructAssign") {
                 def inferred = _infer_expr_type(st.expr, local_env);
                 if (inferred != Null) {
                     def ni = 0;
-                    while (ni < len(st.names)) { def _ = Map.set(local_env, heap_get(st.names, ni), inferred); ni = ni + 1; }
+                    while (ni < len(st.names)) { Map.set(local_env, heap_get(st.names, ni), inferred); ni = ni + 1; }
                 }
                 handled = true;
             }
@@ -1604,14 +1604,14 @@ fn lint_assignment_types(stmts, source, env) {
                 while (ki < len(keys)) {
                     def name = heap_get(keys, ki);
                     if (Map.get(then_env, name, Null) != Null && Map.get(else_env, name, Null) != Null && Map.get(then_env, name) == Map.get(else_env, name)) {
-                        def _ = Map.set(local_env, name, Map.get(then_env, name));
+                        Map.set(local_env, name, Map.get(then_env, name));
                     }
                     ki = ki + 1;
                 }
                 handled = true;
             }
             if (!handled && st.__tag__ == "While") {
-                def _ = check_block(st.body, __copy_state(local_env));
+                check_block(st.body, __copy_state(local_env));
                 handled = true;
             }
             if (!handled && st.__tag__ == "Switch") {
@@ -1620,7 +1620,7 @@ fn lint_assignment_types(stmts, source, env) {
                 while (ci < len(st.cases)) {
                     def case_node = heap_get(st.cases, ci);
                     def env_copy = check_block(case_node.body, __copy_state(local_env));
-                    def _ = Collections.push(case_envs, env_copy);
+                    Collections.push(case_envs, env_copy);
                     ci = ci + 1;
                 }
                 def has_default = false;
@@ -1630,7 +1630,7 @@ fn lint_assignment_types(stmts, source, env) {
                     if (case_node.value == Null) { has_default = true; }
                     ci = ci + 1;
                 }
-                if (!has_default) { def _ = Collections.push(case_envs, __copy_state(local_env)); }
+                if (!has_default) { Collections.push(case_envs, __copy_state(local_env)); }
                 def keys = Map.keys(local_env);
                 def ki = 0;
                 while (ki < len(keys)) {
@@ -1642,7 +1642,7 @@ fn lint_assignment_types(stmts, source, env) {
                         def env_case = heap_get(case_envs, ei);
                         def value = Map.get(env_case, name, Null);
                         if (value == Null) { all_have = false; }
-                        else { def _ = Collections.push(distinct, value); }
+                        else { Collections.push(distinct, value); }
                         ei = ei + 1;
                     }
                     if (all_have && len(distinct) > 0) {
@@ -1653,7 +1653,7 @@ fn lint_assignment_types(stmts, source, env) {
                             if (heap_get(distinct, di) != first) { all_same = false; }
                             di = di + 1;
                         }
-                        if (all_same) { def _ = Map.set(local_env, name, first); }
+                        if (all_same) { Map.set(local_env, name, first); }
                     }
                     ki = ki + 1;
                 }
@@ -1662,14 +1662,14 @@ fn lint_assignment_types(stmts, source, env) {
             if (!handled && st.__tag__ == "TryCatch") {
                 def body_env = check_block(st.body, __copy_state(local_env));
                 def handler_env = __copy_state(local_env);
-                if (st.err_name != Null) { def _ = Map.set(handler_env, st.err_name, "Error"); }
+                if (st.err_name != Null) { Map.set(handler_env, st.err_name, "Error"); }
                 handler_env = check_block(st.handler, handler_env);
                 def keys = Map.keys(local_env);
                 def ki = 0;
                 while (ki < len(keys)) {
                     def name = heap_get(keys, ki);
                     if (Map.get(body_env, name, Null) != Null && Map.get(handler_env, name, Null) != Null && Map.get(body_env, name) == Map.get(handler_env, name)) {
-                        def _ = Map.set(local_env, name, Map.get(body_env, name));
+                        Map.set(local_env, name, Map.get(body_env, name));
                     }
                     ki = ki + 1;
                 }
@@ -1682,14 +1682,14 @@ fn lint_assignment_types(stmts, source, env) {
             if (!handled && st.__tag__ == "Fn") {
                 def fn_env = Map.new();
                 def pi = 0;
-                while (pi < len(st.params)) { def p = heap_get(st.params, pi); if (p.type_hint != Null) { def _ = Map.set(fn_env, p.name, p.type_hint); } pi = pi + 1; }
+                while (pi < len(st.params)) { def p = heap_get(st.params, pi); if (p.type_hint != Null) { Map.set(fn_env, p.name, p.type_hint); } pi = pi + 1; }
                 check_block(st.body, fn_env);
                 handled = true;
             }
             if (!handled && st.__tag__ == "MethodDef") {
                 def method_env = Map.new();
                 def pi = 0;
-                while (pi < len(st.params)) { def p = heap_get(st.params, pi); if (p.type_hint != Null) { def _ = Map.set(method_env, p.name, p.type_hint); } pi = pi + 1; }
+                while (pi < len(st.params)) { def p = heap_get(st.params, pi); if (p.type_hint != Null) { Map.set(method_env, p.name, p.type_hint); } pi = pi + 1; }
                 check_block(st.body, method_env);
                 handled = true;
             }
@@ -1699,7 +1699,7 @@ fn lint_assignment_types(stmts, source, env) {
                     def method_env = Map.new();
                     def pi = 0;
                     def m = heap_get(st.methods, mi);
-                    while (pi < len(m.params)) { def p = heap_get(m.params, pi); if (p.type_hint != Null) { def _ = Map.set(method_env, p.name, p.type_hint); } pi = pi + 1; }
+                    while (pi < len(m.params)) { def p = heap_get(m.params, pi); if (p.type_hint != Null) { Map.set(method_env, p.name, p.type_hint); } pi = pi + 1; }
                     check_block(m.body, method_env);
                     mi = mi + 1;
                 }
@@ -1710,7 +1710,7 @@ fn lint_assignment_types(stmts, source, env) {
                 while (ai < len(st.args)) {
                     def arg = heap_get(st.args, ai);
                     def inferred = _infer_expr_type(arg, local_env);
-                    if (arg.__tag__ == "Var" && inferred != Null) { def _ = Map.set(local_env, arg.name, inferred); }
+                    if (arg.__tag__ == "Var" && inferred != Null) { Map.set(local_env, arg.name, inferred); }
                     ai = ai + 1;
                 }
                 handled = true;
@@ -1721,126 +1721,6 @@ fn lint_assignment_types(stmts, source, env) {
     }
 
     check_block(stmts, base_env);
-}
-
-// ---------------------------------------------------------------------------
-// _collect_function_signatures(stmts, prefix)
-// ---------------------------------------------------------------------------
-// Helper function used by the linter.
-//
-// This function is part of the TinyLanguage linter port and is not intended as a public API.
-//
-// Args:
-//   - stmts: (Tiny value) See implementation for expected shape.
-//   - prefix: (Tiny value) See implementation for expected shape.
-//
-// Returns:
-//   A Tiny value (type depends on operation).
-// ---------------------------------------------------------------------------
-fn _collect_function_signatures(stmts, prefix) {
-    def base_prefix = prefix;
-    if (base_prefix == Null) { base_prefix = ""; }
-    def sigs = Map.new();
-    // ---------------------------------------------------------------------------
-    // qualify(name)
-    // ---------------------------------------------------------------------------
-    // Helper function used by the linter.
-    //
-    // This function is part of the TinyLanguage linter port and is not intended as a public API.
-    //
-    // Args:
-    //   - name: (Tiny value) See implementation for expected shape.
-    //
-    // Returns:
-    //   A Tiny value (type depends on operation).
-    // ---------------------------------------------------------------------------
-    fn qualify(name) { if (base_prefix == Null || base_prefix == "") { return name; } return base_prefix + "." + name; }
-    def i = 0;
-    while (i < len(stmts)) {
-        def st = heap_get(stmts, i);
-        def handled = false;
-        if (!handled && st.__tag__ == "Fn") {
-            def _ = Map.set(sigs, qualify(st.name), st.return_type);
-            handled = true;
-        }
-        if (!handled && st.__tag__ == "Namespace") {
-            def nested = _collect_function_signatures(st.body, qualify(st.name));
-            def keys = Map.keys(nested);
-            def j = 0;
-            while (j < len(keys)) { def k = heap_get(keys, j); def _ = Map.set(sigs, k, Map.get(nested, k)); j = j + 1; }
-            handled = true;
-        }
-        i = i + 1;
-    }
-    return sigs;
-}
-
-// ---------------------------------------------------------------------------
-// lint_bare_call_results(stmts, signatures, source)
-// ---------------------------------------------------------------------------
-// Must-use rule: forbid bare call statements.
-//
-// In TinyLanguage every call result must be used (bound, returned, or otherwise consumed). This lint flags call statements whose return value is ignored.
-//
-// Args:
-//   - stmts: (Tiny value) See implementation for expected shape.
-//   - signatures: (Tiny value) See implementation for expected shape.
-//   - source: (Tiny value) See implementation for expected shape.
-//
-// Returns:
-//   A Tiny value (type depends on operation).
-// ---------------------------------------------------------------------------
-fn lint_bare_call_results(stmts, signatures, source) {
-    def disallowed = Set.new();
-    def keys = Map.keys(signatures);
-    def i = 0;
-    while (i < len(keys)) {
-        def name = heap_get(keys, i);
-        def ret = Map.get(signatures, name, Null);
-        if (!(ret == Null || ret == "Null")) { def _ = Set.add(disallowed, name); }
-        i = i + 1;
-    }
-
-    // ---------------------------------------------------------------------------
-    // visit(block)
-    // ---------------------------------------------------------------------------
-    // Helper function used by the linter.
-    //
-    // This function is part of the TinyLanguage linter port and is not intended as a public API.
-    //
-    // Args:
-    //   - block: (Tiny value) See implementation for expected shape.
-    //
-    // Returns:
-    //   A Tiny value (type depends on operation).
-    // ---------------------------------------------------------------------------
-    fn visit(block) {
-        def bi = 0;
-        while (bi < len(block)) {
-            def st = heap_get(block, bi);
-            def handled = false;
-            if (!handled && st.__tag__ == "CallStmt") {
-                if (Set.has(disallowed, st.name)) {
-                    def msg = "call to " + st.name + " returns a value that is ignored";
-                    def hint = "Assign the return value or explicitly acknowledge it with `_ = ...;`.";
-                    if (source == Null) { __raise_runtime_error(msg); }
-                    else { _lint_error(source, st, msg, "E011", hint); }
-                }
-                handled = true;
-            }
-            if (!handled && st.__tag__ == "If") { visit(st.then); visit(st.els); handled = true; }
-            if (!handled && st.__tag__ == "While") { visit(st.body); handled = true; }
-            if (!handled && st.__tag__ == "TryCatch") { visit(st.body); visit(st.handler); handled = true; }
-            if (!handled && st.__tag__ == "Namespace") { visit(st.body); handled = true; }
-            if (!handled && st.__tag__ == "ClassDef") {
-                def mi = 0;
-                while (mi < len(st.methods)) { visit(heap_get(st.methods, mi).body); mi = mi + 1; }
-            }
-            bi = bi + 1;
-        }
-    }
-
-    visit(stmts);
 }
 
 // ---------------------------------------------------------------------------
@@ -1878,7 +1758,7 @@ fn __import_sort_key(imp) {
 fn __sorted_imports(imports) {
     def arr = new[];
     def i = 0;
-    while (i < len(imports)) { def _ = Collections.push(arr, heap_get(imports, i)); i = i + 1; }
+    while (i < len(imports)) { Collections.push(arr, heap_get(imports, i)); i = i + 1; }
     def n = len(arr);
     def a = 0;
     // ---------------------------------------------------------------------------
@@ -1901,10 +1781,10 @@ fn __sorted_imports(imports) {
         def si = 0;
         while (si < len(list)) {
             if (si == idx_a) {
-                def _ = Collections.push(out, heap_get(list, idx_b));
+                Collections.push(out, heap_get(list, idx_b));
             } else {
-                if (si == idx_b) { def _ = Collections.push(out, heap_get(list, idx_a)); }
-                else { def _ = Collections.push(out, heap_get(list, si)); }
+                if (si == idx_b) { Collections.push(out, heap_get(list, idx_a)); }
+                else { Collections.push(out, heap_get(list, si)); }
             }
             si = si + 1;
         }
@@ -1946,7 +1826,7 @@ fn lint_import_style(stmts, source) {
     while (i < len(stmts) && collecting) {
         def st = heap_get(stmts, i);
         if (st.__tag__ == "Import") {
-            def _ = Collections.push(imports, st);
+            Collections.push(imports, st);
             i = i + 1;
         } else {
             collecting = false;
@@ -2025,12 +1905,12 @@ fn _return_signature(expr) {
     if (expr.__tag__ == "ObjLit") {
         result = new[];
         def i = 0;
-        while (i < len(expr.fields)) { def pair = heap_get(expr.fields, i); def _ = Collections.push(result, heap_get(pair, 0)); i = i + 1; }
+        while (i < len(expr.fields)) { def pair = heap_get(expr.fields, i); Collections.push(result, heap_get(pair, 0)); i = i + 1; }
     } else {
         if (expr.__tag__ == "NewLit") {
             result = new[];
             def i = 0;
-            while (i < len(expr.items)) { def _ = Collections.push(result, __to_str(i)); i = i + 1; }
+            while (i < len(expr.items)) { Collections.push(result, __to_str(i)); i = i + 1; }
         }
     }
     return result;
@@ -2446,7 +2326,7 @@ fn check_destruct_call_expr(expr, names, source, pos) {
         def i = 0;
         while (i < len(expr.args)) {
             def arg = heap_get(expr.args, i);
-            if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { def _ = Set.add(missing_set, arg.name); }
+            if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { Set.add(missing_set, arg.name); }
             i = i + 1;
         }
         def missing = __sorted_strings(Set.to_list(missing_set));
@@ -2461,7 +2341,7 @@ fn check_destruct_call_expr(expr, names, source, pos) {
             def i = 0;
             while (i < len(expr.args)) {
                 def arg = heap_get(expr.args, i);
-                if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { def _ = Set.add(missing_set, arg.name); }
+                if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { Set.add(missing_set, arg.name); }
                 i = i + 1;
             }
             def missing = __sorted_strings(Set.to_list(missing_set));
@@ -2511,14 +2391,14 @@ fn lint_param_mutations_returned(stmts, params, fn_name, is_method, source, pos)
     // ---------------------------------------------------------------------------
     fn visit(st) {
         def handled = false;
-        if (!handled && st.__tag__ == "Assign" && Set.has(params, st.name)) { def _ = Set.add(mutated, st.name); handled = true; }
-        if (!handled && st.__tag__ == "FieldAssign" && st.obj.__tag__ == "Var" && Set.has(params, st.obj.name)) { def _ = Set.add(mutated, st.obj.name); handled = true; }
-        if (!handled && st.__tag__ == "DestructAssign") { def i = 0; while (i < len(st.names)) { def nm = heap_get(st.names, i); if (Set.has(params, nm)) { def _ = Set.add(mutated, nm); } i = i + 1; } handled = true; }
+        if (!handled && st.__tag__ == "Assign" && Set.has(params, st.name)) { Set.add(mutated, st.name); handled = true; }
+        if (!handled && st.__tag__ == "FieldAssign" && st.obj.__tag__ == "Var" && Set.has(params, st.obj.name)) { Set.add(mutated, st.obj.name); handled = true; }
+        if (!handled && st.__tag__ == "DestructAssign") { def i = 0; while (i < len(st.names)) { def nm = heap_get(st.names, i); if (Set.has(params, nm)) { Set.add(mutated, nm); } i = i + 1; } handled = true; }
         if (!handled && st.__tag__ == "Return") {
             def reads = Map.new(); uses_in_expr(st.expr, reads);
             def keys = Map.keys(reads);
             def i = 0;
-            while (i < len(keys)) { def n = heap_get(keys, i); if (Set.has(params, n)) { def _ = Set.add(returned, n); } i = i + 1; }
+            while (i < len(keys)) { def n = heap_get(keys, i); if (Set.has(params, n)) { Set.add(returned, n); } i = i + 1; }
             handled = true;
         }
         if (!handled && st.__tag__ == "If") { def i = 0; while (i < len(st.then)) { visit(heap_get(st.then, i)); i = i + 1; } i = 0; while (i < len(st.els)) { visit(heap_get(st.els, i)); i = i + 1; } handled = true; }

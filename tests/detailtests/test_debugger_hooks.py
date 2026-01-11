@@ -82,7 +82,7 @@ def test_step_over_skips_imported_module_body(tmp_path):
             print("after import");
         }
 
-        def _ = runner();
+        runner();
         """
     )
 

@@ -27,4 +27,4 @@ fn print_list(values) {
 
 def numbers = new[5, 1, 4, 2, 8];
 def sorted_numbers = bubble_sort(numbers);
-def _ = print_list(sorted_numbers);
+print_list(sorted_numbers);

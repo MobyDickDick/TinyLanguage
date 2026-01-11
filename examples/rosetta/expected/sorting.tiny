@@ -84,4 +84,4 @@ def sorted_numbers = bubble_sort(numbers);
 
 // Print result. Bind return value to `_` to satisfy the
 // “no bare call statements” / “must-use” rule.
-def _ = print_list(sorted_numbers);
+print_list(sorted_numbers);

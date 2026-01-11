@@ -416,7 +416,7 @@ def test_llvm_codegen_defines_heap_runtime_helpers() -> None:
 def test_llvm_codegen_emits_collection_helpers() -> None:
     source = """
 def m = Map.new();
-def _ = Map.set(m, 1, 2);
+Map.set(m, 1, 2);
 print(Map.get(m, 1, 0));
 
 def s = Set.new();

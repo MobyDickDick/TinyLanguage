@@ -46,7 +46,7 @@ fn __render_all() {
     def quoted = new[];
     def i = 0;
     while (i < len(outputs)) {
-        def _ = Collections.push(quoted, __json_dump(heap_get(outputs, i)));
+        Collections.push(quoted, __json_dump(heap_get(outputs, i)));
         i = i + 1;
     }
     return "[" + String.join(quoted, ",") + "]";

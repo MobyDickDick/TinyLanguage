@@ -11,4 +11,4 @@ fn run() {
     return main();
 }
 
-def _ = run();
+run();

@@ -91,7 +91,7 @@ def test_cli_respects_copy_on_call_env():
         "fn mutate(a) { heap_set(a, 0, 9); }\n"
         "def xs = new(1);\n"
         "heap_set(xs, 0, 1);\n"
-        "def _ = mutate(xs);\n"
+        "mutate(xs);\n"
         "print(heap_get(xs, 0));"
     )
 

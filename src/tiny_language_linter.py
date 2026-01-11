@@ -648,56 +648,6 @@ def lint_assignment_types(stmts: List[IR], source: Optional[str] = None, env: Op
     check_block(stmts, env)
 
 
-def _collect_function_signatures(stmts: List[IR], prefix: str = "") -> Dict[str, Optional[str]]:
-    sigs: Dict[str, Optional[str]] = {}
-
-    def qualify(name: str) -> str:
-        return f"{prefix}.{name}" if prefix else name
-
-    for st in stmts:
-        if isinstance(st, Fn):
-            sigs[qualify(st.name)] = st.return_type
-        elif isinstance(st, Namespace):
-            nested_prefix = qualify(st.name)
-            sigs.update(_collect_function_signatures(st.body, prefix=nested_prefix))
-    return sigs
-
-
-def lint_bare_call_results(
-    stmts: List[IR], signatures: Dict[str, Optional[str]], source: Optional[str] = None
-) -> None:
-    disallowed: set[str] = {name for name, ret in signatures.items() if ret not in {None, "Null"}}
-
-    def visit(block: List[IR]) -> None:
-        for st in block:
-            if isinstance(st, CallStmt):
-                if st.name in disallowed:
-                    hint = "Assign the return value or explicitly acknowledge it with `_ = ...;`."
-                    msg = f"call to {st.name} returns a value that is ignored"
-                    raise _lint_error(source, st, msg, code="E011", hint=hint)
-            if isinstance(st, If):
-                visit(st.then)
-                visit(st.els)
-            elif isinstance(st, While):
-                visit(st.body)
-            elif isinstance(st, Switch):
-                for case in st.cases:
-                    visit(case.body)
-            elif isinstance(st, TryCatch):
-                visit(st.body)
-                visit(st.handler)
-            elif isinstance(st, TaskBlock):
-                visit(st.body)
-            elif isinstance(st, TaskBlock):
-                visit(st.body)
-            elif isinstance(st, Namespace):
-                visit(st.body)
-            elif isinstance(st, ClassDef):
-                for method in st.methods:
-                    visit(method.body)
-
-    visit(stmts)
-
 
 def lint_import_style(stmts: List[IR], source: Optional[str] = None) -> None:
     imports: List[Import] = []

@@ -71,8 +71,7 @@ def test_definition_returns_source_position():
 def test_diagnostics_from_lints():
     server = TinyLanguageServer("fn greet() -> string { return \"hi\"; }\ngreet();")
     diags = server.diagnostics()
-    assert diags
-    assert diags[0].code == "E011"
+    assert diags == []
 
 
 def test_diagnostics_include_source_range_and_code():

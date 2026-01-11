@@ -547,8 +547,9 @@ def lint_no_underscore_bindings(stmts: List[IR], source: Optional[str] = None) -
                 for name, span in zip(st.names, st.name_spans):
                     check_name(name, span or st)
             elif isinstance(st, Import):
-                binding = _import_binding_name(st.module, st.alias)
-                check_name(binding, st.binding_span or st)
+                if st.alias != "_":
+                    binding = _import_binding_name(st.module, st.alias)
+                    check_name(binding, st.binding_span or st)
             elif isinstance(st, If):
                 visit(st.then)
                 visit(st.els)

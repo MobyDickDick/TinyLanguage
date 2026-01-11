@@ -29,7 +29,7 @@ except ImportError:  # pragma: no cover - Windows and other platforms without te
 
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
-from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, _line_info, format_error
+from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, format_error
 
 from stdlib import register_stdlib
 
@@ -10880,15 +10880,6 @@ def _parse_and_lint(
     lint_nested(stmts)
     lint_bare_call_results(stmts, signatures, src)
     return stmts
-
-
-def _lint_message(source: str) -> Optional[str]:
-    """Return the linter error message for a source string, if any."""
-    try:
-        _parse_and_lint(source)
-    except Exception as exc:  # pragma: no cover - passthrough for Tiny linter parity
-        return str(exc)
-    return None
 
 
 class NativeModuleResolver:

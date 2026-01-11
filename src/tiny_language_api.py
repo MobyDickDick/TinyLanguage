@@ -620,15 +620,6 @@ def _parse_and_lint(
     return stmts
 
 
-def _lint_message(source: str) -> Optional[str]:
-    """Return the linter error message for a source string, if any."""
-    try:
-        _parse_and_lint(source)
-    except Exception as exc:  # pragma: no cover - passthrough for Tiny linter parity
-        return str(exc)
-    return None
-
-
 class NativeModuleResolver:
     """Resolve TinyLanguage modules for the native backend."""
 

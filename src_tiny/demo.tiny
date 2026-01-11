@@ -44,7 +44,7 @@ print(x == y);        // false
 def n = 3;
 def p = new(n);
 // Tag the pointer to mark it as an Arr for debugging/runtime checks.
-def unused4 = tag(p, Arr);
+tag(p, Arr);
 // Populate each slot with incremental numbers.
 def status5 = heap_set(p, 0, 1);
 if (status5.e.code != 0) { print(status5.e.msg); }
@@ -55,7 +55,7 @@ if (status7.e.code != 0) { print(status7.e.msg); }
 // Read back the last element to verify storage.
 print(heap_get(p, 2)); // 3
 // Release the heap allocation to avoid leaks.
-def unused9 = delete(p);
+delete(p);
 
 // array literal via new[ ... ]
 // Allocate and initialize an array literal in one expression.
@@ -65,7 +65,7 @@ print(heap_get(q, 0)); // 10
 print(heap_get(q, 1)); // 20
 print(heap_get(q, 2)); // 12
 // Free the allocated array.
-def unused13 = delete(q);
+delete(q);
 
 // strings
 // Declare a number to mix numeric and string output.

@@ -573,7 +573,12 @@ def _parse_with_tiny_parser(src: str) -> List["IR"]:
     ]
 
 
-def _parse_and_lint(src: str, *, use_tiny_parser: Optional[bool] = None) -> List["IR"]:
+def _parse_and_lint(
+    src: str,
+    *,
+    use_tiny_parser: Optional[bool] = None,
+    repl_mode: bool = False,
+) -> List["IR"]:
     """Return a parsed program after running all linter passes.
 
     The helper centralizes parser creation and the sequence of lints so every entry
@@ -590,9 +595,11 @@ def _parse_and_lint(src: str, *, use_tiny_parser: Optional[bool] = None) -> List
     lint_import_style(stmts, src)
     lint_destruct_call_outputs(stmts, src)
     lint_no_consecutive_definitions(stmts, src)
-    lint_no_underscore_bindings(stmts, src)
+    if not repl_mode:
+        lint_no_underscore_bindings(stmts, src)
     lint_assignment_types(stmts, src)
-    lint_locals_used(stmts, src)
+    if not repl_mode:
+        lint_locals_used(stmts, src)
     lint_unreachable_code(stmts, src)
     signatures = _collect_function_signatures(stmts)
 
@@ -847,6 +854,7 @@ def compile_and_run(
     debugger: Optional[Debugger] = None,
     stream_output: bool = True,
     copy_on_call: Optional[bool] = None,
+    repl_mode: bool = False,
 ) -> str:
     """Compile and execute TinyLanguage source, returning concatenated output.
 
@@ -855,7 +863,7 @@ def compile_and_run(
     resolution strategies. Any error raised during execution is intentionally
     allowed to propagate so the caller can render it with full context.
     """
-    stmts = _parse_and_lint(src)
+    stmts = _parse_and_lint(src, repl_mode=repl_mode)
     runtime = runtime or Runtime(src)  # Reuse an existing runtime or create a fresh one
     if copy_on_call is not None:
         runtime.copy_on_call = copy_on_call
@@ -1818,6 +1826,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                         runtime=runtime,
                         stream_output=True,
                         copy_on_call=args.copy_on_call,
+                        repl_mode=True,
                     )
                 except TinyLangError as err:
                     print(_format_error_for_source(src, err), file=sys.stderr)

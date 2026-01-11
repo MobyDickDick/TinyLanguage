@@ -553,6 +553,18 @@ def test_repl_reports_errors(monkeypatch, capsys):
     assert "expected" in captured.err
 
 
+def test_repl_allows_underscore_binding(monkeypatch, capsys):
+    monkeypatch.setattr("sys.stdin", io.StringIO("def _ = 1;\nprint(0);\n"))
+
+    exit_code = main(["--repl"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "tiny> " in captured.out
+    assert "0\n" in captured.out
+    assert captured.err == ""
+
+
 def test_console_read_line_returns_input(monkeypatch):
     prompts: list[str] = []
 

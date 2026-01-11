@@ -39,7 +39,8 @@ print("The next errors are triggered on purpose; the program still continues and
 
 // 2) Error case: demonstrate an out-of-bounds access.
 def too_short = new[1, 2]; // Create a short array.
-def _oob_value = heap_get(too_short, 5); // Runtime error is recorded.
+def oob_value = heap_get(too_short, 5); // Runtime error is recorded.
+def _ = oob_value;
 
 // Cache the error string immediately to avoid rebuilding it later.
 def oob_error = errorMessage;             // Store the most recent error.

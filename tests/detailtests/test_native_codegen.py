@@ -65,8 +65,10 @@ def test_boolean_formatting_matches_interpreter():
 def test_heap_roundtrip_matches_interpreter():
     source = """
     def p = new(2);
-    def _set1 = heap_set(p, 0, 10);
-    def _set2 = heap_set(p, 1, 20);
+    def set1 = heap_set(p, 0, 10);
+    if (set1.e.code != 0) { print(set1.e.msg); }
+    def set2 = heap_set(p, 1, 20);
+    if (set2.e.code != 0) { print(set2.e.msg); }
     print(heap_get(p, 0), heap_get(p, 1));
     """
     _assert_native_matches(source)

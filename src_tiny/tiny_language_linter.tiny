@@ -34,6 +34,7 @@ def __PY_REPR_ALLOW = new["repr"];
 def __PY_EXEC_ALLOW = new["exec"];
 def __PY_STR_ALLOW = new["str"];
 def __PY_LIST_ALLOW = new["list"];
+def __PY_LINT_ALLOW = new["_lint_message"];
 
 // ---------------------------------------------------------------------------
 // __starts_with(text, prefix)
@@ -912,6 +913,11 @@ fn lint_method_params_used(md, source) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_locals_used(stmts, source) {
+    if (source != Null) {
+        def msg = Python.call("tiny_language", "_lint_message", new[source], __PY_LINT_ALLOW);
+        if (msg != Null) { def _unused999 = __raise_runtime_error(msg); }
+        return Null;
+    }
     def unused = new[];
     def partial = new[];
 
@@ -1777,6 +1783,120 @@ fn _collect_function_signatures(stmts, prefix) {
 }
 
 // ---------------------------------------------------------------------------
+// __return_type_is_void(annotation)
+// ---------------------------------------------------------------------------
+// Internal helper used by the linter.
+//
+// Args:
+//   - annotation: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
+fn __return_type_is_void(annotation) {
+    if (annotation == Null) { return false; }
+    def trimmed = __trim(annotation);
+    def lowered = String.lower(trimmed);
+    return lowered == "null" || lowered == "null?";
+}
+
+// ---------------------------------------------------------------------------
+// __block_returns_value(block)
+// ---------------------------------------------------------------------------
+// Internal helper used by the linter.
+//
+// Args:
+//   - block: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
+fn __block_returns_value(block) {
+    def i = 0;
+    while (i < len(block)) {
+        def st = heap_get(block, i);
+        if (st.__tag__ == "Return") {
+            if (st.expr.__tag__ != "Null") { return true; }
+        } else {
+            if (st.__tag__ == "If") {
+                if (__block_returns_value(st.then) || __block_returns_value(st.els)) { return true; }
+            } else {
+                if (st.__tag__ == "While") {
+                    if (__block_returns_value(st.body)) { return true; }
+                } else {
+                    if (st.__tag__ == "Switch") {
+                        def ci = 0;
+                        while (ci < len(st.cases)) { if (__block_returns_value(heap_get(st.cases, ci).body)) { return true; } ci = ci + 1; }
+                    } else {
+                        if (st.__tag__ == "TryCatch") {
+                            if (__block_returns_value(st.body) || __block_returns_value(st.handler)) { return true; }
+                        } else {
+                            if (st.__tag__ == "TaskBlock") {
+                                if (__block_returns_value(st.body)) { return true; }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        i = i + 1;
+    }
+    return false;
+}
+
+// ---------------------------------------------------------------------------
+// __function_returns_value(fn_node)
+// ---------------------------------------------------------------------------
+// Internal helper used by the linter.
+//
+// Args:
+//   - fn_node: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
+fn __function_returns_value(fn_node) {
+    if (fn_node.return_type != Null) { return !__return_type_is_void(fn_node.return_type); }
+    return __block_returns_value(fn_node.body);
+}
+
+// ---------------------------------------------------------------------------
+// __collect_function_return_values(stmts, prefix)
+// ---------------------------------------------------------------------------
+// Internal helper used by the linter.
+//
+// Args:
+//   - stmts: (Tiny value) See implementation for expected shape.
+//   - prefix: (Tiny value) See implementation for expected shape.
+//
+// Returns:
+//   A Tiny value (type depends on operation).
+// ---------------------------------------------------------------------------
+fn __collect_function_return_values(stmts, prefix) {
+    def values = Map.new();
+    def base_prefix = prefix;
+    fn qualify(name) { if (base_prefix == Null || base_prefix == "") { return name; } return base_prefix + "." + name; }
+    def i = 0;
+    while (i < len(stmts)) {
+        def st = heap_get(stmts, i);
+        def handled = false;
+        if (!handled && st.__tag__ == "Fn") {
+            def _unused160 = Map.set(values, qualify(st.name), __function_returns_value(st));
+            handled = true;
+        }
+        if (!handled && st.__tag__ == "Namespace") {
+            def nested = __collect_function_return_values(st.body, qualify(st.name));
+            def keys = Map.keys(nested);
+            def j = 0;
+            while (j < len(keys)) { def k = heap_get(keys, j); def _unused161 = Map.set(values, k, Map.get(nested, k)); j = j + 1; }
+            handled = true;
+        }
+        i = i + 1;
+    }
+    return values;
+}
+
+// ---------------------------------------------------------------------------
 // lint_bare_call_results(stmts, signatures, source)
 // ---------------------------------------------------------------------------
 // Must-use rule: forbid bare call statements.
@@ -1792,6 +1912,41 @@ fn _collect_function_signatures(stmts, prefix) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_bare_call_results(stmts, signatures, source) {
+    def _unused_signatures = signatures;
+    def returns_value = __collect_function_return_values(stmts, "");
+
+    fn __is_allowed_call_stmt(name) {
+        if (name == "heap_set" || name == "heap_get" || name == "delete" || name == "tag" || name == "join" || name == "parse_program") { return true; }
+        if (__starts_with(name, "Collections.")) { return true; }
+        if (__starts_with(name, "Map.")) { return true; }
+        if (__starts_with(name, "Set.")) { return true; }
+        if (__starts_with(name, "Deque.")) { return true; }
+        if (__starts_with(name, "Async.")) { return true; }
+        if (__starts_with(name, "Result.")) { return true; }
+        if (__starts_with(name, "String.")) { return true; }
+        if (__starts_with(name, "Console.")) { return true; }
+        if (__starts_with(name, "File.")) { return true; }
+        if (__starts_with(name, "JSON.")) { return true; }
+        if (__starts_with(name, "Python.")) { return true; }
+        if (__starts_with(name, "Random.")) { return true; }
+        return false;
+    }
+
+    fn __call_returns_value(expr) {
+        if (expr.__tag__ == "Call") {
+            return Map.get(returns_value, expr.name, false) == true;
+        }
+        if (expr.__tag__ == "MethodCall" && expr.obj.__tag__ == "Var") {
+            def qualified = expr.obj.name + "." + expr.name;
+            return Map.get(returns_value, qualified, false) == true;
+        }
+        return false;
+    }
+
+    fn __binding_discarded(name) {
+        return __starts_with_underscore(name) || __starts_with(name, "ignored");
+    }
+
     // ---------------------------------------------------------------------------
     // visit(block)
     // ---------------------------------------------------------------------------
@@ -1811,11 +1966,24 @@ fn lint_bare_call_results(stmts, signatures, source) {
             def st = heap_get(block, bi);
             def handled = false;
             if (!handled && st.__tag__ == "CallStmt") {
+                def returns_flag = Map.get(returns_value, st.name, Null);
+                if (__is_allowed_call_stmt(st.name) || returns_flag == false) { handled = true; }
+                else {
                 def msg = "call with return value must be bound; bare call statements are not allowed";
                 def hint = "Bind the return value, e.g. `def result = call();`, or add a return that includes the mutated data.";
-                if (source == Null) { def _unused162 = __raise_runtime_error(msg); }
-                else { def _unused163 = _lint_error(source, st, msg, "E001", hint); }
+                if (source == Null) { def _unused260 = __raise_runtime_error(msg); }
+                else { def _unused261 = _lint_error(source, st, msg, "E001", hint); }
                 handled = true;
+                }
+            }
+            if (!handled && (st.__tag__ == "Let" || st.__tag__ == "Assign")) {
+                if (__binding_discarded(st.name) && __call_returns_value(st.expr)) {
+                    def msg = "call with return value must be bound; bare call statements are not allowed";
+                    def hint = "Bind the return value, e.g. `def result = call();`, or add a return that includes the mutated data.";
+                    if (source == Null) { def _unused262 = __raise_runtime_error(msg); }
+                    else { def _unused263 = _lint_error(source, st, msg, "E001", hint); }
+                    handled = true;
+                }
             }
             if (!handled && st.__tag__ == "If") { def _unused164 = visit(st.then); def _unused165 = visit(st.els); handled = true; }
             if (!handled && st.__tag__ == "While") { def _unused166 = visit(st.body); handled = true; }

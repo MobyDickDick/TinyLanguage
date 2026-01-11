@@ -1246,7 +1246,18 @@ class Parser:
                     # otherwise treat it as a variant name and fall through
                     variants.append(TypeVariant(first_name_tok.text, self.parse_variant_fields()))
                     semi = self._eat("SYM", ";")
+                elif self.tok.kind == "KW" and self.tok.text == "def":
+                    self._eat("KW", "def")
+                    self._eat("NAME")
+                    self._eat("SYM", "=")
+                    vname = self._eat("NAME").text
+                    vfields = self.parse_variant_fields()
+                    semi = self._eat("SYM", ";")
+                    variants.append(TypeVariant(vname, vfields))
                 while not self._accept("SYM", "}"):
+                    if self._accept("KW", "def"):
+                        self._eat("NAME")
+                        self._eat("SYM", "=")
                     vname = self._eat("NAME").text
                     vfields = self.parse_variant_fields()
                     semi = self._eat("SYM", ";")
@@ -2544,6 +2555,10 @@ class NativeCodeGenerator:
             instructions.append(self._instr(Opcode.BINARY, expr.op, expr))
             return instructions
         if isinstance(expr, Call):
+            if expr.name == "flush":
+                if expr.args:
+                    raise self._error("flush expects no arguments", node=expr)
+                return [self._instr(Opcode.FLUSH, None, expr), self._instr(Opcode.PUSH_CONST, None, expr)]
             if expr.name in {"__new", "new", "heap_get", "heap_set", "delete"} and not self._allow_heap:
                 raise self._error("native codegen does not yet support heap allocations", node=expr)
             call_name = self._qualify_name(expr.name)
@@ -7081,15 +7096,114 @@ def _collect_function_signatures(stmts: List[IR], prefix: str = "") -> Dict[str,
     return sigs
 
 
+def _return_type_is_void(annotation: Optional[str]) -> bool:
+    if annotation is None:
+        return False
+    normalized = annotation.strip().lower()
+    return normalized in {"null", "null?"}
+
+
+def _function_returns_value(fn: Fn) -> bool:
+    if fn.return_type is not None:
+        return not _return_type_is_void(fn.return_type)
+
+    def visit(block: List[IR]) -> bool:
+        for st in block:
+            if isinstance(st, Return):
+                return not isinstance(st.expr, Null)
+            if isinstance(st, If):
+                if visit(st.then) or visit(st.els):
+                    return True
+            elif isinstance(st, While):
+                if visit(st.body):
+                    return True
+            elif isinstance(st, Switch):
+                for case in st.cases:
+                    if visit(case.body):
+                        return True
+            elif isinstance(st, TryCatch):
+                if visit(st.body) or visit(st.handler):
+                    return True
+            elif isinstance(st, TaskBlock):
+                if visit(st.body):
+                    return True
+            elif isinstance(st, (Fn, MethodDef, ClassDef, Namespace)):
+                continue
+        return False
+
+    return visit(fn.body)
+
+
+def _collect_function_return_values(stmts: List[IR], prefix: str = "") -> Dict[str, bool]:
+    returns_value: Dict[str, bool] = {}
+
+    def qualify(name: str) -> str:
+        return f"{prefix}.{name}" if prefix else name
+
+    for st in stmts:
+        if isinstance(st, Fn):
+            returns_value[qualify(st.name)] = _function_returns_value(st)
+        elif isinstance(st, Namespace):
+            nested_prefix = qualify(st.name)
+            returns_value.update(_collect_function_return_values(st.body, prefix=nested_prefix))
+    return returns_value
+
+
 def lint_bare_call_results(
     stmts: List[IR], signatures: Dict[str, Optional[str]], source: Optional[str] = None
 ) -> None:
+    del signatures
+    returns_value = _collect_function_return_values(stmts)
+    allowed_call_stmts = {"heap_set", "heap_get", "delete", "tag", "join", "parse_program"}
+    allowed_call_prefixes = (
+        "Collections.",
+        "Map.",
+        "Set.",
+        "Deque.",
+        "Async.",
+        "Result.",
+        "String.",
+        "Console.",
+        "File.",
+        "JSON.",
+        "Python.",
+        "Random.",
+    )
+
+    def _call_stmt_allowed(name: str) -> bool:
+        if name in allowed_call_stmts:
+            return True
+        return any(name.startswith(prefix) for prefix in allowed_call_prefixes)
+
+    def _call_returns_value(expr: IR) -> bool:
+        if isinstance(expr, Call):
+            return returns_value.get(expr.name, False)
+        if isinstance(expr, MethodCall) and isinstance(expr.obj, Var):
+            qualified = f"{expr.obj.name}.{expr.name}"
+            return returns_value.get(qualified, False)
+        return False
+
+    def _binding_discarded(name: str) -> bool:
+        return name.startswith("_") or name.startswith("ignored")
+
     def visit(block: List[IR]) -> None:
         for st in block:
             if isinstance(st, CallStmt):
+                if _call_stmt_allowed(st.name) or returns_value.get(st.name) is False:
+                    continue
                 hint = "Bind the return value, e.g. `def result = call();`, or add a return that includes the mutated data."
-                msg = "call with return value must be bound; bare call statements are not allowed"
-                raise _lint_error(source, st, msg, code="E001", hint=hint)
+                msg = (
+                    "call with return value must be bound; bare call statements are not allowed "
+                    f"(offending call: {st.name}())"
+                )
+                raise _lint_error(source, st.pos, msg, code="E001", hint=hint)
+            if isinstance(st, (Let, Assign)) and _binding_discarded(st.name) and _call_returns_value(st.expr):
+                hint = "Bind the return value, e.g. `def result = call();`, or add a return that includes the mutated data."
+                msg = (
+                    "call with return value must be bound; bare call statements are not allowed "
+                    f"(offending call: {st.expr.name}())"
+                )
+                raise _lint_error(source, st.pos, msg, code="E001", hint=hint)
             if isinstance(st, If):
                 visit(st.then)
                 visit(st.els)
@@ -9613,6 +9727,64 @@ def _prefer_named_span(node: IR, attr: str) -> Union[SourcePos, SourceSpan]:
         return span
     return _span_or_pos(node)
 
+
+def _return_type_is_void(annotation: Optional[str]) -> bool:
+    if annotation is None:
+        return False
+    normalized = annotation.strip().lower()
+    return normalized in {"null", "null?"}
+
+
+def _block_returns_value(stmts: List[IR]) -> bool:
+    for st in stmts:
+        if isinstance(st, Return):
+            return not isinstance(st.expr, Null)
+        if isinstance(st, If):
+            if _block_returns_value(st.then) or _block_returns_value(st.els):
+                return True
+        elif isinstance(st, While):
+            if _block_returns_value(st.body):
+                return True
+        elif isinstance(st, Switch):
+            for case in st.cases:
+                if _block_returns_value(case.body):
+                    return True
+        elif isinstance(st, TryCatch):
+            if _block_returns_value(st.body) or _block_returns_value(st.handler):
+                return True
+        elif isinstance(st, TaskBlock):
+            if _block_returns_value(st.body):
+                return True
+    return False
+
+
+def _fn_returns_value(fn: Fn) -> bool:
+    if fn.return_type is not None:
+        return not _return_type_is_void(fn.return_type)
+    return _block_returns_value(fn.body)
+
+
+_ALLOWED_CALL_PREFIXES = (
+    "Collections.",
+    "Map.",
+    "Set.",
+    "Deque.",
+    "Async.",
+    "Result.",
+    "String.",
+    "Console.",
+    "File.",
+    "JSON.",
+    "Python.",
+    "Random.",
+)
+
+
+def _call_stmt_allowed(name: str) -> bool:
+    if name in {"heap_set", "heap_get", "delete", "tag", "join", "parse_program"}:
+        return True
+    return name.startswith(_ALLOWED_CALL_PREFIXES)
+
 def eval_block(self, stmts: List[IR], env: "Environment", namespace: Optional[str] = None) -> Any:
     for st in stmts:
         res = self.eval_stmt(st, env, namespace)
@@ -9737,8 +9909,12 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
         elif isinstance(s, Return):
             return ReturnSignal(self.eval_expr(s.expr, env))
         elif isinstance(s, CallStmt):
-            allowed = s.name in {"heap_set", "heap_get", "delete", "tag", "join"}
+            allowed = _call_stmt_allowed(s.name)
             if not allowed:
+                _, fn = self._resolve_function(s.name, env)
+                if fn is not None and not _fn_returns_value(fn):
+                    self.eval_expr(Call(s.name, s.args, pos=s.pos), env)
+                    return None
                 raise RuntimeError(
                     f"call with return value must be bound; bare call statements are not allowed (offending call: {s.name}())"
                 )
@@ -9804,6 +9980,11 @@ def eval_expr(self, e: IR, env: "Environment") -> Any:
                 candidates=env.all_names(),
             )
         if isinstance(e, Call):
+            if e.name == "flush":
+                if e.args:
+                    raise RuntimeError("flush expects no arguments")
+                self.flush_streams()
+                return None
             if e.name == "__type_field_type":
                 return self.type_field_type(str(self.eval_expr(e.args[0], env)), str(self.eval_expr(e.args[1], env)))
             if e.name == "__new":
@@ -10631,6 +10812,15 @@ def _parse_and_lint(src: str, *, use_tiny_parser: Optional[bool] = None) -> List
     lint_nested(stmts)
     lint_bare_call_results(stmts, signatures, src)
     return stmts
+
+
+def _lint_message(source: str) -> Optional[str]:
+    """Return the linter error message for a source string, if any."""
+    try:
+        _parse_and_lint(source)
+    except Exception as exc:  # pragma: no cover - passthrough for Tiny linter parity
+        return str(exc)
+    return None
 
 
 class NativeModuleResolver:

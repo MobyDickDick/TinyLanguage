@@ -73,6 +73,64 @@ def _prefer_named_span(node: IR, attr: str) -> Union[SourcePos, SourceSpan]:
         return span
     return _span_or_pos(node)
 
+
+def _return_type_is_void(annotation: Optional[str]) -> bool:
+    if annotation is None:
+        return False
+    normalized = annotation.strip().lower()
+    return normalized in {"null", "null?"}
+
+
+def _block_returns_value(stmts: List[IR]) -> bool:
+    for st in stmts:
+        if isinstance(st, Return):
+            return not isinstance(st.expr, Null)
+        if isinstance(st, If):
+            if _block_returns_value(st.then) or _block_returns_value(st.els):
+                return True
+        elif isinstance(st, While):
+            if _block_returns_value(st.body):
+                return True
+        elif isinstance(st, Switch):
+            for case in st.cases:
+                if _block_returns_value(case.body):
+                    return True
+        elif isinstance(st, TryCatch):
+            if _block_returns_value(st.body) or _block_returns_value(st.handler):
+                return True
+        elif isinstance(st, TaskBlock):
+            if _block_returns_value(st.body):
+                return True
+    return False
+
+
+def _fn_returns_value(fn: Fn) -> bool:
+    if fn.return_type is not None:
+        return not _return_type_is_void(fn.return_type)
+    return _block_returns_value(fn.body)
+
+
+_ALLOWED_CALL_PREFIXES = (
+    "Collections.",
+    "Map.",
+    "Set.",
+    "Deque.",
+    "Async.",
+    "Result.",
+    "String.",
+    "Console.",
+    "File.",
+    "JSON.",
+    "Python.",
+    "Random.",
+)
+
+
+def _call_stmt_allowed(name: str) -> bool:
+    if name in {"heap_set", "heap_get", "delete", "tag", "join", "parse_program"}:
+        return True
+    return name.startswith(_ALLOWED_CALL_PREFIXES)
+
 def eval_block(self, stmts: List[IR], env: "Environment", namespace: Optional[str] = None) -> Any:
     for st in stmts:
         res = self.eval_stmt(st, env, namespace)
@@ -197,8 +255,12 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
         elif isinstance(s, Return):
             return ReturnSignal(self.eval_expr(s.expr, env))
         elif isinstance(s, CallStmt):
-            allowed = s.name in {"heap_set", "heap_get", "delete", "tag", "join"}
+            allowed = _call_stmt_allowed(s.name)
             if not allowed:
+                _, fn = self._resolve_function(s.name, env)
+                if fn is not None and not _fn_returns_value(fn):
+                    self.eval_expr(Call(s.name, s.args, pos=s.pos), env)
+                    return None
                 raise RuntimeError(
                     f"call with return value must be bound; bare call statements are not allowed (offending call: {s.name}())"
                 )
@@ -264,6 +326,11 @@ def eval_expr(self, e: IR, env: "Environment") -> Any:
                 candidates=env.all_names(),
             )
         if isinstance(e, Call):
+            if e.name == "flush":
+                if e.args:
+                    raise RuntimeError("flush expects no arguments")
+                self.flush_streams()
+                return None
             if e.name == "__type_field_type":
                 return self.type_field_type(str(self.eval_expr(e.args[0], env)), str(self.eval_expr(e.args[1], env)))
             if e.name == "__new":

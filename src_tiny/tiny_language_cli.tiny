@@ -21,4 +21,4 @@ fn run() {
     def _unused1 = builtins.exit(code);
 }
 
-def _unused2 = run();
+def __unused2 = run();

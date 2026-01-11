@@ -96,4 +96,4 @@ fn run() {
     return 0;
 }
 
-def _unused8 = run();
+def __unused8 = run();

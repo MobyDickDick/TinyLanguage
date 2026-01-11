@@ -84,7 +84,7 @@ def test_cli_hover_returns_position():
 
 def test_cli_reports_diagnostics():
     payload = run_cli(
-        ["--source", "fn greet() -> string { return \"hi\"; }\ndef _ = greet();", "diagnostics"]
+        ["--source", "fn greet() -> string { return \"hi\"; }\ndef ignored1 = greet();", "diagnostics"]
     )
     assert payload == []
 

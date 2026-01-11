@@ -69,7 +69,7 @@ def test_definition_returns_source_position():
 
 
 def test_diagnostics_from_lints():
-    server = TinyLanguageServer("fn greet() -> string { return \"hi\"; }\ndef _ = greet();")
+    server = TinyLanguageServer("fn greet() -> string { return \"hi\"; }\ndef ignored1 = greet();")
     diags = server.diagnostics()
     assert diags == []
 

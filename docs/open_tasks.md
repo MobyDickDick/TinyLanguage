@@ -6,7 +6,7 @@ are grouped by area and can be tackled independently.
 ## Frontend / language
 
 - [x] Improve error positions and messages (tokens + AST nodes carry line/column; unify error type with optional `SourceSpan`).
-- [ ] Refine the linter (must-use across control flow; unreachable-code warnings).
+- [x] Refine the linter (must-use across control flow; unreachable-code warnings).
 
 ## Type discipline
 

@@ -6704,8 +6704,9 @@ def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None
 
 
 def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
-    Location : Union[SourcePos, SourceSpan]
+    Location = Union[SourcePos, SourceSpan]
     unused: List[tuple[str, Location]] = []
+    partial: List[tuple[str, Location]] = []
 
     def names_in_expr(expr: IR) -> Set[str]:
         reads: Dict[str, int] = {}
@@ -6890,32 +6891,37 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
 
     usage_summary: Dict[tuple[str, Location], Dict[str, bool]] = {}
 
-    def _accumulate(states: List[Dict[str, tuple[Location, bool, bool]]], key: str):
+    def _accumulate(states: List[Dict[str, tuple[Location, bool, bool]]], *, active_state: bool) -> None:
         for state in states:
             for name, (pos, used_all, used_any) in state.items():
-                entry = usage_summary.setdefault((name, pos), {
-                    "active_all": True,
-                    "active_any": False,
-                    "active_present": False,
-                    "term_any": False,
-                })
-                if key == "active":
+                entry = usage_summary.setdefault(
+                    (name, pos),
+                    {
+                        "used_any": False,
+                        "active_all": True,
+                        "active_present": False,
+                    },
+                )
+                entry["used_any"] = entry["used_any"] or used_any
+                if active_state:
                     entry["active_all"] = entry["active_all"] and used_all
-                    entry["active_any"] = entry["active_any"] or used_any
                     entry["active_present"] = True
-                else:
-                    entry["term_any"] = entry["term_any"] or used_any
 
-    _accumulate(active, "active")
-    _accumulate(terminated, "term")
+    _accumulate(active, active_state=True)
+    _accumulate(terminated, active_state=False)
 
     for (name, pos), info in usage_summary.items():
         if name.startswith("_") or name.startswith("ignored"):
             continue
 
-        used_any = info["active_any"] or info["term_any"]
+        used_any = info["used_any"]
+        active_all = info["active_all"]
+        active_present = info["active_present"]
         if not used_any:
             unused.append((name, pos))
+            continue
+        if active_present and not active_all:
+            partial.append((name, pos))
             continue
 
     if unused:
@@ -6924,6 +6930,17 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
         pos = unused[0][1]
         msg = f"unused local binding(s): {', '.join(names)}"
         raise _lint_error(source, pos, msg, code="E002", hint="Remove the unused binding or reference it.")
+    if partial:
+        names = [name for name, _ in partial]
+        pos = partial[0][1]
+        msg = f"local binding(s) must be used on all control-flow paths: {', '.join(names)}"
+        raise _lint_error(
+            source,
+            pos,
+            msg,
+            code="E002",
+            hint="Ensure the binding is referenced on every path or remove it.",
+        )
 
 
 def _infer_expr_type(expr: IR, env: Dict[str, str]) -> Optional[str]:
@@ -7172,6 +7189,8 @@ def _stmt_guarantees_exit(st: IR) -> bool:
         return _block_guarantees_return(st.body) and _block_guarantees_return(st.handler)
     if isinstance(st, TaskBlock):
         return _block_guarantees_return(st.body)
+    if isinstance(st, While):
+        return isinstance(st.cond, Bool) and st.cond.value
     return False
 
 
@@ -7246,7 +7265,7 @@ def lint_unreachable_code(stmts: List[IR], source: Optional[str] = None) -> None
         terminated = False
         for st in block:
             if terminated:
-                msg = "unreachable statement after a return"
+                msg = "unreachable statement after a guaranteed exit"
                 raise _lint_error(
                     source,
                     st,

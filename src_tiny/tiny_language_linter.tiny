@@ -913,6 +913,7 @@ fn lint_method_params_used(md, source) {
 // ---------------------------------------------------------------------------
 fn lint_locals_used(stmts, source) {
     def unused = new[];
+    def partial = new[];
 
     // ---------------------------------------------------------------------------
     // names_in_expr(expr)
@@ -1337,7 +1338,7 @@ fn lint_locals_used(stmts, source) {
     }
 
     // ---------------------------------------------------------------------------
-    // _accumulate(states, key)
+    // _accumulate(states, active_state)
     // ---------------------------------------------------------------------------
     // Helper function used by the linter.
     //
@@ -1345,12 +1346,11 @@ fn lint_locals_used(stmts, source) {
     //
     // Args:
     //   - states: (Tiny value) See implementation for expected shape.
-    //   - key: (Tiny value) See implementation for expected shape.
-    //
+    //   - active_state: (Tiny value) See implementation for expected shape.
     // Returns:
     //   A Tiny value (type depends on operation).
     // ---------------------------------------------------------------------------
-    fn _accumulate(states, key) {
+    fn _accumulate(states, active_state) {
         def si = 0;
         while (si < len(states)) {
             def st = heap_get(states, si);
@@ -1367,19 +1367,16 @@ fn lint_locals_used(stmts, source) {
                 if (prev == Null) {
                     def fresh = Map.new();
                     def _p1 = Map.set(fresh, "pos", pos);
-                    def _p2 = Map.set(fresh, "active_all", true);
-                    def _p3 = Map.set(fresh, "active_any", false);
+                    def _p2 = Map.set(fresh, "used_any", false);
+                    def _p3 = Map.set(fresh, "active_all", true);
                     def _p4 = Map.set(fresh, "active_present", false);
-                    def _p5 = Map.set(fresh, "term_any", false);
                     def _ = Map.set(usage_summary, map_key, fresh);
                     prev = fresh;
                 }
-                if (key == "active") {
-                    def _ = Map.set(prev, "active_all", Map.get(prev, "active_all") && used_all);
-                    def _a = Map.set(prev, "active_any", Map.get(prev, "active_any") || used_any);
-                    def _p = Map.set(prev, "active_present", true);
-                } else {
-                    def _t = Map.set(prev, "term_any", Map.get(prev, "term_any") || used_any);
+                def _ = Map.set(prev, "used_any", Map.get(prev, "used_any") || used_any);
+                if (active_state) {
+                    def _a = Map.set(prev, "active_all", Map.get(prev, "active_all") && used_all);
+                    def _b = Map.set(prev, "active_present", true);
                 }
                 ki = ki + 1;
             }
@@ -1387,8 +1384,8 @@ fn lint_locals_used(stmts, source) {
         }
     }
 
-    _accumulate(active, "active");
-    _accumulate(terminated, "term");
+    _accumulate(active, true);
+    _accumulate(terminated, false);
 
     def summary_keys = Map.keys(usage_summary);
     def si = 0;
@@ -1398,10 +1395,17 @@ fn lint_locals_used(stmts, source) {
         def name_parts = String.split(key, "@");
         def name = heap_get(name_parts, 0);
         if (!(__starts_with_underscore(name) || __starts_with(name, "ignored"))) {
-            def used_any = Map.get(info, "active_any") || Map.get(info, "term_any");
+            def used_any = Map.get(info, "used_any");
+            def active_all = Map.get(info, "active_all");
+            def active_present = Map.get(info, "active_present");
             if (!used_any) {
                 def pos = Map.get(info, "pos");
                 def _ = Collections.push(unused, new[name, pos]);
+            } else {
+                if (active_present && !active_all) {
+                    def pos = Map.get(info, "pos");
+                    def _ = Collections.push(partial, new[name, pos]);
+                }
             }
         }
         si = si + 1;
@@ -1415,6 +1419,15 @@ fn lint_locals_used(stmts, source) {
         def msg = "unused local binding(s): " + String.join(names, ", ");
         if (source == Null) { __raise_runtime_error(msg); }
         else { _lint_error(source, pos, msg, "E002", "Remove the unused binding or reference it."); }
+    }
+    if (len(partial) > 0) {
+        def names = new[];
+        def pos = heap_get(heap_get(partial, 0), 1);
+        def ui = 0;
+        while (ui < len(partial)) { def _ = Collections.push(names, heap_get(heap_get(partial, ui), 0)); ui = ui + 1; }
+        def msg = "local binding(s) must be used on all control-flow paths: " + String.join(names, ", ");
+        if (source == Null) { __raise_runtime_error(msg); }
+        else { _lint_error(source, pos, msg, "E002", "Ensure the binding is referenced on every path or remove it."); }
     }
 }
 
@@ -2148,6 +2161,7 @@ fn _stmt_guarantees_exit(st) {
         return has_default && all_return;
     }
     if (st.__tag__ == "TryCatch") { return _block_guarantees_return(st.body) && _block_guarantees_return(st.handler); }
+    if (st.__tag__ == "While") { return st.cond.__tag__ == "Bool" && st.cond.value; }
     return false;
 }
 
@@ -2282,7 +2296,7 @@ fn lint_unreachable_code(stmts, source) {
         while (i < len(block)) {
             def st = heap_get(block, i);
             if (terminated) {
-                def msg = "unreachable statement after a return";
+                def msg = "unreachable statement after a guaranteed exit";
                 if (source == Null) { __raise_runtime_error(msg); }
                 else { _lint_error(source, st, msg, "E013", "Remove the dead code or restructure control flow so it can be reached."); }
             }

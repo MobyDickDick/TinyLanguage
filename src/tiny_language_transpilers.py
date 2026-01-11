@@ -773,10 +773,10 @@ class TinyLanguageTranspiler(LanguageTranspiler):
             elif isinstance(stmt, ExprStmt):
                 expr_source = self._render_expr(stmt.expr)
                 if isinstance(stmt.expr, Call):
-                    unused_name = self._next_unused(local_defined)
                     if stmt.expr.func == "print":
                         rendered.append(f"{pad}{expr_source};")
                     else:
+                        unused_name = self._next_unused(local_defined)
                         rendered.append(f"{pad}def {unused_name} = {expr_source};")
                         local_defined.add(unused_name)
                 else:

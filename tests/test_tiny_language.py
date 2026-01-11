@@ -653,15 +653,15 @@ def test_unused_binding_in_nested_block_method():
 def test_unused_binding_must_be_used_on_all_paths():
     src = """
     def x = 1;
-    if (true) {
+    def flag = 1;
+    if (flag) {
         print(x);
     } else {
         print(0);
     }
     """
 
-    out = run_tiny(src)
-    assert out == "1\n"
+    expect_compile_error(src, r"local binding\(s\) must be used on all control-flow paths: x")
 
 
 def test_binding_used_in_all_branches_is_ok():
@@ -703,7 +703,21 @@ def test_unreachable_statement_after_return():
     demo();
     """
 
-    expect_compile_error(src, r"unreachable statement after a return")
+    expect_compile_error(src, r"unreachable statement after a guaranteed exit")
+
+
+def test_unreachable_statement_after_infinite_loop():
+    src = """
+    fn demo() {
+        while (true) {
+            print(1);
+        }
+        print(2);
+    }
+    demo();
+    """
+
+    expect_compile_error(src, r"unreachable statement after a guaranteed exit")
 
 
 def test_method_param_mutation_must_be_returned():

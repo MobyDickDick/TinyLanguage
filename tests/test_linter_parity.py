@@ -113,6 +113,16 @@ def run_tiny_linter(source: str) -> str | None:
             id="sorted_destruct_missing_outputs",
         ),
         pytest.param("def x = 1; if (false) { print(x); }", id="unused_in_unreachable_branch"),
+        pytest.param(
+            "def x = 1;\n"
+            "def flag = 1;\n"
+            "if (flag) { print(x); } else { print(0); }",
+            id="must_use_on_all_paths",
+        ),
+        pytest.param(
+            "fn demo() { while (true) { print(1); } print(2); }",
+            id="unreachable_after_infinite_loop",
+        ),
         pytest.param("import b;\nimport a;\nprint(1);", id="import_ordering"),
         pytest.param(
             "fn f() { if (true) { return { a: 1 }; } return { b: 2 }; }",

@@ -18,7 +18,7 @@ fn main(argv) {
 
 fn run() {
     def code = tiny_cli.main(__argv_from_env());
-    def unused1 = builtins.exit(code);
+    return builtins.exit(code);
 }
 
-def ignored1 = run();
+if (run() == Null) { }

@@ -52,7 +52,7 @@ fn copy_batch(files, dest_dir, limit, delay) {
         print("copied", os_path.basename(source_path), "->", destination);
         Collections.push(copied, source_path);
 
-        if (idx + 1 < end) { def unused2 = time.sleep(delay); }
+        if (idx + 1 < end) { time.sleep(delay); }
         idx = idx + 1;
     }
 
@@ -134,4 +134,4 @@ fn main() {
     return 0;
 }
 
-def unused7 = main();
+if (main() == Null) { }

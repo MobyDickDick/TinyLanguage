@@ -27,7 +27,7 @@ fn __reverse_list(items) {
     def out = new[];
     def i = len(items) - 1;
     while (i >= 0) {
-        def unused1 = Collections.push(out, heap_get(items, i));
+        Collections.push(out, heap_get(items, i));
         i = i - 1;
     }
     return out;
@@ -38,7 +38,7 @@ fn __pop_args(stack, count) {
     def i = 0;
     while (i < count) {
         def val = Collections.pop(stack);
-        def unused2 = Collections.push(raw, val);
+        Collections.push(raw, val);
         i = i + 1;
     }
     return __reverse_list(raw);
@@ -66,8 +66,7 @@ fn __binary_apply(op, left, right) {
     if (op == ">=") { return left >= right; }
     if (op == "&&" || op == "and") { return __to_bool(left) && __to_bool(right); }
     if (op == "||" || op == "or") { return __to_bool(left) || __to_bool(right); }
-    def unused3 = __raise_runtime_error("unsupported operator " + op);
-    return Null;
+    return __raise_runtime_error("unsupported operator " + op);
 }
 
 fn __supported_opcodes() {
@@ -120,23 +119,22 @@ fn NativeVM() {
 fn _vm_load(vm, locals, name) {
     if (Map.has(locals, name)) { return Map.get(locals, name); }
     if (Map.has(vm.globals, name)) { return Map.get(vm.globals, name); }
-    def unused5 = __raise_runtime_error("unknown variable " + name);
-    return Null;
+    return __raise_runtime_error("unknown variable " + name);
 }
 
 fn _vm_call(vm, name, args) {
-    if (vm.program == Null) { def unused6 = __raise_runtime_error("VM has no program loaded"); }
+    if (vm.program == Null) { return __raise_runtime_error("VM has no program loaded"); }
     def target = Map.get(vm.program.functions, name);
-    if (target == Null) { def unused7 = __raise_runtime_error("unknown function " + name); }
+    if (target == Null) { return __raise_runtime_error("unknown function " + name); }
     if (len(args) != len(target.params)) {
-        def unused8 = __raise_runtime_error("function " + name + " expects " + __to_str(len(target.params)) + " args, got " + __to_str(len(args)));
+        return __raise_runtime_error("function " + name + " expects " + __to_str(len(target.params)) + " args, got " + __to_str(len(args)));
     }
     def locals = Map.new();
     def i = 0;
     while (i < len(target.params)) {
         def param = heap_get(target.params, i);
         def arg = heap_get(args, i);
-        def unused9 = Map.set(locals, param, arg);
+        Map.set(locals, param, arg);
         i = i + 1;
     }
     return _vm_execute(vm, _Frame(target.instructions, locals));
@@ -152,31 +150,31 @@ fn _vm_execute(vm, frame) {
         ip = ip + 1;
 
         if (instr.op == OPCODE_PUSH_CONST) {
-            def unused10 = Collections.push(stack, instr.arg);
+            Collections.push(stack, instr.arg);
         } else {
             if (instr.op == OPCODE_LOAD) {
-                def unused11 = Collections.push(stack, _vm_load(vm, locals, instr.arg));
+                Collections.push(stack, _vm_load(vm, locals, instr.arg));
             } else {
                 if (instr.op == OPCODE_STORE) {
                     def value = Collections.pop(stack);
-                    def unused12 = Map.set(locals, instr.arg, value);
+                    Map.set(locals, instr.arg, value);
                     if (locals == vm.globals) { Map.set(vm.globals, instr.arg, value); }
                 } else {
                     if (instr.op == OPCODE_BINARY) {
                         def right = Collections.pop(stack);
                         def left = Collections.pop(stack);
-                        def unused13 = Collections.push(stack, __binary_apply(instr.arg, left, right));
+                        Collections.push(stack, __binary_apply(instr.arg, left, right));
                     } else {
                         if (instr.op == OPCODE_PRINT) {
                             def values = __pop_args(stack, instr.arg);
                             def rendered = new[];
                             def i = 0;
                             while (i < len(values)) {
-                                def unused14 = Collections.push(rendered, __format_value(heap_get(values, i)));
+                                Collections.push(rendered, __format_value(heap_get(values, i)));
                                 i = i + 1;
                             }
                             def line = String.join(rendered, " ") + "\n";
-                            def unused15 = Collections.push(vm.output, line);
+                            Collections.push(vm.output, line);
                         } else {
                             if (instr.op == OPCODE_FLUSH) {
                                 // No-op in Tiny runtime; output is buffered in memory.
@@ -192,17 +190,17 @@ fn _vm_execute(vm, frame) {
                                             def name = heap_get(instr.arg, 0);
                                             def argc = heap_get(instr.arg, 1);
                                             def args = __pop_args(stack, argc);
-                                            def unused16 = Collections.push(stack, _vm_call(vm, name, args));
+                                            Collections.push(stack, _vm_call(vm, name, args));
                                         } else {
                                             if (instr.op == OPCODE_POP) {
-                                                def unused17 = Collections.pop(stack);
+                                                Collections.pop(stack);
                                             } else {
                                                 if (instr.op == OPCODE_RETURN) {
                                                     if (len(stack) == 0) { return Null; }
                                                     return Collections.pop(stack);
                                                 } else {
                                                     def msg = "unknown opcode " + instr.op + ". Supported opcodes: " + __supported_opcodes() + ".";
-                                                    def unused18 = __raise_runtime_error(msg);
+                                                    return __raise_runtime_error(msg);
                                                 }
                                             }
                                         }

@@ -114,7 +114,7 @@ fn __copy_map(map) {
     def i = 0;
     while (i < len(keys)) {
         def k = heap_get(keys, i);
-        def unused1 = Map.set(out, k, Map.get(map, k));
+        Map.set(out, k, Map.get(map, k));
         i = i + 1;
     }
     return out;
@@ -128,7 +128,7 @@ fn __list_or_empty(items) {
 fn __extend(list, items) {
     def i = 0;
     while (i < len(items)) {
-        def unused2 = Collections.push(list, heap_get(items, i));
+        Collections.push(list, heap_get(items, i));
         i = i + 1;
     }
     return list;
@@ -142,7 +142,7 @@ fn __split_params(text) {
     def i = 0;
     while (i < len(parts)) {
         def part = __strip(heap_get(parts, i));
-        if (String.len(part) > 0) { def unused3 = Collections.push(params, part); }
+        if (String.len(part) > 0) { Collections.push(params, part); }
         i = i + 1;
     }
     return params;
@@ -157,7 +157,7 @@ fn __split_by_braces(line) {
         def ch = heap_get(chars, i);
         if (ch == "{" || ch == "}") {
             if (String.len(__strip(current)) > 0) {
-                def unused4 = Collections.push(parts, __strip(current));
+                Collections.push(parts, __strip(current));
             }
             Collections.push(parts, ch);
             current = "";
@@ -167,7 +167,7 @@ fn __split_by_braces(line) {
         i = i + 1;
     }
     if (String.len(__strip(current)) > 0) {
-        def unused5 = Collections.push(parts, __strip(current));
+        Collections.push(parts, __strip(current));
     }
     return parts;
 }
@@ -221,7 +221,7 @@ fn __tokenize_expr(text) {
             }
             def token_chars = Collections.slice(chars, start, i);
             def token = String.join(token_chars, "");
-            def unused6 = Collections.push(tokens, token);
+            Collections.push(tokens, token);
             handled = true;
         }
         if (!handled && __is_digit(ch)) {
@@ -242,7 +242,7 @@ fn __tokenize_expr(text) {
                 }
             }
             def token = String.join(Collections.slice(chars, start, i), "");
-            def unused7 = Collections.push(tokens, token);
+            Collections.push(tokens, token);
             handled = true;
         }
         if (!handled && __is_identifier_start(ch)) {
@@ -250,19 +250,19 @@ fn __tokenize_expr(text) {
             i = i + 1;
             while (i < len(chars) && __is_identifier_char(heap_get(chars, i))) { i = i + 1; }
             def token = String.join(Collections.slice(chars, start, i), "");
-            def unused8 = Collections.push(tokens, token);
+            Collections.push(tokens, token);
             handled = true;
         }
         if (!handled && i + 1 < len(chars)) {
             def two = heap_get(chars, i) + heap_get(chars, i + 1);
             if (two == "==" || two == "!=" || two == "<=" || two == ">=" || two == "**") {
-                def unused9 = Collections.push(tokens, two);
+                Collections.push(tokens, two);
                 i = i + 2;
                 handled = true;
             }
         }
         if (!handled) {
-            def unused10 = Collections.push(tokens, ch);
+            Collections.push(tokens, ch);
             i = i + 1;
         }
     }
@@ -310,25 +310,25 @@ fn __parse_expression(text) {
         def token = consume();
         if (token == "(") {
             def expr = parse_comparison();
-            if (peek() == ")") { def unused11 = consume(); }
+            if (peek() == ")") { if (consume() == Null) { } }
             return expr;
         }
         if (token == Null) { return __raise_runtime_error("Unexpected end of expression"); }
         def first = __first_char(token);
         def next = peek();
         if (__is_identifier_start(first) && next == "(") {
-            def open = consume();
+            if (consume() == Null) { }
             def args = new[];
             if (peek() != ")") {
                 def done = false;
                 while (!done) {
                     def arg_expr = parse_comparison();
-                    def unused12 = Collections.push(args, arg_expr);
-                    if (peek() == ",") { def c2 = consume(); }
+                    Collections.push(args, arg_expr);
+                    if (peek() == ",") { if (consume() == Null) { } }
                     else { done = true; }
                 }
             }
-            if (peek() == ")") { def close = consume(); }
+            if (peek() == ")") { if (consume() == Null) { } }
             return Call(token, args);
         }
         if (__is_identifier_start(first)) {
@@ -346,7 +346,7 @@ fn __parse_expression(text) {
     fn parse_power() {
         def left = parse_primary();
         if (peek() == "**") {
-            def unused13 = consume();
+            if (consume() == Null) { }
             def right = parse_power();
             return BinaryOp("**", left, right);
         }
@@ -359,7 +359,7 @@ fn __parse_expression(text) {
         while (!done) {
             def op = peek();
             if (op == "*" || op == "/" || op == "%") {
-                def unused14 = consume();
+                if (consume() == Null) { }
                 def rhs = parse_power();
                 expr = BinaryOp(op, expr, rhs);
             } else {
@@ -375,7 +375,7 @@ fn __parse_expression(text) {
         while (!done) {
             def op = peek();
             if (op == "+" || op == "-") {
-                def unused15 = consume();
+                if (consume() == Null) { }
                 def rhs = parse_mul();
                 expr = BinaryOp(op, expr, rhs);
             } else {
@@ -389,7 +389,7 @@ fn __parse_expression(text) {
         def expr = parse_add();
         def op = peek();
         if (op == "==" || op == "!=" || op == "<" || op == ">" || op == "<=" || op == ">=") {
-            def unused16 = consume();
+            if (consume() == Null) { }
             def rhs = parse_add();
             return BinaryOp(op, expr, rhs);
         }
@@ -488,7 +488,7 @@ fn __python_tokenize_lines(code) {
         def text = __strip(raw);
         if (String.len(text) > 0) {
             def indent = __line_indent(raw);
-            def unused17 = Collections.push(lines, new[indent, text]);
+            Collections.push(lines, new[indent, text]);
         }
         i = i + 1;
     }
@@ -532,7 +532,7 @@ fn __python_parse_block(lines, start_index, indent_level) {
                     j = heap_get(else_info, 1);
                 }
             }
-            def unused18 = Collections.push(stmts, IfElse(__parse_expression(condition), then_body, else_body));
+            Collections.push(stmts, IfElse(__parse_expression(condition), then_body, else_body));
             i = j;
             handled = true;
         }
@@ -541,12 +541,12 @@ fn __python_parse_block(lines, start_index, indent_level) {
             def body_info = __python_parse_block(lines, i + 1, indent_level + 4);
             def body = heap_get(body_info, 0);
             def j = heap_get(body_info, 1);
-            def unused19 = Collections.push(stmts, While(__parse_expression(condition), body));
+            Collections.push(stmts, While(__parse_expression(condition), body));
             i = j;
             handled = true;
         }
         if (!handled) {
-            def unused20 = Collections.push(stmts, __parse_statement(text));
+            Collections.push(stmts, __parse_statement(text));
             i = i + 1;
         }
     }
@@ -559,7 +559,7 @@ fn __julia_lines(code) {
     def i = 0;
     while (i < len(raw)) {
         def line = __strip(heap_get(raw, i));
-        if (String.len(line) > 0) { def unused21 = Collections.push(lines, line); }
+        if (String.len(line) > 0) { Collections.push(lines, line); }
         i = i + 1;
     }
     return lines;
@@ -596,7 +596,7 @@ fn __julia_parse_block(lines, start_index) {
             if (j >= len(lines) || heap_get(lines, j) != "end") {
                 return __raise_runtime_error("Unterminated Julia if/else block");
             }
-            def unused22 = Collections.push(stmts, IfElse(__parse_expression(condition), then_body, else_body));
+            Collections.push(stmts, IfElse(__parse_expression(condition), then_body, else_body));
             i = j + 1;
             handled = true;
         }
@@ -608,12 +608,12 @@ fn __julia_parse_block(lines, start_index) {
             if (j >= len(lines) || heap_get(lines, j) != "end") {
                 return __raise_runtime_error("Unterminated Julia while block");
             }
-            def unused23 = Collections.push(stmts, While(__parse_expression(condition), body));
+            Collections.push(stmts, While(__parse_expression(condition), body));
             i = j + 1;
             handled = true;
         }
         if (!handled) {
-            def unused24 = Collections.push(stmts, __parse_statement(line));
+            Collections.push(stmts, __parse_statement(line));
             i = i + 1;
         }
     }
@@ -631,7 +631,7 @@ fn __tokenize_brace_lines(code) {
             def j = 0;
             while (j < len(parts)) {
                 def part = __strip_trailing_semicolon(heap_get(parts, j));
-                if (String.len(part) > 0) { def unused25 = Collections.push(tokens, part); }
+                if (String.len(part) > 0) { Collections.push(tokens, part); }
                 j = j + 1;
             }
         }
@@ -701,7 +701,7 @@ fn __parse_brace_block(lines, start_index, label) {
                 if (j >= len(lines) || heap_get(lines, j) != "}") { return __raise_runtime_error("Unterminated " + label + " else block"); }
                 j = j + 1;
             }
-            def unused26 = Collections.push(stmts, IfElse(__parse_expression(condition), then_body, else_body));
+            Collections.push(stmts, IfElse(__parse_expression(condition), then_body, else_body));
             i = j;
             handled = true;
         }
@@ -712,12 +712,12 @@ fn __parse_brace_block(lines, start_index, label) {
             def body = heap_get(body_info, 0);
             def j = heap_get(body_info, 1);
             if (j >= len(lines) || heap_get(lines, j) != "}") { return __raise_runtime_error("Unterminated " + label + " while block"); }
-            def unused27 = Collections.push(stmts, While(__parse_expression(condition), body));
+            Collections.push(stmts, While(__parse_expression(condition), body));
             i = j + 1;
             handled = true;
         }
         if (!handled) {
-            def unused28 = Collections.push(stmts, __parse_statement(line));
+            Collections.push(stmts, __parse_statement(line));
             i = i + 1;
         }
     }
@@ -861,7 +861,7 @@ class LanguageTranspiler {
             def rendered_args = new[];
             def i = 0;
             while (i < len(expr.args)) {
-                def unused29 = Collections.push(rendered_args, self._render_expr(heap_get(expr.args, i)));
+                Collections.push(rendered_args, self._render_expr(heap_get(expr.args, i)));
                 i = i + 1;
             }
             return expr.func + "(" + String.join(rendered_args, ", ") + ")";
@@ -893,14 +893,14 @@ class PythonTranspiler: LanguageTranspiler {
         def chunks = new[];
         def i = 0;
         while (i < len(program.functions)) {
-            def unused30 = Collections.push(chunks, self._render_function(heap_get(program.functions, i)));
+            Collections.push(chunks, self._render_function(heap_get(program.functions, i)));
             i = i + 1;
         }
         if (len(program.body) > 0) {
             def rendered = self._render_statements(program.body, 0);
             def j = 0;
             while (j < len(rendered)) {
-                def unused31 = Collections.push(chunks, heap_get(rendered, j));
+                Collections.push(chunks, heap_get(rendered, j));
                 j = j + 1;
             }
         }
@@ -912,11 +912,11 @@ class PythonTranspiler: LanguageTranspiler {
         def lines = new[header];
         def body_lines = self._render_statements(fn_ir.body, 1);
         if (len(body_lines) == 0) {
-            def unused32 = Collections.push(lines, self.indent + "pass");
+            Collections.push(lines, self.indent + "pass");
         } else {
             def i = 0;
             while (i < len(body_lines)) {
-                def unused33 = Collections.push(lines, heap_get(body_lines, i));
+                Collections.push(lines, heap_get(body_lines, i));
                 i = i + 1;
             }
         }
@@ -932,50 +932,50 @@ class PythonTranspiler: LanguageTranspiler {
             def handled = false;
             if (!handled && stmt.kind == "Assign") {
                 def line = pad + stmt.target + " = " + self._render_expr(stmt.expr);
-                def unused34 = Collections.push(rendered, line);
+                Collections.push(rendered, line);
                 handled = true;
             }
             if (!handled && stmt.kind == "Return") {
                 def line = pad + "return " + self._render_expr(stmt.expr);
-                def unused35 = Collections.push(rendered, line);
+                Collections.push(rendered, line);
                 handled = true;
             }
             if (!handled && stmt.kind == "ExprStmt") {
                 def line = pad + self._render_expr(stmt.expr);
-                def unused36 = Collections.push(rendered, line);
+                Collections.push(rendered, line);
                 handled = true;
             }
             if (!handled && stmt.kind == "IfElse") {
                 def header = pad + "if " + self._render_expr(stmt.condition) + ":";
-                def unused37 = Collections.push(rendered, header);
+                Collections.push(rendered, header);
                 def then_body = self._render_statements(stmt.then_body, indent_level + 1);
                 if (len(then_body) == 0) {
                     Collections.push(rendered, pad + self.indent + "pass");
                 } else {
                     def ti = 0;
-                    while (ti < len(then_body)) { def unused38 = Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; }
+                    while (ti < len(then_body)) { Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; }
                 }
                 if (len(stmt.else_body) > 0) {
-                    def unused39 = Collections.push(rendered, pad + "else:");
+                    Collections.push(rendered, pad + "else:");
                     def else_body = self._render_statements(stmt.else_body, indent_level + 1);
                     if (len(else_body) == 0) {
                         Collections.push(rendered, pad + self.indent + "pass");
                     } else {
                         def ei = 0;
-                        while (ei < len(else_body)) { def unused40 = Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; }
+                        while (ei < len(else_body)) { Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; }
                     }
                 }
                 handled = true;
             }
             if (!handled && stmt.kind == "While") {
                 def header = pad + "while " + self._render_expr(stmt.condition) + ":";
-                def unused41 = Collections.push(rendered, header);
+                Collections.push(rendered, header);
                 def body = self._render_statements(stmt.body, indent_level + 1);
                 if (len(body) == 0) {
                     Collections.push(rendered, pad + self.indent + "pass");
                 } else {
                     def bi = 0;
-                    while (bi < len(body)) { def unused42 = Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; }
+                    while (bi < len(body)) { Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; }
                 }
                 handled = true;
             }
@@ -1002,7 +1002,7 @@ class PythonTranspiler: LanguageTranspiler {
                 def fn_body_info = __python_parse_block(lines, i + 1, 4);
                 def fn_body = heap_get(fn_body_info, 0);
                 def next_index = heap_get(fn_body_info, 1);
-                def unused43 = Collections.push(functions, FunctionIR(heap_get(signature, 0), heap_get(signature, 1), fn_body));
+                Collections.push(functions, FunctionIR(heap_get(signature, 0), heap_get(signature, 1), fn_body));
                 i = next_index;
             } else {
                 def block_info = __python_parse_block(lines, i, 0);
@@ -1040,15 +1040,15 @@ class JuliaTranspiler: LanguageTranspiler {
             def body_lines = self._render_statements(fn_ir.body, 1);
             def lines = new[header];
             def j = 0;
-            while (j < len(body_lines)) { def unused45 = Collections.push(lines, heap_get(body_lines, j)); j = j + 1; }
-            def unused46 = Collections.push(lines, "end");
+            while (j < len(body_lines)) { Collections.push(lines, heap_get(body_lines, j)); j = j + 1; }
+            Collections.push(lines, "end");
             Collections.push(chunks, self._lines(lines));
             i = i + 1;
         }
         if (len(program.body) > 0) {
             def rendered = self._render_statements(program.body, 0);
             def k = 0;
-            while (k < len(rendered)) { def unused47 = Collections.push(chunks, heap_get(rendered, k)); k = k + 1; }
+            while (k < len(rendered)) { Collections.push(chunks, heap_get(rendered, k)); k = k + 1; }
         }
         return self._lines(chunks);
     }
@@ -1060,33 +1060,33 @@ class JuliaTranspiler: LanguageTranspiler {
         while (i < len(statements)) {
             def stmt = heap_get(statements, i);
             if (stmt.kind == "Assign") {
-                def unused48 = Collections.push(rendered, pad + stmt.target + " = " + self._render_expr(stmt.expr));
+                Collections.push(rendered, pad + stmt.target + " = " + self._render_expr(stmt.expr));
             } else {
                 if (stmt.kind == "Return") {
-                    def unused49 = Collections.push(rendered, pad + "return " + self._render_expr(stmt.expr));
+                    Collections.push(rendered, pad + "return " + self._render_expr(stmt.expr));
                 } else {
                     if (stmt.kind == "ExprStmt") {
-                        def unused50 = Collections.push(rendered, pad + self._render_expr(stmt.expr));
+                        Collections.push(rendered, pad + self._render_expr(stmt.expr));
                     } else {
                         if (stmt.kind == "IfElse") {
-                            def unused51 = Collections.push(rendered, pad + "if " + self._render_expr(stmt.condition));
+                            Collections.push(rendered, pad + "if " + self._render_expr(stmt.condition));
                             def then_body = self._render_statements(stmt.then_body, indent_level + 1);
                             if (len(then_body) == 0) { Collections.push(rendered, pad + self.indent + "nothing"); }
-                            else { def ti = 0; while (ti < len(then_body)) { def unused52 = Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; } }
+                            else { def ti = 0; while (ti < len(then_body)) { Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; } }
                             if (len(stmt.else_body) > 0) {
-                                def unused53 = Collections.push(rendered, pad + "else");
+                                Collections.push(rendered, pad + "else");
                                 def else_body = self._render_statements(stmt.else_body, indent_level + 1);
                                 if (len(else_body) == 0) { Collections.push(rendered, pad + self.indent + "nothing"); }
-                                else { def ei = 0; while (ei < len(else_body)) { def unused54 = Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; } }
+                                else { def ei = 0; while (ei < len(else_body)) { Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; } }
                             }
-                            def unused55 = Collections.push(rendered, pad + "end");
+                            Collections.push(rendered, pad + "end");
                         } else {
                             if (stmt.kind == "While") {
-                                def unused56 = Collections.push(rendered, pad + "while " + self._render_expr(stmt.condition));
+                                Collections.push(rendered, pad + "while " + self._render_expr(stmt.condition));
                                 def body = self._render_statements(stmt.body, indent_level + 1);
                                 if (len(body) == 0) { Collections.push(rendered, pad + self.indent + "nothing"); }
-                                else { def bi = 0; while (bi < len(body)) { def unused57 = Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; } }
-                                def unused58 = Collections.push(rendered, pad + "end");
+                                else { def bi = 0; while (bi < len(body)) { Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; } }
+                                Collections.push(rendered, pad + "end");
                             } else {
                                 return __raise_runtime_error("Unsupported statement: " + __to_str(stmt));
                             }
@@ -1112,7 +1112,7 @@ class JuliaTranspiler: LanguageTranspiler {
                 def fn_body = heap_get(fn_info, 0);
                 def j = heap_get(fn_info, 1);
                 if (j >= len(lines) || heap_get(lines, j) != "end") { return __raise_runtime_error("Unterminated Julia function body"); }
-                def unused59 = Collections.push(functions, FunctionIR(heap_get(signature, 0), heap_get(signature, 1), fn_body));
+                Collections.push(functions, FunctionIR(heap_get(signature, 0), heap_get(signature, 1), fn_body));
                 i = j + 1;
             } else {
                 def block_info = __julia_parse_block(lines, i);
@@ -1150,15 +1150,15 @@ class JavaScriptTranspiler: LanguageTranspiler {
             def body_lines = self._render_statements(fn_ir.body, 1);
             def lines = new[header];
             def j = 0;
-            while (j < len(body_lines)) { def unused61 = Collections.push(lines, heap_get(body_lines, j)); j = j + 1; }
-            def unused62 = Collections.push(lines, "}");
+            while (j < len(body_lines)) { Collections.push(lines, heap_get(body_lines, j)); j = j + 1; }
+            Collections.push(lines, "}");
             Collections.push(chunks, self._lines(lines));
             i = i + 1;
         }
         if (len(program.body) > 0) {
             def rendered = self._render_statements(program.body, 0);
             def k = 0;
-            while (k < len(rendered)) { def unused63 = Collections.push(chunks, heap_get(rendered, k)); k = k + 1; }
+            while (k < len(rendered)) { Collections.push(chunks, heap_get(rendered, k)); k = k + 1; }
         }
         return self._lines(chunks);
     }
@@ -1179,25 +1179,25 @@ class JavaScriptTranspiler: LanguageTranspiler {
                         Collections.push(rendered, pad + self._render_expr(stmt.expr) + ";");
                     } else {
                         if (stmt.kind == "IfElse") {
-                            def unused64 = Collections.push(rendered, pad + "if (" + self._render_expr(stmt.condition) + ") {");
+                            Collections.push(rendered, pad + "if (" + self._render_expr(stmt.condition) + ") {");
                             def then_body = self._render_statements(stmt.then_body, indent_level + 1);
                             def ti = 0;
-                            while (ti < len(then_body)) { def unused65 = Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; }
-                            def unused66 = Collections.push(rendered, pad + "}");
+                            while (ti < len(then_body)) { Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; }
+                            Collections.push(rendered, pad + "}");
                             if (len(stmt.else_body) > 0) {
-                                def unused67 = Collections.push(rendered, pad + "else {");
+                                Collections.push(rendered, pad + "else {");
                                 def else_body = self._render_statements(stmt.else_body, indent_level + 1);
                                 def ei = 0;
-                                while (ei < len(else_body)) { def unused68 = Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; }
-                                def unused69 = Collections.push(rendered, pad + "}");
+                                while (ei < len(else_body)) { Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; }
+                                Collections.push(rendered, pad + "}");
                             }
                         } else {
                             if (stmt.kind == "While") {
-                                def unused70 = Collections.push(rendered, pad + "while (" + self._render_expr(stmt.condition) + ") {");
+                                Collections.push(rendered, pad + "while (" + self._render_expr(stmt.condition) + ") {");
                                 def body = self._render_statements(stmt.body, indent_level + 1);
                                 def bi = 0;
-                                while (bi < len(body)) { def unused71 = Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; }
-                                def unused72 = Collections.push(rendered, pad + "}");
+                                while (bi < len(body)) { Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; }
+                                Collections.push(rendered, pad + "}");
                             } else {
                                 return __raise_runtime_error("Unsupported statement: " + __to_str(stmt));
                             }
@@ -1229,7 +1229,7 @@ class JavaScriptTranspiler: LanguageTranspiler {
                 def fn_body = heap_get(fn_info, 0);
                 def j = heap_get(fn_info, 1);
                 if (j >= len(lines) || heap_get(lines, j) != "}") { return __raise_runtime_error("Unterminated JavaScript function body"); }
-                def unused73 = Collections.push(functions, FunctionIR(name, __split_params(params_text), fn_body));
+                Collections.push(functions, FunctionIR(name, __split_params(params_text), fn_body));
                 i = j + 1;
             } else {
                 def block_info = __parse_brace_block(lines, i, "JavaScript");
@@ -1266,22 +1266,22 @@ class CppTranspiler: LanguageTranspiler {
             def param_parts = new[];
             def pi = 0;
             while (pi < len(fn_ir.params)) {
-                def unused75 = Collections.push(param_parts, "auto " + heap_get(fn_ir.params, pi));
+                Collections.push(param_parts, "auto " + heap_get(fn_ir.params, pi));
                 pi = pi + 1;
             }
             def header = "auto " + fn_ir.name + "(" + String.join(param_parts, ", ") + ") {";
             def body_lines = self._render_statements(fn_ir.body, 1);
             def lines = new[header];
             def j = 0;
-            while (j < len(body_lines)) { def unused76 = Collections.push(lines, heap_get(body_lines, j)); j = j + 1; }
-            def unused77 = Collections.push(lines, "}");
+            while (j < len(body_lines)) { Collections.push(lines, heap_get(body_lines, j)); j = j + 1; }
+            Collections.push(lines, "}");
             Collections.push(chunks, self._lines(lines));
             i = i + 1;
         }
         if (len(program.body) > 0) {
             def rendered = self._render_statements(program.body, 0);
             def k = 0;
-            while (k < len(rendered)) { def unused78 = Collections.push(chunks, heap_get(rendered, k)); k = k + 1; }
+            while (k < len(rendered)) { Collections.push(chunks, heap_get(rendered, k)); k = k + 1; }
         }
         return self._lines(chunks);
     }
@@ -1302,25 +1302,25 @@ class CppTranspiler: LanguageTranspiler {
                         Collections.push(rendered, pad + self._render_expr(stmt.expr) + ";");
                     } else {
                         if (stmt.kind == "IfElse") {
-                            def unused79 = Collections.push(rendered, pad + "if (" + self._render_expr(stmt.condition) + ") {");
+                            Collections.push(rendered, pad + "if (" + self._render_expr(stmt.condition) + ") {");
                             def then_body = self._render_statements(stmt.then_body, indent_level + 1);
                             def ti = 0;
-                            while (ti < len(then_body)) { def unused80 = Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; }
-                            def unused81 = Collections.push(rendered, pad + "}");
+                            while (ti < len(then_body)) { Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; }
+                            Collections.push(rendered, pad + "}");
                             if (len(stmt.else_body) > 0) {
-                                def unused82 = Collections.push(rendered, pad + "else {");
+                                Collections.push(rendered, pad + "else {");
                                 def else_body = self._render_statements(stmt.else_body, indent_level + 1);
                                 def ei = 0;
-                                while (ei < len(else_body)) { def unused83 = Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; }
-                                def unused84 = Collections.push(rendered, pad + "}");
+                                while (ei < len(else_body)) { Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; }
+                                Collections.push(rendered, pad + "}");
                             }
                         } else {
                             if (stmt.kind == "While") {
-                                def unused85 = Collections.push(rendered, pad + "while (" + self._render_expr(stmt.condition) + ") {");
+                                Collections.push(rendered, pad + "while (" + self._render_expr(stmt.condition) + ") {");
                                 def body = self._render_statements(stmt.body, indent_level + 1);
                                 def bi = 0;
-                                while (bi < len(body)) { def unused86 = Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; }
-                                def unused87 = Collections.push(rendered, pad + "}");
+                                while (bi < len(body)) { Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; }
+                                Collections.push(rendered, pad + "}");
                             } else {
                                 return __raise_runtime_error("Unsupported statement: " + __to_str(stmt));
                             }
@@ -1353,7 +1353,7 @@ class CppTranspiler: LanguageTranspiler {
                 while (pi < len(raw_params)) {
                     def param = __strip(heap_get(raw_params, pi));
                     if (__starts_with(param, "auto ")) { param = __strip_prefix(param, "auto "); }
-                    def unused88 = Collections.push(params, param);
+                    Collections.push(params, param);
                     pi = pi + 1;
                 }
                 def body_start = __block_start_index(lines, i, line, "C++ function");
@@ -1361,7 +1361,7 @@ class CppTranspiler: LanguageTranspiler {
                 def fn_body = heap_get(fn_info, 0);
                 def j = heap_get(fn_info, 1);
                 if (j >= len(lines) || heap_get(lines, j) != "}") { return __raise_runtime_error("Unterminated C++ function body"); }
-                def unused89 = Collections.push(functions, FunctionIR(name, params, fn_body));
+                Collections.push(functions, FunctionIR(name, params, fn_body));
                 i = j + 1;
             } else {
                 def block_info = __parse_brace_block(lines, i, "C++");
@@ -1406,7 +1406,7 @@ class TinyLanguageTranspiler: LanguageTranspiler {
         def chunks = new[];
         def idx = 0;
         while (idx < len(program.functions)) {
-            def unused91 = Collections.push(chunks, self._render_function(heap_get(program.functions, idx)));
+            Collections.push(chunks, self._render_function(heap_get(program.functions, idx)));
             if (idx < len(program.functions) - 1) { Collections.push(chunks, ""); }
             idx = idx + 1;
         }
@@ -1414,7 +1414,7 @@ class TinyLanguageTranspiler: LanguageTranspiler {
             if (len(chunks) > 0) { Collections.push(chunks, ""); }
             def body_lines = self._render_statements(program.body, 0, Map.new());
             def bi = 0;
-            while (bi < len(body_lines)) { def unused92 = Collections.push(chunks, heap_get(body_lines, bi)); bi = bi + 1; }
+            while (bi < len(body_lines)) { Collections.push(chunks, heap_get(body_lines, bi)); bi = bi + 1; }
         }
         return self._lines(chunks);
     }
@@ -1422,14 +1422,14 @@ class TinyLanguageTranspiler: LanguageTranspiler {
     fn _render_function(self, fn_ir) {
         def defined = Map.new();
         def i = 0;
-        while (i < len(fn_ir.params)) { def unused93 = Map.set(defined, heap_get(fn_ir.params, i), true); i = i + 1; }
+        while (i < len(fn_ir.params)) { Map.set(defined, heap_get(fn_ir.params, i), true); i = i + 1; }
         def header = "fn " + fn_ir.name + "(" + String.join(fn_ir.params, ", ") + ") {";
         def body_lines = self._render_statements(fn_ir.body, 1, defined);
         if (len(body_lines) == 0) { body_lines = new[self.indent + "// no-op"]; }
         def lines = new[header];
         def j = 0;
-        while (j < len(body_lines)) { def unused94 = Collections.push(lines, heap_get(body_lines, j)); j = j + 1; }
-        def unused95 = Collections.push(lines, "}");
+        while (j < len(body_lines)) { Collections.push(lines, heap_get(body_lines, j)); j = j + 1; }
+        Collections.push(lines, "}");
         return self._lines(lines);
     }
 
@@ -1451,7 +1451,7 @@ class TinyLanguageTranspiler: LanguageTranspiler {
                     if (stmt.kind == "ExprStmt") {
                         def expr_source = self._render_expr(stmt.expr);
                         if (stmt.expr.kind == "Call") {
-                            def unused_name = self._next_unused(defined);
+                            self._next_unused(defined);
                             if (stmt.expr.func == "print") {
                                 Collections.push(rendered, pad + expr_source + ";");
                             } else {
@@ -1463,26 +1463,26 @@ class TinyLanguageTranspiler: LanguageTranspiler {
                         }
                     } else {
                         if (stmt.kind == "IfElse") {
-                            def unused96 = Collections.push(rendered, pad + "if (" + self._render_expr(stmt.condition) + ") {");
+                            Collections.push(rendered, pad + "if (" + self._render_expr(stmt.condition) + ") {");
                             def then_body = self._render_statements(stmt.then_body, indent_level + 1, __copy_map(defined));
                             def ti = 0;
-                            while (ti < len(then_body)) { def unused97 = Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; }
+                            while (ti < len(then_body)) { Collections.push(rendered, heap_get(then_body, ti)); ti = ti + 1; }
                             if (len(stmt.else_body) > 0) {
-                                def unused98 = Collections.push(rendered, pad + "} else {");
+                                Collections.push(rendered, pad + "} else {");
                                 def else_body = self._render_statements(stmt.else_body, indent_level + 1, __copy_map(defined));
                                 def ei = 0;
-                                while (ei < len(else_body)) { def unused99 = Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; }
-                                def unused100 = Collections.push(rendered, pad + "}");
+                                while (ei < len(else_body)) { Collections.push(rendered, heap_get(else_body, ei)); ei = ei + 1; }
+                                Collections.push(rendered, pad + "}");
                             } else {
-                                def unused101 = Collections.push(rendered, pad + "}");
+                                Collections.push(rendered, pad + "}");
                             }
                         } else {
                             if (stmt.kind == "While") {
-                                def unused102 = Collections.push(rendered, pad + "while (" + self._render_expr(stmt.condition) + ") {");
+                                Collections.push(rendered, pad + "while (" + self._render_expr(stmt.condition) + ") {");
                                 def body = self._render_statements(stmt.body, indent_level + 1, __copy_map(defined));
                                 def bi = 0;
-                                while (bi < len(body)) { def unused103 = Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; }
-                                def unused104 = Collections.push(rendered, pad + "}");
+                                while (bi < len(body)) { Collections.push(rendered, heap_get(body, bi)); bi = bi + 1; }
+                                Collections.push(rendered, pad + "}");
                             } else {
                                 return __raise_runtime_error("Unsupported statement: " + __to_str(stmt));
                             }

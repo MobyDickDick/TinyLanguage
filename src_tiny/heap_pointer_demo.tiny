@@ -5,7 +5,7 @@ print("=== Safe heap usage ==="); // Heading for the safe section.
 
 // 1) Create a pointer and add a tag to document the contents.
 def buffer = new(3); // Reserves three slots on the heap.
-def unused2 = tag(buffer, Buffer); // Marks the pointer so its type is explicit.
+tag(buffer, Buffer); // Marks the pointer so its type is explicit.
 
 // Write values: check bounds first, then write.
 def buffer_len = Collections.len(buffer); // Ask for the buffer length.
@@ -32,7 +32,7 @@ if (read_index < buffer_len) { // Confirm the index is within range.
 }
 
 // Release the pointer when it is no longer needed.
-def unused11 = delete(buffer); // Return heap memory.
+delete(buffer); // Return heap memory.
 print("\n=== Common pitfalls ==="); // Heading for the error section.
 print("The next errors are triggered on purpose; the program still continues and exits successfully.\n"); // Reader note.
 def too_short = new[1, 2]; // Create a short array.
@@ -42,7 +42,7 @@ def oob_error = errorMessage;             // Store the most recent error.
 print("Recorded out-of-bounds message:"); // Label for the error message.
 print(oob_error);                            // "heap access error: index 5 out of range ..."
 
-def unused16 = delete(too_short); // Clean up after errors too.
+delete(too_short); // Clean up after errors too.
 
 
 

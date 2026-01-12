@@ -178,7 +178,7 @@ class Parser {
         if (self.tok.kind == "KW" && self.tok.text == "flush") {
             def kw = self._eat("KW", "flush");
             def _eat_status = self._eat("SYM", "(");
-            def _eat_status = self._eat("SYM", ")");
+            def _eat_status2 = self._eat("SYM", ")");
             def semi = self._eat("SYM", ";");
             return self._attach_span(Flush(kw.start, Null), kw.start, semi.stop);
         }
@@ -208,7 +208,7 @@ class Parser {
             def _eat_status = self._eat("SYM", "(");
             def target = self.parse_expr();
             def _eat_status = self._eat("SYM", ")");
-            def _eat_status = self._eat("SYM", "{");
+            def _eat_status2 = self._eat("SYM", "{");
             def cases = new[];
             def has_default = false;
             while (!(self.tok.kind == "SYM" && self.tok.text == "}")) {
@@ -405,7 +405,7 @@ class Parser {
             def _eat_status = self._eat("SYM", ":");
             def b_type_tok = self._eat("NAME", Null);
             def _eat_status = self._eat("SYM", ")");
-            def _eat_status = self._eat("OP", "-");
+            def _eat_status2 = self._eat("OP", "-");
             def _eat_status = self._eat("OP", ">");
             def return_type = self._eat("NAME", Null);
             def body = self.parse_block();
@@ -566,31 +566,31 @@ class Parser {
             if (stmt.__tag__ == "Return") { return visit_expr(stmt.expr); }
             if (stmt.__tag__ == "If") {
                 def i = 0;
-                while (i < len(stmt.then)) { visit_stmt(heap_get(stmt.then, i)); i = i + 1; }
+                while (i < len(stmt.then)) { def ignored_visit = visit_stmt(heap_get(stmt.then, i)); i = i + 1; }
                 i = 0;
-                while (i < len(stmt.els)) { visit_stmt(heap_get(stmt.els, i)); i = i + 1; }
+                while (i < len(stmt.els)) { def ignored_visit = visit_stmt(heap_get(stmt.els, i)); i = i + 1; }
                 return Null;
             }
             if (stmt.__tag__ == "While") {
                 def i = 0;
-                while (i < len(stmt.body)) { visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
+                while (i < len(stmt.body)) { def ignored_visit = visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
                 return Null;
             }
             if (stmt.__tag__ == "TryCatch") {
                 def i = 0;
-                while (i < len(stmt.body)) { visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
+                while (i < len(stmt.body)) { def ignored_visit = visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
                 i = 0;
-                while (i < len(stmt.handler)) { visit_stmt(heap_get(stmt.handler, i)); i = i + 1; }
+                while (i < len(stmt.handler)) { def ignored_visit = visit_stmt(heap_get(stmt.handler, i)); i = i + 1; }
                 return Null;
             }
             if (stmt.__tag__ == "TaskBlock") {
                 def i = 0;
-                while (i < len(stmt.body)) { visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
+                while (i < len(stmt.body)) { def ignored_visit = visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
                 return Null;
             }
             if (stmt.__tag__ == "Namespace") {
                 def i = 0;
-                while (i < len(stmt.body)) { visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
+                while (i < len(stmt.body)) { def ignored_visit = visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
                 return Null;
             }
             if (stmt.__tag__ == "Fn" || stmt.__tag__ == "MethodDef") { return Null; }
@@ -599,7 +599,7 @@ class Parser {
 
         def i = 0;
         while (i < len(stmts)) {
-            visit_stmt(heap_get(stmts, i));
+            def ignored_visit = visit_stmt(heap_get(stmts, i));
             i = i + 1;
         }
         return Set.to_list(used);

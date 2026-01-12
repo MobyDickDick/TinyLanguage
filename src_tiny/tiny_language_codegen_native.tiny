@@ -163,7 +163,7 @@ class NativeCodeGenerator {
         }
 
         if (!handled) {
-            __raise_not_implemented("native codegen does not yet support " + __to_str(tag));
+            def ignored_codegen = __raise_not_implemented("native codegen does not yet support " + __to_str(tag));
         }
         return result;
     }
@@ -262,7 +262,7 @@ class NativeCodeGenerator {
                     } else {
                         if (tag == "New") {
                             if (!self.allow_heap) {
-                                __raise_not_implemented("native codegen does not yet support heap allocations");
+                                def ignored_codegen = __raise_not_implemented("native codegen does not yet support heap allocations");
                             }
                             def instructions = self._compile_expr(expr.size);
                             Collections.push(instructions, Instruction(OPCODE_CALL, new["__new", 1]));
@@ -271,7 +271,7 @@ class NativeCodeGenerator {
                         } else {
                             if (tag == "NewLit") {
                                 if (!self.allow_heap) {
-                                    __raise_not_implemented("native codegen does not yet support heap allocations");
+                                    def ignored_codegen = __raise_not_implemented("native codegen does not yet support heap allocations");
                                 }
                                 def temp_name = self._next_tmp();
                                 def instructions = new[
@@ -329,7 +329,7 @@ class NativeCodeGenerator {
         }
 
         if (!handled) {
-            __raise_not_implemented("native codegen does not yet support expression " + __to_str(tag));
+            def ignored_codegen = __raise_not_implemented("native codegen does not yet support expression " + __to_str(tag));
         }
         return result;
     }

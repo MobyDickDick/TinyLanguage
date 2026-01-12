@@ -144,7 +144,7 @@ fn __read_string(chars, n, i, line, col) {
             line = heap_get(adv_slash, 1);
             col = heap_get(adv_slash, 2);
 
-            if (i >= n) { return __raise_runtime_error("unterminated escape in string"); }
+            if (i >= n) { return new[__raise_runtime_error("unterminated escape in string"), i, line, col]; }
 
             def esc = __peek(chars, n, i);
             def adv_esc = __advance_state(chars, i, n, line, col, 1);
@@ -182,7 +182,7 @@ fn __read_string(chars, n, i, line, col) {
         }
     }
 
-    return __raise_runtime_error("unterminated string literal");
+    return new[__raise_runtime_error("unterminated string literal"), i, line, col];
 }
 
 fn lex(source) {
@@ -346,7 +346,6 @@ fn lex(source) {
 
             if (handled == false) {
                 return __raise_runtime_error("lexing error: unexpected character '" + c + "'");
-                finished = true;
             }
         }
     }

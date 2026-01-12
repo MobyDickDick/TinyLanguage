@@ -45,6 +45,7 @@ from typing import Any, Dict, List
 instructions = {state}
 heap: Dict[int, List[Any]] = {}
 next_ptr = 1
+allocations: Dict[int, int] = {}
 freed_ptrs: set[int] = set()
 freed_allocations: Dict[int, int] = {}
 heap_cell_types: Dict[int, Dict[int, str]] = {}
@@ -162,10 +163,18 @@ def _heap_new(size: Any) -> int:
     ptr = next_ptr
     next_ptr += 1
     heap[ptr] = [0 for _ in range(count)]
+    allocations[ptr] = count
     freed_ptrs.discard(ptr)
     freed_allocations.pop(ptr, None)
     heap_cell_types.pop(ptr, None)
     return ptr
+
+
+def _heap_allocation_size(value: Any) -> int:
+    try:
+        return int(len(value))
+    except Exception:
+        return 0
 
 
 def _value_type_name(value: Any) -> str:
@@ -197,7 +206,7 @@ def _heap_delete(pointer: Any) -> Dict[str, Any]:
     if resolved is None:
         return _heap_error_record(error_message or "")
     ip, cells = resolved
-    size = len(cells)
+    size = allocations.pop(ip, _heap_allocation_size(cells))
     heap.pop(ip, None)
     heap_cell_types.pop(ip, None)
     freed_ptrs.add(ip)
@@ -213,6 +222,10 @@ def _heap_get(pointer: Any, index: Any) -> Any:
     if resolved is None:
         return None
     ip, cells = resolved
+    if not isinstance(cells, list):
+        message = f"heap access error: pointer {ip} does not refer to a list allocation"
+        _record_error(message)
+        return None
     size = len(cells)
     if idx < 0 or idx >= size:
         range_hint = "empty allocation" if size == 0 else f"valid indices: 0..{size - 1}"
@@ -230,6 +243,10 @@ def _heap_set(pointer: Any, index: Any, value: Any) -> Dict[str, Any]:
     if resolved is None:
         return _heap_error_record(error_message or "")
     ip, cells = resolved
+    if not isinstance(cells, list):
+        message = f"heap access error: pointer {ip} does not refer to a list allocation"
+        _record_error(message)
+        return _heap_error_record(message)
     size = len(cells)
     if idx < 0 or idx >= size:
         range_hint = "empty allocation" if size == 0 else f"valid indices: 0..{size - 1}"
@@ -245,6 +262,21 @@ def _heap_set(pointer: Any, index: Any, value: Any) -> Dict[str, Any]:
     cells[idx] = value
     heap_cell_types.setdefault(ip, {})[idx] = actual
     return _heap_ok_record()
+
+
+def heap_leak_report() -> Dict[str, Any]:
+    live = {ptr: _heap_allocation_size(value) for ptr, value in heap.items()}
+    leak_count = len(live)
+    return {
+        "live": live,
+        "count": leak_count,
+        "total_cells": sum(live.values()),
+        "allocations": dict(allocations),
+        "freed_sizes": dict(freed_allocations),
+        "freed": sorted(freed_ptrs),
+        "freed_count": len(freed_ptrs),
+        "has_leaks": leak_count > 0,
+    }
 
 
 def _execute(instrs: List, locals_: Dict[str, Any], globals_: Dict[str, Any]) -> Any:

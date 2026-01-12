@@ -1026,8 +1026,11 @@ class Runtime:
     @staticmethod
     def _normalize_numeric_type(type_name: str) -> str:
         normalized = type_name.strip()
-        if normalized.lower() in {"int", "float"}:
-            return "number"
+        lowered = normalized.lower()
+        if lowered == "int":
+            return "int"
+        if lowered == "float":
+            return "float"
         return type_name
 
     def _check_assignment_type(

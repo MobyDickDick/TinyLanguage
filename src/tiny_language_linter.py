@@ -601,8 +601,6 @@ def _infer_expr_type(expr: IR, env: Dict[str, str]) -> Optional[str]:
 
 
 def _normalize_inferred_type(type_name: str) -> str:
-    if type_name.strip().lower() in {"int", "float"}:
-        return "number"
     return type_name
 
 

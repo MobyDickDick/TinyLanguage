@@ -497,8 +497,6 @@ class Environment:
 
     @staticmethod
     def _normalize_numeric_type(type_name: str) -> str:
-        if type_name.lower() in {"int", "float"}:
-            return "number"
         return type_name
 
     def get(self, name: str) -> Any:

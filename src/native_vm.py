@@ -135,6 +135,7 @@ class NativeVM:
         self.program: Optional[ProgramIR] = None
         self.heap: Dict[int, Any] = {}
         self.next_ptr = 1
+        self.allocations: Dict[int, int] = {}
         self.freed_ptrs: set[int] = set()
         self.freed_allocations: Dict[int, int] = {}
         self.heap_cell_types: Dict[int, Dict[int, str]] = {}
@@ -668,6 +669,7 @@ class NativeVM:
         ptr = self.next_ptr
         self.next_ptr += 1
         self.heap[ptr] = [0 for _ in range(count)]
+        self.allocations[ptr] = count
         self.freed_ptrs.discard(ptr)
         self.freed_allocations.pop(ptr, None)
         self.heap_cell_types.pop(ptr, None)
@@ -677,10 +679,18 @@ class NativeVM:
         ptr = self.next_ptr
         self.next_ptr += 1
         self.heap[ptr] = value
+        self.allocations[ptr] = self._heap_allocation_size(value)
         self.freed_ptrs.discard(ptr)
         self.freed_allocations.pop(ptr, None)
         self.heap_cell_types.pop(ptr, None)
         return ptr
+
+    @staticmethod
+    def _heap_allocation_size(value: Any) -> int:
+        try:
+            return int(len(value))
+        except Exception:
+            return 0
 
     def _to_pointer(self, values: Iterable[Any]) -> int:
         return self._alloc_heap_value(list(values))
@@ -715,7 +725,7 @@ class NativeVM:
         if resolved is None:
             return self._heap_error_record(self.error_message or "")
         ip, cells = resolved
-        size = len(cells)
+        size = self.allocations.pop(ip, self._heap_allocation_size(cells))
         self.heap.pop(ip, None)
         self.heap_cell_types.pop(ip, None)
         self.freed_ptrs.add(ip)
@@ -769,6 +779,20 @@ class NativeVM:
         cells[idx] = value
         self.heap_cell_types.setdefault(ip, {})[idx] = actual
         return self._heap_ok_record()
+
+    def heap_leak_report(self) -> Dict[str, Any]:
+        live = {ptr: self._heap_allocation_size(value) for ptr, value in self.heap.items()}
+        leak_count = len(live)
+        return {
+            "live": live,
+            "count": leak_count,
+            "total_cells": sum(live.values()),
+            "allocations": dict(self.allocations),
+            "freed_sizes": dict(self.freed_allocations),
+            "freed": sorted(self.freed_ptrs),
+            "freed_count": len(self.freed_ptrs),
+            "has_leaks": leak_count > 0,
+        }
 
     def _resolve_sequence(self, target: Any) -> List[Any]:
         if isinstance(target, int) and target in self.heap:

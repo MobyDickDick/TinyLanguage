@@ -11,4 +11,4 @@ fn run() {
     return main();
 }
 
-def ignored1 = run();
+if (run() == Null) { }

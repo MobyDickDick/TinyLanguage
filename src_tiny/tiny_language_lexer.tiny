@@ -144,7 +144,7 @@ fn __read_string(chars, n, i, line, col) {
             line = heap_get(adv_slash, 1);
             col = heap_get(adv_slash, 2);
 
-            if (i >= n) { def unused1 = __raise_runtime_error("unterminated escape in string"); }
+            if (i >= n) { return __raise_runtime_error("unterminated escape in string"); }
 
             def esc = __peek(chars, n, i);
             def adv_esc = __advance_state(chars, i, n, line, col, 1);
@@ -182,9 +182,7 @@ fn __read_string(chars, n, i, line, col) {
         }
     }
 
-    def unused2 = __raise_runtime_error("unterminated string literal");
-    def fallback = Token("STRING", buf, pos0, pos0);
-    return new[fallback, i, line, col];
+    return __raise_runtime_error("unterminated string literal");
 }
 
 fn lex(source) {
@@ -347,7 +345,7 @@ fn lex(source) {
             }
 
             if (handled == false) {
-                def unused3 = __raise_runtime_error("lexing error: unexpected character '" + c + "'");
+                return __raise_runtime_error("lexing error: unexpected character '" + c + "'");
                 finished = true;
             }
         }

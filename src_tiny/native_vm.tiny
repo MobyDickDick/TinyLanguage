@@ -120,7 +120,6 @@ fn _vm_load(vm, locals, name) {
     if (Map.has(locals, name)) { return Map.get(locals, name); }
     if (Map.has(vm.globals, name)) { return Map.get(vm.globals, name); }
     return __raise_runtime_error("unknown variable " + name);
-    return Null;
 }
 
 fn _vm_call(vm, name, args) {

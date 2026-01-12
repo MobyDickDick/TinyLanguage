@@ -87,7 +87,7 @@ fn format_program(program) {
                 }
             }
             def line = label + "[" + _fmt_index(idx) + "]: " + instr.op + suffix;
-            def unused1 = Collections.push(lines, line);
+            Collections.push(lines, line);
             idx = idx + 1;
         }
         return lines;
@@ -100,14 +100,14 @@ fn format_program(program) {
         def name = heap_get(keys, i);
         def func = Map.get(program.functions, name);
         if (func == Null) {
-            def unused2 = __raise_runtime_error("missing function " + __to_str(name));
+            return __raise_runtime_error("missing function " + __to_str(name));
         }
         def header = "function " + func.name + "(" + String.join(func.params, ", ") + ")";
         Collections.push(lines, header);
         def block = _fmt_block("  " + func.name, func.instructions);
         def j = 0;
         while (j < len(block)) {
-            def unused3 = Collections.push(lines, heap_get(block, j));
+            Collections.push(lines, heap_get(block, j));
             j = j + 1;
         }
         i = i + 1;

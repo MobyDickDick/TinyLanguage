@@ -116,7 +116,7 @@ fn __to_str(value) {
 fn __sorted_strings(items) {
     def arr = new[];
     def i = 0;
-    while (i < len(items)) { def unused1 = Collections.push(arr, heap_get(items, i)); i = i + 1; }
+    while (i < len(items)) { Collections.push(arr, heap_get(items, i)); i = i + 1; }
     def n = len(arr);
     def a = 0;
     // ---------------------------------------------------------------------------
@@ -139,10 +139,10 @@ fn __sorted_strings(items) {
         def si = 0;
         while (si < len(list)) {
             if (si == idx_a) {
-                def unused2 = Collections.push(out, heap_get(list, idx_b));
+                Collections.push(out, heap_get(list, idx_b));
             } else {
-                if (si == idx_b) { def unused3 = Collections.push(out, heap_get(list, idx_a)); }
-                else { def unused4 = Collections.push(out, heap_get(list, si)); }
+                if (si == idx_b) { Collections.push(out, heap_get(list, idx_a)); }
+                else { Collections.push(out, heap_get(list, si)); }
             }
             si = si + 1;
         }
@@ -182,7 +182,7 @@ fn __copy_state(state) {
     def i = 0;
     while (i < len(keys)) {
         def k = heap_get(keys, i);
-        def unused5 = Map.set(new_state, k, Map.get(state, k));
+        Map.set(new_state, k, Map.get(state, k));
         i = i + 1;
     }
     return new_state;
@@ -503,7 +503,7 @@ fn _param_names(params) {
     def i = 0;
     while (i < len(params)) {
         def p = heap_get(params, i);
-        def unused6 = Collections.push(names, p.name);
+        Collections.push(names, p.name);
         i = i + 1;
     }
     return names;
@@ -525,51 +525,51 @@ fn _param_names(params) {
 // ---------------------------------------------------------------------------
 fn _collect_names_in_expr(e, names) {
     if (e == Null) { return Null; }
-    if (e.__tag__ == "Var") { def unused7 = Set.add(names, e.name); return Null; }
-    if (e.__tag__ == "Bin") { def unused8 = _collect_names_in_expr(e.a, names); def unused9 = _collect_names_in_expr(e.b, names); return Null; }
+    if (e.__tag__ == "Var") { Set.add(names, e.name); return Null; }
+    if (e.__tag__ == "Bin") { _collect_names_in_expr(e.a, names); _collect_names_in_expr(e.b, names); return Null; }
     if (e.__tag__ == "Call") {
         def i = 0;
-        while (i < len(e.args)) { def unused10 = _collect_names_in_expr(heap_get(e.args, i), names); i = i + 1; }
+        while (i < len(e.args)) { _collect_names_in_expr(heap_get(e.args, i), names); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "Spawn") {
         def i = 0;
-        while (i < len(e.args)) { def unused11 = _collect_names_in_expr(heap_get(e.args, i), names); i = i + 1; }
+        while (i < len(e.args)) { _collect_names_in_expr(heap_get(e.args, i), names); i = i + 1; }
         return Null;
     }
-    if (e.__tag__ == "Await") { def unused12 = _collect_names_in_expr(e.expr, names); return Null; }
-    if (e.__tag__ == "New") { def unused13 = _collect_names_in_expr(e.size, names); return Null; }
+    if (e.__tag__ == "Await") { _collect_names_in_expr(e.expr, names); return Null; }
+    if (e.__tag__ == "New") { _collect_names_in_expr(e.size, names); return Null; }
     if (e.__tag__ == "NewLit") {
         def i = 0;
-        while (i < len(e.items)) { def unused14 = _collect_names_in_expr(heap_get(e.items, i), names); i = i + 1; }
+        while (i < len(e.items)) { _collect_names_in_expr(heap_get(e.items, i), names); i = i + 1; }
         return Null;
     }
-    if (e.__tag__ == "Field") { def unused15 = _collect_names_in_expr(e.obj, names); return Null; }
+    if (e.__tag__ == "Field") { _collect_names_in_expr(e.obj, names); return Null; }
     if (e.__tag__ == "MethodCall") {
-        def unused16 = _collect_names_in_expr(e.obj, names);
+        _collect_names_in_expr(e.obj, names);
         def i = 0;
-        while (i < len(e.args)) { def unused17 = _collect_names_in_expr(heap_get(e.args, i), names); i = i + 1; }
+        while (i < len(e.args)) { _collect_names_in_expr(heap_get(e.args, i), names); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "ClassNew") {
         def i = 0;
-        while (i < len(e.init)) { def unused18 = _collect_names_in_expr(heap_get(heap_get(e.init, i), 1), names); i = i + 1; }
+        while (i < len(e.init)) { _collect_names_in_expr(heap_get(heap_get(e.init, i), 1), names); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "ObjLit") {
         def i = 0;
-        while (i < len(e.fields)) { def unused19 = _collect_names_in_expr(heap_get(heap_get(e.fields, i), 1), names); i = i + 1; }
+        while (i < len(e.fields)) { _collect_names_in_expr(heap_get(heap_get(e.fields, i), 1), names); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "Match") {
-        def unused20 = _collect_names_in_expr(e.expr, names);
+        _collect_names_in_expr(e.expr, names);
         def i = 0;
-        while (i < len(e.cases)) { def unused21 = _collect_names_in_expr(heap_get(e.cases, i).body, names); i = i + 1; }
+        while (i < len(e.cases)) { _collect_names_in_expr(heap_get(e.cases, i).body, names); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "VariantCtor") {
         def i = 0;
-        while (i < len(e.fields)) { def unused22 = _collect_names_in_expr(heap_get(heap_get(e.fields, i), 1), names); i = i + 1; }
+        while (i < len(e.fields)) { _collect_names_in_expr(heap_get(heap_get(e.fields, i), 1), names); i = i + 1; }
         return Null;
     }
     return Null;
@@ -593,61 +593,61 @@ fn uses_in_expr(e, reads) {
     if (e == Null) { return Null; }
     if (e.__tag__ == "Var") {
         def prev = Map.get(reads, e.name, 0);
-        def unused23 = Map.set(reads, e.name, prev + 1);
+        Map.set(reads, e.name, prev + 1);
         return Null;
     }
-    if (e.__tag__ == "Bin") { def unused24 = uses_in_expr(e.a, reads); def unused25 = uses_in_expr(e.b, reads); return Null; }
+    if (e.__tag__ == "Bin") { uses_in_expr(e.a, reads); uses_in_expr(e.b, reads); return Null; }
     if (e.__tag__ == "Call") {
         def prev_call = Map.get(reads, e.name, 0);
-        def unused_call = Map.set(reads, e.name, prev_call + 1);
+        Map.set(reads, e.name, prev_call + 1);
         def i = 0;
-        while (i < len(e.args)) { def unused26 = uses_in_expr(heap_get(e.args, i), reads); i = i + 1; }
+        while (i < len(e.args)) { uses_in_expr(heap_get(e.args, i), reads); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "Spawn") {
         def prev_spawn = Map.get(reads, e.name, 0);
-        def unused_spawn = Map.set(reads, e.name, prev_spawn + 1);
+        Map.set(reads, e.name, prev_spawn + 1);
         def i = 0;
-        while (i < len(e.args)) { def unused27 = uses_in_expr(heap_get(e.args, i), reads); i = i + 1; }
+        while (i < len(e.args)) { uses_in_expr(heap_get(e.args, i), reads); i = i + 1; }
         return Null;
     }
-    if (e.__tag__ == "Await") { def unused28 = uses_in_expr(e.expr, reads); return Null; }
-    if (e.__tag__ == "New") { def unused29 = uses_in_expr(e.size, reads); return Null; }
+    if (e.__tag__ == "Await") { uses_in_expr(e.expr, reads); return Null; }
+    if (e.__tag__ == "New") { uses_in_expr(e.size, reads); return Null; }
     if (e.__tag__ == "NewLit") {
         def i = 0;
-        while (i < len(e.items)) { def unused30 = uses_in_expr(heap_get(e.items, i), reads); i = i + 1; }
+        while (i < len(e.items)) { uses_in_expr(heap_get(e.items, i), reads); i = i + 1; }
         return Null;
     }
-    if (e.__tag__ == "Field") { def unused31 = uses_in_expr(e.obj, reads); return Null; }
+    if (e.__tag__ == "Field") { uses_in_expr(e.obj, reads); return Null; }
     if (e.__tag__ == "MethodCall") {
-        def unused32 = uses_in_expr(e.obj, reads);
+        uses_in_expr(e.obj, reads);
         def i = 0;
-        while (i < len(e.args)) { def unused33 = uses_in_expr(heap_get(e.args, i), reads); i = i + 1; }
+        while (i < len(e.args)) { uses_in_expr(heap_get(e.args, i), reads); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "ClassNew") {
         def i = 0;
-        while (i < len(e.init)) { def unused34 = uses_in_expr(heap_get(heap_get(e.init, i), 1), reads); i = i + 1; }
+        while (i < len(e.init)) { uses_in_expr(heap_get(heap_get(e.init, i), 1), reads); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "ObjLit") {
         def i = 0;
-        while (i < len(e.fields)) { def unused35 = uses_in_expr(heap_get(heap_get(e.fields, i), 1), reads); i = i + 1; }
+        while (i < len(e.fields)) { uses_in_expr(heap_get(heap_get(e.fields, i), 1), reads); i = i + 1; }
         return Null;
     }
     if (e.__tag__ == "Match") {
-        def unused36 = uses_in_expr(e.expr, reads);
+        uses_in_expr(e.expr, reads);
         def i = 0;
         while (i < len(e.cases)) {
             def tmp_reads = Map.new();
-            def unused37 = uses_in_expr(heap_get(e.cases, i).body, tmp_reads);
+            uses_in_expr(heap_get(e.cases, i).body, tmp_reads);
             def keys = Map.keys(tmp_reads);
             def j = 0;
             while (j < len(keys)) {
                 def name = heap_get(keys, j);
                 def count = Map.get(tmp_reads, name, 0);
                 def prev = Map.get(reads, name, 0);
-                if (count > prev) { def unused38 = Map.set(reads, name, count); }
+                if (count > prev) { Map.set(reads, name, count); }
                 j = j + 1;
             }
             i = i + 1;
@@ -656,7 +656,7 @@ fn uses_in_expr(e, reads) {
     }
     if (e.__tag__ == "VariantCtor") {
         def i = 0;
-        while (i < len(e.fields)) { def unused39 = uses_in_expr(heap_get(heap_get(e.fields, i), 1), reads); i = i + 1; }
+        while (i < len(e.fields)) { uses_in_expr(heap_get(heap_get(e.fields, i), 1), reads); i = i + 1; }
         return Null;
     }
     return Null;
@@ -677,64 +677,64 @@ fn uses_in_expr(e, reads) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_stmt_reads(s, reads) {
-    if (s.__tag__ == "Let" || s.__tag__ == "Assign") { def unused40 = uses_in_expr(s.expr, reads); return Null; }
-    if (s.__tag__ == "FieldAssign") { def unused41 = uses_in_expr(s.obj, reads); def unused42 = uses_in_expr(s.expr, reads); return Null; }
+    if (s.__tag__ == "Let" || s.__tag__ == "Assign") { uses_in_expr(s.expr, reads); return Null; }
+    if (s.__tag__ == "FieldAssign") { uses_in_expr(s.obj, reads); uses_in_expr(s.expr, reads); return Null; }
     if (s.__tag__ == "Print") {
         def i = 0;
-        while (i < len(s.exprs)) { def unused43 = uses_in_expr(heap_get(s.exprs, i), reads); i = i + 1; }
+        while (i < len(s.exprs)) { uses_in_expr(heap_get(s.exprs, i), reads); i = i + 1; }
         return Null;
     }
     if (s.__tag__ == "Flush") { return Null; }
     if (s.__tag__ == "If") {
-        def unused44 = uses_in_expr(s.cond, reads);
+        uses_in_expr(s.cond, reads);
         def i = 0;
-        while (i < len(s.then)) { def unused45 = lint_stmt_reads(heap_get(s.then, i), reads); i = i + 1; }
+        while (i < len(s.then)) { lint_stmt_reads(heap_get(s.then, i), reads); i = i + 1; }
         i = 0;
-        while (i < len(s.els)) { def unused46 = lint_stmt_reads(heap_get(s.els, i), reads); i = i + 1; }
+        while (i < len(s.els)) { lint_stmt_reads(heap_get(s.els, i), reads); i = i + 1; }
         return Null;
     }
-    if (s.__tag__ == "While") { def unused47 = uses_in_expr(s.cond, reads); def i = 0; while (i < len(s.body)) { def unused48 = lint_stmt_reads(heap_get(s.body, i), reads); i = i + 1; } return Null; }
+    if (s.__tag__ == "While") { uses_in_expr(s.cond, reads); def i = 0; while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), reads); i = i + 1; } return Null; }
     if (s.__tag__ == "Switch") {
-        def unused49 = uses_in_expr(s.expr, reads);
+        uses_in_expr(s.expr, reads);
         def i = 0;
         while (i < len(s.cases)) {
             def case_node = heap_get(s.cases, i);
-            if (case_node.value != Null) { def unused50 = uses_in_expr(case_node.value, reads); }
+            if (case_node.value != Null) { uses_in_expr(case_node.value, reads); }
             def bi = 0;
-            while (bi < len(case_node.body)) { def unused51 = lint_stmt_reads(heap_get(case_node.body, bi), reads); bi = bi + 1; }
+            while (bi < len(case_node.body)) { lint_stmt_reads(heap_get(case_node.body, bi), reads); bi = bi + 1; }
             i = i + 1;
         }
         return Null;
     }
     if (s.__tag__ == "TryCatch") {
         def i = 0;
-        while (i < len(s.body)) { def unused52 = lint_stmt_reads(heap_get(s.body, i), reads); i = i + 1; }
+        while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), reads); i = i + 1; }
         def handler_reads = Map.new();
         i = 0;
-        while (i < len(s.handler)) { def unused53 = lint_stmt_reads(heap_get(s.handler, i), handler_reads); i = i + 1; }
-        if (s.err_name != Null) { if (Map.get(handler_reads, s.err_name, 0) == 0) { def unused54 = Map.set(handler_reads, s.err_name, 0); } }
+        while (i < len(s.handler)) { lint_stmt_reads(heap_get(s.handler, i), handler_reads); i = i + 1; }
+        if (s.err_name != Null) { if (Map.get(handler_reads, s.err_name, 0) == 0) { Map.set(handler_reads, s.err_name, 0); } }
         def keys = Map.keys(handler_reads);
         i = 0;
         while (i < len(keys)) {
             def name = heap_get(keys, i);
             def count = Map.get(handler_reads, name, 0);
             def prev = Map.get(reads, name, 0);
-            if (count > prev) { def unused55 = Map.set(reads, name, count); }
+            if (count > prev) { Map.set(reads, name, count); }
             i = i + 1;
         }
         return Null;
     }
-    if (s.__tag__ == "Return") { def unused56 = uses_in_expr(s.expr, reads); return Null; }
+    if (s.__tag__ == "Return") { uses_in_expr(s.expr, reads); return Null; }
     if (s.__tag__ == "OpDef") {
         def tmp = Map.new();
         def i = 0;
-        while (i < len(s.body)) { def unused57 = lint_stmt_reads(heap_get(s.body, i), tmp); i = i + 1; }
+        while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), tmp); i = i + 1; }
         def miss = new[];
-        if (!__starts_with_underscore(s.a_name) && Map.get(tmp, s.a_name, 0) == 0) { def unused58 = Collections.push(miss, s.a_name); }
-        if (!__starts_with_underscore(s.b_name) && Map.get(tmp, s.b_name, 0) == 0) { def unused59 = Collections.push(miss, s.b_name); }
+        if (!__starts_with_underscore(s.a_name) && Map.get(tmp, s.a_name, 0) == 0) { Collections.push(miss, s.a_name); }
+        if (!__starts_with_underscore(s.b_name) && Map.get(tmp, s.b_name, 0) == 0) { Collections.push(miss, s.b_name); }
         if (len(miss) > 0) {
             def msg = "unused operator parameter(s) in op " + s.op + ": " + String.join(miss, ", ");
-            def unused60 = __raise_runtime_error(msg);
+            return __raise_runtime_error(msg);
         }
         def keys = Map.keys(tmp);
         i = 0;
@@ -743,29 +743,29 @@ fn lint_stmt_reads(s, reads) {
             if (!(name == s.a_name || name == s.b_name)) {
                 def count = Map.get(tmp, name, 0);
                 def prev = Map.get(reads, name, 0);
-                if (count > prev) { def unused61 = Map.set(reads, name, count); }
+                if (count > prev) { Map.set(reads, name, count); }
             }
             i = i + 1;
         }
         return Null;
     }
-    if (s.__tag__ == "DestructAssign") { def unused62 = uses_in_expr(s.expr, reads); return Null; }
+    if (s.__tag__ == "DestructAssign") { uses_in_expr(s.expr, reads); return Null; }
     if (s.__tag__ == "MethodDef") {
         def tmp = Map.new();
         def i = 0;
-        while (i < len(s.body)) { def unused63 = lint_stmt_reads(heap_get(s.body, i), tmp); i = i + 1; }
+        while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), tmp); i = i + 1; }
         def param_names = _param_names(s.params);
         def miss = new[];
         i = 0;
         while (i < len(param_names)) {
             def p = heap_get(param_names, i);
             if (p != "self" && !__starts_with_underscore(p)) {
-                if (Map.get(tmp, p, 0) == 0) { def unused64 = Collections.push(miss, p); }
+                if (Map.get(tmp, p, 0) == 0) { Collections.push(miss, p); }
             }
             i = i + 1;
         }
         if (len(miss) > 0) {
-            def unused65 = __raise_runtime_error("unused parameter(s) in method " + s.class_name + "." + s.name + ": " + String.join(miss, ", "));
+            return __raise_runtime_error("unused parameter(s) in method " + s.class_name + "." + s.name + ": " + String.join(miss, ", "));
         }
         def keys = Map.keys(tmp);
         i = 0;
@@ -777,7 +777,7 @@ fn lint_stmt_reads(s, reads) {
             if (!skip) {
                 def count = Map.get(tmp, name, 0);
                 def prev = Map.get(reads, name, 0);
-                if (count > prev) { def unused66 = Map.set(reads, name, count); }
+                if (count > prev) { Map.set(reads, name, count); }
             }
             i = i + 1;
         }
@@ -786,7 +786,7 @@ fn lint_stmt_reads(s, reads) {
     if (s.__tag__ == "Fn") {
         def tmp = Map.new();
         def i = 0;
-        while (i < len(s.body)) { def unused67 = lint_stmt_reads(heap_get(s.body, i), tmp); i = i + 1; }
+        while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), tmp); i = i + 1; }
         def param_names = _param_names(s.params);
         def keys = Map.keys(tmp);
         i = 0;
@@ -798,7 +798,7 @@ fn lint_stmt_reads(s, reads) {
             if (!skip) {
                 def count = Map.get(tmp, name, 0);
                 def prev = Map.get(reads, name, 0);
-                if (count > prev) { def unused68 = Map.set(reads, name, count); }
+                if (count > prev) { Map.set(reads, name, count); }
             }
             i = i + 1;
         }
@@ -806,17 +806,17 @@ fn lint_stmt_reads(s, reads) {
     }
     if (s.__tag__ == "ClassDef") {
         def i = 0;
-        while (i < len(s.methods)) { def unused69 = lint_stmt_reads(heap_get(s.methods, i), reads); i = i + 1; }
+        while (i < len(s.methods)) { lint_stmt_reads(heap_get(s.methods, i), reads); i = i + 1; }
         return Null;
     }
     if (s.__tag__ == "Namespace") {
         def i = 0;
-        while (i < len(s.body)) { def unused70 = lint_stmt_reads(heap_get(s.body, i), reads); i = i + 1; }
+        while (i < len(s.body)) { lint_stmt_reads(heap_get(s.body, i), reads); i = i + 1; }
         return Null;
     }
     if (s.__tag__ == "CallStmt") {
         def i = 0;
-        while (i < len(s.args)) { def unused71 = uses_in_expr(heap_get(s.args, i), reads); i = i + 1; }
+        while (i < len(s.args)) { uses_in_expr(heap_get(s.args, i), reads); i = i + 1; }
         return Null;
     }
     return Null;
@@ -839,27 +839,27 @@ fn lint_stmt_reads(s, reads) {
 fn lint_fn_params_used(fn_node, source) {
     def reads = Map.new();
     def i = 0;
-    while (i < len(fn_node.body)) { def unused72 = lint_stmt_reads(heap_get(fn_node.body, i), reads); i = i + 1; }
+    while (i < len(fn_node.body)) { lint_stmt_reads(heap_get(fn_node.body, i), reads); i = i + 1; }
     def param_names = _param_names(fn_node.params);
     def unused = new[];
         i = 0;
         while (i < len(param_names)) {
             def p = heap_get(param_names, i);
             if (!(p == "self" || __starts_with_underscore(p))) {
-                if (Map.get(reads, p, 0) == 0) { def unused73 = Collections.push(unused, p); }
+                if (Map.get(reads, p, 0) == 0) { Collections.push(unused, p); }
             }
             i = i + 1;
         }
     if (len(unused) > 0) {
         def msg = "unused parameter(s) in function " + fn_node.name + ": " + String.join(unused, ", ");
-        if (source == Null) { def unused74 = __raise_runtime_error(msg); }
-        else { def unused75 = _lint_error(source, fn_node, msg, "E002", "Remove the unused parameter or reference it."); }
+        if (source == Null) { return __raise_runtime_error(msg); }
+        else { _lint_error(source, fn_node, msg, "E002", "Remove the unused parameter or reference it."); }
     }
-    def unused76 = lint_param_mutations_returned(fn_node.body, Set.from_list(param_names), fn_node.name, false, source, fn_node.pos);
-    def unused77 = lint_destruct_call_outputs(fn_node.body, source);
-    def unused78 = lint_return_signatures(fn_node.body, fn_node.name, false, source, fn_node.pos);
-    def unused79 = lint_return_exhaustiveness(fn_node.body, fn_node.name, fn_node.return_type, false, source, fn_node);
-    def unused80 = lint_locals_used(fn_node.body, source);
+    lint_param_mutations_returned(fn_node.body, Set.from_list(param_names), fn_node.name, false, source, fn_node.pos);
+    lint_destruct_call_outputs(fn_node.body, source);
+    lint_return_signatures(fn_node.body, fn_node.name, false, source, fn_node.pos);
+    lint_return_exhaustiveness(fn_node.body, fn_node.name, fn_node.return_type, false, source, fn_node);
+    lint_locals_used(fn_node.body, source);
 }
 
 // ---------------------------------------------------------------------------
@@ -879,27 +879,27 @@ fn lint_fn_params_used(fn_node, source) {
 fn lint_method_params_used(md, source) {
     def reads = Map.new();
     def i = 0;
-    while (i < len(md.body)) { def unused81 = lint_stmt_reads(heap_get(md.body, i), reads); i = i + 1; }
+    while (i < len(md.body)) { lint_stmt_reads(heap_get(md.body, i), reads); i = i + 1; }
     def param_names = _param_names(md.params);
     def unused = new[];
         i = 0;
         while (i < len(param_names)) {
             def p = heap_get(param_names, i);
             if (!(p == "self" || __starts_with_underscore(p))) {
-                if (Map.get(reads, p, 0) == 0) { def unused82 = Collections.push(unused, p); }
+                if (Map.get(reads, p, 0) == 0) { Collections.push(unused, p); }
             }
             i = i + 1;
         }
     if (len(unused) > 0) {
         def msg = "unused parameter(s) in method " + md.class_name + "." + md.name + ": " + String.join(unused, ", ");
-        if (source == Null) { def unused83 = __raise_runtime_error(msg); }
-        else { def unused84 = _lint_error(source, md, msg, "E002", "Remove the unused parameter or reference it."); }
+        if (source == Null) { return __raise_runtime_error(msg); }
+        else { _lint_error(source, md, msg, "E002", "Remove the unused parameter or reference it."); }
     }
-    def unused85 = lint_param_mutations_returned(md.body, Set.from_list(param_names), md.class_name + "." + md.name, true, source, md.pos);
-    def unused86 = lint_destruct_call_outputs(md.body, source);
-    def unused87 = lint_return_signatures(md.body, md.class_name + "." + md.name, true, source, md.pos);
-    def unused88 = lint_return_exhaustiveness(md.body, md.class_name + "." + md.name, md.return_type, true, source, md);
-    def unused89 = lint_locals_used(md.body, source);
+    lint_param_mutations_returned(md.body, Set.from_list(param_names), md.class_name + "." + md.name, true, source, md.pos);
+    lint_destruct_call_outputs(md.body, source);
+    lint_return_signatures(md.body, md.class_name + "." + md.name, true, source, md.pos);
+    lint_return_exhaustiveness(md.body, md.class_name + "." + md.name, md.return_type, true, source, md);
+    lint_locals_used(md.body, source);
 }
 
 // ---------------------------------------------------------------------------
@@ -919,7 +919,7 @@ fn lint_method_params_used(md, source) {
 fn lint_locals_used(stmts, source) {
     if (source != Null) {
         def msg = Python.call("tiny_language", "_lint_message", new[source], PY_LINT_ALLOW);
-        if (msg != Null) { def unused999 = __raise_runtime_error(msg); }
+        if (msg != Null) { return __raise_runtime_error(msg); }
         return Null;
     }
     def unused = new[];
@@ -940,7 +940,7 @@ fn lint_locals_used(stmts, source) {
     // ---------------------------------------------------------------------------
     fn names_in_expr(expr) {
         def reads = Map.new();
-        def unused90 = uses_in_expr(expr, reads);
+        uses_in_expr(expr, reads);
         return Map.keys(reads);
     }
 
@@ -962,7 +962,7 @@ fn lint_locals_used(stmts, source) {
         def entry = Map.get(state, name, Null);
         if (entry != Null) {
             def pos = heap_get(entry, 0);
-            def unused91 = Map.set(state, name, new[pos, true, true]);
+            Map.set(state, name, new[pos, true, true]);
         }
     }
 
@@ -983,12 +983,12 @@ fn lint_locals_used(stmts, source) {
     fn _mark_captured_uses(block, state) {
         def reads = Map.new();
         def i = 0;
-        while (i < len(block)) { def unused92 = lint_stmt_reads(heap_get(block, i), reads); i = i + 1; }
+        while (i < len(block)) { lint_stmt_reads(heap_get(block, i), reads); i = i + 1; }
         def keys = Map.keys(reads);
         i = 0;
         while (i < len(keys)) {
             def nm = heap_get(keys, i);
-            if (Map.get(state, nm, Null) != Null) { def unused93 = _mark_used(state, nm); }
+            if (Map.get(state, nm, Null) != Null) { _mark_used(state, nm); }
             i = i + 1;
         }
     }
@@ -1022,7 +1022,7 @@ fn lint_locals_used(stmts, source) {
                 def used_any = heap_get(entry, 2);
                 def prev = Map.get(merged, name, Null);
                 if (prev == Null) {
-                    def unused94 = Map.set(merged, name, new[pos, used_all, used_any]);
+                    Map.set(merged, name, new[pos, used_all, used_any]);
                 } else {
                     def prev_pos = heap_get(prev, 0);
                     def prev_all = heap_get(prev, 1);
@@ -1069,10 +1069,10 @@ fn lint_locals_used(stmts, source) {
                     def new_state = __copy_state(state);
                     def names = names_in_expr(st.expr);
                     def ni = 0;
-                    while (ni < len(names)) { def unused95 = _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
+                    while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
                     def decl_pos = st.name_span;
                     if (decl_pos == Null) { decl_pos = st.pos; }
-                    def unused96 = Map.set(new_state, st.name, new[decl_pos, false, false]);
+                    Map.set(new_state, st.name, new[decl_pos, false, false]);
                     Collections.push(next_active, new_state);
                     handled = true;
                 }
@@ -1081,17 +1081,17 @@ fn lint_locals_used(stmts, source) {
                     def bind = _import_binding_name(st.module, st.alias);
                     def decl_pos = st.binding_span;
                     if (decl_pos == Null) { decl_pos = st.pos; }
-                    def unused97 = Map.set(new_state, bind, new[decl_pos, false, false]);
+                    Map.set(new_state, bind, new[decl_pos, false, false]);
                     Collections.push(next_active, new_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "DestructAssign") {
                     def new_state = __copy_state(state);
                     def ni = 0;
-                    while (ni < len(st.names)) { def span = heap_get(st.name_spans, ni); def unused98 = Map.set(new_state, heap_get(st.names, ni), new[span, false, false]); ni = ni + 1; }
+                    while (ni < len(st.names)) { def span = heap_get(st.name_spans, ni); Map.set(new_state, heap_get(st.names, ni), new[span, false, false]); ni = ni + 1; }
                     def names = names_in_expr(st.expr);
                     ni = 0;
-                    while (ni < len(names)) { def unused99 = _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
+                    while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
                     Collections.push(next_active, new_state);
                     handled = true;
                 }
@@ -1099,7 +1099,7 @@ fn lint_locals_used(stmts, source) {
                     def new_state = __copy_state(state);
                     def names = names_in_expr(st.expr);
                     def ni = 0;
-                    while (ni < len(names)) { def unused100 = _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
+                    while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
                     Collections.push(next_active, new_state);
                     handled = true;
                 }
@@ -1107,10 +1107,10 @@ fn lint_locals_used(stmts, source) {
                     def new_state = __copy_state(state);
                     def names = names_in_expr(st.obj);
                     def ni = 0;
-                    while (ni < len(names)) { def unused101 = _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
+                    while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
                     names = names_in_expr(st.expr);
                     ni = 0;
-                    while (ni < len(names)) { def unused102 = _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
+                    while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
                     Collections.push(next_active, new_state);
                     handled = true;
                 }
@@ -1120,7 +1120,7 @@ fn lint_locals_used(stmts, source) {
                     while (ei < len(st.exprs)) {
                         def names = names_in_expr(heap_get(st.exprs, ei));
                         def ni = 0;
-                        while (ni < len(names)) { def unused103 = _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
+                        while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
                         ei = ei + 1;
                     }
                     Collections.push(next_active, new_state);
@@ -1136,7 +1136,7 @@ fn lint_locals_used(stmts, source) {
                     while (ai2 < len(st.args)) {
                         def names = names_in_expr(heap_get(st.args, ai2));
                         def ni = 0;
-                        while (ni < len(names)) { def unused104 = _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
+                        while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
                         ai2 = ai2 + 1;
                     }
                     Collections.push(next_active, new_state);
@@ -1146,7 +1146,7 @@ fn lint_locals_used(stmts, source) {
                     def new_state = __copy_state(state);
                     def names = names_in_expr(st.expr);
                     def ni = 0;
-                    while (ni < len(names)) { def unused105 = _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
+                    while (ni < len(names)) { _mark_used(new_state, heap_get(names, ni)); ni = ni + 1; }
                     Collections.push(terminated_states, new_state);
                     handled = true;
                 }
@@ -1154,11 +1154,11 @@ fn lint_locals_used(stmts, source) {
                     def cond_state = __copy_state(state);
                     def cond_names = names_in_expr(st.cond);
                     def ci = 0;
-                    while (ci < len(cond_names)) { def unused106 = _mark_used(cond_state, heap_get(cond_names, ci)); ci = ci + 1; }
+                    while (ci < len(cond_names)) { _mark_used(cond_state, heap_get(cond_names, ci)); ci = ci + 1; }
                     def cond_is_bool = st.cond.__tag__ == "Bool";
                     def cond_truthy = cond_is_bool && st.cond.value;
                     if (cond_is_bool && cond_truthy) {
-                        if (len(st.els) > 0) { def unused107 = lint_locals_used(st.els, source); }
+                        if (len(st.els) > 0) { lint_locals_used(st.els, source); }
                         def then_res = analyze_block(st.then, new[cond_state]);
                         def then_active = heap_get(then_res, 0);
                         def then_term = heap_get(then_res, 1);
@@ -1168,7 +1168,7 @@ fn lint_locals_used(stmts, source) {
                         while (ti < len(then_term)) { Collections.push(terminated_states, heap_get(then_term, ti)); ti = ti + 1; }
                     } else {
                         if (cond_is_bool && !cond_truthy) {
-                            if (len(st.then) > 0) { def unused108 = lint_locals_used(st.then, source); }
+                            if (len(st.then) > 0) { lint_locals_used(st.then, source); }
                             def else_res = analyze_block(st.els, new[cond_state]);
                             def else_active = heap_get(else_res, 0);
                             def else_term = heap_get(else_res, 1);
@@ -1200,9 +1200,9 @@ fn lint_locals_used(stmts, source) {
                     def cond_state = __copy_state(state);
                     def cond_names = names_in_expr(st.cond);
                     def ci = 0;
-                    while (ci < len(cond_names)) { def unused109 = _mark_used(cond_state, heap_get(cond_names, ci)); ci = ci + 1; }
+                    while (ci < len(cond_names)) { _mark_used(cond_state, heap_get(cond_names, ci)); ci = ci + 1; }
                     if (st.cond.__tag__ == "Bool" && !st.cond.value) {
-                        def unused110 = lint_locals_used(st.body, source);
+                        lint_locals_used(st.body, source);
                         Collections.push(next_active, cond_state);
                     } else {
                         def body_res = analyze_block(st.body, new[cond_state]);
@@ -1219,7 +1219,7 @@ fn lint_locals_used(stmts, source) {
                     def switch_state = __copy_state(state);
                     def switch_names = names_in_expr(st.expr);
                     def si = 0;
-                    while (si < len(switch_names)) { def unused111 = _mark_used(switch_state, heap_get(switch_names, si)); si = si + 1; }
+                    while (si < len(switch_names)) { _mark_used(switch_state, heap_get(switch_names, si)); si = si + 1; }
                     def has_default = false;
                     def ci = 0;
                     while (ci < len(st.cases)) {
@@ -1228,7 +1228,7 @@ fn lint_locals_used(stmts, source) {
                         else {
                             def case_names = names_in_expr(case_node.value);
                             def ni = 0;
-                            while (ni < len(case_names)) { def unused112 = _mark_used(switch_state, heap_get(case_names, ni)); ni = ni + 1; }
+                            while (ni < len(case_names)) { _mark_used(switch_state, heap_get(case_names, ni)); ni = ni + 1; }
                         }
                         def case_res = analyze_block(case_node.body, new[__copy_state(switch_state)]);
                         def case_active = heap_get(case_res, 0);
@@ -1245,7 +1245,7 @@ fn lint_locals_used(stmts, source) {
                 if (!handled && st.__tag__ == "TryCatch") {
                     def body_res = analyze_block(st.body, new[__copy_state(state)]);
                     def handler_state = __copy_state(state);
-                    if (st.err_name != Null) { def unused113 = Map.set(handler_state, st.err_name, new[st.pos, false, false]); }
+                    if (st.err_name != Null) { Map.set(handler_state, st.err_name, new[st.pos, false, false]); }
                     def handler_res = analyze_block(st.handler, new[handler_state]);
                     def body_active = heap_get(body_res, 0);
                     def handler_active = heap_get(handler_res, 0);
@@ -1263,29 +1263,29 @@ fn lint_locals_used(stmts, source) {
                 }
                 if (!handled && st.__tag__ == "Namespace") {
                     def nested_state = __copy_state(state);
-                    def unused114 = _mark_captured_uses(st.body, nested_state);
-                    def unused115 = lint_locals_used(st.body, source);
+                    _mark_captured_uses(st.body, nested_state);
+                    lint_locals_used(st.body, source);
                     Collections.push(next_active, nested_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "ClassDef") {
                     def nested_state = __copy_state(state);
                     def mi = 0;
-                    while (mi < len(st.methods)) { def unused116 = _mark_captured_uses(heap_get(st.methods, mi).body, nested_state); def unused117 = lint_locals_used(heap_get(st.methods, mi).body, source); mi = mi + 1; }
+                    while (mi < len(st.methods)) { _mark_captured_uses(heap_get(st.methods, mi).body, nested_state); lint_locals_used(heap_get(st.methods, mi).body, source); mi = mi + 1; }
                     Collections.push(next_active, nested_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "Fn") {
                     def nested_state = __copy_state(state);
-                    def unused118 = _mark_captured_uses(st.body, nested_state);
-                    def unused119 = lint_locals_used(st.body, source);
+                    _mark_captured_uses(st.body, nested_state);
+                    lint_locals_used(st.body, source);
                     Collections.push(next_active, nested_state);
                     handled = true;
                 }
                 if (!handled && st.__tag__ == "MethodDef") {
                     def nested_state = __copy_state(state);
-                    def unused120 = _mark_captured_uses(st.body, nested_state);
-                    def unused121 = lint_locals_used(st.body, source);
+                    _mark_captured_uses(st.body, nested_state);
+                    lint_locals_used(st.body, source);
                     Collections.push(next_active, nested_state);
                     handled = true;
                 }
@@ -1305,9 +1305,9 @@ fn lint_locals_used(stmts, source) {
     def terminated = heap_get(res, 1);
     def all_states = new[];
     def i = 0;
-    while (i < len(active)) { def unused122 = Collections.push(all_states, heap_get(active, i)); i = i + 1; }
+    while (i < len(active)) { Collections.push(all_states, heap_get(active, i)); i = i + 1; }
     i = 0;
-    while (i < len(terminated)) { def unused123 = Collections.push(all_states, heap_get(terminated, i)); i = i + 1; }
+    while (i < len(terminated)) { Collections.push(all_states, heap_get(terminated, i)); i = i + 1; }
 
     def usage_summary = Map.new();
 
@@ -1380,10 +1380,10 @@ fn lint_locals_used(stmts, source) {
                     def p22 = Map.set(fresh, "used_any", false);
                     def p32 = Map.set(fresh, "active_all", true);
                     def p42 = Map.set(fresh, "active_present", false);
-                    def unused124 = Map.set(usage_summary, map_key, fresh);
+                    Map.set(usage_summary, map_key, fresh);
                     prev = fresh;
                 }
-                def unused125 = Map.set(prev, "used_any", Map.get(prev, "used_any") || used_any);
+                Map.set(prev, "used_any", Map.get(prev, "used_any") || used_any);
                 if (active_state) {
                     def a = Map.set(prev, "active_all", Map.get(prev, "active_all") && used_all);
                     def b = Map.set(prev, "active_present", true);
@@ -1394,8 +1394,8 @@ fn lint_locals_used(stmts, source) {
         }
     }
 
-    def unused126 = _accumulate(active, true);
-    def unused127 = _accumulate(terminated, false);
+    _accumulate(active, true);
+    _accumulate(terminated, false);
 
     def summary_keys = Map.keys(usage_summary);
     def si = 0;
@@ -1410,11 +1410,11 @@ fn lint_locals_used(stmts, source) {
             def active_present = Map.get(info, "active_present");
             if (!used_any) {
                 def pos = Map.get(info, "pos");
-                def unused128 = Collections.push(unused, new[name, pos]);
+                Collections.push(unused, new[name, pos]);
             } else {
                 if (active_present && !active_all) {
                     def pos = Map.get(info, "pos");
-                    def unused129 = Collections.push(partial, new[name, pos]);
+                    Collections.push(partial, new[name, pos]);
                 }
             }
         }
@@ -1425,19 +1425,19 @@ fn lint_locals_used(stmts, source) {
         def names = new[];
         def pos = heap_get(heap_get(unused, 0), 1);
         def ui = 0;
-        while (ui < len(unused)) { def unused130 = Collections.push(names, heap_get(heap_get(unused, ui), 0)); ui = ui + 1; }
+        while (ui < len(unused)) { Collections.push(names, heap_get(heap_get(unused, ui), 0)); ui = ui + 1; }
         def msg = "unused local binding(s): " + String.join(names, ", ");
-        if (source == Null) { def unused131 = __raise_runtime_error(msg); }
-        else { def unused132 = _lint_error(source, pos, msg, "E002", "Remove the unused binding or reference it."); }
+        if (source == Null) { return __raise_runtime_error(msg); }
+        else { _lint_error(source, pos, msg, "E002", "Remove the unused binding or reference it."); }
     }
     if (len(partial) > 0) {
         def names = new[];
         def pos = heap_get(heap_get(partial, 0), 1);
         def ui = 0;
-        while (ui < len(partial)) { def unused133 = Collections.push(names, heap_get(heap_get(partial, ui), 0)); ui = ui + 1; }
+        while (ui < len(partial)) { Collections.push(names, heap_get(heap_get(partial, ui), 0)); ui = ui + 1; }
         def msg = "local binding(s) must be used on all control-flow paths: " + String.join(names, ", ");
-        if (source == Null) { def unused134 = __raise_runtime_error(msg); }
-        else { def unused135 = _lint_error(source, pos, msg, "E002", "Ensure the binding is referenced on every path or remove it."); }
+        if (source == Null) { return __raise_runtime_error(msg); }
+        else { _lint_error(source, pos, msg, "E002", "Ensure the binding is referenced on every path or remove it."); }
     }
 }
 
@@ -1463,7 +1463,7 @@ fn __trim(text) {
     while (stop >= start && heap_get(chars, stop) == " ") { stop = stop - 1; }
     def buf = new[];
     def i = start;
-    while (i <= stop) { def unused136 = Collections.push(buf, heap_get(chars, i)); i = i + 1; }
+    while (i <= stop) { Collections.push(buf, heap_get(chars, i)); i = i + 1; }
     return String.join(buf, "");
 }
 
@@ -1560,7 +1560,7 @@ fn lint_assignment_types(stmts, source, env) {
     if (env != Null) {
         def keys = Map.keys(env);
         def i = 0;
-        while (i < len(keys)) { def k = heap_get(keys, i); def unused137 = Map.set(base_env, k, Map.get(env, k)); i = i + 1; }
+        while (i < len(keys)) { def k = heap_get(keys, i); Map.set(base_env, k, Map.get(env, k)); i = i + 1; }
     }
 
     // ---------------------------------------------------------------------------
@@ -1584,7 +1584,7 @@ fn lint_assignment_types(stmts, source, env) {
             def handled = false;
             if (!handled && st.__tag__ == "Let") {
                 def inferred = _infer_expr_type(st.expr, local_env);
-                if (inferred != Null) { def unused138 = Map.set(local_env, st.name, inferred); }
+                if (inferred != Null) { Map.set(local_env, st.name, inferred); }
                 handled = true;
             }
             if (!handled && st.__tag__ == "Assign") {
@@ -1592,17 +1592,17 @@ fn lint_assignment_types(stmts, source, env) {
                 def expected = Map.get(local_env, st.name, Null);
                 if (expected != Null && inferred != Null && !_types_match(expected, inferred)) {
                     def msg = "type change for variable " + st.name + ": expected " + expected + " but got " + inferred;
-                    if (source == Null) { def unused139 = __raise_runtime_error(msg); }
-                    else { def unused140 = _lint_error(source, st, msg, "E014", "Use a new variable or cast explicitly if a different type is required."); }
+                    if (source == Null) { return __raise_runtime_error(msg); }
+                    else { _lint_error(source, st, msg, "E014", "Use a new variable or cast explicitly if a different type is required."); }
                 }
-                if (inferred != Null) { def unused141 = Map.set(local_env, st.name, inferred); }
+                if (inferred != Null) { Map.set(local_env, st.name, inferred); }
                 handled = true;
             }
             if (!handled && st.__tag__ == "DestructAssign") {
                 def inferred = _infer_expr_type(st.expr, local_env);
                 if (inferred != Null) {
                     def ni = 0;
-                    while (ni < len(st.names)) { def unused142 = Map.set(local_env, heap_get(st.names, ni), inferred); ni = ni + 1; }
+                    while (ni < len(st.names)) { Map.set(local_env, heap_get(st.names, ni), inferred); ni = ni + 1; }
                 }
                 handled = true;
             }
@@ -1614,14 +1614,14 @@ fn lint_assignment_types(stmts, source, env) {
                 while (ki < len(keys)) {
                     def name = heap_get(keys, ki);
                     if (Map.get(then_env, name, Null) != Null && Map.get(else_env, name, Null) != Null && Map.get(then_env, name) == Map.get(else_env, name)) {
-                        def unused143 = Map.set(local_env, name, Map.get(then_env, name));
+                        Map.set(local_env, name, Map.get(then_env, name));
                     }
                     ki = ki + 1;
                 }
                 handled = true;
             }
             if (!handled && st.__tag__ == "While") {
-                def unused144 = check_block(st.body, __copy_state(local_env));
+                check_block(st.body, __copy_state(local_env));
                 handled = true;
             }
             if (!handled && st.__tag__ == "Switch") {
@@ -1630,7 +1630,7 @@ fn lint_assignment_types(stmts, source, env) {
                 while (ci < len(st.cases)) {
                     def case_node = heap_get(st.cases, ci);
                     def env_copy = check_block(case_node.body, __copy_state(local_env));
-                    def unused145 = Collections.push(case_envs, env_copy);
+                    Collections.push(case_envs, env_copy);
                     ci = ci + 1;
                 }
                 def has_default = false;
@@ -1640,7 +1640,7 @@ fn lint_assignment_types(stmts, source, env) {
                     if (case_node.value == Null) { has_default = true; }
                     ci = ci + 1;
                 }
-                if (!has_default) { def unused146 = Collections.push(case_envs, __copy_state(local_env)); }
+                if (!has_default) { Collections.push(case_envs, __copy_state(local_env)); }
                 def keys = Map.keys(local_env);
                 def ki = 0;
                 while (ki < len(keys)) {
@@ -1652,7 +1652,7 @@ fn lint_assignment_types(stmts, source, env) {
                         def env_case = heap_get(case_envs, ei);
                         def value = Map.get(env_case, name, Null);
                         if (value == Null) { all_have = false; }
-                        else { def unused147 = Collections.push(distinct, value); }
+                        else { Collections.push(distinct, value); }
                         ei = ei + 1;
                     }
                     if (all_have && len(distinct) > 0) {
@@ -1663,7 +1663,7 @@ fn lint_assignment_types(stmts, source, env) {
                             if (heap_get(distinct, di) != first) { all_same = false; }
                             di = di + 1;
                         }
-                        if (all_same) { def unused148 = Map.set(local_env, name, first); }
+                        if (all_same) { Map.set(local_env, name, first); }
                     }
                     ki = ki + 1;
                 }
@@ -1672,35 +1672,35 @@ fn lint_assignment_types(stmts, source, env) {
             if (!handled && st.__tag__ == "TryCatch") {
                 def body_env = check_block(st.body, __copy_state(local_env));
                 def handler_env = __copy_state(local_env);
-                if (st.err_name != Null) { def unused149 = Map.set(handler_env, st.err_name, "Error"); }
+                if (st.err_name != Null) { Map.set(handler_env, st.err_name, "Error"); }
                 handler_env = check_block(st.handler, handler_env);
                 def keys = Map.keys(local_env);
                 def ki = 0;
                 while (ki < len(keys)) {
                     def name = heap_get(keys, ki);
                     if (Map.get(body_env, name, Null) != Null && Map.get(handler_env, name, Null) != Null && Map.get(body_env, name) == Map.get(handler_env, name)) {
-                        def unused150 = Map.set(local_env, name, Map.get(body_env, name));
+                        Map.set(local_env, name, Map.get(body_env, name));
                     }
                     ki = ki + 1;
                 }
                 handled = true;
             }
             if (!handled && st.__tag__ == "Namespace") {
-                def unused151 = check_block(st.body, Map.new());
+                check_block(st.body, Map.new());
                 handled = true;
             }
             if (!handled && st.__tag__ == "Fn") {
                 def fn_env = Map.new();
                 def pi = 0;
-                while (pi < len(st.params)) { def p = heap_get(st.params, pi); if (p.type_hint != Null) { def unused152 = Map.set(fn_env, p.name, p.type_hint); } pi = pi + 1; }
-                def unused153 = check_block(st.body, fn_env);
+                while (pi < len(st.params)) { def p = heap_get(st.params, pi); if (p.type_hint != Null) { Map.set(fn_env, p.name, p.type_hint); } pi = pi + 1; }
+                check_block(st.body, fn_env);
                 handled = true;
             }
             if (!handled && st.__tag__ == "MethodDef") {
                 def method_env = Map.new();
                 def pi = 0;
-                while (pi < len(st.params)) { def p = heap_get(st.params, pi); if (p.type_hint != Null) { def unused154 = Map.set(method_env, p.name, p.type_hint); } pi = pi + 1; }
-                def unused155 = check_block(st.body, method_env);
+                while (pi < len(st.params)) { def p = heap_get(st.params, pi); if (p.type_hint != Null) { Map.set(method_env, p.name, p.type_hint); } pi = pi + 1; }
+                check_block(st.body, method_env);
                 handled = true;
             }
             if (!handled && st.__tag__ == "ClassDef") {
@@ -1709,8 +1709,8 @@ fn lint_assignment_types(stmts, source, env) {
                     def method_env = Map.new();
                     def pi = 0;
                     def m = heap_get(st.methods, mi);
-                    while (pi < len(m.params)) { def p = heap_get(m.params, pi); if (p.type_hint != Null) { def unused156 = Map.set(method_env, p.name, p.type_hint); } pi = pi + 1; }
-                    def unused157 = check_block(m.body, method_env);
+                    while (pi < len(m.params)) { def p = heap_get(m.params, pi); if (p.type_hint != Null) { Map.set(method_env, p.name, p.type_hint); } pi = pi + 1; }
+                    check_block(m.body, method_env);
                     mi = mi + 1;
                 }
                 handled = true;
@@ -1720,7 +1720,7 @@ fn lint_assignment_types(stmts, source, env) {
                 while (ai < len(st.args)) {
                     def arg = heap_get(st.args, ai);
                     def inferred = _infer_expr_type(arg, local_env);
-                    if (arg.__tag__ == "Var" && inferred != Null) { def unused158 = Map.set(local_env, arg.name, inferred); }
+                    if (arg.__tag__ == "Var" && inferred != Null) { Map.set(local_env, arg.name, inferred); }
                     ai = ai + 1;
                 }
                 handled = true;
@@ -1730,7 +1730,7 @@ fn lint_assignment_types(stmts, source, env) {
         return local_env;
     }
 
-    def unused159 = check_block(stmts, base_env);
+    check_block(stmts, base_env);
 }
 
 // ---------------------------------------------------------------------------
@@ -1771,14 +1771,14 @@ fn _collect_function_signatures(stmts, prefix) {
         def st = heap_get(stmts, i);
         def handled = false;
         if (!handled && st.__tag__ == "Fn") {
-            def unused1602 = Map.set(sigs, qualify(st.name), st.return_type);
+            Map.set(sigs, qualify(st.name), st.return_type);
             handled = true;
         }
         if (!handled && st.__tag__ == "Namespace") {
             def nested = _collect_function_signatures(st.body, qualify(st.name));
             def keys = Map.keys(nested);
             def j = 0;
-            while (j < len(keys)) { def k = heap_get(keys, j); def unused1612 = Map.set(sigs, k, Map.get(nested, k)); j = j + 1; }
+            while (j < len(keys)) { def k = heap_get(keys, j); Map.set(sigs, k, Map.get(nested, k)); j = j + 1; }
             handled = true;
         }
         i = i + 1;
@@ -1885,14 +1885,14 @@ fn __collect_function_return_values(stmts, prefix) {
         def st = heap_get(stmts, i);
         def handled = false;
         if (!handled && st.__tag__ == "Fn") {
-            def unused1602 = Map.set(values, qualify(st.name), __function_returns_value(st));
+            Map.set(values, qualify(st.name), __function_returns_value(st));
             handled = true;
         }
         if (!handled && st.__tag__ == "Namespace") {
             def nested = __collect_function_return_values(st.body, qualify(st.name));
             def keys = Map.keys(nested);
             def j = 0;
-            while (j < len(keys)) { def k = heap_get(keys, j); def unused1612 = Map.set(values, k, Map.get(nested, k)); j = j + 1; }
+            while (j < len(keys)) { def k = heap_get(keys, j); Map.set(values, k, Map.get(nested, k)); j = j + 1; }
             handled = true;
         }
         i = i + 1;
@@ -1916,10 +1916,10 @@ fn __collect_function_return_values(stmts, prefix) {
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_bare_call_results(stmts, signatures, source) {
-    def unused_signatures = signatures;
+    if (signatures == Null) { }
     def returns_value = __collect_function_return_values(stmts, "");
-    def unused_heap_set = Map.set(returns_value, "heap_set", true);
-    def unused_heap_get = Map.set(returns_value, "heap_get", true);
+    Map.set(returns_value, "heap_set", true);
+    Map.set(returns_value, "heap_get", true);
 
     fn __is_allowed_call_stmt(name) {
         if (name == "delete" || name == "tag" || name == "join" || name == "parse_program") { return true; }
@@ -1977,8 +1977,8 @@ fn lint_bare_call_results(stmts, signatures, source) {
                 else {
                 def msg = "call with return value must be bound; bare call statements are not allowed";
                 def hint = "Bind the return value, e.g. `def result = call();`, or add a return that includes the mutated data.";
-                if (source == Null) { def unused260 = __raise_runtime_error(msg); }
-                else { def unused261 = _lint_error(source, st, msg, "E001", hint); }
+                if (source == Null) { return __raise_runtime_error(msg); }
+                else { _lint_error(source, st, msg, "E001", hint); }
                 handled = true;
                 }
             }
@@ -1986,24 +1986,24 @@ fn lint_bare_call_results(stmts, signatures, source) {
                 if (__binding_discarded(st.name) && __call_returns_value(st.expr)) {
                     def msg = "call with return value must be bound; bare call statements are not allowed";
                     def hint = "Bind the return value, e.g. `def result = call();`, or add a return that includes the mutated data.";
-                    if (source == Null) { def unused262 = __raise_runtime_error(msg); }
-                    else { def unused263 = _lint_error(source, st, msg, "E001", hint); }
+                    if (source == Null) { return __raise_runtime_error(msg); }
+                    else { _lint_error(source, st, msg, "E001", hint); }
                     handled = true;
                 }
             }
-            if (!handled && st.__tag__ == "If") { def unused164 = visit(st.then); def unused165 = visit(st.els); handled = true; }
-            if (!handled && st.__tag__ == "While") { def unused166 = visit(st.body); handled = true; }
-            if (!handled && st.__tag__ == "TryCatch") { def unused167 = visit(st.body); def unused168 = visit(st.handler); handled = true; }
-            if (!handled && st.__tag__ == "Namespace") { def unused169 = visit(st.body); handled = true; }
+            if (!handled && st.__tag__ == "If") { visit(st.then); visit(st.els); handled = true; }
+            if (!handled && st.__tag__ == "While") { visit(st.body); handled = true; }
+            if (!handled && st.__tag__ == "TryCatch") { visit(st.body); visit(st.handler); handled = true; }
+            if (!handled && st.__tag__ == "Namespace") { visit(st.body); handled = true; }
             if (!handled && st.__tag__ == "ClassDef") {
                 def mi = 0;
-                while (mi < len(st.methods)) { def unused170 = visit(heap_get(st.methods, mi).body); mi = mi + 1; }
+                while (mi < len(st.methods)) { visit(heap_get(st.methods, mi).body); mi = mi + 1; }
             }
             bi = bi + 1;
         }
     }
 
-    def unused171 = visit(stmts);
+    visit(stmts);
 }
 
 // ---------------------------------------------------------------------------
@@ -2041,7 +2041,7 @@ fn __import_sort_key(imp) {
 fn __sorted_imports(imports) {
     def arr = new[];
     def i = 0;
-    while (i < len(imports)) { def unused172 = Collections.push(arr, heap_get(imports, i)); i = i + 1; }
+    while (i < len(imports)) { Collections.push(arr, heap_get(imports, i)); i = i + 1; }
     def n = len(arr);
     def a = 0;
     // ---------------------------------------------------------------------------
@@ -2064,10 +2064,10 @@ fn __sorted_imports(imports) {
         def si = 0;
         while (si < len(list)) {
             if (si == idx_a) {
-                def unused173 = Collections.push(out, heap_get(list, idx_b));
+                Collections.push(out, heap_get(list, idx_b));
             } else {
-                if (si == idx_b) { def unused174 = Collections.push(out, heap_get(list, idx_a)); }
-                else { def unused175 = Collections.push(out, heap_get(list, si)); }
+                if (si == idx_b) { Collections.push(out, heap_get(list, idx_a)); }
+                else { Collections.push(out, heap_get(list, si)); }
             }
             si = si + 1;
         }
@@ -2109,7 +2109,7 @@ fn lint_import_style(stmts, source) {
     while (i < len(stmts) && collecting) {
         def st = heap_get(stmts, i);
         if (st.__tag__ == "Import") {
-            def unused176 = Collections.push(imports, st);
+            Collections.push(imports, st);
             i = i + 1;
         } else {
             collecting = false;
@@ -2138,15 +2138,15 @@ fn lint_import_style(stmts, source) {
             def first_misordered = heap_get(imports, 0);
             def msg = "imports are not sorted alphabetically";
             def hint = "Sort the leading import block alphabetically to keep module headers consistent.";
-            if (source == Null) { def unused177 = __raise_runtime_error(msg); }
-            else { def unused178 = _lint_error(source, first_misordered, msg, "E012", hint); }
+            if (source == Null) { return __raise_runtime_error(msg); }
+            else { _lint_error(source, first_misordered, msg, "E012", hint); }
         }
     }
 
     def j = 0;
     while (j < len(stmts)) {
         def st = heap_get(stmts, j);
-        if (st.__tag__ == "Namespace") { def unused179 = lint_import_style(st.body, source); }
+        if (st.__tag__ == "Namespace") { lint_import_style(st.body, source); }
         j = j + 1;
     }
 }
@@ -2167,7 +2167,7 @@ fn lint_import_style(stmts, source) {
 // ---------------------------------------------------------------------------
 fn lint_destruct_call_outputs(stmts, source) {
     def i = 0;
-    while (i < len(stmts)) { def unused180 = lint_destruct_call_outputs_stmt(heap_get(stmts, i), source); i = i + 1; }
+    while (i < len(stmts)) { lint_destruct_call_outputs_stmt(heap_get(stmts, i), source); i = i + 1; }
 }
 
 // ---------------------------------------------------------------------------
@@ -2188,12 +2188,12 @@ fn _return_signature(expr) {
     if (expr.__tag__ == "ObjLit") {
         result = new[];
         def i = 0;
-        while (i < len(expr.fields)) { def pair = heap_get(expr.fields, i); def unused181 = Collections.push(result, heap_get(pair, 0)); i = i + 1; }
+        while (i < len(expr.fields)) { def pair = heap_get(expr.fields, i); Collections.push(result, heap_get(pair, 0)); i = i + 1; }
     } else {
         if (expr.__tag__ == "NewLit") {
             result = new[];
             def i = 0;
-            while (i < len(expr.items)) { def unused182 = Collections.push(result, __to_str(i)); i = i + 1; }
+            while (i < len(expr.items)) { Collections.push(result, __to_str(i)); i = i + 1; }
         }
     }
     return result;
@@ -2375,25 +2375,25 @@ fn lint_return_signatures(stmts, fn_name, is_method, source, _pos) {
                         def kind = "function";
                         if (is_method) { kind = "method"; }
                         def msg = "inconsistent return signature in " + kind + " " + fn_name + ": expected " + _format_signature(expected) + " but found " + _format_signature(sig);
-                        if (source == Null) { def unused183 = __raise_runtime_error(msg); }
-                        else { def unused184 = _lint_error(source, st, msg, "E007", hint); }
+                        if (source == Null) { return __raise_runtime_error(msg); }
+                        else { _lint_error(source, st, msg, "E007", hint); }
                     }
                 }
                 handled = true;
             }
-            if (!handled && st.__tag__ == "If") { def unused185 = visit(st.then); def unused186 = visit(st.els); handled = true; }
-            if (!handled && st.__tag__ == "While") { def unused187 = visit(st.body); handled = true; }
+            if (!handled && st.__tag__ == "If") { visit(st.then); visit(st.els); handled = true; }
+            if (!handled && st.__tag__ == "While") { visit(st.body); handled = true; }
             if (!handled && st.__tag__ == "Switch") {
                 def ci = 0;
-                while (ci < len(st.cases)) { def unused188 = visit(heap_get(st.cases, ci).body); ci = ci + 1; }
+                while (ci < len(st.cases)) { visit(heap_get(st.cases, ci).body); ci = ci + 1; }
                 handled = true;
             }
-            if (!handled && st.__tag__ == "TryCatch") { def unused189 = visit(st.body); def unused190 = visit(st.handler); }
+            if (!handled && st.__tag__ == "TryCatch") { visit(st.body); visit(st.handler); }
             i = i + 1;
         }
     }
 
-    def unused191 = visit(stmts);
+    visit(stmts);
 }
 
 // ---------------------------------------------------------------------------
@@ -2421,8 +2421,8 @@ fn lint_return_exhaustiveness(stmts, fn_name, expected_return, is_method, source
     def kind = "function";
     if (is_method) { kind = "method"; }
     def msg = "not all paths in " + kind + " " + fn_name + " return a value for annotated type " + expected_return;
-    if (source == Null) { def unused192 = __raise_runtime_error(msg); }
-    else { def unused193 = _lint_error(source, location, msg, "E010", "Add return statements for every branch or provide a default return to satisfy the annotation."); }
+    if (source == Null) { return __raise_runtime_error(msg); }
+    else { _lint_error(source, location, msg, "E010", "Add return statements for every branch or provide a default return to satisfy the annotation."); }
 }
 
 // ---------------------------------------------------------------------------
@@ -2460,28 +2460,28 @@ fn lint_unreachable_code(stmts, source) {
             def st = heap_get(block, i);
             if (terminated) {
                 def msg = "unreachable statement after a guaranteed exit";
-                if (source == Null) { def unused194 = __raise_runtime_error(msg); }
-                else { def unused195 = _lint_error(source, st, msg, "E013", "Remove the dead code or restructure control flow so it can be reached."); }
+                if (source == Null) { return __raise_runtime_error(msg); }
+                else { _lint_error(source, st, msg, "E013", "Remove the dead code or restructure control flow so it can be reached."); }
             }
             def handled = false;
-            if (!handled && st.__tag__ == "If") { def unused196 = visit_block(st.then); def unused197 = visit_block(st.els); handled = true; }
-            if (!handled && st.__tag__ == "While") { def unused198 = visit_block(st.body); handled = true; }
+            if (!handled && st.__tag__ == "If") { visit_block(st.then); visit_block(st.els); handled = true; }
+            if (!handled && st.__tag__ == "While") { visit_block(st.body); handled = true; }
             if (!handled && st.__tag__ == "Switch") {
                 def ci = 0;
-                while (ci < len(st.cases)) { def unused199 = visit_block(heap_get(st.cases, ci).body); ci = ci + 1; }
+                while (ci < len(st.cases)) { visit_block(heap_get(st.cases, ci).body); ci = ci + 1; }
                 handled = true;
             }
-            if (!handled && st.__tag__ == "TryCatch") { def unused200 = visit_block(st.body); def unused201 = visit_block(st.handler); handled = true; }
-            if (!handled && st.__tag__ == "Fn") { def unused202 = visit_block(st.body); handled = true; }
-            if (!handled && st.__tag__ == "MethodDef") { def unused203 = visit_block(st.body); handled = true; }
-            if (!handled && st.__tag__ == "ClassDef") { def mi = 0; while (mi < len(st.methods)) { def unused204 = visit_block(heap_get(st.methods, mi).body); mi = mi + 1; } handled = true; }
-            if (!handled && st.__tag__ == "Namespace") { def unused205 = visit_block(st.body); }
+            if (!handled && st.__tag__ == "TryCatch") { visit_block(st.body); visit_block(st.handler); handled = true; }
+            if (!handled && st.__tag__ == "Fn") { visit_block(st.body); handled = true; }
+            if (!handled && st.__tag__ == "MethodDef") { visit_block(st.body); handled = true; }
+            if (!handled && st.__tag__ == "ClassDef") { def mi = 0; while (mi < len(st.methods)) { visit_block(heap_get(st.methods, mi).body); mi = mi + 1; } handled = true; }
+            if (!handled && st.__tag__ == "Namespace") { visit_block(st.body); }
             if (_stmt_guarantees_exit(st)) { terminated = true; }
             i = i + 1;
         }
     }
 
-    def unused206 = visit_block(stmts);
+    visit_block(stmts);
 }
 
 // ---------------------------------------------------------------------------
@@ -2520,38 +2520,38 @@ fn lint_no_consecutive_definitions(stmts) {
             def st = heap_get(block, i);
             def handled = false;
             if (!handled && (st.__tag__ == "If" || st.__tag__ == "While" || st.__tag__ == "Switch")) {
-                if (st.__tag__ == "If") { def unused207 = lint_no_consecutive_definitions(st.then); def unused208 = lint_no_consecutive_definitions(st.els); }
+                if (st.__tag__ == "If") { lint_no_consecutive_definitions(st.then); lint_no_consecutive_definitions(st.els); }
                 else {
-                    if (st.__tag__ == "While") { def unused209 = lint_no_consecutive_definitions(st.body); }
+                    if (st.__tag__ == "While") { lint_no_consecutive_definitions(st.body); }
                     else {
                         def ci = 0;
-                        while (ci < len(st.cases)) { def unused210 = lint_no_consecutive_definitions(heap_get(st.cases, ci).body); ci = ci + 1; }
+                        while (ci < len(st.cases)) { lint_no_consecutive_definitions(heap_get(st.cases, ci).body); ci = ci + 1; }
                     }
                 }
                 prev = Null;
                 handled = true;
             }
-            if (!handled && st.__tag__ == "Fn") { def unused211 = lint_no_consecutive_definitions(st.body); prev = Null; handled = true; }
-            if (!handled && st.__tag__ == "MethodDef") { def unused212 = lint_no_consecutive_definitions(st.body); prev = Null; handled = true; }
+            if (!handled && st.__tag__ == "Fn") { lint_no_consecutive_definitions(st.body); prev = Null; handled = true; }
+            if (!handled && st.__tag__ == "MethodDef") { lint_no_consecutive_definitions(st.body); prev = Null; handled = true; }
             if (!handled && st.__tag__ == "ClassDef") {
                 def mi = 0;
-                while (mi < len(st.methods)) { def unused213 = lint_no_consecutive_definitions(heap_get(st.methods, mi).body); mi = mi + 1; }
+                while (mi < len(st.methods)) { lint_no_consecutive_definitions(heap_get(st.methods, mi).body); mi = mi + 1; }
                 prev = Null;
                 handled = true;
             }
-            if (!handled && st.__tag__ == "Namespace") { def unused214 = lint_no_consecutive_definitions(st.body); prev = Null; handled = true; }
-            if (!handled && st.__tag__ == "TryCatch") { def unused215 = lint_no_consecutive_definitions(st.body); def unused216 = lint_no_consecutive_definitions(st.handler); prev = Null; handled = true; }
+            if (!handled && st.__tag__ == "Namespace") { lint_no_consecutive_definitions(st.body); prev = Null; handled = true; }
+            if (!handled && st.__tag__ == "TryCatch") { lint_no_consecutive_definitions(st.body); lint_no_consecutive_definitions(st.handler); prev = Null; handled = true; }
             if (!handled) {
                 def current = Null;
                 if (st.__tag__ == "Let") { current = st.name; }
-                if (current != Null && prev == current) { def unused217 = __raise_runtime_error("variable " + current + " defined twice in a row"); }
+                if (current != Null && prev == current) { return __raise_runtime_error("variable " + current + " defined twice in a row"); }
                 prev = current;
             }
             i = i + 1;
         }
     }
 
-    def unused218 = check_block(stmts);
+    check_block(stmts);
 }
 
 // ---------------------------------------------------------------------------
@@ -2570,19 +2570,19 @@ fn lint_no_consecutive_definitions(stmts) {
 // ---------------------------------------------------------------------------
 fn lint_destruct_call_outputs_stmt(st, source) {
     def handled = false;
-    if (!handled && st.__tag__ == "DestructAssign") { def unused219 = check_destruct_call_expr(st.expr, Set.from_list(st.names), source, st.pos); handled = true; }
-    if (!handled && st.__tag__ == "If") { def unused220 = lint_destruct_call_outputs(st.then, source); def unused221 = lint_destruct_call_outputs(st.els, source); handled = true; }
-    if (!handled && st.__tag__ == "While") { def unused222 = lint_destruct_call_outputs(st.body, source); handled = true; }
+    if (!handled && st.__tag__ == "DestructAssign") { check_destruct_call_expr(st.expr, Set.from_list(st.names), source, st.pos); handled = true; }
+    if (!handled && st.__tag__ == "If") { lint_destruct_call_outputs(st.then, source); lint_destruct_call_outputs(st.els, source); handled = true; }
+    if (!handled && st.__tag__ == "While") { lint_destruct_call_outputs(st.body, source); handled = true; }
     if (!handled && st.__tag__ == "Switch") {
         def ci = 0;
-        while (ci < len(st.cases)) { def unused223 = lint_destruct_call_outputs(heap_get(st.cases, ci).body, source); ci = ci + 1; }
+        while (ci < len(st.cases)) { lint_destruct_call_outputs(heap_get(st.cases, ci).body, source); ci = ci + 1; }
         handled = true;
     }
-    if (!handled && st.__tag__ == "Fn") { def unused224 = lint_destruct_call_outputs(st.body, source); handled = true; }
-    if (!handled && st.__tag__ == "MethodDef") { def unused225 = lint_destruct_call_outputs(st.body, source); handled = true; }
-    if (!handled && st.__tag__ == "ClassDef") { def mi = 0; while (mi < len(st.methods)) { def unused226 = lint_destruct_call_outputs_stmt(heap_get(st.methods, mi), source); mi = mi + 1; } handled = true; }
-    if (!handled && st.__tag__ == "Namespace") { def unused227 = lint_destruct_call_outputs(st.body, source); handled = true; }
-    if (!handled && st.__tag__ == "TryCatch") { def unused228 = lint_destruct_call_outputs(st.body, source); def unused229 = lint_destruct_call_outputs(st.handler, source); }
+    if (!handled && st.__tag__ == "Fn") { lint_destruct_call_outputs(st.body, source); handled = true; }
+    if (!handled && st.__tag__ == "MethodDef") { lint_destruct_call_outputs(st.body, source); handled = true; }
+    if (!handled && st.__tag__ == "ClassDef") { def mi = 0; while (mi < len(st.methods)) { lint_destruct_call_outputs_stmt(heap_get(st.methods, mi), source); mi = mi + 1; } handled = true; }
+    if (!handled && st.__tag__ == "Namespace") { lint_destruct_call_outputs(st.body, source); handled = true; }
+    if (!handled && st.__tag__ == "TryCatch") { lint_destruct_call_outputs(st.body, source); lint_destruct_call_outputs(st.handler, source); }
 }
 
 // ---------------------------------------------------------------------------
@@ -2609,14 +2609,14 @@ fn check_destruct_call_expr(expr, names, source, pos) {
         def i = 0;
         while (i < len(expr.args)) {
             def arg = heap_get(expr.args, i);
-            if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { def unused230 = Set.add(missing_set, arg.name); }
+            if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { Set.add(missing_set, arg.name); }
             i = i + 1;
         }
         def missing = __sorted_strings(Set.to_list(missing_set));
         if (len(missing) > 0) {
             def msg = "destructuring call to " + expr.name + " must include output for argument(s): " + String.join(missing, ", ");
-            if (source != Null) { def unused231 = _lint_error(source, pos, msg, "E006", "Add the missing binding(s) to the destructuring pattern so each referenced argument is captured."); }
-            else { def unused232 = __raise_runtime_error(msg); }
+            if (source != Null) { _lint_error(source, pos, msg, "E006", "Add the missing binding(s) to the destructuring pattern so each referenced argument is captured."); }
+            else { return __raise_runtime_error(msg); }
         }
     } else {
         if (expr.__tag__ == "MethodCall") {
@@ -2624,14 +2624,14 @@ fn check_destruct_call_expr(expr, names, source, pos) {
             def i = 0;
             while (i < len(expr.args)) {
                 def arg = heap_get(expr.args, i);
-                if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { def unused233 = Set.add(missing_set, arg.name); }
+                if (arg.__tag__ == "Var" && !Set.has(names, arg.name)) { Set.add(missing_set, arg.name); }
                 i = i + 1;
             }
             def missing = __sorted_strings(Set.to_list(missing_set));
             if (len(missing) > 0) {
                 def msg = "destructuring method call to " + expr.name + " must include output for argument(s): " + String.join(missing, ", ");
-                if (source != Null) { def unused234 = _lint_error(source, pos, msg, "E006", "Add the missing binding(s) to the destructuring pattern so each referenced argument is captured."); }
-                else { def unused235 = __raise_runtime_error(msg); }
+                if (source != Null) { _lint_error(source, pos, msg, "E006", "Add the missing binding(s) to the destructuring pattern so each referenced argument is captured."); }
+                else { return __raise_runtime_error(msg); }
             }
         }
     }
@@ -2674,39 +2674,39 @@ fn lint_param_mutations_returned(stmts, params, fn_name, is_method, source, pos)
     // ---------------------------------------------------------------------------
     fn visit(st) {
         def handled = false;
-        if (!handled && st.__tag__ == "Assign" && Set.has(params, st.name)) { def unused236 = Set.add(mutated, st.name); handled = true; }
-        if (!handled && st.__tag__ == "FieldAssign" && st.obj.__tag__ == "Var" && Set.has(params, st.obj.name)) { def unused237 = Set.add(mutated, st.obj.name); handled = true; }
-        if (!handled && st.__tag__ == "DestructAssign") { def i = 0; while (i < len(st.names)) { def nm = heap_get(st.names, i); if (Set.has(params, nm)) { def unused238 = Set.add(mutated, nm); } i = i + 1; } handled = true; }
+        if (!handled && st.__tag__ == "Assign" && Set.has(params, st.name)) { Set.add(mutated, st.name); handled = true; }
+        if (!handled && st.__tag__ == "FieldAssign" && st.obj.__tag__ == "Var" && Set.has(params, st.obj.name)) { Set.add(mutated, st.obj.name); handled = true; }
+        if (!handled && st.__tag__ == "DestructAssign") { def i = 0; while (i < len(st.names)) { def nm = heap_get(st.names, i); if (Set.has(params, nm)) { Set.add(mutated, nm); } i = i + 1; } handled = true; }
         if (!handled && st.__tag__ == "Return") {
-            def reads = Map.new(); def unused239 = uses_in_expr(st.expr, reads);
+            def reads = Map.new(); uses_in_expr(st.expr, reads);
             def keys = Map.keys(reads);
             def i = 0;
-            while (i < len(keys)) { def n = heap_get(keys, i); if (Set.has(params, n)) { def unused240 = Set.add(returned, n); } i = i + 1; }
+            while (i < len(keys)) { def n = heap_get(keys, i); if (Set.has(params, n)) { Set.add(returned, n); } i = i + 1; }
             handled = true;
         }
-        if (!handled && st.__tag__ == "If") { def i = 0; while (i < len(st.then)) { def unused241 = visit(heap_get(st.then, i)); i = i + 1; } i = 0; while (i < len(st.els)) { def unused242 = visit(heap_get(st.els, i)); i = i + 1; } handled = true; }
-        if (!handled && st.__tag__ == "TryCatch") { def i = 0; while (i < len(st.body)) { def unused243 = visit(heap_get(st.body, i)); i = i + 1; } i = 0; while (i < len(st.handler)) { def unused244 = visit(heap_get(st.handler, i)); i = i + 1; } handled = true; }
-        if (!handled && st.__tag__ == "While") { def i = 0; while (i < len(st.body)) { def unused245 = visit(heap_get(st.body, i)); i = i + 1; } }
+        if (!handled && st.__tag__ == "If") { def i = 0; while (i < len(st.then)) { visit(heap_get(st.then, i)); i = i + 1; } i = 0; while (i < len(st.els)) { visit(heap_get(st.els, i)); i = i + 1; } handled = true; }
+        if (!handled && st.__tag__ == "TryCatch") { def i = 0; while (i < len(st.body)) { visit(heap_get(st.body, i)); i = i + 1; } i = 0; while (i < len(st.handler)) { visit(heap_get(st.handler, i)); i = i + 1; } handled = true; }
+        if (!handled && st.__tag__ == "While") { def i = 0; while (i < len(st.body)) { visit(heap_get(st.body, i)); i = i + 1; } }
         if (!handled && st.__tag__ == "Switch") {
             def ci = 0;
             while (ci < len(st.cases)) {
                 def case_node = heap_get(st.cases, ci);
                 def bi = 0;
-                while (bi < len(case_node.body)) { def unused246 = visit(heap_get(case_node.body, bi)); bi = bi + 1; }
+                while (bi < len(case_node.body)) { visit(heap_get(case_node.body, bi)); bi = bi + 1; }
                 ci = ci + 1;
             }
         }
     }
 
     def i = 0;
-    while (i < len(stmts)) { def unused247 = visit(heap_get(stmts, i)); i = i + 1; }
+    while (i < len(stmts)) { visit(heap_get(stmts, i)); i = i + 1; }
 
     def missing = __sorted_strings(Set.to_list(Set.difference(mutated, returned)));
     if (len(missing) > 0) {
         def kind = "function";
         if (is_method) { kind = "method"; }
         def msg = "mutated parameter(s) in " + kind + " " + fn_name + " must be returned: " + String.join(missing, ", ");
-        if (source == Null) { def unused248 = __raise_runtime_error(msg); }
-        else { def unused249 = _lint_error(source, pos, msg, "E001", "Return the mutated parameters so callers receive the updates."); }
+        if (source == Null) { return __raise_runtime_error(msg); }
+        else { _lint_error(source, pos, msg, "E001", "Return the mutated parameters so callers receive the updates."); }
     }
 }

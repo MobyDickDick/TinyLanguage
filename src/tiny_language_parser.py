@@ -13,7 +13,8 @@ class Parser:
     def __init__(self, lx: Lexer, source: str):
         self.lx = lx
         self.source = source
-        self.tok = lx.next_token()
+        self._buffer: List[Token] = []
+        self.tok = self._next_token()
         self._last_tok = Token("<start>", "", SourcePos.origin(), SourcePos.origin())
         self._allow_variant_ctor = True
 
@@ -58,14 +59,14 @@ class Parser:
         if self.tok.kind != kind or (text is not None and self.tok.text != text):
             raise self._error(f"expected {kind}{' '+text if text else ''}", self.tok.pos, self._tok_span(self.tok))
         t = self.tok
-        self.tok = self.lx.next_token()
+        self.tok = self._next_token()
         self._last_tok = t
         return t
 
     def _eat_name_or_kw(self) -> Token:
         if self.tok.kind in {"NAME", "KW"}:
             t = self.tok
-            self.tok = self.lx.next_token()
+            self.tok = self._next_token()
             self._last_tok = t
             return t
         raise self._error("expected NAME", self.tok.pos, self._tok_span(self.tok))
@@ -73,10 +74,20 @@ class Parser:
     def _accept(self, kind: str, text: Optional[str] = None) -> bool:
         if self.tok.kind == kind and (text is None or self.tok.text == text):
             t = self.tok
-            self.tok = self.lx.next_token()
+            self.tok = self._next_token()
             self._last_tok = t
             return True
         return False
+
+    def _next_token(self) -> Token:
+        if self._buffer:
+            return self._buffer.pop(0)
+        return self.lx.next_token()
+
+    def _peek_token(self, offset: int = 1) -> Token:
+        while len(self._buffer) < offset:
+            self._buffer.append(self.lx.next_token())
+        return self._buffer[offset - 1]
 
     def parse(self) -> List[IR]:
         stmts: List[IR] = []
@@ -402,6 +413,8 @@ class Parser:
             )
         # destructuring or assignment/field assignment
         if self.tok.kind == "SYM" and self.tok.text == "{":
+            if not self._looks_like_destructuring_assignment():
+                raise self._error("standalone blocks are not allowed", self.tok.pos, self._tok_span(self.tok))
             names, start_pos, name_spans = self.parse_destruct_names()
             self._eat("SYM", "=")
             expr = self.parse_expr()
@@ -581,6 +594,26 @@ class Parser:
             spans.append(self._tok_span(name_tok))
         self._eat("SYM", "}")
         return names, start_tok.pos, spans
+
+    def _looks_like_destructuring_assignment(self) -> bool:
+        if not (self.tok.kind == "SYM" and self.tok.text == "{"):
+            return False
+        offset = 1
+        if self._peek_token(offset).kind != "NAME":
+            return False
+        offset += 1
+        while True:
+            tok = self._peek_token(offset)
+            if tok.kind == "SYM" and tok.text == ",":
+                offset += 1
+                if self._peek_token(offset).kind != "NAME":
+                    return False
+                offset += 1
+                continue
+            if tok.kind == "SYM" and tok.text == "}":
+                offset += 1
+                return self._peek_token(offset).kind == "SYM" and self._peek_token(offset).text == "="
+            return False
 
     # expression parsing with precedence
     def parse_expr(self) -> IR:

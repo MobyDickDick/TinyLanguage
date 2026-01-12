@@ -75,7 +75,7 @@ def test_inferred_return_type_stable_across_calls():
         print(pick(true));
         print(pick(false));
         """,
-        r"\[E014\] inferred return type for function pick changed: expected int but got string",
+        r"\[E014\] inferred return type for function pick changed: expected number but got string",
     )
 
 

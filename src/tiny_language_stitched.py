@@ -29,7 +29,7 @@ except ImportError:  # pragma: no cover - Windows and other platforms without te
 
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
-from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, _line_info, format_error
+from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, format_error
 
 from stdlib import register_stdlib
 

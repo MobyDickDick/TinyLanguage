@@ -6818,6 +6818,7 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                     next_active.append(new_state)
                 elif isinstance(st, Assign):
                     new_state = dict(state)
+                    _mark_used(new_state, st.name)
                     for nm in names_in_expr(st.expr):
                         _mark_used(new_state, nm)
                     next_active.append(new_state)
@@ -8719,8 +8720,11 @@ class Runtime:
     @staticmethod
     def _normalize_numeric_type(type_name: str) -> str:
         normalized = type_name.strip()
-        if normalized.lower() in {"int", "float"}:
-            return "number"
+        lowered = normalized.lower()
+        if lowered == "int":
+            return "int"
+        if lowered == "float":
+            return "float"
         return type_name
 
     def _check_assignment_type(
@@ -10254,8 +10258,11 @@ class Environment:
     @staticmethod
     def _normalize_numeric_type(type_name: str) -> str:
         normalized = type_name.strip()
-        if normalized.lower() in {"int", "float"}:
-            return "number"
+        lowered = normalized.lower()
+        if lowered == "int":
+            return "int"
+        if lowered == "float":
+            return "float"
         return type_name
 
     def get(self, name: str) -> Any:

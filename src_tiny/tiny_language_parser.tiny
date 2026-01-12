@@ -111,6 +111,10 @@ class Parser {
         return __keep(self, t);
     }
 
+    fn _eat_void(self, kind, text) -> any {
+        if (self._eat(kind, text) == Null) { }
+    }
+
     fn _eat_name_or_kw(self) -> any {
         if (self.tok.kind == "NAME" || self.tok.kind == "KW") {
             def t = self.tok;
@@ -139,13 +143,13 @@ class Parser {
     }
 
     fn parse_block(self) -> any {
-        self._eat("SYM", "{");
+        self._eat_void("SYM", "{");
         def stmts = new[];
         while (!(self.tok.kind == "SYM" && self.tok.text == "}")) {
             def st = self.parse_stmt();
             Collections.push(stmts, st);
         }
-        self._eat("SYM", "}");
+        self._eat_void("SYM", "}");
         return stmts;
     }
 
@@ -153,7 +157,7 @@ class Parser {
         if (self.tok.kind == "KW" && self.tok.text == "def") {
             def kw = self._eat("KW", "def");
             def name_tok = self._eat("NAME", Null);
-            self._eat("SYM", "=");
+            self._eat_void("SYM", "=");
             def expr = self.parse_expr();
             def semi = self._eat("SYM", ";");
             def name_span = self._tok_span(name_tok);
@@ -161,7 +165,7 @@ class Parser {
         }
         if (self.tok.kind == "KW" && self.tok.text == "print") {
             def kw = self._eat("KW", "print");
-            self._eat("SYM", "(");
+            self._eat_void("SYM", "(");
             def exprs = new[];
             if (!(self.tok.kind == "SYM" && self.tok.text == ")")) {
                 def first = self.parse_expr();
@@ -171,51 +175,51 @@ class Parser {
                     Collections.push(exprs, nxt);
                 }
             }
-            self._eat("SYM", ")");
+            self._eat_void("SYM", ")");
             def semi = self._eat("SYM", ";");
             return self._attach_span(Print(exprs, kw.start, Null), kw.start, semi.stop);
         }
         if (self.tok.kind == "KW" && self.tok.text == "flush") {
             def kw = self._eat("KW", "flush");
-            self._eat("SYM", "(");
-            self._eat("SYM", ")");
+            self._eat_void("SYM", "(");
+            self._eat_void("SYM", ")");
             def semi = self._eat("SYM", ";");
             return self._attach_span(Flush(kw.start, Null), kw.start, semi.stop);
         }
         if (self.tok.kind == "KW" && self.tok.text == "if") {
             def kw = self._eat("KW", "if");
-            self._eat("SYM", "(");
+            self._eat_void("SYM", "(");
             def cond = self.parse_expr();
-            self._eat("SYM", ")");
+            self._eat_void("SYM", ")");
             def then_block = self.parse_block();
             def els = new[];
             if (self.tok.kind == "KW" && self.tok.text == "else") {
-                self._eat("KW", "else");
+                self._eat_void("KW", "else");
                 els = self.parse_block();
             }
             return self._attach_span(If(cond, then_block, els, kw.start, Null), kw.start, self._last_tok.stop);
         }
         if (self.tok.kind == "KW" && self.tok.text == "while") {
             def kw = self._eat("KW", "while");
-            self._eat("SYM", "(");
+            self._eat_void("SYM", "(");
             def cond = self.parse_expr();
-            self._eat("SYM", ")");
+            self._eat_void("SYM", ")");
             def body = self.parse_block();
             return self._attach_span(While(cond, body, kw.start, Null), kw.start, self._last_tok.stop);
         }
         if (self.tok.kind == "KW" && self.tok.text == "switch") {
             def kw = self._eat("KW", "switch");
-            self._eat("SYM", "(");
+            self._eat_void("SYM", "(");
             def target = self.parse_expr();
-            self._eat("SYM", ")");
-            self._eat("SYM", "{");
+            self._eat_void("SYM", ")");
+            self._eat_void("SYM", "{");
             def cases = new[];
             def has_default = false;
             while (!(self.tok.kind == "SYM" && self.tok.text == "}")) {
                 if (self.tok.kind == "KW" && self.tok.text == "case") {
                     def case_kw = self._eat("KW", "case");
                     def value = self.parse_expr();
-                    self._eat("SYM", ":");
+                    self._eat_void("SYM", ":");
                     def body = self.parse_block();
                     Collections.push(
                         cases,
@@ -228,7 +232,7 @@ class Parser {
                             return self._error("duplicate default case", default_kw.start, self._tok_span(default_kw));
                         }
                         has_default = true;
-                        self._eat("SYM", ":");
+                        self._eat_void("SYM", ":");
                         def body = self.parse_block();
                         Collections.push(
                             cases,
@@ -239,18 +243,18 @@ class Parser {
                     }
                 }
             }
-            self._eat("SYM", "}");
+            self._eat_void("SYM", "}");
             return self._attach_span(Switch(target, cases, kw.start, Null), kw.start, self._last_tok.stop);
         }
         if (self.tok.kind == "KW" && self.tok.text == "try") {
             def kw = self._eat("KW", "try");
             def body = self.parse_block();
-            self._eat("KW", "catch");
+            self._eat_void("KW", "catch");
             def err_name = Null;
             if (self._accept("SYM", "(", Null)) {
                 def name_tok = self._eat("NAME", Null);
                 err_name = name_tok.text;
-                self._eat("SYM", ")");
+                self._eat_void("SYM", ")");
             } else {
                 def name_tok = self._eat("NAME", Null);
                 err_name = name_tok.text;
@@ -271,7 +275,7 @@ class Parser {
             def alias = Null;
             def binding_span = module_span;
             if (self.tok.kind == "KW" && self.tok.text == "as") {
-                self._eat("KW", "as");
+                self._eat_void("KW", "as");
                 def alias_tok = self._eat("NAME", Null);
                 alias = alias_tok.text;
                 binding_span = self._tok_span(alias_tok);
@@ -296,7 +300,7 @@ class Parser {
             def params = self.parse_param_list();
             def return_type = Null;
             if (self._accept("OP", "-", Null)) {
-                self._eat("OP", ">");
+                self._eat_void("OP", ">");
                 return_type = self.parse_type_annotation();
             }
             def body = self.parse_block();
@@ -358,7 +362,7 @@ class Parser {
                     Collections.push(bases, more_base.text);
                 }
             }
-            self._eat("SYM", "{");
+            self._eat_void("SYM", "{");
             def fields = new[];
             def methods = new[];
             while (!(self.tok.kind == "SYM" && self.tok.text == "}")) {
@@ -373,7 +377,7 @@ class Parser {
                     def params = self.parse_param_list();
                     def return_type = Null;
                     if (self._accept("OP", "-", Null)) {
-                        self._eat("OP", ">");
+                        self._eat_void("OP", ">");
                         return_type = self.parse_type_annotation();
                     }
                     def body = self.parse_block();
@@ -384,29 +388,29 @@ class Parser {
                     );
                 } else {
                     def fname = self._eat("NAME", Null).text;
-                    self._eat("SYM", ":");
+                    self._eat_void("SYM", ":");
                     def ftype = self._eat("NAME", Null).text;
                     def semi = self._eat("SYM", ";");
                     Collections.push(fields, new[fname, ftype]);
                 }
             }
-            self._eat("SYM", "}");
+            self._eat_void("SYM", "}");
             return self._attach_span(ClassDef(cname_tok.text, fields, methods, bases, kw.start, Null), kw.start, self._last_tok.stop);
         }
         if (self.tok.kind == "KW" && self.tok.text == "operator") {
             def kw = self._eat("KW", "operator");
             def op_tok = self._eat("OP", Null);
-            self._eat("SYM", "(");
+            self._eat_void("SYM", "(");
             def a_tok = self._eat("NAME", Null);
-            self._eat("SYM", ":");
+            self._eat_void("SYM", ":");
             def a_type_tok = self._eat("NAME", Null);
-            self._eat("SYM", ",");
+            self._eat_void("SYM", ",");
             def b_tok = self._eat("NAME", Null);
-            self._eat("SYM", ":");
+            self._eat_void("SYM", ":");
             def b_type_tok = self._eat("NAME", Null);
-            self._eat("SYM", ")");
-            self._eat("OP", "-");
-            self._eat("OP", ">");
+            self._eat_void("SYM", ")");
+            self._eat_void("OP", "-");
+            self._eat_void("OP", ">");
             def return_type = self._eat("NAME", Null);
             def body = self.parse_block();
             return self._attach_span(OpDef(op_tok.text, a_tok.text, a_type_tok.text, b_tok.text, b_type_tok.text, body, kw.start, Null), kw.start, self._last_tok.stop);
@@ -416,7 +420,7 @@ class Parser {
             def names = heap_get(data, 0);
             def start_pos = heap_get(data, 1);
             def name_spans = heap_get(data, 2);
-            self._eat("SYM", "=");
+            self._eat_void("SYM", "=");
             def expr = self.parse_expr();
             def semi = self._eat("SYM", ";");
             return self._attach_span(DestructAssign(names, expr, start_pos, Null, name_spans), start_pos, semi.stop);
@@ -460,7 +464,7 @@ class Parser {
     }
 
     fn parse_param_list(self) -> any {
-        self._eat("SYM", "(");
+        self._eat_void("SYM", "(");
         def params = new[];
         if (!(self.tok.kind == "SYM" && self.tok.text == ")")) {
             def first = self.parse_param();
@@ -470,7 +474,7 @@ class Parser {
                 Collections.push(params, nxt);
             }
         }
-        self._eat("SYM", ")");
+        self._eat_void("SYM", ")");
         return params;
     }
 
@@ -612,7 +616,7 @@ class Parser {
     }
 
     fn parse_arg_list(self) -> any {
-        self._eat("SYM", "(");
+        self._eat_void("SYM", "(");
         def args = new[];
         if (!(self.tok.kind == "SYM" && self.tok.text == ")")) {
             def first = self.parse_expr();
@@ -622,7 +626,7 @@ class Parser {
                 Collections.push(args, nxt);
             }
         }
-        self._eat("SYM", ")");
+        self._eat_void("SYM", ")");
         return args;
     }
 
@@ -638,7 +642,7 @@ class Parser {
             Collections.push(names, name_tok.text);
             Collections.push(spans, self._tok_span(name_tok));
         }
-        self._eat("SYM", "}");
+        self._eat_void("SYM", "}");
         return new[names, start_tok.start, spans];
     }
 
@@ -648,7 +652,7 @@ class Parser {
         def left = self.parse_logic_and();
         while ((self.tok.kind == "KW" && self.tok.text == "or") || (self.tok.kind == "OP" && self.tok.text == "||")) {
             def op_tok = self.tok;
-            self._eat(self.tok.kind, Null);
+            self._eat_void(self.tok.kind, Null);
             def right = self.parse_logic_and();
             def span = self._span_cover(left, right);
             left = self._attach_span(Bin("or", left, right, op_tok.start, Null), span.start, span.stop);
@@ -660,7 +664,7 @@ class Parser {
         def left = self.parse_compare();
         while ((self.tok.kind == "KW" && self.tok.text == "and") || (self.tok.kind == "OP" && self.tok.text == "&&")) {
             def op_tok = self.tok;
-            self._eat(self.tok.kind, Null);
+            self._eat_void(self.tok.kind, Null);
             def right = self.parse_compare();
             def span = self._span_cover(left, right);
             left = self._attach_span(Bin("and", left, right, op_tok.start, Null), span.start, span.stop);
@@ -757,13 +761,13 @@ class Parser {
         self._allow_variant_ctor = false;
         def target = self.parse_expr();
         self._allow_variant_ctor = prev_allow;
-        self._eat("SYM", "{");
+        self._eat_void("SYM", "{");
         def cases = new[];
         while (!self._accept("SYM", "}", Null)) {
             if (!(self.tok.kind == "KW" && self.tok.text == "case")) {
                 return self._error("expected case", self.tok.start, self._tok_span(self.tok));
             }
-            self._eat("KW", "case");
+            self._eat_void("KW", "case");
             def pattern = self.parse_pattern();
             if (self._accept("SYM", ":", Null)) { }
             else {
@@ -836,7 +840,7 @@ class Parser {
     fn parse_primary(self) -> any {
         if (self._accept("SYM", "(", Null)) {
             def inner = self.parse_expr();
-            self._eat("SYM", ")");
+            self._eat_void("SYM", ")");
             return inner;
         }
         if (self.tok.kind == "KW" && self.tok.text == "await") {
@@ -883,7 +887,7 @@ class Parser {
                         Collections.push(items, nxt);
                     }
                 }
-                self._eat("SYM", "]");
+                self._eat_void("SYM", "]");
                 return self._attach_span(NewLit(items, start_tok.start, Null), start_tok.start, self._last_tok.stop);
             }
             if (self.tok.kind == "SYM" && self.tok.text == "(") {
@@ -899,7 +903,7 @@ class Parser {
                     if (self._accept("SYM", "}", Null)) { init_done = true; }
                     else {
                         def fname = self.parse_field_name();
-                        self._eat("SYM", ":");
+                        self._eat_void("SYM", ":");
                         def fexpr = self.parse_expr();
                         Collections.push(init, new[fname, fexpr]);
                         if (self._accept("SYM", "}", Null)) { init_done = true; }
@@ -926,7 +930,7 @@ class Parser {
                 if (self._accept("SYM", "}", Null)) { obj_done = true; }
                 else {
                     def fname = self.parse_field_name();
-                    self._eat("SYM", ":");
+                    self._eat_void("SYM", ":");
                     def fexpr = self.parse_expr();
                     Collections.push(fields, new[fname, fexpr]);
                     if (self._accept("SYM", "}", Null)) { obj_done = true; }
@@ -961,7 +965,7 @@ class Parser {
                 if (self._accept("SYM", closing, Null)) { done = true; }
                 else {
                     def fname = self._eat("NAME", Null).text;
-                    self._eat("SYM", ":");
+                    self._eat_void("SYM", ":");
                     def ftype = self._eat_name_or_kw().text;
                     Collections.push(fields, new[fname, ftype]);
                     if (self._accept("SYM", closing, Null)) { done = true; }
@@ -977,14 +981,14 @@ class Parser {
     }
 
     fn parse_variant_init_fields(self) -> any {
-        self._eat("SYM", "{");
+        self._eat_void("SYM", "{");
         def fields = new[];
         def done = false;
         while (!done) {
             if (self._accept("SYM", "}", Null)) { done = true; }
             else {
                 def fname = self._eat("NAME", Null).text;
-                self._eat("SYM", ":");
+                self._eat_void("SYM", ":");
                 def fexpr = self.parse_expr();
                 Collections.push(fields, new[fname, fexpr]);
                 if (self._accept("SYM", "}", Null)) { done = true; }
@@ -1031,12 +1035,12 @@ class Parser {
     }
 
     fn _parse_product_fields(self) -> any {
-        self._eat("SYM", "{");
+        self._eat_void("SYM", "{");
         def fields = new[];
         def semi = self._last_tok;
         while (!self._accept("SYM", "}", Null)) {
             def fname = self._eat("NAME", Null).text;
-            self._eat("SYM", ":");
+            self._eat_void("SYM", ":");
             def ftype = self._eat_name_or_kw().text;
             semi = self._eat("SYM", ";");
             Collections.push(fields, new[fname, ftype]);
@@ -1045,7 +1049,7 @@ class Parser {
     }
 
     fn _parse_sum_variants(self) -> any {
-        self._eat("SYM", "{");
+        self._eat_void("SYM", "{");
         def variants = new[];
         def semi = self._last_tok;
         if (self.tok.kind == "NAME") {
@@ -1056,7 +1060,7 @@ class Parser {
                 def fields = new[new[first_name_tok.text, first_type]];
                 while (!self._accept("SYM", "}", Null)) {
                     def fname = self._eat("NAME", Null).text;
-                    self._eat("SYM", ":");
+                    self._eat_void("SYM", ":");
                     def ftype = self._eat_name_or_kw().text;
                     semi = self._eat("SYM", ";");
                     Collections.push(fields, new[fname, ftype]);
@@ -1067,9 +1071,9 @@ class Parser {
             semi = self._eat("SYM", ";");
         } else {
             if (self.tok.kind == "KW" && self.tok.text == "def") {
-                self._eat("KW", "def");
+                self._eat_void("KW", "def");
                 def ignored2 = self._eat("NAME", Null);
-                self._eat("SYM", "=");
+                self._eat_void("SYM", "=");
                 def vname = self._eat("NAME", Null).text;
                 def vfields = self.parse_variant_fields();
                 semi = self._eat("SYM", ";");
@@ -1079,7 +1083,7 @@ class Parser {
         while (!self._accept("SYM", "}", Null)) {
             if (self._accept("KW", "def", Null)) {
                 def ignored2 = self._eat("NAME", Null);
-                self._eat("SYM", "=");
+                self._eat_void("SYM", "=");
             }
             def vname = self._eat("NAME", Null).text;
             def vfields = self.parse_variant_fields();

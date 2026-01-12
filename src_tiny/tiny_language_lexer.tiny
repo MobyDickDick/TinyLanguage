@@ -183,8 +183,6 @@ fn __read_string(chars, n, i, line, col) {
     }
 
     return __raise_runtime_error("unterminated string literal");
-    def fallback = Token("STRING", buf, pos0, pos0);
-    return new[fallback, i, line, col];
 }
 
 fn lex(source) {

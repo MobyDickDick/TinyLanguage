@@ -8,7 +8,7 @@ type Shape {
 fn area(shape) {
   return match shape {
     case Circle { radius: r }: 3.14 * r * r;
-    case Rectangle { width: w, height: h }: w * h;
+    case Rectangle { width: w, height: h }: 1.0 * w * h;
   };
 }
 

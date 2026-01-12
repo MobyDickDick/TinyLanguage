@@ -88,8 +88,8 @@ fn __record_symbol(server, name, pos, kind, detail) {
     def kinds = Map.get(server, "symbol_kinds");
     def details = Map.get(server, "symbol_details");
     Map.set(symbols, name, pos);
-    def k = Map.set(kinds, name, kind);
-    if (detail != Null) { def d = Map.set(details, name, detail); }
+    def ignored_kind_set = Map.set(kinds, name, kind);
+    if (detail != Null) { def ignored_detail_set = Map.set(details, name, detail); }
     return Null;
 }
 
@@ -142,10 +142,10 @@ fn TinyLanguageServer(source) {
     def stmts = tiny_language_parser.parse_program(source);
     def server = Map.new();
     Map.set(server, "source", source);
-    def s2 = Map.set(server, "stmts", stmts);
-    def sym = Map.set(server, "symbols", Map.new());
-    def k = Map.set(server, "symbol_kinds", Map.new());
-    def d = Map.set(server, "symbol_details", Map.new());
+    def ignored_stmts = Map.set(server, "stmts", stmts);
+    def ignored_symbols = Map.set(server, "symbols", Map.new());
+    def ignored_symbol_kinds = Map.set(server, "symbol_kinds", Map.new());
+    def ignored_symbol_details = Map.set(server, "symbol_details", Map.new());
     __index_symbols(server, stmts, "");
     return server;
 }
@@ -168,7 +168,7 @@ fn completions(server, prefix) {
         if (String.contains(name, ".")) {
             def parts = String.split(name, ".");
             def short = heap_get(parts, len(parts) - 1);
-            def s2 = Set.add(candidates, short);
+            def ignored_short = Set.add(candidates, short);
         }
         i = i + 1;
     }
@@ -190,8 +190,8 @@ fn completions(server, prefix) {
         def kind = Map.get(Map.get(server, "symbol_kinds"), label);
         if (kind == Null) { kind = "identifier"; }
         def entry = Map.new();
-        def l = Map.set(entry, "label", label);
-        def k = Map.set(entry, "kind", kind);
+        def ignored_label_entry = Map.set(entry, "label", label);
+        def ignored_kind_entry = Map.set(entry, "kind", kind);
         Collections.push(out, entry);
         i = i + 1;
     }
@@ -244,9 +244,9 @@ fn hover(server, symbol) {
     def detail = Map.get(Map.get(server, "symbol_details"), symbol);
     if (detail == Null) { detail = "TinyLanguage symbol"; }
     def result = Map.new();
-    def s2 = Map.set(result, "symbol", symbol);
-    def d = Map.set(result, "detail", detail);
-    def p2 = Map.set(result, "position", new[pos.line, pos.column]);
+    def ignored_symbol_entry = Map.set(result, "symbol", symbol);
+    def ignored_detail_entry = Map.set(result, "detail", detail);
+    def ignored_position_entry = Map.set(result, "position", new[pos.line, pos.column]);
     return result;
 }
 
@@ -354,9 +354,9 @@ fn diagnostics(server) {
         def message = err.message;
         def code = err.code;
         if (code == Null) { code = __extract_code(message); }
-        def m = Map.set(diag, "message", message);
-        def c = Map.set(diag, "code", code);
-        def r = Map.set(diag, "range", __diagnostic_range(err, source));
+        def ignored_message = Map.set(diag, "message", message);
+        def ignored_code = Map.set(diag, "code", code);
+        def ignored_range = Map.set(diag, "range", __diagnostic_range(err, source));
         Collections.push(diagnostics, diag);
     }
     return diagnostics;
@@ -384,7 +384,7 @@ fn definition_for_source(source, symbol, position) {
     def result = definition(server, symbol, position);
     if (result == Null) { return Map.new(); }
     def out = Map.new();
-    def s2 = Map.set(out, "symbol", symbol);
-    def p2 = Map.set(out, "position", new[result.line, result.column]);
+    def ignored_symbol_entry = Map.set(out, "symbol", symbol);
+    def ignored_position_entry = Map.set(out, "position", new[result.line, result.column]);
     return out;
 }

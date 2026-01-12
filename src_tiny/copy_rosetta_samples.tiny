@@ -20,7 +20,7 @@ fn list_missing(source_dir, dest_dir) {
     while (i < builtins.len(dest_files)) {
         def path = heap_get(dest_files, i);
         def stem = heap_get(os_path.splitext(os_path.basename(path)), 0);
-        def added_dest = Set.add(dest_stems, stem);
+        def ignored_added_dest = Set.add(dest_stems, stem);
         i = i + 1;
     }
 
@@ -48,7 +48,7 @@ fn copy_batch(files, dest_dir, limit, delay) {
     while (idx < end) {
         def source_path = heap_get(files, idx);
         def destination = os_path.join(dest_dir, os_path.basename(source_path));
-        def copy_result = shutil.copy2(source_path, destination);
+        def ignored_copy_result = shutil.copy2(source_path, destination);
         print("copied", os_path.basename(source_path), "->", destination);
         Collections.push(copied, source_path);
 
@@ -76,24 +76,24 @@ fn parse_args() {
     ]);
 
     def options = Map.new();
-    def set_dest = Map.set(options, "dest", os_path.abspath(heap_get(argv, 1)));
-    def set_source = Map.set(options, "source", Map.get(defaults, "source"));
-    def set_limit = Map.set(options, "limit", Map.get(defaults, "limit"));
-    def set_delay = Map.set(options, "delay", Map.get(defaults, "delay"));
+    def ignored_set_dest = Map.set(options, "dest", os_path.abspath(heap_get(argv, 1)));
+    def ignored_set_source = Map.set(options, "source", Map.get(defaults, "source"));
+    def ignored_set_limit = Map.set(options, "limit", Map.get(defaults, "limit"));
+    def ignored_set_delay = Map.set(options, "delay", Map.get(defaults, "delay"));
 
     def index = 2;
     while (index < argc) {
         def flag = heap_get(argv, index);
         if (flag == "--source" && index + 1 < argc) {
-            def updated_source = Map.set(options, "source", os_path.abspath(heap_get(argv, index + 1)));
+            def ignored_updated_source = Map.set(options, "source", os_path.abspath(heap_get(argv, index + 1)));
             index = index + 2;
         } else {
             if (flag == "--limit" && index + 1 < argc) {
-                def updated_limit = Map.set(options, "limit", builtins.int(heap_get(argv, index + 1)));
+                def ignored_updated_limit = Map.set(options, "limit", builtins.int(heap_get(argv, index + 1)));
                 index = index + 2;
             } else {
                 if (flag == "--delay" && index + 1 < argc) {
-                    def updated_delay = Map.set(options, "delay", builtins.float(heap_get(argv, index + 1)));
+                    def ignored_updated_delay = Map.set(options, "delay", builtins.float(heap_get(argv, index + 1)));
                     index = index + 2;
                 } else {
                     print("Ignoring unknown or incomplete flag:", flag);
@@ -120,7 +120,7 @@ fn main() {
         return 1;
     }
 
-    if (!os_path.exists(dest)) { def created_dest = os.makedirs(dest); }
+    if (!os_path.exists(dest)) { def ignored_created_dest = os.makedirs(dest); }
     def missing = list_missing(source, dest);
 
     if (builtins.len(missing) == 0) {

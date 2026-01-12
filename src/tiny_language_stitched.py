@@ -7070,6 +7070,9 @@ def _infer_expr_type(expr: IR, env: Dict[str, str]) -> Optional[str]:
 
 
 def _normalize_inferred_type(type_name: str) -> str:
+    normalized = type_name.strip()
+    if normalized.lower() in {"int", "float"}:
+        return "number"
     return type_name
 
 
@@ -8715,6 +8718,9 @@ class Runtime:
 
     @staticmethod
     def _normalize_numeric_type(type_name: str) -> str:
+        normalized = type_name.strip()
+        if normalized.lower() in {"int", "float"}:
+            return "number"
         return type_name
 
     def _check_assignment_type(
@@ -10247,6 +10253,9 @@ class Environment:
 
     @staticmethod
     def _normalize_numeric_type(type_name: str) -> str:
+        normalized = type_name.strip()
+        if normalized.lower() in {"int", "float"}:
+            return "number"
         return type_name
 
     def get(self, name: str) -> Any:

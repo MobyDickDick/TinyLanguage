@@ -600,6 +600,10 @@ def _infer_expr_type(expr: IR, env: Dict[str, str]) -> Optional[str]:
     return None
 
 
+def _normalize_inferred_type(type_name: str) -> str:
+    return type_name
+
+
 def _types_match(expected: str, actual: str) -> bool:
     expected_norm = expected.strip()
     actual_norm = actual.strip()
@@ -629,7 +633,7 @@ def lint_assignment_types(stmts: List[IR], source: Optional[str] = None, env: Op
             if isinstance(st, Let):
                 inferred = _infer_expr_type(st.expr, local_env)
                 if inferred:
-                    local_env[st.name] = inferred
+                    local_env[st.name] = _normalize_inferred_type(inferred)
             elif isinstance(st, Assign):
                 inferred = _infer_expr_type(st.expr, local_env)
                 expected = local_env.get(st.name)
@@ -643,12 +647,12 @@ def lint_assignment_types(stmts: List[IR], source: Optional[str] = None, env: Op
                         hint="Use a new variable or cast explicitly if a different type is required.",
                     )
                 if inferred:
-                    local_env[st.name] = inferred
+                    local_env[st.name] = expected or _normalize_inferred_type(inferred)
             elif isinstance(st, DestructAssign):
                 inferred = _infer_expr_type(st.expr, local_env)
                 if inferred:
                     for nm in st.names:
-                        local_env[nm] = inferred
+                        local_env[nm] = _normalize_inferred_type(inferred)
             elif isinstance(st, If):
                 then_env = check_block(list(st.then), dict(local_env))
                 else_env = check_block(list(st.els), dict(local_env))

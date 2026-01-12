@@ -499,10 +499,8 @@ class Environment:
     def _normalize_numeric_type(type_name: str) -> str:
         normalized = type_name.strip()
         lowered = normalized.lower()
-        if lowered == "int":
-            return "int"
-        if lowered == "float":
-            return "float"
+        if lowered in {"int", "float"}:
+            return "number"
         return type_name
 
     def get(self, name: str) -> Any:

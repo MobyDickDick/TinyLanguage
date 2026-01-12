@@ -72,16 +72,12 @@ print(maybe_label(-2));
     assert compile_and_run(source) == "Null\n"
 
 
-def test_inferred_int_rejects_float_assignment():
+def test_inferred_number_allows_float_assignment():
     source = """
 def x = 0;
 x = 1.5;
 """
-
-    with pytest.raises(TinyLangError) as excinfo:
-        compile_and_run(source)
-
-    assert excinfo.value.code == "E014"
+    assert compile_and_run(source) == ""
 
 
 def test_inferred_type_still_prevents_unrelated_changes():

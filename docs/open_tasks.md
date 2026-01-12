@@ -16,7 +16,7 @@ are grouped by area and can be tackled independently.
 ## Runtime
 
 - [x] Harden the heap API (invalid pointer diagnostics, out-of-bounds details, double-delete detection, leak tracking).
-- [ ] Expand the test suite (nested arrays, many `new/delete` pairs, deep recursion, heap-API error scenarios).
+- [x] Expand the test suite (nested arrays, many `new/delete` pairs, deep recursion, heap-API error scenarios).
 
 ## Test coverage for Tiny programs
 

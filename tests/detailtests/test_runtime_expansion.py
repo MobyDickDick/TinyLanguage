@@ -1,3 +1,6 @@
+import re
+
+
 def test_nested_arrays_roundtrip(run_tiny_source):
     out = run_tiny_source(
         """
@@ -98,3 +101,23 @@ print(sum(50));
     )
 
     assert out.strip() == "1275"
+
+
+def test_heap_api_error_scenarios(run_tiny_source):
+    out = run_tiny_source(
+        """
+def ptr = new(2);
+def ignored1 = heap_set(ptr, 0, 10);
+def ignored2 = heap_set(ptr, 5, 99);
+print(errorMessage);
+def _unused1 = delete(ptr);
+def _unused2 = delete(ptr);
+print(errorMessage);
+def ignored3 = heap_get(42, 0);
+print(errorMessage);
+""".strip()
+    )
+
+    assert re.search(r"heap access error: index 5 out of range for pointer 1", out)
+    assert re.search(r"heap delete error: pointer 1 was already freed", out)
+    assert re.search(r"heap access error: unknown pointer 42", out)

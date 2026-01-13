@@ -93,7 +93,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("path", nargs="?", type=Path, help="Path to a .tiny source file")
     source_group = parser.add_mutually_exclusive_group()
     source_group.add_argument("--file", "-f", type=Path, help="Path to a .tiny source file")
-    source_group.add_argument("--source", "-s", type=str, help="Inline TinyLanguage source code")
+    source_group.add_argument(
+        "--source",
+        "-s",
+        "-e",
+        type=str,
+        help="Inline TinyLanguage source code",
+    )
     backend_group = parser.add_mutually_exclusive_group()
     backend_group.add_argument(
         "--backend",
@@ -145,7 +151,10 @@ def main(argv: list[str] | None = None) -> int:
         help="Deep-copy non-escaping mutable arguments before calls (env: TINYLANG_COPY_ON_CALL)",
     )
 
-    args = parser.parse_args(argv)
+    args, remaining = parser.parse_known_args(argv)
+    program_args = list(remaining)
+    if program_args and program_args[0] == "--":
+        program_args = program_args[1:]
     module_path: Path | None = None
     source: str
     cli_path = args.path or args.file
@@ -183,6 +192,14 @@ def main(argv: list[str] | None = None) -> int:
             out_path.write_text(llvm_ir + os.linesep, encoding="utf-8")
         return 0
 
+    program_argv = []
+    if module_path is not None:
+        program_argv.append(str(module_path))
+    else:
+        program_argv.append("<source>")
+    program_argv.extend(program_args)
+    original_argv = sys.argv[:]
+    sys.argv = program_argv
     try:
         output, streamed = _execute(
             source,
@@ -194,6 +211,8 @@ def main(argv: list[str] | None = None) -> int:
     except TinyLangError as err:
         sys.stderr.write(_format_error_for_source(source, err) + os.linesep)
         return 1
+    finally:
+        sys.argv = original_argv
 
     if not streamed:
         sys.stdout.write(output)

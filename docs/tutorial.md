@@ -82,9 +82,10 @@ Each file prints its expected output and doubles as a runnable reference.
 For multi-file projects, use the CLI helper that understands module manifests:
 
 ```bash
-python -m tiny_lang_cli --file my_pkg/main.tiny --backend interpreter
+python -m tiny_lang_cli my_pkg/main.tiny --backend interpreter
 TINYPATH=../deps python -m tiny_lang_cli --file my_pkg/main.tiny --native-backend
 python -m tiny_lang_cli -e "print(1 + 2);" --backend interpreter
+python -m tiny_lang_cli --file - --backend interpreter < my_pkg/main.tiny
 python -m tiny_lang_cli --file my_pkg/main.tiny -- --flag value
 ```
 

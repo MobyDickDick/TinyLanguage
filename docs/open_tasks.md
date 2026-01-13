@@ -26,7 +26,7 @@ are grouped by area and can be tackled independently.
 
 ## Tooling
 
-- [ ] Improve CLI wrapper ergonomics and documentation.
+- [x] Improve CLI wrapper ergonomics and documentation.
 - [ ] Stabilize formatter + lints + language-server workflows.
 
 ## Structured concurrency

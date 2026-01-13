@@ -70,12 +70,18 @@ class TinyLanguageServer:
     def __init__(self, source: str):
         """Parse ``source`` and eagerly build symbol tables for lookups."""
         self.source = source
+        self.parse_error: Optional[TinyLangError] = None
         self.parser = Parser(Lexer(source), source)
-        self.stmts = self.parser.parse()
+        try:
+            self.stmts = self.parser.parse()
+        except TinyLangError as err:
+            self.stmts = []
+            self.parse_error = err
         self.symbols: Dict[str, SourcePos] = {}
         self.symbol_kinds: Dict[str, str] = {}
         self.symbol_details: Dict[str, str] = {}
-        self._index_symbols(self.stmts)
+        if self.parse_error is None:
+            self._index_symbols(self.stmts)
 
     def _record_symbol(self, name: str, pos: SourcePos, kind: str, detail: Optional[str]) -> None:
         """Store a symbol with supplemental metadata for hover/completion."""
@@ -182,6 +188,15 @@ class TinyLanguageServer:
     def diagnostics(self) -> List[Diagnostic]:
         """Run linters and parser checks, returning any diagnostics."""
         diagnostics: List[Diagnostic] = []
+
+        if self.parse_error is not None:
+            return [
+                Diagnostic(
+                    message=str(self.parse_error),
+                    code=self.parse_error.code,
+                    range=_diagnostic_range(self.parse_error, self.source),
+                )
+            ]
 
         try:
             lint_destruct_call_outputs(self.stmts, self.source)

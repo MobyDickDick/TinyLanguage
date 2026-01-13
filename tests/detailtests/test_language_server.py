@@ -103,3 +103,14 @@ def test_diagnostics_use_span_when_available():
     assert start_line == 1
     assert end_line > start_line  # Span should cover the closing brace.
     assert end_col >= 2  # Exclusive column should advance beyond the brace.
+
+
+def test_diagnostics_surface_parse_errors():
+    source = "fn incomplete() { return 1 "
+    server = TinyLanguageServer(source)
+    diags = server.diagnostics()
+    assert diags
+    diag = diags[0]
+    assert diag.code
+    assert isinstance(diag.range, tuple)
+    assert len(diag.range) == 4

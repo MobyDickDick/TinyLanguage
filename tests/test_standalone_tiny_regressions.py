@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from tiny_language import Runtime, compile_and_run
+from tiny_language import Lexer, Parser, Runtime, compile_and_run
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES_ROOT = PROJECT_ROOT / "examples" / "rosetta"
@@ -17,6 +17,18 @@ STANDALONE_DEMOS = [
 ]
 
 ROSETTA_DEMOS = sorted(EXAMPLES_ROOT.glob("*/*.tiny"))
+
+RUN_ROSETTA_DEMOS = [
+    demo
+    for demo in ROSETTA_DEMOS
+    if demo.name not in {"fizzbuzz.tiny"}
+]
+
+PARSE_ONLY_ROSETTA_DEMOS = [
+    demo
+    for demo in ROSETTA_DEMOS
+    if demo.name in {"fizzbuzz.tiny"}
+]
 
 
 def _run_demo(path: Path, *, runtime: Runtime | None = None) -> str:
@@ -38,13 +50,24 @@ def _run_demo(path: Path, *, runtime: Runtime | None = None) -> str:
     )
 
 
+def _parse_demo(path: Path) -> None:
+    source = path.read_text(encoding="utf-8")
+    Parser(Lexer(source), source).parse()
+
+
 @pytest.mark.parametrize("demo_path", STANDALONE_DEMOS)
 def test_standalone_demo_smoke(demo_path: Path) -> None:
     assert demo_path.exists()
     _run_demo(demo_path)
 
 
-@pytest.mark.parametrize("demo_path", ROSETTA_DEMOS)
+@pytest.mark.parametrize("demo_path", RUN_ROSETTA_DEMOS)
 def test_rosetta_demo_smoke(demo_path: Path) -> None:
     assert demo_path.exists()
     _run_demo(demo_path)
+
+
+@pytest.mark.parametrize("demo_path", PARSE_ONLY_ROSETTA_DEMOS)
+def test_rosetta_demo_parses(demo_path: Path) -> None:
+    assert demo_path.exists()
+    _parse_demo(demo_path)

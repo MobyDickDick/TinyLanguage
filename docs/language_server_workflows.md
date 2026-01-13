@@ -25,7 +25,7 @@ The subcommands mirror common LSP request/response pairs:
 - `completions --prefix <text>` filters all known symbols, keywords, and built-ins by the provided prefix.
 - `hover --symbol <name>` locates a symbol and emits its name, a generic detail string, and a zero-based `(line, column)` position tuple.
 - `definition --symbol <name>` resolves a symbol to its definition location (optionally disambiguated with `--line`/`--col`).
-- `diagnostics` runs the built-in lints and surfaces the first encountered error with a four-tuple range `(start_line, start_col, end_line, end_col)`.
+- `diagnostics` runs the built-in lints and surfaces the first encountered error with a four-tuple range `(start_line, start_col, end_line, end_col)`. Parse errors are reported in the same payload shape so tooling stays stable when source is incomplete.
 - `format` formats the source using the TinyLanguage formatter and returns the formatted source string.
 
 Outputs are JSON so they can be piped into tools or inspected visually. Example diagnostics output:

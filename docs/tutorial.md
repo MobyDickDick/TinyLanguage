@@ -83,7 +83,7 @@ For multi-file projects, use the CLI helper that understands module manifests:
 
 ```bash
 python -m tiny_lang_cli --file my_pkg/main.tiny --backend interpreter
-TINYPATH=../deps python -m tiny_lang_cli --file my_pkg/main.tiny --backend native
+TINYPATH=../deps python -m tiny_lang_cli --file my_pkg/main.tiny --native-backend
 ```
 
 The `module.json` file in a package declares entry points and dependencies; see the module workflows in `docs/demo_run_commands.md` for more examples.

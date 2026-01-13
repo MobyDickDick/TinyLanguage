@@ -38,6 +38,30 @@ SIMPLE_DEMOS = [
     "tiny_language_highlighting.tiny",
 ]
 
+ADDITIONAL_RUN_DEMOS = [
+    "fibonacci.tiny",
+    "hello_world.tiny",
+    "python_fn_demo.tiny",
+    "python_json_demo.tiny",
+    "python_math_demo.tiny",
+    "python_proxy_pipeline_demo.tiny",
+]
+
+ADDITIONAL_PARSE_DEMOS = [
+    "language_server_cli.tiny",
+    "native_ir.tiny",
+    "native_vm.tiny",
+    "tiny_lang_cli.tiny",
+    "tiny_language_ast.tiny",
+    "tiny_language_cli.tiny",
+    "tiny_language_codegen_native.tiny",
+    "tiny_language_lexer.tiny",
+    "tiny_language_linter.tiny",
+    "tiny_language_parser.tiny",
+    "tiny_language_transpilers.tiny",
+]
+
+
 def _run_demo(path: Path, *, runtime: Runtime | None = None) -> str:
     source = path.read_text(encoding="utf-8")
     resolved = path.resolve()
@@ -56,12 +80,29 @@ def _run_demo(path: Path, *, runtime: Runtime | None = None) -> str:
         repl_mode=True,
     )
 
+def _parse_demo(path: Path) -> None:
+    source = path.read_text(encoding="utf-8")
+    Parser(Lexer(source), source).parse()
+
 
 @pytest.mark.parametrize("demo_name", SIMPLE_DEMOS)
 def test_src_tiny_demo_smoke(demo_name: str) -> None:
     demo_path = SRC_TINY / demo_name
     assert demo_path.exists()
     _run_demo(demo_path)
+
+@pytest.mark.parametrize("demo_name", ADDITIONAL_RUN_DEMOS)
+def test_src_tiny_additional_demo_smoke(demo_name: str) -> None:
+    demo_path = SRC_TINY / demo_name
+    assert demo_path.exists()
+    _run_demo(demo_path)
+
+
+@pytest.mark.parametrize("demo_name", ADDITIONAL_PARSE_DEMOS)
+def test_src_tiny_additional_demo_parses(demo_name: str) -> None:
+    demo_path = SRC_TINY / demo_name
+    assert demo_path.exists()
+    _parse_demo(demo_path)
 
 
 def test_console_sum_demo_handles_eof(monkeypatch: pytest.MonkeyPatch) -> None:

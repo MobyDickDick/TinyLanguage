@@ -89,6 +89,23 @@ def test_tl_stdlib_random_module_import(run_tiny_source):
     assert out == "2\nblau\n3\ncba\n"
 
 
+def test_tl_stdlib_string_module_import(run_tiny_source):
+    out = run_tiny_source(
+        """
+        import stdlib.string;
+        def parts = string.split("a,b,c", ",");
+        print(string.join(parts, "-"));
+        print(string.contains("tiny language", "lang"));
+        print(string.upper("hello"));
+        print(string.lower("HELLO"));
+        print(string.trim("  padded  "));
+        print(string.repeat("ha", 2));
+        """,
+    )
+
+    assert out == "a-b-c\ntrue\nHELLO\nhello\npadded\nhaha\n"
+
+
 def test_string_repeat_validates_count(run_tiny_source):
     with pytest.raises(Exception, match=r"repeat count must be non-negative"):
         run_tiny_source('print(String.repeat("x", -1));')

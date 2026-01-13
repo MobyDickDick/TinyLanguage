@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from formatter import format_source
 from language_server import CompletionItem, Diagnostic, HoverResult, TinyLanguageServer
 
 
@@ -62,6 +63,11 @@ def diagnostics(server: TinyLanguageServer) -> List[Dict[str, Any]]:
     return [_diagnostic_dict(diag) for diag in server.diagnostics()]
 
 
+def format_source_payload(source: str) -> Dict[str, str]:
+    """Return formatted source in a JSON-friendly payload."""
+    return {"source": format_source(source)}
+
+
 def definition(
     server: TinyLanguageServer, symbol: str, position: Optional[Tuple[int, int]]
 ) -> Dict[str, Any]:
@@ -101,6 +107,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     subparsers.add_parser("diagnostics", help="List diagnostics for the source")
+    subparsers.add_parser("format", help="Format the source and emit it as JSON")
 
     return parser
 
@@ -111,19 +118,23 @@ def main() -> None:
     args = parser.parse_args()
 
     source = _load_source(args)
-    server = TinyLanguageServer(source)
-
     if args.command == "completions":
+        server = TinyLanguageServer(source)
         payload = completions(server, args.prefix)
     elif args.command == "hover":
+        server = TinyLanguageServer(source)
         payload = hover(server, args.symbol)
     elif args.command == "definition":
+        server = TinyLanguageServer(source)
         if (args.line is None) != (args.col is None):
             raise SystemExit("Provide both --line and --col or neither")
         position = None if args.line is None else (args.line, args.col)
         payload = definition(server, args.symbol, position)
     elif args.command == "diagnostics":
+        server = TinyLanguageServer(source)
         payload = diagnostics(server)
+    elif args.command == "format":
+        payload = format_source_payload(source)
     else:
         raise SystemExit(f"unknown command: {args.command}")
 

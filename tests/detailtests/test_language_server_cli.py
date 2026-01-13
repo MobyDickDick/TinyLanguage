@@ -100,3 +100,8 @@ def test_cli_reports_diagnostics_from_file(tmp_path):
     assert diag["code"] == "E010"
     assert isinstance(diag["range"], list)
     assert len(diag["range"]) == 4
+
+
+def test_cli_format_emits_formatted_source():
+    payload = run_cli(["--source", "fn add(x,y){return x+y;}", "format"])
+    assert payload["source"] == "fn add(x, y) {\n    return x + y;\n}\n"

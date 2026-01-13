@@ -15,6 +15,9 @@ PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny
 
 # Capture diagnostics as JSON
 PYTHONPATH=src python src/language_server_cli.py --source "fn describe(x: number) -> number { if (x > 0) { return x; } }" diagnostics
+
+# Format source and emit JSON payloads
+PYTHONPATH=src python src/language_server_cli.py --source "fn greet(){return 1;}" format
 ```
 
 The subcommands mirror common LSP request/response pairs:
@@ -23,6 +26,7 @@ The subcommands mirror common LSP request/response pairs:
 - `hover --symbol <name>` locates a symbol and emits its name, a generic detail string, and a zero-based `(line, column)` position tuple.
 - `definition --symbol <name>` resolves a symbol to its definition location (optionally disambiguated with `--line`/`--col`).
 - `diagnostics` runs the built-in lints and surfaces the first encountered error with a four-tuple range `(start_line, start_col, end_line, end_col)`.
+- `format` formats the source using the TinyLanguage formatter and returns the formatted source string.
 
 Outputs are JSON so they can be piped into tools or inspected visually. Example diagnostics output:
 
@@ -51,6 +55,7 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
 | `textDocument/hover` | `hover` | `{ "symbol": "Greeter" }` | `{ "symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [0, 6] }` | Returns the recorded zero-based position for the symbol. |
 | `textDocument/definition` | `definition` | `{ "symbol": "greet" }` | `{ "symbol": "greet", "position": [0, 3] }` | Resolves a symbol to its definition position. |
 | `textDocument/diagnostic` | `diagnostics` | `{}` | `[{ "message": "[E010] ...", "code": "E010", "range": [1, 0, 1, 1] }]` | Emits lint findings with machine-readable ranges. |
+| `textDocument/formatting` | `format` | `{}` | `{ "source": "fn greet() { return 1; }\n" }` | Formats the input using the TinyLanguage formatter. |
 
 **Request templates at a glance** (copy/paste into JSON-RPC envelopes):
 
@@ -139,7 +144,27 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
     # => [{"message": "[E010] not all paths in function describe return a value for annotated type number", "code": "E010", "range": [1, 0, 1, 1]}]
     ```
 
-Not implemented yet: formatting or workspace symbol searches. Those can be layered on later by extending the helper functions in [`src/language_server.py`](../src/language_server.py).
+- **Formatting** (`textDocument/formatting` equivalent)
+  - Request payload:
+
+    ```json
+    {}
+    ```
+
+  - Response payload:
+
+    ```json
+    { "source": "fn greet() { return 1; }\n" }
+    ```
+
+  - CLI demo for formatting:
+
+    ```bash
+    PYTHONPATH=src python src/language_server_cli.py --source "fn greet(){return 1;}" format
+    # => {"source": "fn greet() { return 1; }\n"}
+    ```
+
+Not implemented yet: workspace symbol searches. Those can be layered on later by extending the helper functions in [`src/language_server.py`](../src/language_server.py).
 
 ## "So testest du es" quick demos
 

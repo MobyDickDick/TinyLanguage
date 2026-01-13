@@ -210,6 +210,7 @@ python -m tiny_language path/to/program.tiny
 # Run with the Python CLI wrapper (switch backends)
 python -m tiny_lang_cli --file path/to/program.tiny --backend interpreter
 python -m tiny_lang_cli --source "print(1+2);" --backend interpreter
+python -m tiny_lang_cli --file path/to/program.tiny --native-backend
 
 # Run tests
 python -m pytest

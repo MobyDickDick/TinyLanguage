@@ -94,11 +94,27 @@ def main(argv: list[str] | None = None) -> int:
     source_group = parser.add_mutually_exclusive_group()
     source_group.add_argument("--file", "-f", type=Path, help="Path to a .tiny source file")
     source_group.add_argument("--source", "-s", type=str, help="Inline TinyLanguage source code")
-    parser.add_argument(
+    backend_group = parser.add_mutually_exclusive_group()
+    backend_group.add_argument(
         "--backend",
         choices=["interpreter", "python", "native", "native-python-bytecode"],
         default="interpreter",
         help="Execution backend (interpreter/python/native/native-python-bytecode)",
+    )
+    backend_group.add_argument(
+        "--python-backend",
+        action="store_true",
+        help="Alias for --backend python",
+    )
+    backend_group.add_argument(
+        "--native-backend",
+        action="store_true",
+        help="Alias for --backend native",
+    )
+    backend_group.add_argument(
+        "--native-python-bytecode",
+        action="store_true",
+        help="Alias for --backend native-python-bytecode",
     )
     parser.add_argument(
         "--emit-llvm",
@@ -140,6 +156,13 @@ def main(argv: list[str] | None = None) -> int:
         source = args.source
     else:
         parser.error("either provide a path argument, --file, or --source")
+
+    if args.python_backend:
+        args.backend = "python"
+    elif args.native_backend:
+        args.backend = "native"
+    elif args.native_python_bytecode:
+        args.backend = "native-python-bytecode"
 
     if args.emit_llvm is not None:
         try:

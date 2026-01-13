@@ -60,7 +60,7 @@ PYTHONPATH=src python src/language_server_cli.py --file src_tiny/stdlib_io_rando
 python -m tiny_lang_cli --file my_pkg/main.tiny --backend interpreter
 
 # Cross-check with an optional search path and the native backend
-TINYPATH=../deps python -m tiny_lang_cli --file my_pkg/main.tiny --backend native
+TINYPATH=../deps python -m tiny_lang_cli --file my_pkg/main.tiny --native-backend
 ```
 
 ## Everything at once

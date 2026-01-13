@@ -71,7 +71,12 @@ def _load_and_exec_all() -> None:
     stitched_path = base / "tiny_language_stitched.py"
     temp_path = stitched_path.with_suffix(".py.tmp")
     temp_path.write_text(full_source, encoding="utf-8")
-    temp_path.replace(stitched_path)
+    try:
+        temp_path.replace(stitched_path)
+    except OSError:
+        stitched_path.write_text(full_source, encoding="utf-8")
+        if temp_path.exists():
+            temp_path.unlink()
 
     try:
         code = compile(full_source, str(stitched_path), "exec")  # Compile so tracebacks reference the stitched file.

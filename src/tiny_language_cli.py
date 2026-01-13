@@ -31,6 +31,8 @@ def _default_copy_on_call() -> bool:
 
 
 def _read_source_from_file(path: Path) -> str:
+    if str(path) == "-":
+        return sys.stdin.read()
     try:
         return path.read_text(encoding="utf-8")
     except FileNotFoundError as exc:  # pragma: no cover - argparse already guards path existence
@@ -90,9 +92,19 @@ def _execute(
 def main(argv: list[str] | None = None) -> int:
     """Parse CLI arguments, run the requested program, and emit output/errors."""
     parser = argparse.ArgumentParser(description="Run TinyLanguage programs from the command line")
-    parser.add_argument("path", nargs="?", type=Path, help="Path to a .tiny source file")
+    parser.add_argument(
+        "path",
+        nargs="?",
+        type=Path,
+        help="Path to a .tiny source file (use '-' for stdin)",
+    )
     source_group = parser.add_mutually_exclusive_group()
-    source_group.add_argument("--file", "-f", type=Path, help="Path to a .tiny source file")
+    source_group.add_argument(
+        "--file",
+        "-f",
+        type=Path,
+        help="Path to a .tiny source file (use '-' for stdin)",
+    )
     source_group.add_argument(
         "--source",
         "-s",
@@ -159,10 +171,15 @@ def main(argv: list[str] | None = None) -> int:
     source: str
     cli_path = args.path or args.file
     if cli_path:
-        module_path = cli_path.resolve()
-        source = _read_source_from_file(module_path)
+        if str(cli_path) == "-":
+            source = _read_source_from_file(cli_path)
+        else:
+            module_path = cli_path.resolve()
+            source = _read_source_from_file(module_path)
     elif args.source is not None:
         source = args.source
+    elif not sys.stdin.isatty():
+        source = sys.stdin.read()
     else:
         parser.error("either provide a path argument, --file, or --source")
 

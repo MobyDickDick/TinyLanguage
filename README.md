@@ -126,7 +126,7 @@ TinyLanguage currently ships multiple execution routes:
 
 - **Interpreter** (default): parse → AST/IR → execute in Python
 - **Python backend**: alternative execution path for comparison/testing
-- **Native (C backend)**: emit a small C VM + bytecode, compile via `cc/clang/gcc`
+- **Native (C backend)**: emit a small C VM + bytecode, compile via `cc/clang/gcc` (see [docs/c_backend.md](docs/c_backend.md))
 - **LLVM prototype**: optional IR emission path (experimental)
 
 ### Compile to a native executable (C backend)
@@ -276,7 +276,7 @@ For a detailed checklist of open items, see [docs/open_tasks.md](docs/open_tasks
 - Formatter + lints + stable language-server workflows.
 
 ### Native backends
-- Keep the C backend stable and documented (see [docs/native_compiler.md](docs/native_compiler.md)).
+- Keep the C backend stable and documented (see [docs/c_backend.md](docs/c_backend.md)).
 - Continue LLVM emission experiments as a separate track.
 
 ---

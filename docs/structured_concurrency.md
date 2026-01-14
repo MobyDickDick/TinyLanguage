@@ -21,6 +21,7 @@ This document outlines a structured concurrency model that extends the existing 
 
 - **Creation**: `def token = Async.token();` returns a handle that can be shared.
 - **Propagation**: `Async.link(token, handle);` binds an existing `spawn` handle to the token. If the token is already cancelled, the handle is cancelled before running. The link call is idempotent.
+- **Completion wins**: Cancellation only propagates to in-flight handles; completed handles remain complete, and linking an already-finished handle is a no-op.
 - **Observation**: Tasks poll `Async.is_cancelled(token)` inside loops and can look up a reason via `Async.reason(token)` to decide on cleanup steps.
 - **Trigger**: `Async.cancel(token, "timeout")` sets the cancellation flag, propagates to linked handles, and returns `true` only on the first call.
 

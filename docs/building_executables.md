@@ -10,6 +10,10 @@ If you want a true native binary compiled from TinyLanguage source (no Python in
 python src/tiny_language.py --emit-exe hello_native src_tiny/demo.tiny
 ```
 
+For a stable C backend that emits a C source file plus a tiny VM, see
+[`docs/c_backend.md`](c_backend.md). The `tinyc_cli` command can emit C, LLVM IR,
+or LLVM bitcode via `clang`, and it is documented separately.
+
 To inspect the LLVM IR first:
 
 ```bash

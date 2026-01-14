@@ -176,6 +176,7 @@ See [benchmarks/microbenchmarks.py](benchmarks/microbenchmarks.py) and [docs/per
 - [docs/git_conflict_troubleshooting.md](docs/git_conflict_troubleshooting.md) — practical merge/rebase checklist
 
 ### Internals and performance
+- [docs/c_backend.md](docs/c_backend.md) — C backend CLI and supported subset
 - [docs/native_compiler.md](docs/native_compiler.md) — native backend workflow + limits
 - [docs/native_ir.md](docs/native_ir.md) — native backend IR
 - [docs/backend_feature_matrix.md](docs/backend_feature_matrix.md) — feature coverage by backend

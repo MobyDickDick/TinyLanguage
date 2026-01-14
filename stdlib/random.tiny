@@ -15,3 +15,7 @@ fn choice(seq) {
 fn shuffle(seq) {
   return Random.shuffle(seq);
 }
+
+fn seed(value) {
+  return Random.seed(value);
+}

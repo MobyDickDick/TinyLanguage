@@ -31,9 +31,9 @@ are grouped by area and can be tackled independently.
 
 ## Structured concurrency
 
-- [ ] Add `async`/`await` syntax while keeping `spawn`/`join` for compatibility.
-- [ ] Introduce channel primitives (`Async.channel`, `Async.send`, `Async.recv`, `Async.close`) after task scopes stabilize.
-- [ ] Formalize cancellation token semantics for joins, timeouts, and linked tasks.
+- [x] Add `async`/`await` syntax while keeping `spawn`/`join` for compatibility.
+- [x] Introduce channel primitives (`Async.channel`, `Async.send`, `Async.recv`, `Async.close`) after task scopes stabilize.
+- [x] Formalize cancellation token semantics for joins, timeouts, and linked tasks.
 
 ## Native backends
 

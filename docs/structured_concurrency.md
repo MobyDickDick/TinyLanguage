@@ -38,7 +38,7 @@ This document outlines a structured concurrency model that extends the existing 
 
 ## Migration path
 
-1. Ship the `Async` namespace with cancellation tokens (implemented in this change) to unblock cooperative aborts.
+1. ✅ Ship the `Async` namespace with cancellation tokens (implemented in this change) to unblock cooperative aborts.
 2. ✅ Add a `task` block construct that groups spawned work and auto-cancels on scope exit.
-3. Extend the parser with `async`/`await` syntax while keeping `spawn`/`join` for backwards compatibility.
-4. Layer in channel primitives once structured task groups are stable; channels reuse cancellation tokens to abort blocked senders/receivers.
+3. ✅ Extend the parser with `async`/`await` syntax while keeping `spawn`/`join` for backwards compatibility.
+4. ✅ Layer in channel primitives once structured task groups are stable; channels reuse cancellation tokens to abort blocked senders/receivers.

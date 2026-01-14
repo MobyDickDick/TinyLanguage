@@ -196,6 +196,25 @@ print(p.sum());
     assert "call i64 @heap_get" in llvm_ir
 
 
+def test_llvm_codegen_supports_field_get_and_set() -> None:
+    source = """
+class Point {
+  x: number;
+  y: number;
+}
+
+def p = new Point { x: 1; y: 2; };
+p.x = 5;
+print(p.x, p.y);
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+    main_ir = _tiny_main_body(llvm_ir)
+
+    assert "call i64 @heap_set" in main_ir
+    assert "call i64 @heap_get" in main_ir
+
+
 def test_llvm_codegen_emits_operator_overload_calls() -> None:
     source = """
 operator + (a: number, b: number) -> number { return a - b; }

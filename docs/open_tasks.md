@@ -38,7 +38,7 @@ are grouped by area and can be tackled independently.
 ## Native backends
 
 - [x] Keep the C backend stable and documented.
-- [ ] Continue LLVM emission experiments and validation coverage.
+- [x] Continue LLVM emission experiments and validation coverage.
 
 ## Stdlib + compatibility
 

@@ -1,0 +1,44 @@
+// TinyLanguage stdlib: datetime module (Python-style subset)
+
+def PY_ALLOW = new[
+  "datetime_isoformat",
+  "date_isoformat",
+  "time_isoformat",
+  "timedelta_total_seconds"
+];
+
+fn datetime_isoformat(year, month, day, hour, minute, second) {
+  return Python.call(
+    "stdlib_datetime",
+    "datetime_isoformat",
+    new[year, month, day, hour, minute, second],
+    { allow: PY_ALLOW }
+  );
+}
+
+fn date_isoformat(year, month, day) {
+  return Python.call(
+    "stdlib_datetime",
+    "date_isoformat",
+    new[year, month, day],
+    { allow: PY_ALLOW }
+  );
+}
+
+fn time_isoformat(hour, minute, second) {
+  return Python.call(
+    "stdlib_datetime",
+    "time_isoformat",
+    new[hour, minute, second],
+    { allow: PY_ALLOW }
+  );
+}
+
+fn total_seconds(days, seconds) {
+  return Python.call(
+    "stdlib_datetime",
+    "timedelta_total_seconds",
+    new[days, seconds],
+    { allow: PY_ALLOW }
+  );
+}

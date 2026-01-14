@@ -27,3 +27,19 @@ fn trim(text) {
 fn repeat(text, count) {
   return String.repeat(text, count);
 }
+
+fn replace(text, old, replacement) {
+  return String.replace(text, old, replacement);
+}
+
+fn starts_with(text, prefix) {
+  return String.starts_with(text, prefix);
+}
+
+fn ends_with(text, suffix) {
+  return String.ends_with(text, suffix);
+}
+
+fn is_digit(text) {
+  return String.is_digit(text);
+}

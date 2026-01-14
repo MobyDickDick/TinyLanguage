@@ -316,6 +316,7 @@ class _StdLibRegistrar:
         self.runtime.register_native("randint", self._random_randint, namespace="Random")
         self.runtime.register_native("choice", self._random_choice, namespace="Random")
         self.runtime.register_native("shuffle", self._random_shuffle, namespace="Random")
+        self.runtime.register_native("seed", self._random_seed, namespace="Random")
 
         # --------------------------- Console -------------------------------
         self.runtime.register_native("read_line", self._console_read_line, namespace="Console")
@@ -966,6 +967,13 @@ class _StdLibRegistrar:
         """Return a uniform float in [0.0, 1.0)."""
         return random.random()
 
+    def _random_seed(self, value: Any | None = None) -> None:
+        """Seed the RNG for deterministic Random outputs."""
+        if value is None:
+            random.seed()
+        else:
+            random.seed(value)
+
     def _random_randint(self, lower: Any, upper: Any) -> int:
         """Return an integer N such that lower <= N <= upper."""
         try:
@@ -1259,6 +1267,15 @@ class _StdLibRegistrar:
 
         return self.namespace_ref_cls(self.runtime, namespace)
 
+    def _python_resolve_attr(self, module: Any, attr: str) -> Any | None:
+        """Resolve dotted attribute paths on a Python module."""
+        target = module
+        for part in str(attr).split("."):
+            target = getattr(target, part, None)
+            if target is None:
+                return None
+        return target
+
     def _python_call(self, module: str, attr: str, args: Any | None = None, opts: Any | None = None) -> Any:
         """Call a Python function under allowlist control.
 
@@ -1296,7 +1313,7 @@ class _StdLibRegistrar:
         if attr_name not in allowed_attrs:
             raise RuntimeError(f"[PYDENY] attribute {attr_name} not allowed")
 
-        func = getattr(py_module, attr_name, None)
+        func = self._python_resolve_attr(py_module, attr_name)
         if not callable(func):
             raise RuntimeError(f"[PYERR] attribute {attr_name} is not callable")
 
@@ -1359,7 +1376,7 @@ class _StdLibRegistrar:
         if attr_name not in allowed_attrs:
             raise RuntimeError(f"[PYDENY] attribute {attr_name} not allowed")
 
-        func = getattr(py_module, attr_name, None)
+        func = self._python_resolve_attr(py_module, attr_name)
         if not callable(func):
             raise RuntimeError(f"[PYERR] attribute {attr_name} is not callable")
 
@@ -1370,7 +1387,9 @@ class _StdLibRegistrar:
         """Wrap a Python callable so args/results are converted across the boundary."""
         def _callable(*args: Any) -> Any:
             py_args = [self._python_to_host(val) for val in args]
-            func = getattr(module, attr)
+            func = self._python_resolve_attr(module, attr)
+            if not callable(func):
+                raise RuntimeError(f"[PYERR] attribute {attr} is not callable")
             return self._python_from_host(func(*py_args))
 
         return _callable

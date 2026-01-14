@@ -458,6 +458,35 @@ print(Deque.pop_left(q));
     assert "call i64 @__deque_pop_left" in llvm_ir
 
 
+def test_llvm_codegen_emits_collection_accessors() -> None:
+    source = """
+def m = Map.new();
+def _unused0 = Map.set(m, 1, 2);
+def _unused1 = Map.keys(m);
+def _unused2 = Map.values(m);
+def _unused3 = Map.entries(m);
+
+def s = Set.new();
+def _unused4 = Set.to_list(s);
+
+def q = Deque.new();
+def _unused5 = Deque.push_left(q, 7);
+def _unused6 = Deque.peek_left(q);
+def _unused7 = Deque.peek_right(q);
+def _unused8 = Deque.pop_right(q);
+"""
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "call i64 @__map_keys" in llvm_ir
+    assert "call i64 @__map_values" in llvm_ir
+    assert "call i64 @__map_entries" in llvm_ir
+    assert "call i64 @__set_to_list" in llvm_ir
+    assert "call i64 @__deque_peek_left" in llvm_ir
+    assert "call i64 @__deque_peek_right" in llvm_ir
+    assert "call i64 @__deque_pop_right" in llvm_ir
+
+
 def test_llvm_codegen_emits_heap_bounds_checks() -> None:
     source = "def ptr = new(2); def ignored1 = heap_set(ptr, 1, 1); print(heap_get(ptr, 1));"
 

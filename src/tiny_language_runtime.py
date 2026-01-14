@@ -319,8 +319,13 @@ class CancellationToken:
                 return False
             self.reason = reason
             self.cancelled.set()
+            remaining: List[SpawnHandle] = []
             for handle in list(self._linked):
+                if handle.done.is_set():
+                    continue
                 handle.cancelled.set()
+                remaining.append(handle)
+            self._linked = remaining
             return True
 
     def link_handle(self, handle: SpawnHandle) -> bool:
@@ -1788,6 +1793,8 @@ class Runtime:
     def cancel_handle(self, handle: Any) -> bool:
         if not isinstance(handle, SpawnHandle):
             raise RuntimeError("cancel expects a spawn handle")
+        if handle.done.is_set():
+            return False
         already = handle.cancelled.is_set()
         handle.cancelled.set()
         return not already

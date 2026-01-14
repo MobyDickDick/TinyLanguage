@@ -39,7 +39,11 @@ def test_cancellation_token_idempotent_and_immediate(run_tiny_source):
         textwrap.dedent(
             """
             fn quick(token) {
-                if (Async.is_cancelled(token)) { return "blocked"; }
+                def i = 0;
+                while (i < 50000) {
+                    if (Async.is_cancelled(token)) { return "blocked"; }
+                    i = i + 1;
+                }
                 return "live";
             }
 
@@ -64,3 +68,28 @@ def test_cancellation_token_idempotent_and_immediate(run_tiny_source):
     )
 
     assert out == "first true second false true\ncancelled true true first\nlate true false\n"
+
+
+def test_cancellation_token_ignores_completed_handles(run_tiny_source):
+    out = run_tiny_source(
+        textwrap.dedent(
+            """
+            fn quick(token) {
+                if (Async.is_cancelled(token)) { return "cancelled"; }
+                return "ok";
+            }
+
+            def token = Async.token();
+            def handle = spawn quick(token);
+            def linked = Async.link(token, handle);
+
+            def first = join(handle);
+            def cancelled = Async.cancel(token, "late");
+            def second = join(handle);
+
+            print("joined", first, second, linked, cancelled);
+            """
+        )
+    )
+
+    assert out == "joined ok ok true true\n"

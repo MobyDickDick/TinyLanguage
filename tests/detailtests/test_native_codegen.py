@@ -74,6 +74,15 @@ def test_boolean_formatting_matches_interpreter():
     assert native_output == interpreter_output
 
 
+def test_not_operator_roundtrip_matches_interpreter():
+    source = """
+    def a = true;
+    def b = false;
+    print(not a, not b, !b, not (1 == 2));
+    """
+    _assert_native_matches(source)
+
+
 def test_heap_roundtrip_matches_interpreter():
     source = """
     def p = new(2);

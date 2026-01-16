@@ -125,6 +125,7 @@ class NativeVM:
         "||": lambda a, b: bool(a) or bool(b),
         "and": lambda a, b: bool(a) and bool(b),
         "or": lambda a, b: bool(a) or bool(b),
+        "not": lambda _a, b: not bool(b),
     }
 
     def __init__(

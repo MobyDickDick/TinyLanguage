@@ -19,6 +19,9 @@ SRC_STDLIB_DOCS = [
 
 STDLIB_MODULES = [
     PROJECT_ROOT / "stdlib" / "math.tiny",
+    PROJECT_ROOT / "stdlib" / "json.tiny",
+    PROJECT_ROOT / "stdlib" / "os.tiny",
+    PROJECT_ROOT / "stdlib" / "pathlib.tiny",
     PROJECT_ROOT / "stdlib" / "random.tiny",
     PROJECT_ROOT / "stdlib" / "statistics.tiny",
     PROJECT_ROOT / "stdlib" / "string.tiny",

@@ -1,0 +1,39 @@
+// TinyLanguage stdlib: pathlib module (Python-style subset)
+
+import stdlib.os;
+
+class Path {
+  value: string;
+
+  fn as_posix(self) {
+    return self.value;
+  }
+
+  fn joinpath(self, child) {
+    return Path(os.path.join(self.value, child));
+  }
+
+  fn exists(self) {
+    return os.path.exists(self.value);
+  }
+
+  fn read_text(self) {
+    return os.read_text(self.value);
+  }
+
+  fn write_text(self, text) {
+    return os.write_text(self.value, text);
+  }
+
+  fn parent(self) {
+    return Path(os.path.dirname(self.value));
+  }
+
+  fn name(self) {
+    return os.path.basename(self.value);
+  }
+}
+
+fn Path(value) {
+  return new Path { value: value };
+}

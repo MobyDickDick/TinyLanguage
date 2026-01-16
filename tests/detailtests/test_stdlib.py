@@ -125,6 +125,43 @@ def test_tl_stdlib_string_module_import(run_tiny_source):
     assert out == "a-b-c\ntrue\nHELLO\nhello\npadded\npadded\npadded  \n  padded\nhaha\n"
 
 
+def test_tl_stdlib_json_module_import(run_tiny_source):
+    out = run_tiny_source(
+        """
+        import stdlib.json;
+        def data = json.loads("{\\"a\\": 1, \\"b\\": [2, 3]}");
+        print(Map.get(data, "a", 0));
+        print(Collections.len(Map.get(data, "b", new[])));
+        print(json.dumps(data));
+        """,
+    )
+
+    assert out == '1\n2\n{"a": 1, "b": [2, 3]}\n'
+
+
+def test_tl_stdlib_os_and_pathlib_module_import(run_tiny_source, tmp_path):
+    file_path = tmp_path / "dir" / "note.txt"
+    out = run_tiny_source(
+        f"""
+        import stdlib.os;
+        import stdlib.pathlib;
+
+        def joined = os.path.join("{tmp_path.as_posix()}", "dir");
+        print(joined);
+
+        def p = pathlib.Path("{file_path.as_posix()}");
+        print(p.parent().as_posix());
+        def _written = p.write_text("ok");
+        print(os.path.exists("{file_path.as_posix()}"));
+        print(p.read_text());
+        """,
+    )
+
+    expected_joined = f"{tmp_path.as_posix()}/dir"
+    expected_parent = file_path.parent.as_posix()
+    assert out == f"{expected_joined}\n{expected_parent}\ntrue\nok\n"
+
+
 def test_string_repeat_validates_count(run_tiny_source):
     with pytest.raises(Exception, match=r"repeat count must be non-negative"):
         run_tiny_source('print(String.repeat("x", -1));')

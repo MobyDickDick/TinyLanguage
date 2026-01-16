@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import datetime as py_datetime
+import json as py_json
 import math as py_math
+import os as py_os
 import random as py_random
+from pathlib import Path as PyPath
 
 import pytest
 
@@ -128,3 +131,53 @@ print(datetime.total_seconds(1, 30));
     assert lines[1] == d.isoformat()
     assert lines[2] == t.isoformat()
     assert float(lines[3]) == pytest.approx(delta.total_seconds())
+
+
+def test_stdlib_json_matches_python() -> None:
+    source = """
+import stdlib.json;
+
+def data = json.loads("{\\"name\\": \\"Tiny\\", \\"values\\": [1, 2, 3]}");
+print(Map.get(data, "name", ""));
+print(Collections.len(Map.get(data, "values", new[])));
+print(json.dumps(data));
+"""
+    lines = _run_lines(source)
+    expected = py_json.loads('{"name": "Tiny", "values": [1, 2, 3]}')
+
+    assert lines[0] == expected["name"]
+    assert int(lines[1]) == len(expected["values"])
+    assert py_json.loads(lines[2]) == expected
+
+
+def test_stdlib_os_and_pathlib_match_python(tmp_path: PyPath) -> None:
+    base = tmp_path / "root"
+    child = "note.txt"
+    joined = py_os.path.join(base.as_posix(), child)
+    expected_dir = py_os.path.dirname(joined)
+    expected_name = py_os.path.basename(joined)
+
+    source = f"""
+import stdlib.os;
+import stdlib.pathlib;
+
+def joined = os.path.join("{base.as_posix()}", "{child}");
+print(joined);
+print(os.path.basename(joined));
+print(os.path.dirname(joined));
+
+def p = pathlib.Path(joined);
+print(p.name());
+print(p.parent().as_posix());
+def _write = p.write_text("hi");
+print(os.path.exists(p.as_posix()));
+print(p.read_text());
+"""
+    lines = _run_lines(source)
+
+    assert lines[0] == joined
+    assert lines[1] == expected_name
+    assert lines[2] == expected_dir
+    assert lines[3] == PyPath(joined).name
+    assert lines[4] == PyPath(joined).parent.as_posix()
+    assert lines[5:] == ["true", "hi"]

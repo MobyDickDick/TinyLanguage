@@ -12,7 +12,7 @@ Legend:
 
 | Feature | Interpreter | Native VM (`--native-backend`) | C/LLVM pipeline (`--emit-llvm`, `--emit-exe`) |
 | --- | --- | --- | --- |
-| Literals (`number`, `string`, `bool`, `null`) | ✅ | ✅ | ⚠️ Numeric + strings + bools only (subset) |
+| Literals (`number`, `string`, `bool`, `null`) | ✅ | ✅ | ✅ |
 | Variables (`def`, assignment) | ✅ | ✅ | ✅ (numeric subset) |
 | Arithmetic (`+`, `-`, `*`, `/`) | ✅ | ✅ | ✅ (numeric subset) |
 | Comparisons (`==`, `<`, `>`, etc.) | ✅ | ✅ | ✅ (numeric/boolean subset) |
@@ -26,20 +26,20 @@ Legend:
 
 | Feature | Interpreter | Native VM (`--native-backend`) | C/LLVM pipeline (`--emit-llvm`, `--emit-exe`) |
 | --- | --- | --- | --- |
-| Heap (`new`, `heap_get`, `heap_set`, `delete`) | ✅ | ✅ | ⚠️ Basic heap ops (no runtime safety checks) |
+| Heap (`new`, `heap_get`, `heap_set`, `delete`) | ✅ | ✅ | ✅ |
 | Array literals (`new[ a, b, c ]`) | ✅ | ✅ | ✅ |
-| Classes / methods | ✅ | ❌ | ❌ |
-| Operator overloading | ✅ | ✅ | ⚠️ Numeric-only overloads |
-| Pattern matching + ADTs | ✅ | ❌ | ❌ |
-| Collections (`Map`, `Set`, `Deque`) | ✅ | ❌ | ⚠️ Heap-backed collections (linear search, untyped payloads) |
-| Concurrency (`spawn`, `join`, tokens) | ✅ | ✅ | ⚠️ Spawn/join only (synchronous) |
+| Classes / methods | ✅ | ✅ | ✅ |
+| Operator overloading | ✅ | ✅ | ✅ |
+| Pattern matching + ADTs | ✅ | ✅ | ✅ |
+| Collections (`Map`, `Set`, `Deque`) | ✅ | ✅ | ✅ |
+| Concurrency (`spawn`, `join`, tokens) | ✅ | ✅ | ✅ |
 
 ## Interop and tooling
 
 | Feature | Interpreter | Native VM (`--native-backend`) | C/LLVM pipeline (`--emit-llvm`, `--emit-exe`) |
 | --- | --- | --- | --- |
-| Module imports (`import`, namespaces) | ✅ | ❌ | ❌ |
-| Python interop (`Python.import_module`, `Python.call`) | ✅ | ❌ | ⚠️ Basic allowlist-aware calls (numeric/string args, numeric return) |
+| Module imports (`import`, namespaces) | ✅ | ✅ | ⚠️ Module names must be compile-time string literals; module field access is limited to functions |
+| Python interop (`Python.import_module`, `Python.call`) | ✅ | ✅ | ⚠️ Basic allowlist-aware calls (numeric/string args, numeric return) |
 | Formatter / lints | ✅ | ✅ (shared frontend) | ✅ (shared frontend) |
 
 ## Notes

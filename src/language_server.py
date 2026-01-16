@@ -61,6 +61,16 @@ class Diagnostic:
     code: str
     range: Tuple[int, int, int, int]
 
+@dataclass
+class WorkspaceSymbol:
+    """Summary of a symbol for workspace-level search results."""
+
+    name: str
+    kind: str
+    detail: str
+    position: Tuple[int, int]
+    container: str = ""
+
 
 
 
@@ -216,6 +226,31 @@ class TinyLanguageServer:
                 Diagnostic(message=str(err), code=err.code, range=_diagnostic_range(err, self.source))
             )
         return diagnostics
+
+    def workspace_symbols(self, query: str = "") -> List[WorkspaceSymbol]:
+        """Return symbols whose names match ``query`` for workspace search."""
+        if self.parse_error is not None:
+            return []
+        normalized = query.lower().strip()
+        results: List[WorkspaceSymbol] = []
+        for name, pos in self.symbols.items():
+            short_name = name.split(".")[-1]
+            haystack = (name, short_name)
+            if normalized and not any(normalized in candidate.lower() for candidate in haystack):
+                continue
+            container = name.rsplit(".", 1)[0] if "." in name else ""
+            detail = self.symbol_details.get(name, "")
+            kind = self.symbol_kinds.get(name, "identifier")
+            results.append(
+                WorkspaceSymbol(
+                    name=name,
+                    kind=kind,
+                    detail=detail,
+                    position=(pos.line, pos.col),
+                    container=container,
+                )
+            )
+        return sorted(results, key=lambda item: item.name)
 
 
 def _diagnostic_range(err: TinyLangError, source: str) -> Tuple[int, int, int, int]:

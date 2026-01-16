@@ -54,6 +54,7 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
 | `textDocument/completion` | `completions` | `{ "prefix": "gr" }` | `[{ "label": "greet", "kind": "identifier" }]` | Prefix-based lookup across user symbols, keywords, and stdlib names. |
 | `textDocument/hover` | `hover` | `{ "symbol": "Greeter" }` | `{ "symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [0, 6] }` | Returns the recorded zero-based position for the symbol. |
 | `textDocument/definition` | `definition` | `{ "symbol": "greet" }` | `{ "symbol": "greet", "position": [0, 3] }` | Resolves a symbol to its definition position. |
+| `workspace/symbol` | `workspace-symbols` | `{ "query": "gre" }` | `[{ "name": "greet", "kind": "function", "detail": "fn greet()", "position": [0, 3], "container": "" }]` | Substring search across indexed symbols. |
 | `textDocument/diagnostic` | `diagnostics` | `{}` | `[{ "message": "[E010] ...", "code": "E010", "range": [1, 0, 1, 1] }]` | Emits lint findings with machine-readable ranges. |
 | `textDocument/formatting` | `format` | `{}` | `{ "source": "fn greet() { return 1; }\n" }` | Formats the input using the TinyLanguage formatter. |
 
@@ -62,6 +63,7 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
 - Completion: `{ "method": "textDocument/completion", "params": { "prefix": "gr" } }`
 - Hover: `{ "method": "textDocument/hover", "params": { "symbol": "Greeter" } }`
 - Definition: `{ "method": "textDocument/definition", "params": { "symbol": "greet" } }`
+- Workspace symbols: `{ "method": "workspace/symbol", "params": { "query": "gre" } }`
 - Diagnostics: `{ "method": "textDocument/diagnostic", "params": {} }`
 
 - **Completions** (`textDocument/completion` equivalent)
@@ -144,6 +146,26 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
     # => [{"message": "[E010] not all paths in function describe return a value for annotated type number", "code": "E010", "range": [1, 0, 1, 1]}]
     ```
 
+- **Workspace symbols** (`workspace/symbol` equivalent)
+  - Request payload:
+
+    ```json
+    { "query": "Gre" }
+    ```
+
+  - Response payload:
+
+    ```json
+    [{ "name": "Greeter.hello", "kind": "method", "detail": "method hello(self, name)", "position": [1, 2], "container": "Greeter" }]
+    ```
+
+  - CLI demo for symbol search:
+
+    ```bash
+    PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny workspace-symbols --query Gre
+    # => [{"name": "Greeter", "kind": "class", "detail": "", "position": [0, 0], "container": ""}, ...]
+    ```
+
 - **Formatting** (`textDocument/formatting` equivalent)
   - Request payload:
 
@@ -163,8 +185,6 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
     PYTHONPATH=src python src/language_server_cli.py --source "fn greet(){return 1;}" format
     # => {"source": "fn greet() { return 1; }\n"}
     ```
-
-Not implemented yet: workspace symbol searches. Those can be layered on later by extending the helper functions in [`src/language_server.py`](../src/language_server.py).
 
 ## "So testest du es" quick demos
 

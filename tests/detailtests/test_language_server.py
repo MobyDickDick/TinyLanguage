@@ -68,6 +68,15 @@ def test_definition_returns_source_position():
     assert pos.col >= 1
 
 
+def test_workspace_symbols_include_container_names():
+    source = "class Greeter { fn hello(self, name) { return name; } }"
+    server = TinyLanguageServer(source)
+    results = server.workspace_symbols("hello")
+    assert results
+    assert results[0].name.endswith("hello")
+    assert results[0].container == "Greeter"
+
+
 def test_diagnostics_from_lints():
     server = TinyLanguageServer("fn greet() -> string { return \"hi\"; }\ndef ignored1 = greet();")
     diags = server.diagnostics()

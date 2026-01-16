@@ -52,4 +52,4 @@ are grouped by area and can be tackled independently.
 - [x] Expand self-hosting parity coverage with broader Python-vs-Tiny snapshot tests.
 - [x] Build a spec-compliance test suite that validates the documented EBNF grammar and lexer/token rules.
 - [x] Close remaining backend feature gaps so the native VM and LLVM pipelines match interpreter capabilities.
-- [ ] Grow the tooling ecosystem with richer language-server features, debugging workflows, and project scaffolding commands.
+- [x] Grow the tooling ecosystem with richer language-server features, debugging workflows, and project scaffolding commands.

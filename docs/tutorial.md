@@ -91,6 +91,13 @@ python -m tiny_lang_cli --file my_pkg/main.tiny -- --flag value
 
 The `module.json` file in a package declares entry points and dependencies; see the module workflows in `docs/demo_run_commands.md` for more examples.
 
+If you want to scaffold a new project structure (including optional VS Code
+debugging configuration), use the project helper:
+
+```bash
+python -m tiny_project_cli init my_app --vscode
+```
+
 ## 6. Tooling and tests
 
 - Run a focused example set and the pytest suite together with `python run_all.py`.

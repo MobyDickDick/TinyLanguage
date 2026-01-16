@@ -1,0 +1,55 @@
+// TinyLanguage stdlib: os module (Python-style subset)
+
+namespace path {
+  fn _split_path(path) {
+    return String.split(path, "/");
+  }
+
+  fn _last_non_empty(parts) {
+    def idx = Collections.len(parts) - 1;
+    while (idx >= 0) {
+      def part = heap_get(parts, idx);
+      if (Collections.len(part) > 0) { return part; }
+      idx = idx - 1;
+    }
+    return "";
+  }
+
+  fn join(left, right) {
+    if (Collections.len(left) == 0) { return right; }
+    if (String.ends_with(left, "/")) { return left + right; }
+    return left + "/" + right;
+  }
+
+  fn basename(path) {
+    def parts = _split_path(path);
+    return _last_non_empty(parts);
+  }
+
+  fn dirname(path) {
+    def parts = _split_path(path);
+    def idx = Collections.len(parts) - 1;
+    while (idx >= 0 && Collections.len(heap_get(parts, idx)) == 0) {
+      idx = idx - 1;
+    }
+    if (idx <= 0) { return ""; }
+    def parent_parts = Collections.slice(parts, 0, idx);
+    return String.join(parent_parts, "/");
+  }
+
+  fn exists(path) {
+    return File.exists(path);
+  }
+}
+
+fn remove(path) {
+  return File.remove(path);
+}
+
+fn read_text(path) {
+  return File.read(path);
+}
+
+fn write_text(path, text) {
+  return File.write(path, text);
+}

@@ -1,0 +1,25 @@
+// TinyLanguage stdlib: json module (Python-style subset)
+
+fn loads(text) {
+  return JSON.parse(text);
+}
+
+fn dumps(value) {
+  return JSON.stringify(value);
+}
+
+fn load(path) {
+  return JSON.parse(File.read(path));
+}
+
+fn dump(path, value) {
+  return File.write(path, JSON.stringify(value));
+}
+
+fn parse(text) {
+  return loads(text);
+}
+
+fn stringify(value) {
+  return dumps(value);
+}

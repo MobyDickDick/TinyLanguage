@@ -3,10 +3,18 @@ import os
 import pathlib
 import subprocess
 import sys
+from dataclasses import dataclass
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]
 TINY_LANGUAGE = PROJECT_ROOT / "src" / "tiny_language.py"
 TINY_SERVER_CLI = PROJECT_ROOT / "src_tiny" / "language_server_cli.tiny"
+PYTHON_SERVER_CLI = PROJECT_ROOT / "src" / "language_server_cli.py"
+
+
+@dataclass(frozen=True)
+class ServerSnapshot:
+    args: list[str]
+    payload: object
 
 
 def run_tiny_language_server(args):
@@ -27,6 +35,52 @@ def run_tiny_language_server(args):
         cwd=PROJECT_ROOT,
         env=env,
     )
+
+
+def run_python_language_server(args):
+    env = {
+        **os.environ,
+        "PYTHONPATH": os.pathsep.join(
+            filter(None, [str(PROJECT_ROOT / "src"), os.environ.get("PYTHONPATH")])
+        ),
+    }
+    return subprocess.run(
+        [sys.executable, str(PYTHON_SERVER_CLI), *args],
+        capture_output=True,
+        text=True,
+        cwd=PROJECT_ROOT,
+        env=env,
+    )
+
+
+SNAPSHOTS = [
+    ServerSnapshot(
+        args=["--source", "fn add(x, y) { return x + y; }", "completions", "--prefix", "ad"],
+        payload=[{"label": "add", "kind": "function"}],
+    ),
+    ServerSnapshot(
+        args=["--source", "fn add(x, y) { return x + y; }", "hover", "--symbol", "add"],
+        payload={"symbol": "add", "detail": "fn add(x, y)", "position": [1, 1]},
+    ),
+    ServerSnapshot(
+        args=["--source", "fn add(x, y) { return x + y; }", "definition", "--symbol", "add"],
+        payload={"symbol": "add", "position": [1, 1]},
+    ),
+    ServerSnapshot(
+        args=["--source", "def x = 1; @", "diagnostics"],
+        payload=[
+            {
+                "message": "[E000] lexing error: unexpected character '@' (line 1, col 12)\n> 1 | def x = 1; @\n    |            ^",
+                "code": "E000",
+                "range": [1, 12, 1, 13],
+            }
+        ],
+    ),
+    ServerSnapshot(
+        args=["--source", "fn add(x,y){return x+y;}", "format"],
+        payload={"source": "fn add(x, y) {\n    return x + y;\n}\n"},
+    ),
+]
 
 
 def test_tiny_language_server_completions_and_hover():
@@ -60,3 +114,20 @@ def test_tiny_language_server_diagnostics():
     assert diagnostics.returncode == 0, diagnostics.stderr
     diagnostic_payload = json.loads(diagnostics.stdout)
     assert diagnostic_payload == []
+
+
+def assert_server_snapshot(snapshot: ServerSnapshot) -> None:
+    python_proc = run_python_language_server(snapshot.args)
+    assert python_proc.returncode == 0, python_proc.stderr
+    python_payload = json.loads(python_proc.stdout)
+    assert python_payload == snapshot.payload
+
+    tiny_proc = run_tiny_language_server(snapshot.args)
+    assert tiny_proc.returncode == 0, tiny_proc.stderr
+    tiny_payload = json.loads(tiny_proc.stdout)
+    assert tiny_payload == snapshot.payload
+
+
+def test_tiny_language_server_cli_parity_snapshots() -> None:
+    for snapshot in SNAPSHOTS:
+        assert_server_snapshot(snapshot)

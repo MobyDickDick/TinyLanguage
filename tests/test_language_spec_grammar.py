@@ -1,4 +1,5 @@
 import pathlib
+import re
 import sys
 from dataclasses import fields, is_dataclass
 from typing import Any
@@ -6,9 +7,11 @@ from typing import Any
 import pytest
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
+LANGUAGE_SPEC = PROJECT_ROOT / "docs" / "language_spec.md"
 sys.path.append(str(PROJECT_ROOT / "src"))
 
 from tiny_language import Lexer, Parser, _parse_with_tiny_parser
+from tiny_language_lexer import KEYWORDS
 
 
 GRAMMAR_SAMPLES = [
@@ -106,9 +109,64 @@ def _parse_tiny(source: str) -> list[Any]:
     return _parse_with_tiny_parser(source)
 
 
+def _load_language_spec() -> str:
+    return LANGUAGE_SPEC.read_text(encoding="utf-8")
+
+
+def _extract_keyword_list(spec: str) -> set[str]:
+    match = re.search(r"Keywords today include:(.*)", spec)
+    if not match:
+        raise AssertionError("Unable to locate keyword list in language spec.")
+    return set(re.findall(r"`([^`]+)`", match.group(1)))
+
+
+def _extract_token_table(spec: str) -> set[str]:
+    match = re.search(
+        r"\| Category \| Tokens \|\n\|[- |]+\|\n(?P<rows>(?:\|.*\n)+?)\n",
+        spec,
+    )
+    if not match:
+        raise AssertionError("Unable to locate lexer/token table in language spec.")
+    rows = match.group("rows")
+    return set(re.findall(r"`([^`]+)`", rows))
+
+
+def _extract_grammar_block(spec: str) -> str:
+    match = re.search(r"```ebnf\n(.*?)```", spec, flags=re.S)
+    if not match:
+        raise AssertionError("Unable to locate EBNF grammar block in language spec.")
+    return match.group(1)
+
+
 @pytest.mark.parametrize("source", GRAMMAR_SAMPLES)
 def test_grammar_samples_match_tiny_parser(source: str) -> None:
     python_ast = _normalize(_parse_python(source))
     tiny_ast = _normalize(_parse_tiny(source))
 
     assert python_ast == tiny_ast
+
+
+def test_language_spec_keywords_match_lexer() -> None:
+    spec = _load_language_spec()
+    documented = _extract_keyword_list(spec)
+
+    assert documented == set(KEYWORDS)
+
+
+def test_language_spec_token_table_matches_lexer() -> None:
+    spec = _load_language_spec()
+    documented = _extract_token_table(spec)
+
+    symbols = set("(){}[];,=:.?")
+    op_single = set("+-*/><^!%")
+    op_multi = {"&&", "||", "==", "!=", "<=", ">="}
+    expected = symbols | op_single | op_multi | {"//"}
+
+    assert documented == expected
+
+
+def test_language_spec_grammar_mentions_task_and_catch_name() -> None:
+    grammar = _extract_grammar_block(_load_language_spec())
+
+    assert '"task" block' in grammar
+    assert '"try" block "catch" ("(" NAME ")" | NAME) block' in grammar

@@ -11,7 +11,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
   - Strings use double quotes and allow basic escapes like `\n`.
   - Booleans are `true` and `false`; `null` indicates the absence of a value.
 - **Reserved keywords vs. identifiers:** Keywords are reserved in declaration positions (e.g., `def if = 1;` is invalid), but the grammar explicitly allows keywords in some identifier slots via `NAME_or_kw`. Use this when you need a keyword-named method or member:
-  - Keywords today include: `def`, `print`, `if`, `else`, `while`, `switch`, `default`, `fn`, `import`, `return`, `operator`, `new`, `type`, `class`, `namespace`, `as`, `spawn`, `async`, `await`, `true`, `false`, `flush`, `and`, `or`, `not`, `Null`, `try`, `catch`, `match`, `case`.
+  - Keywords today include: `def`, `print`, `if`, `else`, `while`, `switch`, `default`, `fn`, `import`, `return`, `operator`, `new`, `type`, `class`, `namespace`, `as`, `spawn`, `async`, `await`, `task`, `true`, `false`, `flush`, `and`, `or`, `not`, `Null`, `try`, `catch`, `match`, `case`.
   - `NAME_or_kw` appears in member access, method declarations, and type annotations, so keywords can be used there without being treated as control flow.
 
   ```tiny
@@ -123,8 +123,9 @@ The lexer lives in [`src/tiny_language_lexer.py`](../src/tiny_language_lexer.py)
 | Arithmetic | `+` `-` `*` `/` `^` `%` |
 | Comparison | `==` `!=` `<` `<=` `>` `>=` |
 | Boolean | `&&` `||` `!` |
-| Arrow | `->` |
 | Comments | `//` (line comment) |
+
+Return type arrows are tokenized as `-` followed by `>` (there is no dedicated `->` token).
 
 Literals:
 
@@ -140,7 +141,8 @@ stmt            ::= "def" NAME "=" expr ";"
                   | "if" "(" expr ")" block ["else" block]
                   | "while" "(" expr ")" block
                   | "switch" "(" expr ")" "{" switch_case* "}"
-                  | "try" block "catch" ["(" NAME ")"] NAME? block
+                  | "try" block "catch" ("(" NAME ")" | NAME) block
+                  | "task" block
                   | "import" module_path ["as" NAME] ";"
                   | "namespace" qualified_name block
                   | ("async" "fn" | "fn") NAME param_list ["-" ">" type_annotation] block

@@ -157,16 +157,28 @@ def main(argv: list[str] | None = None) -> int:
         help="Run basic LLVM optimization passes (mem2reg, instcombine) on emitted IR",
     )
     parser.add_argument(
+        "--llvm-opt-level",
+        type=int,
+        choices=[0, 1, 2, 3],
+        help="Set LLVM optimization level for emitted IR (0-3, implies --llvm-opt)",
+    )
+    parser.add_argument(
         "--copy-on-call",
         action=argparse.BooleanOptionalAction,
         default=_default_copy_on_call(),
         help="Deep-copy non-escaping mutable arguments before calls (env: TINYLANG_COPY_ON_CALL)",
+    )
+    parser.add_argument(
+        "--native-diagnostics",
+        action="store_true",
+        help="Print native backend diagnostics to stderr when using LLVM flags",
     )
 
     args, remaining = parser.parse_known_args(argv)
     program_args = list(remaining)
     if program_args and program_args[0] == "--":
         program_args = program_args[1:]
+    resolved_llvm_opt_level = args.llvm_opt_level if args.llvm_opt_level is not None else (1 if args.llvm_opt else 0)
     module_path: Path | None = None
     source: str
     cli_path = args.path or args.file
@@ -192,11 +204,25 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.emit_llvm is not None:
         try:
+            if args.native_diagnostics:
+                sys.stderr.write("Native backend diagnostics:\n")
+                sys.stderr.write(f"- mode: emit-llvm{os.linesep}")
+                sys.stderr.write(
+                    f"- llvm opt-level: {resolved_llvm_opt_level}"
+                    + os.linesep
+                )
+                sys.stderr.write(
+                    f"- llvm target triple: {args.llvm_target_triple or 'default'}{os.linesep}"
+                )
+                sys.stderr.write(
+                    f"- llvm data layout: {args.llvm_data_layout or 'default'}{os.linesep}"
+                )
             llvm_ir = compile_to_llvm_ir(
                 source,
                 target_triple=args.llvm_target_triple,
                 data_layout=args.llvm_data_layout,
                 llvm_opt=args.llvm_opt,
+                llvm_opt_level=args.llvm_opt_level,
                 module_path=module_path,
             )
         except TinyLangError as err:

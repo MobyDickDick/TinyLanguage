@@ -24,6 +24,18 @@ fn trim(text) {
   return String.trim(text);
 }
 
+fn strip(text) {
+  return String.strip(text);
+}
+
+fn lstrip(text) {
+  return String.lstrip(text);
+}
+
+fn rstrip(text) {
+  return String.rstrip(text);
+}
+
 fn repeat(text, count) {
   return String.repeat(text, count);
 }

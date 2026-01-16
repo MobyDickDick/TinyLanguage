@@ -44,3 +44,12 @@ are grouped by area and can be tackled independently.
 
 - [x] Port prioritized Python stdlib modules (`math`, `random`, `string`, `datetime`) with comparison tests.
 - [x] Ship a small Julia subset (e.g., `Statistics` with `mean`/`std`) and document API differences.
+
+## Future roadmap ideas
+
+- [ ] Extend the Tiny stdlib with additional Python-style modules (e.g., `json`, `pathlib`, `os`) and add comparison tests.
+- [ ] Stabilize the native compiler CLI with release-ready flags, diagnostics, and optimization profiles.
+- [ ] Expand self-hosting parity coverage with broader Python-vs-Tiny snapshot tests.
+- [ ] Build a spec-compliance test suite that validates the documented EBNF grammar and lexer/token rules.
+- [ ] Close remaining backend feature gaps so the native VM and LLVM pipelines match interpreter capabilities.
+- [ ] Grow the tooling ecosystem with richer language-server features, debugging workflows, and project scaffolding commands.

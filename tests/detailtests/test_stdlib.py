@@ -25,6 +25,9 @@ def test_stdlib_functions_cover_math_string_and_collections(run_tiny_source):
         print(String.upper("Hello"));
         print(String.lower("Hello"));
         print(String.trim("  padded  "));
+        print(String.strip("  padded  "));
+        print(String.lstrip("  padded  "));
+        print(String.rstrip("  padded  "));
         print(String.repeat("ha", 3));
 
         def arr = new[1, 2];
@@ -42,7 +45,7 @@ def test_stdlib_functions_cover_math_string_and_collections(run_tiny_source):
 
     assert (
         out
-        == "5\n8\n3\n10\n-2\n10\na\na-b-c\ntrue\ntiny_language\ntrue\ntrue\ntrue\nfalse\nHELLO\nhello\npadded\nhahaha\n2\n3\n3\n3\n2\n20\ntrue\nfalse\n"
+        == "5\n8\n3\n10\n-2\n10\na\na-b-c\ntrue\ntiny_language\ntrue\ntrue\ntrue\nfalse\nHELLO\nhello\npadded\npadded\npadded  \n  padded\nhahaha\n2\n3\n3\n3\n2\n20\ntrue\nfalse\n"
     )
 
 
@@ -112,11 +115,14 @@ def test_tl_stdlib_string_module_import(run_tiny_source):
         print(string.upper("hello"));
         print(string.lower("HELLO"));
         print(string.trim("  padded  "));
+        print(string.strip("  padded  "));
+        print(string.lstrip("  padded  "));
+        print(string.rstrip("  padded  "));
         print(string.repeat("ha", 2));
         """,
     )
 
-    assert out == "a-b-c\ntrue\nHELLO\nhello\npadded\nhaha\n"
+    assert out == "a-b-c\ntrue\nHELLO\nhello\npadded\npadded\npadded  \n  padded\nhaha\n"
 
 
 def test_string_repeat_validates_count(run_tiny_source):

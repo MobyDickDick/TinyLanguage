@@ -51,6 +51,18 @@ def test_control_flow_and_assignment():
     _assert_native_matches(source)
 
 
+def test_switch_roundtrip_matches_interpreter():
+    source = """
+    def value = 2;
+    switch (value) {
+        case 1: { print("one"); }
+        case 2: { print("two"); }
+        default: { print("other"); }
+    }
+    """
+    _assert_native_matches(source)
+
+
 def test_boolean_formatting_matches_interpreter():
     source = """
     def a = true;

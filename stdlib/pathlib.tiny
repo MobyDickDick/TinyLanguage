@@ -10,7 +10,7 @@ class Path {
   }
 
   fn joinpath(self, child) {
-    return Path(os.path.join(self.value, child));
+    return new Path { value: os.path.join(self.value, child) };
   }
 
   fn exists(self) {
@@ -26,7 +26,7 @@ class Path {
   }
 
   fn parent(self) {
-    return Path(os.path.dirname(self.value));
+    return new Path { value: os.path.dirname(self.value) };
   }
 
   fn name(self) {

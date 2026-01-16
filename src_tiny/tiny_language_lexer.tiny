@@ -60,7 +60,7 @@ def KEYWORDS = Set.from_list(new[
     "Null", "try", "catch", "match", "case"
 ]);
 
-def BUILTINS = Set.from_list(new["Collections", "Math", "String", "len", "print"]);
+def BUILTINS = Set.from_list(new["Collections", "Math", "Statistics", "String", "len", "print"]);
 
 // Lexer -----------------------------------------------------------------------
 def PY_LIST_ALLOW = new["list"];

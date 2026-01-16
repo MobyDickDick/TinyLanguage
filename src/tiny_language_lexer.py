@@ -48,7 +48,7 @@ KEYWORDS = {
     "case",
 }
 
-BUILTINS = {"Collections", "Math", "String", "len", "print"}
+BUILTINS = {"Collections", "Math", "Statistics", "String", "len", "print"}
 
 
 @dataclass

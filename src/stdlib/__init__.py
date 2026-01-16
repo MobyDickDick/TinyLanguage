@@ -227,6 +227,7 @@ class _StdLibRegistrar:
         self._ensure_namespace("Set")
         self._ensure_namespace("Deque")
         self._ensure_namespace("Random")
+        self._ensure_namespace("Statistics")
         self._ensure_namespace("Console")
         self._ensure_namespace("File")
         self._ensure_namespace("JSON")
@@ -317,6 +318,9 @@ class _StdLibRegistrar:
         self.runtime.register_native("choice", self._random_choice, namespace="Random")
         self.runtime.register_native("shuffle", self._random_shuffle, namespace="Random")
         self.runtime.register_native("seed", self._random_seed, namespace="Random")
+
+        self.runtime.register_native("mean", self._statistics_mean, namespace="Statistics")
+        self.runtime.register_native("std", self._statistics_std, namespace="Statistics")
 
         # --------------------------- Console -------------------------------
         self.runtime.register_native("read_line", self._console_read_line, namespace="Console")
@@ -995,6 +999,39 @@ class _StdLibRegistrar:
         seq = self._resolve_sequence(values)
         random.shuffle(seq)
         return len(seq)
+
+    # -----------------------------------------------------------------------
+    # Statistics namespace (Julia-style subset)
+    # -----------------------------------------------------------------------
+
+    def _statistics_mean(self, values: Any) -> float:
+        seq = self._resolve_sequence(values)
+        if not seq:
+            raise RuntimeError("Statistics.mean expects at least one value")
+
+        total = 0.0
+        for item in seq:
+            val, err = self._resolve_number(item)
+            if err is not None and err != "normal":
+                raise RuntimeError("Statistics.mean expects finite numbers")
+            total += float(val)
+        return total / len(seq)
+
+    def _statistics_std(self, values: Any) -> float:
+        seq = self._resolve_sequence(values)
+        if len(seq) < 2:
+            raise RuntimeError("Statistics.std expects at least two values")
+
+        resolved = []
+        for item in seq:
+            val, err = self._resolve_number(item)
+            if err is not None and err != "normal":
+                raise RuntimeError("Statistics.std expects finite numbers")
+            resolved.append(float(val))
+
+        mean = sum(resolved) / len(resolved)
+        variance = sum((value - mean) ** 2 for value in resolved) / (len(resolved) - 1)
+        return math.sqrt(variance)
 
     # -----------------------------------------------------------------------
     # Console namespace

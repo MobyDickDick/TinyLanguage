@@ -89,6 +89,19 @@ def test_tl_stdlib_random_module_import(run_tiny_source):
     assert out == "2\nblau\n3\ncba\n"
 
 
+def test_tl_stdlib_statistics_module_import(run_tiny_source):
+    out = run_tiny_source(
+        """
+        import stdlib.statistics;
+        def values = new[1, 2, 3, 4];
+        print(statistics.mean(values));
+        print(statistics.std(values));
+        """,
+    )
+
+    assert out == "2.5\n1.2909944487358056\n"
+
+
 def test_tl_stdlib_string_module_import(run_tiny_source):
     out = run_tiny_source(
         """

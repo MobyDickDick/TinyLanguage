@@ -3,6 +3,15 @@
 This list captures the currently planned work items for TinyLanguage. The tasks
 are grouped by area and can be tackled independently.
 
+## Next tasks (shortlist)
+
+- [ ] Add regression coverage for `JSON.stringify` round-tripping heap-backed
+  collections (`Map`, `Set`, `Deque`) and nested lists.
+- [ ] Expand CLI smoke tests to include failure cases for `File.remove` and
+  missing-path diagnostics in stdlib helpers.
+- [ ] Add snapshot tests for LSP `hover`/`completion` flows in the self-hosted
+  Tiny language server entry points.
+
 ## Frontend / language
 
 - [x] Improve error positions and messages (tokens + AST nodes carry line/column; unify error type with optional `SourceSpan`).

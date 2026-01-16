@@ -20,8 +20,7 @@ class CompilerSnapshot:
     returncode: int
 
 
-EXPECTED_C_SOURCE = """\
-#include <math.h>
+EXPECTED_C_SOURCE = r"""#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -482,6 +481,7 @@ def run_tiny_compiler_cli(args: list[str]) -> subprocess.CompletedProcess[str]:
             filter(None, [str(PROJECT_ROOT / "src"), os.environ.get("PYTHONPATH")])
         ),
         "TINYLANG_ARGS": json.dumps(args),
+        "TINYLANG_EXIT": "1",
     }
     return subprocess.run(
         [sys.executable, str(TINY_LANGUAGE), str(TINY_COMPILER_CLI)],

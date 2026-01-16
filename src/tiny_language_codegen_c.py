@@ -490,6 +490,9 @@ class CCodeGenerator:
             return execute_frame(program, &frame);
         }
         """
+        for line in runtime.splitlines():
+            if "fprintf(stderr" in line and "\\n" not in line:
+                raise ValueError("C runtime stderr messages must end with \\n")
         return textwrap.dedent(runtime).strip().splitlines()
 
     def _emit_data(self, layout: _ProgramLayout) -> List[str]:

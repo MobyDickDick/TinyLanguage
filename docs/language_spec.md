@@ -7,7 +7,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 - **Comments:** `//` starts a comment to the end of the line. Block comments have no special syntax.
 - **Semicolons:** Every statement ends with `;`. The formatter inserts missing semicolons in simple cases, but programs should include them explicitly.
 - **Identifiers and literals:**
-  - Numbers support integers and decimals (`1`, `3.14`, `0.5`). Scientific notation is intentionally disallowed (`1.2e2` fails).
+  - Numbers support integers, decimals, and scientific notation (`1`, `3.14`, `0.5`, `1.2e2`).
   - Strings use double quotes and allow basic escapes like `\n`.
   - Booleans are `true` and `false`; `null` indicates the absence of a value.
 - **Reserved keywords vs. identifiers:** Keywords are reserved in declaration positions (e.g., `def if = 1;` is invalid), but the grammar explicitly allows keywords in some identifier slots via `NAME_or_kw`. Use this when you need a keyword-named method or member:

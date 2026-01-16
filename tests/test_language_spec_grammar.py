@@ -170,3 +170,23 @@ def test_language_spec_grammar_mentions_task_and_catch_name() -> None:
 
     assert '"task" block' in grammar
     assert '"try" block "catch" ("(" NAME ")" | NAME) block' in grammar
+
+
+def test_language_spec_string_escapes_match_lexer() -> None:
+    source = '"line1\\nline2\\t\\r\\\"\\\\\\q"'
+
+    token = Lexer(source).next_token()
+
+    expected = "".join(
+        [
+            "line1\n",
+            "line2\t",
+            "\r",
+            '"',
+            "\\",
+            "\\q",
+        ]
+    )
+
+    assert token.text == expected
+

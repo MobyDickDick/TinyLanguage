@@ -2423,6 +2423,8 @@ class NativeCodeGenerator:
             return self._compile_if(stmt)
         if isinstance(stmt, While):
             return self._compile_while(stmt)
+        if isinstance(stmt, Switch):
+            return self._compile_switch(stmt)
         if isinstance(stmt, Return):
             instructions: List[Instruction] = []
             instructions.extend(self._compile_expr(stmt.expr))
@@ -2505,6 +2507,53 @@ class NativeCodeGenerator:
         )
 
         instructions.extend(body_instrs)
+        return instructions
+
+    def _compile_switch(self, stmt: "Switch") -> List[Instruction]:
+        instructions = self._compile_expr(stmt.expr)
+        target_name = self._next_tmp()
+        instructions.append(self._instr(Opcode.STORE, target_name, stmt))
+
+        end_jump_indices: List[int] = []
+        default_case = None
+
+        for case in stmt.cases:
+            if case.value is None:
+                default_case = case
+                continue
+            condition_instrs = [self._instr(Opcode.LOAD, target_name, case)]
+            condition_instrs.extend(self._compile_expr(case.value))
+            condition_instrs.append(self._instr(Opcode.BINARY, "==", case))
+            jump_false_index = len(instructions) + len(condition_instrs)
+            condition_instrs.append(self._instr(Opcode.JUMP_IF_FALSE, None, case))
+            instructions.extend(condition_instrs)
+
+            body_instrs: List[Instruction] = []
+            for inner in case.body:
+                nested = self._compile_stmt(inner)
+                body_instrs.extend(self._shift_labels(nested, len(instructions) + len(body_instrs)))
+            instructions.extend(body_instrs)
+            jump_end_index = len(instructions)
+            instructions.append(self._instr(Opcode.JUMP, None, case))
+
+            next_case_start = len(instructions)
+            instructions[jump_false_index] = Instruction(
+                Opcode.JUMP_IF_FALSE, next_case_start, span=instructions[jump_false_index].span
+            )
+            end_jump_indices.append(jump_end_index)
+
+        if default_case is not None:
+            default_instrs: List[Instruction] = []
+            for inner in default_case.body:
+                nested = self._compile_stmt(inner)
+                default_instrs.extend(self._shift_labels(nested, len(instructions) + len(default_instrs)))
+            instructions.extend(default_instrs)
+
+        end_target = len(instructions)
+        for jump_index in end_jump_indices:
+            instructions[jump_index] = Instruction(
+                Opcode.JUMP, end_target, span=instructions[jump_index].span
+            )
         return instructions
 
     def _compile_binding(self, name: str, expr: "IR", node: Optional["IR"] = None) -> List[Instruction]:

@@ -51,5 +51,5 @@ are grouped by area and can be tackled independently.
 - [x] Stabilize the native compiler CLI with release-ready flags, diagnostics, and optimization profiles.
 - [x] Expand self-hosting parity coverage with broader Python-vs-Tiny snapshot tests.
 - [x] Build a spec-compliance test suite that validates the documented EBNF grammar and lexer/token rules.
-- [ ] Close remaining backend feature gaps so the native VM and LLVM pipelines match interpreter capabilities.
+- [x] Close remaining backend feature gaps so the native VM and LLVM pipelines match interpreter capabilities.
 - [ ] Grow the tooling ecosystem with richer language-server features, debugging workflows, and project scaffolding commands.

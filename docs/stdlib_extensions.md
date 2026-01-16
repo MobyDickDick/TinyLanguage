@@ -11,6 +11,11 @@
 - **Math**: In addition to `abs`, `pow`, `sqrt`, `max`, `min`, and `clamp`, there are now `Math.round(value, digits?)`, `Math.floor(value)`, `Math.ceil(value)`, and `Math.sign(value)` for rounding and sign checks.
 - **Random**: `Random.random()` (0–1), `Random.randint(lower, upper)`, `Random.choice(seq)`, and `Random.shuffle(seq)` operate directly on lists or heap pointers.
 
+## Statistics (Julia-style subset)
+
+- **Statistics**: `Statistics.mean(values)` computes the mean of a list/heap pointer (requires at least one value). `Statistics.std(values)` returns the sample standard deviation using `n - 1` in the denominator (requires at least two values).
+- **Julia differences**: Only `mean` and `std` are provided. The TinyLanguage `std` helper errors for sequences shorter than two values instead of returning `NaN`, and it does not expose options like `corrected=false` or handling of `missing` values.
+
 ## File and JSON helpers
 
 - **File**: `File.read(path)` reads UTF-8 text. `File.write(path, text)` writes text and creates directories as needed. `File.exists(path)` checks whether a path exists. `File.remove(path)` deletes (if present, depending on implementation).

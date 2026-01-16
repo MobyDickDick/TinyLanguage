@@ -43,4 +43,4 @@ are grouped by area and can be tackled independently.
 ## Stdlib + compatibility
 
 - [x] Port prioritized Python stdlib modules (`math`, `random`, `string`, `datetime`) with comparison tests.
-- [ ] Ship a small Julia subset (e.g., `Statistics` with `mean`/`std`) and document API differences.
+- [x] Ship a small Julia subset (e.g., `Statistics` with `mean`/`std`) and document API differences.

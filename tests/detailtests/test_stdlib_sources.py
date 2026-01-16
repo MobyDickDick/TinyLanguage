@@ -13,12 +13,14 @@ SRC_STDLIB_DOCS = [
     PROJECT_ROOT / "src" / "stdlib" / "io.tiny",
     PROJECT_ROOT / "src" / "stdlib" / "math.tiny",
     PROJECT_ROOT / "src" / "stdlib" / "random.tiny",
+    PROJECT_ROOT / "src" / "stdlib" / "statistics.tiny",
     PROJECT_ROOT / "src" / "stdlib" / "string.tiny",
 ]
 
 STDLIB_MODULES = [
     PROJECT_ROOT / "stdlib" / "math.tiny",
     PROJECT_ROOT / "stdlib" / "random.tiny",
+    PROJECT_ROOT / "stdlib" / "statistics.tiny",
     PROJECT_ROOT / "stdlib" / "string.tiny",
 ]
 

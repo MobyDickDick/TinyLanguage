@@ -1,0 +1,9 @@
+// TinyLanguage stdlib: statistics module (Julia-style subset)
+
+fn mean(values) {
+  return Statistics.mean(values);
+}
+
+fn std(values) {
+  return Statistics.std(values);
+}

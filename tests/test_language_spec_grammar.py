@@ -12,7 +12,6 @@ sys.path.append(str(PROJECT_ROOT / "src"))
 
 from tiny_language import Lexer, Parser, _parse_with_tiny_parser
 from tiny_language_lexer import KEYWORDS
-from tiny_language_preamble import TinyLangError
 
 
 GRAMMAR_SAMPLES = [
@@ -191,12 +190,3 @@ def test_language_spec_string_escapes_match_lexer() -> None:
 
     assert token.text == expected
 
-
-def test_language_spec_disallows_scientific_notation() -> None:
-    lexer = Lexer("def x = 1e2;")
-    lexer.next_token()
-    lexer.next_token()
-    lexer.next_token()
-
-    with pytest.raises(TinyLangError):
-        lexer.next_token()

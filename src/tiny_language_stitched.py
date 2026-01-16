@@ -431,13 +431,24 @@ class Lexer:
                     continue
                 break
             if j < self.n and self.s[j] in "eE":
-                exp_pos = SourcePos(start_line, start_col + (j - self.i))
-                span = SourceSpan(exp_pos, exp_pos)
-                raise TinyLangError(
-                    format_error(self.s, span, "scientific notation is not supported"),
-                    exp_pos,
-                    span=span,
-                )
+                exp_start = j
+                k = j + 1
+                if k < self.n and self.s[k] in "+-":
+                    k += 1
+                exp_digits = k
+                while k < self.n and self.s[k].isdigit():
+                    k += 1
+                if k == exp_digits:
+                    exp_end = max(exp_digits - 1, exp_start)
+                    exp_start_pos = SourcePos(start_line, start_col + (exp_start - self.i))
+                    exp_stop_pos = SourcePos(start_line, start_col + (exp_end - self.i))
+                    span = SourceSpan(exp_start_pos, exp_stop_pos)
+                    raise TinyLangError(
+                        format_error(self.s, span, "invalid exponent in number literal"),
+                        exp_start_pos,
+                        span=span,
+                    )
+                j = k
             txt = self.s[self.i:j]
             consumed = j - self.i
             self.i = j

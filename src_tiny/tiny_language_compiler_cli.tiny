@@ -3,6 +3,7 @@
 
 def tinyc_cli = Python.import_module("tiny_language_compiler_cli", new["main"]);
 def os = Python.import_module("os", new["getenv"]);
+def builtins = Python.import_module("builtins", new["exit"]);
 
 def PY_JSON_ALLOW = new["loads"];
 def json = Python.import_module("json", PY_JSON_ALLOW);
@@ -14,12 +15,18 @@ fn __argv_from_env() {
     return json.loads(payload);
 }
 
+fn __should_exit() {
+    def flag = os.getenv("TINYLANG_EXIT", "");
+    return flag != Null && len(flag) > 0;
+}
+
 fn main(argv) {
     return tinyc_cli.main(argv);
 }
 
 fn run() {
     def code = tinyc_cli.main(__argv_from_env());
+    if (__should_exit()) { return builtins.exit(code); }
     return code;
 }
 

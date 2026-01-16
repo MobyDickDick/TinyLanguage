@@ -66,6 +66,7 @@ fn __binary_apply(op, left, right) {
     if (op == ">=") { return left >= right; }
     if (op == "&&" || op == "and") { return __to_bool(left) && __to_bool(right); }
     if (op == "||" || op == "or") { return __to_bool(left) || __to_bool(right); }
+    if (op == "not") { return not __to_bool(right); }
     return __raise_runtime_error("unsupported operator " + op);
 }
 

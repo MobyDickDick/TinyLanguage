@@ -12,6 +12,7 @@ sys.path.append(str(PROJECT_ROOT / "src"))
 
 from tiny_language import Lexer, Parser, _parse_with_tiny_parser
 from tiny_language_lexer import KEYWORDS
+from tiny_language_preamble import TinyLangError
 
 
 GRAMMAR_SAMPLES = [
@@ -170,3 +171,32 @@ def test_language_spec_grammar_mentions_task_and_catch_name() -> None:
 
     assert '"task" block' in grammar
     assert '"try" block "catch" ("(" NAME ")" | NAME) block' in grammar
+
+
+def test_language_spec_string_escapes_match_lexer() -> None:
+    source = '"line1\\nline2\\t\\r\\\"\\\\\\q"'
+
+    token = Lexer(source).next_token()
+
+    expected = "".join(
+        [
+            "line1\n",
+            "line2\t",
+            "\r",
+            '"',
+            "\\",
+            "\\q",
+        ]
+    )
+
+    assert token.text == expected
+
+
+def test_language_spec_disallows_scientific_notation() -> None:
+    lexer = Lexer("def x = 1e2;")
+    lexer.next_token()
+    lexer.next_token()
+    lexer.next_token()
+
+    with pytest.raises(TinyLangError):
+        lexer.next_token()

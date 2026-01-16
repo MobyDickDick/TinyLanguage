@@ -17,6 +17,23 @@ quick self-test below before chasing down editor log noise.
   `launch.json`). If it fails, fix the Python path or import errors surfaced in
   the output before retrying VS Code.
 
+## Scaffolding a project with debug config
+
+If you want to start a new TinyLanguage project and ensure VS Code debugging is
+ready immediately, use the scaffolding helper:
+
+```bash
+python -m tiny_project_cli init my_app --vscode
+```
+
+This creates `src/main.tiny`, a `module.json` manifest, and `.vscode/launch.json`
+plus `.vscode/settings.json` with the TinyLanguage debug adapter defaults. You
+can customize the runtime path or Python executable if your setup differs:
+
+```bash
+python -m tiny_project_cli init my_app --vscode --runtime /path/to/tiny_language.py --python python3
+```
+
 ## Launching the debugger
 
 1. Install the local VS Code extension contained in `vscode-extension/` (either

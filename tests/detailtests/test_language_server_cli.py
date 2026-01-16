@@ -107,6 +107,14 @@ def test_cli_format_emits_formatted_source():
     assert payload["source"] == "fn add(x, y) {\n    return x + y;\n}\n"
 
 
+def test_cli_workspace_symbols():
+    source = "class Greeter { fn hello(self, name) { return name; } }"
+    payload = run_cli(["--source", source, "workspace-symbols", "--query", "hello"])
+    assert payload
+    assert payload[0]["name"].endswith("hello")
+    assert payload[0]["container"] == "Greeter"
+
+
 def test_cli_reports_parse_errors_as_diagnostics():
     payload = run_cli(["--source", "fn broken() { return 1 ", "diagnostics"])
     assert payload

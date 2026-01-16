@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from formatter import format_source
-from language_server import CompletionItem, Diagnostic, HoverResult, TinyLanguageServer
+from language_server import CompletionItem, Diagnostic, HoverResult, TinyLanguageServer, WorkspaceSymbol
 
 
 def _load_source(args: argparse.Namespace) -> str:
@@ -47,6 +47,17 @@ def _diagnostic_dict(diag: Diagnostic) -> Dict[str, Any]:
     }
 
 
+def _workspace_symbol_dict(symbol: WorkspaceSymbol) -> Dict[str, Any]:
+    """Convert ``WorkspaceSymbol`` to a JSON-friendly mapping."""
+    return {
+        "name": symbol.name,
+        "kind": symbol.kind,
+        "detail": symbol.detail,
+        "position": list(symbol.position),
+        "container": symbol.container,
+    }
+
+
 def completions(server: TinyLanguageServer, prefix: str) -> List[Dict[str, Any]]:
     """Return completion payloads for ``prefix`` using ``server``."""
     return [_completion_dict(item) for item in server.completions(prefix)]
@@ -61,6 +72,11 @@ def hover(server: TinyLanguageServer, symbol: str) -> Dict[str, Any]:
 def diagnostics(server: TinyLanguageServer) -> List[Dict[str, Any]]:
     """Return diagnostics emitted by ``server`` in JSON-friendly form."""
     return [_diagnostic_dict(diag) for diag in server.diagnostics()]
+
+
+def workspace_symbols(server: TinyLanguageServer, query: str) -> List[Dict[str, Any]]:
+    """Return workspace symbol matches for ``query``."""
+    return [_workspace_symbol_dict(item) for item in server.workspace_symbols(query)]
 
 
 def format_source_payload(source: str) -> Dict[str, str]:
@@ -108,6 +124,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("diagnostics", help="List diagnostics for the source")
     subparsers.add_parser("format", help="Format the source and emit it as JSON")
+    workspace_parser = subparsers.add_parser(
+        "workspace-symbols", help="List symbols matching a workspace query"
+    )
+    workspace_parser.add_argument(
+        "--query", default="", help="Substring used to filter workspace symbols"
+    )
 
     return parser
 
@@ -135,6 +157,9 @@ def main() -> None:
         payload = diagnostics(server)
     elif args.command == "format":
         payload = format_source_payload(source)
+    elif args.command == "workspace-symbols":
+        server = TinyLanguageServer(source)
+        payload = workspace_symbols(server, args.query)
     else:
         raise SystemExit(f"unknown command: {args.command}")
 

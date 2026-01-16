@@ -51,6 +51,7 @@ python -m pytest tests/test_native_codegen.py -q
 PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny hover --symbol Greeter
 PYTHONPATH=src python src/language_server_cli.py --file src_tiny/namespace_demo.tiny completions --prefix To
 PYTHONPATH=src python src/language_server_cli.py --file src_tiny/stdlib_io_random_demo.tiny diagnostics
+PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny workspace-symbols --query Gre
 ```
 
 ## Module workflows
@@ -61,6 +62,12 @@ python -m tiny_lang_cli --file my_pkg/main.tiny --backend interpreter
 
 # Cross-check with an optional search path and the native backend
 TINYPATH=../deps python -m tiny_lang_cli --file my_pkg/main.tiny --native-backend
+```
+
+## Project scaffolding
+
+```bash
+python -m tiny_project_cli init my_app --vscode
 ```
 
 ## Everything at once

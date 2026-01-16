@@ -266,6 +266,9 @@ class _StdLibRegistrar:
         self.runtime.register_native("upper", self._string_upper, namespace="String")
         self.runtime.register_native("lower", self._string_lower, namespace="String")
         self.runtime.register_native("trim", self._string_trim, namespace="String")
+        self.runtime.register_native("strip", self._string_strip, namespace="String")
+        self.runtime.register_native("lstrip", self._string_lstrip, namespace="String")
+        self.runtime.register_native("rstrip", self._string_rstrip, namespace="String")
         self.runtime.register_native("repeat", self._string_repeat, namespace="String")
         self.runtime.register_native("replace", self._string_replace, namespace="String")
         self.runtime.register_native("starts_with", self._string_starts_with, namespace="String")
@@ -766,6 +769,15 @@ class _StdLibRegistrar:
 
     def _string_trim(self, text: Any) -> str:
         return str(text).strip()
+
+    def _string_strip(self, text: Any) -> str:
+        return str(text).strip()
+
+    def _string_lstrip(self, text: Any) -> str:
+        return str(text).lstrip()
+
+    def _string_rstrip(self, text: Any) -> str:
+        return str(text).rstrip()
 
     def _string_repeat(self, text: Any, count: Any) -> str:
         """Repeat a string `count` times; count must be a non-negative integer."""

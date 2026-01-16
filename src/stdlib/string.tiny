@@ -8,6 +8,9 @@
 // String.upper(text) -> Grossbuchstaben
 // String.lower(text) -> Kleinbuchstaben
 // String.trim(text) -> Trimt Leerzeichen links und rechts
+// String.strip(text) -> Trimt Leerzeichen links und rechts
+// String.lstrip(text) -> Trimt Leerzeichen links
+// String.rstrip(text) -> Trimt Leerzeichen rechts
 // String.repeat(text, count) -> Wiederholt den Text count-mal
 // String.replace(text, old, new) -> Ersetzt Teilstrings
 // String.starts_with(text, prefix) -> Bool
@@ -23,3 +26,6 @@
 // print(String.starts_with("tiny language", "tiny"));
 // print(String.ends_with("tiny language", "age"));
 // print(String.is_digit("12345"));
+// print(String.strip("  padded  "));
+// print(String.lstrip("  padded  "));
+// print(String.rstrip("  padded  "));

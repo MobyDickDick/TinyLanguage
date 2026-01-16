@@ -212,6 +212,8 @@ class _StdLibRegistrar:
         self._python_pointers: set[int] = set()
         # - integers that should be treated as scalar ints, not heap pointers
         self._python_scalar_ints: set[int] = set()
+        # - integers parsed from JSON that should stay scalar when stringifying
+        self._json_scalar_ints: set[int] = set()
 
     # -----------------------------------------------------------------------
     # Public API
@@ -1146,6 +1148,9 @@ class _StdLibRegistrar:
             return [self._json_to_value(item) for item in data]
         if data is None:
             return None
+        if isinstance(data, int) and not isinstance(data, bool):
+            self._json_scalar_ints.add(data)
+            return data
         if isinstance(data, (str, int, float, bool)):
             return data
         raise RuntimeError(f"unsupported json value: {data!r}")
@@ -1158,6 +1163,10 @@ class _StdLibRegistrar:
             num_fields = self.runtime._number_fields(val)  # noqa: SLF001
             if num_fields is not None:
                 return num_fields.get("value", 0)
+            if isinstance(val, int) and val in self._json_scalar_ints:
+                return val
+            if isinstance(val, int) and val in self._python_scalar_ints:
+                return val
             if isinstance(val, int) and val in self.runtime.heap:
                 obj = self.runtime.heap[val]
                 if isinstance(obj, list):

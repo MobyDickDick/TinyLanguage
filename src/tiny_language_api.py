@@ -14,6 +14,7 @@ import importlib
 import importlib.util
 import json
 import os
+import shlex
 import shutil
 import struct
 import subprocess
@@ -974,12 +975,25 @@ def _merge_llvm_programs(
     return merged, module_inits
 
 
+def _resolve_llvm_opt_level(llvm_opt: bool, llvm_opt_level: Optional[int]) -> int:
+    if llvm_opt_level is not None:
+        return llvm_opt_level
+    return 1 if llvm_opt else 0
+
+
+def _compiler_opt_args(opt_level: Optional[str]) -> List[str]:
+    if opt_level is None:
+        return []
+    return [f"-O{opt_level}"]
+
+
 def compile_to_llvm_ir(
     src: str,
     *,
     target_triple: Optional[str] = None,
     data_layout: Optional[str] = None,
     llvm_opt: bool = False,
+    llvm_opt_level: Optional[int] = None,
     module_namespace: Optional[str] = None,
     module_path: Optional[Path] = None,
     module_resolver: Optional[LLVMModuleResolver] = None,
@@ -1014,8 +1028,9 @@ def compile_to_llvm_ir(
         module_inits=module_inits,
         source=src,
     ).compile_program(program)
-    if llvm_opt:
-        llvm_ir = _optimize_llvm_ir(llvm_ir)
+    resolved_opt_level = _resolve_llvm_opt_level(llvm_opt, llvm_opt_level)
+    if resolved_opt_level > 0:
+        llvm_ir = _optimize_llvm_ir(llvm_ir, opt_level=resolved_opt_level)
     return llvm_ir
 
 
@@ -1024,6 +1039,20 @@ def compile_to_c_source(src: str) -> str:
     stmts = _parse_and_lint(src)
     program = NativeCodeGenerator(allow_match=False, source=src).compile_program(stmts)
     return CCodeGenerator(source=src).compile_program(program)
+
+
+def _format_compiler_failure(
+    compiler: str,
+    cmd: List[str],
+    exc: subprocess.CalledProcessError,
+    *,
+    action: str,
+) -> RuntimeError:
+    stderr = exc.stderr.strip() if exc.stderr else ""
+    stdout = exc.stdout.strip() if exc.stdout else ""
+    detail = stderr or stdout or "unknown compiler error"
+    command_str = shlex.join(cmd)
+    return RuntimeError(f"failed to {action} via {compiler}: {detail} (command: {command_str})")
 
 
 def compile_to_llvm_ir_via_c(
@@ -1047,8 +1076,7 @@ def compile_to_llvm_ir_via_c(
         try:
             subprocess.run(cmd, check=True, capture_output=True, text=True)
         except subprocess.CalledProcessError as exc:  # pragma: no cover - depends on external toolchain
-            stderr = exc.stderr.strip() if exc.stderr else "unknown compiler error"
-            raise RuntimeError(f"failed to emit LLVM IR via {compiler}: {stderr}") from exc
+            raise _format_compiler_failure(compiler, cmd, exc, action="emit LLVM IR") from exc
         return ll_path.read_text(encoding="utf-8")
 
 
@@ -1073,8 +1101,7 @@ def compile_to_llvm_bitcode_via_c(
         try:
             subprocess.run(cmd, check=True, capture_output=True, text=True)
         except subprocess.CalledProcessError as exc:  # pragma: no cover - depends on external toolchain
-            stderr = exc.stderr.strip() if exc.stderr else "unknown compiler error"
-            raise RuntimeError(f"failed to emit LLVM bitcode via {compiler}: {stderr}") from exc
+            raise _format_compiler_failure(compiler, cmd, exc, action="emit LLVM bitcode") from exc
         return bc_path.read_bytes()
 
 
@@ -1084,6 +1111,7 @@ def compile_to_c_executable(
     *,
     compiler: str = "cc",
     extra_args: Optional[List[str]] = None,
+    opt_level: Optional[str] = None,
 ) -> Path:
     """Compile TinyLanguage to a native executable via the C backend."""
     compiler_path = shutil.which(compiler)
@@ -1096,6 +1124,7 @@ def compile_to_c_executable(
         c_path = Path(tmpdir) / "tiny_program.c"
         c_path.write_text(c_source, encoding="utf-8")
         cmd = [compiler_path, str(c_path), "-o", str(output_path)]
+        cmd.extend(_compiler_opt_args(opt_level))
         args = list(extra_args) if extra_args else []
         if "-lm" not in args:
             args.append("-lm")
@@ -1103,8 +1132,7 @@ def compile_to_c_executable(
         try:
             subprocess.run(cmd, check=True, capture_output=True, text=True)
         except subprocess.CalledProcessError as exc:  # pragma: no cover - depends on external toolchain
-            stderr = exc.stderr.strip() if exc.stderr else "unknown compiler error"
-            raise RuntimeError(f"failed to compile C executable via {compiler}: {stderr}") from exc
+            raise _format_compiler_failure(compiler, cmd, exc, action="compile C executable") from exc
     return output_path
 
 
@@ -1117,6 +1145,8 @@ def compile_to_executable(
     target_triple: Optional[str] = None,
     data_layout: Optional[str] = None,
     llvm_opt: bool = False,
+    llvm_opt_level: Optional[int] = None,
+    opt_level: Optional[str] = None,
     module_namespace: Optional[str] = None,
     module_path: Optional[Path] = None,
     module_resolver: Optional[LLVMModuleResolver] = None,
@@ -1130,6 +1160,7 @@ def compile_to_executable(
         target_triple=target_triple,
         data_layout=data_layout,
         llvm_opt=llvm_opt,
+        llvm_opt_level=llvm_opt_level,
         module_namespace=module_namespace,
         module_path=module_path,
         module_resolver=module_resolver,
@@ -1140,13 +1171,13 @@ def compile_to_executable(
         ll_path = Path(tmpdir) / "tiny_program.ll"
         ll_path.write_text(llvm_ir, encoding="utf-8")
         cmd = [compiler_path, str(ll_path), "-o", str(output_path)]
+        cmd.extend(_compiler_opt_args(opt_level))
         if extra_args:
             cmd.extend(extra_args)
         try:
             subprocess.run(cmd, check=True, capture_output=True, text=True)
         except subprocess.CalledProcessError as exc:  # pragma: no cover - depends on external toolchain
-            stderr = exc.stderr.strip() if exc.stderr else "unknown compiler error"
-            raise RuntimeError(f"failed to compile executable via {compiler}: {stderr}") from exc
+            raise _format_compiler_failure(compiler, cmd, exc, action="compile executable") from exc
     return output_path
 
 
@@ -1339,18 +1370,37 @@ def _raise_llvm_jit_error(step: str, exc: Exception, llvm_binding=None) -> None:
     raise RuntimeError(f"LLVM JIT failed during {step}: {exc} ({context})") from exc
 
 
-def _optimize_llvm_module(llvm_binding, module) -> None:
+def _maybe_add_llvm_pass(pass_manager, method_name: str) -> None:
+    method = getattr(pass_manager, method_name, None)
+    if method is not None:
+        method()
+
+
+def _optimize_llvm_module(llvm_binding, module, opt_level: int = 1) -> None:
     pass_manager = llvm_binding.create_module_pass_manager()
-    pass_manager.add_promote_memory_to_register_pass()
-    pass_manager.add_instruction_combining_pass()
+    _maybe_add_llvm_pass(pass_manager, "add_promote_memory_to_register_pass")
+    _maybe_add_llvm_pass(pass_manager, "add_instruction_combining_pass")
+    if opt_level >= 2:
+        for method_name in (
+            "add_reassociate_pass",
+            "add_gvn_pass",
+            "add_cfg_simplification_pass",
+        ):
+            _maybe_add_llvm_pass(pass_manager, method_name)
+    if opt_level >= 3:
+        for method_name in (
+            "add_dead_store_elimination_pass",
+            "add_sccp_pass",
+        ):
+            _maybe_add_llvm_pass(pass_manager, method_name)
     pass_manager.run(module)
 
 
-def _optimize_llvm_ir(llvm_ir: str) -> str:
+def _optimize_llvm_ir(llvm_ir: str, opt_level: int = 1) -> str:
     llvm_binding = _load_llvmlite_binding()
     module = llvm_binding.parse_assembly(llvm_ir)
     module.verify()
-    _optimize_llvm_module(llvm_binding, module)
+    _optimize_llvm_module(llvm_binding, module, opt_level=opt_level)
     return str(module)
 
 
@@ -1458,6 +1508,7 @@ def run_with_llvm_jit(
     target_triple: Optional[str] = None,
     data_layout: Optional[str] = None,
     llvm_opt: bool = False,
+    llvm_opt_level: Optional[int] = None,
 ) -> str:
     """Execute TinyLanguage code via the LLVM IR JIT (requires llvmlite)."""
     try:
@@ -1501,9 +1552,10 @@ def run_with_llvm_jit(
         module.verify()
     except Exception as exc:
         _raise_llvm_jit_error("verify-module", exc, llvm_binding)
-    if llvm_opt:
+    resolved_opt_level = _resolve_llvm_opt_level(llvm_opt, llvm_opt_level)
+    if resolved_opt_level > 0:
         try:
-            _optimize_llvm_module(llvm_binding, module)
+            _optimize_llvm_module(llvm_binding, module, opt_level=resolved_opt_level)
         except Exception as exc:
             _raise_llvm_jit_error("optimize-module", exc, llvm_binding)
     try:
@@ -1636,10 +1688,34 @@ def _print_optional_dependency_instructions() -> None:
     lines = [
         "Optional dependencies:",
         "- LLVM JIT backend: pip install llvmlite",
-        "- LLVM optimization passes (--llvm-opt): pip install llvmlite",
+        "- LLVM optimization passes (--llvm-opt/--llvm-opt-level): pip install llvmlite",
         "- Native executable emission: install clang (or set --compiler to a compatible tool)",
     ]
     print("\n".join(lines))
+
+
+def _emit_native_diagnostics(
+    *,
+    mode: str,
+    compiler: Optional[str] = None,
+    opt_level: Optional[str] = None,
+    llvm_opt_level: Optional[int] = None,
+    target_triple: Optional[str] = None,
+    data_layout: Optional[str] = None,
+) -> None:
+    lines = ["Native backend diagnostics:"]
+    lines.append(f"- mode: {mode}")
+    if compiler is not None:
+        compiler_path = shutil.which(compiler)
+        compiler_detail = compiler_path or "not found on PATH"
+        lines.append(f"- compiler: {compiler} ({compiler_detail})")
+    opt_detail = f"-O{opt_level}" if opt_level is not None else "default"
+    lines.append(f"- compiler opt-level: {opt_detail}")
+    llvm_opt_detail = str(llvm_opt_level) if llvm_opt_level is not None else "default (0)"
+    lines.append(f"- llvm opt-level: {llvm_opt_detail}")
+    lines.append(f"- llvm target triple: {target_triple or 'default'}")
+    lines.append(f"- llvm data layout: {data_layout or 'default'}")
+    print("\n".join(lines), file=sys.stderr)
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -1702,6 +1778,17 @@ def main(argv: Optional[List[str]] = None) -> int:
         action="store_true",
         help="Run basic LLVM optimization passes (mem2reg, instcombine) on emitted IR",
     )
+    parser.add_argument(
+        "--llvm-opt-level",
+        type=int,
+        choices=[0, 1, 2, 3],
+        help="Set LLVM optimization level for emitted IR/JIT (0-3, implies --llvm-opt)",
+    )
+    parser.add_argument(
+        "--opt-level",
+        choices=["0", "1", "2", "3", "s", "z"],
+        help="Set compiler optimization level for --emit-exe (clang -O flag)",
+    )
     backend_group = parser.add_mutually_exclusive_group()
     backend_group.add_argument(
         "--python-backend",
@@ -1729,15 +1816,23 @@ def main(argv: Optional[List[str]] = None) -> int:
         default=_copy_on_call_default(),
         help="Deep-copy non-escaping mutable arguments before calls (env: TINYLANG_COPY_ON_CALL)",
     )
+    parser.add_argument(
+        "--native-diagnostics",
+        action="store_true",
+        help="Print native backend diagnostics to stderr when using LLVM/native compiler flags",
+    )
     args, remaining = parser.parse_known_args(argv)
     args.program_args = remaining
     if args.program_args and args.program_args[0] == "--":
         args.program_args = args.program_args[1:]
+    resolved_llvm_opt_level = _resolve_llvm_opt_level(args.llvm_opt, args.llvm_opt_level)
 
     if args.repl and (
         args.python_backend or args.native_backend or args.native_python_bytecode or args.llvm_jit
     ):
         parser.error("--native-backend/--python-backend cannot be combined with --repl")
+    if args.opt_level and not args.emit_exe:
+        parser.error("--opt-level requires --emit-exe")
 
     if args.format_file is not None:
         from formatter import format_source
@@ -1756,11 +1851,19 @@ def main(argv: Optional[List[str]] = None) -> int:
             elif args.python_backend:
                 output = run_with_python_backend(args.eval)
             elif args.llvm_jit:
+                if args.native_diagnostics:
+                    _emit_native_diagnostics(
+                        mode="llvm-jit",
+                        llvm_opt_level=resolved_llvm_opt_level,
+                        target_triple=args.llvm_target_triple,
+                        data_layout=args.llvm_data_layout,
+                    )
                 output = run_with_llvm_jit(
                     args.eval,
                     target_triple=args.llvm_target_triple,
                     data_layout=args.llvm_data_layout,
                     llvm_opt=args.llvm_opt,
+                    llvm_opt_level=args.llvm_opt_level,
                 )
                 streamed = True
             else:
@@ -1842,11 +1945,19 @@ def main(argv: Optional[List[str]] = None) -> int:
         if not args.file:
             parser.error("--emit-llvm requires a source file")
         source_text = Path(args.file).read_text(encoding="utf-8")
+        if args.native_diagnostics:
+            _emit_native_diagnostics(
+                mode="emit-llvm",
+                llvm_opt_level=resolved_llvm_opt_level,
+                target_triple=args.llvm_target_triple,
+                data_layout=args.llvm_data_layout,
+            )
         llvm_ir = compile_to_llvm_ir(
             source_text,
             target_triple=args.llvm_target_triple,
             data_layout=args.llvm_data_layout,
             llvm_opt=args.llvm_opt,
+            llvm_opt_level=args.llvm_opt_level,
             module_path=Path(args.file),
         )
         if args.emit_llvm == "-":
@@ -1859,6 +1970,15 @@ def main(argv: Optional[List[str]] = None) -> int:
         if not args.file:
             parser.error("--emit-exe requires a source file")
         source_text = Path(args.file).read_text(encoding="utf-8")
+        if args.native_diagnostics:
+            _emit_native_diagnostics(
+                mode="emit-exe",
+                compiler=args.compiler,
+                opt_level=args.opt_level,
+                llvm_opt_level=resolved_llvm_opt_level,
+                target_triple=args.llvm_target_triple,
+                data_layout=args.llvm_data_layout,
+            )
         try:
             compile_to_executable(
                 source_text,
@@ -1867,6 +1987,8 @@ def main(argv: Optional[List[str]] = None) -> int:
                 target_triple=args.llvm_target_triple,
                 data_layout=args.llvm_data_layout,
                 llvm_opt=args.llvm_opt,
+                llvm_opt_level=args.llvm_opt_level,
+                opt_level=args.opt_level,
                 module_path=Path(args.file),
             )
         except RuntimeError as err:
@@ -1887,11 +2009,19 @@ def main(argv: Optional[List[str]] = None) -> int:
         elif args.python_backend:
             output = run_with_python_backend(Path(args.file).read_text(encoding="utf-8"))
         elif args.llvm_jit:
+            if args.native_diagnostics:
+                _emit_native_diagnostics(
+                    mode="llvm-jit",
+                    llvm_opt_level=resolved_llvm_opt_level,
+                    target_triple=args.llvm_target_triple,
+                    data_layout=args.llvm_data_layout,
+                )
             output = run_with_llvm_jit(
                 Path(args.file).read_text(encoding="utf-8"),
                 target_triple=args.llvm_target_triple,
                 data_layout=args.llvm_data_layout,
                 llvm_opt=args.llvm_opt,
+                llvm_opt_level=args.llvm_opt_level,
             )
             streamed = True
         else:

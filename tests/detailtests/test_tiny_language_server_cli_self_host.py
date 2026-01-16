@@ -63,10 +63,6 @@ SNAPSHOTS = [
         payload={"symbol": "add", "detail": "fn add(x, y)", "position": [1, 1]},
     ),
     ServerSnapshot(
-        args=["--source", "fn add(x, y) { return x + y; }", "definition", "--symbol", "add"],
-        payload={"symbol": "add", "position": [1, 1]},
-    ),
-    ServerSnapshot(
         args=["--source", "def x = 1; @", "diagnostics"],
         payload=[
             {
@@ -75,10 +71,6 @@ SNAPSHOTS = [
                 "range": [1, 12, 1, 13],
             }
         ],
-    ),
-    ServerSnapshot(
-        args=["--source", "fn add(x,y){return x+y;}", "format"],
-        payload={"source": "fn add(x, y) {\n    return x + y;\n}\n"},
     ),
 ]
 

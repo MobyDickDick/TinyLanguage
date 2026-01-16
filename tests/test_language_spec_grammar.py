@@ -190,3 +190,73 @@ def test_language_spec_string_escapes_match_lexer() -> None:
 
     assert token.text == expected
 
+
+def _lex_texts(source: str) -> list[str]:
+    lexer = Lexer(source)
+    tokens = []
+    while True:
+        token = lexer.next_token()
+        if token.kind == "EOF":
+            break
+        tokens.append(token.text)
+    return tokens
+
+
+def test_language_spec_tokens_lex_as_documented() -> None:
+    source = "( ) { } [ ] , ; . : ? = + - * / ^ % < > <= >= == != && || !"
+
+    assert _lex_texts(source) == [
+        "(",
+        ")",
+        "{",
+        "}",
+        "[",
+        "]",
+        ",",
+        ";",
+        ".",
+        ":",
+        "?",
+        "=",
+        "+",
+        "-",
+        "*",
+        "/",
+        "^",
+        "%",
+        "<",
+        ">",
+        "<=",
+        ">=",
+        "==",
+        "!=",
+        "&&",
+        "||",
+        "!",
+    ]
+
+
+def test_language_spec_comment_tokens_are_skipped() -> None:
+    source = "def x = 1; // comment here\nprint(x);"
+
+    assert _lex_texts(source) == [
+        "def",
+        "x",
+        "=",
+        "1",
+        ";",
+        "print",
+        "(",
+        "x",
+        ")",
+        ";",
+    ]
+
+
+def test_language_spec_return_arrow_is_two_tokens() -> None:
+    source = "fn add(x: number) -> number { return x; }"
+    tokens = _lex_texts(source)
+
+    arrow_pos = tokens.index("-")
+
+    assert tokens[arrow_pos + 1] == ">"

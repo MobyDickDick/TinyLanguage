@@ -18,6 +18,11 @@ fn spin_until_cancel(token, label, limit) {
     return label + ":complete";
 }
 
+fn fail_fast() {
+    // Trigger a join error to showcase error metadata in JoinStatus.
+    return join(Null);
+}
+
 fn print_status(label, status) {
     print(
         label,
@@ -44,6 +49,7 @@ task {
 
     def short_task = spawn spin_until_cancel(token, "short", 20000);
     def long_task = spawn spin_until_cancel(token, "long", 2000000);
+    def fail_task = spawn fail_fast();
 
     def _unused1 = Async.link(token, short_task);
     def _unused2 = Async.link(token, long_task);
@@ -53,8 +59,14 @@ task {
     def short_status = join(short_task, 0);
     print_status("short status", short_status);
 
-    def long_status = join(long_task, 1, true);
+    def long_status = join(long_task, 1);
     print_status("long status", long_status);
+
+    def long_cancel = join(long_task, 1, true);
+    print_status("long cancel", long_cancel);
+
+    def fail_status = join(fail_task, 10);
+    print_status("fail status", fail_status);
 
     def cancelled = Async.cancel(token, "demo scope exit");
     print("token", cancelled, Async.is_cancelled(token), Async.reason(token));

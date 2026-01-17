@@ -103,6 +103,7 @@ if "lint_import_style" not in globals():
         lint_bare_call_results,
         lint_destruct_call_outputs,
         lint_fn_params_used,
+        lint_heap_lifetimes,
         lint_import_style,
         lint_locals_used,
         lint_method_params_used,
@@ -602,6 +603,8 @@ def _parse_and_lint(
     if not repl_mode:
         lint_locals_used(stmts, src)
     lint_unreachable_code(stmts, src)
+    if os.environ.get("TINY_LINT_HEAP", "").strip().lower() in {"1", "true", "yes", "on"}:
+        lint_heap_lifetimes(stmts, src)
     signatures = _collect_function_signatures(stmts)
 
     def lint_nested(block: List["IR"]) -> None:

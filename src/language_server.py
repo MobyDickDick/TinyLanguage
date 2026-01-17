@@ -8,6 +8,7 @@ lightweight Python interface.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -29,6 +30,7 @@ from tiny_language import (
     lint_bare_call_results,
     lint_destruct_call_outputs,
     lint_fn_params_used,
+    lint_heap_lifetimes,
     lint_import_style,
     lint_locals_used,
     lint_method_params_used,
@@ -213,6 +215,8 @@ class TinyLanguageServer:
             lint_no_consecutive_definitions(self.stmts, self.source)
             lint_import_style(self.stmts, self.source)
             lint_locals_used(self.stmts, self.source)
+            if os.environ.get("TINY_LINT_HEAP", "").strip().lower() in {"1", "true", "yes", "on"}:
+                lint_heap_lifetimes(self.stmts, self.source)
             signatures = _collect_function_signatures(self.stmts)
             lint_bare_call_results(self.stmts, signatures, self.source)
             for st in self.stmts:

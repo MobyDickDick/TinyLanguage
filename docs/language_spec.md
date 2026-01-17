@@ -29,7 +29,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 - **Comparisons:** `==`, `!=`, `<`, `>`, `<=`, `>=` work on numbers, strings, booleans, and user types with operator overloads.
 - **Booleans:** Short-circuit logic with `&&` and `||`, negation via `!expr`.
 - **Arrays and heap:** `new[1, 2, 3]` creates an array; `new(3)` reserves heap space with three slots. Access via `heap_get(ptr, idx)` and `heap_set(ptr, idx, value)`. `tag(ptr, "Label")` attaches a type tag, and `delete(ptr)` frees memory.
-  - **Known weakness:** heap management is manual today (explicit `delete`), which can lead to leaks or use-after-free mistakes in larger programs. A future safety profile should move toward automatic lifetime management (GC or ownership/borrow rules) and lints that flag risky pointer usage.
+  - **Safety profile (current):** heap management is still manual, but the interpreter ships optional lifetime lints. Enable them with `TINY_LINT_HEAP=1` to catch use-after-free access (including double deletes) and leak-prone rebinding of live pointers. These checks are conservative and do not replace a full ownership or GC model.
 - **Struct literals:** `{ a: 1, b: 2 }` builds an anonymous struct; fields are read with dot notation (`obj.a`).
 
 ## Bindings and visibility

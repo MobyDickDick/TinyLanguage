@@ -4,8 +4,10 @@ import pytest
 
 from native_ir import FunctionIR, Instruction, Opcode, ProgramIR
 from native_vm import NativeVM
-from tiny_errors import SourcePos, SourceSpan
+from tiny_errors import SourcePos, SourceSpan, TinyLangError
 from tiny_language import NativeCodeGenerator, _parse_and_lint, run_with_native_backend
+from tiny_language_codegen_c import CCodeGenerator
+from tiny_language_codegen_llvm import LLVMCodeGenerator
 
 
 def test_native_code_generator_reports_not_implemented_with_location():
@@ -261,6 +263,42 @@ def test_native_vm_error_lists_all_supported_opcodes():
 
     with pytest.raises(RuntimeError) as excinfo:
         vm.run(program)
+
+    message = str(excinfo.value)
+    supported_marker = "Supported opcodes: "
+    assert supported_marker in message
+    supported_text = message.split(supported_marker, 1)[1].rstrip(".")
+    supported_list = [entry.strip() for entry in supported_text.split(",")]
+    assert supported_list == [op.value for op in Opcode]
+
+
+def test_c_backend_error_lists_all_supported_opcodes():
+    program = ProgramIR(
+        entry=[Instruction(op="UNKNOWN_OP")],
+        functions={},
+    )
+    generator = CCodeGenerator(source=None)
+
+    with pytest.raises(TinyLangError) as excinfo:
+        generator.compile_program(program)
+
+    message = str(excinfo.value)
+    supported_marker = "Supported opcodes: "
+    assert supported_marker in message
+    supported_text = message.split(supported_marker, 1)[1].rstrip(".")
+    supported_list = [entry.strip() for entry in supported_text.split(",")]
+    assert supported_list == [op.value for op in Opcode]
+
+
+def test_llvm_backend_error_lists_all_supported_opcodes():
+    program = ProgramIR(
+        entry=[Instruction(op="UNKNOWN_OP")],
+        functions={},
+    )
+    generator = LLVMCodeGenerator()
+
+    with pytest.raises(NotImplementedError) as excinfo:
+        generator.compile_program(program)
 
     message = str(excinfo.value)
     supported_marker = "Supported opcodes: "

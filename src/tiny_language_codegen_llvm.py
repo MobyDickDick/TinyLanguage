@@ -116,10 +116,13 @@ class LLVMCodeGenerator:
 
     def _unsupported_opcode(self, instr: Instruction) -> None:
         op_name = self._format_opcode(instr.op)
-        self._lowering_error(
-            f"opcode {op_name} not supported. Supported opcodes: {self._supported_opcodes()}.",
-            instr,
+        context = self._instruction_context(instr)
+        message = (
+            f"opcode {op_name} not supported.{context} Supported opcodes: {self._supported_opcodes()}."
         )
+        if self._source is not None and instr.span is not None:
+            message = format_error(self._source, instr.span, message)
+        raise NotImplementedError(message)
 
     def compile_program(self, program: ProgramIR) -> str:
         """Return LLVM IR for the given native ``ProgramIR``.

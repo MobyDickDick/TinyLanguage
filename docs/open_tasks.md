@@ -5,9 +5,6 @@ are grouped by area and can be tackled independently.
 
 ## Next tasks (shortlist)
 
-- [ ] Review the native backend error suite when adding new opcodes to ensure
-  diagnostics stay aligned with the interpreter. (Started: added a check that
-  verifies the supported-opcode list stays in sync with the enum.)
 - [ ] Keep the structured concurrency demo in `src_tiny/` updated as new task
   scope features land (e.g., timeout policies, new task metadata).
 
@@ -48,6 +45,9 @@ become concrete tasks.
 
 ## Recently completed tasks
 
+- [x] Review the native backend error suite when adding new opcodes to ensure
+  diagnostics stay aligned with the interpreter. (Started: added a check that
+  verifies the supported-opcode list stays in sync with the enum.)
 - [x] Add a focused regression suite for native backend error diagnostics,
   covering `NotImplementedError` cases and unknown opcode handling.
 - [x] Document module import constraints for the native/LLVM pipeline in

@@ -249,11 +249,11 @@ def test_json_stringify_roundtrip_nested_collections(run_tiny_source):
     out = run_tiny_source(
         """
         def mapping = Map.new();
-        def _k1 = Map.set(mapping, "k1", 1);
-        def _k2 = Map.set(mapping, "k2", 2);
+        def _k1 = Map.set(mapping, "k1", "one");
+        def _k2 = Map.set(mapping, "k2", "two");
         def tags = Set.from_list(new["b", "a"]);
         def queue = Deque.new(new["x", "y"]);
-        def nested = new[new[1, 2], new[3, new[4, 5]]];
+        def nested = new[new["alpha", "beta"], new["gamma", new["delta", "epsilon"]]];
         def values = new[mapping, tags, queue, nested];
         def text = JSON.stringify(values);
         print(text);

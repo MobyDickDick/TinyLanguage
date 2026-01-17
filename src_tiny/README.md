@@ -14,7 +14,8 @@ features and runtime behavior.
   exercises the `Async.channel` send/recv helpers and shows `async fn` + `await`
   alongside `spawn`/`join`.
   The demo also leaves one long-running handle unlinked so the task scope
-  timeout can cancel it automatically.
+  auto-join path (which tracks all spawned handles, linked or not) can cancel
+  it on timeout.
 - The demo prints status snapshots using `join(handle, timeout_ms)` and
   `join(handle, timeout_ms, cancel_on_timeout)` so you can see the `JoinStatus`
   metadata (`__tag__`, `done`, `cancelled`, `error`, and `result`) without

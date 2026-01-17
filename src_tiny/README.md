@@ -9,9 +9,10 @@ features and runtime behavior.
   work, links it to an `Async.token()`, and cancels the token to stop long
   running tasks.
 - The demo prints status snapshots using `join(handle, timeout_ms)` and
-  `join(handle, timeout_ms, cancel_on_timeout)` so you can see `done`,
-  `cancelled`, and `error` fields without raising exceptions. Task scopes also
-  auto-join with a timeout (configure via `TINYLANG_TASK_SCOPE_TIMEOUT_MS`).
+  `join(handle, timeout_ms, cancel_on_timeout)` so you can see the `JoinStatus`
+  metadata (`__tag__`, `done`, `cancelled`, `error`, and `result`) without
+  raising exceptions. Task scopes also auto-join with a timeout (configure via
+  `TINYLANG_TASK_SCOPE_TIMEOUT_MS`).
 
 Run it from the repo root:
 

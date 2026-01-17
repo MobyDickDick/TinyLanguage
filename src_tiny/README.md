@@ -8,8 +8,10 @@ features and runtime behavior.
 - `structured_concurrency_demo.tiny` shows a `task { ... }` scope that spawns
   work, links it to an `Async.token()`, and cancels the token to stop long
   running tasks.
-- The demo prints status snapshots using `join(handle, timeout_ms)` so you can
-  see `done`, `cancelled`, and `error` fields without raising exceptions.
+- The demo prints status snapshots using `join(handle, timeout_ms)` and
+  `join(handle, timeout_ms, cancel_on_timeout)` so you can see `done`,
+  `cancelled`, and `error` fields without raising exceptions. Task scopes also
+  auto-join with a timeout (configure via `TINYLANG_TASK_SCOPE_TIMEOUT_MS`).
 
 Run it from the repo root:
 

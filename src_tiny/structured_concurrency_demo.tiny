@@ -18,6 +18,17 @@ fn spin_until_cancel(token, label, limit) {
     return label + ":complete";
 }
 
+fn print_status(label, status) {
+    print(
+        label,
+        status.__tag__,
+        status.done,
+        status.cancelled,
+        status.error,
+        status.result,
+    );
+}
+
 // Task blocks automatically join outstanding handles on scope exit with a
 // timeout (see TINYLANG_TASK_SCOPE_TIMEOUT_MS). Join also supports a
 // cancel-on-timeout flag for scoped status checks. The status map includes
@@ -40,31 +51,25 @@ task {
     busy_wait(50000);
 
     def short_status = join(short_task, 0);
-    print(
-        "short status",
-        short_status.__tag__,
-        short_status.done,
-        short_status.cancelled,
-        short_status.result,
-    );
+    print_status("short status", short_status);
 
     def long_status = join(long_task, 1, true);
-    print("long status", long_status.__tag__, long_status.done, long_status.cancelled, long_status.error);
+    print_status("long status", long_status);
 
     def cancelled = Async.cancel(token, "demo scope exit");
     print("token", cancelled, Async.is_cancelled(token), Async.reason(token));
 
     def long_final = join(long_task, 50);
-    print("long final", long_final.done, long_final.cancelled, long_final.error);
+    print_status("long final", long_final);
 
     def short_final = join(short_task, 50);
-    print("short final", short_final.done, short_final.cancelled, short_final.result);
+    print_status("short final", short_final);
 
     scoped_handle = spawn spin_until_cancel(token, "scope", 5000000);
     def _unused3 = Async.link(token, scoped_handle);
     def scoped_status = join(scoped_handle, 0);
-    print("scope snapshot", scoped_status.done, scoped_status.cancelled, scoped_status.result);
+    print_status("scope snapshot", scoped_status);
 }
 
 def scope_exit_status = join(scoped_handle, 0);
-print("scope exit", scope_exit_status.done, scope_exit_status.cancelled, scope_exit_status.error);
+print_status("scope exit", scope_exit_status);

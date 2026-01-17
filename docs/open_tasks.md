@@ -21,9 +21,6 @@ become concrete tasks.
 - [ ] Minimize heap usage by preferring fixed-size arrays or stack-friendly
   constructs where semantics allow it (requires a clear ownership/mutation model
   to avoid accidental aliasing).
-- [ ] Re-evaluate `{}` usage: replace unordered set-like literals with ordered
-  tuples `()` where elements are not indexed, and document the semantic
-  distinction explicitly in the language spec.
 - [ ] Explore math-oriented syntax/notation (tuple-based block forms, formula
   syntax, stack-edit or LaTeX-like constructs) with careful incremental trials
   to avoid destabilizing readability or tooling.
@@ -46,6 +43,9 @@ become concrete tasks.
   reference generator plus usage notes for future upkeep.
 - [x] Create a Python-to-Tiny migration guide with known gaps, recommended
   refactors, and tooling automation opportunities.
+- [x] Re-evaluate `{}` usage: clarify that curly braces are reserved for struct
+  literals/destructuring, and document when to use ordered arrays or stdlib
+  `Set`/`Map` types instead of unordered literals.
 - [x] Define a manual heap-lifetime safety profile and add opt-in lints that
   detect use-after-free and leak-prone pointer rebinding in the interpreter.
 - [x] Keep the structured concurrency demo in `src_tiny/` updated as new task

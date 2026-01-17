@@ -56,7 +56,9 @@ keeping behavior aligned.
 - **Replace globals with parameters**: Tiny modules favor explicit parameter
   passing over global mutation.
 - **Prefer deterministic iteration**: Replace unordered set/dict iteration with
-  ordered arrays when output order matters.
+  ordered arrays when output order matters. Tiny does not have unordered set
+  literals; use `new[...]` for ordered collections or stdlib `Set`/`Map` types
+  when you need set semantics.
 
 ## Tooling automation opportunities
 
@@ -104,4 +106,3 @@ print(sum(values))
   synchronization.
 - The code depends on third-party libraries that are not targeted for Tiny
   compatibility.
-

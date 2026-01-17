@@ -31,6 +31,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 - **Arrays and heap:** `new[1, 2, 3]` creates an array; `new(3)` reserves heap space with three slots. Access via `heap_get(ptr, idx)` and `heap_set(ptr, idx, value)`. `tag(ptr, "Label")` attaches a type tag, and `delete(ptr)` frees memory.
   - **Safety profile (current):** heap management is still manual, but the interpreter ships optional lifetime lints. Enable them with `TINY_LINT_HEAP=1` to catch use-after-free access (including double deletes) and leak-prone rebinding of live pointers. These checks are conservative and do not replace a full ownership or GC model.
 - **Struct literals:** `{ a: 1, b: 2 }` builds an anonymous struct; fields are read with dot notation (`obj.a`).
+  - Curly braces are reserved for struct literals and destructuring assignments (`{ a, b } = expr;`). Tiny does not support unordered set literals. Prefer ordered `new[...]` arrays when iteration order matters, and use stdlib `Set`/`Map` types when you need true unordered semantics.
 
 ## Bindings and visibility
 

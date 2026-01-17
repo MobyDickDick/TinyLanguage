@@ -2,7 +2,7 @@ import textwrap
 
 import pytest
 
-from native_ir import Instruction, ProgramIR
+from native_ir import FunctionIR, Instruction, Opcode, ProgramIR
 from native_vm import NativeVM
 from tiny_errors import SourcePos, SourceSpan
 from tiny_language import NativeCodeGenerator, _parse_and_lint, run_with_native_backend
@@ -102,6 +102,44 @@ def test_native_code_generator_reports_not_implemented_for_match():
     assert "match foo" in message
 
 
+def test_native_code_generator_reports_not_implemented_for_heap_allocations():
+    source = textwrap.dedent(
+        """
+        def items = new[1, 2];
+        print(items);
+        """
+    ).strip()
+
+    stmts = _parse_and_lint(source)
+
+    with pytest.raises(NotImplementedError) as excinfo:
+        NativeCodeGenerator(allow_heap=False, allow_match=True, source=source).compile_program(stmts)
+
+    message = str(excinfo.value)
+    assert "native codegen does not yet support heap allocations" in message
+    assert "line 1" in message
+    assert "def items = new[1, 2];" in message
+
+
+def test_native_code_generator_reports_not_implemented_for_variant_constructors():
+    source = textwrap.dedent(
+        """
+        def circle = Circle { radius: 2 };
+        print(circle);
+        """
+    ).strip()
+
+    stmts = _parse_and_lint(source)
+
+    with pytest.raises(NotImplementedError) as excinfo:
+        NativeCodeGenerator(allow_match=False, source=source).compile_program(stmts)
+
+    message = str(excinfo.value)
+    assert "native codegen does not yet support variant constructors" in message
+    assert "line 1" in message
+    assert "def circle = Circle { radius: 2 };" in message
+
+
 def test_native_vm_reports_unknown_opcode_with_context():
     source = "print(1);"
     program = ProgramIR(
@@ -123,3 +161,42 @@ def test_native_vm_reports_unknown_opcode_with_context():
     assert "Supported opcodes" in message
     assert "line 1, col 1" in message
     assert "print(1);" in message
+
+
+def test_native_vm_reports_unknown_opcode_inside_function():
+    source = textwrap.dedent(
+        """
+        def boom() { print(1); }
+        boom();
+        """
+    ).strip()
+    program = ProgramIR(
+        entry=[
+            Instruction(
+                Opcode.CALL,
+                ("boom", 0),
+                span=SourceSpan(SourcePos(2, 1), SourcePos(2, 6)),
+            )
+        ],
+        functions={
+            "boom": FunctionIR(
+                name="boom",
+                params=[],
+                instructions=[
+                    Instruction(
+                        op="UNKNOWN_OP",
+                        span=SourceSpan(SourcePos(1, 1), SourcePos(1, 4)),
+                    )
+                ],
+            )
+        },
+    )
+    vm = NativeVM(source=source)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        vm.run(program)
+
+    message = str(excinfo.value)
+    assert "unknown opcode UNKNOWN_OP" in message
+    assert "line 1" in message
+    assert "def boom() { print(1); }" in message

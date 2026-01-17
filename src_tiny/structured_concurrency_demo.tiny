@@ -81,7 +81,8 @@ task {
 
     def short_linked = Async.link(token, short_task);
     def long_linked = Async.link(token, long_task);
-    print("links", short_linked, long_linked);
+    def short_linked_again = Async.link(token, short_task);
+    print("links", short_linked, long_linked, short_linked_again);
 
     busy_wait(50000);
 
@@ -116,7 +117,14 @@ task {
     print("async result", async_result);
 
     def cancelled = Async.cancel(token, "demo scope exit");
-    print("token", cancelled, Async.is_cancelled(token), Async.reason(token));
+    def cancelled_again = Async.cancel(token, "ignored");
+    print("token", cancelled, cancelled_again, Async.is_cancelled(token), Async.reason(token));
+
+    def late_task = spawn spin_until_cancel(token, "late", 20000);
+    def late_linked = Async.link(token, late_task);
+    print("late link", late_linked);
+    def late_status = join(late_task, 10);
+    print_status("late status", late_status);
 
     def long_final = join(long_task, 50);
     print_status("long final", long_final);

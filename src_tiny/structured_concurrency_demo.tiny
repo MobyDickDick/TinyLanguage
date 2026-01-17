@@ -7,6 +7,11 @@ fn busy_wait(steps) {
     }
 }
 
+async fn async_work(label, steps) {
+    busy_wait(steps);
+    return label + ":async";
+}
+
 fn run_work(label, steps) {
     busy_wait(steps);
     return label + ":complete";
@@ -26,6 +31,14 @@ fn spin_until_cancel(token, label, limit) {
 fn fail_fast() {
     // Trigger a join error to showcase error metadata in JoinStatus.
     return join(Null);
+}
+
+fn send_value(chan, value) {
+    return Async.send(chan, value);
+}
+
+fn recv_value(chan) {
+    return Async.recv(chan);
 }
 
 fn print_status(label, status) {
@@ -57,11 +70,14 @@ def scope_timeout_handle = Null;
 
 task {
     def token = Async.token();
+    def chan = Async.channel(1);
 
     def short_task = spawn spin_until_cancel(token, "short", 20000);
     def long_task = spawn spin_until_cancel(token, "long", 2000000);
     def fail_task = spawn fail_fast();
     def scope_timeout_task = spawn run_work("scope-timeout", 4000000);
+    def send_task = spawn send_value(chan, "ping");
+    def recv_task = spawn recv_value(chan);
 
     def short_linked = Async.link(token, short_task);
     def long_linked = Async.link(token, long_task);
@@ -83,6 +99,21 @@ task {
 
     def fail_status = join(fail_task, 10);
     print_status("fail status", fail_status);
+
+    def send_status = join(send_task, 10);
+    print_status("channel send", send_status);
+
+    def recv_status = join(recv_task, 10);
+    print_status("channel recv", recv_status);
+
+    def channel_closed = Async.close(chan);
+    print("channel closed", channel_closed, Async.recv(chan));
+
+    def async_handle = async_work("async", 20000);
+    def async_snapshot = join(async_handle, 0);
+    print_status("async snapshot", async_snapshot);
+    def async_result = await async_handle;
+    print("async result", async_result);
 
     def cancelled = Async.cancel(token, "demo scope exit");
     print("token", cancelled, Async.is_cancelled(token), Async.reason(token));

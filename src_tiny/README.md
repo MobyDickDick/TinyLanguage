@@ -7,7 +7,8 @@ features and runtime behavior.
 
 - `structured_concurrency_demo.tiny` shows a `task { ... }` scope that spawns
   work, links it to an `Async.token()`, and cancels the token to stop long
-  running tasks.
+  running tasks. It also demonstrates `join` timeout policies (status-only
+  check vs. cancel-on-timeout) and error metadata from failed tasks.
 - The demo prints status snapshots using `join(handle, timeout_ms)` and
   `join(handle, timeout_ms, cancel_on_timeout)` so you can see the `JoinStatus`
   metadata (`__tag__`, `done`, `cancelled`, `error`, and `result`) without

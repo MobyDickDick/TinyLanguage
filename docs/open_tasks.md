@@ -10,6 +10,9 @@ are grouped by area and can be tackled independently.
   verifies the supported-opcode list stays in sync with the enum.)
 - [ ] Keep the structured concurrency demo in `src_tiny/` updated as new task
   scope features land (e.g., timeout policies, new task metadata).
+- [ ] Define a safe heap-lifetime strategy (GC or ownership/borrow rules) and
+  add lints that detect use-after-free and leak-prone code paths in the
+  interpreter.
 
 ## Goals and research ideas (requested)
 

@@ -9,10 +9,11 @@ features and runtime behavior.
   work, links it to an `Async.token()`, and cancels the token to stop long
   running tasks. It also demonstrates `join` timeout policies (status-only
   check vs. cancel-on-timeout), a full `join(handle)` for a completed result,
-  and error metadata from failed tasks. It shows that `Async.link` is
-  idempotent and that linking after cancellation returns `false`. It also
-  exercises the `Async.channel` send/recv helpers and shows `async fn` + `await`
-  alongside `spawn`/`join`.
+  and error metadata from failed tasks, plus cancellation reasons surfaced via
+  `Async.reason` inside workers. It shows that `Async.link` is idempotent and
+  that linking after cancellation returns `false`. It also exercises the
+  `Async.channel` send/recv helpers and shows `async fn` + `await` alongside
+  `spawn`/`join`.
   The demo also leaves one long-running handle unlinked so the task scope
   auto-join path (which tracks all spawned handles, linked or not) can cancel
   it on timeout.

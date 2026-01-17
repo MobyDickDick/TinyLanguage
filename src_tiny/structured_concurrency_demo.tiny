@@ -61,7 +61,8 @@ fn print_status(label, status) {
 // cancel-on-timeout flag for scoped status checks. The status map includes
 // metadata fields (done/cancelled/error/result + __tag__).
 // This demo links spawned handles to a token and cancels it explicitly, plus
-// it leaves one long-running handle to be cancelled by the scope timeout.
+// it leaves one long-running handle unlinked so the scope auto-join path can
+// cancel it on timeout.
 
 print("structured concurrency demo");
 
@@ -75,6 +76,8 @@ task {
     def short_task = spawn spin_until_cancel(token, "short", 20000);
     def long_task = spawn spin_until_cancel(token, "long", 2000000);
     def fail_task = spawn fail_fast();
+    // Leave this handle unlinked to show that task scopes track all spawned
+    // handles, not just those linked to a cancellation token.
     def scope_timeout_task = spawn run_work("scope-timeout", 4000000);
     def send_task = spawn send_value(chan, "ping");
     def recv_task = spawn recv_value(chan);

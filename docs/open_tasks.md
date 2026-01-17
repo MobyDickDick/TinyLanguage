@@ -37,11 +37,13 @@ become concrete tasks.
   order so strict-mode guarantees are measurable.
 - [ ] Add static analysis checks for heap/array aliasing and bounds safety to
   guide the heap-to-array migration effort.
-- [ ] Evaluate a documentation tooling pipeline (e.g., docstrings + generated
+- [x] Evaluate a documentation tooling pipeline (e.g., docstrings + generated
   reference) to make line-level commentary manageable at scale.
 
 ## Recently completed tasks
 
+- [x] Evaluate a documentation tooling pipeline and add a deterministic docstring
+  reference generator plus usage notes for future upkeep.
 - [x] Create a Python-to-Tiny migration guide with known gaps, recommended
   refactors, and tooling automation opportunities.
 - [x] Define a manual heap-lifetime safety profile and add opt-in lints that

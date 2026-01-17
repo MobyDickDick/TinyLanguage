@@ -25,6 +25,43 @@ def test_native_code_generator_reports_not_implemented_with_location():
     assert "def x = { a: 1 };" in message
 
 
+def test_native_code_generator_reports_not_implemented_for_try_catch():
+    source = textwrap.dedent(
+        """
+        try {
+            print("boom");
+        } catch err {
+            print(err);
+        }
+        """
+    ).strip()
+
+    with pytest.raises(NotImplementedError) as excinfo:
+        run_with_native_backend(source)
+
+    message = str(excinfo.value)
+    assert "native codegen does not yet support TryCatch" in message
+    assert "line 1" in message
+    assert "try {" in message
+
+
+def test_native_code_generator_reports_not_implemented_for_destructuring():
+    source = textwrap.dedent(
+        """
+        { a, b } = new[1, 2];
+        print(a, b);
+        """
+    ).strip()
+
+    with pytest.raises(NotImplementedError) as excinfo:
+        run_with_native_backend(source)
+
+    message = str(excinfo.value)
+    assert "native codegen does not yet support DestructAssign" in message
+    assert "line 1" in message
+    assert "{ a, b } = new[1, 2];" in message
+
+
 def test_native_vm_reports_unknown_opcode_with_context():
     source = "print(1);"
     program = ProgramIR(

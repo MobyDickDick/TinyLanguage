@@ -5,9 +5,7 @@ are grouped by area and can be tackled independently.
 
 ## Next tasks (shortlist)
 
-- [ ] Define a safe heap-lifetime strategy (GC or ownership/borrow rules) and
-  add lints that detect use-after-free and leak-prone code paths in the
-  interpreter.
+- [ ] (empty)
 
 ## Goals and research ideas (requested)
 
@@ -46,6 +44,8 @@ become concrete tasks.
 
 ## Recently completed tasks
 
+- [x] Define a manual heap-lifetime safety profile and add opt-in lints that
+  detect use-after-free and leak-prone pointer rebinding in the interpreter.
 - [x] Keep the structured concurrency demo in `src_tiny/` updated as new task
   scope features land (e.g., timeout policies, new task metadata).
 - [x] Review the native backend error suite when adding new opcodes to ensure

@@ -6530,6 +6530,7 @@ parsing so later stages can assume the IR has already been validated for common
 footguns.
 """
 
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Union
 
 from tiny_language_ast import *
@@ -6575,6 +6576,120 @@ def _lint_error(
     else:
         rendered = format_error(source, span or pos, message, code=code, hint=hint)
     return TinyLangError(rendered, pos, code=code, hint=hint, span=span)
+
+
+@dataclass
+class _HeapLifetime:
+    may_live: bool = False
+    may_freed: bool = False
+
+
+def _clone_heap_states(states: Dict[str, _HeapLifetime]) -> Dict[str, _HeapLifetime]:
+    return {name: _HeapLifetime(state.may_live, state.may_freed) for name, state in states.items()}
+
+
+def _merge_heap_states(
+    left: Dict[str, _HeapLifetime],
+    right: Dict[str, _HeapLifetime],
+) -> Dict[str, _HeapLifetime]:
+    merged: Dict[str, _HeapLifetime] = {}
+    for name in set(left) | set(right):
+        left_state = left.get(name)
+        right_state = right.get(name)
+        merged[name] = _HeapLifetime(
+            may_live=bool((left_state and left_state.may_live) or (right_state and right_state.may_live)),
+            may_freed=bool((left_state and left_state.may_freed) or (right_state and right_state.may_freed)),
+        )
+    return merged
+
+
+def _is_heap_allocation_expr(expr: IR) -> bool:
+    if isinstance(expr, (New, NewLit)):
+        return True
+    if isinstance(expr, Call) and expr.name in {"new", "__new"}:
+        return True
+    return False
+
+
+def _heap_pointer_name(expr: IR) -> Optional[str]:
+    if isinstance(expr, Var):
+        return expr.name
+    return None
+
+
+def _lint_heap_expr(expr: IR, states: Dict[str, _HeapLifetime], source: Optional[str]) -> None:
+    if isinstance(expr, Bin):
+        _lint_heap_expr(expr.a, states, source)
+        _lint_heap_expr(expr.b, states, source)
+        return
+    if isinstance(expr, Call):
+        for arg in expr.args:
+            _lint_heap_expr(arg, states, source)
+        if expr.name in {"heap_get", "heap_set"} and expr.args:
+            ptr_name = _heap_pointer_name(expr.args[0])
+            if ptr_name:
+                state = states.get(ptr_name)
+                if state and state.may_freed:
+                    raise _lint_error(
+                        source,
+                        expr,
+                        f"use-after-free: pointer {ptr_name} may have been deleted before {expr.name}",
+                        code="E017",
+                        hint="Avoid accessing heap pointers after delete or reallocate them first.",
+                    )
+        if expr.name == "delete" and expr.args:
+            ptr_name = _heap_pointer_name(expr.args[0])
+            if ptr_name:
+                state = states.get(ptr_name)
+                if state and state.may_freed:
+                    raise _lint_error(
+                        source,
+                        expr,
+                        f"use-after-free: pointer {ptr_name} may have already been deleted",
+                        code="E017",
+                        hint="Ensure each heap pointer is deleted at most once.",
+                    )
+                states[ptr_name] = _HeapLifetime(may_live=False, may_freed=True)
+        return
+    if isinstance(expr, Spawn):
+        for arg in expr.args:
+            _lint_heap_expr(arg, states, source)
+        return
+    if isinstance(expr, Await):
+        _lint_heap_expr(expr.expr, states, source)
+        return
+    if isinstance(expr, New):
+        _lint_heap_expr(expr.size, states, source)
+        return
+    if isinstance(expr, NewLit):
+        for item in expr.items:
+            _lint_heap_expr(item, states, source)
+        return
+    if isinstance(expr, Field):
+        _lint_heap_expr(expr.obj, states, source)
+        return
+    if isinstance(expr, MethodCall):
+        _lint_heap_expr(expr.obj, states, source)
+        for arg in expr.args:
+            _lint_heap_expr(arg, states, source)
+        return
+    if isinstance(expr, ClassNew):
+        for _, value in expr.init:
+            _lint_heap_expr(value, states, source)
+        return
+    if isinstance(expr, ObjLit):
+        for _, value in expr.fields:
+            _lint_heap_expr(value, states, source)
+        return
+    if isinstance(expr, Match):
+        _lint_heap_expr(expr.expr, states, source)
+        for case in expr.cases:
+            _lint_heap_expr(case.body, states, source)
+        return
+    if isinstance(expr, VariantCtor):
+        for _, value in expr.fields:
+            _lint_heap_expr(value, states, source)
+        return
 
 
 def _collect_names_in_expr(e: IR, names: Set[str]) -> None:
@@ -7573,6 +7688,128 @@ def lint_unreachable_code(stmts: List[IR], source: Optional[str] = None) -> None
                 terminated = True
 
     visit_block(stmts)
+
+
+def lint_heap_lifetimes(stmts: List[IR], source: Optional[str] = None) -> None:
+    """Lint for heap pointer use-after-free and leak-prone overwrites."""
+
+    def visit_block(block: List[IR], states: Dict[str, _HeapLifetime]) -> None:
+        for st in block:
+            if isinstance(st, (Let, Assign)):
+                _lint_heap_expr(st.expr, states, source)
+                if _is_heap_allocation_expr(st.expr):
+                    existing = states.get(st.name)
+                    if existing and existing.may_live:
+                        raise _lint_error(
+                            source,
+                            st,
+                            f"heap pointer {st.name} is overwritten without delete",
+                            code="E018",
+                            hint="Delete the previous heap allocation before rebinding this variable.",
+                        )
+                    states[st.name] = _HeapLifetime(may_live=True, may_freed=False)
+                else:
+                    existing = states.get(st.name)
+                    if existing and existing.may_live:
+                        raise _lint_error(
+                            source,
+                            st,
+                            f"heap pointer {st.name} is dropped without delete",
+                            code="E018",
+                            hint="Delete the heap allocation before assigning a non-pointer value.",
+                        )
+                    if existing:
+                        states.pop(st.name, None)
+            elif isinstance(st, FieldAssign):
+                _lint_heap_expr(st.obj, states, source)
+                _lint_heap_expr(st.expr, states, source)
+            elif isinstance(st, Print):
+                for expr in st.exprs:
+                    _lint_heap_expr(expr, states, source)
+            elif isinstance(st, CallStmt):
+                for arg in st.args:
+                    _lint_heap_expr(arg, states, source)
+                if st.name in {"heap_get", "heap_set"} and st.args:
+                    ptr_name = _heap_pointer_name(st.args[0])
+                    if ptr_name:
+                        state = states.get(ptr_name)
+                        if state and state.may_freed:
+                            raise _lint_error(
+                                source,
+                                st,
+                                f"use-after-free: pointer {ptr_name} may have been deleted before {st.name}",
+                                code="E017",
+                                hint="Avoid accessing heap pointers after delete or reallocate them first.",
+                            )
+                if st.name == "delete" and st.args:
+                    ptr_name = _heap_pointer_name(st.args[0])
+                    if ptr_name:
+                        state = states.get(ptr_name)
+                        if state and state.may_freed:
+                            raise _lint_error(
+                                source,
+                                st,
+                                f"use-after-free: pointer {ptr_name} may have already been deleted",
+                                code="E017",
+                                hint="Ensure each heap pointer is deleted at most once.",
+                            )
+                        states[ptr_name] = _HeapLifetime(may_live=False, may_freed=True)
+            elif isinstance(st, If):
+                _lint_heap_expr(st.cond, states, source)
+                then_states = _clone_heap_states(states)
+                els_states = _clone_heap_states(states)
+                visit_block(st.then, then_states)
+                visit_block(st.els, els_states)
+                merged = _merge_heap_states(then_states, els_states)
+                states.clear()
+                states.update(merged)
+            elif isinstance(st, While):
+                _lint_heap_expr(st.cond, states, source)
+                body_states = _clone_heap_states(states)
+                visit_block(st.body, body_states)
+                merged = _merge_heap_states(states, body_states)
+                states.clear()
+                states.update(merged)
+            elif isinstance(st, Switch):
+                _lint_heap_expr(st.expr, states, source)
+                case_states: List[Dict[str, _HeapLifetime]] = []
+                for case in st.cases:
+                    if case.value is not None:
+                        _lint_heap_expr(case.value, states, source)
+                    branch_states = _clone_heap_states(states)
+                    visit_block(case.body, branch_states)
+                    case_states.append(branch_states)
+                if case_states:
+                    merged = case_states[0]
+                    for branch_states in case_states[1:]:
+                        merged = _merge_heap_states(merged, branch_states)
+                    states.clear()
+                    states.update(merged)
+            elif isinstance(st, TryCatch):
+                body_states = _clone_heap_states(states)
+                handler_states = _clone_heap_states(states)
+                visit_block(st.body, body_states)
+                visit_block(st.handler, handler_states)
+                merged = _merge_heap_states(body_states, handler_states)
+                states.clear()
+                states.update(merged)
+            elif isinstance(st, TaskBlock):
+                visit_block(st.body, states)
+            elif isinstance(st, Return):
+                _lint_heap_expr(st.expr, states, source)
+            elif isinstance(st, DestructAssign):
+                _lint_heap_expr(st.expr, states, source)
+            elif isinstance(st, Namespace):
+                visit_block(st.body, {})
+            elif isinstance(st, Fn):
+                visit_block(st.body, {})
+            elif isinstance(st, MethodDef):
+                visit_block(st.body, {})
+            elif isinstance(st, ClassDef):
+                for method in st.methods:
+                    visit_block(method.body, {})
+
+    visit_block(stmts, {})
 
 
 def lint_no_consecutive_definitions(stmts: List[IR], source: Optional[str] = None) -> None:
@@ -10478,6 +10715,7 @@ if "lint_import_style" not in globals():
         lint_bare_call_results,
         lint_destruct_call_outputs,
         lint_fn_params_used,
+        lint_heap_lifetimes,
         lint_import_style,
         lint_locals_used,
         lint_method_params_used,
@@ -10977,6 +11215,8 @@ def _parse_and_lint(
     if not repl_mode:
         lint_locals_used(stmts, src)
     lint_unreachable_code(stmts, src)
+    if os.environ.get("TINY_LINT_HEAP", "").strip().lower() in {"1", "true", "yes", "on"}:
+        lint_heap_lifetimes(stmts, src)
     signatures = _collect_function_signatures(stmts)
 
     def lint_nested(block: List["IR"]) -> None:

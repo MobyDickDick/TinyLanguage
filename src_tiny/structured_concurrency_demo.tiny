@@ -21,7 +21,11 @@ fn spin_until_cancel(token, label, limit) {
     def i = 0;
     while (i < limit) {
         if (Async.is_cancelled(token)) {
-            return label + ":cancelled";
+            def reason = Async.reason(token);
+            if (reason == Null) {
+                reason = "no-reason";
+            }
+            return label + ":cancelled:" + reason;
         }
         i = i + 1;
     }

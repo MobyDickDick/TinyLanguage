@@ -6,9 +6,45 @@ are grouped by area and can be tackled independently.
 ## Next tasks (shortlist)
 
 - [ ] Review the native backend error suite when adding new opcodes to ensure
-  diagnostics stay aligned with the interpreter.
+  diagnostics stay aligned with the interpreter. (Started: added a check that
+  verifies the supported-opcode list stays in sync with the enum.)
 - [ ] Keep the structured concurrency demo in `src_tiny/` updated as new task
   scope features land (e.g., timeout policies, new task metadata).
+
+## Goals and research ideas (requested)
+
+These items are exploratory and may need deeper design/prototyping before they
+become concrete tasks.
+
+- [ ] Convert every Python program in the repo into a Tiny program, keeping
+  parity snapshots and documenting any Tiny-only rewrites needed for features
+  that do not map 1:1.
+- [ ] Document every program line (Tiny + Python) with both high-level intent
+  and line-level rationale; rely on structured cross-references when repeating
+  patterns.
+- [ ] Minimize heap usage by preferring fixed-size arrays or stack-friendly
+  constructs where semantics allow it (requires a clear ownership/mutation model
+  to avoid accidental aliasing).
+- [ ] Re-evaluate `{}` usage: replace unordered set-like literals with ordered
+  tuples `()` where elements are not indexed, and document the semantic
+  distinction explicitly in the language spec.
+- [ ] Explore math-oriented syntax/notation (tuple-based block forms, formula
+  syntax, stack-edit or LaTeX-like constructs) with careful incremental trials
+  to avoid destabilizing readability or tooling.
+- [ ] Establish a "strict-by-default" safety profile to reduce unintended side
+  effects and runtime errors (explicit mutability, purity annotations, stricter
+  effect boundaries, and safer defaults in the stdlib).
+
+## Additional suggested tasks
+
+- [ ] Define a formal, testable semantics suite for side effects and evaluation
+  order so strict-mode guarantees are measurable.
+- [ ] Create a Python-to-Tiny migration guide with known gaps, recommended
+  refactors, and tooling automation opportunities.
+- [ ] Add static analysis checks for heap/array aliasing and bounds safety to
+  guide the heap-to-array migration effort.
+- [ ] Evaluate a documentation tooling pipeline (e.g., docstrings + generated
+  reference) to make line-level commentary manageable at scale.
 
 ## Recently completed tasks
 

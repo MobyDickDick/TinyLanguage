@@ -231,7 +231,7 @@ def test_json_stringify_roundtrip_collections(run_tiny_source):
     out = run_tiny_source(
         """
         def data = Map.new();
-        def _nums = Map.set(data, "numbers", new[1, 2, 3]);
+        def _nums = Map.set(data, "numbers", new["one", "two", "three"]);
         def _tags = Map.set(data, "tags", Set.from_list(new["b", "a"]));
         def _queue = Map.set(data, "queue", Deque.new(new["x", "y"]));
         def text = JSON.stringify(data);

@@ -60,6 +60,12 @@ fn print_status(label, status) {
     );
 }
 
+fn cancel_handle(handle) {
+    def cancelled = cancel(handle);
+    print("manual cancel", cancelled);
+    return cancelled;
+}
+
 // Task blocks automatically join outstanding handles on scope exit with a
 // timeout (see TINYLANG_TASK_SCOPE_TIMEOUT_MS). Join also supports a
 // cancel-on-timeout flag for scoped status checks. The status map includes
@@ -85,6 +91,7 @@ task {
     def scope_timeout_task = spawn run_work("scope-timeout", 4000000);
     def send_task = spawn send_value(chan, "ping");
     def recv_task = spawn recv_value(chan);
+    def manual_task = spawn spin_until_cancel(token, "manual", 5000000);
 
     def short_linked = Async.link(token, short_task);
     def long_linked = Async.link(token, long_task);
@@ -105,6 +112,11 @@ task {
     def long_cancel = join(long_task, 1, true);
     print_status("long cancel", long_cancel);
 
+    def manual_cancelled = cancel_handle(manual_task);
+    print("manual cancel state", manual_cancelled);
+    def manual_status = join(manual_task, 10);
+    print_status("manual status", manual_status);
+
     def fail_status = join(fail_task, 10);
     print_status("fail status", fail_status);
 
@@ -115,7 +127,8 @@ task {
     print_status("channel recv", recv_status);
 
     def channel_closed = Async.close(chan);
-    print("channel closed", channel_closed, Async.recv(chan));
+    def channel_closed_again = Async.close(chan);
+    print("channel closed", channel_closed, channel_closed_again, Async.recv(chan));
 
     def async_handle = async_work("async", 20000);
     def async_snapshot = join(async_handle, 0);

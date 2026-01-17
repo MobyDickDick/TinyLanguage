@@ -5,8 +5,6 @@ are grouped by area and can be tackled independently.
 
 ## Next tasks (shortlist)
 
-- [ ] Keep the structured concurrency demo in `src_tiny/` updated as new task
-  scope features land (e.g., timeout policies, new task metadata).
 - [ ] Define a safe heap-lifetime strategy (GC or ownership/borrow rules) and
   add lints that detect use-after-free and leak-prone code paths in the
   interpreter.
@@ -48,6 +46,8 @@ become concrete tasks.
 
 ## Recently completed tasks
 
+- [x] Keep the structured concurrency demo in `src_tiny/` updated as new task
+  scope features land (e.g., timeout policies, new task metadata).
 - [x] Review the native backend error suite when adding new opcodes to ensure
   diagnostics stay aligned with the interpreter. (Started: added a check that
   verifies the supported-opcode list stays in sync with the enum.)

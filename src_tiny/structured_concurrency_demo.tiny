@@ -24,6 +24,8 @@ fn spin_until_cancel(token, label, limit) {
 
 print("structured concurrency demo");
 
+def scoped_handle = Null;
+
 task {
     def token = Async.token();
 
@@ -49,4 +51,12 @@ task {
 
     def short_final = join(short_task, 50);
     print("short final", short_final.done, short_final.cancelled, short_final.result);
+
+    scoped_handle = spawn spin_until_cancel(token, "scope", 5000000);
+    def _unused3 = Async.link(token, scoped_handle);
+    def scoped_status = join(scoped_handle, 0);
+    print("scope snapshot", scoped_status.done, scoped_status.cancelled, scoped_status.result);
 }
+
+def scope_exit_status = join(scoped_handle, 0);
+print("scope exit", scope_exit_status.done, scope_exit_status.cancelled, scope_exit_status.error);

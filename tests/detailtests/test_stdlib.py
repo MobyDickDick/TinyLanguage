@@ -225,3 +225,21 @@ def test_random_file_and_json_helpers(run_tiny_source, tmp_path):
     assert lines[0].isdigit()
     assert lines[1] in {"rot", "gruen", "blau"}
     assert lines[2:] == ["true", "true", "true", "false"]
+
+
+def test_json_stringify_roundtrip_collections(run_tiny_source):
+    out = run_tiny_source(
+        """
+        def data = Map.new();
+        def _nums = Map.set(data, "numbers", new["one", "two", "three"]);
+        def _tags = Map.set(data, "tags", Set.from_list(new["b", "a"]));
+        def _queue = Map.set(data, "queue", Deque.new(new["x", "y"]));
+        def text = JSON.stringify(data);
+        print(text);
+        def parsed = JSON.parse(text);
+        print(JSON.stringify(parsed));
+        """,
+    )
+
+    lines = out.strip().split("\n")
+    assert lines[0] == lines[1]

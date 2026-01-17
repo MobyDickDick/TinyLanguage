@@ -1157,6 +1157,18 @@ class _StdLibRegistrar:
 
     def _json_stringify(self, value: Any) -> str:
         """Serialize Tiny values (including heap pointers) to JSON."""
+        seen: set[tuple[str, int]] = set()
+
+        def _mark_seen(tag: str, key: int) -> tuple[str, int]:
+            marker = (tag, key)
+            if marker in seen:
+                raise RuntimeError("cyclic value cannot be stringified to JSON")
+            seen.add(marker)
+            return marker
+
+        def _unmark_seen(marker: tuple[str, int]) -> None:
+            seen.remove(marker)
+
         def convert(val: Any) -> Any:
             if isinstance(val, bool):
                 return val
@@ -1169,20 +1181,42 @@ class _StdLibRegistrar:
                 return val
             if isinstance(val, int) and val in self.runtime.heap:
                 obj = self.runtime.heap[val]
-                if isinstance(obj, list):
-                    return [convert(item) for item in obj]
-                if isinstance(obj, dict):
-                    return {str(k): convert(v) for k, v in obj.items()}
-                if isinstance(obj, (deque, set)):
-                    return [convert(item) for item in list(obj)]
+                marker = _mark_seen("heap", val)
+                try:
+                    if isinstance(obj, list):
+                        return [convert(item) for item in obj]
+                    if isinstance(obj, dict):
+                        return {str(k): convert(v) for k, v in obj.items()}
+                    if isinstance(obj, deque):
+                        return [convert(item) for item in list(obj)]
+                    if isinstance(obj, set):
+                        return [convert(item) for item in sorted(obj, key=str)]
+                finally:
+                    _unmark_seen(marker)
             if isinstance(val, list):
-                return [convert(item) for item in val]
+                marker = _mark_seen("list", id(val))
+                try:
+                    return [convert(item) for item in val]
+                finally:
+                    _unmark_seen(marker)
             if isinstance(val, dict):
-                return {str(k): convert(v) for k, v in val.items()}
+                marker = _mark_seen("dict", id(val))
+                try:
+                    return {str(k): convert(v) for k, v in val.items()}
+                finally:
+                    _unmark_seen(marker)
             if isinstance(val, deque):
-                return [convert(item) for item in list(val)]
+                marker = _mark_seen("deque", id(val))
+                try:
+                    return [convert(item) for item in list(val)]
+                finally:
+                    _unmark_seen(marker)
             if isinstance(val, set):
-                return [convert(item) for item in sorted(val, key=str)]
+                marker = _mark_seen("set", id(val))
+                try:
+                    return [convert(item) for item in sorted(val, key=str)]
+                finally:
+                    _unmark_seen(marker)
             if val is None:
                 return None
             if isinstance(val, (str, int, float, bool)):

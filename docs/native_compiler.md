@@ -48,6 +48,33 @@ This draft outlines the target architecture for an alternative backend that exec
 - **LLVM executable scope**: The LLVM backend is intentionally narrow (numeric values, basic control flow, simple functions, and `print`). Expect `NotImplementedError` for anything outside that subset. Use `--llvm-opt-level` and `--opt-level` to tune LLVM/clang optimization profiles.
   For a concise list of open gaps and next steps in the LLVM emitter, see the checklist under **LLVM-basierte Pipeline** in [`docs/expansion_roadmap.md`](expansion_roadmap.md).
 
+### Module import constraints (native + LLVM)
+
+The native VM and LLVM pipeline share the same module resolver, but the LLVM
+code generator needs import targets to be statically known so it can wire the
+module init functions into the emitted IR. That means:
+
+- **Import paths must be literal module paths**: the module string must be known
+  at compile time and is parsed from identifiers/dots (not runtime expressions).
+  `import math.trig;` works, while building a module name at runtime is not
+  supported in the native/LLVM pipeline.
+- **Relative imports remain supported** inside modules (leading dots are resolved
+  against the caller namespace), but the path still needs to be literal.
+- **Python interop imports require string literals**: `Python.import_module`
+  and the internal `__import` call only accept literal module names in the LLVM
+  pipeline; dynamic expressions raise `NotImplementedError`.
+
+Allowed module literals include:
+
+- `import math.trig;`
+- `import stdlib.collections as collections;`
+- `import .helpers;`
+- `import ..shared.math as math;`
+- `def json = Python.import_module("json");`
+
+If you need dynamic module selection (e.g., building a name string at runtime),
+run the interpreter backend instead of `--native-backend`/`--emit-llvm`.
+
 ## CLI workflow at a glance
 
 1. **Smoke run with an example program**: `PYTHONPATH=src python src/tiny_language.py --native-backend src_tiny/demo.tiny` checks whether parser, codegen, and VM cooperate.

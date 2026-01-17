@@ -7,7 +7,7 @@ are grouped by area and can be tackled independently.
 
 - [x] Add regression coverage for `JSON.stringify` round-tripping heap-backed
   collections (`Map`, `Set`, `Deque`) and nested lists.
-- [ ] Expand CLI smoke tests to include failure cases for `File.remove` and
+- [x] Expand CLI smoke tests to include failure cases for `File.remove` and
   missing-path diagnostics in stdlib helpers.
 - [ ] Add snapshot tests for LSP `hover`/`completion` flows in the self-hosted
   Tiny language server entry points.

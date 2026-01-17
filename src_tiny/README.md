@@ -9,7 +9,8 @@ features and runtime behavior.
   work, links it to an `Async.token()`, and cancels the token to stop long
   running tasks. It also demonstrates `join` timeout policies (status-only
   check vs. cancel-on-timeout), a full `join(handle)` for a completed result,
-  and error metadata from failed tasks.
+  and error metadata from failed tasks. The demo also leaves one long-running
+  handle unlinked so the task scope timeout can cancel it automatically.
 - The demo prints status snapshots using `join(handle, timeout_ms)` and
   `join(handle, timeout_ms, cancel_on_timeout)` so you can see the `JoinStatus`
   metadata (`__tag__`, `done`, `cancelled`, `error`, and `result`) without

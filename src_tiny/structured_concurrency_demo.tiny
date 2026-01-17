@@ -7,6 +7,11 @@ fn busy_wait(steps) {
     }
 }
 
+fn run_work(label, steps) {
+    busy_wait(steps);
+    return label + ":complete";
+}
+
 fn spin_until_cancel(token, label, limit) {
     def i = 0;
     while (i < limit) {
@@ -42,11 +47,13 @@ fn print_status(label, status) {
 // timeout (see TINYLANG_TASK_SCOPE_TIMEOUT_MS). Join also supports a
 // cancel-on-timeout flag for scoped status checks. The status map includes
 // metadata fields (done/cancelled/error/result + __tag__).
-// This demo links spawned handles to a token and cancels it explicitly.
+// This demo links spawned handles to a token and cancels it explicitly, plus
+// it leaves one long-running handle to be cancelled by the scope timeout.
 
 print("structured concurrency demo");
 
 def scoped_handle = Null;
+def scope_timeout_handle = Null;
 
 task {
     def token = Async.token();
@@ -54,6 +61,7 @@ task {
     def short_task = spawn spin_until_cancel(token, "short", 20000);
     def long_task = spawn spin_until_cancel(token, "long", 2000000);
     def fail_task = spawn fail_fast();
+    def scope_timeout_task = spawn run_work("scope-timeout", 4000000);
 
     def short_linked = Async.link(token, short_task);
     def long_linked = Async.link(token, long_task);
@@ -89,7 +97,14 @@ task {
     def _unused3 = Async.link(token, scoped_handle);
     def scoped_status = join(scoped_handle, 0);
     print_status("scope snapshot", scoped_status);
+
+    scope_timeout_handle = scope_timeout_task;
+    def scope_timeout_snapshot = join(scope_timeout_task, 0);
+    print_status("scope timeout snapshot", scope_timeout_snapshot);
 }
 
 def scope_exit_status = join(scoped_handle, 0);
 print_status("scope exit", scope_exit_status);
+
+def scope_timeout_status = join(scope_timeout_handle, 50);
+print_status("scope timeout exit", scope_timeout_status);

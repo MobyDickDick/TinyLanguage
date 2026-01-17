@@ -250,3 +250,21 @@ def test_native_vm_reports_unknown_opcode_without_source_context():
     assert "Supported opcodes" in message
     assert "line" not in message
     assert "col" not in message
+
+
+def test_native_vm_error_lists_all_supported_opcodes():
+    program = ProgramIR(
+        entry=[Instruction(op="UNKNOWN_OP")],
+        functions={},
+    )
+    vm = NativeVM(source=None)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        vm.run(program)
+
+    message = str(excinfo.value)
+    supported_marker = "Supported opcodes: "
+    assert supported_marker in message
+    supported_text = message.split(supported_marker, 1)[1].rstrip(".")
+    supported_list = [entry.strip() for entry in supported_text.split(",")]
+    assert supported_list == [op.value for op in Opcode]

@@ -136,7 +136,7 @@ def test_tl_stdlib_json_module_import(run_tiny_source):
         """,
     )
 
-    assert out == '1\n2\n{"a": 1, "b": [2, 3]}\n'
+    assert out == '1\n2\n{"a":1,"b":[2,3]}\n'
 
 
 def test_tl_stdlib_os_and_pathlib_module_import(run_tiny_source, tmp_path):

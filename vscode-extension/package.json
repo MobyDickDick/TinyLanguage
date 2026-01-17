@@ -46,6 +46,10 @@
         "title": "TinyLanguage: Run Active File"
       },
       {
+        "command": "tinylanguage.runFileNative",
+        "title": "TinyLanguage: Run Active File (Native Backend)"
+      },
+      {
         "command": "tinylanguage.formatDocument",
         "title": "TinyLanguage: Format Document"
       },
@@ -71,6 +75,11 @@
           "type": "string",
           "default": "${workspaceFolder}/src/tiny_language.py",
           "description": "Path to tiny_language.py for running the REPL or executing files."
+        },
+        "tinylanguage.cliPath": {
+          "type": "string",
+          "default": "${workspaceFolder}/src/tiny_language_cli.py",
+          "description": "Path to tiny_language_cli.py for advanced backend options (native, LLVM)."
         },
         "tinylanguage.debugLogPath": {
           "type": "string",

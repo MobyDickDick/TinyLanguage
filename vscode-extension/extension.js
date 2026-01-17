@@ -55,6 +55,34 @@ function getRuntimePath() {
   return resolveWorkspacePath(rawPath);
 }
 
+function getCliPath() {
+  const config = vscode.workspace.getConfiguration('tinylanguage');
+  const rawPath = config.get('cliPath') || '';
+  if (rawPath) {
+    return resolveWorkspacePath(rawPath);
+  }
+  const runtimePath = getRuntimePath();
+  if (runtimePath) {
+    if (runtimePath.endsWith('tiny_language_cli.py')) {
+      return runtimePath;
+    }
+    if (runtimePath.endsWith('tiny_language.py') || runtimePath.endsWith('tiny_language_stitched.py')) {
+      const candidate = runtimePath.replace(/tiny_language(?:_stitched)?\.py$/, 'tiny_language_cli.py');
+      if (fs.existsSync(candidate)) {
+        return candidate;
+      }
+    }
+  }
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (workspaceFolder) {
+    const candidate = path.join(workspaceFolder, 'src', 'tiny_language_cli.py');
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return '';
+}
+
 function shouldDelegatePythonDebugging(config) {
   const setting = vscode.workspace.getConfiguration('tinylanguage');
   if (config.usePythonExtension !== undefined) {
@@ -98,6 +126,14 @@ function findBundledRuntime() {
     path.join(__dirname, 'src', 'tiny_language_stitched.py'),
   ];
   return runtimeCandidates.find((candidate) => fs.existsSync(candidate)) || '';
+}
+
+function findBundledCli() {
+  const cliCandidates = [
+    path.join(__dirname, '..', 'src', 'tiny_language_cli.py'),
+    path.join(__dirname, 'src', 'tiny_language_cli.py'),
+  ];
+  return cliCandidates.find((candidate) => fs.existsSync(candidate)) || '';
 }
 
 function ensureDirectoryForFile(filePath, output, label) {
@@ -364,6 +400,36 @@ function registerRunFile(output) {
     const terminal = vscode.window.createTerminal({ name: 'TinyLanguage Run' });
     terminal.show(true);
     terminal.sendText(`${pythonExecutable} ${runtimePath} ${document.uri.fsPath}`);
+  });
+}
+
+function registerRunFileNative(output) {
+  return vscode.commands.registerCommand('tinylanguage.runFileNative', () => {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || editor.document.languageId !== 'tinylanguage') {
+      vscode.window.showInformationMessage('Open a TinyLanguage file to run it with the native backend.');
+      return;
+    }
+    const document = editor.document;
+    if (document.isDirty) {
+      document.save();
+    }
+    const pythonExecutable = getPythonExecutable();
+    let cliPath = getCliPath();
+    if (!cliPath) {
+      cliPath = findBundledCli();
+    }
+    if (!cliPath) {
+      vscode.window.showWarningMessage('TinyLanguage CLI not found. Set tinylanguage.cliPath to tiny_language_cli.py.');
+      return;
+    }
+    logDebug(
+      output,
+      `runFileNative: using python='${pythonExecutable}' cli='${cliPath}' program='${document.uri.fsPath}'`,
+    );
+    const terminal = vscode.window.createTerminal({ name: 'TinyLanguage Native Run' });
+    terminal.show(true);
+    terminal.sendText(`${pythonExecutable} ${cliPath} --backend native ${document.uri.fsPath}`);
   });
 }
 
@@ -785,6 +851,7 @@ function activate(context) {
   const definitions = registerDefinitions(output);
   const repl = registerRepl(output);
   const runFile = registerRunFile(output);
+  const runFileNative = registerRunFileNative(output);
   const [debugAdapterCommand, debugAdapterFactory] = registerDebugAdapterExecutable(output);
   const debugConfigProvider = registerDebugConfigurations(output);
   const refreshCommand = registerRefreshDiagnostics(output, collection, refresh);
@@ -798,6 +865,7 @@ function activate(context) {
     definitions,
     repl,
     runFile,
+    runFileNative,
     debugAdapterCommand,
     debugAdapterFactory,
     debugConfigProvider,

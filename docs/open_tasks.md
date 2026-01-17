@@ -5,6 +5,15 @@ are grouped by area and can be tackled independently.
 
 ## Next tasks (shortlist)
 
+- [ ] Add a focused regression suite for native backend error diagnostics,
+  covering `NotImplementedError` cases and unknown opcode handling.
+- [ ] Document module import constraints for the native/LLVM pipeline in
+  `docs/native_compiler.md`, including examples of allowed module literals.
+- [ ] Add a Tiny demo that exercises structured concurrency task scopes and
+  cancellation tokens, plus a short README in `src_tiny/` describing the flow.
+
+## Recently completed tasks
+
 - [x] Add regression coverage for `JSON.stringify` round-tripping heap-backed
   collections (`Map`, `Set`, `Deque`) and nested lists.
 - [x] Expand CLI smoke tests to include failure cases for `File.remove` and

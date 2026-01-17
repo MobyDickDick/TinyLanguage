@@ -5,7 +5,7 @@ import pytest
 from native_ir import Instruction, ProgramIR
 from native_vm import NativeVM
 from tiny_errors import SourcePos, SourceSpan
-from tiny_language import run_with_native_backend
+from tiny_language import NativeCodeGenerator, _parse_and_lint, run_with_native_backend
 
 
 def test_native_code_generator_reports_not_implemented_with_location():
@@ -60,6 +60,46 @@ def test_native_code_generator_reports_not_implemented_for_destructuring():
     assert "native codegen does not yet support DestructAssign" in message
     assert "line 1" in message
     assert "{ a, b } = new[1, 2];" in message
+
+
+def test_native_code_generator_reports_not_implemented_for_type_definitions():
+    source = textwrap.dedent(
+        """
+        type Person { name: string; }
+        print(1);
+        """
+    ).strip()
+
+    stmts = _parse_and_lint(source)
+
+    with pytest.raises(NotImplementedError) as excinfo:
+        NativeCodeGenerator(allow_match=False, source=source).compile_program(stmts)
+
+    message = str(excinfo.value)
+    assert "native codegen does not yet support type definitions" in message
+    assert "line 1" in message
+    assert "type Person { name: string; }" in message
+
+
+def test_native_code_generator_reports_not_implemented_for_match():
+    source = textwrap.dedent(
+        """
+        def out = match foo {
+            case _: 1;
+        };
+        print(out);
+        """
+    ).strip()
+
+    stmts = _parse_and_lint(source)
+
+    with pytest.raises(NotImplementedError) as excinfo:
+        NativeCodeGenerator(allow_match=False, source=source).compile_program(stmts)
+
+    message = str(excinfo.value)
+    assert "native codegen does not yet support match expressions" in message
+    assert "line 1" in message
+    assert "match foo" in message
 
 
 def test_native_vm_reports_unknown_opcode_with_context():

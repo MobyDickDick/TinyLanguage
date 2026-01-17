@@ -1223,7 +1223,7 @@ class _StdLibRegistrar:
                 return val
             raise RuntimeError(f"value of type {type(val).__name__} cannot be stringified to JSON")
 
-        return json.dumps(convert(value))
+        return json.dumps(convert(value), separators=(",", ":"))
 
     # -----------------------------------------------------------------------
     # Async namespace (tokens, cancellation, channels)

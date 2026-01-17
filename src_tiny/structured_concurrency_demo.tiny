@@ -19,7 +19,9 @@ fn spin_until_cancel(token, label, limit) {
 }
 
 // Task blocks automatically join outstanding handles on scope exit with a
-// timeout. Join also supports a cancel-on-timeout flag for scoped status checks.
+// timeout (see TINYLANG_TASK_SCOPE_TIMEOUT_MS). Join also supports a
+// cancel-on-timeout flag for scoped status checks. The status map includes
+// metadata fields (done/cancelled/error/result + __tag__).
 // This demo links spawned handles to a token and cancels it explicitly.
 
 print("structured concurrency demo");
@@ -38,10 +40,16 @@ task {
     busy_wait(50000);
 
     def short_status = join(short_task, 0);
-    print("short status", short_status.done, short_status.cancelled, short_status.result);
+    print(
+        "short status",
+        short_status.__tag__,
+        short_status.done,
+        short_status.cancelled,
+        short_status.result,
+    );
 
     def long_status = join(long_task, 1, true);
-    print("long status", long_status.done, long_status.cancelled, long_status.error);
+    print("long status", long_status.__tag__, long_status.done, long_status.cancelled, long_status.error);
 
     def cancelled = Async.cancel(token, "demo scope exit");
     print("token", cancelled, Async.is_cancelled(token), Async.reason(token));

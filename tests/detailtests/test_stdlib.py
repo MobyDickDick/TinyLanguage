@@ -266,3 +266,32 @@ def test_json_stringify_roundtrip_nested_collections(run_tiny_source):
     lines = out.strip().split("\n")
     assert lines[0] == '[{"k1":"one","k2":"two"},["a","b"],["x","y"],[["alpha","beta"],["gamma",["delta","epsilon"]]]]'
     assert lines[0] == lines[1]
+
+
+def test_json_stringify_roundtrip_heap_nested_lists(run_tiny_source):
+    out = run_tiny_source(
+        """
+        def inner = Map.new();
+        def _a = Map.set(inner, "a", 101);
+        def _b = Map.set(inner, "b", new[201, 202]);
+        def flags = Set.from_list(new["on", "off"]);
+        def queue = Deque.new(new["left", "right"]);
+        def nested = new[new[301, 302], new[new[303], new[304, 305]]];
+        def data = Map.new();
+        def _inner = Map.set(data, "inner", inner);
+        def _flags = Map.set(data, "flags", flags);
+        def _queue = Map.set(data, "queue", queue);
+        def _nested = Map.set(data, "nested", nested);
+        def text = JSON.stringify(data);
+        print(text);
+        def parsed = JSON.parse(text);
+        print(JSON.stringify(parsed));
+        """,
+    )
+
+    lines = out.strip().split("\n")
+    assert (
+        lines[0]
+        == '{"inner":{"a":101,"b":[201,202]},"flags":["off","on"],"queue":["left","right"],"nested":[[301,302],[[303],[304,305]]]}'
+    )
+    assert lines[0] == lines[1]

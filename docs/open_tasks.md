@@ -35,8 +35,6 @@ become concrete tasks.
 
 - [ ] Define a formal, testable semantics suite for side effects and evaluation
   order so strict-mode guarantees are measurable.
-- [ ] Create a Python-to-Tiny migration guide with known gaps, recommended
-  refactors, and tooling automation opportunities.
 - [ ] Add static analysis checks for heap/array aliasing and bounds safety to
   guide the heap-to-array migration effort.
 - [ ] Evaluate a documentation tooling pipeline (e.g., docstrings + generated
@@ -44,6 +42,8 @@ become concrete tasks.
 
 ## Recently completed tasks
 
+- [x] Create a Python-to-Tiny migration guide with known gaps, recommended
+  refactors, and tooling automation opportunities.
 - [x] Define a manual heap-lifetime safety profile and add opt-in lints that
   detect use-after-free and leak-prone pointer rebinding in the interpreter.
 - [x] Keep the structured concurrency demo in `src_tiny/` updated as new task

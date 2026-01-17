@@ -62,6 +62,41 @@ def test_native_code_generator_reports_not_implemented_for_destructuring():
     assert "{ a, b } = new[1, 2];" in message
 
 
+def test_native_code_generator_reports_not_implemented_for_type_definitions():
+    source = textwrap.dedent(
+        """
+        type Person = { name: string };
+        def p = 1;
+        """
+    ).strip()
+
+    with pytest.raises(NotImplementedError) as excinfo:
+        run_with_native_backend(source)
+
+    message = str(excinfo.value)
+    assert "native codegen does not yet support type definitions" in message
+    assert "line 1" in message
+    assert "type Person = { name: string };" in message
+
+
+def test_native_code_generator_reports_not_implemented_for_match():
+    source = textwrap.dedent(
+        """
+        match 1 {
+            case 1: print(1);
+        }
+        """
+    ).strip()
+
+    with pytest.raises(NotImplementedError) as excinfo:
+        run_with_native_backend(source)
+
+    message = str(excinfo.value)
+    assert "native codegen does not yet support match expressions" in message
+    assert "line 1" in message
+    assert "match 1" in message
+
+
 def test_native_vm_reports_unknown_opcode_with_context():
     source = "print(1);"
     program = ProgramIR(

@@ -9,13 +9,13 @@ PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]
 TINY_LANGUAGE = PROJECT_ROOT / "src" / "tiny_language.py"
 TINY_SERVER_CLI = PROJECT_ROOT / "src_tiny" / "language_server_cli.tiny"
 PYTHON_SERVER_CLI = PROJECT_ROOT / "src" / "language_server_cli.py"
+FIXTURE_SOURCE = PROJECT_ROOT / "tests" / "fixtures" / "language_server_entrypoint_sample.tiny"
 
 
 @dataclass(frozen=True)
 class ServerSnapshot:
     args: list[str]
     payload: object
-
 
 def run_tiny_language_server(args):
     env = {
@@ -71,6 +71,14 @@ SNAPSHOTS = [
                 "range": [1, 12, 1, 13],
             }
         ],
+    ),
+    ServerSnapshot(
+        args=["--file", str(FIXTURE_SOURCE), "completions", "--prefix", "ad"],
+        payload=[{"label": "add", "kind": "function"}],
+    ),
+    ServerSnapshot(
+        args=["--file", str(FIXTURE_SOURCE), "hover", "--symbol", "add"],
+        payload={"symbol": "add", "detail": "fn add(x, y)", "position": [1, 1]},
     ),
 ]
 

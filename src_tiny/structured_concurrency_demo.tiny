@@ -27,9 +27,13 @@ fn print_status(label, status) {
     print(
         label,
         status.__tag__,
+        "done",
         status.done,
+        "cancelled",
         status.cancelled,
+        "error",
         status.error,
+        "result",
         status.result,
     );
 }
@@ -51,13 +55,17 @@ task {
     def long_task = spawn spin_until_cancel(token, "long", 2000000);
     def fail_task = spawn fail_fast();
 
-    def _unused1 = Async.link(token, short_task);
-    def _unused2 = Async.link(token, long_task);
+    def short_linked = Async.link(token, short_task);
+    def long_linked = Async.link(token, long_task);
+    print("links", short_linked, long_linked);
 
     busy_wait(50000);
 
     def short_status = join(short_task, 0);
     print_status("short status", short_status);
+
+    def short_done = join(short_task);
+    print_status("short done", short_done);
 
     def long_status = join(long_task, 1);
     print_status("long status", long_status);

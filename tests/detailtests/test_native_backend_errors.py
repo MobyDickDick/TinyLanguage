@@ -140,6 +140,39 @@ def test_native_code_generator_reports_not_implemented_for_variant_constructors(
     assert "def circle = Circle { radius: 2 };" in message
 
 
+def test_native_code_generator_reports_not_implemented_for_flush_arguments():
+    source = "flush(1);"
+
+    with pytest.raises(Exception) as excinfo:
+        run_with_native_backend(source)
+
+    message = str(excinfo.value)
+    assert "expected SYM )" in message
+    assert "line 1" in message
+    assert "flush(1);" in message
+
+
+def test_native_code_generator_reports_missing_type_info_for_positional_match_patterns():
+    source = textwrap.dedent(
+        """
+        def result = match shape {
+            case Circle(r) => r;
+        };
+        print(result);
+        """
+    ).strip()
+
+    stmts = _parse_and_lint(source)
+
+    with pytest.raises(NotImplementedError) as excinfo:
+        NativeCodeGenerator(allow_match=True, source=source).compile_program(stmts)
+
+    message = str(excinfo.value)
+    assert "native codegen requires type information for positional pattern Circle" in message
+    assert "line 2" in message
+    assert "case Circle(r) => r;" in message
+
+
 def test_native_vm_reports_unknown_opcode_with_context():
     source = "print(1);"
     program = ProgramIR(
@@ -200,3 +233,20 @@ def test_native_vm_reports_unknown_opcode_inside_function():
     assert "unknown opcode UNKNOWN_OP" in message
     assert "line 1" in message
     assert "def boom() { print(1); }" in message
+
+
+def test_native_vm_reports_unknown_opcode_without_source_context():
+    program = ProgramIR(
+        entry=[Instruction(op="UNKNOWN_OP")],
+        functions={},
+    )
+    vm = NativeVM(source=None)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        vm.run(program)
+
+    message = str(excinfo.value)
+    assert "unknown opcode UNKNOWN_OP" in message
+    assert "Supported opcodes" in message
+    assert "line" not in message
+    assert "col" not in message

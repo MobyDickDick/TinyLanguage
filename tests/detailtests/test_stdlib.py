@@ -136,7 +136,7 @@ def test_tl_stdlib_json_module_import(run_tiny_source):
         """,
     )
 
-    assert out == '1\n2\n{"a": 1, "b": [2, 3]}\n'
+    assert out == '1\n2\n{"a":1,"b":[2,3]}\n'
 
 
 def test_tl_stdlib_os_and_pathlib_module_import(run_tiny_source, tmp_path):
@@ -242,6 +242,7 @@ def test_json_stringify_roundtrip_collections(run_tiny_source):
     )
 
     lines = out.strip().split("\n")
+    assert lines[0] == '{"numbers":["one","two","three"],"tags":["a","b"],"queue":["x","y"]}'
     assert lines[0] == lines[1]
 
 
@@ -263,4 +264,5 @@ def test_json_stringify_roundtrip_nested_collections(run_tiny_source):
     )
 
     lines = out.strip().split("\n")
+    assert lines[0] == '[{"k1":"one","k2":"two"},["a","b"],["x","y"],[["alpha","beta"],["gamma",["delta","epsilon"]]]]'
     assert lines[0] == lines[1]

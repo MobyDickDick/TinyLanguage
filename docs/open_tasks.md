@@ -5,7 +5,7 @@ are grouped by area and can be tackled independently.
 
 ## Next tasks (shortlist)
 
-- [ ] Add regression coverage for `JSON.stringify` round-tripping heap-backed
+- [x] Add regression coverage for `JSON.stringify` round-tripping heap-backed
   collections (`Map`, `Set`, `Deque`) and nested lists.
 - [ ] Expand CLI smoke tests to include failure cases for `File.remove` and
   missing-path diagnostics in stdlib helpers.

@@ -61,6 +61,14 @@ def test_cli_supports_inline_source_and_backends():
     assert proc.stderr == ""
 
 
+def test_cli_reports_file_remove_missing_path():
+    proc = run_cli(["--source", "print(File.remove(\"missing.txt\"));"])
+
+    assert proc.returncode == 0
+    assert proc.stdout == "false\n"
+    assert proc.stderr == ""
+
+
 def test_cli_renders_spans_on_errors(tmp_path):
     program = "def x = 1; @"
     file_path = tmp_path / "bad.tiny"
@@ -72,6 +80,21 @@ def test_cli_renders_spans_on_errors(tmp_path):
     assert "[E000]" in proc.stderr
     assert "line 1" in proc.stderr
     assert "^" in proc.stderr
+
+
+def test_cli_reports_missing_path_in_stdlib_helpers():
+    proc = run_cli(
+        [
+            "--source",
+            "import stdlib.os;\ndef _unused = os.read_text(\"missing.txt\");",
+        ]
+    )
+
+    assert proc.returncode == 1
+    assert proc.stdout == ""
+    assert "file does not exist: missing.txt" in proc.stderr
+    assert "Stack trace:" in proc.stderr
+    assert "stdlib.os.read_text" in proc.stderr
 
 
 def test_cli_supports_positional_path(tmp_path):

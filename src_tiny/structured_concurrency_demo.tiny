@@ -1,0 +1,48 @@
+// structured_concurrency_demo.tiny - task scopes + cancellation tokens.
+
+fn busy_wait(steps) {
+    def i = 0;
+    while (i < steps) {
+        i = i + 1;
+    }
+}
+
+fn spin_until_cancel(token, label, limit) {
+    def i = 0;
+    while (i < limit) {
+        if (Async.is_cancelled(token)) {
+            return label + ":cancelled";
+        }
+        i = i + 1;
+    }
+    return label + ":complete";
+}
+
+// Task blocks automatically join outstanding handles on scope exit.
+// This demo links spawned handles to a token and cancels it explicitly.
+
+print("structured concurrency demo");
+
+task {
+    def token = Async.token();
+
+    def short_task = spawn spin_until_cancel(token, "short", 20000);
+    def long_task = spawn spin_until_cancel(token, "long", 2000000);
+
+    def _unused1 = Async.link(token, short_task);
+    def _unused2 = Async.link(token, long_task);
+
+    busy_wait(50000);
+
+    def short_status = join(short_task, 0);
+    print("short status", short_status.done, short_status.cancelled, short_status.result);
+
+    def cancelled = Async.cancel(token, "demo scope exit");
+    print("token", cancelled, Async.is_cancelled(token), Async.reason(token));
+
+    def long_status = join(long_task, 50);
+    print("long status", long_status.done, long_status.cancelled, long_status.error);
+
+    def short_final = join(short_task, 50);
+    print("short final", short_final.done, short_final.cancelled, short_final.result);
+}

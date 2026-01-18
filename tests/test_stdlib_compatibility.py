@@ -5,6 +5,7 @@ import json as py_json
 import math as py_math
 import os as py_os
 import random as py_random
+import statistics as py_statistics
 from pathlib import Path as PyPath
 
 import pytest
@@ -186,3 +187,26 @@ print(p.read_text());
     assert lines[3] == PyPath(joined).name
     assert lines[4] == PyPath(joined).parent.as_posix()
     assert lines[5:] == ["true", "hi"]
+
+
+def test_stdlib_statistics_matches_python() -> None:
+    source = """
+import stdlib.statistics;
+
+def values = new[2, 4, 6, 8, 10];
+def floats = new[1.5, 2.5, 3.5];
+print(statistics.mean(values));
+print(statistics.std(values));
+print(statistics.mean(floats));
+print(statistics.std(floats));
+def _cleanup_values = delete(values);
+def _cleanup_floats = delete(floats);
+"""
+    lines = _run_lines(source)
+    values = [2, 4, 6, 8, 10]
+    floats = [1.5, 2.5, 3.5]
+
+    assert float(lines[0]) == pytest.approx(py_statistics.mean(values))
+    assert float(lines[1]) == pytest.approx(py_statistics.stdev(values))
+    assert float(lines[2]) == pytest.approx(py_statistics.mean(floats))
+    assert float(lines[3]) == pytest.approx(py_statistics.stdev(floats))

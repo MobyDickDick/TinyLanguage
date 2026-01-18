@@ -575,6 +575,11 @@ def _parse_with_tiny_parser(src: str) -> List["IR"]:
     ]
 
 
+def _heap_lints_enabled() -> bool:
+    value = os.environ.get("TINY_LINT_HEAP", "").strip().lower()
+    return value not in {"0", "false", "no", "off"}
+
+
 def _parse_and_lint(
     src: str,
     *,
@@ -603,7 +608,7 @@ def _parse_and_lint(
     if not repl_mode:
         lint_locals_used(stmts, src)
     lint_unreachable_code(stmts, src)
-    if os.environ.get("TINY_LINT_HEAP", "").strip().lower() in {"1", "true", "yes", "on"}:
+    if _heap_lints_enabled():
         lint_heap_lifetimes(stmts, src)
     signatures = _collect_function_signatures(stmts)
 

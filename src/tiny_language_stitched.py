@@ -11408,7 +11408,8 @@ def _parse_and_lint(
     if not repl_mode:
         lint_locals_used(stmts, src)
     lint_unreachable_code(stmts, src)
-    if os.environ.get("TINY_LINT_HEAP", "").strip().lower() in {"1", "true", "yes", "on"}:
+    heap_lint_setting = os.environ.get("TINY_LINT_HEAP", "").strip().lower()
+    if heap_lint_setting not in {"0", "false", "no", "off"}:
         lint_heap_lifetimes(stmts, src)
     signatures = _collect_function_signatures(stmts)
 

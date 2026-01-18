@@ -1,44 +1,77 @@
 // TinyLanguage stdlib: datetime module (Python-style subset)
 
-def PY_ALLOW = new[
-  "datetime_isoformat",
-  "date_isoformat",
-  "time_isoformat",
-  "timedelta_total_seconds"
-];
-
 fn datetime_isoformat(year, month, day, hour, minute, second) {
-  return Python.call(
+  def allow = new[
+    "datetime_isoformat",
+    "date_isoformat",
+    "time_isoformat",
+    "timedelta_total_seconds"
+  ];
+  def args = new[year, month, day, hour, minute, second];
+  def result = Python.call(
     "stdlib_datetime",
     "datetime_isoformat",
-    new[year, month, day, hour, minute, second],
-    { allow: PY_ALLOW }
+    args,
+    { allow: allow }
   );
+  def _cleanup_args = delete(args);
+  def _cleanup_allow = delete(allow);
+  return result;
 }
 
 fn date_isoformat(year, month, day) {
-  return Python.call(
+  def allow = new[
+    "datetime_isoformat",
+    "date_isoformat",
+    "time_isoformat",
+    "timedelta_total_seconds"
+  ];
+  def args = new[year, month, day];
+  def result = Python.call(
     "stdlib_datetime",
     "date_isoformat",
-    new[year, month, day],
-    { allow: PY_ALLOW }
+    args,
+    { allow: allow }
   );
+  def _cleanup_args = delete(args);
+  def _cleanup_allow = delete(allow);
+  return result;
 }
 
 fn time_isoformat(hour, minute, second) {
-  return Python.call(
+  def allow = new[
+    "datetime_isoformat",
+    "date_isoformat",
+    "time_isoformat",
+    "timedelta_total_seconds"
+  ];
+  def args = new[hour, minute, second];
+  def result = Python.call(
     "stdlib_datetime",
     "time_isoformat",
-    new[hour, minute, second],
-    { allow: PY_ALLOW }
+    args,
+    { allow: allow }
   );
+  def _cleanup_args = delete(args);
+  def _cleanup_allow = delete(allow);
+  return result;
 }
 
 fn total_seconds(days, seconds) {
-  return Python.call(
+  def allow = new[
+    "datetime_isoformat",
+    "date_isoformat",
+    "time_isoformat",
+    "timedelta_total_seconds"
+  ];
+  def args = new[days, seconds];
+  def result = Python.call(
     "stdlib_datetime",
     "timedelta_total_seconds",
-    new[days, seconds],
-    { allow: PY_ALLOW }
+    args,
+    { allow: allow }
   );
+  def _cleanup_args = delete(args);
+  def _cleanup_allow = delete(allow);
+  return result;
 }

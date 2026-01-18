@@ -23,7 +23,9 @@ namespace path {
 
   fn basename(path) {
     def parts = _split_path(path);
-    return _last_non_empty(parts);
+    def value = _last_non_empty(parts);
+    def _cleanup_parts = delete(parts);
+    return value;
   }
 
   fn dirname(path) {
@@ -32,9 +34,14 @@ namespace path {
     while (idx >= 0 && Collections.len(heap_get(parts, idx)) == 0) {
       idx = idx - 1;
     }
-    if (idx <= 0) { return ""; }
-    def parent_parts = Collections.slice(parts, 0, idx);
-    return String.join(parent_parts, "/");
+    def value = "";
+    if (idx > 0) {
+      def parent_parts = Collections.slice(parts, 0, idx);
+      value = String.join(parent_parts, "/");
+      def _cleanup_parent = delete(parent_parts);
+    }
+    def _cleanup_parts = delete(parts);
+    return value;
   }
 
   fn exists(path) {

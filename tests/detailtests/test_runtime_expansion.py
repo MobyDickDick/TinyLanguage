@@ -8,6 +8,13 @@ def nested = new[new[1, 2], new[3, 4], new[5, 6]];
 print(heap_get(heap_get(nested, 0), 1));
 print(heap_get(heap_get(nested, 1), 0));
 print(heap_get(heap_get(nested, 2), 1));
+def first = heap_get(nested, 0);
+def second = heap_get(nested, 1);
+def third = heap_get(nested, 2);
+def _cleanup_first = delete(first);
+def _cleanup_second = delete(second);
+def _cleanup_third = delete(third);
+def _cleanup_nested = delete(nested);
 """.strip()
     )
 
@@ -25,6 +32,21 @@ def nested = new[
 print(heap_get(heap_get(heap_get(nested, 0), 1), 0));
 print(heap_get(heap_get(heap_get(nested, 1), 0), 0));
 print(heap_get(heap_get(heap_get(nested, 2), 1), 1));
+def first = heap_get(nested, 0);
+def first_inner = heap_get(first, 1);
+def second = heap_get(nested, 1);
+def second_inner = heap_get(second, 0);
+def third = heap_get(nested, 2);
+def third_left = heap_get(third, 0);
+def third_right = heap_get(third, 1);
+def _cleanup_first_inner = delete(first_inner);
+def _cleanup_first = delete(first);
+def _cleanup_second_inner = delete(second_inner);
+def _cleanup_second = delete(second);
+def _cleanup_third_left = delete(third_left);
+def _cleanup_third_right = delete(third_right);
+def _cleanup_third = delete(third);
+def _cleanup_nested = delete(nested);
 """.strip()
     )
 

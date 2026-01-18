@@ -63,13 +63,13 @@ SNAPSHOTS = [
         args=["--source", "import stdlib.os;\ndef _unused = os.read_text(\"missing.txt\");"],
         stdout="",
         stderr=(
-            "[E000] file does not exist: missing.txt (line 50, col 14)\n"
-            "  49 | fn read_text(path) {\n"
-            "> 50 |   return File.read(path);\n"
-            "  51 | }\n"
+            "[E000] file does not exist: missing.txt (line 57, col 14)\n"
+            "  56 | fn read_text(path) {\n"
+            "> 57 |   return File.read(path);\n"
+            "  58 | }\n"
             "     |              ^\n"
             "Stack trace:\n"
-            "  at stdlib.os.read_text (line 49, col 1)\n"
+            "  at stdlib.os.read_text (line 56, col 1)\n"
         ),
         returncode=1,
     ),

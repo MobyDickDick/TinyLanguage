@@ -19,6 +19,7 @@ def PY_ALLOW = new[
 ];
 
 def PY = Python.import_module("tiny_language", PY_ALLOW);
+def _cleanup_py_allow = delete(PY_ALLOW);
 
 fn compile_and_run(src) {
     return PY.compile_and_run(src);

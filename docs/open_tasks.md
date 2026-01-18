@@ -4,7 +4,7 @@ This list captures the currently planned work items for TinyLanguage. The tasks
 are grouped by area and can be tackled independently.
 
 ## Next tasks (shortlist)
-- [ ] Add CI/regression checks that assert no live heap allocations remain after
+- [x] Add CI/regression checks that assert no live heap allocations remain after
   test runs (use `heap_leak_report` or equivalent harness output).
 - [ ] Formalize ownership/aliasing rules for heap pointers (single-owner or
   borrow model) and update language docs + lint rules accordingly.

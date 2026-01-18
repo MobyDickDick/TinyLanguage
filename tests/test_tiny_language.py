@@ -817,19 +817,20 @@ def test_method_param_mutation_returned_allows_change():
     assert out == "5\n"
 
 
-def test_error_message_for_missing_heap_index():
+def test_error_message_for_missing_heap_index(monkeypatch):
     src = """
     def a = new[1, 2];
     print(heap_get(a, 5));
     print(errorMessage);
     """
 
+    monkeypatch.setenv("TINY_LINT_HEAP", "0")
     out = run_tiny(src)
     assert re.search(r"heap access error: index 5 out of range for pointer 1 \(size 2; valid indices: 0..1\) \(line 3, col \d+\)", out)
     assert "^" in out
 
 
-def test_error_message_for_double_delete():
+def test_error_message_for_double_delete(monkeypatch):
     src = """
     def p = new(1);
     def _unused107 = delete(p);
@@ -837,17 +838,19 @@ def test_error_message_for_double_delete():
     print(errorMessage);
     """
 
+    monkeypatch.setenv("TINY_LINT_HEAP", "0")
     out = run_tiny(src)
     assert re.search(r"heap delete error: pointer 1 was already freed \(size 1\) \(line 4, col \d+\)", out)
     assert "^" in out
 
 
-def test_error_message_for_unknown_delete():
+def test_error_message_for_unknown_delete(monkeypatch):
     src = """
     def _unused110 = delete(9);
     print(errorMessage);
     """
 
+    monkeypatch.setenv("TINY_LINT_HEAP", "0")
     out = run_tiny(src)
     assert re.search(r"heap delete error: unknown pointer 9.*\(line 2, col \d+\)", out)
     assert "^" in out

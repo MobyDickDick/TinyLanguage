@@ -8,9 +8,10 @@ sys.path.append(str(PROJECT_ROOT / "src"))
 from tiny_language import compile_and_run
 
 
-def test_heap_pointer_demo_outputs_errors_and_hints():
+def test_heap_pointer_demo_outputs_errors_and_hints(monkeypatch):
     program = PROJECT_ROOT / "src_tiny" / "heap_pointer_demo.tiny"
 
+    monkeypatch.setenv("TINY_LINT_HEAP", "0")
     output = compile_and_run(program.read_text())
 
     assert output.startswith(

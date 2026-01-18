@@ -156,6 +156,26 @@ def _cleanup_data = delete(data);
     assert py_json.loads(lines[2]) == expected
 
 
+def test_stdlib_json_file_roundtrip(tmp_path: PyPath) -> None:
+    source_path = tmp_path / "payload.json"
+    target_path = tmp_path / "written.json"
+    payload = {"active": True, "scores": [1, 2, 3], "label": "tiny"}
+    source_path.write_text(py_json.dumps(payload))
+
+    source = f"""
+import stdlib.json;
+
+def data = json.load("{source_path.as_posix()}");
+print(Map.get(data, "label", ""));
+def _dumped = json.dump("{target_path.as_posix()}", data);
+def _cleanup_data = delete(data);
+"""
+    lines = _run_lines(source)
+
+    assert lines[0] == payload["label"]
+    assert py_json.loads(target_path.read_text()) == payload
+
+
 def test_stdlib_os_and_pathlib_match_python(tmp_path: PyPath) -> None:
     base = tmp_path / "root"
     child = "note.txt"
@@ -187,6 +207,34 @@ print(p.read_text());
     assert lines[3] == PyPath(joined).name
     assert lines[4] == PyPath(joined).parent.as_posix()
     assert lines[5:] == ["true", "hi"]
+
+
+def test_stdlib_os_remove_and_pathlib_joinpath(tmp_path: PyPath) -> None:
+    base = tmp_path / "root"
+    child = "note.txt"
+    joined = py_os.path.join(base.as_posix(), child)
+    expected = PyPath(joined)
+    base.mkdir()
+    expected.write_text("cleanup")
+
+    source = f"""
+import stdlib.os;
+import stdlib.pathlib;
+
+def base = pathlib.Path("{base.as_posix()}");
+def child = base.joinpath("{child}");
+print(child.as_posix());
+print(child.name());
+def _exists_before = child.exists();
+print(_exists_before);
+def _remove = os.remove(child.as_posix());
+print(os.path.exists(child.as_posix()));
+"""
+    lines = _run_lines(source)
+
+    assert lines[0] == joined
+    assert lines[1] == expected.name
+    assert lines[2:] == ["true", "false"]
 
 
 def test_stdlib_statistics_matches_python() -> None:

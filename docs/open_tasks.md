@@ -26,9 +26,10 @@ become concrete tasks.
 - [ ] Explore math-oriented syntax/notation (tuple-based block forms, formula
   syntax, stack-edit or LaTeX-like constructs) with careful incremental trials
   to avoid destabilizing readability or tooling.
-- [ ] Establish a "strict-by-default" safety profile to reduce unintended side
+- [x] Establish a "strict-by-default" safety profile to reduce unintended side
   effects and runtime errors (explicit mutability, purity annotations, stricter
-  effect boundaries, and safer defaults in the stdlib).
+  effect boundaries, and safer defaults in the stdlib). See
+  `docs/strict_by_default_safety_profile.md`.
 
 ## Additional suggested tasks
 

@@ -10,7 +10,7 @@ are grouped by area and can be tackled independently.
   borrow model) and update language docs + lint rules accordingly.
 - [x] Parity pass: bring native VM and LLVM/C backends up to interpreter-level
   heap safety checks (invalid pointer/index, double delete, leak diagnostics).
-- [ ] Standardize developer tooling workflows (LSP defaults, lint profiles) and
+- [x] Standardize developer tooling workflows (LSP defaults, lint profiles) and
   document recommended editor setup.
 - [ ] Expand stdlib coverage with parity tests for missing or incomplete
   Python-style modules (prioritize commonly used APIs).

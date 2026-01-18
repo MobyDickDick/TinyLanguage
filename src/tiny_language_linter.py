@@ -7,6 +7,7 @@ footguns.
 """
 
 from dataclasses import dataclass
+import re
 from typing import Any, Dict, List, Optional, Set, Union
 
 from tiny_language_ast import *
@@ -77,6 +78,58 @@ def _merge_heap_states(
             may_freed=bool((left_state and left_state.may_freed) or (right_state and right_state.may_freed)),
         )
     return merged
+
+
+def _clone_heap_sizes(sizes: Dict[str, Optional[int]]) -> Dict[str, Optional[int]]:
+    return dict(sizes)
+
+
+def _merge_heap_sizes(
+    left: Dict[str, Optional[int]],
+    right: Dict[str, Optional[int]],
+) -> Dict[str, Optional[int]]:
+    merged: Dict[str, Optional[int]] = {}
+    for name in set(left) | set(right):
+        left_size = left.get(name)
+        right_size = right.get(name)
+        if left_size is None or right_size is None:
+            merged[name] = None
+        elif left_size == right_size:
+            merged[name] = left_size
+        else:
+            merged[name] = None
+    return merged
+
+
+_INT_LITERAL = re.compile(r"^-?\d+$")
+
+
+def _int_literal(expr: IR) -> Optional[int]:
+    if not isinstance(expr, Num):
+        return None
+    txt = expr.txt.replace("_", "")
+    if not _INT_LITERAL.match(txt):
+        return None
+    try:
+        return int(txt, 10)
+    except ValueError:
+        return None
+
+
+def _heap_allocation_size(expr: IR) -> Optional[int]:
+    if isinstance(expr, NewLit):
+        return len(expr.items)
+    if isinstance(expr, New):
+        size = _int_literal(expr.size)
+        if size is None or size < 0:
+            return None
+        return size
+    if isinstance(expr, Call) and expr.name in {"new", "__new"} and expr.args:
+        size = _int_literal(expr.args[0])
+        if size is None or size < 0:
+            return None
+        return size
+    return None
 
 
 def _is_heap_allocation_expr(expr: IR) -> bool:
@@ -165,6 +218,95 @@ def _lint_heap_expr(expr: IR, states: Dict[str, _HeapLifetime], source: Optional
     if isinstance(expr, VariantCtor):
         for _, value in expr.fields:
             _lint_heap_expr(value, states, source)
+        return
+
+
+def _lint_heap_bounds_call(
+    name: str,
+    args: List[IR],
+    sizes: Dict[str, Optional[int]],
+    source: Optional[str],
+    node: Any,
+) -> None:
+    if name not in {"heap_get", "heap_set"} or len(args) < 2:
+        return
+    ptr_name = _heap_pointer_name(args[0])
+    if not ptr_name:
+        return
+    if ptr_name not in sizes:
+        return
+    idx = _int_literal(args[1])
+    if idx is None:
+        return
+    if idx < 0:
+        raise _lint_error(
+            source,
+            node,
+            f"heap index {idx} is negative for pointer {ptr_name}",
+            code="E020",
+            hint="Heap indices must be zero or positive.",
+        )
+    size = sizes.get(ptr_name)
+    if size is None:
+        return
+    if idx >= size:
+        raise _lint_error(
+            source,
+            node,
+            f"heap index {idx} is out of bounds for {ptr_name} (size {size})",
+            code="E020",
+            hint="Ensure heap indices stay within the allocated size.",
+        )
+
+
+def _lint_heap_bounds_expr(expr: IR, sizes: Dict[str, Optional[int]], source: Optional[str]) -> None:
+    if isinstance(expr, Bin):
+        _lint_heap_bounds_expr(expr.a, sizes, source)
+        _lint_heap_bounds_expr(expr.b, sizes, source)
+        return
+    if isinstance(expr, Call):
+        for arg in expr.args:
+            _lint_heap_bounds_expr(arg, sizes, source)
+        _lint_heap_bounds_call(expr.name, expr.args, sizes, source, expr)
+        return
+    if isinstance(expr, Spawn):
+        for arg in expr.args:
+            _lint_heap_bounds_expr(arg, sizes, source)
+        return
+    if isinstance(expr, Await):
+        _lint_heap_bounds_expr(expr.expr, sizes, source)
+        return
+    if isinstance(expr, New):
+        _lint_heap_bounds_expr(expr.size, sizes, source)
+        return
+    if isinstance(expr, NewLit):
+        for item in expr.items:
+            _lint_heap_bounds_expr(item, sizes, source)
+        return
+    if isinstance(expr, Field):
+        _lint_heap_bounds_expr(expr.obj, sizes, source)
+        return
+    if isinstance(expr, MethodCall):
+        _lint_heap_bounds_expr(expr.obj, sizes, source)
+        for arg in expr.args:
+            _lint_heap_bounds_expr(arg, sizes, source)
+        return
+    if isinstance(expr, ClassNew):
+        for _, value in expr.init:
+            _lint_heap_bounds_expr(value, sizes, source)
+        return
+    if isinstance(expr, ObjLit):
+        for _, value in expr.fields:
+            _lint_heap_bounds_expr(value, sizes, source)
+        return
+    if isinstance(expr, Match):
+        _lint_heap_bounds_expr(expr.expr, sizes, source)
+        for case in expr.cases:
+            _lint_heap_bounds_expr(case.body, sizes, source)
+        return
+    if isinstance(expr, VariantCtor):
+        for _, value in expr.fields:
+            _lint_heap_bounds_expr(value, sizes, source)
         return
 
 
@@ -1167,12 +1309,26 @@ def lint_unreachable_code(stmts: List[IR], source: Optional[str] = None) -> None
 
 
 def lint_heap_lifetimes(stmts: List[IR], source: Optional[str] = None) -> None:
-    """Lint for heap pointer use-after-free and leak-prone overwrites."""
+    """Lint for heap pointer use-after-free, aliasing, and bounds issues."""
 
-    def visit_block(block: List[IR], states: Dict[str, _HeapLifetime]) -> None:
+    def visit_block(
+        block: List[IR],
+        states: Dict[str, _HeapLifetime],
+        sizes: Dict[str, Optional[int]],
+    ) -> None:
         for st in block:
             if isinstance(st, (Let, Assign)):
                 _lint_heap_expr(st.expr, states, source)
+                _lint_heap_bounds_expr(st.expr, sizes, source)
+                alias = _heap_pointer_name(st.expr)
+                if alias and alias in sizes and alias != st.name:
+                    raise _lint_error(
+                        source,
+                        st,
+                        f"heap pointer aliasing: {st.name} now references {alias}",
+                        code="E019",
+                        hint="Avoid aliasing heap pointers; copy data or allocate a new buffer instead.",
+                    )
                 if _is_heap_allocation_expr(st.expr):
                     existing = states.get(st.name)
                     if existing and existing.may_live:
@@ -1184,6 +1340,7 @@ def lint_heap_lifetimes(stmts: List[IR], source: Optional[str] = None) -> None:
                             hint="Delete the previous heap allocation before rebinding this variable.",
                         )
                     states[st.name] = _HeapLifetime(may_live=True, may_freed=False)
+                    sizes[st.name] = _heap_allocation_size(st.expr)
                 else:
                     existing = states.get(st.name)
                     if existing and existing.may_live:
@@ -1196,15 +1353,20 @@ def lint_heap_lifetimes(stmts: List[IR], source: Optional[str] = None) -> None:
                         )
                     if existing:
                         states.pop(st.name, None)
+                    sizes.pop(st.name, None)
             elif isinstance(st, FieldAssign):
                 _lint_heap_expr(st.obj, states, source)
                 _lint_heap_expr(st.expr, states, source)
+                _lint_heap_bounds_expr(st.obj, sizes, source)
+                _lint_heap_bounds_expr(st.expr, sizes, source)
             elif isinstance(st, Print):
                 for expr in st.exprs:
                     _lint_heap_expr(expr, states, source)
+                    _lint_heap_bounds_expr(expr, sizes, source)
             elif isinstance(st, CallStmt):
                 for arg in st.args:
                     _lint_heap_expr(arg, states, source)
+                    _lint_heap_bounds_expr(arg, sizes, source)
                 if st.name in {"heap_get", "heap_set"} and st.args:
                     ptr_name = _heap_pointer_name(st.args[0])
                     if ptr_name:
@@ -1217,6 +1379,7 @@ def lint_heap_lifetimes(stmts: List[IR], source: Optional[str] = None) -> None:
                                 code="E017",
                                 hint="Avoid accessing heap pointers after delete or reallocate them first.",
                             )
+                _lint_heap_bounds_call(st.name, st.args, sizes, source, st)
                 if st.name == "delete" and st.args:
                     ptr_name = _heap_pointer_name(st.args[0])
                     if ptr_name:
@@ -1230,62 +1393,92 @@ def lint_heap_lifetimes(stmts: List[IR], source: Optional[str] = None) -> None:
                                 hint="Ensure each heap pointer is deleted at most once.",
                             )
                         states[ptr_name] = _HeapLifetime(may_live=False, may_freed=True)
+                        sizes.pop(ptr_name, None)
             elif isinstance(st, If):
                 _lint_heap_expr(st.cond, states, source)
+                _lint_heap_bounds_expr(st.cond, sizes, source)
                 then_states = _clone_heap_states(states)
                 els_states = _clone_heap_states(states)
-                visit_block(st.then, then_states)
-                visit_block(st.els, els_states)
+                then_sizes = _clone_heap_sizes(sizes)
+                els_sizes = _clone_heap_sizes(sizes)
+                visit_block(st.then, then_states, then_sizes)
+                visit_block(st.els, els_states, els_sizes)
                 merged = _merge_heap_states(then_states, els_states)
+                merged_sizes = _merge_heap_sizes(then_sizes, els_sizes)
                 states.clear()
                 states.update(merged)
+                sizes.clear()
+                sizes.update(merged_sizes)
             elif isinstance(st, While):
                 _lint_heap_expr(st.cond, states, source)
+                _lint_heap_bounds_expr(st.cond, sizes, source)
                 body_states = _clone_heap_states(states)
-                visit_block(st.body, body_states)
+                body_sizes = _clone_heap_sizes(sizes)
+                visit_block(st.body, body_states, body_sizes)
                 merged = _merge_heap_states(states, body_states)
+                merged_sizes = _merge_heap_sizes(sizes, body_sizes)
                 states.clear()
                 states.update(merged)
+                sizes.clear()
+                sizes.update(merged_sizes)
             elif isinstance(st, Switch):
                 _lint_heap_expr(st.expr, states, source)
+                _lint_heap_bounds_expr(st.expr, sizes, source)
                 case_states: List[Dict[str, _HeapLifetime]] = []
+                case_sizes: List[Dict[str, Optional[int]]] = []
                 for case in st.cases:
                     if case.value is not None:
                         _lint_heap_expr(case.value, states, source)
+                        _lint_heap_bounds_expr(case.value, sizes, source)
                     branch_states = _clone_heap_states(states)
-                    visit_block(case.body, branch_states)
+                    branch_sizes = _clone_heap_sizes(sizes)
+                    visit_block(case.body, branch_states, branch_sizes)
                     case_states.append(branch_states)
+                    case_sizes.append(branch_sizes)
                 if case_states:
                     merged = case_states[0]
                     for branch_states in case_states[1:]:
                         merged = _merge_heap_states(merged, branch_states)
                     states.clear()
                     states.update(merged)
+                if case_sizes:
+                    merged_sizes = case_sizes[0]
+                    for branch_sizes in case_sizes[1:]:
+                        merged_sizes = _merge_heap_sizes(merged_sizes, branch_sizes)
+                    sizes.clear()
+                    sizes.update(merged_sizes)
             elif isinstance(st, TryCatch):
                 body_states = _clone_heap_states(states)
                 handler_states = _clone_heap_states(states)
-                visit_block(st.body, body_states)
-                visit_block(st.handler, handler_states)
+                body_sizes = _clone_heap_sizes(sizes)
+                handler_sizes = _clone_heap_sizes(sizes)
+                visit_block(st.body, body_states, body_sizes)
+                visit_block(st.handler, handler_states, handler_sizes)
                 merged = _merge_heap_states(body_states, handler_states)
+                merged_sizes = _merge_heap_sizes(body_sizes, handler_sizes)
                 states.clear()
                 states.update(merged)
+                sizes.clear()
+                sizes.update(merged_sizes)
             elif isinstance(st, TaskBlock):
-                visit_block(st.body, states)
+                visit_block(st.body, states, sizes)
             elif isinstance(st, Return):
                 _lint_heap_expr(st.expr, states, source)
+                _lint_heap_bounds_expr(st.expr, sizes, source)
             elif isinstance(st, DestructAssign):
                 _lint_heap_expr(st.expr, states, source)
+                _lint_heap_bounds_expr(st.expr, sizes, source)
             elif isinstance(st, Namespace):
-                visit_block(st.body, {})
+                visit_block(st.body, {}, {})
             elif isinstance(st, Fn):
-                visit_block(st.body, {})
+                visit_block(st.body, {}, {})
             elif isinstance(st, MethodDef):
-                visit_block(st.body, {})
+                visit_block(st.body, {}, {})
             elif isinstance(st, ClassDef):
                 for method in st.methods:
-                    visit_block(method.body, {})
+                    visit_block(method.body, {}, {})
 
-    visit_block(stmts, {})
+    visit_block(stmts, {}, {})
 
 
 def lint_no_consecutive_definitions(stmts: List[IR], source: Optional[str] = None) -> None:

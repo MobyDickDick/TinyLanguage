@@ -508,7 +508,7 @@ def test_llvm_codegen_emits_heap_bounds_checks() -> None:
 
     llvm_ir = compile_to_llvm_ir(source)
 
-    assert "define i64 @__heap_bounds_error(i64 %idx, i64 %size)" in llvm_ir
+    assert "define i64 @__heap_bounds_error(i64 %idx, i64 %ptr, i64 %size)" in llvm_ir
     assert "add i64 %size, 1" in llvm_ir
     assert "getelementptr i64, i64* %data, i64 -1" in llvm_ir
 

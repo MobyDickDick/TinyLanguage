@@ -8,7 +8,7 @@ are grouped by area and can be tackled independently.
   test runs (use `heap_leak_report` or equivalent harness output).
 - [x] Formalize ownership/aliasing rules for heap pointers (single-owner or
   borrow model) and update language docs + lint rules accordingly.
-- [ ] Parity pass: bring native VM and LLVM/C backends up to interpreter-level
+- [x] Parity pass: bring native VM and LLVM/C backends up to interpreter-level
   heap safety checks (invalid pointer/index, double delete, leak diagnostics).
 - [ ] Standardize developer tooling workflows (LSP defaults, lint profiles) and
   document recommended editor setup.

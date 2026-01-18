@@ -1,0 +1,39 @@
+// TinyLanguage wrapper for tools/generate_doc_reference.py.
+// Uses the Python implementation for docstring extraction parity.
+
+def doc_tool = Python.import_module("tools.generate_doc_reference", new["main"]);
+def os = Python.import_module("os", new["getenv"]);
+def sys = Python.import_module("sys", new["argv"]);
+def builtins = Python.import_module("builtins", new["exit", "list", "setattr"]);
+
+fn __argv_from_env() {
+    def raw = os.getenv("TINYLANG_ARGS", "");
+    def payload = "[]";
+    if (raw != Null && len(raw) > 0) { payload = raw; }
+    return JSON.parse(payload);
+}
+
+fn __argv_with_name(argv) {
+    def full = new["generate_doc_reference"];
+    def i = 0;
+    while (i < len(argv)) {
+        Collections.push(full, heap_get(argv, i));
+        i = i + 1;
+    }
+    return full;
+}
+
+fn __set_sys_argv(argv) {
+    def py_argv = builtins.list(argv);
+    def ignored = builtins.setattr(sys, "argv", py_argv);
+}
+
+fn run() {
+    def argv = __argv_from_env();
+    __set_sys_argv(__argv_with_name(argv));
+    def code = doc_tool.main();
+    if (code == Null) { return builtins.exit(0); }
+    return builtins.exit(code);
+}
+
+if (run() == Null) { }

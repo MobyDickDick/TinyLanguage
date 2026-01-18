@@ -1,0 +1,20 @@
+// TinyLanguage wrapper for src/tiny_language_stitched.py.
+// Delegates CLI handling to the Python implementation.
+
+def stitched = Python.import_module("tiny_language_stitched", new["main"]);
+def os = Python.import_module("os", new["getenv"]);
+def builtins = Python.import_module("builtins", new["exit"]);
+
+fn __argv_from_env() {
+    def raw = os.getenv("TINYLANG_ARGS", "");
+    def payload = "[]";
+    if (raw != Null && len(raw) > 0) { payload = raw; }
+    return JSON.parse(payload);
+}
+
+fn run() {
+    def code = stitched.main(__argv_from_env());
+    return builtins.exit(code);
+}
+
+if (run() == Null) { }

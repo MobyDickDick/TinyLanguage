@@ -1,0 +1,13 @@
+// TinyLanguage wrapper for tools_unused_scan.py.
+// Delegates unused symbol scanning to the Python implementation.
+
+def scan = Python.import_module("tools_unused_scan", new["main"]);
+def builtins = Python.import_module("builtins", new["exit"]);
+
+def run() {
+    def code = scan.main();
+    if (code == Null) { return builtins.exit(0); }
+    return builtins.exit(code);
+}
+
+if (run() == Null) { }

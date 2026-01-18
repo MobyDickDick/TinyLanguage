@@ -3605,7 +3605,7 @@ class CCodeGenerator:
         }
         """
         for line in runtime.splitlines():
-            if "fprintf(stderr" in line and "\\n" not in line:
+            if "fprintf(stderr" in line and "\\n" not in line and "vfprintf(stderr" not in line:
                 raise ValueError("C runtime stderr messages must end with \\n")
         return textwrap.dedent(runtime).strip().splitlines()
 

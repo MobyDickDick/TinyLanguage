@@ -25,6 +25,13 @@ from tiny_language import (
 )
 
 
+def _write_error(message: str) -> None:
+    if message.endswith("\n"):
+        sys.stderr.write(message)
+    else:
+        sys.stderr.write(f"{message}\n")
+
+
 def _default_copy_on_call() -> bool:
     flag = os.environ.get("TINYLANG_COPY_ON_CALL", "").strip().lower()
     return flag in {"1", "true", "yes", "on"}
@@ -226,7 +233,7 @@ def main(argv: list[str] | None = None) -> int:
                 module_path=module_path,
             )
         except TinyLangError as err:
-            sys.stderr.write(_format_error_for_source(source, err) + os.linesep)
+            _write_error(_format_error_for_source(source, err))
             return 1
         if args.emit_llvm == "-":
             sys.stdout.write(llvm_ir + os.linesep)
@@ -252,7 +259,7 @@ def main(argv: list[str] | None = None) -> int:
             copy_on_call=args.copy_on_call,
         )
     except TinyLangError as err:
-        sys.stderr.write(_format_error_for_source(source, err) + os.linesep)
+        _write_error(_format_error_for_source(source, err))
         return 1
     finally:
         sys.argv = original_argv

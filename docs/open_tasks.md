@@ -32,7 +32,7 @@ become concrete tasks.
 
 - [x] Define a formal, testable semantics suite for side effects and evaluation
   order so strict-mode guarantees are measurable.
-- [ ] Add static analysis checks for heap/array aliasing and bounds safety to
+- [x] Add static analysis checks for heap/array aliasing and bounds safety to
   guide the heap-to-array migration effort.
 - [x] Evaluate a documentation tooling pipeline (e.g., docstrings + generated
   reference) to make line-level commentary manageable at scale.

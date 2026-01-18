@@ -18,6 +18,13 @@ from tiny_language import (
 )
 
 
+def _write_error(message: str) -> None:
+    if message.endswith("\n"):
+        sys.stderr.write(message)
+    else:
+        sys.stderr.write(f"{message}\n")
+
+
 def _default_compiler() -> str:
     return os.environ.get("TINYLANG_C_COMPILER", "cc")
 
@@ -111,10 +118,10 @@ def main(argv: list[str] | None = None) -> int:
         compile_to_c_executable(source, args.output, compiler=args.compiler, extra_args=extra_args)
         return 0
     except TinyLangError as err:
-        sys.stderr.write(_format_error_for_source(source, err) + os.linesep)
+        _write_error(_format_error_for_source(source, err))
         return 1
     except RuntimeError as err:
-        sys.stderr.write(str(err) + os.linesep)
+        _write_error(str(err))
         return 1
 
 

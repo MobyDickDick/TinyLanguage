@@ -176,6 +176,26 @@ def _cleanup_data = delete(data);
     assert py_json.loads(target_path.read_text()) == payload
 
 
+def test_stdlib_json_aliases_match_python() -> None:
+    source = """
+import stdlib.json;
+
+def data = json.parse("{\\"a\\": 1, \\"b\\": [true, false]}");
+print(Map.get(data, "a", 0));
+def flags = Map.get(data, "b", Null);
+print(Collections.len(flags));
+print(json.stringify(data));
+def _cleanup_flags = delete(flags);
+def _cleanup_data = delete(data);
+"""
+    lines = _run_lines(source)
+    expected = py_json.loads('{"a": 1, "b": [true, false]}')
+
+    assert int(lines[0]) == expected["a"]
+    assert int(lines[1]) == len(expected["b"])
+    assert py_json.loads(lines[2]) == expected
+
+
 def test_stdlib_os_and_pathlib_match_python(tmp_path: PyPath) -> None:
     base = tmp_path / "root"
     child = "note.txt"
@@ -235,6 +255,24 @@ print(os.path.exists(child.as_posix()));
     assert lines[0] == joined
     assert lines[1] == expected.name
     assert lines[2:] == ["true", "false"]
+
+
+def test_stdlib_os_text_helpers_match_python(tmp_path: PyPath) -> None:
+    target = tmp_path / "note.txt"
+    payload = "hello tiny"
+
+    source = f"""
+import stdlib.os;
+
+def _written = os.write_text("{target.as_posix()}", "{payload}");
+print(os.path.exists("{target.as_posix()}"));
+print(os.read_text("{target.as_posix()}"));
+"""
+    lines = _run_lines(source)
+
+    assert lines[0] == "true"
+    assert lines[1] == payload
+    assert target.read_text() == payload
 
 
 def test_stdlib_statistics_matches_python() -> None:

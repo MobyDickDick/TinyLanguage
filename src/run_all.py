@@ -151,6 +151,8 @@ def run_pytest(failures: list[str]) -> None:
     name = "pytest (full suite)"
     pytest_env = build_pytest_env()
     pytest_command = resolve_pytest_command(pytest_env)
+    if os.environ.get("TINY_ASSERT_NO_HEAP_LEAKS") == "1":
+        pytest_command = [*pytest_command, "--assert-no-heap-leaks"]
     print(f"\n=== Running {name} ===")  # Banner to make output scannable
     print("Command:", " ".join(pytest_command))  # Show the exact invocation
     proc = run_and_echo(pytest_command, pytest_env)
@@ -166,6 +168,8 @@ def run_pytest(failures: list[str]) -> None:
         fallback = _candidate_pytest_fallback()
         if fallback and fallback != pytest_command[0]:
             retry_cmd = [fallback, "-m", "pytest"]
+            if os.environ.get("TINY_ASSERT_NO_HEAP_LEAKS") == "1":
+                retry_cmd.append("--assert-no-heap-leaks")
             print("Retrying pytest with:", " ".join(retry_cmd))
             return run_and_echo(retry_cmd, pytest_env)
         if fallback == pytest_command[0]:

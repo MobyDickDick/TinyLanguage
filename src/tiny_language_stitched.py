@@ -7833,7 +7833,7 @@ def lint_unreachable_code(stmts: List[IR], source: Optional[str] = None) -> None
 
 
 def lint_heap_lifetimes(stmts: List[IR], source: Optional[str] = None) -> None:
-    """Lint for heap pointer use-after-free, aliasing, and bounds issues."""
+    """Lint for heap pointer use-after-free, ownership, aliasing, and bounds issues."""
 
     def visit_block(
         block: List[IR],
@@ -7849,9 +7849,9 @@ def lint_heap_lifetimes(stmts: List[IR], source: Optional[str] = None) -> None:
                     raise _lint_error(
                         source,
                         st,
-                        f"heap pointer aliasing: {st.name} now references {alias}",
+                        f"heap pointer ownership violation: {st.name} now aliases {alias}",
                         code="E019",
-                        hint="Avoid aliasing heap pointers; copy data or allocate a new buffer instead.",
+                        hint="Heap pointers use a single-owner model; copy data or allocate a new buffer instead.",
                     )
                 if _is_heap_allocation_expr(st.expr):
                     existing = states.get(st.name)

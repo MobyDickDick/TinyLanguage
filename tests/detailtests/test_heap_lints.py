@@ -19,4 +19,4 @@ def test_heap_aliasing_check(monkeypatch: pytest.MonkeyPatch) -> None:
     source = "def ptr = new(2);\ndef alias = ptr;\nprint(alias);"
     with pytest.raises(Exception) as excinfo:
         _lint_with_heap_checks(source, monkeypatch)
-    assert "aliasing" in str(excinfo.value)
+    assert "ownership" in str(excinfo.value)

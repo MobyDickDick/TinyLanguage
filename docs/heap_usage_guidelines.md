@@ -5,22 +5,22 @@ patterns for reducing heap allocations in TinyLanguage programs. The intent is
 not to forbid heap usage, but to prioritize fixed-size buffers and reuse when
 semantics allow it.
 
-## Ownership + mutation model (conventions)
+## Ownership + mutation model (single-owner)
 
 These conventions are intentionally simple and should be followed in code and
-examples when minimizing heap use:
+examples when minimizing heap use. They reflect the single-owner model that the
+heap lints enforce.
 
-1. **Single-owner pointers**: A heap pointer has a single logical owner. When a
-   pointer is passed to a helper that mutates it, that helper is considered the
-   temporary owner for the duration of the call.
-2. **Explicit transfer on return**: If a helper returns a pointer, treat the
+1. **Single-owner pointers**: A heap pointer has a single logical owner. The
+   lints treat pointer-to-pointer assignments as aliasing errors, so avoid
+   copying heap handles into new bindings.
+2. **Borrow on call**: Passing a pointer to a helper is a temporary borrow. The
+   caller remains the owner and is responsible for `delete`.
+3. **Explicit transfer on return**: If a helper returns a pointer, treat the
    returned pointer as the new owner and avoid mutating the old reference.
-3. **No implicit aliasing for mutation**: If two names reference the same heap
-   pointer, only one should be used to mutate it. If both need access, treat one
-   as read-only and document it in a comment.
-4. **Prefer read-only sharing**: Use shared pointers only for read-only access
-   (iteration, reporting, formatting). For mutation, pass a pointer explicitly
-   to a function that owns the mutation.
+4. **No implicit sharing for mutation**: If two names need access to the same
+   data, allocate a fresh buffer and copy the data instead of aliasing the heap
+   pointer.
 
 These guidelines keep heap aliasing predictable without adding runtime tracking.
 

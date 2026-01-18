@@ -1,0 +1,300 @@
+// TinyLanguage microbenchmark runner (Tiny entrypoint parity for benchmarks/microbenchmarks.py).
+// Reimplements the Python benchmark harness with Tiny + Python interop.
+
+// Python interop helpers.
+def tiny_language = Python.import_module(
+    "tiny_language",
+    new[
+        "compile_and_run",
+        "run_with_native_backend",
+        "run_with_python_backend",
+        "run_with_python_bytecode_backend"
+    ]
+);
+def time = Python.import_module("time", new["perf_counter"]);
+def os = Python.import_module("os", new["getenv"]);
+def json = Python.import_module("json", new["loads"]);
+
+def PY_INT_ALLOW = new["int"];
+def PY_STR_ALLOW = new["str"];
+def PY_FORMAT_ALLOW = new["format"];
+
+fn __to_int(value) {
+    return Python.call("builtins", "int", new[value], PY_INT_ALLOW);
+}
+
+fn __to_str(value) {
+    return Python.call("builtins", "str", new[value], PY_STR_ALLOW);
+}
+
+fn __format_fixed(value) {
+    return Python.call("builtins", "format", new[value, ".2f"], PY_FORMAT_ALLOW);
+}
+
+fn __argv_from_env() {
+    def raw = os.getenv("TINYLANG_ARGS", "");
+    def payload = "[]";
+    if (raw != Null && len(raw) > 0) { payload = raw; }
+    return json.loads(payload);
+}
+
+// ---------------------------------------------------------------------------
+// Benchmark program generators (TinyLanguage source strings)
+// ---------------------------------------------------------------------------
+
+fn _loop_body(loop_bound) {
+    return String.join(new[
+        "// Tight arithmetic loop to stress integer operations and assignment.",
+        "def sum = 0;",
+        "def i = 0;",
+        "while (i < " + __to_str(loop_bound) + ") {",
+        "    sum = sum + i;",
+        "    i = i + 1;",
+        "}",
+        "print(sum);"
+    ], "\n");
+}
+
+fn _function_calls(call_depth) {
+    return String.join(new[
+        "// Small recursive call tree to exercise function invocation overhead.",
+        "fn fib(n) {",
+        "    if (n <= 1) { return n; }",
+        "    return fib(n - 1) + fib(n - 2);",
+        "}",
+        "print(fib(" + __to_str(call_depth) + "));"
+    ], "\n");
+}
+
+fn _heap_roundtrip(iterations, slots) {
+    def items = new[];
+    def idx = 0;
+    while (idx < slots) {
+        Collections.push(items, "0");
+        idx = idx + 1;
+    }
+    def initial_items = String.join(items, ", ");
+
+    return String.join(new[
+        "// Repeated heap reads/writes to stress pointer checks and indexing.",
+        "def ptr = new[" + initial_items + "];",
+        "def i = 0;",
+        "def idx = 0;",
+        "while (i < " + __to_str(iterations) + ") {",
+        "    def set_status = heap_set(ptr, idx, i);",
+        "    if (set_status.e.code != 0) { print(set_status.e.msg); }",
+        "    def value = heap_get(ptr, idx);",
+        "    if (value == Null) { print(\"heap_get failed\"); }",
+        "    idx = idx + 1;",
+        "    if (idx == " + __to_str(slots) + ") { idx = 0; }",
+        "    i = i + 1;",
+        "}",
+        "print(heap_get(ptr, 0));"
+    ], "\n");
+}
+
+fn _map_operations(iterations) {
+    return String.join(new[
+        "// Insert/update/get operations to stress hash maps and value writes.",
+        "def map = Map.new();",
+        "def i = 0;",
+        "def last = 0;",
+        "while (i < " + __to_str(iterations) + ") {",
+        "    _ = Map.set(map, i, i + 1);",
+        "    last = Map.get(map, i);",
+        "    i = i + 1;",
+        "}",
+        "print(last);"
+    ], "\n");
+}
+
+// ---------------------------------------------------------------------------
+// Benchmark suite & backend registry
+// ---------------------------------------------------------------------------
+
+fn _make_case(name, description, source) {
+    def entry = Map.new();
+    Map.set(entry, "name", name);
+    Map.set(entry, "description", description);
+    Map.set(entry, "source", source);
+    return entry;
+}
+
+def BENCHMARKS = new[
+    _make_case("tight_loop", "Summation loop with predictable arithmetic", _loop_body(5000)),
+    _make_case("recursive_calls", "Naive Fibonacci to measure call overhead", _function_calls(16)),
+    _make_case("heap_roundtrip", "Heap writes/reads to exercise pointer and index checks", _heap_roundtrip(4000, 8)),
+    _make_case("map_operations", "Hash map set/get workload to exercise Map helpers", _map_operations(2000))
+];
+
+def BACKENDS = Map.new();
+Map.set(BACKENDS, "interpreter", tiny_language.compile_and_run);
+Map.set(BACKENDS, "python", tiny_language.run_with_python_backend);
+Map.set(BACKENDS, "native", tiny_language.run_with_native_backend);
+Map.set(BACKENDS, "native-python-bytecode", tiny_language.run_with_python_bytecode_backend);
+
+def DEFAULT_BACKENDS = new["interpreter", "python", "native", "native-python-bytecode"];
+
+def __case_names() {
+    def names = new[];
+    def i = 0;
+    while (i < len(BENCHMARKS)) {
+        def entry = heap_get(BENCHMARKS, i);
+        Collections.push(names, Map.get(entry, "name"));
+        i = i + 1;
+    }
+    return names;
+}
+
+// ---------------------------------------------------------------------------
+// Timing helpers
+// ---------------------------------------------------------------------------
+
+fn _time_runs(func, source, warmup, repeat) {
+    def i = 0;
+    while (i < warmup) {
+        _ = func(source);
+        i = i + 1;
+    }
+
+    def timings = new[];
+    def j = 0;
+    while (j < repeat) {
+        def start = time.perf_counter();
+        _ = func(source);
+        Collections.push(timings, time.perf_counter() - start);
+        j = j + 1;
+    }
+    return timings;
+}
+
+fn _format_timings(timings) {
+    if (len(timings) == 0) { return "n/a"; }
+    def total = 0;
+    def min_val = heap_get(timings, 0);
+    def max_val = min_val;
+    def i = 0;
+    while (i < len(timings)) {
+        def value = heap_get(timings, i);
+        total = total + value;
+        if (value < min_val) { min_val = value; }
+        if (value > max_val) { max_val = value; }
+        i = i + 1;
+    }
+
+    def avg_ms = (total / len(timings)) * 1000.0;
+    def min_ms = min_val * 1000.0;
+    def max_ms = max_val * 1000.0;
+
+    return "avg=" + __format_fixed(avg_ms) + "ms min=" + __format_fixed(min_ms) + "ms max=" + __format_fixed(max_ms) + "ms";
+}
+
+fn __collect_values(argv, start_index) {
+    def values = new[];
+    def idx = start_index;
+    while (idx < len(argv)) {
+        def entry = heap_get(argv, idx);
+        if (String.starts_with(entry, "--")) { break; }
+        Collections.push(values, entry);
+        idx = idx + 1;
+    }
+    return new[values, idx];
+}
+
+fn __contains(values, target) {
+    def i = 0;
+    while (i < len(values)) {
+        if (heap_get(values, i) == target) { return true; }
+        i = i + 1;
+    }
+    return false;
+}
+
+fn __parse_args(argv) {
+    def repeat = 5;
+    def warmup = 1;
+    def backends = Null;
+    def cases = Null;
+
+    def i = 0;
+    while (i < len(argv)) {
+        def arg = heap_get(argv, i);
+        if (arg == "--repeat") {
+            if (i + 1 < len(argv)) {
+                repeat = __to_int(heap_get(argv, i + 1));
+            }
+            i = i + 2;
+            continue;
+        }
+        if (arg == "--warmup") {
+            if (i + 1 < len(argv)) {
+                warmup = __to_int(heap_get(argv, i + 1));
+            }
+            i = i + 2;
+            continue;
+        }
+        if (arg == "--backend") {
+            def collected = __collect_values(argv, i + 1);
+            backends = heap_get(collected, 0);
+            i = heap_get(collected, 1);
+            continue;
+        }
+        if (arg == "--case") {
+            def collected_case = __collect_values(argv, i + 1);
+            cases = heap_get(collected_case, 0);
+            i = heap_get(collected_case, 1);
+            continue;
+        }
+        i = i + 1;
+    }
+
+    def options = Map.new();
+    Map.set(options, "repeat", repeat);
+    Map.set(options, "warmup", warmup);
+    Map.set(options, "backends", backends);
+    Map.set(options, "cases", cases);
+    return options;
+}
+
+fn main(argv) {
+    def options = __parse_args(argv);
+    def selected_backends = Map.get(options, "backends");
+    def selected_cases = Map.get(options, "cases");
+    if (selected_backends == Null) { selected_backends = DEFAULT_BACKENDS; }
+    if (selected_cases == Null) { selected_cases = __case_names(); }
+
+    def repeat = Map.get(options, "repeat");
+    def warmup = Map.get(options, "warmup");
+
+    def case_idx = 0;
+    while (case_idx < len(BENCHMARKS)) {
+        def case_entry = heap_get(BENCHMARKS, case_idx);
+        def case_name = Map.get(case_entry, "name");
+        if (!__contains(selected_cases, case_name)) {
+            case_idx = case_idx + 1;
+            continue;
+        }
+
+        print("\n=== " + case_name + " ===");
+        print(Map.get(case_entry, "description"));
+
+        def backend_idx = 0;
+        while (backend_idx < len(selected_backends)) {
+            def backend_name = heap_get(selected_backends, backend_idx);
+            def runner = Map.get(BACKENDS, backend_name);
+            if (runner != Null) {
+                def timings = _time_runs(runner, Map.get(case_entry, "source"), warmup, repeat);
+                print(backend_name + " " + _format_timings(timings));
+            }
+            backend_idx = backend_idx + 1;
+        }
+
+        case_idx = case_idx + 1;
+    }
+}
+
+fn run() {
+    return main(__argv_from_env());
+}
+
+if (run() == Null) { }

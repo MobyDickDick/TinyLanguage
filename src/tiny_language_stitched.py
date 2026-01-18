@@ -3055,6 +3055,8 @@ class CCodeGenerator:
             int capacity;
         } Stack;
 
+        static Value stack_pop(Stack *stack);
+
         typedef struct {
             int64_t size;
             Value *cells;
@@ -3551,9 +3553,14 @@ class CCodeGenerator:
                         break;
                     }
                     case OP_CALL: {
-                        Value result;
-                        if (call_builtin(instr.arg.as.call_value.name, instr.arg.as.call_value.argc, &stack, &result)) {
-                            stack_push(&stack, result);
+                        Value builtin_result;
+                        if (call_builtin(
+                            instr.arg.as.call_value.name,
+                            instr.arg.as.call_value.argc,
+                            &stack,
+                            &builtin_result
+                        )) {
+                            stack_push(&stack, builtin_result);
                             break;
                         }
                         Function *fn = find_function(program, instr.arg.as.call_value.name);

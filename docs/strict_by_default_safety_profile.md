@@ -80,7 +80,7 @@ Effect boundaries make side effects explicit and auditable.
   operation).
 - Favor fixed-size arrays/stack-friendly structures in strict mode when the
   size is known at compile time; fall back to heap collections only when
-  explicitly requested.
+  explicitly requested. See `docs/heap_usage_guidelines.md` for conventions.
 
 ## Tooling expectations
 

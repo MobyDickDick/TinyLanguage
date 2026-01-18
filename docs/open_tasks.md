@@ -30,7 +30,7 @@ become concrete tasks.
 
 ## Additional suggested tasks
 
-- [ ] Define a formal, testable semantics suite for side effects and evaluation
+- [x] Define a formal, testable semantics suite for side effects and evaluation
   order so strict-mode guarantees are measurable.
 - [ ] Add static analysis checks for heap/array aliasing and bounds safety to
   guide the heap-to-array migration effort.

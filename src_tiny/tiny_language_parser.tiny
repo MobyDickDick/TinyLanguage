@@ -188,10 +188,13 @@ class Parser {
             def cond = self.parse_expr();
             def _eat_status = self._eat("SYM", ")");
             def then_block = self.parse_block();
-            def els = new[];
+            def els = Null;
             if (self.tok.kind == "KW" && self.tok.text == "else") {
                 def _eat_status = self._eat("KW", "else");
                 els = self.parse_block();
+            }
+            if (els == Null) {
+                els = new[];
             }
             return self._attach_span(If(cond, then_block, els, kw.start, Null), kw.start, self._last_tok.stop);
         }

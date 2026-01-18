@@ -38,6 +38,11 @@ from tiny_language import (
 )
 
 
+def _heap_lints_enabled() -> bool:
+    value = os.environ.get("TINY_LINT_HEAP", "").strip().lower()
+    return value not in {"0", "false", "no", "off"}
+
+
 @dataclass
 class HoverResult:
     """Structured hover payload returned by ``TinyLanguageServer.hover``."""
@@ -215,7 +220,7 @@ class TinyLanguageServer:
             lint_no_consecutive_definitions(self.stmts, self.source)
             lint_import_style(self.stmts, self.source)
             lint_locals_used(self.stmts, self.source)
-            if os.environ.get("TINY_LINT_HEAP", "").strip().lower() in {"1", "true", "yes", "on"}:
+            if _heap_lints_enabled():
                 lint_heap_lifetimes(self.stmts, self.source)
             signatures = _collect_function_signatures(self.stmts)
             lint_bare_call_results(self.stmts, signatures, self.source)

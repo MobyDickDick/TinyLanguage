@@ -4,9 +4,6 @@ This list captures the currently planned work items for TinyLanguage. The tasks
 are grouped by area and can be tackled independently.
 
 ## Next tasks (shortlist)
-
-- [ ] Enable heap lifetime lints by default (opt-out flag) and document the new
-  default safety posture.
 - [ ] Add CI/regression checks that assert no live heap allocations remain after
   test runs (use `heap_leak_report` or equivalent harness output).
 - [ ] Formalize ownership/aliasing rules for heap pointers (single-owner or
@@ -54,6 +51,8 @@ become concrete tasks.
 
 ## Recently completed tasks
 
+- [x] Enable heap lifetime lints by default (opt-out flag) and document the new
+  default safety posture.
 - [x] Evaluate a documentation tooling pipeline and add a deterministic docstring
   reference generator plus usage notes for future upkeep.
 - [x] Create a Python-to-Tiny migration guide with known gaps, recommended

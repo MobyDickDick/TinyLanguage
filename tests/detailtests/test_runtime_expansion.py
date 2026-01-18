@@ -103,7 +103,8 @@ print(sum(50));
     assert out.strip() == "1275"
 
 
-def test_heap_api_error_scenarios(run_tiny_source):
+def test_heap_api_error_scenarios(run_tiny_source, monkeypatch):
+    monkeypatch.setenv("TINY_LINT_HEAP", "0")
     out = run_tiny_source(
         """
 def ptr = new(2);

@@ -876,6 +876,24 @@ def test_heap_leak_report_tracks_live_allocations():
     assert report["has_leaks"] is True
 
 
+def test_heap_leak_report_clears_after_cleanup():
+    src = """
+    def first = new(2);
+    def second = new[1, 2, 3];
+    print(len(second));
+    def _unused113 = delete(first);
+    def _unused114 = delete(second);
+    """
+
+    runtime = Runtime(src)
+    compile_and_run(src, runtime=runtime)
+    report = runtime.heap_leak_report()
+
+    assert report["count"] == 0
+    assert report["live"] == {}
+    assert report["has_leaks"] is False
+
+
 def test_error_message_for_missing_field():
     src = """
     def o = { existing: 1; };

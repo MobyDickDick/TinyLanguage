@@ -17,9 +17,9 @@ become concrete tasks.
 - [x] Convert remaining Python entrypoint scripts into Tiny programs, keeping
   parity snapshots and documenting any Tiny-only rewrites needed for features
   that do not map 1:1.
-- [ ] Document every program line (Tiny + Python) with both high-level intent
+- [x] Document every program line (Tiny + Python) with both high-level intent
   and line-level rationale; rely on structured cross-references when repeating
-  patterns.
+  patterns. (See `docs/program_line_reference_generate_doc_reference.md`.)
 - [ ] Minimize heap usage by preferring fixed-size arrays or stack-friendly
   constructs where semantics allow it (requires a clear ownership/mutation model
   to avoid accidental aliasing).

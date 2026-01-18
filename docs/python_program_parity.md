@@ -9,7 +9,7 @@ future conversion work.
 
 | Python entrypoint | Tiny equivalent | Notes |
 | --- | --- | --- |
-| `benchmarks/microbenchmarks.py` | _missing_ | Benchmark driver not yet mirrored in Tiny. |
+| `benchmarks/microbenchmarks.py` | `src_tiny/microbenchmarks.tiny` | Tiny runner mirrors the benchmark harness with Tiny + Python interop. |
 | `examples/rosetta/copy_rosetta_samples.py` | `src_tiny/copy_rosetta_samples.tiny` | Shared Rosetta sample copier. |
 | `run_all.py` | `src_tiny/run_all.tiny` | Tiny version mirrors the main runner in `src/run_all.py`. |
 | `src/language_server_cli.py` | `src_tiny/language_server_cli.tiny` | CLI entrypoint already mirrored. |

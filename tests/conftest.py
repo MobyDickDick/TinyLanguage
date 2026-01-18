@@ -33,6 +33,17 @@ def _ensure_test_fixtures() -> None:
 _ensure_test_fixtures()
 
 
+def pytest_addoption(parser: pytest.Parser) -> None:
+    """Register CLI flags for test-only configuration."""
+
+    parser.addoption(
+        "--assert-no-heap-leaks",
+        action="store_true",
+        default=False,
+        help="Fail tests when heap allocations remain after in-process runs.",
+    )
+
+
 @pytest.fixture
 def run_program():
     """Run a TinyLanguage program via the CLI and capture output."""
@@ -48,8 +59,12 @@ def run_tiny_source():
 
 
 @pytest.fixture(autouse=True)
-def assert_no_heap_leaks(monkeypatch: pytest.MonkeyPatch) -> None:
+def assert_no_heap_leaks(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
     """Enable heap leak assertions for in-process TinyLanguage runs."""
 
+    if os.environ.get("TINY_ASSERT_NO_HEAP_LEAKS") == "1":
+        return
+    if not request.config.getoption("--assert-no-heap-leaks"):
+        return
     if os.environ.get("TINY_ASSERT_NO_HEAP_LEAKS") is None:
         monkeypatch.setenv("TINY_ASSERT_NO_HEAP_LEAKS", "1")

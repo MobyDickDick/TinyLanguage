@@ -6,10 +6,14 @@ behaviors so integrators can navigate the stitched module without reading the
 entire implementation.
 """
 
+from __future__ import annotations
+
 import logging
 import time
+from dataclasses import dataclass, field
 
 from collections import defaultdict, deque
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 # ----- Runtime -----
 

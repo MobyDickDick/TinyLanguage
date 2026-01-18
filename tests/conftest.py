@@ -1,3 +1,4 @@
+import os
 import pathlib
 import shutil
 
@@ -44,3 +45,11 @@ def run_tiny_source():
     """Compile and run TinyLanguage source in-process for convenience."""
 
     return run_tiny
+
+
+@pytest.fixture(autouse=True)
+def assert_no_heap_leaks(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Enable heap leak assertions for in-process TinyLanguage runs."""
+
+    if os.environ.get("TINY_ASSERT_NO_HEAP_LEAKS") is None:
+        monkeypatch.setenv("TINY_ASSERT_NO_HEAP_LEAKS", "1")

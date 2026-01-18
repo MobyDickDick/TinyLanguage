@@ -12,7 +12,9 @@ are grouped by area and can be tackled independently.
 These items are exploratory and may need deeper design/prototyping before they
 become concrete tasks.
 
-- [ ] Convert every Python program in the repo into a Tiny program, keeping
+- [x] Inventory Python entrypoint scripts and map Tiny equivalents (plus gaps)
+  in `docs/python_program_parity.md`.
+- [ ] Convert remaining Python entrypoint scripts into Tiny programs, keeping
   parity snapshots and documenting any Tiny-only rewrites needed for features
   that do not map 1:1.
 - [ ] Document every program line (Tiny + Python) with both high-level intent

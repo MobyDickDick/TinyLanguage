@@ -20,6 +20,7 @@ def test_spawn_results_applied_in_join_order(run_tiny_source):
         print("after second", heap_get(counter, 0));
 
         print("final", heap_get(counter, 0));
+        def _unused = delete(counter);
         """,
     )
 
@@ -44,6 +45,7 @@ def test_join_waits_for_spawned_heap_update(run_tiny_source):
 
         print("joined", join(left), join(right));
         print("slots", heap_get(slots, 0), heap_get(slots, 1));
+        def _unused = delete(slots);
         """,
     )
 

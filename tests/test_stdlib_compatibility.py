@@ -94,6 +94,7 @@ def items = new["a", "b", "c", "d"];
 print(random.choice(items));
 def _shuffled = random.shuffle(items);
 print(string.join(items, ","));
+def _unused = delete(items);
 """
     lines = _run_lines(source)
 
@@ -139,7 +140,8 @@ import stdlib.json;
 
 def data = json.loads("{\\"name\\": \\"Tiny\\", \\"values\\": [1, 2, 3]}");
 print(Map.get(data, "name", ""));
-print(Collections.len(Map.get(data, "values", new[])));
+def values = Map.get(data, "values", Null);
+print(Collections.len(values));
 print(json.dumps(data));
 """
     lines = _run_lines(source)

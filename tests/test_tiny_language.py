@@ -193,6 +193,7 @@ def test_len_and_variadic_print():
         print(len(arr));
         print(len("hi!"));
         print("values", 1 < 2, len(arr));
+        def _unused0 = delete(arr);
         """,
     )
 
@@ -437,6 +438,7 @@ def test_call_stmt_counts_param_usage():
     }
 
     print(init(p));
+    def _unused109 = delete(p);
     """
 
     assert run_tiny(src) == "0\n"
@@ -822,6 +824,7 @@ def test_error_message_for_missing_heap_index(monkeypatch):
     def a = new[1, 2];
     print(heap_get(a, 5));
     print(errorMessage);
+    def _unused206 = delete(a);
     """
 
     monkeypatch.setenv("TINY_LINT_HEAP", "0")

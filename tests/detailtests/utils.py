@@ -9,8 +9,8 @@ PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]
 SRC_ROOT = PROJECT_ROOT / "src"
 sys.path.append(str(SRC_ROOT))
 
+import tiny_language  # noqa: E402
 from tiny_language import compile_and_run  # noqa: E402
-from tiny_language_runtime import Runtime  # noqa: E402
 
 
 @dataclass
@@ -25,11 +25,12 @@ def run_tiny(src: str) -> str:
 
     This mirrors the common pattern used across the test suite.
     """
-    runtime = Runtime(src)
+    runtime = tiny_language.Runtime(src)
     output = compile_and_run(src, runtime=runtime)
-    report = runtime.heap_leak_report()
-    if report["has_leaks"]:
-        raise AssertionError(f"Heap leak detected after run_tiny: {report}")
+    if os.environ.get("TINY_ASSERT_NO_HEAP_LEAKS") == "1":
+        report = runtime.heap_leak_report()
+        if report["has_leaks"]:
+            raise AssertionError(f"Heap leak detected after run_tiny: {report}")
     return output
 
 

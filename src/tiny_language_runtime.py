@@ -6,14 +6,18 @@ behaviors so integrators can navigate the stitched module without reading the
 entire implementation.
 """
 
-from __future__ import annotations
-
 import logging
+import os
+import threading
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from collections import defaultdict, deque
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
+
+from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, _line_info, format_error
+from tiny_language_ast import Fn, IR, Match, MethodDef, OpDef, Param, TypeVariant, VariantPattern, WildcardPattern
 
 # ----- Runtime -----
 

@@ -23,9 +23,10 @@ become concrete tasks.
 - [x] Minimize heap usage by preferring fixed-size arrays or stack-friendly
   constructs where semantics allow it (requires a clear ownership/mutation model
   to avoid accidental aliasing). See `docs/heap_usage_guidelines.md`.
-- [ ] Explore math-oriented syntax/notation (tuple-based block forms, formula
+- [x] Explore math-oriented syntax/notation (tuple-based block forms, formula
   syntax, stack-edit or LaTeX-like constructs) with careful incremental trials
-  to avoid destabilizing readability or tooling.
+  to avoid destabilizing readability or tooling. See
+  `docs/math_syntax_exploration.md`.
 - [x] Establish a "strict-by-default" safety profile to reduce unintended side
   effects and runtime errors (explicit mutability, purity annotations, stricter
   effect boundaries, and safer defaults in the stdlib). See

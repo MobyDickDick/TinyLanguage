@@ -100,6 +100,7 @@ class CCodeGenerator:
             "#include <stdint.h>",
             "#include <stdio.h>",
             "#include <stdlib.h>",
+            "#include <stdarg.h>",
             "#include <string.h>",
         ]
 
@@ -206,6 +207,22 @@ class CCodeGenerator:
             int capacity;
         } Stack;
 
+        static Value stack_pop(Stack *stack);
+
+        typedef struct {
+            int64_t size;
+            Value *cells;
+        } HeapAllocation;
+
+        typedef struct HeapMeta {
+            int64_t ptr;
+            int64_t size;
+            bool freed;
+            struct HeapMeta *next;
+        } HeapMeta;
+
+        static HeapMeta *heap_meta_head = NULL;
+
         #define ARG_NONE_VALUE (Arg){ARG_NONE}
         #define ARG_INT_VALUE(v) (Arg){ARG_INT, .as.int_value = (v)}
         #define ARG_STRING_VALUE(v) (Arg){ARG_STRING, .as.string_value = (v)}
@@ -217,6 +234,252 @@ class CCodeGenerator:
         #define VAL_INT_VALUE(v) (Value){VAL_INT, .as.int_value = (v)}
         #define VAL_DOUBLE_VALUE(v) (Value){VAL_DOUBLE, .as.double_value = (v)}
         #define VAL_STRING_VALUE(v) (Value){VAL_STRING, .as.string_value = (v)}
+
+        static const char *value_type_label(Value value) {
+            switch (value.type) {
+                case VAL_NULL: return "Null";
+                case VAL_BOOL: return "Bool";
+                case VAL_INT: return "int";
+                case VAL_DOUBLE: return "float";
+                case VAL_STRING: return "string";
+            }
+            return "unknown";
+        }
+
+        static void heap_error(const char *fmt, ...) {
+            va_list args;
+            va_start(args, fmt);
+            vfprintf(stderr, fmt, args);
+            va_end(args);
+            fprintf(stderr, "\n");
+            exit(1);
+        }
+
+        static void runtime_error(const char *fmt, ...) {
+            va_list args;
+            va_start(args, fmt);
+            vfprintf(stderr, fmt, args);
+            va_end(args);
+            fprintf(stderr, "\n");
+            exit(1);
+        }
+
+        static int64_t value_to_index(Value value) {
+            if (value.type == VAL_INT) {
+                return value.as.int_value;
+            }
+            if (value.type == VAL_DOUBLE) {
+                double raw = value.as.double_value;
+                int64_t as_int = (int64_t)raw;
+                if ((double)as_int == raw) {
+                    return as_int;
+                }
+                heap_error("heap access error: index %g is not an integer index", raw);
+            }
+            heap_error("heap access error: index %s is not numeric", value_type_label(value));
+            return 0;
+        }
+
+        static int64_t value_to_pointer(Value value, const char *op) {
+            if (value.type == VAL_INT) {
+                return value.as.int_value;
+            }
+            if (value.type == VAL_DOUBLE) {
+                double raw = value.as.double_value;
+                int64_t as_int = (int64_t)raw;
+                if ((double)as_int == raw) {
+                    return as_int;
+                }
+                heap_error("heap %s error: pointer %g is not an integer pointer", op, raw);
+            }
+            heap_error("heap %s error: pointer %s is not numeric", op, value_type_label(value));
+            return 0;
+        }
+
+        static HeapMeta *heap_find_meta(int64_t ptr) {
+            for (HeapMeta *node = heap_meta_head; node != NULL; node = node->next) {
+                if (node->ptr == ptr) {
+                    return node;
+                }
+            }
+            return NULL;
+        }
+
+        static HeapMeta *heap_require_meta(int64_t ptr, const char *op) {
+            if (ptr < 1) {
+                heap_error(
+                    "heap %s error: pointer %lld is invalid (must refer to a live positive allocation)",
+                    op,
+                    (long long)ptr
+                );
+            }
+            HeapMeta *meta = heap_find_meta(ptr);
+            if (!meta) {
+                heap_error("heap %s error: unknown pointer %lld", op, (long long)ptr);
+            }
+            if (meta->freed) {
+                heap_error(
+                    "heap %s error: pointer %lld was already freed (size %lld)",
+                    op,
+                    (long long)ptr,
+                    (long long)meta->size
+                );
+            }
+            return meta;
+        }
+
+        static int64_t value_to_size(Value value) {
+            if (value.type == VAL_INT) {
+                return value.as.int_value;
+            }
+            if (value.type == VAL_DOUBLE) {
+                double raw = value.as.double_value;
+                int64_t as_int = (int64_t)raw;
+                if ((double)as_int == raw) {
+                    return as_int;
+                }
+                heap_error("alloc error: size %g is not an integer", raw);
+            }
+            heap_error("alloc error: size %s is not numeric", value_type_label(value));
+            return 0;
+        }
+
+        static int64_t heap_new_size(Value value) {
+            int64_t size = value_to_size(value);
+            if (size < 0) {
+                heap_error("alloc error: negative size");
+            }
+            return size;
+        }
+
+        static int64_t heap_new_allocation(int64_t size) {
+            HeapAllocation *alloc = malloc(sizeof(HeapAllocation));
+            alloc->size = size;
+            alloc->cells = calloc((size_t)size, sizeof(Value));
+            int64_t ptr = (int64_t)(intptr_t)alloc;
+            HeapMeta *meta = calloc(1, sizeof(HeapMeta));
+            meta->ptr = ptr;
+            meta->size = size;
+            meta->freed = false;
+            meta->next = heap_meta_head;
+            heap_meta_head = meta;
+            return ptr;
+        }
+
+        static Value heap_get(Value ptr_value, Value idx_value) {
+            int64_t ptr = value_to_pointer(ptr_value, "access");
+            int64_t idx = value_to_index(idx_value);
+            HeapMeta *meta = heap_require_meta(ptr, "access");
+            if (idx < 0 || idx >= meta->size) {
+                heap_error(
+                    "heap access error: index %lld out of range for pointer %lld (size %lld)",
+                    (long long)idx,
+                    (long long)ptr,
+                    (long long)meta->size
+                );
+            }
+            HeapAllocation *alloc = (HeapAllocation *)(intptr_t)ptr;
+            return alloc->cells[idx];
+        }
+
+        static Value heap_set(Value ptr_value, Value idx_value, Value value) {
+            int64_t ptr = value_to_pointer(ptr_value, "access");
+            int64_t idx = value_to_index(idx_value);
+            HeapMeta *meta = heap_require_meta(ptr, "access");
+            if (idx < 0 || idx >= meta->size) {
+                heap_error(
+                    "heap access error: index %lld out of range for pointer %lld (size %lld)",
+                    (long long)idx,
+                    (long long)ptr,
+                    (long long)meta->size
+                );
+            }
+            HeapAllocation *alloc = (HeapAllocation *)(intptr_t)ptr;
+            alloc->cells[idx] = value;
+            return VAL_INT_VALUE(0);
+        }
+
+        static Value heap_len(Value ptr_value) {
+            int64_t ptr = value_to_pointer(ptr_value, "access");
+            HeapMeta *meta = heap_require_meta(ptr, "access");
+            return VAL_INT_VALUE(meta->size);
+        }
+
+        static Value heap_delete(Value ptr_value) {
+            int64_t ptr = value_to_pointer(ptr_value, "delete");
+            HeapMeta *meta = heap_require_meta(ptr, "delete");
+            meta->freed = true;
+            HeapAllocation *alloc = (HeapAllocation *)(intptr_t)ptr;
+            free(alloc->cells);
+            free(alloc);
+            return VAL_INT_VALUE(0);
+        }
+
+        static Value heap_leak_report(void) {
+            int64_t count = 0;
+            for (HeapMeta *node = heap_meta_head; node != NULL; node = node->next) {
+                if (!node->freed) {
+                    count += 1;
+                }
+            }
+            return VAL_INT_VALUE(count);
+        }
+
+        static bool call_builtin(const char *name, int argc, Stack *stack, Value *out) {
+            if (strcmp(name, "new") == 0 || strcmp(name, "__new") == 0) {
+                if (argc != 1) {
+                    runtime_error("Runtime error: %s expects 1 arg, got %d", name, argc);
+                }
+                Value size_value = stack_pop(stack);
+                int64_t size = heap_new_size(size_value);
+                int64_t ptr = heap_new_allocation(size);
+                *out = VAL_INT_VALUE(ptr);
+                return true;
+            }
+            if (strcmp(name, "heap_get") == 0) {
+                if (argc != 2) {
+                    runtime_error("Runtime error: heap_get expects 2 args, got %d", argc);
+                }
+                Value idx_value = stack_pop(stack);
+                Value ptr_value = stack_pop(stack);
+                *out = heap_get(ptr_value, idx_value);
+                return true;
+            }
+            if (strcmp(name, "heap_set") == 0) {
+                if (argc != 3) {
+                    runtime_error("Runtime error: heap_set expects 3 args, got %d", argc);
+                }
+                Value value = stack_pop(stack);
+                Value idx_value = stack_pop(stack);
+                Value ptr_value = stack_pop(stack);
+                *out = heap_set(ptr_value, idx_value, value);
+                return true;
+            }
+            if (strcmp(name, "heap_len") == 0) {
+                if (argc != 1) {
+                    runtime_error("Runtime error: heap_len expects 1 arg, got %d", argc);
+                }
+                Value ptr_value = stack_pop(stack);
+                *out = heap_len(ptr_value);
+                return true;
+            }
+            if (strcmp(name, "heap_leak_report") == 0) {
+                if (argc != 0) {
+                    runtime_error("Runtime error: heap_leak_report expects 0 args, got %d", argc);
+                }
+                *out = heap_leak_report();
+                return true;
+            }
+            if (strcmp(name, "delete") == 0) {
+                if (argc != 1) {
+                    runtime_error("Runtime error: delete expects 1 arg, got %d", argc);
+                }
+                Value ptr_value = stack_pop(stack);
+                *out = heap_delete(ptr_value);
+                return true;
+            }
+            return false;
+        }
 
         static void env_init(Env *env) {
             env->items = NULL;
@@ -442,6 +705,16 @@ class CCodeGenerator:
                         break;
                     }
                     case OP_CALL: {
+                        Value builtin_result;
+                        if (call_builtin(
+                            instr.arg.as.call_value.name,
+                            instr.arg.as.call_value.argc,
+                            &stack,
+                            &builtin_result
+                        )) {
+                            stack_push(&stack, builtin_result);
+                            break;
+                        }
                         Function *fn = find_function(program, instr.arg.as.call_value.name);
                         if (!fn) {
                             fprintf(stderr, "Runtime error: unknown function %s\n", instr.arg.as.call_value.name);
@@ -491,7 +764,7 @@ class CCodeGenerator:
         }
         """
         for line in runtime.splitlines():
-            if "fprintf(stderr" in line and "\\n" not in line:
+            if "fprintf(stderr" in line and "\\n" not in line and "vfprintf(stderr" not in line:
                 raise ValueError("C runtime stderr messages must end with \\n")
         return textwrap.dedent(runtime).strip().splitlines()
 

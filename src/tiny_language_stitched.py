@@ -2948,6 +2948,7 @@ class CCodeGenerator:
             "#include <stdint.h>",
             "#include <stdio.h>",
             "#include <stdlib.h>",
+            "#include <stdarg.h>",
             "#include <string.h>",
         ]
 
@@ -3054,6 +3055,22 @@ class CCodeGenerator:
             int capacity;
         } Stack;
 
+        static Value stack_pop(Stack *stack);
+
+        typedef struct {
+            int64_t size;
+            Value *cells;
+        } HeapAllocation;
+
+        typedef struct HeapMeta {
+            int64_t ptr;
+            int64_t size;
+            bool freed;
+            struct HeapMeta *next;
+        } HeapMeta;
+
+        static HeapMeta *heap_meta_head = NULL;
+
         #define ARG_NONE_VALUE (Arg){ARG_NONE}
         #define ARG_INT_VALUE(v) (Arg){ARG_INT, .as.int_value = (v)}
         #define ARG_STRING_VALUE(v) (Arg){ARG_STRING, .as.string_value = (v)}
@@ -3065,6 +3082,252 @@ class CCodeGenerator:
         #define VAL_INT_VALUE(v) (Value){VAL_INT, .as.int_value = (v)}
         #define VAL_DOUBLE_VALUE(v) (Value){VAL_DOUBLE, .as.double_value = (v)}
         #define VAL_STRING_VALUE(v) (Value){VAL_STRING, .as.string_value = (v)}
+
+        static const char *value_type_label(Value value) {
+            switch (value.type) {
+                case VAL_NULL: return "Null";
+                case VAL_BOOL: return "Bool";
+                case VAL_INT: return "int";
+                case VAL_DOUBLE: return "float";
+                case VAL_STRING: return "string";
+            }
+            return "unknown";
+        }
+
+        static void heap_error(const char *fmt, ...) {
+            va_list args;
+            va_start(args, fmt);
+            vfprintf(stderr, fmt, args);
+            va_end(args);
+            fprintf(stderr, "\n");
+            exit(1);
+        }
+
+        static void runtime_error(const char *fmt, ...) {
+            va_list args;
+            va_start(args, fmt);
+            vfprintf(stderr, fmt, args);
+            va_end(args);
+            fprintf(stderr, "\n");
+            exit(1);
+        }
+
+        static int64_t value_to_index(Value value) {
+            if (value.type == VAL_INT) {
+                return value.as.int_value;
+            }
+            if (value.type == VAL_DOUBLE) {
+                double raw = value.as.double_value;
+                int64_t as_int = (int64_t)raw;
+                if ((double)as_int == raw) {
+                    return as_int;
+                }
+                heap_error("heap access error: index %g is not an integer index", raw);
+            }
+            heap_error("heap access error: index %s is not numeric", value_type_label(value));
+            return 0;
+        }
+
+        static int64_t value_to_pointer(Value value, const char *op) {
+            if (value.type == VAL_INT) {
+                return value.as.int_value;
+            }
+            if (value.type == VAL_DOUBLE) {
+                double raw = value.as.double_value;
+                int64_t as_int = (int64_t)raw;
+                if ((double)as_int == raw) {
+                    return as_int;
+                }
+                heap_error("heap %s error: pointer %g is not an integer pointer", op, raw);
+            }
+            heap_error("heap %s error: pointer %s is not numeric", op, value_type_label(value));
+            return 0;
+        }
+
+        static HeapMeta *heap_find_meta(int64_t ptr) {
+            for (HeapMeta *node = heap_meta_head; node != NULL; node = node->next) {
+                if (node->ptr == ptr) {
+                    return node;
+                }
+            }
+            return NULL;
+        }
+
+        static HeapMeta *heap_require_meta(int64_t ptr, const char *op) {
+            if (ptr < 1) {
+                heap_error(
+                    "heap %s error: pointer %lld is invalid (must refer to a live positive allocation)",
+                    op,
+                    (long long)ptr
+                );
+            }
+            HeapMeta *meta = heap_find_meta(ptr);
+            if (!meta) {
+                heap_error("heap %s error: unknown pointer %lld", op, (long long)ptr);
+            }
+            if (meta->freed) {
+                heap_error(
+                    "heap %s error: pointer %lld was already freed (size %lld)",
+                    op,
+                    (long long)ptr,
+                    (long long)meta->size
+                );
+            }
+            return meta;
+        }
+
+        static int64_t value_to_size(Value value) {
+            if (value.type == VAL_INT) {
+                return value.as.int_value;
+            }
+            if (value.type == VAL_DOUBLE) {
+                double raw = value.as.double_value;
+                int64_t as_int = (int64_t)raw;
+                if ((double)as_int == raw) {
+                    return as_int;
+                }
+                heap_error("alloc error: size %g is not an integer", raw);
+            }
+            heap_error("alloc error: size %s is not numeric", value_type_label(value));
+            return 0;
+        }
+
+        static int64_t heap_new_size(Value value) {
+            int64_t size = value_to_size(value);
+            if (size < 0) {
+                heap_error("alloc error: negative size");
+            }
+            return size;
+        }
+
+        static int64_t heap_new_allocation(int64_t size) {
+            HeapAllocation *alloc = malloc(sizeof(HeapAllocation));
+            alloc->size = size;
+            alloc->cells = calloc((size_t)size, sizeof(Value));
+            int64_t ptr = (int64_t)(intptr_t)alloc;
+            HeapMeta *meta = calloc(1, sizeof(HeapMeta));
+            meta->ptr = ptr;
+            meta->size = size;
+            meta->freed = false;
+            meta->next = heap_meta_head;
+            heap_meta_head = meta;
+            return ptr;
+        }
+
+        static Value heap_get(Value ptr_value, Value idx_value) {
+            int64_t ptr = value_to_pointer(ptr_value, "access");
+            int64_t idx = value_to_index(idx_value);
+            HeapMeta *meta = heap_require_meta(ptr, "access");
+            if (idx < 0 || idx >= meta->size) {
+                heap_error(
+                    "heap access error: index %lld out of range for pointer %lld (size %lld)",
+                    (long long)idx,
+                    (long long)ptr,
+                    (long long)meta->size
+                );
+            }
+            HeapAllocation *alloc = (HeapAllocation *)(intptr_t)ptr;
+            return alloc->cells[idx];
+        }
+
+        static Value heap_set(Value ptr_value, Value idx_value, Value value) {
+            int64_t ptr = value_to_pointer(ptr_value, "access");
+            int64_t idx = value_to_index(idx_value);
+            HeapMeta *meta = heap_require_meta(ptr, "access");
+            if (idx < 0 || idx >= meta->size) {
+                heap_error(
+                    "heap access error: index %lld out of range for pointer %lld (size %lld)",
+                    (long long)idx,
+                    (long long)ptr,
+                    (long long)meta->size
+                );
+            }
+            HeapAllocation *alloc = (HeapAllocation *)(intptr_t)ptr;
+            alloc->cells[idx] = value;
+            return VAL_INT_VALUE(0);
+        }
+
+        static Value heap_len(Value ptr_value) {
+            int64_t ptr = value_to_pointer(ptr_value, "access");
+            HeapMeta *meta = heap_require_meta(ptr, "access");
+            return VAL_INT_VALUE(meta->size);
+        }
+
+        static Value heap_delete(Value ptr_value) {
+            int64_t ptr = value_to_pointer(ptr_value, "delete");
+            HeapMeta *meta = heap_require_meta(ptr, "delete");
+            meta->freed = true;
+            HeapAllocation *alloc = (HeapAllocation *)(intptr_t)ptr;
+            free(alloc->cells);
+            free(alloc);
+            return VAL_INT_VALUE(0);
+        }
+
+        static Value heap_leak_report(void) {
+            int64_t count = 0;
+            for (HeapMeta *node = heap_meta_head; node != NULL; node = node->next) {
+                if (!node->freed) {
+                    count += 1;
+                }
+            }
+            return VAL_INT_VALUE(count);
+        }
+
+        static bool call_builtin(const char *name, int argc, Stack *stack, Value *out) {
+            if (strcmp(name, "new") == 0 || strcmp(name, "__new") == 0) {
+                if (argc != 1) {
+                    runtime_error("Runtime error: %s expects 1 arg, got %d", name, argc);
+                }
+                Value size_value = stack_pop(stack);
+                int64_t size = heap_new_size(size_value);
+                int64_t ptr = heap_new_allocation(size);
+                *out = VAL_INT_VALUE(ptr);
+                return true;
+            }
+            if (strcmp(name, "heap_get") == 0) {
+                if (argc != 2) {
+                    runtime_error("Runtime error: heap_get expects 2 args, got %d", argc);
+                }
+                Value idx_value = stack_pop(stack);
+                Value ptr_value = stack_pop(stack);
+                *out = heap_get(ptr_value, idx_value);
+                return true;
+            }
+            if (strcmp(name, "heap_set") == 0) {
+                if (argc != 3) {
+                    runtime_error("Runtime error: heap_set expects 3 args, got %d", argc);
+                }
+                Value value = stack_pop(stack);
+                Value idx_value = stack_pop(stack);
+                Value ptr_value = stack_pop(stack);
+                *out = heap_set(ptr_value, idx_value, value);
+                return true;
+            }
+            if (strcmp(name, "heap_len") == 0) {
+                if (argc != 1) {
+                    runtime_error("Runtime error: heap_len expects 1 arg, got %d", argc);
+                }
+                Value ptr_value = stack_pop(stack);
+                *out = heap_len(ptr_value);
+                return true;
+            }
+            if (strcmp(name, "heap_leak_report") == 0) {
+                if (argc != 0) {
+                    runtime_error("Runtime error: heap_leak_report expects 0 args, got %d", argc);
+                }
+                *out = heap_leak_report();
+                return true;
+            }
+            if (strcmp(name, "delete") == 0) {
+                if (argc != 1) {
+                    runtime_error("Runtime error: delete expects 1 arg, got %d", argc);
+                }
+                Value ptr_value = stack_pop(stack);
+                *out = heap_delete(ptr_value);
+                return true;
+            }
+            return false;
+        }
 
         static void env_init(Env *env) {
             env->items = NULL;
@@ -3290,6 +3553,16 @@ class CCodeGenerator:
                         break;
                     }
                     case OP_CALL: {
+                        Value builtin_result;
+                        if (call_builtin(
+                            instr.arg.as.call_value.name,
+                            instr.arg.as.call_value.argc,
+                            &stack,
+                            &builtin_result
+                        )) {
+                            stack_push(&stack, builtin_result);
+                            break;
+                        }
                         Function *fn = find_function(program, instr.arg.as.call_value.name);
                         if (!fn) {
                             fprintf(stderr, "Runtime error: unknown function %s\n", instr.arg.as.call_value.name);
@@ -3339,7 +3612,7 @@ class CCodeGenerator:
         }
         """
         for line in runtime.splitlines():
-            if "fprintf(stderr" in line and "\\n" not in line:
+            if "fprintf(stderr" in line and "\\n" not in line and "vfprintf(stderr" not in line:
                 raise ValueError("C runtime stderr messages must end with \\n")
         return textwrap.dedent(runtime).strip().splitlines()
 
@@ -4972,7 +5245,15 @@ class LLVMCodeGenerator:
             "@.fmt_i64 = private unnamed_addr constant [5 x i8] c\"%ld\\0A\\00\"",
             "@.fmt_double = private unnamed_addr constant [5 x i8] c\"%lf\\0A\\00\"",
             "@.fmt_str = private unnamed_addr constant [4 x i8] c\"%s\\0A\\00\"",
-            "@.heap_bounds_err = private unnamed_addr constant [54 x i8] c\"heap access error: index %ld out of range (size %ld)\\0A\\00\"",
+            "@.heap_bounds_err = private unnamed_addr constant [70 x i8] c\"heap access error: index %ld out of range for pointer %ld (size %ld)\\0A\\00\"",
+            "@.heap_invalid_ptr_err = private unnamed_addr constant [86 x i8] c\"heap access error: pointer %ld is invalid (must refer to a live positive allocation)\\0A\\00\"",
+            "@.heap_unknown_ptr_err = private unnamed_addr constant [40 x i8] c\"heap access error: unknown pointer %ld\\0A\\00\"",
+            "@.heap_freed_ptr_err = private unnamed_addr constant [61 x i8] c\"heap access error: pointer %ld was already freed (size %ld)\\0A\\00\"",
+            "@.heap_delete_invalid_ptr_err = private unnamed_addr constant [86 x i8] c\"heap delete error: pointer %ld is invalid (must refer to a live positive allocation)\\0A\\00\"",
+            "@.heap_delete_unknown_ptr_err = private unnamed_addr constant [40 x i8] c\"heap delete error: unknown pointer %ld\\0A\\00\"",
+            "@.heap_delete_freed_ptr_err = private unnamed_addr constant [61 x i8] c\"heap delete error: pointer %ld was already freed (size %ld)\\0A\\00\"",
+            "@.heap_alloc_neg_err = private unnamed_addr constant [28 x i8] c\"alloc error: negative size\\0A\\00\"",
+            "@__heap_meta_head = global i64 0",
             "@.match_error_fmt = private unnamed_addr constant [33 x i8] c\"non-exhaustive match for tag %s\\0A\\00\"",
             "@.deque_empty_err = private unnamed_addr constant [16 x i8] c\"deque is empty\\0A\\00\"",
             "declare i32 @printf(i8*, ...)",
@@ -4989,14 +5270,138 @@ class LLVMCodeGenerator:
 
     def _runtime_helpers(self) -> List[str]:
         return [
+            "define void @__heap_error_ptr(i8* %fmt, i64 %ptr) {",
+            "entry:",
+            "  %_printed = call i32 (i8*, ...) @printf(i8* %fmt, i64 %ptr)",
+            "  %_flushed = call i32 @fflush(i8* null)",
+            "  call void @exit(i32 1)",
+            "  ret void",
+            "}",
+            "define void @__heap_error_ptr_size(i8* %fmt, i64 %ptr, i64 %size) {",
+            "entry:",
+            "  %_printed = call i32 (i8*, ...) @printf(i8* %fmt, i64 %ptr, i64 %size)",
+            "  %_flushed = call i32 @fflush(i8* null)",
+            "  call void @exit(i32 1)",
+            "  ret void",
+            "}",
+            "define void @__heap_error_simple(i8* %fmt) {",
+            "entry:",
+            "  %_printed = call i32 (i8*, ...) @printf(i8* %fmt)",
+            "  %_flushed = call i32 @fflush(i8* null)",
+            "  call void @exit(i32 1)",
+            "  ret void",
+            "}",
+            "define i64 @__heap_find_meta(i64 %ptr) {",
+            "entry:",
+            "  %head = load i64, i64* @__heap_meta_head",
+            "  br label %loop",
+            "loop:",
+            "  %node = phi i64 [%head, %entry], [%next, %continue]",
+            "  %is_null = icmp eq i64 %node, 0",
+            "  br i1 %is_null, label %not_found, label %check",
+            "check:",
+            "  %node_ptr = inttoptr i64 %node to i64*",
+            "  %stored_ptr = load i64, i64* %node_ptr",
+            "  %match = icmp eq i64 %stored_ptr, %ptr",
+            "  br i1 %match, label %found, label %continue",
+            "continue:",
+            "  %next_ptr = getelementptr i64, i64* %node_ptr, i64 3",
+            "  %next = load i64, i64* %next_ptr",
+            "  br label %loop",
+            "found:",
+            "  ret i64 %node",
+            "not_found:",
+            "  ret i64 0",
+            "}",
+            "define i64 @__heap_require_live_access(i64 %ptr) {",
+            "entry:",
+            "  %invalid = icmp sle i64 %ptr, 0",
+            "  br i1 %invalid, label %invalid_ptr, label %find",
+            "invalid_ptr:",
+            "  %fmt = getelementptr [86 x i8], [86 x i8]* @.heap_invalid_ptr_err, i64 0, i64 0",
+            "  call void @__heap_error_ptr(i8* %fmt, i64 %ptr)",
+            "  ret i64 0",
+            "find:",
+            "  %meta = call i64 @__heap_find_meta(i64 %ptr)",
+            "  %found = icmp ne i64 %meta, 0",
+            "  br i1 %found, label %check_freed, label %unknown",
+            "unknown:",
+            "  %fmt_unknown = getelementptr [40 x i8], [40 x i8]* @.heap_unknown_ptr_err, i64 0, i64 0",
+            "  call void @__heap_error_ptr(i8* %fmt_unknown, i64 %ptr)",
+            "  ret i64 0",
+            "check_freed:",
+            "  %meta_ptr = inttoptr i64 %meta to i64*",
+            "  %freed_ptr = getelementptr i64, i64* %meta_ptr, i64 2",
+            "  %freed = load i64, i64* %freed_ptr",
+            "  %is_freed = icmp ne i64 %freed, 0",
+            "  br i1 %is_freed, label %freed, label %ok",
+            "freed:",
+            "  %size_ptr = getelementptr i64, i64* %meta_ptr, i64 1",
+            "  %size = load i64, i64* %size_ptr",
+            "  %fmt_freed = getelementptr [61 x i8], [61 x i8]* @.heap_freed_ptr_err, i64 0, i64 0",
+            "  call void @__heap_error_ptr_size(i8* %fmt_freed, i64 %ptr, i64 %size)",
+            "  ret i64 0",
+            "ok:",
+            "  ret i64 %meta",
+            "}",
+            "define i64 @__heap_require_live_delete(i64 %ptr) {",
+            "entry:",
+            "  %invalid = icmp sle i64 %ptr, 0",
+            "  br i1 %invalid, label %invalid_ptr, label %find",
+            "invalid_ptr:",
+            "  %fmt = getelementptr [86 x i8], [86 x i8]* @.heap_delete_invalid_ptr_err, i64 0, i64 0",
+            "  call void @__heap_error_ptr(i8* %fmt, i64 %ptr)",
+            "  ret i64 0",
+            "find:",
+            "  %meta = call i64 @__heap_find_meta(i64 %ptr)",
+            "  %found = icmp ne i64 %meta, 0",
+            "  br i1 %found, label %check_freed, label %unknown",
+            "unknown:",
+            "  %fmt_unknown = getelementptr [40 x i8], [40 x i8]* @.heap_delete_unknown_ptr_err, i64 0, i64 0",
+            "  call void @__heap_error_ptr(i8* %fmt_unknown, i64 %ptr)",
+            "  ret i64 0",
+            "check_freed:",
+            "  %meta_ptr = inttoptr i64 %meta to i64*",
+            "  %freed_ptr = getelementptr i64, i64* %meta_ptr, i64 2",
+            "  %freed = load i64, i64* %freed_ptr",
+            "  %is_freed = icmp ne i64 %freed, 0",
+            "  br i1 %is_freed, label %freed, label %ok",
+            "freed:",
+            "  %size_ptr = getelementptr i64, i64* %meta_ptr, i64 1",
+            "  %size = load i64, i64* %size_ptr",
+            "  %fmt_freed = getelementptr [61 x i8], [61 x i8]* @.heap_delete_freed_ptr_err, i64 0, i64 0",
+            "  call void @__heap_error_ptr_size(i8* %fmt_freed, i64 %ptr, i64 %size)",
+            "  ret i64 0",
+            "ok:",
+            "  ret i64 %meta",
+            "}",
             "define i64 @__new(i64 %size) {",
             "entry:",
+            "  %neg = icmp slt i64 %size, 0",
+            "  br i1 %neg, label %err, label %alloc",
+            "err:",
+            "  %fmt = getelementptr [28 x i8], [28 x i8]* @.heap_alloc_neg_err, i64 0, i64 0",
+            "  call void @__heap_error_simple(i8* %fmt)",
+            "  ret i64 0",
+            "alloc:",
             "  %alloc_size = add i64 %size, 1",
             "  %ptr = call i8* @calloc(i64 %alloc_size, i64 8)",
             "  %base = bitcast i8* %ptr to i64*",
             "  store i64 %size, i64* %base",
             "  %data = getelementptr i64, i64* %base, i64 1",
             "  %int = ptrtoint i64* %data to i64",
+            "  %meta_raw = call i8* @calloc(i64 4, i64 8)",
+            "  %meta = bitcast i8* %meta_raw to i64*",
+            "  store i64 %int, i64* %meta",
+            "  %meta_size = getelementptr i64, i64* %meta, i64 1",
+            "  store i64 %size, i64* %meta_size",
+            "  %meta_freed = getelementptr i64, i64* %meta, i64 2",
+            "  store i64 0, i64* %meta_freed",
+            "  %meta_next = getelementptr i64, i64* %meta, i64 3",
+            "  %head = load i64, i64* @__heap_meta_head",
+            "  store i64 %head, i64* %meta_next",
+            "  %meta_int = ptrtoint i64* %meta to i64",
+            "  store i64 %meta_int, i64* @__heap_meta_head",
             "  ret i64 %int",
             "}",
             "define i64 @new(i64 %size) {",
@@ -5004,44 +5409,48 @@ class LLVMCodeGenerator:
             "  %ptr = call i64 @__new(i64 %size)",
             "  ret i64 %ptr",
             "}",
-            "define i64 @__heap_bounds_error(i64 %idx, i64 %size) {",
+            "define i64 @__heap_bounds_error(i64 %idx, i64 %ptr, i64 %size) {",
             "entry:",
-            "  %fmt = getelementptr [54 x i8], [54 x i8]* @.heap_bounds_err, i64 0, i64 0",
-            "  %_printed = call i32 (i8*, ...) @printf(i8* %fmt, i64 %idx, i64 %size)",
+            "  %fmt = getelementptr [70 x i8], [70 x i8]* @.heap_bounds_err, i64 0, i64 0",
+            "  %_printed = call i32 (i8*, ...) @printf(i8* %fmt, i64 %idx, i64 %ptr, i64 %size)",
             "  %_flushed = call i32 @fflush(i8* null)",
             "  call void @exit(i32 1)",
             "  ret i64 0",
             "}",
             "define i64 @heap_get(i64 %ptr, i64 %idx) {",
             "entry:",
-            "  %data = inttoptr i64 %ptr to i64*",
-            "  %base = getelementptr i64, i64* %data, i64 -1",
-            "  %size = load i64, i64* %base",
+            "  %meta = call i64 @__heap_require_live_access(i64 %ptr)",
+            "  %meta_ptr = inttoptr i64 %meta to i64*",
+            "  %size_ptr = getelementptr i64, i64* %meta_ptr, i64 1",
+            "  %size = load i64, i64* %size_ptr",
             "  %neg = icmp slt i64 %idx, 0",
             "  %oob = icmp sge i64 %idx, %size",
             "  %bad = or i1 %neg, %oob",
             "  br i1 %bad, label %err, label %ok",
             "err:",
-            "  %_ignored = call i64 @__heap_bounds_error(i64 %idx, i64 %size)",
+            "  %_ignored = call i64 @__heap_bounds_error(i64 %idx, i64 %ptr, i64 %size)",
             "  ret i64 0",
             "ok:",
+            "  %data = inttoptr i64 %ptr to i64*",
             "  %offset = getelementptr i64, i64* %data, i64 %idx",
             "  %value = load i64, i64* %offset",
             "  ret i64 %value",
             "}",
             "define i64 @heap_set(i64 %ptr, i64 %idx, i64 %value) {",
             "entry:",
-            "  %data = inttoptr i64 %ptr to i64*",
-            "  %base = getelementptr i64, i64* %data, i64 -1",
-            "  %size = load i64, i64* %base",
+            "  %meta = call i64 @__heap_require_live_access(i64 %ptr)",
+            "  %meta_ptr = inttoptr i64 %meta to i64*",
+            "  %size_ptr = getelementptr i64, i64* %meta_ptr, i64 1",
+            "  %size = load i64, i64* %size_ptr",
             "  %neg = icmp slt i64 %idx, 0",
             "  %oob = icmp sge i64 %idx, %size",
             "  %bad = or i1 %neg, %oob",
             "  br i1 %bad, label %err, label %ok",
             "err:",
-            "  %_ignored = call i64 @__heap_bounds_error(i64 %idx, i64 %size)",
+            "  %_ignored = call i64 @__heap_bounds_error(i64 %idx, i64 %ptr, i64 %size)",
             "  ret i64 0",
             "ok:",
+            "  %data = inttoptr i64 %ptr to i64*",
             "  %offset = getelementptr i64, i64* %data, i64 %idx",
             "  store i64 %value, i64* %offset",
             "  ret i64 0",
@@ -5084,13 +5493,40 @@ class LLVMCodeGenerator:
             "}",
             "define i64 @heap_len(i64 %ptr) {",
             "entry:",
-            "  %data = inttoptr i64 %ptr to i64*",
-            "  %base = getelementptr i64, i64* %data, i64 -1",
-            "  %size = load i64, i64* %base",
+            "  %meta = call i64 @__heap_require_live_access(i64 %ptr)",
+            "  %meta_ptr = inttoptr i64 %meta to i64*",
+            "  %size_ptr = getelementptr i64, i64* %meta_ptr, i64 1",
+            "  %size = load i64, i64* %size_ptr",
             "  ret i64 %size",
+            "}",
+            "define i64 @heap_leak_report() {",
+            "entry:",
+            "  %head = load i64, i64* @__heap_meta_head",
+            "  br label %loop",
+            "loop:",
+            "  %node = phi i64 [%head, %entry], [%next, %body]",
+            "  %count = phi i64 [0, %entry], [%count_next, %body]",
+            "  %is_null = icmp eq i64 %node, 0",
+            "  br i1 %is_null, label %done, label %body",
+            "body:",
+            "  %node_ptr = inttoptr i64 %node to i64*",
+            "  %freed_ptr = getelementptr i64, i64* %node_ptr, i64 2",
+            "  %freed = load i64, i64* %freed_ptr",
+            "  %is_live = icmp eq i64 %freed, 0",
+            "  %live_val = zext i1 %is_live to i64",
+            "  %count_next = add i64 %count, %live_val",
+            "  %next_ptr = getelementptr i64, i64* %node_ptr, i64 3",
+            "  %next = load i64, i64* %next_ptr",
+            "  br label %loop",
+            "done:",
+            "  ret i64 %count",
             "}",
             "define i64 @delete(i64 %ptr) {",
             "entry:",
+            "  %meta = call i64 @__heap_require_live_delete(i64 %ptr)",
+            "  %meta_ptr = inttoptr i64 %meta to i64*",
+            "  %freed_ptr = getelementptr i64, i64* %meta_ptr, i64 2",
+            "  store i64 1, i64* %freed_ptr",
             "  %data = inttoptr i64 %ptr to i64*",
             "  %base = getelementptr i64, i64* %data, i64 -1",
             "  %raw = bitcast i64* %base to i8*",

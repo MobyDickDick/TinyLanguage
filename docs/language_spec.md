@@ -29,7 +29,12 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 - **Comparisons:** `==`, `!=`, `<`, `>`, `<=`, `>=` work on numbers, strings, booleans, and user types with operator overloads.
 - **Booleans:** Short-circuit logic with `&&` and `||`, negation via `!expr`.
 - **Arrays and heap:** `new[1, 2, 3]` creates an array; `new(3)` reserves heap space with three slots. Access via `heap_get(ptr, idx)` and `heap_set(ptr, idx, value)`. `tag(ptr, "Label")` attaches a type tag, and `delete(ptr)` frees memory.
-  - **Safety profile (current):** heap management is still manual, but the interpreter enables lifetime lints by default. Set `TINY_LINT_HEAP=0` to opt out; the lints catch use-after-free access (including double deletes) and leak-prone rebinding of live pointers. These checks are conservative and do not replace a full ownership or GC model.
+  - **Ownership + aliasing (single-owner model):**
+    - Heap pointers have a single logical owner; lints treat pointer-to-pointer assignments as aliasing violations instead of implicit sharing.
+    - Passing a pointer into a helper is a temporary borrow; the caller retains ownership and must still `delete` the allocation.
+    - Returning a pointer hands ownership to the caller, which must treat the result as the new owner and avoid continuing to use the previous binding.
+    - Copy data or allocate a new buffer when two independent mutable references are needed. See `docs/heap_usage_guidelines.md` for patterns.
+  - **Safety profile (current):** heap management is still manual, but the interpreter enables lifetime lints by default. Set `TINY_LINT_HEAP=0` to opt out; the lints catch use-after-free access (including double deletes), leak-prone rebinding of live pointers, and aliasing. These checks are conservative and do not replace a full ownership or GC model.
 - **Struct literals:** `{ a: 1, b: 2 }` builds an anonymous struct; fields are read with dot notation (`obj.a`).
   - Curly braces are reserved for struct literals and destructuring assignments (`{ a, b } = expr;`). Tiny does not support unordered set literals. Prefer ordered `new[...]` arrays when iteration order matters, and use stdlib `Set`/`Map` types when you need true unordered semantics.
 

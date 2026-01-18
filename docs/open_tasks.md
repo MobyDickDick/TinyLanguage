@@ -6,7 +6,7 @@ are grouped by area and can be tackled independently.
 ## Next tasks (shortlist)
 - [x] Add CI/regression checks that assert no live heap allocations remain after
   test runs (use `heap_leak_report` or equivalent harness output).
-- [ ] Formalize ownership/aliasing rules for heap pointers (single-owner or
+- [x] Formalize ownership/aliasing rules for heap pointers (single-owner or
   borrow model) and update language docs + lint rules accordingly.
 - [ ] Parity pass: bring native VM and LLVM/C backends up to interpreter-level
   heap safety checks (invalid pointer/index, double delete, leak diagnostics).

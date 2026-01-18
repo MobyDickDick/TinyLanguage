@@ -24,6 +24,7 @@ def test_stdlib_math_matches_python() -> None:
     source = """
 import stdlib.math;
 print(math.sqrt(81));
+print(math.fabs(-12.5));
 print(math.pow(2, 5));
 print(math.floor(3.9));
 print(math.ceil(3.1));
@@ -33,10 +34,14 @@ print(math.clamp(-2, 0, 5));
 print(math.sign(-7));
 print(math.max(2, 9));
 print(math.min(2, 9));
+print(math.pi);
+print(math.tau);
+print(math.e);
 """
     values = [float(value) for value in _run_lines(source)]
     expected = [
         py_math.sqrt(81),
+        py_math.fabs(-12.5),
         py_math.pow(2, 5),
         py_math.floor(3.9),
         py_math.ceil(3.1),
@@ -46,6 +51,9 @@ print(math.min(2, 9));
         -1,
         max(2, 9),
         min(2, 9),
+        py_math.pi,
+        py_math.tau,
+        py_math.e,
     ]
     assert values == pytest.approx(expected)
 
@@ -59,6 +67,9 @@ print(string.join(parts, "|"));
 print(string.upper("Tiny"));
 print(string.lower("Tiny"));
 print(string.trim("  hi  "));
+print(string.strip("  hi  "));
+print(string.lstrip("  hi  "));
+print(string.rstrip("  hi  "));
 print(string.repeat("ha", 3));
 print(string.contains("tiny language", "lang"));
 print(string.replace("tiny language", " ", "_"));
@@ -73,6 +84,9 @@ def _cleanup_parts = delete(parts);
         "TINY",
         "tiny",
         "hi",
+        "hi",
+        "hi  ",
+        "  hi",
         "hahaha",
         "true",
         "tiny_language",

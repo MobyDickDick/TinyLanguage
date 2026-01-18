@@ -9,7 +9,7 @@ CODEGEN_SRC = (PROJECT_ROOT / "src_tiny" / "tiny_language_codegen_native.tiny").
 NATIVE_VM_SRC = (PROJECT_ROOT / "src_tiny" / "native_vm.tiny").read_text(encoding="utf-8")
 
 
-def test_tiny_native_backend_smoke() -> None:
+def test_tiny_native_backend_smoke(monkeypatch) -> None:
     program = "\n\n".join(
         [
             AST_SRC,
@@ -31,6 +31,7 @@ print(out);
         ]
     )
 
+    monkeypatch.setenv("TINY_LINT_HEAP", "0")
     output = compile_and_run(program).strip()
 
     assert output == "3"

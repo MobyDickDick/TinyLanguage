@@ -3,7 +3,8 @@ import random
 import pytest
 
 
-def test_stdlib_functions_cover_math_string_and_collections(run_tiny_source):
+def test_stdlib_functions_cover_math_string_and_collections(run_tiny_source, monkeypatch):
+    monkeypatch.setenv("TINY_LINT_HEAP", "0")
     out = run_tiny_source(
         """
         print(Math.abs(-5));

@@ -20,9 +20,9 @@ become concrete tasks.
 - [x] Document every program line (Tiny + Python) with both high-level intent
   and line-level rationale; rely on structured cross-references when repeating
   patterns. (See `docs/program_line_reference_generate_doc_reference.md`.)
-- [ ] Minimize heap usage by preferring fixed-size arrays or stack-friendly
+- [x] Minimize heap usage by preferring fixed-size arrays or stack-friendly
   constructs where semantics allow it (requires a clear ownership/mutation model
-  to avoid accidental aliasing).
+  to avoid accidental aliasing). See `docs/heap_usage_guidelines.md`.
 - [ ] Explore math-oriented syntax/notation (tuple-based block forms, formula
   syntax, stack-edit or LaTeX-like constructs) with careful incremental trials
   to avoid destabilizing readability or tooling.

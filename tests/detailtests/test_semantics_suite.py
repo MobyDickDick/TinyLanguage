@@ -78,6 +78,7 @@ def test_semantics_eval_order_for_array_literals():
             def arr = new[mark(1), mark(2), mark(3)];
             print(len(arr));
             print(steps);
+            def _unused = delete(arr);
             """
         )
     )

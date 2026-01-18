@@ -64,6 +64,7 @@ print(string.replace("tiny language", " ", "_"));
 print(string.starts_with("tiny language", "tiny"));
 print(string.ends_with("tiny language", "age"));
 print(string.is_digit("12345"));
+def _cleanup_parts = delete(parts);
 """
     lines = _run_lines(source)
     expected = [
@@ -143,6 +144,8 @@ print(Map.get(data, "name", ""));
 def values = Map.get(data, "values", Null);
 print(Collections.len(values));
 print(json.dumps(data));
+def _cleanup_values = delete(values);
+def _cleanup_data = delete(data);
 """
     lines = _run_lines(source)
     expected = py_json.loads('{"name": "Tiny", "values": [1, 2, 3]}')

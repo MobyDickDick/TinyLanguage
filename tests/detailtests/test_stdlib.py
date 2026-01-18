@@ -37,10 +37,15 @@ def test_stdlib_functions_cover_math_string_and_collections(run_tiny_source, mon
         print(heap_get(arr, 2));
         print(Collections.pop(arr));
         print(Collections.len(arr));
-        def sliced = Collections.slice(new[10, 20, 30, 40], 1, 3);
+        def source = new[10, 20, 30, 40];
+        def sliced = Collections.slice(source, 1, 3);
         print(heap_get(sliced, 0));
         print(Collections.contains(sliced, 30));
         print(Collections.contains(sliced, 99));
+        def _cleanup_parts = delete(parts);
+        def _cleanup_sliced = delete(sliced);
+        def _cleanup_source = delete(source);
+        def _cleanup_arr = delete(arr);
         """,
     )
 
@@ -83,10 +88,13 @@ def test_tl_stdlib_random_module_import(run_tiny_source):
         """
         import stdlib.random;
         print(random.randint(1, 6));
-        print(random.choice(new["rot", "gruen", "blau"]));
+        def colors = new["rot", "gruen", "blau"];
+        print(random.choice(colors));
         def items = new["a", "b", "c"];
         print(random.shuffle(items));
         print(String.join(items, ""));
+        def _cleanup_colors = delete(colors);
+        def _cleanup_items = delete(items);
         """,
     )
 
@@ -100,6 +108,7 @@ def test_tl_stdlib_statistics_module_import(run_tiny_source):
         def values = new[1, 2, 3, 4];
         print(statistics.mean(values));
         print(statistics.std(values));
+        def _cleanup_values = delete(values);
         """,
     )
 
@@ -120,6 +129,7 @@ def test_tl_stdlib_string_module_import(run_tiny_source):
         print(string.lstrip("  padded  "));
         print(string.rstrip("  padded  "));
         print(string.repeat("ha", 2));
+        def _cleanup_parts = delete(parts);
         """,
     )
 
@@ -132,8 +142,11 @@ def test_tl_stdlib_json_module_import(run_tiny_source):
         import stdlib.json;
         def data = json.loads("{\\"a\\": 1, \\"b\\": [2, 3]}");
         print(Map.get(data, "a", 0));
-        print(Collections.len(Map.get(data, "b", new[])));
+        def values = Map.get(data, "b", Null);
+        print(Collections.len(values));
         print(json.dumps(data));
+        def _cleanup_values = delete(values);
+        def _cleanup_data = delete(data);
         """,
     )
 
@@ -174,27 +187,37 @@ def test_string_repeat_validates_count(run_tiny_source):
 def test_map_set_and_deque_helpers(run_tiny_source):
     out = run_tiny_source(
         """
-        def capitals = Map.from_entries(new[
-            new["DE", "Berlin"],
-            new["AT", "Wien"]
-        ]);
+        def capitals = Map.new();
+        def _cap1 = Map.set(capitals, "DE", "Berlin");
+        def _cap2 = Map.set(capitals, "AT", "Wien");
         print(Map.get(capitals, "DE", "?"));
         print(Map.has(capitals, "CH"));
         def _unused41 = Map.set(capitals, "CH", "Bern");
         print(Map.len(capitals));
         print(Map.get(capitals, "CH", "?"));
-        print(heap_get(Map.keys(capitals), 1));
+        def keys = Map.keys(capitals);
+        print(heap_get(keys, 1));
 
-        def features = Set.from_list(String.split("map,set,deque", ","));
+        def feature_parts = String.split("map,set,deque", ",");
+        def features = Set.from_list(feature_parts);
         print(Set.add(features, "json"));
         print(Set.len(features));
         print(Set.has(features, "map"));
 
-        def todo = Deque.new(String.split("a,b", ","));
+        def todo_parts = String.split("a,b", ",");
+        def todo = Deque.new(todo_parts);
         def _dq = Deque.push_left(todo, "start");
         print(Deque.peek_right(todo));
         print(Deque.pop_left(todo));
-        print(String.join(Deque.to_list(todo), "|"));
+        def todo_list = Deque.to_list(todo);
+        print(String.join(todo_list, "|"));
+        def _cleanup_keys = delete(keys);
+        def _cleanup_feature_parts = delete(feature_parts);
+        def _cleanup_features = delete(features);
+        def _cleanup_todo_parts = delete(todo_parts);
+        def _cleanup_todo_list = delete(todo_list);
+        def _cleanup_todo = delete(todo);
+        def _cleanup_capitals = delete(capitals);
         """,
     )
 
@@ -207,7 +230,8 @@ def test_random_file_and_json_helpers(run_tiny_source, tmp_path):
     out = run_tiny_source(
         f"""
         print(Random.randint(1, 10));
-        print(Random.choice(new["rot", "gruen", "blau"]));
+        def colors = new["rot", "gruen", "blau"];
+        print(Random.choice(colors));
 
         def data = JSON.parse("{{\\"n\\": [1, 2], \\"flag\\": true}}");
         def _unused53 = Map.set(data, "extra", 5);
@@ -216,9 +240,13 @@ def test_random_file_and_json_helpers(run_tiny_source, tmp_path):
         print(File.exists(path));
         def text = File.read(path);
         print(String.contains(text, "flag"));
-        print(Map.get(JSON.parse(text), "flag", false));
+        def parsed = JSON.parse(text);
+        print(Map.get(parsed, "flag", false));
         def _rm = File.remove(path);
         print(File.exists(path));
+        def _cleanup_parsed = delete(parsed);
+        def _cleanup_data = delete(data);
+        def _cleanup_colors = delete(colors);
         """
     )
 
@@ -232,13 +260,25 @@ def test_json_stringify_roundtrip_collections(run_tiny_source):
     out = run_tiny_source(
         """
         def data = Map.new();
-        def _nums = Map.set(data, "numbers", new["one", "two", "three"]);
-        def _tags = Map.set(data, "tags", Set.from_list(new["b", "a"]));
-        def _queue = Map.set(data, "queue", Deque.new(new["x", "y"]));
+        def numbers = new["one", "two", "three"];
+        def tags_list = new["b", "a"];
+        def queue_list = new["x", "y"];
+        def _nums = Map.set(data, "numbers", numbers);
+        def tags = Set.from_list(tags_list);
+        def _tags = Map.set(data, "tags", tags);
+        def queue = Deque.new(queue_list);
+        def _queue = Map.set(data, "queue", queue);
         def text = JSON.stringify(data);
         print(text);
         def parsed = JSON.parse(text);
         print(JSON.stringify(parsed));
+        def _cleanup_numbers = delete(numbers);
+        def _cleanup_tags_list = delete(tags_list);
+        def _cleanup_queue_list = delete(queue_list);
+        def _cleanup_tags = delete(tags);
+        def _cleanup_queue = delete(queue);
+        def _cleanup_parsed = delete(parsed);
+        def _cleanup_data = delete(data);
         """,
     )
 
@@ -253,14 +293,30 @@ def test_json_stringify_roundtrip_nested_collections(run_tiny_source):
         def mapping = Map.new();
         def _k1 = Map.set(mapping, "k1", "one");
         def _k2 = Map.set(mapping, "k2", "two");
-        def tags = Set.from_list(new["b", "a"]);
-        def queue = Deque.new(new["x", "y"]);
-        def nested = new[new["alpha", "beta"], new["gamma", new["delta", "epsilon"]]];
+        def tags_list = new["b", "a"];
+        def queue_list = new["x", "y"];
+        def nested_a = new["alpha", "beta"];
+        def nested_b_inner = new["delta", "epsilon"];
+        def nested_b = new["gamma", nested_b_inner];
+        def tags = Set.from_list(tags_list);
+        def queue = Deque.new(queue_list);
+        def nested = new[nested_a, nested_b];
         def values = new[mapping, tags, queue, nested];
         def text = JSON.stringify(values);
         print(text);
         def parsed = JSON.parse(text);
         print(JSON.stringify(parsed));
+        def _cleanup_values = delete(values);
+        def _cleanup_nested_a = delete(nested_a);
+        def _cleanup_nested_b_inner = delete(nested_b_inner);
+        def _cleanup_nested_b = delete(nested_b);
+        def _cleanup_nested = delete(nested);
+        def _cleanup_queue_list = delete(queue_list);
+        def _cleanup_tags_list = delete(tags_list);
+        def _cleanup_queue = delete(queue);
+        def _cleanup_tags = delete(tags);
+        def _cleanup_mapping = delete(mapping);
+        def _cleanup_parsed = delete(parsed);
         """,
     )
 
@@ -274,10 +330,17 @@ def test_json_stringify_roundtrip_heap_nested_lists(run_tiny_source):
         """
         def inner = Map.new();
         def _a = Map.set(inner, "a", 101);
-        def _b = Map.set(inner, "b", new[201, 202]);
-        def flags = Set.from_list(new["on", "off"]);
-        def queue = Deque.new(new["left", "right"]);
-        def nested = new[new[301, 302], new[new[303], new[304, 305]]];
+        def values_b = new[201, 202];
+        def flags_list = new["on", "off"];
+        def queue_list = new["left", "right"];
+        def nested_left = new[301, 302];
+        def nested_right_left = new[303];
+        def nested_right_right = new[304, 305];
+        def nested_right = new[nested_right_left, nested_right_right];
+        def nested = new[nested_left, nested_right];
+        def _b = Map.set(inner, "b", values_b);
+        def flags = Set.from_list(flags_list);
+        def queue = Deque.new(queue_list);
         def data = Map.new();
         def _inner = Map.set(data, "inner", inner);
         def _flags = Map.set(data, "flags", flags);
@@ -287,6 +350,19 @@ def test_json_stringify_roundtrip_heap_nested_lists(run_tiny_source):
         print(text);
         def parsed = JSON.parse(text);
         print(JSON.stringify(parsed));
+        def _cleanup_values_b = delete(values_b);
+        def _cleanup_flags_list = delete(flags_list);
+        def _cleanup_queue_list = delete(queue_list);
+        def _cleanup_nested_left = delete(nested_left);
+        def _cleanup_nested_right_left = delete(nested_right_left);
+        def _cleanup_nested_right_right = delete(nested_right_right);
+        def _cleanup_nested_right = delete(nested_right);
+        def _cleanup_nested = delete(nested);
+        def _cleanup_flags = delete(flags);
+        def _cleanup_queue = delete(queue);
+        def _cleanup_inner = delete(inner);
+        def _cleanup_parsed = delete(parsed);
+        def _cleanup_data = delete(data);
         """,
     )
 

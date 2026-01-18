@@ -25,4 +25,4 @@ jobs:
           src/tiny_language_api.py \
           src/tiny_errors.py
       - name: Run pytest suite
-        run: python -m pytest
+        run: python -m pytest --assert-no-heap-leaks

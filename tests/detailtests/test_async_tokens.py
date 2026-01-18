@@ -23,13 +23,14 @@ def test_cancellation_token_stops_linked_spawn(run_tiny_source):
             def linked = Async.link(token, handle);
             def cancelled = Async.cancel(token, "stop");
 
-            def status = join(handle, 1000);
-            print("status", status.done, status.cancelled, status.error != Null, linked, cancelled);
-            print("reason", Async.reason(token));
-            print("writes", heap_get(ptr, 0));
-            """
+                def status = join(handle, 1000);
+                print("status", status.done, status.cancelled, status.error != Null, linked, cancelled);
+                print("reason", Async.reason(token));
+                print("writes", heap_get(ptr, 0));
+                def _cleanup = delete(ptr);
+                """
+            )
         )
-    )
 
     assert out == "status true true true true true\nreason stop\nwrites 0\n"
 

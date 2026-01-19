@@ -7,10 +7,11 @@ self-hosting port plan.
 
 ## A. Release fundamentals (Scope & DoD)
 
-1. **Document v1.0 DoD (release criteria)**
+1. **Document v1.0 DoD (release criteria)** ✅
    - **Description:** Clearly define when TinyLanguage is considered “v1.0-complete.”
    - **DoD:** Document contains clear criteria for diagnostics, type discipline,
      runtime safety, tooling, and backend scope.
+   - **Owner docs:** `docs/release_v1_dod.md`
 
 2. **Define spec-freeze scope**
    - **Description:** Decide which syntax/features remain stable for the v1.0 release.

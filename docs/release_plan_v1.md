@@ -45,7 +45,7 @@ Create an explicit **release checklist** and treat it as the definition of done.
 - [ ] At least one round of regression tests added for recent fixes.
 
 ### Docs readiness
-- [ ] README quickstart matches current CLI usage.
+- [x] README quickstart matches current CLI usage.
 - [ ] Tutorial runs as-is and outputs match.
 - [ ] Demo commands list is up-to-date (see [docs/demo_run_commands.md](demo_run_commands.md)).
 

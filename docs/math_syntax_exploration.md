@@ -126,8 +126,16 @@ Each experiment should be judged against:
 
 ## Open questions
 
-- Should math-oriented syntax be confined to a `Math` module or be globally
-  available?
 - Do we need a separate operator table for formula mode, or can we reuse the
   existing one?
 - How should the formatter serialize math blocks to keep diffs small?
+
+## Resolved questions
+
+- **Should math-oriented syntax be confined to a `Math` module or be globally
+  available?**  
+  Keep math-oriented syntax **confined to `Math` by default**. This aligns with
+  the existing stdlib namespace layout and avoids global name pollution or
+  precedence conflicts. If a future experiment needs global shorthands, it
+  should be introduced as an explicit, opt-in import/alias (e.g.,
+  `use Math as M`) rather than altering the default global scope.

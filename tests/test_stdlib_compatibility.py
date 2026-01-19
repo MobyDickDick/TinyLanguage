@@ -442,6 +442,22 @@ print(Collections.len(tag_list));
 print(Collections.contains(tag_list, "blue"));
 print(Collections.contains(tag_list, "red"));
 
+def entry_idx = 0;
+def entry_len = Collections.len(entries);
+while (entry_idx < entry_len) {
+  def entry = heap_get(entries, entry_idx);
+  def _cleanup_entry = delete(entry);
+  entry_idx = entry_idx + 1;
+}
+
+def item_idx = 0;
+def item_len = Collections.len(items);
+while (item_idx < item_len) {
+  def item = heap_get(items, item_idx);
+  def _cleanup_item = delete(item);
+  item_idx = item_idx + 1;
+}
+
 def _cleanup_tag_list = delete(tag_list);
 def _cleanup_tags_list = delete(tags_list);
 def _cleanup_tags = delete(tags);

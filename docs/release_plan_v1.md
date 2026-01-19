@@ -47,7 +47,7 @@ Create an explicit **release checklist** and treat it as the definition of done.
 ### Docs readiness
 - [x] README quickstart matches current CLI usage.
 - [ ] Tutorial runs as-is and outputs match.
-- [ ] Demo commands list is up-to-date (see [docs/demo_run_commands.md](demo_run_commands.md)).
+- [x] Demo commands list is up-to-date (see [docs/demo_run_commands.md](demo_run_commands.md)).
 
 ### Release artifact readiness
 - [ ] Version set to `1.0.0` in all relevant files (if versioning exists).

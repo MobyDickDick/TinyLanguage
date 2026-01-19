@@ -12,8 +12,11 @@ python src/tiny_language.py src_tiny/class_demo.tiny
 python src/tiny_language.py src_tiny/namespace_demo.tiny
 python src/tiny_language.py src_tiny/match_demo.tiny
 python src/tiny_language.py src_tiny/operator_overloading_demo.tiny
+python src/tiny_language.py src_tiny/number_class.tiny
+python src/tiny_language.py src_tiny/number_intervall.tiny
 python src/tiny_language.py src_tiny/heap_pointer_demo.tiny
 python src/tiny_language.py src_tiny/try_catch_demo.tiny
+python src/tiny_language.py src_tiny/rosetta_fibonacci.tiny
 python src/tiny_language.py src_tiny/copy_rosetta_samples.tiny
 python src/tiny_language.py src_tiny/transpile_rosetta.tiny
 python src/tiny_language.py src_tiny/stdlib_io_random_demo.tiny
@@ -26,6 +29,7 @@ python src/tiny_language.py src_tiny/stdlib_collections_demo.tiny
 python src/tiny_language.py src_tiny/concurrency_demo.tiny
 python src/tiny_language.py src_tiny/concurrency_pipeline.tiny
 python src/tiny_language.py src_tiny/parallel_map.tiny
+python src/tiny_language.py src_tiny/structured_concurrency_demo.tiny
 ```
 
 ## Python-Interop
@@ -52,6 +56,14 @@ PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny
 PYTHONPATH=src python src/language_server_cli.py --file src_tiny/namespace_demo.tiny completions --prefix To
 PYTHONPATH=src python src/language_server_cli.py --file src_tiny/stdlib_io_random_demo.tiny diagnostics
 PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny workspace-symbols --query Gre
+```
+
+## Regression fixtures from run_all.py
+
+```bash
+python src/tiny_language.py tests/logic_example.tiny
+python src/tiny_language.py .vscode/all_features.tiny
+python src/tiny_language.py .vscode/rosetta_fibonacci.tiny
 ```
 
 ## Module workflows

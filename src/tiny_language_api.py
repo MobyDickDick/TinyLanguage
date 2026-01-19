@@ -124,6 +124,13 @@ def _copy_on_call_default() -> bool:
     return env_flag in {"1", "true", "yes", "on"}
 
 
+def _experimental_math_tuples_enabled(preferred: Optional[bool] = None) -> bool:
+    if preferred is not None:
+        return preferred
+    env_flag = os.environ.get("TINYLANG_EXPERIMENTAL_MATH_TUPLES", "").strip().lower()
+    return env_flag in {"1", "true", "yes", "on"}
+
+
 def _use_tiny_parser(preferred: Optional[bool] = None) -> bool:
     if preferred is not None:
         return preferred
@@ -555,9 +562,15 @@ def _tiny_to_python_ast(runtime: "Runtime", node: object) -> object:
     return node
 
 
-def _parse_with_tiny_parser(src: str) -> List["IR"]:
+def _parse_with_tiny_parser(src: str, *, allow_math_tuples: bool = False) -> List["IR"]:
     program = _tiny_parser_bootstrap_source()
-    program = f"{program}\n\ndef __tiny_ast = parse_program({json.dumps(src)});\n"
+    if allow_math_tuples:
+        flag_literal = "true"
+        program = (
+            f"{program}\n\ndef __tiny_ast = parse_program_with_flags({json.dumps(src)}, {flag_literal});\n"
+        )
+    else:
+        program = f"{program}\n\ndef __tiny_ast = parse_program({json.dumps(src)});\n"
     parser = Parser(Lexer(program), program)
     stmts = parser.parse()
     runtime = Runtime(program)
@@ -585,6 +598,7 @@ def _parse_and_lint(
     *,
     use_tiny_parser: Optional[bool] = None,
     repl_mode: bool = False,
+    experimental_math_tuples: Optional[bool] = None,
 ) -> List["IR"]:
     """Return a parsed program after running all linter passes.
 
@@ -593,10 +607,11 @@ def _parse_and_lint(
     rules. It keeps the order aligned with the standalone linter for predictable
     diagnostics.
     """
+    allow_math_tuples = _experimental_math_tuples_enabled(experimental_math_tuples)
     if _use_tiny_parser(use_tiny_parser):
-        stmts = _parse_with_tiny_parser(src)
+        stmts = _parse_with_tiny_parser(src, allow_math_tuples=allow_math_tuples)
     else:
-        parser = Parser(Lexer(src), src)
+        parser = Parser(Lexer(src), src, allow_math_tuples=allow_math_tuples)
         stmts = parser.parse()
 
     lint_import_style(stmts, src)
@@ -1825,11 +1840,18 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Deep-copy non-escaping mutable arguments before calls (env: TINYLANG_COPY_ON_CALL)",
     )
     parser.add_argument(
+        "--experimental-math-tuples",
+        action="store_true",
+        help="Enable experimental tuple-based math forms like (sum: x) (env: TINYLANG_EXPERIMENTAL_MATH_TUPLES)",
+    )
+    parser.add_argument(
         "--native-diagnostics",
         action="store_true",
         help="Print native backend diagnostics to stderr when using LLVM/native compiler flags",
     )
     args, remaining = parser.parse_known_args(argv)
+    if args.experimental_math_tuples:
+        os.environ["TINYLANG_EXPERIMENTAL_MATH_TUPLES"] = "1"
     args.program_args = remaining
     if args.program_args and args.program_args[0] == "--":
         args.program_args = args.program_args[1:]

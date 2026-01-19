@@ -10,13 +10,14 @@ source text.
 
 
 class Parser:
-    def __init__(self, lx: Lexer, source: str):
+    def __init__(self, lx: Lexer, source: str, *, allow_math_tuples: bool = False):
         self.lx = lx
         self.source = source
         self._buffer: List[Token] = []
         self.tok = self._next_token()
         self._last_tok = Token("<start>", "", SourcePos.origin(), SourcePos.origin())
         self._allow_variant_ctor = True
+        self._allow_math_tuples = allow_math_tuples
 
     @staticmethod
     def _attach_span(node: IR, start: SourcePos, stop: SourcePos) -> IR:
@@ -787,6 +788,25 @@ class Parser:
 
     def parse_primary(self) -> IR:
         if self._accept("SYM", "("):
+            start_tok = self._last_tok
+            if (
+                self.tok.kind == "NAME"
+                and self._peek_token().kind == "SYM"
+                and self._peek_token().text == ":"
+            ):
+                if not self._allow_math_tuples:
+                    raise self._error(
+                        "math tuple syntax requires --experimental-math-tuples",
+                        self.tok.pos,
+                        self._tok_span(self.tok),
+                    )
+                name_tok = self._eat("NAME")
+                self._eat("SYM", ":")
+                expr = self.parse_expr()
+                self._eat("SYM", ")")
+                math_ref = Var("Math", pos=name_tok.pos)
+                call = MethodCall(math_ref, name_tok.text, [expr], pos=name_tok.pos)
+                return self._attach_span(call, start_tok.start, self._last_tok.stop)
             inner = self.parse_expr()
             self._eat("SYM", ")")
             return inner

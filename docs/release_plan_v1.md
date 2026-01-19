@@ -51,7 +51,7 @@ Create an explicit **release checklist** and treat it as the definition of done.
 
 ### Release artifact readiness
 - [ ] Version set to `1.0.0` in all relevant files (if versioning exists).
-- [ ] `CHANGELOG.md` created or updated with “1.0.0” notes.
+- [x] `CHANGELOG.md` created or updated with “1.0.0” notes.
 - [ ] Tag + GitHub release notes prepared.
 
 ---
@@ -137,7 +137,7 @@ Make a decision (and record it in this plan or a roadmap entry):
 [ ] pytest passes
 [ ] run_all.py passes
 [ ] Regression tests added
-[ ] CHANGELOG.md updated
+[x] CHANGELOG.md updated
 [ ] Version set to 1.0.0
 [ ] Release notes written
 [ ] Tag created and release published

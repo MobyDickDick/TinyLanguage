@@ -17,7 +17,11 @@ def second_result = join(second); // Waits for the second task's result.
 def third_result = join(third); // Waits for the third task's result.
 def fourth_result = join(fourth); // Waits for the fourth task's result.
 
-def annotated = new[first_result, second_result, third_result, fourth_result]; // Builds an array with all results.
+def annotated = new(4); // Preallocate a fixed-size array for all results.
+if (heap_set(annotated, 0, first_result) == Null) { }
+if (heap_set(annotated, 1, second_result) == Null) { }
+if (heap_set(annotated, 2, third_result) == Null) { }
+if (heap_set(annotated, 3, fourth_result) == Null) { }
 
 print("labels"); // Header for the output.
 print(String.join(annotated, " | ")); // Joins the annotated strings and prints them.

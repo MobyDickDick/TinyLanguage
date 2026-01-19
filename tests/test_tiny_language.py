@@ -859,6 +859,23 @@ def test_error_message_for_unknown_delete(monkeypatch):
     assert "^" in out
 
 
+def test_error_message_for_heap_type_mismatch(monkeypatch):
+    src = """
+    def p = new(1);
+    { e } = heap_set(p, 0, 1);
+    { e } = heap_set(p, 0, "oops");
+    print(errorMessage);
+    """
+
+    monkeypatch.setenv("TINY_LINT_HEAP", "0")
+    out = run_tiny(src)
+    assert re.search(
+        r"\[E014\] heap type mismatch at 1\[0\]: expected int but got string \(line 4, col \d+\)",
+        out,
+    )
+    assert "^" in out
+
+
 def test_heap_leak_report_tracks_live_allocations():
     src = """
     def first = new(2);

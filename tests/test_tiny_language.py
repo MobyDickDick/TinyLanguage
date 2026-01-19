@@ -864,7 +864,9 @@ def test_error_message_for_heap_type_mismatch(monkeypatch):
     def p = new(1);
     { e } = heap_set(p, 0, 1);
     { e } = heap_set(p, 0, "oops");
+    print(e.code);
     print(errorMessage);
+    def _unused207 = delete(p);
     """
 
     monkeypatch.setenv("TINY_LINT_HEAP", "0")

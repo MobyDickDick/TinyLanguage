@@ -119,7 +119,7 @@ Each experiment should be judged against:
 
 ## Recommended next steps
 
-1. Prototype the tuple-based form as the lowest-risk experiment.
+1. Prototype the tuple-based form as the lowest-risk experiment. ✅ Implemented behind `--experimental-math-tuples`.
 2. If successful, trial the formula delimiter (`#[ ... ]`) with existing
    precedence rules and minimal token additions.
 3. Defer LaTeX-like constructs until the delimiter form proves stable.

@@ -52,6 +52,7 @@ class Parser {
     tok: Token;
     _last_tok: Token;
     _allow_variant_ctor: Bool;
+    _allow_math_tuples: Bool;
 
     fn _next_token(self) -> any {
         if (self.index < len(self.tokens)) {
@@ -838,6 +839,26 @@ class Parser {
 
     fn parse_primary(self) -> any {
         if (self._accept("SYM", "(", Null)) {
+            def start_tok = self._last_tok;
+            def is_math = false;
+            if (self.tok.kind == "NAME") {
+                if (self.index < len(self.tokens)) {
+                    def nxt = heap_get(self.tokens, self.index);
+                    if (nxt.kind == "SYM" && nxt.text == ":") { is_math = true; }
+                }
+            }
+            if (is_math) {
+                if (!self._allow_math_tuples) {
+                    return self._error("math tuple syntax requires --experimental-math-tuples", self.tok.start, self._tok_span(self.tok));
+                }
+                def name_tok = self._eat("NAME", Null);
+                def _eat_status = self._eat("SYM", ":");
+                def expr = self.parse_expr();
+                def _eat_status2 = self._eat("SYM", ")");
+                def math_ref = Var("Math", name_tok.start, Null);
+                def call = MethodCall(math_ref, name_tok.text, new[expr], name_tok.start, Null);
+                return self._attach_span(call, start_tok.start, self._last_tok.stop);
+            }
             def inner = self.parse_expr();
             def _eat_status = self._eat("SYM", ")");
             return inner;
@@ -1094,6 +1115,10 @@ class Parser {
 }
 
 fn Parser_new(source) {
+    return Parser_new_with_flags(source, false);
+}
+
+fn Parser_new_with_flags(source, allow_math_tuples) {
     def tokens = lex(source);
     def start_tok = heap_get(tokens, 0);
     def parser = new Parser {
@@ -1102,12 +1127,18 @@ fn Parser_new(source) {
         source: source;
         tok: start_tok;
         _last_tok: Token("<start>", "", SourcePos_origin(), SourcePos_origin());
-        _allow_variant_ctor: true
+        _allow_variant_ctor: true;
+        _allow_math_tuples: allow_math_tuples
     };
     return parser;
 }
 
 fn parse_program(source) {
     def parser = Parser_new(source);
+    return parser.parse();
+}
+
+fn parse_program_with_flags(source, allow_math_tuples) {
+    def parser = Parser_new_with_flags(source, allow_math_tuples);
     return parser.parse();
 }

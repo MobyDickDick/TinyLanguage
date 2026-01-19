@@ -58,16 +58,16 @@ PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny
 
 ```bash
 # Check a local module tree with a relative import
-python -m tiny_lang_cli --file my_pkg/main.tiny --backend interpreter
+PYTHONPATH=src python -m tiny_lang_cli --file my_pkg/main.tiny --backend interpreter
 
 # Cross-check with an optional search path and the native backend
-TINYPATH=../deps python -m tiny_lang_cli --file my_pkg/main.tiny --native-backend
+PYTHONPATH=src TINYPATH=../deps python -m tiny_lang_cli --file my_pkg/main.tiny --native-backend
 ```
 
 ## Project scaffolding
 
 ```bash
-python -m tiny_project_cli init my_app --vscode
+PYTHONPATH=src python -m tiny_project_cli init my_app --vscode
 ```
 
 ## Everything at once

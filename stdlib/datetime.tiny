@@ -1,13 +1,23 @@
 // TinyLanguage stdlib: datetime module (Python-style subset)
 
+fn __datetime_allowlist() {
+  def allow = new(4);
+  heap_set(allow, 0, "datetime_isoformat");
+  heap_set(allow, 1, "date_isoformat");
+  heap_set(allow, 2, "time_isoformat");
+  heap_set(allow, 3, "timedelta_total_seconds");
+  return allow;
+}
+
 fn datetime_isoformat(year, month, day, hour, minute, second) {
-  def allow = new[
-    "datetime_isoformat",
-    "date_isoformat",
-    "time_isoformat",
-    "timedelta_total_seconds"
-  ];
-  def args = new[year, month, day, hour, minute, second];
+  def allow = __datetime_allowlist();
+  def args = new(6);
+  heap_set(args, 0, year);
+  heap_set(args, 1, month);
+  heap_set(args, 2, day);
+  heap_set(args, 3, hour);
+  heap_set(args, 4, minute);
+  heap_set(args, 5, second);
   def result = Python.call(
     "stdlib_datetime",
     "datetime_isoformat",
@@ -20,13 +30,11 @@ fn datetime_isoformat(year, month, day, hour, minute, second) {
 }
 
 fn date_isoformat(year, month, day) {
-  def allow = new[
-    "datetime_isoformat",
-    "date_isoformat",
-    "time_isoformat",
-    "timedelta_total_seconds"
-  ];
-  def args = new[year, month, day];
+  def allow = __datetime_allowlist();
+  def args = new(3);
+  heap_set(args, 0, year);
+  heap_set(args, 1, month);
+  heap_set(args, 2, day);
   def result = Python.call(
     "stdlib_datetime",
     "date_isoformat",
@@ -39,13 +47,11 @@ fn date_isoformat(year, month, day) {
 }
 
 fn time_isoformat(hour, minute, second) {
-  def allow = new[
-    "datetime_isoformat",
-    "date_isoformat",
-    "time_isoformat",
-    "timedelta_total_seconds"
-  ];
-  def args = new[hour, minute, second];
+  def allow = __datetime_allowlist();
+  def args = new(3);
+  heap_set(args, 0, hour);
+  heap_set(args, 1, minute);
+  heap_set(args, 2, second);
   def result = Python.call(
     "stdlib_datetime",
     "time_isoformat",
@@ -58,13 +64,10 @@ fn time_isoformat(hour, minute, second) {
 }
 
 fn total_seconds(days, seconds) {
-  def allow = new[
-    "datetime_isoformat",
-    "date_isoformat",
-    "time_isoformat",
-    "timedelta_total_seconds"
-  ];
-  def args = new[days, seconds];
+  def allow = __datetime_allowlist();
+  def args = new(2);
+  heap_set(args, 0, days);
+  heap_set(args, 1, seconds);
   def result = Python.call(
     "stdlib_datetime",
     "timedelta_total_seconds",

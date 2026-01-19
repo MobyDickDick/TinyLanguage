@@ -151,6 +151,28 @@ print(datetime.total_seconds(1, 30));
     assert float(lines[3]) == pytest.approx(delta.total_seconds())
 
 
+def test_stdlib_datetime_multiple_calls_match_python() -> None:
+    source = """
+import stdlib.datetime;
+
+print(datetime.datetime_isoformat(1999, 12, 31, 23, 59, 59));
+print(datetime.date_isoformat(2020, 1, 2));
+print(datetime.time_isoformat(0, 7, 8));
+print(datetime.total_seconds(2, 15));
+"""
+    lines = _run_lines(source)
+
+    dt = py_datetime.datetime(1999, 12, 31, 23, 59, 59)
+    d = py_datetime.date(2020, 1, 2)
+    t = py_datetime.time(0, 7, 8)
+    delta = py_datetime.timedelta(days=2, seconds=15)
+
+    assert lines[0] == dt.isoformat()
+    assert lines[1] == d.isoformat()
+    assert lines[2] == t.isoformat()
+    assert float(lines[3]) == pytest.approx(delta.total_seconds())
+
+
 def test_stdlib_json_matches_python() -> None:
     source = """
 import stdlib.json;

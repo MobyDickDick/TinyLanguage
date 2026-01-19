@@ -1,6 +1,6 @@
 # TinyLanguage beginner tutorial
 
-This tutorial shows how to get TinyLanguage running locally, walk through the core syntax, and explore the tooling that ships with the repository. Run the commands from the repository root and keep `src/` on your `PYTHONPATH` when a command mentions it.
+This tutorial shows how to get TinyLanguage running locally, walk through the core syntax, and explore the tooling that ships with the repository. Run the commands from the repository root and set `PYTHONPATH=src` for module-based helpers (for example, `python -m tiny_lang_cli`).
 
 ## 1. Setup
 
@@ -82,11 +82,11 @@ Each file prints its expected output and doubles as a runnable reference.
 For multi-file projects, use the CLI helper that understands module manifests:
 
 ```bash
-python -m tiny_lang_cli my_pkg/main.tiny --backend interpreter
-TINYPATH=../deps python -m tiny_lang_cli --file my_pkg/main.tiny --native-backend
-python -m tiny_lang_cli -e "print(1 + 2);" --backend interpreter
-python -m tiny_lang_cli --file - --backend interpreter < my_pkg/main.tiny
-python -m tiny_lang_cli --file my_pkg/main.tiny -- --flag value
+PYTHONPATH=src python -m tiny_lang_cli my_pkg/main.tiny --backend interpreter
+PYTHONPATH=src TINYPATH=../deps python -m tiny_lang_cli --file my_pkg/main.tiny --native-backend
+PYTHONPATH=src python -m tiny_lang_cli -e "print(1 + 2);" --backend interpreter
+PYTHONPATH=src python -m tiny_lang_cli --file - --backend interpreter < my_pkg/main.tiny
+PYTHONPATH=src python -m tiny_lang_cli --file my_pkg/main.tiny -- --flag value
 ```
 
 The `module.json` file in a package declares entry points and dependencies; see the module workflows in `docs/demo_run_commands.md` for more examples.
@@ -95,7 +95,7 @@ If you want to scaffold a new project structure (including optional VS Code
 debugging configuration), use the project helper:
 
 ```bash
-python -m tiny_project_cli init my_app --vscode
+PYTHONPATH=src python -m tiny_project_cli init my_app --vscode
 ```
 
 ## 6. Tooling and tests

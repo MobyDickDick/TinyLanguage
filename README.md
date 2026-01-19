@@ -35,6 +35,12 @@ If you want a compact reference first:
 2. From the repository root, run any `.tiny` file (for example: [src_tiny/class_demo.tiny](src_tiny/class_demo.tiny)):
 
 ```bash
+python src/tiny_language.py src_tiny/class_demo.tiny
+```
+
+You can also run via the module shim:
+
+```bash
 python -m tiny_language src_tiny/class_demo.tiny
 ```
 
@@ -206,6 +212,9 @@ See [benchmarks/microbenchmarks.py](benchmarks/microbenchmarks.py) and [docs/per
 
 ```bash
 # Run one file
+python src/tiny_language.py path/to/program.tiny
+
+# Module shim (same behavior as src/tiny_language.py)
 python -m tiny_language path/to/program.tiny
 
 # Run with the Python CLI wrapper (switch backends)

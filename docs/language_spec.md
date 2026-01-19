@@ -9,7 +9,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 - **Identifiers and literals:**
   - Numbers support integers, decimals, and scientific notation (`1`, `3.14`, `0.5`, `1.2e2`).
   - Strings use double quotes and allow basic escapes like `\n`.
-  - Booleans are `true` and `false`; `null` indicates the absence of a value.
+  - Booleans are `true` and `false`; `Null` indicates the absence of a value.
 - **Reserved keywords vs. identifiers:** Keywords are reserved in declaration positions (e.g., `def if = 1;` is invalid), but the grammar explicitly allows keywords in some identifier slots via `NAME_or_kw`. Use this when you need a keyword-named method or member:
   - Keywords today include: `def`, `print`, `if`, `else`, `while`, `switch`, `default`, `fn`, `import`, `return`, `operator`, `new`, `type`, `class`, `namespace`, `as`, `spawn`, `async`, `await`, `task`, `true`, `false`, `flush`, `and`, `or`, `not`, `Null`, `try`, `catch`, `match`, `case`.
   - `NAME_or_kw` appears in member access, method declarations, and type annotations, so keywords can be used there without being treated as control flow.
@@ -25,9 +25,9 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 
 ## Expressions and operators
 
-- **Arithmetic:** `+`, `-`, `*`, `/`, and exponentiation `^` (the exponent must be an integer). Division returns floating-point values; overflow is trapped and reported as an error.
+- **Arithmetic:** `+`, `-`, `*`, `/`, and exponentiation `^` (the exponent must be an integer, or a float that is an integer value; fractional exponents require a non-negative base). Division follows Python semantics (integers become floats when needed); tagged `Number`/`NumberIntervall` values use runtime error states like `plus_infinity` instead of raising overflow errors.
 - **Comparisons:** `==`, `!=`, `<`, `>`, `<=`, `>=` work on numbers, strings, booleans, and user types with operator overloads.
-- **Booleans:** Short-circuit logic with `&&` and `||`, negation via `!expr`.
+- **Booleans:** Short-circuit logic with `&&`/`||` or keyword `and`/`or`; negation via `!expr` or `not expr`.
 - **Arrays and heap:** `new[1, 2, 3]` creates an array; `new(3)` reserves heap space with three slots. Access via `heap_get(ptr, idx)` and `heap_set(ptr, idx, value)`. `tag(ptr, "Label")` attaches a type tag, and `delete(ptr)` frees memory.
   - **Ownership + aliasing (single-owner model):**
     - Heap pointers have a single logical owner; lints treat pointer-to-pointer assignments as aliasing violations instead of implicit sharing.
@@ -45,9 +45,9 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 
 ## Control flow
 
-- **`if`/`while`:** Standard control structures with parentheses around the condition. Conditions must yield booleans; all paths in typed functions must return a value.
+- **`if`/`while`:** Standard control structures with parentheses around the condition. Conditions use truthiness (`false`, `Null`, `0`, and empty strings are falsey); all paths in typed functions must return a value.
 - **`switch`:** Compares a target expression against each case expression using equality; the first match runs its block, otherwise the optional `default` block runs. Each case is isolated (no fallthrough).
-- **`match`:** Exhaustive pattern matching for `type` variants and structs. Wildcards (`_`) and named fields (`case Circle { radius: r }`) are supported; missing cases raise an error.
+- **`match`:** Exhaustive pattern matching for tagged values (sum-type variants, classes, and structs). Wildcards (`_`) and named fields (`case Circle { radius: r }`) are supported, along with positional bindings (`case Circle(r) => ...`); missing cases raise an error.
 - **Error handling:** `try { ... } catch(err) { ... }` catches runtime errors and allows alternative returns or logging.
 
 ## Functions and types

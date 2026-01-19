@@ -15,6 +15,12 @@ are grouped by area and can be tackled independently.
 - [x] Expand stdlib coverage with parity tests for missing or incomplete
   Python-style modules (prioritize commonly used APIs).
 
+## Release 1.0 scope checklist (short)
+- [ ] Scope frozen (interpreter + core language only).
+- [ ] Language spec audited and updated against current interpreter behavior.
+- [ ] Tutorial audited and demo commands verified.
+- [ ] Regression suite expanded for recent fixes and high-risk features.
+
 ## Goals and research ideas (requested)
 
 These items are exploratory and may need deeper design/prototyping before they

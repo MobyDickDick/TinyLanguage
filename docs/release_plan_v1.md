@@ -22,6 +22,12 @@ This document proposes concrete steps to plan a **1.0 release** of TinyLanguage.
 
 **Action:** decide and record the official 1.0 scope, then freeze it.
 
+**Scope decision (frozen):**
+- **Release scope:** interpreter + core language only.
+- **Out of scope:** LLVM backend, native/C compiler backend, performance guarantees,
+  and packaging/distribution beyond source checkout.
+- **Status:** frozen for 1.0 to prioritize interpreter stability, docs, and tests.
+
 ---
 
 ## 2) Release criteria (exit checklist)
@@ -106,9 +112,9 @@ Only merge the RC when all checklist items are satisfied.
 ## 7) Open items to decide now
 
 Make a decision (and record it in this plan or a roadmap entry):
-- Should 1.0 include only the interpreter, or also a supported C backend?
-- What guarantees are implied by “1.0” (API stability, no breaking changes)?
-- What are the minimal docs and tests required to ship?
+- ✅ 1.0 includes only the interpreter (C/LLVM remain experimental).
+- Define guarantees implied by “1.0” (API stability, no breaking changes).
+- Define the minimal docs and tests required to ship.
 
 ---
 
@@ -125,7 +131,7 @@ Make a decision (and record it in this plan or a roadmap entry):
 ## 9) Quick checklist (copy/paste)
 
 ```
-[ ] Scope frozen (interpreter + core language only)
+[x] Scope frozen (interpreter + core language only)
 [ ] Language spec audited and updated
 [ ] Tutorial audited and demo commands verified
 [ ] pytest passes

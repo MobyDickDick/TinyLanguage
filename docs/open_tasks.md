@@ -16,7 +16,7 @@ are grouped by area and can be tackled independently.
   Python-style modules (prioritize commonly used APIs).
 
 ## Release 1.0 scope checklist (short)
-- [ ] Scope frozen (interpreter + core language only).
+- [x] Scope frozen (interpreter + core language only).
 - [ ] Language spec audited and updated against current interpreter behavior.
 - [ ] Tutorial audited and demo commands verified.
 - [ ] Regression suite expanded for recent fixes and high-risk features.

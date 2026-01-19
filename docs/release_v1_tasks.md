@@ -19,7 +19,7 @@ self-hosting port plan.
 
 ## B. Diagnostics & Language Core
 
-3. **Verify source-span/position consistency**
+3. **Verify source-span/position consistency** ✅
    - **Description:** Make error diagnostics consistent across parser/linter/runtime.
    - **DoD:** Tests cover line/column accuracy across all error paths.
 

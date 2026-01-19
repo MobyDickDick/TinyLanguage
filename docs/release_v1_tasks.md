@@ -13,9 +13,9 @@ self-hosting port plan.
      runtime safety, tooling, and backend scope.
    - **Owner docs:** `docs/release_v1_dod.md`
 
-2. **Define spec-freeze scope**
+2. **Define spec-freeze scope** ✅
    - **Description:** Decide which syntax/features remain stable for the v1.0 release.
-   - **DoD:** Release document includes a section that excludes syntax changes for v1.0.
+   - **DoD:** Release document includes a section that excludes syntax changes for v1.0 (see `docs/release_v1_dod.md`).
 
 ## B. Diagnostics & Language Core
 

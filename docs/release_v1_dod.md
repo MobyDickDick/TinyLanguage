@@ -45,7 +45,15 @@ release is considered complete only when all criteria below are satisfied.
 - The LLVM backend is explicitly marked as experimental and non-blocking for
   v1.0.
 
-## 6. Release & stabilization gates
+## 6. Spec-freeze scope
+
+- No new syntax or grammar changes are permitted after the v1.0 spec freeze.
+- Only bug fixes, documentation clarifications, and non-semantic tooling updates
+  are allowed in the frozen window.
+- Any exception requires release-owner approval and must be documented as a
+  release note or known limitation.
+
+## 7. Release & stabilization gates
 
 - Release notes summarize breaking changes and known limitations.
 - A full regression run (interpreter + native + LSP) is green.

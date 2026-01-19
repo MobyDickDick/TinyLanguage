@@ -419,6 +419,68 @@ def _cleanup_capitals = delete(capitals);
     assert lines == expected
 
 
+def test_stdlib_map_and_set_helpers_match_python() -> None:
+    source = """
+def entries = new[new["one", "1"], new["two", "2"], new["three", "3"]];
+def mapping = Map.from_entries(entries);
+print(Map.len(mapping));
+def keys = Map.keys(mapping);
+def values = Map.values(mapping);
+def items = Map.entries(mapping);
+print(JSON.stringify(keys));
+print(JSON.stringify(values));
+print(JSON.stringify(items));
+
+def tags_list = new["red", "blue", "red"];
+def tags = Set.from_list(tags_list);
+print(Set.len(tags));
+print(Set.delete(tags, "red"));
+print(Set.delete(tags, "missing"));
+print(Set.has(tags, "red"));
+def tag_list = Set.to_list(tags);
+print(Collections.len(tag_list));
+print(Collections.contains(tag_list, "blue"));
+print(Collections.contains(tag_list, "red"));
+
+def entry_idx = 0;
+def entry_len = Collections.len(entries);
+while (entry_idx < entry_len) {
+  def entry = heap_get(entries, entry_idx);
+  def _cleanup_entry = delete(entry);
+  entry_idx = entry_idx + 1;
+}
+
+def item_idx = 0;
+def item_len = Collections.len(items);
+while (item_idx < item_len) {
+  def item = heap_get(items, item_idx);
+  def _cleanup_item = delete(item);
+  item_idx = item_idx + 1;
+}
+
+def _cleanup_tag_list = delete(tag_list);
+def _cleanup_tags_list = delete(tags_list);
+def _cleanup_tags = delete(tags);
+def _cleanup_items = delete(items);
+def _cleanup_values = delete(values);
+def _cleanup_keys = delete(keys);
+def _cleanup_mapping = delete(mapping);
+def _cleanup_entries = delete(entries);
+"""
+    lines = _run_lines(source)
+
+    expected_map = {"one": "1", "two": "2", "three": "3"}
+    assert int(lines[0]) == len(expected_map)
+    assert py_json.loads(lines[1]) == list(expected_map.keys())
+    assert py_json.loads(lines[2]) == list(expected_map.values())
+    assert py_json.loads(lines[3]) == [[key, value] for key, value in expected_map.items()]
+
+    assert int(lines[4]) == 2
+    assert lines[5:8] == ["true", "false", "false"]
+    assert lines[8] == "1"
+    assert lines[9:11] == ["true", "false"]
+
+
 def test_stdlib_file_helpers_match_python(tmp_path: PyPath) -> None:
     target = tmp_path / "note.txt"
     payload = "hello tiny"

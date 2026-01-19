@@ -6,6 +6,7 @@ import math as py_math
 import os as py_os
 import random as py_random
 import statistics as py_statistics
+from collections import deque as py_deque
 from pathlib import Path as PyPath
 
 import pytest
@@ -310,3 +311,126 @@ def _cleanup_floats = delete(floats);
     assert float(lines[1]) == pytest.approx(py_statistics.stdev(values))
     assert float(lines[2]) == pytest.approx(py_statistics.mean(floats))
     assert float(lines[3]) == pytest.approx(py_statistics.stdev(floats))
+
+
+def test_stdlib_collections_map_set_deque_match_python() -> None:
+    source = """
+def values = new[10, 20, 30];
+print(Collections.len(values));
+print(Collections.contains(values, 20));
+print(Collections.push(values, 40));
+print(Collections.pop(values));
+def sliced = Collections.slice(values, 1, 3);
+print(Collections.len(sliced));
+print(heap_get(sliced, 0));
+print(heap_get(sliced, 1));
+
+def capitals = Map.new();
+def _cap1 = Map.set(capitals, "DE", "Berlin");
+def _cap2 = Map.set(capitals, "AT", "Wien");
+print(Map.len(capitals));
+print(Map.get(capitals, "DE", "?"));
+print(Map.has(capitals, "CH"));
+def _cap3 = Map.delete(capitals, "AT");
+print(Map.len(capitals));
+
+def tags_list = new["a", "b", "a"];
+def tags = Set.from_list(tags_list);
+print(Set.len(tags));
+print(Set.has(tags, "a"));
+print(Set.add(tags, "c"));
+print(Set.len(tags));
+
+def queue_items = new["a", "b"];
+def queue = Deque.new(queue_items);
+print(Deque.peek_left(queue));
+print(Deque.peek_right(queue));
+def _left = Deque.push_left(queue, "start");
+def _right = Deque.push_right(queue, "end");
+print(Deque.len(queue));
+print(Deque.pop_left(queue));
+print(Deque.pop_right(queue));
+def remaining = Deque.to_list(queue);
+print(String.join(remaining, "|"));
+def _cleanup_remaining = delete(remaining);
+def _cleanup_queue_items = delete(queue_items);
+def _cleanup_queue = delete(queue);
+def _cleanup_tags_list = delete(tags_list);
+def _cleanup_tags = delete(tags);
+def _cleanup_sliced = delete(sliced);
+def _cleanup_values = delete(values);
+def _cleanup_capitals = delete(capitals);
+"""
+    lines = _run_lines(source)
+
+    py_values = [10, 20, 30]
+    expected = [
+        str(len(py_values)),
+        str(20 in py_values).lower(),
+        str(len(py_values) + 1),
+        str(40),
+    ]
+    py_values.append(40)
+    py_values.pop()
+    py_slice = py_values[1:3]
+    expected.extend(
+        [
+            str(len(py_slice)),
+            str(py_slice[0]),
+            str(py_slice[1]),
+        ],
+    )
+
+    capitals = {"DE": "Berlin", "AT": "Wien"}
+    expected.extend(
+        [
+            str(len(capitals)),
+            capitals["DE"],
+            str("CH" in capitals).lower(),
+        ],
+    )
+    capitals.pop("AT")
+    expected.append(str(len(capitals)))
+
+    tags = {"a", "b"}
+    expected.extend(
+        [
+            str(len(tags)),
+            str("a" in tags).lower(),
+            str("c" not in tags).lower(),
+            str(len(tags | {"c"})),
+        ],
+    )
+
+    queue = py_deque(["a", "b"])
+    expected.extend(
+        [
+            queue[0],
+            queue[-1],
+        ],
+    )
+    queue.appendleft("start")
+    queue.append("end")
+    expected.append(str(len(queue)))
+    expected.append(queue.popleft())
+    expected.append(queue.pop())
+    expected.append("|".join(queue))
+
+    assert lines == expected
+
+
+def test_stdlib_file_helpers_match_python(tmp_path: PyPath) -> None:
+    target = tmp_path / "note.txt"
+    payload = "hello tiny"
+
+    source = f"""
+def _write = File.write("{target.as_posix()}", "{payload}");
+print(File.exists("{target.as_posix()}"));
+print(File.read("{target.as_posix()}"));
+def _remove = File.remove("{target.as_posix()}");
+print(File.exists("{target.as_posix()}"));
+"""
+    lines = _run_lines(source)
+
+    assert lines == ["true", payload, "false"]
+    assert not target.exists()

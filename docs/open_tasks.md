@@ -19,7 +19,7 @@ are grouped by area and can be tackled independently.
 - [x] Scope frozen (interpreter + core language only).
 - [x] Language spec audited and updated against current interpreter behavior.
 - [x] Tutorial audited and demo commands verified.
-- [ ] Regression suite expanded for recent fixes and high-risk features.
+- [x] Regression suite expanded for recent fixes and high-risk features.
 
 ## Goals and research ideas (requested)
 

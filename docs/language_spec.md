@@ -45,6 +45,10 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
   - The first assignment to a binding infers its type; `int`/`float` literals normalize to `number`.
   - Future assignments must stay compatible (e.g., `number` accepts both `int` and `float`; `Bool` matches `bool`; `string` stays `string`).
   - Annotated types follow the same compatibility rules (including `T?` accepting `Null`, and `any` allowing any value).
+  - Compatibility is structural for built-ins: `number` accepts `int`/`float`, `Bool`/`boolean` accept `true`/`false`, `string` accepts only string values, and `Null` accepts only `Null`.
+  - Optional annotations (`T?`) accept `Null` and any value compatible with `T`.
+  - `any` disables type-change checks for that binding, but still reports mismatches when a stricter annotation is present on parameters or returns.
+  - To change a binding to an unrelated type, introduce a new variable (or annotate the binding as `any`/`T?` when appropriate) instead of reassigning.
   - Unannotated function returns also infer a type; returning a different type later triggers `E014` unless a return annotation is provided.
 - **Scopes:** Functions, namespaces, and match arms introduce their own scopes. Imported modules are registered under their fully qualified name and can be reached via aliases.
 

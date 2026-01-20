@@ -29,7 +29,7 @@ self-hosting port plan.
 
 ## C. Type Discipline v1
 
-5. **Finalize rules for type changes**
+5. **Finalize rules for type changes** ✅
    - **Description:** Define explicit rules for type changes.
    - **DoD:** Documentation + tests for allowed/disallowed type changes.
 

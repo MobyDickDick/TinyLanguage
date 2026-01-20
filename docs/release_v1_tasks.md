@@ -33,9 +33,12 @@ self-hosting port plan.
    - **Description:** Define explicit rules for type changes.
    - **DoD:** Documentation + tests for allowed/disallowed type changes.
 
-6. **Define optional type inference (scope)**
+6. **Define optional type inference (scope)** ✅
    - **Description:** Decide whether “simple type inference” is part of v1.0.
    - **DoD:** Clear scope documented (“in v1.0” or “post-v1.0”).
+   - **Decision:** In scope for v1.0 as limited, first-assignment inference for
+     bindings and returns; no global or flow-sensitive inference beyond the
+     existing type-stability rules.
 
 ## D. Runtime Safety (Heap/API)
 

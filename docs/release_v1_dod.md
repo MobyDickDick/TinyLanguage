@@ -17,8 +17,9 @@ release is considered complete only when all criteria below are satisfied.
 - The language specification explicitly documents allowed and disallowed type
   changes (reassignments, inferred changes, casts).
 - Tests cover both valid and invalid type transitions.
-- The v1.0 scope for any type inference is documented as either in-scope or
-  deferred beyond v1.0.
+- The v1.0 scope for type inference is documented as limited, first-assignment
+  inference for bindings and returns; no global, flow-sensitive, or cross-module
+  inference is required for v1.0.
 
 ## 3. Runtime safety
 

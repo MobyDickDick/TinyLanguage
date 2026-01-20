@@ -23,7 +23,7 @@ self-hosting port plan.
    - **Description:** Make error diagnostics consistent across parser/linter/runtime.
    - **DoD:** Tests cover line/column accuracy across all error paths.
 
-4. **Define a unified error format**
+4. **Define a unified error format** ✅
    - **Description:** Unify error classes/format (parser, linter, runtime).
    - **DoD:** Documented error format + regression tests.
 

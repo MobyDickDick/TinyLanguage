@@ -40,7 +40,12 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 
 ## Bindings and visibility
 
-- **Definitions:** `def x = expr;` creates a new variable. Later assignments without `def` update existing bindings and must not silently change the type when annotations are present.
+- **Definitions:** `def x = expr;` creates a new variable. Later assignments without `def` update existing bindings and must keep the same inferred type (or a compatible type) to avoid implicit type changes.
+- **Type stability rules:**
+  - The first assignment to a binding infers its type; `int`/`float` literals normalize to `number`.
+  - Future assignments must stay compatible (e.g., `number` accepts both `int` and `float`; `Bool` matches `bool`; `string` stays `string`).
+  - Annotated types follow the same compatibility rules (including `T?` accepting `Null`, and `any` allowing any value).
+  - Unannotated function returns also infer a type; returning a different type later triggers `E014` unless a return annotation is provided.
 - **Scopes:** Functions, namespaces, and match arms introduce their own scopes. Imported modules are registered under their fully qualified name and can be reached via aliases.
 
 ## Control flow

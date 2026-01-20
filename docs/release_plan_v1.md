@@ -41,7 +41,7 @@ Create an explicit **release checklist** and treat it as the definition of done.
   (see `CHANGELOG.md`).
 
 ### Testing readiness
-- [ ] `python -m pytest` passes locally.
+- [x] `python -m pytest` passes locally.
 - [ ] `python run_all.py` passes locally.
 - [ ] At least one round of regression tests added for recent fixes.
 
@@ -135,7 +135,7 @@ Make a decision (and record it in this plan or a roadmap entry):
 [x] Scope frozen (interpreter + core language only)
 [ ] Language spec audited and updated
 [ ] Tutorial audited and demo commands verified
-[ ] pytest passes
+[x] pytest passes
 [ ] run_all.py passes
 [ ] Regression tests added
 [x] CHANGELOG.md updated

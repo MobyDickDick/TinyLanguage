@@ -1,4 +1,5 @@
 import pathlib
+import re
 import sys
 
 import pytest
@@ -18,6 +19,30 @@ def test_parser_error_includes_context():
         str(excinfo.value)
         == "[E000] expected SYM ) (line 2, col 8)\n  1 | def a = 1;\n> 2 | print(a;\n    |        ^"
     )
+
+
+def test_unified_error_format_headers():
+    parser_source = "def a = 1\n"
+    with pytest.raises(TinyLangError) as parser_excinfo:
+        compile_and_run(parser_source)
+    parser_header = str(parser_excinfo.value).splitlines()[0]
+    assert re.match(r"^\[E\d{3}\] .+ \(line \d+, col \d+", parser_header)
+
+    lint_source = "def unused = 1;\n"
+    with pytest.raises(TinyLangError) as lint_excinfo:
+        compile_and_run(lint_source)
+    lint_output = str(lint_excinfo.value)
+    lint_header = lint_output.splitlines()[0]
+    assert re.match(r"^\[E\d{3}\] .+ \(line \d+, col \d+", lint_header)
+    assert "Hint:" in lint_output
+
+    runtime_source = "callme();\n"
+    with pytest.raises(TinyLangError) as runtime_excinfo:
+        compile_and_run(runtime_source)
+    runtime_output = str(runtime_excinfo.value)
+    runtime_header = runtime_output.splitlines()[0]
+    assert re.match(r"^\[E\d{3}\] .+ \(line \d+, col \d+", runtime_header)
+    assert "Hint:" in runtime_output
 
 
 def test_runtime_error_includes_context():

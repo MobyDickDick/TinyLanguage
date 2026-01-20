@@ -106,6 +106,25 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 
 ## Errors and diagnostics
 
+- **Unified error format:** Parser, linter, and runtime errors all use the same
+  human-readable shape:
+  - **Header:** `[E###] <message> (line <start>, col <start>)` or, for spans,
+    `[E###] <message> (line <start>, col <start> to line <end>, col <end>)`.
+  - **Context lines:** A short excerpt of source with a `^` underline marking
+    the location or span.
+  - **Optional hint:** A trailing `Hint:` line when a fix can be suggested.
+  - **Machine-readable fields:** Each error also carries `code`, `pos`, `span`
+    (when available), and `hint` fields for tooling workflows.
+
+  Example:
+
+  ```text
+  [E003] unknown variable val (line 2, col 15)
+    1 | def value = 1;
+  > 2 | print(value + val);
+      |               ^
+    Hint: Did you mean `value`? Declare the variable first, e.g. `def name = ...;`.
+  ```
 - **Error messages:** The interpreter annotates lexer, parser, and runtime errors with codes like `E001` (syntax), `E008` (module resolution), or `E009` (type error). When possible, a `SourceSpan` with line/column information highlights the failing code.
 - **Linter:** Warnings for unused bindings, style rules (semicolons, spacing), and simple “must use” checks are integrated and reported during formatting or by the LSP.
 

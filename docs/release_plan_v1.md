@@ -37,7 +37,8 @@ Create an explicit **release checklist** and treat it as the definition of done.
 ### Feature readiness
 - [ ] All “must-have” features in the scope are implemented and documented.
 - [ ] Language spec updated and consistent with current behavior.
-- [ ] Known “major” bugs are either fixed or documented in a “Known issues” list.
+- [x] Known “major” bugs are either fixed or documented in a “Known issues” list
+  (see `CHANGELOG.md`).
 
 ### Testing readiness
 - [ ] `python -m pytest` passes locally.

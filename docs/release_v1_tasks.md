@@ -42,7 +42,7 @@ self-hosting port plan.
 
 ## D. Runtime Safety (Heap/API)
 
-7. **Full coverage for heap diagnostics**
+7. **Full coverage for heap diagnostics** ✅
    - **Description:** invalid pointer, out-of-bounds, double delete, leak tracking.
    - **DoD:** Tests for all error cases; diagnostics are consistent.
 

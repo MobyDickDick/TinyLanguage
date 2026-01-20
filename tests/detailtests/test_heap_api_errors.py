@@ -29,6 +29,19 @@ def test_heap_access_errors_are_precise():
     assert "freed" in rt.error_message
 
 
+def test_heap_access_rejects_invalid_pointers():
+    rt = Runtime("")
+
+    assert rt.heap_get("nope", 0) is None
+    assert "not numeric" in (rt.error_message or "")
+
+    assert rt.heap_get(1.5, 0) is None
+    assert "not an integer pointer" in (rt.error_message or "")
+
+    assert rt.heap_get(0, 0) is None
+    assert "invalid (must refer to a live positive allocation)" in (rt.error_message or "")
+
+
 def test_heap_delete_and_leak_report():
     rt = Runtime("")
     first = rt._Runtime__new(1)  # noqa: SLF001 - intentional for testing
@@ -55,6 +68,23 @@ def test_heap_delete_and_leak_report():
     result = rt.delete(second)
     assert result["e"]["code"] == 1
     assert "was already freed" in rt.error_message
+
+
+def test_heap_delete_rejects_invalid_pointers():
+    rt = Runtime("")
+
+    result = rt.delete("nope")
+    assert result["e"]["code"] == 1
+    assert "not numeric" in result["e"]["msg"]
+    assert "nope" in result["e"]["msg"]
+
+    result = rt.delete(2.5)
+    assert result["e"]["code"] == 1
+    assert "not an integer pointer" in result["e"]["msg"]
+
+    result = rt.delete(0)
+    assert result["e"]["code"] == 1
+    assert "invalid (must refer to a live positive allocation)" in result["e"]["msg"]
 
 
 def test_heap_errors_show_offending_values():

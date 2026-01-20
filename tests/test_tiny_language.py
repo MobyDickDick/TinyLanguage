@@ -62,6 +62,28 @@ def test_reassign_with_different_type_errors():
     )
 
 
+def test_reassign_number_allows_float():
+    out = run_tiny(
+        """
+        def amount = 1;
+        amount = 2.5;
+        print(amount);
+        """
+    )
+    assert out == "2.5\n"
+
+
+def test_reassign_null_to_string_errors():
+    expect_compile_error(
+        """
+        def maybe = Null;
+        maybe = "now";
+        print(maybe);
+        """,
+        r"\[E014\] type change for variable maybe: expected Null but got string",
+    )
+
+
 def test_inferred_return_type_stable_across_calls():
     expect_compile_error(
         """

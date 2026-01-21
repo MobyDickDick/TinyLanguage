@@ -46,7 +46,7 @@ self-hosting port plan.
    - **Description:** invalid pointer, out-of-bounds, double delete, leak tracking.
    - **DoD:** Tests for all error cases; diagnostics are consistent.
 
-8. **Expand heap regression tests**
+8. **Expand heap regression tests** ✅
    - **Description:** Test cases for nested arrays, deep recursion, OOB.
    - **DoD:** Expanded regression suite with stable error messages.
 

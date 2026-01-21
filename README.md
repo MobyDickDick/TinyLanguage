@@ -235,6 +235,9 @@ python -m tiny_lang_cli --file path/to/program.tiny -- --flag value
 python -m pytest
 ```
 
+For a fuller walkthrough of interpreter, wrapper, and native backend CLI usage,
+see [docs/cli_workflows.md](docs/cli_workflows.md).
+
 ### Debugging and tracing
 
 If you suspect stepping/breakpoints or interpreter flow issues, environment variables enable trace logging:

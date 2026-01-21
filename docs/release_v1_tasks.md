@@ -52,7 +52,7 @@ self-hosting port plan.
 
 ## E. Tooling & Developer Experience
 
-9. **Stabilize CLI workflows**
+9. **Stabilize CLI workflows** ✅
    - **Description:** Document interpreter/native CLI flows consistently.
    - **DoD:** CLI guide updated + smoke tests for standard flows.
 

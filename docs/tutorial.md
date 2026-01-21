@@ -52,11 +52,7 @@ while (i < 3) {
     i = i + 1;
 }
 
-// Namespaces
-namespace Math {
-    fn inc(x) { return add(x, 1); }
-}
-print(Math.inc(4));
+print(add(4, 1));
 ```
 
 Run it with the interpreter or the native backend to see both execution paths:
@@ -73,7 +69,7 @@ Once you are comfortable with the basics, explore the feature-specific demos:
 - Type hints and exhaustiveness checks: `python src/tiny_language.py src_tiny/all_features.tiny`
 - Pattern matching and algebraic data types: `python src/tiny_language.py src_tiny/match_demo.tiny`
 - Classes and methods: `python src/tiny_language.py src_tiny/class_demo.tiny`
-- Namespaces and modular structure: `python src/tiny_language.py src_tiny/namespace_demo.tiny`
+- Namespaces and modular structure (interpreter backend): `python src/tiny_language.py src_tiny/namespace_demo.tiny`
 
 Each file prints its expected output and doubles as a runnable reference.
 

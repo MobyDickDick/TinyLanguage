@@ -56,7 +56,7 @@ self-hosting port plan.
    - **Description:** Document interpreter/native CLI flows consistently.
    - **DoD:** CLI guide updated + smoke tests for standard flows.
 
-10. **Define formatter/lint workflows**
+10. **Define formatter/lint workflows** ✅
     - **Description:** Standard lint profiles, formatter workflow, CI checks.
     - **DoD:** Documentation + CI checks defined.
 

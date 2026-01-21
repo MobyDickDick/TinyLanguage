@@ -114,8 +114,19 @@ Only merge the RC when all checklist items are satisfied.
 
 Make a decision (and record it in this plan or a roadmap entry):
 - ✅ 1.0 includes only the interpreter (C/LLVM remain experimental).
-- Define guarantees implied by “1.0” (API stability, no breaking changes).
+- ✅ Define guarantees implied by “1.0” (API stability, no breaking changes).
 - Define the minimal docs and tests required to ship.
+
+**1.0 guarantees (decided):**
+- **API stability:** the core language syntax + interpreter behavior documented in
+  `docs/language_spec.md` must remain stable for the 1.0 line; breaking changes
+  require a 2.0 plan.
+- **Backwards compatibility:** existing Tiny programs that conform to the 1.0
+  spec should keep running without mandatory source changes.
+- **Diagnostics consistency:** error messages and source spans may improve, but
+  should remain compatible with current tests and known-issues notes.
+- **Experimental scope:** LLVM/native backends remain experimental and are not
+  covered by the 1.0 stability guarantees.
 
 ---
 

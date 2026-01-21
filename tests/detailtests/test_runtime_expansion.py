@@ -125,6 +125,41 @@ print(sum(50));
     assert out.strip() == "1275"
 
 
+def test_recursive_heap_allocation_sum(run_tiny_source):
+    out = run_tiny_source(
+        """
+fn sum_heap(n) {
+    if (n == 0) {
+        return 0;
+    }
+    def ptr = new(1);
+    def ignored1 = heap_set(ptr, 0, n);
+    def total = heap_get(ptr, 0) + sum_heap(n - 1);
+    def _cleanup = delete(ptr);
+    return total;
+}
+
+print(sum_heap(10));
+""".strip()
+    )
+
+    assert out.strip() == "55"
+
+
+def test_heap_bounds_error_negative_index(run_tiny_source, monkeypatch):
+    monkeypatch.setenv("TINY_LINT_HEAP", "0")
+    out = run_tiny_source(
+        """
+def ptr = new(2);
+def ignored1 = heap_set(ptr, -1, 99);
+print(errorMessage);
+def _cleanup = delete(ptr);
+""".strip()
+    )
+
+    assert re.search(r"heap access error: index -1 out of range for pointer 1", out)
+
+
 def test_heap_api_error_scenarios(run_tiny_source, monkeypatch):
     monkeypatch.setenv("TINY_LINT_HEAP", "0")
     out = run_tiny_source(

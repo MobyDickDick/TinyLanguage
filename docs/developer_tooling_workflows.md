@@ -40,6 +40,22 @@ formatter pipeline. The recommended lint profiles are:
 To keep CI and local workflows aligned, only use relaxed heap mode for targeted
 experiments and capture the reason in your commit or PR notes.
 
+## Formatter + lint checks in CI
+
+TinyLanguage CI runs a lightweight formatter and lint gate to ensure the
+recommended workflow stays healthy:
+
+1. **Formatter stability**: `tools/check_format_lint.py` formats a curated set
+   of fixtures and verifies the output is unchanged.
+2. **Lint clean**: the same fixtures must return zero diagnostics with the
+   default lint profile (heap lints enabled).
+
+To mirror CI locally, run:
+
+```bash
+python tools/check_format_lint.py
+```
+
 ## Recommended editor setup (VS Code)
 
 TinyLanguage ships a VS Code extension and scaffolding helper to align settings

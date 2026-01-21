@@ -42,7 +42,7 @@ Create an explicit **release checklist** and treat it as the definition of done.
 
 ### Testing readiness
 - [x] `python -m pytest` passes locally.
-- [ ] `python run_all.py` passes locally.
+- [x] `python run_all.py` passes locally.
 - [ ] At least one round of regression tests added for recent fixes.
 
 ### Docs readiness

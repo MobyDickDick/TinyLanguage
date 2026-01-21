@@ -4,7 +4,10 @@ class Point { // Represents a 2D point.
     y: number; // Y coordinate of the point.
 
     fn to_tuple(self) { // Converts the point into a heap array.
-        return new[self.x, self.y]; // Stores x and y in a new array.
+        def buf = new(2); // Preallocate a fixed-size buffer for the tuple.
+        heap_set(buf, 0, self.x); // Store x in the first slot.
+        heap_set(buf, 1, self.y); // Store y in the second slot.
+        return buf; // Return the heap-backed tuple buffer.
     }
 }
 
@@ -24,6 +27,7 @@ def p = Point(1, 2); // Create a point at (1, 2).
 def q = Point(3, 4); // Create a second point at (3, 4).
 
 def sum = p + q; // Use the overloaded addition to form the sum.
-print(heap_get(sum.to_tuple(), 0)); // 4 // Print the x component of the sum point.
-print(heap_get(sum.to_tuple(), 1)); // 6 // Print the y component of the sum point.
+def sum_tuple = sum.to_tuple(); // Reuse a single tuple buffer for output.
+print(heap_get(sum_tuple, 0)); // 4 // Print the x component of the sum point.
+print(heap_get(sum_tuple, 1)); // 6 // Print the y component of the sum point.
 print(p == sum); // false // Comparing the original point with the sum yields false.

@@ -26,5 +26,11 @@ jobs:
           src/tiny_errors.py
       - name: Run formatter/lint gate
         run: python tools/check_format_lint.py
+      - name: Run LSP workflow tests
+        run: |
+          python -m pytest \
+            tests/detailtests/test_language_server.py \
+            tests/detailtests/test_language_server_cli.py \
+            tests/detailtests/test_tiny_language_server_cli_self_host.py
       - name: Run pytest suite
         run: python -m pytest --assert-no-heap-leaks

@@ -80,7 +80,7 @@ self-hosting port plan.
 
 ## G. Release & Stabilization
 
-15. **Release notes + breaking changes**
+15. **Release notes + breaking changes** ✅
     - **Description:** Summarize final API/syntax changes.
     - **DoD:** Release notes include breaking changes + known limitations.
 

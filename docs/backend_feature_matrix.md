@@ -10,43 +10,44 @@ Legend:
 
 ## Core language
 
-| Feature | Interpreter | Native VM (`--native-backend`) | C/LLVM pipeline (`--emit-llvm`, `--emit-exe`) |
-| --- | --- | --- | --- |
-| Literals (`number`, `string`, `bool`, `null`) | ✅ | ✅ | ✅ |
-| Variables (`def`, assignment) | ✅ | ✅ | ✅ (numeric subset) |
-| Arithmetic (`+`, `-`, `*`, `/`) | ✅ | ✅ | ✅ (numeric subset) |
-| Comparisons (`==`, `<`, `>`, etc.) | ✅ | ✅ | ✅ (numeric/boolean subset) |
-| `if` / `else` | ✅ | ✅ | ✅ (simple control flow) |
-| `while` loops | ✅ | ✅ | ✅ (simple control flow) |
-| Functions + `return` | ✅ | ✅ | ✅ (simple, typed by inference) |
-| Recursion | ✅ | ✅ | ✅ (within numeric subset) |
-| `print` | ✅ | ✅ | ✅ (simple output) |
+| Feature | Interpreter | Native VM (`--native-backend`) | Native LLVM pipeline (`--emit-llvm`, `--emit-exe`) | C backend (`tinyc_cli`) |
+| --- | --- | --- | --- | --- |
+| Literals (`number`, `string`, `bool`, `null`) | ✅ | ✅ | ✅ | ✅ |
+| Variables (`def`, assignment) | ✅ | ✅ | ✅ (numeric subset) | ✅ |
+| Arithmetic (`+`, `-`, `*`, `/`) | ✅ | ✅ | ✅ (numeric subset) | ✅ (basic subset) |
+| Comparisons (`==`, `<`, `>`, etc.) | ✅ | ✅ | ✅ (numeric/boolean subset) | ✅ (basic subset) |
+| `if` / `else` | ✅ | ✅ | ✅ (simple control flow) | ✅ |
+| `while` loops | ✅ | ✅ | ✅ (simple control flow) | ✅ |
+| Functions + `return` | ✅ | ✅ | ✅ (simple, typed by inference) | ✅ |
+| Recursion | ✅ | ✅ | ✅ (within numeric subset) | ✅ |
+| `print` | ✅ | ✅ | ✅ (simple output) | ✅ (simple output) |
 
 ## Data structures and advanced language features
 
-| Feature | Interpreter | Native VM (`--native-backend`) | C/LLVM pipeline (`--emit-llvm`, `--emit-exe`) |
-| --- | --- | --- | --- |
-| Heap (`new`, `heap_get`, `heap_set`, `delete`) | ✅ | ✅ | ✅ |
-| Array literals (`new[ a, b, c ]`) | ✅ | ✅ | ✅ |
-| Classes / methods | ✅ | ✅ | ✅ |
-| Operator overloading | ✅ | ✅ | ✅ |
-| Pattern matching + ADTs | ✅ | ✅ | ✅ |
-| Collections (`Map`, `Set`, `Deque`) | ✅ | ✅ | ✅ |
-| Concurrency (`spawn`, `join`, tokens) | ✅ | ✅ | ✅ |
+| Feature | Interpreter | Native VM (`--native-backend`) | Native LLVM pipeline (`--emit-llvm`, `--emit-exe`) | C backend (`tinyc_cli`) |
+| --- | --- | --- | --- | --- |
+| Heap (`new`, `heap_get`, `heap_set`, `delete`) | ✅ | ✅ | ✅ | ❌ |
+| Array literals (`new[ a, b, c ]`) | ✅ | ✅ | ✅ | ❌ |
+| Classes / methods | ✅ | ✅ | ✅ | ❌ |
+| Operator overloading | ✅ | ✅ | ✅ | ❌ |
+| Pattern matching + ADTs | ✅ | ✅ | ✅ | ❌ |
+| Collections (`Map`, `Set`, `Deque`) | ✅ | ✅ | ✅ | ❌ |
+| Concurrency (`spawn`, `join`, tokens) | ✅ | ✅ | ✅ | ❌ |
 
 ## Interop and tooling
 
-| Feature | Interpreter | Native VM (`--native-backend`) | C/LLVM pipeline (`--emit-llvm`, `--emit-exe`) |
-| --- | --- | --- | --- |
-| Module imports (`import`, namespaces) | ✅ | ✅ | ⚠️ Module names must be compile-time string literals; module field access is limited to functions |
-| Python interop (`Python.import_module`, `Python.call`) | ✅ | ✅ | ⚠️ Basic allowlist-aware calls (numeric/string args, numeric return) |
-| Formatter / lints | ✅ | ✅ (shared frontend) | ✅ (shared frontend) |
+| Feature | Interpreter | Native VM (`--native-backend`) | Native LLVM pipeline (`--emit-llvm`, `--emit-exe`) | C backend (`tinyc_cli`) |
+| --- | --- | --- | --- | --- |
+| Module imports (`import`, namespaces) | ✅ | ✅ | ⚠️ Module names must be compile-time string literals; module field access is limited to functions | ❌ |
+| Python interop (`Python.import_module`, `Python.call`) | ✅ | ✅ | ⚠️ Basic allowlist-aware calls (numeric/string args, numeric return) | ❌ |
+| Formatter / lints | ✅ | ✅ (shared frontend) | ✅ (shared frontend) | ✅ (shared frontend) |
 
 ## Notes
 
 - The native VM and LLVM prototype intentionally target the tutorial-style subset. Unsupported constructs raise `NotImplementedError` so gaps remain visible.
-- The LLVM/C pipeline lowers the native IR; if a feature is not in the native VM subset, it is also unavailable in the LLVM output.
-- For the most up-to-date subset details, see `docs/native_compiler.md` and the code generator headers in `src/tiny_language_codegen_native.py` and `src/tiny_language_codegen_llvm.py`.
+- The LLVM pipeline lowers the native IR; if a feature is not in the native VM subset, it is also unavailable in the LLVM output.
+- The `tinyc_cli` C backend is separate from the native LLVM pipeline and intentionally limited to the minimal subset described in `docs/c_backend.md`.
+- For the most up-to-date subset details, see `docs/native_compiler.md`, `docs/c_backend.md`, and the code generator headers in `src/tiny_language_codegen_native.py`, `src/tiny_language_codegen_llvm.py`, and `src/tiny_language_codegen_c.py`.
 
 ## Open backend work items (by feature)
 
@@ -98,7 +99,7 @@ _None_
 - [x] Python interop
   - [x] Define native VM bridges for `Python.import_module` and `Python.call`.
   - [x] Validate argument/return marshalling in the VM runtime.
-### C/LLVM pipeline (`--emit-llvm`, `--emit-exe`)
+### Native LLVM pipeline (`--emit-llvm`, `--emit-exe`)
 
 ### Open tasks
 

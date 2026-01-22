@@ -298,6 +298,27 @@ def test_while_if_else():
     assert out == "1\n1\n100\n1\n4\n"
 
 
+def test_break_and_continue_in_while_loop():
+    out = run_tiny(
+        """
+        def i = 0;
+        def total = 0;
+        while (i < 5) {
+            i = i + 1;
+            if (i == 3) {
+                continue;
+            }
+            if (i == 5) {
+                break;
+            }
+            total = total + i;
+        }
+        print(total);
+        """
+    )
+    assert out == "7\n"
+
+
 def test_heap_ops_and_tag():
     out = run_tiny(
         """

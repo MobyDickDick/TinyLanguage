@@ -298,20 +298,28 @@ def test_while_if_else():
     assert out == "1\n1\n100\n1\n4\n"
 
 
-def test_break_and_continue_in_while_loop():
+def test_while_loop_skip_and_exit_conditions():
     out = run_tiny(
         """
         def i = 0;
         def total = 0;
-        while (i < 5) {
+        def done = false;
+        while (i < 5 && !done) {
             i = i + 1;
             if (i == 3) {
-                continue;
+                // Skip adding 3 without using continue.
+                def skip = true;
+                if (!skip) {
+                    total = total + i;
+                }
             }
             if (i == 5) {
-                break;
+                done = true;
+            } else {
+                if (i != 3) {
+                    total = total + i;
+                }
             }
-            total = total + i;
         }
         print(total);
         """

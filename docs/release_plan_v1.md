@@ -43,7 +43,7 @@ Create an explicit **release checklist** and treat it as the definition of done.
 ### Testing readiness
 - [x] `python -m pytest` passes locally.
 - [x] `python run_all.py` passes locally.
-- [ ] At least one round of regression tests added for recent fixes.
+- [x] At least one round of regression tests added for recent fixes.
 
 ### Docs readiness
 - [x] README quickstart matches current CLI usage.
@@ -148,7 +148,7 @@ Make a decision (and record it in this plan or a roadmap entry):
 [ ] Tutorial audited and demo commands verified
 [x] pytest passes
 [ ] run_all.py passes
-[ ] Regression tests added
+[x] Regression tests added
 [x] CHANGELOG.md updated
 [ ] Version set to 1.0.0
 [ ] Release notes written

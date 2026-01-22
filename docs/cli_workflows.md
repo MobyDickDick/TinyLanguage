@@ -51,7 +51,9 @@ PYTHONPATH=src python -m tiny_lang_cli --file path/to/program.tiny -- --flag val
 
 ## 3. LLVM emission (via `tiny_language_cli`)
 
-The CLI wrapper can emit LLVM IR without running the program:
+The CLI wrapper can emit LLVM IR without running the program. The LLVM pipeline
+is **experimental** and only supports a subset of the language; use the
+interpreter backend when you need full feature coverage.
 
 ```bash
 PYTHONPATH=src python -m tiny_lang_cli --file path/to/program.tiny --emit-llvm -

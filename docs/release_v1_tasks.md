@@ -70,7 +70,7 @@ self-hosting port plan.
     - **Description:** Interpreter parity as a hard requirement for v1.0.
     - **DoD:** Parity tests enforced in CI (covered by the full pytest run in `.github/workflows/ci.yml`).
 
-13. **Stabilize C backend (feature subset)**
+13. **Stabilize C backend (feature subset)** ✅
     - **Description:** Document the supported feature subset.
     - **DoD:** Documentation + feature matrix updated.
 

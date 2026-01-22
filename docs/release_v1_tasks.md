@@ -60,7 +60,7 @@ self-hosting port plan.
     - **Description:** Standard lint profiles, formatter workflow, CI checks.
     - **DoD:** Documentation + CI checks defined.
 
-11. **LSP workflows as CI gate**
+11. **LSP workflows as CI gate** ✅
     - **Description:** Lock LSP tests (hover/completion/diagnostics).
     - **DoD:** Tests run reliably in CI.
 

@@ -2,6 +2,11 @@
 
 This draft outlines the target architecture for an alternative backend that executes TinyLanguage programs without the AST interpreter. The emphasis is on a fast feedback loop: small, inspectable building blocks that can be checked against the existing interpreter tests.
 
+> **Status:** The native VM and LLVM pipeline are experimental and explicitly
+> non-blocking for v1.0. Expect missing features and `NotImplementedError` for
+> unsupported constructs; use the interpreter backend for full language
+> coverage.
+
 ## Goals
 
 - **Emit bytecode/IR from the existing AST**: We do not want to maintain a second parser pipeline. The generator should operate directly on the nodes from `tiny_language_ast.py`.

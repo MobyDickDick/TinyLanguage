@@ -74,7 +74,7 @@ self-hosting port plan.
     - **Description:** Document the supported feature subset.
     - **DoD:** Documentation + feature matrix updated.
 
-14. **Mark LLVM backend as experimental**
+14. **Mark LLVM backend as experimental** ✅
     - **Description:** Explicit documentation + known limitations.
     - **DoD:** LLVM scope explicitly “non-blocking” for v1.0.
 

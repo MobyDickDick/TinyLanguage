@@ -66,9 +66,9 @@ self-hosting port plan.
 
 ## F. Backend Parity & Release Candidate
 
-12. **Interpreter as the “golden path”**
+12. **Interpreter as the “golden path”** ✅
     - **Description:** Interpreter parity as a hard requirement for v1.0.
-    - **DoD:** Parity tests enforced in CI.
+    - **DoD:** Parity tests enforced in CI (covered by the full pytest run in `.github/workflows/ci.yml`).
 
 13. **Stabilize C backend (feature subset)**
     - **Description:** Document the supported feature subset.

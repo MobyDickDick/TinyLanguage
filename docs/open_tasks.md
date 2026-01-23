@@ -26,7 +26,8 @@ documentation so they can be tracked alongside the main backlog.
 - [x] Audit `docs/tutorial.md` + demo commands against current CLI output.
 - [x] Expand regression coverage for recent fixes and high-risk features.
 - [x] Write release notes and finalize the release tag/publishing checklist.
-- [ ] Schedule a release candidate window and perform a full doc + demo run-through.
+- [x] Schedule a release candidate window and perform a full doc + demo run-through
+  (see `docs/release_candidate_runthrough.md`).
 
 ### Math syntax experiments (from `docs/math_syntax_exploration.md`)
 - [ ] Trial the `#[ ... ]` formula delimiter with existing precedence rules.

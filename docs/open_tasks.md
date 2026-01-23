@@ -31,7 +31,7 @@ documentation so they can be tracked alongside the main backlog.
 
 ### Math syntax experiments (from `docs/math_syntax_exploration.md`)
 - [x] Trial the `#[ ... ]` formula delimiter with existing precedence rules.
-- [ ] Decide whether formula mode needs a separate operator table.
+- [x] Decide whether formula mode needs a separate operator table.
 - [ ] Define formatter rules for math blocks to keep diffs minimal.
 
 ## Release 1.0 readiness checklist (open)

@@ -126,12 +126,15 @@ Each experiment should be judged against:
 
 ## Open questions
 
-- Do we need a separate operator table for formula mode, or can we reuse the
-  existing one?
 - How should the formatter serialize math blocks to keep diffs small?
 
 ## Resolved questions
 
+- **Do we need a separate operator table for formula mode?**  
+  No. Formula mode should **reuse the existing operator table** to preserve
+  TinyLanguage's current precedence rules and avoid introducing a second
+  precedence model. If a future experiment adds new operators, treat them as
+  explicit opt-ins within the formula translation layer rather than a new table.
 - **Should math-oriented syntax be confined to a `Math` module or be globally
   available?**  
   Keep math-oriented syntax **confined to `Math` by default**. This aligns with

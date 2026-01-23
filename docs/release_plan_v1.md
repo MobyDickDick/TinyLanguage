@@ -51,7 +51,8 @@ Create an explicit **release checklist** and treat it as the definition of done.
 - [x] Demo commands list is up-to-date (see [docs/demo_run_commands.md](demo_run_commands.md)).
 
 ### Release artifact readiness
-- [ ] Version set to `1.0.0` in all relevant files (if versioning exists).
+- [x] Version set to `1.0.0` in all relevant files (stored in `VERSION`,
+  `CHANGELOG.md`, and release tags).
 - [x] `CHANGELOG.md` created or updated with “1.0.0” notes.
 - [ ] Tag + GitHub release notes prepared.
 
@@ -94,6 +95,8 @@ Only merge the RC when all checklist items are satisfied.
 ## 5) Versioning + changelog policy
 
 - Adopt **SemVer** for release tags (`1.0.0`, `1.0.1`, etc.).
+- Store the current release version in the repository `VERSION` file for
+  tooling/scripts to read without parsing the changelog.
 - Maintain a `CHANGELOG.md` with:
   - Added/Changed/Fixed sections.
   - A “Known issues” list for limitations or experimental features.
@@ -150,7 +153,7 @@ Make a decision (and record it in this plan or a roadmap entry):
 [x] run_all.py passes
 [x] Regression tests added
 [x] CHANGELOG.md updated
-[ ] Version set to 1.0.0
+[x] Version set to 1.0.0
 [ ] Release notes written
 [ ] Tag created and release published
 ```

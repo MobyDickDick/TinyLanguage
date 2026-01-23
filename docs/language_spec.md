@@ -26,7 +26,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 
 ## Expressions and operators
 
-- **Arithmetic:** `+`, `-`, `*`, `/`, and exponentiation `^` (the exponent must be an integer, or a float that is an integer value; fractional exponents require a non-negative base). Division follows Python semantics (integers become floats when needed); tagged `Number`/`NumberIntervall` values use runtime error states like `plus_infinity` instead of raising overflow errors.
+- **Arithmetic:** `+`, `-`, `*`, `/`, `%`, and exponentiation `^` (the exponent must be an integer, or a float that is an integer value; fractional exponents require a non-negative base). Division follows Python semantics (integers become floats when needed); tagged `Number`/`NumberIntervall` values use runtime error states like `plus_infinity` instead of raising overflow errors.
 - **Comparisons:** `==`, `!=`, `<`, `>`, `<=`, `>=` work on numbers, strings, booleans, and user types with operator overloads.
 - **Booleans:** Short-circuit logic with `&&`/`||` or keyword `and`/`or`; negation via `!expr` or `not expr`.
 - **Experimental math tuples:** With `--experimental-math-tuples`, a single tuple-like form `(name: expr)` desugars to `Math.name(expr)` for quick formula-style calls.
@@ -114,6 +114,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 ## Concurrency and async API
 
 - **Tasks:** `spawn f(1, 2)` starts `f` asynchronously; `join(handle)` waits and forwards the result or error.
+- **Async functions:** `async fn work() { ... }` returns a task handle when invoked. Use `await expr` to join a handle inline (equivalent to `join(expr)`), which returns the result or raises an error.
 - **Spawn targets:** `spawn` expects a function name (`spawn work(1)`); use helpers or wrappers when you need to call methods or field-based callables.
 - **Cancellation:** `Async.token()` creates a token that can be cancelled via `Async.cancel(token, "reason")`. Tasks can be linked (`Async.link(token, handle)`) to propagate cancellations.
 

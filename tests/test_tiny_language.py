@@ -101,6 +101,31 @@ def test_inferred_return_type_stable_across_calls():
     )
 
 
+def test_len_handles_heap_pointer():
+    out = run_tiny(
+        """
+        def ptr = new(3);
+        def ignored1 = heap_set(ptr, 0, 10);
+        def ignored2 = heap_set(ptr, 1, 20);
+        def ignored3 = heap_set(ptr, 2, 30);
+        print(len(ptr));
+        def _cleanup = delete(ptr);
+        """
+    )
+    assert out == "3\n"
+
+
+def test_len_reports_freed_pointer():
+    expect_compile_error(
+        """
+        def ptr = new(1);
+        def _cleanup = delete(ptr);
+        print(len(ptr));
+        """,
+        r"\[E005\] len expects a sized value",
+    )
+
+
 def test_lexer_basics_define():
     out = run_tiny(
         """

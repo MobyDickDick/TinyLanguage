@@ -25,7 +25,7 @@ documentation so they can be tracked alongside the main backlog.
 - [x] Audit `docs/language_spec.md` against current interpreter behavior.
 - [x] Audit `docs/tutorial.md` + demo commands against current CLI output.
 - [x] Expand regression coverage for recent fixes and high-risk features.
-- [ ] Write release notes and finalize the release tag/publishing checklist.
+- [x] Write release notes and finalize the release tag/publishing checklist.
 - [ ] Schedule a release candidate window and perform a full doc + demo run-through.
 
 ### Math syntax experiments (from `docs/math_syntax_exploration.md`)

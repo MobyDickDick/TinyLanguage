@@ -396,6 +396,10 @@ class Lexer:
         start_col = self.col
         pos = SourcePos(start_line, start_col)
 
+        if c == "#" and self.i + 1 < self.n and self.s[self.i + 1] == "[":
+            self._advance(2)
+            stop = SourcePos(start_line, start_col + 1)
+            return Token("SYM", "#[", pos, stop)
         if c == "&" and self.i + 1 < self.n and self.s[self.i + 1] == "&":
             self._advance(2)
             stop = SourcePos(start_line, start_col + 1)
@@ -964,7 +968,14 @@ source text.
 
 
 class Parser:
-    def __init__(self, lx: Lexer, source: str, *, allow_math_tuples: bool = False):
+    def __init__(
+        self,
+        lx: Lexer,
+        source: str,
+        *,
+        allow_math_tuples: bool = False,
+        allow_math_formula: bool = False,
+    ):
         self.lx = lx
         self.source = source
         self._buffer: List[Token] = []
@@ -972,6 +983,7 @@ class Parser:
         self._last_tok = Token("<start>", "", SourcePos.origin(), SourcePos.origin())
         self._allow_variant_ctor = True
         self._allow_math_tuples = allow_math_tuples
+        self._allow_math_formula = allow_math_formula
 
     @staticmethod
     def _attach_span(node: IR, start: SourcePos, stop: SourcePos) -> IR:
@@ -1741,6 +1753,17 @@ class Parser:
         )
 
     def parse_primary(self) -> IR:
+        if self._accept("SYM", "#["):
+            start_tok = self._last_tok
+            if not self._allow_math_formula:
+                raise self._error(
+                    "math formula syntax requires --experimental-math-formula",
+                    start_tok.pos,
+                    self._tok_span(start_tok),
+                )
+            inner = self.parse_expr()
+            self._eat("SYM", "]")
+            return inner
         if self._accept("SYM", "("):
             start_tok = self._last_tok
             if (
@@ -11400,6 +11423,13 @@ def _experimental_math_tuples_enabled(preferred: Optional[bool] = None) -> bool:
     return env_flag in {"1", "true", "yes", "on"}
 
 
+def _experimental_math_formula_enabled(preferred: Optional[bool] = None) -> bool:
+    if preferred is not None:
+        return preferred
+    env_flag = os.environ.get("TINYLANG_EXPERIMENTAL_MATH_FORMULA", "").strip().lower()
+    return env_flag in {"1", "true", "yes", "on"}
+
+
 def _use_tiny_parser(preferred: Optional[bool] = None) -> bool:
     if preferred is not None:
         return preferred
@@ -11831,12 +11861,18 @@ def _tiny_to_python_ast(runtime: "Runtime", node: object) -> object:
     return node
 
 
-def _parse_with_tiny_parser(src: str, *, allow_math_tuples: bool = False) -> List["IR"]:
+def _parse_with_tiny_parser(
+    src: str,
+    *,
+    allow_math_tuples: bool = False,
+    allow_math_formula: bool = False,
+) -> List["IR"]:
     program = _tiny_parser_bootstrap_source()
-    if allow_math_tuples:
-        flag_literal = "true"
+    if allow_math_tuples or allow_math_formula:
+        tuples_flag = "true" if allow_math_tuples else "false"
+        formula_flag = "true" if allow_math_formula else "false"
         program = (
-            f"{program}\n\ndef __tiny_ast = parse_program_with_flags({json.dumps(src)}, {flag_literal});\n"
+            f"{program}\n\ndef __tiny_ast = parse_program_with_flags({json.dumps(src)}, {tuples_flag}, {formula_flag});\n"
         )
     else:
         program = f"{program}\n\ndef __tiny_ast = parse_program({json.dumps(src)});\n"
@@ -11868,6 +11904,7 @@ def _parse_and_lint(
     use_tiny_parser: Optional[bool] = None,
     repl_mode: bool = False,
     experimental_math_tuples: Optional[bool] = None,
+    experimental_math_formula: Optional[bool] = None,
 ) -> List["IR"]:
     """Return a parsed program after running all linter passes.
 
@@ -11877,10 +11914,20 @@ def _parse_and_lint(
     diagnostics.
     """
     allow_math_tuples = _experimental_math_tuples_enabled(experimental_math_tuples)
+    allow_math_formula = _experimental_math_formula_enabled(experimental_math_formula)
     if _use_tiny_parser(use_tiny_parser):
-        stmts = _parse_with_tiny_parser(src, allow_math_tuples=allow_math_tuples)
+        stmts = _parse_with_tiny_parser(
+            src,
+            allow_math_tuples=allow_math_tuples,
+            allow_math_formula=allow_math_formula,
+        )
     else:
-        parser = Parser(Lexer(src), src, allow_math_tuples=allow_math_tuples)
+        parser = Parser(
+            Lexer(src),
+            src,
+            allow_math_tuples=allow_math_tuples,
+            allow_math_formula=allow_math_formula,
+        )
         stmts = parser.parse()
 
     lint_import_style(stmts, src)
@@ -13114,6 +13161,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Enable experimental tuple-based math forms like (sum: x) (env: TINYLANG_EXPERIMENTAL_MATH_TUPLES)",
     )
     parser.add_argument(
+        "--experimental-math-formula",
+        action="store_true",
+        help="Enable experimental formula syntax like #[ a + b ] (env: TINYLANG_EXPERIMENTAL_MATH_FORMULA)",
+    )
+    parser.add_argument(
         "--native-diagnostics",
         action="store_true",
         help="Print native backend diagnostics to stderr when using LLVM/native compiler flags",
@@ -13121,6 +13173,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     args, remaining = parser.parse_known_args(argv)
     if args.experimental_math_tuples:
         os.environ["TINYLANG_EXPERIMENTAL_MATH_TUPLES"] = "1"
+    if args.experimental_math_formula:
+        os.environ["TINYLANG_EXPERIMENTAL_MATH_FORMULA"] = "1"
     args.program_args = remaining
     if args.program_args and args.program_args[0] == "--":
         args.program_args = args.program_args[1:]

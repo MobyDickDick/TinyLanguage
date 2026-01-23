@@ -233,39 +233,48 @@ fn lex(source) {
             def pos = SourcePos(start_line, start_col);
             def handled = false;
 
-            if (c == "&" && __peek_at(chars, n, i, 1) == "&") {
-                def adv_and = __advance_state(chars, i, n, line, col, 2);
-                i = heap_get(adv_and, 0);
-                line = heap_get(adv_and, 1);
-                col = heap_get(adv_and, 2);
-                def stop = SourcePos(start_line, start_col + 1);
-                Collections.push(tokens, Token("OP", "&&", pos, stop));
+            if (c == "#" && __peek_at(chars, n, i, 1) == "[") {
+                def adv_hash = __advance_state(chars, i, n, line, col, 2);
+                i = heap_get(adv_hash, 0);
+                line = heap_get(adv_hash, 1);
+                col = heap_get(adv_hash, 2);
+                def stop_hash = SourcePos(start_line, start_col + 1);
+                Collections.push(tokens, Token("SYM", "#[", pos, stop_hash));
                 handled = true;
             } else {
-                if (c == "|" && __peek_at(chars, n, i, 1) == "|") {
-                    def adv_or = __advance_state(chars, i, n, line, col, 2);
-                    i = heap_get(adv_or, 0);
-                    line = heap_get(adv_or, 1);
-                    col = heap_get(adv_or, 2);
-                    def stop_or = SourcePos(start_line, start_col + 1);
-                    Collections.push(tokens, Token("OP", "||", pos, stop_or));
+                if (c == "&" && __peek_at(chars, n, i, 1) == "&") {
+                    def adv_and = __advance_state(chars, i, n, line, col, 2);
+                    i = heap_get(adv_and, 0);
+                    line = heap_get(adv_and, 1);
+                    col = heap_get(adv_and, 2);
+                    def stop = SourcePos(start_line, start_col + 1);
+                    Collections.push(tokens, Token("OP", "&&", pos, stop));
                     handled = true;
                 } else {
-                    if (c == "\"") {
-                        def res = __read_string(chars, n, i, line, col);
-                        def tok = heap_get(res, 0);
-                        i = heap_get(res, 1);
-                        line = heap_get(res, 2);
-                        col = heap_get(res, 3);
-                        Collections.push(tokens, tok);
+                    if (c == "|" && __peek_at(chars, n, i, 1) == "|") {
+                        def adv_or = __advance_state(chars, i, n, line, col, 2);
+                        i = heap_get(adv_or, 0);
+                        line = heap_get(adv_or, 1);
+                        col = heap_get(adv_or, 2);
+                        def stop_or = SourcePos(start_line, start_col + 1);
+                        Collections.push(tokens, Token("OP", "||", pos, stop_or));
                         handled = true;
                     } else {
-                        if (__is_alpha(c) || c == "_") {
-                            def j = i + 1;
-                            def keep = true;
-                            while (j < n && keep) {
-                                def cj = heap_get(chars, j);
-                                if (__is_alnum_or_underscore(cj)) {
+                        if (c == "\"") {
+                            def res = __read_string(chars, n, i, line, col);
+                            def tok = heap_get(res, 0);
+                            i = heap_get(res, 1);
+                            line = heap_get(res, 2);
+                            col = heap_get(res, 3);
+                            Collections.push(tokens, tok);
+                            handled = true;
+                        } else {
+                            if (__is_alpha(c) || c == "_") {
+                                def j = i + 1;
+                                def keep = true;
+                                while (j < n && keep) {
+                                    def cj = heap_get(chars, j);
+                                    if (__is_alnum_or_underscore(cj)) {
                                     j = j + 1;
                                 } else {
                                     keep = false;
@@ -283,13 +292,13 @@ fn lex(source) {
                             def stop_name = SourcePos(start_line, start_col + consumed - 1);
                             Collections.push(tokens, Token(kind, txt, pos, stop_name));
                             handled = true;
-                        } else {
-                            if (__is_digit(c)) {
-                                def jnum = i + 1;
-                                def hasdot = false;
-                                def keep_num = true;
-                                while (jnum < n && keep_num) {
-                                    def cjnum = heap_get(chars, jnum);
+                            } else {
+                                if (__is_digit(c)) {
+                                    def jnum = i + 1;
+                                    def hasdot = false;
+                                    def keep_num = true;
+                                    while (jnum < n && keep_num) {
+                                        def cjnum = heap_get(chars, jnum);
                                     if (cjnum == "." && hasdot == false) {
                                         hasdot = true;
                                         jnum = jnum + 1;
@@ -308,34 +317,35 @@ fn lex(source) {
                                 def stop_num = SourcePos(start_line, start_col + consumed_num - 1);
                                 Collections.push(tokens, Token("NUMBER", txtnum, pos, stop_num));
                                 handled = true;
-                            } else {
-                                if (c == ">" || c == "<" || c == "=" || c == "!") {
-                                    if (__peek_at(chars, n, i, 1) == "=") {
-                                        def adv_cmp = __advance_state(chars, i, n, line, col, 2);
-                                        i = heap_get(adv_cmp, 0);
-                                        line = heap_get(adv_cmp, 1);
-                                        col = heap_get(adv_cmp, 2);
-                                        def stop_cmp = SourcePos(start_line, start_col + 1);
-                                        Collections.push(tokens, Token("OP", c + "=", pos, stop_cmp));
-                                        handled = true;
-                                    }
-                                }
-                                if (handled == false && (c == "+" || c == "-" || c == "*" || c == "/" || c == ">" || c == "<" || c == "^" || c == "!" || c == "%")) {
-                                    def adv_op = __advance_state(chars, i, n, line, col, 1);
-                                    i = heap_get(adv_op, 0);
-                                    line = heap_get(adv_op, 1);
-                                    col = heap_get(adv_op, 2);
-                                    Collections.push(tokens, Token("OP", c, pos, SourcePos(start_line, start_col)));
-                                    handled = true;
                                 } else {
-                                    if (handled == false && (c == "(" || c == ")" || c == "{" || c == "}" || c == "[" || c == "]"
-                                        || c == ";" || c == "," || c == "=" || c == ":" || c == "." || c == "?")) {
-                                        def adv_sym = __advance_state(chars, i, n, line, col, 1);
-                                        i = heap_get(adv_sym, 0);
-                                        line = heap_get(adv_sym, 1);
-                                        col = heap_get(adv_sym, 2);
-                                        Collections.push(tokens, Token("SYM", c, pos, SourcePos(start_line, start_col)));
+                                    if (c == ">" || c == "<" || c == "=" || c == "!") {
+                                        if (__peek_at(chars, n, i, 1) == "=") {
+                                            def adv_cmp = __advance_state(chars, i, n, line, col, 2);
+                                            i = heap_get(adv_cmp, 0);
+                                            line = heap_get(adv_cmp, 1);
+                                            col = heap_get(adv_cmp, 2);
+                                            def stop_cmp = SourcePos(start_line, start_col + 1);
+                                            Collections.push(tokens, Token("OP", c + "=", pos, stop_cmp));
+                                            handled = true;
+                                        }
+                                    }
+                                    if (handled == false && (c == "+" || c == "-" || c == "*" || c == "/" || c == ">" || c == "<" || c == "^" || c == "!" || c == "%")) {
+                                        def adv_op = __advance_state(chars, i, n, line, col, 1);
+                                        i = heap_get(adv_op, 0);
+                                        line = heap_get(adv_op, 1);
+                                        col = heap_get(adv_op, 2);
+                                        Collections.push(tokens, Token("OP", c, pos, SourcePos(start_line, start_col)));
                                         handled = true;
+                                    } else {
+                                        if (handled == false && (c == "(" || c == ")" || c == "{" || c == "}" || c == "[" || c == "]"
+                                            || c == ";" || c == "," || c == "=" || c == ":" || c == "." || c == "?")) {
+                                            def adv_sym = __advance_state(chars, i, n, line, col, 1);
+                                            i = heap_get(adv_sym, 0);
+                                            line = heap_get(adv_sym, 1);
+                                            col = heap_get(adv_sym, 2);
+                                            Collections.push(tokens, Token("SYM", c, pos, SourcePos(start_line, start_col)));
+                                            handled = true;
+                                        }
                                     }
                                 }
                             }

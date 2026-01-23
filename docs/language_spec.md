@@ -30,6 +30,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 - **Comparisons:** `==`, `!=`, `<`, `>`, `<=`, `>=` work on numbers, strings, booleans, and user types with operator overloads.
 - **Booleans:** Short-circuit logic with `&&`/`||` or keyword `and`/`or`; negation via `!expr` or `not expr`.
 - **Experimental math tuples:** With `--experimental-math-tuples`, a single tuple-like form `(name: expr)` desugars to `Math.name(expr)` for quick formula-style calls.
+- **Experimental math formulas:** With `--experimental-math-formula`, `#[ ... ]` delimits an expression that is parsed using the existing precedence rules.
 - **Arrays and heap:** `new[1, 2, 3]` creates an array; `new(3)` reserves heap space with three slots. Access via `heap_get(ptr, idx)` and `heap_set(ptr, idx, value)`. `tag(ptr, "Label")` attaches a type tag, and `delete(ptr)` frees memory.
   - **Ownership + aliasing (single-owner model):**
     - Heap pointers have a single logical owner; lints treat pointer-to-pointer assignments as aliasing violations instead of implicit sharing.

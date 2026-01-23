@@ -110,6 +110,10 @@ class Lexer:
         start_col = self.col
         pos = SourcePos(start_line, start_col)
 
+        if c == "#" and self.i + 1 < self.n and self.s[self.i + 1] == "[":
+            self._advance(2)
+            stop = SourcePos(start_line, start_col + 1)
+            return Token("SYM", "#[", pos, stop)
         if c == "&" and self.i + 1 < self.n and self.s[self.i + 1] == "&":
             self._advance(2)
             stop = SourcePos(start_line, start_col + 1)

@@ -228,6 +228,8 @@ primary         ::= "(" expr ")"
                   | "spawn" NAME_or_kw arg_list
                   | "await" expr
                   | "match" match_expr
+                  | "new" "[" [expr ("," expr)*] "]"
+                  | "new" NAME "{" class_init_fields "}"
                   | NUMBER
                   | STRING
                   | "true" | "false"
@@ -237,8 +239,6 @@ primary         ::= "(" expr ")"
                   ;
 
 primary_suffix  ::= arg_list
-                  | ("new" "[" [expr ("," expr)*] "]")
-                  | ("new" NAME "{" class_init_fields "}")
                   | variant_ctor
                   | /* empty -> Var */
                   ;

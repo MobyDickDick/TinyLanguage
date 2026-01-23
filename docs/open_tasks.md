@@ -21,7 +21,7 @@ are grouped by area and can be tackled independently.
 - [x] README, tutorial, and demo command docs verified against current CLI output.
 - [x] Versioning/location for `1.0.0` documented and updated (stored in `VERSION`,
   `CHANGELOG.md`, and release tags).
-- [ ] Release notes + tag plan prepared.
+- [x] Release notes + tag plan prepared.
 
 ## Release 1.0 scope checklist (complete)
 - [x] Scope frozen (interpreter + core language only).

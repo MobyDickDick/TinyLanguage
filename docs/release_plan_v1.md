@@ -35,7 +35,7 @@ This document proposes concrete steps to plan a **1.0 release** of TinyLanguage.
 Create an explicit **release checklist** and treat it as the definition of done.
 
 ### Feature readiness
-- [ ] All “must-have” features in the scope are implemented and documented.
+- [x] All “must-have” features in the scope are implemented and documented.
 - [ ] Language spec updated and consistent with current behavior.
 - [x] Known “major” bugs are either fixed or documented in a “Known issues” list
   (see `CHANGELOG.md`).

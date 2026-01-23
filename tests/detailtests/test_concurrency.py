@@ -164,3 +164,31 @@ def test_task_block_keeps_completed_spawns(run_tiny_source, monkeypatch):
     )
 
     assert out == "status true false true\nvalue 5\n"
+
+
+def test_join_status_reports_spawn_errors(run_tiny_source):
+    out = run_tiny_source(
+        """
+        fn boom() {
+            return join(Null);
+        }
+
+        def handle = spawn boom();
+        def status = join(handle, 1000);
+        print("status", status.done, status.cancelled);
+        print("error", status.error);
+        print("result_null", status.result == Null);
+        """,
+    )
+
+    assert out == (
+        "status true false\n"
+        "error [E000] join expects a spawn handle (line 3, col 20)\n"
+        "   2 |         fn boom() {\n"
+        ">  3 |             return join(Null);\n"
+        "   4 |         }\n"
+        "     |                    ^\n"
+        "Stack trace:\n"
+        "  at boom (line 2, col 9)\n"
+        "result_null true\n"
+    )

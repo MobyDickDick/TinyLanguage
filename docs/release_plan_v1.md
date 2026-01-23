@@ -36,7 +36,7 @@ Create an explicit **release checklist** and treat it as the definition of done.
 
 ### Feature readiness
 - [x] All “must-have” features in the scope are implemented and documented.
-- [ ] Language spec updated and consistent with current behavior.
+- [x] Language spec updated and consistent with current behavior.
 - [x] Known “major” bugs are either fixed or documented in a “Known issues” list
   (see `CHANGELOG.md`).
 
@@ -136,7 +136,7 @@ Make a decision (and record it in this plan or a roadmap entry):
 ## 8) Suggested next steps (actionable)
 
 1. ✅ Add a short **1.0 scope** checklist to `docs/open_tasks.md` or a dedicated release checklist.
-2. Audit the language spec + tutorial against the current interpreter behavior.
+2. ✅ Audit the language spec + tutorial against the current interpreter behavior.
 3. Create/expand regression tests for recent fixes and high-risk features.
 4. Introduce a `CHANGELOG.md` and decide versioning location.
 5. ✅ Schedule a release candidate window and perform a full doc + demo run-through
@@ -148,8 +148,8 @@ Make a decision (and record it in this plan or a roadmap entry):
 
 ```
 [x] Scope frozen (interpreter + core language only)
-[ ] Language spec audited and updated
-[ ] Tutorial audited and demo commands verified
+[x] Language spec audited and updated
+[x] Tutorial audited and demo commands verified
 [x] pytest passes
 [x] run_all.py passes
 [x] Regression tests added

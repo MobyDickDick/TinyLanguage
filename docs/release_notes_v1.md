@@ -1,32 +1,66 @@
 # TinyLanguage 1.0.0 Release Notes (Draft)
 
-These notes summarize the planned 1.0.0 release, with a focus on what is
-considered stable, any breaking changes, and known limitations.
+## Summary
+
+TinyLanguage 1.0.0 marks the first stable interpreter-focused release. It
+solidifies the core language syntax, the interpreter runtime, and the baseline
+standard library that ships with the repo. LLVM/C backends remain experimental
+and are explicitly out of scope for the 1.0 stability guarantees.
 
 ## Highlights
 
-- Stable interpreter-first workflow (the interpreter is the 1.0.0 golden path).
-- Core language syntax and semantics documented in `docs/language_spec.md`.
-- Baseline standard library coverage documented in `docs/stdlib_compatibility.md`.
-- CLI usage and tutorials updated in `README.md` and `docs/tutorial.md`.
+- **Stable core language + interpreter** with the 1.0 scope defined in
+  `docs/release_plan_v1.md`.
+- **Documented language spec** in `docs/language_spec.md`, aligned with the
+  interpreter behavior.
+- **Standard library baseline** documented in `docs/stdlib_compatibility.md`.
+- **CLI + tutorial parity** verified in `README.md` and `docs/tutorial.md`.
 
-## Breaking changes
+## What is stable in 1.0
 
-- **None identified for 1.0.0.** The 1.0 line is intended to preserve
-  compatibility with programs that follow the documented language spec.
+- The **interpreter** and its documented semantics in
+  `docs/language_spec.md`.
+- The **core stdlib surface** documented in `docs/stdlib_compatibility.md`.
+- **CLI workflows** described in `README.md` and demo command docs.
 
-## Known limitations
+## What remains experimental
 
-- LLVM and native/C backends remain experimental and are out of scope for 1.0.0.
-- Performance guarantees and packaging/distribution workflows are not part of
-  the 1.0.0 scope.
+- **LLVM backend** and **native/C compiler** pipelines.
+- Performance guarantees and optimization profiles.
+- Any tooling or scripts not covered by the 1.0 scope checklist.
 
-## Getting started
+## Known issues
 
-- See `README.md` for the quickstart.
-- Follow `docs/tutorial.md` for a guided walkthrough.
+See the “Known issues” section in `CHANGELOG.md` for any limitations or
+regressions that were deferred for the 1.0 release.
 
-## Feedback
+## Upgrade and compatibility notes
 
-If you encounter issues, please reference the known limitations and file a
-report with a minimal repro case and expected vs. actual behavior.
+- 1.0 is intended to be **backwards compatible** with programs that conform to
+  the 1.0 language spec.
+- Breaking changes require a future 2.0 plan.
+
+## Tag + release workflow
+
+1. **Finalize the changelog**: verify `CHANGELOG.md` includes a complete 1.0.0
+   entry with Added/Changed/Fixed and Known issues sections.
+2. **Verify versioning**: confirm `VERSION` is set to `1.0.0` and matches the
+   changelog entry.
+3. **Create the tag**:
+   - `git tag -a v1.0.0 -m "TinyLanguage 1.0.0"`
+4. **Push the tag**:
+   - `git push origin v1.0.0`
+5. **Publish release notes** (GitHub):
+   - Title: `TinyLanguage 1.0.0`
+   - Body: copy the Summary + Highlights + Known issues from this document and
+     link to `CHANGELOG.md`.
+6. **Post-release verification**:
+   - Ensure the tag is visible in the remote repository.
+   - Confirm release notes render correctly and link to docs.
+
+## Checklist for release readiness
+
+- [ ] Changelog entry verified and complete.
+- [ ] Version file matches the changelog.
+- [ ] Tag created and pushed.
+- [ ] Release notes published.

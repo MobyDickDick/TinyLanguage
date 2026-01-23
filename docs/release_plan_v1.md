@@ -54,7 +54,7 @@ Create an explicit **release checklist** and treat it as the definition of done.
 - [x] Version set to `1.0.0` in all relevant files (stored in `VERSION`,
   `CHANGELOG.md`, and release tags).
 - [x] `CHANGELOG.md` created or updated with “1.0.0” notes.
-- [ ] Tag + GitHub release notes prepared.
+- [x] Tag + GitHub release notes prepared (see `docs/release_notes_v1.md`).
 
 ---
 

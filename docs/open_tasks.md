@@ -16,7 +16,7 @@ are grouped by area and can be tackled independently.
   Python-style modules (prioritize commonly used APIs).
 
 ## Release 1.0 readiness checklist (open)
-- [ ] Must-have interpreter features implemented and documented.
+- [x] Must-have interpreter features implemented and documented.
 - [ ] Language spec updated and consistent with current behavior.
 - [x] README, tutorial, and demo command docs verified against current CLI output.
 - [x] Versioning/location for `1.0.0` documented and updated (stored in `VERSION`,

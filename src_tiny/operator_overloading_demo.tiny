@@ -5,8 +5,11 @@ class Point { // Represents a 2D point.
 
     fn to_tuple(self) { // Converts the point into a heap array.
         def buf = new(2); // Preallocate a fixed-size buffer for the tuple.
-        heap_set(buf, 0, self.x); // Store x in the first slot.
-        heap_set(buf, 1, self.y); // Store y in the second slot.
+        def status_x = heap_set(buf, 0, self.x); // Store x in the first slot.
+        def status_y = heap_set(buf, 1, self.y); // Store y in the second slot.
+        if (status_x.e.code != 0 || status_y.e.code != 0) { // Surface any heap write errors.
+            print("Heap write failed in Point.to_tuple"); // Report failed writes for debugging.
+        }
         return buf; // Return the heap-backed tuple buffer.
     }
 }

@@ -130,6 +130,22 @@ Each experiment should be judged against:
 
 ## Resolved questions
 
+- **How should the formatter serialize math blocks to keep diffs small?**  
+  Treat math blocks like ordinary expressions with a few delimiter-specific
+  spacing rules so formatting stays stable and low-noise:
+  - **Formula delimiters (`#[ ... ]`) stay tight**: no space after `#[` and no
+    space before `]`. Inside the block, apply the standard spacing rules
+    (spaces around operators and after commas), yielding e.g. `#[pi * r ^ 2]`.
+  - **Math tuples keep existing paren/colon spacing**: `(sum: x)` and
+    `(sum: [x, y])` follow the normal formatter rules for `(`, `)`, `:`, and
+    `,` (no extra spaces just inside parens, a single space after `:`).
+  - **No line wrapping added by the formatter**: math blocks remain on a single
+    line unless the user inserts explicit newlines; the formatter will not
+    reflow `#[ ... ]` or `(name: ...)` forms on its own.
+  - **Indentation matches surrounding expressions**: math blocks are not
+    special-cased for indentation; they inherit the indentation of their parent
+    statement like any other expression.
+
 - **Do we need a separate operator table for formula mode?**  
   No. Formula mode should **reuse the existing operator table** to preserve
   TinyLanguage's current precedence rules and avoid introducing a second

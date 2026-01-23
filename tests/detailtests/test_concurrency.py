@@ -123,6 +123,28 @@ def test_task_block_cancels_pending_spawns(run_tiny_source, monkeypatch):
     assert out == "status false true\n"
 
 
+def test_task_block_timeout_respects_custom_env(run_tiny_source, monkeypatch):
+    monkeypatch.setenv("TINYLANG_TASK_SCOPE_TIMEOUT_MS", "1.5")
+    out = run_tiny_source(
+        """
+        fn slow(value) {
+            def i = 0;
+            while (i < 2000000) { i = i + 1; }
+            return value;
+        }
+
+        task {
+            def handle = spawn slow(3);
+        }
+
+        def status = join(handle, 0);
+        print("status", status.done, status.cancelled);
+        """,
+    )
+
+    assert out == "status false true\n"
+
+
 def test_task_block_keeps_completed_spawns(run_tiny_source, monkeypatch):
     monkeypatch.setenv("TINYLANG_TASK_SCOPE_TIMEOUT_MS", "50")
     out = run_tiny_source(

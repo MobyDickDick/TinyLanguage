@@ -84,6 +84,7 @@ self-hosting port plan.
     - **Description:** Summarize final API/syntax changes.
     - **DoD:** Release notes include breaking changes + known limitations.
 
-16. **Final regression run (RC)**
+16. **Final regression run (RC)** ✅
     - **Description:** Full test run (interpreter + native + LSP).
     - **DoD:** All gates green; v1.0 release approved.
+    - **Run:** `python -m pytest` (556 passed, 1 skipped) on 2026-01-23.

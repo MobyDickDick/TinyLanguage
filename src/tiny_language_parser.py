@@ -10,7 +10,14 @@ source text.
 
 
 class Parser:
-    def __init__(self, lx: Lexer, source: str, *, allow_math_tuples: bool = False):
+    def __init__(
+        self,
+        lx: Lexer,
+        source: str,
+        *,
+        allow_math_tuples: bool = False,
+        allow_math_formula: bool = False,
+    ):
         self.lx = lx
         self.source = source
         self._buffer: List[Token] = []
@@ -18,6 +25,7 @@ class Parser:
         self._last_tok = Token("<start>", "", SourcePos.origin(), SourcePos.origin())
         self._allow_variant_ctor = True
         self._allow_math_tuples = allow_math_tuples
+        self._allow_math_formula = allow_math_formula
 
     @staticmethod
     def _attach_span(node: IR, start: SourcePos, stop: SourcePos) -> IR:
@@ -787,6 +795,17 @@ class Parser:
         )
 
     def parse_primary(self) -> IR:
+        if self._accept("SYM", "#["):
+            start_tok = self._last_tok
+            if not self._allow_math_formula:
+                raise self._error(
+                    "math formula syntax requires --experimental-math-formula",
+                    start_tok.pos,
+                    self._tok_span(start_tok),
+                )
+            inner = self.parse_expr()
+            self._eat("SYM", "]")
+            return inner
         if self._accept("SYM", "("):
             start_tok = self._last_tok
             if (

@@ -181,6 +181,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Enable experimental tuple-based math forms like (sum: x) (env: TINYLANG_EXPERIMENTAL_MATH_TUPLES)",
     )
     parser.add_argument(
+        "--experimental-math-formula",
+        action="store_true",
+        help="Enable experimental formula syntax like #[ a + b ] (env: TINYLANG_EXPERIMENTAL_MATH_FORMULA)",
+    )
+    parser.add_argument(
         "--native-diagnostics",
         action="store_true",
         help="Print native backend diagnostics to stderr when using LLVM flags",
@@ -189,6 +194,8 @@ def main(argv: list[str] | None = None) -> int:
     args, remaining = parser.parse_known_args(argv)
     if args.experimental_math_tuples:
         os.environ["TINYLANG_EXPERIMENTAL_MATH_TUPLES"] = "1"
+    if args.experimental_math_formula:
+        os.environ["TINYLANG_EXPERIMENTAL_MATH_FORMULA"] = "1"
     program_args = list(remaining)
     if program_args and program_args[0] == "--":
         program_args = program_args[1:]

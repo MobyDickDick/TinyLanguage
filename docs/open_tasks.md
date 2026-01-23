@@ -30,7 +30,7 @@ documentation so they can be tracked alongside the main backlog.
   (see `docs/release_candidate_runthrough.md`).
 
 ### Math syntax experiments (from `docs/math_syntax_exploration.md`)
-- [ ] Trial the `#[ ... ]` formula delimiter with existing precedence rules.
+- [x] Trial the `#[ ... ]` formula delimiter with existing precedence rules.
 - [ ] Decide whether formula mode needs a separate operator table.
 - [ ] Define formatter rules for math blocks to keep diffs minimal.
 

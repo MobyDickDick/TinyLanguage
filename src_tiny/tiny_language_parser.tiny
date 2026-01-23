@@ -53,6 +53,7 @@ class Parser {
     _last_tok: Token;
     _allow_variant_ctor: Bool;
     _allow_math_tuples: Bool;
+    _allow_math_formula: Bool;
 
     fn _next_token(self) -> any {
         if (self.index < len(self.tokens)) {
@@ -838,6 +839,15 @@ class Parser {
     }
 
     fn parse_primary(self) -> any {
+        if (self._accept("SYM", "#[", Null)) {
+            def start_tok = self._last_tok;
+            if (!self._allow_math_formula) {
+                return self._error("math formula syntax requires --experimental-math-formula", start_tok.start, self._tok_span(start_tok));
+            }
+            def inner = self.parse_expr();
+            def _eat_status = self._eat("SYM", "]");
+            return inner;
+        }
         if (self._accept("SYM", "(", Null)) {
             def start_tok = self._last_tok;
             def is_math = false;
@@ -1115,10 +1125,10 @@ class Parser {
 }
 
 fn Parser_new(source) {
-    return Parser_new_with_flags(source, false);
+    return Parser_new_with_flags(source, false, false);
 }
 
-fn Parser_new_with_flags(source, allow_math_tuples) {
+fn Parser_new_with_flags(source, allow_math_tuples, allow_math_formula) {
     def tokens = lex(source);
     def start_tok = heap_get(tokens, 0);
     def parser = new Parser {
@@ -1128,7 +1138,8 @@ fn Parser_new_with_flags(source, allow_math_tuples) {
         tok: start_tok;
         _last_tok: Token("<start>", "", SourcePos_origin(), SourcePos_origin());
         _allow_variant_ctor: true;
-        _allow_math_tuples: allow_math_tuples
+        _allow_math_tuples: allow_math_tuples;
+        _allow_math_formula: allow_math_formula
     };
     return parser;
 }
@@ -1138,7 +1149,7 @@ fn parse_program(source) {
     return parser.parse();
 }
 
-fn parse_program_with_flags(source, allow_math_tuples) {
-    def parser = Parser_new_with_flags(source, allow_math_tuples);
+fn parse_program_with_flags(source, allow_math_tuples, allow_math_formula) {
+    def parser = Parser_new_with_flags(source, allow_math_tuples, allow_math_formula);
     return parser.parse();
 }

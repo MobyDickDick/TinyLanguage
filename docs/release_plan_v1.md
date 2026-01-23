@@ -147,7 +147,7 @@ Make a decision (and record it in this plan or a roadmap entry):
 [ ] Language spec audited and updated
 [ ] Tutorial audited and demo commands verified
 [x] pytest passes
-[ ] run_all.py passes
+[x] run_all.py passes
 [x] Regression tests added
 [x] CHANGELOG.md updated
 [ ] Version set to 1.0.0

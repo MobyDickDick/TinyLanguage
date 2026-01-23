@@ -5,7 +5,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 ## Lexical elements
 
 - **Comments:** `//` starts a comment to the end of the line. Block comments have no special syntax.
-- **Semicolons:** Every statement ends with `;`. The formatter inserts missing semicolons in simple cases, but programs should include them explicitly.
+- **Semicolons:** Simple statements (`def`, assignments, calls, `return`, etc.) end with `;`. Block statements (`if`, `while`, `switch`, `try`, `task`, `fn`, `class`, `type`, `namespace`) use braces and do not take a trailing semicolon. The formatter inserts missing semicolons in simple cases, but programs should include them explicitly.
 - **Identifiers and literals:**
   - Numbers support integers, decimals, and scientific notation (`1`, `3.14`, `0.5`, `1.2e2`).
   - Strings use double quotes and allow basic escapes like `\n`.
@@ -28,6 +28,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 - **Arithmetic:** `+`, `-`, `*`, `/`, and exponentiation `^` (the exponent must be an integer, or a float that is an integer value; fractional exponents require a non-negative base). Division follows Python semantics (integers become floats when needed); tagged `Number`/`NumberIntervall` values use runtime error states like `plus_infinity` instead of raising overflow errors.
 - **Comparisons:** `==`, `!=`, `<`, `>`, `<=`, `>=` work on numbers, strings, booleans, and user types with operator overloads.
 - **Booleans:** Short-circuit logic with `&&`/`||` or keyword `and`/`or`; negation via `!expr` or `not expr`.
+- **Experimental math tuples:** With `--experimental-math-tuples`, a single tuple-like form `(name: expr)` desugars to `Math.name(expr)` for quick formula-style calls.
 - **Arrays and heap:** `new[1, 2, 3]` creates an array; `new(3)` reserves heap space with three slots. Access via `heap_get(ptr, idx)` and `heap_set(ptr, idx, value)`. `tag(ptr, "Label")` attaches a type tag, and `delete(ptr)` frees memory.
   - **Ownership + aliasing (single-owner model):**
     - Heap pointers have a single logical owner; lints treat pointer-to-pointer assignments as aliasing violations instead of implicit sharing.
@@ -58,6 +59,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 - **`switch`:** Compares a target expression against each case expression using equality; the first match runs its block, otherwise the optional `default` block runs. Each case is isolated (no fallthrough).
 - **`match`:** Exhaustive pattern matching for tagged values (sum-type variants, classes, and structs). Wildcards (`_`) and named fields (`case Circle { radius: r }`) are supported, along with positional bindings (`case Circle(r) => ...`); missing cases raise an error.
 - **Error handling:** `try { ... } catch(err) { ... }` catches runtime errors and allows alternative returns or logging.
+- **Task scopes:** `task { ... }` introduces a structured concurrency scope. Any `spawn`ed work that is still running when the scope exits is cancelled and joined automatically.
 
 ## Functions and types
 
@@ -111,6 +113,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 ## Concurrency and async API
 
 - **Tasks:** `spawn f(1, 2)` starts `f` asynchronously; `join(handle)` waits and forwards the result or error.
+- **Spawn targets:** `spawn` expects a function name (`spawn work(1)`); use helpers or wrappers when you need to call methods or field-based callables.
 - **Cancellation:** `Async.token()` creates a token that can be cancelled via `Async.cancel(token, "reason")`. Tasks can be linked (`Async.link(token, handle)`) to propagate cancellations.
 
 ## Errors and diagnostics
@@ -215,6 +218,7 @@ unary           ::= "-" unary
 postfix         ::= primary ( "." NAME_or_kw [arg_list]? )* ;
 
 primary         ::= "(" expr ")"
+                  | "spawn" NAME_or_kw arg_list
                   | "await" expr
                   | "match" match_expr
                   | NUMBER
@@ -262,7 +266,8 @@ pattern_field   ::= NAME [":" (NAME_or_kw | "_")] ;
 pattern_args    ::= (NAME_or_kw | "_") ((","|";") (NAME_or_kw | "_"))* ;
 
 variant_ctor    ::= "{" variant_init_fields "}" ;
-variant_init_fields ::= field_init ((","|";") field_init)* ;
+variant_init_fields ::= [field_init ((","|";") field_init)*] ;
+class_init_fields ::= [field_init ((","|";") field_init)*] ;
 
 module_path     ::= ("."*) NAME ("." NAME)* ;
 qualified_name  ::= NAME ("." NAME)* ;

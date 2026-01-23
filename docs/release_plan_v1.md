@@ -154,6 +154,6 @@ Make a decision (and record it in this plan or a roadmap entry):
 [x] Regression tests added
 [x] CHANGELOG.md updated
 [x] Version set to 1.0.0
-[ ] Release notes written
+[x] Release notes written
 [ ] Tag created and release published
 ```

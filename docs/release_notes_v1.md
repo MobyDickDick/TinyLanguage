@@ -1,11 +1,11 @@
-# TinyLanguage 1.0.0 Release Notes (Draft)
+# TinyLanguage 1.0.0 Release Notes
 
 ## Summary
 
-TinyLanguage 1.0.0 marks the first stable interpreter-focused release. It
-solidifies the core language syntax, the interpreter runtime, and the baseline
-standard library that ships with the repo. LLVM/C backends remain experimental
-and are explicitly out of scope for the 1.0 stability guarantees.
+TinyLanguage 1.0.0 is the first stable, interpreter-focused release. It locks
+the core language syntax, interpreter runtime semantics, and a baseline standard
+library API surface. LLVM/C backends remain experimental and are explicitly out
+of scope for the 1.0 stability guarantees.
 
 ## Highlights
 
@@ -15,6 +15,8 @@ and are explicitly out of scope for the 1.0 stability guarantees.
   interpreter behavior.
 - **Standard library baseline** documented in `docs/stdlib_compatibility.md`.
 - **CLI + tutorial parity** verified in `README.md` and `docs/tutorial.md`.
+- **Regression coverage** maintained via the core `pytest` suite and
+  `run_all.py` smoke checks.
 
 ## What is stable in 1.0
 
@@ -31,8 +33,10 @@ and are explicitly out of scope for the 1.0 stability guarantees.
 
 ## Known issues
 
-See the “Known issues” section in `CHANGELOG.md` for any limitations or
-regressions that were deferred for the 1.0 release.
+- LLVM and native/C compiler backends remain experimental and out of scope for
+  1.0 stability guarantees.
+- Performance guarantees and packaging/distribution workflows are not part of
+  the 1.0 scope.
 
 ## Upgrade and compatibility notes
 
@@ -60,7 +64,7 @@ regressions that were deferred for the 1.0 release.
 
 ## Checklist for release readiness
 
-- [ ] Changelog entry verified and complete.
-- [ ] Version file matches the changelog.
+- [x] Changelog entry verified and complete.
+- [x] Version file matches the changelog.
 - [ ] Tag created and pushed.
 - [ ] Release notes published.

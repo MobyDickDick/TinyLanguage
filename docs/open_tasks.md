@@ -19,7 +19,8 @@ are grouped by area and can be tackled independently.
 - [ ] Must-have interpreter features implemented and documented.
 - [ ] Language spec updated and consistent with current behavior.
 - [x] README, tutorial, and demo command docs verified against current CLI output.
-- [ ] Versioning/location for `1.0.0` documented and updated (if versioning exists).
+- [x] Versioning/location for `1.0.0` documented and updated (stored in `VERSION`,
+  `CHANGELOG.md`, and release tags).
 - [ ] Release notes + tag plan prepared.
 
 ## Release 1.0 scope checklist (complete)

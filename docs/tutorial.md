@@ -75,7 +75,8 @@ Each file prints its expected output and doubles as a runnable reference.
 
 ## 5. Modules and the CLI wrapper
 
-For multi-file projects, use the CLI helper that understands module manifests:
+For multi-file projects, use the CLI helper to run entry points and set module
+search paths with `TINYPATH`:
 
 ```bash
 PYTHONPATH=src python -m tiny_lang_cli my_pkg/main.tiny --backend interpreter
@@ -85,7 +86,7 @@ PYTHONPATH=src python -m tiny_lang_cli --file - --backend interpreter < my_pkg/m
 PYTHONPATH=src python -m tiny_lang_cli --file my_pkg/main.tiny -- --flag value
 ```
 
-The `module.json` file in a package declares entry points and dependencies; see the module workflows in `docs/demo_run_commands.md` for more examples.
+The CLI wrapper forwards to the same options as `python -m tiny_language`, so you can reuse flags like `--native-backend` or `--emit-llvm`. See the module workflows in `docs/demo_run_commands.md` for more examples.
 
 If you want to scaffold a new project structure (including optional VS Code
 debugging configuration), use the project helper:

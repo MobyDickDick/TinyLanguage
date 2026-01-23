@@ -15,6 +15,24 @@ are grouped by area and can be tackled independently.
 - [x] Expand stdlib coverage with parity tests for missing or incomplete
   Python-style modules (prioritize commonly used APIs).
 
+## Follow-up tasks from docs (active)
+
+These items consolidate next steps and open questions called out in other
+documentation so they can be tracked alongside the main backlog.
+
+### Release plan follow-ups (from `docs/release_plan_v1.md`)
+- [x] Add this follow-up tracking section for release-plan and math-syntax items.
+- [ ] Audit `docs/language_spec.md` against current interpreter behavior.
+- [ ] Audit `docs/tutorial.md` + demo commands against current CLI output.
+- [ ] Expand regression coverage for recent fixes and high-risk features.
+- [ ] Write release notes and finalize the release tag/publishing checklist.
+- [ ] Schedule a release candidate window and perform a full doc + demo run-through.
+
+### Math syntax experiments (from `docs/math_syntax_exploration.md`)
+- [ ] Trial the `#[ ... ]` formula delimiter with existing precedence rules.
+- [ ] Decide whether formula mode needs a separate operator table.
+- [ ] Define formatter rules for math blocks to keep diffs minimal.
+
 ## Release 1.0 readiness checklist (open)
 - [x] Must-have interpreter features implemented and documented.
 - [x] Language spec updated and consistent with current behavior.

@@ -22,7 +22,7 @@ documentation so they can be tracked alongside the main backlog.
 
 ### Release plan follow-ups (from `docs/release_plan_v1.md`)
 - [x] Add this follow-up tracking section for release-plan and math-syntax items.
-- [ ] Audit `docs/language_spec.md` against current interpreter behavior.
+- [x] Audit `docs/language_spec.md` against current interpreter behavior.
 - [x] Audit `docs/tutorial.md` + demo commands against current CLI output.
 - [ ] Expand regression coverage for recent fixes and high-risk features.
 - [ ] Write release notes and finalize the release tag/publishing checklist.

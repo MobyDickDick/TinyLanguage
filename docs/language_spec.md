@@ -97,6 +97,10 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
   }
   ```
 
+  - Sum types can also be spelled explicitly with `type Shape = sum { ... }`.
+  - Product types can be declared as `type Point = product { x: number; y: number; }`.
+  - When the `=` kind is omitted, the parser treats a body that starts with
+    `name: type` as a product type; otherwise it parses a sum type.
   Each variant automatically becomes a constructor (e.g., `Circle { radius: 2 }`).
 - **Exhaustive matching:** `match` expressions must cover every variant; otherwise a hint about the missing cases is produced.
 

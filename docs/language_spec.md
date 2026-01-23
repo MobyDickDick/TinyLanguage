@@ -10,7 +10,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
   - Numbers support integers, decimals, and scientific notation (`1`, `3.14`, `0.5`, `1.2e2`).
   - Strings use double quotes and allow basic escapes like `\n`.
   - Booleans are `true` and `false`; `Null` indicates the absence of a value.
-- **Reserved keywords vs. identifiers:** Keywords are reserved in declaration positions (e.g., `def if = 1;` is invalid), but the grammar explicitly allows keywords in some identifier slots via `NAME_or_kw`. Use this when you need a keyword-named method or member:
+- **Reserved keywords vs. identifiers:** Keywords are still used to start control-flow statements, but Tiny deliberately allows keywords in select identifier slots so you can name members or bindings with them. The grammar uses `NAME_or_kw` for those positions, and the parser accepts keywords in plain binding positions as well (e.g., `def match = 1;` or `match = 2;`). Some positions remain strict `NAME` only (function parameters, destructuring targets, and module path segments).
   - Keywords today include: `def`, `print`, `if`, `else`, `while`, `switch`, `default`, `fn`, `import`, `return`, `operator`, `new`, `type`, `class`, `namespace`, `as`, `spawn`, `async`, `await`, `task`, `true`, `false`, `flush`, `and`, `or`, `not`, `Null`, `try`, `catch`, `match`, `case`.
   - `NAME_or_kw` appears in member access, method declarations, and type annotations, so keywords can be used there without being treated as control flow.
 
@@ -19,6 +19,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
       fn match(self) { return "ok"; } // method name uses a keyword
   }
 
+  def match = "ok"; // keyword used as a binding name
   def demo = new KeywordDemo {};
   print(demo.match()); // member access accepts NAME_or_kw
   ```
@@ -173,7 +174,7 @@ Literals:
 ```ebnf
 program         ::= stmt* EOF ;
 
-stmt            ::= "def" NAME "=" expr ";"
+stmt            ::= "def" NAME_or_kw "=" expr ";"
                   | "print" "(" [expr ("," expr)*] ")" ";"
                   | "flush" "(" ")" ";"
                   | "if" "(" expr ")" block ["else" block]
@@ -189,7 +190,7 @@ stmt            ::= "def" NAME "=" expr ";"
                   | "class" NAME [ ":" NAME ("," NAME)* ] class_body
                   | "operator" OP "(" NAME ":" NAME "," NAME ":" NAME ")" "-" ">" NAME block
                   | "{" destruct_names "}" "=" expr ";"
-                  | NAME stmt_suffix
+                  | NAME_or_kw stmt_suffix
                   ;
 
 stmt_suffix     ::= "." NAME_or_kw ("=" expr ";" | arg_list ";")

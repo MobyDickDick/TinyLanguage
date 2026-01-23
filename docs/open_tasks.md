@@ -18,7 +18,7 @@ are grouped by area and can be tackled independently.
 ## Release 1.0 readiness checklist (open)
 - [ ] Must-have interpreter features implemented and documented.
 - [ ] Language spec updated and consistent with current behavior.
-- [ ] README, tutorial, and demo command docs verified against current CLI output.
+- [x] README, tutorial, and demo command docs verified against current CLI output.
 - [ ] Versioning/location for `1.0.0` documented and updated (if versioning exists).
 - [ ] Release notes + tag plan prepared.
 

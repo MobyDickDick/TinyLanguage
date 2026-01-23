@@ -5,7 +5,7 @@ This tutorial shows how to get TinyLanguage running locally, walk through the co
 ## 1. Setup
 
 - Install Python 3 and clone the repository.
-- From the repo root, you can run the interpreter directly with `python src/tiny_language.py`.
+- From the repo root, you can run the interpreter with `python -m tiny_language` (the module wrapper calls the same CLI as the source file).
 - The bundled demos live in `src_tiny/`; they work without additional dependencies.
 
 ## 2. Your first TinyLanguage program
@@ -19,13 +19,13 @@ print("Hello, TinyLanguage!");
 Run it through the interpreter:
 
 ```bash
-python src/tiny_language.py hello.tiny
+python -m tiny_language hello.tiny
 ```
 
 You can also try the richer demo that exercises variables, functions, and control flow:
 
 ```bash
-python src/tiny_language.py src_tiny/demo.tiny
+python -m tiny_language src_tiny/demo.tiny
 ```
 
 ## 3. Language basics in one file
@@ -58,18 +58,18 @@ print(add(4, 1));
 Run it with the interpreter or the native backend to see both execution paths:
 
 ```bash
-python src/tiny_language.py basics.tiny
-python src/tiny_language.py --native-backend basics.tiny
+python -m tiny_language basics.tiny
+python -m tiny_language --native-backend basics.tiny
 ```
 
 ## 4. Types, pattern matching, and classes
 
 Once you are comfortable with the basics, explore the feature-specific demos:
 
-- Type hints and exhaustiveness checks: `python src/tiny_language.py src_tiny/all_features.tiny`
-- Pattern matching and algebraic data types: `python src/tiny_language.py src_tiny/match_demo.tiny`
-- Classes and methods: `python src/tiny_language.py src_tiny/class_demo.tiny`
-- Namespaces and modular structure (interpreter backend): `python src/tiny_language.py src_tiny/namespace_demo.tiny`
+- Type hints and exhaustiveness checks: `python -m tiny_language src_tiny/all_features.tiny`
+- Pattern matching and algebraic data types: `python -m tiny_language src_tiny/match_demo.tiny`
+- Classes and methods: `python -m tiny_language src_tiny/class_demo.tiny`
+- Namespaces and modular structure (interpreter backend): `python -m tiny_language src_tiny/namespace_demo.tiny`
 
 Each file prints its expected output and doubles as a runnable reference.
 
@@ -98,6 +98,6 @@ PYTHONPATH=src python -m tiny_project_cli init my_app --vscode
 
 - Run a focused example set and the pytest suite together with `python run_all.py`.
 - Call the language-server helper for hover, completions, or diagnostics, e.g. `PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny hover --symbol Greeter`.
-- Compare interpreter vs. native backend output with `python src/tiny_language.py --native-backend src_tiny/all_features.tiny`.
+- Compare interpreter vs. native backend output with `python -m tiny_language --native-backend src_tiny/all_features.tiny`.
 
 These commands give quick feedback loops for experimenting with new code or validating changes.

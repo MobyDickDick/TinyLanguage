@@ -15,7 +15,14 @@ are grouped by area and can be tackled independently.
 - [x] Expand stdlib coverage with parity tests for missing or incomplete
   Python-style modules (prioritize commonly used APIs).
 
-## Release 1.0 scope checklist (short)
+## Release 1.0 readiness checklist (open)
+- [ ] Must-have interpreter features implemented and documented.
+- [ ] Language spec updated and consistent with current behavior.
+- [ ] README, tutorial, and demo command docs verified against current CLI output.
+- [ ] Versioning/location for `1.0.0` documented and updated (if versioning exists).
+- [ ] Release notes + tag plan prepared.
+
+## Release 1.0 scope checklist (complete)
 - [x] Scope frozen (interpreter + core language only).
 - [x] Language spec audited and updated against current interpreter behavior.
 - [x] Tutorial audited and demo commands verified.

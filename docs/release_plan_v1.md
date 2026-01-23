@@ -132,7 +132,7 @@ Make a decision (and record it in this plan or a roadmap entry):
 
 ## 8) Suggested next steps (actionable)
 
-1. Add a short **1.0 scope** checklist to `docs/open_tasks.md` or a dedicated release checklist.
+1. ✅ Add a short **1.0 scope** checklist to `docs/open_tasks.md` or a dedicated release checklist.
 2. Audit the language spec + tutorial against the current interpreter behavior.
 3. Create/expand regression tests for recent fixes and high-risk features.
 4. Introduce a `CHANGELOG.md` and decide versioning location.

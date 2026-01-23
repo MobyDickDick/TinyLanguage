@@ -60,7 +60,7 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 - **`switch`:** Compares a target expression against each case expression using equality; the first match runs its block, otherwise the optional `default` block runs. Each case is isolated (no fallthrough).
 - **`match`:** Exhaustive pattern matching for tagged values (sum-type variants, classes, and structs). Wildcards (`_`) and named fields (`case Circle { radius: r }`) are supported, along with positional bindings (`case Circle(r) => ...`); missing cases raise an error.
 - **Error handling:** `try { ... } catch(err) { ... }` catches runtime errors and allows alternative returns or logging.
-- **Task scopes:** `task { ... }` introduces a structured concurrency scope. Any `spawn`ed work that is still running when the scope exits is cancelled and joined automatically.
+- **Task scopes:** `task { ... }` introduces a structured concurrency scope. When the scope exits, TinyLanguage waits up to a small timeout (defaults to `50ms`, configurable via `TINYLANG_TASK_SCOPE_TIMEOUT_MS`) for outstanding `spawn`ed work to finish; any tasks still running after the timeout are cancelled and joined automatically.
 
 ## Functions and types
 

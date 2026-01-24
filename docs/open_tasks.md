@@ -27,7 +27,7 @@ are grouped by area and can be tackled independently.
 ## Roadmap-derived tasks (from `docs/roadmap_next.md`)
 - [x] Align the language specification updates with the roadmap's language core
   scope (evaluation order, scoping, error handling, concurrency).
-- [ ] Define a shared diagnostic error schema for interpreter + tooling.
+- [x] Define a shared diagnostic error schema for interpreter + tooling.
 - [ ] Introduce optional type annotations with a gradual-typing strategy.
 - [ ] Build a minimal type-checking pass that can run in lints/CI.
 - [x] Document optimization stages and performance targets for interpreter, C,

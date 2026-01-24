@@ -12,6 +12,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from tiny_errors import diagnostic_range
 from tiny_language import (
     BUILTINS,
     KEYWORDS,
@@ -20,13 +21,11 @@ from tiny_language import (
     Namespace,
     Parser,
     SourcePos,
-    SourceSpan,
     TypeDef,
     TinyLangError,
     ClassDef,
     Fn,
     _collect_function_signatures,
-    _line_info,
     lint_bare_call_results,
     lint_destruct_call_outputs,
     lint_fn_params_used,
@@ -67,6 +66,12 @@ class Diagnostic:
     message: str
     code: str
     range: Tuple[int, int, int, int]
+    severity: str = "error"
+    phase: str = "lint"
+    source: str = "linter"
+    origin: str = "language_server"
+    hint: Optional[str] = None
+
 
 @dataclass
 class WorkspaceSymbol:
@@ -211,7 +216,11 @@ class TinyLanguageServer:
                 Diagnostic(
                     message=str(self.parse_error),
                     code=self.parse_error.code,
-                    range=_diagnostic_range(self.parse_error, self.source),
+                    range=diagnostic_range(self.parse_error, self.source),
+                    phase="parse",
+                    source="parser",
+                    origin="language_server",
+                    hint=self.parse_error.hint,
                 )
             ]
 
@@ -232,7 +241,15 @@ class TinyLanguageServer:
                         lint_fn_params_used(st, self.source)
         except TinyLangError as err:
             diagnostics.append(
-                Diagnostic(message=str(err), code=err.code, range=_diagnostic_range(err, self.source))
+                Diagnostic(
+                    message=str(err),
+                    code=err.code,
+                    range=diagnostic_range(err, self.source),
+                    phase="lint",
+                    source="linter",
+                    origin="language_server",
+                    hint=err.hint,
+                )
             )
         return diagnostics
 
@@ -262,26 +279,6 @@ class TinyLanguageServer:
         return sorted(results, key=lambda item: item.name)
 
 
-def _diagnostic_range(err: TinyLangError, source: str) -> Tuple[int, int, int, int]:
-    """Convert a ``TinyLangError`` to a 1-based diagnostic range.
-
-    When the error carries a ``span`` we underline the full start→stop region.
-    Otherwise we fall back to a single-character marker at ``err.pos``.
-    """
-
-    span: Optional[SourceSpan] = getattr(err, "span", None)
-    if span is not None:
-        start_line, start_col, _ = _line_info(source, span.start)
-        stop_line, stop_col, _ = _line_info(source, span.stop)
-        end_col = stop_col + 1  # Make the end position exclusive for VS Code ranges.
-        if stop_line == start_line:
-            end_col = max(end_col, start_col + 1)
-        return (start_line, start_col, stop_line, end_col)
-
-    line, col, _ = _line_info(source, err.pos)
-    return (line, col, line, col + 1)
-
-
 def completions_for_source(source: str, prefix: str = "") -> List[Dict[str, Any]]:
     """Return completion dicts for ``source`` filtered by ``prefix``."""
     server = TinyLanguageServer(source)
@@ -301,7 +298,16 @@ def diagnostics_for_source(source: str) -> List[Dict[str, Any]]:
     """Return diagnostics for ``source`` as JSON-friendly dicts."""
     server = TinyLanguageServer(source)
     return [
-        {"message": diag.message, "code": diag.code, "range": list(diag.range)}
+        {
+            "message": diag.message,
+            "code": diag.code,
+            "range": list(diag.range),
+            "severity": diag.severity,
+            "phase": diag.phase,
+            "source": diag.source,
+            "origin": diag.origin,
+            "hint": diag.hint,
+        }
         for diag in server.diagnostics()
     ]
 

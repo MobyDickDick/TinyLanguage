@@ -21,6 +21,8 @@ PYTHONPATH=src python src/language_server_cli.py --file path/to/file.tiny diagno
 1. **Format first.** Run the formatter to normalize source before linting.
 2. **Collect diagnostics.** Run the `diagnostics` request to collect lints in a
    machine-readable JSON payload.
+   The payload adheres to the shared diagnostic schema in
+   [`docs/diagnostic_error_schema.md`](diagnostic_error_schema.md).
 
 The `language_server_cli.py` helper exposes both steps, so editors or scripts
 can treat it as the default LSP entry point until a full JSON-RPC client is

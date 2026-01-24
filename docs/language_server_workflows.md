@@ -23,9 +23,9 @@ PYTHONPATH=src python src/language_server_cli.py --source "fn greet(){return 1;}
 The subcommands mirror common LSP request/response pairs:
 
 - `completions --prefix <text>` filters all known symbols, keywords, and built-ins by the provided prefix.
-- `hover --symbol <name>` locates a symbol and emits its name, a generic detail string, and a zero-based `(line, column)` position tuple.
+- `hover --symbol <name>` locates a symbol and emits its name, a generic detail string, and a 1-based `(line, column)` position tuple.
 - `definition --symbol <name>` resolves a symbol to its definition location (optionally disambiguated with `--line`/`--col`).
-- `diagnostics` runs the built-in lints and surfaces the first encountered error with a four-tuple range `(start_line, start_col, end_line, end_col)`. Parse errors are reported in the same payload shape so tooling stays stable when source is incomplete.
+- `diagnostics` runs the built-in lints and surfaces the first encountered error with a four-tuple range `(start_line, start_col, end_line, end_col)` (1-based, end-exclusive). Parse errors are reported in the same payload shape so tooling stays stable when source is incomplete.
 - `format` formats the source using the TinyLanguage formatter and returns the formatted source string.
 
 Outputs are JSON so they can be piped into tools or inspected visually. Example diagnostics output:
@@ -37,25 +37,33 @@ Outputs are JSON so they can be piped into tools or inspected visually. Example 
     "code": "E010",
     "range": [
       1,
-      0,
       1,
-      1
-    ]
+      1,
+      2
+    ],
+    "severity": "error",
+    "phase": "lint",
+    "source": "linter",
+    "origin": "language_server",
+    "hint": "Add return statements for every branch or provide a default return to satisfy the annotation."
   }
 ]
 ```
 
+The diagnostics payload follows the shared schema in
+[`docs/diagnostic_error_schema.md`](diagnostic_error_schema.md).
+
 ## Supported methods and example payloads
 
-Each subcommand is a thin wrapper around an internal request/response pair and can be copy/pasted into JSON-RPC glue code. Positions are zero-based and include namespace-qualified symbols (`Math.inc`, `Tools.double`, …). Currently exposed methods (keep this table in sync with the helpers in `src/language_server.py`):
+Each subcommand is a thin wrapper around an internal request/response pair and can be copy/pasted into JSON-RPC glue code. Positions are 1-based and include namespace-qualified symbols (`Math.inc`, `Tools.double`, …). Currently exposed methods (keep this table in sync with the helpers in `src/language_server.py`):
 
 | Method (LSP analog) | CLI subcommand | Request (JSON) | Response (JSON) | Notes |
 | --- | --- | --- | --- | --- |
 | `textDocument/completion` | `completions` | `{ "prefix": "gr" }` | `[{ "label": "greet", "kind": "identifier" }]` | Prefix-based lookup across user symbols, keywords, and stdlib names. |
-| `textDocument/hover` | `hover` | `{ "symbol": "Greeter" }` | `{ "symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [0, 6] }` | Returns the recorded zero-based position for the symbol. |
-| `textDocument/definition` | `definition` | `{ "symbol": "greet" }` | `{ "symbol": "greet", "position": [0, 3] }` | Resolves a symbol to its definition position. |
-| `workspace/symbol` | `workspace-symbols` | `{ "query": "gre" }` | `[{ "name": "greet", "kind": "function", "detail": "fn greet()", "position": [0, 3], "container": "" }]` | Substring search across indexed symbols. |
-| `textDocument/diagnostic` | `diagnostics` | `{}` | `[{ "message": "[E010] ...", "code": "E010", "range": [1, 0, 1, 1] }]` | Emits lint findings with machine-readable ranges. |
+| `textDocument/hover` | `hover` | `{ "symbol": "Greeter" }` | `{ "symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [1, 7] }` | Returns the recorded 1-based position for the symbol. |
+| `textDocument/definition` | `definition` | `{ "symbol": "greet" }` | `{ "symbol": "greet", "position": [1, 4] }` | Resolves a symbol to its definition position. |
+| `workspace/symbol` | `workspace-symbols` | `{ "query": "gre" }` | `[{ "name": "greet", "kind": "function", "detail": "fn greet()", "position": [1, 4], "container": "" }]` | Substring search across indexed symbols. |
+| `textDocument/diagnostic` | `diagnostics` | `{}` | `[{ "message": "[E010] ...", "code": "E010", "range": [1, 1, 1, 2], "severity": "error", "phase": "lint", "source": "linter", "origin": "language_server" }]` | Emits lint findings with machine-readable ranges. |
 | `textDocument/formatting` | `format` | `{}` | `{ "source": "fn greet() { return 1; }\n" }` | Formats the input using the TinyLanguage formatter. |
 
 **Request templates at a glance** (copy/paste into JSON-RPC envelopes):
@@ -103,7 +111,7 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
 
     ```bash
     PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny hover --symbol Greeter
-    # => {"symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [0, 6]}
+    # => {"symbol": "Greeter", "detail": "TinyLanguage symbol", "position": [1, 7]}
     ```
 
 - **Definition** (`textDocument/definition` equivalent)
@@ -116,14 +124,14 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
   - Response payload:
 
     ```json
-    { "symbol": "greet", "position": [0, 3] }
+    { "symbol": "greet", "position": [1, 4] }
     ```
 
   - CLI demo for a definition lookup:
 
     ```bash
     PYTHONPATH=src python src/language_server_cli.py --source "fn greet() { return 1; }\ngreet();" definition --symbol greet
-    # => {"symbol": "greet", "position": [0, 3]}
+    # => {"symbol": "greet", "position": [1, 4]}
     ```
 
 - **Diagnostics** (`textDocument/diagnostic` equivalent)
@@ -163,7 +171,7 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
 
     ```bash
     PYTHONPATH=src python src/language_server_cli.py --file src_tiny/class_demo.tiny workspace-symbols --query Gre
-    # => [{"name": "Greeter", "kind": "class", "detail": "", "position": [0, 0], "container": ""}, ...]
+    # => [{"name": "Greeter", "kind": "class", "detail": "", "position": [1, 1], "container": ""}, ...]
     ```
 
 - **Formatting** (`textDocument/formatting` equivalent)

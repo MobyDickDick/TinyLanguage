@@ -83,9 +83,9 @@ logic already covered by Tiny sources.【F:src/stdlib/__init__.py†L2-L44】
 
 ### Stdlib consolidation decision template
 
-If the project decides to revisit the split stdlib layout, use the decision
-template in `docs/stdlib_consolidation_decision.md` to evaluate whether the
-stdlib roots can be merged and what the downstream impact would be.
+If the project decides to revisit the split stdlib layout, use the task list in
+`docs/stdlib_consolidation_decision.md` to evaluate whether the stdlib roots
+can be merged and what the downstream impact would be.
 
 ## Summary
 

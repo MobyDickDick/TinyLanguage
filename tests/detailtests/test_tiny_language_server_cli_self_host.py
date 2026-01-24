@@ -73,6 +73,11 @@ SNAPSHOTS = [
                 "message": "[E000] lexing error: unexpected character '@' (line 1, col 12)\n> 1 | def x = 1; @\n    |            ^",
                 "code": "E000",
                 "range": [1, 12, 1, 13],
+                "severity": "error",
+                "phase": "parse",
+                "source": "parser",
+                "origin": "language_server",
+                "hint": None,
             }
         ],
     ),

@@ -137,8 +137,8 @@ Make a decision (and record it in this plan or a roadmap entry):
 
 1. ✅ Add a short **1.0 scope** checklist to `docs/open_tasks.md` or a dedicated release checklist.
 2. ✅ Audit the language spec + tutorial against the current interpreter behavior.
-3. Create/expand regression tests for recent fixes and high-risk features.
-4. Introduce a `CHANGELOG.md` and decide versioning location.
+3. ✅ Create/expand regression tests for recent fixes and high-risk features.
+4. ✅ Introduce a `CHANGELOG.md` and decide versioning location.
 5. ✅ Schedule a release candidate window and perform a full doc + demo run-through
    (see `docs/release_candidate_runthrough.md`).
 

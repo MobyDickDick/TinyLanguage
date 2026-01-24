@@ -1,3 +1,5 @@
+"""Error reporting tests for native backends and runtime helpers."""
+
 import textwrap
 
 import pytest
@@ -11,6 +13,7 @@ from tiny_language_codegen_llvm import LLVMCodeGenerator
 
 
 def test_native_code_generator_reports_not_implemented_with_location():
+    """Unsupported constructs should include line context in errors."""
     source = textwrap.dedent(
         """
         def x = { a: 1 };
@@ -28,6 +31,7 @@ def test_native_code_generator_reports_not_implemented_with_location():
 
 
 def test_native_code_generator_reports_not_implemented_for_try_catch():
+    """Try/catch should raise a not-implemented error in native mode."""
     source = textwrap.dedent(
         """
         try {
@@ -48,6 +52,7 @@ def test_native_code_generator_reports_not_implemented_for_try_catch():
 
 
 def test_native_code_generator_reports_not_implemented_for_destructuring():
+    """Destructuring assignment is unsupported in the native backend."""
     source = textwrap.dedent(
         """
         { a, b } = new[1, 2];
@@ -65,6 +70,7 @@ def test_native_code_generator_reports_not_implemented_for_destructuring():
 
 
 def test_native_code_generator_reports_not_implemented_for_type_definitions():
+    """Type definitions should be rejected when native codegen forbids them."""
     source = textwrap.dedent(
         """
         type Person { name: string; }
@@ -84,6 +90,7 @@ def test_native_code_generator_reports_not_implemented_for_type_definitions():
 
 
 def test_native_code_generator_reports_not_implemented_for_match():
+    """Match expressions should error when match support is disabled."""
     source = textwrap.dedent(
         """
         def out = match foo {
@@ -105,6 +112,7 @@ def test_native_code_generator_reports_not_implemented_for_match():
 
 
 def test_native_code_generator_reports_not_implemented_for_heap_allocations():
+    """Heap allocations should fail when heap support is disabled."""
     source = textwrap.dedent(
         """
         def items = new[1, 2];
@@ -124,6 +132,7 @@ def test_native_code_generator_reports_not_implemented_for_heap_allocations():
 
 
 def test_native_code_generator_reports_not_implemented_for_variant_constructors():
+    """Variant constructors should report missing native support."""
     source = textwrap.dedent(
         """
         def circle = Circle { radius: 2 };
@@ -143,6 +152,7 @@ def test_native_code_generator_reports_not_implemented_for_variant_constructors(
 
 
 def test_native_code_generator_reports_not_implemented_for_flush_arguments():
+    """flush() should reject unexpected arguments during parsing."""
     source = "flush(1);"
 
     with pytest.raises(Exception) as excinfo:
@@ -155,6 +165,7 @@ def test_native_code_generator_reports_not_implemented_for_flush_arguments():
 
 
 def test_native_code_generator_reports_missing_type_info_for_positional_match_patterns():
+    """Match patterns without type info should emit a detailed error."""
     source = textwrap.dedent(
         """
         def result = match shape {
@@ -176,6 +187,7 @@ def test_native_code_generator_reports_missing_type_info_for_positional_match_pa
 
 
 def test_native_vm_reports_unknown_opcode_with_context():
+    """Unknown opcodes should report source location when available."""
     source = "print(1);"
     program = ProgramIR(
         entry=[
@@ -199,6 +211,7 @@ def test_native_vm_reports_unknown_opcode_with_context():
 
 
 def test_native_vm_reports_unknown_opcode_inside_function():
+    """Errors inside functions should map to that function's source span."""
     source = textwrap.dedent(
         """
         def boom() { print(1); }
@@ -238,6 +251,7 @@ def test_native_vm_reports_unknown_opcode_inside_function():
 
 
 def test_native_vm_reports_unknown_opcode_without_source_context():
+    """When no source is available, errors should omit line/col info."""
     program = ProgramIR(
         entry=[Instruction(op="UNKNOWN_OP")],
         functions={},
@@ -255,6 +269,7 @@ def test_native_vm_reports_unknown_opcode_without_source_context():
 
 
 def test_native_vm_error_lists_all_supported_opcodes():
+    """Supported opcode list should include all enum values."""
     program = ProgramIR(
         entry=[Instruction(op="UNKNOWN_OP")],
         functions={},
@@ -273,6 +288,7 @@ def test_native_vm_error_lists_all_supported_opcodes():
 
 
 def test_c_backend_error_lists_all_supported_opcodes():
+    """C backend errors should list the supported opcodes."""
     program = ProgramIR(
         entry=[Instruction(op="UNKNOWN_OP")],
         functions={},
@@ -291,6 +307,7 @@ def test_c_backend_error_lists_all_supported_opcodes():
 
 
 def test_llvm_backend_error_lists_all_supported_opcodes():
+    """LLVM backend errors should list the supported opcodes."""
     program = ProgramIR(
         entry=[Instruction(op="UNKNOWN_OP")],
         functions={},

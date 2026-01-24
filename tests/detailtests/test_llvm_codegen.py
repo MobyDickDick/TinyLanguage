@@ -1,3 +1,9 @@
+"""LLVM codegen regression tests for Tiny Language.
+
+These tests focus on the LLVM IR output produced by the compiler and verify
+that major language features lower into the expected IR constructs.
+"""
+
 import os
 import subprocess
 import sys
@@ -11,6 +17,7 @@ from tiny_language_codegen_llvm import LLVMCodeGenerator
 
 
 def _tiny_main_body(llvm_ir: str) -> str:
+    """Return the body of the generated tiny_main function for assertions."""
     lines = llvm_ir.splitlines()
     start = None
     for idx, line in enumerate(lines):
@@ -26,6 +33,7 @@ def _tiny_main_body(llvm_ir: str) -> str:
 
 
 def test_compile_to_llvm_ir_emits_arithmetic_ir() -> None:
+    """Arithmetic expressions should lower into SSA temporaries."""
     source = "def a = 1 + 2; print(a);"
 
     llvm_ir = compile_to_llvm_ir(source)
@@ -37,6 +45,7 @@ def test_compile_to_llvm_ir_emits_arithmetic_ir() -> None:
 
 
 def test_compile_to_llvm_ir_includes_target_metadata() -> None:
+    """Target triple and data layout are preserved when provided."""
     source = "def a = 1; print(a);"
 
     llvm_ir = compile_to_llvm_ir(
@@ -51,6 +60,7 @@ def test_compile_to_llvm_ir_includes_target_metadata() -> None:
 
 
 def test_cli_emits_llvm_ir(tmp_path) -> None:
+    """CLI --emit-llvm should output integer math operations."""
     source = "def value = 5 * 2; print(value);"
     script = tmp_path / "program.tiny"
     script.write_text(source, encoding="utf-8")
@@ -61,7 +71,13 @@ def test_cli_emits_llvm_ir(tmp_path) -> None:
     ).strip(os.pathsep)
 
     result = subprocess.run(
-        [sys.executable, str(Path(__file__).resolve().parents[2] / "src" / "tiny_language_cli.py"), "--file", str(script), "--emit-llvm"],
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[2] / "src" / "tiny_language_cli.py"),
+            "--file",
+            str(script),
+            "--emit-llvm",
+        ],
         capture_output=True,
         text=True,
         check=False,
@@ -75,6 +91,7 @@ def test_cli_emits_llvm_ir(tmp_path) -> None:
 
 
 def test_llvm_codegen_emits_full_format_string_lengths() -> None:
+    """Printf format constants must include newline and null terminators."""
     source = "print(1); print(2.0);"
 
     llvm_ir = compile_to_llvm_ir(source)
@@ -86,6 +103,7 @@ def test_llvm_codegen_emits_full_format_string_lengths() -> None:
 
 
 def test_llvm_codegen_supports_function_calls() -> None:
+    """Function declarations and call sites should exist in the IR."""
     source = "fn add(x, y) { return x + y; } print(add(2, 3));"
 
     llvm_ir = compile_to_llvm_ir(source)
@@ -95,6 +113,7 @@ def test_llvm_codegen_supports_function_calls() -> None:
 
 
 def test_llvm_codegen_supports_module_imports(tmp_path) -> None:
+    """Imports emit init routines and qualified symbol names."""
     helper = tmp_path / "helper.tiny"
     helper.write_text("fn add(x, y) { return x + y; }", encoding="utf-8")
     main = tmp_path / "main.tiny"
@@ -110,6 +129,7 @@ def test_llvm_codegen_supports_module_imports(tmp_path) -> None:
 
 
 def test_llvm_codegen_supports_python_interop() -> None:
+    """Python interop should reference import/call runtime helpers."""
     source = """
 def math = Python.import_module("math", new["sqrt"]);
 def value = Python.call("math", "sqrt", new[9]);
@@ -128,6 +148,7 @@ print(other);
 
 
 def test_llvm_codegen_supports_spawn_and_join() -> None:
+    """Async spawn/join should call the runtime helpers."""
     source = """
 async fn add(x, y) { return x + y; }
 def handle = spawn add(2, 3);
@@ -145,6 +166,7 @@ print(result);
 
 
 def test_llvm_codegen_supports_async_tokens() -> None:
+    """Async token primitives should appear in the IR."""
     source = """
 fn quick() { return 1; }
 
@@ -173,6 +195,7 @@ print(linked, cancelled);
 
 
 def test_llvm_codegen_supports_class_methods() -> None:
+    """Class method lowering should reference heap operations."""
     source = """
 class Point {
   x: number;
@@ -197,6 +220,7 @@ print(p.sum());
 
 
 def test_llvm_codegen_supports_field_get_and_set() -> None:
+    """Field access should use heap get/set helpers."""
     source = """
 class Point {
   x: number;
@@ -216,6 +240,7 @@ print(p.x, p.y);
 
 
 def test_llvm_codegen_emits_operator_overload_calls() -> None:
+    """Operator overloads should be emitted as explicit runtime calls."""
     source = """
 operator + (a: number, b: number) -> number { return a - b; }
 def total = 2 + 3;
@@ -229,6 +254,7 @@ print(total);
 
 
 def test_pop_is_ignored_in_llvm_codegen() -> None:
+    """POP instructions should not leak into the final IR."""
     program = ProgramIR(
         entry=[
             Instruction(Opcode.PUSH_CONST, 1),
@@ -248,6 +274,7 @@ def test_pop_is_ignored_in_llvm_codegen() -> None:
 
 
 def test_llvm_codegen_handles_modulo_operation() -> None:
+    """Modulo should use signed remainder for integers."""
     source = "def value = 5 % 2; print(value);"
 
     llvm_ir = compile_to_llvm_ir(source)
@@ -257,6 +284,7 @@ def test_llvm_codegen_handles_modulo_operation() -> None:
 
 
 def test_llvm_codegen_handles_float_modulo_operation() -> None:
+    """Modulo should use floating remainder for doubles."""
     source = "def value = 5.0 % 2.0; print(value);"
 
     llvm_ir = compile_to_llvm_ir(source)
@@ -266,6 +294,7 @@ def test_llvm_codegen_handles_float_modulo_operation() -> None:
 
 
 def test_llvm_codegen_emits_integer_and_float_comparisons() -> None:
+    """Comparisons should use appropriate integer and float predicates."""
     source = "def a = 3 > 1; def b = 2.0 <= 4.0; print(a, b);"
 
     llvm_ir = compile_to_llvm_ir(source)
@@ -277,6 +306,7 @@ def test_llvm_codegen_emits_integer_and_float_comparisons() -> None:
 
 
 def test_cli_emits_llvm_ir_for_comparisons(tmp_path) -> None:
+    """CLI output should include comparison predicates for mixed types."""
     source = "def a = 2 == 2; def b = 1.5 != 3.0; print(a, b);"
     script = tmp_path / "program.tiny"
     script.write_text(source, encoding="utf-8")
@@ -287,7 +317,13 @@ def test_cli_emits_llvm_ir_for_comparisons(tmp_path) -> None:
     ).strip(os.pathsep)
 
     result = subprocess.run(
-        [sys.executable, str(Path(__file__).resolve().parents[2] / "src" / "tiny_language_cli.py"), "--file", str(script), "--emit-llvm"],
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[2] / "src" / "tiny_language_cli.py"),
+            "--file",
+            str(script),
+            "--emit-llvm",
+        ],
         capture_output=True,
         text=True,
         check=False,
@@ -301,6 +337,7 @@ def test_cli_emits_llvm_ir_for_comparisons(tmp_path) -> None:
 
 
 def test_cli_emits_llvm_ir_for_modulo(tmp_path) -> None:
+    """CLI output should include integer and float modulo helpers."""
     source = "def a = 9 % 4; def b = 7.5 % 2.5; print(a, b);"
     script = tmp_path / "program.tiny"
     script.write_text(source, encoding="utf-8")
@@ -311,7 +348,13 @@ def test_cli_emits_llvm_ir_for_modulo(tmp_path) -> None:
     ).strip(os.pathsep)
 
     result = subprocess.run(
-        [sys.executable, str(Path(__file__).resolve().parents[2] / "src" / "tiny_language_cli.py"), "--file", str(script), "--emit-llvm"],
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[2] / "src" / "tiny_language_cli.py"),
+            "--file",
+            str(script),
+            "--emit-llvm",
+        ],
         capture_output=True,
         text=True,
         check=False,
@@ -326,6 +369,7 @@ def test_cli_emits_llvm_ir_for_modulo(tmp_path) -> None:
 
 
 def test_llvm_codegen_emits_flush_calls() -> None:
+    """Flush should lower to fflush(NULL) between print calls."""
     source = "print(1); def _unused19 = flush(); print(2);"
 
     llvm_ir = compile_to_llvm_ir(source)
@@ -336,6 +380,7 @@ def test_llvm_codegen_emits_flush_calls() -> None:
 
 
 def test_llvm_codegen_handles_if_and_while_control_flow() -> None:
+    """Loops and conditionals should produce branch instructions."""
     source = """
 def i = 0;
 while (i < 2) {
@@ -354,6 +399,7 @@ if (i == 2) {
 
 
 def test_llvm_codegen_emits_string_prints() -> None:
+    """String literals should be emitted as global constants."""
     source = 'print("hello");'
 
     llvm_ir = compile_to_llvm_ir(source)
@@ -364,6 +410,7 @@ def test_llvm_codegen_emits_string_prints() -> None:
 
 
 def test_llvm_codegen_supports_non_numeric_variables() -> None:
+    """Non-numeric locals should get appropriate stack allocations."""
     source = 'def greeting = "hi"; def ok = true; print(greeting, ok);'
 
     llvm_ir = compile_to_llvm_ir(source)
@@ -377,6 +424,7 @@ def test_llvm_codegen_supports_non_numeric_variables() -> None:
 
 
 def test_llvm_codegen_supports_null_literal_prints() -> None:
+    """Null literals should route through the string formatting path."""
     source = "print(Null);"
 
     llvm_ir = compile_to_llvm_ir(source)
@@ -387,6 +435,7 @@ def test_llvm_codegen_supports_null_literal_prints() -> None:
 
 
 def test_llvm_codegen_emits_heap_calls() -> None:
+    """Heap helper calls should be present for raw heap usage."""
     source = "def ptr = new(1); def ignored1 = heap_set(ptr, 0, 42); print(heap_get(ptr, 0));"
 
     llvm_ir = compile_to_llvm_ir(source)
@@ -397,6 +446,7 @@ def test_llvm_codegen_emits_heap_calls() -> None:
 
 
 def test_llvm_codegen_emits_heap_string_helpers() -> None:
+    """Heap string helpers should be generated for string accessors."""
     source = 'def ptr = new(1); def ignored1 = heap_set(ptr, 0, "hello"); print(heap_get(ptr, 0));'
 
     llvm_ir = compile_to_llvm_ir(source)
@@ -406,6 +456,7 @@ def test_llvm_codegen_emits_heap_string_helpers() -> None:
 
 
 def test_llvm_codegen_emits_array_literal_heap_helpers() -> None:
+    """Array literals should use __new and heap_set_str helpers."""
     source = 'def ptr = new["hello", "world"]; print(heap_get(ptr, 1));'
 
     llvm_ir = compile_to_llvm_ir(source)
@@ -416,6 +467,7 @@ def test_llvm_codegen_emits_array_literal_heap_helpers() -> None:
 
 
 def test_llvm_codegen_emits_typed_heap_helpers() -> None:
+    """Typed heap helpers should appear for double/bool fields."""
     source = """
 def ptr = new(2);
 def ignored34 = heap_set(ptr, 0, 1.5);
@@ -432,6 +484,7 @@ print(heap_get(ptr, 0), heap_get(ptr, 1));
 
 
 def test_llvm_codegen_defines_heap_runtime_helpers() -> None:
+    """Runtime helpers should be defined alongside the emitted IR."""
     source = "def ptr = new(1); def ignored1 = heap_set(ptr, 0, 1); print(heap_get(ptr, 0));"
 
     llvm_ir = compile_to_llvm_ir(source)
@@ -449,6 +502,7 @@ def test_llvm_codegen_defines_heap_runtime_helpers() -> None:
 
 
 def test_llvm_codegen_emits_collection_helpers() -> None:
+    """Collection stdlib helpers should be referenced in the IR."""
     source = """
 def m = Map.new();
 def _unused26 = Map.set(m, 1, 2);
@@ -475,6 +529,7 @@ print(Deque.pop_left(q));
 
 
 def test_llvm_codegen_emits_collection_accessors() -> None:
+    """Collection accessors should lower to helper calls."""
     source = """
 def m = Map.new();
 def _unused0 = Map.set(m, 1, 2);
@@ -504,6 +559,7 @@ def _unused8 = Deque.pop_right(q);
 
 
 def test_llvm_codegen_emits_heap_bounds_checks() -> None:
+    """Heap bounds checks should include error helper and pointer math."""
     source = "def ptr = new(2); def ignored1 = heap_set(ptr, 1, 1); print(heap_get(ptr, 1));"
 
     llvm_ir = compile_to_llvm_ir(source)
@@ -514,6 +570,7 @@ def test_llvm_codegen_emits_heap_bounds_checks() -> None:
 
 
 def test_llvm_codegen_emits_branches_for_jump_ops() -> None:
+    """Jump opcodes should map to labeled branches."""
     program = ProgramIR(
         entry=[
             Instruction(Opcode.PUSH_CONST, 0),
@@ -537,6 +594,7 @@ def test_llvm_codegen_emits_branches_for_jump_ops() -> None:
 
 
 def test_llvm_codegen_reports_missing_lowering_with_context() -> None:
+    """Missing lowerings should raise with helpful context."""
     program = ProgramIR(
         entry=[
             Instruction(Opcode.PUSH_CONST, 1),
@@ -556,6 +614,7 @@ def test_llvm_codegen_reports_missing_lowering_with_context() -> None:
 
 
 def test_llvm_codegen_reports_mixed_type_arithmetic_with_context() -> None:
+    """Mixed-type arithmetic should raise with type details."""
     program = ProgramIR(
         entry=[
             Instruction(Opcode.PUSH_CONST, 1),
@@ -575,6 +634,7 @@ def test_llvm_codegen_reports_mixed_type_arithmetic_with_context() -> None:
 
 
 def test_llvm_codegen_supports_match_and_variants() -> None:
+    """Match expressions and variants should emit heap lookups."""
     source = """
 type Shape {
   Circle { radius: number };

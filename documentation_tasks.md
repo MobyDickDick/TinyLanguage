@@ -103,11 +103,11 @@ PY
 - [x] ./tests/detailtests/test_hello_world.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [x] ./tests/detailtests/test_inheritance.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [x] ./tests/detailtests/test_language_server.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
-- [ ] ./tests/detailtests/test_language_server_cli.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
-- [ ] ./tests/detailtests/test_llvm_codegen.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
-- [ ] ./tests/detailtests/test_modules.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
-- [ ] ./tests/detailtests/test_namespaces.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
-- [ ] ./tests/detailtests/test_native_backend_errors.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
+- [x] ./tests/detailtests/test_language_server_cli.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
+- [x] ./tests/detailtests/test_llvm_codegen.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
+- [x] ./tests/detailtests/test_modules.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
+- [x] ./tests/detailtests/test_namespaces.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
+- [x] ./tests/detailtests/test_native_backend_errors.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [ ] ./tests/detailtests/test_native_codegen.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [ ] ./tests/detailtests/test_native_ir.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [ ] ./tests/detailtests/test_native_python_bytecode_backend.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?

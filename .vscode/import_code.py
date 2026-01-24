@@ -1,3 +1,5 @@
+"""Bundle the TinyLanguage repository into a distributable zip archive."""
+
 import argparse
 import zipfile
 from pathlib import Path
@@ -6,11 +8,12 @@ EXCLUDED_PARTS = {".git", "__pycache__", ".pytest_cache", "venv", "dist"}
 
 
 def should_exclude(path: Path) -> bool:
-    """Return True if any part of the path is in the excluded set."""
+    """Return True when the path includes a directory that should be skipped."""
     return any(part in EXCLUDED_PARTS for part in path.parts)
 
 
 def build_archive(output: Path) -> Path:
+    """Create a zip archive of the project, excluding temporary or generated files."""
     project_root = Path(__file__).resolve().parent.parent
     output.parent.mkdir(parents=True, exist_ok=True)
 
@@ -24,6 +27,7 @@ def build_archive(output: Path) -> Path:
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse CLI arguments for the archive builder."""
     parser = argparse.ArgumentParser(description="Create a downloadable TinyLanguage archive.")
     parser.add_argument(
         "--output",
@@ -35,6 +39,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """Run the archive creation workflow and report the output path."""
     args = parse_args()
     archive_path = build_archive(args.output)
     print(f"Created archive at {archive_path}")

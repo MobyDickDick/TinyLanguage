@@ -6,7 +6,7 @@ are grouped by area and can be tackled independently.
 ## Roadmap refresh (proposed)
 - [x] Publish a TinyLanguage roadmap document that groups planned work by
   language core, type system, runtime, tooling, and ecosystem maturity.
-- [ ] Expand the language specification with explicit evaluation-order rules,
+- [x] Expand the language specification with explicit evaluation-order rules,
   concurrency semantics, and versioning/deprecation policies.
 - [ ] Plan an optional static typing track (annotations + gradual typing) and
   identify the minimal type-checking passes needed for early wins.

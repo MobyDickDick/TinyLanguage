@@ -13,8 +13,11 @@ import sys
 import time
 from pathlib import Path
 
+# Resolve repository paths once so every function can reference a single root.
 ROOT = Path(__file__).resolve().parents[2]
+# Default location of the upstream Rosetta Code Python samples.
 DEFAULT_SOURCE = ROOT / "examples" / "rosetta" / "python"
+# Default destination for transpiled TinyLanguage outputs.
 DEFAULT_TINY_DEST = ROOT / "examples" / "rosetta" / "expected"
 
 
@@ -25,8 +28,11 @@ def list_missing(source_dir: Path, dest_dir: Path) -> list[Path]:
     other extensions are ignored when computing missing entries.
     """
 
+    # Gather only regular Python source files.
     source_files = [path for path in source_dir.glob("*.py") if path.is_file()]
+    # Compare by stem so we ignore different file extensions with the same base name.
     dest_stems = {path.stem for path in dest_dir.glob("*.py")}
+    # Return the sorted list to keep output deterministic.
     return [path for path in sorted(source_files) if path.stem not in dest_stems]
 
 
@@ -36,11 +42,13 @@ def filter_missing(files: list[Path], includes: list[str] | None) -> list[Path]:
     if not includes:
         return files
 
+    # Normalize filters by trimming whitespace and dropping empty strings.
     normalized = [pattern.strip() for pattern in includes if pattern.strip()]
     if not normalized:
         return files
 
     def _matches(path: Path) -> bool:
+        """Check whether a file stem starts with any requested prefix."""
         return any(path.stem.startswith(pattern) for pattern in normalized)
 
     return [path for path in files if _matches(path)]
@@ -51,15 +59,19 @@ def copy_batch(
 ) -> list[Path]:
     """Copy up to ``limit`` files into ``dest_dir`` with ``delay`` seconds between."""
 
+    # Limit the copy set to avoid overwhelming large sample directories.
     to_copy = files[:limit]
     for index, source_path in enumerate(to_copy):
+        # Build the destination filename next to the provided destination dir.
         destination = dest_dir / source_path.name
         if dry_run:
             print(f"[dry-run] would copy {source_path.name} -> {destination}")
         else:
+            # Preserve timestamps/metadata to keep traceability to the source file.
             shutil.copy2(source_path, destination)
             print(f"copied {source_path.name} -> {destination}")
         if index + 1 < len(to_copy) and not dry_run:
+            # Pause between copies to keep filesystem load predictable.
             time.sleep(delay)
     return to_copy
 
@@ -67,13 +79,16 @@ def copy_batch(
 def run_transpiler(dest: Path, *, source_dir: Path) -> None:
     """Invoke the Rosetta transpiler with the provided destination."""
 
+    # Add the repo src directory so the transpiler can be imported.
     sys.path.insert(0, str(ROOT / "src"))
     from transpile_rosetta import transpile_all
 
+    # Transpile all Rosetta Python samples into TinyLanguage.
     transpile_all(dest, source_dir=source_dir)
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Parse CLI arguments for copy and transpile operations.
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "dest",
@@ -122,23 +137,28 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    # Validate that the input directory exists before scanning.
     if not args.source.exists():
         parser.error(f"source directory does not exist: {args.source}")
 
+    # Identify missing scripts and apply optional include filters.
     missing = filter_missing(list_missing(args.source, args.dest), args.include)
 
     if not missing:
         print("No missing Python scripts detected; nothing to copy.")
         return 0
 
+    # Ensure the destination directory exists unless running a dry-run.
     if not args.dry_run:
         args.dest.mkdir(parents=True, exist_ok=True)
 
+    # Copy files and report how many remain missing.
     copied = copy_batch(missing, args.dest, args.limit, args.delay, dry_run=args.dry_run)
     remaining = len(missing) - len(copied)
     summary_prefix = "Planned to copy" if args.dry_run else "Copied"
     print(f"{summary_prefix} {len(copied)} file(s); {remaining} still missing.")
 
+    # Optionally transpile the copied samples into TinyLanguage.
     if args.transpile and not args.dry_run:
         run_transpiler(args.transpile_dest, source_dir=args.source)
 

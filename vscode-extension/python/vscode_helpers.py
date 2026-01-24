@@ -1,3 +1,5 @@
+"""Helper CLI for TinyLanguage VS Code extension features."""
+
 from __future__ import annotations
 
 import argparse
@@ -15,12 +17,14 @@ from language_server import TinyLanguageServer  # type: ignore
 
 
 def format_command(source: str) -> int:
+    """Format TinyLanguage source and write it to stdout."""
     formatted = format_source(source)
     sys.stdout.write(formatted)
     return 0
 
 
 def diagnostics_command(source: str, file_path: str | None = None) -> int:
+    """Emit diagnostics JSON for TinyLanguage source."""
     server = TinyLanguageServer(source)
     diagnostics = []
     for diag in server.diagnostics():
@@ -38,6 +42,7 @@ def diagnostics_command(source: str, file_path: str | None = None) -> int:
 
 
 def completions_command(source: str, prefix: str) -> int:
+    """Emit completion items for the given prefix as JSON."""
     server = TinyLanguageServer(source)
     items = [
         {
@@ -51,6 +56,7 @@ def completions_command(source: str, prefix: str) -> int:
 
 
 def hover_command(source: str, symbol: str) -> int:
+    """Emit hover information for a symbol as JSON."""
     server = TinyLanguageServer(source)
     result = server.hover(symbol)
     if result is None:
@@ -66,6 +72,7 @@ def hover_command(source: str, symbol: str) -> int:
 
 
 def definitions_command(source: str, symbol: str, position: tuple[int, int] | None = None) -> int:
+    """Emit definition locations for a symbol as JSON."""
     server = TinyLanguageServer(source)
     result = server.definition(symbol, position)
     if result is None:
@@ -80,6 +87,7 @@ def definitions_command(source: str, symbol: str, position: tuple[int, int] | No
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the module entry point."""
     parser = argparse.ArgumentParser(description="TinyLanguage VS Code helper")
     parser.add_argument(
         "command",

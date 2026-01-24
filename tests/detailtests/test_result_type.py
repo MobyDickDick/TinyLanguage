@@ -1,3 +1,5 @@
+"""Tests for result type."""
+
 import pathlib
 import sys
 
@@ -7,6 +9,7 @@ from tiny_language import compile_and_run
 
 
 def test_result_helpers_wrap_and_unwrap_errors():
+    """Test that result helpers wrap and unwrap errors."""
     source = """
 fn explode() { return missing(); }
 fn safe_call() {
@@ -34,6 +37,7 @@ print(Result.unwrap_or(res, "default"));
 
 
 def test_result_err_handles_strings_without_throwing():
+    """Test that result err handles strings without throwing."""
     source = """
 fn returns_result(flag) {
   if (flag) {

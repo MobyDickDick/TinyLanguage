@@ -1,3 +1,5 @@
+"""Tests for src tiny regressions."""
+
 import pathlib
 import sys
 
@@ -50,6 +52,7 @@ PROGRAMS = [
 
 @pytest.mark.parametrize("program", PROGRAMS)
 def test_src_tiny_programs_parse(program):
+    """Test that src tiny programs parse."""
     source = (SRC_TINY / program).read_text(encoding="utf-8")
 
     Parser(Lexer(source), source).parse()

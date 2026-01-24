@@ -1,3 +1,5 @@
+"""Tests for src tiny regressions."""
+
 from __future__ import annotations
 
 import json
@@ -63,6 +65,7 @@ ADDITIONAL_PARSE_DEMOS = [
 
 
 def _run_demo(path: Path, *, runtime: Runtime | None = None) -> str:
+    """Helper to run demo."""
     source = path.read_text(encoding="utf-8")
     resolved = path.resolve()
     try:
@@ -81,18 +84,21 @@ def _run_demo(path: Path, *, runtime: Runtime | None = None) -> str:
     )
 
 def _parse_demo(path: Path) -> None:
+    """Helper to parse demo."""
     source = path.read_text(encoding="utf-8")
     Parser(Lexer(source), source).parse()
 
 
 @pytest.mark.parametrize("demo_name", SIMPLE_DEMOS)
 def test_src_tiny_demo_smoke(demo_name: str) -> None:
+    """Test that src tiny demo smoke."""
     demo_path = SRC_TINY / demo_name
     assert demo_path.exists()
     _run_demo(demo_path)
 
 @pytest.mark.parametrize("demo_name", ADDITIONAL_RUN_DEMOS)
 def test_src_tiny_additional_demo_smoke(demo_name: str) -> None:
+    """Test that src tiny additional demo smoke."""
     demo_path = SRC_TINY / demo_name
     assert demo_path.exists()
     _run_demo(demo_path)
@@ -100,18 +106,21 @@ def test_src_tiny_additional_demo_smoke(demo_name: str) -> None:
 
 @pytest.mark.parametrize("demo_name", ADDITIONAL_PARSE_DEMOS)
 def test_src_tiny_additional_demo_parses(demo_name: str) -> None:
+    """Test that src tiny additional demo parses."""
     demo_path = SRC_TINY / demo_name
     assert demo_path.exists()
     _parse_demo(demo_path)
 
 
 def test_console_sum_demo_handles_eof(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that console sum demo handles eof."""
     monkeypatch.setattr("builtins.input", lambda _prompt="": "")
     out = _run_demo(SRC_TINY / "console_sum.tiny")
     assert "Summe:" in out
 
 
 def test_stdlib_io_random_demo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that stdlib io random demo."""
     (tmp_path / "tmp").mkdir()
     monkeypatch.chdir(tmp_path)
     out = _run_demo(SRC_TINY / "stdlib_io_random_demo.tiny")
@@ -119,26 +128,31 @@ def test_stdlib_io_random_demo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
 
 
 def test_simpelst_python_program_parses() -> None:
+    """Test that simpelst python program parses."""
     source = (SRC_TINY / "simpelst_Python_program.tiny").read_text(encoding="utf-8")
     Parser(Lexer(source), source).parse()
 
 
 def test_transpile_rosetta_parses() -> None:
+    """Test that transpile rosetta parses."""
     source = (SRC_TINY / "transpile_rosetta.tiny").read_text(encoding="utf-8")
     Parser(Lexer(source), source).parse()
 
 
 def test_language_server_parses() -> None:
+    """Test that language server parses."""
     source = (SRC_TINY / "language_server.tiny").read_text(encoding="utf-8")
     Parser(Lexer(source), source).parse()
 
 
 def test_copy_rosetta_samples_parses() -> None:
+    """Test that copy rosetta samples parses."""
     source = (SRC_TINY / "copy_rosetta_samples.tiny").read_text(encoding="utf-8")
     Parser(Lexer(source), source).parse()
 
 
 def test_compiler_cli_wrappers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that compiler cli wrappers."""
     sample = tmp_path / "sample.tiny"
     sample.write_text("print(1);\n", encoding="utf-8")
     monkeypatch.setenv("TINYLANG_ARGS", json.dumps([str(sample), "--emit-c"]))
@@ -147,6 +161,7 @@ def test_compiler_cli_wrappers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
 
 
 def test_run_all_tiny_wrapper() -> None:
+    """Test that run all tiny wrapper."""
     demo_path = SRC_TINY / "run_all.tiny"
     runtime = Runtime(demo_path.read_text(encoding="utf-8"))
     runtime.register_native("main", lambda: 0)

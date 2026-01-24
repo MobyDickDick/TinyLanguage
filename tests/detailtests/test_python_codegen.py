@@ -1,7 +1,10 @@
+"""Tests for python codegen."""
+
 from tiny_language import compile_and_run, compile_to_python_source, run_with_python_backend
 
 
 def test_python_backend_executes_basic_program():
+    """Test that python backend executes basic program."""
     src = """
     fn add(x, y) {
         return x + y;
@@ -19,6 +22,7 @@ def test_python_backend_executes_basic_program():
 
 
 def test_emit_python_source_contains_entrypoint():
+    """Test that emit python source contains entrypoint."""
     src = "print(1 + 1);"
     emitted = compile_to_python_source(src)
 

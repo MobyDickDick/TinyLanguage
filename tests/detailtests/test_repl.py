@@ -1,3 +1,5 @@
+"""Tests for repl."""
+
 from __future__ import annotations
 
 import pathlib
@@ -14,12 +16,14 @@ readline = tl.readline
 
 
 def test_is_incomplete_source_multiline_blocks():
+    """Test that is incomplete source multiline blocks."""
     assert tl._is_incomplete_source("if true {")
     assert not tl._is_incomplete_source("if true {\n}")
     assert not tl._is_incomplete_source('print("{")')
 
 
 def test_read_repl_command_collects_until_complete():
+    """Test that read repl command collects until complete."""
     lines = iter(["if true {", "print(1)", "}"])
 
     def reader(prompt: str) -> str:  # noqa: ARG001 - prompt unused in test
@@ -32,6 +36,7 @@ def test_read_repl_command_collects_until_complete():
 
 
 def test_history_file_roundtrip(tmp_path: Path):
+    """Test that history file roundtrip."""
     if readline is None:
         pytest.skip("readline not available on this platform", allow_module_level=True)
 

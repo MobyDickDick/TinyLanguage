@@ -1,9 +1,12 @@
+"""Tests for semantics suite."""
+
 import textwrap
 
 from tests.utils import run_tiny
 
 
 def test_semantics_eval_order_for_call_args():
+    """Test that semantics eval order for call args."""
     out = run_tiny(
         textwrap.dedent(
             """
@@ -27,6 +30,7 @@ def test_semantics_eval_order_for_call_args():
 
 
 def test_semantics_eval_order_for_binops():
+    """Test that semantics eval order for binops."""
     out = run_tiny(
         textwrap.dedent(
             """
@@ -46,6 +50,7 @@ def test_semantics_eval_order_for_binops():
 
 
 def test_semantics_short_circuit_and_or():
+    """Test that semantics short circuit and or."""
     out = run_tiny(
         textwrap.dedent(
             """
@@ -66,6 +71,7 @@ def test_semantics_short_circuit_and_or():
 
 
 def test_semantics_eval_order_for_array_literals():
+    """Test that semantics eval order for array literals."""
     out = run_tiny(
         textwrap.dedent(
             """

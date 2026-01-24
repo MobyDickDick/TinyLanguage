@@ -4,6 +4,7 @@ from tests.utils import run_tiny
 
 
 def test_tiny_language_api_wrapper_compile_and_run() -> None:
+    """Test that tiny language api wrapper compile and run."""
     source = """
 import src_tiny.tiny_language_api as api;
 

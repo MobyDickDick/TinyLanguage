@@ -1,3 +1,5 @@
+"""Tests for typing."""
+
 import pathlib
 import sys
 
@@ -9,12 +11,14 @@ from tiny_language import TinyLangError, compile_and_run
 
 
 def test_typed_function_happy_path():
+    """Test that typed function happy path."""
     source = "fn greet(name: string) -> string { return \"hi \" + name; }\nprint(greet(\"Ada\"));\n"
 
     assert compile_and_run(source) == "hi Ada\n"
 
 
 def test_typed_function_argument_mismatch():
+    """Test that typed function argument mismatch."""
     source = "fn add(x: number, label: string) -> number { print(label); return x; }\nprint(add(\"oops\", \"ok\"));\n"
 
     with pytest.raises(TinyLangError) as excinfo:
@@ -25,6 +29,7 @@ def test_typed_function_argument_mismatch():
 
 
 def test_typed_function_return_mismatch():
+    """Test that typed function return mismatch."""
     source = "fn as_text(x: number) -> number { if (x > 0) { return \"txt\"; } return \"txt\"; }\nprint(as_text(1));\n"
 
     with pytest.raises(TinyLangError) as excinfo:
@@ -35,6 +40,7 @@ def test_typed_function_return_mismatch():
 
 
 def test_typed_function_requires_all_paths_return():
+    """Test that typed function requires all paths return."""
     source = """
 fn maybe(x: number) -> number {
     if (x > 0) { return x; }
@@ -50,6 +56,7 @@ def _unused2 = maybe(1);
 
 
 def test_optional_parameter_allows_null():
+    """Test that optional parameter allows null."""
     source = """
 fn greet(name: string?) -> string {
     if (name == Null) { return "hi"; }
@@ -62,6 +69,7 @@ print(greet(Null));
 
 
 def test_optional_return_skips_exhaustiveness_check():
+    """Test that optional return skips exhaustiveness check."""
     source = """
 fn maybe_label(x: number) -> string? {
     if (x > 0) { return "positive"; }
@@ -73,6 +81,7 @@ print(maybe_label(-2));
 
 
 def test_inferred_number_allows_float_assignment():
+    """Test that inferred number allows float assignment."""
     source = """
 def x = 0;
 x = 1.5;
@@ -81,6 +90,7 @@ x = 1.5;
 
 
 def test_inferred_type_still_prevents_unrelated_changes():
+    """Test that inferred type still prevents unrelated changes."""
     source = """
 def msg = "hello";
 msg = 123;

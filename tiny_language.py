@@ -22,6 +22,7 @@ if str(src_dir) not in sys.path:
 
 
 def _load_impl():
+    """Load the implementation module from the repository's src directory."""
     if not src_entrypoint.is_file():
         raise ImportError("Cannot find src/tiny_language.py; run from the repository root.")
 
@@ -43,14 +44,17 @@ globals().update({name: getattr(_IMPL, name) for name in __all__})
 
 
 def __getattr__(name):
+    """Proxy attribute access to the implementation module."""
     return getattr(_IMPL, name)
 
 
 def __dir__():
+    """Expose the merged attribute list for interactive inspection tools."""
     return sorted(set(list(globals().keys()) + list(dir(_IMPL))))
 
 
 def _main() -> int:
+    """Run the CLI entry point and normalize SystemExit into an int code."""
     try:
         return int(_IMPL.main(sys.argv[1:]))
     except SystemExit as exc:

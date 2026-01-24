@@ -1,16 +1,21 @@
+"""Tests for number intervall."""
+
 import math
 import pathlib
 
 
 def load_number_intervall() -> str:
+    """Helper to load number intervall."""
     return (pathlib.Path(__file__).resolve().parents[2] / "src_tiny" / "number_intervall.tiny").read_text()
 
 
 def load_number_class() -> str:
+    """Helper to load number class."""
     return (pathlib.Path(__file__).resolve().parents[2] / "src_tiny" / "number_class.tiny").read_text()
 
 
 def test_basic_interval_operations_and_formatting(run_tiny_source):
+    """Test that basic interval operations and formatting."""
     interval_def = load_number_intervall()
     extra = """
     def a = NumberIntervall(0, 1);
@@ -35,6 +40,7 @@ def test_basic_interval_operations_and_formatting(run_tiny_source):
 
 
 def test_wrapped_intervals_and_zero_division_expand_to_wrapped_result(run_tiny_source):
+    """Test that wrapped intervals and zero division expand to wrapped result."""
     interval_def = load_number_intervall()
     extra = """
     def wrapped = NumberIntervall(1, 0);
@@ -55,6 +61,7 @@ def test_wrapped_intervals_and_zero_division_expand_to_wrapped_result(run_tiny_s
 
 
 def test_interval_number_uses_neighboring_floats(run_tiny_source):
+    """Test that interval number uses neighboring floats."""
     interval_def = load_number_intervall()
 
     extra = """
@@ -84,6 +91,7 @@ def test_interval_number_uses_neighboring_floats(run_tiny_source):
 
 
 def test_dividing_infinities_by_zero_spanning_interval_yields_any_number(run_tiny_source):
+    """Test that dividing infinities by zero spanning interval yields any number."""
     interval_def = load_number_intervall()
 
     extra = """
@@ -101,6 +109,7 @@ def test_dividing_infinities_by_zero_spanning_interval_yields_any_number(run_tin
 
 
 def test_dividing_zero_spanning_intervals_yields_wrapped_interval(run_tiny_source):
+    """Test that dividing zero spanning intervals yields wrapped interval."""
     interval_def = load_number_intervall()
 
     extra = """
@@ -116,6 +125,7 @@ def test_dividing_zero_spanning_intervals_yields_wrapped_interval(run_tiny_sourc
 
 
 def test_division_results_with_infinite_bounds(run_tiny_source):
+    """Test that division results with infinite bounds."""
     interval_def = load_number_intervall()
 
     extra = """
@@ -142,6 +152,7 @@ def test_division_results_with_infinite_bounds(run_tiny_source):
 
 
 def test_python_numbers_promote_to_intervals(run_tiny_source):
+    """Test that python numbers promote to intervals."""
     interval_def = load_number_intervall()
     number_def = load_number_class()
 

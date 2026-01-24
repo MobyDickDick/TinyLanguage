@@ -1,4 +1,7 @@
+"""Tests for objects."""
+
 def test_class_operator_overloads_with_numbers(run_tiny_source):
+    """Test that class operator overloads with numbers."""
     src = """
     class Counter {
         total: number;

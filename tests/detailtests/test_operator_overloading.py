@@ -8,6 +8,7 @@ from tests.utils import run_tiny
 
 
 def test_box_addition_and_equality():
+    """Test that box addition and equality."""
     out = run_tiny(
         """
         fn box(v) { return { __tag__: "Box", value: v }; }

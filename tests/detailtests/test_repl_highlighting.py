@@ -1,3 +1,5 @@
+"""Tests for repl highlighting."""
+
 import types
 
 import tiny_language as tl
@@ -5,6 +7,7 @@ from tiny_language_highlighting import PYGMENTS_AVAILABLE, highlight_source
 
 
 def test_highlight_source_is_optional() -> None:
+    """Test that highlight source is optional."""
     snippet = "def x = 1; // highlight me"
     highlighted = highlight_source(snippet)
     if PYGMENTS_AVAILABLE:
@@ -15,6 +18,7 @@ def test_highlight_source_is_optional() -> None:
 
 
 def test_repl_highlighting_requires_tty(monkeypatch) -> None:
+    """Test that repl highlighting requires tty."""
     fake_stdout = types.SimpleNamespace(isatty=lambda: True)
     monkeypatch.setattr(tl, "PYGMENTS_AVAILABLE", True)
     monkeypatch.setattr(tl.sys, "stdout", fake_stdout)
@@ -27,6 +31,7 @@ def test_repl_highlighting_requires_tty(monkeypatch) -> None:
 
 
 def test_repl_highlighting_can_be_disabled(monkeypatch) -> None:
+    """Test that repl highlighting can be disabled."""
     fake_stdout = types.SimpleNamespace(isatty=lambda: True)
     monkeypatch.setattr(tl, "PYGMENTS_AVAILABLE", True)
     monkeypatch.setattr(tl.sys, "stdout", fake_stdout)

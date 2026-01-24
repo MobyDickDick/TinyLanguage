@@ -1,3 +1,5 @@
+"""Tests for tiny language server cli self host."""
+
 import json
 import os
 import pathlib
@@ -18,6 +20,7 @@ class ServerSnapshot:
     payload: object
 
 def run_tiny_language_server(args):
+    """Helper to run tiny language server."""
     env = {
         **os.environ,
         "PYTHONPATH": os.pathsep.join(
@@ -38,6 +41,7 @@ def run_tiny_language_server(args):
 
 
 def run_python_language_server(args):
+    """Helper to run python language server."""
     env = {
         **os.environ,
         "PYTHONPATH": os.pathsep.join(
@@ -84,6 +88,7 @@ SNAPSHOTS = [
 
 
 def test_tiny_language_server_completions_and_hover():
+    """Test that tiny language server completions and hover."""
     source = "fn add(x, y) { return x + y; }"
 
     completions = run_tiny_language_server(
@@ -103,6 +108,7 @@ def test_tiny_language_server_completions_and_hover():
 
 
 def test_tiny_language_server_diagnostics():
+    """Test that tiny language server diagnostics."""
     diagnostics = run_tiny_language_server(
         [
             "--source",
@@ -117,6 +123,7 @@ def test_tiny_language_server_diagnostics():
 
 
 def assert_server_snapshot(snapshot: ServerSnapshot) -> None:
+    """Helper to assert server snapshot."""
     python_proc = run_python_language_server(snapshot.args)
     assert python_proc.returncode == 0, python_proc.stderr
     python_payload = json.loads(python_proc.stdout)
@@ -129,5 +136,6 @@ def assert_server_snapshot(snapshot: ServerSnapshot) -> None:
 
 
 def test_tiny_language_server_cli_parity_snapshots() -> None:
+    """Test that tiny language server cli parity snapshots."""
     for snapshot in SNAPSHOTS:
         assert_server_snapshot(snapshot)

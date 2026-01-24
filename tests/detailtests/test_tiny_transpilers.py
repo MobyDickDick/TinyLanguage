@@ -1,3 +1,5 @@
+"""Tests for tiny transpilers."""
+
 import json
 import pathlib
 import sys
@@ -57,11 +59,13 @@ def __OUTPUTS = __render_all();
 
 
 def build_sample_program() -> ProgramIR:
+    """Helper to build sample program."""
     body = [Assign("total", BinaryOp("+", Name("a"), Name("b"))), Return(Name("total"))]
     return ProgramIR(functions=[FunctionIR(name="add", params=["a", "b"], body=body)])
 
 
 def run_tiny_transpilers() -> list[str]:
+    """Helper to run tiny transpilers."""
     program = TINY_TRANSPILER_SRC + "\n\n" + TINY_TRANSPILER_DRIVER
     parser = Parser(Lexer(program), program)
     stmts = parser.parse()
@@ -76,6 +80,7 @@ def run_tiny_transpilers() -> list[str]:
 
 
 def test_tiny_transpiler_rendering_matches_python() -> None:
+    """Test that tiny transpiler rendering matches python."""
     program = build_sample_program()
     expected = [
         PythonTranspiler().to_source(program),

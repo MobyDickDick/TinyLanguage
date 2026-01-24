@@ -1,3 +1,5 @@
+"""Tests for null."""
+
 import pathlib
 import sys
 
@@ -8,6 +10,7 @@ from tests.utils import run_tiny
 
 
 def test_null_literal_prints():
+    """Test that null literal prints."""
     out = run_tiny(
         """
         print(Null);
@@ -17,6 +20,7 @@ def test_null_literal_prints():
 
 
 def test_null_is_falsy_and_zero_like_in_arithmetic():
+    """Test that null is falsy and zero like in arithmetic."""
     out = run_tiny(
         """
         def a = Null;
@@ -29,6 +33,7 @@ def test_null_is_falsy_and_zero_like_in_arithmetic():
 
 
 def test_null_can_be_compared():
+    """Test that null can be compared."""
     out = run_tiny(
         """
         def val = Null;

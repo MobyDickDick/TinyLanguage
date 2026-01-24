@@ -1,3 +1,5 @@
+"""Tests for c backend."""
+
 from __future__ import annotations
 
 import os
@@ -12,6 +14,7 @@ from tiny_language import compile_to_c_executable, compile_to_llvm_ir_via_c
 
 
 def _find_compiler() -> str | None:
+    """Helper to find compiler."""
     preferred = os.environ.get("TINYLANG_C_COMPILER")
     candidates = [preferred, "cc", "clang", "gcc"]
     for candidate in candidates:
@@ -23,6 +26,7 @@ def _find_compiler() -> str | None:
 
 
 def _find_clang() -> str | None:
+    """Helper to find clang."""
     candidates = ["clang"]
     for candidate in candidates:
         if shutil.which(candidate):
@@ -38,6 +42,7 @@ def _find_clang() -> str | None:
     ],
 )
 def test_c_backend_examples(tmp_path: Path, source_path: Path, expected: str) -> None:
+    """Test that c backend examples."""
     compiler = _find_compiler()
     if compiler is None:
         pytest.skip("no C compiler available for C backend tests")
@@ -51,6 +56,7 @@ def test_c_backend_examples(tmp_path: Path, source_path: Path, expected: str) ->
 
 
 def test_emit_llvm_ir_via_c() -> None:
+    """Test that emit llvm ir via c."""
     compiler = _find_clang()
     if compiler is None:
         pytest.skip("clang not available for LLVM IR emission")
@@ -62,6 +68,7 @@ def test_emit_llvm_ir_via_c() -> None:
 
 
 def test_emit_llvm_ir_via_c_cli(tmp_path: Path) -> None:
+    """Test that emit llvm ir via c cli."""
     compiler = _find_clang()
     if compiler is None:
         pytest.skip("clang not available for LLVM IR emission")

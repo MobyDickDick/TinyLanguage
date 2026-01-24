@@ -128,6 +128,7 @@ class VariableHandle:
 
 class DAPServer:
     def __init__(self) -> None:
+        """Initialize the debug adapter state."""
         self._seq = 0
         self._lock = threading.Lock()
         self._paused_snapshot = None
@@ -195,6 +196,7 @@ class DAPServer:
         )
 
     def _open_log_file(self):
+        """Open the debug adapter log file if configured."""
         log_path = os.environ.get("TINYLANGUAGE_DAP_LOG")
         if not log_path:
             return None
@@ -207,6 +209,7 @@ class DAPServer:
             return None
 
     def _log(self, message: str) -> None:
+        """Write a diagnostic line to the adapter log."""
         timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         if not self._log_handle:
             if self._log_to_stderr:
@@ -327,6 +330,7 @@ class DAPServer:
                 os.environ["TINYLANGUAGE_DAP_STDIN_PIPE"] = self._previous_console_pipe
 
     def __del__(self) -> None:
+        """Release log resources on teardown."""
         try:
             self._cleanup_console_pipe()
         except Exception:
@@ -378,6 +382,7 @@ class DAPServer:
         return message
 
     def _send(self, payload: Dict[str, Any]) -> None:
+        """Send a DAP message payload to the client."""
         data = json.dumps(payload)
         message = f"Content-Length: {len(data)}\r\n\r\n{data}".encode("utf-8")
         self._log(f"--> {payload}")
@@ -387,12 +392,14 @@ class DAPServer:
         self._writer.flush()
 
     def _next_seq(self) -> int:
+        """Return the next DAP sequence number."""
         with self._lock:
             self._seq += 1
             return self._seq
 
     # ----- TinyLanguage helpers -----
     def _namespace_for_path(self, path: Path) -> str:
+        """Compute the module namespace for a source path."""
         try:
             rel = path.resolve().relative_to(Path.cwd())
             return ".".join(rel.with_suffix("").parts)
@@ -400,7 +407,9 @@ class DAPServer:
             return path.stem
 
     def _debugger(self):
+        """Create and configure the TinyLanguage debugger instance."""
         def on_pause(snapshot):
+            """Capture a paused execution snapshot and emit a stop event."""
             self._paused_snapshot = snapshot
             self._log("Paused at breakpoint")
             reason = "pause" if self._pause_requested else "breakpoint"
@@ -428,10 +437,12 @@ class DAPServer:
         return dbg
 
     def _python_debugger(self, program: Path):
+        """Create a Python debugger wrapper for tooling."""
         server = self
 
         class _PythonDebugger(bdb.Bdb):
             def user_line(self, frame):  # pragma: no cover - exercised via VS Code
+                """Handle a Python debugger line event."""
                 filename = Path(frame.f_code.co_filename).resolve()
                 if filename != program.resolve():
                     return
@@ -467,6 +478,7 @@ class DAPServer:
         return dbg
 
     def _apply_breakpoints(self, path: Optional[str], lines: List[int]) -> None:
+        """Apply breakpoint updates for a specific source."""
         debugger = self._debugger_instance
         if debugger is None:
             return
@@ -494,12 +506,14 @@ class DAPServer:
             self._log(f"Failed to set breakpoints for {path or '<module>'}: {exc}")
 
     def _sync_all_breakpoints(self) -> None:
+        """Ensure all breakpoints are synced to the debugger."""
         if not self._debugger_instance:
             return
         for path, lines in self._breakpoints.items():
             self._apply_breakpoints(path, lines)
 
     def _wait_for_command(self) -> str:
+        """Block until a client command is available."""
         timeout = float(os.environ.get("TINYLANGUAGE_DAP_PAUSE_TIMEOUT", "30"))
         deadline = None if timeout <= 0 else time.monotonic() + timeout
         command = None
@@ -591,6 +605,7 @@ class DAPServer:
         self._log(f"Console pipe ready at {pipe_path}")
 
     def _run_program(self, program: Path) -> None:
+        """Run the TinyLanguage program under debugger control."""
         self._log(f"Starting program run: {program}")
         try:
             source = program.read_text(encoding="utf-8")
@@ -679,6 +694,7 @@ class DAPServer:
             })
 
     def _run_python_program(self, program: Path) -> None:
+        """Run a Python program under debugger control."""
         self._log(f"Starting Python program run: {program}")
         self._namespace = str(program)
         debugger = self._python_debugger(program)
@@ -774,6 +790,7 @@ class DAPServer:
 
     # ----- Request handlers -----
     def _start_program_thread(self, trigger: str) -> None:
+        """Start the background program execution thread."""
         if self._thread and self._thread.is_alive():
             self._log(f"Start skipped; program already running (trigger={trigger})")
             return
@@ -802,6 +819,7 @@ class DAPServer:
             self._thread_event_sent = True
 
     def handle_initialize(self, request: Dict[str, Any]) -> None:
+        """Handle DAP initialize requests."""
         response = {
             "type": "response",
             "seq": self._next_seq(),
@@ -819,6 +837,7 @@ class DAPServer:
         self._initialized_sent = True
 
     def handle_set_breakpoints(self, request: Dict[str, Any]) -> None:
+        """Handle breakpoint configuration requests from the client."""
         args = request.get("arguments", {})
         source = args.get("source", {})
         path = source.get("path")
@@ -843,6 +862,7 @@ class DAPServer:
         # TinyLanguage does not currently differentiate exception types, but the
         # VS Code client always sends this request during configuration. Reply
         # with an empty set of breakpoints so the session can proceed.
+        """Handle exception breakpoint configuration requests."""
         response = {
             "type": "response",
             "seq": self._next_seq(),
@@ -854,6 +874,7 @@ class DAPServer:
         self._send(response)
 
     def handle_launch(self, request: Dict[str, Any]) -> None:
+        """Handle launch requests and begin the debug session."""
         args = request.get("arguments", {})
         program = args.get("program")
         self._python_mode = bool(args.get("pythonMode"))
@@ -917,6 +938,7 @@ class DAPServer:
         self._send(response)
 
     def handle_configuration_done(self, request: Dict[str, Any]) -> None:
+        """Handle configuration completion requests."""
         self._configuration_done = True
         self._start_program_thread("configurationDone")
         response = {
@@ -930,6 +952,7 @@ class DAPServer:
         self._send(response)
 
     def handle_threads(self, request: Dict[str, Any]) -> None:
+        """Handle thread listing requests."""
         response = {
             "type": "response",
             "seq": self._next_seq(),
@@ -941,9 +964,11 @@ class DAPServer:
         self._send(response)
 
     def _frame_path(self) -> Optional[str]:
+        """Resolve a source path for a stack frame."""
         return str(self._program) if self._program else None
 
     def handle_stack_trace(self, request: Dict[str, Any]) -> None:
+        """Handle stack trace requests."""
         frames = []
         if self._paused_snapshot:
             if isinstance(self._paused_snapshot, dict) and self._paused_snapshot.get("python"):
@@ -985,6 +1010,7 @@ class DAPServer:
         self._send(response)
 
     def handle_scopes(self, request: Dict[str, Any]) -> None:
+        """Handle scope enumeration requests."""
         scopes = []
         if self._paused_snapshot:
             if isinstance(self._paused_snapshot, dict) and self._paused_snapshot.get("python"):
@@ -1024,6 +1050,7 @@ class DAPServer:
         self._send(response)
 
     def handle_variables(self, request: Dict[str, Any]) -> None:
+        """Handle variable expansion requests."""
         args = request.get("arguments", {})
         handle_id = args.get("variablesReference")
         handle = self._variable_handles.get(handle_id)
@@ -1046,6 +1073,7 @@ class DAPServer:
         self._send(response)
 
     def handle_evaluate(self, request: Dict[str, Any]) -> None:
+        """Handle evaluate requests for expressions."""
         args = request.get("arguments", {})
         expr = args.get("expression", "")
         result: Optional[str] = None
@@ -1078,6 +1106,7 @@ class DAPServer:
     def _handle_unknown(self, request: Dict[str, Any]) -> None:
         # Respond to unexpected requests so the client does not hang waiting for
         # a reply. Unknown commands are logged for easier diagnostics.
+        """Handle unsupported DAP requests with a failure response."""
         command = request.get("command", "<unknown>")
         self._log(f"Received unsupported request: {command}")
         if request.get("type") == "request":
@@ -1095,6 +1124,7 @@ class DAPServer:
         # If the client never sends configuration or launch requests after the
         # initialize handshake, provide a clear failure signal instead of
         # letting the adapter sit idle forever.
+        """Monitor for idle clients and emit warnings when stuck."""
         while not self._shutdown:
             time.sleep(0.5)
             idle = time.monotonic() - self._last_client_message
@@ -1158,6 +1188,7 @@ class DAPServer:
                 self._watchdog_warning_sent = True
 
     def _enqueue(self, command: str) -> None:
+        """Enqueue a DAP request for processing."""
         self._command_queue.put(command)
         self._log(f"Enqueued command: {command}")
         response = {
@@ -1169,6 +1200,7 @@ class DAPServer:
         self._send(response)
 
     def handle_pause(self, request: Dict[str, Any]) -> None:
+        """Handle pause requests from the client."""
         self._pause_requested = True
         debugger = self._debugger_instance
         if debugger is not None:
@@ -1188,6 +1220,7 @@ class DAPServer:
         self._send(response)
 
     def handle_continue(self, request: Dict[str, Any], command: str = "continue") -> None:
+        """Handle continue/step requests from the client."""
         self._enqueue(command)
         response = {
             "type": "response",
@@ -1200,6 +1233,7 @@ class DAPServer:
         self._send(response)
 
     def handle_disconnect(self, request: Dict[str, Any]) -> None:
+        """Handle disconnect requests and shut down the adapter."""
         if self._thread and self._thread.is_alive():
             self._enqueue("continue")
             self._thread.join(timeout=1)
@@ -1216,6 +1250,7 @@ class DAPServer:
 
     # ----- Main loop -----
     def run(self) -> None:
+        """Run the debug adapter main loop."""
         handlers = {
             "initialize": self.handle_initialize,
             "setBreakpoints": self.handle_set_breakpoints,
@@ -1257,6 +1292,7 @@ class DAPServer:
 
 
 def _self_test() -> None:
+    """Emit a JSON diagnostic payload for quick adapter health checks."""
     try:
         module_path = inspect.getfile(compile_and_run)
     except Exception:  # pragma: no cover - diagnostic guardrail

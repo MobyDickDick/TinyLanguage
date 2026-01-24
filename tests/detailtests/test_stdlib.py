@@ -1,9 +1,12 @@
+"""Tests for stdlib."""
+
 import random
 
 import pytest
 
 
 def test_stdlib_functions_cover_math_string_and_collections(run_tiny_source, monkeypatch):
+    """Test that stdlib functions cover math string and collections."""
     monkeypatch.setenv("TINY_LINT_HEAP", "0")
     out = run_tiny_source(
         """
@@ -56,6 +59,7 @@ def test_stdlib_functions_cover_math_string_and_collections(run_tiny_source, mon
 
 
 def test_collections_pop_errors_on_empty(run_tiny_source):
+    """Test that collections pop errors on empty."""
     with pytest.raises(Exception, match=r"pop from empty collection"):
         run_tiny_source(
             """
@@ -67,6 +71,7 @@ def test_collections_pop_errors_on_empty(run_tiny_source):
 
 
 def test_tl_stdlib_math_module_import(run_tiny_source):
+    """Test that tl stdlib math module import."""
     out = run_tiny_source(
         """
         import stdlib.math;
@@ -83,6 +88,7 @@ def test_tl_stdlib_math_module_import(run_tiny_source):
 
 
 def test_tl_stdlib_random_module_import(run_tiny_source):
+    """Test that tl stdlib random module import."""
     random.seed(1)
     out = run_tiny_source(
         """
@@ -102,6 +108,7 @@ def test_tl_stdlib_random_module_import(run_tiny_source):
 
 
 def test_tl_stdlib_statistics_module_import(run_tiny_source):
+    """Test that tl stdlib statistics module import."""
     out = run_tiny_source(
         """
         import stdlib.statistics;
@@ -116,6 +123,7 @@ def test_tl_stdlib_statistics_module_import(run_tiny_source):
 
 
 def test_tl_stdlib_string_module_import(run_tiny_source):
+    """Test that tl stdlib string module import."""
     out = run_tiny_source(
         """
         import stdlib.string;
@@ -137,6 +145,7 @@ def test_tl_stdlib_string_module_import(run_tiny_source):
 
 
 def test_tl_stdlib_json_module_import(run_tiny_source):
+    """Test that tl stdlib json module import."""
     out = run_tiny_source(
         """
         import stdlib.json;
@@ -154,6 +163,7 @@ def test_tl_stdlib_json_module_import(run_tiny_source):
 
 
 def test_tl_stdlib_os_and_pathlib_module_import(run_tiny_source, tmp_path):
+    """Test that tl stdlib os and pathlib module import."""
     file_path = tmp_path / "dir" / "note.txt"
     out = run_tiny_source(
         f"""
@@ -177,6 +187,7 @@ def test_tl_stdlib_os_and_pathlib_module_import(run_tiny_source, tmp_path):
 
 
 def test_string_repeat_validates_count(run_tiny_source):
+    """Test that string repeat validates count."""
     with pytest.raises(Exception, match=r"repeat count must be non-negative"):
         run_tiny_source('print(String.repeat("x", -1));')
 
@@ -185,6 +196,7 @@ def test_string_repeat_validates_count(run_tiny_source):
 
 
 def test_map_set_and_deque_helpers(run_tiny_source):
+    """Test that map set and deque helpers."""
     out = run_tiny_source(
         """
         def capitals = Map.new();
@@ -225,6 +237,7 @@ def test_map_set_and_deque_helpers(run_tiny_source):
 
 
 def test_random_file_and_json_helpers(run_tiny_source, tmp_path):
+    """Test that random file and json helpers."""
     random.seed(0)
     file_path = tmp_path / "demo.json"
     out = run_tiny_source(
@@ -257,6 +270,7 @@ def test_random_file_and_json_helpers(run_tiny_source, tmp_path):
 
 
 def test_json_stringify_roundtrip_collections(run_tiny_source):
+    """Test that json stringify roundtrip collections."""
     out = run_tiny_source(
         """
         def data = Map.new();
@@ -288,6 +302,7 @@ def test_json_stringify_roundtrip_collections(run_tiny_source):
 
 
 def test_json_stringify_roundtrip_nested_collections(run_tiny_source):
+    """Test that json stringify roundtrip nested collections."""
     out = run_tiny_source(
         """
         def mapping = Map.new();
@@ -326,6 +341,7 @@ def test_json_stringify_roundtrip_nested_collections(run_tiny_source):
 
 
 def test_json_stringify_roundtrip_heap_nested_lists(run_tiny_source):
+    """Test that json stringify roundtrip heap nested lists."""
     out = run_tiny_source(
         """
         def inner = Map.new();

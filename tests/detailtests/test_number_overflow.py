@@ -1,7 +1,10 @@
+"""Tests for number overflow."""
+
 import pathlib
 
 
 def test_number_error_propagation_and_printing(run_tiny_source):
+    """Test that number error propagation and printing."""
     number_def = (pathlib.Path(__file__).resolve().parents[2] / "src_tiny" / "number_class.tiny").read_text()
 
     extra = """

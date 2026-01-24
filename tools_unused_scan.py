@@ -1,11 +1,17 @@
+"""Scan Python sources to report unused definitions, imports, and assignments."""
+
 import ast
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
 Root = Path(__file__).parent
 
+
 class ModuleData:
+    """Collect definitions, imports, and usage metadata for one module."""
+
     def __init__(self, path: Path):
+        """Initialize tracking collections for a module's symbols."""
         self.path = path
         self.definitions: List[Tuple[str, str, int]] = []
         self.imports: List[Tuple[str, int]] = []
@@ -15,26 +21,33 @@ class ModuleData:
         self.explicit_exports: Set[str] = set()
 
     def record_definition(self, kind: str, name: str, lineno: int) -> None:
+        """Record a top-level definition (function/class) with its line number."""
         self.definitions.append((kind, name, lineno))
 
     def record_import(self, name: str, lineno: int) -> None:
+        """Record an import name with its line number."""
         self.imports.append((name, lineno))
 
     def record_assignment(self, name: str, lineno: int) -> None:
+        """Record a top-level assignment name with its line number."""
         self.assigned.append((name, lineno))
 
     def mark_used(self, name: str) -> None:
+        """Mark a symbol name as used within the module."""
         self.used_names.add(name)
 
     def mark_attr(self, attr: str) -> None:
+        """Mark an attribute access as used within the module."""
         self.used_attrs.add(attr)
 
     @property
     def exported(self) -> Set[str]:
+        """Expose explicitly exported symbols collected from __all__."""
         return self.explicit_exports
 
 
 def parse_file(path: Path) -> ModuleData:
+    """Parse one module and capture definitions, imports, and usage."""
     data = ModuleData(path)
     try:
         tree = ast.parse(path.read_text())
@@ -43,9 +56,11 @@ def parse_file(path: Path) -> ModuleData:
 
     class DefinitionVisitor(ast.NodeVisitor):
         def __init__(self):
+            """Track the current nesting level to stay at module scope."""
             self.level = 0
 
         def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+            """Record top-level function definitions."""
             if self.level == 0:
                 data.record_definition("function", node.name, node.lineno)
             self.level += 1
@@ -53,6 +68,7 @@ def parse_file(path: Path) -> ModuleData:
             self.level -= 1
 
         def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+            """Record top-level async function definitions."""
             if self.level == 0:
                 data.record_definition("async function", node.name, node.lineno)
             self.level += 1
@@ -60,6 +76,7 @@ def parse_file(path: Path) -> ModuleData:
             self.level -= 1
 
         def visit_ClassDef(self, node: ast.ClassDef) -> None:
+            """Record top-level class definitions."""
             if self.level == 0:
                 data.record_definition("class", node.name, node.lineno)
             self.level += 1
@@ -67,6 +84,7 @@ def parse_file(path: Path) -> ModuleData:
             self.level -= 1
 
         def visit_Assign(self, node: ast.Assign) -> None:
+            """Record top-level assignments and __all__ exports."""
             if self.level == 0:
                 for target in node.targets:
                     if isinstance(target, ast.Name):
@@ -89,6 +107,7 @@ def parse_file(path: Path) -> ModuleData:
             self.generic_visit(node)
 
         def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+            """Record annotated assignments and __all__ exports."""
             if self.level == 0 and isinstance(node.target, ast.Name):
                 data.record_assignment(node.target.id, node.lineno)
             if isinstance(node.target, ast.Name) and node.target.id == "__all__" and isinstance(node.value, (ast.List, ast.Tuple, ast.Set)):
@@ -98,11 +117,13 @@ def parse_file(path: Path) -> ModuleData:
             self.generic_visit(node)
 
         def visit_Import(self, node: ast.Import) -> None:
+            """Record imported symbol names."""
             for alias in node.names:
                 data.record_import(alias.asname or alias.name.split(".")[0], node.lineno)
             self.generic_visit(node)
 
         def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+            """Record imported symbol names from modules."""
             if node.module == "__future__":
                 return
             for alias in node.names:
@@ -113,15 +134,18 @@ def parse_file(path: Path) -> ModuleData:
 
     class UsageVisitor(ast.NodeVisitor):
         def visit_Name(self, node: ast.Name) -> None:
+            """Mark name usages that appear in load/delete contexts."""
             if isinstance(node.ctx, (ast.Load, ast.Del)):
                 data.mark_used(node.id)
             self.generic_visit(node)
 
         def visit_Attribute(self, node: ast.Attribute) -> None:
+            """Mark attribute usages, even when accessed via dotted paths."""
             data.mark_attr(node.attr)
             self.generic_visit(node)
 
         def visit_Constant(self, node: ast.Constant) -> None:
+            """Treat identifier-like string literals as used symbols."""
             if isinstance(node.value, str) and node.value.isidentifier():
                 data.mark_used(node.value)
 
@@ -139,6 +163,7 @@ def parse_file(path: Path) -> ModuleData:
 
 
 def scan(paths: List[Path]) -> Tuple[Dict[Path, ModuleData], Set[str], Set[str]]:
+    """Scan Python files and merge used names/attributes across modules."""
     modules: Dict[Path, ModuleData] = {}
     used_names: Set[str] = set()
     used_attrs: Set[str] = set()
@@ -154,10 +179,12 @@ def scan(paths: List[Path]) -> Tuple[Dict[Path, ModuleData], Set[str], Set[str]]
 
 
 def find_python_files(root: Path) -> List[Path]:
+    """Collect Python files while skipping virtual envs and caches."""
     return [p for p in root.rglob("*.py") if ".venv" not in p.parts and "__pycache__" not in p.parts]
 
 
 def main() -> None:
+    """Run the module entry point."""
     targets = [Root / "src", Root / "examples", Root / "tests"]
     files: List[Path] = []
     for target in targets:

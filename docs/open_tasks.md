@@ -8,8 +8,9 @@ are grouped by area and can be tackled independently.
   language core, type system, runtime, tooling, and ecosystem maturity.
 - [x] Expand the language specification with explicit evaluation-order rules,
   concurrency semantics, and versioning/deprecation policies.
-- [ ] Plan an optional static typing track (annotations + gradual typing) and
-  identify the minimal type-checking passes needed for early wins.
+- [x] Plan an optional static typing track (annotations + gradual typing) and
+  identify the minimal type-checking passes needed for early wins. (See
+  `docs/typing_track_plan.md`.)
 - [ ] Define a package/module system roadmap (namespaces, versioning, lockfiles,
   dependency resolution) and outline a minimal CLI for it.
 - [ ] Document runtime-performance goals (interpreter vs. C/LLVM backends),

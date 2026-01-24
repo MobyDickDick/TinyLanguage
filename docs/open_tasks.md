@@ -16,8 +16,9 @@ are grouped by area and can be tackled independently.
   `docs/package_module_roadmap.md`.)
 - [x] Document runtime-performance goals (interpreter vs. C/LLVM backends),
   including optimization phases and profiling workflows.
-- [ ] Outline a conformance and compatibility test strategy (spec tests +
-  cross-backend parity suites).
+- [x] Outline a conformance and compatibility test strategy (spec tests +
+  cross-backend parity suites). (See
+  `docs/conformance_compatibility_test_strategy.md`.)
 - [ ] Create a standard library expansion plan with prioritized modules and
   test coverage expectations.
 

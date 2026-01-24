@@ -10,6 +10,9 @@ that co-locates the Python source and the translated TinyLanguage snapshot.
 This keeps related artifacts together while the shared `python/` and `expected/`
 folders remain the canonical inputs for the transpiler.
 
+The word-count TinyLanguage sample is maintained in `src_tiny/rosetta_word_count.tiny`
+to avoid duplicating the source across example directories.
+
 ## Copy missing Python samples
 
 `copy_rosetta_samples.py` pulls Python scripts from a source directory (default:

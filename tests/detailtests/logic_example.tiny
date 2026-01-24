@@ -1,4 +1,5 @@
-// Demonstration of boolean literals, logical operators, and variadic print
+// Demonstration of boolean literals, logical operators, and variadic print.
+// Canonical logic example fixture (duplicate removed from tests root).
 print(true);
 print(false);
 print(not false);

@@ -47,6 +47,86 @@ lockfiles, and a minimal CLI that can evolve into a full package manager.
 - The interpreter/tooling should refuse to resolve new versions unless explicitly
   updated via the CLI.
 
+## Manifest schema (`tiny.toml`)
+
+The manifest defines package metadata and dependency constraints. It should be
+friendly to hand edits while remaining strict enough for tooling to validate.
+
+### Required keys
+
+```toml
+[package]
+name = "example-app"         # Lowercase slug, can include dashes.
+version = "0.1.0"            # SemVer package version.
+```
+
+### Optional metadata
+
+```toml
+[package]
+description = "One-line summary of the package."
+license = "MIT"
+authors = ["Ada Lovelace <ada@example.com>"]
+homepage = "https://example.com"
+repository = "https://github.com/example/example-app"
+```
+
+### Dependency tables
+
+Dependencies are grouped by scope. Each dependency can be a version constraint,
+or a structured entry for path/registry overrides.
+
+```toml
+[dependencies]
+http = "^1.2"
+json = { version = "~0.9", registry = "https://registry.tiny-lang.org" }
+
+[dev-dependencies]
+test-utils = "^0.3"
+
+[build-dependencies]
+codegen = { version = ">=1.0 <2.0" }
+```
+
+### Local path dependencies
+
+```toml
+[dependencies]
+my-lib = { path = "../my-lib" }
+```
+
+### Registry configuration
+
+```toml
+[registries]
+default = "https://registry.tiny-lang.org"
+internal = "https://packages.internal.example.com"
+```
+
+### Reference example
+
+```toml
+[package]
+name = "weather-cli"
+version = "0.4.2"
+description = "CLI for fetching weather summaries."
+license = "Apache-2.0"
+authors = ["TinyLanguage Team <team@tinylang.dev>"]
+repository = "https://github.com/tiny-lang/weather-cli"
+
+[dependencies]
+http = "^1.2"
+json = "~0.9"
+cli = { version = ">=0.5 <1.0" }
+config = { path = "../config" }
+
+[dev-dependencies]
+test-utils = "^0.3"
+
+[registries]
+default = "https://registry.tiny-lang.org"
+```
+
 ## Minimal CLI (phase 1)
 
 Introduce a small set of commands, likely as extensions of `tiny` or `tinyc`.
@@ -94,7 +174,12 @@ Notes:
 These tasks translate the roadmap into actionable work items that can be tracked
 in the main backlog.
 
-- [ ] Draft the `tiny.toml` manifest schema and add a reference example.
+- [x] Draft the `tiny.toml` manifest schema and add a reference example.
+- [ ] Document validation rules for manifest fields (required keys, slug rules,
+  version format, and URL validation).
+- [ ] Define error messages and diagnostics for invalid manifest files.
+- [ ] Add a `tiny pkg init` template that matches the documented manifest schema.
+- [ ] Extend docs with a dependency override example (path + registry fallback).
 - [ ] Define the `tiny.lock` schema (resolved versions, sources, checksums).
 - [ ] Specify namespace resolution rules for `local`, `std`, and `pkg` imports.
 - [ ] Implement dependency resolution with SemVer constraints and lockfile

@@ -19,8 +19,10 @@ are grouped by area and can be tackled independently.
 - [x] Outline a conformance and compatibility test strategy (spec tests +
   cross-backend parity suites). (See
   `docs/conformance_compatibility_test_strategy.md`.)
-- [ ] Create a standard library expansion plan with prioritized modules and
-  test coverage expectations.
+- [x] Create a standard library expansion plan with prioritized modules and
+  test coverage expectations. (See `docs/stdlib_expansion_plan.md`.)
+- [ ] Break down the stdlib expansion plan into actionable implementation tasks.
+  (See `docs/stdlib_expansion_tasks.md`.)
 
 ## Roadmap-derived tasks (from `docs/roadmap_next.md`)
 - [ ] Align the language specification updates with the roadmap's language core

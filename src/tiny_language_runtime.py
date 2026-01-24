@@ -21,6 +21,8 @@ from tiny_language_ast import Fn, IR, Match, MethodDef, OpDef, Param, TypeVarian
 
 # ----- Runtime -----
 
+LOGGER = logging.getLogger(__name__)
+
 
 class ReturnSignal(Exception):
     def __init__(self, value: Any):
@@ -186,9 +188,28 @@ class ModuleResolver:
         configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
         default_roots = [Path.cwd(), Path(__file__).parent]
         self.stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
+        self.legacy_stdlib_root = Path(__file__).resolve().parent / "stdlib"
         self.search_paths: List[Path] = search_paths or configured_paths + default_roots
         self.cache: Dict[Path, NamespaceRef] = {}
         self._in_progress: List[Path] = []
+        self._warned_legacy_stdlib = False
+
+    def _maybe_warn_legacy_stdlib(self, resolved_path: Path) -> None:
+        if self._warned_legacy_stdlib:
+            return
+        if not self.legacy_stdlib_root.exists() or self.legacy_stdlib_root == self.stdlib_root:
+            return
+        try:
+            resolved_path.relative_to(self.legacy_stdlib_root)
+        except ValueError:
+            return
+        self._warned_legacy_stdlib = True
+        LOGGER.warning(
+            "Loading Tiny stdlib module from legacy root %s. "
+            "Move .tiny stdlib sources to %s to silence this warning.",
+            self.legacy_stdlib_root,
+            self.stdlib_root,
+        )
 
     def _resolve_name(self, raw: str, caller_namespace: Optional[str], pos: Optional[Any]) -> str:
         """Normalize relative import names against the caller's namespace.
@@ -236,6 +257,8 @@ class ModuleResolver:
             rel_path = Path(*module_name.split(".")[1:])
             if self.stdlib_root.exists():
                 roots.append(self.stdlib_root)
+            if self.legacy_stdlib_root.exists() and self.legacy_stdlib_root != self.stdlib_root:
+                roots.append(self.legacy_stdlib_root)
         else:
             rel_path = Path(*module_name.split("."))
             if caller_path:
@@ -263,6 +286,7 @@ class ModuleResolver:
             if resolved_path in self.cache:
                 return self.cache[resolved_path]
             if resolved_path.exists():
+                self._maybe_warn_legacy_stdlib(resolved_path)
                 if resolved_path in self._in_progress:
                     raise TinyLangError(
                         f"circular import involving {resolved_path}",

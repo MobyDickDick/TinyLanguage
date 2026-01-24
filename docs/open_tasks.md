@@ -3,6 +3,22 @@
 This list captures the currently planned work items for TinyLanguage. The tasks
 are grouped by area and can be tackled independently.
 
+## Roadmap refresh (proposed)
+- [ ] Publish a TinyLanguage roadmap document that groups planned work by
+  language core, type system, runtime, tooling, and ecosystem maturity.
+- [ ] Expand the language specification with explicit evaluation-order rules,
+  concurrency semantics, and versioning/deprecation policies.
+- [ ] Plan an optional static typing track (annotations + gradual typing) and
+  identify the minimal type-checking passes needed for early wins.
+- [ ] Define a package/module system roadmap (namespaces, versioning, lockfiles,
+  dependency resolution) and outline a minimal CLI for it.
+- [ ] Document runtime-performance goals (interpreter vs. C/LLVM backends),
+  including optimization phases and profiling workflows.
+- [ ] Outline a conformance and compatibility test strategy (spec tests +
+  cross-backend parity suites).
+- [ ] Create a standard library expansion plan with prioritized modules and
+  test coverage expectations.
+
 ## Next tasks (shortlist)
 - [x] Add CI/regression checks that assert no live heap allocations remain after
   test runs (use `heap_leak_report` or equivalent harness output).

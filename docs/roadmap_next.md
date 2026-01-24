@@ -4,6 +4,48 @@ This document captures a forward-looking roadmap for maturing TinyLanguage into
 an end-to-end programming language with a stable toolchain and ecosystem. The
 phases below build on each other but can progress in parallel where practical.
 
+## Roadmap by area (execution-oriented)
+
+To make the roadmap actionable, the work is grouped by the major program areas
+tracked in `docs/open_tasks.md`.
+
+### Language core
+
+- Finalize evaluation-order, scoping, error-handling, and concurrency rules in
+  the language specification.
+- Define compatibility commitments and deprecation policies for core semantics.
+- Align diagnostics with a shared error schema across interpreter and tooling.
+
+### Type system
+
+- Introduce optional type annotations and a gradual-typing strategy.
+- Add a minimal type-checking pass that can run in lints/CI.
+- Decide if effect or mutability annotations are needed for stricter safety
+  profiles.
+
+### Runtime and performance
+
+- Document optimization stages and performance targets for interpreter, C, and
+  LLVM backends.
+- Establish profiling + benchmarking workflows for regressions.
+- Track backend parity gaps with targeted tests and close them.
+
+### Tooling and developer experience
+
+- Expand LSP capabilities (rename, references, code actions, formatting hooks).
+- Improve debugging workflows (breakpoints, watch expressions, variable views).
+- Provide project scaffolding, templates, and versioned CLI ergonomics.
+
+### Ecosystem maturity
+
+- Prioritize stdlib modules (I/O, data formats, filesystem, networking, math,
+  collections) and document APIs.
+- Specify module resolution rules (local vs. stdlib vs. external packages).
+- Define a package manager plan (lockfiles, registry layout, semantic
+  versioning).
+- Maintain conformance and cross-backend parity test suites.
+- Publish compatibility matrices and migration guides for major releases.
+
 ## Phase 1: Language core stability
 
 **Goals**: Lock down semantics, reduce surprises, and define compatibility rules.

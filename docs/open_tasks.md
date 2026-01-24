@@ -4,7 +4,7 @@ This list captures the currently planned work items for TinyLanguage. The tasks
 are grouped by area and can be tackled independently.
 
 ## Roadmap refresh (proposed)
-- [ ] Publish a TinyLanguage roadmap document that groups planned work by
+- [x] Publish a TinyLanguage roadmap document that groups planned work by
   language core, type system, runtime, tooling, and ecosystem maturity.
 - [ ] Expand the language specification with explicit evaluation-order rules,
   concurrency semantics, and versioning/deprecation policies.
@@ -18,6 +18,25 @@ are grouped by area and can be tackled independently.
   cross-backend parity suites).
 - [ ] Create a standard library expansion plan with prioritized modules and
   test coverage expectations.
+
+## Roadmap-derived tasks (from `docs/roadmap_next.md`)
+- [ ] Align the language specification updates with the roadmap's language core
+  scope (evaluation order, scoping, error handling, concurrency).
+- [ ] Define a shared diagnostic error schema for interpreter + tooling.
+- [ ] Introduce optional type annotations with a gradual-typing strategy.
+- [ ] Build a minimal type-checking pass that can run in lints/CI.
+- [ ] Document optimization stages and performance targets for interpreter, C,
+  and LLVM backends.
+- [ ] Establish profiling + benchmarking workflows for regression tracking.
+- [ ] Expand LSP features (rename, references, code actions, formatting hooks).
+- [ ] Improve debugging workflows (breakpoints, watch expressions, variable
+  views).
+- [ ] Draft project scaffolding/templates and versioned CLI ergonomics.
+- [ ] Specify module resolution rules (local vs. stdlib vs. external packages).
+- [ ] Define a package manager plan (lockfiles, registry layout, semantic
+  versioning).
+- [ ] Maintain conformance + cross-backend parity test suites.
+- [ ] Publish compatibility matrices and migration guides for major releases.
 
 ## Next tasks (shortlist)
 - [x] Add CI/regression checks that assert no live heap allocations remain after

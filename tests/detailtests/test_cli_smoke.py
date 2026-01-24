@@ -17,7 +17,7 @@ def run_cli(args, *, stdin_data=None):
         ),
     }
     return subprocess.run(
-        [sys.executable, "-m", "tiny_lang_cli", *args],
+        [sys.executable, "-m", "tiny_language_cli", *args],
         input=stdin_data,
         capture_output=True,
         text=True,

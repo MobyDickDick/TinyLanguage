@@ -176,7 +176,7 @@ PY
 
 - [x] Entrypoint-Shims konsolidieren: Migrationsplan definieren, der festlegt, welche Wrapper (`run_all.py`, `tiny_language`, `tiny_language.py`, `src/tiny_lang_cli.py`) entfernt oder umbenannt werden, inklusive Abkündigungszeitraum und kompatibler Übergangskommandos.
 - [x] Tooling/Docs anpassen: Dokumentation und interne Tools so aktualisieren, dass sie auf die kanonischen Entry-Points verweisen (z. B. `src/run_all.py`, `src/tiny_language.py`, `src/tiny_language_cli.py`) und die alten Pfade nicht mehr voraussetzen.
-- [ ] Tests/CI aktualisieren: Prüfen, welche Tests oder Scripts die Wrapper direkt aufrufen, und sie auf die neuen Entry-Points umstellen; Regressionstests ergänzen, die den Migrationsplan validieren.
+- [x] Tests/CI aktualisieren: Prüfen, welche Tests oder Scripts die Wrapper direkt aufrufen, und sie auf die neuen Entry-Points umstellen; Regressionstests ergänzen, die den Migrationsplan validieren.
 - [ ] Stdlib-Struktur vereinheitlichen: Entscheidungsvorlage erstellen, ob `stdlib/` und `src/stdlib/` zusammengeführt werden können (inkl. Auswirkungen auf Import-Pfade, Runtime-Suche und API-Registrierung).
 - [ ] Runtime-Suchpfade refaktorisieren: Falls eine Zusammenführung beschlossen wird, Runtime-Logik (`tiny_language_runtime.py`) so anpassen, dass nur ein einziges Stdlib-Root unterstützt wird.
 - [ ] Übergangsstrategie für Stdlib: Deprecation-Notizen und ggf. Migrationstools bereitstellen, die bestehende Tiny-Programme auf neue Import-Pfade anheben.

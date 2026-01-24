@@ -25,7 +25,7 @@ are grouped by area and can be tackled independently.
   (See `docs/stdlib_expansion_tasks.md`.)
 
 ## Roadmap-derived tasks (from `docs/roadmap_next.md`)
-- [ ] Align the language specification updates with the roadmap's language core
+- [x] Align the language specification updates with the roadmap's language core
   scope (evaluation order, scoping, error handling, concurrency).
 - [ ] Define a shared diagnostic error schema for interpreter + tooling.
 - [ ] Introduce optional type annotations with a gradual-typing strategy.

@@ -2,6 +2,22 @@
 
 This file summarizes the most important TinyLanguage constructs. It is intended for readers who want to look up syntax and runtime behavior quickly without diving into the interpreter code.
 
+## Language core alignment (roadmap scope)
+
+The language-core roadmap scope calls out evaluation order, scoping, error
+handling, and concurrency semantics. This spec explicitly covers those topics
+in the sections below so the roadmap and the documentation stay in sync.
+
+- **Evaluation order** is defined in **Evaluation order and side effects**,
+  including left-to-right argument evaluation and short-circuit logic.
+- **Scoping** rules are summarized in **Bindings and visibility**, including
+  where new scopes are introduced and how bindings are resolved.
+- **Error handling** is defined in **Control flow** and elaborated in
+  **Errors and diagnostics**, covering runtime `try`/`catch` behavior and the
+  structured error format used across tooling.
+- **Concurrency semantics** are described in **Control flow** (task scopes)
+  and **Concurrency and async API** (spawn/await/cancellation behavior).
+
 ## Lexical elements
 
 - **Comments:** `//` starts a comment to the end of the line. Block comments have no special syntax.

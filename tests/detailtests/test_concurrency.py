@@ -166,6 +166,33 @@ def test_task_block_keeps_completed_spawns(run_tiny_source, monkeypatch):
     assert out == "status true false true\nvalue 5\n"
 
 
+def test_task_block_does_not_cancel_outer_spawns(run_tiny_source, monkeypatch):
+    monkeypatch.setenv("TINYLANG_TASK_SCOPE_TIMEOUT_MS", "0")
+    out = run_tiny_source(
+        """
+        fn slow(value, steps) {
+            def i = 0;
+            while (i < steps) { i = i + 1; }
+            return value;
+        }
+
+        def outer = spawn slow(1, 20000);
+
+        task {
+            def inner = spawn slow(2, 200000);
+        }
+
+        def inner_status = join(inner, 0);
+        print("inner", inner_status.done, inner_status.cancelled);
+
+        def outer_value = join(outer);
+        print("outer", outer_value);
+        """,
+    )
+
+    assert out == "inner false true\nouter 1\n"
+
+
 def test_join_status_reports_spawn_errors(run_tiny_source):
     out = run_tiny_source(
         """

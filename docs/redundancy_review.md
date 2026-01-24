@@ -81,6 +81,12 @@ This duplication is deliberate: Tiny-language modules live in `stdlib/`, while
 `src/stdlib/__init__.py` wires the native runtime APIs and avoids re-implementing
 logic already covered by Tiny sources.【F:src/stdlib/__init__.py†L2-L44】
 
+### Stdlib consolidation decision template
+
+If the project decides to revisit the split stdlib layout, use the decision
+template in `docs/stdlib_consolidation_decision.md` to evaluate whether the
+stdlib roots can be merged and what the downstream impact would be.
+
 ## Summary
 
 The redundancy scan did not uncover any accidental duplicate implementations.

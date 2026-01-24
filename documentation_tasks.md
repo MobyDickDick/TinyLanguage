@@ -98,11 +98,11 @@ PY
 - [x] ./tests/detailtests/test_experimental_math_tuples.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [x] ./tests/detailtests/test_formatter.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [x] ./tests/detailtests/test_heap_api_errors.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
-- [ ] ./tests/detailtests/test_heap_lints.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
-- [ ] ./tests/detailtests/test_heap_pointer_demo.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
-- [ ] ./tests/detailtests/test_hello_world.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
-- [ ] ./tests/detailtests/test_inheritance.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
-- [ ] ./tests/detailtests/test_language_server.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
+- [x] ./tests/detailtests/test_heap_lints.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
+- [x] ./tests/detailtests/test_heap_pointer_demo.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
+- [x] ./tests/detailtests/test_hello_world.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
+- [x] ./tests/detailtests/test_inheritance.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
+- [x] ./tests/detailtests/test_language_server.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [ ] ./tests/detailtests/test_language_server_cli.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [ ] ./tests/detailtests/test_llvm_codegen.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [ ] ./tests/detailtests/test_modules.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?

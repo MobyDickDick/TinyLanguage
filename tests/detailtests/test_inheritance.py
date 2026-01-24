@@ -8,6 +8,7 @@ from tests.utils import run_tiny
 
 
 def test_counter_and_fancy_counter_hierarchy():
+    """Run a tiny program that exercises inheritance and method overrides."""
     out = run_tiny(
         """
         class Counter {
@@ -32,6 +33,7 @@ def test_counter_and_fancy_counter_hierarchy():
           bonus: number;
 
           fn init(self, start, label, bonus) {
+            // Use a base-class assignment to validate parent field access.
             Counter.value = start;
             self.label = label;
             self.bonus = bonus;
@@ -47,6 +49,7 @@ def test_counter_and_fancy_counter_hierarchy():
         }
 
         def fc = new FancyCounter { bonus: 0; label: "temp"; value: 0; };
+        // Initialize, mutate, and read the derived instance.
         fc = fc.init(3, "fancy", 7);
         fc = fc.bump(2);
         print(fc.total());
@@ -54,4 +57,5 @@ def test_counter_and_fancy_counter_hierarchy():
         """
     )
 
+    # total() includes bonus, read() returns the base class value.
     assert out == "12\n5\n"

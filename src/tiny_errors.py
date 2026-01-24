@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import os
 import sys
-from typing import List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 
 @dataclass(frozen=True)
@@ -61,6 +61,54 @@ class TinyLangError(Exception):
     def __str__(self) -> str:  # pragma: no cover - Exception already stringifies message
         return self.message
 
+
+def diagnostic_range(error: TinyLangError, source: str) -> Tuple[int, int, int, int]:
+    """Return a 1-based, end-exclusive range for ``error`` within ``source``."""
+    span = error.span
+    if span is not None:
+        start_line, start_col, _ = _line_info(source, span.start)
+        stop_line, stop_col, _ = _line_info(source, span.stop)
+        end_col = stop_col + 1
+        if stop_line == start_line:
+            end_col = max(end_col, start_col + 1)
+        return (start_line, start_col, stop_line, end_col)
+    line, col, _ = _line_info(source, error.pos)
+    return (line, col, line, col + 1)
+
+
+def diagnostic_payload(
+    error: TinyLangError,
+    source: str,
+    *,
+    phase: str,
+    severity: str = "error",
+    origin: str = "interpreter",
+    uri: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Create a shared diagnostic payload for tooling and interpreter errors."""
+    payload: Dict[str, Any] = {
+        "message": str(error),
+        "code": error.code,
+        "severity": severity,
+        "phase": phase,
+        "range": list(diagnostic_range(error, source)),
+        "origin": origin,
+    }
+    if error.hint:
+        payload["hint"] = error.hint
+    if uri:
+        payload["uri"] = uri
+    if error.stack:
+        payload["stack"] = [
+            {
+                "name": frame.name,
+                "namespace": frame.namespace,
+                "line": frame.pos.line,
+                "column": frame.pos.column,
+            }
+            for frame in error.stack
+        ]
+    return payload
 
 def _line_info(source: str, pos: Union[int, SourcePos, SourceSpan]) -> Tuple[int, int, str]:
     lines = source.splitlines()

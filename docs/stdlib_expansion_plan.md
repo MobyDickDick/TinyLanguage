@@ -31,7 +31,8 @@ Target modules that map directly to existing primitives or have clear,
 small-scope implementations.
 
 - **`stdlib.path`**: Path join/split, basename/dirname, extension helpers,
-  normalization, and simple glob-like filtering based on directory listings.
+  normalization, `is_absolute`, and simple glob-like filtering based on
+  directory listings.
 - **`stdlib.os`**: Basic environment access (`getenv`, `setenv`, `cwd`),
   directory listing, and platform identifiers.
 - **`stdlib.json`** (module wrapper): Mirror the runtime `JSON` namespace with

@@ -180,6 +180,9 @@ spec treats those behaviors as stable.
   - **Optional hint:** A trailing `Hint:` line when a fix can be suggested.
   - **Machine-readable fields:** Each error also carries `code`, `pos`, `span`
     (when available), and `hint` fields for tooling workflows.
+  - **Shared schema:** Tooling should emit the structured diagnostic schema
+    defined in [`docs/diagnostic_error_schema.md`](diagnostic_error_schema.md)
+    so editors and CLI helpers can consume a consistent payload.
 
   Example:
 

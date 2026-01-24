@@ -44,6 +44,11 @@ def _diagnostic_dict(diag: Diagnostic) -> Dict[str, Any]:
         "message": diag.message,
         "code": diag.code,
         "range": list(diag.range),
+        "severity": diag.severity,
+        "phase": diag.phase,
+        "source": diag.source,
+        "origin": diag.origin,
+        "hint": diag.hint,
     }
 
 

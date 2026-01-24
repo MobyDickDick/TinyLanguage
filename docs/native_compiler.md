@@ -48,7 +48,7 @@ This draft outlines the target architecture for an alternative backend that exec
 
 - **Plan for A/B comparisons**: Every run with `--native-backend` should be repeated once without the flag to surface divergences from the interpreter immediately.
 - **Limited language surface**: Heap operations, classes, pattern matching, or deques are not covered yet and deliberately raise `NotImplementedError`. Use the interpreter path for those features.
-- **Consistent invocation shapes**: Both the CLI (`src/tiny_language.py`) and `tiny_lang_cli` accept `--native-backend` before `-e` or the file path. The VM only works on files or inline snippets; the REPL and formatter remain interpreter-backed.
+- **Consistent invocation shapes**: Both the CLI (`src/tiny_language.py`) and `src/tiny_language_cli.py` accept `--native-backend` before `-e` or the file path. The VM only works on files or inline snippets; the REPL and formatter remain interpreter-backed.
 - **Output comparison**: The VM buffers `print` output line by line; that keeps comparisons with the interpreter simple, but multi-delimiters or structured logs are not implemented yet.
 - **LLVM executable scope**: The LLVM backend is intentionally narrow (numeric values, basic control flow, simple functions, and `print`). Expect `NotImplementedError` for anything outside that subset. Use `--llvm-opt-level` and `--opt-level` to tune LLVM/clang optimization profiles.
   For a concise list of open gaps and next steps in the LLVM emitter, see the checklist under **LLVM-basierte Pipeline** in [`docs/expansion_roadmap.md`](expansion_roadmap.md).
@@ -126,7 +126,7 @@ Typical CLI responses:
 - Not all constructs are covered yet; classes and pattern matching are intentionally marked as `NotImplementedError`.
 - The VM expects simple numeric/Boolean expressions. Type annotations are accepted, but complex type checks still happen in the interpreter.
 - `print` collects output inside the VM but currently does not support formatting or multi-delimiters like the interpreter.
-- Backend flags apply per invocation: the REPL and formatter still use the interpreter path; only `--native-backend` in `tiny_language.py` or `tiny_lang_cli` enables the VM.
+- Backend flags apply per invocation: the REPL and formatter still use the interpreter path; only `--native-backend` in `src/tiny_language.py` or `src/tiny_language_cli.py` enables the VM.
 - No object model yet: classes are not yet represented in bytecode. Tests needing those features should run against the interpreter for now.
 
 ## Troubleshooting

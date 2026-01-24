@@ -36,7 +36,7 @@ legacy shims.
 **Canonical entrypoints (target)**
 
 - Test/automation runner: `python src/run_all.py`
-- Language CLI: `python -m src.tiny_language_cli` (or `python src/tiny_language_cli.py`)
+- Language CLI: `python src/tiny_language_cli.py`
 - Interpreter runner: `python src/tiny_language.py`
 
 **Deprecation timeline**
@@ -46,7 +46,7 @@ legacy shims.
      - `run_all.py` warns to use `python src/run_all.py`.
      - `tiny_language` / `tiny_language.py` warn to use `python src/tiny_language.py`
        (or the CLI module as appropriate).
-     - `src/tiny_lang_cli.py` warns to use `python -m src.tiny_language_cli`.
+     - `src/tiny_lang_cli.py` warns to use `python src/tiny_language_cli.py`.
    - Update docs and internal tooling to reference canonical entrypoints only.
 2. **Phase 2 (grace period, 1–2 releases):**
    - Shims remain, warnings stay, but tests/CI no longer call shims.
@@ -61,7 +61,7 @@ legacy shims.
 - `run_all.py` → `python src/run_all.py`
 - `tiny_language` → `python src/tiny_language.py`
 - `python -m tiny_language` → `python src/tiny_language.py`
-- `python -m tiny_lang_cli` → `python -m src.tiny_language_cli`
+- `python -m tiny_lang_cli` → `python src/tiny_language_cli.py`
 
 ## Stdlib sources vs. native stdlib registration
 

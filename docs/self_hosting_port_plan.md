@@ -33,7 +33,7 @@ The repository splits the interpreter and tooling into a handful of focused modu
 ## Testing and validation checklist
 
 - Interpreter parity: for each migrated module, run the relevant sections of `tests/test_tiny_language.py` through both Python and Tiny entry points (document any expected deviations).
-- CLI coverage: exercise `python -m tiny_language_cli --file sample.tiny` and the Tiny-hosted equivalent once available.
+- CLI coverage: exercise `python src/tiny_language_cli.py --file sample.tiny` and the Tiny-hosted equivalent once available.
 - Native backend smoke tests: reuse `run_all.py` scenarios to compare interpreter vs. native execution paths.
 - Language server: record sample `initialize`, `textDocument/hover`, and `textDocument/completion` exchanges using both hosts.
 

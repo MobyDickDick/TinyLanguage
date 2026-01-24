@@ -1,9 +1,8 @@
 # CLI workflows
 
 This guide summarizes the supported command-line flows for running TinyLanguage
-programs. All commands are intended to run from the repository root. For module
-entrypoints (`python -m tiny_lang_cli`), set `PYTHONPATH=src` so Python can find
-TinyLanguage’s modules.
+programs. All commands are intended to run from the repository root; the
+canonical entry points live under `src/`.
 
 ## 1. Interpreter entrypoint (`tiny_language.py`)
 
@@ -22,31 +21,30 @@ python src/tiny_language.py --native-backend path/to/program.tiny
 python src/tiny_language.py --native-backend -e "print(1 + 2);"
 ```
 
-## 2. CLI wrapper with backend selection (`tiny_language_cli` / `tiny_lang_cli`)
+## 2. CLI wrapper with backend selection (`tiny_language_cli.py`)
 
 The CLI wrapper mirrors the interpreter API but adds explicit backend selection
-and consistent argument parsing. The recommended entrypoint is the module-based
-wrapper:
+and consistent argument parsing:
 
 ```bash
-PYTHONPATH=src python -m tiny_lang_cli --file path/to/program.tiny
-PYTHONPATH=src python -m tiny_lang_cli --source "print(1 + 2);"
-PYTHONPATH=src python -m tiny_lang_cli --file - < path/to/program.tiny
+python src/tiny_language_cli.py --file path/to/program.tiny
+python src/tiny_language_cli.py --source "print(1 + 2);"
+python src/tiny_language_cli.py --file - < path/to/program.tiny
 ```
 
 Backends:
 
 ```bash
-PYTHONPATH=src python -m tiny_lang_cli --file path/to/program.tiny --backend interpreter
-PYTHONPATH=src python -m tiny_lang_cli --file path/to/program.tiny --backend python
-PYTHONPATH=src python -m tiny_lang_cli --file path/to/program.tiny --native-backend
+python src/tiny_language_cli.py --file path/to/program.tiny --backend interpreter
+python src/tiny_language_cli.py --file path/to/program.tiny --backend python
+python src/tiny_language_cli.py --file path/to/program.tiny --native-backend
 ```
 
 Pass-through arguments are separated with `--` and arrive in `sys.argv` inside
 Tiny programs:
 
 ```bash
-PYTHONPATH=src python -m tiny_lang_cli --file path/to/program.tiny -- --flag value
+python src/tiny_language_cli.py --file path/to/program.tiny -- --flag value
 ```
 
 ## 3. LLVM emission (via `tiny_language_cli`)
@@ -56,15 +54,15 @@ is **experimental** and only supports a subset of the language; use the
 interpreter backend when you need full feature coverage.
 
 ```bash
-PYTHONPATH=src python -m tiny_lang_cli --file path/to/program.tiny --emit-llvm -
-PYTHONPATH=src python -m tiny_lang_cli --file path/to/program.tiny --emit-llvm out.ll
-PYTHONPATH=src python -m tiny_lang_cli --file path/to/program.tiny --emit-llvm - --llvm-opt
+python src/tiny_language_cli.py --file path/to/program.tiny --emit-llvm -
+python src/tiny_language_cli.py --file path/to/program.tiny --emit-llvm out.ll
+python src/tiny_language_cli.py --file path/to/program.tiny --emit-llvm - --llvm-opt
 ```
 
 Optional overrides:
 
 ```bash
-PYTHONPATH=src python -m tiny_lang_cli --file path/to/program.tiny \
+python src/tiny_language_cli.py --file path/to/program.tiny \
   --emit-llvm out.ll \
   --llvm-target-triple x86_64-unknown-linux-gnu \
   --llvm-data-layout "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
@@ -76,8 +74,8 @@ For multi-file projects, combine the CLI wrapper with `TINYPATH` and module
 manifests:
 
 ```bash
-PYTHONPATH=src TINYPATH=../deps python -m tiny_lang_cli --file my_pkg/main.tiny --backend interpreter
-PYTHONPATH=src TINYPATH=../deps python -m tiny_lang_cli --file my_pkg/main.tiny --native-backend
+TINYPATH=../deps python src/tiny_language_cli.py --file my_pkg/main.tiny --backend interpreter
+TINYPATH=../deps python src/tiny_language_cli.py --file my_pkg/main.tiny --native-backend
 ```
 
 ## 5. Related helpers

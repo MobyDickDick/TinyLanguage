@@ -8843,9 +8843,7 @@ class ModuleResolver:
         env_paths = os.environ.get("TINYPATH", "")
         configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
         default_roots = [Path.cwd(), Path(__file__).parent]
-        stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
-        if stdlib_root.exists():
-            default_roots.append(stdlib_root)
+        self.stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
         self.search_paths: List[Path] = search_paths or configured_paths + default_roots
         self.cache: Dict[Path, NamespaceRef] = {}
         self._in_progress: List[Path] = []
@@ -8890,12 +8888,17 @@ class ModuleResolver:
         mirrors Python's ``pkg.subpkg.module`` to ``pkg/subpkg/module.tiny``
         translation.
         """
-        rel_path = Path(*module_name.split("."))
         candidates: List[Path] = []
         roots: List[Path] = []
-        if caller_path:
-            roots.append(caller_path.parent)
-        roots.extend(self.search_paths)
+        if module_name.startswith("stdlib."):
+            rel_path = Path(*module_name.split(".")[1:])
+            if self.stdlib_root.exists():
+                roots.append(self.stdlib_root)
+        else:
+            rel_path = Path(*module_name.split("."))
+            if caller_path:
+                roots.append(caller_path.parent)
+            roots.extend(self.search_paths)
         for root in roots:
             candidates.append((root / rel_path).with_suffix(".tiny"))
         return candidates
@@ -11967,9 +11970,7 @@ class NativeModuleResolver:
         env_paths = os.environ.get("TINYPATH", "")
         configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
         default_roots = [Path.cwd(), Path(__file__).parent]
-        stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
-        if stdlib_root.exists():
-            default_roots.append(stdlib_root)
+        self.stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
         self.search_paths: List[Path] = search_paths or configured_paths + default_roots
         self.cache: dict[Path, NativeNamespaceRef] = {}
         self._in_progress: List[Path] = []
@@ -12001,12 +12002,17 @@ class NativeModuleResolver:
         return ".".join(part for part in trimmed if part)
 
     def _candidate_paths(self, module_name: str, caller_path: Optional[Path]) -> List[Path]:
-        rel_path = Path(*module_name.split("."))
         candidates: List[Path] = []
         roots: List[Path] = []
-        if caller_path:
-            roots.append(caller_path.parent)
-        roots.extend(self.search_paths)
+        if module_name.startswith("stdlib."):
+            rel_path = Path(*module_name.split(".")[1:])
+            if self.stdlib_root.exists():
+                roots.append(self.stdlib_root)
+        else:
+            rel_path = Path(*module_name.split("."))
+            if caller_path:
+                roots.append(caller_path.parent)
+            roots.extend(self.search_paths)
         for root in roots:
             candidates.append((root / rel_path).with_suffix(".tiny"))
         return candidates
@@ -12076,9 +12082,7 @@ class LLVMModuleResolver:
         env_paths = os.environ.get("TINYPATH", "")
         configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
         default_roots = [Path.cwd(), Path(__file__).parent]
-        stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
-        if stdlib_root.exists():
-            default_roots.append(stdlib_root)
+        self.stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
         self.search_paths: List[Path] = search_paths or configured_paths + default_roots
         self.cache: dict[Path, LLVMModuleInfo] = {}
         self._in_progress: List[Path] = []
@@ -12110,12 +12114,17 @@ class LLVMModuleResolver:
         return ".".join(part for part in trimmed if part)
 
     def _candidate_paths(self, module_name: str, caller_path: Optional[Path]) -> List[Path]:
-        rel_path = Path(*module_name.split("."))
         candidates: List[Path] = []
         roots: List[Path] = []
-        if caller_path:
-            roots.append(caller_path.parent)
-        roots.extend(self.search_paths)
+        if module_name.startswith("stdlib."):
+            rel_path = Path(*module_name.split(".")[1:])
+            if self.stdlib_root.exists():
+                roots.append(self.stdlib_root)
+        else:
+            rel_path = Path(*module_name.split("."))
+            if caller_path:
+                roots.append(caller_path.parent)
+            roots.extend(self.search_paths)
         for root in roots:
             candidates.append((root / rel_path).with_suffix(".tiny"))
         return candidates

@@ -167,3 +167,7 @@ PY
 - [x] ./vscode-extension/extension.js: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [x] ./vscode-extension/python/tiny_debug_adapter.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [x] ./vscode-extension/python/vscode_helpers.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
+
+## Zusätzliche Dokumentationsaufgabe
+
+- [x] Gibt es Redundanzen in der Tiny-Language? (siehe `docs/redundancy_review.md`)

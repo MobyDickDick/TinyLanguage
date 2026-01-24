@@ -41,6 +41,21 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 - **Struct literals:** `{ a: 1, b: 2 }` builds an anonymous struct; fields are read with dot notation (`obj.a`).
   - Curly braces are reserved for struct literals and destructuring assignments (`{ a, b } = expr;`). Tiny does not support unordered set literals. Prefer ordered `new[...]` arrays when iteration order matters, and use stdlib `Set`/`Map` types when you need true unordered semantics.
 
+## Evaluation order and side effects
+
+TinyLanguage guarantees a deterministic left-to-right evaluation order for the
+core expression forms that can introduce side effects. The baseline rules are
+captured by the semantics suite in `docs/semantics_suite.md`, and the language
+spec treats those behaviors as stable.
+
+- **Function and method call arguments** are evaluated left to right before the
+  call is applied.
+- **Binary operators** evaluate the left operand before the right operand.
+- **Short-circuit boolean operators** (`and`/`or`, `&&`/`||`) only evaluate the
+  right operand when needed to determine the result.
+- **Array literals** created with `new[...]` evaluate item expressions from left
+  to right.
+
 ## Bindings and visibility
 
 - **Definitions:** `def x = expr;` creates a new variable. Later assignments without `def` update existing bindings and must keep the same inferred type (or a compatible type) to avoid implicit type changes.
@@ -122,6 +137,21 @@ This file summarizes the most important TinyLanguage constructs. It is intended 
 - **Async functions:** `async fn work() { ... }` returns a task handle when invoked. Use `await expr` to join a handle inline (equivalent to `join(expr)`), which returns the result or raises an error.
 - **Spawn targets:** `spawn` expects a function name (`spawn work(1)`); use helpers or wrappers when you need to call methods or field-based callables.
 - **Cancellation:** `Async.token()` creates a token that can be cancelled via `Async.cancel(token, "reason")`. Tasks can be linked (`Async.link(token, handle)`) to propagate cancellations.
+- **Scheduling semantics:** `spawn` begins work as soon as the runtime can schedule it; there is no guaranteed ordering between sibling tasks, so any ordering requirements should be encoded explicitly (e.g., by awaiting a handle or using synchronization primitives).
+- **Cancellation semantics:** cancellation is cooperative—tasks observe cancellation through linked tokens and should exit promptly when signaled. A cancelled task reports a cancellation error to `join`/`await` instead of a successful result.
+
+## Versioning and deprecation policies
+
+- **Versioning:** TinyLanguage uses SemVer release tags (`MAJOR.MINOR.PATCH`).
+  The current release number lives in `VERSION`, and `CHANGELOG.md` captures
+  Added/Changed/Fixed entries plus known issues.
+- **Stability guarantees:** the interpreter behavior documented in this spec is
+  considered stable for the current major line; breaking changes require a major
+  version bump and an explicit migration plan.
+- **Deprecations:** breaking or removed features must be announced in the
+  changelog and documentation before removal. When possible, tooling should emit
+  deprecation warnings and maintain backwards-compatible shims through at least
+  one minor release to ease migrations.
 
 ## Errors and diagnostics
 

@@ -1,9 +1,12 @@
+"""Tests for TinyLangError formatting utilities."""
+
 import textwrap
 
 from tiny_language import SourcePos, SourceSpan, TinyLangError, _format_error_for_source
 
 
 def test_format_error_includes_code_hint_and_span():
+    """Ensure formatted errors include code, hints, and span markers."""
     source = textwrap.dedent(
         """
         def value = 1 + 2;
@@ -22,6 +25,7 @@ def test_format_error_includes_code_hint_and_span():
 
 
 def test_multiline_span_highlights_each_line():
+    """Verify multi-line spans highlight all affected lines."""
     source = textwrap.dedent(
         """
         alpha beta gamma

@@ -1,7 +1,10 @@
+"""Tests for C code generation outputs."""
+
 from tiny_language import compile_to_c_source
 
 
 def test_c_codegen_supports_non_numeric_variables() -> None:
+    """Ensure string/bool variables are emitted correctly in C output."""
     source = 'def greeting = "hi"; def ok = true; print(greeting, ok);'
 
     c_source = compile_to_c_source(source)

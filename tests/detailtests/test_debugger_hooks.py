@@ -1,13 +1,17 @@
+"""Tests for debugger hooks and step behavior."""
+
 import textwrap
 
 from tiny_language import Debugger, ModuleResolver, Runtime, compile_and_run
 
 
 def _lines(snapshot_list):
+    """Extract line numbers from debugger snapshots."""
     return [snap.pos.line for snap in snapshot_list]
 
 
 def test_breakpoint_records_scopes_and_stack():
+    """Ensure breakpoints capture scope values and call stacks."""
     program = textwrap.dedent(
         """\
         def x = 1;
@@ -36,6 +40,7 @@ def test_breakpoint_records_scopes_and_stack():
 
 
 def test_stepping_sequences_follow_depth_changes():
+    """Verify step commands follow depth changes in the call stack."""
     program = textwrap.dedent(
         """\
         fn add(a, b) {
@@ -65,6 +70,7 @@ def test_stepping_sequences_follow_depth_changes():
 
 
 def test_step_over_skips_imported_module_body(tmp_path):
+    """Ensure step-over ignores imported module bodies."""
     helper = tmp_path / "helper.tiny"
     helper.write_text(
         textwrap.dedent(

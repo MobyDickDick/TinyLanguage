@@ -1,4 +1,8 @@
+"""Concurrency primitives tests for spawn/join behavior."""
+
+
 def test_spawn_results_applied_in_join_order(run_tiny_source):
+    """Confirm join order dictates how results are applied."""
     out = run_tiny_source(
         """
         fn compute(value) { return value; }
@@ -28,6 +32,7 @@ def test_spawn_results_applied_in_join_order(run_tiny_source):
 
 
 def test_join_waits_for_spawned_heap_update(run_tiny_source):
+    """Ensure joins observe heap updates performed by spawned tasks."""
     out = run_tiny_source(
         """
         fn store(ptr, idx, value) {
@@ -53,6 +58,7 @@ def test_join_waits_for_spawned_heap_update(run_tiny_source):
 
 
 def test_join_timeout_status(run_tiny_source):
+    """Verify join timeout returns a pending status before completion."""
     out = run_tiny_source(
         """
         fn slow(value) {
@@ -75,6 +81,7 @@ def test_join_timeout_status(run_tiny_source):
 
 
 def test_join_timeout_can_cancel(run_tiny_source):
+    """Check join cancellation flags and follow-up status behavior."""
     out = run_tiny_source(
         """
         fn slow(value) {
@@ -102,6 +109,7 @@ def test_join_timeout_can_cancel(run_tiny_source):
 
 
 def test_task_block_cancels_pending_spawns(run_tiny_source, monkeypatch):
+    """Ensure task blocks cancel pending spawns when timeout is immediate."""
     monkeypatch.setenv("TINYLANG_TASK_SCOPE_TIMEOUT_MS", "0")
     out = run_tiny_source(
         """
@@ -124,6 +132,7 @@ def test_task_block_cancels_pending_spawns(run_tiny_source, monkeypatch):
 
 
 def test_task_block_timeout_respects_custom_env(run_tiny_source, monkeypatch):
+    """Verify task scope timeout respects custom environment values."""
     monkeypatch.setenv("TINYLANG_TASK_SCOPE_TIMEOUT_MS", "1.5")
     out = run_tiny_source(
         """
@@ -146,6 +155,7 @@ def test_task_block_timeout_respects_custom_env(run_tiny_source, monkeypatch):
 
 
 def test_task_block_keeps_completed_spawns(run_tiny_source, monkeypatch):
+    """Ensure completed spawns survive task block cancellation."""
     monkeypatch.setenv("TINYLANG_TASK_SCOPE_TIMEOUT_MS", "50")
     out = run_tiny_source(
         """
@@ -167,6 +177,7 @@ def test_task_block_keeps_completed_spawns(run_tiny_source, monkeypatch):
 
 
 def test_task_block_does_not_cancel_outer_spawns(run_tiny_source, monkeypatch):
+    """Confirm outer spawns are not cancelled by inner task blocks."""
     monkeypatch.setenv("TINYLANG_TASK_SCOPE_TIMEOUT_MS", "0")
     out = run_tiny_source(
         """
@@ -194,6 +205,7 @@ def test_task_block_does_not_cancel_outer_spawns(run_tiny_source, monkeypatch):
 
 
 def test_join_status_reports_spawn_errors(run_tiny_source):
+    """Ensure join reports errors raised within spawned tasks."""
     out = run_tiny_source(
         """
         fn boom() {

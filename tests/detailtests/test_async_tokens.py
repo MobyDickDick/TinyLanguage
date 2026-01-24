@@ -1,7 +1,10 @@
+"""Tests for Async cancellation tokens and linked task behavior."""
+
 import textwrap
 
 
 def test_cancellation_token_stops_linked_spawn(run_tiny_source):
+    """Ensure cancelling a token stops linked tasks and reports reason."""
     out = run_tiny_source(
         textwrap.dedent(
             """
@@ -36,6 +39,7 @@ def test_cancellation_token_stops_linked_spawn(run_tiny_source):
 
 
 def test_cancellation_token_idempotent_and_immediate(run_tiny_source):
+    """Verify cancellation is idempotent and affects already-linked handles."""
     out = run_tiny_source(
         textwrap.dedent(
             """
@@ -72,6 +76,7 @@ def test_cancellation_token_idempotent_and_immediate(run_tiny_source):
 
 
 def test_cancellation_token_ignores_completed_handles(run_tiny_source):
+    """Confirm cancellation does not retroactively affect completed tasks."""
     out = run_tiny_source(
         textwrap.dedent(
             """

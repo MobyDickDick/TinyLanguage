@@ -1,3 +1,5 @@
+"""Pytest fixtures and CLI options for TinyLanguage's test suite."""
+
 import os
 import pathlib
 import shutil

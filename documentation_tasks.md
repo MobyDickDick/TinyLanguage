@@ -36,7 +36,7 @@ PY
 - [ ] ./examples/rosetta/copy_rosetta_samples.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [ ] ./examples/rosetta/factorial/factorial.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [ ] ./examples/rosetta/fibonacci/fibonacci.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
-- [ ] ./examples/rosetta/fizzbuzz/fizzbuzz.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
+- [x] ./examples/rosetta/fizzbuzz/fizzbuzz.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [ ] ./examples/rosetta/hello_world/hello_world.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [ ] ./examples/rosetta/python/factorial.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [ ] ./examples/rosetta/python/fibonacci.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?

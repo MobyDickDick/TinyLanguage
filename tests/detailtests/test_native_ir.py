@@ -1,8 +1,11 @@
+"""Tests for formatting native intermediate representation programs."""
+
 from native_ir import format_program
 from tiny_language import NativeCodeGenerator, _parse_and_lint
 
 
 def test_format_program_lists_entry_and_functions():
+    """Ensure formatted IR includes entry and function sections."""
     source = """
     fn add(x, y) { return x + y; }
 

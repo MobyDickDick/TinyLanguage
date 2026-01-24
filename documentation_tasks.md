@@ -108,10 +108,10 @@ PY
 - [x] ./tests/detailtests/test_modules.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [x] ./tests/detailtests/test_namespaces.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [x] ./tests/detailtests/test_native_backend_errors.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
-- [ ] ./tests/detailtests/test_native_codegen.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
-- [ ] ./tests/detailtests/test_native_ir.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
-- [ ] ./tests/detailtests/test_native_python_bytecode_backend.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
-- [ ] ./tests/detailtests/test_native_vm.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
+- [x] ./tests/detailtests/test_native_codegen.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
+- [x] ./tests/detailtests/test_native_ir.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
+- [x] ./tests/detailtests/test_native_python_bytecode_backend.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
+- [x] ./tests/detailtests/test_native_vm.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [ ] ./tests/detailtests/test_null.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [ ] ./tests/detailtests/test_number_class.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?
 - [ ] ./tests/detailtests/test_number_intervall.py: Ist die Sourcecodedatei möglichst vollständig (zeilenweise, mit größeren Zusammenhängen) auf Englisch dokumentiert?

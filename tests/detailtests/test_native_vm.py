@@ -1,8 +1,11 @@
+"""Unit tests for the low-level native virtual machine."""
+
 from native_ir import FunctionIR, Instruction, Opcode, ProgramIR
 from native_vm import NativeVM
 
 
 def test_vm_runs_simple_program():
+    """Run a minimal program to validate stack operations and print."""
     program = ProgramIR(
         entry=[
             Instruction(Opcode.PUSH_CONST, 1),
@@ -20,6 +23,7 @@ def test_vm_runs_simple_program():
 
 
 def test_vm_executes_function_calls_and_locals():
+    """Ensure calls pass arguments and locals load correctly."""
     add_body = [
         Instruction(Opcode.LOAD, "x"),
         Instruction(Opcode.LOAD, "y"),
@@ -43,6 +47,7 @@ def test_vm_executes_function_calls_and_locals():
 
 
 def test_vm_heap_safety_checks():
+    """Validate heap operations detect out-of-bounds and double free."""
     vm = NativeVM()
 
     ptr = vm._call("__new", [2])

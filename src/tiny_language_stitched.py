@@ -8679,6 +8679,8 @@ from tiny_language_ast import Fn, IR, Match, MethodDef, OpDef, Param, TypeVarian
 
 # ----- Runtime -----
 
+LOGGER = logging.getLogger(__name__)
+
 
 class ReturnSignal(Exception):
     def __init__(self, value: Any):
@@ -10740,6 +10742,13 @@ class Runtime:
     
 
 # --- segment: tiny_language_eval.py ---
+"""Evaluation helpers for TinyLanguage's AST interpreter.
+
+These functions execute TinyLanguage IR nodes against the runtime environment,
+handling control flow, function calls, heap operations, and async primitives.
+They are stitched into the original monolithic interpreter so other modules can
+share the same execution semantics without duplicating the evaluator logic.
+"""
 
 # ----- Evaluation -----
 # AST evaluator that executes statements against the runtime environment.
@@ -10803,6 +10812,7 @@ if "SourcePos" not in globals():
     from tiny_errors import SourcePos, SourceSpan
 
 def _span_or_pos(node: IR) -> Union[SourcePos, SourceSpan]:
+    """Return the most precise span information available for ``node``."""
     span = getattr(node, "span", None)
     if span is not None:
         return span
@@ -10810,6 +10820,7 @@ def _span_or_pos(node: IR) -> Union[SourcePos, SourceSpan]:
 
 
 def _prefer_named_span(node: IR, attr: str) -> Union[SourcePos, SourceSpan]:
+    """Prefer a named span attribute when available, else fall back to ``node``'s span."""
     span = getattr(node, attr, None)
     if span is not None:
         return span
@@ -10817,6 +10828,7 @@ def _prefer_named_span(node: IR, attr: str) -> Union[SourcePos, SourceSpan]:
 
 
 def _return_type_is_void(annotation: Optional[str]) -> bool:
+    """Return ``True`` when the annotation represents a void-ish type."""
     if annotation is None:
         return False
     normalized = annotation.strip().lower()
@@ -10824,6 +10836,7 @@ def _return_type_is_void(annotation: Optional[str]) -> bool:
 
 
 def _block_returns_value(stmts: List[IR]) -> bool:
+    """Inspect a block of statements and report whether it can return a value."""
     for st in stmts:
         if isinstance(st, Return):
             return not isinstance(st.expr, Null)
@@ -10847,6 +10860,7 @@ def _block_returns_value(stmts: List[IR]) -> bool:
 
 
 def _fn_returns_value(fn: Fn) -> bool:
+    """Return ``True`` when a function returns a non-void value."""
     if fn.return_type is not None:
         return not _return_type_is_void(fn.return_type)
     return _block_returns_value(fn.body)
@@ -10869,11 +10883,13 @@ _ALLOWED_CALL_PREFIXES = (
 
 
 def _call_stmt_allowed(name: str) -> bool:
+    """Return ``True`` when a call-only statement is permitted for ``name``."""
     if name in {"heap_set", "heap_get", "delete", "tag", "join", "parse_program"}:
         return True
     return name.startswith(_ALLOWED_CALL_PREFIXES)
 
 def eval_block(self, stmts: List[IR], env: "Environment", namespace: Optional[str] = None) -> Any:
+    """Evaluate a list of statements, returning a ``ReturnSignal`` if one appears."""
     for st in stmts:
         res = self.eval_stmt(st, env, namespace)
         if isinstance(res, ReturnSignal):
@@ -10881,6 +10897,7 @@ def eval_block(self, stmts: List[IR], env: "Environment", namespace: Optional[st
     return None
 
 def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) -> Any:
+    """Evaluate a single statement node inside the interpreter."""
     self._maybe_pause(s, env, namespace)
     try:
         if isinstance(s, Let):

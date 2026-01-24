@@ -8,6 +8,7 @@ from tests.utils import run_tiny
 
 
 def test_parallel_namespaces_and_local_calls():
+    """Ensure namespace-qualified calls remain isolated."""
     out = run_tiny(
         """
         namespace Math {
@@ -26,4 +27,5 @@ def test_parallel_namespaces_and_local_calls():
         """
     )
 
+    # Each namespace keeps its own add implementation.
     assert out == "5\n5\ngo!\n"

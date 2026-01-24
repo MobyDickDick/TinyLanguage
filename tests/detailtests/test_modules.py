@@ -1,7 +1,10 @@
+"""Module resolution tests for Tiny Language."""
+
 from tiny_language import ModuleResolver, Runtime, compile_and_run
 
 
 def test_import_caching_and_binding(tmp_path):
+    """Importing the same module twice should not re-execute it."""
     pkg = tmp_path / "pkg"
     pkg.mkdir()
     module_file = pkg / "counter.tiny"
@@ -15,6 +18,7 @@ def test_import_caching_and_binding(tmp_path):
 
     runtime = Runtime("")
     resolver = ModuleResolver(search_paths=[tmp_path])
+    # Import the module twice to verify the cached binding is reused.
     program = """
     import pkg.counter;
     print(counter.load_count);
@@ -34,6 +38,7 @@ def test_import_caching_and_binding(tmp_path):
 
 
 def test_relative_import_uses_caller_namespace(tmp_path):
+    """Relative imports should resolve based on the caller's namespace."""
     pkg = tmp_path / "pkg"
     pkg.mkdir()
     util_file = pkg / "util.tiny"

@@ -1,6 +1,7 @@
 // Rosetta example calculating a factorial iteratively and printing the result.
 
 fn factorial(n) {
+    // Return n! by multiplying the integer range from 1..n.
     def result = 1;
     def i = 2;
     while (i <= n) {

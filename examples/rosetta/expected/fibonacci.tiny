@@ -1,6 +1,7 @@
 // Rosetta example computing the nth Fibonacci number iteratively and printing a sample.
 
 fn fibonacci(n) {
+    // Return the nth Fibonacci number using an iterative loop.
     if (n <= 1) {
         return n;
     }

@@ -1,3 +1,5 @@
+"""Tests for specific TinyLanguage error messages and hints."""
+
 import pathlib
 import sys
 
@@ -11,10 +13,12 @@ from tiny_language import TinyLangError, compile_and_run  # noqa: E402
 
 
 def read_fixture(name: str) -> str:
+    """Load a fixture file from the test fixtures directory."""
     return (PROJECT_ROOT / "tests" / "fixtures" / name).read_text()
 
 
 def test_exponent_requires_integer_hint():
+    """Ensure fractional exponents report the correct error and hint."""
     source = read_fixture("float_exponent.tiny")
 
     with pytest.raises(TinyLangError) as excinfo:
@@ -27,6 +31,7 @@ def test_exponent_requires_integer_hint():
 
 
 def test_len_reports_unsized_value():
+    """Verify len() errors when passed unsized values."""
     source = read_fixture("len_unsized.tiny")
 
     with pytest.raises(TinyLangError) as excinfo:
@@ -39,6 +44,7 @@ def test_len_reports_unsized_value():
 
 
 def test_destructuring_call_missing_outputs_includes_hint():
+    """Check destructuring call errors include missing binding hints."""
     source = read_fixture("invalid_destruct.tiny")
 
     with pytest.raises(TinyLangError) as excinfo:

@@ -65,19 +65,18 @@ legacy shims.
 
 ## Stdlib sources vs. native stdlib registration
 
-There are two stdlib trees in the repo:
+There are two stdlib layers in the repo:
 
 - `stdlib/` at the repository root contains Tiny `.tiny` modules intended for
   source-level imports in TinyLanguage programs.
 - `src/stdlib/` contains a Python module (`__init__.py`) that registers built-in
-  namespaces/types with the runtime, plus a curated set of `.tiny` sources used
-  by the interpreter/runtime as needed.
+  namespaces/types with the runtime.
 
-The runtime explicitly searches for the top-level `stdlib/` directory as a
-module root at execution time, which means it intentionally coexists with the
-native registration logic in `src/stdlib/__init__.py`.【F:src/tiny_language_runtime.py†L188-L190】【F:src/stdlib/__init__.py†L2-L44】
+The runtime explicitly resolves `stdlib.*` imports against the top-level
+`stdlib/` directory, while native registration continues to live in
+`src/stdlib/__init__.py`.【F:src/tiny_language_runtime.py†L188-L192】【F:src/stdlib/__init__.py†L2-L44】
 
-This duplication is deliberate: Tiny-language modules live in `stdlib/`, while
+This layout keeps Tiny-language sources in `stdlib/`, while
 `src/stdlib/__init__.py` wires the native runtime APIs and avoids re-implementing
 logic already covered by Tiny sources.【F:src/stdlib/__init__.py†L2-L44】
 

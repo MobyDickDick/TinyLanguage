@@ -1,3 +1,5 @@
+"""End-to-end flow tests for the debug adapter protocol server."""
+
 import io
 import json
 import os
@@ -12,6 +14,7 @@ import pytest
 
 
 def load_adapter_module():
+    """Load the debug adapter module from the extension or repo root."""
     tests_root = Path(__file__).resolve().parent.parent
     candidates = [
         tests_root / "vscode-extension" / "python" / "tiny_debug_adapter.py",
@@ -37,6 +40,7 @@ def load_adapter_module():
 
 @pytest.fixture()
 def debug_server(tmp_path):
+    """Provision a debug server with a sample program and message capture."""
     module = load_adapter_module()
     server = module.DAPServer()
     messages = []
@@ -61,6 +65,7 @@ def debug_server(tmp_path):
 
 
 def _response(messages: list[Dict[str, Any]], command: str) -> Dict[str, Any]:
+    """Return the response message for a given DAP command."""
     for message in messages:
         if message.get("type") == "response" and message.get("command") == command:
             return message
@@ -68,6 +73,7 @@ def _response(messages: list[Dict[str, Any]], command: str) -> Dict[str, Any]:
 
 
 def _debug_context(server: Any, messages: list[Dict[str, Any]], note: str | None = None) -> str:
+    """Render a debug snapshot for assertion failures."""
     thread_alive = getattr(getattr(server, "_thread", None), "is_alive", lambda: False)()
     watchdog_alive = getattr(getattr(server, "_watchdog_thread", None), "is_alive", lambda: False)()
     queue_size = getattr(getattr(server, "_command_queue", None), "qsize", lambda: "unknown")()
@@ -83,6 +89,7 @@ def _debug_context(server: Any, messages: list[Dict[str, Any]], note: str | None
 
 
 def test_debug_adapter_runs_and_surfaces_state(debug_server):
+    """Validate the adapter lifecycle, stack frames, and variable scopes."""
     _, server, messages, program = debug_server
 
     server.handle_initialize({"seq": 1, "command": "initialize"})
@@ -128,6 +135,7 @@ def test_debug_adapter_runs_and_surfaces_state(debug_server):
 
 
 def test_launch_waits_for_configuration_done(debug_server):
+    """Ensure launch waits for configurationDone before running."""
     _, server, messages, program = debug_server
 
     server.handle_initialize({"seq": 1, "command": "initialize"})
@@ -154,6 +162,7 @@ def test_launch_waits_for_configuration_done(debug_server):
 
 
 def test_output_events_stream_from_runtime(debug_server):
+    """Check that runtime output is surfaced as DAP output events."""
     _, server, messages, program = debug_server
 
     server.handle_initialize({"seq": 1, "command": "initialize"})
@@ -172,6 +181,7 @@ def test_output_events_stream_from_runtime(debug_server):
 
 
 def test_launch_after_configuration_done_starts_program(debug_server):
+    """Verify configurationDone before launch still starts execution."""
     _, server, messages, program = debug_server
 
     server.handle_initialize({"seq": 1, "command": "initialize"})
@@ -192,6 +202,7 @@ def test_launch_after_configuration_done_starts_program(debug_server):
 
 
 def test_launch_without_program_returns_error(debug_server):
+    """Ensure launch fails cleanly when the program path is missing."""
     _, server, messages, _ = debug_server
 
     server.handle_initialize({"seq": 1, "command": "initialize"})
@@ -206,6 +217,7 @@ def test_launch_without_program_returns_error(debug_server):
 
 
 def test_breakpoints_follow_module_namespace(monkeypatch, tmp_path):
+    """Ensure breakpoints are scoped to the module namespace."""
     module = load_adapter_module()
     captured = []
 
@@ -241,6 +253,7 @@ def test_breakpoints_follow_module_namespace(monkeypatch, tmp_path):
 
 
 def test_program_output_is_forwarded(debug_server):
+    """Validate that program stdout is forwarded as output events."""
     _, server, messages, program = debug_server
 
     program.write_text("print(42);", encoding="utf-8")
@@ -258,6 +271,7 @@ def test_program_output_is_forwarded(debug_server):
 
 
 def test_breakpoints_can_be_added_after_launch(tmp_path):
+    """Confirm breakpoints can be added while paused after launch."""
     module = load_adapter_module()
     server = module.DAPServer()
     messages = []
@@ -329,6 +343,7 @@ def test_breakpoints_can_be_added_after_launch(tmp_path):
 
 
 def test_watchdog_warns_without_terminating(debug_server):
+    """Ensure the watchdog emits warnings without terminating sessions."""
     _, server, messages, _ = debug_server
 
     server.handle_initialize({"seq": 1, "command": "initialize"})
@@ -360,6 +375,7 @@ def test_watchdog_warns_without_terminating(debug_server):
 
 
 def test_watchdog_surfaces_initialize_timeout(debug_server):
+    """Confirm watchdog explains when initialize messages are missing."""
     _, server, messages, _ = debug_server
 
     # Simulate a client that never sends "initialize" so the adapter explains the idle state.
@@ -389,6 +405,7 @@ def test_watchdog_surfaces_initialize_timeout(debug_server):
 
 
 def test_env_var_truthy_parsing(monkeypatch):
+    """Verify truthy/falsey parsing for DAP stderr environment flag."""
     module = load_adapter_module()
 
     monkeypatch.setenv("TINYLANGUAGE_DAP_STDERR", "true")

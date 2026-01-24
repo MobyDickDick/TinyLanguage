@@ -1,9 +1,12 @@
+"""Tests for experimental math tuple syntax gating and parsing."""
+
 import pytest
 
 from tiny_language import Lexer, Parser, TinyLangError, _parse_and_lint, Let, MethodCall, Var
 
 
 def test_math_tuple_requires_flag() -> None:
+    """Ensure the math tuple syntax is gated behind a feature flag."""
     source = "def area = (sqrt: 9);"
     with pytest.raises(TinyLangError) as excinfo:
         Parser(Lexer(source), source).parse()
@@ -11,6 +14,7 @@ def test_math_tuple_requires_flag() -> None:
 
 
 def test_math_tuple_parses_with_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify math tuple parsing when the experimental flag is enabled."""
     monkeypatch.setenv("TINYLANG_EXPERIMENTAL_MATH_TUPLES", "1")
     source = "def area = (sqrt: 9); print(area);"
     stmts = _parse_and_lint(source)

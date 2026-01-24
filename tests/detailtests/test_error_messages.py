@@ -1,3 +1,5 @@
+"""Tests for TinyLanguage error message formatting and hints."""
+
 import pathlib
 import re
 import sys
@@ -10,6 +12,7 @@ from tiny_language import TinyLangError, compile_and_run
 
 
 def test_parser_error_includes_context():
+    """Ensure parser errors include inline source context."""
     source = "def a = 1;\nprint(a;\n"
 
     with pytest.raises(Exception) as excinfo:
@@ -22,6 +25,7 @@ def test_parser_error_includes_context():
 
 
 def test_unified_error_format_headers():
+    """Verify parser, lint, and runtime errors share a common header format."""
     parser_source = "def a = 1\n"
     with pytest.raises(TinyLangError) as parser_excinfo:
         compile_and_run(parser_source)
@@ -46,6 +50,7 @@ def test_unified_error_format_headers():
 
 
 def test_runtime_error_includes_context():
+    """Ensure runtime errors include inline source context."""
     source = "callme();\n"
 
     with pytest.raises(Exception) as excinfo:
@@ -58,6 +63,7 @@ def test_runtime_error_includes_context():
 
 
 def test_unknown_variable_suggests_name():
+    """Check unknown variables suggest the closest known name."""
     source = "def value = 1;\nprint(value + val);\n"
 
     with pytest.raises(Exception) as excinfo:
@@ -70,6 +76,7 @@ def test_unknown_variable_suggests_name():
 
 
 def test_unused_binding_reports_hint():
+    """Verify unused bindings report a helpful hint."""
     source = "def unused = 1;\n"
 
     with pytest.raises(Exception) as excinfo:
@@ -85,6 +92,7 @@ def test_unused_binding_reports_hint():
 
 
 def test_mutated_param_requires_return():
+    """Ensure mutated parameters trigger the appropriate error message."""
     source = "fn foo(x) { x = x + 1; }\nfoo(1);\n"
 
     with pytest.raises(Exception) as excinfo:
@@ -97,6 +105,7 @@ def test_mutated_param_requires_return():
 
 
 def test_parser_error_exposes_code_and_location():
+    """Confirm parser errors expose code and location metadata."""
     source = "def a = 1\n"
 
     with pytest.raises(TinyLangError) as excinfo:
@@ -111,6 +120,7 @@ def test_parser_error_exposes_code_and_location():
 
 
 def test_unknown_variable_error_includes_hint():
+    """Ensure unknown variable errors include the suggestion hint."""
     source = "def value = 1;\nprint(value + vale);\n"
 
     with pytest.raises(TinyLangError) as excinfo:

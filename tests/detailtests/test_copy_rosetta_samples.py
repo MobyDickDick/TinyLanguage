@@ -1,8 +1,11 @@
+"""Tests for copying Rosetta samples tooling."""
+
 import importlib.util
 from pathlib import Path
 
 
 def _load_copy_module():
+    """Import the rosetta copy module from the examples folder."""
     module_path = Path(__file__).resolve().parents[2] / "examples" / "rosetta" / "copy_rosetta_samples.py"
     spec = importlib.util.spec_from_file_location("copy_rosetta_samples", module_path)
     module = importlib.util.module_from_spec(spec)
@@ -12,6 +15,7 @@ def _load_copy_module():
 
 
 def test_filter_missing_accepts_prefix_filters(tmp_path):
+    """Ensure prefix filters select the expected missing files."""
     module = _load_copy_module()
     source = tmp_path / "source"
     dest = tmp_path / "dest"
@@ -29,6 +33,7 @@ def test_filter_missing_accepts_prefix_filters(tmp_path):
 
 
 def test_copy_batch_supports_dry_run(tmp_path):
+    """Verify dry-run mode does not write files."""
     module = _load_copy_module()
     dest = tmp_path / "dest"
     dest.mkdir()
@@ -47,6 +52,7 @@ def test_copy_batch_supports_dry_run(tmp_path):
 
 
 def test_main_triggers_transpiler_when_requested(monkeypatch, tmp_path):
+    """Confirm the CLI triggers the transpiler when flags are set."""
     module = _load_copy_module()
     source = tmp_path / "source"
     dest = tmp_path / "dest"

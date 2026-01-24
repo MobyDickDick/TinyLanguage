@@ -1,3 +1,5 @@
+"""Tests covering heap API error handling and reporting."""
+
 import pathlib
 import sys
 
@@ -8,6 +10,7 @@ from tiny_language import Runtime  # noqa: E402
 
 
 def test_heap_access_errors_are_precise():
+    """Ensure heap access errors include precise range diagnostics."""
     rt = Runtime("")
     ptr = rt._Runtime__new(2)  # noqa: SLF001 - intentional for testing
 
@@ -30,6 +33,7 @@ def test_heap_access_errors_are_precise():
 
 
 def test_heap_access_rejects_invalid_pointers():
+    """Verify invalid heap pointers are rejected with clear messages."""
     rt = Runtime("")
 
     assert rt.heap_get("nope", 0) is None
@@ -43,6 +47,7 @@ def test_heap_access_rejects_invalid_pointers():
 
 
 def test_heap_delete_and_leak_report():
+    """Check heap deletion and leak reporting across allocations."""
     rt = Runtime("")
     first = rt._Runtime__new(1)  # noqa: SLF001 - intentional for testing
     second = rt._Runtime__new(3)  # noqa: SLF001 - intentional for testing
@@ -71,6 +76,7 @@ def test_heap_delete_and_leak_report():
 
 
 def test_heap_delete_rejects_invalid_pointers():
+    """Ensure deleting invalid pointers returns structured errors."""
     rt = Runtime("")
 
     result = rt.delete("nope")
@@ -88,6 +94,7 @@ def test_heap_delete_rejects_invalid_pointers():
 
 
 def test_heap_errors_show_offending_values():
+    """Confirm error messages include offending pointer/index values."""
     rt = Runtime("")
 
     bad_pointer = rt.heap_set("not-a-pointer", 0, 1)
@@ -101,6 +108,7 @@ def test_heap_errors_show_offending_values():
 
 
 def test_heap_rejects_fractional_pointers_and_indices():
+    """Validate fractional pointers and indices are rejected."""
     rt = Runtime("")
 
     assert rt.heap_get(1.5, 0) is None

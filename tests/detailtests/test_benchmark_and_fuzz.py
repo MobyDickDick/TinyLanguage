@@ -1,3 +1,5 @@
+"""Benchmarks and fuzz tests that stress TinyLanguage runtime behavior."""
+
 import importlib.util
 import multiprocessing
 import pathlib
@@ -27,6 +29,7 @@ print(fib(10));
 
 @contextmanager
 def _time_limit(seconds: float):
+    """Context manager that raises ``TimeoutError`` after ``seconds``."""
     def _timeout_handler(signum, frame):
         raise TimeoutError(f"program exceeded {seconds:.2f}s time limit")
 
@@ -95,6 +98,7 @@ def _run_program_with_timeout(source: str, seconds: float) -> None:
 
 
 def test_recursive_fibonacci_benchmark(record_property) -> None:
+    """Measure recursive Fibonacci performance and sanity-check output."""
     start = time.perf_counter()
     output = compile_and_run(FIBONACCI_PROGRAM)
     duration = time.perf_counter() - start
@@ -215,6 +219,7 @@ def _record_failures(
 
 
 def test_randomized_programs_do_not_crash(record_property) -> None:
+    """Fuzz random programs to ensure the runtime does not crash."""
     rng = random.Random(1337)
     failing_seeds: List[int] = []
     timeout_seeds: List[int] = []
@@ -256,6 +261,7 @@ if hypothesis_spec:  # pragma: no cover - optional
     @settings(max_examples=10, deadline=1000)
     @given(st.integers(min_value=0, max_value=2**32 - 1))
     def test_randomized_programs_shrink_on_failure(seed: int, record_property):
+        """Use Hypothesis to shrink failing randomized programs."""
         seed, src = _generate_program(seed)
         try:
             _run_program_with_timeout(src, 1.0)
@@ -291,6 +297,7 @@ if hypothesis_spec:  # pragma: no cover - optional
     @settings(max_examples=15, deadline=1000)
     @given(_arithmetic_exprs())
     def test_arithmetic_round_trip_matches_python(expr: str) -> None:
+        """Check arithmetic expressions match Python evaluation."""
         program = f"print({expr});"
         output = compile_and_run(program).strip()
 
@@ -326,6 +333,7 @@ if hypothesis_spec:  # pragma: no cover - optional
     @settings(max_examples=12, deadline=1500)
     @given(_tiny_programs())
     def test_generated_statements_execute_without_errors(program: str) -> None:
+        """Ensure generated print/def statements execute without errors."""
         output = compile_and_run(program).strip()
         assert output, "generated program did not produce any output"
 
@@ -475,6 +483,7 @@ if hypothesis_spec:  # pragma: no cover - optional
     @settings(max_examples=10, deadline=1500)
     @given(_tiny_arithmetic_programs())
     def test_generated_programs_match_python_reference(program_and_outputs):
+        """Compare TinyLanguage outputs to the Python reference model."""
         program, expected_outputs = program_and_outputs
         actual_output = compile_and_run(program).splitlines()
         assert actual_output == expected_outputs
@@ -483,6 +492,7 @@ if hypothesis_spec:  # pragma: no cover - optional
     @settings(max_examples=10, deadline=1500)
     @given(_match_programs())
     def test_match_programs_evaluate_expected_outputs(program_and_outputs):
+        """Validate match expressions evaluate to expected outputs."""
         program, expected_outputs = program_and_outputs
         actual_output = compile_and_run(program).splitlines()
         assert actual_output == expected_outputs

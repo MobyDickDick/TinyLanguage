@@ -1,7 +1,10 @@
+"""Structured async execution tests for TinyLanguage."""
+
 import textwrap
 
 
 def test_async_functions_can_be_awaited(run_tiny_source):
+    """Ensure async functions return values that can be awaited in order."""
     out = run_tiny_source(
         textwrap.dedent(
             """
@@ -21,6 +24,7 @@ def test_async_functions_can_be_awaited(run_tiny_source):
 
 
 def test_channels_block_and_close_cleanly(run_tiny_source):
+    """Validate channel send/recv semantics, blocking, and closing behavior."""
     out = run_tiny_source(
         textwrap.dedent(
             """

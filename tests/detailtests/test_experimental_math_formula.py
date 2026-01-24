@@ -1,9 +1,12 @@
+"""Tests for experimental math formula syntax gating and parsing."""
+
 import pytest
 
 from tiny_language import Bin, Lexer, Let, Num, Parser, TinyLangError, _parse_and_lint
 
 
 def test_math_formula_requires_flag() -> None:
+    """Ensure the experimental math formula syntax requires a flag."""
     source = "def area = #[1 + 2];"
     with pytest.raises(TinyLangError) as excinfo:
         Parser(Lexer(source), source).parse()
@@ -11,6 +14,7 @@ def test_math_formula_requires_flag() -> None:
 
 
 def test_math_formula_parses_with_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify math formula parsing when the experimental flag is enabled."""
     monkeypatch.setenv("TINYLANG_EXPERIMENTAL_MATH_FORMULA", "1")
     source = "def area = #[1 + 2 * 3]; print(area);"
     stmts = _parse_and_lint(source)

@@ -1,3 +1,5 @@
+"""Tests for copy-on-call semantics in TinyLanguage."""
+
 import pytest
 
 from tiny_language import TinyLangError, compile_and_run
@@ -6,6 +8,7 @@ from tests.utils import execute_tiny_program
 
 
 def test_non_escaped_parameter_is_copied_by_default():
+    """Ensure arguments are copied unless explicitly escaped."""
     source = """
     fn bump(buf) {
         def ignored1 = heap_set(buf, 0, 99);
@@ -23,6 +26,7 @@ def test_non_escaped_parameter_is_copied_by_default():
 
 
 def test_escaped_parameter_mutations_propagate():
+    """Confirm escaped parameters share mutations with the caller."""
     source = """
     fn passthrough(buf) {
         def ignored1 = heap_set(buf, 0, 42);
@@ -42,6 +46,7 @@ def test_escaped_parameter_mutations_propagate():
 
 
 def test_legacy_behavior_when_copy_on_call_disabled():
+    """Verify legacy in-place mutation when copy-on-call is disabled."""
     source = """
     fn bump(buf) {
         def ignored1 = heap_set(buf, 0, 99);
@@ -59,6 +64,7 @@ def test_legacy_behavior_when_copy_on_call_disabled():
 
 
 def test_mutating_protected_argument_raises():
+    """Ensure mutating a protected alias raises a TinyLangError."""
     source = """
     def shared = new(1);
 
@@ -78,6 +84,7 @@ def test_mutating_protected_argument_raises():
 
 
 def test_cli_flag_enables_copy_on_call():
+    """Check CLI flag toggles copy-on-call behavior."""
     source = """
     fn bump(buf) {
         def ignored1 = heap_set(buf, 0, 99);

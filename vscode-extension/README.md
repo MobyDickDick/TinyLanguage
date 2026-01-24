@@ -144,7 +144,7 @@ The “nativeCompiler” work is tracked separately.
 ### 4. Tooling
 
 - [x] **CLI wrapper**
-  - A small command-line tool that compiles/runs TinyLanguage files (for example `python -m tiny_language_cli demo.tiny` or `python -m tiny_lang_cli --source "print(1+2);"`).
+  - A small command-line tool that compiles/runs TinyLanguage files (for example `python src/tiny_language_cli.py demo.tiny` or `python src/tiny_language_cli.py --source "print(1+2);"`).
 - [x] **Document the language**
   - Short, stable language specification (syntax, type rules, “must use” rules) to keep behavior clear. See [`LANGUAGE_SPEC.md`](LANGUAGE_SPEC.md) for the stable reference used by the VS Code extension and other tooling.
 

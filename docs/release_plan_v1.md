@@ -42,7 +42,7 @@ Create an explicit **release checklist** and treat it as the definition of done.
 
 ### Testing readiness
 - [x] `python -m pytest` passes locally.
-- [x] `python run_all.py` passes locally.
+- [x] `python src/run_all.py` passes locally.
 - [x] At least one round of regression tests added for recent fixes.
 
 ### Docs readiness
@@ -70,7 +70,7 @@ Break the release into **short, verifiable milestones**. Example:
 ### Milestone B — Test hardening
 - Expand tests for interpreter edge cases (heap, control flow, recursion).
 - Add regression tests for known tricky behavior.
-- Ensure `run_all.py` and `pytest` are green.
+- Ensure `src/run_all.py` and `pytest` are green.
 
 ### Milestone C — Release packaging
 - Add or update version info.
@@ -151,7 +151,7 @@ Make a decision (and record it in this plan or a roadmap entry):
 [x] Language spec audited and updated
 [x] Tutorial audited and demo commands verified
 [x] pytest passes
-[x] run_all.py passes
+[x] src/run_all.py passes
 [x] Regression tests added
 [x] CHANGELOG.md updated
 [x] Version set to 1.0.0

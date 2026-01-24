@@ -289,6 +289,6 @@ The API intentionally mirrors common LSP interactions so it can be wired into JS
 ## Tips for integration
 
 - Keep `PYTHONPATH=src` when invoking helpers from the repository root so Python can locate `language_server.py`.
-- Pair diagnostics with the formatter: running `python tiny_language.py --format your_file.tiny` before gathering diagnostics often removes avoidable lint errors (e.g., import order).
+- Pair diagnostics with the formatter: running `python src/tiny_language.py --format your_file.tiny` before gathering diagnostics often removes avoidable lint errors (e.g., import order).
 - When embedding this helper into editors, treat the JSON emitted by `language_server_cli.py` as a transport-neutral representation; mapping it to JSON-RPC messages is straightforward because the field names already mirror LSP concepts.
 - For regression tests or scripted experiments, prefer `--source` so the entire interaction (request plus expected response) lives in version control without separate fixtures.

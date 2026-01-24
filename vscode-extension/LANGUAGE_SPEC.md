@@ -56,8 +56,8 @@ This guide provides a concise, implementation-stable reference for TinyLanguage.
 
 ## Example checklist
 
-- Hello world: `python tiny_language.py src_tiny/hello_world.tiny`.
-- Linter/formatter: `python tiny_language.py --format path/to/file.tiny`.
-- Interpreter vs. native backend: `python -m tiny_lang_cli --file src_tiny/demo.tiny --backend interpreter`.
+- Hello world: `python src/tiny_language.py src_tiny/hello_world.tiny`.
+- Linter/formatter: `python src/tiny_language.py --format path/to/file.tiny`.
+- Interpreter vs. native backend: `python src/tiny_language_cli.py --file src_tiny/demo.tiny --backend interpreter`.
 
 This document is intended to stay stable so that editor integrations and users have a clear baseline for TinyLanguage behavior.

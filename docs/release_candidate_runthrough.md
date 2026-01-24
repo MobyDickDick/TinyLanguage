@@ -17,7 +17,7 @@
 - Demo command list reviewed for consistency with current entry points.
 
 ### Demo execution
-- ✅ `python run_all.py` (includes pytest + demo programs)
+- ✅ `python src/run_all.py` (includes pytest + demo programs)
 
 ### Notes
 - No blocking issues observed during the doc/demos pass.

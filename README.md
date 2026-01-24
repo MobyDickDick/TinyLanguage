@@ -35,19 +35,13 @@ If you want a compact reference first:
 2. From the repository root, run any `.tiny` file (for example: [src_tiny/class_demo.tiny](src_tiny/class_demo.tiny)):
 
 ```bash
-python tiny_language.py src_tiny/class_demo.tiny
+python src/tiny_language.py src_tiny/class_demo.tiny
 ```
 
-You can also run via the module shim:
+You can also run via the compatibility module shim (optional):
 
 ```bash
 python -m tiny_language src_tiny/class_demo.tiny
-```
-
-Or invoke the implementation directly:
-
-```bash
-python src/tiny_language.py src_tiny/class_demo.tiny
 ```
 
 You should see:
@@ -69,7 +63,7 @@ python -m pytest
 If you want a broad smoke test across demos and tools:
 
 ```bash
-python run_all.py
+python src/run_all.py
 ```
 
 ---
@@ -220,16 +214,16 @@ See [benchmarks/microbenchmarks.py](benchmarks/microbenchmarks.py) and [docs/per
 # Run one file
 python src/tiny_language.py path/to/program.tiny
 
-# Module shim (same behavior as src/tiny_language.py)
+# Module shim (optional; same behavior as src/tiny_language.py)
 python -m tiny_language path/to/program.tiny
 
 # Run with the Python CLI wrapper (switch backends)
-python -m tiny_lang_cli path/to/program.tiny --backend interpreter
-python -m tiny_lang_cli --file - --backend interpreter < path/to/program.tiny
-python -m tiny_lang_cli --source "print(1+2);" --backend interpreter
-python -m tiny_lang_cli -e "print(1+2);" --backend interpreter
-python -m tiny_lang_cli --file path/to/program.tiny --native-backend
-python -m tiny_lang_cli --file path/to/program.tiny -- --flag value
+python src/tiny_language_cli.py path/to/program.tiny --backend interpreter
+python src/tiny_language_cli.py --file - --backend interpreter < path/to/program.tiny
+python src/tiny_language_cli.py --source "print(1+2);" --backend interpreter
+python src/tiny_language_cli.py -e "print(1+2);" --backend interpreter
+python src/tiny_language_cli.py --file path/to/program.tiny --native-backend
+python src/tiny_language_cli.py --file path/to/program.tiny -- --flag value
 
 # Run tests
 python -m pytest

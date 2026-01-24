@@ -16,7 +16,7 @@ of scope for the 1.0 stability guarantees.
 - **Standard library baseline** documented in `docs/stdlib_compatibility.md`.
 - **CLI + tutorial parity** verified in `README.md` and `docs/tutorial.md`.
 - **Regression coverage** maintained via the core `pytest` suite and
-  `run_all.py` smoke checks.
+  `src/run_all.py` smoke checks.
 
 ## What is stable in 1.0
 

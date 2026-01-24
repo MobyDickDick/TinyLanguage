@@ -1,3 +1,5 @@
+"""Tests for linter parity."""
+
 import json
 import pathlib
 import sys
@@ -68,6 +70,7 @@ TINY_LINTER_BASE = "\n\n".join(
 
 
 def run_python_linter(source: str) -> str | None:
+    """Helper to run python linter."""
     try:
         _parse_and_lint(source)
     except Exception as exc:  # pragma: no cover - passthrough for assertion messages
@@ -76,6 +79,7 @@ def run_python_linter(source: str) -> str | None:
 
 
 def run_tiny_linter(source: str) -> str | None:
+    """Helper to run tiny linter."""
     program = TINY_LINTER_BASE + "\ndef _unused = __run_lints(" + json.dumps(source) + ");\n"
     parser = Parser(Lexer(program), program)
     stmts = parser.parse()
@@ -149,6 +153,7 @@ def run_tiny_linter(source: str) -> str | None:
         ],
     )
 def test_python_and_tiny_linter_outputs_match(source: str):
+    """Test that python and tiny linter outputs match."""
     python_msg = run_python_linter(source)
     tiny_msg = run_tiny_linter(source)
 
@@ -158,6 +163,7 @@ def test_python_and_tiny_linter_outputs_match(source: str):
 
 
 def test_python_and_tiny_linter_allow_switch_returns() -> None:
+    """Test that python and tiny linter allow switch returns."""
     source = "fn f(x) -> number { switch (x) { case 1: { return 1; } default: { return 0; } } }"
     assert run_python_linter(source) is None
     assert run_tiny_linter(source) is None

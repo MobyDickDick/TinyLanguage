@@ -1,3 +1,5 @@
+"""Tests for tiny lexer self host."""
+
 import json
 import pathlib
 
@@ -16,6 +18,7 @@ def _run_lexer_program(body: str) -> str:
 
 
 def test_tiny_lexer_emits_expected_token_stream():
+    """Test that tiny lexer emits expected token stream."""
     source_literal = json.dumps('def a = 7;\nprint("hi"); // comment')
     body = f"""
 def tokens = lex({source_literal});
@@ -45,6 +48,7 @@ while (i < len(tokens)) {{
 
 
 def test_tiny_lexer_tracks_source_positions():
+    """Test that tiny lexer tracks source positions."""
     source_literal = json.dumps('while (x <= 10) { print(x); }')
     body = f"""
 def tokens = lex({source_literal});
@@ -67,6 +71,7 @@ while (i < len(tokens)) {{
 
 
 def test_tiny_lexer_handles_ops_and_escaped_strings():
+    """Test that tiny lexer handles ops and escaped strings."""
     source_literal = json.dumps(
         'if (a == b && c != d || e >= f && g <= h) { print("slash: \\\\"); }'
     )
@@ -113,6 +118,7 @@ while (i < len(tokens)) {{
 
 
 def test_tiny_lexer_multiline_string_span_tracks_end_line():
+    """Test that tiny lexer multiline string span tracks end line."""
     source_literal = "\"\\\"a\\nb\\\"\""
     body = f"""
 def tokens = lex({source_literal});

@@ -1,9 +1,12 @@
+"""Tests for spans."""
+
 import textwrap
 
 from tiny_language import Lexer, Parser
 
 
 def test_let_statement_span_tracks_semicolon():
+    """Test that let statement span tracks semicolon."""
     src = "def value = 1 + 2;"
     stmts = Parser(Lexer(src), src).parse()
     define_stmt = stmts[0]
@@ -17,6 +20,7 @@ def test_let_statement_span_tracks_semicolon():
 
 
 def test_print_statement_span_includes_trailing_semicolon():
+    """Test that print statement span includes trailing semicolon."""
     src = textwrap.dedent(
         """
         print(value);

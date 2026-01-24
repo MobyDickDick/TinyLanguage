@@ -1,3 +1,5 @@
+"""Tests for stdlib compatibility."""
+
 from __future__ import annotations
 
 import datetime as py_datetime
@@ -15,6 +17,7 @@ from tests.utils import run_tiny
 
 
 def _run_lines(source: str) -> list[str]:
+    """Helper to run lines."""
     output = run_tiny(source).strip()
     if not output:
         return []
@@ -22,6 +25,7 @@ def _run_lines(source: str) -> list[str]:
 
 
 def test_stdlib_math_matches_python() -> None:
+    """Test that stdlib math matches python."""
     source = """
 import stdlib.math;
 print(math.sqrt(81));
@@ -60,6 +64,7 @@ print(math.e);
 
 
 def test_stdlib_string_matches_python() -> None:
+    """Test that stdlib string matches python."""
     source = """
 import stdlib.string;
 
@@ -99,6 +104,7 @@ def _cleanup_parts = delete(parts);
 
 
 def test_stdlib_random_matches_python() -> None:
+    """Test that stdlib random matches python."""
     source = """
 import stdlib.random;
 import stdlib.string;
@@ -130,6 +136,7 @@ def _unused = delete(items);
 
 
 def test_stdlib_datetime_matches_python() -> None:
+    """Test that stdlib datetime matches python."""
     source = """
 import stdlib.datetime;
 
@@ -152,6 +159,7 @@ print(datetime.total_seconds(1, 30));
 
 
 def test_stdlib_datetime_multiple_calls_match_python() -> None:
+    """Test that stdlib datetime multiple calls match python."""
     source = """
 import stdlib.datetime;
 
@@ -174,6 +182,7 @@ print(datetime.total_seconds(2, 15));
 
 
 def test_stdlib_json_matches_python() -> None:
+    """Test that stdlib json matches python."""
     source = """
 import stdlib.json;
 
@@ -194,6 +203,7 @@ def _cleanup_data = delete(data);
 
 
 def test_stdlib_json_file_roundtrip(tmp_path: PyPath) -> None:
+    """Test that stdlib json file roundtrip."""
     source_path = tmp_path / "payload.json"
     target_path = tmp_path / "written.json"
     payload = {"active": True, "scores": [1, 2, 3], "label": "tiny"}
@@ -214,6 +224,7 @@ def _cleanup_data = delete(data);
 
 
 def test_stdlib_json_aliases_match_python() -> None:
+    """Test that stdlib json aliases match python."""
     source = """
 import stdlib.json;
 
@@ -234,6 +245,7 @@ def _cleanup_data = delete(data);
 
 
 def test_stdlib_os_and_pathlib_match_python(tmp_path: PyPath) -> None:
+    """Test that stdlib os and pathlib match python."""
     base = tmp_path / "root"
     child = "note.txt"
     joined = py_os.path.join(base.as_posix(), child)
@@ -267,6 +279,7 @@ print(p.read_text());
 
 
 def test_stdlib_os_remove_and_pathlib_joinpath(tmp_path: PyPath) -> None:
+    """Test that stdlib os remove and pathlib joinpath."""
     base = tmp_path / "root"
     child = "note.txt"
     joined = py_os.path.join(base.as_posix(), child)
@@ -295,6 +308,7 @@ print(os.path.exists(child.as_posix()));
 
 
 def test_stdlib_os_text_helpers_match_python(tmp_path: PyPath) -> None:
+    """Test that stdlib os text helpers match python."""
     target = tmp_path / "note.txt"
     payload = "hello tiny"
 
@@ -313,6 +327,7 @@ print(os.read_text("{target.as_posix()}"));
 
 
 def test_stdlib_statistics_matches_python() -> None:
+    """Test that stdlib statistics matches python."""
     source = """
 import stdlib.statistics;
 
@@ -336,6 +351,7 @@ def _cleanup_floats = delete(floats);
 
 
 def test_stdlib_collections_map_set_deque_match_python() -> None:
+    """Test that stdlib collections map set deque match python."""
     source = """
 def values = new[10, 20, 30];
 print(Collections.len(values));
@@ -442,6 +458,7 @@ def _cleanup_capitals = delete(capitals);
 
 
 def test_stdlib_map_and_set_helpers_match_python() -> None:
+    """Test that stdlib map and set helpers match python."""
     source = """
 def entries = new[new["one", "1"], new["two", "2"], new["three", "3"]];
 def mapping = Map.from_entries(entries);
@@ -504,6 +521,7 @@ def _cleanup_entries = delete(entries);
 
 
 def test_stdlib_file_helpers_match_python(tmp_path: PyPath) -> None:
+    """Test that stdlib file helpers match python."""
     target = tmp_path / "note.txt"
     payload = "hello tiny"
 

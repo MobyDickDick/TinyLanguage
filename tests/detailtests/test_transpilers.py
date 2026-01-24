@@ -1,3 +1,5 @@
+"""Tests for transpilers."""
+
 import textwrap
 
 import pytest
@@ -22,11 +24,13 @@ from tiny_language_transpilers import (
 
 
 def sample_program():
+    """Helper to sample program."""
     body = [Assign("total", BinaryOp("+", Name("a"), Name("b"))), Return(Name("total"))]
     return ProgramIR(functions=[FunctionIR(name="add", params=["a", "b"], body=body)])
 
 
 def control_flow_program():
+    """Helper to control flow program."""
     loop_body = [
         IfElse(
             BinaryOp("==", Name("x"), Literal(2)),
@@ -43,6 +47,7 @@ def control_flow_program():
 
 
 def literal_program():
+    """Helper to literal program."""
     body = [
         Assign("flag", Literal(True)),
         Assign("name", Literal("hi")),
@@ -52,6 +57,7 @@ def literal_program():
 
 
 def test_python_roundtrip():
+    """Test that python roundtrip."""
     program = sample_program()
     transpiler = PythonTranspiler()
     source = transpiler.to_source(program)
@@ -61,6 +67,7 @@ def test_python_roundtrip():
 
 
 def test_other_languages_render_expected_shape():
+    """Test that other languages render expected shape."""
     program = sample_program()
 
     julia = JuliaTranspiler().to_source(program)
@@ -77,6 +84,7 @@ def test_other_languages_render_expected_shape():
 
 
 def test_cross_language_parsing_to_ir():
+    """Test that cross language parsing to ir."""
     expected = sample_program()
 
     python_src = textwrap.dedent(
@@ -118,6 +126,7 @@ def test_cross_language_parsing_to_ir():
 
 
 def test_expression_statements_render_across_languages():
+    """Test that expression statements render across languages."""
     program = ProgramIR(
         functions=[],
         body=[ExprStmt(Call("print", [Literal("ready")]))],
@@ -137,6 +146,7 @@ def test_expression_statements_render_across_languages():
 
 
 def test_literal_rendering_across_languages():
+    """Test that literal rendering across languages."""
     program = literal_program()
 
     python_source = PythonTranspiler().to_source(program)
@@ -161,6 +171,7 @@ def test_literal_rendering_across_languages():
 
 
 def test_control_flow_roundtrip_python():
+    """Test that control flow roundtrip python."""
     program = control_flow_program()
     transpiler = PythonTranspiler()
     rendered = transpiler.to_source(program)
@@ -170,6 +181,7 @@ def test_control_flow_roundtrip_python():
 
 
 def test_control_flow_roundtrip_other_languages():
+    """Test that control flow roundtrip other languages."""
     program = control_flow_program()
 
     julia = JuliaTranspiler()
@@ -189,6 +201,7 @@ def test_control_flow_roundtrip_other_languages():
 
 
 def test_literal_roundtrip_parsing():
+    """Test that literal roundtrip parsing."""
     expected = literal_program()
 
     python_src = textwrap.dedent(
@@ -237,6 +250,7 @@ def test_literal_roundtrip_parsing():
 
 
 def test_control_flow_cross_language_parsing():
+    """Test that control flow cross language parsing."""
     expected = control_flow_program()
 
     python_src = textwrap.dedent(
@@ -343,5 +357,6 @@ def test_control_flow_cross_language_parsing():
     ],
 )
 def test_unsupported_boolean_operations_raise(transpiler, code):
+    """Test that unsupported boolean operations raise."""
     with pytest.raises(ValueError):
         transpiler.from_source(textwrap.dedent(code))

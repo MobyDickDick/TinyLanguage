@@ -128,6 +128,7 @@ def _random_expression(
 
 
 def _random_statement(rng: random.Random, defined_vars: List[str], used_vars: set[str]) -> str:
+    """Helper to random statement."""
     choice = rng.random()
     if choice < 0.25:
         new_var = f"v{rng.randint(0, max(5, len(defined_vars) + 2))}"
@@ -193,6 +194,7 @@ def _random_statement(rng: random.Random, defined_vars: List[str], used_vars: se
 
 
 def _generate_program(seed: int) -> Tuple[int, str]:
+    """Helper to generate program."""
     rng = random.Random(seed)
     size = rng.randint(3, 7)
     defined_vars: List[str] = []

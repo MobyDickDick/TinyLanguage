@@ -1,3 +1,5 @@
+"""Tests for tiny language compiler cli."""
+
 import os
 import pathlib
 import shutil
@@ -12,10 +14,12 @@ FIXTURES_ROOT = pathlib.Path(__file__).resolve().parent / "fixtures"
 
 
 def _find_clang() -> str | None:
+    """Helper to find clang."""
     return shutil.which("clang")
 
 
 def _run_compiler_cli(command):
+    """Helper to run compiler cli."""
     env = {
         **os.environ,
         "PYTHONPATH": os.pathsep.join(
@@ -32,6 +36,7 @@ def _run_compiler_cli(command):
 
 
 def test_emit_llvm_bitcode_creates_artifact(tmp_path: pathlib.Path) -> None:
+    """Test that emit llvm bitcode creates artifact."""
     compiler = _find_clang()
     if compiler is None:
         pytest.skip("clang not available for LLVM bitcode emission")
@@ -49,6 +54,7 @@ def test_emit_llvm_bitcode_creates_artifact(tmp_path: pathlib.Path) -> None:
 
 
 def test_emit_c_accepts_debug_flag() -> None:
+    """Test that emit c accepts debug flag."""
     program_path = FIXTURES_ROOT / "hello_world.tiny"
 
     result = _run_compiler_cli([str(program_path), "--emit-c", "--debug"])

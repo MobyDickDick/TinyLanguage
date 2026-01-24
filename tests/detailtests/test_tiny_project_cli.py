@@ -1,3 +1,5 @@
+"""Tests for tiny project cli."""
+
 import json
 import os
 import pathlib
@@ -10,6 +12,7 @@ SRC_ROOT = PROJECT_ROOT / "src"
 
 
 def run_cli(command, cwd):
+    """Helper to run cli."""
     env = {
         **os.environ,
         "PYTHONPATH": os.pathsep.join(
@@ -43,6 +46,7 @@ def run_cli(command, cwd):
 
 
 def test_project_cli_init_scaffolds_project(tmp_path):
+    """Test that project cli init scaffolds project."""
     project_dir = tmp_path / "my_app"
     run_cli(["init", str(project_dir), "--vscode"], cwd=PROJECT_ROOT)
 

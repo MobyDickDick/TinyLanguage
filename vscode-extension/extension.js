@@ -5,13 +5,28 @@ const fs = require('fs');
 const os = require('os');
 const net = require('net');
 
+/**
+ * VS Code extension entry for TinyLanguage tooling, debugging, and diagnostics.
+ *
+ * The helpers below orchestrate the helper Python scripts, resolve runtime
+ * paths, and wire up VS Code providers (formatting, completion, hover, etc.).
+ */
 let debugTerminal;
 
+/**
+ * Check whether the debug log terminal is enabled in configuration.
+ * @returns {boolean} True when the debug terminal should be shown.
+ */
 function isDebugTerminalEnabled() {
   const config = vscode.workspace.getConfiguration('tinylanguage');
   return Boolean(config.get('showDebugTerminal'));
 }
 
+/**
+ * Emit a debug log message to the output channel and console.
+ * @param {vscode.OutputChannel} output
+ * @param {string} message
+ */
 function logDebug(output, message) {
   const formatted = `[TinyLanguage][debug] ${message}`;
   if (output?.appendLine) {
@@ -22,6 +37,11 @@ function logDebug(output, message) {
   console.log(formatted); // eslint-disable-line no-console
 }
 
+/**
+ * Lazily create or reuse the debug log terminal when enabled.
+ * @param {vscode.OutputChannel} output
+ * @returns {vscode.Terminal|undefined}
+ */
 function getDebugTerminal(output) {
   if (!isDebugTerminalEnabled()) {
     logDebug(output, 'debugTerminal: skipped (disabled via configuration)');
@@ -35,12 +55,21 @@ function getDebugTerminal(output) {
   return debugTerminal;
 }
 
+/**
+ * Resolve the Python interpreter configured for TinyLanguage tooling.
+ * @returns {string} The python executable path or fallback name.
+ */
 function getPythonExecutable() {
   const config = vscode.workspace.getConfiguration('tinylanguage');
   const python = config.get('pythonPath') || 'python';
   return python;
 }
 
+/**
+ * Expand a ${workspaceFolder} token in paths from configuration.
+ * @param {string} rawPath
+ * @returns {string}
+ */
 function resolveWorkspacePath(rawPath) {
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   if (workspaceFolder) {
@@ -49,12 +78,20 @@ function resolveWorkspacePath(rawPath) {
   return rawPath;
 }
 
+/**
+ * Resolve the TinyLanguage runtime path from configuration.
+ * @returns {string}
+ */
 function getRuntimePath() {
   const config = vscode.workspace.getConfiguration('tinylanguage');
   const rawPath = config.get('runtimePath') || '';
   return resolveWorkspacePath(rawPath);
 }
 
+/**
+ * Resolve the TinyLanguage CLI path or derive it from the runtime.
+ * @returns {string}
+ */
 function getCliPath() {
   const config = vscode.workspace.getConfiguration('tinylanguage');
   const rawPath = config.get('cliPath') || '';
@@ -83,6 +120,11 @@ function getCliPath() {
   return '';
 }
 
+/**
+ * Decide whether Python debugging should be delegated to the VS Code Python extension.
+ * @param {object} config
+ * @returns {boolean}
+ */
 function shouldDelegatePythonDebugging(config) {
   const setting = vscode.workspace.getConfiguration('tinylanguage');
   if (config.usePythonExtension !== undefined) {
@@ -92,6 +134,10 @@ function shouldDelegatePythonDebugging(config) {
   return preferPython !== undefined ? Boolean(preferPython) : true;
 }
 
+/**
+ * Compute the file path for debug adapter logs.
+ * @returns {string}
+ */
 function getDebugLogPath() {
   const config = vscode.workspace.getConfiguration('tinylanguage');
   const rawPath = config.get('debugLogPath') || '';
@@ -105,6 +151,10 @@ function getDebugLogPath() {
   return path.join(os.tmpdir(), 'tinylanguage', 'debug-adapter.log');
 }
 
+/**
+ * Compute the file path for runtime trace logs.
+ * @returns {string}
+ */
 function getTraceLogPath() {
   const config = vscode.workspace.getConfiguration('tinylanguage');
   const rawPath = config.get('traceLogPath') || '';
@@ -118,6 +168,10 @@ function getTraceLogPath() {
   return '';
 }
 
+/**
+ * Locate a TinyLanguage runtime packaged alongside the extension.
+ * @returns {string}
+ */
 function findBundledRuntime() {
   const runtimeCandidates = [
     path.join(__dirname, '..', 'src', 'tiny_language.py'),
@@ -128,6 +182,10 @@ function findBundledRuntime() {
   return runtimeCandidates.find((candidate) => fs.existsSync(candidate)) || '';
 }
 
+/**
+ * Locate a TinyLanguage CLI packaged alongside the extension.
+ * @returns {string}
+ */
 function findBundledCli() {
   const cliCandidates = [
     path.join(__dirname, '..', 'src', 'tiny_language_cli.py'),
@@ -136,6 +194,13 @@ function findBundledCli() {
   return cliCandidates.find((candidate) => fs.existsSync(candidate)) || '';
 }
 
+/**
+ * Ensure the directory for a log file path exists before using it.
+ * @param {string} filePath
+ * @param {vscode.OutputChannel} output
+ * @param {string} label
+ * @returns {string}
+ */
 function ensureDirectoryForFile(filePath, output, label) {
   if (!filePath) {
     return '';
@@ -150,6 +215,11 @@ function ensureDirectoryForFile(filePath, output, label) {
   }
 }
 
+/**
+ * Normalize environment values to strings for process spawning.
+ * @param {unknown} value
+ * @returns {unknown}
+ */
 function normalizeEnvValue(value) {
   if (value === undefined || value === null) {
     return value;
@@ -164,6 +234,12 @@ function normalizeEnvValue(value) {
   }
 }
 
+/**
+ * Create a Python execution environment for helper scripts and tools.
+ * @param {Record<string, unknown>} extraEnv
+ * @param {vscode.OutputChannel} output
+ * @returns {NodeJS.ProcessEnv}
+ */
 function createToolEnv(extraEnv = {}, output) {
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   const repoSrcCandidates = [path.join(__dirname, '..', 'src'), path.join(__dirname, 'src')];
@@ -188,6 +264,15 @@ function createToolEnv(extraEnv = {}, output) {
   return env;
 }
 
+/**
+ * Run the VS Code helper Python script for formatting/diagnostics/etc.
+ * @param {string} command
+ * @param {string} documentText
+ * @param {string} filePath
+ * @param {vscode.OutputChannel} output
+ * @param {string[]} extraArgs
+ * @returns {{stdout?: string, error?: string}}
+ */
 function runHelper(command, documentText, filePath, output, extraArgs = []) {
   const helperPath = path.join(__dirname, 'python', 'vscode_helpers.py');
   const pythonExecutable = getPythonExecutable();
@@ -217,6 +302,11 @@ function runHelper(command, documentText, filePath, output, extraArgs = []) {
   return { stdout: result.stdout };
 }
 
+/**
+ * Register the TinyLanguage formatter provider.
+ * @param {vscode.OutputChannel} output
+ * @returns {vscode.Disposable}
+ */
 function registerFormatter(output) {
   return vscode.languages.registerDocumentFormattingEditProvider('tinylanguage', {
     provideDocumentFormattingEdits(document) {
@@ -232,6 +322,12 @@ function registerFormatter(output) {
   });
 }
 
+/**
+ * Register diagnostics and wire them to document change events.
+ * @param {vscode.OutputChannel} output
+ * @param {vscode.DiagnosticCollection} collection
+ * @returns {{refresh: Function, disposables: vscode.Disposable[]}}
+ */
 function registerDiagnostics(output, collection) {
   async function refresh(document) {
     if (document.languageId !== 'tinylanguage') {
@@ -270,12 +366,23 @@ function registerDiagnostics(output, collection) {
   return { refresh, disposables: [openListener, changeListener, saveListener] };
 }
 
+/**
+ * Extract a word prefix for completion/hover at the current cursor position.
+ * @param {vscode.TextDocument} document
+ * @param {vscode.Position} position
+ * @returns {string}
+ */
 function wordPrefixAtPosition(document, position) {
   const text = document.lineAt(position.line).text.substring(0, position.character);
   const match = text.match(/([A-Za-z_\.][\w\.]*)$/);
   return match ? match[1] : '';
 }
 
+/**
+ * Register completion provider backed by the helper script.
+ * @param {vscode.OutputChannel} output
+ * @returns {vscode.Disposable}
+ */
 function registerCompletions(output) {
   const kindMap = {
     function: vscode.CompletionItemKind.Function,
@@ -308,6 +415,11 @@ function registerCompletions(output) {
   });
 }
 
+/**
+ * Register hover provider backed by the helper script.
+ * @param {vscode.OutputChannel} output
+ * @returns {vscode.Disposable}
+ */
 function registerHover(output) {
   return vscode.languages.registerHoverProvider('tinylanguage', {
     provideHover(document, position) {
@@ -337,6 +449,11 @@ function registerHover(output) {
   });
 }
 
+/**
+ * Register go-to-definition provider backed by the helper script.
+ * @param {vscode.OutputChannel} output
+ * @returns {vscode.Disposable}
+ */
 function registerDefinitions(output) {
   return vscode.languages.registerDefinitionProvider('tinylanguage', {
     provideDefinition(document, position) {
@@ -372,6 +489,11 @@ function registerDefinitions(output) {
   });
 }
 
+/**
+ * Register the command that launches a TinyLanguage REPL terminal.
+ * @param {vscode.OutputChannel} output
+ * @returns {vscode.Disposable}
+ */
 function registerRepl(output) {
   return vscode.commands.registerCommand('tinylanguage.startRepl', () => {
     const pythonExecutable = getPythonExecutable();
@@ -383,6 +505,11 @@ function registerRepl(output) {
   });
 }
 
+/**
+ * Register the command that runs the active TinyLanguage file.
+ * @param {vscode.OutputChannel} output
+ * @returns {vscode.Disposable}
+ */
 function registerRunFile(output) {
   return vscode.commands.registerCommand('tinylanguage.runFile', () => {
     const editor = vscode.window.activeTextEditor;
@@ -403,6 +530,11 @@ function registerRunFile(output) {
   });
 }
 
+/**
+ * Register the command that runs the active file with the native backend.
+ * @param {vscode.OutputChannel} output
+ * @returns {vscode.Disposable}
+ */
 function registerRunFileNative(output) {
   return vscode.commands.registerCommand('tinylanguage.runFileNative', () => {
     const editor = vscode.window.activeTextEditor;
@@ -433,6 +565,11 @@ function registerRunFileNative(output) {
   });
 }
 
+/**
+ * Register the debug adapter factory and command for TinyLanguage sessions.
+ * @param {vscode.OutputChannel} output
+ * @returns {vscode.Disposable[]}
+ */
 function registerDebugAdapterExecutable(output) {
   function probeDebugAdapter(pythonExecutable, adapterPath, env) {
     const probe = cp.spawnSync(pythonExecutable, [adapterPath, '--self-test'], {
@@ -631,6 +768,11 @@ function registerDebugAdapterExecutable(output) {
   return [command, factory];
 }
 
+/**
+ * Register dynamic debug configuration defaults for TinyLanguage.
+ * @param {vscode.OutputChannel} output
+ * @returns {vscode.Disposable}
+ */
 function registerDebugConfigurations(output) {
   const type = 'tinylanguage';
   const supportedExtensions = new Set(['.tiny', '.py']);
@@ -829,6 +971,13 @@ function registerDebugConfigurations(output) {
   return vscode.debug.registerDebugConfigurationProvider(type, provider);
 }
 
+/**
+ * Register a command to force-refresh diagnostics on demand.
+ * @param {vscode.OutputChannel} output
+ * @param {vscode.DiagnosticCollection} collection
+ * @param {(doc: vscode.TextDocument) => void} refreshFn
+ * @returns {vscode.Disposable}
+ */
 function registerRefreshDiagnostics(output, collection, refreshFn) {
   return vscode.commands.registerCommand('tinylanguage.refreshDiagnostics', () => {
     const editor = vscode.window.activeTextEditor;
@@ -840,6 +989,10 @@ function registerRefreshDiagnostics(output, collection, refreshFn) {
   });
 }
 
+/**
+ * Activate the TinyLanguage extension and register VS Code providers.
+ * @param {vscode.ExtensionContext} context
+ */
 function activate(context) {
   const output = vscode.window.createOutputChannel('TinyLanguage');
   logDebug(output, 'activate: creating output channel and registering providers');
@@ -874,6 +1027,9 @@ function activate(context) {
   );
 }
 
+/**
+ * Deactivate the extension (VS Code disposes subscriptions automatically).
+ */
 function deactivate() {}
 
 module.exports = {

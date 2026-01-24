@@ -1,3 +1,5 @@
+"""Tests for tiny language."""
+
 import io
 import pathlib
 import re
@@ -15,11 +17,13 @@ from tiny_language_lexer import Lexer
 
 
 def expect_compile_error(src: str, pattern: str) -> None:
+    """Helper to expect compile error."""
     with pytest.raises(Exception, match=pattern):
         compile_and_run(src)
 
 
 def test_double_definition_error():
+    """Test that double definition error."""
     expect_compile_error(
         """
         def a = 2 + 3;
@@ -30,6 +34,7 @@ def test_double_definition_error():
 
 
 def test_prints_and_returns(capsys):
+    """Test that prints and returns."""
     runtime = Runtime("")
 
     out = compile_and_run(
@@ -52,6 +57,7 @@ def test_prints_and_returns(capsys):
 
 
 def test_reassign_with_different_type_errors():
+    """Test that reassign with different type errors."""
     expect_compile_error(
         """
         def msg = "hi";
@@ -63,6 +69,7 @@ def test_reassign_with_different_type_errors():
 
 
 def test_reassign_number_allows_float():
+    """Test that reassign number allows float."""
     out = run_tiny(
         """
         def amount = 1;
@@ -74,6 +81,7 @@ def test_reassign_number_allows_float():
 
 
 def test_reassign_null_to_string_errors():
+    """Test that reassign null to string errors."""
     expect_compile_error(
         """
         def maybe = Null;
@@ -85,6 +93,7 @@ def test_reassign_null_to_string_errors():
 
 
 def test_inferred_return_type_stable_across_calls():
+    """Test that inferred return type stable across calls."""
     expect_compile_error(
         """
         fn pick(flag) {
@@ -102,6 +111,7 @@ def test_inferred_return_type_stable_across_calls():
 
 
 def test_len_handles_heap_pointer():
+    """Test that len handles heap pointer."""
     out = run_tiny(
         """
         def ptr = new(3);
@@ -116,6 +126,7 @@ def test_len_handles_heap_pointer():
 
 
 def test_len_reports_freed_pointer():
+    """Test that len reports freed pointer."""
     expect_compile_error(
         """
         def ptr = new(1);
@@ -127,6 +138,7 @@ def test_len_reports_freed_pointer():
 
 
 def test_lexer_basics_define():
+    """Test that lexer basics define."""
     out = run_tiny(
         """
         def a = 7;
@@ -137,6 +149,7 @@ def test_lexer_basics_define():
 
 
 def test_lexer_multiline_string_span_tracks_end_line():
+    """Test that lexer multiline string span tracks end line."""
     source = "\"a\nb\""
     lexer = Lexer(source)
     token = lexer.next_token()
@@ -146,6 +159,7 @@ def test_lexer_multiline_string_span_tracks_end_line():
 
 
 def test_arithmetic_and_print_with_define():
+    """Test that arithmetic and print with define."""
     out = run_tiny(
         """
         def a = 7 + 5 * 2;
@@ -156,6 +170,7 @@ def test_arithmetic_and_print_with_define():
 
 
 def test_power_operator():
+    """Test that power operator."""
     out = run_tiny(
         """
         print(2 ^ 3);
@@ -166,6 +181,7 @@ def test_power_operator():
 
 
 def test_power_operator_allows_fractional_exponent():
+    """Test that power operator allows fractional exponent."""
     out = run_tiny(
         """
         print(2 ^ 0.5);
@@ -175,6 +191,7 @@ def test_power_operator_allows_fractional_exponent():
 
 
 def test_power_operator_rejects_fractional_negative_base():
+    """Test that power operator rejects fractional negative base."""
     expect_compile_error(
         """
         print((-1) ^ 0.5);
@@ -184,6 +201,7 @@ def test_power_operator_rejects_fractional_negative_base():
 
 
 def test_power_function_allows_fractional_exponent():
+    """Test that power function allows fractional exponent."""
     out = run_tiny(
         """
         print(power(81, 0.5));
@@ -194,6 +212,7 @@ def test_power_function_allows_fractional_exponent():
 
 
 def test_scientific_notation_supported():
+    """Test that scientific notation supported."""
     out = run_tiny(
         """
         print(1.2e2);
@@ -204,6 +223,7 @@ def test_scientific_notation_supported():
 
 
 def test_comparisons():
+    """Test that comparisons."""
     out = run_tiny(
         """
         print(3 > 2);
@@ -219,6 +239,7 @@ def test_comparisons():
 
 
 def test_boolean_literals_and_logic():
+    """Test that boolean literals and logic."""
     out = run_tiny(
         """
         print(true);
@@ -234,6 +255,7 @@ def test_boolean_literals_and_logic():
 
 
 def test_len_and_variadic_print():
+    """Test that len and variadic print."""
     out = run_tiny(
         """
         def arr = new[1, 2, 3, 4];
@@ -248,6 +270,7 @@ def test_len_and_variadic_print():
 
 
 def test_switch_statement():
+    """Test that switch statement."""
     out = run_tiny(
         """
         def value = 2;
@@ -267,6 +290,7 @@ def test_switch_statement():
 
 
 def test_function_return_call():
+    """Test that function return call."""
     out = run_tiny(
         """
         fn add(a, b) {
@@ -281,6 +305,7 @@ def test_function_return_call():
 
 
 def test_namespaced_functions_and_scoping():
+    """Test that namespaced functions and scoping."""
     out = run_tiny(
         """
         namespace Math {
@@ -302,6 +327,7 @@ def test_namespaced_functions_and_scoping():
 
 
 def test_while_if_else():
+    """Test that while if else."""
     out = run_tiny(
         """
         def i = 0;
@@ -324,6 +350,7 @@ def test_while_if_else():
 
 
 def test_while_loop_skip_and_exit_conditions():
+    """Test that while loop skip and exit conditions."""
     out = run_tiny(
         """
         def i = 0;
@@ -353,6 +380,7 @@ def test_while_loop_skip_and_exit_conditions():
 
 
 def test_heap_ops_and_tag():
+    """Test that heap ops and tag."""
     out = run_tiny(
         """
         def p = new(3);
@@ -374,6 +402,7 @@ def test_heap_ops_and_tag():
 
 
 def test_pointer_of_arrays():
+    """Test that pointer of arrays."""
     out = run_tiny(
         """
         // flat init
@@ -413,6 +442,7 @@ def test_pointer_of_arrays():
 
 
 def test_classes_fields_methods():
+    """Test that classes fields methods."""
     out = run_tiny(
         """
         class Point {
@@ -446,6 +476,7 @@ def test_classes_fields_methods():
 
 
 def test_class_inheritance_with_conflicting_fields_and_methods():
+    """Test that class inheritance with conflicting fields and methods."""
     out = run_tiny(
         """
         class BaseOne {
@@ -495,6 +526,7 @@ def test_class_inheritance_with_conflicting_fields_and_methods():
 
 
 def test_must_use_unused_param_function():
+    """Test that must use unused param function."""
     src = """
     fn f(a, b) {
         print(a);
@@ -505,6 +537,7 @@ def test_must_use_unused_param_function():
 
 
 def test_call_stmt_counts_param_usage():
+    """Test that call stmt counts param usage."""
     src = """
     def p = new(1);
 
@@ -521,6 +554,7 @@ def test_call_stmt_counts_param_usage():
 
 
 def test_param_mutation_must_be_returned_function():
+    """Test that param mutation must be returned function."""
     src = """
     fn bump(a) {
         a = a + 1;
@@ -531,6 +565,7 @@ def test_param_mutation_must_be_returned_function():
 
 
 def test_param_mutation_returned_allows_change():
+    """Test that param mutation returned allows change."""
     src = """
     fn bump(a) {
         a = a + 1;
@@ -546,6 +581,7 @@ def test_param_mutation_returned_allows_change():
 
 
 def test_inconsistent_return_signature_in_function():
+    """Test that inconsistent return signature in function."""
     src = """
     fn f(a) {
         if (a) {
@@ -564,6 +600,7 @@ def test_inconsistent_return_signature_in_function():
 
 
 def test_must_use_unused_local_binding_top_level():
+    """Test that must use unused local binding top level."""
     src = """
     def x = 1;
     print(42);
@@ -572,6 +609,7 @@ def test_must_use_unused_local_binding_top_level():
 
 
 def test_run_file_executes_source(tmp_path):
+    """Test that run file executes source."""
     src_file = tmp_path / "prog.tiny"
     src_file.write_text(
         """
@@ -585,6 +623,7 @@ def test_run_file_executes_source(tmp_path):
 
 
 def test_main_runs_and_writes_output(run_program):
+    """Test that main runs and writes output."""
     result = run_program("print(21 + 21);")
 
     assert result.returncode == 0
@@ -593,6 +632,7 @@ def test_main_runs_and_writes_output(run_program):
 
 
 def test_main_eval_executes_snippet(capsys):
+    """Test that main eval executes snippet."""
     exit_code = main(["--eval", "print(3 * 4);"])
     captured = capsys.readouterr()
 
@@ -602,6 +642,7 @@ def test_main_eval_executes_snippet(capsys):
 
 
 def test_main_eval_reports_error(capsys):
+    """Test that main eval reports error."""
     exit_code = main(["--eval", "def x = ;"])
     captured = capsys.readouterr()
 
@@ -610,6 +651,7 @@ def test_main_eval_reports_error(capsys):
 
 
 def test_repl_executes_lines(monkeypatch, capsys):
+    """Test that repl executes lines."""
     monkeypatch.setattr("sys.stdin", io.StringIO("print(2 + 3);\nprint(1);\n"))
 
     exit_code = main(["--repl"])
@@ -621,6 +663,7 @@ def test_repl_executes_lines(monkeypatch, capsys):
 
 
 def test_repl_reports_errors(monkeypatch, capsys):
+    """Test that repl reports errors."""
     monkeypatch.setattr("sys.stdin", io.StringIO("def y = ;\n"))
 
     exit_code = main(["--repl"])
@@ -632,6 +675,7 @@ def test_repl_reports_errors(monkeypatch, capsys):
 
 
 def test_repl_allows_underscore_binding(monkeypatch, capsys):
+    """Test that repl allows underscore binding."""
     monkeypatch.setattr("sys.stdin", io.StringIO("def _ = 1;\nprint(0);\n"))
 
     exit_code = main(["--repl"])
@@ -644,6 +688,7 @@ def test_repl_allows_underscore_binding(monkeypatch, capsys):
 
 
 def test_console_read_line_returns_input(monkeypatch):
+    """Test that console read line returns input."""
     prompts: list[str] = []
 
     def fake_input(prompt: str = "") -> str:
@@ -659,6 +704,7 @@ def test_console_read_line_returns_input(monkeypatch):
 
 
 def test_console_read_line_handles_eof(monkeypatch):
+    """Test that console read line handles eof."""
     def fake_input(prompt: str = "") -> str:
         raise EOFError()
 
@@ -669,6 +715,7 @@ def test_console_read_line_handles_eof(monkeypatch):
     assert out == "\n"
 
 def test_console_read_line_blocked_when_dap_disables_stdin(monkeypatch):
+    """Test that console read line blocked when dap disables stdin."""
     monkeypatch.setenv("TINYLANGUAGE_DAP_DISABLE_STDIN", "1")
 
     with pytest.raises(Exception, match="Console\\.read_line is disabled"):
@@ -676,6 +723,7 @@ def test_console_read_line_blocked_when_dap_disables_stdin(monkeypatch):
 
 
 def test_must_use_unused_local_binding_function():
+    """Test that must use unused local binding function."""
     src = """
     fn g(a) {
         def t = 123;
@@ -687,6 +735,7 @@ def test_must_use_unused_local_binding_function():
 
 
 def test_must_use_bare_call_forbidden():
+    """Test that must use bare call forbidden."""
     src = """
     fn h() { return 1; }
     def _unused85 = h();
@@ -695,6 +744,7 @@ def test_must_use_bare_call_forbidden():
 
 
 def test_must_use_destructure_all_fields():
+    """Test that must use destructure all fields."""
     src = """
     fn make() { return { p: 1, e: 0 }; }
     { p, e } = make();
@@ -704,6 +754,7 @@ def test_must_use_destructure_all_fields():
 
 
 def test_ok_destructure_both_values():
+    """Test that ok destructure both values."""
     src = """
     fn make() { return { p: 1, e: 0 }; }
     { p, e } = make();
@@ -715,6 +766,7 @@ def test_ok_destructure_both_values():
 
 
 def test_unused_binding_in_nested_block_function():
+    """Test that unused binding in nested block function."""
     src = """
     fn g(a) {
         if (true) {
@@ -727,6 +779,7 @@ def test_unused_binding_in_nested_block_function():
 
 
 def test_unused_binding_in_nested_block_method():
+    """Test that unused binding in nested block method."""
     src = """
     class Box {
         fn touch(self, v) {
@@ -741,6 +794,7 @@ def test_unused_binding_in_nested_block_method():
 
 
 def test_unused_binding_must_be_used_on_all_paths():
+    """Test that unused binding must be used on all paths."""
     src = """
     def x = 1;
     def flag = 1;
@@ -755,6 +809,7 @@ def test_unused_binding_must_be_used_on_all_paths():
 
 
 def test_binding_used_in_all_branches_is_ok():
+    """Test that binding used in all branches is ok."""
     src = """
     fn demo(flag) {
         def label = "hi";
@@ -773,6 +828,7 @@ def test_binding_used_in_all_branches_is_ok():
 
 
 def test_loop_skipped_counts_as_unused():
+    """Test that loop skipped counts as unused."""
     src = """
     def msg = "once";
     while (false) {
@@ -785,6 +841,7 @@ def test_loop_skipped_counts_as_unused():
 
 
 def test_unreachable_statement_after_return():
+    """Test that unreachable statement after return."""
     src = """
     fn demo() {
         return 1;
@@ -797,6 +854,7 @@ def test_unreachable_statement_after_return():
 
 
 def test_unreachable_statement_after_infinite_loop():
+    """Test that unreachable statement after infinite loop."""
     src = """
     fn demo() {
         while (true) {
@@ -811,6 +869,7 @@ def test_unreachable_statement_after_infinite_loop():
 
 
 def test_method_param_mutation_must_be_returned():
+    """Test that method param mutation must be returned."""
     src = """
     class Box {
         value: number;
@@ -826,6 +885,7 @@ def test_method_param_mutation_must_be_returned():
 
 
 def test_inconsistent_return_signature_in_method():
+    """Test that inconsistent return signature in method."""
     src = """
     class Box {
         value: number;
@@ -846,6 +906,7 @@ def test_inconsistent_return_signature_in_method():
 
 
 def test_ok_function_call_as_argument():
+    """Test that ok function call as argument."""
     src = """
     fn one() { return 1; }
     print(one());
@@ -855,6 +916,7 @@ def test_ok_function_call_as_argument():
 
 
 def test_destructure_requires_all_call_args():
+    """Test that destructure requires all call args."""
     src = """
     fn f(a) { return { a: a + 1, e: 0 }; }
     def a = 3;
@@ -867,6 +929,7 @@ def test_destructure_requires_all_call_args():
 
 
 def test_destructure_missing_input_variable_fails():
+    """Test that destructure missing input variable fails."""
     src = """
     fn f(a) { return { a: a + 1, e: 0 }; }
     def a = 3;
@@ -876,6 +939,7 @@ def test_destructure_missing_input_variable_fails():
 
 
 def test_method_param_mutation_returned_allows_change():
+    """Test that method param mutation returned allows change."""
     src = """
     class Box {
         value: number;
@@ -896,6 +960,7 @@ def test_method_param_mutation_returned_allows_change():
 
 
 def test_error_message_for_missing_heap_index(monkeypatch):
+    """Test that error message for missing heap index."""
     src = """
     def a = new[1, 2];
     print(heap_get(a, 5));
@@ -910,6 +975,7 @@ def test_error_message_for_missing_heap_index(monkeypatch):
 
 
 def test_error_message_for_double_delete(monkeypatch):
+    """Test that error message for double delete."""
     src = """
     def p = new(1);
     def _unused107 = delete(p);
@@ -924,6 +990,7 @@ def test_error_message_for_double_delete(monkeypatch):
 
 
 def test_error_message_for_unknown_delete(monkeypatch):
+    """Test that error message for unknown delete."""
     src = """
     def _unused110 = delete(9);
     print(errorMessage);
@@ -936,6 +1003,7 @@ def test_error_message_for_unknown_delete(monkeypatch):
 
 
 def test_error_message_for_heap_type_mismatch(monkeypatch):
+    """Test that error message for heap type mismatch."""
     src = """
     def p = new(1);
     { e } = heap_set(p, 0, 1);
@@ -955,6 +1023,7 @@ def test_error_message_for_heap_type_mismatch(monkeypatch):
 
 
 def test_heap_leak_report_tracks_live_allocations():
+    """Test that heap leak report tracks live allocations."""
     src = """
     def first = new(2);
     def second = new[1, 2, 3];
@@ -975,6 +1044,7 @@ def test_heap_leak_report_tracks_live_allocations():
 
 
 def test_heap_leak_report_clears_after_cleanup():
+    """Test that heap leak report clears after cleanup."""
     src = """
     def first = new(2);
     def second = new[1, 2, 3];
@@ -993,6 +1063,7 @@ def test_heap_leak_report_clears_after_cleanup():
 
 
 def test_error_message_for_missing_field():
+    """Test that error message for missing field."""
     src = """
     def o = { existing: 1; };
     print(o.missing);
@@ -1005,14 +1076,17 @@ def test_error_message_for_missing_field():
 
 
 def test_parser_error_reports_context():
+    """Test that parser error reports context."""
     expect_compile_error("def a = ;", r"unexpected token SYM \(line 1, col 9\)")
 
 
 def test_runtime_error_reports_context():
+    """Test that runtime error reports context."""
     expect_compile_error("print(1/0);", r"(?s)division by zero \(line 1, col 8\).*\^")
 
 
 def test_typedef_simple_record():
+    """Test that typedef simple record."""
     src = """
     type Error {
         code: number;
@@ -1029,6 +1103,7 @@ def test_typedef_simple_record():
     out = run_tiny(src)
     assert out == "number\nstring\n"
 def test_rosetta_fibonacci_program():
+    """Test that rosetta fibonacci program."""
     program = pathlib.Path(__file__).resolve().parents[1] / "src_tiny" / "rosetta_fibonacci.tiny"
 
     out = run_file(str(program))
@@ -1052,6 +1127,7 @@ def test_rosetta_fibonacci_program():
 
 
 def test_number_class_with_operator_overloads():
+    """Test that number class with operator overloads."""
     src = """
     class Number {
         value: number;
@@ -1086,6 +1162,7 @@ def test_number_class_with_operator_overloads():
 
 
 def test_spawn_and_join():
+    """Test that spawn and join."""
     out = run_tiny(
         """
         fn add(x, y) {

@@ -1,3 +1,5 @@
+"""Tests for tiny language cli self host."""
+
 import json
 import os
 import pathlib
@@ -77,6 +79,7 @@ SNAPSHOTS = [
 
 
 def run_tiny_cli(args, cli_path=TINY_CLI, extra_env=None):
+    """Helper to run tiny cli."""
     env = {
         **os.environ,
         "PYTHONPATH": os.pathsep.join(
@@ -96,6 +99,7 @@ def run_tiny_cli(args, cli_path=TINY_CLI, extra_env=None):
 
 
 def run_python_cli(args, extra_env=None):
+    """Helper to run python cli."""
     env = {
         **os.environ,
         "PYTHONPATH": os.pathsep.join(
@@ -114,6 +118,7 @@ def run_python_cli(args, extra_env=None):
 
 
 def assert_cli_parity(args, cli_path=TINY_CLI, extra_env=None):
+    """Helper to assert cli parity."""
     python_proc = run_python_cli(args, extra_env=extra_env)
     tiny_proc = run_tiny_cli(args, cli_path=cli_path, extra_env=extra_env)
     assert tiny_proc.returncode == python_proc.returncode
@@ -122,6 +127,7 @@ def assert_cli_parity(args, cli_path=TINY_CLI, extra_env=None):
 
 
 def assert_cli_snapshot(snapshot: CliSnapshot, cli_path=TINY_CLI):
+    """Helper to assert cli snapshot."""
     python_proc = run_python_cli(snapshot.args)
     assert python_proc.stdout == snapshot.stdout
     assert python_proc.stderr == snapshot.stderr
@@ -134,6 +140,7 @@ def assert_cli_snapshot(snapshot: CliSnapshot, cli_path=TINY_CLI):
 
 
 def test_tiny_cli_runs_inline_source():
+    """Test that tiny cli runs inline source."""
     proc = run_tiny_cli(["--source", "print(1 + 2);"])
 
     assert proc.returncode == 0
@@ -142,10 +149,12 @@ def test_tiny_cli_runs_inline_source():
 
 
 def test_tiny_cli_parity_inline_source():
+    """Test that tiny cli parity inline source."""
     assert_cli_parity(["--source", "print(10 - 3);"])
 
 
 def test_tiny_cli_parity_file_and_backend(tmp_path):
+    """Test that tiny cli parity file and backend."""
     program = "print(6 * 7);"
     file_path = tmp_path / "program.tiny"
     file_path.write_text(program, encoding="utf-8")
@@ -154,6 +163,7 @@ def test_tiny_cli_parity_file_and_backend(tmp_path):
 
 
 def test_tiny_cli_parity_errors(tmp_path):
+    """Test that tiny cli parity errors."""
     program = "def x = 1; @"
     file_path = tmp_path / "bad.tiny"
     file_path.write_text(program, encoding="utf-8")
@@ -162,9 +172,11 @@ def test_tiny_cli_parity_errors(tmp_path):
 
 
 def test_tiny_lang_cli_parity_inline_source():
+    """Test that tiny lang cli parity inline source."""
     assert_cli_parity(["--source", "print(5 + 4);"], cli_path=TINY_LANG_CLI)
 
 
 @pytest.mark.parametrize("snapshot", SNAPSHOTS, ids=lambda snapshot: " ".join(snapshot.args))
 def test_tiny_cli_parity_snapshots(snapshot: CliSnapshot) -> None:
+    """Test that tiny cli parity snapshots."""
     assert_cli_snapshot(snapshot)

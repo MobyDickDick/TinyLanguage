@@ -1,3 +1,5 @@
+"""Tests for tiny language preamble."""
+
 import pathlib
 import sys
 
@@ -15,6 +17,7 @@ from tiny_language_preamble import (
 
 
 def test_stack_frame_qualified_name():
+    """Test that stack frame qualified name."""
     frame = StackFrame(name="run", namespace="Core", pos=SourcePos(line=1, column=1))
     assert frame.qualified_name == "Core.run"
 
@@ -23,6 +26,7 @@ def test_stack_frame_qualified_name():
 
 
 def test_format_error_with_position():
+    """Test that format error with position."""
     source = "first\nsecond"
     output = format_error(source, SourcePos(line=2, column=3), "boom", code="E123")
 
@@ -32,6 +36,7 @@ def test_format_error_with_position():
 
 
 def test_format_error_with_span_and_hint():
+    """Test that format error with span and hint."""
     source = "alpha\nbeta\ngamma"
     span = SourceSpan(SourcePos(line=1, column=2), SourcePos(line=2, column=3))
     output = format_error(source, span, "bad span", code="E777", hint="fix it")
@@ -42,11 +47,13 @@ def test_format_error_with_span_and_hint():
 
 
 def test_closest_match_prefers_best_candidate():
+    """Test that closest match prefers best candidate."""
     match = _closest_match("banana", ["bandana", "banana", "ban"])
     assert match == "banana"
 
 
 def test_classify_error_suggestions():
+    """Test that classify error suggestions."""
     code, hint = _classify_error("unused binding foo")
     assert code == "E002"
     assert "unused" in hint.lower()
@@ -62,6 +69,7 @@ def test_classify_error_suggestions():
 
 
 def test_fallback_readline_history_round_trip(tmp_path):
+    """Test that fallback readline history round trip."""
     rl = _FallbackReadline()
     rl.add_history("first")
     rl.add_history("second")

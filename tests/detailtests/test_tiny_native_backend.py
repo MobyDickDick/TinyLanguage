@@ -1,3 +1,5 @@
+"""Tests for tiny native backend."""
+
 import pathlib
 
 from tiny_language import compile_and_run
@@ -10,6 +12,7 @@ NATIVE_VM_SRC = (PROJECT_ROOT / "src_tiny" / "native_vm.tiny").read_text(encodin
 
 
 def test_tiny_native_backend_smoke(monkeypatch) -> None:
+    """Test that tiny native backend smoke."""
     program = "\n\n".join(
         [
             AST_SRC,

@@ -418,6 +418,7 @@ def test_env_var_truthy_parsing(monkeypatch):
 
 
 def test_tcp_transport_does_not_disable_stdin(monkeypatch, tmp_path):
+    """Test that tcp transport does not disable stdin."""
     module = load_adapter_module()
 
     # Use port 0 so the OS picks an ephemeral port without needing a real client.

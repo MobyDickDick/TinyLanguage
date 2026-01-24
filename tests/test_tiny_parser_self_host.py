@@ -1,3 +1,5 @@
+"""Tests for tiny parser self host."""
+
 import json
 import pathlib
 
@@ -13,11 +15,13 @@ PARSER_SRC = (PROJECT_ROOT / "src_tiny" / "tiny_language_parser.tiny").read_text
 
 
 def _run_parser_program(body: str) -> list[str]:
+    """Helper to run parser program."""
     program = "\n\n".join([AST_SRC, LEXER_SRC, PARSER_SRC, body])
     return compile_and_run(program).strip().splitlines()
 
 
 def test_tiny_parser_builds_basic_ast_nodes():
+    """Test that tiny parser builds basic ast nodes."""
     source_literal = json.dumps("def value = 7; print(value);")
     body = f"""
 def ast = parse_program({source_literal});
@@ -36,6 +40,7 @@ print(Python.call("builtins", "repr", new[second], new["repr"]));
 
 
 def test_tiny_parser_reports_span_context():
+    """Test that tiny parser reports span context."""
     program = "\n\n".join(
         [
             AST_SRC,

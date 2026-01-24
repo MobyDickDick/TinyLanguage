@@ -1,3 +1,5 @@
+"""Tests for standalone tiny regressions."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -32,6 +34,7 @@ PARSE_ONLY_ROSETTA_DEMOS = [
 
 
 def _run_demo(path: Path, *, runtime: Runtime | None = None) -> str:
+    """Helper to run demo."""
     source = path.read_text(encoding="utf-8")
     resolved = path.resolve()
     try:
@@ -51,23 +54,27 @@ def _run_demo(path: Path, *, runtime: Runtime | None = None) -> str:
 
 
 def _parse_demo(path: Path) -> None:
+    """Helper to parse demo."""
     source = path.read_text(encoding="utf-8")
     Parser(Lexer(source), source).parse()
 
 
 @pytest.mark.parametrize("demo_path", STANDALONE_DEMOS)
 def test_standalone_demo_smoke(demo_path: Path) -> None:
+    """Test that standalone demo smoke."""
     assert demo_path.exists()
     _run_demo(demo_path)
 
 
 @pytest.mark.parametrize("demo_path", RUN_ROSETTA_DEMOS)
 def test_rosetta_demo_smoke(demo_path: Path) -> None:
+    """Test that rosetta demo smoke."""
     assert demo_path.exists()
     _run_demo(demo_path)
 
 
 @pytest.mark.parametrize("demo_path", PARSE_ONLY_ROSETTA_DEMOS)
 def test_rosetta_demo_parses(demo_path: Path) -> None:
+    """Test that rosetta demo parses."""
     assert demo_path.exists()
     _parse_demo(demo_path)

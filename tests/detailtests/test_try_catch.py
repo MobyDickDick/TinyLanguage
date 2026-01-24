@@ -1,3 +1,5 @@
+"""Tests for try catch."""
+
 import pathlib
 import sys
 
@@ -9,6 +11,7 @@ from tiny_language import TinyLangError, compile_and_run
 
 
 def test_stacktrace_includes_call_chain():
+    """Test that stacktrace includes call chain."""
     source = """
 fn leaf() { def _unused1 = missing(); }
 fn middle() { return leaf(); }
@@ -26,6 +29,7 @@ print(top());
 
 
 def test_try_catch_handles_error_object():
+    """Test that try catch handles error object."""
     source = """
 fn explode() { return missing(); }
 fn wrapper() {
@@ -47,6 +51,7 @@ print(wrapper());
 
 
 def test_try_catch_keeps_program_running():
+    """Test that try catch keeps program running."""
     source = """
 fn explode() { def _unused5 = missing(); }
 

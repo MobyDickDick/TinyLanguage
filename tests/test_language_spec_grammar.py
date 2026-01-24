@@ -1,3 +1,5 @@
+"""Tests for language spec grammar."""
+
 import pathlib
 import re
 import sys
@@ -74,6 +76,7 @@ GRAMMAR_SAMPLES = [
 
 
 def _normalize(value: Any) -> Any:
+    """Helper to normalize."""
     if isinstance(value, list):
         return [_normalize(item) for item in value]
     if isinstance(value, tuple):
@@ -101,19 +104,23 @@ def _normalize(value: Any) -> Any:
 
 
 def _parse_python(source: str) -> list[Any]:
+    """Helper to parse python."""
     parser = Parser(Lexer(source), source)
     return parser.parse()
 
 
 def _parse_tiny(source: str) -> list[Any]:
+    """Helper to parse tiny."""
     return _parse_with_tiny_parser(source)
 
 
 def _load_language_spec() -> str:
+    """Helper to load language spec."""
     return LANGUAGE_SPEC.read_text(encoding="utf-8")
 
 
 def _extract_keyword_list(spec: str) -> set[str]:
+    """Helper to extract keyword list."""
     match = re.search(r"Keywords today include:(.*)", spec)
     if not match:
         raise AssertionError("Unable to locate keyword list in language spec.")
@@ -121,6 +128,7 @@ def _extract_keyword_list(spec: str) -> set[str]:
 
 
 def _extract_token_table(spec: str) -> set[str]:
+    """Helper to extract token table."""
     match = re.search(
         r"\| Category \| Tokens \|\n\|[- |]+\|\n(?P<rows>(?:\|.*\n)+?)\n",
         spec,
@@ -132,6 +140,7 @@ def _extract_token_table(spec: str) -> set[str]:
 
 
 def _extract_grammar_block(spec: str) -> str:
+    """Helper to extract grammar block."""
     match = re.search(r"```ebnf\n(.*?)```", spec, flags=re.S)
     if not match:
         raise AssertionError("Unable to locate EBNF grammar block in language spec.")
@@ -140,6 +149,7 @@ def _extract_grammar_block(spec: str) -> str:
 
 @pytest.mark.parametrize("source", GRAMMAR_SAMPLES)
 def test_grammar_samples_match_tiny_parser(source: str) -> None:
+    """Test that grammar samples match tiny parser."""
     python_ast = _normalize(_parse_python(source))
     tiny_ast = _normalize(_parse_tiny(source))
 
@@ -147,6 +157,7 @@ def test_grammar_samples_match_tiny_parser(source: str) -> None:
 
 
 def test_language_spec_keywords_match_lexer() -> None:
+    """Test that language spec keywords match lexer."""
     spec = _load_language_spec()
     documented = _extract_keyword_list(spec)
 
@@ -154,6 +165,7 @@ def test_language_spec_keywords_match_lexer() -> None:
 
 
 def test_language_spec_token_table_matches_lexer() -> None:
+    """Test that language spec token table matches lexer."""
     spec = _load_language_spec()
     documented = _extract_token_table(spec)
 
@@ -166,6 +178,7 @@ def test_language_spec_token_table_matches_lexer() -> None:
 
 
 def test_language_spec_grammar_mentions_task_and_catch_name() -> None:
+    """Test that language spec grammar mentions task and catch name."""
     grammar = _extract_grammar_block(_load_language_spec())
 
     assert '"task" block' in grammar
@@ -173,6 +186,7 @@ def test_language_spec_grammar_mentions_task_and_catch_name() -> None:
 
 
 def test_language_spec_string_escapes_match_lexer() -> None:
+    """Test that language spec string escapes match lexer."""
     source = '"line1\\nline2\\t\\r\\\"\\\\\\q"'
 
     token = Lexer(source).next_token()
@@ -192,6 +206,7 @@ def test_language_spec_string_escapes_match_lexer() -> None:
 
 
 def _lex_texts(source: str) -> list[str]:
+    """Helper to lex texts."""
     lexer = Lexer(source)
     tokens = []
     while True:
@@ -203,6 +218,7 @@ def _lex_texts(source: str) -> list[str]:
 
 
 def test_language_spec_tokens_lex_as_documented() -> None:
+    """Test that language spec tokens lex as documented."""
     source = "( ) { } [ ] , ; . : ? = + - * / ^ % < > <= >= == != && || !"
 
     assert _lex_texts(source) == [
@@ -237,6 +253,7 @@ def test_language_spec_tokens_lex_as_documented() -> None:
 
 
 def test_language_spec_comment_tokens_are_skipped() -> None:
+    """Test that language spec comment tokens are skipped."""
     source = "def x = 1; // comment here\nprint(x);"
 
     assert _lex_texts(source) == [
@@ -254,6 +271,7 @@ def test_language_spec_comment_tokens_are_skipped() -> None:
 
 
 def test_language_spec_return_arrow_is_two_tokens() -> None:
+    """Test that language spec return arrow is two tokens."""
     source = "fn add(x: number) -> number { return x; }"
     tokens = _lex_texts(source)
 

@@ -1,11 +1,15 @@
+"""Tests for number class."""
+
 import pathlib
 
 
 def load_number_class() -> str:
+    """Helper to load number class."""
     return (pathlib.Path(__file__).resolve().parents[2] / "src_tiny" / "number_class.tiny").read_text()
 
 
 def test_subtraction_infinities_and_overflow(run_tiny_source):
+    """Test that subtraction infinities and overflow."""
     number_def = load_number_class()
     baseline = "12.5\n-2.5\n37.5\n0.6666666666666666 (rounded)\n"
     extra = """
@@ -45,6 +49,7 @@ def test_subtraction_infinities_and_overflow(run_tiny_source):
 
 
 def test_multiplication_zero_and_infinity_signs(run_tiny_source):
+    """Test that multiplication zero and infinity signs."""
     number_def = load_number_class()
     baseline = "12.5\n-2.5\n37.5\n0.6666666666666666 (rounded)\n"
     extra = """
@@ -80,6 +85,7 @@ def test_multiplication_zero_and_infinity_signs(run_tiny_source):
 
 
 def test_division_with_infinities_and_zero(run_tiny_source):
+    """Test that division with infinities and zero."""
     number_def = load_number_class()
     baseline = "12.5\n-2.5\n37.5\n0.6666666666666666 (rounded)\n"
     extra = """
@@ -118,6 +124,7 @@ def test_division_with_infinities_and_zero(run_tiny_source):
 
 
 def test_division_rounding_marks_error_code(run_tiny_source):
+    """Test that division rounding marks error code."""
     number_def = load_number_class()
     extra = """
     def one = Number(1);

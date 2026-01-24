@@ -1,3 +1,5 @@
+"""Tests for python interop demos."""
+
 import pathlib
 import sys
 
@@ -8,6 +10,7 @@ from tiny_language import compile_and_run
 
 
 def test_math_demo_runs_end_to_end():
+    """Test that math demo runs end to end."""
     program = PROJECT_ROOT / "src_tiny" / "python_math_demo.tiny"
     output = compile_and_run(program.read_text())
 
@@ -23,6 +26,7 @@ def test_math_demo_runs_end_to_end():
 
 
 def test_json_demo_round_trips_and_maps_list_entries():
+    """Test that json demo round trips and maps list entries."""
     program = PROJECT_ROOT / "src_tiny" / "python_json_demo.tiny"
     output = compile_and_run(program.read_text())
 
@@ -40,6 +44,7 @@ def test_json_demo_round_trips_and_maps_list_entries():
 
 
 def test_allowlist_violation_is_reported():
+    """Test that allowlist violation is reported."""
     source = """
     def math = Python.import_module("math", new["sqrt"]);
     print(math.sqrt(9));
@@ -59,6 +64,7 @@ def test_allowlist_violation_is_reported():
 
 
 def test_python_call_requires_allowlist():
+    """Test that python call requires allowlist."""
     source = """
     try {
       def ignored = Python.call("math", "sqrt", new[9]);
@@ -74,6 +80,7 @@ def test_python_call_requires_allowlist():
 
 
 def test_banned_python_modules_are_blocked():
+    """Test that banned python modules are blocked."""
     source = """
     try {
       def forbidden = Python.import_module("subprocess");
@@ -90,6 +97,7 @@ def test_banned_python_modules_are_blocked():
 
 
 def test_python_call_honors_timeout_option():
+    """Test that python call honors timeout option."""
     source = """
     try {
       def ignored = Python.call("time", "sleep", new[0.05], { allow: new["sleep"], timeout_ms: 1 });
@@ -105,6 +113,7 @@ def test_python_call_honors_timeout_option():
 
 
 def test_proxy_pipeline_demo_runs_end_to_end():
+    """Test that proxy pipeline demo runs end to end."""
     program = PROJECT_ROOT / "src_tiny" / "python_proxy_pipeline_demo.tiny"
     output = compile_and_run(program.read_text())
 
@@ -113,6 +122,7 @@ def test_proxy_pipeline_demo_runs_end_to_end():
 
 
 def test_python_fn_demo_runs_end_to_end():
+    """Test that python fn demo runs end to end."""
     program = PROJECT_ROOT / "src_tiny" / "python_fn_demo.tiny"
     output = compile_and_run(program.read_text())
 

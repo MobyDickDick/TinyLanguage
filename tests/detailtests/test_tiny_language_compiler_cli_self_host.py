@@ -1,3 +1,5 @@
+"""Tests for tiny language compiler cli self host."""
+
 import json
 import os
 import pathlib
@@ -732,6 +734,7 @@ SNAPSHOTS = [
 
 
 def run_python_compiler_cli(args: list[str]) -> subprocess.CompletedProcess[str]:
+    """Helper to run python compiler cli."""
     env = {
         **os.environ,
         "PYTHONPATH": os.pathsep.join(
@@ -748,6 +751,7 @@ def run_python_compiler_cli(args: list[str]) -> subprocess.CompletedProcess[str]
 
 
 def run_tiny_compiler_cli(args: list[str]) -> subprocess.CompletedProcess[str]:
+    """Helper to run tiny compiler cli."""
     env = {
         **os.environ,
         "PYTHONPATH": os.pathsep.join(
@@ -766,6 +770,7 @@ def run_tiny_compiler_cli(args: list[str]) -> subprocess.CompletedProcess[str]:
 
 
 def assert_compiler_snapshot(snapshot: CompilerSnapshot, tmp_path: pathlib.Path) -> None:
+    """Helper to assert compiler snapshot."""
     program_path = tmp_path / "program.tiny"
     program_path.write_text(snapshot.source, encoding="utf-8")
     args = [str(program_path), *snapshot.args]
@@ -782,5 +787,6 @@ def assert_compiler_snapshot(snapshot: CompilerSnapshot, tmp_path: pathlib.Path)
 
 
 def test_tiny_compiler_cli_parity_snapshots(tmp_path: pathlib.Path) -> None:
+    """Test that tiny compiler cli parity snapshots."""
     for snapshot in SNAPSHOTS:
         assert_compiler_snapshot(snapshot, tmp_path)

@@ -1,3 +1,5 @@
+"""Tests for stdlib sources."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -29,11 +31,13 @@ STDLIB_MODULES = [
 
 
 def _parse_demo(path: Path) -> None:
+    """Helper to parse demo."""
     source = path.read_text(encoding="utf-8")
     Parser(Lexer(source), source).parse()
 
 
 @pytest.mark.parametrize("demo_path", SRC_STDLIB_DOCS + STDLIB_MODULES)
 def test_stdlib_sources_parse(demo_path: Path) -> None:
+    """Test that stdlib sources parse."""
     assert demo_path.exists()
     _parse_demo(demo_path)

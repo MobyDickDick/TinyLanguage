@@ -1,7 +1,10 @@
+"""Tests for runtime expansion."""
+
 import re
 
 
 def test_nested_arrays_roundtrip(run_tiny_source):
+    """Test that nested arrays roundtrip."""
     out = run_tiny_source(
         """
 def nested = new[new[1, 2], new[3, 4], new[5, 6]];
@@ -22,6 +25,7 @@ def _cleanup_nested = delete(nested);
 
 
 def test_nested_arrays_three_levels(run_tiny_source):
+    """Test that nested arrays three levels."""
     out = run_tiny_source(
         """
 def nested = new[
@@ -54,6 +58,7 @@ def _cleanup_nested = delete(nested);
 
 
 def test_repeated_new_delete_pairs(run_tiny_source):
+    """Test that repeated new delete pairs."""
     out = run_tiny_source(
         """
 def total = 0;
@@ -73,6 +78,7 @@ print(total);
 
 
 def test_many_new_delete_pairs(run_tiny_source):
+    """Test that many new delete pairs."""
     out = run_tiny_source(
         """
 def total = 0;
@@ -92,6 +98,7 @@ print(total);
 
 
 def test_deep_recursion_sum(run_tiny_source):
+    """Test that deep recursion sum."""
     out = run_tiny_source(
         """
 fn sum(n) {
@@ -109,6 +116,7 @@ print(sum(25));
 
 
 def test_deeper_recursion_sum(run_tiny_source):
+    """Test that deeper recursion sum."""
     out = run_tiny_source(
         """
 fn sum(n) {
@@ -126,6 +134,7 @@ print(sum(50));
 
 
 def test_recursive_heap_allocation_sum(run_tiny_source):
+    """Test that recursive heap allocation sum."""
     out = run_tiny_source(
         """
 fn sum_heap(n) {
@@ -147,6 +156,7 @@ print(sum_heap(10));
 
 
 def test_heap_bounds_error_negative_index(run_tiny_source, monkeypatch):
+    """Test that heap bounds error negative index."""
     monkeypatch.setenv("TINY_LINT_HEAP", "0")
     out = run_tiny_source(
         """
@@ -161,6 +171,7 @@ def _cleanup = delete(ptr);
 
 
 def test_heap_api_error_scenarios(run_tiny_source, monkeypatch):
+    """Test that heap api error scenarios."""
     monkeypatch.setenv("TINY_LINT_HEAP", "0")
     out = run_tiny_source(
         """

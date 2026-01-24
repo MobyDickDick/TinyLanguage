@@ -1,3 +1,5 @@
+"""Shared helpers for TinyLanguage detail tests."""
+
 import os
 import pathlib
 import subprocess
@@ -15,6 +17,8 @@ from tiny_language import compile_and_run  # noqa: E402
 
 @dataclass
 class ExecutionResult:
+    """Capture stdout, stderr, and exit status from a CLI execution."""
+
     stdout: str
     stderr: str
     returncode: int

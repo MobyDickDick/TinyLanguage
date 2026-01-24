@@ -21,6 +21,7 @@ FIXTURES = [
 
 
 def _format_diff(path: pathlib.Path, source: str, formatted: str) -> str:
+    """Format a diff-like snippet to show formatting drift."""
     return "\n".join(
         [
             f"--- {path}",
@@ -34,6 +35,7 @@ def _format_diff(path: pathlib.Path, source: str, formatted: str) -> str:
 
 
 def _diagnostic_summary(diagnostics: Iterable) -> str:
+    """Summarize diagnostics into human-readable bullet points."""
     lines = []
     for diag in diagnostics:
         lines.append(f"- [{diag.code}] {diag.message}")
@@ -41,6 +43,7 @@ def _diagnostic_summary(diagnostics: Iterable) -> str:
 
 
 def check_fixture(path: pathlib.Path) -> list[str]:
+    """Check formatter idempotence and lint diagnostics for one fixture."""
     errors: list[str] = []
     source = path.read_text(encoding="utf-8")
     formatted = format_source(source)
@@ -69,6 +72,7 @@ def check_fixture(path: pathlib.Path) -> list[str]:
 
 
 def main() -> int:
+    """Run the module entry point."""
     failures: list[str] = []
     for fixture in FIXTURES:
         if not fixture.exists():

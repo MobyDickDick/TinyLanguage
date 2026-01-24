@@ -12,6 +12,8 @@ from typing import Iterable, List
 
 @dataclass(frozen=True)
 class DocItem:
+    """Represent a documented symbol extracted from a module."""
+
     kind: str
     name: str
     qualname: str
@@ -20,12 +22,15 @@ class DocItem:
 
 @dataclass(frozen=True)
 class ModuleDoc:
+    """Capture a module's docstring and extracted documented items."""
+
     path: Path
     docstring: str | None
     items: List[DocItem]
 
 
 def _iter_python_files(paths: Iterable[Path]) -> Iterable[Path]:
+    """Yield Python files under the provided file system roots."""
     for path in paths:
         if path.is_dir():
             for file_path in path.rglob("*.py"):
@@ -37,6 +42,7 @@ def _iter_python_files(paths: Iterable[Path]) -> Iterable[Path]:
 
 
 def _collect_module_docs(path: Path) -> ModuleDoc:
+    """Parse a module and collect its top-level docstrings."""
     source = path.read_text(encoding="utf-8")
     module = ast.parse(source, filename=str(path))
     module_docstring = ast.get_docstring(module)
@@ -77,12 +83,14 @@ def _collect_module_docs(path: Path) -> ModuleDoc:
 
 
 def _format_docstring(docstring: str | None, indent: str = "") -> List[str]:
+    """Format docstrings into Markdown-friendly lines with indentation."""
     if not docstring:
         return [f"{indent}*No docstring available.*"]
     return [f"{indent}{line}" for line in docstring.splitlines()]
 
 
 def render_markdown(modules: Iterable[ModuleDoc]) -> str:
+    """Render module documentation into a Markdown reference document."""
     lines: List[str] = [
         "# Generated reference",
         "",
@@ -110,6 +118,7 @@ def render_markdown(modules: Iterable[ModuleDoc]) -> str:
 
 
 def main() -> int:
+    """Run the module entry point."""
     parser = argparse.ArgumentParser(
         description="Generate a Markdown reference from Python docstrings."
     )

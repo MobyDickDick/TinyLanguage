@@ -1,3 +1,5 @@
+"""Tests for rosetta transpile."""
+
 from pathlib import Path
 
 import pytest
@@ -18,11 +20,13 @@ if not PYTHON_DIR.exists() or not EXPECTED_DIR.exists():  # pragma: no cover - g
 
 
 def translate_python_to_tiny(path: Path) -> str:
+    """Helper to translate python to tiny."""
     program_ir = PythonTranspiler().from_source(path.read_text())
     return TinyLanguageTranspiler().to_source(program_ir)
 
 
 def assert_snapshot(name: str) -> None:
+    """Helper to assert snapshot."""
     python_path = PYTHON_DIR / f"{name}.py"
     expected_path = EXPECTED_DIR / f"{name}.tiny"
     assert python_path.exists(), f"Missing Python sample: {python_path}"  # pragma: no cover - guardrail
@@ -34,16 +38,20 @@ def assert_snapshot(name: str) -> None:
 
 
 def test_fizzbuzz_snapshot():
+    """Test that fizzbuzz snapshot."""
     assert_snapshot("fizzbuzz")
 
 
 def test_fibonacci_snapshot():
+    """Test that fibonacci snapshot."""
     assert_snapshot("fibonacci")
 
 
 def test_factorial_snapshot():
+    """Test that factorial snapshot."""
     assert_snapshot("factorial")
 
 
 def test_hello_world_snapshot():
+    """Test that hello world snapshot."""
     assert_snapshot("hello_world")

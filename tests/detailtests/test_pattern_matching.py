@@ -1,3 +1,5 @@
+"""Tests for pattern matching."""
+
 import pytest
 
 from tests.utils import run_tiny
@@ -5,6 +7,7 @@ from tiny_language import compile_and_run
 
 
 def test_sum_type_match_and_bindings():
+    """Test that sum type match and bindings."""
     out = run_tiny(
         """
         type Option {
@@ -30,6 +33,7 @@ def test_sum_type_match_and_bindings():
 
 
 def test_match_requires_exhaustive_cases():
+    """Test that match requires exhaustive cases."""
     with pytest.raises(Exception, match=r"missing cases: None"):
         compile_and_run(
             """
@@ -51,6 +55,7 @@ def test_match_requires_exhaustive_cases():
 
 
 def test_match_rejects_unknown_case():
+    """Test that match rejects unknown case."""
     with pytest.raises(Exception, match=r"unexpected case Maybe for type Option"):
         compile_and_run(
             """
@@ -74,6 +79,7 @@ def test_match_rejects_unknown_case():
 
 
 def test_match_missing_cases_reports_hint_and_location():
+    """Test that match missing cases reports hint and location."""
     source = """
     type Option {
       Some { value: number };
@@ -100,6 +106,7 @@ def test_match_missing_cases_reports_hint_and_location():
 
 
 def test_match_unknown_case_reports_location():
+    """Test that match unknown case reports location."""
     source = """
     type Option {
       Some { value: number };
@@ -127,6 +134,7 @@ def test_match_unknown_case_reports_location():
 
 
 def test_match_duplicate_case_reports_location():
+    """Test that match duplicate case reports location."""
     source = """
     type Option {
       Some { value: number };

@@ -110,3 +110,54 @@ The MVP can be expressed as a sequence of passes over the AST:
 - [ ] Implement the Phase 1 static pass in the linter pipeline.
 - [ ] Document configuration and migration strategy.
 - [ ] Add regression tests for common typing errors.
+
+## Task breakdown (work items)
+
+The following tasks break the plan into actionable work items that can be
+tracked independently. Each task is intentionally scoped so it can be picked
+up without requiring the entire typing track to be complete.
+
+### Phase 1: Annotation-aware linting (MVP)
+
+- [ ] Inventory existing runtime type checks and map them to linter diagnostics
+  (reuse error codes where possible).
+- [ ] Add an AST pass that collects function signatures, return annotations, and
+  type/class field annotations.
+- [ ] Add a binding inference + stability pass that mirrors runtime reassignment
+  rules (`any` and `T?` are explicit escape hatches).
+- [ ] Add a call validation pass that checks arity and annotated argument
+  compatibility.
+- [ ] Add a return validation pass that enforces annotated return types and
+  preserves existing stability rules for unannotated functions.
+- [ ] Align diagnostics with existing `SourceSpan`-based reporting for editor
+  and CLI outputs.
+- [ ] Expose a `typing` lint profile (e.g., `tinyc lint --profile typing`) that
+  runs the new static checks.
+- [ ] Add a strict flag (e.g., `--typecheck`) that fails builds on typing
+  errors.
+- [ ] Document configuration + migration guidance for gradual adoption.
+- [ ] Add regression tests that cover common typing mistakes (reassignment,
+  call mismatch, and inconsistent returns).
+
+### Phase 2: Module-level summaries
+
+- [ ] Define a lightweight module summary format (exported functions, types,
+  and class fields).
+- [ ] Emit summaries during parsing or linting for modules with annotations.
+- [ ] Resolve imports against summaries to validate cross-module call sites.
+- [ ] Add tests that validate cross-module signature mismatches.
+
+### Phase 3: Optional enhancements
+
+- [ ] Add limited generic constraints for container helpers (e.g.,
+  `List[number]`) and document the supported syntax.
+- [ ] Introduce flow-sensitive narrowing for `match`/`if` guards where safe.
+- [ ] Add richer diagnostics for IDE integration (quick fixes, hints, and
+  annotation suggestions).
+
+### Open questions to resolve
+
+- [ ] Decide whether runtime `tag(...)` should act as a static type assertion.
+- [ ] Decide how external module imports are typed (stubs vs. inferred
+  summaries).
+- [ ] Decide how strongly to warn about implicit `any` usage in typed modules.

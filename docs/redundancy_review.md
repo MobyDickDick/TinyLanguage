@@ -27,6 +27,42 @@ These files are “redundant” in the sense that they forward to the same
 implementation, but they intentionally preserve backwards-compatible entry
 points and are not expected to be removed without a migration plan.
 
+### Migration plan (proposed)
+
+Goal: consolidate user-facing entrypoints on the canonical `src/` modules while
+keeping a safe deprecation window for tooling and docs that still rely on the
+legacy shims.
+
+**Canonical entrypoints (target)**
+
+- Test/automation runner: `python src/run_all.py`
+- Language CLI: `python -m src.tiny_language_cli` (or `python src/tiny_language_cli.py`)
+- Interpreter runner: `python src/tiny_language.py`
+
+**Deprecation timeline**
+
+1. **Phase 1 (announce, 0–1 release):**
+   - Keep all shims, but print a one-line warning on invocation:
+     - `run_all.py` warns to use `python src/run_all.py`.
+     - `tiny_language` / `tiny_language.py` warn to use `python src/tiny_language.py`
+       (or the CLI module as appropriate).
+     - `src/tiny_lang_cli.py` warns to use `python -m src.tiny_language_cli`.
+   - Update docs and internal tooling to reference canonical entrypoints only.
+2. **Phase 2 (grace period, 1–2 releases):**
+   - Shims remain, warnings stay, but tests/CI no longer call shims.
+   - Provide a short migration note in release notes.
+3. **Phase 3 (removal, 2+ releases):**
+   - Remove the root-level shims (`run_all.py`, `tiny_language`,
+     `tiny_language.py`) and the `src/tiny_lang_cli.py` alias.
+   - Keep a final changelog entry listing removed commands and replacements.
+
+**Compatibility mappings**
+
+- `run_all.py` → `python src/run_all.py`
+- `tiny_language` → `python src/tiny_language.py`
+- `python -m tiny_language` → `python src/tiny_language.py`
+- `python -m tiny_lang_cli` → `python -m src.tiny_language_cli`
+
 ## Stdlib sources vs. native stdlib registration
 
 There are two stdlib trees in the repo:

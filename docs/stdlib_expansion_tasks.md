@@ -5,12 +5,24 @@ plan so implementation can proceed in small, testable steps.
 
 ## Phase 1 tasks (high-value, low-risk)
 
-- [ ] Define the `stdlib.path` API surface (join/split/basename/dirname/extension,
+- [x] Define the `stdlib.path` API surface (join/split/basename/dirname/extension,
   normalize, directory filtering) and map each helper to runtime capabilities.
   - Deliverables: API table in `docs/stdlib_expansion_tasks.md` (this file) plus
     updates to `docs/stdlib_expansion_plan.md` if new helpers are added.
   - Dependencies: confirm which helpers can be built from `File` primitives vs.
     need runtime additions in `src/tiny_language_runtime.py`.
+  - API table (draft for `stdlib/path.tiny`):
+
+    | Helper | Signature | Behavior | Runtime mapping |
+    | --- | --- | --- | --- |
+    | `join` | `join(parts: [string]) -> string` | Join path parts using `/`, ignore empty parts, avoid duplicate separators. | Tiny implementation with `String.join`, `Collections.filter`, `String.contains`. |
+    | `split` | `split(path: string) -> [string]` | Split on `/` after normalization; preserve leading empty entry for absolute paths. | Tiny implementation with `String.split` + normalization helper. |
+    | `basename` | `basename(path: string) -> string` | Return final path segment; empty string for trailing `/`. | Tiny implementation with `split` + last non-empty helper. |
+    | `dirname` | `dirname(path: string) -> string` | Return parent path without trailing separator; empty string if none. | Tiny implementation with `split` + slice/join helpers. |
+    | `extension` | `extension(path: string) -> string` | Return suffix after last `.` in basename; empty string if none. | Tiny implementation with `basename` + `String.last_index`. |
+    | `normalize` | `normalize(path: string) -> string` | Collapse `.` segments, resolve `..` where possible, replace `\\` with `/`, collapse repeated `/`. | Tiny implementation with `String.replace`, `String.split`, stack-based reduce. |
+    | `is_absolute` | `is_absolute(path: string) -> bool` | `true` when path starts with `/` or drive prefix (`C:`). | Tiny implementation with `String.starts_with` and drive-prefix check. |
+    | `filter_dir` | `filter_dir(dir: string, pattern: string) -> [string]` | List directory entries and filter by simple glob (`*` suffix/prefix) using normalized paths. | Needs runtime helper (e.g., `File.listdir`) or `stdlib.os.listdir` wrapper. |
 - [ ] Implement runtime helpers for `stdlib.path` (path normalization + join
   semantics) and add Tiny wrappers in `stdlib/path.tiny`.
   - Deliverables: runtime helper functions + Tiny wrapper module and parity

@@ -14,7 +14,7 @@ are grouped by area and can be tackled independently.
 - [x] Define a package/module system roadmap (namespaces, versioning, lockfiles,
   dependency resolution) and outline a minimal CLI for it. (See
   `docs/package_module_roadmap.md`.)
-- [ ] Document runtime-performance goals (interpreter vs. C/LLVM backends),
+- [x] Document runtime-performance goals (interpreter vs. C/LLVM backends),
   including optimization phases and profiling workflows.
 - [ ] Outline a conformance and compatibility test strategy (spec tests +
   cross-backend parity suites).
@@ -27,9 +27,9 @@ are grouped by area and can be tackled independently.
 - [ ] Define a shared diagnostic error schema for interpreter + tooling.
 - [ ] Introduce optional type annotations with a gradual-typing strategy.
 - [ ] Build a minimal type-checking pass that can run in lints/CI.
-- [ ] Document optimization stages and performance targets for interpreter, C,
+- [x] Document optimization stages and performance targets for interpreter, C,
   and LLVM backends.
-- [ ] Establish profiling + benchmarking workflows for regression tracking.
+- [x] Establish profiling + benchmarking workflows for regression tracking.
 - [ ] Expand LSP features (rename, references, code actions, formatting hooks).
 - [ ] Improve debugging workflows (breakpoints, watch expressions, variable
   views).

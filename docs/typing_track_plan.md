@@ -85,6 +85,35 @@ The MVP can be expressed as a sequence of passes over the AST:
    - Reuse existing error codes where possible (e.g., `E009`, `E014`).
    - Emit linter-style diagnostics with `SourceSpan` for editor integration.
 
+## Runtime type-check inventory (inputs for Phase 1)
+
+The runtime already enforces several type-related constraints that should be
+mirrored by the static lint pass. The table below maps the enforcement points
+to their diagnostic codes so the linter can reuse the same semantics.
+
+| Runtime check | Where it happens | Error code | Notes for the linter |
+| --- | --- | --- | --- |
+| Variable type stability (reassignment) | `_check_assignment_type` in `Runtime` | `E014` | Mirrors `lint_assignment_types` in the linter to flag type changes on reassignments. |
+| Annotation enforcement (params/returns/fields) | `_enforce_annotation` in `Runtime` | `E009` | Emit when annotated types do not match values; linter should mirror `_type_matches` semantics. |
+| Inferred return stability | `_enforce_inferred_return` in `Runtime` | `E014` | Used when unannotated functions change inferred return type across branches/returns. |
+| Heap cell type stability | `heap_set` in `Runtime` | `E014` | Treat heap cell types as stable; linter may eventually mirror for heap APIs. |
+
+The shared matching rules (`_type_matches` and `_types_match`) already normalize
+`number`, `string`, `bool`, optional `T?`, and `any`, so the static checks should
+reuse the same equivalence behavior. 
+
+### Tasks derived from the runtime inventory
+
+- [ ] Align `_types_match` in the linter with runtime `_type_matches` so both
+  respect the same normalization rules (e.g. `number`, `string`, `bool`,
+  optional `T?`, and `any`).
+- [ ] Add annotation enforcement checks to the linter pipeline so annotated
+  params/returns/fields emit `E009` when values do not match.
+- [ ] Extend return validation to mirror `_enforce_inferred_return` and emit
+  `E014` for inferred return type drift in unannotated functions.
+- [ ] Evaluate whether heap API type stability (e.g. `heap_set`) should be
+  surfaced in linting and document the decision.
+
 ## CLI and tooling integration
 
 - Add a lint profile (e.g., `tinyc lint --profile typing`) that runs the static
@@ -119,7 +148,7 @@ up without requiring the entire typing track to be complete.
 
 ### Phase 1: Annotation-aware linting (MVP)
 
-- [ ] Inventory existing runtime type checks and map them to linter diagnostics
+- [x] Inventory existing runtime type checks and map them to linter diagnostics
   (reuse error codes where possible).
 - [ ] Add an AST pass that collects function signatures, return annotations, and
   type/class field annotations.

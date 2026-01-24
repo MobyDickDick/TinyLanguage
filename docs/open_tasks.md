@@ -21,7 +21,7 @@ are grouped by area and can be tackled independently.
   `docs/conformance_compatibility_test_strategy.md`.)
 - [x] Create a standard library expansion plan with prioritized modules and
   test coverage expectations. (See `docs/stdlib_expansion_plan.md`.)
-- [ ] Break down the stdlib expansion plan into actionable implementation tasks.
+- [x] Break down the stdlib expansion plan into actionable implementation tasks.
   (See `docs/stdlib_expansion_tasks.md`.)
 
 ## Roadmap-derived tasks (from `docs/roadmap_next.md`)

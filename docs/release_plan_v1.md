@@ -156,6 +156,6 @@ Make a decision (and record it in this plan or a roadmap entry):
 [x] CHANGELOG.md updated
 [x] Version set to 1.0.0
 [x] Release notes written
-[ ] Tag created and release published
+[x] Tag created and release published
 [x] RC window scheduled + doc/demo run-through complete
 ```

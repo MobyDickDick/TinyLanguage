@@ -1,4 +1,10 @@
-"""Rosetta example implementing FizzBuzz with a simple counting loop."""
+"""Rosetta example implementing FizzBuzz with a simple counting loop.
+
+The program prints the numbers from 1 to ``n`` while substituting:
+- "Fizz" for multiples of 3
+- "Buzz" for multiples of 5
+- "FizzBuzz" for multiples of both 3 and 5
+"""
 
 def fizzbuzz(n):
     """Print the FizzBuzz sequence from 1 through n inclusive."""

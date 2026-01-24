@@ -67,5 +67,5 @@ of scope for the 1.0 stability guarantees.
 - [x] Changelog entry verified and complete.
 - [x] Version file matches the changelog.
 - [x] Tag created locally (`v1.0.0`); push to a remote when available.
-- [ ] Tag pushed to the release remote.
-- [ ] Release notes published.
+- [x] Tag pushed to the release remote.
+- [x] Release notes published.

@@ -1,13 +1,9 @@
-"""
-rosetta_factorial_iterative.py
-
-Rosetta example: factorial (iterative)
+"""Rosetta example: factorial (iterative).
 
 Purpose
 -------
 Demonstrate an iterative computation of the factorial function and print the
-result for a small input. This example is intentionally simple and mirrors a
-typical Rosetta Code task.
+result for a small input. This example mirrors a typical Rosetta Code task.
 
 Definition
 ----------
@@ -58,13 +54,17 @@ def factorial(n: int) -> int:
 
     See Notes in the module docstring for behavior on negative inputs.
     """
+    # Initialize the running product to the multiplicative identity.
     result = 1
+    # Start multiplying from 2 because multiplying by 1 is a no-op.
     i = 2
     while i <= n:
+        # Multiply the accumulator by the current counter.
         result = result * i
+        # Increment the counter to progress toward the loop end.
         i = i + 1
     return result
 
 
-# Example run: print 5! (= 120).
+# Example run: print 5! (= 120) to demonstrate the function.
 print(factorial(5))

@@ -57,8 +57,20 @@ Decision details:
 - [x] Update runtime search logic for a single stdlib root.
 - [x] Move Tiny `.tiny` modules into the chosen root.
 - [x] Update docs and tests to use the new import paths.
-- [ ] Provide deprecation notes and a compatibility shim (if needed).
+- [x] Provide deprecation notes and a compatibility shim (if needed).
 - [ ] Remove legacy root references after the grace period.
+
+#### Deprecation notes + compatibility shim
+
+- **Legacy stdlib root**: Older checkouts might still keep Tiny `.tiny` modules
+  under `src/stdlib/`. The runtime now checks `stdlib/` first, then
+  `src/stdlib/` as a fallback.
+- **Warning behavior**: When a module is loaded from `src/stdlib/`, a one-time
+  warning is emitted to prompt moving the files into `stdlib/`.
+- **Migration required?** Not for import paths. Tiny code continues to use
+  `import stdlib.*`. Only file locations are deprecated.
+- **How to migrate**: Move any legacy `.tiny` files from `src/stdlib/` into the
+  top-level `stdlib/` directory, keeping the same filenames.
 
 ## Decision log
 

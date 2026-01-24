@@ -179,4 +179,4 @@ PY
 - [x] Tests/CI aktualisieren: Prüfen, welche Tests oder Scripts die Wrapper direkt aufrufen, und sie auf die neuen Entry-Points umstellen; Regressionstests ergänzen, die den Migrationsplan validieren.
 - [x] Stdlib-Struktur vereinheitlichen: Entscheidungsvorlage erstellen, ob `stdlib/` und `src/stdlib/` zusammengeführt werden können (inkl. Auswirkungen auf Import-Pfade, Runtime-Suche und API-Registrierung).
 - [x] Runtime-Suchpfade refaktorisieren: Falls eine Zusammenführung beschlossen wird, Runtime-Logik (`tiny_language_runtime.py`) so anpassen, dass nur ein einziges Stdlib-Root unterstützt wird.
-- [ ] Übergangsstrategie für Stdlib: Deprecation-Notizen und ggf. Migrationstools bereitstellen, die bestehende Tiny-Programme auf neue Import-Pfade anheben.
+- [x] Übergangsstrategie für Stdlib: Deprecation-Notizen und ggf. Migrationstools bereitstellen, die bestehende Tiny-Programme auf neue Import-Pfade anheben.

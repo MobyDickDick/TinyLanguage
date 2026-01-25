@@ -69,6 +69,39 @@ Every fixture should declare:
   native VM.
 - **Stability tier:** core (must pass) or experimental (can be skipped).
 
+## Ownership boundaries by suite
+
+This matrix clarifies which test suite owns specific behavior so new tests land
+in the right place and regressions are scoped correctly.
+
+| Behavior area | Spec conformance suite | Cross-backend parity suite | Compatibility + regression suite |
+| --- | --- | --- | --- |
+| Language syntax + parsing | **Owns**: verify syntax rules, error spans, and parsing diagnostics against the spec. | **Inherits**: reuse spec fixtures to ensure backends agree. | **Inherits**: add regressions for previously broken syntax cases. |
+| Evaluation order + control flow | **Owns**: explicit order rules, scoping, and control flow semantics from the spec. | **Owns**: assert interpreter/LLVM/C/native VM match interpreter outputs. | **Inherits**: record regressions for evaluation-order bugs. |
+| Runtime errors + diagnostics format | **Owns**: error types, messages, and spans defined by the spec. | **Owns**: normalize and compare diagnostics across backends. | **Owns**: CLI flags/output stability and regression messages. |
+| Stdlib API surface + semantics | **Owns**: spec-defined stdlib behavior (namespaces, function signatures, and error contracts). | **Owns**: parity for shared stdlib behavior across backends. | **Owns**: compatibility promises for deprecated stdlib APIs or CLI helpers. |
+| CLI UX + tooling behavior | **Inherits**: only when the spec mandates CLI output. | **Inherits**: backends that expose CLI wrappers should match interpreter output. | **Owns**: help text, flags, exit codes, and formatting snapshots. |
+| Backend-specific features | **Not owned**: only spec items apply. | **Not owned**: parity is skipped when a backend intentionally lacks a feature. | **Owns**: regression tests for backend-specific bugs and opt-in behavior. |
+
+**Placement guidance**
+
+- Spec conformance tests are the source of truth for the language spec and
+  documented stdlib semantics. If a behavior is described in the spec, start
+  here.
+- Parity tests are for ensuring backends match the interpreter. Prefer reusing
+  spec fixtures; only add parity-only fixtures when the spec suite is too
+  heavyweight or uses fixtures not supported in all backends.
+- Compatibility/regression tests capture CLI and backwards-compatibility
+  promises that are not formalized in the spec. These tests should be explicit
+  about the release/version they protect.
+
+**Follow-on tasks enabled by this matrix**
+
+- Add a fixture header field (or metadata file) that records suite ownership so
+  new tests can be validated against this matrix during review.
+- Add a lint/check that flags parity-only fixtures that are not backed by a spec
+  fixture unless the fixture declares an explicit reason.
+
 ## Automation workflow
 
 1. **Spec suite run:** Use the interpreter as the primary reference.
@@ -136,7 +169,7 @@ centralized in a single helper so new backend runners stay aligned.
 
 - [x] Draft a normalization spec for backend output (what is stripped, what is
   canonicalized, and how version banners are handled).
-- [ ] Define ownership boundaries between spec, parity, and compatibility
+- [x] Define ownership boundaries between spec, parity, and compatibility
   suites (including stdlib behavior expectations).
 - [ ] Add a smoke subset that runs in under 60 seconds for local developer
   feedback.

@@ -183,5 +183,6 @@ centralized in a single helper so new backend runners stay aligned.
   feedback.
 - [x] Create a `tests/spec/` skeleton with one example fixture and snapshot
   layout to document the expected structure.
-- [ ] Implement a parity runner that executes the same fixtures across
+- [x] Implement a parity runner that executes the same fixtures across
   interpreter, C, LLVM, and native VM backends and diffs normalized outputs.
+  (`tools/parity_runner.py`).

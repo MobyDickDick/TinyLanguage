@@ -77,6 +77,47 @@ Every fixture should declare:
 3. **Compatibility run:** Execute regression and CLI snapshots.
 4. **Reporting:** Summarize failures by backend + spec section.
 
+## Backend output normalization spec
+
+Parity comparisons depend on stable, backend-agnostic output. The normalization
+step should transform raw stdout/stderr into a canonical form before diffing.
+
+### Scope
+
+Apply normalization to both stdout and stderr, including error diagnostics and
+CLI banners emitted by any backend runner.
+
+### Strip or replace
+
+- **Version banners + backend headers:** Remove lines that match known banner
+  prefixes such as `TinyLanguage`, `tinyc`, `tiny-language`, or backend labels
+  like `Interpreter`, `C backend`, `LLVM backend`, `Native VM`. If a banner must
+  remain for a specific test, the fixture should opt out of normalization and
+  compare raw output instead.
+- **Timing data:** Remove lines or fragments that report durations, compilation
+  times, or perf counters (e.g., `time=`, `elapsed`, `ms`, `ns`).
+- **Absolute paths:** Replace absolute filesystem prefixes with a placeholder
+  like `<ROOT>` while retaining the relative suffix.
+- **Process IDs / random seeds:** Replace numeric tokens tied to PID, port, or
+  random seeds with `<ID>` or `<SEED>` placeholders.
+
+### Canonicalize formatting
+
+- **Line endings:** Convert Windows `\r\n` to `\n`.
+- **Whitespace:** Trim trailing whitespace on each line; collapse repeated
+  blank lines to a single blank line.
+- **Error prefixes:** Normalize backend-specific error headers to a common
+  prefix such as `error:` and warnings to `warning:` while leaving the message
+  body intact.
+- **Stack traces:** If stack traces are expected, normalize file paths and line
+  numbers as described above; otherwise strip stack traces entirely.
+
+### Normalization output
+
+Emit the normalized stdout/stderr as separate snapshots so parity comparisons
+can still distinguish stream differences. The normalization rules should be
+centralized in a single helper so new backend runners stay aligned.
+
 ## CI expectations
 
 - Spec tests are required for every PR that changes language semantics.
@@ -86,14 +127,14 @@ Every fixture should declare:
 
 ## Open follow-ups
 
-- Define a standard normalization step for backend output (especially error
-  diagnostics).
+- Implement the normalization helper in the parity runner (including error
+  diagnostics and stdout/stderr separation).
 - Decide which suite owns stdlib behavior vs. spec vs. parity.
 - Add a small smoke subset for quick developer feedback.
 
 ## Derived tasks
 
-- [ ] Draft a normalization spec for backend output (what is stripped, what is
+- [x] Draft a normalization spec for backend output (what is stripped, what is
   canonicalized, and how version banners are handled).
 - [ ] Define ownership boundaries between spec, parity, and compatibility
   suites (including stdlib behavior expectations).

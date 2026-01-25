@@ -232,6 +232,7 @@ class _StdLibRegistrar:
         self._ensure_namespace("Statistics")
         self._ensure_namespace("Console")
         self._ensure_namespace("File")
+        self._ensure_namespace("Path")
         self._ensure_namespace("JSON")
         self._ensure_namespace("Async")
         self._ensure_namespace("Result")
@@ -335,6 +336,10 @@ class _StdLibRegistrar:
         self.runtime.register_native("write", self._file_write, namespace="File")
         self.runtime.register_native("exists", self._file_exists, namespace="File")
         self.runtime.register_native("remove", self._file_remove, namespace="File")
+
+        # ----------------------------- Path --------------------------------
+        self.runtime.register_native("normalize", self._path_normalize, namespace="Path")
+        self.runtime.register_native("join", self._path_join, namespace="Path")
 
         # ----------------------------- JSON --------------------------------
         self.runtime.register_native("parse", self._json_parse, namespace="JSON")
@@ -1127,6 +1132,82 @@ class _StdLibRegistrar:
             return False
         text_path.unlink()
         return True
+
+    # -----------------------------------------------------------------------
+    # Path namespace
+    # -----------------------------------------------------------------------
+
+    def _path_normalize(self, path: Any) -> str:
+        """Normalize path separators and resolve '.' / '..' segments."""
+        raw = str(path).replace("\\", "/")
+        if raw == "":
+            return ""
+
+        drive = ""
+        remainder = raw
+        if len(remainder) >= 2 and remainder[1] == ":" and remainder[0].isalpha():
+            drive = remainder[:2]
+            remainder = remainder[2:]
+
+        absolute = False
+        if remainder.startswith("/"):
+            absolute = True
+            remainder = remainder.lstrip("/")
+
+        segments = [seg for seg in remainder.split("/") if seg not in ("", ".")]
+        stack: list[str] = []
+        for segment in segments:
+            if segment == "..":
+                if stack and stack[-1] != "..":
+                    stack.pop()
+                elif not absolute:
+                    stack.append(segment)
+                continue
+            stack.append(segment)
+
+        joined = "/".join(stack)
+        prefix = drive
+        if absolute:
+            prefix += "/"
+
+        if joined:
+            return f"{prefix}{joined}"
+        if prefix:
+            return prefix
+        return "/" if absolute else ""
+
+    def _path_join(self, parts: Any) -> str:
+        """Join path parts with normalized separators and no duplicate slashes."""
+        seq = self._resolve_sequence(parts)
+        drive = ""
+        absolute = False
+        segments: list[str] = []
+
+        for idx, item in enumerate(seq):
+            part = str(item).replace("\\", "/")
+            if part == "":
+                continue
+
+            if idx == 0:
+                if len(part) >= 2 and part[1] == ":" and part[0].isalpha():
+                    drive = part[:2]
+                    part = part[2:]
+                if part.startswith("/"):
+                    absolute = True
+                    part = part.lstrip("/")
+            else:
+                part = part.strip("/")
+
+            if part:
+                segments.append(part)
+
+        joined = "/".join(segments)
+        prefix = drive + ("/" if absolute else "")
+        if joined:
+            return f"{prefix}{joined}"
+        if prefix:
+            return prefix
+        return "/" if absolute else ""
 
     # -----------------------------------------------------------------------
     # JSON namespace

@@ -23,7 +23,7 @@ plan so implementation can proceed in small, testable steps.
     | `normalize` | `normalize(path: string) -> string` | Collapse `.` segments, resolve `..` where possible, replace `\\` with `/`, collapse repeated `/`. | Tiny implementation with `String.replace`, `String.split`, stack-based reduce. |
     | `is_absolute` | `is_absolute(path: string) -> bool` | `true` when path starts with `/` or drive prefix (`C:`). | Tiny implementation with `String.starts_with` and drive-prefix check. |
     | `filter_dir` | `filter_dir(dir: string, pattern: string) -> [string]` | List directory entries and filter by simple glob (`*` suffix/prefix) using normalized paths. | Needs runtime helper (e.g., `File.listdir`) or `stdlib.os.listdir` wrapper. |
-- [ ] Implement runtime helpers for `stdlib.path` (path normalization + join
+- [x] Implement runtime helpers for `stdlib.path` (path normalization + join
   semantics) and add Tiny wrappers in `stdlib/path.tiny`.
   - Deliverables: runtime helper functions + Tiny wrapper module and parity
     mapping notes.

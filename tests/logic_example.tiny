@@ -1,0 +1,17 @@
+// logic_example.tiny - sanity check for boolean logic and control flow.
+
+print(true);
+print(false);
+print(not false);
+print(true and false);
+print(true or false);
+print(false || (1 < 2));
+
+// Combine comparisons with logical operators in a conditional.
+def a = 1;
+def b = 2;
+if (a < b && b == 2) {
+  print("logic ok");
+} else {
+  print("logic fail");
+}

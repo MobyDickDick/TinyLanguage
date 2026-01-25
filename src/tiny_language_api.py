@@ -99,6 +99,7 @@ if "TinyLangError" not in globals():
 if "lint_import_style" not in globals():
     from tiny_language_linter import (
         _collect_function_signatures,
+        lint_annotation_enforcement,
         lint_assignment_types,
         lint_bare_call_results,
         lint_destruct_call_outputs,
@@ -644,6 +645,7 @@ def _parse_and_lint(
     if not repl_mode:
         lint_no_underscore_bindings(stmts, src)
     lint_assignment_types(stmts, src)
+    lint_annotation_enforcement(stmts, src)
     if not repl_mode:
         lint_locals_used(stmts, src)
     lint_unreachable_code(stmts, src)

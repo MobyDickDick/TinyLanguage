@@ -7011,7 +7011,7 @@ footguns.
 
 from dataclasses import dataclass
 import re
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from tiny_language_ast import *
 from tiny_language_preamble import TinyLangError, format_error
@@ -7858,6 +7858,8 @@ def _infer_expr_type(expr: IR, env: Dict[str, str]) -> Optional[str]:
         return "Null"
     if isinstance(expr, Var):
         return env.get(expr.name)
+    if isinstance(expr, ClassNew):
+        return expr.name
     return None
 
 
@@ -7889,6 +7891,317 @@ def _types_match(expected: str, actual: str) -> bool:
     if optional and actual_norm.lower() != "null":
         return _types_match(base_expected, actual)
     return False
+
+
+@dataclass
+class _ClassInfo:
+    fields: Dict[str, str]
+    bases: List[str]
+
+
+def _qualify_name(name: str, prefix: str) -> str:
+    return f"{prefix}.{name}" if prefix else name
+
+
+def _qualify_reference(name: str, prefix: str) -> str:
+    if not prefix or "." in name:
+        return name
+    return f"{prefix}.{name}"
+
+
+def _collect_function_params(stmts: List[IR], prefix: str = "") -> Dict[str, List[Param]]:
+    params: Dict[str, List[Param]] = {}
+    for st in stmts:
+        if isinstance(st, Fn):
+            params[_qualify_name(st.name, prefix)] = list(st.params)
+        elif isinstance(st, Namespace):
+            nested_prefix = _qualify_name(st.name, prefix)
+            params.update(_collect_function_params(st.body, prefix=nested_prefix))
+    return params
+
+
+def _collect_class_info(stmts: List[IR], prefix: str = "") -> Tuple[Dict[str, _ClassInfo], Dict[Tuple[str, str], List[Param]]]:
+    classes: Dict[str, _ClassInfo] = {}
+    methods: Dict[Tuple[str, str], List[Param]] = {}
+    for st in stmts:
+        if isinstance(st, ClassDef):
+            class_name = _qualify_name(st.name, prefix)
+            bases = [_qualify_reference(base, prefix) for base in st.bases]
+            classes[class_name] = _ClassInfo(fields=dict(st.fields), bases=bases)
+            for method in st.methods:
+                methods[(class_name, method.name)] = list(method.params)
+        elif isinstance(st, Namespace):
+            nested_prefix = _qualify_name(st.name, prefix)
+            nested_classes, nested_methods = _collect_class_info(st.body, prefix=nested_prefix)
+            classes.update(nested_classes)
+            methods.update(nested_methods)
+    return classes, methods
+
+
+def _resolve_field_type(
+    classes: Dict[str, _ClassInfo],
+    class_name: str,
+    field_name: str,
+    *,
+    owner_hint: Optional[str] = None,
+) -> Optional[str]:
+    if owner_hint:
+        info = classes.get(owner_hint)
+        if info is None and "." not in owner_hint and "." in class_name:
+            prefix = class_name.rsplit(".", 1)[0]
+            info = classes.get(f"{prefix}.{owner_hint}")
+        if info:
+            return info.fields.get(field_name)
+        return None
+    seen: Set[str] = set()
+    queue = [class_name]
+    while queue:
+        current = queue.pop(0)
+        if current in seen:
+            continue
+        seen.add(current)
+        info = classes.get(current)
+        if not info:
+            continue
+        if field_name in info.fields:
+            return info.fields[field_name]
+        queue.extend(info.bases)
+    return None
+
+
+def _resolve_method_params(
+    classes: Dict[str, _ClassInfo],
+    methods: Dict[Tuple[str, str], List[Param]],
+    class_name: str,
+    method_name: str,
+) -> Optional[List[Param]]:
+    seen: Set[str] = set()
+    queue = [class_name]
+    while queue:
+        current = queue.pop(0)
+        if current in seen:
+            continue
+        seen.add(current)
+        params = methods.get((current, method_name))
+        if params is not None:
+            return params
+        info = classes.get(current)
+        if info:
+            queue.extend(info.bases)
+    return None
+
+
+def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -> None:
+    function_params = _collect_function_params(stmts)
+    classes, methods = _collect_class_info(stmts)
+
+    def check_expr(expr: IR, env: Dict[str, str]) -> None:
+        if isinstance(expr, Bin):
+            check_expr(expr.a, env)
+            check_expr(expr.b, env)
+            return
+        if isinstance(expr, Call):
+            for arg in expr.args:
+                check_expr(arg, env)
+            params = function_params.get(expr.name)
+            if params:
+                for param, arg in zip(params, expr.args):
+                    if not param.type:
+                        continue
+                    inferred = _infer_expr_type(arg, env)
+                    if inferred and not _types_match(param.type, inferred):
+                        msg = (
+                            f"type mismatch for parameter {param.name} in function {expr.name}: "
+                            f"expected {param.type} but got {inferred}"
+                        )
+                        raise _lint_error(
+                            source,
+                            arg,
+                            msg,
+                            code="E009",
+                            hint="Adjust the type annotation (use '?' to allow Null) or pass a compatible value to satisfy the hint.",
+                        )
+            return
+        if isinstance(expr, MethodCall):
+            check_expr(expr.obj, env)
+            for arg in expr.args:
+                check_expr(arg, env)
+            obj_type = _infer_expr_type(expr.obj, env)
+            if obj_type:
+                params = _resolve_method_params(classes, methods, obj_type, expr.name)
+                if params:
+                    for param, arg in zip(params, expr.args):
+                        if not param.type:
+                            continue
+                        inferred = _infer_expr_type(arg, env)
+                        if inferred and not _types_match(param.type, inferred):
+                            msg = (
+                                f"type mismatch for parameter {param.name} in method {obj_type}.{expr.name}: "
+                                f"expected {param.type} but got {inferred}"
+                            )
+                            raise _lint_error(
+                                source,
+                                arg,
+                                msg,
+                                code="E009",
+                                hint="Adjust the type annotation (use '?' to allow Null) or pass a compatible value to satisfy the hint.",
+                            )
+            return
+        if isinstance(expr, ClassNew):
+            for field_name, value in expr.init:
+                check_expr(value, env)
+                owner_hint = None
+                field_key = field_name
+                if "." in field_name:
+                    owner_hint, field_key = field_name.split(".", 1)
+                expected = _resolve_field_type(classes, expr.name, field_key, owner_hint=owner_hint)
+                if expected:
+                    inferred = _infer_expr_type(value, env)
+                    if inferred and not _types_match(expected, inferred):
+                        msg = (
+                            f"type mismatch for field {field_name} in class {expr.name}: "
+                            f"expected {expected} but got {inferred}"
+                        )
+                        raise _lint_error(
+                            source,
+                            value,
+                            msg,
+                            code="E009",
+                            hint="Adjust the type annotation (use '?' to allow Null) or assign a compatible value.",
+                        )
+            return
+        if isinstance(expr, Field):
+            check_expr(expr.obj, env)
+            return
+        if isinstance(expr, Spawn):
+            for arg in expr.args:
+                check_expr(arg, env)
+            return
+        if isinstance(expr, Await):
+            check_expr(expr.expr, env)
+            return
+        if isinstance(expr, New):
+            check_expr(expr.size, env)
+            return
+        if isinstance(expr, NewLit):
+            for item in expr.items:
+                check_expr(item, env)
+            return
+        if isinstance(expr, ObjLit):
+            for _, value in expr.fields:
+                check_expr(value, env)
+            return
+        if isinstance(expr, Match):
+            check_expr(expr.expr, env)
+            for case in expr.cases:
+                check_expr(case.body, env)
+            return
+        if isinstance(expr, VariantCtor):
+            for _, value in expr.fields:
+                check_expr(value, env)
+            return
+
+    def check_block(
+        block: List[IR],
+        local_env: Dict[str, str],
+        *,
+        return_annotation: Optional[str] = None,
+        return_label: Optional[str] = None,
+    ) -> None:
+        for st in block:
+            if isinstance(st, Let):
+                check_expr(st.expr, local_env)
+                inferred = _infer_expr_type(st.expr, local_env)
+                if inferred:
+                    local_env[st.name] = _normalize_inferred_type(inferred)
+            elif isinstance(st, Assign):
+                check_expr(st.expr, local_env)
+                inferred = _infer_expr_type(st.expr, local_env)
+                if inferred:
+                    local_env[st.name] = local_env.get(st.name, _normalize_inferred_type(inferred))
+            elif isinstance(st, DestructAssign):
+                check_expr(st.expr, local_env)
+                inferred = _infer_expr_type(st.expr, local_env)
+                if inferred:
+                    for nm in st.names:
+                        local_env[nm] = _normalize_inferred_type(inferred)
+            elif isinstance(st, FieldAssign):
+                check_expr(st.obj, local_env)
+                check_expr(st.expr, local_env)
+                obj_type = _infer_expr_type(st.obj, local_env)
+                if obj_type:
+                    expected = _resolve_field_type(classes, obj_type, st.name)
+                    inferred = _infer_expr_type(st.expr, local_env)
+                    if expected and inferred and not _types_match(expected, inferred):
+                        msg = (
+                            f"type mismatch for field {st.name} in class {obj_type}: "
+                            f"expected {expected} but got {inferred}"
+                        )
+                        raise _lint_error(
+                            source,
+                            st,
+                            msg,
+                            code="E009",
+                            hint="Adjust the type annotation (use '?' to allow Null) or assign a compatible value.",
+                        )
+            elif isinstance(st, Print):
+                for expr in st.exprs:
+                    check_expr(expr, local_env)
+            elif isinstance(st, CallStmt):
+                check_expr(Call(st.name, st.args, st.pos), local_env)
+            elif isinstance(st, Return):
+                check_expr(st.expr, local_env)
+                if return_annotation:
+                    inferred = _infer_expr_type(st.expr, local_env)
+                    if inferred and not _types_match(return_annotation, inferred):
+                        msg = (
+                            f"type mismatch for {return_label}: expected {return_annotation} but got {inferred}"
+                        )
+                        raise _lint_error(
+                            source,
+                            st,
+                            msg,
+                            code="E009",
+                            hint="Adjust the type annotation (use '?' to allow Null) or return a compatible value.",
+                        )
+            elif isinstance(st, If):
+                check_expr(st.cond, local_env)
+                check_block(list(st.then), dict(local_env), return_annotation=return_annotation, return_label=return_label)
+                check_block(list(st.els), dict(local_env), return_annotation=return_annotation, return_label=return_label)
+            elif isinstance(st, While):
+                check_expr(st.cond, local_env)
+                check_block(list(st.body), dict(local_env), return_annotation=return_annotation, return_label=return_label)
+            elif isinstance(st, Switch):
+                check_expr(st.expr, local_env)
+                for case in st.cases:
+                    if case.value is not None:
+                        check_expr(case.value, local_env)
+                    check_block(list(case.body), dict(local_env), return_annotation=return_annotation, return_label=return_label)
+            elif isinstance(st, TryCatch):
+                check_block(list(st.body), dict(local_env), return_annotation=return_annotation, return_label=return_label)
+                handler_env = dict(local_env)
+                if st.err_name:
+                    handler_env[st.err_name] = "Error"
+                check_block(list(st.handler), handler_env, return_annotation=return_annotation, return_label=return_label)
+            elif isinstance(st, TaskBlock):
+                check_block(list(st.body), dict(local_env), return_annotation=return_annotation, return_label=return_label)
+            elif isinstance(st, Namespace):
+                check_block(list(st.body), {}, return_annotation=None, return_label=None)
+            elif isinstance(st, Fn):
+                fn_env = {p.name: p.type for p in st.params if p.type}
+                label = f"return value for function {st.name}"
+                check_block(list(st.body), fn_env, return_annotation=st.return_type, return_label=label)
+            elif isinstance(st, MethodDef):
+                method_env = {p.name: p.type for p in st.params if p.type}
+                label = f"return value for method {st.class_name}.{st.name}"
+                check_block(list(st.body), method_env, return_annotation=st.return_type, return_label=label)
+            elif isinstance(st, ClassDef):
+                for method in st.methods:
+                    method_env = {p.name: p.type for p in method.params if p.type}
+                    label = f"return value for method {method.class_name}.{method.name}"
+                    check_block(list(method.body), method_env, return_annotation=method.return_type, return_label=label)
+
+    check_block(stmts, {})
 
 
 def lint_assignment_types(stmts: List[IR], source: Optional[str] = None, env: Optional[Dict[str, str]] = None) -> None:
@@ -11413,6 +11726,7 @@ if "TinyLangError" not in globals():
 if "lint_import_style" not in globals():
     from tiny_language_linter import (
         _collect_function_signatures,
+        lint_annotation_enforcement,
         lint_assignment_types,
         lint_bare_call_results,
         lint_destruct_call_outputs,
@@ -11958,6 +12272,7 @@ def _parse_and_lint(
     if not repl_mode:
         lint_no_underscore_bindings(stmts, src)
     lint_assignment_types(stmts, src)
+    lint_annotation_enforcement(stmts, src)
     if not repl_mode:
         lint_locals_used(stmts, src)
     lint_unreachable_code(stmts, src)

@@ -107,6 +107,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Inline TinyLanguage program passed directly on the command line",
     )
     parser.add_argument("--file", help="Path to a .tiny program to load from disk")
+    parser.add_argument(
+        "--lint-profile",
+        choices=["default", "typing"],
+        default="default",
+        help="Select the lint profile for diagnostics (default: default)",
+    )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -146,24 +152,24 @@ def main() -> None:
 
     source = _load_source(args)
     if args.command == "completions":
-        server = TinyLanguageServer(source)
+        server = TinyLanguageServer(source, lint_profile=args.lint_profile)
         payload = completions(server, args.prefix)
     elif args.command == "hover":
-        server = TinyLanguageServer(source)
+        server = TinyLanguageServer(source, lint_profile=args.lint_profile)
         payload = hover(server, args.symbol)
     elif args.command == "definition":
-        server = TinyLanguageServer(source)
+        server = TinyLanguageServer(source, lint_profile=args.lint_profile)
         if (args.line is None) != (args.col is None):
             raise SystemExit("Provide both --line and --col or neither")
         position = None if args.line is None else (args.line, args.col)
         payload = definition(server, args.symbol, position)
     elif args.command == "diagnostics":
-        server = TinyLanguageServer(source)
+        server = TinyLanguageServer(source, lint_profile=args.lint_profile)
         payload = diagnostics(server)
     elif args.command == "format":
         payload = format_source_payload(source)
     elif args.command == "workspace-symbols":
-        server = TinyLanguageServer(source)
+        server = TinyLanguageServer(source, lint_profile=args.lint_profile)
         payload = workspace_symbols(server, args.query)
     else:
         raise SystemExit(f"unknown command: {args.command}")

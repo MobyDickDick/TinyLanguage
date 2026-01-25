@@ -73,7 +73,7 @@ fn is_absolute(path) {
   if (!String.contains(path, ":")) { return false; }
   def parts = String.split(path, ":");
   def value = false;
-  if (Collections.len(parts) > 0 && String.len(heap_get(parts, 0)) == 1) {
+  if (Collections.len(parts) > 0 && len(heap_get(parts, 0)) == 1) {
     value = true;
   }
   def _cleanup_parts = delete(parts);

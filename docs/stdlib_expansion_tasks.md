@@ -27,7 +27,7 @@ plan so implementation can proceed in small, testable steps.
   semantics) and add Tiny wrappers in `stdlib/path.tiny`.
   - Deliverables: runtime helper functions + Tiny wrapper module and parity
     mapping notes.
-- [ ] Add tests for `stdlib.path` covering cross-platform separators, extension
+- [x] Add tests for `stdlib.path` covering cross-platform separators, extension
   handling, and error cases (invalid inputs).
   - Deliverables: `tests/detailtests/test_stdlib_path.py` with fixture-based
     coverage for join/split/basename/dirname and invalid inputs.

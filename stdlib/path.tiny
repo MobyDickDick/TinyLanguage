@@ -1,0 +1,81 @@
+// TinyLanguage stdlib: path module (POSIX-style helpers)
+
+fn normalize(path) {
+  return Path.normalize(path);
+}
+
+fn join(parts) {
+  return Path.join(parts);
+}
+
+fn _split_path(path) {
+  def normalized = normalize(path);
+  return String.split(normalized, "/");
+}
+
+fn _last_non_empty(parts) {
+  def idx = Collections.len(parts) - 1;
+  while (idx >= 0) {
+    def part = heap_get(parts, idx);
+    if (Collections.len(part) > 0) { return part; }
+    idx = idx - 1;
+  }
+  return "";
+}
+
+fn split(path) {
+  return _split_path(path);
+}
+
+fn basename(path) {
+  def parts = _split_path(path);
+  def value = _last_non_empty(parts);
+  def _cleanup_parts = delete(parts);
+  return value;
+}
+
+fn dirname(path) {
+  def parts = _split_path(path);
+  def idx = Collections.len(parts) - 1;
+  while (idx >= 0 && Collections.len(heap_get(parts, idx)) == 0) {
+    idx = idx - 1;
+  }
+  def value = "";
+  if (idx > 0) {
+    def parent_parts = Collections.slice(parts, 0, idx);
+    value = String.join(parent_parts, "/");
+    def _cleanup_parent = delete(parent_parts);
+  }
+  def _cleanup_parts = delete(parts);
+  return value;
+}
+
+fn extension(path) {
+  def base = basename(path);
+  if (!String.contains(base, ".")) { return ""; }
+  def parts = String.split(base, ".");
+  def count = Collections.len(parts);
+  if (count <= 1) {
+    def _cleanup_parts = delete(parts);
+    return "";
+  }
+  if (String.starts_with(base, ".") && count == 2) {
+    def _cleanup_parts = delete(parts);
+    return "";
+  }
+  def value = heap_get(parts, count - 1);
+  def _cleanup_parts = delete(parts);
+  return value;
+}
+
+fn is_absolute(path) {
+  if (String.starts_with(path, "/")) { return true; }
+  if (!String.contains(path, ":")) { return false; }
+  def parts = String.split(path, ":");
+  def value = false;
+  if (Collections.len(parts) > 0 && String.len(heap_get(parts, 0)) == 1) {
+    value = true;
+  }
+  def _cleanup_parts = delete(parts);
+  return value;
+}

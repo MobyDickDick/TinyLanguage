@@ -1,0 +1,3 @@
+// Spec: docs/language_spec.md (basic statements / print).
+// Expected: print a single line to stdout.
+print("Hello World");

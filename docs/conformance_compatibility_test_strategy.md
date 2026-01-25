@@ -99,7 +99,7 @@ Every fixture should declare:
   suites (including stdlib behavior expectations).
 - [ ] Add a smoke subset that runs in under 60 seconds for local developer
   feedback.
-- [ ] Create a `tests/spec/` skeleton with one example fixture and snapshot
+- [x] Create a `tests/spec/` skeleton with one example fixture and snapshot
   layout to document the expected structure.
 - [ ] Implement a parity runner that executes the same fixtures across
   interpreter, C, LLVM, and native VM backends and diffs normalized outputs.

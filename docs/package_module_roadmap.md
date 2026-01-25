@@ -201,7 +201,7 @@ in the main backlog.
 - [x] Draft the `tiny.toml` manifest schema and add a reference example.
 - [x] Document validation rules for manifest fields (required keys, slug rules,
   version format, and URL validation).
-- [ ] Define error messages and diagnostics for invalid manifest files.
+- [x] Define error messages and diagnostics for invalid manifest files.
 - [ ] Add a `tiny pkg init` template that matches the documented manifest schema.
 - [ ] Extend docs with a dependency override example (path + registry fallback).
 - [ ] Define the `tiny.lock` schema (resolved versions, sources, checksums).
@@ -212,3 +212,34 @@ in the main backlog.
 - [ ] Document vendoring behavior and layout for `tiny pkg vendor`.
 - [ ] Update `docs/open_tasks.md` and `docs/roadmap_next.md` with package/module
   milestones and links to this roadmap.
+
+## Manifest diagnostics (error messages + codes)
+
+Use the following error catalog whenever `tiny.toml` fails validation. Each
+diagnostic includes a stable error code, the expected user-facing message, and
+the location to highlight in tooling (file + line/column). When multiple issues
+are present, emit the highest-severity error first, then list remaining
+diagnostics in document order.
+
+| Code | Severity | Message | When to emit | Highlight |
+| --- | --- | --- | --- | --- |
+| `PKG001` | error | `Manifest is missing required key "<key>".` | A required top-level field (e.g., `package`, `version`) is absent. | Key name in schema reference. |
+| `PKG002` | error | `Invalid package name "<name>": expected kebab-case slug.` | `package.name` fails the slug regex from the validation rules. | Offending value. |
+| `PKG003` | error | `Invalid version "<version>": expected SemVer "MAJOR.MINOR.PATCH".` | `version` does not match SemVer requirements. | Offending value. |
+| `PKG004` | error | `Dependency "<dep>" must specify exactly one source (version, path, or git).` | A dependency entry has zero or multiple source keys. | Dependency entry. |
+| `PKG005` | error | `Dependency path "<path>" does not exist.` | A `path` dependency points to a missing directory. | Path value. |
+| `PKG006` | error | `Git dependency "<dep>" is missing required key "<key>".` | `git` dependency is missing `url` or `rev/tag`. | Missing key or dependency block. |
+| `PKG007` | error | `Unsupported key "<key>" in manifest section "<section>".` | Extra keys not in the schema are found. | Offending key. |
+| `PKG008` | error | `Duplicate dependency name "<dep>" in "<section>".` | Same dependency appears twice in `dependencies`/`dev-dependencies`. | Duplicate entry. |
+| `PKG009` | error | `Dependency version constraint "<constraint>" is invalid.` | Constraint cannot be parsed as SemVer range. | Constraint value. |
+| `PKG010` | warning | `Dependency "<dep>" has no explicit version; using "*" for resolution.` | A dependency lists only a `git` URL without a ref, or omits `version`. | Dependency entry. |
+
+### Notes for tooling
+
+- Always include the manifest filename in error output, e.g.
+  `tiny.toml:12:5 PKG003 Invalid version "1.0".`
+- If the parser fails before a section can be identified, report `PKG001` with
+  the missing key rather than a generic syntax error, then include the parser
+  detail as a secondary note.
+- For `PKG005`, check path existence relative to the manifest directory and
+  normalize separators for display.

@@ -7516,6 +7516,14 @@ def lint_fn_params_used(fn: Fn, source: Optional[str] = None) -> None:
     lint_param_mutations_returned(fn.body, set(param_names), fn.name, is_method=False, source=source, pos=fn.pos)
     lint_destruct_call_outputs(fn.body, source)
     lint_return_signatures(fn.body, fn.name, is_method=False, source=source, pos=fn.pos)
+    lint_inferred_return_types(
+        fn.body,
+        fn.name,
+        params=fn.params,
+        return_annotation=fn.return_type,
+        is_method=False,
+        source=source,
+    )
     lint_return_exhaustiveness(
         fn.body, fn.name, expected_return=fn.return_type, is_method=False, source=source, location=fn
     )
@@ -7536,6 +7544,14 @@ def lint_method_params_used(md: MethodDef, source: Optional[str] = None) -> None
     )
     lint_destruct_call_outputs(md.body, source)
     lint_return_signatures(md.body, f"{md.class_name}.{md.name}", is_method=True, source=source, pos=md.pos)
+    lint_inferred_return_types(
+        md.body,
+        f"{md.class_name}.{md.name}",
+        params=md.params,
+        return_annotation=md.return_type,
+        is_method=True,
+        source=source,
+    )
     lint_return_exhaustiveness(
         md.body,
         f"{md.class_name}.{md.name}",
@@ -8555,6 +8571,75 @@ def lint_return_signatures(
                 visit(st.handler)
 
     visit(stmts)
+
+
+def lint_inferred_return_types(
+    stmts: List[IR],
+    fn_name: str,
+    *,
+    params: List[Param],
+    return_annotation: Optional[str],
+    is_method: bool,
+    source: Optional[str],
+) -> None:
+    if return_annotation is not None:
+        return
+    expected: Optional[str] = None
+    hint = "Add an explicit return type annotation or keep return values consistent to avoid implicit type changes."
+
+    def record_return(st: Return, local_env: Dict[str, str]) -> None:
+        nonlocal expected
+        inferred = _infer_expr_type(st.expr, local_env)
+        if inferred is None:
+            return
+        if expected is None:
+            expected = inferred
+            return
+        if not _types_match(expected, inferred):
+            kind = "method" if is_method else "function"
+            msg = f"inferred return type for {kind} {fn_name} changed: expected {expected} but got {inferred}"
+            raise _lint_error(source, st, msg, code="E014", hint=hint)
+
+    def check_block(block: List[IR], local_env: Dict[str, str]) -> None:
+        for st in block:
+            if isinstance(st, Let):
+                inferred = _infer_expr_type(st.expr, local_env)
+                if inferred:
+                    local_env[st.name] = inferred
+            elif isinstance(st, Assign):
+                inferred = _infer_expr_type(st.expr, local_env)
+                if inferred:
+                    local_env[st.name] = inferred
+            elif isinstance(st, DestructAssign):
+                inferred = _infer_expr_type(st.expr, local_env)
+                if inferred:
+                    for nm in st.names:
+                        local_env[nm] = inferred
+            elif isinstance(st, Return):
+                record_return(st, local_env)
+            elif isinstance(st, If):
+                check_block(list(st.then), dict(local_env))
+                check_block(list(st.els), dict(local_env))
+            elif isinstance(st, While):
+                check_block(list(st.body), dict(local_env))
+            elif isinstance(st, Switch):
+                for case in st.cases:
+                    check_block(list(case.body), dict(local_env))
+            elif isinstance(st, TryCatch):
+                check_block(list(st.body), dict(local_env))
+                handler_env = dict(local_env)
+                if st.err_name:
+                    handler_env[st.err_name] = "Error"
+                check_block(list(st.handler), handler_env)
+            elif isinstance(st, TaskBlock):
+                check_block(list(st.body), dict(local_env))
+            elif isinstance(st, Namespace):
+                continue
+            elif isinstance(st, (Fn, MethodDef, ClassDef)):
+                continue
+
+    env = {p.name: p.type for p in params if p.type}
+    check_block(stmts, env)
 
 
 def lint_return_exhaustiveness(

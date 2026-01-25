@@ -104,7 +104,7 @@ reuse the same equivalence behavior.
 
 ### Tasks derived from the runtime inventory
 
-- [ ] Align `_types_match` in the linter with runtime `_type_matches` so both
+- [x] Align `_types_match` in the linter with runtime `_type_matches` so both
   respect the same normalization rules (e.g. `number`, `string`, `bool`,
   optional `T?`, and `any`).
 - [ ] Add annotation enforcement checks to the linter pipeline so annotated

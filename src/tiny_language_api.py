@@ -949,22 +949,36 @@ def compile_and_run(
 def run_file(path: str, *, stream_output: bool = True, copy_on_call: Optional[bool] = None) -> str:
     """Execute a TinyLanguage source file and return its printed output."""
     path_obj = Path(path)  # Accept strings or Path-like objects
-    resolved = path_obj.resolve()  # Normalize to an absolute path
+    candidates = []
+    if path_obj.is_absolute():
+        candidates.append(path_obj)
+    else:
+        candidates.append(Path.cwd() / path_obj)
+        module_dir = Path(__file__).resolve().parent
+        candidates.append(module_dir / path_obj)
+        candidates.append(module_dir.parent / path_obj)
+    resolved = None
+    for candidate in candidates:
+        if candidate.exists():
+            resolved = candidate.resolve()
+            break
+    if resolved is None:
+        resolved = (Path.cwd() / path_obj).resolve()
     try:
         rel = resolved.relative_to(Path.cwd())  # Try to derive a module namespace from cwd
         namespace = ".".join(rel.with_suffix("").parts)
     except Exception:  # noqa: BLE001
         namespace = resolved.stem  # Fall back to filename when relative resolution fails
-    runtime = Runtime(path_obj.read_text(encoding="utf-8"))
-    with open(path, "r", encoding="utf-8") as f:
-        output = compile_and_run(
-            f.read(),
-            runtime=runtime,
-            module_namespace=namespace,
-            module_path=resolved,
-            stream_output=stream_output,
-            copy_on_call=copy_on_call,
-        )
+    source = resolved.read_text(encoding="utf-8")
+    runtime = Runtime(source)
+    output = compile_and_run(
+        source,
+        runtime=runtime,
+        module_namespace=namespace,
+        module_path=resolved,
+        stream_output=stream_output,
+        copy_on_call=copy_on_call,
+    )
     if stream_output and not runtime.streamed_output:
         print(output, end="")
     return output

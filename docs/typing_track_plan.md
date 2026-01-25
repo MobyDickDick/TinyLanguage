@@ -109,7 +109,7 @@ reuse the same equivalence behavior.
   optional `T?`, and `any`).
 - [x] Add annotation enforcement checks to the linter pipeline so annotated
   params/returns/fields emit `E009` when values do not match.
-- [ ] Extend return validation to mirror `_enforce_inferred_return` and emit
+- [x] Extend return validation to mirror `_enforce_inferred_return` and emit
   `E014` for inferred return type drift in unannotated functions.
 - [ ] Evaluate whether heap API type stability (e.g. `heap_set`) should be
   surfaced in linting and document the decision.

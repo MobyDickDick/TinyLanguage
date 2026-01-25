@@ -107,7 +107,7 @@ reuse the same equivalence behavior.
 - [x] Align `_types_match` in the linter with runtime `_type_matches` so both
   respect the same normalization rules (e.g. `number`, `string`, `bool`,
   optional `T?`, and `any`).
-- [ ] Add annotation enforcement checks to the linter pipeline so annotated
+- [x] Add annotation enforcement checks to the linter pipeline so annotated
   params/returns/fields emit `E009` when values do not match.
 - [ ] Extend return validation to mirror `_enforce_inferred_return` and emit
   `E014` for inferred return type drift in unannotated functions.

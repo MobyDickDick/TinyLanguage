@@ -60,6 +60,30 @@ name = "example-app"         # Lowercase slug, can include dashes.
 version = "0.1.0"            # SemVer package version.
 ```
 
+### Validation rules
+
+- `package.name` is required, must be lowercase `a-z`, `0-9`, and `-`, start
+  with a letter, end with a letter or digit, and be 2-64 characters long.
+- `package.version` is required and must follow SemVer `MAJOR.MINOR.PATCH`
+  (no leading zeroes unless the number is `0`). Pre-release and build metadata
+  are allowed (e.g., `1.2.3-alpha.1+build.7`).
+- `package.description` is optional; if present, keep it under 160 characters.
+- `package.license` is optional; if present, prefer SPDX identifiers.
+- `package.authors` is optional; if present, each entry must be a non-empty
+  string (optionally with an email in angle brackets).
+- `package.homepage` and `package.repository` are optional; if present, they
+  must be valid `http://` or `https://` URLs.
+- Dependency names in `dependencies`, `dev-dependencies`, and
+  `build-dependencies` must follow the same slug rules as `package.name`.
+- Dependency entries must be either a version constraint string or a table with
+  exactly one of `version` or `path` (optional `registry` only with `version`).
+- `dependencies.*.version` must be a valid SemVer constraint (e.g., `^1.2`,
+  `~0.9`, `>=1.0 <2.0`).
+- `dependencies.*.path` must be a relative path and may not escape the workspace
+  root when normalized.
+- `registries.*` values must be valid `http://` or `https://` URLs, and the
+  `default` key is required if any dependency uses a registry override.
+
 ### Optional metadata
 
 ```toml
@@ -175,7 +199,7 @@ These tasks translate the roadmap into actionable work items that can be tracked
 in the main backlog.
 
 - [x] Draft the `tiny.toml` manifest schema and add a reference example.
-- [ ] Document validation rules for manifest fields (required keys, slug rules,
+- [x] Document validation rules for manifest fields (required keys, slug rules,
   version format, and URL validation).
 - [ ] Define error messages and diagnostics for invalid manifest files.
 - [ ] Add a `tiny pkg init` template that matches the documented manifest schema.

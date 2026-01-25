@@ -867,6 +867,8 @@ def _normalize_inferred_type(type_name: str) -> str:
 
 def _types_match(expected: str, actual: str) -> bool:
     expected_norm = expected.strip()
+    if expected_norm.lower() == "any":
+        return True
     actual_norm = actual.strip()
     optional = expected_norm.endswith("?")
     base_expected = expected_norm[:-1].strip() if optional else expected_norm

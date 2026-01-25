@@ -35,6 +35,9 @@ formatter pipeline. The recommended lint profiles are:
 
 - **Default (recommended):** Use all built-in lints, including heap lifetime
   checks. The interpreter enables heap lints by default.
+- **Typing (opt-in):** Enable additional annotation-aware checks (assignment
+  stability and annotation enforcement). Run diagnostics with
+  `python src/language_server_cli.py --lint-profile typing --file path/to/file.tiny diagnostics`.
 - **Relaxed heap mode:** If you need to temporarily suppress heap lifetime
   lints, set `TINY_LINT_HEAP=0` in your environment before running diagnostics
   or tests. All other lints remain active.

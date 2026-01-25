@@ -27,6 +27,8 @@ from tiny_language import (
     Fn,
     _collect_function_signatures,
     lint_bare_call_results,
+    lint_annotation_enforcement,
+    lint_assignment_types,
     lint_destruct_call_outputs,
     lint_fn_params_used,
     lint_heap_lifetimes,
@@ -89,9 +91,12 @@ class WorkspaceSymbol:
 class TinyLanguageServer:
     """Extremely small convenience wrapper around the parser and linters."""
 
-    def __init__(self, source: str):
+    def __init__(self, source: str, *, lint_profile: str = "default"):
         """Parse ``source`` and eagerly build symbol tables for lookups."""
+        if lint_profile not in {"default", "typing"}:
+            raise ValueError(f"Unknown lint profile: {lint_profile}")
         self.source = source
+        self.lint_profile = lint_profile
         self.parse_error: Optional[TinyLangError] = None
         self.parser = Parser(Lexer(source), source)
         try:
@@ -228,6 +233,9 @@ class TinyLanguageServer:
             lint_destruct_call_outputs(self.stmts, self.source)
             lint_no_consecutive_definitions(self.stmts, self.source)
             lint_import_style(self.stmts, self.source)
+            if self.lint_profile == "typing":
+                lint_assignment_types(self.stmts, self.source)
+                lint_annotation_enforcement(self.stmts, self.source)
             lint_locals_used(self.stmts, self.source)
             if _heap_lints_enabled():
                 lint_heap_lifetimes(self.stmts, self.source)

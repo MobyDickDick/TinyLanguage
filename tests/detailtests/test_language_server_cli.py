@@ -115,6 +115,16 @@ def test_cli_reports_diagnostics_from_file(tmp_path):
     assert len(diag["range"]) == 4
 
 
+def test_cli_reports_typing_profile_diagnostics():
+    """Typing profile should surface assignment type mismatches."""
+    source = 'fn main() { def value = 1; value = "no"; return value; }'
+    default_payload = run_cli(["--source", source, "diagnostics"])
+    assert default_payload == []
+
+    typing_payload = run_cli(["--lint-profile", "typing", "--source", source, "diagnostics"])
+    assert any(diag["code"] == "E014" for diag in typing_payload)
+
+
 def test_cli_format_emits_formatted_source():
     """Formatting should return a normalized, pretty-printed source string."""
     payload = run_cli(["--source", "fn add(x,y){return x+y;}", "format"])

@@ -142,7 +142,7 @@ revisit once Phase 2 module summaries or Phase 3 narrowing are in place.
 
 ## Deliverables checklist
 
-- [ ] Add a `typing` lint profile and CLI flag.
+- [x] Add a `typing` lint profile and CLI flag.
 - [ ] Implement the Phase 1 static pass in the linter pipeline.
 - [ ] Document configuration and migration strategy.
 - [ ] Add regression tests for common typing errors.
@@ -167,7 +167,7 @@ up without requiring the entire typing track to be complete.
   preserves existing stability rules for unannotated functions.
 - [ ] Align diagnostics with existing `SourceSpan`-based reporting for editor
   and CLI outputs.
-- [ ] Expose a `typing` lint profile (e.g., `tinyc lint --profile typing`) that
+- [x] Expose a `typing` lint profile (e.g., `python src/language_server_cli.py --lint-profile typing ...`) that
   runs the new static checks.
 - [ ] Add a strict flag (e.g., `--typecheck`) that fails builds on typing
   errors.

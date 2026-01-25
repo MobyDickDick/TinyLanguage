@@ -169,6 +169,14 @@ Notes:
 - Vendoring is optional but provides deterministic builds before a full package
   cache exists.
 
+### `tiny pkg init` template
+
+Use the following template as the baseline manifest emitted by `tiny pkg init`.
+It mirrors the schema above and includes commented examples for optional
+dependency formats:
+
+- [`docs/tiny_pkg_init_template.toml`](./tiny_pkg_init_template.toml)
+
 ## Evolution (phase 2+)
 
 - Add registry discovery and authentication for publishing.
@@ -202,7 +210,7 @@ in the main backlog.
 - [x] Document validation rules for manifest fields (required keys, slug rules,
   version format, and URL validation).
 - [x] Define error messages and diagnostics for invalid manifest files.
-- [ ] Add a `tiny pkg init` template that matches the documented manifest schema.
+- [x] Add a `tiny pkg init` template that matches the documented manifest schema.
 - [ ] Extend docs with a dependency override example (path + registry fallback).
 - [ ] Define the `tiny.lock` schema (resolved versions, sources, checksums).
 - [ ] Specify namespace resolution rules for `local`, `std`, and `pkg` imports.

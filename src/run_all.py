@@ -5,6 +5,7 @@ that everything still works with a single command or debug session.
 """
 from __future__ import annotations  # Keep annotations as strings for forward references
 
+import argparse  # Parse CLI options for smoke runs
 import os  # Augment environment with src/ on PYTHONPATH
 import re  # Match missing pytest errors for fallback handling
 import subprocess  # Run external processes for demos and tests
@@ -130,9 +131,14 @@ COMMANDS: list[tuple[str, list[str]]] = [
     (".vscode/all_features.tiny", [REPO_PYTHON, str(INTERPRETER), ".vscode/all_features.tiny"]),  # VS Code tutorial copy
     (".vscode/rosetta_fibonacci.tiny", [REPO_PYTHON, str(INTERPRETER), ".vscode/rosetta_fibonacci.tiny"]),  # VS Code Fib copy
 ]
+SMOKE_COMMANDS: list[tuple[str, list[str]]] = [
+    ("demo.tiny", [REPO_PYTHON, str(INTERPRETER), str(DEMO_ROOT / "demo.tiny")]),  # Quick sanity check
+    ("tests/logic_example.tiny", [REPO_PYTHON, str(INTERPRETER), "tests/logic_example.tiny"]),  # Tiny program sanity check
+]
+SMOKE_PYTEST_TARGETS = ["tests/test_smoke.py"]
 
 
-def run_pytest(failures: list[str]) -> None:
+def run_pytest(failures: list[str], extra_args: list[str] | None = None) -> None:
     """Run the Python test suite and record failures."""
     def run_and_echo(command: list[str], pytest_env: dict[str, str]) -> subprocess.CompletedProcess[str]:
         proc = subprocess.run(
@@ -148,11 +154,13 @@ def run_pytest(failures: list[str]) -> None:
             print(proc.stderr, end="", file=sys.stderr)
         return proc
 
-    name = "pytest (full suite)"
+    name = "pytest (smoke subset)" if extra_args else "pytest (full suite)"
     pytest_env = build_pytest_env()
     pytest_command = resolve_pytest_command(pytest_env)
     if os.environ.get("TINY_ASSERT_NO_HEAP_LEAKS") == "1":
         pytest_command = [*pytest_command, "--assert-no-heap-leaks"]
+    if extra_args:
+        pytest_command = [*pytest_command, *extra_args]
     print(f"\n=== Running {name} ===")  # Banner to make output scannable
     print("Command:", " ".join(pytest_command))  # Show the exact invocation
     proc = run_and_echo(pytest_command, pytest_env)
@@ -186,13 +194,30 @@ def run_pytest(failures: list[str]) -> None:
     return proc
 
 
+def parse_args() -> argparse.Namespace:
+    """Parse CLI arguments for the test runner."""
+    parser = argparse.ArgumentParser(description="Run TinyLanguage tests and demos.")
+    parser.add_argument(
+        "--smoke",
+        action="store_true",
+        help="Run the smoke subset for quick local feedback.",
+    )
+    return parser.parse_args()
+
+
 def main() -> int:
     """Run each configured command and report which ones fail."""
+    args = parse_args()
+    smoke_mode = args.smoke or os.environ.get("TINYLANGUAGE_SMOKE") == "1"
+    if smoke_mode:
+        print("Smoke mode enabled: running a reduced test/demo subset.")
 
     failures: list[str] = []  # Collect human-friendly names for failing runs
-    run_pytest(failures)
+    pytest_args = SMOKE_PYTEST_TARGETS if smoke_mode else None
+    run_pytest(failures, pytest_args)
 
-    for name, cmd in COMMANDS:  # Iterate through each demo/test pair
+    commands = SMOKE_COMMANDS if smoke_mode else COMMANDS
+    for name, cmd in commands:  # Iterate through each demo/test pair
         print(f"\n=== Running {name} ===")  # Banner to make output scannable
         print("Command:", " ".join(cmd))  # Show the exact invocation
         proc = subprocess.run(

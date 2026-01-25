@@ -110,6 +110,14 @@ in the right place and regressions are scoped correctly.
 3. **Compatibility run:** Execute regression and CLI snapshots.
 4. **Reporting:** Summarize failures by backend + spec section.
 
+## Smoke subset (local developer feedback)
+
+Use the smoke subset for quick verification when you only need a fast sanity
+check. It runs a minimal pytest target plus a small set of Tiny demos.
+
+- CLI: `python src/run_all.py --smoke`
+- Environment toggle: `TINYLANGUAGE_SMOKE=1 python src/run_all.py`
+
 ## Backend output normalization spec
 
 Parity comparisons depend on stable, backend-agnostic output. The normalization
@@ -163,7 +171,7 @@ centralized in a single helper so new backend runners stay aligned.
 - Implement the normalization helper in the parity runner (including error
   diagnostics and stdout/stderr separation).
 - Decide which suite owns stdlib behavior vs. spec vs. parity.
-- Add a small smoke subset for quick developer feedback.
+- Validate the smoke subset stays under 60 seconds as tests evolve.
 
 ## Derived tasks
 
@@ -171,7 +179,7 @@ centralized in a single helper so new backend runners stay aligned.
   canonicalized, and how version banners are handled).
 - [x] Define ownership boundaries between spec, parity, and compatibility
   suites (including stdlib behavior expectations).
-- [ ] Add a smoke subset that runs in under 60 seconds for local developer
+- [x] Add a smoke subset that runs in under 60 seconds for local developer
   feedback.
 - [x] Create a `tests/spec/` skeleton with one example fixture and snapshot
   layout to document the expected structure.

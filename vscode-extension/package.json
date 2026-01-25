@@ -182,11 +182,8 @@
     "url": "https://github.com/tinylanguage/TinyLanguage.git"
   },
   "license": "CC-BY-NC-SA-4.0",
-  "dependencies": {
-    "code": "^5.2.4",
-    "vsce": "^2.15.0"
-  },
   "devDependencies": {
+    "@vscode/vsce": "^3.7.1",
     "esbuild": "^0.27.2"
   }
 }

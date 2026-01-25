@@ -170,6 +170,72 @@ test-utils = "^0.3"
 default = "https://registry.tiny-lang.org"
 ```
 
+## Lockfile schema (`tiny.lock`)
+
+The lockfile captures fully resolved dependencies so builds are deterministic.
+The format is TOML to keep it easy to diff and hand-inspect, but it should be
+treated as tool-managed. All paths are stored normalized with `/` separators.
+
+### Top-level fields
+
+- `lockfile_version` (required): Integer schema version. Start at `1`.
+- `manifest_hash` (required): SHA-256 hash of the normalized `tiny.toml`
+  contents to detect drift.
+- `generated_at` (required): ISO 8601 timestamp in UTC (e.g.,
+  `2024-05-12T14:05:00Z`).
+- `registry` (optional): Default registry URL used when resolving `pkg`
+  dependencies.
+
+### Dependency entries
+
+Dependencies are grouped by the manifest section they came from. Each entry
+must include:
+
+- `name`: package name (slug).
+- `version`: resolved SemVer string.
+- `source`: one of `registry`, `path`, or `git`.
+- `checksum`: checksum of the resolved package contents (hex SHA-256). For
+  path dependencies, checksum is of the local directory snapshot at lock time.
+
+Additional fields by source:
+
+- `registry`: `registry` URL and `registry_checksum` (optional checksum of the
+  registry index entry).
+- `path`: `path` relative to the workspace root.
+- `git`: `url` plus exactly one of `rev` or `tag`.
+
+### Example lockfile
+
+```toml
+lockfile_version = 1
+manifest_hash = "9a7c1b4d08f2fba51e5d95de8d0e0b9f21a7c6d4b29f0a7126a1ac5c6d7e2b3a"
+generated_at = "2024-05-12T14:05:00Z"
+registry = "https://registry.tiny-lang.org"
+
+[[dependencies]]
+name = "http"
+version = "1.2.4"
+source = "registry"
+checksum = "c7d8f2ad12a67caa903987b2b5a8c1e0447e5f0f8b13796bc3e60bdcbd147c11"
+registry = "https://registry.tiny-lang.org"
+registry_checksum = "2f9b4a70d1f5b6a77c1e87f4c0a92e2c8817e9d0a2c98b0a548c0f5a0a1e118e"
+
+[[dependencies]]
+name = "config"
+version = "0.1.0"
+source = "path"
+path = "../config"
+checksum = "6a9bc4e1f035bb5df08a0e26f3ed9a5cbfbaedb8012b6b6d8a0d390b532a6f19"
+
+[[dependencies]]
+name = "cli"
+version = "0.5.2"
+source = "git"
+url = "https://github.com/tiny-lang/cli"
+rev = "4f9a0d8b12c3f6f7a9b2c4d5e6f7a8b9c0d1e2f3"
+checksum = "59e24c5f58b9e8f6b5c4a1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2"
+```
+
 ## Minimal CLI (phase 1)
 
 Introduce a small set of commands, likely as extensions of `tiny` or `tinyc`.
@@ -231,7 +297,7 @@ in the main backlog.
 - [x] Define error messages and diagnostics for invalid manifest files.
 - [x] Add a `tiny pkg init` template that matches the documented manifest schema.
 - [x] Extend docs with a dependency override example (path + registry fallback).
-- [ ] Define the `tiny.lock` schema (resolved versions, sources, checksums).
+- [x] Define the `tiny.lock` schema (resolved versions, sources, checksums).
 - [ ] Specify namespace resolution rules for `local`, `std`, and `pkg` imports.
 - [ ] Implement dependency resolution with SemVer constraints and lockfile
   persistence.

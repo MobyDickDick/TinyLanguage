@@ -127,6 +127,25 @@ default = "https://registry.tiny-lang.org"
 internal = "https://packages.internal.example.com"
 ```
 
+### Dependency overrides (path + registry fallback)
+
+Use overrides to point a dependency at a local checkout while keeping the
+registry constraint as the default resolution when the override path is absent.
+The resolver should prefer the override path if it exists; otherwise it should
+fall back to the registry version declared in `dependencies`.
+
+```toml
+[dependencies]
+http = { version = "^1.2", registry = "https://registry.tiny-lang.org" }
+
+[dependency-overrides]
+http = { path = "../http" }
+```
+
+In this example, a developer can work against `../http` locally. CI or other
+environments without the override path will resolve `http` from the registry
+using the `^1.2` constraint.
+
 ### Reference example
 
 ```toml
@@ -211,7 +230,7 @@ in the main backlog.
   version format, and URL validation).
 - [x] Define error messages and diagnostics for invalid manifest files.
 - [x] Add a `tiny pkg init` template that matches the documented manifest schema.
-- [ ] Extend docs with a dependency override example (path + registry fallback).
+- [x] Extend docs with a dependency override example (path + registry fallback).
 - [ ] Define the `tiny.lock` schema (resolved versions, sources, checksums).
 - [ ] Specify namespace resolution rules for `local`, `std`, and `pkg` imports.
 - [ ] Implement dependency resolution with SemVer constraints and lockfile

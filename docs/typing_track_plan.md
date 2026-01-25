@@ -111,8 +111,15 @@ reuse the same equivalence behavior.
   params/returns/fields emit `E009` when values do not match.
 - [x] Extend return validation to mirror `_enforce_inferred_return` and emit
   `E014` for inferred return type drift in unannotated functions.
-- [ ] Evaluate whether heap API type stability (e.g. `heap_set`) should be
+- [x] Evaluate whether heap API type stability (e.g. `heap_set`) should be
   surfaced in linting and document the decision.
+
+**Decision (heap type stability in linting):** Defer adding a static lint for
+`heap_set` type stability in Phase 1. The runtime check depends on the dynamic
+value flowing into each heap cell (including pointer tags), and a static pass
+would need alias tracking plus flow-sensitive value typing to avoid false
+positives. For now, keep the runtime `E014` guard as the source of truth and
+revisit once Phase 2 module summaries or Phase 3 narrowing are in place.
 
 ## CLI and tooling integration
 

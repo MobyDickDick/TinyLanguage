@@ -42,6 +42,46 @@ small-scope implementations.
 - **`stdlib.time`**: Timestamps and sleeps that map to runtime-supported
   monotonic/epoch APIs.
 
+### `stdlib.csv` behavior notes (Phase 1)
+
+The initial CSV helpers should stay deliberately small and deterministic so
+tests can round-trip cleanly across backends.
+
+- **Defaults**: delimiter `,`, quote `"`, newline `\n`, no header row unless
+  requested.
+- **Parsing**:
+  - Accept input with `\n` or `\r\n` line endings; normalize to `\n`.
+  - Treat a final trailing newline as optional (do not append an empty row for
+    it).
+  - Support quoted fields that may include delimiters, newlines, or escaped
+    quotes. Escaped quotes use doubled quote characters (`""` → `"`).
+  - When `has_header` is `true`, return rows as dictionaries keyed by header
+    strings; missing fields map to `null`, extra fields are ignored beyond the
+    header count.
+  - When `has_header` is `false`, return rows as lists of strings.
+- **Serialization**:
+  - Accept rows as lists (no headers) or dictionaries (with headers provided).
+  - Emit rows in the provided order; if a header list is supplied, serialize
+    columns in that exact order.
+  - Quote fields when they contain the delimiter, quote, or newline. Escape
+    quotes by doubling them.
+  - Emit `\n` line endings and do not add a trailing newline by default.
+- **Determinism**: dictionary serialization must use the explicit header order
+  to avoid hash-order variance; missing keys serialize as empty strings.
+- **Errors**: invalid delimiter/quote inputs (empty strings or multi-character
+  tokens) raise a `ValueError` with a clear diagnostic message.
+- **Examples**:
+  - Parse without headers:
+    - Input: `name,score\nAda,10\nLinus,12`
+    - Output: `[[\"name\", \"score\"], [\"Ada\", \"10\"], [\"Linus\", \"12\"]]`
+  - Parse with headers:
+    - Input: `name,score\nAda,10\nLinus,12`
+    - Output: `[{\"name\": \"Ada\", \"score\": \"10\"}, {\"name\": \"Linus\", \"score\": \"12\"}]`
+  - Serialize with headers:
+    - Headers: `[\"name\", \"score\"]`
+    - Rows: `[{\"name\": \"Ada\", \"score\": \"10\"}, {\"name\": \"Linus\", \"score\": \"12\"}]`
+    - Output: `name,score\nAda,10\nLinus,12`
+
 **Expected tests**
 
 - Unit tests for each module that cover successful usage and failure modes

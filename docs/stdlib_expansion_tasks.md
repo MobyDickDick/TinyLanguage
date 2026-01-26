@@ -31,9 +31,31 @@ plan so implementation can proceed in small, testable steps.
   handling, and error cases (invalid inputs).
   - Deliverables: `tests/detailtests/test_stdlib_path.py` with fixture-based
     coverage for join/split/basename/dirname and invalid inputs.
-- [ ] Define the `stdlib.os` API surface (environment access, cwd, listdir,
+- [x] Define the `stdlib.os` API surface (environment access, cwd, listdir,
   platform identifiers) with explicit platform guarantees.
   - Deliverables: API table + platform behavior notes.
+  - API table (draft for `stdlib/os.tiny`):
+
+    | Helper | Signature | Behavior | Runtime mapping |
+    | --- | --- | --- | --- |
+    | `getenv` | `getenv(key: string) -> string?` | Return the environment value for `key`, or `null` when unset. | Runtime helper reading `os.environ`/`getenv`. |
+    | `setenv` | `setenv(key: string, value: string) -> bool` | Set `key` to `value`; return `true` on success. | Runtime helper mapping to `setenv`/`putenv`. |
+    | `unsetenv` | `unsetenv(key: string) -> bool` | Remove `key` from the environment; return `true` if removed. | Runtime helper mapping to `unsetenv`. |
+    | `cwd` | `cwd() -> string` | Return the current working directory as an absolute path. | Runtime helper mapping to `os.getcwd`. |
+    | `chdir` | `chdir(path: string) -> bool` | Change the process working directory; return `true` on success. | Runtime helper mapping to `os.chdir`. |
+    | `listdir` | `listdir(path: string) -> [string]` | Return entry names (not full paths) sorted lexicographically. | Runtime helper mapping to `os.listdir`. |
+    | `platform` | `platform() -> string` | Return `"linux"`, `"darwin"`, `"windows"`, or `"unknown"`. | Runtime helper mapping to `sys.platform`. |
+    | `path_separator` | `path_separator() -> string` | Return the platform path separator (`"/"` or `"\\"`). | Runtime helper mapping to `os.sep`. |
+  - Platform behavior notes:
+    - `listdir` sorts entries for deterministic tests; the runtime helper should
+      normalize ordering instead of relying on OS iteration order.
+    - `platform` maps `sys.platform` values to stable identifiers: `"linux"`
+      for `linux*`, `"darwin"` for `darwin`, `"windows"` for `win32` or
+      `cygwin`, otherwise `"unknown"`.
+    - `cwd` and `chdir` should return normalized paths (use `/` separators) so
+      Tiny code can compare results across backends.
+    - `getenv` returns `null` (not empty string) when keys are missing to
+      distinguish unset variables from intentionally empty values.
 - [ ] Implement runtime helpers + `stdlib/os.tiny` wrappers, including error
   handling for missing environment keys.
   - Deliverables: runtime helpers in `src/tiny_language_runtime.py` and wrapper

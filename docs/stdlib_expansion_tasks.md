@@ -60,7 +60,7 @@ plan so implementation can proceed in small, testable steps.
   handling for missing environment keys.
   - Deliverables: runtime helpers in `src/tiny_language_runtime.py` and wrapper
     module in `stdlib/os.tiny` with docstrings.
-- [ ] Add tests for `stdlib.os` covering environment reads/writes, listdir, and
+- [x] Add tests for `stdlib.os` covering environment reads/writes, listdir, and
   stable platform identifiers.
   - Deliverables: `tests/detailtests/test_stdlib_os.py` with deterministic
     temporary directory fixtures.

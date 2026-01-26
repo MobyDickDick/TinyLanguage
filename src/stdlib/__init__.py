@@ -51,6 +51,7 @@ import json
 import math
 import os
 import random
+import sys
 import threading
 from collections import deque
 from dataclasses import dataclass
@@ -233,6 +234,7 @@ class _StdLibRegistrar:
         self._ensure_namespace("Console")
         self._ensure_namespace("File")
         self._ensure_namespace("Path")
+        self._ensure_namespace("OS")
         self._ensure_namespace("JSON")
         self._ensure_namespace("Async")
         self._ensure_namespace("Result")
@@ -340,6 +342,16 @@ class _StdLibRegistrar:
         # ----------------------------- Path --------------------------------
         self.runtime.register_native("normalize", self._path_normalize, namespace="Path")
         self.runtime.register_native("join", self._path_join, namespace="Path")
+
+        # ------------------------------ OS ---------------------------------
+        self.runtime.register_native("getenv", self._os_getenv, namespace="OS")
+        self.runtime.register_native("setenv", self._os_setenv, namespace="OS")
+        self.runtime.register_native("unsetenv", self._os_unsetenv, namespace="OS")
+        self.runtime.register_native("cwd", self._os_cwd, namespace="OS")
+        self.runtime.register_native("chdir", self._os_chdir, namespace="OS")
+        self.runtime.register_native("listdir", self._os_listdir, namespace="OS")
+        self.runtime.register_native("platform", self._os_platform, namespace="OS")
+        self.runtime.register_native("path_separator", self._os_path_separator, namespace="OS")
 
         # ----------------------------- JSON --------------------------------
         self.runtime.register_native("parse", self._json_parse, namespace="JSON")
@@ -1133,6 +1145,10 @@ class _StdLibRegistrar:
         text_path.unlink()
         return True
 
+    def _normalize_platform_path(self, path: str) -> str:
+        """Normalize platform paths to forward-slash-separated strings."""
+        return path.replace("\\", "/")
+
     # -----------------------------------------------------------------------
     # Path namespace
     # -----------------------------------------------------------------------
@@ -1208,6 +1224,70 @@ class _StdLibRegistrar:
         if prefix:
             return prefix
         return "/" if absolute else ""
+
+    # -----------------------------------------------------------------------
+    # OS namespace
+    # -----------------------------------------------------------------------
+
+    def _os_getenv(self, key: Any) -> Any:
+        """Return the value of `key` or None if it is not set."""
+        return os.environ.get(str(key))
+
+    def _os_setenv(self, key: Any, value: Any) -> bool:
+        """Set an environment variable; return True on success."""
+        try:
+            os.environ[str(key)] = str(value)
+        except Exception:
+            return False
+        return True
+
+    def _os_unsetenv(self, key: Any) -> bool:
+        """Unset an environment variable; return True if it existed."""
+        key_str = str(key)
+        if key_str not in os.environ:
+            return False
+        try:
+            del os.environ[key_str]
+        except Exception:
+            return False
+        return True
+
+    def _os_cwd(self) -> str:
+        """Return the current working directory with normalized separators."""
+        return self._normalize_platform_path(os.getcwd())
+
+    def _os_chdir(self, path: Any) -> bool:
+        """Change the working directory; return True on success."""
+        try:
+            os.chdir(self._coerce_path(path))
+        except Exception:
+            return False
+        return True
+
+    def _os_listdir(self, path: Any) -> int:
+        """List directory entries, returning a sorted Tiny heap list pointer."""
+        dir_path = self._coerce_path(path)
+        if not dir_path.exists():
+            raise RuntimeError(f"directory does not exist: {dir_path}")
+        if not dir_path.is_dir():
+            raise RuntimeError(f"path is not a directory: {dir_path}")
+        entries = sorted(os.listdir(dir_path))
+        return self._to_pointer(entries)
+
+    def _os_platform(self) -> str:
+        """Return a stable platform identifier."""
+        platform = sys.platform
+        if platform.startswith("linux"):
+            return "linux"
+        if platform.startswith("darwin"):
+            return "darwin"
+        if platform.startswith(("win32", "cygwin")):
+            return "windows"
+        return "unknown"
+
+    def _os_path_separator(self) -> str:
+        """Return the platform path separator."""
+        return os.sep
 
     # -----------------------------------------------------------------------
     # JSON namespace

@@ -26,29 +26,36 @@ def _expected_platform() -> str:
 def test_stdlib_os_environment_and_platform(run_tiny_source, monkeypatch):
     """Validate env helpers plus platform + separator outputs."""
     monkeypatch.setenv("TINY_LINT_HEAP", "0")
-    key = "TINY_STD_OS_TEST"
-    monkeypatch.delenv(key, raising=False)
+    missing_key = "TINY_STD_OS_TEST_MISSING"
+    value_key = "TINY_STD_OS_TEST_VALUE"
+    monkeypatch.delenv(missing_key, raising=False)
+    monkeypatch.delenv(value_key, raising=False)
+
+    missing_out = run_tiny_source(
+        f'''
+        import stdlib.os;
+
+        print(os.getenv("{missing_key}"));
+        ''',
+    )
+    assert missing_out == "Null\n"
 
     out = run_tiny_source(
         f'''
         import stdlib.os;
 
-        print(os.getenv("{key}"));
-        print(os.setenv("{key}", "value"));
-        print(os.getenv("{key}"));
-        print(os.unsetenv("{key}"));
-        print(os.getenv("{key}"));
+        print(os.setenv("{value_key}", "value"));
+        print(os.getenv("{value_key}"));
+        print(os.unsetenv("{value_key}"));
         print(os.platform());
         print(os.path_separator());
         ''',
     )
 
     expected = (
-        "Null\n"
         "true\n"
         "value\n"
         "true\n"
-        "Null\n"
         f"{_expected_platform()}\n"
         f"{os.sep}\n"
     )

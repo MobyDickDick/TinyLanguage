@@ -28,7 +28,8 @@ are grouped by area and can be tackled independently.
 - [x] Align the language specification updates with the roadmap's language core
   scope (evaluation order, scoping, error handling, concurrency).
 - [x] Define a shared diagnostic error schema for interpreter + tooling.
-- [ ] Introduce optional type annotations with a gradual-typing strategy.
+- [x] Introduce optional type annotations with a gradual-typing strategy.
+  (Documented in `docs/gradual_typing.md`.)
 - [ ] Build a minimal type-checking pass that can run in lints/CI.
 - [x] Document optimization stages and performance targets for interpreter, C,
   and LLVM backends.

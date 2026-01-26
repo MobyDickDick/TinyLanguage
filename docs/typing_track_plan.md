@@ -144,7 +144,8 @@ revisit once Phase 2 module summaries or Phase 3 narrowing are in place.
 
 - [x] Add a `typing` lint profile and CLI flag.
 - [ ] Implement the Phase 1 static pass in the linter pipeline.
-- [ ] Document configuration and migration strategy.
+- [x] Document configuration and migration strategy. (See
+  `docs/gradual_typing.md`.)
 - [ ] Add regression tests for common typing errors.
 
 ## Task breakdown (work items)
@@ -171,7 +172,8 @@ up without requiring the entire typing track to be complete.
   runs the new static checks.
 - [ ] Add a strict flag (e.g., `--typecheck`) that fails builds on typing
   errors.
-- [ ] Document configuration + migration guidance for gradual adoption.
+- [x] Document configuration + migration guidance for gradual adoption. (See
+  `docs/gradual_typing.md`.)
 - [ ] Add regression tests that cover common typing mistakes (reassignment,
   call mismatch, and inconsistent returns).
 

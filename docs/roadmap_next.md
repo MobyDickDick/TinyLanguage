@@ -18,7 +18,8 @@ tracked in `docs/open_tasks.md`.
 
 ### Type system
 
-- Introduce optional type annotations and a gradual-typing strategy.
+- Introduce optional type annotations and a gradual-typing strategy. (See
+  `docs/gradual_typing.md`.)
 - Add a minimal type-checking pass that can run in lints/CI.
 - Decide if effect or mutability annotations are needed for stricter safety
   profiles.
@@ -61,7 +62,8 @@ tracked in `docs/open_tasks.md`.
 
 **Goals**: Provide optional static checks without blocking dynamic workflows.
 
-- Introduce optional type annotations with a gradual-typing strategy.
+- Introduce optional type annotations with a gradual-typing strategy. (See
+  `docs/gradual_typing.md`.)
 - Define a minimal type-checking pass that can run as a linter or CI gate.
 - Plan for effect or mutability annotations if needed for stricter safety
   profiles.

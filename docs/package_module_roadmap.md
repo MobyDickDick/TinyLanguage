@@ -25,6 +25,36 @@ lockfiles, and a minimal CLI that can evolve into a full package manager.
 - **Optional org namespace**: Allow `pkg.org_name.module` to disambiguate
   community packages when registries arrive.
 
+### Namespace resolution rules
+
+These rules describe how the resolver maps an import path to a module source.
+They should be applied consistently across the interpreter, compiler, and
+tooling so users see the same behavior everywhere.
+
+1. **Parse the import path** into segments separated by `.`.
+2. **Check reserved prefixes**:
+   - `std.<path>` resolves to the canonical stdlib root, regardless of local
+     files with the same name.
+   - `pkg.<path>` resolves to the package graph defined in `tiny.toml` +
+     `tiny.lock` (or `vendor/` when present).
+3. **Resolve unprefixed imports (`local` namespace)**:
+   - Look for a module under the project root `src/` tree first (for example,
+     `import app.utils` → `src/app/utils.tiny` or `src/app/utils/__init__.tiny`).
+   - If not found, fall back to other project-local search roots (e.g.,
+     `./app/utils.tiny`), but never probe `std` or `pkg` namespaces implicitly.
+4. **No implicit fallback across namespaces**:
+   - If `std.foo` is missing, do not try `pkg.foo` or local equivalents.
+   - If `pkg.foo` is missing, do not try `std.foo` or local equivalents.
+5. **Collision rules**:
+   - Local modules may shadow each other by directory order only within the
+     local search roots; they can never shadow `std` or `pkg` modules.
+   - `pkg` namespace is owned by the resolver; local modules cannot use
+     `pkg.*` or `std.*` prefixes.
+6. **Error reporting**:
+   - When resolution fails, report which namespace was attempted and list the
+     roots consulted (e.g., `std`, `pkg`, or local roots), so users can fix the
+     import path or adjust configuration.
+
 ### Versioning model
 
 - Adopt SemVer for published packages (major.minor.patch).
@@ -298,7 +328,7 @@ in the main backlog.
 - [x] Add a `tiny pkg init` template that matches the documented manifest schema.
 - [x] Extend docs with a dependency override example (path + registry fallback).
 - [x] Define the `tiny.lock` schema (resolved versions, sources, checksums).
-- [ ] Specify namespace resolution rules for `local`, `std`, and `pkg` imports.
+- [x] Specify namespace resolution rules for `local`, `std`, and `pkg` imports.
 - [ ] Implement dependency resolution with SemVer constraints and lockfile
   persistence.
 - [ ] Add CLI stubs for `tiny pkg init`, `tiny pkg add`, and `tiny pkg resolve`.

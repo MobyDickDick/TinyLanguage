@@ -1,37 +1,5 @@
 // TinyLanguage stdlib: os module (Python-style subset)
 
-fn getenv(key) {
-  return OS.getenv(key);
-}
-
-fn setenv(key, value) {
-  return OS.setenv(key, value);
-}
-
-fn unsetenv(key) {
-  return OS.unsetenv(key);
-}
-
-fn cwd() {
-  return OS.cwd();
-}
-
-fn chdir(path) {
-  return OS.chdir(path);
-}
-
-fn listdir(path) {
-  return OS.listdir(path);
-}
-
-fn platform() {
-  return OS.platform();
-}
-
-fn path_separator() {
-  return OS.path_separator();
-}
-
 // Backwards-compatible helpers: os.path + file shims.
 namespace path {
   fn _split_path(path) {
@@ -81,7 +49,6 @@ namespace path {
     return File.exists(path);
   }
 }
-
 fn remove(path) {
   return File.remove(path);
 }
@@ -92,4 +59,36 @@ fn read_text(path) {
 
 fn write_text(path, text) {
   return File.write(path, text);
+}
+
+fn getenv(key) {
+  return OS.getenv(key);
+}
+
+fn setenv(key, value) {
+  return OS.setenv(key, value);
+}
+
+fn unsetenv(key) {
+  return OS.unsetenv(key);
+}
+
+fn cwd() {
+  return OS.cwd();
+}
+
+fn chdir(path) {
+  return OS.chdir(path);
+}
+
+fn listdir(path) {
+  return OS.listdir(path);
+}
+
+fn platform() {
+  return OS.platform();
+}
+
+fn path_separator() {
+  return OS.path_separator();
 }

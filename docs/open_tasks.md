@@ -39,8 +39,9 @@ are grouped by area and can be tackled independently.
   views).
 - [ ] Draft project scaffolding/templates and versioned CLI ergonomics.
 - [ ] Specify module resolution rules (local vs. stdlib vs. external packages).
+  (See `docs/package_module_roadmap.md`.)
 - [ ] Define a package manager plan (lockfiles, registry layout, semantic
-  versioning).
+  versioning). (See `docs/package_module_roadmap.md`.)
 - [ ] Maintain conformance + cross-backend parity test suites.
 - [ ] Publish compatibility matrices and migration guides for major releases.
 

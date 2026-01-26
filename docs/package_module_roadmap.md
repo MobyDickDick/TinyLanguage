@@ -333,7 +333,7 @@ in the main backlog.
   persistence.
 - [ ] Add CLI stubs for `tiny pkg init`, `tiny pkg add`, and `tiny pkg resolve`.
 - [ ] Document vendoring behavior and layout for `tiny pkg vendor`.
-- [ ] Update `docs/open_tasks.md` and `docs/roadmap_next.md` with package/module
+- [x] Update `docs/open_tasks.md` and `docs/roadmap_next.md` with package/module
   milestones and links to this roadmap.
 
 ## Manifest diagnostics (error messages + codes)

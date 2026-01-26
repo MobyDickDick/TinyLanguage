@@ -57,7 +57,7 @@ def check_fixture(path: pathlib.Path) -> list[str]:
             )
         )
 
-    server = TinyLanguageServer(source)
+    server = TinyLanguageServer(source, lint_profile="typing")
     diagnostics = server.diagnostics()
     if diagnostics:
         errors.append(

@@ -56,7 +56,7 @@ plan so implementation can proceed in small, testable steps.
       Tiny code can compare results across backends.
     - `getenv` returns `null` (not empty string) when keys are missing to
       distinguish unset variables from intentionally empty values.
-- [ ] Implement runtime helpers + `stdlib/os.tiny` wrappers, including error
+- [x] Implement runtime helpers + `stdlib/os.tiny` wrappers, including error
   handling for missing environment keys.
   - Deliverables: runtime helpers in `src/tiny_language_runtime.py` and wrapper
     module in `stdlib/os.tiny` with docstrings.

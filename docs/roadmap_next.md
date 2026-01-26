@@ -44,6 +44,8 @@ tracked in `docs/open_tasks.md`.
 - Specify module resolution rules (local vs. stdlib vs. external packages).
 - Define a package manager plan (lockfiles, registry layout, semantic
   versioning).
+- Track package/module milestones and deliverables in
+  `docs/package_module_roadmap.md`.
 - Maintain conformance and cross-backend parity test suites.
 - Publish compatibility matrices and migration guides for major releases.
 
@@ -77,6 +79,8 @@ tracked in `docs/open_tasks.md`.
 - Specify module resolution rules (local vs. stdlib vs. external packages).
 - Define a package manager plan (lockfiles, registry layout, semantic
   versioning).
+- Track package/module milestones and deliverables in
+  `docs/package_module_roadmap.md`.
 
 ## Phase 4: Runtime and performance
 

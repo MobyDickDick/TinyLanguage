@@ -23,3 +23,7 @@ fn parse(text) {
 fn stringify(value) {
   return dumps(value);
 }
+
+fn validate(text) {
+  return JSON.validate(text);
+}

@@ -64,7 +64,7 @@ plan so implementation can proceed in small, testable steps.
   stable platform identifiers.
   - Deliverables: `tests/detailtests/test_stdlib_os.py` with deterministic
     temporary directory fixtures.
-- [ ] Add `stdlib/json.tiny` wrapper for the existing `JSON` namespace and add
+- [x] Add `stdlib/json.tiny` wrapper for the existing `JSON` namespace and add
   parity tests for `parse`/`stringify`/`validate`.
   - Deliverables: wrapper module plus parity tests in
     `tests/detailtests/test_stdlib_json.py`.

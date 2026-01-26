@@ -355,6 +355,7 @@ class _StdLibRegistrar:
 
         # ----------------------------- JSON --------------------------------
         self.runtime.register_native("parse", self._json_parse, namespace="JSON")
+        self.runtime.register_native("validate", self._json_validate, namespace="JSON")
         self.runtime.register_native("stringify", self._json_stringify, namespace="JSON")
 
         # ----------------------------- Async -------------------------------
@@ -1300,6 +1301,14 @@ class _StdLibRegistrar:
         except Exception as exc:
             raise RuntimeError(f"invalid json: {exc}")
         return self._json_to_value(loaded)
+
+    def _json_validate(self, text: Any) -> bool:
+        """Return True when `text` is valid JSON, False otherwise."""
+        try:
+            json.loads(str(text))
+        except Exception:
+            return False
+        return True
 
     def _json_to_value(self, data: Any) -> Any:
         """Recursively map decoded JSON to Tiny values."""

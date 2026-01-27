@@ -12,7 +12,16 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from formatter import format_source
-from language_server import CompletionItem, Diagnostic, HoverResult, TinyLanguageServer, WorkspaceSymbol
+from language_server import (
+    CodeAction,
+    CompletionItem,
+    Diagnostic,
+    HoverResult,
+    ReferenceLocation,
+    TextEdit,
+    TinyLanguageServer,
+    WorkspaceSymbol,
+)
 
 
 def _load_source(args: argparse.Namespace) -> str:
@@ -63,6 +72,26 @@ def _workspace_symbol_dict(symbol: WorkspaceSymbol) -> Dict[str, Any]:
     }
 
 
+def _reference_dict(item: ReferenceLocation) -> Dict[str, Any]:
+    """Convert ``ReferenceLocation`` to a JSON-friendly mapping."""
+    return {"range": list(item.range)}
+
+
+def _text_edit_dict(edit: TextEdit) -> Dict[str, Any]:
+    """Convert ``TextEdit`` to a JSON-friendly mapping."""
+    return {"range": list(edit.range), "newText": edit.new_text}
+
+
+def _code_action_dict(action: CodeAction) -> Dict[str, Any]:
+    """Convert ``CodeAction`` to a JSON-friendly mapping."""
+    return {
+        "title": action.title,
+        "kind": action.kind,
+        "edits": [_text_edit_dict(edit) for edit in action.edits],
+        "diagnostics": list(action.diagnostics),
+    }
+
+
 def completions(server: TinyLanguageServer, prefix: str) -> List[Dict[str, Any]]:
     """Return completion payloads for ``prefix`` using ``server``."""
     return [_completion_dict(item) for item in server.completions(prefix)]
@@ -97,6 +126,28 @@ def definition(
     if not result:
         return {}
     return {"symbol": symbol, "position": [result.line, result.col]}
+
+
+def references(
+    server: TinyLanguageServer, symbol: str, include_definition: bool
+) -> List[Dict[str, Any]]:
+    """Return reference locations for ``symbol``."""
+    return [_reference_dict(item) for item in server.references(symbol, include_definition=include_definition)]
+
+
+def rename(server: TinyLanguageServer, symbol: str, new_name: str) -> List[Dict[str, Any]]:
+    """Return rename edits for ``symbol``."""
+    return [_text_edit_dict(edit) for edit in server.rename(symbol, new_name)]
+
+
+def format_edits(server: TinyLanguageServer) -> List[Dict[str, Any]]:
+    """Return formatter edits as a list of text edits."""
+    return [_text_edit_dict(edit) for edit in server.format_edits()]
+
+
+def code_actions(server: TinyLanguageServer) -> List[Dict[str, Any]]:
+    """Return code actions for ``server``."""
+    return [_code_action_dict(action) for action in server.code_actions()]
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -135,12 +186,26 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("diagnostics", help="List diagnostics for the source")
     subparsers.add_parser("format", help="Format the source and emit it as JSON")
+    subparsers.add_parser("format-edits", help="Format the source and emit text edits")
     workspace_parser = subparsers.add_parser(
         "workspace-symbols", help="List symbols matching a workspace query"
     )
     workspace_parser.add_argument(
         "--query", default="", help="Substring used to filter workspace symbols"
     )
+    references_parser = subparsers.add_parser(
+        "references", help="Find references to a symbol"
+    )
+    references_parser.add_argument("--symbol", required=True, help="Symbol name to search for")
+    references_parser.add_argument(
+        "--exclude-definition",
+        action="store_true",
+        help="Exclude the definition location from results",
+    )
+    rename_parser = subparsers.add_parser("rename", help="Return rename edits for a symbol")
+    rename_parser.add_argument("--symbol", required=True, help="Symbol name to rename")
+    rename_parser.add_argument("--new-name", required=True, help="New symbol name")
+    subparsers.add_parser("code-actions", help="List available code actions")
 
     return parser
 
@@ -168,9 +233,23 @@ def main() -> None:
         payload = diagnostics(server)
     elif args.command == "format":
         payload = format_source_payload(source)
+    elif args.command == "format-edits":
+        server = TinyLanguageServer(source, lint_profile=args.lint_profile)
+        payload = format_edits(server)
     elif args.command == "workspace-symbols":
         server = TinyLanguageServer(source, lint_profile=args.lint_profile)
         payload = workspace_symbols(server, args.query)
+    elif args.command == "references":
+        server = TinyLanguageServer(source, lint_profile=args.lint_profile)
+        payload = references(
+            server, args.symbol, include_definition=not args.exclude_definition
+        )
+    elif args.command == "rename":
+        server = TinyLanguageServer(source, lint_profile=args.lint_profile)
+        payload = rename(server, args.symbol, args.new_name)
+    elif args.command == "code-actions":
+        server = TinyLanguageServer(source, lint_profile=args.lint_profile)
+        payload = code_actions(server)
     else:
         raise SystemExit(f"unknown command: {args.command}")
 

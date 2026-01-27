@@ -1,6 +1,6 @@
 # Language server workflows
 
-This note bundles a quickstart for the `TinyLanguageServer` helper that lives in [`src/language_server.py`](../src/language_server.py). The goal is to give a lightweight, JSON-style interface for experiments with hover, completion, and diagnostics without implementing JSON-RPC wiring.
+This note bundles a quickstart for the `TinyLanguageServer` helper that lives in [`src/language_server.py`](../src/language_server.py). The goal is to give a lightweight, JSON-style interface for experiments with hover, completion, diagnostics, and basic LSP-style edits without implementing JSON-RPC wiring.
 
 ## Quickstart: CLI demos
 
@@ -18,6 +18,18 @@ PYTHONPATH=src python src/language_server_cli.py --source "fn describe(x: number
 
 # Format source and emit JSON payloads
 PYTHONPATH=src python src/language_server_cli.py --source "fn greet(){return 1;}" format
+
+# Ask for formatter edits (text edits) instead of the full formatted source
+PYTHONPATH=src python src/language_server_cli.py --source "fn greet(){return 1;}" format-edits
+
+# Find references to a symbol
+PYTHONPATH=src python src/language_server_cli.py --source $'fn add(x, y) { return x + y; }\nadd(1, 2);' references --symbol add
+
+# Request rename edits for a symbol
+PYTHONPATH=src python src/language_server_cli.py --source $'fn add(x, y) { return x + y; }\nadd(1, 2);' rename --symbol add --new-name sum
+
+# List code actions (formatting is returned as a source-level action)
+PYTHONPATH=src python src/language_server_cli.py --source "fn greet(){return 1;}" code-actions
 ```
 
 The subcommands mirror common LSP request/response pairs:
@@ -27,6 +39,10 @@ The subcommands mirror common LSP request/response pairs:
 - `definition --symbol <name>` resolves a symbol to its definition location (optionally disambiguated with `--line`/`--col`).
 - `diagnostics` runs the built-in lints and surfaces the first encountered error with a four-tuple range `(start_line, start_col, end_line, end_col)` (1-based, end-exclusive). Parse errors are reported in the same payload shape so tooling stays stable when source is incomplete.
 - `format` formats the source using the TinyLanguage formatter and returns the formatted source string.
+- `format-edits` formats the source and returns text edits that replace the document contents.
+- `references --symbol <name>` returns the 1-based ranges for each reference to a symbol (including its definition unless excluded).
+- `rename --symbol <name> --new-name <name>` returns text edits that rename all references to the symbol.
+- `code-actions` returns code action payloads, currently exposing a format document action when formatting changes are available.
 
 Outputs are JSON so they can be piped into tools or inspected visually. Example diagnostics output:
 
@@ -65,6 +81,10 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
 | `workspace/symbol` | `workspace-symbols` | `{ "query": "gre" }` | `[{ "name": "greet", "kind": "function", "detail": "fn greet()", "position": [1, 4], "container": "" }]` | Substring search across indexed symbols. |
 | `textDocument/diagnostic` | `diagnostics` | `{}` | `[{ "message": "[E010] ...", "code": "E010", "range": [1, 1, 1, 2], "severity": "error", "phase": "lint", "source": "linter", "origin": "language_server" }]` | Emits lint findings with machine-readable ranges. |
 | `textDocument/formatting` | `format` | `{}` | `{ "source": "fn greet() { return 1; }\n" }` | Formats the input using the TinyLanguage formatter. |
+| `textDocument/formatting` | `format-edits` | `{}` | `[{ "range": [1, 1, 1, 18], "newText": "fn greet() { return 1; }\n" }]` | Formatter edits as LSP-style text edits. |
+| `textDocument/references` | `references` | `{ "symbol": "greet" }` | `[{ "range": [1, 4, 1, 9] }, { "range": [2, 1, 2, 6] }]` | Reference ranges for the symbol (1-based, end-exclusive). |
+| `textDocument/rename` | `rename` | `{ "symbol": "greet", "newName": "hello" }` | `[{ "range": [1, 4, 1, 9], "newText": "hello" }]` | Rename edits that update each reference. |
+| `textDocument/codeAction` | `code-actions` | `{}` | `[{ "title": "Format document", "kind": "source.format", "edits": [{ "range": [1, 1, 1, 18], "newText": "fn greet() { return 1; }\n" }], "diagnostics": [] }]` | Provides formatting as a source-level code action. |
 
 **Request templates at a glance** (copy/paste into JSON-RPC envelopes):
 
@@ -73,6 +93,9 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
 - Definition: `{ "method": "textDocument/definition", "params": { "symbol": "greet" } }`
 - Workspace symbols: `{ "method": "workspace/symbol", "params": { "query": "gre" } }`
 - Diagnostics: `{ "method": "textDocument/diagnostic", "params": {} }`
+- References: `{ "method": "textDocument/references", "params": { "symbol": "greet" } }`
+- Rename: `{ "method": "textDocument/rename", "params": { "symbol": "greet", "newName": "hello" } }`
+- Code actions: `{ "method": "textDocument/codeAction", "params": {} }`
 
 - **Completions** (`textDocument/completion` equivalent)
   - Request payload:
@@ -192,6 +215,86 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
     ```bash
     PYTHONPATH=src python src/language_server_cli.py --source "fn greet(){return 1;}" format
     # => {"source": "fn greet() { return 1; }\n"}
+    ```
+
+- **Formatting edits** (`textDocument/formatting` equivalent)
+  - Request payload:
+
+    ```json
+    {}
+    ```
+
+  - Response payload:
+
+    ```json
+    [{ "range": [1, 1, 1, 18], "newText": "fn greet() { return 1; }\n" }]
+    ```
+
+  - CLI demo for formatting edits:
+
+    ```bash
+    PYTHONPATH=src python src/language_server_cli.py --source "fn greet(){return 1;}" format-edits
+    # => [{"range": [1, 1, 1, 18], "newText": "fn greet() { return 1; }\n"}]
+    ```
+
+- **References** (`textDocument/references` equivalent)
+  - Request payload:
+
+    ```json
+    { "symbol": "add" }
+    ```
+
+  - Response payload:
+
+    ```json
+    [{ "range": [1, 4, 1, 7] }, { "range": [2, 1, 2, 4] }]
+    ```
+
+  - CLI demo for references:
+
+    ```bash
+    PYTHONPATH=src python src/language_server_cli.py --source $'fn add(x, y) { return x + y; }\nadd(1, 2);' references --symbol add
+    # => [{"range": [1, 4, 1, 7]}, {"range": [2, 1, 2, 4]}]
+    ```
+
+- **Rename** (`textDocument/rename` equivalent)
+  - Request payload:
+
+    ```json
+    { "symbol": "add", "newName": "sum" }
+    ```
+
+  - Response payload:
+
+    ```json
+    [{ "range": [1, 4, 1, 7], "newText": "sum" }, { "range": [2, 1, 2, 4], "newText": "sum" }]
+    ```
+
+  - CLI demo for rename edits:
+
+    ```bash
+    PYTHONPATH=src python src/language_server_cli.py --source $'fn add(x, y) { return x + y; }\nadd(1, 2);' rename --symbol add --new-name sum
+    # => [{"range": [1, 4, 1, 7], "newText": "sum"}, {"range": [2, 1, 2, 4], "newText": "sum"}]
+    ```
+
+- **Code actions** (`textDocument/codeAction` equivalent)
+  - Request payload:
+
+    ```json
+    {}
+    ```
+
+  - Response payload:
+
+    ```json
+    [{ "title": "Format document", "kind": "source.format", "edits": [{ "range": [1, 1, 1, 18], "newText": "fn greet() { return 1; }\n" }], "diagnostics": [] }]
+    ```
+
+  - CLI demo for code actions:
+
+    ```bash
+    PYTHONPATH=src python src/language_server_cli.py --source "fn greet(){return 1;}" code-actions
+    # => [{"title": "Format document", "kind": "source.format", "edits": [{"range": [1, 1, 1, 18], "newText": "fn greet() { return 1; }\n"}], "diagnostics": []}]
     ```
 
 ## "So testest du es" quick demos

@@ -331,7 +331,7 @@ in the main backlog.
 - [x] Specify namespace resolution rules for `local`, `std`, and `pkg` imports.
 - [ ] Implement dependency resolution with SemVer constraints and lockfile
   persistence.
-- [ ] Add CLI stubs for `tiny pkg init`, `tiny pkg add`, and `tiny pkg resolve`.
+- [x] Add CLI stubs for `tiny pkg init`, `tiny pkg add`, and `tiny pkg resolve`.
 - [ ] Document vendoring behavior and layout for `tiny pkg vendor`.
 - [x] Update `docs/open_tasks.md` and `docs/roadmap_next.md` with package/module
   milestones and links to this roadmap.

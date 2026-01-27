@@ -138,3 +138,43 @@ def test_diagnostics_surface_parse_errors():
     assert diag.code
     assert isinstance(diag.range, tuple)
     assert len(diag.range) == 4
+
+
+def test_references_include_definition_and_usage():
+    """Reference lookups should return ranges for definition and usage."""
+    source = "fn add(x, y) { return x + y; }\nadd(1, 2);"
+    server = TinyLanguageServer(source)
+    refs = server.references("add")
+    assert len(refs) >= 2
+    ranges = {(item.range[0], item.range[1]) for item in refs}
+    assert (1, 4) in ranges
+    assert (2, 1) in ranges
+
+
+def test_rename_emits_text_edits():
+    """Rename should return text edits for each reference."""
+    source = "fn add(x, y) { return x + y; }\nadd(1, 2);"
+    server = TinyLanguageServer(source)
+    edits = server.rename("add", "sum")
+    assert len(edits) == 2
+    assert all(edit.new_text == "sum" for edit in edits)
+
+
+def test_format_edits_replace_document_when_needed():
+    """Formatter edits should cover the full document when formatting changes."""
+    source = "fn greet(){return 1;}"
+    server = TinyLanguageServer(source)
+    edits = server.format_edits()
+    assert edits
+    edit = edits[0]
+    assert edit.range[0:2] == (1, 1)
+    assert edit.new_text.endswith("\n")
+
+
+def test_code_actions_include_format_when_needed():
+    """Code actions should include a format action when formatting changes."""
+    source = "fn greet(){return 1;}"
+    server = TinyLanguageServer(source)
+    actions = server.code_actions()
+    assert actions
+    assert actions[0].kind == "source.format"

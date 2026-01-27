@@ -10,12 +10,13 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from tiny_errors import diagnostic_range
 from tiny_language import (
     BUILTINS,
     KEYWORDS,
+    Token,
     Lexer,
     MethodDef,
     Namespace,
@@ -86,6 +87,31 @@ class WorkspaceSymbol:
     container: str = ""
 
 
+@dataclass
+class ReferenceLocation:
+    """Location entry for a reference lookup."""
+
+    range: Tuple[int, int, int, int]
+
+
+@dataclass
+class TextEdit:
+    """Text edit entry for formatting, rename, or code actions."""
+
+    range: Tuple[int, int, int, int]
+    new_text: str
+
+
+@dataclass
+class CodeAction:
+    """Minimal code action entry for formatting or quick fixes."""
+
+    title: str
+    kind: str
+    edits: List[TextEdit]
+    diagnostics: List[str]
+
+
 
 
 class TinyLanguageServer:
@@ -107,8 +133,24 @@ class TinyLanguageServer:
         self.symbols: Dict[str, SourcePos] = {}
         self.symbol_kinds: Dict[str, str] = {}
         self.symbol_details: Dict[str, str] = {}
+        self._tokens: List[Token] = []
+        try:
+            self._tokens = self._collect_tokens()
+        except TinyLangError:
+            self._tokens = []
         if self.parse_error is None:
             self._index_symbols(self.stmts)
+
+    def _collect_tokens(self) -> List[Token]:
+        """Return a cached list of lexer tokens for source lookups."""
+        tokens: List[Token] = []
+        lexer = Lexer(self.source)
+        while True:
+            token = lexer.next_token()
+            if token.kind == "EOF":
+                break
+            tokens.append(token)
+        return tokens
 
     def _record_symbol(self, name: str, pos: SourcePos, kind: str, detail: Optional[str]) -> None:
         """Store a symbol with supplemental metadata for hover/completion."""
@@ -156,6 +198,45 @@ class TinyLanguageServer:
                             method_name = f"{qualified}.{method.name}" if qualified else method.name
                             method_detail = f"method {self._format_signature(method.name, method.params, method.return_type)}"
                             self._record_symbol(method_name, getattr(method, "pos", pos), "method", method_detail)
+
+    def _token_range(self, token: Token) -> Tuple[int, int, int, int]:
+        """Return a 1-based, end-exclusive range for a token."""
+        return (token.start.line, token.start.col, token.stop.line, token.stop.col + 1)
+
+    def _source_end_position(self) -> Tuple[int, int]:
+        """Return the 1-based end position for the current source."""
+        if not self.source:
+            return (1, 1)
+        last_newline = self.source.rfind("\n")
+        if last_newline == -1:
+            return (1, len(self.source) + 1)
+        line = self.source.count("\n") + 1
+        col = len(self.source) - last_newline
+        return (line, col)
+
+    def _iter_dotted_names(self) -> Iterable[Tuple[str, Token]]:
+        """Yield dotted name strings with the final token for highlighting."""
+        tokens = self._tokens
+        for idx, token in enumerate(tokens):
+            if token.kind != "NAME":
+                continue
+            parts = [token.text]
+            last_token = token
+            j = idx
+            while j + 2 < len(tokens) and tokens[j + 1].text == "." and tokens[j + 2].kind == "NAME":
+                parts.append(tokens[j + 2].text)
+                last_token = tokens[j + 2]
+                j += 2
+            yield ".".join(parts), last_token
+
+    def _reference_candidates(self, symbol: str) -> Set[str]:
+        """Return all symbol spellings eligible for reference matching."""
+        candidates = {symbol}
+        if "." not in symbol:
+            for name in self.symbols:
+                if name.split(".")[-1] == symbol:
+                    candidates.add(name)
+        return candidates
 
     def completions(self, prefix: str = "") -> List[CompletionItem]:
         """Return completion items for keywords, builtins, and indexed symbols."""
@@ -212,6 +293,34 @@ class TinyLanguageServer:
         detail = self.symbol_details.get(symbol, "TinyLanguage symbol")
         return HoverResult(symbol=symbol, detail=detail, position=(pos.line, pos.col))
 
+    def references(self, symbol: str, *, include_definition: bool = True) -> List[ReferenceLocation]:
+        """Return reference locations for ``symbol`` based on lexer matches."""
+        candidates = self._reference_candidates(symbol)
+        results: List[ReferenceLocation] = []
+        for name, token in self._iter_dotted_names():
+            if name in candidates or name.split(".")[-1] == symbol:
+                results.append(ReferenceLocation(range=self._token_range(token)))
+        if not include_definition:
+            definition = self.definition(symbol)
+            if definition is not None:
+                results = [
+                    ref
+                    for ref in results
+                    if not (
+                        ref.range[0] == definition.line
+                        and ref.range[1] == definition.col
+                    )
+                ]
+        return results
+
+    def rename(self, symbol: str, new_name: str) -> List[TextEdit]:
+        """Return text edits needed to rename ``symbol`` to ``new_name``."""
+        edits = [
+            TextEdit(range=ref.range, new_text=new_name)
+            for ref in self.references(symbol, include_definition=True)
+        ]
+        return edits
+
     def diagnostics(self) -> List[Diagnostic]:
         """Run linters and parser checks, returning any diagnostics."""
         diagnostics: List[Diagnostic] = []
@@ -260,6 +369,31 @@ class TinyLanguageServer:
                 )
             )
         return diagnostics
+
+    def format_edits(self) -> List[TextEdit]:
+        """Return text edits that apply the formatter to the whole document."""
+        from formatter import format_source
+
+        formatted = format_source(self.source)
+        if formatted == self.source:
+            return []
+        end_line, end_col = self._source_end_position()
+        return [TextEdit(range=(1, 1, end_line, end_col), new_text=formatted)]
+
+    def code_actions(self) -> List[CodeAction]:
+        """Return available code actions, such as formatting."""
+        actions: List[CodeAction] = []
+        format_edits = self.format_edits()
+        if format_edits:
+            actions.append(
+                CodeAction(
+                    title="Format document",
+                    kind="source.format",
+                    edits=format_edits,
+                    diagnostics=[],
+                )
+            )
+        return actions
 
     def workspace_symbols(self, query: str = "") -> List[WorkspaceSymbol]:
         """Return symbols whose names match ``query`` for workspace search."""
@@ -320,6 +454,38 @@ def diagnostics_for_source(source: str) -> List[Dict[str, Any]]:
     ]
 
 
+def references_for_source(source: str, symbol: str, include_definition: bool = True) -> List[Dict[str, Any]]:
+    """Return reference ranges for ``symbol`` in ``source``."""
+    server = TinyLanguageServer(source)
+    return [{"range": list(item.range)} for item in server.references(symbol, include_definition=include_definition)]
+
+
+def rename_for_source(source: str, symbol: str, new_name: str) -> List[Dict[str, Any]]:
+    """Return rename edits for ``symbol`` in ``source``."""
+    server = TinyLanguageServer(source)
+    return [{"range": list(edit.range), "newText": edit.new_text} for edit in server.rename(symbol, new_name)]
+
+
+def format_edits_for_source(source: str) -> List[Dict[str, Any]]:
+    """Return formatting edits for ``source``."""
+    server = TinyLanguageServer(source)
+    return [{"range": list(edit.range), "newText": edit.new_text} for edit in server.format_edits()]
+
+
+def code_actions_for_source(source: str) -> List[Dict[str, Any]]:
+    """Return code actions for ``source``."""
+    server = TinyLanguageServer(source)
+    return [
+        {
+            "title": action.title,
+            "kind": action.kind,
+            "edits": [{"range": list(edit.range), "newText": edit.new_text} for edit in action.edits],
+            "diagnostics": action.diagnostics,
+        }
+        for action in server.code_actions()
+    ]
+
+
 def definition_for_source(
     source: str, symbol: str, position: Optional[Tuple[int, int]] = None
 ) -> Dict[str, Any]:
@@ -335,9 +501,16 @@ __all__ = [
     "TinyLanguageServer",
     "HoverResult",
     "CompletionItem",
+    "ReferenceLocation",
+    "TextEdit",
+    "CodeAction",
     "Diagnostic",
     "completions_for_source",
     "definition_for_source",
     "hover_for_source",
     "diagnostics_for_source",
+    "references_for_source",
+    "rename_for_source",
+    "format_edits_for_source",
+    "code_actions_for_source",
 ]

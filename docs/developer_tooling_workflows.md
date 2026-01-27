@@ -8,7 +8,8 @@ editor setup is recommended for contributors.
 
 The TinyLanguage language server lives in `src/language_server.py`, and the
 companion CLI wrapper (`src/language_server_cli.py`) mirrors common LSP
-request/response flows for hover, completion, diagnostics, and formatting. Use
+request/response flows for hover, completion, diagnostics, formatting, references,
+rename, and code actions. Use
 this CLI for quick checks or for wiring editor integrations that do not speak
 JSON-RPC yet. For example:
 

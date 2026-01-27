@@ -34,7 +34,7 @@ are grouped by area and can be tackled independently.
 - [x] Document optimization stages and performance targets for interpreter, C,
   and LLVM backends.
 - [x] Establish profiling + benchmarking workflows for regression tracking.
-- [ ] Expand LSP features (rename, references, code actions, formatting hooks).
+- [x] Expand LSP features (rename, references, code actions, formatting hooks).
 - [ ] Improve debugging workflows (breakpoints, watch expressions, variable
   views).
 - [ ] Draft project scaffolding/templates and versioned CLI ergonomics.
@@ -56,7 +56,7 @@ are grouped by area and can be tackled independently.
   document recommended editor setup.
 - [x] Expand stdlib coverage with parity tests for missing or incomplete
   Python-style modules (prioritize commonly used APIs).
-- [ ] Extend LSP capabilities beyond hover/completion (rename, references, code
+- [x] Extend LSP capabilities beyond hover/completion (rename, references, code
   actions, formatting hooks) and document the supported request matrix.
 - [ ] Improve debugging workflows by specifying breakpoint, watch, and variable
   view behavior for the debugger adapters + CLI tooling.

@@ -68,7 +68,7 @@ plan so implementation can proceed in small, testable steps.
   parity tests for `parse`/`stringify`/`validate`.
   - Deliverables: wrapper module plus parity tests in
     `tests/detailtests/test_stdlib_json.py`.
-- [ ] Define `stdlib.csv` parsing/serialization behavior (delimiter, quotes,
+- [x] Define `stdlib.csv` parsing/serialization behavior (delimiter, quotes,
   headers) and confirm deterministic output expectations.
   - Deliverables: spec notes + examples in `docs/stdlib_expansion_plan.md`.
 - [ ] Implement `stdlib.csv` helpers (Tiny or runtime) with round-trip tests for

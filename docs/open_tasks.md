@@ -56,6 +56,18 @@ are grouped by area and can be tackled independently.
   document recommended editor setup.
 - [x] Expand stdlib coverage with parity tests for missing or incomplete
   Python-style modules (prioritize commonly used APIs).
+- [ ] Extend LSP capabilities beyond hover/completion (rename, references, code
+  actions, formatting hooks) and document the supported request matrix.
+- [ ] Improve debugging workflows by specifying breakpoint, watch, and variable
+  view behavior for the debugger adapters + CLI tooling.
+- [ ] Draft project scaffolding/templates and versioned CLI ergonomics for new
+  packages, including a minimal init flow and workspace layout.
+- [ ] Specify module resolution precedence (local vs. stdlib vs. external
+  packages) and define how ambiguous imports are surfaced to users.
+- [ ] Define a package manager plan that covers lockfiles, registry layout,
+  semantic versioning, and dependency graph resolution.
+- [ ] Maintain conformance + cross-backend parity test suites with a published
+  compatibility matrix and upgrade/migration guides per release.
 
 ## Follow-up tasks from docs (active)
 

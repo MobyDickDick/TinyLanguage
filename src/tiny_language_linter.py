@@ -1018,6 +1018,18 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
                 check_expr(arg, env)
             params = function_params.get(expr.name)
             if params:
+                if len(expr.args) != len(params):
+                    msg = (
+                        f"argument count mismatch for function {expr.name}: "
+                        f"expected {len(params)} but got {len(expr.args)}"
+                    )
+                    raise _lint_error(
+                        source,
+                        expr,
+                        msg,
+                        code="E009",
+                        hint="Adjust the call to pass the expected number of arguments.",
+                    )
                 for param, arg in zip(params, expr.args):
                     if not param.type:
                         continue
@@ -1043,7 +1055,20 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
             if obj_type:
                 params = _resolve_method_params(classes, methods, obj_type, expr.name)
                 if params:
-                    for param, arg in zip(params, expr.args):
+                    expected_params = params[1:] if params else []
+                    if len(expr.args) != len(expected_params):
+                        msg = (
+                            f"argument count mismatch for method {obj_type}.{expr.name}: "
+                            f"expected {len(expected_params)} but got {len(expr.args)}"
+                        )
+                        raise _lint_error(
+                            source,
+                            expr,
+                            msg,
+                            code="E009",
+                            hint="Adjust the call to pass the expected number of arguments.",
+                        )
+                    for param, arg in zip(expected_params, expr.args):
                         if not param.type:
                             continue
                         inferred = _infer_expr_type(arg, env)
@@ -1089,6 +1114,36 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
         if isinstance(expr, Spawn):
             for arg in expr.args:
                 check_expr(arg, env)
+            params = function_params.get(expr.name)
+            if params:
+                if len(expr.args) != len(params):
+                    msg = (
+                        f"argument count mismatch for spawned function {expr.name}: "
+                        f"expected {len(params)} but got {len(expr.args)}"
+                    )
+                    raise _lint_error(
+                        source,
+                        expr,
+                        msg,
+                        code="E009",
+                        hint="Adjust the spawn call to pass the expected number of arguments.",
+                    )
+                for param, arg in zip(params, expr.args):
+                    if not param.type:
+                        continue
+                    inferred = _infer_expr_type(arg, env)
+                    if inferred and not _types_match(param.type, inferred):
+                        msg = (
+                            f"type mismatch for parameter {param.name} in function {expr.name}: "
+                            f"expected {param.type} but got {inferred}"
+                        )
+                        raise _lint_error(
+                            source,
+                            arg,
+                            msg,
+                            code="E009",
+                            hint="Adjust the type annotation (use '?' to allow Null) or pass a compatible value to satisfy the hint.",
+                        )
             return
         if isinstance(expr, Await):
             check_expr(expr.expr, env)

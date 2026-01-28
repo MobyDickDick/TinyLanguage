@@ -143,7 +143,7 @@ revisit once Phase 2 module summaries or Phase 3 narrowing are in place.
 ## Deliverables checklist
 
 - [x] Add a `typing` lint profile and CLI flag.
-- [ ] Implement the Phase 1 static pass in the linter pipeline.
+- [x] Implement the Phase 1 static pass in the linter pipeline.
 - [x] Document configuration and migration strategy. (See
   `docs/gradual_typing.md`.)
 - [ ] Add regression tests for common typing errors.

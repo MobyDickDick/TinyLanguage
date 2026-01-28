@@ -43,7 +43,7 @@ are grouped by area and can be tackled independently.
 - [x] Define a package manager plan (lockfiles, registry layout, semantic
   versioning). (See `docs/package_module_roadmap.md`.)
 - [x] Maintain conformance + cross-backend parity test suites.
-- [ ] Publish compatibility matrices and migration guides for major releases.
+- [x] Publish compatibility matrices and migration guides for major releases.
 
 ## Next tasks (shortlist)
 - [x] Add CI/regression checks that assert no live heap allocations remain after

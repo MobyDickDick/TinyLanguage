@@ -10,6 +10,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from tiny_pkg_resolution import write_lockfile
+
 
 _DEFAULT_TEMPLATE = """\
 [package]
@@ -71,8 +73,13 @@ def _cmd_add(args: argparse.Namespace) -> int:
     return 0
 
 
-def _cmd_resolve(_: argparse.Namespace) -> int:
-    print("[stub] tiny pkg resolve - dependency resolution not implemented yet.")
+def _cmd_resolve(args: argparse.Namespace) -> int:
+    manifest_path = Path(args.manifest).resolve()
+    if not manifest_path.is_file():
+        raise SystemExit(f"Missing manifest: {manifest_path}")
+    lock_path = manifest_path.parent / "tiny.lock"
+    write_lockfile(lock_path, manifest_path)
+    print(f"Resolved dependencies into {lock_path}")
     return 0
 
 
@@ -105,7 +112,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_parser.set_defaults(func=_cmd_add)
 
-    resolve_parser = subparsers.add_parser("resolve", help="Resolve dependencies (stub)")
+    resolve_parser = subparsers.add_parser("resolve", help="Resolve dependencies")
+    resolve_parser.add_argument(
+        "--manifest",
+        default="tiny.toml",
+        help="Path to the tiny.toml manifest (default: ./tiny.toml)",
+    )
     resolve_parser.set_defaults(func=_cmd_resolve)
 
     return parser

@@ -329,7 +329,7 @@ in the main backlog.
 - [x] Extend docs with a dependency override example (path + registry fallback).
 - [x] Define the `tiny.lock` schema (resolved versions, sources, checksums).
 - [x] Specify namespace resolution rules for `local`, `std`, and `pkg` imports.
-- [ ] Implement dependency resolution with SemVer constraints and lockfile
+- [x] Implement dependency resolution with SemVer constraints and lockfile
   persistence.
 - [x] Add CLI stubs for `tiny pkg init`, `tiny pkg add`, and `tiny pkg resolve`.
 - [ ] Document vendoring behavior and layout for `tiny pkg vendor`.

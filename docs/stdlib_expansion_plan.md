@@ -102,6 +102,42 @@ tests can round-trip cleanly across backends.
 - **`stdlib.argparse`**: Minimal CLI argument parsing (flags, positional args,
   default values).
 
+### Minimal regex syntax subset (Phase 2)
+
+To keep regex behavior portable across interpreter, C, and LLVM backends, the
+initial `stdlib.regex` module targets a small, deterministic syntax slice.
+
+**Supported constructs**
+
+- Literals: ordinary characters match themselves; escape metacharacters with
+  `\` (e.g., `\.` matches a literal dot).
+- Wildcard: `.` matches any character except newline.
+- Anchors: `^` (start of string) and `$` (end of string).
+- Character classes:
+  - `[abc]` for explicit sets, `[a-z]` for ASCII ranges, `[^abc]` for negation.
+  - Escapes inside classes: `\d` (digits), `\w` (ASCII word), `\s` (ASCII
+    whitespace); literal `]` and `-` must be escaped.
+- Alternation: `|` with left-to-right precedence.
+- Grouping: `(...)` for capturing groups only (no non-capturing syntax).
+- Quantifiers (greedy only): `?`, `*`, `+`, `{m}`, `{m,}`, `{m,n}` where `m`
+  and `n` are non-negative integers with `m <= n`.
+
+**Unsupported constructs (deferred)**
+
+- Lookarounds: `(?=...)`, `(?!...)`, `(?<=...)`, `(?<!...)`.
+- Backreferences: `\1`, `\k<name>`, or any numbered/name-based backref syntax.
+- Named groups or group modifiers: `(?P<name>...)`, `(?<name>...)`, `(?:...)`.
+- Inline flags or mode switches: `(?i)`, `(?m)`, `(?s)` and equivalents.
+- Non-greedy quantifiers: `*?`, `+?`, `??`, `{m,n}?`.
+- Unicode categories and properties: `\p{...}` / `\P{...}`.
+- Word-boundary tokens: `\b`, `\B` (can be added once backend parity is proven).
+
+**Determinism requirements**
+
+- The engine should behave as ASCII-only for the supported escapes above.
+- Errors must include the failing pattern and a short reason (e.g., "unsupported
+  construct" vs. "unbalanced parentheses").
+
 **Expected tests**
 
 - Parser round-trip tests (serialize → parse) for JSON/YAML/CSV modules.

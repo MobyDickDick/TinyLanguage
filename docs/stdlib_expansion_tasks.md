@@ -71,7 +71,7 @@ plan so implementation can proceed in small, testable steps.
 - [x] Define `stdlib.csv` parsing/serialization behavior (delimiter, quotes,
   headers) and confirm deterministic output expectations.
   - Deliverables: spec notes + examples in `docs/stdlib_expansion_plan.md`.
-- [ ] Implement `stdlib.csv` helpers (Tiny or runtime) with round-trip tests for
+- [x] Implement `stdlib.csv` helpers (Tiny or runtime) with round-trip tests for
   simple and quoted data.
   - Deliverables: `stdlib/csv.tiny` + tests in
     `tests/detailtests/test_stdlib_csv.py`.

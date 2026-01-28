@@ -1,0 +1,151 @@
+// TinyLanguage stdlib: csv module (minimal parser/serializer)
+
+def PY_EXEC_ALLOW = new["exec"];
+def PY_REPR_ALLOW = new["repr"];
+
+fn __csv_allowlist() {
+  def allow = new(1);
+  heap_set(allow, 0, "parse");
+  return allow;
+}
+
+fn __raise_value_error(msg) {
+  def safe = Python.call("builtins", "repr", new[msg], PY_REPR_ALLOW);
+  def stmt = "raise ValueError(" + safe + ")";
+  return Python.call("builtins", "exec", new[stmt], PY_EXEC_ALLOW);
+}
+
+fn __validate_token(token, label) {
+  if (token == Null) { return __raise_value_error(label + " must be a single character"); }
+  if (len(token) != 1) { return __raise_value_error(label + " must be a single character"); }
+  return true;
+}
+
+fn __needs_quote(value, delimiter, quote) {
+  if (String.contains(value, delimiter)) { return true; }
+  if (String.contains(value, quote)) { return true; }
+  if (String.contains(value, "\n")) { return true; }
+  if (String.contains(value, "\r")) { return true; }
+  return false;
+}
+
+fn __escape_value(value, quote) {
+  return String.replace(value, quote, quote + quote);
+}
+
+fn __stringify_value(value, delimiter, quote) {
+  def text = value;
+  if (text == Null) { text = ""; }
+  if (!__needs_quote(text, delimiter, quote)) { return text; }
+  def escaped = __escape_value(text, quote);
+  return quote + escaped + quote;
+}
+
+fn parse_with_options(text, delimiter, quote, has_header) {
+  def allow = __csv_allowlist();
+  def args = new(4);
+  heap_set(args, 0, text);
+  heap_set(args, 1, delimiter);
+  heap_set(args, 2, quote);
+  heap_set(args, 3, has_header);
+  def result = Python.call(
+    "stdlib_csv",
+    "parse",
+    args,
+    { allow: allow }
+  );
+  def _cleanup_args = delete(args);
+  def _cleanup_allow = delete(allow);
+  return result;
+}
+
+fn stringify_with_options(rows, headers, delimiter, quote) {
+  def _delimiter_ok = __validate_token(delimiter, "delimiter");
+  def _quote_ok = __validate_token(quote, "quote");
+  def lines = new[];
+  if (headers != Null) {
+    def header_fields = new[];
+    def h = 0;
+    while (h < len(headers)) {
+      def header = heap_get(headers, h);
+      Collections.push(header_fields, __stringify_value(header, delimiter, quote));
+      h = h + 1;
+    }
+    Collections.push(lines, String.join(header_fields, delimiter));
+    def _cleanup_header_fields = delete(header_fields);
+    def r = 0;
+    while (r < len(rows)) {
+      def row = heap_get(rows, r);
+      def fields = new[];
+      def i = 0;
+      while (i < len(headers)) {
+        def key = heap_get(headers, i);
+        def raw = Map.get(row, key, "");
+        if (raw == Null) { raw = ""; }
+        Collections.push(fields, __stringify_value(raw, delimiter, quote));
+        i = i + 1;
+      }
+      Collections.push(lines, String.join(fields, delimiter));
+      def _cleanup_fields = delete(fields);
+      r = r + 1;
+    }
+  } else {
+    def r = 0;
+    while (r < len(rows)) {
+      def row = heap_get(rows, r);
+      def fields = new[];
+      def i = 0;
+      while (i < len(row)) {
+        def raw = heap_get(row, i);
+        Collections.push(fields, __stringify_value(raw, delimiter, quote));
+        i = i + 1;
+      }
+      Collections.push(lines, String.join(fields, delimiter));
+      def _cleanup_fields = delete(fields);
+      r = r + 1;
+    }
+  }
+  def result = String.join(lines, "\n");
+  def _cleanup_lines = delete(lines);
+  return result;
+}
+
+fn parse(text) {
+  return parse_with_options(text, ",", "\"", false);
+}
+
+fn parse_with_header(text) {
+  return parse_with_options(text, ",", "\"", true);
+}
+
+fn stringify(rows) {
+  return stringify_with_options(rows, Null, ",", "\"");
+}
+
+fn stringify_with_headers(rows, headers) {
+  return stringify_with_options(rows, headers, ",", "\"");
+}
+
+fn load(path) {
+  return parse(File.read(path));
+}
+
+fn load_with_header(path) {
+  return parse_with_header(File.read(path));
+}
+
+fn load_with_options(path, delimiter, quote, has_header) {
+  return parse_with_options(File.read(path), delimiter, quote, has_header);
+}
+
+fn dump(path, rows) {
+  return File.write(path, stringify(rows));
+}
+
+fn dump_with_headers(path, rows, headers) {
+  return File.write(path, stringify_with_headers(rows, headers));
+}
+
+fn dump_with_options(path, rows, headers, delimiter, quote) {
+  return File.write(path, stringify_with_options(rows, headers, delimiter, quote));
+}

@@ -37,7 +37,7 @@ are grouped by area and can be tackled independently.
 - [x] Expand LSP features (rename, references, code actions, formatting hooks).
 - [x] Improve debugging workflows (breakpoints, watch expressions, variable
   views). (See `docs/debugger_workflows.md`.)
-- [ ] Draft project scaffolding/templates and versioned CLI ergonomics.
+- [x] Draft project scaffolding/templates and versioned CLI ergonomics.
 - [ ] Specify module resolution rules (local vs. stdlib vs. external packages).
   (See `docs/package_module_roadmap.md`.)
 - [ ] Define a package manager plan (lockfiles, registry layout, semantic
@@ -60,7 +60,7 @@ are grouped by area and can be tackled independently.
   actions, formatting hooks) and document the supported request matrix.
 - [x] Improve debugging workflows by specifying breakpoint, watch, and variable
   view behavior for the debugger adapters + CLI tooling.
-- [ ] Draft project scaffolding/templates and versioned CLI ergonomics for new
+- [x] Draft project scaffolding/templates and versioned CLI ergonomics for new
   packages, including a minimal init flow and workspace layout.
 - [ ] Specify module resolution precedence (local vs. stdlib vs. external
   packages) and define how ambiguous imports are surfaced to users.

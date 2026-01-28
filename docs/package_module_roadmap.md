@@ -55,6 +55,30 @@ tooling so users see the same behavior everywhere.
      roots consulted (e.g., `std`, `pkg`, or local roots), so users can fix the
      import path or adjust configuration.
 
+### Resolution precedence and ambiguity handling
+
+The resolver follows a strict precedence order to avoid surprising cross-namespace
+fallbacks and to keep import intent explicit.
+
+1. **Explicit namespace imports win immediately**:
+   - `std.*` only checks the stdlib root.
+   - `pkg.*` only checks the dependency graph (or vendored root, if configured).
+   - Local search roots are never consulted for prefixed imports.
+2. **Unprefixed imports are local-only**:
+   - Search the ordered list of configured local roots (default: `src/`, then
+     project root) and stop at the first match.
+   - Do not probe `std` or `pkg` namespaces implicitly.
+3. **Ambiguity detection**:
+   - If the same module path exists in multiple local roots, treat the first
+     match as canonical but emit a warning that lists all shadowed candidates
+     and the active root.
+   - If a local module name collides with a reserved prefix (`std`, `pkg`),
+     treat it as a configuration error and require a rename.
+4. **Error messaging for ambiguity**:
+   - Include the full import path, the roots checked, and the canonical pick.
+   - Provide a suggested fix (e.g., "qualify as `std.foo`" or "rename local
+     module to avoid shadowing").
+
 ### Versioning model
 
 - Adopt SemVer for published packages (major.minor.patch).

@@ -38,7 +38,7 @@ are grouped by area and can be tackled independently.
 - [x] Improve debugging workflows (breakpoints, watch expressions, variable
   views). (See `docs/debugger_workflows.md`.)
 - [x] Draft project scaffolding/templates and versioned CLI ergonomics.
-- [ ] Specify module resolution rules (local vs. stdlib vs. external packages).
+- [x] Specify module resolution rules (local vs. stdlib vs. external packages).
   (See `docs/package_module_roadmap.md`.)
 - [ ] Define a package manager plan (lockfiles, registry layout, semantic
   versioning). (See `docs/package_module_roadmap.md`.)
@@ -62,7 +62,7 @@ are grouped by area and can be tackled independently.
   view behavior for the debugger adapters + CLI tooling.
 - [x] Draft project scaffolding/templates and versioned CLI ergonomics for new
   packages, including a minimal init flow and workspace layout.
-- [ ] Specify module resolution precedence (local vs. stdlib vs. external
+- [x] Specify module resolution precedence (local vs. stdlib vs. external
   packages) and define how ambiguous imports are surfaced to users.
 - [ ] Define a package manager plan that covers lockfiles, registry layout,
   semantic versioning, and dependency graph resolution.

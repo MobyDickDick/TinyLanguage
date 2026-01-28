@@ -1,0 +1,13 @@
+// Spec: docs/language_spec.md (definitions, assignment, while, if).
+// Expected: compute a running sum and print the verified value.
+def total = 0;
+def i = 1;
+while (i <= 3) {
+  total = total + i;
+  i = i + 1;
+}
+if (total == 6) {
+  print("sum=6");
+} else {
+  print("sum mismatch");
+}

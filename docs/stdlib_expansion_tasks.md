@@ -106,7 +106,7 @@ plan so implementation can proceed in small, testable steps.
     | Monotonic time (`monotonic_ms`) | `time.monotonic()` | Needs native helper (monotonic clock) | Needs native helper (monotonic clock) |
     | Sleep (`sleep_ms`) | `time.sleep()` | Needs native helper (sleep) | Needs native helper (sleep) |
     | ISO timestamp (`now_iso`) | `datetime.utcnow()` | Needs native helper (format) | Needs native helper (format) |
-- [ ] Implement `stdlib.time` helpers and add smoke tests for timestamps and
+- [x] Implement `stdlib.time` helpers and add smoke tests for timestamps and
   sleeps (with deterministic tolerance thresholds).
   - Deliverables: `stdlib/time.tiny` + tests in
     `tests/detailtests/test_stdlib_time.py`.

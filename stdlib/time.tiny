@@ -1,0 +1,17 @@
+// TinyLanguage stdlib: time module (Python-style subset)
+
+fn now_ms() {
+  return Time.now_ms();
+}
+
+fn monotonic_ms() {
+  return Time.monotonic_ms();
+}
+
+fn sleep_ms(ms) {
+  return Time.sleep_ms(ms);
+}
+
+fn now_iso() {
+  return Time.now_iso();
+}

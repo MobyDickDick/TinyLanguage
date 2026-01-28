@@ -113,7 +113,7 @@ plan so implementation can proceed in small, testable steps.
 
 ## Phase 2 tasks (data interchange + text processing)
 
-- [ ] Define the minimal regex syntax subset and document unsupported constructs.
+- [x] Define the minimal regex syntax subset and document unsupported constructs.
   - Deliverables: regex syntax spec section + unsupported list in
     `docs/stdlib_expansion_plan.md`.
 - [ ] Add a `stdlib.regex` module with match/search/replace APIs and tests for

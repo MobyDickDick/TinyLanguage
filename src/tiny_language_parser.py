@@ -251,7 +251,7 @@ class Parser:
                 fn_kw = self._eat("KW", "fn")
             else:
                 fn_kw = self._eat("KW", "fn")
-            name_tok = self._eat("NAME")
+            name_tok = self._eat_name_or_kw()
             params = self.parse_param_list()
             return_type = None
             if self._accept("OP", "-"):

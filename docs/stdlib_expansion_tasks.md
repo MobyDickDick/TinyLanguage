@@ -75,9 +75,37 @@ plan so implementation can proceed in small, testable steps.
   simple and quoted data.
   - Deliverables: `stdlib/csv.tiny` + tests in
     `tests/detailtests/test_stdlib_csv.py`.
-- [ ] Define `stdlib.time` API requirements (wall clock vs. monotonic, sleep
+- [x] Define `stdlib.time` API requirements (wall clock vs. monotonic, sleep
   semantics) and confirm backend support.
   - Deliverables: runtime capability matrix + decision notes.
+  - API requirements (draft for `stdlib/time.tiny`):
+
+    | Helper | Signature | Behavior | Runtime mapping |
+    | --- | --- | --- | --- |
+    | `now_ms` | `now_ms() -> number` | Return wall-clock epoch time in milliseconds (UTC). | Runtime helper mapping to `time.time()` × 1000. |
+    | `monotonic_ms` | `monotonic_ms() -> number` | Return monotonic time in milliseconds for measuring elapsed durations. | Runtime helper mapping to `time.monotonic()` × 1000. |
+    | `sleep_ms` | `sleep_ms(ms: number) -> number` | Sleep for at least `ms` milliseconds (clamp negatives to 0) and return elapsed milliseconds. | Runtime helper mapping to `time.sleep(ms / 1000)`. |
+    | `now_iso` | `now_iso() -> string` | Return an ISO 8601 timestamp in UTC (e.g., `2025-01-01T00:00:00Z`). | Runtime helper using `datetime.datetime.utcnow().isoformat() + "Z"`. |
+
+  - Decision notes:
+    - Expose both wall-clock and monotonic clocks so callers can choose stable
+      elapsed-time measurements without being affected by clock adjustments.
+    - `sleep_ms` uses monotonic time to compute elapsed duration; it must not
+      return before the requested time unless interrupted by the runtime
+      cancellation model (treat negative values as 0 for a yield-only sleep).
+    - The initial API stays in milliseconds to align with existing runtime
+      timeout settings (e.g., `join` and task-scope timeouts).
+    - `now_iso` provides a human-readable timestamp for logs without requiring
+      callers to format epoch values manually.
+
+  - Runtime capability matrix (initial target):
+
+    | Capability | Interpreter runtime | Native VM | LLVM/C backend |
+    | --- | --- | --- | --- |
+    | Epoch time (`now_ms`) | `time.time()` | Needs native helper (clock + epoch) | Needs native helper (clock + epoch) |
+    | Monotonic time (`monotonic_ms`) | `time.monotonic()` | Needs native helper (monotonic clock) | Needs native helper (monotonic clock) |
+    | Sleep (`sleep_ms`) | `time.sleep()` | Needs native helper (sleep) | Needs native helper (sleep) |
+    | ISO timestamp (`now_iso`) | `datetime.utcnow()` | Needs native helper (format) | Needs native helper (format) |
 - [ ] Implement `stdlib.time` helpers and add smoke tests for timestamps and
   sleeps (with deterministic tolerance thresholds).
   - Deliverables: `stdlib/time.tiny` + tests in

@@ -46,6 +46,7 @@ The public entry point is `register_stdlib(runtime, env, ...)`.
 
 from __future__ import annotations
 
+import datetime
 import importlib
 import json
 import math
@@ -53,6 +54,7 @@ import os
 import random
 import sys
 import threading
+import time
 from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
@@ -235,6 +237,7 @@ class _StdLibRegistrar:
         self._ensure_namespace("File")
         self._ensure_namespace("Path")
         self._ensure_namespace("OS")
+        self._ensure_namespace("Time")
         self._ensure_namespace("JSON")
         self._ensure_namespace("Async")
         self._ensure_namespace("Result")
@@ -352,6 +355,12 @@ class _StdLibRegistrar:
         self.runtime.register_native("listdir", self._os_listdir, namespace="OS")
         self.runtime.register_native("platform", self._os_platform, namespace="OS")
         self.runtime.register_native("path_separator", self._os_path_separator, namespace="OS")
+
+        # ----------------------------- Time --------------------------------
+        self.runtime.register_native("now_ms", self._time_now_ms, namespace="Time")
+        self.runtime.register_native("monotonic_ms", self._time_monotonic_ms, namespace="Time")
+        self.runtime.register_native("sleep_ms", self._time_sleep_ms, namespace="Time")
+        self.runtime.register_native("now_iso", self._time_now_iso, namespace="Time")
 
         # ----------------------------- JSON --------------------------------
         self.runtime.register_native("parse", self._json_parse, namespace="JSON")
@@ -1289,6 +1298,36 @@ class _StdLibRegistrar:
     def _os_path_separator(self) -> str:
         """Return the platform path separator."""
         return os.sep
+
+    # -----------------------------------------------------------------------
+    # Time namespace
+    # -----------------------------------------------------------------------
+
+    def _time_now_ms(self) -> float:
+        """Return the wall-clock time in milliseconds since the epoch."""
+        return time.time() * 1000.0
+
+    def _time_monotonic_ms(self) -> float:
+        """Return the monotonic time in milliseconds."""
+        return time.monotonic() * 1000.0
+
+    def _time_sleep_ms(self, ms: Any) -> float:
+        """Sleep for at least ``ms`` milliseconds and return elapsed time."""
+        try:
+            duration_ms = float(ms)
+        except Exception as exc:
+            raise RuntimeError(f"sleep_ms expects a number: {exc}")
+        if math.isnan(duration_ms) or math.isinf(duration_ms):
+            raise RuntimeError("sleep_ms expects a finite number")
+        duration_ms = max(0.0, duration_ms)
+        start = time.monotonic()
+        time.sleep(duration_ms / 1000.0)
+        elapsed = time.monotonic() - start
+        return elapsed * 1000.0
+
+    def _time_now_iso(self) -> str:
+        """Return the current UTC timestamp in ISO 8601 format."""
+        return datetime.datetime.utcnow().isoformat() + "Z"
 
     # -----------------------------------------------------------------------
     # JSON namespace

@@ -20,6 +20,7 @@ STDLIB_MODULES = [
     PROJECT_ROOT / "stdlib" / "random.tiny",
     PROJECT_ROOT / "stdlib" / "statistics.tiny",
     PROJECT_ROOT / "stdlib" / "string.tiny",
+    PROJECT_ROOT / "stdlib" / "time.tiny",
 ]
 
 

@@ -42,7 +42,7 @@ are grouped by area and can be tackled independently.
   (See `docs/package_module_roadmap.md`.)
 - [x] Define a package manager plan (lockfiles, registry layout, semantic
   versioning). (See `docs/package_module_roadmap.md`.)
-- [ ] Maintain conformance + cross-backend parity test suites.
+- [x] Maintain conformance + cross-backend parity test suites.
 - [ ] Publish compatibility matrices and migration guides for major releases.
 
 ## Next tasks (shortlist)
@@ -66,7 +66,7 @@ are grouped by area and can be tackled independently.
   packages) and define how ambiguous imports are surfaced to users.
 - [x] Define a package manager plan that covers lockfiles, registry layout,
   semantic versioning, and dependency graph resolution.
-- [ ] Maintain conformance + cross-backend parity test suites with a published
+- [x] Maintain conformance + cross-backend parity test suites with a published
   compatibility matrix and upgrade/migration guides per release.
 
 ## Follow-up tasks from docs (active)

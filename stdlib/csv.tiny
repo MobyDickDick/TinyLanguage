@@ -1,8 +1,5 @@
 // TinyLanguage stdlib: csv module (minimal parser/serializer)
 
-def PY_EXEC_ALLOW = new["exec"];
-def PY_REPR_ALLOW = new["repr"];
-
 fn __csv_allowlist() {
   def allow = new(1);
   heap_set(allow, 0, "parse");
@@ -10,9 +7,14 @@ fn __csv_allowlist() {
 }
 
 fn __raise_value_error(msg) {
-  def safe = Python.call("builtins", "repr", new[msg], PY_REPR_ALLOW);
+  def allow_repr = new["repr"];
+  def safe = Python.call("builtins", "repr", new[msg], allow_repr);
+  def _cleanup_allow_repr = delete(allow_repr);
   def stmt = "raise ValueError(" + safe + ")";
-  return Python.call("builtins", "exec", new[stmt], PY_EXEC_ALLOW);
+  def allow_exec = new["exec"];
+  def raised = Python.call("builtins", "exec", new[stmt], allow_exec);
+  def _cleanup_allow_exec = delete(allow_exec);
+  return raised;
 }
 
 fn __validate_token(token, label) {

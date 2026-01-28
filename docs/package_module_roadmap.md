@@ -292,6 +292,14 @@ dependency formats:
 
 - [`docs/tiny_pkg_init_template.toml`](./tiny_pkg_init_template.toml)
 
+### Project scaffolding & CLI ergonomics
+
+The initial project layout, CLI flags, and template versioning strategy are
+defined in `docs/project_scaffolding.md` so the scaffolding plan can evolve
+alongside the package roadmap without bloating this document.
+
+- [`docs/project_scaffolding.md`](./project_scaffolding.md)
+
 ## Evolution (phase 2+)
 
 - Add registry discovery and authentication for publishing.

@@ -308,6 +308,55 @@ Notes:
 - Vendoring is optional but provides deterministic builds before a full package
   cache exists.
 
+### Vendoring behavior (`tiny pkg vendor`)
+
+`tiny pkg vendor` materializes resolved dependencies into a local `vendor/`
+tree so builds can run without network access. The command uses `tiny.lock` as
+the source of truth and refuses to vendor if the lockfile is missing or out of
+date with respect to `tiny.toml`.
+
+Vendored layout (example):
+
+```
+vendor/
+  registry.tiny-lang.org/
+    http/
+      1.2.4/
+        tiny.toml
+        src/...
+        stdlib/...
+    json/
+      0.9.3/
+        tiny.toml
+        src/...
+  local/
+    config/
+      0.1.0/
+        tiny.toml
+        src/...
+```
+
+Behavior details:
+
+- **Registry namespace**: Registry-hosted packages are stored under
+  `vendor/<registry-host>/<package>/<version>/`. The registry host is normalized
+  to lowercase and strips the scheme (e.g., `https://registry.tiny-lang.org` →
+  `registry.tiny-lang.org`).
+- **Path dependencies**: Local path dependencies are copied into
+  `vendor/local/<package>/<version>/` so vendoring produces a self-contained
+  tree. The vendored copy is treated as immutable once created; edits should be
+  made in the original path and re-vendored.
+- **Lockfile enforcement**: `tiny pkg vendor` only uses versions and checksums
+  from `tiny.lock`. If checksums mismatch the fetched content, the command fails
+  and reports the offending package.
+- **Manifest + metadata**: Each vendored package must include its `tiny.toml`
+  and source files; generated artifacts are excluded. A `vendor/README.md` may
+  be emitted summarizing the vendored packages, lockfile hash, and registry
+  sources for auditing.
+- **Resolver behavior**: When `vendor/` exists, `pkg.*` imports resolve against
+  the vendored tree first; if a dependency is missing from `vendor/`, resolution
+  fails instead of falling back to the network.
+
 ### `tiny pkg init` template
 
 Use the following template as the baseline manifest emitted by `tiny pkg init`.
@@ -364,7 +413,7 @@ in the main backlog.
 - [x] Implement dependency resolution with SemVer constraints and lockfile
   persistence.
 - [x] Add CLI stubs for `tiny pkg init`, `tiny pkg add`, and `tiny pkg resolve`.
-- [ ] Document vendoring behavior and layout for `tiny pkg vendor`.
+- [x] Document vendoring behavior and layout for `tiny pkg vendor`.
 - [x] Update `docs/open_tasks.md` and `docs/roadmap_next.md` with package/module
   milestones and links to this roadmap.
 

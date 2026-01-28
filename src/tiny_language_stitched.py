@@ -7915,6 +7915,26 @@ class _ClassInfo:
     bases: List[str]
 
 
+@dataclass
+class _FunctionSignature:
+    params: List[Param]
+    return_type: Optional[str]
+
+
+@dataclass
+class _TypeInfo:
+    fields: Dict[str, str]
+    variants: Dict[str, Dict[str, str]]
+
+
+@dataclass
+class _AnnotationIndex:
+    functions: Dict[str, _FunctionSignature]
+    classes: Dict[str, _ClassInfo]
+    methods: Dict[Tuple[str, str], _FunctionSignature]
+    types: Dict[str, _TypeInfo]
+
+
 def _qualify_name(name: str, prefix: str) -> str:
     return f"{prefix}.{name}" if prefix else name
 
@@ -7925,33 +7945,36 @@ def _qualify_reference(name: str, prefix: str) -> str:
     return f"{prefix}.{name}"
 
 
-def _collect_function_params(stmts: List[IR], prefix: str = "") -> Dict[str, List[Param]]:
-    params: Dict[str, List[Param]] = {}
+def _collect_annotation_index(stmts: List[IR], prefix: str = "") -> _AnnotationIndex:
+    functions: Dict[str, _FunctionSignature] = {}
+    classes: Dict[str, _ClassInfo] = {}
+    methods: Dict[Tuple[str, str], _FunctionSignature] = {}
+    types: Dict[str, _TypeInfo] = {}
     for st in stmts:
         if isinstance(st, Fn):
-            params[_qualify_name(st.name, prefix)] = list(st.params)
-        elif isinstance(st, Namespace):
-            nested_prefix = _qualify_name(st.name, prefix)
-            params.update(_collect_function_params(st.body, prefix=nested_prefix))
-    return params
-
-
-def _collect_class_info(stmts: List[IR], prefix: str = "") -> Tuple[Dict[str, _ClassInfo], Dict[Tuple[str, str], List[Param]]]:
-    classes: Dict[str, _ClassInfo] = {}
-    methods: Dict[Tuple[str, str], List[Param]] = {}
-    for st in stmts:
-        if isinstance(st, ClassDef):
+            functions[_qualify_name(st.name, prefix)] = _FunctionSignature(list(st.params), st.return_type)
+        elif isinstance(st, TypeDef):
+            type_name = _qualify_name(st.name, prefix)
+            fields = dict(st.fields) if st.fields else {}
+            variants: Dict[str, Dict[str, str]] = {}
+            if st.variants:
+                for variant in st.variants:
+                    variants[variant.name] = dict(variant.fields)
+            types[type_name] = _TypeInfo(fields=fields, variants=variants)
+        elif isinstance(st, ClassDef):
             class_name = _qualify_name(st.name, prefix)
             bases = [_qualify_reference(base, prefix) for base in st.bases]
             classes[class_name] = _ClassInfo(fields=dict(st.fields), bases=bases)
             for method in st.methods:
-                methods[(class_name, method.name)] = list(method.params)
+                methods[(class_name, method.name)] = _FunctionSignature(list(method.params), method.return_type)
         elif isinstance(st, Namespace):
             nested_prefix = _qualify_name(st.name, prefix)
-            nested_classes, nested_methods = _collect_class_info(st.body, prefix=nested_prefix)
-            classes.update(nested_classes)
-            methods.update(nested_methods)
-    return classes, methods
+            nested = _collect_annotation_index(st.body, prefix=nested_prefix)
+            functions.update(nested.functions)
+            classes.update(nested.classes)
+            methods.update(nested.methods)
+            types.update(nested.types)
+    return _AnnotationIndex(functions=functions, classes=classes, methods=methods, types=types)
 
 
 def _resolve_field_type(
@@ -8008,8 +8031,10 @@ def _resolve_method_params(
 
 
 def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -> None:
-    function_params = _collect_function_params(stmts)
-    classes, methods = _collect_class_info(stmts)
+    index = _collect_annotation_index(stmts)
+    function_params = {name: sig.params for name, sig in index.functions.items()}
+    classes = index.classes
+    methods = {key: sig.params for key, sig in index.methods.items()}
 
     def check_expr(expr: IR, env: Dict[str, str]) -> None:
         if isinstance(expr, Bin):

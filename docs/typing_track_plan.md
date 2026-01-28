@@ -160,7 +160,7 @@ up without requiring the entire typing track to be complete.
   (reuse error codes where possible).
 - [x] Add an AST pass that collects function signatures, return annotations, and
   type/class field annotations.
-- [ ] Add a binding inference + stability pass that mirrors runtime reassignment
+- [x] Add a binding inference + stability pass that mirrors runtime reassignment
   rules (`any` and `T?` are explicit escape hatches).
 - [ ] Add a call validation pass that checks arity and annotated argument
   compatibility.

@@ -1055,10 +1055,11 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
             if obj_type:
                 params = _resolve_method_params(classes, methods, obj_type, expr.name)
                 if params:
-                    if len(expr.args) != len(params):
+                    expected_params = params[1:] if params else []
+                    if len(expr.args) != len(expected_params):
                         msg = (
                             f"argument count mismatch for method {obj_type}.{expr.name}: "
-                            f"expected {len(params)} but got {len(expr.args)}"
+                            f"expected {len(expected_params)} but got {len(expr.args)}"
                         )
                         raise _lint_error(
                             source,
@@ -1067,7 +1068,7 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
                             code="E009",
                             hint="Adjust the call to pass the expected number of arguments.",
                         )
-                    for param, arg in zip(params, expr.args):
+                    for param, arg in zip(expected_params, expr.args):
                         if not param.type:
                             continue
                         inferred = _infer_expr_type(arg, env)

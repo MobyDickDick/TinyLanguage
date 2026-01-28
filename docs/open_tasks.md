@@ -35,8 +35,8 @@ are grouped by area and can be tackled independently.
   and LLVM backends.
 - [x] Establish profiling + benchmarking workflows for regression tracking.
 - [x] Expand LSP features (rename, references, code actions, formatting hooks).
-- [ ] Improve debugging workflows (breakpoints, watch expressions, variable
-  views).
+- [x] Improve debugging workflows (breakpoints, watch expressions, variable
+  views). (See `docs/debugger_workflows.md`.)
 - [ ] Draft project scaffolding/templates and versioned CLI ergonomics.
 - [ ] Specify module resolution rules (local vs. stdlib vs. external packages).
   (See `docs/package_module_roadmap.md`.)
@@ -58,7 +58,7 @@ are grouped by area and can be tackled independently.
   Python-style modules (prioritize commonly used APIs).
 - [x] Extend LSP capabilities beyond hover/completion (rename, references, code
   actions, formatting hooks) and document the supported request matrix.
-- [ ] Improve debugging workflows by specifying breakpoint, watch, and variable
+- [x] Improve debugging workflows by specifying breakpoint, watch, and variable
   view behavior for the debugger adapters + CLI tooling.
 - [ ] Draft project scaffolding/templates and versioned CLI ergonomics for new
   packages, including a minimal init flow and workspace layout.

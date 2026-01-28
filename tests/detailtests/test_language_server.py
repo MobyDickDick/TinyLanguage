@@ -95,6 +95,33 @@ def test_diagnostics_from_lints():
     assert diags == []
 
 
+def test_typing_profile_reports_assignment_mismatch():
+    """Typing profile should flag type changes in assignments."""
+    source = "fn main() { def value = 1; value = \"no\"; return value; }"
+    server = TinyLanguageServer(source, lint_profile="typing")
+    diags = server.diagnostics()
+    assert diags
+    assert diags[0].code == "E014"
+
+
+def test_typing_profile_reports_call_mismatch():
+    """Typing profile should flag mismatched argument types."""
+    source = "fn add(x: number, label: string) -> number { return x; }\nadd(\"oops\", \"ok\");"
+    server = TinyLanguageServer(source, lint_profile="typing")
+    diags = server.diagnostics()
+    assert diags
+    assert diags[0].code == "E009"
+
+
+def test_typing_profile_reports_return_mismatch():
+    """Typing profile should flag return values that violate annotations."""
+    source = "fn greet() -> string { return 1; }\ngreet();"
+    server = TinyLanguageServer(source, lint_profile="typing")
+    diags = server.diagnostics()
+    assert diags
+    assert diags[0].code == "E009"
+
+
 def test_diagnostics_include_source_range_and_code():
     """Diagnostics should include error codes and a source span."""
     source = "fn describe(x: number) -> number { if (x > 0) { return x; } }"

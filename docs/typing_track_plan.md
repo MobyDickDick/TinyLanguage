@@ -146,7 +146,7 @@ revisit once Phase 2 module summaries or Phase 3 narrowing are in place.
 - [x] Implement the Phase 1 static pass in the linter pipeline.
 - [x] Document configuration and migration strategy. (See
   `docs/gradual_typing.md`.)
-- [ ] Add regression tests for common typing errors.
+- [x] Add regression tests for common typing errors.
 
 ## Task breakdown (work items)
 
@@ -174,7 +174,7 @@ up without requiring the entire typing track to be complete.
   errors.
 - [x] Document configuration + migration guidance for gradual adoption. (See
   `docs/gradual_typing.md`.)
-- [ ] Add regression tests that cover common typing mistakes (reassignment,
+- [x] Add regression tests that cover common typing mistakes (reassignment,
   call mismatch, and inconsistent returns).
 
 ### Phase 2: Module-level summaries

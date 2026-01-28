@@ -1,0 +1,13 @@
+// TinyLanguage stdlib: regex module (minimal, deterministic subset)
+
+fn match(pattern, text) {
+  return Regex.match(pattern, text);
+}
+
+fn search(pattern, text) {
+  return Regex.search(pattern, text);
+}
+
+fn replace(pattern, text, replacement) {
+  return Regex.replace(pattern, text, replacement);
+}

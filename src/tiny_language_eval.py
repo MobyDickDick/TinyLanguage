@@ -133,6 +133,7 @@ _ALLOWED_CALL_PREFIXES = (
     "Console.",
     "File.",
     "JSON.",
+    "Regex.",
     "Python.",
     "Random.",
 )

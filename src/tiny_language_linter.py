@@ -1463,6 +1463,7 @@ def lint_bare_call_results(
         "Console.",
         "File.",
         "JSON.",
+        "Regex.",
         "Python.",
         "Random.",
     )

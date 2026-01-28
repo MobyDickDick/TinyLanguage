@@ -52,6 +52,7 @@ import json
 import math
 import os
 import random
+import re
 import sys
 import threading
 import time
@@ -239,6 +240,7 @@ class _StdLibRegistrar:
         self._ensure_namespace("OS")
         self._ensure_namespace("Time")
         self._ensure_namespace("JSON")
+        self._ensure_namespace("Regex")
         self._ensure_namespace("Async")
         self._ensure_namespace("Result")
         self._ensure_namespace("Python")
@@ -366,6 +368,10 @@ class _StdLibRegistrar:
         self.runtime.register_native("parse", self._json_parse, namespace="JSON")
         self.runtime.register_native("validate", self._json_validate, namespace="JSON")
         self.runtime.register_native("stringify", self._json_stringify, namespace="JSON")
+
+        self.runtime.register_native("match", self._regex_match, namespace="Regex")
+        self.runtime.register_native("search", self._regex_search, namespace="Regex")
+        self.runtime.register_native("replace", self._regex_replace, namespace="Regex")
 
         # ----------------------------- Async -------------------------------
         self.runtime.register_native("token", self._async_token, namespace="Async")
@@ -1433,6 +1439,79 @@ class _StdLibRegistrar:
             raise RuntimeError(f"value of type {type(val).__name__} cannot be stringified to JSON")
 
         return json.dumps(convert(value), separators=(",", ":"))
+
+    # -----------------------------------------------------------------------
+    # Regex namespace
+    # -----------------------------------------------------------------------
+
+    def _regex_validate_pattern(self, pattern: str) -> None:
+        """Validate pattern against the supported regex subset."""
+        idx = 0
+        in_class = False
+        length = len(pattern)
+        while idx < length:
+            ch = pattern[idx]
+            if ch == "\\":
+                if idx + 1 < length:
+                    nxt = pattern[idx + 1]
+                    if nxt in {"b", "B"}:
+                        raise RuntimeError("unsupported regex construct: word boundary")
+                    if nxt in {"p", "P"} and idx + 2 < length and pattern[idx + 2] == "{":
+                        raise RuntimeError("unsupported regex construct: unicode category")
+                    if nxt.isdigit():
+                        raise RuntimeError("unsupported regex construct: backreference")
+                idx += 2
+                continue
+            if ch == "[":
+                in_class = True
+                idx += 1
+                continue
+            if ch == "]" and in_class:
+                in_class = False
+                idx += 1
+                continue
+            if in_class:
+                idx += 1
+                continue
+            if ch == "(" and idx + 1 < length and pattern[idx + 1] == "?":
+                raise RuntimeError("unsupported regex construct: group modifier")
+            if ch in {"*", "+", "?"} and idx + 1 < length and pattern[idx + 1] == "?":
+                raise RuntimeError("unsupported regex construct: non-greedy quantifier")
+            if ch == "}" and idx + 1 < length and pattern[idx + 1] == "?":
+                raise RuntimeError("unsupported regex construct: non-greedy quantifier")
+            idx += 1
+
+    def _regex_compile(self, pattern: Any) -> re.Pattern[str]:
+        """Compile a regex pattern after validating the allowed syntax subset."""
+        pattern_text = str(pattern)
+        self._regex_validate_pattern(pattern_text)
+        try:
+            return re.compile(pattern_text)
+        except re.error as exc:
+            raise RuntimeError(f"invalid regex pattern {pattern_text!r}: {exc}")
+
+    def _regex_match(self, pattern: Any, text: Any) -> Any:
+        """Return capture list for a prefix match, or Null when unmatched."""
+        compiled = self._regex_compile(pattern)
+        match = compiled.match(str(text))
+        if match is None:
+            return None
+        captures = [match.group(0), *match.groups()]
+        return self._to_pointer(captures)
+
+    def _regex_search(self, pattern: Any, text: Any) -> Any:
+        """Return capture list for the first match, or Null when unmatched."""
+        compiled = self._regex_compile(pattern)
+        match = compiled.search(str(text))
+        if match is None:
+            return None
+        captures = [match.group(0), *match.groups()]
+        return self._to_pointer(captures)
+
+    def _regex_replace(self, pattern: Any, text: Any, replacement: Any) -> str:
+        """Replace all matches of pattern with replacement."""
+        compiled = self._regex_compile(pattern)
+        return compiled.sub(str(replacement), str(text))
 
     # -----------------------------------------------------------------------
     # Async namespace (tokens, cancellation, channels)

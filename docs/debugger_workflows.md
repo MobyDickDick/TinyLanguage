@@ -120,17 +120,52 @@ binary is compiled with debug symbols:
 
 - **Breakpoints**: Any line breakpoint in a TinyLanguage source file will pause
   execution. Breakpoints are forwarded through the adapter and installed on the
-  interpreter-side debugger before the program starts.
+  interpreter-side debugger before the program starts. The adapter currently
+  supports line breakpoints only—conditional breakpoints, hit counts, logpoints,
+  and exception breakpoints are ignored by the runtime and will behave like
+  regular line stops.
 - **Stepping**: Continue, step over, step into, and step out map to the
   interpreter's synchronous stepping hooks. The adapter sends `stopped` events
   whenever the runtime pauses and responds to the corresponding DAP step
   requests by resuming execution.
 - **Scopes and variables**: When paused, the adapter surfaces the current scopes
   and variables reported by the interpreter. Variable values are rendered with
-  `repr` to stay faithful to the runtime objects.
+  `repr` to stay faithful to the runtime objects, and nested expansion is not
+  yet supported (variables are returned as leaf values).
 - **Call stacks**: The stack trace view includes TinyLanguage function frames and
   the current location in the active source file. Namespaces are resolved from
   the file path to keep module names stable across workspaces.
+
+### Watch expressions and variable views
+
+- **Watch expressions**: The debugger only resolves simple identifier lookups in
+  TinyLanguage scopes. Watch expressions that are not exact variable names (for
+  example `foo + 1` or `obj.field`) will return `<unknown>`. This keeps watch
+  evaluation side-effect-free and mirrors the interpreter's paused state.
+- **Paused-only evaluation**: When the runtime is not paused, watch expressions
+  return `<not paused>`; the adapter does not execute Tiny code while running.
+- **Python-only evaluation**: If the adapter is attached to a Python-level pause
+  (for example while debugging the adapter itself), it will evaluate expressions
+  using Python `eval` in the paused frame. TinyLanguage sessions still only
+  resolve variable names.
+- **Variable view behavior**: The Variables panel lists scope variables only and
+  does not offer child expansion. Use a watch entry for specific variable names
+  you want to monitor across pauses.
+
+### CLI debugging and tracing helpers
+
+The CLI does not provide an interactive debugger (no breakpoints or watch
+expressions). To inspect execution flow outside VS Code, use the runtime trace
+environment flags when running `tiny_language.py` or `tiny_language_cli.py`:
+
+- `TINYLANG_TRACE_LOG=/path/to/trace.log` writes structured trace output to a
+  file for offline review.
+- `TINYLANG_TRACE_EVERY_STATEMENT=1` logs every executed statement instead of
+  the default heartbeat-based sampling.
+- `TINYLANG_TRACE_HEARTBEAT_SECS=0.5` adjusts the sampling interval (in seconds)
+  when `TINYLANG_TRACE_EVERY_STATEMENT` is not enabled.
+- `TINYLANG_TRACE_STDOUT=1` mirrors trace output to stdout, which is helpful in
+  CI or when you want to stream execution traces in the terminal.
 
 ## Troubleshooting
 

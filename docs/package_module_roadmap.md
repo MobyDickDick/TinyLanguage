@@ -100,6 +100,8 @@ fallbacks and to keep import intent explicit.
 - Lockfile records resolved versions, source (registry, path), and checksums.
 - The interpreter/tooling should refuse to resolve new versions unless explicitly
   updated via the CLI.
+- For the full package manager and registry plan, see
+  `docs/package_manager_plan.md`.
 
 ## Manifest schema (`tiny.toml`)
 

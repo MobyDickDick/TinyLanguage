@@ -119,7 +119,7 @@ plan so implementation can proceed in small, testable steps.
 - [x] Add a `stdlib.regex` module with match/search/replace APIs and tests for
   capture groups and failure cases.
   - Deliverables: `stdlib/regex.tiny` + `tests/detailtests/test_stdlib_regex.py`.
-- [ ] Decide on `stdlib.yaml` scope (optional) and add parser/serializer stubs
+- [x] Decide on `stdlib.yaml` scope (optional) and add parser/serializer stubs
   with round-trip tests if approved.
   - Deliverables: scope decision + `stdlib/yaml.tiny` stub + test placeholders.
 - [ ] Introduce `stdlib.logging` with structured JSON output and file helpers;

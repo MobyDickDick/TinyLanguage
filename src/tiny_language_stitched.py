@@ -8391,7 +8391,7 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
                             msg,
                             code="E009",
                             hint="Adjust the type annotation (use '?' to allow Null) or assign a compatible value.",
-                        )
+                )
             return
         if isinstance(expr, Field):
             check_expr(expr.obj, env)
@@ -8506,19 +8506,6 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
                 check_expr(Call(st.name, st.args, st.pos), local_env)
             elif isinstance(st, Return):
                 check_expr(st.expr, local_env)
-                if return_annotation:
-                    inferred = _infer_expr_type(st.expr, local_env)
-                    if inferred and not _types_match(return_annotation, inferred):
-                        msg = (
-                            f"type mismatch for {return_label}: expected {return_annotation} but got {inferred}"
-                        )
-                        raise _lint_error(
-                            source,
-                            st,
-                            msg,
-                            code="E009",
-                            hint="Adjust the type annotation (use '?' to allow Null) or return a compatible value.",
-                        )
             elif isinstance(st, If):
                 check_expr(st.cond, local_env)
                 check_block(list(st.then), dict(local_env), return_annotation=return_annotation, return_label=return_label)
@@ -8531,6 +8518,109 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
                 for case in st.cases:
                     if case.value is not None:
                         check_expr(case.value, local_env)
+                    check_block(list(case.body), dict(local_env), return_annotation=return_annotation, return_label=return_label)
+            elif isinstance(st, TryCatch):
+                check_block(list(st.body), dict(local_env), return_annotation=return_annotation, return_label=return_label)
+                handler_env = dict(local_env)
+                if st.err_name:
+                    handler_env[st.err_name] = "Error"
+                check_block(list(st.handler), handler_env, return_annotation=return_annotation, return_label=return_label)
+            elif isinstance(st, TaskBlock):
+                check_block(list(st.body), dict(local_env), return_annotation=return_annotation, return_label=return_label)
+            elif isinstance(st, Namespace):
+                check_block(list(st.body), {}, return_annotation=None, return_label=None)
+            elif isinstance(st, Fn):
+                fn_env = {p.name: p.type for p in st.params if p.type}
+                label = f"return value for function {st.name}"
+                check_block(list(st.body), fn_env, return_annotation=st.return_type, return_label=label)
+            elif isinstance(st, MethodDef):
+                method_env = {p.name: p.type for p in st.params if p.type}
+                label = f"return value for method {st.class_name}.{st.name}"
+                check_block(list(st.body), method_env, return_annotation=st.return_type, return_label=label)
+            elif isinstance(st, ClassDef):
+                for method in st.methods:
+                    method_env = {p.name: p.type for p in method.params if p.type}
+                    label = f"return value for method {method.class_name}.{method.name}"
+                    check_block(list(method.body), method_env, return_annotation=method.return_type, return_label=label)
+
+    check_block(stmts, {})
+
+
+def lint_return_validation(stmts: List[IR], source: Optional[str] = None) -> None:
+    """Ensure annotated return types match inferred return expression types."""
+    index = _collect_annotation_index(stmts)
+    variant_types = _build_variant_type_index(index.types)
+
+    def check_block(
+        block: List[IR],
+        local_env: Dict[str, str],
+        *,
+        return_annotation: Optional[str] = None,
+        return_label: Optional[str] = None,
+    ) -> None:
+        for st in block:
+            if isinstance(st, Let):
+                inferred = _infer_typed_expr_type(
+                    st.expr,
+                    local_env,
+                    functions=index.functions,
+                    classes=index.classes,
+                    methods=index.methods,
+                    variant_types=variant_types,
+                )
+                if inferred:
+                    local_env[st.name] = _normalize_inferred_type(inferred)
+            elif isinstance(st, Assign):
+                inferred = _infer_typed_expr_type(
+                    st.expr,
+                    local_env,
+                    functions=index.functions,
+                    classes=index.classes,
+                    methods=index.methods,
+                    variant_types=variant_types,
+                )
+                if inferred:
+                    local_env[st.name] = local_env.get(st.name, _normalize_inferred_type(inferred))
+            elif isinstance(st, DestructAssign):
+                inferred = _infer_typed_expr_type(
+                    st.expr,
+                    local_env,
+                    functions=index.functions,
+                    classes=index.classes,
+                    methods=index.methods,
+                    variant_types=variant_types,
+                )
+                if inferred:
+                    for nm in st.names:
+                        local_env[nm] = _normalize_inferred_type(inferred)
+            elif isinstance(st, Return):
+                if return_annotation:
+                    inferred = _infer_typed_expr_type(
+                        st.expr,
+                        local_env,
+                        functions=index.functions,
+                        classes=index.classes,
+                        methods=index.methods,
+                        variant_types=variant_types,
+                    )
+                    if inferred and not _types_match(return_annotation, inferred):
+                        msg = (
+                            f"type mismatch for {return_label}: expected {return_annotation} but got {inferred}"
+                        )
+                        raise _lint_error(
+                            source,
+                            st,
+                            msg,
+                            code="E009",
+                            hint="Adjust the type annotation (use '?' to allow Null) or return a compatible value.",
+                        )
+            elif isinstance(st, If):
+                check_block(list(st.then), dict(local_env), return_annotation=return_annotation, return_label=return_label)
+                check_block(list(st.els), dict(local_env), return_annotation=return_annotation, return_label=return_label)
+            elif isinstance(st, While):
+                check_block(list(st.body), dict(local_env), return_annotation=return_annotation, return_label=return_label)
+            elif isinstance(st, Switch):
+                for case in st.cases:
                     check_block(list(case.body), dict(local_env), return_annotation=return_annotation, return_label=return_label)
             elif isinstance(st, TryCatch):
                 check_block(list(st.body), dict(local_env), return_annotation=return_annotation, return_label=return_label)
@@ -12194,6 +12284,7 @@ if "lint_import_style" not in globals():
         lint_method_params_used,
         lint_no_consecutive_definitions,
         lint_no_underscore_bindings,
+        lint_return_validation,
         lint_unreachable_code,
     )
 
@@ -12730,6 +12821,7 @@ def _parse_and_lint(
         lint_no_underscore_bindings(stmts, src)
     lint_assignment_types(stmts, src)
     lint_call_validation(stmts, src)
+    lint_return_validation(stmts, src)
     lint_annotation_enforcement(stmts, src)
     if not repl_mode:
         lint_locals_used(stmts, src)

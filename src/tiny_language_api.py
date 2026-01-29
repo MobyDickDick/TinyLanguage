@@ -111,6 +111,7 @@ if "lint_import_style" not in globals():
         lint_method_params_used,
         lint_no_consecutive_definitions,
         lint_no_underscore_bindings,
+        lint_return_validation,
         lint_unreachable_code,
     )
 
@@ -647,6 +648,7 @@ def _parse_and_lint(
         lint_no_underscore_bindings(stmts, src)
     lint_assignment_types(stmts, src)
     lint_call_validation(stmts, src)
+    lint_return_validation(stmts, src)
     lint_annotation_enforcement(stmts, src)
     if not repl_mode:
         lint_locals_used(stmts, src)

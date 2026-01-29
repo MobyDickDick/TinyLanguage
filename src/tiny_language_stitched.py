@@ -8041,7 +8041,7 @@ def _infer_typed_expr_type(
     if isinstance(expr, (Num, Str, Bool, Null, Var, ClassNew)):
         return _infer_expr_type(expr, env)
     if isinstance(expr, (New, NewLit)):
-        return "int"
+        return "Pointer"
     if isinstance(expr, ObjLit):
         return "Struct"
     if isinstance(expr, VariantCtor):
@@ -8222,9 +8222,9 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
                             continue
                         inferred = _infer_typed_expr_type(
                             arg,
-                        env,
-                        functions=index.functions,
-                        classes=index.classes,
+                            env,
+                            functions=index.functions,
+                            classes=index.classes,
                             methods=index.methods,
                             variant_types=variant_types,
                         )

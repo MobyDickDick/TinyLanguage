@@ -8135,12 +8135,50 @@ def _resolve_method_params(
     return None
 
 
-def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -> None:
+def lint_call_validation(stmts: List[IR], source: Optional[str] = None) -> None:
     index = _collect_annotation_index(stmts)
     function_params = {name: sig.params for name, sig in index.functions.items()}
     classes = index.classes
     methods = {key: sig.params for key, sig in index.methods.items()}
     variant_types = _build_variant_type_index(index.types)
+
+    def validate_call_params(
+        *,
+        label: str,
+        params: List[Param],
+        args: List[IR],
+        call_site: IR,
+        env: Dict[str, str],
+    ) -> None:
+        if len(args) != len(params):
+            msg = f"argument count mismatch for {label}: expected {len(params)} but got {len(args)}"
+            raise _lint_error(
+                source,
+                call_site,
+                msg,
+                code="E009",
+                hint="Adjust the call to pass the expected number of arguments.",
+            )
+        for param, arg in zip(params, args):
+            if not param.type:
+                continue
+            inferred = _infer_typed_expr_type(
+                arg,
+                env,
+                functions=index.functions,
+                classes=index.classes,
+                methods=index.methods,
+                variant_types=variant_types,
+            )
+            if inferred and not _types_match(param.type, inferred):
+                msg = f"type mismatch for parameter {param.name} in {label}: expected {param.type} but got {inferred}"
+                raise _lint_error(
+                    source,
+                    arg,
+                    msg,
+                    code="E009",
+                    hint="Adjust the type annotation (use '?' to allow Null) or pass a compatible value to satisfy the hint.",
+                )
 
     def check_expr(expr: IR, env: Dict[str, str]) -> None:
         if isinstance(expr, Bin):
@@ -8152,41 +8190,13 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
                 check_expr(arg, env)
             params = function_params.get(expr.name)
             if params:
-                if len(expr.args) != len(params):
-                    msg = (
-                        f"argument count mismatch for function {expr.name}: "
-                        f"expected {len(params)} but got {len(expr.args)}"
-                    )
-                    raise _lint_error(
-                        source,
-                        expr,
-                        msg,
-                        code="E009",
-                        hint="Adjust the call to pass the expected number of arguments.",
-                    )
-                for param, arg in zip(params, expr.args):
-                    if not param.type:
-                        continue
-                    inferred = _infer_typed_expr_type(
-                        arg,
-                        env,
-                        functions=index.functions,
-                        classes=index.classes,
-                        methods=index.methods,
-                        variant_types=variant_types,
-                    )
-                    if inferred and not _types_match(param.type, inferred):
-                        msg = (
-                            f"type mismatch for parameter {param.name} in function {expr.name}: "
-                            f"expected {param.type} but got {inferred}"
-                        )
-                        raise _lint_error(
-                            source,
-                            arg,
-                            msg,
-                            code="E009",
-                            hint="Adjust the type annotation (use '?' to allow Null) or pass a compatible value to satisfy the hint.",
-                        )
+                validate_call_params(
+                    label=f"function {expr.name}",
+                    params=list(params),
+                    args=expr.args,
+                    call_site=expr,
+                    env=env,
+                )
             return
         if isinstance(expr, MethodCall):
             check_expr(expr.obj, env)
@@ -8204,42 +8214,154 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
                 base_type = _base_type_name(obj_type) or obj_type
                 params = _resolve_method_params(classes, methods, base_type, expr.name)
                 if params:
-                    expected_params = params[1:] if params else []
-                    if len(expr.args) != len(expected_params):
-                        msg = (
-                            f"argument count mismatch for method {base_type}.{expr.name}: "
-                            f"expected {len(expected_params)} but got {len(expr.args)}"
-                        )
-                        raise _lint_error(
-                            source,
-                            expr,
-                            msg,
-                            code="E009",
-                            hint="Adjust the call to pass the expected number of arguments.",
-                        )
-                    for param, arg in zip(expected_params, expr.args):
-                        if not param.type:
-                            continue
-                        inferred = _infer_typed_expr_type(
-                            arg,
-                            env,
-                            functions=index.functions,
-                            classes=index.classes,
-                            methods=index.methods,
-                            variant_types=variant_types,
-                        )
-                        if inferred and not _types_match(param.type, inferred):
-                            msg = (
-                                f"type mismatch for parameter {param.name} in method {base_type}.{expr.name}: "
-                                f"expected {param.type} but got {inferred}"
-                            )
-                            raise _lint_error(
-                                source,
-                                arg,
-                                msg,
-                                code="E009",
-                                hint="Adjust the type annotation (use '?' to allow Null) or pass a compatible value to satisfy the hint.",
-                            )
+                    expected_params = params[1:]
+                    validate_call_params(
+                        label=f"method {base_type}.{expr.name}",
+                        params=expected_params,
+                        args=expr.args,
+                        call_site=expr,
+                        env=env,
+                    )
+            return
+        if isinstance(expr, Spawn):
+            for arg in expr.args:
+                check_expr(arg, env)
+            params = function_params.get(expr.name)
+            if params:
+                validate_call_params(
+                    label=f"spawned function {expr.name}",
+                    params=list(params),
+                    args=expr.args,
+                    call_site=expr,
+                    env=env,
+                )
+            return
+        if isinstance(expr, ClassNew):
+            for _, value in expr.init:
+                check_expr(value, env)
+            return
+        if isinstance(expr, Field):
+            check_expr(expr.obj, env)
+            return
+        if isinstance(expr, Await):
+            check_expr(expr.expr, env)
+            return
+        if isinstance(expr, New):
+            check_expr(expr.size, env)
+            return
+        if isinstance(expr, NewLit):
+            for item in expr.items:
+                check_expr(item, env)
+            return
+        if isinstance(expr, ObjLit):
+            for _, value in expr.fields:
+                check_expr(value, env)
+            return
+        if isinstance(expr, Match):
+            check_expr(expr.expr, env)
+            for case in expr.cases:
+                check_expr(case.body, env)
+            return
+        if isinstance(expr, VariantCtor):
+            for _, value in expr.fields:
+                check_expr(value, env)
+            return
+
+    def check_block(block: List[IR], local_env: Dict[str, str]) -> None:
+        for st in block:
+            if isinstance(st, Let):
+                check_expr(st.expr, local_env)
+                inferred = _infer_typed_expr_type(
+                    st.expr,
+                    local_env,
+                    functions=index.functions,
+                    classes=index.classes,
+                    methods=index.methods,
+                    variant_types=variant_types,
+                )
+                if inferred:
+                    local_env[st.name] = _normalize_inferred_type(inferred)
+            elif isinstance(st, Assign):
+                check_expr(st.expr, local_env)
+                inferred = _infer_typed_expr_type(
+                    st.expr,
+                    local_env,
+                    functions=index.functions,
+                    classes=index.classes,
+                    methods=index.methods,
+                    variant_types=variant_types,
+                )
+                if inferred:
+                    local_env[st.name] = local_env.get(st.name, _normalize_inferred_type(inferred))
+            elif isinstance(st, DestructAssign):
+                check_expr(st.expr, local_env)
+                inferred = _infer_typed_expr_type(
+                    st.expr,
+                    local_env,
+                    functions=index.functions,
+                    classes=index.classes,
+                    methods=index.methods,
+                    variant_types=variant_types,
+                )
+                if inferred:
+                    for nm in st.names:
+                        local_env[nm] = _normalize_inferred_type(inferred)
+            elif isinstance(st, FieldAssign):
+                check_expr(st.obj, local_env)
+                check_expr(st.expr, local_env)
+            elif isinstance(st, Print):
+                for expr in st.exprs:
+                    check_expr(expr, local_env)
+            elif isinstance(st, CallStmt):
+                check_expr(Call(st.name, st.args, st.pos), local_env)
+            elif isinstance(st, Return):
+                check_expr(st.expr, local_env)
+            elif isinstance(st, If):
+                check_expr(st.cond, local_env)
+                check_block(list(st.then), dict(local_env))
+                check_block(list(st.els), dict(local_env))
+            elif isinstance(st, While):
+                check_expr(st.cond, local_env)
+                check_block(list(st.body), dict(local_env))
+            elif isinstance(st, Switch):
+                check_expr(st.expr, local_env)
+                for case in st.cases:
+                    if case.value is not None:
+                        check_expr(case.value, local_env)
+                    check_block(list(case.body), dict(local_env))
+            elif isinstance(st, TryCatch):
+                check_block(list(st.body), dict(local_env))
+                handler_env = dict(local_env)
+                if st.err_name:
+                    handler_env[st.err_name] = "Error"
+                check_block(list(st.handler), handler_env)
+            elif isinstance(st, TaskBlock):
+                check_block(list(st.body), dict(local_env))
+            elif isinstance(st, Namespace):
+                check_block(list(st.body), {})
+            elif isinstance(st, Fn):
+                fn_env = {p.name: p.type for p in st.params if p.type}
+                check_block(list(st.body), fn_env)
+            elif isinstance(st, MethodDef):
+                method_env = {p.name: p.type for p in st.params if p.type}
+                check_block(list(st.body), method_env)
+            elif isinstance(st, ClassDef):
+                for method in st.methods:
+                    method_env = {p.name: p.type for p in method.params if p.type}
+                    check_block(list(method.body), method_env)
+
+    check_block(stmts, {})
+
+
+def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -> None:
+    index = _collect_annotation_index(stmts)
+    classes = index.classes
+    variant_types = _build_variant_type_index(index.types)
+
+    def check_expr(expr: IR, env: Dict[str, str]) -> None:
+        if isinstance(expr, Bin):
+            check_expr(expr.a, env)
+            check_expr(expr.b, env)
             return
         if isinstance(expr, ClassNew):
             for field_name, value in expr.init:
@@ -8273,47 +8395,6 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
             return
         if isinstance(expr, Field):
             check_expr(expr.obj, env)
-            return
-        if isinstance(expr, Spawn):
-            for arg in expr.args:
-                check_expr(arg, env)
-            params = function_params.get(expr.name)
-            if params:
-                if len(expr.args) != len(params):
-                    msg = (
-                        f"argument count mismatch for spawned function {expr.name}: "
-                        f"expected {len(params)} but got {len(expr.args)}"
-                    )
-                    raise _lint_error(
-                        source,
-                        expr,
-                        msg,
-                        code="E009",
-                        hint="Adjust the spawn call to pass the expected number of arguments.",
-                    )
-                for param, arg in zip(params, expr.args):
-                    if not param.type:
-                        continue
-                    inferred = _infer_typed_expr_type(
-                        arg,
-                        env,
-                        functions=index.functions,
-                        classes=index.classes,
-                        methods=index.methods,
-                        variant_types=variant_types,
-                    )
-                    if inferred and not _types_match(param.type, inferred):
-                        msg = (
-                            f"type mismatch for parameter {param.name} in function {expr.name}: "
-                            f"expected {param.type} but got {inferred}"
-                        )
-                        raise _lint_error(
-                            source,
-                            arg,
-                            msg,
-                            code="E009",
-                            hint="Adjust the type annotation (use '?' to allow Null) or pass a compatible value to satisfy the hint.",
-                        )
             return
         if isinstance(expr, Await):
             check_expr(expr.expr, env)
@@ -12104,6 +12185,7 @@ if "lint_import_style" not in globals():
         lint_annotation_enforcement,
         lint_assignment_types,
         lint_bare_call_results,
+        lint_call_validation,
         lint_destruct_call_outputs,
         lint_fn_params_used,
         lint_heap_lifetimes,
@@ -12647,6 +12729,7 @@ def _parse_and_lint(
     if not repl_mode:
         lint_no_underscore_bindings(stmts, src)
     lint_assignment_types(stmts, src)
+    lint_call_validation(stmts, src)
     lint_annotation_enforcement(stmts, src)
     if not repl_mode:
         lint_locals_used(stmts, src)

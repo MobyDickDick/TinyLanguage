@@ -1,0 +1,232 @@
+// TinyLanguage stdlib: argparse module (minimal flag + positional parsing)
+
+def ARGPARSE_REPR_ALLOW = new["repr"];
+def ARGPARSE_EXEC_ALLOW = new["exec"];
+def ARGPARSE_FLOAT_ALLOW = new["float"];
+
+fn __raise_value_error(msg) {
+  def safe = Python.call("builtins", "repr", new[msg], ARGPARSE_REPR_ALLOW);
+  def stmt = "raise ValueError(" + safe + ")";
+  return Python.call("builtins", "exec", new[stmt], ARGPARSE_EXEC_ALLOW);
+}
+
+fn __split_flag_token(token, prefix) {
+  def parts = String.split(token, "=");
+  def raw_name = heap_get(parts, 0);
+  def name = String.replace(raw_name, prefix, "");
+  def value = "";
+  def has_value = false;
+  if (len(parts) > 1) {
+    has_value = true;
+    def i = 1;
+    while (i < len(parts)) {
+      if (i > 1) { value = value + "="; }
+      value = value + heap_get(parts, i);
+      i = i + 1;
+    }
+  }
+  def _cleanup_parts = delete(parts);
+  return { name: name, value: value, has_value: has_value };
+}
+
+fn __flag_takes_value(flag) {
+  if (Map.has(flag, "takes_value")) { return Map.get(flag, "takes_value"); }
+  def kind = Map.get(flag, "type", "string");
+  if (kind == "bool") { return false; }
+  return true;
+}
+
+fn __flag_label(flag) {
+  def long_name = Map.get(flag, "long", Null);
+  if (long_name != Null) { return "--" + long_name; }
+  def short_name = Map.get(flag, "short", Null);
+  if (short_name != Null) { return "-" + short_name; }
+  def name = Map.get(flag, "name", "<flag>");
+  return name;
+}
+
+fn __coerce_value(value, kind, label) {
+  if (kind == Null || kind == "string") { return value; }
+  if (kind == "bool") {
+    if (value == true || value == false) { return value; }
+    if (value == Null) { return false; }
+    def lowered = String.lower(value);
+    if (lowered == "true") { return true; }
+    if (lowered == "false") { return false; }
+    return __raise_value_error("invalid boolean for " + label);
+  }
+  if (kind == "number") {
+    try {
+      return Python.call("builtins", "float", new[value], ARGPARSE_FLOAT_ALLOW);
+    } catch (_err) {
+      return __raise_value_error("invalid number for " + label);
+    }
+  }
+  return __raise_value_error("unsupported type for " + label + ": " + kind);
+}
+
+fn __apply_flag_defaults(flags, result) {
+  def i = 0;
+  while (i < len(flags)) {
+    def flag = heap_get(flags, i);
+    def name = Map.get(flag, "name", Null);
+    if (name == Null) { return __raise_value_error("flag missing name"); }
+    def default_value = Map.get(flag, "default_value", Map.get(flag, "default", Null));
+    if (default_value == Null && Map.get(flag, "type", "string") == "bool") {
+      default_value = false;
+    }
+    def _ignored = Map.set(result, name, default_value);
+    i = i + 1;
+  }
+  return result;
+}
+
+fn __apply_positional_defaults(positionals, result) {
+  def i = 0;
+  while (i < len(positionals)) {
+    def arg = heap_get(positionals, i);
+    def name = Map.get(arg, "name", Null);
+    if (name == Null) { return __raise_value_error("argument missing name"); }
+    def default_value = Map.get(arg, "default_value", Map.get(arg, "default", Null));
+    def _ignored = Map.set(result, name, default_value);
+    i = i + 1;
+  }
+  return result;
+}
+
+fn __find_flag_by_long(flags, long_name) {
+  def i = 0;
+  while (i < len(flags)) {
+    def flag = heap_get(flags, i);
+    if (Map.get(flag, "long", Null) == long_name) { return flag; }
+    i = i + 1;
+  }
+  return Null;
+}
+
+fn __find_flag_by_short(flags, short_name) {
+  def i = 0;
+  while (i < len(flags)) {
+    def flag = heap_get(flags, i);
+    if (Map.get(flag, "short", Null) == short_name) { return flag; }
+    i = i + 1;
+  }
+  return Null;
+}
+
+fn __require_flag_value(flag, name, inline_value, has_inline, args, index) {
+  def takes_value = __flag_takes_value(flag);
+  if (has_inline) {
+    if (!takes_value) { return __raise_value_error("flag " + name + " does not take a value"); }
+    return inline_value;
+  }
+  if (!takes_value) { return "true"; }
+  if (index + 1 >= len(args)) { return __raise_value_error("flag " + name + " expects a value"); }
+  return heap_get(args, index + 1);
+}
+
+fn parse(args, spec) {
+  def flags = Map.get(spec, "flags", new[]);
+  def positionals = Map.get(spec, "positionals", new[]);
+  def result = Map.new();
+  def provided = Map.new();
+  def _flag_defaults = __apply_flag_defaults(flags, result);
+  def _pos_defaults = __apply_positional_defaults(positionals, result);
+
+  def parsing_flags = true;
+  def position_index = 0;
+  def i = 0;
+  while (i < len(args)) {
+    def token = heap_get(args, i);
+    if (parsing_flags && token == "--") {
+      parsing_flags = false;
+      i = i + 1;
+    } else {
+      def handled = false;
+      if (parsing_flags && String.starts_with(token, "--")) {
+        def split = __split_flag_token(token, "--");
+        def long_name = Map.get(split, "name", "");
+        def inline_value = Map.get(split, "value", "");
+        def has_inline = Map.get(split, "has_value", false);
+        def _cleanup_split = delete(split);
+        def flag = __find_flag_by_long(flags, long_name);
+        if (flag == Null) { return __raise_value_error("unknown flag --" + long_name); }
+        def label = "--" + long_name;
+        def raw_value = __require_flag_value(flag, label, inline_value, has_inline, args, i);
+        if (__flag_takes_value(flag) && !has_inline) { i = i + 1; }
+        def name = Map.get(flag, "name", long_name);
+        def kind = Map.get(flag, "type", "string");
+        def parsed = __coerce_value(raw_value, kind, label);
+        def _ignored = Map.set(result, name, parsed);
+        def _mark_provided = Map.set(provided, name, true);
+        i = i + 1;
+        handled = true;
+      }
+
+      if (!handled && parsing_flags && String.starts_with(token, "-") && token != "-") {
+        def split = __split_flag_token(token, "-");
+        def short_name = Map.get(split, "name", "");
+        def inline_value = Map.get(split, "value", "");
+        def has_inline = Map.get(split, "has_value", false);
+        def _cleanup_split = delete(split);
+        if (len(short_name) != 1) { return __raise_value_error("unsupported short flag: -" + short_name); }
+        def flag = __find_flag_by_short(flags, short_name);
+        if (flag == Null) { return __raise_value_error("unknown flag -" + short_name); }
+        def label = "-" + short_name;
+        def raw_value = __require_flag_value(flag, label, inline_value, has_inline, args, i);
+        if (__flag_takes_value(flag) && !has_inline) { i = i + 1; }
+        def name = Map.get(flag, "name", short_name);
+        def kind = Map.get(flag, "type", "string");
+        def parsed = __coerce_value(raw_value, kind, label);
+        def _ignored = Map.set(result, name, parsed);
+        def _mark_provided = Map.set(provided, name, true);
+        i = i + 1;
+        handled = true;
+      }
+
+      if (!handled) {
+        if (position_index >= len(positionals)) {
+          return __raise_value_error("unexpected argument " + token);
+        }
+        def arg = heap_get(positionals, position_index);
+        def name = Map.get(arg, "name", Null);
+        if (name == Null) { return __raise_value_error("argument missing name"); }
+        def kind = Map.get(arg, "type", "string");
+        def parsed = __coerce_value(token, kind, name);
+        def _ignored = Map.set(result, name, parsed);
+        def _mark_provided = Map.set(provided, name, true);
+        position_index = position_index + 1;
+        i = i + 1;
+      }
+    }
+  }
+
+  def f = 0;
+  while (f < len(flags)) {
+    def flag = heap_get(flags, f);
+    def name = Map.get(flag, "name", Null);
+    def required = Map.get(flag, "required", false);
+    if (required && name != Null && !Map.get(provided, name, false)) {
+      return __raise_value_error("missing required flag " + __flag_label(flag));
+    }
+    f = f + 1;
+  }
+
+  def remaining = position_index;
+  def p = 0;
+  while (p < len(positionals)) {
+    def arg = heap_get(positionals, p);
+    def name = Map.get(arg, "name", Null);
+    def required = Map.get(arg, "required", false);
+    if (remaining > 0) {
+      remaining = remaining - 1;
+    } else {
+      if (required && name != Null) {
+        return __raise_value_error("missing required argument " + name);
+      }
+    }
+    p = p + 1;
+  }
+
+  return result;
+}

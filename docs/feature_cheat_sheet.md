@@ -23,6 +23,7 @@ Quick reference to core language features with links to the full `.tiny` demos. 
 
 - **Namespaces**: `src_tiny/namespace_demo.tiny` groups utilities and calls them with qualification.
 - **Imports & stdlib**: `src_tiny/stdlib_io_random_demo.tiny` uses `import`, I/O, and randomness.
+- **CLI parsing**: `src_tiny/stdlib_argparse_demo.tiny` demonstrates basic flag and positional parsing.
 
 ## Classes and operators
 

@@ -122,6 +122,15 @@ def test_typing_profile_reports_return_mismatch():
     assert diags[0].code == "E009"
 
 
+def test_typing_profile_reports_return_mismatch_from_call():
+    """Typing profile should validate annotated returns sourced from calls."""
+    source = "fn value() -> number { return 1; }\nfn greet() -> string { return value(); }\ngreet();"
+    server = TinyLanguageServer(source, lint_profile="typing")
+    diags = server.diagnostics()
+    assert diags
+    assert diags[0].code == "E009"
+
+
 def test_typing_profile_infers_typed_call_bindings():
     """Typing profile should infer bindings initialized from typed calls."""
     source = "fn get() -> number { return 1; }\nfn main() { def value = get(); value = \"oops\"; }"

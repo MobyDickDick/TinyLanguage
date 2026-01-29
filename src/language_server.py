@@ -38,6 +38,7 @@ from tiny_language import (
     lint_locals_used,
     lint_method_params_used,
     lint_no_consecutive_definitions,
+    lint_return_validation,
 )
 
 
@@ -346,6 +347,7 @@ class TinyLanguageServer:
             if self.lint_profile == "typing":
                 lint_assignment_types(self.stmts, self.source)
                 lint_call_validation(self.stmts, self.source)
+                lint_return_validation(self.stmts, self.source)
                 lint_annotation_enforcement(self.stmts, self.source)
             lint_locals_used(self.stmts, self.source)
             if _heap_lints_enabled():

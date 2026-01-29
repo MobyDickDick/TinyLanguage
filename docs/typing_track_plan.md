@@ -164,7 +164,7 @@ up without requiring the entire typing track to be complete.
   rules (`any` and `T?` are explicit escape hatches).
 - [x] Add a call validation pass that checks arity and annotated argument
   compatibility.
-- [ ] Add a return validation pass that enforces annotated return types and
+- [x] Add a return validation pass that enforces annotated return types and
   preserves existing stability rules for unannotated functions.
 - [ ] Align diagnostics with existing `SourceSpan`-based reporting for editor
   and CLI outputs.

@@ -190,14 +190,12 @@ class Parser {
             def cond = self.parse_expr();
             def _eat_status = self._eat("SYM", ")");
             def then_block = self.parse_block();
-            def els = Null;
             if (self.tok.kind == "KW" && self.tok.text == "else") {
                 def _eat_status = self._eat("KW", "else");
-                els = self.parse_block();
+                def els = self.parse_block();
+                return self._attach_span(If(cond, then_block, els, kw.start, Null), kw.start, self._last_tok.stop);
             }
-            if (els == Null) {
-                els = new[];
-            }
+            def els = new[];
             return self._attach_span(If(cond, then_block, els, kw.start, Null), kw.start, self._last_tok.stop);
         }
         if (self.tok.kind == "KW" && self.tok.text == "while") {
@@ -793,7 +791,6 @@ class Parser {
         if (!(self.tok.kind == "NAME")) { return self._error("expected pattern", self.tok.start, self._tok_span(self.tok)); }
         def vname_tok = self._eat("NAME", Null);
         def bindings = Map.new();
-        def positional = Null;
         if (self._accept("SYM", "{", Null)) {
             def done = false;
             while (!done) {
@@ -815,27 +812,28 @@ class Parser {
                     }
                 }
             }
-        } else {
-            if (self._accept("SYM", "(", Null)) {
-                positional = new[];
-                def done_pos = false;
-                while (!done_pos) {
+            return self._attach_span(VariantPattern(vname_tok.text, bindings, Null, vname_tok.start, Null), vname_tok.start, self._last_tok.stop);
+        }
+        if (self._accept("SYM", "(", Null)) {
+            def positional = new[];
+            def done_pos = false;
+            while (!done_pos) {
+                if (self._accept("SYM", ")", Null)) { done_pos = true; }
+                else {
+                    def bind_tok = self._eat_name_or_kw();
+                    if (bind_tok.text == "_") { Collections.push(positional, Null); }
+                    else { Collections.push(positional, bind_tok.text); }
                     if (self._accept("SYM", ")", Null)) { done_pos = true; }
                     else {
-                        def bind_tok = self._eat_name_or_kw();
-                        if (bind_tok.text == "_") { Collections.push(positional, Null); }
-                        else { Collections.push(positional, bind_tok.text); }
-                        if (self._accept("SYM", ")", Null)) { done_pos = true; }
-                        else {
-                            if (!(self._accept("SYM", ",", Null) || self._accept("SYM", ";", Null))) {
-                                return self._error("expected field separator", self.tok.start, self._tok_span(self.tok));
-                            }
+                        if (!(self._accept("SYM", ",", Null) || self._accept("SYM", ";", Null))) {
+                            return self._error("expected field separator", self.tok.start, self._tok_span(self.tok));
                         }
                     }
                 }
             }
+            return self._attach_span(VariantPattern(vname_tok.text, bindings, positional, vname_tok.start, Null), vname_tok.start, self._last_tok.stop);
         }
-        return self._attach_span(VariantPattern(vname_tok.text, bindings, positional, vname_tok.start, Null), vname_tok.start, self._last_tok.stop);
+        return self._attach_span(VariantPattern(vname_tok.text, bindings, Null, vname_tok.start, Null), vname_tok.start, self._last_tok.stop);
     }
 
     fn parse_primary(self) -> any {

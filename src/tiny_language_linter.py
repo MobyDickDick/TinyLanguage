@@ -876,6 +876,8 @@ def _infer_expr_type(expr: IR, env: Dict[str, str]) -> Optional[str]:
     return None
 
 
+
+
 def _normalize_inferred_type(type_name: str) -> str:
     normalized = type_name.strip()
     if normalized.lower() in {"int", "float"}:
@@ -974,6 +976,109 @@ def _collect_annotation_index(stmts: List[IR], prefix: str = "") -> _AnnotationI
     return _AnnotationIndex(functions=functions, classes=classes, methods=methods, types=types)
 
 
+def _base_type_name(type_name: Optional[str]) -> Optional[str]:
+    if not type_name:
+        return None
+    normalized = type_name.strip()
+    if normalized.endswith("?"):
+        return normalized[:-1].strip()
+    return normalized
+
+
+def _build_variant_type_index(types: Dict[str, _TypeInfo]) -> Dict[str, Optional[str]]:
+    variant_index: Dict[str, Optional[str]] = {}
+    for type_name, info in types.items():
+        if info.variants:
+            for variant_name in info.variants:
+                existing = variant_index.get(variant_name)
+                if existing is None:
+                    variant_index[variant_name] = type_name
+                elif existing != type_name:
+                    variant_index[variant_name] = None
+        else:
+            existing = variant_index.get(type_name)
+            if existing is None:
+                variant_index[type_name] = type_name
+            elif existing != type_name:
+                variant_index[type_name] = None
+    return variant_index
+
+
+def _resolve_method_return(
+    classes: Dict[str, _ClassInfo],
+    methods: Dict[Tuple[str, str], _FunctionSignature],
+    class_name: str,
+    method_name: str,
+) -> Optional[str]:
+    seen: Set[str] = set()
+    queue = [class_name]
+    while queue:
+        current = queue.pop(0)
+        if current in seen:
+            continue
+        seen.add(current)
+        signature = methods.get((current, method_name))
+        if signature is not None:
+            return signature.return_type
+        info = classes.get(current)
+        if info:
+            queue.extend(info.bases)
+    return None
+
+
+def _infer_typed_expr_type(
+    expr: IR,
+    env: Dict[str, str],
+    *,
+    functions: Dict[str, _FunctionSignature],
+    classes: Dict[str, _ClassInfo],
+    methods: Dict[Tuple[str, str], _FunctionSignature],
+    variant_types: Dict[str, Optional[str]],
+) -> Optional[str]:
+    if isinstance(expr, (Num, Str, Bool, Null, Var, ClassNew)):
+        return _infer_expr_type(expr, env)
+    if isinstance(expr, (New, NewLit)):
+        return "Pointer"
+    if isinstance(expr, ObjLit):
+        return "Struct"
+    if isinstance(expr, VariantCtor):
+        if expr.type_name:
+            return expr.type_name
+        return variant_types.get(expr.variant)
+    if isinstance(expr, Call):
+        signature = functions.get(expr.name)
+        if signature and signature.return_type:
+            return signature.return_type
+        return None
+    if isinstance(expr, MethodCall):
+        obj_type = _infer_typed_expr_type(
+            expr.obj,
+            env,
+            functions=functions,
+            classes=classes,
+            methods=methods,
+            variant_types=variant_types,
+        )
+        base_type = _base_type_name(obj_type)
+        if base_type:
+            return _resolve_method_return(classes, methods, base_type, expr.name)
+        return None
+    if isinstance(expr, Field):
+        obj_type = _infer_typed_expr_type(
+            expr.obj,
+            env,
+            functions=functions,
+            classes=classes,
+            methods=methods,
+            variant_types=variant_types,
+        )
+        base_type = _base_type_name(obj_type)
+        if base_type:
+            return _resolve_field_type(classes, base_type, expr.name)
+        return None
+    return None
+
+
 def _resolve_field_type(
     classes: Dict[str, _ClassInfo],
     class_name: str,
@@ -1032,6 +1137,7 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
     function_params = {name: sig.params for name, sig in index.functions.items()}
     classes = index.classes
     methods = {key: sig.params for key, sig in index.methods.items()}
+    variant_types = _build_variant_type_index(index.types)
 
     def check_expr(expr: IR, env: Dict[str, str]) -> None:
         if isinstance(expr, Bin):
@@ -1058,7 +1164,14 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
                 for param, arg in zip(params, expr.args):
                     if not param.type:
                         continue
-                    inferred = _infer_expr_type(arg, env)
+                    inferred = _infer_typed_expr_type(
+                        arg,
+                        env,
+                        functions=index.functions,
+                        classes=index.classes,
+                        methods=index.methods,
+                        variant_types=variant_types,
+                    )
                     if inferred and not _types_match(param.type, inferred):
                         msg = (
                             f"type mismatch for parameter {param.name} in function {expr.name}: "
@@ -1076,14 +1189,22 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
             check_expr(expr.obj, env)
             for arg in expr.args:
                 check_expr(arg, env)
-            obj_type = _infer_expr_type(expr.obj, env)
+            obj_type = _infer_typed_expr_type(
+                expr.obj,
+                env,
+                functions=index.functions,
+                classes=index.classes,
+                methods=index.methods,
+                variant_types=variant_types,
+            )
             if obj_type:
-                params = _resolve_method_params(classes, methods, obj_type, expr.name)
+                base_type = _base_type_name(obj_type) or obj_type
+                params = _resolve_method_params(classes, methods, base_type, expr.name)
                 if params:
                     expected_params = params[1:] if params else []
                     if len(expr.args) != len(expected_params):
                         msg = (
-                            f"argument count mismatch for method {obj_type}.{expr.name}: "
+                            f"argument count mismatch for method {base_type}.{expr.name}: "
                             f"expected {len(expected_params)} but got {len(expr.args)}"
                         )
                         raise _lint_error(
@@ -1096,10 +1217,17 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
                     for param, arg in zip(expected_params, expr.args):
                         if not param.type:
                             continue
-                        inferred = _infer_expr_type(arg, env)
+                        inferred = _infer_typed_expr_type(
+                            arg,
+                            env,
+                            functions=index.functions,
+                            classes=index.classes,
+                            methods=index.methods,
+                            variant_types=variant_types,
+                        )
                         if inferred and not _types_match(param.type, inferred):
                             msg = (
-                                f"type mismatch for parameter {param.name} in method {obj_type}.{expr.name}: "
+                                f"type mismatch for parameter {param.name} in method {base_type}.{expr.name}: "
                                 f"expected {param.type} but got {inferred}"
                             )
                             raise _lint_error(
@@ -1119,7 +1247,14 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
                     owner_hint, field_key = field_name.split(".", 1)
                 expected = _resolve_field_type(classes, expr.name, field_key, owner_hint=owner_hint)
                 if expected:
-                    inferred = _infer_expr_type(value, env)
+                    inferred = _infer_typed_expr_type(
+                        value,
+                        env,
+                        functions=index.functions,
+                        classes=index.classes,
+                        methods=index.methods,
+                        variant_types=variant_types,
+                    )
                     if inferred and not _types_match(expected, inferred):
                         msg = (
                             f"type mismatch for field {field_name} in class {expr.name}: "
@@ -1156,7 +1291,14 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
                 for param, arg in zip(params, expr.args):
                     if not param.type:
                         continue
-                    inferred = _infer_expr_type(arg, env)
+                    inferred = _infer_typed_expr_type(
+                        arg,
+                        env,
+                        functions=index.functions,
+                        classes=index.classes,
+                        methods=index.methods,
+                        variant_types=variant_types,
+                    )
                     if inferred and not _types_match(param.type, inferred):
                         msg = (
                             f"type mismatch for parameter {param.name} in function {expr.name}: "
@@ -1204,27 +1346,63 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
         for st in block:
             if isinstance(st, Let):
                 check_expr(st.expr, local_env)
-                inferred = _infer_expr_type(st.expr, local_env)
+                inferred = _infer_typed_expr_type(
+                    st.expr,
+                    local_env,
+                    functions=index.functions,
+                    classes=index.classes,
+                    methods=index.methods,
+                    variant_types=variant_types,
+                )
                 if inferred:
                     local_env[st.name] = _normalize_inferred_type(inferred)
             elif isinstance(st, Assign):
                 check_expr(st.expr, local_env)
-                inferred = _infer_expr_type(st.expr, local_env)
+                inferred = _infer_typed_expr_type(
+                    st.expr,
+                    local_env,
+                    functions=index.functions,
+                    classes=index.classes,
+                    methods=index.methods,
+                    variant_types=variant_types,
+                )
                 if inferred:
                     local_env[st.name] = local_env.get(st.name, _normalize_inferred_type(inferred))
             elif isinstance(st, DestructAssign):
                 check_expr(st.expr, local_env)
-                inferred = _infer_expr_type(st.expr, local_env)
+                inferred = _infer_typed_expr_type(
+                    st.expr,
+                    local_env,
+                    functions=index.functions,
+                    classes=index.classes,
+                    methods=index.methods,
+                    variant_types=variant_types,
+                )
                 if inferred:
                     for nm in st.names:
                         local_env[nm] = _normalize_inferred_type(inferred)
             elif isinstance(st, FieldAssign):
                 check_expr(st.obj, local_env)
                 check_expr(st.expr, local_env)
-                obj_type = _infer_expr_type(st.obj, local_env)
+                obj_type = _infer_typed_expr_type(
+                    st.obj,
+                    local_env,
+                    functions=index.functions,
+                    classes=index.classes,
+                    methods=index.methods,
+                    variant_types=variant_types,
+                )
                 if obj_type:
-                    expected = _resolve_field_type(classes, obj_type, st.name)
-                    inferred = _infer_expr_type(st.expr, local_env)
+                    base_type = _base_type_name(obj_type) or obj_type
+                    expected = _resolve_field_type(classes, base_type, st.name)
+                    inferred = _infer_typed_expr_type(
+                        st.expr,
+                        local_env,
+                        functions=index.functions,
+                        classes=index.classes,
+                        methods=index.methods,
+                        variant_types=variant_types,
+                    )
                     if expected and inferred and not _types_match(expected, inferred):
                         msg = (
                             f"type mismatch for field {st.name} in class {obj_type}: "
@@ -1299,15 +1477,31 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
 
 def lint_assignment_types(stmts: List[IR], source: Optional[str] = None, env: Optional[Dict[str, str]] = None) -> None:
     env = dict(env or {})
+    index = _collect_annotation_index(stmts)
+    variant_types = _build_variant_type_index(index.types)
 
     def check_block(block: List[IR], local_env: Dict[str, str]) -> Dict[str, str]:
         for st in block:
             if isinstance(st, Let):
-                inferred = _infer_expr_type(st.expr, local_env)
+                inferred = _infer_typed_expr_type(
+                    st.expr,
+                    local_env,
+                    functions=index.functions,
+                    classes=index.classes,
+                    methods=index.methods,
+                    variant_types=variant_types,
+                )
                 if inferred:
                     local_env[st.name] = _normalize_inferred_type(inferred)
             elif isinstance(st, Assign):
-                inferred = _infer_expr_type(st.expr, local_env)
+                inferred = _infer_typed_expr_type(
+                    st.expr,
+                    local_env,
+                    functions=index.functions,
+                    classes=index.classes,
+                    methods=index.methods,
+                    variant_types=variant_types,
+                )
                 expected = local_env.get(st.name)
                 if expected and inferred and not _types_match(expected, inferred):
                     msg = f"type change for variable {st.name}: expected {expected} but got {inferred}"
@@ -1321,7 +1515,14 @@ def lint_assignment_types(stmts: List[IR], source: Optional[str] = None, env: Op
                 if inferred:
                     local_env[st.name] = expected or _normalize_inferred_type(inferred)
             elif isinstance(st, DestructAssign):
-                inferred = _infer_expr_type(st.expr, local_env)
+                inferred = _infer_typed_expr_type(
+                    st.expr,
+                    local_env,
+                    functions=index.functions,
+                    classes=index.classes,
+                    methods=index.methods,
+                    variant_types=variant_types,
+                )
                 if inferred:
                     for nm in st.names:
                         local_env[nm] = _normalize_inferred_type(inferred)
@@ -1369,7 +1570,14 @@ def lint_assignment_types(stmts: List[IR], source: Optional[str] = None, env: Op
                     check_block(list(method.body), method_env)
             elif isinstance(st, CallStmt):
                 for arg in st.args:
-                    inferred = _infer_expr_type(arg, local_env)
+                    inferred = _infer_typed_expr_type(
+                        arg,
+                        local_env,
+                        functions=index.functions,
+                        classes=index.classes,
+                        methods=index.methods,
+                        variant_types=variant_types,
+                    )
                     if isinstance(arg, Var) and inferred:
                         local_env[arg.name] = inferred
         return local_env

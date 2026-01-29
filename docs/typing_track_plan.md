@@ -166,7 +166,7 @@ up without requiring the entire typing track to be complete.
   compatibility.
 - [x] Add a return validation pass that enforces annotated return types and
   preserves existing stability rules for unannotated functions.
-- [ ] Align diagnostics with existing `SourceSpan`-based reporting for editor
+- [x] Align diagnostics with existing `SourceSpan`-based reporting for editor
   and CLI outputs.
 - [x] Expose a `typing` lint profile (e.g., `python src/language_server_cli.py --lint-profile typing ...`) that
   runs the new static checks.

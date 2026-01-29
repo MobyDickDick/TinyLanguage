@@ -21,7 +21,12 @@
 - **File**: `File.read(path)` reads UTF-8 text. `File.write(path, text)` writes text and creates directories as needed. `File.exists(path)` checks whether a path exists. `File.remove(path)` deletes (if present, depending on implementation).
 - **JSON**: `JSON.parse(text)` converts text into maps/lists using native Python containers; numbers/bools/null are preserved. `JSON.stringify(value)` serializes compatible TinyLanguage values (including Map/Deque/List heap pointers) into a string.
 
+## CLI argument parsing
+
+- **argparse**: `stdlib.argparse` provides a minimal CLI parser for flags and positional arguments, returning a map of parsed values. Definitions include short/long flag names, `default_value` entries, and required positional fields.
+
 ## Example programs
 
 - [`stdlib_collections_demo.tiny`](../src_tiny/stdlib_collections_demo.tiny) demonstrates Map/Set/Deque.
 - [`stdlib_io_random_demo.tiny`](../src_tiny/stdlib_io_random_demo.tiny) combines Random, File, and JSON.
+- [`stdlib_argparse_demo.tiny`](../src_tiny/stdlib_argparse_demo.tiny) shows the new CLI parsing helpers.

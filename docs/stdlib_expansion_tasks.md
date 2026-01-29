@@ -125,7 +125,7 @@ plan so implementation can proceed in small, testable steps.
 - [x] Introduce `stdlib.logging` with structured JSON output and file helpers;
   add tests for formatting and file writes.
   - Deliverables: `stdlib/logging.tiny` + `tests/detailtests/test_stdlib_logging.py`.
-- [ ] Add `stdlib.argparse` with flag/positional parsing and update CLI demos;
+- [x] Add `stdlib.argparse` with flag/positional parsing and update CLI demos;
   add tests for error messages and defaults.
   - Deliverables: `stdlib/argparse.tiny`, updated demo references, and
     `tests/detailtests/test_stdlib_argparse.py`.

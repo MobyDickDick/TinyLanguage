@@ -21,6 +21,7 @@ python src/tiny_language.py src_tiny/copy_rosetta_samples.tiny
 python src/tiny_language.py src_tiny/transpile_rosetta.tiny
 python src/tiny_language.py src_tiny/stdlib_io_random_demo.tiny
 python src/tiny_language.py src_tiny/stdlib_collections_demo.tiny
+python src/tiny_language.py src_tiny/stdlib_argparse_demo.tiny
 ```
 
 ## Concurrency and pipeline examples

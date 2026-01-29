@@ -1,0 +1,22 @@
+import stdlib.argparse;
+
+def argv = new["--count", "3", "-v", "input.txt"];
+
+def flags = new[
+  { name: "verbose", short: "v", long: "verbose", takes_value: false, default_value: false },
+  { name: "count", short: "c", long: "count", takes_value: true, default_value: "1" }
+];
+
+def positionals = new[
+  { name: "input", required: true },
+  { name: "output", default_value: "out.txt" }
+];
+
+def spec = { flags: flags, positionals: positionals };
+
+def parsed = argparse.parse(argv, spec);
+
+print("verbose:", Map.get(parsed, "verbose"));
+print("count:", Map.get(parsed, "count"));
+print("input:", Map.get(parsed, "input"));
+print("output:", Map.get(parsed, "output"));

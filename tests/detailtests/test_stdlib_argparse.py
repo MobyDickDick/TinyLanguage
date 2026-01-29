@@ -24,6 +24,10 @@ def test_stdlib_argparse_parses_flags_and_positionals(run_tiny_source):
         print(Map.get(parsed, "count"));
         print(Map.get(parsed, "input"));
         print(Map.get(parsed, "output"));
+        def _cleanup_parsed = delete(parsed);
+        def _cleanup_args = delete(args);
+        def _cleanup_flags = delete(flags);
+        def _cleanup_positionals = delete(positionals);
         """,
     )
 
@@ -40,6 +44,7 @@ def test_stdlib_argparse_unknown_flag(run_tiny_source):
             def args = new["--oops"];
             def spec = { flags: new[], positionals: new[] };
             def _parsed = argparse.parse(args, spec);
+            def _cleanup_args = delete(args);
             """,
         )
 
@@ -57,6 +62,8 @@ def test_stdlib_argparse_missing_value(run_tiny_source):
             ];
             def spec = { flags: flags, positionals: new[] };
             def _parsed = argparse.parse(args, spec);
+            def _cleanup_args = delete(args);
+            def _cleanup_flags = delete(flags);
             """,
         )
 
@@ -74,5 +81,7 @@ def test_stdlib_argparse_missing_required_positional(run_tiny_source):
             ];
             def spec = { flags: new[], positionals: positionals };
             def _parsed = argparse.parse(args, spec);
+            def _cleanup_args = delete(args);
+            def _cleanup_positionals = delete(positionals);
             """,
         )

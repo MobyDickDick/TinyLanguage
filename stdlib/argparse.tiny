@@ -1,13 +1,14 @@
 // TinyLanguage stdlib: argparse module (minimal flag + positional parsing)
 
-def ARGPARSE_REPR_ALLOW = new["repr"];
-def ARGPARSE_EXEC_ALLOW = new["exec"];
-def ARGPARSE_FLOAT_ALLOW = new["float"];
-
 fn __raise_value_error(msg) {
-  def safe = Python.call("builtins", "repr", new[msg], ARGPARSE_REPR_ALLOW);
+  def allow_repr = new["repr"];
+  def safe = Python.call("builtins", "repr", new[msg], allow_repr);
+  def _cleanup_allow_repr = delete(allow_repr);
   def stmt = "raise ValueError(" + safe + ")";
-  return Python.call("builtins", "exec", new[stmt], ARGPARSE_EXEC_ALLOW);
+  def allow_exec = new["exec"];
+  def raised = Python.call("builtins", "exec", new[stmt], allow_exec);
+  def _cleanup_allow_exec = delete(allow_exec);
+  return raised;
 }
 
 fn __split_flag_token(token, prefix) {
@@ -57,7 +58,10 @@ fn __coerce_value(value, kind, label) {
   }
   if (kind == "number") {
     try {
-      return Python.call("builtins", "float", new[value], ARGPARSE_FLOAT_ALLOW);
+      def allow_float = new["float"];
+      def parsed = Python.call("builtins", "float", new[value], allow_float);
+      def _cleanup_allow_float = delete(allow_float);
+      return parsed;
     } catch (_err) {
       return __raise_value_error("invalid number for " + label);
     }
@@ -126,8 +130,18 @@ fn __require_flag_value(flag, name, inline_value, has_inline, args, index) {
 }
 
 fn parse(args, spec) {
-  def flags = Map.get(spec, "flags", new[]);
-  def positionals = Map.get(spec, "positionals", new[]);
+  def flags = Map.get(spec, "flags", Null);
+  def flags_owned = false;
+  if (flags == Null) {
+    flags = new[];
+    flags_owned = true;
+  }
+  def positionals = Map.get(spec, "positionals", Null);
+  def positionals_owned = false;
+  if (positionals == Null) {
+    positionals = new[];
+    positionals_owned = true;
+  }
   def result = Map.new();
   def provided = Map.new();
   def _flag_defaults = __apply_flag_defaults(flags, result);
@@ -228,5 +242,8 @@ fn parse(args, spec) {
     p = p + 1;
   }
 
+  if (flags_owned) { def _cleanup_flags = delete(flags); }
+  if (positionals_owned) { def _cleanup_positionals = delete(positionals); }
+  def _cleanup_provided = delete(provided);
   return result;
 }

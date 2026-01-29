@@ -122,7 +122,7 @@ plan so implementation can proceed in small, testable steps.
 - [x] Decide on `stdlib.yaml` scope (optional) and add parser/serializer stubs
   with round-trip tests if approved.
   - Deliverables: scope decision + `stdlib/yaml.tiny` stub + test placeholders.
-- [ ] Introduce `stdlib.logging` with structured JSON output and file helpers;
+- [x] Introduce `stdlib.logging` with structured JSON output and file helpers;
   add tests for formatting and file writes.
   - Deliverables: `stdlib/logging.tiny` + `tests/detailtests/test_stdlib_logging.py`.
 - [ ] Add `stdlib.argparse` with flag/positional parsing and update CLI demos;

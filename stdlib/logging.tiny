@@ -1,0 +1,50 @@
+// TinyLanguage stdlib: logging module (structured JSON helpers)
+
+fn __record(level, message, context, timestamp) {
+  def record = Map.new();
+  def _level = Map.set(record, "level", level);
+  def _message = Map.set(record, "message", message);
+  if (timestamp != Null) {
+    def _timestamp = Map.set(record, "timestamp", timestamp);
+  }
+  if (context != Null) {
+    def _context = Map.set(record, "context", context);
+  }
+  return record;
+}
+
+fn format(level, message, context, timestamp) {
+  def record = __record(level, message, context, timestamp);
+  def text = JSON.stringify(record);
+  def _cleanup_record = delete(record);
+  return text;
+}
+
+fn format_now(level, message, context) {
+  return format(level, message, context, Time.now_iso());
+}
+
+fn write(path, level, message, context, timestamp) {
+  return File.write(path, format(level, message, context, timestamp));
+}
+
+fn write_now(path, level, message, context) {
+  return File.write(path, format_now(level, message, context));
+}
+
+fn append(path, level, message, context, timestamp) {
+  def line = format(level, message, context, timestamp);
+  def existing = "";
+  if (File.exists(path)) {
+    existing = File.read(path);
+    if (existing == Null) { existing = ""; }
+  }
+  if (existing == "") {
+    return File.write(path, line);
+  }
+  return File.write(path, existing + "\n" + line);
+}
+
+fn append_now(path, level, message, context) {
+  return append(path, level, message, context, Time.now_iso());
+}

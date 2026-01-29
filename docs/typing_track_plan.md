@@ -162,7 +162,7 @@ up without requiring the entire typing track to be complete.
   type/class field annotations.
 - [x] Add a binding inference + stability pass that mirrors runtime reassignment
   rules (`any` and `T?` are explicit escape hatches).
-- [ ] Add a call validation pass that checks arity and annotated argument
+- [x] Add a call validation pass that checks arity and annotated argument
   compatibility.
 - [ ] Add a return validation pass that enforces annotated return types and
   preserves existing stability rules for unannotated functions.

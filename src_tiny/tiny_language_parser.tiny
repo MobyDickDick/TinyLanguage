@@ -790,7 +790,7 @@ class Parser {
         if (!(self.tok.kind == "NAME")) { return self._error("expected pattern", self.tok.start, self._tok_span(self.tok)); }
         def vname_tok = self._eat("NAME", Null);
         def bindings = Map.new();
-        def positional = Null;
+        def positional = new[];
         if (self._accept("SYM", "{", Null)) {
             def done = false;
             while (!done) {
@@ -814,7 +814,6 @@ class Parser {
             }
         } else {
             if (self._accept("SYM", "(", Null)) {
-                positional = new[];
                 def done_pos = false;
                 while (!done_pos) {
                     if (self._accept("SYM", ")", Null)) { done_pos = true; }

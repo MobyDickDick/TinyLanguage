@@ -102,6 +102,20 @@ tests can round-trip cleanly across backends.
 - **`stdlib.argparse`**: Minimal CLI argument parsing (flags, positional args,
   default values).
 
+### YAML scope decision (Phase 2)
+
+The initial `stdlib.yaml` scope is approved as an optional, JSON-compatible
+subset of YAML. The module will focus on deterministic round trips for:
+
+- Scalars: strings, numbers, booleans, and `null`.
+- Collections: lists (`- item`) and maps (`key: value`) with string keys.
+- Whitespace rules: spaces only (no tabs), with consistent indentation
+  requirements to keep parsing deterministic across backends.
+
+Non-goals for the first iteration include anchors/aliases, tags, complex keys,
+and multi-document streams. The module will expose `parse`, `stringify`, `load`,
+and `dump` wrappers once a backend implementation is available.
+
 ### Minimal regex syntax subset (Phase 2)
 
 To keep regex behavior portable across interpreter, C, and LLVM backends, the

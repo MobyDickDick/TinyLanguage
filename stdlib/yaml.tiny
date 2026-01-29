@@ -1,0 +1,34 @@
+// TinyLanguage stdlib: yaml module (stub for JSON-compatible YAML)
+
+fn __yaml_allowlist() {
+  def allow = new(1);
+  heap_set(allow, 0, "exec");
+  return allow;
+}
+
+fn __raise_not_implemented() {
+  def allow = __yaml_allowlist();
+  def stmt = "raise NotImplementedError('stdlib.yaml is not implemented yet')";
+  def raised = Python.call("builtins", "exec", new[stmt], { allow: allow });
+  def _cleanup_allow = delete(allow);
+  return raised;
+}
+
+fn parse(text) {
+  def _unused = text;
+  return __raise_not_implemented();
+}
+
+fn stringify(value) {
+  def _unused = value;
+  return __raise_not_implemented();
+}
+
+fn load(path) {
+  def content = File.read(path);
+  return parse(content);
+}
+
+fn dump(path, value) {
+  return File.write(path, stringify(value));
+}

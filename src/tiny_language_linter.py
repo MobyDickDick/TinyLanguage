@@ -1038,7 +1038,7 @@ def _infer_typed_expr_type(
     if isinstance(expr, (Num, Str, Bool, Null, Var, ClassNew)):
         return _infer_expr_type(expr, env)
     if isinstance(expr, (New, NewLit)):
-        return "int"
+        return "Pointer"
     if isinstance(expr, ObjLit):
         return "Struct"
     if isinstance(expr, VariantCtor):

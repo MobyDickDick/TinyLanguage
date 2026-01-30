@@ -59,7 +59,9 @@ fn __coerce_value(value, kind, label) -> any {
   if (kind == "number") {
     try {
       def allow_float = new["float"];
-      def parsed = Python.call("builtins", "float", new[value], allow_float);
+      def float_args = new[value];
+      def parsed = Python.call("builtins", "float", float_args, allow_float);
+      def _cleanup_float_args = delete(float_args);
       def _cleanup_allow_float = delete(allow_float);
       return parsed;
     } catch (_err) {

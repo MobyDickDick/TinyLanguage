@@ -1,0 +1,46 @@
+// TinyLanguage stdlib: fswatch module (mock-focused stub)
+
+fn __fswatch_error(code, message) {
+  return Result.err(message, code);
+}
+
+fn __fswatch_result(handle, events) {
+  return { handle: handle, events: events };
+}
+
+fn __fswatch_event(kind, path) {
+  return { kind: kind, path: path };
+}
+
+fn __fswatch_mock(path, options) {
+  def _unused_options = options;
+
+  if (String.starts_with(path, "mock://empty")) {
+    def empty_events = new[];
+    def response = __fswatch_result("mock-0", empty_events);
+    return Result.ok(response);
+  }
+  if (String.starts_with(path, "mock://events")) {
+    def emitted_events = new[];
+    def _add_create = Collections.push(emitted_events, __fswatch_event("create", "demo.txt"));
+    def _add_update = Collections.push(emitted_events, __fswatch_event("modify", "demo.txt"));
+    def response = __fswatch_result("mock-1", emitted_events);
+    return Result.ok(response);
+  }
+  if (String.starts_with(path, "mock://invalid")) {
+    return __fswatch_error("E_INVALID", "invalid watch target");
+  }
+  return __fswatch_error("E_INVALID", "unknown mock target");
+}
+
+fn watch(path, options) {
+  if (Collections.len(path) == 0) {
+    return __fswatch_error("E_INVALID", "path required");
+  }
+  if (String.starts_with(path, "mock://")) {
+    return __fswatch_mock(path, options);
+  }
+
+  def _unused_options = options;
+  return __fswatch_error("E_PERMISSION", "fswatch capability not enabled");
+}

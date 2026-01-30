@@ -9,7 +9,7 @@ def test_stdlib_fswatch_mock_events(run_tiny_source):
 
         def res = fswatch.watch("mock://events", Null);
         def rendered = match(res) {
-          case Ok { value: watch } => watch.handle + "::" + String.from_number(Collections.len(watch.events));
+          case Ok { value: watch } => watch.handle + "::" + JSON.stringify(Collections.len(watch.events));
           case Err { code: code, message: message } => code + "\n" + message;
         };
         print(rendered);

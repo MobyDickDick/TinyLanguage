@@ -66,6 +66,9 @@ Use the typing lint profile to enable static checks for annotated code paths:
 - **CLI example**: `python src/language_server_cli.py --lint-profile typing ...`
 - **Expected behavior**: annotated parameter, return, and assignment mismatches
   are reported early without requiring whole-program typing.
+- **Strict build gate**: pass `--typecheck` to `python src/tiny_language_cli.py`
+  or `python src/tiny_language_compiler_cli.py` to fail before execution or
+  compilation if typing diagnostics are found.
 
 (See `docs/typing_track_plan.md` for the implementation roadmap and the planned
 Phase 1 static checks.)

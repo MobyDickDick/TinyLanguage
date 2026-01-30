@@ -18,7 +18,13 @@ from tiny_language import (
     _format_error_for_source,
     compile_and_run,
     compile_to_llvm_ir,
+    Lexer,
+    Parser,
     Runtime,
+    lint_annotation_enforcement,
+    lint_assignment_types,
+    lint_call_validation,
+    lint_return_validation,
     run_with_native_backend,
     run_with_python_bytecode_backend,
     run_with_python_backend,
@@ -94,6 +100,21 @@ def _execute(
     if backend == "native-python-bytecode":
         return run_with_python_bytecode_backend(source), False
     raise SystemExit(f"Unknown backend: {backend}")
+
+
+def _run_typecheck(source: str, *, allow_math_tuples: bool, allow_math_formula: bool) -> None:
+    """Run annotation-aware typing checks and raise on the first failure."""
+    parser = Parser(
+        Lexer(source),
+        source,
+        allow_math_tuples=allow_math_tuples,
+        allow_math_formula=allow_math_formula,
+    )
+    stmts = parser.parse()
+    lint_assignment_types(stmts, source)
+    lint_call_validation(stmts, source)
+    lint_return_validation(stmts, source)
+    lint_annotation_enforcement(stmts, source)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -190,6 +211,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Print native backend diagnostics to stderr when using LLVM flags",
     )
+    parser.add_argument(
+        "--typecheck",
+        action="store_true",
+        help="Run static typing checks and fail before execution or compilation",
+    )
 
     args, remaining = parser.parse_known_args(argv)
     if args.experimental_math_tuples:
@@ -222,6 +248,17 @@ def main(argv: list[str] | None = None) -> int:
         args.backend = "native"
     elif args.native_python_bytecode:
         args.backend = "native-python-bytecode"
+
+    if args.typecheck:
+        try:
+            _run_typecheck(
+                source,
+                allow_math_tuples=args.experimental_math_tuples,
+                allow_math_formula=args.experimental_math_formula,
+            )
+        except TinyLangError as err:
+            _write_error(_format_error_for_source(source, err))
+            return 1
 
     if args.emit_llvm is not None:
         try:

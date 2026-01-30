@@ -15,6 +15,12 @@ from tiny_language import (
     compile_to_c_source,
     compile_to_llvm_bitcode_via_c,
     compile_to_llvm_ir_via_c,
+    Lexer,
+    Parser,
+    lint_annotation_enforcement,
+    lint_assignment_types,
+    lint_call_validation,
+    lint_return_validation,
 )
 
 
@@ -27,6 +33,11 @@ def _write_error(message: str) -> None:
 
 def _default_compiler() -> str:
     return os.environ.get("TINYLANG_C_COMPILER", "cc")
+
+
+def _experimental_flag_enabled(name: str) -> bool:
+    value = os.environ.get(name, "").strip().lower()
+    return value in {"1", "true", "yes", "on"}
 
 
 def _read_source(path: Path) -> str:
@@ -85,12 +96,29 @@ def main(argv: list[str] | None = None) -> int:
         default=_default_compiler(),
         help="C compiler to invoke (default: cc, env: TINYLANG_C_COMPILER)",
     )
+    parser.add_argument(
+        "--typecheck",
+        action="store_true",
+        help="Run static typing checks and fail before compilation",
+    )
 
     args = parser.parse_args(argv)
     source = _read_source(args.path)
     extra_args = ["-g", "-O0"] if args.debug else None
 
     try:
+        if args.typecheck:
+            parser_impl = Parser(
+                Lexer(source),
+                source,
+                allow_math_tuples=_experimental_flag_enabled("TINYLANG_EXPERIMENTAL_MATH_TUPLES"),
+                allow_math_formula=_experimental_flag_enabled("TINYLANG_EXPERIMENTAL_MATH_FORMULA"),
+            )
+            stmts = parser_impl.parse()
+            lint_assignment_types(stmts, source)
+            lint_call_validation(stmts, source)
+            lint_return_validation(stmts, source)
+            lint_annotation_enforcement(stmts, source)
         if args.emit_c is not None:
             c_source = compile_to_c_source(source)
             if args.emit_c == "-":

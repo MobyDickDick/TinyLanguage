@@ -16,15 +16,15 @@ fn __fswatch_mock(path, options) {
   def _unused_options = options;
 
   if (String.starts_with(path, "mock://empty")) {
-    def events = new[];
-    def response = __fswatch_result("mock-0", events);
+    def empty_events = new[];
+    def response = __fswatch_result("mock-0", empty_events);
     return Result.ok(response);
   }
   if (String.starts_with(path, "mock://events")) {
-    def events = new[];
-    def _add_create = Collections.push(events, __fswatch_event("create", "demo.txt"));
-    def _add_update = Collections.push(events, __fswatch_event("modify", "demo.txt"));
-    def response = __fswatch_result("mock-1", events);
+    def emitted_events = new[];
+    def _add_create = Collections.push(emitted_events, __fswatch_event("create", "demo.txt"));
+    def _add_update = Collections.push(emitted_events, __fswatch_event("modify", "demo.txt"));
+    def response = __fswatch_result("mock-1", emitted_events);
     return Result.ok(response);
   }
   if (String.starts_with(path, "mock://invalid")) {

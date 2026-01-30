@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from tests.detailtests.stdlib_helpers import stdlib_program
+
 
 def test_stdlib_time_now_and_sleep(run_tiny_source, monkeypatch):
     """Validate time helpers return monotonic values and ISO timestamps."""
@@ -9,23 +11,24 @@ def test_stdlib_time_now_and_sleep(run_tiny_source, monkeypatch):
 
     sleep_ms = 10
     out = run_tiny_source(
-        f"""
-        import stdlib.time;
+        stdlib_program(
+            "time",
+            f"""
+            def t1 = time.now_ms();
+            def m1 = time.monotonic_ms();
+            def elapsed = time.sleep_ms({sleep_ms});
+            def t2 = time.now_ms();
+            def m2 = time.monotonic_ms();
+            def iso = time.now_iso();
 
-        def t1 = time.now_ms();
-        def m1 = time.monotonic_ms();
-        def elapsed = time.sleep_ms({sleep_ms});
-        def t2 = time.now_ms();
-        def m2 = time.monotonic_ms();
-        def iso = time.now_iso();
-
-        print(t1);
-        print(t2);
-        print(m1);
-        print(m2);
-        print(elapsed);
-        print(iso);
-        """,
+            print(t1);
+            print(t2);
+            print(m1);
+            print(m2);
+            print(elapsed);
+            print(iso);
+            """,
+        ),
     )
 
     lines = out.strip().splitlines()

@@ -13,6 +13,10 @@ def test_stdlib_fswatch_mock_events(run_tiny_source):
           case Err { code: code, message: message } => code + "\n" + message;
         };
         print(rendered);
+        def _cleanup = match(res) {
+          case Ok { value: watch } => delete(watch.events);
+          case Err { code: code, message: message } => Null;
+        };
         """,
     )
 

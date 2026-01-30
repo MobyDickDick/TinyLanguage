@@ -18,7 +18,6 @@ fn __fswatch_mock(path, options) {
   if (String.starts_with(path, "mock://empty")) {
     def events = new[];
     def response = __fswatch_result("mock-0", events);
-    def _cleanup_events = delete(events);
     return Result.ok(response);
   }
   if (String.starts_with(path, "mock://events")) {
@@ -26,7 +25,6 @@ fn __fswatch_mock(path, options) {
     def _add_create = Collections.push(events, __fswatch_event("create", "demo.txt"));
     def _add_update = Collections.push(events, __fswatch_event("modify", "demo.txt"));
     def response = __fswatch_result("mock-1", events);
-    def _cleanup_events = delete(events);
     return Result.ok(response);
   }
   if (String.starts_with(path, "mock://invalid")) {

@@ -163,7 +163,7 @@ plan so implementation can proceed in small, testable steps.
 - [x] Add a shared stdlib test harness for module-level unit tests to reduce
   duplication across `tests/detailtests`.
   - Deliverables: shared helper module + docstring on standard fixture layout.
-- [ ] Add parity tests that assert module wrappers match runtime namespaces.
+- [x] Add parity tests that assert module wrappers match runtime namespaces.
   - Deliverables: cross-module parity test helpers + smoke coverage.
 - [ ] Add documentation examples for each module and exercise them via tests.
   - Deliverables: example snippets in docs + tests that execute them.

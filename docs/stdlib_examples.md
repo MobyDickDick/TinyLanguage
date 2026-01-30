@@ -311,6 +311,7 @@ try {
 } catch (err) {
   def _ignored = err;
   print("not implemented");
+  def _cleanup_error = delete(err);
 }
 ```
 

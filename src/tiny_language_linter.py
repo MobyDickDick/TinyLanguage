@@ -1875,7 +1875,7 @@ def lint_bare_call_results(
                     "call with return value must be bound; bare call statements are not allowed "
                     f"(offending call: {st.name}())"
                 )
-                raise _lint_error(source, st, msg, code="E001", hint=hint)
+                raise _lint_error(source, st.pos, msg, code="E001", hint=hint)
             if isinstance(st, (Let, Assign)) and _binding_discarded(st.name) and _call_returns_value(st.expr):
                 hint = "Bind the return value, e.g. `def result = call();`, or add a return that includes the mutated data."
                 msg = (

@@ -21,6 +21,10 @@ def spec = { flags: flags, positionals: positionals };
 def parsed = argparse.parse(args, spec);
 print(Map.get(parsed, "count"));
 print(Map.get(parsed, "input"));
+def _cleanup_parsed = delete(parsed);
+def _cleanup_args = delete(args);
+def _cleanup_flags = delete(flags);
+def _cleanup_positionals = delete(positionals);
 ```
 
 ```text
@@ -37,6 +41,7 @@ def _unused = collections;
 def nums = new[1, 2, 3];
 print(Collections.len(nums));
 print(Collections.contains(nums, 2));
+def _cleanup_nums = delete(nums);
 ```
 
 ```text
@@ -53,6 +58,8 @@ def rows = csv.parse_with_header("name,score\nAda,10");
 def first = heap_get(rows, 0);
 print(Map.get(first, "name", ""));
 print(Map.get(first, "score", ""));
+def _cleanup_first = delete(first);
+def _cleanup_rows = delete(rows);
 ```
 
 ```text
@@ -85,6 +92,10 @@ def rendered = match(res) {
 };
 
 print(rendered);
+def _cleanup = match(res) {
+  case Ok { value: watch } => delete(watch.events);
+  case Err { code: code, message: message } => Null;
+};
 ```
 
 ```text
@@ -215,6 +226,7 @@ def rendered = match(res) {
 };
 
 print(rendered);
+def _cleanup_args = delete(args);
 ```
 
 ```text
@@ -226,8 +238,10 @@ print(rendered);
 ```tiny
 import stdlib.random;
 
-def choice = random.choice(new["only"]);
+def choices = new["only"];
+def choice = random.choice(choices);
 print(choice);
+def _cleanup_choices = delete(choices);
 ```
 
 ```text
@@ -253,6 +267,7 @@ import stdlib.statistics;
 
 def values = new[2, 4, 6];
 print(statistics.mean(values));
+def _cleanup_values = delete(values);
 ```
 
 ```text

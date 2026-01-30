@@ -9,7 +9,9 @@ fn __yaml_allowlist() {
 fn __raise_not_implemented() {
   def allow = __yaml_allowlist();
   def stmt = "raise NotImplementedError('stdlib.yaml is not implemented yet')";
-  def raised = Python.call("builtins", "exec", new[stmt], { allow: allow });
+  def args = new[stmt];
+  def raised = Python.call("builtins", "exec", args, { allow: allow });
+  def _cleanup_args = delete(args);
   def _cleanup_allow = delete(allow);
   return raised;
 }

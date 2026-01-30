@@ -2,12 +2,15 @@
 
 import pytest
 
+from tests.detailtests.stdlib_helpers import run_stdlib_module, stdlib_program
+
 
 def test_stdlib_csv_parse_defaults(run_tiny_source):
     """Parse CSV text into rows using default delimiter/quote settings."""
-    out = run_tiny_source(
+    out = run_stdlib_module(
+        run_tiny_source,
+        "csv",
         """
-        import stdlib.csv;
         def rows = csv.parse("name,score\nAda,10\nLinus,12");
         print(Collections.len(rows));
         def header = heap_get(rows, 0);
@@ -28,9 +31,10 @@ def test_stdlib_csv_parse_defaults(run_tiny_source):
 
 def test_stdlib_csv_parse_with_header(run_tiny_source):
     """Parse CSV text into dictionaries when a header row is present."""
-    out = run_tiny_source(
+    out = run_stdlib_module(
+        run_tiny_source,
+        "csv",
         """
-        import stdlib.csv;
         def text = "name,score,team\nAda,10\nLinus,12,Kernel,Extra";
         def rows = csv.parse_with_header(text);
         print(Collections.len(rows));
@@ -50,9 +54,10 @@ def test_stdlib_csv_parse_with_header(run_tiny_source):
 
 def test_stdlib_csv_stringify_with_headers(run_tiny_source):
     """Serialize CSV data deterministically with explicit headers."""
-    out = run_tiny_source(
+    out = run_stdlib_module(
+        run_tiny_source,
+        "csv",
         """
-        import stdlib.csv;
         def headers = new["name", "note"];
         def row1 = Map.new();
         Map.set(row1, "name", "Ada");
@@ -76,16 +81,20 @@ def test_stdlib_csv_invalid_delimiter_raises(run_tiny_source):
     """Invalid delimiter or quote inputs should raise a ValueError."""
     with pytest.raises(Exception, match=r"delimiter must be a single character"):
         run_tiny_source(
-            """
-            import stdlib.csv;
-            def _rows = csv.parse_with_options("a,b", "||", "\\\"", false);
-            """,
+            stdlib_program(
+                "csv",
+                """
+                def _rows = csv.parse_with_options("a,b", "||", "\\\"", false);
+                """,
+            ),
         )
 
     with pytest.raises(Exception, match=r"quote must be a single character"):
         run_tiny_source(
-            """
-            import stdlib.csv;
-            def _rows = csv.parse_with_options("a,b", ",", "''", false);
-            """,
+            stdlib_program(
+                "csv",
+                """
+                def _rows = csv.parse_with_options("a,b", ",", "''", false);
+                """,
+            ),
         )

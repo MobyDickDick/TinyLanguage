@@ -2,12 +2,15 @@
 
 import pytest
 
+from tests.detailtests.stdlib_helpers import run_stdlib_module, stdlib_program
+
 
 def test_stdlib_json_parse_and_stringify(run_tiny_source):
     """Ensure stdlib json wraps JSON.parse/stringify helpers."""
-    out = run_tiny_source(
+    out = run_stdlib_module(
+        run_tiny_source,
+        "json",
         """
-        import stdlib.json;
         def data = json.parse("{\\"a\\": 1, \\"b\\": [true, null]}");
         print(Map.get(data, "a", 0));
         def values = Map.get(data, "b", Null);
@@ -23,9 +26,10 @@ def test_stdlib_json_parse_and_stringify(run_tiny_source):
 
 def test_stdlib_json_validate(run_tiny_source):
     """Validate JSON input without raising errors."""
-    out = run_tiny_source(
+    out = run_stdlib_module(
+        run_tiny_source,
+        "json",
         """
-        import stdlib.json;
         print(json.validate("{\\"ok\\": true}"));
         print(json.validate("{broken}"));
         """,
@@ -38,8 +42,10 @@ def test_stdlib_json_parse_invalid_raises(run_tiny_source):
     """Invalid JSON should raise via the wrapper."""
     with pytest.raises(Exception, match=r"invalid json"):
         run_tiny_source(
-            """
-            import stdlib.json;
-            def _value = json.parse("{broken}");
-            """,
+            stdlib_program(
+                "json",
+                """
+                def _value = json.parse("{broken}");
+                """,
+            ),
         )

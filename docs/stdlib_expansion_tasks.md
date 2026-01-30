@@ -160,7 +160,7 @@ plan so implementation can proceed in small, testable steps.
 
 ## Cross-cutting tasks (all phases)
 
-- [ ] Add a shared stdlib test harness for module-level unit tests to reduce
+- [x] Add a shared stdlib test harness for module-level unit tests to reduce
   duplication across `tests/detailtests`.
   - Deliverables: shared helper module + docstring on standard fixture layout.
 - [ ] Add parity tests that assert module wrappers match runtime namespaces.

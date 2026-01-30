@@ -1,0 +1,4 @@
+pytest -q
+
+Result:
+634 passed, 1 skipped, 2 xfailed in 165.57s (0:02:45)

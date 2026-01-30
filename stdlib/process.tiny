@@ -1,0 +1,42 @@
+// TinyLanguage stdlib: process module (mock-focused stub)
+
+fn __process_error(code, message) {
+  return Result.err(message, code);
+}
+
+fn __process_result(exit_code, stdout, stderr) {
+  return { exit_code: exit_code, stdout: stdout, stderr: stderr };
+}
+
+fn __process_mock(command, args, options) {
+  def _unused_args = args;
+  def _unused_options = options;
+
+  if (String.starts_with(command, "mock://exit/0")) {
+    return Result.ok(__process_result(0, "", ""));
+  }
+  if (String.starts_with(command, "mock://exit/1")) {
+    return Result.ok(__process_result(1, "", ""));
+  }
+  if (String.starts_with(command, "mock://invalid")) {
+    return __process_error("E_INVALID", "invalid command");
+  }
+  return __process_error("E_INVALID", "unknown mock command");
+}
+
+fn run(command, args, options) {
+  if (Collections.len(command) == 0) {
+    return __process_error("E_INVALID", "command required");
+  }
+  if (String.starts_with(command, "mock://")) {
+    return __process_mock(command, args, options);
+  }
+
+  def _unused_args = args;
+  def _unused_options = options;
+  return __process_error("E_PERMISSION", "process capability not enabled");
+}
+
+fn spawn(command, args, options) {
+  return run(command, args, options);
+}

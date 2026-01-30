@@ -132,7 +132,7 @@ plan so implementation can proceed in small, testable steps.
 
 ## Phase 3 tasks (platform integration)
 
-- [ ] Draft capability/permission model for network/process/file-watching APIs.
+- [x] Draft capability/permission model for network/process/file-watching APIs.
   - Deliverables: capability model section in `docs/stdlib_expansion_plan.md`.
 - [ ] Define `stdlib.http` API shape and error model; add mocked tests for
   timeouts and invalid inputs.

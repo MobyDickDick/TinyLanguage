@@ -169,6 +169,44 @@ These modules require clear portability rules or optional capability flags.
 - **`stdlib.process`**: Process spawning, environment isolation, and exit-code
   management.
 
+### Capability/permission model (draft)
+
+Phase 3 modules must be gated behind explicit runtime capabilities so that
+programs are deterministic, auditable, and safe by default. The intent is to
+keep the default runtime in a "deny" posture and require opt-in to external
+side effects. The capabilities below describe the minimal flags the runtime
+should expose, along with the expected failure mode when a capability is
+missing.
+
+**Design goals**
+
+- Default deny: network/process/fswatch APIs raise a permission error unless the
+  caller enables the relevant capability.
+- Granular scope: capabilities can be enabled broadly or scoped to specific
+  hosts, ports, paths, or executable names.
+- Consistent errors: failures should return a deterministic permission error
+  with a stable code (e.g., `E_PERMISSION`) and human-friendly message.
+- Test-friendly: capability checks must be mockable so tests can assert both
+  allow and deny paths deterministically.
+
+**Capability surface**
+
+| Capability | Scope | Applies to | Notes |
+| --- | --- | --- | --- |
+| `net` | `allow_all` or allowlist of `host[:port]` patterns | `stdlib.http` | DNS/network access; deny when host/port is not allowlisted. |
+| `process` | `allow_all` or allowlist of executable names/paths | `stdlib.process` | Spawning and signaling child processes; deny when target is not allowlisted. |
+| `fswatch` | allowlist of directories/globs | `stdlib.fswatch` | File watching for build tooling; deny when target path is not allowlisted. |
+
+**Runtime behavior**
+
+- Capability checks happen before any external call (DNS, socket connect,
+  spawn, or filesystem watch registration).
+- When denied, the API returns a deterministic error payload without partial
+  side effects (no network activity, no process spawned, no watcher started).
+- The runtime should surface capability configuration in CLI flags and API
+  entry points (for example, `--cap-net=example.com:443`), but the exact flag
+  syntax can evolve with the CLI design.
+
 **Expected tests**
 
 - Capability-gated tests that skip when system features are unavailable.

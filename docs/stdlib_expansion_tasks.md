@@ -167,5 +167,5 @@ plan so implementation can proceed in small, testable steps.
   - Deliverables: cross-module parity test helpers + smoke coverage.
 - [x] Add documentation examples for each module and exercise them via tests.
   - Deliverables: example snippets in docs + tests that execute them.
-- [ ] Update backend smoke tests to include new stdlib modules as they land.
+- [x] Update backend smoke tests to include new stdlib modules as they land.
   - Deliverables: smoke-test matrix update in `tests/` and documentation notes.

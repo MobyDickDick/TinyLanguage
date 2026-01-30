@@ -55,15 +55,12 @@ fn extension(path) {
   if (!String.contains(base, ".")) { return ""; }
   def parts = String.split(base, ".");
   def count = Collections.len(parts);
-  if (count <= 1) {
-    def _cleanup_parts = delete(parts);
-    return "";
+  def value = "";
+  if (count > 1) {
+    if (!(String.starts_with(base, ".") && count == 2)) {
+      value = heap_get(parts, count - 1);
+    }
   }
-  if (String.starts_with(base, ".") && count == 2) {
-    def _cleanup_parts = delete(parts);
-    return "";
-  }
-  def value = heap_get(parts, count - 1);
   def _cleanup_parts = delete(parts);
   return value;
 }

@@ -406,6 +406,8 @@ class Runtime:
         self._last_emitted_output_idx: int = 0
         self._task_scopes: List[TaskScope] = []
         self.task_scope_timeout_ms: float = float(os.environ.get("TINYLANG_TASK_SCOPE_TIMEOUT_MS", "50"))
+        heap_debug_flag = os.environ.get("TINYLANG_HEAP_DEBUG", "").strip().lower()
+        self.heap_debug: bool = heap_debug_flag in {"1", "true", "yes", "on"}
         if self.trace_log_path:
             self._setup_trace_logger()
 
@@ -846,6 +848,38 @@ class Runtime:
             return str(int(p))
         return f"{p!r} ({type_name})"
 
+    def _heap_debug_suffix(
+        self,
+        *,
+        pointer: Optional[Any] = None,
+        index: Optional[Any] = None,
+        size: Optional[int] = None,
+    ) -> str:
+        if not self.heap_debug:
+            return ""
+        parts: List[str] = []
+        if pointer is not None:
+            parts.append(f"pointer={self._pointer_label(pointer)}")
+            try:
+                tag = self.ptr_tags.get(int(pointer))
+            except Exception:
+                tag = None
+            if tag:
+                parts.append(f"tag={tag}")
+        if index is not None:
+            parts.append(f"index={index!r}")
+        if size is not None:
+            parts.append(f"size={size}")
+        parts.append(f"module={self.current_module_namespace or '<main>'}")
+        with self._lock:
+            live = sorted(self.heap.keys())
+            freed = sorted(self.freed_ptrs)
+        if live:
+            parts.append(f"live={live}")
+        if freed:
+            parts.append(f"freed={freed}")
+        return f" [debug: {', '.join(parts)}]"
+
     def _resolve_ptr(self, p: Any, pos: Optional[Any], *, op: str) -> Tuple[Optional[int], Optional[List[Any]]]:
         """Validate and resolve a heap pointer for the requested operation.
 
@@ -856,18 +890,25 @@ class Runtime:
         try:
             ip = int(p)
         except Exception:
-            message = f"heap {op} error: pointer {self._pointer_label(p)} is not numeric"
+            message = (
+                f"heap {op} error: pointer {self._pointer_label(p)} is not numeric"
+                f"{self._heap_debug_suffix(pointer=p)}"
+            )
             self._record_error(message, pos)
             return None, None
 
         if isinstance(p, float) and not p.is_integer():
-            message = f"heap {op} error: pointer {self._pointer_label(p)} is not an integer pointer"
+            message = (
+                f"heap {op} error: pointer {self._pointer_label(p)} is not an integer pointer"
+                f"{self._heap_debug_suffix(pointer=p)}"
+            )
             self._record_error(message, pos)
             return None, None
 
         if ip < 1:
             message = (
                 f"heap {op} error: pointer {ip} is invalid (must refer to a live positive allocation)"
+                f"{self._heap_debug_suffix(pointer=ip)}"
             )
             self._record_error(message, pos)
             return None, None
@@ -876,7 +917,10 @@ class Runtime:
             if ip in self.freed_ptrs:
                 size_part = self.freed_allocations.get(ip)
                 size_hint = f" (size {size_part})" if size_part is not None else ""
-                message = f"heap {op} error: pointer {ip} was already freed{size_hint}"
+                message = (
+                    f"heap {op} error: pointer {ip} was already freed{size_hint}"
+                    f"{self._heap_debug_suffix(pointer=ip, size=size_part)}"
+                )
                 self._record_error(message, pos)
                 return None, None
             try:
@@ -890,7 +934,10 @@ class Runtime:
                 if freed:
                     details.append(f"freed: {freed}")
                 context = f" ({'; '.join(details)})" if details else ""
-                message = f"heap {op} error: unknown pointer {ip}{context}"
+                message = (
+                    f"heap {op} error: unknown pointer {ip}{context}"
+                    f"{self._heap_debug_suffix(pointer=ip)}"
+                )
                 self._record_error(message, pos)
                 return None, None
             return ip, cells
@@ -901,12 +948,15 @@ class Runtime:
         try:
             idx = int(i)
         except Exception:
-            message = f"heap access error: index {i!r} is not numeric"
+            message = f"heap access error: index {i!r} is not numeric{self._heap_debug_suffix(index=i)}"
             self._record_error(message, pos)
             return None
 
         if isinstance(i, float) and not i.is_integer():
-            message = f"heap access error: index {self._pointer_label(i)} is not an integer index"
+            message = (
+                "heap access error: index "
+                f"{self._pointer_label(i)} is not an integer index{self._heap_debug_suffix(index=i)}"
+            )
             self._record_error(message, pos)
             return None
 
@@ -940,7 +990,9 @@ class Runtime:
         if idx < 0 or idx >= size:
             range_hint = "empty allocation" if size == 0 else f"valid indices: 0..{size - 1}"
             self._record_error(
-                f"heap access error: index {idx} out of range for pointer {ip} (size {size}; {range_hint})",
+                "heap access error: index "
+                f"{idx} out of range for pointer {ip} (size {size}; {range_hint})"
+                f"{self._heap_debug_suffix(pointer=ip, index=idx, size=size)}",
                 pos,
             )
             return None
@@ -959,7 +1011,11 @@ class Runtime:
         size = len(cells)
         if idx < 0 or idx >= size:
             range_hint = "empty allocation" if size == 0 else f"valid indices: 0..{size - 1}"
-            message = f"heap access error: index {idx} out of range for pointer {ip} (size {size}; {range_hint})"
+            message = (
+                "heap access error: index "
+                f"{idx} out of range for pointer {ip} (size {size}; {range_hint})"
+                f"{self._heap_debug_suffix(pointer=ip, index=idx, size=size)}"
+            )
             self._record_error(message, pos)
             return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": message}}
 
@@ -969,7 +1025,10 @@ class Runtime:
             expected = self.heap_cell_types.get(ip, {}).get(idx)
             actual = self._value_type_name(v)
             if expected is not None and expected != actual:
-                message = f"heap type mismatch at {ip}[{idx}]: expected {expected} but got {actual}"
+                message = (
+                    f"heap type mismatch at {ip}[{idx}]: expected {expected} but got {actual}"
+                    f"{self._heap_debug_suffix(pointer=ip, index=idx)}"
+                )
                 self._record_error(message, pos, code="E014")
                 return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": message}}
             self.heap[ip][idx] = v

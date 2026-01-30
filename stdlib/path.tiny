@@ -56,12 +56,10 @@ fn extension(path) {
   def parts = String.split(base, ".");
   def count = Collections.len(parts);
   def value = "";
-  if (count <= 1) {
-    value = "";
-  } else if (String.starts_with(base, ".") && count == 2) {
-    value = "";
-  } else {
-    value = heap_get(parts, count - 1);
+  if (count > 1) {
+    if (!(String.starts_with(base, ".") && count == 2)) {
+      value = heap_get(parts, count - 1);
+    }
   }
   def _cleanup_parts = delete(parts);
   return value;

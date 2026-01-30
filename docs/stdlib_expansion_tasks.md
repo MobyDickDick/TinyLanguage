@@ -152,7 +152,7 @@ plan so implementation can proceed in small, testable steps.
     - `E_TIMEOUT`: request exceeded timeout.
   - Mocking convention: URLs starting with `mock://` return deterministic
     responses for tests (`mock://timeout`, `mock://invalid`, `mock://ok`).
-- [ ] Define `stdlib.process` API for spawning and exit codes; add capability-
+- [x] Define `stdlib.process` API for spawning and exit codes; add capability-
   gated tests for error paths.
   - Deliverables: `stdlib/process.tiny` stub + capability-gated tests.
 - [ ] Define `stdlib.fswatch` behavior and add capability-gated tests.

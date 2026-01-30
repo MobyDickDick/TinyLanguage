@@ -170,7 +170,7 @@ up without requiring the entire typing track to be complete.
   and CLI outputs.
 - [x] Expose a `typing` lint profile (e.g., `python src/language_server_cli.py --lint-profile typing ...`) that
   runs the new static checks.
-- [ ] Add a strict flag (e.g., `--typecheck`) that fails builds on typing
+- [x] Add a strict flag (e.g., `--typecheck`) that fails builds on typing
   errors.
 - [x] Document configuration + migration guidance for gradual adoption. (See
   `docs/gradual_typing.md`.)

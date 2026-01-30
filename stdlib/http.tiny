@@ -1,0 +1,52 @@
+// TinyLanguage stdlib: http module (mock-focused stub)
+
+fn __http_error(code, message) {
+  return Result.err(message, code);
+}
+
+fn __http_response(status, body, headers, url) {
+  return { status: status, body: body, headers: headers, url: url };
+}
+
+fn __http_mock_response(method, url, options) {
+  def _unused_method = method;
+  def _unused_options = options;
+
+  if (String.starts_with(url, "mock://timeout")) {
+    return __http_error("E_TIMEOUT", "request timed out");
+  }
+  if (String.starts_with(url, "mock://invalid")) {
+    return __http_error("E_INVALID", "invalid request");
+  }
+  if (String.starts_with(url, "mock://ok")) {
+    def headers = new[];
+    def response = __http_response(200, "ok", headers, url);
+    def _cleanup_headers = delete(headers);
+    return Result.ok(response);
+  }
+  return __http_error("E_INVALID", "unknown mock endpoint");
+}
+
+fn request(method, url, options) {
+  if (Collections.len(method) == 0) {
+    return __http_error("E_INVALID", "method required");
+  }
+  if (Collections.len(url) == 0) {
+    return __http_error("E_INVALID", "url required");
+  }
+  if (String.starts_with(url, "mock://")) {
+    return __http_mock_response(method, url, options);
+  }
+
+  def _unused_options = options;
+  return __http_error("E_PERMISSION", "network capability not enabled");
+}
+
+fn get(url, options) {
+  return request("GET", url, options);
+}
+
+fn post(url, body, options) {
+  def _unused_body = body;
+  return request("POST", url, options);
+}

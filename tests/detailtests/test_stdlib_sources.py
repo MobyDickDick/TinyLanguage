@@ -11,16 +11,26 @@ from tiny_language import Lexer, Parser
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 STDLIB_MODULES = [
+    PROJECT_ROOT / "stdlib" / "argparse.tiny",
     PROJECT_ROOT / "stdlib" / "collections.tiny",
+    PROJECT_ROOT / "stdlib" / "csv.tiny",
+    PROJECT_ROOT / "stdlib" / "datetime.tiny",
+    PROJECT_ROOT / "stdlib" / "fswatch.tiny",
+    PROJECT_ROOT / "stdlib" / "http.tiny",
     PROJECT_ROOT / "stdlib" / "io.tiny",
+    PROJECT_ROOT / "stdlib" / "logging.tiny",
     PROJECT_ROOT / "stdlib" / "math.tiny",
     PROJECT_ROOT / "stdlib" / "json.tiny",
     PROJECT_ROOT / "stdlib" / "os.tiny",
+    PROJECT_ROOT / "stdlib" / "path.tiny",
     PROJECT_ROOT / "stdlib" / "pathlib.tiny",
+    PROJECT_ROOT / "stdlib" / "process.tiny",
     PROJECT_ROOT / "stdlib" / "random.tiny",
+    PROJECT_ROOT / "stdlib" / "regex.tiny",
     PROJECT_ROOT / "stdlib" / "statistics.tiny",
     PROJECT_ROOT / "stdlib" / "string.tiny",
     PROJECT_ROOT / "stdlib" / "time.tiny",
+    PROJECT_ROOT / "stdlib" / "yaml.tiny",
 ]
 
 

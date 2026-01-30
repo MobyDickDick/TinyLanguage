@@ -165,7 +165,7 @@ plan so implementation can proceed in small, testable steps.
   - Deliverables: shared helper module + docstring on standard fixture layout.
 - [x] Add parity tests that assert module wrappers match runtime namespaces.
   - Deliverables: cross-module parity test helpers + smoke coverage.
-- [ ] Add documentation examples for each module and exercise them via tests.
+- [x] Add documentation examples for each module and exercise them via tests.
   - Deliverables: example snippets in docs + tests that execute them.
 - [ ] Update backend smoke tests to include new stdlib modules as they land.
   - Deliverables: smoke-test matrix update in `tests/` and documentation notes.

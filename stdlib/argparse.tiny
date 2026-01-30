@@ -46,7 +46,7 @@ fn __flag_label(flag) {
   return name;
 }
 
-fn __coerce_value(value, kind, label) {
+fn __coerce_value(value, kind, label) -> any {
   if (kind == Null || kind == "string") { return value; }
   if (kind == "bool") {
     if (value == true || value == false) { return value; }

@@ -155,7 +155,7 @@ plan so implementation can proceed in small, testable steps.
 - [x] Define `stdlib.process` API for spawning and exit codes; add capability-
   gated tests for error paths.
   - Deliverables: `stdlib/process.tiny` stub + capability-gated tests.
-- [ ] Define `stdlib.fswatch` behavior and add capability-gated tests.
+- [x] Define `stdlib.fswatch` behavior and add capability-gated tests.
   - Deliverables: `stdlib/fswatch.tiny` stub + capability-gated tests.
 
 ## Cross-cutting tasks (all phases)

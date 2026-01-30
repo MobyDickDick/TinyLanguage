@@ -198,6 +198,32 @@ deterministic.
 Tests should use mock URLs (`mock://timeout`, `mock://invalid`, `mock://ok`) to
 avoid real network calls while still exercising timeout/error handling.
 
+### `stdlib.fswatch` API draft
+
+The file-watcher API returns `Result` values so capability errors are explicit.
+
+| Helper | Signature | Behavior |
+| --- | --- | --- |
+| `watch` | `watch(path: string, options: struct?) -> Result` | Register a watcher for `path` and return `Result.Ok({ handle, events })` or `Result.Err(error)`. |
+
+**Response shape**
+
+`{ handle: string, events: [struct] }` where each event has `{ kind, path }`.
+
+**Error model**
+
+`Result.Err` wraps errors with `{ code, message, hint, stack }`. Codes used by
+`stdlib.fswatch` include:
+
+- `E_PERMISSION`: missing `fswatch` capability for the target path.
+- `E_INVALID`: missing path or unsupported watch options.
+
+**Testing/mocking**
+
+Tests should use mock paths (`mock://events`, `mock://empty`, `mock://invalid`)
+to avoid filesystem dependencies while still exercising success and error
+handling.
+
 ### Capability/permission model (draft)
 
 Phase 3 modules must be gated behind explicit runtime capabilities so that

@@ -134,9 +134,24 @@ plan so implementation can proceed in small, testable steps.
 
 - [x] Draft capability/permission model for network/process/file-watching APIs.
   - Deliverables: capability model section in `docs/stdlib_expansion_plan.md`.
-- [ ] Define `stdlib.http` API shape and error model; add mocked tests for
+- [x] Define `stdlib.http` API shape and error model; add mocked tests for
   timeouts and invalid inputs.
   - Deliverables: `stdlib/http.tiny` stub + mocked tests with capability gates.
+  - API table (draft for `stdlib/http.tiny`):
+
+    | Helper | Signature | Behavior | Notes |
+    | --- | --- | --- | --- |
+    | `request` | `request(method: string, url: string, options: struct?) -> Result` | Perform an HTTP request and return `Result.Ok(response)` or `Result.Err(error)`. | Requires `net` capability for real requests. |
+    | `get` | `get(url: string, options: struct?) -> Result` | Convenience wrapper for `request("GET", ...)`. | Same error behavior as `request`. |
+    | `post` | `post(url: string, body: string, options: struct?) -> Result` | Convenience wrapper for `request("POST", ...)`. | Body handling defined in options. |
+
+  - Response shape: `{ status: number, body: string, headers: [struct], url: string }`.
+  - Error model (via `Result.Err`): `{ code: string, message: string, hint: string?, stack: [string] }`.
+    - `E_PERMISSION`: capability denied for non-mocked URLs.
+    - `E_INVALID`: missing method/url, invalid timeout, or unsupported option shape.
+    - `E_TIMEOUT`: request exceeded timeout.
+  - Mocking convention: URLs starting with `mock://` return deterministic
+    responses for tests (`mock://timeout`, `mock://invalid`, `mock://ok`).
 - [ ] Define `stdlib.process` API for spawning and exit codes; add capability-
   gated tests for error paths.
   - Deliverables: `stdlib/process.tiny` stub + capability-gated tests.

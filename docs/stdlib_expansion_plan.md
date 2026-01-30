@@ -169,6 +169,35 @@ These modules require clear portability rules or optional capability flags.
 - **`stdlib.process`**: Process spawning, environment isolation, and exit-code
   management.
 
+### `stdlib.http` API draft
+
+The HTTP client returns `Result` values to keep errors explicit and
+deterministic.
+
+| Helper | Signature | Behavior |
+| --- | --- | --- |
+| `request` | `request(method: string, url: string, options: struct?) -> Result` | Perform a request and return `Result.Ok(response)` or `Result.Err(error)`. |
+| `get` | `get(url: string, options: struct?) -> Result` | Convenience wrapper for `request("GET", ...)`. |
+| `post` | `post(url: string, body: string, options: struct?) -> Result` | Convenience wrapper for `request("POST", ...)`. |
+
+**Response shape**
+
+`{ status: number, body: string, headers: [struct], url: string }`.
+
+**Error model**
+
+`Result.Err` wraps errors with `{ code, message, hint, stack }`. Codes used by
+`stdlib.http` include:
+
+- `E_PERMISSION`: missing `net` capability.
+- `E_INVALID`: invalid URL/method/options.
+- `E_TIMEOUT`: timeout exceeded.
+
+**Testing/mocking**
+
+Tests should use mock URLs (`mock://timeout`, `mock://invalid`, `mock://ok`) to
+avoid real network calls while still exercising timeout/error handling.
+
 ### Capability/permission model (draft)
 
 Phase 3 modules must be gated behind explicit runtime capabilities so that

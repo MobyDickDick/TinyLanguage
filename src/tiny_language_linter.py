@@ -1138,6 +1138,70 @@ def _signature_has_annotations(signature: _FunctionSignature) -> bool:
     return bool(signature.return_type or any(param.type for param in signature.params))
 
 
+def _implicit_any_warning(
+    *,
+    kind: str,
+    name: str,
+    params: List[Param],
+    return_type: Optional[str],
+    source: Optional[str],
+    node: Any,
+) -> Optional[TinyLangError]:
+    missing_params = [param.name for param in params if not param.type]
+    missing_return = return_type is None
+    if not missing_params and not missing_return:
+        return None
+    details = []
+    if missing_params:
+        details.append(f"unannotated parameter(s): {', '.join(missing_params)}")
+    if missing_return:
+        details.append("missing return type annotation")
+    message = f"Implicit `any` in typed module ({kind} {name}): " + "; ".join(details) + "."
+    hint = "Add explicit type annotations or use `any` to document dynamic intent."
+    return _lint_error(source, node, message, code="W010", hint=hint)
+
+
+def lint_implicit_any_usage(stmts: List[IR], source: Optional[str] = None) -> List[TinyLangError]:
+    if not _module_has_annotations(stmts):
+        return []
+    warnings: List[TinyLangError] = []
+
+    def visit(nodes: List[IR], prefix: str = "") -> None:
+        for st in nodes:
+            if isinstance(st, Fn):
+                qualified = _qualify_name(st.name, prefix)
+                warning = _implicit_any_warning(
+                    kind="function",
+                    name=qualified,
+                    params=st.params,
+                    return_type=st.return_type,
+                    source=source,
+                    node=st,
+                )
+                if warning is not None:
+                    warnings.append(warning)
+            elif isinstance(st, ClassDef):
+                class_name = _qualify_name(st.name, prefix)
+                for method in st.methods:
+                    method_name = f"{class_name}.{method.name}"
+                    warning = _implicit_any_warning(
+                        kind="method",
+                        name=method_name,
+                        params=method.params,
+                        return_type=method.return_type,
+                        source=source,
+                        node=method,
+                    )
+                    if warning is not None:
+                        warnings.append(warning)
+            elif isinstance(st, Namespace):
+                nested_prefix = _qualify_name(st.name, prefix)
+                visit(st.body, prefix=nested_prefix)
+
+    visit(stmts)
+    return warnings
+
+
 def _format_summary_params(params: List[Param]) -> str:
     rendered = []
     for param in params:

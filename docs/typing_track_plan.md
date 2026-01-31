@@ -229,7 +229,7 @@ up without requiring the entire typing track to be complete.
 - [x] Decide whether runtime `tag(...)` should act as a static type assertion.
 - [x] Decide how external module imports are typed (stubs vs. inferred
   summaries).
-- [ ] Decide how strongly to warn about implicit `any` usage in typed modules.
+- [x] Decide how strongly to warn about implicit `any` usage in typed modules.
 
 **Decision (static `tag(...)` assertions):** Treat `tag(value, "Type")` as a
 static assertion when the typing lint profile is enabled. The linter should
@@ -245,3 +245,9 @@ stub manifest for non-Tiny dependencies). If no stub or summary is available,
 imported symbols are treated as `any`, and the typing lint profile should emit a
 single warning per module noting the missing stub so teams can add coverage over
 time without blocking builds.
+
+**Decision (implicit `any` usage warnings):** In modules that opt into typing
+(any annotation present), the typing lint profile should emit warning diagnostics
+for functions or methods that leave parameter or return types unannotated. The
+warning is non-blocking by default, and teams can silence it by adding explicit
+types or annotating with `any` where dynamic behavior is intentional.

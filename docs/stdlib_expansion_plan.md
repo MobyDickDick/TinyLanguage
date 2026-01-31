@@ -25,6 +25,29 @@ Modules are ranked using the following criteria:
 - **Cross-backend support** (interpreter + C/LLVM backends should be able to
   share behavior and diagnostics).
 
+## Core module priority set (parity with Python)
+
+The following modules are treated as the **first-class compatibility targets**
+because they are common dependencies in small scripts and tooling workflows.
+Each module must ship with parity tests that compare TinyLanguage behavior to
+Python for the supported subset.
+
+| Module | Priority reason | Parity-test focus |
+| --- | --- | --- |
+| `stdlib.json` | Foundational data interchange across CLI + network tooling. | `parse`, `stringify`, and `validate` outputs match Python `json` for supported inputs (numbers, strings, lists, maps, null/bool). |
+| `stdlib.pathlib` | Cross-platform path handling needed by build tooling. | `Path.joinpath`, `name`, `suffix`, `parent`, and normalization behavior compared to `pathlib.PurePath`. |
+| `stdlib.os` | Environment + directory access required by tooling and package managers. | `getenv`, `setenv`, `cwd`, `listdir`, and platform identifiers compared against `os` behavior. |
+| FS primitives (`File`/`stdlib.io`) | Base file reads/writes for CLI and stdlib modules. | File open/read/write/close semantics and error cases compared to Python `open`/`io`. |
+
+**Parity-test expectations**
+
+- Each module ships a deterministic, backend-agnostic test suite in
+  `tests/detailtests` that exercises success + failure paths.
+- Tests compare behavior against Python for the supported subset (e.g.,
+  `json` round-trips, `pathlib` normalization rules, `os` env/listing behavior).
+- File-system tests use temporary directories and normalize separators so
+  interpreter, C, and LLVM backends remain consistent.
+
 ## Phase 1 (short term): high-value, low-risk
 
 Target modules that map directly to existing primitives or have clear,

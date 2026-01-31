@@ -21,7 +21,7 @@ interpreter and tooling footprint.
 - [x] Ship a reference project layout template with tooling defaults.
 
 ### 3) Standard library coverage
-- [ ] Prioritize missing core modules (`json`, `pathlib`, `os`, `fs` primitives)
+- [x] Prioritize missing core modules (`json`, `pathlib`, `os`, `fs` primitives)
   with parity tests against Python behavior.
 - [ ] Document stdlib API stability guarantees and module maturity tiers.
 
@@ -45,6 +45,8 @@ interpreter and tooling footprint.
 
 - [x] Centralize the “full-language readiness” task list in
   `docs/full_language_readiness.md` and link it from `docs/open_tasks.md`.
+- [x] Prioritize missing core modules (`json`, `pathlib`, `os`, `fs` primitives)
+  with explicit parity-test expectations in `docs/stdlib_expansion_plan.md`.
 - [x] Define and publish the formal versioning + deprecation policy for language
   changes.
 - [x] Define the minimal package manager UX (init, add/remove deps, lockfile).

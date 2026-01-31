@@ -11,7 +11,7 @@ interpreter and tooling footprint.
 - [x] Specify a formal versioning + deprecation policy for language changes.
 - [x] Lock down evaluation order, scoping, and error-handling rules with
   testable examples in `docs/language_spec.md`.
-- [ ] Publish a conformance test suite for the spec (lexer, parser, runtime
+- [x] Publish a conformance test suite for the spec (lexer, parser, runtime
   semantics) and gate it in CI.
 
 ### 2) Modules + packages (MVP)
@@ -47,3 +47,5 @@ interpreter and tooling footprint.
   `docs/full_language_readiness.md` and link it from `docs/open_tasks.md`.
 - [x] Define and publish the formal versioning + deprecation policy for language
   changes.
+- [x] Gate spec conformance fixtures in the test suite to verify canonical
+  stdout/stderr snapshots for spec examples.

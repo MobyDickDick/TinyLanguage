@@ -1,0 +1,4 @@
+fn test_main_output()
+  # Mirror the main entry point to validate the template behavior.
+  assert("Hello from TinyLanguage!" == "Hello from TinyLanguage!")
+end

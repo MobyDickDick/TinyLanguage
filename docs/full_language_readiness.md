@@ -18,7 +18,7 @@ interpreter and tooling footprint.
 - [x] Define the minimal package manager UX (init, add/remove deps, lockfile).
 - [x] Implement a module-resolution algorithm that is shared across interpreter
   and native backends.
-- [ ] Ship a reference project layout template with tooling defaults.
+- [x] Ship a reference project layout template with tooling defaults.
 
 ### 3) Standard library coverage
 - [ ] Prioritize missing core modules (`json`, `pathlib`, `os`, `fs` primitives)
@@ -50,3 +50,5 @@ interpreter and tooling footprint.
 - [x] Define the minimal package manager UX (init, add/remove deps, lockfile).
 - [x] Gate spec conformance fixtures in the test suite to verify canonical
   stdout/stderr snapshots for spec examples.
+- [x] Ship a reference project layout template with tooling defaults (see
+  `docs/project_template_v1/`).

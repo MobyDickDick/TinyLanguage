@@ -1,0 +1,8 @@
+module: stdlib.argparse
+
+exports:
+  fn __coerce_value(value: any, kind: any, label: any) -> any
+
+types:
+
+classes:

@@ -1,0 +1,8 @@
+module: src_tiny.match_demo
+
+exports:
+
+types:
+  type Shape = Circle(radius: number) | Rectangle(height: number, width: number)
+
+classes:

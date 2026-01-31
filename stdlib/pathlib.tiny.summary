@@ -1,0 +1,9 @@
+module: stdlib.pathlib
+
+exports:
+
+types:
+
+classes:
+  class Path
+    field value: string

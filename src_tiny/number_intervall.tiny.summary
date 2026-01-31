@@ -1,0 +1,11 @@
+module: src_tiny.number_intervall
+
+exports:
+
+types:
+
+classes:
+  class NumberIntervall
+    field error: string
+    field lower: number
+    field upper: number

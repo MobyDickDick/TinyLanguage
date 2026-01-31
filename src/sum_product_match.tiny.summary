@@ -1,0 +1,9 @@
+module: src.sum_product_match
+
+exports:
+
+types:
+  type Point = { x: Number, y: Number }
+  type Shape = Circle(radius: Number) | Rect(height: Number, width: Number) | Unit
+
+classes:

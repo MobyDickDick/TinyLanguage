@@ -1,0 +1,10 @@
+module: src_tiny.python_namespace_typed_demo
+
+exports:
+  fn PyInterop.hypotenuse(a: number, b: number) -> number
+  fn PyInterop.normalize(angle: number) -> string
+  fn module_label(path: string) -> string
+
+types:
+
+classes:

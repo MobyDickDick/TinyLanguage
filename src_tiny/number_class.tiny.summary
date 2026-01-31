@@ -1,0 +1,10 @@
+module: src_tiny.number_class
+
+exports:
+
+types:
+
+classes:
+  class Number
+    field error: string
+    field value: number

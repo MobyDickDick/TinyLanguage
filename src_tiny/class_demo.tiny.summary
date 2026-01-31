@@ -1,0 +1,9 @@
+module: src_tiny.class_demo
+
+exports:
+
+types:
+
+classes:
+  class Greeter
+    field name: string

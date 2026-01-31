@@ -1,0 +1,10 @@
+module: src_tiny.operator_overloading_demo
+
+exports:
+
+types:
+
+classes:
+  class Point
+    field x: number
+    field y: number

@@ -1,0 +1,10 @@
+module: src_tiny.python_proxy_pipeline_demo
+
+exports:
+  fn PyPipeline.normalize_path(path: string) -> string
+  fn PyPipeline.sqrt_then_square(x: number) -> number
+  fn describe_area(width: number, height: number) -> string
+
+types:
+
+classes:

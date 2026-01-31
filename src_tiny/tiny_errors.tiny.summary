@@ -1,0 +1,18 @@
+module: src_tiny.tiny_errors
+
+exports:
+  fn format_error(err: TinyError, source: string) -> any
+
+types:
+
+classes:
+  class SourcePos
+    field column: number
+    field line: number
+  class SourceSpan
+    field start: SourcePos
+    field stop: SourcePos
+  class TinyError
+    field kind: string
+    field msg: string
+    field span: SourceSpan

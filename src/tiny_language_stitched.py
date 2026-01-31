@@ -7010,6 +7010,8 @@ footguns.
 """
 
 from dataclasses import dataclass
+import os
+from pathlib import Path
 import re
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
@@ -7036,6 +7038,13 @@ def _node_pos(obj: Any) -> SourcePos:
     if isinstance(obj, SourcePos):
         return obj
     return getattr(obj, "pos", SourcePos.origin())
+
+
+def _import_binding_name(module: str, alias: Optional[str]) -> str:
+    if alias:
+        return alias
+    stripped = module.lstrip(".") or module
+    return stripped.split(".")[-1]
 
 
 def _lint_error(
@@ -7937,6 +7946,12 @@ class _AnnotationIndex:
     types: Dict[str, _TypeInfo]
 
 
+@dataclass
+class _ModuleSummary:
+    name: str
+    functions: Dict[str, _FunctionSignature]
+
+
 def _qualify_name(name: str, prefix: str) -> str:
     return f"{prefix}.{name}" if prefix else name
 
@@ -8228,12 +8243,160 @@ def _resolve_method_params(
     return None
 
 
-def lint_call_validation(stmts: List[IR], source: Optional[str] = None) -> None:
+def _split_summary_params(params_text: str) -> List[Param]:
+    normalized = params_text.strip()
+    if not normalized:
+        return []
+    parts: List[str] = []
+    buffer: List[str] = []
+    depth = 0
+    for ch in params_text:
+        if ch in "([{<":
+            depth += 1
+        elif ch in ")]}>":
+            depth = max(depth - 1, 0)
+        if ch == "," and depth == 0:
+            parts.append("".join(buffer).strip())
+            buffer = []
+            continue
+        buffer.append(ch)
+    if buffer:
+        parts.append("".join(buffer).strip())
+    params: List[Param] = []
+    for entry in parts:
+        if not entry:
+            continue
+        if ":" in entry:
+            name, type_name = entry.split(":", 1)
+            params.append(Param(name.strip(), type_name.strip() or None))
+        else:
+            params.append(Param(entry.strip(), None))
+    return params
+
+
+def _parse_module_summary(summary_text: str) -> Optional[_ModuleSummary]:
+    lines = [line.rstrip() for line in summary_text.splitlines()]
+    if not lines or not lines[0].startswith("module: "):
+        return None
+    module_name = lines[0].split("module: ", 1)[1].strip()
+    if not module_name:
+        return None
+    section: Optional[str] = None
+    functions: Dict[str, _FunctionSignature] = {}
+    for line in lines[1:]:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if stripped == "exports:":
+            section = "exports"
+            continue
+        if stripped.endswith(":"):
+            section = stripped[:-1]
+            continue
+        if section != "exports":
+            continue
+        if not stripped.startswith("fn "):
+            continue
+        header = stripped[len("fn ") :]
+        if "(" not in header or ")" not in header:
+            continue
+        name_part, rest = header.split("(", 1)
+        params_part, rest = rest.split(")", 1)
+        return_type = None
+        rest = rest.strip()
+        if rest.startswith("->"):
+            return_type = rest[2:].strip() or None
+        params = _split_summary_params(params_part)
+        functions[name_part.strip()] = _FunctionSignature(params=params, return_type=return_type)
+    return _ModuleSummary(name=module_name, functions=functions)
+
+
+def _iter_imports(stmts: List[IR]) -> List[Import]:
+    imports: List[Import] = []
+    for st in stmts:
+        if isinstance(st, Import):
+            imports.append(st)
+        elif isinstance(st, Namespace):
+            imports.extend(_iter_imports(st.body))
+    return imports
+
+
+def _resolve_import_name(raw: str, caller_namespace: Optional[str]) -> Optional[str]:
+    leading = len(raw) - len(raw.lstrip("."))
+    if leading == 0:
+        return raw
+    if not caller_namespace:
+        return None
+    base = caller_namespace.split(".")
+    if leading > len(base):
+        return None
+    trimmed = base[: len(base) - leading]
+    remainder = raw.lstrip(".")
+    if remainder:
+        trimmed.append(remainder)
+    return ".".join(part for part in trimmed if part)
+
+
+def _summary_paths_for_module(
+    module_name: str,
+    caller_path: Optional[Path],
+    search_paths: List[Path],
+    stdlib_root: Path,
+) -> List[Path]:
+    roots: List[Path] = []
+    if module_name.startswith("stdlib."):
+        rel_path = Path(*module_name.split(".")[1:])
+        if stdlib_root.exists():
+            roots.append(stdlib_root)
+    else:
+        rel_path = Path(*module_name.split("."))
+        if caller_path:
+            roots.append(caller_path.parent)
+        roots.extend(search_paths)
+    return [(root / rel_path).with_suffix(".tiny.summary") for root in roots]
+
+
+def _load_import_summaries(
+    stmts: List[IR],
+    module_name: Optional[str],
+    module_path: Optional[Path],
+) -> Dict[str, _ModuleSummary]:
+    env_paths = os.environ.get("TINYPATH", "")
+    configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
+    default_roots = [Path.cwd(), Path(__file__).parent]
+    search_paths = configured_paths + default_roots
+    stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
+    summaries: Dict[str, _ModuleSummary] = {}
+    for st in _iter_imports(stmts):
+        resolved = _resolve_import_name(st.module, module_name)
+        if not resolved:
+            continue
+        binding = _import_binding_name(st.module, st.alias)
+        if binding in summaries:
+            continue
+        for summary_path in _summary_paths_for_module(resolved, module_path, search_paths, stdlib_root):
+            if not summary_path.is_file():
+                continue
+            summary = _parse_module_summary(summary_path.read_text(encoding="utf-8"))
+            if summary:
+                summaries[binding] = summary
+            break
+    return summaries
+
+
+def lint_call_validation(
+    stmts: List[IR],
+    source: Optional[str] = None,
+    *,
+    module_name: Optional[str] = None,
+    module_path: Optional[Path] = None,
+) -> None:
     index = _collect_annotation_index(stmts)
     function_params = {name: sig.params for name, sig in index.functions.items()}
     classes = index.classes
     methods = {key: sig.params for key, sig in index.methods.items()}
     variant_types = _build_variant_type_index(index.types)
+    module_summaries = _load_import_summaries(stmts, module_name, module_path)
 
     def validate_call_params(
         *,
@@ -8295,6 +8458,19 @@ def lint_call_validation(stmts: List[IR], source: Optional[str] = None) -> None:
             check_expr(expr.obj, env)
             for arg in expr.args:
                 check_expr(arg, env)
+            if isinstance(expr.obj, Var):
+                summary = module_summaries.get(expr.obj.name)
+                if summary:
+                    signature = summary.functions.get(expr.name)
+                    if signature:
+                        validate_call_params(
+                            label=f"function {summary.name}.{expr.name}",
+                            params=list(signature.params),
+                            args=expr.args,
+                            call_site=expr,
+                            env=env,
+                        )
+                    return
             obj_type = _infer_typed_expr_type(
                 expr.obj,
                 env,
@@ -12975,7 +13151,7 @@ def _parse_and_lint(
     if not repl_mode:
         lint_no_underscore_bindings(stmts, src)
     lint_assignment_types(stmts, src)
-    lint_call_validation(stmts, src)
+    lint_call_validation(stmts, src, module_name=module_name, module_path=module_path)
     lint_return_validation(stmts, src)
     lint_annotation_enforcement(stmts, src)
     if not repl_mode:

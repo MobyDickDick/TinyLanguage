@@ -100,3 +100,65 @@ msg = 123;
         compile_and_run(source)
 
     assert excinfo.value.code == "E014"
+
+
+def test_import_summary_validates_argument_types(tmp_path, monkeypatch):
+    """Validate that module summaries enforce typed call arguments."""
+    monkeypatch.chdir(tmp_path)
+    module_path = tmp_path / "lib" / "math.tiny"
+    module_path.parent.mkdir(parents=True, exist_ok=True)
+    module_source = "fn add(a: number, b: number) -> number { return a + b; }\n"
+    module_path.write_text(module_source)
+
+    compile_and_run(
+        module_source,
+        module_namespace="lib.math",
+        module_path=module_path,
+        stream_output=False,
+    )
+
+    main_source = "import lib.math;\nprint(math.add(\"oops\", 1));\n"
+    main_path = tmp_path / "main.tiny"
+    main_path.write_text(main_source)
+
+    with pytest.raises(TinyLangError) as excinfo:
+        compile_and_run(
+            main_source,
+            module_namespace="main",
+            module_path=main_path,
+            stream_output=False,
+        )
+
+    assert excinfo.value.code == "E009"
+    assert "function lib.math.add" in str(excinfo.value)
+
+
+def test_import_summary_validates_argument_count(tmp_path, monkeypatch):
+    """Validate that module summaries enforce argument counts."""
+    monkeypatch.chdir(tmp_path)
+    module_path = tmp_path / "helpers" / "calc.tiny"
+    module_path.parent.mkdir(parents=True, exist_ok=True)
+    module_source = "fn scale(value: number, factor: number) -> number { return value * factor; }\n"
+    module_path.write_text(module_source)
+
+    compile_and_run(
+        module_source,
+        module_namespace="helpers.calc",
+        module_path=module_path,
+        stream_output=False,
+    )
+
+    main_source = "import helpers.calc;\nprint(calc.scale(3));\n"
+    main_path = tmp_path / "main.tiny"
+    main_path.write_text(main_source)
+
+    with pytest.raises(TinyLangError) as excinfo:
+        compile_and_run(
+            main_source,
+            module_namespace="main",
+            module_path=main_path,
+            stream_output=False,
+        )
+
+    assert excinfo.value.code == "E009"
+    assert "function helpers.calc.scale" in str(excinfo.value)

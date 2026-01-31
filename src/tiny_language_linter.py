@@ -993,12 +993,17 @@ def _types_match(expected: str, actual: str) -> bool:
     actual_norm = actual.strip()
     expected_expr = _parse_type_expression(expected_norm)
     actual_expr = _parse_type_expression(actual_norm)
+    if expected_norm.lower() == "pointer" and actual_expr:
+        if actual_expr.name.lower() == "list":
+            return True
     if expected_expr and expected_expr.name.lower() == "any":
         return True
     if expected_expr and expected_expr.optional:
         if actual_norm.lower() == "null":
             return True
         expected_expr = _ParsedType(name=expected_expr.name, args=expected_expr.args, optional=False)
+    if expected_expr and expected_expr.name.lower() == "list" and actual_norm.lower() == "pointer":
+        return True
     if expected_expr and actual_expr:
         if actual_expr.optional and not expected_expr.optional:
             return False
@@ -1297,7 +1302,7 @@ def _infer_typed_expr_type(
     if isinstance(expr, (Num, Str, Bool, Null, Var, ClassNew)):
         return _infer_expr_type(expr, env)
     if isinstance(expr, New):
-        return "List[any]"
+        return "Pointer"
     if isinstance(expr, NewLit):
         return _infer_list_literal_type(
             expr.items,

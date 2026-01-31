@@ -1095,32 +1095,44 @@ class _StdLibRegistrar:
         - Otherwise, if `TINYLANGUAGE_DAP_DISABLE_STDIN` is set and
           `TINYLANGUAGE_DAP_ALLOW_STDIN` is *not* set, deny reads.
         """
+        def read_from_stdin() -> str:
+            try:
+                return input("" if prompt is None else str(prompt))
+            except EOFError:
+                return ""
+
+        def stdin_disabled() -> bool:
+            return bool(
+                os.environ.get("TINYLANGUAGE_DAP_DISABLE_STDIN")
+                and not os.environ.get("TINYLANGUAGE_DAP_ALLOW_STDIN")
+            )
+
         pipe_path = os.environ.get("TINYLANGUAGE_DAP_STDIN_PIPE")
         if pipe_path:
             try:
                 with open(pipe_path, "r", encoding="utf-8") as handle:
                     line = handle.readline()
             except FileNotFoundError:
-                raise RuntimeError(
-                    f"Console.read_line pipe does not exist: {pipe_path}. "
-                    "Re-run the debugger or recreate the FIFO."
-                )
+                if stdin_disabled():
+                    raise RuntimeError(
+                        "Console.read_line is disabled while running under the TinyLanguage debug adapter "
+                        "because stdin/stdout carry the protocol stream. Run the program from a terminal or "
+                        "set TINYLANGUAGE_DAP_ALLOW_STDIN=1 to bypass this guard (not recommended)."
+                    )
+                return read_from_stdin()
             except Exception as exc:  # pragma: no cover - unexpected FIFO error
                 raise RuntimeError(f"Console.read_line failed to read pipe {pipe_path}: {exc}")
             if line == "":
                 return ""
             return line.rstrip("\n")
 
-        if os.environ.get("TINYLANGUAGE_DAP_DISABLE_STDIN") and not os.environ.get("TINYLANGUAGE_DAP_ALLOW_STDIN"):
+        if stdin_disabled():
             raise RuntimeError(
                 "Console.read_line is disabled while running under the TinyLanguage debug adapter "
                 "because stdin/stdout carry the protocol stream. Run the program from a terminal or "
                 "set TINYLANGUAGE_DAP_ALLOW_STDIN=1 to bypass this guard (not recommended)."
             )
-        try:
-            return input("" if prompt is None else str(prompt))
-        except EOFError:
-            return ""
+        return read_from_stdin()
 
     # -----------------------------------------------------------------------
     # File namespace

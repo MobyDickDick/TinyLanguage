@@ -8063,7 +8063,7 @@ class _FunctionSignature:
 @dataclass
 class _TypeInfo:
     fields: Dict[str, str]
-    variants: Dict[str, Dict[str, str]]
+    variants: Dict[str, List[Tuple[str, str]]]
 
 
 @dataclass
@@ -8101,10 +8101,10 @@ def _collect_annotation_index(stmts: List[IR], prefix: str = "") -> _AnnotationI
         elif isinstance(st, TypeDef):
             type_name = _qualify_name(st.name, prefix)
             fields = dict(st.fields) if st.fields else {}
-            variants: Dict[str, Dict[str, str]] = {}
+            variants: Dict[str, List[Tuple[str, str]]] = {}
             if st.variants:
                 for variant in st.variants:
-                    variants[variant.name] = dict(variant.fields)
+                    variants[variant.name] = list(variant.fields)
             types[type_name] = _TypeInfo(fields=fields, variants=variants)
         elif isinstance(st, ClassDef):
             class_name = _qualify_name(st.name, prefix)
@@ -8161,7 +8161,7 @@ def _format_type_expression(info: _TypeInfo) -> str:
         parts = []
         for variant_name, fields in sorted(info.variants.items()):
             if fields:
-                field_parts = [f"{name}: {type_name}" for name, type_name in sorted(fields.items())]
+                field_parts = [f"{name}: {type_name}" for name, type_name in sorted(fields)]
                 parts.append(f"{variant_name}({', '.join(field_parts)})")
             else:
                 parts.append(variant_name)
@@ -8361,6 +8361,96 @@ def _infer_typed_expr_type(
             return _resolve_field_type(classes, base_type, expr.name)
         return None
     return None
+
+
+def _null_guarded_binding(cond: IR) -> Optional[Tuple[str, bool]]:
+    if not isinstance(cond, Bin) or cond.op not in {"==", "!="}:
+        return None
+    left_var = cond.a.name if isinstance(cond.a, Var) else None
+    right_var = cond.b.name if isinstance(cond.b, Var) else None
+    if isinstance(cond.a, Null) and right_var:
+        return right_var, cond.op == "=="
+    if isinstance(cond.b, Null) and left_var:
+        return left_var, cond.op == "=="
+    return None
+
+
+def _narrow_env_for_condition(
+    cond: IR,
+    env: Dict[str, str],
+) -> Tuple[Dict[str, str], Dict[str, str]]:
+    guard = _null_guarded_binding(cond)
+    if not guard:
+        return dict(env), dict(env)
+    name, is_equal = guard
+    current = env.get(name)
+    if not _is_optional_annotation(current):
+        return dict(env), dict(env)
+    base = _base_type_name(current) or current
+    then_env = dict(env)
+    else_env = dict(env)
+    if is_equal:
+        then_env[name] = "Null"
+        else_env[name] = base
+    else:
+        then_env[name] = base
+        else_env[name] = "Null"
+    return then_env, else_env
+
+
+def _variant_info_for_pattern(
+    pattern: VariantPattern,
+    *,
+    match_type: Optional[str],
+    types: Dict[str, _TypeInfo],
+    variant_types: Dict[str, Optional[str]],
+) -> Tuple[Optional[str], Optional[List[Tuple[str, str]]]]:
+    if match_type:
+        base = _base_type_name(match_type) or match_type
+        info = types.get(base)
+        if info and pattern.variant in info.variants:
+            return base, info.variants[pattern.variant]
+    type_name = variant_types.get(pattern.variant)
+    if type_name:
+        info = types.get(type_name)
+        if info and pattern.variant in info.variants:
+            return type_name, info.variants[pattern.variant]
+    return None, None
+
+
+def _pattern_bindings(
+    pattern: Pattern,
+    *,
+    match_type: Optional[str],
+    types: Dict[str, _TypeInfo],
+    variant_types: Dict[str, Optional[str]],
+) -> Tuple[Dict[str, str], Optional[str]]:
+    bindings: Dict[str, str] = {}
+    if isinstance(pattern, WildcardPattern):
+        if pattern.name and match_type:
+            bindings[pattern.name] = _normalize_inferred_type(match_type)
+        return bindings, match_type
+    if isinstance(pattern, VariantPattern):
+        type_name, fields = _variant_info_for_pattern(
+            pattern,
+            match_type=match_type,
+            types=types,
+            variant_types=variant_types,
+        )
+        if fields:
+            field_map = dict(fields)
+            for field_name, binding_name in pattern.bindings.items():
+                if not binding_name:
+                    continue
+                field_type = field_map.get(field_name)
+                if field_type:
+                    bindings[binding_name] = field_type
+            if pattern.positional_bindings:
+                for (field_name, field_type), binding_name in zip(fields, pattern.positional_bindings):
+                    if binding_name:
+                        bindings[binding_name] = field_type
+        return bindings, type_name or match_type
+    return bindings, match_type
 
 
 def _resolve_field_type(
@@ -8701,8 +8791,26 @@ def lint_call_validation(
             return
         if isinstance(expr, Match):
             check_expr(expr.expr, env)
+            match_type = _infer_typed_expr_type(
+                expr.expr,
+                env,
+                functions=index.functions,
+                classes=index.classes,
+                methods=index.methods,
+                variant_types=variant_types,
+            )
             for case in expr.cases:
-                check_expr(case.body, env)
+                case_bindings, narrowed_type = _pattern_bindings(
+                    case.pattern,
+                    match_type=match_type,
+                    types=index.types,
+                    variant_types=variant_types,
+                )
+                case_env = dict(env)
+                case_env.update(case_bindings)
+                if narrowed_type and isinstance(expr.expr, Var):
+                    case_env[expr.expr.name] = _normalize_inferred_type(narrowed_type)
+                check_expr(case.body, case_env)
             return
         if isinstance(expr, VariantCtor):
             for _, value in expr.fields:
@@ -8760,8 +8868,9 @@ def lint_call_validation(
                 check_expr(st.expr, local_env)
             elif isinstance(st, If):
                 check_expr(st.cond, local_env)
-                check_block(list(st.then), dict(local_env))
-                check_block(list(st.els), dict(local_env))
+                then_env, else_env = _narrow_env_for_condition(st.cond, local_env)
+                check_block(list(st.then), dict(then_env))
+                check_block(list(st.els), dict(else_env))
             elif isinstance(st, While):
                 check_expr(st.cond, local_env)
                 check_block(list(st.body), dict(local_env))
@@ -8854,8 +8963,26 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
             return
         if isinstance(expr, Match):
             check_expr(expr.expr, env)
+            match_type = _infer_typed_expr_type(
+                expr.expr,
+                env,
+                functions=index.functions,
+                classes=index.classes,
+                methods=index.methods,
+                variant_types=variant_types,
+            )
             for case in expr.cases:
-                check_expr(case.body, env)
+                case_bindings, narrowed_type = _pattern_bindings(
+                    case.pattern,
+                    match_type=match_type,
+                    types=index.types,
+                    variant_types=variant_types,
+                )
+                case_env = dict(env)
+                case_env.update(case_bindings)
+                if narrowed_type and isinstance(expr.expr, Var):
+                    case_env[expr.expr.name] = _normalize_inferred_type(narrowed_type)
+                check_expr(case.body, case_env)
             return
         if isinstance(expr, VariantCtor):
             for _, value in expr.fields:
@@ -8950,8 +9077,9 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
                 check_expr(st.expr, local_env)
             elif isinstance(st, If):
                 check_expr(st.cond, local_env)
-                check_block(list(st.then), dict(local_env), return_annotation=return_annotation, return_label=return_label)
-                check_block(list(st.els), dict(local_env), return_annotation=return_annotation, return_label=return_label)
+                then_env, else_env = _narrow_env_for_condition(st.cond, local_env)
+                check_block(list(st.then), dict(then_env), return_annotation=return_annotation, return_label=return_label)
+                check_block(list(st.els), dict(else_env), return_annotation=return_annotation, return_label=return_label)
             elif isinstance(st, While):
                 check_expr(st.cond, local_env)
                 check_block(list(st.body), dict(local_env), return_annotation=return_annotation, return_label=return_label)
@@ -9057,8 +9185,9 @@ def lint_return_validation(stmts: List[IR], source: Optional[str] = None) -> Non
                             hint="Adjust the type annotation (use '?' to allow Null) or return a compatible value.",
                         )
             elif isinstance(st, If):
-                check_block(list(st.then), dict(local_env), return_annotation=return_annotation, return_label=return_label)
-                check_block(list(st.els), dict(local_env), return_annotation=return_annotation, return_label=return_label)
+                then_env, else_env = _narrow_env_for_condition(st.cond, local_env)
+                check_block(list(st.then), dict(then_env), return_annotation=return_annotation, return_label=return_label)
+                check_block(list(st.els), dict(else_env), return_annotation=return_annotation, return_label=return_label)
             elif isinstance(st, While):
                 check_block(list(st.body), dict(local_env), return_annotation=return_annotation, return_label=return_label)
             elif isinstance(st, Switch):
@@ -9143,8 +9272,9 @@ def lint_assignment_types(stmts: List[IR], source: Optional[str] = None, env: Op
                     for nm in st.names:
                         local_env[nm] = _normalize_inferred_type(inferred)
             elif isinstance(st, If):
-                then_env = check_block(list(st.then), dict(local_env))
-                else_env = check_block(list(st.els), dict(local_env))
+                then_branch, else_branch = _narrow_env_for_condition(st.cond, local_env)
+                then_env = check_block(list(st.then), dict(then_branch))
+                else_env = check_block(list(st.els), dict(else_branch))
                 for name in list(local_env.keys()):
                     if name in then_env and name in else_env and then_env[name] == else_env[name]:
                         local_env[name] = then_env[name]

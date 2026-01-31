@@ -888,32 +888,152 @@ def _infer_expr_type(expr: IR, env: Dict[str, str]) -> Optional[str]:
 
 
 def _normalize_inferred_type(type_name: str) -> str:
-    normalized = type_name.strip()
-    if normalized.lower() in {"int", "float"}:
-        return "number"
-    return type_name
+    parsed = _parse_type_expression(type_name)
+    if not parsed:
+        normalized = type_name.strip()
+        if normalized.lower() in {"int", "float"}:
+            return "number"
+        return type_name
+
+    def normalize(node: _ParsedType) -> _ParsedType:
+        name = node.name
+        if name.strip().lower() in {"int", "float"}:
+            name = "number"
+        return _ParsedType(name=name, args=[normalize(arg) for arg in node.args], optional=node.optional)
+
+    return _render_type_expression(normalize(parsed))
+
+
+@dataclass
+class _ParsedType:
+    name: str
+    args: List["_ParsedType"]
+    optional: bool = False
+
+
+def _parse_type_expression(type_name: str) -> Optional[_ParsedType]:
+    text = type_name.strip()
+    if not text:
+        return None
+    idx = 0
+
+    def skip_ws() -> None:
+        nonlocal idx
+        while idx < len(text) and text[idx].isspace():
+            idx += 1
+
+    def parse_expr() -> Optional[_ParsedType]:
+        nonlocal idx
+        skip_ws()
+        start = idx
+        while idx < len(text) and (text[idx].isalnum() or text[idx] in "._"):
+            idx += 1
+        if start == idx:
+            return None
+        name = text[start:idx]
+        skip_ws()
+        args: List[_ParsedType] = []
+        if idx < len(text) and text[idx] == "[":
+            idx += 1
+            skip_ws()
+            if idx < len(text) and text[idx] == "]":
+                idx += 1
+            else:
+                while True:
+                    arg = parse_expr()
+                    if arg is None:
+                        return None
+                    args.append(arg)
+                    skip_ws()
+                    if idx < len(text) and text[idx] == ",":
+                        idx += 1
+                        continue
+                    if idx < len(text) and text[idx] == "]":
+                        idx += 1
+                        break
+                    return None
+        skip_ws()
+        optional = False
+        if idx < len(text) and text[idx] == "?":
+            optional = True
+            idx += 1
+        skip_ws()
+        return _ParsedType(name=name, args=args, optional=optional)
+
+    parsed = parse_expr()
+    skip_ws()
+    if parsed is None or idx != len(text):
+        return None
+    return parsed
+
+
+def _render_type_expression(expr: _ParsedType) -> str:
+    rendered = expr.name
+    if expr.args:
+        rendered = f"{rendered}[{', '.join(_render_type_expression(arg) for arg in expr.args)}]"
+    if expr.optional:
+        rendered = f"{rendered}?"
+    return rendered
+
+
+def _type_name_matches(expected: str, actual: str) -> bool:
+    if expected.lower() == actual.lower():
+        return True
+    if expected.lower() == "number" and actual.lower() in {"number", "int", "float"}:
+        return True
+    if expected.lower() == "string" and actual.lower() == "string":
+        return True
+    if expected.lower() in {"bool", "boolean"} and actual.lower() in {"bool", "boolean"}:
+        return True
+    return False
 
 
 def _types_match(expected: str, actual: str) -> bool:
     expected_norm = expected.strip()
+    actual_norm = actual.strip()
+    expected_expr = _parse_type_expression(expected_norm)
+    actual_expr = _parse_type_expression(actual_norm)
+    if expected_norm.lower() == "pointer" and actual_expr:
+        if actual_expr.name.lower() == "list":
+            return True
+    if expected_expr and expected_expr.name.lower() == "any":
+        return True
+    if expected_expr and expected_expr.optional:
+        if actual_norm.lower() == "null":
+            return True
+        expected_expr = _ParsedType(name=expected_expr.name, args=expected_expr.args, optional=False)
+    if expected_expr and expected_expr.name.lower() == "list" and actual_norm.lower() == "pointer":
+        return True
+    if expected_expr and actual_expr:
+        if actual_expr.optional and not expected_expr.optional:
+            return False
+        if expected_expr.args:
+            if expected_expr.name.lower() in {"list", "set", "deque", "map"}:
+                if not _type_name_matches(expected_expr.name, actual_expr.name):
+                    return False
+                if not actual_expr.args:
+                    return False
+                if expected_expr.name.lower() == "map" and len(expected_expr.args) != 2:
+                    return False
+                if len(expected_expr.args) != len(actual_expr.args):
+                    return False
+                return all(
+                    _types_match(_render_type_expression(exp), _render_type_expression(act))
+                    for exp, act in zip(expected_expr.args, actual_expr.args)
+                )
+        if not _type_name_matches(expected_expr.name, actual_expr.name):
+            return False
+        return True
     if expected_norm.lower() == "any":
         return True
-    actual_norm = actual.strip()
     optional = expected_norm.endswith("?")
     base_expected = expected_norm[:-1].strip() if optional else expected_norm
-
     if optional and actual_norm.lower() == "null":
         return True
-    if base_expected.lower() == actual_norm.lower():
-        return True
-    if base_expected.lower() == "number" and actual_norm.lower() in {"number", "int", "float"}:
-        return True
-    if base_expected.lower() == "string" and actual_norm.lower() == "string":
-        return True
-    if base_expected.lower() in {"bool", "boolean"} and actual_norm.lower() in {"bool", "boolean"}:
+    if _type_name_matches(base_expected, actual_norm):
         return True
     if optional and actual_norm.lower() != "null":
-        return _types_match(base_expected, actual)
+        return _types_match(base_expected, actual_norm)
     return False
 
 
@@ -1134,6 +1254,42 @@ def _resolve_method_return(
     return None
 
 
+def _infer_list_literal_type(
+    items: List[IR],
+    env: Dict[str, str],
+    *,
+    functions: Dict[str, _FunctionSignature],
+    classes: Dict[str, _ClassInfo],
+    methods: Dict[Tuple[str, str], _FunctionSignature],
+    variant_types: Dict[str, Optional[str]],
+) -> str:
+    if not items:
+        return "List[any]"
+    candidate: Optional[str] = None
+    for item in items:
+        inferred = _infer_typed_expr_type(
+            item,
+            env,
+            functions=functions,
+            classes=classes,
+            methods=methods,
+            variant_types=variant_types,
+        )
+        if inferred is None:
+            return "List[any]"
+        normalized = _normalize_inferred_type(inferred)
+        if normalized.lower() == "any":
+            return "List[any]"
+        if candidate is None:
+            candidate = normalized
+            continue
+        if not (_types_match(candidate, normalized) and _types_match(normalized, candidate)):
+            return "List[any]"
+    if candidate is None:
+        return "List[any]"
+    return f"List[{candidate}]"
+
+
 def _infer_typed_expr_type(
     expr: IR,
     env: Dict[str, str],
@@ -1145,8 +1301,17 @@ def _infer_typed_expr_type(
 ) -> Optional[str]:
     if isinstance(expr, (Num, Str, Bool, Null, Var, ClassNew)):
         return _infer_expr_type(expr, env)
-    if isinstance(expr, (New, NewLit)):
+    if isinstance(expr, New):
         return "Pointer"
+    if isinstance(expr, NewLit):
+        return _infer_list_literal_type(
+            expr.items,
+            env,
+            functions=functions,
+            classes=classes,
+            methods=methods,
+            variant_types=variant_types,
+        )
     if isinstance(expr, ObjLit):
         return "Struct"
     if isinstance(expr, VariantCtor):

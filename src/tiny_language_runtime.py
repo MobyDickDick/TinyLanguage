@@ -364,6 +364,13 @@ class TaskScope:
             self.handles.append(handle)
 
 
+@dataclass
+class _ParsedType:
+    name: str
+    args: List["_ParsedType"]
+    optional: bool = False
+
+
 class Runtime:
     def __init__(self, source: str):
         self._lock = threading.RLock()
@@ -1125,25 +1132,172 @@ class Runtime:
                 hint="Use a new variable or cast explicitly if a different type is required.",
             )
 
+    def _parse_type_expression(self, type_name: str) -> Optional[_ParsedType]:
+        text = type_name.strip()
+        if not text:
+            return None
+        idx = 0
+
+        def skip_ws() -> None:
+            nonlocal idx
+            while idx < len(text) and text[idx].isspace():
+                idx += 1
+
+        def parse_expr() -> Optional[_ParsedType]:
+            nonlocal idx
+            skip_ws()
+            start = idx
+            while idx < len(text) and (text[idx].isalnum() or text[idx] in "._"):
+                idx += 1
+            if start == idx:
+                return None
+            name = text[start:idx]
+            skip_ws()
+            args: List[_ParsedType] = []
+            if idx < len(text) and text[idx] == "[":
+                idx += 1
+                skip_ws()
+                if idx < len(text) and text[idx] == "]":
+                    idx += 1
+                else:
+                    while True:
+                        arg = parse_expr()
+                        if arg is None:
+                            return None
+                        args.append(arg)
+                        skip_ws()
+                        if idx < len(text) and text[idx] == ",":
+                            idx += 1
+                            continue
+                        if idx < len(text) and text[idx] == "]":
+                            idx += 1
+                            break
+                        return None
+            skip_ws()
+            optional = False
+            if idx < len(text) and text[idx] == "?":
+                optional = True
+                idx += 1
+            skip_ws()
+            return _ParsedType(name=name, args=args, optional=optional)
+
+        parsed = parse_expr()
+        skip_ws()
+        if parsed is None or idx != len(text):
+            return None
+        return parsed
+
+    @staticmethod
+    def _render_type_expression(expr: _ParsedType) -> str:
+        rendered = expr.name
+        if expr.args:
+            rendered = f"{rendered}[{', '.join(Runtime._render_type_expression(arg) for arg in expr.args)}]"
+        if expr.optional:
+            rendered = f"{rendered}?"
+        return rendered
+
+    @staticmethod
+    def _type_name_matches(expected: str, actual: str) -> bool:
+        if expected.lower() == actual.lower():
+            return True
+        if expected.lower() == "number" and actual.lower() in {"number", "int", "float"}:
+            return True
+        if expected.lower() == "string" and actual.lower() == "string":
+            return True
+        if expected.lower() in {"bool", "boolean"} and actual.lower() in {"bool", "boolean"}:
+            return True
+        return False
+
+    def _is_list_value(self, value: Any) -> bool:
+        if isinstance(value, list):
+            return True
+        if self._is_heap_pointer(value):
+            return True
+        tag = self.__get_tag(value)
+        return tag in {"PyList", "List"}
+
+    @staticmethod
+    def _is_map_value(value: Any) -> bool:
+        return isinstance(value, dict) and "__tag__" not in value and "__type__" not in value
+
+    @staticmethod
+    def _is_set_value(value: Any) -> bool:
+        return isinstance(value, set)
+
+    @staticmethod
+    def _is_deque_value(value: Any) -> bool:
+        return isinstance(value, deque)
+
+    def _iter_list_values(self, value: Any) -> List[Any]:
+        if isinstance(value, list):
+            return list(value)
+        if self._is_heap_pointer(value):
+            with self._lock:
+                return list(self.heap.get(int(value), []))
+        return []
+
+    def _container_type_matches(self, expected: _ParsedType, value: Any) -> bool:
+        expected_name = expected.name.lower()
+        if expected_name == "list":
+            if not self._is_list_value(value):
+                return False
+            if not expected.args:
+                return True
+            element = self._render_type_expression(expected.args[0])
+            for item in self._iter_list_values(value):
+                if not self._type_matches(element, item):
+                    return False
+            return True
+        if expected_name == "set":
+            if not self._is_set_value(value):
+                return False
+            if not expected.args:
+                return True
+            element = self._render_type_expression(expected.args[0])
+            return all(self._type_matches(element, item) for item in value)
+        if expected_name == "deque":
+            if not self._is_deque_value(value):
+                return False
+            if not expected.args:
+                return True
+            element = self._render_type_expression(expected.args[0])
+            return all(self._type_matches(element, item) for item in value)
+        if expected_name == "map":
+            if not self._is_map_value(value):
+                return False
+            if not expected.args:
+                return True
+            if len(expected.args) != 2:
+                return False
+            key_type = self._render_type_expression(expected.args[0])
+            value_type = self._render_type_expression(expected.args[1])
+            return all(self._type_matches(key_type, k) and self._type_matches(value_type, v) for k, v in value.items())
+        return False
+
     def _type_matches(self, expected: str, value: Any) -> bool:
+        expected_norm = expected.strip()
+        expected_expr = self._parse_type_expression(expected_norm)
+        if expected_expr and expected_expr.name.lower() == "any":
+            return True
+        if expected_expr and expected_expr.optional:
+            if value is None:
+                return True
+            expected_expr = _ParsedType(name=expected_expr.name, args=expected_expr.args, optional=False)
+        if expected_expr and expected_expr.name.lower() in {"list", "set", "deque", "map"}:
+            return self._container_type_matches(expected_expr, value)
         actual = self._value_type_name(value)
         if actual is None:
             return False
-        expected_norm = expected.strip()
+        actual_norm = actual.strip() if isinstance(actual, str) else str(actual)
+        if expected_expr:
+            return self._type_name_matches(expected_expr.name, actual_norm)
         if expected_norm.lower() == "any":
             return True
         optional = expected_norm.endswith("?")
         base_expected = expected_norm[:-1].strip() if optional else expected_norm
-        actual_norm = actual.strip() if isinstance(actual, str) else str(actual)
         if optional and actual_norm.lower() == "null":
             return True
-        if base_expected == actual_norm or base_expected.lower() == actual_norm.lower():
-            return True
-        if base_expected.lower() == "number" and actual_norm.lower() in {"number", "int", "float"}:
-            return True
-        if base_expected.lower() == "string" and actual_norm.lower() == "string":
-            return True
-        if base_expected.lower() in {"bool", "boolean"} and actual_norm.lower() in {"bool", "boolean"}:
+        if self._type_name_matches(base_expected, actual_norm):
             return True
         if base_expected == "Null" and value is None:
             return True

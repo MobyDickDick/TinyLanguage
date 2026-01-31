@@ -609,9 +609,20 @@ class Parser {
     }
 
     fn parse_type_annotation(self) -> any {
-        def name = self._eat_name_or_kw().text;
-        if (self._accept("SYM", "?", Null)) { return name + "?"; }
-        return name;
+        def base = self._eat_name_or_kw().text;
+        if (self._accept("SYM", "[", Null)) {
+            def args = new[];
+            if (!(self.tok.kind == "SYM" && self.tok.text == "]")) {
+                Collections.push(args, self.parse_type_annotation());
+                while (self._accept("SYM", ",", Null)) {
+                    Collections.push(args, self.parse_type_annotation());
+                }
+            }
+            def _eat_status = self._eat("SYM", "]", Null);
+            base = base + "[" + String.join(args, ", ") + "]";
+        }
+        if (self._accept("SYM", "?", Null)) { return base + "?"; }
+        return base;
     }
 
     fn parse_arg_list(self) -> any {

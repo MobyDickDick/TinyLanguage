@@ -15,7 +15,7 @@ interpreter and tooling footprint.
   semantics) and gate it in CI.
 
 ### 2) Modules + packages (MVP)
-- [ ] Define the minimal package manager UX (init, add/remove deps, lockfile).
+- [x] Define the minimal package manager UX (init, add/remove deps, lockfile).
 - [ ] Implement a module-resolution algorithm that is shared across interpreter
   and native backends.
 - [ ] Ship a reference project layout template with tooling defaults.
@@ -47,5 +47,6 @@ interpreter and tooling footprint.
   `docs/full_language_readiness.md` and link it from `docs/open_tasks.md`.
 - [x] Define and publish the formal versioning + deprecation policy for language
   changes.
+- [x] Define the minimal package manager UX (init, add/remove deps, lockfile).
 - [x] Gate spec conformance fixtures in the test suite to verify canonical
   stdout/stderr snapshots for spec examples.

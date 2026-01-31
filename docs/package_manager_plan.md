@@ -92,9 +92,29 @@ manager validates it and enforces SemVer constraints.
 - `tiny pkg init`: create `tiny.toml` and a default `src/` layout.
 - `tiny pkg add <name>[@<constraint>]`: update manifest, resolve, write
   `tiny.lock`.
+- `tiny pkg remove <name>`: drop dependency from the manifest and update
+  `tiny.lock` after re-resolving.
 - `tiny pkg update [<name>]`: refresh locked versions within constraints.
 - `tiny pkg vendor`: download sources to `vendor/` and rewrite lockfile sources.
 - `tiny pkg publish`: validate, package, and upload to registry (token-based).
+
+### Minimal package manager UX (v0)
+
+The first release focuses on a small, teachable workflow that covers project
+bootstrap, dependency changes, and reproducible builds.
+
+1. **Initialize**: `tiny pkg init` creates `tiny.toml`, a `src/` directory, and
+   an empty `tiny.lock` stub so the project is immediately reproducible.
+2. **Add dependencies**: `tiny pkg add <name>[@<constraint>]` writes the
+   dependency to `tiny.toml`, resolves versions, and updates `tiny.lock` with
+   the full graph and checksums.
+3. **Remove dependencies**: `tiny pkg remove <name>` deletes the entry from
+   `tiny.toml`, re-resolves, and rewrites `tiny.lock` to drop unused packages.
+4. **Refresh locks**: `tiny pkg update [<name>]` upgrades resolved versions
+   within constraints and rewrites `tiny.lock`.
+5. **Reproducible installs**: the interpreter + tooling read `tiny.lock` by
+   default; when it is missing or out of date, the CLI refuses to run without
+   an explicit `tiny pkg add/update` to restore determinism.
 
 ## Resolution strategy
 

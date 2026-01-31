@@ -976,6 +976,99 @@ def _collect_annotation_index(stmts: List[IR], prefix: str = "") -> _AnnotationI
     return _AnnotationIndex(functions=functions, classes=classes, methods=methods, types=types)
 
 
+def _module_has_annotations(stmts: List[IR]) -> bool:
+    for st in stmts:
+        if isinstance(st, Fn):
+            if st.return_type or any(param.type for param in st.params):
+                return True
+        elif isinstance(st, MethodDef):
+            if st.return_type or any(param.type for param in st.params):
+                return True
+        elif isinstance(st, TypeDef):
+            if st.fields or st.variants:
+                return True
+        elif isinstance(st, ClassDef):
+            if st.fields:
+                return True
+            if any(method.return_type or any(param.type for param in method.params) for method in st.methods):
+                return True
+        elif isinstance(st, Namespace):
+            if _module_has_annotations(st.body):
+                return True
+    return False
+
+
+def _signature_has_annotations(signature: _FunctionSignature) -> bool:
+    return bool(signature.return_type or any(param.type for param in signature.params))
+
+
+def _format_summary_params(params: List[Param]) -> str:
+    rendered = []
+    for param in params:
+        param_type = param.type or "any"
+        rendered.append(f"{param.name}: {param_type}")
+    return ", ".join(rendered)
+
+
+def _format_type_expression(info: _TypeInfo) -> str:
+    if info.variants:
+        parts = []
+        for variant_name, fields in sorted(info.variants.items()):
+            if fields:
+                field_parts = [f"{name}: {type_name}" for name, type_name in sorted(fields.items())]
+                parts.append(f"{variant_name}({', '.join(field_parts)})")
+            else:
+                parts.append(variant_name)
+        return " | ".join(parts)
+    if info.fields:
+        field_parts = [f"{name}: {type_name}" for name, type_name in sorted(info.fields.items())]
+        return "{ " + ", ".join(field_parts) + " }"
+    return "{}"
+
+
+def build_module_summary(stmts: List[IR], module_name: str) -> Optional[str]:
+    if not module_name or not _module_has_annotations(stmts):
+        return None
+    index = _collect_annotation_index(stmts)
+    lines = [f"module: {module_name}", "", "exports:"]
+
+    exported_functions = []
+    for name, signature in sorted(index.functions.items()):
+        if not _signature_has_annotations(signature):
+            continue
+        params = _format_summary_params(signature.params)
+        return_type = signature.return_type or "any"
+        exported_functions.append(f"  fn {name}({params}) -> {return_type}")
+    lines.extend(exported_functions)
+
+    lines.extend(["", "types:"])
+    for name, info in sorted(index.types.items()):
+        type_expr = _format_type_expression(info)
+        lines.append(f"  type {name} = {type_expr}")
+
+    lines.extend(["", "classes:"])
+    methods_by_class: Dict[str, List[Tuple[str, _FunctionSignature]]] = {}
+    for (class_name, method_name), signature in index.methods.items():
+        methods_by_class.setdefault(class_name, []).append((method_name, signature))
+    for name, info in sorted(index.classes.items()):
+        class_methods = [
+            (method_name, signature)
+            for method_name, signature in sorted(methods_by_class.get(name, []))
+            if _signature_has_annotations(signature)
+        ]
+        if not info.fields and not class_methods:
+            continue
+        lines.append(f"  class {name}")
+        for field_name, field_type in sorted(info.fields.items()):
+            lines.append(f"    field {field_name}: {field_type}")
+        for method_name, signature in class_methods:
+            params = _format_summary_params(signature.params)
+            return_type = signature.return_type or "any"
+            lines.append(f"    method {method_name}({params}) -> {return_type}")
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
 def _base_type_name(type_name: Optional[str]) -> Optional[str]:
     if not type_name:
         return None

@@ -9,7 +9,7 @@ lightweight Python interface.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from tiny_errors import diagnostic_range
@@ -76,6 +76,7 @@ class Diagnostic:
     source: str = "linter"
     origin: str = "language_server"
     hint: Optional[str] = None
+    suggestions: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -216,6 +217,37 @@ class TinyLanguageServer:
         col = len(self.source) - last_newline
         return (line, col)
 
+    def _text_at_range(self, range_hint: Tuple[int, int, int, int]) -> str:
+        """Return the source snippet covered by ``range_hint`` if it is single-line."""
+        start_line, start_col, end_line, end_col = range_hint
+        if start_line != end_line:
+            return ""
+        lines = self.source.splitlines()
+        if not (1 <= start_line <= len(lines)):
+            return ""
+        line_text = lines[start_line - 1]
+        start_idx = max(start_col - 1, 0)
+        end_idx = max(end_col - 1, start_idx)
+        return line_text[start_idx:end_idx]
+
+    def _unused_binding_quickfix(self, diag: Diagnostic) -> Optional[CodeAction]:
+        """Return a quick fix for unused bindings when possible."""
+        if diag.code != "E002" or "unused" not in diag.message.lower():
+            return None
+        name = self._text_at_range(diag.range).strip()
+        if not name or name == "_" or name.startswith("_"):
+            return None
+        if not name.isidentifier():
+            return None
+        new_name = f"_{name}"
+        edit = TextEdit(range=diag.range, new_text=new_name)
+        return CodeAction(
+            title=f"Rename unused binding to '{new_name}'",
+            kind="quickfix",
+            edits=[edit],
+            diagnostics=[diag.code],
+        )
+
     def _iter_dotted_names(self) -> Iterable[Tuple[str, Token]]:
         """Yield dotted name strings with the final token for highlighting."""
         tokens = self._tokens
@@ -337,6 +369,7 @@ class TinyLanguageServer:
                     source="parser",
                     origin="language_server",
                     hint=self.parse_error.hint,
+                    suggestions=list(self.parse_error.suggestions),
                 )
             ]
 
@@ -370,6 +403,7 @@ class TinyLanguageServer:
                     source="linter",
                     origin="language_server",
                     hint=err.hint,
+                    suggestions=list(err.suggestions),
                 )
             )
         return diagnostics
@@ -397,6 +431,10 @@ class TinyLanguageServer:
                     diagnostics=[],
                 )
             )
+        for diagnostic in self.diagnostics():
+            action = self._unused_binding_quickfix(diagnostic)
+            if action:
+                actions.append(action)
         return actions
 
     def workspace_symbols(self, query: str = "") -> List[WorkspaceSymbol]:
@@ -443,8 +481,9 @@ def hover_for_source(source: str, symbol: str) -> Dict[str, Any]:
 def diagnostics_for_source(source: str) -> List[Dict[str, Any]]:
     """Return diagnostics for ``source`` as JSON-friendly dicts."""
     server = TinyLanguageServer(source)
-    return [
-        {
+    diagnostics = []
+    for diag in server.diagnostics():
+        payload: Dict[str, Any] = {
             "message": diag.message,
             "code": diag.code,
             "range": list(diag.range),
@@ -454,8 +493,10 @@ def diagnostics_for_source(source: str) -> List[Dict[str, Any]]:
             "origin": diag.origin,
             "hint": diag.hint,
         }
-        for diag in server.diagnostics()
-    ]
+        if diag.suggestions:
+            payload["suggestions"] = list(diag.suggestions)
+        diagnostics.append(payload)
+    return diagnostics
 
 
 def references_for_source(source: str, symbol: str, include_definition: bool = True) -> List[Dict[str, Any]]:

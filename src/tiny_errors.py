@@ -55,6 +55,7 @@ class TinyLangError(Exception):
     pos: SourcePos = field(default_factory=SourcePos.origin)
     code: str = "E000"
     hint: Optional[str] = None
+    suggestions: Tuple[str, ...] = field(default_factory=tuple)
     stack: Tuple[StackFrame, ...] = field(default_factory=tuple)
     span: Optional[SourceSpan] = None
 
@@ -96,6 +97,8 @@ def diagnostic_payload(
     }
     if error.hint:
         payload["hint"] = error.hint
+    if error.suggestions:
+        payload["suggestions"] = list(error.suggestions)
     if uri:
         payload["uri"] = uri
     if error.stack:

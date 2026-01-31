@@ -51,6 +51,7 @@ def _lint_error(
     *,
     code: str = "E000",
     hint: Optional[str] = None,
+    suggestions: Optional[List[str]] = None,
 ) -> TinyLangError:
     span = _node_span(node)
     pos = _node_pos(node)
@@ -61,7 +62,7 @@ def _lint_error(
             rendered = f"{rendered}\n  Hint: {hint}"
     else:
         rendered = format_error(source, span or pos, message, code=code, hint=hint)
-    return TinyLangError(rendered, pos, code=code, hint=hint, span=span)
+    return TinyLangError(rendered, pos, code=code, hint=hint, suggestions=tuple(suggestions or ()), span=span)
 
 
 @dataclass
@@ -1680,12 +1681,17 @@ def lint_call_validation(
             )
             if inferred and not _types_match(param.type, inferred):
                 msg = f"type mismatch for parameter {param.name} in {label}: expected {param.type} but got {inferred}"
+                suggestion = (
+                    f"If the call site is correct, consider updating the annotation for {param.name} to "
+                    f"'{_normalize_inferred_type(inferred)}'."
+                )
                 raise _lint_error(
                     source,
                     arg,
                     msg,
                     code="E009",
                     hint="Adjust the type annotation (use '?' to allow Null) or pass a compatible value to satisfy the hint.",
+                    suggestions=[suggestion],
                 )
 
     def check_expr(expr: IR, env: Dict[str, str]) -> None:
@@ -1925,13 +1931,18 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
                             f"type mismatch for field {field_name} in class {expr.name}: "
                             f"expected {expected} but got {inferred}"
                         )
+                        suggestion = (
+                            f"Consider updating the field annotation for {field_name} to "
+                            f"'{_normalize_inferred_type(inferred)}' if this value is correct."
+                        )
                         raise _lint_error(
                             source,
                             value,
                             msg,
                             code="E009",
                             hint="Adjust the type annotation (use '?' to allow Null) or assign a compatible value.",
-                )
+                            suggestions=[suggestion],
+                        )
             return
         if isinstance(expr, Field):
             check_expr(expr.obj, env)
@@ -2050,12 +2061,17 @@ def lint_annotation_enforcement(stmts: List[IR], source: Optional[str] = None) -
                             f"type mismatch for field {st.name} in class {obj_type}: "
                             f"expected {expected} but got {inferred}"
                         )
+                        suggestion = (
+                            f"Consider updating the field annotation for {st.name} to "
+                            f"'{_normalize_inferred_type(inferred)}' if this value is correct."
+                        )
                         raise _lint_error(
                             source,
                             st,
                             msg,
                             code="E009",
                             hint="Adjust the type annotation (use '?' to allow Null) or assign a compatible value.",
+                            suggestions=[suggestion],
                         )
             elif isinstance(st, Print):
                 for expr in st.exprs:
@@ -2166,12 +2182,17 @@ def lint_return_validation(stmts: List[IR], source: Optional[str] = None) -> Non
                         msg = (
                             f"type mismatch for {return_label}: expected {return_annotation} but got {inferred}"
                         )
+                        suggestion = (
+                            f"Consider updating the return annotation to '{_normalize_inferred_type(inferred)}' "
+                            "if the returned value is correct."
+                        )
                         raise _lint_error(
                             source,
                             st,
                             msg,
                             code="E009",
                             hint="Adjust the type annotation (use '?' to allow Null) or return a compatible value.",
+                            suggestions=[suggestion],
                         )
             elif isinstance(st, If):
                 then_env, else_env = _narrow_env_for_condition(st.cond, local_env)

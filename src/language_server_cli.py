@@ -49,7 +49,7 @@ def _completion_dict(item: CompletionItem) -> Dict[str, Any]:
 
 def _diagnostic_dict(diag: Diagnostic) -> Dict[str, Any]:
     """Convert ``Diagnostic`` to a JSON-friendly mapping."""
-    return {
+    payload = {
         "message": diag.message,
         "code": diag.code,
         "range": list(diag.range),
@@ -59,6 +59,9 @@ def _diagnostic_dict(diag: Diagnostic) -> Dict[str, Any]:
         "origin": diag.origin,
         "hint": diag.hint,
     }
+    if diag.suggestions:
+        payload["suggestions"] = list(diag.suggestions)
+    return payload
 
 
 def _workspace_symbol_dict(symbol: WorkspaceSymbol) -> Dict[str, Any]:

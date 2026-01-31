@@ -3,6 +3,12 @@
 This list captures the currently planned work items for TinyLanguage. The tasks
 are grouped by area and can be tackled independently.
 
+## Full-language readiness (new)
+
+See `docs/full_language_readiness.md` for a centralized checklist of remaining
+work needed to ship TinyLanguage as a complete, production-ready programming
+language.
+
 ## Roadmap refresh (proposed)
 - [x] Publish a TinyLanguage roadmap document that groups planned work by
   language core, type system, runtime, tooling, and ecosystem maturity.

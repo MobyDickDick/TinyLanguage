@@ -8,7 +8,7 @@ interpreter and tooling footprint.
 ## Checklist (prioritized)
 
 ### 1) Core language + semantics
-- [ ] Specify a formal versioning + deprecation policy for language changes.
+- [x] Specify a formal versioning + deprecation policy for language changes.
 - [ ] Lock down evaluation order, scoping, and error-handling rules with
   testable examples in `docs/language_spec.md`.
 - [ ] Publish a conformance test suite for the spec (lexer, parser, runtime
@@ -45,3 +45,5 @@ interpreter and tooling footprint.
 
 - [x] Centralize the “full-language readiness” task list in
   `docs/full_language_readiness.md` and link it from `docs/open_tasks.md`.
+- [x] Define and publish the formal versioning + deprecation policy for language
+  changes.

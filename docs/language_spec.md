@@ -160,7 +160,8 @@ spec treats those behaviors as stable.
 
 - **Versioning:** TinyLanguage uses SemVer release tags (`MAJOR.MINOR.PATCH`).
   The current release number lives in `VERSION`, and `CHANGELOG.md` captures
-  Added/Changed/Fixed entries plus known issues.
+  Added/Changed/Fixed entries plus known issues. The canonical policy is
+  documented in [`docs/versioning_deprecation_policy.md`](versioning_deprecation_policy.md).
 - **Stability guarantees:** the interpreter behavior documented in this spec is
   considered stable for the current major line; breaking changes require a major
   version bump and an explicit migration plan.

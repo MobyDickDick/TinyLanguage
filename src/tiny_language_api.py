@@ -99,6 +99,7 @@ if "TinyLangError" not in globals():
 if "lint_import_style" not in globals():
     from tiny_language_linter import (
         _collect_function_signatures,
+        build_module_summary,
         lint_annotation_enforcement,
         lint_assignment_types,
         lint_bare_call_results,
@@ -616,6 +617,8 @@ def _parse_and_lint(
     repl_mode: bool = False,
     experimental_math_tuples: Optional[bool] = None,
     experimental_math_formula: Optional[bool] = None,
+    module_name: Optional[str] = None,
+    module_path: Optional[Path] = None,
 ) -> List["IR"]:
     """Return a parsed program after running all linter passes.
 
@@ -671,6 +674,10 @@ def _parse_and_lint(
 
     lint_nested(stmts)
     lint_bare_call_results(stmts, signatures, src)
+    summary = build_module_summary(stmts, module_name or "")
+    if summary and module_path is not None:
+        summary_path = module_path.with_suffix(module_path.suffix + ".summary")
+        summary_path.write_text(summary, encoding="utf-8")
     return stmts
 
 
@@ -756,7 +763,11 @@ class NativeModuleResolver:
                 try:
                     module_env: dict[str, Any] = {}
                     source = resolved_path.read_text(encoding="utf-8")
-                    stmts = _parse_and_lint(source)
+                    stmts = _parse_and_lint(
+                        source,
+                        module_name=resolved_name,
+                        module_path=resolved_path,
+                    )
                     program = NativeCodeGenerator(
                         allow_heap=True,
                         allow_match=True,
@@ -866,7 +877,11 @@ class LLVMModuleResolver:
                 self._in_progress.append(resolved_path)
                 try:
                     source = resolved_path.read_text(encoding="utf-8")
-                    stmts = _parse_and_lint(source)
+                    stmts = _parse_and_lint(
+                        source,
+                        module_name=resolved_name,
+                        module_path=resolved_path,
+                    )
                     for stmt in stmts:
                         if isinstance(stmt, Import):
                             self.import_module(
@@ -914,7 +929,12 @@ def compile_and_run(
     resolution strategies. Any error raised during execution is intentionally
     allowed to propagate so the caller can render it with full context.
     """
-    stmts = _parse_and_lint(src, repl_mode=repl_mode)
+    stmts = _parse_and_lint(
+        src,
+        repl_mode=repl_mode,
+        module_name=module_namespace,
+        module_path=module_path,
+    )
     runtime = runtime or Runtime(src)  # Reuse an existing runtime or create a fresh one
     if copy_on_call is not None:
         runtime.copy_on_call = copy_on_call

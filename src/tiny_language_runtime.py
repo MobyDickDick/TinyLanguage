@@ -18,6 +18,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Un
 
 from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, _line_info, format_error
 from tiny_language_ast import Fn, IR, Match, MethodDef, OpDef, Param, TypeVariant, VariantPattern, WildcardPattern
+from tiny_language_module_resolution import ModuleResolutionConfig, candidate_module_paths, resolve_module_name
 
 # ----- Runtime -----
 
@@ -184,68 +185,24 @@ class ModuleResolver:
     """
 
     def __init__(self, search_paths: Optional[List[Path]] = None):
-        env_paths = os.environ.get("TINYPATH", "")
-        configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
-        default_roots = [Path.cwd(), Path(__file__).parent]
-        self.stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
-        self.search_paths: List[Path] = search_paths or configured_paths + default_roots
+        config = ModuleResolutionConfig.from_search_paths(search_paths)
+        self.stdlib_root = config.stdlib_root
+        self.search_paths = config.search_paths
         self.cache: Dict[Path, NamespaceRef] = {}
         self._in_progress: List[Path] = []
 
     def _resolve_name(self, raw: str, caller_namespace: Optional[str], pos: Optional[Any]) -> str:
-        """Normalize relative import names against the caller's namespace.
-
-        A leading dot sequence (e.g. ``.foo`` or ``..bar.baz``) is expanded using
-        the caller's module namespace. Errors include source span information to
-        aid diagnostics in the parser and linter.
-        """
-        pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
-        leading = len(raw) - len(raw.lstrip("."))
-        if leading == 0:
-            return raw
-        if not caller_namespace:
-            raise TinyLangError(
-                "relative import outside a module",
-                pos_for_error or SourcePos.origin(),
-                code="E008",
-                span=pos if isinstance(pos, SourceSpan) else None,
-            )
-        base = caller_namespace.split(".")
-        if leading > len(base):
-            raise TinyLangError(
-                "relative import traverses beyond module root",
-                pos_for_error or SourcePos.origin(),
-                code="E008",
-                span=pos if isinstance(pos, SourceSpan) else None,
-            )
-        trimmed = base[: len(base) - leading]
-        remainder = raw.lstrip(".")
-        if remainder:
-            trimmed.append(remainder)
-        return ".".join(part for part in trimmed if part)
+        """Normalize relative import names against the caller's namespace."""
+        return resolve_module_name(raw, caller_namespace, pos)
 
     def _candidate_paths(self, module_name: str, caller_path: Optional[Path]) -> List[Path]:
-        """Return possible filesystem paths for a module name.
-
-        The search order starts next to the caller's module (for relative
-        imports) before falling back to configured search roots. Each candidate
-        mirrors Python's ``pkg.subpkg.module`` to ``pkg/subpkg/module.tiny``
-        translation.
-        """
-        candidates: List[Path] = []
-        roots: List[Path] = []
-        if module_name.startswith("stdlib."):
-            rel_path = Path(*module_name.split(".")[1:])
-            if self.stdlib_root.exists():
-                roots.append(self.stdlib_root)
-        else:
-            rel_path = Path(*module_name.split("."))
-            if caller_path:
-                roots.append(caller_path.parent)
-            roots.extend(self.search_paths)
-        for root in roots:
-            candidates.append((root / rel_path).with_suffix(".tiny"))
-        return candidates
+        """Return possible filesystem paths for a module name."""
+        return candidate_module_paths(
+            module_name,
+            caller_path=caller_path,
+            search_paths=self.search_paths,
+            stdlib_root=self.stdlib_root,
+        )
 
     def import_module(
         self,

@@ -72,6 +72,44 @@ spec treats those behaviors as stable.
 - **Array literals** created with `new[...]` evaluate item expressions from left
   to right.
 
+**Example: left-to-right evaluation**
+
+```tiny
+fn record(label, value) {
+  print(label);
+  return value;
+}
+
+def result = record("left", 1) + record("right", 2);
+print(result);
+```
+
+Expected output:
+
+```text
+left
+right
+3
+```
+
+**Example: short-circuiting**
+
+```tiny
+fn side_effect() {
+  print("should not run");
+  return true;
+}
+
+def ok = false && side_effect();
+print("done");
+```
+
+Expected output:
+
+```text
+done
+```
+
 ## Bindings and visibility
 
 - **Definitions:** `def x = expr;` creates a new variable. Later assignments without `def` update existing bindings and must keep the same inferred type (or a compatible type) to avoid implicit type changes.
@@ -86,6 +124,46 @@ spec treats those behaviors as stable.
   - Unannotated function returns also infer a type; returning a different type later triggers `E014` unless a return annotation is provided.
 - **Scopes:** Functions, namespaces, and match arms introduce their own scopes. Imported modules are registered under their fully qualified name and can be reached via aliases.
 
+**Example: function scope shadowing**
+
+```tiny
+def x = 1;
+
+fn demo() {
+  def x = 2;
+  return x;
+}
+
+print(demo());
+print(x);
+```
+
+Expected output:
+
+```text
+2
+1
+```
+
+**Example: match arm bindings are local**
+
+```tiny
+type Shape {
+  Circle { radius: number };
+}
+
+def shape = Shape.Circle { radius: 3 };
+match(shape) {
+  case Shape.Circle { radius: r } => { print(r); }
+}
+```
+
+Expected output:
+
+```text
+3
+```
+
 ## Control flow
 
 - **`if`/`while`:** Standard control structures with parentheses around the condition. Conditions use truthiness (`false`, `Null`, `0`, and empty strings are falsey); all paths in typed functions must return a value.
@@ -93,6 +171,23 @@ spec treats those behaviors as stable.
 - **`match`:** Exhaustive pattern matching for tagged values (sum-type variants, classes, and structs). Wildcards (`_`) and named fields (`case Circle { radius: r }`) are supported, along with positional bindings (`case Circle(r) => ...`); missing cases raise an error.
 - **Error handling:** `try { ... } catch(err) { ... }` catches runtime errors and allows alternative returns or logging.
 - **Task scopes:** `task { ... }` introduces a structured concurrency scope. When the scope exits, TinyLanguage waits up to a small timeout (defaults to `50ms`, configurable via `TINYLANG_TASK_SCOPE_TIMEOUT_MS`) for outstanding `spawn`ed work to finish; any tasks still running after the timeout are cancelled and joined automatically.
+
+**Example: try/catch**
+
+```tiny
+try {
+  def x = 1 / 0;
+  print("unreachable");
+} catch(err) {
+  print("caught");
+}
+```
+
+Expected output:
+
+```text
+caught
+```
 
 ## Functions and types
 

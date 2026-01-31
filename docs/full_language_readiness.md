@@ -9,7 +9,7 @@ interpreter and tooling footprint.
 
 ### 1) Core language + semantics
 - [x] Specify a formal versioning + deprecation policy for language changes.
-- [ ] Lock down evaluation order, scoping, and error-handling rules with
+- [x] Lock down evaluation order, scoping, and error-handling rules with
   testable examples in `docs/language_spec.md`.
 - [ ] Publish a conformance test suite for the spec (lexer, parser, runtime
   semantics) and gate it in CI.

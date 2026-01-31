@@ -26,6 +26,8 @@ Annotations can appear on:
 - **Parameters**: `fn add(x: number, y: number) -> number { ... }`
 - **Return types**: `fn name(...) -> string { ... }`
 - **Type/class fields**: `type Point { x: number; y: number; }`
+- **Containers (limited)**: `List[number]`, `Set[string]`, `Map[string, number]`,
+  `Deque[any]`
 
 ### Optional and dynamic escape hatches
 
@@ -44,6 +46,9 @@ checks) rather than a heavy structural type system:
 - `T?` accepts `Null` and any value compatible with `T`.
 - `any` accepts any value but should be reserved for interoperability or staged
   migrations.
+- Container annotations accept the corresponding runtime container, and the
+  typing lint profile checks element types for list literals and collection
+  values when possible.
 
 ## Type stability in bindings
 

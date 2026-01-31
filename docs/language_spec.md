@@ -258,7 +258,7 @@ block           ::= "{" stmt* "}" ;
 param_list      ::= "(" [param ("," param)*] ")" ;
 param           ::= NAME [":" type_annotation] ;
 
-type_annotation ::= NAME_or_kw ["?"] ;
+type_annotation ::= NAME_or_kw ["[" type_annotation ("," type_annotation)* "]"] ["?"] ;
 
 expr            ::= logic_or ;
 logic_or        ::= logic_and (("or" | "||") logic_and)* ;

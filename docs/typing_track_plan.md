@@ -218,7 +218,7 @@ up without requiring the entire typing track to be complete.
 
 ### Phase 3: Optional enhancements
 
-- [ ] Add limited generic constraints for container helpers (e.g.,
+- [x] Add limited generic constraints for container helpers (e.g.,
   `List[number]`) and document the supported syntax.
 - [ ] Introduce flow-sensitive narrowing for `match`/`if` guards where safe.
 - [ ] Add richer diagnostics for IDE integration (quick fixes, hints, and

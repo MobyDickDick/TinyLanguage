@@ -80,6 +80,32 @@ print(maybe_label(-2));
     assert compile_and_run(source) == "Null\n"
 
 
+def test_typed_list_parameter_accepts_list_literal():
+    """Test that typed list parameters accept compatible list literals."""
+    source = """
+fn first_item(items: List[number]) -> number {
+    return heap_get(items, 0);
+}
+print(first_item(new[1, 2, 3]));
+"""
+    assert compile_and_run(source) == "1\n"
+
+
+def test_typed_list_parameter_rejects_mismatched_elements():
+    """Test that typed list parameters reject incompatible element types."""
+    source = """
+fn first_item(items: List[number]) -> number {
+    return heap_get(items, 0);
+}
+print(first_item(new["oops"]));
+"""
+
+    with pytest.raises(TinyLangError) as excinfo:
+        compile_and_run(source)
+
+    assert excinfo.value.code == "E009"
+
+
 def test_inferred_number_allows_float_assignment():
     """Test that inferred number allows float assignment."""
     source = """

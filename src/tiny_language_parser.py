@@ -575,10 +575,18 @@ class Parser:
         return used
 
     def parse_type_annotation(self) -> str:
-        name = self._eat_name_or_kw().text
+        base = self._eat_name_or_kw().text
+        if self._accept("SYM", "["):
+            args: List[str] = []
+            if not (self.tok.kind == "SYM" and self.tok.text == "]"):
+                args.append(self.parse_type_annotation())
+                while self._accept("SYM", ","):
+                    args.append(self.parse_type_annotation())
+            self._eat("SYM", "]")
+            base = f"{base}[{', '.join(args)}]"
         if self._accept("SYM", "?"):
-            return f"{name}?"
-        return name
+            return f"{base}?"
+        return base
 
     def parse_arg_list(self) -> List[IR]:
         self._eat("SYM", "(")

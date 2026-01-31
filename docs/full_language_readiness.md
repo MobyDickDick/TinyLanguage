@@ -16,7 +16,7 @@ interpreter and tooling footprint.
 
 ### 2) Modules + packages (MVP)
 - [x] Define the minimal package manager UX (init, add/remove deps, lockfile).
-- [ ] Implement a module-resolution algorithm that is shared across interpreter
+- [x] Implement a module-resolution algorithm that is shared across interpreter
   and native backends.
 - [ ] Ship a reference project layout template with tooling defaults.
 

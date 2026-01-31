@@ -226,7 +226,14 @@ up without requiring the entire typing track to be complete.
 
 ### Open questions to resolve
 
-- [ ] Decide whether runtime `tag(...)` should act as a static type assertion.
+- [x] Decide whether runtime `tag(...)` should act as a static type assertion.
 - [ ] Decide how external module imports are typed (stubs vs. inferred
   summaries).
 - [ ] Decide how strongly to warn about implicit `any` usage in typed modules.
+
+**Decision (static `tag(...)` assertions):** Treat `tag(value, "Type")` as a
+static assertion when the typing lint profile is enabled. The linter should
+validate that the value's inferred/annotated type is compatible with the tag
+and emit `E009` on mismatch, while also narrowing the value to the tagged type
+for the remainder of the scope. This keeps parity with runtime checks without
+introducing new syntax or behaviors.

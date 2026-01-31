@@ -481,8 +481,9 @@ def hover_for_source(source: str, symbol: str) -> Dict[str, Any]:
 def diagnostics_for_source(source: str) -> List[Dict[str, Any]]:
     """Return diagnostics for ``source`` as JSON-friendly dicts."""
     server = TinyLanguageServer(source)
-    return [
-        {
+    diagnostics = []
+    for diag in server.diagnostics():
+        payload: Dict[str, Any] = {
             "message": diag.message,
             "code": diag.code,
             "range": list(diag.range),
@@ -491,10 +492,11 @@ def diagnostics_for_source(source: str) -> List[Dict[str, Any]]:
             "source": diag.source,
             "origin": diag.origin,
             "hint": diag.hint,
-            "suggestions": list(diag.suggestions),
         }
-        for diag in server.diagnostics()
-    ]
+        if diag.suggestions:
+            payload["suggestions"] = list(diag.suggestions)
+        diagnostics.append(payload)
+    return diagnostics
 
 
 def references_for_source(source: str, symbol: str, include_definition: bool = True) -> List[Dict[str, Any]]:

@@ -95,7 +95,7 @@ fn format_header(header_buf) {
 - [x] Can this allocation be replaced with `new(size)` + `heap_set`?
 - [x] Is this buffer reused across iterations or rebuilt every time?
 - [x] Are we relying on aliasing without documenting read-only usage?
-- [ ] Can scalar variables replace a short-lived array literal?
+- [x] Can scalar variables replace a short-lived array literal?
 
 When reviewing loops, confirm that temporary buffers are allocated once outside
 the loop and reused unless each iteration truly needs a distinct buffer (for
@@ -122,6 +122,32 @@ fn make_pair(a, b) {
     return buf;
 }
 ```
+
+## Prefer scalars over short-lived array literals
+
+If an array literal is created only to feed a helper that accepts multiple
+parameters, drop the array and pass scalar values directly. This avoids heap
+allocation for transient argument bundling and makes the data flow clearer.
+
+```tiny
+// Before: allocate a temporary array just for formatting.
+fn log_bounds(min, max) {
+    print("Bounds:", String.join(new[min, max]));
+}
+
+// After: pass scalars to a helper that formats without heap allocations.
+fn log_bounds(min, max) {
+    print("Bounds:", format_pair(min, max));
+}
+
+fn format_pair(left, right) {
+    return String.concat(String.concat(String.from(left), ","), String.from(right));
+}
+```
+
+When a helper cannot be changed (e.g., it strictly accepts an array), prefer
+reusing a shared buffer or a fixed-size `new(size)` buffer rather than creating
+an array literal each call.
 
 ## Related documentation
 

@@ -73,11 +73,28 @@ When `new[...]` is only used to pass arguments to helpers (e.g., `print` or
 an array is required (e.g., `Python.call` allowlists), reuse an existing shared
 allowlist constant rather than rebuilding it.
 
+## Document read-only aliasing explicitly
+
+Occasionally it is practical to keep two references to the same heap buffer,
+but this must stay *read-only* for all aliases. When you intentionally share a
+buffer across bindings, document that the buffer is treated as immutable by all
+consumers and that no mutation is permitted through those aliases. This keeps
+the ownership model predictable and helps reviewers confirm that no hidden
+writes slip in.
+
+```tiny
+// Shared read-only reference: alias must never mutate the heap buffer.
+fn format_header(header_buf) {
+    // header_buf is read-only in this helper.
+    print("Header:", String.join(header_buf));
+}
+```
+
 ## Checklist for reviewing heap usage
 
 - [x] Can this allocation be replaced with `new(size)` + `heap_set`?
 - [x] Is this buffer reused across iterations or rebuilt every time?
-- [ ] Are we relying on aliasing without documenting read-only usage?
+- [x] Are we relying on aliasing without documenting read-only usage?
 - [ ] Can scalar variables replace a short-lived array literal?
 
 When reviewing loops, confirm that temporary buffers are allocated once outside

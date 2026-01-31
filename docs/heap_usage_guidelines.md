@@ -76,9 +76,14 @@ allowlist constant rather than rebuilding it.
 ## Checklist for reviewing heap usage
 
 - [x] Can this allocation be replaced with `new(size)` + `heap_set`?
-- [ ] Is this buffer reused across iterations or rebuilt every time?
+- [x] Is this buffer reused across iterations or rebuilt every time?
 - [ ] Are we relying on aliasing without documenting read-only usage?
 - [ ] Can scalar variables replace a short-lived array literal?
+
+When reviewing loops, confirm that temporary buffers are allocated once outside
+the loop and reused unless each iteration truly needs a distinct buffer (for
+example, when the buffer is stored in a result list). If a buffer is only used
+as scratch space, hoist the allocation and write into it on each iteration.
 
 ### Worked example: replace heap literals with fixed-size buffers
 

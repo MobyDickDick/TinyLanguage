@@ -58,6 +58,37 @@ Introduce lightweight symbol summaries per module:
 
 This allows cross-module validation without full whole-program inference.
 
+**Proposed summary format (lightweight, text-first)**
+
+Store one summary per module as a small, line-oriented manifest that can be
+emitted by the parser or linter without requiring full codegen. The format is
+intentionally simple to keep it easy to diff and quick to load.
+
+```
+module: <module_name>
+
+exports:
+  fn <name>(<param_name>: <type>, ...) -> <type>
+  fn <name>(<param_name>: <type>) -> <type>
+
+types:
+  type <name> = <type_expression>
+
+classes:
+  class <name>
+    field <field_name>: <type>
+```
+
+**Notes**
+
+- Only exported symbols appear in the summary.
+- `<type>` reuses the existing annotation syntax (`number`, `string`, `bool`,
+  `any`, `T?`, etc.).
+- If a module has no annotations, it may emit only the module header and an
+  empty `exports:` block to keep downstream handling simple.
+- The summary is purely declarative; it does not include code bodies or
+  inferred types beyond explicit annotations.
+
 ### Phase 3: Optional enhancements
 
 - Limited generic constraints for container helpers (e.g., `List[number]`).
@@ -179,7 +210,7 @@ up without requiring the entire typing track to be complete.
 
 ### Phase 2: Module-level summaries
 
-- [ ] Define a lightweight module summary format (exported functions, types,
+- [x] Define a lightweight module summary format (exported functions, types,
   and class fields).
 - [ ] Emit summaries during parsing or linting for modules with annotations.
 - [ ] Resolve imports against summaries to validate cross-module call sites.

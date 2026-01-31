@@ -58,6 +58,7 @@ def _diagnostic_dict(diag: Diagnostic) -> Dict[str, Any]:
         "source": diag.source,
         "origin": diag.origin,
         "hint": diag.hint,
+        "suggestions": list(diag.suggestions),
     }
 
 

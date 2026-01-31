@@ -34,6 +34,7 @@ from tiny_language import (
     lint_destruct_call_outputs,
     lint_fn_params_used,
     lint_heap_lifetimes,
+    lint_implicit_any_usage,
     lint_import_style,
     lint_locals_used,
     lint_method_params_used,
@@ -382,6 +383,20 @@ class TinyLanguageServer:
                 lint_call_validation(self.stmts, self.source)
                 lint_return_validation(self.stmts, self.source)
                 lint_annotation_enforcement(self.stmts, self.source)
+                for warning in lint_implicit_any_usage(self.stmts, self.source):
+                    diagnostics.append(
+                        Diagnostic(
+                            message=str(warning),
+                            code=warning.code,
+                            range=diagnostic_range(warning, self.source),
+                            phase="lint",
+                            source="linter",
+                            origin="language_server",
+                            severity="warning",
+                            hint=warning.hint,
+                            suggestions=list(warning.suggestions),
+                        )
+                    )
             lint_locals_used(self.stmts, self.source)
             if _heap_lints_enabled():
                 lint_heap_lifetimes(self.stmts, self.source)

@@ -80,6 +80,20 @@ print(maybe_label(-2));
     assert compile_and_run(source) == "Null\n"
 
 
+def test_optional_guard_narrows_in_else_branch():
+    """Test that optional Null guards narrow types in the else branch."""
+    source = """
+fn shout(text: string) -> string {
+    return text;
+}
+fn greet(name: string?) -> string {
+    if (name == Null) { return "hi"; } else { return shout(name); }
+}
+print(greet(Null));
+"""
+    assert compile_and_run(source) == "hi\n"
+
+
 def test_typed_list_parameter_accepts_list_literal():
     """Test that typed list parameters accept compatible list literals."""
     source = """
@@ -98,6 +112,31 @@ fn first_item(items: List[number]) -> number {
     return heap_get(items, 0);
 }
 print(first_item(new["oops"]));
+"""
+
+    with pytest.raises(TinyLangError) as excinfo:
+        compile_and_run(source)
+
+    assert excinfo.value.code == "E009"
+
+
+def test_match_pattern_narrows_variant_bindings():
+    """Test that match patterns narrow variant binding types."""
+    source = """
+type Payload {
+    Ok(value: number);
+    Err(message: string);
+}
+fn needs_string(text: string) -> string {
+    return text;
+}
+fn demo(payload: Payload) -> string {
+    return match payload {
+        case Ok { value: v } => needs_string(v);
+        case Err { message: msg } => msg;
+    };
+}
+print(demo(Ok { value: 1 }));
 """
 
     with pytest.raises(TinyLangError) as excinfo:

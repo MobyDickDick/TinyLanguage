@@ -227,7 +227,7 @@ up without requiring the entire typing track to be complete.
 ### Open questions to resolve
 
 - [x] Decide whether runtime `tag(...)` should act as a static type assertion.
-- [ ] Decide how external module imports are typed (stubs vs. inferred
+- [x] Decide how external module imports are typed (stubs vs. inferred
   summaries).
 - [ ] Decide how strongly to warn about implicit `any` usage in typed modules.
 
@@ -237,3 +237,11 @@ validate that the value's inferred/annotated type is compatible with the tag
 and emit `E009` on mismatch, while also narrowing the value to the tagged type
 for the remainder of the scope. This keeps parity with runtime checks without
 introducing new syntax or behaviors.
+
+**Decision (external module imports typing):** Prefer explicit typing stubs for
+external modules. The linter should look for a sibling summary/stub artifact
+(e.g., a module summary file emitted for TinyLanguage modules, or a dedicated
+stub manifest for non-Tiny dependencies). If no stub or summary is available,
+imported symbols are treated as `any`, and the typing lint profile should emit a
+single warning per module noting the missing stub so teams can add coverage over
+time without blocking builds.

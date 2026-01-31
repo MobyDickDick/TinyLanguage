@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "TinyLanguage: Launch main.tiny",
+      "type": "tinylanguage",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/main.tiny",
+      "runtime": "${config:tinylanguage.runtimePath}",
+      "python": "${config:tinylanguage.pythonPath}",
+      "stopOnEntry": false
+    }
+  ]
+}

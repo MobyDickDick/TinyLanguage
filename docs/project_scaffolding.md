@@ -71,6 +71,9 @@ project-root/
 └─ .gitignore
 ```
 
+Reference files for this layout live in
+[`docs/project_template_v1/`](./project_template_v1/).
+
 ### Generated files
 
 #### `tiny.toml`

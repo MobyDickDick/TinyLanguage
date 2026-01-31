@@ -1,0 +1,4 @@
+{
+  "tinylanguage.pythonPath": "python",
+  "tinylanguage.runtimePath": "/path/to/tiny_language.py"
+}

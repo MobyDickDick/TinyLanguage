@@ -75,10 +75,31 @@ allowlist constant rather than rebuilding it.
 
 ## Checklist for reviewing heap usage
 
-- [ ] Can this allocation be replaced with `new(size)` + `heap_set`?
+- [x] Can this allocation be replaced with `new(size)` + `heap_set`?
 - [ ] Is this buffer reused across iterations or rebuilt every time?
 - [ ] Are we relying on aliasing without documenting read-only usage?
 - [ ] Can scalar variables replace a short-lived array literal?
+
+### Worked example: replace heap literals with fixed-size buffers
+
+If a function builds a tiny array literal only to return it, consider switching
+to an explicit fixed-size buffer and `heap_set` calls. This makes allocation
+intent explicit and prevents accidental resizing later.
+
+```tiny
+// Before: literal allocation.
+fn make_pair(a, b) {
+    return new[a, b];
+}
+
+// After: fixed-size buffer with explicit writes.
+fn make_pair(a, b) {
+    def buf = new(2);
+    heap_set(buf, 0, a);
+    heap_set(buf, 1, b);
+    return buf;
+}
+```
 
 ## Related documentation
 

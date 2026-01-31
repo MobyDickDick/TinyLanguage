@@ -213,8 +213,8 @@ up without requiring the entire typing track to be complete.
 - [x] Define a lightweight module summary format (exported functions, types,
   and class fields).
 - [x] Emit summaries during parsing or linting for modules with annotations.
-- [ ] Resolve imports against summaries to validate cross-module call sites.
-- [ ] Add tests that validate cross-module signature mismatches.
+- [x] Resolve imports against summaries to validate cross-module call sites.
+- [x] Add tests that validate cross-module signature mismatches.
 
 ### Phase 3: Optional enhancements
 

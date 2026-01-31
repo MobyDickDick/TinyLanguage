@@ -650,7 +650,7 @@ def _parse_and_lint(
     if not repl_mode:
         lint_no_underscore_bindings(stmts, src)
     lint_assignment_types(stmts, src)
-    lint_call_validation(stmts, src)
+    lint_call_validation(stmts, src, module_name=module_name, module_path=module_path)
     lint_return_validation(stmts, src)
     lint_annotation_enforcement(stmts, src)
     if not repl_mode:

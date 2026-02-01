@@ -8,8 +8,20 @@ are grouped by area and can be tackled independently.
 The items below keep the backlog actionable. They should be completed before
 adding new multi-week features so that priorities and ownership stay current.
 
-- [ ] Refresh the backlog from `docs/roadmap_next.md` and record the top
+- [x] Refresh the backlog from `docs/roadmap_next.md` and record the top
   3-5 near-term tasks with clear owners and success criteria.
+  - **Finalize language spec alignment** (Owner: Language Core Lead)
+    - Success: `docs/language_spec.md` updated with evaluation order, scoping,
+      error handling, and concurrency semantics; referenced by tests or lints.
+  - **Shared diagnostic schema rollout** (Owner: Tooling Lead)
+    - Success: interpreter + tooling emit the same structured error fields and
+      formatting with parity coverage in tests.
+  - **LSP feature expansion** (Owner: Developer Experience Lead)
+    - Success: rename, references, code actions, and formatting hooks supported
+      and documented with request/response matrix.
+  - **Package/module resolution plan** (Owner: Ecosystem Lead)
+    - Success: module resolution rules finalized and package manager roadmap
+      milestones captured in `docs/package_module_roadmap.md`.
 - [ ] Add a short "next milestone" section that names the target release or
   timeframe for the refreshed tasks.
 - [ ] Confirm that completed tasks are archived so this file only tracks

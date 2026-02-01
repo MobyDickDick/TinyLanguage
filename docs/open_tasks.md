@@ -3,6 +3,18 @@
 This list captures the currently planned work items for TinyLanguage. The tasks
 are grouped by area and can be tackled independently.
 
+## Backlog refresh (active)
+
+The items below keep the backlog actionable. They should be completed before
+adding new multi-week features so that priorities and ownership stay current.
+
+- [ ] Refresh the backlog from `docs/roadmap_next.md` and record the top
+  3-5 near-term tasks with clear owners and success criteria.
+- [ ] Add a short "next milestone" section that names the target release or
+  timeframe for the refreshed tasks.
+- [ ] Confirm that completed tasks are archived so this file only tracks
+  current work.
+
 ## Full-language readiness (new)
 
 See `docs/full_language_readiness.md` for a centralized checklist of remaining

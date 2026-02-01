@@ -33,8 +33,9 @@ interpreter and tooling footprint.
   all supported launch modes (see `docs/debug_adapter_integration.md`).
 
 ### 5) Distribution + releases
-- [ ] Publish official release artifacts (versioned binaries, pip/npm packages
-  as needed) and a reproducible build pipeline.
+- [x] Publish official release artifacts (versioned binaries, pip/npm packages
+  as needed) and a reproducible build pipeline (see
+  `docs/release_artifacts_pipeline.md`).
 - [ ] Provide upgrade guides and compatibility matrices for each release.
 
 ### 6) Ecosystem maturity

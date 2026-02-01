@@ -22,8 +22,11 @@ adding new multi-week features so that priorities and ownership stay current.
   - **Package/module resolution plan** (Owner: Ecosystem Lead)
     - Success: module resolution rules finalized and package manager roadmap
       milestones captured in `docs/package_module_roadmap.md`.
-- [ ] Add a short "next milestone" section that names the target release or
+- [x] Add a short "next milestone" section that names the target release or
   timeframe for the refreshed tasks.
+- **Next milestone:** Post-1.0 stabilization + roadmap kick-off, targeting the
+  next minor release and a 4-6 week execution window for the backlog refresh
+  items above.
 - [ ] Confirm that completed tasks are archived so this file only tracks
   current work.
 

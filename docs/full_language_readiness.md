@@ -5,6 +5,17 @@ an end-to-end, production-ready programming language. It focuses on language
 completeness, ecosystem maturity, and delivery requirements beyond the current
 interpreter and tooling footprint.
 
+## What qualifies as “full-language readiness”
+
+TinyLanguage is considered a complete, production-ready programming language
+once it meets the six readiness pillars below: a stable core spec and semantics,
+an MVP package/module system, a reliable standard library baseline, developer
+tooling that supports real-world workflows, shippable distribution artifacts
+with upgrade guidance, and ecosystem maturity via interoperability and
+performance budgets. The checklist that follows enumerates these requirements
+so the project can track and verify readiness with concrete, testable work
+items.
+
 ## Checklist (prioritized)
 
 ### 1) Core language + semantics

@@ -17,6 +17,8 @@ README and `docs/language_spec.md` for updated CLI usage and language behavior.
 - The interpreter remains the reference implementation.
 - The native VM + LLVM pipeline remain experimental and may lag behind full
   language coverage. Use the interpreter for full feature support.
+- See `docs/release_compatibility_matrix.md#100-current` for the full backend
+  compatibility matrix for this release.
 
 ## Update checklist for future major releases
 

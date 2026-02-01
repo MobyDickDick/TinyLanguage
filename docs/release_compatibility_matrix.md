@@ -27,6 +27,11 @@ Documented backend expectations are:
 For authoritative backend constraints and the experimental status of the native
 VM + LLVM paths, see `docs/native_compiler.md`.
 
+### Upgrade guide
+
+For users migrating from pre-1.0 development snapshots, follow the guidance in
+`docs/release_migration_guides.md#100`.
+
 ## Update checklist for future major releases
 
 When a new major version is released:

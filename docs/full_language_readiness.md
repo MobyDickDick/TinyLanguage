@@ -36,7 +36,9 @@ interpreter and tooling footprint.
 - [x] Publish official release artifacts (versioned binaries, pip/npm packages
   as needed) and a reproducible build pipeline (see
   `docs/release_artifacts_pipeline.md`).
-- [ ] Provide upgrade guides and compatibility matrices for each release.
+- [x] Provide upgrade guides and compatibility matrices for each release (see
+  `docs/release_migration_guides.md` and
+  `docs/release_compatibility_matrix.md`).
 
 ### 6) Ecosystem maturity
 - [ ] Define interoperability/FFI guidelines (embedding, calling C/Python, data

@@ -13,10 +13,6 @@ they can be tackled incrementally.
 - **Task list (statusable, current prototype)**:
 ### Open tasks
 
-  - [ ] Add an LLVM conformance smoke suite that compiles a representative set of Tiny programs
-        (arithmetic, control flow, functions, heap ops, string ops) via `--emit-llvm`, then executes
-        them with `clang`/`llc` and asserts on stdout/stderr snapshots.
-
   - [ ] Extend the LLVM emitter to cover remaining runtime built-ins needed by the interpreter
         (confirm gap list by diffing `tiny_language_runtime.py` built-ins against LLVM lowering).
 
@@ -27,6 +23,10 @@ they can be tackled incrementally.
         runtime) using the microbenchmarks in `benchmarks/microbenchmarks.py`.
 
 ### Closed tasks
+
+  - [x] Add an LLVM conformance smoke suite that compiles a representative set of Tiny programs
+        (arithmetic, control flow, functions, heap ops, string ops) via `--emit-llvm`, then executes
+        them with `clang`/`llc` and asserts on stdout/stderr snapshots.
 
   - [x] Map straight-line code (arithmetic expressions, variables, `print`).
 

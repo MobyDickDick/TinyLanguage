@@ -23,7 +23,8 @@ interpreter and tooling footprint.
 ### 3) Standard library coverage
 - [x] Prioritize missing core modules (`json`, `pathlib`, `os`, `fs` primitives)
   with parity tests against Python behavior.
-- [ ] Document stdlib API stability guarantees and module maturity tiers.
+- [x] Document stdlib API stability guarantees and module maturity tiers (see
+  `docs/stdlib_compatibility.md`).
 
 ### 4) Tooling + developer experience
 - [ ] Expand LSP coverage (rename, references, code actions) and publish a

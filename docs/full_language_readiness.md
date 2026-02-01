@@ -43,7 +43,7 @@ interpreter and tooling footprint.
 ### 6) Ecosystem maturity
 - [x] Define interoperability/FFI guidelines (embedding, calling C/Python, data
   marshaling rules). (See `docs/ffi_interop_guidelines.md`.)
-- [ ] Establish performance budgets and profiling baselines for each backend.
+- [x] Establish performance budgets and profiling baselines for each backend.
 
 ## Completed (this update)
 
@@ -58,3 +58,5 @@ interpreter and tooling footprint.
   stdout/stderr snapshots for spec examples.
 - [x] Ship a reference project layout template with tooling defaults (see
   `docs/project_template_v1/`).
+- [x] Define backend performance budgets and baseline snapshots (see
+  `docs/performance_budgets_and_baselines.md`).

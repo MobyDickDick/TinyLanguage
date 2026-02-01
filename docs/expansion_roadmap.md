@@ -16,7 +16,7 @@ they can be tackled incrementally.
   - [x] Document a minimal, reproducible LLVM toolchain setup (versions + flags) in
         `docs/native_compiler.md`, including common failure modes and fixes.
 
-  - [ ] Add an LLVM optimization checklist with measurable before/after metrics (compile time,
+  - [x] Add an LLVM optimization checklist with measurable before/after metrics (compile time,
         runtime) using the microbenchmarks in `benchmarks/microbenchmarks.py`.
 
 ### Closed tasks

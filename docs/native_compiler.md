@@ -106,6 +106,67 @@ pass `--opt-level 2` to `--emit-exe` so TinyLanguage drives the optimization.
 | Unsupported target triple | `error: unknown target triple` | Pass a known target triple via the CLI (see `--native-diagnostics`) or install the matching LLVM target backend. |
 | IR verification failures | `LLVM ERROR: Broken module found` | Lower optimization levels (`--llvm-opt-level 0`), then bisect the input to isolate unsupported constructs. |
 
+## LLVM optimization checklist (with benchmark metrics)
+
+Use this checklist when you change LLVM lowering or tweak optimization flags.
+The goal is to gather **before/after** numbers for both compile time and
+runtime using the microbenchmarks in `benchmarks/microbenchmarks.py`.
+
+### 1) Record the baseline (no extra LLVM optimizations)
+
+1. **Compile time (IR → executable)**
+
+   ```bash
+   /usr/bin/time -p PYTHONPATH=src python src/tiny_language.py --emit-exe /tmp/tiny-bench \
+     --llvm-opt-level 0 --opt-level 0 benchmarks/microbenchmarks.tiny
+   ```
+
+   Capture `real` time in seconds.
+
+2. **Runtime**
+
+   ```bash
+   /usr/bin/time -p /tmp/tiny-bench
+   ```
+
+   Capture `real` time in seconds.
+
+3. **Benchmark output**
+
+   ```bash
+   PYTHONPATH=src python benchmarks/microbenchmarks.py
+   ```
+
+   Copy the printed benchmark table for reference.
+
+### 2) Record the optimized run
+
+Repeat the same commands, but enable optimizations:
+
+```bash
+/usr/bin/time -p PYTHONPATH=src python src/tiny_language.py --emit-exe /tmp/tiny-bench-opt \
+  --llvm-opt-level 2 --opt-level 2 benchmarks/microbenchmarks.tiny
+/usr/bin/time -p /tmp/tiny-bench-opt
+PYTHONPATH=src python benchmarks/microbenchmarks.py
+```
+
+### 3) Fill in the before/after table
+
+| Metric | Baseline (`--llvm-opt-level 0`, `--opt-level 0`) | Optimized (`--llvm-opt-level 2`, `--opt-level 2`) | Delta |
+| --- | --- | --- | --- |
+| Compile time (`/usr/bin/time`) | | | |
+| Runtime (`/usr/bin/time`) | | | |
+| Benchmark highlights | | | |
+
+### 4) Notes and next actions
+
+- If compile time regresses >10% with minimal runtime gain, prefer a lower
+  optimization level or reduce the LLVM pass list.
+- If runtime improves but compile time balloons, document it in the PR so we
+  can decide whether the new default should stay optional.
+- Keep the benchmark output snippet in the PR body or commit message for
+  traceability.
+
 ## Current CLI workflow and VM boundaries
 
 - **Plan for A/B comparisons**: Every run with `--native-backend` should be repeated once without the flag to surface divergences from the interpreter immediately.

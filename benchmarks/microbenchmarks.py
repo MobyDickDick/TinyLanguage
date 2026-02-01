@@ -279,7 +279,7 @@ def map = Map.new();
 def i = 0;
 def last = 0;
 while (i < {iterations}) {{
-    _ = Map.set(map, i, i + 1);
+    updated = Map.set(map, i, i + 1);
     // Read the value back to ensure lookups participate in timing.
     last = Map.get(map, i);
     i = i + 1;

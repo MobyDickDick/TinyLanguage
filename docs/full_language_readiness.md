@@ -41,8 +41,8 @@ interpreter and tooling footprint.
   `docs/release_compatibility_matrix.md`).
 
 ### 6) Ecosystem maturity
-- [ ] Define interoperability/FFI guidelines (embedding, calling C/Python, data
-  marshaling rules).
+- [x] Define interoperability/FFI guidelines (embedding, calling C/Python, data
+  marshaling rules). (See `docs/ffi_interop_guidelines.md`.)
 - [ ] Establish performance budgets and profiling baselines for each backend.
 
 ## Completed (this update)

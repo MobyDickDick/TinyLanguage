@@ -13,7 +13,18 @@ they can be tackled incrementally.
 - **Task list (statusable, current prototype)**:
 ### Open tasks
 
-_None_
+  - [ ] Add an LLVM conformance smoke suite that compiles a representative set of Tiny programs
+        (arithmetic, control flow, functions, heap ops, string ops) via `--emit-llvm`, then executes
+        them with `clang`/`llc` and asserts on stdout/stderr snapshots.
+
+  - [ ] Extend the LLVM emitter to cover remaining runtime built-ins needed by the interpreter
+        (confirm gap list by diffing `tiny_language_runtime.py` built-ins against LLVM lowering).
+
+  - [ ] Document a minimal, reproducible LLVM toolchain setup (versions + flags) in
+        `docs/native_compiler.md`, including common failure modes and fixes.
+
+  - [ ] Add an LLVM optimization checklist with measurable before/after metrics (compile time,
+        runtime) using the microbenchmarks in `benchmarks/microbenchmarks.py`.
 
 ### Closed tasks
 
@@ -29,7 +40,17 @@ _None_
 - **LLVM integration tasks (Julia-style, incremental)**:
 ### Open tasks
 
-_None_
+  - [ ] Add a `math` module parity map: list Python APIs to mirror, then implement TL equivalents in
+        `stdlib/math.tiny` with cross-check tests against Python results.
+
+  - [ ] Add a `random` module parity map: define minimal API surface (seed, randint, choice,
+        shuffle) and introduce deterministic tests using fixed seeds.
+
+  - [ ] Add a `string` module parity map: extend beyond current string helpers with utilities like
+        `split`, `join`, `strip`, `replace`, and document any deviations.
+
+  - [ ] Add a `datetime` module parity map: document supported types and format helpers, then build
+        a TL subset with snapshot tests for parsing/formatting.
 
 ### Closed tasks
 
@@ -75,6 +96,20 @@ _None_
 - **Keep scope small**: e.g. `Statistics` or simple linear algebra.
 - **PoC modules**: First functions (e.g. `mean`, `std`) with tests.
 - **API notes**: Document differences to Julia.
+### Open tasks
+
+  - [ ] Define the target Julia subset (e.g. `Statistics`) and list the specific functions to
+        implement in `docs/julia_subset.md` with signatures and examples.
+
+  - [ ] Implement `mean` and `std` in a new TL module (e.g. `stdlib/statistics.tiny`) and add tests
+        that compare TL output against Python/NumPy reference values where feasible.
+
+  - [ ] Add a short compatibility table that flags precision or edge-case differences compared to
+        Julia (NaN handling, empty collections, integer promotion).
+
+### Closed tasks
+
+_None_
 
 ## 5) Debugging & IDEs
 
@@ -101,3 +136,22 @@ _None_
   - [x] Add `String.starts_with(text, prefix)` + `String.ends_with(text, suffix)` with tests in `tests/detailtests/test_stdlib.py`.
 
   - [x] Add `String.replace(text, old, new)` with coverage in `tests/detailtests/test_stdlib.py`.
+
+## 7) Self-hosting parity verification
+
+- **Goal**: Keep Tiny self-hosting modules aligned with Python behavior and error messages.
+- **Scope**: Lexer/parser, runtime/eval, linter, transpilers, CLI, and native backend parity.
+### Open tasks
+
+  - [ ] Add parity snapshots for CLI and LSP flows by running both Python and Tiny CLIs on the
+        same inputs and asserting identical diagnostics and exit codes.
+
+  - [ ] Expand parity tests to cover error formatting and span consistency between Python and Tiny
+        (including multi-line errors and nested spans).
+
+  - [ ] Introduce a regression matrix for self-hosting modules that records last-verified
+        interpreter/hash versions and known deviations.
+
+### Closed tasks
+
+_None_

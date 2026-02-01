@@ -29,8 +29,8 @@ interpreter and tooling footprint.
 ### 4) Tooling + developer experience
 - [x] Expand LSP coverage (rename, references, code actions) and publish a
   feature matrix (see `docs/language_server_workflows.md`).
-- [ ] Provide a debug adapter integration guide with troubleshooting steps for
-  all supported launch modes.
+- [x] Provide a debug adapter integration guide with troubleshooting steps for
+  all supported launch modes (see `docs/debug_adapter_integration.md`).
 
 ### 5) Distribution + releases
 - [ ] Publish official release artifacts (versioned binaries, pip/npm packages

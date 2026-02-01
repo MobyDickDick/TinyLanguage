@@ -69,6 +69,23 @@ Outputs are JSON so they can be piped into tools or inspected visually. Example 
 The diagnostics payload follows the shared schema in
 [`docs/diagnostic_error_schema.md`](diagnostic_error_schema.md).
 
+## LSP feature matrix
+
+This matrix summarizes which LSP-style capabilities are currently exposed by
+the TinyLanguage language server helper and its CLI wrapper.
+
+| Capability | LSP method | CLI subcommand | Status | Notes |
+| --- | --- | --- | --- | --- |
+| Completions | `textDocument/completion` | `completions` | ✅ Supported | Prefix-based matches across user symbols, keywords, and built-ins. |
+| Hover | `textDocument/hover` | `hover` | ✅ Supported | Returns symbol name, detail, and 1-based position. |
+| Definition | `textDocument/definition` | `definition` | ✅ Supported | Resolves symbols to their definition locations. |
+| References | `textDocument/references` | `references` | ✅ Supported | Lexer-based reference ranges (1-based, end-exclusive). |
+| Rename | `textDocument/rename` | `rename` | ✅ Supported | Returns text edits to rename all references. |
+| Code actions | `textDocument/codeAction` | `code-actions` | ✅ Supported | Currently includes format-document action. |
+| Formatting | `textDocument/formatting` | `format` / `format-edits` | ✅ Supported | Full-document formatting or text edits. |
+| Diagnostics | `textDocument/diagnostic` | `diagnostics` | ✅ Supported | Lints + parse errors emitted as structured ranges. |
+| Workspace symbols | `workspace/symbol` | `workspace-symbols` | ✅ Supported | Substring search across indexed symbols. |
+
 ## Supported methods and example payloads
 
 Each subcommand is a thin wrapper around an internal request/response pair and can be copy/pasted into JSON-RPC glue code. Positions are 1-based and include namespace-qualified symbols (`Math.inc`, `Tools.double`, …). Currently exposed methods (keep this table in sync with the helpers in `src/language_server.py`):

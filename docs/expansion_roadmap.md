@@ -13,9 +13,6 @@ they can be tackled incrementally.
 - **Task list (statusable, current prototype)**:
 ### Open tasks
 
-  - [ ] Extend the LLVM emitter to cover remaining runtime built-ins needed by the interpreter
-        (confirm gap list by diffing `tiny_language_runtime.py` built-ins against LLVM lowering).
-
   - [ ] Document a minimal, reproducible LLVM toolchain setup (versions + flags) in
         `docs/native_compiler.md`, including common failure modes and fixes.
 
@@ -23,6 +20,9 @@ they can be tackled incrementally.
         runtime) using the microbenchmarks in `benchmarks/microbenchmarks.py`.
 
 ### Closed tasks
+
+  - [x] Extend the LLVM emitter to cover remaining runtime built-ins needed by the interpreter
+        (confirm gap list by diffing `tiny_language_runtime.py` built-ins against LLVM lowering).
 
   - [x] Add an LLVM conformance smoke suite that compiles a representative set of Tiny programs
         (arithmetic, control flow, functions, heap ops, string ops) via `--emit-llvm`, then executes

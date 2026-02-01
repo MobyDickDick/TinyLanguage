@@ -445,6 +445,16 @@ def test_llvm_codegen_emits_heap_calls() -> None:
     assert "call i64 @heap_get(i64" in llvm_ir
 
 
+def test_llvm_codegen_emits_heap_introspection_calls() -> None:
+    """Heap length and leak report helpers should be emitted when referenced."""
+    source = "def ptr = new(2); print(heap_len(ptr)); print(heap_leak_report());"
+
+    llvm_ir = compile_to_llvm_ir(source)
+
+    assert "call i64 @heap_len(i64" in llvm_ir
+    assert "call i64 @heap_leak_report()" in llvm_ir
+
+
 def test_llvm_codegen_emits_heap_string_helpers() -> None:
     """Heap string helpers should be generated for string accessors."""
     source = 'def ptr = new(1); def ignored1 = heap_set(ptr, 0, "hello"); print(heap_get(ptr, 0));'

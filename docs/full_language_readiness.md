@@ -27,8 +27,8 @@ interpreter and tooling footprint.
   `docs/stdlib_compatibility.md`).
 
 ### 4) Tooling + developer experience
-- [ ] Expand LSP coverage (rename, references, code actions) and publish a
-  feature matrix.
+- [x] Expand LSP coverage (rename, references, code actions) and publish a
+  feature matrix (see `docs/language_server_workflows.md`).
 - [ ] Provide a debug adapter integration guide with troubleshooting steps for
   all supported launch modes.
 

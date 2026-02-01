@@ -44,6 +44,68 @@ This draft outlines the target architecture for an alternative backend that exec
 - **Diagnostics**: Add `--native-diagnostics` to emit compiler/LLVM configuration details (opt levels, target info, and compiler resolution) to stderr.
 - **Regression tests**: `python -m pytest tests/test_native_codegen.py -q` compares interpreter and native-backend output and ensures unsupported constructs remain visible as `NotImplementedError`.
 
+## Minimal LLVM toolchain setup (reproducible)
+
+The LLVM pipeline expects a working `clang` + `llc` toolchain and (optionally)
+`llvmlite` for the JIT runner. Keep the LLVM pieces on the same major version.
+
+### Recommended versions
+
+- **LLVM/clang/llc**: 15.x or 16.x (same major version across tools).
+- **llvmlite** (optional): build against the same major LLVM version as above.
+
+If your distro packages a newer LLVM (e.g. 17+), it can still work as long as
+all LLVM tools (`clang`, `llc`, `llvm-config`) match on the major version.
+
+### Baseline commands
+
+```bash
+clang --version
+llc --version
+llvm-config --version
+```
+
+Check that the major versions match (for example, all report `15.x` or `16.x`).
+
+### Minimal end-to-end workflow
+
+```bash
+# 1) Emit LLVM IR from TinyLanguage.
+PYTHONPATH=src python src/tiny_language.py --emit-llvm out.ll path/to/program.tiny
+
+# 2) Build a native executable with clang.
+clang -O0 -g -o out out.ll
+
+# 3) Run the binary.
+./out
+```
+
+If you want a release-style build, use `-O2` (or `-O3`) in the `clang` step, or
+pass `--opt-level 2` to `--emit-exe` so TinyLanguage drives the optimization.
+
+### Common flags and when to use them
+
+- **TinyLanguage flags**:
+  - `--emit-llvm out.ll`: emit human-readable LLVM IR.
+  - `--emit-exe out`: compile to a native binary using `clang`.
+  - `--llvm-opt-level 0|1|2|3`: set LLVM IR optimization level.
+  - `--opt-level 0|1|2|3`: set `clang` optimization level for executables.
+  - `--compiler /path/to/clang`: override the compiler resolution.
+- **clang flags** (manual builds):
+  - `-O0/-O2/-O3`: optimization level.
+  - `-g`: include debug symbols (useful for LLDB/GDB).
+  - `-fno-omit-frame-pointer`: optional; keeps call stacks clearer for profiling.
+
+### Common failure modes and fixes
+
+| Symptom | Typical error | Fix |
+| --- | --- | --- |
+| `clang` not found | `FileNotFoundError: [Errno 2] No such file or directory: 'clang'` | Install clang or point to it with `--compiler /path/to/clang`. |
+| `llc` not found | `RuntimeError: llc not found on PATH` | Install LLVM tools and ensure `llc` is on `PATH`. |
+| Mixed LLVM versions | `LLVM ERROR: mismatch in LLVM version` or `llvmlite: incompatible LLVM` | Align versions: make sure `clang`, `llc`, and `llvm-config` share the same major version; rebuild `llvmlite` against that version. |
+| Unsupported target triple | `error: unknown target triple` | Pass a known target triple via the CLI (see `--native-diagnostics`) or install the matching LLVM target backend. |
+| IR verification failures | `LLVM ERROR: Broken module found` | Lower optimization levels (`--llvm-opt-level 0`), then bisect the input to isolate unsupported constructs. |
+
 ## Current CLI workflow and VM boundaries
 
 - **Plan for A/B comparisons**: Every run with `--native-backend` should be repeated once without the flag to surface divergences from the interpreter immediately.

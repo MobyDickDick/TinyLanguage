@@ -13,7 +13,7 @@ they can be tackled incrementally.
 - **Task list (statusable, current prototype)**:
 ### Open tasks
 
-  - [ ] Document a minimal, reproducible LLVM toolchain setup (versions + flags) in
+  - [x] Document a minimal, reproducible LLVM toolchain setup (versions + flags) in
         `docs/native_compiler.md`, including common failure modes and fixes.
 
   - [ ] Add an LLVM optimization checklist with measurable before/after metrics (compile time,

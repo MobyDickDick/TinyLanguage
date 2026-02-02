@@ -1,5 +1,14 @@
 # Open tasks archive
 
+Archived from `docs/open_tasks.md` on 2026-02-02.
+
+## Backlog refresh (completed)
+
+- [x] Publish a refreshed near-term backlog (owners + success criteria).
+  - Owner: Project Lead
+  - Success: Top 5 tasks confirmed, prioritized, and time-boxed in
+    `docs/open_tasks.md`.
+
 Archived from `docs/open_tasks.md` on 2026-02-01.
 
 # Open tasks

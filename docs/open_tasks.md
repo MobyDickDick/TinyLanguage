@@ -5,9 +5,26 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
-- [ ] Publish a refreshed near-term backlog (owners + success criteria).
-  - Owner: Project Lead
-  - Success: Top 5 tasks below are confirmed, prioritized, and time-boxed.
+The active work items are tracked in the refreshed near-term backlog and the
+sections below.
+
+## Refreshed near-term backlog (published 2026-02-02)
+
+Timebox: 2026-02-02 to 2026-03-16 (6 weeks).
+
+1. **Improve error positions and messages** (Owner: Language Core)
+   - Success: Source spans propagate through tokens + AST; diagnostics include
+     consistent line/column ranges.
+2. **Refine linter “must-use” and unreachable-code checks** (Owner: Language Core)
+   - Success: Lints cover control-flow exits and flag unreachable code with tests.
+3. **Harden heap API diagnostics** (Owner: Runtime)
+   - Success: Interpreter reports detailed heap failures; regression tests cover
+     error cases (invalid pointer, bounds, double-delete, leak tracking).
+4. **Stabilize formatter + lints + LSP workflows** (Owner: Tooling)
+   - Success: Documented formatter rules, lint profiles, and LSP smoke tests.
+5. **Expand native backend stability docs** (Owner: Native Backends)
+   - Success: `docs/c_backend.md` and LLVM notes updated with current
+     limitations and usage guidance.
 
 ## Near-term priorities (next 4-6 weeks)
 

@@ -40,9 +40,6 @@ Timebox: 2026-02-02 to 2026-03-16 (6 weeks).
 
 ## Expansion roadmap follow-ups
 
-- [ ] Add a `datetime` parity map and a minimal TL subset with snapshot tests.
-  - Owner: Stdlib
-  - Success: `stdlib/datetime.tiny` scope documented and tested against known inputs.
 - [x] Define the Julia subset target and list functions in `docs/julia_subset.md`.
   - Owner: Language/Stdlib
   - Success: Documented function list with examples and scope boundaries.

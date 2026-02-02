@@ -1,0 +1,33 @@
+// Spec: stdlib.datetime ISO parsing + formatting snapshots.
+
+import stdlib.datetime;
+
+def datetime_iso = datetime.datetime_isoformat(2024, 2, 3, 4, 5, 6);
+print(datetime_iso);
+
+def date_iso = datetime.date_isoformat(2024, 2, 3);
+print(date_iso);
+
+def time_iso = datetime.time_isoformat(4, 5, 6);
+print(time_iso);
+
+def datetime_parts = datetime.datetime_parse_iso("2024-02-03T04:05:06");
+print(heap_get(datetime_parts, 0));
+print(heap_get(datetime_parts, 1));
+print(heap_get(datetime_parts, 2));
+print(heap_get(datetime_parts, 3));
+print(heap_get(datetime_parts, 4));
+print(heap_get(datetime_parts, 5));
+def _cleanup_datetime_parts = delete(datetime_parts);
+
+def date_parts = datetime.date_parse_iso("2024-02-03");
+print(heap_get(date_parts, 0));
+print(heap_get(date_parts, 1));
+print(heap_get(date_parts, 2));
+def _cleanup_date_parts = delete(date_parts);
+
+def time_parts = datetime.time_parse_iso("04:05:06");
+print(heap_get(time_parts, 0));
+print(heap_get(time_parts, 1));
+print(heap_get(time_parts, 2));
+def _cleanup_time_parts = delete(time_parts);

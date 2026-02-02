@@ -49,7 +49,7 @@ they can be tackled incrementally.
   - [x] Add a `string` module parity map: extend beyond current string helpers with utilities like
         `split`, `join`, `strip`, `replace`, and document any deviations.
 
-  - [ ] Add a `datetime` module parity map: document supported types and format helpers, then build
+  - [x] Add a `datetime` module parity map: document supported types and format helpers, then build
         a TL subset with snapshot tests for parsing/formatting.
 
 ### Closed tasks

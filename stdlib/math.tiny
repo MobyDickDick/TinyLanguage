@@ -48,3 +48,36 @@ fn max(a, b) {
 fn min(a, b) {
   return Math.min(a, b);
 }
+
+fn trunc(x) {
+  if (x < 0) {
+    return Math.ceil(x);
+  }
+  return Math.floor(x);
+}
+
+fn degrees(radians) {
+  return radians * 180 / pi;
+}
+
+fn radians(degrees) {
+  return degrees * pi / 180;
+}
+
+fn copysign(x, y) {
+  if (y < 0) {
+    return -Math.abs(x);
+  }
+  return Math.abs(x);
+}
+
+fn isclose_tol(a, b, rel_tol, abs_tol) {
+  def diff = Math.abs(a - b);
+  def max_ab = Math.max(Math.abs(a), Math.abs(b));
+  def tolerance = Math.max(rel_tol * max_ab, abs_tol);
+  return diff <= tolerance;
+}
+
+fn isclose(a, b) {
+  return isclose_tol(a, b, 1e-9, 0);
+}

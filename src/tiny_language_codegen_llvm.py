@@ -3114,6 +3114,10 @@ class LLVMCodeGenerator:
             return _ResolvedFunctionSignature(
                 param_types={"ptr": "i64", "idx": "i64", "value": "i1"}, return_type="i64"
             )
+        if name == "heap_len":
+            return _ResolvedFunctionSignature(param_types={"ptr": "i64"}, return_type="i64")
+        if name == "heap_leak_report":
+            return _ResolvedFunctionSignature(param_types={}, return_type="i64")
         if name == "delete":
             return _ResolvedFunctionSignature(param_types={"ptr": "i64"}, return_type="i64")
         return None

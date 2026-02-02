@@ -42,8 +42,16 @@ print(math.min(2, 9));
 print(math.pi);
 print(math.tau);
 print(math.e);
+print(math.trunc(3.9));
+print(math.trunc(-3.9));
+print(math.degrees(math.pi));
+print(math.radians(180));
+print(math.copysign(2.5, -1));
+print(math.copysign(-2.5, 1));
+print(math.isclose(0.1 + 0.2, 0.3));
+print(math.isclose_tol(0.1 + 0.2, 0.3, 1e-12, 0));
 """
-    values = [float(value) for value in _run_lines(source)]
+    values = _run_lines(source)
     expected = [
         py_math.sqrt(81),
         py_math.fabs(-12.5),
@@ -59,8 +67,21 @@ print(math.e);
         py_math.pi,
         py_math.tau,
         py_math.e,
+        py_math.trunc(3.9),
+        py_math.trunc(-3.9),
+        py_math.degrees(py_math.pi),
+        py_math.radians(180),
+        py_math.copysign(2.5, -1),
+        py_math.copysign(-2.5, 1),
+        py_math.isclose(0.1 + 0.2, 0.3),
+        py_math.isclose(0.1 + 0.2, 0.3, rel_tol=1e-12, abs_tol=0.0),
     ]
-    assert values == pytest.approx(expected)
+    assert len(values) == len(expected)
+    for value, expected_value in zip(values, expected, strict=True):
+        if isinstance(expected_value, bool):
+            assert value == str(expected_value).lower()
+        else:
+            assert float(value) == pytest.approx(expected_value)
 
 
 def test_stdlib_string_matches_python() -> None:

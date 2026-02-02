@@ -22,9 +22,6 @@ Timebox: 2026-02-02 to 2026-03-16 (6 weeks).
      error cases (invalid pointer, bounds, double-delete, leak tracking).
 4. **Stabilize formatter + lints + LSP workflows** (Owner: Tooling)
    - Success: Documented formatter rules, lint profiles, and LSP smoke tests.
-5. **Expand native backend stability docs** (Owner: Native Backends)
-   - Success: `docs/c_backend.md` and LLVM notes updated with current
-     limitations and usage guidance.
 
 ## Near-term priorities (next 4-6 weeks)
 
@@ -40,9 +37,6 @@ Timebox: 2026-02-02 to 2026-03-16 (6 weeks).
 - [ ] Stabilize formatter + lints + LSP workflows.
   - Owner: Tooling
   - Success: Documented formatter rules, lint profiles, and LSP smoke tests.
-- [ ] Expand native backend stability docs (C backend + LLVM status).
-  - Owner: Native Backends
-  - Success: `docs/c_backend.md` and LLVM notes updated with current limitations and usage.
 
 ## Expansion roadmap follow-ups
 

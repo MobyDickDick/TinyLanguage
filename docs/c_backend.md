@@ -49,6 +49,35 @@ python -m tinyc_cli examples/c_backend/hello_world.tiny --emit-bc build/hello_wo
 If you want debug symbols and no optimizations, add `--debug` (passes `-g -O0`
 to the compiler).
 
+## Stability status and guidance
+
+The C backend is intended for quick native builds of the TinyLanguage subset
+described below. It is stable for that subset, but it is not a full-language
+replacement for the interpreter. Expect `NotImplementedError` for unsupported
+features and runtime errors from the embedded VM if the bytecode hits a missing
+opcode path.
+
+Use this backend when you need:
+
+- Fast, single-binary prototypes for the supported subset.
+- A quick way to compare interpreter output with native output.
+- A stepping stone to LLVM IR/bitcode emission via `clang`.
+
+Prefer the interpreter or LLVM-native backend when you need:
+
+- Modules, classes, heap operations, collections, pattern matching, or
+  concurrency.
+- Precise diagnostic spans or advanced tooling integrations.
+
+## Known limitations
+
+- **Opcode coverage is intentionally small**: unsupported constructs fail fast
+  during codegen with `NotImplementedError`.
+- **Runtime diagnostics are VM-level**: they do not include rich source spans.
+- **Platform dependencies**: the emitted C must be compiled with a local toolchain.
+- **Output parity**: formatting is line-based; expect minor differences if you
+  rely on interpreter-only formatting quirks.
+
 ## Supported subset
 
 The C backend intentionally targets the minimal native-VM subset. It supports:

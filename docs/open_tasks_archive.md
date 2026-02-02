@@ -2,6 +2,14 @@
 
 Archived from `docs/open_tasks.md` on 2026-02-02.
 
+## Native backend documentation updates (completed)
+
+- [x] Expand native backend stability docs (C backend + LLVM status).
+  - Owner: Native Backends
+  - Success: `docs/c_backend.md` and LLVM notes updated with current limitations and usage.
+
+Archived from `docs/open_tasks.md` on 2026-02-02.
+
 ## Backlog refresh (completed)
 
 - [x] Publish a refreshed near-term backlog (owners + success criteria).

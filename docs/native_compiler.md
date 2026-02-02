@@ -44,6 +44,33 @@ This draft outlines the target architecture for an alternative backend that exec
 - **Diagnostics**: Add `--native-diagnostics` to emit compiler/LLVM configuration details (opt levels, target info, and compiler resolution) to stderr.
 - **Regression tests**: `python -m pytest tests/test_native_codegen.py -q` compares interpreter and native-backend output and ensures unsupported constructs remain visible as `NotImplementedError`.
 
+## Stability status and known gaps
+
+The native VM and LLVM pipeline are prototype backends. They are stable for the
+subset described in this document but remain experimental beyond that scope.
+Use them for performance experiments and native builds, not as a full
+interpreter replacement.
+
+**What is stable today**
+
+- Deterministic output for arithmetic, control flow, and simple function calls.
+- Consistent `NotImplementedError` surface for unsupported constructs.
+- LLVM emission for numeric/control-flow-heavy programs when `clang` is present.
+
+**What is not covered yet**
+
+- Heap operations, collections, classes, pattern matching, concurrency, and
+  advanced stdlib modules.
+- Rich diagnostic spans (line/column ranges) on the LLVM path.
+- Debugger/LSP integrations (the REPL stays interpreter-backed).
+
+**Practical guidance**
+
+- Use `--native-backend` for fast A/B comparisons with the interpreter.
+- Use `--emit-llvm`/`--emit-exe` only when you can compile with a local LLVM
+  toolchain and you are staying within the supported subset.
+- Prefer the interpreter for feature-complete semantics and diagnostics.
+
 ## Minimal LLVM toolchain setup (reproducible)
 
 The LLVM pipeline expects a working `clang` + `llc` toolchain and (optionally)

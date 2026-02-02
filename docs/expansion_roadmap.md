@@ -98,7 +98,7 @@ _None_
 - **API notes**: Document differences to Julia.
 ### Open tasks
 
-  - [ ] Define the target Julia subset (e.g. `Statistics`) and list the specific functions to
+  - [x] Define the target Julia subset (e.g. `Statistics`) and list the specific functions to
         implement in `docs/julia_subset.md` with signatures and examples.
 
   - [ ] Implement `mean` and `std` in a new TL module (e.g. `stdlib/statistics.tiny`) and add tests

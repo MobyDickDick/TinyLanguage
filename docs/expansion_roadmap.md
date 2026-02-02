@@ -43,7 +43,7 @@ they can be tackled incrementally.
   - [x] Add a `math` module parity map: list Python APIs to mirror, then implement TL equivalents in
         `stdlib/math.tiny` with cross-check tests against Python results.
 
-  - [ ] Add a `random` module parity map: define minimal API surface (seed, randint, choice,
+  - [x] Add a `random` module parity map: define minimal API surface (seed, randint, choice,
         shuffle) and introduce deterministic tests using fixed seeds.
 
   - [ ] Add a `string` module parity map: extend beyond current string helpers with utilities like

@@ -46,7 +46,7 @@ they can be tackled incrementally.
   - [x] Add a `random` module parity map: define minimal API surface (seed, randint, choice,
         shuffle) and introduce deterministic tests using fixed seeds.
 
-  - [ ] Add a `string` module parity map: extend beyond current string helpers with utilities like
+  - [x] Add a `string` module parity map: extend beyond current string helpers with utilities like
         `split`, `join`, `strip`, `replace`, and document any deviations.
 
   - [ ] Add a `datetime` module parity map: document supported types and format helpers, then build

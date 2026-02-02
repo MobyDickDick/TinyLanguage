@@ -40,7 +40,7 @@ they can be tackled incrementally.
 - **LLVM integration tasks (Julia-style, incremental)**:
 ### Open tasks
 
-  - [ ] Add a `math` module parity map: list Python APIs to mirror, then implement TL equivalents in
+  - [x] Add a `math` module parity map: list Python APIs to mirror, then implement TL equivalents in
         `stdlib/math.tiny` with cross-check tests against Python results.
 
   - [ ] Add a `random` module parity map: define minimal API surface (seed, randint, choice,

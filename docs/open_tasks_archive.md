@@ -1,9 +1,6 @@
 # Open tasks archive
 
-This file preserves previously completed backlog items from `docs/open_tasks.md`.
-It is intended to keep the active open-tasks file focused on current work.
-
----
+Archived from `docs/open_tasks.md` on 2026-02-01.
 
 # Open tasks
 

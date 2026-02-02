@@ -1,9 +1,8 @@
 # Open tasks
 
-This file tracks the currently active work items for TinyLanguage.
-Completed backlog items have been archived to keep this list focused.
-See `docs/open_tasks_archive.md` for historical context.
+This file tracks only active work items for TinyLanguage. Completed tasks are
+archived in `docs/open_tasks_archive.md`.
 
-## Active tasks
+## Current tasks
 
-_No active backlog items at this time._
+- (none)

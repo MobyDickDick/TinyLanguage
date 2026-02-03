@@ -43,7 +43,7 @@ Timebox: 2026-02-02 to 2026-03-16 (6 weeks).
 - [x] Define the Julia subset target and list functions in `docs/julia_subset.md`.
   - Owner: Language/Stdlib
   - Success: Documented function list with examples and scope boundaries.
-- [ ] Implement `mean` + `std` in a new statistics module with tests.
+- [x] Implement `mean` + `std` in a new statistics module with tests.
   - Owner: Stdlib
   - Success: `stdlib/statistics.tiny` plus tests comparing outputs to Python/NumPy where feasible.
 - [ ] Add self-hosting parity snapshots for CLI + LSP diagnostics.

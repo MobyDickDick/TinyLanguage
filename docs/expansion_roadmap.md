@@ -101,7 +101,7 @@ _None_
   - [x] Define the target Julia subset (e.g. `Statistics`) and list the specific functions to
         implement in `docs/julia_subset.md` with signatures and examples.
 
-  - [ ] Implement `mean` and `std` in a new TL module (e.g. `stdlib/statistics.tiny`) and add tests
+  - [x] Implement `mean` and `std` in a new TL module (e.g. `stdlib/statistics.tiny`) and add tests
         that compare TL output against Python/NumPy reference values where feasible.
 
   - [ ] Add a short compatibility table that flags precision or edge-case differences compared to
@@ -109,7 +109,8 @@ _None_
 
 ### Closed tasks
 
-_None_
+- [x] Implement `mean` and `std` in a new TL module (e.g. `stdlib/statistics.tiny`) and add tests
+      that compare TL output against Python/NumPy reference values where feasible.
 
 ## 5) Debugging & IDEs
 

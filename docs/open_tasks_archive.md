@@ -261,6 +261,7 @@ become concrete tasks.
 ## Stdlib + compatibility
 
 - [x] Port prioritized Python stdlib modules (`math`, `random`, `string`, `datetime`) with comparison tests.
+- [x] Add a `datetime` parity map plus ISO parsing/formatting snapshot tests.
 - [x] Ship a small Julia subset (e.g., `Statistics` with `mean`/`std`) and document API differences.
 
 ## Future roadmap ideas

@@ -1,11 +1,14 @@
 // TinyLanguage stdlib: datetime module (Python-style subset)
 
 fn __datetime_allowlist() {
-  def allow = new(4);
+  def allow = new(7);
   heap_set(allow, 0, "datetime_isoformat");
   heap_set(allow, 1, "date_isoformat");
   heap_set(allow, 2, "time_isoformat");
   heap_set(allow, 3, "timedelta_total_seconds");
+  heap_set(allow, 4, "datetime_parse_iso");
+  heap_set(allow, 5, "date_parse_iso");
+  heap_set(allow, 6, "time_parse_iso");
   return allow;
 }
 
@@ -71,6 +74,51 @@ fn total_seconds(days, seconds) {
   def result = Python.call(
     "stdlib_datetime",
     "timedelta_total_seconds",
+    args,
+    { allow: allow }
+  );
+  def _cleanup_args = delete(args);
+  def _cleanup_allow = delete(allow);
+  return result;
+}
+
+fn datetime_parse_iso(value) {
+  def allow = __datetime_allowlist();
+  def args = new(1);
+  heap_set(args, 0, value);
+  def result = Python.call(
+    "stdlib_datetime",
+    "datetime_parse_iso",
+    args,
+    { allow: allow }
+  );
+  def _cleanup_args = delete(args);
+  def _cleanup_allow = delete(allow);
+  return result;
+}
+
+fn date_parse_iso(value) {
+  def allow = __datetime_allowlist();
+  def args = new(1);
+  heap_set(args, 0, value);
+  def result = Python.call(
+    "stdlib_datetime",
+    "date_parse_iso",
+    args,
+    { allow: allow }
+  );
+  def _cleanup_args = delete(args);
+  def _cleanup_allow = delete(allow);
+  return result;
+}
+
+fn time_parse_iso(value) {
+  def allow = __datetime_allowlist();
+  def args = new(1);
+  heap_set(args, 0, value);
+  def result = Python.call(
+    "stdlib_datetime",
+    "time_parse_iso",
     args,
     { allow: allow }
   );

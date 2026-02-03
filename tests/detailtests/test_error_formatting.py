@@ -42,3 +42,16 @@ def test_multiline_span_highlights_each_line():
     assert "1 | alpha beta gamma" in formatted
     assert "2 | second line here" in formatted
     assert "^^^^^^^" in formatted  # at least the combined carets are rendered
+
+
+def test_format_error_normalizes_reversed_span():
+    """Ensure reversed spans are normalized for formatting."""
+    source = "alpha beta gamma"
+    start = SourcePos(1, 12)
+    stop = SourcePos(1, 7)
+    err = TinyLangError("reverse span", start, code="E404", span=SourceSpan(start, stop))
+
+    formatted = _format_error_for_source(source, err)
+
+    assert "[E404] reverse span" in formatted
+    assert "^^^^^^" in formatted

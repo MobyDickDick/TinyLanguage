@@ -67,6 +67,7 @@ def diagnostic_range(error: TinyLangError, source: str) -> Tuple[int, int, int, 
     """Return a 1-based, end-exclusive range for ``error`` within ``source``."""
     span = error.span
     if span is not None:
+        span = _normalize_span(span)
         start_line, start_col, _ = _line_info(source, span.start)
         stop_line, stop_col, _ = _line_info(source, span.stop)
         end_col = stop_col + 1
@@ -116,7 +117,7 @@ def diagnostic_payload(
 def _line_info(source: str, pos: Union[int, SourcePos, SourceSpan]) -> Tuple[int, int, str]:
     lines = source.splitlines()
     if isinstance(pos, SourceSpan):
-        pos = pos.start
+        pos = _normalize_span(pos).start
     if isinstance(pos, SourcePos):
         line = max(1, min(pos.line, len(lines) or 1))
         line_text = lines[line - 1] if 0 <= line - 1 < len(lines) else ""
@@ -139,6 +140,7 @@ def format_error(
         )
     lines = source.splitlines()
     if isinstance(pos, SourceSpan):
+        pos = _normalize_span(pos)
         start_line, start_col, _ = _line_info(source, pos.start)
         stop_line, stop_col, _ = _line_info(source, pos.stop)
         gutter_width = len(str(max(1, len(lines))))
@@ -195,3 +197,10 @@ def format_error(
     if hint:
         lines_out.append(f"  Hint: {hint}")
     return "\n".join(lines_out)
+
+
+def _normalize_span(span: SourceSpan) -> SourceSpan:
+    """Ensure span ordering is consistent (start <= stop)."""
+    if (span.start.line, span.start.column) <= (span.stop.line, span.stop.column):
+        return span
+    return SourceSpan(span.stop, span.start)

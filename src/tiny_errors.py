@@ -115,8 +115,17 @@ def diagnostic_payload(
         ]
     return payload
 
-def _line_info(source: str, pos: Union[int, SourcePos, SourceSpan]) -> Tuple[int, int, str]:
+
+def _source_lines(source: str) -> List[str]:
+    """Return source lines, preserving trailing empty lines."""
     lines = source.splitlines()
+    if source.endswith("\n"):
+        lines.append("")
+    return lines
+
+
+def _line_info(source: str, pos: Union[int, SourcePos, SourceSpan]) -> Tuple[int, int, str]:
+    lines = _source_lines(source)
     if isinstance(pos, SourceSpan):
         pos = _normalize_span(pos).start
     if isinstance(pos, SourcePos):
@@ -139,7 +148,7 @@ def format_error(
         sys.stderr.write(
             f"[tiny_errors] format_error code={code} message={message!r} pos_type={type(pos).__name__}\n"
         )
-    lines = source.splitlines()
+    lines = _source_lines(source)
     if isinstance(pos, SourceSpan):
         pos = _normalize_span(pos)
         start_line, start_col, _ = _line_info(source, pos.start)

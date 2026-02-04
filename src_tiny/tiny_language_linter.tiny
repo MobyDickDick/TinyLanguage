@@ -2311,7 +2311,13 @@ fn _block_guarantees_return(stmts) {
 // ---------------------------------------------------------------------------
 fn _stmt_guarantees_exit(st) {
     if (st.__tag__ == "Return") { return true; }
-    if (st.__tag__ == "If") { return _block_guarantees_return(st.then) && _block_guarantees_return(st.els); }
+    if (st.__tag__ == "If") {
+        if (st.cond.__tag__ == "Bool") {
+            if (st.cond.value) { return _block_guarantees_return(st.then); }
+            return _block_guarantees_return(st.els);
+        }
+        return _block_guarantees_return(st.then) && _block_guarantees_return(st.els);
+    }
     if (st.__tag__ == "Switch") {
         def has_default = false;
         def all_return = true;
@@ -2465,8 +2471,20 @@ fn lint_unreachable_code(stmts, source) {
                 else { _lint_error(source, st, msg, "E013", "Remove the dead code or restructure control flow so it can be reached."); }
             }
             def handled = false;
-            if (!handled && st.__tag__ == "If") { visit_block(st.then); visit_block(st.els); handled = true; }
-            if (!handled && st.__tag__ == "While") { visit_block(st.body); handled = true; }
+            if (!handled && st.__tag__ == "If") {
+                if (st.cond.__tag__ == "Bool") {
+                    if (st.cond.value) { visit_block(st.then); }
+                    else { visit_block(st.els); }
+                } else {
+                    visit_block(st.then);
+                    visit_block(st.els);
+                }
+                handled = true;
+            }
+            if (!handled && st.__tag__ == "While") {
+                if (!(st.cond.__tag__ == "Bool" && !st.cond.value)) { visit_block(st.body); }
+                handled = true;
+            }
             if (!handled && st.__tag__ == "Switch") {
                 def ci = 0;
                 while (ci < len(st.cases)) { visit_block(heap_get(st.cases, ci).body); ci = ci + 1; }

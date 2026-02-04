@@ -9641,6 +9641,10 @@ def _stmt_guarantees_exit(st: IR) -> bool:
     if isinstance(st, Return):
         return True
     if isinstance(st, If):
+        if isinstance(st.cond, Bool):
+            if st.cond.value:
+                return _block_guarantees_return(st.then)
+            return _block_guarantees_return(st.els)
         return _block_guarantees_return(st.then) and _block_guarantees_return(st.els)
     if isinstance(st, Switch):
         has_default = any(case.value is None for case in st.cases)
@@ -9804,10 +9808,17 @@ def lint_unreachable_code(stmts: List[IR], source: Optional[str] = None) -> None
                 )
 
             if isinstance(st, If):
-                visit_block(st.then)
-                visit_block(st.els)
+                if isinstance(st.cond, Bool):
+                    if st.cond.value:
+                        visit_block(st.then)
+                    else:
+                        visit_block(st.els)
+                else:
+                    visit_block(st.then)
+                    visit_block(st.els)
             elif isinstance(st, While):
-                visit_block(st.body)
+                if not (isinstance(st.cond, Bool) and not st.cond.value):
+                    visit_block(st.body)
             elif isinstance(st, Switch):
                 for case in st.cases:
                     visit_block(case.body)

@@ -150,7 +150,7 @@ _None_
   - [ ] Expand parity tests to cover error formatting and span consistency between Python and Tiny
         (including multi-line errors and nested spans).
 
-  - [ ] Introduce a regression matrix for self-hosting modules that records last-verified
+  - [x] Introduce a regression matrix for self-hosting modules that records last-verified
         interpreter/hash versions and known deviations.
 
 ### Closed tasks

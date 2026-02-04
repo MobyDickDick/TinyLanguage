@@ -52,7 +52,7 @@ Timebox: 2026-02-02 to 2026-03-16 (6 weeks).
 - [ ] Expand parity tests for multi-line/nested error spans.
   - Owner: Tooling
   - Success: Regression suite verifies identical formatting for complex spans.
-- [ ] Add a regression matrix for self-hosting modules.
+- [x] Add a regression matrix for self-hosting modules.
   - Owner: Tooling
   - Success: Documented matrix with last-verified versions and known deviations.
 

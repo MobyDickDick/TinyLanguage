@@ -2,6 +2,7 @@
 
 import textwrap
 
+from tiny_errors import diagnostic_range
 from tiny_language import SourcePos, SourceSpan, TinyLangError, _format_error_for_source
 
 
@@ -71,3 +72,13 @@ def test_format_error_normalizes_reversed_span():
 
     assert "[E404] reverse span" in formatted
     assert "^^^^^^" in formatted
+
+
+def test_diagnostic_range_caps_end_column_at_line_end():
+    """Ensure diagnostic ranges do not exceed the line end column."""
+    source = "abc"
+    start = SourcePos(1, 2)
+    stop = SourcePos(1, 4)
+    err = TinyLangError("range cap", start, span=SourceSpan(start, stop))
+
+    assert diagnostic_range(err, source) == (1, 2, 1, 4)

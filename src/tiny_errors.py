@@ -69,10 +69,11 @@ def diagnostic_range(error: TinyLangError, source: str) -> Tuple[int, int, int, 
     if span is not None:
         span = _normalize_span(span)
         start_line, start_col, _ = _line_info(source, span.start)
-        stop_line, stop_col, _ = _line_info(source, span.stop)
-        end_col = stop_col + 1
+        stop_line, stop_col, stop_text = _line_info(source, span.stop)
+        max_col = len(stop_text) + 1 if stop_text else stop_col + 1
+        end_col = min(stop_col + 1, max_col)
         if stop_line == start_line:
-            end_col = max(end_col, start_col + 1)
+            end_col = min(max(end_col, start_col + 1), max_col)
         return (start_line, start_col, stop_line, end_col)
     line, col, _ = _line_info(source, error.pos)
     return (line, col, line, col + 1)

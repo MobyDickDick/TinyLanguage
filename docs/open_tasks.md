@@ -46,9 +46,6 @@ Timebox: 2026-02-02 to 2026-03-16 (6 weeks).
 - [x] Implement `mean` + `std` in a new statistics module with tests.
   - Owner: Stdlib
   - Success: `stdlib/statistics.tiny` plus tests comparing outputs to Python/NumPy where feasible.
-- [ ] Add self-hosting parity snapshots for CLI + LSP diagnostics.
-  - Owner: Tooling
-  - Success: Parity tests compare Python vs Tiny CLIs for exit codes + diagnostics formatting.
 - [ ] Expand parity tests for multi-line/nested error spans.
   - Owner: Tooling
   - Success: Regression suite verifies identical formatting for complex spans.

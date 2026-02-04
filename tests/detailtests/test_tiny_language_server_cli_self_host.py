@@ -89,6 +89,10 @@ SNAPSHOTS = [
         args=["--file", str(FIXTURE_SOURCE), "hover", "--symbol", "add"],
         payload={"symbol": "add", "detail": "fn add(x, y)", "position": [1, 1]},
     ),
+    ServerSnapshot(
+        args=["--file", str(FIXTURE_SOURCE), "diagnostics"],
+        payload=[],
+    ),
 ]
 
 

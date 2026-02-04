@@ -144,9 +144,6 @@ _None_
 - **Scope**: Lexer/parser, runtime/eval, linter, transpilers, CLI, and native backend parity.
 ### Open tasks
 
-  - [ ] Add parity snapshots for CLI and LSP flows by running both Python and Tiny CLIs on the
-        same inputs and asserting identical diagnostics and exit codes.
-
   - [ ] Expand parity tests to cover error formatting and span consistency between Python and Tiny
         (including multi-line errors and nested spans).
 
@@ -155,4 +152,5 @@ _None_
 
 ### Closed tasks
 
-_None_
+  - [x] Add parity snapshots for CLI and LSP flows by running both Python and Tiny CLIs on the
+        same inputs and asserting identical diagnostics and exit codes.

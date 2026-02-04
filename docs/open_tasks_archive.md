@@ -1,5 +1,13 @@
 # Open tasks archive
 
+Archived from `docs/open_tasks.md` on 2026-02-03.
+
+## Expansion roadmap follow-ups (completed)
+
+- [x] Add self-hosting parity snapshots for CLI + LSP diagnostics.
+  - Owner: Tooling
+  - Success: Parity tests compare Python vs Tiny CLIs for exit codes + diagnostics formatting.
+
 Archived from `docs/open_tasks.md` on 2026-02-02.
 
 ## Native backend documentation updates (completed)

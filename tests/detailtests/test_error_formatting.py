@@ -24,6 +24,22 @@ def test_format_error_includes_code_hint_and_span():
     assert "^^^^^" in formatted
 
 
+def test_format_error_rebuilds_inline_location_without_context():
+    """Rebuild context when a message only contains inline line/col info."""
+    source = "alpha beta gamma"
+    err = TinyLangError(
+        "[E999] lint failure (line 1, col 7)",
+        SourcePos(1, 7),
+        code="E999",
+    )
+
+    formatted = _format_error_for_source(source, err)
+
+    assert "[E999] lint failure (line 1, col 7)" in formatted
+    assert "1 | alpha beta gamma" in formatted
+    assert "[E999] [E999]" not in formatted
+
+
 def test_multiline_span_highlights_each_line():
     """Verify multi-line spans highlight all affected lines."""
     source = textwrap.dedent(

@@ -103,3 +103,12 @@ def med = Statistics.median(values); // -> 3.0
 - Empty arrays should raise a descriptive error rather than returning `NaN`.
 - The first implementation mirrors Julia's population statistics defaults to
   avoid extra parameters in the TinyLanguage API.
+
+## Compatibility Table (TinyLanguage vs Julia)
+
+| Area | Julia behavior | TinyLanguage behavior | Notes |
+| --- | --- | --- | --- |
+| NaN handling | Propagates `NaN` values through aggregates like `mean` and `std`. | Propagates `NaN` values when present in input data. | Matches Julia for IEEE `NaN` propagation. |
+| Empty collections | Throws a `ArgumentError` (e.g., `mean([])` is invalid). | Raises a runtime error for empty arrays. | Error type/message differs, but empty input is rejected. |
+| Integer promotion | Aggregates promote integers to floating point as needed. | Aggregates return `Num`, promoting integers to floating point for fractional results. | Results align for typical numeric inputs. |
+| Population vs sample | `mean`/`var`/`std` default to population statistics unless `corrected=true`. | Always uses population statistics (no correction flag). | Matches `corrected=false` in Julia. |

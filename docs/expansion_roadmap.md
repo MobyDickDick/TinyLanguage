@@ -104,7 +104,7 @@ _None_
   - [x] Implement `mean` and `std` in a new TL module (e.g. `stdlib/statistics.tiny`) and add tests
         that compare TL output against Python/NumPy reference values where feasible.
 
-  - [ ] Add a short compatibility table that flags precision or edge-case differences compared to
+  - [x] Add a short compatibility table that flags precision or edge-case differences compared to
         Julia (NaN handling, empty collections, integer promotion).
 
 ### Closed tasks

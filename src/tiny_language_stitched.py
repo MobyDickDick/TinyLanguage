@@ -6890,6 +6890,10 @@ class LLVMCodeGenerator:
             return _ResolvedFunctionSignature(
                 param_types={"ptr": "i64", "idx": "i64", "value": "i1"}, return_type="i64"
             )
+        if name == "heap_len":
+            return _ResolvedFunctionSignature(param_types={"ptr": "i64"}, return_type="i64")
+        if name == "heap_leak_report":
+            return _ResolvedFunctionSignature(param_types={}, return_type="i64")
         if name == "delete":
             return _ResolvedFunctionSignature(param_types={"ptr": "i64"}, return_type="i64")
         return None
@@ -8147,6 +8151,70 @@ def _module_has_annotations(stmts: List[IR]) -> bool:
 
 def _signature_has_annotations(signature: _FunctionSignature) -> bool:
     return bool(signature.return_type or any(param.type for param in signature.params))
+
+
+def _implicit_any_warning(
+    *,
+    kind: str,
+    name: str,
+    params: List[Param],
+    return_type: Optional[str],
+    source: Optional[str],
+    node: Any,
+) -> Optional[TinyLangError]:
+    missing_params = [param.name for param in params if not param.type]
+    missing_return = return_type is None
+    if not missing_params and not missing_return:
+        return None
+    details = []
+    if missing_params:
+        details.append(f"unannotated parameter(s): {', '.join(missing_params)}")
+    if missing_return:
+        details.append("missing return type annotation")
+    message = f"Implicit `any` in typed module ({kind} {name}): " + "; ".join(details) + "."
+    hint = "Add explicit type annotations or use `any` to document dynamic intent."
+    return _lint_error(source, node, message, code="W010", hint=hint)
+
+
+def lint_implicit_any_usage(stmts: List[IR], source: Optional[str] = None) -> List[TinyLangError]:
+    if not _module_has_annotations(stmts):
+        return []
+    warnings: List[TinyLangError] = []
+
+    def visit(nodes: List[IR], prefix: str = "") -> None:
+        for st in nodes:
+            if isinstance(st, Fn):
+                qualified = _qualify_name(st.name, prefix)
+                warning = _implicit_any_warning(
+                    kind="function",
+                    name=qualified,
+                    params=st.params,
+                    return_type=st.return_type,
+                    source=source,
+                    node=st,
+                )
+                if warning is not None:
+                    warnings.append(warning)
+            elif isinstance(st, ClassDef):
+                class_name = _qualify_name(st.name, prefix)
+                for method in st.methods:
+                    method_name = f"{class_name}.{method.name}"
+                    warning = _implicit_any_warning(
+                        kind="method",
+                        name=method_name,
+                        params=method.params,
+                        return_type=method.return_type,
+                        source=source,
+                        node=method,
+                    )
+                    if warning is not None:
+                        warnings.append(warning)
+            elif isinstance(st, Namespace):
+                nested_prefix = _qualify_name(st.name, prefix)
+                visit(st.body, prefix=nested_prefix)
+
+    visit(stmts)
+    return warnings
 
 
 def _format_summary_params(params: List[Param]) -> str:
@@ -10129,6 +10197,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Un
 
 from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, _line_info, format_error
 from tiny_language_ast import Fn, IR, Match, MethodDef, OpDef, Param, TypeVariant, VariantPattern, WildcardPattern
+from tiny_language_module_resolution import ModuleResolutionConfig, candidate_module_paths, resolve_module_name
 
 # ----- Runtime -----
 
@@ -10295,68 +10364,24 @@ class ModuleResolver:
     """
 
     def __init__(self, search_paths: Optional[List[Path]] = None):
-        env_paths = os.environ.get("TINYPATH", "")
-        configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
-        default_roots = [Path.cwd(), Path(__file__).parent]
-        self.stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
-        self.search_paths: List[Path] = search_paths or configured_paths + default_roots
+        config = ModuleResolutionConfig.from_search_paths(search_paths)
+        self.stdlib_root = config.stdlib_root
+        self.search_paths = config.search_paths
         self.cache: Dict[Path, NamespaceRef] = {}
         self._in_progress: List[Path] = []
 
     def _resolve_name(self, raw: str, caller_namespace: Optional[str], pos: Optional[Any]) -> str:
-        """Normalize relative import names against the caller's namespace.
-
-        A leading dot sequence (e.g. ``.foo`` or ``..bar.baz``) is expanded using
-        the caller's module namespace. Errors include source span information to
-        aid diagnostics in the parser and linter.
-        """
-        pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
-        leading = len(raw) - len(raw.lstrip("."))
-        if leading == 0:
-            return raw
-        if not caller_namespace:
-            raise TinyLangError(
-                "relative import outside a module",
-                pos_for_error or SourcePos.origin(),
-                code="E008",
-                span=pos if isinstance(pos, SourceSpan) else None,
-            )
-        base = caller_namespace.split(".")
-        if leading > len(base):
-            raise TinyLangError(
-                "relative import traverses beyond module root",
-                pos_for_error or SourcePos.origin(),
-                code="E008",
-                span=pos if isinstance(pos, SourceSpan) else None,
-            )
-        trimmed = base[: len(base) - leading]
-        remainder = raw.lstrip(".")
-        if remainder:
-            trimmed.append(remainder)
-        return ".".join(part for part in trimmed if part)
+        """Normalize relative import names against the caller's namespace."""
+        return resolve_module_name(raw, caller_namespace, pos)
 
     def _candidate_paths(self, module_name: str, caller_path: Optional[Path]) -> List[Path]:
-        """Return possible filesystem paths for a module name.
-
-        The search order starts next to the caller's module (for relative
-        imports) before falling back to configured search roots. Each candidate
-        mirrors Python's ``pkg.subpkg.module`` to ``pkg/subpkg/module.tiny``
-        translation.
-        """
-        candidates: List[Path] = []
-        roots: List[Path] = []
-        if module_name.startswith("stdlib."):
-            rel_path = Path(*module_name.split(".")[1:])
-            if self.stdlib_root.exists():
-                roots.append(self.stdlib_root)
-        else:
-            rel_path = Path(*module_name.split("."))
-            if caller_path:
-                roots.append(caller_path.parent)
-            roots.extend(self.search_paths)
-        for root in roots:
-            candidates.append((root / rel_path).with_suffix(".tiny"))
-        return candidates
+        """Return possible filesystem paths for a module name."""
+        return candidate_module_paths(
+            module_name,
+            caller_path=caller_path,
+            search_paths=self.search_paths,
+            stdlib_root=self.stdlib_root,
+        )
 
     def import_module(
         self,
@@ -10861,13 +10886,15 @@ class Runtime:
         return resolved_pos, resolved_span
 
     @staticmethod
-    def _format_location(pos: Optional[SourcePos], span: Optional[SourceSpan]) -> Optional[Union[SourcePos, SourceSpan]]:
+    def _format_location(
+        pos: Optional[SourcePos], span: Optional[SourceSpan]
+    ) -> Optional[Union[SourcePos, SourceSpan]]:
         if pos is not None:
             return pos
         if span is not None:
-            if span.start.line == span.stop.line:
-                return span.start
-            return span
+            if span.start != span.stop:
+                return span
+            return span.start
         return pos
 
     def _record_error(
@@ -12996,6 +13023,7 @@ import os
 import shlex
 import shutil
 import struct
+import re
 import subprocess
 import sys
 import tempfile
@@ -13012,6 +13040,7 @@ from tiny_errors import SourcePos, SourceSpan
 from tiny_language_codegen_c import CCodeGenerator
 from tiny_language_codegen_llvm import LLVMCodeGenerator
 from tiny_language_highlighting import PYGMENTS_AVAILABLE, highlight_source
+from tiny_language_module_resolution import ModuleResolutionConfig, candidate_module_paths, resolve_module_name
 
 if "IR" not in globals():
     from tiny_language_ast import (
@@ -13664,55 +13693,22 @@ class NativeModuleResolver:
     """Resolve TinyLanguage modules for the native backend."""
 
     def __init__(self, search_paths: Optional[List[Path]] = None) -> None:
-        env_paths = os.environ.get("TINYPATH", "")
-        configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
-        default_roots = [Path.cwd(), Path(__file__).parent]
-        self.stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
-        self.search_paths: List[Path] = search_paths or configured_paths + default_roots
+        config = ModuleResolutionConfig.from_search_paths(search_paths)
+        self.stdlib_root = config.stdlib_root
+        self.search_paths = config.search_paths
         self.cache: dict[Path, NativeNamespaceRef] = {}
         self._in_progress: List[Path] = []
 
     def _resolve_name(self, raw: str, caller_namespace: Optional[str], pos: Optional[Any]) -> str:
-        pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
-        leading = len(raw) - len(raw.lstrip("."))
-        if leading == 0:
-            return raw
-        if not caller_namespace:
-            raise TinyLangError(
-                "relative import outside a module",
-                pos_for_error or SourcePos.origin(),
-                code="E008",
-                span=pos if isinstance(pos, SourceSpan) else None,
-            )
-        base = caller_namespace.split(".")
-        if leading > len(base):
-            raise TinyLangError(
-                "relative import traverses beyond module root",
-                pos_for_error or SourcePos.origin(),
-                code="E008",
-                span=pos if isinstance(pos, SourceSpan) else None,
-            )
-        trimmed = base[: len(base) - leading]
-        remainder = raw.lstrip(".")
-        if remainder:
-            trimmed.append(remainder)
-        return ".".join(part for part in trimmed if part)
+        return resolve_module_name(raw, caller_namespace, pos)
 
     def _candidate_paths(self, module_name: str, caller_path: Optional[Path]) -> List[Path]:
-        candidates: List[Path] = []
-        roots: List[Path] = []
-        if module_name.startswith("stdlib."):
-            rel_path = Path(*module_name.split(".")[1:])
-            if self.stdlib_root.exists():
-                roots.append(self.stdlib_root)
-        else:
-            rel_path = Path(*module_name.split("."))
-            if caller_path:
-                roots.append(caller_path.parent)
-            roots.extend(self.search_paths)
-        for root in roots:
-            candidates.append((root / rel_path).with_suffix(".tiny"))
-        return candidates
+        return candidate_module_paths(
+            module_name,
+            caller_path=caller_path,
+            search_paths=self.search_paths,
+            stdlib_root=self.stdlib_root,
+        )
 
     def import_module(
         self,
@@ -13780,55 +13776,22 @@ class LLVMModuleResolver:
     """Resolve TinyLanguage modules for the LLVM backend."""
 
     def __init__(self, search_paths: Optional[List[Path]] = None) -> None:
-        env_paths = os.environ.get("TINYPATH", "")
-        configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
-        default_roots = [Path.cwd(), Path(__file__).parent]
-        self.stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
-        self.search_paths: List[Path] = search_paths or configured_paths + default_roots
+        config = ModuleResolutionConfig.from_search_paths(search_paths)
+        self.stdlib_root = config.stdlib_root
+        self.search_paths = config.search_paths
         self.cache: dict[Path, LLVMModuleInfo] = {}
         self._in_progress: List[Path] = []
 
     def _resolve_name(self, raw: str, caller_namespace: Optional[str], pos: Optional[Any]) -> str:
-        pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
-        leading = len(raw) - len(raw.lstrip("."))
-        if leading == 0:
-            return raw
-        if not caller_namespace:
-            raise TinyLangError(
-                "relative import outside a module",
-                pos_for_error or SourcePos.origin(),
-                code="E008",
-                span=pos if isinstance(pos, SourceSpan) else None,
-            )
-        base = caller_namespace.split(".")
-        if leading > len(base):
-            raise TinyLangError(
-                "relative import traverses beyond module root",
-                pos_for_error or SourcePos.origin(),
-                code="E008",
-                span=pos if isinstance(pos, SourceSpan) else None,
-            )
-        trimmed = base[: len(base) - leading]
-        remainder = raw.lstrip(".")
-        if remainder:
-            trimmed.append(remainder)
-        return ".".join(part for part in trimmed if part)
+        return resolve_module_name(raw, caller_namespace, pos)
 
     def _candidate_paths(self, module_name: str, caller_path: Optional[Path]) -> List[Path]:
-        candidates: List[Path] = []
-        roots: List[Path] = []
-        if module_name.startswith("stdlib."):
-            rel_path = Path(*module_name.split(".")[1:])
-            if self.stdlib_root.exists():
-                roots.append(self.stdlib_root)
-        else:
-            rel_path = Path(*module_name.split("."))
-            if caller_path:
-                roots.append(caller_path.parent)
-            roots.extend(self.search_paths)
-        for root in roots:
-            candidates.append((root / rel_path).with_suffix(".tiny"))
-        return candidates
+        return candidate_module_paths(
+            module_name,
+            caller_path=caller_path,
+            search_paths=self.search_paths,
+            stdlib_root=self.stdlib_root,
+        )
 
     def import_module(
         self,
@@ -13987,12 +13950,27 @@ def run_file(path: str, *, stream_output: bool = True, copy_on_call: Optional[bo
     return output
 
 
+def _message_has_source_context(message: str) -> bool:
+    """Return True when the message already includes rendered source context."""
+    return "\n" in message and " | " in message
+
+
+def _strip_inline_location(message: str, code: str) -> str:
+    """Remove inline location hints and duplicate code prefixes when reformatting."""
+    stripped = message
+    if code and stripped.startswith(f"[{code}] "):
+        stripped = stripped[len(code) + 3 :]
+    stripped = re.sub(r"\s*\(line\s+\d+,\s*col\s+\d+\)\s*$", "", stripped)
+    return stripped
+
+
 def _format_error_for_source(source: str, err: TinyLangError) -> str:
     """Format an error with source context when available."""
-    if "(line " in err.message:
+    if _message_has_source_context(err.message):
         return err.message
     location = err.span if err.span is not None else err.pos
-    return format_error(source, location, err.message, code=err.code, hint=err.hint)
+    message = _strip_inline_location(err.message, err.code)
+    return format_error(source, location, message, code=err.code, hint=err.hint)
 
 
 def compile_to_python_ast(src: str) -> ast.AST:

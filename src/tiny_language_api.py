@@ -17,6 +17,7 @@ import os
 import shlex
 import shutil
 import struct
+import re
 import subprocess
 import sys
 import tempfile
@@ -943,12 +944,27 @@ def run_file(path: str, *, stream_output: bool = True, copy_on_call: Optional[bo
     return output
 
 
+def _message_has_source_context(message: str) -> bool:
+    """Return True when the message already includes rendered source context."""
+    return "\n" in message and " | " in message
+
+
+def _strip_inline_location(message: str, code: str) -> str:
+    """Remove inline location hints and duplicate code prefixes when reformatting."""
+    stripped = message
+    if code and stripped.startswith(f"[{code}] "):
+        stripped = stripped[len(code) + 3 :]
+    stripped = re.sub(r"\s*\(line\s+\d+,\s*col\s+\d+\)\s*$", "", stripped)
+    return stripped
+
+
 def _format_error_for_source(source: str, err: TinyLangError) -> str:
     """Format an error with source context when available."""
-    if "(line " in err.message:
+    if _message_has_source_context(err.message):
         return err.message
     location = err.span if err.span is not None else err.pos
-    return format_error(source, location, err.message, code=err.code, hint=err.hint)
+    message = _strip_inline_location(err.message, err.code)
+    return format_error(source, location, message, code=err.code, hint=err.hint)
 
 
 def compile_to_python_ast(src: str) -> ast.AST:

@@ -158,8 +158,14 @@ def format_error(
     lines = _source_lines(source, preserve_trailing=True)
     if isinstance(pos, SourceSpan):
         pos = _normalize_span(pos)
-        start_line, start_col, _ = _line_info(source, pos.start)
-        stop_line, stop_col, _ = _line_info(source, pos.stop)
+        start_line, start_col, start_text = _line_info(source, pos.start)
+        stop_line, stop_col, stop_text = _line_info(source, pos.stop)
+        if start_text == "" and start_line == len(lines) and start_line > 1 and source.endswith("\n"):
+            start_line -= 1
+            start_col = 1
+        if stop_text == "" and stop_line == len(lines) and stop_line > 1 and source.endswith("\n"):
+            stop_line -= 1
+            stop_col = 1
         lines = _context_lines(lines, last_line_needed=stop_line)
         gutter_width = len(str(max(1, len(lines))))
         header = f"[{code}] {message} (line {start_line}, col {start_col})"

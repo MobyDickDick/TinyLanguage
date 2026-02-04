@@ -127,6 +127,10 @@ def run_tiny_linter(source: str) -> str | None:
             "fn demo() { while (true) { print(1); } print(2); }",
             id="unreachable_after_infinite_loop",
         ),
+        pytest.param(
+            "fn demo() { if (true) { return 1; } print(\"never\"); }",
+            id="unreachable_after_constant_true_if",
+        ),
         pytest.param("import b;\nimport a;\nprint(1);", id="import_ordering"),
         pytest.param(
             "fn f() { if (true) { return { a: 1 }; } return { b: 2 }; }",

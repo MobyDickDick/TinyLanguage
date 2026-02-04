@@ -200,7 +200,10 @@ def format_error(
         if hint:
             lines_out.append(f"  Hint: {hint}")
         return "\n".join(lines_out)
-    line, col, _ = _line_info(source, pos)
+    line, col, line_text = _line_info(source, pos)
+    if line_text == "" and line == len(lines) and line > 1 and source.endswith("\n"):
+        line = line - 1
+        col = 1
     lines = _context_lines(lines, last_line_needed=line)
     gutter_width = len(str(max(1, len(lines))))
     start = max(1, line - 1)

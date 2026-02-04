@@ -46,7 +46,7 @@ Timebox: 2026-02-02 to 2026-03-16 (6 weeks).
 - [x] Implement `mean` + `std` in a new statistics module with tests.
   - Owner: Stdlib
   - Success: `stdlib/statistics.tiny` plus tests comparing outputs to Python/NumPy where feasible.
-- [ ] Expand parity tests for multi-line/nested error spans.
+- [x] Expand parity tests for multi-line/nested error spans.
   - Owner: Tooling
   - Success: Regression suite verifies identical formatting for complex spans.
 - [x] Add a regression matrix for self-hosting modules.

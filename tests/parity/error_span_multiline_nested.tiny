@@ -1,0 +1,9 @@
+def total = (
+    10
+    + unknown_function(
+        1,
+        2
+    )
+    + 30
+);
+print(total);

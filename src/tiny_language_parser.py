@@ -67,6 +67,9 @@ class Parser:
     def _current_span(self) -> SourceSpan:
         if self.tok.kind == "EOF" and self._last_tok.kind != "<start>":
             stop = self._last_tok.stop
+            if self.source.endswith("\n"):
+                line = self.source.count("\n") + 1
+                stop = SourcePos(line, 1)
             return SourceSpan(stop, stop)
         return self._tok_span(self.tok)
 

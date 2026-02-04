@@ -1022,9 +1022,18 @@ class Parser:
     def _tok_span(tok: Token) -> SourceSpan:
         return SourceSpan(tok.start, tok.stop)
 
+    def _current_span(self) -> SourceSpan:
+        if self.tok.kind == "EOF" and self._last_tok.kind != "<start>":
+            stop = self._last_tok.stop
+            if self.source.endswith("\n"):
+                line = self.source.count("\n") + 1
+                stop = SourcePos(line, 1)
+            return SourceSpan(stop, stop)
+        return self._tok_span(self.tok)
+
     def _eat(self, kind: str, text: Optional[str] = None) -> Token:
         if self.tok.kind != kind or (text is not None and self.tok.text != text):
-            raise self._error(f"expected {kind}{' '+text if text else ''}", self.tok.pos, self._tok_span(self.tok))
+            raise self._error(f"expected {kind}{' '+text if text else ''}", self.tok.pos, self._current_span())
         t = self.tok
         self.tok = self._next_token()
         self._last_tok = t
@@ -1036,7 +1045,7 @@ class Parser:
             self.tok = self._next_token()
             self._last_tok = t
             return t
-        raise self._error("expected NAME", self.tok.pos, self._tok_span(self.tok))
+        raise self._error("expected NAME", self.tok.pos, self._current_span())
 
     def _accept(self, kind: str, text: Optional[str] = None) -> bool:
         if self.tok.kind == kind and (text is None or self.tok.text == text):
@@ -1156,7 +1165,7 @@ class Parser:
                         )
                     )
                     continue
-                raise self._error("expected case or default", self.tok.pos, self._tok_span(self.tok))
+                raise self._error("expected case or default", self.tok.pos, self._current_span())
             return self._attach_span(Switch(target, cases, pos=kw.pos), kw.start, self._last_tok.stop)
         if self.tok.kind == "KW" and self.tok.text == "try":
             kw = self._eat("KW", "try")
@@ -1381,7 +1390,7 @@ class Parser:
         # destructuring or assignment/field assignment
         if self.tok.kind == "SYM" and self.tok.text == "{":
             if not self._looks_like_destructuring_assignment():
-                raise self._error("standalone blocks are not allowed", self.tok.pos, self._tok_span(self.tok))
+                raise self._error("standalone blocks are not allowed", self.tok.pos, self._current_span())
             names, start_pos, name_spans = self.parse_destruct_names()
             self._eat("SYM", "=")
             expr = self.parse_expr()
@@ -1422,7 +1431,7 @@ class Parser:
                 semi = self._eat("SYM", ";")
                 return self._attach_span(CallStmt(name_tok.text, args, pos=name_tok.pos), name_tok.start, semi.stop)
             raise self._error("unexpected token after name", name_tok.pos, self._tok_span(name_tok))
-        raise self._error(f"unexpected token {self.tok.kind}", self.tok.pos, self._tok_span(self.tok))
+        raise self._error(f"unexpected token {self.tok.kind}", self.tok.pos, self._current_span())
 
     def parse_param(self) -> Param:
         name_tok = self._eat("NAME")
@@ -1709,16 +1718,16 @@ class Parser:
         cases: List[MatchCase] = []
         while not self._accept("SYM", "}"):
             if not (self.tok.kind == "KW" and self.tok.text == "case"):
-                raise self._error("expected case", self.tok.pos, self._tok_span(self.tok))
+                raise self._error("expected case", self.tok.pos, self._current_span())
             self._eat("KW", "case")
             pattern = self.parse_pattern()
             if self._accept("SYM", ":"):
                 pass
             elif self._accept("SYM", "="):
                 if not self._accept("OP", ">"):
-                    raise self._error("expected '=>'", self.tok.pos, self._tok_span(self.tok))
+                    raise self._error("expected '=>'", self.tok.pos, self._current_span())
             else:
-                raise self._error("expected ':' or '=>'", self.tok.pos, self._tok_span(self.tok))
+                raise self._error("expected ':' or '=>'", self.tok.pos, self._current_span())
             body = self.parse_expr()
             semi = self._eat("SYM", ";")
             cases.append(self._attach_span(MatchCase(pattern, body, pos=pattern.pos), pattern.pos, semi.stop))
@@ -1729,7 +1738,7 @@ class Parser:
             tok = self._eat("NAME")
             return self._attach_span(WildcardPattern(name=None, pos=tok.pos), tok.start, tok.stop)
         if self.tok.kind != "NAME":
-            raise self._error("expected pattern", self.tok.pos, self._tok_span(self.tok))
+            raise self._error("expected pattern", self.tok.pos, self._current_span())
         vname_tok = self._eat("NAME")
         bindings: Dict[str, Optional[str]] = {}
         positional: Optional[List[Optional[str]]] = None
@@ -1744,7 +1753,7 @@ class Parser:
                 if self._accept("SYM", "}"):
                     break
                 if not (self._accept("SYM", ";") or self._accept("SYM", ",")):
-                    raise self._error("expected field separator", self.tok.pos, self._tok_span(self.tok))
+                    raise self._error("expected field separator", self.tok.pos, self._current_span())
         elif self._accept("SYM", "("):
             positional = []
             while not self._accept("SYM", ")"):
@@ -1753,7 +1762,7 @@ class Parser:
                 if self._accept("SYM", ")"):
                     break
                 if not (self._accept("SYM", ",") or self._accept("SYM", ";")):
-                    raise self._error("expected field separator", self.tok.pos, self._tok_span(self.tok))
+                    raise self._error("expected field separator", self.tok.pos, self._current_span())
         return self._attach_span(
             VariantPattern(vname_tok.text, bindings, positional_bindings=positional, pos=vname_tok.pos),
             vname_tok.start,
@@ -1783,7 +1792,7 @@ class Parser:
                     raise self._error(
                         "math tuple syntax requires --experimental-math-tuples",
                         self.tok.pos,
-                        self._tok_span(self.tok),
+                        self._current_span(),
                     )
                 name_tok = self._eat("NAME")
                 self._eat("SYM", ":")
@@ -1847,7 +1856,7 @@ class Parser:
                     if self._accept("SYM", "}"):
                         break
                     if not (self._accept("SYM", ";") or self._accept("SYM", ",")):
-                        raise self._error("expected field separator", self.tok.pos, self._tok_span(self.tok))
+                        raise self._error("expected field separator", self.tok.pos, self._current_span())
                 return self._attach_span(ClassNew(cname, init, pos=name_tok.pos), name_tok.start, self._last_tok.stop)
             if self._allow_variant_ctor and self.tok.kind == "SYM" and self.tok.text == "{":
                 fields = self.parse_variant_init_fields()
@@ -1864,9 +1873,9 @@ class Parser:
                 if self._accept("SYM", "}"):
                     break
                 if not (self._accept("SYM", ";") or self._accept("SYM", ",")):
-                    raise self._error("expected field separator", self.tok.pos, self._tok_span(self.tok))
+                    raise self._error("expected field separator", self.tok.pos, self._current_span())
             return self._attach_span(ObjLit(fields, pos=start_tok.pos), start_tok.start, self._last_tok.stop)
-        raise self._error(f"unexpected token {self.tok.kind}", self.tok.pos, self._tok_span(self.tok))
+        raise self._error(f"unexpected token {self.tok.kind}", self.tok.pos, self._current_span())
 
     def parse_field_name(self) -> str:
         name = self._eat("NAME").text
@@ -1887,7 +1896,7 @@ class Parser:
                 if self._accept("SYM", closing):
                     break
                 if not (self._accept("SYM", ";") or self._accept("SYM", ",")):
-                    raise self._error("expected field separator", self.tok.pos, self._tok_span(self.tok))
+                    raise self._error("expected field separator", self.tok.pos, self._current_span())
         return fields
 
     def parse_variant_init_fields(self) -> List[Tuple[str, IR]]:
@@ -1901,7 +1910,7 @@ class Parser:
             if self._accept("SYM", "}"):
                 break
             if not (self._accept("SYM", ";") or self._accept("SYM", ",")):
-                raise self._error("expected field separator", self.tok.pos, self._tok_span(self.tok))
+                raise self._error("expected field separator", self.tok.pos, self._current_span())
         return fields
 
     def parse_module_path(self) -> Tuple[str, SourceSpan]:
@@ -1911,7 +1920,7 @@ class Parser:
             start_tok = start_tok or self._last_tok
             prefix += "."
         if self.tok.kind != "NAME":
-            raise self._error("expected NAME", self.tok.pos, self._tok_span(self.tok))
+            raise self._error("expected NAME", self.tok.pos, self._current_span())
         first_tok = self._eat("NAME")
         parts = [first_tok.text]
         last_tok = first_tok

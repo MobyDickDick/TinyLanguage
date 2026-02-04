@@ -116,16 +116,23 @@ def diagnostic_payload(
     return payload
 
 
-def _source_lines(source: str) -> List[str]:
-    """Return source lines, preserving trailing empty lines."""
+def _source_lines(source: str, *, preserve_trailing: bool = True) -> List[str]:
+    """Return source lines, optionally preserving trailing empty lines."""
     lines = source.splitlines()
-    if source.endswith("\n"):
+    if preserve_trailing and source.endswith("\n"):
         lines.append("")
     return lines
 
 
+def _context_lines(lines: List[str], *, last_line_needed: int) -> List[str]:
+    """Trim trailing empty context lines unless they are part of the target span."""
+    if lines and lines[-1] == "" and last_line_needed < len(lines):
+        return lines[:-1]
+    return lines
+
+
 def _line_info(source: str, pos: Union[int, SourcePos, SourceSpan]) -> Tuple[int, int, str]:
-    lines = _source_lines(source)
+    lines = _source_lines(source, preserve_trailing=True)
     if isinstance(pos, SourceSpan):
         pos = _normalize_span(pos).start
     if isinstance(pos, SourcePos):
@@ -148,11 +155,12 @@ def format_error(
         sys.stderr.write(
             f"[tiny_errors] format_error code={code} message={message!r} pos_type={type(pos).__name__}\n"
         )
-    lines = _source_lines(source)
+    lines = _source_lines(source, preserve_trailing=True)
     if isinstance(pos, SourceSpan):
         pos = _normalize_span(pos)
         start_line, start_col, _ = _line_info(source, pos.start)
         stop_line, stop_col, _ = _line_info(source, pos.stop)
+        lines = _context_lines(lines, last_line_needed=stop_line)
         gutter_width = len(str(max(1, len(lines))))
         header = f"[{code}] {message} (line {start_line}, col {start_col})"
         if start_line != stop_line or start_col != stop_col:
@@ -193,6 +201,7 @@ def format_error(
             lines_out.append(f"  Hint: {hint}")
         return "\n".join(lines_out)
     line, col, _ = _line_info(source, pos)
+    lines = _context_lines(lines, last_line_needed=line)
     gutter_width = len(str(max(1, len(lines))))
     start = max(1, line - 1)
     end = min(len(lines), line + 1) if lines else line

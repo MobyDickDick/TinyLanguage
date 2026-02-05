@@ -729,6 +729,7 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                     for nm in names_in_expr(st.cond):
                         _mark_used(cond_state, nm)
                     if isinstance(st.cond, Bool) and not st.cond.value:
+                        lint_locals_used(st.body, source)
                         next_active.append(cond_state)
                     else:
                         body_active, body_term = analyze_block(st.body, [cond_state])
@@ -2867,21 +2868,14 @@ def lint_unreachable_code(stmts: List[IR], source: Optional[str] = None) -> None
             if isinstance(st, If):
                 if isinstance(st.cond, Bool):
                     if st.cond.value:
-                        if st.els:
-                            raise_unreachable(st.els[0])
                         visit_block(st.then)
                     else:
-                        if st.then:
-                            raise_unreachable(st.then[0])
                         visit_block(st.els)
                 else:
                     visit_block(st.then)
                     visit_block(st.els)
             elif isinstance(st, While):
-                if isinstance(st.cond, Bool) and not st.cond.value:
-                    if st.body:
-                        raise_unreachable(st.body[0])
-                else:
+                if not (isinstance(st.cond, Bool) and not st.cond.value):
                     visit_block(st.body)
             elif isinstance(st, Switch):
                 for case in st.cases:

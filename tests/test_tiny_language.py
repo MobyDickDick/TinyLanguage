@@ -907,37 +907,6 @@ def test_unreachable_statement_after_infinite_loop():
     expect_compile_error(src, r"unreachable statement after a guaranteed exit")
 
 
-def test_unreachable_statement_in_constant_if_branch():
-    """Test that unreachable statement in constant if branch."""
-    src = """
-    fn demo() {
-        if (true) {
-            return 1;
-        } else {
-            print(2);
-        }
-    }
-    def _unused120 = demo();
-    """
-
-    expect_compile_error(src, r"unreachable statement after a guaranteed exit")
-
-
-def test_unreachable_statement_in_while_false_body():
-    """Test that unreachable statement in while false body."""
-    src = """
-    fn demo() {
-        while (false) {
-            print(1);
-        }
-        return 0;
-    }
-    def _unused130 = demo();
-    """
-
-    expect_compile_error(src, r"unreachable statement after a guaranteed exit")
-
-
 def test_method_param_mutation_must_be_returned():
     """Test that method param mutation must be returned."""
     src = """

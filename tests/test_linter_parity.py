@@ -131,6 +131,10 @@ def run_tiny_linter(source: str) -> str | None:
             "fn demo() { if (true) { return 1; } print(\"never\"); }",
             id="unreachable_after_constant_true_if",
         ),
+        pytest.param(
+            "fn demo() { if (true) { return 1; } else { def unused = 0; } }",
+            id="unused_in_unreachable_else",
+        ),
         pytest.param("import b;\nimport a;\nprint(1);", id="import_ordering"),
         pytest.param(
             "fn f() { if (true) { return { a: 1 }; } return { b: 2 }; }",

@@ -1,0 +1,9 @@
+def total = 10;
+if (total > 0) {
+    print(
+        total + unknown_function(
+            1,
+            2
+        )
+    );
+}

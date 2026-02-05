@@ -144,13 +144,15 @@ _None_
 - **Scope**: Lexer/parser, runtime/eval, linter, transpilers, CLI, and native backend parity.
 ### Open tasks
 
-  - [ ] Expand parity tests to cover error formatting and span consistency between Python and Tiny
-        (including multi-line errors and nested spans).
+_None_
 
   - [x] Introduce a regression matrix for self-hosting modules that records last-verified
         interpreter/hash versions and known deviations.
 
 ### Closed tasks
+
+  - [x] Expand parity tests to cover error formatting and span consistency between Python and Tiny
+        (including multi-line errors and nested spans).
 
   - [x] Add parity snapshots for CLI and LSP flows by running both Python and Tiny CLIs on the
         same inputs and asserting identical diagnostics and exit codes.

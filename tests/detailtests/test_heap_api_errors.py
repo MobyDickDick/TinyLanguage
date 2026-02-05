@@ -36,6 +36,9 @@ def test_heap_access_rejects_invalid_pointers():
     """Verify invalid heap pointers are rejected with clear messages."""
     rt = Runtime("")
 
+    assert rt.heap_get(True, 0) is None
+    assert "not numeric" in (rt.error_message or "")
+
     assert rt.heap_get("nope", 0) is None
     assert "not numeric" in (rt.error_message or "")
 
@@ -117,6 +120,9 @@ def test_heap_rejects_fractional_pointers_and_indices():
     ptr = rt._Runtime__new(2)  # noqa: SLF001 - intentional for testing
     rt.heap_get(ptr, 0.25)
     assert "not an integer index" in (rt.error_message or "")
+
+    rt.heap_get(ptr, False)
+    assert "not numeric" in (rt.error_message or "")
 
     result = rt.heap_set(ptr, -1, 0)
     assert result["e"]["code"] == 1

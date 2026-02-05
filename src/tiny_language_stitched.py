@@ -11126,6 +11126,14 @@ class Runtime:
         validation failed and an error was recorded.
         """
 
+        if isinstance(p, bool):
+            message = (
+                f"heap {op} error: pointer {self._pointer_label(p)} is not numeric"
+                f"{self._heap_debug_suffix(pointer=p)}"
+            )
+            self._record_error(message, pos)
+            return None, None
+
         try:
             ip = int(p)
         except Exception:
@@ -11183,6 +11191,14 @@ class Runtime:
 
     def _parse_heap_index(self, i: Any, pos: Optional[Any]) -> Optional[int]:
         """Parse an index argument and record helpful errors when invalid."""
+
+        if isinstance(i, bool):
+            message = (
+                "heap access error: index "
+                f"{self._pointer_label(i)} is not numeric{self._heap_debug_suffix(index=i)}"
+            )
+            self._record_error(message, pos)
+            return None
 
         try:
             idx = int(i)

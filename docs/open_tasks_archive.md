@@ -257,7 +257,7 @@ become concrete tasks.
 
 ## Runtime
 
-- [x] Harden the heap API (invalid pointer diagnostics, out-of-bounds details, double-delete detection, leak tracking).
+- [x] Harden the heap API (invalid pointer diagnostics, out-of-bounds details, double-delete detection, leak tracking, and boolean pointer/index rejection).
 - [x] Expand the test suite (nested arrays, many `new/delete` pairs, deep recursion, heap-API error scenarios).
 
 ## Test coverage for Tiny programs

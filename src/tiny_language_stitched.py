@@ -7774,6 +7774,10 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                 else:
                     next_active.append(dict(state))
 
+            if _stmt_guarantees_exit(st):
+                terminated_states.extend(next_active)
+                next_active = []
+
             active_states = _merge_states(next_active)
 
         return _merge_states(active_states), _merge_states(terminated_states)
@@ -9646,22 +9650,47 @@ def _block_guarantees_return(stmts: List[IR]) -> bool:
     return False
 
 
+def _block_guarantees_exit(stmts: List[IR]) -> bool:
+    for st in stmts:
+        if isinstance(st, Return):
+            return True
+        if isinstance(st, While):
+            if isinstance(st.cond, Bool) and st.cond.value:
+                return True
+        if isinstance(st, If):
+            if _block_guarantees_exit(st.then) and _block_guarantees_exit(st.els):
+                return True
+        if isinstance(st, Switch):
+            has_default = any(case.value is None for case in st.cases)
+            if has_default and all(_block_guarantees_exit(case.body) for case in st.cases):
+                return True
+        if isinstance(st, TryCatch):
+            if _block_guarantees_exit(st.body) and _block_guarantees_exit(st.handler):
+                return True
+        if isinstance(st, TaskBlock):
+            if _block_guarantees_exit(st.body):
+                return True
+        elif isinstance(st, (Fn, MethodDef, ClassDef, Namespace)):
+            continue
+    return False
+
+
 def _stmt_guarantees_exit(st: IR) -> bool:
     if isinstance(st, Return):
         return True
     if isinstance(st, If):
         if isinstance(st.cond, Bool):
             if st.cond.value:
-                return _block_guarantees_return(st.then)
-            return _block_guarantees_return(st.els)
-        return _block_guarantees_return(st.then) and _block_guarantees_return(st.els)
+                return _block_guarantees_exit(st.then)
+            return _block_guarantees_exit(st.els)
+        return _block_guarantees_exit(st.then) and _block_guarantees_exit(st.els)
     if isinstance(st, Switch):
         has_default = any(case.value is None for case in st.cases)
-        return has_default and all(_block_guarantees_return(case.body) for case in st.cases)
+        return has_default and all(_block_guarantees_exit(case.body) for case in st.cases)
     if isinstance(st, TryCatch):
-        return _block_guarantees_return(st.body) and _block_guarantees_return(st.handler)
+        return _block_guarantees_exit(st.body) and _block_guarantees_exit(st.handler)
     if isinstance(st, TaskBlock):
-        return _block_guarantees_return(st.body)
+        return _block_guarantees_exit(st.body)
     if isinstance(st, While):
         return isinstance(st.cond, Bool) and st.cond.value
     return False

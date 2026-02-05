@@ -42,7 +42,11 @@ SNAPSHOTS = [
     CliSnapshot(
         args=["--source", "print(1 / 0);"],
         stdout="",
-        stderr="[E000] division by zero (line 1, col 9)\n> 1 | print(1 / 0);\n    |         ^\n",
+        stderr=(
+            "[E000] division by zero (line 1, col 7 to line 1, col 11)\n"
+            "> 1 | print(1 / 0);\n"
+            "    |       ^^^^^\n"
+        ),
         returncode=1,
     ),
     CliSnapshot(
@@ -65,11 +69,11 @@ SNAPSHOTS = [
         args=["--source", "import stdlib.os;\ndef _unused = os.read_text(\"missing.txt\");"],
         stdout="",
         stderr=(
-            "[E000] file does not exist: missing.txt (line 57, col 14)\n"
+            "[E000] file does not exist: missing.txt (line 57, col 10 to line 57, col 24)\n"
             "  56 | fn read_text(path) {\n"
             "> 57 |   return File.read(path);\n"
+            "     |          ^^^^^^^^^^^^^^^\n"
             "  58 | }\n"
-            "     |              ^\n"
             "Stack trace:\n"
             "  at stdlib.os.read_text (line 56, col 1)\n"
         ),

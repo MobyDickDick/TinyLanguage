@@ -970,7 +970,11 @@ def test_error_message_for_missing_heap_index(monkeypatch):
 
     monkeypatch.setenv("TINY_LINT_HEAP", "0")
     out = run_tiny(src)
-    assert re.search(r"heap access error: index 5 out of range for pointer 1 \(size 2; valid indices: 0..1\) \(line 3, col \d+\)", out)
+    assert re.search(
+        r"(?:\[E\d+\] )?heap access error: index 5 out of range for pointer 1 "
+        r"\(size 2; valid indices: 0..1\) \(line 3, col \d+(?: to line \d+, col \d+)?\)",
+        out,
+    )
     assert "^" in out
 
 
@@ -985,7 +989,11 @@ def test_error_message_for_double_delete(monkeypatch):
 
     monkeypatch.setenv("TINY_LINT_HEAP", "0")
     out = run_tiny(src)
-    assert re.search(r"heap delete error: pointer 1 was already freed \(size 1\) \(line 4, col \d+\)", out)
+    assert re.search(
+        r"(?:\[E\d+\] )?heap delete error: pointer 1 was already freed \(size 1\) "
+        r"\(line 4, col \d+(?: to line \d+, col \d+)?\)",
+        out,
+    )
     assert "^" in out
 
 
@@ -998,7 +1006,10 @@ def test_error_message_for_unknown_delete(monkeypatch):
 
     monkeypatch.setenv("TINY_LINT_HEAP", "0")
     out = run_tiny(src)
-    assert re.search(r"heap delete error: unknown pointer 9.*\(line 2, col \d+\)", out)
+    assert re.search(
+        r"(?:\[E\d+\] )?heap delete error: unknown pointer 9.*\(line 2, col \d+(?: to line \d+, col \d+)?\)",
+        out,
+    )
     assert "^" in out
 
 
@@ -1016,7 +1027,8 @@ def test_error_message_for_heap_type_mismatch(monkeypatch):
     monkeypatch.setenv("TINY_LINT_HEAP", "0")
     out = run_tiny(src)
     assert re.search(
-        r"\[E014\] heap type mismatch at 1\[0\]: expected int but got string \(line 4, col \d+\)",
+        r"\[E014\] heap type mismatch at 1\[0\]: expected int but got string "
+        r"\(line 4, col \d+(?: to line \d+, col \d+)?\)",
         out,
     )
     assert "^" in out
@@ -1071,7 +1083,10 @@ def test_error_message_for_missing_field():
     """
 
     out = run_tiny(src)
-    assert re.search(r"unknown field missing \(line 3, col \d+\)", out)
+    assert re.search(
+        r"(?:\[E\d+\] )?unknown field missing \(line 3, col \d+(?: to line \d+, col \d+)?\)",
+        out,
+    )
     assert "^" in out
 
 
@@ -1082,7 +1097,10 @@ def test_parser_error_reports_context():
 
 def test_runtime_error_reports_context():
     """Test that runtime error reports context."""
-    expect_compile_error("print(1/0);", r"(?s)division by zero \(line 1, col 8\).*\^")
+    expect_compile_error(
+        "print(1/0);",
+        r"(?s)(?:\[E\d+\] )?division by zero \(line 1, col \d+(?: to line 1, col \d+)?\).*\^+",
+    )
 
 
 def test_typedef_simple_record():

@@ -71,7 +71,11 @@ def test_unknown_variable_suggests_name():
 
     assert (
         str(excinfo.value)
-        == "[E003] unknown variable val (line 2, col 15)\n  1 | def value = 1;\n> 2 | print(value + val);\n    |               ^\n  Hint: Did you mean `value`? Declare the variable first, e.g. `def name = ...;`."
+        == "[E003] unknown variable val (line 2, col 15 to line 2, col 17)\n"
+        "  1 | def value = 1;\n"
+        "> 2 | print(value + val);\n"
+        "    |               ^^^\n"
+        "  Hint: Did you mean `value`? Declare the variable first, e.g. `def name = ...;`."
     )
 
 
@@ -136,5 +140,9 @@ def test_unknown_variable_error_includes_hint():
     assert err.pos.col == 15
     assert (
         str(err)
-        == "[E003] unknown variable vale (line 2, col 15)\n  1 | def value = 1;\n> 2 | print(value + vale);\n    |               ^\n  Hint: Did you mean `value`? Declare the variable first, e.g. `def name = ...;`."
+        == "[E003] unknown variable vale (line 2, col 15 to line 2, col 18)\n"
+        "  1 | def value = 1;\n"
+        "> 2 | print(value + vale);\n"
+        "    |               ^^^^\n"
+        "  Hint: Did you mean `value`? Declare the variable first, e.g. `def name = ...;`."
     )

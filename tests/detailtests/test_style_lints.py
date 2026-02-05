@@ -69,6 +69,19 @@ def test_unreachable_after_constant_true_if_is_flagged():
     assert "unreachable" in str(err.value).lower()
 
 
+def test_unreachable_in_constant_false_branch_is_flagged():
+    """Test that unreachable in constant false branch is flagged."""
+    src = """
+    fn never() {
+        if (false) { print("never"); }
+        return 0;
+    }
+    """
+    with pytest.raises(TinyLangError) as err:
+        compile_and_run(src)
+    assert "unreachable" in str(err.value).lower()
+
+
 def test_unreachable_after_infinite_loop_if_is_flagged():
     """Test that unreachable after infinite loop if is flagged."""
     src = """

@@ -1158,7 +1158,6 @@ fn lint_locals_used(stmts, source) {
                     def cond_is_bool = st.cond.__tag__ == "Bool";
                     def cond_truthy = cond_is_bool && st.cond.value;
                     if (cond_is_bool && cond_truthy) {
-                        if (len(st.els) > 0) { lint_locals_used(st.els, source); }
                         def then_res = analyze_block(st.then, new[cond_state]);
                         def then_active = heap_get(then_res, 0);
                         def then_term = heap_get(then_res, 1);
@@ -1168,7 +1167,6 @@ fn lint_locals_used(stmts, source) {
                         while (ti < len(then_term)) { Collections.push(terminated_states, heap_get(then_term, ti)); ti = ti + 1; }
                     } else {
                         if (cond_is_bool && !cond_truthy) {
-                            if (len(st.then) > 0) { lint_locals_used(st.then, source); }
                             def else_res = analyze_block(st.els, new[cond_state]);
                             def else_active = heap_get(else_res, 0);
                             def else_term = heap_get(else_res, 1);
@@ -1202,7 +1200,6 @@ fn lint_locals_used(stmts, source) {
                     def ci = 0;
                     while (ci < len(cond_names)) { _mark_used(cond_state, heap_get(cond_names, ci)); ci = ci + 1; }
                     if (st.cond.__tag__ == "Bool" && !st.cond.value) {
-                        lint_locals_used(st.body, source);
                         Collections.push(next_active, cond_state);
                     } else {
                         def body_res = analyze_block(st.body, new[cond_state]);
@@ -2447,6 +2444,12 @@ fn lint_return_exhaustiveness(stmts, fn_name, expected_return, is_method, source
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_unreachable_code(stmts, source) {
+    fn raise_unreachable(node) {
+        def msg = "unreachable statement after a guaranteed exit";
+        if (source == Null) { return __raise_runtime_error(msg); }
+        else { _lint_error(source, node, msg, "E013", "Remove the dead code or restructure control flow so it can be reached."); }
+    }
+
     // ---------------------------------------------------------------------------
     // visit_block(block)
     // ---------------------------------------------------------------------------
@@ -2466,15 +2469,18 @@ fn lint_unreachable_code(stmts, source) {
         while (i < len(block)) {
             def st = heap_get(block, i);
             if (terminated) {
-                def msg = "unreachable statement after a guaranteed exit";
-                if (source == Null) { return __raise_runtime_error(msg); }
-                else { _lint_error(source, st, msg, "E013", "Remove the dead code or restructure control flow so it can be reached."); }
+                raise_unreachable(st);
             }
             def handled = false;
             if (!handled && st.__tag__ == "If") {
                 if (st.cond.__tag__ == "Bool") {
-                    if (st.cond.value) { visit_block(st.then); }
-                    else { visit_block(st.els); }
+                    if (st.cond.value) {
+                        if (len(st.els) > 0) { raise_unreachable(heap_get(st.els, 0)); }
+                        visit_block(st.then);
+                    } else {
+                        if (len(st.then) > 0) { raise_unreachable(heap_get(st.then, 0)); }
+                        visit_block(st.els);
+                    }
                 } else {
                     visit_block(st.then);
                     visit_block(st.els);
@@ -2482,7 +2488,11 @@ fn lint_unreachable_code(stmts, source) {
                 handled = true;
             }
             if (!handled && st.__tag__ == "While") {
-                if (!(st.cond.__tag__ == "Bool" && !st.cond.value)) { visit_block(st.body); }
+                if (st.cond.__tag__ == "Bool" && !st.cond.value) {
+                    if (len(st.body) > 0) { raise_unreachable(heap_get(st.body, 0)); }
+                } else {
+                    visit_block(st.body);
+                }
                 handled = true;
             }
             if (!handled && st.__tag__ == "Switch") {

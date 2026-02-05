@@ -7599,6 +7599,43 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
     unused: List[tuple[str, Location]] = []
     partial: List[tuple[str, Location]] = []
 
+    def _should_skip_binding(name: str) -> bool:
+        return name.startswith("_") or name.startswith("ignored") or (
+            name.startswith("unused") and name != "unused"
+        )
+
+    def _record_scoped_usage(
+        name: str,
+        pos: Location,
+        active_states: List[Dict[str, tuple[Location, bool, bool]]],
+        terminated_states: List[Dict[str, tuple[Location, bool, bool]]],
+    ) -> None:
+        if _should_skip_binding(name):
+            return
+
+        used_any = False
+        active_all = True
+        active_present = False
+
+        for state in active_states:
+            if name not in state:
+                continue
+            _, used_all, used_any_state = state[name]
+            used_any = used_any or used_any_state
+            active_all = active_all and used_all
+            active_present = True
+
+        for state in terminated_states:
+            if name not in state:
+                continue
+            _, _, used_any_state = state[name]
+            used_any = used_any or used_any_state
+
+        if not used_any:
+            unused.append((name, pos))
+        elif active_present and not active_all:
+            partial.append((name, pos))
+
     def names_in_expr(expr: IR) -> Set[str]:
         reads: Dict[str, int] = {}
         uses_in_expr(expr, reads)
@@ -7695,14 +7732,10 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                     cond_truthy = cond_is_bool and st.cond.value
 
                     if cond_is_bool and cond_truthy:
-                        if st.els:
-                            lint_locals_used(st.els, source)
                         then_active, then_term = analyze_block(st.then, [cond_state])
                         next_active.extend(then_active)
                         terminated_states.extend(then_term)
                     elif cond_is_bool and not cond_truthy:
-                        if st.then:
-                            lint_locals_used(st.then, source)
                         else_active, else_term = analyze_block(st.els, [cond_state])
                         next_active.extend(else_active or [dict(cond_state)])
                         terminated_states.extend(else_term)
@@ -7717,7 +7750,6 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                     for nm in names_in_expr(st.cond):
                         _mark_used(cond_state, nm)
                     if isinstance(st.cond, Bool) and not st.cond.value:
-                        lint_locals_used(st.body, source)
                         next_active.append(cond_state)
                     else:
                         body_active, body_term = analyze_block(st.body, [cond_state])
@@ -7744,6 +7776,11 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                     if st.err_name:
                         handler_state[st.err_name] = (st.pos, False, False)
                     handler_active, handler_term = analyze_block(st.handler, [handler_state])
+                    if st.err_name:
+                        _record_scoped_usage(st.err_name, st.pos, handler_active, handler_term)
+                        for scope_states in (handler_active, handler_term):
+                            for scope_state in scope_states:
+                                scope_state.pop(st.err_name, None)
                     next_active.extend(body_active + handler_active)
                     terminated_states.extend(body_term + handler_term)
                 elif isinstance(st, TaskBlock):
@@ -7807,7 +7844,7 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
     _accumulate(terminated, active_state=False)
 
     for (name, pos), info in usage_summary.items():
-        if name.startswith("_") or name.startswith("ignored") or (name.startswith("unused") and name != "unused"):
+        if _should_skip_binding(name):
             continue
 
         used_any = info["used_any"]
@@ -9832,30 +9869,40 @@ def lint_return_exhaustiveness(
 
 
 def lint_unreachable_code(stmts: List[IR], source: Optional[str] = None) -> None:
+    def raise_unreachable(node: IR) -> None:
+        msg = "unreachable statement after a guaranteed exit"
+        raise _lint_error(
+            source,
+            node,
+            msg,
+            code="E013",
+            hint="Remove the dead code or restructure control flow so it can be reached.",
+        )
+
     def visit_block(block: List[IR]) -> None:
         terminated = False
         for st in block:
             if terminated:
-                msg = "unreachable statement after a guaranteed exit"
-                raise _lint_error(
-                    source,
-                    st,
-                    msg,
-                    code="E013",
-                    hint="Remove the dead code or restructure control flow so it can be reached.",
-                )
+                raise_unreachable(st)
 
             if isinstance(st, If):
                 if isinstance(st.cond, Bool):
                     if st.cond.value:
+                        if st.els:
+                            raise_unreachable(st.els[0])
                         visit_block(st.then)
                     else:
+                        if st.then:
+                            raise_unreachable(st.then[0])
                         visit_block(st.els)
                 else:
                     visit_block(st.then)
                     visit_block(st.els)
             elif isinstance(st, While):
-                if not (isinstance(st.cond, Bool) and not st.cond.value):
+                if isinstance(st.cond, Bool) and not st.cond.value:
+                    if st.body:
+                        raise_unreachable(st.body[0])
+                else:
                     visit_block(st.body)
             elif isinstance(st, Switch):
                 for case in st.cases:

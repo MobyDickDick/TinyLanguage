@@ -711,14 +711,10 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                     cond_truthy = cond_is_bool and st.cond.value
 
                     if cond_is_bool and cond_truthy:
-                        if st.els:
-                            lint_locals_used(st.els, source)
                         then_active, then_term = analyze_block(st.then, [cond_state])
                         next_active.extend(then_active)
                         terminated_states.extend(then_term)
                     elif cond_is_bool and not cond_truthy:
-                        if st.then:
-                            lint_locals_used(st.then, source)
                         else_active, else_term = analyze_block(st.els, [cond_state])
                         next_active.extend(else_active or [dict(cond_state)])
                         terminated_states.extend(else_term)

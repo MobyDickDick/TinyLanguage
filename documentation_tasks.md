@@ -172,6 +172,12 @@ PY
 
 - [x] Gibt es Redundanzen in der Tiny-Language? (siehe `docs/redundancy_review.md`)
 
+## Zusätzliche Aufgabenliste (Projektanforderungen)
+
+- [ ] Jede Python-Datei im Projekt wird am Schluss in eine äquivalente Tiny-Datei übersetzt und der Nachweis (Mapping/Tabelle) ist dokumentiert.
+- [ ] Jede Sourcecodedatei ist so detailliert wie sinnvoll dokumentiert (inklusive Kontext/Begründungen für größere Zusammenhänge).
+- [ ] Große Sourcecodedateien sind in überschaubare, logisch getrennte kleinere Dateien aufgeteilt (inkl. ggf. neuer Modulstruktur und aktualisierten Importpfaden).
+
 ## Aufgaben zur Redundanz-Reduktion (aus `docs/redundancy_review.md`)
 
 - [x] Entrypoint-Shims konsolidieren: Migrationsplan definieren, der festlegt, welche Wrapper (`run_all.py`, `tiny_language`, `tiny_language.py`, `src/tiny_lang_cli.py`) entfernt oder umbenannt werden, inklusive Abkündigungszeitraum und kompatibler Übergangskommandos.

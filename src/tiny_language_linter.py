@@ -2853,18 +2853,21 @@ def lint_return_exhaustiveness(
 
 
 def lint_unreachable_code(stmts: List[IR], source: Optional[str] = None) -> None:
+    def raise_unreachable(node: IR) -> None:
+        msg = "unreachable statement after a guaranteed exit"
+        raise _lint_error(
+            source,
+            node,
+            msg,
+            code="E013",
+            hint="Remove the dead code or restructure control flow so it can be reached.",
+        )
+
     def visit_block(block: List[IR]) -> None:
         terminated = False
         for st in block:
             if terminated:
-                msg = "unreachable statement after a guaranteed exit"
-                raise _lint_error(
-                    source,
-                    st,
-                    msg,
-                    code="E013",
-                    hint="Remove the dead code or restructure control flow so it can be reached.",
-                )
+                raise_unreachable(st)
 
             if isinstance(st, If):
                 if isinstance(st.cond, Bool):

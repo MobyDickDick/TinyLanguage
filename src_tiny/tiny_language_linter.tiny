@@ -2447,6 +2447,12 @@ fn lint_return_exhaustiveness(stmts, fn_name, expected_return, is_method, source
 //   A Tiny value (type depends on operation).
 // ---------------------------------------------------------------------------
 fn lint_unreachable_code(stmts, source) {
+    fn raise_unreachable(node) {
+        def msg = "unreachable statement after a guaranteed exit";
+        if (source == Null) { return __raise_runtime_error(msg); }
+        else { _lint_error(source, node, msg, "E013", "Remove the dead code or restructure control flow so it can be reached."); }
+    }
+
     // ---------------------------------------------------------------------------
     // visit_block(block)
     // ---------------------------------------------------------------------------
@@ -2466,9 +2472,7 @@ fn lint_unreachable_code(stmts, source) {
         while (i < len(block)) {
             def st = heap_get(block, i);
             if (terminated) {
-                def msg = "unreachable statement after a guaranteed exit";
-                if (source == Null) { return __raise_runtime_error(msg); }
-                else { _lint_error(source, st, msg, "E013", "Remove the dead code or restructure control flow so it can be reached."); }
+                raise_unreachable(st);
             }
             def handled = false;
             if (!handled && st.__tag__ == "If") {
@@ -2482,7 +2486,9 @@ fn lint_unreachable_code(stmts, source) {
                 handled = true;
             }
             if (!handled && st.__tag__ == "While") {
-                if (!(st.cond.__tag__ == "Bool" && !st.cond.value)) { visit_block(st.body); }
+                if (!(st.cond.__tag__ == "Bool" && !st.cond.value)) {
+                    visit_block(st.body);
+                }
                 handled = true;
             }
             if (!handled && st.__tag__ == "Switch") {

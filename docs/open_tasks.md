@@ -12,22 +12,16 @@ sections below.
 
 Timebox: 2026-02-02 to 2026-03-16 (6 weeks).
 
-1. **Improve error positions and messages** (Owner: Language Core)
-   - Success: Source spans propagate through tokens + AST; diagnostics include
-     consistent line/column ranges.
-2. **Refine linter “must-use” and unreachable-code checks** (Owner: Language Core)
+1. **Refine linter “must-use” and unreachable-code checks** (Owner: Language Core)
    - Success: Lints cover control-flow exits and flag unreachable code with tests.
-3. **Harden heap API diagnostics** (Owner: Runtime)
+2. **Harden heap API diagnostics** (Owner: Runtime)
    - Success: Interpreter reports detailed heap failures; regression tests cover
      error cases (invalid pointer, bounds, double-delete, leak tracking).
-4. **Stabilize formatter + lints + LSP workflows** (Owner: Tooling)
+3. **Stabilize formatter + lints + LSP workflows** (Owner: Tooling)
    - Success: Documented formatter rules, lint profiles, and LSP smoke tests.
 
 ## Near-term priorities (next 4-6 weeks)
 
-- [ ] Improve error positions and messages (line/column spans, unified error type).
-  - Owner: Language Core
-  - Success: Source spans propagate through tokens + AST; diagnostics include consistent line/column ranges.
 - [ ] Refine linter “must-use” and unreachable-code checks.
   - Owner: Language Core
   - Success: Lints cover control-flow exits and flag unreachable code with tests.

@@ -1,5 +1,13 @@
 # Open tasks archive
 
+Archived from `docs/open_tasks.md` on 2026-02-04.
+
+## Refreshed near-term backlog (completed)
+
+- [x] Improve error positions and messages (line/column spans, unified error type).
+  - Owner: Language Core
+  - Success: Source spans propagate through tokens + AST; diagnostics include consistent line/column ranges.
+
 Archived from `docs/open_tasks.md` on 2026-02-03.
 
 ## Expansion roadmap follow-ups (completed)

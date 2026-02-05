@@ -26,6 +26,16 @@ def test_parser_error_span_tracks_unexpected_token():
     _assert_span(exc.value, 1, 9, 1, 9)
 
 
+def test_parser_error_span_points_to_eof():
+    """Test that parser errors at EOF point to the end position."""
+    source = "def a = 1"
+
+    with pytest.raises(TinyLangError) as exc:
+        compile_and_run(source)
+
+    _assert_span(exc.value, 1, 10, 1, 10)
+
+
 def test_linter_error_span_tracks_reserved_binding_name():
     """Test that linter error span tracks reserved binding name."""
     source = textwrap.dedent(

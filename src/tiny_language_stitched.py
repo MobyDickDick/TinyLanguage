@@ -1023,12 +1023,9 @@ class Parser:
         return SourceSpan(tok.start, tok.stop)
 
     def _current_span(self) -> SourceSpan:
-        if self.tok.kind == "EOF" and self._last_tok.kind != "<start>":
-            stop = self._last_tok.stop
-            if self.source.endswith("\n"):
-                line = self.source.count("\n") + 1
-                stop = SourcePos(line, 1)
-            return SourceSpan(stop, stop)
+        if self.tok.kind == "EOF":
+            eof_pos = self.tok.pos
+            return SourceSpan(eof_pos, eof_pos)
         return self._tok_span(self.tok)
 
     def _eat(self, kind: str, text: Optional[str] = None) -> Token:

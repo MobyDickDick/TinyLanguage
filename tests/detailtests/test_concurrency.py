@@ -222,11 +222,11 @@ def test_join_status_reports_spawn_errors(run_tiny_source):
 
     assert out == (
         "status true false\n"
-        "error [E000] join expects a spawn handle (line 3, col 20)\n"
+        "error [E000] join expects a spawn handle (line 3, col 20 to line 3, col 29)\n"
         "   2 |         fn boom() {\n"
         ">  3 |             return join(Null);\n"
+        "     |                    ^^^^^^^^^^\n"
         "   4 |         }\n"
-        "     |                    ^\n"
         "Stack trace:\n"
         "  at boom (line 2, col 9)\n"
         "result_null true\n"

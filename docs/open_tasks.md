@@ -12,17 +12,11 @@ sections below.
 
 Timebox: 2026-02-02 to 2026-03-16 (6 weeks).
 
-1. **Harden heap API diagnostics** (Owner: Runtime)
-   - Success: Interpreter reports detailed heap failures; regression tests cover
-     error cases (invalid pointer, bounds, double-delete, leak tracking).
-2. **Stabilize formatter + lints + LSP workflows** (Owner: Tooling)
+1. **Stabilize formatter + lints + LSP workflows** (Owner: Tooling)
    - Success: Documented formatter rules, lint profiles, and LSP smoke tests.
 
 ## Near-term priorities (next 4-6 weeks)
 
-- [ ] Harden heap API diagnostics (invalid pointer, bounds, double-delete, leak tracking).
-  - Owner: Runtime
-  - Success: Interpreter reports detailed heap failures; regression tests cover error cases.
 - [ ] Stabilize formatter + lints + LSP workflows.
   - Owner: Tooling
   - Success: Documented formatter rules, lint profiles, and LSP smoke tests.

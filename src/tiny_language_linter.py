@@ -34,6 +34,9 @@ def _node_pos(obj: Any) -> SourcePos:
         return obj.start
     if isinstance(obj, SourcePos):
         return obj
+    span = getattr(obj, "span", None)
+    if span is not None:
+        return span.start
     return getattr(obj, "pos", SourcePos.origin())
 
 

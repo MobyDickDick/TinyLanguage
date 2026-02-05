@@ -59,6 +59,15 @@ class TinyLangError(Exception):
     stack: Tuple[StackFrame, ...] = field(default_factory=tuple)
     span: Optional[SourceSpan] = None
 
+    def __post_init__(self) -> None:
+        """Normalize spans and align positional defaults."""
+        if self.span is not None:
+            normalized = _normalize_span(self.span)
+            if normalized != self.span:
+                self.span = normalized
+            if self.pos == SourcePos.origin():
+                self.pos = normalized.start
+
     def __str__(self) -> str:  # pragma: no cover - Exception already stringifies message
         return self.message
 

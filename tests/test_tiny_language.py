@@ -827,6 +827,27 @@ def test_binding_used_in_all_branches_is_ok():
     assert out == "hi\n0\n"
 
 
+def test_must_use_ignores_exit_paths_with_infinite_loop():
+    """Test that must-use ignores exit paths with infinite loop."""
+    src = """
+    fn demo(flag) {
+        def x = 1;
+        if (flag) {
+            while (true) {
+                print(0);
+            }
+        } else {
+            print(x);
+        }
+        return 0;
+    }
+    print(demo(false));
+    """
+
+    out = run_tiny(src)
+    assert out == "1\n0\n"
+
+
 def test_loop_skipped_counts_as_unused():
     """Test that loop skipped counts as unused."""
     src = """

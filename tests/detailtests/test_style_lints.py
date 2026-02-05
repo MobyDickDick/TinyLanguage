@@ -69,6 +69,19 @@ def test_unreachable_after_constant_true_if_is_flagged():
     assert "unreachable" in str(err.value).lower()
 
 
+def test_unreachable_after_infinite_loop_if_is_flagged():
+    """Test that unreachable after infinite loop if is flagged."""
+    src = """
+    fn spin(flag) {
+        if (flag) { while (true) { print(1); } } else { while (true) { print(2); } }
+        print("never");
+    }
+    """
+    with pytest.raises(TinyLangError) as err:
+        compile_and_run(src)
+    assert "unreachable" in str(err.value).lower()
+
+
 def test_type_change_is_flagged_even_without_execution():
     """Test that type change is flagged even without execution."""
     src = """

@@ -1,5 +1,13 @@
 # Open tasks archive
 
+Archived from `docs/open_tasks.md` on 2026-02-05.
+
+## Refreshed near-term backlog (completed)
+
+- [x] Refine linter “must-use” and unreachable-code checks.
+  - Owner: Language Core
+  - Success: Lints cover control-flow exits and flag unreachable code with tests.
+
 Archived from `docs/open_tasks.md` on 2026-02-04.
 
 ## Refreshed near-term backlog (completed)

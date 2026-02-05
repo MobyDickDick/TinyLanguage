@@ -827,6 +827,24 @@ def test_binding_used_in_all_branches_is_ok():
     assert out == "hi\n0\n"
 
 
+def test_binding_used_on_non_exit_path_is_ok():
+    """Test that binding used when only non-exit path continues is ok."""
+    src = """
+    fn demo(flag) {
+        def x = 1;
+        if (flag) {
+            return 0;
+        }
+        print(x);
+        return 1;
+    }
+    print(demo(false));
+    """
+
+    out = run_tiny(src)
+    assert out == "1\n1\n"
+
+
 def test_must_use_ignores_exit_paths_with_infinite_loop():
     """Test that must-use ignores exit paths with infinite loop."""
     src = """
@@ -884,6 +902,37 @@ def test_unreachable_statement_after_infinite_loop():
         print(2);
     }
     def _unused100 = demo();
+    """
+
+    expect_compile_error(src, r"unreachable statement after a guaranteed exit")
+
+
+def test_unreachable_statement_in_constant_if_branch():
+    """Test that unreachable statement in constant if branch."""
+    src = """
+    fn demo() {
+        if (true) {
+            return 1;
+        } else {
+            print(2);
+        }
+    }
+    def _unused120 = demo();
+    """
+
+    expect_compile_error(src, r"unreachable statement after a guaranteed exit")
+
+
+def test_unreachable_statement_in_while_false_body():
+    """Test that unreachable statement in while false body."""
+    src = """
+    fn demo() {
+        while (false) {
+            print(1);
+        }
+        return 0;
+    }
+    def _unused130 = demo();
     """
 
     expect_compile_error(src, r"unreachable statement after a guaranteed exit")

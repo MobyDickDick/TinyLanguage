@@ -12,19 +12,14 @@ sections below.
 
 Timebox: 2026-02-02 to 2026-03-16 (6 weeks).
 
-1. **Refine linter “must-use” and unreachable-code checks** (Owner: Language Core)
-   - Success: Lints cover control-flow exits and flag unreachable code with tests.
-2. **Harden heap API diagnostics** (Owner: Runtime)
+1. **Harden heap API diagnostics** (Owner: Runtime)
    - Success: Interpreter reports detailed heap failures; regression tests cover
      error cases (invalid pointer, bounds, double-delete, leak tracking).
-3. **Stabilize formatter + lints + LSP workflows** (Owner: Tooling)
+2. **Stabilize formatter + lints + LSP workflows** (Owner: Tooling)
    - Success: Documented formatter rules, lint profiles, and LSP smoke tests.
 
 ## Near-term priorities (next 4-6 weeks)
 
-- [ ] Refine linter “must-use” and unreachable-code checks.
-  - Owner: Language Core
-  - Success: Lints cover control-flow exits and flag unreachable code with tests.
 - [ ] Harden heap API diagnostics (invalid pointer, bounds, double-delete, leak tracking).
   - Owner: Runtime
   - Success: Interpreter reports detailed heap failures; regression tests cover error cases.

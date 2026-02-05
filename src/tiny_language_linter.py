@@ -711,14 +711,10 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                     cond_truthy = cond_is_bool and st.cond.value
 
                     if cond_is_bool and cond_truthy:
-                        if st.els:
-                            lint_locals_used(st.els, source)
                         then_active, then_term = analyze_block(st.then, [cond_state])
                         next_active.extend(then_active)
                         terminated_states.extend(then_term)
                     elif cond_is_bool and not cond_truthy:
-                        if st.then:
-                            lint_locals_used(st.then, source)
                         else_active, else_term = analyze_block(st.els, [cond_state])
                         next_active.extend(else_active or [dict(cond_state)])
                         terminated_states.extend(else_term)
@@ -733,7 +729,6 @@ def lint_locals_used(stmts: List[IR], source: Optional[str] = None) -> None:
                     for nm in names_in_expr(st.cond):
                         _mark_used(cond_state, nm)
                     if isinstance(st.cond, Bool) and not st.cond.value:
-                        lint_locals_used(st.body, source)
                         next_active.append(cond_state)
                     else:
                         body_active, body_term = analyze_block(st.body, [cond_state])
@@ -2872,14 +2867,21 @@ def lint_unreachable_code(stmts: List[IR], source: Optional[str] = None) -> None
             if isinstance(st, If):
                 if isinstance(st.cond, Bool):
                     if st.cond.value:
+                        if st.els:
+                            raise_unreachable(st.els[0])
                         visit_block(st.then)
                     else:
+                        if st.then:
+                            raise_unreachable(st.then[0])
                         visit_block(st.els)
                 else:
                     visit_block(st.then)
                     visit_block(st.els)
             elif isinstance(st, While):
-                if not (isinstance(st.cond, Bool) and not st.cond.value):
+                if isinstance(st.cond, Bool) and not st.cond.value:
+                    if st.body:
+                        raise_unreachable(st.body[0])
+                else:
                     visit_block(st.body)
             elif isinstance(st, Switch):
                 for case in st.cases:

@@ -313,6 +313,14 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
 
 def eval_expr(self, e: IR, env: "Environment") -> Any:
     try:
+        def _unknown_function_label(name: str) -> str:
+            if "." in name:
+                return name
+            namespace = env.namespace or self.current_module_namespace
+            if namespace:
+                return self._qualify_name(name, namespace)
+            return name
+
         if isinstance(e, Num):
             if "." in e.txt or "e" in e.txt or "E" in e.txt:
                 value = float(e.txt)
@@ -420,11 +428,11 @@ def eval_expr(self, e: IR, env: "Environment") -> Any:
                 if fn.is_async:
                     return self._start_task(fn, arg_values)
                 return self._invoke_function(fn, arg_values)
-            raise RuntimeError(f"unknown function {e.name}")
+            raise RuntimeError(f"unknown function {_unknown_function_label(e.name)}")
         if isinstance(e, Spawn):
             resolved_name, fn = self._resolve_function(e.name, env)
             if fn is None:
-                raise RuntimeError(f"unknown function {e.name}")
+                raise RuntimeError(f"unknown function {_unknown_function_label(e.name)}")
             arg_values = [self.eval_expr(arg, env) for arg in e.args]
             return self._start_task(fn, arg_values)
         if isinstance(e, Await):

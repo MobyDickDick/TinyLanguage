@@ -1,11 +1,14 @@
 // Parity: loop + conditional arithmetic should match across backends.
+// Avoid modulo to stay within the interpreter's supported operators.
 
 def total = 0;
 def i = 1;
+def is_odd = true;
 while (i <= 9) {
-  if (i % 2 == 1) {
+  if (is_odd) {
     total = total + i;
   }
+  is_odd = not is_odd;
   i = i + 1;
 }
 

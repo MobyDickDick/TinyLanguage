@@ -40,4 +40,6 @@ No active near-term items. Completed tasks are archived in
 ## Longer-term backlog (unprioritized)
 
 - [ ] Module resolution and package manager roadmap implementation.
-- [ ] Conformance + cross-backend parity suite expansion.
+- [x] Conformance + cross-backend parity suite expansion.
+  - Added parity fixtures for function branching and looped arithmetic in
+    `tests/parity/`.

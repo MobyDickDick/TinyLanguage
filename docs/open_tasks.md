@@ -29,8 +29,6 @@ a fully functional, production-ready language. They are intentionally concrete
 and testable so they can be promoted into the formal backlog as needed.
 
 ### Language + runtime stability
-- [ ] Freeze a language spec v1.0 by tagging mandatory vs. experimental
-  features, then gate “v1-only” programs in CI.
 - [ ] Close remaining semantic ambiguities with executable spec tests (e.g.,
   numeric overflow, error propagation, evaluation order in edge cases).
 - [ ] Stabilize runtime error taxonomy with machine-readable codes and update

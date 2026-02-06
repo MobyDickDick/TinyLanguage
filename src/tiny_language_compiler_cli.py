@@ -40,6 +40,11 @@ def _experimental_flag_enabled(name: str) -> bool:
     return value in {"1", "true", "yes", "on"}
 
 
+def _v1_only_enabled() -> bool:
+    value = os.environ.get("TINYLANG_V1_ONLY", "").strip().lower()
+    return value in {"1", "true", "yes", "on"}
+
+
 def _read_source(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
@@ -107,12 +112,25 @@ def main(argv: list[str] | None = None) -> int:
     extra_args = ["-g", "-O0"] if args.debug else None
 
     try:
+        if _v1_only_enabled() and (
+            _experimental_flag_enabled("TINYLANG_EXPERIMENTAL_MATH_TUPLES")
+            or _experimental_flag_enabled("TINYLANG_EXPERIMENTAL_MATH_FORMULA")
+        ):
+            raise TinyLangError(
+                "v1-only mode forbids experimental math syntax; remove experimental flags or disable TINYLANG_V1_ONLY",
+                hint="Unset TINYLANG_V1_ONLY or drop --experimental-math-tuples/--experimental-math-formula.",
+            )
         if args.typecheck:
+            allow_math_tuples = _experimental_flag_enabled("TINYLANG_EXPERIMENTAL_MATH_TUPLES")
+            allow_math_formula = _experimental_flag_enabled("TINYLANG_EXPERIMENTAL_MATH_FORMULA")
+            if _v1_only_enabled():
+                allow_math_tuples = False
+                allow_math_formula = False
             parser_impl = Parser(
                 Lexer(source),
                 source,
-                allow_math_tuples=_experimental_flag_enabled("TINYLANG_EXPERIMENTAL_MATH_TUPLES"),
-                allow_math_formula=_experimental_flag_enabled("TINYLANG_EXPERIMENTAL_MATH_FORMULA"),
+                allow_math_tuples=allow_math_tuples,
+                allow_math_formula=allow_math_formula,
             )
             stmts = parser_impl.parse()
             lint_assignment_types(stmts, source)

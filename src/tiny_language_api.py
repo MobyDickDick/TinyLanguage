@@ -144,6 +144,13 @@ def _experimental_math_formula_enabled(preferred: Optional[bool] = None) -> bool
     return env_flag in {"1", "true", "yes", "on"}
 
 
+def _v1_only_enabled(preferred: Optional[bool] = None) -> bool:
+    if preferred is not None:
+        return preferred
+    env_flag = os.environ.get("TINYLANG_V1_ONLY", "").strip().lower()
+    return env_flag in {"1", "true", "yes", "on"}
+
+
 def _use_tiny_parser(preferred: Optional[bool] = None) -> bool:
     if preferred is not None:
         return preferred
@@ -631,6 +638,15 @@ def _parse_and_lint(
     """
     allow_math_tuples = _experimental_math_tuples_enabled(experimental_math_tuples)
     allow_math_formula = _experimental_math_formula_enabled(experimental_math_formula)
+    if _v1_only_enabled():
+        if allow_math_tuples or allow_math_formula:
+            raise TinyLangError(
+                "v1-only mode forbids experimental math syntax; remove experimental flags or disable TINYLANG_V1_ONLY",
+                code="E000",
+                hint="Unset TINYLANG_V1_ONLY or drop --experimental-math-tuples/--experimental-math-formula.",
+            )
+        allow_math_tuples = False
+        allow_math_formula = False
     if _use_tiny_parser(use_tiny_parser):
         stmts = _parse_with_tiny_parser(
             src,
@@ -1859,6 +1875,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Deep-copy non-escaping mutable arguments before calls (env: TINYLANG_COPY_ON_CALL)",
     )
     parser.add_argument(
+        "--v1-only",
+        action="store_true",
+        help="Disable experimental language features to enforce the v1 profile (env: TINYLANG_V1_ONLY)",
+    )
+    parser.add_argument(
         "--experimental-math-tuples",
         action="store_true",
         help="Enable experimental tuple-based math forms like (sum: x) (env: TINYLANG_EXPERIMENTAL_MATH_TUPLES)",
@@ -1874,6 +1895,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Print native backend diagnostics to stderr when using LLVM/native compiler flags",
     )
     args, remaining = parser.parse_known_args(argv)
+    if args.v1_only and (args.experimental_math_tuples or args.experimental_math_formula):
+        parser.error("--v1-only cannot be combined with experimental math syntax flags")
+    if args.v1_only:
+        os.environ["TINYLANG_V1_ONLY"] = "1"
     if args.experimental_math_tuples:
         os.environ["TINYLANG_EXPERIMENTAL_MATH_TUPLES"] = "1"
     if args.experimental_math_formula:

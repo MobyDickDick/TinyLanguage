@@ -35,6 +35,7 @@ from tiny_language_codegen_c import CCodeGenerator
 from tiny_language_codegen_llvm import LLVMCodeGenerator
 from tiny_language_highlighting import PYGMENTS_AVAILABLE, highlight_source
 from tiny_language_module_resolution import ModuleResolutionConfig, candidate_module_paths, resolve_module_name
+from tiny_pkg_cli import main as pkg_main
 
 if "IR" not in globals():
     from tiny_language_ast import (
@@ -1778,6 +1779,9 @@ def _emit_native_diagnostics(
 
 def main(argv: Optional[List[str]] = None) -> int:
     """CLI entry point for running files, snippets, REPL sessions, or codegen."""
+    argv = list(argv) if argv is not None else sys.argv[1:]
+    if argv[:1] == ["pkg"]:
+        return int(pkg_main(argv[1:]))
     parser = argparse.ArgumentParser(description="Run a TinyLanguage program from a file")
     mode_group = parser.add_mutually_exclusive_group()  # Eval and REPL are exclusive options
     mode_group.add_argument(

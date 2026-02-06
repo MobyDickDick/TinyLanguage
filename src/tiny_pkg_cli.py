@@ -2,13 +2,16 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import tarfile
 import tomllib
 from typing import Any, Iterable
 from urllib.parse import urlparse
+from urllib.request import urlopen
 
 from tiny_pkg_resolution import write_lockfile
 
@@ -179,18 +182,26 @@ def _load_registry_index(registry_url: str, manifest_dir: Path) -> dict[str, Any
     return {}
 
 
-def _lookup_registry_dist(index: dict[str, Any], name: str, version: str) -> str | None:
+def _lookup_registry_dist(
+    index: dict[str, Any],
+    name: str,
+    version: str,
+) -> tuple[str | None, str | None]:
     packages = index.get("packages") if isinstance(index.get("packages"), dict) else index
     if not isinstance(packages, dict):
-        return None
+        return None, None
     entry = packages.get(name, {})
     versions = entry.get("versions") if isinstance(entry, dict) and "versions" in entry else entry
     if not isinstance(versions, dict):
-        return None
+        return None, None
     metadata = versions.get(version, {})
     if isinstance(metadata, dict):
-        return metadata.get("dist") or metadata.get("path")
-    return None
+        dist = metadata.get("dist") or metadata.get("path")
+        checksum = metadata.get("sha256") or metadata.get("checksum")
+        return dist, checksum
+    if isinstance(metadata, str):
+        return metadata, None
+    return None, None
 
 
 def _safe_extract(tar: tarfile.TarFile, dest: Path) -> None:
@@ -211,10 +222,51 @@ def _copy_tree(source: Path, dest: Path, *, force: bool) -> None:
     shutil.copytree(source, dest, ignore=ignore)
 
 
-def _vendor_from_dist(dist: str, dest: Path, *, force: bool) -> None:
+def _normalize_checksum(value: str | None) -> str | None:
+    if not value:
+        return None
+    value = value.strip()
+    if value.startswith("sha256:"):
+        value = value.split(":", 1)[1]
+    return value or None
+
+
+def _checksum_matches(path: Path, checksum: str | None) -> bool:
+    normalized = _normalize_checksum(checksum)
+    if not normalized:
+        return True
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    return digest == normalized
+
+
+def _download_to_cache(url: str, cache_path: Path, *, checksum: str | None) -> Path:
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = cache_path.with_suffix(cache_path.suffix + ".tmp")
+    with urlopen(url) as response, tmp_path.open("wb") as handle:
+        shutil.copyfileobj(response, handle)
+    tmp_path.replace(cache_path)
+    if not _checksum_matches(cache_path, checksum):
+        cache_path.unlink(missing_ok=True)
+        raise SystemExit(f"Checksum mismatch for cached download: {cache_path}")
+    return cache_path
+
+
+def _vendor_from_dist(
+    dist: str,
+    dest: Path,
+    *,
+    force: bool,
+    cache_path: Path | None = None,
+    checksum: str | None = None,
+) -> None:
     if dist.startswith(("http://", "https://")):
-        raise SystemExit(f"Remote registry fetch is not implemented yet for {dist}")
-    if dist.startswith("file://"):
+        if cache_path is None:
+            raise SystemExit("Cache path required for remote registry fetches.")
+        if cache_path.is_file() and _checksum_matches(cache_path, checksum):
+            dist_path = cache_path
+        else:
+            dist_path = _download_to_cache(dist, cache_path, checksum=checksum)
+    elif dist.startswith("file://"):
         dist_path = Path(dist[len("file://") :])
     else:
         dist_path = Path(dist)
@@ -227,13 +279,22 @@ def _vendor_from_dist(dist: str, dest: Path, *, force: bool) -> None:
                 raise SystemExit(f"Destination already exists: {dest}")
             shutil.rmtree(dest)
         dest.mkdir(parents=True, exist_ok=True)
+        if not _checksum_matches(dist_path, checksum):
+            raise SystemExit(f"Checksum mismatch for archive: {dist_path}")
         with tarfile.open(dist_path) as tar:
             _safe_extract(tar, dest)
         return
     raise SystemExit(f"Unsupported registry dist: {dist}")
 
 
-def _vendor_dependency(entry: dict[str, Any], project_root: Path, vendor_root: Path, *, force: bool) -> None:
+def _vendor_dependency(
+    entry: dict[str, Any],
+    project_root: Path,
+    vendor_root: Path,
+    *,
+    cache_root: Path,
+    force: bool,
+) -> None:
     name = entry.get("name")
     version = entry.get("version", "0.0.0")
     source = entry.get("source")
@@ -251,11 +312,13 @@ def _vendor_dependency(entry: dict[str, Any], project_root: Path, vendor_root: P
         registry = entry.get("registry")
         host = _registry_host(registry)
         index = _load_registry_index(registry or "", project_root)
-        dist = _lookup_registry_dist(index, name, version)
+        dist, checksum = _lookup_registry_dist(index, name, version)
         if not dist:
             raise SystemExit(f"Registry entry missing dist for {name}@{version}")
         dest = vendor_root / host / name / version
-        _vendor_from_dist(dist, dest, force=force)
+        cache_filename = Path(urlparse(dist).path).name or f"{name}-{version}.tar.gz"
+        cache_path = cache_root / "registry" / host / name / version / cache_filename
+        _vendor_from_dist(dist, dest, force=force, cache_path=cache_path, checksum=checksum)
         return
     if source == "git":
         url = entry.get("url")
@@ -350,6 +413,13 @@ def _cmd_update(args: argparse.Namespace) -> int:
     return 0
 
 
+def _resolve_cache_root(project_root: Path) -> Path:
+    env_root = os.environ.get("TINY_PKG_CACHE", "").strip()
+    if env_root:
+        return Path(env_root).expanduser().resolve()
+    return project_root / ".tiny-cache"
+
+
 def _cmd_vendor(args: argparse.Namespace) -> int:
     manifest_path = Path(args.manifest).resolve()
     project_root = manifest_path.parent
@@ -357,8 +427,15 @@ def _cmd_vendor(args: argparse.Namespace) -> int:
     entries = _lockfile_entries(lock_path)
     vendor_root = project_root / "vendor"
     vendor_root.mkdir(parents=True, exist_ok=True)
+    cache_root = _resolve_cache_root(project_root)
     for entry in entries:
-        _vendor_dependency(entry, project_root, vendor_root, force=args.force)
+        _vendor_dependency(
+            entry,
+            project_root,
+            vendor_root,
+            cache_root=cache_root,
+            force=args.force,
+        )
     print(f"Vendored dependencies into {vendor_root}")
     return 0
 

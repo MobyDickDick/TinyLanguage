@@ -1,5 +1,16 @@
 # Open tasks archive
 
+Archived from `docs/open_tasks.md` on 2026-03-19.
+
+## Proposed production-readiness tasks (completed)
+
+### Package + module system (MVP → usable)
+- [x] Implement a real package manager prototype (`tiny pkg`) with dependency
+  resolution, lockfiles, and offline cache support.
+  - Notes: wired `tiny pkg` into the main CLI entrypoints, extended vendoring
+    to download and cache registry artifacts under `.tiny-cache`, and added
+    checksum verification for cached archives.
+
 Archived from `docs/open_tasks.md` on 2026-03-18.
 
 ## Proposed production-readiness tasks (completed)

@@ -18,6 +18,24 @@ in the sections below so the roadmap and the documentation stay in sync.
 - **Concurrency semantics** are described in **Control flow** (task scopes)
   and **Concurrency and async API** (spawn/await/cancellation behavior).
 
+## Version 1.0 feature status
+
+The v1 language profile separates stable, mandatory features from opt-in
+experiments. Use `TINYLANG_V1_ONLY=1` (or `--v1-only` in the CLI) to ensure a
+program stays within the v1 feature set.
+
+**V1 core (mandatory)**
+- Lexical elements, literals, and identifiers.
+- Expressions, operators, and evaluation order.
+- Control-flow (`if`, `while`, `switch`, `match`, `try`/`catch`).
+- Functions, classes/types, namespaces, and module imports.
+- Struct literals, arrays, and heap operations (including linted safety rules).
+- Concurrency primitives (`spawn`, `await`, `task` scopes) as documented below.
+
+**Experimental (opt-in)**
+- Math tuple sugar `(name: expr)` gated behind `--experimental-math-tuples`.
+- Math formula blocks `#[ ... ]` gated behind `--experimental-math-formula`.
+
 ## Lexical elements
 
 - **Comments:** `//` starts a comment to the end of the line. Block comments have no special syntax.
@@ -45,8 +63,8 @@ in the sections below so the roadmap and the documentation stay in sync.
 - **Arithmetic:** `+`, `-`, `*`, `/`, `%`, and exponentiation `^` (the exponent must be an integer, or a float that is an integer value; fractional exponents require a non-negative base). Division follows Python semantics (integers become floats when needed); tagged `Number`/`NumberIntervall` values use runtime error states like `plus_infinity` instead of raising overflow errors.
 - **Comparisons:** `==`, `!=`, `<`, `>`, `<=`, `>=` work on numbers, strings, booleans, and user types with operator overloads.
 - **Booleans:** Short-circuit logic with `&&`/`||` or keyword `and`/`or`; negation via `!expr` or `not expr`.
-- **Experimental math tuples:** With `--experimental-math-tuples`, a single tuple-like form `(name: expr)` desugars to `Math.name(expr)` for quick formula-style calls.
-- **Experimental math formulas:** With `--experimental-math-formula`, `#[ ... ]` delimits an expression that is parsed using the existing precedence rules.
+- **Experimental math tuples (opt-in):** With `--experimental-math-tuples`, a single tuple-like form `(name: expr)` desugars to `Math.name(expr)` for quick formula-style calls.
+- **Experimental math formulas (opt-in):** With `--experimental-math-formula`, `#[ ... ]` delimits an expression that is parsed using the existing precedence rules.
 - **Arrays and heap:** `new[1, 2, 3]` creates an array; `new(3)` reserves heap space with three slots. Access via `heap_get(ptr, idx)` and `heap_set(ptr, idx, value)`. `tag(ptr, "Label")` attaches a type tag, and `delete(ptr)` frees memory.
   - **Ownership + aliasing (single-owner model):**
     - Heap pointers have a single logical owner; lints treat pointer-to-pointer assignments as aliasing violations instead of implicit sharing.

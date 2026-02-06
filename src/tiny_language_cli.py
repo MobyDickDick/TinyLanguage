@@ -197,6 +197,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Deep-copy non-escaping mutable arguments before calls (env: TINYLANG_COPY_ON_CALL)",
     )
     parser.add_argument(
+        "--v1-only",
+        action="store_true",
+        help="Disable experimental language features to enforce the v1 profile (env: TINYLANG_V1_ONLY)",
+    )
+    parser.add_argument(
         "--experimental-math-tuples",
         action="store_true",
         help="Enable experimental tuple-based math forms like (sum: x) (env: TINYLANG_EXPERIMENTAL_MATH_TUPLES)",
@@ -218,6 +223,10 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     args, remaining = parser.parse_known_args(argv)
+    if args.v1_only and (args.experimental_math_tuples or args.experimental_math_formula):
+        parser.error("--v1-only cannot be combined with experimental math syntax flags")
+    if args.v1_only:
+        os.environ["TINYLANG_V1_ONLY"] = "1"
     if args.experimental_math_tuples:
         os.environ["TINYLANG_EXPERIMENTAL_MATH_TUPLES"] = "1"
     if args.experimental_math_formula:

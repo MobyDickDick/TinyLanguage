@@ -1,5 +1,15 @@
 # Open tasks archive
 
+Archived from `docs/open_tasks.md` on 2026-02-06.
+
+## Proposed production-readiness tasks (completed)
+
+### Language + runtime stability
+- [x] Freeze a language spec v1.0 by tagging mandatory vs. experimental
+  features, then gate “v1-only” programs in CI.
+  - Notes: added a v1 feature-status section in `docs/language_spec.md` and
+    enforced v1-only gating for experimental syntax in CLI + parser entrypoints.
+
 Archived from `docs/open_tasks.md` on 2026-03-17.
 
 ## Longer-term backlog (completed)

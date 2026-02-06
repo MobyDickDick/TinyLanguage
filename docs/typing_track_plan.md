@@ -16,6 +16,21 @@ blocking dynamic workflows or introducing a heavy type system too early.
 - **Runtime parity**: Keep runtime checks in place for annotated paths so
   behavior stays consistent across backends.
 
+## Status update (2026-02-06)
+
+The optional typing track is implemented at the level described in this plan,
+with a clear boundary on inference:
+
+- **Inference scope**: first-assignment inference for `def` bindings only.
+  Global or flow-sensitive inference is intentionally out of scope for now.
+- **Gradual typing support**: `any` and `T?` are documented and treated as
+  explicit escape hatches in the lint profile.
+- **Tooling alignment**: runtime checks and lint diagnostics share the same
+  error codes (`E009`, `E014`) and matching semantics.
+
+See `docs/gradual_typing.md` for the current usage guidance and migration
+strategy.
+
 ## Current foundations to leverage
 
 TinyLanguage already supports:

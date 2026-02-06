@@ -1,5 +1,13 @@
 # Open tasks archive
 
+Archived from `docs/open_tasks.md` on 2026-02-06.
+
+## Longer-term backlog (completed)
+
+- [x] Optional type inference and gradual typing track updates.
+  - Notes: updated optional inference guidance and typing track status in
+    `docs/gradual_typing.md` and `docs/typing_track_plan.md`.
+
 Archived from `docs/open_tasks.md` on 2026-03-16.
 
 ## Near-term priorities (completed)

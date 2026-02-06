@@ -18,6 +18,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from native_ir import Instruction, Opcode, ProgramIR
 from tiny_errors import SourcePos, SourceSpan
+from tiny_language_error_codes import classify_error
 from tiny_language_preamble import TinyLangError, format_error
 
 
@@ -250,13 +251,21 @@ class NativeVM:
                 raise
             except Exception as exc:  # noqa: BLE001
                 if isinstance(exc, RuntimeError):
-                    formatted = self._format_error_message(str(exc), instr)
+                    code, hint = classify_error(str(exc))
+                    formatted = self._format_error_message(str(exc), instr, code=code, hint=hint)
                     self._record_error(formatted)
                     raise RuntimeError(formatted) from exc
                 raise self._error(str(exc), instr) from exc
         return None
 
-    def _format_error_message(self, message: str, location: Optional[object]) -> str:
+    def _format_error_message(
+        self,
+        message: str,
+        location: Optional[object],
+        *,
+        code: str = "E000",
+        hint: Optional[str] = None,
+    ) -> str:
         span = None
         pos = None
         if isinstance(location, SourceSpan):
@@ -269,8 +278,10 @@ class NativeVM:
         if pos is None and span is not None:
             pos = span.start
         if span is not None or pos is not None:
-            return format_error(self.source or "", span or pos, message)
-        return message
+            return format_error(self.source or "", span or pos, message, code=code, hint=hint)
+        if hint:
+            return f"[{code}] {message}\n  Hint: {hint}"
+        return f"[{code}] {message}"
 
     def _error(self, message: str, location: Optional[object]) -> TinyLangError:
         span = None
@@ -284,9 +295,10 @@ class NativeVM:
             pos = getattr(location, "pos", None)
         if pos is None and span is not None:
             pos = span.start
-        formatted = self._format_error_message(message, location)
+        code, hint = classify_error(message)
+        formatted = self._format_error_message(message, location, code=code, hint=hint)
         self._record_error(formatted)
-        return TinyLangError(formatted, pos or SourcePos.origin(), span=span)
+        return TinyLangError(formatted, pos or SourcePos.origin(), code=code, hint=hint, span=span)
 
     def _load(self, locals_: Dict[str, Any], globals_: Dict[str, Any], name: str) -> Any:
         """Resolve a variable name from locals or globals, raising on miss."""

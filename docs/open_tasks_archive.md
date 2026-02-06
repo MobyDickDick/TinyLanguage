@@ -1,5 +1,16 @@
 # Open tasks archive
 
+Archived from `docs/open_tasks.md` on 2026-03-18.
+
+## Proposed production-readiness tasks (completed)
+
+### Language + runtime stability
+- [x] Stabilize runtime error taxonomy with machine-readable codes and update
+  all backends to emit consistent error metadata.
+  - Notes: centralized runtime error codes + hints in `src/tiny_language_error_codes.py`,
+    routed parser/runtime/native VM classification through the shared helper, and
+    ensured native VM formatting includes codes and hints.
+
 Archived from `docs/open_tasks.md` on 2026-02-06.
 
 ## Proposed production-readiness tasks (completed)

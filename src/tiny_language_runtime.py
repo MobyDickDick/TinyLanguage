@@ -17,6 +17,7 @@ from collections import deque
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, _line_info, format_error
+from tiny_language_error_codes import classify_error
 from tiny_language_ast import Fn, IR, Match, MethodDef, OpDef, Param, TypeVariant, VariantPattern, WildcardPattern
 from tiny_language_runtime_debugger import DebugSnapshot, Debugger, ScopeSnapshot, StepRequest
 from tiny_language_runtime_environment import Environment
@@ -541,7 +542,7 @@ class Runtime:
         ) -> TinyLangError:
         resolved_pos, resolved_span = self._pos_and_span(pos, span)
         location = self._format_location(resolved_pos, resolved_span) or resolved_pos or SourcePos.origin()
-        derived_code, derived_hint = _classify_error(msg, candidates)
+        derived_code, derived_hint = classify_error(msg, candidates)
         code = code or derived_code
         hint = hint or derived_hint
         source = self._source_for_namespace(self.current_module_namespace)

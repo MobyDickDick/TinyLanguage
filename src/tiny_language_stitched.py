@@ -7035,6 +7035,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from tiny_language_ast import *
 from tiny_language_preamble import TinyLangError, format_error
+from tiny_language_module_resolution import ModuleResolutionConfig, candidate_module_paths
 from tiny_errors import SourcePos, SourceSpan
 
 # ----- Linter -----
@@ -8727,20 +8728,16 @@ def _resolve_import_name(raw: str, caller_namespace: Optional[str]) -> Optional[
 def _summary_paths_for_module(
     module_name: str,
     caller_path: Optional[Path],
-    search_paths: List[Path],
-    stdlib_root: Path,
+    config: ModuleResolutionConfig,
 ) -> List[Path]:
-    roots: List[Path] = []
-    if module_name.startswith("stdlib."):
-        rel_path = Path(*module_name.split(".")[1:])
-        if stdlib_root.exists():
-            roots.append(stdlib_root)
-    else:
-        rel_path = Path(*module_name.split("."))
-        if caller_path:
-            roots.append(caller_path.parent)
-        roots.extend(search_paths)
-    return [(root / rel_path).with_suffix(".tiny.summary") for root in roots]
+    return [
+        candidate.with_suffix(candidate.suffix + ".summary")
+        for candidate in candidate_module_paths(
+            module_name,
+            caller_path=caller_path,
+            config=config,
+        )
+    ]
 
 
 def _load_import_summaries(
@@ -8752,7 +8749,10 @@ def _load_import_summaries(
     configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
     default_roots = [Path.cwd(), Path(__file__).parent]
     search_paths = configured_paths + default_roots
-    stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
+    config = ModuleResolutionConfig.from_search_paths(
+        search_paths,
+        start_path=module_path or Path.cwd(),
+    )
     summaries: Dict[str, _ModuleSummary] = {}
     for st in _iter_imports(stmts):
         resolved = _resolve_import_name(st.module, module_name)
@@ -8761,7 +8761,7 @@ def _load_import_summaries(
         binding = _import_binding_name(st.module, st.alias)
         if binding in summaries:
             continue
-        for summary_path in _summary_paths_for_module(resolved, module_path, search_paths, stdlib_root):
+        for summary_path in _summary_paths_for_module(resolved, module_path, config):
             if not summary_path.is_file():
                 continue
             summary = _parse_module_summary(summary_path.read_text(encoding="utf-8"))
@@ -10286,12 +10286,14 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from collections import defaultdict, deque
+from collections import deque
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, _line_info, format_error
 from tiny_language_ast import Fn, IR, Match, MethodDef, OpDef, Param, TypeVariant, VariantPattern, WildcardPattern
-from tiny_language_module_resolution import ModuleResolutionConfig, candidate_module_paths, resolve_module_name
+from tiny_language_runtime_debugger import DebugSnapshot, Debugger, ScopeSnapshot, StepRequest
+from tiny_language_runtime_environment import Environment
+from tiny_language_runtime_modules import ModuleResolver, NamespaceRef, _import_binding_name
 
 # ----- Runtime -----
 
@@ -10305,26 +10307,6 @@ class ReturnSignal(Exception):
 
 
 @dataclass
-class ScopeSnapshot:
-    values: Dict[str, Any]
-    types: Dict[str, str]
-
-
-@dataclass
-class DebugSnapshot:
-    pos: SourcePos
-    namespace: Optional[str]
-    call_stack: Tuple[StackFrame, ...]
-    scopes: List[ScopeSnapshot]
-
-
-@dataclass
-class StepRequest:
-    mode: str
-    depth: int
-
-
-@dataclass
 class ParameterBinding:
     name: str
     original: Any
@@ -10335,205 +10317,10 @@ class ParameterBinding:
 ParamKey = Tuple[str, int]
 
 
-class Debugger:
-    """Lightweight, synchronous debugger controller for stepping and breakpoints."""
-
-    VALID_COMMANDS = {"continue", "step_in", "step_over", "step_out", "pause"}
-
-    def __init__(
-        self,
-        on_pause: Optional[Callable[[DebugSnapshot], str]] = None,
-        *,
-        mirror_stdout: bool = True,
-    ):
-        self.breakpoints: Dict[Optional[str], Set[int]] = defaultdict(set)
-        self.on_pause = on_pause
-        self.command_queue: deque[str] = deque()
-        self.snapshots: List[DebugSnapshot] = []
-        self.pending_step: Optional[StepRequest] = None
-        self.last_location: Optional[Tuple[Optional[str], int]] = None
-        self.force_pause: bool = False
-        # When False, the runtime will avoid mirroring program output to
-        # ``stdout`` while debugging. This is useful for DAP transports that use
-        # stdout for the protocol stream and expect program output to be emitted
-        # via explicit ``output`` events instead of direct writes.
-        self.mirror_stdout = mirror_stdout
-
-    def set_breakpoints(self, namespace: Optional[str], lines: Set[int]) -> None:
-        """Register breakpoints for a namespace (or ``None`` for the active module)."""
-
-        self.breakpoints[namespace] = set(lines)
-
-    def enqueue_commands(self, *commands: str) -> None:
-        """Queue debugger commands to run in order as pauses are hit."""
-
-        for cmd in commands:
-            self._validate_command(cmd)
-            self.command_queue.append(cmd)
-
-    def request_pause(self) -> None:
-        """Force the debugger to pause at the next opportunity."""
-
-        self.force_pause = True
-
-    def should_pause(self, pos: SourcePos, namespace: Optional[str], depth: int) -> bool:
-        location = (namespace, pos.line)
-        if self.force_pause:
-            return True
-        if pos.line in self.breakpoints.get(namespace, set()) or pos.line in self.breakpoints.get(None, set()):
-            return True
-        return self._matches_step(location, depth)
-
-    def handle_pause(self, snapshot: DebugSnapshot, depth: int) -> None:
-        self.snapshots.append(snapshot)
-        self.last_location = (snapshot.namespace, snapshot.pos.line)
-        # Clear any pending forced pause now that we've yielded control.
-        self.force_pause = False
-        command = self._next_command(snapshot)
-        self.pending_step = self._step_for_command(command, depth)
-
-    def _next_command(self, snapshot: DebugSnapshot) -> str:
-        if self.on_pause is not None:
-            command = self.on_pause(snapshot)
-        elif self.command_queue:
-            command = self.command_queue.popleft()
-        else:
-            command = "continue"
-        self._validate_command(command)
-        return command
-
-    def _validate_command(self, command: str) -> None:
-        if command not in self.VALID_COMMANDS:
-            raise ValueError(f"invalid debugger command {command!r}; expected one of {sorted(self.VALID_COMMANDS)}")
-
-    def _step_for_command(self, command: str, depth: int) -> Optional[StepRequest]:
-        if command == "continue":
-            return None
-        if command == "step_in":
-            return StepRequest("step_in", depth)
-        if command == "step_over":
-            return StepRequest("step_over", depth)
-        if command == "step_out":
-            return StepRequest("step_out", max(0, depth - 1))
-        return None
-
-    def _matches_step(self, location: Tuple[Optional[str], int], depth: int) -> bool:
-        if self.pending_step is None:
-            return False
-        if self.pending_step.mode == "step_in":
-            return location != self.last_location
-        if self.pending_step.mode == "step_over":
-            return depth <= self.pending_step.depth and location != self.last_location
-        if self.pending_step.mode == "step_out":
-            return depth <= self.pending_step.depth and location != self.last_location
-        return False
-
-
 @dataclass
 class BaseView:
     obj: Dict[str, Any]
     class_name: str
-
-
-@dataclass
-class NamespaceRef:
-    runtime: "Runtime"
-    name: str
-
-
-def _import_binding_name(module: str, alias: Optional[str]) -> str:
-    if alias:
-        return alias
-    stripped = module.lstrip(".") or module
-    return stripped.split(".")[-1]
-
-
-class ModuleResolver:
-    """Locate and load TinyLanguage modules from configurable search roots.
-
-    The resolver accepts optional search paths (including the ``TINYPATH``
-    environment variable) and memoizes successfully loaded modules so repeated
-    imports are cheap. It also guards against circular imports by tracking the
-    current resolution stack.
-    """
-
-    def __init__(self, search_paths: Optional[List[Path]] = None):
-        config = ModuleResolutionConfig.from_search_paths(search_paths)
-        self.stdlib_root = config.stdlib_root
-        self.search_paths = config.search_paths
-        self.cache: Dict[Path, NamespaceRef] = {}
-        self._in_progress: List[Path] = []
-
-    def _resolve_name(self, raw: str, caller_namespace: Optional[str], pos: Optional[Any]) -> str:
-        """Normalize relative import names against the caller's namespace."""
-        return resolve_module_name(raw, caller_namespace, pos)
-
-    def _candidate_paths(self, module_name: str, caller_path: Optional[Path]) -> List[Path]:
-        """Return possible filesystem paths for a module name."""
-        return candidate_module_paths(
-            module_name,
-            caller_path=caller_path,
-            search_paths=self.search_paths,
-            stdlib_root=self.stdlib_root,
-        )
-
-    def import_module(
-        self,
-        name: str,
-        runtime: "Runtime",
-        *,
-        caller_namespace: Optional[str],
-        caller_path: Optional[Path],
-        pos: Optional[Any] = None,
-    ) -> NamespaceRef:
-        """Import a module, executing it if necessary and caching the namespace."""
-        resolved_name = self._resolve_name(name, caller_namespace, pos)
-        pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
-        frame_pos = pos_for_error or SourcePos.origin()
-        for candidate in self._candidate_paths(resolved_name, caller_path):
-            resolved_path = candidate.resolve()
-            if resolved_path in self.cache:
-                return self.cache[resolved_path]
-            if resolved_path.exists():
-                if resolved_path in self._in_progress:
-                    raise TinyLangError(
-                        f"circular import involving {resolved_path}",
-                        pos_for_error or SourcePos.origin(),
-                        code="E008",
-                        span=pos if isinstance(pos, SourceSpan) else None,
-                    )
-                self._in_progress.append(resolved_path)
-                module_frame: Optional[StackFrame] = None
-                if runtime.debugger is not None:
-                    module_frame = StackFrame(resolved_name or "<module>", resolved_name, frame_pos)
-                    runtime.call_stack.append(module_frame)
-                try:
-                    module_env = Environment(parent=None, namespace=resolved_name, runtime=runtime)
-                    previous_global_env = runtime.global_env
-                    try:
-                        compile_and_run(
-                            resolved_path.read_text(encoding="utf-8"),
-                            env=module_env,
-                            runtime=runtime,
-                            module_namespace=resolved_name,
-                            module_path=resolved_path,
-                            module_resolver=self,
-                        )
-                    finally:
-                        runtime.global_env = previous_global_env
-                    ns_ref = NamespaceRef(runtime, resolved_name)
-                    self.cache[resolved_path] = ns_ref
-                    return ns_ref
-                finally:
-                    if module_frame is not None:
-                        runtime.call_stack.pop()
-                    self._in_progress.remove(resolved_path)
-        raise TinyLangError(
-            f"module '{name}' not found on search path",
-            pos or SourcePos.origin(),
-            code="E008",
-            span=pos if isinstance(pos, SourceSpan) else None,
-        )
 
 
 @dataclass
@@ -10602,6 +10389,8 @@ class _ParsedType:
 
 
 class Runtime:
+    """Interpreter runtime state and helpers for executing TinyLanguage code."""
+
     def __init__(self, source: str):
         self._lock = threading.RLock()
         self.heap: Dict[int, List[Any]] = {}
@@ -12542,6 +12331,21 @@ class Runtime:
         except Exception:
             return True
 
+
+def compile_and_run(*args: Any, **kwargs: Any) -> str:
+    """Proxy to the public API compile helper to preserve legacy imports."""
+
+    import importlib.util
+
+    if importlib.util.find_spec("tiny_language_stitched"):
+        from tiny_language_stitched import compile_and_run as stitched_compile_and_run
+
+        return stitched_compile_and_run(*args, **kwargs)
+
+    from tiny_language_api import compile_and_run as api_compile_and_run
+
+    return api_compile_and_run(*args, **kwargs)
+
     
 
 # --- segment: tiny_language_eval.py ---
@@ -12607,6 +12411,9 @@ if "IR" not in globals():
 
 if "Runtime" not in globals():
     from tiny_language_runtime import NamespaceRef, ReturnSignal, Runtime
+
+if "Environment" not in globals():
+    from tiny_language_runtime_environment import Environment
 
 if "TinyLangError" not in globals():
     from tiny_language_preamble import TinyLangError
@@ -13038,88 +12845,6 @@ def eval_expr(self, e: IR, env: "Environment") -> Any:
 Runtime.eval_block = eval_block
 Runtime.eval_stmt = eval_stmt
 Runtime.eval_expr = eval_expr
-
-
-class Environment:
-    def __init__(
-        self, parent: Optional["Environment"], namespace: Optional[str] = None, runtime: Optional["Runtime"] = None
-    ):
-        self.parent = parent  # Outer lexical scope (if any)
-        self.namespace = namespace  # Module/namespace name for namespacing lookups
-        self.runtime = runtime or (parent.runtime if parent else None)
-        self.values: Dict[str, Any] = {}  # Local symbol table
-        self.types: Dict[str, str] = {}
-
-    @staticmethod
-    def _fallback_type_name(value: Any) -> str:
-        if isinstance(value, dict) and "__type__" in value:
-            return str(value.get("__type__"))
-        if value is None:
-            return "Null"
-        if isinstance(value, bool):
-            return "Bool"
-        if isinstance(value, int) and not isinstance(value, bool):
-            return "int"
-        if isinstance(value, float):
-            return "float"
-        if isinstance(value, str):
-            return "string"
-        return type(value).__name__
-
-    @staticmethod
-    def _normalize_numeric_type(type_name: str) -> str:
-        normalized = type_name.strip()
-        lowered = normalized.lower()
-        if lowered in {"int", "float"}:
-            return "number"
-        return type_name
-
-    def get(self, name: str) -> Any:
-        if name in self.values:
-            return self.values[name]
-        if self.parent is not None:
-            return self.parent.get(name)
-        raise RuntimeError(f"unknown variable {name}")
-
-    def define(self, name: str, value: Any, pos: Union[SourcePos, SourceSpan]) -> None:
-        if self.runtime:
-            inferred = self.runtime._infer_type_name(value)
-            self.types[name] = self._normalize_numeric_type(inferred)
-        else:
-            self.types[name] = self._fallback_type_name(value)
-        self.values[name] = value
-
-    def assign(self, name: str, value: Any, pos: Union[SourcePos, SourceSpan]) -> None:
-        if name in self.values:
-            if self.runtime:
-                self.runtime._check_assignment_type(self, name, value, pos, local_only=True)
-                inferred = self.runtime._infer_type_name(value)
-                self.types[name] = self._normalize_numeric_type(inferred)
-            else:
-                self.types[name] = self._fallback_type_name(value)
-            self.values[name] = value
-        elif self.parent is not None:
-            self.parent.assign(name, value, pos)
-        else:
-            self.define(name, value, pos)
-
-    def contains(self, name: str) -> bool:
-        if name in self.values:
-            return True
-        return self.parent.contains(name) if self.parent else False
-
-    def type_of(self, name: str, *, local_only: bool = False) -> Optional[str]:
-        if name in self.types:
-            return self.types[name]
-        if not local_only and self.parent is not None:
-            return self.parent.type_of(name)
-        return None
-
-    def all_names(self) -> List[str]:
-        names = list(self.values.keys())  # Start with current scope names
-        if self.parent:
-            names.extend(self.parent.all_names())  # Include ancestors
-        return names
 
 # --- segment: tiny_language_api.py ---
 """Convenience entrypoints for running, compiling, and interacting with TinyLanguage.
@@ -13811,9 +13536,9 @@ class NativeModuleResolver:
     """Resolve TinyLanguage modules for the native backend."""
 
     def __init__(self, search_paths: Optional[List[Path]] = None) -> None:
-        config = ModuleResolutionConfig.from_search_paths(search_paths)
-        self.stdlib_root = config.stdlib_root
-        self.search_paths = config.search_paths
+        self._config = ModuleResolutionConfig.from_search_paths(search_paths)
+        self.stdlib_root = self._config.stdlib_root
+        self.search_paths = self._config.search_paths
         self.cache: dict[Path, NativeNamespaceRef] = {}
         self._in_progress: List[Path] = []
 
@@ -13824,8 +13549,7 @@ class NativeModuleResolver:
         return candidate_module_paths(
             module_name,
             caller_path=caller_path,
-            search_paths=self.search_paths,
-            stdlib_root=self.stdlib_root,
+            config=self._config,
         )
 
     def import_module(
@@ -13894,9 +13618,9 @@ class LLVMModuleResolver:
     """Resolve TinyLanguage modules for the LLVM backend."""
 
     def __init__(self, search_paths: Optional[List[Path]] = None) -> None:
-        config = ModuleResolutionConfig.from_search_paths(search_paths)
-        self.stdlib_root = config.stdlib_root
-        self.search_paths = config.search_paths
+        self._config = ModuleResolutionConfig.from_search_paths(search_paths)
+        self.stdlib_root = self._config.stdlib_root
+        self.search_paths = self._config.search_paths
         self.cache: dict[Path, LLVMModuleInfo] = {}
         self._in_progress: List[Path] = []
 
@@ -13907,8 +13631,7 @@ class LLVMModuleResolver:
         return candidate_module_paths(
             module_name,
             caller_path=caller_path,
-            search_paths=self.search_paths,
-            stdlib_root=self.stdlib_root,
+            config=self._config,
         )
 
     def import_module(

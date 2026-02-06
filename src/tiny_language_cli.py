@@ -29,6 +29,7 @@ from tiny_language import (
     run_with_python_bytecode_backend,
     run_with_python_backend,
 )
+from tiny_pkg_cli import main as pkg_main
 
 
 def _write_error(message: str) -> None:
@@ -119,6 +120,9 @@ def _run_typecheck(source: str, *, allow_math_tuples: bool, allow_math_formula: 
 
 def main(argv: list[str] | None = None) -> int:
     """Parse CLI arguments, run the requested program, and emit output/errors."""
+    argv = list(argv) if argv is not None else sys.argv[1:]
+    if argv[:1] == ["pkg"]:
+        return int(pkg_main(argv[1:]))
     parser = argparse.ArgumentParser(description="Run TinyLanguage programs from the command line")
     parser.add_argument(
         "path",

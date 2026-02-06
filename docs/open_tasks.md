@@ -36,8 +36,6 @@ and testable so they can be promoted into the formal backlog as needed.
     `tests/detailtests/test_number_overflow.py`.
 
 ### Package + module system (MVP → usable)
-- [ ] Implement a real package manager prototype (`tiny pkg`) with dependency
-  resolution, lockfiles, and offline cache support.
 - [ ] Add semver-aware dependency constraints and a minimal registry schema.
 - [ ] Define a reproducible module-resolution algorithm shared by interpreter
   and native backends, including tests for edge cases.

@@ -28,6 +28,7 @@ except ImportError:  # pragma: no cover - Windows and other platforms without te
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, _line_info, format_error
+from tiny_language_error_codes import _closest_match as _closest_match_impl
 from tiny_language_error_codes import classify_error
 
 from stdlib import register_stdlib
@@ -251,3 +252,9 @@ readline = _load_readline()
 
 def _classify_error(msg: str, candidates: Optional[List[str]] = None) -> Tuple[str, Optional[str]]:
     return classify_error(msg, candidates)
+
+
+def _closest_match(name: str, candidates: List[str]) -> Optional[str]:
+    """Backward-compatible helper for tests and callers."""
+
+    return _closest_match_impl(name, candidates)

@@ -57,6 +57,25 @@ annotation is present. Reassignments must stay compatible with the established
 (or annotated) type. If you need to change to an unrelated type, introduce a new
 binding instead of reassigning the old one.
 
+## Optional type inference (current behavior)
+
+TinyLanguage performs **first-assignment inference** for `def` bindings that do
+not have an explicit annotation. This keeps optional typing lightweight while
+still catching obvious type drift early.
+
+- **First write wins**: `def total = 0;` infers `number`. Subsequent
+  reassignments must remain compatible with `number` (or `number?` if `Null`
+  is introduced via an explicit optional annotation).
+- **No global inference**: the compiler/linter does not infer types across
+  modules or propagate types through complex control flow. If you need that
+  precision, add annotations at the call boundary.
+- **Escape hatch remains explicit**: use `any` when you truly need to suppress
+  type-change checks for a binding.
+
+This inference model aligns with the runtime type-stability rules and the
+typing lint profile: the lint pass mirrors runtime checks rather than
+introducing a separate static type system.
+
 ## Runtime enforcement
 
 Annotations are enforced at runtime in the interpreter and backend runtimes.

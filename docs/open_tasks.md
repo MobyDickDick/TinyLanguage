@@ -39,6 +39,5 @@ No active near-term items. Completed tasks are archived in
 
 ## Longer-term backlog (unprioritized)
 
-- [ ] Optional type inference and gradual typing track updates.
 - [ ] Module resolution and package manager roadmap implementation.
 - [ ] Conformance + cross-backend parity suite expansion.

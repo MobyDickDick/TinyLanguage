@@ -5,6 +5,17 @@ Archived from `docs/open_tasks.md` on 2026-02-06.
 ## Proposed production-readiness tasks (completed)
 
 ### Language + runtime stability
+- [x] Close remaining semantic ambiguities with executable spec tests (e.g.,
+  numeric overflow, error propagation, evaluation order in edge cases).
+  - Notes: added targeted spec tests for error propagation/evaluation order and
+    numeric overflow edges in `tests/detailtests/test_semantics_suite.py` and
+    `tests/detailtests/test_number_overflow.py`.
+
+Archived from `docs/open_tasks.md` on 2026-02-06.
+
+## Proposed production-readiness tasks (completed)
+
+### Language + runtime stability
 - [x] Freeze a language spec v1.0 by tagging mandatory vs. experimental
   features, then gate “v1-only” programs in CI.
   - Notes: added a v1 feature-status section in `docs/language_spec.md` and

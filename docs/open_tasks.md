@@ -36,7 +36,10 @@ and testable so they can be promoted into the formal backlog as needed.
     `tests/detailtests/test_number_overflow.py`.
 
 ### Package + module system (MVP → usable)
-- [ ] Add semver-aware dependency constraints and a minimal registry schema.
+- [x] Add semver-aware dependency constraints and a minimal registry schema.
+  - Notes: `src/tiny_pkg_resolution.py` parses SemVer constraints and resolves
+    registry versions; `docs/package_manager_plan.md` documents the initial
+    registry metadata schema with checksum fields.
 - [ ] Define a reproducible module-resolution algorithm shared by interpreter
   and native backends, including tests for edge cases.
 

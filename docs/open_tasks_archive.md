@@ -1,5 +1,15 @@
 # Open tasks archive
 
+Archived from `docs/open_tasks.md` on 2026-02-06.
+
+## Proposed production-readiness tasks (completed)
+
+### Package + module system (MVP → usable)
+- [x] Add semver-aware dependency constraints and a minimal registry schema.
+  - Notes: `src/tiny_pkg_resolution.py` resolves SemVer constraints and selects
+    registry versions from a minimal JSON index; `docs/package_manager_plan.md`
+    documents the initial registry metadata schema with checksum fields.
+
 Archived from `docs/open_tasks.md` on 2026-03-19.
 
 ## Proposed production-readiness tasks (completed)

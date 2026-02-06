@@ -10,7 +10,6 @@ history and completion hooks when available.
 from __future__ import annotations
 
 import argparse  # required to keep stitched globals available
-import difflib
 import importlib.util  # required to keep stitched globals available
 import math  # required to keep stitched globals available
 import os  # required to keep stitched globals available
@@ -29,6 +28,8 @@ except ImportError:  # pragma: no cover - Windows and other platforms without te
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, _line_info, format_error
+from tiny_language_error_codes import _closest_match as _closest_match_impl
+from tiny_language_error_codes import classify_error
 
 from stdlib import register_stdlib
 
@@ -249,35 +250,11 @@ def _load_readline():
 readline = _load_readline()
 
 
-def _closest_match(name: str, candidates: List[str]) -> Optional[str]:
-    if not candidates:
-        return None
-    matches = difflib.get_close_matches(name, candidates, n=1, cutoff=0.6)
-    return matches[0] if matches else None
-
-
 def _classify_error(msg: str, candidates: Optional[List[str]] = None) -> Tuple[str, Optional[str]]:
-    lower_msg = msg.lower()
-    if "return value must be bound" in lower_msg or "must be returned" in lower_msg:
-        return "E001", "Bind the return value, e.g. `def result = call();`, or add a return that includes the mutated data."
-    if lower_msg.startswith("unused"):
-        return "E002", "Remove the unused binding or reference it."
-    if "unknown variable" in lower_msg:
-        suggestion = _closest_match(msg.split()[-1], candidates or []) if candidates is not None else None
-        base_hint = "Declare the variable first, e.g. `def name = ...;`."
-        if suggestion:
-            return "E003", f"Did you mean `{suggestion}`? {base_hint}"
-        return "E003", base_hint
-    if "exponent for ^ must be an integer" in lower_msg:
-        return "E004", "Use an integer exponent (cast with `int(...)` if necessary) when using the ^ operator."
-    if "fractional exponent for ^ requires a non-negative base" in lower_msg:
-        return "E004", "Use a non-negative base or an integer exponent when using the ^ operator."
-    if "len expects a sized value" in lower_msg:
-        return "E005", "Pass a list, string, heap pointer, or other sized value to `len`."
-    if "destructuring call" in lower_msg and "must include output" in lower_msg:
-        return "E006", "Add the missing binding(s) to the destructuring pattern so each referenced argument is captured."
-    if "type mismatch" in lower_msg:
-        return "E009", "Adjust the annotation or the provided value so they agree."
-    if "not all paths" in lower_msg and "return" in lower_msg:
-        return "E010", "Add return statements for every branch or supply a default return value."
-    return "E000", None
+    return classify_error(msg, candidates)
+
+
+def _closest_match(name: str, candidates: List[str]) -> Optional[str]:
+    """Backward-compatible helper for tests and callers."""
+
+    return _closest_match_impl(name, candidates)

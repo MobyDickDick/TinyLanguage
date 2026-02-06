@@ -34,8 +34,6 @@ and testable so they can be promoted into the formal backlog as needed.
   - Notes: added targeted spec tests for error propagation and overflow edges in
     `tests/detailtests/test_semantics_suite.py` and
     `tests/detailtests/test_number_overflow.py`.
-- [ ] Stabilize runtime error taxonomy with machine-readable codes and update
-  all backends to emit consistent error metadata.
 
 ### Package + module system (MVP → usable)
 - [ ] Implement a real package manager prototype (`tiny pkg`) with dependency

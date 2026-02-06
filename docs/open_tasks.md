@@ -12,14 +12,15 @@ sections below.
 
 Timebox: 2026-02-02 to 2026-03-16 (6 weeks).
 
-1. **Stabilize formatter + lints + LSP workflows** (Owner: Tooling)
+1. **Stabilize formatter + lints + LSP workflows** (Owner: Tooling) ✅
    - Success: Documented formatter rules, lint profiles, and LSP smoke tests.
+   - Completed: See `docs/formatter_rules.md`, `docs/developer_tooling_workflows.md`,
+     and `docs/lsp_smoke_tests.md` (archived in `docs/open_tasks_archive.md`).
 
 ## Near-term priorities (next 4-6 weeks)
 
-- [ ] Stabilize formatter + lints + LSP workflows.
-  - Owner: Tooling
-  - Success: Documented formatter rules, lint profiles, and LSP smoke tests.
+No active near-term items. Completed tasks are archived in
+`docs/open_tasks_archive.md`.
 
 ## Expansion roadmap follow-ups
 

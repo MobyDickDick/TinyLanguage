@@ -29,6 +29,9 @@ The `language_server_cli.py` helper exposes both steps, so editors or scripts
 can treat it as the default LSP entry point until a full JSON-RPC client is
 needed.
 
+For the exact formatter behavior (spacing, semicolons, braces, imports, and
+comment handling), see [`docs/formatter_rules.md`](formatter_rules.md).
+
 ## Lint profiles
 
 TinyLanguage lints run as part of the language server diagnostics and the
@@ -45,6 +48,9 @@ formatter pipeline. The recommended lint profiles are:
 
 To keep CI and local workflows aligned, only use relaxed heap mode for targeted
 experiments and capture the reason in your commit or PR notes.
+
+For a compact checklist of language server sanity checks, see
+[`docs/lsp_smoke_tests.md`](lsp_smoke_tests.md).
 
 ## Formatter + lint checks in CI
 

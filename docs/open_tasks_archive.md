@@ -1,5 +1,15 @@
 # Open tasks archive
 
+Archived from `docs/open_tasks.md` on 2026-03-16.
+
+## Near-term priorities (completed)
+
+- [x] Stabilize formatter + lints + LSP workflows.
+  - Owner: Tooling
+  - Success: Documented formatter rules, lint profiles, and LSP smoke tests.
+  - References: `docs/formatter_rules.md`, `docs/developer_tooling_workflows.md`,
+    `docs/lsp_smoke_tests.md`.
+
 Archived from `docs/open_tasks.md` on 2026-02-05.
 
 ## Near-term priorities (completed)

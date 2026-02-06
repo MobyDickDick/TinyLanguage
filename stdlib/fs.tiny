@@ -1,0 +1,37 @@
+// TinyLanguage stdlib: fs module (core file-system helpers)
+//
+// These helpers provide a Python-style facade over the runtime File/OS
+// namespaces. They are intentionally minimal to stay within the supported
+// capability set of the runtime.
+
+fn read_text(path) {
+  return File.read(path);
+}
+
+fn write_text(path, text) {
+  return File.write(path, text);
+}
+
+fn exists(path) {
+  return File.exists(path);
+}
+
+fn remove(path) {
+  return File.remove(path);
+}
+
+fn listdir(path) {
+  return OS.listdir(path);
+}
+
+fn cwd() {
+  return OS.cwd();
+}
+
+fn chdir(path) {
+  return OS.chdir(path);
+}
+
+fn path_separator() {
+  return OS.path_separator();
+}

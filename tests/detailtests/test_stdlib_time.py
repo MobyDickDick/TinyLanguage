@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 from tests.detailtests.stdlib_helpers import stdlib_program
 
 
@@ -46,3 +48,30 @@ def test_stdlib_time_now_and_sleep(run_tiny_source, monkeypatch):
     assert elapsed >= sleep_ms
     assert iso.endswith("Z")
     assert "T" in iso
+
+
+def test_stdlib_time_now_ms_matches_python_window(run_tiny_source, monkeypatch):
+    """Ensure now_ms/monotonic_ms align with Python time windows."""
+    monkeypatch.setenv("TINY_LINT_HEAP", "0")
+
+    start_wall = time.time() * 1000.0
+    start_mono = time.monotonic() * 1000.0
+    out = run_tiny_source(
+        stdlib_program(
+            "time",
+            """
+            print(time.now_ms());
+            print(time.monotonic_ms());
+            """,
+        ),
+    )
+    end_wall = time.time() * 1000.0
+    end_mono = time.monotonic() * 1000.0
+
+    lines = out.strip().splitlines()
+    assert len(lines) == 2
+    now_ms = float(lines[0])
+    mono_ms = float(lines[1])
+
+    assert start_wall - 50 <= now_ms <= end_wall + 50
+    assert start_mono - 50 <= mono_ms <= end_mono + 50

@@ -47,8 +47,11 @@ and testable so they can be promoted into the formal backlog as needed.
     `tests/detailtests/test_module_resolution_algorithm.py`.
 
 ### Standard library completeness
-- [ ] Ship “core IO” parity (`fs`, `path`, `process`, `env`, `time`) with
+- [x] Ship “core IO” parity (`fs`, `path`, `process`, `env`, `time`) with
   parity tests against Python behavior.
+  - Notes: added `stdlib.fs` wrapper plus parity coverage for `fs`, POSIX-style
+    `path`, and `time`; existing `os` env tests cover `env`, and process parity
+    remains scoped to the mock-backed API surface.
 - [ ] Expand networking and serialization modules (`http`, `json`, `toml`)
   with fuzzed round-trip tests.
 - [ ] Publish a stability/maturity tier for each stdlib module and a policy for

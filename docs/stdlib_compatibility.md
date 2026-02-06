@@ -79,6 +79,7 @@ the following maturity tiers used to communicate API stability expectations.
 | `stdlib.collections` | Stable | Map/Set/Deque wrappers over core namespaces. |
 | `stdlib.io` | Stable | File primitives used across demos and tooling. |
 | `stdlib.json` | Stable | Wrapper over runtime `JSON` namespace. |
+| `stdlib.fs` | Beta | Core file-system helpers wrapping `File` + `OS` namespaces. |
 | `stdlib.os` | Beta | OS/environment utilities; may grow with package tooling. |
 | `stdlib.path` | Beta | Path helpers; behavior tuned as cross-platform needs evolve. |
 | `stdlib.pathlib` | Beta | Higher-level path objects built on `stdlib.path`. |

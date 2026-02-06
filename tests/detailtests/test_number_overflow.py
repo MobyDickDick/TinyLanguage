@@ -49,3 +49,29 @@ def test_number_error_propagation_and_printing(run_tiny_source):
         "plus_infinity\nplus_infinity\nplus_infinity\nminus_infinity\nany_number\n0\n"
         "any_number\nany_number\nplus_infinity\nminus_infinity\nplus_infinity\n"
     )
+
+
+def test_number_overflow_edges(run_tiny_source):
+    """Test numeric overflow edges for multiplication and subtraction."""
+    number_def = (pathlib.Path(__file__).resolve().parents[2] / "src_tiny" / "number_class.tiny").read_text()
+
+    extra = """
+    def big = Number(PYTHON_FLOAT_MAX);
+    def overflow_mul = big * Number(2);
+    print(overflow_mul.to_string());
+
+    def neg_big = Number(PYTHON_FLOAT_MIN);
+    def overflow_sub = neg_big - Number(2);
+    print(overflow_sub.to_string());
+
+    def normal = Number(1) - Number(2);
+    print(normal.to_string());
+    """
+
+    out = run_tiny_source(number_def + "\n" + extra)
+
+    assert (
+        out
+        == "12.5\n-2.5\n37.5\n0.6666666666666666 (rounded)\n"
+        "plus_infinity\nminus_infinity\n-1\n"
+    )

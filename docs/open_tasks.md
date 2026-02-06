@@ -29,8 +29,11 @@ a fully functional, production-ready language. They are intentionally concrete
 and testable so they can be promoted into the formal backlog as needed.
 
 ### Language + runtime stability
-- [ ] Close remaining semantic ambiguities with executable spec tests (e.g.,
+- [x] Close remaining semantic ambiguities with executable spec tests (e.g.,
   numeric overflow, error propagation, evaluation order in edge cases).
+  - Notes: added targeted spec tests for error propagation and overflow edges in
+    `tests/detailtests/test_semantics_suite.py` and
+    `tests/detailtests/test_number_overflow.py`.
 - [ ] Stabilize runtime error taxonomy with machine-readable codes and update
   all backends to emit consistent error metadata.
 

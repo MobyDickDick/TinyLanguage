@@ -90,3 +90,34 @@ def test_semantics_eval_order_for_array_literals():
     )
 
     assert out == "3\n123\n"
+
+
+def test_semantics_error_propagation_in_expressions():
+    """Test that errors propagate and halt later expression evaluation."""
+    out = run_tiny(
+        textwrap.dedent(
+            """
+            def steps = 0;
+            fn mark(v) {
+                steps = steps * 10 + v;
+                return v;
+            }
+
+            fn explode() {
+                return missing();
+            }
+
+            try {
+                def value = mark(1) + explode() + mark(2);
+                print(value);
+            } catch(err) {
+                print(steps);
+                print(err.code);
+            }
+            """
+        )
+    )
+
+    lines = out.splitlines()
+    assert lines[0] == "1"
+    assert lines[1].startswith("E")

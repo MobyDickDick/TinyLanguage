@@ -1,5 +1,13 @@
 # Open tasks archive
 
+Archived from `docs/open_tasks.md` on 2026-03-17.
+
+## Longer-term backlog (completed)
+
+- [x] Module resolution and package manager roadmap implementation.
+  - Notes: implemented std/pkg module resolution rules and package CLI workflows
+    (`tiny pkg init/add/remove/update/vendor`) with lockfile-aware vendoring.
+
 Archived from `docs/open_tasks.md` on 2026-02-06.
 
 ## Longer-term backlog (completed)

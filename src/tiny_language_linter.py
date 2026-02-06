@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from tiny_language_ast import *
 from tiny_language_preamble import TinyLangError, format_error
+from tiny_language_module_resolution import ModuleResolutionConfig, candidate_module_paths
 from tiny_errors import SourcePos, SourceSpan
 
 # ----- Linter -----
@@ -1706,20 +1707,16 @@ def _resolve_import_name(raw: str, caller_namespace: Optional[str]) -> Optional[
 def _summary_paths_for_module(
     module_name: str,
     caller_path: Optional[Path],
-    search_paths: List[Path],
-    stdlib_root: Path,
+    config: ModuleResolutionConfig,
 ) -> List[Path]:
-    roots: List[Path] = []
-    if module_name.startswith("stdlib."):
-        rel_path = Path(*module_name.split(".")[1:])
-        if stdlib_root.exists():
-            roots.append(stdlib_root)
-    else:
-        rel_path = Path(*module_name.split("."))
-        if caller_path:
-            roots.append(caller_path.parent)
-        roots.extend(search_paths)
-    return [(root / rel_path).with_suffix(".tiny.summary") for root in roots]
+    return [
+        candidate.with_suffix(candidate.suffix + ".summary")
+        for candidate in candidate_module_paths(
+            module_name,
+            caller_path=caller_path,
+            config=config,
+        )
+    ]
 
 
 def _load_import_summaries(
@@ -1731,7 +1728,10 @@ def _load_import_summaries(
     configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
     default_roots = [Path.cwd(), Path(__file__).parent]
     search_paths = configured_paths + default_roots
-    stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
+    config = ModuleResolutionConfig.from_search_paths(
+        search_paths,
+        start_path=module_path or Path.cwd(),
+    )
     summaries: Dict[str, _ModuleSummary] = {}
     for st in _iter_imports(stmts):
         resolved = _resolve_import_name(st.module, module_name)
@@ -1740,7 +1740,7 @@ def _load_import_summaries(
         binding = _import_binding_name(st.module, st.alias)
         if binding in summaries:
             continue
-        for summary_path in _summary_paths_for_module(resolved, module_path, search_paths, stdlib_root):
+        for summary_path in _summary_paths_for_module(resolved, module_path, config):
             if not summary_path.is_file():
                 continue
             summary = _parse_module_summary(summary_path.read_text(encoding="utf-8"))

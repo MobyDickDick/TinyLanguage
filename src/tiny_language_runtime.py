@@ -185,9 +185,9 @@ class ModuleResolver:
     """
 
     def __init__(self, search_paths: Optional[List[Path]] = None):
-        config = ModuleResolutionConfig.from_search_paths(search_paths)
-        self.stdlib_root = config.stdlib_root
-        self.search_paths = config.search_paths
+        self._config = ModuleResolutionConfig.from_search_paths(search_paths)
+        self.stdlib_root = self._config.stdlib_root
+        self.search_paths = self._config.search_paths
         self.cache: Dict[Path, NamespaceRef] = {}
         self._in_progress: List[Path] = []
 
@@ -200,8 +200,7 @@ class ModuleResolver:
         return candidate_module_paths(
             module_name,
             caller_path=caller_path,
-            search_paths=self.search_paths,
-            stdlib_root=self.stdlib_root,
+            config=self._config,
         )
 
     def import_module(

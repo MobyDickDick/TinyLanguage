@@ -1,0 +1,10 @@
+// TinyLanguage wrapper for src/tiny_language_runtime_environment.py.
+// Exposes the runtime Environment container via Python interop.
+
+def PY_ALLOW = new["Environment"];
+
+def PY = Python.import_module("tiny_language_runtime_environment", PY_ALLOW);
+
+def Environment = PY.Environment;
+
+def exports = new[Environment];

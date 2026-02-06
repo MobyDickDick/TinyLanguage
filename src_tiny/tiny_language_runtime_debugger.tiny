@@ -1,0 +1,18 @@
+// TinyLanguage wrapper for src/tiny_language_runtime_debugger.py.
+// Exposes debugger primitives via Python interop for parity.
+
+def PY_ALLOW = new[
+    "ScopeSnapshot",
+    "DebugSnapshot",
+    "StepRequest",
+    "Debugger"
+];
+
+def PY = Python.import_module("tiny_language_runtime_debugger", PY_ALLOW);
+
+def ScopeSnapshot = PY.ScopeSnapshot;
+def DebugSnapshot = PY.DebugSnapshot;
+def StepRequest = PY.StepRequest;
+def Debugger = PY.Debugger;
+
+def exports = new[ScopeSnapshot, DebugSnapshot, StepRequest, Debugger];

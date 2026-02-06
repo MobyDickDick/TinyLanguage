@@ -1,0 +1,11 @@
+// TinyLanguage wrapper for src/tiny_language_runtime_modules.py.
+// Exposes module resolution helpers via Python interop for parity.
+
+def PY_ALLOW = new["NamespaceRef", "ModuleResolver"];
+
+def PY = Python.import_module("tiny_language_runtime_modules", PY_ALLOW);
+
+def NamespaceRef = PY.NamespaceRef;
+def ModuleResolver = PY.ModuleResolver;
+
+def exports = new[NamespaceRef, ModuleResolver];

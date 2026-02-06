@@ -1,0 +1,340 @@
+// TinyLanguage translation of src/tiny_language_runtime_modules.py.
+// Implements module resolution helpers without delegating to Python modules.
+
+import tiny_language_runtime_environment;
+import tiny_errors;
+import tiny_language;
+
+def os = Python.import_module("os", new["getenv", "getcwd"]);
+def PY_RUNTIME_ALLOW = new["compile_and_run"];
+def PY_LIST_ALLOW = new["list"];
+
+fn __chars(text) {
+    return Python.call("builtins", "list", new[text], PY_LIST_ALLOW);
+}
+
+fn __ends_with(text, suffix) {
+    if (text == Null || suffix == Null) { return false; }
+    def text_chars = __chars(text);
+    def suffix_chars = __chars(suffix);
+    if (len(suffix_chars) > len(text_chars)) { return false; }
+    def offset = len(text_chars) - len(suffix_chars);
+    def i = 0;
+    while (i < len(suffix_chars)) {
+        if (heap_get(text_chars, offset + i) != heap_get(suffix_chars, i)) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+fn __split_path(path) {
+    if (path == Null || len(path) == 0) { return new[]; }
+    return String.split(path, "/");
+}
+
+fn __join_path(parts) {
+    if (parts == Null || len(parts) == 0) { return ""; }
+    return String.join(parts, "/");
+}
+
+fn __path_dirname(path) {
+    def parts = __split_path(path);
+    if (len(parts) <= 1) { return "."; }
+    return __join_path(Collections.slice(parts, 0, len(parts) - 1));
+}
+
+fn __path_join(root, rel) {
+    if (root == Null || len(root) == 0) { return rel; }
+    if (rel == Null || len(rel) == 0) { return root; }
+    if (__ends_with(root, "/")) { return root + rel; }
+    return root + "/" + rel;
+}
+
+fn __path_with_suffix(path, suffix) {
+    return path + suffix;
+}
+
+fn __is_empty(text) {
+    return text == Null || len(text) == 0;
+}
+
+class ModuleResolutionConfig {
+    search_paths: Pointer;
+    stdlib_root: string;
+    project_root: Pointer;
+}
+
+fn ModuleResolutionConfig(search_paths, stdlib_root, project_root) {
+    return new ModuleResolutionConfig { search_paths: search_paths; stdlib_root: stdlib_root; project_root: project_root };
+}
+
+fn _find_project_root(start_path) {
+    def current = start_path;
+    if (current == Null) { current = os.getcwd(); }
+    def current_dir = current;
+    def parents = new[current_dir];
+    def parts = __split_path(current_dir);
+    def i = len(parts) - 1;
+    while (i > 0) {
+        Collections.push(parents, __join_path(Collections.slice(parts, 0, i)));
+        i = i - 1;
+    }
+    def j = 0;
+    while (j < len(parents)) {
+        def candidate = heap_get(parents, j);
+        if (File.exists(__path_join(candidate, "tiny.toml"))) { return candidate; }
+        if (File.exists(__path_join(candidate, "tiny.lock"))) { return candidate; }
+        if (File.exists(__path_join(candidate, "vendor"))) { return candidate; }
+        j = j + 1;
+    }
+    return Null;
+}
+
+fn _lockfile_entries(lock_path) {
+    // TinyLanguage does not include a TOML parser yet. If no lock file is
+    // present, return an empty list so resolution falls back to search paths.
+    if (!File.exists(lock_path)) { return new[]; }
+    return new[];
+}
+
+fn _pkg_module_rel_paths(parts) {
+    if (parts == Null || len(parts) == 0) { return new[]; }
+    if (len(parts) == 1) {
+        def package_name = heap_get(parts, 0);
+        return new["__init__", package_name];
+    }
+    return new[String.join(Collections.slice(parts, 1, len(parts)), "/")];
+}
+
+fn _package_roots_for(package_name, project_root) {
+    if (project_root == Null) { return new[]; }
+    def lock_path = __path_join(project_root, "tiny.lock");
+    def entries = _lockfile_entries(lock_path);
+    def vendor_root = __path_join(project_root, "vendor");
+    def roots = new[];
+    def i = 0;
+    while (i < len(entries)) {
+        def entry = heap_get(entries, i);
+        if (Map.get(entry, "name", Null) != package_name) { i = i + 1; continue; }
+        def source = Map.get(entry, "source", Null);
+        def version = Map.get(entry, "version", "0.0.0");
+        if (source == "path") {
+            if (File.exists(vendor_root)) {
+                def candidate = __path_join(__path_join(__path_join(vendor_root, "local"), package_name), version);
+                if (File.exists(candidate)) { Collections.push(roots, candidate); i = i + 1; continue; }
+            }
+            def path_value = Map.get(entry, "path", Null);
+            if (path_value != Null) { Collections.push(roots, __path_join(project_root, path_value)); }
+        } else if (source == "registry") {
+            if (File.exists(vendor_root)) {
+                def candidate = __path_join(__path_join(__path_join(vendor_root, "registry"), package_name), version);
+                Collections.push(roots, candidate);
+            }
+        } else if (source == "git") {
+            if (File.exists(vendor_root)) {
+                def candidate = __path_join(__path_join(__path_join(vendor_root, "git"), package_name), version);
+                Collections.push(roots, candidate);
+            }
+        }
+        i = i + 1;
+    }
+    return roots;
+}
+
+fn _expand_module_candidates(rel_path, roots) {
+    def candidates = new[];
+    def i = 0;
+    while (i < len(roots)) {
+        def root = heap_get(roots, i);
+        def base = __path_join(root, rel_path);
+        Collections.push(candidates, __path_with_suffix(base, ".tiny"));
+        def rel_parts = String.split(rel_path, "/");
+        if (heap_get(rel_parts, len(rel_parts) - 1) != "__init__") {
+            Collections.push(candidates, __path_join(base, "__init__.tiny"));
+        }
+        i = i + 1;
+    }
+    return candidates;
+}
+
+fn _fallback_pkg_candidates(module_name, caller_path, search_paths) {
+    def rel_path = String.join(String.split(module_name, "."), "/");
+    def roots = new[];
+    if (caller_path != Null) { Collections.push(roots, __path_dirname(caller_path)); }
+    def i = 0;
+    while (i < len(search_paths)) {
+        Collections.push(roots, heap_get(search_paths, i));
+        i = i + 1;
+    }
+    return _expand_module_candidates(rel_path, roots);
+}
+
+fn resolve_module_name(raw, caller_namespace, pos) {
+    def leading = 0;
+    def chars = __chars(raw);
+    def i = 0;
+    while (i < len(chars) && heap_get(chars, i) == ".") {
+        leading = leading + 1;
+        i = i + 1;
+    }
+    if (leading == 0) { return raw; }
+    if (__is_empty(caller_namespace)) {
+        throw(tiny_language.TinyLangError("relative import outside a module", tiny_errors.SourcePos_origin(), "E008", pos));
+    }
+    def base = String.split(caller_namespace, ".");
+    if (leading > len(base)) {
+        throw(tiny_language.TinyLangError("relative import traverses beyond module root", tiny_errors.SourcePos_origin(), "E008", pos));
+    }
+    def trimmed = Collections.slice(base, 0, len(base) - leading);
+    def remainder = String.join(Collections.slice(chars, leading, len(chars)), "");
+    if (!__is_empty(remainder)) { Collections.push(trimmed, remainder); }
+    return String.join(trimmed, ".");
+}
+
+fn candidate_module_paths(module_name, caller_path, config) {
+    if (String.starts_with(module_name, "stdlib.") || String.starts_with(module_name, "std.")) {
+        def rel_path = String.join(Collections.slice(String.split(module_name, "."), 1, len(String.split(module_name, "."))), "/");
+        if (File.exists(config.stdlib_root)) {
+            return _expand_module_candidates(rel_path, new[config.stdlib_root]);
+        }
+        return new[];
+    }
+    if (String.starts_with(module_name, "pkg.")) {
+        def parts = Collections.slice(String.split(module_name, "."), 1, len(String.split(module_name, ".")));
+        if (len(parts) == 0) { return new[]; }
+        def package_name = heap_get(parts, 0);
+        def project_root = config.project_root;
+        if (project_root == Null) { project_root = _find_project_root(caller_path); }
+        def package_roots = _package_roots_for(package_name, project_root);
+        def module_rel_paths = _pkg_module_rel_paths(parts);
+        if (len(package_roots) > 0 && len(module_rel_paths) > 0) {
+            def candidates = new[];
+            def i = 0;
+            while (i < len(package_roots)) {
+                def package_root = heap_get(package_roots, i);
+                def bases = new[__path_join(package_root, "src"), package_root];
+                def bi = 0;
+                while (bi < len(bases)) {
+                    def base = heap_get(bases, bi);
+                    def r = 0;
+                    while (r < len(module_rel_paths)) {
+                        def rel = heap_get(module_rel_paths, r);
+                        def expanded = _expand_module_candidates(rel, new[base]);
+                        def ei = 0;
+                        while (ei < len(expanded)) {
+                            Collections.push(candidates, heap_get(expanded, ei));
+                            ei = ei + 1;
+                        }
+                        r = r + 1;
+                    }
+                    bi = bi + 1;
+                }
+                i = i + 1;
+            }
+            return candidates;
+        }
+        return _fallback_pkg_candidates(module_name, caller_path, config.search_paths);
+    }
+    def rel_path = String.join(String.split(module_name, "."), "/");
+    def roots = new[];
+    if (caller_path != Null) { Collections.push(roots, __path_dirname(caller_path)); }
+    def j = 0;
+    while (j < len(config.search_paths)) {
+        Collections.push(roots, heap_get(config.search_paths, j));
+        j = j + 1;
+    }
+    return _expand_module_candidates(rel_path, roots);
+}
+
+class NamespaceRef {
+    runtime: Pointer;
+    name: string;
+}
+
+fn NamespaceRef(runtime, name) {
+    return new NamespaceRef { runtime: runtime; name: name };
+}
+
+class ModuleResolver {
+    config: ModuleResolutionConfig;
+    stdlib_root: string;
+    search_paths: Pointer;
+    cache: Pointer;
+    in_progress: Pointer;
+
+    fn _resolve_name(self, raw, caller_namespace, pos) {
+        return resolve_module_name(raw, caller_namespace, pos);
+    }
+
+    fn _candidate_paths(self, module_name, caller_path) {
+        return candidate_module_paths(module_name, caller_path, self.config);
+    }
+
+    fn import_module(self, name, runtime, caller_namespace, caller_path, pos) {
+        def resolved_name = self._resolve_name(name, caller_namespace, pos);
+        def candidates = self._candidate_paths(resolved_name, caller_path);
+        def i = 0;
+        while (i < len(candidates)) {
+            def candidate = heap_get(candidates, i);
+            if (Map.has(self.cache, candidate)) {
+                return Map.get(self.cache, candidate);
+            }
+            if (File.exists(candidate)) {
+                if (Set.has(self.in_progress, candidate)) {
+                    throw(tiny_language.TinyLangError("circular import involving " + candidate, tiny_errors.SourcePos_origin(), "E008", pos));
+                }
+                Set.add(self.in_progress, candidate);
+                def module_frame = Null;
+                if (runtime.debugger != Null) { module_frame = true; }
+                def module_env = tiny_language_runtime_environment.Environment(Null, resolved_name, runtime);
+                def previous_global_env = runtime.global_env;
+                runtime.global_env = module_env;
+                Python.call("tiny_language", "compile_and_run", new[
+                    File.read(candidate),
+                    module_env,
+                    runtime
+                ], PY_RUNTIME_ALLOW);
+                runtime.global_env = previous_global_env;
+                def ns_ref = NamespaceRef(runtime, resolved_name);
+                Map.set(self.cache, candidate, ns_ref);
+                if (module_frame != Null && len(runtime.call_stack) > 0) { Collections.pop(runtime.call_stack); }
+                Set.remove(self.in_progress, candidate);
+                return ns_ref;
+            }
+            i = i + 1;
+        }
+        throw(tiny_language.TinyLangError("module '" + name + "' not found on search path", tiny_errors.SourcePos_origin(), "E008", pos));
+    }
+}
+
+fn ModuleResolver(search_paths) {
+    def env_paths = new[];
+    def env_raw = os.getenv("TINYPATH", "");
+    if (!__is_empty(env_raw)) {
+        def separator = ":";
+        if (String.contains(env_raw, ";")) { separator = ";"; }
+        env_paths = String.split(env_raw, separator);
+    }
+    def default_roots = new[os.getcwd(), "src"];
+    def roots = search_paths;
+    if (roots == Null || len(roots) == 0) {
+        roots = env_paths;
+        def i = 0;
+        while (i < len(default_roots)) {
+            Collections.push(roots, heap_get(default_roots, i));
+            i = i + 1;
+        }
+    }
+    def stdlib_root = "stdlib";
+    def project_root = _find_project_root(os.getcwd());
+    def config = ModuleResolutionConfig(roots, stdlib_root, project_root);
+    return new ModuleResolver {
+        config: config;
+        stdlib_root: stdlib_root;
+        search_paths: roots;
+        cache: Map.new();
+        in_progress: Set.new()
+    };
+}
+
+def exports = new[NamespaceRef, ModuleResolver, ModuleResolutionConfig, resolve_module_name, candidate_module_paths];

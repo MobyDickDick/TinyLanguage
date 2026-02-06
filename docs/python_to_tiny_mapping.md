@@ -49,6 +49,9 @@ This document tracks which Python sources have TinyLanguage equivalents and clar
 | `src/tiny_language_parser.py` | `src_tiny/tiny_language_parser.tiny` |
 | `src/tiny_language_preamble.py` | `src_tiny/tiny_language_preamble.tiny` |
 | `src/tiny_language_runtime.py` | `src_tiny/tiny_language_runtime.tiny` |
+| `src/tiny_language_runtime_debugger.py` | `src_tiny/tiny_language_runtime_debugger.tiny` |
+| `src/tiny_language_runtime_environment.py` | `src_tiny/tiny_language_runtime_environment.tiny` |
+| `src/tiny_language_runtime_modules.py` | `src_tiny/tiny_language_runtime_modules.tiny` |
 | `src/tiny_language_stitched.py` | `src_tiny/tiny_language_stitched.tiny` |
 | `src/tiny_language_transpilers.py` | `src_tiny/tiny_language_transpilers.tiny` |
 | `src/tiny_project_cli.py` | `src_tiny/tiny_project_cli.tiny` |

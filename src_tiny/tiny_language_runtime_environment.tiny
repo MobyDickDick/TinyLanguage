@@ -1,0 +1,94 @@
+// TinyLanguage translation of src/tiny_language_runtime_environment.py.
+// Stores lexical scopes and inferred types during runtime evaluation.
+
+fn __normalize_numeric_type(type_name) {
+    def normalized = String.trim(type_name);
+    def lowered = String.lower(normalized);
+    if (lowered == "int" || lowered == "float") { return "number"; }
+    return type_name;
+}
+
+fn __fallback_type_name(value) {
+    if (value == Null) { return "Null"; }
+    if (value == true || value == false) { return "Bool"; }
+    return "Unknown";
+}
+
+class Environment {
+    parent: Pointer;
+    namespace: Pointer;
+    runtime: Pointer;
+    values: Pointer;
+    types: Pointer;
+
+    fn get(self, name) {
+        if (Map.has(self.values, name)) { return Map.get(self.values, name); }
+        if (self.parent != Null) { return self.parent.get(name); }
+        throw("unknown variable " + name);
+    }
+
+    fn define(self, name, value, pos) {
+        if (self.runtime != Null) {
+            def inferred = self.runtime._infer_type_name(value);
+            Map.set(self.types, name, __normalize_numeric_type(inferred));
+        } else {
+            Map.set(self.types, name, __fallback_type_name(value));
+        }
+        Map.set(self.values, name, value);
+    }
+
+    fn assign(self, name, value, pos) {
+        if (Map.has(self.values, name)) {
+            if (self.runtime != Null) {
+                self.runtime._check_assignment_type(self, name, value, pos, true);
+                def inferred = self.runtime._infer_type_name(value);
+                Map.set(self.types, name, __normalize_numeric_type(inferred));
+            } else {
+                Map.set(self.types, name, __fallback_type_name(value));
+            }
+            Map.set(self.values, name, value);
+            return Null;
+        }
+        if (self.parent != Null) { return self.parent.assign(name, value, pos); }
+        return self.define(name, value, pos);
+    }
+
+    fn contains(self, name) {
+        if (Map.has(self.values, name)) { return true; }
+        if (self.parent != Null) { return self.parent.contains(name); }
+        return false;
+    }
+
+    fn type_of(self, name, local_only) {
+        if (Map.has(self.types, name)) { return Map.get(self.types, name); }
+        if (!local_only && self.parent != Null) { return self.parent.type_of(name, false); }
+        return Null;
+    }
+
+    fn all_names(self) {
+        def names = Map.keys(self.values);
+        if (self.parent != Null) {
+            def parent_names = self.parent.all_names();
+            def i = 0;
+            while (i < len(parent_names)) {
+                Collections.push(names, heap_get(parent_names, i));
+                i = i + 1;
+            }
+        }
+        return names;
+    }
+}
+
+fn Environment(parent, namespace, runtime) {
+    def resolved_runtime = runtime;
+    if (resolved_runtime == Null && parent != Null) { resolved_runtime = parent.runtime; }
+    return new Environment {
+        parent: parent;
+        namespace: namespace;
+        runtime: resolved_runtime;
+        values: Map.new();
+        types: Map.new()
+    };
+}
+
+def exports = new[Environment];

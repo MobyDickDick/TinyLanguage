@@ -1,0 +1,158 @@
+// TinyLanguage translation of src/tiny_language_runtime_debugger.py.
+// Implements debugger primitives without delegating to Python modules.
+
+def VALID_COMMANDS = new["continue", "step_in", "step_over", "step_out", "pause"];
+
+fn __list_contains(items, value) {
+    def i = 0;
+    while (i < len(items)) {
+        if (heap_get(items, i) == value) { return true; }
+        i = i + 1;
+    }
+    return false;
+}
+
+fn __location_changed(current, previous) {
+    if (previous == Null) { return true; }
+    if (heap_get(current, 0) != heap_get(previous, 0)) { return true; }
+    if (heap_get(current, 1) != heap_get(previous, 1)) { return true; }
+    return false;
+}
+
+class ScopeSnapshot {
+    values: Pointer;
+    types: Pointer;
+}
+fn ScopeSnapshot(values, types) {
+    return new ScopeSnapshot { values: values; types: types };
+}
+
+class DebugSnapshot {
+    pos: Pointer;
+    namespace: Pointer;
+    call_stack: Pointer;
+    scopes: Pointer;
+}
+fn DebugSnapshot(pos, namespace, call_stack, scopes) {
+    return new DebugSnapshot { pos: pos; namespace: namespace; call_stack: call_stack; scopes: scopes };
+}
+
+class StepRequest {
+    mode: string;
+    depth: number;
+}
+fn StepRequest(mode, depth) {
+    return new StepRequest { mode: mode; depth: depth };
+}
+
+class Debugger {
+    breakpoints: Pointer;
+    on_pause: Pointer;
+    command_queue: Pointer;
+    command_index: number;
+    snapshots: Pointer;
+    pending_step: Pointer;
+    last_location: Pointer;
+    force_pause: bool;
+    mirror_stdout: bool;
+
+    fn set_breakpoints(self, namespace, lines) {
+        def set_lines = lines;
+        if (set_lines == Null) { set_lines = Set.new(); }
+        Map.set(self.breakpoints, namespace, set_lines);
+    }
+
+    fn enqueue_commands(self, commands) {
+        def i = 0;
+        while (i < len(commands)) {
+            def cmd = heap_get(commands, i);
+            self._validate_command(cmd);
+            Collections.push(self.command_queue, cmd);
+            i = i + 1;
+        }
+    }
+
+    fn request_pause(self) {
+        self.force_pause = true;
+    }
+
+    fn should_pause(self, pos, namespace, depth) {
+        def location = new[namespace, pos.line];
+        if (self.force_pause) { return true; }
+        def ns_breaks = Map.get(self.breakpoints, namespace, Null);
+        if (ns_breaks != Null && Set.has(ns_breaks, pos.line)) { return true; }
+        def global_breaks = Map.get(self.breakpoints, Null, Null);
+        if (global_breaks != Null && Set.has(global_breaks, pos.line)) { return true; }
+        return self._matches_step(location, depth);
+    }
+
+    fn handle_pause(self, snapshot, depth) {
+        Collections.push(self.snapshots, snapshot);
+        self.last_location = new[snapshot.namespace, snapshot.pos.line];
+        self.force_pause = false;
+        def command = self._next_command(snapshot);
+        self.pending_step = self._step_for_command(command, depth);
+    }
+
+    fn _next_command(self, snapshot) {
+        def command = "continue";
+        if (self.on_pause != Null) {
+            command = self.on_pause(snapshot);
+        } else if (self.command_index < len(self.command_queue)) {
+            command = heap_get(self.command_queue, self.command_index);
+            self.command_index = self.command_index + 1;
+        }
+        self._validate_command(command);
+        return command;
+    }
+
+    fn _validate_command(self, command) {
+        if (!__list_contains(VALID_COMMANDS, command)) {
+            def valid = String.join(VALID_COMMANDS, ", ");
+            throw("invalid debugger command " + command + "; expected one of " + valid);
+        }
+    }
+
+    fn _step_for_command(self, command, depth) {
+        if (command == "continue") { return Null; }
+        if (command == "step_in") { return StepRequest("step_in", depth); }
+        if (command == "step_over") { return StepRequest("step_over", depth); }
+        if (command == "step_out") {
+            def target = depth - 1;
+            if (target < 0) { target = 0; }
+            return StepRequest("step_out", target);
+        }
+        return Null;
+    }
+
+    fn _matches_step(self, location, depth) {
+        if (self.pending_step == Null) { return false; }
+        if (self.pending_step.mode == "step_in") {
+            return __location_changed(location, self.last_location);
+        }
+        if (self.pending_step.mode == "step_over") {
+            return depth <= self.pending_step.depth && __location_changed(location, self.last_location);
+        }
+        if (self.pending_step.mode == "step_out") {
+            return depth <= self.pending_step.depth && __location_changed(location, self.last_location);
+        }
+        return false;
+    }
+}
+
+fn Debugger(on_pause, mirror_stdout) {
+    def instance = new Debugger {
+        breakpoints: Map.new();
+        on_pause: on_pause;
+        command_queue: new[];
+        command_index: 0;
+        snapshots: new[];
+        pending_step: Null;
+        last_location: Null;
+        force_pause: false;
+        mirror_stdout: mirror_stdout
+    };
+    return instance;
+}
+
+def exports = new[ScopeSnapshot, DebugSnapshot, StepRequest, Debugger];

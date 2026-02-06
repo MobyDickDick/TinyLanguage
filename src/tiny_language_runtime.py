@@ -19,6 +19,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Un
 from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, _line_info, format_error
 from tiny_language_ast import Fn, IR, Match, MethodDef, OpDef, Param, TypeVariant, VariantPattern, WildcardPattern
 from tiny_language_runtime_debugger import DebugSnapshot, Debugger, ScopeSnapshot, StepRequest
+from tiny_language_runtime_environment import Environment
 from tiny_language_runtime_modules import ModuleResolver, NamespaceRef, _import_binding_name
 
 # ----- Runtime -----
@@ -2056,5 +2057,20 @@ class Runtime:
             return bool(val)
         except Exception:
             return True
+
+
+def compile_and_run(*args: Any, **kwargs: Any) -> str:
+    """Proxy to the public API compile helper to preserve legacy imports."""
+
+    import importlib.util
+
+    if importlib.util.find_spec("tiny_language_stitched"):
+        from tiny_language_stitched import compile_and_run as stitched_compile_and_run
+
+        return stitched_compile_and_run(*args, **kwargs)
+
+    from tiny_language_api import compile_and_run as api_compile_and_run
+
+    return api_compile_and_run(*args, **kwargs)
 
     

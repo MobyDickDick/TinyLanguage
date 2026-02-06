@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
+import importlib.util
 import os
 from dataclasses import dataclass
 from pathlib import Path
-import tomllib
 from typing import Any, List, Optional
 from urllib.parse import urlparse
 
 from tiny_errors import SourcePos, SourceSpan, TinyLangError
+
+if importlib.util.find_spec("tomllib"):
+    import tomllib
+else:
+    import tomli as tomllib
 
 
 @dataclass(frozen=True)

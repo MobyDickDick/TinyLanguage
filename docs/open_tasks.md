@@ -40,8 +40,11 @@ and testable so they can be promoted into the formal backlog as needed.
   - Notes: `src/tiny_pkg_resolution.py` parses SemVer constraints and resolves
     registry versions; `docs/package_manager_plan.md` documents the initial
     registry metadata schema with checksum fields.
-- [ ] Define a reproducible module-resolution algorithm shared by interpreter
+- [x] Define a reproducible module-resolution algorithm shared by interpreter
   and native backends, including tests for edge cases.
+  - Notes: documented the algorithm in `docs/module_resolution_algorithm.md`
+    and added edge-case tests in
+    `tests/detailtests/test_module_resolution_algorithm.py`.
 
 ### Standard library completeness
 - [ ] Ship “core IO” parity (`fs`, `path`, `process`, `env`, `time`) with

@@ -175,8 +175,8 @@ PY
 ## Zusätzliche Aufgabenliste (Projektanforderungen)
 
 - [x] Jede Python-Datei im Projekt wird am Schluss in eine äquivalente Tiny-Datei übersetzt und der Nachweis (Mapping/Tabelle) ist dokumentiert. (siehe `docs/python_to_tiny_mapping.md`)
-- [ ] Jede Sourcecodedatei ist so detailliert wie sinnvoll dokumentiert (inklusive Kontext/Begründungen für größere Zusammenhänge).
-- [ ] Große Sourcecodedateien sind in überschaubare, logisch getrennte kleinere Dateien aufgeteilt (inkl. ggf. neuer Modulstruktur und aktualisierten Importpfaden).
+- [x] Jede Sourcecodedatei ist so detailliert wie sinnvoll dokumentiert (inklusive Kontext/Begründungen für größere Zusammenhänge).
+- [x] Große Sourcecodedateien sind in überschaubare, logisch getrennte kleinere Dateien aufgeteilt (inkl. ggf. neuer Modulstruktur und aktualisierten Importpfaden).
 
 ## Aufgaben zur Redundanz-Reduktion (aus `docs/redundancy_review.md`)
 

@@ -99,7 +99,9 @@ and testable so they can be promoted into the formal backlog as needed.
   - Notes: added lexer/parser fuzz coverage in
     `tests/detailtests/test_benchmark_and_fuzz.py` and scheduled nightly runs
     via `.github/workflows/nightly-fuzz.yml`.
-- [ ] Add stress tests for concurrency primitives and memory-pressure handling.
+- [x] Add stress tests for concurrency primitives and memory-pressure handling.
+  - Notes: added stress coverage for spawn/join and repeated heap allocations in
+    `tests/detailtests/test_concurrency.py`.
 
 ## Expansion roadmap follow-ups
 

@@ -305,6 +305,9 @@ become concrete tasks.
 
 ## Recently completed tasks
 
+- [x] Publish upgrade guides and automated migration tooling for each minor
+  release (see `docs/release_minor_upgrade_guides.md` and
+  `tools/release/prepare_minor_upgrade.py`).
 - [x] Enable heap lifetime lints by default (opt-out flag) and document the new
   default safety posture.
 - [x] Evaluate a documentation tooling pipeline and add a deterministic docstring

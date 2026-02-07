@@ -80,8 +80,11 @@ and testable so they can be promoted into the formal backlog as needed.
 ### Distribution + releases
 - [x] Produce signed, reproducible release artifacts for all supported OSes
   and include SBOMs in release bundles.
-- [ ] Publish upgrade guides and automated migration tooling for each minor
+- [x] Publish upgrade guides and automated migration tooling for each minor
   release.
+  - Notes: added `docs/release_minor_upgrade_guides.md`, a migration recipe
+    registry (`docs/release_minor_migration_recipes.json`), and the automation
+    entry point `tools/release/prepare_minor_upgrade.py`.
 - [ ] Establish a release-candidate checklist that is run in CI.
 
 ### Performance + reliability

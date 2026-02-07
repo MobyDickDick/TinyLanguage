@@ -29,7 +29,12 @@ Each tagged release (`vX.Y.Z`) must publish the following artifacts:
    - `tiny-language-vscode.vsix` built from `vscode-extension/`.
 5. **Checksums**
    - `SHA256SUMS` covering every artifact above.
-6. **Provenance + metadata**
+6. **SBOMs**
+   - `TinyLanguage-vX.Y.Z-sbom.spdx.json` describing every artifact in the
+     release bundle.
+7. **Signatures**
+   - Detached ASCII signatures (`.asc`) for each artifact and `SHA256SUMS`.
+8. **Provenance + metadata**
    - `build-info.json` recording:
      - Git tag/commit, build timestamp (UTC), builder image digest,
        tool versions, and artifact hashes.
@@ -72,8 +77,16 @@ The release pipeline is designed to make the build deterministic and auditable.
    - `vsce package -o tiny-language-vscode.vsix`
 7. **Generate checksums**:
    - `sha256sum * > SHA256SUMS`
-8. **Emit provenance**:
+8. **Generate SBOM**:
+   - Produce `TinyLanguage-vX.Y.Z-sbom.spdx.json` for the artifact bundle.
+9. **Sign artifacts**:
+   - Use `gpg --armor --detach-sign` on each artifact and `SHA256SUMS`.
+10. **Emit provenance**:
    - Create `build-info.json` with full metadata.
+11. **Automation helper (recommended)**:
+   - `python tools/release/build_release_artifacts.py --output-dir dist/release`
+     generates the source archive, SBOM, checksums, signatures, and
+     `build-info.json` deterministically.
 
 ### 4) Reproducibility checks
 
@@ -88,7 +101,7 @@ For each artifact:
 
 1. Tag pushed, and `VERSION` matches.
 2. All artifacts generated successfully.
-3. `SHA256SUMS` and `build-info.json` are present.
+3. `SHA256SUMS`, SBOM, signatures, and `build-info.json` are present.
 4. Reproducibility check completed (hashes match).
 5. Release notes link to:
    - `docs/release_migration_guides.md`

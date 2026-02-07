@@ -11,6 +11,6 @@ it whenever release criteria change, and keep every CI-gated item checked.
 - [x] Release artifacts build successfully (unsigned).
 
 ## Manual follow-ups (not CI-gated)
-- [ ] Confirm release notes are updated and linked in `CHANGELOG.md`.
+- [x] Confirm release notes are updated and linked in `CHANGELOG.md`.
 - [ ] Verify demo commands in `docs/release_candidate_runthrough.md`.
 - [ ] Capture any new follow-up fixes with dates + commit links.

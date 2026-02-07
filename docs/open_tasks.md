@@ -78,7 +78,7 @@ and testable so they can be promoted into the formal backlog as needed.
     `tests/detailtests/test_debugger_hooks.py` to validate spawned-task locals.
 
 ### Distribution + releases
-- [ ] Produce signed, reproducible release artifacts for all supported OSes
+- [x] Produce signed, reproducible release artifacts for all supported OSes
   and include SBOMs in release bundles.
 - [ ] Publish upgrade guides and automated migration tooling for each minor
   release.

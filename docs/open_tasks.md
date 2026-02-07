@@ -54,8 +54,11 @@ and testable so they can be promoted into the formal backlog as needed.
     remains scoped to the mock-backed API surface.
 - [ ] Expand networking and serialization modules (`http`, `json`, `toml`)
   with fuzzed round-trip tests.
-- [ ] Publish a stability/maturity tier for each stdlib module and a policy for
+- [x] Publish a stability/maturity tier for each stdlib module and a policy for
   deprecations.
+  - Notes: maturity tiers and module status live in
+    `docs/stdlib_compatibility.md`, with the deprecation policy defined in
+    `docs/versioning_deprecation_policy.md`.
 
 ### Tooling + DX
 - [ ] Add end-to-end LSP acceptance tests for rename, references, and code

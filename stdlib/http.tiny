@@ -24,6 +24,16 @@ fn __http_mock_response(method, url, options) {
     def _cleanup_headers = delete(headers);
     return Result.ok(response);
   }
+  if (String.starts_with(url, "mock://echo")) {
+    def headers = new[];
+    def body = "";
+    if (options != Null && Map.has(options, "body")) {
+      body = Map.get(options, "body");
+    }
+    def response = __http_response(200, body, headers, url);
+    def _cleanup_headers = delete(headers);
+    return Result.ok(response);
+  }
   return __http_error("E_INVALID", "unknown mock endpoint");
 }
 

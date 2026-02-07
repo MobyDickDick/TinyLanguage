@@ -63,6 +63,11 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Tuple
 
 from tiny_errors import SourcePos
 
+if importlib.util.find_spec("tomllib"):
+    tomllib = importlib.import_module("tomllib")
+else:
+    tomllib = importlib.import_module("tomli")
+
 # ---------------------------------------------------------------------------
 # Python interop: module denylist
 # ---------------------------------------------------------------------------
@@ -218,6 +223,8 @@ class _StdLibRegistrar:
         self._python_scalar_ints: set[int] = set()
         # - integers parsed from JSON that should stay scalar when stringifying
         self._json_scalar_ints: set[int] = set()
+        # - integers parsed from TOML that should stay scalar when stringifying
+        self._toml_scalar_ints: set[int] = set()
 
     # -----------------------------------------------------------------------
     # Public API
@@ -240,6 +247,7 @@ class _StdLibRegistrar:
         self._ensure_namespace("OS")
         self._ensure_namespace("Time")
         self._ensure_namespace("JSON")
+        self._ensure_namespace("TOML")
         self._ensure_namespace("Regex")
         self._ensure_namespace("Async")
         self._ensure_namespace("Result")
@@ -368,6 +376,11 @@ class _StdLibRegistrar:
         self.runtime.register_native("parse", self._json_parse, namespace="JSON")
         self.runtime.register_native("validate", self._json_validate, namespace="JSON")
         self.runtime.register_native("stringify", self._json_stringify, namespace="JSON")
+
+        # ----------------------------- TOML --------------------------------
+        self.runtime.register_native("parse", self._toml_parse, namespace="TOML")
+        self.runtime.register_native("validate", self._toml_validate, namespace="TOML")
+        self.runtime.register_native("stringify", self._toml_stringify, namespace="TOML")
 
         self.runtime.register_native("match", self._regex_match, namespace="Regex")
         self.runtime.register_native("search", self._regex_search, namespace="Regex")
@@ -1451,6 +1464,171 @@ class _StdLibRegistrar:
             raise RuntimeError(f"value of type {type(val).__name__} cannot be stringified to JSON")
 
         return json.dumps(convert(value), separators=(",", ":"))
+
+    # -----------------------------------------------------------------------
+    # TOML namespace
+    # -----------------------------------------------------------------------
+
+    def _toml_parse(self, text: Any) -> Any:
+        """Parse TOML and convert it into Tiny-friendly values."""
+        try:
+            loaded = tomllib.loads(str(text))
+        except Exception as exc:
+            raise RuntimeError(f"invalid toml: {exc}")
+        return self._toml_to_value(loaded)
+
+    def _toml_validate(self, text: Any) -> bool:
+        """Return True when `text` is valid TOML, False otherwise."""
+        try:
+            tomllib.loads(str(text))
+        except Exception:
+            return False
+        return True
+
+    def _toml_to_value(self, data: Any) -> Any:
+        """Recursively map decoded TOML to Tiny values."""
+        if isinstance(data, dict):
+            return {k: self._toml_to_value(v) for k, v in data.items()}
+        if isinstance(data, list):
+            return [self._toml_to_value(item) for item in data]
+        if isinstance(data, (datetime.datetime, datetime.date, datetime.time)):
+            return data.isoformat()
+        if data is None:
+            return None
+        if isinstance(data, int) and not isinstance(data, bool):
+            self._toml_scalar_ints.add(data)
+            return data
+        if isinstance(data, (str, int, float, bool)):
+            return data
+        raise RuntimeError(f"unsupported toml value: {data!r}")
+
+    def _toml_stringify(self, value: Any) -> str:
+        """Serialize Tiny values (including heap pointers) to TOML."""
+        seen: set[tuple[str, int]] = set()
+
+        def _mark_seen(tag: str, key: int) -> tuple[str, int]:
+            marker = (tag, key)
+            if marker in seen:
+                raise RuntimeError("cyclic value cannot be stringified to TOML")
+            seen.add(marker)
+            return marker
+
+        def _unmark_seen(marker: tuple[str, int]) -> None:
+            seen.remove(marker)
+
+        def convert(val: Any) -> Any:
+            if isinstance(val, bool):
+                return val
+            num_fields = self.runtime._number_fields(val)  # noqa: SLF001
+            if num_fields is not None:
+                return num_fields.get("value", 0)
+            if isinstance(val, int) and val in self._toml_scalar_ints:
+                return val
+            if isinstance(val, int) and val in self._json_scalar_ints:
+                return val
+            if isinstance(val, int) and val in self._python_scalar_ints:
+                return val
+            if isinstance(val, int) and val in self.runtime.heap:
+                obj = self.runtime.heap[val]
+                marker = _mark_seen("heap", val)
+                try:
+                    if isinstance(obj, list):
+                        return [convert(item) for item in obj]
+                    if isinstance(obj, dict):
+                        return {str(k): convert(v) for k, v in obj.items()}
+                    if isinstance(obj, deque):
+                        return [convert(item) for item in list(obj)]
+                    if isinstance(obj, set):
+                        return [convert(item) for item in sorted(obj, key=str)]
+                finally:
+                    _unmark_seen(marker)
+            if isinstance(val, list):
+                marker = _mark_seen("list", id(val))
+                try:
+                    return [convert(item) for item in val]
+                finally:
+                    _unmark_seen(marker)
+            if isinstance(val, dict):
+                marker = _mark_seen("dict", id(val))
+                try:
+                    return {str(k): convert(v) for k, v in val.items()}
+                finally:
+                    _unmark_seen(marker)
+            if isinstance(val, deque):
+                marker = _mark_seen("deque", id(val))
+                try:
+                    return [convert(item) for item in list(val)]
+                finally:
+                    _unmark_seen(marker)
+            if isinstance(val, set):
+                marker = _mark_seen("set", id(val))
+                try:
+                    return [convert(item) for item in sorted(val, key=str)]
+                finally:
+                    _unmark_seen(marker)
+            if val is None:
+                raise RuntimeError("null values cannot be stringified to TOML")
+            if isinstance(val, (str, int, float, bool)):
+                return val
+            raise RuntimeError(f"value of type {type(val).__name__} cannot be stringified to TOML")
+
+        def escape_string(text: str) -> str:
+            return (
+                text.replace("\\", "\\\\")
+                .replace('"', '\\"')
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t")
+            )
+
+        def format_key(key: str) -> str:
+            if re.fullmatch(r"[A-Za-z0-9_-]+", key):
+                return key
+            return f'"{escape_string(key)}"'
+
+        def format_value(val: Any) -> str:
+            if isinstance(val, bool):
+                return "true" if val else "false"
+            if isinstance(val, int):
+                return str(val)
+            if isinstance(val, float):
+                return repr(val)
+            if isinstance(val, str):
+                return f'"{escape_string(val)}"'
+            if isinstance(val, list):
+                inner = ", ".join(format_value(item) for item in val)
+                return f"[{inner}]"
+            if isinstance(val, dict):
+                raise RuntimeError("inline TOML tables are not supported")
+            raise RuntimeError(f"unsupported TOML value: {val!r}")
+
+        def render_table(data: Dict[str, Any], path: List[str]) -> List[str]:
+            lines: List[str] = []
+            items = sorted(data.items(), key=lambda item: str(item[0]))
+            scalars: List[tuple[str, Any]] = []
+            tables: List[tuple[str, Any]] = []
+            for key, val in items:
+                if not isinstance(key, str):
+                    raise RuntimeError("toml keys must be strings")
+                if isinstance(val, dict):
+                    tables.append((key, val))
+                else:
+                    scalars.append((key, val))
+            if path:
+                section = ".".join(format_key(part) for part in path)
+                lines.append(f"[{section}]")
+            for key, val in scalars:
+                lines.append(f"{format_key(key)} = {format_value(val)}")
+            for key, val in tables:
+                if lines:
+                    lines.append("")
+                lines.extend(render_table(val, path + [key]))
+            return lines
+
+        prepared = convert(value)
+        if not isinstance(prepared, dict):
+            raise RuntimeError("top-level TOML value must be a map")
+        return "\n".join(render_table(prepared, []))
 
     # -----------------------------------------------------------------------
     # Regex namespace

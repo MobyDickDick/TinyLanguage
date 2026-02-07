@@ -52,8 +52,10 @@ and testable so they can be promoted into the formal backlog as needed.
   - Notes: added `stdlib.fs` wrapper plus parity coverage for `fs`, POSIX-style
     `path`, and `time`; existing `os` env tests cover `env`, and process parity
     remains scoped to the mock-backed API surface.
-- [ ] Expand networking and serialization modules (`http`, `json`, `toml`)
+- [x] Expand networking and serialization modules (`http`, `json`, `toml`)
   with fuzzed round-trip tests.
+  - Notes: added TOML stdlib wrapper, mock HTTP echo handling, and fuzzed
+    round-trip tests for JSON/TOML/HTTP in the detail test suite.
 - [x] Publish a stability/maturity tier for each stdlib module and a policy for
   deprecations.
   - Notes: maturity tiers and module status live in

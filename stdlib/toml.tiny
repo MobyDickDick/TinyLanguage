@@ -1,19 +1,19 @@
-// TinyLanguage stdlib: json module (Python-style subset)
+// TinyLanguage stdlib: toml module (minimal subset with Python-backed parser)
 
 fn loads(text) -> any {
-  return JSON.parse(text);
+  return TOML.parse(text);
 }
 
 fn dumps(value) -> string {
-  return JSON.stringify(value);
+  return TOML.stringify(value);
 }
 
 fn load(path) -> any {
-  return JSON.parse(File.read(path));
+  return TOML.parse(File.read(path));
 }
 
 fn dump(path, value) -> string {
-  return File.write(path, JSON.stringify(value));
+  return File.write(path, TOML.stringify(value));
 }
 
 fn parse(text) -> any {
@@ -25,5 +25,5 @@ fn stringify(value) -> string {
 }
 
 fn validate(text) -> bool {
-  return JSON.validate(text);
+  return TOML.validate(text);
 }

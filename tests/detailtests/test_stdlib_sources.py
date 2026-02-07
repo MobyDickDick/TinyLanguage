@@ -29,6 +29,7 @@ STDLIB_MODULES = [
     PROJECT_ROOT / "stdlib" / "regex.tiny",
     PROJECT_ROOT / "stdlib" / "statistics.tiny",
     PROJECT_ROOT / "stdlib" / "string.tiny",
+    PROJECT_ROOT / "stdlib" / "toml.tiny",
     PROJECT_ROOT / "stdlib" / "time.tiny",
     PROJECT_ROOT / "stdlib" / "yaml.tiny",
 ]

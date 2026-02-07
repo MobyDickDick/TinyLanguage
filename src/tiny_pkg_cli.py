@@ -3,17 +3,22 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import json
 import os
 from pathlib import Path
 import shutil
 import tarfile
-import tomllib
 from typing import Any, Iterable
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
 from tiny_pkg_resolution import write_lockfile
+
+if importlib.util.find_spec("tomllib"):
+    tomllib = importlib.import_module("tomllib")
+else:
+    tomllib = importlib.import_module("tomli")
 
 
 _DEFAULT_TEMPLATE = """\

@@ -1,0 +1,40 @@
+# Minor release upgrade guides
+
+This document defines how TinyLanguage publishes **minor release upgrade
+information** and **automated migration tooling**. Each minor release (X.Y.0)
+gets its own upgrade guide in `docs/release_minor_guides/` plus a matching
+migration recipe entry in `docs/release_minor_migration_recipes.json`.
+
+## Current minor release guides
+
+No minor release guides have been published yet. When the first minor release is
+cut, add the guide to `docs/release_minor_guides/` and update the table below.
+
+| From → To | Guide | Migration recipe | Status |
+| --- | --- | --- | --- |
+| _TBD_ | _TBD_ | _TBD_ | Pending first minor release |
+
+## Publishing workflow
+
+1. **Create or update the migration recipe**
+   - Add a `releases["X.Y.Z->X.Y+1.0"]` entry in
+     `docs/release_minor_migration_recipes.json`.
+   - Keep automated changes mechanical (renames, path changes, config updates).
+   - Leave manual steps for the guide.
+2. **Generate the upgrade guide skeleton**
+   - Run:
+     ```bash
+     python tools/release/prepare_minor_upgrade.py \
+       --from X.Y.Z --to X.Y+1.0 \
+       --guide-dir docs/release_minor_guides
+     ```
+3. **Validate automated migrations**
+   - Use `--apply --dry-run` to preview updates, then run without `--dry-run`.
+4. **Finalize the guide**
+   - Fill in version-specific notes, test steps, and any manual migration work.
+
+## Automation entry point
+
+`tools/release/prepare_minor_upgrade.py` reads migration recipes, generates the
+upgrade guide template, and can apply recipe steps. See the script header for
+supported actions and usage examples.

@@ -1,0 +1,14 @@
+module: stdlib.json
+
+exports:
+  fn dump(path: any, value: any) -> bool
+  fn dumps(value: any) -> string
+  fn load(path: any) -> any
+  fn loads(text: any) -> any
+  fn parse(text: any) -> any
+  fn stringify(value: any) -> string
+  fn validate(text: any) -> bool
+
+types:
+
+classes:

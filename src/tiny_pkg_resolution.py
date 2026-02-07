@@ -10,11 +10,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
+import importlib
 import json
 from pathlib import Path
 import re
-import tomllib
 from typing import Mapping
+
+if importlib.util.find_spec("tomllib"):
+    tomllib = importlib.import_module("tomllib")
+else:
+    tomllib = importlib.import_module("tomli")
 
 
 _SEMVER_PATTERN = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")

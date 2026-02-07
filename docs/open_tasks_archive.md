@@ -1,5 +1,15 @@
 # Open tasks archive
 
+Archived from `docs/open_tasks.md` on 2026-03-19.
+
+## Proposed production-readiness tasks (completed)
+
+### Standard library completeness
+- [x] Publish a stability/maturity tier for each stdlib module and a policy for
+  deprecations.
+  - Notes: module tiers are defined in `docs/stdlib_compatibility.md`, with the
+    deprecation policy captured in `docs/versioning_deprecation_policy.md`.
+
 Archived from `docs/open_tasks.md` on 2026-02-06.
 
 ## Proposed production-readiness tasks (completed)

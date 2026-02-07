@@ -4,6 +4,8 @@ All notable changes to TinyLanguage will be documented in this file.
 
 ## 1.0.0 (planned)
 
+Release notes: [`docs/release_notes_v1.md`](docs/release_notes_v1.md).
+
 ### Added
 - Stable interpreter + core language scope for the 1.0.0 release.
 - Baseline documentation covering the language spec, CLI usage, and stdlib.

@@ -34,3 +34,12 @@ The helper emits:
 
 Integrate additional artifacts (binaries, wheels, VSIX) in the pipeline and add
 those files to the `SHA256SUMS` and SBOM entries before publishing.
+
+## Release-candidate checklist
+
+CI enforces the release-candidate checklist in
+`docs/release_candidate_checklist.md` via:
+
+```bash
+python tools/release/check_release_candidate_checklist.py
+```

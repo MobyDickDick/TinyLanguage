@@ -65,6 +65,25 @@ def run_cli(command: List[str]):
         raise AssertionError(f"Failed to parse CLI JSON output.\n{debug}") from exc
 
 
+def build_multi_file_project(tmp_path: pathlib.Path) -> pathlib.Path:
+    """Create a multi-file TinyLanguage project for end-to-end LSP checks."""
+    project_dir = tmp_path / "project"
+    project_dir.mkdir()
+    (project_dir / "math.tiny").write_text(
+        "fn add(x, y) { return x + y; }\n",
+        encoding="utf-8",
+    )
+    (project_dir / "main.tiny").write_text(
+        "fn main() { return add(1, 2); }\n",
+        encoding="utf-8",
+    )
+    (project_dir / "formatting.tiny").write_text(
+        "fn greet(){return 1;}\n",
+        encoding="utf-8",
+    )
+    return project_dir
+
+
 def test_cli_completions_emit_labels():
     """Completions should list identifiers defined in the source."""
     payload = run_cli(["--source", "fn alpha() { return 1; }", "completions", "--prefix", "a"])
@@ -148,3 +167,25 @@ def test_cli_reports_parse_errors_as_diagnostics():
     assert diag["code"]
     assert isinstance(diag["range"], list)
     assert len(diag["range"]) == 4
+
+
+def test_cli_project_references_span_multiple_files(tmp_path):
+    """Reference lookups should include usages across project files."""
+    project_dir = build_multi_file_project(tmp_path)
+    payload = run_cli(["--project", str(project_dir), "references", "--symbol", "add"])
+    assert len(payload) == 2
+
+
+def test_cli_project_rename_returns_multi_file_edits(tmp_path):
+    """Rename operations should include edits from all project files."""
+    project_dir = build_multi_file_project(tmp_path)
+    payload = run_cli(["--project", str(project_dir), "rename", "--symbol", "add", "--new-name", "sum"])
+    assert len(payload) == 2
+    assert all(edit["newText"] == "sum" for edit in payload)
+
+
+def test_cli_project_code_actions_offer_formatting(tmp_path):
+    """Code actions should surface formatting when any project file is unformatted."""
+    project_dir = build_multi_file_project(tmp_path)
+    payload = run_cli(["--project", str(project_dir), "code-actions"])
+    assert any(action["kind"] == "source.format" for action in payload)

@@ -24,13 +24,30 @@ from language_server import (
 )
 
 
+def _load_project_sources(project_root: Path) -> str:
+    """Return a single combined source string for ``project_root``."""
+    if not project_root.exists():
+        raise SystemExit(f"Project path does not exist: {project_root}")
+    if not project_root.is_dir():
+        raise SystemExit(f"Project path is not a directory: {project_root}")
+
+    paths = sorted(project_root.rglob("*.tiny"))
+    if not paths:
+        raise SystemExit(f"No .tiny files found under {project_root}")
+    return "\n".join(path.read_text(encoding="utf-8") for path in paths)
+
+
 def _load_source(args: argparse.Namespace) -> str:
     """Return inline source or contents of ``args.file``; exit if missing."""
+    if args.project and (args.source or args.file):
+        raise SystemExit("Use --project by itself instead of combining it with --source/--file")
     if args.source:
         return args.source
     if args.file:
         return Path(args.file).read_text(encoding="utf-8")
-    raise SystemExit("Provide --source or --file to supply TinyLanguage code")
+    if args.project:
+        return _load_project_sources(Path(args.project))
+    raise SystemExit("Provide --source, --file, or --project to supply TinyLanguage code")
 
 
 def _hover_dict(result: HoverResult) -> Dict[str, Any]:
@@ -161,6 +178,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Inline TinyLanguage program passed directly on the command line",
     )
     parser.add_argument("--file", help="Path to a .tiny program to load from disk")
+    parser.add_argument(
+        "--project",
+        help="Path to a directory containing multiple .tiny files to load together",
+    )
     parser.add_argument(
         "--lint-profile",
         choices=["default", "typing"],

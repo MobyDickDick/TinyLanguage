@@ -63,8 +63,11 @@ and testable so they can be promoted into the formal backlog as needed.
     `docs/versioning_deprecation_policy.md`.
 
 ### Tooling + DX
-- [ ] Add end-to-end LSP acceptance tests for rename, references, and code
+- [x] Add end-to-end LSP acceptance tests for rename, references, and code
   actions across a multi-file project.
+  - Notes: CLI tests now exercise `references`, `rename`, and `code-actions`
+    against a multi-file project fixture in
+    `tests/detailtests/test_language_server_cli.py`.
 - [x] Provide a first-class formatter + lint baseline for CI and editor
   integration (single command to enforce).
   - Notes: `tools/format_lint_baseline.py` provides a unified formatter + lint

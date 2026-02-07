@@ -63,8 +63,10 @@ and testable so they can be promoted into the formal backlog as needed.
 ### Tooling + DX
 - [ ] Add end-to-end LSP acceptance tests for rename, references, and code
   actions across a multi-file project.
-- [ ] Provide a first-class formatter + lint baseline for CI and editor
+- [x] Provide a first-class formatter + lint baseline for CI and editor
   integration (single command to enforce).
+  - Notes: `tools/format_lint_baseline.py` provides a unified formatter + lint
+    runner with `--check`/`--apply` modes for CI and editor tasks.
 - [ ] Improve debugger parity (breakpoints, variable inspection, async tasks)
   with a canonical test suite.
 

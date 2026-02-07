@@ -68,6 +68,17 @@ To mirror CI locally, run:
 python tools/check_format_lint.py
 ```
 
+## Single-command formatter + lint baseline
+
+For editor integration or one-off checks, use the unified baseline runner. It
+formats (optionally writes changes) and then runs the linter in one command:
+
+```bash
+python tools/format_lint_baseline.py --check path/to/file_or_directory
+```
+
+To auto-apply formatting before linting, use `--apply` instead of `--check`.
+
 ## Recommended editor setup (VS Code)
 
 TinyLanguage ships a VS Code extension and scaffolding helper to align settings

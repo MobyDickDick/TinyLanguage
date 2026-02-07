@@ -34,6 +34,8 @@ jobs:
             tests/detailtests/test_tiny_language_server_cli_self_host.py
       - name: Run release-candidate checklist gate
         run: python tools/release/check_release_candidate_checklist.py
+      - name: Run performance budget gate
+        run: python tools/performance/check_performance_budgets.py
       - name: Run pytest suite
         run: python -m pytest --assert-no-heap-leaks
       - name: Build unsigned release artifacts

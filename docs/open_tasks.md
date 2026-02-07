@@ -91,8 +91,10 @@ and testable so they can be promoted into the formal backlog as needed.
     `.github/workflows/ci.yml`.
 
 ### Performance + reliability
-- [ ] Lock in performance budgets per backend and enforce regression alerts in
+- [x] Lock in performance budgets per backend and enforce regression alerts in
   CI with baseline snapshots.
+  - Notes: baseline snapshot tracked in `benchmarks/performance_baselines.json`
+    and enforced in CI via `tools/performance/check_performance_budgets.py`.
 - [ ] Expand fuzzing coverage (lexer/parser/runtime) and require nightly runs.
 - [ ] Add stress tests for concurrency primitives and memory-pressure handling.
 

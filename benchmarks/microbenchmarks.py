@@ -50,6 +50,7 @@ exposes the `tiny_language` package. It adjusts `sys.path` accordingly.
 
 from __future__ import annotations
 
+import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -170,6 +171,20 @@ def _format_timings(timings: Iterable[float]) -> str:
     min_ms = min(timings_list) * 1000.0
     max_ms = max(timings_list) * 1000.0
     return f"avg={avg_ms:.2f}ms min={min_ms:.2f}ms max={max_ms:.2f}ms"
+
+
+def _timing_stats(timings: Iterable[float]) -> dict[str, float]:
+    """Convert timings into a numeric stats payload (milliseconds)."""
+    timings_list = list(timings)
+    if not timings_list:
+        return {"avg_ms": 0.0, "min_ms": 0.0, "max_ms": 0.0}
+
+    avg_ms = mean(timings_list) * 1000.0
+    return {
+        "avg_ms": avg_ms,
+        "min_ms": min(timings_list) * 1000.0,
+        "max_ms": max(timings_list) * 1000.0,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -361,10 +376,17 @@ def main() -> None:
         nargs="*",
         help="Limit to specific cases",
     )
+    parser.add_argument(
+        "--json-output",
+        type=Path,
+        help="Optional path to write benchmark results as JSON",
+    )
     args = parser.parse_args()
 
     selected_backends = args.backend or list(BACKENDS.keys())
     selected_cases = args.case or [b.name for b in BENCHMARKS]
+
+    results: dict[str, dict[str, dict[str, float | str]]] = {}
 
     for case in BENCHMARKS:
         if case.name not in selected_cases:
@@ -373,10 +395,32 @@ def main() -> None:
         print(f"\n=== {case.name} ===")
         print(case.description)
 
+        case_results: dict[str, dict[str, float | str]] = {}
         for backend_name in selected_backends:
             runner = BACKENDS[backend_name]
-            timings = _time_runs(runner, case.source, args.warmup, args.repeat)
+            try:
+                timings = _time_runs(runner, case.source, args.warmup, args.repeat)
+            except Exception as exc:  # pragma: no cover - best effort error capture
+                error_message = f"{type(exc).__name__}: {exc}"
+                case_results[backend_name] = {"error": error_message}
+                print(f"{backend_name:24s} error={error_message}")
+                continue
+            case_results[backend_name] = _timing_stats(timings)
             print(f"{backend_name:24s} {_format_timings(timings)}")
+        results[case.name] = case_results
+
+    if args.json_output:
+        payload = {
+            "benchmarks": selected_cases,
+            "backends": selected_backends,
+            "repeat": args.repeat,
+            "warmup": args.warmup,
+            "results": results,
+        }
+        args.json_output.write_text(
+            json.dumps(payload, indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
 
 
 if __name__ == "__main__":

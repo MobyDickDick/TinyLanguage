@@ -50,6 +50,17 @@ Notes:
 3. If a backend fails on a benchmark (missing opcode or lint rule), note the
    failure and open a follow-up task to restore parity.
 
+## CI enforcement
+
+CI runs the microbenchmarks against the baseline snapshot stored in
+`benchmarks/performance_baselines.json` and enforces the budget ratios defined
+there. The check also flags regressions when a backend average is more than
+15% slower than the recorded baseline. To run the same check locally:
+
+```bash
+python tools/performance/check_performance_budgets.py
+```
+
 ## Baseline snapshot (2026-02-01)
 
 Environment notes:

@@ -1,0 +1,100 @@
+{
+  "generated_at": "2026-02-01",
+  "benchmarks": [
+    "tight_loop",
+    "recursive_calls",
+    "heap_roundtrip",
+    "map_operations"
+  ],
+  "backends": [
+    "interpreter",
+    "native",
+    "native-python-bytecode",
+    "python"
+  ],
+  "budgets": {
+    "native": {
+      "tight_loop": {
+        "min_ratio": 2.0
+      },
+      "recursive_calls": {
+        "min_ratio": 1.8
+      },
+      "heap_roundtrip": {
+        "min_ratio": 1.5
+      },
+      "map_operations": {
+        "min_ratio": 1.4
+      }
+    },
+    "native-python-bytecode": {
+      "tight_loop": {
+        "min_ratio": 2.0
+      },
+      "recursive_calls": {
+        "min_ratio": 1.8
+      },
+      "heap_roundtrip": {
+        "min_ratio": 1.4
+      },
+      "map_operations": {
+        "min_ratio": 1.4
+      }
+    },
+    "python": {
+      "tight_loop": {
+        "min_ratio": 0.6667
+      },
+      "recursive_calls": {
+        "min_ratio": 0.6667
+      },
+      "heap_roundtrip": {
+        "min_ratio": 0.7692
+      },
+      "map_operations": {
+        "min_ratio": 0.7692
+      }
+    }
+  },
+  "baseline_ms": {
+    "interpreter": {
+      "tight_loop": 339.0,
+      "recursive_calls": 221.34,
+      "heap_roundtrip": 567.65,
+      "map_operations": 187.51
+    },
+    "native": {
+      "tight_loop": 136.53,
+      "recursive_calls": 96.14,
+      "heap_roundtrip": 340.18,
+      "map_operations": 106.87
+    },
+    "native-python-bytecode": {
+      "tight_loop": 42.67,
+      "recursive_calls": 28.37,
+      "heap_roundtrip": null,
+      "map_operations": null
+    },
+    "python": {
+      "tight_loop": null,
+      "recursive_calls": null,
+      "heap_roundtrip": null,
+      "map_operations": null
+    }
+  },
+  "blocked": {
+    "native-python-bytecode": {
+      "heap_roundtrip": "unknown function in heap bench",
+      "map_operations": "unknown variable in Map bench"
+    },
+    "python": {
+      "tight_loop": "binary operator `<` not supported yet",
+      "recursive_calls": "binary operator `<` not supported yet",
+      "heap_roundtrip": "binary operator `<` not supported yet",
+      "map_operations": "binary operator `<` not supported yet"
+    }
+  },
+  "regression": {
+    "max_slowdown_ratio": 1.15
+  }
+}

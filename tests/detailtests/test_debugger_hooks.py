@@ -112,3 +112,34 @@ def test_step_over_skips_imported_module_body(tmp_path):
     assert "after import" in output
     assert [snap.namespace for snap in debugger.snapshots] == ["main", "main"]
     assert _lines(debugger.snapshots) == [2, 3]
+
+
+def test_async_breakpoint_captures_spawned_scope():
+    """Confirm debugger snapshots capture async task locals at breakpoints."""
+    program = textwrap.dedent(
+        """\
+        async fn compute(x) {
+            def doubled = x + x;
+            return doubled;
+        }
+
+        def handle = spawn compute(5);
+        def result = await handle;
+        print(result);
+        """
+    )
+
+    debugger = Debugger()
+    debugger.set_breakpoints(None, {3})
+
+    runtime = Runtime(program)
+    runtime.debugger = debugger
+
+    output = compile_and_run(program, runtime=runtime)
+
+    assert output.strip() == "10"
+    assert _lines(debugger.snapshots) == [3]
+
+    scope = debugger.snapshots[0].scopes[0]
+    assert scope.values["x"] == 5
+    assert scope.values["doubled"] == 10

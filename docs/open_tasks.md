@@ -72,8 +72,10 @@ and testable so they can be promoted into the formal backlog as needed.
   integration (single command to enforce).
   - Notes: `tools/format_lint_baseline.py` provides a unified formatter + lint
     runner with `--check`/`--apply` modes for CI and editor tasks.
-- [ ] Improve debugger parity (breakpoints, variable inspection, async tasks)
+- [x] Improve debugger parity (breakpoints, variable inspection, async tasks)
   with a canonical test suite.
+  - Notes: added async breakpoint scope coverage to the debugger hook tests in
+    `tests/detailtests/test_debugger_hooks.py` to validate spawned-task locals.
 
 ### Distribution + releases
 - [ ] Produce signed, reproducible release artifacts for all supported OSes

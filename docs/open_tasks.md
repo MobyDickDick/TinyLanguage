@@ -85,7 +85,10 @@ and testable so they can be promoted into the formal backlog as needed.
   - Notes: added `docs/release_minor_upgrade_guides.md`, a migration recipe
     registry (`docs/release_minor_migration_recipes.json`), and the automation
     entry point `tools/release/prepare_minor_upgrade.py`.
-- [ ] Establish a release-candidate checklist that is run in CI.
+- [x] Establish a release-candidate checklist that is run in CI.
+  - Notes: added `docs/release_candidate_checklist.md`, a CI gate script in
+    `tools/release/check_release_candidate_checklist.py`, and wired it into
+    `.github/workflows/ci.yml`.
 
 ### Performance + reliability
 - [ ] Lock in performance budgets per backend and enforce regression alerts in

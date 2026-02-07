@@ -12,7 +12,7 @@ fn load(path) -> any {
   return JSON.parse(File.read(path));
 }
 
-fn dump(path, value) -> string {
+fn dump(path, value) -> bool {
   return File.write(path, JSON.stringify(value));
 }
 

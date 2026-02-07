@@ -1,7 +1,7 @@
 module: stdlib.toml
 
 exports:
-  fn dump(path: any, value: any) -> string
+  fn dump(path: any, value: any) -> bool
   fn dumps(value: any) -> string
   fn load(path: any) -> any
   fn loads(text: any) -> any

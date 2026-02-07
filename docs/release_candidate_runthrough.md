@@ -9,7 +9,7 @@
 
 ## Doc + demo run-through record
 
-**Run date:** 2026-01-23
+**Run date:** 2026-02-07
 
 ### Documentation review
 - README quickstart verified against the current CLI usage.

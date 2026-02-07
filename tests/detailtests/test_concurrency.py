@@ -231,3 +231,65 @@ def test_join_status_reports_spawn_errors(run_tiny_source):
         "  at boom (line 2, col 9)\n"
         "result_null true\n"
     )
+
+
+def test_spawn_join_stress_sums_expected_total(run_tiny_source):
+    """Stress spawn/join ordering with many concurrent tasks."""
+    out = run_tiny_source(
+        """
+        fn work(value) {
+            def i = 0;
+            while (i < 2000) { i = i + 1; }
+            return value;
+        }
+
+        def count = 25;
+        def handles = new(count);
+        def idx = 0;
+        while (idx < count) {
+            def handle = spawn work(idx);
+            def ignored = heap_set(handles, idx, handle);
+            idx = idx + 1;
+        }
+
+        def total = 0;
+        idx = 0;
+        while (idx < count) {
+            def handle = heap_get(handles, idx);
+            total = total + join(handle);
+            idx = idx + 1;
+        }
+
+        print("total", total);
+        def _unused = delete(handles);
+        """,
+    )
+
+    assert out == "total 300\n"
+
+
+def test_memory_pressure_allocations_release_cleanly(run_tiny_source):
+    """Stress repeated heap allocations and deletes under load."""
+    out = run_tiny_source(
+        """
+        def blocks = 40;
+        def block_size = 30;
+        def total = 0;
+        def idx = 0;
+        while (idx < blocks) {
+            def block = new(block_size);
+            def j = 0;
+            while (j < block_size) {
+                def ignored = heap_set(block, j, idx + j);
+                j = j + 1;
+            }
+            total = total + heap_get(block, 0) + heap_get(block, block_size - 1);
+            def ignored2 = delete(block);
+            idx = idx + 1;
+        }
+
+        print("total", total);
+        """,
+    )
+
+    assert out == "total 2720\n"

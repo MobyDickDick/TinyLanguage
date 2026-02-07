@@ -95,7 +95,10 @@ and testable so they can be promoted into the formal backlog as needed.
   CI with baseline snapshots.
   - Notes: baseline snapshot tracked in `benchmarks/performance_baselines.json`
     and enforced in CI via `tools/performance/check_performance_budgets.py`.
-- [ ] Expand fuzzing coverage (lexer/parser/runtime) and require nightly runs.
+- [x] Expand fuzzing coverage (lexer/parser/runtime) and require nightly runs.
+  - Notes: added lexer/parser fuzz coverage in
+    `tests/detailtests/test_benchmark_and_fuzz.py` and scheduled nightly runs
+    via `.github/workflows/nightly-fuzz.yml`.
 - [ ] Add stress tests for concurrency primitives and memory-pressure handling.
 
 ## Expansion roadmap follow-ups

@@ -5,6 +5,7 @@ import multiprocessing
 import pathlib
 import random
 import signal
+import string
 import sys
 import time
 from contextlib import contextmanager
@@ -15,6 +16,8 @@ import pytest
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2] / "src"))
 
 from tiny_language import TinyLangError, compile_and_run
+from tiny_language_lexer import Lexer
+from tiny_language_parser import Parser
 
 
 FIBONACCI_PROGRAM = """
@@ -97,6 +100,25 @@ def _run_program_with_timeout(source: str, seconds: float) -> None:
         raise payload
 
 
+def _lex_all(source: str, max_tokens: int = 5000) -> None:
+    """Tokenize ``source`` until EOF and guard against infinite loops."""
+    lexer = Lexer(source)
+    token_count = 0
+    while True:
+        token = lexer.next_token()
+        token_count += 1
+        if token_count > max_tokens:
+            raise AssertionError("lexer did not reach EOF within token budget")
+        if token.kind == "EOF":
+            return
+
+
+def _parse_source(source: str) -> None:
+    """Parse ``source`` into statements to exercise parser error handling."""
+    parser = Parser(Lexer(source), source)
+    parser.parse()
+
+
 def test_recursive_fibonacci_benchmark(record_property) -> None:
     """Measure recursive Fibonacci performance and sanity-check output."""
     start = time.perf_counter()
@@ -107,6 +129,13 @@ def test_recursive_fibonacci_benchmark(record_property) -> None:
     assert output.strip() == "55"
     # Simple guardrail to detect major slowdowns without being flaky
     assert duration < 2.0
+
+
+def _random_source(seed: int, max_length: int = 160) -> str:
+    rng = random.Random(seed)
+    alphabet = string.ascii_letters + string.digits + string.punctuation + " \t\n"
+    length = rng.randint(0, max_length)
+    return "".join(rng.choice(alphabet) for _ in range(length))
 
 
 def _random_expression(
@@ -248,6 +277,48 @@ def test_randomized_programs_do_not_crash(record_property) -> None:
     assert not timeout_seeds, f"programs timed out for seeds: {timeout_seeds}"
     assert not runtime_error_seeds, f"unexpected runtime errors for seeds: {runtime_error_seeds}"
     assert successes > 0, "generator did not produce any runnable program"
+
+
+def test_lexer_random_inputs_do_not_crash(record_property) -> None:
+    """Fuzz lexer with random inputs and ensure only TinyLangError is raised."""
+    rng = random.Random(2025)
+    failing_seeds: List[int] = []
+    crash_seeds: List[int] = []
+
+    for _ in range(25):
+        seed = rng.getrandbits(32)
+        source = _random_source(seed)
+        try:
+            _lex_all(source)
+        except TinyLangError:
+            failing_seeds.append(seed)
+        except Exception:
+            crash_seeds.append(seed)
+
+    record_property("lexer_error_seeds", failing_seeds)
+    record_property("lexer_crash_seeds", crash_seeds)
+    assert not crash_seeds, f"unexpected lexer crashes for seeds: {crash_seeds}"
+
+
+def test_parser_random_inputs_do_not_crash(record_property) -> None:
+    """Fuzz parser with random inputs and ensure it reports TinyLangError."""
+    rng = random.Random(2026)
+    failing_seeds: List[int] = []
+    crash_seeds: List[int] = []
+
+    for _ in range(25):
+        seed = rng.getrandbits(32)
+        source = _random_source(seed)
+        try:
+            _parse_source(source)
+        except TinyLangError:
+            failing_seeds.append(seed)
+        except Exception:
+            crash_seeds.append(seed)
+
+    record_property("parser_error_seeds", failing_seeds)
+    record_property("parser_crash_seeds", crash_seeds)
+    assert not crash_seeds, f"unexpected parser crashes for seeds: {crash_seeds}"
 
 
 hypothesis_spec = importlib.util.find_spec("hypothesis")
@@ -498,5 +569,25 @@ if hypothesis_spec:  # pragma: no cover - optional
         program, expected_outputs = program_and_outputs
         actual_output = compile_and_run(program).splitlines()
         assert actual_output == expected_outputs
+
+    @pytest.mark.skipif(not hypothesis_available, reason="hypothesis not installed")
+    @settings(max_examples=25, deadline=1000)
+    @given(st.text(alphabet=list(string.printable), min_size=0, max_size=200))
+    def test_lexer_handles_random_text(text: str) -> None:
+        """Ensure lexer handles arbitrary text without crashing."""
+        try:
+            _lex_all(text)
+        except TinyLangError:
+            return
+
+    @pytest.mark.skipif(not hypothesis_available, reason="hypothesis not installed")
+    @settings(max_examples=25, deadline=1000)
+    @given(st.text(alphabet=list(string.printable), min_size=0, max_size=200))
+    def test_parser_handles_random_text(text: str) -> None:
+        """Ensure parser handles arbitrary text without crashing."""
+        try:
+            _parse_source(text)
+        except TinyLangError:
+            return
 else:  # pragma: no cover - optional
     hypothesis_available = False

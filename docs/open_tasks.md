@@ -33,7 +33,7 @@ documentation into implementation.
   `manifest_hash` does not match the current `tiny.toml`.
 - [x] Add unit coverage for `tiny pkg vendor` readme output and lockfile drift
   validation.
-- [ ] Document the package CLI workflows in `docs/package_manager_plan.md` with
+- [x] Document the package CLI workflows in `docs/package_manager_plan.md` with
   the new vendor audit output and lockfile drift behavior.
 
 ## Proposed production-readiness tasks (draft for next planning cycle)

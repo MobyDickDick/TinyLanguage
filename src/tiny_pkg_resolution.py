@@ -151,6 +151,12 @@ def _manifest_hash(manifest_text: str) -> str:
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
+def manifest_hash_for_path(manifest_path: Path) -> str:
+    """Return the canonical manifest hash used by lockfile entries."""
+    manifest_text = manifest_path.read_text(encoding="utf-8")
+    return _manifest_hash(manifest_text)
+
+
 def _hash_directory(path: Path) -> str:
     hasher = hashlib.sha256()
     for file_path in sorted(p for p in path.rglob("*") if p.is_file()):

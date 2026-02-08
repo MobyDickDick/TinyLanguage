@@ -8,19 +8,30 @@ archived in `docs/open_tasks_archive.md`.
 The active work items are tracked in the refreshed near-term backlog and the
 sections below.
 
-## Refreshed near-term backlog (published 2026-02-02)
+## Refreshed near-term backlog (published 2026-03-20)
 
-Timebox: 2026-02-02 to 2026-03-16 (6 weeks).
+Timebox: 2026-03-20 to 2026-05-01 (6 weeks).
 
-1. **Stabilize formatter + lints + LSP workflows** (Owner: Tooling) ✅
-   - Success: Documented formatter rules, lint profiles, and LSP smoke tests.
-   - Completed: See `docs/formatter_rules.md`, `docs/developer_tooling_workflows.md`,
-     and `docs/lsp_smoke_tests.md` (archived in `docs/open_tasks_archive.md`).
+1. **Refresh the roadmap with a concrete minor-release milestone** (Owner: Project Lead)
+   - Success: `docs/roadmap_next.md` includes a dated milestone section with
+     3-5 deliverables and cross-links to the corresponding backlog items.
+2. **Expand module-resolution regression coverage for package workflows** (Owner: Ecosystem)
+   - Success: Add edge-case tests for vendor cache + local override precedence,
+     plus a short note in `docs/module_resolution_algorithm.md` describing the
+     precedence order tested.
+3. **Add LSP formatting-hook acceptance coverage** (Owner: Tooling)
+   - Success: A new multi-file LSP test validates formatting hooks and documents
+     the request/response shape in `docs/language_server_workflows.md`.
+4. **Define a repeatable profiling capture workflow** (Owner: Runtime)
+   - Success: `docs/performance_budgets_and_baselines.md` describes a step-by-step
+     profiling capture flow and identifies the baseline artifacts to store.
 
 ## Near-term priorities (next 4-6 weeks)
 
-No active near-term items. Completed tasks are archived in
-`docs/open_tasks_archive.md`.
+Active items are tracked in the refreshed backlog above.
+
+**Next milestone:** 2026-05 minor release planning checkpoint (roadmap refresh
+with scoped deliverables and owners).
 
 ## Package tooling execution plan (proposed)
 

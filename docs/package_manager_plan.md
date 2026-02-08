@@ -100,6 +100,39 @@ manager validates it and enforces SemVer constraints.
   `manifest_hash` does not match the current `tiny.toml` (lockfile drift).
 - `tiny pkg publish`: validate, package, and upload to registry (token-based).
 
+#### `tiny pkg publish --dry-run` (spec)
+
+Purpose: validate and assemble a publish payload without performing any network
+operations. The command is meant to mirror the real publish flow while making
+the staged artifacts inspectable for review and CI checks.
+
+**Inputs**
+
+- `tiny.toml` (package metadata, dependencies, and registry configuration).
+- `tiny.lock` (resolved dependency versions + checksums).
+- Package source tree rooted at the project (defaults to current working
+  directory).
+- Optional flags: `--registry <url>` override; `--output-dir <path>` to direct
+  staging artifacts; `--profile <name>` to select a manifest profile.
+- Environment: `TINY_PKG_TOKEN` **must be ignored** in dry-run mode to enforce
+  the no-network guarantee.
+
+**Outputs**
+
+- Exit code `0` when validation passes and all artifacts are staged.
+- Non-zero exit when validation fails (missing metadata, invalid SemVer,
+  lockfile drift, or missing required files).
+- A human-readable summary of what would be uploaded (package name, version,
+  registry URL, artifact sizes, and checksum).
+
+**Expected artifacts (staged on disk)**
+
+- `publish/<name>-<version>.tar.gz`: source tarball matching the registry layout.
+- `publish/<name>-<version>.json`: registry metadata payload (dist URL placeholder,
+  checksum, TinyLanguage version range, publish timestamp placeholder).
+- `publish/manifest.json`: build manifest containing source file list, total
+  bytes, and the computed SHA-256 for the tarball.
+
 ### Minimal package manager UX (v0)
 
 The first release focuses on a small, teachable workflow that covers project

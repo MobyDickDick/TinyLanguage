@@ -12,7 +12,7 @@ cut, add the guide to `docs/release_minor_guides/` and update the table below.
 
 | From → To | Guide | Migration recipe | Status |
 | --- | --- | --- | --- |
-| _TBD_ | _TBD_ | _TBD_ | Pending first minor release |
+| 1.0.0 → 1.1.0 | `docs/release_minor_guides/1_0_0_to_1_1_0.md` | `docs/release_minor_migration_recipes.json` | Planned |
 
 ## Publishing workflow
 

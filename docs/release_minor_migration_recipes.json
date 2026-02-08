@@ -1,21 +1,13 @@
 {
   "schema_version": 1,
   "releases": {
-    "X.Y.Z->X.Y+1.0": {
-      "summary": "Template entry. Replace with real versions and steps.",
-      "steps": [
-        {
-          "action": "replace",
-          "path": "README.md",
-          "search": "old-flag",
-          "replace": "new-flag",
-          "count": 0,
-          "description": "Example: update a renamed CLI flag in README snippets."
-        }
-      ],
+    "1.0.0->1.1.0": {
+      "summary": "Prepare for the first minor release upgrade by documenting validation steps and placeholders for migration work.",
+      "steps": [],
       "manual_steps": [
-        "Update project configuration files not safe to edit automatically.",
-        "Verify new defaults against your CI and runtime environments."
+        "Review release notes for any API or CLI changes introduced in 1.1.0.",
+        "Run the full test suite after upgrading to confirm behavior matches 1.0.0 expectations.",
+        "Update any automation or documentation references if the release introduced renamed commands."
       ]
     }
   }

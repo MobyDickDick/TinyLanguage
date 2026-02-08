@@ -29,7 +29,7 @@ documentation into implementation.
 
 - [x] Emit a vendor summary (`vendor/README.md`) during `tiny pkg vendor` for
   auditability (manifest hash + dependency list).
-- [ ] Add lockfile drift checks that fail `tiny pkg vendor` when
+- [x] Add lockfile drift checks that fail `tiny pkg vendor` when
   `manifest_hash` does not match the current `tiny.toml`.
 - [ ] Add unit coverage for `tiny pkg vendor` readme output and lockfile drift
   validation.

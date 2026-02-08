@@ -13,7 +13,7 @@ from typing import Any, Iterable
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
-from tiny_pkg_resolution import write_lockfile
+from tiny_pkg_resolution import manifest_hash_for_path, write_lockfile
 
 if importlib.util.find_spec("tomllib"):
     tomllib = importlib.import_module("tomllib")
@@ -469,6 +469,15 @@ def _cmd_vendor(args: argparse.Namespace) -> int:
     project_root = manifest_path.parent
     lock_path = project_root / "tiny.lock"
     lock_data = _read_lockfile(lock_path)
+    manifest_hash = lock_data.get("manifest_hash")
+    if not manifest_hash:
+        raise SystemExit(f"Missing manifest hash in lockfile: {lock_path}")
+    current_hash = manifest_hash_for_path(manifest_path)
+    if manifest_hash != current_hash:
+        raise SystemExit(
+            "Lockfile manifest hash does not match tiny.toml. "
+            "Run `tiny pkg resolve` or `tiny pkg update` to refresh tiny.lock."
+        )
     entries = _lockfile_entries(lock_data)
     vendor_root = project_root / "vendor"
     vendor_root.mkdir(parents=True, exist_ok=True)

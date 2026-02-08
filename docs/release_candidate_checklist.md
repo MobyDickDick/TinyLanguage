@@ -13,4 +13,7 @@ it whenever release criteria change, and keep every CI-gated item checked.
 ## Manual follow-ups (not CI-gated)
 - [x] Confirm release notes are updated and linked in `CHANGELOG.md`.
 - [x] Verify demo commands in `docs/release_candidate_runthrough.md`.
-- [ ] Capture any new follow-up fixes with dates + commit links.
+- [x] Capture any new follow-up fixes with dates + commit links.
+
+### Follow-up fixes log
+- 2026-02-08: No follow-up fixes identified for this release candidate.

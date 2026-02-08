@@ -26,6 +26,44 @@ Timebox: 2026-03-20 to 2026-05-01 (6 weeks).
    - Success: `docs/performance_budgets_and_baselines.md` describes a step-by-step
      profiling capture flow and identifies the baseline artifacts to store.
 
+## Newly proposed backlog items (drafts)
+
+The tasks below are newly formulated and meant to be triaged into the active
+backlog once ownership and sequencing are confirmed.
+
+1. **Ship a package publish dry-run workflow** (Owner: Ecosystem)
+   - Success: `docs/package_manager_plan.md` documents a `tiny pkg publish --dry-run`
+     workflow and `tools/tiny_pkg_publish.py` supports an explicit dry-run mode that
+     emits the staged payload without network side effects.
+2. **Document debugger trace workflows for async tasks** (Owner: Tooling)
+   - Success: `docs/debugger_guide.md` adds a walkthrough for stepping through
+     async tasks, including the expected output from `tiny debug trace` when
+     multiple tasks are scheduled.
+3. **Add reproducible perf regression triage playbook** (Owner: Runtime)
+   - Success: `docs/performance_budgets_and_baselines.md` includes a playbook
+     for diffing baseline JSONs, capturing flamegraphs, and filing regression
+     tickets with the required artifacts.
+4. **Define a module deprecation workflow for stdlib moves** (Owner: Language/Stdlib)
+   - Success: `docs/versioning_deprecation_policy.md` includes a checklist for
+     stdlib moves (announce, warn, provide alias, remove) and references the
+     existing compatibility matrix.
+
+### Concrete tasks derived from the drafts
+
+- [ ] Draft a `tiny pkg publish --dry-run` CLI spec section that enumerates inputs,
+  outputs, and expected artifacts for review in `docs/package_manager_plan.md`.
+- [ ] Add a minimal dry-run execution path in `tools/tiny_pkg_publish.py` that
+  serializes the payload to disk and returns a non-zero exit code when validation
+  fails.
+- [ ] Capture an async-task debugging transcript (commands + outputs) and embed
+  it in `docs/debugger_guide.md` as a worked example.
+- [ ] Extend `docs/performance_budgets_and_baselines.md` with a checklist for
+  capturing flamegraphs, tagging baseline snapshots, and filing regressions with
+  links to artifacts.
+- [ ] Add a stdlib deprecation checklist entry to
+  `docs/versioning_deprecation_policy.md`, including the expected warning
+  timeline and aliasing strategy.
+
 ## Near-term priorities (next 4-6 weeks)
 
 Active items are tracked in the refreshed backlog above.

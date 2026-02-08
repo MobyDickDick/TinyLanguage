@@ -22,6 +22,20 @@ Timebox: 2026-02-02 to 2026-03-16 (6 weeks).
 No active near-term items. Completed tasks are archived in
 `docs/open_tasks_archive.md`.
 
+## Package tooling execution plan (proposed)
+
+Concrete next steps derived from the package/module roadmap to move from
+documentation into implementation.
+
+- [x] Emit a vendor summary (`vendor/README.md`) during `tiny pkg vendor` for
+  auditability (manifest hash + dependency list).
+- [ ] Add lockfile drift checks that fail `tiny pkg vendor` when
+  `manifest_hash` does not match the current `tiny.toml`.
+- [ ] Add unit coverage for `tiny pkg vendor` readme output and lockfile drift
+  validation.
+- [ ] Document the package CLI workflows in `docs/package_manager_plan.md` with
+  the new vendor audit output and lockfile drift behavior.
+
 ## Proposed production-readiness tasks (draft for next planning cycle)
 
 These are suggested tasks to move TinyLanguage from a capable prototype toward

@@ -95,7 +95,8 @@ manager validates it and enforces SemVer constraints.
 - `tiny pkg remove <name>`: drop dependency from the manifest and update
   `tiny.lock` after re-resolving.
 - `tiny pkg update [<name>]`: refresh locked versions within constraints.
-- `tiny pkg vendor`: download sources to `vendor/` and rewrite lockfile sources.
+- `tiny pkg vendor`: download sources to `vendor/`, emit `vendor/README.md` for
+  auditing, and rewrite lockfile sources.
 - `tiny pkg publish`: validate, package, and upload to registry (token-based).
 
 ### Minimal package manager UX (v0)

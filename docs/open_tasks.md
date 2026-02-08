@@ -31,7 +31,7 @@ documentation into implementation.
   auditability (manifest hash + dependency list).
 - [x] Add lockfile drift checks that fail `tiny pkg vendor` when
   `manifest_hash` does not match the current `tiny.toml`.
-- [ ] Add unit coverage for `tiny pkg vendor` readme output and lockfile drift
+- [x] Add unit coverage for `tiny pkg vendor` readme output and lockfile drift
   validation.
 - [ ] Document the package CLI workflows in `docs/package_manager_plan.md` with
   the new vendor audit output and lockfile drift behavior.

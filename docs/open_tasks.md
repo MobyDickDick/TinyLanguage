@@ -55,7 +55,7 @@ backlog once ownership and sequencing are confirmed.
 - [x] Add a minimal dry-run execution path in `tools/tiny_pkg_publish.py` that
   serializes the payload to disk and returns a non-zero exit code when validation
   fails.
-- [ ] Capture an async-task debugging transcript (commands + outputs) and embed
+- [x] Capture an async-task debugging transcript (commands + outputs) and embed
   it in `docs/debugger_guide.md` as a worked example.
 - [ ] Extend `docs/performance_budgets_and_baselines.md` with a checklist for
   capturing flamegraphs, tagging baseline snapshots, and filing regressions with

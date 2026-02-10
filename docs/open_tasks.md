@@ -52,6 +52,11 @@ backlog once ownership and sequencing are confirmed.
      strategy where TinyLanguage can compile TinyLanguage without a Python
      runtime dependency, using a minimal platform-specific seed executable per
      target OS as the initial trust anchor.
+6. **Define an executable optimization plan for native builds** (Owner: Runtime/Compiler)
+   - Success: `docs/native_compiler.md` and `docs/runtime_performance_goals.md`
+     include a prioritized optimization backlog for generated executables
+     (LLVM pass tuning, opt-level defaults, profile-guided workflow) plus
+     benchmark-based acceptance criteria.
 
 ### Concrete tasks derived from the drafts
 
@@ -72,6 +77,10 @@ backlog once ownership and sequencing are confirmed.
   `docs/self_hosting_port_plan.md` that defines seed executable requirements
   (Windows/macOS/Linux), reproducible bootstrap steps, and parity validation
   gates between Python-hosted and Tiny-hosted compilation outputs.
+- [ ] Add an executable-optimization milestone to `docs/native_compiler.md`
+  that defines default `--llvm-opt-level` / `--opt-level` profiles, optional
+  profile-guided optimization capture steps, and required benchmark deltas
+  before changing release defaults.
 
 ## Near-term priorities (next 4-6 weeks)
 

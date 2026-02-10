@@ -52,7 +52,7 @@ backlog once ownership and sequencing are confirmed.
 
 - [x] Draft a `tiny pkg publish --dry-run` CLI spec section that enumerates inputs,
   outputs, and expected artifacts for review in `docs/package_manager_plan.md`.
-- [ ] Add a minimal dry-run execution path in `tools/tiny_pkg_publish.py` that
+- [x] Add a minimal dry-run execution path in `tools/tiny_pkg_publish.py` that
   serializes the payload to disk and returns a non-zero exit code when validation
   fails.
 - [ ] Capture an async-task debugging transcript (commands + outputs) and embed

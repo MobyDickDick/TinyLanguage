@@ -47,6 +47,11 @@ backlog once ownership and sequencing are confirmed.
    - Success: `docs/versioning_deprecation_policy.md` includes a checklist for
      stdlib moves (announce, warn, provide alias, remove) and references the
      existing compatibility matrix.
+5. **Define a Python-independent self-hosting compiler bootstrap path** (Owner: Compiler/Runtime)
+   - Success: `docs/self_hosting_port_plan.md` documents a staged bootstrap
+     strategy where TinyLanguage can compile TinyLanguage without a Python
+     runtime dependency, using a minimal platform-specific seed executable per
+     target OS as the initial trust anchor.
 
 ### Concrete tasks derived from the drafts
 
@@ -63,6 +68,10 @@ backlog once ownership and sequencing are confirmed.
 - [ ] Add a stdlib deprecation checklist entry to
   `docs/versioning_deprecation_policy.md`, including the expected warning
   timeline and aliasing strategy.
+- [ ] Add a self-hosting compiler bootstrap milestone to
+  `docs/self_hosting_port_plan.md` that defines seed executable requirements
+  (Windows/macOS/Linux), reproducible bootstrap steps, and parity validation
+  gates between Python-hosted and Tiny-hosted compilation outputs.
 
 ## Near-term priorities (next 4-6 weeks)
 

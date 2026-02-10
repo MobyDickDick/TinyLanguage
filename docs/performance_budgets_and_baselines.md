@@ -50,6 +50,77 @@ Notes:
 3. If a backend fails on a benchmark (missing opcode or lint rule), note the
    failure and open a follow-up task to restore parity.
 
+### Repeatable profiling capture workflow
+
+Use this flow whenever you refresh `benchmarks/performance_baselines.json` or
+investigate a regression report so captured artifacts are comparable.
+
+1. **Create an artifact folder** under a dated path:
+
+   ```bash
+   mkdir -p artifacts/perf/$(date +%Y-%m-%d)/raw
+   ```
+
+2. **Capture a baseline benchmark JSON** with fixed run parameters:
+
+   ```bash
+   python benchmarks/microbenchmarks.py \
+     --backend interpreter native native_py \
+     --repeat 5 \
+     --warmup 2 \
+     --json-out artifacts/perf/$(date +%Y-%m-%d)/raw/microbenchmarks.json
+   ```
+
+3. **Snapshot host/tool metadata** into a sidecar file for reproducibility:
+
+   ```bash
+   python -V > artifacts/perf/$(date +%Y-%m-%d)/raw/environment.txt
+   uname -a >> artifacts/perf/$(date +%Y-%m-%d)/raw/environment.txt
+   git rev-parse HEAD >> artifacts/perf/$(date +%Y-%m-%d)/raw/environment.txt
+   ```
+
+4. **Capture flamegraphs for any benchmark that regresses >=10%** relative to
+   the current baseline (or all benchmarks during a major refresh).
+   - Linux (`perf`): record + fold + render SVG flamegraph.
+   - Cross-platform fallback (`py-spy`):
+
+     ```bash
+     py-spy record \
+       --output artifacts/perf/$(date +%Y-%m-%d)/raw/tight_loop_native.svg \
+       -- python benchmarks/microbenchmarks.py --backend native --case tight_loop --repeat 1 --warmup 0
+     ```
+
+5. **Copy/update the canonical baseline snapshot** and keep the raw capture for
+   auditability:
+
+   ```bash
+   cp artifacts/perf/$(date +%Y-%m-%d)/raw/microbenchmarks.json benchmarks/performance_baselines.json
+   ```
+
+6. **Tag the snapshot in version control** after merge so future triage can
+   diff against a stable reference:
+   - Tag format: `perf-baseline-YYYY-MM-DD`.
+   - Include date, commit SHA, and benchmark command in the tag annotation.
+
+### Perf regression triage checklist
+
+When CI or local checks report a regression, complete this checklist before
+closing the incident:
+
+- [ ] Re-run the budget check locally and save stdout/stderr logs.
+- [ ] Diff current vs baseline JSON (`benchmarks/performance_baselines.json`) and
+      list all cases above the 15% threshold.
+- [ ] Capture at least one flamegraph per regressed benchmark/backend pair.
+- [ ] Confirm whether the regression reproduces on a clean checkout.
+- [ ] File a regression ticket with links to required artifacts:
+      - benchmark JSON diff
+      - raw benchmark output log
+      - flamegraph SVG(s)
+      - environment metadata (`python -V`, OS/kernel, commit SHA)
+      - suspected culprit commit (if identified)
+- [ ] Add the ticket link to the next baseline update PR and note whether the
+      baseline should be held or intentionally rebaselined.
+
 ## CI enforcement
 
 CI runs the microbenchmarks against the baseline snapshot stored in

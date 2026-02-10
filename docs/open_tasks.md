@@ -57,7 +57,7 @@ backlog once ownership and sequencing are confirmed.
   fails.
 - [x] Capture an async-task debugging transcript (commands + outputs) and embed
   it in `docs/debugger_guide.md` as a worked example.
-- [ ] Extend `docs/performance_budgets_and_baselines.md` with a checklist for
+- [x] Extend `docs/performance_budgets_and_baselines.md` with a checklist for
   capturing flamegraphs, tagging baseline snapshots, and filing regressions with
   links to artifacts.
 - [ ] Add a stdlib deprecation checklist entry to

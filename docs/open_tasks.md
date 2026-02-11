@@ -73,10 +73,13 @@ backlog once ownership and sequencing are confirmed.
 - [x] Add a stdlib deprecation checklist entry to
   `docs/versioning_deprecation_policy.md`, including the expected warning
   timeline and aliasing strategy.
-- [ ] Add a self-hosting compiler bootstrap milestone to
+- [x] Add a self-hosting compiler bootstrap milestone to
   `docs/self_hosting_port_plan.md` that defines seed executable requirements
   (Windows/macOS/Linux), reproducible bootstrap steps, and parity validation
   gates between Python-hosted and Tiny-hosted compilation outputs.
+  - Notes: added a dedicated milestone section with per-OS seed trust-anchor
+    requirements, staged reproducible bootstrap flow, explicit parity gates,
+    and milestone exit criteria in `docs/self_hosting_port_plan.md`.
 - [ ] Add an executable-optimization milestone to `docs/native_compiler.md`
   that defines default `--llvm-opt-level` / `--opt-level` profiles, optional
   profile-guided optimization capture steps, and required benchmark deltas

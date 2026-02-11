@@ -26,6 +26,14 @@ Timebox: 2026-03-20 to 2026-05-01 (6 weeks).
    - Success: `docs/performance_budgets_and_baselines.md` describes a step-by-step
      profiling capture flow and identifies the baseline artifacts to store.
 
+### Concrete tasks derived from refreshed backlog
+
+- [x] Add a dated 2026-05 planning milestone section to `docs/roadmap_next.md`
+  with 3-5 deliverables and cross-links to refreshed backlog items.
+  - Notes: added the "2026-05 minor-release planning checkpoint" section with
+    four deliverables, explicit backlog references, and milestone exit criteria
+    in `docs/roadmap_next.md`.
+
 ## Newly proposed backlog items (drafts)
 
 The tasks below are newly formulated and meant to be triaged into the active

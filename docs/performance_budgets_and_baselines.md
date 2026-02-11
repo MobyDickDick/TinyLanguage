@@ -107,7 +107,7 @@ investigate a regression report so captured artifacts are comparable.
 When CI or local checks report a regression, complete this checklist before
 closing the incident:
 
-- [ ] Re-run the budget check locally and save stdout/stderr logs.
+- [x] Re-run the budget check locally and save stdout/stderr logs. (2026-02-11: `python tools/performance/check_performance_budgets.py` logs saved to `artifacts/perf/2026-02-11/logs/budget_check.stdout.log` and `artifacts/perf/2026-02-11/logs/budget_check.stderr.log`; run reported `heap_roundtrip` native ratio regression.)
 - [ ] Diff current vs baseline JSON (`benchmarks/performance_baselines.json`) and
       list all cases above the 15% threshold.
 - [ ] Capture at least one flamegraph per regressed benchmark/backend pair.

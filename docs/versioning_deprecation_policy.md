@@ -62,6 +62,44 @@ Deprecations must be explicit, documented, and time-bound.
    - Migration notes must be included in the release guide, with examples of the
      required changes.
 
+## Stdlib module move / rename checklist
+
+When a standard-library module path changes (for example, a merge, split, or
+namespace rename), maintainers must complete the checklist below so users have
+a predictable upgrade path.
+
+1. **Announce the move in a minor release (`N`)**
+   - Add a dedicated changelog item that states:
+     - old import path,
+     - new import path,
+     - first release that emits warnings,
+     - planned major release for removal.
+   - Update `docs/stdlib_compatibility.md` and the compatibility matrix to show
+     the module is in a deprecation window.
+2. **Provide an aliasing compatibility layer during `N` and `N+1`**
+   - Keep the old import path as a runtime alias/wrapper to the new module for
+     at least one full minor release after announcement.
+   - Ensure docs and examples prefer the new import path, while still showing
+     that the old path remains temporarily supported.
+3. **Emit deprecation warnings on old-path imports during `N` and `N+1`**
+   - Warning text should include:
+     - old and new import paths,
+     - target major release where old path is removed,
+     - link to migration notes.
+   - Warnings should be visible in CLI/test workflows and suppressible only via
+     the standard project-wide warning controls.
+4. **Remove old path in the next major release (`N+2` major boundary)**
+   - Delete aliasing code and mark the old module path as removed.
+   - Provide final migration examples in the major-release upgrade guide.
+
+### Recommended warning timeline for stdlib moves
+
+- **Minor `N`**: Announce + alias + warnings enabled by default.
+- **Minor `N+1`**: Continue alias + warnings; do not introduce new features on
+  the old path.
+- **Major `N+2`**: Remove alias and old path, keep migration references in
+  release notes.
+
 ### Minimum guarantees
 
 - Deprecations remain available for **at least one minor release** after first

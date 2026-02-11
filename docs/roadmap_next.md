@@ -9,6 +9,42 @@ phases below build on each other but can progress in parallel where practical.
 To make the roadmap actionable, the work is grouped by the major program areas
 tracked in `docs/open_tasks.md`.
 
+## 2026-05 minor-release planning checkpoint (dated milestone)
+
+**Milestone date:** 2026-05-01
+**Purpose:** Convert the near-term backlog into a release-scoped checkpoint with
+clear deliverables and ownership handoff.
+
+### Deliverables (3-5) linked to active backlog items
+
+1. **Roadmap milestone publication with scoped owners and exits**
+   - Publish this dated milestone section and keep it aligned with active
+     backlog ownership and acceptance wording.
+   - Backlog reference: `docs/open_tasks.md` refreshed backlog item 1
+     (roadmap refresh).
+2. **Module-resolution precedence coverage closure**
+   - Add/verify regression tests for vendor-cache and local-override precedence,
+     and ensure documentation reflects the tested order.
+   - Backlog reference: `docs/open_tasks.md` refreshed backlog item 2
+     (module-resolution coverage).
+3. **LSP formatting-hook acceptance coverage**
+   - Land a multi-file acceptance test for formatting hooks and document the
+     request/response contract used by the CLI/LSP workflow.
+   - Backlog reference: `docs/open_tasks.md` refreshed backlog item 3
+     (LSP formatting hooks).
+4. **Repeatable profiling-capture workflow baseline**
+   - Document a stepwise profiling capture flow and define baseline artifacts to
+     keep with performance snapshots for future regression triage.
+   - Backlog reference: `docs/open_tasks.md` refreshed backlog item 4
+     (profiling workflow).
+
+### Milestone exit criteria
+
+- All four linked backlog items have merged implementation/docs updates and
+  explicit validation evidence.
+- Any remaining gaps are converted into dated follow-up tasks in
+  `docs/open_tasks.md` with named owners.
+
 ### Language core
 
 - Finalize evaluation-order, scoping, error-handling, and concurrency rules in

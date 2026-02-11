@@ -70,7 +70,7 @@ backlog once ownership and sequencing are confirmed.
 - [x] Extend `docs/performance_budgets_and_baselines.md` with a checklist for
   capturing flamegraphs, tagging baseline snapshots, and filing regressions with
   links to artifacts.
-- [ ] Add a stdlib deprecation checklist entry to
+- [x] Add a stdlib deprecation checklist entry to
   `docs/versioning_deprecation_policy.md`, including the expected warning
   timeline and aliasing strategy.
 - [ ] Add a self-hosting compiler bootstrap milestone to

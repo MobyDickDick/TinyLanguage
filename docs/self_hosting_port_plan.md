@@ -37,6 +37,84 @@ The repository splits the interpreter and tooling into a handful of focused modu
 - Native backend smoke tests: reuse `run_all.py` scenarios to compare interpreter vs. native execution paths.
 - Language server: record sample `initialize`, `textDocument/hover`, and `textDocument/completion` exchanges using both hosts.
 
+## Bootstrap milestone: Python-independent self-hosting compiler
+
+This milestone defines how TinyLanguage reaches a **Python-independent bootstrap**
+path while preserving deterministic outputs across hosts. The milestone is split
+into platform seed requirements, reproducible bootstrap stages, and parity
+validation gates that must pass before release promotion.
+
+### Seed executable requirements (trust anchor per OS)
+
+Each supported OS starts from a minimal, signed seed executable named
+`tiny-seed` that can compile the self-hosting compiler core from source.
+
+| OS | Required seed artifact | Mandatory capabilities | Packaging + trust requirements |
+| --- | --- | --- | --- |
+| Windows (x86_64) | `tiny-seed-windows-x86_64.exe` | Parse + type-check + emit native object files for the compiler core; deterministic file ordering; stable diagnostics. | Authenticode signature, SHA-256 checksum in release manifest, reproducible build attestation. |
+| macOS (arm64 + x86_64) | `tiny-seed-macos-universal2` | Same compiler-core subset as Windows plus deterministic universal-binary linking pipeline. | Notarized + codesigned artifact, SHA-256 checksum, reproducibility metadata (builder image + toolchain hash). |
+| Linux (x86_64 + arm64) | `tiny-seed-linux-<arch>` | Same compiler-core subset plus deterministic archive/link behavior under glibc baseline. | Detached signature (`.sig`), SHA-256 checksum, containerized reproducible build recipe reference. |
+
+Seed executables are intentionally minimal and only include the language/runtime
+surface needed to build the first Tiny-hosted compiler binary.
+
+### Reproducible bootstrap steps
+
+1. **Pin inputs**
+   - Check out a tagged source revision.
+   - Resolve the pinned toolchain set (`VERSION`, lockfiles, and release metadata).
+2. **Stage A — Python-hosted reference build**
+   - Build compiler artifact `compiler_py_host` via the existing Python-hosted path.
+   - Record provenance: commit SHA, platform, toolchain digest, and output hash.
+3. **Stage B — seed build**
+   - Use `tiny-seed` for the platform to compile the Tiny compiler sources into
+     `compiler_seed_host`.
+   - Persist full build logs and normalized command transcript under `var/bootstrap/`.
+4. **Stage C — Tiny self-rebuild**
+   - Run `compiler_seed_host` to rebuild the same compiler sources, producing
+     `compiler_tiny_host`.
+   - Re-run once more (`compiler_tiny_host` rebuilding itself) to produce
+     `compiler_tiny_host_round2`.
+5. **Stage D — reproducibility check**
+   - Compare normalized hashes of `compiler_tiny_host` and
+     `compiler_tiny_host_round2`; they must match bit-for-bit after permitted
+     metadata normalization (timestamp/path stripping).
+6. **Publish bootstrap bundle**
+   - Store seed artifact metadata, all stage hashes, parity report, and logs as
+     release artifacts for the milestone checkpoint.
+
+### Parity validation gates (Python-hosted vs Tiny-hosted)
+
+Promotion is blocked unless all gates below pass on each supported OS:
+
+1. **Compiler output parity gate**
+   - Build a fixed corpus with `compiler_py_host` and `compiler_tiny_host`.
+   - Produced IR/native outputs must be byte-identical after canonical
+     normalization rules.
+2. **Diagnostics parity gate**
+   - Error codes and primary diagnostic spans must match across both hosts for
+     the regression corpus (parser, type, runtime, module-resolution failures).
+3. **Behavior parity gate**
+   - Execute the conformance/parity suites against artifacts produced by both
+     hosts; pass/fail sets must be identical.
+4. **Bootstrap stability gate**
+   - Self-rebuild round-trip hash equality (`round1 == round2`) is required per OS.
+5. **Performance guardrail gate**
+   - Tiny-hosted compiler build/runtime performance must remain within agreed
+     tolerance against Python-hosted baselines (documented in
+     `docs/performance_budgets_and_baselines.md`).
+
+### Milestone exit criteria
+
+The self-hosting bootstrap milestone is complete when:
+
+- Seed executables for Windows/macOS/Linux are published with signatures and
+  checksums.
+- The reproducible bootstrap flow above is automated and archived for at least
+  one tagged release candidate per OS.
+- All parity validation gates pass for that release candidate with no open
+  blocker-level deviations.
+
 ## Next tasks
 
 - **AST + runtime parity:** ✅ Completed alignment for `src_tiny/tiny_language_ast.tiny`, `src_tiny/tiny_language_runtime.tiny`, and `src_tiny/tiny_language_eval.tiny` with their Python counterparts, keeping built-in behaviors and error messages delegated to the Python runtime for parity.

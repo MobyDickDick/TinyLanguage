@@ -194,6 +194,70 @@ PYTHONPATH=src python benchmarks/microbenchmarks.py
 - Keep the benchmark output snippet in the PR body or commit message for
   traceability.
 
+## Executable optimization milestone (minor-release gate)
+
+This milestone defines when it is safe to change native-build optimization
+defaults in release branches. The scope covers both TinyLanguage LLVM lowering
+(`--llvm-opt-level`) and system-compiler flags (`--opt-level`).
+
+### Default optimization profiles (current policy)
+
+- **Development profile (`dev`)**
+  - `--llvm-opt-level 0`
+  - `--opt-level 0`
+  - Goal: fastest compile/debug loop, easiest IR inspection.
+- **Release profile (`release`)**
+  - `--llvm-opt-level 2`
+  - `--opt-level 2`
+  - Goal: balanced runtime speedup without aggressive compile-time cost.
+- **Experimental profile (`max`)**
+  - `--llvm-opt-level 3`
+  - `--opt-level 3`
+  - Goal: opt-in experiments only; never the default until benchmark gates pass.
+
+Any proposal to change the release defaults must include benchmark evidence
+from this document's checklist and pass the acceptance gates below.
+
+### Optional profile-guided optimization (PGO) workflow
+
+PGO remains optional and should be used only when investigating regressions or
+validating a candidate default change.
+
+1. Build an instrumented executable with clang profiling enabled (e.g.
+   `-fprofile-instr-generate -fcoverage-mapping`) while keeping TinyLanguage
+   opt levels explicit.
+2. Run representative benchmark workloads (at minimum
+   `benchmarks/microbenchmarks.tiny` and one real-world Tiny program) to
+   generate profile data (`*.profraw`).
+3. Merge profiles (`llvm-profdata merge`) into a single `*.profdata` file.
+4. Rebuild with `-fprofile-instr-use=<profile.profdata>` and the candidate
+   optimization levels.
+5. Re-run compile/runtime measurements and compare against both non-PGO
+   baseline and current release defaults.
+
+If the local LLVM toolchain does not provide profiling tools, document the
+missing binaries and continue with non-PGO benchmark evidence.
+
+### Required benchmark deltas before changing release defaults
+
+Changing default `--llvm-opt-level` or `--opt-level` requires all gates below:
+
+1. **Runtime improvement gate**
+   - Median runtime improvement of at least **8%** across the microbenchmark
+     suite, with no benchmark regressing by more than **3%**.
+2. **Compile-time budget gate**
+   - End-to-end compile time for `--emit-exe` may not regress by more than
+     **12%** versus the current release default profile.
+3. **Stability gate**
+   - No new test failures in native backend/LLVM suites (`test_native_codegen`,
+     `test_llvm_codegen`, and smoke checks).
+4. **Reproducibility gate**
+   - Results reproduced on at least one clean checkout rerun with the same tool
+     versions, with command transcripts attached to the PR.
+
+If any gate fails, keep the proposed levels behind explicit opt-in flags and do
+not update release defaults.
+
 ## Current CLI workflow and VM boundaries
 
 - **Plan for A/B comparisons**: Every run with `--native-backend` should be repeated once without the flag to surface divergences from the interpreter immediately.

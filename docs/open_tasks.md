@@ -80,10 +80,13 @@ backlog once ownership and sequencing are confirmed.
   - Notes: added a dedicated milestone section with per-OS seed trust-anchor
     requirements, staged reproducible bootstrap flow, explicit parity gates,
     and milestone exit criteria in `docs/self_hosting_port_plan.md`.
-- [ ] Add an executable-optimization milestone to `docs/native_compiler.md`
+- [x] Add an executable-optimization milestone to `docs/native_compiler.md`
   that defines default `--llvm-opt-level` / `--opt-level` profiles, optional
   profile-guided optimization capture steps, and required benchmark deltas
   before changing release defaults.
+  - Notes: added a dedicated milestone section in `docs/native_compiler.md`
+    with profile defaults (`dev`/`release`/`max`), an optional PGO workflow,
+    and explicit benchmark/stability/reproducibility gates for default changes.
 
 ## Near-term priorities (next 4-6 weeks)
 

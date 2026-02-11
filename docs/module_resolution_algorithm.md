@@ -101,6 +101,8 @@ Edge-case coverage is maintained in `tests/detailtests/test_module_resolution_al
 - Relative import traversal errors.
 - Deterministic candidate ordering for stdlib modules.
 - Lockfile + vendor-derived resolution for `pkg.*` imports.
+- Precedence checks for package workflows: local path overrides first,
+  then vendored registry roots, then vendored git roots.
 
 ## Notes for backend integrations
 

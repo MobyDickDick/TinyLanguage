@@ -92,7 +92,7 @@ def _package_roots_for(
     lock_path = project_root / "tiny.lock"
     entries = _lockfile_entries(lock_path)
     vendor_root = project_root / "vendor"
-    roots: list[Path] = []
+    prioritized_roots: dict[int, list[Path]] = {0: [], 1: [], 2: []}
     for entry in entries:
         if entry.get("name") != package_name:
             continue
@@ -102,18 +102,21 @@ def _package_roots_for(
             if vendor_root.is_dir():
                 candidate = vendor_root / "local" / package_name / version
                 if candidate.exists():
-                    roots.append(candidate)
+                    prioritized_roots[0].append(candidate)
                     continue
             path_value = entry.get("path")
             if path_value:
-                roots.append((project_root / str(path_value)).resolve())
+                prioritized_roots[0].append((project_root / str(path_value)).resolve())
         elif source == "registry":
             if vendor_root.is_dir():
                 host = _registry_host(entry.get("registry"))
-                roots.append(vendor_root / host / package_name / version)
+                prioritized_roots[1].append(vendor_root / host / package_name / version)
         elif source == "git":
             if vendor_root.is_dir():
-                roots.append(vendor_root / "git" / package_name / version)
+                prioritized_roots[2].append(vendor_root / "git" / package_name / version)
+    roots: list[Path] = []
+    for priority in (0, 1, 2):
+        roots.extend(prioritized_roots[priority])
     return roots
 
 

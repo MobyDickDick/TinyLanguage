@@ -34,6 +34,14 @@ Timebox: 2026-03-20 to 2026-05-01 (6 weeks).
     four deliverables, explicit backlog references, and milestone exit criteria
     in `docs/roadmap_next.md`.
 
+- [x] Expand module-resolution regression coverage for package workflows,
+  including local override + vendor precedence edge cases, and document the
+  tested precedence order in `docs/module_resolution_algorithm.md`.
+  - Notes: added package precedence tests in
+    `tests/detailtests/test_module_resolution_algorithm.py` and documented
+    local-override → registry-vendor → git-vendor ordering in
+    `docs/module_resolution_algorithm.md`.
+
 ## Newly proposed backlog items (drafts)
 
 The tasks below are newly formulated and meant to be triaged into the active

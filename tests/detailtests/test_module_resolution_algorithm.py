@@ -85,3 +85,97 @@ checksum = "deadbeef"
         vendor_root / "client.tiny",
         vendor_root / "client" / "__init__.tiny",
     ]
+
+
+def test_pkg_resolution_prefers_local_override_before_registry_vendor(tmp_path):
+    """Path-based overrides resolve before registry-backed vendor entries."""
+
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    lockfile = project_root / "tiny.lock"
+    lockfile.write_text(
+        """
+lockfile_version = 1
+
+[[dependencies]]
+name = "widgets"
+version = "2.0.0"
+source = "registry"
+registry = "https://registry.example.com"
+checksum = "cafebabe"
+
+[[dependencies]]
+name = "widgets"
+version = "2.0.0"
+source = "path"
+path = "overrides/widgets"
+checksum = "local"
+""".lstrip(),
+        encoding="utf-8",
+    )
+
+    (project_root / "overrides" / "widgets").mkdir(parents=True)
+    (project_root / "vendor" / "registry.example.com" / "widgets" / "2.0.0" / "src").mkdir(parents=True)
+
+    config = ModuleResolutionConfig(
+        search_paths=[project_root],
+        stdlib_root=tmp_path / "stdlib",
+        project_root=project_root,
+    )
+
+    candidates = candidate_module_paths("pkg.widgets.client", caller_path=None, config=config)
+
+    override_root = (project_root / "overrides" / "widgets").resolve()
+    assert candidates[:4] == [
+        override_root / "src" / "client.tiny",
+        override_root / "src" / "client" / "__init__.tiny",
+        override_root / "client.tiny",
+        override_root / "client" / "__init__.tiny",
+    ]
+
+
+def test_pkg_resolution_prefers_vendor_local_before_registry_vendor(tmp_path):
+    """Vendored local overrides resolve before vendored registry entries."""
+
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    lockfile = project_root / "tiny.lock"
+    lockfile.write_text(
+        """
+lockfile_version = 1
+
+[[dependencies]]
+name = "widgets"
+version = "3.1.0"
+source = "registry"
+registry = "https://registry.example.com"
+checksum = "feedface"
+
+[[dependencies]]
+name = "widgets"
+version = "3.1.0"
+source = "path"
+path = "overrides/widgets"
+checksum = "local"
+""".lstrip(),
+        encoding="utf-8",
+    )
+
+    vendor_local = project_root / "vendor" / "local" / "widgets" / "3.1.0"
+    (vendor_local / "src").mkdir(parents=True)
+    (project_root / "vendor" / "registry.example.com" / "widgets" / "3.1.0" / "src").mkdir(parents=True)
+
+    config = ModuleResolutionConfig(
+        search_paths=[project_root],
+        stdlib_root=tmp_path / "stdlib",
+        project_root=project_root,
+    )
+
+    candidates = candidate_module_paths("pkg.widgets.client", caller_path=None, config=config)
+
+    assert candidates[:4] == [
+        vendor_local / "src" / "client.tiny",
+        vendor_local / "src" / "client" / "__init__.tiny",
+        vendor_local / "client.tiny",
+        vendor_local / "client" / "__init__.tiny",
+    ]

@@ -1,0 +1,56 @@
+
+=== tight_loop ===
+Summation loop with predictable arithmetic
+12497500
+12497500
+12497500
+12497500
+interpreter              avg=211.12ms min=209.90ms max=211.97ms
+native                   avg=92.06ms min=85.46ms max=100.01ms
+native-python-bytecode   avg=29.51ms min=26.73ms max=34.93ms
+python                   error=NotImplementedError: binary operator < is not supported in Python backend yet
+
+=== recursive_calls ===
+Naive Fibonacci to measure call overhead
+987
+987
+987
+987
+interpreter              avg=137.22ms min=136.19ms max=138.75ms
+native                   avg=56.92ms min=55.26ms max=58.35ms
+native-python-bytecode   avg=19.46ms min=19.09ms max=19.93ms
+python                   error=NotImplementedError: binary operator <= is not supported in Python backend yet
+
+=== heap_roundtrip ===
+Heap writes/reads to exercise pointer and index checks
+heap_get failed
+3992
+heap_get failed
+3992
+heap_get failed
+3992
+heap_get failed
+3992
+interpreter              avg=385.56ms min=376.73ms max=395.08ms
+native                   avg=230.93ms min=228.33ms max=234.54ms
+native-python-bytecode   error=RuntimeError: unknown function {name}
+python                   error=NotImplementedError: binary operator < is not supported in Python backend yet
+
+=== map_operations ===
+Hash map set/get workload to exercise Map helpers
+2000
+2000
+2000
+2000
+interpreter              avg=136.09ms min=133.47ms max=140.84ms
+native                   avg=68.35ms min=67.82ms max=68.90ms
+native-python-bytecode   error=RuntimeError: unknown variable {arg}
+python                   error=NotImplementedError: expression MethodCall is not supported by the Python backend yet
+Performance budget warnings:
+  - tight_loop: python unavailable (blocked: binary operator `<` not supported yet)
+  - recursive_calls: python unavailable (blocked: binary operator `<` not supported yet)
+  - heap_roundtrip: native-python-bytecode unavailable (blocked: unknown function in heap bench)
+  - heap_roundtrip: python unavailable (blocked: binary operator `<` not supported yet)
+  - map_operations: native-python-bytecode unavailable (blocked: unknown variable in Map bench)
+  - map_operations: python unavailable (blocked: binary operator `<` not supported yet)
+Performance budgets within limits.

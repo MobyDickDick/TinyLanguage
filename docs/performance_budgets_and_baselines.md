@@ -126,15 +126,29 @@ closing the incident:
       `tight_loop_interpreter.svg`, `recursive_calls_interpreter.svg`,
       `recursive_calls_native-python-bytecode.svg`,
       `tight_loop_native.svg`, and `recursive_calls_native.svg`.)
-- [ ] Confirm whether the regression reproduces on a clean checkout.
-- [ ] File a regression ticket with links to required artifacts:
+- [x] Confirm whether the regression reproduces on a clean checkout.
+      (2026-02-12: cloned `file:///workspace/TinyLanguage` into
+      `/tmp/TinyLanguage-clean` and ran
+      `python tools/performance/check_performance_budgets.py`; command exited
+      `0` and reported "Performance budgets within limits", so the previously
+      observed regressions do **not** reproduce on a clean checkout. Logs:
+      `artifacts/perf/2026-02-12/logs/clean_checkout_budget_check.stdout.log`
+      and
+      `artifacts/perf/2026-02-12/logs/clean_checkout_budget_check.stderr.log`.)
+- [x] File a regression ticket with links to required artifacts:
       - benchmark JSON diff
       - raw benchmark output log
       - flamegraph SVG(s)
       - environment metadata (`python -V`, OS/kernel, commit SHA)
       - suspected culprit commit (if identified)
-- [ ] Add the ticket link to the next baseline update PR and note whether the
+      (2026-02-12: ticket created in
+      `docs/performance_regressions/regression_2026-02-12_native_and_interpreter_slowdown.md`.)
+- [x] Add the ticket link to the next baseline update PR and note whether the
       baseline should be held or intentionally rebaselined.
+      (2026-02-12: linked ticket
+      `docs/performance_regressions/regression_2026-02-12_native_and_interpreter_slowdown.md`
+      in this baseline-triage update and marked the baseline as **held**,
+      because the slowdown did not reproduce on a clean checkout.)
 
 ## CI enforcement
 

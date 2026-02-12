@@ -7,12 +7,11 @@ migration recipe entry in `docs/release_minor_migration_recipes.json`.
 
 ## Current minor release guides
 
-No minor release guides have been published yet. When the first minor release is
-cut, add the guide to `docs/release_minor_guides/` and update the table below.
+A draft guide exists for the first planned minor release. Finalize release-specific notes and validation evidence when cutting the release candidate.
 
 | From → To | Guide | Migration recipe | Status |
 | --- | --- | --- | --- |
-| 1.0.0 → 1.1.0 | `docs/release_minor_guides/1_0_0_to_1_1_0.md` | `docs/release_minor_migration_recipes.json` | Planned |
+| 1.0.0 → 1.1.0 | `docs/release_minor_guides/1_0_0_to_1_1_0.md` | `docs/release_minor_migration_recipes.json` | Drafted (pre-release) |
 
 ## Publishing workflow
 

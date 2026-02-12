@@ -1,0 +1,48 @@
+
+=== tight_loop ===
+Summation loop with predictable arithmetic
+12497500
+12497500
+12497500
+12497500
+interpreter              avg=461.94ms min=435.33ms max=481.51ms
+python                   error=NotImplementedError: binary operator < is not supported in Python backend yet
+native                   avg=172.07ms min=167.10ms max=175.29ms
+native-python-bytecode   avg=44.31ms min=42.57ms max=46.08ms
+
+=== recursive_calls ===
+Naive Fibonacci to measure call overhead
+987
+987
+987
+987
+interpreter              avg=299.35ms min=291.53ms max=306.39ms
+python                   error=NotImplementedError: binary operator <= is not supported in Python backend yet
+native                   avg=120.11ms min=109.48ms max=132.78ms
+native-python-bytecode   avg=37.55ms min=36.53ms max=38.08ms
+
+=== heap_roundtrip ===
+Heap writes/reads to exercise pointer and index checks
+heap_get failed
+3992
+heap_get failed
+3992
+heap_get failed
+3992
+heap_get failed
+3992
+interpreter              avg=888.34ms min=830.23ms max=933.29ms
+python                   error=NotImplementedError: binary operator < is not supported in Python backend yet
+native                   avg=539.99ms min=524.04ms max=560.71ms
+native-python-bytecode   error=RuntimeError: unknown function {name}
+
+=== map_operations ===
+Hash map set/get workload to exercise Map helpers
+2000
+2000
+2000
+2000
+interpreter              avg=295.64ms min=275.75ms max=312.63ms
+python                   error=NotImplementedError: expression MethodCall is not supported by the Python backend yet
+native                   avg=148.58ms min=143.28ms max=158.12ms
+native-python-bytecode   error=RuntimeError: unknown variable {arg}

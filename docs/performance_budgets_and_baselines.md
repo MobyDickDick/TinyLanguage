@@ -108,8 +108,16 @@ When CI or local checks report a regression, complete this checklist before
 closing the incident:
 
 - [x] Re-run the budget check locally and save stdout/stderr logs. (2026-02-11: `python tools/performance/check_performance_budgets.py` logs saved to `artifacts/perf/2026-02-11/logs/budget_check.stdout.log` and `artifacts/perf/2026-02-11/logs/budget_check.stderr.log`; run reported `heap_roundtrip` native ratio regression.)
-- [ ] Diff current vs baseline JSON (`benchmarks/performance_baselines.json`) and
-      list all cases above the 15% threshold.
+- [x] Diff current vs baseline JSON (`benchmarks/performance_baselines.json`) and
+      list all cases above the 15% threshold. (2026-02-12: captured
+      `artifacts/perf/2026-02-12/raw/microbenchmarks.json`, wrote
+      `artifacts/perf/2026-02-12/raw/baseline_diff.md`, and identified 9
+      regressions above threshold:
+      `heap_roundtrip/native` 1.59x, `map_operations/interpreter` 1.58x,
+      `heap_roundtrip/interpreter` 1.56x, `map_operations/native` 1.39x,
+      `tight_loop/interpreter` 1.36x, `recursive_calls/interpreter` 1.35x,
+      `recursive_calls/native-python-bytecode` 1.32x,
+      `tight_loop/native` 1.26x, `recursive_calls/native` 1.25x.)
 - [ ] Capture at least one flamegraph per regressed benchmark/backend pair.
 - [ ] Confirm whether the regression reproduces on a clean checkout.
 - [ ] File a regression ticket with links to required artifacts:

@@ -130,6 +130,8 @@ backlog once ownership and sequencing are confirmed.
   - Notes: added a dedicated milestone section in `docs/native_compiler.md`
     with profile defaults (`dev`/`release`/`max`), an optional PGO workflow,
     and explicit benchmark/stability/reproducibility gates for default changes.
+    Added a matching prioritized optimization backlog + acceptance criteria in
+    `docs/runtime_performance_goals.md` to keep cross-doc ownership aligned.
 
 ## Near-term priorities (next 4-6 weeks)
 

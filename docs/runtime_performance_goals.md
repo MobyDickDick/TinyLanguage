@@ -80,6 +80,42 @@ present, while others describe the planned structure for future improvements.
 3. **Targeted LLVM tuning** (planned): customize pass pipelines for hot loops,
    constant folding, and alloc-heavy workloads.
 
+## Prioritized executable optimization backlog
+
+This backlog translates the native-build optimization milestone into concrete,
+ordered work items that can be tracked across releases.
+
+1. **Tune LLVM pass presets for generated executables**
+   - Scope: compare candidate pass presets at `--llvm-opt-level 1/2/3` for
+     loop-heavy and allocation-heavy workloads; document the selected release
+     preset and rejected alternatives.
+   - Acceptance criteria:
+     - runtime median improves by at least **5%** vs. current `release`
+       profile on benchmark cases tagged `tight_loop` and `map_operations`;
+     - no benchmark regresses by more than **3%**;
+     - parity and native backend tests remain green.
+
+2. **Re-validate executable default opt levels (`--llvm-opt-level`, `--opt-level`)**
+   - Scope: periodically evaluate whether the current `release` defaults
+     (`2/2`) should remain unchanged or be updated based on benchmark data.
+   - Acceptance criteria:
+     - complete A/B benchmark runs for `dev (0/0)`, current `release (2/2)`,
+       and candidate profile;
+     - compile-time delta for `--emit-exe` is within **+12%** budget;
+     - recommendation is recorded with command transcript + environment
+       metadata in `artifacts/perf/<date>/`.
+
+3. **Maintain an optional profile-guided optimization (PGO) path**
+   - Scope: keep a documented and reproducible PGO flow for investigations and
+     release-candidate experiments, without making PGO mandatory for daily
+     development.
+   - Acceptance criteria:
+     - instrumented build, profile capture, and profile-use rebuild commands are
+       documented and runnable;
+     - at least one benchmark rerun compares non-PGO vs. PGO outputs for each
+       experiment;
+     - missing tooling (if any) is explicitly logged as an environment limit.
+
 ## Profiling + benchmarking workflow
 
 We will use a combination of microbenchmarks and targeted regression checks to

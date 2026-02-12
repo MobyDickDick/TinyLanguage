@@ -1,0 +1,4 @@
+
+=== tight_loop ===
+Summation loop with predictable arithmetic
+native                   avg=266.40ms min=266.40ms max=266.40ms

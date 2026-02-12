@@ -1,0 +1,5 @@
+
+=== tight_loop ===
+Summation loop with predictable arithmetic
+12497500
+interpreter              avg=1098.04ms min=1098.04ms max=1098.04ms

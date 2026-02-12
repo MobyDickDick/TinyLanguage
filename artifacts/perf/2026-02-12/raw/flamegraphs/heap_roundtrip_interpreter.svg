@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="640">
+<style>text{font-family:monospace;font-size:12px;}</style>
+<text x="20" y="22">TinyLanguage profile flamegraph (cProfile cumulative time): backend=interpreter, case=heap_roundtrip</text>
+<rect x="20" y="40" width="152" height="22" fill="rgb(200,80,60)"/>
+<text x="24" y="55">&lt;built-in method builtins.exec&gt; (~:0) | cum=2342.88ms self=59.27ms calls=579</text>
+<rect x="20" y="67" width="152" height="22" fill="rgb(217,117,113)"/>
+<text x="24" y="82">&lt;module&gt; (microbenchmarks.py:1) | cum=2342.88ms self=0.12ms calls=1</text>
+<rect x="20" y="94" width="101" height="22" fill="rgb(234,154,166)"/>
+<text x="24" y="109">main (microbenchmarks.py:350) | cum=1552.26ms self=0.06ms calls=1</text>
+<rect x="20" y="121" width="101" height="22" fill="rgb(251,191,79)"/>
+<text x="24" y="136">_time_runs (microbenchmarks.py:113) | cum=1549.63ms self=0.07ms calls=1</text>
+<rect x="20" y="148" width="101" height="22" fill="rgb(213,108,132)"/>
+<text x="24" y="163">compile_and_run (tiny_language_stitched.py:13752) | cum=1549.54ms self=0.04ms calls=1</text>
+<rect x="20" y="175" width="100" height="22" fill="rgb(230,145,185)"/>
+<text x="24" y="190">eval_stmt (tiny_language_stitched.py:12550) | cum=1537.90ms self=110.23ms calls=28506</text>
+<rect x="20" y="202" width="92" height="22" fill="rgb(247,182,98)"/>
+<text x="24" y="217">eval_block (tiny_language_stitched.py:12542) | cum=1414.66ms self=32.91ms calls=16000</text>
+<rect x="20" y="229" width="60" height="22" fill="rgb(209,99,151)"/>
+<text x="24" y="244">eval_expr (tiny_language_stitched.py:12708) | cum=933.28ms self=325.52ms calls=108518</text>
+<rect x="20" y="256" width="51" height="22" fill="rgb(226,136,64)"/>
+<text x="24" y="271">_find_and_load (&lt;frozen importlib._bootstrap&gt;:1022) | cum=789.02ms self=1.19ms calls=148</text>
+<rect x="20" y="283" width="51" height="22" fill="rgb(243,173,117)"/>
+<text x="24" y="298">_find_and_load_unlocked (&lt;frozen importlib._bootstrap&gt;:987) | cum=788.84ms self=0.71ms calls=146</text>
+<rect x="20" y="310" width="51" height="22" fill="rgb(205,90,170)"/>
+<text x="24" y="325">_load_unlocked (&lt;frozen importlib._bootstrap&gt;:664) | cum=787.72ms self=0.96ms calls=140</text>
+<rect x="20" y="337" width="51" height="22" fill="rgb(222,127,83)"/>
+<text x="24" y="352">exec_module (&lt;frozen importlib._bootstrap_external&gt;:877) | cum=787.42ms self=0.43ms calls=111</text>
+<rect x="20" y="364" width="51" height="22" fill="rgb(239,164,136)"/>
+<text x="24" y="379">_call_with_frames_removed (&lt;frozen importlib._bootstrap&gt;:233) | cum=785.27ms self=0.32ms calls=177</text>
+<rect x="20" y="391" width="49" height="22" fill="rgb(201,81,189)"/>
+<text x="24" y="406">&lt;module&gt; (tiny_language.py:1) | cum=758.44ms self=1.20ms calls=1</text>
+<rect x="20" y="418" width="48" height="22" fill="rgb(218,118,102)"/>
+<text x="24" y="433">_load_and_exec_all (tiny_language.py:33) | cum=747.67ms self=0.40ms calls=1</text>
+<rect x="20" y="445" width="31" height="22" fill="rgb(235,155,155)"/>
+<text x="24" y="460">&lt;built-in method builtins.compile&gt; (~:0) | cum=483.00ms self=483.00ms calls=6</text>
+<rect x="20" y="472" width="24" height="22" fill="rgb(252,192,68)"/>
+<text x="24" y="487">__binop (tiny_language_stitched.py:11672) | cum=375.08ms self=118.45ms calls=24001</text>
+<rect x="20" y="499" width="22" height="22" fill="rgb(214,109,121)"/>
+<text x="24" y="514">assign (tiny_language_runtime_environment.py:59) | cum=337.34ms self=21.51ms calls=8500</text>
+<rect x="20" y="526" width="17" height="22" fill="rgb(231,146,174)"/>
+<text x="24" y="541">_check_assignment_type (tiny_language_stitched.py:11197) | cum=265.93ms self=14.33ms calls=8500</text>
+<rect x="20" y="553" width="16" height="22" fill="rgb(248,183,87)"/>
+<text x="24" y="568">_type_matches (tiny_language_stitched.py:11354) | cum=248.54ms self=38.29ms calls=8500</text>
+<rect x="20" y="580" width="15" height="22" fill="rgb(210,100,140)"/>
+<text x="24" y="595">&lt;module&gt; (tiny_language_stitched.py:1) | cum=238.22ms self=0.93ms calls=1</text>
+<rect x="20" y="607" width="14" height="22" fill="rgb(227,137,193)"/>
+<text x="24" y="622">__get_tag (tiny_language_stitched.py:11151) | cum=228.70ms self=164.16ms calls=125034</text>
+</svg>

@@ -1,0 +1,5 @@
+
+=== recursive_calls ===
+Naive Fibonacci to measure call overhead
+987
+interpreter              avg=507.96ms min=507.96ms max=507.96ms

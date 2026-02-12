@@ -1,0 +1,5 @@
+
+=== map_operations ===
+Hash map set/get workload to exercise Map helpers
+2000
+interpreter              avg=531.22ms min=531.22ms max=531.22ms

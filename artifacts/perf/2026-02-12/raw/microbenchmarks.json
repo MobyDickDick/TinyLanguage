@@ -1,0 +1,94 @@
+{
+  "backends": [
+    "interpreter",
+    "python",
+    "native",
+    "native-python-bytecode"
+  ],
+  "benchmarks": [
+    "tight_loop",
+    "recursive_calls",
+    "heap_roundtrip",
+    "map_operations"
+  ],
+  "repeat": 3,
+  "results": {
+    "heap_roundtrip": {
+      "interpreter": {
+        "avg_ms": 888.336312000007,
+        "max_ms": 933.2867910000004,
+        "min_ms": 830.231031000011
+      },
+      "native": {
+        "avg_ms": 539.993479333333,
+        "max_ms": 560.7097850000002,
+        "min_ms": 524.0430449999849
+      },
+      "native-python-bytecode": {
+        "error": "RuntimeError: unknown function {name}"
+      },
+      "python": {
+        "error": "NotImplementedError: binary operator < is not supported in Python backend yet"
+      }
+    },
+    "map_operations": {
+      "interpreter": {
+        "avg_ms": 295.639177333328,
+        "max_ms": 312.63239699998735,
+        "min_ms": 275.7476689999976
+      },
+      "native": {
+        "avg_ms": 148.5766446666522,
+        "max_ms": 158.12455799999725,
+        "min_ms": 143.27628799998138
+      },
+      "native-python-bytecode": {
+        "error": "RuntimeError: unknown variable {arg}"
+      },
+      "python": {
+        "error": "NotImplementedError: expression MethodCall is not supported by the Python backend yet"
+      }
+    },
+    "recursive_calls": {
+      "interpreter": {
+        "avg_ms": 299.3505753333447,
+        "max_ms": 306.38662699999486,
+        "min_ms": 291.5318870000192
+      },
+      "native": {
+        "avg_ms": 120.11097133334185,
+        "max_ms": 132.78163800001153,
+        "min_ms": 109.48358400000302
+      },
+      "native-python-bytecode": {
+        "avg_ms": 37.55016100000338,
+        "max_ms": 38.07519899999079,
+        "min_ms": 36.53341300000079
+      },
+      "python": {
+        "error": "NotImplementedError: binary operator <= is not supported in Python backend yet"
+      }
+    },
+    "tight_loop": {
+      "interpreter": {
+        "avg_ms": 461.94393833332964,
+        "max_ms": 481.5085869999791,
+        "min_ms": 435.3348829999959
+      },
+      "native": {
+        "avg_ms": 172.0725633333302,
+        "max_ms": 175.28839700000276,
+        "min_ms": 167.1033720000139
+      },
+      "native-python-bytecode": {
+        "avg_ms": 44.309594666657404,
+        "max_ms": 46.080258999978696,
+        "min_ms": 42.57286600000043
+      },
+      "python": {
+        "error": "NotImplementedError: binary operator < is not supported in Python backend yet"
+      }
+    }
+  },
+  "warmup": 1
+}

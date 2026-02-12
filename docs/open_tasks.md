@@ -50,6 +50,15 @@ Timebox: 2026-03-20 to 2026-05-01 (6 weeks).
     (`test_cli_project_formatting_hook_matches_format_output`) and aligned the
     workflow documentation examples in `docs/language_server_workflows.md`.
 
+- [x] Define a repeatable profiling capture workflow in
+  `docs/performance_budgets_and_baselines.md` that includes baseline capture,
+  environment metadata snapshots, artifact retention paths, and post-merge
+  baseline tagging guidance.
+  - Notes: expanded the profiling workflow into an explicit runbook with
+    deterministic benchmark commands, required artifact layout under
+    `artifacts/perf/<date>/raw`, canonical baseline update steps, and
+    version-control tag conventions for later regression triage.
+
 ## Newly proposed backlog items (drafts)
 
 The tasks below are newly formulated and meant to be triaged into the active

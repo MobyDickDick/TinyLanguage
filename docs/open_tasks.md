@@ -42,6 +42,14 @@ Timebox: 2026-03-20 to 2026-05-01 (6 weeks).
     local-override → registry-vendor → git-vendor ordering in
     `docs/module_resolution_algorithm.md`.
 
+- [x] Add LSP formatting-hook acceptance coverage with a multi-file project
+  workflow and document the formatting/code-action request/response payloads
+  in `docs/language_server_workflows.md`.
+  - Notes: added multi-file formatting-hook acceptance assertions in
+    `tests/detailtests/test_language_server_cli.py`
+    (`test_cli_project_formatting_hook_matches_format_output`) and aligned the
+    workflow documentation examples in `docs/language_server_workflows.md`.
+
 ## Newly proposed backlog items (drafts)
 
 The tasks below are newly formulated and meant to be triaged into the active

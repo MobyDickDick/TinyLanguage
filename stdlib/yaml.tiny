@@ -1,20 +1,74 @@
-// TinyLanguage stdlib: yaml module (stub for JSON-compatible YAML)
+// TinyLanguage stdlib: yaml module (JSON-compatible YAML subset)
 
-fn __raise_not_implemented() {
-  def _unused = 1 / 0;
-  return _unused;
+fn _parse_scalar(text) -> any {
+  def trimmed = String.trim(text);
+  if (trimmed == "true" || trimmed == "false" || trimmed == "null") {
+    return JSON.parse(trimmed);
+  }
+  if (String.starts_with(trimmed, "[") || String.starts_with(trimmed, "{") || String.starts_with(trimmed, "\"")) {
+    return JSON.parse(trimmed);
+  }
+  if (String.is_digit(trimmed)) {
+    return trimmed;
+  }
+  return trimmed;
 }
 
-fn parse(text) {
-  def _unused = text;
-  return __raise_not_implemented();
+fn _stringify_scalar(value) {
+  if (value == Null) { return "null"; }
+  if (value == true) { return "true"; }
+  if (value == false) { return "false"; }
+  return JSON.stringify(value);
 }
 
-fn stringify(value) {
-  def _unused = value;
-  return __raise_not_implemented();
+fn _parse_mapping(text) -> any {
+  def result = Map.new();
+  def lines = String.split(text, "\n");
+  def idx = 0;
+  while (idx < Collections.len(lines)) {
+    def line = String.trim(heap_get(lines, idx));
+    if (Collections.len(line) > 0) {
+      def parts = String.split(line, ":");
+      if (Collections.len(parts) > 1) {
+        def key = String.trim(heap_get(parts, 0));
+        def value_parts = Collections.slice(parts, 1, Collections.len(parts));
+        def raw_value = String.trim(String.join(value_parts, ":"));
+        def value = _parse_scalar(raw_value);
+        def _set = Map.set(result, key, value);
+        def _cleanup_value_parts = delete(value_parts);
+      }
+      def _cleanup_parts = delete(parts);
+    }
+    idx = idx + 1;
+  }
+  def _cleanup_lines = delete(lines);
+  return result;
 }
 
+fn parse(text) -> any {
+  def trimmed = String.trim(text);
+  if (Collections.len(trimmed) == 0) { return Map.new(); }
+  if (String.starts_with(trimmed, "{") || String.starts_with(trimmed, "[")) {
+    return JSON.parse(trimmed);
+  }
+  return _parse_mapping(trimmed);
+}
+
+fn stringify(value) -> string {
+  def keys = Map.keys(value);
+  def lines = new[];
+  def idx = 0;
+  while (idx < Collections.len(keys)) {
+    def key = heap_get(keys, idx);
+    def entry = key + ": " + _stringify_scalar(Map.get(value, key));
+    def _push = Collections.push(lines, entry);
+    idx = idx + 1;
+  }
+  def rendered = String.join(lines, "\n");
+  def _cleanup_keys = delete(keys);
+  def _cleanup_lines = delete(lines);
+  return rendered;
+}
 fn load(path) {
   def content = File.read(path);
   return parse(content);

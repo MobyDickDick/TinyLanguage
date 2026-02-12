@@ -295,7 +295,7 @@ def _execute(instrs: List, locals_: Dict[str, Any], globals_: Dict[str, Any]) ->
             elif arg in globals_:
                 stack.append(globals_[arg])
             else:
-                raise RuntimeError(f"unknown variable {{arg}}")
+                raise RuntimeError(f"unknown variable {arg}")
         elif op == "STORE":
             value = stack.pop()
             locals_[arg] = value
@@ -319,26 +319,26 @@ def _execute(instrs: List, locals_: Dict[str, Any], globals_: Dict[str, Any]) ->
             args = [stack.pop() for _ in range(argc)][::-1]
             if name in ("__new", "new"):
                 if len(args) != 1:
-                    raise RuntimeError(f"{{name}} expects 1 arg, got {{len(args)}}")
+                    raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
                 stack.append(_heap_new(args[0]))
             elif name == "heap_get":
                 if len(args) != 2:
-                    raise RuntimeError(f"heap_get expects 2 args, got {{len(args)}}")
+                    raise RuntimeError(f"heap_get expects 2 args, got {len(args)}")
                 stack.append(_heap_get(args[0], args[1]))
             elif name == "heap_set":
                 if len(args) != 3:
-                    raise RuntimeError(f"heap_set expects 3 args, got {{len(args)}}")
+                    raise RuntimeError(f"heap_set expects 3 args, got {len(args)}")
                 stack.append(_heap_set(args[0], args[1], args[2]))
             elif name == "delete":
                 if len(args) != 1:
-                    raise RuntimeError(f"delete expects 1 arg, got {{len(args)}}")
+                    raise RuntimeError(f"delete expects 1 arg, got {len(args)}")
                 stack.append(_heap_delete(args[0]))
             else:
                 fn = instructions["functions"].get(name)
                 if fn is None:
-                    raise RuntimeError(f"unknown function {{name}}")
+                    raise RuntimeError(f"unknown function {name}")
                 if len(args) != len(fn["params"]):
-                    raise RuntimeError(f"function {{name}} expects {{len(fn['params'])}} args, got {{len(args)}}")
+                    raise RuntimeError(f"function {name} expects {len(fn['params'])} args, got {len(args)}")
                 locals_child = dict(zip(fn["params"], args))
                 stack.append(_execute(fn["instructions"], locals_child, globals_))
         elif op == "POP":
@@ -346,7 +346,7 @@ def _execute(instrs: List, locals_: Dict[str, Any], globals_: Dict[str, Any]) ->
         elif op == "RETURN":
             return stack.pop() if stack else None
         else:
-            raise RuntimeError(f"unknown opcode {{op}}")
+            raise RuntimeError(f"unknown opcode {op}")
     return None
 
 

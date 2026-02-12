@@ -1,0 +1,11 @@
+module: stdlib.yaml
+
+exports:
+  fn _parse_mapping(text: any) -> any
+  fn _parse_scalar(text: any) -> any
+  fn parse(text: any) -> any
+  fn stringify(value: any) -> string
+
+types:
+
+classes:

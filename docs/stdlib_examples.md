@@ -305,16 +305,12 @@ true
 ```tiny
 import stdlib.yaml;
 
-def _unused = yaml;
-try {
-  def _value = yaml.parse("key: value");
-} catch (err) {
-  def _ignored = err;
-  print("not implemented");
-  def _cleanup_error = delete(err);
-}
+def value = yaml.parse("a: 1\nb: [true, null]\n");
+print(yaml.stringify(value));
+def _cleanup_value = delete(value);
 ```
 
 ```text
-not implemented
+a: "1"
+b: [true,null]
 ```

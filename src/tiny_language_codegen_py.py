@@ -349,13 +349,50 @@ class PythonCodeGenerator:
                 args=[ast.Constant(value=expr.name), ast.List(elts=args, ctx=ast.Load())],
                 keywords=[],
             )
+        if isinstance(expr, MethodCall):
+            obj = self._emit_expr(expr.obj, env_name=env_name)
+            args = [self._emit_expr(arg, env_name=env_name) for arg in expr.args]
+            return ast.Call(
+                func=ast.Attribute(value=ast.Name(id="runtime", ctx=ast.Load()), attr="call_method", ctx=ast.Load()),
+                args=[obj, ast.Constant(value=expr.name), ast.List(elts=args, ctx=ast.Load())],
+                keywords=[],
+            )
         if isinstance(expr, Bin):
+            if expr.op in {"<", "<=", ">", ">=", "==", "!="}:
+                return ast.Compare(
+                    left=self._emit_expr(expr.a, env_name=env_name),
+                    ops=[self._compare_op(expr.op)],
+                    comparators=[self._emit_expr(expr.b, env_name=env_name)],
+                )
+            if expr.op in {"&&", "and"}:
+                return ast.BoolOp(
+                    op=ast.And(),
+                    values=[self._emit_expr(expr.a, env_name=env_name), self._emit_expr(expr.b, env_name=env_name)],
+                )
+            if expr.op in {"||", "or"}:
+                return ast.BoolOp(
+                    op=ast.Or(),
+                    values=[self._emit_expr(expr.a, env_name=env_name), self._emit_expr(expr.b, env_name=env_name)],
+                )
             return ast.BinOp(left=self._emit_expr(expr.a, env_name=env_name), op=self._bin_op(expr.op), right=self._emit_expr(expr.b, env_name=env_name))
         if isinstance(expr, NewLit):
             return ast.List(elts=[self._emit_expr(item, env_name=env_name) for item in expr.items], ctx=ast.Load())
         if isinstance(expr, ObjLit):
             return ast.Dict(keys=[ast.Constant(value=k) for k, _ in expr.fields], values=[self._emit_expr(v, env_name=env_name) for _, v in expr.fields])
         raise NotImplementedError(f"expression {type(expr).__name__} is not supported by the Python backend yet")
+
+    def _compare_op(self, op: str) -> ast.cmpop:
+        mapping = {
+            "<": ast.Lt(),
+            "<=": ast.LtE(),
+            ">": ast.Gt(),
+            ">=": ast.GtE(),
+            "==": ast.Eq(),
+            "!=": ast.NotEq(),
+        }
+        if op in mapping:
+            return mapping[op]
+        raise NotImplementedError(f"comparison operator {op} is not supported in Python backend yet")
 
     def _bin_op(self, op: str) -> ast.operator:
         mapping = {
@@ -391,4 +428,5 @@ if TYPE_CHECKING:  # pragma: no cover - only used for type checking
         Var,
         While,
         If,
+        MethodCall,
     )

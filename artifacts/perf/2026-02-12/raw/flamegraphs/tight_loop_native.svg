@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="640">
+<style>text{font-family:monospace;font-size:12px;}</style>
+<text x="20" y="22">TinyLanguage profile flamegraph (cProfile cumulative time): backend=native, case=tight_loop</text>
+<rect x="20" y="40" width="144" height="22" fill="rgb(200,80,60)"/>
+<text x="24" y="55">&lt;built-in method builtins.exec&gt; (~:0) | cum=897.24ms self=58.16ms calls=579</text>
+<rect x="20" y="67" width="144" height="22" fill="rgb(217,117,113)"/>
+<text x="24" y="82">&lt;module&gt; (microbenchmarks.py:1) | cum=897.23ms self=0.13ms calls=1</text>
+<rect x="20" y="94" width="101" height="22" fill="rgb(234,154,166)"/>
+<text x="24" y="109">_find_and_load (&lt;frozen importlib._bootstrap&gt;:1022) | cum=626.15ms self=1.22ms calls=148</text>
+<rect x="20" y="121" width="101" height="22" fill="rgb(251,191,79)"/>
+<text x="24" y="136">_find_and_load_unlocked (&lt;frozen importlib._bootstrap&gt;:987) | cum=625.92ms self=0.67ms calls=146</text>
+<rect x="20" y="148" width="100" height="22" fill="rgb(213,108,132)"/>
+<text x="24" y="163">_load_unlocked (&lt;frozen importlib._bootstrap&gt;:664) | cum=624.76ms self=0.92ms calls=140</text>
+<rect x="20" y="175" width="100" height="22" fill="rgb(230,145,185)"/>
+<text x="24" y="190">exec_module (&lt;frozen importlib._bootstrap_external&gt;:877) | cum=624.38ms self=0.44ms calls=111</text>
+<rect x="20" y="202" width="100" height="22" fill="rgb(247,182,98)"/>
+<text x="24" y="217">_call_with_frames_removed (&lt;frozen importlib._bootstrap&gt;:233) | cum=622.38ms self=0.28ms calls=177</text>
+<rect x="20" y="229" width="96" height="22" fill="rgb(209,99,151)"/>
+<text x="24" y="244">&lt;module&gt; (tiny_language.py:1) | cum=597.65ms self=1.27ms calls=1</text>
+<rect x="20" y="256" width="94" height="22" fill="rgb(226,136,64)"/>
+<text x="24" y="271">_load_and_exec_all (tiny_language.py:33) | cum=587.61ms self=0.31ms calls=1</text>
+<rect x="20" y="283" width="54" height="22" fill="rgb(243,173,117)"/>
+<text x="24" y="298">&lt;built-in method builtins.compile&gt; (~:0) | cum=337.30ms self=337.30ms calls=6</text>
+<rect x="20" y="310" width="43" height="22" fill="rgb(205,90,170)"/>
+<text x="24" y="325">main (microbenchmarks.py:350) | cum=269.09ms self=0.06ms calls=1</text>
+<rect x="20" y="337" width="42" height="22" fill="rgb(222,127,83)"/>
+<text x="24" y="352">_time_runs (microbenchmarks.py:113) | cum=266.42ms self=0.04ms calls=1</text>
+<rect x="20" y="364" width="42" height="22" fill="rgb(239,164,136)"/>
+<text x="24" y="379">run_with_native_backend (tiny_language_stitched.py:14140) | cum=266.37ms self=0.03ms calls=1</text>
+<rect x="20" y="391" width="42" height="22" fill="rgb(201,81,189)"/>
+<text x="24" y="406">run (native_vm.py:174) | cum=262.23ms self=0.02ms calls=1</text>
+<rect x="20" y="418" width="42" height="22" fill="rgb(218,118,102)"/>
+<text x="24" y="433">_execute (native_vm.py:192) | cum=262.20ms self=189.67ms calls=1</text>
+<rect x="20" y="445" width="37" height="22" fill="rgb(235,155,155)"/>
+<text x="24" y="460">&lt;module&gt; (tiny_language_stitched.py:1) | cum=231.80ms self=0.99ms calls=1</text>
+<rect x="20" y="472" width="16" height="22" fill="rgb(252,192,68)"/>
+<text x="24" y="487">wrap (dataclasses.py:1174) | cum=101.64ms self=0.25ms calls=140</text>
+<rect x="20" y="499" width="16" height="22" fill="rgb(214,109,121)"/>
+<text x="24" y="514">_process_class (dataclasses.py:881) | cum=101.39ms self=7.08ms calls=140</text>
+<rect x="20" y="526" width="13" height="22" fill="rgb(231,146,174)"/>
+<text x="24" y="541">dataclass (dataclasses.py:1156) | cum=84.46ms self=0.20ms calls=140</text>
+<rect x="20" y="553" width="10" height="22" fill="rgb(248,183,87)"/>
+<text x="24" y="568">_create_fn (dataclasses.py:412) | cum=63.50ms self=3.18ms calls=466</text>
+<rect x="20" y="580" width="6" height="22" fill="rgb(210,100,140)"/>
+<text x="24" y="595">&lt;module&gt; (tiny_language_highlighting.py:1) | cum=39.55ms self=0.12ms calls=1</text>
+<rect x="20" y="607" width="6" height="22" fill="rgb(227,137,193)"/>
+<text x="24" y="622">_value_type_name (native_vm.py:718) | cum=38.40ms self=22.31ms calls=30002</text>
+</svg>

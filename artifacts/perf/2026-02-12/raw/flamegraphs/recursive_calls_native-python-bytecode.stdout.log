@@ -1,0 +1,4 @@
+
+=== recursive_calls ===
+Naive Fibonacci to measure call overhead
+native-python-bytecode   avg=79.91ms min=79.91ms max=79.91ms

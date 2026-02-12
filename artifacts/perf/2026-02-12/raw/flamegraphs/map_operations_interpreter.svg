@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="640">
+<style>text{font-family:monospace;font-size:12px;}</style>
+<text x="20" y="22">TinyLanguage profile flamegraph (cProfile cumulative time): backend=interpreter, case=map_operations</text>
+<rect x="20" y="40" width="144" height="22" fill="rgb(200,80,60)"/>
+<text x="24" y="55">&lt;built-in method builtins.exec&gt; (~:0) | cum=1320.87ms self=69.24ms calls=579</text>
+<rect x="20" y="67" width="144" height="22" fill="rgb(217,117,113)"/>
+<text x="24" y="82">&lt;module&gt; (microbenchmarks.py:1) | cum=1320.86ms self=0.15ms calls=1</text>
+<rect x="20" y="94" width="86" height="22" fill="rgb(234,154,166)"/>
+<text x="24" y="109">_find_and_load (&lt;frozen importlib._bootstrap&gt;:1022) | cum=785.38ms self=1.50ms calls=148</text>
+<rect x="20" y="121" width="86" height="22" fill="rgb(251,191,79)"/>
+<text x="24" y="136">_find_and_load_unlocked (&lt;frozen importlib._bootstrap&gt;:987) | cum=785.13ms self=0.92ms calls=146</text>
+<rect x="20" y="148" width="86" height="22" fill="rgb(213,108,132)"/>
+<text x="24" y="163">_load_unlocked (&lt;frozen importlib._bootstrap&gt;:664) | cum=783.78ms self=1.31ms calls=140</text>
+<rect x="20" y="175" width="85" height="22" fill="rgb(230,145,185)"/>
+<text x="24" y="190">exec_module (&lt;frozen importlib._bootstrap_external&gt;:877) | cum=783.36ms self=0.59ms calls=111</text>
+<rect x="20" y="202" width="85" height="22" fill="rgb(247,182,98)"/>
+<text x="24" y="217">_call_with_frames_removed (&lt;frozen importlib._bootstrap&gt;:233) | cum=781.03ms self=0.34ms calls=177</text>
+<rect x="20" y="229" width="82" height="22" fill="rgb(209,99,151)"/>
+<text x="24" y="244">&lt;module&gt; (tiny_language.py:1) | cum=749.61ms self=1.32ms calls=1</text>
+<rect x="20" y="256" width="80" height="22" fill="rgb(226,136,64)"/>
+<text x="24" y="271">_load_and_exec_all (tiny_language.py:33) | cum=736.76ms self=0.37ms calls=1</text>
+<rect x="20" y="283" width="58" height="22" fill="rgb(243,173,117)"/>
+<text x="24" y="298">main (microbenchmarks.py:350) | cum=533.74ms self=0.13ms calls=1</text>
+<rect x="20" y="310" width="58" height="22" fill="rgb(205,90,170)"/>
+<text x="24" y="325">_time_runs (microbenchmarks.py:113) | cum=531.23ms self=0.04ms calls=1</text>
+<rect x="20" y="337" width="58" height="22" fill="rgb(222,127,83)"/>
+<text x="24" y="352">compile_and_run (tiny_language_stitched.py:13752) | cum=531.19ms self=0.04ms calls=1</text>
+<rect x="20" y="364" width="57" height="22" fill="rgb(239,164,136)"/>
+<text x="24" y="379">eval_stmt (tiny_language_stitched.py:12550) | cum=526.00ms self=24.15ms calls=6005</text>
+<rect x="20" y="391" width="51" height="22" fill="rgb(201,81,189)"/>
+<text x="24" y="406">eval_block (tiny_language_stitched.py:12542) | cum=468.29ms self=6.42ms calls=2000</text>
+<rect x="20" y="418" width="47" height="22" fill="rgb(218,118,102)"/>
+<text x="24" y="433">&lt;built-in method builtins.compile&gt; (~:0) | cum=428.58ms self=428.58ms calls=6</text>
+<rect x="20" y="445" width="31" height="22" fill="rgb(235,155,155)"/>
+<text x="24" y="460">&lt;module&gt; (tiny_language_stitched.py:1) | cum=287.51ms self=1.05ms calls=1</text>
+<rect x="20" y="472" width="29" height="22" fill="rgb(252,192,68)"/>
+<text x="24" y="487">eval_expr (tiny_language_stitched.py:12708) | cum=268.89ms self=106.44ms calls=34008</text>
+<rect x="20" y="499" width="23" height="22" fill="rgb(214,109,121)"/>
+<text x="24" y="514">assign (tiny_language_runtime_environment.py:59) | cum=210.12ms self=14.06ms calls=5999</text>
+<rect x="20" y="526" width="17" height="22" fill="rgb(231,146,174)"/>
+<text x="24" y="541">_check_assignment_type (tiny_language_stitched.py:11197) | cum=163.78ms self=8.81ms calls=5999</text>
+<rect x="20" y="553" width="16" height="22" fill="rgb(248,183,87)"/>
+<text x="24" y="568">_type_matches (tiny_language_stitched.py:11354) | cum=152.92ms self=23.30ms calls=5999</text>
+<rect x="20" y="580" width="13" height="22" fill="rgb(210,100,140)"/>
+<text x="24" y="595">wrap (dataclasses.py:1174) | cum=120.15ms self=0.28ms calls=140</text>
+<rect x="20" y="607" width="13" height="22" fill="rgb(227,137,193)"/>
+<text x="24" y="622">_process_class (dataclasses.py:881) | cum=119.87ms self=7.96ms calls=140</text>
+</svg>

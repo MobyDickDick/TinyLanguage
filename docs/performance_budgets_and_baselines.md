@@ -118,7 +118,14 @@ closing the incident:
       `tight_loop/interpreter` 1.36x, `recursive_calls/interpreter` 1.35x,
       `recursive_calls/native-python-bytecode` 1.32x,
       `tight_loop/native` 1.26x, `recursive_calls/native` 1.25x.)
-- [ ] Capture at least one flamegraph per regressed benchmark/backend pair.
+- [x] Capture at least one flamegraph per regressed benchmark/backend pair.
+      (2026-02-12: captured cProfile-based flamegraph SVGs for all 9 regressed
+      pairs under `artifacts/perf/2026-02-12/raw/flamegraphs/`:
+      `heap_roundtrip_native.svg`, `map_operations_interpreter.svg`,
+      `heap_roundtrip_interpreter.svg`, `map_operations_native.svg`,
+      `tight_loop_interpreter.svg`, `recursive_calls_interpreter.svg`,
+      `recursive_calls_native-python-bytecode.svg`,
+      `tight_loop_native.svg`, and `recursive_calls_native.svg`.)
 - [ ] Confirm whether the regression reproduces on a clean checkout.
 - [ ] File a regression ticket with links to required artifacts:
       - benchmark JSON diff

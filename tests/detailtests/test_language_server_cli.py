@@ -84,6 +84,24 @@ def build_multi_file_project(tmp_path: pathlib.Path) -> pathlib.Path:
     return project_dir
 
 
+def read_project_source(project_dir: pathlib.Path) -> str:
+    """Return the concatenated project source payload used by ``--project``."""
+    paths = sorted(project_dir.rglob("*.tiny"))
+    return "\n".join(path.read_text(encoding="utf-8") for path in paths)
+
+
+def source_end_position(source: str) -> tuple[int, int]:
+    """Return the same 1-based end position logic used by the language server."""
+    if not source:
+        return (1, 1)
+    last_newline = source.rfind("\n")
+    if last_newline == -1:
+        return (1, len(source) + 1)
+    line = source.count("\n") + 1
+    col = len(source) - last_newline
+    return (line, col)
+
+
 def test_cli_completions_emit_labels():
     """Completions should list identifiers defined in the source."""
     payload = run_cli(["--source", "fn alpha() { return 1; }", "completions", "--prefix", "a"])
@@ -189,3 +207,25 @@ def test_cli_project_code_actions_offer_formatting(tmp_path):
     project_dir = build_multi_file_project(tmp_path)
     payload = run_cli(["--project", str(project_dir), "code-actions"])
     assert any(action["kind"] == "source.format" for action in payload)
+
+
+def test_cli_project_formatting_hook_matches_format_output(tmp_path):
+    """Formatting code-action edits should match the formatted project payload."""
+    project_dir = build_multi_file_project(tmp_path)
+    source_payload = read_project_source(project_dir)
+
+    formatted_payload = run_cli(["--project", str(project_dir), "format"])
+    code_actions_payload = run_cli(["--project", str(project_dir), "code-actions"])
+
+    format_actions = [action for action in code_actions_payload if action["kind"] == "source.format"]
+    assert len(format_actions) == 1
+
+    format_action = format_actions[0]
+    assert format_action["title"] == "Format document"
+    assert format_action["diagnostics"] == []
+    assert len(format_action["edits"]) == 1
+
+    edit = format_action["edits"][0]
+    expected_end_line, expected_end_col = source_end_position(source_payload)
+    assert edit["range"] == [1, 1, expected_end_line, expected_end_col]
+    assert edit["newText"] == formatted_payload["source"]

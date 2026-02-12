@@ -314,6 +314,38 @@ Each subcommand is a thin wrapper around an internal request/response pair and c
     # => [{"title": "Format document", "kind": "source.format", "edits": [{"range": [1, 1, 1, 18], "newText": "fn greet() { return 1; }\n"}], "diagnostics": []}]
     ```
 
+### Multi-file formatting-hook acceptance flow (`--project`)
+
+For project-wide acceptance checks, the CLI can concatenate all `*.tiny` files
+under a folder and surface formatting through both `format` and
+`code-actions` responses. The key invariant is:
+
+- The `source.format` code action contains exactly one full-document edit.
+- That edit's `newText` is byte-identical to the `format` command's returned
+  `source` payload for the same `--project` input.
+
+Minimal shell walkthrough:
+
+```bash
+tmp_dir="$(mktemp -d)"
+cat >"$tmp_dir/math.tiny" <<'EOF'
+fn add(x, y) { return x + y; }
+EOF
+cat >"$tmp_dir/main.tiny" <<'EOF'
+fn main() { return add(1, 2); }
+EOF
+cat >"$tmp_dir/formatting.tiny" <<'EOF'
+fn greet(){return 1;}
+EOF
+
+PYTHONPATH=src python src/language_server_cli.py --project "$tmp_dir" format
+PYTHONPATH=src python src/language_server_cli.py --project "$tmp_dir" code-actions
+```
+
+The detail test `test_cli_project_formatting_hook_matches_format_output` in
+`tests/detailtests/test_language_server_cli.py` automates this exact flow and
+asserts the request/response contract for formatting hooks.
+
 ## "So testest du es" quick demos
 
 The example programs referenced in the README’s “Syntax and Features” section can be exercised via the same CLI to validate hover/completion/diagnostics end-to-end. Each snippet includes a short expectation so results can be compared quickly:

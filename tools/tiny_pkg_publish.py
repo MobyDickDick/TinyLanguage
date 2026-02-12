@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import importlib
+import importlib.util
 import json
 from pathlib import Path
 import sys
@@ -170,6 +171,11 @@ def main(argv: list[str] | None = None) -> int:
         description="Stage a tiny pkg publish payload without network operations",
     )
     parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Stage publish artifacts without network side effects (required)",
+    )
+    parser.add_argument(
         "--manifest",
         type=Path,
         default=Path("tiny.toml"),
@@ -201,6 +207,14 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     args = parser.parse_args(argv)
+
+    if not args.dry_run:
+        print(
+            "Only dry-run publishing is currently implemented. "
+            "Re-run with --dry-run.",
+            file=sys.stderr,
+        )
+        return 2
 
     manifest = _read_manifest(args.manifest)
     lock_data = _read_lockfile(args.lockfile)

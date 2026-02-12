@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
 import importlib
+import importlib.util
 import json
 from pathlib import Path
 import re

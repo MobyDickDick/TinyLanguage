@@ -91,7 +91,7 @@ the following maturity tiers used to communicate API stability expectations.
 | `stdlib.http` | Experimental | Capability-gated networking; scope may shift. |
 | `stdlib.process` | Experimental | Capability-gated process spawning; API may adjust. |
 | `stdlib.fswatch` | Experimental | File watch API, likely to evolve with backend support. |
-| `stdlib.yaml` | Experimental | Optional YAML support pending final scope decision. |
+| `stdlib.yaml` | Experimental | JSON-compatible YAML subset (`key: value` mappings + JSON literals for scalars/sequences/maps); broader YAML features remain out of scope for now. |
 | `stdlib.argparse` | Beta | CLI parsing helpers; expected to expand with package tooling. |
 
 When a module changes tiers, the docs and release notes must explicitly call out

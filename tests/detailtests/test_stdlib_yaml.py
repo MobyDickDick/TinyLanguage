@@ -1,11 +1,8 @@
-"""Placeholder tests for the stdlib yaml module stub."""
-
-import pytest
+"""Coverage tests for the stdlib yaml module."""
 
 
-@pytest.mark.xfail(reason="stdlib.yaml stub not implemented yet", strict=False)
-def test_stdlib_yaml_round_trip_placeholder(run_tiny_source):
-    """Document the expected parse/stringify round trip for YAML."""
+def test_stdlib_yaml_round_trip_mapping_and_sequence(run_tiny_source):
+    """Parse a compact YAML mapping and render it back to text."""
     out = run_tiny_source(
         """
         import stdlib.yaml;
@@ -16,24 +13,24 @@ def test_stdlib_yaml_round_trip_placeholder(run_tiny_source):
         """,
     )
 
-    assert "a:" in out
-    assert "b:" in out
+    assert "a: \"1\"" in out
+    assert "b: [true,null]" in out
 
 
-@pytest.mark.xfail(reason="stdlib.yaml stub not implemented yet", strict=False)
-def test_stdlib_yaml_load_dump_placeholder(run_tiny_source, tmp_path):
-    """Document the expected file-based helpers for YAML."""
+def test_stdlib_yaml_load_dump_round_trip(run_tiny_source, tmp_path):
+    """Load a YAML file and dump it again via stdlib helpers."""
     yaml_path = tmp_path / "sample.yaml"
-    yaml_path.write_text("flag: true\n")
+    yaml_path.write_text("flag: true\nname: tiny\n", encoding="utf-8")
 
     out = run_tiny_source(
         f"""
         import stdlib.yaml;
-        def value = yaml.load(\"{yaml_path}\");
-        def _dumped = yaml.dump(\"{yaml_path}\", value);
+        def value = yaml.load("{yaml_path}");
+        def _dumped = yaml.dump("{yaml_path}", value);
         def _cleanup_value = delete(value);
-        print(File.read(\"{yaml_path}\"));
+        print(File.read("{yaml_path}"));
         """,
     )
 
-    assert "flag" in out
+    assert "flag: true" in out
+    assert "name: \"tiny\"" in out

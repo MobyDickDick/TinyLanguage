@@ -109,6 +109,13 @@ backlog once ownership and sequencing are confirmed.
 - [x] Add a stdlib deprecation checklist entry to
   `docs/versioning_deprecation_policy.md`, including the expected warning
   timeline and aliasing strategy.
+- [x] Finalize the `stdlib.yaml` scope decision and replace the placeholder
+  stub behavior with a minimal JSON-compatible implementation (mapping lines +
+  JSON literals), including executable tests and examples.
+  - Notes: `stdlib/yaml.tiny` now supports parsing `key: value` mappings,
+    JSON-style scalar/list/map literals, and `load`/`dump` round-trips;
+    coverage lives in `tests/detailtests/test_stdlib_yaml.py` and examples in
+    `docs/stdlib_examples.md`.
 - [x] Add a self-hosting compiler bootstrap milestone to
   `docs/self_hosting_port_plan.md` that defines seed executable requirements
   (Windows/macOS/Linux), reproducible bootstrap steps, and parity validation

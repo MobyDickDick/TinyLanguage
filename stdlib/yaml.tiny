@@ -64,7 +64,7 @@ fn stringify(value) -> string {
     def _push = Collections.push(lines, entry);
     idx = idx + 1;
   }
-  def rendered = String.join(lines, "\n") + "\n";
+  def rendered = String.join(lines, "\n");
   def _cleanup_keys = delete(keys);
   def _cleanup_lines = delete(lines);
   return rendered;

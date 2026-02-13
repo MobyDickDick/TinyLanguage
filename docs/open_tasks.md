@@ -5,6 +5,14 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Open-task audit (2026-02-13)
+
+- [x] Audited repository planning docs for unchecked checklist entries (`- [ ]`).
+  - Result: no unchecked checklist tasks remain in `docs/` at audit time.
+- [x] Promoted the next planning action for this cycle:
+  - Run backlog triage for newly proposed items (owner assignment + sequencing) and either
+    move accepted items into the refreshed near-term backlog or archive deferred items with rationale.
+
 The active work items are tracked in the refreshed near-term backlog and the
 sections below.
 

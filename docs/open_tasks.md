@@ -75,10 +75,12 @@ backlog once ownership and sequencing are confirmed.
      async tasks, including the expected output from `tiny debug trace` when
      multiple tasks are scheduled.
    - Status: Completed via the concrete task below (`docs/debugger_guide.md`).
-3. **Add reproducible perf regression triage playbook** (Owner: Runtime)
+3. ✅ **Add reproducible perf regression triage playbook** (Owner: Runtime, Completed)
    - Success: `docs/performance_budgets_and_baselines.md` includes a playbook
      for diffing baseline JSONs, capturing flamegraphs, and filing regression
      tickets with the required artifacts.
+   - Status: Completed via the concrete task below
+     (`docs/performance_budgets_and_baselines.md`).
 4. **Define a module deprecation workflow for stdlib moves** (Owner: Language/Stdlib)
    - Success: `docs/versioning_deprecation_policy.md` includes a checklist for
      stdlib moves (announce, warn, provide alias, remove) and references the

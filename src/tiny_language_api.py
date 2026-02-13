@@ -704,6 +704,7 @@ class NativeModuleResolver:
     """Resolve TinyLanguage modules for the native backend."""
 
     def __init__(self, search_paths: Optional[List[Path]] = None) -> None:
+        """Initialize resolver state and search configuration for native imports."""
         self._config = ModuleResolutionConfig.from_search_paths(search_paths)
         self.stdlib_root = self._config.stdlib_root
         self.search_paths = self._config.search_paths
@@ -729,6 +730,7 @@ class NativeModuleResolver:
         caller_path: Optional[Path],
         pos: Optional[Any] = None,
     ) -> NativeNamespaceRef:
+        """Load and cache a module namespace for the native VM backend."""
         resolved_name = self._resolve_name(name, caller_namespace, pos)
         pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
         for candidate in self._candidate_paths(resolved_name, caller_path):
@@ -786,6 +788,7 @@ class LLVMModuleResolver:
     """Resolve TinyLanguage modules for the LLVM backend."""
 
     def __init__(self, search_paths: Optional[List[Path]] = None) -> None:
+        """Initialize resolver state and search configuration for LLVM imports."""
         self._config = ModuleResolutionConfig.from_search_paths(search_paths)
         self.stdlib_root = self._config.stdlib_root
         self.search_paths = self._config.search_paths
@@ -810,6 +813,7 @@ class LLVMModuleResolver:
         caller_path: Optional[Path],
         pos: Optional[Any] = None,
     ) -> LLVMModuleInfo:
+        """Load and cache a module IR bundle for LLVM code generation."""
         resolved_name = self._resolve_name(name, caller_namespace, pos)
         pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
         for candidate in self._candidate_paths(resolved_name, caller_path):
@@ -1731,7 +1735,6 @@ def _resolve_read_fn():
 
 def _repl_highlighting_enabled() -> bool:
     """Return True when REPL syntax highlighting should be active."""
-
     if not PYGMENTS_AVAILABLE:
         return False  # Skip when pygments is not installed
 

@@ -81,10 +81,11 @@ backlog once ownership and sequencing are confirmed.
      tickets with the required artifacts.
    - Status: Completed via the concrete task below
      (`docs/performance_budgets_and_baselines.md`).
-4. **Define a module deprecation workflow for stdlib moves** (Owner: Language/Stdlib)
+4. ✅ **Define a module deprecation workflow for stdlib moves** (Owner: Language/Stdlib, Completed)
    - Success: `docs/versioning_deprecation_policy.md` includes a checklist for
      stdlib moves (announce, warn, provide alias, remove) and references the
      existing compatibility matrix.
+   - Status: Completed via the concrete task below (`docs/versioning_deprecation_policy.md`).
 5. **Define a Python-independent self-hosting compiler bootstrap path** (Owner: Compiler/Runtime)
    - Success: `docs/self_hosting_port_plan.md` documents a staged bootstrap
      strategy where TinyLanguage can compile TinyLanguage without a Python

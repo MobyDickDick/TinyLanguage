@@ -86,16 +86,20 @@ backlog once ownership and sequencing are confirmed.
      stdlib moves (announce, warn, provide alias, remove) and references the
      existing compatibility matrix.
    - Status: Completed via the concrete task below (`docs/versioning_deprecation_policy.md`).
-5. **Define a Python-independent self-hosting compiler bootstrap path** (Owner: Compiler/Runtime)
+5. ✅ **Define a Python-independent self-hosting compiler bootstrap path** (Owner: Compiler/Runtime, Completed)
    - Success: `docs/self_hosting_port_plan.md` documents a staged bootstrap
      strategy where TinyLanguage can compile TinyLanguage without a Python
      runtime dependency, using a minimal platform-specific seed executable per
      target OS as the initial trust anchor.
-6. **Define an executable optimization plan for native builds** (Owner: Runtime/Compiler)
+   - Status: Completed via the concrete task below
+     (`docs/self_hosting_port_plan.md`).
+6. ✅ **Define an executable optimization plan for native builds** (Owner: Runtime/Compiler, Completed)
    - Success: `docs/native_compiler.md` and `docs/runtime_performance_goals.md`
      include a prioritized optimization backlog for generated executables
      (LLVM pass tuning, opt-level defaults, profile-guided workflow) plus
      benchmark-based acceptance criteria.
+   - Status: Completed via the concrete tasks below
+     (`docs/native_compiler.md`, `docs/runtime_performance_goals.md`).
 
 ### Concrete tasks derived from the drafts
 

@@ -70,10 +70,11 @@ backlog once ownership and sequencing are confirmed.
      emits the staged payload without network side effects.
    - Status: Completed via the concrete tasks below (`docs/package_manager_plan.md`,
      `tools/tiny_pkg_publish.py`, and `tests/detailtests/test_tiny_pkg_publish.py`).
-2. **Document debugger trace workflows for async tasks** (Owner: Tooling)
+2. ✅ **Document debugger trace workflows for async tasks** (Owner: Tooling, Completed)
    - Success: `docs/debugger_guide.md` adds a walkthrough for stepping through
      async tasks, including the expected output from `tiny debug trace` when
      multiple tasks are scheduled.
+   - Status: Completed via the concrete task below (`docs/debugger_guide.md`).
 3. **Add reproducible perf regression triage playbook** (Owner: Runtime)
    - Success: `docs/performance_budgets_and_baselines.md` includes a playbook
      for diffing baseline JSONs, capturing flamegraphs, and filing regression
@@ -94,6 +95,13 @@ backlog once ownership and sequencing are confirmed.
      benchmark-based acceptance criteria.
 
 ### Concrete tasks derived from the drafts
+
+- [x] Add an async-task debugger trace walkthrough to `docs/debugger_guide.md`
+  that includes setup steps, the `tiny debug trace` invocation, and expected
+  output for multiple concurrently scheduled tasks.
+  - Notes: `docs/debugger_guide.md` now includes a CLI-first walkthrough with
+    a runnable async sample, breakpoint configuration, expected trace output,
+    and interpretation guidance for two concurrently scheduled tasks.
 
 - [x] Draft a `tiny pkg publish --dry-run` CLI spec section that enumerates inputs,
   outputs, and expected artifacts for review in `docs/package_manager_plan.md`.

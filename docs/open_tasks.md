@@ -64,10 +64,12 @@ Timebox: 2026-03-20 to 2026-05-01 (6 weeks).
 The tasks below are newly formulated and meant to be triaged into the active
 backlog once ownership and sequencing are confirmed.
 
-1. **Ship a package publish dry-run workflow** (Owner: Ecosystem)
+1. ✅ **Ship a package publish dry-run workflow** (Owner: Ecosystem, Completed)
    - Success: `docs/package_manager_plan.md` documents a `tiny pkg publish --dry-run`
      workflow and `tools/tiny_pkg_publish.py` supports an explicit dry-run mode that
      emits the staged payload without network side effects.
+   - Status: Completed via the concrete tasks below (`docs/package_manager_plan.md`,
+     `tools/tiny_pkg_publish.py`, and `tests/detailtests/test_tiny_pkg_publish.py`).
 2. **Document debugger trace workflows for async tasks** (Owner: Tooling)
    - Success: `docs/debugger_guide.md` adds a walkthrough for stepping through
      async tasks, including the expected output from `tiny debug trace` when

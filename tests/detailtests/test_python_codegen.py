@@ -43,3 +43,32 @@ def test_python_backend_supports_comparisons_and_method_calls():
 
     assert interpreted == "hello true true\n"
     assert generated == interpreted
+
+
+def test_python_backend_supports_assignment_via_environment_setter():
+    """Python backend assignment should update bindings without AttributeError."""
+    src = """
+    def counter = 1;
+    counter = counter + 4;
+    print(counter);
+    """
+
+    interpreted = compile_and_run(src)
+    generated = run_with_python_backend(src)
+
+    assert interpreted == "5\n"
+    assert generated == interpreted
+
+
+def test_python_backend_supports_field_access_expressions():
+    """Python backend should compile and execute field access expressions."""
+    src = """
+    def p = { x: 3, y: 4 };
+    print(p.x, p.y);
+    """
+
+    interpreted = compile_and_run(src)
+    generated = run_with_python_backend(src)
+
+    assert interpreted == "3 4\n"
+    assert generated == interpreted

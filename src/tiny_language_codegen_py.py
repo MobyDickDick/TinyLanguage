@@ -357,6 +357,12 @@ class PythonCodeGenerator:
                 args=[obj, ast.Constant(value=expr.name), ast.List(elts=args, ctx=ast.Load())],
                 keywords=[],
             )
+        if isinstance(expr, Field):
+            return ast.Call(
+                func=ast.Attribute(value=ast.Name(id="runtime", ctx=ast.Load()), attr="field_get", ctx=ast.Load()),
+                args=[self._emit_expr(expr.obj, env_name=env_name), ast.Constant(value=expr.name)],
+                keywords=[],
+            )
         if isinstance(expr, Bin):
             if expr.op in {"<", "<=", ">", ">=", "==", "!="}:
                 return ast.Compare(
@@ -429,4 +435,5 @@ if TYPE_CHECKING:  # pragma: no cover - only used for type checking
         While,
         If,
         MethodCall,
+        Field,
     )

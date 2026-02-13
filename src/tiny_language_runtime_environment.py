@@ -70,6 +70,16 @@ class Environment:
         else:
             self.define(name, value, pos)
 
+    def set(self, name: str, value: Any) -> None:
+        """Compatibility setter used by generated Python backend code.
+
+        This mirrors assignment semantics: update an existing binding in the
+        nearest lexical scope, or define a new binding if the name is not
+        present yet.
+        """
+
+        self.assign(name, value, SourcePos.origin())
+
     def contains(self, name: str) -> bool:
         if name in self.values:
             return True

@@ -40,17 +40,22 @@ class SourceSpan:
 
 @dataclass(frozen=True)
 class StackFrame:
+    """One call-frame entry used in TinyLanguage stack traces."""
+
     name: str
     namespace: Optional[str]
     pos: SourcePos
 
     @property
     def qualified_name(self) -> str:
+        """Return fully qualified name when a namespace exists."""
         return f"{self.namespace}.{self.name}" if self.namespace else self.name
 
 
 @dataclass
 class TinyLangError(Exception):
+    """Structured TinyLanguage error carrying code, hint, and source location."""
+
     message: str
     pos: SourcePos = field(default_factory=SourcePos.origin)
     code: str = "E000"
@@ -69,6 +74,7 @@ class TinyLangError(Exception):
                 self.pos = normalized.start
 
     def __str__(self) -> str:  # pragma: no cover - Exception already stringifies message
+        """Return the error message string for display and logging."""
         return self.message
 
 
@@ -160,6 +166,7 @@ def _line_info(source: str, pos: Union[int, SourcePos, SourceSpan]) -> Tuple[int
 def format_error(
     source: str, pos: Union[int, SourcePos, SourceSpan], message: str, *, code: str = "E000", hint: Optional[str] = None
 ) -> str:
+    """Format a single TinyLanguage error with location, excerpt, and hint."""
     if os.environ.get("TINYLANG_DEBUG_ERRORS"):
         sys.stderr.write(
             f"[tiny_errors] format_error code={code} message={message!r} pos_type={type(pos).__name__}\n"

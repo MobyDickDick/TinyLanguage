@@ -158,7 +158,6 @@ class TinyLanguageServer:
 
     def _record_symbol(self, name: str, pos: SourcePos, kind: str, detail: Optional[str]) -> None:
         """Store a symbol with supplemental metadata for hover/completion."""
-
         self.symbols[name] = pos
         self.symbol_kinds[name] = kind
         if detail:

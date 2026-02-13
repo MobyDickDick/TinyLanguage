@@ -168,8 +168,12 @@ centralized in a single helper so new backend runners stay aligned.
 
 ## Open follow-ups
 
-- Implement the normalization helper in the parity runner (including error
+- [x] Implement the normalization helper in the parity runner (including error
   diagnostics and stdout/stderr separation).
+  - Notes: `tools/parity_runner.py` now normalizes stdout/stderr independently
+    via `tools/output_normalization.py`, and regression coverage in
+    `tests/test_parity_runner.py` verifies stream-specific diff reporting plus
+    normalized error-prefix parity.
 - Decide which suite owns stdlib behavior vs. spec vs. parity.
 - Validate the smoke subset stays under 60 seconds as tests evolve.
 

@@ -29,11 +29,14 @@ for triage into the next active timebox.
     updated `src/tiny_pkg_resolution.py` to normalize dependency paths and
     sort dependency keys before lockfile rendering for stable output.
 
-- [ ] **Define interpreter/native parity gates for release candidates**
+- [x] **Define interpreter/native parity gates for release candidates**
   (Owner: Runtime)
   - Success: `docs/release_candidate_checklist.md` adds explicit parity gates
     requiring key smoke programs to match output and error codes across
     interpreter, C backend, and native backend before release sign-off.
+  - Notes: expanded `docs/release_candidate_checklist.md` with a CI parity gate,
+    a required interpreter/C/native smoke scenario matrix, and a manual
+    transcript-attachment requirement for release sign-off auditability.
 
 - [ ] **Add a stdlib API change budget for minor releases**
   (Owner: Language/Stdlib)

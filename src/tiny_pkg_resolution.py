@@ -8,7 +8,6 @@ version constraints to select versions.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 import hashlib
 import importlib
 import importlib.util
@@ -257,6 +256,11 @@ def _parse_dependency_entry(name: str, value: object) -> dict[str, object]:
     raise SystemExit(f"Unsupported dependency format for {name}.")
 
 
+def _normalize_manifest_path(value: str) -> str:
+    """Normalize manifest path values to a stable, cross-platform form."""
+    return str(Path(value.replace("\\", "/")).as_posix())
+
+
 def resolve_manifest(
     manifest_path: Path,
 ) -> tuple[dict[str, list[ResolvedDependency]], str, str | None]:
@@ -272,15 +276,18 @@ def resolve_manifest(
     resolved: dict[str, list[ResolvedDependency]] = {section: [] for section in sections}
     for section in sections:
         deps = manifest.get(section, {})
-        for name, value in deps.items():
+        for name in sorted(deps):
+            value = deps[name]
             entry = _parse_dependency_entry(name, value)
             override = overrides.get(name)
             if isinstance(override, dict) and "path" in override:
-                override_path = (manifest_dir / str(override["path"])).resolve()
+                override_manifest_path = _normalize_manifest_path(str(override["path"]))
+                override_path = (manifest_dir / override_manifest_path).resolve()
                 if override_path.exists():
-                    entry = {"path": str(override["path"]), "version": entry.get("version")}
+                    entry = {"path": override_manifest_path, "version": entry.get("version")}
             if "path" in entry:
-                path = (manifest_dir / str(entry["path"])).resolve()
+                entry_path = _normalize_manifest_path(str(entry["path"]))
+                path = (manifest_dir / entry_path).resolve()
                 if not path.exists():
                     raise SystemExit(f"Dependency path does not exist for {name}: {path}")
                 version = _resolve_path_version(path, entry.get("version"))
@@ -291,7 +298,7 @@ def resolve_manifest(
                         version=version,
                         source="path",
                         checksum=checksum,
-                        path=str(Path(entry["path"]).as_posix()),
+                        path=entry_path,
                     )
                 )
                 continue
@@ -342,11 +349,9 @@ def resolve_manifest(
 
 def write_lockfile(lock_path: Path, manifest_path: Path) -> Path:
     resolved, manifest_hash, default_registry = resolve_manifest(manifest_path)
-    generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     lines: list[str] = [
         "lockfile_version = 1",
         f'manifest_hash = "{manifest_hash}"',
-        f'generated_at = "{generated_at}"',
     ]
     if default_registry:
         lines.append(f'registry = "{default_registry}"')

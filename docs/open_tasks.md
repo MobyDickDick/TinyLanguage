@@ -5,6 +5,36 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Proposed next-cycle tasks (2026-06 draft)
+
+The following items are intentionally left open (`- [ ]`) and are candidates
+for triage into the next active timebox.
+
+- [ ] **Publish a language-server compatibility matrix per editor client**
+  (Owner: Tooling)
+  - Success: `docs/language_server_workflows.md` includes a matrix for VS Code,
+    Neovim (LSP), and generic Language Server Protocol clients with supported
+    capabilities (`hover`, `diagnostics`, `formatting`, `code actions`) and
+    known caveats.
+
+- [ ] **Add package lockfile reproducibility checks across platforms**
+  (Owner: Ecosystem)
+  - Success: A deterministic test verifies that the same `tiny.toml` generates
+    identical lockfile content on Linux/macOS/Windows path conventions,
+    including normalized separators and stable dependency ordering.
+
+- [ ] **Define interpreter/native parity gates for release candidates**
+  (Owner: Runtime)
+  - Success: `docs/release_candidate_checklist.md` adds explicit parity gates
+    requiring key smoke programs to match output and error codes across
+    interpreter, C backend, and native backend before release sign-off.
+
+- [ ] **Add a stdlib API change budget for minor releases**
+  (Owner: Language/Stdlib)
+  - Success: `docs/versioning_deprecation_policy.md` defines a per-minor budget
+    for additive vs. breaking stdlib changes and references the required
+    migration-note template.
+
 ## Open-task audit (2026-02-13)
 
 - [x] Audited repository planning docs for unchecked checklist entries (`- [ ]`).

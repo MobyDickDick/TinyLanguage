@@ -20,11 +20,14 @@ for triage into the next active timebox.
     level caveats in `docs/language_server_workflows.md` covering VS Code,
     Neovim, and generic LSP client adapters.
 
-- [ ] **Add package lockfile reproducibility checks across platforms**
+- [x] **Add package lockfile reproducibility checks across platforms**
   (Owner: Ecosystem)
   - Success: A deterministic test verifies that the same `tiny.toml` generates
     identical lockfile content on Linux/macOS/Windows path conventions,
     including normalized separators and stable dependency ordering.
+  - Notes: added `tests/detailtests/test_pkg_lockfile_reproducibility.py` and
+    updated `src/tiny_pkg_resolution.py` to normalize dependency paths and
+    sort dependency keys before lockfile rendering for stable output.
 
 - [ ] **Define interpreter/native parity gates for release candidates**
   (Owner: Runtime)

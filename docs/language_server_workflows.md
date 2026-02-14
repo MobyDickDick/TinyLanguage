@@ -86,6 +86,33 @@ the TinyLanguage language server helper and its CLI wrapper.
 | Diagnostics | `textDocument/diagnostic` | `diagnostics` | ✅ Supported | Lints + parse errors emitted as structured ranges. |
 | Workspace symbols | `workspace/symbol` | `workspace-symbols` | ✅ Supported | Substring search across indexed symbols. |
 
+## Editor-client compatibility matrix
+
+The table below translates the core TinyLanguage helper capabilities into
+editor-client expectations. It is intended as a practical reference for
+integrators wiring the CLI helper (`src/language_server_cli.py`) into a
+JSON-RPC/LSP bridge.
+
+| Editor client | Hover | Diagnostics | Formatting | Code actions | Notes / caveats |
+| --- | --- | --- | --- | --- | --- |
+| VS Code (custom extension or task runner bridge) | ✅ Supported (`textDocument/hover`) | ✅ Supported (`textDocument/diagnostic`) | ✅ Supported (`textDocument/formatting`) | ✅ Supported (`textDocument/codeAction`) | Best fit for the current workflow: the repository already ships extension assets under `vscode-extension/`; bridge adapters should normalize 1-based TinyLanguage ranges to VS Code/LSP expectations consistently. |
+| Neovim (built-in LSP client via wrapper) | ✅ Supported | ✅ Supported | ✅ Supported | ✅ Supported | Works when TinyLanguage CLI is wrapped by an LSP transport shim. Ensure response payloads are mapped into Neovim handler tables (especially for `codeAction` edits and diagnostic severity fields). |
+| Generic LSP clients (Helix, Sublime LSP, Emacs eglot/lsp-mode, etc.) | ✅ Supported | ✅ Supported | ✅ Supported | ✅ Supported | Capability parity is available at the protocol level as long as the bridge exposes the methods listed in the feature matrix above. Clients that require strict schema validation may need adapter-side field normalization for optional metadata. |
+
+### Capability caveats by method
+
+- `hover`: returns symbol + detail + position; adapters should preserve symbol
+  names exactly (including namespace-qualified names such as `Math.inc`).
+- `diagnostics`: payload includes TinyLanguage-specific metadata (`phase`,
+  `origin`, optional `hint`) in addition to standard code/range/severity
+  fields; clients can surface extra metadata as diagnostic tags or hover text.
+- `formatting`: supports either full-document output (`format`) or edit lists
+  (`format-edits`); bridges should pick one strategy per client to avoid
+  duplicate edits.
+- `code actions`: currently includes formatting-focused source actions; adapter
+  implementations should still advertise `codeActionProvider` so future
+  non-format quick fixes can be adopted without client-side config changes.
+
 ## Supported methods and example payloads
 
 Each subcommand is a thin wrapper around an internal request/response pair and can be copy/pasted into JSON-RPC glue code. Positions are 1-based and include namespace-qualified symbols (`Math.inc`, `Tools.double`, …). Currently exposed methods (keep this table in sync with the helpers in `src/language_server.py`):

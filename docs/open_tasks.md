@@ -10,12 +10,15 @@ archived in `docs/open_tasks_archive.md`.
 The following items are intentionally left open (`- [ ]`) and are candidates
 for triage into the next active timebox.
 
-- [ ] **Publish a language-server compatibility matrix per editor client**
+- [x] **Publish a language-server compatibility matrix per editor client**
   (Owner: Tooling)
   - Success: `docs/language_server_workflows.md` includes a matrix for VS Code,
     Neovim (LSP), and generic Language Server Protocol clients with supported
     capabilities (`hover`, `diagnostics`, `formatting`, `code actions`) and
     known caveats.
+  - Notes: added the "Editor-client compatibility matrix" section and method-
+    level caveats in `docs/language_server_workflows.md` covering VS Code,
+    Neovim, and generic LSP client adapters.
 
 - [ ] **Add package lockfile reproducibility checks across platforms**
   (Owner: Ecosystem)

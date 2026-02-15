@@ -1,0 +1,187 @@
+// TinyLanguage port of a Rosetta Code Python snippet downloader.
+// Run with: python src/tiny_language.py src_tiny/rosetta_fetch_python.tiny [--out DIR] [--limit N] [--delay SECONDS]
+
+// Python helpers
+// NOTE: The script relies on Python interop for HTTP + regex parsing because TinyLanguage
+// does not yet provide a native MediaWiki client.
+def requests = Python.import_module("requests", new["Session"]);
+def urllib_parse = Python.import_module("urllib.parse", new["urlencode"]);
+def re = Python.import_module("re", new["search", "findall", "sub", "I", "S"]);
+def os = Python.import_module("os", new["makedirs"]);
+def os_path = Python.import_module("os.path", new["join", "abspath", "exists"]);
+def sys = Python.import_module("sys", new["argv"]);
+def time = Python.import_module("time", new["sleep"]);
+def builtins = Python.import_module("builtins", new["len", "list", "str", "print", "int", "float"]);
+def import_refs = new[os, os_path, time, requests, urllib_parse]; // keep linter happy
+
+def API = "https://rosettacode.org/mw/api.php";
+
+def session = requests.Session();
+
+fn build_url(params) {
+    def query = urllib_parse.urlencode(params);
+    return API + "?" + query;
+}
+
+fn get_json(url) {
+    def response = session.get(url);
+    def ignored_status = response.raise_for_status();
+    return response.json();
+}
+
+fn get_all_task_titles(limit) {
+    def titles = builtins.list();
+    def cmcontinue = Null;
+    def keep_fetching = true;
+
+    while (Collections.len(titles) < limit && keep_fetching) {
+        def params = Map.from_entries(new[
+            new["action", "query"],
+            new["list", "categorymembers"],
+            new["cmtitle", "Category:Programming_Tasks"],
+            new["cmlimit", "max"],
+            new["format", "json"]
+        ]);
+        if (cmcontinue != Null && cmcontinue != "") {
+            def ignored_set_continue = Map.set(params, "cmcontinue", cmcontinue);
+        }
+
+        def data = get_json(build_url(params));
+        def query = Map.get(data, "query", Map.new());
+        def members = Map.get(query, "categorymembers", new[]);
+
+        def idx = 0;
+        while (idx < Collections.len(members) && Collections.len(titles) < limit) {
+            def member = heap_get(members, idx);
+            Collections.push(titles, Map.get(member, "title", ""));
+            idx = idx + 1;
+        }
+
+        def continuation = Map.get(data, "continue", Map.new());
+        cmcontinue = Map.get(continuation, "cmcontinue", Null);
+        if (cmcontinue == Null || cmcontinue == "") {
+            keep_fetching = false;
+        }
+    }
+
+    return titles;
+}
+
+fn fetch_wikitext(title) {
+    def params = Map.from_entries(new[
+        new["action", "query"],
+        new["prop", "revisions"],
+        new["rvprop", "content"],
+        new["rvslots", "main"],
+        new["titles", title],
+        new["format", "json"]
+    ]);
+
+    def data = get_json(build_url(params));
+    def query = Map.get(data, "query", Map.new());
+    def pages = Map.get(query, "pages", Map.new());
+    def values = Map.values(pages);
+    if (Collections.len(values) == 0) { return ""; }
+
+    def page = heap_get(values, 0);
+    def revisions = Map.get(page, "revisions", new[]);
+    if (Collections.len(revisions) == 0) { return ""; }
+
+    def first_revision = heap_get(revisions, 0);
+    def slots = Map.get(first_revision, "slots", Map.new());
+    def main_slot = Map.get(slots, "main", Map.new());
+    return Map.get(main_slot, "*", "");
+}
+
+fn extract_python_code(wikitext) {
+    def lowered = String.lower(wikitext);
+    def blocks = re.findall("<lang\s+python[^>]*>(.*?)</lang>", lowered, re.S);
+    if (Collections.len(blocks) == 0) {
+        blocks = re.findall("<syntaxhighlight[^>]*python[^>]*>(.*?)</syntaxhighlight>", lowered, re.S);
+    }
+
+    if (Collections.len(blocks) == 0) { return Null; }
+    def code = String.trim(heap_get(blocks, 0));
+    if (code == "") { return Null; }
+    return code;
+}
+
+fn safe_name(title) {
+    def lowered = String.lower(title);
+    def normalized = re.sub("[^a-z0-9]+", "_", lowered);
+    def no_prefix = re.sub("^_+", "", normalized);
+    def no_suffix = re.sub("_+$", "", no_prefix);
+    return no_suffix + ".py";
+}
+
+fn parse_args() {
+    def argv = sys.argv;
+    def argc = builtins.len(argv);
+    def opts = Map.from_entries(new[
+        new["out", "rosetta_python_mirror"],
+        new["limit", 250],
+        new["delay", 0.15]
+    ]);
+
+    def index = 1;
+    while (index < argc) {
+        def flag = heap_get(argv, index);
+        if (flag == "--out" && index + 1 < argc) {
+            def ignored_set_out = Map.set(opts, "out", heap_get(argv, index + 1));
+            index = index + 2;
+        } else {
+            if (flag == "--limit" && index + 1 < argc) {
+                def ignored_set_limit = Map.set(opts, "limit", builtins.int(heap_get(argv, index + 1)));
+                index = index + 2;
+            } else {
+                if (flag == "--delay" && index + 1 < argc) {
+                    def ignored_set_delay = Map.set(opts, "delay", builtins.float(heap_get(argv, index + 1)));
+                    index = index + 2;
+                } else {
+                    print("Ignoring unknown or incomplete flag:", flag);
+                    index = index + 1;
+                }
+            }
+        }
+    }
+
+    return opts;
+}
+
+fn main() {
+    def args = parse_args();
+    def out_dir = Map.get(args, "out");
+    def limit = Map.get(args, "limit");
+    def delay = Map.get(args, "delay");
+
+    if (!os_path.exists(out_dir)) {
+        def ignored_mkdir = os.makedirs(out_dir);
+    }
+
+    def titles = get_all_task_titles(limit);
+    def saved = 0;
+
+    def i = 0;
+    while (i < Collections.len(titles)) {
+        def title = heap_get(titles, i);
+        try {
+            def txt = fetch_wikitext(title);
+            def code = extract_python_code(txt);
+            if (code != Null) {
+                def path = os_path.join(out_dir, safe_name(title));
+                def ignored_write = File.write(path, code + "\n");
+                saved = saved + 1;
+                print("[", i + 1, "/", Collections.len(titles), "] saved:", path);
+            }
+            time.sleep(delay);
+        } catch (err) {
+            print("[", i + 1, "/", Collections.len(titles), "] error", title, ":", err);
+        }
+        i = i + 1;
+    }
+
+    print("Done. Saved", saved, "python files to", os_path.abspath(out_dir));
+    return 0;
+}
+
+if (main() == Null) { }

@@ -151,6 +151,12 @@ def test_copy_rosetta_samples_parses() -> None:
     Parser(Lexer(source), source).parse()
 
 
+def test_rosetta_fetch_python_parses() -> None:
+    """Test that rosetta fetch python parses."""
+    source = (SRC_TINY / "rosetta_fetch_python.tiny").read_text(encoding="utf-8")
+    Parser(Lexer(source), source).parse()
+
+
 def test_compiler_cli_wrappers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that compiler cli wrappers."""
     sample = tmp_path / "sample.tiny"

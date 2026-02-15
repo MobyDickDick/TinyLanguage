@@ -17,6 +17,8 @@ fn main() {
     print("Discovered tasks:", builtins.str(Map.get(summary, "discovered_tasks")));
     print("Downloaded:", builtins.str(Map.get(summary, "downloaded")));
     print("Skipped without Python section:", builtins.str(Map.get(summary, "skipped_without_python")));
+    print("Resumed from:", builtins.str(Map.get(summary, "resumed_from")));
+    print("Last downloaded:", builtins.str(Map.get(summary, "last_downloaded")));
     print("Saved to:", Map.get(summary, "destination"));
 
     return 0;

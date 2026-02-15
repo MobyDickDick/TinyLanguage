@@ -62,6 +62,45 @@ Deprecations must be explicit, documented, and time-bound.
    - Migration notes must be included in the release guide, with examples of the
      required changes.
 
+## Stdlib API change budget for minor releases
+
+To keep minor releases predictable, each minor release (`x.Y.0`) must stay
+within the budget below for public stdlib API changes.
+
+### Budget limits
+
+- **Additive stdlib changes (default allowance): up to 10 items per minor**
+  - Includes newly added modules, functions, methods, constants, and optional
+    keyword arguments that preserve existing behavior.
+- **Soft-breaking stdlib changes (strictly limited): up to 2 items per minor**
+  - Includes behavior-tightening changes that may surface new warnings or errors
+    for previously ambiguous usage, but still keep the old API shape available
+    via compatibility shims.
+- **Hard-breaking stdlib changes: 0 items in minor releases**
+  - Removals, signature-incompatible changes, and default behavior flips are
+    prohibited in minor releases and must be deferred to a major release.
+
+If a release candidate exceeds the additive or soft-breaking budget, maintainers
+must either defer lower-priority items or re-scope the release.
+
+### Required migration-note template for budgeted changes
+
+Every soft-breaking stdlib item counted against the minor-release budget must
+include a migration note that follows the minor-upgrade guide template in
+`docs/release_minor_upgrade_guides.md` and the per-release guide under
+`docs/release_minor_guides/`.
+
+Each migration note must include:
+
+1. **Change summary**: old behavior/API and new behavior/API.
+2. **Impact scope**: which modules/functions/call patterns are affected.
+3. **Compatibility window**: first warning release and planned major removal.
+4. **Required user action**: concrete before/after code snippet.
+5. **Verification step**: at least one command users can run post-upgrade.
+
+Release sign-off should fail if a soft-breaking stdlib change lacks this
+template-complete migration note.
+
 ## Stdlib module move / rename checklist
 
 When a standard-library module path changes (for example, a merge, split, or

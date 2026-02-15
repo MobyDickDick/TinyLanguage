@@ -55,3 +55,13 @@ def test_factorial_snapshot():
 def test_hello_world_snapshot():
     """Test that hello world snapshot."""
     assert_snapshot("hello_world")
+
+
+def test_ackermann_function_snapshot():
+    """Test that ackermann_function snapshot."""
+    assert_snapshot("ackermann_function")
+
+
+def test_greatest_common_divisor_snapshot():
+    """Test that greatest_common_divisor snapshot."""
+    assert_snapshot("greatest_common_divisor")

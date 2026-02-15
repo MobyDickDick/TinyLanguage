@@ -38,11 +38,16 @@ for triage into the next active timebox.
     a required interpreter/C/native smoke scenario matrix, and a manual
     transcript-attachment requirement for release sign-off auditability.
 
-- [ ] **Add a stdlib API change budget for minor releases**
+- [x] **Add a stdlib API change budget for minor releases**
   (Owner: Language/Stdlib)
   - Success: `docs/versioning_deprecation_policy.md` defines a per-minor budget
     for additive vs. breaking stdlib changes and references the required
     migration-note template.
+  - Notes: added the "Stdlib API change budget for minor releases" section to
+    `docs/versioning_deprecation_policy.md`, including explicit additive/
+    soft-breaking/hard-breaking limits and a required migration-note template
+    tied to `docs/release_minor_upgrade_guides.md` and
+    `docs/release_minor_guides/`.
 
 ## Open-task audit (2026-02-13)
 

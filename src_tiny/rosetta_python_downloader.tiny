@@ -1,0 +1,27 @@
+// Downloads up to N Python snippets from Rosetta Code and stores them locally.
+// Uses Python interop for HTTPS + HTML parsing work.
+// Run with:
+// TINYLANG_ARGS='["./rosetta_python_samples","--limit","50","--delay","0.25"]' python src/tiny_language.py src_tiny/rosetta_python_downloader.tiny
+
+def os = Python.import_module("os", new["getenv"]);
+def builtins = Python.import_module("builtins", new["str"]);
+def downloader = Python.import_module("rosetta_python_downloader", new["download_from_args_json"]);
+
+fn main() {
+    def raw_args = os.getenv("TINYLANG_ARGS", "[]");
+
+    print("Fetching Rosetta Code Python snippets...");
+    def summary = downloader.download_from_args_json(raw_args);
+
+    print("Requested:", builtins.str(Map.get(summary, "requested")));
+    print("Discovered tasks:", builtins.str(Map.get(summary, "discovered_tasks")));
+    print("Downloaded:", builtins.str(Map.get(summary, "downloaded")));
+    print("Skipped without Python section:", builtins.str(Map.get(summary, "skipped_without_python")));
+    print("Resumed from:", builtins.str(Map.get(summary, "resumed_from")));
+    print("Last downloaded:", builtins.str(Map.get(summary, "last_downloaded")));
+    print("Saved to:", Map.get(summary, "destination"));
+
+    return 0;
+}
+
+if (main() == Null) { }

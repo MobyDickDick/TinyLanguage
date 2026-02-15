@@ -5,6 +5,37 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Active timebox (2026-02-15 refresh)
+
+The following items were promoted from the roadmap into an active execution
+window. They remain open until the listed success criteria are met.
+
+- [ ] **Improve source-span accuracy in parser/interpreter diagnostics**
+  (Owner: Frontend)
+  - Success: parser/runtime errors include stable line+column spans and at
+    least one regression test locks in the emitted span for malformed input.
+
+- [ ] **Strengthen heap API diagnostics and safety checks** (Owner: Runtime)
+  - Success: invalid pointer, out-of-bounds access, and double-delete paths
+    produce distinct user-facing messages with dedicated detail tests.
+
+- [ ] **Expand heap stress/regression coverage** (Owner: Runtime)
+  - Success: add tests for nested arrays, larger `new/delete` churn, and deep
+    recursion interaction with heap allocation/deallocation.
+
+- [ ] **Tooling ergonomics pass for CLI + formatter/LSP workflow docs**
+  (Owner: Tooling)
+  - Success: `docs/cli_workflows.md` and
+    `docs/language_server_workflows.md` each receive one end-to-end workflow
+    update validated by the corresponding tests.
+
+## Planning notes
+
+- [x] Verified all historical checklist entries below this section remain
+  archived/completed and can stay unchanged.
+- [x] Promoted a focused set of open tasks from the roadmap so the backlog has
+  clear in-progress candidates again.
+
 ## Proposed next-cycle tasks (2026-06 draft)
 
 The following items are intentionally left open (`- [ ]`) and are candidates

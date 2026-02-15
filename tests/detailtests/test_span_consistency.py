@@ -36,6 +36,16 @@ def test_parser_error_span_points_to_eof():
     _assert_span(exc.value, 1, 10, 1, 10)
 
 
+def test_parser_error_span_after_trailing_newline_stays_on_statement_line():
+    """Test that parser EOF spans after trailing newline stay on the prior token line."""
+    source = "def value = 1\n"
+
+    with pytest.raises(TinyLangError) as exc:
+        compile_and_run(source)
+
+    _assert_span(exc.value, 1, 14, 1, 14)
+
+
 def test_linter_error_span_tracks_reserved_binding_name():
     """Test that linter error span tracks reserved binding name."""
     source = textwrap.dedent(

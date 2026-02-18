@@ -18,9 +18,13 @@ window. They remain open until the listed success criteria are met.
     in `tests/detailtests/test_spans.py` to lock parser `TinyLangError` span
     coordinates and rendered line context for malformed input.
 
-- [ ] **Strengthen heap API diagnostics and safety checks** (Owner: Runtime)
+- [x] **Strengthen heap API diagnostics and safety checks** (Owner: Runtime)
   - Success: invalid pointer, out-of-bounds access, and double-delete paths
     produce distinct user-facing messages with dedicated detail tests.
+  - Notes: added `tests/detailtests/test_heap_api_diagnostics_messages.py`
+    with dedicated coverage for invalid-pointer (`heap_get(0, 0)`),
+    out-of-bounds (`heap_get(ptr, 5)`), and double-delete diagnostics,
+    asserting each path emits the expected user-facing message pattern.
 
 - [ ] **Expand heap stress/regression coverage** (Owner: Runtime)
   - Success: add tests for nested arrays, larger `new/delete` churn, and deep

@@ -118,9 +118,9 @@ def test_parser_error_exposes_code_and_location():
     err = excinfo.value
     assert err.code == "E000"
     assert err.hint is None
-    assert err.pos.line == 2
-    assert err.pos.col == 1
-    assert str(err) == "[E000] expected SYM ; (line 1, col 1)\n> 1 | def a = 1\n    | ^"
+    assert err.pos.line == 1
+    assert err.pos.col == 10
+    assert str(err) == "[E000] expected SYM ; (line 1, col 10)\n> 1 | def a = 1\n    |          ^"
 
 
 def test_unknown_variable_error_includes_hint():

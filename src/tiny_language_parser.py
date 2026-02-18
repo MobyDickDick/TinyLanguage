@@ -129,6 +129,8 @@ class Parser:
     def _current_span(self) -> SourceSpan:
         if self.tok.kind == "EOF":
             eof_pos = self.tok.pos
+            if self._last_tok is not None:
+                eof_pos = SourcePos(self._last_tok.stop.line, self._last_tok.stop.column + 1)
             return SourceSpan(eof_pos, eof_pos)
         return self._tok_span(self.tok)
 

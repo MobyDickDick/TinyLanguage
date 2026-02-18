@@ -10,10 +10,13 @@ archived in `docs/open_tasks_archive.md`.
 The following items were promoted from the roadmap into an active execution
 window. They remain open until the listed success criteria are met.
 
-- [ ] **Improve source-span accuracy in parser/interpreter diagnostics**
+- [x] **Improve source-span accuracy in parser/interpreter diagnostics**
   (Owner: Frontend)
   - Success: parser/runtime errors include stable line+column spans and at
     least one regression test locks in the emitted span for malformed input.
+  - Notes: added `test_parser_error_reports_stable_multiline_span_for_malformed_input`
+    in `tests/detailtests/test_spans.py` to lock parser `TinyLangError` span
+    coordinates and rendered line context for malformed input.
 
 - [ ] **Strengthen heap API diagnostics and safety checks** (Owner: Runtime)
   - Success: invalid pointer, out-of-bounds access, and double-delete paths

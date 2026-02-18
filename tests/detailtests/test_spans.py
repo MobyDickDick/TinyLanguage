@@ -2,7 +2,10 @@
 
 import textwrap
 
+import pytest
+
 from tiny_language import Lexer, Parser
+from tiny_language_preamble import TinyLangError
 
 
 def test_let_statement_span_tracks_semicolon():
@@ -34,3 +37,18 @@ def test_print_statement_span_includes_trailing_semicolon():
     var = print_stmt.exprs[0]
     assert var.span.start.column == 7
     assert var.span.stop.column == 11
+
+
+def test_parser_error_reports_stable_multiline_span_for_malformed_input():
+    """Lock in parser diagnostics with line/column span details for malformed input."""
+    src = "def value = 1;\nprint((value + ));\n"
+
+    with pytest.raises(TinyLangError) as exc_info:
+        Parser(Lexer(src), src).parse()
+
+    err = exc_info.value
+    assert err.span is not None
+    assert (err.span.start.line, err.span.start.column) == (2, 16)
+    assert (err.span.stop.line, err.span.stop.column) == (2, 16)
+    assert "unexpected token SYM (line 2, col 16)" in str(err)
+    assert "2 | print((value + ));" in str(err)

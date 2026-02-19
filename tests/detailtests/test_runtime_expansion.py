@@ -97,6 +97,27 @@ print(total);
     assert out.strip() == "190"
 
 
+def test_large_heap_churn_keeps_expected_sum(run_tiny_source):
+    """Stress repeated allocation/deallocation with a larger churn window."""
+    out = run_tiny_source(
+        """
+def total = 0;
+def i = 0;
+while (i < 200) {
+    def ptr = new(2);
+    def ignored1 = heap_set(ptr, 0, i);
+    def ignored2 = heap_set(ptr, 1, i * 2);
+    total = total + heap_get(ptr, 0) + heap_get(ptr, 1);
+    def _cleanup = delete(ptr);
+    i = i + 1;
+}
+print(total);
+""".strip()
+    )
+
+    assert out.strip() == "59700"
+
+
 def test_deep_recursion_sum(run_tiny_source):
     """Test that deep recursion sum."""
     out = run_tiny_source(
@@ -153,6 +174,38 @@ print(sum_heap(10));
     )
 
     assert out.strip() == "55"
+
+
+def test_recursive_nested_heap_allocations_cleanup(run_tiny_source):
+    """Exercise nested heap pointers under recursion and verify cleanup."""
+    out = run_tiny_source(
+        """
+fn nested_sum(depth) {
+    if (depth == 0) {
+        return 0;
+    }
+
+    def outer = new(2);
+    def inner = new(2);
+    def ignored1 = heap_set(inner, 0, depth);
+    def ignored2 = heap_set(inner, 1, depth * 2);
+    def ignored3 = heap_set(outer, 0, inner);
+    def ignored4 = heap_set(outer, 1, depth + 100);
+
+    def inner_ptr = heap_get(outer, 0);
+    def value = heap_get(inner_ptr, 0) + heap_get(inner_ptr, 1) + heap_get(outer, 1);
+    def nested = value + nested_sum(depth - 1);
+
+    def _cleanup_inner = delete(inner_ptr);
+    def _cleanup_outer = delete(outer);
+    return nested;
+}
+
+print(nested_sum(30));
+""".strip()
+    )
+
+    assert out.strip() == "4860"
 
 
 def test_heap_bounds_error_negative_index(run_tiny_source, monkeypatch):

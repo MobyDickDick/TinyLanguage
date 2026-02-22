@@ -26,9 +26,12 @@ window. They remain open until the listed success criteria are met.
     out-of-bounds (`heap_get(ptr, 5)`), and double-delete diagnostics,
     asserting each path emits the expected user-facing message pattern.
 
-- [ ] **Expand heap stress/regression coverage** (Owner: Runtime)
+- [x] **Expand heap stress/regression coverage** (Owner: Runtime)
   - Success: add tests for nested arrays, larger `new/delete` churn, and deep
     recursion interaction with heap allocation/deallocation.
+  - Notes: expanded `tests/detailtests/test_heap_api_errors.py` with dedicated
+    nested-pointer, high-churn allocation/deallocation, and deep-recursion
+    heap-unwind scenarios that assert leak-report stability and expected output.
 
 - [ ] **Tooling ergonomics pass for CLI + formatter/LSP workflow docs**
   (Owner: Tooling)

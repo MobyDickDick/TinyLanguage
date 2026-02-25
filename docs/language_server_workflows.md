@@ -2,6 +2,29 @@
 
 This note bundles a quickstart for the `TinyLanguageServer` helper that lives in [`src/language_server.py`](../src/language_server.py). The goal is to give a lightweight, JSON-style interface for experiments with hover, completion, diagnostics, and basic LSP-style edits without implementing JSON-RPC wiring.
 
+
+## End-to-end workflow: multi-file formatting via project mode
+
+Use `--project` when you want language-server actions to operate on all
+`.tiny` files in a workspace-like directory. This is useful for editor hooks
+that request code actions and then apply returned edits.
+
+```bash
+# 1) Ask for code actions on the full project.
+PYTHONPATH=src python src/language_server_cli.py --project path/to/project code-actions
+
+# 2) Request the fully formatted source payload for the same project.
+PYTHONPATH=src python src/language_server_cli.py --project path/to/project format
+```
+
+Expected behavior: `code-actions` includes exactly one `source.format` action,
+its first edit range spans the complete aggregated project source, and that
+edit's `newText` equals the `format` command's `source` string.
+
+Regression coverage for this workflow lives in
+`tests/detailtests/test_language_server_cli.py`
+(`test_cli_project_formatting_hook_matches_format_output`).
+
 ## Quickstart: CLI demos
 
 Use the small helper CLI to run the same operations from a terminal. Either provide inline source via `--source` or point to a `.tiny` file with `--file`.

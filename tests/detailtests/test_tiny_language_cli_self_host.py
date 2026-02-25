@@ -184,3 +184,20 @@ def test_tiny_lang_cli_parity_inline_source():
 def test_tiny_cli_parity_snapshots(snapshot: CliSnapshot) -> None:
     """Test that tiny cli parity snapshots."""
     assert_cli_snapshot(snapshot)
+
+
+def test_tiny_cli_typecheck_then_backend_run_workflow(tmp_path):
+    """Typecheck-first workflow should pass before backend execution."""
+    program = "fn add(x: number, y: number) -> number { return x + y; }\nprint(add(2, 3));\n"
+    file_path = tmp_path / "typed_program.tiny"
+    file_path.write_text(program, encoding="utf-8")
+
+    typecheck_proc = run_tiny_cli(["--file", str(file_path), "--typecheck"])
+    assert typecheck_proc.returncode == 0
+    assert typecheck_proc.stdout == "5\n"
+    assert typecheck_proc.stderr == ""
+
+    backend_proc = run_tiny_cli(["--file", str(file_path), "--backend", "python"])
+    assert backend_proc.returncode == 0
+    assert backend_proc.stdout == "5\n"
+    assert backend_proc.stderr == ""

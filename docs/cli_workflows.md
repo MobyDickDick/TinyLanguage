@@ -47,6 +47,24 @@ Tiny programs:
 python src/tiny_language_cli.py --file path/to/program.tiny -- --flag value
 ```
 
+### End-to-end workflow: validate first, then run
+
+For CI and pre-commit hooks, use a two-step flow: first run with `--typecheck`
+(which validates before executing), then run again with the target backend for
+explicit backend parity checks.
+
+```bash
+# Step 1: fail early on typing/lint errors.
+python src/tiny_language_cli.py --file path/to/program.tiny --typecheck
+
+# Step 2: run the same file with the selected backend.
+python src/tiny_language_cli.py --file path/to/program.tiny --backend python
+```
+
+Regression coverage for this workflow lives in
+`tests/detailtests/test_tiny_language_cli_self_host.py`
+(`test_tiny_cli_typecheck_then_backend_run_workflow`).
+
 ## 3. LLVM emission (via `tiny_language_cli`)
 
 The CLI wrapper can emit LLVM IR without running the program. The LLVM pipeline

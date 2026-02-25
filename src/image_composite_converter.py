@@ -114,7 +114,15 @@ class Reflection:
 
 class Action:
     @staticmethod
-    def trace_image_segment(img_segment: np.ndarray, epsilon_factor: float, offset_y: int = 0) -> list[str]:
+    def trace_image_segment(
+        img_segment: np.ndarray,
+        epsilon_factor: float,
+        *,
+        scale_x: float = 1.0,
+        scale_y: float = 1.0,
+        offset_x: float = 0.0,
+        offset_y: float = 0.0,
+    ) -> list[str]:
         if img_segment is None or img_segment.size == 0:
             return []
 
@@ -143,7 +151,13 @@ class Action:
                 epsilon = epsilon_factor * cv2.arcLength(contour, True)
                 approx = cv2.approxPolyDP(contour, epsilon, True)
                 path_d = "M " + " L ".join(
-                    [f"{pt[0][0]},{pt[0][1] + offset_y}" for pt in approx]
+                    [
+                        (
+                            f"{(pt[0][0] * scale_x) + offset_x:.3f},"
+                            f"{(pt[0][1] * scale_y) + offset_y:.3f}"
+                        )
+                        for pt in approx
+                    ]
                 ) + " Z"
                 paths.append(f'  <path d="{path_d}" fill="{hex_color}" stroke="none" />')
         return paths
@@ -151,12 +165,15 @@ class Action:
     @staticmethod
     def generate_composite_svg(w: int, h: int, params: dict, folder_path: str, epsilon: float) -> str:
         svg_elements = [
-            f'<svg width="{w}px" height="{h}px" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">'
+            (
+                f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}" '
+                'xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">'
+            )
         ]
 
         if params["top_source_ref"]:
             ref_path = None
-            for ext in [".jpg", ".JPG", ".bmp"]:
+            for ext in [".jpg", ".JPG", ".jpeg", ".JPEG", ".bmp", ".png", ".PNG"]:
                 p = os.path.join(folder_path, params["top_source_ref"] + ext)
                 if os.path.exists(p):
                     ref_path = p
@@ -165,9 +182,20 @@ class Action:
             if ref_path:
                 ref_img = cv2.imread(ref_path)
                 ref_h, ref_w = ref_img.shape[:2]
-                cut_y = int(ref_h * 0.55)
+                cut_ratio = 0.55
+                cut_y = max(1, int(round(ref_h * cut_ratio)))
                 top_half_img = ref_img[0:cut_y, 0:ref_w]
-                svg_elements.extend(Action.trace_image_segment(top_half_img, epsilon))
+                target_top_h = max(1, int(round(h * cut_ratio)))
+                scale_x = w / ref_w if ref_w > 0 else 1.0
+                scale_y = target_top_h / cut_y if cut_y > 0 else 1.0
+                svg_elements.extend(
+                    Action.trace_image_segment(
+                        top_half_img,
+                        epsilon,
+                        scale_x=scale_x,
+                        scale_y=scale_y,
+                    )
+                )
 
         if params["bottom_shape"] == "square_cross":
             cx = w / 2

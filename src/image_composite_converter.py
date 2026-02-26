@@ -86,8 +86,9 @@ class Reflection:
         self.raw_desc = raw_desc
 
     def parse_description(self, base_name: str, img_filename: str):
-        desc = self.raw_desc.get(base_name, "").lower()
-        desc += " " + self.raw_desc.get(os.path.splitext(img_filename)[0], "").lower()
+        desc_raw = self.raw_desc.get(base_name, "")
+        desc_raw += " " + self.raw_desc.get(os.path.splitext(img_filename)[0], "")
+        desc = desc_raw.lower().strip()
 
         params = {
             "mode": "auto",
@@ -328,6 +329,10 @@ def run_iteration_pipeline(img_path: str, csv_path: str, max_iterations: int, ou
 
     ref = Reflection(perc.raw_desc)
     desc, params = ref.parse_description(perc.base_name, filename)
+
+    if not desc.strip():
+        print("  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.")
+        return None
 
     print(f"\n--- Verarbeite {filename} ---")
     elements = ", ".join(params["elements"]) if params["elements"] else "Kein Compositing-Befehl gefunden"

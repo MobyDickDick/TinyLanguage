@@ -125,6 +125,9 @@ class Action:
     M_PATH_D = "M188 1493H678L1018 694L1360 1493H1849V0H1485V1092L1141 287H897L553 1092V0H188Z"
     M_XMIN = 188
     M_YMAX = 1493
+    T_PATH_D = "M829 0V1194H381V1493H1636V1194H1188V0H829Z"
+    T_XMIN = 381
+    T_YMAX = 1493
 
     # AR0100 tuned defaults for 25x25.
     AR0100_BASE = {
@@ -190,8 +193,10 @@ class Action:
                 "stroke_gray": b["stroke_gray"],
                 "text_gray": b["text_gray"],
                 "label": b["label"],
-                "font_size": 14.0 * scale,
-                "text_mode": "font",
+                "tx": 8.7 * scale,
+                "ty": 5.7 * scale,
+                "s": 0.0100 * scale,
+                "text_mode": "path_t",
             }
 
         return None
@@ -207,13 +212,13 @@ class Action:
             ),
         ]
 
-        if p.get("text_mode") == "font":
+        if p.get("text_mode") == "path_t":
             elements.append(
                 (
-                    f'  <text x="{p["cx"]:.4f}" y="{p["cy"] + (p["font_size"] * 0.34):.4f}" '
-                    f'font-size="{p["font_size"]:.4f}" font-family="Arial, Helvetica, sans-serif" '
-                    f'font-weight="700" text-anchor="middle" '
-                    f'fill="{Action.grayhex(p["text_gray"])}">{p["label"]}</text>'
+                    f'  <path d="{Action.T_PATH_D}" fill="{Action.grayhex(p["text_gray"])}" '
+                    f'transform="translate({p["tx"]:.4f},{p["ty"]:.4f}) '
+                    f'scale({p["s"]:.6f},{-p["s"]:.6f}) '
+                    f'translate({-Action.T_XMIN},{-Action.T_YMAX})"/>'
                 )
             )
         else:
@@ -373,7 +378,7 @@ def run_iteration_pipeline(img_path: str, csv_path: str, max_iterations: int, ou
     ref = Reflection(perc.raw_desc)
     desc, params = ref.parse_description(perc.base_name, filename)
 
-    if not desc.strip():
+    if not desc.strip() and params["mode"] != "semantic_badge":
         print("  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.")
         return None
 
@@ -437,20 +442,28 @@ def run_iteration_pipeline(img_path: str, csv_path: str, max_iterations: int, ou
     return base, desc, params, best_iter, best_error
 
 
-def _extract_ar_number(name: str) -> int | None:
-    match = re.match(r"^AR(\d{3,4})$", name.upper())
+def _extract_ref_parts(name: str) -> tuple[str, int] | None:
+    match = re.match(r"^([A-Z]{2})(\d{3,4})$", name.upper())
     if not match:
         return None
-    return int(match.group(1))
+    return match.group(1), int(match.group(2))
 
 
 def _in_requested_range(filename: str, start_ref: str, end_ref: str) -> bool:
     stem = os.path.splitext(filename)[0].upper()
-    stem_n = _extract_ar_number(stem)
-    start_n = _extract_ar_number(start_ref)
-    end_n = _extract_ar_number(end_ref)
-    if stem_n is None or start_n is None or end_n is None:
+    stem_parts = _extract_ref_parts(stem)
+    start_parts = _extract_ref_parts(start_ref)
+    end_parts = _extract_ref_parts(end_ref)
+    if stem_parts is None or start_parts is None or end_parts is None:
         return False
+
+    stem_prefix, stem_n = stem_parts
+    start_prefix, start_n = start_parts
+    end_prefix, end_n = end_parts
+
+    if start_prefix != end_prefix or stem_prefix != start_prefix:
+        return False
+
     return start_n <= stem_n <= end_n
 
 

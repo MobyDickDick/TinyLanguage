@@ -98,10 +98,10 @@ class Reflection:
             "label": "M",
         }
 
-        if base_name.upper() == "AR0100":
+        if base_name.upper() in {"AR0100", "AC0870"}:
             params["mode"] = "semantic_badge"
             params["elements"].append("SEMANTIC: Kreis + Buchstabe")
-            params["label"] = "M"
+            params["label"] = "M" if base_name.upper() == "AR0100" else "T"
             return desc, params
 
         match = re.search(r"oben .*?wie .*?in ([a-z0-9_]+)", desc)
@@ -140,6 +140,17 @@ class Action:
         "s": 0.007665,
     }
 
+    AC0870_BASE = {
+        "cx": 15.0,
+        "cy": 15.0,
+        "r": 12.0,
+        "stroke_width": 2.0,
+        "fill_gray": 220,
+        "stroke_gray": 152,
+        "text_gray": 98,
+        "label": "T",
+    }
+
     @staticmethod
     def grayhex(gray: int) -> str:
         g = max(0, min(255, int(round(gray))))
@@ -147,44 +158,76 @@ class Action:
 
     @staticmethod
     def make_badge_params(w: int, h: int, base_name: str) -> dict | None:
-        if base_name.upper() != "AR0100":
-            return None
+        name = base_name.upper()
 
-        scale = min(w, h) / 25.0 if min(w, h) > 0 else 1.0
-        b = Action.AR0100_BASE
-        return {
-            "cx": b["cx"] * scale,
-            "cy": b["cy"] * scale,
-            "r": b["r"] * scale,
-            "stroke_circle": b["stroke_width"] * scale,
-            "fill_gray": b["fill_gray"],
-            "stroke_gray": b["stroke_gray"],
-            "text_gray": b["text_gray"],
-            "tx": b["tx"] * scale,
-            "ty": b["ty"] * scale,
-            "s": b["s"] * scale,
-            "label": "M",
-        }
+        if name == "AR0100":
+            scale = min(w, h) / 25.0 if min(w, h) > 0 else 1.0
+            b = Action.AR0100_BASE
+            return {
+                "cx": b["cx"] * scale,
+                "cy": b["cy"] * scale,
+                "r": b["r"] * scale,
+                "stroke_circle": b["stroke_width"] * scale,
+                "fill_gray": b["fill_gray"],
+                "stroke_gray": b["stroke_gray"],
+                "text_gray": b["text_gray"],
+                "tx": b["tx"] * scale,
+                "ty": b["ty"] * scale,
+                "s": b["s"] * scale,
+                "label": "M",
+                "text_mode": "path",
+            }
+
+        if name == "AC0870":
+            scale = min(w, h) / 30.0 if min(w, h) > 0 else 1.0
+            b = Action.AC0870_BASE
+            return {
+                "cx": b["cx"] * scale,
+                "cy": b["cy"] * scale,
+                "r": b["r"] * scale,
+                "stroke_circle": b["stroke_width"] * scale,
+                "fill_gray": b["fill_gray"],
+                "stroke_gray": b["stroke_gray"],
+                "text_gray": b["text_gray"],
+                "label": b["label"],
+                "font_size": 14.0 * scale,
+                "text_mode": "font",
+            }
+
+        return None
 
     @staticmethod
     def generate_badge_svg(w: int, h: int, p: dict) -> str:
-        return "\n".join(
-            [
-                f'<svg width="{w}px" height="{h}px" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">',
+        elements = [
+            f'<svg width="{w}px" height="{h}px" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">',
+            (
+                f'  <circle cx="{p["cx"]:.4f}" cy="{p["cy"]:.4f}" r="{p["r"]:.4f}" '
+                f'fill="{Action.grayhex(p["fill_gray"])}" stroke="{Action.grayhex(p["stroke_gray"])}" '
+                f'stroke-width="{p["stroke_circle"]:.4f}"/>'
+            ),
+        ]
+
+        if p.get("text_mode") == "font":
+            elements.append(
                 (
-                    f'  <circle cx="{p["cx"]:.4f}" cy="{p["cy"]:.4f}" r="{p["r"]:.4f}" '
-                    f'fill="{Action.grayhex(p["fill_gray"])}" stroke="{Action.grayhex(p["stroke_gray"])}" '
-                    f'stroke-width="{p["stroke_circle"]:.4f}"/>'
-                ),
+                    f'  <text x="{p["cx"]:.4f}" y="{p["cy"] + (p["font_size"] * 0.34):.4f}" '
+                    f'font-size="{p["font_size"]:.4f}" font-family="Arial, Helvetica, sans-serif" '
+                    f'font-weight="700" text-anchor="middle" '
+                    f'fill="{Action.grayhex(p["text_gray"])}">{p["label"]}</text>'
+                )
+            )
+        else:
+            elements.append(
                 (
                     f'  <path d="{Action.M_PATH_D}" fill="{Action.grayhex(p["text_gray"])}" '
                     f'transform="translate({p["tx"]:.4f},{p["ty"]:.4f}) '
                     f'scale({p["s"]:.6f},{-p["s"]:.6f}) '
                     f'translate({-Action.M_XMIN},{-Action.M_YMAX})"/>'
-                ),
-                "</svg>",
-            ]
-        )
+                )
+            )
+
+        elements.append("</svg>")
+        return "\n".join(elements)
 
     @staticmethod
     def trace_image_segment(

@@ -94,7 +94,14 @@ class Reflection:
             "top_source_ref": None,
             "bottom_shape": None,
             "elements": [],
+            "label": "M",
         }
+
+        if base_name.upper() == "AR0100":
+            params["mode"] = "semantic_badge"
+            params["elements"].append("SEMANTIC: Kreis + Buchstabe")
+            params["label"] = "M"
+            return desc, params
 
         match = re.search(r"oben .*?wie .*?in ([a-z0-9_]+)", desc)
         if match:
@@ -113,6 +120,71 @@ class Reflection:
 
 
 class Action:
+    # DejaVuSans-Bold glyph outline in font units.
+    M_PATH_D = "M188 1493H678L1018 694L1360 1493H1849V0H1485V1092L1141 287H897L553 1092V0H188Z"
+    M_XMIN = 188
+    M_YMAX = 1493
+
+    # AR0100 tuned defaults for 25x25.
+    AR0100_BASE = {
+        "cx": 12.654,
+        "cy": 12.065,
+        "r": 11.280,
+        "stroke_width": 1.618,
+        "fill_gray": 244,
+        "stroke_gray": 171,
+        "text_gray": 110,
+        "tx": 6.249,
+        "ty": 5.946,
+        "s": 0.007665,
+    }
+
+    @staticmethod
+    def grayhex(gray: int) -> str:
+        g = max(0, min(255, int(round(gray))))
+        return f"#{g:02x}{g:02x}{g:02x}"
+
+    @staticmethod
+    def make_badge_params(w: int, h: int, base_name: str) -> dict | None:
+        if base_name.upper() != "AR0100":
+            return None
+
+        scale = min(w, h) / 25.0 if min(w, h) > 0 else 1.0
+        b = Action.AR0100_BASE
+        return {
+            "cx": b["cx"] * scale,
+            "cy": b["cy"] * scale,
+            "r": b["r"] * scale,
+            "stroke_circle": b["stroke_width"] * scale,
+            "fill_gray": b["fill_gray"],
+            "stroke_gray": b["stroke_gray"],
+            "text_gray": b["text_gray"],
+            "tx": b["tx"] * scale,
+            "ty": b["ty"] * scale,
+            "s": b["s"] * scale,
+            "label": "M",
+        }
+
+    @staticmethod
+    def generate_badge_svg(w: int, h: int, p: dict) -> str:
+        return "\n".join(
+            [
+                f'<svg width="{w}px" height="{h}px" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">',
+                (
+                    f'  <circle cx="{p["cx"]:.4f}" cy="{p["cy"]:.4f}" r="{p["r"]:.4f}" '
+                    f'fill="{Action.grayhex(p["fill_gray"])}" stroke="{Action.grayhex(p["stroke_gray"])}" '
+                    f'stroke-width="{p["stroke_circle"]:.4f}"/>'
+                ),
+                (
+                    f'  <path d="{Action.M_PATH_D}" fill="{Action.grayhex(p["text_gray"])}" '
+                    f'transform="translate({p["tx"]:.4f},{p["ty"]:.4f}) '
+                    f'scale({p["s"]:.6f},{-p["s"]:.6f}) '
+                    f'translate({-Action.M_XMIN},{-Action.M_YMAX})"/>'
+                ),
+                "</svg>",
+            ]
+        )
+
     @staticmethod
     def trace_image_segment(
         img_segment: np.ndarray,
@@ -260,6 +332,25 @@ def run_iteration_pipeline(img_path: str, csv_path: str, max_iterations: int, ou
     print(f"\n--- Verarbeite {filename} ---")
     elements = ", ".join(params["elements"]) if params["elements"] else "Kein Compositing-Befehl gefunden"
     print(f"Befehl erkannt: {elements}")
+
+    if params["mode"] == "semantic_badge":
+        badge_params = Action.make_badge_params(w, h, perc.base_name)
+        if badge_params is None:
+            return None
+
+        svg_content = Action.generate_badge_svg(w, h, badge_params)
+        base = os.path.splitext(filename)[0]
+        with open(os.path.join(out_dir, f"{base}.svg"), "w", encoding="utf-8") as f:
+            f.write(svg_content)
+
+        if fitz is not None:
+            svg_rendered = Action.render_svg_to_numpy(svg_content, w, h)
+            if svg_rendered is not None:
+                diff = Action.create_diff_image(perc.img, svg_rendered)
+                cv2.imwrite(os.path.join(out_dir, f"{base}_diff.png"), diff)
+                return base, desc, params, 1, Action.calculate_error(perc.img, svg_rendered)
+
+        return base, desc, params, 1, float("inf")
 
     if params["mode"] != "composite":
         print("  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.")

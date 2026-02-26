@@ -12,8 +12,14 @@ import os
 import re
 from dataclasses import dataclass
 
-import cv2
-import numpy as np
+try:
+    import cv2
+except ImportError:  # pragma: no cover - optional dependency in constrained environments
+    cv2 = None
+try:
+    import numpy as np
+except ImportError:  # pragma: no cover - optional dependency in constrained environments
+    np = None
 
 try:
     import fitz  # PyMuPDF for native SVG rendering
@@ -434,6 +440,17 @@ class Action:
 
 
 def run_iteration_pipeline(img_path: str, csv_path: str, max_iterations: int, out_dir: str):
+    if cv2 is None or np is None:
+        missing = []
+        if cv2 is None:
+            missing.append("cv2")
+        if np is None:
+            missing.append("numpy")
+        raise RuntimeError(
+            "Required image dependencies are missing: " + ", ".join(missing) + ". "
+            "Install dependencies before running the conversion pipeline."
+        )
+
     folder_path = os.path.dirname(img_path)
     filename = os.path.basename(img_path)
 

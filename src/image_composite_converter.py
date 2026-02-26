@@ -98,10 +98,10 @@ class Reflection:
             "label": "M",
         }
 
-        if base_name.upper() == "AR0100":
+        if base_name.upper() in {"AR0100", "AC0870"}:
             params["mode"] = "semantic_badge"
             params["elements"].append("SEMANTIC: Kreis + Buchstabe")
-            params["label"] = "M"
+            params["label"] = "M" if base_name.upper() == "AR0100" else "T"
             return desc, params
 
         match = re.search(r"oben .*?wie .*?in ([a-z0-9_]+)", desc)
@@ -125,6 +125,9 @@ class Action:
     M_PATH_D = "M188 1493H678L1018 694L1360 1493H1849V0H1485V1092L1141 287H897L553 1092V0H188Z"
     M_XMIN = 188
     M_YMAX = 1493
+    T_PATH_D = "M829 0V1194H381V1493H1636V1194H1188V0H829Z"
+    T_XMIN = 381
+    T_YMAX = 1493
 
     # AR0100 tuned defaults for 25x25.
     AR0100_BASE = {
@@ -140,6 +143,17 @@ class Action:
         "s": 0.007665,
     }
 
+    AC0870_BASE = {
+        "cx": 15.0,
+        "cy": 15.0,
+        "r": 12.0,
+        "stroke_width": 2.0,
+        "fill_gray": 220,
+        "stroke_gray": 152,
+        "text_gray": 98,
+        "label": "T",
+    }
+
     @staticmethod
     def grayhex(gray: int) -> str:
         g = max(0, min(255, int(round(gray))))
@@ -147,44 +161,78 @@ class Action:
 
     @staticmethod
     def make_badge_params(w: int, h: int, base_name: str) -> dict | None:
-        if base_name.upper() != "AR0100":
-            return None
+        name = base_name.upper()
 
-        scale = min(w, h) / 25.0 if min(w, h) > 0 else 1.0
-        b = Action.AR0100_BASE
-        return {
-            "cx": b["cx"] * scale,
-            "cy": b["cy"] * scale,
-            "r": b["r"] * scale,
-            "stroke_circle": b["stroke_width"] * scale,
-            "fill_gray": b["fill_gray"],
-            "stroke_gray": b["stroke_gray"],
-            "text_gray": b["text_gray"],
-            "tx": b["tx"] * scale,
-            "ty": b["ty"] * scale,
-            "s": b["s"] * scale,
-            "label": "M",
-        }
+        if name == "AR0100":
+            scale = min(w, h) / 25.0 if min(w, h) > 0 else 1.0
+            b = Action.AR0100_BASE
+            return {
+                "cx": b["cx"] * scale,
+                "cy": b["cy"] * scale,
+                "r": b["r"] * scale,
+                "stroke_circle": b["stroke_width"] * scale,
+                "fill_gray": b["fill_gray"],
+                "stroke_gray": b["stroke_gray"],
+                "text_gray": b["text_gray"],
+                "tx": b["tx"] * scale,
+                "ty": b["ty"] * scale,
+                "s": b["s"] * scale,
+                "label": "M",
+                "text_mode": "path",
+            }
+
+        if name == "AC0870":
+            scale = min(w, h) / 30.0 if min(w, h) > 0 else 1.0
+            b = Action.AC0870_BASE
+            return {
+                "cx": b["cx"] * scale,
+                "cy": b["cy"] * scale,
+                "r": b["r"] * scale,
+                "stroke_circle": b["stroke_width"] * scale,
+                "fill_gray": b["fill_gray"],
+                "stroke_gray": b["stroke_gray"],
+                "text_gray": b["text_gray"],
+                "label": b["label"],
+                "tx": 8.7 * scale,
+                "ty": 5.7 * scale,
+                "s": 0.0100 * scale,
+                "text_mode": "path_t",
+            }
+
+        return None
 
     @staticmethod
     def generate_badge_svg(w: int, h: int, p: dict) -> str:
-        return "\n".join(
-            [
-                f'<svg width="{w}px" height="{h}px" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">',
+        elements = [
+            f'<svg width="{w}px" height="{h}px" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">',
+            (
+                f'  <circle cx="{p["cx"]:.4f}" cy="{p["cy"]:.4f}" r="{p["r"]:.4f}" '
+                f'fill="{Action.grayhex(p["fill_gray"])}" stroke="{Action.grayhex(p["stroke_gray"])}" '
+                f'stroke-width="{p["stroke_circle"]:.4f}"/>'
+            ),
+        ]
+
+        if p.get("text_mode") == "path_t":
+            elements.append(
                 (
-                    f'  <circle cx="{p["cx"]:.4f}" cy="{p["cy"]:.4f}" r="{p["r"]:.4f}" '
-                    f'fill="{Action.grayhex(p["fill_gray"])}" stroke="{Action.grayhex(p["stroke_gray"])}" '
-                    f'stroke-width="{p["stroke_circle"]:.4f}"/>'
-                ),
+                    f'  <path d="{Action.T_PATH_D}" fill="{Action.grayhex(p["text_gray"])}" '
+                    f'transform="translate({p["tx"]:.4f},{p["ty"]:.4f}) '
+                    f'scale({p["s"]:.6f},{-p["s"]:.6f}) '
+                    f'translate({-Action.T_XMIN},{-Action.T_YMAX})"/>'
+                )
+            )
+        else:
+            elements.append(
                 (
                     f'  <path d="{Action.M_PATH_D}" fill="{Action.grayhex(p["text_gray"])}" '
                     f'transform="translate({p["tx"]:.4f},{p["ty"]:.4f}) '
                     f'scale({p["s"]:.6f},{-p["s"]:.6f}) '
                     f'translate({-Action.M_XMIN},{-Action.M_YMAX})"/>'
-                ),
-                "</svg>",
-            ]
-        )
+                )
+            )
+
+        elements.append("</svg>")
+        return "\n".join(elements)
 
     @staticmethod
     def trace_image_segment(
@@ -330,7 +378,7 @@ def run_iteration_pipeline(img_path: str, csv_path: str, max_iterations: int, ou
     ref = Reflection(perc.raw_desc)
     desc, params = ref.parse_description(perc.base_name, filename)
 
-    if not desc.strip():
+    if not desc.strip() and params["mode"] != "semantic_badge":
         print("  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.")
         return None
 
@@ -394,20 +442,28 @@ def run_iteration_pipeline(img_path: str, csv_path: str, max_iterations: int, ou
     return base, desc, params, best_iter, best_error
 
 
-def _extract_ar_number(name: str) -> int | None:
-    match = re.match(r"^AR(\d{3,4})$", name.upper())
+def _extract_ref_parts(name: str) -> tuple[str, int] | None:
+    match = re.match(r"^([A-Z]{2})(\d{3,4})$", name.upper())
     if not match:
         return None
-    return int(match.group(1))
+    return match.group(1), int(match.group(2))
 
 
 def _in_requested_range(filename: str, start_ref: str, end_ref: str) -> bool:
     stem = os.path.splitext(filename)[0].upper()
-    stem_n = _extract_ar_number(stem)
-    start_n = _extract_ar_number(start_ref)
-    end_n = _extract_ar_number(end_ref)
-    if stem_n is None or start_n is None or end_n is None:
+    stem_parts = _extract_ref_parts(stem)
+    start_parts = _extract_ref_parts(start_ref)
+    end_parts = _extract_ref_parts(end_ref)
+    if stem_parts is None or start_parts is None or end_parts is None:
         return False
+
+    stem_prefix, stem_n = stem_parts
+    start_prefix, start_n = start_parts
+    end_prefix, end_n = end_parts
+
+    if start_prefix != end_prefix or stem_prefix != start_prefix:
+        return False
+
     return start_n <= stem_n <= end_n
 
 

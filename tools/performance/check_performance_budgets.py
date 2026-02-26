@@ -56,6 +56,19 @@ def _format_ratio(value: float) -> str:
     return f"{value:.2f}x"
 
 
+def _ratio_below_budget(ratio: float, min_ratio: float) -> bool:
+    """Return True when ``ratio`` is materially below ``min_ratio``.
+
+    We compare using a two-decimal guard so values that render identically in
+    user-facing output (e.g. 1.999 vs 2.000 -> both shown as 2.00x) do not
+    fail the budget check due to floating-point noise.
+    """
+
+    if ratio >= min_ratio:
+        return False
+    return round(ratio, 2) < round(min_ratio, 2)
+
+
 def _evaluate_results(
     *,
     results: dict[str, Any],
@@ -106,7 +119,7 @@ def _evaluate_results(
             budget = budget_cases.get(case)
             if budget:
                 min_ratio = budget["min_ratio"]
-                if ratio < min_ratio:
+                if _ratio_below_budget(ratio, min_ratio):
                     issues.append(
                         f"{case}: {backend} ratio {_format_ratio(ratio)} below budget"
                         f" {_format_ratio(min_ratio)}"

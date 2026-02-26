@@ -160,7 +160,86 @@ class Action:
         return f"#{g:02x}{g:02x}{g:02x}"
 
     @staticmethod
-    def make_badge_params(w: int, h: int, base_name: str) -> dict | None:
+    def _default_ac0870_params(w: int, h: int) -> dict:
+        scale = min(w, h) / 30.0 if min(w, h) > 0 else 1.0
+        b = Action.AC0870_BASE
+        return {
+            "cx": b["cx"] * scale,
+            "cy": b["cy"] * scale,
+            "r": b["r"] * scale,
+            "stroke_circle": b["stroke_width"] * scale,
+            "fill_gray": b["fill_gray"],
+            "stroke_gray": b["stroke_gray"],
+            "text_gray": b["text_gray"],
+            "label": b["label"],
+            "tx": 8.7 * scale,
+            "ty": 6.5 * scale,
+            "s": 0.0100 * scale,
+            "text_mode": "path_t",
+        }
+
+    @staticmethod
+    def _fit_ac0870_params_from_image(img: np.ndarray, defaults: dict) -> dict:
+        params = dict(defaults)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        h, w = gray.shape
+
+        blurred = cv2.GaussianBlur(gray, (3, 3), 0)
+        min_side = float(min(h, w))
+        circles = cv2.HoughCircles(
+            blurred,
+            cv2.HOUGH_GRADIENT,
+            dp=1.0,
+            minDist=max(8.0, min_side * 0.5),
+            param1=100,
+            param2=10,
+            minRadius=max(4, int(round(min_side * 0.25))),
+            maxRadius=max(6, int(round(min_side * 0.48))),
+        )
+
+        if circles is not None and circles.size > 0:
+            c = circles[0][0]
+            params["cx"] = float(c[0])
+            params["cy"] = float(c[1])
+            params["r"] = float(c[2])
+
+        yy, xx = np.indices(gray.shape)
+        dist = np.sqrt((xx - params["cx"]) ** 2 + (yy - params["cy"]) ** 2)
+        inner_mask = dist <= params["r"] * 0.88
+        ring_mask = np.abs(dist - params["r"]) <= max(1.0, params["stroke_circle"])
+
+        if np.any(inner_mask):
+            inner_vals = gray[inner_mask]
+            text_threshold = min(150, int(np.percentile(inner_vals, 20) + 3))
+            text_mask = (gray <= text_threshold) & inner_mask
+
+            kernel = np.ones((2, 2), np.uint8)
+            text_mask_u8 = cv2.morphologyEx(text_mask.astype(np.uint8), cv2.MORPH_OPEN, kernel)
+            contours, _ = cv2.findContours(text_mask_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            if contours:
+                contour = max(contours, key=cv2.contourArea)
+                x, y, tw, th = cv2.boundingRect(contour)
+                if tw > 2 and th > 2:
+                    t_width_units = 1636 - Action.T_XMIN
+                    t_height_units = Action.T_YMAX
+                    sx = tw / t_width_units
+                    sy = th / t_height_units
+                    s = float(max(0.004, min(0.04, (sx + sy) / 2.0)))
+                    params["s"] = s
+                    params["tx"] = float(x)
+                    params["ty"] = float(y)
+                    params["text_gray"] = int(np.median(gray[text_mask_u8 > 0]))
+
+            params["fill_gray"] = int(np.median(inner_vals))
+
+        if np.any(ring_mask):
+            params["stroke_gray"] = int(np.median(gray[ring_mask]))
+
+        return params
+
+    @staticmethod
+    def make_badge_params(w: int, h: int, base_name: str, img: np.ndarray | None = None) -> dict | None:
         name = base_name.upper()
 
         if name == "AR0100":
@@ -182,22 +261,10 @@ class Action:
             }
 
         if name == "AC0870":
-            scale = min(w, h) / 30.0 if min(w, h) > 0 else 1.0
-            b = Action.AC0870_BASE
-            return {
-                "cx": b["cx"] * scale,
-                "cy": b["cy"] * scale,
-                "r": b["r"] * scale,
-                "stroke_circle": b["stroke_width"] * scale,
-                "fill_gray": b["fill_gray"],
-                "stroke_gray": b["stroke_gray"],
-                "text_gray": b["text_gray"],
-                "label": b["label"],
-                "tx": 8.7 * scale,
-                "ty": 5.7 * scale,
-                "s": 0.0100 * scale,
-                "text_mode": "path_t",
-            }
+            defaults = Action._default_ac0870_params(w, h)
+            if img is None:
+                return defaults
+            return Action._fit_ac0870_params_from_image(img, defaults)
 
         return None
 
@@ -387,7 +454,7 @@ def run_iteration_pipeline(img_path: str, csv_path: str, max_iterations: int, ou
     print(f"Befehl erkannt: {elements}")
 
     if params["mode"] == "semantic_badge":
-        badge_params = Action.make_badge_params(w, h, perc.base_name)
+        badge_params = Action.make_badge_params(w, h, perc.base_name, perc.img)
         if badge_params is None:
             return None
 

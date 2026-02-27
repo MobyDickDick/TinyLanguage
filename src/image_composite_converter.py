@@ -117,9 +117,9 @@ class Reflection:
             params["label"] = ""
             return desc, params
 
-        if base_name.upper() in {"AR0100", "AC0812", "AC0813", "AC0870", "AC0881", "AC0882"}:
+        if base_name.upper() in {"AR0100", "AC0812", "AC0813", "AC0814", "AC0870", "AC0881", "AC0882"}:
             params["mode"] = "semantic_badge"
-            if base_name.upper() in {"AC0812", "AC0813"}:
+            if base_name.upper() in {"AC0812", "AC0813", "AC0814"}:
                 params["elements"].append("SEMANTIC: Kreis ohne Buchstabe")
                 params["label"] = ""
             else:
@@ -131,6 +131,8 @@ class Reflection:
                 params["elements"].append("SEMANTIC: waagrechter Strich links vom Kreis")
             if base_name.upper() == "AC0813":
                 params["elements"].append("SEMANTIC: senkrechter Strich oben vom Kreis")
+            if base_name.upper() == "AC0814":
+                params["elements"].append("SEMANTIC: waagrechter Strich rechts vom Kreis")
             return desc, params
 
         match = re.search(r"oben .*?wie .*?in ([a-z0-9_]+)", desc)
@@ -254,6 +256,21 @@ class Action:
     @staticmethod
     def _default_ac0813_params(w: int, h: int) -> dict:
         params = Action._default_ac0882_params(w, h)
+        cx0 = float(w) / 2.0
+        cy0 = float(h) / 2.0
+
+        def rotate_clockwise(x: float, y: float) -> tuple[float, float]:
+            return cx0 + (y - cy0), cy0 - (x - cx0)
+
+        params["cx"], params["cy"] = rotate_clockwise(params["cx"], params["cy"])
+        params["arm_x1"], params["arm_y1"] = rotate_clockwise(params["arm_x1"], params["arm_y1"])
+        params["arm_x2"], params["arm_y2"] = rotate_clockwise(params["arm_x2"], params["arm_y2"])
+        Action._center_glyph_bbox(params)
+        return params
+
+    @staticmethod
+    def _default_ac0814_params(w: int, h: int) -> dict:
+        params = Action._default_ac0813_params(w, h)
         cx0 = float(w) / 2.0
         cy0 = float(h) / 2.0
 
@@ -399,6 +416,13 @@ class Action:
 
         if name == "AC0813":
             params = Action._default_ac0813_params(w, h)
+            params["draw_text"] = False
+            params["fill_gray"] = 220
+            params["stroke_gray"] = 98
+            return params
+
+        if name == "AC0814":
+            params = Action._default_ac0814_params(w, h)
             params["draw_text"] = False
             params["fill_gray"] = 220
             params["stroke_gray"] = 98
@@ -602,7 +626,13 @@ class Action:
         return float(np.mean(cv2.absdiff(img_orig, img_svg)))
 
 
-def run_iteration_pipeline(img_path: str, csv_path: str, max_iterations: int, out_dir: str):
+def run_iteration_pipeline(
+    img_path: str,
+    csv_path: str,
+    max_iterations: int,
+    svg_out_dir: str,
+    diff_out_dir: str,
+):
     if cv2 is None or np is None:
         missing = []
         if cv2 is None:
@@ -645,14 +675,14 @@ def run_iteration_pipeline(img_path: str, csv_path: str, max_iterations: int, ou
 
         svg_content = Action.generate_badge_svg(w, h, badge_params)
         base = os.path.splitext(filename)[0]
-        with open(os.path.join(out_dir, f"{base}.svg"), "w", encoding="utf-8") as f:
+        with open(os.path.join(svg_out_dir, f"{base}.svg"), "w", encoding="utf-8") as f:
             f.write(svg_content)
 
         svg_rendered = Action.render_svg_to_numpy(svg_content, w, h)
         if svg_rendered is None:
             raise RuntimeError("SVG rendering failed although fitz is installed.")
         diff = Action.create_diff_image(perc.img, svg_rendered)
-        cv2.imwrite(os.path.join(out_dir, f"{base}_diff.png"), diff)
+        cv2.imwrite(os.path.join(diff_out_dir, f"{base}_diff.png"), diff)
         return base, desc, params, 1, Action.calculate_error(perc.img, svg_rendered)
 
     if params["mode"] != "composite":
@@ -680,10 +710,10 @@ def run_iteration_pipeline(img_path: str, csv_path: str, max_iterations: int, ou
     print(f"-> Bester Match in Iteration {best_iter} (Fehler auf {best_error:.2f} reduziert)")
 
     base = os.path.splitext(filename)[0]
-    with open(os.path.join(out_dir, f"{base}.svg"), "w", encoding="utf-8") as f:
+    with open(os.path.join(svg_out_dir, f"{base}.svg"), "w", encoding="utf-8") as f:
         f.write(best_svg)
     if best_diff is not None:
-        cv2.imwrite(os.path.join(out_dir, f"{base}_diff.png"), best_diff)
+        cv2.imwrite(os.path.join(diff_out_dir, f"{base}_diff.png"), best_diff)
 
     return base, desc, params, best_iter, best_error
 
@@ -713,9 +743,20 @@ def _in_requested_range(filename: str, start_ref: str, end_ref: str) -> bool:
     return start_n <= stem_n <= end_n
 
 
+def _default_converted_symbols_root() -> str:
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(repo_root, "artifacts", "converted_symbols")
+
+
 def convert_range(folder_path: str, csv_path: str, iterations: int, start_ref: str = "AR0102", end_ref: str = "AR0104") -> str:
-    out_dir = os.path.join(folder_path, "Iterated_SVGs")
-    os.makedirs(out_dir, exist_ok=True)
+    out_root = _default_converted_symbols_root()
+    svg_out_dir = os.path.join(out_root, "svg")
+    diff_out_dir = os.path.join(out_root, "diff_pngs")
+    reports_out_dir = os.path.join(out_root, "reports")
+
+    os.makedirs(svg_out_dir, exist_ok=True)
+    os.makedirs(diff_out_dir, exist_ok=True)
+    os.makedirs(reports_out_dir, exist_ok=True)
 
     files = sorted(
         f
@@ -723,17 +764,23 @@ def convert_range(folder_path: str, csv_path: str, iterations: int, start_ref: s
         if f.lower().endswith((".bmp", ".jpg", ".png")) and _in_requested_range(f, start_ref, end_ref)
     )
 
-    log_path = os.path.join(out_dir, "Iteration_Log.csv")
+    log_path = os.path.join(reports_out_dir, "Iteration_Log.csv")
     with open(log_path, mode="w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f, delimiter=";")
         writer.writerow(["Dateiname", "Gefundene Elemente", "Beste Iteration", "Diff-Score"])
         for filename in files:
-            res = run_iteration_pipeline(os.path.join(folder_path, filename), csv_path, iterations, out_dir)
+            res = run_iteration_pipeline(
+                os.path.join(folder_path, filename),
+                csv_path,
+                iterations,
+                svg_out_dir,
+                diff_out_dir,
+            )
             if res:
                 _base, _desc, params, best_iter, best_error = res
                 writer.writerow([filename, " + ".join(params["elements"]), best_iter, f"{best_error:.2f}"])
 
-    return out_dir
+    return out_root
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

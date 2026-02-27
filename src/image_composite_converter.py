@@ -450,6 +450,11 @@ def run_iteration_pipeline(img_path: str, csv_path: str, max_iterations: int, ou
             "Required image dependencies are missing: " + ", ".join(missing) + ". "
             "Install dependencies before running the conversion pipeline."
         )
+    if fitz is None:
+        raise RuntimeError(
+            "Required SVG renderer dependency is missing: fitz (PyMuPDF). "
+            "Install PyMuPDF before running the conversion pipeline."
+        )
 
     folder_path = os.path.dirname(img_path)
     filename = os.path.basename(img_path)
@@ -480,14 +485,12 @@ def run_iteration_pipeline(img_path: str, csv_path: str, max_iterations: int, ou
         with open(os.path.join(out_dir, f"{base}.svg"), "w", encoding="utf-8") as f:
             f.write(svg_content)
 
-        if fitz is not None:
-            svg_rendered = Action.render_svg_to_numpy(svg_content, w, h)
-            if svg_rendered is not None:
-                diff = Action.create_diff_image(perc.img, svg_rendered)
-                cv2.imwrite(os.path.join(out_dir, f"{base}_diff.png"), diff)
-                return base, desc, params, 1, Action.calculate_error(perc.img, svg_rendered)
-
-        return base, desc, params, 1, float("inf")
+        svg_rendered = Action.render_svg_to_numpy(svg_content, w, h)
+        if svg_rendered is None:
+            raise RuntimeError("SVG rendering failed although fitz is installed.")
+        diff = Action.create_diff_image(perc.img, svg_rendered)
+        cv2.imwrite(os.path.join(out_dir, f"{base}_diff.png"), diff)
+        return base, desc, params, 1, Action.calculate_error(perc.img, svg_rendered)
 
     if params["mode"] != "composite":
         print("  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.")
@@ -502,12 +505,8 @@ def run_iteration_pipeline(img_path: str, csv_path: str, max_iterations: int, ou
     for i, eps in enumerate(epsilon_factors):
         svg_content = Action.generate_composite_svg(w, h, params, folder_path, float(eps))
 
-        if fitz is not None:
-            svg_rendered = Action.render_svg_to_numpy(svg_content, w, h)
-            error = Action.calculate_error(perc.img, svg_rendered)
-        else:
-            error = 0.0
-            svg_rendered = np.zeros_like(perc.img)
+        svg_rendered = Action.render_svg_to_numpy(svg_content, w, h)
+        error = Action.calculate_error(perc.img, svg_rendered)
 
         print(f"  [Iter {i+1}/{max_iterations}] Epsilon={eps:.4f} -> Diff-Fehler: {error:.2f}")
 

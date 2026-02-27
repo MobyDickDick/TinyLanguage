@@ -1,6 +1,6 @@
 # AC range conversion attempt log
 
-- Timestamp (UTC): `2026-02-27T21:35:11.856599+00:00`
+- Timestamp (UTC): `2026-02-27T22:22:13.349047+00:00`
 - Range: `AC0800..AC0884`
 - Iterations: `8`
 - Input count: `105`
@@ -27,7 +27,7 @@ C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\python.exe src/image_comp
 
 - Ran conversion: `true`
 - Exit code: `0`
-- Duration (s): `1.253`
+- Duration (s): `0.944`
 
 ### Converter stdout
 
@@ -52,28 +52,22 @@ Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich hin
 Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
 
 --- Verarbeite AC0812_L.jpg ---
-Befehl erkannt: Kein Compositing-Befehl gefunden
-  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
 
 --- Verarbeite AC0812_M.jpg ---
-Befehl erkannt: Kein Compositing-Befehl gefunden
-  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
 
 --- Verarbeite AC0812_S.jpg ---
-Befehl erkannt: Kein Compositing-Befehl gefunden
-  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
 
 --- Verarbeite AC0813_L.jpg ---
-Befehl erkannt: Kein Compositing-Befehl gefunden
-  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich oben vom Kreis
 
 --- Verarbeite AC0813_M.jpg ---
-Befehl erkannt: Kein Compositing-Befehl gefunden
-  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich oben vom Kreis
 
 --- Verarbeite AC0813_S.jpg ---
-Befehl erkannt: Kein Compositing-Befehl gefunden
-  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich oben vom Kreis
 
 --- Verarbeite AC0814_L.jpg ---
 Befehl erkannt: Kein Compositing-Befehl gefunden

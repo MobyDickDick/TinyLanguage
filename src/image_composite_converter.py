@@ -227,44 +227,66 @@ class Action:
         return params
 
     @staticmethod
-    def _default_ac0882_params(w: int, h: int) -> dict:
-        sx = w / 45.0 if w > 0 else 1.0
-        sy = h / 25.0 if h > 0 else 1.0
-        s = min(sx, sy)
-
-        params = {
-            "cx": 18.0 * sx,
-            "cy": 12.5 * sy,
-            "r": 8.4 * s,
-            "stroke_circle": 1.5 * s,
-            "fill_gray": 220,
+    def _default_ac081x_shared(w: int, h: int) -> dict:
+        scale = min(1.0, (min(w, h) / 25.0)) if min(w, h) > 0 else 1.0
+        cx = float(w) / 2.0
+        cy = float(h) / 2.0
+        r = 8.4 * scale
+        stroke_circle = 1.5 * scale
+        stem_or_arm = 2.0 * scale
+        stem_or_arm_len = 6.0 * scale
+        return {
+            "cx": cx,
+            "cy": cy,
+            "r": r,
+            "stroke_circle": stroke_circle,
             "stroke_gray": 152,
-            "text_gray": 98,
-            "label": "T",
-            "text_mode": "path_t",
-            "arm_enabled": True,
-            "arm_x1": 2.0 * sx,
-            "arm_y1": 12.5 * sy,
-            "arm_x2": 10.0 * sx,
-            "arm_y2": 12.5 * sy,
-            "arm_stroke": 2.0 * s,
-            "s": 0.0088 * s,
+            "fill_gray": 220,
+            "stem_or_arm": stem_or_arm,
+            "stem_or_arm_len": stem_or_arm_len,
         }
+
+    @staticmethod
+    def _default_ac0882_params(w: int, h: int) -> dict:
+        params = Action._default_ac081x_shared(w, h)
+        arm_x2 = params["cx"] - params["r"]
+        arm_x1 = max(0.0, arm_x2 - params["stem_or_arm_len"])
+        params.update(
+            {
+                "text_gray": 98,
+                "label": "T",
+                "text_mode": "path_t",
+                "arm_enabled": True,
+                "arm_x1": arm_x1,
+                "arm_y1": params["cy"],
+                "arm_x2": arm_x2,
+                "arm_y2": params["cy"],
+                "arm_stroke": params["stem_or_arm"],
+                "s": 0.0088 * min(1.0, (min(w, h) / 25.0)) if min(w, h) > 0 else 0.0088,
+            }
+        )
         Action._center_glyph_bbox(params)
         return params
 
     @staticmethod
     def _default_ac0813_params(w: int, h: int) -> dict:
-        params = Action._default_ac0882_params(w, h)
-        cx0 = float(w) / 2.0
-        cy0 = float(h) / 2.0
-
-        def rotate_clockwise(x: float, y: float) -> tuple[float, float]:
-            return cx0 + (y - cy0), cy0 - (x - cx0)
-
-        params["cx"], params["cy"] = rotate_clockwise(params["cx"], params["cy"])
-        params["arm_x1"], params["arm_y1"] = rotate_clockwise(params["arm_x1"], params["arm_y1"])
-        params["arm_x2"], params["arm_y2"] = rotate_clockwise(params["arm_x2"], params["arm_y2"])
+        params = Action._default_ac081x_shared(w, h)
+        arm_y2 = params["cy"] - params["r"]
+        arm_y1 = max(0.0, arm_y2 - params["stem_or_arm_len"])
+        params.update(
+            {
+                "text_gray": 98,
+                "label": "T",
+                "text_mode": "path_t",
+                "arm_enabled": True,
+                "arm_x1": params["cx"],
+                "arm_y1": arm_y1,
+                "arm_x2": params["cx"],
+                "arm_y2": arm_y2,
+                "arm_stroke": params["stem_or_arm"],
+                "s": 0.0088 * min(1.0, (min(w, h) / 25.0)) if min(w, h) > 0 else 0.0088,
+            }
+        )
         Action._center_glyph_bbox(params)
         return params
 
@@ -400,10 +422,15 @@ class Action:
             }
 
         if name == "AC0811":
-            params = Action._default_ac0881_params(w, h)
+            params = Action._default_ac081x_shared(w, h)
             params["draw_text"] = False
             params["fill_gray"] = 220
             params["stroke_gray"] = 98
+            params["stem_enabled"] = True
+            params["stem_width"] = params["stem_or_arm"]
+            params["stem_x"] = params["cx"] - (params["stem_width"] / 2.0)
+            params["stem_top"] = params["cy"] + params["r"]
+            params["stem_bottom"] = min(float(h), params["stem_top"] + params["stem_or_arm_len"])
             params["stem_gray"] = 98
             return params
 

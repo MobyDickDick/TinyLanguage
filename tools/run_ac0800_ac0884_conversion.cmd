@@ -41,9 +41,18 @@ exit /b 2
 if "%PYTHON_BIN%"=="" (
   where py >nul 2>nul
   if %ERRORLEVEL%==0 (
-    set "PYTHON_BIN=py -3.12"
+    py -3 -c "import sys" >nul 2>nul
+    if %ERRORLEVEL%==0 (
+      set "PYTHON_BIN=py -3"
+    ) else (
+      set "PYTHON_BIN=python"
+    )
   ) else (
     set "PYTHON_BIN=python"
+  )
+) else (
+  if exist "%PYTHON_BIN%" (
+    set "PYTHON_BIN=\"%PYTHON_BIN%\""
   )
 )
 

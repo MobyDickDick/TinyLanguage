@@ -117,13 +117,17 @@ class Reflection:
             params["label"] = ""
             return desc, params
 
-        if base_name.upper() in {"AR0100", "AC0870", "AC0881", "AC0882"}:
+        if base_name.upper() in {"AR0100", "AC0812", "AC0870", "AC0881", "AC0882"}:
             params["mode"] = "semantic_badge"
-            params["elements"].append("SEMANTIC: Kreis + Buchstabe")
-            params["label"] = "M" if base_name.upper() == "AR0100" else "T"
+            if base_name.upper() == "AC0812":
+                params["elements"].append("SEMANTIC: Kreis ohne Buchstabe")
+                params["label"] = ""
+            else:
+                params["elements"].append("SEMANTIC: Kreis + Buchstabe")
+                params["label"] = "M" if base_name.upper() == "AR0100" else "T"
             if base_name.upper() == "AC0881":
                 params["elements"].append("SEMANTIC: senkrechter Strich hinter dem Kreis")
-            if base_name.upper() == "AC0882":
+            if base_name.upper() in {"AC0812", "AC0882"}:
                 params["elements"].append("SEMANTIC: waagrechter Strich links vom Kreis")
             return desc, params
 
@@ -366,6 +370,13 @@ class Action:
             params["fill_gray"] = 220
             params["stroke_gray"] = 98
             params["stem_gray"] = 98
+            return params
+
+        if name == "AC0812":
+            params = Action._default_ac0882_params(w, h)
+            params["draw_text"] = False
+            params["fill_gray"] = 220
+            params["stroke_gray"] = 98
             return params
 
         if name == "AC0881":

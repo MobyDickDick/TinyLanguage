@@ -1,47 +1,166 @@
 # AC range conversion attempt log
 
-- Timestamp (UTC): `2026-02-27T17:17:36.309056+00:00`
+- Timestamp (UTC): `2026-02-27T18:13:37.807067+00:00`
 - Range: `AC0800..AC0884`
 - Iterations: `8`
 - Input count: `105`
 
 ## Environment
 
-- Python: `3.10.19`
-- Executable: `/root/.pyenv/versions/3.10.19/bin/python3`
-- Platform: `Linux-6.12.47-x86_64-with-glibc2.39`
+- Python: `3.14.2`
+- Executable: `C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\python.exe`
+- Platform: `Windows-11-10.0.26200-SP0`
 
 ## Dependencies
 
-- cv2: `False`
-- numpy: `False`
-- fitz: `False`
+- cv2: `True`
+- numpy: `True`
+- fitz: `True`
 
 ## Command
 
 ```bash
-/root/.pyenv/versions/3.10.19/bin/python3 src/image_composite_converter.py artifacts/images_to_convert artifacts/images_to_convert/nonexistent.csv 8 --start AC0800 --end AC0884
+C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\python.exe src/image_composite_converter.py artifacts\images_to_convert artifacts/images_to_convert/nonexistent.csv 8 --start AC0800 --end AC0884
 ```
 
 ## Result
 
-- Ran conversion: `false`
-- Reason: `missing dependencies`
+- Ran conversion: `true`
+- Exit code: `0`
+- Duration (s): `0.839`
 
-## Suggested install commands
+### Converter stdout
 
-### Linux/macOS (bash)
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install numpy opencv-python-headless pymupdf
+```text
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+
+--- Verarbeite AC0870_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0870_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0870_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0881_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
+
+--- Verarbeite AC0881_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
+
+--- Verarbeite AC0881_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
+
+--- Verarbeite AC0882_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
+
+--- Verarbeite AC0882_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
+
+--- Verarbeite AC0882_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.
+
+Abgeschlossen! Ausgaben unter: artifacts\images_to_convert\Iterated_SVGs
 ```
 
-### Windows (PowerShell)
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install numpy opencv-python-headless pymupdf
+### Converter stderr
+
+```text
+
 ```

@@ -1,6 +1,6 @@
 # AC range conversion attempt log
 
-- Timestamp (UTC): `2026-02-27T18:24:19.964040+00:00`
+- Timestamp (UTC): `2026-02-27T21:12:22.802044+00:00`
 - Range: `AC0800..AC0884`
 - Iterations: `8`
 - Input count: `105`
@@ -27,83 +27,29 @@ C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\python.exe src/image_comp
 
 - Ran conversion: `true`
 - Exit code: `0`
-- Duration (s): `2.302`
+- Duration (s): `2.72`
 
 ### Converter stdout
 
 ```text
 
 --- Verarbeite AC0800_L.jpg ---
-Befehl erkannt: OBEN: Geschnitten aus Originaldatei AC0800, UNTEN: Parametrisch generiertes Viereck mit Kreuz
-  [Iter 1/8] Epsilon=0.0500 -> Diff-Fehler: 31.07
-  [Iter 2/8] Epsilon=0.0429 -> Diff-Fehler: 31.07
-  [Iter 3/8] Epsilon=0.0359 -> Diff-Fehler: 31.07
-  [Iter 4/8] Epsilon=0.0288 -> Diff-Fehler: 31.07
-  [Iter 5/8] Epsilon=0.0217 -> Diff-Fehler: 31.07
-  [Iter 6/8] Epsilon=0.0146 -> Diff-Fehler: 31.07
-  [Iter 7/8] Epsilon=0.0076 -> Diff-Fehler: 31.07
-  [Iter 8/8] Epsilon=0.0005 -> Diff-Fehler: 31.07
--> Bester Match in Iteration 1 (Fehler auf 31.07 reduziert)
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
 
 --- Verarbeite AC0800_M.jpg ---
-Befehl erkannt: OBEN: Geschnitten aus Originaldatei AC0800, UNTEN: Parametrisch generiertes Viereck mit Kreuz
-  [Iter 1/8] Epsilon=0.0500 -> Diff-Fehler: 30.61
-  [Iter 2/8] Epsilon=0.0429 -> Diff-Fehler: 30.61
-  [Iter 3/8] Epsilon=0.0359 -> Diff-Fehler: 30.61
-  [Iter 4/8] Epsilon=0.0288 -> Diff-Fehler: 30.61
-  [Iter 5/8] Epsilon=0.0217 -> Diff-Fehler: 30.61
-  [Iter 6/8] Epsilon=0.0146 -> Diff-Fehler: 30.61
-  [Iter 7/8] Epsilon=0.0076 -> Diff-Fehler: 30.61
-  [Iter 8/8] Epsilon=0.0005 -> Diff-Fehler: 30.61
--> Bester Match in Iteration 1 (Fehler auf 30.61 reduziert)
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
 
 --- Verarbeite AC0800_S.jpg ---
-Befehl erkannt: OBEN: Geschnitten aus Originaldatei AC0800, UNTEN: Parametrisch generiertes Viereck mit Kreuz
-  [Iter 1/8] Epsilon=0.0500 -> Diff-Fehler: 30.42
-  [Iter 2/8] Epsilon=0.0429 -> Diff-Fehler: 30.42
-  [Iter 3/8] Epsilon=0.0359 -> Diff-Fehler: 30.42
-  [Iter 4/8] Epsilon=0.0288 -> Diff-Fehler: 30.42
-  [Iter 5/8] Epsilon=0.0217 -> Diff-Fehler: 30.42
-  [Iter 6/8] Epsilon=0.0146 -> Diff-Fehler: 30.42
-  [Iter 7/8] Epsilon=0.0076 -> Diff-Fehler: 30.42
-  [Iter 8/8] Epsilon=0.0005 -> Diff-Fehler: 30.42
--> Bester Match in Iteration 1 (Fehler auf 30.42 reduziert)
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
 
 --- Verarbeite AC0811_L.jpg ---
-Befehl erkannt: OBEN: Geschnitten aus Originaldatei AC0811, UNTEN: Parametrisch generiertes Viereck mit Kreuz
-  [Iter 1/8] Epsilon=0.0500 -> Diff-Fehler: 20.98
-  [Iter 2/8] Epsilon=0.0429 -> Diff-Fehler: 20.98
-  [Iter 3/8] Epsilon=0.0359 -> Diff-Fehler: 20.98
-  [Iter 4/8] Epsilon=0.0288 -> Diff-Fehler: 20.98
-  [Iter 5/8] Epsilon=0.0217 -> Diff-Fehler: 20.98
-  [Iter 6/8] Epsilon=0.0146 -> Diff-Fehler: 20.98
-  [Iter 7/8] Epsilon=0.0076 -> Diff-Fehler: 20.98
-  [Iter 8/8] Epsilon=0.0005 -> Diff-Fehler: 20.98
--> Bester Match in Iteration 1 (Fehler auf 20.98 reduziert)
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
 
 --- Verarbeite AC0811_M.jpg ---
-Befehl erkannt: OBEN: Geschnitten aus Originaldatei AC0811, UNTEN: Parametrisch generiertes Viereck mit Kreuz
-  [Iter 1/8] Epsilon=0.0500 -> Diff-Fehler: 22.57
-  [Iter 2/8] Epsilon=0.0429 -> Diff-Fehler: 22.57
-  [Iter 3/8] Epsilon=0.0359 -> Diff-Fehler: 22.57
-  [Iter 4/8] Epsilon=0.0288 -> Diff-Fehler: 22.57
-  [Iter 5/8] Epsilon=0.0217 -> Diff-Fehler: 22.57
-  [Iter 6/8] Epsilon=0.0146 -> Diff-Fehler: 22.57
-  [Iter 7/8] Epsilon=0.0076 -> Diff-Fehler: 22.57
-  [Iter 8/8] Epsilon=0.0005 -> Diff-Fehler: 22.57
--> Bester Match in Iteration 1 (Fehler auf 22.57 reduziert)
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
 
 --- Verarbeite AC0811_S.jpg ---
-Befehl erkannt: OBEN: Geschnitten aus Originaldatei AC0811, UNTEN: Parametrisch generiertes Viereck mit Kreuz
-  [Iter 1/8] Epsilon=0.0500 -> Diff-Fehler: 22.87
-  [Iter 2/8] Epsilon=0.0429 -> Diff-Fehler: 22.87
-  [Iter 3/8] Epsilon=0.0359 -> Diff-Fehler: 22.87
-  [Iter 4/8] Epsilon=0.0288 -> Diff-Fehler: 22.87
-  [Iter 5/8] Epsilon=0.0217 -> Diff-Fehler: 22.87
-  [Iter 6/8] Epsilon=0.0146 -> Diff-Fehler: 22.87
-  [Iter 7/8] Epsilon=0.0076 -> Diff-Fehler: 22.87
-  [Iter 8/8] Epsilon=0.0005 -> Diff-Fehler: 22.87
--> Bester Match in Iteration 1 (Fehler auf 22.87 reduziert)
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
 
 --- Verarbeite AC0812_L.jpg ---
 Befehl erkannt: OBEN: Geschnitten aus Originaldatei AC0812, UNTEN: Parametrisch generiertes Viereck mit Kreuz

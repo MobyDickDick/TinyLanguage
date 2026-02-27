@@ -1,0 +1,5 @@
+<svg width="15" height="15" viewBox="0 0 15 15" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+  <rect x="5.25" y="9.0" width="4.5" height="4.5" fill="#e6e6e6" stroke="#4d4d4d" stroke-width="0.3"/>
+  <line x1="5.25" y1="9.0" x2="9.75" y2="13.5" stroke="#4d4d4d" stroke-width="0.3"/>
+  <line x1="9.75" y1="9.0" x2="5.25" y2="13.5" stroke="#4d4d4d" stroke-width="0.3"/>
+</svg>

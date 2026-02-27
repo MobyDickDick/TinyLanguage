@@ -2,7 +2,7 @@
 1;AC0800;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, ohne Buchstabe und ohne Kelle.
 2;AC0811;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, ohne Buchstabe, mit Kelle unten (senkrechter grauer Strich im Hintergrund).
 3;AC0812;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, ohne Buchstabe, mit waagrechtem grauem Strich links, der den Kreis links berührt und hinter dem Kreis gezeichnet wird.
-4;AC0813;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, ohne Buchstabe, mit Kelle unten (senkrechter grauer Strich im Hintergrund).
+4;AC0813;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, ohne Buchstabe, mit Kelle oben (entspricht AC0812, um 90° im Uhrzeigersinn gedreht).
 5;AC0814;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, ohne Buchstabe, mit Kelle rechts (waagrechter grauer Strich im Hintergrund).
 6;AC0820;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "CO²", ohne Kelle.
 7;AC0831;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "CO²" und Kelle unten.

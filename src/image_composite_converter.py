@@ -117,9 +117,9 @@ class Reflection:
             params["label"] = ""
             return desc, params
 
-        if base_name.upper() in {"AR0100", "AC0812", "AC0870", "AC0881", "AC0882"}:
+        if base_name.upper() in {"AR0100", "AC0812", "AC0813", "AC0870", "AC0881", "AC0882"}:
             params["mode"] = "semantic_badge"
-            if base_name.upper() == "AC0812":
+            if base_name.upper() in {"AC0812", "AC0813"}:
                 params["elements"].append("SEMANTIC: Kreis ohne Buchstabe")
                 params["label"] = ""
             else:
@@ -129,6 +129,8 @@ class Reflection:
                 params["elements"].append("SEMANTIC: senkrechter Strich hinter dem Kreis")
             if base_name.upper() in {"AC0812", "AC0882"}:
                 params["elements"].append("SEMANTIC: waagrechter Strich links vom Kreis")
+            if base_name.upper() == "AC0813":
+                params["elements"].append("SEMANTIC: senkrechter Strich oben vom Kreis")
             return desc, params
 
         match = re.search(r"oben .*?wie .*?in ([a-z0-9_]+)", desc)
@@ -240,11 +242,27 @@ class Action:
             "text_mode": "path_t",
             "arm_enabled": True,
             "arm_x1": 2.0 * sx,
-            "arm_y": 12.5 * sy,
+            "arm_y1": 12.5 * sy,
             "arm_x2": 10.0 * sx,
+            "arm_y2": 12.5 * sy,
             "arm_stroke": 2.0 * s,
             "s": 0.0088 * s,
         }
+        Action._center_glyph_bbox(params)
+        return params
+
+    @staticmethod
+    def _default_ac0813_params(w: int, h: int) -> dict:
+        params = Action._default_ac0882_params(w, h)
+        cx0 = float(w) / 2.0
+        cy0 = float(h) / 2.0
+
+        def rotate_clockwise(x: float, y: float) -> tuple[float, float]:
+            return cx0 + (y - cy0), cy0 - (x - cx0)
+
+        params["cx"], params["cy"] = rotate_clockwise(params["cx"], params["cy"])
+        params["arm_x1"], params["arm_y1"] = rotate_clockwise(params["arm_x1"], params["arm_y1"])
+        params["arm_x2"], params["arm_y2"] = rotate_clockwise(params["arm_x2"], params["arm_y2"])
         Action._center_glyph_bbox(params)
         return params
 
@@ -379,6 +397,13 @@ class Action:
             params["stroke_gray"] = 98
             return params
 
+        if name == "AC0813":
+            params = Action._default_ac0813_params(w, h)
+            params["draw_text"] = False
+            params["fill_gray"] = 220
+            params["stroke_gray"] = 98
+            return params
+
         if name == "AC0881":
             return Action._default_ac0881_params(w, h)
 
@@ -394,10 +419,12 @@ class Action:
         ]
 
         if p.get("arm_enabled"):
+            arm_y1 = p.get("arm_y1", p.get("arm_y", 0.0))
+            arm_y2 = p.get("arm_y2", p.get("arm_y", arm_y1))
             elements.append(
                 (
-                    f'  <line x1="{p["arm_x1"]:.4f}" y1="{p["arm_y"]:.4f}" '
-                    f'x2="{p["arm_x2"]:.4f}" y2="{p["arm_y"]:.4f}" '
+                    f'  <line x1="{p["arm_x1"]:.4f}" y1="{arm_y1:.4f}" '
+                    f'x2="{p["arm_x2"]:.4f}" y2="{arm_y2:.4f}" '
                     f'stroke="{Action.grayhex(p.get("stroke_gray", 152))}" '
                     f'stroke-width="{p["arm_stroke"]:.4f}" stroke-linecap="round"/>'
                 )

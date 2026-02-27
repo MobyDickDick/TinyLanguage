@@ -104,10 +104,12 @@ class Reflection:
             "label": "M",
         }
 
-        if base_name.upper() in {"AR0100", "AC0870"}:
+        if base_name.upper() in {"AR0100", "AC0870", "AC0881"}:
             params["mode"] = "semantic_badge"
             params["elements"].append("SEMANTIC: Kreis + Buchstabe")
             params["label"] = "M" if base_name.upper() == "AR0100" else "T"
+            if base_name.upper() == "AC0881":
+                params["elements"].append("SEMANTIC: senkrechter Strich hinter dem Kreis")
             return desc, params
 
         match = re.search(r"oben .*?wie .*?in ([a-z0-9_]+)", desc)
@@ -188,6 +190,17 @@ class Action:
             "text_mode": "path_t",
         }
         Action._center_glyph_bbox(params)
+        return params
+
+    @staticmethod
+    def _default_ac0881_params(w: int, h: int) -> dict:
+        params = Action._default_ac0870_params(w, h)
+        params["stem_enabled"] = True
+        params["stem_width"] = max(1.0, params["r"] * 0.30)
+        params["stem_x"] = params["cx"] - (params["stem_width"] / 2.0)
+        params["stem_top"] = params["cy"] + (params["r"] * 0.60)
+        params["stem_bottom"] = float(h)
+        params["stem_gray"] = params["stroke_gray"]
         return params
 
     @staticmethod
@@ -294,18 +307,33 @@ class Action:
                 return defaults
             return Action._fit_ac0870_params_from_image(img, defaults)
 
+        if name == "AC0881":
+            return Action._default_ac0881_params(w, h)
+
         return None
 
     @staticmethod
     def generate_badge_svg(w: int, h: int, p: dict) -> str:
         elements = [
-            f'<svg width="{w}px" height="{h}px" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">',
+            f'<svg width="{w}px" height="{h}px" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">'
+        ]
+
+        if p.get("stem_enabled"):
+            elements.append(
+                (
+                    f'  <rect x="{p["stem_x"]:.4f}" y="{p["stem_top"]:.4f}" '
+                    f'width="{p["stem_width"]:.4f}" height="{max(0.0, p["stem_bottom"] - p["stem_top"]):.4f}" '
+                    f'fill="{Action.grayhex(p.get("stem_gray", p["stroke_gray"]))}"/>'
+                )
+            )
+
+        elements.append(
             (
                 f'  <circle cx="{p["cx"]:.4f}" cy="{p["cy"]:.4f}" r="{p["r"]:.4f}" '
                 f'fill="{Action.grayhex(p["fill_gray"])}" stroke="{Action.grayhex(p["stroke_gray"])}" '
                 f'stroke-width="{p["stroke_circle"]:.4f}"/>'
-            ),
-        ]
+            )
+        )
 
         if p.get("text_mode") == "path_t":
             elements.append(

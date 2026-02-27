@@ -104,6 +104,12 @@ class Reflection:
             "label": "M",
         }
 
+        if base_name.upper() == "AC0800":
+            params["mode"] = "semantic_badge"
+            params["elements"].append("SEMANTIC: Kreis ohne Buchstabe")
+            params["label"] = ""
+            return desc, params
+
         if base_name.upper() in {"AR0100", "AC0870", "AC0881", "AC0882"}:
             params["mode"] = "semantic_badge"
             params["elements"].append("SEMANTIC: Kreis + Buchstabe")
@@ -335,6 +341,18 @@ class Action:
                 return defaults
             return Action._fit_ac0870_params_from_image(img, defaults)
 
+        if name == "AC0800":
+            scale = min(w, h) / 30.0 if min(w, h) > 0 else 1.0
+            return {
+                "cx": 15.0 * scale,
+                "cy": 15.0 * scale,
+                "r": 12.0 * scale,
+                "stroke_circle": 2.0 * scale,
+                "fill_gray": 220,
+                "stroke_gray": 152,
+                "draw_text": False,
+            }
+
         if name == "AC0881":
             return Action._default_ac0881_params(w, h)
 
@@ -376,24 +394,25 @@ class Action:
             )
         )
 
-        if p.get("text_mode") == "path_t":
-            elements.append(
-                (
-                    f'  <path d="{Action.T_PATH_D}" fill="{Action.grayhex(p["text_gray"])}" '
-                    f'transform="translate({p["tx"]:.4f},{p["ty"]:.4f}) '
-                    f'scale({p["s"]:.6f},{-p["s"]:.6f}) '
-                    f'translate({-Action.T_XMIN},{-Action.T_YMAX})"/>'
+        if p.get("draw_text", True):
+            if p.get("text_mode") == "path_t":
+                elements.append(
+                    (
+                        f'  <path d="{Action.T_PATH_D}" fill="{Action.grayhex(p["text_gray"])}" '
+                        f'transform="translate({p["tx"]:.4f},{p["ty"]:.4f}) '
+                        f'scale({p["s"]:.6f},{-p["s"]:.6f}) '
+                        f'translate({-Action.T_XMIN},{-Action.T_YMAX})"/>'
+                    )
                 )
-            )
-        else:
-            elements.append(
-                (
-                    f'  <path d="{Action.M_PATH_D}" fill="{Action.grayhex(p["text_gray"])}" '
-                    f'transform="translate({p["tx"]:.4f},{p["ty"]:.4f}) '
-                    f'scale({p["s"]:.6f},{-p["s"]:.6f}) '
-                    f'translate({-Action.M_XMIN},{-Action.M_YMAX})"/>'
+            else:
+                elements.append(
+                    (
+                        f'  <path d="{Action.M_PATH_D}" fill="{Action.grayhex(p["text_gray"])}" '
+                        f'transform="translate({p["tx"]:.4f},{p["ty"]:.4f}) '
+                        f'scale({p["s"]:.6f},{-p["s"]:.6f}) '
+                        f'translate({-Action.M_XMIN},{-Action.M_YMAX})"/>'
+                    )
                 )
-            )
 
         elements.append("</svg>")
         return "\n".join(elements)

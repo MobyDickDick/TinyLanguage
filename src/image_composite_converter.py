@@ -104,12 +104,14 @@ class Reflection:
             "label": "M",
         }
 
-        if base_name.upper() in {"AR0100", "AC0870", "AC0881"}:
+        if base_name.upper() in {"AR0100", "AC0870", "AC0881", "AC0882"}:
             params["mode"] = "semantic_badge"
             params["elements"].append("SEMANTIC: Kreis + Buchstabe")
             params["label"] = "M" if base_name.upper() == "AR0100" else "T"
             if base_name.upper() == "AC0881":
                 params["elements"].append("SEMANTIC: senkrechter Strich hinter dem Kreis")
+            if base_name.upper() == "AC0882":
+                params["elements"].append("SEMANTIC: waagrechter Strich links vom Kreis")
             return desc, params
 
         match = re.search(r"oben .*?wie .*?in ([a-z0-9_]+)", desc)
@@ -201,6 +203,32 @@ class Action:
         params["stem_top"] = params["cy"] + (params["r"] * 0.60)
         params["stem_bottom"] = float(h)
         params["stem_gray"] = params["stroke_gray"]
+        return params
+
+    @staticmethod
+    def _default_ac0882_params(w: int, h: int) -> dict:
+        sx = w / 45.0 if w > 0 else 1.0
+        sy = h / 25.0 if h > 0 else 1.0
+        s = min(sx, sy)
+
+        params = {
+            "cx": 18.0 * sx,
+            "cy": 12.5 * sy,
+            "r": 8.0 * s,
+            "stroke_circle": 1.5 * s,
+            "fill_gray": 220,
+            "stroke_gray": 152,
+            "text_gray": 98,
+            "label": "T",
+            "text_mode": "path_t",
+            "arm_enabled": True,
+            "arm_x1": 2.0 * sx,
+            "arm_y": 12.5 * sy,
+            "arm_x2": 10.0 * sx,
+            "arm_stroke": 2.0 * s,
+            "s": 0.0100 * s,
+        }
+        Action._center_glyph_bbox(params)
         return params
 
     @staticmethod
@@ -310,6 +338,9 @@ class Action:
         if name == "AC0881":
             return Action._default_ac0881_params(w, h)
 
+        if name == "AC0882":
+            return Action._default_ac0882_params(w, h)
+
         return None
 
     @staticmethod
@@ -317,6 +348,16 @@ class Action:
         elements = [
             f'<svg width="{w}px" height="{h}px" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">'
         ]
+
+        if p.get("arm_enabled"):
+            elements.append(
+                (
+                    f'  <line x1="{p["arm_x1"]:.4f}" y1="{p["arm_y"]:.4f}" '
+                    f'x2="{p["arm_x2"]:.4f}" y2="{p["arm_y"]:.4f}" '
+                    f'stroke="{Action.grayhex(p.get("stroke_gray", 152))}" '
+                    f'stroke-width="{p["arm_stroke"]:.4f}" stroke-linecap="round"/>'
+                )
+            )
 
         if p.get("stem_enabled"):
             elements.append(

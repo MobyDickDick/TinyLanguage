@@ -214,7 +214,7 @@ class Action:
         params = {
             "cx": 18.0 * sx,
             "cy": 12.5 * sy,
-            "r": 8.0 * s,
+            "r": 8.4 * s,
             "stroke_circle": 1.5 * s,
             "fill_gray": 220,
             "stroke_gray": 152,
@@ -226,7 +226,7 @@ class Action:
             "arm_y": 12.5 * sy,
             "arm_x2": 10.0 * sx,
             "arm_stroke": 2.0 * s,
-            "s": 0.0100 * s,
+            "s": 0.0088 * s,
         }
         Action._center_glyph_bbox(params)
         return params
@@ -624,7 +624,7 @@ def _extract_ref_parts(name: str) -> tuple[str, int] | None:
 
 
 def _in_requested_range(filename: str, start_ref: str, end_ref: str) -> bool:
-    stem = os.path.splitext(filename)[0].upper()
+    stem = get_base_name_from_file(os.path.splitext(filename)[0]).upper()
     stem_parts = _extract_ref_parts(stem)
     start_parts = _extract_ref_parts(start_ref)
     end_parts = _extract_ref_parts(end_ref)

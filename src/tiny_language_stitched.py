@@ -29,6 +29,7 @@ except ImportError:  # pragma: no cover - Windows and other platforms without te
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, _line_info, format_error
+from tiny_language_error_codes import _closest_match as _closest_match_impl
 from tiny_language_error_codes import classify_error
 
 from stdlib import register_stdlib
@@ -252,6 +253,12 @@ readline = _load_readline()
 
 def _classify_error(msg: str, candidates: Optional[List[str]] = None) -> Tuple[str, Optional[str]]:
     return classify_error(msg, candidates)
+
+
+def _closest_match(name: str, candidates: List[str]) -> Optional[str]:
+    """Backward-compatible helper for tests and callers."""
+
+    return _closest_match_impl(name, candidates)
 
 # --- segment: tiny_language_lexer.py ---
 """Tokenizer that emits TinyLanguage tokens with source positions.
@@ -936,6 +943,68 @@ source text.
 
 # ----- Parser -----
 
+from typing import List, Optional, Tuple
+
+if "Lexer" not in globals():
+    from tiny_language_lexer import Lexer, Token
+
+if "IR" not in globals():
+    from tiny_language_ast import (
+        Assign,
+        Await,
+        Bin,
+        Bool,
+        Call,
+        CallStmt,
+        ClassDef,
+        ClassNew,
+        DestructAssign,
+        Dict,
+        Field,
+        FieldAssign,
+        Flush,
+        Fn,
+        If,
+        Import,
+        IR,
+        Let,
+        Match,
+        MatchCase,
+        MethodCall,
+        MethodDef,
+        Namespace,
+        NewLit,
+        Null,
+        Num,
+        ObjLit,
+        OpDef,
+        Param,
+        Pattern,
+        Print,
+        Return,
+        Set,
+        Spawn,
+        Str,
+        Switch,
+        SwitchCase,
+        TaskBlock,
+        TryCatch,
+        Tuple,
+        TypeDef,
+        TypeVariant,
+        Var,
+        VariantCtor,
+        VariantPattern,
+        While,
+        WildcardPattern,
+    )
+
+if "SourcePos" not in globals():
+    from tiny_errors import SourcePos, SourceSpan
+
+if "TinyLangError" not in globals():
+    from tiny_language_preamble import TinyLangError, _classify_error, format_error
+
 
 class Parser:
     def __init__(
@@ -995,6 +1064,8 @@ class Parser:
     def _current_span(self) -> SourceSpan:
         if self.tok.kind == "EOF":
             eof_pos = self.tok.pos
+            if self._last_tok is not None:
+                eof_pos = SourcePos(self._last_tok.stop.line, self._last_tok.stop.column + 1)
             return SourceSpan(eof_pos, eof_pos)
         return self._tok_span(self.tok)
 
@@ -2256,13 +2327,56 @@ class PythonCodeGenerator:
                 args=[ast.Constant(value=expr.name), ast.List(elts=args, ctx=ast.Load())],
                 keywords=[],
             )
+        if isinstance(expr, MethodCall):
+            obj = self._emit_expr(expr.obj, env_name=env_name)
+            args = [self._emit_expr(arg, env_name=env_name) for arg in expr.args]
+            return ast.Call(
+                func=ast.Attribute(value=ast.Name(id="runtime", ctx=ast.Load()), attr="call_method", ctx=ast.Load()),
+                args=[obj, ast.Constant(value=expr.name), ast.List(elts=args, ctx=ast.Load())],
+                keywords=[],
+            )
+        if isinstance(expr, Field):
+            return ast.Call(
+                func=ast.Attribute(value=ast.Name(id="runtime", ctx=ast.Load()), attr="field_get", ctx=ast.Load()),
+                args=[self._emit_expr(expr.obj, env_name=env_name), ast.Constant(value=expr.name)],
+                keywords=[],
+            )
         if isinstance(expr, Bin):
+            if expr.op in {"<", "<=", ">", ">=", "==", "!="}:
+                return ast.Compare(
+                    left=self._emit_expr(expr.a, env_name=env_name),
+                    ops=[self._compare_op(expr.op)],
+                    comparators=[self._emit_expr(expr.b, env_name=env_name)],
+                )
+            if expr.op in {"&&", "and"}:
+                return ast.BoolOp(
+                    op=ast.And(),
+                    values=[self._emit_expr(expr.a, env_name=env_name), self._emit_expr(expr.b, env_name=env_name)],
+                )
+            if expr.op in {"||", "or"}:
+                return ast.BoolOp(
+                    op=ast.Or(),
+                    values=[self._emit_expr(expr.a, env_name=env_name), self._emit_expr(expr.b, env_name=env_name)],
+                )
             return ast.BinOp(left=self._emit_expr(expr.a, env_name=env_name), op=self._bin_op(expr.op), right=self._emit_expr(expr.b, env_name=env_name))
         if isinstance(expr, NewLit):
             return ast.List(elts=[self._emit_expr(item, env_name=env_name) for item in expr.items], ctx=ast.Load())
         if isinstance(expr, ObjLit):
             return ast.Dict(keys=[ast.Constant(value=k) for k, _ in expr.fields], values=[self._emit_expr(v, env_name=env_name) for _, v in expr.fields])
         raise NotImplementedError(f"expression {type(expr).__name__} is not supported by the Python backend yet")
+
+    def _compare_op(self, op: str) -> ast.cmpop:
+        mapping = {
+            "<": ast.Lt(),
+            "<=": ast.LtE(),
+            ">": ast.Gt(),
+            ">=": ast.GtE(),
+            "==": ast.Eq(),
+            "!=": ast.NotEq(),
+        }
+        if op in mapping:
+            return mapping[op]
+        raise NotImplementedError(f"comparison operator {op} is not supported in Python backend yet")
 
     def _bin_op(self, op: str) -> ast.operator:
         mapping = {
@@ -2298,6 +2412,8 @@ if TYPE_CHECKING:  # pragma: no cover - only used for type checking
         Var,
         While,
         If,
+        MethodCall,
+        Field,
     )
 
 # --- segment: tiny_language_codegen_native.py ---
@@ -10260,6 +10376,7 @@ from collections import deque
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, _line_info, format_error
+from tiny_language_error_codes import classify_error
 from tiny_language_ast import Fn, IR, Match, MethodDef, OpDef, Param, TypeVariant, VariantPattern, WildcardPattern
 from tiny_language_runtime_debugger import DebugSnapshot, Debugger, ScopeSnapshot, StepRequest
 from tiny_language_runtime_environment import Environment
@@ -10784,7 +10901,7 @@ class Runtime:
         ) -> TinyLangError:
         resolved_pos, resolved_span = self._pos_and_span(pos, span)
         location = self._format_location(resolved_pos, resolved_span) or resolved_pos or SourcePos.origin()
-        derived_code, derived_hint = _classify_error(msg, candidates)
+        derived_code, derived_hint = classify_error(msg, candidates)
         code = code or derived_code
         hint = hint or derived_hint
         source = self._source_for_namespace(self.current_module_namespace)
@@ -12854,6 +12971,7 @@ from tiny_language_codegen_c import CCodeGenerator
 from tiny_language_codegen_llvm import LLVMCodeGenerator
 from tiny_language_highlighting import PYGMENTS_AVAILABLE, highlight_source
 from tiny_language_module_resolution import ModuleResolutionConfig, candidate_module_paths, resolve_module_name
+from tiny_pkg_cli import main as pkg_main
 
 if "IR" not in globals():
     from tiny_language_ast import (
@@ -13522,6 +13640,7 @@ class NativeModuleResolver:
     """Resolve TinyLanguage modules for the native backend."""
 
     def __init__(self, search_paths: Optional[List[Path]] = None) -> None:
+        """Initialize resolver state and search configuration for native imports."""
         self._config = ModuleResolutionConfig.from_search_paths(search_paths)
         self.stdlib_root = self._config.stdlib_root
         self.search_paths = self._config.search_paths
@@ -13547,6 +13666,7 @@ class NativeModuleResolver:
         caller_path: Optional[Path],
         pos: Optional[Any] = None,
     ) -> NativeNamespaceRef:
+        """Load and cache a module namespace for the native VM backend."""
         resolved_name = self._resolve_name(name, caller_namespace, pos)
         pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
         for candidate in self._candidate_paths(resolved_name, caller_path):
@@ -13604,6 +13724,7 @@ class LLVMModuleResolver:
     """Resolve TinyLanguage modules for the LLVM backend."""
 
     def __init__(self, search_paths: Optional[List[Path]] = None) -> None:
+        """Initialize resolver state and search configuration for LLVM imports."""
         self._config = ModuleResolutionConfig.from_search_paths(search_paths)
         self.stdlib_root = self._config.stdlib_root
         self.search_paths = self._config.search_paths
@@ -13628,6 +13749,7 @@ class LLVMModuleResolver:
         caller_path: Optional[Path],
         pos: Optional[Any] = None,
     ) -> LLVMModuleInfo:
+        """Load and cache a module IR bundle for LLVM code generation."""
         resolved_name = self._resolve_name(name, caller_namespace, pos)
         pos_for_error = pos.start if isinstance(pos, SourceSpan) else pos
         for candidate in self._candidate_paths(resolved_name, caller_path):
@@ -14549,7 +14671,6 @@ def _resolve_read_fn():
 
 def _repl_highlighting_enabled() -> bool:
     """Return True when REPL syntax highlighting should be active."""
-
     if not PYGMENTS_AVAILABLE:
         return False  # Skip when pygments is not installed
 
@@ -14597,6 +14718,9 @@ def _emit_native_diagnostics(
 
 def main(argv: Optional[List[str]] = None) -> int:
     """CLI entry point for running files, snippets, REPL sessions, or codegen."""
+    argv = list(argv) if argv is not None else sys.argv[1:]
+    if argv[:1] == ["pkg"]:
+        return int(pkg_main(argv[1:]))
     parser = argparse.ArgumentParser(description="Run a TinyLanguage program from a file")
     mode_group = parser.add_mutually_exclusive_group()  # Eval and REPL are exclusive options
     mode_group.add_argument(

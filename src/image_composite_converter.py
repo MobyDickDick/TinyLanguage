@@ -130,9 +130,13 @@ class Action:
     # DejaVuSans-Bold glyph outline in font units.
     M_PATH_D = "M188 1493H678L1018 694L1360 1493H1849V0H1485V1092L1141 287H897L553 1092V0H188Z"
     M_XMIN = 188
+    M_XMAX = 1849
+    M_YMIN = 0
     M_YMAX = 1493
     T_PATH_D = "M829 0V1194H381V1493H1636V1194H1188V0H829Z"
     T_XMIN = 381
+    T_XMAX = 1636
+    T_YMIN = 0
     T_YMAX = 1493
 
     # AR0100 tuned defaults for 25x25.
@@ -169,7 +173,7 @@ class Action:
     def _default_ac0870_params(w: int, h: int) -> dict:
         scale = min(w, h) / 30.0 if min(w, h) > 0 else 1.0
         b = Action.AC0870_BASE
-        return {
+        params = {
             "cx": b["cx"] * scale,
             "cy": b["cy"] * scale,
             "r": b["r"] * scale,
@@ -183,6 +187,22 @@ class Action:
             "s": 0.0100 * scale,
             "text_mode": "path_t",
         }
+        Action._center_glyph_bbox(params)
+        return params
+
+    @staticmethod
+    def _glyph_bbox(text_mode: str) -> tuple[int, int, int, int]:
+        if text_mode == "path_t":
+            return Action.T_XMIN, Action.T_YMIN, Action.T_XMAX, Action.T_YMAX
+        return Action.M_XMIN, Action.M_YMIN, Action.M_XMAX, Action.M_YMAX
+
+    @staticmethod
+    def _center_glyph_bbox(params: dict) -> None:
+        xmin, ymin, xmax, ymax = Action._glyph_bbox(params.get("text_mode", "path"))
+        glyph_width = (xmax - xmin) * params["s"]
+        glyph_height = (ymax - ymin) * params["s"]
+        params["tx"] = float(params["cx"] - (glyph_width / 2.0))
+        params["ty"] = float(params["cy"] - (glyph_height / 2.0))
 
     @staticmethod
     def _fit_ac0870_params_from_image(img: np.ndarray, defaults: dict) -> dict:
@@ -233,9 +253,9 @@ class Action:
                     sy = th / t_height_units
                     s = float(max(0.004, min(0.04, (sx + sy) / 2.0)))
                     params["s"] = s
-                    params["tx"] = float(x)
-                    params["ty"] = float(y)
                     params["text_gray"] = int(np.median(gray[text_mask_u8 > 0]))
+
+            Action._center_glyph_bbox(params)
 
             params["fill_gray"] = int(np.median(inner_vals))
 
@@ -251,7 +271,7 @@ class Action:
         if name == "AR0100":
             scale = min(w, h) / 25.0 if min(w, h) > 0 else 1.0
             b = Action.AR0100_BASE
-            return {
+            params = {
                 "cx": b["cx"] * scale,
                 "cy": b["cy"] * scale,
                 "r": b["r"] * scale,
@@ -265,6 +285,8 @@ class Action:
                 "label": "M",
                 "text_mode": "path",
             }
+            Action._center_glyph_bbox(params)
+            return params
 
         if name == "AC0870":
             defaults = Action._default_ac0870_params(w, h)

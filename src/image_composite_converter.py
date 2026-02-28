@@ -349,6 +349,69 @@ class Action:
         return params
 
     @staticmethod
+    def _default_ac0812_params(w: int, h: int) -> dict:
+        """AC0812 is AC0811 rotated 90° clockwise."""
+        base = Action._default_ac0811_params(w, h)
+        c = float(w) / 2.0
+
+        def rotate_clockwise(x: float, y: float) -> tuple[float, float]:
+            # image-space clockwise description maps to mathematically counter-clockwise
+            # because y grows downward in raster coordinates.
+            return c - (y - c), c + (x - c)
+
+        left_x, left_y = rotate_clockwise(float(base["stem_x"]), float(base["stem_top"]))
+        right_x, right_y = rotate_clockwise(float(base["stem_x"] + base["stem_width"]), float(base["stem_top"]))
+        x1, y1 = rotate_clockwise(float(base["stem_x"]), float(base["stem_bottom"]))
+        x2, y2 = rotate_clockwise(float(base["stem_x"] + base["stem_width"]), float(base["stem_bottom"]))
+
+        arm_anchor_x = (left_x + right_x) / 2.0
+        arm_anchor_y = (left_y + right_y) / 2.0
+        arm_end_x = min(x1, x2)
+        arm_y = (y1 + y2) / 2.0
+
+        circle_x, circle_y = rotate_clockwise(float(base["cx"]), float(base["cy"]))
+
+        return Action._normalize_light_circle_colors({
+            "cx": circle_x,
+            "cy": circle_y,
+            "r": float(base["r"]),
+            "stroke_circle": float(base["stroke_circle"]),
+            "stroke_gray": int(base["stroke_gray"]),
+            "fill_gray": int(base["fill_gray"]),
+            "draw_text": False,
+            "arm_enabled": True,
+            "arm_x1": max(0.0, min(arm_anchor_x, arm_end_x)),
+            "arm_y1": arm_y,
+            "arm_x2": max(0.0, max(arm_anchor_x, arm_end_x)),
+            "arm_y2": arm_y,
+            "arm_stroke": max(1.0, abs(right_y - left_y)),
+        })
+
+    @staticmethod
+    def _fit_ac0812_params_from_image(img: np.ndarray, defaults: dict) -> dict:
+        """Fit AC0812 while keeping the horizontal arm anchored to the left edge."""
+        params = Action._fit_semantic_badge_from_image(img, defaults)
+        h, w = img.shape[:2]
+
+        raw_arm_stroke = float(params.get("arm_stroke", defaults.get("arm_stroke", max(1.0, float(h) * 0.10))))
+        cx = float(params.get("cx", defaults.get("cx", float(w) / 2.0)))
+        cy = float(params.get("cy", defaults.get("cy", float(h) / 2.0)))
+        r = float(params.get("r", defaults.get("r", float(h) * 0.4)))
+        stroke_circle = float(params.get("stroke_circle", defaults.get("stroke_circle", max(0.9, float(h) / 15.0))))
+
+        min_arm_stroke = max(1.0, stroke_circle * 0.75)
+        max_arm_stroke = max(min_arm_stroke, min(float(h) * 0.14, stroke_circle * 1.6))
+        arm_stroke = max(min_arm_stroke, min(raw_arm_stroke, max_arm_stroke))
+
+        params["arm_enabled"] = True
+        params["arm_stroke"] = arm_stroke
+        params["arm_x1"] = 0.0
+        params["arm_y1"] = cy
+        params["arm_x2"] = max(0.0, cx - r)
+        params["arm_y2"] = cy
+        return Action._normalize_light_circle_colors(params)
+
+    @staticmethod
     def _default_ac0813_params(w: int, h: int) -> dict:
         params = Action._default_ac081x_shared(w, h)
         arm_y2 = params["cy"] - params["r"]
@@ -373,11 +436,12 @@ class Action:
     @staticmethod
     def _default_ac0814_params(w: int, h: int) -> dict:
         params = Action._default_ac0813_params(w, h)
-        cx0 = float(w) / 2.0
-        cy0 = float(h) / 2.0
+        c = float(w) / 2.0
 
         def rotate_clockwise(x: float, y: float) -> tuple[float, float]:
-            return cx0 + (y - cy0), cy0 - (x - cx0)
+            # image-space clockwise description maps to mathematically counter-clockwise
+            # because y grows downward in raster coordinates.
+            return c - (y - c), c + (x - c)
 
         params["cx"], params["cy"] = rotate_clockwise(params["cx"], params["cy"])
         params["arm_x1"], params["arm_y1"] = rotate_clockwise(params["arm_x1"], params["arm_y1"])
@@ -643,13 +707,10 @@ class Action:
             return Action._fit_ac0811_params_from_image(img, defaults)
 
         if name == "AC0812":
-            params = Action._default_ac0882_params(w, h)
-            params["draw_text"] = False
-            params["fill_gray"] = 220
-            params["stroke_gray"] = 98
-            if img is not None:
-                params = Action._fit_semantic_badge_from_image(img, params)
-            return params
+            defaults = Action._default_ac0812_params(w, h)
+            if img is None:
+                return defaults
+            return Action._fit_ac0812_params_from_image(img, defaults)
 
         if name == "AC0813":
             params = Action._default_ac0813_params(w, h)

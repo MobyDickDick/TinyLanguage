@@ -13,7 +13,7 @@ pushd "%REPO_ROOT%" >nul
 
 set "PYTHON_BIN="
 set "SKIP_INSTALL=0"
-set "AC0811_DEBUG_DIR=artifacts\converted_symbols\diff_pngs\tmp_ac0811_element_debug"
+set "AC081X_DEBUG_DIR=artifacts\converted_symbols\diff_pngs\tmp_ac081x_element_debug"
 
 :parse_args
 if "%~1"=="" goto args_done
@@ -77,7 +77,7 @@ if "%SKIP_INSTALL%"=="0" (
 )
 
 echo [INFO] Running conversion AC0800..AC0884
-call %PYTHON_BIN% src\image_composite_converter.py artifacts\images_to_convert artifacts\images_to_convert\nonexistent.csv 8 --start AC0800 --end AC0884 --debug-ac0811-dir "%AC0811_DEBUG_DIR%"
+call %PYTHON_BIN% src\image_composite_converter.py artifacts\images_to_convert artifacts\images_to_convert\nonexistent.csv 8 --start AC0800 --end AC0884 --debug-ac0811-dir "%AC081X_DEBUG_DIR%"
 set "CONVERT_EXIT=%ERRORLEVEL%"
 
 if not "%CONVERT_EXIT%"=="0" (
@@ -97,9 +97,9 @@ if not "%HELPER_EXIT%"=="0" (
 echo [INFO] Done. Check:
 echo   - artifacts\converted_symbols\AC0800_AC0884_attempt_report.json
 echo   - artifacts\converted_symbols\AC0800_AC0884_attempt_log.md
-echo   - %AC0811_DEBUG_DIR%\AC0811_L\round_XX_full_diff.png
-echo   - %AC0811_DEBUG_DIR%\AC0811_L\round_XX_circle_diff.png
-echo   - %AC0811_DEBUG_DIR%\AC0811_L\round_XX_stem_diff.png
+echo   - %AC081X_DEBUG_DIR%\AC0812_L\round_XX_full_diff.png
+echo   - %AC081X_DEBUG_DIR%\AC0812_L\round_XX_circle_diff.png
+echo   - %AC081X_DEBUG_DIR%\AC0812_L\round_XX_stem_or_arm_diff.png
 
 popd >nul
 exit /b %CONVERT_EXIT%

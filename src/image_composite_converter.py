@@ -1383,12 +1383,15 @@ def convert_range(
     )
 
     log_path = os.path.join(reports_out_dir, "Iteration_Log.csv")
+    semantic_results: list[dict[str, object]] = []
+
     with open(log_path, mode="w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f, delimiter=";")
         writer.writerow(["Dateiname", "Gefundene Elemente", "Beste Iteration", "Diff-Score"])
         for filename in files:
+            image_path = os.path.join(folder_path, filename)
             res = run_iteration_pipeline(
-                os.path.join(folder_path, filename),
+                image_path,
                 csv_path,
                 iterations,
                 svg_out_dir,
@@ -1400,7 +1403,212 @@ def convert_range(
                 _base, _desc, params, best_iter, best_error = res
                 writer.writerow([filename, " + ".join(params["elements"]), best_iter, f"{best_error:.2f}"])
 
+                if params.get("mode") == "semantic_badge":
+                    img = cv2.imread(image_path)
+                    if img is not None:
+                        h, w = img.shape[:2]
+                        semantic_results.append(
+                            {
+                                "filename": filename,
+                                "base": get_base_name_from_file(os.path.splitext(filename)[0]).upper(),
+                                "variant": os.path.splitext(filename)[0].upper(),
+                                "w": int(w),
+                                "h": int(h),
+                                "error": float(best_error),
+                            }
+                        )
+
+    _harmonize_semantic_size_variants(semantic_results, svg_out_dir, reports_out_dir)
+
     return out_root
+
+
+def _read_svg_geometry(svg_path: str) -> tuple[int, int, dict] | None:
+    if not os.path.exists(svg_path):
+        return None
+
+    text = open(svg_path, "r", encoding="utf-8").read()
+
+    svg_match = re.search(r"<svg[^>]*viewBox=\"0 0 (\d+) (\d+)\"", text)
+    if not svg_match:
+        return None
+    w = int(svg_match.group(1))
+    h = int(svg_match.group(2))
+
+    params: dict[str, float | bool | int] = {
+        "fill_gray": 220,
+        "stroke_gray": 222,
+        "circle_enabled": False,
+        "stem_enabled": False,
+        "arm_enabled": False,
+    }
+
+    circle_match = re.search(
+        r"<circle[^>]*cx=\"([0-9.]+)\"[^>]*cy=\"([0-9.]+)\"[^>]*r=\"([0-9.]+)\"[^>]*stroke-width=\"([0-9.]+)\"",
+        text,
+    )
+    if circle_match:
+        params["circle_enabled"] = True
+        params["cx"] = float(circle_match.group(1))
+        params["cy"] = float(circle_match.group(2))
+        params["r"] = float(circle_match.group(3))
+        params["stroke_circle"] = float(circle_match.group(4))
+
+    rect_match = re.search(
+        r"<rect[^>]*x=\"([0-9.]+)\"[^>]*y=\"([0-9.]+)\"[^>]*width=\"([0-9.]+)\"[^>]*height=\"([0-9.]+)\"",
+        text,
+    )
+    if rect_match:
+        x = float(rect_match.group(1))
+        y = float(rect_match.group(2))
+        width = float(rect_match.group(3))
+        height = float(rect_match.group(4))
+        params["stem_enabled"] = True
+        params["stem_x"] = x
+        params["stem_width"] = width
+        params["stem_top"] = y
+        params["stem_bottom"] = y + height
+        params["stem_gray"] = 222
+
+    line_match = re.search(
+        r"<line[^>]*x1=\"([0-9.]+)\"[^>]*y1=\"([0-9.]+)\"[^>]*x2=\"([0-9.]+)\"[^>]*y2=\"([0-9.]+)\"[^>]*stroke-width=\"([0-9.]+)\"",
+        text,
+    )
+    if line_match:
+        params["arm_enabled"] = True
+        params["arm_x1"] = float(line_match.group(1))
+        params["arm_y1"] = float(line_match.group(2))
+        params["arm_x2"] = float(line_match.group(3))
+        params["arm_y2"] = float(line_match.group(4))
+        params["arm_stroke"] = float(line_match.group(5))
+
+    return w, h, params
+
+
+def _normalized_geometry_signature(w: int, h: int, params: dict) -> dict[str, float]:
+    sig: dict[str, float] = {}
+    scale = max(1.0, float(min(w, h)))
+
+    if params.get("circle_enabled"):
+        sig["cx"] = float(params["cx"]) / max(1.0, float(w))
+        sig["cy"] = float(params["cy"]) / max(1.0, float(h))
+        sig["r"] = float(params["r"]) / scale
+        sig["stroke_circle"] = float(params["stroke_circle"]) / scale
+
+    if params.get("stem_enabled"):
+        sig["stem_x"] = float(params["stem_x"]) / max(1.0, float(w))
+        sig["stem_width"] = float(params["stem_width"]) / max(1.0, float(w))
+        sig["stem_top"] = float(params["stem_top"]) / max(1.0, float(h))
+        sig["stem_bottom"] = float(params["stem_bottom"]) / max(1.0, float(h))
+
+    if params.get("arm_enabled"):
+        sig["arm_x1"] = float(params["arm_x1"]) / max(1.0, float(w))
+        sig["arm_y1"] = float(params["arm_y1"]) / max(1.0, float(h))
+        sig["arm_x2"] = float(params["arm_x2"]) / max(1.0, float(w))
+        sig["arm_y2"] = float(params["arm_y2"]) / max(1.0, float(h))
+        sig["arm_stroke"] = float(params["arm_stroke"]) / scale
+
+    return sig
+
+
+def _max_signature_delta(sig_a: dict[str, float], sig_b: dict[str, float]) -> float:
+    keys = sorted(set(sig_a.keys()).intersection(sig_b.keys()))
+    if not keys:
+        return 1.0
+    return max(abs(sig_a[k] - sig_b[k]) for k in keys)
+
+
+def _scale_badge_params(anchor: dict, anchor_w: int, anchor_h: int, target_w: int, target_h: int) -> dict:
+    scaled = dict(anchor)
+    scale = max(1e-6, float(min(target_w, target_h)) / max(1.0, float(min(anchor_w, anchor_h))))
+    scale_x = max(1e-6, float(target_w) / max(1.0, float(anchor_w)))
+    scale_y = max(1e-6, float(target_h) / max(1.0, float(anchor_h)))
+
+    if scaled.get("circle_enabled"):
+        scaled["cx"] = float(anchor["cx"]) * scale_x
+        scaled["cy"] = float(anchor["cy"]) * scale_y
+        scaled["r"] = float(anchor["r"]) * scale
+        scaled["stroke_circle"] = float(anchor["stroke_circle"]) * scale
+
+    if scaled.get("stem_enabled"):
+        scaled["stem_x"] = float(anchor["stem_x"]) * scale_x
+        scaled["stem_width"] = float(anchor["stem_width"]) * scale_x
+        scaled["stem_top"] = float(anchor["stem_top"]) * scale_y
+        scaled["stem_bottom"] = float(anchor["stem_bottom"]) * scale_y
+
+    if scaled.get("arm_enabled"):
+        scaled["arm_x1"] = float(anchor["arm_x1"]) * scale_x
+        scaled["arm_y1"] = float(anchor["arm_y1"]) * scale_y
+        scaled["arm_x2"] = float(anchor["arm_x2"]) * scale_x
+        scaled["arm_y2"] = float(anchor["arm_y2"]) * scale_y
+        scaled["arm_stroke"] = float(anchor["arm_stroke"]) * scale
+
+    return scaled
+
+
+def _harmonize_semantic_size_variants(results: list[dict[str, object]], svg_out_dir: str, reports_out_dir: str) -> None:
+    grouped: dict[str, list[dict[str, object]]] = {}
+    for result in results:
+        base = str(result.get("base", ""))
+        grouped.setdefault(base, []).append(result)
+
+    harmonized_logs: list[str] = []
+    for base, entries in sorted(grouped.items()):
+        if len(entries) < 2:
+            continue
+
+        variant_rows: list[dict[str, object]] = []
+        for entry in entries:
+            variant = str(entry["variant"])
+            suffix = variant.rsplit("_", 1)[-1] if "_" in variant else ""
+            if suffix not in {"L", "M", "S"}:
+                continue
+            parsed = _read_svg_geometry(os.path.join(svg_out_dir, f"{variant}.svg"))
+            if parsed is None:
+                continue
+            w, h, params = parsed
+            variant_rows.append({"entry": entry, "variant": variant, "suffix": suffix, "w": w, "h": h, "params": params})
+
+        if len(variant_rows) < 2:
+            continue
+
+        sigs = {
+            row["variant"]: _normalized_geometry_signature(int(row["w"]), int(row["h"]), dict(row["params"]))
+            for row in variant_rows
+        }
+        max_delta = 0.0
+        for i in range(len(variant_rows)):
+            for j in range(i + 1, len(variant_rows)):
+                vi = str(variant_rows[i]["variant"])
+                vj = str(variant_rows[j]["variant"])
+                max_delta = max(max_delta, _max_signature_delta(sigs[vi], sigs[vj]))
+
+        if max_delta > 0.08:
+            continue
+
+        anchor = min(variant_rows, key=lambda row: float(dict(row["entry"])["error"]))
+        anchor_variant = str(anchor["variant"])
+        anchor_w = int(anchor["w"])
+        anchor_h = int(anchor["h"])
+        anchor_params = dict(anchor["params"])
+
+        for row in variant_rows:
+            if row is anchor:
+                continue
+            target_variant = str(row["variant"])
+            target_w = int(row["w"])
+            target_h = int(row["h"])
+            scaled = _scale_badge_params(anchor_params, anchor_w, anchor_h, target_w, target_h)
+            svg = Action.generate_badge_svg(target_w, target_h, scaled)
+            with open(os.path.join(svg_out_dir, f"{target_variant}.svg"), "w", encoding="utf-8") as f:
+                f.write(svg)
+            harmonized_logs.append(
+                f"{base}: {target_variant} aus {anchor_variant} abgeleitet (max_delta={max_delta:.4f})"
+            )
+
+    if harmonized_logs:
+        with open(os.path.join(reports_out_dir, "variant_harmonization.log"), "w", encoding="utf-8") as f:
+            f.write("\n".join(harmonized_logs).rstrip() + "\n")
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

@@ -1,12 +1,12 @@
 Runde 1: elementweise Validierung gestartet
-circle: Fehler=80.036
-arm: Fehler=99.971
-Runde 1: Gesamtfehler=25.584
+circle: Fehler=80.757
+arm: Fehler=121.258
+Runde 1: Gesamtfehler=28.877
 Runde 2: elementweise Validierung gestartet
-circle: Fehler=80.036
-arm: Fehler=99.971
-Runde 2: Gesamtfehler=25.584
+circle: Fehler=80.757
+arm: Fehler=121.258
+Runde 2: Gesamtfehler=28.877
 Runde 3: elementweise Validierung gestartet
-circle: Fehler=80.036
-arm: Fehler=99.971
-Runde 3: Gesamtfehler=25.584
+circle: Fehler=80.757
+arm: Fehler=121.258
+Runde 3: Gesamtfehler=28.877

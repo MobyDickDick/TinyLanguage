@@ -706,26 +706,35 @@ class Action:
         return float(np.mean(vals))
 
     @staticmethod
-    def extract_badge_element_mask(img_orig: np.ndarray, params: dict, element: str) -> np.ndarray | None:
-        gray = cv2.cvtColor(img_orig, cv2.COLOR_BGR2GRAY)
-        _, fg = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-        fg_bool = fg > 0
-        h, w = gray.shape
+    def _element_region_mask(h: int, w: int, params: dict, element: str) -> np.ndarray | None:
         yy, xx = np.indices((h, w))
-
         if element == "circle":
             circle = (xx - params["cx"]) ** 2 + (yy - params["cy"]) ** 2 <= (params["r"] + 2.0) ** 2
             top = yy <= (params["cy"] + params["r"] + 1.0)
-            mask = fg_bool & circle & top
-        elif element == "stem" and params.get("stem_enabled"):
+            return circle & top
+        if element == "stem" and params.get("stem_enabled"):
             x1 = max(0.0, params["stem_x"] - 1.0)
             x2 = min(float(w), params["stem_x"] + params["stem_width"] + 1.0)
             y1 = max(0.0, params["stem_top"] - 1.0)
             y2 = min(float(h), params["stem_bottom"] + 1.0)
-            rect = (xx >= x1) & (xx <= x2) & (yy >= y1) & (yy <= y2)
-            mask = fg_bool & rect
-        else:
+            return (xx >= x1) & (xx <= x2) & (yy >= y1) & (yy <= y2)
+        return None
+
+    @staticmethod
+    def _foreground_mask(img: np.ndarray) -> np.ndarray:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        _, fg = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        return fg > 0
+
+    @staticmethod
+    def extract_badge_element_mask(img_orig: np.ndarray, params: dict, element: str) -> np.ndarray | None:
+        h, w = img_orig.shape[:2]
+        region_mask = Action._element_region_mask(h, w, params, element)
+        if region_mask is None:
             return None
+
+        fg_bool = Action._foreground_mask(img_orig)
+        mask = fg_bool & region_mask
 
         if int(mask.sum()) < 3:
             return None
@@ -744,11 +753,15 @@ class Action:
     def _masked_error(img_orig: np.ndarray, img_svg: np.ndarray, mask: np.ndarray | None) -> float:
         if img_svg is None or mask is None or int(mask.sum()) == 0:
             return float("inf")
-        diff = cv2.absdiff(img_orig, img_svg).astype(np.float32)
-        masked = diff[mask]
-        if masked.size == 0:
+        if img_svg.shape[:2] != img_orig.shape[:2]:
+            img_svg = cv2.resize(img_svg, (img_orig.shape[1], img_orig.shape[0]), interpolation=cv2.INTER_AREA)
+        gray_diff = cv2.cvtColor(cv2.absdiff(img_orig, img_svg), cv2.COLOR_BGR2GRAY).astype(np.float32)
+        valid = mask.astype(np.float32)
+        denom = float(np.sum(valid))
+        if denom <= 0.0:
             return float("inf")
-        return float(np.mean(masked))
+        weighted = gray_diff * valid
+        return float(np.sum(weighted) / denom)
 
     @staticmethod
     def optimize_ac0811_by_elements(
@@ -830,9 +843,9 @@ class Action:
             worst_element = None
             worst_err = -1.0
             for element in elements:
-                mask = Action.extract_badge_element_mask(img_orig, params, element)
-                if mask is None:
-                    logs.append(f"{element}: keine Nachkorrektur möglich (Extraktion fehlgeschlagen)")
+                mask = Action._element_region_mask(h, w, params, element)
+                if mask is None or int(mask.sum()) < 3:
+                    logs.append(f"{element}: keine Nachkorrektur möglich (Region fehlt)")
                     continue
                 elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(params, element))
                 elem_render = Action.render_svg_to_numpy(elem_svg, w, h)

@@ -1220,6 +1220,99 @@ class Action:
         return cx, cy, size
 
     @staticmethod
+    def _mask_min_rect_center_diag(mask: np.ndarray) -> tuple[float, float, float] | None:
+        mask_u8 = (mask.astype(np.uint8)) * 255
+        contours, _ = cv2.findContours(mask_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not contours:
+            return None
+        cnt = max(contours, key=cv2.contourArea)
+        if cv2.contourArea(cnt) < 2.0:
+            return None
+
+        (cx, cy), (rw, rh), _angle = cv2.minAreaRect(cnt)
+        diag = float(np.hypot(float(rw), float(rh)))
+        if not np.isfinite(diag) or diag <= 0.0:
+            return None
+        return float(cx), float(cy), diag
+
+    @staticmethod
+    def _apply_element_alignment_step(
+        params: dict,
+        element: str,
+        center_dx: float,
+        center_dy: float,
+        diag_scale: float,
+        w: int,
+        h: int,
+    ) -> bool:
+        changed = False
+        scale = float(np.clip(diag_scale, 0.85, 1.18))
+
+        if element == "circle":
+            old_cx = float(params["cx"])
+            old_cy = float(params["cy"])
+            old_r = float(params["r"])
+            params["cx"] = float(np.clip(old_cx + center_dx * 0.65, 0.0, float(w - 1)))
+            params["cy"] = float(np.clip(old_cy + center_dy * 0.65, 0.0, float(h - 1)))
+            params["r"] = float(np.clip(old_r * scale, 1.0, float(min(w, h)) * 0.48))
+            changed = (
+                abs(params["cx"] - old_cx) > 0.02
+                or abs(params["cy"] - old_cy) > 0.02
+                or abs(params["r"] - old_r) > 0.02
+            )
+
+        elif element == "stem" and params.get("stem_enabled"):
+            old_x = float(params["stem_x"])
+            old_w = float(params["stem_width"])
+            old_top = float(params["stem_top"])
+            old_bottom = float(params["stem_bottom"])
+
+            stem_cx = old_x + (old_w / 2.0)
+            stem_cx = float(np.clip(stem_cx + center_dx * 0.75, 0.0, float(w - 1)))
+            new_w = float(np.clip(old_w * scale, 1.0, float(w) * 0.22))
+            params["stem_width"] = new_w
+            params["stem_x"] = float(np.clip(stem_cx - (new_w / 2.0), 0.0, float(w) - new_w))
+            params["stem_top"] = float(np.clip(old_top + center_dy * 0.45, 0.0, float(h - 2)))
+            params["stem_bottom"] = float(np.clip(old_bottom + center_dy * 0.25, params["stem_top"] + 1.0, float(h - 1)))
+            changed = (
+                abs(params["stem_x"] - old_x) > 0.02
+                or abs(params["stem_width"] - old_w) > 0.02
+                or abs(params["stem_top"] - old_top) > 0.02
+                or abs(params["stem_bottom"] - old_bottom) > 0.02
+            )
+
+        elif element == "arm" and params.get("arm_enabled"):
+            old_x1 = float(params["arm_x1"])
+            old_x2 = float(params["arm_x2"])
+            old_y1 = float(params["arm_y1"])
+            old_y2 = float(params["arm_y2"])
+            old_stroke = float(params.get("arm_stroke", params.get("stem_or_arm", 1.0)))
+
+            ax1 = old_x1 + center_dx * 0.75
+            ax2 = old_x2 + center_dx * 0.75
+            ay1 = old_y1 + center_dy * 0.75
+            ay2 = old_y2 + center_dy * 0.75
+            acx = (ax1 + ax2) / 2.0
+            acy = (ay1 + ay2) / 2.0
+            vx = (ax2 - ax1) * scale
+            vy = (ay2 - ay1) * scale
+
+            params["arm_x1"] = float(np.clip(acx - (vx / 2.0), 0.0, float(w - 1)))
+            params["arm_x2"] = float(np.clip(acx + (vx / 2.0), 0.0, float(w - 1)))
+            params["arm_y1"] = float(np.clip(acy - (vy / 2.0), 0.0, float(h - 1)))
+            params["arm_y2"] = float(np.clip(acy + (vy / 2.0), 0.0, float(h - 1)))
+            params["arm_stroke"] = float(np.clip(old_stroke * scale, 1.0, float(min(w, h)) * 0.18))
+            changed = (
+                abs(params["arm_x1"] - old_x1) > 0.02
+                or abs(params["arm_x2"] - old_x2) > 0.02
+                or abs(params["arm_y1"] - old_y1) > 0.02
+                or abs(params["arm_y2"] - old_y2) > 0.02
+                or abs(params["arm_stroke"] - old_stroke) > 0.02
+            )
+
+        return changed
+
+    @staticmethod
     def _estimate_vertical_stem_from_mask(
         mask: np.ndarray,
         expected_cx: float,
@@ -1461,6 +1554,7 @@ class Action:
                 full_diff = Action.create_diff_image(img_orig, full_render)
                 cv2.imwrite(os.path.join(debug_out_dir, f"round_{round_idx + 1:02d}_full_diff.png"), full_diff)
 
+            round_changed = False
             for element in elements:
                 elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(params, element))
                 elem_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(elem_svg, w, h))
@@ -1481,6 +1575,28 @@ class Action:
                         os.path.join(debug_out_dir, f"round_{round_idx + 1:02d}_{element}_diff.png"),
                         elem_diff,
                     )
+
+                # Geometrie-Abgleich über Mittelpunkt + Diagonale des kleinsten
+                # umschließenden Rechtecks (minAreaRect) auf Element-Ebene.
+                rect_orig = Action._mask_min_rect_center_diag(mask_orig)
+                rect_svg = Action._mask_min_rect_center_diag(mask_svg)
+                if rect_orig is not None and rect_svg is not None:
+                    ocx, ocy, odiag = rect_orig
+                    scx, scy, sdiag = rect_svg
+                    dx = ocx - scx
+                    dy = ocy - scy
+                    scale = odiag / max(1e-6, sdiag)
+                    changed = Action._apply_element_alignment_step(params, element, dx, dy, scale, w, h)
+                    logs.append(
+                        (
+                            f"{element}: minRect Δcx={dx:.3f}, Δcy={dy:.3f}, "
+                            f"diag={sdiag:.3f}->{odiag:.3f}, scale={scale:.4f}"
+                        )
+                    )
+                    if changed:
+                        round_changed = True
+                        logs.append(f"{element}: Parameter nach Mittelpunkt/Diagonale angepasst")
+
                 elem_err = Action._masked_error(img_orig, elem_render, mask_orig)
                 logs.append(f"{element}: Fehler={elem_err:.3f}")
 
@@ -1489,6 +1605,7 @@ class Action:
                     if refine_log:
                         logs.append(refine_log)
                     if changed:
+                        round_changed = True
                         logs.append("stem: Geometrie nach Elementabgleich aktualisiert")
 
             full_svg = Action.generate_badge_svg(w, h, params)
@@ -1501,6 +1618,10 @@ class Action:
                 break
 
             if round_idx + 1 >= max_rounds:
+                break
+
+            if not round_changed:
+                logs.append("Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet")
                 break
 
         return logs

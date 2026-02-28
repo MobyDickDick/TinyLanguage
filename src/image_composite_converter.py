@@ -413,41 +413,28 @@ class Action:
 
     @staticmethod
     def _default_ac0813_params(w: int, h: int) -> dict:
-        params = Action._default_ac081x_shared(w, h)
-        arm_y2 = params["cy"] - params["r"]
-        arm_y1 = max(0.0, arm_y2 - params["stem_or_arm_len"])
-        params.update(
-            {
-                "text_gray": 98,
-                "label": "T",
-                "text_mode": "path_t",
-                "arm_enabled": True,
-                "arm_x1": params["cx"],
-                "arm_y1": arm_y1,
-                "arm_x2": params["cx"],
-                "arm_y2": arm_y2,
-                "arm_stroke": params["stem_or_arm"],
-                "s": 0.0088 * min(1.0, (min(w, h) / 25.0)) if min(w, h) > 0 else 0.0088,
-            }
-        )
-        Action._center_glyph_bbox(params)
-        return params
+        """AC0813 is AC0812 rotated 90° clockwise."""
+        return Action._rotate_semantic_badge_clockwise(Action._default_ac0812_params(w, h), w, h)
 
     @staticmethod
-    def _default_ac0814_params(w: int, h: int) -> dict:
-        params = Action._default_ac0813_params(w, h)
-        c = float(w) / 2.0
+    def _rotate_semantic_badge_clockwise(params: dict, w: int, h: int) -> dict:
+        cx = float(w) / 2.0
+        cy = float(h) / 2.0
 
         def rotate_clockwise(x: float, y: float) -> tuple[float, float]:
             # image-space clockwise description maps to mathematically counter-clockwise
             # because y grows downward in raster coordinates.
-            return c - (y - c), c + (x - c)
+            return cx - (y - cy), cy + (x - cx)
 
-        params["cx"], params["cy"] = rotate_clockwise(params["cx"], params["cy"])
-        params["arm_x1"], params["arm_y1"] = rotate_clockwise(params["arm_x1"], params["arm_y1"])
-        params["arm_x2"], params["arm_y2"] = rotate_clockwise(params["arm_x2"], params["arm_y2"])
-        Action._center_glyph_bbox(params)
-        return params
+        rotated = dict(params)
+        rotated["cx"], rotated["cy"] = rotate_clockwise(float(params["cx"]), float(params["cy"]))
+        rotated["arm_x1"], rotated["arm_y1"] = rotate_clockwise(float(params["arm_x1"]), float(params["arm_y1"]))
+        rotated["arm_x2"], rotated["arm_y2"] = rotate_clockwise(float(params["arm_x2"]), float(params["arm_y2"]))
+        return rotated
+
+    @staticmethod
+    def _default_ac0814_params(w: int, h: int) -> dict:
+        return Action._rotate_semantic_badge_clockwise(Action._default_ac0813_params(w, h), w, h)
 
     @staticmethod
     def _glyph_bbox(text_mode: str) -> tuple[int, int, int, int]:

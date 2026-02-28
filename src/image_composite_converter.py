@@ -214,7 +214,8 @@ class Action:
     }
 
     LIGHT_CIRCLE_FILL_GRAY = 242
-    LIGHT_CIRCLE_STROKE_GRAY = 222
+    # AC08xx-Kreisränder waren zu hell; etwas dunkleres Grau für bessere Lesbarkeit.
+    LIGHT_CIRCLE_STROKE_GRAY = 181
     LIGHT_CIRCLE_TEXT_GRAY = 98
 
     @staticmethod
@@ -230,6 +231,14 @@ class Action:
             params["stem_gray"] = Action.LIGHT_CIRCLE_STROKE_GRAY
         if params.get("draw_text", True) and "text_gray" in params:
             params["text_gray"] = Action.LIGHT_CIRCLE_TEXT_GRAY
+        return params
+
+    @staticmethod
+    def _align_stem_to_circle_center(params: dict) -> dict:
+        """Ensure vertical handle/stem extension runs through circle center."""
+        if params.get("stem_enabled") and params.get("circle_enabled", True):
+            if "stem_width" in params and "cx" in params:
+                params["stem_x"] = float(params["cx"]) - (float(params["stem_width"]) / 2.0)
         return params
 
     @staticmethod
@@ -900,6 +909,7 @@ class Action:
 
     @staticmethod
     def generate_badge_svg(w: int, h: int, p: dict) -> str:
+        p = Action._align_stem_to_circle_center(dict(p))
         elements = [
             f'<svg width="{w}px" height="{h}px" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">'
         ]
@@ -950,7 +960,7 @@ class Action:
                     (
                         f'  <text x="{p["cx"]:.4f}" y="{p["cy"]:.4f}" fill="{Action.grayhex(p["text_gray"])}" '
                         f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}" '
-                        f'font-style="normal" text-anchor="middle" dominant-baseline="middle">'
+                        f'font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">'
                         f'CO<tspan font-size="70%" baseline-shift="sub">2</tspan></text>'
                     )
                 )

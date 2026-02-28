@@ -769,6 +769,7 @@ class Action:
         base_params: dict,
         *,
         max_rounds: int = 4,
+        debug_out_dir: str | None = None,
     ) -> tuple[dict, list[str]]:
         h, w = img_orig.shape[:2]
         params = dict(base_params)
@@ -783,12 +784,26 @@ class Action:
                 logs.append("Abbruch: SVG konnte nicht gerendert werden")
                 break
 
+            if debug_out_dir:
+                full_diff = Action.create_diff_image(img_orig, full_render)
+                cv2.imwrite(os.path.join(debug_out_dir, f"round_{round_idx + 1:02d}_full_diff.png"), full_diff)
+
             for element in elements:
                 mask_orig = Action.extract_badge_element_mask(img_orig, params, element)
                 mask_svg = Action.extract_badge_element_mask(full_render, params, element)
                 if mask_orig is None or mask_svg is None:
                     logs.append(f"{element}: Element konnte nicht extrahiert werden")
                     continue
+
+                if debug_out_dir:
+                    elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(params, element))
+                    elem_render = Action.render_svg_to_numpy(elem_svg, w, h)
+                    if elem_render is not None:
+                        elem_diff = Action.create_diff_image(img_orig, elem_render)
+                        cv2.imwrite(
+                            os.path.join(debug_out_dir, f"round_{round_idx + 1:02d}_{element}_diff.png"),
+                            elem_diff,
+                        )
 
                 if element == "circle":
                     m_orig = Action._mask_centroid_radius(mask_orig)
@@ -869,6 +884,7 @@ def run_iteration_pipeline(
     svg_out_dir: str,
     diff_out_dir: str,
     reports_out_dir: str | None = None,
+    debug_ac0811_dir: str | None = None,
 ):
     if cv2 is None or np is None:
         missing = []
@@ -912,7 +928,15 @@ def run_iteration_pipeline(
 
         optimization_logs: list[str] = []
         if perc.base_name.upper() == "AC0811":
-            badge_params, optimization_logs = Action.optimize_ac0811_by_elements(perc.img, badge_params)
+            debug_dir = None
+            if debug_ac0811_dir:
+                debug_dir = os.path.join(debug_ac0811_dir, os.path.splitext(filename)[0])
+                os.makedirs(debug_dir, exist_ok=True)
+            badge_params, optimization_logs = Action.optimize_ac0811_by_elements(
+                perc.img,
+                badge_params,
+                debug_out_dir=debug_dir,
+            )
             if reports_out_dir:
                 log_path = os.path.join(reports_out_dir, f"{os.path.splitext(filename)[0]}_element_optimization.log")
                 with open(log_path, "w", encoding="utf-8") as f:
@@ -993,7 +1017,14 @@ def _default_converted_symbols_root() -> str:
     return os.path.join(repo_root, "artifacts", "converted_symbols")
 
 
-def convert_range(folder_path: str, csv_path: str, iterations: int, start_ref: str = "AR0102", end_ref: str = "AR0104") -> str:
+def convert_range(
+    folder_path: str,
+    csv_path: str,
+    iterations: int,
+    start_ref: str = "AR0102",
+    end_ref: str = "AR0104",
+    debug_ac0811_dir: str | None = None,
+) -> str:
     out_root = _default_converted_symbols_root()
     svg_out_dir = os.path.join(out_root, "svg")
     diff_out_dir = os.path.join(out_root, "diff_pngs")
@@ -1021,6 +1052,7 @@ def convert_range(folder_path: str, csv_path: str, iterations: int, start_ref: s
                 svg_out_dir,
                 diff_out_dir,
                 reports_out_dir,
+                debug_ac0811_dir,
             )
             if res:
                 _base, _desc, params, best_iter, best_error = res
@@ -1036,12 +1068,24 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("iterations", type=int, help="Anzahl der Iterationen (z.B. 8)")
     parser.add_argument("--start", default="AR0102", help="Start-Referenz (inkl.), default: AR0102")
     parser.add_argument("--end", default="AR0104", help="End-Referenz (inkl.), default: AR0104")
+    parser.add_argument(
+        "--debug-ac0811-dir",
+        default=None,
+        help="Optional: Ordner für AC0811 Element-Diff-Dumps pro Runde/Element",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    out_dir = convert_range(args.folder_path, args.csv_path, args.iterations, args.start, args.end)
+    out_dir = convert_range(
+        args.folder_path,
+        args.csv_path,
+        args.iterations,
+        args.start,
+        args.end,
+        args.debug_ac0811_dir,
+    )
     print(f"\nAbgeschlossen! Ausgaben unter: {out_dir}")
     return 0
 

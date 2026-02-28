@@ -1,12 +1,12 @@
 Runde 1: elementweise Validierung gestartet
-circle: Fehler=87.966
-arm: Fehler=104.556
-Runde 1: Gesamtfehler=18.341
+circle: Fehler=87.586
+arm: Element konnte nicht extrahiert werden
+Runde 1: Gesamtfehler=19.299
 Runde 2: elementweise Validierung gestartet
-circle: Fehler=87.966
-arm: Fehler=104.556
-Runde 2: Gesamtfehler=18.341
+circle: Fehler=87.586
+arm: Element konnte nicht extrahiert werden
+Runde 2: Gesamtfehler=19.299
 Runde 3: elementweise Validierung gestartet
-circle: Fehler=87.966
-arm: Fehler=104.556
-Runde 3: Gesamtfehler=18.341
+circle: Fehler=87.586
+arm: Element konnte nicht extrahiert werden
+Runde 3: Gesamtfehler=19.299

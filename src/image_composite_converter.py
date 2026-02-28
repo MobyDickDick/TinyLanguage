@@ -274,8 +274,34 @@ class Action:
             "stem_x": cx - (stem_width / 2.0),
             "stem_top": cy + r,
             "stem_bottom": min(float(h), (cy + r) + stem_len),
-            "stem_gray": 98,
+            "stem_gray": 152,
         }
+
+    @staticmethod
+    def _fit_ac0811_params_from_image(img: np.ndarray, defaults: dict) -> dict:
+        """Fit AC0811 while keeping the vertical stem anchored to the lower edge.
+
+        AC0811 source symbols are noisy for thin vertical lines. Generic stem fitting can
+        under-segment the line so the generated SVG misses parts of the lower connector.
+        For this family we therefore fit the circle/tones from the image, but keep the stem
+        geometry constrained to the semantic template (centered under the circle, extending
+        to the image bottom).
+        """
+        params = Action._fit_semantic_badge_from_image(img, defaults)
+        h, w = img.shape[:2]
+
+        stem_width = float(params.get("stem_width", defaults.get("stem_width", max(1.0, float(w) * 0.10))))
+        cx = float(params.get("cx", defaults.get("cx", float(w) / 2.0)))
+        cy = float(params.get("cy", defaults.get("cy", float(w) / 2.0)))
+        r = float(params.get("r", defaults.get("r", float(w) * 0.4)))
+
+        params["stem_enabled"] = True
+        params["stem_width"] = max(1.0, stem_width)
+        params["stem_x"] = cx - (params["stem_width"] / 2.0)
+        params["stem_top"] = max(0.0, min(float(h), cy + r))
+        params["stem_bottom"] = float(h)
+        params["stem_gray"] = int(round(params.get("stroke_gray", defaults.get("stroke_gray", 152))))
+        return params
 
     @staticmethod
     def _default_ac0882_params(w: int, h: int) -> dict:
@@ -591,7 +617,7 @@ class Action:
             defaults = Action._default_ac0811_params(w, h)
             if img is None:
                 return defaults
-            return Action._fit_semantic_badge_from_image(img, defaults)
+            return Action._fit_ac0811_params_from_image(img, defaults)
 
         if name == "AC0812":
             params = Action._default_ac0882_params(w, h)

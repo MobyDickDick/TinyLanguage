@@ -439,6 +439,10 @@ class Action:
         if w <= 18 and not bool(params.get("draw_text", True)):
             cx = float(defaults.get("cx", float(w) / 2.0))
             params["cx"] = cx
+            # Keep tiny AC0811 variants horizontally anchored; anti-aliased
+            # min-rect alignment can otherwise pull circle/stem to one side.
+            params["lock_circle_cx"] = True
+            params["lock_stem_center_to_circle"] = True
         stroke_circle = float(params.get("stroke_circle", defaults.get("stroke_circle", max(0.9, float(w) / 15.0))))
 
         # AC0811 stems are intentionally thin. The generic contour fit can over-estimate
@@ -1324,7 +1328,10 @@ class Action:
             old_cx = float(params["cx"])
             old_cy = float(params["cy"])
             old_r = float(params["r"])
-            params["cx"] = float(np.clip(old_cx + center_dx * 0.65, 0.0, float(w - 1)))
+            if bool(params.get("lock_circle_cx", False)):
+                params["cx"] = old_cx
+            else:
+                params["cx"] = float(np.clip(old_cx + center_dx * 0.65, 0.0, float(w - 1)))
             params["cy"] = float(np.clip(old_cy + center_dy * 0.65, 0.0, float(h - 1)))
             params["r"] = float(np.clip(old_r * scale, 1.0, float(min(w, h)) * 0.48))
             changed = (
@@ -1340,7 +1347,10 @@ class Action:
             old_bottom = float(params["stem_bottom"])
 
             stem_cx = old_x + (old_w / 2.0)
-            stem_cx = float(np.clip(stem_cx + center_dx * 0.75, 0.0, float(w - 1)))
+            if bool(params.get("lock_stem_center_to_circle", False)):
+                stem_cx = float(params.get("cx", stem_cx))
+            else:
+                stem_cx = float(np.clip(stem_cx + center_dx * 0.75, 0.0, float(w - 1)))
             new_w = float(np.clip(old_w * scale, 1.0, float(w) * 0.22))
             params["stem_width"] = new_w
             params["stem_x"] = float(np.clip(stem_cx - (new_w / 2.0), 0.0, float(w) - new_w))
@@ -1574,7 +1584,10 @@ class Action:
             min_w = max(1.0, float(params.get("stroke_circle", 1.0)) * 0.70)
             max_w = max(min_w, min(float(w) * 0.18, float(params.get("r", 1.0)) * 0.80))
             target_width = max(min_w, min(est_width, max_w))
-            target_cx = est_cx
+            if bool(params.get("lock_stem_center_to_circle", False)):
+                target_cx = float(params.get("cx", est_cx))
+            else:
+                target_cx = est_cx
             estimate_mode = "iter"
         else:
             if 0.92 <= ratio <= 1.10:

@@ -1,6 +1,6 @@
 # AC range conversion attempt log
 
-- Timestamp (UTC): `2026-02-28T17:11:44.028733+00:00`
+- Timestamp (UTC): `2026-02-28T17:19:54.480983+00:00`
 - Range: `AC0800..AC0884`
 - Iterations: `8`
 - Input count: `105`
@@ -26,8 +26,8 @@ C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\python.exe src/image_comp
 ## Result
 
 - Ran conversion: `true`
-- Exit code: `1`
-- Duration (s): `2.514`
+- Exit code: `0`
+- Duration (s): `1.928`
 
 ### Converter stdout
 
@@ -428,28 +428,12 @@ Befehl erkannt: Kein Compositing-Befehl gefunden
 --- Verarbeite AC0884_S.jpg ---
 Befehl erkannt: Kein Compositing-Befehl gefunden
   -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+Abgeschlossen! Ausgaben unter: C:\Users\marku\myCloud\TinyLanguage\artifacts\converted_symbols
 ```
 
 ### Converter stderr
 
 ```text
-Traceback (most recent call last):
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 1644, in <module>
-    raise SystemExit(main())
-                     ~~~~^^
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 1631, in main
-    out_dir = convert_range(
-        args.folder_path,
-    ...<4 lines>...
-        args.debug_ac0811_dir,
-    )
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 1421, in convert_range
-    _harmonize_semantic_size_variants(semantic_results, svg_out_dir, reports_out_dir)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 1602, in _harmonize_semantic_size_variants
-    svg = Action.generate_badge_svg(target_w, target_h, scaled)
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 735, in generate_badge_svg
-    f'  <path d="{Action.M_PATH_D}" fill="{Action.grayhex(p["text_gray"])}" '
-                                                          ~^^^^^^^^^^^^^
-KeyError: 'text_gray'
+
 ```

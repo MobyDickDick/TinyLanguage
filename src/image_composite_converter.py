@@ -703,6 +703,19 @@ class Action:
         return x1, y1, x2, y2
 
     @staticmethod
+    def _mask_center_size(mask: np.ndarray) -> tuple[float, float, float] | None:
+        bbox = Action._mask_bbox(mask)
+        if bbox is None:
+            return None
+        x1, y1, x2, y2 = bbox
+        width = max(1.0, (x2 - x1) + 1.0)
+        height = max(1.0, (y2 - y1) + 1.0)
+        cx = (x1 + x2) / 2.0
+        cy = (y1 + y2) / 2.0
+        size = width * height
+        return cx, cy, size
+
+    @staticmethod
     def _ring_and_fill_masks(h: int, w: int, params: dict) -> tuple[np.ndarray, np.ndarray]:
         yy, xx = np.indices((h, w))
         dist = np.sqrt((xx - params["cx"]) ** 2 + (yy - params["cy"]) ** 2)
@@ -823,16 +836,18 @@ class Action:
                         )
 
                 if element == "circle":
-                    m_orig = Action._mask_centroid_radius(mask_orig)
-                    m_svg = Action._mask_centroid_radius(mask_svg)
+                    m_orig = Action._mask_center_size(mask_orig)
+                    m_svg = Action._mask_center_size(mask_svg)
                     if m_orig and m_svg:
                         dx = m_orig[0] - m_svg[0]
                         dy = m_orig[1] - m_svg[1]
-                        dr = m_orig[2] - m_svg[2]
+                        target_r = 0.5 * np.sqrt(max(1.0, m_orig[2]))
+                        current_r = 0.5 * np.sqrt(max(1.0, m_svg[2]))
+                        dr = target_r - current_r
                         params["cx"] = max(0.0, min(float(w), params["cx"] + dx))
                         params["cy"] = max(0.0, min(float(h), params["cy"] + dy))
                         params["r"] = max(2.0, params["r"] + dr)
-                        logs.append(f"circle: Δcx={dx:.3f}, Δcy={dy:.3f}, Δr={dr:.3f}")
+                        logs.append(f"circle: Δcx={dx:.3f}, Δcy={dy:.3f}, Δsize={m_orig[2] - m_svg[2]:.3f}, Δr={dr:.3f}")
 
                         ring_mask, fill_mask = Action._ring_and_fill_masks(h, w, params)
                         orig_ring = Action._mean_gray_for_mask(img_orig, ring_mask)
@@ -845,16 +860,27 @@ class Action:
                             params["fill_gray"] = int(round(max(0, min(255, params["fill_gray"] + (orig_fill - svg_fill)))))
 
                 elif element == "stem":
+                    m_orig = Action._mask_center_size(mask_orig)
+                    m_svg = Action._mask_center_size(mask_svg)
                     b_orig = Action._mask_bbox(mask_orig)
                     b_svg = Action._mask_bbox(mask_svg)
-                    if b_orig and b_svg:
-                        dx = ((b_orig[0] + b_orig[2]) / 2.0) - ((b_svg[0] + b_svg[2]) / 2.0)
-                        dtop = b_orig[1] - b_svg[1]
-                        dbottom = b_orig[3] - b_svg[3]
+                    if m_orig and m_svg and b_orig and b_svg:
+                        dx = m_orig[0] - m_svg[0]
+                        dy = m_orig[1] - m_svg[1]
+                        scale = np.sqrt(max(1e-6, m_orig[2]) / max(1e-6, m_svg[2]))
+                        old_height = max(1.0, params["stem_bottom"] - params["stem_top"])
+
                         params["stem_x"] = max(0.0, min(float(w), params["stem_x"] + dx))
-                        params["stem_top"] = max(0.0, min(float(h), params["stem_top"] + dtop))
-                        params["stem_bottom"] = max(params["stem_top"], min(float(h), params["stem_bottom"] + dbottom))
-                        logs.append(f"stem: Δx={dx:.3f}, Δtop={dtop:.3f}, Δbottom={dbottom:.3f}")
+                        params["stem_top"] = max(0.0, min(float(h), params["stem_top"] + dy))
+                        params["stem_width"] = max(1.0, min(float(w), params["stem_width"] * scale))
+                        new_height = old_height * scale
+                        params["stem_bottom"] = max(
+                            params["stem_top"],
+                            min(float(h), params["stem_top"] + new_height),
+                        )
+                        logs.append(
+                            f"stem: Δcx={dx:.3f}, Δcy={dy:.3f}, Δsize={m_orig[2] - m_svg[2]:.3f}, scale={scale:.3f}"
+                        )
 
                         stem_region = Action.extract_badge_element_mask(img_orig, params, "stem")
                         if stem_region is not None:

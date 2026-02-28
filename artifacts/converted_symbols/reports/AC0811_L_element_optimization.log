@@ -1,20 +1,20 @@
 Runde 1: elementweise Optimierung gestartet
-circle: Δcx=0.669, Δcy=3.562, Δr=-1.256
-stem: Δx=-0.500, Δtop=0.000, Δbottom=1.000
-Runde 1: Gesamtfehler=23.216
-Nachkorrektur fokussiert auf Element: circle
+circle: Δcx=1.000, Δcy=3.500, Δsize=-112.000, Δr=-1.472
+stem: Δcx=-0.500, Δcy=0.500, Δsize=-7.000, scale=0.908
+Runde 1: Gesamtfehler=22.871
+Nachkorrektur fokussiert auf Element: stem
 Runde 2: elementweise Optimierung gestartet
-circle: Δcx=-0.151, Δcy=2.202, Δr=-1.019
-stem: Δx=0.000, Δtop=-2.000, Δbottom=1.000
-Runde 2: Gesamtfehler=22.076
+circle: Δcx=0.000, Δcy=2.000, Δsize=-40.000, Δr=-0.592
+stem: Δcx=0.500, Δcy=1.000, Δsize=-2.000, scale=0.968
+Runde 2: Gesamtfehler=21.728
 Nachkorrektur fokussiert auf Element: circle
 Runde 3: elementweise Optimierung gestartet
-circle: Δcx=-0.055, Δcy=0.711, Δr=-0.669
-stem: Δx=0.000, Δtop=-5.000, Δbottom=1.000
-Runde 3: Gesamtfehler=20.538
+circle: Δcx=0.000, Δcy=1.500, Δsize=-17.000, Δr=-0.271
+stem: Δcx=-0.500, Δcy=0.500, Δsize=2.000, scale=1.035
+Runde 3: Gesamtfehler=21.324
 Nachkorrektur fokussiert auf Element: stem
 Runde 4: elementweise Optimierung gestartet
-circle: Δcx=-0.177, Δcy=0.574, Δr=-3.001
-stem: Δx=0.000, Δtop=2.000, Δbottom=1.000
-Runde 4: Gesamtfehler=18.470
-Nachkorrektur fokussiert auf Element: stem
+circle: Δcx=0.000, Δcy=1.000, Δsize=-30.000, Δr=-0.500
+stem: Δcx=0.500, Δcy=-0.500, Δsize=2.000, scale=1.035
+Runde 4: Gesamtfehler=19.747
+Nachkorrektur fokussiert auf Element: circle

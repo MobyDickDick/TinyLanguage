@@ -1,15 +1,20 @@
 Runde 1: elementweise Optimierung gestartet
-circle: Versuch 1, Fehler=55.925
-circle: Versuch 2, Fehler=55.450
-circle: Versuch 3, Fehler=55.450
-stem: Versuch 1, Fehler=14.250
-stem: Versuch 2, Fehler=4.500
-stem: Versuch 3, Fehler=4.500
-Runde 1: Gesamtfehler=28.146
-Nachkorrektur fokussiert auf Element: circle
+circle: Δcx=0.328, Δcy=2.075, Δr=-1.050
+stem: Δx=-0.500, Δtop=0.000, Δbottom=2.000
+Runde 1: Gesamtfehler=24.334
+Nachkorrektur fokussiert auf Element: stem
 Runde 2: elementweise Optimierung gestartet
-circle: Versuch 1, Fehler=57.163
-stem: Versuch 1, Fehler=4.269
-stem: Versuch 2, Fehler=4.269
-Runde 2: Gesamtfehler=27.939
-Nachkorrektur fokussiert auf Element: circle
+circle: Δcx=0.371, Δcy=0.987, Δr=-0.922
+stem: Δx=0.000, Δtop=-1.000, Δbottom=1.000
+Runde 2: Gesamtfehler=23.481
+Nachkorrektur fokussiert auf Element: stem
+Runde 3: elementweise Optimierung gestartet
+circle: Δcx=-0.230, Δcy=0.361, Δr=-0.685
+stem: Δx=0.000, Δtop=-2.000, Δbottom=0.000
+Runde 3: Gesamtfehler=21.800
+Nachkorrektur fokussiert auf Element: stem
+Runde 4: elementweise Optimierung gestartet
+circle: Element konnte nicht extrahiert werden
+stem: Δx=0.500, Δtop=-5.000, Δbottom=0.000
+Runde 4: Gesamtfehler=20.411
+Nachkorrektur fokussiert auf Element: stem

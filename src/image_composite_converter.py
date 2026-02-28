@@ -413,8 +413,59 @@ class Action:
 
     @staticmethod
     def _default_ac0813_params(w: int, h: int) -> dict:
-        """AC0813 is AC0812 rotated 90° clockwise."""
-        return Action._rotate_semantic_badge_clockwise(Action._default_ac0812_params(w, h), w, h)
+        """AC0813 is AC0812 rotated 90° clockwise (vertical arm from top to circle)."""
+        if w <= 0 or h <= 0:
+            return Action._default_ac081x_shared(w, h)
+
+        # AC0813 is a vertically elongated symbol; like AC0811/AC0812 variants,
+        # keep the circle sized from the narrow side so the top arm can reach it.
+        r = float(w) * 0.4
+        stroke_circle = max(0.9, float(w) / 15.0)
+        cx = float(w) / 2.0
+        cy = float(h) - (float(w) / 2.0)
+        arm_stroke = max(1.0, float(w) * 0.10)
+
+        return Action._normalize_light_circle_colors(
+            {
+                "cx": cx,
+                "cy": cy,
+                "r": r,
+                "stroke_circle": stroke_circle,
+                "stroke_gray": Action.LIGHT_CIRCLE_STROKE_GRAY,
+                "fill_gray": Action.LIGHT_CIRCLE_FILL_GRAY,
+                "draw_text": False,
+                "arm_enabled": True,
+                "arm_x1": cx,
+                "arm_y1": 0.0,
+                "arm_x2": cx,
+                "arm_y2": max(0.0, cy - r),
+                "arm_stroke": arm_stroke,
+            }
+        )
+
+    @staticmethod
+    def _fit_ac0813_params_from_image(img: np.ndarray, defaults: dict) -> dict:
+        """Fit AC0813 while keeping the vertical arm anchored to the upper edge."""
+        params = Action._fit_semantic_badge_from_image(img, defaults)
+        h, w = img.shape[:2]
+
+        raw_arm_stroke = float(params.get("arm_stroke", defaults.get("arm_stroke", max(1.0, float(w) * 0.10))))
+        cx = float(params.get("cx", defaults.get("cx", float(w) / 2.0)))
+        cy = float(params.get("cy", defaults.get("cy", float(h) - (float(w) / 2.0))))
+        r = float(params.get("r", defaults.get("r", float(w) * 0.4)))
+        stroke_circle = float(params.get("stroke_circle", defaults.get("stroke_circle", max(0.9, float(w) / 15.0))))
+
+        min_arm_stroke = max(1.0, stroke_circle * 0.75)
+        max_arm_stroke = max(min_arm_stroke, min(float(w) * 0.14, stroke_circle * 1.6))
+        arm_stroke = max(min_arm_stroke, min(raw_arm_stroke, max_arm_stroke))
+
+        params["arm_enabled"] = True
+        params["arm_stroke"] = arm_stroke
+        params["arm_x1"] = cx
+        params["arm_y1"] = 0.0
+        params["arm_x2"] = cx
+        params["arm_y2"] = max(0.0, cy - r)
+        return Action._normalize_light_circle_colors(params)
 
     @staticmethod
     def _rotate_semantic_badge_clockwise(params: dict, w: int, h: int) -> dict:
@@ -700,13 +751,10 @@ class Action:
             return Action._fit_ac0812_params_from_image(img, defaults)
 
         if name == "AC0813":
-            params = Action._default_ac0813_params(w, h)
-            params["draw_text"] = False
-            params["fill_gray"] = 220
-            params["stroke_gray"] = 98
-            if img is not None:
-                params = Action._fit_semantic_badge_from_image(img, params)
-            return params
+            defaults = Action._default_ac0813_params(w, h)
+            if img is None:
+                return defaults
+            return Action._fit_ac0813_params_from_image(img, defaults)
 
         if name == "AC0814":
             params = Action._default_ac0814_params(w, h)

@@ -1003,6 +1003,32 @@ class Action:
         weighted = gray_diff * valid
         return float(np.sum(weighted) / denom)
 
+
+    @staticmethod
+    def _refine_stem_geometry_from_masks(params: dict, mask_orig: np.ndarray, mask_svg: np.ndarray, w: int) -> tuple[bool, str | None]:
+        """Refine stem width/position when validation detects a geometric mismatch."""
+        orig_bbox = Action._mask_bbox(mask_orig)
+        svg_bbox = Action._mask_bbox(mask_svg)
+        if orig_bbox is None or svg_bbox is None:
+            return False, None
+
+        ox1, _oy1, ox2, _oy2 = orig_bbox
+        sx1, _sy1, sx2, _sy2 = svg_bbox
+        orig_w = max(1.0, (ox2 - ox1) + 1.0)
+        svg_w = max(1.0, (sx2 - sx1) + 1.0)
+        ratio = svg_w / orig_w
+
+        if 0.92 <= ratio <= 1.10:
+            return False, None
+
+        target_width = float(params.get("stem_width", svg_w)) * (orig_w / svg_w)
+        target_width = max(1.0, min(target_width, float(w) * 0.20))
+
+        orig_cx = (ox1 + ox2) / 2.0
+        params["stem_width"] = target_width
+        params["stem_x"] = max(0.0, min(float(w) - target_width, orig_cx - (target_width / 2.0)))
+        return True, f"stem: Breitenkorrektur ratio={ratio:.3f}, neu={target_width:.3f}"
+
     @staticmethod
     def validate_badge_by_elements(
         img_orig: np.ndarray,
@@ -1053,6 +1079,13 @@ class Action:
                     )
                 elem_err = Action._masked_error(img_orig, elem_render, mask_orig)
                 logs.append(f"{element}: Fehler={elem_err:.3f}")
+
+                if element == "stem" and params.get("stem_enabled"):
+                    changed, refine_log = Action._refine_stem_geometry_from_masks(params, mask_orig, mask_svg, w)
+                    if refine_log:
+                        logs.append(refine_log)
+                    if changed:
+                        logs.append("stem: Geometrie nach Elementabgleich aktualisiert")
 
             full_svg = Action.generate_badge_svg(w, h, params)
             full_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(full_svg, w, h))

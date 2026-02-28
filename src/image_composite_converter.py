@@ -411,6 +411,138 @@ class Action:
         return params
 
     @staticmethod
+    def _fit_semantic_badge_from_image(img: np.ndarray, defaults: dict) -> dict:
+        """Fit common semantic badge primitives (circle/stem/arm) directly from image content."""
+        params = dict(defaults)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        h, w = gray.shape
+
+        min_side = float(min(h, w))
+        blur = cv2.GaussianBlur(gray, (3, 3), 0)
+        circles = cv2.HoughCircles(
+            blur,
+            cv2.HOUGH_GRADIENT,
+            dp=1.0,
+            minDist=max(6.0, min_side * 0.35),
+            param1=80,
+            param2=9,
+            minRadius=max(3, int(round(min_side * 0.18))),
+            maxRadius=max(5, int(round(min_side * 0.49))),
+        )
+
+        if circles is not None and circles.size > 0:
+            best = None
+            for c in circles[0]:
+                cx, cy, r = float(c[0]), float(c[1]), float(c[2])
+                yy, xx = np.indices(gray.shape)
+                dist = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
+                fill_mask = dist <= max(1.0, r * 0.82)
+                ring_mask = np.abs(dist - r) <= max(1.0, params.get("stroke_circle", 1.2))
+                if not np.any(fill_mask) or not np.any(ring_mask):
+                    continue
+                fill_gray = float(np.median(gray[fill_mask]))
+                ring_gray = float(np.median(gray[ring_mask]))
+                score = abs(fill_gray - 220.0) + abs(ring_gray - 152.0)
+                if best is None or score < best[0]:
+                    best = (score, cx, cy, r, fill_gray, ring_gray)
+
+            if best is not None:
+                _, cx, cy, r, fill_gray, ring_gray = best
+                params["cx"] = cx
+                params["cy"] = cy
+                params["r"] = r
+                params["fill_gray"] = int(round(fill_gray))
+                params["stroke_gray"] = int(round(ring_gray))
+
+        if params.get("stem_enabled"):
+            dark = gray <= min(225, int(np.percentile(gray, 75)))
+            x1 = max(0, int(round(params["cx"] - params["r"] * 0.8)))
+            x2 = min(w, int(round(params["cx"] + params["r"] * 0.8)))
+            y1 = max(0, int(round(params["cy"] + params["r"] * 0.45)))
+            roi = dark[y1:h, x1:x2]
+            if roi.size > 0:
+                cnts, _ = cv2.findContours(roi.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                best_rect = None
+                for cnt in cnts:
+                    rx, ry, rw, rh = cv2.boundingRect(cnt)
+                    if rw < 1 or rh < 2 or rh <= rw:
+                        continue
+                    area = rw * rh
+                    if best_rect is None or area > best_rect[0]:
+                        best_rect = (area, rx, ry, rw, rh)
+                if best_rect is not None:
+                    _, rx, ry, rw, rh = best_rect
+                    params["stem_x"] = float(x1 + rx)
+                    params["stem_top"] = float(y1 + ry)
+                    params["stem_width"] = float(max(1, rw))
+                    params["stem_bottom"] = float(min(h, y1 + ry + rh))
+                    stem_mask = np.zeros_like(gray, dtype=bool)
+                    sx1 = int(max(0, params["stem_x"]))
+                    sx2 = int(min(w, params["stem_x"] + params["stem_width"]))
+                    sy1 = int(max(0, params["stem_top"]))
+                    sy2 = int(min(h, params["stem_bottom"]))
+                    stem_mask[sy1:sy2, sx1:sx2] = True
+                    stem_vals = gray[stem_mask]
+                    if stem_vals.size > 0:
+                        params["stem_gray"] = int(round(np.median(stem_vals)))
+
+        if params.get("arm_enabled"):
+            dark = gray <= min(225, int(np.percentile(gray, 75)))
+            is_horizontal = abs(params.get("arm_x2", 0.0) - params.get("arm_x1", 0.0)) >= abs(
+                params.get("arm_y2", 0.0) - params.get("arm_y1", 0.0)
+            )
+            if is_horizontal:
+                side = -1 if params.get("arm_x2", 0.0) <= params.get("cx", 0.0) else 1
+                y1 = max(0, int(round(params["cy"] - params["r"] * 0.6)))
+                y2 = min(h, int(round(params["cy"] + params["r"] * 0.6)))
+                if side < 0:
+                    x1 = max(0, int(round(params["cx"] - params["r"] * 2.0)))
+                    x2 = max(0, int(round(params["cx"] - params["r"] * 0.4)))
+                else:
+                    x1 = min(w, int(round(params["cx"] + params["r"] * 0.4)))
+                    x2 = min(w, int(round(params["cx"] + params["r"] * 2.0)))
+            else:
+                x1 = max(0, int(round(params["cx"] - params["r"] * 0.6)))
+                x2 = min(w, int(round(params["cx"] + params["r"] * 0.6)))
+                y1 = max(0, int(round(params["cy"] - params["r"] * 2.0)))
+                y2 = max(0, int(round(params["cy"] - params["r"] * 0.4)))
+
+            roi = dark[y1:y2, x1:x2] if y2 > y1 and x2 > x1 else None
+            if roi is not None and roi.size > 0:
+                cnts, _ = cv2.findContours(roi.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                best_rect = None
+                for cnt in cnts:
+                    rx, ry, rw, rh = cv2.boundingRect(cnt)
+                    if rw < 1 or rh < 1:
+                        continue
+                    elong = (rw / max(1, rh)) if is_horizontal else (rh / max(1, rw))
+                    if elong < 1.2:
+                        continue
+                    area = rw * rh
+                    if best_rect is None or area > best_rect[0]:
+                        best_rect = (area, rx, ry, rw, rh)
+                if best_rect is not None:
+                    _, rx, ry, rw, rh = best_rect
+                    if is_horizontal:
+                        params["arm_x1"] = float(x1 + rx)
+                        params["arm_x2"] = float(x1 + rx + rw)
+                        y = float(y1 + ry + rh / 2.0)
+                        params["arm_y1"] = y
+                        params["arm_y2"] = y
+                        params["arm_stroke"] = float(max(1.0, rh))
+                    else:
+                        x = float(x1 + rx + rw / 2.0)
+                        params["arm_x1"] = x
+                        params["arm_x2"] = x
+                        params["arm_y1"] = float(y1 + ry)
+                        params["arm_y2"] = float(y1 + ry + rh)
+                        params["arm_stroke"] = float(max(1.0, rw))
+
+        if params.get("draw_text", True):
+            Action._center_glyph_bbox(params)
+        return params
+
+    @staticmethod
     def make_badge_params(w: int, h: int, base_name: str, img: np.ndarray | None = None) -> dict | None:
         name = base_name.upper()
 
@@ -442,7 +574,7 @@ class Action:
 
         if name == "AC0800":
             scale = min(w, h) / 30.0 if min(w, h) > 0 else 1.0
-            return {
+            defaults = {
                 "cx": 15.0 * scale,
                 "cy": 15.0 * scale,
                 "r": 12.0 * scale,
@@ -451,15 +583,23 @@ class Action:
                 "stroke_gray": 152,
                 "draw_text": False,
             }
+            if img is None:
+                return defaults
+            return Action._fit_semantic_badge_from_image(img, defaults)
 
         if name == "AC0811":
-            return Action._default_ac0811_params(w, h)
+            defaults = Action._default_ac0811_params(w, h)
+            if img is None:
+                return defaults
+            return Action._fit_semantic_badge_from_image(img, defaults)
 
         if name == "AC0812":
             params = Action._default_ac0882_params(w, h)
             params["draw_text"] = False
             params["fill_gray"] = 220
             params["stroke_gray"] = 98
+            if img is not None:
+                params = Action._fit_semantic_badge_from_image(img, params)
             return params
 
         if name == "AC0813":
@@ -467,6 +607,8 @@ class Action:
             params["draw_text"] = False
             params["fill_gray"] = 220
             params["stroke_gray"] = 98
+            if img is not None:
+                params = Action._fit_semantic_badge_from_image(img, params)
             return params
 
         if name == "AC0814":
@@ -474,13 +616,21 @@ class Action:
             params["draw_text"] = False
             params["fill_gray"] = 220
             params["stroke_gray"] = 98
+            if img is not None:
+                params = Action._fit_semantic_badge_from_image(img, params)
             return params
 
         if name == "AC0881":
-            return Action._default_ac0881_params(w, h)
+            defaults = Action._default_ac0881_params(w, h)
+            if img is None:
+                return defaults
+            return Action._fit_semantic_badge_from_image(img, defaults)
 
         if name == "AC0882":
-            return Action._default_ac0882_params(w, h)
+            defaults = Action._default_ac0882_params(w, h)
+            if img is None:
+                return defaults
+            return Action._fit_semantic_badge_from_image(img, defaults)
 
         return None
 
@@ -766,6 +916,13 @@ class Action:
             y1 = max(0.0, params["stem_top"] - 1.0)
             y2 = min(float(h), params["stem_bottom"] + 1.0)
             return (xx >= x1) & (xx <= x2) & (yy >= y1) & (yy <= y2)
+        if element == "arm" and params.get("arm_enabled"):
+            x1 = max(0.0, min(params.get("arm_x1", 0.0), params.get("arm_x2", 0.0)) - 1.0)
+            x2 = min(float(w), max(params.get("arm_x1", 0.0), params.get("arm_x2", 0.0)) + 1.0)
+            y1 = max(0.0, min(params.get("arm_y1", 0.0), params.get("arm_y2", 0.0)) - 1.0)
+            y2 = min(float(h), max(params.get("arm_y1", 0.0), params.get("arm_y2", 0.0)) + 1.0)
+            pad = max(1.0, params.get("arm_stroke", params.get("stem_or_arm", 1.0)) * 0.8)
+            return (xx >= (x1 - pad)) & (xx <= (x2 + pad)) & (yy >= (y1 - pad)) & (yy <= (y2 + pad))
         return None
 
     @staticmethod
@@ -812,20 +969,23 @@ class Action:
         return float(np.sum(weighted) / denom)
 
     @staticmethod
-    def optimize_ac0811_by_elements(
+    def validate_badge_by_elements(
         img_orig: np.ndarray,
-        base_params: dict,
+        params: dict,
         *,
-        max_rounds: int = 4,
+        max_rounds: int = 3,
         debug_out_dir: str | None = None,
-    ) -> tuple[dict, list[str]]:
+    ) -> list[str]:
         h, w = img_orig.shape[:2]
-        params = dict(base_params)
         logs: list[str] = []
-        elements = ["circle", "stem"]
+        elements = ["circle"]
+        if params.get("stem_enabled"):
+            elements.append("stem")
+        if params.get("arm_enabled"):
+            elements.append("arm")
 
         for round_idx in range(max_rounds):
-            logs.append(f"Runde {round_idx + 1}: elementweise Optimierung gestartet")
+            logs.append(f"Runde {round_idx + 1}: elementweise Validierung gestartet")
             full_svg = Action.generate_badge_svg(w, h, params)
             full_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(full_svg, w, h))
             if full_render is None:
@@ -856,60 +1016,8 @@ class Action:
                         os.path.join(debug_out_dir, f"round_{round_idx + 1:02d}_{element}_diff.png"),
                         elem_diff,
                     )
-
-                if element == "circle":
-                    m_orig = Action._mask_center_size(mask_orig)
-                    m_svg = Action._mask_center_size(mask_svg)
-                    if m_orig and m_svg:
-                        dx = m_orig[0] - m_svg[0]
-                        dy = m_orig[1] - m_svg[1]
-                        target_r = 0.5 * np.sqrt(max(1.0, m_orig[2]))
-                        current_r = 0.5 * np.sqrt(max(1.0, m_svg[2]))
-                        dr = target_r - current_r
-                        params["cx"] = max(0.0, min(float(w), params["cx"] + dx))
-                        params["cy"] = max(0.0, min(float(h), params["cy"] + dy))
-                        params["r"] = max(2.0, params["r"] + dr)
-                        logs.append(f"circle: Δcx={dx:.3f}, Δcy={dy:.3f}, Δsize={m_orig[2] - m_svg[2]:.3f}, Δr={dr:.3f}")
-
-                        ring_mask, fill_mask = Action._ring_and_fill_masks(h, w, params)
-                        orig_ring = Action._mean_gray_for_mask(img_orig, ring_mask)
-                        svg_ring = Action._mean_gray_for_mask(elem_render, ring_mask)
-                        orig_fill = Action._mean_gray_for_mask(img_orig, fill_mask)
-                        svg_fill = Action._mean_gray_for_mask(elem_render, fill_mask)
-                        if orig_ring is not None and svg_ring is not None:
-                            params["stroke_gray"] = int(round(max(0, min(255, params["stroke_gray"] + (orig_ring - svg_ring)))))
-                        if orig_fill is not None and svg_fill is not None:
-                            params["fill_gray"] = int(round(max(0, min(255, params["fill_gray"] + (orig_fill - svg_fill)))))
-
-                elif element == "stem":
-                    m_orig = Action._mask_center_size(mask_orig)
-                    m_svg = Action._mask_center_size(mask_svg)
-                    b_orig = Action._mask_bbox(mask_orig)
-                    b_svg = Action._mask_bbox(mask_svg)
-                    if m_orig and m_svg and b_orig and b_svg:
-                        dx = m_orig[0] - m_svg[0]
-                        dy = m_orig[1] - m_svg[1]
-                        scale = np.sqrt(max(1e-6, m_orig[2]) / max(1e-6, m_svg[2]))
-                        old_height = max(1.0, params["stem_bottom"] - params["stem_top"])
-
-                        params["stem_x"] = max(0.0, min(float(w), params["stem_x"] + dx))
-                        params["stem_top"] = max(0.0, min(float(h), params["stem_top"] + dy))
-                        params["stem_width"] = max(1.0, min(float(w), params["stem_width"] * scale))
-                        new_height = old_height * scale
-                        params["stem_bottom"] = max(
-                            params["stem_top"],
-                            min(float(h), params["stem_top"] + new_height),
-                        )
-                        logs.append(
-                            f"stem: Δcx={dx:.3f}, Δcy={dy:.3f}, Δsize={m_orig[2] - m_svg[2]:.3f}, scale={scale:.3f}"
-                        )
-
-                        stem_region = Action.extract_badge_element_mask(img_orig, params, "stem")
-                        if stem_region is not None:
-                            orig_stem = Action._mean_gray_for_mask(img_orig, stem_region)
-                            svg_stem = Action._mean_gray_for_mask(elem_render, stem_region)
-                            if orig_stem is not None and svg_stem is not None:
-                                params["stem_gray"] = int(round(max(0, min(255, params.get("stem_gray", params["stroke_gray"]) + (orig_stem - svg_stem)))))
+                elem_err = Action._masked_error(img_orig, elem_render, mask_orig)
+                logs.append(f"{element}: Fehler={elem_err:.3f}")
 
             full_svg = Action.generate_badge_svg(w, h, params)
             full_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(full_svg, w, h))
@@ -917,29 +1025,13 @@ class Action:
             logs.append(f"Runde {round_idx + 1}: Gesamtfehler={full_err:.3f}")
 
             if full_err <= 8.0:
-                logs.append("Gesamtfehler unter Schwellwert, Optimierung beendet")
+                logs.append("Gesamtfehler unter Schwellwert, Validierung beendet")
                 break
 
-            worst_element = None
-            worst_err = -1.0
-            for element in elements:
-                mask = Action._element_region_mask(h, w, params, element)
-                if mask is None or int(mask.sum()) < 3:
-                    logs.append(f"{element}: keine Nachkorrektur möglich (Region fehlt)")
-                    continue
-                elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(params, element))
-                elem_render = Action.render_svg_to_numpy(elem_svg, w, h)
-                elem_err = Action._masked_error(img_orig, elem_render, mask)
-                if elem_err > worst_err:
-                    worst_err = elem_err
-                    worst_element = element
-
-            if worst_element is None:
-                logs.append("Abbruch: Kein fehlerhaftes Element mehr extrahierbar")
+            if round_idx + 1 >= max_rounds:
                 break
-            logs.append(f"Nachkorrektur fokussiert auf Element: {worst_element}")
 
-        return params, logs
+        return logs
 
 
 def run_iteration_pipeline(
@@ -991,21 +1083,20 @@ def run_iteration_pipeline(
         if badge_params is None:
             return None
 
-        optimization_logs: list[str] = []
-        if perc.base_name.upper() == "AC0811":
-            debug_dir = None
-            if debug_ac0811_dir:
-                debug_dir = os.path.join(debug_ac0811_dir, os.path.splitext(filename)[0])
-                os.makedirs(debug_dir, exist_ok=True)
-            badge_params, optimization_logs = Action.optimize_ac0811_by_elements(
-                perc.img,
-                badge_params,
-                debug_out_dir=debug_dir,
-            )
-            if reports_out_dir:
-                log_path = os.path.join(reports_out_dir, f"{os.path.splitext(filename)[0]}_element_optimization.log")
-                with open(log_path, "w", encoding="utf-8") as f:
-                    f.write("\n".join(optimization_logs).rstrip() + "\n")
+        validation_logs: list[str] = []
+        debug_dir = None
+        if debug_ac0811_dir and perc.base_name.upper() == "AC0811":
+            debug_dir = os.path.join(debug_ac0811_dir, os.path.splitext(filename)[0])
+            os.makedirs(debug_dir, exist_ok=True)
+        validation_logs = Action.validate_badge_by_elements(
+            perc.img,
+            badge_params,
+            debug_out_dir=debug_dir,
+        )
+        if reports_out_dir:
+            log_path = os.path.join(reports_out_dir, f"{os.path.splitext(filename)[0]}_element_validation.log")
+            with open(log_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(validation_logs).rstrip() + "\n")
 
         svg_content = Action.generate_badge_svg(w, h, badge_params)
         base = os.path.splitext(filename)[0]

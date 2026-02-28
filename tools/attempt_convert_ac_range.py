@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import importlib.util
+import importlib.metadata
 import json
 import os
 import platform
@@ -21,8 +22,22 @@ import sys
 from pathlib import Path
 
 
-def _has_mod(name: str) -> bool:
-    return importlib.util.find_spec(name) is not None
+def _probe_mod(name: str) -> dict[str, str | bool]:
+    spec = importlib.util.find_spec(name)
+    out: dict[str, str | bool] = {
+        "available": spec is not None,
+        "origin": "",
+        "version": "",
+    }
+    if spec is None:
+        return out
+
+    out["origin"] = str(spec.origin or "")
+    try:
+        out["version"] = importlib.metadata.version(name)
+    except importlib.metadata.PackageNotFoundError:
+        out["version"] = "unknown"
+    return out
 
 
 def _collect_inputs(folder: Path, start: str, end: str) -> list[str]:
@@ -60,6 +75,8 @@ def _write_markdown_log(log_path: Path, report: dict) -> None:
     deps = report["dependencies"]
     conv = report["conversion"]
 
+    runtime_path = str(report.get("runtime_path") or "")
+
     lines = [
         "# AC range conversion attempt log",
         "",
@@ -73,12 +90,13 @@ def _write_markdown_log(log_path: Path, report: dict) -> None:
         f"- Python: `{env['python_version']}`",
         f"- Executable: `{env['python_executable']}`",
         f"- Platform: `{env['platform']}`",
+        f"- Runtime path override: `{runtime_path or '(none)'}`",
         "",
         "## Dependencies",
         "",
-        f"- cv2: `{deps['cv2']}`",
-        f"- numpy: `{deps['numpy']}`",
-        f"- fitz: `{deps['fitz']}`",
+        f"- cv2: available=`{deps['cv2']['available']}` version=`{deps['cv2']['version']}` origin=`{deps['cv2']['origin']}`",
+        f"- numpy: available=`{deps['numpy']['available']}` version=`{deps['numpy']['version']}` origin=`{deps['numpy']['origin']}`",
+        f"- fitz: available=`{deps['fitz']['available']}` version=`{deps['fitz']['version']}` origin=`{deps['fitz']['origin']}`",
         "",
         "## Command",
         "",
@@ -150,6 +168,14 @@ def main() -> int:
     parser.add_argument("--start", default="AC0800")
     parser.add_argument("--end", default="AC0884")
     parser.add_argument(
+        "--runtime-path",
+        default="",
+        help=(
+            "Optional path to a staged runtime directory (containing cv2/numpy/fitz). "
+            "Will be prepended to PYTHONPATH for dependency checks and conversion run."
+        ),
+    )
+    parser.add_argument(
         "--report",
         default="artifacts/converted_symbols/AC0800_AC0884_attempt_report.json",
         help="JSON output report path",
@@ -161,6 +187,10 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    runtime_path = args.runtime_path.strip()
+    if runtime_path:
+        sys.path.insert(0, runtime_path)
+
     images_dir = Path(args.images)
     report_path = Path(args.report)
     log_path = Path(args.log)
@@ -168,7 +198,7 @@ def main() -> int:
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
     inputs = _collect_inputs(images_dir, args.start, args.end)
-    deps = {name: _has_mod(name) for name in ("cv2", "numpy", "fitz")}
+    deps = {name: _probe_mod(name) for name in ("cv2", "numpy", "fitz")}
 
     cmd = [
         sys.executable,
@@ -193,9 +223,14 @@ def main() -> int:
         "stderr": "",
     }
 
-    if deps["cv2"] and deps["numpy"] and deps["fitz"]:
+    dep_ok = all(bool(deps[name]["available"]) for name in ("cv2", "numpy", "fitz"))
+    if dep_ok:
         started = dt.datetime.now(dt.timezone.utc)
-        proc = subprocess.run(cmd, capture_output=True, text=True)
+        env = os.environ.copy()
+        if runtime_path:
+            old_pythonpath = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = runtime_path if not old_pythonpath else f"{runtime_path}{os.pathsep}{old_pythonpath}"
+        proc = subprocess.run(cmd, capture_output=True, text=True, env=env)
         finished = dt.datetime.now(dt.timezone.utc)
         duration = (finished - started).total_seconds()
         conversion = {
@@ -220,6 +255,7 @@ def main() -> int:
             "platform": platform.platform(),
         },
         "dependencies": deps,
+        "runtime_path": runtime_path,
         "conversion": conversion,
     }
 

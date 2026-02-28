@@ -1,12 +1,18 @@
 Runde 1: elementweise Validierung gestartet
-circle: Fehler=80.745
-stem: Element konnte nicht extrahiert werden
-Runde 1: Gesamtfehler=18.440
+circle: Fehler=89.155
+stem: Fehler=88.429
+stem: Breitenkorrektur ratio=0.833, neu=4.000
+stem: Geometrie nach Elementabgleich aktualisiert
+Runde 1: Gesamtfehler=18.790
 Runde 2: elementweise Validierung gestartet
-circle: Fehler=80.745
-stem: Element konnte nicht extrahiert werden
-Runde 2: Gesamtfehler=18.440
+circle: Fehler=89.155
+stem: Fehler=94.263
+stem: Breitenkorrektur ratio=0.833, neu=4.000
+stem: Geometrie nach Elementabgleich aktualisiert
+Runde 2: Gesamtfehler=18.790
 Runde 3: elementweise Validierung gestartet
-circle: Fehler=80.745
-stem: Element konnte nicht extrahiert werden
-Runde 3: Gesamtfehler=18.440
+circle: Fehler=89.155
+stem: Fehler=94.263
+stem: Breitenkorrektur ratio=0.833, neu=4.000
+stem: Geometrie nach Elementabgleich aktualisiert
+Runde 3: Gesamtfehler=18.790

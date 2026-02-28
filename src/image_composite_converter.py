@@ -117,11 +117,27 @@ class Reflection:
             params["label"] = ""
             return desc, params
 
-        if base_name.upper() in {"AR0100", "AC0812", "AC0813", "AC0814", "AC0870", "AC0881", "AC0882"}:
+        if base_name.upper() in {
+            "AR0100",
+            "AC0812",
+            "AC0813",
+            "AC0814",
+            "AC0820",
+            "AC0831",
+            "AC0832",
+            "AC0833",
+            "AC0834",
+            "AC0870",
+            "AC0881",
+            "AC0882",
+        }:
             params["mode"] = "semantic_badge"
             if base_name.upper() in {"AC0812", "AC0813", "AC0814"}:
                 params["elements"].append("SEMANTIC: Kreis ohne Buchstabe")
                 params["label"] = ""
+            elif base_name.upper() in {"AC0820", "AC0831", "AC0832", "AC0833", "AC0834"}:
+                params["elements"].append("SEMANTIC: Kreis + Buchstabe CO_2")
+                params["label"] = "CO_2"
             else:
                 params["elements"].append("SEMANTIC: Kreis + Buchstabe")
                 params["label"] = "M" if base_name.upper() == "AR0100" else "T"
@@ -132,6 +148,14 @@ class Reflection:
             if base_name.upper() == "AC0813":
                 params["elements"].append("SEMANTIC: senkrechter Strich oben vom Kreis")
             if base_name.upper() == "AC0814":
+                params["elements"].append("SEMANTIC: waagrechter Strich rechts vom Kreis")
+            if base_name.upper() == "AC0831":
+                params["elements"].append("SEMANTIC: senkrechter Strich hinter dem Kreis")
+            if base_name.upper() == "AC0832":
+                params["elements"].append("SEMANTIC: waagrechter Strich links vom Kreis")
+            if base_name.upper() == "AC0833":
+                params["elements"].append("SEMANTIC: senkrechter Strich oben vom Kreis")
+            if base_name.upper() == "AC0834":
                 params["elements"].append("SEMANTIC: waagrechter Strich rechts vom Kreis")
             return desc, params
 
@@ -346,6 +370,13 @@ class Action:
             }
         )
         Action._center_glyph_bbox(params)
+        return params
+
+    @staticmethod
+    def _apply_co2_label(params: dict) -> dict:
+        params["draw_text"] = True
+        params["text_mode"] = "co2"
+        params["text_gray"] = int(round(params.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY)))
         return params
 
     @staticmethod
@@ -833,6 +864,36 @@ class Action:
                 return defaults
             return Action._fit_semantic_badge_from_image(img, defaults)
 
+        if name == "AC0820":
+            defaults = Action._apply_co2_label(Action._default_ac0870_params(w, h))
+            if img is None:
+                return defaults
+            return Action._apply_co2_label(Action._fit_semantic_badge_from_image(img, defaults))
+
+        if name == "AC0831":
+            defaults = Action._apply_co2_label(Action._default_ac0881_params(w, h))
+            if img is None:
+                return defaults
+            return Action._apply_co2_label(Action._fit_ac0811_params_from_image(img, defaults))
+
+        if name == "AC0832":
+            defaults = Action._apply_co2_label(Action._default_ac0812_params(w, h))
+            if img is None:
+                return defaults
+            return Action._apply_co2_label(Action._fit_ac0812_params_from_image(img, defaults))
+
+        if name == "AC0833":
+            defaults = Action._apply_co2_label(Action._default_ac0813_params(w, h))
+            if img is None:
+                return defaults
+            return Action._apply_co2_label(Action._fit_ac0813_params_from_image(img, defaults))
+
+        if name == "AC0834":
+            defaults = Action._apply_co2_label(Action._default_ac0814_params(w, h))
+            if img is None:
+                return defaults
+            return Action._apply_co2_label(Action._fit_ac0814_params_from_image(img, defaults))
+
         return None
 
     @staticmethod
@@ -879,6 +940,16 @@ class Action:
                         f'transform="translate({p["tx"]:.4f},{p["ty"]:.4f}) '
                         f'scale({p["s"]:.6f},{-p["s"]:.6f}) '
                         f'translate({-Action.T_XMIN},{-Action.T_YMAX})"/>'
+                    )
+                )
+            elif p.get("text_mode") == "co2":
+                font_size = max(4.0, p.get("r", min(w, h) * 0.4) * 0.95)
+                elements.append(
+                    (
+                        f'  <text x="{p["cx"]:.4f}" y="{p["cy"]:.4f}" fill="{Action.grayhex(p["text_gray"])}" '
+                        f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}" '
+                        f'font-style="normal" text-anchor="middle" dominant-baseline="middle">'
+                        f'CO<tspan font-size="70%" baseline-shift="sub">2</tspan></text>'
                     )
                 )
             else:

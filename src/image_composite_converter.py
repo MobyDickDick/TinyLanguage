@@ -249,6 +249,35 @@ class Action:
         }
 
     @staticmethod
+    def _default_ac0811_params(w: int, h: int) -> dict:
+        """AC0811 is vertically elongated: circle sits in the upper square area."""
+        if w <= 0 or h <= 0:
+            return Action._default_ac081x_shared(w, h)
+
+        r = float(w) * 0.4
+        stroke_circle = max(0.9, float(w) / 15.0)
+        cx = float(w) / 2.0
+        cy = float(w) / 2.0
+        stem_width = max(1.0, float(w) * 0.10)
+        stem_len = max(2.0, float(h) - (cy + r))
+
+        return {
+            "cx": cx,
+            "cy": cy,
+            "r": r,
+            "stroke_circle": stroke_circle,
+            "stroke_gray": 152,
+            "fill_gray": 220,
+            "draw_text": False,
+            "stem_enabled": True,
+            "stem_width": stem_width,
+            "stem_x": cx - (stem_width / 2.0),
+            "stem_top": cy + r,
+            "stem_bottom": min(float(h), (cy + r) + stem_len),
+            "stem_gray": 98,
+        }
+
+    @staticmethod
     def _default_ac0882_params(w: int, h: int) -> dict:
         params = Action._default_ac081x_shared(w, h)
         arm_x2 = params["cx"] - params["r"]
@@ -424,17 +453,7 @@ class Action:
             }
 
         if name == "AC0811":
-            params = Action._default_ac081x_shared(w, h)
-            params["draw_text"] = False
-            params["fill_gray"] = 220
-            params["stroke_gray"] = 98
-            params["stem_enabled"] = True
-            params["stem_width"] = params["stem_or_arm"]
-            params["stem_x"] = params["cx"] - (params["stem_width"] / 2.0)
-            params["stem_top"] = params["cy"] + params["r"]
-            params["stem_bottom"] = min(float(h), params["stem_top"] + params["stem_or_arm_len"])
-            params["stem_gray"] = 98
-            return params
+            return Action._default_ac0811_params(w, h)
 
         if name == "AC0812":
             params = Action._default_ac0882_params(w, h)

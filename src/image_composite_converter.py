@@ -818,22 +818,25 @@ class Action:
                 cv2.imwrite(os.path.join(debug_out_dir, f"round_{round_idx + 1:02d}_full_diff.png"), full_diff)
 
             for element in elements:
+                elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(params, element))
+                elem_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(elem_svg, w, h))
+                if elem_render is None:
+                    logs.append(f"{element}: Element-SVG konnte nicht gerendert werden")
+                    continue
+
                 mask_orig = Action.extract_badge_element_mask(img_orig, params, element)
-                mask_svg = Action.extract_badge_element_mask(full_render, params, element)
+                mask_svg = Action.extract_badge_element_mask(elem_render, params, element)
                 if mask_orig is None or mask_svg is None:
                     logs.append(f"{element}: Element konnte nicht extrahiert werden")
                     continue
 
                 if debug_out_dir:
-                    elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(params, element))
-                    elem_render = Action.render_svg_to_numpy(elem_svg, w, h)
-                    if elem_render is not None:
-                        elem_focus_mask = Action._element_region_mask(h, w, params, element)
-                        elem_diff = Action.create_diff_image(img_orig, elem_render, elem_focus_mask)
-                        cv2.imwrite(
-                            os.path.join(debug_out_dir, f"round_{round_idx + 1:02d}_{element}_diff.png"),
-                            elem_diff,
-                        )
+                    elem_focus_mask = Action._element_region_mask(h, w, params, element)
+                    elem_diff = Action.create_diff_image(img_orig, elem_render, elem_focus_mask)
+                    cv2.imwrite(
+                        os.path.join(debug_out_dir, f"round_{round_idx + 1:02d}_{element}_diff.png"),
+                        elem_diff,
+                    )
 
                 if element == "circle":
                     m_orig = Action._mask_center_size(mask_orig)
@@ -851,9 +854,9 @@ class Action:
 
                         ring_mask, fill_mask = Action._ring_and_fill_masks(h, w, params)
                         orig_ring = Action._mean_gray_for_mask(img_orig, ring_mask)
-                        svg_ring = Action._mean_gray_for_mask(full_render, ring_mask)
+                        svg_ring = Action._mean_gray_for_mask(elem_render, ring_mask)
                         orig_fill = Action._mean_gray_for_mask(img_orig, fill_mask)
-                        svg_fill = Action._mean_gray_for_mask(full_render, fill_mask)
+                        svg_fill = Action._mean_gray_for_mask(elem_render, fill_mask)
                         if orig_ring is not None and svg_ring is not None:
                             params["stroke_gray"] = int(round(max(0, min(255, params["stroke_gray"] + (orig_ring - svg_ring)))))
                         if orig_fill is not None and svg_fill is not None:
@@ -885,7 +888,7 @@ class Action:
                         stem_region = Action.extract_badge_element_mask(img_orig, params, "stem")
                         if stem_region is not None:
                             orig_stem = Action._mean_gray_for_mask(img_orig, stem_region)
-                            svg_stem = Action._mean_gray_for_mask(full_render, stem_region)
+                            svg_stem = Action._mean_gray_for_mask(elem_render, stem_region)
                             if orig_stem is not None and svg_stem is not None:
                                 params["stem_gray"] = int(round(max(0, min(255, params.get("stem_gray", params["stroke_gray"]) + (orig_stem - svg_stem)))))
 

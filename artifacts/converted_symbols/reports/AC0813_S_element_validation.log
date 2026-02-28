@@ -2,11 +2,4 @@ Runde 1: elementweise Validierung gestartet
 circle: Fehler=83.724
 arm: Fehler=24.071
 Runde 1: Gesamtfehler=22.144
-Runde 2: elementweise Validierung gestartet
-circle: Fehler=83.724
-arm: Fehler=24.071
-Runde 2: Gesamtfehler=22.144
-Runde 3: elementweise Validierung gestartet
-circle: Fehler=83.724
-arm: Fehler=24.071
-Runde 3: Gesamtfehler=22.144
+Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet

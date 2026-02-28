@@ -1,18 +1,28 @@
 Runde 1: elementweise Validierung gestartet
+circle: minRect Δcx=1.000, Δcy=0.000, diag=28.284->31.113, scale=1.1000
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=93.369
 stem: Fehler=88.377
 stem: Breitenkorrektur mode=iter, ratio=0.250, alt=1.000, neu=3.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 1: Gesamtfehler=18.465
+Runde 1: Gesamtfehler=10.157
 Runde 2: elementweise Validierung gestartet
-circle: Fehler=93.369
+circle: minRect Δcx=0.500, Δcy=0.500, diag=31.828->31.828, scale=1.0000
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=67.795
+stem: minRect Δcx=0.500, Δcy=2.500, diag=22.204->17.464, scale=0.7866
+stem: Parameter nach Mittelpunkt/Diagonale angepasst
 stem: Fehler=32.516
-stem: Breitenkorrektur mode=iter, ratio=0.800, alt=3.000, neu=3.000
+stem: Breitenkorrektur mode=iter, ratio=0.800, alt=2.550, neu=3.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 2: Gesamtfehler=18.465
+Runde 2: Gesamtfehler=9.202
 Runde 3: elementweise Validierung gestartet
-circle: Fehler=93.369
-stem: Fehler=32.516
-stem: Breitenkorrektur mode=iter, ratio=0.800, alt=3.000, neu=3.000
+circle: minRect Δcx=0.000, Δcy=-0.500, diag=31.828->32.000, scale=1.0054
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=63.698
+stem: minRect Δcx=0.500, Δcy=2.500, diag=20.224->17.464, scale=0.8636
+stem: Parameter nach Mittelpunkt/Diagonale angepasst
+stem: Fehler=29.661
+stem: Breitenkorrektur mode=iter, ratio=0.800, alt=2.591, neu=3.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 3: Gesamtfehler=18.465
+Runde 3: Gesamtfehler=9.049

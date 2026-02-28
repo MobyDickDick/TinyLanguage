@@ -1,12 +1,18 @@
 Runde 1: elementweise Validierung gestartet
+circle: minRect Δcx=2.079, Δcy=0.792, diag=14.142->11.315, scale=0.8001
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=85.121
 arm: Fehler=114.429
-Runde 1: Gesamtfehler=33.339
+Runde 1: Gesamtfehler=32.827
 Runde 2: elementweise Validierung gestartet
-circle: Fehler=85.121
+circle: minRect Δcx=0.579, Δcy=0.292, diag=12.728->11.315, scale=0.8890
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=81.317
 arm: Fehler=114.429
-Runde 2: Gesamtfehler=33.339
+Runde 2: Gesamtfehler=32.909
 Runde 3: elementweise Validierung gestartet
-circle: Fehler=85.121
+circle: minRect Δcx=0.079, Δcy=-0.208, diag=11.314->11.315, scale=1.0002
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=86.900
 arm: Fehler=114.429
-Runde 3: Gesamtfehler=33.339
+Runde 3: Gesamtfehler=33.003

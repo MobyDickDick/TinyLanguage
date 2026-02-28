@@ -1825,7 +1825,7 @@ def convert_range(
                             }
                         )
 
-    _harmonize_semantic_size_variants(semantic_results, svg_out_dir, reports_out_dir)
+    _harmonize_semantic_size_variants(semantic_results, folder_path, svg_out_dir, reports_out_dir)
 
     return out_root
 
@@ -1999,7 +1999,12 @@ def _scale_badge_params(anchor: dict, anchor_w: int, anchor_h: int, target_w: in
     return scaled
 
 
-def _harmonize_semantic_size_variants(results: list[dict[str, object]], svg_out_dir: str, reports_out_dir: str) -> None:
+def _harmonize_semantic_size_variants(
+    results: list[dict[str, object]],
+    folder_path: str,
+    svg_out_dir: str,
+    reports_out_dir: str,
+) -> None:
     grouped: dict[str, list[dict[str, object]]] = {}
     for result in results:
         base = str(result.get("base", ""))
@@ -2053,10 +2058,33 @@ def _harmonize_semantic_size_variants(results: list[dict[str, object]], svg_out_
             target_h = int(row["h"])
             scaled = _scale_badge_params(anchor_params, anchor_w, anchor_h, target_w, target_h)
             svg = Action.generate_badge_svg(target_w, target_h, scaled)
+
+            target_filename = str(dict(row["entry"])["filename"])
+            target_path = os.path.join(folder_path, target_filename)
+            target_img = cv2.imread(target_path)
+            if target_img is None:
+                harmonized_logs.append(f"{base}: {target_variant} übersprungen (Bild fehlt: {target_filename})")
+                continue
+
+            rendered = Action.render_svg_to_numpy(svg, target_w, target_h)
+            candidate_error = Action.calculate_error(target_img, rendered)
+            baseline_error = float(dict(row["entry"]).get("error", float("inf")))
+            if candidate_error > baseline_error + 0.25:
+                harmonized_logs.append(
+                    (
+                        f"{base}: {target_variant} nicht harmonisiert "
+                        f"(Fehler {candidate_error:.2f} > Basis {baseline_error:.2f})"
+                    )
+                )
+                continue
+
             with open(os.path.join(svg_out_dir, f"{target_variant}.svg"), "w", encoding="utf-8") as f:
                 f.write(svg)
             harmonized_logs.append(
-                f"{base}: {target_variant} aus {anchor_variant} abgeleitet (max_delta={max_delta:.4f})"
+                (
+                    f"{base}: {target_variant} aus {anchor_variant} abgeleitet "
+                    f"(max_delta={max_delta:.4f}, Fehler {baseline_error:.2f}->{candidate_error:.2f})"
+                )
             )
 
     if harmonized_logs:

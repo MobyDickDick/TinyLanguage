@@ -934,6 +934,87 @@ class Action:
         return cx, cy, size
 
     @staticmethod
+    def _estimate_vertical_stem_from_mask(
+        mask: np.ndarray,
+        expected_cx: float,
+        y_start: int,
+        y_end: int,
+    ) -> tuple[float, float] | None:
+        """Estimate stem center/width from foreground mask rows.
+
+        The estimate is intentionally iterative: we repeatedly reject outliers around
+        the running median width so anti-aliased pixels at the circle junction do not
+        inflate the final width.
+        """
+        h, w = mask.shape[:2]
+        y1 = max(0, min(h, int(y_start)))
+        y2 = max(y1, min(h, int(y_end)))
+        if y2 <= y1:
+            return None
+
+        widths: list[float] = []
+        centers: list[float] = []
+        cx_idx = int(round(expected_cx))
+
+        for y in range(y1, y2):
+            row = mask[y]
+            xs = np.where(row)[0]
+            if xs.size == 0:
+                continue
+
+            split_points = np.where(np.diff(xs) > 1)[0]
+            runs = np.split(xs, split_points + 1)
+            if not runs:
+                continue
+
+            # Prefer the run that contains the expected center, otherwise nearest run.
+            chosen = None
+            nearest_dist = float("inf")
+            for run in runs:
+                rx1, rx2 = int(run[0]), int(run[-1])
+                if rx1 <= cx_idx <= rx2:
+                    chosen = run
+                    break
+                dist = min(abs(cx_idx - rx1), abs(cx_idx - rx2))
+                if dist < nearest_dist:
+                    nearest_dist = dist
+                    chosen = run
+
+            if chosen is None:
+                continue
+
+            rw = float((chosen[-1] - chosen[0]) + 1)
+            rcx = float((chosen[0] + chosen[-1]) / 2.0)
+            widths.append(rw)
+            centers.append(rcx)
+
+        if not widths:
+            return None
+
+        widths_arr = np.array(widths, dtype=np.float32)
+        centers_arr = np.array(centers, dtype=np.float32)
+        keep = np.ones(widths_arr.shape[0], dtype=bool)
+
+        for _ in range(3):
+            sel_w = widths_arr[keep]
+            if sel_w.size < 3:
+                break
+            med = float(np.median(sel_w))
+            tol = max(1.0, med * 0.35)
+            new_keep = keep & (np.abs(widths_arr - med) <= tol)
+            if int(np.sum(new_keep)) == int(np.sum(keep)):
+                break
+            keep = new_keep
+
+        if int(np.sum(keep)) == 0:
+            return None
+
+        est_width = float(np.median(widths_arr[keep]))
+        est_cx = float(np.median(centers_arr[keep]))
+        est_width = max(1.0, min(est_width, float(w)))
+        return est_cx, est_width
+
+    @staticmethod
     def _ring_and_fill_masks(h: int, w: int, params: dict) -> tuple[np.ndarray, np.ndarray]:
         yy, xx = np.indices((h, w))
         dist = np.sqrt((xx - params["cx"]) ** 2 + (yy - params["cy"]) ** 2)
@@ -1032,16 +1113,39 @@ class Action:
         svg_w = max(1.0, (sx2 - sx1) + 1.0)
         ratio = svg_w / orig_w
 
-        if 0.92 <= ratio <= 1.10:
+        expected_cx = float(params.get("cx", (ox1 + ox2) / 2.0))
+        y_start = float(params.get("stem_top", 0.0)) + 1.0
+        y_end = float(params.get("stem_bottom", mask_orig.shape[0]))
+        est = Action._estimate_vertical_stem_from_mask(mask_orig, expected_cx, int(y_start), int(y_end))
+
+        if est is not None:
+            est_cx, est_width = est
+            min_w = max(1.0, float(params.get("stroke_circle", 1.0)) * 0.70)
+            max_w = max(min_w, min(float(w) * 0.18, float(params.get("r", 1.0)) * 0.80))
+            target_width = max(min_w, min(est_width, max_w))
+            target_cx = est_cx
+            estimate_mode = "iter"
+        else:
+            if 0.92 <= ratio <= 1.10:
+                return False, None
+            target_width = float(params.get("stem_width", svg_w)) * (orig_w / svg_w)
+            target_width = max(1.0, min(target_width, float(w) * 0.20))
+            target_cx = (ox1 + ox2) / 2.0
+            estimate_mode = "bbox"
+
+        old_width = float(params.get("stem_width", svg_w))
+        width_delta = abs(target_width - old_width)
+        ratio_after = target_width / max(1.0, orig_w)
+
+        if width_delta < 0.05 and 0.90 <= ratio_after <= 1.12:
             return False, None
 
-        target_width = float(params.get("stem_width", svg_w)) * (orig_w / svg_w)
-        target_width = max(1.0, min(target_width, float(w) * 0.20))
-
-        orig_cx = (ox1 + ox2) / 2.0
         params["stem_width"] = target_width
-        params["stem_x"] = max(0.0, min(float(w) - target_width, orig_cx - (target_width / 2.0)))
-        return True, f"stem: Breitenkorrektur ratio={ratio:.3f}, neu={target_width:.3f}"
+        params["stem_x"] = max(0.0, min(float(w) - target_width, target_cx - (target_width / 2.0)))
+        return True, (
+            f"stem: Breitenkorrektur mode={estimate_mode}, ratio={ratio:.3f}, "
+            f"alt={old_width:.3f}, neu={target_width:.3f}"
+        )
 
     @staticmethod
     def validate_badge_by_elements(

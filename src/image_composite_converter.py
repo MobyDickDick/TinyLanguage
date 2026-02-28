@@ -1435,9 +1435,22 @@ def _read_svg_geometry(svg_path: str) -> tuple[int, int, dict] | None:
     w = int(svg_match.group(1))
     h = int(svg_match.group(2))
 
-    params: dict[str, float | bool | int] = {
+    def _gray_from_hex(color: str, fallback: int) -> int:
+        m = re.match(r"#([0-9a-fA-F]{6})", color.strip())
+        if not m:
+            return fallback
+        hex_value = m.group(1)
+        r = int(hex_value[0:2], 16)
+        g = int(hex_value[2:4], 16)
+        b = int(hex_value[4:6], 16)
+        return int(round((r + g + b) / 3.0))
+
+    params: dict[str, float | bool | int | str] = {
         "fill_gray": 220,
-        "stroke_gray": 222,
+        "stroke_gray": 152,
+        "text_gray": 98,
+        "draw_text": False,
+        "text_mode": "path",
         "circle_enabled": False,
         "stem_enabled": False,
         "arm_enabled": False,
@@ -1453,6 +1466,15 @@ def _read_svg_geometry(svg_path: str) -> tuple[int, int, dict] | None:
         params["cy"] = float(circle_match.group(2))
         params["r"] = float(circle_match.group(3))
         params["stroke_circle"] = float(circle_match.group(4))
+        circle_tag_match = re.search(r"(<circle[^>]*>)", text)
+        if circle_tag_match:
+            circle_tag = circle_tag_match.group(1)
+            fill_match = re.search(r'fill="(#[0-9a-fA-F]{6})"', circle_tag)
+            stroke_match = re.search(r'stroke="(#[0-9a-fA-F]{6})"', circle_tag)
+            if fill_match:
+                params["fill_gray"] = _gray_from_hex(fill_match.group(1), int(params["fill_gray"]))
+            if stroke_match:
+                params["stroke_gray"] = _gray_from_hex(stroke_match.group(1), int(params["stroke_gray"]))
 
     rect_match = re.search(
         r"<rect[^>]*x=\"([0-9.]+)\"[^>]*y=\"([0-9.]+)\"[^>]*width=\"([0-9.]+)\"[^>]*height=\"([0-9.]+)\"",
@@ -1468,7 +1490,15 @@ def _read_svg_geometry(svg_path: str) -> tuple[int, int, dict] | None:
         params["stem_width"] = width
         params["stem_top"] = y
         params["stem_bottom"] = y + height
-        params["stem_gray"] = 222
+        rect_tag_match = re.search(r"(<rect[^>]*>)", text)
+        if rect_tag_match:
+            rect_fill_match = re.search(r'fill="(#[0-9a-fA-F]{6})"', rect_tag_match.group(1))
+            if rect_fill_match:
+                params["stem_gray"] = _gray_from_hex(rect_fill_match.group(1), int(params["stroke_gray"]))
+            else:
+                params["stem_gray"] = int(params["stroke_gray"])
+        else:
+            params["stem_gray"] = int(params["stroke_gray"])
 
     line_match = re.search(
         r"<line[^>]*x1=\"([0-9.]+)\"[^>]*y1=\"([0-9.]+)\"[^>]*x2=\"([0-9.]+)\"[^>]*y2=\"([0-9.]+)\"[^>]*stroke-width=\"([0-9.]+)\"",
@@ -1481,6 +1511,22 @@ def _read_svg_geometry(svg_path: str) -> tuple[int, int, dict] | None:
         params["arm_x2"] = float(line_match.group(3))
         params["arm_y2"] = float(line_match.group(4))
         params["arm_stroke"] = float(line_match.group(5))
+
+    text_path_match = re.search(r"(<path[^>]*>)", text)
+    if text_path_match:
+        path_tag = text_path_match.group(1)
+        fill_match = re.search(r'fill="(#[0-9a-fA-F]{6})"', path_tag)
+        params["draw_text"] = True
+        if fill_match:
+            params["text_gray"] = _gray_from_hex(fill_match.group(1), int(params["text_gray"]))
+        if Action.T_PATH_D in path_tag:
+            params["text_mode"] = "path_t"
+        else:
+            params["text_mode"] = "path"
+
+    if params.get("draw_text") and ("tx" not in params or "ty" not in params or "s" not in params):
+        # Fallback for older SVGs where we only need compositing geometry during harmonization.
+        params["draw_text"] = False
 
     return w, h, params
 

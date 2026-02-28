@@ -432,6 +432,13 @@ class Action:
             params["cx"] = cx
             params["cy"] = cy
             params["r"] = r
+
+        # On tiny AC0811 variants, anti-aliased pixels can pull contour-based center
+        # estimates to one side. Keep the semantic template's horizontal center so the
+        # stem remains visually centered under the circle.
+        if w <= 18 and not bool(params.get("draw_text", True)):
+            cx = float(defaults.get("cx", float(w) / 2.0))
+            params["cx"] = cx
         stroke_circle = float(params.get("stroke_circle", defaults.get("stroke_circle", max(0.9, float(w) / 15.0))))
 
         # AC0811 stems are intentionally thin. The generic contour fit can over-estimate

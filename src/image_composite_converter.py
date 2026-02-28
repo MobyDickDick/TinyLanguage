@@ -640,11 +640,27 @@ class Action:
         return cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
     @staticmethod
-    def create_diff_image(img_orig: np.ndarray, img_svg: np.ndarray) -> np.ndarray:
+    def create_diff_image(
+        img_orig: np.ndarray,
+        img_svg: np.ndarray,
+        focus_mask: np.ndarray | None = None,
+    ) -> np.ndarray:
         if img_svg.shape[:2] != img_orig.shape[:2]:
             img_svg = cv2.resize(img_svg, (img_orig.shape[1], img_orig.shape[0]), interpolation=cv2.INTER_AREA)
         gray_orig = cv2.cvtColor(img_orig, cv2.COLOR_BGR2GRAY)
         gray_svg = cv2.cvtColor(img_svg, cv2.COLOR_BGR2GRAY)
+
+        if focus_mask is not None:
+            if focus_mask.shape[:2] != img_orig.shape[:2]:
+                focus_mask = cv2.resize(
+                    focus_mask.astype(np.uint8),
+                    (img_orig.shape[1], img_orig.shape[0]),
+                    interpolation=cv2.INTER_NEAREST,
+                )
+            mask = focus_mask > 0
+            gray_orig = np.where(mask, gray_orig, 0).astype(np.uint8)
+            gray_svg = np.where(mask, gray_svg, 0).astype(np.uint8)
+
         diff = np.zeros_like(img_orig)
         diff[:, :, 2] = gray_orig
         diff[:, :, 1] = gray_svg
@@ -799,7 +815,8 @@ class Action:
                     elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(params, element))
                     elem_render = Action.render_svg_to_numpy(elem_svg, w, h)
                     if elem_render is not None:
-                        elem_diff = Action.create_diff_image(img_orig, elem_render)
+                        elem_focus_mask = Action._element_region_mask(h, w, params, element)
+                        elem_diff = Action.create_diff_image(img_orig, elem_render, elem_focus_mask)
                         cv2.imwrite(
                             os.path.join(debug_out_dir, f"round_{round_idx + 1:02d}_{element}_diff.png"),
                             elem_diff,

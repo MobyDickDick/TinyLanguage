@@ -1,18 +1,18 @@
 Runde 1: elementweise Validierung gestartet
-circle: Fehler=81.050
-stem: Fehler=57.536
+circle: Fehler=62.430
+stem: Fehler=24.071
 stem: Breitenkorrektur mode=iter, ratio=0.750, alt=2.667, neu=3.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 1: Gesamtfehler=12.843
+Runde 1: Gesamtfehler=11.305
 Runde 2: elementweise Validierung gestartet
-circle: Fehler=81.050
-stem: Fehler=60.741
+circle: Fehler=62.430
+stem: Fehler=35.155
 stem: Breitenkorrektur mode=iter, ratio=0.800, alt=3.000, neu=3.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 2: Gesamtfehler=12.843
+Runde 2: Gesamtfehler=11.305
 Runde 3: elementweise Validierung gestartet
-circle: Fehler=81.050
-stem: Fehler=60.741
+circle: Fehler=62.430
+stem: Fehler=35.155
 stem: Breitenkorrektur mode=iter, ratio=0.800, alt=3.000, neu=3.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 3: Gesamtfehler=12.843
+Runde 3: Gesamtfehler=11.305

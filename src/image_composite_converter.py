@@ -585,6 +585,8 @@ class Action:
 
     @staticmethod
     def _center_glyph_bbox(params: dict) -> None:
+        if "s" not in params or "cx" not in params or "cy" not in params:
+            return
         xmin, ymin, xmax, ymax = Action._glyph_bbox(params.get("text_mode", "path"))
         glyph_width = (xmax - xmin) * params["s"]
         glyph_height = (ymax - ymin) * params["s"]
@@ -779,7 +781,7 @@ class Action:
                         params["arm_y2"] = float(y1 + ry + rh)
                         params["arm_stroke"] = float(max(1.0, rw))
 
-        if params.get("draw_text", True):
+        if params.get("draw_text", True) and params.get("text_mode") in {"path", "path_t"}:
             Action._center_glyph_bbox(params)
         return Action._normalize_light_circle_colors(params)
 

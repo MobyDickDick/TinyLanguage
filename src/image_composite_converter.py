@@ -386,7 +386,24 @@ class Action:
         params["draw_text"] = True
         params["text_mode"] = "co2"
         params["text_gray"] = int(round(params.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY)))
+        params["co2_font_scale"] = float(params.get("co2_font_scale", 0.82))
+        params["co2_sub_font_scale"] = float(params.get("co2_sub_font_scale", 66.0))
+        params["co2_dy"] = float(params.get("co2_dy", -0.02 * float(params.get("r", 0.0))))
         return params
+
+    @staticmethod
+    def _tune_ac0832_co2_badge(params: dict) -> dict:
+        """AC0832 has a compact circle; keep CO₂ comfortably inside the ring."""
+        p = dict(params)
+        r = float(p.get("r", 0.0))
+        p["stroke_gray"] = 127  # #7F7F7F
+        p["arm_stroke"] = min(float(p.get("arm_stroke", 1.0)), max(1.0, 0.17 * r))
+        p["stroke_circle"] = 1.0
+        p["co2_font_scale"] = min(float(p.get("co2_font_scale", 0.82)), 0.74)
+        p["co2_sub_font_scale"] = min(float(p.get("co2_sub_font_scale", 66.0)), 62.0)
+        p["co2_dy"] = float(p.get("co2_dy", 0.0)) - (0.03 * r)
+        p["text_gray"] = p["stroke_gray"]
+        return p
 
     @staticmethod
     def _default_ac0812_params(w: int, h: int) -> dict:
@@ -890,8 +907,10 @@ class Action:
         if name == "AC0832":
             defaults = Action._apply_co2_label(Action._default_ac0812_params(w, h))
             if img is None:
-                return defaults
-            return Action._apply_co2_label(Action._fit_ac0812_params_from_image(img, defaults))
+                return Action._tune_ac0832_co2_badge(defaults)
+            return Action._tune_ac0832_co2_badge(
+                Action._apply_co2_label(Action._fit_ac0812_params_from_image(img, defaults))
+            )
 
         if name == "AC0833":
             defaults = Action._apply_co2_label(Action._default_ac0813_params(w, h))
@@ -955,13 +974,16 @@ class Action:
                     )
                 )
             elif p.get("text_mode") == "co2":
-                font_size = max(4.0, p.get("r", min(w, h) * 0.4) * 0.95)
+                radius = p.get("r", min(w, h) * 0.4)
+                font_size = max(4.0, radius * p.get("co2_font_scale", 0.82))
+                sub_scale = p.get("co2_sub_font_scale", 66.0)
+                co2_dy = p.get("co2_dy", 0.0)
                 elements.append(
                     (
-                        f'  <text x="{p["cx"]:.4f}" y="{p["cy"]:.4f}" fill="{Action.grayhex(p["text_gray"])}" '
+                        f'  <text x="{p["cx"]:.4f}" y="{(p["cy"] + co2_dy):.4f}" fill="{Action.grayhex(p["text_gray"])}" '
                         f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}" '
                         f'font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">'
-                        f'CO<tspan font-size="70%" baseline-shift="sub">2</tspan></text>'
+                        f'CO<tspan font-size="{sub_scale:.2f}%" baseline-shift="sub">2</tspan></text>'
                     )
                 )
             else:

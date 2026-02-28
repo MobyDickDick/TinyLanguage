@@ -214,9 +214,10 @@ class Action:
     }
 
     LIGHT_CIRCLE_FILL_GRAY = 242
-    # AC08xx-Kreisränder waren zu hell; etwas dunkleres Grau für bessere Lesbarkeit.
-    LIGHT_CIRCLE_STROKE_GRAY = 181
-    LIGHT_CIRCLE_TEXT_GRAY = 98
+    # Einheitliche AC08xx-Grauwerte (entspricht #7F7F7F).
+    LIGHT_CIRCLE_STROKE_GRAY = 127
+    LIGHT_CIRCLE_TEXT_GRAY = 127
+    AC08_STROKE_WIDTH_PX = 1.0
 
     @staticmethod
     def grayhex(gray: int) -> str:
@@ -232,6 +233,31 @@ class Action:
         if params.get("draw_text", True) and "text_gray" in params:
             params["text_gray"] = Action.LIGHT_CIRCLE_TEXT_GRAY
         return params
+
+    @staticmethod
+    def _normalize_ac08_line_widths(params: dict) -> dict:
+        """For AC08xx symbols: prefer a uniform 1px circle/connector stroke."""
+        p = dict(params)
+        p["stroke_circle"] = Action.AC08_STROKE_WIDTH_PX
+        if p.get("arm_enabled"):
+            p["arm_stroke"] = Action.AC08_STROKE_WIDTH_PX
+        if p.get("stem_enabled"):
+            p["stem_width"] = Action.AC08_STROKE_WIDTH_PX
+            if "cx" in p:
+                p["stem_x"] = float(p["cx"]) - (Action.AC08_STROKE_WIDTH_PX / 2.0)
+            p["stem_gray"] = int(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY))
+        return p
+
+    @staticmethod
+    def _finalize_ac08_style(name: str, params: dict) -> dict:
+        """Apply AC08xx palette/stroke conventions globally for semantic conversions."""
+        if not name.startswith("AC08"):
+            return params
+        p = Action._normalize_light_circle_colors(dict(params))
+        p = Action._normalize_ac08_line_widths(p)
+        if p.get("draw_text", True) and "text_gray" in p:
+            p["text_gray"] = int(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY))
+        return p
 
     @staticmethod
     def _align_stem_to_circle_center(params: dict) -> dict:
@@ -396,9 +422,9 @@ class Action:
         """AC0832 has a compact circle; keep CO₂ comfortably inside the ring."""
         p = dict(params)
         r = float(p.get("r", 0.0))
-        p["stroke_gray"] = 127  # #7F7F7F
-        p["arm_stroke"] = min(float(p.get("arm_stroke", 1.0)), max(1.0, 0.17 * r))
-        p["stroke_circle"] = 1.0
+        p["stroke_gray"] = Action.LIGHT_CIRCLE_STROKE_GRAY
+        p["arm_stroke"] = Action.AC08_STROKE_WIDTH_PX
+        p["stroke_circle"] = Action.AC08_STROKE_WIDTH_PX
         p["co2_font_scale"] = min(float(p.get("co2_font_scale", 0.82)), 0.74)
         p["co2_sub_font_scale"] = min(float(p.get("co2_sub_font_scale", 66.0)), 62.0)
         p["co2_dy"] = float(p.get("co2_dy", 0.0)) - (0.03 * r)
@@ -838,8 +864,8 @@ class Action:
         if name == "AC0870":
             defaults = Action._default_ac0870_params(w, h)
             if img is None:
-                return defaults
-            return Action._fit_ac0870_params_from_image(img, defaults)
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._fit_ac0870_params_from_image(img, defaults))
 
         if name == "AC0800":
             scale = min(w, h) / 30.0 if min(w, h) > 0 else 1.0
@@ -853,76 +879,79 @@ class Action:
                 "draw_text": False,
             }
             if img is None:
-                return defaults
-            return Action._fit_semantic_badge_from_image(img, defaults)
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._fit_semantic_badge_from_image(img, defaults))
 
         if name == "AC0811":
             defaults = Action._default_ac0811_params(w, h)
             if img is None:
-                return defaults
-            return Action._fit_ac0811_params_from_image(img, defaults)
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._fit_ac0811_params_from_image(img, defaults))
 
         if name == "AC0812":
             defaults = Action._default_ac0812_params(w, h)
             if img is None:
-                return defaults
-            return Action._fit_ac0812_params_from_image(img, defaults)
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._fit_ac0812_params_from_image(img, defaults))
 
         if name == "AC0813":
             defaults = Action._default_ac0813_params(w, h)
             if img is None:
-                return defaults
-            return Action._fit_ac0813_params_from_image(img, defaults)
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._fit_ac0813_params_from_image(img, defaults))
 
         if name == "AC0814":
             defaults = Action._default_ac0814_params(w, h)
             if img is None:
-                return defaults
-            return Action._fit_ac0814_params_from_image(img, defaults)
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._fit_ac0814_params_from_image(img, defaults))
 
         if name == "AC0881":
             defaults = Action._default_ac0881_params(w, h)
             if img is None:
-                return defaults
-            return Action._fit_semantic_badge_from_image(img, defaults)
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._fit_semantic_badge_from_image(img, defaults))
 
         if name == "AC0882":
             defaults = Action._default_ac0882_params(w, h)
             if img is None:
-                return defaults
-            return Action._fit_semantic_badge_from_image(img, defaults)
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._fit_semantic_badge_from_image(img, defaults))
 
         if name == "AC0820":
             defaults = Action._apply_co2_label(Action._default_ac0870_params(w, h))
             if img is None:
-                return defaults
-            return Action._apply_co2_label(Action._fit_semantic_badge_from_image(img, defaults))
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._apply_co2_label(Action._fit_semantic_badge_from_image(img, defaults)))
 
         if name == "AC0831":
             defaults = Action._apply_co2_label(Action._default_ac0881_params(w, h))
             if img is None:
-                return defaults
-            return Action._apply_co2_label(Action._fit_ac0811_params_from_image(img, defaults))
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._apply_co2_label(Action._fit_ac0811_params_from_image(img, defaults)))
 
         if name == "AC0832":
             defaults = Action._apply_co2_label(Action._default_ac0812_params(w, h))
             if img is None:
-                return Action._tune_ac0832_co2_badge(defaults)
-            return Action._tune_ac0832_co2_badge(
-                Action._apply_co2_label(Action._fit_ac0812_params_from_image(img, defaults))
+                return Action._finalize_ac08_style(name, Action._tune_ac0832_co2_badge(defaults))
+            return Action._finalize_ac08_style(
+                name,
+                Action._tune_ac0832_co2_badge(
+                    Action._apply_co2_label(Action._fit_ac0812_params_from_image(img, defaults))
+                ),
             )
 
         if name == "AC0833":
             defaults = Action._apply_co2_label(Action._default_ac0813_params(w, h))
             if img is None:
-                return defaults
-            return Action._apply_co2_label(Action._fit_ac0813_params_from_image(img, defaults))
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._apply_co2_label(Action._fit_ac0813_params_from_image(img, defaults)))
 
         if name == "AC0834":
             defaults = Action._apply_co2_label(Action._default_ac0814_params(w, h))
             if img is None:
-                return defaults
-            return Action._apply_co2_label(Action._fit_ac0814_params_from_image(img, defaults))
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._apply_co2_label(Action._fit_ac0814_params_from_image(img, defaults)))
 
         return None
 

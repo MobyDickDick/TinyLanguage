@@ -641,6 +641,8 @@ class Action:
 
     @staticmethod
     def create_diff_image(img_orig: np.ndarray, img_svg: np.ndarray) -> np.ndarray:
+        if img_svg.shape[:2] != img_orig.shape[:2]:
+            img_svg = cv2.resize(img_svg, (img_orig.shape[1], img_orig.shape[0]), interpolation=cv2.INTER_AREA)
         gray_orig = cv2.cvtColor(img_orig, cv2.COLOR_BGR2GRAY)
         gray_svg = cv2.cvtColor(img_svg, cv2.COLOR_BGR2GRAY)
         diff = np.zeros_like(img_orig)
@@ -653,7 +655,55 @@ class Action:
     def calculate_error(img_orig: np.ndarray, img_svg: np.ndarray) -> float:
         if img_svg is None:
             return float("inf")
+        if img_svg.shape[:2] != img_orig.shape[:2]:
+            img_svg = cv2.resize(img_svg, (img_orig.shape[1], img_orig.shape[0]), interpolation=cv2.INTER_AREA)
         return float(np.mean(cv2.absdiff(img_orig, img_svg)))
+
+    @staticmethod
+    def _fit_to_original_size(img_orig: np.ndarray, img_svg: np.ndarray | None) -> np.ndarray | None:
+        if img_svg is None:
+            return None
+        if img_svg.shape[:2] == img_orig.shape[:2]:
+            return img_svg
+        return cv2.resize(img_svg, (img_orig.shape[1], img_orig.shape[0]), interpolation=cv2.INTER_AREA)
+
+    @staticmethod
+    def _mask_centroid_radius(mask: np.ndarray) -> tuple[float, float, float] | None:
+        ys, xs = np.where(mask)
+        if xs.size < 5:
+            return None
+        cx = float(np.mean(xs))
+        cy = float(np.mean(ys))
+        r = float(np.sqrt(xs.size / np.pi))
+        return cx, cy, r
+
+    @staticmethod
+    def _mask_bbox(mask: np.ndarray) -> tuple[float, float, float, float] | None:
+        ys, xs = np.where(mask)
+        if xs.size < 3:
+            return None
+        x1, x2 = float(xs.min()), float(xs.max())
+        y1, y2 = float(ys.min()), float(ys.max())
+        return x1, y1, x2, y2
+
+    @staticmethod
+    def _ring_and_fill_masks(h: int, w: int, params: dict) -> tuple[np.ndarray, np.ndarray]:
+        yy, xx = np.indices((h, w))
+        dist = np.sqrt((xx - params["cx"]) ** 2 + (yy - params["cy"]) ** 2)
+        ring_half = max(0.7, params["stroke_circle"])
+        ring = np.abs(dist - params["r"]) <= ring_half
+        fill = dist <= max(0.5, params["r"] - ring_half)
+        return ring, fill
+
+    @staticmethod
+    def _mean_gray_for_mask(img: np.ndarray, mask: np.ndarray) -> float | None:
+        if int(mask.sum()) == 0:
+            return None
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        vals = gray[mask]
+        if vals.size == 0:
+            return None
+        return float(np.mean(vals))
 
     @staticmethod
     def extract_badge_element_mask(img_orig: np.ndarray, params: dict, element: str) -> np.ndarray | None:
@@ -705,8 +755,7 @@ class Action:
         img_orig: np.ndarray,
         base_params: dict,
         *,
-        max_rounds: int = 2,
-        max_attempts_per_element: int = 4,
+        max_rounds: int = 4,
     ) -> tuple[dict, list[str]]:
         h, w = img_orig.shape[:2]
         params = dict(base_params)
@@ -715,56 +764,62 @@ class Action:
 
         for round_idx in range(max_rounds):
             logs.append(f"Runde {round_idx + 1}: elementweise Optimierung gestartet")
+            full_svg = Action.generate_badge_svg(w, h, params)
+            full_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(full_svg, w, h))
+            if full_render is None:
+                logs.append("Abbruch: SVG konnte nicht gerendert werden")
+                break
+
             for element in elements:
-                mask = Action.extract_badge_element_mask(img_orig, params, element)
-                if mask is None:
+                mask_orig = Action.extract_badge_element_mask(img_orig, params, element)
+                mask_svg = Action.extract_badge_element_mask(full_render, params, element)
+                if mask_orig is None or mask_svg is None:
                     logs.append(f"{element}: Element konnte nicht extrahiert werden")
                     continue
 
-                best = dict(params)
-                element_svg = Action.generate_badge_svg(w, h, Action._element_only_params(best, element))
-                element_render = Action.render_svg_to_numpy(element_svg, w, h)
-                best_err = Action._masked_error(img_orig, element_render, mask)
+                if element == "circle":
+                    m_orig = Action._mask_centroid_radius(mask_orig)
+                    m_svg = Action._mask_centroid_radius(mask_svg)
+                    if m_orig and m_svg:
+                        dx = m_orig[0] - m_svg[0]
+                        dy = m_orig[1] - m_svg[1]
+                        dr = m_orig[2] - m_svg[2]
+                        params["cx"] = max(0.0, min(float(w), params["cx"] + dx))
+                        params["cy"] = max(0.0, min(float(h), params["cy"] + dy))
+                        params["r"] = max(2.0, params["r"] + dr)
+                        logs.append(f"circle: Δcx={dx:.3f}, Δcy={dy:.3f}, Δr={dr:.3f}")
 
-                for attempt in range(max_attempts_per_element):
-                    candidates: list[dict] = []
-                    if element == "circle":
-                        for dx in (-0.8, 0.0, 0.8):
-                            for dy in (-0.8, 0.0, 0.8):
-                                for dr in (-0.6, 0.0, 0.6):
-                                    c = dict(best)
-                                    c["cx"] = max(0.0, min(float(w), c["cx"] + dx))
-                                    c["cy"] = max(0.0, min(float(h), c["cy"] + dy))
-                                    c["r"] = max(2.0, c["r"] + dr)
-                                    candidates.append(c)
-                    elif element == "stem":
-                        for dx in (-0.8, 0.0, 0.8):
-                            for dtop in (-1.0, 0.0, 1.0):
-                                for dbottom in (-1.2, 0.0, 1.2):
-                                    c = dict(best)
-                                    c["stem_x"] = max(0.0, min(float(w), c["stem_x"] + dx))
-                                    c["stem_top"] = max(0.0, min(float(h), c["stem_top"] + dtop))
-                                    c["stem_bottom"] = max(c["stem_top"], min(float(h), c["stem_bottom"] + dbottom))
-                                    candidates.append(c)
+                        ring_mask, fill_mask = Action._ring_and_fill_masks(h, w, params)
+                        orig_ring = Action._mean_gray_for_mask(img_orig, ring_mask)
+                        svg_ring = Action._mean_gray_for_mask(full_render, ring_mask)
+                        orig_fill = Action._mean_gray_for_mask(img_orig, fill_mask)
+                        svg_fill = Action._mean_gray_for_mask(full_render, fill_mask)
+                        if orig_ring is not None and svg_ring is not None:
+                            params["stroke_gray"] = int(round(max(0, min(255, params["stroke_gray"] + (orig_ring - svg_ring)))))
+                        if orig_fill is not None and svg_fill is not None:
+                            params["fill_gray"] = int(round(max(0, min(255, params["fill_gray"] + (orig_fill - svg_fill)))))
 
-                    improved = False
-                    for cand in candidates:
-                        cand_svg = Action.generate_badge_svg(w, h, Action._element_only_params(cand, element))
-                        cand_render = Action.render_svg_to_numpy(cand_svg, w, h)
-                        cand_err = Action._masked_error(img_orig, cand_render, mask)
-                        if cand_err + 1e-6 < best_err:
-                            best = cand
-                            best_err = cand_err
-                            improved = True
+                elif element == "stem":
+                    b_orig = Action._mask_bbox(mask_orig)
+                    b_svg = Action._mask_bbox(mask_svg)
+                    if b_orig and b_svg:
+                        dx = ((b_orig[0] + b_orig[2]) / 2.0) - ((b_svg[0] + b_svg[2]) / 2.0)
+                        dtop = b_orig[1] - b_svg[1]
+                        dbottom = b_orig[3] - b_svg[3]
+                        params["stem_x"] = max(0.0, min(float(w), params["stem_x"] + dx))
+                        params["stem_top"] = max(0.0, min(float(h), params["stem_top"] + dtop))
+                        params["stem_bottom"] = max(params["stem_top"], min(float(h), params["stem_bottom"] + dbottom))
+                        logs.append(f"stem: Δx={dx:.3f}, Δtop={dtop:.3f}, Δbottom={dbottom:.3f}")
 
-                    logs.append(f"{element}: Versuch {attempt + 1}, Fehler={best_err:.3f}")
-                    if not improved:
-                        break
-
-                params.update(best)
+                        stem_region = Action.extract_badge_element_mask(img_orig, params, "stem")
+                        if stem_region is not None:
+                            orig_stem = Action._mean_gray_for_mask(img_orig, stem_region)
+                            svg_stem = Action._mean_gray_for_mask(full_render, stem_region)
+                            if orig_stem is not None and svg_stem is not None:
+                                params["stem_gray"] = int(round(max(0, min(255, params.get("stem_gray", params["stroke_gray"]) + (orig_stem - svg_stem)))))
 
             full_svg = Action.generate_badge_svg(w, h, params)
-            full_render = Action.render_svg_to_numpy(full_svg, w, h)
+            full_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(full_svg, w, h))
             full_err = Action.calculate_error(img_orig, full_render)
             logs.append(f"Runde {round_idx + 1}: Gesamtfehler={full_err:.3f}")
 

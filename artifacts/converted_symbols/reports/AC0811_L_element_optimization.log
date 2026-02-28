@@ -7,7 +7,7 @@ Runde 2: elementweise Optimierung gestartet
 circle: Δcx=-0.151, Δcy=2.202, Δr=-1.019
 stem: Δx=0.000, Δtop=-2.000, Δbottom=1.000
 Runde 2: Gesamtfehler=22.076
-Nachkorrektur fokussiert auf Element: stem
+Nachkorrektur fokussiert auf Element: circle
 Runde 3: elementweise Optimierung gestartet
 circle: Δcx=-0.055, Δcy=0.711, Δr=-0.669
 stem: Δx=0.000, Δtop=-5.000, Δbottom=1.000

@@ -189,10 +189,24 @@ class Action:
         "label": "T",
     }
 
+    LIGHT_CIRCLE_FILL_GRAY = 242
+    LIGHT_CIRCLE_STROKE_GRAY = 222
+    LIGHT_CIRCLE_TEXT_GRAY = 98
+
     @staticmethod
     def grayhex(gray: int) -> str:
         g = max(0, min(255, int(round(gray))))
         return f"#{g:02x}{g:02x}{g:02x}"
+
+    @staticmethod
+    def _normalize_light_circle_colors(params: dict) -> dict:
+        params["fill_gray"] = Action.LIGHT_CIRCLE_FILL_GRAY
+        params["stroke_gray"] = Action.LIGHT_CIRCLE_STROKE_GRAY
+        if params.get("stem_enabled"):
+            params["stem_gray"] = Action.LIGHT_CIRCLE_STROKE_GRAY
+        if params.get("draw_text", True) and "text_gray" in params:
+            params["text_gray"] = Action.LIGHT_CIRCLE_TEXT_GRAY
+        return params
 
     @staticmethod
     def _default_ac0870_params(w: int, h: int) -> dict:
@@ -213,7 +227,7 @@ class Action:
             "text_mode": "path_t",
         }
         Action._center_glyph_bbox(params)
-        return params
+        return Action._normalize_light_circle_colors(params)
 
     @staticmethod
     def _default_ac0881_params(w: int, h: int) -> dict:
@@ -261,21 +275,21 @@ class Action:
         stem_width = max(1.0, float(w) * 0.10)
         stem_len = max(2.0, float(h) - (cy + r))
 
-        return {
+        return Action._normalize_light_circle_colors({
             "cx": cx,
             "cy": cy,
             "r": r,
             "stroke_circle": stroke_circle,
-            "stroke_gray": 152,
-            "fill_gray": 220,
+            "stroke_gray": Action.LIGHT_CIRCLE_STROKE_GRAY,
+            "fill_gray": Action.LIGHT_CIRCLE_FILL_GRAY,
             "draw_text": False,
             "stem_enabled": True,
             "stem_width": stem_width,
             "stem_x": cx - (stem_width / 2.0),
             "stem_top": cy + r,
             "stem_bottom": min(float(h), (cy + r) + stem_len),
-            "stem_gray": 152,
-        }
+            "stem_gray": Action.LIGHT_CIRCLE_STROKE_GRAY,
+        })
 
     @staticmethod
     def _fit_ac0811_params_from_image(img: np.ndarray, defaults: dict) -> dict:
@@ -310,7 +324,7 @@ class Action:
         params["stem_top"] = max(0.0, min(float(h), cy + r))
         params["stem_bottom"] = float(h)
         params["stem_gray"] = int(round(params.get("stroke_gray", defaults.get("stroke_gray", 152))))
-        return params
+        return Action._normalize_light_circle_colors(params)
 
     @staticmethod
     def _default_ac0882_params(w: int, h: int) -> dict:
@@ -575,7 +589,7 @@ class Action:
 
         if params.get("draw_text", True):
             Action._center_glyph_bbox(params)
-        return params
+        return Action._normalize_light_circle_colors(params)
 
     @staticmethod
     def make_badge_params(w: int, h: int, base_name: str, img: np.ndarray | None = None) -> dict | None:

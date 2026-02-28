@@ -1,0 +1,14 @@
+Runde 1: elementweise Optimierung gestartet
+circle: Versuch 1, Fehler=53.000
+circle: Versuch 2, Fehler=53.000
+stem: Versuch 1, Fehler=19.424
+stem: Versuch 2, Fehler=19.424
+Runde 1: Gesamtfehler=26.989
+Nachkorrektur fokussiert auf Element: circle
+Runde 2: elementweise Optimierung gestartet
+circle: Versuch 1, Fehler=53.449
+circle: Versuch 2, Fehler=53.449
+stem: Versuch 1, Fehler=20.692
+stem: Versuch 2, Fehler=20.692
+Runde 2: Gesamtfehler=28.334
+Nachkorrektur fokussiert auf Element: circle

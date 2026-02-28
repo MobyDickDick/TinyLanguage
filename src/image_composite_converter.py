@@ -290,13 +290,22 @@ class Action:
         params = Action._fit_semantic_badge_from_image(img, defaults)
         h, w = img.shape[:2]
 
-        stem_width = float(params.get("stem_width", defaults.get("stem_width", max(1.0, float(w) * 0.10))))
+        raw_stem_width = float(params.get("stem_width", defaults.get("stem_width", max(1.0, float(w) * 0.10))))
         cx = float(params.get("cx", defaults.get("cx", float(w) / 2.0)))
         cy = float(params.get("cy", defaults.get("cy", float(w) / 2.0)))
         r = float(params.get("r", defaults.get("r", float(w) * 0.4)))
+        stroke_circle = float(params.get("stroke_circle", defaults.get("stroke_circle", max(0.9, float(w) / 15.0))))
+
+        # AC0811 stems are intentionally thin. The generic contour fit can over-estimate
+        # width when anti-aliased circle pixels bleed into the stem ROI, especially on
+        # larger "_L" variants. Keep the fitted value but clamp it to a narrow, plausible
+        # band derived from the circle stroke and image width.
+        min_stem_width = max(1.0, stroke_circle * 0.75)
+        max_stem_width = max(min_stem_width, min(float(w) * 0.14, stroke_circle * 1.6))
+        stem_width = max(min_stem_width, min(raw_stem_width, max_stem_width))
 
         params["stem_enabled"] = True
-        params["stem_width"] = max(1.0, stem_width)
+        params["stem_width"] = stem_width
         params["stem_x"] = cx - (params["stem_width"] / 2.0)
         params["stem_top"] = max(0.0, min(float(h), cy + r))
         params["stem_bottom"] = float(h)

@@ -103,6 +103,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/src/run_all.py",
+      "python": "${config:python.defaultInterpreterPath}",
       "console": "integratedTerminal",
       "env": {
         "TINYLANGUAGE_DEBUG_PYTEST": "1"

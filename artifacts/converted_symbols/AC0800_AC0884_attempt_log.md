@@ -1,6 +1,6 @@
 # AC range conversion attempt log
 
-- Timestamp (UTC): `2026-02-28T19:29:28.027962+00:00`
+- Timestamp (UTC): `2026-02-28T19:51:05.696819+00:00`
 - Range: `AC0800..AC0884`
 - Iterations: `8`
 - Input count: `105`
@@ -26,8 +26,8 @@ C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\python.exe src/image_comp
 ## Result
 
 - Ran conversion: `true`
-- Exit code: `1`
-- Duration (s): `1.76`
+- Exit code: `0`
+- Duration (s): `2.463`
 
 ### Converter stdout
 
@@ -98,39 +98,327 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich h
 
 --- Verarbeite AC0832_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich links vom Kreis
+
+--- Verarbeite AC0832_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich links vom Kreis
+
+--- Verarbeite AC0832_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich links vom Kreis
+
+--- Verarbeite AC0833_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich oben vom Kreis
+
+--- Verarbeite AC0833_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich oben vom Kreis
+
+--- Verarbeite AC0833_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich oben vom Kreis
+
+--- Verarbeite AC0834_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich rechts vom Kreis
+
+--- Verarbeite AC0834_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich rechts vom Kreis
+
+--- Verarbeite AC0834_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich rechts vom Kreis
+
+--- Verarbeite AC0835_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0835_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0835_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0836_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0836_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0836_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0837_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0837_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0837_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0838_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0838_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0838_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0839_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0839_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0839_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0840_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0840_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0840_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0841_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0841_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0841_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0842_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0842_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0842_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0843_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0843_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0843_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0844_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0844_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0844_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0845_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0845_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0845_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0846_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0846_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0846_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0847_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0847_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0847_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0848_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0848_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0848_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0849_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0849_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0849_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0850_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0850_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0850_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0861_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0861_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0861_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0862_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0862_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0862_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0863_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0863_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0863_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0864_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0864_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0864_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0870_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0870_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0870_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0881_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
+
+--- Verarbeite AC0881_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
+
+--- Verarbeite AC0881_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
+
+--- Verarbeite AC0882_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
+
+--- Verarbeite AC0882_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
+
+--- Verarbeite AC0882_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
+
+--- Verarbeite AC0883_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0883_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0883_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0884_L.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0884_M.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+--- Verarbeite AC0884_S.jpg ---
+Befehl erkannt: Kein Compositing-Befehl gefunden
+  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
+
+Abgeschlossen! Ausgaben unter: C:\Users\marku\myCloud\TinyLanguage\artifacts\converted_symbols
 ```
 
 ### Converter stderr
 
 ```text
-Traceback (most recent call last):
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 1913, in <module>
-    raise SystemExit(main())
-                     ~~~~^^
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 1900, in main
-    out_dir = convert_range(
-        args.folder_path,
-    ...<4 lines>...
-        args.debug_ac0811_dir,
-    )
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 1616, in convert_range
-    res = run_iteration_pipeline(
-        image_path,
-    ...<5 lines>...
-        debug_ac0811_dir,
-    )
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 1491, in run_iteration_pipeline
-    badge_params = Action.make_badge_params(w, h, perc.base_name, perc.img)
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 883, in make_badge_params
-    return Action._apply_co2_label(Action._fit_ac0812_params_from_image(img, defaults))
-                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 424, in _fit_ac0812_params_from_image
-    params = Action._fit_semantic_badge_from_image(img, defaults)
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 783, in _fit_semantic_badge_from_image
-    Action._center_glyph_bbox(params)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 589, in _center_glyph_bbox
-    glyph_width = (xmax - xmin) * params["s"]
-                                  ~~~~~~^^^^^
-KeyError: 's'
+
 ```

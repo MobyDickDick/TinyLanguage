@@ -492,13 +492,14 @@ class Action:
                 )
             )
 
-        elements.append(
-            (
-                f'  <circle cx="{p["cx"]:.4f}" cy="{p["cy"]:.4f}" r="{p["r"]:.4f}" '
-                f'fill="{Action.grayhex(p["fill_gray"])}" stroke="{Action.grayhex(p["stroke_gray"])}" '
-                f'stroke-width="{p["stroke_circle"]:.4f}"/>'
+        if p.get("circle_enabled", True):
+            elements.append(
+                (
+                    f'  <circle cx="{p["cx"]:.4f}" cy="{p["cy"]:.4f}" r="{p["r"]:.4f}" '
+                    f'fill="{Action.grayhex(p["fill_gray"])}" stroke="{Action.grayhex(p["stroke_gray"])}" '
+                    f'stroke-width="{p["stroke_circle"]:.4f}"/>'
+                )
             )
-        )
 
         if p.get("draw_text", True):
             if p.get("text_mode") == "path_t":
@@ -654,6 +655,144 @@ class Action:
             return float("inf")
         return float(np.mean(cv2.absdiff(img_orig, img_svg)))
 
+    @staticmethod
+    def extract_badge_element_mask(img_orig: np.ndarray, params: dict, element: str) -> np.ndarray | None:
+        gray = cv2.cvtColor(img_orig, cv2.COLOR_BGR2GRAY)
+        _, fg = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        fg_bool = fg > 0
+        h, w = gray.shape
+        yy, xx = np.indices((h, w))
+
+        if element == "circle":
+            circle = (xx - params["cx"]) ** 2 + (yy - params["cy"]) ** 2 <= (params["r"] + 2.0) ** 2
+            top = yy <= (params["cy"] + params["r"] + 1.0)
+            mask = fg_bool & circle & top
+        elif element == "stem" and params.get("stem_enabled"):
+            x1 = max(0.0, params["stem_x"] - 1.0)
+            x2 = min(float(w), params["stem_x"] + params["stem_width"] + 1.0)
+            y1 = max(0.0, params["stem_top"] - 1.0)
+            y2 = min(float(h), params["stem_bottom"] + 1.0)
+            rect = (xx >= x1) & (xx <= x2) & (yy >= y1) & (yy <= y2)
+            mask = fg_bool & rect
+        else:
+            return None
+
+        if int(mask.sum()) < 3:
+            return None
+        return mask
+
+    @staticmethod
+    def _element_only_params(params: dict, element: str) -> dict:
+        only = dict(params)
+        only["draw_text"] = False
+        only["circle_enabled"] = element == "circle"
+        only["stem_enabled"] = bool(params.get("stem_enabled") and element == "stem")
+        only["arm_enabled"] = bool(params.get("arm_enabled") and element == "arm")
+        return only
+
+    @staticmethod
+    def _masked_error(img_orig: np.ndarray, img_svg: np.ndarray, mask: np.ndarray | None) -> float:
+        if img_svg is None or mask is None or int(mask.sum()) == 0:
+            return float("inf")
+        diff = cv2.absdiff(img_orig, img_svg).astype(np.float32)
+        masked = diff[mask]
+        if masked.size == 0:
+            return float("inf")
+        return float(np.mean(masked))
+
+    @staticmethod
+    def optimize_ac0811_by_elements(
+        img_orig: np.ndarray,
+        base_params: dict,
+        *,
+        max_rounds: int = 2,
+        max_attempts_per_element: int = 4,
+    ) -> tuple[dict, list[str]]:
+        h, w = img_orig.shape[:2]
+        params = dict(base_params)
+        logs: list[str] = []
+        elements = ["circle", "stem"]
+
+        for round_idx in range(max_rounds):
+            logs.append(f"Runde {round_idx + 1}: elementweise Optimierung gestartet")
+            for element in elements:
+                mask = Action.extract_badge_element_mask(img_orig, params, element)
+                if mask is None:
+                    logs.append(f"{element}: Element konnte nicht extrahiert werden")
+                    continue
+
+                best = dict(params)
+                element_svg = Action.generate_badge_svg(w, h, Action._element_only_params(best, element))
+                element_render = Action.render_svg_to_numpy(element_svg, w, h)
+                best_err = Action._masked_error(img_orig, element_render, mask)
+
+                for attempt in range(max_attempts_per_element):
+                    candidates: list[dict] = []
+                    if element == "circle":
+                        for dx in (-0.8, 0.0, 0.8):
+                            for dy in (-0.8, 0.0, 0.8):
+                                for dr in (-0.6, 0.0, 0.6):
+                                    c = dict(best)
+                                    c["cx"] = max(0.0, min(float(w), c["cx"] + dx))
+                                    c["cy"] = max(0.0, min(float(h), c["cy"] + dy))
+                                    c["r"] = max(2.0, c["r"] + dr)
+                                    candidates.append(c)
+                    elif element == "stem":
+                        for dx in (-0.8, 0.0, 0.8):
+                            for dtop in (-1.0, 0.0, 1.0):
+                                for dbottom in (-1.2, 0.0, 1.2):
+                                    c = dict(best)
+                                    c["stem_x"] = max(0.0, min(float(w), c["stem_x"] + dx))
+                                    c["stem_top"] = max(0.0, min(float(h), c["stem_top"] + dtop))
+                                    c["stem_bottom"] = max(c["stem_top"], min(float(h), c["stem_bottom"] + dbottom))
+                                    candidates.append(c)
+
+                    improved = False
+                    for cand in candidates:
+                        cand_svg = Action.generate_badge_svg(w, h, Action._element_only_params(cand, element))
+                        cand_render = Action.render_svg_to_numpy(cand_svg, w, h)
+                        cand_err = Action._masked_error(img_orig, cand_render, mask)
+                        if cand_err + 1e-6 < best_err:
+                            best = cand
+                            best_err = cand_err
+                            improved = True
+
+                    logs.append(f"{element}: Versuch {attempt + 1}, Fehler={best_err:.3f}")
+                    if not improved:
+                        break
+
+                params.update(best)
+
+            full_svg = Action.generate_badge_svg(w, h, params)
+            full_render = Action.render_svg_to_numpy(full_svg, w, h)
+            full_err = Action.calculate_error(img_orig, full_render)
+            logs.append(f"Runde {round_idx + 1}: Gesamtfehler={full_err:.3f}")
+
+            if full_err <= 8.0:
+                logs.append("Gesamtfehler unter Schwellwert, Optimierung beendet")
+                break
+
+            worst_element = None
+            worst_err = -1.0
+            for element in elements:
+                mask = Action.extract_badge_element_mask(img_orig, params, element)
+                if mask is None:
+                    logs.append(f"{element}: keine Nachkorrektur möglich (Extraktion fehlgeschlagen)")
+                    continue
+                elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(params, element))
+                elem_render = Action.render_svg_to_numpy(elem_svg, w, h)
+                elem_err = Action._masked_error(img_orig, elem_render, mask)
+                if elem_err > worst_err:
+                    worst_err = elem_err
+                    worst_element = element
+
+            if worst_element is None:
+                logs.append("Abbruch: Kein fehlerhaftes Element mehr extrahierbar")
+                break
+            logs.append(f"Nachkorrektur fokussiert auf Element: {worst_element}")
+
+        return params, logs
+
 
 def run_iteration_pipeline(
     img_path: str,
@@ -661,6 +800,7 @@ def run_iteration_pipeline(
     max_iterations: int,
     svg_out_dir: str,
     diff_out_dir: str,
+    reports_out_dir: str | None = None,
 ):
     if cv2 is None or np is None:
         missing = []
@@ -701,6 +841,14 @@ def run_iteration_pipeline(
         badge_params = Action.make_badge_params(w, h, perc.base_name, perc.img)
         if badge_params is None:
             return None
+
+        optimization_logs: list[str] = []
+        if perc.base_name.upper() == "AC0811":
+            badge_params, optimization_logs = Action.optimize_ac0811_by_elements(perc.img, badge_params)
+            if reports_out_dir:
+                log_path = os.path.join(reports_out_dir, f"{os.path.splitext(filename)[0]}_element_optimization.log")
+                with open(log_path, "w", encoding="utf-8") as f:
+                    f.write("\n".join(optimization_logs).rstrip() + "\n")
 
         svg_content = Action.generate_badge_svg(w, h, badge_params)
         base = os.path.splitext(filename)[0]
@@ -804,6 +952,7 @@ def convert_range(folder_path: str, csv_path: str, iterations: int, start_ref: s
                 iterations,
                 svg_out_dir,
                 diff_out_dir,
+                reports_out_dir,
             )
             if res:
                 _base, _desc, params, best_iter, best_error = res

@@ -1,4 +1,4 @@
 <svg width="25px" height="15px" viewBox="0 0 25 15" xmlns="http://www.w3.org/2000/svg">
-  <line x1="0.0000" y1="6.9000" x2="9.5556" y2="6.9000" stroke="#b5b5b5" stroke-width="2.1000" stroke-linecap="round"/>
-  <circle cx="15.2778" cy="6.9000" r="6.1800" fill="#f2f2f2" stroke="#b5b5b5" stroke-width="1.8000"/>
+  <line x1="0.0000" y1="6.9000" x2="9.5556" y2="6.9000" stroke="#aaaaaa" stroke-width="1.0506" stroke-linecap="round"/>
+  <circle cx="15.2778" cy="6.9000" r="6.1800" fill="#f2f2f2" stroke="#aaaaaa" stroke-width="1.3596"/>
 </svg>

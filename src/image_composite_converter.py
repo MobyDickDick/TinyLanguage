@@ -1441,7 +1441,7 @@ class Action:
                 sub_scale = float(layout["sub_scale"])
                 y_text = float(layout["y_base"])
                 anchor_mode = str(layout["anchor_mode"])
-                if anchor_mode == "co":
+                if anchor_mode in {"co", "center_co"}:
                     elements.append(
                         (
                             f'  <text x="{float(layout["co_x"]):.4f}" y="{y_text:.4f}" fill="{Action.grayhex(p["text_gray"])}" '

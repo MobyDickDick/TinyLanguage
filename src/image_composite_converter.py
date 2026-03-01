@@ -425,6 +425,7 @@ class Action:
             return params
         p = Action._normalize_light_circle_colors(dict(params))
         p = Action._normalize_ac08_line_widths(p)
+        p = Action._normalize_centered_co2_label(p)
         if p.get("draw_text", True) and "text_gray" in p:
             p["text_gray"] = int(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY))
         return p
@@ -732,6 +733,37 @@ class Action:
         p["co2_sub_font_scale"] = min(float(p.get("co2_sub_font_scale", 66.0)), 62.0)
         p["co2_dy"] = float(p.get("co2_dy", 0.0)) - (0.03 * r)
         p["text_gray"] = p["stroke_gray"]
+        return p
+
+    @staticmethod
+    def _normalize_centered_co2_label(params: dict) -> dict:
+        """Normalize CO₂ label sizing for plain circular badges.
+
+        This keeps CO₂ text proportionate to the inner circle diameter for any
+        centered (connector-free) semantic badge instead of tuning a single SKU.
+        """
+        p = dict(params)
+        if str(p.get("text_mode", "")).lower() != "co2":
+            return p
+        if p.get("arm_enabled") or p.get("stem_enabled"):
+            return p
+        if not p.get("circle_enabled", True):
+            return p
+
+        r = max(1.0, float(p.get("r", 1.0)))
+        stroke = max(0.8, float(p.get("stroke_circle", 1.0)))
+        inner_diameter = max(2.0, (2.0 * r) - stroke)
+
+        cur_scale = float(p.get("co2_font_scale", 0.82))
+        cur_font = max(4.0, r * cur_scale)
+        cur_width = cur_font * 1.45
+        target_width = inner_diameter * 0.66
+
+        adjusted_scale = cur_scale * (target_width / max(1e-6, cur_width))
+        p["co2_font_scale"] = float(max(0.82, min(1.05, adjusted_scale)))
+        p["co2_sub_font_scale"] = float(max(60.0, min(68.0, float(p.get("co2_sub_font_scale", 66.0)))))
+        p["co2_dy"] = float(max(-0.20 * r, min(0.20 * r, float(p.get("co2_dy", -0.02 * r)))))
+        p["text_gray"] = int(round(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY)))
         return p
 
     @staticmethod

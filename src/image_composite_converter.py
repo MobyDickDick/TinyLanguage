@@ -225,6 +225,62 @@ class Action:
         return f"#{g:02x}{g:02x}{g:02x}"
 
     @staticmethod
+    def _snap_half(value: float) -> float:
+        return round(float(value) * 2.0) / 2.0
+
+    @staticmethod
+    def _snap_int_px(value: float, minimum: float = 1.0) -> float:
+        return float(max(int(round(float(minimum))), int(round(float(value)))))
+
+    @staticmethod
+    def _quantize_badge_params(params: dict, w: int, h: int) -> dict:
+        """Quantize geometry for bitmap-like sources.
+
+        - Coordinates/lengths use 0.5px steps.
+        - Line widths use integer pixel steps.
+        """
+        p = dict(params)
+
+        half_keys = (
+            "cx",
+            "cy",
+            "r",
+            "stem_x",
+            "stem_top",
+            "stem_bottom",
+            "arm_x1",
+            "arm_y1",
+            "arm_x2",
+            "arm_y2",
+            "tx",
+            "ty",
+            "co2_dy",
+        )
+        for key in half_keys:
+            if key in p:
+                p[key] = Action._snap_half(float(p[key]))
+
+        int_width_keys = ("stroke_circle", "arm_stroke", "stem_width")
+        for key in int_width_keys:
+            if key in p:
+                p[key] = Action._snap_int_px(float(p[key]), minimum=1.0)
+
+        if "stem_width_max" in p:
+            p["stem_width_max"] = max(1.0, Action._snap_half(float(p["stem_width_max"])))
+
+        if p.get("stem_enabled") and "cx" in p and "stem_width" in p:
+            p["stem_x"] = Action._snap_half(float(p["cx"]) - (float(p["stem_width"]) / 2.0))
+
+        if "stem_x" in p and "stem_width" in p:
+            p["stem_x"] = max(0.0, min(float(w) - float(p["stem_width"]), float(p["stem_x"])))
+        if "stem_top" in p:
+            p["stem_top"] = max(0.0, min(float(h), float(p["stem_top"])))
+        if "stem_bottom" in p:
+            p["stem_bottom"] = max(0.0, min(float(h), float(p["stem_bottom"])))
+
+        return p
+
+    @staticmethod
     def _normalize_light_circle_colors(params: dict) -> dict:
         params["fill_gray"] = Action.LIGHT_CIRCLE_FILL_GRAY
         params["stroke_gray"] = Action.LIGHT_CIRCLE_STROKE_GRAY
@@ -1060,6 +1116,7 @@ class Action:
     @staticmethod
     def generate_badge_svg(w: int, h: int, p: dict) -> str:
         p = Action._align_stem_to_circle_center(dict(p))
+        p = Action._quantize_badge_params(p, w, h)
         elements = [
             f'<svg width="{w}px" height="{h}px" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">'
         ]
@@ -1663,9 +1720,14 @@ class Action:
         if abs(best_width - old) < 0.02:
             return False
 
+        if key in {"stroke_circle", "arm_stroke", "stem_width"}:
+            best_width = Action._snap_int_px(best_width, minimum=1.0)
+        else:
+            best_width = Action._snap_half(best_width)
+
         params[key] = best_width
         if key == "stem_width" and params.get("stem_enabled"):
-            params["stem_x"] = float(params.get("cx", params.get("stem_x", 0.0))) - (params["stem_width"] / 2.0)
+            params["stem_x"] = Action._snap_half(float(params.get("cx", params.get("stem_x", 0.0))) - (params["stem_width"] / 2.0))
         logs.append(f"{element}: Breiten-Bracketing {key} {old:.3f}->{best_width:.3f}")
         return True
 
@@ -1726,8 +1788,9 @@ class Action:
 
         stem_width_cap = float(params.get("stem_width_max", float(w) * 0.20))
         target_width = min(target_width, stem_width_cap)
+        target_width = Action._snap_int_px(target_width, minimum=1.0)
         params["stem_width"] = target_width
-        params["stem_x"] = max(0.0, min(float(w) - target_width, target_cx - (target_width / 2.0)))
+        params["stem_x"] = Action._snap_half(max(0.0, min(float(w) - target_width, target_cx - (target_width / 2.0))))
         return True, (
             f"stem: Breitenkorrektur mode={estimate_mode}, ratio={ratio:.3f}, "
             f"alt={old_width:.3f}, neu={target_width:.3f}"

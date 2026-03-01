@@ -10,13 +10,13 @@ import src.image_composite_converter as image_composite_converter
 from src.image_composite_converter import Action
 
 
-def test_co2_label_defaults_keep_co_centered() -> None:
-    """Default CO₂ layout should center the "CO" run on the circle center."""
+def test_co2_label_defaults_use_center_co_anchor_mode() -> None:
+    """Default CO₂ layout should keep center_co mode and only shift left if required."""
     params = Action._apply_co2_label(Action._default_ac0870_params(15, 15))
     layout = Action._co2_layout(params)
 
     assert layout["anchor_mode"] == "center_co"
-    assert abs(float(layout["co_x"]) - float(params["cx"])) < 1e-6
+    assert float(layout["co_x"]) <= float(params["cx"])
 
 
 def test_co2_layout_legacy_cluster_mode_still_supported() -> None:
@@ -29,6 +29,42 @@ def test_co2_layout_legacy_cluster_mode_still_supported() -> None:
     assert float(layout["co_x"]) < float(params["cx"])
 
 
+
+
+def test_co2_layout_keeps_subscript_inside_inner_circle_for_centered_badges() -> None:
+    """Centered CO₂ badges should keep the subscript inside the inner circle."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(15, 15))
+    params = Action._finalize_ac08_style("AC0820", params)
+    layout = Action._co2_layout(params)
+
+    cx = float(params["cx"])
+    r = float(params["r"])
+    stroke = float(params["stroke_circle"])
+    inner_right = cx + max(1.0, r - stroke)
+
+    assert float(layout["x2"]) <= inner_right + 1e-6
+
+
+def test_co2_layout_enforces_minimum_subscript_pixel_size() -> None:
+    """Subscript font should keep a minimum size so the "2" remains visible."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(15, 15))
+    params["co2_font_scale"] = 0.50
+    params["co2_sub_font_scale"] = 40.0
+    layout = Action._co2_layout(params)
+
+    assert float(layout["sub_font_px"]) >= 4.0
+
+
+
+def test_generate_badge_svg_renders_center_co_as_split_text_nodes() -> None:
+    """center_co layout should render CO and subscript as separate positioned text nodes."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
+    params = Action._finalize_ac08_style("AC0820", params)
+    svg = Action.generate_badge_svg(30, 30, params)
+
+    assert ">CO</text>" in svg
+    assert ">2</text>" in svg
+    assert "<tspan" not in svg
 def test_default_ac0812_uses_height_based_circle_radius() -> None:
     """AC0812 should size its circle from height so tiny variants don't shrink."""
     params = Action._default_ac0812_params(25, 15)

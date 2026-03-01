@@ -1,15 +1,18 @@
 Runde 1: elementweise Validierung gestartet
 circle: Fehler=87.793
-circle: Breiten-Bracketing stroke_circle 1.000->1.000
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->87.793, 0.825->87.793, 0.850->87.793
 arm: Fehler=24.071
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..3.000)
 Runde 1: Gesamtfehler=23.021
 Runde 2: elementweise Validierung gestartet
 circle: Fehler=87.793
-circle: Breiten-Bracketing stroke_circle 1.000->1.000
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->87.793, 0.825->87.793, 0.850->87.793
 arm: Fehler=24.071
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..3.000)
 Runde 2: Gesamtfehler=23.021
 Runde 3: elementweise Validierung gestartet
 circle: Fehler=87.793
-circle: Breiten-Bracketing stroke_circle 1.000->1.000
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->87.793, 0.825->87.793, 0.850->87.793
 arm: Fehler=24.071
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..3.000)
 Runde 3: Gesamtfehler=23.021

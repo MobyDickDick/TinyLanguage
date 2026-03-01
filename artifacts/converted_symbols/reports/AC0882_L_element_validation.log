@@ -2,11 +2,11 @@ Runde 1: elementweise Validierung gestartet
 circle: minRect Δcx=-1.000, Δcy=-1.000, diag=30.000->15.620, scale=0.5207
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=90.752
-circle: Breiten-Bracketing stroke_circle 1.000->1.000
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->116.527, 0.825->116.527, 0.850->116.527
 arm: minRect Δcx=2.000, Δcy=0.500, diag=2.236->5.657, scale=2.5298
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=109.824
-arm: Breiten-Bracketing arm_stroke 1.180->1.000
+arm: Breiten-Bracketing arm_stroke 1.180->1.000; Kandidaten=1.000->124.125, 1.022->124.125, 1.045->124.125
 text: minRect Δcx=-0.500, Δcy=-1.000, diag=13.892->13.416, scale=0.9657
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=75.684
@@ -15,8 +15,9 @@ Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=-0.500, Δcy=-0.500, diag=26.000->15.620, scale=0.6008
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=116.527
-circle: Breiten-Bracketing stroke_circle 1.000->1.000
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->114.905, 0.825->114.905, 0.850->114.905
 arm: Fehler=124.125
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..5.000)
 text: minRect Δcx=-0.500, Δcy=0.000, diag=13.892->13.416, scale=0.9657
 text: Fehler=64.459
 Runde 2: Gesamtfehler=23.324
@@ -24,8 +25,9 @@ Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=-0.000, Δcy=0.000, diag=22.000->15.620, scale=0.7100
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=114.905
-circle: Breiten-Bracketing stroke_circle 1.000->1.000
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->103.435, 0.825->103.435, 0.850->103.435
 arm: Fehler=124.125
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..5.000)
 text: minRect Δcx=-0.500, Δcy=0.000, diag=13.892->13.416, scale=0.9657
 text: Fehler=64.459
 Runde 3: Gesamtfehler=22.519

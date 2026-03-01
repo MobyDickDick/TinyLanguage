@@ -2,11 +2,11 @@ Runde 1: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=0.000, diag=22.627->25.456, scale=1.1250
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=95.775
-circle: Breiten-Bracketing stroke_circle 1.000->1.000
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->70.362, 0.825->70.362, 0.850->70.362
 arm: minRect Δcx=0.500, Δcy=0.000, diag=6.083->11.045, scale=1.8158
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=86.833
-arm: Breiten-Bracketing arm_stroke 1.180->1.000
+arm: Breiten-Bracketing arm_stroke 1.180->1.000; Kandidaten=1.000->82.034, 1.022->82.034, 1.045->82.034
 text: minRect Δcx=0.000, Δcy=0.500, diag=11.662->10.817, scale=0.9275
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=60.522
@@ -15,11 +15,11 @@ Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=0.500, Δcy=0.500, diag=25.456->26.000, scale=1.0214
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=70.362
-circle: Breiten-Bracketing stroke_circle 1.000->1.000
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->60.741, 0.825->60.741, 0.850->60.741
 arm: minRect Δcx=1.000, Δcy=0.500, diag=8.062->12.649, scale=1.5689
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=82.034
-arm: Breiten-Bracketing arm_stroke 1.180->1.000
+arm: Breiten-Bracketing arm_stroke 1.180->1.000; Kandidaten=1.000->76.172, 1.022->76.172, 1.045->76.172
 text: minRect Δcx=0.000, Δcy=0.500, diag=11.662->10.817, scale=0.9275
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=53.417
@@ -27,8 +27,9 @@ Runde 2: Gesamtfehler=9.104
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=0.000, diag=26.000->26.000, scale=1.0000
 circle: Fehler=60.741
-circle: Breiten-Bracketing stroke_circle 1.000->1.000
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->60.741, 0.825->60.741, 0.850->60.741
 arm: Fehler=76.172
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..4.000)
 text: minRect Δcx=0.000, Δcy=-0.500, diag=11.662->10.817, scale=0.9275
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=48.792

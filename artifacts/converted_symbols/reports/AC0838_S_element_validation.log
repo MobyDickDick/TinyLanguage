@@ -2,32 +2,35 @@ Runde 1: elementweise Validierung gestartet
 circle: minRect Δcx=0.888, Δcy=-0.905, diag=14.000->17.452, scale=1.2466
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=84.070
-circle: Breiten-Bracketing stroke_circle 1.000->1.000
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->71.723, 0.825->71.723, 0.850->71.723
 arm: Fehler=24.357
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..3.000)
 text: minRect Δcx=0.500, Δcy=2.000, diag=7.071->8.544, scale=1.2083
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=100.400
-text: Breiten-Bracketing voc_font_scale 0.520->0.500
+text: Breiten-Bracketing voc_font_scale 0.520->0.500; Kandidaten=0.390->84.606, 0.406->84.606, 0.422->84.606
 Runde 1: Gesamtfehler=24.245
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=-0.500, Δcy=1.000, diag=17.889->19.000, scale=1.0621
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=71.723
-circle: Breiten-Bracketing stroke_circle 1.000->1.000
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->67.814, 0.825->67.814, 0.850->67.814
 arm: Fehler=24.357
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..3.000)
 text: minRect Δcx=0.000, Δcy=1.000, diag=7.071->9.487, scale=1.3416
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=84.345
-text: Breiten-Bracketing voc_font_scale 0.500->0.500
+text: Breiten-Bracketing voc_font_scale 0.500->0.500; Kandidaten=0.594->75.333, 0.609->75.333, 0.625->75.067
 Runde 2: Gesamtfehler=22.277
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=-0.500, Δcy=0.500, diag=19.000->19.000, scale=1.0000
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=67.814
-circle: Breiten-Bracketing stroke_circle 1.000->1.000
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->58.860, 0.825->58.860, 0.850->58.860
 arm: Fehler=24.357
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..3.000)
 text: minRect Δcx=0.000, Δcy=0.500, diag=7.071->9.220, scale=1.3038
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=71.182
-text: Breiten-Bracketing voc_font_scale 0.500->0.500
+text: Breiten-Bracketing voc_font_scale 0.500->0.500; Kandidaten=0.594->71.846, 0.609->71.846, 0.625->71.231
 Runde 3: Gesamtfehler=16.459

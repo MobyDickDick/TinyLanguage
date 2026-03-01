@@ -2,38 +2,41 @@ Runde 1: elementweise Validierung gestartet
 circle: minRect Δcx=1.000, Δcy=0.500, diag=16.000->19.000, scale=1.1875
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=76.591
-circle: Breiten-Bracketing stroke_circle 1.000->1.000
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->65.000, 0.825->65.000, 0.850->65.000
 stem: Fehler=67.000
 stem: Breitenkorrektur mode=iter, ratio=0.500, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
+stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..1.350)
 text: minRect Δcx=1.000, Δcy=2.000, diag=7.280->9.849, scale=1.3528
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=94.128
-text: Breiten-Bracketing voc_font_scale 0.520->0.500
+text: Breiten-Bracketing voc_font_scale 0.520->0.500; Kandidaten=0.390->83.188, 0.406->83.188, 0.422->83.188
 Runde 1: Gesamtfehler=20.939
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=0.500, Δcy=-0.000, diag=18.000->19.000, scale=1.0556
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=65.000
-circle: Breiten-Bracketing stroke_circle 1.000->1.000
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->59.584, 0.825->59.584, 0.850->59.584
 stem: Fehler=18.000
 stem: Breitenkorrektur mode=iter, ratio=0.333, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
+stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..1.350)
 text: minRect Δcx=0.500, Δcy=0.500, diag=8.246->9.487, scale=1.1504
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=80.938
-text: Breiten-Bracketing voc_font_scale 0.500->0.500
+text: Breiten-Bracketing voc_font_scale 0.500->0.500; Kandidaten=0.594->75.062, 0.609->73.938, 0.625->73.219
 Runde 2: Gesamtfehler=17.240
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=-0.000, diag=20.518->19.000, scale=0.9260
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=59.584
-circle: Breiten-Bracketing stroke_circle 1.000->1.000
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->58.135, 0.825->58.135, 0.850->58.135
 stem: Fehler=18.000
 stem: Breitenkorrektur mode=iter, ratio=0.333, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
+stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..1.350)
 text: minRect Δcx=0.500, Δcy=0.500, diag=8.246->9.487, scale=1.1504
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=76.000
-text: Breiten-Bracketing voc_font_scale 0.500->0.500
+text: Breiten-Bracketing voc_font_scale 0.500->0.500; Kandidaten=0.594->75.040, 0.609->75.040, 0.625->74.840
 Runde 3: Gesamtfehler=16.051

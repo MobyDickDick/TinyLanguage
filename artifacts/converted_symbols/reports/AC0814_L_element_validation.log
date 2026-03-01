@@ -4,27 +4,8 @@ circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=63.163
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->31.459, 0.825->31.459, 0.850->31.459
 circle: Radius-Bracketing r 10.927->11.000; Kandidaten=10.000->90.379, 10.500->72.667, 11.000->31.459, 11.500->33.070, 12.000->61.623
-arm: Fehler=86.857
+arm: Fehler=46.632
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..5.000)
-arm: Längen-Bracketing abgebrochen (arm_len) wegen nicht-finiten Fehlern 15.500->inf, 21.000->86.857, 26.000->74.696
-Runde 1: Gesamtfehler=8.122
-Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=0.500, Δcy=-0.000, diag=31.000->32.558, scale=1.0502
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=31.459
-circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->33.070, 0.825->33.070, 0.850->33.070
-circle: Radius-Bracketing r 11.553->11.000; Kandidaten=10.500->72.822, 11.000->32.842, 11.500->33.070, 12.000->62.239
-arm: Fehler=86.857
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..5.000)
-arm: Längen-Bracketing abgebrochen (arm_len) wegen nicht-finiten Fehlern 15.500->inf, 20.500->86.857, 26.000->74.696
-Runde 2: Gesamtfehler=8.122
-Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=-0.000, diag=31.000->33.000, scale=1.0645
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=32.842
-circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->33.070, 0.825->33.070, 0.850->33.070
-circle: Radius-Bracketing r 11.710->11.000; Kandidaten=10.500->72.822, 11.000->32.842, 11.500->33.070, 12.000->62.239
-arm: Fehler=86.857
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..5.000)
-arm: Längen-Bracketing abgebrochen (arm_len) wegen nicht-finiten Fehlern 15.500->inf, 20.500->86.857, 26.000->74.696
-Runde 3: Gesamtfehler=8.122
+arm: Längen-Bracketing arm_len 18.175->18.000; Kandidaten=13.500->50.176, 18.000->48.246, 22.500->48.246
+Runde 1: Gesamtfehler=6.273
+Gesamtfehler unter Schwellwert, Validierung beendet

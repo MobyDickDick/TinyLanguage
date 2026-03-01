@@ -332,6 +332,10 @@ class Action:
         cx = float(w) / 2.0
         cy = float(w) / 2.0
         stem_width = max(1.0, float(w) * 0.10)
+        # AC0811 reference symbols use a visually slim vertical handle.
+        # Persist an explicit width ceiling so later fitting/validation
+        # steps cannot widen the stem beyond the template's intent.
+        stem_width_max = max(1.0, float(w) * 0.105)
         stem_len = max(2.0, float(h) - (cy + r))
 
         return Action._normalize_light_circle_colors({
@@ -344,6 +348,7 @@ class Action:
             "draw_text": False,
             "stem_enabled": True,
             "stem_width": stem_width,
+            "stem_width_max": stem_width_max,
             "stem_x": cx - (stem_width / 2.0),
             "stem_top": cy + r,
             "stem_bottom": min(float(h), (cy + r) + stem_len),
@@ -465,12 +470,17 @@ class Action:
         # width when anti-aliased circle pixels bleed into the stem ROI, especially on
         # larger "_L" variants. Keep the fitted value but clamp it to a narrow, plausible
         # band derived from the circle stroke and image width.
-        min_stem_width = max(1.0, stroke_circle * 0.75)
-        max_stem_width = max(min_stem_width, min(float(w) * 0.14, stroke_circle * 1.6))
+        min_stem_width = max(1.0, stroke_circle * 0.72)
+        default_stem_width_max = max(min_stem_width, min(float(w) * 0.12, stroke_circle * 1.35))
+        max_stem_width = max(
+            min_stem_width,
+            min(float(defaults.get("stem_width_max", default_stem_width_max)), default_stem_width_max),
+        )
         stem_width = max(min_stem_width, min(raw_stem_width, max_stem_width))
 
         params["stem_enabled"] = True
         params["stem_width"] = stem_width
+        params["stem_width_max"] = max_stem_width
         params["stem_x"] = cx - (params["stem_width"] / 2.0)
         params["stem_top"] = max(0.0, min(float(h), cy + r))
         params["stem_bottom"] = float(h)
@@ -1591,14 +1601,23 @@ class Action:
         ratio = svg_w / orig_w
 
         expected_cx = float(params.get("cx", (ox1 + ox2) / 2.0))
-        y_start = float(params.get("stem_top", 0.0)) + 1.0
+        stroke = float(params.get("stroke_circle", 1.0))
+        # Skip a small band right below the circle edge so anti-aliased ring/fill
+        # pixels do not inflate stem width estimation.
+        y_start = float(params.get("stem_top", 0.0)) + max(1.0, stroke * 2.0)
         y_end = float(params.get("stem_bottom", mask_orig.shape[0]))
         est = Action._estimate_vertical_stem_from_mask(mask_orig, expected_cx, int(y_start), int(y_end))
 
         if est is not None:
             est_cx, est_width = est
             min_w = max(1.0, float(params.get("stroke_circle", 1.0)) * 0.70)
-            max_w = max(min_w, min(float(w) * 0.18, float(params.get("r", 1.0)) * 0.80))
+            max_w = max(
+                min_w,
+                min(
+                    float(params.get("stem_width_max", float(w) * 0.18)),
+                    min(float(w) * 0.18, float(params.get("r", 1.0)) * 0.80),
+                ),
+            )
             target_width = max(min_w, min(est_width, max_w))
             if bool(params.get("lock_stem_center_to_circle", False)):
                 target_cx = float(params.get("cx", est_cx))
@@ -1606,10 +1625,11 @@ class Action:
                 target_cx = est_cx
             estimate_mode = "iter"
         else:
-            if 0.92 <= ratio <= 1.10:
+            if 0.95 <= ratio <= 1.05:
                 return False, None
             target_width = float(params.get("stem_width", svg_w)) * (orig_w / svg_w)
-            target_width = max(1.0, min(target_width, float(w) * 0.20))
+            stem_width_cap = float(params.get("stem_width_max", float(w) * 0.20))
+            target_width = max(1.0, min(target_width, min(float(w) * 0.20, stem_width_cap)))
             target_cx = (ox1 + ox2) / 2.0
             estimate_mode = "bbox"
 
@@ -1620,6 +1640,8 @@ class Action:
         if width_delta < 0.05 and 0.90 <= ratio_after <= 1.12:
             return False, None
 
+        stem_width_cap = float(params.get("stem_width_max", float(w) * 0.20))
+        target_width = min(target_width, stem_width_cap)
         params["stem_width"] = target_width
         params["stem_x"] = max(0.0, min(float(w) - target_width, target_cx - (target_width / 2.0)))
         return True, (

@@ -1,5 +1,7 @@
 AC0800: AC0800_L aus AC0800_M abgeleitet (max_delta=0.0564, Fehler 7.43->5.79)
 AC0800: AC0800_S aus AC0800_M abgeleitet (max_delta=0.0564, Fehler 17.48->6.20)
+AC0811: AC0811_L nicht harmonisiert (Fehler 10.52 > Basis 5.40)
+AC0811: AC0811_S nicht harmonisiert (Fehler 11.43 > Basis 5.13)
 AC0833: AC0833_M aus AC0833_L abgeleitet (max_delta=0.0489, Fehler 30.73->29.73)
 AC0833: AC0833_S aus AC0833_L abgeleitet (max_delta=0.0489, Fehler 33.00->29.37)
 AC0870: AC0870_M nicht harmonisiert (Fehler 37.81 > Basis 33.99)

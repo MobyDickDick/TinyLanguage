@@ -1,6 +1,6 @@
 <svg width="25px" height="15px" viewBox="0 0 25 15" xmlns="http://www.w3.org/2000/svg">
   <line x1="7.0000" y1="8.5000" x2="12.5000" y2="8.5000" stroke="#7f7f7f" stroke-width="1.0000" stroke-linecap="round"/>
   <circle cx="18.0000" cy="8.5000" r="5.5000" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="1.0000"/>
-  <text x="16.9950" y="9.3410" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="5.5000" font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">CO</text>
-  <text x="20.0200" y="10.3310" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="4.0000" font-style="normal" font-weight="600" text-anchor="start" dominant-baseline="middle">2</text>
+  <text x="16.9950" y="8.9950" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="5.5000" font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">CO</text>
+  <text x="20.0200" y="9.9850" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="4.0000" font-style="normal" font-weight="600" text-anchor="start" dominant-baseline="middle">2</text>
 </svg>

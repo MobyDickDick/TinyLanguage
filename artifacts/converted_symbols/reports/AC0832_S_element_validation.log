@@ -40,5 +40,5 @@ arm: Längen-Bracketing arm_len 5.156->6.500; Kandidaten=4.000->96.000, 5.000->9
 text: minRect Δcx=0.000, Δcy=-0.500, diag=8.062->7.616, scale=0.9446
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=67.467
-text: Breiten-Bracketing co2_font_scale 1.000->1.000; Kandidaten=1.125->70.214, 1.156->70.238, 1.188->71.905
+text: Breiten-Bracketing co2_font_scale 1.000->1.000; Kandidaten=1.125->70.214, 1.156->71.429, 1.188->71.167
 Runde 3: Gesamtfehler=25.899

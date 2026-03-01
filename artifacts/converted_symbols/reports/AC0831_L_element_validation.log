@@ -50,5 +50,5 @@ stem: Längen-Bracketing stem_len 18.625->23.500; Kandidaten=14.000->17.429, 18.
 text: minRect Δcx=-1.800, Δcy=0.900, diag=7.376->13.000, scale=1.7626
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=88.450
-text: Breiten-Bracketing co2_font_scale 1.000->1.000; Kandidaten=0.938->76.483, 0.969->76.553, 1.000->78.125
+text: Breiten-Bracketing co2_font_scale 1.000->1.000; Kandidaten=1.000->78.125, 1.031->74.390, 1.062->70.683
 Runde 3: Gesamtfehler=21.724

@@ -706,9 +706,9 @@ class Action:
         params["co2_sub_font_scale"] = float(params.get("co2_sub_font_scale", 66.0))
         params["co2_dy"] = float(params.get("co2_dy", 0.0))
         # Keep "CO" as an explicit run so the subscript position remains stable across
-        # renderers. The final x/y position is then corrected optically from computed
-        # label metrics (see _co2_layout), which is robust for different circle sizes.
-        params["co2_anchor_mode"] = str(params.get("co2_anchor_mode", "co"))
+        # renderers. By default we keep "CO" itself centered in the badge and attach
+        # the subscript to the right; this avoids visible drift in compact variants.
+        params["co2_anchor_mode"] = str(params.get("co2_anchor_mode", "center_co"))
         return params
 
     @staticmethod
@@ -720,26 +720,25 @@ class Action:
         font_size = max(4.0, r * float(params.get("co2_font_scale", 0.82)))
         sub_scale = float(params.get("co2_sub_font_scale", 66.0))
         sub_font_px = font_size * (sub_scale / 100.0)
-        anchor_mode = str(params.get("co2_anchor_mode", "co")).lower()
+        anchor_mode = str(params.get("co2_anchor_mode", "center_co")).lower()
 
         co_width = font_size * 1.04
         gap = font_size * 0.03
         sub_w = sub_font_px * 0.62
 
-        if anchor_mode == "co":
-            # Center the *whole* CO₂ cluster, not only "CO", so text does not drift right
-            # when the subscript is attached.
+        if anchor_mode in {"cluster", "co"}:
+            # Legacy mode: center the whole CO₂ cluster.
             cluster_shift = (gap + sub_w) / 2.0
             co_x = cx - cluster_shift
             x1 = co_x - (co_width / 2.0)
             subscript_x = co_x + (co_width / 2.0) + gap
             x2 = subscript_x + sub_w
         else:
-            width = font_size * 1.65
-            x1 = cx - (width / 2.0)
-            x2 = cx + (width / 2.0)
+            # Default mode: keep the "CO" run itself centered and attach the ₂ rightward.
             co_x = cx
-            subscript_x = cx + (font_size * 0.32)
+            x1 = co_x - (co_width / 2.0)
+            subscript_x = co_x + (co_width / 2.0) + gap
+            x2 = subscript_x + sub_w
 
         # Capital glyphs usually appear slightly high when simply middle-anchored.
         # Apply a proportional optical correction so the label sits visually centered.

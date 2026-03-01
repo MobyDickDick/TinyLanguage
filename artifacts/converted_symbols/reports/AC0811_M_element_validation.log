@@ -8,5 +8,5 @@ stem: Parameter nach Mittelpunkt/Diagonale angepasst
 stem: Fehler=63.125
 stem: Breitenkorrektur mode=iter, ratio=0.500, alt=1.000, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 1: Gesamtfehler=2.206
+Runde 1: Gesamtfehler=2.213
 Gesamtfehler unter Schwellwert, Validierung beendet

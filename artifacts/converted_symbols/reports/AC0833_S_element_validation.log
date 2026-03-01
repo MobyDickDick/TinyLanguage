@@ -4,13 +4,19 @@ circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=87.293
 circle: Breiten-Bracketing stroke_circle 1.000->1.000
 arm: Fehler=114.429
-Runde 1: Gesamtfehler=29.469
+text: minRect Δcx=0.000, Δcy=2.000, diag=6.325->8.944, scale=1.4142
+text: Fehler=90.321
+text: Breiten-Bracketing co2_font_scale 0.820->1.000
+Runde 1: Gesamtfehler=29.648
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=0.579, Δcy=0.292, diag=12.728->11.315, scale=0.8890
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=83.317
 circle: Breiten-Bracketing stroke_circle 1.000->1.000
 arm: Fehler=114.429
+text: minRect Δcx=0.000, Δcy=1.500, diag=6.083->8.944, scale=1.4704
+text: Fehler=90.321
+text: Breiten-Bracketing co2_font_scale 1.000->1.000
 Runde 2: Gesamtfehler=28.872
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.579, Δcy=0.292, diag=12.000->11.315, scale=0.9430
@@ -18,4 +24,7 @@ circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=82.775
 circle: Breiten-Bracketing stroke_circle 1.000->1.000
 arm: Fehler=114.429
+text: minRect Δcx=0.500, Δcy=1.000, diag=6.325->8.062, scale=1.2748
+text: Fehler=82.640
+text: Breiten-Bracketing co2_font_scale 1.000->1.000
 Runde 3: Gesamtfehler=32.381

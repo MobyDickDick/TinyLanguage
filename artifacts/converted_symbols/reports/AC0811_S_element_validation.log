@@ -6,7 +6,7 @@ circle: Breiten-Bracketing stroke_circle 1.000->1.000
 stem: Fehler=22.600
 stem: Breitenkorrektur mode=iter, ratio=0.250, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 1: Gesamtfehler=8.077
+Runde 1: Gesamtfehler=8.160
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=-0.100, Δcy=0.300, diag=18.974->19.606, scale=1.0333
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -24,4 +24,4 @@ circle: Breiten-Bracketing stroke_circle 1.000->1.000
 stem: Fehler=22.600
 stem: Breitenkorrektur mode=iter, ratio=0.250, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 3: Gesamtfehler=8.077
+Runde 3: Gesamtfehler=8.160

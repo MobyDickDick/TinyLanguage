@@ -1,27 +1,36 @@
 Runde 1: elementweise Validierung gestartet
-circle: minRect Δcx=0.250, Δcy=-0.750, diag=14.000->17.734, scale=1.2667
+circle: minRect Δcx=1.000, Δcy=0.500, diag=16.000->19.000, scale=1.1875
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=84.811
+circle: Fehler=76.591
 circle: Breiten-Bracketing stroke_circle 1.000->1.000
-stem: Fehler=114.286
-stem: Breitenkorrektur mode=iter, ratio=0.250, alt=1.000, neu=1.000
+stem: Fehler=67.000
+stem: Breitenkorrektur mode=iter, ratio=0.500, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 1: Gesamtfehler=33.645
+text: minRect Δcx=1.000, Δcy=2.000, diag=7.280->9.849, scale=1.3528
+text: Fehler=94.128
+text: Breiten-Bracketing voc_font_scale 0.520->0.500
+Runde 1: Gesamtfehler=22.864
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=1.000, Δcy=1.000, diag=17.000->19.000, scale=1.1176
+circle: minRect Δcx=0.500, Δcy=-0.000, diag=18.000->19.000, scale=1.0556
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=75.636
+circle: Fehler=65.000
 circle: Breiten-Bracketing stroke_circle 1.000->1.000
 stem: Fehler=18.000
 stem: Breitenkorrektur mode=iter, ratio=0.333, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 2: Gesamtfehler=22.952
+text: minRect Δcx=0.500, Δcy=2.000, diag=8.246->9.849, scale=1.1943
+text: Fehler=93.564
+text: Breiten-Bracketing voc_font_scale 0.500->0.500
+Runde 2: Gesamtfehler=19.661
 Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=0.500, diag=19.799->19.000, scale=0.9596
+circle: minRect Δcx=0.000, Δcy=-0.000, diag=20.518->19.000, scale=0.9260
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=64.292
+circle: Fehler=59.584
 circle: Breiten-Bracketing stroke_circle 1.000->1.000
 stem: Fehler=18.000
 stem: Breitenkorrektur mode=iter, ratio=0.333, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 3: Gesamtfehler=18.477
+text: minRect Δcx=0.500, Δcy=2.000, diag=8.246->9.849, scale=1.1943
+text: Fehler=93.564
+text: Breiten-Bracketing voc_font_scale 0.500->0.500
+Runde 3: Gesamtfehler=18.472

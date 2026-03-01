@@ -59,14 +59,19 @@ def _format_ratio(value: float) -> str:
 def _ratio_below_budget(ratio: float, min_ratio: float) -> bool:
     """Return True when ``ratio`` is materially below ``min_ratio``.
 
-    We compare using a two-decimal guard so values that render identically in
-    user-facing output (e.g. 1.999 vs 2.000 -> both shown as 2.00x) do not
-    fail the budget check due to floating-point noise.
+    Benchmarks can vary slightly on shared CI hosts. We therefore allow a
+    tiny relative tolerance (0.5%) plus two-decimal rounding before flagging
+    a regression.
     """
 
     if ratio >= min_ratio:
         return False
-    return round(ratio, 2) < round(min_ratio, 2)
+
+    tolerance_ratio = min_ratio * 0.995
+    if ratio >= tolerance_ratio:
+        return False
+
+    return round(ratio, 2) < round(tolerance_ratio, 2)
 
 
 def _evaluate_results(

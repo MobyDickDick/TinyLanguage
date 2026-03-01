@@ -54,3 +54,18 @@ def test_validate_badge_can_expand_ac0812_tiny_circle_radius() -> None:
 
     assert float(params["r"]) > 5.0
     assert any("Radius-Bracketing r" in line for line in logs)
+
+
+def test_validate_badge_logs_extent_bracketing_for_line_elements() -> None:
+    """Validation should include explicit extent/length optimization for arm/stem elements."""
+    img_path = Path("artifacts/images_to_convert/AC0812_S.jpg")
+    cv2 = pytest.importorskip("cv2")
+    img = cv2.imread(str(img_path))
+    if img is None:
+        pytest.skip("AC0812_S fixture image not available")
+
+    h, w = img.shape[:2]
+    params = Action._finalize_ac08_style("AC0812", Action._default_ac0812_params(w, h))
+    logs = Action.validate_badge_by_elements(img, params, max_rounds=1)
+
+    assert any("arm: Längen-Bracketing" in line for line in logs)

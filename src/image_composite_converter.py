@@ -2125,6 +2125,134 @@ class Action:
         return True
 
     @staticmethod
+    def _element_error_for_extent(img_orig: np.ndarray, params: dict, element: str, extent_value: float) -> float:
+        h, w = img_orig.shape[:2]
+        probe = dict(params)
+
+        if element == "stem" and probe.get("stem_enabled"):
+            min_len = 1.0
+            max_len = float(h)
+            new_len = float(np.clip(extent_value, min_len, max_len))
+            center = (float(probe.get("stem_top", 0.0)) + float(probe.get("stem_bottom", 0.0))) / 2.0
+            half = new_len / 2.0
+            probe["stem_top"] = float(np.clip(center - half, 0.0, float(h - 1)))
+            probe["stem_bottom"] = float(np.clip(center + half, probe["stem_top"] + 1.0, float(h)))
+
+        elif element == "arm" and probe.get("arm_enabled"):
+            x1 = float(probe.get("arm_x1", 0.0))
+            y1 = float(probe.get("arm_y1", 0.0))
+            x2 = float(probe.get("arm_x2", 0.0))
+            y2 = float(probe.get("arm_y2", 0.0))
+            dx = x2 - x1
+            dy = y2 - y1
+            cur_len = float(np.hypot(dx, dy))
+            if cur_len <= 1e-6:
+                return float("inf")
+            new_len = float(np.clip(extent_value, 1.0, float(max(w, h))))
+            ux = dx / cur_len
+            uy = dy / cur_len
+            cx = (x1 + x2) / 2.0
+            cy = (y1 + y2) / 2.0
+            half = new_len / 2.0
+            probe["arm_x1"] = float(np.clip(cx - (ux * half), 0.0, float(w - 1)))
+            probe["arm_y1"] = float(np.clip(cy - (uy * half), 0.0, float(h - 1)))
+            probe["arm_x2"] = float(np.clip(cx + (ux * half), 0.0, float(w - 1)))
+            probe["arm_y2"] = float(np.clip(cy + (uy * half), 0.0, float(h - 1)))
+        else:
+            return float("inf")
+
+        elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(probe, element))
+        elem_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(elem_svg, w, h))
+        if elem_render is None:
+            return float("inf")
+
+        mask_orig = Action.extract_badge_element_mask(img_orig, probe, element)
+        if mask_orig is None:
+            return float("inf")
+
+        return Action._masked_error(img_orig, elem_render, mask_orig)
+
+    @staticmethod
+    def _optimize_element_extent_bracket(img_orig: np.ndarray, params: dict, element: str, logs: list[str]) -> bool:
+        h, w = img_orig.shape[:2]
+        if element == "stem" and params.get("stem_enabled"):
+            current = float(params.get("stem_bottom", 0.0)) - float(params.get("stem_top", 0.0))
+            key_label = "stem_len"
+            low_bound = 1.0
+            high_bound = float(h)
+        elif element == "arm" and params.get("arm_enabled"):
+            dx = float(params.get("arm_x2", 0.0)) - float(params.get("arm_x1", 0.0))
+            dy = float(params.get("arm_y2", 0.0)) - float(params.get("arm_y1", 0.0))
+            current = float(np.hypot(dx, dy))
+            key_label = "arm_len"
+            low_bound = 1.0
+            high_bound = float(max(w, h))
+        else:
+            return False
+
+        if current <= 0.0:
+            return False
+
+        low = max(low_bound, current * 0.75)
+        high = min(high_bound, current * 1.25)
+        if not (low < current < high):
+            logs.append(
+                f"{element}: Längen-Bracketing übersprungen ({key_label}: current={current:.3f}, "
+                f"Range={low_bound:.3f}..{high_bound:.3f})"
+            )
+            return False
+
+        candidates = sorted({Action._snap_half(low), Action._snap_half(current), Action._snap_half(high)})
+        candidate_errors = [Action._element_error_for_extent(img_orig, params, element, v) for v in candidates]
+        if not all(np.isfinite(e) for e in candidate_errors):
+            logs.append(
+                f"{element}: Längen-Bracketing abgebrochen ({key_label}) wegen nicht-finiten Fehlern "
+                + ", ".join(f"{v:.3f}->{e:.3f}" for v, e in zip(candidates, candidate_errors, strict=False))
+            )
+            return False
+
+        best_idx = int(np.argmin(candidate_errors))
+        best_len = float(candidates[best_idx])
+        if abs(best_len - current) < 0.02:
+            logs.append(
+                f"{element}: Längen-Bracketing keine relevante Änderung ({key_label}: {current:.3f}); "
+                f"Kandidaten="
+                + ", ".join(f"{v:.3f}->{e:.3f}" for v, e in zip(candidates, candidate_errors, strict=False))
+            )
+            return False
+
+        if element == "stem":
+            center = (float(params.get("stem_top", 0.0)) + float(params.get("stem_bottom", 0.0))) / 2.0
+            half = best_len / 2.0
+            params["stem_top"] = float(np.clip(center - half, 0.0, float(h - 1)))
+            params["stem_bottom"] = float(np.clip(center + half, params["stem_top"] + 1.0, float(h)))
+        else:
+            x1 = float(params.get("arm_x1", 0.0))
+            y1 = float(params.get("arm_y1", 0.0))
+            x2 = float(params.get("arm_x2", 0.0))
+            y2 = float(params.get("arm_y2", 0.0))
+            dx = x2 - x1
+            dy = y2 - y1
+            cur_len = float(np.hypot(dx, dy))
+            if cur_len <= 1e-6:
+                return False
+            ux = dx / cur_len
+            uy = dy / cur_len
+            cx = (x1 + x2) / 2.0
+            cy = (y1 + y2) / 2.0
+            half = best_len / 2.0
+            params["arm_x1"] = float(np.clip(cx - (ux * half), 0.0, float(w - 1)))
+            params["arm_y1"] = float(np.clip(cy - (uy * half), 0.0, float(h - 1)))
+            params["arm_x2"] = float(np.clip(cx + (ux * half), 0.0, float(w - 1)))
+            params["arm_y2"] = float(np.clip(cy + (uy * half), 0.0, float(h - 1)))
+
+        logs.append(
+            f"{element}: Längen-Bracketing {key_label} {current:.3f}->{best_len:.3f}; Kandidaten="
+            + ", ".join(f"{v:.3f}->{e:.3f}" for v, e in zip(candidates, candidate_errors, strict=False))
+        )
+        return True
+
+    @staticmethod
     def _optimize_element_width_bracket(img_orig: np.ndarray, params: dict, element: str, logs: list[str]) -> bool:
         h, w = img_orig.shape[:2]
         info = Action._element_width_key_and_bounds(element, params, w, h)
@@ -2349,6 +2477,10 @@ class Action:
 
                 width_changed = Action._optimize_element_width_bracket(img_orig, params, element, logs)
                 if width_changed:
+                    round_changed = True
+
+                extent_changed = Action._optimize_element_extent_bracket(img_orig, params, element, logs)
+                if extent_changed:
                     round_changed = True
 
                 if element == "circle":

@@ -10,6 +10,8 @@ import argparse
 import csv
 import os
 import re
+import subprocess
+import sys
 from dataclasses import dataclass
 
 try:
@@ -25,6 +27,45 @@ try:
     import fitz  # PyMuPDF for native SVG rendering
 except ImportError:  # pragma: no cover - optional dependency
     fitz = None
+
+
+def _missing_required_image_dependencies() -> list[str]:
+    missing: list[str] = []
+    if cv2 is None:
+        missing.append("opencv-python-headless")
+    if np is None:
+        missing.append("numpy")
+    return missing
+
+
+def _bootstrap_required_image_dependencies() -> list[str]:
+    missing = _missing_required_image_dependencies()
+    if not missing:
+        return []
+
+    cmd = [sys.executable, "-m", "pip", "install", *missing]
+    print(f"[INFO] Fehlende Bild-Abhängigkeiten gefunden: {', '.join(missing)}")
+    print(f"[INFO] Installiere via: {' '.join(cmd)}")
+    try:
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(
+            "Automatische Installation fehlgeschlagen. "
+            "Bitte Abhängigkeiten manuell installieren oder Proxy/Netzwerk prüfen."
+        ) from exc
+
+    # Re-import in current process so conversion can run without restart.
+    global cv2, np
+    if "opencv-python-headless" in missing:
+        import cv2 as _cv2
+
+        cv2 = _cv2
+    if "numpy" in missing:
+        import numpy as _np
+
+        np = _np
+
+    return missing
 
 
 def rgb_to_hex(rgb: np.ndarray) -> str:
@@ -127,6 +168,11 @@ class Reflection:
             "AC0832",
             "AC0833",
             "AC0834",
+            "AC0835",
+            "AC0836",
+            "AC0837",
+            "AC0838",
+            "AC0839",
             "AC0870",
             "AC0881",
             "AC0882",
@@ -138,6 +184,9 @@ class Reflection:
             elif base_name.upper() in {"AC0820", "AC0831", "AC0832", "AC0833", "AC0834"}:
                 params["elements"].append("SEMANTIC: Kreis + Buchstabe CO_2")
                 params["label"] = "CO_2"
+            elif base_name.upper() in {"AC0835", "AC0836", "AC0837", "AC0838", "AC0839"}:
+                params["elements"].append("SEMANTIC: Kreis + Buchstabe VOC")
+                params["label"] = "VOC"
             else:
                 params["elements"].append("SEMANTIC: Kreis + Buchstabe")
                 params["label"] = "M" if base_name.upper() == "AR0100" else "T"
@@ -156,6 +205,14 @@ class Reflection:
             if base_name.upper() == "AC0833":
                 params["elements"].append("SEMANTIC: senkrechter Strich oben vom Kreis")
             if base_name.upper() == "AC0834":
+                params["elements"].append("SEMANTIC: waagrechter Strich rechts vom Kreis")
+            if base_name.upper() == "AC0836":
+                params["elements"].append("SEMANTIC: senkrechter Strich hinter dem Kreis")
+            if base_name.upper() == "AC0837":
+                params["elements"].append("SEMANTIC: waagrechter Strich links vom Kreis")
+            if base_name.upper() == "AC0838":
+                params["elements"].append("SEMANTIC: senkrechter Strich oben vom Kreis")
+            if base_name.upper() == "AC0839":
                 params["elements"].append("SEMANTIC: waagrechter Strich rechts vom Kreis")
             return desc, params
 
@@ -630,6 +687,16 @@ class Action:
         params["co2_font_scale"] = float(params.get("co2_font_scale", 0.82))
         params["co2_sub_font_scale"] = float(params.get("co2_sub_font_scale", 66.0))
         params["co2_dy"] = float(params.get("co2_dy", -0.02 * float(params.get("r", 0.0))))
+        return params
+
+    @staticmethod
+    def _apply_voc_label(params: dict) -> dict:
+        params["draw_text"] = True
+        params["text_mode"] = "voc"
+        params["text_gray"] = int(round(params.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY)))
+        params["voc_font_scale"] = float(params.get("voc_font_scale", 0.52))
+        params["voc_dy"] = float(params.get("voc_dy", -0.01 * float(params.get("r", 0.0))))
+        params["voc_weight"] = int(params.get("voc_weight", 600))
         return params
 
     @staticmethod
@@ -1168,6 +1235,36 @@ class Action:
                 return Action._finalize_ac08_style(name, defaults)
             return Action._finalize_ac08_style(name, Action._apply_co2_label(Action._fit_ac0814_params_from_image(img, defaults)))
 
+        if name == "AC0835":
+            defaults = Action._apply_voc_label(Action._default_ac0870_params(w, h))
+            if img is None:
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._apply_voc_label(Action._fit_semantic_badge_from_image(img, defaults)))
+
+        if name == "AC0836":
+            defaults = Action._apply_voc_label(Action._default_ac0881_params(w, h))
+            if img is None:
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._apply_voc_label(Action._fit_ac0811_params_from_image(img, defaults)))
+
+        if name == "AC0837":
+            defaults = Action._apply_voc_label(Action._default_ac0812_params(w, h))
+            if img is None:
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._apply_voc_label(Action._fit_ac0812_params_from_image(img, defaults)))
+
+        if name == "AC0838":
+            defaults = Action._apply_voc_label(Action._default_ac0813_params(w, h))
+            if img is None:
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._apply_voc_label(Action._fit_ac0813_params_from_image(img, defaults)))
+
+        if name == "AC0839":
+            defaults = Action._apply_voc_label(Action._default_ac0814_params(w, h))
+            if img is None:
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._apply_voc_label(Action._fit_ac0814_params_from_image(img, defaults)))
+
         return None
 
     @staticmethod
@@ -1229,6 +1326,19 @@ class Action:
                         f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}" '
                         f'font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">'
                         f'CO<tspan font-size="{sub_scale:.2f}%" baseline-shift="sub">2</tspan></text>'
+                    )
+                )
+            elif p.get("text_mode") == "voc":
+                radius = p.get("r", min(w, h) * 0.4)
+                font_size = max(4.0, radius * p.get("voc_font_scale", 0.52))
+                voc_dy = p.get("voc_dy", 0.0)
+                voc_weight = int(p.get("voc_weight", 600))
+                elements.append(
+                    (
+                        f'  <text x="{p["cx"]:.4f}" y="{(p["cy"] + voc_dy):.4f}" fill="{Action.grayhex(p["text_gray"])}" '
+                        f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}" '
+                        f'font-style="normal" font-weight="{voc_weight}" letter-spacing="0.01em" '
+                        f'text-anchor="middle" dominant-baseline="middle">VOC</text>'
                     )
                 )
             else:
@@ -2435,11 +2545,29 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Optional: Ordner für AC0811 Element-Diff-Dumps pro Runde/Element",
     )
+    parser.add_argument(
+        "--bootstrap-deps",
+        action="store_true",
+        help=(
+            "Installiert fehlende Bild-Abhängigkeiten (numpy, opencv-python-headless) "
+            "automatisch via pip vor der Konvertierung."
+        ),
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+
+    if args.bootstrap_deps:
+        try:
+            installed = _bootstrap_required_image_dependencies()
+        except RuntimeError as exc:
+            print(f"[ERROR] {exc}")
+            return 2
+        if installed:
+            print(f"[INFO] Installiert: {', '.join(installed)}")
+
     out_dir = convert_range(
         args.folder_path,
         args.csv_path,

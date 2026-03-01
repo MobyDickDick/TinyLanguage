@@ -420,6 +420,7 @@ class Action:
         cx = float(params.get("cx", defaults.get("cx", float(w) / 2.0)))
         cy = float(params.get("cy", defaults.get("cy", float(w) / 2.0)))
         r = float(params.get("r", defaults.get("r", float(w) * 0.4)))
+        stroke_circle = float(params.get("stroke_circle", defaults.get("stroke_circle", max(0.9, float(w) / 15.0))))
 
         upper_circle = Action._estimate_upper_circle_from_foreground(img, defaults)
         if upper_circle is not None:
@@ -437,13 +438,28 @@ class Action:
         # estimates to one side. Keep the semantic template's horizontal center so the
         # stem remains visually centered under the circle.
         if w <= 18 and not bool(params.get("draw_text", True)):
-            cx = float(defaults.get("cx", float(w) / 2.0))
-            params["cx"] = cx
+            default_cx = float(defaults.get("cx", float(w) / 2.0))
+            default_cy = float(defaults.get("cy", float(w) / 2.0))
+            default_r = float(defaults.get("r", float(w) * 0.4))
+            cx = default_cx
+            cy = float(np.clip(cy, default_cy - 0.8, default_cy + 0.8))
+            # Keep tiny variants from shrinking due to noisy anti-aliased edge pixels.
+            # This preserves the visual diameter expected for AC0811_S.
+            r = max(r, default_r * 0.96)
+
+            # Ensure the fitted circle remains fully inside the canvas with stroke taken
+            # into account so it is not clipped at the edges.
+            radius_limit_x = max(1.0, min(default_cx, float(w) - default_cx) - (stroke_circle / 2.0))
+            radius_limit_y = max(1.0, min(default_cy, float(h) - default_cy) - (stroke_circle / 2.0))
+            r = float(min(r, radius_limit_x, radius_limit_y))
+
+            params["cx"] = default_cx
+            params["cy"] = cy
+            params["r"] = r
             # Keep tiny AC0811 variants horizontally anchored; anti-aliased
             # min-rect alignment can otherwise pull circle/stem to one side.
             params["lock_circle_cx"] = True
             params["lock_stem_center_to_circle"] = True
-        stroke_circle = float(params.get("stroke_circle", defaults.get("stroke_circle", max(0.9, float(w) / 15.0))))
 
         # AC0811 stems are intentionally thin. The generic contour fit can over-estimate
         # width when anti-aliased circle pixels bleed into the stem ROI, especially on

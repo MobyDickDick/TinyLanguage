@@ -7,9 +7,10 @@ stem: Fehler=67.000
 stem: Breitenkorrektur mode=iter, ratio=0.500, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
 text: minRect Δcx=1.000, Δcy=2.000, diag=7.280->9.849, scale=1.3528
+text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=94.128
 text: Breiten-Bracketing voc_font_scale 0.520->0.500
-Runde 1: Gesamtfehler=22.864
+Runde 1: Gesamtfehler=20.939
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=0.500, Δcy=-0.000, diag=18.000->19.000, scale=1.0556
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -18,10 +19,11 @@ circle: Breiten-Bracketing stroke_circle 1.000->1.000
 stem: Fehler=18.000
 stem: Breitenkorrektur mode=iter, ratio=0.333, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
-text: minRect Δcx=0.500, Δcy=2.000, diag=8.246->9.849, scale=1.1943
-text: Fehler=93.564
+text: minRect Δcx=0.500, Δcy=0.500, diag=8.246->9.487, scale=1.1504
+text: Parameter nach Mittelpunkt/Diagonale angepasst
+text: Fehler=80.938
 text: Breiten-Bracketing voc_font_scale 0.500->0.500
-Runde 2: Gesamtfehler=19.661
+Runde 2: Gesamtfehler=17.240
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=-0.000, diag=20.518->19.000, scale=0.9260
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -30,7 +32,8 @@ circle: Breiten-Bracketing stroke_circle 1.000->1.000
 stem: Fehler=18.000
 stem: Breitenkorrektur mode=iter, ratio=0.333, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
-text: minRect Δcx=0.500, Δcy=2.000, diag=8.246->9.849, scale=1.1943
-text: Fehler=93.564
+text: minRect Δcx=0.500, Δcy=0.500, diag=8.246->9.487, scale=1.1504
+text: Parameter nach Mittelpunkt/Diagonale angepasst
+text: Fehler=76.000
 text: Breiten-Bracketing voc_font_scale 0.500->0.500
-Runde 3: Gesamtfehler=18.472
+Runde 3: Gesamtfehler=16.051

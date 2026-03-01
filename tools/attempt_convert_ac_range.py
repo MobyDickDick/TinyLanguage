@@ -19,6 +19,8 @@ import platform
 import re
 import subprocess
 import sys
+import tempfile
+import zipfile
 from pathlib import Path
 
 
@@ -176,6 +178,14 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--runtime-zip",
+        default="",
+        help=(
+            "Optional zip archive containing staged runtime libs (cv2/numpy/fitz at archive root). "
+            "When set, it is extracted to a temporary directory and used as runtime path."
+        ),
+    )
+    parser.add_argument(
         "--report",
         default="artifacts/converted_symbols/AC0800_AC0884_attempt_report.json",
         help="JSON output report path",
@@ -188,6 +198,17 @@ def main() -> int:
     args = parser.parse_args()
 
     runtime_path = args.runtime_path.strip()
+    runtime_zip = args.runtime_zip.strip()
+    temp_runtime_dir: str | None = None
+    if runtime_zip:
+        zpath = Path(runtime_zip)
+        if not zpath.exists():
+            raise FileNotFoundError(f"Runtime zip not found: {runtime_zip}")
+        temp_runtime_dir = tempfile.mkdtemp(prefix="converter_runtime_")
+        with zipfile.ZipFile(zpath, "r") as zf:
+            zf.extractall(temp_runtime_dir)
+        runtime_path = temp_runtime_dir
+
     if runtime_path:
         sys.path.insert(0, runtime_path)
 
@@ -256,11 +277,17 @@ def main() -> int:
         },
         "dependencies": deps,
         "runtime_path": runtime_path,
+        "runtime_zip": runtime_zip,
         "conversion": conversion,
     }
 
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     _write_markdown_log(log_path, report)
+
+    if temp_runtime_dir:
+        import shutil
+
+        shutil.rmtree(temp_runtime_dir, ignore_errors=True)
 
     print(f"Wrote report: {report_path}")
     print(f"Wrote log: {log_path}")

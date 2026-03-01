@@ -52,6 +52,72 @@ heap_cell_types: Dict[int, Dict[int, str]] = {}
 error_message: Any = None
 
 
+class _MapHelpers:
+    @staticmethod
+    def new() -> dict[Any, Any]:
+        return {}
+
+    @staticmethod
+    def set(map_obj: Any, key: Any, value: Any) -> Any:
+        if not isinstance(map_obj, dict):
+            raise RuntimeError("map operation expects dict")
+        map_obj[key] = value
+        return map_obj
+
+    @staticmethod
+    def get(map_obj: Any, key: Any, default: Any = None) -> Any:
+        if not isinstance(map_obj, dict):
+            raise RuntimeError("map operation expects dict")
+        return map_obj.get(key, default)
+
+    @staticmethod
+    def has(map_obj: Any, key: Any) -> bool:
+        if not isinstance(map_obj, dict):
+            raise RuntimeError("map operation expects dict")
+        return key in map_obj
+
+    @staticmethod
+    def delete(map_obj: Any, key: Any) -> Any:
+        if not isinstance(map_obj, dict):
+            raise RuntimeError("map operation expects dict")
+        map_obj.pop(key, None)
+        return map_obj
+
+    @staticmethod
+    def len(map_obj: Any) -> int:
+        if not isinstance(map_obj, dict):
+            raise RuntimeError("map operation expects dict")
+        return len(map_obj)
+
+    @staticmethod
+    def keys(map_obj: Any) -> list[Any]:
+        if not isinstance(map_obj, dict):
+            raise RuntimeError("map operation expects dict")
+        return list(map_obj.keys())
+
+    @staticmethod
+    def values(map_obj: Any) -> list[Any]:
+        if not isinstance(map_obj, dict):
+            raise RuntimeError("map operation expects dict")
+        return list(map_obj.values())
+
+    @staticmethod
+    def entries(map_obj: Any) -> list[list[Any]]:
+        if not isinstance(map_obj, dict):
+            raise RuntimeError("map operation expects dict")
+        return [[k, v] for k, v in map_obj.items()]
+
+    @staticmethod
+    def from_entries(entries: Any) -> dict[Any, Any]:
+        result: dict[Any, Any] = {}
+        for entry in entries:
+            if isinstance(entry, (list, tuple)) and len(entry) >= 2:
+                result[entry[0]] = entry[1]
+            else:
+                raise RuntimeError("Map.from_entries expects [key, value] pairs")
+        return result
+
+
 def _binary(op: str, left: Any, right: Any) -> Any:
     if op == "+":
         return left + right
@@ -317,7 +383,19 @@ def _execute(instrs: List, locals_: Dict[str, Any], globals_: Dict[str, Any]) ->
         elif op == "CALL":
             name, argc = arg
             args = [stack.pop() for _ in range(argc)][::-1]
-            if name in ("__new", "new"):
+            if name == "__method_call":
+                if len(args) < 2:
+                    raise RuntimeError(f"__method_call expects at least 2 args, got {len(args)}")
+                target = args[0]
+                method_name = args[1]
+                method_args = args[2:]
+                method = getattr(target, method_name, None)
+                if method is None:
+                    raise RuntimeError(f"attribute {method_name} not found")
+                if not callable(method):
+                    raise RuntimeError(f"attribute {method_name} is not callable")
+                stack.append(method(*method_args))
+            elif name in ("__new", "new"):
                 if len(args) != 1:
                     raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
                 stack.append(_heap_new(args[0]))
@@ -351,7 +429,7 @@ def _execute(instrs: List, locals_: Dict[str, Any], globals_: Dict[str, Any]) ->
 
 
 def run_program() -> str:
-    global_globals: Dict[str, Any] = {}
+    global_globals: Dict[str, Any] = {"Map": _MapHelpers}
     _execute(instructions["entry"], global_globals, global_globals)
     return "".join(output)
 

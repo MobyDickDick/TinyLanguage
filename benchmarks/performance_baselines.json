@@ -84,8 +84,7 @@
   },
   "blocked": {
     "native-python-bytecode": {
-      "heap_roundtrip": "unknown function in heap bench",
-      "map_operations": "unknown variable in Map bench"
+      "heap_roundtrip": "unknown function in heap bench"
     },
     "python": {
       "tight_loop": "binary operator `<` not supported yet",

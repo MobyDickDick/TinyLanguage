@@ -29,3 +29,15 @@ def test_bytecode_backend_handles_functions_and_loops() -> None:
     native_output = run_with_native_backend(src)
     bytecode_output = run_with_python_bytecode_backend(src)
     assert bytecode_output == native_output
+
+
+def test_bytecode_backend_supports_map_helpers() -> None:
+    """Map helper namespace should be available in the bytecode backend."""
+    src = """
+    def m = Map.new();
+    Map.set(m, "a", 41);
+    print(Map.get(m, "a", 0) + 1);
+    """
+    native_output = run_with_native_backend(src)
+    bytecode_output = run_with_python_bytecode_backend(src)
+    assert bytecode_output == native_output

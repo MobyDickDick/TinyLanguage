@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
+import pytest
+
 from src.image_composite_converter import Action
 
 
@@ -31,3 +35,22 @@ def test_default_ac0812_uses_height_based_circle_radius() -> None:
     assert abs(float(params["r"]) - 6.0) < 1e-6
     assert abs(float(params["cx"]) - 17.5) < 1e-6
     assert abs(float(params["arm_x2"]) - 11.5) < 1e-6
+
+
+def test_validate_badge_can_expand_ac0812_tiny_circle_radius() -> None:
+    """Element validation should actively correct a too-small AC0812_S circle radius."""
+    img_path = Path("artifacts/images_to_convert/AC0812_S.jpg")
+    cv2 = pytest.importorskip("cv2")
+    img = cv2.imread(str(img_path))
+    if img is None:
+        pytest.skip("AC0812_S fixture image not available")
+
+    h, w = img.shape[:2]
+    params = Action._finalize_ac08_style("AC0812", Action._default_ac0812_params(w, h))
+    params["r"] = 5.0
+    params["arm_x2"] = max(0.0, float(params["cx"]) - float(params["r"]))
+
+    logs = Action.validate_badge_by_elements(img, params, max_rounds=2)
+
+    assert float(params["r"]) > 5.0
+    assert any("Radius-Bracketing r" in line for line in logs)

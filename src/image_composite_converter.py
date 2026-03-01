@@ -704,6 +704,7 @@ class Action:
         params["text_gray"] = int(round(params.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY)))
         params["co2_font_scale"] = float(params.get("co2_font_scale", 0.82))
         params["co2_sub_font_scale"] = float(params.get("co2_sub_font_scale", 66.0))
+        params["co2_dx"] = float(params.get("co2_dx", 0.0))
         params["co2_dy"] = float(params.get("co2_dy", 0.0))
         # Keep "CO" as an explicit run so the subscript position remains stable across
         # renderers. By default we keep "CO" itself centered in the badge and attach
@@ -731,13 +732,13 @@ class Action:
         if anchor_mode in {"cluster", "co"}:
             # Legacy mode: center the whole CO₂ cluster.
             cluster_shift = (gap + sub_w) / 2.0
-            co_x = cx - cluster_shift
+            co_x = (cx + float(params.get("co2_dx", 0.0))) - cluster_shift
             x1 = co_x - (co_width / 2.0)
             subscript_x = co_x + (co_width / 2.0) + gap
             x2 = subscript_x + sub_w
         else:
             # Default mode: keep the "CO" run itself centered and attach the ₂ rightward.
-            co_x = cx
+            co_x = cx + float(params.get("co2_dx", 0.0))
             x1 = co_x - (co_width / 2.0)
             subscript_x = co_x + (co_width / 2.0) + gap
             x2 = subscript_x + sub_w
@@ -753,11 +754,35 @@ class Action:
                 subscript_x -= overflow
                 x2 -= overflow
 
+            # Keep the left side inside the inner circle as well.
+            inner_left = cx - max(1.0, r - stroke)
+            left_overflow = inner_left - x1
+            if left_overflow > 0.0:
+                co_x += left_overflow
+                x1 += left_overflow
+                subscript_x += left_overflow
+                x2 += left_overflow
+
         # Capital glyphs usually appear slightly high when simply middle-anchored.
         # Apply a proportional optical correction so the label sits visually centered.
         y_base = cy + float(params.get("co2_dy", 0.0)) + (font_size * 0.05)
         subscript_y = y_base + (font_size * 0.18)
         height = font_size * 0.95
+
+        # Keep text vertically within the circle's clear area.
+        stroke = max(0.8, float(params.get("stroke_circle", 1.0)))
+        inner_top = cy - max(1.0, r - stroke)
+        inner_bottom = cy + max(1.0, r - stroke)
+        top = y_base - (height / 2.0)
+        bottom = subscript_y + (sub_font_px * 0.35)
+        if top < inner_top:
+            delta = inner_top - top
+            y_base += delta
+            subscript_y += delta
+        elif bottom > inner_bottom:
+            delta = bottom - inner_bottom
+            y_base -= delta
+            subscript_y -= delta
 
         return {
             "anchor_mode": anchor_mode,
@@ -824,7 +849,8 @@ class Action:
         adjusted_scale = cur_scale * (target_width / max(1e-6, cur_width))
         p["co2_font_scale"] = float(max(0.90, min(1.12, adjusted_scale)))
         p["co2_sub_font_scale"] = float(max(60.0, min(68.0, float(p.get("co2_sub_font_scale", 66.0)))))
-        p["co2_dy"] = float(max(-0.20 * r, min(0.20 * r, float(p.get("co2_dy", -0.02 * r)))))
+        p["co2_dx"] = float(max(-0.18 * r, min(0.18 * r, float(p.get("co2_dx", -0.04 * r)))))
+        p["co2_dy"] = float(max(-0.20 * r, min(0.20 * r, float(p.get("co2_dy", 0.03 * r)))))
         p["text_gray"] = int(round(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY)))
         return p
 

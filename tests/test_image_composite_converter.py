@@ -17,6 +17,7 @@ def test_co2_label_defaults_use_center_co_anchor_mode() -> None:
 
     assert layout["anchor_mode"] == "center_co"
     assert float(layout["co_x"]) <= float(params["cx"])
+    assert float(params["co2_dx"]) == 0.0
 
 
 def test_co2_layout_legacy_cluster_mode_still_supported() -> None:
@@ -43,6 +44,29 @@ def test_co2_layout_keeps_subscript_inside_inner_circle_for_centered_badges() ->
     inner_right = cx + max(1.0, r - stroke)
 
     assert float(layout["x2"]) <= inner_right + 1e-6
+
+def test_co2_layout_keeps_text_within_inner_circle_bounds() -> None:
+    """CO₂ layout should not let any glyph run outside the inner circle boundary."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(15, 15))
+    params = Action._finalize_ac08_style("AC0820", params)
+    layout = Action._co2_layout(params)
+
+    cx = float(params["cx"])
+    cy = float(params["cy"])
+    r = float(params["r"])
+    stroke = float(params["stroke_circle"])
+    inner_left = cx - max(1.0, r - stroke)
+    inner_right = cx + max(1.0, r - stroke)
+    inner_top = cy - max(1.0, r - stroke)
+    inner_bottom = cy + max(1.0, r - stroke)
+
+    text_top = float(layout["y_base"]) - (float(layout["height"]) / 2.0)
+    text_bottom = float(layout["subscript_y"]) + (float(layout["sub_font_px"]) * 0.35)
+
+    assert float(layout["x1"]) >= inner_left - 1e-6
+    assert float(layout["x2"]) <= inner_right + 1e-6
+    assert text_top >= inner_top - 1e-6
+    assert text_bottom <= inner_bottom + 1e-6
 
 
 def test_co2_layout_enforces_minimum_subscript_pixel_size() -> None:

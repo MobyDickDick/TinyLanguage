@@ -2079,8 +2079,14 @@ class Action:
         if current <= 0.0:
             return False
 
+        min_dim = float(min(w, h))
         low_bound = max(1.0, current - 1.0)
-        high_bound = min(float(min(w, h)) * 0.48, current + 1.0)
+        # Tiny badges are especially sensitive to anti-aliasing noise in the
+        # circle-only error mask. Prevent aggressive downward jumps that make
+        # AC0800_S noticeably smaller than the medium/large variants.
+        if min_dim <= 16.0:
+            low_bound = max(low_bound, current * 0.9)
+        high_bound = min(min_dim * 0.48, current + 1.0)
         if not low_bound < high_bound:
             return False
 

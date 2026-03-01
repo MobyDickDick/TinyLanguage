@@ -704,6 +704,10 @@ class Action:
         params["co2_font_scale"] = float(params.get("co2_font_scale", 0.82))
         params["co2_sub_font_scale"] = float(params.get("co2_sub_font_scale", 66.0))
         params["co2_dy"] = float(params.get("co2_dy", -0.02 * float(params.get("r", 0.0))))
+        # Keep "CO" optically centered and place subscript "2" relative to that anchor.
+        # This avoids the whole "CO₂" run being centered as a block (which can make "CO"
+        # appear too far to the left and too high on some renderers).
+        params["co2_anchor_mode"] = str(params.get("co2_anchor_mode", "co"))
         return params
 
     @staticmethod
@@ -1305,10 +1309,15 @@ class Action:
             )
 
         if p.get("stem_enabled"):
+            stem_bottom = float(p.get("stem_bottom", 0.0))
+            # If the stem should touch the lower border, extend by half a pixel so
+            # rasterization keeps the bottom row fully covered after quantization.
+            if stem_bottom >= (float(h) - 0.01):
+                stem_bottom = float(h) + 0.5
             elements.append(
                 (
                     f'  <rect x="{p["stem_x"]:.4f}" y="{p["stem_top"]:.4f}" '
-                    f'width="{p["stem_width"]:.4f}" height="{max(0.0, p["stem_bottom"] - p["stem_top"]):.4f}" '
+                    f'width="{p["stem_width"]:.4f}" height="{max(0.0, stem_bottom - p["stem_top"]):.4f}" '
                     f'fill="{Action.grayhex(p.get("stem_gray", p["stroke_gray"]))}"/>'
                 )
             )
@@ -1337,14 +1346,36 @@ class Action:
                 font_size = max(4.0, radius * p.get("co2_font_scale", 0.82))
                 sub_scale = p.get("co2_sub_font_scale", 66.0)
                 co2_dy = p.get("co2_dy", 0.0)
-                elements.append(
-                    (
-                        f'  <text x="{p["cx"]:.4f}" y="{(p["cy"] + co2_dy):.4f}" fill="{Action.grayhex(p["text_gray"])}" '
-                        f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}" '
-                        f'font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">'
-                        f'CO<tspan font-size="{sub_scale:.2f}%" baseline-shift="sub">2</tspan></text>'
+                y_text = p["cy"] + co2_dy
+                anchor_mode = str(p.get("co2_anchor_mode", "co")).lower()
+                if anchor_mode == "co":
+                    co_width = font_size * 1.04
+                    sub_font_px = font_size * (sub_scale / 100.0)
+                    subscript_x = p["cx"] + (co_width / 2.0) + (font_size * 0.03)
+                    subscript_y = y_text + (font_size * 0.18)
+                    elements.append(
+                        (
+                            f'  <text x="{p["cx"]:.4f}" y="{y_text:.4f}" fill="{Action.grayhex(p["text_gray"])}" '
+                            f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}" '
+                            f'font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">CO</text>'
+                        )
                     )
-                )
+                    elements.append(
+                        (
+                            f'  <text x="{subscript_x:.4f}" y="{subscript_y:.4f}" fill="{Action.grayhex(p["text_gray"])}" '
+                            f'font-family="Arial, Helvetica, sans-serif" font-size="{sub_font_px:.4f}" '
+                            f'font-style="normal" font-weight="600" text-anchor="start" dominant-baseline="middle">2</text>'
+                        )
+                    )
+                else:
+                    elements.append(
+                        (
+                            f'  <text x="{p["cx"]:.4f}" y="{y_text:.4f}" fill="{Action.grayhex(p["text_gray"])}" '
+                            f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}" '
+                            f'font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">'
+                            f'CO<tspan font-size="{sub_scale:.2f}%" baseline-shift="sub">2</tspan></text>'
+                        )
+                    )
             elif p.get("text_mode") == "voc":
                 radius = p.get("r", min(w, h) * 0.4)
                 font_size = max(4.0, radius * p.get("voc_font_scale", 0.52))
@@ -1807,10 +1838,20 @@ class Action:
 
         if mode == "co2":
             font_size = max(4.0, r * float(params.get("co2_font_scale", 0.82)))
-            width = font_size * 1.65
+            anchor_mode = str(params.get("co2_anchor_mode", "co")).lower()
+            if anchor_mode == "co":
+                co_width = font_size * 1.04
+                sub_w = font_size * (float(params.get("co2_sub_font_scale", 66.0)) / 100.0) * 0.62
+                width = co_width + (font_size * 0.03) + sub_w
+                x1 = cx - (co_width / 2.0)
+                x2 = x1 + width
+            else:
+                width = font_size * 1.65
+                x1 = cx - (width / 2.0)
+                x2 = cx + (width / 2.0)
             height = font_size * 0.95
             y = cy + float(params.get("co2_dy", 0.0))
-            return (cx - (width / 2.0), y - (height / 2.0), cx + (width / 2.0), y + (height / 2.0))
+            return (x1, y - (height / 2.0), x2, y + (height / 2.0))
 
         # path/path_t fallback via known glyph bounds.
         s = float(params.get("s", 0.0))

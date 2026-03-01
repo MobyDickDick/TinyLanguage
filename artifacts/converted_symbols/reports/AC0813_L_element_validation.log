@@ -3,15 +3,28 @@ circle: minRect Δcx=1.000, Δcy=0.000, diag=30.000->31.113, scale=1.0371
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=62.727
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->64.330, 0.825->64.330, 0.850->64.330
-arm: Fehler=85.089
+circle: Radius-Bracketing r 10.682->11.500; Kandidaten=9.500->99.612, 10.000->87.622, 10.500->63.789, 11.000->46.438, 11.500->40.143
+arm: Fehler=95.750
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..5.000)
-Runde 1: Gesamtfehler=11.848
+arm: Längen-Bracketing arm_len 10.850->11.000; Kandidaten=8.000->119.000, 11.000->95.750, 13.500->95.750
+Runde 1: Gesamtfehler=10.160
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=0.500, Δcy=0.000, diag=30.414->32.558, scale=1.0705
+circle: minRect Δcx=0.500, Δcy=0.000, diag=33.000->32.558, scale=0.9866
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=64.330
+circle: Fehler=40.143
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->32.071, 0.825->32.071, 0.850->32.071
-arm: Fehler=85.089
+circle: Radius-Bracketing r 11.346->11.500; Kandidaten=10.500->67.817, 11.000->36.080, 11.500->32.071, 12.000->63.957
+arm: Fehler=95.750
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..5.000)
-Runde 2: Gesamtfehler=6.765
-Gesamtfehler unter Schwellwert, Validierung beendet
+arm: Längen-Bracketing arm_len 10.600->10.500; Kandidaten=8.000->126.750, 10.500->95.750, 13.000->95.750
+Runde 2: Gesamtfehler=8.578
+Runde 3: elementweise Validierung gestartet
+circle: minRect Δcx=0.000, Δcy=0.000, diag=33.732->32.558, scale=0.9652
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=32.071
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->36.080, 0.825->36.080, 0.850->36.080
+circle: Radius-Bracketing r 11.100->11.500; Kandidaten=10.000->92.109, 10.500->67.817, 11.000->36.080, 11.500->32.071, 12.000->63.957
+arm: Fehler=95.750
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..5.000)
+arm: Längen-Bracketing arm_len 10.550->10.500; Kandidaten=8.000->119.000, 10.500->95.750, 13.000->95.750
+Runde 3: Gesamtfehler=8.578

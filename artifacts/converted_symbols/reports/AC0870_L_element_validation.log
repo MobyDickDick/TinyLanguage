@@ -3,22 +3,25 @@ circle: minRect Δcx=0.500, Δcy=0.000, diag=33.941->19.105, scale=0.5629
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=105.715
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->117.852, 0.825->117.852, 0.850->117.852
+circle: Radius-Bracketing r 10.370->11.500; Kandidaten=9.500->115.932, 10.000->117.795, 10.500->115.870, 11.000->110.538, 11.500->109.694
 text: minRect Δcx=1.000, Δcy=0.000, diag=15.652->16.643, scale=1.0633
 text: Fehler=40.443
-Runde 1: Gesamtfehler=32.640
+Runde 1: Gesamtfehler=31.838
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=0.000, diag=30.414->19.105, scale=0.6282
+circle: minRect Δcx=-0.000, Δcy=0.000, diag=33.000->19.105, scale=0.5789
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=117.852
-circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->114.614, 0.825->114.614, 0.850->114.614
+circle: Fehler=109.694
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->117.795, 0.825->117.795, 0.850->117.795
+circle: Radius-Bracketing r 9.775->11.000; Kandidaten=9.000->114.614, 9.500->115.932, 10.000->117.795, 10.500->115.870, 11.000->110.538
 text: minRect Δcx=1.000, Δcy=0.000, diag=15.652->16.643, scale=1.0633
 text: Fehler=40.443
-Runde 2: Gesamtfehler=32.000
+Runde 2: Gesamtfehler=32.517
 Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=0.000, diag=26.173->19.105, scale=0.7300
+circle: minRect Δcx=0.000, Δcy=0.000, diag=31.000->19.105, scale=0.6163
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=114.614
-circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->102.724, 0.825->102.724, 0.850->102.724
+circle: Fehler=110.538
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->115.932, 0.825->115.932, 0.850->115.932
+circle: Radius-Bracketing r 9.350->8.500; Kandidaten=8.500->109.841, 9.000->114.614, 9.500->115.932, 10.000->117.795, 10.500->115.870
 text: minRect Δcx=1.000, Δcy=0.000, diag=15.652->16.643, scale=1.0633
 text: Fehler=40.443
-Runde 3: Gesamtfehler=30.517
+Runde 3: Gesamtfehler=31.467

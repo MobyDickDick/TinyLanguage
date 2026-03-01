@@ -1,18 +1,24 @@
 Runde 1: elementweise Validierung gestartet
 circle: Fehler=87.793
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->87.793, 0.825->87.793, 0.850->87.793
+circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 4.000->inf, 4.500->88.667, 5.000->84.680, 5.500->77.103, 6.000->59.432
 arm: Fehler=24.071
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..3.000)
+arm: Längen-Bracketing arm_len 11.300->11.500; Kandidaten=8.500->38.214, 11.500->24.071, 14.000->24.071
 Runde 1: Gesamtfehler=23.021
 Runde 2: elementweise Validierung gestartet
 circle: Fehler=87.793
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->87.793, 0.825->87.793, 0.850->87.793
+circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 4.000->inf, 4.500->88.667, 5.000->84.680, 5.500->77.103, 6.000->59.432
 arm: Fehler=24.071
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..3.000)
+arm: Längen-Bracketing arm_len 11.400->11.500; Kandidaten=8.500->38.214, 11.500->24.071, 14.500->24.071
 Runde 2: Gesamtfehler=23.021
 Runde 3: elementweise Validierung gestartet
 circle: Fehler=87.793
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->87.793, 0.825->87.793, 0.850->87.793
+circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 4.000->inf, 4.500->88.667, 5.000->84.680, 5.500->77.103, 6.000->59.432
 arm: Fehler=24.071
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..3.000)
+arm: Längen-Bracketing arm_len 11.450->11.500; Kandidaten=8.500->38.214, 11.500->24.071, 14.500->24.071
 Runde 3: Gesamtfehler=23.021

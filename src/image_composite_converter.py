@@ -766,7 +766,7 @@ class Action:
         # Capital glyphs usually appear slightly high when simply middle-anchored.
         # Apply a proportional optical correction so the label sits visually centered.
         y_base = cy + float(params.get("co2_dy", 0.0)) + (font_size * 0.05)
-        subscript_y = y_base + (font_size * 0.18)
+        subscript_offset = font_size * 0.18
         height = font_size * 0.95
 
         # Keep text vertically within the circle's clear area.
@@ -774,15 +774,31 @@ class Action:
         inner_top = cy - max(1.0, r - stroke)
         inner_bottom = cy + max(1.0, r - stroke)
         top = y_base - (height / 2.0)
-        bottom = subscript_y + (sub_font_px * 0.35)
+        bottom = y_base + (height / 2.0)
         if top < inner_top:
             delta = inner_top - top
             y_base += delta
-            subscript_y += delta
         elif bottom > inner_bottom:
             delta = bottom - inner_bottom
             y_base -= delta
-            subscript_y -= delta
+
+        # Keep the subscript readable and away from the border, but do not let it
+        # drive the vertical centering of the main "CO" run.
+        min_subscript_offset = font_size * 0.08
+        max_subscript_offset = font_size * 0.24
+        subscript_offset = float(max(min_subscript_offset, min(max_subscript_offset, subscript_offset)))
+        subscript_y = y_base + subscript_offset
+        sub_bottom = subscript_y + (sub_font_px * 0.35)
+        if sub_bottom > inner_bottom:
+            max_offset = inner_bottom - y_base - (sub_font_px * 0.35)
+            subscript_offset = float(max(min_subscript_offset, min(max_subscript_offset, max_offset)))
+            subscript_y = y_base + subscript_offset
+
+        sub_top = subscript_y - (sub_font_px * 0.60)
+        if sub_top < inner_top:
+            min_offset = inner_top - y_base + (sub_font_px * 0.60)
+            subscript_offset = float(max(min_subscript_offset, min(max_subscript_offset, min_offset)))
+            subscript_y = y_base + subscript_offset
 
         return {
             "anchor_mode": anchor_mode,

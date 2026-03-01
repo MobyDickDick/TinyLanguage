@@ -69,6 +69,37 @@ def test_co2_layout_keeps_text_within_inner_circle_bounds() -> None:
     assert text_bottom <= inner_bottom + 1e-6
 
 
+def test_co2_layout_vertical_centering_ignores_subscript_for_main_text() -> None:
+    """The CO run should stay centered even if the subscript is very large."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(15, 15))
+    params = Action._finalize_ac08_style("AC0820", params)
+    params["co2_sub_font_scale"] = 95.0
+    layout = Action._co2_layout(params)
+
+    assert abs(float(layout["y_base"]) - float(params["cy"])) <= 0.35
+
+
+def test_co2_layout_keeps_subscript_inside_circle_without_changing_main_center() -> None:
+    """Large subscripts should be constrained by offset, not by shifting the CO baseline."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(15, 15))
+    params = Action._finalize_ac08_style("AC0820", params)
+    params["co2_sub_font_scale"] = 95.0
+    layout = Action._co2_layout(params)
+
+    cy = float(params["cy"])
+    r = float(params["r"])
+    stroke = float(params["stroke_circle"])
+    inner_top = cy - max(1.0, r - stroke)
+    inner_bottom = cy + max(1.0, r - stroke)
+
+    sub_top = float(layout["subscript_y"]) - (float(layout["sub_font_px"]) * 0.60)
+    sub_bottom = float(layout["subscript_y"]) + (float(layout["sub_font_px"]) * 0.35)
+
+    assert sub_top >= inner_top - 1e-6
+    assert sub_bottom <= inner_bottom + 1e-6
+    assert abs(float(layout["y_base"]) - cy) <= 0.35
+
+
 def test_co2_layout_enforces_minimum_subscript_pixel_size() -> None:
     """Subscript font should keep a minimum size so the "2" remains visible."""
     params = Action._apply_co2_label(Action._default_ac0870_params(15, 15))

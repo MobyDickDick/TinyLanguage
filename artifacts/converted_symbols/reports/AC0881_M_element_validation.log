@@ -1,28 +1,33 @@
 Runde 1: elementweise Validierung gestartet
-circle: minRect Δcx=0.500, Δcy=0.500, diag=25.456->26.000, scale=1.0214
+circle: minRect Δcx=0.000, Δcy=0.500, diag=27.586->26.000, scale=0.9425
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=76.436
+circle: Fehler=75.282
+circle: Breiten-Bracketing stroke_circle 1.000->1.000
 stem: Fehler=72.529
 stem: Breitenkorrektur mode=iter, ratio=0.250, alt=1.000, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 1: Gesamtfehler=15.476
+stem: Breiten-Bracketing stem_width 2.000->2.000
+Runde 1: Gesamtfehler=13.567
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=0.000, diag=26.870->26.000, scale=0.9676
+circle: minRect Δcx=1.000, Δcy=0.000, diag=26.000->26.000, scale=1.0000
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=73.545
-stem: minRect Δcx=0.500, Δcy=2.500, diag=18.111->13.342, scale=0.7367
+circle: Fehler=69.155
+circle: Breiten-Bracketing stroke_circle 1.000->1.000
+stem: minRect Δcx=0.000, Δcy=2.500, diag=18.028->13.342, scale=0.7401
 stem: Parameter nach Mittelpunkt/Diagonale angepasst
-stem: Fehler=44.059
-stem: Breitenkorrektur mode=iter, ratio=0.750, alt=1.700, neu=2.000
+stem: Fehler=17.118
+stem: Breitenkorrektur mode=iter, ratio=0.500, alt=1.700, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 2: Gesamtfehler=12.717
+stem: Breiten-Bracketing stem_width 2.000->2.000
+Runde 2: Gesamtfehler=8.280
 Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=0.250, Δcy=0.250, diag=26.505->26.000, scale=0.9810
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=67.696
-stem: minRect Δcx=0.500, Δcy=2.500, diag=16.125->13.342, scale=0.8274
+circle: minRect Δcx=0.000, Δcy=0.000, diag=26.000->26.000, scale=1.0000
+circle: Fehler=56.436
+circle: Breiten-Bracketing stroke_circle 1.000->1.000
+stem: minRect Δcx=0.500, Δcy=2.000, diag=16.031->14.560, scale=0.9082
 stem: Parameter nach Mittelpunkt/Diagonale angepasst
-stem: Fehler=41.933
-stem: Breitenkorrektur mode=iter, ratio=0.750, alt=1.700, neu=2.000
+stem: Fehler=19.531
+stem: Breitenkorrektur mode=iter, ratio=0.400, alt=1.816, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 3: Gesamtfehler=9.330
+stem: Breiten-Bracketing stem_width 2.000->2.000
+Runde 3: Gesamtfehler=8.280

@@ -1,29 +1,23 @@
 Runde 1: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=0.000, diag=28.284->31.113, scale=1.1000
+circle: minRect Δcx=0.000, Δcy=0.000, diag=30.000->31.113, scale=1.0371
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=69.190
+circle: Fehler=56.170
+circle: Breiten-Bracketing stroke_circle 1.000->1.000
 stem: Fehler=46.786
-stem: Breitenkorrektur mode=iter, ratio=0.250, alt=1.000, neu=3.000
+stem: Breitenkorrektur mode=iter, ratio=0.250, alt=1.000, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 1: Gesamtfehler=8.706
+stem: Breiten-Bracketing stem_width 2.000->2.000
+Runde 1: Gesamtfehler=9.820
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=0.500, diag=31.113->31.828, scale=1.0230
+circle: minRect Δcx=0.000, Δcy=0.500, diag=30.000->31.828, scale=1.0609
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=48.664
-stem: minRect Δcx=0.500, Δcy=0.000, diag=18.248->18.439, scale=1.0105
+circle: Fehler=60.204
+circle: Breiten-Bracketing stroke_circle 1.000->1.000
+stem: minRect Δcx=0.500, Δcy=0.000, diag=18.111->18.248, scale=1.0076
 stem: Parameter nach Mittelpunkt/Diagonale angepasst
-stem: Fehler=26.190
-stem: Breitenkorrektur mode=iter, ratio=0.800, alt=3.031, neu=3.000
+stem: Fehler=8.750
+stem: Breitenkorrektur mode=iter, ratio=0.750, alt=2.015, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 2: Gesamtfehler=8.012
-Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.500, diag=33.000->32.558, scale=0.9866
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=40.690
-stem: minRect Δcx=0.500, Δcy=0.500, diag=17.263->18.439, scale=1.0681
-stem: Parameter nach Mittelpunkt/Diagonale angepasst
-stem: Fehler=29.328
-stem: Breitenkorrektur mode=iter, ratio=0.800, alt=3.204, neu=3.000
-stem: Geometrie nach Elementabgleich aktualisiert
-Runde 3: Gesamtfehler=5.397
+stem: Breiten-Bracketing stem_width 2.000->2.000
+Runde 2: Gesamtfehler=4.984
 Gesamtfehler unter Schwellwert, Validierung beendet

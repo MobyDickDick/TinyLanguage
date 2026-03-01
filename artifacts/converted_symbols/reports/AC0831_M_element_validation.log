@@ -1,30 +1,31 @@
 Runde 1: elementweise Validierung gestartet
-circle: minRect Δcx=0.250, Δcy=0.750, diag=20.506->13.000, scale=0.6340
+circle: minRect Δcx=0.500, Δcy=1.000, diag=20.000->13.000, scale=0.6500
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=92.910
-stem: minRect Δcx=0.500, Δcy=1.500, diag=16.031->13.153, scale=0.8205
-stem: Parameter nach Mittelpunkt/Diagonale angepasst
-stem: Fehler=80.586
-stem: Breitenkorrektur mode=iter, ratio=0.667, alt=1.000, neu=2.000
+circle: Fehler=89.022
+circle: Breiten-Bracketing stroke_circle 1.000->1.000
+stem: Fehler=65.000
+stem: Breitenkorrektur mode=iter, ratio=0.333, alt=1.000, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 1: Gesamtfehler=27.386
+Runde 1: Gesamtfehler=26.259
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=0.500, diag=16.971->13.000, scale=0.7660
+circle: minRect Δcx=-0.000, Δcy=0.000, diag=17.000->13.000, scale=0.7647
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=91.569
-stem: minRect Δcx=0.500, Δcy=1.500, diag=14.142->13.342, scale=0.9434
+circle: Fehler=90.863
+circle: Breiten-Bracketing stroke_circle 1.000->1.000
+stem: minRect Δcx=0.500, Δcy=1.500, diag=16.125->13.342, scale=0.8274
 stem: Parameter nach Mittelpunkt/Diagonale angepasst
-stem: Fehler=41.833
-stem: Breitenkorrektur mode=iter, ratio=0.750, alt=1.887, neu=2.000
+stem: Fehler=35.633
+stem: Breitenkorrektur mode=iter, ratio=0.750, alt=1.700, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 2: Gesamtfehler=25.789
+Runde 2: Gesamtfehler=25.410
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=0.000, diag=14.866->13.000, scale=0.8745
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=90.765
+circle: Fehler=90.863
+circle: Breiten-Bracketing stroke_circle 1.000->1.000
 stem: minRect Δcx=0.500, Δcy=1.500, diag=14.142->13.342, scale=0.9434
 stem: Parameter nach Mittelpunkt/Diagonale angepasst
 stem: Fehler=41.833
 stem: Breitenkorrektur mode=iter, ratio=0.750, alt=1.887, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 3: Gesamtfehler=25.137
+Runde 3: Gesamtfehler=25.036

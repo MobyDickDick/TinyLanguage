@@ -2,8 +2,11 @@ Runde 1: elementweise Validierung gestartet
 circle: minRect Δcx=0.500, Δcy=0.500, diag=22.627->26.000, scale=1.1490
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=69.922
-stem: Fehler=66.438
-stem: Breitenkorrektur mode=iter, ratio=0.250, alt=1.000, neu=2.000
+circle: Breiten-Bracketing stroke_circle 1.000->1.000
+stem: minRect Δcx=0.000, Δcy=0.500, diag=15.033->14.318, scale=0.9524
+stem: Parameter nach Mittelpunkt/Diagonale angepasst
+stem: Fehler=63.125
+stem: Breitenkorrektur mode=iter, ratio=0.500, alt=1.000, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
-Runde 1: Gesamtfehler=5.043
+Runde 1: Gesamtfehler=2.206
 Gesamtfehler unter Schwellwert, Validierung beendet

@@ -1,5 +1,15 @@
 Runde 1: elementweise Validierung gestartet
-circle: Fehler=88.194
+circle: Fehler=91.452
+circle: Breiten-Bracketing stroke_circle 1.000->1.000
 arm: Fehler=24.571
-Runde 1: Gesamtfehler=22.587
-Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet
+Runde 1: Gesamtfehler=23.448
+Runde 2: elementweise Validierung gestartet
+circle: Fehler=91.452
+circle: Breiten-Bracketing stroke_circle 1.000->1.000
+arm: Fehler=24.571
+Runde 2: Gesamtfehler=23.448
+Runde 3: elementweise Validierung gestartet
+circle: Fehler=91.452
+circle: Breiten-Bracketing stroke_circle 1.000->1.000
+arm: Fehler=24.571
+Runde 3: Gesamtfehler=23.448

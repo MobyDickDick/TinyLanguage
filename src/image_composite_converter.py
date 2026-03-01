@@ -2050,10 +2050,7 @@ class Action:
         probe["r"] = float(np.clip(radius_value, 1.0, max_r))
 
         if probe.get("arm_enabled"):
-            cy = float(probe.get("cy", 0.0))
-            probe["arm_y1"] = cy
-            probe["arm_y2"] = cy
-            probe["arm_x2"] = max(0.0, float(probe.get("cx", 0.0)) - float(probe["r"]))
+            Action._reanchor_arm_to_circle_edge(probe, float(probe["r"]))
 
         if probe.get("stem_enabled"):
             probe["stem_top"] = float(probe.get("cy", 0.0)) + float(probe["r"])
@@ -2068,6 +2065,42 @@ class Action:
             return float("inf")
 
         return Action._masked_error(img_orig, elem_render, mask_orig)
+
+    @staticmethod
+    def _reanchor_arm_to_circle_edge(params: dict, radius: float) -> None:
+        """Keep arm orientation but snap the circle-side endpoint to the new radius."""
+        if not params.get("arm_enabled"):
+            return
+        if not all(k in params for k in ("arm_x1", "arm_y1", "arm_x2", "arm_y2", "cx", "cy")):
+            return
+
+        cx = float(params.get("cx", 0.0))
+        cy = float(params.get("cy", 0.0))
+        x1 = float(params.get("arm_x1", cx))
+        y1 = float(params.get("arm_y1", cy))
+        x2 = float(params.get("arm_x2", cx))
+        y2 = float(params.get("arm_y2", cy))
+
+        # Preserve dominant orientation (horizontal vs. vertical).
+        is_horizontal = abs(x2 - x1) >= abs(y2 - y1)
+        if is_horizontal:
+            params["arm_y1"] = cy
+            params["arm_y2"] = cy
+            p1_dist = abs(x1 - cx)
+            p2_dist = abs(x2 - cx)
+            if p2_dist <= p1_dist:
+                params["arm_x2"] = cx - radius if x1 <= cx else cx + radius
+            else:
+                params["arm_x1"] = cx - radius if x2 <= cx else cx + radius
+        else:
+            params["arm_x1"] = cx
+            params["arm_x2"] = cx
+            p1_dist = abs(y1 - cy)
+            p2_dist = abs(y2 - cy)
+            if p2_dist <= p1_dist:
+                params["arm_y2"] = cy - radius if y1 <= cy else cy + radius
+            else:
+                params["arm_y1"] = cy - radius if y2 <= cy else cy + radius
 
     @staticmethod
     def _optimize_circle_radius_bracket(img_orig: np.ndarray, params: dict, logs: list[str]) -> bool:
@@ -2118,9 +2151,7 @@ class Action:
         old_r = current
         params["r"] = best_r
         if params.get("arm_enabled"):
-            params["arm_y1"] = float(params.get("cy", 0.0))
-            params["arm_y2"] = float(params.get("cy", 0.0))
-            params["arm_x2"] = max(0.0, float(params.get("cx", 0.0)) - best_r)
+            Action._reanchor_arm_to_circle_edge(params, best_r)
         if params.get("stem_enabled"):
             params["stem_top"] = float(params.get("cy", 0.0)) + best_r
 

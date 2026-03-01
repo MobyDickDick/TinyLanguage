@@ -72,6 +72,37 @@ def test_validate_badge_logs_extent_bracketing_for_line_elements() -> None:
     assert any("arm: Längen-Bracketing" in line for line in logs)
 
 
+
+
+def test_optimize_circle_radius_keeps_ac0813_vertical_arm_orientation() -> None:
+    """AC0813 radius optimization must not collapse the vertical arm into a horizontal one."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    class DummyImg:
+        shape = (25, 15, 3)
+
+    img = DummyImg()
+    params = Action._default_ac0813_params(15, 25)
+    params = Action._finalize_ac08_style("AC0813", params)
+    logs: list[str] = []
+
+    original = Action._element_error_for_circle_radius
+
+    def prefer_smallest_radius(_img: object, _params: dict, radius_value: float) -> float:
+        return float(radius_value)
+
+    Action._element_error_for_circle_radius = staticmethod(prefer_smallest_radius)
+    try:
+        changed = Action._optimize_circle_radius_bracket(img, params, logs)
+    finally:
+        Action._element_error_for_circle_radius = original
+
+    assert changed is True
+    assert abs(float(params["arm_x1"]) - float(params["arm_x2"])) < 1e-6
+    assert float(params["arm_y1"]) < float(params["arm_y2"])
+    assert abs(float(params["arm_y2"]) - (float(params["cy"]) - float(params["r"]))) < 1e-6
+
 def test_tiny_circle_radius_bracketing_limits_downscale() -> None:
     """Tiny symbols should not shrink circle radius by more than 10% in one step."""
     if image_composite_converter.np is None:

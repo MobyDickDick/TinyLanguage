@@ -3,7 +3,7 @@
  .pytest_cache
  .tinylanguage/
  .tinylanguage
- .ven/
+ .venv/
  .vens
  # Virtual environments
 venv/

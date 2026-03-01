@@ -4,5 +4,5 @@ circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=68.403
 circle: Breiten-Bracketing stroke_circle 1.000->1.000
 arm: Fehler=65.188
-Runde 1: Gesamtfehler=4.147
+Runde 1: Gesamtfehler=4.071
 Gesamtfehler unter Schwellwert, Validierung beendet

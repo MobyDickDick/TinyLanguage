@@ -19,7 +19,6 @@ PYTHON = sys.executable  # Absolute path to the active Python executable
 VENV_ROOTS = [
     Path(path) for path in [os.environ.get("TINYLANGUAGE_VENV"), os.environ.get("VIRTUAL_ENV")] if path
 ] + [
-    PROJECT_ROOT / ".ven",
     PROJECT_ROOT / ".venv",
 ]
 

@@ -11,10 +11,10 @@ circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=66.313
 circle: Breiten-Bracketing stroke_circle 1.000->1.000
 arm: Fehler=69.914
-Runde 2: Gesamtfehler=15.284
+Runde 2: Gesamtfehler=15.214
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=0.000, diag=26.000->26.000, scale=1.0000
 circle: Fehler=56.954
 circle: Breiten-Bracketing stroke_circle 1.000->1.000
 arm: Fehler=69.914
-Runde 3: Gesamtfehler=15.284
+Runde 3: Gesamtfehler=15.214

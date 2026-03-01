@@ -1,7 +1,7 @@
 {
-  "python.defaultInterpreterPath": "${workspaceFolder}\\.ven\\Scripts\\python.exe",
+  "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
   "python.analysis.extraPaths": [],
   "tinylanguage.runtimePath": "${workspaceFolder}/src/tiny_language.py",
-  "tinylanguage.pythonPath": "${workspaceFolder}\\.ven\\Scripts\\python.exe",
+  "tinylanguage.pythonPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
   "python.terminal.launchArgs": []
 }

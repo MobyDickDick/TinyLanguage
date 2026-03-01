@@ -3,26 +3,26 @@ circle: minRect Δcx=0.000, Δcy=-0.500, diag=11.314->13.454, scale=1.1891
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=70.980
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->60.712, 0.825->60.712, 0.850->60.712
-text: Fehler=103.920
-text: Breiten-Bracketing co2_font_scale 0.820->1.000; Kandidaten=0.974->103.360, 0.999->103.120, 1.025->99.500
-Runde 1: Gesamtfehler=38.262
+text: Fehler=107.208
+text: Breiten-Bracketing co2_font_scale 0.820->1.000; Kandidaten=0.974->107.042, 0.999->106.040, 1.025->106.793
+Runde 1: Gesamtfehler=38.942
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=0.500, Δcy=0.000, diag=13.000->15.811, scale=1.2163
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=60.712
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->66.104, 0.825->66.104, 0.850->66.104
-text: minRect Δcx=0.500, Δcy=3.500, diag=8.544->9.849, scale=1.1527
+text: minRect Δcx=0.000, Δcy=3.500, diag=8.544->8.944, scale=1.0468
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=89.512
-text: Breiten-Bracketing co2_font_scale 1.000->1.000; Kandidaten=1.188->76.062, 1.219->74.958, 1.250->73.271
-Runde 2: Gesamtfehler=38.569
+text: Fehler=93.000
+text: Breiten-Bracketing co2_font_scale 1.000->1.000; Kandidaten=1.125->77.154, 1.156->76.261, 1.188->77.435
+Runde 2: Gesamtfehler=37.631
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=-0.200, Δcy=-0.100, diag=14.866->16.840, scale=1.1328
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=66.104
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->76.438, 0.825->76.438, 0.850->76.438
-text: minRect Δcx=0.230, Δcy=1.390, diag=8.981->9.849, scale=1.0966
+text: minRect Δcx=0.000, Δcy=1.500, diag=8.544->8.944, scale=1.0468
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=74.436
-text: Breiten-Bracketing co2_font_scale 1.000->1.000; Kandidaten=1.062->70.383, 1.094->70.851, 1.125->70.021
-Runde 3: Gesamtfehler=42.173
+text: Fehler=81.325
+text: Breiten-Bracketing co2_font_scale 1.000->1.000; Kandidaten=1.062->75.356, 1.094->73.511, 1.125->73.457
+Runde 3: Gesamtfehler=44.289

@@ -1690,6 +1690,25 @@ class Action:
                 or abs(params["arm_stroke"] - old_stroke) > 0.02
             )
 
+        elif element == "text" and params.get("draw_text", True):
+            mode = str(params.get("text_mode", "")).lower()
+            r = max(1.0, float(params.get("r", min(w, h) * 0.45)))
+
+            # Keep text alignment iterative on the vertical axis so badges such as
+            # AC0820_L can converge against the source when "CO" drifts too high.
+            if mode == "co2":
+                old_dy = float(params.get("co2_dy", 0.0))
+                params["co2_dy"] = float(np.clip(old_dy + center_dy * 0.75, -0.45 * r, 0.45 * r))
+                changed = abs(params["co2_dy"] - old_dy) > 0.02
+            elif mode == "voc":
+                old_dy = float(params.get("voc_dy", 0.0))
+                params["voc_dy"] = float(np.clip(old_dy + center_dy * 0.75, -0.45 * r, 0.45 * r))
+                changed = abs(params["voc_dy"] - old_dy) > 0.02
+            elif "ty" in params:
+                old_ty = float(params.get("ty", 0.0))
+                params["ty"] = float(np.clip(old_ty + center_dy * 0.75, 0.0, float(h - 1)))
+                changed = abs(params["ty"] - old_ty) > 0.02
+
         return changed
 
     @staticmethod

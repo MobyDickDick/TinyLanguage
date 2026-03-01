@@ -704,12 +704,62 @@ class Action:
         params["text_gray"] = int(round(params.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY)))
         params["co2_font_scale"] = float(params.get("co2_font_scale", 0.82))
         params["co2_sub_font_scale"] = float(params.get("co2_sub_font_scale", 66.0))
-        params["co2_dy"] = float(params.get("co2_dy", -0.02 * float(params.get("r", 0.0))))
-        # Keep "CO" optically centered and place subscript "2" relative to that anchor.
-        # This avoids the whole "CO₂" run being centered as a block (which can make "CO"
-        # appear too far to the left and too high on some renderers).
+        params["co2_dy"] = float(params.get("co2_dy", 0.0))
+        # Keep "CO" as an explicit run so the subscript position remains stable across
+        # renderers. The final x/y position is then corrected optically from computed
+        # label metrics (see _co2_layout), which is robust for different circle sizes.
         params["co2_anchor_mode"] = str(params.get("co2_anchor_mode", "co"))
         return params
+
+    @staticmethod
+    def _co2_layout(params: dict) -> dict[str, float | str]:
+        """Compute renderer-independent CO₂ text metrics and placement."""
+        cx = float(params.get("cx", 0.0))
+        cy = float(params.get("cy", 0.0))
+        r = max(1.0, float(params.get("r", 1.0)))
+        font_size = max(4.0, r * float(params.get("co2_font_scale", 0.82)))
+        sub_scale = float(params.get("co2_sub_font_scale", 66.0))
+        sub_font_px = font_size * (sub_scale / 100.0)
+        anchor_mode = str(params.get("co2_anchor_mode", "co")).lower()
+
+        co_width = font_size * 1.04
+        gap = font_size * 0.03
+        sub_w = sub_font_px * 0.62
+
+        if anchor_mode == "co":
+            # Center the *whole* CO₂ cluster, not only "CO", so text does not drift right
+            # when the subscript is attached.
+            cluster_shift = (gap + sub_w) / 2.0
+            co_x = cx - cluster_shift
+            x1 = co_x - (co_width / 2.0)
+            subscript_x = co_x + (co_width / 2.0) + gap
+            x2 = subscript_x + sub_w
+        else:
+            width = font_size * 1.65
+            x1 = cx - (width / 2.0)
+            x2 = cx + (width / 2.0)
+            co_x = cx
+            subscript_x = cx + (font_size * 0.32)
+
+        # Capital glyphs usually appear slightly high when simply middle-anchored.
+        # Apply a proportional optical correction so the label sits visually centered.
+        y_base = cy + float(params.get("co2_dy", 0.0)) + (font_size * 0.05)
+        subscript_y = y_base + (font_size * 0.18)
+        height = font_size * 0.95
+
+        return {
+            "anchor_mode": anchor_mode,
+            "font_size": font_size,
+            "sub_scale": sub_scale,
+            "sub_font_px": sub_font_px,
+            "co_x": co_x,
+            "y_base": y_base,
+            "subscript_x": subscript_x,
+            "subscript_y": subscript_y,
+            "x1": x1,
+            "x2": x2,
+            "height": height,
+        }
 
     @staticmethod
     def _apply_voc_label(params: dict) -> dict:
@@ -1374,28 +1424,23 @@ class Action:
                     )
                 )
             elif p.get("text_mode") == "co2":
-                radius = p.get("r", min(w, h) * 0.4)
-                font_size = max(4.0, radius * p.get("co2_font_scale", 0.82))
-                sub_scale = p.get("co2_sub_font_scale", 66.0)
-                co2_dy = p.get("co2_dy", 0.0)
-                y_text = p["cy"] + co2_dy
-                anchor_mode = str(p.get("co2_anchor_mode", "co")).lower()
+                layout = Action._co2_layout(p)
+                font_size = float(layout["font_size"])
+                sub_scale = float(layout["sub_scale"])
+                y_text = float(layout["y_base"])
+                anchor_mode = str(layout["anchor_mode"])
                 if anchor_mode == "co":
-                    co_width = font_size * 1.04
-                    sub_font_px = font_size * (sub_scale / 100.0)
-                    subscript_x = p["cx"] + (co_width / 2.0) + (font_size * 0.03)
-                    subscript_y = y_text + (font_size * 0.18)
                     elements.append(
                         (
-                            f'  <text x="{p["cx"]:.4f}" y="{y_text:.4f}" fill="{Action.grayhex(p["text_gray"])}" '
+                            f'  <text x="{float(layout["co_x"]):.4f}" y="{y_text:.4f}" fill="{Action.grayhex(p["text_gray"])}" '
                             f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}" '
                             f'font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">CO</text>'
                         )
                     )
                     elements.append(
                         (
-                            f'  <text x="{subscript_x:.4f}" y="{subscript_y:.4f}" fill="{Action.grayhex(p["text_gray"])}" '
-                            f'font-family="Arial, Helvetica, sans-serif" font-size="{sub_font_px:.4f}" '
+                            f'  <text x="{float(layout["subscript_x"]):.4f}" y="{float(layout["subscript_y"]):.4f}" fill="{Action.grayhex(p["text_gray"])}" '
+                            f'font-family="Arial, Helvetica, sans-serif" font-size="{float(layout["sub_font_px"]):.4f}" '
                             f'font-style="normal" font-weight="600" text-anchor="start" dominant-baseline="middle">2</text>'
                         )
                     )
@@ -1888,20 +1933,11 @@ class Action:
             return (cx - (width / 2.0), y - (height / 2.0), cx + (width / 2.0), y + (height / 2.0))
 
         if mode == "co2":
-            font_size = max(4.0, r * float(params.get("co2_font_scale", 0.82)))
-            anchor_mode = str(params.get("co2_anchor_mode", "co")).lower()
-            if anchor_mode == "co":
-                co_width = font_size * 1.04
-                sub_w = font_size * (float(params.get("co2_sub_font_scale", 66.0)) / 100.0) * 0.62
-                width = co_width + (font_size * 0.03) + sub_w
-                x1 = cx - (co_width / 2.0)
-                x2 = x1 + width
-            else:
-                width = font_size * 1.65
-                x1 = cx - (width / 2.0)
-                x2 = cx + (width / 2.0)
-            height = font_size * 0.95
-            y = cy + float(params.get("co2_dy", 0.0))
+            layout = Action._co2_layout(params)
+            x1 = float(layout["x1"])
+            x2 = float(layout["x2"])
+            y = float(layout["y_base"])
+            height = float(layout["height"])
             return (x1, y - (height / 2.0), x2, y + (height / 2.0))
 
         # path/path_t fallback via known glyph bounds.

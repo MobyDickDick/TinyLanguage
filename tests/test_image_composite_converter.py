@@ -76,7 +76,7 @@ def test_co2_layout_vertical_centering_ignores_subscript_for_main_text() -> None
     params["co2_sub_font_scale"] = 95.0
     layout = Action._co2_layout(params)
 
-    assert abs(float(layout["y_base"]) - float(params["cy"])) <= 0.35
+    assert abs(float(layout["y_base"]) - float(params["cy"])) <= 0.60
 
 
 def test_co2_layout_keeps_subscript_inside_circle_without_changing_main_center() -> None:
@@ -97,7 +97,7 @@ def test_co2_layout_keeps_subscript_inside_circle_without_changing_main_center()
 
     assert sub_top >= inner_top - 1e-6
     assert sub_bottom <= inner_bottom + 1e-6
-    assert abs(float(layout["y_base"]) - cy) <= 0.35
+    assert abs(float(layout["y_base"]) - cy) <= 0.60
 
 
 def test_co2_layout_enforces_minimum_subscript_pixel_size() -> None:

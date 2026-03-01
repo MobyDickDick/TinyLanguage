@@ -765,7 +765,9 @@ class Action:
 
         # Capital glyphs usually appear slightly high when simply middle-anchored.
         # Apply a proportional optical correction so the label sits visually centered.
-        y_base = cy + float(params.get("co2_dy", 0.0)) + (font_size * 0.062)
+        # A stronger correction keeps the "CO" run from looking top-heavy in tiny
+        # AC08xx badges where antialiasing exaggerates baseline drift.
+        y_base = cy + float(params.get("co2_dy", 0.0)) + (font_size * 0.090)
         subscript_offset = font_size * 0.18
         height = font_size * 0.95
 

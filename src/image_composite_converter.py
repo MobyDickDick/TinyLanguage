@@ -1585,6 +1585,90 @@ class Action:
         weighted = gray_diff * valid
         return float(np.sum(weighted) / denom)
 
+    @staticmethod
+    def _element_width_key_and_bounds(element: str, params: dict, w: int, h: int) -> tuple[str, float, float] | None:
+        if element == "stem" and params.get("stem_enabled"):
+            low = max(1.0, float(params.get("stroke_circle", 1.0)) * 0.65)
+            high = max(low, min(float(w) * 0.25, float(params.get("stem_width_max", float(w) * 0.25))))
+            return "stem_width", low, high
+        if element == "arm" and params.get("arm_enabled"):
+            low = max(1.0, float(params.get("stroke_circle", 1.0)) * 0.65)
+            high = max(low, min(float(min(w, h)) * 0.20, float(params.get("r", min(w, h))) * 0.9))
+            return "arm_stroke", low, high
+        if element == "circle" and params.get("circle_enabled", True):
+            low = max(0.8, float(params.get("stroke_circle", 1.0)) * 0.6)
+            high = max(low, min(float(min(w, h)) * 0.22, float(params.get("r", min(w, h))) * 0.9))
+            return "stroke_circle", low, high
+        return None
+
+    @staticmethod
+    def _element_error_for_width(img_orig: np.ndarray, params: dict, element: str, width_value: float) -> float:
+        h, w = img_orig.shape[:2]
+        probe = dict(params)
+        info = Action._element_width_key_and_bounds(element, probe, w, h)
+        if info is None:
+            return float("inf")
+        key, low, high = info
+        probe[key] = float(np.clip(width_value, low, high))
+        if key == "stem_width" and probe.get("stem_enabled"):
+            probe["stem_x"] = float(probe.get("cx", probe.get("stem_x", 0.0))) - (probe["stem_width"] / 2.0)
+        elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(probe, element))
+        elem_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(elem_svg, w, h))
+        if elem_render is None:
+            return float("inf")
+        mask_orig = Action.extract_badge_element_mask(img_orig, probe, element)
+        if mask_orig is None:
+            return float("inf")
+        return Action._masked_error(img_orig, elem_render, mask_orig)
+
+    @staticmethod
+    def _optimize_element_width_bracket(img_orig: np.ndarray, params: dict, element: str, logs: list[str]) -> bool:
+        h, w = img_orig.shape[:2]
+        info = Action._element_width_key_and_bounds(element, params, w, h)
+        if info is None:
+            return False
+
+        key, low_bound, high_bound = info
+        current = float(params.get(key, 0.0))
+        if current <= 0.0:
+            return False
+
+        # Drei-Punkt-Bracketing: dünn < aktuell < dick.
+        low = max(low_bound, current * 0.75)
+        high = min(high_bound, current * 1.25)
+        if not (low < current < high):
+            return False
+
+        mid = current
+        values = {low, mid, high}
+        for _ in range(3):
+            low, mid, high = sorted(values)
+            e_low = Action._element_error_for_width(img_orig, params, element, low)
+            e_mid = Action._element_error_for_width(img_orig, params, element, mid)
+            e_high = Action._element_error_for_width(img_orig, params, element, high)
+            if not np.isfinite(e_low) or not np.isfinite(e_mid) or not np.isfinite(e_high):
+                return False
+
+            # Vergleiche die zwei benachbarten Paare über ihre Gesamtabweichung.
+            if (e_low + e_mid) <= (e_mid + e_high):
+                new_point = (low + mid) / 2.0
+                values = {low, mid, new_point}
+            else:
+                new_point = (mid + high) / 2.0
+                values = {mid, high, new_point}
+
+        candidates = sorted(values)
+        best_width = min(candidates, key=lambda v: Action._element_error_for_width(img_orig, params, element, v))
+        old = float(params.get(key, current))
+        if abs(best_width - old) < 0.02:
+            return False
+
+        params[key] = best_width
+        if key == "stem_width" and params.get("stem_enabled"):
+            params["stem_x"] = float(params.get("cx", params.get("stem_x", 0.0))) - (params["stem_width"] / 2.0)
+        logs.append(f"{element}: Breiten-Bracketing {key} {old:.3f}->{best_width:.3f}")
+        return True
+
 
     @staticmethod
     def _refine_stem_geometry_from_masks(params: dict, mask_orig: np.ndarray, mask_svg: np.ndarray, w: int) -> tuple[bool, str | None]:
@@ -1730,6 +1814,10 @@ class Action:
                     if changed:
                         round_changed = True
                         logs.append("stem: Geometrie nach Elementabgleich aktualisiert")
+
+                width_changed = Action._optimize_element_width_bracket(img_orig, params, element, logs)
+                if width_changed:
+                    round_changed = True
 
             full_svg = Action.generate_badge_svg(w, h, params)
             full_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(full_svg, w, h))

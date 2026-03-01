@@ -60,14 +60,14 @@ def _ratio_below_budget(ratio: float, min_ratio: float) -> bool:
     """Return True when ``ratio`` is materially below ``min_ratio``.
 
     Benchmarks can vary slightly on shared CI hosts. We therefore allow a
-    small relative tolerance (2%) plus two-decimal rounding before flagging
+    tiny relative tolerance (0.5%) plus two-decimal rounding before flagging
     a regression.
     """
 
     if ratio >= min_ratio:
         return False
 
-    tolerance_ratio = min_ratio * 0.98
+    tolerance_ratio = min_ratio * 0.995
     if ratio >= tolerance_ratio:
         return False
 

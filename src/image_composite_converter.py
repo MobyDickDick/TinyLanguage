@@ -431,10 +431,17 @@ class Action:
 
     @staticmethod
     def _align_stem_to_circle_center(params: dict) -> dict:
-        """Ensure vertical handle/stem extension runs through circle center."""
+        """Ensure vertical handle/stem extension runs through circle center.
+
+        For vertical connector badges (e.g. AC0811/AC0831/AC0836), force the
+        connector start to the circle edge so quantization does not leave a
+        visible gap between circle and stem.
+        """
         if params.get("stem_enabled") and params.get("circle_enabled", True):
             if "stem_width" in params and "cx" in params:
                 params["stem_x"] = float(params["cx"]) - (float(params["stem_width"]) / 2.0)
+            if "cy" in params and "r" in params:
+                params["stem_top"] = float(params["cy"]) + float(params["r"])
         return params
 
     @staticmethod
@@ -597,7 +604,10 @@ class Action:
         r = float(params.get("r", defaults.get("r", float(w) * 0.4)))
         stroke_circle = float(params.get("stroke_circle", defaults.get("stroke_circle", max(0.9, float(w) / 15.0))))
 
-        upper_circle = Action._estimate_upper_circle_from_foreground(img, defaults)
+        # Foreground contour estimation helps stem-only badges, but for VOC/CO2
+        # labels it can lock onto text blobs and shrink the fitted circle.
+        allow_upper_circle_estimate = str(params.get("text_mode", "")).lower() not in {"voc", "co2"}
+        upper_circle = Action._estimate_upper_circle_from_foreground(img, defaults) if allow_upper_circle_estimate else None
         if upper_circle is not None:
             ecx, ecy, er = upper_circle
             # Prefer robust foreground estimate for tiny/narrow AC0811 variants.
@@ -635,6 +645,13 @@ class Action:
             # min-rect alignment can otherwise pull circle/stem to one side.
             params["lock_circle_cx"] = True
             params["lock_stem_center_to_circle"] = True
+
+        # Keep text badges close to template radius; otherwise under-estimation
+        # shrinks both the circle and text size in variants such as AC0836_L.
+        if str(params.get("text_mode", "")).lower() in {"voc", "co2"}:
+            default_r = float(defaults.get("r", r))
+            r = float(np.clip(r, default_r * 0.95, default_r * 1.08))
+            params["r"] = r
 
         # AC0811 stems are intentionally thin. The generic contour fit can over-estimate
         # width when anti-aliased circle pixels bleed into the stem ROI, especially on
@@ -1764,7 +1781,47 @@ class Action:
             y2 = min(float(h), max(params.get("arm_y1", 0.0), params.get("arm_y2", 0.0)) + 1.0)
             pad = max(1.0, params.get("arm_stroke", params.get("stem_or_arm", 1.0)) * 0.8)
             return (xx >= (x1 - pad)) & (xx <= (x2 + pad)) & (yy >= (y1 - pad)) & (yy <= (y2 + pad))
+        if element == "text" and params.get("draw_text", True):
+            x1, y1, x2, y2 = Action._text_bbox(params)
+            x1 = max(0.0, x1 - 1.0)
+            y1 = max(0.0, y1 - 1.0)
+            x2 = min(float(w), x2 + 1.0)
+            y2 = min(float(h), y2 + 1.0)
+            return (xx >= x1) & (xx <= x2) & (yy >= y1) & (yy <= y2)
         return None
+
+    @staticmethod
+    def _text_bbox(params: dict) -> tuple[float, float, float, float]:
+        """Approximate text bounding box for semantic badge text modes."""
+        cx = float(params.get("cx", 0.0))
+        cy = float(params.get("cy", 0.0))
+        r = max(1.0, float(params.get("r", 1.0)))
+        mode = str(params.get("text_mode", "")).lower()
+
+        if mode == "voc":
+            font_size = max(4.0, r * float(params.get("voc_font_scale", 0.52)))
+            width = font_size * 1.95
+            height = font_size * 0.90
+            y = cy + float(params.get("voc_dy", 0.0))
+            return (cx - (width / 2.0), y - (height / 2.0), cx + (width / 2.0), y + (height / 2.0))
+
+        if mode == "co2":
+            font_size = max(4.0, r * float(params.get("co2_font_scale", 0.82)))
+            width = font_size * 1.65
+            height = font_size * 0.95
+            y = cy + float(params.get("co2_dy", 0.0))
+            return (cx - (width / 2.0), y - (height / 2.0), cx + (width / 2.0), y + (height / 2.0))
+
+        # path/path_t fallback via known glyph bounds.
+        s = float(params.get("s", 0.0))
+        tx = float(params.get("tx", cx))
+        ty = float(params.get("ty", cy))
+        xmin, ymin, xmax, ymax = Action._glyph_bbox(params.get("text_mode", "path"))
+        x1 = tx + (xmin * s)
+        y1 = ty + (ymin * s)
+        x2 = tx + (xmax * s)
+        y2 = ty + (ymax * s)
+        return (x1, y1, x2, y2)
 
     @staticmethod
     def _foreground_mask(img: np.ndarray) -> np.ndarray:
@@ -1789,7 +1846,7 @@ class Action:
     @staticmethod
     def _element_only_params(params: dict, element: str) -> dict:
         only = dict(params)
-        only["draw_text"] = False
+        only["draw_text"] = bool(params.get("draw_text", True) and element == "text")
         only["circle_enabled"] = element == "circle"
         only["stem_enabled"] = bool(params.get("stem_enabled") and element == "stem")
         only["arm_enabled"] = bool(params.get("arm_enabled") and element == "arm")
@@ -1823,6 +1880,14 @@ class Action:
             low = max(0.8, float(params.get("stroke_circle", 1.0)) * 0.6)
             high = max(low, min(float(min(w, h)) * 0.22, float(params.get("r", min(w, h))) * 0.9))
             return "stroke_circle", low, high
+        if element == "text" and params.get("draw_text", True):
+            mode = str(params.get("text_mode", "")).lower()
+            if mode == "voc":
+                cur = float(params.get("voc_font_scale", 0.52))
+                return "voc_font_scale", max(0.30, cur * 0.70), min(0.90, cur * 1.35)
+            if mode == "co2":
+                cur = float(params.get("co2_font_scale", 0.82))
+                return "co2_font_scale", max(0.45, cur * 0.72), min(1.20, cur * 1.35)
         return None
 
     @staticmethod
@@ -1978,6 +2043,8 @@ class Action:
             elements.append("stem")
         if params.get("arm_enabled"):
             elements.append("arm")
+        if params.get("draw_text", True):
+            elements.append("text")
 
         for round_idx in range(max_rounds):
             logs.append(f"Runde {round_idx + 1}: elementweise Validierung gestartet")

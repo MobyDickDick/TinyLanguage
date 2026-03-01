@@ -719,7 +719,9 @@ class Action:
         r = max(1.0, float(params.get("r", 1.0)))
         font_size = max(4.0, r * float(params.get("co2_font_scale", 0.82)))
         sub_scale = float(params.get("co2_sub_font_scale", 66.0))
-        sub_font_px = font_size * (sub_scale / 100.0)
+        # Tiny badges can otherwise rasterize the subscript into a barely visible
+        # blob or drop it entirely. Keep a conservative minimum pixel height.
+        sub_font_px = max(4.0, font_size * (sub_scale / 100.0))
         anchor_mode = str(params.get("co2_anchor_mode", "center_co")).lower()
 
         co_width = font_size * 1.04
@@ -739,6 +741,17 @@ class Action:
             x1 = co_x - (co_width / 2.0)
             subscript_x = co_x + (co_width / 2.0) + gap
             x2 = subscript_x + sub_w
+
+            # If that right-anchored subscript would run outside the inner circle,
+            # shift the label cluster left only as much as needed to keep "2" readable.
+            stroke = max(0.8, float(params.get("stroke_circle", 1.0)))
+            inner_right = cx + max(1.0, r - stroke)
+            overflow = x2 - inner_right
+            if overflow > 0.0:
+                co_x -= overflow
+                x1 -= overflow
+                subscript_x -= overflow
+                x2 -= overflow
 
         # Capital glyphs usually appear slightly high when simply middle-anchored.
         # Apply a proportional optical correction so the label sits visually centered.
@@ -806,10 +819,10 @@ class Action:
         cur_scale = float(p.get("co2_font_scale", 0.82))
         cur_font = max(4.0, r * cur_scale)
         cur_width = cur_font * 1.45
-        target_width = inner_diameter * 0.66
+        target_width = inner_diameter * 0.74
 
         adjusted_scale = cur_scale * (target_width / max(1e-6, cur_width))
-        p["co2_font_scale"] = float(max(0.82, min(1.05, adjusted_scale)))
+        p["co2_font_scale"] = float(max(0.90, min(1.12, adjusted_scale)))
         p["co2_sub_font_scale"] = float(max(60.0, min(68.0, float(p.get("co2_sub_font_scale", 66.0)))))
         p["co2_dy"] = float(max(-0.20 * r, min(0.20 * r, float(p.get("co2_dy", -0.02 * r)))))
         p["text_gray"] = int(round(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY)))

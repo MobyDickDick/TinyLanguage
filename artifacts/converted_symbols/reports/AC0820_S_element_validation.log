@@ -6,7 +6,7 @@ circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->60.712,
 circle: Radius-Bracketing r 4.720->5.000; Kandidaten=4.000->70.321, 4.500->59.691, 5.000->56.672, 5.500->66.094
 text: minRect Δcx=-0.500, Δcy=2.500, diag=3.606->8.544, scale=2.3697
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=103.321
+text: Fehler=97.429
 text: Breiten-Bracketing co2_font_scale 0.900->1.000; Kandidaten=1.069->85.459, 1.097->83.289, 1.125->81.684
 Runde 1: Gesamtfehler=34.404
 Runde 2: elementweise Validierung gestartet

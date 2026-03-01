@@ -9,11 +9,11 @@ stem: Fehler=39.971
 stem: Breitenkorrektur mode=iter, ratio=1.000, alt=1.066, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing stem_width 2.000->2.000; Kandidaten=1.500->46.725, 1.562->46.725, 1.625->46.725
-text: minRect Δcx=-1.500, Δcy=1.000, diag=7.810->13.038, scale=1.6694
+text: minRect Δcx=1.000, Δcy=1.000, diag=10.770->13.416, scale=1.2457
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=93.368
-text: Breiten-Bracketing co2_font_scale 0.820->1.000; Kandidaten=0.820->93.660, 0.846->94.760, 0.871->93.442
-Runde 1: Gesamtfehler=26.626
+text: Fehler=93.608
+text: Breiten-Bracketing co2_font_scale 0.820->1.000; Kandidaten=0.769->78.744, 0.794->77.974, 0.820->80.415
+Runde 1: Gesamtfehler=24.376
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=0.500, Δcy=-0.500, diag=26.173->17.464, scale=0.6673
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -25,11 +25,11 @@ stem: Fehler=46.725
 stem: Breitenkorrektur mode=iter, ratio=0.667, alt=2.145, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing stem_width 2.000->2.000; Kandidaten=1.500->49.431, 1.562->49.431, 1.625->49.431
-text: minRect Δcx=1.000, Δcy=1.000, diag=10.770->13.416, scale=1.2457
+text: minRect Δcx=1.000, Δcy=0.500, diag=11.180->13.416, scale=1.2000
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=93.367
-text: Breiten-Bracketing co2_font_scale 1.000->1.000; Kandidaten=1.125->84.255, 1.156->84.673, 1.188->85.382
-Runde 2: Gesamtfehler=24.087
+text: Fehler=83.863
+text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 1.000); Kandidaten=0.938->88.463, 0.969->86.122, 1.000->85.780
+Runde 2: Gesamtfehler=23.439
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.500, Δcy=0.000, diag=21.213->17.464, scale=0.8233
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -41,8 +41,8 @@ stem: Fehler=14.137
 stem: Breitenkorrektur mode=iter, ratio=1.000, alt=2.280, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing stem_width 2.000->2.000; Kandidaten=1.500->14.137, 1.562->14.137, 1.625->14.137
-text: minRect Δcx=1.000, Δcy=0.500, diag=8.944->11.180, scale=1.2500
+text: minRect Δcx=1.000, Δcy=0.500, diag=9.849->12.083, scale=1.2268
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=84.222
-text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 1.000); Kandidaten=1.000->84.222, 1.031->85.194, 1.062->86.579
-Runde 3: Gesamtfehler=22.398
+text: Fehler=89.658
+text: Breiten-Bracketing co2_font_scale 1.000->1.000; Kandidaten=1.125->79.026, 1.156->79.158, 1.188->84.674
+Runde 3: Gesamtfehler=22.516

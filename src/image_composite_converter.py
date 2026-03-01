@@ -1947,7 +1947,9 @@ class Action:
                 return "voc_font_scale", max(0.30, cur * 0.70), min(0.90, cur * 1.35)
             if mode == "co2":
                 cur = float(params.get("co2_font_scale", 0.82))
-                return "co2_font_scale", max(0.45, cur * 0.72), min(1.20, cur * 1.35)
+                # CO₂ labels in large variants can require a noticeably larger font
+                # than the historical cap of 1.20 to match the source symbol.
+                return "co2_font_scale", max(0.45, cur * 0.72), min(1.55, cur * 1.45)
         return None
 
     @staticmethod
@@ -1986,6 +1988,10 @@ class Action:
         low = max(low_bound, current * 0.75)
         high = min(high_bound, current * 1.25)
         if not (low < current < high):
+            logs.append(
+                f"{element}: Breiten-Bracketing übersprungen ({key}: current={current:.3f}, "
+                f"Range={low_bound:.3f}..{high_bound:.3f})"
+            )
             return False
 
         mid = current
@@ -1996,6 +2002,10 @@ class Action:
             e_mid = Action._element_error_for_width(img_orig, params, element, mid)
             e_high = Action._element_error_for_width(img_orig, params, element, high)
             if not np.isfinite(e_low) or not np.isfinite(e_mid) or not np.isfinite(e_high):
+                logs.append(
+                    f"{element}: Breiten-Bracketing abgebrochen ({key}) wegen nicht-finiten Fehlern "
+                    f"low={e_low:.3f}, mid={e_mid:.3f}, high={e_high:.3f}"
+                )
                 return False
 
             # Vergleiche die zwei benachbarten Paare über ihre Gesamtabweichung.
@@ -2007,9 +2017,18 @@ class Action:
                 values = {mid, high, new_point}
 
         candidates = sorted(values)
-        best_width = min(candidates, key=lambda v: Action._element_error_for_width(img_orig, params, element, v))
+        candidate_errors = [Action._element_error_for_width(img_orig, params, element, v) for v in candidates]
+        best_idx = int(np.argmin(candidate_errors))
+        best_width = candidates[best_idx]
         old = float(params.get(key, current))
         if abs(best_width - old) < 0.02:
+            logs.append(
+                f"{element}: Breiten-Bracketing keine relevante Änderung ({key}: {old:.3f}); "
+                f"Kandidaten="
+                + ", ".join(
+                    f"{v:.3f}->{e:.3f}" for v, e in zip(candidates, candidate_errors, strict=False)
+                )
+            )
             return False
 
         if key in {"stroke_circle", "arm_stroke", "stem_width"}:
@@ -2020,7 +2039,11 @@ class Action:
         params[key] = best_width
         if key == "stem_width" and params.get("stem_enabled"):
             params["stem_x"] = Action._snap_half(float(params.get("cx", params.get("stem_x", 0.0))) - (params["stem_width"] / 2.0))
-        logs.append(f"{element}: Breiten-Bracketing {key} {old:.3f}->{best_width:.3f}")
+        logs.append(
+            f"{element}: Breiten-Bracketing {key} {old:.3f}->{best_width:.3f}; "
+            f"Kandidaten="
+            + ", ".join(f"{v:.3f}->{e:.3f}" for v, e in zip(candidates, candidate_errors, strict=False))
+        )
         return True
 
 

@@ -225,6 +225,62 @@ class Action:
         return f"#{g:02x}{g:02x}{g:02x}"
 
     @staticmethod
+    def _snap_half(value: float) -> float:
+        return round(float(value) * 2.0) / 2.0
+
+    @staticmethod
+    def _snap_int_px(value: float, minimum: float = 1.0) -> float:
+        return float(max(int(round(float(minimum))), int(round(float(value)))))
+
+    @staticmethod
+    def _quantize_badge_params(params: dict, w: int, h: int) -> dict:
+        """Quantize geometry for bitmap-like sources.
+
+        - Coordinates/lengths use 0.5px steps.
+        - Line widths use integer pixel steps.
+        """
+        p = dict(params)
+
+        half_keys = (
+            "cx",
+            "cy",
+            "r",
+            "stem_x",
+            "stem_top",
+            "stem_bottom",
+            "arm_x1",
+            "arm_y1",
+            "arm_x2",
+            "arm_y2",
+            "tx",
+            "ty",
+            "co2_dy",
+        )
+        for key in half_keys:
+            if key in p:
+                p[key] = Action._snap_half(float(p[key]))
+
+        int_width_keys = ("stroke_circle", "arm_stroke", "stem_width")
+        for key in int_width_keys:
+            if key in p:
+                p[key] = Action._snap_int_px(float(p[key]), minimum=1.0)
+
+        if "stem_width_max" in p:
+            p["stem_width_max"] = max(1.0, Action._snap_half(float(p["stem_width_max"])))
+
+        if p.get("stem_enabled") and "cx" in p and "stem_width" in p:
+            p["stem_x"] = Action._snap_half(float(p["cx"]) - (float(p["stem_width"]) / 2.0))
+
+        if "stem_x" in p and "stem_width" in p:
+            p["stem_x"] = max(0.0, min(float(w) - float(p["stem_width"]), float(p["stem_x"])))
+        if "stem_top" in p:
+            p["stem_top"] = max(0.0, min(float(h), float(p["stem_top"])))
+        if "stem_bottom" in p:
+            p["stem_bottom"] = max(0.0, min(float(h), float(p["stem_bottom"])))
+
+        return p
+
+    @staticmethod
     def _normalize_light_circle_colors(params: dict) -> dict:
         params["fill_gray"] = Action.LIGHT_CIRCLE_FILL_GRAY
         params["stroke_gray"] = Action.LIGHT_CIRCLE_STROKE_GRAY
@@ -332,6 +388,10 @@ class Action:
         cx = float(w) / 2.0
         cy = float(w) / 2.0
         stem_width = max(1.0, float(w) * 0.10)
+        # AC0811 reference symbols use a visually slim vertical handle.
+        # Persist an explicit width ceiling so later fitting/validation
+        # steps cannot widen the stem beyond the template's intent.
+        stem_width_max = max(1.0, float(w) * 0.105)
         stem_len = max(2.0, float(h) - (cy + r))
 
         return Action._normalize_light_circle_colors({
@@ -344,6 +404,7 @@ class Action:
             "draw_text": False,
             "stem_enabled": True,
             "stem_width": stem_width,
+            "stem_width_max": stem_width_max,
             "stem_x": cx - (stem_width / 2.0),
             "stem_top": cy + r,
             "stem_bottom": min(float(h), (cy + r) + stem_len),
@@ -465,12 +526,17 @@ class Action:
         # width when anti-aliased circle pixels bleed into the stem ROI, especially on
         # larger "_L" variants. Keep the fitted value but clamp it to a narrow, plausible
         # band derived from the circle stroke and image width.
-        min_stem_width = max(1.0, stroke_circle * 0.75)
-        max_stem_width = max(min_stem_width, min(float(w) * 0.14, stroke_circle * 1.6))
+        min_stem_width = max(1.0, stroke_circle * 0.72)
+        default_stem_width_max = max(min_stem_width, min(float(w) * 0.12, stroke_circle * 1.35))
+        max_stem_width = max(
+            min_stem_width,
+            min(float(defaults.get("stem_width_max", default_stem_width_max)), default_stem_width_max),
+        )
         stem_width = max(min_stem_width, min(raw_stem_width, max_stem_width))
 
         params["stem_enabled"] = True
         params["stem_width"] = stem_width
+        params["stem_width_max"] = max_stem_width
         params["stem_x"] = cx - (params["stem_width"] / 2.0)
         params["stem_top"] = max(0.0, min(float(h), cy + r))
         params["stem_bottom"] = float(h)
@@ -1050,6 +1116,7 @@ class Action:
     @staticmethod
     def generate_badge_svg(w: int, h: int, p: dict) -> str:
         p = Action._align_stem_to_circle_center(dict(p))
+        p = Action._quantize_badge_params(p, w, h)
         elements = [
             f'<svg width="{w}px" height="{h}px" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">'
         ]
@@ -1575,6 +1642,95 @@ class Action:
         weighted = gray_diff * valid
         return float(np.sum(weighted) / denom)
 
+    @staticmethod
+    def _element_width_key_and_bounds(element: str, params: dict, w: int, h: int) -> tuple[str, float, float] | None:
+        if element == "stem" and params.get("stem_enabled"):
+            low = max(1.0, float(params.get("stroke_circle", 1.0)) * 0.65)
+            high = max(low, min(float(w) * 0.25, float(params.get("stem_width_max", float(w) * 0.25))))
+            return "stem_width", low, high
+        if element == "arm" and params.get("arm_enabled"):
+            low = max(1.0, float(params.get("stroke_circle", 1.0)) * 0.65)
+            high = max(low, min(float(min(w, h)) * 0.20, float(params.get("r", min(w, h))) * 0.9))
+            return "arm_stroke", low, high
+        if element == "circle" and params.get("circle_enabled", True):
+            low = max(0.8, float(params.get("stroke_circle", 1.0)) * 0.6)
+            high = max(low, min(float(min(w, h)) * 0.22, float(params.get("r", min(w, h))) * 0.9))
+            return "stroke_circle", low, high
+        return None
+
+    @staticmethod
+    def _element_error_for_width(img_orig: np.ndarray, params: dict, element: str, width_value: float) -> float:
+        h, w = img_orig.shape[:2]
+        probe = dict(params)
+        info = Action._element_width_key_and_bounds(element, probe, w, h)
+        if info is None:
+            return float("inf")
+        key, low, high = info
+        probe[key] = float(np.clip(width_value, low, high))
+        if key == "stem_width" and probe.get("stem_enabled"):
+            probe["stem_x"] = float(probe.get("cx", probe.get("stem_x", 0.0))) - (probe["stem_width"] / 2.0)
+        elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(probe, element))
+        elem_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(elem_svg, w, h))
+        if elem_render is None:
+            return float("inf")
+        mask_orig = Action.extract_badge_element_mask(img_orig, probe, element)
+        if mask_orig is None:
+            return float("inf")
+        return Action._masked_error(img_orig, elem_render, mask_orig)
+
+    @staticmethod
+    def _optimize_element_width_bracket(img_orig: np.ndarray, params: dict, element: str, logs: list[str]) -> bool:
+        h, w = img_orig.shape[:2]
+        info = Action._element_width_key_and_bounds(element, params, w, h)
+        if info is None:
+            return False
+
+        key, low_bound, high_bound = info
+        current = float(params.get(key, 0.0))
+        if current <= 0.0:
+            return False
+
+        # Drei-Punkt-Bracketing: dünn < aktuell < dick.
+        low = max(low_bound, current * 0.75)
+        high = min(high_bound, current * 1.25)
+        if not (low < current < high):
+            return False
+
+        mid = current
+        values = {low, mid, high}
+        for _ in range(3):
+            low, mid, high = sorted(values)
+            e_low = Action._element_error_for_width(img_orig, params, element, low)
+            e_mid = Action._element_error_for_width(img_orig, params, element, mid)
+            e_high = Action._element_error_for_width(img_orig, params, element, high)
+            if not np.isfinite(e_low) or not np.isfinite(e_mid) or not np.isfinite(e_high):
+                return False
+
+            # Vergleiche die zwei benachbarten Paare über ihre Gesamtabweichung.
+            if (e_low + e_mid) <= (e_mid + e_high):
+                new_point = (low + mid) / 2.0
+                values = {low, mid, new_point}
+            else:
+                new_point = (mid + high) / 2.0
+                values = {mid, high, new_point}
+
+        candidates = sorted(values)
+        best_width = min(candidates, key=lambda v: Action._element_error_for_width(img_orig, params, element, v))
+        old = float(params.get(key, current))
+        if abs(best_width - old) < 0.02:
+            return False
+
+        if key in {"stroke_circle", "arm_stroke", "stem_width"}:
+            best_width = Action._snap_int_px(best_width, minimum=1.0)
+        else:
+            best_width = Action._snap_half(best_width)
+
+        params[key] = best_width
+        if key == "stem_width" and params.get("stem_enabled"):
+            params["stem_x"] = Action._snap_half(float(params.get("cx", params.get("stem_x", 0.0))) - (params["stem_width"] / 2.0))
+        logs.append(f"{element}: Breiten-Bracketing {key} {old:.3f}->{best_width:.3f}")
+        return True
+
 
     @staticmethod
     def _refine_stem_geometry_from_masks(params: dict, mask_orig: np.ndarray, mask_svg: np.ndarray, w: int) -> tuple[bool, str | None]:
@@ -1591,14 +1747,23 @@ class Action:
         ratio = svg_w / orig_w
 
         expected_cx = float(params.get("cx", (ox1 + ox2) / 2.0))
-        y_start = float(params.get("stem_top", 0.0)) + 1.0
+        stroke = float(params.get("stroke_circle", 1.0))
+        # Skip a small band right below the circle edge so anti-aliased ring/fill
+        # pixels do not inflate stem width estimation.
+        y_start = float(params.get("stem_top", 0.0)) + max(1.0, stroke * 2.0)
         y_end = float(params.get("stem_bottom", mask_orig.shape[0]))
         est = Action._estimate_vertical_stem_from_mask(mask_orig, expected_cx, int(y_start), int(y_end))
 
         if est is not None:
             est_cx, est_width = est
             min_w = max(1.0, float(params.get("stroke_circle", 1.0)) * 0.70)
-            max_w = max(min_w, min(float(w) * 0.18, float(params.get("r", 1.0)) * 0.80))
+            max_w = max(
+                min_w,
+                min(
+                    float(params.get("stem_width_max", float(w) * 0.18)),
+                    min(float(w) * 0.18, float(params.get("r", 1.0)) * 0.80),
+                ),
+            )
             target_width = max(min_w, min(est_width, max_w))
             if bool(params.get("lock_stem_center_to_circle", False)):
                 target_cx = float(params.get("cx", est_cx))
@@ -1606,10 +1771,11 @@ class Action:
                 target_cx = est_cx
             estimate_mode = "iter"
         else:
-            if 0.92 <= ratio <= 1.10:
+            if 0.95 <= ratio <= 1.05:
                 return False, None
             target_width = float(params.get("stem_width", svg_w)) * (orig_w / svg_w)
-            target_width = max(1.0, min(target_width, float(w) * 0.20))
+            stem_width_cap = float(params.get("stem_width_max", float(w) * 0.20))
+            target_width = max(1.0, min(target_width, min(float(w) * 0.20, stem_width_cap)))
             target_cx = (ox1 + ox2) / 2.0
             estimate_mode = "bbox"
 
@@ -1620,8 +1786,11 @@ class Action:
         if width_delta < 0.05 and 0.90 <= ratio_after <= 1.12:
             return False, None
 
+        stem_width_cap = float(params.get("stem_width_max", float(w) * 0.20))
+        target_width = min(target_width, stem_width_cap)
+        target_width = Action._snap_int_px(target_width, minimum=1.0)
         params["stem_width"] = target_width
-        params["stem_x"] = max(0.0, min(float(w) - target_width, target_cx - (target_width / 2.0)))
+        params["stem_x"] = Action._snap_half(max(0.0, min(float(w) - target_width, target_cx - (target_width / 2.0))))
         return True, (
             f"stem: Breitenkorrektur mode={estimate_mode}, ratio={ratio:.3f}, "
             f"alt={old_width:.3f}, neu={target_width:.3f}"
@@ -1708,6 +1877,10 @@ class Action:
                     if changed:
                         round_changed = True
                         logs.append("stem: Geometrie nach Elementabgleich aktualisiert")
+
+                width_changed = Action._optimize_element_width_bracket(img_orig, params, element, logs)
+                if width_changed:
+                    round_changed = True
 
             full_svg = Action.generate_badge_svg(w, h, params)
             full_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(full_svg, w, h))

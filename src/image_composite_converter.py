@@ -817,42 +817,35 @@ class Action:
 
     @staticmethod
     def _default_ac0812_params(w: int, h: int) -> dict:
-        """AC0812 is AC0811 rotated 90° clockwise."""
-        base = Action._default_ac0811_params(w, h)
-        c = float(w) / 2.0
+        """AC0812 is horizontally elongated: left arm, circle on the right."""
+        if w <= 0 or h <= 0:
+            return Action._default_ac081x_shared(w, h)
 
-        def rotate_clockwise(x: float, y: float) -> tuple[float, float]:
-            # image-space clockwise description maps to mathematically counter-clockwise
-            # because y grows downward in raster coordinates.
-            return c - (y - c), c + (x - c)
+        # Like AC0811/AC0813, size from the narrow side so tiny variants keep
+        # the intended visual circle diameter.
+        r = float(h) * 0.4
+        stroke_circle = max(0.9, float(h) / 15.0)
+        cx = float(w) - (float(h) / 2.0)
+        cy = float(h) / 2.0
+        arm_stroke = max(1.0, float(h) * 0.10)
 
-        left_x, left_y = rotate_clockwise(float(base["stem_x"]), float(base["stem_top"]))
-        right_x, right_y = rotate_clockwise(float(base["stem_x"] + base["stem_width"]), float(base["stem_top"]))
-        x1, y1 = rotate_clockwise(float(base["stem_x"]), float(base["stem_bottom"]))
-        x2, y2 = rotate_clockwise(float(base["stem_x"] + base["stem_width"]), float(base["stem_bottom"]))
-
-        arm_anchor_x = (left_x + right_x) / 2.0
-        arm_anchor_y = (left_y + right_y) / 2.0
-        arm_end_x = min(x1, x2)
-        arm_y = (y1 + y2) / 2.0
-
-        circle_x, circle_y = rotate_clockwise(float(base["cx"]), float(base["cy"]))
-
-        return Action._normalize_light_circle_colors({
-            "cx": circle_x,
-            "cy": circle_y,
-            "r": float(base["r"]),
-            "stroke_circle": float(base["stroke_circle"]),
-            "stroke_gray": int(base["stroke_gray"]),
-            "fill_gray": int(base["fill_gray"]),
-            "draw_text": False,
-            "arm_enabled": True,
-            "arm_x1": max(0.0, min(arm_anchor_x, arm_end_x)),
-            "arm_y1": arm_y,
-            "arm_x2": max(0.0, max(arm_anchor_x, arm_end_x)),
-            "arm_y2": arm_y,
-            "arm_stroke": max(1.0, abs(right_y - left_y)),
-        })
+        return Action._normalize_light_circle_colors(
+            {
+                "cx": cx,
+                "cy": cy,
+                "r": r,
+                "stroke_circle": stroke_circle,
+                "stroke_gray": Action.LIGHT_CIRCLE_STROKE_GRAY,
+                "fill_gray": Action.LIGHT_CIRCLE_FILL_GRAY,
+                "draw_text": False,
+                "arm_enabled": True,
+                "arm_x1": 0.0,
+                "arm_y1": cy,
+                "arm_x2": max(0.0, cx - r),
+                "arm_y2": cy,
+                "arm_stroke": arm_stroke,
+            }
+        )
 
     @staticmethod
     def _fit_ac0812_params_from_image(img: np.ndarray, defaults: dict) -> dict:
@@ -869,6 +862,13 @@ class Action:
         min_arm_stroke = max(1.0, stroke_circle * 0.75)
         max_arm_stroke = max(min_arm_stroke, min(float(h) * 0.14, stroke_circle * 1.6))
         arm_stroke = max(min_arm_stroke, min(raw_arm_stroke, max_arm_stroke))
+
+        if h <= 15 and not bool(params.get("draw_text", True)):
+            default_r = float(defaults.get("r", float(h) * 0.4))
+            # AC0812_S can lose roughly one anti-aliased ring pixel in contour/Hough
+            # fitting; keep tiny plain variants close to the semantic template size.
+            r = max(r, default_r * 0.98)
+            params["r"] = r
 
         params["arm_enabled"] = True
         params["arm_stroke"] = arm_stroke

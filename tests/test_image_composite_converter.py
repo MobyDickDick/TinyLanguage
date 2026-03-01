@@ -22,3 +22,12 @@ def test_co2_layout_legacy_cluster_mode_still_supported() -> None:
 
     assert layout["anchor_mode"] == "cluster"
     assert float(layout["co_x"]) < float(params["cx"])
+
+
+def test_default_ac0812_uses_height_based_circle_radius() -> None:
+    """AC0812 should size its circle from height so tiny variants don't shrink."""
+    params = Action._default_ac0812_params(25, 15)
+
+    assert abs(float(params["r"]) - 6.0) < 1e-6
+    assert abs(float(params["cx"]) - 17.5) < 1e-6
+    assert abs(float(params["arm_x2"]) - 11.5) < 1e-6

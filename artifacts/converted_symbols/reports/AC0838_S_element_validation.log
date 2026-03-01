@@ -3,7 +3,7 @@ circle: minRect Δcx=0.888, Δcy=-0.905, diag=14.000->17.452, scale=1.2466
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=84.070
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->71.723, 0.825->71.723, 0.850->71.723
-circle: Radius-Bracketing r 6.136->6.000; Kandidaten=5.000->77.097, 5.500->72.000, 6.000->70.480, 6.500->75.759, 7.000->72.330
+circle: Radius-Bracketing r 6.136->6.000; Kandidaten=5.500->72.000, 6.000->70.480, 6.500->75.759, 7.000->72.330
 arm: minRect Δcx=0.430, Δcy=0.490, diag=5.099->8.810, scale=1.7278
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=83.182
@@ -19,7 +19,7 @@ circle: minRect Δcx=0.250, Δcy=0.250, diag=17.889->17.564, scale=0.9819
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=70.480
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->68.500, 0.825->68.500, 0.850->68.500
-circle: Radius-Bracketing r 5.891->6.000; Kandidaten=5.000->76.508, 5.500->71.580, 6.000->71.250, 6.500->75.759, 7.000->71.701
+circle: Radius-Bracketing r 5.891->6.000; Kandidaten=5.500->71.580, 6.000->71.250, 6.500->75.759, 7.000->71.701
 arm: minRect Δcx=1.000, Δcy=1.000, diag=6.083->10.440, scale=1.7164
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=90.294

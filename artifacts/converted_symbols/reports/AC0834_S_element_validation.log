@@ -3,7 +3,7 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=14.000->17.029, scale=1.2164
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=90.750
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->76.312, 0.825->76.312, 0.850->76.312
-circle: Radius-Bracketing r 6.136->7.000; Kandidaten=5.000->87.691, 5.500->88.485, 6.000->76.487, 6.500->65.590, 7.000->58.833
+circle: Radius-Bracketing r 6.136->7.000; Kandidaten=5.500->88.485, 6.000->76.487, 6.500->65.590, 7.000->58.833
 arm: minRect Δcx=1.000, Δcy=0.000, diag=11.045->9.487, scale=0.8589
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=93.139
@@ -19,7 +19,7 @@ circle: minRect Δcx=0.000, Δcy=-0.500, diag=20.000->19.000, scale=0.9500
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=58.833
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->58.372, 0.825->58.372, 0.850->58.372
-circle: Radius-Bracketing r 6.650->6.500; Kandidaten=5.500->92.896, 6.000->79.675, 6.500->58.372, 7.000->59.308
+circle: Radius-Bracketing r 6.650->6.500; Kandidaten=6.000->79.675, 6.500->58.372, 7.000->59.308
 arm: Fehler=96.541
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..3.000)
 arm: Längen-Bracketing arm_len 12.438->15.500; Kandidaten=9.500->97.167, 12.500->96.541, 15.500->95.308
@@ -32,7 +32,7 @@ Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=0.000, diag=19.000->19.000, scale=1.0000
 circle: Fehler=58.372
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->58.372, 0.825->58.372, 0.850->58.372
-circle: Radius-Bracketing keine relevante Änderung (r: 6.500); Kandidaten=5.500->92.896, 6.000->79.675, 6.500->58.372, 7.000->59.308
+circle: Radius-Bracketing keine relevante Änderung (r: 6.500); Kandidaten=6.000->79.675, 6.500->58.372, 7.000->59.308
 arm: Fehler=95.308
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..3.000)
 arm: Längen-Bracketing arm_len 15.294->19.000; Kandidaten=11.500->97.784, 15.500->95.308, 19.000->92.415

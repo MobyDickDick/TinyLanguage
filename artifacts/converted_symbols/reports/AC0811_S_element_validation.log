@@ -3,7 +3,7 @@ circle: minRect Δcx=0.250, Δcy=0.250, diag=16.971->19.506, scale=1.1494
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=53.837
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->28.824, 0.825->28.824, 0.850->28.824
-circle: Radius-Bracketing r 6.621->6.500; Kandidaten=5.500->73.415, 6.000->53.800, 6.500->28.824, 7.000->31.314
+circle: Radius-Bracketing r 6.621->6.500; Kandidaten=6.000->53.800, 6.500->28.824, 7.000->31.314
 stem: Fehler=20.214
 stem: Breitenkorrektur mode=iter, ratio=0.250, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
@@ -15,7 +15,7 @@ circle: minRect Δcx=-0.100, Δcy=0.300, diag=18.974->19.606, scale=1.0333
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=28.824
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->24.510, 0.825->24.510, 0.850->24.510
-circle: Radius-Bracketing r 6.717->6.500; Kandidaten=5.500->70.525, 6.000->55.939, 6.500->24.510, 7.000->31.039
+circle: Radius-Bracketing r 6.717->6.500; Kandidaten=6.000->55.939, 6.500->24.510, 7.000->31.039
 stem: Fehler=24.429
 stem: Breitenkorrektur mode=iter, ratio=0.250, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
@@ -27,7 +27,7 @@ circle: minRect Δcx=-0.100, Δcy=-0.200, diag=19.000->19.606, scale=1.0319
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=24.510
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->28.824, 0.825->28.824, 0.850->28.824
-circle: Radius-Bracketing r 6.707->6.500; Kandidaten=5.500->73.415, 6.000->53.800, 6.500->28.824, 7.000->31.314
+circle: Radius-Bracketing r 6.707->6.500; Kandidaten=6.000->53.800, 6.500->28.824, 7.000->31.314
 stem: Fehler=20.214
 stem: Breitenkorrektur mode=iter, ratio=0.250, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert

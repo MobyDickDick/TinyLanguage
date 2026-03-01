@@ -3,7 +3,7 @@ circle: minRect Δcx=0.500, Δcy=0.000, diag=14.000->17.692, scale=1.2637
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=84.542
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->74.637, 0.825->74.637, 0.850->74.637
-circle: Radius-Bracketing r 6.136->6.500; Kandidaten=5.000->81.074, 5.500->78.610, 6.000->74.637, 6.500->70.810, 7.000->71.647
+circle: Radius-Bracketing r 6.136->6.500; Kandidaten=5.500->78.610, 6.000->74.637, 6.500->70.810, 7.000->71.647
 arm: Fehler=111.368
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..3.000)
 arm: Längen-Bracketing arm_len 10.325->13.000; Kandidaten=7.500->119.286, 10.500->111.368, 13.000->108.045
@@ -17,7 +17,7 @@ circle: minRect Δcx=0.000, Δcy=0.500, diag=18.385->19.000, scale=1.0335
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=70.810
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->67.060, 0.825->67.060, 0.850->67.060
-circle: Radius-Bracketing r 6.718->7.000; Kandidaten=5.500->84.769, 6.000->73.875, 6.500->67.060, 7.000->61.294
+circle: Radius-Bracketing r 6.718->7.000; Kandidaten=6.000->73.875, 6.500->67.060, 7.000->61.294
 arm: minRect Δcx=1.269, Δcy=0.846, diag=9.055->11.559, scale=1.2765
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=75.125
@@ -33,7 +33,7 @@ circle: minRect Δcx=0.000, Δcy=0.500, diag=20.000->19.000, scale=0.9500
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=61.294
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->67.060, 0.825->67.060, 0.850->67.060
-circle: Radius-Bracketing r 6.650->7.000; Kandidaten=5.500->84.744, 6.000->73.512, 6.500->67.060, 7.000->61.294
+circle: Radius-Bracketing r 6.650->7.000; Kandidaten=6.000->73.512, 6.500->67.060, 7.000->61.294
 arm: Fehler=80.067
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..3.000)
 arm: Längen-Bracketing arm_len 8.211->10.500; Kandidaten=6.000->88.385, 8.000->83.000, 10.500->79.053

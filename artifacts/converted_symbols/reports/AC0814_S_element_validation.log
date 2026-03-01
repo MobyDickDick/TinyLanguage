@@ -1,24 +1,27 @@
 Runde 1: elementweise Validierung gestartet
 circle: Fehler=91.452
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->91.452, 0.825->91.452, 0.850->91.452
-circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 4.000->inf, 4.500->89.333, 5.000->88.444, 5.500->79.487, 6.000->61.500
-arm: Fehler=24.571
+circle: Radius-Bracketing r 5.200->6.000; Kandidaten=4.500->89.333, 5.000->88.444, 5.500->79.487, 6.000->61.500
+arm: Fehler=91.750
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..3.000)
-arm: Längen-Bracketing arm_len 12.300->12.500; Kandidaten=9.000->33.357, 12.500->31.286, 15.500->31.286
-Runde 1: Gesamtfehler=23.699
+arm: Längen-Bracketing arm_len 11.200->11.000; Kandidaten=8.500->93.750, 11.000->91.750, 14.000->98.700
+Runde 1: Gesamtfehler=19.720
 Runde 2: elementweise Validierung gestartet
-circle: Fehler=91.452
-circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->91.452, 0.825->91.452, 0.850->91.452
-circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 4.000->inf, 4.500->89.333, 5.000->88.444, 5.500->79.487, 6.000->61.500
-arm: Fehler=31.286
+circle: minRect Δcx=0.500, Δcy=-0.000, diag=16.971->19.000, scale=1.1196
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=61.500
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->26.889, 0.825->26.889, 0.850->26.889
+circle: Radius-Bracketing r 6.718->6.500; Kandidaten=6.000->63.932, 6.500->26.889, 7.000->27.511
+arm: Fehler=91.750
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..3.000)
-arm: Längen-Bracketing arm_len 11.400->11.500; Kandidaten=8.500->44.571, 11.500->31.286, 14.500->31.286
-Runde 2: Gesamtfehler=23.699
+arm: Längen-Bracketing arm_len 11.275->8.500; Kandidaten=8.500->93.750, 11.500->95.625, 14.000->95.556
+Runde 2: Gesamtfehler=11.077
 Runde 3: elementweise Validierung gestartet
-circle: Fehler=91.452
-circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->91.452, 0.825->91.452, 0.850->91.452
-circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 4.000->inf, 4.500->89.333, 5.000->88.444, 5.500->79.487, 6.000->61.500
-arm: Fehler=31.286
+circle: minRect Δcx=0.000, Δcy=0.000, diag=19.000->19.000, scale=1.0000
+circle: Fehler=26.889
+circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->26.889, 0.825->26.889, 0.850->26.889
+circle: Radius-Bracketing keine relevante Änderung (r: 6.500); Kandidaten=6.000->63.932, 6.500->26.889, 7.000->27.511
+arm: Fehler=93.750
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..3.000)
-arm: Längen-Bracketing arm_len 11.450->11.500; Kandidaten=8.500->44.571, 11.500->31.286, 14.500->31.286
-Runde 3: Gesamtfehler=23.699
+arm: Längen-Bracketing abgebrochen (arm_len) wegen nicht-finiten Fehlern 6.500->inf, 8.500->93.750, 10.500->91.750
+Runde 3: Gesamtfehler=11.077

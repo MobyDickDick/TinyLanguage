@@ -3,7 +3,7 @@ circle: minRect Δcx=0.500, Δcy=-0.000, diag=14.000->17.692, scale=1.2637
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=79.026
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->69.714, 0.825->69.714, 0.850->69.714
-circle: Radius-Bracketing r 6.136->6.500; Kandidaten=5.000->79.420, 5.500->77.286, 6.000->69.708, 6.500->60.478, 7.000->60.902
+circle: Radius-Bracketing r 6.136->6.500; Kandidaten=5.500->77.286, 6.000->69.708, 6.500->60.478, 7.000->60.902
 text: minRect Δcx=0.000, Δcy=1.000, diag=7.280->9.849, scale=1.3528
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=90.105
@@ -14,7 +14,7 @@ circle: minRect Δcx=-0.500, Δcy=0.000, diag=19.000->19.677, scale=1.0357
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=60.478
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->56.880, 0.825->56.880, 0.850->56.880
-circle: Radius-Bracketing r 6.732->6.500; Kandidaten=5.500->78.887, 6.000->69.522, 6.500->56.880, 7.000->62.033
+circle: Radius-Bracketing r 6.732->6.500; Kandidaten=6.000->69.522, 6.500->56.880, 7.000->62.033
 text: minRect Δcx=0.000, Δcy=1.000, diag=7.071->9.487, scale=1.3416
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=97.344
@@ -25,7 +25,7 @@ circle: minRect Δcx=0.000, Δcy=0.000, diag=18.974->19.677, scale=1.0371
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=56.880
 circle: Breiten-Bracketing stroke_circle 1.000->1.000; Kandidaten=0.800->56.880, 0.825->56.880, 0.850->56.880
-circle: Radius-Bracketing r 6.741->6.500; Kandidaten=5.500->78.301, 6.000->69.522, 6.500->56.880, 7.000->62.033
+circle: Radius-Bracketing r 6.741->6.500; Kandidaten=6.000->69.522, 6.500->56.880, 7.000->62.033
 text: minRect Δcx=0.000, Δcy=0.500, diag=7.071->9.220, scale=1.3038
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=87.292

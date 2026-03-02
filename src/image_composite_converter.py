@@ -2086,7 +2086,14 @@ class Action:
             mode = str(params.get("text_mode", "")).lower()
             if mode == "voc":
                 cur = float(params.get("voc_font_scale", 0.52))
-                return "voc_font_scale", max(0.30, cur * 0.70), min(0.90, cur * 1.35)
+                min_dim = float(min(w, h))
+                # VOC labels vary strongly across AC08xx variants, especially in
+                # tiny symbols where the text can occupy most of the inner circle.
+                # Keep a broad search window instead of anchoring too tightly to
+                # the current estimate.
+                low = max(0.30, min(cur * 0.60, 0.45))
+                high = 1.35 if min_dim > 16.0 else 1.60
+                return "voc_font_scale", low, max(low, high)
             if mode == "co2":
                 cur = float(params.get("co2_font_scale", 0.82))
                 # CO₂ labels in large variants can require a noticeably larger font
@@ -2317,16 +2324,32 @@ class Action:
             )
             return False
 
-        candidates = sorted(
-            {
-                Action._snap_half(low),
-                Action._snap_half(low + (high - low) * 0.25),
-                Action._snap_half((low + high) / 2.0),
-                Action._snap_half(low + (high - low) * 0.75),
-                Action._snap_half(high),
-                Action._snap_half(current),
-            }
-        )
+        if key.endswith("_font_scale"):
+            candidates = sorted(
+                {
+                    round(low, 3),
+                    round(low + (high - low) * 0.15, 3),
+                    round(low + (high - low) * 0.30, 3),
+                    round(low + (high - low) * 0.50, 3),
+                    round(low + (high - low) * 0.70, 3),
+                    round(low + (high - low) * 0.85, 3),
+                    round(high, 3),
+                    round(max(low, min(high, current * 0.85)), 3),
+                    round(max(low, min(high, current)), 3),
+                    round(max(low, min(high, current * 1.15)), 3),
+                }
+            )
+        else:
+            candidates = sorted(
+                {
+                    Action._snap_half(low),
+                    Action._snap_half(low + (high - low) * 0.25),
+                    Action._snap_half((low + high) / 2.0),
+                    Action._snap_half(low + (high - low) * 0.75),
+                    Action._snap_half(high),
+                    Action._snap_half(current),
+                }
+            )
         candidate_errors = [Action._element_error_for_extent(img_orig, params, element, v) for v in candidates]
         if not all(np.isfinite(e) for e in candidate_errors):
             logs.append(
@@ -2398,16 +2421,32 @@ class Action:
             )
             return False
 
-        candidates = sorted(
-            {
-                Action._snap_half(low),
-                Action._snap_half(low + (high - low) * 0.25),
-                Action._snap_half((low + high) / 2.0),
-                Action._snap_half(low + (high - low) * 0.75),
-                Action._snap_half(high),
-                Action._snap_half(current),
-            }
-        )
+        if key.endswith("_font_scale"):
+            candidates = sorted(
+                {
+                    round(low, 3),
+                    round(low + (high - low) * 0.15, 3),
+                    round(low + (high - low) * 0.30, 3),
+                    round(low + (high - low) * 0.50, 3),
+                    round(low + (high - low) * 0.70, 3),
+                    round(low + (high - low) * 0.85, 3),
+                    round(high, 3),
+                    round(max(low, min(high, current * 0.85)), 3),
+                    round(max(low, min(high, current)), 3),
+                    round(max(low, min(high, current * 1.15)), 3),
+                }
+            )
+        else:
+            candidates = sorted(
+                {
+                    Action._snap_half(low),
+                    Action._snap_half(low + (high - low) * 0.25),
+                    Action._snap_half((low + high) / 2.0),
+                    Action._snap_half(low + (high - low) * 0.75),
+                    Action._snap_half(high),
+                    Action._snap_half(current),
+                }
+            )
         candidate_errors = [Action._element_error_for_width(img_orig, params, element, v) for v in candidates]
         if not all(np.isfinite(e) for e in candidate_errors):
             logs.append(
@@ -2431,6 +2470,8 @@ class Action:
 
         if key in {"stroke_circle", "arm_stroke", "stem_width"}:
             best_width = Action._snap_int_px(best_width, minimum=1.0)
+        elif key.endswith("_font_scale"):
+            best_width = float(round(best_width, 3))
         else:
             best_width = Action._snap_half(best_width)
 

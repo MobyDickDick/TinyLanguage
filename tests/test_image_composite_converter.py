@@ -262,3 +262,52 @@ def test_tiny_circle_radius_bracketing_limits_downscale() -> None:
     assert changed is True
     assert abs(float(params["r"]) - 4.5) < 1e-6
     assert any("Radius-Bracketing" in line for line in logs)
+
+
+def test_voc_font_scale_bounds_allow_larger_tiny_badge_labels() -> None:
+    """Tiny VOC badges should allow expanding text scale beyond the historic cap."""
+    params = {
+        "draw_text": True,
+        "text_mode": "voc",
+        "voc_font_scale": 0.52,
+    }
+
+    info = Action._element_width_key_and_bounds("text", params, 15, 15)
+
+    assert info is not None
+    key, low, high = info
+    assert key == "voc_font_scale"
+    assert low <= 0.45
+    assert high >= 1.60
+
+
+def test_text_width_bracketing_keeps_fractional_font_scale_precision() -> None:
+    """Text scale optimization should not quantize font scale to half-pixel steps."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    class DummyImg:
+        shape = (30, 30, 3)
+
+    img = DummyImg()
+    params = {
+        "draw_text": True,
+        "text_mode": "voc",
+        "voc_font_scale": 0.52,
+    }
+    logs: list[str] = []
+
+    original = Action._element_error_for_width
+
+    def prefer_target_scale(_img: object, _params: dict, _element: str, width_value: float) -> float:
+        return abs(float(width_value) - 0.85)
+
+    Action._element_error_for_width = staticmethod(prefer_target_scale)
+    try:
+        changed = Action._optimize_element_width_bracket(img, params, "text", logs)
+    finally:
+        Action._element_error_for_width = original
+
+    assert changed is True
+    assert abs(float(params["voc_font_scale"]) - 0.85) < 1e-6
+    assert any("Breiten-Bracketing" in line for line in logs)

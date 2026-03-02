@@ -38,6 +38,17 @@ def test_finalize_ac0820_uses_cluster_anchor_exception() -> None:
     assert params["co2_anchor_mode"] == "cluster"
 
 
+
+
+def test_finalize_ac0820_variant_name_uses_cluster_anchor_exception() -> None:
+    """AC0820 variant names (e.g. AC0820_L) should keep the same centering override."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
+    params = Action._finalize_ac08_style("AC0820_L", params)
+
+    assert params["co2_anchor_mode"] == "cluster"
+    assert float(params["co2_optical_bias"]) >= 0.105
+
+
 def test_finalize_ac0820_increases_optical_bias_for_co_vertical_centering() -> None:
     """AC0820 should nudge CO down so the main run appears vertically centered in-circle."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))

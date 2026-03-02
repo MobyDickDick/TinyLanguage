@@ -767,7 +767,11 @@ class Action:
         # Apply a proportional optical correction so the label sits visually centered.
         # A stronger correction keeps the "CO" run from looking top-heavy in tiny
         # AC08xx badges where antialiasing exaggerates baseline drift.
-        y_base = cy + float(params.get("co2_dy", 0.0)) + (font_size * 0.090)
+        # Large variants (e.g. AC0820_L) can still look top-heavy with a fixed
+        # correction. Nudge bigger badges slightly further down while keeping the
+        # small-size behavior effectively unchanged.
+        optical_bias = 0.090 + (0.015 * min(1.0, r / 12.0))
+        y_base = cy + float(params.get("co2_dy", 0.0)) + (font_size * optical_bias)
         subscript_offset = font_size * 0.18
         height = font_size * 0.95
 

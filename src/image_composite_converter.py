@@ -426,6 +426,12 @@ class Action:
         p = Action._normalize_light_circle_colors(dict(params))
         p = Action._normalize_ac08_line_widths(p)
         p = Action._normalize_centered_co2_label(p)
+        if name == "AC0820" and str(p.get("text_mode", "")).lower() == "co2":
+            # Special-case AC0820 variants (L/M/S): center the whole CO₂ cluster
+            # horizontally while keeping the main "CO" run optically centered in
+            # the circle (without letting the subscript drive vertical alignment).
+            p["co2_anchor_mode"] = "cluster"
+            p["co2_optical_bias"] = 0.105
         if p.get("draw_text", True) and "text_gray" in p:
             p["text_gray"] = int(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY))
         return p
@@ -770,7 +776,7 @@ class Action:
         # Large variants (e.g. AC0820_L) can still look top-heavy with a fixed
         # correction. Nudge bigger badges slightly further down while keeping the
         # small-size behavior effectively unchanged.
-        optical_bias = 0.090 + (0.015 * min(1.0, r / 12.0))
+        optical_bias = float(params.get("co2_optical_bias", 0.090 + (0.015 * min(1.0, r / 12.0))))
         y_base = cy + float(params.get("co2_dy", 0.0)) + (font_size * optical_bias)
         subscript_offset = font_size * 0.18
         height = font_size * 0.95

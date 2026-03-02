@@ -1963,29 +1963,31 @@ class Action:
     @staticmethod
     def _element_region_mask(h: int, w: int, params: dict, element: str) -> np.ndarray | None:
         yy, xx = np.indices((h, w))
+        context_pad = max(2.0, float(min(h, w)) * 0.12)
         if element == "circle":
-            circle = (xx - params["cx"]) ** 2 + (yy - params["cy"]) ** 2 <= (params["r"] + 2.0) ** 2
-            top = yy <= (params["cy"] + params["r"] + 1.0)
+            radius_with_context = params["r"] + context_pad
+            circle = (xx - params["cx"]) ** 2 + (yy - params["cy"]) ** 2 <= radius_with_context**2
+            top = yy <= (params["cy"] + params["r"] + context_pad)
             return circle & top
         if element == "stem" and params.get("stem_enabled"):
-            x1 = max(0.0, params["stem_x"] - 1.0)
-            x2 = min(float(w), params["stem_x"] + params["stem_width"] + 1.0)
-            y1 = max(0.0, params["stem_top"] - 1.0)
-            y2 = min(float(h), params["stem_bottom"] + 1.0)
+            x1 = max(0.0, params["stem_x"] - context_pad)
+            x2 = min(float(w), params["stem_x"] + params["stem_width"] + context_pad)
+            y1 = max(0.0, params["stem_top"] - context_pad)
+            y2 = min(float(h), params["stem_bottom"] + context_pad)
             return (xx >= x1) & (xx <= x2) & (yy >= y1) & (yy <= y2)
         if element == "arm" and params.get("arm_enabled"):
-            x1 = max(0.0, min(params.get("arm_x1", 0.0), params.get("arm_x2", 0.0)) - 1.0)
-            x2 = min(float(w), max(params.get("arm_x1", 0.0), params.get("arm_x2", 0.0)) + 1.0)
-            y1 = max(0.0, min(params.get("arm_y1", 0.0), params.get("arm_y2", 0.0)) - 1.0)
-            y2 = min(float(h), max(params.get("arm_y1", 0.0), params.get("arm_y2", 0.0)) + 1.0)
+            x1 = max(0.0, min(params.get("arm_x1", 0.0), params.get("arm_x2", 0.0)) - context_pad)
+            x2 = min(float(w), max(params.get("arm_x1", 0.0), params.get("arm_x2", 0.0)) + context_pad)
+            y1 = max(0.0, min(params.get("arm_y1", 0.0), params.get("arm_y2", 0.0)) - context_pad)
+            y2 = min(float(h), max(params.get("arm_y1", 0.0), params.get("arm_y2", 0.0)) + context_pad)
             pad = max(1.0, params.get("arm_stroke", params.get("stem_or_arm", 1.0)) * 0.8)
             return (xx >= (x1 - pad)) & (xx <= (x2 + pad)) & (yy >= (y1 - pad)) & (yy <= (y2 + pad))
         if element == "text" and params.get("draw_text", True):
             x1, y1, x2, y2 = Action._text_bbox(params)
-            x1 = max(0.0, x1 - 1.0)
-            y1 = max(0.0, y1 - 1.0)
-            x2 = min(float(w), x2 + 1.0)
-            y2 = min(float(h), y2 + 1.0)
+            x1 = max(0.0, x1 - context_pad)
+            y1 = max(0.0, y1 - context_pad)
+            x2 = min(float(w), x2 + context_pad)
+            y2 = min(float(h), y2 + context_pad)
             return (xx >= x1) & (xx <= x2) & (yy >= y1) & (yy <= y2)
         return None
 
@@ -2186,21 +2188,24 @@ class Action:
             return False
 
         min_dim = float(min(w, h))
-        low_bound = max(1.0, current - 1.0)
+        low_bound = max(1.0, min_dim * 0.14)
         # Tiny badges are especially sensitive to anti-aliasing noise in the
         # circle-only error mask. Prevent aggressive downward jumps that make
         # AC0800_S noticeably smaller than the medium/large variants.
         if min_dim <= 16.0:
             low_bound = max(low_bound, current * 0.9)
-        high_bound = min(min_dim * 0.48, current + 1.0)
+        high_bound = min_dim * 0.48
         if not low_bound < high_bound:
             return False
 
         candidates = sorted({
             Action._snap_half(low_bound),
-            Action._snap_half((low_bound + current) / 2.0),
+            Action._snap_half(low_bound + (high_bound - low_bound) * 0.25),
+            Action._snap_half((low_bound + high_bound) / 2.0),
+            Action._snap_half(low_bound + (high_bound - low_bound) * 0.75),
             Action._snap_half(current),
-            Action._snap_half((current + high_bound) / 2.0),
+            Action._snap_half(current - 1.0),
+            Action._snap_half(current + 1.0),
             Action._snap_half(high_bound),
         })
 
@@ -2303,16 +2308,25 @@ class Action:
         if current <= 0.0:
             return False
 
-        low = max(low_bound, current * 0.75)
-        high = min(high_bound, current * 1.25)
-        if not (low < current < high):
+        low = float(low_bound)
+        high = float(high_bound)
+        if not (low < high):
             logs.append(
                 f"{element}: Längen-Bracketing übersprungen ({key_label}: current={current:.3f}, "
                 f"Range={low_bound:.3f}..{high_bound:.3f})"
             )
             return False
 
-        candidates = sorted({Action._snap_half(low), Action._snap_half(current), Action._snap_half(high)})
+        candidates = sorted(
+            {
+                Action._snap_half(low),
+                Action._snap_half(low + (high - low) * 0.25),
+                Action._snap_half((low + high) / 2.0),
+                Action._snap_half(low + (high - low) * 0.75),
+                Action._snap_half(high),
+                Action._snap_half(current),
+            }
+        )
         candidate_errors = [Action._element_error_for_extent(img_orig, params, element, v) for v in candidates]
         if not all(np.isfinite(e) for e in candidate_errors):
             logs.append(
@@ -2374,40 +2388,34 @@ class Action:
         if current <= 0.0:
             return False
 
-        # Drei-Punkt-Bracketing: dünn < aktuell < dick.
-        low = max(low_bound, current * 0.75)
-        high = min(high_bound, current * 1.25)
-        if not (low < current < high):
+        # Breiteres Mehrpunkt-Bracketing über den gesamten plausiblen Bereich.
+        low = float(low_bound)
+        high = float(high_bound)
+        if not (low < high):
             logs.append(
                 f"{element}: Breiten-Bracketing übersprungen ({key}: current={current:.3f}, "
                 f"Range={low_bound:.3f}..{high_bound:.3f})"
             )
             return False
 
-        mid = current
-        values = {low, mid, high}
-        for _ in range(3):
-            low, mid, high = sorted(values)
-            e_low = Action._element_error_for_width(img_orig, params, element, low)
-            e_mid = Action._element_error_for_width(img_orig, params, element, mid)
-            e_high = Action._element_error_for_width(img_orig, params, element, high)
-            if not np.isfinite(e_low) or not np.isfinite(e_mid) or not np.isfinite(e_high):
-                logs.append(
-                    f"{element}: Breiten-Bracketing abgebrochen ({key}) wegen nicht-finiten Fehlern "
-                    f"low={e_low:.3f}, mid={e_mid:.3f}, high={e_high:.3f}"
-                )
-                return False
-
-            # Vergleiche die zwei benachbarten Paare über ihre Gesamtabweichung.
-            if (e_low + e_mid) <= (e_mid + e_high):
-                new_point = (low + mid) / 2.0
-                values = {low, mid, new_point}
-            else:
-                new_point = (mid + high) / 2.0
-                values = {mid, high, new_point}
-
-        candidates = sorted(values)
+        candidates = sorted(
+            {
+                Action._snap_half(low),
+                Action._snap_half(low + (high - low) * 0.25),
+                Action._snap_half((low + high) / 2.0),
+                Action._snap_half(low + (high - low) * 0.75),
+                Action._snap_half(high),
+                Action._snap_half(current),
+            }
+        )
         candidate_errors = [Action._element_error_for_width(img_orig, params, element, v) for v in candidates]
+        if not all(np.isfinite(e) for e in candidate_errors):
+            logs.append(
+                f"{element}: Breiten-Bracketing abgebrochen ({key}) wegen nicht-finiten Fehlern "
+                + ", ".join(f"{v:.3f}->{e:.3f}" for v, e in zip(candidates, candidate_errors, strict=False))
+            )
+            return False
+
         best_idx = int(np.argmin(candidate_errors))
         best_width = candidates[best_idx]
         old = float(params.get(key, current))

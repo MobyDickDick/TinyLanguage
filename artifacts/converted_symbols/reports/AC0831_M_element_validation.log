@@ -29,7 +29,7 @@ stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..
 stem: Längen-Bracketing stem_len 13.950->17.500; Kandidaten=10.500->55.036, 14.000->41.833, 17.500->35.633
 text: minRect Δcx=-2.500, Δcy=0.000, diag=7.810->12.083, scale=1.5471
 text: Fehler=93.796
-text: Breiten-Bracketing co2_font_scale 1.000->1.000; Kandidaten=0.750->89.769, 0.781->91.128, 0.812->91.846
+text: Breiten-Bracketing co2_font_scale 1.000->1.000; Kandidaten=1.188->91.712, 1.219->91.136, 1.250->88.426
 Runde 2: Gesamtfehler=26.280
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=-0.000, Δcy=0.000, diag=23.000->13.000, scale=0.5652
@@ -46,5 +46,5 @@ stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..
 stem: Längen-Bracketing stem_len 13.950->17.500; Kandidaten=10.500->55.036, 14.000->41.833, 17.500->35.633
 text: minRect Δcx=-2.500, Δcy=0.000, diag=7.810->12.083, scale=1.5471
 text: Fehler=93.796
-text: Breiten-Bracketing co2_font_scale 1.000->1.000; Kandidaten=0.750->89.769, 0.781->91.128, 0.812->91.846
+text: Breiten-Bracketing co2_font_scale 1.000->1.000; Kandidaten=1.188->91.712, 1.219->91.136, 1.250->88.426
 Runde 3: Gesamtfehler=26.280

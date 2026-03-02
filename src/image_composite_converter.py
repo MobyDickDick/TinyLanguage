@@ -421,13 +421,15 @@ class Action:
     @staticmethod
     def _finalize_ac08_style(name: str, params: dict) -> dict:
         """Apply AC08xx palette/stroke conventions globally for semantic conversions."""
-        if not name.startswith("AC08"):
+        canonical_name = str(name).upper()
+        symbol_name = canonical_name.split("_", 1)[0]
+        if not symbol_name.startswith("AC08"):
             return params
         p = Action._normalize_light_circle_colors(dict(params))
         p = Action._normalize_ac08_line_widths(p)
-        if name != "AC0820":
+        if symbol_name != "AC0820":
             p = Action._normalize_centered_co2_label(p)
-        if name == "AC0820" and str(p.get("text_mode", "")).lower() == "co2":
+        if symbol_name == "AC0820" and str(p.get("text_mode", "")).lower() == "co2":
             # Special-case AC0820 variants (L/M/S): center the whole CO₂ cluster
             # horizontally while keeping the main "CO" run optically centered in
             # the circle (without letting the subscript drive vertical alignment).

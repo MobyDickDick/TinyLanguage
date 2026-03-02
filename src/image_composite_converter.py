@@ -872,7 +872,9 @@ class Action:
         cur_scale = float(p.get("co2_font_scale", 0.82))
         cur_font = max(4.0, r * cur_scale)
         cur_width = cur_font * 1.45
-        target_width = inner_diameter * 0.74
+        # Keep centered CO₂ labels clearly readable in small AC0820 badges while
+        # still fitting inside the inner ring.
+        target_width = inner_diameter * 0.84
 
         adjusted_scale = cur_scale * (target_width / max(1e-6, cur_width))
         p["co2_font_scale"] = float(max(0.90, min(1.12, adjusted_scale)))
@@ -1494,31 +1496,20 @@ class Action:
                 font_size = float(layout["font_size"])
                 sub_scale = float(layout["sub_scale"])
                 y_text = float(layout["y_base"])
-                anchor_mode = str(layout["anchor_mode"])
-                if anchor_mode in {"co", "center_co"}:
-                    elements.append(
-                        (
-                            f'  <text x="{float(layout["co_x"]):.4f}" y="{y_text:.4f}" fill="{Action.grayhex(p["text_gray"])}" '
-                            f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}" '
-                            f'font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">CO</text>'
-                        )
+                elements.append(
+                    (
+                        f'  <text x="{float(layout["co_x"]):.4f}" y="{y_text:.4f}" fill="{Action.grayhex(p["text_gray"])}" '
+                        f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}" '
+                        f'font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">CO</text>'
                     )
-                    elements.append(
-                        (
-                            f'  <text x="{float(layout["subscript_x"]):.4f}" y="{float(layout["subscript_y"]):.4f}" fill="{Action.grayhex(p["text_gray"])}" '
-                            f'font-family="Arial, Helvetica, sans-serif" font-size="{float(layout["sub_font_px"]):.4f}" '
-                            f'font-style="normal" font-weight="600" text-anchor="start" dominant-baseline="middle">2</text>'
-                        )
+                )
+                elements.append(
+                    (
+                        f'  <text x="{float(layout["subscript_x"]):.4f}" y="{float(layout["subscript_y"]):.4f}" fill="{Action.grayhex(p["text_gray"])}" '
+                        f'font-family="Arial, Helvetica, sans-serif" font-size="{float(layout["sub_font_px"]):.4f}" '
+                        f'font-style="normal" font-weight="600" text-anchor="start" dominant-baseline="middle">2</text>'
                     )
-                else:
-                    elements.append(
-                        (
-                            f'  <text x="{p["cx"]:.4f}" y="{y_text:.4f}" fill="{Action.grayhex(p["text_gray"])}" '
-                            f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}" '
-                            f'font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">'
-                            f'CO<tspan font-size="{sub_scale:.2f}%" baseline-shift="sub">2</tspan></text>'
-                        )
-                    )
+                )
             elif p.get("text_mode") == "voc":
                 radius = p.get("r", min(w, h) * 0.4)
                 font_size = max(4.0, radius * p.get("voc_font_scale", 0.52))

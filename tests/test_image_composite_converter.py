@@ -45,7 +45,7 @@ def test_finalize_ac0820_increases_optical_bias_for_co_vertical_centering() -> N
     layout = Action._co2_layout(params)
 
     assert float(layout["y_base"]) > float(params["cy"])
-    assert abs(float(layout["y_base"]) - float(params["cy"])) <= 1.30
+    assert abs(float(layout["y_base"]) - float(params["cy"])) <= 1.45
 
 
 
@@ -94,7 +94,7 @@ def test_co2_layout_vertical_centering_ignores_subscript_for_main_text() -> None
     params["co2_sub_font_scale"] = 95.0
     layout = Action._co2_layout(params)
 
-    assert abs(float(layout["y_base"]) - float(params["cy"])) <= 0.60
+    assert abs(float(layout["y_base"]) - float(params["cy"])) <= 0.70
 
 
 def test_co2_layout_keeps_subscript_inside_circle_without_changing_main_center() -> None:
@@ -115,7 +115,7 @@ def test_co2_layout_keeps_subscript_inside_circle_without_changing_main_center()
 
     assert sub_top >= inner_top - 1e-6
     assert sub_bottom <= inner_bottom + 1e-6
-    assert abs(float(layout["y_base"]) - cy) <= 0.60
+    assert abs(float(layout["y_base"]) - cy) <= 0.70
 
 
 def test_co2_layout_enforces_minimum_subscript_pixel_size() -> None:
@@ -139,15 +139,15 @@ def test_generate_badge_svg_renders_center_co_as_split_text_nodes() -> None:
     assert "<tspan" not in svg
 
 
-def test_generate_badge_svg_renders_cluster_mode_with_tspan() -> None:
-    """Cluster mode should render CO₂ as a single text node with a subscript tspan."""
+def test_generate_badge_svg_renders_cluster_mode_as_split_text_nodes() -> None:
+    """Cluster mode should render CO₂ as explicit CO + subscript nodes."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
     params = Action._finalize_ac08_style("AC0820", params)
     svg = Action.generate_badge_svg(30, 30, params)
 
-    assert "CO<tspan" in svg
-    assert "baseline-shift=\"sub\"" in svg
-
+    assert ">CO</text>" in svg
+    assert ">2</text>" in svg
+    assert "<tspan" not in svg
 
 def test_default_ac0812_uses_height_based_circle_radius() -> None:
     """AC0812 should size its circle from height so tiny variants don't shrink."""

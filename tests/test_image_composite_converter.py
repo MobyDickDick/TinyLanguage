@@ -30,6 +30,24 @@ def test_co2_layout_legacy_cluster_mode_still_supported() -> None:
     assert float(layout["co_x"]) < float(params["cx"])
 
 
+def test_finalize_ac0820_uses_cluster_anchor_exception() -> None:
+    """AC0820 should center the full CO₂ cluster horizontally as a conversion exception."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
+    params = Action._finalize_ac08_style("AC0820", params)
+
+    assert params["co2_anchor_mode"] == "cluster"
+
+
+def test_finalize_ac0820_increases_optical_bias_for_co_vertical_centering() -> None:
+    """AC0820 should nudge CO down so the main run appears vertically centered in-circle."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
+    params = Action._finalize_ac08_style("AC0820", params)
+    layout = Action._co2_layout(params)
+
+    assert float(layout["y_base"]) > float(params["cy"])
+    assert abs(float(layout["y_base"]) - float(params["cy"])) <= 1.30
+
+
 
 
 def test_co2_layout_keeps_subscript_inside_inner_circle_for_centered_badges() -> None:

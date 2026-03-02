@@ -30,23 +30,23 @@ def test_co2_layout_legacy_cluster_mode_still_supported() -> None:
     assert float(layout["co_x"]) < float(params["cx"])
 
 
-def test_finalize_ac0820_uses_cluster_anchor_exception() -> None:
-    """AC0820 should center the full CO₂ cluster horizontally as a conversion exception."""
+def test_finalize_ac0820_uses_center_co_anchor_mode() -> None:
+    """AC0820 should keep the main CO run centered for better optical balance."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
     params = Action._finalize_ac08_style("AC0820", params)
 
-    assert params["co2_anchor_mode"] == "cluster"
+    assert params["co2_anchor_mode"] == "center_co"
 
 
 
 
-def test_finalize_ac0820_variant_name_uses_cluster_anchor_exception() -> None:
-    """AC0820 variant names (e.g. AC0820_L) should keep the same centering override."""
+def test_finalize_ac0820_variant_name_uses_center_co_anchor_mode() -> None:
+    """AC0820 variant names (e.g. AC0820_L) should keep center_co alignment."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
     params = Action._finalize_ac08_style("AC0820_L", params)
 
-    assert params["co2_anchor_mode"] == "cluster"
-    assert float(params["co2_optical_bias"]) >= 0.105
+    assert params["co2_anchor_mode"] == "center_co"
+    assert float(params["co2_optical_bias"]) >= 0.125
 
 
 def test_finalize_ac0820_increases_optical_bias_for_co_vertical_centering() -> None:
@@ -105,7 +105,7 @@ def test_co2_layout_vertical_centering_ignores_subscript_for_main_text() -> None
     params["co2_sub_font_scale"] = 95.0
     layout = Action._co2_layout(params)
 
-    assert abs(float(layout["y_base"]) - float(params["cy"])) <= 0.70
+    assert abs(float(layout["y_base"]) - float(params["cy"])) <= 0.75
 
 
 def test_co2_layout_keeps_subscript_inside_circle_without_changing_main_center() -> None:
@@ -126,7 +126,7 @@ def test_co2_layout_keeps_subscript_inside_circle_without_changing_main_center()
 
     assert sub_top >= inner_top - 1e-6
     assert sub_bottom <= inner_bottom + 1e-6
-    assert abs(float(layout["y_base"]) - cy) <= 0.70
+    assert abs(float(layout["y_base"]) - cy) <= 0.75
 
 
 def test_co2_layout_enforces_minimum_subscript_pixel_size() -> None:

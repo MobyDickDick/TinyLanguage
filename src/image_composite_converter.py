@@ -430,22 +430,21 @@ class Action:
         if symbol_name != "AC0820":
             p = Action._normalize_centered_co2_label(p)
         if symbol_name == "AC0820" and str(p.get("text_mode", "")).lower() == "co2":
-            # AC0820 variants (L/M/S): enforce explicit alignment requirements:
-            # - whole CO₂ cluster horizontally centered in the circle,
-            # - main "CO" run vertically centered to the circle center line,
-            # - cap-height matching the converted single-letter "C" badges.
-            p["co2_anchor_mode"] = "cluster"
-            p["co2_optical_bias"] = 0.105
+            # AC0820 variants (L/M/S): keep "CO" itself centered and nudge it
+            # slightly lower. Centering the whole cluster makes the visually
+            # dominant run look too far left in tiny badges.
+            p["co2_anchor_mode"] = "center_co"
+            p["co2_optical_bias"] = 0.125
             r = max(1.0, float(p.get("r", 1.0)))
             # Keep AC0820 text close to the cap-height used by centered path
             # glyph labels (e.g. single C) so the leading "C" is no longer
             # undersized compared to the original badge family.
             if r >= 10.0:
-                p["co2_font_scale"] = 0.96
+                p["co2_font_scale"] = 0.94
             elif r >= 6.0:
-                p["co2_font_scale"] = 1.0
+                p["co2_font_scale"] = 0.95
             else:
-                p["co2_font_scale"] = 1.02
+                p["co2_font_scale"] = 0.97
             p["co2_sub_font_scale"] = float(p.get("co2_sub_font_scale", 66.0))
             p["co2_subscript_offset_scale"] = 0.27
         if p.get("draw_text", True) and "text_gray" in p:

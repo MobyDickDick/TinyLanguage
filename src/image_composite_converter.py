@@ -435,7 +435,7 @@ class Action:
             # - main "CO" run vertically centered to the circle center line,
             # - cap-height matching the converted single-letter "C" badges.
             p["co2_anchor_mode"] = "cluster"
-            p["co2_optical_bias"] = 0.0
+            p["co2_optical_bias"] = 0.105
             r = max(1.0, float(p.get("r", 1.0)))
             # Keep AC0820 text close to the cap-height used by centered path
             # glyph labels (e.g. single C) so the leading "C" is no longer

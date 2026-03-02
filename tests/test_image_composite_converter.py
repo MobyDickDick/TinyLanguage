@@ -132,12 +132,23 @@ def test_co2_layout_enforces_minimum_subscript_pixel_size() -> None:
 def test_generate_badge_svg_renders_center_co_as_split_text_nodes() -> None:
     """center_co layout should render CO and subscript as separate positioned text nodes."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
-    params = Action._finalize_ac08_style("AC0820", params)
     svg = Action.generate_badge_svg(30, 30, params)
 
     assert ">CO</text>" in svg
     assert ">2</text>" in svg
     assert "<tspan" not in svg
+
+
+def test_generate_badge_svg_renders_cluster_mode_with_tspan() -> None:
+    """Cluster mode should render CO₂ as a single text node with a subscript tspan."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
+    params = Action._finalize_ac08_style("AC0820", params)
+    svg = Action.generate_badge_svg(30, 30, params)
+
+    assert "CO<tspan" in svg
+    assert "baseline-shift=\"sub\"" in svg
+
+
 def test_default_ac0812_uses_height_based_circle_radius() -> None:
     """AC0812 should size its circle from height so tiny variants don't shrink."""
     params = Action._default_ac0812_params(25, 15)

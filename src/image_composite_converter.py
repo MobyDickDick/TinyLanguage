@@ -434,15 +434,15 @@ class Action:
             p["co2_anchor_mode"] = "cluster"
             p["co2_optical_bias"] = 0.105
             r = max(1.0, float(p.get("r", 1.0)))
-            # Keep AC0820 text close to the original symbol proportions:
-            # - larger badges should not inflate CO,
-            # - small badges keep a readable minimum.
+            # Keep AC0820 text at the same optical cap-height basis as the
+            # converted "C" glyphs. The previous AC0820-specific downscaling
+            # made CO noticeably too small in medium/large variants.
             if r >= 10.0:
-                p["co2_font_scale"] = 0.50
+                p["co2_font_scale"] = 0.82
             elif r >= 6.0:
-                p["co2_font_scale"] = 0.70
+                p["co2_font_scale"] = 0.86
             else:
-                p["co2_font_scale"] = 1.00
+                p["co2_font_scale"] = 0.96
             p["co2_sub_font_scale"] = float(p.get("co2_sub_font_scale", 66.0))
             p["co2_subscript_offset_scale"] = 0.27
         if p.get("draw_text", True) and "text_gray" in p:

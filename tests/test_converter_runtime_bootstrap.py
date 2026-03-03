@@ -35,3 +35,18 @@ def test_bootstrap_main_runs_script_with_forwarded_args(tmp_path: Path, capsys) 
     assert exit_code == 0
     assert "Runtime-Pfad aktiviert" in out
     assert "ARGS=--input,image.png" in out
+
+
+def test_configure_converter_runtime_appends_vendor_to_sys_path(tmp_path: Path) -> None:
+    import sys
+
+    vendor_root = tmp_path / "vendor" / "converter_runtime"
+    vendor_root.mkdir(parents=True)
+
+    original = list(sys.path)
+    try:
+        configured = configure_converter_runtime(vendor_root)
+        assert configured == vendor_root.resolve()
+        assert sys.path[-1] == str(vendor_root.resolve())
+    finally:
+        sys.path[:] = original

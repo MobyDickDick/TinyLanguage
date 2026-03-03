@@ -28,7 +28,11 @@ def configure_converter_runtime(vendor_root: Path | None = None) -> Path | None:
 
     root_str = str(root)
     if root_str not in sys.path:
-        sys.path.insert(0, root_str)
+        # Keep the active environment's site-packages ahead of vendored modules.
+        # This avoids shadowing ABI-compatible wheels (e.g. numpy/cv2 for newer
+        # Python versions) with stale vendored builds while still allowing an
+        # offline fallback when packages are otherwise missing.
+        sys.path.append(root_str)
 
     # OpenCV and similar packages can need a DLL/shared-lib search path.
     existing_path = os.environ.get("PATH", "")

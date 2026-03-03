@@ -14,6 +14,10 @@ import subprocess
 import sys
 from dataclasses import dataclass
 
+from src.converter_runtime_bootstrap import configure_converter_runtime
+
+configure_converter_runtime()
+
 try:
     import cv2
 except ImportError:  # pragma: no cover - optional dependency in constrained environments

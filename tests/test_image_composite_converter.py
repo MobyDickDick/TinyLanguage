@@ -150,6 +150,25 @@ def test_co2_layout_enforces_minimum_subscript_pixel_size() -> None:
 
 
 
+
+
+def test_finalize_ac0820_keeps_text_scale_tunable_with_bounds() -> None:
+    """AC0820 should allow bounded CO₂ scale tuning during validation rounds."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(20, 20))
+    params = Action._finalize_ac08_style("AC0820", params)
+
+    assert params["lock_text_scale"] is False
+    assert float(params["co2_font_scale_min"]) < float(params["co2_font_scale"])
+    assert float(params["co2_font_scale_max"]) > float(params["co2_font_scale"])
+
+
+def test_finalize_non_ac0820_co2_keeps_text_scale_locked() -> None:
+    """Non-AC0820 CO₂ badges should keep fixed text scale to avoid drift."""
+    params = Action._apply_co2_label(Action._default_ac0881_params(20, 20))
+    params = Action._finalize_ac08_style("AC0831", params)
+
+    assert params["lock_text_scale"] is True
+
 def test_generate_badge_svg_renders_center_co_as_split_text_nodes() -> None:
     """center_co layout should render CO and subscript as separate positioned text nodes."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
@@ -420,6 +439,30 @@ def test_text_width_bracketing_keeps_fractional_font_scale_precision() -> None:
     assert any("Breiten-Bracketing" in line for line in logs)
 
 
+
+
+def test_co2_layout_prioritizes_co_alignment_before_subscript_shift() -> None:
+    """Centered CO should stay near the circle center even when subscript space is tight."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(20, 20))
+    params = Action._finalize_ac08_style("AC0820_M", params)
+    params["co2_sub_font_scale"] = 130.0
+
+    layout = Action._co2_layout(params)
+
+    assert abs(float(layout["co_x"]) - float(params["cx"])) <= 0.20
+
+
+def test_co2_layout_can_shrink_subscript_before_moving_co() -> None:
+    """When space is tight, subscript should shrink to preserve CO placement first."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(20, 20))
+    params = Action._finalize_ac08_style("AC0820_M", params)
+    params["co2_sub_font_scale"] = 160.0
+
+    requested_sub_font_px = max(4.0, float(params["r"]) * float(params["co2_font_scale"]) * (float(params["co2_sub_font_scale"]) / 100.0))
+    layout = Action._co2_layout(params)
+
+    assert float(layout["sub_font_px"]) < requested_sub_font_px
+
 def test_co2_layout_caps_font_size_to_inner_circle_ratio() -> None:
     """CO font size must stay proportionate even for inflated co2_font_scale values."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
@@ -433,12 +476,13 @@ def test_co2_layout_caps_font_size_to_inner_circle_ratio() -> None:
     assert float(layout["font_size"]) <= (inner_diameter * 0.50) + 1e-6
 
 
-def test_co2_text_width_bracketing_is_locked_for_semantic_badges() -> None:
-    """Semantic AC08 CO₂ badges should not re-optimize co2_font_scale in width bracketing."""
+def test_co2_text_width_bracketing_is_bounded_for_ac0820() -> None:
+    """AC0820 CO₂ badges should allow bounded text tuning during width bracketing."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
     params = Action._finalize_ac08_style("AC0820", params)
 
     key, low, high = Action._element_width_key_and_bounds("text", params, 30, 30)
     assert key == "co2_font_scale"
-    assert abs(float(low) - float(params["co2_font_scale"])) < 1e-9
-    assert abs(float(high) - float(params["co2_font_scale"])) < 1e-9
+    assert float(low) <= float(params["co2_font_scale"]) <= float(high)
+    assert float(low) >= float(params["co2_font_scale_min"]) - 1e-9
+    assert float(high) <= float(params["co2_font_scale_max"]) + 1e-9

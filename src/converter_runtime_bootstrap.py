@@ -7,6 +7,7 @@ import os
 import runpy
 import sys
 from pathlib import Path
+from shutil import rmtree
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -22,6 +23,8 @@ def configure_converter_runtime(vendor_root: Path | None = None) -> Path | None:
     root = (vendor_root or VENDOR_RUNTIME_ROOT).resolve()
     if not root.exists():
         return None
+
+    _remove_vendor_bytecode_caches(root)
 
     root_str = str(root)
     if root_str not in sys.path:
@@ -41,6 +44,26 @@ def configure_converter_runtime(vendor_root: Path | None = None) -> Path | None:
             pass
 
     return root
+
+
+def _remove_vendor_bytecode_caches(vendor_root: Path) -> None:
+    """Remove cached bytecode from synced vendor folders.
+
+    Cloud sync tools occasionally truncate ``.pyc`` files which then crash imports
+    with errors like ``EOFError: marshal data too short``. Keeping only source
+    files avoids this entire class of startup failures.
+    """
+
+    for cache_dir in vendor_root.rglob("__pycache__"):
+        if cache_dir.is_dir():
+            rmtree(cache_dir, ignore_errors=True)
+
+    for pyc_file in vendor_root.rglob("*.pyc"):
+        try:
+            pyc_file.unlink()
+        except OSError:
+            # Best effort cleanup; imports can still succeed from source files.
+            pass
 
 
 def _build_parser() -> argparse.ArgumentParser:

@@ -376,3 +376,27 @@ def test_text_width_bracketing_keeps_fractional_font_scale_precision() -> None:
     assert changed is True
     assert abs(float(params["voc_font_scale"]) - 0.85) < 1e-6
     assert any("Breiten-Bracketing" in line for line in logs)
+
+
+def test_co2_layout_caps_font_size_to_inner_circle_ratio() -> None:
+    """CO font size must stay proportionate even for inflated co2_font_scale values."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
+    params = Action._finalize_ac08_style("AC0820_L", params)
+    params["co2_font_scale"] = 1.50
+    layout = Action._co2_layout(params)
+
+    r = float(params["r"])
+    stroke = float(params["stroke_circle"])
+    inner_diameter = (2.0 * r) - stroke
+    assert float(layout["font_size"]) <= (inner_diameter * 0.50) + 1e-6
+
+
+def test_co2_text_width_bracketing_is_locked_for_semantic_badges() -> None:
+    """Semantic AC08 CO₂ badges should not re-optimize co2_font_scale in width bracketing."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
+    params = Action._finalize_ac08_style("AC0820", params)
+
+    key, low, high = Action._element_width_key_and_bounds("text", params, 30, 30)
+    assert key == "co2_font_scale"
+    assert abs(float(low) - float(params["co2_font_scale"])) < 1e-9
+    assert abs(float(high) - float(params["co2_font_scale"])) < 1e-9

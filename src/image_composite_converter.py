@@ -451,6 +451,9 @@ class Action:
                 p["co2_font_scale"] = 0.97
             p["co2_sub_font_scale"] = float(p.get("co2_sub_font_scale", 66.0))
             p["co2_subscript_offset_scale"] = 0.27
+        if str(p.get("text_mode", "")).lower() == "co2":
+            # Prevent iterative width optimization from inflating CO₂ text.
+            p["lock_text_scale"] = True
         if p.get("draw_text", True) and "text_gray" in p:
             p["text_gray"] = int(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY))
         return p
@@ -743,7 +746,16 @@ class Action:
         cx = float(params.get("cx", 0.0))
         cy = float(params.get("cy", 0.0))
         r = max(1.0, float(params.get("r", 1.0)))
-        font_size = max(4.0, r * float(params.get("co2_font_scale", 0.82)))
+        stroke = max(0.8, float(params.get("stroke_circle", 1.0)))
+        inner_diameter = max(2.0, (2.0 * r) - stroke)
+        requested_font_size = max(4.0, r * float(params.get("co2_font_scale", 0.82)))
+        # Keep the main CO run proportionate to the circle interior, even if
+        # optimizer steps push co2_font_scale too high for anti-aliased rasters.
+        max_font_size = max(
+            4.0,
+            inner_diameter * float(params.get("co2_max_inner_diameter_ratio", 0.50)),
+        )
+        font_size = min(requested_font_size, max_font_size)
         sub_scale = float(params.get("co2_sub_font_scale", 66.0))
         # Tiny badges can otherwise rasterize the subscript into a barely visible
         # blob or drop it entirely. Keep a conservative minimum pixel height.
@@ -2100,6 +2112,8 @@ class Action:
             mode = str(params.get("text_mode", "")).lower()
             if mode == "voc":
                 cur = float(params.get("voc_font_scale", 0.52))
+                if bool(params.get("lock_text_scale", False)):
+                    return "voc_font_scale", cur, cur
                 min_dim = float(min(w, h))
                 # VOC labels vary strongly across AC08xx variants, especially in
                 # tiny symbols where the text can occupy most of the inner circle.
@@ -2110,6 +2124,8 @@ class Action:
                 return "voc_font_scale", low, max(low, high)
             if mode == "co2":
                 cur = float(params.get("co2_font_scale", 0.82))
+                if bool(params.get("lock_text_scale", False)):
+                    return "co2_font_scale", cur, cur
                 # CO₂ labels in large variants can require a noticeably larger font
                 # than the historical cap of 1.20 to match the source symbol.
                 return "co2_font_scale", max(0.45, cur * 0.72), min(1.55, cur * 1.45)

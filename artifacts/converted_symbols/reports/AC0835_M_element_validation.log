@@ -3,9 +3,9 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=22.000->26.000, scale=1.1818
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=85.879
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Farb-Bracketing fill_gray 242->153; Kandidaten=153->38.730, 200->50.794, 210->55.213, 220->59.674, 226->62.348, 230->64.113, 234->65.901, 240->68.638, 242->69.532, 250->73.163, 255->75.390
-circle: Farb-Bracketing stroke_gray 127->143; Kandidaten=95->42.270, 96->42.113, 111->40.305, 112->40.184, 119->39.426, 127->38.730, 128->38.553, 135->38.014, 143->37.901, 144->37.936, 152->38.489, 153->38.546, 159->39.092, 160->39.163, 171->40.461
-circle: Radius-Bracketing r 8.732->9.500; Kandidaten=7.500->57.149, 8.000->51.021, 8.500->37.901, 9.000->30.113, 9.500->24.142
+circle: Radius-Bracketing r 8.732->9.500; Kandidaten=7.500->85.879, 8.000->82.844, 8.500->69.532, 9.000->69.794, 9.500->67.801
+circle: Farb-Bracketing fill_gray 242->153; Kandidaten=153->25.298, 200->41.206, 210->47.496, 220->53.794, 226->57.596, 230->60.135, 234->62.716, 240->66.518, 242->67.801, 250->73.121, 255->76.567
+circle: Farb-Bracketing stroke_gray 127->143; Kandidaten=95->30.652, 96->30.496, 111->27.766, 112->27.603, 119->26.433, 127->25.298, 128->25.142, 135->24.560, 143->24.142, 144->24.149, 152->24.149, 153->24.206, 159->24.496, 160->24.546, 171->25.362
 text: minRect Δcx=-1.500, Δcy=2.500, diag=6.708->14.318, scale=2.1344
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=102.468
@@ -17,9 +17,9 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=25.456->26.000, scale=1.0214
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=24.142
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 9.600->9.500; Kandidaten=8.500->37.901, 9.000->30.113, 9.500->24.142, 10.500->24.142
 circle: Farb-Bracketing keine relevante Änderung (fill_gray: 153); Kandidaten=121->30.965, 137->25.752, 145->24.482, 153->24.142, 161->24.915, 169->26.213, 185->32.007, 200->40.766, 210->47.248, 220->53.766, 230->60.319, 240->67.177
 circle: Farb-Bracketing stroke_gray 143->151; Kandidaten=96->30.496, 111->27.766, 112->27.603, 127->25.298, 128->25.142, 135->24.560, 143->24.142, 144->24.149, 151->24.106, 152->24.149, 153->24.206, 159->24.496, 160->24.546, 171->25.362, 175->25.787
-circle: Radius-Bracketing r 9.600->9.500; Kandidaten=8.500->38.418, 9.000->30.078, 9.500->24.106, 10.500->24.106
 text: minRect Δcx=1.000, Δcy=4.000, diag=9.220->23.601, scale=2.5599
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=85.111
@@ -31,9 +31,9 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=25.456->26.000, scale=1.0214
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=24.106
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 9.600->9.500; Kandidaten=8.500->38.418, 9.000->30.078, 9.500->24.106, 10.500->24.106
 circle: Farb-Bracketing keine relevante Änderung (fill_gray: 153); Kandidaten=121->30.645, 137->25.518, 145->24.312, 153->24.106, 161->24.972, 169->26.433, 185->32.404, 200->41.291, 210->47.794, 220->54.284, 230->61.085, 240->68.099
 circle: Farb-Bracketing keine relevante Änderung (stroke_gray: 151); Kandidaten=96->30.496, 112->27.603, 119->26.433, 128->25.142, 135->24.560, 143->24.142, 144->24.149, 151->24.106, 152->24.149, 153->24.206, 159->24.496, 160->24.546, 167->25.028, 171->25.362, 183->26.723
-circle: Radius-Bracketing r 9.600->9.500; Kandidaten=8.500->38.418, 9.000->30.078, 9.500->24.106, 10.500->24.106
 text: minRect Δcx=-2.500, Δcy=3.000, diag=13.000->21.954, scale=1.6888
 text: Fehler=68.520
 text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 1.015); Kandidaten=0.450->94.160, 0.585->90.182, 0.720->78.000, 0.863->74.061, 0.900->71.020, 1.015->68.520, 1.080->69.688, 1.167->74.505, 1.215->76.780, 1.350->77.919
@@ -44,9 +44,9 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=25.456->26.000, scale=1.0214
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=24.106
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 9.600->9.500; Kandidaten=8.500->38.418, 9.000->30.078, 9.500->24.106, 10.500->24.106
 circle: Farb-Bracketing keine relevante Änderung (fill_gray: 153); Kandidaten=121->30.645, 137->25.518, 145->24.312, 153->24.106, 161->24.972, 169->26.433, 185->32.404, 200->41.291, 210->47.794, 220->54.284, 230->61.085, 240->68.099
 circle: Farb-Bracketing keine relevante Änderung (stroke_gray: 151); Kandidaten=96->30.496, 112->27.603, 119->26.433, 128->25.142, 135->24.560, 143->24.142, 144->24.149, 151->24.106, 152->24.149, 153->24.206, 159->24.496, 160->24.546, 167->25.028, 171->25.362, 183->26.723
-circle: Radius-Bracketing r 9.600->9.500; Kandidaten=8.500->38.418, 9.000->30.078, 9.500->24.106, 10.500->24.106
 text: minRect Δcx=-2.500, Δcy=3.000, diag=13.000->21.954, scale=1.6888
 text: Fehler=68.296
 text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 1.015); Kandidaten=0.450->93.400, 0.585->89.985, 0.720->77.590, 0.863->73.765, 0.900->70.969, 1.015->68.296, 1.080->69.927, 1.167->74.651, 1.215->77.156, 1.350->78.288
@@ -57,9 +57,9 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=25.456->26.000, scale=1.0214
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=24.106
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 9.600->9.500; Kandidaten=8.500->38.418, 9.000->30.078, 9.500->24.106, 10.500->24.106
 circle: Farb-Bracketing keine relevante Änderung (fill_gray: 153); Kandidaten=121->30.645, 137->25.518, 145->24.312, 153->24.106, 161->24.972, 169->26.433, 185->32.404, 200->41.291, 210->47.794, 220->54.284, 230->61.085, 240->68.099
 circle: Farb-Bracketing keine relevante Änderung (stroke_gray: 151); Kandidaten=96->30.496, 112->27.603, 119->26.433, 128->25.142, 135->24.560, 143->24.142, 144->24.149, 151->24.106, 152->24.149, 153->24.206, 159->24.496, 160->24.546, 167->25.028, 171->25.362, 183->26.723
-circle: Radius-Bracketing r 9.600->9.500; Kandidaten=8.500->38.418, 9.000->30.078, 9.500->24.106, 10.500->24.106
 text: minRect Δcx=-2.500, Δcy=3.000, diag=13.000->21.954, scale=1.6888
 text: Fehler=68.296
 text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 1.015); Kandidaten=0.450->93.400, 0.585->89.985, 0.720->77.590, 0.863->73.765, 0.900->70.969, 1.015->68.296, 1.080->69.927, 1.167->74.651, 1.215->77.156, 1.350->78.288
@@ -70,9 +70,9 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=25.456->26.000, scale=1.0214
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=24.106
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 9.600->9.500; Kandidaten=8.500->38.418, 9.000->30.078, 9.500->24.106, 10.500->24.106
 circle: Farb-Bracketing keine relevante Änderung (fill_gray: 153); Kandidaten=121->30.645, 137->25.518, 145->24.312, 153->24.106, 161->24.972, 169->26.433, 185->32.404, 200->41.291, 210->47.794, 220->54.284, 230->61.085, 240->68.099
 circle: Farb-Bracketing keine relevante Änderung (stroke_gray: 151); Kandidaten=96->30.496, 112->27.603, 119->26.433, 128->25.142, 135->24.560, 143->24.142, 144->24.149, 151->24.106, 152->24.149, 153->24.206, 159->24.496, 160->24.546, 167->25.028, 171->25.362, 183->26.723
-circle: Radius-Bracketing r 9.600->9.500; Kandidaten=8.500->38.418, 9.000->30.078, 9.500->24.106, 10.500->24.106
 text: minRect Δcx=-2.500, Δcy=3.000, diag=13.000->21.954, scale=1.6888
 text: Fehler=68.296
 text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 1.015); Kandidaten=0.450->93.400, 0.585->89.985, 0.720->77.590, 0.863->73.765, 0.900->70.969, 1.015->68.296, 1.080->69.927, 1.167->74.651, 1.215->77.156, 1.350->78.288

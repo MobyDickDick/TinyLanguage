@@ -3,45 +3,113 @@ circle: minRect Δcx=0.000, Δcy=0.500, diag=27.586->26.000, scale=0.9425
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=77.088
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 8.859->9.500; Kandidaten=8.000->90.982, 8.500->72.366, 9.000->71.175, 9.500->70.026, 10.000->70.026
+circle: Farb-Bracketing fill_gray 242->146; Kandidaten=146->38.272, 200->52.947, 210->57.219, 220->61.570, 226->64.149, 230->65.895, 234->67.667, 240->70.281, 242->71.175, 250->74.728, 255->77.000
+circle: Farb-Bracketing stroke_gray 127->146; Kandidaten=95->44.447, 96->44.219, 111->40.886, 112->40.684, 119->39.360, 127->38.272, 128->38.096, 135->37.456, 143->37.140, 144->37.123, 146->37.009, 152->37.096, 159->37.368, 160->37.421, 171->38.421
+circle: Radius-Bracketing r 8.859->9.500; Kandidaten=8.000->62.348, 8.500->45.411, 9.000->37.009, 9.500->28.947, 10.000->28.947
 stem: Fehler=68.706
 stem: Breitenkorrektur mode=iter, ratio=0.167, alt=1.000, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
-stem: Längen-Bracketing stem_len 13.675->18.000; Kandidaten=1.000->111.250, 9.500->58.692, 13.500->43.765, 18.000->40.265, 26.500->52.881, 35.000->52.788
+stem: Farb-Bracketing stem_gray 127->128; Kandidaten=95->49.147, 96->48.765, 111->46.176, 112->45.824, 119->44.912, 127->43.765, 128->43.471, 135->47.441, 136->48.235, 143->52.294, 144->52.676, 152->57.529, 159->61.971, 160->62.382, 171->68.853
+stem: Längen-Bracketing stem_len 13.675->18.000; Kandidaten=1.000->111.333, 9.500->58.385, 13.500->43.471, 18.000->39.971, 26.500->52.690, 35.000->52.731
 text: minRect Δcx=0.500, Δcy=0.500, diag=12.207->12.042, scale=0.9865
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=62.019
-Runde 1: Gesamtfehler=13.883
+text: Farb-Bracketing text_gray 127->96; Kandidaten=95->47.111, 96->46.944, 111->48.926, 112->49.167, 119->51.148, 127->53.593, 128->53.907, 132->55.093, 135->56.000, 143->60.000, 144->60.611, 152->65.111, 159->69.000, 160->69.537, 171->75.685
+Runde 1: Gesamtfehler=32.390
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=0.000, diag=26.870->26.000, scale=0.9676
+circle: minRect Δcx=0.500, Δcy=0.000, diag=26.173->26.000, scale=0.9934
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=70.026
+circle: Fehler=28.947
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.192->9.500; Kandidaten=8.000->90.982, 8.500->72.366, 9.000->71.175, 9.500->70.026, 10.000->70.026
-stem: minRect Δcx=0.500, Δcy=-0.500, diag=13.153->14.866, scale=1.1302
+circle: Farb-Bracketing fill_gray 146->138; Kandidaten=114->32.026, 130->29.711, 138->29.123, 146->29.746, 154->30.772, 162->32.474, 178->37.430, 200->49.044, 210->55.088, 220->61.096, 230->67.140, 240->73.167
+circle: Farb-Bracketing stroke_gray 146->171; Kandidaten=96->40.061, 112->35.149, 114->34.658, 128->31.289, 130->30.974, 138->29.965, 144->29.333, 146->29.123, 152->28.518, 154->28.342, 160->28.105, 162->28.079, 171->28.000, 178->28.035
+circle: Radius-Bracketing r 9.437->9.500; Kandidaten=8.500->47.062, 9.000->32.439, 9.500->28.000, 10.500->28.000
+stem: minRect Δcx=0.000, Δcy=-0.500, diag=13.038->14.866, scale=1.1402
 stem: Parameter nach Mittelpunkt/Diagonale angepasst
-stem: Fehler=43.765
-stem: Breitenkorrektur mode=iter, ratio=0.500, alt=2.260, neu=2.000
+stem: Fehler=18.029
+stem: Breitenkorrektur mode=iter, ratio=0.333, alt=2.280, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
-stem: Längen-Bracketing stem_len 12.900->18.000; Kandidaten=1.000->111.500, 9.500->66.000, 13.000->45.735, 18.000->40.265, 26.500->55.114, 35.000->61.690
+stem: Farb-Bracketing keine relevante Änderung (stem_gray: 128); Kandidaten=96->46.206, 112->33.971, 120->27.853, 128->22.088, 136->27.912, 144->34.029, 152->40.147, 160->46.265, 171->54.676
+stem: Längen-Bracketing stem_len 12.900->18.000; Kandidaten=1.000->105.833, 9.500->45.938, 13.000->22.088, 18.000->14.618, 26.500->31.500, 35.000->38.690
 text: minRect Δcx=0.500, Δcy=0.000, diag=11.402->12.042, scale=1.0561
-text: Fehler=55.196
-Runde 2: Gesamtfehler=13.883
+text: Fehler=48.786
+text: Farb-Bracketing keine relevante Änderung (text_gray: 96); Kandidaten=64->58.304, 80->52.518, 88->50.286, 96->48.786, 104->49.000, 112->50.929, 128->55.500, 133->56.982, 144->61.964, 152->66.304, 160->70.571, 171->76.500
+Runde 2: Gesamtfehler=31.053
 Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=0.000, diag=26.870->26.000, scale=0.9676
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=70.026
+circle: minRect Δcx=0.000, Δcy=0.000, diag=26.000->26.000, scale=1.0000
+circle: Fehler=28.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.192->9.500; Kandidaten=8.000->90.982, 8.500->72.366, 9.000->71.175, 9.500->70.026, 10.000->70.026
-stem: minRect Δcx=0.500, Δcy=-0.500, diag=13.153->14.866, scale=1.1302
+circle: Farb-Bracketing keine relevante Änderung (fill_gray: 138); Kandidaten=106->31.009, 122->28.842, 130->28.193, 138->28.000, 146->28.991, 154->30.263, 170->34.719, 200->50.202, 210->56.447, 220->62.675, 230->68.904, 240->75.167
+circle: Farb-Bracketing keine relevante Änderung (stroke_gray: 171); Kandidaten=96->40.061, 112->35.149, 128->31.289, 139->29.877, 144->29.333, 146->29.123, 152->28.518, 155->28.263, 160->28.105, 163->28.079, 171->28.000, 179->28.088, 187->28.526, 203->31.912
+circle: Radius-Bracketing keine relevante Änderung (r: 9.500); Kandidaten=8.500->47.062, 9.000->32.439, 9.500->28.000, 10.500->28.000
+stem: minRect Δcx=0.000, Δcy=-0.500, diag=13.038->14.866, scale=1.1402
 stem: Parameter nach Mittelpunkt/Diagonale angepasst
-stem: Fehler=43.765
-stem: Breitenkorrektur mode=iter, ratio=0.500, alt=2.260, neu=2.000
+stem: Fehler=18.029
+stem: Breitenkorrektur mode=iter, ratio=0.333, alt=2.280, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
-stem: Längen-Bracketing stem_len 12.900->18.000; Kandidaten=1.000->111.500, 9.500->66.000, 13.000->45.735, 18.000->40.265, 26.500->55.114, 35.000->61.690
+stem: Farb-Bracketing keine relevante Änderung (stem_gray: 128); Kandidaten=96->46.206, 112->33.971, 120->27.853, 128->22.088, 136->27.912, 144->34.029, 152->40.147, 160->46.265, 171->54.676
+stem: Längen-Bracketing stem_len 12.900->18.000; Kandidaten=1.000->105.833, 9.500->45.938, 13.000->22.088, 18.000->14.618, 26.500->31.500, 35.000->38.690
 text: minRect Δcx=0.500, Δcy=0.000, diag=11.402->12.042, scale=1.0561
-text: Fehler=55.196
-Runde 3: Gesamtfehler=13.883
+text: Fehler=48.786
+text: Farb-Bracketing keine relevante Änderung (text_gray: 96); Kandidaten=64->58.304, 80->52.518, 88->50.286, 96->48.786, 104->49.000, 112->50.929, 128->55.500, 133->56.982, 144->61.964, 152->66.304, 160->70.571, 171->76.500
+Runde 3: Gesamtfehler=31.053
+Runde 4: elementweise Validierung gestartet
+circle: minRect Δcx=0.000, Δcy=0.000, diag=26.000->26.000, scale=1.0000
+circle: Fehler=28.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Farb-Bracketing keine relevante Änderung (fill_gray: 138); Kandidaten=106->31.009, 122->28.842, 130->28.193, 138->28.000, 146->28.991, 154->30.263, 170->34.719, 200->50.202, 210->56.447, 220->62.675, 230->68.904, 240->75.167
+circle: Farb-Bracketing keine relevante Änderung (stroke_gray: 171); Kandidaten=96->40.061, 112->35.149, 128->31.289, 139->29.877, 144->29.333, 146->29.123, 152->28.518, 155->28.263, 160->28.105, 163->28.079, 171->28.000, 179->28.088, 187->28.526, 203->31.912
+circle: Radius-Bracketing keine relevante Änderung (r: 9.500); Kandidaten=8.500->47.062, 9.000->32.439, 9.500->28.000, 10.500->28.000
+stem: minRect Δcx=0.000, Δcy=-0.500, diag=13.038->14.866, scale=1.1402
+stem: Parameter nach Mittelpunkt/Diagonale angepasst
+stem: Fehler=18.029
+stem: Breitenkorrektur mode=iter, ratio=0.333, alt=2.280, neu=2.000
+stem: Geometrie nach Elementabgleich aktualisiert
+stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
+stem: Farb-Bracketing keine relevante Änderung (stem_gray: 128); Kandidaten=96->46.206, 112->33.971, 120->27.853, 128->22.088, 136->27.912, 144->34.029, 152->40.147, 160->46.265, 171->54.676
+stem: Längen-Bracketing stem_len 12.900->18.000; Kandidaten=1.000->105.833, 9.500->45.938, 13.000->22.088, 18.000->14.618, 26.500->31.500, 35.000->38.690
+text: minRect Δcx=0.500, Δcy=0.000, diag=11.402->12.042, scale=1.0561
+text: Fehler=48.786
+text: Farb-Bracketing keine relevante Änderung (text_gray: 96); Kandidaten=64->58.304, 80->52.518, 88->50.286, 96->48.786, 104->49.000, 112->50.929, 128->55.500, 133->56.982, 144->61.964, 152->66.304, 160->70.571, 171->76.500
+Runde 4: Gesamtfehler=31.053
+Runde 5: elementweise Validierung gestartet
+circle: minRect Δcx=0.000, Δcy=0.000, diag=26.000->26.000, scale=1.0000
+circle: Fehler=28.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Farb-Bracketing keine relevante Änderung (fill_gray: 138); Kandidaten=106->31.009, 122->28.842, 130->28.193, 138->28.000, 146->28.991, 154->30.263, 170->34.719, 200->50.202, 210->56.447, 220->62.675, 230->68.904, 240->75.167
+circle: Farb-Bracketing keine relevante Änderung (stroke_gray: 171); Kandidaten=96->40.061, 112->35.149, 128->31.289, 139->29.877, 144->29.333, 146->29.123, 152->28.518, 155->28.263, 160->28.105, 163->28.079, 171->28.000, 179->28.088, 187->28.526, 203->31.912
+circle: Radius-Bracketing keine relevante Änderung (r: 9.500); Kandidaten=8.500->47.062, 9.000->32.439, 9.500->28.000, 10.500->28.000
+stem: minRect Δcx=0.000, Δcy=-0.500, diag=13.038->14.866, scale=1.1402
+stem: Parameter nach Mittelpunkt/Diagonale angepasst
+stem: Fehler=18.029
+stem: Breitenkorrektur mode=iter, ratio=0.333, alt=2.280, neu=2.000
+stem: Geometrie nach Elementabgleich aktualisiert
+stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
+stem: Farb-Bracketing keine relevante Änderung (stem_gray: 128); Kandidaten=96->46.206, 112->33.971, 120->27.853, 128->22.088, 136->27.912, 144->34.029, 152->40.147, 160->46.265, 171->54.676
+stem: Längen-Bracketing stem_len 12.900->18.000; Kandidaten=1.000->105.833, 9.500->45.938, 13.000->22.088, 18.000->14.618, 26.500->31.500, 35.000->38.690
+text: minRect Δcx=0.500, Δcy=0.000, diag=11.402->12.042, scale=1.0561
+text: Fehler=48.786
+text: Farb-Bracketing keine relevante Änderung (text_gray: 96); Kandidaten=64->58.304, 80->52.518, 88->50.286, 96->48.786, 104->49.000, 112->50.929, 128->55.500, 133->56.982, 144->61.964, 152->66.304, 160->70.571, 171->76.500
+Runde 5: Gesamtfehler=31.053
+Runde 6: elementweise Validierung gestartet
+circle: minRect Δcx=0.000, Δcy=0.000, diag=26.000->26.000, scale=1.0000
+circle: Fehler=28.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Farb-Bracketing keine relevante Änderung (fill_gray: 138); Kandidaten=106->31.009, 122->28.842, 130->28.193, 138->28.000, 146->28.991, 154->30.263, 170->34.719, 200->50.202, 210->56.447, 220->62.675, 230->68.904, 240->75.167
+circle: Farb-Bracketing keine relevante Änderung (stroke_gray: 171); Kandidaten=96->40.061, 112->35.149, 128->31.289, 139->29.877, 144->29.333, 146->29.123, 152->28.518, 155->28.263, 160->28.105, 163->28.079, 171->28.000, 179->28.088, 187->28.526, 203->31.912
+circle: Radius-Bracketing keine relevante Änderung (r: 9.500); Kandidaten=8.500->47.062, 9.000->32.439, 9.500->28.000, 10.500->28.000
+stem: minRect Δcx=0.000, Δcy=-0.500, diag=13.038->14.866, scale=1.1402
+stem: Parameter nach Mittelpunkt/Diagonale angepasst
+stem: Fehler=18.029
+stem: Breitenkorrektur mode=iter, ratio=0.333, alt=2.280, neu=2.000
+stem: Geometrie nach Elementabgleich aktualisiert
+stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
+stem: Farb-Bracketing keine relevante Änderung (stem_gray: 128); Kandidaten=96->46.206, 112->33.971, 120->27.853, 128->22.088, 136->27.912, 144->34.029, 152->40.147, 160->46.265, 171->54.676
+stem: Längen-Bracketing stem_len 12.900->18.000; Kandidaten=1.000->105.833, 9.500->45.938, 13.000->22.088, 18.000->14.618, 26.500->31.500, 35.000->38.690
+text: minRect Δcx=0.500, Δcy=0.000, diag=11.402->12.042, scale=1.0561
+text: Fehler=48.786
+text: Farb-Bracketing keine relevante Änderung (text_gray: 96); Kandidaten=64->58.304, 80->52.518, 88->50.286, 96->48.786, 104->49.000, 112->50.929, 128->55.500, 133->56.982, 144->61.964, 152->66.304, 160->70.571, 171->76.500
+Runde 6: Gesamtfehler=31.053

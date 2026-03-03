@@ -3,7 +3,7 @@ circle: minRect Δcx=0.000, Δcy=0.500, diag=27.586->26.000, scale=0.9425
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=77.088
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 8.859->9.500; Kandidaten=3.000->116.200, 4.500->94.947, 6.000->111.974, 8.000->90.982, 9.000->71.175, 9.500->70.026, 10.000->70.026
+circle: Radius-Bracketing r 8.859->9.500; Kandidaten=8.000->90.982, 8.500->72.366, 9.000->71.175, 9.500->70.026, 10.000->70.026
 stem: Fehler=68.706
 stem: Breitenkorrektur mode=iter, ratio=0.167, alt=1.000, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
@@ -18,7 +18,7 @@ circle: minRect Δcx=0.000, Δcy=0.000, diag=26.870->26.000, scale=0.9676
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=70.026
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.192->9.500; Kandidaten=3.000->116.200, 4.500->94.947, 6.000->111.974, 8.000->90.982, 9.000->71.175, 9.500->70.026, 10.000->70.026
+circle: Radius-Bracketing r 9.192->9.500; Kandidaten=8.000->90.982, 8.500->72.366, 9.000->71.175, 9.500->70.026, 10.000->70.026
 stem: minRect Δcx=0.500, Δcy=-0.500, diag=13.153->14.866, scale=1.1302
 stem: Parameter nach Mittelpunkt/Diagonale angepasst
 stem: Fehler=43.765
@@ -34,7 +34,7 @@ circle: minRect Δcx=0.000, Δcy=0.000, diag=26.870->26.000, scale=0.9676
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=70.026
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.192->9.500; Kandidaten=3.000->116.200, 4.500->94.947, 6.000->111.974, 8.000->90.982, 9.000->71.175, 9.500->70.026, 10.000->70.026
+circle: Radius-Bracketing r 9.192->9.500; Kandidaten=8.000->90.982, 8.500->72.366, 9.000->71.175, 9.500->70.026, 10.000->70.026
 stem: minRect Δcx=0.500, Δcy=-0.500, diag=13.153->14.866, scale=1.1302
 stem: Parameter nach Mittelpunkt/Diagonale angepasst
 stem: Fehler=43.765

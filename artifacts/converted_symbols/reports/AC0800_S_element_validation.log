@@ -3,12 +3,19 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=14.000->18.385, scale=1.3132
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=63.163
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 6.136->7.000; Kandidaten=5.000->67.628, 5.500->63.492, 6.000->42.077, 6.500->43.831, 7.000->33.708
-Runde 1: Gesamtfehler=15.720
+circle: Radius-Bracketing r 6.136->6.500; Kandidaten=5.000->61.302, 5.500->52.038, 6.000->53.308, 6.500->44.277, 7.000->49.785
+Runde 1: Gesamtfehler=23.787
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=0.000, diag=19.799->19.799, scale=1.0000
-circle: Fehler=33.708
+circle: minRect Δcx=0.500, Δcy=0.500, diag=18.385->19.799, scale=1.0769
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=44.277
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 7.000); Kandidaten=6.000->42.077, 6.500->43.831, 7.000->33.708, 8.000->33.708
-Runde 2: Gesamtfehler=15.720
-Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet
+circle: Radius-Bracketing r 7.000->6.500; Kandidaten=6.000->53.308, 6.500->44.277, 7.000->49.785, 8.000->49.785
+Runde 2: Gesamtfehler=23.787
+Runde 3: elementweise Validierung gestartet
+circle: minRect Δcx=0.500, Δcy=0.500, diag=18.385->19.799, scale=1.0769
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=44.277
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 7.000->6.500; Kandidaten=6.000->53.308, 6.500->44.277, 7.000->49.785, 8.000->49.785
+Runde 3: Gesamtfehler=23.787

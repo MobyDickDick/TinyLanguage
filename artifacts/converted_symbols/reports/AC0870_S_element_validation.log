@@ -3,28 +3,28 @@ circle: minRect Δcx=1.000, Δcy=1.000, diag=14.000->8.485, scale=0.6061
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=81.733
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 4.420->7.000; Kandidaten=3.500->80.880, 4.000->89.040, 4.500->91.622, 5.000->89.232, 5.500->80.972, 6.500->63.833, 7.000->57.139
+circle: Radius-Bracketing r 4.576->6.500; Kandidaten=3.500->86.760, 4.500->81.944, 5.000->82.463, 5.500->75.254, 6.000->74.292, 6.500->68.069, 7.000->69.819
 text: minRect Δcx=0.500, Δcy=0.500, diag=8.602->8.485, scale=0.9864
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=75.667
-Runde 1: Gesamtfehler=26.604
+Runde 1: Gesamtfehler=34.618
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=-0.000, diag=19.799->19.677, scale=0.9939
+circle: minRect Δcx=0.500, Δcy=0.500, diag=18.385->19.677, scale=1.0703
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=57.139
+circle: Fehler=68.069
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 6.957->7.000; Kandidaten=6.000->67.278, 6.500->63.833, 7.000->57.139, 8.000->57.139
+circle: Radius-Bracketing r 6.957->6.500; Kandidaten=6.000->74.292, 6.500->68.069, 7.000->69.819, 8.000->69.819
 text: minRect Δcx=0.500, Δcy=0.500, diag=8.602->8.485, scale=0.9864
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=75.054
-Runde 2: Gesamtfehler=24.316
+Runde 2: Gesamtfehler=32.329
 Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=-0.000, diag=19.799->19.677, scale=0.9939
+circle: minRect Δcx=0.500, Δcy=0.500, diag=18.385->19.677, scale=1.0703
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=57.139
+circle: Fehler=68.069
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 6.957->7.000; Kandidaten=6.000->67.278, 6.500->63.833, 7.000->57.139, 8.000->57.139
+circle: Radius-Bracketing r 6.957->6.500; Kandidaten=6.000->74.292, 6.500->68.069, 7.000->69.819, 8.000->69.819
 text: minRect Δcx=0.500, Δcy=0.500, diag=8.602->8.485, scale=0.9864
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=67.946
-Runde 3: Gesamtfehler=24.187
+Runde 3: Gesamtfehler=32.200

@@ -3,7 +3,7 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=22.627->26.000, scale=1.1490
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=78.676
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 8.963->9.000; Kandidaten=3.000->74.229, 4.500->91.984, 6.000->88.564, 8.000->83.789, 9.000->61.826, 9.500->74.221, 10.000->74.221
+circle: Radius-Bracketing r 8.963->9.000; Kandidaten=8.000->83.789, 8.500->74.476, 9.000->61.826, 9.500->74.221, 10.000->74.221
 arm: minRect Δcx=-1.500, Δcy=0.500, diag=13.038->17.088, scale=1.3106
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=75.651
@@ -18,7 +18,7 @@ Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=0.000, diag=26.000->26.000, scale=1.0000
 circle: Fehler=61.826
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 9.000); Kandidaten=3.000->74.229, 4.500->91.984, 6.000->88.564, 8.000->83.789, 9.000->61.826, 9.500->74.221, 10.000->74.221
+circle: Radius-Bracketing keine relevante Änderung (r: 9.000); Kandidaten=8.000->83.789, 8.500->74.476, 9.000->61.826, 9.500->74.221, 10.000->74.221
 arm: minRect Δcx=-1.000, Δcy=0.500, diag=12.042->17.088, scale=1.4191
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=77.907
@@ -33,7 +33,7 @@ Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=0.000, diag=26.000->26.000, scale=1.0000
 circle: Fehler=61.826
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 9.000); Kandidaten=3.000->74.229, 4.500->91.984, 6.000->88.564, 8.000->83.789, 9.000->61.826, 9.500->74.221, 10.000->74.221
+circle: Radius-Bracketing keine relevante Änderung (r: 9.000); Kandidaten=8.000->83.789, 8.500->74.476, 9.000->61.826, 9.500->74.221, 10.000->74.221
 arm: minRect Δcx=-1.000, Δcy=0.500, diag=12.042->17.088, scale=1.4191
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=77.907

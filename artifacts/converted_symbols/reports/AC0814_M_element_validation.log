@@ -3,9 +3,11 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=22.627->26.000, scale=1.1490
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=70.141
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 3.000->inf, 4.500->inf, 6.000->80.600, 8.000->70.500, 9.000->13.171, 9.500->50.476, 10.000->50.476
-arm: Fehler=69.265
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 15.500); Kandidaten=1.000->101.222, 9.500->81.059, 15.500->71.111, 18.000->71.111, 26.500->71.111, 35.000->71.111
-Runde 1: Gesamtfehler=3.679
+circle: Radius-Bracketing r 9.192->9.000; Kandidaten=8.000->70.500, 8.500->52.700, 9.000->13.171, 9.500->50.476, 10.000->50.476
+arm: minRect Δcx=-0.930, Δcy=1.510, diag=13.038->15.654, scale=1.2006
+arm: Parameter nach Mittelpunkt/Diagonale angepasst
+arm: Fehler=68.417
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.180, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 15.148->15.000; Kandidaten=1.000->101.222, 9.500->81.059, 15.000->71.111, 18.000->71.111, 26.500->71.111, 35.000->71.111
+Runde 1: Gesamtfehler=3.817
 Gesamtfehler unter Schwellwert, Validierung beendet

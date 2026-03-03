@@ -3,31 +3,30 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=22.000->26.000, scale=1.1818
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=85.879
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 8.732->8.500; Kandidaten=3.000->78.818, 4.500->94.864, 6.000->87.808, 7.500->93.275, 8.000->82.887, 8.500->72.596, 9.500->72.638
-text: minRect Δcx=1.000, Δcy=2.000, diag=8.246->13.416, scale=1.6270
+circle: Radius-Bracketing r 8.732->9.500; Kandidaten=7.500->85.879, 8.000->82.844, 8.500->69.532, 9.000->69.794, 9.500->67.801
+text: minRect Δcx=-1.500, Δcy=2.500, diag=6.708->14.318, scale=2.1344
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=100.895
-text: Breiten-Bracketing voc_font_scale 0.520->0.831; Kandidaten=0.312->99.725, 0.442->99.725, 0.468->99.725, 0.520->97.207, 0.598->91.471, 0.623->89.417, 0.831->84.116, 1.039->86.143, 1.194->85.442, 1.350->86.513
-Runde 1: Gesamtfehler=30.240
+text: Fehler=102.468
+text: Breiten-Bracketing voc_font_scale 0.520->1.194; Kandidaten=0.312->98.217, 0.442->96.261, 0.468->97.547, 0.520->93.141, 0.598->87.416, 0.623->84.727, 0.831->85.396, 1.039->86.973, 1.194->84.598, 1.350->84.941
+Runde 1: Gesamtfehler=38.325
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=24.000->26.000, scale=1.0833
+circle: minRect Δcx=0.000, Δcy=0.000, diag=26.870->26.000, scale=0.9676
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=72.596
+circle: Fehler=67.801
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.208->9.000; Kandidaten=3.000->78.818, 4.500->94.864, 6.000->87.808, 8.000->82.887, 9.000->50.638, 9.500->72.638, 10.000->72.638
-text: minRect Δcx=0.500, Δcy=3.000, diag=15.811->21.095, scale=1.3342
+circle: Radius-Bracketing r 9.192->9.500; Kandidaten=8.000->82.844, 8.500->69.532, 9.000->69.794, 9.500->67.801, 10.000->67.801
+text: minRect Δcx=1.000, Δcy=4.000, diag=9.220->23.601, scale=2.5599
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=85.525
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.831); Kandidaten=0.450->97.132, 0.585->86.317, 0.706->70.690, 0.720->69.423, 0.831->64.562, 0.900->72.582, 0.956->70.449, 1.080->74.596, 1.215->75.541, 1.350->75.550
-Runde 2: Gesamtfehler=11.338
+text: Fehler=84.598
+text: Breiten-Bracketing voc_font_scale 1.194->1.015; Kandidaten=0.450->95.140, 0.585->90.561, 0.720->78.718, 0.900->71.357, 1.015->69.082, 1.080->69.587, 1.194->74.174, 1.215->76.587, 1.350->77.586
+Runde 2: Gesamtfehler=28.065
 Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
+circle: minRect Δcx=0.000, Δcy=0.000, diag=26.870->26.000, scale=0.9676
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=50.638
+circle: Fehler=67.801
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.024->9.000; Kandidaten=3.000->78.818, 4.500->94.864, 6.000->87.808, 8.000->82.887, 9.000->50.638, 9.500->72.638, 10.000->72.638
-text: minRect Δcx=0.500, Δcy=3.000, diag=15.811->21.095, scale=1.3342
-text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=64.562
-text: Breiten-Bracketing voc_font_scale 0.831->0.956; Kandidaten=0.450->100.674, 0.585->87.698, 0.706->79.507, 0.720->78.356, 0.831->73.588, 0.900->72.582, 0.956->70.449, 1.080->76.714, 1.215->75.541, 1.350->75.725
-Runde 3: Gesamtfehler=16.038
+circle: Radius-Bracketing r 9.192->9.500; Kandidaten=8.000->82.844, 8.500->69.532, 9.000->69.794, 9.500->67.801, 10.000->67.801
+text: minRect Δcx=-2.500, Δcy=3.000, diag=13.000->21.954, scale=1.6888
+text: Fehler=69.082
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 1.015); Kandidaten=0.450->95.140, 0.585->90.561, 0.720->78.718, 0.863->74.520, 0.900->71.357, 1.015->69.082, 1.080->69.587, 1.167->74.651, 1.215->76.587, 1.350->77.586
+Runde 3: Gesamtfehler=28.065

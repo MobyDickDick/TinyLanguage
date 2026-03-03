@@ -3,29 +3,30 @@ circle: minRect Δcx=1.000, Δcy=1.000, diag=14.000->19.799, scale=1.4142
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=98.701
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 6.136->7.000; Kandidaten=3.500->93.611, 5.000->96.595, 5.500->96.837, 6.000->89.198, 7.000->84.300, 8.000->92.609, 10.000->94.920, 12.000->96.771
-text: minRect Δcx=1.000, Δcy=2.000, diag=7.280->15.264, scale=2.0967
+circle: Radius-Bracketing r 6.136->6.500; Kandidaten=4.500->97.851, 5.000->98.701, 6.000->93.625, 6.500->88.800, 7.000->89.591, 8.500->91.794, 10.000->96.790, 12.000->96.883
+text: minRect Δcx=0.541, Δcy=0.907, diag=8.544->16.483, scale=1.9292
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=99.163
-text: Breiten-Bracketing voc_font_scale 0.520->1.194; Kandidaten=0.312->100.000, 0.442->100.000, 0.468->100.000, 0.520->100.000, 0.598->98.875, 0.623->98.706, 0.831->90.926, 1.039->85.069, 1.194->84.756, 1.350->91.000
-Runde 1: Gesamtfehler=38.216
+text: Fehler=103.750
+text: Breiten-Bracketing voc_font_scale 0.520->1.350; Kandidaten=0.312->98.125, 0.442->98.125, 0.468->98.125, 0.520->98.125, 0.598->98.125, 0.623->98.417, 0.831->94.154, 1.039->90.160, 1.194->93.515, 1.350->89.487
+Runde 1: Gesamtfehler=37.843
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.500, diag=20.000->20.518, scale=1.0259
+circle: minRect Δcx=-0.000, Δcy=1.000, diag=18.974->21.260, scale=1.1205
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=84.300
+circle: Fehler=88.800
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 7.181->7.000; Kandidaten=3.500->91.275, 5.500->95.919, 6.000->88.533, 7.000->86.490, 8.000->91.170, 10.000->94.404, 12.000->97.329
-text: minRect Δcx=-4.000, Δcy=3.000, diag=12.083->20.248, scale=1.6758
+circle: Radius-Bracketing r 7.283->6.500; Kandidaten=4.500->97.851, 6.500->88.800, 7.500->89.821, 8.500->91.794, 10.000->96.790, 12.000->96.883
+text: minRect Δcx=-1.000, Δcy=4.000, diag=7.071->23.022, scale=3.2558
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=85.329
-text: Breiten-Bracketing voc_font_scale 1.194->1.350; Kandidaten=0.450->110.317, 0.585->109.341, 0.720->99.140, 0.900->90.852, 1.015->82.339, 1.080->82.148, 1.194->84.671, 1.215->86.566, 1.350->80.188
-Runde 2: Gesamtfehler=40.514
+text: Fehler=89.487
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 1.350); Kandidaten=0.450->106.735, 0.585->106.735, 0.720->99.907, 0.900->94.938, 1.080->89.186, 1.147->88.929, 1.215->90.988, 1.350->85.527
+Runde 2: Gesamtfehler=38.672
 Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=0.000, diag=20.518->20.518, scale=1.0000
-circle: Fehler=86.490
+circle: minRect Δcx=-0.000, Δcy=1.000, diag=18.974->21.260, scale=1.1205
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=88.800
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 7.000); Kandidaten=3.500->91.275, 5.500->95.919, 6.000->88.533, 7.000->86.490, 8.000->91.170, 10.000->94.404, 12.000->97.329
-text: minRect Δcx=1.500, Δcy=2.000, diag=13.416->21.471, scale=1.6003
-text: Fehler=80.188
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 1.350); Kandidaten=0.450->110.317, 0.585->109.341, 0.720->99.140, 0.900->90.852, 1.080->82.148, 1.147->81.508, 1.215->86.566, 1.350->80.188
-Runde 3: Gesamtfehler=40.514
+circle: Radius-Bracketing r 7.283->6.500; Kandidaten=4.500->97.851, 6.500->88.800, 7.500->89.821, 8.500->91.794, 10.000->96.790, 12.000->96.883
+text: minRect Δcx=-1.000, Δcy=3.000, diag=7.071->21.954, scale=3.1048
+text: Fehler=85.527
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 1.350); Kandidaten=0.450->106.735, 0.585->106.735, 0.720->99.907, 0.900->94.938, 1.080->89.186, 1.147->88.929, 1.215->90.988, 1.350->85.527
+Runde 3: Gesamtfehler=38.672

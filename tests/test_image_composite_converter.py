@@ -486,3 +486,68 @@ def test_co2_text_width_bracketing_is_bounded_for_ac0820() -> None:
     assert float(low) <= float(params["co2_font_scale"]) <= float(high)
     assert float(low) >= float(params["co2_font_scale_min"]) - 1e-9
     assert float(high) <= float(params["co2_font_scale_max"]) + 1e-9
+
+
+def test_validate_badge_runs_color_bracketing_after_geometry_steps() -> None:
+    """Validation should optimize color only after extent/radius geometry updates."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+
+    class DummyImg:
+        shape = (15, 15, 3)
+
+    img = DummyImg()
+    params = {"circle_enabled": True, "draw_text": False}
+    call_order: list[str] = []
+
+    original_generate_badge_svg = Action.generate_badge_svg
+    original_render_svg_to_numpy = Action.render_svg_to_numpy
+    original_fit_to_original_size = Action._fit_to_original_size
+    original_extract_badge_element_mask = Action.extract_badge_element_mask
+    original_mask_min_rect_center_diag = Action._mask_min_rect_center_diag
+    original_masked_error = Action._masked_error
+    original_calculate_error = Action.calculate_error
+    original_width = Action._optimize_element_width_bracket
+    original_extent = Action._optimize_element_extent_bracket
+    original_radius = Action._optimize_circle_radius_bracket
+    original_color = Action._optimize_element_color_bracket
+
+    Action.generate_badge_svg = staticmethod(lambda _w, _h, _params: "<svg/>")
+    Action.render_svg_to_numpy = staticmethod(lambda _svg, w, h: np.zeros((h, w, 3), dtype=np.uint8))
+    Action._fit_to_original_size = staticmethod(lambda _orig, render: render)
+    Action.extract_badge_element_mask = staticmethod(lambda _img, _params, _element: np.ones((15, 15), dtype=np.uint8))
+    Action._mask_min_rect_center_diag = staticmethod(lambda _mask: None)
+    Action._masked_error = staticmethod(lambda _orig, _render, _mask: 0.0)
+    Action.calculate_error = staticmethod(lambda _orig, _render: 0.0)
+
+    Action._optimize_element_width_bracket = staticmethod(
+        lambda _img, _params, _element, _logs: call_order.append("width") or False
+    )
+    Action._optimize_element_extent_bracket = staticmethod(
+        lambda _img, _params, _element, _logs: call_order.append("extent") or False
+    )
+    Action._optimize_circle_radius_bracket = staticmethod(
+        lambda _img, _params, _logs: call_order.append("radius") or False
+    )
+    Action._optimize_element_color_bracket = staticmethod(
+        lambda _img, _params, _element, _mask, _logs: call_order.append("color") or False
+    )
+
+    try:
+        Action.validate_badge_by_elements(img, params, max_rounds=1)
+    finally:
+        Action.generate_badge_svg = original_generate_badge_svg
+        Action.render_svg_to_numpy = original_render_svg_to_numpy
+        Action._fit_to_original_size = original_fit_to_original_size
+        Action.extract_badge_element_mask = original_extract_badge_element_mask
+        Action._mask_min_rect_center_diag = original_mask_min_rect_center_diag
+        Action._masked_error = original_masked_error
+        Action.calculate_error = original_calculate_error
+        Action._optimize_element_width_bracket = original_width
+        Action._optimize_element_extent_bracket = original_extent
+        Action._optimize_circle_radius_bracket = original_radius
+        Action._optimize_element_color_bracket = original_color
+
+    assert call_order == ["width", "extent", "radius", "color"]

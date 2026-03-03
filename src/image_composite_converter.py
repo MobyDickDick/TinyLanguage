@@ -2324,32 +2324,16 @@ class Action:
             )
             return False
 
-        if key.endswith("_font_scale"):
-            candidates = sorted(
-                {
-                    round(low, 3),
-                    round(low + (high - low) * 0.15, 3),
-                    round(low + (high - low) * 0.30, 3),
-                    round(low + (high - low) * 0.50, 3),
-                    round(low + (high - low) * 0.70, 3),
-                    round(low + (high - low) * 0.85, 3),
-                    round(high, 3),
-                    round(max(low, min(high, current * 0.85)), 3),
-                    round(max(low, min(high, current)), 3),
-                    round(max(low, min(high, current * 1.15)), 3),
-                }
-            )
-        else:
-            candidates = sorted(
-                {
-                    Action._snap_half(low),
-                    Action._snap_half(low + (high - low) * 0.25),
-                    Action._snap_half((low + high) / 2.0),
-                    Action._snap_half(low + (high - low) * 0.75),
-                    Action._snap_half(high),
-                    Action._snap_half(current),
-                }
-            )
+        candidates = sorted(
+            {
+                Action._snap_half(low),
+                Action._snap_half(low + (high - low) * 0.25),
+                Action._snap_half((low + high) / 2.0),
+                Action._snap_half(low + (high - low) * 0.75),
+                Action._snap_half(high),
+                Action._snap_half(current),
+            }
+        )
         candidate_errors = [Action._element_error_for_extent(img_orig, params, element, v) for v in candidates]
         if not all(np.isfinite(e) for e in candidate_errors):
             logs.append(

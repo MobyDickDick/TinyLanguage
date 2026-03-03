@@ -1768,6 +1768,21 @@ class Action:
         return float(np.mean(cv2.absdiff(img_orig, img_svg)))
 
     @staticmethod
+    def calculate_delta2_stats(img_orig: np.ndarray, img_svg: np.ndarray) -> tuple[float, float]:
+        """Return mean/std of per-pixel squared RGB deltas.
+
+        Per-pixel metric:
+            delta2 = (ΔR)^2 + (ΔG)^2 + (ΔB)^2
+        """
+        if img_svg is None:
+            return float("inf"), float("inf")
+        if img_svg.shape[:2] != img_orig.shape[:2]:
+            img_svg = cv2.resize(img_svg, (img_orig.shape[1], img_orig.shape[0]), interpolation=cv2.INTER_AREA)
+        diff = img_orig.astype(np.float32) - img_svg.astype(np.float32)
+        delta2 = np.sum(diff * diff, axis=2)
+        return float(np.mean(delta2)), float(np.std(delta2))
+
+    @staticmethod
     def _fit_to_original_size(img_orig: np.ndarray, img_svg: np.ndarray | None) -> np.ndarray | None:
         if img_svg is None:
             return None
@@ -2614,6 +2629,100 @@ class Action:
 
 
     @staticmethod
+    def _element_color_keys(element: str, params: dict) -> list[str]:
+        if element == "circle" and params.get("circle_enabled", True):
+            return ["fill_gray", "stroke_gray"]
+        if element == "stem" and params.get("stem_enabled"):
+            return ["stem_gray"]
+        if element == "arm" and params.get("arm_enabled"):
+            return ["stroke_gray"]
+        if element == "text" and params.get("draw_text", True):
+            return ["text_gray"]
+        return []
+
+    @staticmethod
+    def _element_error_for_color(
+        img_orig: np.ndarray,
+        params: dict,
+        element: str,
+        color_key: str,
+        color_value: int,
+        mask_orig: np.ndarray,
+    ) -> float:
+        probe = dict(params)
+        probe[color_key] = int(np.clip(color_value, 0, 255))
+
+        h, w = img_orig.shape[:2]
+        elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(probe, element))
+        elem_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(elem_svg, w, h))
+        if elem_render is None:
+            return float("inf")
+        return Action._masked_error(img_orig, elem_render, mask_orig)
+
+    @staticmethod
+    def _optimize_element_color_bracket(
+        img_orig: np.ndarray,
+        params: dict,
+        element: str,
+        mask_orig: np.ndarray,
+        logs: list[str],
+    ) -> bool:
+        if mask_orig is None or int(mask_orig.sum()) == 0:
+            return False
+
+        changed_any = False
+        local_gray = Action._mean_gray_for_mask(img_orig, mask_orig)
+        sampled = int(round(local_gray)) if local_gray is not None else None
+
+        for color_key in Action._element_color_keys(element, params):
+            current = int(round(float(params.get(color_key, 128))))
+            candidates = {
+                int(np.clip(current - 32, 0, 255)),
+                int(np.clip(current - 16, 0, 255)),
+                int(np.clip(current - 8, 0, 255)),
+                int(np.clip(current, 0, 255)),
+                int(np.clip(current + 8, 0, 255)),
+                int(np.clip(current + 16, 0, 255)),
+                int(np.clip(current + 32, 0, 255)),
+            }
+            if sampled is not None:
+                candidates.add(int(np.clip(sampled, 0, 255)))
+            if element == "circle" and color_key == "fill_gray":
+                candidates.update({200, 210, 220, 230, 240})
+            if color_key in {"stroke_gray", "stem_gray", "text_gray"}:
+                candidates.update({96, 112, 128, 144, 152, 160, 171})
+
+            values = sorted(candidates)
+            errs = [
+                Action._element_error_for_color(img_orig, params, element, color_key, v, mask_orig)
+                for v in values
+            ]
+            if not all(np.isfinite(e) for e in errs):
+                logs.append(
+                    f"{element}: Farb-Bracketing abgebrochen ({color_key}) wegen nicht-finiten Fehlern "
+                    + ", ".join(f"{v}->{e:.3f}" for v, e in zip(values, errs, strict=False))
+                )
+                continue
+
+            best_idx = int(np.argmin(errs))
+            best_value = int(values[best_idx])
+            if best_value == current:
+                logs.append(
+                    f"{element}: Farb-Bracketing keine relevante Änderung ({color_key}: {current}); Kandidaten="
+                    + ", ".join(f"{v}->{e:.3f}" for v, e in zip(values, errs, strict=False))
+                )
+                continue
+
+            params[color_key] = int(best_value)
+            changed_any = True
+            logs.append(
+                f"{element}: Farb-Bracketing {color_key} {current}->{best_value}; Kandidaten="
+                + ", ".join(f"{v}->{e:.3f}" for v, e in zip(values, errs, strict=False))
+            )
+
+        return changed_any
+
+    @staticmethod
     def _refine_stem_geometry_from_masks(params: dict, mask_orig: np.ndarray, mask_svg: np.ndarray, w: int) -> tuple[bool, str | None]:
         """Refine stem width/position when validation detects a geometric mismatch."""
         orig_bbox = Action._mask_bbox(mask_orig)
@@ -2682,7 +2791,7 @@ class Action:
         img_orig: np.ndarray,
         params: dict,
         *,
-        max_rounds: int = 3,
+        max_rounds: int = 6,
         debug_out_dir: str | None = None,
     ) -> list[str]:
         h, w = img_orig.shape[:2]
@@ -2763,6 +2872,10 @@ class Action:
 
                 width_changed = Action._optimize_element_width_bracket(img_orig, params, element, logs)
                 if width_changed:
+                    round_changed = True
+
+                color_changed = Action._optimize_element_color_bracket(img_orig, params, element, mask_orig, logs)
+                if color_changed:
                     round_changed = True
 
                 extent_changed = Action._optimize_element_extent_bracket(img_orig, params, element, logs)
@@ -2992,6 +3105,7 @@ def convert_range(
                         )
 
     _harmonize_semantic_size_variants(semantic_results, folder_path, svg_out_dir, reports_out_dir)
+    _write_pixel_delta2_ranking(folder_path, svg_out_dir, reports_out_dir)
 
     return out_root
 
@@ -3256,6 +3370,59 @@ def _harmonize_semantic_size_variants(
     if harmonized_logs:
         with open(os.path.join(reports_out_dir, "variant_harmonization.log"), "w", encoding="utf-8") as f:
             f.write("\n".join(harmonized_logs).rstrip() + "\n")
+
+
+def _write_pixel_delta2_ranking(folder_path: str, svg_out_dir: str, reports_out_dir: str, threshold: float = 18.0) -> None:
+    ranking: list[dict[str, float | str]] = []
+    for svg_name in sorted(f for f in os.listdir(svg_out_dir) if f.lower().endswith(".svg")):
+        stem = os.path.splitext(svg_name)[0]
+        orig_path = None
+        for ext in (".jpg", ".png", ".bmp"):
+            candidate = os.path.join(folder_path, f"{stem}{ext}")
+            if os.path.exists(candidate):
+                orig_path = candidate
+                break
+        if orig_path is None:
+            continue
+
+        img_orig = cv2.imread(orig_path)
+        if img_orig is None:
+            continue
+
+        with open(os.path.join(svg_out_dir, svg_name), "r", encoding="utf-8") as f:
+            svg_content = f.read()
+
+        h, w = img_orig.shape[:2]
+        rendered = Action.render_svg_to_numpy(svg_content, w, h)
+        if rendered is None:
+            continue
+
+        mean_delta2, std_delta2 = Action.calculate_delta2_stats(img_orig, rendered)
+        ranking.append(
+            {
+                "image": os.path.basename(orig_path),
+                "mean_delta2": float(mean_delta2),
+                "std_delta2": float(std_delta2),
+            }
+        )
+
+    ranking.sort(key=lambda row: float(row["mean_delta2"]), reverse=True)
+    csv_path = os.path.join(reports_out_dir, "pixel_delta2_ranking.csv")
+    with open(csv_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f, delimiter=";")
+        writer.writerow(["image", "mean_delta2", "std_delta2"])
+        for row in ranking:
+            writer.writerow([row["image"], f"{float(row['mean_delta2']):.6f}", f"{float(row['std_delta2']):.6f}"])
+
+    valid = [row for row in ranking if np.isfinite(float(row["mean_delta2"]))]
+    count_ok = sum(1 for row in valid if float(row["mean_delta2"]) <= threshold)
+    summary_lines = [
+        f"images_total={len(valid)}",
+        f"threshold_mean_delta2={threshold:.3f}",
+        f"images_with_mean_delta2_le_threshold={count_ok}",
+    ]
+    with open(os.path.join(reports_out_dir, "pixel_delta2_summary.txt"), "w", encoding="utf-8") as f:
+        f.write("\n".join(summary_lines) + "\n")
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

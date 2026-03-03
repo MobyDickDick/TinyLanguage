@@ -2874,10 +2874,6 @@ class Action:
                 if width_changed:
                     round_changed = True
 
-                color_changed = Action._optimize_element_color_bracket(img_orig, params, element, mask_orig, logs)
-                if color_changed:
-                    round_changed = True
-
                 extent_changed = Action._optimize_element_extent_bracket(img_orig, params, element, logs)
                 if extent_changed:
                     round_changed = True
@@ -2886,6 +2882,10 @@ class Action:
                     radius_changed = Action._optimize_circle_radius_bracket(img_orig, params, logs)
                     if radius_changed:
                         round_changed = True
+
+                color_changed = Action._optimize_element_color_bracket(img_orig, params, element, mask_orig, logs)
+                if color_changed:
+                    round_changed = True
 
             full_svg = Action.generate_badge_svg(w, h, params)
             full_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(full_svg, w, h))

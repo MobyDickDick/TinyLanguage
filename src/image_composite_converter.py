@@ -409,6 +409,10 @@ class Action:
         """For AC08xx symbols: prefer a uniform 1px circle/connector stroke."""
         p = dict(params)
         p["stroke_circle"] = Action.AC08_STROKE_WIDTH_PX
+        # Keep semantic AC08xx families on their canonical stroke thickness.
+        # The later pixel-error bracketing step can otherwise over-fit anti-aliased
+        # ring edges and inflate widths (e.g. 1px -> 6px for tiny circles).
+        p["lock_stroke_widths"] = True
         if p.get("arm_enabled"):
             p["arm_stroke"] = Action.AC08_STROKE_WIDTH_PX
         if p.get("stem_enabled"):
@@ -2070,15 +2074,25 @@ class Action:
 
     @staticmethod
     def _element_width_key_and_bounds(element: str, params: dict, w: int, h: int) -> tuple[str, float, float] | None:
+        lock_strokes = bool(params.get("lock_stroke_widths"))
         if element == "stem" and params.get("stem_enabled"):
+            if lock_strokes:
+                fixed = float(Action.AC08_STROKE_WIDTH_PX)
+                return "stem_width", fixed, fixed
             low = max(1.0, float(params.get("stroke_circle", 1.0)) * 0.65)
             high = max(low, min(float(w) * 0.25, float(params.get("stem_width_max", float(w) * 0.25))))
             return "stem_width", low, high
         if element == "arm" and params.get("arm_enabled"):
+            if lock_strokes:
+                fixed = float(Action.AC08_STROKE_WIDTH_PX)
+                return "arm_stroke", fixed, fixed
             low = max(1.0, float(params.get("stroke_circle", 1.0)) * 0.65)
             high = max(low, min(float(min(w, h)) * 0.20, float(params.get("r", min(w, h))) * 0.9))
             return "arm_stroke", low, high
         if element == "circle" and params.get("circle_enabled", True):
+            if lock_strokes:
+                fixed = float(Action.AC08_STROKE_WIDTH_PX)
+                return "stroke_circle", fixed, fixed
             low = max(0.8, float(params.get("stroke_circle", 1.0)) * 0.6)
             high = max(low, min(float(min(w, h)) * 0.22, float(params.get("r", min(w, h))) * 0.9))
             return "stroke_circle", low, high

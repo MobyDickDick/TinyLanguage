@@ -6,22 +6,28 @@ circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.
 circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 3.500->inf, 5.500->inf, 8.000->92.436, 10.000->86.170, 11.000->47.548, 12.000->58.432
 arm: Fehler=86.190
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 18.200->1.000; Kandidaten=1.000->82.222, 12.000->86.968, 18.000->86.190, 23.000->86.190, 34.000->86.190, 45.000->86.190
-Runde 1: Gesamtfehler=9.506
+arm: Längen-Bracketing arm_len 18.200->18.000; Kandidaten=1.000->84.833, 12.000->61.930, 18.000->54.444, 23.000->54.444, 34.000->54.444, 45.000->54.444
+Runde 1: Gesamtfehler=8.655
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=0.500, Δcy=0.500, diag=31.000->33.000, scale=1.0645
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=47.548
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 3.500->inf, 5.500->inf, 8.000->99.872, 10.000->89.098, 11.000->33.791, 12.000->62.746, 13.000->62.746
-arm: Element konnte nicht extrahiert werden
-Runde 2: Gesamtfehler=13.311
+arm: minRect Δcx=0.500, Δcy=1.000, diag=17.029->19.313, scale=1.1341
+arm: Parameter nach Mittelpunkt/Diagonale angepasst
+arm: Fehler=54.444
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.134, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 18.858->19.000; Kandidaten=1.000->85.333, 12.000->62.050, 19.000->53.762, 23.000->53.762, 34.000->53.762, 45.000->53.762
+Runde 2: Gesamtfehler=12.405
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=-0.000, diag=34.655->33.000, scale=0.9522
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=62.746
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 3.500->inf, 5.500->inf, 8.000->99.872, 10.000->89.098, 10.500->72.741, 11.500->33.670, 12.000->62.746, 12.500->62.746
-arm: Element konnte nicht extrahiert werden
-Runde 3: Gesamtfehler=7.220
+arm: Fehler=53.762
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.134, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 16.926->23.000; Kandidaten=1.000->84.792, 12.000->60.737, 17.000->53.143, 23.000->52.714, 34.000->52.714, 45.000->52.714
+Runde 3: Gesamtfehler=6.315
 Gesamtfehler unter Schwellwert, Validierung beendet

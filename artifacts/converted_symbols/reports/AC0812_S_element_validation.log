@@ -6,7 +6,7 @@ circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.
 circle: Radius-Bracketing r 6.583->7.000; Kandidaten=5.500->81.211, 6.000->63.136, 6.500->25.659, 7.000->25.178, 7.500->25.178
 arm: Fehler=35.062
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 9.825->13.000; Kandidaten=1.000->99.000, 7.000->56.375, 10.000->35.062, 13.000->33.312, 19.000->33.312, 25.000->33.312
+arm: Längen-Bracketing arm_len 9.825->10.000; Kandidaten=1.000->90.000, 7.000->56.750, 10.000->35.062, 13.000->35.062, 19.000->35.062, 25.000->35.062
 Runde 1: Gesamtfehler=8.309
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=-0.000, diag=20.518->19.000, scale=0.9260
@@ -16,7 +16,7 @@ circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.
 circle: Radius-Bracketing r 6.482->7.000; Kandidaten=5.500->81.211, 6.000->63.136, 6.500->25.659, 7.000->25.178, 7.500->25.178
 arm: Fehler=35.062
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 9.825->13.000; Kandidaten=1.000->99.000, 7.000->56.375, 10.000->35.062, 13.000->33.312, 19.000->33.312, 25.000->33.312
+arm: Längen-Bracketing arm_len 9.825->10.000; Kandidaten=1.000->90.000, 7.000->56.750, 10.000->35.062, 13.000->35.062, 19.000->35.062, 25.000->35.062
 Runde 2: Gesamtfehler=8.309
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=-0.000, diag=20.518->19.000, scale=0.9260
@@ -26,5 +26,5 @@ circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.
 circle: Radius-Bracketing r 6.482->7.000; Kandidaten=5.500->81.211, 6.000->63.136, 6.500->25.659, 7.000->25.178, 7.500->25.178
 arm: Fehler=35.062
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 9.825->13.000; Kandidaten=1.000->99.000, 7.000->56.375, 10.000->35.062, 13.000->33.312, 19.000->33.312, 25.000->33.312
+arm: Längen-Bracketing arm_len 9.825->10.000; Kandidaten=1.000->90.000, 7.000->56.750, 10.000->35.062, 13.000->35.062, 19.000->35.062, 25.000->35.062
 Runde 3: Gesamtfehler=8.309

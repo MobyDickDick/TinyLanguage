@@ -35,11 +35,11 @@ circle: minRect Δcx=0.000, Δcy=0.000, diag=19.000->19.000, scale=1.0000
 circle: Fehler=58.900
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing keine relevante Änderung (r: 6.500); Kandidaten=5.500->83.095, 6.000->76.528, 6.500->58.900, 7.000->60.333, 7.500->61.066
-stem: Fehler=29.067
+stem: Fehler=29.267
 stem: Breitenkorrektur mode=iter, ratio=0.200, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..1.000)
-stem: Längen-Bracketing stem_len 11.838->12.000; Kandidaten=1.000->101.200, 7.000->58.867, 12.000->29.067, 13.000->29.067, 19.000->54.593, 25.000->67.114
+stem: Längen-Bracketing stem_len 10.675->13.000; Kandidaten=1.000->101.800, 7.000->38.800, 10.500->29.267, 13.000->29.067, 19.000->47.696, 25.000->69.086
 text: minRect Δcx=-2.500, Δcy=2.500, diag=9.849->16.643, scale=1.6899
 text: Fehler=62.181
 text: Breiten-Bracketing voc_font_scale 1.099->0.934; Kandidaten=0.450->82.824, 0.623->82.216, 0.795->66.684, 0.934->61.300, 1.025->62.222, 1.099->62.181, 1.255->66.932, 1.264->66.781, 1.427->67.027, 1.600->70.158

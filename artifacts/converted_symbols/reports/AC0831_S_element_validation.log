@@ -19,11 +19,11 @@ circle: minRect Δcx=0.000, Δcy=0.000, diag=19.000->19.000, scale=1.0000
 circle: Fehler=57.027
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing keine relevante Änderung (r: 6.500); Kandidaten=5.500->93.000, 6.000->80.041, 6.500->57.027, 7.000->59.216, 7.500->60.120
-stem: Fehler=29.867
+stem: Fehler=29.933
 stem: Breitenkorrektur mode=iter, ratio=0.200, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..1.000)
-stem: Längen-Bracketing stem_len 11.838->12.000; Kandidaten=1.000->101.200, 7.000->59.267, 12.000->29.867, 13.000->29.867, 19.000->58.958, 25.000->65.758
+stem: Längen-Bracketing stem_len 10.675->13.000; Kandidaten=1.000->101.800, 7.000->38.600, 10.500->29.933, 13.000->29.867, 19.000->54.650, 25.000->67.848
 text: minRect Δcx=-0.805, Δcy=0.363, diag=10.500->10.019, scale=0.9543
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=74.135
@@ -34,11 +34,11 @@ circle: minRect Δcx=0.000, Δcy=0.000, diag=19.000->19.000, scale=1.0000
 circle: Fehler=57.027
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing keine relevante Änderung (r: 6.500); Kandidaten=5.500->93.000, 6.000->80.041, 6.500->57.027, 7.000->59.216, 7.500->60.120
-stem: Fehler=29.867
+stem: Fehler=29.933
 stem: Breitenkorrektur mode=iter, ratio=0.200, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..1.000)
-stem: Längen-Bracketing stem_len 11.919->12.000; Kandidaten=1.000->101.200, 7.000->59.267, 12.000->29.867, 13.000->29.867, 19.000->58.958, 25.000->65.758
+stem: Längen-Bracketing stem_len 10.675->13.000; Kandidaten=1.000->101.800, 7.000->38.600, 10.500->29.933, 13.000->29.867, 19.000->54.650, 25.000->67.848
 text: minRect Δcx=-0.385, Δcy=0.423, diag=13.416->10.019, scale=0.7468
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=73.483

@@ -8,7 +8,7 @@ arm: minRect Δcx=-1.006, Δcy=-0.776, diag=17.029->19.999, scale=1.1744
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=52.597
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.174, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 18.631->18.500; Kandidaten=1.000->77.407, 12.000->63.984, 18.500->62.761, 23.000->69.817, 34.000->78.336, 45.000->85.731
+arm: Längen-Bracketing arm_len 18.631->18.500; Kandidaten=1.000->89.231, 12.000->62.441, 18.500->54.161, 23.000->54.161, 34.000->54.161, 45.000->54.161
 text: minRect Δcx=-3.500, Δcy=1.500, diag=10.630->17.464, scale=1.6429
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=97.888
@@ -24,7 +24,7 @@ arm: minRect Δcx=-1.006, Δcy=-0.776, diag=15.033->19.999, scale=1.3303
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=55.210
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.386, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 18.420->18.500; Kandidaten=1.000->77.111, 12.000->64.115, 18.500->62.761, 23.000->70.573, 34.000->78.336, 45.000->85.731
+arm: Längen-Bracketing arm_len 18.426->18.500; Kandidaten=1.000->89.500, 12.000->63.443, 18.500->56.359, 23.000->56.359, 34.000->56.359, 45.000->56.359
 text: minRect Δcx=-0.059, Δcy=0.765, diag=14.216->15.652, scale=1.1011
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=89.430
@@ -38,7 +38,7 @@ circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.
 circle: Radius-Bracketing r 11.152->11.000; Kandidaten=3.500->89.768, 5.500->98.909, 8.000->102.211, 10.000->103.936, 11.000->64.869, 12.000->86.497
 arm: Fehler=55.429
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.386, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 16.713->16.500; Kandidaten=1.000->77.407, 12.000->63.984, 16.500->55.429, 23.000->65.066, 34.000->78.500, 45.000->82.852
+arm: Längen-Bracketing arm_len 16.713->16.500; Kandidaten=1.000->88.074, 12.000->63.217, 16.500->55.429, 23.000->55.429, 34.000->55.429, 45.000->55.429
 text: minRect Δcx=-4.500, Δcy=0.500, diag=12.042->17.464, scale=1.4503
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=93.571

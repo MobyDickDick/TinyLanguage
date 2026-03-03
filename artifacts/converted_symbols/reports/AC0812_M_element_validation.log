@@ -6,6 +6,6 @@ circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.
 circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 3.000->inf, 4.500->inf, 6.000->79.615, 8.000->68.300, 9.000->11.256, 9.500->49.762, 10.000->49.762
 arm: Fehler=68.500
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 14.500); Kandidaten=1.000->114.938, 9.500->84.647, 14.500->68.500, 18.000->69.382, 26.500->69.382, 35.000->69.382
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 14.500); Kandidaten=1.000->97.375, 9.500->80.853, 14.500->69.944, 18.000->69.944, 26.500->69.944, 35.000->69.944
 Runde 1: Gesamtfehler=4.071
 Gesamtfehler unter Schwellwert, Validierung beendet

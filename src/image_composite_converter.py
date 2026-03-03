@@ -458,6 +458,13 @@ class Action:
                 p["co2_font_scale"] = 0.97
             p["co2_sub_font_scale"] = float(p.get("co2_sub_font_scale", 66.0))
             p["co2_subscript_offset_scale"] = 0.27
+        if p.get("circle_enabled", True) and not p.get("arm_enabled") and not p.get("stem_enabled"):
+            # Plain centered badges should keep their circle optically centered.
+            # Otherwise min-rect alignment may drift the ring into a corner,
+            # which also makes CO/VOC labels look far too small.
+            p["lock_circle_cx"] = True
+            p["lock_circle_cy"] = True
+            p["min_circle_radius"] = float(max(1.0, float(p.get("r", 1.0)) * 0.88))
         if str(p.get("text_mode", "")).lower() == "co2":
             # Prevent iterative width optimization from inflating CO₂ text.
             p["lock_text_scale"] = True
@@ -1798,12 +1805,16 @@ class Action:
             old_cx = float(params["cx"])
             old_cy = float(params["cy"])
             old_r = float(params["r"])
+            min_r = float(max(1.0, params.get("min_circle_radius", 1.0)))
             if bool(params.get("lock_circle_cx", False)):
                 params["cx"] = old_cx
             else:
                 params["cx"] = float(np.clip(old_cx + center_dx * 0.65, 0.0, float(w - 1)))
-            params["cy"] = float(np.clip(old_cy + center_dy * 0.65, 0.0, float(h - 1)))
-            params["r"] = float(np.clip(old_r * scale, 1.0, float(min(w, h)) * 0.48))
+            if bool(params.get("lock_circle_cy", False)):
+                params["cy"] = old_cy
+            else:
+                params["cy"] = float(np.clip(old_cy + center_dy * 0.65, 0.0, float(h - 1)))
+            params["r"] = float(np.clip(old_r * scale, min_r, float(min(w, h)) * 0.48))
             changed = (
                 abs(params["cx"] - old_cx) > 0.02
                 or abs(params["cy"] - old_cy) > 0.02
@@ -2233,10 +2244,11 @@ class Action:
 
         min_dim = float(min(w, h))
         low_bound = max(1.0, min_dim * 0.14)
+        low_bound = max(low_bound, float(params.get("min_circle_radius", 1.0)))
         # Tiny badges are especially sensitive to anti-aliasing noise in the
         # circle-only error mask. Prevent aggressive downward jumps that make
         # AC0800_S noticeably smaller than the medium/large variants.
-        if min_dim <= 16.0:
+        if min_dim <= 22.0:
             low_bound = max(low_bound, current * 0.9)
         high_bound = min_dim * 0.48
         if not low_bound < high_bound:

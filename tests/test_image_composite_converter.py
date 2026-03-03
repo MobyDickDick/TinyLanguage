@@ -49,6 +49,16 @@ def test_finalize_ac0820_variant_name_uses_center_co_anchor_mode() -> None:
     assert float(params["co2_optical_bias"]) >= 0.125
 
 
+def test_finalize_ac0820_locks_plain_circle_center_and_min_radius() -> None:
+    """Plain AC0820 badges should keep a centered ring and preserve readable radius."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(20, 20))
+    params = Action._finalize_ac08_style("AC0820", params)
+
+    assert params["lock_circle_cx"] is True
+    assert params["lock_circle_cy"] is True
+    assert float(params["min_circle_radius"]) >= float(params["r"]) * 0.88
+
+
 def test_finalize_ac0820_increases_optical_bias_for_co_vertical_centering() -> None:
     """AC0820 should nudge CO down so the main run appears vertically centered in-circle."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
@@ -261,6 +271,38 @@ def test_tiny_circle_radius_bracketing_limits_downscale() -> None:
 
     assert changed is True
     assert abs(float(params["r"]) - 4.5) < 1e-6
+    assert any("Radius-Bracketing" in line for line in logs)
+
+
+def test_circle_radius_bracketing_respects_configured_min_radius() -> None:
+    """Radius optimization must not shrink below per-symbol min radius floors."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    class DummyImg:
+        shape = (20, 20, 3)
+
+    img = DummyImg()
+    params = {
+        "circle_enabled": True,
+        "r": 8.0,
+        "min_circle_radius": 7.0,
+    }
+    logs: list[str] = []
+
+    original = Action._element_error_for_circle_radius
+
+    def prefer_smallest_radius(_img: object, _params: dict, radius_value: float) -> float:
+        return float(radius_value)
+
+    Action._element_error_for_circle_radius = staticmethod(prefer_smallest_radius)
+    try:
+        changed = Action._optimize_circle_radius_bracket(img, params, logs)
+    finally:
+        Action._element_error_for_circle_radius = original
+
+    assert changed is True
+    assert float(params["r"]) >= 7.0
     assert any("Radius-Bracketing" in line for line in logs)
 
 

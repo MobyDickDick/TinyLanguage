@@ -1,50 +1,5 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg
-   width="30px"
-   height="30px"
-   viewBox="0 0 30 30"
-   version="1.1"
-   id="svg2"
-   xml:space="preserve"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg"><defs
-     id="defs2" /><g
-     id="layer1"><g
-       id="g3"><g
-         id="g5"
-         transform="translate(23.837772,-25.970944)"><g
-           id="g4"
-           transform="translate(-23.801453,25.970944)"><circle
-             cx="15"
-             cy="15"
-             r="13.5"
-             fill="#f2f2f2"
-             stroke="#7f7f7f"
-             stroke-width="1"
-             id="circle1"
-             style="fill:#f2f2fc;fill-opacity:1" /><g
-             id="g2"
-             transform="matrix(0.65661535,0,0,0.70388101,5.0797975,2.7831197)"
-             style="stroke-width:1.47094"><text
-               x="12.0683"
-               y="18.7598"
-               fill="#7f7f7f"
-               font-family="Arial, Helvetica, sans-serif"
-               font-size="18.4005px"
-               font-style="normal"
-               font-weight="600"
-               text-anchor="middle"
-               dominant-baseline="middle"
-               id="text1"
-               style="stroke-width:1.47094">CO</text><text
-               x="22.188499"
-               y="23.1759"
-               fill="#7f7f7f"
-               font-family="Arial, Helvetica, sans-serif"
-               font-size="12.1443px"
-               font-style="normal"
-               font-weight="600"
-               text-anchor="start"
-               dominant-baseline="middle"
-               id="text2"
-               style="stroke-width:1.47094">2</text></g></g></g></g></g></svg>
+<svg width="30px" height="30px" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="15.0000" cy="15.0000" r="13.5000" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="1.0000"/>
+  <text x="15.0000" y="18.0862" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="12.6900" font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">CO</text>
+  <text x="21.9795" y="21.1319" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="8.3754" font-style="normal" font-weight="600" text-anchor="start" dominant-baseline="middle">2</text>
+</svg>

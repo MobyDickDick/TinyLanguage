@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.machinery
 import os
 import runpy
 import sys
@@ -27,7 +28,8 @@ def configure_converter_runtime(vendor_root: Path | None = None) -> Path | None:
     _remove_vendor_bytecode_caches(root)
 
     root_str = str(root)
-    if root_str not in sys.path:
+    has_incompatible_binaries = _has_incompatible_binary_extensions(root)
+    if root_str not in sys.path and not has_incompatible_binaries:
         # Keep the active environment's site-packages ahead of vendored modules.
         # This avoids shadowing ABI-compatible wheels (e.g. numpy/cv2 for newer
         # Python versions) with stale vendored builds while still allowing an
@@ -48,6 +50,32 @@ def configure_converter_runtime(vendor_root: Path | None = None) -> Path | None:
             pass
 
     return root
+
+
+def _has_incompatible_binary_extensions(vendor_root: Path) -> bool:
+    """Detect whether vendored native modules are built for another ABI/platform.
+
+    We only inspect known runtime packages that commonly ship compiled extensions.
+    If any extension filename does not match an importable suffix for this Python,
+    we avoid adding the vendor runtime to ``sys.path`` to prevent import shadowing.
+    """
+
+    extension_suffixes = tuple(importlib.machinery.EXTENSION_SUFFIXES)
+    runtime_packages = ("numpy", "cv2", "fitz")
+
+    for package in runtime_packages:
+        package_root = vendor_root / package
+        if not package_root.exists():
+            continue
+
+        for binary in package_root.rglob("*"):
+            if not binary.is_file() or binary.suffix not in {".so", ".pyd"}:
+                continue
+            if binary.name.endswith(extension_suffixes):
+                continue
+            return True
+
+    return False
 
 
 def _remove_vendor_bytecode_caches(vendor_root: Path) -> None:

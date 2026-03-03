@@ -201,7 +201,7 @@ def test_default_ac0812_uses_height_based_circle_radius() -> None:
 def test_validate_badge_can_expand_ac0812_tiny_circle_radius() -> None:
     """Element validation should actively correct a too-small AC0812_S circle radius."""
     img_path = Path("artifacts/images_to_convert/AC0812_S.jpg")
-    cv2 = pytest.importorskip("cv2")
+    cv2 = pytest.importorskip("cv2", exc_type=ImportError)
     img = cv2.imread(str(img_path))
     if img is None:
         pytest.skip("AC0812_S fixture image not available")
@@ -220,7 +220,7 @@ def test_validate_badge_can_expand_ac0812_tiny_circle_radius() -> None:
 def test_validate_badge_logs_extent_bracketing_for_line_elements() -> None:
     """Validation should include explicit extent/length optimization for arm/stem elements."""
     img_path = Path("artifacts/images_to_convert/AC0812_S.jpg")
-    cv2 = pytest.importorskip("cv2")
+    cv2 = pytest.importorskip("cv2", exc_type=ImportError)
     img = cv2.imread(str(img_path))
     if img is None:
         pytest.skip("AC0812_S fixture image not available")

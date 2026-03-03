@@ -50,3 +50,20 @@ def test_configure_converter_runtime_appends_vendor_to_sys_path(tmp_path: Path) 
         assert sys.path[-1] == str(vendor_root.resolve())
     finally:
         sys.path[:] = original
+
+
+def test_configure_converter_runtime_ignores_incompatible_binary_vendor(tmp_path: Path) -> None:
+    import sys
+
+    vendor_root = tmp_path / "vendor" / "converter_runtime"
+    numpy_core = vendor_root / "numpy" / "_core"
+    numpy_core.mkdir(parents=True)
+    (numpy_core / "_multiarray_umath.cp314-win_amd64.pyd").write_bytes(b"stub")
+
+    original = list(sys.path)
+    try:
+        configured = configure_converter_runtime(vendor_root)
+        assert configured == vendor_root.resolve()
+        assert str(vendor_root.resolve()) not in sys.path
+    finally:
+        sys.path[:] = original

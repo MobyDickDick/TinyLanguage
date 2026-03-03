@@ -2,38 +2,38 @@ Runde 1: elementweise Validierung gestartet
 circle: minRect Δcx=-1.000, Δcy=-1.000, diag=30.000->31.113, scale=1.0371
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=93.925
-circle: Breiten-Bracketing stroke_circle 1.000->6.000; Kandidaten=1.000->89.548, 2.000->77.293, 3.000->67.994, 4.500->61.510, 5.500->58.140
-circle: Radius-Bracketing r 10.682->3.500; Kandidaten=3.500->28.023, 5.500->49.742, 8.000->57.231, 9.500->53.850, 10.000->55.025, 10.500->58.140, 11.500->60.737, 12.000->60.730
-arm: minRect Δcx=4.500, Δcy=0.000, diag=3.162->7.280, scale=2.3022
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 10.682->11.500; Kandidaten=3.500->117.909, 5.500->108.839, 8.000->112.673, 9.500->111.667, 10.000->103.599, 10.500->89.548, 11.500->81.069, 12.000->85.963
+arm: minRect Δcx=-3.250, Δcy=0.250, diag=4.123->7.906, scale=1.9174
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
-arm: Fehler=150.120
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.180, Range=3.900..3.900)
-arm: Längen-Bracketing arm_len 3.953->45.000; Kandidaten=1.000->148.833, 4.000->140.833, 12.000->134.640, 23.000->109.051, 34.000->92.716, 45.000->83.359
+arm: Fehler=95.389
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.180, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 5.487->34.000; Kandidaten=1.000->89.143, 5.500->77.370, 12.000->82.432, 23.000->85.346, 34.000->76.092, 45.000->78.266
 text: minRect Δcx=-0.500, Δcy=-1.000, diag=15.000->14.422, scale=0.9615
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=80.938
-Runde 1: Gesamtfehler=25.608
+Runde 1: Gesamtfehler=13.485
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=-1.052, Δcy=-0.621, diag=15.556->13.858, scale=0.8908
+circle: minRect Δcx=-0.500, Δcy=-0.500, diag=32.527->32.000, scale=0.9838
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=28.023
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=6.000, Range=3.600..3.600)
-circle: Radius-Bracketing r 3.118->3.500; Kandidaten=2.000->37.344, 3.000->30.209, 3.500->28.021, 4.000->31.891, 5.500->49.032, 8.000->76.092, 10.000->57.675, 12.000->60.847
-arm: Fehler=80.740
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.180, Range=3.900..3.900)
-arm: Längen-Bracketing arm_len 20.116->12.000; Kandidaten=1.000->88.333, 12.000->65.089, 20.000->80.740, 23.000->85.548, 34.000->76.917, 45.000->80.495
+circle: Fehler=81.069
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 11.314->11.500; Kandidaten=3.500->117.196, 5.500->105.387, 8.000->114.495, 10.000->109.083, 10.500->92.885, 11.500->68.975, 12.000->89.791, 12.500->89.791
+arm: Fehler=53.517
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.180, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 16.788->23.000; Kandidaten=1.000->77.407, 12.000->63.267, 17.000->53.517, 23.000->52.917, 34.000->81.488, 45.000->76.917
 text: minRect Δcx=-0.500, Δcy=0.000, diag=15.000->14.422, scale=0.9615
 text: Fehler=65.393
-Runde 2: Gesamtfehler=25.668
+Runde 2: Gesamtfehler=9.773
 Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=1.642, Δcy=-0.193, diag=16.279->14.054, scale=0.8633
+circle: minRect Δcx=0.000, Δcy=-0.000, diag=33.732->32.000, scale=0.9487
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=28.021
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=6.000, Range=3.600..3.600)
-circle: Radius-Bracketing r 3.022->3.500; Kandidaten=2.000->34.452, 3.000->30.721, 3.500->27.347, 4.000->32.709, 5.500->49.823, 8.000->64.905, 10.000->58.305, 12.000->61.169
-arm: Fehler=95.638
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.180, Range=3.900..3.900)
-arm: Längen-Bracketing arm_len 17.126->34.000; Kandidaten=1.000->89.095, 12.000->84.341, 17.000->95.638, 23.000->86.667, 34.000->76.977, 45.000->79.463
+circle: Fehler=68.975
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 10.910->11.000; Kandidaten=3.500->117.196, 5.500->105.387, 8.000->114.495, 10.000->109.083, 11.000->68.050, 12.000->89.791
+arm: Fehler=52.417
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.180, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 17.525->17.500; Kandidaten=1.000->77.111, 12.000->63.400, 17.500->52.417, 23.000->52.917, 34.000->81.488, 45.000->76.917
 text: minRect Δcx=-0.500, Δcy=0.000, diag=15.000->14.422, scale=0.9615
 text: Fehler=65.393
-Runde 3: Gesamtfehler=24.897
+Runde 3: Gesamtfehler=9.908

@@ -2,12 +2,12 @@ Runde 1: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=1.000, diag=30.000->32.558, scale=1.0853
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=60.862
-circle: Breiten-Bracketing stroke_circle 1.000->2.000; Kandidaten=1.000->35.230, 2.000->26.377, 3.000->32.459, 4.500->33.254, 5.500->32.246
-circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 3.500->inf, 5.500->inf, 8.000->99.279, 10.000->73.143, 11.000->26.377, 12.000->42.808
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 3.500->inf, 5.500->inf, 8.000->99.279, 10.000->86.681, 11.000->35.230, 12.000->62.504
 stem: Fehler=51.922
 stem: Breitenkorrektur mode=iter, ratio=0.125, alt=1.000, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
-stem: Breiten-Bracketing stem_width 2.000->2.000; Kandidaten=1.500->18.641, 2.000->18.641, 2.500->18.641
-stem: Längen-Bracketing stem_len 19.200->19.000; Kandidaten=1.000->72.810, 12.000->38.000, 19.000->18.641, 23.000->18.641, 34.000->18.641, 45.000->18.641
-Runde 1: Gesamtfehler=5.804
+stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
+stem: Längen-Bracketing stem_len 19.200->19.000; Kandidaten=1.000->72.810, 12.000->38.267, 19.000->20.697, 23.000->20.697, 34.000->20.697, 45.000->20.697
+Runde 1: Gesamtfehler=4.657
 Gesamtfehler unter Schwellwert, Validierung beendet

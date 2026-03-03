@@ -1,6 +1,6 @@
 <svg width="45px" height="25px" viewBox="0 0 45 25" xmlns="http://www.w3.org/2000/svg">
-  <line x1="0.5000" y1="12.5000" x2="27.0000" y2="12.5000" stroke="#7f7f7f" stroke-width="3.0000" stroke-linecap="round"/>
-  <circle cx="29.0000" cy="12.5000" r="2.0000" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="6.0000"/>
-  <text x="30.0800" y="11.6000" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="4.0000" font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">CO</text>
-  <text x="32.2800" y="12.5600" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="4.0000" font-style="normal" font-weight="600" text-anchor="start" dominant-baseline="middle">2</text>
+  <line x1="8.0000" y1="12.5000" x2="17.0000" y2="12.5000" stroke="#7f7f7f" stroke-width="1.0000" stroke-linecap="round"/>
+  <circle cx="28.5000" cy="12.5000" r="11.5000" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="1.0000"/>
+  <text x="26.0790" y="15.6202" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="15.5365" font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">CO</text>
+  <text x="34.6241" y="18.4167" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="9.6326" font-style="normal" font-weight="600" text-anchor="start" dominant-baseline="middle">2</text>
 </svg>

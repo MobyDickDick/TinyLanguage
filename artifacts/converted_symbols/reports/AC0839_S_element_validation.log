@@ -2,43 +2,43 @@ Runde 1: elementweise Validierung gestartet
 circle: minRect Δcx=0.835, Δcy=1.727, diag=14.000->17.562, scale=1.2544
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=86.960
-circle: Breiten-Bracketing stroke_circle 1.000->4.000; Kandidaten=1.000->72.333, 1.500->69.240, 2.000->69.240, 2.500->69.240, 3.500->62.267
-circle: Radius-Bracketing r 6.136->5.000; Kandidaten=5.000->50.656, 5.500->57.074, 6.000->59.108, 6.500->59.800, 7.000->63.365
-arm: Fehler=103.231
-arm: Breiten-Bracketing keine relevante Änderung (arm_stroke: 1.000); Kandidaten=1.000->63.132, 2.500->63.132, 3.000->64.875
-arm: Längen-Bracketing arm_len 11.957->19.000; Kandidaten=1.000->127.000, 7.000->108.100, 12.000->103.231, 13.000->103.000, 19.000->101.744, 25.000->103.979
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 6.136->6.500; Kandidaten=5.000->80.623, 5.500->79.074, 6.000->71.595, 6.500->70.225, 7.000->70.659
+arm: Fehler=104.130
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 10.457->19.000; Kandidaten=1.000->127.000, 7.000->115.667, 10.500->104.130, 13.000->103.231, 19.000->103.135, 25.000->104.178
 text: minRect Δcx=0.500, Δcy=2.000, diag=7.616->12.207, scale=1.6028
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=87.864
-text: Breiten-Bracketing voc_font_scale 0.520->1.407; Kandidaten=0.312->82.727, 0.442->82.727, 0.505->82.727, 0.520->82.727, 0.598->82.727, 0.698->82.727, 0.956->75.852, 1.214->66.233, 1.407->62.986, 1.600->68.357
-Runde 1: Gesamtfehler=38.336
+text: Breiten-Bracketing voc_font_scale 0.520->1.214; Kandidaten=0.312->82.727, 0.442->82.727, 0.505->82.727, 0.520->82.727, 0.598->82.727, 0.698->80.426, 0.956->66.918, 1.214->65.657, 1.407->72.162, 1.600->69.697
+Runde 1: Gesamtfehler=27.392
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=0.169, Δcy=1.354, diag=16.971->15.777, scale=0.9297
+circle: minRect Δcx=0.000, Δcy=-0.500, diag=18.385->19.000, scale=1.0335
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=50.656
-circle: Breiten-Bracketing stroke_circle 4.000->3.000; Kandidaten=2.500->60.368, 3.000->50.912, 3.500->50.912, 4.000->50.912
-circle: Radius-Bracketing r 4.648->4.000; Kandidaten=3.500->47.213, 4.000->45.623, 4.500->50.912, 5.000->56.172, 5.500->60.323, 6.500->63.973, 7.000->65.130
-arm: Fehler=98.269
-arm: Breiten-Bracketing keine relevante Änderung (arm_stroke: 1.000); Kandidaten=1.000->90.297, 2.000->90.297, 2.500->90.297, 3.000->94.550
-arm: Längen-Bracketing arm_len 11.847->13.000; Kandidaten=1.000->127.000, 7.000->103.905, 12.000->98.269, 13.000->98.069, 19.000->99.343, 25.000->98.163
-text: minRect Δcx=0.500, Δcy=2.000, diag=11.402->15.652, scale=1.3728
+circle: Fehler=70.225
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 6.718->6.500; Kandidaten=5.500->79.278, 6.000->72.079, 6.500->70.262, 7.000->70.659, 7.500->71.314
+arm: Fehler=104.130
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 9.457->13.000; Kandidaten=1.000->127.000, 7.000->108.100, 9.500->104.130, 13.000->102.600, 19.000->103.436, 25.000->105.354
+text: minRect Δcx=-1.000, Δcy=2.500, diag=10.770->18.358, scale=1.7045
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=77.234
-text: Breiten-Bracketing voc_font_scale 1.407->1.600; Kandidaten=0.450->84.765, 0.623->84.765, 0.795->84.765, 1.025->84.353, 1.196->80.743, 1.255->79.857, 1.407->80.170, 1.427->78.872, 1.600->74.812
-Runde 2: Gesamtfehler=35.421
+text: Fehler=65.657
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 1.214); Kandidaten=0.450->84.387, 0.623->84.516, 0.795->85.837, 1.025->73.292, 1.032->73.021, 1.214->62.516, 1.255->73.532, 1.396->77.968, 1.427->80.156, 1.600->75.849
+Runde 2: Gesamtfehler=28.299
 Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=0.500, Δcy=0.500, diag=14.142->14.213, scale=1.0050
+circle: minRect Δcx=0.000, Δcy=-0.500, diag=18.385->19.000, scale=1.0335
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=45.623
-circle: Breiten-Bracketing keine relevante Änderung (stroke_circle: 3.000); Kandidaten=2.000->54.453, 2.500->54.453, 3.000->45.509, 3.500->45.509
-circle: Radius-Bracketing r 4.020->3.500; Kandidaten=3.000->42.895, 3.500->37.318, 4.000->45.509, 4.500->48.218, 5.000->48.793, 5.500->56.629, 6.500->61.986, 7.000->67.842
-arm: minRect Δcx=-1.000, Δcy=0.000, diag=11.045->15.811, scale=1.4315
+circle: Fehler=70.262
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 6.718->7.000; Kandidaten=5.500->84.603, 6.000->73.886, 6.500->65.235, 7.000->60.600, 7.500->61.372
+arm: minRect Δcx=-1.147, Δcy=-1.156, diag=8.062->12.363, scale=1.5335
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
-arm: Fehler=97.379
-arm: Breiten-Bracketing arm_stroke 1.180->3.000; Kandidaten=1.000->97.882, 2.000->97.882, 2.500->99.881, 3.000->92.140
-arm: Längen-Bracketing arm_len 13.855->25.000; Kandidaten=1.000->104.765, 7.000->95.576, 13.000->90.111, 14.000->92.140, 19.000->87.947, 25.000->85.986
-text: minRect Δcx=0.000, Δcy=1.500, diag=10.440->13.416, scale=1.2851
+arm: Fehler=74.500
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.180, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 10.570->13.000; Kandidaten=1.000->113.429, 7.000->84.350, 10.500->80.107, 13.000->79.219, 19.000->79.721, 25.000->82.660
+text: minRect Δcx=-1.000, Δcy=2.000, diag=11.705->18.788, scale=1.6052
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=72.686
-text: Breiten-Bracketing voc_font_scale 1.600->1.427; Kandidaten=0.450->83.059, 0.623->83.059, 0.795->83.059, 1.025->83.059, 1.255->80.912, 1.360->80.200, 1.427->77.486, 1.600->78.512
-Runde 3: Gesamtfehler=39.381
+text: Fehler=76.492
+text: Breiten-Bracketing voc_font_scale 1.214->1.025; Kandidaten=0.450->80.516, 0.623->79.857, 0.795->78.085, 1.025->65.952, 1.032->66.000, 1.214->76.492, 1.255->77.794, 1.396->76.306, 1.427->74.611, 1.600->75.479
+Runde 3: Gesamtfehler=20.144

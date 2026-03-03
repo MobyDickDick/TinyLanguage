@@ -456,6 +456,12 @@ class Action:
                 p["co2_font_scale"] = 0.95
             else:
                 p["co2_font_scale"] = 0.97
+            # Keep AC0820_M/S adjustable in validation: the tiny CO run can still
+            # be slightly undersized after geometric fitting, but we do not want
+            # unconstrained growth that reintroduces prior over-scaling regressions.
+            base_scale = float(p["co2_font_scale"])
+            p["co2_font_scale_min"] = float(max(0.84, base_scale * 0.92))
+            p["co2_font_scale_max"] = float(min(1.12, base_scale * 1.22))
             p["co2_sub_font_scale"] = float(p.get("co2_sub_font_scale", 66.0))
             p["co2_subscript_offset_scale"] = 0.27
         if p.get("circle_enabled", True) and not p.get("arm_enabled") and not p.get("stem_enabled"):
@@ -466,8 +472,10 @@ class Action:
             p["lock_circle_cy"] = True
             p["min_circle_radius"] = float(max(1.0, float(p.get("r", 1.0)) * 0.88))
         if str(p.get("text_mode", "")).lower() == "co2":
-            # Prevent iterative width optimization from inflating CO₂ text.
-            p["lock_text_scale"] = True
+            # Keep AC0820 variants tunable (bounded via *_min/*_max overrides)
+            # while preserving strict text-scale locking for other AC08xx CO₂
+            # badges that do not suffer from the AC0820-specific undersizing.
+            p["lock_text_scale"] = symbol_name != "AC0820"
         if p.get("draw_text", True) and "text_gray" in p:
             p["text_gray"] = int(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY))
         return p
@@ -789,24 +797,51 @@ class Action:
             x2 = subscript_x + sub_w
         else:
             # Default mode: keep the "CO" run itself centered and attach the ₂ rightward.
+            # Prioritize matching the main "CO" glyphs first; if space is tight, shrink
+            # or tuck the subscript before shifting the dominant "CO" run.
             co_x = cx + float(params.get("co2_dx", 0.0))
             x1 = co_x - (co_width / 2.0)
-            subscript_x = co_x + (co_width / 2.0) + gap
-            x2 = subscript_x + sub_w
 
-            # If that right-anchored subscript would run outside the inner circle,
-            # shift the label cluster left only as much as needed to keep "2" readable.
+            local_gap = gap
+            local_sub_font_px = sub_font_px
+            local_sub_w = sub_w
+            subscript_x = co_x + (co_width / 2.0) + local_gap
+            x2 = subscript_x + local_sub_w
+
             stroke = max(0.8, float(params.get("stroke_circle", 1.0)))
             inner_right = cx + max(1.0, r - stroke)
+            inner_left = cx - max(1.0, r - stroke)
+
             overflow = x2 - inner_right
             if overflow > 0.0:
-                co_x -= overflow
-                x1 -= overflow
-                subscript_x -= overflow
-                x2 -= overflow
+                # Step 1: reduce spacing before moving CO.
+                min_gap = font_size * 0.005
+                shrink_gap = min(overflow, max(0.0, local_gap - min_gap))
+                local_gap -= shrink_gap
+                overflow -= shrink_gap
+
+                # Step 2: reduce subscript size (keep readable floor) before moving CO.
+                if overflow > 0.0:
+                    min_sub_font_px = max(3.6, font_size * 0.42)
+                    max_shrink_px = max(0.0, local_sub_font_px - min_sub_font_px)
+                    shrink_px = min(max_shrink_px, overflow / 0.62)
+                    local_sub_font_px -= shrink_px
+                    local_sub_w = local_sub_font_px * 0.62
+
+                # Recompute geometry with adjusted ₂ attachment.
+                sub_font_px = local_sub_font_px
+                subscript_x = co_x + (co_width / 2.0) + local_gap
+                x2 = subscript_x + local_sub_w
+
+                # Step 3: only if still necessary, shift cluster minimally left.
+                overflow = x2 - inner_right
+                if overflow > 0.0:
+                    co_x -= overflow
+                    x1 -= overflow
+                    subscript_x -= overflow
+                    x2 -= overflow
 
             # Keep the left side inside the inner circle as well.
-            inner_left = cx - max(1.0, r - stroke)
             left_overflow = inner_left - x1
             if left_overflow > 0.0:
                 co_x += left_overflow
@@ -2146,7 +2181,13 @@ class Action:
                     return "co2_font_scale", cur, cur
                 # CO₂ labels in large variants can require a noticeably larger font
                 # than the historical cap of 1.20 to match the source symbol.
-                return "co2_font_scale", max(0.45, cur * 0.72), min(1.55, cur * 1.45)
+                low = max(0.45, cur * 0.72)
+                high = min(1.55, cur * 1.45)
+                if "co2_font_scale_min" in params:
+                    low = max(low, float(params["co2_font_scale_min"]))
+                if "co2_font_scale_max" in params:
+                    high = min(high, float(params["co2_font_scale_max"]))
+                return "co2_font_scale", low, max(low, high)
         return None
 
     @staticmethod

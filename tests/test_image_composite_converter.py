@@ -281,6 +281,71 @@ def test_voc_font_scale_bounds_allow_larger_tiny_badge_labels() -> None:
     assert high >= 1.60
 
 
+
+
+def test_optimize_arm_extent_keeps_circle_side_anchor_for_horizontal_connectors() -> None:
+    """Arm length optimization should keep the circle-side endpoint fixed for AC0812-like arms."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    class DummyImg:
+        shape = (15, 25, 3)
+
+    img = DummyImg()
+    params = Action._default_ac0812_params(25, 15)
+    params = Action._finalize_ac08_style("AC0812", params)
+
+    # Intentionally shrink the free-side arm to emulate under-length conversion output.
+    params["arm_x1"] = float(params["arm_x2"] - 3.0)
+
+    logs: list[str] = []
+    original = Action._element_error_for_extent
+
+    def prefer_longer(_img: object, _params: dict, _element: str, extent_value: float) -> float:
+        return abs(float(extent_value) - 10.0)
+
+    Action._element_error_for_extent = staticmethod(prefer_longer)
+    try:
+        changed = Action._optimize_element_extent_bracket(img, params, "arm", logs)
+    finally:
+        Action._element_error_for_extent = original
+
+    assert changed is True
+    assert abs(float(params["arm_x2"]) - (float(params["cx"]) - float(params["r"]))) < 1e-6
+    assert float(params["arm_x1"]) < float(params["arm_x2"])
+    assert any("arm: Längen-Bracketing" in line for line in logs)
+
+
+def test_optimize_stem_extent_keeps_circle_side_anchor() -> None:
+    """Stem length optimization should keep stem_top attached to the circle edge."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    class DummyImg:
+        shape = (25, 15, 3)
+
+    img = DummyImg()
+    params = Action._default_ac0811_params(15, 25)
+    params = Action._finalize_ac08_style("AC0811", params)
+    params["stem_top"] = float(params["cy"] + params["r"] + 2.0)
+
+    logs: list[str] = []
+    original = Action._element_error_for_extent
+
+    def prefer_longer(_img: object, _params: dict, _element: str, extent_value: float) -> float:
+        return abs(float(extent_value) - 12.0)
+
+    Action._element_error_for_extent = staticmethod(prefer_longer)
+    try:
+        changed = Action._optimize_element_extent_bracket(img, params, "stem", logs)
+    finally:
+        Action._element_error_for_extent = original
+
+    assert changed is True
+    assert abs(float(params["stem_top"]) - (float(params["cy"]) + float(params["r"]))) < 1e-6
+    assert float(params["stem_bottom"]) > float(params["stem_top"])
+    assert any("stem: Längen-Bracketing" in line for line in logs)
+
 def test_text_width_bracketing_keeps_fractional_font_scale_precision() -> None:
     """Text scale optimization should not quantize font scale to half-pixel steps."""
     if image_composite_converter.np is None:

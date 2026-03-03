@@ -2287,13 +2287,38 @@ class Action:
             new_len = float(np.clip(extent_value, 1.0, float(max(w, h))))
             ux = dx / cur_len
             uy = dy / cur_len
-            cx = (x1 + x2) / 2.0
-            cy = (y1 + y2) / 2.0
-            half = new_len / 2.0
-            probe["arm_x1"] = float(np.clip(cx - (ux * half), 0.0, float(w - 1)))
-            probe["arm_y1"] = float(np.clip(cy - (uy * half), 0.0, float(h - 1)))
-            probe["arm_x2"] = float(np.clip(cx + (ux * half), 0.0, float(w - 1)))
-            probe["arm_y2"] = float(np.clip(cy + (uy * half), 0.0, float(h - 1)))
+
+            if probe.get("circle_enabled", True) and all(k in probe for k in ("cx", "cy", "r")):
+                # Keep the endpoint at the circle edge fixed and optimize the free side
+                # length only. Symmetric center-scaling shortens both ends and can make
+                # AC0812/AC0814 horizontal connectors visibly too short.
+                Action._reanchor_arm_to_circle_edge(probe, float(probe.get("r", 0.0)))
+                ax1 = float(probe.get("arm_x1", x1))
+                ay1 = float(probe.get("arm_y1", y1))
+                ax2 = float(probe.get("arm_x2", x2))
+                ay2 = float(probe.get("arm_y2", y2))
+
+                cx = float(probe.get("cx", 0.0))
+                cy = float(probe.get("cy", 0.0))
+                d1 = float(np.hypot(ax1 - cx, ay1 - cy))
+                d2 = float(np.hypot(ax2 - cx, ay2 - cy))
+
+                if d1 <= d2:
+                    ix, iy = ax1, ay1
+                    probe["arm_x2"] = float(np.clip(ix + (ux * new_len), 0.0, float(w - 1)))
+                    probe["arm_y2"] = float(np.clip(iy + (uy * new_len), 0.0, float(h - 1)))
+                else:
+                    ix, iy = ax2, ay2
+                    probe["arm_x1"] = float(np.clip(ix - (ux * new_len), 0.0, float(w - 1)))
+                    probe["arm_y1"] = float(np.clip(iy - (uy * new_len), 0.0, float(h - 1)))
+            else:
+                cx = (x1 + x2) / 2.0
+                cy = (y1 + y2) / 2.0
+                half = new_len / 2.0
+                probe["arm_x1"] = float(np.clip(cx - (ux * half), 0.0, float(w - 1)))
+                probe["arm_y1"] = float(np.clip(cy - (uy * half), 0.0, float(h - 1)))
+                probe["arm_x2"] = float(np.clip(cx + (ux * half), 0.0, float(w - 1)))
+                probe["arm_y2"] = float(np.clip(cy + (uy * half), 0.0, float(h - 1)))
         else:
             return float("inf")
 
@@ -2367,10 +2392,16 @@ class Action:
             return False
 
         if element == "stem":
-            center = (float(params.get("stem_top", 0.0)) + float(params.get("stem_bottom", 0.0))) / 2.0
-            half = best_len / 2.0
-            params["stem_top"] = float(np.clip(center - half, 0.0, float(h - 1)))
-            params["stem_bottom"] = float(np.clip(center + half, params["stem_top"] + 1.0, float(h)))
+            if params.get("circle_enabled", True) and all(k in params for k in ("cy", "r")):
+                # Keep the stem attached to the circle edge and optimize only the free end.
+                top = float(np.clip(float(params.get("cy", 0.0)) + float(params.get("r", 0.0)), 0.0, float(h - 1)))
+                params["stem_top"] = top
+                params["stem_bottom"] = float(np.clip(top + best_len, top + 1.0, float(h)))
+            else:
+                center = (float(params.get("stem_top", 0.0)) + float(params.get("stem_bottom", 0.0))) / 2.0
+                half = best_len / 2.0
+                params["stem_top"] = float(np.clip(center - half, 0.0, float(h - 1)))
+                params["stem_bottom"] = float(np.clip(center + half, params["stem_top"] + 1.0, float(h)))
         else:
             x1 = float(params.get("arm_x1", 0.0))
             y1 = float(params.get("arm_y1", 0.0))
@@ -2383,13 +2414,35 @@ class Action:
                 return False
             ux = dx / cur_len
             uy = dy / cur_len
-            cx = (x1 + x2) / 2.0
-            cy = (y1 + y2) / 2.0
-            half = best_len / 2.0
-            params["arm_x1"] = float(np.clip(cx - (ux * half), 0.0, float(w - 1)))
-            params["arm_y1"] = float(np.clip(cy - (uy * half), 0.0, float(h - 1)))
-            params["arm_x2"] = float(np.clip(cx + (ux * half), 0.0, float(w - 1)))
-            params["arm_y2"] = float(np.clip(cy + (uy * half), 0.0, float(h - 1)))
+
+            if params.get("circle_enabled", True) and all(k in params for k in ("cx", "cy", "r")):
+                Action._reanchor_arm_to_circle_edge(params, float(params.get("r", 0.0)))
+                ax1 = float(params.get("arm_x1", x1))
+                ay1 = float(params.get("arm_y1", y1))
+                ax2 = float(params.get("arm_x2", x2))
+                ay2 = float(params.get("arm_y2", y2))
+
+                cx = float(params.get("cx", 0.0))
+                cy = float(params.get("cy", 0.0))
+                d1 = float(np.hypot(ax1 - cx, ay1 - cy))
+                d2 = float(np.hypot(ax2 - cx, ay2 - cy))
+
+                if d1 <= d2:
+                    ix, iy = ax1, ay1
+                    params["arm_x2"] = float(np.clip(ix + (ux * best_len), 0.0, float(w - 1)))
+                    params["arm_y2"] = float(np.clip(iy + (uy * best_len), 0.0, float(h - 1)))
+                else:
+                    ix, iy = ax2, ay2
+                    params["arm_x1"] = float(np.clip(ix - (ux * best_len), 0.0, float(w - 1)))
+                    params["arm_y1"] = float(np.clip(iy - (uy * best_len), 0.0, float(h - 1)))
+            else:
+                cx = (x1 + x2) / 2.0
+                cy = (y1 + y2) / 2.0
+                half = best_len / 2.0
+                params["arm_x1"] = float(np.clip(cx - (ux * half), 0.0, float(w - 1)))
+                params["arm_y1"] = float(np.clip(cy - (uy * half), 0.0, float(h - 1)))
+                params["arm_x2"] = float(np.clip(cx + (ux * half), 0.0, float(w - 1)))
+                params["arm_y2"] = float(np.clip(cy + (uy * half), 0.0, float(h - 1)))
 
         logs.append(
             f"{element}: Längen-Bracketing {key_label} {current:.3f}->{best_len:.3f}; Kandidaten="

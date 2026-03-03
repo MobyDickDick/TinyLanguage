@@ -10,8 +10,8 @@ arm: Längen-Bracketing arm_len 11.957->19.000; Kandidaten=1.000->127.000, 7.000
 text: minRect Δcx=0.500, Δcy=2.000, diag=7.616->12.207, scale=1.6028
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=87.864
-text: Breiten-Bracketing voc_font_scale 0.520->0.500; Kandidaten=0.500->82.727
-Runde 1: Gesamtfehler=39.755
+text: Breiten-Bracketing voc_font_scale 0.520->1.407; Kandidaten=0.312->82.727, 0.442->82.727, 0.505->82.727, 0.520->82.727, 0.598->82.727, 0.698->82.727, 0.956->75.852, 1.214->66.233, 1.407->62.986, 1.600->68.357
+Runde 1: Gesamtfehler=38.336
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=0.169, Δcy=1.354, diag=16.971->15.777, scale=0.9297
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -21,11 +21,11 @@ circle: Radius-Bracketing r 4.648->4.000; Kandidaten=3.500->47.213, 4.000->45.62
 arm: Fehler=98.269
 arm: Breiten-Bracketing keine relevante Änderung (arm_stroke: 1.000); Kandidaten=1.000->90.297, 2.000->90.297, 2.500->90.297, 3.000->94.550
 arm: Längen-Bracketing arm_len 11.847->13.000; Kandidaten=1.000->127.000, 7.000->103.905, 12.000->98.269, 13.000->98.069, 19.000->99.343, 25.000->98.163
-text: minRect Δcx=1.000, Δcy=2.000, diag=7.280->12.530, scale=1.7211
+text: minRect Δcx=0.500, Δcy=2.000, diag=11.402->15.652, scale=1.3728
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=81.235
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.500); Kandidaten=0.500->84.765
-Runde 2: Gesamtfehler=35.139
+text: Fehler=77.234
+text: Breiten-Bracketing voc_font_scale 1.407->1.600; Kandidaten=0.450->84.765, 0.623->84.765, 0.795->84.765, 1.025->84.353, 1.196->80.743, 1.255->79.857, 1.407->80.170, 1.427->78.872, 1.600->74.812
+Runde 2: Gesamtfehler=35.421
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.500, Δcy=0.500, diag=14.142->14.213, scale=1.0050
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -37,8 +37,8 @@ arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=97.379
 arm: Breiten-Bracketing arm_stroke 1.180->3.000; Kandidaten=1.000->97.882, 2.000->97.882, 2.500->99.881, 3.000->92.140
 arm: Längen-Bracketing arm_len 13.855->25.000; Kandidaten=1.000->104.765, 7.000->95.576, 13.000->90.111, 14.000->92.140, 19.000->87.947, 25.000->85.986
-text: minRect Δcx=0.500, Δcy=1.000, diag=8.246->12.530, scale=1.5195
+text: minRect Δcx=0.000, Δcy=1.500, diag=10.440->13.416, scale=1.2851
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=86.353
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.500); Kandidaten=0.500->83.059
-Runde 3: Gesamtfehler=39.291
+text: Fehler=72.686
+text: Breiten-Bracketing voc_font_scale 1.600->1.427; Kandidaten=0.450->83.059, 0.623->83.059, 0.795->83.059, 1.025->83.059, 1.255->80.912, 1.360->80.200, 1.427->77.486, 1.600->78.512
+Runde 3: Gesamtfehler=39.381

@@ -11,7 +11,7 @@ arm: Breiten-Bracketing keine relevante Änderung (arm_stroke: 1.000); Kandidate
 arm: Längen-Bracketing arm_len 16.787->17.000; Kandidaten=1.000->115.000, 9.500->79.091, 17.000->75.800, 18.000->75.800, 26.500->89.200, 35.000->81.908
 text: minRect Δcx=0.500, Δcy=0.000, diag=6.708->10.296, scale=1.5348
 text: Fehler=95.674
-text: Breiten-Bracketing co2_font_scale 0.820->0.500; Kandidaten=0.500->95.674, 1.000->95.674
+text: Breiten-Bracketing co2_font_scale 0.820->0.590; Kandidaten=0.590->95.674, 0.680->95.674, 0.697->95.674, 0.770->95.674, 0.820->95.674, 0.890->95.674, 0.943->95.674, 1.009->95.674, 1.099->95.674, 1.189->95.674
 Runde 1: Gesamtfehler=26.113
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=0.500, Δcy=0.000, diag=12.728->11.180, scale=0.8784
@@ -26,7 +26,7 @@ arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=2.600..2
 arm: Längen-Bracketing arm_len 17.574->35.000; Kandidaten=1.000->121.600, 9.500->106.943, 17.500->95.940, 18.000->97.135, 26.500->90.517, 35.000->86.197
 text: minRect Δcx=0.500, Δcy=0.000, diag=6.708->10.296, scale=1.5348
 text: Fehler=95.340
-text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.500); Kandidaten=0.500->95.340
+text: Breiten-Bracketing co2_font_scale 0.590->0.450; Kandidaten=0.450->95.340, 0.501->95.340, 0.511->95.340, 0.572->95.340, 0.590->95.340, 0.653->95.340, 0.678->95.340, 0.734->95.340, 0.795->95.340, 0.855->95.340
 Runde 2: Gesamtfehler=25.227
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.500, Δcy=0.000, diag=9.899->9.434, scale=0.9530
@@ -39,5 +39,5 @@ arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=2.600..2
 arm: Längen-Bracketing arm_len 18.838->9.500; Kandidaten=1.000->101.500, 9.500->79.346, 18.000->88.429, 19.000->89.309, 26.500->84.136, 35.000->83.924
 text: minRect Δcx=0.000, Δcy=0.000, diag=6.708->9.434, scale=1.4063
 text: Fehler=91.400
-text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.500); Kandidaten=0.500->91.400
+text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.450); Kandidaten=0.450->91.400, 0.480->91.400, 0.511->91.400, 0.517->91.400, 0.551->91.400, 0.592->91.400, 0.622->91.400, 0.652->91.400
 Runde 3: Gesamtfehler=26.460

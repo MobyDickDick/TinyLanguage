@@ -12,8 +12,8 @@ arm: Längen-Bracketing arm_len 11.488->25.000; Kandidaten=1.000->116.923, 7.000
 text: minRect Δcx=-0.500, Δcy=0.500, diag=6.708->8.062, scale=1.2019
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=79.656
-text: Breiten-Bracketing co2_font_scale 0.820->0.500; Kandidaten=0.500->79.656, 1.000->79.656
-Runde 1: Gesamtfehler=34.384
+text: Breiten-Bracketing co2_font_scale 0.820->1.189; Kandidaten=0.590->79.656, 0.680->79.656, 0.697->79.656, 0.770->79.656, 0.820->79.656, 0.890->79.656, 0.943->79.656, 1.009->79.656, 1.099->79.656, 1.189->78.812
+Runde 1: Gesamtfehler=34.445
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=0.500, diag=12.728->9.849, scale=0.7738
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -28,7 +28,7 @@ arm: Längen-Bracketing arm_len 11.758->25.000; Kandidaten=1.000->114.231, 7.000
 text: minRect Δcx=-0.500, Δcy=0.500, diag=6.708->8.062, scale=1.2019
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=82.909
-text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.500); Kandidaten=0.500->88.939
+text: Breiten-Bracketing co2_font_scale 1.189->0.856; Kandidaten=0.856->88.939, 0.960->88.939, 1.011->88.939, 1.064->88.939, 1.189->88.939, 1.203->88.939, 1.342->88.939, 1.367->88.939, 1.446->88.939, 1.550->88.939
 Runde 2: Gesamtfehler=30.328
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=0.000, diag=10.630->8.062, scale=0.7584
@@ -44,5 +44,5 @@ arm: Längen-Bracketing arm_len 11.510->25.000; Kandidaten=1.000->118.556, 7.000
 text: minRect Δcx=0.294, Δcy=1.824, diag=7.491->11.402, scale=1.5220
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=88.939
-text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.500); Kandidaten=0.500->88.939
+text: Breiten-Bracketing co2_font_scale 0.856->0.616; Kandidaten=0.616->88.939, 0.710->88.939, 0.728->88.939, 0.804->88.939, 0.856->88.939, 0.929->88.939, 0.984->88.939, 1.054->88.939, 1.147->88.939, 1.241->88.939
 Runde 3: Gesamtfehler=28.659

@@ -10,8 +10,8 @@ arm: Längen-Bracketing arm_len 17.200->12.000; Kandidaten=1.000->68.071, 12.000
 text: minRect Δcx=0.500, Δcy=2.000, diag=13.892->16.553, scale=1.1915
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=104.675
-text: Breiten-Bracketing co2_font_scale 0.740->1.000; Kandidaten=0.500->101.119, 1.000->98.284
-Runde 1: Gesamtfehler=25.668
+text: Breiten-Bracketing co2_font_scale 0.740->0.695; Kandidaten=0.533->101.119, 0.614->97.174, 0.629->97.362, 0.695->92.213, 0.740->97.391, 0.803->97.854, 0.851->95.971, 0.911->97.144, 0.992->98.474, 1.073->97.690
+Runde 1: Gesamtfehler=22.828
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=1.000, Δcy=0.500, diag=33.242->32.000, scale=0.9627
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -26,8 +26,8 @@ arm: Längen-Bracketing arm_len 19.295->45.000; Kandidaten=1.000->117.217, 12.00
 text: minRect Δcx=0.294, Δcy=1.824, diag=7.491->13.038, scale=1.7405
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=106.264
-text: Breiten-Bracketing co2_font_scale 1.000->1.500; Kandidaten=0.500->106.264, 1.000->106.264, 1.500->103.583
-Runde 2: Gesamtfehler=25.359
+text: Breiten-Bracketing co2_font_scale 0.695->0.500; Kandidaten=0.500->106.264, 0.577->106.264, 0.591->106.264, 0.653->106.264, 0.695->106.264, 0.754->106.264, 0.799->106.264, 0.856->106.264, 0.932->106.264, 1.008->106.264
+Runde 2: Gesamtfehler=25.410
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.500, Δcy=0.000, diag=16.279->13.416, scale=0.8242
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -42,5 +42,5 @@ arm: Längen-Bracketing arm_len 22.674->45.000; Kandidaten=1.000->118.568, 12.00
 text: minRect Δcx=0.794, Δcy=1.824, diag=7.491->12.207, scale=1.6295
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=103.750
-text: Breiten-Bracketing co2_font_scale 1.500->1.000; Kandidaten=1.000->103.750, 1.500->103.750
+text: Breiten-Bracketing co2_font_scale 0.500->0.450; Kandidaten=0.450->103.750, 0.491->103.750, 0.500->103.750, 0.532->103.750, 0.575->103.750, 0.588->103.750, 0.642->103.750, 0.684->103.750, 0.725->103.750
 Runde 3: Gesamtfehler=22.942

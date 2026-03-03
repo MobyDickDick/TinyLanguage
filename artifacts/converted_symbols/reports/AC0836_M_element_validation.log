@@ -14,8 +14,8 @@ stem: Längen-Bracketing stem_len 17.425->35.000; Kandidaten=1.000->116.333, 9.5
 text: minRect Δcx=0.500, Δcy=1.500, diag=7.280->13.000, scale=1.7857
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=102.537
-text: Breiten-Bracketing voc_font_scale 0.520->0.500; Kandidaten=0.500->103.109
-Runde 1: Gesamtfehler=29.694
+text: Breiten-Bracketing voc_font_scale 0.520->1.350; Kandidaten=0.312->103.109, 0.442->103.109, 0.468->103.109, 0.520->103.109, 0.598->103.109, 0.623->103.109, 0.831->103.109, 1.039->103.109, 1.194->103.109, 1.350->102.727
+Runde 1: Gesamtfehler=29.703
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=0.500, Δcy=0.000, diag=12.728->11.180, scale=0.8784
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -29,10 +29,10 @@ stem: Breitenkorrektur mode=iter, ratio=0.500, alt=1.700, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=2.600..2.600)
 stem: Längen-Bracketing stem_len 16.750->18.000; Kandidaten=1.000->111.333, 9.500->56.767, 17.000->52.974, 18.000->50.658, 26.500->64.233, 35.000->58.300
-text: minRect Δcx=0.500, Δcy=0.500, diag=8.246->12.083, scale=1.4653
+text: minRect Δcx=0.500, Δcy=1.000, diag=8.544->13.928, scale=1.6302
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=101.100
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.500); Kandidaten=0.500->95.610
+text: Fehler=99.833
+text: Breiten-Bracketing voc_font_scale 1.350->0.450; Kandidaten=0.450->95.610, 0.585->95.610, 0.720->95.610, 0.900->95.610, 1.080->95.610, 1.147->95.610, 1.215->98.449, 1.350->100.583
 Runde 2: Gesamtfehler=27.786
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.500, Δcy=0.500, diag=14.142->12.083, scale=0.8544
@@ -50,5 +50,5 @@ stem: Längen-Bracketing stem_len 16.250->16.000; Kandidaten=1.000->105.333, 9.5
 text: minRect Δcx=0.500, Δcy=0.500, diag=7.616->12.649, scale=1.6609
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=97.644
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.500); Kandidaten=0.500->97.644
+text: Breiten-Bracketing voc_font_scale 0.450->0.300; Kandidaten=0.300->97.644, 0.383->97.644, 0.450->97.644, 0.458->97.644, 0.517->97.644, 0.615->97.644, 0.825->97.644, 1.035->97.644, 1.192->97.644, 1.350->97.778
 Runde 3: Gesamtfehler=25.167

@@ -14,7 +14,10 @@ import subprocess
 import sys
 from dataclasses import dataclass
 
-from src.converter_runtime_bootstrap import configure_converter_runtime
+try:
+    from src.converter_runtime_bootstrap import configure_converter_runtime
+except ModuleNotFoundError:  # Script-Ausführung aus src/-Verzeichnis
+    from converter_runtime_bootstrap import configure_converter_runtime
 
 configure_converter_runtime()
 

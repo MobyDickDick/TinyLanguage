@@ -883,3 +883,40 @@ def test_optimize_arm_extent_allows_shorter_length_when_not_edge_anchored(monkey
     assert changed is True
     arm_len = float(((float(params["arm_x2"]) - float(params["arm_x1"])) ** 2 + (float(params["arm_y2"]) - float(params["arm_y1"])) ** 2) ** 0.5)
     assert arm_len <= 1.0 + 1e-6
+
+
+def test_union_bbox_from_masks_handles_disjoint_regions() -> None:
+    """Union bbox should span both masks and return inclusive pixel bounds."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    mask_a = np.zeros((8, 10), dtype=bool)
+    mask_b = np.zeros((8, 10), dtype=bool)
+    mask_a[1:3, 2:4] = True
+    mask_b[5:7, 7:9] = True
+
+    bbox = Action._union_bbox_from_masks(mask_a, mask_b)
+
+    assert bbox == (2, 1, 8, 6)
+
+
+def test_masked_union_error_in_bbox_penalizes_missed_overlap() -> None:
+    """Union-masked bbox error should be >0 when only one side contains foreground."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img_orig = np.full((10, 10, 3), 255, dtype=np.uint8)
+    img_svg = np.full((10, 10, 3), 255, dtype=np.uint8)
+
+    # Foreground in source only (darker), absent in svg -> should produce clear error.
+    img_orig[2:6, 2:6] = 0
+
+    mask_orig = np.zeros((10, 10), dtype=bool)
+    mask_svg = np.zeros((10, 10), dtype=bool)
+    mask_orig[2:6, 2:6] = True
+
+    err = Action._masked_union_error_in_bbox(img_orig, img_svg, mask_orig, mask_svg)
+
+    assert err > 200.0

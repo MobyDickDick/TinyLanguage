@@ -5,6 +5,7 @@ circle: Fehler=77.157
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing cx 7.150->7.500, cy 7.825->8.000 (best_err=58.900)
 circle: Radius-Bracketing r 6.726->6.500 (best_err=58.900); Kandidaten=6.000->76.528, 6.500->58.900, 7.000->60.333
+circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=8.000, r=6.500, best_err=58.900)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: Fehler=33.647
 stem: Breitenkorrektur mode=iter, ratio=0.167, alt=1.000, neu=1.000
@@ -24,6 +25,7 @@ circle: Fehler=58.900
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=7.500, cy=8.000, best_err=58.900)
 circle: Radius-Bracketing keine relevante Änderung (r: 6.500, best_err=58.900); Kandidaten=6.000->76.528, 6.500->58.900, 7.000->60.333
+circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=8.000, r=6.500, best_err=58.900)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: Fehler=29.267
 stem: Breitenkorrektur mode=iter, ratio=0.200, alt=1.000, neu=1.000
@@ -43,6 +45,7 @@ circle: Fehler=58.900
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=7.500, cy=8.000, best_err=58.900)
 circle: Radius-Bracketing keine relevante Änderung (r: 6.500, best_err=58.900); Kandidaten=6.000->76.528, 6.500->58.900, 7.000->60.333
+circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=8.000, r=6.500, best_err=58.900)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: Fehler=29.267
 stem: Breitenkorrektur mode=iter, ratio=0.200, alt=1.000, neu=1.000
@@ -61,6 +64,7 @@ circle: Fehler=58.900
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=7.500, cy=8.000, best_err=58.900)
 circle: Radius-Bracketing keine relevante Änderung (r: 6.500, best_err=58.900); Kandidaten=6.000->76.528, 6.500->58.900, 7.000->60.333
+circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=8.000, r=6.500, best_err=58.900)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: Fehler=29.267
 stem: Breitenkorrektur mode=iter, ratio=0.200, alt=1.000, neu=1.000
@@ -79,6 +83,7 @@ circle: Fehler=58.900
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=7.500, cy=8.000, best_err=58.900)
 circle: Radius-Bracketing keine relevante Änderung (r: 6.500, best_err=58.900); Kandidaten=6.000->76.528, 6.500->58.900, 7.000->60.333
+circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=8.000, r=6.500, best_err=58.900)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: Fehler=29.267
 stem: Breitenkorrektur mode=iter, ratio=0.200, alt=1.000, neu=1.000
@@ -97,6 +102,7 @@ circle: Fehler=58.900
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=7.500, cy=8.000, best_err=58.900)
 circle: Radius-Bracketing keine relevante Änderung (r: 6.500, best_err=58.900); Kandidaten=6.000->76.528, 6.500->58.900, 7.000->60.333
+circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=8.000, r=6.500, best_err=58.900)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: Fehler=29.267
 stem: Breitenkorrektur mode=iter, ratio=0.200, alt=1.000, neu=1.000

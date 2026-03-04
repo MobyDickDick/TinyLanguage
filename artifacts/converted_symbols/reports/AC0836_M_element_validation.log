@@ -5,6 +5,7 @@ circle: Fehler=86.130
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing cx 8.825->10.500, cy 14.150->12.000 (best_err=73.504)
 circle: Radius-Bracketing r 8.464->9.500 (best_err=72.248); Kandidaten=7.500->93.287, 8.500->73.504, 9.000->72.248, 9.500->72.248
+circle: Joint-Multistart keine relevante Änderung (cx=10.500, cy=12.000, r=9.500, best_err=72.248)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: Fehler=69.879
 stem: Breitenkorrektur mode=iter, ratio=0.167, alt=1.000, neu=2.000
@@ -25,14 +26,15 @@ circle: Fehler=72.248
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing cx 10.500->10.000, cy 12.000->12.000 (best_err=62.985)
 circle: Radius-Bracketing r 9.192->9.000 (best_err=62.985); Kandidaten=8.500->75.948, 9.000->62.985, 9.500->76.102
+circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=12.000, r=9.000, best_err=62.985)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: minRect Δcx=0.000, Δcy=-0.500, diag=13.038->14.866, scale=1.1402
-stem: Parameter nach Mittelpunkt/Diagonale angepasst
+stem: Mittelpunkt/Diagonale-Update verworfen (Fehler 15.382->22.794)
 stem: Fehler=15.382
-stem: Breitenkorrektur mode=iter, ratio=0.333, alt=2.280, neu=2.000
+stem: Breitenkorrektur mode=iter, ratio=0.333, alt=2.000, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
-stem: Längen-Bracketing stem_len 13.225->18.000; Kandidaten=1.000->106.000, 9.500->45.812, 13.000->22.794, 18.000->15.382, 26.500->40.098, 35.000->48.300
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 14.000); Kandidaten=1.000->101.200, 9.500->42.250, 14.000->15.382, 18.000->15.382, 26.500->37.191, 35.000->50.267
 stem: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=0.500, Δcy=3.500, diag=8.485->23.022, scale=2.7131
 text: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -46,14 +48,15 @@ circle: Fehler=62.985
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=10.000, cy=12.000, best_err=62.985)
 circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=62.985); Kandidaten=8.000->87.733, 9.000->62.985, 9.500->76.102
+circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=12.000, r=9.000, best_err=62.985)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: minRect Δcx=0.000, Δcy=-0.500, diag=13.038->14.866, scale=1.1402
-stem: Parameter nach Mittelpunkt/Diagonale angepasst
+stem: Mittelpunkt/Diagonale-Update verworfen (Fehler 15.382->22.794)
 stem: Fehler=15.382
-stem: Breitenkorrektur mode=iter, ratio=0.333, alt=2.280, neu=2.000
+stem: Breitenkorrektur mode=iter, ratio=0.333, alt=2.000, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
-stem: Längen-Bracketing stem_len 13.225->18.000; Kandidaten=1.000->106.000, 9.500->45.812, 13.000->22.794, 18.000->15.382, 26.500->40.098, 35.000->48.300
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 14.000); Kandidaten=1.000->101.200, 9.500->42.250, 14.000->15.382, 18.000->15.382, 26.500->37.191, 35.000->50.267
 stem: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-2.500, Δcy=3.000, diag=10.770->21.471, scale=1.9935
 text: Fehler=65.596
@@ -66,14 +69,15 @@ circle: Fehler=62.985
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=10.000, cy=12.000, best_err=62.985)
 circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=62.985); Kandidaten=8.000->87.733, 9.000->62.985, 9.500->76.102
+circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=12.000, r=9.000, best_err=62.985)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: minRect Δcx=0.000, Δcy=-0.500, diag=13.038->14.866, scale=1.1402
-stem: Parameter nach Mittelpunkt/Diagonale angepasst
+stem: Mittelpunkt/Diagonale-Update verworfen (Fehler 15.382->22.794)
 stem: Fehler=15.382
-stem: Breitenkorrektur mode=iter, ratio=0.333, alt=2.280, neu=2.000
+stem: Breitenkorrektur mode=iter, ratio=0.333, alt=2.000, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
-stem: Längen-Bracketing stem_len 13.225->18.000; Kandidaten=1.000->106.000, 9.500->45.812, 13.000->22.794, 18.000->15.382, 26.500->40.098, 35.000->48.300
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 14.000); Kandidaten=1.000->101.200, 9.500->42.250, 14.000->15.382, 18.000->15.382, 26.500->37.191, 35.000->50.267
 stem: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-2.500, Δcy=3.000, diag=10.770->21.471, scale=1.9935
 text: Fehler=65.596
@@ -86,14 +90,15 @@ circle: Fehler=62.985
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=10.000, cy=12.000, best_err=62.985)
 circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=62.985); Kandidaten=8.000->87.733, 9.000->62.985, 9.500->76.102
+circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=12.000, r=9.000, best_err=62.985)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: minRect Δcx=0.000, Δcy=-0.500, diag=13.038->14.866, scale=1.1402
-stem: Parameter nach Mittelpunkt/Diagonale angepasst
+stem: Mittelpunkt/Diagonale-Update verworfen (Fehler 15.382->22.794)
 stem: Fehler=15.382
-stem: Breitenkorrektur mode=iter, ratio=0.333, alt=2.280, neu=2.000
+stem: Breitenkorrektur mode=iter, ratio=0.333, alt=2.000, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
-stem: Längen-Bracketing stem_len 13.225->18.000; Kandidaten=1.000->106.000, 9.500->45.812, 13.000->22.794, 18.000->15.382, 26.500->40.098, 35.000->48.300
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 14.000); Kandidaten=1.000->101.200, 9.500->42.250, 14.000->15.382, 18.000->15.382, 26.500->37.191, 35.000->50.267
 stem: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-2.500, Δcy=3.000, diag=10.770->21.471, scale=1.9935
 text: Fehler=65.596
@@ -106,14 +111,15 @@ circle: Fehler=62.985
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=10.000, cy=12.000, best_err=62.985)
 circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=62.985); Kandidaten=8.000->87.733, 9.000->62.985, 9.500->76.102
+circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=12.000, r=9.000, best_err=62.985)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: minRect Δcx=0.000, Δcy=-0.500, diag=13.038->14.866, scale=1.1402
-stem: Parameter nach Mittelpunkt/Diagonale angepasst
+stem: Mittelpunkt/Diagonale-Update verworfen (Fehler 15.382->22.794)
 stem: Fehler=15.382
-stem: Breitenkorrektur mode=iter, ratio=0.333, alt=2.280, neu=2.000
+stem: Breitenkorrektur mode=iter, ratio=0.333, alt=2.000, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
-stem: Längen-Bracketing stem_len 13.225->18.000; Kandidaten=1.000->106.000, 9.500->45.812, 13.000->22.794, 18.000->15.382, 26.500->40.098, 35.000->48.300
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 14.000); Kandidaten=1.000->101.200, 9.500->42.250, 14.000->15.382, 18.000->15.382, 26.500->37.191, 35.000->50.267
 stem: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-2.500, Δcy=3.000, diag=10.770->21.471, scale=1.9935
 text: Fehler=65.596

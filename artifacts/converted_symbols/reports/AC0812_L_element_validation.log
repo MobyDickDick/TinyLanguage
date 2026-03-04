@@ -5,10 +5,11 @@ circle: Fehler=64.438
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing cx 28.500->29.000, cy 12.150->12.500 (best_err=33.791)
 circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 3.500->inf, 11.000->32.438, 12.000->62.183
+circle: Joint-Multistart cx 29.000->29.000, cy 12.500->12.500, r 11.178->11.000 (best_err=32.438)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Fehler=52.238
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 17.822->18.000; Kandidaten=1.000->86.292, 12.000->61.368, 18.000->52.238, 23.000->52.238, 34.000->52.238, 45.000->52.238
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 18.000); Kandidaten=1.000->86.292, 12.000->61.368, 18.000->52.238, 23.000->52.238, 34.000->52.238, 45.000->52.238
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 Runde 1: Gesamtfehler=6.326
 Gesamtfehler unter Schwellwert, Validierung beendet

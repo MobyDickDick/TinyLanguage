@@ -5,6 +5,7 @@ circle: Fehler=35.533
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing cx 7.825->8.000, cy 7.500->7.500 (best_err=26.889)
 circle: Radius-Bracketing r 6.676->6.500 (best_err=26.889); Kandidaten=6.000->63.932, 6.500->26.889, 7.000->27.511
+circle: Joint-Multistart keine relevante Änderung (cx=8.000, cy=7.500, r=6.500, best_err=26.889)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Fehler=32.412
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)

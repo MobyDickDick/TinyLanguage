@@ -778,3 +778,23 @@ def test_optimize_circle_pose_multistart_can_escape_local_center_radius_plateau(
     assert float(params["cy"]) == 9.0
     assert float(params["r"]) == 6.5
     assert any("Joint-Multistart" in line for line in logs)
+
+
+def test_make_badge_params_supports_ac0810_variants() -> None:
+    """AC0810 and variant names should map to the semantic right-arm badge model."""
+    params = Action.make_badge_params(25, 15, "AC0810")
+
+    assert params is not None
+    assert params.get("arm_enabled") is True
+    assert float(params["arm_x2"]) > float(params["arm_x1"])
+    assert float(params["arm_x2"]) >= 22.0
+
+
+def test_parse_description_marks_ac0810_as_semantic_badge() -> None:
+    """Reflection parsing should treat AC0810 as a semantic circle+right-arm badge."""
+    desc, params = image_composite_converter.Reflection({}).parse_description("AC0810", "AC0810_L.jpg")
+
+    assert desc == ""
+    assert params["mode"] == "semantic_badge"
+    assert "SEMANTIC: Kreis ohne Buchstabe" in params["elements"]
+    assert "SEMANTIC: waagrechter Strich rechts vom Kreis" in params["elements"]

@@ -59,6 +59,17 @@ def test_finalize_ac0820_locks_plain_circle_center_and_min_radius() -> None:
     assert float(params["min_circle_radius"]) >= float(params["r"]) * 0.88
 
 
+def test_finalize_ac0820_min_circle_radius_uses_template_baseline() -> None:
+    """Radius floor should be anchored to template size, not a shrunken interim fit."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(20, 20))
+    params["template_circle_radius"] = float(params["r"])
+    params["r"] = 3.0
+
+    params = Action._finalize_ac08_style("AC0820", params)
+
+    assert float(params["min_circle_radius"]) >= float(params["template_circle_radius"]) * 0.90
+
+
 def test_fit_semantic_badge_prevents_over_shrinking_plain_text_badge_circle(monkeypatch: pytest.MonkeyPatch) -> None:
     """Circle fitting should keep a minimum template-relative radius for plain text badges."""
     if image_composite_converter.np is None or image_composite_converter.cv2 is None:

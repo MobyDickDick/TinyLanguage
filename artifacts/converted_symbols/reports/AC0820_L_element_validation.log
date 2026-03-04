@@ -3,7 +3,7 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=75.873
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500; Kandidaten=12.000->103.780, 12.500->92.800, 13.500->75.873, 14.000->77.171, 14.500->87.747
+circle: Radius-Bracketing r 13.565->13.500; Kandidaten=12.500->92.800, 13.000->80.506, 13.500->75.873, 14.000->77.171, 14.500->87.747
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-1.500, Δcy=2.000, diag=14.866->14.213, scale=0.9560
 text: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -16,7 +16,7 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=75.873
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500; Kandidaten=12.000->103.780, 12.500->92.800, 13.500->75.873, 14.000->77.171, 14.500->87.747
+circle: Radius-Bracketing r 13.565->13.500; Kandidaten=12.500->92.800, 13.000->80.506, 13.500->75.873, 14.000->77.171, 14.500->87.747
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-2.265, Δcy=0.441, diag=16.077->14.213, scale=0.8840
 text: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -29,7 +29,7 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=75.873
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500; Kandidaten=12.000->103.780, 12.500->92.800, 13.500->75.873, 14.000->77.171, 14.500->87.747
+circle: Radius-Bracketing r 13.565->13.500; Kandidaten=12.500->92.800, 13.000->80.506, 13.500->75.873, 14.000->77.171, 14.500->87.747
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-1.500, Δcy=0.000, diag=14.866->14.213, scale=0.9560
 text: Fehler=92.949
@@ -41,7 +41,7 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=75.873
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500; Kandidaten=12.000->103.780, 12.500->92.800, 13.500->75.873, 14.000->77.171, 14.500->87.747
+circle: Radius-Bracketing r 13.565->13.500; Kandidaten=12.500->92.800, 13.000->80.506, 13.500->75.873, 14.000->77.171, 14.500->87.747
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-1.500, Δcy=0.000, diag=14.866->14.213, scale=0.9560
 text: Fehler=92.949
@@ -53,7 +53,7 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=75.873
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500; Kandidaten=12.000->103.780, 12.500->92.800, 13.500->75.873, 14.000->77.171, 14.500->87.747
+circle: Radius-Bracketing r 13.565->13.500; Kandidaten=12.500->92.800, 13.000->80.506, 13.500->75.873, 14.000->77.171, 14.500->87.747
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-1.500, Δcy=0.000, diag=14.866->14.213, scale=0.9560
 text: Fehler=92.949
@@ -65,7 +65,7 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=75.873
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500; Kandidaten=12.000->103.780, 12.500->92.800, 13.500->75.873, 14.000->77.171, 14.500->87.747
+circle: Radius-Bracketing r 13.565->13.500; Kandidaten=12.500->92.800, 13.000->80.506, 13.500->75.873, 14.000->77.171, 14.500->87.747
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-1.500, Δcy=0.000, diag=14.866->14.213, scale=0.9560
 text: Fehler=92.949

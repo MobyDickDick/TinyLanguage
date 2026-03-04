@@ -1,9 +1,9 @@
 Runde 1: elementweise Validierung gestartet
-circle: minRect Δcx=0.500, Δcy=0.500, diag=14.000->18.385, scale=1.3132
+circle: minRect Δcx=0.500, Δcy=0.500, diag=16.000->18.385, scale=1.1490
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=63.163
+circle: Fehler=49.449
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 6.136->6.500; Kandidaten=5.000->61.302, 5.500->52.038, 6.000->53.308, 6.500->44.277, 7.000->49.785
+circle: Radius-Bracketing r 6.067->6.500; Kandidaten=5.000->61.302, 5.500->52.038, 6.000->53.308, 6.500->44.277, 7.000->49.785
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 Runde 1: Gesamtfehler=23.787
 Runde 2: elementweise Validierung gestartet

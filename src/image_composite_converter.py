@@ -518,6 +518,16 @@ class Action:
             min_dim = float(min(float(p.get("width", 0.0) or 0.0), float(p.get("height", 0.0) or 0.0)))
             if min_dim <= 0.0:
                 min_dim = max(1.0, float(p.get("r", 1.0)) * 2.0)
+            if canonical_name == "AC0835_M" and min_dim <= 22.0:
+                # AC0835_M often lands with visibly undersized VOC text after
+                # anti-aliased fitting. Keep the medium badge explicitly
+                # biased toward a larger baseline, while still allowing upward
+                # growth in iterative validation for difficult sources.
+                base_scale = float(p.get("voc_font_scale", 0.52))
+                p["lock_text_scale"] = False
+                p["voc_font_scale"] = float(max(0.60, base_scale))
+                p["voc_font_scale_min"] = float(max(0.60, base_scale * 1.10))
+                p.pop("voc_font_scale_max", None)
             if canonical_name == "AC0835_S" and min_dim <= 15.5:
                 # AC0835_S tends to over-scale VOC during text bracketing,
                 # producing a visibly heavy label compared to the source icon.
@@ -2367,7 +2377,9 @@ class Action:
         return float(np.sum(gray_diff * union_mask.astype(np.float32)) / float(denom))
 
     @staticmethod
-    def _element_width_key_and_bounds(element: str, params: dict, w: int, h: int) -> tuple[str, float, float] | None:
+    def _element_width_key_and_bounds(
+        element: str, params: dict, w: int, h: int, img_orig: np.ndarray | None = None
+    ) -> tuple[str, float, float] | None:
         lock_strokes = bool(params.get("lock_stroke_widths"))
         if element == "stem" and params.get("stem_enabled"):
             if lock_strokes:
@@ -2396,21 +2408,28 @@ class Action:
                 cur = float(params.get("voc_font_scale", 0.52))
                 if bool(params.get("lock_text_scale", False)):
                     return "voc_font_scale", cur, cur
-                min_dim = float(min(w, h))
-                # VOC labels vary strongly across AC08xx variants, especially in
-                # tiny symbols where the text can occupy most of the inner circle.
-                # Keep a broad search window instead of anchoring too tightly to
-                # the current estimate.
+                # Start with broad generic bounds so the optimizer can follow
+                # text-mask error rather than artificial variant caps.
                 low = max(0.30, min(cur * 0.60, 0.45))
-                # Large VOC badges can otherwise over-scale the label to the
-                # hard cap and look visibly too heavy (e.g. AC0837_L). Keep the
-                # tiny-size exploration broad, but tighten larger variants.
-                if min_dim > 22.0:
-                    high = 1.10
-                elif min_dim > 16.0:
-                    high = 1.30
-                else:
-                    high = 1.60
+                high = max(1.60, cur * 1.65)
+
+                # If the original text region can be extracted, derive a
+                # data-driven target scale from the observed text bbox and
+                # widen the bracket around that estimate.
+                if img_orig is not None:
+                    mask_orig = Action.extract_badge_element_mask(img_orig, params, "text")
+                    if mask_orig is not None:
+                        ys, xs = np.where(mask_orig)
+                        if ys.size > 0 and xs.size > 0:
+                            obs_w = float(xs.max() - xs.min() + 1)
+                            obs_h = float(ys.max() - ys.min() + 1)
+                            r = max(1.0, float(params.get("r", 1.0)))
+                            by_width = obs_w / max(1e-6, (r * 1.95))
+                            by_height = obs_h / max(1e-6, (r * 0.90))
+                            target = max(0.35, min(2.20, min(by_width, by_height)))
+                            low = min(low, max(0.30, target * 0.55))
+                            high = max(high, min(2.20, target * 1.55))
+
                 if "voc_font_scale_min" in params:
                     low = max(low, float(params["voc_font_scale_min"]))
                 if "voc_font_scale_max" in params:
@@ -2435,7 +2454,7 @@ class Action:
     def _element_error_for_width(img_orig: np.ndarray, params: dict, element: str, width_value: float) -> float:
         h, w = img_orig.shape[:2]
         probe = dict(params)
-        info = Action._element_width_key_and_bounds(element, probe, w, h)
+        info = Action._element_width_key_and_bounds(element, probe, w, h, img_orig=img_orig)
         if info is None:
             return float("inf")
         key, low, high = info
@@ -3071,7 +3090,7 @@ class Action:
     @staticmethod
     def _optimize_element_width_bracket(img_orig: np.ndarray, params: dict, element: str, logs: list[str]) -> bool:
         h, w = img_orig.shape[:2]
-        info = Action._element_width_key_and_bounds(element, params, w, h)
+        info = Action._element_width_key_and_bounds(element, params, w, h, img_orig=img_orig)
         if info is None:
             return False
 

@@ -2791,6 +2791,23 @@ class Action:
             key_label = "arm_len"
             low_bound = 1.0
             high_bound = float(max(w, h))
+            # Keep edge-anchored connector variants (e.g. AC0832_S) from collapsing
+            # to tiny stubs when element-only error masks under-segment thin lines.
+            is_edge_anchored = any(
+                (
+                    float(params.get(key, 0.0)) <= 0.5
+                    or float(params.get(key, 0.0)) >= float(limit) - 0.5
+                )
+                for key, limit in (
+                    ("arm_x1", w),
+                    ("arm_x2", w),
+                    ("arm_y1", h),
+                    ("arm_y2", h),
+                )
+            )
+            if is_edge_anchored and params.get("circle_enabled", True):
+                min_ratio = float(params.get("arm_len_min_ratio", 0.75))
+                low_bound = max(low_bound, current * max(0.0, min(1.0, min_ratio)))
         else:
             return False
 

@@ -828,3 +828,58 @@ def test_parse_description_marks_ac0810_as_semantic_badge() -> None:
     assert params["mode"] == "semantic_badge"
     assert "SEMANTIC: Kreis ohne Buchstabe" in params["elements"]
     assert "SEMANTIC: waagrechter Strich rechts vom Kreis" in params["elements"]
+
+def test_optimize_arm_extent_keeps_min_length_for_edge_anchored_connectors(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Edge-anchored semantic arms should not collapse to 1px stubs during length bracketing."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.full((15, 25, 3), 220, dtype=np.uint8)
+    params = Action._default_ac0812_params(25, 15)
+    params["r"] = 5.5
+
+    monkeypatch.setattr(
+        Action,
+        "_element_error_for_extent",
+        staticmethod(lambda *_args, **_kwargs: 0.0),
+    )
+
+    logs: list[str] = []
+    changed = Action._optimize_element_extent_bracket(img, params, "arm", logs)
+
+    assert changed is True
+    assert abs(float(params["arm_x1"]) - 0.0) < 1e-6
+    arm_len = float(((float(params["arm_x2"]) - float(params["arm_x1"])) ** 2 + (float(params["arm_y2"]) - float(params["arm_y1"])) ** 2) ** 0.5)
+    assert arm_len >= 7.0 - 1e-6
+
+
+def test_optimize_arm_extent_allows_shorter_length_when_not_edge_anchored(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Non-edge-anchored arms keep existing behavior and may still shrink to tiny lengths."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.full((20, 20, 3), 220, dtype=np.uint8)
+    params = {
+        "circle_enabled": False,
+        "arm_enabled": True,
+        "arm_x1": 8.0,
+        "arm_y1": 10.0,
+        "arm_x2": 14.0,
+        "arm_y2": 10.0,
+        "arm_stroke": 1.0,
+    }
+
+    monkeypatch.setattr(
+        Action,
+        "_element_error_for_extent",
+        staticmethod(lambda *_args, **_kwargs: 0.0),
+    )
+
+    logs: list[str] = []
+    changed = Action._optimize_element_extent_bracket(img, params, "arm", logs)
+
+    assert changed is True
+    arm_len = float(((float(params["arm_x2"]) - float(params["arm_x1"])) ** 2 + (float(params["arm_y2"]) - float(params["arm_y1"])) ** 2) ** 0.5)
+    assert arm_len <= 1.0 + 1e-6

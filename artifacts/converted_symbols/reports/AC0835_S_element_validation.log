@@ -9,9 +9,9 @@ circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=0.500, Δcy=2.000, diag=8.544->13.038, scale=1.5260
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=89.980
-text: Breiten-Bracketing voc_font_scale 0.520->0.956; Kandidaten=0.312->84.667, 0.442->84.667, 0.505->84.667, 0.520->84.667, 0.598->84.667, 0.698->76.811, 0.956->69.386, 1.214->71.547, 1.407->71.013, 1.600->70.405
+text: Breiten-Bracketing übersprungen (voc_font_scale: current=0.520, Range=0.580..0.580)
 text: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 1: Gesamtfehler=25.182
+Runde 1: Gesamtfehler=24.582
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=0.000, diag=18.974->19.677, scale=1.0371
 circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 56.880->62.033)
@@ -20,23 +20,10 @@ circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.
 circle: Radius-Bracketing keine relevante Änderung (r: 6.514, best_err=53.364); Kandidaten=6.000->71.361, 6.500->53.364, 7.000->61.090
 circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=7.500, r=6.514, best_err=53.364)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
-text: minRect Δcx=0.000, Δcy=2.500, diag=12.369->16.125, scale=1.3036
-text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=69.386
-text: Breiten-Bracketing voc_font_scale 0.956->1.099; Kandidaten=0.450->83.186, 0.623->81.977, 0.795->67.104, 0.813->66.396, 0.956->63.266, 1.025->64.203, 1.099->61.594, 1.255->63.849, 1.427->64.315, 1.600->64.827
+text: minRect Δcx=0.500, Δcy=2.000, diag=8.246->12.530, scale=1.5195
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 84.667->92.756)
+text: Fehler=84.667
+text: Breiten-Bracketing übersprungen (voc_font_scale: current=0.520, Range=0.580..0.580)
 text: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 2: Gesamtfehler=24.200
-Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=0.000, diag=18.974->19.677, scale=1.0371
-circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 56.880->62.033)
-circle: Fehler=56.880
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 6.514, best_err=53.364); Kandidaten=6.000->71.361, 6.500->53.364, 7.000->61.090
-circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=7.500, r=6.514, best_err=53.364)
-circle: Farb-Bracketing übersprungen (Farben gesperrt)
-text: minRect Δcx=-2.500, Δcy=2.000, diag=9.849->16.125, scale=1.6372
-text: Fehler=61.594
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 1.099); Kandidaten=0.450->83.186, 0.623->81.977, 0.795->67.104, 0.934->62.875, 1.025->64.203, 1.099->61.594, 1.255->63.849, 1.264->64.890, 1.427->64.315, 1.600->64.827
-text: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 3: Gesamtfehler=24.200
+Runde 2: Gesamtfehler=24.582
 Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet

@@ -2234,6 +2234,60 @@ class Action:
         return float(np.sum(weighted) / denom)
 
     @staticmethod
+    def _union_bbox_from_masks(mask_a: np.ndarray | None, mask_b: np.ndarray | None) -> tuple[int, int, int, int] | None:
+        boxes: list[tuple[float, float, float, float]] = []
+        if mask_a is not None:
+            box_a = Action._mask_bbox(mask_a)
+            if box_a is not None:
+                boxes.append(box_a)
+        if mask_b is not None:
+            box_b = Action._mask_bbox(mask_b)
+            if box_b is not None:
+                boxes.append(box_b)
+        if not boxes:
+            return None
+
+        x1 = int(np.floor(min(b[0] for b in boxes)))
+        y1 = int(np.floor(min(b[1] for b in boxes)))
+        x2 = int(np.ceil(max(b[2] for b in boxes)))
+        y2 = int(np.ceil(max(b[3] for b in boxes)))
+        return x1, y1, x2, y2
+
+    @staticmethod
+    def _masked_union_error_in_bbox(
+        img_orig: np.ndarray,
+        img_svg: np.ndarray,
+        mask_orig: np.ndarray | None,
+        mask_svg: np.ndarray | None,
+    ) -> float:
+        """Symmetric masked error, cropped to the smallest rectangle around both masks."""
+        if img_svg is None or mask_orig is None or mask_svg is None:
+            return float("inf")
+        if img_svg.shape[:2] != img_orig.shape[:2]:
+            img_svg = cv2.resize(img_svg, (img_orig.shape[1], img_orig.shape[0]), interpolation=cv2.INTER_AREA)
+
+        bbox = Action._union_bbox_from_masks(mask_orig, mask_svg)
+        if bbox is None:
+            return float("inf")
+
+        h, w = img_orig.shape[:2]
+        x1, y1, x2, y2 = bbox
+        x1 = max(0, min(w - 1, x1))
+        y1 = max(0, min(h - 1, y1))
+        x2 = max(x1, min(w - 1, x2))
+        y2 = max(y1, min(h - 1, y2))
+
+        orig_crop = img_orig[y1 : y2 + 1, x1 : x2 + 1]
+        svg_crop = img_svg[y1 : y2 + 1, x1 : x2 + 1]
+        union_mask = mask_orig[y1 : y2 + 1, x1 : x2 + 1] | mask_svg[y1 : y2 + 1, x1 : x2 + 1]
+        denom = int(np.sum(union_mask))
+        if denom <= 0:
+            return float("inf")
+
+        gray_diff = cv2.cvtColor(cv2.absdiff(orig_crop, svg_crop), cv2.COLOR_BGR2GRAY).astype(np.float32)
+        return float(np.sum(gray_diff * union_mask.astype(np.float32)) / float(denom))
+
+    @staticmethod
     def _element_width_key_and_bounds(element: str, params: dict, w: int, h: int) -> tuple[str, float, float] | None:
         lock_strokes = bool(params.get("lock_stroke_widths"))
         if element == "stem" and params.get("stem_enabled"):
@@ -2338,8 +2392,11 @@ class Action:
         mask_orig = Action.extract_badge_element_mask(img_orig, probe, "circle")
         if mask_orig is None:
             return float("inf")
+        mask_svg = Action.extract_badge_element_mask(elem_render, probe, "circle")
+        if mask_svg is None:
+            return float("inf")
 
-        return Action._masked_error(img_orig, elem_render, mask_orig)
+        return Action._masked_union_error_in_bbox(img_orig, elem_render, mask_orig, mask_svg)
 
 
     @staticmethod
@@ -2376,8 +2433,11 @@ class Action:
         mask_orig = Action.extract_badge_element_mask(img_orig, probe, "circle")
         if mask_orig is None:
             return float("inf")
+        mask_svg = Action.extract_badge_element_mask(elem_render, probe, "circle")
+        if mask_svg is None:
+            return float("inf")
 
-        return Action._masked_error(img_orig, elem_render, mask_orig)
+        return Action._masked_union_error_in_bbox(img_orig, elem_render, mask_orig, mask_svg)
 
     @staticmethod
     def _reanchor_arm_to_circle_edge(params: dict, radius: float) -> None:

@@ -342,6 +342,23 @@ def test_voc_font_scale_bounds_allow_larger_tiny_badge_labels() -> None:
     assert high >= 1.60
 
 
+def test_voc_font_scale_bounds_limit_growth_for_large_badges() -> None:
+    """Large VOC badges should avoid overscaling text during width bracketing."""
+    params = {
+        "draw_text": True,
+        "text_mode": "voc",
+        "voc_font_scale": 0.52,
+    }
+
+    info = Action._element_width_key_and_bounds("text", params, 45, 25)
+
+    assert info is not None
+    key, low, high = info
+    assert key == "voc_font_scale"
+    assert low <= 0.45
+    assert high <= 1.10
+
+
 
 
 def test_optimize_arm_extent_keeps_circle_side_anchor_for_horizontal_connectors() -> None:

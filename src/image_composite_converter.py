@@ -2192,7 +2192,15 @@ class Action:
                 # Keep a broad search window instead of anchoring too tightly to
                 # the current estimate.
                 low = max(0.30, min(cur * 0.60, 0.45))
-                high = 1.35 if min_dim > 16.0 else 1.60
+                # Large VOC badges can otherwise over-scale the label to the
+                # hard cap and look visibly too heavy (e.g. AC0837_L). Keep the
+                # tiny-size exploration broad, but tighten larger variants.
+                if min_dim > 22.0:
+                    high = 1.10
+                elif min_dim > 16.0:
+                    high = 1.30
+                else:
+                    high = 1.60
                 return "voc_font_scale", low, max(low, high)
             if mode == "co2":
                 cur = float(params.get("co2_font_scale", 0.82))

@@ -1290,8 +1290,19 @@ class Action:
 
         if circles is not None and circles.size > 0:
             best = None
+            template_cx = float(defaults.get("cx", params.get("cx", float(w) / 2.0)))
+            template_cy = float(defaults.get("cy", params.get("cy", float(h) / 2.0)))
+            template_r = float(defaults.get("r", params.get("r", max(1.0, min_side * 0.35))))
+            max_center_offset = max(2.0, min_side * 0.30)
+            max_radius_delta = max(1.5, template_r * 0.40)
             for c in circles[0]:
                 cx, cy, r = float(c[0]), float(c[1]), float(c[2])
+                center_offset = float(np.hypot(cx - template_cx, cy - template_cy))
+                # Semantic AC08xx badges follow a fixed layout. Reject detections
+                # that drift too far away from the expected template center; on
+                # tiny CO₂/VOC symbols those are usually text blobs, not circles.
+                if center_offset > max_center_offset:
+                    continue
                 yy, xx = np.indices(gray.shape)
                 dist = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
                 fill_mask = dist <= max(1.0, r * 0.82)
@@ -1301,6 +1312,10 @@ class Action:
                 fill_gray = float(np.median(gray[fill_mask]))
                 ring_gray = float(np.median(gray[ring_mask]))
                 score = abs(fill_gray - 220.0) + abs(ring_gray - 152.0)
+                # Prefer circles that stay close to the semantic template size/
+                # position so all AC08xx variants remain stable across JPEG noise.
+                score += (center_offset / max_center_offset) * 9.0
+                score += (abs(r - template_r) / max_radius_delta) * 6.0
                 if best is None or score < best[0]:
                     best = (score, cx, cy, r, fill_gray, ring_gray)
 

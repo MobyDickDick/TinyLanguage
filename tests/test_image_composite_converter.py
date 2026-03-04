@@ -38,8 +38,6 @@ def test_finalize_ac0820_uses_center_co_anchor_mode() -> None:
     assert params["co2_anchor_mode"] == "center_co"
 
 
-
-
 def test_finalize_ac0820_variant_name_uses_center_co_anchor_mode() -> None:
     """AC0820 variant names (e.g. AC0820_L) should keep center_co alignment."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
@@ -79,8 +77,6 @@ def test_finalize_non_ac0820_text_badge_uses_less_strict_radius_floor() -> None:
     params = Action._finalize_ac08_style("AC0831", params)
 
     assert float(params["min_circle_radius"]) >= float(params["template_circle_radius"]) * 0.90
-
-
 
 
 def test_finalize_plain_ac08_badge_reanchors_circle_to_template_center() -> None:
@@ -168,6 +164,53 @@ def test_fit_semantic_badge_allows_lower_floor_when_connector_present(monkeypatc
     assert float(fitted["r"]) >= (float(defaults["r"]) * 0.80) - 1e-6
 
 
+def test_fit_semantic_badge_rejects_far_off_hough_center_for_ac08_variants(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Hough candidates far from template center should not override semantic circle placement."""
+    if image_composite_converter.np is None or image_composite_converter.cv2 is None:
+        pytest.skip("numpy/cv2 not available in this environment")
+
+    np = image_composite_converter.np
+    cv2 = image_composite_converter.cv2
+    img = np.full((15, 25, 3), 220, dtype=np.uint8)
+
+    defaults = Action._default_ac0812_params(25, 15)
+
+    monkeypatch.setattr(
+        cv2,
+        "HoughCircles",
+        lambda *_args, **_kwargs: np.array([[[6.0, 9.0, 4.4]]], dtype=np.float32),
+    )
+
+    fitted = Action._fit_semantic_badge_from_image(img, defaults)
+
+    assert abs(float(fitted["cx"]) - float(defaults["cx"])) <= 1e-6
+    assert abs(float(fitted["cy"]) - float(defaults["cy"])) <= 1e-6
+
+
+def test_fit_semantic_badge_keeps_near_template_hough_candidate(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A near-template Hough hit should still be accepted and applied."""
+    if image_composite_converter.np is None or image_composite_converter.cv2 is None:
+        pytest.skip("numpy/cv2 not available in this environment")
+
+    np = image_composite_converter.np
+    cv2 = image_composite_converter.cv2
+    img = np.full((15, 25, 3), 220, dtype=np.uint8)
+
+    defaults = Action._default_ac0812_params(25, 15)
+
+    monkeypatch.setattr(
+        cv2,
+        "HoughCircles",
+        lambda *_args, **_kwargs: np.array([[[17.4, 7.3, 5.2]]], dtype=np.float32),
+    )
+
+    fitted = Action._fit_semantic_badge_from_image(img, defaults)
+
+    assert abs(float(fitted["cx"]) - 17.4) < 1e-6
+    assert abs(float(fitted["cy"]) - 7.3) < 1e-6
+    assert abs(float(fitted["r"]) - 5.2) < 1e-6
+
+
 def test_finalize_ac0820_increases_optical_bias_for_co_vertical_centering() -> None:
     """AC0820 should nudge CO down so the main run appears vertically centered in-circle."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
@@ -176,8 +219,6 @@ def test_finalize_ac0820_increases_optical_bias_for_co_vertical_centering() -> N
 
     assert float(layout["y_base"]) > float(params["cy"])
     assert abs(float(layout["y_base"]) - float(params["cy"])) <= 1.45
-
-
 
 
 def test_co2_layout_keeps_subscript_inside_inner_circle_for_centered_badges() -> None:
@@ -258,9 +299,6 @@ def test_co2_layout_enforces_minimum_subscript_pixel_size() -> None:
     assert float(layout["sub_font_px"]) >= 4.0
 
 
-
-
-
 def test_finalize_ac0820_keeps_text_scale_tunable_with_bounds() -> None:
     """AC0820 should allow bounded CO₂ scale tuning during validation rounds."""
     params = Action._apply_co2_label(Action._default_ac0870_params(20, 20))
@@ -339,8 +377,6 @@ def test_validate_badge_logs_extent_bracketing_for_line_elements() -> None:
     logs = Action.validate_badge_by_elements(img, params, max_rounds=1)
 
     assert any("arm: Längen-Bracketing" in line for line in logs)
-
-
 
 
 def test_optimize_circle_radius_keeps_ac0813_vertical_arm_orientation() -> None:
@@ -468,8 +504,6 @@ def test_voc_font_scale_bounds_limit_growth_for_large_badges() -> None:
     assert high <= 1.10
 
 
-
-
 def test_optimize_arm_extent_keeps_circle_side_anchor_for_horizontal_connectors() -> None:
     """Arm length optimization should keep the circle-side endpoint fixed for AC0812-like arms."""
     if image_composite_converter.np is None:
@@ -565,8 +599,6 @@ def test_text_width_bracketing_keeps_fractional_font_scale_precision() -> None:
     assert any("Breiten-Bracketing" in line for line in logs)
 
 
-
-
 def test_co2_layout_prioritizes_co_alignment_before_subscript_shift() -> None:
     """Centered CO should stay near the circle center even when subscript space is tight."""
     params = Action._apply_co2_label(Action._default_ac0870_params(20, 20))
@@ -612,8 +644,6 @@ def test_co2_text_width_bracketing_is_bounded_for_ac0820() -> None:
     assert float(low) <= float(params["co2_font_scale"]) <= float(high)
     assert float(low) >= float(params["co2_font_scale_min"]) - 1e-9
     assert float(high) <= float(params["co2_font_scale_max"]) + 1e-9
-
-
 
 
 def test_finalize_ac0820_locks_palette_against_color_bracketing() -> None:

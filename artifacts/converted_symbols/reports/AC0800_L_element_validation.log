@@ -1,54 +1,10 @@
 Runde 1: elementweise Validierung gestartet
-circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
+circle: minRect Δcx=-0.000, Δcy=0.000, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=49.111
+circle: Fehler=28.056
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500 (best_err=49.111); Kandidaten=12.000->96.674, 13.500->49.111, 14.000->51.278, 14.500->69.285
-circle: Joint-Multistart keine relevante Änderung (cx=14.500, cy=14.500, r=13.500, best_err=49.111)
+circle: Radius-Bracketing r 13.565->13.500 (best_err=28.056); Kandidaten=12.000->99.035, 13.500->28.056, 14.000->50.910, 14.500->75.292
+circle: Joint-Multistart keine relevante Änderung (cx=15.000, cy=15.000, r=13.500, best_err=28.056)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 1: Gesamtfehler=10.974
-Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=49.111
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500 (best_err=49.111); Kandidaten=12.000->96.674, 13.500->49.111, 14.000->51.278, 14.500->69.285
-circle: Joint-Multistart keine relevante Änderung (cx=14.500, cy=14.500, r=13.500, best_err=49.111)
-circle: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 2: Gesamtfehler=10.974
-Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=49.111
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500 (best_err=49.111); Kandidaten=12.000->96.674, 13.500->49.111, 14.000->51.278, 14.500->69.285
-circle: Joint-Multistart keine relevante Änderung (cx=14.500, cy=14.500, r=13.500, best_err=49.111)
-circle: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 3: Gesamtfehler=10.974
-Runde 4: elementweise Validierung gestartet
-circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=49.111
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500 (best_err=49.111); Kandidaten=12.000->96.674, 13.500->49.111, 14.000->51.278, 14.500->69.285
-circle: Joint-Multistart keine relevante Änderung (cx=14.500, cy=14.500, r=13.500, best_err=49.111)
-circle: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 4: Gesamtfehler=10.974
-Runde 5: elementweise Validierung gestartet
-circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=49.111
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500 (best_err=49.111); Kandidaten=12.000->96.674, 13.500->49.111, 14.000->51.278, 14.500->69.285
-circle: Joint-Multistart keine relevante Änderung (cx=14.500, cy=14.500, r=13.500, best_err=49.111)
-circle: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 5: Gesamtfehler=10.974
-Runde 6: elementweise Validierung gestartet
-circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=49.111
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500 (best_err=49.111); Kandidaten=12.000->96.674, 13.500->49.111, 14.000->51.278, 14.500->69.285
-circle: Joint-Multistart keine relevante Änderung (cx=14.500, cy=14.500, r=13.500, best_err=49.111)
-circle: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 6: Gesamtfehler=10.974
+Runde 1: Gesamtfehler=6.847
+Gesamtfehler unter Schwellwert, Validierung beendet

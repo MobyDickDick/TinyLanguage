@@ -3,7 +3,7 @@ circle: minRect Δcx=-0.000, Δcy=0.000, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=63.465
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500 (best_err=63.465); Kandidaten=12.500->96.739, 13.500->63.465, 14.000->76.980, 14.500->91.286
+circle: Radius-Bracketing r 13.565->13.500 (best_err=63.465); Kandidaten=12.500->92.388, 13.500->63.465, 14.000->70.951, 14.500->89.382
 circle: Joint-Multistart keine relevante Änderung (cx=15.000, cy=15.000, r=13.500, best_err=63.465)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-1.500, Δcy=1.000, diag=14.866->14.213, scale=0.9560
@@ -17,7 +17,7 @@ circle: minRect Δcx=-0.000, Δcy=0.000, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=63.465
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500 (best_err=63.465); Kandidaten=12.500->96.739, 13.500->63.465, 14.000->76.980, 14.500->91.286
+circle: Radius-Bracketing r 13.565->13.500 (best_err=63.465); Kandidaten=12.500->92.388, 13.500->63.465, 14.000->70.951, 14.500->89.382
 circle: Joint-Multistart keine relevante Änderung (cx=15.000, cy=15.000, r=13.500, best_err=63.465)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-2.000, Δcy=-0.500, diag=16.498->14.213, scale=0.8615
@@ -31,7 +31,7 @@ circle: minRect Δcx=-0.000, Δcy=0.000, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=63.465
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500 (best_err=63.465); Kandidaten=12.500->96.739, 13.500->63.465, 14.000->76.980, 14.500->91.286
+circle: Radius-Bracketing r 13.565->13.500 (best_err=63.465); Kandidaten=12.500->92.388, 13.500->63.465, 14.000->70.951, 14.500->89.382
 circle: Joint-Multistart keine relevante Änderung (cx=15.000, cy=15.000, r=13.500, best_err=63.465)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-2.000, Δcy=-0.500, diag=16.498->14.213, scale=0.8615
@@ -45,7 +45,7 @@ circle: minRect Δcx=-0.000, Δcy=0.000, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=63.465
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500 (best_err=63.465); Kandidaten=12.500->96.739, 13.500->63.465, 14.000->76.980, 14.500->91.286
+circle: Radius-Bracketing r 13.565->13.500 (best_err=63.465); Kandidaten=12.500->92.388, 13.500->63.465, 14.000->70.951, 14.500->89.382
 circle: Joint-Multistart keine relevante Änderung (cx=15.000, cy=15.000, r=13.500, best_err=63.465)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-2.000, Δcy=-0.500, diag=16.498->14.213, scale=0.8615
@@ -59,7 +59,7 @@ circle: minRect Δcx=-0.000, Δcy=0.000, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=63.465
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500 (best_err=63.465); Kandidaten=12.500->96.739, 13.500->63.465, 14.000->76.980, 14.500->91.286
+circle: Radius-Bracketing r 13.565->13.500 (best_err=63.465); Kandidaten=12.500->92.388, 13.500->63.465, 14.000->70.951, 14.500->89.382
 circle: Joint-Multistart keine relevante Änderung (cx=15.000, cy=15.000, r=13.500, best_err=63.465)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-2.000, Δcy=-0.500, diag=16.498->14.213, scale=0.8615
@@ -73,7 +73,7 @@ circle: minRect Δcx=-0.000, Δcy=0.000, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=63.465
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500 (best_err=63.465); Kandidaten=12.500->96.739, 13.500->63.465, 14.000->76.980, 14.500->91.286
+circle: Radius-Bracketing r 13.565->13.500 (best_err=63.465); Kandidaten=12.500->92.388, 13.500->63.465, 14.000->70.951, 14.500->89.382
 circle: Joint-Multistart keine relevante Änderung (cx=15.000, cy=15.000, r=13.500, best_err=63.465)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-2.000, Δcy=-0.500, diag=16.498->14.213, scale=0.8615

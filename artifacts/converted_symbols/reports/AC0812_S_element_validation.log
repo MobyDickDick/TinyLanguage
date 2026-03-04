@@ -3,9 +3,9 @@ circle: minRect Δcx=0.500, Δcy=-0.000, diag=16.971->19.000, scale=1.1196
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=60.318
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 16.825->17.000, cy 7.500->7.500 (best_err=25.659)
-circle: Radius-Bracketing r 6.583->7.000 (best_err=22.886); Kandidaten=6.000->61.558, 6.500->25.659, 7.000->22.886
-circle: Joint-Multistart keine relevante Änderung (cx=17.000, cy=7.500, r=7.000, best_err=22.886)
+circle: Mittelpunkt-Bracketing cx 16.825->17.000, cy 7.500->7.500 (best_err=30.230)
+circle: Radius-Bracketing r 6.583->7.000 (best_err=29.302); Kandidaten=6.000->65.763, 6.500->30.230, 7.000->29.302
+circle: Joint-Multistart keine relevante Änderung (cx=17.000, cy=7.500, r=7.000, best_err=29.302)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Fehler=35.062
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
@@ -17,9 +17,9 @@ circle: minRect Δcx=0.000, Δcy=-0.000, diag=20.518->19.000, scale=0.9260
 circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 22.886->25.659)
 circle: Fehler=22.886
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=17.000, cy=7.500, best_err=22.886)
-circle: Radius-Bracketing keine relevante Änderung (r: 7.000, best_err=22.886); Kandidaten=6.500->25.659, 7.000->22.886
-circle: Joint-Multistart keine relevante Änderung (cx=17.000, cy=7.500, r=7.000, best_err=22.886)
+circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=17.000, cy=7.500, best_err=29.302)
+circle: Radius-Bracketing keine relevante Änderung (r: 7.000, best_err=29.302); Kandidaten=6.500->30.230, 7.000->29.302
+circle: Joint-Multistart keine relevante Änderung (cx=17.000, cy=7.500, r=7.000, best_err=29.302)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Fehler=35.062
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)

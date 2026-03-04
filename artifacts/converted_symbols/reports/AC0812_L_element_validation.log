@@ -3,9 +3,9 @@ circle: minRect Δcx=-0.000, Δcy=1.000, diag=30.000->32.558, scale=1.0853
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=64.438
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 28.500->29.000, cy 12.150->12.500 (best_err=33.791)
-circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 3.500->inf, 11.000->32.438, 12.000->62.183
-circle: Joint-Multistart cx 29.000->29.000, cy 12.500->12.500, r 11.178->11.000 (best_err=32.438)
+circle: Mittelpunkt-Bracketing cx 28.500->29.000, cy 12.150->12.500 (best_err=32.889)
+circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 3.500->inf, 11.000->31.634, 12.000->65.506
+circle: Joint-Multistart cx 29.000->29.000, cy 12.500->12.500, r 11.178->11.000 (best_err=31.634)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Fehler=52.238
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)

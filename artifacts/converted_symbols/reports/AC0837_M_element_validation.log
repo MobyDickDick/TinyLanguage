@@ -3,9 +3,9 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=22.627->26.000, scale=1.1490
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=89.903
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 22.825->23.000, cy 9.825->10.000 (best_err=62.691)
-circle: Radius-Bracketing r 8.963->9.000 (best_err=62.691); Kandidaten=8.000->87.782, 9.000->62.691, 9.500->76.412
-circle: Joint-Multistart keine relevante Änderung (cx=23.000, cy=10.000, r=9.000, best_err=62.691)
+circle: Mittelpunkt-Bracketing cx 22.825->23.000, cy 9.825->10.000 (best_err=56.843)
+circle: Radius-Bracketing r 8.963->9.000 (best_err=56.843); Kandidaten=8.000->81.179, 9.000->56.843, 9.500->76.012
+circle: Joint-Multistart keine relevante Änderung (cx=23.000, cy=10.000, r=9.000, best_err=56.843)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: minRect Δcx=2.000, Δcy=0.500, diag=13.038->18.028, scale=1.3827
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -23,9 +23,9 @@ Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=0.000, diag=26.000->26.000, scale=1.0000
 circle: Fehler=62.691
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=23.000, cy=10.000, best_err=62.691)
-circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=62.691); Kandidaten=8.000->87.782, 9.000->62.691, 9.500->76.412
-circle: Joint-Multistart keine relevante Änderung (cx=23.000, cy=10.000, r=9.000, best_err=62.691)
+circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=23.000, cy=10.000, best_err=56.843)
+circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=56.843); Kandidaten=8.000->81.179, 9.000->56.843, 9.500->76.012
+circle: Joint-Multistart keine relevante Änderung (cx=23.000, cy=10.000, r=9.000, best_err=56.843)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Fehler=86.100
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.180, Range=1.000..1.000)

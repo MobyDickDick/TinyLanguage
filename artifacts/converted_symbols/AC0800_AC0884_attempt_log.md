@@ -1,6 +1,6 @@
 # AC range conversion attempt log
 
-- Timestamp (UTC): `2026-03-04T18:55:20.014418+00:00`
+- Timestamp (UTC): `2026-03-04T19:08:47.458129+00:00`
 - Range: `AC0800..AC0884`
 - Iterations: `8`
 - Input count: `105`
@@ -28,7 +28,7 @@ C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\python.exe src/image_comp
 
 - Ran conversion: `true`
 - Exit code: `0`
-- Duration (s): `22.299`
+- Duration (s): `33.637`
 
 ### Converter stdout
 

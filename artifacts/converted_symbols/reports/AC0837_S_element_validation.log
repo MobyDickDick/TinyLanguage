@@ -3,9 +3,9 @@ circle: minRect Δcx=0.500, Δcy=0.000, diag=14.000->17.692, scale=1.2637
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=84.373
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 16.825->18.000, cy 6.500->4.000 (best_err=71.631)
-circle: Radius-Bracketing r 6.136->6.000 (best_err=70.476); Kandidaten=5.500->75.500, 6.000->70.476, 7.000->77.493
-circle: Joint-Multistart keine relevante Änderung (cx=18.000, cy=4.000, r=6.000, best_err=70.476)
+circle: Mittelpunkt-Bracketing cx 16.825->18.000, cy 6.500->4.000 (best_err=70.500)
+circle: Radius-Bracketing r 6.136->6.000 (best_err=69.585); Kandidaten=5.500->75.870, 6.000->69.585, 7.000->76.958
+circle: Joint-Multistart keine relevante Änderung (cx=18.000, cy=4.000, r=6.000, best_err=69.585)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: minRect Δcx=2.000, Δcy=0.500, diag=11.045->16.155, scale=1.4626
 arm: Mittelpunkt/Diagonale-Update verworfen (Fehler 103.867->109.767)
@@ -24,9 +24,9 @@ circle: minRect Δcx=-0.767, Δcy=-0.327, diag=16.401->16.564, scale=1.0099
 circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 70.476->73.476)
 circle: Fehler=70.476
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=18.000, cy=4.000, best_err=70.476)
-circle: Radius-Bracketing keine relevante Änderung (r: 6.000, best_err=70.476); Kandidaten=5.500->75.500, 6.000->70.476, 7.000->77.493
-circle: Joint-Multistart keine relevante Änderung (cx=18.000, cy=4.000, r=6.000, best_err=70.476)
+circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=18.000, cy=4.000, best_err=69.585)
+circle: Radius-Bracketing keine relevante Änderung (r: 6.000, best_err=69.585); Kandidaten=5.500->75.870, 6.000->69.585, 7.000->76.958
+circle: Joint-Multistart keine relevante Änderung (cx=18.000, cy=4.000, r=6.000, best_err=69.585)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: minRect Δcx=0.500, Δcy=0.500, diag=8.062->16.155, scale=2.0038
 arm: Mittelpunkt/Diagonale-Update verworfen (Fehler 103.867->109.767)
@@ -45,9 +45,9 @@ circle: minRect Δcx=-0.767, Δcy=-0.327, diag=16.401->16.564, scale=1.0099
 circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 70.476->73.476)
 circle: Fehler=70.476
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=18.000, cy=4.000, best_err=70.476)
-circle: Radius-Bracketing keine relevante Änderung (r: 6.000, best_err=70.476); Kandidaten=5.500->75.500, 6.000->70.476, 7.000->77.493
-circle: Joint-Multistart keine relevante Änderung (cx=18.000, cy=4.000, r=6.000, best_err=70.476)
+circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=18.000, cy=4.000, best_err=69.585)
+circle: Radius-Bracketing keine relevante Änderung (r: 6.000, best_err=69.585); Kandidaten=5.500->75.870, 6.000->69.585, 7.000->76.958
+circle: Joint-Multistart keine relevante Änderung (cx=18.000, cy=4.000, r=6.000, best_err=69.585)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: minRect Δcx=0.500, Δcy=0.500, diag=6.083->14.318, scale=2.3538
 arm: Mittelpunkt/Diagonale-Update verworfen (Fehler 102.214->108.536)
@@ -65,9 +65,9 @@ circle: minRect Δcx=-0.767, Δcy=-0.327, diag=16.401->16.564, scale=1.0099
 circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 70.476->73.476)
 circle: Fehler=70.476
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=18.000, cy=4.000, best_err=70.476)
-circle: Radius-Bracketing keine relevante Änderung (r: 6.000, best_err=70.476); Kandidaten=5.500->75.500, 6.000->70.476, 7.000->77.493
-circle: Joint-Multistart keine relevante Änderung (cx=18.000, cy=4.000, r=6.000, best_err=70.476)
+circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=18.000, cy=4.000, best_err=69.585)
+circle: Radius-Bracketing keine relevante Änderung (r: 6.000, best_err=69.585); Kandidaten=5.500->75.870, 6.000->69.585, 7.000->76.958
+circle: Joint-Multistart keine relevante Änderung (cx=18.000, cy=4.000, r=6.000, best_err=69.585)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: minRect Δcx=0.500, Δcy=0.500, diag=4.123->12.530, scale=3.0390
 arm: Mittelpunkt/Diagonale-Update verworfen (Fehler 100.308->107.115)
@@ -85,9 +85,9 @@ circle: minRect Δcx=-0.767, Δcy=-0.327, diag=16.401->16.564, scale=1.0099
 circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 70.476->73.476)
 circle: Fehler=70.476
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=18.000, cy=4.000, best_err=70.476)
-circle: Radius-Bracketing keine relevante Änderung (r: 6.000, best_err=70.476); Kandidaten=5.500->75.500, 6.000->70.476, 7.000->77.493
-circle: Joint-Multistart keine relevante Änderung (cx=18.000, cy=4.000, r=6.000, best_err=70.476)
+circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=18.000, cy=4.000, best_err=69.585)
+circle: Radius-Bracketing keine relevante Änderung (r: 6.000, best_err=69.585); Kandidaten=5.500->75.870, 6.000->69.585, 7.000->76.958
+circle: Joint-Multistart keine relevante Änderung (cx=18.000, cy=4.000, r=6.000, best_err=69.585)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: minRect Δcx=0.500, Δcy=0.500, diag=3.162->11.662, scale=3.6878
 arm: Mittelpunkt/Diagonale-Update verworfen (Fehler 99.240->106.320)
@@ -105,9 +105,9 @@ circle: minRect Δcx=-0.767, Δcy=-0.327, diag=16.401->16.564, scale=1.0099
 circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 70.476->73.476)
 circle: Fehler=70.476
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=18.000, cy=4.000, best_err=70.476)
-circle: Radius-Bracketing keine relevante Änderung (r: 6.000, best_err=70.476); Kandidaten=5.500->75.500, 6.000->70.476, 7.000->77.493
-circle: Joint-Multistart keine relevante Änderung (cx=18.000, cy=4.000, r=6.000, best_err=70.476)
+circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=18.000, cy=4.000, best_err=69.585)
+circle: Radius-Bracketing keine relevante Änderung (r: 6.000, best_err=69.585); Kandidaten=5.500->75.870, 6.000->69.585, 7.000->76.958
+circle: Joint-Multistart keine relevante Änderung (cx=18.000, cy=4.000, r=6.000, best_err=69.585)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: minRect Δcx=0.500, Δcy=0.500, diag=2.236->10.817, scale=4.8374
 arm: Mittelpunkt/Diagonale-Update verworfen (Fehler 98.083->105.458)

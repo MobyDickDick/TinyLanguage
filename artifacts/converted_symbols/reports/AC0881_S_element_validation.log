@@ -3,9 +3,9 @@ circle: minRect Δcx=-0.000, Δcy=0.500, diag=14.000->9.220, scale=0.6585
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=90.709
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 7.500->10.000, cy 7.825->9.000 (best_err=59.929)
-circle: Radius-Bracketing r 4.080->4.000 (best_err=59.929); Kandidaten=3.500->65.895, 4.000->59.929, 7.000->78.206
-circle: Joint-Multistart cx 10.000->11.000, cy 9.000->9.000, r 4.000->4.000 (best_err=50.385)
+circle: Mittelpunkt-Bracketing cx 7.500->10.000, cy 7.825->9.000 (best_err=60.293)
+circle: Radius-Bracketing r 4.080->4.000 (best_err=60.293); Kandidaten=3.500->67.308, 4.000->60.293, 7.000->74.784
+circle: Joint-Multistart cx 10.000->11.000, cy 9.000->9.000, r 4.000->4.000 (best_err=54.860)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: Fehler=101.350
 stem: Breitenkorrektur mode=iter, ratio=0.167, alt=1.000, neu=1.000
@@ -22,9 +22,9 @@ circle: minRect Δcx=-3.100, Δcy=-1.200, diag=12.000->8.637, scale=0.7198
 circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 50.385->72.897)
 circle: Fehler=50.385
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=11.000, cy=9.000, best_err=50.385)
-circle: Radius-Bracketing keine relevante Änderung (r: 4.000, best_err=50.385); Kandidaten=3.500->62.514, 4.000->50.385, 7.000->78.344
-circle: Joint-Multistart keine relevante Änderung (cx=11.000, cy=9.000, r=4.000, best_err=50.385)
+circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=11.000, cy=9.000, best_err=54.860)
+circle: Radius-Bracketing keine relevante Änderung (r: 4.000, best_err=54.860); Kandidaten=3.500->63.064, 4.000->54.860, 7.000->76.557
+circle: Joint-Multistart keine relevante Änderung (cx=11.000, cy=9.000, r=4.000, best_err=54.860)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: Element konnte nicht extrahiert werden
 text: minRect Δcx=0.000, Δcy=0.000, diag=8.602->8.602, scale=1.0000

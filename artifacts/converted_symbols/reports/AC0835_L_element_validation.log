@@ -3,39 +3,55 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=24.000->29.698, scale=1.2374
 circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 100.661->102.230)
 circle: Fehler=100.661
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 8.667->11.000 (best_err=68.348); Kandidaten=9.000->103.884, 10.500->89.087, 11.000->68.348, 12.000->89.147
-circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=12.500, r=11.000, best_err=68.348)
+circle: Radius-Bracketing r 8.667->11.000 (best_err=66.031); Kandidaten=9.000->97.692, 10.500->82.637, 11.000->66.031, 12.000->86.320
+circle: Joint-Multistart cx 12.500->12.500, cy 12.500->12.500, r 11.000->11.500 (best_err=63.726)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
-text: minRect Δcx=1.000, Δcy=2.500, diag=11.705->18.385, scale=1.5707
+text: minRect Δcx=0.500, Δcy=2.500, diag=12.649->18.385, scale=1.4534
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=103.968
-text: Breiten-Bracketing voc_font_scale 0.520->0.706; Kandidaten=0.312->112.063, 0.430->110.662, 0.442->109.676, 0.520->101.443, 0.548->99.753, 0.598->94.842, 0.706->88.732, 0.864->97.652, 0.982->95.826, 1.100->94.007
+text: Fehler=103.957
+text: Breiten-Bracketing voc_font_scale 0.520->0.598; Kandidaten=0.312->112.063, 0.430->108.757, 0.442->106.560, 0.520->100.041, 0.548->97.683, 0.598->93.183, 0.706->94.902, 0.864->96.558, 0.982->95.042, 1.100->94.581
 text: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 1: Gesamtfehler=20.848
+Runde 1: Gesamtfehler=21.712
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=0.000, diag=31.113->31.113, scale=1.0000
-circle: Fehler=68.348
+circle: minRect Δcx=-0.000, Δcy=0.000, diag=33.614->31.113, scale=0.9256
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 70.788->89.087)
+circle: Fehler=70.788
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 11.000, best_err=68.348); Kandidaten=9.000->103.884, 11.000->68.348, 11.500->70.788, 12.000->89.147
-circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=12.500, r=11.000, best_err=68.348)
+circle: Radius-Bracketing keine relevante Änderung (r: 11.500, best_err=63.726); Kandidaten=9.000->97.692, 11.500->63.726, 12.000->86.320
+circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=12.500, r=11.500, best_err=63.726)
+circle: Farb-Bracketing übersprungen (Farben gesperrt)
+text: minRect Δcx=-2.000, Δcy=3.000, diag=10.296->21.954, scale=2.1324
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 93.183->93.560)
+text: Fehler=93.183
+text: Breiten-Bracketing voc_font_scale 0.598->0.688; Kandidaten=0.359->112.222, 0.470->103.357, 0.508->100.660, 0.581->95.229, 0.598->93.183, 0.688->88.577, 0.729->96.567, 0.878->96.507, 0.989->95.069, 1.100->94.581
+text: Farb-Bracketing übersprungen (Farben gesperrt)
+Runde 2: Gesamtfehler=20.968
+Runde 3: elementweise Validierung gestartet
+circle: minRect Δcx=-0.000, Δcy=0.000, diag=33.614->31.113, scale=0.9256
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 70.788->89.087)
+circle: Fehler=70.788
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing keine relevante Änderung (r: 11.500, best_err=63.726); Kandidaten=9.000->97.692, 11.500->63.726, 12.000->86.320
+circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=12.500, r=11.500, best_err=63.726)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=1.000, Δcy=2.500, diag=15.811->24.187, scale=1.5297
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=88.732
-text: Breiten-Bracketing voc_font_scale 0.706->0.762; Kandidaten=0.424->101.356, 0.525->96.873, 0.600->91.318, 0.627->89.000, 0.706->81.658, 0.762->70.171, 0.812->72.707, 0.897->78.211, 0.999->85.442, 1.100->82.993
+text: Fehler=88.577
+text: Breiten-Bracketing voc_font_scale 0.688->0.756; Kandidaten=0.413->100.458, 0.516->96.633, 0.585->91.242, 0.619->91.972, 0.688->79.650, 0.756->70.508, 0.791->71.970, 0.894->81.959, 0.997->83.702, 1.100->82.146
 text: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 2: Gesamtfehler=16.133
-Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=0.000, diag=31.113->31.113, scale=1.0000
-circle: Fehler=68.348
+Runde 3: Gesamtfehler=15.085
+Runde 4: elementweise Validierung gestartet
+circle: minRect Δcx=-0.000, Δcy=0.000, diag=33.614->31.113, scale=0.9256
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 70.788->89.087)
+circle: Fehler=70.788
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 11.000, best_err=68.348); Kandidaten=9.000->103.884, 11.000->68.348, 11.500->70.788, 12.000->89.147
-circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=12.500, r=11.000, best_err=68.348)
+circle: Radius-Bracketing keine relevante Änderung (r: 11.500, best_err=63.726); Kandidaten=9.000->97.692, 11.500->63.726, 12.000->86.320
+circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=12.500, r=11.500, best_err=63.726)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
-text: minRect Δcx=1.500, Δcy=3.500, diag=7.071->23.324, scale=3.2985
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 70.171->78.923)
-text: Fehler=70.171
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.762); Kandidaten=0.450->102.015, 0.547->95.797, 0.645->92.056, 0.648->91.841, 0.762->70.171, 0.775->68.265, 0.876->75.823, 0.905->78.259, 1.003->85.381, 1.100->82.993
+text: minRect Δcx=1.000, Δcy=4.000, diag=7.071->24.698, scale=3.4928
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 70.508->93.563)
+text: Fehler=70.508
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.756); Kandidaten=0.450->98.824, 0.547->94.468, 0.643->87.009, 0.645->86.850, 0.756->70.508, 0.775->72.684, 0.869->78.259, 0.905->82.129, 1.003->83.801, 1.100->82.146
 text: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 3: Gesamtfehler=16.133
+Runde 4: Gesamtfehler=15.085
 Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet

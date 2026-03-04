@@ -3,102 +3,115 @@ circle: minRect Δcx=-1.000, Δcy=-1.000, diag=30.000->31.113, scale=1.0371
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=90.158
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 10.682->11.500; Kandidaten=3.500->83.828, 5.500->101.280, 8.000->100.830, 9.500->104.045, 10.000->98.086, 10.500->87.225, 11.500->80.874, 12.000->85.150
+circle: Mittelpunkt-Bracketing cx 28.850->29.000, cy 12.850->13.000 (best_err=87.225)
+circle: Radius-Bracketing r 10.682->3.500 (best_err=85.017); Kandidaten=3.500->85.017, 4.000->87.774, 5.000->99.039, 7.000->101.219, 10.500->87.225, 12.000->85.052
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
-arm: minRect Δcx=0.384, Δcy=1.014, diag=17.029->18.898, scale=1.1097
+arm: minRect Δcx=-3.558, Δcy=1.507, diag=25.020->19.292, scale=0.7710
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
-arm: Fehler=64.726
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.110, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 18.590->18.500; Kandidaten=1.000->103.912, 12.000->73.090, 18.500->64.726, 23.000->64.726, 34.000->64.726, 45.000->64.726
+arm: Fehler=79.518
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 20.919->34.000; Kandidaten=1.000->125.050, 12.000->99.088, 21.000->84.514, 23.000->82.164, 34.000->79.518, 45.000->79.518
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
-text: minRect Δcx=-1.500, Δcy=1.500, diag=8.062->17.464, scale=2.1662
+text: minRect Δcx=0.500, Δcy=1.000, diag=7.280->13.416, scale=1.8429
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=100.588
-text: Breiten-Bracketing voc_font_scale 0.520->0.706; Kandidaten=0.312->108.038, 0.430->107.643, 0.442->108.149, 0.520->102.137, 0.548->100.609, 0.598->95.100, 0.706->90.488, 0.864->92.522, 0.982->91.736, 1.100->93.433
+text: Fehler=112.017
+text: Breiten-Bracketing voc_font_scale 0.520->0.312; Kandidaten=0.312->111.390, 0.430->111.390, 0.442->111.390, 0.520->111.390, 0.548->111.390, 0.598->111.390, 0.706->111.390, 0.864->111.390, 0.982->111.390, 1.100->111.390
 text: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 1: Gesamtfehler=17.532
+Runde 1: Gesamtfehler=23.716
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=-0.500, Δcy=-0.500, diag=32.527->32.000, scale=0.9838
+circle: minRect Δcx=0.500, Δcy=-1.000, diag=9.899->13.892, scale=1.4033
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=80.874
+circle: Fehler=85.017
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 11.314->11.500; Kandidaten=3.500->83.000, 5.500->97.259, 8.000->100.459, 10.000->103.273, 10.500->90.267, 11.500->70.858, 12.000->88.321, 12.500->88.321
+circle: Mittelpunkt-Bracketing cx 29.325->29.500, cy 12.350->13.000 (best_err=85.719)
+circle: Radius-Bracketing r 4.130->3.500 (best_err=84.526); Kandidaten=3.500->84.526, 4.000->85.719, 12.000->86.947
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
-arm: Fehler=66.795
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.110, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 17.025->17.000; Kandidaten=1.000->104.118, 12.000->74.015, 17.000->66.795, 23.000->66.795, 34.000->66.795, 45.000->66.795
+arm: minRect Δcx=12.000, Δcy=-0.500, diag=25.020->12.530, scale=0.5008
+arm: Parameter nach Mittelpunkt/Diagonale angepasst
+arm: Fehler=82.179
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 22.100->34.000; Kandidaten=1.000->124.894, 12.000->101.839, 22.000->86.325, 23.000->85.222, 34.000->82.179, 45.000->82.179
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
-text: minRect Δcx=3.500, Δcy=3.000, diag=11.180->24.698, scale=2.2091
+text: minRect Δcx=0.500, Δcy=0.500, diag=8.544->14.318, scale=1.6758
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=88.656
-text: Breiten-Bracketing voc_font_scale 0.706->0.812; Kandidaten=0.424->100.857, 0.525->93.971, 0.600->91.382, 0.627->89.747, 0.706->77.629, 0.762->74.538, 0.812->71.201, 0.897->78.965, 0.999->81.987, 1.100->81.738
+text: Fehler=112.406
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.312); Kandidaten=0.300->106.269, 0.312->106.269, 0.359->106.269, 0.420->106.269, 0.540->106.269, 0.700->106.269, 0.860->106.269, 0.980->106.269, 1.100->106.269
 text: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 2: Gesamtfehler=10.302
+Runde 2: Gesamtfehler=23.826
 Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=-0.000, diag=33.732->32.000, scale=0.9487
+circle: minRect Δcx=1.000, Δcy=-1.000, diag=10.630->13.892, scale=1.3069
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=70.858
+circle: Fehler=84.526
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 10.910->11.000; Kandidaten=3.500->83.000, 5.500->97.259, 8.000->100.459, 10.000->103.273, 11.000->69.732, 12.000->88.321
+circle: Mittelpunkt-Bracketing cx 30.150->30.000, cy 12.350->12.000 (best_err=87.103)
+circle: Radius-Bracketing r 4.130->4.000 (best_err=86.000); Kandidaten=3.500->90.951, 4.000->86.000, 12.000->91.255
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
-arm: Fehler=65.890
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.110, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 17.500); Kandidaten=1.000->103.882, 12.000->73.896, 17.500->65.890, 23.000->65.890, 34.000->65.890, 45.000->65.890
+arm: minRect Δcx=2.500, Δcy=0.500, diag=25.020->31.048, scale=1.2409
+arm: Parameter nach Mittelpunkt/Diagonale angepasst
+arm: Fehler=83.532
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.180, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 30.215->30.000; Kandidaten=1.000->120.077, 12.000->100.372, 23.000->86.113, 30.000->83.532, 34.000->83.532, 45.000->83.532
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
-text: minRect Δcx=1.500, Δcy=3.500, diag=7.810->23.854, scale=3.0542
+text: minRect Δcx=0.500, Δcy=1.000, diag=7.280->13.416, scale=1.8429
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=72.177
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.812); Kandidaten=0.450->104.592, 0.547->102.408, 0.645->96.805, 0.690->93.439, 0.775->83.545, 0.812->82.654, 0.905->83.363, 0.934->84.984, 1.003->85.929, 1.100->85.577
+text: Fehler=110.678
+text: Breiten-Bracketing voc_font_scale 0.312->1.100; Kandidaten=0.300->110.763, 0.312->110.763, 0.359->110.763, 0.420->110.763, 0.540->110.763, 0.700->110.763, 0.860->110.763, 0.980->110.763, 1.100->109.493
 text: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 3: Gesamtfehler=14.029
+Runde 3: Gesamtfehler=23.548
 Runde 4: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=-0.000, diag=31.113->32.000, scale=1.0285
+circle: minRect Δcx=0.500, Δcy=0.000, diag=12.000->13.892, scale=1.1577
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=69.732
+circle: Fehler=86.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 11.314->11.500; Kandidaten=3.500->83.000, 5.500->97.259, 8.000->100.459, 10.000->103.273, 10.500->90.267, 11.500->70.858, 12.000->88.321, 12.500->88.321
+circle: Mittelpunkt-Bracketing cx 30.325->30.500, cy 12.000->12.000 (best_err=92.155)
+circle: Radius-Bracketing r 4.631->4.500 (best_err=91.319); Kandidaten=3.500->95.677, 4.500->91.319, 5.000->92.247, 6.000->100.130, 8.000->104.709, 12.000->94.519
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
-arm: Fehler=66.795
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.110, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 17.000); Kandidaten=1.000->104.118, 12.000->74.015, 17.000->66.795, 23.000->66.795, 34.000->66.795, 45.000->66.795
+arm: minRect Δcx=2.500, Δcy=0.500, diag=25.020->31.048, scale=1.2409
+arm: Parameter nach Mittelpunkt/Diagonale angepasst
+arm: Fehler=83.532
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.392, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 30.215->30.000; Kandidaten=1.000->120.077, 12.000->100.372, 23.000->86.113, 30.000->83.532, 34.000->83.532, 45.000->83.532
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
-text: minRect Δcx=7.000, Δcy=3.500, diag=6.403->25.060, scale=3.9137
+text: minRect Δcx=-1.500, Δcy=2.500, diag=6.708->18.028, scale=2.6874
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=82.570
-text: Breiten-Bracketing voc_font_scale 0.812->1.100; Kandidaten=0.450->104.552, 0.547->101.618, 0.645->94.841, 0.690->92.744, 0.775->92.654, 0.812->91.832, 0.905->88.855, 0.934->87.540, 1.003->84.528, 1.100->83.577
+text: Fehler=106.987
+text: Breiten-Bracketing voc_font_scale 1.100->0.935; Kandidaten=0.450->107.769, 0.547->107.769, 0.645->107.769, 0.775->107.769, 0.905->106.346, 0.935->105.615, 1.003->108.939, 1.100->106.987
 text: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 4: Gesamtfehler=17.032
+Runde 4: Gesamtfehler=24.254
 Runde 5: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=-0.000, diag=33.732->32.000, scale=0.9487
+circle: minRect Δcx=0.500, Δcy=0.000, diag=13.000->14.765, scale=1.1358
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=70.858
+circle: Fehler=91.319
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 10.910->11.000; Kandidaten=3.500->83.000, 5.500->97.259, 8.000->100.459, 10.000->103.273, 11.000->69.732, 12.000->88.321
+circle: Mittelpunkt-Bracketing cx 30.825->35.000, cy 12.000->14.500 (best_err=80.288)
+circle: Radius-Bracketing r 5.111->5.000 (best_err=78.232); Kandidaten=3.500->104.439, 5.000->78.232, 5.500->85.203, 6.000->92.052, 7.000->95.133, 8.500->95.038, 12.000->97.409
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
-arm: Fehler=65.890
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.110, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 17.500); Kandidaten=1.000->103.882, 12.000->73.896, 17.500->65.890, 23.000->65.890, 34.000->65.890, 45.000->65.890
+arm: Fehler=97.168
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.392, Range=1.000..1.000)
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 30.000); Kandidaten=1.000->116.114, 12.000->106.127, 23.000->98.279, 30.000->97.168, 34.000->97.168, 45.000->97.168
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
-text: minRect Δcx=-5.500, Δcy=3.000, diag=17.464->28.178, scale=1.6135
-text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=83.677
-text: Breiten-Bracketing voc_font_scale 1.100->0.905; Kandidaten=0.450->104.592, 0.547->102.408, 0.645->96.805, 0.775->83.545, 0.905->83.363, 0.935->84.911, 1.003->85.929, 1.100->85.577
+text: minRect Δcx=0.000, Δcy=0.000, diag=9.487->14.000, scale=1.4757
+text: Fehler=89.442
+text: Breiten-Bracketing voc_font_scale 0.935->1.075; Kandidaten=0.450->97.878, 0.547->97.878, 0.645->97.878, 0.775->97.878, 0.795->97.878, 0.905->91.372, 0.935->89.442, 1.003->83.837, 1.075->81.067, 1.100->82.625
 text: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 5: Gesamtfehler=14.210
+Runde 5: Gesamtfehler=27.132
 Runde 6: elementweise Validierung gestartet
-circle: minRect Δcx=0.000, Δcy=-0.000, diag=31.113->32.000, scale=1.0285
+circle: minRect Δcx=-1.000, Δcy=1.000, diag=14.866->17.804, scale=1.1977
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=69.732
+circle: Fehler=78.232
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 11.314->11.500; Kandidaten=3.500->83.000, 5.500->97.259, 8.000->100.459, 10.000->103.273, 10.500->90.267, 11.500->70.858, 12.000->88.321, 12.500->88.321
+circle: Mittelpunkt-Bracketing cx 34.350->38.500, cy 15.150->19.000 (best_err=85.889)
+circle: Radius-Bracketing r 5.900->5.000 (best_err=78.645); Kandidaten=3.500->93.400, 5.000->78.645, 5.500->84.771, 6.000->86.189, 12.000->97.594
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
-arm: Fehler=66.795
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.110, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 17.000); Kandidaten=1.000->104.118, 12.000->74.015, 17.000->66.795, 23.000->66.795, 34.000->66.795, 45.000->66.795
+arm: minRect Δcx=10.064, Δcy=1.410, diag=33.015->21.500, scale=0.6512
+arm: Parameter nach Mittelpunkt/Diagonale angepasst
+arm: Fehler=110.356
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.184, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 28.475->23.000; Kandidaten=1.000->116.300, 12.000->116.233, 23.000->110.356, 28.500->110.356, 34.000->110.356, 45.000->110.356
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
-text: minRect Δcx=-0.500, Δcy=3.500, diag=8.485->26.420, scale=3.1136
+text: minRect Δcx=-0.750, Δcy=1.250, diag=6.708->10.700, scale=1.5951
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=84.460
-text: Breiten-Bracketing voc_font_scale 0.905->1.100; Kandidaten=0.450->104.552, 0.547->101.618, 0.645->94.841, 0.769->92.879, 0.775->92.654, 0.905->88.855, 1.003->84.528, 1.041->83.762, 1.100->83.577
+text: Fehler=88.000
+text: Breiten-Bracketing voc_font_scale 1.075->0.914; Kandidaten=0.450->79.385, 0.547->79.385, 0.645->79.385, 0.775->79.385, 0.905->79.000, 0.914->78.462, 1.003->82.750, 1.075->79.438, 1.100->81.250
 text: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 6: Gesamtfehler=17.032
+Runde 6: Gesamtfehler=31.764

@@ -3,7 +3,7 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=33.941->38.184, scale=1.1250
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=104.724
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.725->13.500; Kandidaten=10.500->112.785, 11.500->108.151, 12.500->93.078, 13.500->75.237, 14.500->87.750
+circle: Radius-Bracketing r 13.725->13.500 (best_err=75.237); Kandidaten=10.500->112.785, 13.500->75.237, 14.000->76.642, 14.500->87.750
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=1.000, Δcy=0.000, diag=17.205->18.439, scale=1.0718
 text: Fehler=56.091
@@ -14,7 +14,7 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=75.237
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500; Kandidaten=10.500->112.785, 11.500->108.151, 12.500->93.078, 13.500->75.237, 14.500->87.750
+circle: Radius-Bracketing r 13.565->13.500 (best_err=75.237); Kandidaten=10.500->112.785, 13.500->75.237, 14.000->76.642, 14.500->87.750
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=1.000, Δcy=0.000, diag=17.205->18.439, scale=1.0718
 text: Fehler=56.091
@@ -25,7 +25,7 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=75.237
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500; Kandidaten=10.500->112.785, 11.500->108.151, 12.500->93.078, 13.500->75.237, 14.500->87.750
+circle: Radius-Bracketing r 13.565->13.500 (best_err=75.237); Kandidaten=10.500->112.785, 13.500->75.237, 14.000->76.642, 14.500->87.750
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=1.000, Δcy=0.000, diag=17.205->18.439, scale=1.0718
 text: Fehler=56.091
@@ -36,7 +36,7 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=75.237
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500; Kandidaten=10.500->112.785, 11.500->108.151, 12.500->93.078, 13.500->75.237, 14.500->87.750
+circle: Radius-Bracketing r 13.565->13.500 (best_err=75.237); Kandidaten=10.500->112.785, 13.500->75.237, 14.000->76.642, 14.500->87.750
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=1.000, Δcy=0.000, diag=17.205->18.439, scale=1.0718
 text: Fehler=56.091
@@ -47,7 +47,7 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=75.237
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500; Kandidaten=10.500->112.785, 11.500->108.151, 12.500->93.078, 13.500->75.237, 14.500->87.750
+circle: Radius-Bracketing r 13.565->13.500 (best_err=75.237); Kandidaten=10.500->112.785, 13.500->75.237, 14.000->76.642, 14.500->87.750
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=1.000, Δcy=0.000, diag=17.205->18.439, scale=1.0718
 text: Fehler=56.091
@@ -58,7 +58,7 @@ circle: minRect Δcx=0.500, Δcy=0.500, diag=38.000->38.184, scale=1.0048
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=75.237
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500; Kandidaten=10.500->112.785, 11.500->108.151, 12.500->93.078, 13.500->75.237, 14.500->87.750
+circle: Radius-Bracketing r 13.565->13.500 (best_err=75.237); Kandidaten=10.500->112.785, 13.500->75.237, 14.000->76.642, 14.500->87.750
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=1.000, Δcy=0.000, diag=17.205->18.439, scale=1.0718
 text: Fehler=56.091

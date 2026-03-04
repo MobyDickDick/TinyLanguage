@@ -3,11 +3,12 @@ circle: minRect Δcx=0.500, Δcy=-0.000, diag=31.113->33.000, scale=1.0607
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=45.895
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 3.500->inf, 5.500->inf, 8.000->97.289, 10.000->88.847, 10.500->72.965, 11.500->34.419, 12.000->62.239, 12.500->62.239
+circle: Mittelpunkt-Bracketing cx 15.825->16.000, cy 12.500->12.500 (best_err=34.419)
+circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern 3.500->inf, 11.500->34.419, 12.000->62.239
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
-arm: Fehler=51.719
+arm: Fehler=52.203
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 18.500); Kandidaten=1.000->82.821, 12.000->61.213, 18.500->53.641, 23.000->53.641, 34.000->53.641, 45.000->53.641
+arm: Längen-Bracketing arm_len 17.333->17.500; Kandidaten=1.000->82.821, 12.000->61.213, 17.500->53.641, 23.000->53.641, 34.000->53.641, 45.000->53.641
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 1: Gesamtfehler=6.143
+Runde 1: Gesamtfehler=6.225
 Gesamtfehler unter Schwellwert, Validierung beendet

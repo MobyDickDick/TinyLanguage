@@ -1,5 +1,5 @@
 <svg width="15px" height="15px" viewBox="0 0 15 15" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="6.5000" cy="5.5000" r="4.5000" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="1.0000"/>
-  <text x="5.6680" y="7.1000" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="4.0000" font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">CO</text>
-  <text x="7.7680" y="7.7400" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="3.6000" font-style="normal" font-weight="600" text-anchor="start" dominant-baseline="middle">2</text>
+  <circle cx="6.5000" cy="5.5000" r="5.5000" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="1.0000"/>
+  <text x="6.1430" y="7.6250" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="5.0000" font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">CO</text>
+  <text x="8.7680" y="8.7400" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="3.6000" font-style="normal" font-weight="600" text-anchor="start" dominant-baseline="middle">2</text>
 </svg>

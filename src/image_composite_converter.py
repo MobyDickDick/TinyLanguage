@@ -1184,6 +1184,7 @@ class Action:
                 "arm_x2": float(w),
                 "arm_y2": cy,
                 "arm_stroke": arm_stroke,
+                "arm_len_min": max(1.0, (float(w) - min(float(w), cx + r)) * 0.75),
                 "arm_len_min_ratio": 0.75,
             }
         )
@@ -1210,6 +1211,8 @@ class Action:
         params["arm_y1"] = cy
         params["arm_x2"] = float(w)
         params["arm_y2"] = cy
+        current_arm_len = float(np.hypot(params["arm_x2"] - params["arm_x1"], params["arm_y2"] - params["arm_y1"]))
+        params["arm_len_min"] = max(1.0, current_arm_len * 0.75)
         return Action._normalize_light_circle_colors(params)
 
     @staticmethod
@@ -2889,6 +2892,9 @@ class Action:
             key_label = "arm_len"
             low_bound = 1.0
             high_bound = float(max(w, h))
+            forced_abs_min = params.get("arm_len_min")
+            if forced_abs_min is not None:
+                low_bound = max(low_bound, float(forced_abs_min))
             forced_min_ratio = params.get("arm_len_min_ratio")
             if forced_min_ratio is not None:
                 min_ratio = float(max(0.0, min(1.0, float(forced_min_ratio))))

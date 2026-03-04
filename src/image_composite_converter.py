@@ -2389,7 +2389,11 @@ class Action:
         if elem_render is None:
             return float("inf")
 
-        mask_orig = Action.extract_badge_element_mask(img_orig, probe, "circle")
+        # Keep the source mask anchored to the current parameter state.
+        # If we derive `mask_orig` from the candidate radius itself, a smaller
+        # probe can hide mismatching source pixels and bias the optimizer toward
+        # collapsing circles (observed on AC0833_L).
+        mask_orig = Action.extract_badge_element_mask(img_orig, params, "circle")
         if mask_orig is None:
             return float("inf")
         mask_svg = Action.extract_badge_element_mask(elem_render, probe, "circle")
@@ -2430,7 +2434,9 @@ class Action:
         if elem_render is None:
             return float("inf")
 
-        mask_orig = Action.extract_badge_element_mask(img_orig, probe, "circle")
+        # See `_element_error_for_circle_radius`: use a stable source mask that
+        # is independent from the tested candidate pose.
+        mask_orig = Action.extract_badge_element_mask(img_orig, params, "circle")
         if mask_orig is None:
             return float("inf")
         mask_svg = Action.extract_badge_element_mask(elem_render, probe, "circle")

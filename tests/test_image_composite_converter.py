@@ -470,6 +470,42 @@ def test_circle_radius_bracketing_respects_configured_min_radius() -> None:
     assert any("Radius-Bracketing" in line for line in logs)
 
 
+
+def test_circle_error_uses_stable_source_mask_for_radius_candidates(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Circle radius scoring should keep the source mask tied to current params."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    class DummyImg:
+        shape = (20, 20, 3)
+
+    img = DummyImg()
+    params = {
+        "circle_enabled": True,
+        "r": 8.0,
+        "cx": 10.0,
+        "cy": 10.0,
+    }
+
+    monkeypatch.setattr(Action, "generate_badge_svg", staticmethod(lambda *_args, **_kwargs: "<svg />"))
+    monkeypatch.setattr(Action, "render_svg_to_numpy", staticmethod(lambda *_args, **_kwargs: object()))
+    monkeypatch.setattr(Action, "_fit_to_original_size", staticmethod(lambda _img, rendered: rendered))
+
+    calls: list[dict] = []
+
+    def fake_extract(_img: object, mask_params: dict, _element: str) -> object:
+        calls.append(mask_params)
+        return object()
+
+    monkeypatch.setattr(Action, "extract_badge_element_mask", staticmethod(fake_extract))
+    monkeypatch.setattr(Action, "_masked_union_error_in_bbox", staticmethod(lambda *_args, **_kwargs: 1.0))
+
+    err = Action._element_error_for_circle_radius(img, params, 3.5)
+
+    assert err == 1.0
+    assert len(calls) >= 2
+    assert calls[0] is params
+    assert calls[1] is not params
 def test_voc_font_scale_bounds_allow_larger_tiny_badge_labels() -> None:
     """Tiny VOC badges should allow expanding text scale beyond the historic cap."""
     params = {

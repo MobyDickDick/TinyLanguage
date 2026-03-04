@@ -167,6 +167,7 @@ class Reflection:
 
         if base_name.upper() in {
             "AR0100",
+            "AC0810",
             "AC0812",
             "AC0813",
             "AC0814",
@@ -185,7 +186,7 @@ class Reflection:
             "AC0882",
         }:
             params["mode"] = "semantic_badge"
-            if base_name.upper() in {"AC0812", "AC0813", "AC0814"}:
+            if base_name.upper() in {"AC0810", "AC0812", "AC0813", "AC0814"}:
                 params["elements"].append("SEMANTIC: Kreis ohne Buchstabe")
                 params["label"] = ""
             elif base_name.upper() in {"AC0820", "AC0831", "AC0832", "AC0833", "AC0834"}:
@@ -197,6 +198,8 @@ class Reflection:
             else:
                 params["elements"].append("SEMANTIC: Kreis + Buchstabe")
                 params["label"] = "M" if base_name.upper() == "AR0100" else "T"
+            if base_name.upper() == "AC0810":
+                params["elements"].append("SEMANTIC: waagrechter Strich rechts vom Kreis")
             if base_name.upper() == "AC0881":
                 params["elements"].append("SEMANTIC: senkrechter Strich hinter dem Kreis")
             if base_name.upper() in {"AC0812", "AC0882"}:
@@ -1187,6 +1190,16 @@ class Action:
         return Action._normalize_light_circle_colors(params)
 
     @staticmethod
+    def _default_ac0810_params(w: int, h: int) -> dict:
+        """AC0810 uses the same right-arm geometry as AC0814 (circle on the left)."""
+        return Action._default_ac0814_params(w, h)
+
+    @staticmethod
+    def _fit_ac0810_params_from_image(img: np.ndarray, defaults: dict) -> dict:
+        """Fit AC0810 with the same right-anchored arm behavior as AC0814."""
+        return Action._fit_ac0814_params_from_image(img, defaults)
+
+    @staticmethod
     def _glyph_bbox(text_mode: str) -> tuple[int, int, int, int]:
         if text_mode == "path_t":
             return Action.T_XMIN, Action.T_YMIN, Action.T_XMAX, Action.T_YMAX
@@ -1489,6 +1502,12 @@ class Action:
             if img is None:
                 return Action._finalize_ac08_style(name, defaults)
             return Action._finalize_ac08_style(name, Action._fit_ac0811_params_from_image(img, defaults))
+
+        if name == "AC0810":
+            defaults = Action._default_ac0810_params(w, h)
+            if img is None:
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._fit_ac0810_params_from_image(img, defaults))
 
         if name == "AC0812":
             defaults = Action._default_ac0812_params(w, h)

@@ -580,13 +580,15 @@ def test_finalize_ac08_style_caps_ac0835_s_voc_growth() -> None:
     assert abs(float(finalized["voc_font_scale_max"]) - 0.546) < 1e-6
 
 
-def test_finalize_ac08_style_keeps_ac0835_m_voc_scaling_unlocked() -> None:
-    """AC0835_M must not inherit the strict tiny S-variant VOC cap."""
+def test_finalize_ac08_style_boosts_ac0835_m_voc_baseline() -> None:
+    """AC0835_M should bias VOC text upward so medium badges remain readable."""
     params = Action._apply_voc_label(Action._default_ac0870_params(20, 20))
 
     finalized = Action._finalize_ac08_style("AC0835_M", params)
 
-    assert "voc_font_scale_min" not in finalized
+    assert finalized["lock_text_scale"] is False
+    assert abs(float(finalized["voc_font_scale"]) - 0.60) < 1e-6
+    assert abs(float(finalized["voc_font_scale_min"]) - 0.60) < 1e-6
     assert "voc_font_scale_max" not in finalized
 
 

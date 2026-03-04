@@ -518,6 +518,16 @@ class Action:
             min_dim = float(min(float(p.get("width", 0.0) or 0.0), float(p.get("height", 0.0) or 0.0)))
             if min_dim <= 0.0:
                 min_dim = max(1.0, float(p.get("r", 1.0)) * 2.0)
+            if canonical_name == "AC0835_M" and min_dim <= 22.0:
+                # AC0835_M often lands with visibly undersized VOC text after
+                # anti-aliased fitting. Keep the medium badge explicitly
+                # biased toward a larger baseline, while still allowing upward
+                # growth in iterative validation for difficult sources.
+                base_scale = float(p.get("voc_font_scale", 0.52))
+                p["lock_text_scale"] = False
+                p["voc_font_scale"] = float(max(0.60, base_scale))
+                p["voc_font_scale_min"] = float(max(0.60, base_scale * 1.10))
+                p.pop("voc_font_scale_max", None)
             if canonical_name == "AC0835_S" and min_dim <= 15.5:
                 # AC0835_S tends to over-scale VOC during text bracketing,
                 # producing a visibly heavy label compared to the source icon.

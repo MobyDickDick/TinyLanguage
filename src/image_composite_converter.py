@@ -969,6 +969,32 @@ class Action:
         return p
 
     @staticmethod
+    def _tune_ac0834_co2_badge(params: dict, w: int, h: int) -> dict:
+        """Stabilize tiny AC0834 badges where fitting drifts the circle downward."""
+        p = dict(params)
+        p["stroke_gray"] = Action.LIGHT_CIRCLE_STROKE_GRAY
+        p["text_gray"] = p["stroke_gray"]
+        p["stroke_circle"] = Action.AC08_STROKE_WIDTH_PX
+        p["arm_stroke"] = Action.AC08_STROKE_WIDTH_PX
+
+        if min(w, h) <= 16:
+            default_cy = float(h) / 2.0
+            default_r = float(h) * 0.4
+
+            p["cy"] = default_cy
+            p["r"] = max(default_r * 0.95, float(p.get("r", default_r)))
+            cx = float(p.get("cx", float(h) / 2.0))
+            p["arm_y1"] = default_cy
+            p["arm_y2"] = default_cy
+            p["arm_x1"] = min(float(w), cx + float(p["r"]))
+            p["arm_x2"] = float(w)
+
+            p["co2_font_scale"] = min(float(p.get("co2_font_scale", 0.82)), 0.86)
+            p["co2_sub_font_scale"] = min(float(p.get("co2_sub_font_scale", 66.0)), 64.0)
+
+        return p
+
+    @staticmethod
     def _normalize_centered_co2_label(params: dict) -> dict:
         """Normalize CO₂ label sizing for plain circular badges.
 
@@ -1597,8 +1623,15 @@ class Action:
         if name == "AC0834":
             defaults = Action._apply_co2_label(Action._default_ac0814_params(w, h))
             if img is None:
-                return Action._finalize_ac08_style(name, defaults)
-            return Action._finalize_ac08_style(name, Action._apply_co2_label(Action._fit_ac0814_params_from_image(img, defaults)))
+                return Action._finalize_ac08_style(name, Action._tune_ac0834_co2_badge(defaults, w, h))
+            return Action._finalize_ac08_style(
+                name,
+                Action._tune_ac0834_co2_badge(
+                    Action._apply_co2_label(Action._fit_ac0814_params_from_image(img, defaults)),
+                    w,
+                    h,
+                ),
+            )
 
         if name == "AC0835":
             defaults = Action._apply_voc_label(Action._default_ac0870_params(w, h))

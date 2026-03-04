@@ -9,7 +9,7 @@ circle: Joint-Multistart keine relevante Änderung (cx=16.000, cy=12.500, r=11.0
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Fehler=51.719
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 18.000); Kandidaten=13.500->59.875, 18.000->53.156, 21.500->53.156, 29.000->53.156, 37.000->53.156, 45.000->53.156
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 18.000); Kandidaten=14.500->57.938, 18.000->53.156, 22.000->53.156, 29.500->53.156, 37.500->53.156, 45.000->53.156
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 Runde 1: Gesamtfehler=6.191
 Gesamtfehler unter Schwellwert, Validierung beendet

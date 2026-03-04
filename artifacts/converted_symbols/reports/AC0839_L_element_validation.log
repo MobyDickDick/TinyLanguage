@@ -11,7 +11,7 @@ arm: minRect Δcx=-2.329, Δcy=-0.982, diag=17.029->22.677, scale=1.3316
 arm: Mittelpunkt/Diagonale-Update verworfen (Fehler 63.932->67.055)
 arm: Fehler=63.932
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 18.000); Kandidaten=13.500->71.425, 18.000->65.260, 21.500->65.260, 29.000->65.260, 37.000->65.260, 45.000->65.260
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 18.000); Kandidaten=15.000->68.795, 18.000->65.260, 22.500->65.260, 30.000->65.260, 37.500->65.260, 45.000->65.260
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-1.500, Δcy=1.000, diag=7.616->17.464, scale=2.2932
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 99.159->99.364)
@@ -30,7 +30,7 @@ circle: Joint-Multistart keine relevante Änderung (cx=16.500, cy=12.500, r=11.5
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Fehler=63.232
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 17.000); Kandidaten=13.000->69.957, 17.000->64.565, 21.000->64.565, 29.000->64.565, 37.000->64.565, 45.000->64.565
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 17.000); Kandidaten=15.000->66.362, 17.000->64.565, 22.500->64.565, 30.000->64.565, 37.500->64.565, 45.000->64.565
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=2.000, Δcy=5.000, diag=10.630->31.064, scale=2.9223
 text: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -49,7 +49,7 @@ circle: Joint-Multistart keine relevante Änderung (cx=16.500, cy=12.500, r=11.5
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Fehler=63.232
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 17.000); Kandidaten=13.000->69.957, 17.000->64.565, 21.000->64.565, 29.000->64.565, 37.000->64.565, 45.000->64.565
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 17.000); Kandidaten=15.000->66.362, 17.000->64.565, 22.500->64.565, 30.000->64.565, 37.500->64.565, 45.000->64.565
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=1.000, Δcy=4.000, diag=7.071->26.420, scale=3.7363
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 74.488->96.748)
@@ -68,7 +68,7 @@ circle: Joint-Multistart keine relevante Änderung (cx=16.500, cy=12.500, r=11.5
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Fehler=63.232
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 17.000); Kandidaten=13.000->69.957, 17.000->64.565, 21.000->64.565, 29.000->64.565, 37.000->64.565, 45.000->64.565
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 17.000); Kandidaten=15.000->66.362, 17.000->64.565, 22.500->64.565, 30.000->64.565, 37.500->64.565, 45.000->64.565
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=1.000, Δcy=4.000, diag=7.071->26.420, scale=3.7363
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 74.488->96.748)
@@ -87,7 +87,7 @@ circle: Joint-Multistart keine relevante Änderung (cx=16.500, cy=12.500, r=11.5
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Fehler=63.232
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 17.000); Kandidaten=13.000->69.957, 17.000->64.565, 21.000->64.565, 29.000->64.565, 37.000->64.565, 45.000->64.565
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 17.000); Kandidaten=15.000->66.362, 17.000->64.565, 22.500->64.565, 30.000->64.565, 37.500->64.565, 45.000->64.565
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=1.000, Δcy=4.000, diag=7.071->26.420, scale=3.7363
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 74.488->96.748)
@@ -106,7 +106,7 @@ circle: Joint-Multistart keine relevante Änderung (cx=16.500, cy=12.500, r=11.5
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Fehler=63.232
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 17.000); Kandidaten=13.000->69.957, 17.000->64.565, 21.000->64.565, 29.000->64.565, 37.000->64.565, 45.000->64.565
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 17.000); Kandidaten=15.000->66.362, 17.000->64.565, 22.500->64.565, 30.000->64.565, 37.500->64.565, 45.000->64.565
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=1.000, Δcy=4.000, diag=7.071->26.420, scale=3.7363
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 74.488->96.748)

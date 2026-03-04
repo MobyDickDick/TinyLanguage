@@ -9,13 +9,29 @@ circle: Joint-Multistart cx 9.000->8.000, cy 11.000->12.000, r 6.000->6.000 (bes
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Fehler=87.833
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 11.000->1.000; Kandidaten=1.000->87.833, 7.000->87.833, 11.000->87.833, 13.000->87.833, 19.000->87.833, 25.000->87.833
+arm: Längen-Bracketing arm_len 11.000->8.000; Kandidaten=8.000->87.833, 11.000->87.833, 12.500->87.833, 16.500->87.833, 21.000->87.833, 25.000->87.833
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 text: Fehler=71.250
 text: Breiten-Bracketing übersprungen (co2_font_scale: current=0.820, Range=0.820..0.820)
 text: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 1: Gesamtfehler=29.435
+Runde 1: Gesamtfehler=31.843
 Runde 2: elementweise Validierung gestartet
+circle: minRect Δcx=0.000, Δcy=0.000, diag=15.811->15.811, scale=1.0000
+circle: Fehler=69.250
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=8.000, cy=12.000, best_err=69.250)
+circle: Radius-Bracketing keine relevante Änderung (r: 6.000, best_err=69.250); Kandidaten=5.500->73.809, 6.000->69.250, 6.500->75.661, 7.000->73.017
+circle: Joint-Multistart keine relevante Änderung (cx=8.000, cy=12.000, r=6.000, best_err=69.250)
+circle: Farb-Bracketing übersprungen (Farben gesperrt)
+arm: Fehler=87.833
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 8.000->1.000; Kandidaten=1.000->87.833, 7.000->87.833, 8.000->87.833, 13.000->87.833, 19.000->87.833, 25.000->87.833
+arm: Farb-Bracketing übersprungen (Farben gesperrt)
+text: Fehler=71.250
+text: Breiten-Bracketing übersprungen (co2_font_scale: current=0.820, Range=0.820..0.820)
+text: Farb-Bracketing übersprungen (Farben gesperrt)
+Runde 2: Gesamtfehler=29.435
+Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.000, Δcy=0.000, diag=15.811->15.811, scale=1.0000
 circle: Fehler=69.250
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
@@ -27,5 +43,5 @@ arm: Element konnte nicht extrahiert werden
 text: Fehler=71.250
 text: Breiten-Bracketing übersprungen (co2_font_scale: current=0.820, Range=0.820..0.820)
 text: Farb-Bracketing übersprungen (Farben gesperrt)
-Runde 2: Gesamtfehler=29.435
+Runde 3: Gesamtfehler=29.435
 Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet

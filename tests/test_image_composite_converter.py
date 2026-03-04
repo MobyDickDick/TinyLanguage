@@ -569,6 +569,36 @@ def test_voc_font_scale_bounds_limit_growth_for_large_badges() -> None:
     assert high <= 1.10
 
 
+def test_finalize_ac08_style_caps_ac0835_s_voc_growth() -> None:
+    """AC0835_S should keep VOC scale bounded to avoid heavy-looking labels."""
+    params = Action._apply_voc_label(Action._default_ac0870_params(15, 15))
+
+    finalized = Action._finalize_ac08_style("AC0835_S", params)
+
+    assert finalized["lock_text_scale"] is False
+    assert abs(float(finalized["voc_font_scale_min"]) - 0.58) < 1e-6
+    assert abs(float(finalized["voc_font_scale_max"]) - 0.546) < 1e-6
+
+
+def test_voc_font_scale_bounds_honor_explicit_min_max_overrides() -> None:
+    """VOC text bracketing should respect caller-provided scale bounds."""
+    params = {
+        "draw_text": True,
+        "text_mode": "voc",
+        "voc_font_scale": 0.52,
+        "voc_font_scale_min": 0.58,
+        "voc_font_scale_max": 0.546,
+    }
+
+    info = Action._element_width_key_and_bounds("text", params, 15, 15)
+
+    assert info is not None
+    key, low, high = info
+    assert key == "voc_font_scale"
+    assert abs(float(low) - 0.58) < 1e-6
+    assert abs(float(high) - 0.58) < 1e-6
+
+
 def test_optimize_arm_extent_keeps_circle_side_anchor_for_horizontal_connectors() -> None:
     """Arm length optimization should keep the circle-side endpoint fixed for AC0812-like arms."""
     if image_composite_converter.np is None:

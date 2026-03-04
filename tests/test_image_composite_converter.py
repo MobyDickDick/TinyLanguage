@@ -59,6 +59,64 @@ def test_finalize_ac0820_locks_plain_circle_center_and_min_radius() -> None:
     assert float(params["min_circle_radius"]) >= float(params["r"]) * 0.88
 
 
+def test_fit_semantic_badge_prevents_over_shrinking_plain_text_badge_circle(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Circle fitting should keep a minimum template-relative radius for plain text badges."""
+    if image_composite_converter.np is None or image_composite_converter.cv2 is None:
+        pytest.skip("numpy/cv2 not available in this environment")
+
+    np = image_composite_converter.np
+    cv2 = image_composite_converter.cv2
+    img = np.full((20, 20, 3), 220, dtype=np.uint8)
+
+    defaults = Action._apply_co2_label(Action._default_ac0870_params(20, 20))
+    default_r = float(defaults["r"])
+
+    monkeypatch.setattr(
+        cv2,
+        "HoughCircles",
+        lambda *_args, **_kwargs: np.array([[[10.0, 10.0, 2.0]]], dtype=np.float32),
+    )
+
+    fitted = Action._fit_semantic_badge_from_image(img, defaults)
+
+    assert float(fitted["r"]) >= (default_r * 0.92) - 1e-6
+
+
+def test_fit_semantic_badge_allows_lower_floor_when_connector_present(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Connector badges should use a looser minimum-ratio floor than plain centered badges."""
+    if image_composite_converter.np is None or image_composite_converter.cv2 is None:
+        pytest.skip("numpy/cv2 not available in this environment")
+
+    np = image_composite_converter.np
+    cv2 = image_composite_converter.cv2
+    img = np.full((20, 20, 3), 220, dtype=np.uint8)
+
+    defaults = {
+        "cx": 10.0,
+        "cy": 10.0,
+        "r": 6.0,
+        "stroke_circle": 1.0,
+        "fill_gray": 220,
+        "stroke_gray": 152,
+        "draw_text": False,
+        "arm_enabled": True,
+        "arm_x1": 1.0,
+        "arm_y1": 10.0,
+        "arm_x2": 4.0,
+        "arm_y2": 10.0,
+    }
+
+    monkeypatch.setattr(
+        cv2,
+        "HoughCircles",
+        lambda *_args, **_kwargs: np.array([[[10.0, 10.0, 2.0]]], dtype=np.float32),
+    )
+
+    fitted = Action._fit_semantic_badge_from_image(img, defaults)
+
+    assert float(fitted["r"]) >= (float(defaults["r"]) * 0.80) - 1e-6
+
+
 def test_finalize_ac0820_increases_optical_bias_for_co_vertical_centering() -> None:
     """AC0820 should nudge CO down so the main run appears vertically centered in-circle."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))

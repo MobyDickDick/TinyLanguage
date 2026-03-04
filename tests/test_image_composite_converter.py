@@ -639,6 +639,7 @@ def test_validate_badge_runs_color_bracketing_after_geometry_steps() -> None:
     original_calculate_error = Action.calculate_error
     original_width = Action._optimize_element_width_bracket
     original_extent = Action._optimize_element_extent_bracket
+    original_center = Action._optimize_circle_center_bracket
     original_radius = Action._optimize_circle_radius_bracket
     original_color = Action._optimize_element_color_bracket
 
@@ -655,6 +656,9 @@ def test_validate_badge_runs_color_bracketing_after_geometry_steps() -> None:
     )
     Action._optimize_element_extent_bracket = staticmethod(
         lambda _img, _params, _element, _logs: call_order.append("extent") or False
+    )
+    Action._optimize_circle_center_bracket = staticmethod(
+        lambda _img, _params, _logs: call_order.append("center") or False
     )
     Action._optimize_circle_radius_bracket = staticmethod(
         lambda _img, _params, _logs: call_order.append("radius") or False
@@ -675,7 +679,8 @@ def test_validate_badge_runs_color_bracketing_after_geometry_steps() -> None:
         Action.calculate_error = original_calculate_error
         Action._optimize_element_width_bracket = original_width
         Action._optimize_element_extent_bracket = original_extent
+        Action._optimize_circle_center_bracket = original_center
         Action._optimize_circle_radius_bracket = original_radius
         Action._optimize_element_color_bracket = original_color
 
-    assert call_order == ["width", "extent", "radius", "color"]
+    assert call_order == ["width", "extent", "center", "radius", "color"]

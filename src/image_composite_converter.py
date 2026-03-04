@@ -2303,6 +2303,44 @@ class Action:
 
         return Action._masked_error(img_orig, elem_render, mask_orig)
 
+
+    @staticmethod
+    def _element_error_for_circle_pose(
+        img_orig: np.ndarray,
+        params: dict,
+        *,
+        cx_value: float,
+        cy_value: float,
+        radius_value: float,
+    ) -> float:
+        h, w = img_orig.shape[:2]
+        if not params.get("circle_enabled", True):
+            return float("inf")
+
+        probe = dict(params)
+        max_r = max(1.0, (float(min(w, h)) * 0.48))
+        probe["cx"] = Action._snap_half(float(np.clip(cx_value, 0.0, float(w - 1))))
+        probe["cy"] = Action._snap_half(float(np.clip(cy_value, 0.0, float(h - 1))))
+        min_r = float(max(1.0, probe.get("min_circle_radius", 1.0)))
+        probe["r"] = Action._snap_half(float(np.clip(radius_value, min_r, max_r)))
+
+        if probe.get("arm_enabled"):
+            Action._reanchor_arm_to_circle_edge(probe, float(probe["r"]))
+
+        if probe.get("stem_enabled"):
+            probe["stem_top"] = float(probe.get("cy", 0.0)) + float(probe["r"])
+
+        elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(probe, "circle"))
+        elem_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(elem_svg, w, h))
+        if elem_render is None:
+            return float("inf")
+
+        mask_orig = Action.extract_badge_element_mask(img_orig, probe, "circle")
+        if mask_orig is None:
+            return float("inf")
+
+        return Action._masked_error(img_orig, elem_render, mask_orig)
+
     @staticmethod
     def _reanchor_arm_to_circle_edge(params: dict, radius: float) -> None:
         """Keep arm orientation but snap the circle-side endpoint to the new radius."""
@@ -2531,6 +2569,101 @@ class Action:
         logs.append(
             f"circle: Radius-Bracketing r {old_r:.3f}->{best_r:.3f} (best_err={best_err:.3f}); Kandidaten="
             + candidate_dump
+        )
+        return True
+
+    @staticmethod
+    def _optimize_circle_pose_multistart(img_orig: np.ndarray, params: dict, logs: list[str]) -> bool:
+        """Jointly optimize circle center+radius via a compact multi-start grid."""
+        if not params.get("circle_enabled", True):
+            return False
+
+        h, w = img_orig.shape[:2]
+        current_cx = float(params.get("cx", -1.0))
+        current_cy = float(params.get("cy", -1.0))
+        current_r = float(params.get("r", 0.0))
+        if current_r <= 0.0 or current_cx < 0.0 or current_cy < 0.0:
+            return False
+
+        lock_cx = bool(params.get("lock_circle_cx", False))
+        lock_cy = bool(params.get("lock_circle_cy", False))
+
+        shift = max(0.5, float(min(w, h)) * 0.08)
+        radius_span = max(0.5, current_r * 0.12)
+        min_r = float(max(1.0, params.get("min_circle_radius", 1.0)))
+        max_r = max(min_r, float(min(w, h)) * 0.48)
+
+        if lock_cx:
+            cx_candidates = [Action._snap_half(current_cx)]
+        else:
+            cx_candidates = [
+                Action._snap_half(float(np.clip(current_cx + offset, 0.0, float(w - 1))))
+                for offset in (-shift, 0.0, shift)
+            ]
+        if lock_cy:
+            cy_candidates = [Action._snap_half(current_cy)]
+        else:
+            cy_candidates = [
+                Action._snap_half(float(np.clip(current_cy + offset, 0.0, float(h - 1))))
+                for offset in (-shift, 0.0, shift)
+            ]
+
+        r_candidates = [
+            Action._snap_half(float(np.clip(current_r + offset, min_r, max_r)))
+            for offset in (-radius_span, -(radius_span * 0.5), 0.0, radius_span * 0.5, radius_span)
+        ]
+
+        evaluations: dict[tuple[float, float, float], float] = {}
+
+        def eval_pose(cx: float, cy: float, rad: float) -> float:
+            key = (cx, cy, rad)
+            if key not in evaluations:
+                evaluations[key] = float(
+                    Action._element_error_for_circle_pose(
+                        img_orig,
+                        params,
+                        cx_value=cx,
+                        cy_value=cy,
+                        radius_value=rad,
+                    )
+                )
+            return evaluations[key]
+
+        best = (Action._snap_half(current_cx), Action._snap_half(current_cy), Action._snap_half(current_r))
+        best_err = eval_pose(*best)
+
+        for cx in cx_candidates:
+            for cy in cy_candidates:
+                for rad in r_candidates:
+                    err = eval_pose(cx, cy, rad)
+                    if np.isfinite(err) and err + 0.05 < best_err:
+                        best = (cx, cy, rad)
+                        best_err = err
+
+        best_cx, best_cy, best_r = best
+        if (
+            abs(best_cx - current_cx) < 0.02
+            and abs(best_cy - current_cy) < 0.02
+            and abs(best_r - current_r) < 0.02
+        ):
+            logs.append(
+                f"circle: Joint-Multistart keine relevante Änderung (cx={current_cx:.3f}, cy={current_cy:.3f}, r={current_r:.3f}, best_err={best_err:.3f})"
+            )
+            return False
+
+        params["cx"] = best_cx
+        params["cy"] = best_cy
+        params["r"] = best_r
+        if params.get("arm_enabled"):
+            Action._reanchor_arm_to_circle_edge(params, best_r)
+        if params.get("stem_enabled"):
+            params["stem_top"] = float(params.get("cy", 0.0)) + best_r
+            if bool(params.get("lock_stem_center_to_circle", False)):
+                stem_w = float(params.get("stem_width", 1.0))
+                params["stem_x"] = Action._snap_half(max(0.0, min(float(w) - stem_w, best_cx - (stem_w / 2.0))))
+
+        logs.append(
+            f"circle: Joint-Multistart cx {current_cx:.3f}->{best_cx:.3f}, cy {current_cy:.3f}->{best_cy:.3f}, r {current_r:.3f}->{best_r:.3f} (best_err={best_err:.3f})"
         )
         return True
 
@@ -3029,6 +3162,8 @@ class Action:
                 rect_orig = Action._mask_min_rect_center_diag(mask_orig)
                 rect_svg = Action._mask_min_rect_center_diag(mask_svg)
                 if rect_orig is not None and rect_svg is not None:
+                    old_params = dict(params)
+                    old_elem_err = float(Action._masked_error(img_orig, elem_render, mask_orig))
                     ocx, ocy, odiag = rect_orig
                     scx, scy, sdiag = rect_svg
                     dx = ocx - scx
@@ -3042,8 +3177,27 @@ class Action:
                         )
                     )
                     if changed:
-                        round_changed = True
-                        logs.append(f"{element}: Parameter nach Mittelpunkt/Diagonale angepasst")
+                        updated_elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(params, element))
+                        updated_elem_render = Action._fit_to_original_size(
+                            img_orig,
+                            Action.render_svg_to_numpy(updated_elem_svg, w, h),
+                        )
+                        updated_err = float("inf")
+                        if updated_elem_render is not None:
+                            updated_err = float(Action._masked_error(img_orig, updated_elem_render, mask_orig))
+
+                        if np.isfinite(updated_err) and updated_err <= old_elem_err + 0.20:
+                            round_changed = True
+                            logs.append(f"{element}: Parameter nach Mittelpunkt/Diagonale angepasst")
+                        else:
+                            params.clear()
+                            params.update(old_params)
+                            logs.append(
+                                (
+                                    f"{element}: Mittelpunkt/Diagonale-Update verworfen "
+                                    f"(Fehler {old_elem_err:.3f}->{updated_err:.3f})"
+                                )
+                            )
 
                 elem_err = Action._masked_error(img_orig, elem_render, mask_orig)
                 logs.append(f"{element}: Fehler={elem_err:.3f}")
@@ -3070,6 +3224,9 @@ class Action:
                         round_changed = True
                     radius_changed = Action._optimize_circle_radius_bracket(img_orig, params, logs)
                     if radius_changed:
+                        round_changed = True
+                    joint_changed = Action._optimize_circle_pose_multistart(img_orig, params, logs)
+                    if joint_changed:
                         round_changed = True
 
                 color_changed = Action._optimize_element_color_bracket(img_orig, params, element, mask_orig, logs)
@@ -3103,6 +3260,7 @@ def run_iteration_pipeline(
     diff_out_dir: str,
     reports_out_dir: str | None = None,
     debug_ac0811_dir: str | None = None,
+    debug_element_diff_dir: str | None = None,
 ):
     if cv2 is None or np is None:
         missing = []
@@ -3146,7 +3304,10 @@ def run_iteration_pipeline(
 
         validation_logs: list[str] = []
         debug_dir = None
-        if debug_ac0811_dir and perc.base_name.upper() == "AC0811":
+        if debug_element_diff_dir:
+            debug_dir = os.path.join(debug_element_diff_dir, os.path.splitext(filename)[0])
+            os.makedirs(debug_dir, exist_ok=True)
+        elif debug_ac0811_dir and perc.base_name.upper() == "AC0811":
             debug_dir = os.path.join(debug_ac0811_dir, os.path.splitext(filename)[0])
             os.makedirs(debug_dir, exist_ok=True)
         validation_logs = Action.validate_badge_by_elements(
@@ -3241,6 +3402,7 @@ def convert_range(
     start_ref: str = "AR0102",
     end_ref: str = "AR0104",
     debug_ac0811_dir: str | None = None,
+    debug_element_diff_dir: str | None = None,
 ) -> str:
     out_root = _default_converted_symbols_root()
     svg_out_dir = os.path.join(out_root, "svg")
@@ -3273,6 +3435,7 @@ def convert_range(
                 diff_out_dir,
                 reports_out_dir,
                 debug_ac0811_dir,
+                debug_element_diff_dir,
             )
             if res:
                 _base, _desc, params, best_iter, best_error = res
@@ -3657,6 +3820,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional: Ordner für AC0811 Element-Diff-Dumps pro Runde/Element",
     )
     parser.add_argument(
+        "--debug-element-diff-dir",
+        default=None,
+        help="Optional: Ordner für Element-Diff-Dumps pro Runde/Element für alle Semantic-Badges",
+    )
+    parser.add_argument(
         "--bootstrap-deps",
         action="store_true",
         help=(
@@ -3686,6 +3854,7 @@ def main(argv: list[str] | None = None) -> int:
         args.start,
         args.end,
         args.debug_ac0811_dir,
+        args.debug_element_diff_dir,
     )
     print(f"\nAbgeschlossen! Ausgaben unter: {out_dir}")
     return 0

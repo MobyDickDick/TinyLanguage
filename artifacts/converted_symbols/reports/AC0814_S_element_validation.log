@@ -11,7 +11,7 @@ arm: minRect Δcx=-1.405, Δcy=-0.989, diag=10.050->12.848, scale=1.2784
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=68.222
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.180, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 11.499); Kandidaten=1.000->92.167, 7.000->80.778, 11.500->71.278, 13.000->71.278, 19.000->71.278, 25.000->71.278
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 11.499); Kandidaten=8.500->75.111, 11.500->71.278, 12.500->71.278, 17.000->71.278, 21.000->71.278, 25.000->71.278
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 Runde 1: Gesamtfehler=11.971
 Runde 2: elementweise Validierung gestartet
@@ -27,7 +27,7 @@ arm: minRect Δcx=-1.405, Δcy=-0.989, diag=8.062->12.848, scale=1.5935
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=74.889
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.392, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 10.620->10.500; Kandidaten=1.000->97.308, 7.000->82.556, 10.500->74.889, 13.000->74.889, 19.000->74.889, 25.000->74.889
+arm: Längen-Bracketing arm_len 10.620->10.500; Kandidaten=8.000->78.722, 10.500->74.889, 12.000->74.889, 16.500->74.889, 20.500->74.889, 25.000->74.889
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 Runde 2: Gesamtfehler=11.021
 Runde 3: elementweise Validierung gestartet
@@ -43,7 +43,7 @@ arm: minRect Δcx=-1.405, Δcy=-0.989, diag=8.062->12.848, scale=1.5935
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=74.889
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.643, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 10.620->10.500; Kandidaten=1.000->77.538, 7.000->49.278, 10.500->35.278, 13.000->35.278, 19.000->35.278, 25.000->35.278
+arm: Längen-Bracketing arm_len 10.620->10.500; Kandidaten=8.000->42.278, 10.500->35.278, 12.000->35.278, 16.500->35.278, 20.500->35.278, 25.000->35.278
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 Runde 3: Gesamtfehler=11.203
 Runde 4: elementweise Validierung gestartet
@@ -59,7 +59,7 @@ arm: minRect Δcx=-1.405, Δcy=-0.989, diag=10.050->12.848, scale=1.2784
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=35.278
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.939, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 10.620->10.500; Kandidaten=1.000->77.538, 7.000->49.278, 10.500->35.278, 13.000->35.278, 19.000->35.278, 25.000->35.278
+arm: Längen-Bracketing arm_len 10.620->10.500; Kandidaten=8.000->42.278, 10.500->35.278, 12.000->35.278, 16.500->35.278, 20.500->35.278, 25.000->35.278
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 Runde 4: Gesamtfehler=11.203
 Runde 5: elementweise Validierung gestartet
@@ -75,7 +75,7 @@ arm: minRect Δcx=-1.405, Δcy=-0.989, diag=10.050->12.848, scale=1.2784
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=35.278
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=2.288, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 10.620->10.500; Kandidaten=1.000->77.538, 7.000->49.278, 10.500->35.278, 13.000->35.278, 19.000->35.278, 25.000->35.278
+arm: Längen-Bracketing arm_len 10.620->10.500; Kandidaten=8.000->42.278, 10.500->35.278, 12.000->35.278, 16.500->35.278, 20.500->35.278, 25.000->35.278
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 Runde 5: Gesamtfehler=11.203
 Runde 6: elementweise Validierung gestartet
@@ -91,6 +91,6 @@ arm: minRect Δcx=-1.405, Δcy=-0.989, diag=10.050->12.848, scale=1.2784
 arm: Parameter nach Mittelpunkt/Diagonale angepasst
 arm: Fehler=35.278
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=2.700, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 10.620->10.500; Kandidaten=1.000->75.000, 7.000->48.905, 10.500->38.429, 13.000->38.429, 19.000->38.429, 25.000->38.429
+arm: Längen-Bracketing arm_len 10.620->10.500; Kandidaten=8.000->42.905, 10.500->38.429, 12.000->38.429, 16.500->38.429, 20.500->38.429, 25.000->38.429
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 Runde 6: Gesamtfehler=12.859

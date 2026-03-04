@@ -1020,6 +1020,7 @@ class Action:
                 "arm_x2": max(0.0, cx - r),
                 "arm_y2": cy,
                 "arm_stroke": arm_stroke,
+                "arm_len_min_ratio": 0.75,
             }
         )
 
@@ -1153,6 +1154,7 @@ class Action:
                 "arm_x2": float(w),
                 "arm_y2": cy,
                 "arm_stroke": arm_stroke,
+                "arm_len_min_ratio": 0.75,
             }
         )
 
@@ -2791,6 +2793,10 @@ class Action:
             key_label = "arm_len"
             low_bound = 1.0
             high_bound = float(max(w, h))
+            forced_min_ratio = params.get("arm_len_min_ratio")
+            if forced_min_ratio is not None:
+                min_ratio = float(max(0.0, min(1.0, float(forced_min_ratio))))
+                low_bound = max(low_bound, current * min_ratio)
             # Keep edge-anchored connector variants (e.g. AC0832_S) from collapsing
             # to tiny stubs when element-only error masks under-segment thin lines.
             is_edge_anchored = any(
@@ -2805,7 +2811,7 @@ class Action:
                     ("arm_y2", h),
                 )
             )
-            if is_edge_anchored and params.get("circle_enabled", True):
+            if forced_min_ratio is None and is_edge_anchored and params.get("circle_enabled", True):
                 min_ratio = float(params.get("arm_len_min_ratio", 0.75))
                 low_bound = max(low_bound, current * max(0.0, min(1.0, min_ratio)))
         else:

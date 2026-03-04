@@ -3276,6 +3276,36 @@ def _scale_badge_params(anchor: dict, anchor_w: int, anchor_h: int, target_w: in
         scaled["arm_y2"] = float(anchor["arm_y2"]) * scale_y
         scaled["arm_stroke"] = float(anchor["arm_stroke"]) * scale
 
+    if scaled.get("circle_enabled"):
+        stroke = max(0.0, float(scaled.get("stroke_circle", 1.0)))
+        half_stroke = stroke / 2.0
+        cx = float(scaled.get("cx", target_w / 2.0))
+        cy = float(scaled.get("cy", target_h / 2.0))
+        r = max(1.0, float(scaled.get("r", 1.0)))
+
+        max_fit_r = max(1.0, (min(float(target_w), float(target_h)) / 2.0) - half_stroke)
+        if r > max_fit_r:
+            r = max_fit_r
+
+        min_cx = r + half_stroke
+        max_cx = float(target_w) - r - half_stroke
+        min_cy = r + half_stroke
+        max_cy = float(target_h) - r - half_stroke
+
+        if min_cx > max_cx:
+            cx = float(target_w) / 2.0
+        else:
+            cx = float(np.clip(cx, min_cx, max_cx))
+
+        if min_cy > max_cy:
+            cy = float(target_h) / 2.0
+        else:
+            cy = float(np.clip(cy, min_cy, max_cy))
+
+        scaled["cx"] = cx
+        scaled["cy"] = cy
+        scaled["r"] = r
+
     return scaled
 
 

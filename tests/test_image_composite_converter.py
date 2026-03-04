@@ -81,6 +81,35 @@ def test_finalize_non_ac0820_text_badge_uses_less_strict_radius_floor() -> None:
     assert float(params["min_circle_radius"]) >= float(params["template_circle_radius"]) * 0.90
 
 
+
+
+def test_finalize_plain_ac08_badge_reanchors_circle_to_template_center() -> None:
+    """Plain AC08xx badges should lock to template circle center, not drifted fit center."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(20, 20))
+    params["template_circle_cx"] = 9.5
+    params["template_circle_cy"] = 9.5
+    params["cx"] = 8.0
+    params["cy"] = 7.0
+
+    params = Action._finalize_ac08_style("AC0820_M", params)
+
+    assert float(params["cx"]) == 9.5
+    assert float(params["cy"]) == 9.5
+
+
+def test_fit_semantic_badge_records_template_center_for_finalize_locking() -> None:
+    """Semantic fit should persist template center so finalize can restore canonical centering."""
+    if image_composite_converter.np is None or image_composite_converter.cv2 is None:
+        pytest.skip("numpy/cv2 not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.full((20, 20, 3), 240, dtype=np.uint8)
+    defaults = Action._default_ac0870_params(20, 20)
+
+    params = Action._fit_semantic_badge_from_image(img, defaults)
+
+    assert float(params["template_circle_cx"]) == float(defaults["cx"])
+    assert float(params["template_circle_cy"]) == float(defaults["cy"])
 def test_fit_semantic_badge_prevents_over_shrinking_plain_text_badge_circle(monkeypatch: pytest.MonkeyPatch) -> None:
     """Circle fitting should keep a minimum template-relative radius for plain text badges."""
     if image_composite_converter.np is None or image_composite_converter.cv2 is None:

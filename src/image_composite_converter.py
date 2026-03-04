@@ -474,6 +474,13 @@ class Action:
             # which also makes CO/VOC labels look far too small.
             p["lock_circle_cx"] = True
             p["lock_circle_cy"] = True
+            # Re-anchor to template center before locking so noisy Hough fits
+            # (especially on medium/small JPEGs like AC0820_M/S) cannot freeze
+            # an already-shifted ring position for the rest of validation.
+            if "template_circle_cx" in p:
+                p["cx"] = float(p["template_circle_cx"])
+            if "template_circle_cy" in p:
+                p["cy"] = float(p["template_circle_cy"])
             # Keep a robust radius floor anchored to the semantic template,
             # not only to the currently fitted radius. If an early Hough/contour
             # pass under-estimates the circle, the iterative optimizer would
@@ -1261,6 +1268,10 @@ class Action:
         params = dict(defaults)
         if "r" in params and "template_circle_radius" not in params:
             params["template_circle_radius"] = float(params["r"])
+        if "cx" in params and "template_circle_cx" not in params:
+            params["template_circle_cx"] = float(params["cx"])
+        if "cy" in params and "template_circle_cy" not in params:
+            params["template_circle_cy"] = float(params["cy"])
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         h, w = gray.shape
 

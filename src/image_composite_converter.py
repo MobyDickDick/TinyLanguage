@@ -1114,6 +1114,25 @@ class Action:
         max_arm_stroke = max(min_arm_stroke, min(float(w) * 0.14, stroke_circle * 1.6))
         arm_stroke = max(min_arm_stroke, min(raw_arm_stroke, max_arm_stroke))
 
+        # Tiny vertical badges with text overlays (e.g. AC0833_S / AC0838_S)
+        # tend to be over-influenced by anti-aliased text pixels during contour
+        # fitting. This can pull the circle downward and shrink its radius, which
+        # shortens the visible top connector. Keep small variants close to the
+        # semantic template geometry and only allow minimal vertical drift.
+        if w <= 15 and bool(params.get("draw_text", False)):
+            default_cx = float(defaults.get("cx", float(w) / 2.0))
+            default_cy = float(defaults.get("cy", float(h) - (float(w) / 2.0)))
+            default_r = float(defaults.get("r", float(w) * 0.4))
+            params["cx"] = default_cx
+            params["cy"] = float(np.clip(cy, default_cy - 0.8, default_cy + 0.8))
+            params["r"] = max(r, default_r * 0.94)
+            params["lock_circle_cx"] = True
+            params["lock_circle_cy"] = True
+            params["lock_arm_center_to_circle"] = True
+            cx = float(params["cx"])
+            cy = float(params["cy"])
+            r = float(params["r"])
+
         params["arm_enabled"] = True
         params["arm_stroke"] = arm_stroke
         params["arm_x1"] = cx

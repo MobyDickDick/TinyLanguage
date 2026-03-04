@@ -641,6 +641,7 @@ def test_validate_badge_runs_color_bracketing_after_geometry_steps() -> None:
     original_extent = Action._optimize_element_extent_bracket
     original_center = Action._optimize_circle_center_bracket
     original_radius = Action._optimize_circle_radius_bracket
+    original_joint = Action._optimize_circle_pose_multistart
     original_color = Action._optimize_element_color_bracket
 
     Action.generate_badge_svg = staticmethod(lambda _w, _h, _params: "<svg/>")
@@ -663,6 +664,9 @@ def test_validate_badge_runs_color_bracketing_after_geometry_steps() -> None:
     Action._optimize_circle_radius_bracket = staticmethod(
         lambda _img, _params, _logs: call_order.append("radius") or False
     )
+    Action._optimize_circle_pose_multistart = staticmethod(
+        lambda _img, _params, _logs: call_order.append("joint") or False
+    )
     Action._optimize_element_color_bracket = staticmethod(
         lambda _img, _params, _element, _mask, _logs: call_order.append("color") or False
     )
@@ -681,6 +685,37 @@ def test_validate_badge_runs_color_bracketing_after_geometry_steps() -> None:
         Action._optimize_element_extent_bracket = original_extent
         Action._optimize_circle_center_bracket = original_center
         Action._optimize_circle_radius_bracket = original_radius
+        Action._optimize_circle_pose_multistart = original_joint
         Action._optimize_element_color_bracket = original_color
 
-    assert call_order == ["width", "extent", "center", "radius", "color"]
+    assert call_order == ["width", "extent", "center", "radius", "joint", "color"]
+
+
+def test_optimize_circle_pose_multistart_can_escape_local_center_radius_plateau(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Joint circle pose search should improve cx/cy/r together when independent steps stall."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.zeros((20, 20, 3), dtype=np.uint8)
+    params = {
+        "circle_enabled": True,
+        "cx": 10.0,
+        "cy": 10.0,
+        "r": 6.0,
+        "min_circle_radius": 4.0,
+    }
+    logs: list[str] = []
+
+    def fake_error(_img, _params, *, cx_value: float, cy_value: float, radius_value: float) -> float:
+        return ((cx_value - 11.0) ** 2) + ((cy_value - 9.0) ** 2) + ((radius_value - 6.5) ** 2)
+
+    monkeypatch.setattr(Action, "_element_error_for_circle_pose", staticmethod(fake_error))
+
+    changed = Action._optimize_circle_pose_multistart(img, params, logs)
+
+    assert changed is True
+    assert float(params["cx"]) == 11.0
+    assert float(params["cy"]) == 9.0
+    assert float(params["r"]) == 6.5
+    assert any("Joint-Multistart" in line for line in logs)

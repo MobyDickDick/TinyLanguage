@@ -1,44 +1,5 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg
-   width="20px"
-   height="20px"
-   viewBox="0 0 20 20"
-   version="1.1"
-   id="svg2"
-   xml:space="preserve"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg"><defs
-     id="defs2" /><g
-     id="layer2"><ellipse
-       cx="9.9330215"
-       cy="9.852025"
-       fill="#f2f2f2"
-       stroke="#7f7f7f"
-       stroke-width="1"
-       id="circle1"
-       rx="9.1775703"
-       ry="9.0685358" /><text
-       x="9.388648"
-       y="10.273538"
-       fill="#7f7f7f"
-       font-family="Arial, Helvetica, sans-serif"
-       font-size="9.16302px"
-       font-style="normal"
-       font-weight="600"
-       text-anchor="middle"
-       dominant-baseline="middle"
-       id="text1"
-       style="stroke-width:0.699148"
-       transform="scale(0.97103126,1.029833)">CO</text><text
-       x="14.19923"
-       y="12.472663"
-       fill="#7f7f7f"
-       font-family="Arial, Helvetica, sans-serif"
-       font-size="5.99761px"
-       font-style="normal"
-       font-weight="600"
-       text-anchor="start"
-       dominant-baseline="middle"
-       id="text2"
-       style="stroke-width:0.699148"
-       transform="scale(0.97103126,1.029833)">2</text></g></svg>
+<svg width="20px" height="20px" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="8.5000" cy="7.5000" r="6.0000" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="1.0000"/>
+  <text x="8.3805" y="9.8875" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="5.5000" font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">CO</text>
+  <text x="11.2680" y="11.2075" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="3.6000" font-style="normal" font-weight="600" text-anchor="start" dominant-baseline="middle">2</text>
+</svg>

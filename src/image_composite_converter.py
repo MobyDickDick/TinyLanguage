@@ -474,7 +474,15 @@ class Action:
             # which also makes CO/VOC labels look far too small.
             p["lock_circle_cx"] = True
             p["lock_circle_cy"] = True
-            p["min_circle_radius"] = float(max(1.0, float(p.get("r", 1.0)) * 0.88))
+            # Keep a robust radius floor anchored to the semantic template,
+            # not only to the currently fitted radius. If an early Hough/contour
+            # pass under-estimates the circle, the iterative optimizer would
+            # otherwise preserve and further reinforce that undersized fit.
+            template_r = float(p.get("template_circle_radius", p.get("r", 1.0)))
+            current_r = float(p.get("r", template_r))
+            base_r = max(1.0, template_r, current_r)
+            min_ratio = 0.90 if p.get("draw_text", False) else 0.88
+            p["min_circle_radius"] = float(max(float(p.get("min_circle_radius", 1.0)), base_r * min_ratio))
         if str(p.get("text_mode", "")).lower() == "co2":
             # Keep AC0820 variants tunable (bounded via *_min/*_max overrides)
             # while preserving strict text-scale locking for other AC08xx CO₂
@@ -1246,6 +1254,8 @@ class Action:
     def _fit_semantic_badge_from_image(img: np.ndarray, defaults: dict) -> dict:
         """Fit common semantic badge primitives (circle/stem/arm) directly from image content."""
         params = dict(defaults)
+        if "r" in params and "template_circle_radius" not in params:
+            params["template_circle_radius"] = float(params["r"])
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         h, w = gray.shape
 

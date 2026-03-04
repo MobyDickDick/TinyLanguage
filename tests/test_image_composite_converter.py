@@ -389,6 +389,25 @@ def test_validate_badge_logs_extent_bracketing_for_line_elements() -> None:
     assert any("arm: Längen-Bracketing" in line for line in logs)
 
 
+
+
+def test_tune_ac0834_co2_badge_recenters_tiny_variant_and_locks_strokes() -> None:
+    """AC0834_S tuning should keep the badge centered and connector geometry stable."""
+    params = Action._apply_co2_label(Action._default_ac0814_params(25, 15))
+    params["cy"] = 10.0
+    params["r"] = 5.0
+    params["stroke_circle"] = 1.7
+    params["arm_stroke"] = 1.6
+
+    tuned = Action._tune_ac0834_co2_badge(params, 25, 15)
+
+    assert abs(float(tuned["cy"]) - 7.5) < 1e-6
+    assert abs(float(tuned["arm_y1"]) - float(tuned["cy"])) < 1e-6
+    assert abs(float(tuned["arm_y2"]) - float(tuned["cy"])) < 1e-6
+    assert float(tuned["arm_x2"]) == 25.0
+    assert float(tuned["stroke_circle"]) == Action.AC08_STROKE_WIDTH_PX
+    assert float(tuned["arm_stroke"]) == Action.AC08_STROKE_WIDTH_PX
+
 def test_optimize_circle_radius_keeps_ac0813_vertical_arm_orientation() -> None:
     """AC0813 radius optimization must not collapse the vertical arm into a horizontal one."""
     if image_composite_converter.np is None:

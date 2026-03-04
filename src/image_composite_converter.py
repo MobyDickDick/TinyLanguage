@@ -2340,6 +2340,113 @@ class Action:
                 params["arm_y1"] = cy - radius if y2 <= cy else cy + radius
 
     @staticmethod
+    def _optimize_circle_center_bracket(img_orig: np.ndarray, params: dict, logs: list[str]) -> bool:
+        if not params.get("circle_enabled", True):
+            return False
+
+        h, w = img_orig.shape[:2]
+        current_cx = float(params.get("cx", -1.0))
+        current_cy = float(params.get("cy", -1.0))
+        current_r = float(params.get("r", 0.0))
+        if current_r <= 0.0 or current_cx < 0.0 or current_cy < 0.0:
+            return False
+
+        lock_cx = bool(params.get("lock_circle_cx", False))
+        lock_cy = bool(params.get("lock_circle_cy", False))
+        if lock_cx and lock_cy:
+            return False
+
+        max_shift = max(1.0, float(min(w, h)) * 0.16)
+        x_low = Action._snap_half(max(0.0, current_cx - max_shift))
+        x_high = Action._snap_half(min(float(w - 1), current_cx + max_shift))
+        y_low = Action._snap_half(max(0.0, current_cy - max_shift))
+        y_high = Action._snap_half(min(float(h - 1), current_cy + max_shift))
+
+        evaluations: dict[tuple[float, float], float] = {}
+
+        def eval_center(cx_value: float, cy_value: float) -> float:
+            cx_snap = Action._snap_half(float(np.clip(cx_value, 0.0, float(w - 1))))
+            cy_snap = Action._snap_half(float(np.clip(cy_value, 0.0, float(h - 1))))
+            key = (cx_snap, cy_snap)
+            if key not in evaluations:
+                probe = dict(params)
+                probe["cx"] = cx_snap
+                probe["cy"] = cy_snap
+                evaluations[key] = float(Action._element_error_for_circle_radius(img_orig, probe, current_r))
+            return evaluations[key]
+
+        def optimize_axis(low: float, high: float, fixed: float, axis: str) -> float:
+            if high - low < 0.05:
+                return Action._snap_half((low + high) / 2.0)
+            mid = Action._snap_half((low + high) / 2.0)
+            for _ in range(8):
+                if axis == "x":
+                    low_err = eval_center(low, fixed)
+                    mid_err = eval_center(mid, fixed)
+                    high_err = eval_center(high, fixed)
+                else:
+                    low_err = eval_center(fixed, low)
+                    mid_err = eval_center(fixed, mid)
+                    high_err = eval_center(fixed, high)
+
+                if not all(np.isfinite(v) for v in (low_err, mid_err, high_err)):
+                    return mid
+
+                if mid_err <= low_err and mid_err <= high_err:
+                    if low_err <= high_err:
+                        high = mid
+                    else:
+                        low = mid
+                elif low_err <= mid_err and low_err <= high_err:
+                    high = mid
+                else:
+                    low = mid
+
+                if high - low < 0.05:
+                    break
+                next_mid = Action._snap_half((low + high) / 2.0)
+                if abs(next_mid - mid) < 0.02:
+                    break
+                mid = next_mid
+            points = [low, mid, high]
+            if axis == "x":
+                return min(points, key=lambda v: eval_center(v, fixed))
+            return min(points, key=lambda v: eval_center(fixed, v))
+
+        best_cx = current_cx
+        best_cy = current_cy
+        if not lock_cx:
+            best_cx = optimize_axis(x_low, x_high, current_cy, "x")
+        if not lock_cy:
+            best_cy = optimize_axis(y_low, y_high, best_cx, "y")
+
+        best_err = eval_center(best_cx, best_cy)
+        if not np.isfinite(best_err):
+            logs.append("circle: Mittelpunkt-Bracketing abgebrochen wegen nicht-finitem Fehler")
+            return False
+
+        if abs(best_cx - current_cx) < 0.02 and abs(best_cy - current_cy) < 0.02:
+            logs.append(
+                f"circle: Mittelpunkt-Bracketing keine relevante Änderung (cx={current_cx:.3f}, cy={current_cy:.3f}, best_err={best_err:.3f})"
+            )
+            return False
+
+        params["cx"] = best_cx
+        params["cy"] = best_cy
+        if params.get("arm_enabled"):
+            Action._reanchor_arm_to_circle_edge(params, current_r)
+        if params.get("stem_enabled"):
+            params["stem_top"] = float(params.get("cy", 0.0)) + current_r
+            if bool(params.get("lock_stem_center_to_circle", False)):
+                stem_w = float(params.get("stem_width", 1.0))
+                params["stem_x"] = Action._snap_half(max(0.0, min(float(w) - stem_w, best_cx - (stem_w / 2.0))))
+
+        logs.append(
+            f"circle: Mittelpunkt-Bracketing cx {current_cx:.3f}->{best_cx:.3f}, cy {current_cy:.3f}->{best_cy:.3f} (best_err={best_err:.3f})"
+        )
+        return True
+
+    @staticmethod
     def _optimize_circle_radius_bracket(img_orig: np.ndarray, params: dict, logs: list[str]) -> bool:
         if not params.get("circle_enabled", True):
             return False
@@ -2361,31 +2468,56 @@ class Action:
         if not low_bound < high_bound:
             return False
 
-        candidates = sorted({
-            Action._snap_half(low_bound),
-            Action._snap_half(low_bound + (high_bound - low_bound) * 0.25),
-            Action._snap_half((low_bound + high_bound) / 2.0),
-            Action._snap_half(low_bound + (high_bound - low_bound) * 0.75),
-            Action._snap_half(current),
-            Action._snap_half(current - 1.0),
-            Action._snap_half(current + 1.0),
-            Action._snap_half(high_bound),
-        })
-
-        candidate_errors = [Action._element_error_for_circle_radius(img_orig, params, v) for v in candidates]
-        if not all(np.isfinite(e) for e in candidate_errors):
-            logs.append(
-                "circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern "
-                + ", ".join(f"{v:.3f}->{e:.3f}" for v, e in zip(candidates, candidate_errors, strict=False))
-            )
+        low = Action._snap_half(low_bound)
+        high = Action._snap_half(high_bound)
+        mid = Action._snap_half(float(np.clip(current, low, high)))
+        if high - low < 0.05:
             return False
 
-        best_idx = int(np.argmin(candidate_errors))
-        best_r = float(candidates[best_idx])
+        evaluations: dict[float, float] = {}
+
+        def eval_radius(radius: float) -> float:
+            snapped = Action._snap_half(float(np.clip(radius, low_bound, high_bound)))
+            if snapped not in evaluations:
+                evaluations[snapped] = float(Action._element_error_for_circle_radius(img_orig, params, snapped))
+            return evaluations[snapped]
+
+        max_rounds = 12
+        for _ in range(max_rounds):
+            low_err = eval_radius(low)
+            mid_err = eval_radius(mid)
+            high_err = eval_radius(high)
+            if not all(np.isfinite(v) for v in (low_err, mid_err, high_err)):
+                logs.append(
+                    "circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern "
+                    + ", ".join(f"{v:.3f}->{e:.3f}" for v, e in sorted(evaluations.items()))
+                )
+                return False
+
+            # Drei-Punkt-Bracketing: immer den besten Punkt und seinen besseren Nachbarn behalten.
+            if mid_err <= low_err and mid_err <= high_err:
+                if low_err <= high_err:
+                    high = mid
+                else:
+                    low = mid
+            elif low_err <= mid_err and low_err <= high_err:
+                high = mid
+            else:
+                low = mid
+
+            if high - low < 0.05:
+                break
+            next_mid = Action._snap_half((low + high) / 2.0)
+            if abs(next_mid - mid) < 0.02:
+                break
+            mid = next_mid
+
+        best_r, best_err = min(evaluations.items(), key=lambda pair: pair[1])
+        candidate_dump = ", ".join(f"{v:.3f}->{e:.3f}" for v, e in sorted(evaluations.items()))
         if abs(best_r - current) < 0.02:
             logs.append(
-                f"circle: Radius-Bracketing keine relevante Änderung (r: {current:.3f}); Kandidaten="
-                + ", ".join(f"{v:.3f}->{e:.3f}" for v, e in zip(candidates, candidate_errors, strict=False))
+                f"circle: Radius-Bracketing keine relevante Änderung (r: {current:.3f}, best_err={best_err:.3f}); Kandidaten="
+                + candidate_dump
             )
             return False
 
@@ -2397,8 +2529,8 @@ class Action:
             params["stem_top"] = float(params.get("cy", 0.0)) + best_r
 
         logs.append(
-            f"circle: Radius-Bracketing r {old_r:.3f}->{best_r:.3f}; Kandidaten="
-            + ", ".join(f"{v:.3f}->{e:.3f}" for v, e in zip(candidates, candidate_errors, strict=False))
+            f"circle: Radius-Bracketing r {old_r:.3f}->{best_r:.3f} (best_err={best_err:.3f}); Kandidaten="
+            + candidate_dump
         )
         return True
 
@@ -2933,6 +3065,9 @@ class Action:
                     round_changed = True
 
                 if element == "circle":
+                    center_changed = Action._optimize_circle_center_bracket(img_orig, params, logs)
+                    if center_changed:
+                        round_changed = True
                     radius_changed = Action._optimize_circle_radius_bracket(img_orig, params, logs)
                     if radius_changed:
                         round_changed = True

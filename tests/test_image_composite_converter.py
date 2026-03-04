@@ -488,6 +488,37 @@ def test_co2_text_width_bracketing_is_bounded_for_ac0820() -> None:
     assert float(high) <= float(params["co2_font_scale_max"]) + 1e-9
 
 
+
+
+def test_finalize_ac0820_locks_palette_against_color_bracketing() -> None:
+    """AC08xx semantic badges should keep canonical fill/stroke grayscale values."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
+    params = Action._finalize_ac08_style("AC0820", params)
+
+    assert params["lock_colors"] is True
+
+
+def test_optimize_element_color_bracket_skips_when_colors_locked() -> None:
+    """Color tuning must be skipped when lock_colors is enabled."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.zeros((8, 8, 3), dtype=np.uint8)
+    mask = np.ones((8, 8), dtype=np.uint8)
+    params = {
+        "circle_enabled": True,
+        "fill_gray": 242,
+        "stroke_gray": 127,
+        "lock_colors": True,
+    }
+    logs: list[str] = []
+
+    changed = Action._optimize_element_color_bracket(img, params, "circle", mask, logs)
+
+    assert changed is False
+    assert any("Farben gesperrt" in line for line in logs)
+
 def test_validate_badge_runs_color_bracketing_after_geometry_steps() -> None:
     """Validation should optimize color only after extent/radius geometry updates."""
     if image_composite_converter.np is None:

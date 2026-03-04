@@ -438,6 +438,10 @@ class Action:
             return params
         p = Action._normalize_light_circle_colors(dict(params))
         p = Action._normalize_ac08_line_widths(p)
+        # Keep the canonical AC08xx palette fixed. JPEG compression noise and
+        # anti-aliased source edges otherwise pull the element-wise color
+        # bracketing toward muddy mid-grays across the entire converted family.
+        p["lock_colors"] = True
         if symbol_name != "AC0820":
             p = Action._normalize_centered_co2_label(p)
         if symbol_name == "AC0820" and str(p.get("text_mode", "")).lower() == "co2":
@@ -2667,6 +2671,9 @@ class Action:
         mask_orig: np.ndarray,
         logs: list[str],
     ) -> bool:
+        if bool(params.get("lock_colors", False)):
+            logs.append(f"{element}: Farb-Bracketing übersprungen (Farben gesperrt)")
+            return False
         if mask_orig is None or int(mask_orig.sum()) == 0:
             return False
 

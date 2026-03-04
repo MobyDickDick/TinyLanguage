@@ -580,6 +580,16 @@ def test_finalize_ac08_style_caps_ac0835_s_voc_growth() -> None:
     assert abs(float(finalized["voc_font_scale_max"]) - 0.546) < 1e-6
 
 
+def test_finalize_ac08_style_keeps_ac0835_m_voc_scaling_unlocked() -> None:
+    """AC0835_M must not inherit the strict tiny S-variant VOC cap."""
+    params = Action._apply_voc_label(Action._default_ac0870_params(20, 20))
+
+    finalized = Action._finalize_ac08_style("AC0835_M", params)
+
+    assert "voc_font_scale_min" not in finalized
+    assert "voc_font_scale_max" not in finalized
+
+
 def test_voc_font_scale_bounds_honor_explicit_min_max_overrides() -> None:
     """VOC text bracketing should respect caller-provided scale bounds."""
     params = {

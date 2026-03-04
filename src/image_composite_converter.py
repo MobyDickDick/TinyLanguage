@@ -518,9 +518,11 @@ class Action:
             min_dim = float(min(float(p.get("width", 0.0) or 0.0), float(p.get("height", 0.0) or 0.0)))
             if min_dim <= 0.0:
                 min_dim = max(1.0, float(p.get("r", 1.0)) * 2.0)
-            if symbol_name == "AC0835" and min_dim <= 15.5:
+            if canonical_name == "AC0835_S" and min_dim <= 15.5:
                 # AC0835_S tends to over-scale VOC during text bracketing,
                 # producing a visibly heavy label compared to the source icon.
+                # Keep this safeguard strictly scoped to the S-variant so
+                # AC0835_M can still grow the VOC text when it is undersized.
                 base_scale = float(p.get("voc_font_scale", 0.52))
                 p["lock_text_scale"] = False
                 p["voc_font_scale_min"] = float(max(0.58, base_scale * 0.90))

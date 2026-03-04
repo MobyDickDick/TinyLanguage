@@ -552,8 +552,8 @@ def test_voc_font_scale_bounds_allow_larger_tiny_badge_labels() -> None:
     assert high >= 1.60
 
 
-def test_voc_font_scale_bounds_limit_growth_for_large_badges() -> None:
-    """Large VOC badges should avoid overscaling text during width bracketing."""
+def test_voc_font_scale_bounds_keep_broad_search_for_large_badges() -> None:
+    """Large VOC badges should keep enough headroom for text-mask driven fitting."""
     params = {
         "draw_text": True,
         "text_mode": "voc",
@@ -566,7 +566,34 @@ def test_voc_font_scale_bounds_limit_growth_for_large_badges() -> None:
     key, low, high = info
     assert key == "voc_font_scale"
     assert low <= 0.45
-    assert high <= 1.10
+    assert high >= 1.60
+
+
+def test_voc_font_scale_bounds_expand_from_original_text_bbox(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When original text extents are known, bounds should expand around that estimate."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    params = {
+        "draw_text": True,
+        "text_mode": "voc",
+        "voc_font_scale": 0.52,
+        "r": 5.0,
+    }
+    img = np.zeros((40, 40, 3), dtype=np.uint8)
+
+    mask = np.zeros((40, 40), dtype=np.uint8)
+    mask[10:18, 6:34] = 1  # wide/tall enough to imply larger VOC than defaults
+
+    monkeypatch.setattr(Action, "extract_badge_element_mask", staticmethod(lambda *_args, **_kwargs: mask))
+
+    info = Action._element_width_key_and_bounds("text", params, 40, 40, img_orig=img)
+
+    assert info is not None
+    key, low, high = info
+    assert key == "voc_font_scale"
+    assert low <= 0.90
+    assert high >= 2.0
 
 
 def test_finalize_ac08_style_caps_ac0835_s_voc_growth() -> None:

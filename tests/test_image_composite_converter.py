@@ -316,6 +316,16 @@ def test_finalize_non_ac0820_co2_keeps_text_scale_locked() -> None:
 
     assert params["lock_text_scale"] is True
 
+
+def test_finalize_tiny_non_ac0820_co2_unlocks_bounded_text_tuning() -> None:
+    """Tiny CO₂ variants should allow bounded text tuning across AC08xx families."""
+    params = Action._apply_co2_label(Action._default_ac0813_params(15, 25))
+    params = Action._finalize_ac08_style("AC0833_S", params)
+
+    assert params["lock_text_scale"] is False
+    assert float(params["co2_font_scale_min"]) < float(params["co2_font_scale"])
+    assert float(params["co2_font_scale_max"]) > float(params["co2_font_scale"])
+
 def test_generate_badge_svg_renders_center_co_as_split_text_nodes() -> None:
     """center_co layout should render CO and subscript as separate positioned text nodes."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))

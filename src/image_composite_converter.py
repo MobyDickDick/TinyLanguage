@@ -499,10 +499,21 @@ class Action:
                 min_ratio = 0.92 if symbol_name == "AC0820" else 0.90
             p["min_circle_radius"] = float(max(float(p.get("min_circle_radius", 1.0)), base_r * min_ratio))
         if str(p.get("text_mode", "")).lower() == "co2":
-            # Keep AC0820 variants tunable (bounded via *_min/*_max overrides)
-            # while preserving strict text-scale locking for other AC08xx CO₂
-            # badges that do not suffer from the AC0820-specific undersizing.
-            p["lock_text_scale"] = symbol_name != "AC0820"
+            min_dim = float(min(float(p.get("width", 0.0) or 0.0), float(p.get("height", 0.0) or 0.0)))
+            if min_dim <= 0.0:
+                # Fallback for call sites that only pass geometry parameters.
+                min_dim = max(1.0, float(p.get("r", 1.0)) * 2.0)
+
+            # Keep AC0820 variants tunable (bounded via *_min/*_max overrides).
+            # Very small CO₂ badges from other AC08xx families (e.g. AC0833_S)
+            # can exhibit the same undersizing behavior after anti-aliased fitting,
+            # so unlock bounded tuning for tiny variants in general.
+            tiny_co2_variant = min_dim <= 15.5
+            p["lock_text_scale"] = not (symbol_name == "AC0820" or tiny_co2_variant)
+            if tiny_co2_variant:
+                base_scale = float(p.get("co2_font_scale", 0.82))
+                p["co2_font_scale_min"] = float(max(0.74, base_scale * 0.90))
+                p["co2_font_scale_max"] = float(min(1.18, base_scale * 1.25))
         if p.get("draw_text", True) and "text_gray" in p:
             p["text_gray"] = int(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY))
         return p

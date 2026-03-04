@@ -3,7 +3,7 @@ circle: minRect Δcx=1.000, Δcy=1.000, diag=14.000->8.485, scale=0.6061
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=81.733
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 4.576->4.500 (best_err=71.514); Kandidaten=4.500->71.514, 7.000->71.865
+circle: Radius-Bracketing r 4.576->4.500 (best_err=72.671); Kandidaten=4.500->72.671, 7.000->75.205
 circle: Joint-Multistart keine relevante Änderung (cx=6.500, cy=6.500, r=4.500, best_err=71.514)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=0.500, Δcy=0.500, diag=8.602->8.485, scale=0.9864
@@ -16,7 +16,7 @@ circle: minRect Δcx=1.000, Δcy=1.000, diag=13.914->8.485, scale=0.6098
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=81.944
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 4.576->4.500 (best_err=71.514); Kandidaten=4.500->71.514, 7.000->71.865
+circle: Radius-Bracketing r 4.576->4.500 (best_err=72.671); Kandidaten=4.500->72.671, 7.000->75.205
 circle: Joint-Multistart keine relevante Änderung (cx=6.500, cy=6.500, r=4.500, best_err=71.514)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=0.500, Δcy=0.500, diag=8.602->8.485, scale=0.9864
@@ -29,7 +29,7 @@ circle: minRect Δcx=1.000, Δcy=1.000, diag=13.914->8.485, scale=0.6098
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=81.944
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 4.576->4.500 (best_err=71.514); Kandidaten=4.500->71.514, 7.000->71.865
+circle: Radius-Bracketing r 4.576->4.500 (best_err=72.671); Kandidaten=4.500->72.671, 7.000->75.205
 circle: Joint-Multistart keine relevante Änderung (cx=6.500, cy=6.500, r=4.500, best_err=71.514)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=0.500, Δcy=0.500, diag=8.602->8.485, scale=0.9864
@@ -42,7 +42,7 @@ circle: minRect Δcx=1.000, Δcy=1.000, diag=13.914->8.485, scale=0.6098
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=81.944
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 4.576->4.500 (best_err=71.514); Kandidaten=4.500->71.514, 7.000->71.865
+circle: Radius-Bracketing r 4.576->4.500 (best_err=72.671); Kandidaten=4.500->72.671, 7.000->75.205
 circle: Joint-Multistart keine relevante Änderung (cx=6.500, cy=6.500, r=4.500, best_err=71.514)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=0.500, Δcy=-0.500, diag=8.602->8.485, scale=0.9864
@@ -55,7 +55,7 @@ circle: minRect Δcx=1.000, Δcy=1.000, diag=13.914->8.485, scale=0.6098
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=81.944
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 4.576->4.500 (best_err=71.514); Kandidaten=4.500->71.514, 7.000->71.865
+circle: Radius-Bracketing r 4.576->4.500 (best_err=72.671); Kandidaten=4.500->72.671, 7.000->75.205
 circle: Joint-Multistart keine relevante Änderung (cx=6.500, cy=6.500, r=4.500, best_err=71.514)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=0.500, Δcy=-0.500, diag=8.602->8.485, scale=0.9864
@@ -68,7 +68,7 @@ circle: minRect Δcx=1.000, Δcy=1.000, diag=13.914->8.485, scale=0.6098
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=81.944
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 4.576->4.500 (best_err=71.514); Kandidaten=4.500->71.514, 7.000->71.865
+circle: Radius-Bracketing r 4.576->4.500 (best_err=72.671); Kandidaten=4.500->72.671, 7.000->75.205
 circle: Joint-Multistart keine relevante Änderung (cx=6.500, cy=6.500, r=4.500, best_err=71.514)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=0.500, Δcy=-0.500, diag=8.602->8.485, scale=0.9864

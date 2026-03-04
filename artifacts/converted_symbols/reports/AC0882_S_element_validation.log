@@ -4,7 +4,7 @@ circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 89.196->106.750)
 circle: Fehler=89.196
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing cx 15.500->17.000, cy 7.500->7.500 (best_err=56.351)
-circle: Radius-Bracketing r 6.400->6.500 (best_err=56.351); Kandidaten=6.000->80.272, 6.500->56.351, 7.000->56.922
+circle: Radius-Bracketing r 6.400->6.500 (best_err=56.351); Kandidaten=6.000->80.785, 6.500->56.351, 7.000->56.922
 circle: Joint-Multistart keine relevante Änderung (cx=17.000, cy=7.500, r=6.500, best_err=56.351)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Fehler=52.882
@@ -22,7 +22,7 @@ circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 62.345->102.818)
 circle: Fehler=62.345
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=17.000, cy=7.500, best_err=56.351)
-circle: Radius-Bracketing keine relevante Änderung (r: 6.500, best_err=56.351); Kandidaten=6.000->80.272, 6.500->56.351, 7.000->56.922
+circle: Radius-Bracketing keine relevante Änderung (r: 6.500, best_err=56.351); Kandidaten=6.000->80.785, 6.500->56.351, 7.000->56.922
 circle: Joint-Multistart keine relevante Änderung (cx=17.000, cy=7.500, r=6.500, best_err=56.351)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Fehler=32.471

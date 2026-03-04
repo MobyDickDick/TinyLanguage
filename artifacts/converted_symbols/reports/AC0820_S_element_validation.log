@@ -3,7 +3,7 @@ circle: minRect Δcx=0.600, Δcy=1.200, diag=14.000->17.754, scale=1.2681
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=82.788
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 5.900->6.500 (best_err=50.981); Kandidaten=5.500->72.952, 6.000->70.345, 6.500->50.981, 7.000->57.903
+circle: Radius-Bracketing r 5.900->6.500 (best_err=51.304); Kandidaten=5.500->72.954, 6.000->70.439, 6.500->51.304, 7.000->57.903
 circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=7.500, r=6.500, best_err=50.981)
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: minRect Δcx=-0.500, Δcy=0.500, diag=10.296->8.944, scale=0.8687

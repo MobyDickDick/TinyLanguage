@@ -780,6 +780,36 @@ def test_optimize_circle_pose_multistart_can_escape_local_center_radius_plateau(
     assert any("Joint-Multistart" in line for line in logs)
 
 
+
+
+def test_default_ac0814_params_place_circle_left_with_right_arm() -> None:
+    """AC0814 defaults should keep a left circle and right-going horizontal arm."""
+    params = Action._default_ac0814_params(45, 25)
+
+    assert abs(float(params["cx"]) - 12.5) < 1e-6
+    assert abs(float(params["cy"]) - 12.5) < 1e-6
+    assert abs(float(params["r"]) - 10.0) < 1e-6
+    assert abs(float(params["arm_x1"]) - 22.5) < 1e-6
+    assert abs(float(params["arm_x2"]) - 45.0) < 1e-6
+    assert abs(float(params["arm_y1"]) - 12.5) < 1e-6
+    assert abs(float(params["arm_y2"]) - 12.5) < 1e-6
+
+
+def test_fit_ac0814_params_keeps_right_edge_anchor() -> None:
+    """AC0814 fitting should preserve right-edge anchoring for the horizontal arm."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.zeros((25, 45, 3), dtype=np.uint8)
+    defaults = Action._default_ac0814_params(45, 25)
+
+    params = Action._fit_ac0814_params_from_image(img, defaults)
+
+    assert abs(float(params["arm_x2"]) - 45.0) < 1e-6
+    assert abs(float(params["arm_x1"]) - (float(params["cx"]) + float(params["r"]))) < 1e-6
+
+
 def test_make_badge_params_supports_ac0810_variants() -> None:
     """AC0810 and variant names should map to the semantic right-arm badge model."""
     params = Action.make_badge_params(25, 15, "AC0810")

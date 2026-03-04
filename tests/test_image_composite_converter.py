@@ -67,6 +67,17 @@ def test_finalize_ac0820_min_circle_radius_uses_template_baseline() -> None:
 
     params = Action._finalize_ac08_style("AC0820", params)
 
+    assert float(params["min_circle_radius"]) >= float(params["template_circle_radius"]) * 0.92
+
+
+def test_finalize_non_ac0820_text_badge_uses_less_strict_radius_floor() -> None:
+    """Non-AC0820 text badges should preserve the previous 90%-template floor."""
+    params = Action._apply_co2_label(Action._default_ac0870_params(20, 20))
+    params["template_circle_radius"] = float(params["r"])
+    params["r"] = 3.0
+
+    params = Action._finalize_ac08_style("AC0831", params)
+
     assert float(params["min_circle_radius"]) >= float(params["template_circle_radius"]) * 0.90
 
 

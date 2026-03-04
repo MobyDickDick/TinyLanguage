@@ -481,7 +481,12 @@ class Action:
             template_r = float(p.get("template_circle_radius", p.get("r", 1.0)))
             current_r = float(p.get("r", template_r))
             base_r = max(1.0, template_r, current_r)
-            min_ratio = 0.90 if p.get("draw_text", False) else 0.88
+            min_ratio = 0.88
+            if p.get("draw_text", False):
+                # AC0820 remains the most shrink-sensitive semantic family:
+                # keep its finalized radius floor aligned with the fitting
+                # guard so later circle-radius bracketing cannot undo it.
+                min_ratio = 0.92 if symbol_name == "AC0820" else 0.90
             p["min_circle_radius"] = float(max(float(p.get("min_circle_radius", 1.0)), base_r * min_ratio))
         if str(p.get("text_mode", "")).lower() == "co2":
             # Keep AC0820 variants tunable (bounded via *_min/*_max overrides)

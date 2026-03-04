@@ -1286,6 +1286,30 @@ class Action:
                 params["fill_gray"] = int(round(fill_gray))
                 params["stroke_gray"] = int(round(ring_gray))
 
+        # Keep contour/Hough noise from collapsing circles far below the semantic
+        # template size. This was most visible for compact centered badges
+        # (e.g. AC0820_M), but the guard is intentionally generic for the full
+        # semantic badge family.
+        if "r" in defaults and "r" in params:
+            default_r = float(defaults.get("r", 0.0))
+            if default_r > 0.0:
+                has_connector = bool(params.get("arm_enabled") or params.get("stem_enabled"))
+                has_text = bool(params.get("draw_text", False))
+                min_ratio = 0.80
+                if not has_connector:
+                    min_ratio = 0.88
+                if has_text and not has_connector:
+                    min_ratio = 0.92
+
+                cx = float(params.get("cx", defaults.get("cx", float(w) / 2.0)))
+                cy = float(params.get("cy", defaults.get("cy", float(h) / 2.0)))
+                stroke = max(0.0, float(params.get("stroke_circle", defaults.get("stroke_circle", 1.0))))
+                radius_limit_x = max(1.0, min(cx, float(w) - cx) - (stroke / 2.0))
+                radius_limit_y = max(1.0, min(cy, float(h) - cy) - (stroke / 2.0))
+                max_r = max(1.0, min(radius_limit_x, radius_limit_y))
+                min_r = min(max_r, max(1.0, default_r * min_ratio))
+                params["r"] = float(np.clip(float(params.get("r", default_r)), min_r, max_r))
+
         if params.get("stem_enabled"):
             dark = gray <= min(225, int(np.percentile(gray, 75)))
             x1 = max(0, int(round(params["cx"] - params["r"] * 0.8)))

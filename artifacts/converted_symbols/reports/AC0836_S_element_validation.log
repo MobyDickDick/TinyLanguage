@@ -9,7 +9,7 @@ stem: Fehler=569.000
 stem: Breitenkorrektur mode=iter, ratio=0.167, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..1.000)
-stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.000->952.000, 11.000->569.000, 11.500->569.000, 16.000->958.000, 20.500->2005.000, 25.000->3119.000
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.500->952.000, 11.000->569.000, 12.000->569.000, 16.500->958.000, 20.500->2005.000, 25.000->3119.000
 text: minRect Δcx=0.500, Δcy=2.000, diag=8.544->13.038, scale=1.5260
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 4739.000->4136.000; Box-Check verworfen (w_ratio=0.750, h_ratio=0.375, area_ratio=0.281))
 text: Fehler=4739.000
@@ -25,7 +25,7 @@ stem: Fehler=569.000
 stem: Breitenkorrektur mode=iter, ratio=0.167, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..1.000)
-stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.000->952.000, 11.000->569.000, 11.500->569.000, 16.000->958.000, 20.500->2005.000, 25.000->3119.000
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.500->952.000, 11.000->569.000, 12.000->569.000, 16.500->958.000, 20.500->2005.000, 25.000->3119.000
 text: minRect Δcx=-1.000, Δcy=2.000, diag=5.831->13.038, scale=2.2361
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 4689.000->4014.000; Box-Check verworfen (w_ratio=0.750, h_ratio=0.375, area_ratio=0.281))
 text: Fehler=4689.000
@@ -41,7 +41,7 @@ stem: Fehler=569.000
 stem: Breitenkorrektur mode=iter, ratio=0.167, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..1.000)
-stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.000->952.000, 11.000->569.000, 11.500->569.000, 16.000->958.000, 20.500->2005.000, 25.000->3119.000
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.500->952.000, 11.000->569.000, 12.000->569.000, 16.500->958.000, 20.500->2005.000, 25.000->3119.000
 text: minRect Δcx=-1.000, Δcy=2.000, diag=5.831->13.038, scale=2.2361
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 4689.000->4014.000; Box-Check verworfen (w_ratio=0.750, h_ratio=0.375, area_ratio=0.281))
 text: Fehler=4689.000
@@ -57,7 +57,7 @@ stem: Fehler=569.000
 stem: Breitenkorrektur mode=iter, ratio=0.167, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..1.000)
-stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.000->952.000, 11.000->569.000, 11.500->569.000, 16.000->958.000, 20.500->2005.000, 25.000->3119.000
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.500->952.000, 11.000->569.000, 12.000->569.000, 16.500->958.000, 20.500->2005.000, 25.000->3119.000
 text: minRect Δcx=-1.000, Δcy=2.000, diag=5.831->13.038, scale=2.2361
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 4689.000->4014.000; Box-Check verworfen (w_ratio=0.750, h_ratio=0.375, area_ratio=0.281))
 text: Fehler=4689.000
@@ -73,7 +73,7 @@ stem: Fehler=569.000
 stem: Breitenkorrektur mode=iter, ratio=0.167, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..1.000)
-stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.000->952.000, 11.000->569.000, 11.500->569.000, 16.000->958.000, 20.500->2005.000, 25.000->3119.000
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.500->952.000, 11.000->569.000, 12.000->569.000, 16.500->958.000, 20.500->2005.000, 25.000->3119.000
 text: minRect Δcx=-1.000, Δcy=2.000, diag=5.831->13.038, scale=2.2361
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 4689.000->4014.000; Box-Check verworfen (w_ratio=0.750, h_ratio=0.375, area_ratio=0.281))
 text: Fehler=4689.000
@@ -89,7 +89,7 @@ stem: Fehler=569.000
 stem: Breitenkorrektur mode=iter, ratio=0.167, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..1.000)
-stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.000->952.000, 11.000->569.000, 11.500->569.000, 16.000->958.000, 20.500->2005.000, 25.000->3119.000
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.500->952.000, 11.000->569.000, 12.000->569.000, 16.500->958.000, 20.500->2005.000, 25.000->3119.000
 text: minRect Δcx=-1.000, Δcy=2.000, diag=5.831->13.038, scale=2.2361
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 4689.000->4014.000; Box-Check verworfen (w_ratio=0.750, h_ratio=0.375, area_ratio=0.281))
 text: Fehler=4689.000
@@ -105,7 +105,7 @@ stem: Fehler=569.000
 stem: Breitenkorrektur mode=iter, ratio=0.167, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..1.000)
-stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.000->952.000, 11.000->569.000, 11.500->569.000, 16.000->958.000, 20.500->2005.000, 25.000->3119.000
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.500->952.000, 11.000->569.000, 12.000->569.000, 16.500->958.000, 20.500->2005.000, 25.000->3119.000
 text: minRect Δcx=-1.000, Δcy=2.000, diag=5.831->13.038, scale=2.2361
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 4689.000->4014.000; Box-Check verworfen (w_ratio=0.750, h_ratio=0.375, area_ratio=0.281))
 text: Fehler=4689.000
@@ -121,7 +121,7 @@ stem: Fehler=569.000
 stem: Breitenkorrektur mode=iter, ratio=0.167, alt=1.000, neu=1.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..1.000)
-stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.000->952.000, 11.000->569.000, 11.500->569.000, 16.000->958.000, 20.500->2005.000, 25.000->3119.000
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.500->952.000, 11.000->569.000, 12.000->569.000, 16.500->958.000, 20.500->2005.000, 25.000->3119.000
 text: minRect Δcx=-1.000, Δcy=2.000, diag=5.831->13.038, scale=2.2361
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 4689.000->4014.000; Box-Check verworfen (w_ratio=0.750, h_ratio=0.375, area_ratio=0.281))
 text: Fehler=4689.000

@@ -12,7 +12,7 @@ stem: Fehler=2401.000
 stem: Breitenkorrektur mode=iter, ratio=0.333, alt=1.000, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
-stem: Längen-Bracketing stem_len 14.000->15.500; Kandidaten=9.000->1028.000, 14.000->671.000, 15.500->557.000, 22.000->557.000, 28.500->557.000, 35.000->557.000
+stem: Längen-Bracketing stem_len 14.000->16.500; Kandidaten=10.000->1036.000, 14.000->671.000, 16.500->557.000, 22.500->557.000, 29.000->557.000, 35.000->557.000
 Runde 1: Gesamtfehler=1.853
 Gesamtfehler unter Schwellwert, Validierung beendet
 circle: Farb-Bracketing übersprungen (Farben gesperrt)

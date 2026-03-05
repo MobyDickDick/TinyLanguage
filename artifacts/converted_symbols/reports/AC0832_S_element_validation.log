@@ -7,7 +7,7 @@ circle: Radius-Bracketing r 5.649->6.500 (best_err=5638.000); Kandidaten=5.500->
 circle: Joint-Multistart keine relevante Änderung (cx=17.500, cy=7.500, r=6.500, best_err=6022.000)
 arm: Fehler=1720.000
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 11.000); Kandidaten=8.000->2067.000, 11.000->1720.000, 12.500->1720.000, 16.500->1720.000, 21.000->1720.000, 25.000->1720.000
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 11.000); Kandidaten=8.500->2001.000, 11.000->1720.000, 12.500->1720.000, 16.500->1720.000, 21.000->1720.000, 25.000->1720.000
 text: minRect Δcx=0.365, Δcy=2.311, diag=8.308->12.806, scale=1.5414
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=3600.000
@@ -21,7 +21,7 @@ circle: Radius-Bracketing keine relevante Änderung (r: 6.509, best_err=6022.000
 circle: Joint-Multistart keine relevante Änderung (cx=17.500, cy=7.500, r=6.509, best_err=6022.000)
 arm: Fehler=1720.000
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 11.000); Kandidaten=8.000->1684.000, 11.000->1337.000, 12.500->1337.000, 16.500->1337.000, 21.000->1337.000, 25.000->1337.000
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 11.000); Kandidaten=8.500->1618.000, 11.000->1337.000, 12.500->1337.000, 16.500->1337.000, 21.000->1337.000, 25.000->1337.000
 text: minRect Δcx=-0.500, Δcy=-0.500, diag=8.062->8.544, scale=1.0598
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 2810.000->2989.000)
 text: Fehler=2810.000

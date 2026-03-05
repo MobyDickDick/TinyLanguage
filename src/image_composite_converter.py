@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import math
 import os
 import re
@@ -3933,6 +3934,45 @@ def _default_converted_symbols_root() -> str:
     return os.path.join(repo_root, "artifacts", "converted_symbols")
 
 
+def _quality_config_path(reports_out_dir: str) -> str:
+    return os.path.join(reports_out_dir, "quality_tercile_config.json")
+
+
+def _load_quality_config(reports_out_dir: str) -> dict[str, object]:
+    path = _quality_config_path(reports_out_dir)
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _write_quality_config(
+    reports_out_dir: str,
+    *,
+    allowed_error_per_pixel: float,
+    skipped_variants: list[str],
+    source: str,
+) -> None:
+    path = _quality_config_path(reports_out_dir)
+    normalized_error_pp = float(allowed_error_per_pixel) if math.isfinite(allowed_error_per_pixel) else 0.0
+    payload = {
+        "allowed_error_per_pixel": float(max(0.0, normalized_error_pp)),
+        "skip_variants": sorted(set(skipped_variants)),
+        "notes": (
+            "Varianten in skip_variants werden in Folge-Pässen nicht erneut konvertiert. "
+            "Loeschen der Datei setzt den Ablauf zurueck, dann werden wieder alle Bitmaps bearbeitet."
+        ),
+        "source": source,
+    }
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+
+
 def _quality_sort_key(row: dict[str, object]) -> float:
     value = float(row.get("error_per_pixel", float("inf")))
     if math.isfinite(value):
@@ -3980,6 +4020,127 @@ def _write_quality_pass_report(
             ])
 
 
+def _extract_svg_inner(svg_text: str) -> str:
+    match = re.search(r"<svg[^>]*>(.*)</svg>", svg_text, flags=re.DOTALL | re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+    return svg_text
+
+
+def _build_transformed_svg_from_template(
+    template_svg_text: str,
+    target_w: int,
+    target_h: int,
+    *,
+    rotation_deg: int,
+    scale: float,
+) -> str:
+    inner = _extract_svg_inner(template_svg_text)
+    cx = float(target_w) / 2.0
+    cy = float(target_h) / 2.0
+    return (
+        f'<svg width="{target_w}" height="{target_h}" viewBox="0 0 {target_w} {target_h}" '
+        'xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">\n'
+        f'  <g transform="translate({cx:.3f} {cy:.3f}) rotate({int(rotation_deg)}) scale({float(scale):.4f}) '
+        f'translate({-cx:.3f} {-cy:.3f})">\n'
+        f"{inner}\n"
+        "  </g>\n"
+        "</svg>"
+    )
+
+
+def _try_template_transfer(
+    *,
+    target_row: dict[str, object],
+    donor_rows: list[dict[str, object]],
+    folder_path: str,
+    svg_out_dir: str,
+    diff_out_dir: str,
+) -> tuple[dict[str, object] | None, dict[str, object] | None]:
+    filename = str(target_row.get("filename", ""))
+    if not filename:
+        return None, None
+
+    img_path = os.path.join(folder_path, filename)
+    img_orig = cv2.imread(img_path)
+    if img_orig is None:
+        return None, None
+
+    h, w = img_orig.shape[:2]
+    pixel_count = float(max(1, w * h))
+    prev_error_pp = float(target_row.get("error_per_pixel", float("inf")))
+
+    best_svg: str | None = None
+    best_error = float(target_row.get("best_error", float("inf")))
+    best_error_pp = prev_error_pp
+    best_donor = ""
+    best_rotation = 0
+    best_scale = 1.0
+
+    rotations = [0, 90, 180, 270]
+    scales = [0.80, 0.90, 1.00, 1.10, 1.25]
+
+    target_variant = str(target_row.get("variant", "")).upper()
+    for donor in donor_rows:
+        donor_variant = str(donor.get("variant", "")).upper()
+        if not donor_variant or donor_variant == target_variant:
+            continue
+        donor_svg_path = os.path.join(svg_out_dir, f"{donor_variant}.svg")
+        if not os.path.exists(donor_svg_path):
+            continue
+        try:
+            donor_svg_text = open(donor_svg_path, "r", encoding="utf-8").read()
+        except OSError:
+            continue
+
+        for rotation in rotations:
+            for scale in scales:
+                candidate_svg = _build_transformed_svg_from_template(
+                    donor_svg_text,
+                    w,
+                    h,
+                    rotation_deg=rotation,
+                    scale=scale,
+                )
+                rendered = Action.render_svg_to_numpy(candidate_svg, w, h)
+                error = Action.calculate_error(img_orig, rendered)
+                error_pp = float(error) / pixel_count
+                if error_pp + 1e-9 < best_error_pp:
+                    best_error = float(error)
+                    best_error_pp = error_pp
+                    best_svg = candidate_svg
+                    best_donor = donor_variant
+                    best_rotation = rotation
+                    best_scale = scale
+
+    if best_svg is None:
+        return None, None
+
+    stem = os.path.splitext(filename)[0]
+    svg_path = os.path.join(svg_out_dir, f"{stem}.svg")
+    with open(svg_path, "w", encoding="utf-8") as f:
+        f.write(best_svg)
+
+    rendered = Action.render_svg_to_numpy(best_svg, w, h)
+    if rendered is not None:
+        diff = Action.create_diff_image(img_orig, rendered)
+        cv2.imwrite(os.path.join(diff_out_dir, f"{stem}_diff.png"), diff)
+
+    updated_row = dict(target_row)
+    updated_row["best_error"] = float(best_error)
+    updated_row["error_per_pixel"] = float(best_error_pp)
+
+    detail = {
+        "filename": filename,
+        "donor_variant": best_donor,
+        "rotation_deg": int(best_rotation),
+        "scale": float(best_scale),
+        "old_error_per_pixel": float(prev_error_pp),
+        "new_error_per_pixel": float(best_error_pp),
+    }
+    return updated_row, detail
+
+
 def convert_range(
     folder_path: str,
     csv_path: str,
@@ -4004,6 +4165,7 @@ def convert_range(
         if f.lower().endswith((".bmp", ".jpg", ".png")) and _in_requested_range(f, start_ref, end_ref)
     )
 
+    base_iterations = max(128, int(iterations))
     max_quality_passes = 4
     quality_logs: list[dict[str, object]] = []
     result_map: dict[str, dict[str, object]] = {}
@@ -4047,11 +4209,50 @@ def convert_range(
 
     # Initial conversion pass for all forms.
     for filename in files:
-        row = _convert_one(filename, iteration_budget=iterations, badge_rounds=6)
+        row = _convert_one(filename, iteration_budget=base_iterations, badge_rounds=6)
         if row is not None:
             result_map[filename] = row
 
+    current_rows = [
+        row
+        for row in result_map.values()
+        if math.isfinite(float(row.get("error_per_pixel", float("inf"))))
+    ]
+    ranked_rows = sorted(current_rows, key=_quality_sort_key)
+    first_cut = max(1, len(ranked_rows) // 3) if ranked_rows else 0
+    initial_top_tercile = ranked_rows[:first_cut]
+    initial_threshold = float(initial_top_tercile[-1]["error_per_pixel"]) if initial_top_tercile else float("inf")
+
+    cfg = _load_quality_config(reports_out_dir)
+    allowed_error_pp = initial_threshold
+    cfg_value = cfg.get("allowed_error_per_pixel")
+    if cfg_value is not None:
+        try:
+            allowed_error_pp = max(0.0, float(cfg_value))
+        except (TypeError, ValueError):
+            allowed_error_pp = initial_threshold
+
+    skip_variants: set[str] = {str(row["variant"]) for row in initial_top_tercile}
+    cfg_skips = cfg.get("skip_variants")
+    if isinstance(cfg_skips, list):
+        skip_variants.update(str(item).upper() for item in cfg_skips)
+
+    if math.isfinite(allowed_error_pp):
+        for row in ranked_rows:
+            if float(row.get("error_per_pixel", float("inf"))) <= allowed_error_pp:
+                skip_variants.add(str(row.get("variant", "")).upper())
+
+    _write_quality_config(
+        reports_out_dir,
+        allowed_error_per_pixel=allowed_error_pp,
+        skipped_variants=sorted(v for v in skip_variants if v),
+        source="manual-config" if cfg_value is not None else "initial-first-tercile",
+    )
+
     # Iteratively refine only middle+lower quality terciles across all forms.
+    consecutive_no_improvement = 0
+    strategy_switch_after = 2
+    strategy_logs: list[dict[str, object]] = []
     for pass_idx in range(1, max_quality_passes + 1):
         current_rows = [
             row
@@ -4065,8 +4266,12 @@ def convert_range(
         improved_in_pass = False
         for row in candidates:
             filename = str(row["filename"])
+            variant = str(row.get("variant", "")).upper()
+            if variant in skip_variants:
+                continue
+
             prev_error_pp = float(row["error_per_pixel"])
-            iteration_budget = int(iterations + pass_idx)
+            iteration_budget = int(base_iterations + pass_idx)
             badge_rounds = int(6 + pass_idx)
 
             new_row = _convert_one(filename, iteration_budget=iteration_budget, badge_rounds=badge_rounds)
@@ -4092,9 +4297,75 @@ def convert_range(
             )
 
         if not improved_in_pass:
-            break
+            consecutive_no_improvement += 1
+        else:
+            consecutive_no_improvement = 0
+
+        if consecutive_no_improvement >= strategy_switch_after:
+            donor_rows = [
+                row
+                for row in result_map.values()
+                if math.isfinite(float(row.get("error_per_pixel", float("inf"))))
+                and float(row.get("error_per_pixel", float("inf"))) <= allowed_error_pp
+            ]
+            fallback_improved = False
+            for row in candidates:
+                filename = str(row["filename"])
+                current = result_map.get(filename)
+                if current is None:
+                    continue
+                prev_error_pp = float(current.get("error_per_pixel", float("inf")))
+                if prev_error_pp <= allowed_error_pp:
+                    continue
+
+                updated, detail = _try_template_transfer(
+                    target_row=current,
+                    donor_rows=donor_rows,
+                    folder_path=folder_path,
+                    svg_out_dir=svg_out_dir,
+                    diff_out_dir=diff_out_dir,
+                )
+                if updated is None or detail is None:
+                    continue
+
+                new_error_pp = float(updated["error_per_pixel"])
+                improved = new_error_pp + 1e-9 < prev_error_pp
+                if improved:
+                    result_map[filename] = updated
+                    fallback_improved = True
+                    strategy_logs.append(detail)
+
+            if fallback_improved:
+                consecutive_no_improvement = 0
+                continue
+            else:
+                break
+
+        if not improved_in_pass and consecutive_no_improvement < strategy_switch_after:
+            continue
 
     _write_quality_pass_report(reports_out_dir, quality_logs)
+    if strategy_logs:
+        strategy_path = os.path.join(reports_out_dir, "strategy_switch_template_transfers.csv")
+        with open(strategy_path, "w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f, delimiter=";")
+            writer.writerow([
+                "filename",
+                "donor_variant",
+                "rotation_deg",
+                "scale",
+                "old_error_per_pixel",
+                "new_error_per_pixel",
+            ])
+            for row in strategy_logs:
+                writer.writerow([
+                    row["filename"],
+                    row["donor_variant"],
+                    row["rotation_deg"],
+                    f"{float(row['scale']):.4f}",
+                    f"{float(row['old_error_per_pixel']):.8f}",
+                    f"{float(row['new_error_per_pixel']):.8f}",
+                ])
 
     log_path = os.path.join(reports_out_dir, "Iteration_Log.csv")
     semantic_results: list[dict[str, object]] = []

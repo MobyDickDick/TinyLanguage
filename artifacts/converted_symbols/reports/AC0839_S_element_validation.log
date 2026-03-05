@@ -99,62 +99,6 @@ arm: Längen-Bracketing arm_len 10.000->9.000; Kandidaten=9.000->478.000, 10.000
 text: Fehler=718.000
 text: Breiten-Bracketing voc_font_scale 0.450->0.300; Kandidaten=0.300->718.000, 0.383->718.000, 0.450->718.000, 0.517->718.000, 0.585->718.000, 0.870->718.000, 1.250->718.000, 1.630->718.000, 1.915->718.000, 2.200->718.000
 Runde 6: Gesamtfehler=34.976
-Runde 7: elementweise Validierung gestartet
-circle: Fehler=218.000
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 8.000->7.000, cy 14.000->14.000 (best_err=352.000)
-circle: Radius-Bracketing r 1.000->2.000 (best_err=791.000); Kandidaten=2.000->791.000, 7.000->2255.000
-circle: Joint-Multistart cx 7.000->6.000, cy 14.000->14.000, r 2.000->1.500 (best_err=752.000)
-circle: Joint-Multistart liegt am Rand; starte stochastic survivor search
-circle: Stochastic-Survivor übernommen (cx=6.500, cy=14.000, r=1.500, err=653.000)
-arm: Fehler=507.000
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 10.000->9.000; Kandidaten=9.000->507.000, 10.000->507.000, 13.000->507.000, 17.000->507.000, 21.000->507.000, 25.000->507.000
-text: Fehler=726.000
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.300); Kandidaten=0.300->726.000, 0.345->726.000, 0.585->726.000, 0.870->726.000, 1.250->726.000, 1.630->726.000, 1.915->726.000, 2.200->726.000
-Runde 7: Gesamtfehler=34.760
-Runde 8: elementweise Validierung gestartet
-circle: Fehler=198.000
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 6.500->4.000, cy 14.000->14.000 (best_err=622.000)
-circle: Radius-Bracketing r 1.500->2.000 (best_err=844.000); Kandidaten=2.000->844.000, 7.000->1710.000
-circle: Joint-Multistart cx 4.000->4.000, cy 14.000->14.000, r 2.000->1.500 (best_err=803.000)
-circle: Joint-Multistart liegt am Rand; starte stochastic survivor search
-circle: Stochastic-Survivor keine relevante Verbesserung
-arm: Fehler=560.000
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 11.500->9.000; Kandidaten=9.000->560.000, 11.500->560.000, 13.000->560.000, 17.000->560.000, 21.000->560.000, 25.000->560.000
-text: Fehler=545.000
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.300); Kandidaten=0.300->545.000, 0.345->545.000, 0.585->545.000, 0.870->545.000, 1.250->545.000, 1.630->545.000, 1.915->545.000, 2.200->545.000
-Runde 8: Gesamtfehler=34.680
-Runde 9: elementweise Validierung gestartet
-circle: Fehler=226.000
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=4.000, cy=14.000, best_err=622.000)
-circle: Radius-Bracketing r 1.500->2.000 (best_err=844.000); Kandidaten=2.000->844.000, 7.000->1710.000
-circle: Joint-Multistart cx 4.000->4.000, cy 14.000->14.000, r 2.000->1.500 (best_err=803.000)
-circle: Joint-Multistart liegt am Rand; starte stochastic survivor search
-circle: Stochastic-Survivor keine relevante Verbesserung
-arm: Fehler=560.000
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 9.000); Kandidaten=9.000->560.000, 13.000->560.000, 17.000->560.000, 21.000->560.000, 25.000->560.000
-text: Fehler=545.000
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.300); Kandidaten=0.300->545.000, 0.345->545.000, 0.585->545.000, 0.870->545.000, 1.250->545.000, 1.630->545.000, 1.915->545.000, 2.200->545.000
-Runde 9: Gesamtfehler=34.680
-Runde 10: elementweise Validierung gestartet
-circle: Fehler=226.000
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=4.000, cy=14.000, best_err=622.000)
-circle: Radius-Bracketing r 1.500->2.000 (best_err=844.000); Kandidaten=2.000->844.000, 7.000->1710.000
-circle: Joint-Multistart cx 4.000->4.000, cy 14.000->14.000, r 2.000->1.500 (best_err=803.000)
-circle: Joint-Multistart liegt am Rand; starte stochastic survivor search
-circle: Stochastic-Survivor keine relevante Verbesserung
-arm: Fehler=560.000
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 9.000); Kandidaten=9.000->560.000, 13.000->560.000, 17.000->560.000, 21.000->560.000, 25.000->560.000
-text: Fehler=545.000
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.300); Kandidaten=0.300->545.000, 0.345->545.000, 0.585->545.000, 0.870->545.000, 1.250->545.000, 1.630->545.000, 1.915->545.000, 2.200->545.000
-Runde 10: Gesamtfehler=34.680
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 text: Farb-Bracketing übersprungen (Farben gesperrt)

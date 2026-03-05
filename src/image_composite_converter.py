@@ -468,21 +468,6 @@ class Action:
         if not symbol_name.startswith("AC08"):
             return params
         p = Action._capture_canonical_badge_colors(Action._normalize_light_circle_colors(dict(params)))
-        # Katalog-Standard: Kellen-Formen werden über alle Varianten mit
-        # nach unten gerichteter Griff-Geometrie normalisiert.
-        if symbol_name in {"AC0811", "AC0812", "AC0813", "AC0814", "AC0831", "AC0832", "AC0833", "AC0834", "AC0836", "AC0837", "AC0838", "AC0839"}:
-            if p.get("circle_enabled", True):
-                cx = float(p.get("cx", 0.0))
-                cy = float(p.get("cy", 0.0))
-                r = float(p.get("r", 1.0))
-                grip_width = float(p.get("stem_width", p.get("arm_stroke", 1.0)))
-                p["arm_enabled"] = False
-                p["stem_enabled"] = True
-                p["stem_width"] = max(1.0, grip_width)
-                p["stem_x"] = cx - (p["stem_width"] / 2.0)
-                p["stem_top"] = cy + r
-                p["stem_bottom"] = float(max(cy + r + 1.0, 1_000_000.0))
-                p["stem_gray"] = int(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY))
         # During geometry fitting we intentionally keep auto-estimated colors.
         # Canonical palette values are re-applied once fitting converged.
         p = Action._normalize_ac08_line_widths(p)

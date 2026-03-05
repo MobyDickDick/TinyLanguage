@@ -794,6 +794,27 @@ def test_fit_ac0811_preserves_visible_stem_when_circle_estimate_reaches_bottom()
     assert float(params["stem_top"]) <= float(img.shape[0]) - 1.0
     assert float(params["stem_bottom"]) - float(params["stem_top"]) >= 1.0
 
+
+def test_estimate_vertical_stem_from_mask_ignores_circle_junction_bulge() -> None:
+    """Stem width estimate should prefer the lower stem over top junction bulges."""
+
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    mask = np.zeros((20, 15), dtype=bool)
+
+    # Simulate anti-aliased widening near the circle/stem transition.
+    mask[0:6, 4:11] = True   # wide top bulge (7 px)
+    mask[6:20, 6:9] = True   # actual slim stem (3 px)
+
+    est = Action._estimate_vertical_stem_from_mask(mask, expected_cx=7.0, y_start=0, y_end=20)
+    assert est is not None
+
+    est_cx, est_width = est
+    assert abs(float(est_cx) - 7.0) <= 0.6
+    assert abs(float(est_width) - 3.0) <= 0.25
+
 def test_text_width_bracketing_keeps_fractional_font_scale_precision() -> None:
     """Text scale optimization should not quantize font scale to half-pixel steps."""
     if image_composite_converter.np is None:

@@ -104,4 +104,15 @@ circle: Joint-Multistart cx 1.000->1.000, cy 32.000->30.500, r 9.500->9.500 (bes
 stem: Element konnte nicht extrahiert werden
 text: Element konnte nicht extrahiert werden
 Runde 8: Gesamtfehler=33.580
+Runde 9: elementweise Validierung gestartet
+circle: minRect Δcx=2.278, Δcy=0.246, diag=17.405->16.724, scale=0.9609
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 2303.000->2710.000)
+circle: Fehler=2303.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Mittelpunkt-Bracketing cx 1.000->0.500, cy 30.500->33.500 (best_err=2731.000)
+circle: Radius-Bracketing keine relevante Änderung (r: 9.500, best_err=2731.000); Kandidaten=8.500->3649.000, 9.500->2731.000
+circle: Joint-Multistart cx 0.500->2.000, cy 33.500->32.000, r 9.500->8.500 (best_err=2256.000)
+stem: Element konnte nicht extrahiert werden
+text: Element konnte nicht extrahiert werden
+Runde 9: Gesamtfehler=33.771
 circle: Farb-Bracketing übersprungen (Farben gesperrt)

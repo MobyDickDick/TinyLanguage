@@ -72,6 +72,28 @@ text: minRect Δcx=1.557, Δcy=0.869, diag=5.099->9.307, scale=1.8253
 text: Fehler=1697.000
 text: Breiten-Bracketing übersprungen (co2_font_scale: current=0.820, Range=0.820..0.820)
 Runde 6: Gesamtfehler=28.745
+Runde 7: elementweise Validierung gestartet
+circle: Fehler=851.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=0.500, cy=23.500, best_err=1373.000)
+circle: Radius-Bracketing r 3.000->3.500 (best_err=1679.000); Kandidaten=3.500->1679.000, 12.000->4476.000
+circle: Joint-Multistart cx 0.500->0.500, cy 23.500->23.500, r 3.500->3.000 (best_err=1615.000)
+stem: Element konnte nicht extrahiert werden
+text: minRect Δcx=1.557, Δcy=0.869, diag=5.099->9.307, scale=1.8253
+text: Fehler=1697.000
+text: Breiten-Bracketing übersprungen (co2_font_scale: current=0.820, Range=0.820..0.820)
+Runde 7: Gesamtfehler=28.745
+Runde 8: elementweise Validierung gestartet
+circle: Fehler=851.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=0.500, cy=23.500, best_err=1373.000)
+circle: Radius-Bracketing r 3.000->3.500 (best_err=1679.000); Kandidaten=3.500->1679.000, 12.000->4476.000
+circle: Joint-Multistart cx 0.500->0.500, cy 23.500->23.500, r 3.500->3.000 (best_err=1615.000)
+stem: Element konnte nicht extrahiert werden
+text: minRect Δcx=1.557, Δcy=0.869, diag=5.099->9.307, scale=1.8253
+text: Fehler=1697.000
+text: Breiten-Bracketing übersprungen (co2_font_scale: current=0.820, Range=0.820..0.820)
+Runde 8: Gesamtfehler=28.745
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: Farb-Bracketing übersprungen (Farben gesperrt)
 text: Farb-Bracketing übersprungen (Farben gesperrt)

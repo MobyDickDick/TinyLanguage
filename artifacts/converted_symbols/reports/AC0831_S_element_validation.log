@@ -107,6 +107,42 @@ text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000)
 text: Fehler=3244.000
 text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.740); Kandidaten=0.740->3244.000, 0.783->3264.000, 0.826->3786.000, 0.851->3721.000, 0.882->3677.000, 0.939->3633.000, 0.982->3633.000, 1.025->3633.000
 Runde 6: Gesamtfehler=16.184
+Runde 7: elementweise Validierung gestartet
+circle: minRect Δcx=0.000, Δcy=-0.000, diag=20.518->19.000, scale=0.9260
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=4382.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=7.500, cy=8.000, best_err=5148.000)
+circle: Radius-Bracketing r 6.482->7.000 (best_err=5135.000); Kandidaten=6.000->8597.000, 6.500->5148.000, 7.000->5135.000
+circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=8.000, r=7.000, best_err=5135.000)
+stem: Fehler=518.000
+stem: Breitenkorrektur mode=iter, ratio=0.200, alt=1.000, neu=1.000
+stem: Geometrie nach Elementabgleich aktualisiert
+stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..1.000)
+stem: Längen-Bracketing stem_len 10.000->7.000; Kandidaten=1.000->506.000, 7.000->383.000, 10.000->518.000, 13.000->448.000, 19.000->1093.000, 25.000->2224.000
+text: minRect Δcx=-0.454, Δcy=-0.131, diag=8.602->9.219, scale=1.0717
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000)
+text: Fehler=3244.000
+text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.740); Kandidaten=0.740->3244.000, 0.783->3264.000, 0.826->3786.000, 0.851->3721.000, 0.882->3677.000, 0.939->3633.000, 0.982->3633.000, 1.025->3633.000
+Runde 7: Gesamtfehler=17.192
+Runde 8: elementweise Validierung gestartet
+circle: minRect Δcx=0.000, Δcy=-0.000, diag=20.518->19.000, scale=0.9260
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=4382.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=7.500, cy=8.000, best_err=5148.000)
+circle: Radius-Bracketing r 6.482->7.000 (best_err=5135.000); Kandidaten=6.000->8597.000, 6.500->5148.000, 7.000->5135.000
+circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=8.000, r=7.000, best_err=5135.000)
+stem: Fehler=769.000
+stem: Breitenkorrektur mode=iter, ratio=0.200, alt=1.000, neu=1.000
+stem: Geometrie nach Elementabgleich aktualisiert
+stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..1.000)
+stem: Längen-Bracketing stem_len 7.000->13.000; Kandidaten=1.000->509.000, 7.000->769.000, 13.000->448.000, 19.000->1715.000, 25.000->2111.000
+text: minRect Δcx=-0.454, Δcy=-0.131, diag=8.602->9.219, scale=1.0717
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000)
+text: Fehler=3244.000
+text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.740); Kandidaten=0.740->3244.000, 0.783->3264.000, 0.826->3786.000, 0.851->3721.000, 0.882->3677.000, 0.939->3633.000, 0.982->3633.000, 1.025->3633.000
+Runde 8: Gesamtfehler=16.184
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: Farb-Bracketing übersprungen (Farben gesperrt)
 text: Farb-Bracketing übersprungen (Farben gesperrt)

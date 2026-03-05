@@ -77,6 +77,18 @@ stem: Element konnte nicht extrahiert werden
 text: minRect Δcx=0.000, Δcy=0.000, diag=8.602->8.602, scale=1.0000
 text: Fehler=2067.000
 Runde 6: Gesamtfehler=23.176
+Runde 7: elementweise Validierung gestartet
+circle: Fehler=274.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=14.000, cy=9.000, best_err=649.000)
+circle: Radius-Bracketing r 1.500->2.000 (best_err=795.000); Kandidaten=2.000->795.000, 7.000->2489.000
+circle: Joint-Multistart cx 14.000->14.000, cy 9.000->9.000, r 2.000->1.500 (best_err=760.000)
+circle: Joint-Multistart liegt am Rand; starte stochastic survivor search
+circle: Stochastic-Survivor keine relevante Verbesserung
+stem: Element konnte nicht extrahiert werden
+text: minRect Δcx=0.000, Δcy=0.000, diag=8.602->8.602, scale=1.0000
+text: Fehler=2067.000
+Runde 7: Gesamtfehler=23.176
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: Farb-Bracketing übersprungen (Farben gesperrt)
 text: Farb-Bracketing übersprungen (Farben gesperrt)

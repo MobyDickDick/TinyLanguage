@@ -65,5 +65,25 @@ circle: Radius-Bracketing r 6.650->7.000 (best_err=2285.000); Kandidaten=6.000->
 circle: Joint-Multistart keine relevante Änderung (cx=8.000, cy=17.000, r=7.000, best_err=2285.000)
 arm: Element konnte nicht extrahiert werden
 Runde 6: Gesamtfehler=12.715
+Runde 7: elementweise Validierung gestartet
+circle: minRect Δcx=-0.500, Δcy=0.000, diag=20.000->19.000, scale=0.9500
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=1091.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Mittelpunkt-Bracketing cx 7.675->8.000, cy 17.000->17.000 (best_err=2498.000)
+circle: Radius-Bracketing r 6.650->7.000 (best_err=2285.000); Kandidaten=6.000->4716.000, 6.500->2498.000, 7.000->2285.000
+circle: Joint-Multistart keine relevante Änderung (cx=8.000, cy=17.000, r=7.000, best_err=2285.000)
+arm: Element konnte nicht extrahiert werden
+Runde 7: Gesamtfehler=12.715
+Runde 8: elementweise Validierung gestartet
+circle: minRect Δcx=-0.500, Δcy=0.000, diag=20.000->19.000, scale=0.9500
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=1091.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Mittelpunkt-Bracketing cx 7.675->8.000, cy 17.000->17.000 (best_err=2498.000)
+circle: Radius-Bracketing r 6.650->7.000 (best_err=2285.000); Kandidaten=6.000->4716.000, 6.500->2498.000, 7.000->2285.000
+circle: Joint-Multistart keine relevante Änderung (cx=8.000, cy=17.000, r=7.000, best_err=2285.000)
+arm: Element konnte nicht extrahiert werden
+Runde 8: Gesamtfehler=12.715
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Farb-Bracketing übersprungen (Farben gesperrt)

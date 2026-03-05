@@ -99,5 +99,32 @@ arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1
 arm: Längen-Bracketing arm_len 6.500->5.000; Kandidaten=5.000->1143.000, 6.500->1346.000, 12.500->1636.000, 20.000->1636.000, 27.500->1636.000, 35.000->1636.000
 text: Element konnte nicht extrahiert werden
 Runde 6: Gesamtfehler=30.631
+Runde 7: elementweise Validierung gestartet
+circle: minRect Δcx=0.320, Δcy=-0.750, diag=9.424->8.734, scale=0.9268
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 581.000->632.000)
+circle: Fehler=581.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=0.000, cy=34.000, best_err=1188.000)
+circle: Radius-Bracketing keine relevante Änderung (r: 6.500, best_err=1188.000); Kandidaten=6.000->1492.000, 6.500->1188.000, 9.500->2250.000
+circle: Joint-Multistart keine relevante Änderung (cx=0.000, cy=34.000, r=6.500, best_err=1188.000)
+arm: Fehler=1143.000
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 5.000->4.000; Kandidaten=4.000->1091.000, 5.000->1143.000, 11.500->1636.000, 19.500->1636.000, 27.000->1636.000, 35.000->1636.000
+text: Element konnte nicht extrahiert werden
+Runde 7: Gesamtfehler=30.717
+Runde 8: elementweise Validierung gestartet
+circle: minRect Δcx=0.320, Δcy=-0.750, diag=9.424->8.734, scale=0.9268
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 581.000->632.000)
+circle: Fehler=581.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=0.000, cy=34.000, best_err=1188.000)
+circle: Radius-Bracketing keine relevante Änderung (r: 6.500, best_err=1188.000); Kandidaten=6.000->1492.000, 6.500->1188.000, 9.500->2250.000
+circle: Joint-Multistart keine relevante Änderung (cx=0.000, cy=34.000, r=6.500, best_err=1188.000)
+arm: Fehler=1091.000
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
+arm: Längen-Stochastic-Survivor aktiviert (best_len=3.000, err=988.000)
+arm: Längen-Bracketing arm_len 4.000->3.000; Kandidaten=3.000->988.000, 4.000->1091.000, 11.000->1636.000, 19.000->1636.000, 27.000->1636.000, 35.000->1636.000
+text: Element konnte nicht extrahiert werden
+Runde 8: Gesamtfehler=30.757
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Farb-Bracketing übersprungen (Farben gesperrt)

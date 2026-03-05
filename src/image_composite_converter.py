@@ -4130,6 +4130,46 @@ def _select_middle_lower_tercile(rows: list[dict[str, object]]) -> list[dict[str
     return ranked[first_cut:]
 
 
+def _select_open_quality_cases(
+    rows: list[dict[str, object]],
+    *,
+    allowed_error_per_pixel: float,
+    skip_variants: set[str] | None = None,
+) -> list[dict[str, object]]:
+    """Return unresolved quality cases sorted from worst to best.
+
+    "Open" means the case is finite, not explicitly skipped, and still above the
+    accepted quality threshold.
+    """
+    skips = {str(v).upper() for v in (skip_variants or set()) if str(v).strip()}
+    open_rows: list[dict[str, object]] = []
+    for row in rows:
+        err = float(row.get("error_per_pixel", float("inf")))
+        if not math.isfinite(err):
+            continue
+        variant = str(row.get("variant", "")).upper()
+        if variant and variant in skips:
+            continue
+        if math.isfinite(allowed_error_per_pixel) and err <= allowed_error_per_pixel:
+            continue
+        open_rows.append(row)
+
+    return sorted(open_rows, key=_quality_sort_key, reverse=True)
+
+
+def _iteration_strategy_for_pass(pass_idx: int, base_iterations: int) -> tuple[int, int]:
+    """Adaptive per-pass search budget for unresolved quality cases."""
+    p = max(1, int(pass_idx))
+    base = max(1, int(base_iterations))
+    phase = (p - 1) % 3
+
+    if phase == 0:
+        return base + p, 6 + p
+    if phase == 1:
+        return base + 24 + (p * 2), 7 + p
+    return base + 48 + (p * 3), 8 + p
+
+
 def _write_quality_pass_report(
     reports_out_dir: str,
     pass_rows: list[dict[str, object]],
@@ -4542,7 +4582,8 @@ def convert_range(
         source="manual-config" if cfg_value is not None else "initial-first-tercile",
     )
 
-    # Iteratively refine only middle+lower quality terciles across all forms.
+    # Iteratively refine unresolved quality cases while preserving all already
+    # successful outputs (replace only when strictly better).
     consecutive_no_improvement = 0
     strategy_switch_after = 2
     strategy_logs: list[dict[str, object]] = []
@@ -4553,11 +4594,20 @@ def convert_range(
             for row in result_map.values()
             if math.isfinite(float(row.get("error_per_pixel", float("inf"))))
         ]
-        candidates = _select_middle_lower_tercile(current_rows)
+        candidates = _select_open_quality_cases(
+            current_rows,
+            allowed_error_per_pixel=allowed_error_pp,
+            skip_variants=skip_variants,
+        )
+        # Fallback to the historical selection when no explicit open set exists
+        # (e.g. without threshold config).
+        if not candidates:
+            candidates = _select_middle_lower_tercile(current_rows)
         if not candidates:
             break
 
         improved_in_pass = False
+        iteration_budget, badge_rounds = _iteration_strategy_for_pass(pass_idx, base_iterations)
         for row in candidates:
             filename = str(row["filename"])
             variant = str(row.get("variant", "")).upper()
@@ -4565,8 +4615,6 @@ def convert_range(
                 continue
 
             prev_error_pp = float(row["error_per_pixel"])
-            iteration_budget = int(base_iterations + pass_idx)
-            badge_rounds = int(6 + pass_idx)
 
             new_row = _convert_one(filename, iteration_budget=iteration_budget, badge_rounds=badge_rounds)
             if new_row is None:

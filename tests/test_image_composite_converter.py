@@ -704,6 +704,27 @@ def test_optimize_stem_extent_keeps_circle_side_anchor() -> None:
 
 
 
+
+
+def test_finalize_persists_stem_length_floor_for_ac08_stem_connectors() -> None:
+    params = Action._default_ac0881_params(15, 15)
+    params = Action._finalize_ac08_style("AC0881_S", params)
+
+    stem_len = float(params["stem_bottom"]) - float(params["stem_top"])
+    assert stem_len > 0.0
+    assert float(params.get("stem_len_min_ratio", 0.0)) >= 0.65
+    assert float(params.get("stem_len_min", 0.0)) >= stem_len * float(params["stem_len_min_ratio"])
+
+
+def test_finalize_persists_arm_length_floor_for_ac08_arm_connectors() -> None:
+    params = Action._default_ac0812_params(15, 15)
+    params = Action._finalize_ac08_style("AC0812_S", params)
+
+    arm_len = float(abs(params["arm_x2"] - params["arm_x1"]))
+    assert arm_len > 0.0
+    assert float(params.get("arm_len_min_ratio", 0.0)) >= 0.75
+    assert float(params.get("arm_len_min", 0.0)) >= arm_len * float(params["arm_len_min_ratio"])
+
 def test_optimize_stem_extent_keeps_bottom_anchored_ac0811_stem_from_collapsing() -> None:
     """Bottom-anchored AC0811 stems should retain a minimum visible length during bracketing."""
     if image_composite_converter.np is None:

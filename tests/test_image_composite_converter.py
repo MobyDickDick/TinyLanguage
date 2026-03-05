@@ -1313,3 +1313,29 @@ def test_iteration_strategy_for_pass_cycles_search_budgets() -> None:
     assert image_composite_converter._iteration_strategy_for_pass(2, 128) == (156, 9)
     assert image_composite_converter._iteration_strategy_for_pass(3, 128) == (185, 11)
     assert image_composite_converter._iteration_strategy_for_pass(4, 128) == (132, 10)
+
+
+def test_harmonization_anchor_priority_prefers_large_for_connector_families() -> None:
+    assert image_composite_converter._harmonization_anchor_priority("L", prefer_large=True) == 0
+    assert image_composite_converter._harmonization_anchor_priority("M", prefer_large=True) == 1
+
+
+def test_harmonization_anchor_priority_prefers_medium_for_plain_circles() -> None:
+    assert image_composite_converter._harmonization_anchor_priority("M", prefer_large=False) == 0
+    assert image_composite_converter._harmonization_anchor_priority("L", prefer_large=False) == 1
+
+
+def test_semantic_transfer_rotations_keep_text_upright() -> None:
+    rotations = image_composite_converter._semantic_transfer_rotations(
+        {"draw_text": True},
+        {"draw_text": False},
+    )
+    assert rotations == (0,)
+
+
+def test_semantic_transfer_rotations_allow_connector_rotation_without_text() -> None:
+    rotations = image_composite_converter._semantic_transfer_rotations(
+        {"draw_text": False},
+        {"draw_text": False},
+    )
+    assert rotations == (0, 90, 180, 270)

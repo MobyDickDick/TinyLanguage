@@ -4036,6 +4036,19 @@ def _build_transformed_svg_from_template(
     scale: float,
 ) -> str:
     inner = _extract_svg_inner(template_svg_text)
+    # Keep donor stroke widths visually stable when trying scale-based transfers.
+    # This mirrors the "M->S/L while preserving line thickness" workflow that is
+    # often needed for noisy small/large bitmap variants.
+    inner = re.sub(
+        r"<(circle|ellipse|line|path|polygon|polyline|rect)\\b([^>]*)>",
+        lambda m: (
+            f"<{m.group(1)}{m.group(2)}>"
+            if "vector-effect=" in m.group(2)
+            else f"<{m.group(1)}{m.group(2)} vector-effect=\"non-scaling-stroke\">"
+        ),
+        inner,
+        flags=re.IGNORECASE,
+    )
     cx = float(target_w) / 2.0
     cy = float(target_h) / 2.0
     return (
@@ -4554,11 +4567,12 @@ def _scale_badge_params(anchor: dict, anchor_w: int, anchor_h: int, target_w: in
         scaled["cx"] = float(anchor["cx"]) * scale_x
         scaled["cy"] = float(anchor["cy"]) * scale_y
         scaled["r"] = float(anchor["r"]) * scale
-        scaled["stroke_circle"] = float(anchor["stroke_circle"]) * scale
+        # Intentionally preserve stroke thickness across size variants.
+        scaled["stroke_circle"] = float(anchor["stroke_circle"])
 
     if scaled.get("stem_enabled"):
         scaled["stem_x"] = float(anchor["stem_x"]) * scale_x
-        scaled["stem_width"] = float(anchor["stem_width"]) * scale_x
+        scaled["stem_width"] = float(anchor["stem_width"])
         scaled["stem_top"] = float(anchor["stem_top"]) * scale_y
         scaled["stem_bottom"] = float(anchor["stem_bottom"]) * scale_y
 
@@ -4567,7 +4581,7 @@ def _scale_badge_params(anchor: dict, anchor_w: int, anchor_h: int, target_w: in
         scaled["arm_y1"] = float(anchor["arm_y1"]) * scale_y
         scaled["arm_x2"] = float(anchor["arm_x2"]) * scale_x
         scaled["arm_y2"] = float(anchor["arm_y2"]) * scale_y
-        scaled["arm_stroke"] = float(anchor["arm_stroke"]) * scale
+        scaled["arm_stroke"] = float(anchor["arm_stroke"])
 
     if scaled.get("circle_enabled"):
         stroke = max(0.0, float(scaled.get("stroke_circle", 1.0)))
@@ -4594,6 +4608,10 @@ def _scale_badge_params(anchor: dict, anchor_w: int, anchor_h: int, target_w: in
             cy = float(target_h) / 2.0
         else:
             cy = float(np.clip(cy, min_cy, max_cy))
+
+        if scaled.get("stem_enabled") and "stem_width" in scaled:
+            stem_width = max(1e-6, float(scaled["stem_width"]))
+            scaled["stem_x"] = cx - (stem_width / 2.0)
 
         scaled["cx"] = cx
         scaled["cy"] = cy
@@ -4644,8 +4662,8 @@ def _harmonize_semantic_size_variants(
                 vj = str(variant_rows[j]["variant"])
                 max_delta = max(max_delta, _max_signature_delta(sigs[vi], sigs[vj]))
 
-        if max_delta > 0.08:
-            continue
+        # Do not skip families with one badly fitted outlier variant. We still
+        # validate every harmonization candidate against raster error before write.
 
         anchor = min(variant_rows, key=lambda row: float(dict(row["entry"])["error"]))
         anchor_variant = str(anchor["variant"])

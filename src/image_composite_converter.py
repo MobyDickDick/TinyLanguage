@@ -472,33 +472,46 @@ class Action:
             p["co2_font_scale_max"] = float(min(1.12, base_scale * 1.22))
             p["co2_sub_font_scale"] = float(p.get("co2_sub_font_scale", 66.0))
             p["co2_subscript_offset_scale"] = 0.27
-        if p.get("circle_enabled", True) and not p.get("arm_enabled") and not p.get("stem_enabled"):
-            # Plain centered badges should keep their circle optically centered.
-            # Otherwise min-rect alignment may drift the ring into a corner,
-            # which also makes CO/VOC labels look far too small.
-            p["lock_circle_cx"] = True
-            p["lock_circle_cy"] = True
-            # Re-anchor to template center before locking so noisy Hough fits
-            # (especially on medium/small JPEGs like AC0820_M/S) cannot freeze
-            # an already-shifted ring position for the rest of validation.
-            if "template_circle_cx" in p:
-                p["cx"] = float(p["template_circle_cx"])
-            if "template_circle_cy" in p:
-                p["cy"] = float(p["template_circle_cy"])
-            # Keep a robust radius floor anchored to the semantic template,
-            # not only to the currently fitted radius. If an early Hough/contour
-            # pass under-estimates the circle, the iterative optimizer would
-            # otherwise preserve and further reinforce that undersized fit.
+        if p.get("circle_enabled", True):
+            has_connector = bool(p.get("arm_enabled") or p.get("stem_enabled"))
+            has_text = bool(p.get("draw_text", False))
+
+            # For all semantic AC08xx badges, keep a robust radius floor anchored
+            # to the template geometry. This prevents degenerate late-stage fits
+            # where noisy masks shrink circles far below their known base size.
             template_r = float(p.get("template_circle_radius", p.get("r", 1.0)))
             current_r = float(p.get("r", template_r))
             base_r = max(1.0, template_r, current_r)
             min_ratio = 0.88
-            if p.get("draw_text", False):
-                # AC0820 remains the most shrink-sensitive semantic family:
-                # keep its finalized radius floor aligned with the fitting
-                # guard so later circle-radius bracketing cannot undo it.
+            if has_text:
+                # Text badges are especially sensitive to circle shrink because
+                # the label scales relative to the interior diameter.
                 min_ratio = 0.92 if symbol_name == "AC0820" else 0.90
             p["min_circle_radius"] = float(max(float(p.get("min_circle_radius", 1.0)), base_r * min_ratio))
+
+            # Plain centered badges should keep their circle optically centered.
+            # Otherwise min-rect alignment may drift the ring into a corner,
+            # which also makes CO/VOC labels look far too small.
+            if not has_connector:
+                p["lock_circle_cx"] = True
+                p["lock_circle_cy"] = True
+
+            # Connector + text badges (e.g. AC0831/AC0836 families) can lose
+            # connector extraction in noisy JPEGs. Without geometric anchors the
+            # circle optimizer may collapse toward text blobs near the border.
+            # Keep center and connector alignment locked to template semantics.
+            if has_connector and has_text:
+                p["lock_circle_cx"] = True
+                p["lock_circle_cy"] = True
+                if p.get("stem_enabled"):
+                    p["lock_stem_center_to_circle"] = True
+                if p.get("arm_enabled"):
+                    p["lock_arm_center_to_circle"] = True
+
+            if bool(p.get("lock_circle_cx", False)) and "template_circle_cx" in p:
+                p["cx"] = float(p["template_circle_cx"])
+            if bool(p.get("lock_circle_cy", False)) and "template_circle_cy" in p:
+                p["cy"] = float(p["template_circle_cy"])
         if str(p.get("text_mode", "")).lower() == "co2":
             min_dim = float(min(float(p.get("width", 0.0) or 0.0), float(p.get("height", 0.0) or 0.0)))
             if min_dim <= 0.0:

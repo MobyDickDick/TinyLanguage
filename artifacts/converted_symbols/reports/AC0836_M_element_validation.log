@@ -149,6 +149,25 @@ text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5520.000->4555.000; Box-Che
 text: Fehler=5520.000
 text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.312); Kandidaten=0.300->5520.000, 0.312->5520.000, 0.359->5520.000, 0.495->5520.000, 0.690->6606.000, 0.950->8759.000, 1.210->10437.000, 1.405->10261.000, 1.600->10701.000
 Runde 8: Gesamtfehler=23.076
+Runde 9: elementweise Validierung gestartet
+circle: minRect Δcx=0.568, Δcy=-0.379, diag=20.000->22.211, scale=1.1106
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 7804.000->8289.000)
+circle: Fehler=7804.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing keine relevante Änderung (r: 7.000, best_err=9609.000); Kandidaten=7.000->9609.000, 9.500->14441.000
+circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=7.000, best_err=9609.000)
+stem: minRect Δcx=0.500, Δcy=2.000, diag=16.031->15.232, scale=0.9501
+stem: Mittelpunkt/Diagonale-Update verworfen (Fehler 1234.000->1354.000; Box-Check verworfen (w_ratio=0.286, h_ratio=0.800, area_ratio=0.229))
+stem: Fehler=1234.000
+stem: Breitenkorrektur mode=iter, ratio=0.286, alt=2.000, neu=2.000
+stem: Geometrie nach Elementabgleich aktualisiert
+stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 17.500); Kandidaten=11.500->1278.000, 17.500->1234.000, 23.000->2594.000, 29.000->3907.000, 35.000->3651.000
+text: minRect Δcx=0.500, Δcy=4.000, diag=7.280->12.649, scale=1.7375
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5520.000->4555.000; Box-Check verworfen (w_ratio=0.615, h_ratio=0.333, area_ratio=0.205))
+text: Fehler=5520.000
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.312); Kandidaten=0.300->5520.000, 0.312->5520.000, 0.359->5520.000, 0.495->5520.000, 0.690->6606.000, 0.950->8759.000, 1.210->10437.000, 1.405->10261.000, 1.600->10701.000
+Runde 9: Gesamtfehler=23.076
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: Farb-Bracketing übersprungen (Farben gesperrt)
 text: Farb-Bracketing übersprungen (Farben gesperrt)

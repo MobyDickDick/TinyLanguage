@@ -8,12 +8,11 @@ circle: Radius-Bracketing r 8.000->7.500 (best_err=9731.000); Kandidaten=7.000->
 circle: Joint-Multistart keine relevante Änderung (cx=16.000, cy=12.500, r=7.500, best_err=9298.000)
 arm: Fehler=1527.000
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Stochastic-Survivor aktiviert (best_len=1.000, err=892.000)
-arm: Längen-Bracketing arm_len 5.560->1.000; Kandidaten=1.000->892.000, 5.500->1527.000, 9.500->1527.000, 18.000->1527.000, 26.500->1527.000, 35.000->1527.000
+arm: Längen-Bracketing arm_len 5.560->5.500; Kandidaten=5.500->1527.000, 13.000->1527.000, 20.000->1527.000, 27.500->1527.000, 35.000->1527.000
 text: minRect Δcx=3.500, Δcy=1.000, diag=11.402->12.042, scale=1.0561
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 6519.000->6229.000; Box-Check verworfen (w_ratio=0.571, h_ratio=0.625, area_ratio=0.357))
 text: Fehler=6519.000
-Runde 1: Gesamtfehler=31.546
+Runde 1: Gesamtfehler=32.366
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=5.000, Δcy=-2.500, diag=21.000->10.296, scale=0.4903
 circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 6429.000->7378.000)
@@ -26,7 +25,7 @@ arm: Element konnte nicht extrahiert werden
 text: minRect Δcx=3.500, Δcy=1.000, diag=11.402->12.042, scale=1.0561
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 6519.000->6229.000; Box-Check verworfen (w_ratio=0.571, h_ratio=0.625, area_ratio=0.357))
 text: Fehler=6519.000
-Runde 2: Gesamtfehler=30.700
+Runde 2: Gesamtfehler=31.499
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=1.841, Δcy=0.073, diag=20.809->20.843, scale=1.0017
 circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 5415.000->5501.000)
@@ -39,7 +38,7 @@ arm: Element konnte nicht extrahiert werden
 text: minRect Δcx=3.500, Δcy=1.000, diag=11.402->12.042, scale=1.0561
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 6519.000->6229.000; Box-Check verworfen (w_ratio=0.571, h_ratio=0.625, area_ratio=0.357))
 text: Fehler=6519.000
-Runde 3: Gesamtfehler=30.901
+Runde 3: Gesamtfehler=31.203
 Runde 4: elementweise Validierung gestartet
 circle: minRect Δcx=3.041, Δcy=-0.243, diag=22.825->21.111, scale=0.9249
 circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 4178.000->4490.000)

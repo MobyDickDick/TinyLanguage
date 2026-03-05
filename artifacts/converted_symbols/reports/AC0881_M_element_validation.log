@@ -12,7 +12,7 @@ stem: Fehler=2251.000
 stem: Breitenkorrektur mode=iter, ratio=0.333, alt=1.000, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
-stem: Längen-Bracketing keine relevante Änderung (stem_len: 14.000); Kandidaten=9.000->1027.000, 14.000->521.000, 15.500->521.000, 22.000->1135.000, 28.500->1286.000, 35.000->1452.000
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 14.000); Kandidaten=12.500->1025.000, 14.000->521.000, 18.000->521.000, 23.500->1185.000, 29.500->1332.000, 35.000->1452.000
 text: minRect Δcx=0.500, Δcy=0.500, diag=12.207->12.042, scale=0.9865
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=3349.000

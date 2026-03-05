@@ -10,7 +10,7 @@ arm: minRect Δcx=1.510, Δcy=0.930, diag=13.038->15.654, scale=1.2006
 arm: Mittelpunkt/Diagonale-Update verworfen (Fehler 2494.000->3241.000; Box-Check verworfen (w_ratio=0.286, h_ratio=1.000, area_ratio=0.286))
 arm: Fehler=2494.000
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 14.000); Kandidaten=10.500->2658.000, 14.000->2494.000, 16.500->2494.000, 23.000->2494.000, 29.000->2494.000, 35.000->2494.000
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 14.000); Kandidaten=11.500->2784.000, 14.000->2494.000, 17.500->2494.000, 23.500->2494.000, 29.000->2494.000, 35.000->2494.000
 Runde 1: Gesamtfehler=4.194
 Gesamtfehler unter Schwellwert, Validierung beendet
 circle: Farb-Bracketing übersprungen (Farben gesperrt)

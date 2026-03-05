@@ -435,6 +435,31 @@ class Action:
         return p
 
     @staticmethod
+    def _persist_connector_length_floor(params: dict, element: str, default_ratio: float) -> None:
+        """Persist a robust minimum connector length for later validation stages."""
+        if element == "stem":
+            length = float(params.get("stem_bottom", 0.0)) - float(params.get("stem_top", 0.0))
+            min_key = "stem_len_min"
+            ratio_key = "stem_len_min_ratio"
+        elif element == "arm":
+            x1 = float(params.get("arm_x1", 0.0))
+            y1 = float(params.get("arm_y1", 0.0))
+            x2 = float(params.get("arm_x2", 0.0))
+            y2 = float(params.get("arm_y2", 0.0))
+            length = float(math.hypot(x2 - x1, y2 - y1))
+            min_key = "arm_len_min"
+            ratio_key = "arm_len_min_ratio"
+        else:
+            return
+
+        if length <= 0.0:
+            return
+
+        ratio = float(max(0.0, min(1.0, float(params.get(ratio_key, default_ratio)))))
+        params[ratio_key] = ratio
+        params[min_key] = float(max(float(params.get(min_key, 1.0)), length * ratio, 1.0))
+
+    @staticmethod
     def _finalize_ac08_style(name: str, params: dict) -> dict:
         """Apply AC08xx palette/stroke conventions globally for semantic conversions."""
         canonical_name = str(name).upper()
@@ -512,6 +537,10 @@ class Action:
                 p["cx"] = float(p["template_circle_cx"])
             if bool(p.get("lock_circle_cy", False)) and "template_circle_cy" in p:
                 p["cy"] = float(p["template_circle_cy"])
+        if p.get("stem_enabled"):
+            Action._persist_connector_length_floor(p, "stem", default_ratio=0.65)
+        if p.get("arm_enabled"):
+            Action._persist_connector_length_floor(p, "arm", default_ratio=0.75)
         if str(p.get("text_mode", "")).lower() == "co2":
             min_dim = float(min(float(p.get("width", 0.0) or 0.0), float(p.get("height", 0.0) or 0.0)))
             if min_dim <= 0.0:

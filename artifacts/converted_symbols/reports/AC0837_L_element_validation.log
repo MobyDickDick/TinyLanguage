@@ -103,6 +103,26 @@ text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=744.000
 text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.300); Kandidaten=0.300->952.000, 0.345->952.000, 0.573->952.000, 0.846->952.000, 1.210->952.000, 1.574->977.000, 1.847->977.000, 2.120->1355.000
 Runde 6: Gesamtfehler=28.340
+Runde 7: elementweise Validierung gestartet
+circle: minRect Δcx=-0.854, Δcy=-1.317, diag=8.062->8.680, scale=1.0766
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 891.000->1010.000)
+circle: Fehler=891.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Mittelpunkt-Bracketing cx 36.000->36.500, cy 23.500->24.000 (best_err=1563.000)
+circle: Radius-Bracketing r 3.000->3.500 (best_err=1601.000); Kandidaten=3.500->1601.000, 12.000->3409.000
+circle: Joint-Multistart cx 36.500->34.500, cy 24.000->24.000, r 3.500->3.000 (best_err=1724.000)
+circle: Joint-Multistart liegt am Rand; starte stochastic survivor search
+circle: Stochastic-Survivor übernommen (cx=35.000, cy=24.000, r=3.000, err=1762.000)
+arm: minRect Δcx=2.500, Δcy=-2.000, diag=11.045->16.279, scale=1.4738
+arm: Mittelpunkt/Diagonale-Update verworfen (Fehler 2007.000->2059.000)
+arm: Fehler=2007.000
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 12.000->9.000; Kandidaten=9.000->2007.000, 12.000->2007.000, 18.000->2007.000, 27.000->2007.000, 36.000->2007.000, 45.000->2007.000
+text: minRect Δcx=-1.800, Δcy=-0.600, diag=7.616->7.720, scale=1.0137
+text: Parameter nach Mittelpunkt/Diagonale angepasst
+text: Fehler=877.000
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.300); Kandidaten=0.300->837.000, 0.345->837.000, 0.573->837.000, 0.846->837.000, 1.210->837.000, 1.574->1162.000, 1.847->1320.000, 2.120->1566.000
+Runde 7: Gesamtfehler=28.332
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 text: Farb-Bracketing übersprungen (Farben gesperrt)

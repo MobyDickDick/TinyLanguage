@@ -2284,6 +2284,13 @@ class Action:
         if y2 <= y1:
             return None
 
+        # The rows directly below the circle/stem junction are frequently widened
+        # by anti-aliased ring pixels. Bias the estimator towards the lower stem
+        # segment so thin stems (e.g. tall AC0811 variants) are not over-thickened.
+        span = y2 - y1
+        if span >= 8:
+            y1 = min(y2 - 1, y1 + int(round(span * 0.25)))
+
         widths: list[float] = []
         centers: list[float] = []
         cx_idx = int(round(expected_cx))

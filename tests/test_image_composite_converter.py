@@ -1339,3 +1339,40 @@ def test_semantic_transfer_rotations_allow_connector_rotation_without_text() -> 
         {"draw_text": False},
     )
     assert rotations == (0, 90, 180, 270)
+
+
+def test_semantic_transfer_badge_params_backfills_required_color_keys() -> None:
+    donor = {
+        "mode": "semantic_badge",
+        "draw_text": True,
+        "circle_enabled": True,
+        "cx": 10.0,
+        "cy": 10.0,
+        "r": 6.0,
+    }
+    target = {
+        "mode": "semantic_badge",
+        "variant": "AC0831_M",
+        "draw_text": True,
+        "cx": 11.0,
+        "cy": 12.0,
+    }
+
+    params = image_composite_converter._semantic_transfer_badge_params(
+        donor,
+        target,
+        target_w=25,
+        target_h=25,
+        rotation_deg=0,
+        scale=1.0,
+    )
+
+    assert "fill_gray" in params
+    assert "stroke_gray" in params
+    assert "text_gray" in params
+
+
+def test_semantic_transfer_scale_candidates_include_wide_range() -> None:
+    scales = image_composite_converter._semantic_transfer_scale_candidates(1.0)
+    assert min(scales) <= 0.55
+    assert max(scales) >= 1.9

@@ -245,6 +245,7 @@ class Reflection:
 
 
 class Action:
+    STOCHASTIC_SEED_OFFSET = 0
     # DejaVuSans-Bold glyph outline in font units.
     M_PATH_D = "M188 1493H678L1018 694L1360 1493H1849V0H1485V1092L1141 287H897L553 1092V0H188Z"
     M_XMIN = 188
@@ -467,6 +468,21 @@ class Action:
         if not symbol_name.startswith("AC08"):
             return params
         p = Action._capture_canonical_badge_colors(Action._normalize_light_circle_colors(dict(params)))
+        # Katalog-Standard: Kellen-Formen werden über alle Varianten mit
+        # nach unten gerichteter Griff-Geometrie normalisiert.
+        if symbol_name in {"AC0811", "AC0812", "AC0813", "AC0814", "AC0831", "AC0832", "AC0833", "AC0834", "AC0836", "AC0837", "AC0838", "AC0839"}:
+            if p.get("circle_enabled", True):
+                cx = float(p.get("cx", 0.0))
+                cy = float(p.get("cy", 0.0))
+                r = float(p.get("r", 1.0))
+                grip_width = float(p.get("stem_width", p.get("arm_stroke", 1.0)))
+                p["arm_enabled"] = False
+                p["stem_enabled"] = True
+                p["stem_width"] = max(1.0, grip_width)
+                p["stem_x"] = cx - (p["stem_width"] / 2.0)
+                p["stem_top"] = cy + r
+                p["stem_bottom"] = float(max(cy + r + 1.0, 1_000_000.0))
+                p["stem_gray"] = int(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY))
         # During geometry fitting we intentionally keep auto-estimated colors.
         # Canonical palette values are re-applied once fitting converged.
         p = Action._normalize_ac08_line_widths(p)
@@ -2580,7 +2596,7 @@ class Action:
         if not np.isfinite(best_err):
             return best_value, best_err, False
 
-        rng = np.random.default_rng(seed)
+        rng = np.random.default_rng(int(seed) + int(Action.STOCHASTIC_SEED_OFFSET))
         span = max(0.5, abs(high - low) * 0.22)
         improved = False
         stable_rounds = 0
@@ -2638,7 +2654,7 @@ class Action:
         )
         lock_cx = bool(params.get("lock_circle_cx", False))
         lock_cy = bool(params.get("lock_circle_cy", False))
-        rng = np.random.default_rng(835)
+        rng = np.random.default_rng(835 + int(Action.STOCHASTIC_SEED_OFFSET))
 
         def eval_pose(candidate: tuple[float, float, float]) -> float:
             cx, cy, rad = candidate
@@ -4546,6 +4562,7 @@ def convert_range(
     strategy_switch_after = 2
     strategy_logs: list[dict[str, object]] = []
     for pass_idx in range(1, max_quality_passes + 1):
+        Action.STOCHASTIC_SEED_OFFSET = pass_idx
         current_rows = [
             row
             for row in result_map.values()
@@ -4692,6 +4709,7 @@ def convert_range(
     _harmonize_semantic_size_variants(semantic_results, folder_path, svg_out_dir, reports_out_dir)
     _write_pixel_delta2_ranking(folder_path, svg_out_dir, reports_out_dir)
 
+    Action.STOCHASTIC_SEED_OFFSET = 0
     return out_root
 
 
@@ -4911,6 +4929,7 @@ def _harmonize_semantic_size_variants(
         grouped.setdefault(base, []).append(result)
 
     harmonized_logs: list[str] = []
+    category_logs: list[str] = []
     for base, entries in sorted(grouped.items()):
         if len(entries) < 2:
             continue
@@ -4930,6 +4949,16 @@ def _harmonize_semantic_size_variants(
         if len(variant_rows) < 2:
             continue
 
+        has_text = any(bool(dict(row["params"]).get("draw_text", False)) for row in variant_rows)
+        has_stem = any(bool(dict(row["params"]).get("stem_enabled", False)) for row in variant_rows)
+        category = "Kreise mit Buchstaben" if has_text and not has_stem else (
+            "Kreise ohne Buchstaben" if (not has_text and not has_stem) else (
+                "Kellen mit Buchstaben" if has_text else "Kellen ohne Buchstaben"
+            )
+        )
+        variants_joined = "|".join(sorted(str(r["variant"]) for r in variant_rows))
+        category_logs.append(f"{base};{category};{variants_joined}")
+
         sigs = {
             row["variant"]: _normalized_geometry_signature(int(row["w"]), int(row["h"]), dict(row["params"]))
             for row in variant_rows
@@ -4944,7 +4973,13 @@ def _harmonize_semantic_size_variants(
         # Do not skip families with one badly fitted outlier variant. We still
         # validate every harmonization candidate against raster error before write.
 
-        anchor = min(variant_rows, key=lambda row: float(dict(row["entry"])["error"]))
+        def _anchor_rank(row: dict[str, object]) -> tuple[int, float]:
+            suffix = str(row.get("suffix", ""))
+            priority = {"M": 0, "L": 1, "S": 2}.get(suffix, 3)
+            err = float(dict(row["entry"]).get("error", float("inf")))
+            return priority, err
+
+        anchor = min(variant_rows, key=_anchor_rank)
         anchor_variant = str(anchor["variant"])
         anchor_w = int(anchor["w"])
         anchor_h = int(anchor["h"])
@@ -4990,6 +5025,10 @@ def _harmonize_semantic_size_variants(
     if harmonized_logs:
         with open(os.path.join(reports_out_dir, "variant_harmonization.log"), "w", encoding="utf-8") as f:
             f.write("\n".join(harmonized_logs).rstrip() + "\n")
+    if category_logs:
+        with open(os.path.join(reports_out_dir, "shape_catalog.csv"), "w", encoding="utf-8") as f:
+            f.write("base;category;variants\n")
+            f.write("\n".join(category_logs).rstrip() + "\n")
 
 
 def _write_pixel_delta2_ranking(folder_path: str, svg_out_dir: str, reports_out_dir: str, threshold: float = 18.0) -> None:

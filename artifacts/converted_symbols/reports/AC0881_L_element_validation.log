@@ -4,7 +4,7 @@ circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=15530.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing cx 12.150->12.000, cy 15.800->16.000 (best_err=17209.000)
-circle: Radius-Bracketing r 10.682->11.000 (best_err=15102.000); Kandidaten=3.500->19239.000, 10.500->17209.000, 11.000->15102.000, 12.000->17523.000
+circle: Radius-Bracketing r 10.682->11.000 (best_err=15102.000); Kandidaten=9.000->23959.000, 10.500->17209.000, 11.000->15102.000, 12.000->17523.000
 circle: Joint-Multistart keine relevante Änderung (cx=12.000, cy=16.000, r=11.000, best_err=15228.000)
 stem: minRect Δcx=-1.014, Δcy=-0.384, diag=17.029->18.898, scale=1.1097
 stem: Mittelpunkt/Diagonale-Update verworfen (Fehler 3202.000->3320.000)
@@ -23,7 +23,7 @@ circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=13056.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing cx 12.325->12.500, cy 16.325->16.500 (best_err=11081.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 11.000, best_err=11081.000); Kandidaten=3.500->19692.000, 11.000->11081.000, 11.500->11724.000, 12.000->18958.000
+circle: Radius-Bracketing keine relevante Änderung (r: 11.000, best_err=11081.000); Kandidaten=9.000->24134.000, 11.000->11081.000, 11.500->11724.000, 12.000->18958.000
 circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=16.500, r=11.000, best_err=11081.000)
 stem: Fehler=2044.000
 stem: Breitenkorrektur mode=bbox, ratio=0.333, alt=3.000, neu=5.000
@@ -40,7 +40,7 @@ circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 10973.000->11134.000)
 circle: Fehler=10973.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=12.500, cy=16.500, best_err=11081.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 11.000, best_err=11081.000); Kandidaten=3.500->19692.000, 11.000->11081.000, 11.500->11724.000, 12.000->18958.000
+circle: Radius-Bracketing keine relevante Änderung (r: 11.000, best_err=11081.000); Kandidaten=9.000->24134.000, 11.000->11081.000, 11.500->11724.000, 12.000->18958.000
 circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=16.500, r=11.000, best_err=11081.000)
 stem: Fehler=2148.000
 stem: Breitenkorrektur mode=bbox, ratio=0.455, alt=5.000, neu=5.000
@@ -57,7 +57,7 @@ circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 10973.000->11134.000)
 circle: Fehler=10973.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=12.500, cy=16.500, best_err=11081.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 11.000, best_err=11081.000); Kandidaten=3.500->19692.000, 11.000->11081.000, 11.500->11724.000, 12.000->18958.000
+circle: Radius-Bracketing keine relevante Änderung (r: 11.000, best_err=11081.000); Kandidaten=9.000->24134.000, 11.000->11081.000, 11.500->11724.000, 12.000->18958.000
 circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=16.500, r=11.000, best_err=11081.000)
 stem: Fehler=2148.000
 stem: Breitenkorrektur mode=bbox, ratio=0.455, alt=5.000, neu=5.000
@@ -73,7 +73,7 @@ circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 10973.000->11134.000)
 circle: Fehler=10973.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=12.500, cy=16.500, best_err=11081.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 11.000, best_err=11081.000); Kandidaten=3.500->19692.000, 11.000->11081.000, 11.500->11724.000, 12.000->18958.000
+circle: Radius-Bracketing keine relevante Änderung (r: 11.000, best_err=11081.000); Kandidaten=9.000->24134.000, 11.000->11081.000, 11.500->11724.000, 12.000->18958.000
 circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=16.500, r=11.000, best_err=11081.000)
 stem: Fehler=2148.000
 stem: Breitenkorrektur mode=bbox, ratio=0.455, alt=5.000, neu=5.000
@@ -89,7 +89,7 @@ circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 10973.000->11134.000)
 circle: Fehler=10973.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing keine relevante Änderung (cx=12.500, cy=16.500, best_err=11081.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 11.000, best_err=11081.000); Kandidaten=3.500->19692.000, 11.000->11081.000, 11.500->11724.000, 12.000->18958.000
+circle: Radius-Bracketing keine relevante Änderung (r: 11.000, best_err=11081.000); Kandidaten=9.000->24134.000, 11.000->11081.000, 11.500->11724.000, 12.000->18958.000
 circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=16.500, r=11.000, best_err=11081.000)
 stem: Fehler=2148.000
 stem: Breitenkorrektur mode=bbox, ratio=0.455, alt=5.000, neu=5.000

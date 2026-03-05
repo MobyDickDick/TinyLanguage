@@ -1,138 +1,132 @@
 Runde 1: elementweise Validierung gestartet
-circle: minRect Δcx=1.000, Δcy=1.000, diag=22.627->25.456, scale=1.1250
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=11017.000
+circle: minRect Δcx=0.647, Δcy=-0.088, diag=23.401->23.431, scale=1.0013
+circle: Fehler=9346.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 9.150->12.500, cy 12.250->10.000 (best_err=12534.000)
-circle: Radius-Bracketing r 8.812->9.000 (best_err=12534.000); Kandidaten=8.000->13375.000, 9.000->12534.000, 9.500->12648.000
-circle: Joint-Multistart cx 12.500->11.000, cy 10.000->11.500, r 9.000->8.000 (best_err=10886.000)
-stem: minRect Δcx=-0.690, Δcy=0.112, diag=15.033->15.262, scale=1.0152
-stem: Mittelpunkt/Diagonale-Update verworfen (Fehler 2995.000->3063.000)
-stem: Fehler=2995.000
+circle: Radius-Bracketing r 7.843->7.000 (best_err=10666.000); Kandidaten=7.000->10666.000, 7.500->11526.000, 8.000->12266.000, 9.500->15001.000
+circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=7.000, best_err=9609.000)
+stem: minRect Δcx=0.310, Δcy=1.112, diag=17.029->15.262, scale=0.8962
+stem: Mittelpunkt/Diagonale-Update verworfen (Fehler 2673.000->2801.000)
+stem: Fehler=2673.000
 stem: Breitenkorrektur mode=iter, ratio=0.333, alt=1.000, neu=2.000
 stem: Geometrie nach Elementabgleich aktualisiert
 stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
-stem: Längen-Bracketing stem_len 15.500->1.000; Kandidaten=1.000->1398.000, 9.500->2667.000, 15.500->2231.000, 18.000->2231.000, 26.500->3773.000, 35.000->4248.000
-text: minRect Δcx=0.500, Δcy=3.000, diag=7.616->13.000, scale=1.7070
+stem: Längen-Stochastic-Survivor aktiviert (best_len=17.000, err=776.000)
+stem: Längen-Bracketing stem_len 18.000->17.000; Kandidaten=1.000->1012.000, 9.500->1398.000, 18.000->1102.000, 26.500->3196.000, 35.000->3651.000
+text: minRect Δcx=0.500, Δcy=4.000, diag=7.280->12.649, scale=1.7375
 text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=5694.000
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.520); Kandidaten=0.312->5423.000, 0.442->5423.000, 0.505->5410.000, 0.520->5338.000, 0.598->6212.000, 0.698->6408.000, 0.956->7847.000, 1.214->8980.000, 1.407->9351.000, 1.600->9668.000
-Runde 1: Gesamtfehler=24.793
+text: Fehler=5520.000
+text: Breiten-Bracketing voc_font_scale 0.520->0.598; Kandidaten=0.312->5498.000, 0.442->5498.000, 0.505->5498.000, 0.520->5498.000, 0.598->5467.000, 0.698->6362.000, 0.956->7695.000, 1.214->8838.000, 1.407->8930.000, 1.600->9774.000
+Runde 1: Gesamtfehler=21.019
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=-0.500, Δcy=1.000, diag=23.000->25.456, scale=1.1068
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=9936.000
+circle: minRect Δcx=0.568, Δcy=-0.379, diag=20.000->22.211, scale=1.1106
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 7804.000->8289.000)
+circle: Fehler=7804.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 10.675->14.000, cy 12.150->15.500 (best_err=11440.000)
-circle: Radius-Bracketing r 8.854->9.000 (best_err=11440.000); Kandidaten=8.000->12163.000, 9.000->11440.000, 9.500->11971.000
-circle: Joint-Multistart keine relevante Änderung (cx=14.000, cy=15.500, r=9.000, best_err=11675.000)
-stem: Element konnte nicht extrahiert werden
-text: minRect Δcx=-0.500, Δcy=2.000, diag=9.487->13.000, scale=1.3703
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 2766.000->3498.000)
-text: Fehler=2766.000
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.520); Kandidaten=0.312->2942.000, 0.442->2942.000, 0.505->2839.000, 0.520->2766.000, 0.598->3474.000, 0.698->3527.000, 0.956->5347.000, 1.214->7164.000, 1.407->9040.000, 1.600->9288.000
-Runde 2: Gesamtfehler=29.139
+circle: Radius-Bracketing keine relevante Änderung (r: 7.000, best_err=9609.000); Kandidaten=7.000->9609.000, 9.500->14441.000
+circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=7.000, best_err=9609.000)
+stem: minRect Δcx=0.500, Δcy=2.000, diag=16.031->15.232, scale=0.9501
+stem: Parameter nach Mittelpunkt/Diagonale angepasst
+stem: Fehler=1354.000
+stem: Breitenkorrektur mode=iter, ratio=0.286, alt=1.900, neu=2.000
+stem: Geometrie nach Elementabgleich aktualisiert
+stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
+stem: Längen-Bracketing stem_len 16.100->16.000; Kandidaten=1.000->1012.000, 9.500->1530.000, 16.000->896.000, 18.000->1102.000, 26.500->3196.000, 35.000->3651.000
+text: minRect Δcx=0.500, Δcy=1.500, diag=7.280->13.000, scale=1.7857
+text: Parameter nach Mittelpunkt/Diagonale angepasst
+text: Fehler=5467.000
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.598); Kandidaten=0.359->5498.000, 0.508->5498.000, 0.545->5498.000, 0.598->5467.000, 0.688->6357.000, 0.731->6249.000, 0.979->8699.000, 1.228->8812.000, 1.414->9521.000, 1.600->9774.000
+Runde 2: Gesamtfehler=21.379
 Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=0.250, Δcy=-0.750, diag=23.431->23.759, scale=1.0140
-circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 8901.000->8960.000)
-circle: Fehler=8901.000
+circle: minRect Δcx=0.568, Δcy=-0.379, diag=20.000->22.211, scale=1.1106
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 7804.000->8289.000)
+circle: Fehler=7804.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 14.000->17.000, cy 15.500->18.500 (best_err=8887.000)
-circle: Radius-Bracketing r 9.000->8.000 (best_err=8150.000); Kandidaten=8.000->8150.000, 8.500->8413.000, 9.000->8887.000, 9.500->9161.000
-circle: Joint-Multistart keine relevante Änderung (cx=17.000, cy=18.500, r=8.000, best_err=7058.000)
-stem: Element konnte nicht extrahiert werden
-text: minRect Δcx=-1.824, Δcy=0.794, diag=6.708->7.276, scale=1.0847
-text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=669.000
-text: Breiten-Stochastic-Survivor aktiviert (voc_font_scale=0.300, err=486.000)
-text: Breiten-Bracketing voc_font_scale 0.520->0.300; Kandidaten=0.300->486.000, 0.442->486.000, 0.495->486.000, 0.520->585.000, 0.598->1164.000, 0.690->1261.000, 0.950->2551.000, 1.210->3751.000, 1.405->5171.000, 1.600->5663.000
-Runde 3: Gesamtfehler=30.380
+circle: Radius-Bracketing keine relevante Änderung (r: 7.000, best_err=9609.000); Kandidaten=7.000->9609.000, 9.500->14441.000
+circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=7.000, best_err=9609.000)
+stem: minRect Δcx=0.500, Δcy=2.500, diag=15.033->15.232, scale=1.0132
+stem: Parameter nach Mittelpunkt/Diagonale angepasst
+stem: Fehler=1606.000
+stem: Breitenkorrektur mode=iter, ratio=0.286, alt=2.026, neu=2.000
+stem: Geometrie nach Elementabgleich aktualisiert
+stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 15.500); Kandidaten=1.000->1264.000, 9.500->1530.000, 15.500->1028.000, 18.000->1102.000, 26.500->3196.000, 35.000->3651.000
+text: minRect Δcx=0.500, Δcy=1.500, diag=7.280->13.000, scale=1.7857
+text: Fehler=5467.000
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.598); Kandidaten=0.359->5498.000, 0.508->5498.000, 0.545->5498.000, 0.598->5467.000, 0.688->6357.000, 0.731->6249.000, 0.979->8699.000, 1.228->8812.000, 1.414->9521.000, 1.600->9774.000
+Runde 3: Gesamtfehler=21.207
 Runde 4: elementweise Validierung gestartet
-circle: minRect Δcx=-1.329, Δcy=-1.963, diag=19.416->20.394, scale=1.0504
-circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 5162.000->6025.000)
-circle: Fehler=5162.000
+circle: minRect Δcx=0.568, Δcy=-0.379, diag=20.000->22.211, scale=1.1106
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 7804.000->8289.000)
+circle: Fehler=7804.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 17.000->18.500, cy 18.500->21.500 (best_err=5269.000)
-circle: Radius-Bracketing r 8.000->9.000 (best_err=5247.000); Kandidaten=7.000->5525.000, 8.000->5269.000, 9.000->5247.000, 9.500->5267.000
-circle: Joint-Multistart cx 18.500->17.000, cy 21.500->20.000, r 9.000->8.500 (best_err=6155.000)
-stem: Element konnte nicht extrahiert werden
-text: minRect Δcx=-3.000, Δcy=-1.000, diag=6.325->4.561, scale=0.7211
-text: Parameter nach Mittelpunkt/Diagonale angepasst
-text: Fehler=536.000
-text: Breiten-Bracketing voc_font_scale 0.300->0.495; Kandidaten=0.300->553.000, 0.345->553.000, 0.495->530.000, 0.690->2258.000, 0.950->2817.000, 1.210->4049.000, 1.405->4429.000, 1.600->5718.000
-Runde 4: Gesamtfehler=31.477
+circle: Radius-Bracketing keine relevante Änderung (r: 7.000, best_err=9609.000); Kandidaten=7.000->9609.000, 9.500->14441.000
+circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=7.000, best_err=9609.000)
+stem: minRect Δcx=0.500, Δcy=2.000, diag=14.036->15.232, scale=1.0852
+stem: Parameter nach Mittelpunkt/Diagonale angepasst
+stem: Fehler=1028.000
+stem: Breitenkorrektur mode=iter, ratio=0.286, alt=2.170, neu=2.000
+stem: Geometrie nach Elementabgleich aktualisiert
+stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
+stem: Längen-Bracketing stem_len 14.975->18.000; Kandidaten=1.000->1272.000, 9.500->1528.000, 15.000->896.000, 18.000->644.000, 26.500->3196.000, 35.000->3651.000
+text: minRect Δcx=0.500, Δcy=1.500, diag=7.280->13.000, scale=1.7857
+text: Fehler=5467.000
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.598); Kandidaten=0.359->5498.000, 0.508->5498.000, 0.545->5498.000, 0.598->5467.000, 0.688->6357.000, 0.731->6249.000, 0.979->8699.000, 1.228->8812.000, 1.414->9521.000, 1.600->9774.000
+Runde 4: Gesamtfehler=20.659
 Runde 5: elementweise Validierung gestartet
-circle: minRect Δcx=-2.038, Δcy=-2.192, diag=20.248->21.583, scale=1.0659
-circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 5706.000->6397.000)
-circle: Fehler=5706.000
+circle: minRect Δcx=0.568, Δcy=-0.379, diag=20.000->22.211, scale=1.1106
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 7804.000->8289.000)
+circle: Fehler=7804.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 17.000->18.500, cy 20.000->23.000 (best_err=5099.000)
-circle: Radius-Bracketing r 8.500->9.000 (best_err=4869.000); Kandidaten=7.500->6172.000, 8.500->5099.000, 9.000->4869.000, 9.500->5377.000
-circle: Joint-Multistart keine relevante Änderung (cx=18.500, cy=23.000, r=9.000, best_err=5320.000)
-stem: Element konnte nicht extrahiert werden
-text: Element konnte nicht extrahiert werden
-Runde 5: Gesamtfehler=33.304
+circle: Radius-Bracketing keine relevante Änderung (r: 7.000, best_err=9609.000); Kandidaten=7.000->9609.000, 9.500->14441.000
+circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=7.000, best_err=9609.000)
+stem: minRect Δcx=0.500, Δcy=1.500, diag=17.029->15.232, scale=0.8944
+stem: Mittelpunkt/Diagonale-Update verworfen (Fehler 1102.000->1354.000)
+stem: Fehler=1102.000
+stem: Breitenkorrektur mode=iter, ratio=0.286, alt=2.000, neu=2.000
+stem: Geometrie nach Elementabgleich aktualisiert
+stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
+stem: Längen-Stochastic-Survivor aktiviert (best_len=17.000, err=776.000)
+stem: Längen-Bracketing stem_len 18.000->17.000; Kandidaten=1.000->1012.000, 9.500->1398.000, 18.000->1102.000, 26.500->3196.000, 35.000->3651.000
+text: minRect Δcx=0.500, Δcy=1.500, diag=7.280->13.000, scale=1.7857
+text: Fehler=5467.000
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.598); Kandidaten=0.359->5498.000, 0.508->5498.000, 0.545->5498.000, 0.598->5467.000, 0.688->6357.000, 0.731->6249.000, 0.979->8699.000, 1.228->8812.000, 1.414->9521.000, 1.600->9774.000
+Runde 5: Gesamtfehler=21.019
 Runde 6: elementweise Validierung gestartet
-circle: minRect Δcx=-1.708, Δcy=-2.762, diag=21.471->21.029, scale=0.9794
-circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 3340.000->4001.000)
-circle: Fehler=3340.000
+circle: minRect Δcx=0.568, Δcy=-0.379, diag=20.000->22.211, scale=1.1106
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 7804.000->8289.000)
+circle: Fehler=7804.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 18.500->18.500, cy 23.000->26.000 (best_err=4581.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=4581.000); Kandidaten=8.000->5302.000, 9.000->4581.000, 9.500->4730.000
-circle: Joint-Multistart cx 18.500->18.500, cy 26.000->27.500, r 9.000->9.000 (best_err=3443.000)
-stem: Element konnte nicht extrahiert werden
-text: Element konnte nicht extrahiert werden
-Runde 6: Gesamtfehler=32.520
+circle: Radius-Bracketing keine relevante Änderung (r: 7.000, best_err=9609.000); Kandidaten=7.000->9609.000, 9.500->14441.000
+circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=7.000, best_err=9609.000)
+stem: minRect Δcx=0.500, Δcy=2.000, diag=16.031->15.232, scale=0.9501
+stem: Parameter nach Mittelpunkt/Diagonale angepasst
+stem: Fehler=1354.000
+stem: Breitenkorrektur mode=iter, ratio=0.286, alt=1.900, neu=2.000
+stem: Geometrie nach Elementabgleich aktualisiert
+stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
+stem: Längen-Bracketing stem_len 16.100->16.000; Kandidaten=1.000->1012.000, 9.500->1530.000, 16.000->896.000, 18.000->1102.000, 26.500->3196.000, 35.000->3651.000
+text: minRect Δcx=0.500, Δcy=1.500, diag=7.280->13.000, scale=1.7857
+text: Fehler=5467.000
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.598); Kandidaten=0.359->5498.000, 0.508->5498.000, 0.545->5498.000, 0.598->5467.000, 0.688->6357.000, 0.731->6249.000, 0.979->8699.000, 1.228->8812.000, 1.414->9521.000, 1.600->9774.000
+Runde 6: Gesamtfehler=21.379
 Runde 7: elementweise Validierung gestartet
-circle: minRect Δcx=-1.581, Δcy=-0.436, diag=18.889->19.188, scale=1.0159
-circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 2235.000->2777.000)
-circle: Fehler=2235.000
+circle: minRect Δcx=0.568, Δcy=-0.379, diag=20.000->22.211, scale=1.1106
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 7804.000->8289.000)
+circle: Fehler=7804.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 18.500->18.500, cy 27.500->30.500 (best_err=2704.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=2704.000); Kandidaten=8.000->3579.000, 9.000->2704.000, 9.500->2927.000
-circle: Joint-Multistart cx 18.500->19.000, cy 30.500->29.000, r 9.000->9.500 (best_err=2400.000)
-circle: Joint-Multistart liegt am Rand; starte stochastic survivor search
-circle: Stochastic-Survivor übernommen (cx=18.500, cy=28.000, r=9.000, err=2920.000)
-stem: Element konnte nicht extrahiert werden
-text: Element konnte nicht extrahiert werden
-Runde 7: Gesamtfehler=32.617
-Runde 8: elementweise Validierung gestartet
-circle: minRect Δcx=-1.758, Δcy=-0.271, diag=19.035->19.553, scale=1.0272
-circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 2365.000->2653.000)
-circle: Fehler=2365.000
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 18.500->18.500, cy 28.000->31.000 (best_err=2612.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=2612.000); Kandidaten=8.000->3538.000, 9.000->2612.000, 9.500->2931.000
-circle: Joint-Multistart cx 18.500->19.000, cy 31.000->29.500, r 9.000->9.500 (best_err=2535.000)
-circle: Joint-Multistart liegt am Rand; starte stochastic survivor search
-circle: Stochastic-Survivor übernommen (cx=19.000, cy=28.000, r=9.500, err=2555.000)
-stem: Element konnte nicht extrahiert werden
-text: Element konnte nicht extrahiert werden
-Runde 8: Gesamtfehler=32.406
-Runde 9: elementweise Validierung gestartet
-circle: minRect Δcx=-1.621, Δcy=-0.280, diag=18.962->19.553, scale=1.0312
-circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 2303.000->2613.000)
-circle: Fehler=2303.000
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 19.000->19.000, cy 28.000->31.000 (best_err=2552.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 9.500, best_err=2552.000); Kandidaten=8.500->3462.000, 9.500->2552.000
-circle: Joint-Multistart cx 19.000->19.000, cy 31.000->29.500, r 9.500->9.500 (best_err=2535.000)
-circle: Joint-Multistart liegt am Rand; starte stochastic survivor search
-circle: Stochastic-Survivor übernommen (cx=19.000, cy=28.000, r=9.500, err=2555.000)
-stem: Element konnte nicht extrahiert werden
-text: Element konnte nicht extrahiert werden
-Runde 9: Gesamtfehler=32.406
-Runde 10: elementweise Validierung gestartet
-circle: minRect Δcx=-1.621, Δcy=-0.280, diag=18.962->19.553, scale=1.0312
-circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 2303.000->2613.000)
-circle: Fehler=2303.000
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 19.000->19.000, cy 28.000->31.000 (best_err=2552.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 9.500, best_err=2552.000); Kandidaten=8.500->3462.000, 9.500->2552.000
-circle: Joint-Multistart cx 19.000->19.000, cy 31.000->29.500, r 9.500->9.500 (best_err=2535.000)
-circle: Joint-Multistart liegt am Rand; starte stochastic survivor search
-circle: Stochastic-Survivor übernommen (cx=19.000, cy=28.000, r=9.500, err=2555.000)
-stem: Element konnte nicht extrahiert werden
-text: Element konnte nicht extrahiert werden
-Runde 10: Gesamtfehler=32.406
+circle: Radius-Bracketing keine relevante Änderung (r: 7.000, best_err=9609.000); Kandidaten=7.000->9609.000, 9.500->14441.000
+circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=7.000, best_err=9609.000)
+stem: minRect Δcx=0.500, Δcy=2.500, diag=15.033->15.232, scale=1.0132
+stem: Parameter nach Mittelpunkt/Diagonale angepasst
+stem: Fehler=1606.000
+stem: Breitenkorrektur mode=iter, ratio=0.286, alt=2.026, neu=2.000
+stem: Geometrie nach Elementabgleich aktualisiert
+stem: Breiten-Bracketing übersprungen (stem_width: current=2.000, Range=1.000..1.000)
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 15.500); Kandidaten=1.000->1264.000, 9.500->1530.000, 15.500->1028.000, 18.000->1102.000, 26.500->3196.000, 35.000->3651.000
+text: minRect Δcx=0.500, Δcy=1.500, diag=7.280->13.000, scale=1.7857
+text: Fehler=5467.000
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.598); Kandidaten=0.359->5498.000, 0.508->5498.000, 0.545->5498.000, 0.598->5467.000, 0.688->6357.000, 0.731->6249.000, 0.979->8699.000, 1.228->8812.000, 1.414->9521.000, 1.600->9774.000
+Runde 7: Gesamtfehler=21.207
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
+stem: Farb-Bracketing übersprungen (Farben gesperrt)
+text: Farb-Bracketing übersprungen (Farben gesperrt)

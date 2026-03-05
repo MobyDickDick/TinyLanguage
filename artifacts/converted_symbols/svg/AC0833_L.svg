@@ -1,5 +1,5 @@
 <svg width="25px" height="45px" viewBox="0 0 25 45" xmlns="http://www.w3.org/2000/svg">
-  <line x1="0.5000" y1="29.0000" x2="0.5000" y2="32.5000" stroke="#7f7f7f" stroke-width="1.0000" stroke-linecap="round"/>
+  <line x1="0.5000" y1="30.5000" x2="0.5000" y2="32.5000" stroke="#7f7f7f" stroke-width="1.0000" stroke-linecap="round"/>
   <circle cx="0.5000" cy="35.5000" r="3.0000" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="1.0000"/>
   <text x="0.5800" y="35.6000" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="4.0000" font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">CO</text>
   <text x="2.6800" y="36.2400" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="3.6000" font-style="normal" font-weight="600" text-anchor="start" dominant-baseline="middle">2</text>

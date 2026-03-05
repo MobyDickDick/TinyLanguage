@@ -9,7 +9,7 @@ arm: Fehler=7960.000
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
 arm: Längen-Bracketing keine relevante Änderung (arm_len: 23.000); Kandidaten=17.000->8419.000, 23.000->8052.000, 24.000->8052.000, 31.000->8052.000, 38.000->8052.000, 45.000->8052.000
 text: minRect Δcx=-1.500, Δcy=2.000, diag=6.708->17.493, scale=2.6077
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 8357.000->8407.000)
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 8357.000->8407.000; Box-Check verworfen (w_ratio=0.688, h_ratio=0.400, area_ratio=0.275))
 text: Fehler=8357.000
 text: Breiten-Bracketing voc_font_scale 0.520->0.442; Kandidaten=0.312->7415.000, 0.442->7292.000, 0.505->8449.000, 0.520->8357.000, 0.598->9193.000, 0.698->9330.000, 0.956->10690.000, 1.214->12943.000, 1.407->14739.000, 1.600->16024.000
 Runde 1: Gesamtfehler=25.661
@@ -24,7 +24,7 @@ arm: Fehler=7960.000
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
 arm: Längen-Bracketing keine relevante Änderung (arm_len: 23.000); Kandidaten=17.000->8419.000, 23.000->8052.000, 24.000->8052.000, 31.000->8052.000, 38.000->8052.000, 45.000->8052.000
 text: minRect Δcx=0.500, Δcy=1.000, diag=8.544->14.765, scale=1.7281
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 7292.000->7309.000)
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 7292.000->7309.000; Box-Check verworfen (w_ratio=0.643, h_ratio=0.300, area_ratio=0.193))
 text: Fehler=7292.000
 text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.442); Kandidaten=0.300->7415.000, 0.376->7415.000, 0.442->7292.000, 0.495->8482.000, 0.508->8440.000, 0.690->9295.000, 0.950->10719.000, 1.210->12966.000, 1.405->14733.000, 1.600->16024.000
 Runde 2: Gesamtfehler=25.661

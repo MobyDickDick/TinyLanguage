@@ -30,7 +30,7 @@ stem: Breiten-Bracketing übersprungen (stem_width: current=1.000, Range=1.000..
 stem: Längen-Stochastic-Survivor aktiviert (best_len=1.500, err=383.000)
 stem: Längen-Bracketing stem_len 7.000->1.500; Kandidaten=1.000->506.000, 7.000->899.000, 13.000->647.000, 19.000->2009.000, 25.000->2555.000
 text: minRect Δcx=-0.454, Δcy=-0.131, diag=8.602->9.219, scale=1.0717
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000)
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000; Box-Check verworfen (w_ratio=0.667, h_ratio=0.556, area_ratio=0.370))
 text: Fehler=3244.000
 text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.740); Kandidaten=0.740->3244.000, 0.783->3264.000, 0.826->3786.000, 0.851->3721.000, 0.882->3677.000, 0.939->3633.000, 0.982->3633.000, 1.025->3633.000
 Runde 2: Gesamtfehler=21.773
@@ -43,7 +43,7 @@ circle: Radius-Bracketing r 6.718->7.000 (best_err=6016.000); Kandidaten=6.000->
 circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=7.500, r=7.000, best_err=6016.000)
 stem: Element konnte nicht extrahiert werden
 text: minRect Δcx=-0.454, Δcy=-0.131, diag=8.602->9.219, scale=1.0717
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000)
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000; Box-Check verworfen (w_ratio=0.667, h_ratio=0.556, area_ratio=0.370))
 text: Fehler=3244.000
 text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.740); Kandidaten=0.740->3244.000, 0.783->3264.000, 0.826->3786.000, 0.851->3721.000, 0.882->3677.000, 0.939->3633.000, 0.982->3633.000, 1.025->3633.000
 Runde 3: Gesamtfehler=21.773
@@ -56,7 +56,7 @@ circle: Radius-Bracketing r 6.718->7.000 (best_err=6016.000); Kandidaten=6.000->
 circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=7.500, r=7.000, best_err=6016.000)
 stem: Element konnte nicht extrahiert werden
 text: minRect Δcx=-0.454, Δcy=-0.131, diag=8.602->9.219, scale=1.0717
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000)
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000; Box-Check verworfen (w_ratio=0.667, h_ratio=0.556, area_ratio=0.370))
 text: Fehler=3244.000
 text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.740); Kandidaten=0.740->3244.000, 0.783->3264.000, 0.826->3786.000, 0.851->3721.000, 0.882->3677.000, 0.939->3633.000, 0.982->3633.000, 1.025->3633.000
 Runde 4: Gesamtfehler=21.773
@@ -69,7 +69,7 @@ circle: Radius-Bracketing r 6.718->7.000 (best_err=6016.000); Kandidaten=6.000->
 circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=7.500, r=7.000, best_err=6016.000)
 stem: Element konnte nicht extrahiert werden
 text: minRect Δcx=-0.454, Δcy=-0.131, diag=8.602->9.219, scale=1.0717
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000)
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000; Box-Check verworfen (w_ratio=0.667, h_ratio=0.556, area_ratio=0.370))
 text: Fehler=3244.000
 text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.740); Kandidaten=0.740->3244.000, 0.783->3264.000, 0.826->3786.000, 0.851->3721.000, 0.882->3677.000, 0.939->3633.000, 0.982->3633.000, 1.025->3633.000
 Runde 5: Gesamtfehler=21.773
@@ -82,7 +82,7 @@ circle: Radius-Bracketing r 6.718->7.000 (best_err=6016.000); Kandidaten=6.000->
 circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=7.500, r=7.000, best_err=6016.000)
 stem: Element konnte nicht extrahiert werden
 text: minRect Δcx=-0.454, Δcy=-0.131, diag=8.602->9.219, scale=1.0717
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000)
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000; Box-Check verworfen (w_ratio=0.667, h_ratio=0.556, area_ratio=0.370))
 text: Fehler=3244.000
 text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.740); Kandidaten=0.740->3244.000, 0.783->3264.000, 0.826->3786.000, 0.851->3721.000, 0.882->3677.000, 0.939->3633.000, 0.982->3633.000, 1.025->3633.000
 Runde 6: Gesamtfehler=21.773
@@ -95,7 +95,7 @@ circle: Radius-Bracketing r 6.718->7.000 (best_err=6016.000); Kandidaten=6.000->
 circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=7.500, r=7.000, best_err=6016.000)
 stem: Element konnte nicht extrahiert werden
 text: minRect Δcx=-0.454, Δcy=-0.131, diag=8.602->9.219, scale=1.0717
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000)
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000; Box-Check verworfen (w_ratio=0.667, h_ratio=0.556, area_ratio=0.370))
 text: Fehler=3244.000
 text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.740); Kandidaten=0.740->3244.000, 0.783->3264.000, 0.826->3786.000, 0.851->3721.000, 0.882->3677.000, 0.939->3633.000, 0.982->3633.000, 1.025->3633.000
 Runde 7: Gesamtfehler=21.773
@@ -108,7 +108,7 @@ circle: Radius-Bracketing r 6.718->7.000 (best_err=6016.000); Kandidaten=6.000->
 circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=7.500, r=7.000, best_err=6016.000)
 stem: Element konnte nicht extrahiert werden
 text: minRect Δcx=-0.454, Δcy=-0.131, diag=8.602->9.219, scale=1.0717
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000)
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000; Box-Check verworfen (w_ratio=0.667, h_ratio=0.556, area_ratio=0.370))
 text: Fehler=3244.000
 text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.740); Kandidaten=0.740->3244.000, 0.783->3264.000, 0.826->3786.000, 0.851->3721.000, 0.882->3677.000, 0.939->3633.000, 0.982->3633.000, 1.025->3633.000
 Runde 8: Gesamtfehler=21.773
@@ -121,7 +121,7 @@ circle: Radius-Bracketing r 6.718->7.000 (best_err=6016.000); Kandidaten=6.000->
 circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=7.500, r=7.000, best_err=6016.000)
 stem: Element konnte nicht extrahiert werden
 text: minRect Δcx=-0.454, Δcy=-0.131, diag=8.602->9.219, scale=1.0717
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000)
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000; Box-Check verworfen (w_ratio=0.667, h_ratio=0.556, area_ratio=0.370))
 text: Fehler=3244.000
 text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.740); Kandidaten=0.740->3244.000, 0.783->3264.000, 0.826->3786.000, 0.851->3721.000, 0.882->3677.000, 0.939->3633.000, 0.982->3633.000, 1.025->3633.000
 Runde 9: Gesamtfehler=21.773
@@ -134,7 +134,7 @@ circle: Radius-Bracketing r 6.718->7.000 (best_err=6016.000); Kandidaten=6.000->
 circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=7.500, r=7.000, best_err=6016.000)
 stem: Element konnte nicht extrahiert werden
 text: minRect Δcx=-0.454, Δcy=-0.131, diag=8.602->9.219, scale=1.0717
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000)
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 3244.000->3464.000; Box-Check verworfen (w_ratio=0.667, h_ratio=0.556, area_ratio=0.370))
 text: Fehler=3244.000
 text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.740); Kandidaten=0.740->3244.000, 0.783->3264.000, 0.826->3786.000, 0.851->3721.000, 0.882->3677.000, 0.939->3633.000, 0.982->3633.000, 1.025->3633.000
 Runde 10: Gesamtfehler=21.773

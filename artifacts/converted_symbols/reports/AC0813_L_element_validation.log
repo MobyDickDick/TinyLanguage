@@ -4,16 +4,16 @@ circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=6903.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Mittelpunkt-Bracketing cx 12.150->16.000, cy 29.850->33.500 (best_err=10096.000)
-circle: Radius-Bracketing r 10.682->12.000 (best_err=9203.000); Kandidaten=9.000->9946.000, 10.500->10096.000, 11.000->9807.000, 11.500->10043.000, 12.000->9203.000
+circle: Radius-Bracketing r 10.682->12.000 (best_err=9203.000); Kandidaten=9.500->10042.000, 10.500->10096.000, 11.000->9807.000, 11.500->10043.000, 12.000->9203.000
 circle: Joint-Multistart cx 16.000->18.000, cy 33.500->35.500, r 12.000->12.000 (best_err=8938.000)
 circle: Joint-Multistart liegt am Rand; starte stochastic survivor search
 circle: Stochastic-Survivor übernommen (cx=21.000, cy=41.500, r=9.000, err=6693.000)
 arm: minRect Δcx=0.411, Δcy=10.663, diag=32.016->19.098, scale=0.5965
-arm: Parameter nach Mittelpunkt/Diagonale angepasst
+arm: Mittelpunkt/Diagonale-Update verworfen (Fehler 3056.000->3008.000; Box-Check verworfen (w_ratio=0.143, h_ratio=1.474, area_ratio=0.211))
 arm: Fehler=3056.000
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing arm_len 27.625->1.000; Kandidaten=1.000->1440.000, 12.000->3076.000, 23.000->3056.000, 27.500->3056.000, 34.000->3056.000, 45.000->3056.000
-Runde 1: Gesamtfehler=20.089
+arm: Längen-Bracketing arm_len 32.500->24.500; Kandidaten=24.500->3056.000, 29.500->3056.000, 32.500->3056.000, 34.500->3056.000, 40.000->3056.000, 45.000->3056.000
+Runde 1: Gesamtfehler=21.740
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=1.524, Δcy=0.149, diag=17.356->16.936, scale=0.9758
 circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 2303.000->2360.000)
@@ -22,12 +22,11 @@ circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.
 circle: Mittelpunkt-Bracketing cx 21.000->24.000, cy 41.500->44.000 (best_err=2549.000)
 circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=2549.000); Kandidaten=9.000->2549.000, 12.000->3666.000
 circle: Joint-Multistart keine relevante Änderung (cx=24.000, cy=44.000, r=9.000, best_err=2549.000)
-arm: minRect Δcx=-1.342, Δcy=0.247, diag=3.162->9.642, scale=3.0489
-arm: Parameter nach Mittelpunkt/Diagonale angepasst
-arm: Fehler=1366.000
-arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.180, Range=1.000..1.000)
-arm: Längen-Stochastic-Survivor aktiviert (best_len=1.000, err=1255.000)
-arm: Längen-Bracketing arm_len 4.130->1.000; Kandidaten=1.000->1255.000, 4.000->1456.000, 12.000->2201.000, 23.000->2201.000, 34.000->2201.000, 45.000->2201.000
+arm: minRect Δcx=-2.000, Δcy=7.500, diag=26.019->17.263, scale=0.6635
+arm: Mittelpunkt/Diagonale-Update verworfen (Fehler 2201.000->2387.000; Box-Check verworfen (w_ratio=0.250, h_ratio=1.333, area_ratio=0.333))
+arm: Fehler=2201.000
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
+arm: Längen-Bracketing arm_len 27.000->1.000; Kandidaten=1.000->1255.000, 12.000->2201.000, 23.000->2201.000, 27.000->2201.000, 34.000->2201.000, 45.000->2201.000
 Runde 2: Gesamtfehler=19.577
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=0.170, Δcy=-1.190, diag=14.577->12.397, scale=0.8504

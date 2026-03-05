@@ -7,7 +7,7 @@ circle: Mittelpunkt-Bracketing cx 23.075->23.000, cy 9.825->10.000 (best_err=963
 circle: Radius-Bracketing r 9.192->9.000 (best_err=963.000); Kandidaten=8.500->5335.000, 9.000->963.000, 9.500->5483.000
 circle: Joint-Multistart keine relevante Änderung (cx=23.000, cy=10.000, r=9.000, best_err=963.000)
 arm: minRect Δcx=0.930, Δcy=1.510, diag=13.038->15.654, scale=1.2006
-arm: Mittelpunkt/Diagonale-Update verworfen (Fehler 2455.000->3200.000)
+arm: Mittelpunkt/Diagonale-Update verworfen (Fehler 2455.000->3200.000; Box-Check verworfen (w_ratio=1.000, h_ratio=0.286, area_ratio=0.286))
 arm: Fehler=2455.000
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
 arm: Längen-Bracketing keine relevante Änderung (arm_len: 14.000); Kandidaten=10.500->2621.000, 14.000->2455.000, 16.500->2455.000, 23.000->2455.000, 29.000->2455.000, 35.000->2455.000

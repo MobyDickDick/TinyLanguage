@@ -11,6 +11,8 @@ import csv
 import json
 import math
 import os
+import random
+import time
 import re
 import subprocess
 import sys
@@ -4070,6 +4072,18 @@ def _in_requested_range(filename: str, start_ref: str, end_ref: str) -> bool:
     return start_n <= stem_n <= end_n
 
 
+
+
+def _conversion_random() -> random.Random:
+    """Return run-local RNG (seedable via env) for non-deterministic search order."""
+    seed_raw = os.environ.get("TINY_ICC_RANDOM_SEED")
+    if seed_raw is not None and str(seed_raw).strip() != "":
+        try:
+            return random.Random(int(str(seed_raw).strip()))
+        except ValueError:
+            pass
+    return random.Random(time.time_ns())
+
 def _default_converted_symbols_root() -> str:
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(repo_root, "artifacts", "converted_symbols")
@@ -4370,6 +4384,103 @@ def _rank_template_transfer_donors(
     return [donor for _, donor in ranked]
 
 
+
+
+def _semantic_transfer_rotations(target_params: dict[str, object], donor_params: dict[str, object]) -> tuple[int, ...]:
+    """Rotation candidates for semantic transfer; keep text upright."""
+    has_text = bool(target_params.get("draw_text", False) or donor_params.get("draw_text", False))
+    if has_text:
+        return (0,)
+    return (0, 90, 180, 270)
+
+
+
+
+def _semantic_transfer_scale_candidates(base_scale: float) -> list[float]:
+    """Broader scale ladder for semantic badge transfer exploration."""
+    core = _template_transfer_scale_candidates(base_scale)
+    extra = [0.55, 0.65, 0.75, 0.85, 1.00, 1.15, 1.30, 1.50, 1.75, 2.00]
+    values = []
+    seen: set[float] = set()
+    for v in [*core, *extra]:
+        value = float(min(2.2, max(0.5, float(v))))
+        key = round(value, 4)
+        if key in seen:
+            continue
+        seen.add(key)
+        values.append(key)
+    return values
+
+def _semantic_transfer_badge_params(
+    donor_params: dict[str, object],
+    target_params: dict[str, object],
+    *,
+    target_w: int,
+    target_h: int,
+    rotation_deg: int,
+    scale: float,
+) -> dict[str, object]:
+    """Rotate/scale connector geometry around circle center while preserving upright text."""
+    p = dict(donor_params)
+    cx = float(p.get("cx", target_w / 2.0))
+    cy = float(p.get("cy", target_h / 2.0))
+    tx = float(target_params.get("cx", target_w / 2.0))
+    ty = float(target_params.get("cy", target_h / 2.0))
+
+    # Always carry essential rendering colors from target/donor/defaults.
+    p["fill_gray"] = int(round(float(target_params.get("fill_gray", p.get("fill_gray", Action.LIGHT_CIRCLE_FILL_GRAY)))))
+    p["stroke_gray"] = int(round(float(target_params.get("stroke_gray", p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY)))))
+    if bool(target_params.get("draw_text", p.get("draw_text", False))) or bool(p.get("draw_text", False)):
+        p["text_gray"] = int(round(float(target_params.get("text_gray", p.get("text_gray", Action.LIGHT_CIRCLE_TEXT_GRAY)))))
+    if bool(target_params.get("stem_enabled", p.get("stem_enabled", False))) or bool(p.get("stem_enabled", False)):
+        p["stem_gray"] = int(round(float(target_params.get("stem_gray", p.get("stem_gray", p["stroke_gray"])))))
+
+    # Prefer target anchor so center alignment remains stable between variants.
+    p["cx"] = tx
+    p["cy"] = ty
+
+    if p.get("circle_enabled", True):
+        p["r"] = max(1.0, float(p.get("r", 1.0)) * float(scale))
+
+    angle = math.radians(float(rotation_deg))
+    ca = math.cos(angle)
+    sa = math.sin(angle)
+
+    def _rot_scale_point(x: float, y: float) -> tuple[float, float]:
+        dx = (x - cx) * float(scale)
+        dy = (y - cy) * float(scale)
+        rx = (dx * ca) - (dy * sa)
+        ry = (dx * sa) + (dy * ca)
+        return tx + rx, ty + ry
+
+    if p.get("arm_enabled"):
+        x1, y1 = _rot_scale_point(float(p.get("arm_x1", tx)), float(p.get("arm_y1", ty)))
+        x2, y2 = _rot_scale_point(float(p.get("arm_x2", tx)), float(p.get("arm_y2", ty)))
+        p["arm_x1"] = float(np.clip(x1, 0.0, max(0.0, float(target_w - 1))))
+        p["arm_y1"] = float(np.clip(y1, 0.0, max(0.0, float(target_h - 1))))
+        p["arm_x2"] = float(np.clip(x2, 0.0, max(0.0, float(target_w - 1))))
+        p["arm_y2"] = float(np.clip(y2, 0.0, max(0.0, float(target_h - 1))))
+
+    if p.get("stem_enabled"):
+        stem_x = float(p.get("stem_x", tx)) + (float(p.get("stem_width", 1.0)) / 2.0)
+        top = float(p.get("stem_top", ty))
+        bottom = float(p.get("stem_bottom", ty))
+        x1, y1 = _rot_scale_point(stem_x, top)
+        x2, y2 = _rot_scale_point(stem_x, bottom)
+        p["stem_x"] = float(np.clip((x1 + x2) / 2.0 - (float(p.get("stem_width", 1.0)) / 2.0), 0.0, float(target_w)))
+        p["stem_top"] = float(np.clip(min(y1, y2), 0.0, float(target_h)))
+        p["stem_bottom"] = float(np.clip(max(y1, y2), 0.0, float(target_h)))
+
+    # Keep text horizontally readable; only scale text size mildly with radius changes.
+    if bool(p.get("draw_text", False)):
+        if "s" in p:
+            p["s"] = float(max(1e-4, float(p.get("s", 0.01)) * math.sqrt(max(0.5, min(1.8, float(scale))))))
+
+    symbol_name = str(target_params.get("label") or target_params.get("variant") or target_params.get("base") or "")
+    if symbol_name:
+        p = Action._finalize_ac08_style(symbol_name, p)
+    return p
+
 def _try_template_transfer(
     *,
     target_row: dict[str, object],
@@ -4377,6 +4488,7 @@ def _try_template_transfer(
     folder_path: str,
     svg_out_dir: str,
     diff_out_dir: str,
+    rng: random.Random | None = None,
 ) -> tuple[dict[str, object] | None, dict[str, object] | None]:
     filename = str(target_row.get("filename", ""))
     if not filename:
@@ -4400,6 +4512,11 @@ def _try_template_transfer(
 
     target_variant = str(target_row.get("variant", "")).upper()
     ordered_donors = _rank_template_transfer_donors(target_row, donor_rows)
+    if rng is not None and len(ordered_donors) > 1:
+        head = ordered_donors[:3]
+        tail = ordered_donors[3:]
+        rng.shuffle(head)
+        ordered_donors = head + tail
     for donor in ordered_donors:
         donor_variant = str(donor.get("variant", "")).upper()
         if not donor_variant or donor_variant == target_variant:
@@ -4422,6 +4539,42 @@ def _try_template_transfer(
             )
             for rotation in (0, 90, 180, 270)
         }
+
+        target_params_raw = target_row.get("params")
+        donor_params_raw = donor.get("params")
+        if isinstance(target_params_raw, dict) and isinstance(donor_params_raw, dict):
+            if str(target_params_raw.get("mode", "")) == "semantic_badge" and str(donor_params_raw.get("mode", "")) == "semantic_badge":
+                base_scale = float(min(w, h)) / max(1.0, float(min(int(donor.get("w", w)), int(donor.get("h", h)))))
+                semantic_scales = _semantic_transfer_scale_candidates(base_scale)
+                if rng is not None:
+                    keep = semantic_scales[:2]
+                    rest = semantic_scales[2:]
+                    rng.shuffle(rest)
+                    semantic_scales = keep + rest
+                for rotation in _semantic_transfer_rotations(dict(target_params_raw), dict(donor_params_raw)):
+                    for scale in semantic_scales:
+                        candidate_params = _semantic_transfer_badge_params(
+                            dict(donor_params_raw),
+                            dict(target_params_raw),
+                            target_w=w,
+                            target_h=h,
+                            rotation_deg=rotation,
+                            scale=float(scale),
+                        )
+                        try:
+                            candidate_svg = Action.generate_badge_svg(w, h, candidate_params)
+                            rendered = Action.render_svg_to_numpy(candidate_svg, w, h)
+                        except Exception:
+                            continue
+                        error = Action.calculate_error(img_orig, rendered)
+                        error_pp = float(error) / pixel_count
+                        if error_pp + 1e-9 < best_error_pp:
+                            best_error = float(error)
+                            best_error_pp = error_pp
+                            best_svg = candidate_svg
+                            best_donor = donor_variant
+                            best_rotation = rotation
+                            best_scale = float(scale)
 
         for rotation, scale in _template_transfer_transform_candidates(
             target_variant,
@@ -4497,6 +4650,9 @@ def convert_range(
         for f in os.listdir(folder_path)
         if f.lower().endswith((".bmp", ".jpg", ".png")) and _in_requested_range(f, start_ref, end_ref)
     )
+    rng = _conversion_random()
+    process_files = list(files)
+    rng.shuffle(process_files)
 
     base_iterations = max(128, int(iterations))
     max_quality_passes = 4
@@ -4541,10 +4697,29 @@ def convert_range(
         }
 
     # Initial conversion pass for all forms.
-    for filename in files:
+    for filename in process_files:
         row = _convert_one(filename, iteration_budget=base_iterations, badge_rounds=6)
-        if row is not None:
-            result_map[filename] = row
+        if row is None:
+            continue
+
+        donor_rows = [
+            prev
+            for key, prev in result_map.items()
+            if key != filename and math.isfinite(float(prev.get("error_per_pixel", float("inf"))))
+        ]
+        if donor_rows:
+            transferred, _detail = _try_template_transfer(
+                target_row=row,
+                donor_rows=donor_rows,
+                folder_path=folder_path,
+                svg_out_dir=svg_out_dir,
+                diff_out_dir=diff_out_dir,
+                rng=rng,
+            )
+            if transferred is not None and float(transferred.get("error_per_pixel", float("inf"))) + 1e-9 < float(row.get("error_per_pixel", float("inf"))):
+                row = transferred
+
+        result_map[filename] = row
 
     current_rows = [
         row
@@ -4608,6 +4783,8 @@ def convert_range(
 
         improved_in_pass = False
         iteration_budget, badge_rounds = _iteration_strategy_for_pass(pass_idx, base_iterations)
+        if len(candidates) > 1:
+            rng.shuffle(candidates)
         for row in candidates:
             filename = str(row["filename"])
             variant = str(row.get("variant", "")).upper()
@@ -4651,6 +4828,8 @@ def convert_range(
                 and float(row.get("error_per_pixel", float("inf"))) <= allowed_error_pp
             ]
             fallback_improved = False
+            if len(candidates) > 1:
+                rng.shuffle(candidates)
             for row in candidates:
                 filename = str(row["filename"])
                 current = result_map.get(filename)
@@ -4666,6 +4845,7 @@ def convert_range(
                     folder_path=folder_path,
                     svg_out_dir=svg_out_dir,
                     diff_out_dir=diff_out_dir,
+                    rng=rng,
                 )
                 if updated is None or detail is None:
                     continue
@@ -4950,6 +5130,16 @@ def _scale_badge_params(anchor: dict, anchor_w: int, anchor_h: int, target_w: in
     return scaled
 
 
+def _harmonization_anchor_priority(suffix: str, prefer_large: bool) -> int:
+    """Return size-priority rank for L/M/S harmonization anchors."""
+    if prefer_large:
+        # For connector families we keep L authoritative to avoid undersized
+        # large variants caused by propagating medium geometry upwards.
+        return {"L": 0, "M": 1, "S": 2}.get(str(suffix), 3)
+    # Plain circles remain more stable when M is used as anchor.
+    return {"M": 0, "L": 1, "S": 2}.get(str(suffix), 3)
+
+
 def _harmonize_semantic_size_variants(
     results: list[dict[str, object]],
     folder_path: str,
@@ -4984,8 +5174,10 @@ def _harmonize_semantic_size_variants(
 
         has_text = any(bool(dict(row["params"]).get("draw_text", False)) for row in variant_rows)
         has_stem = any(bool(dict(row["params"]).get("stem_enabled", False)) for row in variant_rows)
-        category = "Kreise mit Buchstaben" if has_text and not has_stem else (
-            "Kreise ohne Buchstaben" if (not has_text and not has_stem) else (
+        has_arm = any(bool(dict(row["params"]).get("arm_enabled", False)) for row in variant_rows)
+        has_connector = has_stem or has_arm
+        category = "Kreise mit Buchstaben" if has_text and not has_connector else (
+            "Kreise ohne Buchstaben" if (not has_text and not has_connector) else (
                 "Kellen mit Buchstaben" if has_text else "Kellen ohne Buchstaben"
             )
         )
@@ -5008,7 +5200,10 @@ def _harmonize_semantic_size_variants(
 
         def _anchor_rank(row: dict[str, object]) -> tuple[int, float]:
             suffix = str(row.get("suffix", ""))
-            priority = {"M": 0, "L": 1, "S": 2}.get(suffix, 3)
+            # Connector families ("Kellen") tend to under-fit large variants
+            # when we derive L from M. Prefer L as harmonization anchor so the
+            # largest geometry stays authoritative and M/S scale down from it.
+            priority = _harmonization_anchor_priority(suffix, prefer_large=has_connector)
             err = float(dict(row["entry"]).get("error", float("inf")))
             return priority, err
 

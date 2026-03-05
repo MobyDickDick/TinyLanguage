@@ -701,6 +701,44 @@ def test_optimize_stem_extent_keeps_circle_side_anchor() -> None:
     assert float(params["stem_bottom"]) > float(params["stem_top"])
     assert any("stem: Längen-Bracketing" in line for line in logs)
 
+
+def test_fit_ac0811_preserves_visible_stem_when_circle_estimate_reaches_bottom() -> None:
+    """AC0811 fitting should keep at least a small visible stem segment."""
+
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    class DummyImg:
+        shape = (15, 15, 3)
+
+    img = DummyImg()
+    defaults = Action._default_ac0811_params(15, 15)
+
+    original_fit = Action._fit_semantic_badge_from_image
+    original_upper = Action._estimate_upper_circle_from_foreground
+    try:
+        Action._fit_semantic_badge_from_image = staticmethod(
+            lambda _img, _defaults: {
+                **dict(defaults),
+                "cx": float(defaults["cx"]),
+                "cy": float(defaults["cy"]),
+                # Simulate a noisy fit where the circle radius grows so much
+                # that stem_top would otherwise land at/below image bottom.
+                "r": float(img.shape[0]),
+                "stem_width": float(defaults["stem_width"]),
+            }
+        )
+        Action._estimate_upper_circle_from_foreground = staticmethod(lambda _img, _defaults: None)
+
+        params = Action._fit_ac0811_params_from_image(img, defaults)
+    finally:
+        Action._fit_semantic_badge_from_image = original_fit
+        Action._estimate_upper_circle_from_foreground = original_upper
+
+    assert float(params["stem_bottom"]) == float(img.shape[0])
+    assert float(params["stem_top"]) <= float(img.shape[0]) - 1.0
+    assert float(params["stem_bottom"]) - float(params["stem_top"]) >= 1.0
+
 def test_text_width_bracketing_keeps_fractional_font_scale_precision() -> None:
     """Text scale optimization should not quantize font scale to half-pixel steps."""
     if image_composite_converter.np is None:
@@ -1054,3 +1092,27 @@ def test_masked_union_error_in_bbox_penalizes_missed_overlap() -> None:
     err = Action._masked_union_error_in_bbox(img_orig, img_svg, mask_orig, mask_svg)
 
     assert err > 200.0
+
+
+def test_select_middle_lower_tercile_returns_worst_two_thirds_by_error_per_pixel() -> None:
+    rows = [
+        {"filename": "A", "error_per_pixel": 0.01},
+        {"filename": "B", "error_per_pixel": 0.05},
+        {"filename": "C", "error_per_pixel": 0.03},
+        {"filename": "D", "error_per_pixel": 0.02},
+        {"filename": "E", "error_per_pixel": 0.04},
+        {"filename": "F", "error_per_pixel": 0.06},
+    ]
+
+    selected = image_composite_converter._select_middle_lower_tercile(rows)
+
+    assert [row["filename"] for row in selected] == ["C", "E", "B", "F"]
+
+
+def test_select_middle_lower_tercile_requires_at_least_three_entries() -> None:
+    rows = [
+        {"filename": "A", "error_per_pixel": 0.01},
+        {"filename": "B", "error_per_pixel": 0.05},
+    ]
+
+    assert image_composite_converter._select_middle_lower_tercile(rows) == []

@@ -94,6 +94,16 @@ arm: Element konnte nicht extrahiert werden
 text: minRect Δcx=3.500, Δcy=0.000, diag=11.402->12.042, scale=1.0561
 text: Fehler=5760.000
 Runde 7: Gesamtfehler=28.919
+Runde 8: elementweise Validierung gestartet
+circle: Fehler=1426.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Mittelpunkt-Bracketing cx 23.500->23.500, cy 17.500->19.000 (best_err=2047.000)
+circle: Radius-Bracketing keine relevante Änderung (r: 3.000, best_err=2047.000); Kandidaten=3.000->2047.000, 9.500->4398.000
+circle: Joint-Multistart cx 23.500->23.500, cy 19.000->17.500, r 3.000->3.000 (best_err=1593.000)
+arm: Element konnte nicht extrahiert werden
+text: minRect Δcx=3.500, Δcy=0.000, diag=11.402->12.042, scale=1.0561
+text: Fehler=5760.000
+Runde 8: Gesamtfehler=28.919
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Farb-Bracketing übersprungen (Farben gesperrt)
 text: Farb-Bracketing übersprungen (Farben gesperrt)

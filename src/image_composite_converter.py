@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import math
 import os
 import re
 import subprocess
@@ -780,7 +781,14 @@ class Action:
         params["stem_width"] = stem_width
         params["stem_width_max"] = max_stem_width
         params["stem_x"] = cx - (params["stem_width"] / 2.0)
-        params["stem_top"] = max(0.0, min(float(h), cy + r))
+        min_stem_len = 1.0 if h <= 18 else 2.0
+        max_r_for_visible_stem = max(1.0, float(h) - cy - min_stem_len)
+        if r > max_r_for_visible_stem:
+            r = max_r_for_visible_stem
+            params["r"] = r
+        stem_top = cy + r
+        stem_top = max(0.0, min(float(h) - min_stem_len, stem_top))
+        params["stem_top"] = stem_top
         params["stem_bottom"] = float(h)
         params["stem_gray"] = int(round(params.get("stroke_gray", defaults.get("stroke_gray", 152))))
         return Action._normalize_light_circle_colors(params)
@@ -3742,6 +3750,7 @@ def run_iteration_pipeline(
     reports_out_dir: str | None = None,
     debug_ac0811_dir: str | None = None,
     debug_element_diff_dir: str | None = None,
+    badge_validation_rounds: int = 6,
 ):
     if cv2 is None or np is None:
         missing = []
@@ -3794,6 +3803,7 @@ def run_iteration_pipeline(
         validation_logs = Action.validate_badge_by_elements(
             perc.img,
             badge_params,
+            max_rounds=max(1, int(badge_validation_rounds)),
             debug_out_dir=debug_dir,
         )
         if reports_out_dir:
@@ -3876,6 +3886,53 @@ def _default_converted_symbols_root() -> str:
     return os.path.join(repo_root, "artifacts", "converted_symbols")
 
 
+def _quality_sort_key(row: dict[str, object]) -> float:
+    value = float(row.get("error_per_pixel", float("inf")))
+    if math.isfinite(value):
+        return value
+    return float("inf")
+
+
+def _select_middle_lower_tercile(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    if len(rows) < 3:
+        return []
+
+    ranked = sorted(rows, key=_quality_sort_key)
+    first_cut = max(1, len(ranked) // 3)
+    return ranked[first_cut:]
+
+
+def _write_quality_pass_report(
+    reports_out_dir: str,
+    pass_rows: list[dict[str, object]],
+) -> None:
+    if not pass_rows:
+        return
+
+    out_path = os.path.join(reports_out_dir, "quality_tercile_passes.csv")
+    with open(out_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f, delimiter=";")
+        writer.writerow([
+            "pass",
+            "filename",
+            "old_error_per_pixel",
+            "new_error_per_pixel",
+            "improved",
+            "iteration_budget",
+            "badge_validation_rounds",
+        ])
+        for row in pass_rows:
+            writer.writerow([
+                row["pass"],
+                row["filename"],
+                f"{float(row['old_error_per_pixel']):.8f}",
+                f"{float(row['new_error_per_pixel']):.8f}",
+                "1" if bool(row["improved"]) else "0",
+                row["iteration_budget"],
+                row["badge_validation_rounds"],
+            ])
+
+
 def convert_range(
     folder_path: str,
     csv_path: str,
@@ -3900,42 +3957,127 @@ def convert_range(
         if f.lower().endswith((".bmp", ".jpg", ".png")) and _in_requested_range(f, start_ref, end_ref)
     )
 
+    max_quality_passes = 4
+    quality_logs: list[dict[str, object]] = []
+    result_map: dict[str, dict[str, object]] = {}
+
+    def _convert_one(filename: str, iteration_budget: int, badge_rounds: int) -> dict[str, object] | None:
+        image_path = os.path.join(folder_path, filename)
+        res = run_iteration_pipeline(
+            image_path,
+            csv_path,
+            max(1, int(iteration_budget)),
+            svg_out_dir,
+            diff_out_dir,
+            reports_out_dir,
+            debug_ac0811_dir,
+            debug_element_diff_dir,
+            badge_validation_rounds=max(1, int(badge_rounds)),
+        )
+        if not res:
+            return None
+
+        _base, _desc, params, best_iter, best_error = res
+        img = cv2.imread(image_path)
+        pixel_count = 1.0
+        width = 0
+        height = 0
+        if img is not None:
+            height, width = img.shape[:2]
+            pixel_count = float(max(1, width * height))
+
+        return {
+            "filename": filename,
+            "params": params,
+            "best_iter": int(best_iter),
+            "best_error": float(best_error),
+            "error_per_pixel": float(best_error) / pixel_count,
+            "w": int(width),
+            "h": int(height),
+            "base": get_base_name_from_file(os.path.splitext(filename)[0]).upper(),
+            "variant": os.path.splitext(filename)[0].upper(),
+        }
+
+    # Initial conversion pass for all forms.
+    for filename in files:
+        row = _convert_one(filename, iteration_budget=iterations, badge_rounds=6)
+        if row is not None:
+            result_map[filename] = row
+
+    # Iteratively refine only middle+lower quality terciles across all forms.
+    for pass_idx in range(1, max_quality_passes + 1):
+        current_rows = [
+            row
+            for row in result_map.values()
+            if math.isfinite(float(row.get("error_per_pixel", float("inf"))))
+        ]
+        candidates = _select_middle_lower_tercile(current_rows)
+        if not candidates:
+            break
+
+        improved_in_pass = False
+        for row in candidates:
+            filename = str(row["filename"])
+            prev_error_pp = float(row["error_per_pixel"])
+            iteration_budget = int(iterations + pass_idx)
+            badge_rounds = int(6 + pass_idx)
+
+            new_row = _convert_one(filename, iteration_budget=iteration_budget, badge_rounds=badge_rounds)
+            if new_row is None:
+                continue
+
+            new_error_pp = float(new_row["error_per_pixel"])
+            improved = new_error_pp + 1e-9 < prev_error_pp
+            if improved:
+                result_map[filename] = new_row
+                improved_in_pass = True
+
+            quality_logs.append(
+                {
+                    "pass": pass_idx,
+                    "filename": filename,
+                    "old_error_per_pixel": prev_error_pp,
+                    "new_error_per_pixel": new_error_pp,
+                    "improved": improved,
+                    "iteration_budget": iteration_budget,
+                    "badge_validation_rounds": badge_rounds,
+                }
+            )
+
+        if not improved_in_pass:
+            break
+
+    _write_quality_pass_report(reports_out_dir, quality_logs)
+
     log_path = os.path.join(reports_out_dir, "Iteration_Log.csv")
     semantic_results: list[dict[str, object]] = []
-
     with open(log_path, mode="w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f, delimiter=";")
-        writer.writerow(["Dateiname", "Gefundene Elemente", "Beste Iteration", "Diff-Score"])
+        writer.writerow(["Dateiname", "Gefundene Elemente", "Beste Iteration", "Diff-Score", "FehlerProPixel"])
         for filename in files:
-            image_path = os.path.join(folder_path, filename)
-            res = run_iteration_pipeline(
-                image_path,
-                csv_path,
-                iterations,
-                svg_out_dir,
-                diff_out_dir,
-                reports_out_dir,
-                debug_ac0811_dir,
-                debug_element_diff_dir,
-            )
-            if res:
-                _base, _desc, params, best_iter, best_error = res
-                writer.writerow([filename, " + ".join(params["elements"]), best_iter, f"{best_error:.2f}"])
+            row = result_map.get(filename)
+            if row is None:
+                continue
+            params = dict(row["params"])
+            writer.writerow([
+                filename,
+                " + ".join(params.get("elements", [])),
+                int(row["best_iter"]),
+                f"{float(row['best_error']):.2f}",
+                f"{float(row['error_per_pixel']):.8f}",
+            ])
 
-                if params.get("mode") == "semantic_badge":
-                    img = cv2.imread(image_path)
-                    if img is not None:
-                        h, w = img.shape[:2]
-                        semantic_results.append(
-                            {
-                                "filename": filename,
-                                "base": get_base_name_from_file(os.path.splitext(filename)[0]).upper(),
-                                "variant": os.path.splitext(filename)[0].upper(),
-                                "w": int(w),
-                                "h": int(h),
-                                "error": float(best_error),
-                            }
-                        )
+            if params.get("mode") == "semantic_badge":
+                semantic_results.append(
+                    {
+                        "filename": filename,
+                        "base": row["base"],
+                        "variant": row["variant"],
+                        "w": int(row.get("w", 0)),
+                        "h": int(row.get("h", 0)),
+                        "error": float(row["best_error"]),
+                    }
+                )
 
     _harmonize_semantic_size_variants(semantic_results, folder_path, svg_out_dir, reports_out_dir)
     _write_pixel_delta2_ranking(folder_path, svg_out_dir, reports_out_dir)

@@ -8,9 +8,9 @@ circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.00
 text: minRect Δcx=0.500, Δcy=2.500, diag=9.487->13.416, scale=1.4142
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=5698.000
-text: Breiten-Stochastic-Survivor aktiviert (voc_font_scale=0.312, err=5188.000)
-text: Breiten-Bracketing voc_font_scale 0.520->0.312; Kandidaten=0.312->5188.000, 0.442->5188.000, 0.505->5278.000, 0.520->5191.000, 0.598->6360.000, 0.698->7070.000, 0.956->9038.000, 1.214->9149.000, 1.407->9218.000, 1.600->9764.000
-Runde 1: Gesamtfehler=18.915
+text: Breiten-Stochastic-Survivor aktiviert (voc_font_scale=0.522, err=5168.000)
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.520); Kandidaten=0.312->5188.000, 0.442->5188.000, 0.505->5278.000, 0.520->5191.000, 0.598->6360.000, 0.698->7070.000, 0.956->9038.000, 1.214->9149.000, 1.407->9218.000, 1.600->9764.000
+Runde 1: Gesamtfehler=18.470
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -18,11 +18,12 @@ circle: Fehler=7140.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
 circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=0.500, diag=7.280->13.000, scale=1.7857
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5188.000->5188.000; Box-Check verworfen (w_ratio=0.615, h_ratio=0.375, area_ratio=0.231))
-text: Fehler=5188.000
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.312); Kandidaten=0.300->5188.000, 0.312->5188.000, 0.359->5188.000, 0.495->5321.000, 0.690->6692.000, 0.950->9049.000, 1.210->9161.000, 1.405->9214.000, 1.600->9764.000
-Runde 2: Gesamtfehler=18.915
+text: minRect Δcx=0.500, Δcy=1.000, diag=9.487->13.000, scale=1.3703
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5191.000->5200.000; Box-Check verworfen (w_ratio=0.769, h_ratio=0.444, area_ratio=0.342))
+text: Fehler=5191.000
+text: Breiten-Stochastic-Survivor aktiviert (voc_font_scale=0.522, err=5168.000)
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.520); Kandidaten=0.312->5188.000, 0.442->5188.000, 0.505->5278.000, 0.520->5191.000, 0.598->6360.000, 0.698->7070.000, 0.956->9038.000, 1.214->9149.000, 1.407->9218.000, 1.600->9764.000
+Runde 2: Gesamtfehler=18.470
 Runde 3: elementweise Validierung gestartet
 circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -30,11 +31,12 @@ circle: Fehler=7140.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
 circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=0.500, diag=7.280->13.000, scale=1.7857
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5188.000->5188.000; Box-Check verworfen (w_ratio=0.615, h_ratio=0.375, area_ratio=0.231))
-text: Fehler=5188.000
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.312); Kandidaten=0.300->5188.000, 0.312->5188.000, 0.359->5188.000, 0.495->5321.000, 0.690->6692.000, 0.950->9049.000, 1.210->9161.000, 1.405->9214.000, 1.600->9764.000
-Runde 3: Gesamtfehler=18.915
+text: minRect Δcx=0.500, Δcy=1.000, diag=9.487->13.000, scale=1.3703
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5191.000->5200.000; Box-Check verworfen (w_ratio=0.769, h_ratio=0.444, area_ratio=0.342))
+text: Fehler=5191.000
+text: Breiten-Stochastic-Survivor aktiviert (voc_font_scale=0.522, err=5168.000)
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.520); Kandidaten=0.312->5188.000, 0.442->5188.000, 0.505->5278.000, 0.520->5191.000, 0.598->6360.000, 0.698->7070.000, 0.956->9038.000, 1.214->9149.000, 1.407->9218.000, 1.600->9764.000
+Runde 3: Gesamtfehler=18.470
 Runde 4: elementweise Validierung gestartet
 circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -42,11 +44,12 @@ circle: Fehler=7140.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
 circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=0.500, diag=7.280->13.000, scale=1.7857
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5188.000->5188.000; Box-Check verworfen (w_ratio=0.615, h_ratio=0.375, area_ratio=0.231))
-text: Fehler=5188.000
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.312); Kandidaten=0.300->5188.000, 0.312->5188.000, 0.359->5188.000, 0.495->5321.000, 0.690->6692.000, 0.950->9049.000, 1.210->9161.000, 1.405->9214.000, 1.600->9764.000
-Runde 4: Gesamtfehler=18.915
+text: minRect Δcx=0.500, Δcy=1.000, diag=9.487->13.000, scale=1.3703
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5191.000->5200.000; Box-Check verworfen (w_ratio=0.769, h_ratio=0.444, area_ratio=0.342))
+text: Fehler=5191.000
+text: Breiten-Stochastic-Survivor aktiviert (voc_font_scale=0.522, err=5168.000)
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.520); Kandidaten=0.312->5188.000, 0.442->5188.000, 0.505->5278.000, 0.520->5191.000, 0.598->6360.000, 0.698->7070.000, 0.956->9038.000, 1.214->9149.000, 1.407->9218.000, 1.600->9764.000
+Runde 4: Gesamtfehler=18.470
 Runde 5: elementweise Validierung gestartet
 circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -54,11 +57,12 @@ circle: Fehler=7140.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
 circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=0.500, diag=7.280->13.000, scale=1.7857
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5188.000->5188.000; Box-Check verworfen (w_ratio=0.615, h_ratio=0.375, area_ratio=0.231))
-text: Fehler=5188.000
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.312); Kandidaten=0.300->5188.000, 0.312->5188.000, 0.359->5188.000, 0.495->5321.000, 0.690->6692.000, 0.950->9049.000, 1.210->9161.000, 1.405->9214.000, 1.600->9764.000
-Runde 5: Gesamtfehler=18.915
+text: minRect Δcx=0.500, Δcy=1.000, diag=9.487->13.000, scale=1.3703
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5191.000->5200.000; Box-Check verworfen (w_ratio=0.769, h_ratio=0.444, area_ratio=0.342))
+text: Fehler=5191.000
+text: Breiten-Stochastic-Survivor aktiviert (voc_font_scale=0.522, err=5168.000)
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.520); Kandidaten=0.312->5188.000, 0.442->5188.000, 0.505->5278.000, 0.520->5191.000, 0.598->6360.000, 0.698->7070.000, 0.956->9038.000, 1.214->9149.000, 1.407->9218.000, 1.600->9764.000
+Runde 5: Gesamtfehler=18.470
 Runde 6: elementweise Validierung gestartet
 circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -66,11 +70,12 @@ circle: Fehler=7140.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
 circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=0.500, diag=7.280->13.000, scale=1.7857
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5188.000->5188.000; Box-Check verworfen (w_ratio=0.615, h_ratio=0.375, area_ratio=0.231))
-text: Fehler=5188.000
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.312); Kandidaten=0.300->5188.000, 0.312->5188.000, 0.359->5188.000, 0.495->5321.000, 0.690->6692.000, 0.950->9049.000, 1.210->9161.000, 1.405->9214.000, 1.600->9764.000
-Runde 6: Gesamtfehler=18.915
+text: minRect Δcx=0.500, Δcy=1.000, diag=9.487->13.000, scale=1.3703
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5191.000->5200.000; Box-Check verworfen (w_ratio=0.769, h_ratio=0.444, area_ratio=0.342))
+text: Fehler=5191.000
+text: Breiten-Stochastic-Survivor aktiviert (voc_font_scale=0.522, err=5168.000)
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.520); Kandidaten=0.312->5188.000, 0.442->5188.000, 0.505->5278.000, 0.520->5191.000, 0.598->6360.000, 0.698->7070.000, 0.956->9038.000, 1.214->9149.000, 1.407->9218.000, 1.600->9764.000
+Runde 6: Gesamtfehler=18.470
 Runde 7: elementweise Validierung gestartet
 circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
@@ -78,46 +83,11 @@ circle: Fehler=7140.000
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
 circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=0.500, diag=7.280->13.000, scale=1.7857
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5188.000->5188.000; Box-Check verworfen (w_ratio=0.615, h_ratio=0.375, area_ratio=0.231))
-text: Fehler=5188.000
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.312); Kandidaten=0.300->5188.000, 0.312->5188.000, 0.359->5188.000, 0.495->5321.000, 0.690->6692.000, 0.950->9049.000, 1.210->9161.000, 1.405->9214.000, 1.600->9764.000
-Runde 7: Gesamtfehler=18.915
-Runde 8: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=7140.000
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
-circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=0.500, diag=7.280->13.000, scale=1.7857
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5188.000->5188.000; Box-Check verworfen (w_ratio=0.615, h_ratio=0.375, area_ratio=0.231))
-text: Fehler=5188.000
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.312); Kandidaten=0.300->5188.000, 0.312->5188.000, 0.359->5188.000, 0.495->5321.000, 0.690->6692.000, 0.950->9049.000, 1.210->9161.000, 1.405->9214.000, 1.600->9764.000
-Runde 8: Gesamtfehler=18.915
-Runde 9: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=7140.000
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
-circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=0.500, diag=7.280->13.000, scale=1.7857
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5188.000->5188.000; Box-Check verworfen (w_ratio=0.615, h_ratio=0.375, area_ratio=0.231))
-text: Fehler=5188.000
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.312); Kandidaten=0.300->5188.000, 0.312->5188.000, 0.359->5188.000, 0.495->5321.000, 0.690->6692.000, 0.950->9049.000, 1.210->9161.000, 1.405->9214.000, 1.600->9764.000
-Runde 9: Gesamtfehler=18.915
-Runde 10: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=7140.000
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
-circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=0.500, diag=7.280->13.000, scale=1.7857
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5188.000->5188.000; Box-Check verworfen (w_ratio=0.615, h_ratio=0.375, area_ratio=0.231))
-text: Fehler=5188.000
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.312); Kandidaten=0.300->5188.000, 0.312->5188.000, 0.359->5188.000, 0.495->5321.000, 0.690->6692.000, 0.950->9049.000, 1.210->9161.000, 1.405->9214.000, 1.600->9764.000
-Runde 10: Gesamtfehler=18.915
+text: minRect Δcx=0.500, Δcy=1.000, diag=9.487->13.000, scale=1.3703
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 5191.000->5200.000; Box-Check verworfen (w_ratio=0.769, h_ratio=0.444, area_ratio=0.342))
+text: Fehler=5191.000
+text: Breiten-Stochastic-Survivor aktiviert (voc_font_scale=0.522, err=5168.000)
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.520); Kandidaten=0.312->5188.000, 0.442->5188.000, 0.505->5278.000, 0.520->5191.000, 0.598->6360.000, 0.698->7070.000, 0.956->9038.000, 1.214->9149.000, 1.407->9218.000, 1.600->9764.000
+Runde 7: Gesamtfehler=18.470
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: Farb-Bracketing übersprungen (Farben gesperrt)

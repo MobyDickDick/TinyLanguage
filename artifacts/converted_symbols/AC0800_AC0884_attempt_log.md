@@ -1,6 +1,6 @@
 # AC range conversion attempt log
 
-- Timestamp (UTC): `2026-03-05T08:22:03.767686+00:00`
+- Timestamp (UTC): `2026-03-05T11:33:47.550920+00:00`
 - Range: `AC0800..AC0884`
 - Iterations: `8`
 - Input count: `105`
@@ -28,7 +28,7 @@ C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\python.exe src/image_comp
 
 - Ran conversion: `true`
 - Exit code: `0`
-- Duration (s): `453.084`
+- Duration (s): `159.363`
 
 ### Converter stdout
 
@@ -400,17 +400,8 @@ Befehl erkannt: Kein Compositing-Befehl gefunden
 Befehl erkannt: Kein Compositing-Befehl gefunden
   -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.
 
---- Verarbeite AC0832_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich links vom Kreis
-
---- Verarbeite AC0812_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
-
---- Verarbeite AC0839_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich rechts vom Kreis
-
---- Verarbeite AC0837_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich links vom Kreis
+--- Verarbeite AC0882_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
 
 --- Verarbeite AC0833_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich oben vom Kreis
@@ -421,20 +412,32 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich ob
 --- Verarbeite AC0820_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
 
+--- Verarbeite AC0837_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich links vom Kreis
+
 --- Verarbeite AC0839_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich rechts vom Kreis
 
 --- Verarbeite AC0834_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich rechts vom Kreis
 
+--- Verarbeite AC0836_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich hinter dem Kreis
+
+--- Verarbeite AC0812_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
+
 --- Verarbeite AC0831_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich hinter dem Kreis
 
---- Verarbeite AC0837_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich links vom Kreis
+--- Verarbeite AC0838_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich oben vom Kreis
 
---- Verarbeite AC0836_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich hinter dem Kreis
+--- Verarbeite AC0813_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich oben vom Kreis
+
+--- Verarbeite AC0814_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich rechts vom Kreis
 
 --- Verarbeite AC0831_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich hinter dem Kreis
@@ -442,14 +445,17 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich h
 --- Verarbeite AC0811_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
 
---- Verarbeite AC0813_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich oben vom Kreis
-
 --- Verarbeite AC0835_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 
 --- Verarbeite AC0834_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich rechts vom Kreis
+
+--- Verarbeite AC0882_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
+
+--- Verarbeite AC0881_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
 
 --- Verarbeite AC0831_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich hinter dem Kreis
@@ -469,9 +475,6 @@ Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
 --- Verarbeite AC0836_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich hinter dem Kreis
 
---- Verarbeite AC0882_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
-
 --- Verarbeite AC0835_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 
@@ -484,11 +487,8 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich ob
 --- Verarbeite AC0836_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich hinter dem Kreis
 
---- Verarbeite AC0814_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich rechts vom Kreis
-
---- Verarbeite AC0881_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
+--- Verarbeite AC0882_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
 
 --- Verarbeite AC0832_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich links vom Kreis
@@ -508,17 +508,8 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 --- Verarbeite AC0870_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
---- Verarbeite AC0832_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich links vom Kreis
-
---- Verarbeite AC0812_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
-
---- Verarbeite AC0839_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich rechts vom Kreis
-
---- Verarbeite AC0837_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich links vom Kreis
+--- Verarbeite AC0882_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
 
 --- Verarbeite AC0833_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich oben vom Kreis
@@ -529,20 +520,32 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich ob
 --- Verarbeite AC0820_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
 
+--- Verarbeite AC0837_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich links vom Kreis
+
 --- Verarbeite AC0839_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich rechts vom Kreis
 
 --- Verarbeite AC0834_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich rechts vom Kreis
 
+--- Verarbeite AC0836_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich hinter dem Kreis
+
+--- Verarbeite AC0812_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
+
 --- Verarbeite AC0831_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich hinter dem Kreis
 
---- Verarbeite AC0837_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich links vom Kreis
+--- Verarbeite AC0838_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich oben vom Kreis
 
---- Verarbeite AC0836_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich hinter dem Kreis
+--- Verarbeite AC0813_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich oben vom Kreis
+
+--- Verarbeite AC0814_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich rechts vom Kreis
 
 --- Verarbeite AC0831_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich hinter dem Kreis
@@ -550,14 +553,17 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich h
 --- Verarbeite AC0811_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
 
---- Verarbeite AC0813_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich oben vom Kreis
-
 --- Verarbeite AC0835_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 
 --- Verarbeite AC0834_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich rechts vom Kreis
+
+--- Verarbeite AC0882_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
+
+--- Verarbeite AC0881_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
 
 --- Verarbeite AC0831_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich hinter dem Kreis
@@ -577,9 +583,6 @@ Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
 --- Verarbeite AC0836_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich hinter dem Kreis
 
---- Verarbeite AC0882_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
-
 --- Verarbeite AC0835_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 
@@ -592,11 +595,8 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich ob
 --- Verarbeite AC0836_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich hinter dem Kreis
 
---- Verarbeite AC0814_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich rechts vom Kreis
-
---- Verarbeite AC0881_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
+--- Verarbeite AC0882_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
 
 --- Verarbeite AC0832_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich links vom Kreis
@@ -616,17 +616,8 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 --- Verarbeite AC0870_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
---- Verarbeite AC0832_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich links vom Kreis
-
---- Verarbeite AC0812_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
-
---- Verarbeite AC0839_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich rechts vom Kreis
-
---- Verarbeite AC0837_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich links vom Kreis
+--- Verarbeite AC0882_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
 
 --- Verarbeite AC0833_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich oben vom Kreis
@@ -643,14 +634,26 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich li
 --- Verarbeite AC0839_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich rechts vom Kreis
 
+--- Verarbeite AC0836_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich hinter dem Kreis
+
 --- Verarbeite AC0834_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich rechts vom Kreis
+
+--- Verarbeite AC0812_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
 
 --- Verarbeite AC0831_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich hinter dem Kreis
 
---- Verarbeite AC0836_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich hinter dem Kreis
+--- Verarbeite AC0838_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich oben vom Kreis
+
+--- Verarbeite AC0813_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich oben vom Kreis
+
+--- Verarbeite AC0814_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich rechts vom Kreis
 
 --- Verarbeite AC0831_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich hinter dem Kreis
@@ -658,14 +661,17 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich h
 --- Verarbeite AC0811_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
 
---- Verarbeite AC0813_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich oben vom Kreis
-
 --- Verarbeite AC0835_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 
 --- Verarbeite AC0834_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich rechts vom Kreis
+
+--- Verarbeite AC0882_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
+
+--- Verarbeite AC0881_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
 
 --- Verarbeite AC0831_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich hinter dem Kreis
@@ -685,9 +691,6 @@ Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
 --- Verarbeite AC0836_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich hinter dem Kreis
 
---- Verarbeite AC0882_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
-
 --- Verarbeite AC0835_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 
@@ -700,11 +703,8 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich ob
 --- Verarbeite AC0836_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich hinter dem Kreis
 
---- Verarbeite AC0814_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich rechts vom Kreis
-
---- Verarbeite AC0881_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
+--- Verarbeite AC0882_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
 
 --- Verarbeite AC0832_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich links vom Kreis
@@ -724,17 +724,8 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 --- Verarbeite AC0870_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
---- Verarbeite AC0832_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich links vom Kreis
-
---- Verarbeite AC0812_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
-
---- Verarbeite AC0839_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich rechts vom Kreis
-
---- Verarbeite AC0837_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich links vom Kreis
+--- Verarbeite AC0882_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
 
 --- Verarbeite AC0833_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich oben vom Kreis
@@ -751,14 +742,26 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich li
 --- Verarbeite AC0839_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: waagrechter Strich rechts vom Kreis
 
+--- Verarbeite AC0836_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich hinter dem Kreis
+
 --- Verarbeite AC0834_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich rechts vom Kreis
+
+--- Verarbeite AC0812_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
 
 --- Verarbeite AC0831_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich hinter dem Kreis
 
---- Verarbeite AC0836_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich hinter dem Kreis
+--- Verarbeite AC0838_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich oben vom Kreis
+
+--- Verarbeite AC0813_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich oben vom Kreis
+
+--- Verarbeite AC0814_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich rechts vom Kreis
 
 --- Verarbeite AC0831_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich hinter dem Kreis
@@ -766,14 +769,17 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich h
 --- Verarbeite AC0811_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
 
---- Verarbeite AC0813_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: senkrechter Strich oben vom Kreis
-
 --- Verarbeite AC0835_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 
 --- Verarbeite AC0834_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich rechts vom Kreis
+
+--- Verarbeite AC0882_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
+
+--- Verarbeite AC0881_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
 
 --- Verarbeite AC0831_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: senkrechter Strich hinter dem Kreis
@@ -793,9 +799,6 @@ Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
 --- Verarbeite AC0836_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich hinter dem Kreis
 
---- Verarbeite AC0882_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
-
 --- Verarbeite AC0835_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 
@@ -808,11 +811,8 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich ob
 --- Verarbeite AC0836_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC, SEMANTIC: senkrechter Strich hinter dem Kreis
 
---- Verarbeite AC0814_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe, SEMANTIC: waagrechter Strich rechts vom Kreis
-
---- Verarbeite AC0881_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: senkrechter Strich hinter dem Kreis
+--- Verarbeite AC0882_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe, SEMANTIC: waagrechter Strich links vom Kreis
 
 --- Verarbeite AC0832_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2, SEMANTIC: waagrechter Strich links vom Kreis

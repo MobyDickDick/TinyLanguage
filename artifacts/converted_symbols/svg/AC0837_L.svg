@@ -1,5 +1,5 @@
 <svg width="45px" height="25px" viewBox="0 0 45 25" xmlns="http://www.w3.org/2000/svg">
-  <line x1="23.0000" y1="24.0000" x2="32.0000" y2="24.0000" stroke="#7f7f7f" stroke-width="1.0000" stroke-linecap="round"/>
-  <circle cx="35.0000" cy="24.0000" r="3.0000" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="1.0000"/>
-  <text x="35.0000" y="23.8456" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="4.0000" font-style="normal" font-weight="600" letter-spacing="0.01em" text-anchor="middle" dominant-baseline="middle">VOC</text>
+  <line x1="29.5000" y1="19.5000" x2="36.0000" y2="19.5000" stroke="#7f7f7f" stroke-width="1.0000" stroke-linecap="round"/>
+  <circle cx="37.0000" cy="19.5000" r="1.0000" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="1.0000"/>
+  <text x="37.0000" y="19.9500" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="4.0000" font-style="normal" font-weight="600" letter-spacing="0.01em" text-anchor="middle" dominant-baseline="middle">VOC</text>
 </svg>

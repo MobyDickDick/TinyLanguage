@@ -1274,3 +1274,42 @@ def test_rank_template_transfer_donors_prefers_same_base_then_geometry() -> None
     ranked = image_composite_converter._rank_template_transfer_donors(target, donors)
 
     assert ranked[0]["variant"] == "Y"
+
+
+def test_select_open_quality_cases_filters_threshold_and_skips_sorted_worst_first() -> None:
+    rows = [
+        {"filename": "A", "variant": "AC0800_S", "error_per_pixel": 0.01},
+        {"filename": "B", "variant": "AC0801_S", "error_per_pixel": 0.06},
+        {"filename": "C", "variant": "AC0802_S", "error_per_pixel": 0.03},
+        {"filename": "D", "variant": "AC0803_S", "error_per_pixel": 0.08},
+    ]
+
+    selected = image_composite_converter._select_open_quality_cases(
+        rows,
+        allowed_error_per_pixel=0.04,
+        skip_variants={"AC0803_S"},
+    )
+
+    assert [row["filename"] for row in selected] == ["B"]
+
+
+def test_select_open_quality_cases_returns_worst_first_when_multiple_open() -> None:
+    rows = [
+        {"filename": "A", "variant": "AC0800_S", "error_per_pixel": 0.06},
+        {"filename": "B", "variant": "AC0801_S", "error_per_pixel": 0.09},
+        {"filename": "C", "variant": "AC0802_S", "error_per_pixel": 0.07},
+    ]
+
+    selected = image_composite_converter._select_open_quality_cases(
+        rows,
+        allowed_error_per_pixel=0.04,
+    )
+
+    assert [row["filename"] for row in selected] == ["B", "C", "A"]
+
+
+def test_iteration_strategy_for_pass_cycles_search_budgets() -> None:
+    assert image_composite_converter._iteration_strategy_for_pass(1, 128) == (129, 7)
+    assert image_composite_converter._iteration_strategy_for_pass(2, 128) == (156, 9)
+    assert image_composite_converter._iteration_strategy_for_pass(3, 128) == (185, 11)
+    assert image_composite_converter._iteration_strategy_for_pass(4, 128) == (132, 10)

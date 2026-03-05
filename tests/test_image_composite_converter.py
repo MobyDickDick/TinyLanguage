@@ -1158,3 +1158,43 @@ def test_select_middle_lower_tercile_requires_at_least_three_entries() -> None:
     ]
 
     assert image_composite_converter._select_middle_lower_tercile(rows) == []
+
+
+def test_template_transfer_scale_candidates_expand_around_estimate() -> None:
+    scales = image_composite_converter._template_transfer_scale_candidates(1.4)
+
+    assert scales[0] == pytest.approx(1.4, abs=1e-4)
+    assert any(scale > 1.5 for scale in scales)
+    assert 0.80 in scales
+    assert len(scales) == len(set(scales))
+
+
+def test_template_transfer_candidates_use_estimated_scale_per_rotation() -> None:
+    candidates = image_composite_converter._template_transfer_transform_candidates(
+        "AC0813_L",
+        "AC0811_M",
+        estimated_scale_by_rotation={180: 1.5},
+    )
+
+    # Rotations are grouped; for 180° the estimated scale is tried first.
+    rot180 = [scale for rotation, scale in candidates if rotation == 180]
+    assert rot180[0] == pytest.approx(1.5, abs=1e-4)
+    assert 1.25 in rot180
+    assert len(candidates) == len(set(candidates))
+
+
+def test_rank_template_transfer_donors_prefers_same_base_then_geometry() -> None:
+    target = {
+        "base": "AC0813",
+        "w": 20,
+        "h": 30,
+        "params": {"cx": 10, "cy": 20, "r": 7, "stroke_circle": 1.2, "arm_enabled": True, "arm_x1": 10, "arm_y1": 0, "arm_x2": 10, "arm_y2": 13, "arm_stroke": 1.2},
+    }
+    donors = [
+        {"variant": "X", "base": "AC0811", "w": 20, "h": 20, "params": {"cx": 10, "cy": 10, "r": 7, "stroke_circle": 1.2}, "error_per_pixel": 0.001},
+        {"variant": "Y", "base": "AC0813", "w": 20, "h": 30, "params": {"cx": 10, "cy": 20, "r": 7, "stroke_circle": 1.2, "arm_enabled": True, "arm_x1": 10, "arm_y1": 0, "arm_x2": 10, "arm_y2": 13, "arm_stroke": 1.2}, "error_per_pixel": 0.01},
+    ]
+
+    ranked = image_composite_converter._rank_template_transfer_donors(target, donors)
+
+    assert ranked[0]["variant"] == "Y"

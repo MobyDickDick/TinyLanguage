@@ -4145,6 +4145,133 @@ def _build_transformed_svg_from_template(
     )
 
 
+def _template_transfer_scale_candidates(base_scale: float) -> list[float]:
+    """Build a compact scale ladder around an estimated best scale."""
+    if not math.isfinite(base_scale) or base_scale <= 0.0:
+        base_scale = 1.0
+
+    multipliers = (1.00, 0.92, 1.08, 0.84, 1.18, 0.74, 1.35, 1.55)
+    scales: list[float] = []
+    seen: set[float] = set()
+    for mul in multipliers:
+        value = float(min(1.90, max(0.65, base_scale * mul)))
+        key = round(value, 4)
+        if key in seen:
+            continue
+        seen.add(key)
+        scales.append(key)
+
+    for fallback in (0.80, 0.90, 1.00, 1.10, 1.25):
+        key = round(float(fallback), 4)
+        if key not in seen:
+            seen.add(key)
+            scales.append(key)
+    return scales
+
+
+def _estimate_template_transfer_scale(
+    img_orig: np.ndarray,
+    donor_svg_text: str,
+    target_w: int,
+    target_h: int,
+    *,
+    rotation_deg: int,
+) -> float | None:
+    """Estimate donor->target scale from foreground silhouette bboxes."""
+    rendered = Action.render_svg_to_numpy(
+        _build_transformed_svg_from_template(
+            donor_svg_text,
+            target_w,
+            target_h,
+            rotation_deg=rotation_deg,
+            scale=1.0,
+        ),
+        target_w,
+        target_h,
+    )
+    if rendered is None:
+        return None
+
+    target_mask = Action._foreground_mask(img_orig)
+    donor_mask = Action._foreground_mask(rendered)
+    target_bbox = Action._mask_bbox(target_mask)
+    donor_bbox = Action._mask_bbox(donor_mask)
+    if target_bbox is None or donor_bbox is None:
+        return None
+
+    target_w_box = max(1e-6, float(target_bbox[2] - target_bbox[0] + 1.0))
+    target_h_box = max(1e-6, float(target_bbox[3] - target_bbox[1] + 1.0))
+    donor_w_box = max(1e-6, float(donor_bbox[2] - donor_bbox[0] + 1.0))
+    donor_h_box = max(1e-6, float(donor_bbox[3] - donor_bbox[1] + 1.0))
+
+    scale_w = target_w_box / donor_w_box
+    scale_h = target_h_box / donor_h_box
+    scale = math.sqrt(max(1e-6, scale_w * scale_h))
+    if not math.isfinite(scale):
+        return None
+    return float(min(1.90, max(0.65, scale)))
+
+
+def _template_transfer_transform_candidates(
+    target_variant: str,
+    donor_variant: str,
+    *,
+    estimated_scale_by_rotation: dict[int, float] | None = None,
+) -> list[tuple[int, float]]:
+    """Return ordered rotation/scale candidates for template-based fallback."""
+    del target_variant, donor_variant  # reserved for future metadata-based policies
+
+    candidates: list[tuple[int, float]] = []
+    seen: set[tuple[int, float]] = set()
+    for rotation in (0, 90, 180, 270):
+        estimated = None
+        if estimated_scale_by_rotation is not None:
+            estimated = estimated_scale_by_rotation.get(rotation)
+        for scale in _template_transfer_scale_candidates(estimated if estimated is not None else 1.0):
+            candidate = (rotation, float(scale))
+            key = (rotation, round(float(scale), 4))
+            if key in seen:
+                continue
+            seen.add(key)
+            candidates.append(candidate)
+    return candidates
+
+
+def _rank_template_transfer_donors(
+    target_row: dict[str, object],
+    donor_rows: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Prioritize donors that are already good and geometrically close to target."""
+    target_base = str(target_row.get("base", "")).upper()
+    target_sig: dict[str, float] | None = None
+    target_params = target_row.get("params")
+    if isinstance(target_params, dict):
+        target_sig = _normalized_geometry_signature(
+            int(target_row.get("w", 0)),
+            int(target_row.get("h", 0)),
+            dict(target_params),
+        )
+
+    ranked: list[tuple[tuple[float, float, float], dict[str, object]]] = []
+    for donor in donor_rows:
+        donor_base = str(donor.get("base", "")).upper()
+        donor_error_pp = float(donor.get("error_per_pixel", float("inf")))
+        donor_sig: dict[str, float] | None = None
+        donor_params = donor.get("params")
+        if isinstance(donor_params, dict):
+            donor_sig = _normalized_geometry_signature(int(donor.get("w", 0)), int(donor.get("h", 0)), dict(donor_params))
+
+        delta = float("inf")
+        if target_sig is not None and donor_sig is not None:
+            delta = _max_signature_delta(target_sig, donor_sig)
+
+        key = (0.0 if donor_base == target_base else 1.0, delta, donor_error_pp)
+        ranked.append((key, donor))
+
+    ranked.sort(key=lambda item: item[0])
+    return [donor for _, donor in ranked]
+
+
 def _try_template_transfer(
     *,
     target_row: dict[str, object],
@@ -4173,11 +4300,9 @@ def _try_template_transfer(
     best_rotation = 0
     best_scale = 1.0
 
-    rotations = [0, 90, 180, 270]
-    scales = [0.80, 0.90, 1.00, 1.10, 1.25]
-
     target_variant = str(target_row.get("variant", "")).upper()
-    for donor in donor_rows:
+    ordered_donors = _rank_template_transfer_donors(target_row, donor_rows)
+    for donor in ordered_donors:
         donor_variant = str(donor.get("variant", "")).upper()
         if not donor_variant or donor_variant == target_variant:
             continue
@@ -4189,25 +4314,39 @@ def _try_template_transfer(
         except OSError:
             continue
 
-        for rotation in rotations:
-            for scale in scales:
-                candidate_svg = _build_transformed_svg_from_template(
-                    donor_svg_text,
-                    w,
-                    h,
-                    rotation_deg=rotation,
-                    scale=scale,
-                )
-                rendered = Action.render_svg_to_numpy(candidate_svg, w, h)
-                error = Action.calculate_error(img_orig, rendered)
-                error_pp = float(error) / pixel_count
-                if error_pp + 1e-9 < best_error_pp:
-                    best_error = float(error)
-                    best_error_pp = error_pp
-                    best_svg = candidate_svg
-                    best_donor = donor_variant
-                    best_rotation = rotation
-                    best_scale = scale
+        estimated_scales = {
+            rotation: _estimate_template_transfer_scale(
+                img_orig,
+                donor_svg_text,
+                w,
+                h,
+                rotation_deg=rotation,
+            )
+            for rotation in (0, 90, 180, 270)
+        }
+
+        for rotation, scale in _template_transfer_transform_candidates(
+            target_variant,
+            donor_variant,
+            estimated_scale_by_rotation=estimated_scales,
+        ):
+            candidate_svg = _build_transformed_svg_from_template(
+                donor_svg_text,
+                w,
+                h,
+                rotation_deg=rotation,
+                scale=scale,
+            )
+            rendered = Action.render_svg_to_numpy(candidate_svg, w, h)
+            error = Action.calculate_error(img_orig, rendered)
+            error_pp = float(error) / pixel_count
+            if error_pp + 1e-9 < best_error_pp:
+                best_error = float(error)
+                best_error_pp = error_pp
+                best_svg = candidate_svg
+                best_donor = donor_variant
+                best_rotation = rotation
+                best_scale = scale
 
     if best_svg is None:
         return None, None

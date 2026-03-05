@@ -982,6 +982,48 @@ def test_fit_ac0814_params_keeps_right_edge_anchor() -> None:
     assert abs(float(params["arm_x1"]) - (float(params["cx"]) + float(params["r"]))) < 1e-6
 
 
+
+
+def test_stabilize_semantic_circle_pose_locks_tiny_connector_badges_to_template() -> None:
+    """Tiny connector badges should snap circle pose to the semantic template."""
+    defaults = Action._default_ac0814_params(25, 15)
+    params = {
+        **defaults,
+        "cx": 0.2,
+        "cy": 13.9,
+        "r": 3.3,
+        "draw_text": False,
+        "arm_enabled": True,
+    }
+
+    stabilized = Action._stabilize_semantic_circle_pose(params, defaults, 25, 15)
+
+    assert abs(float(stabilized["cx"]) - float(defaults["cx"])) < 1e-6
+    assert abs(float(stabilized["cy"]) - float(defaults["cy"])) < 1e-6
+    assert float(stabilized["r"]) >= float(defaults["r"]) * 0.96 - 1e-6
+    assert stabilized.get("lock_circle_cx") is True
+    assert stabilized.get("lock_circle_cy") is True
+
+
+def test_stabilize_semantic_circle_pose_clamps_non_tiny_connector_badges() -> None:
+    """Larger connector badges should be bounded near the semantic template."""
+    defaults = Action._default_ac0814_params(45, 25)
+    params = {
+        **defaults,
+        "cx": 1.0,
+        "cy": 23.0,
+        "r": 2.0,
+        "draw_text": False,
+        "arm_enabled": True,
+    }
+
+    stabilized = Action._stabilize_semantic_circle_pose(params, defaults, 45, 25)
+
+    tol = max(1.0, 25.0 * 0.08)
+    assert abs(float(stabilized["cx"]) - float(defaults["cx"])) <= tol + 1e-6
+    assert abs(float(stabilized["cy"]) - float(defaults["cy"])) <= tol + 1e-6
+    assert float(stabilized["r"]) >= float(defaults["r"]) * 0.88 - 1e-6
+
 def test_make_badge_params_supports_ac0810_variants() -> None:
     """AC0810 and variant names should map to the semantic right-arm badge model."""
     params = Action.make_badge_params(25, 15, "AC0810")

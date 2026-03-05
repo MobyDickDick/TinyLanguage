@@ -521,11 +521,13 @@ class Action:
                 p["lock_circle_cx"] = True
                 p["lock_circle_cy"] = True
 
-            # Connector + text badges (e.g. AC0831/AC0836 families) can lose
-            # connector extraction in noisy JPEGs. Without geometric anchors the
-            # circle optimizer may collapse toward text blobs near the border.
-            # Keep center and connector alignment locked to template semantics.
-            if has_connector and has_text:
+            # Connector-only and connector+text badges can both lose connector
+            # extraction in noisy JPEGs. Without geometric anchors the circle
+            # optimizer may collapse toward unrelated border blobs (for plain
+            # symbols) or text blobs (for labeled symbols). Keep the center and
+            # connector alignment locked to template semantics for all connector
+            # families so rotations/reflections/scales remain stable.
+            if has_connector:
                 p["lock_circle_cx"] = True
                 p["lock_circle_cy"] = True
                 if p.get("stem_enabled"):

@@ -4394,6 +4394,23 @@ def _semantic_transfer_rotations(target_params: dict[str, object], donor_params:
     return (0, 90, 180, 270)
 
 
+
+
+def _semantic_transfer_scale_candidates(base_scale: float) -> list[float]:
+    """Broader scale ladder for semantic badge transfer exploration."""
+    core = _template_transfer_scale_candidates(base_scale)
+    extra = [0.55, 0.65, 0.75, 0.85, 1.00, 1.15, 1.30, 1.50, 1.75, 2.00]
+    values = []
+    seen: set[float] = set()
+    for v in [*core, *extra]:
+        value = float(min(2.2, max(0.5, float(v))))
+        key = round(value, 4)
+        if key in seen:
+            continue
+        seen.add(key)
+        values.append(key)
+    return values
+
 def _semantic_transfer_badge_params(
     donor_params: dict[str, object],
     target_params: dict[str, object],
@@ -4409,6 +4426,14 @@ def _semantic_transfer_badge_params(
     cy = float(p.get("cy", target_h / 2.0))
     tx = float(target_params.get("cx", target_w / 2.0))
     ty = float(target_params.get("cy", target_h / 2.0))
+
+    # Always carry essential rendering colors from target/donor/defaults.
+    p["fill_gray"] = int(round(float(target_params.get("fill_gray", p.get("fill_gray", Action.LIGHT_CIRCLE_FILL_GRAY)))))
+    p["stroke_gray"] = int(round(float(target_params.get("stroke_gray", p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY)))))
+    if bool(target_params.get("draw_text", p.get("draw_text", False))) or bool(p.get("draw_text", False)):
+        p["text_gray"] = int(round(float(target_params.get("text_gray", p.get("text_gray", Action.LIGHT_CIRCLE_TEXT_GRAY)))))
+    if bool(target_params.get("stem_enabled", p.get("stem_enabled", False))) or bool(p.get("stem_enabled", False)):
+        p["stem_gray"] = int(round(float(target_params.get("stem_gray", p.get("stem_gray", p["stroke_gray"])))))
 
     # Prefer target anchor so center alignment remains stable between variants.
     p["cx"] = tx
@@ -4451,7 +4476,10 @@ def _semantic_transfer_badge_params(
         if "s" in p:
             p["s"] = float(max(1e-4, float(p.get("s", 0.01)) * math.sqrt(max(0.5, min(1.8, float(scale))))))
 
-    return Action._finalize_ac08_style(str(target_params.get("label", "")), p)
+    symbol_name = str(target_params.get("label") or target_params.get("variant") or target_params.get("base") or "")
+    if symbol_name:
+        p = Action._finalize_ac08_style(symbol_name, p)
+    return p
 
 def _try_template_transfer(
     *,
@@ -4517,7 +4545,7 @@ def _try_template_transfer(
         if isinstance(target_params_raw, dict) and isinstance(donor_params_raw, dict):
             if str(target_params_raw.get("mode", "")) == "semantic_badge" and str(donor_params_raw.get("mode", "")) == "semantic_badge":
                 base_scale = float(min(w, h)) / max(1.0, float(min(int(donor.get("w", w)), int(donor.get("h", h)))))
-                semantic_scales = _template_transfer_scale_candidates(base_scale)
+                semantic_scales = _semantic_transfer_scale_candidates(base_scale)
                 if rng is not None:
                     keep = semantic_scales[:2]
                     rest = semantic_scales[2:]
@@ -4533,8 +4561,11 @@ def _try_template_transfer(
                             rotation_deg=rotation,
                             scale=float(scale),
                         )
-                        candidate_svg = Action.generate_badge_svg(w, h, candidate_params)
-                        rendered = Action.render_svg_to_numpy(candidate_svg, w, h)
+                        try:
+                            candidate_svg = Action.generate_badge_svg(w, h, candidate_params)
+                            rendered = Action.render_svg_to_numpy(candidate_svg, w, h)
+                        except Exception:
+                            continue
                         error = Action.calculate_error(img_orig, rendered)
                         error_pp = float(error) / pixel_count
                         if error_pp + 1e-9 < best_error_pp:

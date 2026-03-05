@@ -439,12 +439,11 @@ class Action:
         symbol_name = canonical_name.split("_", 1)[0]
         if not symbol_name.startswith("AC08"):
             return params
-        p = Action._normalize_light_circle_colors(dict(params))
+        p = Action._capture_canonical_badge_colors(Action._normalize_light_circle_colors(dict(params)))
+        # During geometry fitting we intentionally keep auto-estimated colors.
+        # Canonical palette values are re-applied once fitting converged.
         p = Action._normalize_ac08_line_widths(p)
-        # Keep the canonical AC08xx palette fixed. JPEG compression noise and
-        # anti-aliased source edges otherwise pull the element-wise color
-        # bracketing toward muddy mid-grays across the entire converted family.
-        p["lock_colors"] = True
+        p["lock_colors"] = False
         if symbol_name != "AC0820":
             p = Action._normalize_centered_co2_label(p)
         if symbol_name == "AC0820" and str(p.get("text_mode", "")).lower() == "co2":
@@ -2316,11 +2315,10 @@ class Action:
             img_svg = cv2.resize(img_svg, (img_orig.shape[1], img_orig.shape[0]), interpolation=cv2.INTER_AREA)
         gray_diff = cv2.cvtColor(cv2.absdiff(img_orig, img_svg), cv2.COLOR_BGR2GRAY).astype(np.float32)
         valid = mask.astype(np.float32)
-        denom = float(np.sum(valid))
-        if denom <= 0.0:
+        if float(np.sum(valid)) <= 0.0:
             return float("inf")
         weighted = gray_diff * valid
-        return float(np.sum(weighted) / denom)
+        return float(np.sum(weighted))
 
     @staticmethod
     def _union_bbox_from_masks(mask_a: np.ndarray | None, mask_b: np.ndarray | None) -> tuple[int, int, int, int] | None:
@@ -2369,12 +2367,187 @@ class Action:
         orig_crop = img_orig[y1 : y2 + 1, x1 : x2 + 1]
         svg_crop = img_svg[y1 : y2 + 1, x1 : x2 + 1]
         union_mask = mask_orig[y1 : y2 + 1, x1 : x2 + 1] | mask_svg[y1 : y2 + 1, x1 : x2 + 1]
-        denom = int(np.sum(union_mask))
-        if denom <= 0:
+        if int(np.sum(union_mask)) <= 0:
             return float("inf")
 
         gray_diff = cv2.cvtColor(cv2.absdiff(orig_crop, svg_crop), cv2.COLOR_BGR2GRAY).astype(np.float32)
-        return float(np.sum(gray_diff * union_mask.astype(np.float32)) / float(denom))
+        return float(np.sum(gray_diff * union_mask.astype(np.float32)))
+
+    @staticmethod
+    def _capture_canonical_badge_colors(params: dict) -> dict:
+        p = dict(params)
+        p["target_fill_gray"] = int(round(float(p.get("fill_gray", Action.LIGHT_CIRCLE_FILL_GRAY))))
+        p["target_stroke_gray"] = int(round(float(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY))))
+        if p.get("stem_enabled"):
+            p["target_stem_gray"] = int(round(float(p.get("stem_gray", p["target_stroke_gray"]))))
+        if p.get("draw_text", True) and "text_gray" in p:
+            p["target_text_gray"] = int(round(float(p.get("text_gray", Action.LIGHT_CIRCLE_TEXT_GRAY))))
+        return p
+
+    @staticmethod
+    def _apply_canonical_badge_colors(params: dict) -> dict:
+        p = dict(params)
+        if "target_fill_gray" in p:
+            p["fill_gray"] = int(p["target_fill_gray"])
+        if "target_stroke_gray" in p:
+            p["stroke_gray"] = int(p["target_stroke_gray"])
+        if p.get("stem_enabled") and "target_stem_gray" in p:
+            p["stem_gray"] = int(p["target_stem_gray"])
+        if p.get("draw_text", True) and "target_text_gray" in p:
+            p["text_gray"] = int(p["target_text_gray"])
+        return p
+
+    @staticmethod
+    def _circle_bounds(params: dict, w: int, h: int) -> tuple[float, float, float, float, float, float]:
+        min_r = float(max(1.0, params.get("min_circle_radius", 1.0)))
+        max_r = max(min_r, float(min(w, h)) * 0.48)
+        return 0.0, float(w - 1), 0.0, float(h - 1), min_r, max_r
+
+    @staticmethod
+    def _stochastic_survivor_scalar(
+        current_value: float,
+        low: float,
+        high: float,
+        evaluate,
+        *,
+        snap,
+        seed: int,
+        iterations: int = 20,
+    ) -> tuple[float, float, bool]:
+        """Random 3-candidate survivor search for a scalar parameter."""
+        cur = float(snap(float(np.clip(current_value, low, high))))
+        best_value = cur
+        best_err = float(evaluate(best_value))
+        if not np.isfinite(best_err):
+            return best_value, best_err, False
+
+        rng = np.random.default_rng(seed)
+        span = max(0.5, abs(high - low) * 0.22)
+        improved = False
+        stable_rounds = 0
+
+        for _ in range(max(1, iterations)):
+            candidates = [best_value]
+            for _j in range(2):
+                sample = float(np.clip(rng.normal(best_value, span), low, high))
+                candidates.append(float(snap(sample)))
+
+            scored: list[tuple[float, float]] = []
+            for cand in candidates:
+                err = float(evaluate(cand))
+                if np.isfinite(err):
+                    scored.append((cand, err))
+            if not scored:
+                continue
+            scored.sort(key=lambda pair: pair[1])
+            cand_best, cand_err = scored[0]
+            if cand_err + 0.05 < best_err:
+                best_value, best_err = cand_best, cand_err
+                improved = True
+                stable_rounds = 0
+            else:
+                stable_rounds += 1
+
+            span = max(0.2, span * 0.90)
+            if stable_rounds >= 6:
+                break
+
+        return best_value, best_err, improved
+
+    @staticmethod
+    def _optimize_circle_pose_stochastic_survivor(
+        img_orig: np.ndarray,
+        params: dict,
+        logs: list[str],
+        *,
+        iterations: int = 24,
+    ) -> bool:
+        """Stochastic 3-candidate survivor search for circle pose.
+
+        Draw 3 random candidates per round, discard the worst, and continue from
+        the best survivor with shrinking perturbation.
+        """
+        if not params.get("circle_enabled", True):
+            return False
+
+        h, w = img_orig.shape[:2]
+        x_low, x_high, y_low, y_high, r_low, r_high = Action._circle_bounds(params, w, h)
+        current = (
+            Action._snap_half(float(params.get("cx", (w - 1) / 2.0))),
+            Action._snap_half(float(params.get("cy", (h - 1) / 2.0))),
+            Action._snap_half(float(params.get("r", max(1.0, min(w, h) * 0.3)))),
+        )
+        lock_cx = bool(params.get("lock_circle_cx", False))
+        lock_cy = bool(params.get("lock_circle_cy", False))
+        rng = np.random.default_rng(835)
+
+        def eval_pose(candidate: tuple[float, float, float]) -> float:
+            cx, cy, rad = candidate
+            return float(
+                Action._element_error_for_circle_pose(
+                    img_orig,
+                    params,
+                    cx_value=cx,
+                    cy_value=cy,
+                    radius_value=rad,
+                )
+            )
+
+        best = current
+        best_err = eval_pose(best)
+        if not np.isfinite(best_err):
+            return False
+
+        spread_xy = max(1.0, float(min(w, h)) * 0.10)
+        spread_r = max(0.6, float(best[2]) * 0.18)
+        improved = False
+        stable_rounds = 0
+
+        for _ in range(max(1, iterations)):
+            candidates: list[tuple[tuple[float, float, float], float]] = [(best, best_err)]
+            for _j in range(2):
+                if lock_cx:
+                    cx = best[0]
+                else:
+                    cx = Action._snap_half(float(np.clip(rng.normal(best[0], spread_xy), x_low, x_high)))
+                if lock_cy:
+                    cy = best[1]
+                else:
+                    cy = Action._snap_half(float(np.clip(rng.normal(best[1], spread_xy), y_low, y_high)))
+                rad = Action._snap_half(float(np.clip(rng.normal(best[2], spread_r), r_low, r_high)))
+                cand = (cx, cy, rad)
+                candidates.append((cand, eval_pose(cand)))
+
+            finite = [pair for pair in candidates if np.isfinite(pair[1])]
+            if not finite:
+                continue
+            finite.sort(key=lambda item: item[1])
+            round_best, round_err = finite[0]
+            if round_err + 0.05 < best_err:
+                best, best_err = round_best, round_err
+                improved = True
+                stable_rounds = 0
+            else:
+                stable_rounds += 1
+
+            spread_xy = max(0.4, spread_xy * 0.92)
+            spread_r = max(0.35, spread_r * 0.90)
+            if stable_rounds >= 7:
+                break
+
+        if not improved:
+            logs.append("circle: Stochastic-Survivor keine relevante Verbesserung")
+            return False
+
+        params["cx"], params["cy"], params["r"] = best
+        if params.get("arm_enabled"):
+            Action._reanchor_arm_to_circle_edge(params, best[2])
+        if params.get("stem_enabled"):
+            params["stem_top"] = float(params.get("cy", 0.0)) + best[2]
+        logs.append(
+            f"circle: Stochastic-Survivor übernommen (cx={best[0]:.3f}, cy={best[1]:.3f}, r={best[2]:.3f}, err={best_err:.3f})"
+        )
+        return True
 
     @staticmethod
     def _element_width_key_and_bounds(
@@ -2796,8 +2969,7 @@ class Action:
 
         shift = max(0.5, float(min(w, h)) * 0.08)
         radius_span = max(0.5, current_r * 0.12)
-        min_r = float(max(1.0, params.get("min_circle_radius", 1.0)))
-        max_r = max(min_r, float(min(w, h)) * 0.48)
+        _x_low, _x_high, _y_low, _y_high, min_r, max_r = Action._circle_bounds(params, w, h)
 
         if lock_cx:
             cx_candidates = [Action._snap_half(current_cx)]
@@ -2871,6 +3043,16 @@ class Action:
         logs.append(
             f"circle: Joint-Multistart cx {current_cx:.3f}->{best_cx:.3f}, cy {current_cy:.3f}->{best_cy:.3f}, r {current_r:.3f}->{best_r:.3f} (best_err={best_err:.3f})"
         )
+
+        at_boundary = (
+            (not lock_cx and (best_cx <= 0.01 or best_cx >= float(w - 1) - 0.01))
+            or (not lock_cy and (best_cy <= 0.01 or best_cy >= float(h - 1) - 0.01))
+            or abs(best_r - min_r) <= 0.01
+            or abs(best_r - max_r) <= 0.01
+        )
+        if at_boundary:
+            logs.append("circle: Joint-Multistart liegt am Rand; starte stochastic survivor search")
+            Action._optimize_circle_pose_stochastic_survivor(img_orig, params, logs)
         return True
 
     @staticmethod
@@ -3020,6 +3202,23 @@ class Action:
 
         best_idx = int(np.argmin(candidate_errors))
         best_len = float(candidates[best_idx])
+
+        boundary_best = abs(best_len - low) < 0.02 or abs(best_len - high) < 0.02
+        if boundary_best:
+            s_best, s_err, s_improved = Action._stochastic_survivor_scalar(
+                current,
+                low,
+                high,
+                lambda v: Action._element_error_for_extent(img_orig, params, element, float(v)),
+                snap=Action._snap_half,
+                seed=1103 if element == "stem" else 1109,
+            )
+            if s_improved:
+                best_len = float(s_best)
+                logs.append(
+                    f"{element}: Längen-Stochastic-Survivor aktiviert (best_len={best_len:.3f}, err={s_err:.3f})"
+                )
+
         if abs(best_len - current) < 0.02:
             logs.append(
                 f"{element}: Längen-Bracketing keine relevante Änderung ({key_label}: {current:.3f}); "
@@ -3145,6 +3344,24 @@ class Action:
 
         best_idx = int(np.argmin(candidate_errors))
         best_width = candidates[best_idx]
+
+        boundary_best = abs(float(best_width) - low) < 0.02 or abs(float(best_width) - high) < 0.02
+        if boundary_best:
+            snap_fn = (lambda v: float(round(v, 3))) if key.endswith("_font_scale") else Action._snap_half
+            s_best, s_err, s_improved = Action._stochastic_survivor_scalar(
+                current,
+                low,
+                high,
+                lambda v: Action._element_error_for_width(img_orig, params, element, float(v)),
+                snap=snap_fn,
+                seed=1201,
+            )
+            if s_improved:
+                best_width = float(s_best)
+                logs.append(
+                    f"{element}: Breiten-Stochastic-Survivor aktiviert ({key}={best_width:.3f}, err={s_err:.3f})"
+                )
+
         old = float(params.get(key, current))
         if abs(best_width - old) < 0.02:
             logs.append(
@@ -3255,6 +3472,29 @@ class Action:
 
             best_idx = int(np.argmin(errs))
             best_value = int(values[best_idx])
+
+            if best_value == min(values) or best_value == max(values):
+                s_best, s_err, s_improved = Action._stochastic_survivor_scalar(
+                    float(current),
+                    float(min(values)),
+                    float(max(values)),
+                    lambda v: Action._element_error_for_color(
+                        img_orig,
+                        params,
+                        element,
+                        color_key,
+                        int(np.clip(int(round(v)), 0, 255)),
+                        mask_orig,
+                    ),
+                    snap=lambda v: int(np.clip(int(round(v)), 0, 255)),
+                    seed=1301,
+                )
+                if s_improved:
+                    best_value = int(np.clip(int(round(s_best)), 0, 255))
+                    logs.append(
+                        f"{element}: Farb-Stochastic-Survivor aktiviert ({color_key}={best_value}, err={s_err:.3f})"
+                    )
+
             if best_value == current:
                 logs.append(
                     f"{element}: Farb-Bracketing keine relevante Änderung ({color_key}: {current}); Kandidaten="
@@ -3459,9 +3699,8 @@ class Action:
                     if joint_changed:
                         round_changed = True
 
-                color_changed = Action._optimize_element_color_bracket(img_orig, params, element, mask_orig, logs)
-                if color_changed:
-                    round_changed = True
+                # Color fitting is intentionally deferred to the end so
+                # geometry convergence is not biased by temporary palette noise.
 
             full_svg = Action.generate_badge_svg(w, h, params)
             full_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(full_svg, w, h))
@@ -3478,6 +3717,18 @@ class Action:
             if not round_changed:
                 logs.append("Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet")
                 break
+
+        for element in elements:
+            if element == "text" and not params.get("draw_text", True):
+                continue
+            mask_orig = Action.extract_badge_element_mask(img_orig, params, element)
+            if mask_orig is None:
+                continue
+            color_changed = Action._optimize_element_color_bracket(img_orig, params, element, mask_orig, logs)
+            if color_changed:
+                logs.append(f"{element}: Farboptimierung in Abschlussphase angewendet")
+
+        params.update(Action._apply_canonical_badge_colors(params))
 
         return logs
 

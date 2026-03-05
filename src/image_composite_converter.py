@@ -443,7 +443,7 @@ class Action:
         # During geometry fitting we intentionally keep auto-estimated colors.
         # Canonical palette values are re-applied once fitting converged.
         p = Action._normalize_ac08_line_widths(p)
-        p["lock_colors"] = False
+        p["lock_colors"] = True
         if symbol_name != "AC0820":
             p = Action._normalize_centered_co2_label(p)
         if symbol_name == "AC0820" and str(p.get("text_mode", "")).lower() == "co2":

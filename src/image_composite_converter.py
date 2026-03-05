@@ -2077,6 +2077,58 @@ class Action:
         return float(cx), float(cy), diag
 
     @staticmethod
+    def _element_bbox_change_is_plausible(
+        mask_orig: np.ndarray,
+        mask_svg: np.ndarray,
+    ) -> tuple[bool, str | None]:
+        """Reject clearly implausible box drifts between source and converted element."""
+        orig_bbox = Action._mask_bbox(mask_orig)
+        svg_bbox = Action._mask_bbox(mask_svg)
+        if orig_bbox is None or svg_bbox is None:
+            return True, None
+
+        ox1, oy1, ox2, oy2 = orig_bbox
+        sx1, sy1, sx2, sy2 = svg_bbox
+
+        ow = max(1.0, (ox2 - ox1) + 1.0)
+        oh = max(1.0, (oy2 - oy1) + 1.0)
+        sw = max(1.0, (sx2 - sx1) + 1.0)
+        sh = max(1.0, (sy2 - sy1) + 1.0)
+
+        ocx = (ox1 + ox2) / 2.0
+        ocy = (oy1 + oy2) / 2.0
+        scx = (sx1 + sx2) / 2.0
+        scy = (sy1 + sy2) / 2.0
+
+        center_dist = float(np.hypot(scx - ocx, scy - ocy))
+        orig_diag = float(np.hypot(ow, oh))
+        max_center_dist = max(2.0, orig_diag * 0.42)
+
+        w_ratio = sw / ow
+        h_ratio = sh / oh
+        area_ratio = (sw * sh) / max(1.0, ow * oh)
+
+        if center_dist > max_center_dist:
+            return (
+                False,
+                (
+                    "Box-Check verworfen "
+                    f"(Δcenter={center_dist:.3f} > {max_center_dist:.3f})"
+                ),
+            )
+
+        if not (0.55 <= w_ratio <= 1.85 and 0.55 <= h_ratio <= 1.85 and 0.40 <= area_ratio <= 2.40):
+            return (
+                False,
+                (
+                    "Box-Check verworfen "
+                    f"(w_ratio={w_ratio:.3f}, h_ratio={h_ratio:.3f}, area_ratio={area_ratio:.3f})"
+                ),
+            )
+
+        return True, None
+
+    @staticmethod
     def _apply_element_alignment_step(
         params: dict,
         element: str,
@@ -2945,6 +2997,16 @@ class Action:
         min_dim = float(min(w, h))
         low_bound = max(1.0, min_dim * 0.14)
         low_bound = max(low_bound, float(params.get("min_circle_radius", 1.0)))
+        has_connector = bool(params.get("arm_enabled") or params.get("stem_enabled"))
+        if has_connector:
+            # Connector badges (AC081x/AC083x families) are geometrically tied to
+            # a semantic template. If radius bracketing can dive to the generic
+            # min-dimension floor, the circle may detach from that template and
+            # the connector degenerates into a tiny corner artifact.
+            template_r = float(params.get("template_circle_radius", current))
+            low_bound = max(low_bound, template_r * 0.88)
+            # Also prevent one-shot collapses from noisy element masks.
+            low_bound = max(low_bound, current * 0.90)
         # Tiny badges are especially sensitive to anti-aliasing noise in the
         # circle-only error mask. Prevent aggressive downward jumps that make
         # AC0800_S noticeably smaller than the medium/large variants.
@@ -3722,19 +3784,27 @@ class Action:
                             Action.render_svg_to_numpy(updated_elem_svg, w, h),
                         )
                         updated_err = float("inf")
+                        bbox_ok = True
+                        bbox_log: str | None = None
                         if updated_elem_render is not None:
                             updated_err = float(Action._masked_error(img_orig, updated_elem_render, mask_orig))
+                            updated_mask_svg = Action.extract_badge_element_mask(updated_elem_render, params, element)
+                            if updated_mask_svg is not None:
+                                bbox_ok, bbox_log = Action._element_bbox_change_is_plausible(mask_orig, updated_mask_svg)
 
-                        if np.isfinite(updated_err) and updated_err <= old_elem_err + 0.20:
+                        if np.isfinite(updated_err) and updated_err <= old_elem_err + 0.20 and bbox_ok:
                             round_changed = True
                             logs.append(f"{element}: Parameter nach Mittelpunkt/Diagonale angepasst")
                         else:
                             params.clear()
                             params.update(old_params)
+                            reason = f"Fehler {old_elem_err:.3f}->{updated_err:.3f}"
+                            if bbox_log:
+                                reason = f"{reason}; {bbox_log}"
                             logs.append(
                                 (
                                     f"{element}: Mittelpunkt/Diagonale-Update verworfen "
-                                    f"(Fehler {old_elem_err:.3f}->{updated_err:.3f})"
+                                    f"({reason})"
                                 )
                             )
 

@@ -118,36 +118,6 @@ text: minRect Δcx=3.250, Δcy=4.250, diag=4.743->5.000, scale=1.0541
 text: Fehler=3022.000
 text: Breiten-Bracketing übersprungen (co2_font_scale: current=0.820, Range=0.820..0.820)
 Runde 8: Gesamtfehler=29.588
-Runde 9: elementweise Validierung gestartet
-circle: minRect Δcx=0.678, Δcy=0.692, diag=6.325->8.723, scale=1.3791
-circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 1567.000->1595.000)
-circle: Fehler=1567.000
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 0.000->0.000, cy 12.500->11.500 (best_err=1581.000)
-circle: Radius-Bracketing r 2.500->3.500 (best_err=2003.000); Kandidaten=3.500->2003.000, 12.000->4677.000
-circle: Joint-Multistart cx 0.000->0.000, cy 11.500->11.500, r 3.500->3.000 (best_err=2604.000)
-circle: Joint-Multistart liegt am Rand; starte stochastic survivor search
-circle: Stochastic-Survivor übernommen (cx=0.000, cy=12.500, r=2.500, err=1898.000)
-stem: Element konnte nicht extrahiert werden
-text: minRect Δcx=3.250, Δcy=4.250, diag=4.743->5.000, scale=1.0541
-text: Fehler=3022.000
-text: Breiten-Bracketing übersprungen (co2_font_scale: current=0.820, Range=0.820..0.820)
-Runde 9: Gesamtfehler=29.588
-Runde 10: elementweise Validierung gestartet
-circle: minRect Δcx=0.678, Δcy=0.692, diag=6.325->8.723, scale=1.3791
-circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 1567.000->1595.000)
-circle: Fehler=1567.000
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Mittelpunkt-Bracketing cx 0.000->0.000, cy 12.500->11.500 (best_err=1581.000)
-circle: Radius-Bracketing r 2.500->3.500 (best_err=2003.000); Kandidaten=3.500->2003.000, 12.000->4677.000
-circle: Joint-Multistart cx 0.000->0.000, cy 11.500->11.500, r 3.500->3.000 (best_err=2604.000)
-circle: Joint-Multistart liegt am Rand; starte stochastic survivor search
-circle: Stochastic-Survivor übernommen (cx=0.000, cy=12.500, r=2.500, err=1898.000)
-stem: Element konnte nicht extrahiert werden
-text: minRect Δcx=3.250, Δcy=4.250, diag=4.743->5.000, scale=1.0541
-text: Fehler=3022.000
-text: Breiten-Bracketing übersprungen (co2_font_scale: current=0.820, Range=0.820..0.820)
-Runde 10: Gesamtfehler=29.588
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: Farb-Bracketing übersprungen (Farben gesperrt)
 text: Farb-Bracketing übersprungen (Farben gesperrt)

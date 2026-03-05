@@ -101,31 +101,5 @@ text: Fehler=14071.000
 text: Breiten-Stochastic-Survivor aktiviert (co2_font_scale=0.886, err=13579.000)
 text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.903); Kandidaten=0.865->13740.000, 0.903->14071.000, 0.941->15007.000, 0.992->15026.000, 1.038->15026.000, 1.043->15026.000, 1.082->15026.000, 1.120->15026.000
 Runde 8: Gesamtfehler=22.463
-Runde 9: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=38.000->38.184, scale=1.0048
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=15549.000
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500 (best_err=15549.000); Kandidaten=12.500->27624.000, 13.000->20627.000, 13.500->15549.000, 14.500->28513.000
-circle: Joint-Multistart keine relevante Änderung (cx=15.000, cy=15.000, r=13.500, best_err=15549.000)
-text: minRect Δcx=-1.500, Δcy=0.500, diag=14.142->14.213, scale=1.0050
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 14071.000->14170.000)
-text: Fehler=14071.000
-text: Breiten-Stochastic-Survivor aktiviert (co2_font_scale=0.886, err=13579.000)
-text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.903); Kandidaten=0.865->13740.000, 0.903->14071.000, 0.941->15007.000, 0.992->15026.000, 1.038->15026.000, 1.043->15026.000, 1.082->15026.000, 1.120->15026.000
-Runde 9: Gesamtfehler=22.463
-Runde 10: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=38.000->38.184, scale=1.0048
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=15549.000
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.565->13.500 (best_err=15549.000); Kandidaten=12.500->27624.000, 13.000->20627.000, 13.500->15549.000, 14.500->28513.000
-circle: Joint-Multistart keine relevante Änderung (cx=15.000, cy=15.000, r=13.500, best_err=15549.000)
-text: minRect Δcx=-1.500, Δcy=0.500, diag=14.142->14.213, scale=1.0050
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 14071.000->14170.000)
-text: Fehler=14071.000
-text: Breiten-Stochastic-Survivor aktiviert (co2_font_scale=0.886, err=13579.000)
-text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.903); Kandidaten=0.865->13740.000, 0.903->14071.000, 0.941->15007.000, 0.992->15026.000, 1.038->15026.000, 1.043->15026.000, 1.082->15026.000, 1.120->15026.000
-Runde 10: Gesamtfehler=22.463
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: Farb-Bracketing übersprungen (Farben gesperrt)

@@ -702,6 +702,40 @@ def test_optimize_stem_extent_keeps_circle_side_anchor() -> None:
     assert any("stem: Längen-Bracketing" in line for line in logs)
 
 
+
+
+def test_optimize_stem_extent_keeps_bottom_anchored_ac0811_stem_from_collapsing() -> None:
+    """Bottom-anchored AC0811 stems should retain a minimum visible length during bracketing."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    class DummyImg:
+        shape = (15, 15, 3)
+
+    img = DummyImg()
+    params = Action._default_ac0811_params(15, 15)
+    params = Action._finalize_ac08_style("AC0811_S", params)
+
+    logs: list[str] = []
+    original = Action._element_error_for_extent
+
+    def prefer_tiny(_img: object, _params: dict, _element: str, extent_value: float) -> float:
+        # Try to collapse the stem aggressively; guardrails should prevent this.
+        return abs(float(extent_value) - 1.0)
+
+    Action._element_error_for_extent = staticmethod(prefer_tiny)
+    try:
+        changed = Action._optimize_element_extent_bracket(img, params, "stem", logs)
+    finally:
+        Action._element_error_for_extent = original
+
+    assert changed is True
+    stem_len = float(params["stem_bottom"]) - float(params["stem_top"])
+    assert stem_len >= 5.5
+    assert abs(float(params["stem_top"]) - (float(params["cy"]) + float(params["r"]))) < 1e-6
+    assert any("Längen-Bracketing" in line for line in logs)
+
+
 def test_fit_ac0811_preserves_visible_stem_when_circle_estimate_reaches_bottom() -> None:
     """AC0811 fitting should keep at least a small visible stem segment."""
 

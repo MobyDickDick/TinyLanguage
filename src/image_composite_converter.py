@@ -3267,6 +3267,25 @@ class Action:
             key_label = "stem_len"
             low_bound = 1.0
             high_bound = float(h)
+            forced_abs_min = params.get("stem_len_min")
+            if forced_abs_min is not None:
+                low_bound = max(low_bound, float(forced_abs_min))
+            forced_min_ratio = params.get("stem_len_min_ratio")
+            if forced_min_ratio is not None:
+                min_ratio = float(max(0.0, min(1.0, float(forced_min_ratio))))
+                low_bound = max(low_bound, current * min_ratio)
+            # Keep bottom-anchored stem variants (e.g. AC0811_S) from collapsing
+            # into near-invisible stubs when anti-aliased extraction under-segments
+            # thin line pixels in element-only masks.
+            is_bottom_anchored = float(params.get("stem_bottom", 0.0)) >= float(h) - 0.5
+            if (
+                forced_min_ratio is None
+                and is_bottom_anchored
+                and params.get("circle_enabled", True)
+                and all(k in params for k in ("cy", "r"))
+            ):
+                min_ratio = float(params.get("stem_len_min_ratio", 0.65))
+                low_bound = max(low_bound, current * max(0.0, min(1.0, min_ratio)))
         elif element == "arm" and params.get("arm_enabled"):
             dx = float(params.get("arm_x2", 0.0)) - float(params.get("arm_x1", 0.0))
             dy = float(params.get("arm_y2", 0.0)) - float(params.get("arm_y1", 0.0))

@@ -1261,6 +1261,10 @@ class Action:
         max_arm_stroke = max(min_arm_stroke, min(float(h) * 0.14, stroke_circle * 1.6))
         arm_stroke = max(min_arm_stroke, min(raw_arm_stroke, max_arm_stroke))
 
+        cx = float(params.get("cx", defaults.get("cx", float(h) / 2.0)))
+        cy = float(params.get("cy", defaults.get("cy", float(h) / 2.0)))
+        r = float(params.get("r", defaults.get("r", float(h) * 0.4)))
+
         params["arm_enabled"] = True
         params["arm_stroke"] = arm_stroke
         params["arm_x1"] = min(float(w), cx + r)
@@ -1298,6 +1302,47 @@ class Action:
         params["ty"] = float(params["cy"] - (glyph_height / 2.0))
 
     @staticmethod
+    def _stabilize_semantic_circle_pose(params: dict, defaults: dict, w: int, h: int) -> dict:
+        """Bound fitted circle pose to semantic template geometry.
+
+        Tiny, low-information raster variants are especially sensitive to JPEG
+        edge artifacts. For connector-only badges without text, prefer the
+        semantic template center and keep radius from collapsing.
+        """
+        if "r" not in defaults:
+            return params
+
+        default_cx = float(defaults.get("cx", float(w) / 2.0))
+        default_cy = float(defaults.get("cy", float(h) / 2.0))
+        default_r = float(defaults.get("r", 0.0))
+        if default_r <= 0.0:
+            return params
+
+        has_connector = bool(params.get("arm_enabled") or params.get("stem_enabled"))
+        has_text = bool(params.get("draw_text", False))
+        if not has_connector:
+            return params
+
+        if not has_text and min(w, h) <= 16:
+            params["cx"] = default_cx
+            params["cy"] = default_cy
+            params["r"] = max(float(params.get("r", default_r)), default_r * 0.96)
+            params["lock_circle_cx"] = True
+            params["lock_circle_cy"] = True
+            return params
+
+        cx_tolerance = max(1.0, float(min(w, h)) * 0.08)
+        cy_tolerance = max(1.0, float(min(w, h)) * 0.08)
+        current_cx = float(params.get("cx", default_cx))
+        current_cy = float(params.get("cy", default_cy))
+        params["cx"] = float(max(default_cx - cx_tolerance, min(default_cx + cx_tolerance, current_cx)))
+        params["cy"] = float(max(default_cy - cy_tolerance, min(default_cy + cy_tolerance, current_cy)))
+        min_radius = max(1.0, default_r * 0.88)
+        max_radius = max(min_radius, default_r * 1.12)
+        current_r = float(params.get("r", default_r))
+        params["r"] = float(max(min_radius, min(max_radius, current_r)))
+        return params
+
     def _fit_ac0870_params_from_image(img: np.ndarray, defaults: dict) -> dict:
         params = dict(defaults)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -1529,6 +1574,8 @@ class Action:
                         params["arm_y1"] = float(y1 + ry)
                         params["arm_y2"] = float(y1 + ry + rh)
                         params["arm_stroke"] = float(max(1.0, rw))
+
+        params = Action._stabilize_semantic_circle_pose(params, defaults, w, h)
 
         if params.get("draw_text", True) and params.get("text_mode") in {"path", "path_t"}:
             Action._center_glyph_bbox(params)

@@ -122,5 +122,19 @@ arm: Element konnte nicht extrahiert werden
 text: minRect Δcx=3.500, Δcy=0.000, diag=11.402->12.042, scale=1.0561
 text: Fehler=5760.000
 Runde 9: Gesamtfehler=29.273
+Runde 10: elementweise Validierung gestartet
+circle: minRect Δcx=1.168, Δcy=-1.338, diag=18.962->20.649, scale=1.0889
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 2479.000->3049.000)
+circle: Fehler=2479.000
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Mittelpunkt-Bracketing cx 7.000->4.000, cy 19.000->19.000 (best_err=3183.000)
+circle: Radius-Bracketing keine relevante Änderung (r: 9.500, best_err=3183.000); Kandidaten=8.500->4075.000, 9.500->3183.000
+circle: Joint-Multistart cx 4.000->5.500, cy 19.000->19.000, r 9.500->9.500 (best_err=3058.000)
+circle: Joint-Multistart liegt am Rand; starte stochastic survivor search
+circle: Stochastic-Survivor übernommen (cx=7.000, cy=19.000, r=9.500, err=2927.000)
+arm: Element konnte nicht extrahiert werden
+text: minRect Δcx=3.500, Δcy=0.000, diag=11.402->12.042, scale=1.0561
+text: Fehler=5760.000
+Runde 10: Gesamtfehler=29.273
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: Farb-Bracketing übersprungen (Farben gesperrt)

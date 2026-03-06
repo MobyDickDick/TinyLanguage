@@ -1,0 +1,11 @@
+{
+  "allowed_error_per_pixel": 0.02698024691358025,
+  "skip_variants": [
+    "AC0800_L",
+    "AC0800_M",
+    "AC0820_L",
+    "AC0870_L"
+  ],
+  "notes": "Varianten in skip_variants werden in Folge-Pässen nicht erneut konvertiert. Loeschen der Datei setzt den Ablauf zurueck, dann werden wieder alle Bitmaps bearbeitet.",
+  "source": "manual-config"
+}

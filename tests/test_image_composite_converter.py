@@ -316,6 +316,16 @@ def test_finalize_non_ac0820_co2_keeps_text_scale_locked() -> None:
 
     assert params["lock_text_scale"] is True
 
+
+def test_finalize_tiny_non_ac0820_co2_unlocks_bounded_text_tuning() -> None:
+    """Tiny CO₂ variants should allow bounded text tuning across AC08xx families."""
+    params = Action._apply_co2_label(Action._default_ac0813_params(15, 25))
+    params = Action._finalize_ac08_style("AC0833_S", params)
+
+    assert params["lock_text_scale"] is False
+    assert float(params["co2_font_scale_min"]) < float(params["co2_font_scale"])
+    assert float(params["co2_font_scale_max"]) > float(params["co2_font_scale"])
+
 def test_generate_badge_svg_renders_center_co_as_split_text_nodes() -> None:
     """center_co layout should render CO and subscript as separate positioned text nodes."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
@@ -378,6 +388,25 @@ def test_validate_badge_logs_extent_bracketing_for_line_elements() -> None:
 
     assert any("arm: Längen-Bracketing" in line for line in logs)
 
+
+
+
+def test_tune_ac0834_co2_badge_recenters_tiny_variant_and_locks_strokes() -> None:
+    """AC0834_S tuning should keep the badge centered and connector geometry stable."""
+    params = Action._apply_co2_label(Action._default_ac0814_params(25, 15))
+    params["cy"] = 10.0
+    params["r"] = 5.0
+    params["stroke_circle"] = 1.7
+    params["arm_stroke"] = 1.6
+
+    tuned = Action._tune_ac0834_co2_badge(params, 25, 15)
+
+    assert abs(float(tuned["cy"]) - 7.5) < 1e-6
+    assert abs(float(tuned["arm_y1"]) - float(tuned["cy"])) < 1e-6
+    assert abs(float(tuned["arm_y2"]) - float(tuned["cy"])) < 1e-6
+    assert float(tuned["arm_x2"]) == 25.0
+    assert float(tuned["stroke_circle"]) == Action.AC08_STROKE_WIDTH_PX
+    assert float(tuned["arm_stroke"]) == Action.AC08_STROKE_WIDTH_PX
 
 def test_optimize_circle_radius_keeps_ac0813_vertical_arm_orientation() -> None:
     """AC0813 radius optimization must not collapse the vertical arm into a horizontal one."""
@@ -470,6 +499,42 @@ def test_circle_radius_bracketing_respects_configured_min_radius() -> None:
     assert any("Radius-Bracketing" in line for line in logs)
 
 
+
+def test_circle_error_uses_stable_source_mask_for_radius_candidates(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Circle radius scoring should keep the source mask tied to current params."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    class DummyImg:
+        shape = (20, 20, 3)
+
+    img = DummyImg()
+    params = {
+        "circle_enabled": True,
+        "r": 8.0,
+        "cx": 10.0,
+        "cy": 10.0,
+    }
+
+    monkeypatch.setattr(Action, "generate_badge_svg", staticmethod(lambda *_args, **_kwargs: "<svg />"))
+    monkeypatch.setattr(Action, "render_svg_to_numpy", staticmethod(lambda *_args, **_kwargs: object()))
+    monkeypatch.setattr(Action, "_fit_to_original_size", staticmethod(lambda _img, rendered: rendered))
+
+    calls: list[dict] = []
+
+    def fake_extract(_img: object, mask_params: dict, _element: str) -> object:
+        calls.append(mask_params)
+        return object()
+
+    monkeypatch.setattr(Action, "extract_badge_element_mask", staticmethod(fake_extract))
+    monkeypatch.setattr(Action, "_masked_union_error_in_bbox", staticmethod(lambda *_args, **_kwargs: 1.0))
+
+    err = Action._element_error_for_circle_radius(img, params, 3.5)
+
+    assert err == 1.0
+    assert len(calls) >= 2
+    assert calls[0] is params
+    assert calls[1] is not params
 def test_voc_font_scale_bounds_allow_larger_tiny_badge_labels() -> None:
     """Tiny VOC badges should allow expanding text scale beyond the historic cap."""
     params = {
@@ -487,8 +552,8 @@ def test_voc_font_scale_bounds_allow_larger_tiny_badge_labels() -> None:
     assert high >= 1.60
 
 
-def test_voc_font_scale_bounds_limit_growth_for_large_badges() -> None:
-    """Large VOC badges should avoid overscaling text during width bracketing."""
+def test_voc_font_scale_bounds_keep_broad_search_for_large_badges() -> None:
+    """Large VOC badges should keep enough headroom for text-mask driven fitting."""
     params = {
         "draw_text": True,
         "text_mode": "voc",
@@ -501,7 +566,106 @@ def test_voc_font_scale_bounds_limit_growth_for_large_badges() -> None:
     key, low, high = info
     assert key == "voc_font_scale"
     assert low <= 0.45
-    assert high <= 1.10
+    assert high >= 1.60
+
+
+def test_voc_font_scale_bounds_expand_from_original_text_bbox(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When original text extents are known, bounds should expand around that estimate."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    params = {
+        "draw_text": True,
+        "text_mode": "voc",
+        "voc_font_scale": 0.52,
+        "r": 5.0,
+    }
+    img = np.zeros((40, 40, 3), dtype=np.uint8)
+
+    mask = np.zeros((40, 40), dtype=np.uint8)
+    mask[10:18, 6:34] = 1  # wide/tall enough to imply larger VOC than defaults
+
+    monkeypatch.setattr(Action, "extract_badge_element_mask", staticmethod(lambda *_args, **_kwargs: mask))
+
+    info = Action._element_width_key_and_bounds("text", params, 40, 40, img_orig=img)
+
+    assert info is not None
+    key, low, high = info
+    assert key == "voc_font_scale"
+    assert low <= 0.90
+    assert high >= 2.0
+
+
+def test_finalize_ac08_style_caps_ac0835_s_voc_growth() -> None:
+    """AC0835_S should keep VOC scale bounded to avoid heavy-looking labels."""
+    params = Action._apply_voc_label(Action._default_ac0870_params(15, 15))
+
+    finalized = Action._finalize_ac08_style("AC0835_S", params)
+
+    assert finalized["lock_text_scale"] is False
+    assert abs(float(finalized["voc_font_scale_min"]) - 0.58) < 1e-6
+    assert abs(float(finalized["voc_font_scale_max"]) - 0.546) < 1e-6
+
+
+def test_finalize_ac08_style_boosts_ac0835_m_voc_baseline() -> None:
+    """AC0835_M should bias VOC text upward so medium badges remain readable."""
+    params = Action._apply_voc_label(Action._default_ac0870_params(20, 20))
+
+    finalized = Action._finalize_ac08_style("AC0835_M", params)
+
+    assert finalized["lock_text_scale"] is False
+    assert abs(float(finalized["voc_font_scale"]) - 0.60) < 1e-6
+    assert abs(float(finalized["voc_font_scale_min"]) - 0.60) < 1e-6
+    assert "voc_font_scale_max" not in finalized
+
+
+def test_voc_font_scale_bounds_honor_explicit_min_max_overrides() -> None:
+    """VOC text bracketing should respect caller-provided scale bounds."""
+    params = {
+        "draw_text": True,
+        "text_mode": "voc",
+        "voc_font_scale": 0.52,
+        "voc_font_scale_min": 0.58,
+        "voc_font_scale_max": 0.546,
+    }
+
+    info = Action._element_width_key_and_bounds("text", params, 15, 15)
+
+    assert info is not None
+    key, low, high = info
+    assert key == "voc_font_scale"
+    assert abs(float(low) - 0.58) < 1e-6
+    assert abs(float(high) - 0.58) < 1e-6
+
+
+def test_finalize_ac08_style_caps_ac0835_s_voc_growth() -> None:
+    """AC0835_S should keep VOC scale bounded to avoid heavy-looking labels."""
+    params = Action._apply_voc_label(Action._default_ac0870_params(15, 15))
+
+    finalized = Action._finalize_ac08_style("AC0835_S", params)
+
+    assert finalized["lock_text_scale"] is False
+    assert abs(float(finalized["voc_font_scale_min"]) - 0.58) < 1e-6
+    assert abs(float(finalized["voc_font_scale_max"]) - 0.546) < 1e-6
+
+
+def test_voc_font_scale_bounds_honor_explicit_min_max_overrides() -> None:
+    """VOC text bracketing should respect caller-provided scale bounds."""
+    params = {
+        "draw_text": True,
+        "text_mode": "voc",
+        "voc_font_scale": 0.52,
+        "voc_font_scale_min": 0.58,
+        "voc_font_scale_max": 0.546,
+    }
+
+    info = Action._element_width_key_and_bounds("text", params, 15, 15)
+
+    assert info is not None
+    key, low, high = info
+    assert key == "voc_font_scale"
+    assert abs(float(low) - 0.58) < 1e-6
+    assert abs(float(high) - 0.58) < 1e-6
 
 
 def test_optimize_arm_extent_keeps_circle_side_anchor_for_horizontal_connectors() -> None:
@@ -566,6 +730,120 @@ def test_optimize_stem_extent_keeps_circle_side_anchor() -> None:
     assert abs(float(params["stem_top"]) - (float(params["cy"]) + float(params["r"]))) < 1e-6
     assert float(params["stem_bottom"]) > float(params["stem_top"])
     assert any("stem: Längen-Bracketing" in line for line in logs)
+
+
+
+
+
+
+def test_finalize_persists_stem_length_floor_for_ac08_stem_connectors() -> None:
+    params = Action._default_ac0881_params(15, 15)
+    params = Action._finalize_ac08_style("AC0881_S", params)
+
+    stem_len = float(params["stem_bottom"]) - float(params["stem_top"])
+    assert stem_len > 0.0
+    assert float(params.get("stem_len_min_ratio", 0.0)) >= 0.65
+    assert float(params.get("stem_len_min", 0.0)) >= stem_len * float(params["stem_len_min_ratio"])
+
+
+def test_finalize_persists_arm_length_floor_for_ac08_arm_connectors() -> None:
+    params = Action._default_ac0812_params(15, 15)
+    params = Action._finalize_ac08_style("AC0812_S", params)
+
+    arm_len = float(abs(params["arm_x2"] - params["arm_x1"]))
+    assert arm_len > 0.0
+    assert float(params.get("arm_len_min_ratio", 0.0)) >= 0.75
+    assert float(params.get("arm_len_min", 0.0)) >= arm_len * float(params["arm_len_min_ratio"])
+
+def test_optimize_stem_extent_keeps_bottom_anchored_ac0811_stem_from_collapsing() -> None:
+    """Bottom-anchored AC0811 stems should retain a minimum visible length during bracketing."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    class DummyImg:
+        shape = (15, 15, 3)
+
+    img = DummyImg()
+    params = Action._default_ac0811_params(15, 15)
+    params = Action._finalize_ac08_style("AC0811_S", params)
+
+    logs: list[str] = []
+    original = Action._element_error_for_extent
+
+    def prefer_tiny(_img: object, _params: dict, _element: str, extent_value: float) -> float:
+        # Try to collapse the stem aggressively; guardrails should prevent this.
+        return abs(float(extent_value) - 1.0)
+
+    Action._element_error_for_extent = staticmethod(prefer_tiny)
+    try:
+        changed = Action._optimize_element_extent_bracket(img, params, "stem", logs)
+    finally:
+        Action._element_error_for_extent = original
+
+    assert changed is True
+    stem_len = float(params["stem_bottom"]) - float(params["stem_top"])
+    assert stem_len >= 5.5
+    assert abs(float(params["stem_top"]) - (float(params["cy"]) + float(params["r"]))) < 1e-6
+    assert any("Längen-Bracketing" in line for line in logs)
+
+
+def test_fit_ac0811_preserves_visible_stem_when_circle_estimate_reaches_bottom() -> None:
+    """AC0811 fitting should keep at least a small visible stem segment."""
+
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    class DummyImg:
+        shape = (15, 15, 3)
+
+    img = DummyImg()
+    defaults = Action._default_ac0811_params(15, 15)
+
+    original_fit = Action._fit_semantic_badge_from_image
+    original_upper = Action._estimate_upper_circle_from_foreground
+    try:
+        Action._fit_semantic_badge_from_image = staticmethod(
+            lambda _img, _defaults: {
+                **dict(defaults),
+                "cx": float(defaults["cx"]),
+                "cy": float(defaults["cy"]),
+                # Simulate a noisy fit where the circle radius grows so much
+                # that stem_top would otherwise land at/below image bottom.
+                "r": float(img.shape[0]),
+                "stem_width": float(defaults["stem_width"]),
+            }
+        )
+        Action._estimate_upper_circle_from_foreground = staticmethod(lambda _img, _defaults: None)
+
+        params = Action._fit_ac0811_params_from_image(img, defaults)
+    finally:
+        Action._fit_semantic_badge_from_image = original_fit
+        Action._estimate_upper_circle_from_foreground = original_upper
+
+    assert float(params["stem_bottom"]) == float(img.shape[0])
+    assert float(params["stem_top"]) <= float(img.shape[0]) - 1.0
+    assert float(params["stem_bottom"]) - float(params["stem_top"]) >= 1.0
+
+
+def test_estimate_vertical_stem_from_mask_ignores_circle_junction_bulge() -> None:
+    """Stem width estimate should prefer the lower stem over top junction bulges."""
+
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    mask = np.zeros((20, 15), dtype=bool)
+
+    # Simulate anti-aliased widening near the circle/stem transition.
+    mask[0:6, 4:11] = True   # wide top bulge (7 px)
+    mask[6:20, 6:9] = True   # actual slim stem (3 px)
+
+    est = Action._estimate_vertical_stem_from_mask(mask, expected_cx=7.0, y_start=0, y_end=20)
+    assert est is not None
+
+    est_cx, est_width = est
+    assert abs(float(est_cx) - 7.0) <= 0.6
+    assert abs(float(est_width) - 3.0) <= 0.25
 
 def test_text_width_bracketing_keeps_fractional_font_scale_precision() -> None:
     """Text scale optimization should not quantize font scale to half-pixel steps."""
@@ -700,7 +978,6 @@ def test_validate_badge_runs_color_bracketing_after_geometry_steps() -> None:
     original_extent = Action._optimize_element_extent_bracket
     original_center = Action._optimize_circle_center_bracket
     original_radius = Action._optimize_circle_radius_bracket
-    original_joint = Action._optimize_circle_pose_multistart
     original_color = Action._optimize_element_color_bracket
 
     Action.generate_badge_svg = staticmethod(lambda _w, _h, _params: "<svg/>")
@@ -723,9 +1000,6 @@ def test_validate_badge_runs_color_bracketing_after_geometry_steps() -> None:
     Action._optimize_circle_radius_bracket = staticmethod(
         lambda _img, _params, _logs: call_order.append("radius") or False
     )
-    Action._optimize_circle_pose_multistart = staticmethod(
-        lambda _img, _params, _logs: call_order.append("joint") or False
-    )
     Action._optimize_element_color_bracket = staticmethod(
         lambda _img, _params, _element, _mask, _logs: call_order.append("color") or False
     )
@@ -744,10 +1018,9 @@ def test_validate_badge_runs_color_bracketing_after_geometry_steps() -> None:
         Action._optimize_element_extent_bracket = original_extent
         Action._optimize_circle_center_bracket = original_center
         Action._optimize_circle_radius_bracket = original_radius
-        Action._optimize_circle_pose_multistart = original_joint
         Action._optimize_element_color_bracket = original_color
 
-    assert call_order == ["width", "extent", "center", "radius", "joint", "color"]
+    assert call_order == ["width", "extent", "center", "radius", "color"]
 
 
 def test_optimize_circle_pose_multistart_can_escape_local_center_radius_plateau(monkeypatch: pytest.MonkeyPatch) -> None:

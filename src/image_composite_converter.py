@@ -535,6 +535,9 @@ class Action:
                 p["lock_circle_cy"] = True
                 if p.get("stem_enabled"):
                     p["lock_stem_center_to_circle"] = True
+                    p["stem_center_lock_max_offset"] = float(max(0.35, float(p.get("stroke_circle", 1.0)) * 0.6))
+                    p["allow_stem_width_tuning"] = True
+                    p["stem_width_tuning_px"] = 1.0
                 if p.get("arm_enabled"):
                     p["lock_arm_center_to_circle"] = True
 
@@ -2776,7 +2779,13 @@ class Action:
         if element == "stem" and params.get("stem_enabled"):
             if lock_strokes:
                 fixed = float(Action.AC08_STROKE_WIDTH_PX)
-                return "stem_width", fixed, fixed
+                if not bool(params.get("allow_stem_width_tuning", False)):
+                    return "stem_width", fixed, fixed
+                high = min(
+                    float(params.get("stem_width_max", fixed + 1.0)),
+                    max(fixed, fixed + float(params.get("stem_width_tuning_px", 1.0))),
+                )
+                return "stem_width", fixed, max(fixed, high)
             low = max(1.0, float(params.get("stroke_circle", 1.0)) * 0.65)
             high = max(low, min(float(w) * 0.25, float(params.get("stem_width_max", float(w) * 0.25))))
             return "stem_width", low, high
@@ -3793,7 +3802,9 @@ class Action:
             )
             target_width = max(min_w, min(est_width, max_w))
             if bool(params.get("lock_stem_center_to_circle", False)):
-                target_cx = float(params.get("cx", est_cx))
+                circle_cx = float(params.get("cx", est_cx))
+                max_offset = float(params.get("stem_center_lock_max_offset", max(0.35, target_width * 0.75)))
+                target_cx = float(np.clip(est_cx, circle_cx - max_offset, circle_cx + max_offset))
             else:
                 target_cx = est_cx
             estimate_mode = "iter"
@@ -3816,12 +3827,61 @@ class Action:
         stem_width_cap = float(params.get("stem_width_max", float(w) * 0.20))
         target_width = min(target_width, stem_width_cap)
         target_width = Action._snap_int_px(target_width, minimum=1.0)
+        old_x = float(params.get("stem_x", 0.0))
+        old_w = float(params.get("stem_width", 1.0))
+        new_x = Action._snap_half(max(0.0, min(float(w) - target_width, target_cx - (target_width / 2.0))))
+        if abs(target_width - old_w) < 0.05 and abs(new_x - old_x) < 0.05:
+            return False, None
         params["stem_width"] = target_width
-        params["stem_x"] = Action._snap_half(max(0.0, min(float(w) - target_width, target_cx - (target_width / 2.0))))
+        params["stem_x"] = new_x
         return True, (
             f"stem: Breitenkorrektur mode={estimate_mode}, ratio={ratio:.3f}, "
             f"alt={old_width:.3f}, neu={target_width:.3f}"
         )
+
+    @staticmethod
+    def _expected_semantic_presence(semantic_elements: list[str]) -> dict[str, bool]:
+        normalized = [str(elem).lower() for elem in semantic_elements]
+        has_text = any("kreis + buchstabe" in elem for elem in normalized)
+        return {
+            "circle": True,
+            "stem": any("senkrechter strich" in elem for elem in normalized),
+            "arm": any("waagrechter strich" in elem for elem in normalized),
+            "text": has_text,
+        }
+
+    @staticmethod
+    def _semantic_presence_mismatches(expected: dict[str, bool], observed: dict[str, bool]) -> list[str]:
+        labels = {
+            "circle": "Kreis",
+            "stem": "senkrechter Strich",
+            "arm": "waagrechter Strich",
+            "text": "Buchstabe/Text",
+        }
+        issues: list[str] = []
+        for key in ("circle", "stem", "arm", "text"):
+            exp = bool(expected.get(key, False))
+            obs = bool(observed.get(key, False))
+            if exp and not obs:
+                issues.append(f"Beschreibung erwartet {labels[key]}, im Bild aber nicht robust erkennbar")
+            if obs and not exp:
+                issues.append(f"Im Bild ist {labels[key]} erkennbar, aber nicht in der Beschreibung enthalten")
+        return issues
+
+    @staticmethod
+    def validate_semantic_description_alignment(
+        img_orig: np.ndarray,
+        semantic_elements: list[str],
+        badge_params: dict,
+    ) -> list[str]:
+        expected = Action._expected_semantic_presence(semantic_elements)
+        observed = {
+            "circle": Action.extract_badge_element_mask(img_orig, badge_params, "circle") is not None,
+            "stem": Action.extract_badge_element_mask(img_orig, badge_params, "stem") is not None,
+            "arm": Action.extract_badge_element_mask(img_orig, badge_params, "arm") is not None,
+            "text": Action.extract_badge_element_mask(img_orig, badge_params, "text") is not None,
+        }
+        return Action._semantic_presence_mismatches(expected, observed)
 
     @staticmethod
     def validate_badge_by_elements(
@@ -4038,6 +4098,17 @@ def run_iteration_pipeline(
     if params["mode"] == "semantic_badge":
         badge_params = Action.make_badge_params(w, h, perc.base_name, perc.img)
         if badge_params is None:
+            return None
+
+        semantic_issues = Action.validate_semantic_description_alignment(
+            perc.img,
+            list(params.get("elements", [])),
+            badge_params,
+        )
+        if semantic_issues:
+            print("[ERROR] Semantik-Abgleich fehlgeschlagen:")
+            for issue in semantic_issues:
+                print(f"  - {issue}")
             return None
 
         validation_logs: list[str] = []

@@ -5,6 +5,7 @@
     "AC0800_M",
     "AC0811_L",
     "AC0811_M",
+    "AC0811_S",
     "AC0812_L",
     "AC0812_M",
     "AC0813_L",
@@ -25,7 +26,8 @@
     "AC0839_M",
     "AC0870_L",
     "AC0881_L",
-    "AC0881_M"
+    "AC0881_M",
+    "AC0882_L"
   ],
   "notes": "Varianten in skip_variants werden in Folge-Pässen nicht erneut konvertiert. Loeschen der Datei setzt den Ablauf zurueck, dann werden wieder alle Bitmaps bearbeitet.",
   "source": "manual-config"

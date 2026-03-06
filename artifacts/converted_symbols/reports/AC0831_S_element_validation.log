@@ -136,6 +136,21 @@ text: Mittelpunkt/Diagonale-Update verworfen (Fehler 129.066->145.120; Box-Check
 text: Fehler=129.066
 text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.740); Kandidaten=0.740->129.066, 0.783->135.619, 0.826->136.770, 0.851->135.591, 0.882->140.269, 0.939->142.601, 0.982->142.601, 1.025->142.601
 Runde 9: Gesamtfehler=18.749
+Runde 10: elementweise Validierung gestartet
+circle: minRect Δcx=0.000, Δcy=0.500, diag=19.799->19.000, scale=0.9596
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 120.760->126.889)
+circle: Fehler=120.760
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing keine relevante Änderung (r: 7.000, best_err=6016.000); Kandidaten=6.500->6050.000, 7.000->6016.000
+circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=7.500, r=7.000, best_err=6016.000)
+stem: Fehler=44.867
+stem: Breiten-Bracketing keine relevante Änderung (stem_width: 1.000); Kandidaten=1.000->54.000, 1.500->54.000
+stem: Längen-Bracketing stem_len 10.500->12.000; Kandidaten=7.500->85.333, 10.500->44.867, 12.000->44.800, 16.500->70.867, 20.500->110.661, 25.000->117.219
+text: minRect Δcx=-0.454, Δcy=-0.131, diag=8.602->9.219, scale=1.0717
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 129.066->145.120; Box-Check verworfen (w_ratio=0.667, h_ratio=0.556, area_ratio=0.370))
+text: Fehler=129.066
+text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.740); Kandidaten=0.740->129.066, 0.783->135.619, 0.826->136.770, 0.851->135.591, 0.882->140.269, 0.939->142.601, 0.982->142.601, 1.025->142.601
+Runde 10: Gesamtfehler=18.749
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 stem: Farb-Bracketing übersprungen (Farben gesperrt)
 text: Farb-Bracketing übersprungen (Farben gesperrt)

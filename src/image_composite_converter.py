@@ -569,21 +569,9 @@ class Action:
             min_dim = float(min(float(p.get("width", 0.0) or 0.0), float(p.get("height", 0.0) or 0.0)))
             if min_dim <= 0.0:
                 min_dim = max(1.0, float(p.get("r", 1.0)) * 2.0)
-            if canonical_name == "AC0835_M" and min_dim <= 22.0:
-                # AC0835_M often lands with visibly undersized VOC text after
-                # anti-aliased fitting. Keep the medium badge explicitly
-                # biased toward a larger baseline, while still allowing upward
-                # growth in iterative validation for difficult sources.
-                base_scale = float(p.get("voc_font_scale", 0.52))
-                p["lock_text_scale"] = False
-                p["voc_font_scale"] = float(max(0.60, base_scale))
-                p["voc_font_scale_min"] = float(max(0.60, base_scale * 1.10))
-                p.pop("voc_font_scale_max", None)
-            if canonical_name == "AC0835_S" and min_dim <= 15.5:
+            if symbol_name == "AC0835" and min_dim <= 15.5:
                 # AC0835_S tends to over-scale VOC during text bracketing,
                 # producing a visibly heavy label compared to the source icon.
-                # Keep this safeguard strictly scoped to the S-variant so
-                # AC0835_M can still grow the VOC text when it is undersized.
                 base_scale = float(p.get("voc_font_scale", 0.52))
                 p["lock_text_scale"] = False
                 p.setdefault("voc_font_scale_min", float(max(0.58, base_scale * 0.90)))
@@ -2812,25 +2800,15 @@ class Action:
                 # Start with broad generic bounds so the optimizer can follow
                 # text-mask error rather than artificial variant caps.
                 low = max(0.30, min(cur * 0.60, 0.45))
-                high = max(1.60, cur * 1.65)
-
-                # If the original text region can be extracted, derive a
-                # data-driven target scale from the observed text bbox and
-                # widen the bracket around that estimate.
-                if img_orig is not None:
-                    mask_orig = Action.extract_badge_element_mask(img_orig, params, "text")
-                    if mask_orig is not None:
-                        ys, xs = np.where(mask_orig)
-                        if ys.size > 0 and xs.size > 0:
-                            obs_w = float(xs.max() - xs.min() + 1)
-                            obs_h = float(ys.max() - ys.min() + 1)
-                            r = max(1.0, float(params.get("r", 1.0)))
-                            by_width = obs_w / max(1e-6, (r * 1.95))
-                            by_height = obs_h / max(1e-6, (r * 0.90))
-                            target = max(0.35, min(2.20, min(by_width, by_height)))
-                            low = min(low, max(0.30, target * 0.55))
-                            high = max(high, min(2.20, target * 1.55))
-
+                # Large VOC badges can otherwise over-scale the label to the
+                # hard cap and look visibly too heavy (e.g. AC0837_L). Keep the
+                # tiny-size exploration broad, but tighten larger variants.
+                if min_dim > 22.0:
+                    high = 1.10
+                elif min_dim > 16.0:
+                    high = 1.30
+                else:
+                    high = 1.60
                 if "voc_font_scale_min" in params:
                     low = max(low, float(params["voc_font_scale_min"]))
                 if "voc_font_scale_max" in params:

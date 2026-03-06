@@ -85,7 +85,7 @@ if not "%CONVERT_EXIT%"=="0" (
   echo [INFO] Writing structured attempt logs via helper script...
 )
 
-call %PYTHON_BIN% tools\attempt_convert_ac_range.py --start AC0800 --end AC0884 --iterations 8
+call %PYTHON_BIN% tools\attempt_convert_ac_range.py --start AC0800 --end AC0884 --iterations 128
 set "HELPER_EXIT=%ERRORLEVEL%"
 
 if not "%HELPER_EXIT%"=="0" (

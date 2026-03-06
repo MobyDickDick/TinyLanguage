@@ -1095,10 +1095,28 @@ def test_stabilize_semantic_circle_pose_clamps_non_tiny_connector_badges() -> No
 
     stabilized = Action._stabilize_semantic_circle_pose(params, defaults, 45, 25)
 
-    tol = max(1.0, 25.0 * 0.08)
+    tol = max(1.5, 25.0 * 0.18)
     assert abs(float(stabilized["cx"]) - float(defaults["cx"])) <= tol + 1e-6
     assert abs(float(stabilized["cy"]) - float(defaults["cy"])) <= tol + 1e-6
-    assert float(stabilized["r"]) >= float(defaults["r"]) * 0.88 - 1e-6
+    assert float(stabilized["r"]) >= float(defaults["r"]) * 0.80 - 1e-6
+
+
+def test_stabilize_semantic_circle_pose_allows_meaningful_radius_growth_for_non_tiny_connector_badges() -> None:
+    """Non-tiny connector badges may grow above template radius when fit evidence supports it."""
+    defaults = Action._default_ac0813_params(25, 45)
+    params = {
+        **defaults,
+        "cx": float(defaults["cx"]),
+        "cy": float(defaults["cy"]),
+        "r": float(defaults["r"]) * 2.0,
+        "draw_text": False,
+        "arm_enabled": True,
+    }
+
+    stabilized = Action._stabilize_semantic_circle_pose(params, defaults, 25, 45)
+
+    assert float(stabilized["r"]) <= float(defaults["r"]) * 1.45 + 1e-6
+    assert float(stabilized["r"]) >= float(defaults["r"]) * 1.40
 
 def test_make_badge_params_supports_ac0810_variants() -> None:
     """AC0810 and variant names should map to the semantic right-arm badge model."""

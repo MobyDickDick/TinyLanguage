@@ -1147,4 +1147,5 @@ def test_parse_description_extracts_co2_horizontal_center_override() -> None:
 
     overrides = params.get("badge_overrides")
     assert isinstance(overrides, dict)
-    assert overrides["co2_anchor_mode"] == "cluster"
+    assert overrides["co2_anchor_mode"] == "center_co"
+    assert overrides["co2_dx"] == 0.0

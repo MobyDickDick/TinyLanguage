@@ -147,6 +147,7 @@ class Reflection:
         desc_raw = self.raw_desc.get(base_name, "")
         desc_raw += " " + self.raw_desc.get(os.path.splitext(img_filename)[0], "")
         desc = desc_raw.lower().strip()
+        base_upper = base_name.upper()
 
         params = {
             "mode": "auto",
@@ -156,78 +157,35 @@ class Reflection:
             "label": "M",
         }
 
-        if base_name.upper() == "AC0800":
+        semantic_symbol = base_upper.startswith("AC08") or base_upper == "AR0100"
+        if semantic_symbol:
             params["mode"] = "semantic_badge"
-            params["elements"].append("SEMANTIC: Kreis ohne Buchstabe")
-            params["label"] = ""
-            return desc, params
 
-        if base_name.upper() == "AC0811":
-            params["mode"] = "semantic_badge"
-            params["elements"].append("SEMANTIC: Kreis ohne Buchstabe")
-            params["elements"].append("SEMANTIC: senkrechter Strich hinter dem Kreis")
-            params["label"] = ""
-            return desc, params
-
-        if base_name.upper() in {
-            "AR0100",
-            "AC0810",
-            "AC0812",
-            "AC0813",
-            "AC0814",
-            "AC0820",
-            "AC0831",
-            "AC0832",
-            "AC0833",
-            "AC0834",
-            "AC0835",
-            "AC0836",
-            "AC0837",
-            "AC0838",
-            "AC0839",
-            "AC0870",
-            "AC0881",
-            "AC0882",
-        }:
-            params["mode"] = "semantic_badge"
-            if base_name.upper() in {"AC0810", "AC0812", "AC0813", "AC0814"}:
+            if "ohne buchstabe" in desc:
                 params["elements"].append("SEMANTIC: Kreis ohne Buchstabe")
                 params["label"] = ""
-            elif base_name.upper() in {"AC0820", "AC0831", "AC0832", "AC0833", "AC0834"}:
+            elif "co_2" in desc or "co2" in desc:
                 params["elements"].append("SEMANTIC: Kreis + Buchstabe CO_2")
                 params["label"] = "CO_2"
-            elif base_name.upper() in {"AC0835", "AC0836", "AC0837", "AC0838", "AC0839"}:
+            elif "voc" in desc:
                 params["elements"].append("SEMANTIC: Kreis + Buchstabe VOC")
                 params["label"] = "VOC"
+            elif "buchstabe" in desc:
+                params["elements"].append("SEMANTIC: Kreis + Buchstabe")
+                params["label"] = "M" if base_upper == "AR0100" else "T"
             else:
                 params["elements"].append("SEMANTIC: Kreis + Buchstabe")
-                params["label"] = "M" if base_name.upper() == "AR0100" else "T"
-            if base_name.upper() == "AC0810":
-                params["elements"].append("SEMANTIC: waagrechter Strich rechts vom Kreis")
-            if base_name.upper() == "AC0881":
-                params["elements"].append("SEMANTIC: senkrechter Strich hinter dem Kreis")
-            if base_name.upper() in {"AC0812", "AC0882"}:
+                params["label"] = "M" if base_upper == "AR0100" else "T"
+
+            if "waagrechter strich links" in desc:
                 params["elements"].append("SEMANTIC: waagrechter Strich links vom Kreis")
-            if base_name.upper() == "AC0813":
-                params["elements"].append("SEMANTIC: senkrechter Strich oben vom Kreis")
-            if base_name.upper() == "AC0814":
+            if "waagrechter strich rechts" in desc:
                 params["elements"].append("SEMANTIC: waagrechter Strich rechts vom Kreis")
-            if base_name.upper() == "AC0831":
+            if "senkrechter strich oben" in desc:
+                params["elements"].append("SEMANTIC: senkrechter Strich oben vom Kreis")
+            if "senkrechter strich hinter" in desc:
                 params["elements"].append("SEMANTIC: senkrechter Strich hinter dem Kreis")
-            if base_name.upper() == "AC0832":
-                params["elements"].append("SEMANTIC: waagrechter Strich links vom Kreis")
-            if base_name.upper() == "AC0833":
-                params["elements"].append("SEMANTIC: senkrechter Strich oben vom Kreis")
-            if base_name.upper() == "AC0834":
-                params["elements"].append("SEMANTIC: waagrechter Strich rechts vom Kreis")
-            if base_name.upper() == "AC0836":
-                params["elements"].append("SEMANTIC: senkrechter Strich hinter dem Kreis")
-            if base_name.upper() == "AC0837":
-                params["elements"].append("SEMANTIC: waagrechter Strich links vom Kreis")
-            if base_name.upper() == "AC0838":
-                params["elements"].append("SEMANTIC: senkrechter Strich oben vom Kreis")
-            if base_name.upper() == "AC0839":
-                params["elements"].append("SEMANTIC: waagrechter Strich rechts vom Kreis")
+
             return desc, params
 
         match = re.search(r"oben .*?wie .*?in ([a-z0-9_]+)", desc)

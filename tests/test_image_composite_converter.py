@@ -1125,3 +1125,26 @@ def test_parse_description_forces_ac0820_variant_to_co2_without_description_hint
     assert params["mode"] == "semantic_badge"
     assert params["label"] == "CO_2"
     assert "SEMANTIC: Kreis + Buchstabe CO_2" in params["elements"]
+
+
+def test_parse_description_extracts_co_vertical_center_override() -> None:
+    raw_desc = {
+        "AC0820": "Kreis mit CO bezüglich des Kreises vertikal zentriert und CO_2 normal"
+    }
+    _, params = image_composite_converter.Reflection(raw_desc).parse_description("AC0820", "AC0820_L.jpg")
+
+    overrides = params.get("badge_overrides")
+    assert isinstance(overrides, dict)
+    assert overrides["co2_dy"] == 0.0
+    assert overrides["co2_optical_bias"] == 0.0
+
+
+def test_parse_description_extracts_co2_horizontal_center_override() -> None:
+    raw_desc = {
+        "AC0820": "Kreis mit CO_2 bezüglich des Kreises horizontal zentriert"
+    }
+    _, params = image_composite_converter.Reflection(raw_desc).parse_description("AC0820", "AC0820_L.jpg")
+
+    overrides = params.get("badge_overrides")
+    assert isinstance(overrides, dict)
+    assert overrides["co2_anchor_mode"] == "cluster"

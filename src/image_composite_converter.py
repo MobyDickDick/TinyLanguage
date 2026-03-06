@@ -197,6 +197,11 @@ class Reflection:
             if "senkrechter strich hinter" in desc:
                 params["elements"].append("SEMANTIC: senkrechter Strich hinter dem Kreis")
 
+            layout_overrides = Reflection._parse_semantic_badge_layout_overrides(desc)
+            if layout_overrides:
+                params["badge_overrides"] = layout_overrides
+                params["elements"].append("SEMANTIC: Layout-Override für Badge-Text")
+
             return desc, params
 
         match = re.search(r"oben .*?wie .*?in ([a-z0-9_]+)", desc)
@@ -223,6 +228,27 @@ class Reflection:
         subscript_digit_map = str.maketrans("₀₁₂₃₄₅₆₇₈₉", "0123456789")
         normalized = text.lower().translate(subscript_digit_map)
         return re.search(r"(^|[^a-z])co([^a-z]|$)", normalized) is not None
+
+    @staticmethod
+    def _parse_semantic_badge_layout_overrides(text: str) -> dict[str, float | str]:
+        """Extract optional layout directives from semantic badge descriptions."""
+        if not text:
+            return {}
+
+        normalized = re.sub(r"\s+", " ", text.lower()).strip()
+        overrides: dict[str, float | str] = {}
+
+        # Example phrases we intentionally support:
+        # - "CO bezüglich des Kreises vertikal zentriert"
+        # - "CO_2 bezüglich des Kreises horizontal zentriert"
+        if re.search(r"\bco\b[^.\n]*vertikal\s+zentriert", normalized):
+            overrides["co2_dy"] = 0.0
+            overrides["co2_optical_bias"] = 0.0
+
+        if re.search(r"\bco(?:[_\s-]*2|₂)\b[^.\n]*horizontal\s+zentriert", normalized):
+            overrides["co2_anchor_mode"] = "cluster"
+
+        return overrides
 
 
 class Action:
@@ -4008,6 +4034,10 @@ def run_iteration_pipeline(
         badge_params = Action.make_badge_params(w, h, perc.base_name, perc.img)
         if badge_params is None:
             return None
+
+        badge_overrides = params.get("badge_overrides")
+        if isinstance(badge_overrides, dict):
+            badge_params.update(badge_overrides)
 
         semantic_issues = Action.validate_semantic_description_alignment(
             perc.img,

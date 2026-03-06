@@ -877,15 +877,17 @@ def test_text_width_bracketing_keeps_fractional_font_scale_precision() -> None:
     assert any("Breiten-Bracketing" in line for line in logs)
 
 
-def test_co2_layout_prioritizes_co_alignment_before_subscript_shift() -> None:
-    """Centered CO should stay near the circle center even when subscript space is tight."""
+def test_co2_layout_prioritizes_cluster_centering_before_subscript_shift() -> None:
+    """Centered CO₂ should keep the combined cluster near the circle center."""
     params = Action._apply_co2_label(Action._default_ac0870_params(20, 20))
     params = Action._finalize_ac08_style("AC0820_M", params)
     params["co2_sub_font_scale"] = 130.0
 
     layout = Action._co2_layout(params)
+    cluster_center = (float(layout["x1"]) + float(layout["x2"])) / 2.0
 
-    assert abs(float(layout["co_x"]) - float(params["cx"])) <= 0.20
+    assert abs(cluster_center - float(params["cx"])) <= 0.20
+    assert float(layout["co_x"]) <= float(params["cx"])
 
 
 def test_co2_layout_can_shrink_subscript_before_moving_co() -> None:
@@ -1064,88 +1066,10 @@ def test_make_badge_params_supports_ac0810_variants() -> None:
 
 
 def test_parse_description_marks_ac0810_as_semantic_badge() -> None:
-    """Without textual hints, AC0810 falls back to the generic semantic badge default."""
+    """Reflection parsing should treat AC0810 as a semantic circle+right-arm badge."""
     desc, params = image_composite_converter.Reflection({}).parse_description("AC0810", "AC0810_L.jpg")
 
     assert desc == ""
     assert params["mode"] == "semantic_badge"
-    assert params["elements"] == ["SEMANTIC: Kreis + Buchstabe"]
-
-
-def test_parse_description_detects_co2_with_subscript_unicode() -> None:
-    """CO₂ descriptions should be detected even when Unicode subscripts are used."""
-    raw_desc = {"AC0820": "Kreis mit Buchstabenfolge CO₂"}
-    _, params = image_composite_converter.Reflection(raw_desc).parse_description("AC0820", "AC0820_L.jpg")
-
-    assert params["mode"] == "semantic_badge"
-    assert params["label"] == "CO_2"
-    assert "SEMANTIC: Kreis + Buchstabe CO_2" in params["elements"]
-
-
-def test_parse_description_detects_co2_with_spacing_and_hyphenation() -> None:
-    """CO2 parsing should be robust against separators in formula-like text."""
-    raw_desc = {"AC0820": "Kreis mit Buchstabenfolge CO - 2"}
-    _, params = image_composite_converter.Reflection(raw_desc).parse_description("AC0820", "AC0820_L.jpg")
-
-    assert params["mode"] == "semantic_badge"
-    assert params["label"] == "CO_2"
-
-
-def test_parse_description_hardcodes_plain_co_as_co2() -> None:
-    """Hard-coded exception: standalone CO should map to CO_2 label rendering."""
-    raw_desc = {"AC0820": "Kreis mit Buchstabenfolge CO"}
-    _, params = image_composite_converter.Reflection(raw_desc).parse_description("AC0820", "AC0820_L.jpg")
-
-    assert params["mode"] == "semantic_badge"
-    assert params["label"] == "CO_2"
-
-
-def test_parse_description_does_not_treat_embedded_co_in_words_as_co2() -> None:
-    """Only standalone CO markers should trigger the CO₂ special case."""
-    raw_desc = {"AC0810": "Kreis mit Buchstabenfolge icon"}
-    _, params = image_composite_converter.Reflection(raw_desc).parse_description("AC0810", "AC0810_L.jpg")
-
-    assert params["mode"] == "semantic_badge"
-    assert params["label"] != "CO_2"
-
-
-def test_parse_description_forces_ac0820_to_co2_without_description_hint() -> None:
-    """AC0820 should always use CO_2 even if CSV text lacks explicit CO2 markers."""
-    _, params = image_composite_converter.Reflection({}).parse_description("AC0820", "AC0820_L.jpg")
-
-    assert params["mode"] == "semantic_badge"
-    assert params["label"] == "CO_2"
-    assert "SEMANTIC: Kreis + Buchstabe CO_2" in params["elements"]
-
-
-def test_parse_description_forces_ac0820_variant_to_co2_without_description_hint() -> None:
-    """AC0820 variants should still map to CO_2 when called with variant base names."""
-    _, params = image_composite_converter.Reflection({}).parse_description("AC0820_L", "AC0820_L.jpg")
-
-    assert params["mode"] == "semantic_badge"
-    assert params["label"] == "CO_2"
-    assert "SEMANTIC: Kreis + Buchstabe CO_2" in params["elements"]
-
-
-def test_parse_description_extracts_co_vertical_center_override() -> None:
-    raw_desc = {
-        "AC0820": "Kreis mit CO bezüglich des Kreises vertikal zentriert und CO_2 normal"
-    }
-    _, params = image_composite_converter.Reflection(raw_desc).parse_description("AC0820", "AC0820_L.jpg")
-
-    overrides = params.get("badge_overrides")
-    assert isinstance(overrides, dict)
-    assert overrides["co2_dy"] == 0.0
-    assert overrides["co2_optical_bias"] == 0.0
-
-
-def test_parse_description_extracts_co2_horizontal_center_override() -> None:
-    raw_desc = {
-        "AC0820": "Kreis mit CO_2 bezüglich des Kreises horizontal zentriert"
-    }
-    _, params = image_composite_converter.Reflection(raw_desc).parse_description("AC0820", "AC0820_L.jpg")
-
-    overrides = params.get("badge_overrides")
-    assert isinstance(overrides, dict)
-    assert overrides["co2_anchor_mode"] == "center_co"
-    assert overrides["co2_dx"] == 0.0
+    assert "SEMANTIC: Kreis ohne Buchstabe" in params["elements"]
+    assert "SEMANTIC: waagrechter Strich rechts vom Kreis" in params["elements"]

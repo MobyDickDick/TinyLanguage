@@ -11,9 +11,8 @@ arm: Längen-Bracketing keine relevante Änderung (arm_len: 11.000); Kandidaten=
 text: minRect Δcx=0.500, Δcy=2.000, diag=8.544->13.038, scale=1.5260
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 151.067->130.149; Box-Check verworfen (w_ratio=0.750, h_ratio=0.375, area_ratio=0.281))
 text: Fehler=151.067
-text: Breiten-Stochastic-Survivor aktiviert (voc_font_scale=0.631, err=149.855)
-text: Breiten-Bracketing voc_font_scale 0.520->0.631; Kandidaten=0.312->151.067, 0.442->151.067, 0.505->151.067, 0.520->151.067, 0.598->151.067, 0.698->156.865, 0.956->155.580, 1.214->175.896, 1.407->164.065, 1.600->174.689
-Runde 1: Gesamtfehler=19.827
+text: Breiten-Bracketing voc_font_scale 0.520->0.312; Kandidaten=0.312->151.067, 0.442->151.067, 0.505->151.067, 0.520->151.067, 0.598->151.067, 0.698->156.865, 0.956->155.580, 1.214->175.896, 1.407->164.065, 1.600->174.689
+Runde 1: Gesamtfehler=19.677
 Runde 2: elementweise Validierung gestartet
 circle: minRect Δcx=-0.500, Δcy=-0.000, diag=18.974->19.000, scale=1.0014
 circle: Fehler=117.299
@@ -24,10 +23,10 @@ arm: Fehler=102.233
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
 arm: Längen-Bracketing keine relevante Änderung (arm_len: 11.000); Kandidaten=8.000->114.000, 11.000->94.926, 12.500->94.926, 16.500->94.926, 21.000->94.926, 25.000->94.926
 text: minRect Δcx=0.500, Δcy=2.000, diag=8.544->13.038, scale=1.5260
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 149.855->129.628; Box-Check verworfen (w_ratio=0.750, h_ratio=0.375, area_ratio=0.281))
-text: Fehler=149.855
-text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.631); Kandidaten=0.379->151.067, 0.536->151.067, 0.562->151.067, 0.631->149.855, 0.726->157.127, 0.745->154.245, 0.989->158.772, 1.234->169.078, 1.417->163.862, 1.600->174.689
-Runde 2: Gesamtfehler=19.827
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 151.067->130.149; Box-Check verworfen (w_ratio=0.750, h_ratio=0.375, area_ratio=0.281))
+text: Fehler=151.067
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.312); Kandidaten=0.300->151.067, 0.312->151.067, 0.359->151.067, 0.495->151.067, 0.690->156.990, 0.950->155.487, 1.210->175.969, 1.405->164.025, 1.600->174.689
+Runde 2: Gesamtfehler=19.677
 Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Farb-Bracketing übersprungen (Farben gesperrt)

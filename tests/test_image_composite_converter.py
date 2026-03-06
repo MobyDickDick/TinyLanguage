@@ -1102,8 +1102,17 @@ def test_parse_description_hardcodes_plain_co_as_co2() -> None:
 
 def test_parse_description_does_not_treat_embedded_co_in_words_as_co2() -> None:
     """Only standalone CO markers should trigger the CO₂ special case."""
-    raw_desc = {"AC0820": "Kreis mit Buchstabenfolge icon"}
-    _, params = image_composite_converter.Reflection(raw_desc).parse_description("AC0820", "AC0820_L.jpg")
+    raw_desc = {"AC0810": "Kreis mit Buchstabenfolge icon"}
+    _, params = image_composite_converter.Reflection(raw_desc).parse_description("AC0810", "AC0810_L.jpg")
 
     assert params["mode"] == "semantic_badge"
     assert params["label"] != "CO_2"
+
+
+def test_parse_description_forces_ac0820_to_co2_without_description_hint() -> None:
+    """AC0820 should always use CO_2 even if CSV text lacks explicit CO2 markers."""
+    _, params = image_composite_converter.Reflection({}).parse_description("AC0820", "AC0820_L.jpg")
+
+    assert params["mode"] == "semantic_badge"
+    assert params["label"] == "CO_2"
+    assert "SEMANTIC: Kreis + Buchstabe CO_2" in params["elements"]

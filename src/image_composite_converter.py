@@ -158,13 +158,14 @@ class Reflection:
         }
 
         semantic_symbol = base_upper.startswith("AC08") or base_upper == "AR0100"
+        forced_co2_symbols = {"AC0820", "AC0831", "AC0832", "AC0833", "AC0834"}
         if semantic_symbol:
             params["mode"] = "semantic_badge"
 
             if "ohne buchstabe" in desc:
                 params["elements"].append("SEMANTIC: Kreis ohne Buchstabe")
                 params["label"] = ""
-            elif Reflection._contains_co_marker(desc):
+            elif base_upper in forced_co2_symbols or Reflection._contains_co_marker(desc):
                 params["elements"].append("SEMANTIC: Kreis + Buchstabe CO_2")
                 params["label"] = "CO_2"
             elif "voc" in desc:

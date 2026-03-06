@@ -18,5 +18,5 @@
     "AC0882_L"
   ],
   "notes": "Varianten in skip_variants werden in Folge-Pässen nicht erneut konvertiert. Loeschen der Datei setzt den Ablauf zurueck, dann werden wieder alle Bitmaps bearbeitet.",
-  "source": "initial-first-tercile"
+  "source": "manual-config"
 }

@@ -1,0 +1,68 @@
+Runde 1: elementweise Validierung gestartet
+circle: minRect Δcx=1.000, Δcy=1.000, diag=14.000->8.485, scale=0.6061
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 178.930->181.433)
+circle: Fehler=178.930
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 5.200->7.000 (best_err=6087.000); Kandidaten=4.500->7056.000, 5.000->7106.000, 6.000->6839.000, 6.500->6324.000, 7.000->6087.000
+circle: Joint-Multistart keine relevante Änderung (cx=6.500, cy=6.500, r=7.000, best_err=6899.000)
+text: minRect Δcx=0.500, Δcy=0.500, diag=8.602->8.485, scale=0.9864
+text: Parameter nach Mittelpunkt/Diagonale angepasst
+text: Fehler=125.405
+Runde 1: Gesamtfehler=34.364
+Runde 2: elementweise Validierung gestartet
+circle: minRect Δcx=-0.750, Δcy=-0.750, diag=16.867->19.677, scale=1.1666
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=149.806
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 7.200->7.000 (best_err=6899.000); Kandidaten=6.500->7185.000, 7.000->6899.000
+circle: Joint-Multistart keine relevante Änderung (cx=6.500, cy=6.500, r=7.000, best_err=6899.000)
+text: minRect Δcx=0.500, Δcy=0.500, diag=8.602->8.485, scale=0.9864
+text: Parameter nach Mittelpunkt/Diagonale angepasst
+text: Fehler=124.059
+Runde 2: Gesamtfehler=32.076
+Runde 3: elementweise Validierung gestartet
+circle: minRect Δcx=-0.750, Δcy=-0.750, diag=16.867->19.677, scale=1.1666
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=149.806
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 7.200->7.000 (best_err=6899.000); Kandidaten=6.500->7185.000, 7.000->6899.000
+circle: Joint-Multistart keine relevante Änderung (cx=6.500, cy=6.500, r=7.000, best_err=6899.000)
+text: minRect Δcx=0.500, Δcy=0.500, diag=8.602->8.485, scale=0.9864
+text: Parameter nach Mittelpunkt/Diagonale angepasst
+text: Fehler=104.843
+Runde 3: Gesamtfehler=31.947
+Runde 4: elementweise Validierung gestartet
+circle: minRect Δcx=-0.750, Δcy=-0.750, diag=16.867->19.677, scale=1.1666
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=149.806
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 7.200->7.000 (best_err=6899.000); Kandidaten=6.500->7185.000, 7.000->6899.000
+circle: Joint-Multistart keine relevante Änderung (cx=6.500, cy=6.500, r=7.000, best_err=6899.000)
+text: minRect Δcx=0.500, Δcy=-0.500, diag=8.602->8.485, scale=0.9864
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 102.519->109.321)
+text: Fehler=102.519
+Runde 4: Gesamtfehler=31.947
+Runde 5: elementweise Validierung gestartet
+circle: minRect Δcx=-0.750, Δcy=-0.750, diag=16.867->19.677, scale=1.1666
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=149.806
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 7.200->7.000 (best_err=6899.000); Kandidaten=6.500->7185.000, 7.000->6899.000
+circle: Joint-Multistart keine relevante Änderung (cx=6.500, cy=6.500, r=7.000, best_err=6899.000)
+text: minRect Δcx=0.500, Δcy=-0.500, diag=8.602->8.485, scale=0.9864
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 102.519->109.321)
+text: Fehler=102.519
+Runde 5: Gesamtfehler=31.947
+Runde 6: elementweise Validierung gestartet
+circle: minRect Δcx=-0.750, Δcy=-0.750, diag=16.867->19.677, scale=1.1666
+circle: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Fehler=149.806
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 7.200->7.000 (best_err=6899.000); Kandidaten=6.500->7185.000, 7.000->6899.000
+circle: Joint-Multistart keine relevante Änderung (cx=6.500, cy=6.500, r=7.000, best_err=6899.000)
+text: minRect Δcx=0.500, Δcy=-0.500, diag=8.602->8.485, scale=0.9864
+text: Mittelpunkt/Diagonale-Update verworfen (Fehler 102.519->109.321)
+text: Fehler=102.519
+Runde 6: Gesamtfehler=31.947
+circle: Farb-Bracketing übersprungen (Farben gesperrt)
+text: Farb-Bracketing übersprungen (Farben gesperrt)

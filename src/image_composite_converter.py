@@ -246,7 +246,11 @@ class Reflection:
             overrides["co2_optical_bias"] = 0.0
 
         if re.search(r"\bco(?:[_\s-]*2|₂)\b[^.\n]*horizontal\s+zentriert", normalized):
-            overrides["co2_anchor_mode"] = "cluster"
+            # "Horizontal zentriert" refers to the dominant "CO" run in badge
+            # reviews. Centering the full CO₂ cluster shifts the visual focus left,
+            # which is perceived as misaligned in AC0820_L/M/S.
+            overrides["co2_anchor_mode"] = "center_co"
+            overrides["co2_dx"] = 0.0
 
         return overrides
 

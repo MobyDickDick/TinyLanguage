@@ -1,6 +1,6 @@
 # AC range conversion attempt log
 
-- Timestamp (UTC): `2026-03-06T19:31:05.081575+00:00`
+- Timestamp (UTC): `2026-03-06T19:45:03.712895+00:00`
 - Range: `AC0800..AC0884`
 - Iterations: `128`
 - Input count: `105`
@@ -28,40 +28,93 @@ C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\python.exe src/image_comp
 
 - Ran conversion: `true`
 - Exit code: `0`
-- Duration (s): `11.485`
+- Duration (s): `8.902`
 
 ### Converter stdout
 
 ```text
 
---- Verarbeite AC0838_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0834_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0850_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+--- Verarbeite AC0800_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
 
 --- Verarbeite AC0837_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 [ERROR] Semantik-Abgleich fehlgeschlagen:
   - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
 
---- Verarbeite AC0863_S.jpg ---
+--- Verarbeite AC0849_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
---- Verarbeite AC0848_L.jpg ---
+--- Verarbeite AC0814_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0841_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
---- Verarbeite AC0844_M.jpg ---
+--- Verarbeite AC0843_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0846_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0800_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
+
+--- Verarbeite AC0820_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
+
+--- Verarbeite AC0884_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0870_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0800_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
+
+--- Verarbeite AC0881_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0836_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0883_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0863_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0839_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0861_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0833_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
 
 --- Verarbeite AC0845_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0881_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0842_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0848_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
 --- Verarbeite AC0882_L.jpg ---
@@ -69,11 +122,116 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 [ERROR] Semantik-Abgleich fehlgeschlagen:
   - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
 
---- Verarbeite AC0820_M.jpg ---
+--- Verarbeite AC0812_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0844_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0834_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
 
 --- Verarbeite AC0814_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0835_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
+
+--- Verarbeite AC0845_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0850_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0832_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0849_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0840_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0833_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0842_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0811_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0864_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0831_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0846_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0862_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0831_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0820_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
+
+--- Verarbeite AC0861_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0836_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0883_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0884_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0882_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0837_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0864_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0813_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0847_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0838_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 [ERROR] Semantik-Abgleich fehlgeschlagen:
   - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
 
@@ -82,139 +240,7 @@ Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
 [ERROR] Semantik-Abgleich fehlgeschlagen:
   - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
 
---- Verarbeite AC0883_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0844_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0832_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0849_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0881_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0884_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0842_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0835_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-
---- Verarbeite AC0800_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
-
---- Verarbeite AC0862_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0864_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0812_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0836_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0864_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
 --- Verarbeite AC0843_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0883_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0812_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0836_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0834_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0834_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0841_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0849_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0839_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0882_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0861_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0881_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0813_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0833_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0863_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0850_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0831_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0883_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0840_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0832_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0864_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
 --- Verarbeite AC0812_S.jpg ---
@@ -222,108 +248,56 @@ Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
 [ERROR] Semantik-Abgleich fehlgeschlagen:
   - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
 
---- Verarbeite AC0811_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+--- Verarbeite AC0850_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
 --- Verarbeite AC0839_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 [ERROR] Semantik-Abgleich fehlgeschlagen:
   - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
 
---- Verarbeite AC0884_L.jpg ---
+--- Verarbeite AC0844_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0870_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0863_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0848_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0847_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0811_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0841_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0840_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0870_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
 --- Verarbeite AC0884_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
---- Verarbeite AC0847_M.jpg ---
+--- Verarbeite AC0864_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0843_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
 --- Verarbeite AC0862_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
---- Verarbeite AC0832_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0835_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-
---- Verarbeite AC0835_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-
---- Verarbeite AC0843_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0841_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0814_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0840_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0838_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0844_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0846_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0831_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0836_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0820_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0861_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0833_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0846_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0847_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0813_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0850_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0813_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0841_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0846_S.jpg ---
+--- Verarbeite AC0862_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
 --- Verarbeite AC0814_M.jpg ---
@@ -331,60 +305,17 @@ Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
 [ERROR] Semantik-Abgleich fehlgeschlagen:
   - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
 
---- Verarbeite AC0848_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0842_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0837_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0820_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0861_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0882_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-[ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
-
---- Verarbeite AC0847_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0870_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0862_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0870_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0833_M.jpg ---
+--- Verarbeite AC0831_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
 [ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
 
---- Verarbeite AC0863_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0843_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0839_S.jpg ---
+--- Verarbeite AC0838_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 [ERROR] Semantik-Abgleich fehlgeschlagen:
   - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
 
---- Verarbeite AC0840_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0838_L.jpg ---
+--- Verarbeite AC0837_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 [ERROR] Semantik-Abgleich fehlgeschlagen:
   - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
@@ -392,97 +323,118 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 --- Verarbeite AC0845_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
---- Verarbeite AC0881_S.jpg ---
+--- Verarbeite AC0863_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0861_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0836_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 [ERROR] Semantik-Abgleich fehlgeschlagen:
   - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
 
---- Verarbeite AC0811_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
+--- Verarbeite AC0840_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0833_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
 [ERROR] Semantik-Abgleich fehlgeschlagen:
-  - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
 
---- Verarbeite AC0870_S.jpg ---
+--- Verarbeite AC0850_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
---- Verarbeite AC0842_L.jpg ---
+--- Verarbeite AC0820_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
+
+--- Verarbeite AC0846_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
---- Verarbeite AC0800_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
-
---- Verarbeite AC0800_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
-
---- Verarbeite AC0849_L.jpg ---
+--- Verarbeite AC0883_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
---- Verarbeite AC0845_S.jpg ---
+--- Verarbeite AC0847_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
---- Verarbeite AC0848_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+--- Verarbeite AC0835_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 
---- Verarbeite AC0837_S.jpg ---
+--- Verarbeite AC0838_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 [ERROR] Semantik-Abgleich fehlgeschlagen:
   - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
 
---- Verarbeite AC0831_M.jpg ---
+--- Verarbeite AC0842_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0882_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0844_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0812_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0832_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0834_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0839_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0835_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
+
+--- Verarbeite AC0848_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0813_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0849_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0841_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+
+--- Verarbeite AC0834_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0832_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0813_L.jpg ---
+Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
+[ERROR] Semantik-Abgleich fehlgeschlagen:
+  - Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+
+--- Verarbeite AC0881_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 [ERROR] Semantik-Abgleich fehlgeschlagen:
   - Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
 
---- Verarbeite AC0835_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-
---- Verarbeite AC0870_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0870_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0800_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
-
 --- Verarbeite AC0820_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0820_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0835_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-
---- Verarbeite AC0835_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-
---- Verarbeite AC0870_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0870_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0835_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-
---- Verarbeite AC0800_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
-
---- Verarbeite AC0820_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0835_L.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-
---- Verarbeite AC0835_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-
---- Verarbeite AC0820_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0870_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
 
 --- Verarbeite AC0870_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
@@ -490,19 +442,31 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 --- Verarbeite AC0835_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 
---- Verarbeite AC0820_S.jpg ---
+--- Verarbeite AC0870_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
---- Verarbeite AC0835_S.jpg ---
+--- Verarbeite AC0835_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
+
+--- Verarbeite AC0820_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
 
 --- Verarbeite AC0800_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
 
+--- Verarbeite AC0835_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
+
 --- Verarbeite AC0820_M.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
+
+--- Verarbeite AC0820_S.jpg ---
+Befehl erkannt: SEMANTIC: Kreis + Buchstabe CO_2
+
+--- Verarbeite AC0870_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 
---- Verarbeite AC0835_M.jpg ---
+--- Verarbeite AC0835_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 
 --- Verarbeite AC0870_M.jpg ---
@@ -511,22 +475,10 @@ Befehl erkannt: SEMANTIC: Kreis + Buchstabe
 --- Verarbeite AC0800_S.jpg ---
 Befehl erkannt: SEMANTIC: Kreis ohne Buchstabe
 
---- Verarbeite AC0835_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
-
---- Verarbeite AC0820_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0870_S.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
---- Verarbeite AC0820_M.jpg ---
-Befehl erkannt: SEMANTIC: Kreis + Buchstabe
-
 --- Verarbeite AC0835_L.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 
---- Verarbeite AC0835_S.jpg ---
+--- Verarbeite AC0835_M.jpg ---
 Befehl erkannt: SEMANTIC: Kreis + Buchstabe VOC
 
 Abgeschlossen! Ausgaben unter: C:\Users\marku\myCloud\TinyLanguage\artifacts\converted_symbols

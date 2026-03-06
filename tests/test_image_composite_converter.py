@@ -1116,3 +1116,12 @@ def test_parse_description_forces_ac0820_to_co2_without_description_hint() -> No
     assert params["mode"] == "semantic_badge"
     assert params["label"] == "CO_2"
     assert "SEMANTIC: Kreis + Buchstabe CO_2" in params["elements"]
+
+
+def test_parse_description_forces_ac0820_variant_to_co2_without_description_hint() -> None:
+    """AC0820 variants should still map to CO_2 when called with variant base names."""
+    _, params = image_composite_converter.Reflection({}).parse_description("AC0820_L", "AC0820_L.jpg")
+
+    assert params["mode"] == "semantic_badge"
+    assert params["label"] == "CO_2"
+    assert "SEMANTIC: Kreis + Buchstabe CO_2" in params["elements"]

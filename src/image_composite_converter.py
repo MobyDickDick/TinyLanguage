@@ -144,10 +144,20 @@ class Reflection:
         self.raw_desc = raw_desc
 
     def parse_description(self, base_name: str, img_filename: str):
-        desc_raw = self.raw_desc.get(base_name, "")
-        desc_raw += " " + self.raw_desc.get(os.path.splitext(img_filename)[0], "")
+        variant_name = os.path.splitext(img_filename)[0]
+        canonical_base = get_base_name_from_file(base_name).upper()
+        canonical_variant = get_base_name_from_file(variant_name).upper()
+
+        desc_parts = [
+            self.raw_desc.get(base_name, ""),
+            self.raw_desc.get(variant_name, ""),
+            self.raw_desc.get(canonical_base, ""),
+            self.raw_desc.get(canonical_variant, ""),
+        ]
+        desc_raw = " ".join(part for part in desc_parts if part)
         desc = desc_raw.lower().strip()
         base_upper = base_name.upper()
+        symbol_upper = canonical_base or base_upper
 
         params = {
             "mode": "auto",
@@ -157,7 +167,7 @@ class Reflection:
             "label": "M",
         }
 
-        semantic_symbol = base_upper.startswith("AC08") or base_upper == "AR0100"
+        semantic_symbol = symbol_upper.startswith("AC08") or symbol_upper == "AR0100"
         forced_co2_symbols = {"AC0820", "AC0831", "AC0832", "AC0833", "AC0834"}
         if semantic_symbol:
             params["mode"] = "semantic_badge"
@@ -165,7 +175,7 @@ class Reflection:
             if "ohne buchstabe" in desc:
                 params["elements"].append("SEMANTIC: Kreis ohne Buchstabe")
                 params["label"] = ""
-            elif base_upper in forced_co2_symbols or Reflection._contains_co_marker(desc):
+            elif symbol_upper in forced_co2_symbols or Reflection._contains_co_marker(desc):
                 params["elements"].append("SEMANTIC: Kreis + Buchstabe CO_2")
                 params["label"] = "CO_2"
             elif "voc" in desc:
@@ -173,10 +183,10 @@ class Reflection:
                 params["label"] = "VOC"
             elif "buchstabe" in desc:
                 params["elements"].append("SEMANTIC: Kreis + Buchstabe")
-                params["label"] = "M" if base_upper == "AR0100" else "T"
+                params["label"] = "M" if symbol_upper == "AR0100" else "T"
             else:
                 params["elements"].append("SEMANTIC: Kreis + Buchstabe")
-                params["label"] = "M" if base_upper == "AR0100" else "T"
+                params["label"] = "M" if symbol_upper == "AR0100" else "T"
 
             if "waagrechter strich links" in desc:
                 params["elements"].append("SEMANTIC: waagrechter Strich links vom Kreis")

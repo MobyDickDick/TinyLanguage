@@ -2811,15 +2811,9 @@ class Action:
                 # Start with broad generic bounds so the optimizer can follow
                 # text-mask error rather than artificial variant caps.
                 low = max(0.30, min(cur * 0.60, 0.45))
-                # Large VOC badges can otherwise over-scale the label to the
-                # hard cap and look visibly too heavy (e.g. AC0837_L). Keep the
-                # tiny-size exploration broad, but tighten larger variants.
-                if min_dim > 22.0:
-                    high = 1.10
-                elif min_dim > 16.0:
-                    high = 1.30
-                else:
-                    high = 1.60
+                # Keep a broad generic search window unless a specific badge
+                # family constrains it via explicit min/max overrides.
+                high = 1.60
                 if "voc_font_scale_min" in params:
                     low = max(low, float(params["voc_font_scale_min"]))
                 if "voc_font_scale_max" in params:

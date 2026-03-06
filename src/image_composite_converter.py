@@ -246,6 +246,8 @@ class Reflection:
             overrides["co2_optical_bias"] = 0.0
 
         if re.search(r"\bco(?:[_\s-]*2|₂)\b[^.\n]*horizontal\s+zentriert", normalized):
+            # For explicit horizontal-centering directives, center the full CO₂
+            # cluster (CO plus subscript) so rendered output matches reference.
             overrides["co2_anchor_mode"] = "cluster"
 
         return overrides

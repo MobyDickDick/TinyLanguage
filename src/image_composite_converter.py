@@ -1379,14 +1379,17 @@ class Action:
             params["lock_circle_cy"] = True
             return params
 
-        cx_tolerance = max(1.0, float(min(w, h)) * 0.08)
-        cy_tolerance = max(1.0, float(min(w, h)) * 0.08)
+        # Keep semantic drift bounded, but allow enough travel that larger source
+        # variants (especially AC081x line+circle symbols) can still land on the
+        # visually correct center when Hough/contours detect a shifted ring.
+        cx_tolerance = max(1.5, float(min(w, h)) * 0.18)
+        cy_tolerance = max(1.5, float(min(w, h)) * 0.18)
         current_cx = float(params.get("cx", default_cx))
         current_cy = float(params.get("cy", default_cy))
         params["cx"] = float(max(default_cx - cx_tolerance, min(default_cx + cx_tolerance, current_cx)))
         params["cy"] = float(max(default_cy - cy_tolerance, min(default_cy + cy_tolerance, current_cy)))
-        min_radius = max(1.0, default_r * 0.88)
-        max_radius = max(min_radius, default_r * 1.12)
+        min_radius = max(1.0, default_r * 0.80)
+        max_radius = max(min_radius, default_r * 1.45)
         current_r = float(params.get("r", default_r))
         params["r"] = float(max(min_radius, min(max_radius, current_r)))
         return params
@@ -1472,8 +1475,8 @@ class Action:
             minDist=max(6.0, min_side * 0.35),
             param1=80,
             param2=9,
-            minRadius=max(3, int(round(min_side * 0.18))),
-            maxRadius=max(5, int(round(min_side * 0.49))),
+            minRadius=max(3, int(round(min_side * 0.14))),
+            maxRadius=max(6, int(round(min_side * 0.60))),
         )
 
         if circles is not None and circles.size > 0:
@@ -1481,8 +1484,8 @@ class Action:
             template_cx = float(defaults.get("cx", params.get("cx", float(w) / 2.0)))
             template_cy = float(defaults.get("cy", params.get("cy", float(h) / 2.0)))
             template_r = float(defaults.get("r", params.get("r", max(1.0, min_side * 0.35))))
-            max_center_offset = max(2.0, min_side * 0.30)
-            max_radius_delta = max(1.5, template_r * 0.40)
+            max_center_offset = max(2.0, min_side * 0.42)
+            max_radius_delta = max(2.0, template_r * 0.70)
             for c in circles[0]:
                 cx, cy, r = float(c[0]), float(c[1]), float(c[2])
                 center_offset = float(np.hypot(cx - template_cx, cy - template_cy))

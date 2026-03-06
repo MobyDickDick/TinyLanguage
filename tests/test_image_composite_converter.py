@@ -877,15 +877,17 @@ def test_text_width_bracketing_keeps_fractional_font_scale_precision() -> None:
     assert any("Breiten-Bracketing" in line for line in logs)
 
 
-def test_co2_layout_prioritizes_co_alignment_before_subscript_shift() -> None:
-    """Centered CO should stay near the circle center even when subscript space is tight."""
+def test_co2_layout_prioritizes_cluster_centering_before_subscript_shift() -> None:
+    """Centered CO₂ should keep the combined cluster near the circle center."""
     params = Action._apply_co2_label(Action._default_ac0870_params(20, 20))
     params = Action._finalize_ac08_style("AC0820_M", params)
     params["co2_sub_font_scale"] = 130.0
 
     layout = Action._co2_layout(params)
+    cluster_center = (float(layout["x1"]) + float(layout["x2"])) / 2.0
 
-    assert abs(float(layout["co_x"]) - float(params["cx"])) <= 0.20
+    assert abs(cluster_center - float(params["cx"])) <= 0.20
+    assert float(layout["co_x"]) <= float(params["cx"])
 
 
 def test_co2_layout_can_shrink_subscript_before_moving_co() -> None:

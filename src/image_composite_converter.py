@@ -906,8 +906,9 @@ class Action:
         params["co2_dx"] = float(params.get("co2_dx", 0.0))
         params["co2_dy"] = float(params.get("co2_dy", 0.0))
         # Keep "CO" as an explicit run so the subscript position remains stable across
-        # renderers. By default we keep "CO" itself centered in the badge and attach
-        # the subscript to the right; this avoids visible drift in compact variants.
+        # renderers. The default mode keeps the CO baseline vertically centered, but
+        # applies a small left compensation so the overall CO₂ cluster appears
+        # horizontally centered in the circle.
         params["co2_anchor_mode"] = str(params.get("co2_anchor_mode", "center_co"))
         return params
 
@@ -945,10 +946,13 @@ class Action:
             subscript_x = co_x + (co_width / 2.0) + gap
             x2 = subscript_x + sub_w
         else:
-            # Default mode: keep the "CO" run itself centered and attach the ₂ rightward.
+            # Default mode: keep the "CO" run as the dominant anchor, but compensate
+            # slightly left so the visually perceived CO₂ cluster remains centered.
             # Prioritize matching the main "CO" glyphs first; if space is tight, shrink
             # or tuck the subscript before shifting the dominant "CO" run.
-            co_x = cx + float(params.get("co2_dx", 0.0))
+            visual_sub_w = sub_font_px * float(params.get("co2_subscript_visual_width_factor", 0.62))
+            visual_cluster_shift = (gap + visual_sub_w) / 2.0
+            co_x = (cx + float(params.get("co2_dx", 0.0))) - visual_cluster_shift
             x1 = co_x - (co_width / 2.0)
 
             local_gap = gap
@@ -1887,14 +1891,14 @@ class Action:
                 elements.append(
                     (
                         f'  <text x="{float(layout["co_x"]):.4f}" y="{y_text:.4f}" fill="{Action.grayhex(p["text_gray"])}" '
-                        f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}" '
+                        f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}px" '
                         f'font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">CO</text>'
                     )
                 )
                 elements.append(
                     (
                         f'  <text x="{float(layout["subscript_x"]):.4f}" y="{float(layout["subscript_y"]):.4f}" fill="{Action.grayhex(p["text_gray"])}" '
-                        f'font-family="Arial, Helvetica, sans-serif" font-size="{float(layout["sub_font_px"]):.4f}" '
+                        f'font-family="Arial, Helvetica, sans-serif" font-size="{float(layout["sub_font_px"]):.4f}px" '
                         f'font-style="normal" font-weight="600" text-anchor="start" dominant-baseline="middle">2</text>'
                     )
                 )
@@ -1906,7 +1910,7 @@ class Action:
                 elements.append(
                     (
                         f'  <text x="{p["cx"]:.4f}" y="{(p["cy"] + voc_dy):.4f}" fill="{Action.grayhex(p["text_gray"])}" '
-                        f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}" '
+                        f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}px" '
                         f'font-style="normal" font-weight="{voc_weight}" letter-spacing="0.01em" '
                         f'text-anchor="middle" dominant-baseline="middle">VOC</text>'
                     )

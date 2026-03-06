@@ -586,8 +586,8 @@ class Action:
                 # AC0835_M can still grow the VOC text when it is undersized.
                 base_scale = float(p.get("voc_font_scale", 0.52))
                 p["lock_text_scale"] = False
-                p["voc_font_scale_min"] = float(max(0.58, base_scale * 0.90))
-                p["voc_font_scale_max"] = float(min(0.92, base_scale * 1.05))
+                p.setdefault("voc_font_scale_min", float(max(0.58, base_scale * 0.90)))
+                p.setdefault("voc_font_scale_max", float(min(0.92, base_scale * 1.05)))
         if p.get("draw_text", True) and "text_gray" in p:
             p["text_gray"] = int(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY))
         return p

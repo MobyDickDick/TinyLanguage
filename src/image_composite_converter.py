@@ -3914,56 +3914,6 @@ class Action:
                         elem_diff,
                     )
 
-                # Geometrie-Abgleich über Mittelpunkt + Diagonale des kleinsten
-                # umschließenden Rechtecks (minAreaRect) auf Element-Ebene.
-                rect_orig = Action._mask_min_rect_center_diag(mask_orig)
-                rect_svg = Action._mask_min_rect_center_diag(mask_svg)
-                if rect_orig is not None and rect_svg is not None:
-                    old_params = dict(params)
-                    old_elem_err = float(Action._element_match_error(img_orig, elem_render, params, element, mask_orig=mask_orig, mask_svg=mask_svg))
-                    ocx, ocy, odiag = rect_orig
-                    scx, scy, sdiag = rect_svg
-                    dx = ocx - scx
-                    dy = ocy - scy
-                    scale = odiag / max(1e-6, sdiag)
-                    changed = Action._apply_element_alignment_step(params, element, dx, dy, scale, w, h)
-                    logs.append(
-                        (
-                            f"{element}: minRect Δcx={dx:.3f}, Δcy={dy:.3f}, "
-                            f"diag={sdiag:.3f}->{odiag:.3f}, scale={scale:.4f}"
-                        )
-                    )
-                    if changed:
-                        updated_elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(params, element))
-                        updated_elem_render = Action._fit_to_original_size(
-                            img_orig,
-                            Action.render_svg_to_numpy(updated_elem_svg, w, h),
-                        )
-                        updated_err = float("inf")
-                        bbox_ok = True
-                        bbox_log: str | None = None
-                        if updated_elem_render is not None:
-                            updated_err = float(Action._element_match_error(img_orig, updated_elem_render, params, element, mask_orig=mask_orig))
-                            updated_mask_svg = Action.extract_badge_element_mask(updated_elem_render, params, element)
-                            if updated_mask_svg is not None:
-                                bbox_ok, bbox_log = Action._element_bbox_change_is_plausible(mask_orig, updated_mask_svg)
-
-                        if np.isfinite(updated_err) and updated_err <= old_elem_err + 0.20 and bbox_ok:
-                            round_changed = True
-                            logs.append(f"{element}: Parameter nach Mittelpunkt/Diagonale angepasst")
-                        else:
-                            params.clear()
-                            params.update(old_params)
-                            reason = f"Fehler {old_elem_err:.3f}->{updated_err:.3f}"
-                            if bbox_log:
-                                reason = f"{reason}; {bbox_log}"
-                            logs.append(
-                                (
-                                    f"{element}: Mittelpunkt/Diagonale-Update verworfen "
-                                    f"({reason})"
-                                )
-                            )
-
                 elem_err = Action._element_match_error(img_orig, elem_render, params, element, mask_orig=mask_orig, mask_svg=mask_svg)
                 logs.append(f"{element}: Fehler={elem_err:.3f}")
 
@@ -3989,9 +3939,6 @@ class Action:
                         round_changed = True
                     radius_changed = Action._optimize_circle_radius_bracket(img_orig, params, logs)
                     if radius_changed:
-                        round_changed = True
-                    joint_changed = Action._optimize_circle_pose_multistart(img_orig, params, logs)
-                    if joint_changed:
                         round_changed = True
 
                 # Color fitting is intentionally deferred to the end so

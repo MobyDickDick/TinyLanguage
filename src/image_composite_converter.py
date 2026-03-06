@@ -2536,6 +2536,60 @@ class Action:
         return float(np.sum(gray_diff * union_mask.astype(np.float32)))
 
     @staticmethod
+    def _element_match_error(
+        img_orig: np.ndarray,
+        img_svg: np.ndarray,
+        params: dict,
+        element: str,
+        *,
+        mask_orig: np.ndarray | None = None,
+        mask_svg: np.ndarray | None = None,
+    ) -> float:
+        """Element score for optimization: localization + redraw + symmetric compare.
+
+        The score combines:
+        - photometric difference in the union bbox of source/candidate element masks
+        - overlap quality (IoU)
+        - explicit penalties for missing source pixels and extra candidate pixels
+
+        This keeps exploration broad, but accepts candidates only when the element
+        truly matches better (not merely by shrinking or drifting outside the source mask).
+        """
+        if img_svg is None:
+            return float("inf")
+        if img_svg.shape[:2] != img_orig.shape[:2]:
+            img_svg = cv2.resize(img_svg, (img_orig.shape[1], img_orig.shape[0]), interpolation=cv2.INTER_AREA)
+
+        local_mask_orig = mask_orig if mask_orig is not None else Action.extract_badge_element_mask(img_orig, params, element)
+        local_mask_svg = mask_svg if mask_svg is not None else Action.extract_badge_element_mask(img_svg, params, element)
+        if local_mask_orig is None or local_mask_svg is None:
+            return float("inf")
+
+        orig_area = float(np.sum(local_mask_orig))
+        svg_area = float(np.sum(local_mask_svg))
+        if orig_area <= 0.0 or svg_area <= 0.0:
+            return float("inf")
+
+        photo_err = float(Action._masked_union_error_in_bbox(img_orig, img_svg, local_mask_orig, local_mask_svg))
+        if not np.isfinite(photo_err):
+            return float("inf")
+
+        inter = float(np.sum(local_mask_orig & local_mask_svg))
+        union = float(np.sum(local_mask_orig | local_mask_svg))
+        if union <= 0.0:
+            return float("inf")
+
+        miss = float(np.sum(local_mask_orig & (~local_mask_svg))) / orig_area
+        extra = float(np.sum(local_mask_svg & (~local_mask_orig))) / orig_area
+        iou = inter / union
+
+        # Normalize photometric term by source element area so comparisons stay
+        # meaningful across sizes (S/M/L variants).
+        photo_norm = photo_err / max(1.0, orig_area)
+
+        return float(photo_norm + (38.0 * miss) + (24.0 * extra) + (18.0 * (1.0 - iou)))
+
+    @staticmethod
     def _capture_canonical_badge_colors(params: dict) -> dict:
         p = dict(params)
         p["target_fill_gray"] = int(round(float(p.get("fill_gray", Action.LIGHT_CIRCLE_FILL_GRAY))))
@@ -2803,7 +2857,7 @@ class Action:
         mask_orig = Action.extract_badge_element_mask(img_orig, probe, element)
         if mask_orig is None:
             return float("inf")
-        return Action._masked_error(img_orig, elem_render, mask_orig)
+        return Action._element_match_error(img_orig, elem_render, probe, element, mask_orig=mask_orig)
 
     @staticmethod
     def _element_error_for_circle_radius(img_orig: np.ndarray, params: dict, radius_value: float) -> float:
@@ -3298,7 +3352,7 @@ class Action:
         if mask_orig is None:
             return float("inf")
 
-        return Action._masked_error(img_orig, elem_render, mask_orig)
+        return Action._element_match_error(img_orig, elem_render, probe, element, mask_orig=mask_orig)
 
     @staticmethod
     def _optimize_element_extent_bracket(img_orig: np.ndarray, params: dict, element: str, logs: list[str]) -> bool:
@@ -3611,7 +3665,7 @@ class Action:
         elem_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(elem_svg, w, h))
         if elem_render is None:
             return float("inf")
-        return Action._masked_error(img_orig, elem_render, mask_orig)
+        return Action._element_match_error(img_orig, elem_render, probe, element, mask_orig=mask_orig)
 
     @staticmethod
     def _optimize_element_color_bracket(
@@ -3824,7 +3878,7 @@ class Action:
                 rect_svg = Action._mask_min_rect_center_diag(mask_svg)
                 if rect_orig is not None and rect_svg is not None:
                     old_params = dict(params)
-                    old_elem_err = float(Action._masked_error(img_orig, elem_render, mask_orig))
+                    old_elem_err = float(Action._element_match_error(img_orig, elem_render, params, element, mask_orig=mask_orig, mask_svg=mask_svg))
                     ocx, ocy, odiag = rect_orig
                     scx, scy, sdiag = rect_svg
                     dx = ocx - scx
@@ -3847,7 +3901,7 @@ class Action:
                         bbox_ok = True
                         bbox_log: str | None = None
                         if updated_elem_render is not None:
-                            updated_err = float(Action._masked_error(img_orig, updated_elem_render, mask_orig))
+                            updated_err = float(Action._element_match_error(img_orig, updated_elem_render, params, element, mask_orig=mask_orig))
                             updated_mask_svg = Action.extract_badge_element_mask(updated_elem_render, params, element)
                             if updated_mask_svg is not None:
                                 bbox_ok, bbox_log = Action._element_bbox_change_is_plausible(mask_orig, updated_mask_svg)
@@ -3868,7 +3922,7 @@ class Action:
                                 )
                             )
 
-                elem_err = Action._masked_error(img_orig, elem_render, mask_orig)
+                elem_err = Action._element_match_error(img_orig, elem_render, params, element, mask_orig=mask_orig, mask_svg=mask_svg)
                 logs.append(f"{element}: Fehler={elem_err:.3f}")
 
                 if element == "stem" and params.get("stem_enabled"):
@@ -4387,9 +4441,18 @@ def _rank_template_transfer_donors(
 
 
 def _semantic_transfer_rotations(target_params: dict[str, object], donor_params: dict[str, object]) -> tuple[int, ...]:
-    """Rotation candidates for semantic transfer; keep text upright."""
+    """Rotation candidates for semantic transfer while preserving symbol semantics."""
     has_text = bool(target_params.get("draw_text", False) or donor_params.get("draw_text", False))
-    if has_text:
+    has_connector = bool(
+        target_params.get("arm_enabled", False)
+        or target_params.get("stem_enabled", False)
+        or donor_params.get("arm_enabled", False)
+        or donor_params.get("stem_enabled", False)
+    )
+    if has_text or has_connector:
+        # Directional semantic badges (e.g. AC0812 left arm) encode orientation in
+        # geometry. Rotating donor templates can improve pixel error but flips the
+        # meaning of connector-side symbols. Keep transfer upright/unrotated.
         return (0,)
     return (0, 90, 180, 270)
 
@@ -5015,6 +5078,23 @@ def _read_svg_geometry(svg_path: str) -> tuple[int, int, dict] | None:
         params["arm_y2"] = float(line_match.group(4))
         params["arm_stroke"] = float(line_match.group(5))
 
+    text_tag_match = re.search(r"(<text[^>]*>)", text)
+    if text_tag_match:
+        text_tag = text_tag_match.group(1)
+        fill_match = re.search(r'fill="(#[0-9a-fA-F]{6})"', text_tag)
+        if fill_match:
+            params["text_gray"] = _gray_from_hex(fill_match.group(1), int(params["text_gray"]))
+        text_content_match = re.search(r"<text[^>]*>([^<]+)</text>", text)
+        text_content = text_content_match.group(1).strip().upper() if text_content_match else ""
+        if text_content == "VOC":
+            params["draw_text"] = True
+            params["text_mode"] = "voc"
+        elif text_content in {"CO", "2"}:
+            # CO₂ is emitted as two separate text nodes ("CO" + subscript "2").
+            # Preserve text semantics so variant harmonization cannot strip labels.
+            params["draw_text"] = True
+            params["text_mode"] = "co2"
+
     text_path_match = re.search(r"(<path[^>]*>)", text)
     if text_path_match:
         path_tag = text_path_match.group(1)
@@ -5027,8 +5107,11 @@ def _read_svg_geometry(svg_path: str) -> tuple[int, int, dict] | None:
         else:
             params["text_mode"] = "path"
 
-    if params.get("draw_text") and ("tx" not in params or "ty" not in params or "s" not in params):
-        # Fallback for older SVGs where we only need compositing geometry during harmonization.
+    if params.get("draw_text") and params.get("text_mode") in {"path", "path_t"} and (
+        "tx" not in params or "ty" not in params or "s" not in params
+    ):
+        # Fallback for older path-glyph SVGs where we only need compositing geometry
+        # during harmonization. Keep native <text>-based modes (CO₂/VOC) intact.
         params["draw_text"] = False
 
     return w, h, params

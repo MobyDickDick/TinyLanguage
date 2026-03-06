@@ -1341,6 +1341,103 @@ def test_semantic_transfer_rotations_allow_connector_rotation_without_text() -> 
     assert rotations == (0, 90, 180, 270)
 
 
+def test_semantic_transfer_rotations_keep_connector_orientation() -> None:
+    rotations = image_composite_converter._semantic_transfer_rotations(
+        {"draw_text": False, "arm_enabled": True},
+        {"draw_text": False},
+    )
+    assert rotations == (0,)
+
+
+def test_read_svg_geometry_preserves_co2_text_mode(tmp_path: Path) -> None:
+    svg = tmp_path / "AC0820_L.svg"
+    svg.write_text(
+        """
+<svg width="30px" height="30px" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="15.0000" cy="15.0000" r="13.5000" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="1.0000"/>
+  <text x="15.0" y="15.5" fill="#7f7f7f" font-size="12">CO</text>
+  <text x="20.0" y="17.0" fill="#7f7f7f" font-size="8">2</text>
+</svg>
+""".strip(),
+        encoding="utf-8",
+    )
+
+    parsed = image_composite_converter._read_svg_geometry(str(svg))
+    assert parsed is not None
+    _w, _h, params = parsed
+    assert params["draw_text"] is True
+    assert params["text_mode"] == "co2"
+
+
+def test_element_match_error_prefers_exact_element_overlap() -> None:
+    cv2_mod = image_composite_converter.cv2
+    np_mod = image_composite_converter.np
+    if cv2_mod is None or np_mod is None:
+        pytest.skip("opencv/numpy not available")
+
+    h, w = 30, 30
+    img_orig = np_mod.full((h, w, 3), 255, dtype=np_mod.uint8)
+    img_perturbed = np_mod.full((h, w, 3), 255, dtype=np_mod.uint8)
+
+    cv2_mod.circle(img_orig, (15, 15), 8, (120, 120, 120), 2)
+    cv2_mod.circle(img_perturbed, (15, 15), 10, (120, 120, 120), 2)
+
+    yy, xx = np_mod.indices((h, w))
+    mask_orig = np_mod.abs(np_mod.sqrt((xx - 15.0) ** 2 + (yy - 15.0) ** 2) - 8.0) <= 2.0
+    mask_perturbed = np_mod.abs(np_mod.sqrt((xx - 15.0) ** 2 + (yy - 15.0) ** 2) - 10.0) <= 2.0
+
+    exact_err = Action._element_match_error(
+        img_orig,
+        img_orig,
+        {},
+        "circle",
+        mask_orig=mask_orig,
+        mask_svg=mask_orig,
+    )
+    perturbed_err = Action._element_match_error(
+        img_orig,
+        img_perturbed,
+        {},
+        "circle",
+        mask_orig=mask_orig,
+        mask_svg=mask_perturbed,
+    )
+
+    assert exact_err <= 1e-6
+    assert perturbed_err > exact_err + 1.0
+
+
+def test_element_match_error_penalizes_missing_and_extra_pixels() -> None:
+    cv2_mod = image_composite_converter.cv2
+    np_mod = image_composite_converter.np
+    if cv2_mod is None or np_mod is None:
+        pytest.skip("opencv/numpy not available")
+
+    h, w = 30, 30
+    img_orig = np_mod.full((h, w, 3), 255, dtype=np_mod.uint8)
+    img_smaller = np_mod.full((h, w, 3), 255, dtype=np_mod.uint8)
+
+    cv2_mod.circle(img_orig, (15, 15), 9, (120, 120, 120), 2)
+    cv2_mod.circle(img_smaller, (15, 15), 6, (120, 120, 120), 2)
+
+    yy, xx = np_mod.indices((h, w))
+    mask_orig = np_mod.abs(np_mod.sqrt((xx - 15.0) ** 2 + (yy - 15.0) ** 2) - 9.0) <= 2.0
+    mask_smaller = np_mod.abs(np_mod.sqrt((xx - 15.0) ** 2 + (yy - 15.0) ** 2) - 6.0) <= 2.0
+
+    legacy_err = Action._masked_error(img_orig, img_smaller, mask_orig)
+    robust_err = Action._element_match_error(
+        img_orig,
+        img_smaller,
+        {},
+        "circle",
+        mask_orig=mask_orig,
+        mask_svg=mask_smaller,
+    )
+
+    assert robust_err > 0.0
+    assert robust_err > (legacy_err / max(1.0, float(mask_orig.sum())))
+
+
 def test_semantic_transfer_badge_params_backfills_required_color_keys() -> None:
     donor = {
         "mode": "semantic_badge",

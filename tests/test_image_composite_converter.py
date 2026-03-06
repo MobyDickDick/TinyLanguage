@@ -552,8 +552,8 @@ def test_voc_font_scale_bounds_allow_larger_tiny_badge_labels() -> None:
     assert high >= 1.60
 
 
-def test_voc_font_scale_bounds_limit_growth_for_large_badges() -> None:
-    """Large VOC badges should avoid overscaling text during width bracketing."""
+def test_voc_font_scale_bounds_keep_broad_search_for_large_badges() -> None:
+    """Large VOC badges should keep enough headroom for text-mask driven fitting."""
     params = {
         "draw_text": True,
         "text_mode": "voc",
@@ -566,7 +566,76 @@ def test_voc_font_scale_bounds_limit_growth_for_large_badges() -> None:
     key, low, high = info
     assert key == "voc_font_scale"
     assert low <= 0.45
-    assert high <= 1.10
+    assert high >= 1.60
+
+
+def test_voc_font_scale_bounds_expand_from_original_text_bbox(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When original text extents are known, bounds should expand around that estimate."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    params = {
+        "draw_text": True,
+        "text_mode": "voc",
+        "voc_font_scale": 0.52,
+        "r": 5.0,
+    }
+    img = np.zeros((40, 40, 3), dtype=np.uint8)
+
+    mask = np.zeros((40, 40), dtype=np.uint8)
+    mask[10:18, 6:34] = 1  # wide/tall enough to imply larger VOC than defaults
+
+    monkeypatch.setattr(Action, "extract_badge_element_mask", staticmethod(lambda *_args, **_kwargs: mask))
+
+    info = Action._element_width_key_and_bounds("text", params, 40, 40, img_orig=img)
+
+    assert info is not None
+    key, low, high = info
+    assert key == "voc_font_scale"
+    assert low <= 0.90
+    assert high >= 2.0
+
+
+def test_finalize_ac08_style_caps_ac0835_s_voc_growth() -> None:
+    """AC0835_S should keep VOC scale bounded to avoid heavy-looking labels."""
+    params = Action._apply_voc_label(Action._default_ac0870_params(15, 15))
+
+    finalized = Action._finalize_ac08_style("AC0835_S", params)
+
+    assert finalized["lock_text_scale"] is False
+    assert abs(float(finalized["voc_font_scale_min"]) - 0.58) < 1e-6
+    assert abs(float(finalized["voc_font_scale_max"]) - 0.546) < 1e-6
+
+
+def test_finalize_ac08_style_boosts_ac0835_m_voc_baseline() -> None:
+    """AC0835_M should bias VOC text upward so medium badges remain readable."""
+    params = Action._apply_voc_label(Action._default_ac0870_params(20, 20))
+
+    finalized = Action._finalize_ac08_style("AC0835_M", params)
+
+    assert finalized["lock_text_scale"] is False
+    assert abs(float(finalized["voc_font_scale"]) - 0.60) < 1e-6
+    assert abs(float(finalized["voc_font_scale_min"]) - 0.60) < 1e-6
+    assert "voc_font_scale_max" not in finalized
+
+
+def test_voc_font_scale_bounds_honor_explicit_min_max_overrides() -> None:
+    """VOC text bracketing should respect caller-provided scale bounds."""
+    params = {
+        "draw_text": True,
+        "text_mode": "voc",
+        "voc_font_scale": 0.52,
+        "voc_font_scale_min": 0.58,
+        "voc_font_scale_max": 0.546,
+    }
+
+    info = Action._element_width_key_and_bounds("text", params, 15, 15)
+
+    assert info is not None
+    key, low, high = info
+    assert key == "voc_font_scale"
+    assert abs(float(low) - 0.58) < 1e-6
+    assert abs(float(high) - 0.58) < 1e-6
 
 
 def test_finalize_ac08_style_caps_ac0835_s_voc_growth() -> None:
@@ -661,6 +730,120 @@ def test_optimize_stem_extent_keeps_circle_side_anchor() -> None:
     assert abs(float(params["stem_top"]) - (float(params["cy"]) + float(params["r"]))) < 1e-6
     assert float(params["stem_bottom"]) > float(params["stem_top"])
     assert any("stem: Längen-Bracketing" in line for line in logs)
+
+
+
+
+
+
+def test_finalize_persists_stem_length_floor_for_ac08_stem_connectors() -> None:
+    params = Action._default_ac0881_params(15, 15)
+    params = Action._finalize_ac08_style("AC0881_S", params)
+
+    stem_len = float(params["stem_bottom"]) - float(params["stem_top"])
+    assert stem_len > 0.0
+    assert float(params.get("stem_len_min_ratio", 0.0)) >= 0.65
+    assert float(params.get("stem_len_min", 0.0)) >= stem_len * float(params["stem_len_min_ratio"])
+
+
+def test_finalize_persists_arm_length_floor_for_ac08_arm_connectors() -> None:
+    params = Action._default_ac0812_params(15, 15)
+    params = Action._finalize_ac08_style("AC0812_S", params)
+
+    arm_len = float(abs(params["arm_x2"] - params["arm_x1"]))
+    assert arm_len > 0.0
+    assert float(params.get("arm_len_min_ratio", 0.0)) >= 0.75
+    assert float(params.get("arm_len_min", 0.0)) >= arm_len * float(params["arm_len_min_ratio"])
+
+def test_optimize_stem_extent_keeps_bottom_anchored_ac0811_stem_from_collapsing() -> None:
+    """Bottom-anchored AC0811 stems should retain a minimum visible length during bracketing."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    class DummyImg:
+        shape = (15, 15, 3)
+
+    img = DummyImg()
+    params = Action._default_ac0811_params(15, 15)
+    params = Action._finalize_ac08_style("AC0811_S", params)
+
+    logs: list[str] = []
+    original = Action._element_error_for_extent
+
+    def prefer_tiny(_img: object, _params: dict, _element: str, extent_value: float) -> float:
+        # Try to collapse the stem aggressively; guardrails should prevent this.
+        return abs(float(extent_value) - 1.0)
+
+    Action._element_error_for_extent = staticmethod(prefer_tiny)
+    try:
+        changed = Action._optimize_element_extent_bracket(img, params, "stem", logs)
+    finally:
+        Action._element_error_for_extent = original
+
+    assert changed is True
+    stem_len = float(params["stem_bottom"]) - float(params["stem_top"])
+    assert stem_len >= 5.5
+    assert abs(float(params["stem_top"]) - (float(params["cy"]) + float(params["r"]))) < 1e-6
+    assert any("Längen-Bracketing" in line for line in logs)
+
+
+def test_fit_ac0811_preserves_visible_stem_when_circle_estimate_reaches_bottom() -> None:
+    """AC0811 fitting should keep at least a small visible stem segment."""
+
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    class DummyImg:
+        shape = (15, 15, 3)
+
+    img = DummyImg()
+    defaults = Action._default_ac0811_params(15, 15)
+
+    original_fit = Action._fit_semantic_badge_from_image
+    original_upper = Action._estimate_upper_circle_from_foreground
+    try:
+        Action._fit_semantic_badge_from_image = staticmethod(
+            lambda _img, _defaults: {
+                **dict(defaults),
+                "cx": float(defaults["cx"]),
+                "cy": float(defaults["cy"]),
+                # Simulate a noisy fit where the circle radius grows so much
+                # that stem_top would otherwise land at/below image bottom.
+                "r": float(img.shape[0]),
+                "stem_width": float(defaults["stem_width"]),
+            }
+        )
+        Action._estimate_upper_circle_from_foreground = staticmethod(lambda _img, _defaults: None)
+
+        params = Action._fit_ac0811_params_from_image(img, defaults)
+    finally:
+        Action._fit_semantic_badge_from_image = original_fit
+        Action._estimate_upper_circle_from_foreground = original_upper
+
+    assert float(params["stem_bottom"]) == float(img.shape[0])
+    assert float(params["stem_top"]) <= float(img.shape[0]) - 1.0
+    assert float(params["stem_bottom"]) - float(params["stem_top"]) >= 1.0
+
+
+def test_estimate_vertical_stem_from_mask_ignores_circle_junction_bulge() -> None:
+    """Stem width estimate should prefer the lower stem over top junction bulges."""
+
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    mask = np.zeros((20, 15), dtype=bool)
+
+    # Simulate anti-aliased widening near the circle/stem transition.
+    mask[0:6, 4:11] = True   # wide top bulge (7 px)
+    mask[6:20, 6:9] = True   # actual slim stem (3 px)
+
+    est = Action._estimate_vertical_stem_from_mask(mask, expected_cx=7.0, y_start=0, y_end=20)
+    assert est is not None
+
+    est_cx, est_width = est
+    assert abs(float(est_cx) - 7.0) <= 0.6
+    assert abs(float(est_width) - 3.0) <= 0.25
 
 def test_text_width_bracketing_keeps_fractional_font_scale_precision() -> None:
     """Text scale optimization should not quantize font scale to half-pixel steps."""
@@ -905,6 +1088,66 @@ def test_fit_ac0814_params_keeps_right_edge_anchor() -> None:
     assert abs(float(params["arm_x1"]) - (float(params["cx"]) + float(params["r"]))) < 1e-6
 
 
+
+
+def test_stabilize_semantic_circle_pose_locks_tiny_connector_badges_to_template() -> None:
+    """Tiny connector badges should snap circle pose to the semantic template."""
+    defaults = Action._default_ac0814_params(25, 15)
+    params = {
+        **defaults,
+        "cx": 0.2,
+        "cy": 13.9,
+        "r": 3.3,
+        "draw_text": False,
+        "arm_enabled": True,
+    }
+
+    stabilized = Action._stabilize_semantic_circle_pose(params, defaults, 25, 15)
+
+    assert abs(float(stabilized["cx"]) - float(defaults["cx"])) < 1e-6
+    assert abs(float(stabilized["cy"]) - float(defaults["cy"])) < 1e-6
+    assert float(stabilized["r"]) >= float(defaults["r"]) * 0.96 - 1e-6
+    assert stabilized.get("lock_circle_cx") is True
+    assert stabilized.get("lock_circle_cy") is True
+
+
+def test_stabilize_semantic_circle_pose_clamps_non_tiny_connector_badges() -> None:
+    """Larger connector badges should be bounded near the semantic template."""
+    defaults = Action._default_ac0814_params(45, 25)
+    params = {
+        **defaults,
+        "cx": 1.0,
+        "cy": 23.0,
+        "r": 2.0,
+        "draw_text": False,
+        "arm_enabled": True,
+    }
+
+    stabilized = Action._stabilize_semantic_circle_pose(params, defaults, 45, 25)
+
+    tol = max(1.5, 25.0 * 0.18)
+    assert abs(float(stabilized["cx"]) - float(defaults["cx"])) <= tol + 1e-6
+    assert abs(float(stabilized["cy"]) - float(defaults["cy"])) <= tol + 1e-6
+    assert float(stabilized["r"]) >= float(defaults["r"]) * 0.80 - 1e-6
+
+
+def test_stabilize_semantic_circle_pose_allows_meaningful_radius_growth_for_non_tiny_connector_badges() -> None:
+    """Non-tiny connector badges may grow above template radius when fit evidence supports it."""
+    defaults = Action._default_ac0813_params(25, 45)
+    params = {
+        **defaults,
+        "cx": float(defaults["cx"]),
+        "cy": float(defaults["cy"]),
+        "r": float(defaults["r"]) * 2.0,
+        "draw_text": False,
+        "arm_enabled": True,
+    }
+
+    stabilized = Action._stabilize_semantic_circle_pose(params, defaults, 25, 45)
+
+    assert float(stabilized["r"]) <= float(defaults["r"]) * 1.45 + 1e-6
+    assert float(stabilized["r"]) >= float(defaults["r"]) * 1.40
+
 def test_make_badge_params_supports_ac0810_variants() -> None:
     """AC0810 and variant names should map to the semantic right-arm badge model."""
     params = Action.make_badge_params(25, 15, "AC0810")
@@ -1015,3 +1258,297 @@ def test_masked_union_error_in_bbox_penalizes_missed_overlap() -> None:
     err = Action._masked_union_error_in_bbox(img_orig, img_svg, mask_orig, mask_svg)
 
     assert err > 200.0
+
+
+def test_select_middle_lower_tercile_returns_worst_two_thirds_by_error_per_pixel() -> None:
+    rows = [
+        {"filename": "A", "error_per_pixel": 0.01},
+        {"filename": "B", "error_per_pixel": 0.05},
+        {"filename": "C", "error_per_pixel": 0.03},
+        {"filename": "D", "error_per_pixel": 0.02},
+        {"filename": "E", "error_per_pixel": 0.04},
+        {"filename": "F", "error_per_pixel": 0.06},
+    ]
+
+    selected = image_composite_converter._select_middle_lower_tercile(rows)
+
+    assert [row["filename"] for row in selected] == ["C", "E", "B", "F"]
+
+
+def test_select_middle_lower_tercile_requires_at_least_three_entries() -> None:
+    rows = [
+        {"filename": "A", "error_per_pixel": 0.01},
+        {"filename": "B", "error_per_pixel": 0.05},
+    ]
+
+    assert image_composite_converter._select_middle_lower_tercile(rows) == []
+
+
+def test_template_transfer_scale_candidates_expand_around_estimate() -> None:
+    scales = image_composite_converter._template_transfer_scale_candidates(1.4)
+
+    assert scales[0] == pytest.approx(1.4, abs=1e-4)
+    assert any(scale > 1.5 for scale in scales)
+    assert 0.80 in scales
+    assert len(scales) == len(set(scales))
+
+
+def test_template_transfer_candidates_use_estimated_scale_per_rotation() -> None:
+    candidates = image_composite_converter._template_transfer_transform_candidates(
+        "AC0813_L",
+        "AC0811_M",
+        estimated_scale_by_rotation={180: 1.5},
+    )
+
+    # Rotations are grouped; for 180° the estimated scale is tried first.
+    rot180 = [scale for rotation, scale in candidates if rotation == 180]
+    assert rot180[0] == pytest.approx(1.5, abs=1e-4)
+    assert 1.25 in rot180
+    assert len(candidates) == len(set(candidates))
+
+
+def test_rank_template_transfer_donors_prefers_same_base_then_geometry() -> None:
+    target = {
+        "base": "AC0813",
+        "w": 20,
+        "h": 30,
+        "params": {"cx": 10, "cy": 20, "r": 7, "stroke_circle": 1.2, "arm_enabled": True, "arm_x1": 10, "arm_y1": 0, "arm_x2": 10, "arm_y2": 13, "arm_stroke": 1.2},
+    }
+    donors = [
+        {"variant": "X", "base": "AC0811", "w": 20, "h": 20, "params": {"cx": 10, "cy": 10, "r": 7, "stroke_circle": 1.2}, "error_per_pixel": 0.001},
+        {"variant": "Y", "base": "AC0813", "w": 20, "h": 30, "params": {"cx": 10, "cy": 20, "r": 7, "stroke_circle": 1.2, "arm_enabled": True, "arm_x1": 10, "arm_y1": 0, "arm_x2": 10, "arm_y2": 13, "arm_stroke": 1.2}, "error_per_pixel": 0.01},
+    ]
+
+    ranked = image_composite_converter._rank_template_transfer_donors(target, donors)
+
+    assert ranked[0]["variant"] == "Y"
+
+
+def test_select_open_quality_cases_filters_threshold_and_skips_sorted_worst_first() -> None:
+    rows = [
+        {"filename": "A", "variant": "AC0800_S", "error_per_pixel": 0.01},
+        {"filename": "B", "variant": "AC0801_S", "error_per_pixel": 0.06},
+        {"filename": "C", "variant": "AC0802_S", "error_per_pixel": 0.03},
+        {"filename": "D", "variant": "AC0803_S", "error_per_pixel": 0.08},
+    ]
+
+    selected = image_composite_converter._select_open_quality_cases(
+        rows,
+        allowed_error_per_pixel=0.04,
+        skip_variants={"AC0803_S"},
+    )
+
+    assert [row["filename"] for row in selected] == ["B"]
+
+
+def test_select_open_quality_cases_returns_worst_first_when_multiple_open() -> None:
+    rows = [
+        {"filename": "A", "variant": "AC0800_S", "error_per_pixel": 0.06},
+        {"filename": "B", "variant": "AC0801_S", "error_per_pixel": 0.09},
+        {"filename": "C", "variant": "AC0802_S", "error_per_pixel": 0.07},
+    ]
+
+    selected = image_composite_converter._select_open_quality_cases(
+        rows,
+        allowed_error_per_pixel=0.04,
+    )
+
+    assert [row["filename"] for row in selected] == ["B", "C", "A"]
+
+
+def test_iteration_strategy_for_pass_cycles_search_budgets() -> None:
+    assert image_composite_converter._iteration_strategy_for_pass(1, 128) == (129, 7)
+    assert image_composite_converter._iteration_strategy_for_pass(2, 128) == (156, 9)
+    assert image_composite_converter._iteration_strategy_for_pass(3, 128) == (185, 11)
+    assert image_composite_converter._iteration_strategy_for_pass(4, 128) == (132, 10)
+
+
+def test_harmonization_anchor_priority_prefers_large_for_connector_families() -> None:
+    assert image_composite_converter._harmonization_anchor_priority("L", prefer_large=True) == 0
+    assert image_composite_converter._harmonization_anchor_priority("M", prefer_large=True) == 1
+
+
+def test_harmonization_anchor_priority_prefers_medium_for_plain_circles() -> None:
+    assert image_composite_converter._harmonization_anchor_priority("M", prefer_large=False) == 0
+    assert image_composite_converter._harmonization_anchor_priority("L", prefer_large=False) == 1
+
+
+def test_semantic_transfer_rotations_keep_text_upright() -> None:
+    rotations = image_composite_converter._semantic_transfer_rotations(
+        {"draw_text": True},
+        {"draw_text": False},
+    )
+    assert rotations == (0,)
+
+
+def test_semantic_transfer_rotations_allow_connector_rotation_without_text() -> None:
+    rotations = image_composite_converter._semantic_transfer_rotations(
+        {"draw_text": False},
+        {"draw_text": False},
+    )
+    assert rotations == (0, 90, 180, 270)
+
+
+def test_semantic_transfer_rotations_keep_connector_orientation() -> None:
+    rotations = image_composite_converter._semantic_transfer_rotations(
+        {"draw_text": False, "arm_enabled": True},
+        {"draw_text": False},
+    )
+    assert rotations == (0,)
+
+
+def test_read_svg_geometry_preserves_co2_text_mode(tmp_path: Path) -> None:
+    svg = tmp_path / "AC0820_L.svg"
+    svg.write_text(
+        """
+<svg width="30px" height="30px" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="15.0000" cy="15.0000" r="13.5000" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="1.0000"/>
+  <text x="15.0" y="15.5" fill="#7f7f7f" font-size="12">CO</text>
+  <text x="20.0" y="17.0" fill="#7f7f7f" font-size="8">2</text>
+</svg>
+""".strip(),
+        encoding="utf-8",
+    )
+
+    parsed = image_composite_converter._read_svg_geometry(str(svg))
+    assert parsed is not None
+    _w, _h, params = parsed
+    assert params["draw_text"] is True
+    assert params["text_mode"] == "co2"
+
+
+def test_element_match_error_prefers_exact_element_overlap() -> None:
+    cv2_mod = image_composite_converter.cv2
+    np_mod = image_composite_converter.np
+    if cv2_mod is None or np_mod is None:
+        pytest.skip("opencv/numpy not available")
+
+    h, w = 30, 30
+    img_orig = np_mod.full((h, w, 3), 255, dtype=np_mod.uint8)
+    img_perturbed = np_mod.full((h, w, 3), 255, dtype=np_mod.uint8)
+
+    cv2_mod.circle(img_orig, (15, 15), 8, (120, 120, 120), 2)
+    cv2_mod.circle(img_perturbed, (15, 15), 10, (120, 120, 120), 2)
+
+    yy, xx = np_mod.indices((h, w))
+    mask_orig = np_mod.abs(np_mod.sqrt((xx - 15.0) ** 2 + (yy - 15.0) ** 2) - 8.0) <= 2.0
+    mask_perturbed = np_mod.abs(np_mod.sqrt((xx - 15.0) ** 2 + (yy - 15.0) ** 2) - 10.0) <= 2.0
+
+    exact_err = Action._element_match_error(
+        img_orig,
+        img_orig,
+        {},
+        "circle",
+        mask_orig=mask_orig,
+        mask_svg=mask_orig,
+    )
+    perturbed_err = Action._element_match_error(
+        img_orig,
+        img_perturbed,
+        {},
+        "circle",
+        mask_orig=mask_orig,
+        mask_svg=mask_perturbed,
+    )
+
+    assert exact_err <= 1e-6
+    assert perturbed_err > exact_err + 1.0
+
+
+def test_element_match_error_penalizes_missing_and_extra_pixels() -> None:
+    cv2_mod = image_composite_converter.cv2
+    np_mod = image_composite_converter.np
+    if cv2_mod is None or np_mod is None:
+        pytest.skip("opencv/numpy not available")
+
+    h, w = 30, 30
+    img_orig = np_mod.full((h, w, 3), 255, dtype=np_mod.uint8)
+    img_smaller = np_mod.full((h, w, 3), 255, dtype=np_mod.uint8)
+
+    cv2_mod.circle(img_orig, (15, 15), 9, (120, 120, 120), 2)
+    cv2_mod.circle(img_smaller, (15, 15), 6, (120, 120, 120), 2)
+
+    yy, xx = np_mod.indices((h, w))
+    mask_orig = np_mod.abs(np_mod.sqrt((xx - 15.0) ** 2 + (yy - 15.0) ** 2) - 9.0) <= 2.0
+    mask_smaller = np_mod.abs(np_mod.sqrt((xx - 15.0) ** 2 + (yy - 15.0) ** 2) - 6.0) <= 2.0
+
+    legacy_err = Action._masked_error(img_orig, img_smaller, mask_orig)
+    robust_err = Action._element_match_error(
+        img_orig,
+        img_smaller,
+        {},
+        "circle",
+        mask_orig=mask_orig,
+        mask_svg=mask_smaller,
+    )
+
+    assert robust_err > 0.0
+    assert robust_err > (legacy_err / max(1.0, float(mask_orig.sum())))
+
+
+def test_semantic_transfer_badge_params_backfills_required_color_keys() -> None:
+    donor = {
+        "mode": "semantic_badge",
+        "draw_text": True,
+        "circle_enabled": True,
+        "cx": 10.0,
+        "cy": 10.0,
+        "r": 6.0,
+    }
+    target = {
+        "mode": "semantic_badge",
+        "variant": "AC0831_M",
+        "draw_text": True,
+        "cx": 11.0,
+        "cy": 12.0,
+    }
+
+    params = image_composite_converter._semantic_transfer_badge_params(
+        donor,
+        target,
+        target_w=25,
+        target_h=25,
+        rotation_deg=0,
+        scale=1.0,
+    )
+
+    assert "fill_gray" in params
+    assert "stroke_gray" in params
+    assert "text_gray" in params
+
+
+def test_semantic_transfer_scale_candidates_include_wide_range() -> None:
+    scales = image_composite_converter._semantic_transfer_scale_candidates(1.0)
+    assert min(scales) <= 0.55
+    assert max(scales) >= 1.9
+
+
+def test_semantic_presence_reports_missing_and_undescribed_elements() -> None:
+    expected = Action._expected_semantic_presence([
+        "SEMANTIC: Kreis ohne Buchstabe",
+        "SEMANTIC: senkrechter Strich hinter dem Kreis",
+    ])
+    observed = {"circle": True, "stem": False, "arm": True, "text": False}
+
+    issues = Action._semantic_presence_mismatches(expected, observed)
+
+    assert any("erwartet senkrechter Strich" in item for item in issues)
+    assert any("waagrechter Strich" in item and "nicht in der Beschreibung" in item for item in issues)
+
+
+def test_stem_width_bounds_allow_limited_tuning_when_strokes_are_locked() -> None:
+    params = {
+        "stem_enabled": True,
+        "lock_stroke_widths": True,
+        "allow_stem_width_tuning": True,
+        "stem_width_max": 2.0,
+        "stem_width_tuning_px": 1.0,
+    }
+
+    info = Action._element_width_key_and_bounds("stem", params, 25, 45)
+
+    assert info is not None
+    key, low, high = info
+    assert key == "stem_width"
+    assert abs(float(low) - 1.0) < 1e-6
+    assert abs(float(high) - 2.0) < 1e-6

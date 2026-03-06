@@ -569,13 +569,23 @@ class Action:
             min_dim = float(min(float(p.get("width", 0.0) or 0.0), float(p.get("height", 0.0) or 0.0)))
             if min_dim <= 0.0:
                 min_dim = max(1.0, float(p.get("r", 1.0)) * 2.0)
-            if symbol_name == "AC0835" and min_dim <= 15.5:
-                # AC0835_S tends to over-scale VOC during text bracketing,
-                # producing a visibly heavy label compared to the source icon.
-                base_scale = float(p.get("voc_font_scale", 0.52))
+            if symbol_name == "AC0835":
+                # AC0835 variants use a freer VOC fitting policy than the CO₂
+                # families: keep text scaling unlocked and bias the medium+
+                # badges toward a readable baseline.
                 p["lock_text_scale"] = False
-                p.setdefault("voc_font_scale_min", float(max(0.58, base_scale * 0.90)))
-                p.setdefault("voc_font_scale_max", float(min(0.92, base_scale * 1.05)))
+                if min_dim <= 15.5:
+                    # AC0835_S tends to over-scale VOC during text bracketing,
+                    # producing a visibly heavy label compared to the source icon.
+                    base_scale = float(p.get("voc_font_scale", 0.52))
+                    p.setdefault("voc_font_scale_min", float(max(0.58, base_scale * 0.90)))
+                    p.setdefault("voc_font_scale_max", float(min(0.92, base_scale * 1.05)))
+                else:
+                    # Medium/Large variants can start too small; pin a minimum
+                    # readable baseline while still allowing upward tuning.
+                    p["voc_font_scale"] = float(max(float(p.get("voc_font_scale", 0.52)), 0.60))
+                    p.setdefault("voc_font_scale_min", 0.60)
+                    p.pop("voc_font_scale_max", None)
         if p.get("draw_text", True) and "text_gray" in p:
             p["text_gray"] = int(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY))
         return p
@@ -2801,15 +2811,9 @@ class Action:
                 # Start with broad generic bounds so the optimizer can follow
                 # text-mask error rather than artificial variant caps.
                 low = max(0.30, min(cur * 0.60, 0.45))
-                # Large VOC badges can otherwise over-scale the label to the
-                # hard cap and look visibly too heavy (e.g. AC0837_L). Keep the
-                # tiny-size exploration broad, but tighten larger variants.
-                if min_dim > 22.0:
-                    high = 1.10
-                elif min_dim > 16.0:
-                    high = 1.30
-                else:
-                    high = 1.60
+                # Keep a broad generic search window unless a specific badge
+                # family constrains it via explicit min/max overrides.
+                high = 1.60
                 if "voc_font_scale_min" in params:
                     low = max(low, float(params["voc_font_scale_min"]))
                 if "voc_font_scale_max" in params:
@@ -3914,56 +3918,6 @@ class Action:
                         elem_diff,
                     )
 
-                # Geometrie-Abgleich über Mittelpunkt + Diagonale des kleinsten
-                # umschließenden Rechtecks (minAreaRect) auf Element-Ebene.
-                rect_orig = Action._mask_min_rect_center_diag(mask_orig)
-                rect_svg = Action._mask_min_rect_center_diag(mask_svg)
-                if rect_orig is not None and rect_svg is not None:
-                    old_params = dict(params)
-                    old_elem_err = float(Action._element_match_error(img_orig, elem_render, params, element, mask_orig=mask_orig, mask_svg=mask_svg))
-                    ocx, ocy, odiag = rect_orig
-                    scx, scy, sdiag = rect_svg
-                    dx = ocx - scx
-                    dy = ocy - scy
-                    scale = odiag / max(1e-6, sdiag)
-                    changed = Action._apply_element_alignment_step(params, element, dx, dy, scale, w, h)
-                    logs.append(
-                        (
-                            f"{element}: minRect Δcx={dx:.3f}, Δcy={dy:.3f}, "
-                            f"diag={sdiag:.3f}->{odiag:.3f}, scale={scale:.4f}"
-                        )
-                    )
-                    if changed:
-                        updated_elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(params, element))
-                        updated_elem_render = Action._fit_to_original_size(
-                            img_orig,
-                            Action.render_svg_to_numpy(updated_elem_svg, w, h),
-                        )
-                        updated_err = float("inf")
-                        bbox_ok = True
-                        bbox_log: str | None = None
-                        if updated_elem_render is not None:
-                            updated_err = float(Action._element_match_error(img_orig, updated_elem_render, params, element, mask_orig=mask_orig))
-                            updated_mask_svg = Action.extract_badge_element_mask(updated_elem_render, params, element)
-                            if updated_mask_svg is not None:
-                                bbox_ok, bbox_log = Action._element_bbox_change_is_plausible(mask_orig, updated_mask_svg)
-
-                        if np.isfinite(updated_err) and updated_err <= old_elem_err + 0.20 and bbox_ok:
-                            round_changed = True
-                            logs.append(f"{element}: Parameter nach Mittelpunkt/Diagonale angepasst")
-                        else:
-                            params.clear()
-                            params.update(old_params)
-                            reason = f"Fehler {old_elem_err:.3f}->{updated_err:.3f}"
-                            if bbox_log:
-                                reason = f"{reason}; {bbox_log}"
-                            logs.append(
-                                (
-                                    f"{element}: Mittelpunkt/Diagonale-Update verworfen "
-                                    f"({reason})"
-                                )
-                            )
-
                 elem_err = Action._element_match_error(img_orig, elem_render, params, element, mask_orig=mask_orig, mask_svg=mask_svg)
                 logs.append(f"{element}: Fehler={elem_err:.3f}")
 
@@ -3989,9 +3943,6 @@ class Action:
                         round_changed = True
                     radius_changed = Action._optimize_circle_radius_bracket(img_orig, params, logs)
                     if radius_changed:
-                        round_changed = True
-                    joint_changed = Action._optimize_circle_pose_multistart(img_orig, params, logs)
-                    if joint_changed:
                         round_changed = True
 
                 # Color fitting is intentionally deferred to the end so

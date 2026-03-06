@@ -978,7 +978,6 @@ def test_validate_badge_runs_color_bracketing_after_geometry_steps() -> None:
     original_extent = Action._optimize_element_extent_bracket
     original_center = Action._optimize_circle_center_bracket
     original_radius = Action._optimize_circle_radius_bracket
-    original_joint = Action._optimize_circle_pose_multistart
     original_color = Action._optimize_element_color_bracket
 
     Action.generate_badge_svg = staticmethod(lambda _w, _h, _params: "<svg/>")
@@ -1001,9 +1000,6 @@ def test_validate_badge_runs_color_bracketing_after_geometry_steps() -> None:
     Action._optimize_circle_radius_bracket = staticmethod(
         lambda _img, _params, _logs: call_order.append("radius") or False
     )
-    Action._optimize_circle_pose_multistart = staticmethod(
-        lambda _img, _params, _logs: call_order.append("joint") or False
-    )
     Action._optimize_element_color_bracket = staticmethod(
         lambda _img, _params, _element, _mask, _logs: call_order.append("color") or False
     )
@@ -1022,10 +1018,9 @@ def test_validate_badge_runs_color_bracketing_after_geometry_steps() -> None:
         Action._optimize_element_extent_bracket = original_extent
         Action._optimize_circle_center_bracket = original_center
         Action._optimize_circle_radius_bracket = original_radius
-        Action._optimize_circle_pose_multistart = original_joint
         Action._optimize_element_color_bracket = original_color
 
-    assert call_order == ["width", "extent", "center", "radius", "joint", "color"]
+    assert call_order == ["width", "extent", "center", "radius", "color"]
 
 
 def test_optimize_circle_pose_multistart_can_escape_local_center_radius_plateau(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -2764,6 +2764,7 @@ class Action:
         element: str, params: dict, w: int, h: int, img_orig: np.ndarray | None = None
     ) -> tuple[str, float, float] | None:
         lock_strokes = bool(params.get("lock_stroke_widths"))
+        min_dim = float(min(w, h))
         if element == "stem" and params.get("stem_enabled"):
             if lock_strokes:
                 fixed = float(Action.AC08_STROKE_WIDTH_PX)

@@ -569,13 +569,23 @@ class Action:
             min_dim = float(min(float(p.get("width", 0.0) or 0.0), float(p.get("height", 0.0) or 0.0)))
             if min_dim <= 0.0:
                 min_dim = max(1.0, float(p.get("r", 1.0)) * 2.0)
-            if symbol_name == "AC0835" and min_dim <= 15.5:
-                # AC0835_S tends to over-scale VOC during text bracketing,
-                # producing a visibly heavy label compared to the source icon.
-                base_scale = float(p.get("voc_font_scale", 0.52))
+            if symbol_name == "AC0835":
+                # AC0835 variants use a freer VOC fitting policy than the CO₂
+                # families: keep text scaling unlocked and bias the medium+
+                # badges toward a readable baseline.
                 p["lock_text_scale"] = False
-                p.setdefault("voc_font_scale_min", float(max(0.58, base_scale * 0.90)))
-                p.setdefault("voc_font_scale_max", float(min(0.92, base_scale * 1.05)))
+                if min_dim <= 15.5:
+                    # AC0835_S tends to over-scale VOC during text bracketing,
+                    # producing a visibly heavy label compared to the source icon.
+                    base_scale = float(p.get("voc_font_scale", 0.52))
+                    p.setdefault("voc_font_scale_min", float(max(0.58, base_scale * 0.90)))
+                    p.setdefault("voc_font_scale_max", float(min(0.92, base_scale * 1.05)))
+                else:
+                    # Medium/Large variants can start too small; pin a minimum
+                    # readable baseline while still allowing upward tuning.
+                    p["voc_font_scale"] = float(max(float(p.get("voc_font_scale", 0.52)), 0.60))
+                    p.setdefault("voc_font_scale_min", 0.60)
+                    p.pop("voc_font_scale_max", None)
         if p.get("draw_text", True) and "text_gray" in p:
             p["text_gray"] = int(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY))
         return p

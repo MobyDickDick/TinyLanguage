@@ -1,1 +1,0 @@
-python tools\attempt_convert_ac_range.py --start AC0820 --end AC0820 --iterations 128

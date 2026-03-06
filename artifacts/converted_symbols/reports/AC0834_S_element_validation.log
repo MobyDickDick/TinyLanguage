@@ -1,13 +1,13 @@
 Runde 1: elementweise Validierung gestartet
-circle: minRect Δcx=0.500, Δcy=-0.000, diag=16.000->19.000, scale=1.1875
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=188.876
+circle: minRect Δcx=0.500, Δcy=-0.000, diag=19.799->19.000, scale=0.9596
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 120.267->123.976)
+circle: Fehler=120.267
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 6.726->7.000 (best_err=6241.000); Kandidaten=6.000->8398.000, 6.500->6270.000, 7.000->6241.000
+circle: Radius-Bracketing keine relevante Änderung (r: 7.000, best_err=6241.000); Kandidaten=6.500->6270.000, 7.000->6241.000
 circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=7.500, r=7.000, best_err=6241.000)
 arm: Fehler=67.350
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 10.500); Kandidaten=9.000->77.850, 10.500->74.850, 13.000->74.850, 17.000->74.850, 21.000->74.850, 25.000->74.850
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 10.500); Kandidaten=8.000->86.950, 10.500->74.850, 12.000->74.850, 16.500->74.850, 20.500->74.850, 25.000->74.850
 text: minRect Δcx=1.413, Δcy=2.794, diag=10.085->14.458, scale=1.4337
 text: Parameter nach Mittelpunkt/Diagonale angepasst
 text: Fehler=162.669
@@ -22,7 +22,7 @@ circle: Radius-Bracketing keine relevante Änderung (r: 7.000, best_err=6241.000
 circle: Joint-Multistart keine relevante Änderung (cx=7.500, cy=7.500, r=7.000, best_err=6241.000)
 arm: Fehler=67.350
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 10.500); Kandidaten=9.000->77.850, 10.500->74.850, 13.000->74.850, 17.000->74.850, 21.000->74.850, 25.000->74.850
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 10.500); Kandidaten=8.000->86.950, 10.500->74.850, 12.000->74.850, 16.500->74.850, 20.500->74.850, 25.000->74.850
 text: minRect Δcx=0.000, Δcy=-0.500, diag=9.849->9.487, scale=0.9632
 text: Mittelpunkt/Diagonale-Update verworfen (Fehler 113.471->135.695)
 text: Fehler=113.471

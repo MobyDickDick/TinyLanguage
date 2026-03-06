@@ -1,9 +1,9 @@
 Runde 1: elementweise Validierung gestartet
-circle: minRect Δcx=-0.835, Δcy=0.641, diag=23.401->24.050, scale=1.0277
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=170.424
+circle: minRect Δcx=-0.500, Δcy=0.500, diag=21.213->23.022, scale=1.0853
+circle: Mittelpunkt/Diagonale-Update verworfen (Fehler 170.170->172.529)
+circle: Fehler=170.170
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 8.016->7.000 (best_err=11490.000); Kandidaten=7.000->11490.000, 7.500->12332.000, 8.000->12485.000, 9.500->14153.000
+circle: Radius-Bracketing r 7.400->7.000 (best_err=10786.000); Kandidaten=7.000->10786.000, 7.500->11628.000, 9.500->14065.000
 circle: Joint-Multistart keine relevante Änderung (cx=25.000, cy=10.000, r=7.000, best_err=10479.000)
 arm: minRect Δcx=2.000, Δcy=0.500, diag=17.029->21.840, scale=1.2825
 arm: Mittelpunkt/Diagonale-Update verworfen (Fehler 118.175->130.420; Box-Check verworfen (w_ratio=0.955, h_ratio=0.143, area_ratio=0.136))

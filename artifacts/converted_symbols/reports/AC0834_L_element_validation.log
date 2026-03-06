@@ -1,9 +1,9 @@
 Runde 1: elementweise Validierung gestartet
 circle: minRect Δcx=4.000, Δcy=0.500, diag=30.000->17.464, scale=0.5821
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=203.053
+circle: Fehler=201.299
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.270->9.500 (best_err=17018.000); Kandidaten=9.500->17018.000, 12.000->19580.000
+circle: Radius-Bracketing r 9.600->9.500 (best_err=17270.000); Kandidaten=9.500->17270.000, 12.000->19705.000
 circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=12.500, r=9.500, best_err=17270.000)
 arm: Fehler=117.683
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
@@ -18,7 +18,7 @@ circle: minRect Δcx=4.000, Δcy=0.500, diag=27.727->17.464, scale=0.6299
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=196.868
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.270->9.500 (best_err=17018.000); Kandidaten=9.500->17018.000, 12.000->19580.000
+circle: Radius-Bracketing r 9.600->9.500 (best_err=17270.000); Kandidaten=9.500->17270.000, 12.000->19705.000
 circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=12.500, r=9.500, best_err=17270.000)
 arm: Fehler=117.683
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
@@ -33,7 +33,7 @@ circle: minRect Δcx=4.000, Δcy=0.500, diag=27.727->17.464, scale=0.6299
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=196.868
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.270->9.500 (best_err=17018.000); Kandidaten=9.500->17018.000, 12.000->19580.000
+circle: Radius-Bracketing r 9.600->9.500 (best_err=17270.000); Kandidaten=9.500->17270.000, 12.000->19705.000
 circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=12.500, r=9.500, best_err=17270.000)
 arm: Fehler=117.683
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
@@ -48,7 +48,7 @@ circle: minRect Δcx=4.000, Δcy=0.500, diag=27.727->17.464, scale=0.6299
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=196.868
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.270->9.500 (best_err=17018.000); Kandidaten=9.500->17018.000, 12.000->19580.000
+circle: Radius-Bracketing r 9.600->9.500 (best_err=17270.000); Kandidaten=9.500->17270.000, 12.000->19705.000
 circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=12.500, r=9.500, best_err=17270.000)
 arm: Fehler=117.683
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
@@ -63,7 +63,7 @@ circle: minRect Δcx=4.000, Δcy=0.500, diag=27.727->17.464, scale=0.6299
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=196.868
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.270->9.500 (best_err=17018.000); Kandidaten=9.500->17018.000, 12.000->19580.000
+circle: Radius-Bracketing r 9.600->9.500 (best_err=17270.000); Kandidaten=9.500->17270.000, 12.000->19705.000
 circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=12.500, r=9.500, best_err=17270.000)
 arm: Fehler=117.683
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
@@ -78,7 +78,7 @@ circle: minRect Δcx=4.000, Δcy=0.500, diag=27.727->17.464, scale=0.6299
 circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=196.868
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.270->9.500 (best_err=17018.000); Kandidaten=9.500->17018.000, 12.000->19580.000
+circle: Radius-Bracketing r 9.600->9.500 (best_err=17270.000); Kandidaten=9.500->17270.000, 12.000->19705.000
 circle: Joint-Multistart keine relevante Änderung (cx=12.500, cy=12.500, r=9.500, best_err=17270.000)
 arm: Fehler=117.683
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)

@@ -1491,3 +1491,34 @@ def test_semantic_transfer_scale_candidates_include_wide_range() -> None:
     scales = image_composite_converter._semantic_transfer_scale_candidates(1.0)
     assert min(scales) <= 0.55
     assert max(scales) >= 1.9
+
+
+def test_semantic_presence_reports_missing_and_undescribed_elements() -> None:
+    expected = Action._expected_semantic_presence([
+        "SEMANTIC: Kreis ohne Buchstabe",
+        "SEMANTIC: senkrechter Strich hinter dem Kreis",
+    ])
+    observed = {"circle": True, "stem": False, "arm": True, "text": False}
+
+    issues = Action._semantic_presence_mismatches(expected, observed)
+
+    assert any("erwartet senkrechter Strich" in item for item in issues)
+    assert any("waagrechter Strich" in item and "nicht in der Beschreibung" in item for item in issues)
+
+
+def test_stem_width_bounds_allow_limited_tuning_when_strokes_are_locked() -> None:
+    params = {
+        "stem_enabled": True,
+        "lock_stroke_widths": True,
+        "allow_stem_width_tuning": True,
+        "stem_width_max": 2.0,
+        "stem_width_tuning_px": 1.0,
+    }
+
+    info = Action._element_width_key_and_bounds("stem", params, 25, 45)
+
+    assert info is not None
+    key, low, high = info
+    assert key == "stem_width"
+    assert abs(float(low) - 1.0) < 1e-6
+    assert abs(float(high) - 2.0) < 1e-6

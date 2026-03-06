@@ -1,7 +1,11 @@
 <svg width="25" height="45" viewBox="0 0 25 45" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-  <g transform="translate(12.500 22.500) rotate(0) scale(0.9019) translate(-12.500 -22.500)">
-<rect x="11.5000" y="21.5000" width="2.0000" height="24.0000" fill="#7f7f7f"/>
-  <circle cx="12.5000" cy="12.5000" r="9.0000" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="1.0000"/>
-  <path d="M829 0V1194H381V1493H1636V1194H1188V0H829Z" fill="#7f7f7f" transform="translate(5.5000,10.0000) scale(0.008333,-0.008333) translate(-381,-1493)"/>
+  <g transform="translate(12.500 22.500) rotate(0) scale(0.8000) translate(-12.500 -22.500)">
+<g transform="translate(10.000 10.000) rotate(180) scale(1.2728) translate(-10.000 -10.000)">
+<g transform="translate(17.500 10.000) rotate(180) scale(1.0000) translate(-17.500 -10.000)">
+<line x1="0.0000" y1="10.0000" x2="18.0000" y2="10.0000" stroke="#7f7f7f" stroke-width="1.0000" stroke-linecap="round"/>
+  <circle cx="25.0000" cy="10.0000" r="7.0000" fill="#f2f2f2" stroke="#7f7f7f" stroke-width="1.0000"/>
+  <text x="25.0000" y="9.9200" fill="#7f7f7f" font-family="Arial, Helvetica, sans-serif" font-size="4.1860" font-style="normal" font-weight="600" letter-spacing="0.01em" text-anchor="middle" dominant-baseline="middle">VOC</text>
+  </g>
+  </g>
   </g>
 </svg>

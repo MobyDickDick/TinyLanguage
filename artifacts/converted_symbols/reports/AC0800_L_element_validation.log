@@ -1,10 +1,7 @@
 Runde 1: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=34.000->38.184, scale=1.1231
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=220.113
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 13.701->13.500 (best_err=4040.000); Kandidaten=10.500->22179.000, 13.500->4040.000, 14.000->8560.000, 14.500->16999.000
-circle: Joint-Multistart keine relevante Änderung (cx=15.000, cy=15.000, r=13.500, best_err=4040.000)
+circle: Radius-Bracketing r 12.200->13.500 (best_err=4040.000); Kandidaten=10.500->22179.000, 12.000->21185.000, 13.000->9130.000, 13.500->4040.000, 14.000->8560.000, 14.500->16999.000
 Runde 1: Gesamtfehler=6.847
 Gesamtfehler unter Schwellwert, Validierung beendet
 circle: Farb-Bracketing übersprungen (Farben gesperrt)

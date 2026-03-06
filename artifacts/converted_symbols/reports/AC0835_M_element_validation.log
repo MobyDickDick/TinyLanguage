@@ -1,122 +1,17 @@
 Runde 1: elementweise Validierung gestartet
-circle: minRect Δcx=0.500, Δcy=0.500, diag=21.213->25.020, scale=1.1795
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=190.788
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 8.728->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 8.500->11295.000, 9.000->7140.000, 9.500->11948.000
-circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=2.500, diag=9.487->13.416, scale=1.4142
-text: Parameter nach Mittelpunkt/Diagonale angepasst
+circle: Radius-Bracketing r 7.400->9.000 (best_err=7055.000); Kandidaten=7.000->14964.000, 7.500->16201.000, 8.500->10324.000, 9.000->7055.000, 9.500->11948.000
 text: Fehler=157.173
 text: Breiten-Bracketing übersprungen (voc_font_scale: current=0.520, Range=0.580..0.580)
-Runde 1: Gesamtfehler=18.470
+Runde 1: Gesamtfehler=19.305
 Runde 2: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
 circle: Fehler=79.631
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
-circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=1.000, diag=9.487->13.000, scale=1.3703
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 145.947->146.664; Box-Check verworfen (w_ratio=0.769, h_ratio=0.444, area_ratio=0.342))
-text: Fehler=145.947
+circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
+text: Fehler=157.173
 text: Breiten-Bracketing übersprungen (voc_font_scale: current=0.520, Range=0.580..0.580)
-Runde 2: Gesamtfehler=18.470
-Runde 3: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=79.631
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
-circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=1.000, diag=9.487->13.000, scale=1.3703
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 145.947->146.664; Box-Check verworfen (w_ratio=0.769, h_ratio=0.444, area_ratio=0.342))
-text: Fehler=145.947
-text: Breiten-Bracketing übersprungen (voc_font_scale: current=0.520, Range=0.580..0.580)
-Runde 3: Gesamtfehler=18.470
-Runde 4: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=79.631
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
-circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=1.000, diag=9.487->13.000, scale=1.3703
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 145.947->146.664; Box-Check verworfen (w_ratio=0.769, h_ratio=0.444, area_ratio=0.342))
-text: Fehler=145.947
-text: Breiten-Bracketing übersprungen (voc_font_scale: current=0.520, Range=0.580..0.580)
-Runde 4: Gesamtfehler=18.470
-Runde 5: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=79.631
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
-circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=1.000, diag=9.487->13.000, scale=1.3703
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 145.947->146.664; Box-Check verworfen (w_ratio=0.769, h_ratio=0.444, area_ratio=0.342))
-text: Fehler=145.947
-text: Breiten-Bracketing übersprungen (voc_font_scale: current=0.520, Range=0.580..0.580)
-Runde 5: Gesamtfehler=18.470
-Runde 6: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=79.631
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
-circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=1.000, diag=9.487->13.000, scale=1.3703
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 145.947->146.664; Box-Check verworfen (w_ratio=0.769, h_ratio=0.444, area_ratio=0.342))
-text: Fehler=145.947
-text: Breiten-Bracketing übersprungen (voc_font_scale: current=0.520, Range=0.580..0.580)
-Runde 6: Gesamtfehler=18.470
-Runde 7: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=79.631
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
-circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=1.000, diag=9.487->13.000, scale=1.3703
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 145.947->146.664; Box-Check verworfen (w_ratio=0.769, h_ratio=0.444, area_ratio=0.342))
-text: Fehler=145.947
-text: Breiten-Bracketing übersprungen (voc_font_scale: current=0.520, Range=0.580..0.580)
-Runde 7: Gesamtfehler=18.470
-Runde 8: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=79.631
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
-circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=1.000, diag=9.487->13.000, scale=1.3703
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 145.947->146.664; Box-Check verworfen (w_ratio=0.769, h_ratio=0.444, area_ratio=0.342))
-text: Fehler=145.947
-text: Breiten-Bracketing übersprungen (voc_font_scale: current=0.520, Range=0.580..0.580)
-Runde 8: Gesamtfehler=18.470
-Runde 9: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=79.631
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
-circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=1.000, diag=9.487->13.000, scale=1.3703
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 145.947->146.664; Box-Check verworfen (w_ratio=0.769, h_ratio=0.444, area_ratio=0.342))
-text: Fehler=145.947
-text: Breiten-Bracketing übersprungen (voc_font_scale: current=0.520, Range=0.580..0.580)
-Runde 9: Gesamtfehler=18.470
-Runde 10: elementweise Validierung gestartet
-circle: minRect Δcx=-0.000, Δcy=0.000, diag=25.931->26.000, scale=1.0027
-circle: Parameter nach Mittelpunkt/Diagonale angepasst
-circle: Fehler=79.631
-circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 9.024->9.000 (best_err=7140.000); Kandidaten=8.000->15106.000, 9.000->7140.000, 9.500->11948.000
-circle: Joint-Multistart keine relevante Änderung (cx=10.000, cy=10.000, r=9.000, best_err=7140.000)
-text: minRect Δcx=0.500, Δcy=1.000, diag=9.487->13.000, scale=1.3703
-text: Mittelpunkt/Diagonale-Update verworfen (Fehler 145.947->146.664; Box-Check verworfen (w_ratio=0.769, h_ratio=0.444, area_ratio=0.342))
-text: Fehler=145.947
-text: Breiten-Bracketing übersprungen (voc_font_scale: current=0.520, Range=0.580..0.580)
-Runde 10: Gesamtfehler=18.470
+Runde 2: Gesamtfehler=19.305
+Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: Farb-Bracketing übersprungen (Farben gesperrt)

@@ -164,7 +164,7 @@ class Reflection:
             if "ohne buchstabe" in desc:
                 params["elements"].append("SEMANTIC: Kreis ohne Buchstabe")
                 params["label"] = ""
-            elif "co_2" in desc or "co2" in desc:
+            elif Reflection._contains_co_marker(desc):
                 params["elements"].append("SEMANTIC: Kreis + Buchstabe CO_2")
                 params["label"] = "CO_2"
             elif "voc" in desc:
@@ -202,6 +202,16 @@ class Reflection:
             params["elements"].append("UNTEN: Parametrisch generiertes Viereck mit Kreuz")
 
         return desc, params
+
+    @staticmethod
+    def _contains_co_marker(text: str) -> bool:
+        """Hard-coded CO₂ exception: detect standalone CO and render as CO₂."""
+        if not text:
+            return False
+
+        subscript_digit_map = str.maketrans("₀₁₂₃₄₅₆₇₈₉", "0123456789")
+        normalized = text.lower().translate(subscript_digit_map)
+        return re.search(r"(^|[^a-z])co([^a-z]|$)", normalized) is not None
 
 
 class Action:

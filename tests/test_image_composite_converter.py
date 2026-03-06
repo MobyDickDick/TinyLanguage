@@ -1070,3 +1070,40 @@ def test_parse_description_marks_ac0810_as_semantic_badge() -> None:
     assert desc == ""
     assert params["mode"] == "semantic_badge"
     assert params["elements"] == ["SEMANTIC: Kreis + Buchstabe"]
+
+
+def test_parse_description_detects_co2_with_subscript_unicode() -> None:
+    """CO₂ descriptions should be detected even when Unicode subscripts are used."""
+    raw_desc = {"AC0820": "Kreis mit Buchstabenfolge CO₂"}
+    _, params = image_composite_converter.Reflection(raw_desc).parse_description("AC0820", "AC0820_L.jpg")
+
+    assert params["mode"] == "semantic_badge"
+    assert params["label"] == "CO_2"
+    assert "SEMANTIC: Kreis + Buchstabe CO_2" in params["elements"]
+
+
+def test_parse_description_detects_co2_with_spacing_and_hyphenation() -> None:
+    """CO2 parsing should be robust against separators in formula-like text."""
+    raw_desc = {"AC0820": "Kreis mit Buchstabenfolge CO - 2"}
+    _, params = image_composite_converter.Reflection(raw_desc).parse_description("AC0820", "AC0820_L.jpg")
+
+    assert params["mode"] == "semantic_badge"
+    assert params["label"] == "CO_2"
+
+
+def test_parse_description_hardcodes_plain_co_as_co2() -> None:
+    """Hard-coded exception: standalone CO should map to CO_2 label rendering."""
+    raw_desc = {"AC0820": "Kreis mit Buchstabenfolge CO"}
+    _, params = image_composite_converter.Reflection(raw_desc).parse_description("AC0820", "AC0820_L.jpg")
+
+    assert params["mode"] == "semantic_badge"
+    assert params["label"] == "CO_2"
+
+
+def test_parse_description_does_not_treat_embedded_co_in_words_as_co2() -> None:
+    """Only standalone CO markers should trigger the CO₂ special case."""
+    raw_desc = {"AC0820": "Kreis mit Buchstabenfolge icon"}
+    _, params = image_composite_converter.Reflection(raw_desc).parse_description("AC0820", "AC0820_L.jpg")
+
+    assert params["mode"] == "semantic_badge"
+    assert params["label"] != "CO_2"

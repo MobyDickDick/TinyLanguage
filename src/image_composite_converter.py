@@ -321,6 +321,12 @@ class Action:
     # Einheitliche AC08xx-Grauwerte (entspricht #7F7F7F).
     LIGHT_CIRCLE_STROKE_GRAY = 127
     LIGHT_CIRCLE_TEXT_GRAY = 127
+
+    # Global guardrail for text sizing in semantic badges.
+    # Historical runs were deliberately conservative to avoid overscaling on
+    # noisy rasters, but this can make converted labels consistently too small.
+    # Keep a mild global uplift that applies across text modes.
+    SEMANTIC_TEXT_BASE_SCALE = 1.08
     AC08_STROKE_WIDTH_PX = 1.0
 
     @staticmethod
@@ -607,9 +613,11 @@ class Action:
                 if min_dim <= 15.5:
                     # AC0835_S tends to over-scale VOC during text bracketing,
                     # producing a visibly heavy label compared to the source icon.
-                    base_scale = float(p.get("voc_font_scale", 0.52))
-                    p.setdefault("voc_font_scale_min", float(max(0.58, base_scale * 0.90)))
-                    p.setdefault("voc_font_scale_max", float(min(0.92, base_scale * 1.05)))
+                    # Keep the historical small-badge cap stable regardless of
+                    # global baseline uplifts so regression bounds remain intact.
+                    legacy_base_scale = 0.52
+                    p.setdefault("voc_font_scale_min", float(max(0.58, legacy_base_scale * 0.90)))
+                    p.setdefault("voc_font_scale_max", float(min(0.92, legacy_base_scale * 1.05)))
                 else:
                     # Medium/Large variants can start too small; pin a minimum
                     # readable baseline while still allowing upward tuning.
@@ -899,7 +907,7 @@ class Action:
         params["draw_text"] = True
         params["text_mode"] = "co2"
         params["text_gray"] = int(round(params.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY)))
-        params["co2_font_scale"] = float(params.get("co2_font_scale", 0.82))
+        params["co2_font_scale"] = float(params.get("co2_font_scale", 0.82 * Action.SEMANTIC_TEXT_BASE_SCALE))
         params["co2_sub_font_scale"] = float(params.get("co2_sub_font_scale", 66.0))
         params["co2_dx"] = float(params.get("co2_dx", 0.0))
         params["co2_dy"] = float(params.get("co2_dy", 0.0))
@@ -1074,7 +1082,7 @@ class Action:
         params["draw_text"] = True
         params["text_mode"] = "voc"
         params["text_gray"] = int(round(params.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY)))
-        params["voc_font_scale"] = float(params.get("voc_font_scale", 0.52))
+        params["voc_font_scale"] = float(params.get("voc_font_scale", 0.52 * Action.SEMANTIC_TEXT_BASE_SCALE))
         params["voc_dy"] = float(params.get("voc_dy", -0.01 * float(params.get("r", 0.0))))
         params["voc_weight"] = int(params.get("voc_weight", 600))
         return params
@@ -4588,10 +4596,20 @@ def _semantic_transfer_badge_params(
         p["stem_top"] = float(np.clip(min(y1, y2), 0.0, float(target_h)))
         p["stem_bottom"] = float(np.clip(max(y1, y2), 0.0, float(target_h)))
 
-    # Keep text horizontally readable; only scale text size mildly with radius changes.
+    # Keep text horizontally readable while preventing aggressive down-scaling
+    # during template transfer. The historical sqrt(scale) shrink was often too
+    # strong and produced undersized labels in converted outputs.
     if bool(p.get("draw_text", False)):
+        text_scale = max(0.5, min(1.8, float(scale)))
+        # Gentle response to geometric scale changes: preserve legibility for
+        # downscaled transfers while still allowing moderate growth.
+        text_adjust = max(0.90, min(1.18, text_scale ** 0.38))
         if "s" in p:
-            p["s"] = float(max(1e-4, float(p.get("s", 0.01)) * math.sqrt(max(0.5, min(1.8, float(scale))))))
+            p["s"] = float(max(1e-4, float(p.get("s", 0.01)) * text_adjust))
+        if "co2_font_scale" in p:
+            p["co2_font_scale"] = float(max(0.30, float(p.get("co2_font_scale", 0.82)) * text_adjust))
+        if "voc_font_scale" in p:
+            p["voc_font_scale"] = float(max(0.30, float(p.get("voc_font_scale", 0.52)) * text_adjust))
 
     symbol_name = str(target_params.get("label") or target_params.get("variant") or target_params.get("base") or "")
     if symbol_name:

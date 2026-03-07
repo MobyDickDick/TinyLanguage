@@ -30,21 +30,31 @@ def test_co2_layout_legacy_cluster_mode_still_supported() -> None:
     assert float(layout["co_x"]) < float(params["cx"])
 
 
-def test_finalize_ac0820_uses_center_co_anchor_mode() -> None:
-    """AC0820 should keep the main CO run centered for better optical balance."""
+def test_finalize_ac0820_uses_cluster_anchor_mode() -> None:
+    """AC0820 should center the full CO₂ cluster horizontally."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
     params = Action._finalize_ac08_style("AC0820", params)
 
-    assert params["co2_anchor_mode"] == "center_co"
+    assert params["co2_anchor_mode"] == "cluster"
 
 
-def test_finalize_ac0820_variant_name_uses_center_co_anchor_mode() -> None:
-    """AC0820 variant names (e.g. AC0820_L) should keep center_co alignment."""
+def test_finalize_ac0820_variant_name_uses_cluster_anchor_mode() -> None:
+    """AC0820 variant names (e.g. AC0820_L) should center the full CO₂ label."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))
     params = Action._finalize_ac08_style("AC0820_L", params)
 
-    assert params["co2_anchor_mode"] == "center_co"
+    assert params["co2_anchor_mode"] == "cluster"
     assert float(params["co2_optical_bias"]) >= 0.125
+
+
+def test_parse_semantic_badge_layout_overrides_centers_full_co2_cluster() -> None:
+    """Horizontal centering directive should target the full CO₂ cluster."""
+    overrides = image_composite_converter.Reflection._parse_semantic_badge_layout_overrides(
+        "CO_2 bezüglich des Kreises horizontal zentriert"
+    )
+
+    assert overrides["co2_anchor_mode"] == "cluster"
+    assert float(overrides["co2_dx"]) == 0.0
 
 
 def test_finalize_ac0820_locks_plain_circle_center_and_min_radius() -> None:
@@ -880,7 +890,7 @@ def test_text_width_bracketing_keeps_fractional_font_scale_precision() -> None:
 def test_co2_layout_prioritizes_co_centering_before_cluster_centering() -> None:
     """center_co mode should keep the main CO run centered, even with a large subscript."""
     params = Action._apply_co2_label(Action._default_ac0870_params(20, 20))
-    params = Action._finalize_ac08_style("AC0820_M", params)
+    params["co2_anchor_mode"] = "center_co"
     params["co2_sub_font_scale"] = 130.0
 
     layout = Action._co2_layout(params)

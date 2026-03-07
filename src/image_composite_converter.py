@@ -270,9 +270,9 @@ class Reflection:
             overrides["co2_optical_bias"] = 0.0
 
         if re.search(r"\bco(?:[_\s-]*2|₂)\b[^.\n]*horizontal\s+zentriert", normalized):
-            # Keep the dominant CO run centered when horizontal centering is
-            # requested; this is what badge review expects for AC0820 variants.
-            overrides["co2_anchor_mode"] = "center_co"
+            # Horizontal centering explicitly targets the full CO₂ cluster,
+            # not just the dominant "CO" run.
+            overrides["co2_anchor_mode"] = "cluster"
             overrides["co2_dx"] = 0.0
 
         return overrides
@@ -509,10 +509,8 @@ class Action:
         if symbol_name != "AC0820":
             p = Action._normalize_centered_co2_label(p)
         if symbol_name == "AC0820" and str(p.get("text_mode", "")).lower() == "co2":
-            # AC0820 variants (L/M/S): keep "CO" itself centered and nudge it
-            # slightly lower. Centering the whole cluster makes the visually
-            # dominant run look too far left in tiny badges.
-            p["co2_anchor_mode"] = "center_co"
+            # AC0820 variants (L/M/S): center the full CO₂ cluster horizontally.
+            p["co2_anchor_mode"] = "cluster"
             p["co2_optical_bias"] = 0.125
             r = max(1.0, float(p.get("r", 1.0)))
             # Keep AC0820 text close to the cap-height used by centered path

@@ -2824,6 +2824,169 @@ class Action:
         return True
 
     @staticmethod
+    def _optimize_circle_pose_adaptive_domain(
+        img_orig: np.ndarray,
+        params: dict,
+        logs: list[str],
+        *,
+        rounds: int = 4,
+        samples_per_round: int = 18,
+    ) -> bool:
+        """Adaptive random-domain search with iterative domain shrinking.
+
+        Strategy:
+        1) Start from a broad but plausible 3D domain (cx, cy, r).
+        2) Evaluate random samples and keep a near-optimal plateau.
+        3) Estimate a surrogate minimum from the plateau center and best sample.
+        4) Shrink the domain and repeat.
+        """
+        if not params.get("circle_enabled", True):
+            return False
+
+        h, w = img_orig.shape[:2]
+        x_low, x_high, y_low, y_high, r_low, r_high = Action._circle_bounds(params, w, h)
+        lock_cx = bool(params.get("lock_circle_cx", False))
+        lock_cy = bool(params.get("lock_circle_cy", False))
+
+        current = (
+            Action._snap_half(float(params.get("cx", (w - 1) / 2.0))),
+            Action._snap_half(float(params.get("cy", (h - 1) / 2.0))),
+            Action._snap_half(float(params.get("r", max(1.0, min(w, h) * 0.3)))),
+        )
+
+        def clamp_pose(candidate: tuple[float, float, float]) -> tuple[float, float, float]:
+            cx, cy, rad = candidate
+            if lock_cx:
+                cx = current[0]
+            else:
+                cx = Action._snap_half(float(np.clip(cx, x_low, x_high)))
+            if lock_cy:
+                cy = current[1]
+            else:
+                cy = Action._snap_half(float(np.clip(cy, y_low, y_high)))
+            rad = Action._snap_half(float(np.clip(rad, r_low, r_high)))
+            return cx, cy, rad
+
+        cache: dict[tuple[float, float, float], float] = {}
+
+        def eval_pose(candidate: tuple[float, float, float]) -> float:
+            pose = clamp_pose(candidate)
+            if pose not in cache:
+                cache[pose] = float(
+                    Action._element_error_for_circle_pose(
+                        img_orig,
+                        params,
+                        cx_value=pose[0],
+                        cy_value=pose[1],
+                        radius_value=pose[2],
+                    )
+                )
+            return cache[pose]
+
+        best = clamp_pose(current)
+        best_err = eval_pose(best)
+        if not np.isfinite(best_err):
+            return False
+
+        domain = {
+            "cx_low": x_low,
+            "cx_high": x_high,
+            "cy_low": y_low,
+            "cy_high": y_high,
+            "r_low": r_low,
+            "r_high": r_high,
+        }
+
+        rng = np.random.default_rng(2027 + int(Action.STOCHASTIC_SEED_OFFSET))
+        improved = False
+        flat_plateau_hits = 0
+
+        for _round in range(max(1, rounds)):
+            samples: list[tuple[tuple[float, float, float], float]] = [(best, best_err)]
+            for _ in range(max(8, int(samples_per_round))):
+                if lock_cx:
+                    cx = current[0]
+                else:
+                    cx = float(rng.uniform(domain["cx_low"], domain["cx_high"]))
+                if lock_cy:
+                    cy = current[1]
+                else:
+                    cy = float(rng.uniform(domain["cy_low"], domain["cy_high"]))
+                rad = float(rng.uniform(domain["r_low"], domain["r_high"]))
+                pose = clamp_pose((cx, cy, rad))
+                samples.append((pose, eval_pose(pose)))
+
+            finite = [pair for pair in samples if np.isfinite(pair[1])]
+            if not finite:
+                continue
+            finite.sort(key=lambda item: item[1])
+            round_best, round_best_err = finite[0]
+
+            # Build a near-optimal plateau and use its center as a smooth surrogate.
+            plateau_eps = max(0.06, round_best_err * 0.02)
+            plateau = [pose for pose, err in finite if err <= round_best_err + plateau_eps]
+            if len(plateau) >= 4:
+                flat_plateau_hits += 1
+
+            plateau_arr = np.array(plateau, dtype=np.float64) if plateau else np.array([round_best], dtype=np.float64)
+            plateau_min = plateau_arr.min(axis=0)
+            plateau_max = plateau_arr.max(axis=0)
+            plateau_mid = clamp_pose(tuple((plateau_min + plateau_max) / 2.0))
+            plateau_mid_err = eval_pose(plateau_mid)
+
+            candidate_best = round_best
+            candidate_err = round_best_err
+            if np.isfinite(plateau_mid_err) and plateau_mid_err < candidate_err:
+                candidate_best = plateau_mid
+                candidate_err = plateau_mid_err
+
+            if candidate_err + 0.05 < best_err:
+                best = candidate_best
+                best_err = candidate_err
+                improved = True
+
+            # Iteratively shrink domain around the stable near-optimal region.
+            shrink = 0.58
+            if not lock_cx:
+                half_span = max(0.5, float((domain["cx_high"] - domain["cx_low"]) * shrink * 0.5))
+                focus = float(best[0] if len(plateau) <= 1 else (plateau_min[0] + plateau_max[0]) / 2.0)
+                domain["cx_low"] = max(x_low, focus - half_span)
+                domain["cx_high"] = min(x_high, focus + half_span)
+            if not lock_cy:
+                half_span = max(0.5, float((domain["cy_high"] - domain["cy_low"]) * shrink * 0.5))
+                focus = float(best[1] if len(plateau) <= 1 else (plateau_min[1] + plateau_max[1]) / 2.0)
+                domain["cy_low"] = max(y_low, focus - half_span)
+                domain["cy_high"] = min(y_high, focus + half_span)
+            half_span_r = max(0.5, float((domain["r_high"] - domain["r_low"]) * shrink * 0.5))
+            focus_r = float(best[2] if len(plateau) <= 1 else (plateau_min[2] + plateau_max[2]) / 2.0)
+            domain["r_low"] = max(r_low, focus_r - half_span_r)
+            domain["r_high"] = min(r_high, focus_r + half_span_r)
+
+        if not improved:
+            logs.append("circle: Adaptive-Domain-Suche keine relevante Verbesserung")
+            return False
+
+        params["cx"], params["cy"], params["r"] = best
+        if params.get("arm_enabled"):
+            Action._reanchor_arm_to_circle_edge(params, best[2])
+        if params.get("stem_enabled"):
+            params["stem_top"] = float(params.get("cy", 0.0)) + best[2]
+
+        boundary_hit = (
+            (not lock_cx and (abs(best[0] - x_low) <= 0.01 or abs(best[0] - x_high) <= 0.01))
+            or (not lock_cy and (abs(best[1] - y_low) <= 0.01 or abs(best[1] - y_high) <= 0.01))
+            or abs(best[2] - r_low) <= 0.01
+            or abs(best[2] - r_high) <= 0.01
+        )
+        flat_hint = flat_plateau_hits >= 2
+        logs.append(
+            "circle: Adaptive-Domain-Suche übernommen "
+            f"(cx={best[0]:.3f}, cy={best[1]:.3f}, r={best[2]:.3f}, err={best_err:.3f}, "
+            f"rand_optimum={'ja' if boundary_hit else 'nein'}, flaches_optimum={'ja' if flat_hint else 'nein'})"
+        )
+        return True
+
+    @staticmethod
     def _element_width_key_and_bounds(
         element: str, params: dict, w: int, h: int, img_orig: np.ndarray | None = None
     ) -> tuple[str, float, float] | None:
@@ -3326,8 +3489,11 @@ class Action:
             or abs(best_r - max_r) <= 0.01
         )
         if at_boundary:
-            logs.append("circle: Joint-Multistart liegt am Rand; starte stochastic survivor search")
-            Action._optimize_circle_pose_stochastic_survivor(img_orig, params, logs)
+            logs.append("circle: Joint-Multistart liegt am Rand; starte adaptive Domain-Suche")
+            improved = Action._optimize_circle_pose_adaptive_domain(img_orig, params, logs)
+            if not improved:
+                logs.append("circle: Adaptive-Domain-Suche ohne Gewinn; fallback auf stochastic survivor")
+                Action._optimize_circle_pose_stochastic_survivor(img_orig, params, logs)
         return True
 
     @staticmethod

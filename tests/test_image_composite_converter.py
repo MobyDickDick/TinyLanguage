@@ -877,17 +877,24 @@ def test_text_width_bracketing_keeps_fractional_font_scale_precision() -> None:
     assert any("Breiten-Bracketing" in line for line in logs)
 
 
-def test_co2_layout_prioritizes_cluster_centering_before_subscript_shift() -> None:
-    """Centered CO₂ should keep the combined cluster near the circle center."""
+def test_co2_layout_prioritizes_co_centering_before_cluster_centering() -> None:
+    """center_co mode should keep the main CO run centered, even with a large subscript."""
     params = Action._apply_co2_label(Action._default_ac0870_params(20, 20))
     params = Action._finalize_ac08_style("AC0820_M", params)
     params["co2_sub_font_scale"] = 130.0
 
     layout = Action._co2_layout(params)
-    cluster_center = (float(layout["x1"]) + float(layout["x2"])) / 2.0
+    cx = float(params["cx"])
+    r = float(params["r"])
+    stroke = float(params["stroke_circle"])
+    inner_padding = float(params.get("co2_inner_padding_px", 0.35))
 
-    assert abs(cluster_center - float(params["cx"])) <= 0.20
-    assert float(layout["co_x"]) <= float(params["cx"])
+    inner_left = cx - max(1.0, r - stroke) + inner_padding
+    inner_right = cx + max(1.0, r - stroke) - inner_padding
+
+    assert abs(float(layout["co_x"]) - cx) <= 0.20
+    assert float(layout["x1"]) >= inner_left - 1e-6
+    assert float(layout["x2"]) <= inner_right + 1e-6
 
 
 def test_co2_layout_can_shrink_subscript_before_moving_co() -> None:

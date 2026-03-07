@@ -2,16 +2,16 @@ Runde 1: elementweise Validierung gestartet
 circle: Fehler=183.678
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing r 5.000->6.500 (best_err=5142.000); Kandidaten=5.500->8359.000, 6.000->7054.000, 6.500->5142.000, 7.000->5334.000
-text: Fehler=129.826
-text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.970); Kandidaten=0.873->146.688, 0.919->145.310, 0.965->129.826, 0.970->129.826, 1.026->129.826, 1.088->129.826, 1.115->129.826, 1.134->129.826, 1.180->129.826
-Runde 1: Gesamtfehler=24.973
+text: Fehler=133.577
+text: Breiten-Bracketing co2_font_scale 0.970->0.873; Kandidaten=0.873->133.577, 0.919->133.577, 0.965->133.577, 0.970->133.577, 1.026->133.577, 1.088->133.577, 1.115->133.577, 1.134->133.577, 1.180->133.577
+Runde 1: Gesamtfehler=25.071
 Runde 2: elementweise Validierung gestartet
 circle: Fehler=99.815
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing keine relevante Änderung (r: 6.500, best_err=5302.000); Kandidaten=6.000->8160.000, 6.500->5302.000, 7.000->5385.000
-text: Fehler=129.826
-text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.970); Kandidaten=0.873->146.688, 0.919->145.310, 0.965->129.826, 0.970->129.826, 1.026->129.826, 1.088->129.826, 1.115->129.826, 1.134->129.826, 1.180->129.826
-Runde 2: Gesamtfehler=24.973
+text: Fehler=133.577
+text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.873); Kandidaten=0.873->133.577, 0.919->133.577, 0.965->133.577, 1.004->133.577, 1.026->133.577, 1.088->133.577, 1.134->133.577, 1.180->133.577
+Runde 2: Gesamtfehler=25.071
 Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 text: Farb-Bracketing übersprungen (Farben gesperrt)

@@ -321,6 +321,12 @@ class Action:
     # Einheitliche AC08xx-Grauwerte (entspricht #7F7F7F).
     LIGHT_CIRCLE_STROKE_GRAY = 127
     LIGHT_CIRCLE_TEXT_GRAY = 127
+
+    # Global guardrail for text sizing in semantic badges.
+    # Historical runs were deliberately conservative to avoid overscaling on
+    # noisy rasters, but this can make converted labels consistently too small.
+    # Keep a mild global uplift that applies across text modes.
+    SEMANTIC_TEXT_BASE_SCALE = 1.08
     AC08_STROKE_WIDTH_PX = 1.0
 
     @staticmethod
@@ -607,9 +613,11 @@ class Action:
                 if min_dim <= 15.5:
                     # AC0835_S tends to over-scale VOC during text bracketing,
                     # producing a visibly heavy label compared to the source icon.
-                    base_scale = float(p.get("voc_font_scale", 0.52))
-                    p.setdefault("voc_font_scale_min", float(max(0.58, base_scale * 0.90)))
-                    p.setdefault("voc_font_scale_max", float(min(0.92, base_scale * 1.05)))
+                    # Keep the historical small-badge cap stable regardless of
+                    # global baseline uplifts so regression bounds remain intact.
+                    legacy_base_scale = 0.52
+                    p.setdefault("voc_font_scale_min", float(max(0.58, legacy_base_scale * 0.90)))
+                    p.setdefault("voc_font_scale_max", float(min(0.92, legacy_base_scale * 1.05)))
                 else:
                     # Medium/Large variants can start too small; pin a minimum
                     # readable baseline while still allowing upward tuning.
@@ -899,7 +907,7 @@ class Action:
         params["draw_text"] = True
         params["text_mode"] = "co2"
         params["text_gray"] = int(round(params.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY)))
-        params["co2_font_scale"] = float(params.get("co2_font_scale", 0.82))
+        params["co2_font_scale"] = float(params.get("co2_font_scale", 0.82 * Action.SEMANTIC_TEXT_BASE_SCALE))
         params["co2_sub_font_scale"] = float(params.get("co2_sub_font_scale", 66.0))
         params["co2_dx"] = float(params.get("co2_dx", 0.0))
         params["co2_dy"] = float(params.get("co2_dy", 0.0))
@@ -1074,7 +1082,7 @@ class Action:
         params["draw_text"] = True
         params["text_mode"] = "voc"
         params["text_gray"] = int(round(params.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY)))
-        params["voc_font_scale"] = float(params.get("voc_font_scale", 0.52))
+        params["voc_font_scale"] = float(params.get("voc_font_scale", 0.52 * Action.SEMANTIC_TEXT_BASE_SCALE))
         params["voc_dy"] = float(params.get("voc_dy", -0.01 * float(params.get("r", 0.0))))
         params["voc_weight"] = int(params.get("voc_weight", 600))
         return params
@@ -2816,6 +2824,169 @@ class Action:
         return True
 
     @staticmethod
+    def _optimize_circle_pose_adaptive_domain(
+        img_orig: np.ndarray,
+        params: dict,
+        logs: list[str],
+        *,
+        rounds: int = 4,
+        samples_per_round: int = 18,
+    ) -> bool:
+        """Adaptive random-domain search with iterative domain shrinking.
+
+        Strategy:
+        1) Start from a broad but plausible 3D domain (cx, cy, r).
+        2) Evaluate random samples and keep a near-optimal plateau.
+        3) Estimate a surrogate minimum from the plateau center and best sample.
+        4) Shrink the domain and repeat.
+        """
+        if not params.get("circle_enabled", True):
+            return False
+
+        h, w = img_orig.shape[:2]
+        x_low, x_high, y_low, y_high, r_low, r_high = Action._circle_bounds(params, w, h)
+        lock_cx = bool(params.get("lock_circle_cx", False))
+        lock_cy = bool(params.get("lock_circle_cy", False))
+
+        current = (
+            Action._snap_half(float(params.get("cx", (w - 1) / 2.0))),
+            Action._snap_half(float(params.get("cy", (h - 1) / 2.0))),
+            Action._snap_half(float(params.get("r", max(1.0, min(w, h) * 0.3)))),
+        )
+
+        def clamp_pose(candidate: tuple[float, float, float]) -> tuple[float, float, float]:
+            cx, cy, rad = candidate
+            if lock_cx:
+                cx = current[0]
+            else:
+                cx = Action._snap_half(float(np.clip(cx, x_low, x_high)))
+            if lock_cy:
+                cy = current[1]
+            else:
+                cy = Action._snap_half(float(np.clip(cy, y_low, y_high)))
+            rad = Action._snap_half(float(np.clip(rad, r_low, r_high)))
+            return cx, cy, rad
+
+        cache: dict[tuple[float, float, float], float] = {}
+
+        def eval_pose(candidate: tuple[float, float, float]) -> float:
+            pose = clamp_pose(candidate)
+            if pose not in cache:
+                cache[pose] = float(
+                    Action._element_error_for_circle_pose(
+                        img_orig,
+                        params,
+                        cx_value=pose[0],
+                        cy_value=pose[1],
+                        radius_value=pose[2],
+                    )
+                )
+            return cache[pose]
+
+        best = clamp_pose(current)
+        best_err = eval_pose(best)
+        if not np.isfinite(best_err):
+            return False
+
+        domain = {
+            "cx_low": x_low,
+            "cx_high": x_high,
+            "cy_low": y_low,
+            "cy_high": y_high,
+            "r_low": r_low,
+            "r_high": r_high,
+        }
+
+        rng = np.random.default_rng(2027 + int(Action.STOCHASTIC_SEED_OFFSET))
+        improved = False
+        flat_plateau_hits = 0
+
+        for _round in range(max(1, rounds)):
+            samples: list[tuple[tuple[float, float, float], float]] = [(best, best_err)]
+            for _ in range(max(8, int(samples_per_round))):
+                if lock_cx:
+                    cx = current[0]
+                else:
+                    cx = float(rng.uniform(domain["cx_low"], domain["cx_high"]))
+                if lock_cy:
+                    cy = current[1]
+                else:
+                    cy = float(rng.uniform(domain["cy_low"], domain["cy_high"]))
+                rad = float(rng.uniform(domain["r_low"], domain["r_high"]))
+                pose = clamp_pose((cx, cy, rad))
+                samples.append((pose, eval_pose(pose)))
+
+            finite = [pair for pair in samples if np.isfinite(pair[1])]
+            if not finite:
+                continue
+            finite.sort(key=lambda item: item[1])
+            round_best, round_best_err = finite[0]
+
+            # Build a near-optimal plateau and use its center as a smooth surrogate.
+            plateau_eps = max(0.06, round_best_err * 0.02)
+            plateau = [pose for pose, err in finite if err <= round_best_err + plateau_eps]
+            if len(plateau) >= 4:
+                flat_plateau_hits += 1
+
+            plateau_arr = np.array(plateau, dtype=np.float64) if plateau else np.array([round_best], dtype=np.float64)
+            plateau_min = plateau_arr.min(axis=0)
+            plateau_max = plateau_arr.max(axis=0)
+            plateau_mid = clamp_pose(tuple((plateau_min + plateau_max) / 2.0))
+            plateau_mid_err = eval_pose(plateau_mid)
+
+            candidate_best = round_best
+            candidate_err = round_best_err
+            if np.isfinite(plateau_mid_err) and plateau_mid_err < candidate_err:
+                candidate_best = plateau_mid
+                candidate_err = plateau_mid_err
+
+            if candidate_err + 0.05 < best_err:
+                best = candidate_best
+                best_err = candidate_err
+                improved = True
+
+            # Iteratively shrink domain around the stable near-optimal region.
+            shrink = 0.58
+            if not lock_cx:
+                half_span = max(0.5, float((domain["cx_high"] - domain["cx_low"]) * shrink * 0.5))
+                focus = float(best[0] if len(plateau) <= 1 else (plateau_min[0] + plateau_max[0]) / 2.0)
+                domain["cx_low"] = max(x_low, focus - half_span)
+                domain["cx_high"] = min(x_high, focus + half_span)
+            if not lock_cy:
+                half_span = max(0.5, float((domain["cy_high"] - domain["cy_low"]) * shrink * 0.5))
+                focus = float(best[1] if len(plateau) <= 1 else (plateau_min[1] + plateau_max[1]) / 2.0)
+                domain["cy_low"] = max(y_low, focus - half_span)
+                domain["cy_high"] = min(y_high, focus + half_span)
+            half_span_r = max(0.5, float((domain["r_high"] - domain["r_low"]) * shrink * 0.5))
+            focus_r = float(best[2] if len(plateau) <= 1 else (plateau_min[2] + plateau_max[2]) / 2.0)
+            domain["r_low"] = max(r_low, focus_r - half_span_r)
+            domain["r_high"] = min(r_high, focus_r + half_span_r)
+
+        if not improved:
+            logs.append("circle: Adaptive-Domain-Suche keine relevante Verbesserung")
+            return False
+
+        params["cx"], params["cy"], params["r"] = best
+        if params.get("arm_enabled"):
+            Action._reanchor_arm_to_circle_edge(params, best[2])
+        if params.get("stem_enabled"):
+            params["stem_top"] = float(params.get("cy", 0.0)) + best[2]
+
+        boundary_hit = (
+            (not lock_cx and (abs(best[0] - x_low) <= 0.01 or abs(best[0] - x_high) <= 0.01))
+            or (not lock_cy and (abs(best[1] - y_low) <= 0.01 or abs(best[1] - y_high) <= 0.01))
+            or abs(best[2] - r_low) <= 0.01
+            or abs(best[2] - r_high) <= 0.01
+        )
+        flat_hint = flat_plateau_hits >= 2
+        logs.append(
+            "circle: Adaptive-Domain-Suche übernommen "
+            f"(cx={best[0]:.3f}, cy={best[1]:.3f}, r={best[2]:.3f}, err={best_err:.3f}, "
+            f"rand_optimum={'ja' if boundary_hit else 'nein'}, flaches_optimum={'ja' if flat_hint else 'nein'})"
+        )
+        return True
+
+    @staticmethod
     def _element_width_key_and_bounds(
         element: str, params: dict, w: int, h: int, img_orig: np.ndarray | None = None
     ) -> tuple[str, float, float] | None:
@@ -3318,8 +3489,11 @@ class Action:
             or abs(best_r - max_r) <= 0.01
         )
         if at_boundary:
-            logs.append("circle: Joint-Multistart liegt am Rand; starte stochastic survivor search")
-            Action._optimize_circle_pose_stochastic_survivor(img_orig, params, logs)
+            logs.append("circle: Joint-Multistart liegt am Rand; starte adaptive Domain-Suche")
+            improved = Action._optimize_circle_pose_adaptive_domain(img_orig, params, logs)
+            if not improved:
+                logs.append("circle: Adaptive-Domain-Suche ohne Gewinn; fallback auf stochastic survivor")
+                Action._optimize_circle_pose_stochastic_survivor(img_orig, params, logs)
         return True
 
     @staticmethod
@@ -4588,10 +4762,20 @@ def _semantic_transfer_badge_params(
         p["stem_top"] = float(np.clip(min(y1, y2), 0.0, float(target_h)))
         p["stem_bottom"] = float(np.clip(max(y1, y2), 0.0, float(target_h)))
 
-    # Keep text horizontally readable; only scale text size mildly with radius changes.
+    # Keep text horizontally readable while preventing aggressive down-scaling
+    # during template transfer. The historical sqrt(scale) shrink was often too
+    # strong and produced undersized labels in converted outputs.
     if bool(p.get("draw_text", False)):
+        text_scale = max(0.5, min(1.8, float(scale)))
+        # Gentle response to geometric scale changes: preserve legibility for
+        # downscaled transfers while still allowing moderate growth.
+        text_adjust = max(0.90, min(1.18, text_scale ** 0.38))
         if "s" in p:
-            p["s"] = float(max(1e-4, float(p.get("s", 0.01)) * math.sqrt(max(0.5, min(1.8, float(scale))))))
+            p["s"] = float(max(1e-4, float(p.get("s", 0.01)) * text_adjust))
+        if "co2_font_scale" in p:
+            p["co2_font_scale"] = float(max(0.30, float(p.get("co2_font_scale", 0.82)) * text_adjust))
+        if "voc_font_scale" in p:
+            p["voc_font_scale"] = float(max(0.30, float(p.get("voc_font_scale", 0.52)) * text_adjust))
 
     symbol_name = str(target_params.get("label") or target_params.get("variant") or target_params.get("base") or "")
     if symbol_name:

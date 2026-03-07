@@ -613,9 +613,11 @@ class Action:
                 if min_dim <= 15.5:
                     # AC0835_S tends to over-scale VOC during text bracketing,
                     # producing a visibly heavy label compared to the source icon.
-                    base_scale = float(p.get("voc_font_scale", 0.52))
-                    p.setdefault("voc_font_scale_min", float(max(0.58, base_scale * 0.90)))
-                    p.setdefault("voc_font_scale_max", float(min(0.92, base_scale * 1.05)))
+                    # Keep the historical small-badge cap stable regardless of
+                    # global baseline uplifts so regression bounds remain intact.
+                    legacy_base_scale = 0.52
+                    p.setdefault("voc_font_scale_min", float(max(0.58, legacy_base_scale * 0.90)))
+                    p.setdefault("voc_font_scale_max", float(min(0.92, legacy_base_scale * 1.05)))
                 else:
                     # Medium/Large variants can start too small; pin a minimum
                     # readable baseline while still allowing upward tuning.

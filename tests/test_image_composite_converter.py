@@ -268,6 +268,64 @@ def test_co2_layout_keeps_text_within_inner_circle_bounds() -> None:
     assert text_bottom <= inner_bottom + 1e-6
 
 
+def test_optimize_circle_pose_adaptive_domain_improves_and_logs(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Adaptive domain search should improve pose and report boundary/plateau hints."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.full((20, 20, 3), 220, dtype=np.uint8)
+    params = {
+        "circle_enabled": True,
+        "cx": 3.0,
+        "cy": 3.0,
+        "r": 2.0,
+        "min_circle_radius": 1.0,
+    }
+
+    def fake_error(_img: object, _params: dict, *, cx_value: float, cy_value: float, radius_value: float) -> float:
+        return float((cx_value - 9.0) ** 2 + (cy_value - 10.0) ** 2 + (radius_value - 5.0) ** 2)
+
+    monkeypatch.setattr(Action, "_element_error_for_circle_pose", staticmethod(fake_error))
+    logs: list[str] = []
+
+    changed = Action._optimize_circle_pose_adaptive_domain(img, params, logs, rounds=3, samples_per_round=14)
+
+    assert changed is True
+    assert abs(float(params["cx"]) - 9.0) <= 3.0
+    assert abs(float(params["cy"]) - 10.0) <= 3.0
+    assert abs(float(params["r"]) - 5.0) <= 2.0
+    assert any("Adaptive-Domain-Suche übernommen" in line for line in logs)
+
+
+def test_optimize_circle_pose_adaptive_domain_no_improvement(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Adaptive domain search should return False when no better sample exists."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.full((20, 20, 3), 220, dtype=np.uint8)
+    params = {
+        "circle_enabled": True,
+        "cx": 9.0,
+        "cy": 10.0,
+        "r": 5.0,
+        "min_circle_radius": 1.0,
+    }
+
+    monkeypatch.setattr(
+        Action,
+        "_element_error_for_circle_pose",
+        staticmethod(lambda *_args, **_kwargs: 1.0),
+    )
+    logs: list[str] = []
+
+    changed = Action._optimize_circle_pose_adaptive_domain(img, params, logs, rounds=2, samples_per_round=10)
+
+    assert changed is False
+    assert any("keine relevante Verbesserung" in line for line in logs)
+
+
 def test_co2_layout_vertical_centering_ignores_subscript_for_main_text() -> None:
     """The CO run should stay centered even if the subscript is very large."""
     params = Action._apply_co2_label(Action._default_ac0870_params(15, 15))

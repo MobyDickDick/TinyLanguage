@@ -1238,7 +1238,23 @@ class Action:
         params["arm_x2"] = max(0.0, cx - r)
         params["arm_y2"] = cy
         current_arm_len = float(np.hypot(params["arm_x2"] - params["arm_x1"], params["arm_y2"] - params["arm_y1"]))
-        params["arm_len_min"] = max(1.0, current_arm_len * 0.75)
+        default_arm_len = max(
+            0.0,
+            float(defaults.get("cx", float(w) / 2.0)) - float(defaults.get("r", float(h) * 0.4)),
+        )
+        # Keep AC0812 connector geometry anchored to the semantic template. If we
+        # derive the minimum arm length from an already-overgrown fitted circle,
+        # later circle optimization can converge to the same unstable large-radius
+        # solution. Use the template arm span as the lower bound baseline instead.
+        semantic_arm_len_min = max(1.0, default_arm_len * 0.90)
+        params["arm_len_min"] = max(1.0, current_arm_len * 0.75, semantic_arm_len_min)
+        params["arm_len_min_ratio"] = float(max(float(params.get("arm_len_min_ratio", 0.75)), 0.90))
+
+        # Expose a stable upper radius bound for later stochastic/adaptive circle
+        # searches. This prevents left-arm AC0812 variants from re-growing the
+        # circle and shortening the mandatory connector arm during optimization.
+        max_r_from_arm_span = max(1.0, cx - params["arm_len_min"])
+        params["max_circle_radius"] = float(min(default_r, max_r_from_arm_span))
         return Action._normalize_light_circle_colors(params)
 
     @staticmethod
@@ -2740,6 +2756,8 @@ class Action:
     def _circle_bounds(params: dict, w: int, h: int) -> tuple[float, float, float, float, float, float]:
         min_r = float(max(1.0, params.get("min_circle_radius", 1.0)))
         max_r = max(min_r, float(min(w, h)) * 0.48)
+        if "max_circle_radius" in params:
+            max_r = min(max_r, float(params.get("max_circle_radius", max_r)))
         return 0.0, float(w - 1), 0.0, float(h - 1), min_r, max_r
 
     @staticmethod

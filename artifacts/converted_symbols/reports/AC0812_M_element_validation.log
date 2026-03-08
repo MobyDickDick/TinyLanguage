@@ -1,19 +1,19 @@
 Runde 1: elementweise Validierung gestartet
-circle: Fehler=176.588
+circle: Fehler=190.436
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 8.320->7.500 (best_err=6635.000); Kandidaten=7.500->6635.000, 8.000->6729.000, 8.500->7147.000, 9.500->7980.000
-arm: Fehler=88.810
+circle: Radius-Bracketing r 7.200->7.000 (best_err=5781.000); Kandidaten=6.500->6747.000, 7.000->5781.000, 9.500->7771.000
+arm: Fehler=89.671
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 17.500); Kandidaten=13.000->107.735, 17.500->88.810, 18.500->88.810, 24.000->88.810, 29.500->88.810, 35.000->88.810
-Runde 1: Gesamtfehler=16.839
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 18.000); Kandidaten=13.500->108.704, 18.000->89.671, 19.000->89.671, 24.000->89.671, 29.500->89.671, 35.000->89.671
+Runde 1: Gesamtfehler=17.336
 Runde 2: elementweise Validierung gestartet
-circle: Fehler=170.791
+circle: Fehler=194.021
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 7.500, best_err=5655.000); Kandidaten=7.500->5655.000, 9.500->7771.000
-arm: Fehler=88.810
+circle: Radius-Bracketing keine relevante Änderung (r: 7.000, best_err=5527.000); Kandidaten=6.500->6493.000, 7.000->5527.000, 9.500->7771.000
+arm: Fehler=89.671
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 17.500); Kandidaten=13.000->107.735, 17.500->88.810, 18.500->88.810, 24.000->88.810, 29.500->88.810, 35.000->88.810
-Runde 2: Gesamtfehler=16.839
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 18.000); Kandidaten=13.500->108.704, 18.000->89.671, 19.000->89.671, 24.000->89.671, 29.500->89.671, 35.000->89.671
+Runde 2: Gesamtfehler=17.336
 Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet
 circle: Farb-Bracketing übersprungen (Farben gesperrt)
 arm: Farb-Bracketing übersprungen (Farben gesperrt)

@@ -53,6 +53,32 @@ def _vendor_runtime_compatible(runtime_root: Path) -> bool:
     return True
 
 
+def _vendor_runtime_importable(runtime_root: Path) -> bool:
+    """Return True when runtime can import required native deps in-process."""
+    runtime = str(runtime_root)
+    if not runtime:
+        return False
+
+    old_sys_path = list(sys.path)
+    old_pythonpath = os.environ.get("PYTHONPATH", "")
+    try:
+        sys.path.insert(0, runtime)
+        os.environ["PYTHONPATH"] = runtime if not old_pythonpath else f"{runtime}{os.pathsep}{old_pythonpath}"
+        import numpy  # noqa: F401
+        import cv2  # noqa: F401
+        import fitz  # noqa: F401
+    except Exception:
+        return False
+    finally:
+        sys.path[:] = old_sys_path
+        if old_pythonpath:
+            os.environ["PYTHONPATH"] = old_pythonpath
+        else:
+            os.environ.pop("PYTHONPATH", None)
+
+    return True
+
+
 def _apply_runtime_path_to_sys_path(runtime_path: str) -> None:
     if not runtime_path:
         return
@@ -199,7 +225,12 @@ def _write_markdown_log(log_path: Path, report: dict) -> None:
 
 
 def _resolve_runtime_path(cli_runtime_path: str) -> str:
-    """Resolve runtime path preference with repo-local vendor fallback."""
+    """Resolve runtime path preference with repo-local vendor fallback.
+
+    Keep this function intentionally lightweight/legacy-compatible for tests and
+    callers that only want path selection policy. Importability checks happen in
+    the execution path (main) before the runtime is actually used.
+    """
     explicit = str(cli_runtime_path or "").strip()
     if explicit:
         return explicit
@@ -254,6 +285,11 @@ def main() -> int:
         with zipfile.ZipFile(zpath, "r") as zf:
             zf.extractall(temp_runtime_dir)
         runtime_path = temp_runtime_dir
+
+    # Runtime selection only picks a candidate path. Validate actual imports
+    # before wiring it into sys.path/PYTHONPATH for probing/conversion.
+    if runtime_path and not _vendor_runtime_importable(Path(runtime_path)):
+        runtime_path = ""
 
     _apply_runtime_path_to_sys_path(runtime_path)
 

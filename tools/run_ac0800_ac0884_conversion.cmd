@@ -67,10 +67,16 @@ if "%PYTHON_BIN%"=="" (
 echo [INFO] Using Python launcher: %PYTHON_BIN%
 
 set "VENDOR_RUNTIME=%REPO_ROOT%\vendor\converter_runtime"
+set "USE_VENDOR_RUNTIME=0"
 if exist "%VENDOR_RUNTIME%" (
-  set "PYTHONPATH=%VENDOR_RUNTIME%;%PYTHONPATH%"
-  echo [INFO] Using vendored runtime: %VENDOR_RUNTIME%
-  if "%FORCE_INSTALL%"=="0" set "SKIP_INSTALL=1"
+  %PYTHON_BIN% -c "import importlib.machinery as m,pathlib as p;root=p.Path(r'%VENDOR_RUNTIME%');s=tuple(m.EXTENSION_SUFFIXES);bad=any((f.is_file() and f.suffix.lower() in ('.so','.pyd') and not f.name.endswith(s)) for pkg in ('numpy','cv2','fitz') for f in (root/pkg).rglob('*') if (root/pkg).exists());raise SystemExit(1 if bad else 0)"
+  if %ERRORLEVEL%==0 (
+    set "USE_VENDOR_RUNTIME=1"
+    echo [INFO] Using compatible vendored runtime: %VENDOR_RUNTIME%
+    if "%FORCE_INSTALL%"=="0" set "SKIP_INSTALL=1"
+  ) else (
+    echo [WARN] Vendored runtime appears ABI-incompatible; falling back to local environment.
+  )
 ) else (
   echo [INFO] No vendored runtime found at %VENDOR_RUNTIME%
 )
@@ -101,7 +107,11 @@ if not "%CONVERT_EXIT%"=="0" (
   echo [INFO] Writing structured attempt logs via helper script...
 )
 
-call %PYTHON_BIN% tools\attempt_convert_ac_range.py --start AC0800 --end AC0884 --iterations 128 --runtime-path "%VENDOR_RUNTIME%"
+if "%USE_VENDOR_RUNTIME%"=="1" (
+  call %PYTHON_BIN% tools\attempt_convert_ac_range.py --start AC0800 --end AC0884 --iterations 128 --runtime-path "%VENDOR_RUNTIME%"
+) else (
+  call %PYTHON_BIN% tools\attempt_convert_ac_range.py --start AC0800 --end AC0884 --iterations 128
+)
 set "HELPER_EXIT=%ERRORLEVEL%"
 
 if not "%HELPER_EXIT%"=="0" (

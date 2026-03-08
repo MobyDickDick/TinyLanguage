@@ -5,6 +5,7 @@ REM Windows CMD helper: installs deps (optional) and runs AC0800..AC0884 convers
 REM Usage:
 REM   tools\run_ac0800_ac0884_conversion.cmd
 REM   tools\run_ac0800_ac0884_conversion.cmd --skip-install
+REM   tools\run_ac0800_ac0884_conversion.cmd --force-install
 REM   tools\run_ac0800_ac0884_conversion.cmd --python "C:\Path\to\python.exe"
 
 set "SCRIPT_DIR=%~dp0"
@@ -13,12 +14,18 @@ pushd "%REPO_ROOT%" >nul
 
 set "PYTHON_BIN="
 set "SKIP_INSTALL=0"
+set "FORCE_INSTALL=0"
 set "AC081X_DEBUG_DIR=artifacts\converted_symbols\diff_pngs\tmp_ac081x_element_debug"
 
 :parse_args
 if "%~1"=="" goto args_done
 if /I "%~1"=="--skip-install" (
   set "SKIP_INSTALL=1"
+  shift
+  goto parse_args
+)
+if /I "%~1"=="--force-install" (
+  set "FORCE_INSTALL=1"
   shift
   goto parse_args
 )
@@ -34,7 +41,7 @@ if /I "%~1"=="--python" (
   goto parse_args
 )
 echo [ERROR] Unknown argument: %~1
-echo [INFO] Supported: --skip-install, --python "C:\Path\python.exe"
+echo [INFO] Supported: --skip-install, --force-install, --python "C:\Path\python.exe"
 popd >nul
 exit /b 2
 
@@ -58,6 +65,15 @@ if "%PYTHON_BIN%"=="" (
 )
 
 echo [INFO] Using Python launcher: %PYTHON_BIN%
+
+set "VENDOR_RUNTIME=%REPO_ROOT%\vendor\converter_runtime"
+if exist "%VENDOR_RUNTIME%" (
+  set "PYTHONPATH=%VENDOR_RUNTIME%;%PYTHONPATH%"
+  echo [INFO] Using vendored runtime: %VENDOR_RUNTIME%
+  if "%FORCE_INSTALL%"=="0" set "SKIP_INSTALL=1"
+) else (
+  echo [INFO] No vendored runtime found at %VENDOR_RUNTIME%
+)
 
 if "%SKIP_INSTALL%"=="0" (
   echo [INFO] Installing/updating required packages...
@@ -85,7 +101,7 @@ if not "%CONVERT_EXIT%"=="0" (
   echo [INFO] Writing structured attempt logs via helper script...
 )
 
-call %PYTHON_BIN% tools\attempt_convert_ac_range.py --start AC0800 --end AC0884 --iterations 128
+call %PYTHON_BIN% tools\attempt_convert_ac_range.py --start AC0800 --end AC0884 --iterations 128 --runtime-path "%VENDOR_RUNTIME%"
 set "HELPER_EXIT=%ERRORLEVEL%"
 
 if not "%HELPER_EXIT%"=="0" (

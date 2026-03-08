@@ -24,6 +24,11 @@ import zipfile
 from pathlib import Path
 
 
+SCRIPT_ROOT = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_ROOT.parent
+DEFAULT_VENDOR_RUNTIME = REPO_ROOT / "vendor" / "converter_runtime"
+
+
 def _probe_mod(name: str) -> dict[str, str | bool]:
     spec = importlib.util.find_spec(name)
     out: dict[str, str | bool] = {
@@ -162,6 +167,16 @@ def _write_markdown_log(log_path: Path, report: dict) -> None:
     log_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
 
 
+def _resolve_runtime_path(cli_runtime_path: str) -> str:
+    """Resolve runtime path preference with repo-local vendor fallback."""
+    explicit = str(cli_runtime_path or "").strip()
+    if explicit:
+        return explicit
+    if DEFAULT_VENDOR_RUNTIME.exists():
+        return str(DEFAULT_VENDOR_RUNTIME)
+    return ""
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--images", default="artifacts/images_to_convert")
@@ -173,7 +188,7 @@ def main() -> int:
         "--runtime-path",
         default="",
         help=(
-            "Optional path to a staged runtime directory (containing cv2/numpy/fitz). "
+            "Optional path to a staged runtime directory (containing cv2/numpy/fitz). If omitted, the script auto-uses vendor/converter_runtime when present. "
             "Will be prepended to PYTHONPATH for dependency checks and conversion run."
         ),
     )
@@ -197,7 +212,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    runtime_path = args.runtime_path.strip()
+    runtime_path = _resolve_runtime_path(args.runtime_path)
     runtime_zip = args.runtime_zip.strip()
     temp_runtime_dir: str | None = None
     if runtime_zip:

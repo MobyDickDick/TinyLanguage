@@ -2950,6 +2950,16 @@ class Action:
         improved = False
         flat_plateau_hits = 0
 
+        logs.append(
+            (
+                "circle: Adaptive-Domain-Suche gestartet "
+                f"(Möglichkeitsraum: cx=[{domain['cx_low']:.2f},{domain['cx_high']:.2f}], "
+                f"cy=[{domain['cy_low']:.2f},{domain['cy_high']:.2f}], "
+                f"r=[{domain['r_low']:.2f},{domain['r_high']:.2f}], "
+                f"samples_pro_runde={max(8, int(samples_per_round))})"
+            )
+        )
+
         for _round in range(max(1, rounds)):
             samples: list[tuple[tuple[float, float, float], float]] = [(best, best_err)]
             for _ in range(max(8, int(samples_per_round))):
@@ -2994,6 +3004,14 @@ class Action:
                 best_err = candidate_err
                 improved = True
 
+            logs.append(
+                (
+                    f"circle: Runde {_round + 1} random-samples={len(samples) - 1}, "
+                    f"Error-Minimum={best_err:.3f} bei "
+                    f"(cx={best[0]:.3f}, cy={best[1]:.3f}, r={best[2]:.3f})"
+                )
+            )
+
             # Iteratively shrink domain around the stable near-optimal region.
             shrink = 0.58
             if not lock_cx:
@@ -3010,6 +3028,15 @@ class Action:
             focus_r = float(best[2] if len(plateau) <= 1 else (plateau_min[2] + plateau_max[2]) / 2.0)
             domain["r_low"] = max(r_low, focus_r - half_span_r)
             domain["r_high"] = min(r_high, focus_r + half_span_r)
+
+            logs.append(
+                (
+                    f"circle: Runde {_round + 1} Möglichkeitsraum eingegrenzt auf "
+                    f"cx=[{domain['cx_low']:.2f},{domain['cx_high']:.2f}], "
+                    f"cy=[{domain['cy_low']:.2f},{domain['cy_high']:.2f}], "
+                    f"r=[{domain['r_low']:.2f},{domain['r_high']:.2f}]"
+                )
+            )
 
         if not improved:
             logs.append("circle: Adaptive-Domain-Suche keine relevante Verbesserung")
@@ -3034,6 +3061,20 @@ class Action:
             f"rand_optimum={'ja' if boundary_hit else 'nein'}, flaches_optimum={'ja' if flat_hint else 'nein'})"
         )
         return True
+
+    @staticmethod
+    def _enforce_semantic_connector_expectation(base_name: str, semantic_elements: list[str], params: dict, w: int, h: int) -> dict:
+        """Restore mandatory connector geometry for directional semantic badges."""
+        normalized_base = str(base_name).upper()
+        normalized_elements = [str(elem).lower() for elem in (semantic_elements or [])]
+        expects_left_arm = any("waagrechter strich links" in elem for elem in normalized_elements)
+
+        # AC0812/AC0837/AC0882 are directional left-arm families. If noisy element
+        # extraction temporarily drops arm flags, regenerate canonical connector geometry
+        # from the fitted circle before final SVG serialization.
+        if normalized_base in {"AC0812", "AC0837", "AC0882"} or expects_left_arm:
+            return Action._enforce_left_arm_badge_geometry(params, w, h)
+        return params
 
     @staticmethod
     def _element_width_key_and_bounds(
@@ -4328,6 +4369,17 @@ def run_iteration_pipeline(
             max_rounds=max(1, int(badge_validation_rounds)),
             debug_out_dir=debug_dir,
         )
+        badge_params = Action._enforce_semantic_connector_expectation(
+            perc.base_name,
+            list(params.get("elements", [])),
+            badge_params,
+            w,
+            h,
+        )
+        if badge_params.get("arm_enabled"):
+            validation_logs.append(
+                "semantic-guard: Erwartete Arm-Geometrie bestätigt/wiederhergestellt (z.B. AC0812 links)."
+            )
         if reports_out_dir:
             log_path = os.path.join(reports_out_dir, f"{os.path.splitext(filename)[0]}_element_validation.log")
             with open(log_path, "w", encoding="utf-8") as f:

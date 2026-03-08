@@ -4864,6 +4864,8 @@ def _try_template_transfer(
     target_svg_path = os.path.join(svg_out_dir, f"{target_variant}.svg")
     target_svg_geometry = _read_svg_geometry(target_svg_path)
     target_geom_params = dict(target_svg_geometry[2]) if target_svg_geometry is not None else None
+    target_params_raw = target_row.get("params")
+    target_is_semantic = isinstance(target_params_raw, dict) and str(target_params_raw.get("mode", "")) == "semantic_badge"
     ordered_donors = _rank_template_transfer_donors(target_row, donor_rows)
     if rng is not None and len(ordered_donors) > 1:
         head = ordered_donors[:3]
@@ -4896,12 +4898,15 @@ def _try_template_transfer(
             for rotation in (0, 90, 180, 270)
         }
 
-        target_params_raw = target_row.get("params")
         donor_params_raw = donor.get("params")
+        donor_is_semantic = isinstance(donor_params_raw, dict) and str(donor_params_raw.get("mode", "")) == "semantic_badge"
+        if target_is_semantic and not donor_is_semantic:
+            continue
+
         if isinstance(target_params_raw, dict) and isinstance(donor_params_raw, dict):
             if (
-                str(target_params_raw.get("mode", "")) == "semantic_badge"
-                and str(donor_params_raw.get("mode", "")) == "semantic_badge"
+                target_is_semantic
+                and donor_is_semantic
                 and target_geom_params is not None
                 and donor_geom_params is not None
             ):
@@ -4936,6 +4941,11 @@ def _try_template_transfer(
                             best_donor = donor_variant
                             best_rotation = rotation
                             best_scale = float(scale)
+
+        if target_is_semantic:
+            # Semantic badges encode meaning in connector/text geometry.
+            # Generic donor SVG transforms can remove those semantics.
+            continue
 
         for rotation, scale in _template_transfer_transform_candidates(
             target_variant,

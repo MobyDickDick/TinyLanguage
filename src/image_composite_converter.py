@@ -4736,6 +4736,36 @@ def _semantic_transfer_rotations(target_params: dict[str, object], donor_params:
 
 
 
+
+
+def _semantic_transfer_is_compatible(target_params: dict[str, object], donor_params: dict[str, object]) -> bool:
+    """Return whether donor semantics can preserve target semantic geometry."""
+    target_has_arm = bool(target_params.get("arm_enabled", False))
+    target_has_stem = bool(target_params.get("stem_enabled", False))
+    donor_has_arm = bool(donor_params.get("arm_enabled", False))
+    donor_has_stem = bool(donor_params.get("stem_enabled", False))
+
+    # Keep connector type stable for directional symbols (arm vs stem).
+    if target_has_arm != donor_has_arm:
+        return False
+    if target_has_stem != donor_has_stem:
+        return False
+
+    target_has_text = bool(target_params.get("draw_text", False))
+    donor_has_text = bool(donor_params.get("draw_text", False))
+    if target_has_text != donor_has_text:
+        return False
+
+    # If both carry labels, require same text mode (e.g. VOC vs CO₂ path families).
+    if target_has_text and donor_has_text:
+        target_mode = str(target_params.get("text_mode", "")).lower()
+        donor_mode = str(donor_params.get("text_mode", "")).lower()
+        if target_mode and donor_mode and target_mode != donor_mode:
+            return False
+
+    return True
+
+
 def _semantic_transfer_scale_candidates(base_scale: float) -> list[float]:
     """Broader scale ladder for semantic badge transfer exploration."""
     core = _template_transfer_scale_candidates(base_scale)
@@ -4909,6 +4939,7 @@ def _try_template_transfer(
                 and donor_is_semantic
                 and target_geom_params is not None
                 and donor_geom_params is not None
+                and _semantic_transfer_is_compatible(dict(target_params_raw), dict(donor_params_raw))
             ):
                 base_scale = float(min(w, h)) / max(1.0, float(min(int(donor.get("w", w)), int(donor.get("h", h)))))
                 semantic_scales = _semantic_transfer_scale_candidates(base_scale)

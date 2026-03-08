@@ -4861,6 +4861,9 @@ def _try_template_transfer(
     best_scale = 1.0
 
     target_variant = str(target_row.get("variant", "")).upper()
+    target_svg_path = os.path.join(svg_out_dir, f"{target_variant}.svg")
+    target_svg_geometry = _read_svg_geometry(target_svg_path)
+    target_geom_params = dict(target_svg_geometry[2]) if target_svg_geometry is not None else None
     ordered_donors = _rank_template_transfer_donors(target_row, donor_rows)
     if rng is not None and len(ordered_donors) > 1:
         head = ordered_donors[:3]
@@ -4879,6 +4882,9 @@ def _try_template_transfer(
         except OSError:
             continue
 
+        donor_svg_geometry = _read_svg_geometry(donor_svg_path)
+        donor_geom_params = dict(donor_svg_geometry[2]) if donor_svg_geometry is not None else None
+
         estimated_scales = {
             rotation: _estimate_template_transfer_scale(
                 img_orig,
@@ -4893,7 +4899,12 @@ def _try_template_transfer(
         target_params_raw = target_row.get("params")
         donor_params_raw = donor.get("params")
         if isinstance(target_params_raw, dict) and isinstance(donor_params_raw, dict):
-            if str(target_params_raw.get("mode", "")) == "semantic_badge" and str(donor_params_raw.get("mode", "")) == "semantic_badge":
+            if (
+                str(target_params_raw.get("mode", "")) == "semantic_badge"
+                and str(donor_params_raw.get("mode", "")) == "semantic_badge"
+                and target_geom_params is not None
+                and donor_geom_params is not None
+            ):
                 base_scale = float(min(w, h)) / max(1.0, float(min(int(donor.get("w", w)), int(donor.get("h", h)))))
                 semantic_scales = _semantic_transfer_scale_candidates(base_scale)
                 if rng is not None:
@@ -4904,8 +4915,8 @@ def _try_template_transfer(
                 for rotation in _semantic_transfer_rotations(dict(target_params_raw), dict(donor_params_raw)):
                     for scale in semantic_scales:
                         candidate_params = _semantic_transfer_badge_params(
-                            dict(donor_params_raw),
-                            dict(target_params_raw),
+                            dict(donor_geom_params),
+                            dict(target_geom_params),
                             target_w=w,
                             target_h=h,
                             rotation_deg=rotation,

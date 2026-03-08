@@ -16,6 +16,12 @@ def test_resolve_runtime_path_prefers_explicit_path() -> None:
     assert attempt_convert._resolve_runtime_path(explicit) == explicit
 
 
-def test_resolve_runtime_path_uses_repo_vendor_fallback() -> None:
+def test_resolve_runtime_path_uses_repo_vendor_fallback_when_compatible(monkeypatch) -> None:
     expected = str((Path(__file__).resolve().parent.parent / "vendor" / "converter_runtime"))
+    monkeypatch.setattr(attempt_convert, "_vendor_runtime_compatible", lambda _path: True)
     assert attempt_convert._resolve_runtime_path("") == expected
+
+
+def test_resolve_runtime_path_returns_empty_for_incompatible_vendor(monkeypatch) -> None:
+    monkeypatch.setattr(attempt_convert, "_vendor_runtime_compatible", lambda _path: False)
+    assert attempt_convert._resolve_runtime_path("") == ""

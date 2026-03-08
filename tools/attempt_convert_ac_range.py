@@ -13,6 +13,7 @@ import argparse
 import datetime as dt
 import importlib.util
 import importlib.metadata
+import importlib.machinery
 import json
 import os
 import platform
@@ -27,6 +28,36 @@ from pathlib import Path
 SCRIPT_ROOT = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_ROOT.parent
 DEFAULT_VENDOR_RUNTIME = REPO_ROOT / "vendor" / "converter_runtime"
+
+
+def _vendor_runtime_compatible(runtime_root: Path) -> bool:
+    """Return True when vendored native extensions match this Python ABI."""
+    if not runtime_root.exists():
+        return False
+
+    extension_suffixes = tuple(importlib.machinery.EXTENSION_SUFFIXES)
+    runtime_packages = ("numpy", "cv2", "fitz")
+
+    for package in runtime_packages:
+        package_root = runtime_root / package
+        if not package_root.exists():
+            continue
+
+        for binary in package_root.rglob("*"):
+            if not binary.is_file() or binary.suffix.lower() not in {".so", ".pyd"}:
+                continue
+            if binary.name.endswith(extension_suffixes):
+                continue
+            return False
+
+    return True
+
+
+def _apply_runtime_path_to_sys_path(runtime_path: str) -> None:
+    if not runtime_path:
+        return
+    if runtime_path not in sys.path:
+        sys.path.append(runtime_path)
 
 
 def _probe_mod(name: str) -> dict[str, str | bool]:
@@ -172,7 +203,7 @@ def _resolve_runtime_path(cli_runtime_path: str) -> str:
     explicit = str(cli_runtime_path or "").strip()
     if explicit:
         return explicit
-    if DEFAULT_VENDOR_RUNTIME.exists():
+    if _vendor_runtime_compatible(DEFAULT_VENDOR_RUNTIME):
         return str(DEFAULT_VENDOR_RUNTIME)
     return ""
 
@@ -224,8 +255,7 @@ def main() -> int:
             zf.extractall(temp_runtime_dir)
         runtime_path = temp_runtime_dir
 
-    if runtime_path:
-        sys.path.insert(0, runtime_path)
+    _apply_runtime_path_to_sys_path(runtime_path)
 
     images_dir = Path(args.images)
     report_path = Path(args.report)

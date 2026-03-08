@@ -1,6 +1,6 @@
 # AC range conversion attempt log
 
-- Timestamp (UTC): `2026-03-08T18:29:43.852652+00:00`
+- Timestamp (UTC): `2026-03-08T18:40:13.991044+00:00`
 - Range: `AC0800..AC0884`
 - Iterations: `128`
 - Input count: `105`
@@ -14,9 +14,9 @@
 
 ## Dependencies
 
-- cv2: available=`True` version=`unknown` origin=`C:\Users\marku\myCloud\TinyLanguage\tools\..\vendor\converter_runtime\cv2\__init__.py`
-- numpy: available=`True` version=`2.4.2` origin=`C:\Users\marku\myCloud\TinyLanguage\tools\..\vendor\converter_runtime\numpy\__init__.py`
-- fitz: available=`True` version=`unknown` origin=`C:\Users\marku\myCloud\TinyLanguage\tools\..\vendor\converter_runtime\fitz\__init__.py`
+- cv2: available=`True` version=`unknown` origin=`C:\Users\marku\AppData\Roaming\Python\Python314\site-packages\cv2\__init__.py`
+- numpy: available=`True` version=`2.4.2` origin=`C:\Users\marku\AppData\Roaming\Python\Python314\site-packages\numpy\__init__.py`
+- fitz: available=`True` version=`unknown` origin=`C:\Users\marku\AppData\Roaming\Python\Python314\site-packages\fitz\__init__.py`
 
 ## Command
 
@@ -28,7 +28,7 @@ C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\python.exe src/image_comp
 
 - Ran conversion: `true`
 - Exit code: `1`
-- Duration (s): `1.192`
+- Duration (s): `0.952`
 
 ### Converter stdout
 

@@ -1316,3 +1316,64 @@ def test_template_transfer_skips_semantic_but_incompatible_donors_for_connector_
 
     assert updated_row is None
     assert detail is None
+
+
+def test_enforce_semantic_connector_expectation_restores_left_arm_for_ac0812() -> None:
+    params = {
+        "circle_enabled": True,
+        "cx": 32.5,
+        "cy": 12.5,
+        "r": 8.0,
+        "arm_enabled": False,
+    }
+
+    restored = Action._enforce_semantic_connector_expectation(
+        "AC0812",
+        ["SEMANTIC: Kreis ohne Buchstabe", "SEMANTIC: waagrechter Strich links vom Kreis"],
+        params,
+        45,
+        25,
+    )
+
+    assert restored["arm_enabled"] is True
+    assert float(restored["arm_x1"]) == 0.0
+    assert abs(float(restored["arm_x2"]) - (float(restored["cx"]) - float(restored["r"]))) < 1e-6
+
+
+def test_optimize_circle_pose_adaptive_domain_logs_random_domain_steps() -> None:
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    class DummyImg:
+        shape = (25, 45, 3)
+
+    img = DummyImg()
+    params = Action._default_ac0812_params(45, 25)
+    params = Action._finalize_ac08_style("AC0812", params)
+
+    original_eval = Action._element_error_for_circle_pose
+
+    def paraboloid(_img: object, _params: dict, *, cx_value: float, cy_value: float, radius_value: float) -> float:
+        return (
+            ((float(cx_value) - 32.5) ** 2)
+            + ((float(cy_value) - 12.5) ** 2)
+            + ((float(radius_value) - 8.0) ** 2)
+        )
+
+    logs: list[str] = []
+    Action._element_error_for_circle_pose = staticmethod(paraboloid)
+    try:
+        changed = Action._optimize_circle_pose_adaptive_domain(
+            img,
+            params,
+            logs,
+            rounds=2,
+            samples_per_round=8,
+        )
+    finally:
+        Action._element_error_for_circle_pose = original_eval
+
+    assert changed is True
+    assert any("Möglichkeitsraum" in line for line in logs)
+    assert any("random-samples" in line for line in logs)
+    assert any("Möglichkeitsraum eingegrenzt" in line for line in logs)

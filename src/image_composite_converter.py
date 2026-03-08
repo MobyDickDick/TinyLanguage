@@ -1169,7 +1169,9 @@ class Action:
 
         # Like AC0811/AC0813, size from the narrow side so tiny variants keep
         # the intended visual circle diameter.
-        r = float(h) * 0.4
+        # AC0812 source rasters leave a slightly larger vertical margin around the
+        # ring than AC0811/AC0813. Using 0.40*h tends to over-size the circle.
+        r = float(h) * 0.36
         stroke_circle = max(0.9, float(h) / 15.0)
         cx = float(w) - (float(h) / 2.0)
         cy = float(h) / 2.0
@@ -1210,12 +1212,24 @@ class Action:
         max_arm_stroke = max(min_arm_stroke, min(float(h) * 0.14, stroke_circle * 1.6))
         arm_stroke = max(min_arm_stroke, min(raw_arm_stroke, max_arm_stroke))
 
+        default_r = float(defaults.get("r", float(h) * 0.4))
+        # Why circles can become too large here:
+        # - AC0812 has a circle touching the right side and an extra left arm.
+        # - On anti-aliased rasters, contour/Hough fitting may merge ring edge,
+        #   arm and border pixels into one oversized blob.
+        # Keep fitting adaptive, but cap growth against semantic template size.
+        # Keep AC0812 circle growth deterministic: merged anti-aliased blobs can
+        # bias contour/Hough estimates upward. For this family we do not allow
+        # growth beyond the semantic template radius.
+        max_r = default_r
+        r = min(r, max_r)
+
         if h <= 15 and not bool(params.get("draw_text", True)):
-            default_r = float(defaults.get("r", float(h) * 0.4))
             # AC0812_S can lose roughly one anti-aliased ring pixel in contour/Hough
             # fitting; keep tiny plain variants close to the semantic template size.
             r = max(r, default_r * 0.98)
-            params["r"] = r
+
+        params["r"] = r
 
         params["arm_enabled"] = True
         params["arm_stroke"] = arm_stroke
@@ -1351,7 +1365,9 @@ class Action:
         if w <= 0 or h <= 0:
             return Action._default_ac081x_shared(w, h)
 
-        r = float(h) * 0.4
+        # AC0812 source rasters leave a slightly larger vertical margin around the
+        # ring than AC0811/AC0813. Using 0.40*h tends to over-size the circle.
+        r = float(h) * 0.36
         stroke_circle = max(0.9, float(h) / 15.0)
         cx = float(h) / 2.0
         cy = float(h) / 2.0

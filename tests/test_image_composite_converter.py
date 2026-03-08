@@ -444,12 +444,41 @@ def test_enforce_left_arm_badge_geometry_restores_missing_arm() -> None:
 
 
 def test_default_ac0812_uses_height_based_circle_radius() -> None:
-    """AC0812 should size its circle from height so tiny variants don't shrink."""
+    """AC0812 should size its circle from height without overfilling the frame."""
     params = Action._default_ac0812_params(25, 15)
 
-    assert abs(float(params["r"]) - 6.0) < 1e-6
+    assert abs(float(params["r"]) - 5.4) < 1e-6
     assert abs(float(params["cx"]) - 17.5) < 1e-6
-    assert abs(float(params["arm_x2"]) - 11.5) < 1e-6
+    assert abs(float(params["arm_x2"]) - 12.1) < 1e-6
+
+
+def test_fit_ac0812_caps_radius_to_template(monkeypatch: pytest.MonkeyPatch) -> None:
+    """AC0812 fit should not allow radius growth above semantic template."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    monkeypatch.setattr(
+        Action,
+        "_fit_semantic_badge_from_image",
+        staticmethod(
+            lambda _img, defaults: {
+                **defaults,
+                "cx": float(defaults["cx"]),
+                "cy": float(defaults["cy"]),
+                "r": float(defaults["r"]) * 1.8,
+                "arm_enabled": True,
+                "draw_text": False,
+            }
+        ),
+    )
+
+    class DummyImg:
+        shape = (15, 25, 3)
+
+    defaults = Action._default_ac0812_params(25, 15)
+    fitted = Action._fit_ac0812_params_from_image(DummyImg(), defaults)
+
+    assert float(fitted["r"]) <= float(defaults["r"]) + 1e-6
 
 
 def test_validate_badge_can_expand_ac0812_tiny_circle_radius() -> None:

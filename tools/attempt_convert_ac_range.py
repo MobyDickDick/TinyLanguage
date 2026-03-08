@@ -225,14 +225,16 @@ def _write_markdown_log(log_path: Path, report: dict) -> None:
 
 
 def _resolve_runtime_path(cli_runtime_path: str) -> str:
-    """Resolve runtime path preference with repo-local vendor fallback."""
+    """Resolve runtime path preference with repo-local vendor fallback.
+
+    Keep this function intentionally lightweight/legacy-compatible for tests and
+    callers that only want path selection policy. Importability checks happen in
+    the execution path (main) before the runtime is actually used.
+    """
     explicit = str(cli_runtime_path or "").strip()
     if explicit:
-        explicit_path = Path(explicit)
-        if explicit_path.exists() and _vendor_runtime_importable(explicit_path):
-            return explicit
-        return ""
-    if _vendor_runtime_compatible(DEFAULT_VENDOR_RUNTIME) and _vendor_runtime_importable(DEFAULT_VENDOR_RUNTIME):
+        return explicit
+    if _vendor_runtime_compatible(DEFAULT_VENDOR_RUNTIME):
         return str(DEFAULT_VENDOR_RUNTIME)
     return ""
 
@@ -283,6 +285,11 @@ def main() -> int:
         with zipfile.ZipFile(zpath, "r") as zf:
             zf.extractall(temp_runtime_dir)
         runtime_path = temp_runtime_dir
+
+    # Runtime selection only picks a candidate path. Validate actual imports
+    # before wiring it into sys.path/PYTHONPATH for probing/conversion.
+    if runtime_path and not _vendor_runtime_importable(Path(runtime_path)):
+        runtime_path = ""
 
     _apply_runtime_path_to_sys_path(runtime_path)
 

@@ -1347,6 +1347,19 @@ def test_template_transfer_skips_semantic_but_incompatible_donors_for_connector_
     assert detail is None
 
 
+def test_semantic_transfer_rejects_opposite_arm_directions() -> None:
+    """Semantic transfer must not mix right-arm donors into left-arm targets."""
+    target = Action.make_badge_params(45, 25, "AC0812")
+    donor = Action.make_badge_params(45, 25, "AC0810")
+
+    assert target is not None
+    assert donor is not None
+    assert target.get("arm_enabled") is True
+    assert donor.get("arm_enabled") is True
+
+    assert image_composite_converter._semantic_transfer_is_compatible(target, donor) is False
+
+
 def test_enforce_semantic_connector_expectation_restores_left_arm_for_ac0812() -> None:
     params = {
         "circle_enabled": True,

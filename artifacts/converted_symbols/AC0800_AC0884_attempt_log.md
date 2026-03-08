@@ -1,6 +1,6 @@
 # AC range conversion attempt log
 
-- Timestamp (UTC): `2026-03-08T18:40:13.991044+00:00`
+- Timestamp (UTC): `2026-03-08T18:53:40.385219+00:00`
 - Range: `AC0800..AC0884`
 - Iterations: `128`
 - Input count: `105`
@@ -28,7 +28,7 @@ C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\python.exe src/image_comp
 
 - Ran conversion: `true`
 - Exit code: `1`
-- Duration (s): `0.952`
+- Duration (s): `1.097`
 
 ### Converter stdout
 
@@ -42,24 +42,24 @@ Install it via command:
 
 ```text
 Traceback (most recent call last):
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 5843, in <module>
+  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 5852, in <module>
     raise SystemExit(main())
                      ~~~~^^
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 5829, in main
+  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 5838, in main
     out_dir = convert_range(
         args.folder_path,
     ...<5 lines>...
         args.debug_element_diff_dir,
     )
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 5155, in convert_range
+  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 5164, in convert_range
     row = _convert_one(filename, iteration_budget=base_iterations, badge_rounds=6)
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 5118, in _convert_one
+  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 5127, in _convert_one
     res = run_iteration_pipeline(
         image_path,
     ...<7 lines>...
         badge_validation_rounds=max(1, int(badge_rounds)),
     )
-  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 4309, in run_iteration_pipeline
+  File "C:\Users\marku\myCloud\TinyLanguage\src\image_composite_converter.py", line 4318, in run_iteration_pipeline
     raise RuntimeError(
     ...<2 lines>...
     )

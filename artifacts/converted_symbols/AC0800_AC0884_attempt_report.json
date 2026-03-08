@@ -1,5 +1,5 @@
 {
-  "timestamp_utc": "2026-03-08T18:40:13.991044+00:00",
+  "timestamp_utc": "2026-03-08T18:53:40.385219+00:00",
   "range": {
     "start": "AC0800",
     "end": "AC0884"
@@ -142,8 +142,8 @@
     "reason": "executed",
     "command": "C:\\Users\\marku\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe src/image_composite_converter.py artifacts\\images_to_convert artifacts/images_to_convert/nonexistent.csv 128 --start AC0800 --end AC0884",
     "exit_code": 1,
-    "duration_seconds": 0.952,
+    "duration_seconds": 1.097,
     "stdout": "OpenCV bindings requires \"numpy\" package.\nInstall it via command:\n    pip install numpy\n",
-    "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\marku\\myCloud\\TinyLanguage\\src\\image_composite_converter.py\", line 5843, in <module>\n    raise SystemExit(main())\n                     ~~~~^^\n  File \"C:\\Users\\marku\\myCloud\\TinyLanguage\\src\\image_composite_converter.py\", line 5829, in main\n    out_dir = convert_range(\n        args.folder_path,\n    ...<5 lines>...\n        args.debug_element_diff_dir,\n    )\n  File \"C:\\Users\\marku\\myCloud\\TinyLanguage\\src\\image_composite_converter.py\", line 5155, in convert_range\n    row = _convert_one(filename, iteration_budget=base_iterations, badge_rounds=6)\n  File \"C:\\Users\\marku\\myCloud\\TinyLanguage\\src\\image_composite_converter.py\", line 5118, in _convert_one\n    res = run_iteration_pipeline(\n        image_path,\n    ...<7 lines>...\n        badge_validation_rounds=max(1, int(badge_rounds)),\n    )\n  File \"C:\\Users\\marku\\myCloud\\TinyLanguage\\src\\image_composite_converter.py\", line 4309, in run_iteration_pipeline\n    raise RuntimeError(\n    ...<2 lines>...\n    )\nRuntimeError: Required image dependencies are missing: cv2, numpy. Install dependencies before running the conversion pipeline.\n"
+    "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\marku\\myCloud\\TinyLanguage\\src\\image_composite_converter.py\", line 5852, in <module>\n    raise SystemExit(main())\n                     ~~~~^^\n  File \"C:\\Users\\marku\\myCloud\\TinyLanguage\\src\\image_composite_converter.py\", line 5838, in main\n    out_dir = convert_range(\n        args.folder_path,\n    ...<5 lines>...\n        args.debug_element_diff_dir,\n    )\n  File \"C:\\Users\\marku\\myCloud\\TinyLanguage\\src\\image_composite_converter.py\", line 5164, in convert_range\n    row = _convert_one(filename, iteration_budget=base_iterations, badge_rounds=6)\n  File \"C:\\Users\\marku\\myCloud\\TinyLanguage\\src\\image_composite_converter.py\", line 5127, in _convert_one\n    res = run_iteration_pipeline(\n        image_path,\n    ...<7 lines>...\n        badge_validation_rounds=max(1, int(badge_rounds)),\n    )\n  File \"C:\\Users\\marku\\myCloud\\TinyLanguage\\src\\image_composite_converter.py\", line 4318, in run_iteration_pipeline\n    raise RuntimeError(\n    ...<2 lines>...\n    )\nRuntimeError: Required image dependencies are missing: cv2, numpy. Install dependencies before running the conversion pipeline.\n"
   }
 }

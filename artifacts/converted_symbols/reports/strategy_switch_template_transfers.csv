@@ -1,4 +1,2 @@
 filename;donor_variant;rotation_deg;scale;old_error_per_pixel;new_error_per_pixel
-AC0820_M.jpg;AC0800_M;0;1.0000;0.05215000;0.04375625
-AC0882_M.jpg;AC0812_M;0;0.9408;0.03706939;0.03342245
-AC0870_M.jpg;AC0800_M;0;1.0000;0.03825000;0.03781875
+AC0870_M.jpg;AC0800_M;0;1.0000;0.05000625;0.03781875

@@ -71,15 +71,21 @@ set "USE_VENDOR_RUNTIME=0"
 if exist "%VENDOR_RUNTIME%" (
   %PYTHON_BIN% -c "import importlib.machinery as m,pathlib as p;root=p.Path(r'%VENDOR_RUNTIME%');s=tuple(m.EXTENSION_SUFFIXES);bad=any((f.is_file() and f.suffix.lower() in ('.so','.pyd') and not f.name.endswith(s)) for pkg in ('numpy','cv2','fitz') for f in (root/pkg).rglob('*') if (root/pkg).exists());raise SystemExit(1 if bad else 0)"
   if %ERRORLEVEL%==0 (
-    set "USE_VENDOR_RUNTIME=1"
-    echo [INFO] Using compatible vendored runtime: %VENDOR_RUNTIME%
-    if "%FORCE_INSTALL%"=="0" set "SKIP_INSTALL=1"
+    %PYTHON_BIN% -c "import os,sys;runtime=r'%VENDOR_RUNTIME%';sys.path.insert(0,runtime);old=os.environ.get('PYTHONPATH','');os.environ['PYTHONPATH']=runtime if not old else runtime+os.pathsep+old;import numpy,cv2,fitz"
+    if %ERRORLEVEL%==0 (
+      set "USE_VENDOR_RUNTIME=1"
+      echo [INFO] Using compatible vendored runtime: %VENDOR_RUNTIME%
+      if "%FORCE_INSTALL%"=="0" set "SKIP_INSTALL=1"
+    ) else (
+      echo [WARN] Vendored runtime import smoke test failed; falling back to local environment.
+    )
   ) else (
     echo [WARN] Vendored runtime appears ABI-incompatible; falling back to local environment.
   )
 ) else (
   echo [INFO] No vendored runtime found at %VENDOR_RUNTIME%
 )
+
 
 if "%SKIP_INSTALL%"=="0" (
   echo [INFO] Installing/updating required packages...

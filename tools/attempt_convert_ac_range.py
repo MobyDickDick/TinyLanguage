@@ -53,6 +53,32 @@ def _vendor_runtime_compatible(runtime_root: Path) -> bool:
     return True
 
 
+def _vendor_runtime_importable(runtime_root: Path) -> bool:
+    """Return True when runtime can import required native deps in-process."""
+    runtime = str(runtime_root)
+    if not runtime:
+        return False
+
+    old_sys_path = list(sys.path)
+    old_pythonpath = os.environ.get("PYTHONPATH", "")
+    try:
+        sys.path.insert(0, runtime)
+        os.environ["PYTHONPATH"] = runtime if not old_pythonpath else f"{runtime}{os.pathsep}{old_pythonpath}"
+        import numpy  # noqa: F401
+        import cv2  # noqa: F401
+        import fitz  # noqa: F401
+    except Exception:
+        return False
+    finally:
+        sys.path[:] = old_sys_path
+        if old_pythonpath:
+            os.environ["PYTHONPATH"] = old_pythonpath
+        else:
+            os.environ.pop("PYTHONPATH", None)
+
+    return True
+
+
 def _apply_runtime_path_to_sys_path(runtime_path: str) -> None:
     if not runtime_path:
         return
@@ -202,8 +228,11 @@ def _resolve_runtime_path(cli_runtime_path: str) -> str:
     """Resolve runtime path preference with repo-local vendor fallback."""
     explicit = str(cli_runtime_path or "").strip()
     if explicit:
-        return explicit
-    if _vendor_runtime_compatible(DEFAULT_VENDOR_RUNTIME):
+        explicit_path = Path(explicit)
+        if explicit_path.exists() and _vendor_runtime_importable(explicit_path):
+            return explicit
+        return ""
+    if _vendor_runtime_compatible(DEFAULT_VENDOR_RUNTIME) and _vendor_runtime_importable(DEFAULT_VENDOR_RUNTIME):
         return str(DEFAULT_VENDOR_RUNTIME)
     return ""
 

@@ -414,6 +414,35 @@ def test_generate_badge_svg_renders_cluster_mode_as_split_text_nodes() -> None:
     assert ">2</text>" in svg
     assert "<tspan" not in svg
 
+
+
+def test_make_badge_params_ac0812_family_keeps_left_arm_without_image_fit() -> None:
+    """AC0812-family semantic defaults must always preserve a visible left connector."""
+    for name in ("AC0812", "AC0882", "AC0832", "AC0837"):
+        params = Action.make_badge_params(45, 25, name, img=None)
+        assert params is not None
+        assert params.get("arm_enabled") is True
+        assert abs(float(params["arm_y1"]) - float(params["cy"])) < 1e-6
+        assert abs(float(params["arm_y2"]) - float(params["cy"])) < 1e-6
+        assert float(params["arm_x1"]) == 0.0
+        assert float(params["arm_x2"]) > 0.0
+        assert float(params.get("arm_len_min", 0.0)) >= float(params["arm_x2"]) * float(params.get("arm_len_min_ratio", 0.75))
+
+
+def test_enforce_left_arm_badge_geometry_restores_missing_arm() -> None:
+    """Left-arm enforcement should recover connector geometry from circle-only params."""
+    params = {"cx": 32.5, "cy": 12.5, "r": 10.0, "circle_enabled": True}
+
+    fixed = Action._enforce_left_arm_badge_geometry(params, 45, 25)
+
+    assert fixed.get("arm_enabled") is True
+    assert float(fixed["arm_x1"]) == 0.0
+    assert abs(float(fixed["arm_y1"]) - 12.5) < 1e-6
+    assert abs(float(fixed["arm_x2"]) - 22.5) < 1e-6
+    assert abs(float(fixed["arm_y2"]) - 12.5) < 1e-6
+    assert float(fixed["arm_len_min"]) >= 22.5 * 0.75
+
+
 def test_default_ac0812_uses_height_based_circle_radius() -> None:
     """AC0812 should size its circle from height so tiny variants don't shrink."""
     params = Action._default_ac0812_params(25, 15)

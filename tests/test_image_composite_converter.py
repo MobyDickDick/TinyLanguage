@@ -1340,6 +1340,29 @@ def test_enforce_semantic_connector_expectation_restores_left_arm_for_ac0812() -
     assert abs(float(restored["arm_x2"]) - (float(restored["cx"]) - float(restored["r"]))) < 1e-6
 
 
+def test_enforce_semantic_connector_expectation_handles_variant_base_name_for_ac0812() -> None:
+    """Variant names (AC0812_L/M/S) should still trigger left-arm semantic guard."""
+    params = {
+        "circle_enabled": True,
+        "cx": 32.5,
+        "cy": 12.5,
+        "r": 8.0,
+        "arm_enabled": False,
+    }
+
+    restored = Action._enforce_semantic_connector_expectation(
+        "AC0812_L",
+        ["SEMANTIC: Kreis ohne Buchstabe", "SEMANTIC: waagrechter Strich links vom Kreis"],
+        params,
+        45,
+        25,
+    )
+
+    assert restored["arm_enabled"] is True
+    assert float(restored["arm_x1"]) == 0.0
+    assert abs(float(restored["arm_x2"]) - (float(restored["cx"]) - float(restored["r"]))) < 1e-6
+
+
 def test_optimize_circle_pose_adaptive_domain_logs_random_domain_steps() -> None:
     if image_composite_converter.np is None:
         pytest.skip("numpy not available in this environment")

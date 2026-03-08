@@ -3065,7 +3065,7 @@ class Action:
     @staticmethod
     def _enforce_semantic_connector_expectation(base_name: str, semantic_elements: list[str], params: dict, w: int, h: int) -> dict:
         """Restore mandatory connector geometry for directional semantic badges."""
-        normalized_base = str(base_name).upper()
+        normalized_base = get_base_name_from_file(str(base_name)).upper()
         normalized_elements = [str(elem).lower() for elem in (semantic_elements or [])]
         expects_left_arm = any("waagrechter strich links" in elem for elem in normalized_elements)
 

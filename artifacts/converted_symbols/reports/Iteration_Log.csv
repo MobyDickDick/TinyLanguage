@@ -2,18 +2,18 @@
 AC0800_L.jpg;;1;6.85;0.00760741
 AC0800_M.jpg;;1;2.36;0.00590000
 AC0800_S.jpg;;1;10.27;0.04564938
-AC0812_L.jpg;SEMANTIC: Kreis ohne Buchstabe + SEMANTIC: waagrechter Strich links vom Kreis;1;16.57;0.01472553
+AC0812_L.jpg;SEMANTIC: Kreis ohne Buchstabe + SEMANTIC: waagrechter Strich links vom Kreis;1;14.59;0.01296514
 AC0812_M.jpg;SEMANTIC: Kreis ohne Buchstabe + SEMANTIC: waagrechter Strich links vom Kreis;1;17.34;0.02476531
 AC0812_S.jpg;SEMANTIC: Kreis ohne Buchstabe + SEMANTIC: waagrechter Strich links vom Kreis;1;9.64;0.02569956
-AC0820_L.jpg;SEMANTIC: Kreis + Buchstabe CO_2;1;21.04;0.02338148
-AC0820_M.jpg;SEMANTIC: Kreis + Buchstabe CO_2;1;17.49;0.04371875
+AC0820_L.jpg;SEMANTIC: Kreis + Buchstabe CO_2;1;20.65;0.02294198
+AC0820_M.jpg;SEMANTIC: Kreis + Buchstabe CO_2;1;15.79;0.03948750
 AC0820_S.jpg;SEMANTIC: Kreis + Buchstabe CO_2;1;24.42;0.10854321
-AC0835_L.jpg;SEMANTIC: Kreis + Buchstabe VOC;1;24.25;0.03879936
-AC0835_M.jpg;SEMANTIC: Kreis + Buchstabe VOC;1;20.03;0.05008125
+AC0835_L.jpg;SEMANTIC: Kreis + Buchstabe VOC;1;23.86;0.03817216
+AC0835_M.jpg;SEMANTIC: Kreis + Buchstabe VOC;1;19.30;0.04826250
 AC0835_S.jpg;SEMANTIC: Kreis + Buchstabe VOC;1;27.08;0.12037531
 AC0870_L.jpg;SEMANTIC: Kreis + Buchstabe;1;15.12;0.01680370
 AC0870_M.jpg;SEMANTIC: Kreis + Buchstabe;1;20.00;0.05000625
-AC0870_S.jpg;SEMANTIC: Kreis + Buchstabe;1;32.99;0.14660741
+AC0870_S.jpg;SEMANTIC: Kreis + Buchstabe;1;32.06;0.14249877
 AC0881_L.jpg;SEMANTIC: Kreis + Buchstabe + SEMANTIC: senkrechter Strich hinter dem Kreis;1;22.19;0.01972227
 AC0881_M.jpg;SEMANTIC: Kreis + Buchstabe + SEMANTIC: senkrechter Strich hinter dem Kreis;1;18.13;0.02589592
 AC0881_S.jpg;SEMANTIC: Kreis + Buchstabe + SEMANTIC: senkrechter Strich hinter dem Kreis;1;13.65;0.03638756

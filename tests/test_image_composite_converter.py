@@ -298,6 +298,51 @@ def test_optimize_circle_pose_adaptive_domain_improves_and_logs(monkeypatch: pyt
     assert any("Adaptive-Domain-Suche übernommen" in line for line in logs)
 
 
+def test_optimize_circle_pose_adaptive_domain_uses_run_seed_offset(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Adaptive domain RNG should incorporate run-seed and pass offset."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.full((20, 20, 3), 220, dtype=np.uint8)
+    params = {
+        "circle_enabled": True,
+        "cx": 9.0,
+        "cy": 10.0,
+        "r": 5.0,
+        "min_circle_radius": 1.0,
+    }
+
+    captured: list[int] = []
+
+    class _DummyRng:
+        def uniform(self, low: float, high: float) -> float:
+            return float((low + high) / 2.0)
+
+    monkeypatch.setattr(Action, "_element_error_for_circle_pose", staticmethod(lambda *_args, **_kwargs: 1.0))
+
+    original_default_rng = np.random.default_rng
+
+    def fake_default_rng(seed: int):
+        captured.append(int(seed))
+        return _DummyRng()
+
+    monkeypatch.setattr(np.random, "default_rng", fake_default_rng)
+    logs: list[str] = []
+
+    Action.STOCHASTIC_RUN_SEED = 41
+    Action.STOCHASTIC_SEED_OFFSET = 2
+    try:
+        Action._optimize_circle_pose_adaptive_domain(img, params, logs, rounds=1, samples_per_round=8)
+    finally:
+        Action.STOCHASTIC_RUN_SEED = 0
+        Action.STOCHASTIC_SEED_OFFSET = 0
+        np.random.default_rng = original_default_rng
+
+    assert captured
+    assert captured[0] == 2027 + 41 + 2
+
+
 def test_optimize_circle_pose_adaptive_domain_no_improvement(monkeypatch: pytest.MonkeyPatch) -> None:
     """Adaptive domain search should return False when no better sample exists."""
     if image_composite_converter.np is None:

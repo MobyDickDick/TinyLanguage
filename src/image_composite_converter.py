@@ -280,6 +280,7 @@ class Reflection:
 
 class Action:
     STOCHASTIC_SEED_OFFSET = 0
+    STOCHASTIC_RUN_SEED = 0
     # DejaVuSans-Bold glyph outline in font units.
     M_PATH_D = "M188 1493H678L1018 694L1360 1493H1849V0H1485V1092L1141 287H897L553 1092V0H188Z"
     M_XMIN = 188
@@ -2836,7 +2837,7 @@ class Action:
         )
         lock_cx = bool(params.get("lock_circle_cx", False))
         lock_cy = bool(params.get("lock_circle_cy", False))
-        rng = np.random.default_rng(835 + int(Action.STOCHASTIC_SEED_OFFSET))
+        rng = np.random.default_rng(835 + int(Action.STOCHASTIC_RUN_SEED) + int(Action.STOCHASTIC_SEED_OFFSET))
 
         def eval_pose(candidate: tuple[float, float, float]) -> float:
             cx, cy, rad = candidate
@@ -2980,7 +2981,7 @@ class Action:
             "r_high": r_high,
         }
 
-        rng = np.random.default_rng(2027 + int(Action.STOCHASTIC_SEED_OFFSET))
+        rng = np.random.default_rng(2027 + int(Action.STOCHASTIC_RUN_SEED) + int(Action.STOCHASTIC_SEED_OFFSET))
         improved = False
         flat_plateau_hits = 0
 
@@ -5189,6 +5190,8 @@ def convert_range(
         if f.lower().endswith((".bmp", ".jpg", ".png")) and _in_requested_range(f, start_ref, end_ref)
     )
     rng = _conversion_random()
+    run_seed = rng.randrange(1 << 30)
+    Action.STOCHASTIC_RUN_SEED = int(run_seed)
     process_files = list(files)
     rng.shuffle(process_files)
 
@@ -5461,6 +5464,7 @@ def convert_range(
     _write_pixel_delta2_ranking(folder_path, svg_out_dir, reports_out_dir)
 
     Action.STOCHASTIC_SEED_OFFSET = 0
+    Action.STOCHASTIC_RUN_SEED = 0
     return out_root
 
 

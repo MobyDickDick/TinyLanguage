@@ -1,26 +1,6 @@
 {
   "allowed_error_per_pixel": 0.02698024691358025,
-  "skip_variants": [
-    "AC0800_L",
-    "AC0800_M",
-    "AC0812_L",
-    "AC0812_M",
-    "AC0812_S",
-    "AC0814_L",
-    "AC0814_M",
-    "AC0814_S",
-    "AC0820_L",
-    "AC0831_L",
-    "AC0832_L",
-    "AC0834_L",
-    "AC0836_L",
-    "AC0837_L",
-    "AC0839_L",
-    "AC0870_L",
-    "AC0881_L",
-    "AC0881_M",
-    "AC0882_L"
-  ],
+  "skip_variants": [],
   "notes": "Varianten in skip_variants werden in Folge-Pässen nicht erneut konvertiert. Loeschen der Datei setzt den Ablauf zurueck, dann werden wieder alle Bitmaps bearbeitet.",
   "source": "manual-config"
 }

@@ -1219,24 +1219,24 @@ class Action:
         # - AC0812 has a circle touching the right side and an extra left arm.
         # - On anti-aliased rasters, contour/Hough fitting may merge ring edge,
         #   arm and border pixels into one oversized blob.
-        # Keep fitting adaptive, but cap growth against semantic template size.
-        # Keep AC0812 circle growth deterministic: merged anti-aliased blobs can
-        # bias contour/Hough estimates upward. For this family we do not allow
-        # growth beyond the semantic template radius.
-        max_r = default_r
+        # Keep fitting adaptive, but bounded by generic geometric plausibility
+        # instead of variant-specific hard caps. This keeps elongated connector
+        # symbols (including AC0812_L-like forms) free to grow when needed while
+        # still avoiding runaway radii from anti-aliased merged contours.
+        max_r = max(default_r * 1.12, default_r + 0.75)
+        max_r = min(max_r, float(min(w, h)) * 0.48)
         r = min(r, max_r)
 
         if h <= 15 and not bool(params.get("draw_text", True)):
-            # AC0812_S can lose roughly one anti-aliased ring pixel in contour/Hough
-            # fitting; keep tiny plain variants close to the semantic template size.
+            # Tiny plain connector badges can lose roughly one anti-aliased ring
+            # pixel in contour/Hough fitting; keep them close to template size.
             r = max(r, default_r * 0.98)
 
-        # Diff-PNG inspection for AC0812_L shows that elongated variants can still
-        # shrink the ring too aggressively when the left connector bleeds into the
-        # contour mask. Keep large horizontal forms very close to their semantic
-        # template radius while preserving the adaptive fit for medium/small forms.
-        if aspect_ratio >= 1.75 and h >= 22 and not bool(params.get("draw_text", True)):
-            r = max(r, default_r * 0.96)
+        # Elongated connector badges are prone to under-estimating the ring when
+        # the connector bleeds into the contour mask. Apply a generic floor for
+        # broad, no-text forms rather than pinning a single SKU.
+        if aspect_ratio >= 1.60 and h >= 20 and not bool(params.get("draw_text", True)):
+            r = max(r, default_r * 0.95)
 
         params["r"] = r
 
@@ -4386,6 +4386,25 @@ def run_iteration_pipeline(
     elements = ", ".join(params["elements"]) if params["elements"] else "Kein Compositing-Befehl gefunden"
     print(f"Befehl erkannt: {elements}")
 
+    log_path = None
+    if reports_out_dir:
+        log_path = os.path.join(reports_out_dir, f"{os.path.splitext(filename)[0]}_element_validation.log")
+
+    def _write_validation_log(lines: list[str]) -> None:
+        if not log_path:
+            return
+        payload = [
+            (
+                "run-meta: "
+                f"run_seed={int(Action.STOCHASTIC_RUN_SEED)} "
+                f"pass_seed_offset={int(Action.STOCHASTIC_SEED_OFFSET)} "
+                f"nonce_ns={time.time_ns()}"
+            )
+        ]
+        payload.extend(str(line) for line in lines)
+        with open(log_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(payload).rstrip() + "\n")
+
     if params["mode"] == "semantic_badge":
         badge_params = Action.make_badge_params(w, h, perc.base_name, perc.img)
         if badge_params is None:
@@ -4404,6 +4423,7 @@ def run_iteration_pipeline(
             print("[ERROR] Semantik-Abgleich fehlgeschlagen:")
             for issue in semantic_issues:
                 print(f"  - {issue}")
+            _write_validation_log(["status=semantic_mismatch", *[f"issue={issue}" for issue in semantic_issues]])
             return None
 
         validation_logs: list[str] = []
@@ -4420,15 +4440,6 @@ def run_iteration_pipeline(
             max_rounds=max(1, int(badge_validation_rounds)),
             debug_out_dir=debug_dir,
         )
-        validation_logs.insert(
-            0,
-            (
-                "run-meta: "
-                f"run_seed={int(Action.STOCHASTIC_RUN_SEED)} "
-                f"pass_seed_offset={int(Action.STOCHASTIC_SEED_OFFSET)} "
-                f"nonce_ns={time.time_ns()}"
-            ),
-        )
         badge_params = Action._enforce_semantic_connector_expectation(
             perc.base_name,
             list(params.get("elements", [])),
@@ -4440,10 +4451,7 @@ def run_iteration_pipeline(
             validation_logs.append(
                 "semantic-guard: Erwartete Arm-Geometrie bestätigt/wiederhergestellt (z.B. AC0812 links)."
             )
-        if reports_out_dir:
-            log_path = os.path.join(reports_out_dir, f"{os.path.splitext(filename)[0]}_element_validation.log")
-            with open(log_path, "w", encoding="utf-8") as f:
-                f.write("\n".join(validation_logs).rstrip() + "\n")
+        _write_validation_log(["status=semantic_ok", *validation_logs])
 
         svg_content = Action.generate_badge_svg(w, h, badge_params)
         base = os.path.splitext(filename)[0]
@@ -4459,6 +4467,7 @@ def run_iteration_pipeline(
 
     if params["mode"] != "composite":
         print("  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.")
+        _write_validation_log(["status=skipped_non_composite"])
         return None
 
     best_error = float("inf")
@@ -4487,6 +4496,11 @@ def run_iteration_pipeline(
     if best_diff is not None:
         cv2.imwrite(os.path.join(diff_out_dir, f"{base}_diff.png"), best_diff)
 
+    _write_validation_log([
+        "status=composite_ok",
+        f"best_iter={int(best_iter)}",
+        f"best_error={float(best_error):.6f}",
+    ])
     return base, desc, params, best_iter, best_error
 
 

@@ -208,11 +208,11 @@ class Reflection:
             else:
                 params["elements"].append("SEMANTIC: Kreis + Buchstabe")
                 params["label"] = "M" if base_name.upper() == "AR0100" else "T"
-            if base_name.upper() == "AC0810":
+            if base_name.upper() in {"AC0810", "AC0814", "AC0834", "AC0839"}:
                 params["elements"].append("SEMANTIC: waagrechter Strich rechts vom Kreis")
-            if base_name.upper() == "AC0881":
+            if base_name.upper() in {"AC0881", "AC0831", "AC0836"}:
                 params["elements"].append("SEMANTIC: senkrechter Strich hinter dem Kreis")
-            if base_name.upper() in {"AC0812", "AC0882"}:
+            if base_name.upper() in {"AC0812", "AC0832", "AC0837", "AC0882"}:
                 params["elements"].append("SEMANTIC: waagrechter Strich links vom Kreis")
             if "waagrechter strich rechts" in desc:
                 params["elements"].append("SEMANTIC: waagrechter Strich rechts vom Kreis")
@@ -3217,11 +3217,19 @@ class Action:
         if elem_render is None:
             return float("inf")
 
-        # Keep the source mask anchored to the current parameter state.
-        # If we derive `mask_orig` from the candidate radius itself, a smaller
-        # probe can hide mismatching source pixels and bias the optimizer toward
-        # collapsing circles (observed on AC0833_L).
-        mask_orig = Action.extract_badge_element_mask(img_orig, params, "circle")
+        # Keep the source mask conservative across radius probes.
+        # - For shrink probes, stay anchored to the current radius so we don't
+        #   hide missing source pixels (collapse bias, observed on AC0833_L).
+        # - For growth probes, expand the source mask context to the larger
+        #   radius so underestimated starts (e.g. AC0812_L) can still move up.
+        source_mask_params = dict(params)
+        source_mask_params["r"] = max(float(params.get("r", 0.0)), float(probe["r"]))
+        if source_mask_params.get("arm_enabled"):
+            Action._reanchor_arm_to_circle_edge(source_mask_params, float(source_mask_params["r"]))
+        if source_mask_params.get("stem_enabled"):
+            source_mask_params["stem_top"] = float(source_mask_params.get("cy", 0.0)) + float(source_mask_params["r"])
+
+        mask_orig = Action.extract_badge_element_mask(img_orig, source_mask_params, "circle")
         if mask_orig is None:
             return float("inf")
         mask_svg = Action.extract_badge_element_mask(elem_render, probe, "circle")

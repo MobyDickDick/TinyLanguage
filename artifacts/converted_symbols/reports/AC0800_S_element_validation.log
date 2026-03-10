@@ -1,7 +1,7 @@
 Runde 1: elementweise Validierung gestartet
 circle: Fehler=186.450
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 5.500->6.500 (best_err=1863.000); Kandidaten=5.500->6255.000, 6.000->4344.000, 6.500->1863.000, 7.000->2181.000
+circle: Radius-Bracketing r 5.500->6.500 (best_err=2009.000); Kandidaten=5.500->6255.000, 6.000->5165.000, 6.500->2009.000, 7.000->2181.000
 Runde 1: Gesamtfehler=10.347
 Runde 2: elementweise Validierung gestartet
 circle: Fehler=49.369

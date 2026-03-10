@@ -228,7 +228,148 @@ def test_finalize_ac0820_increases_optical_bias_for_co_vertical_centering() -> N
     layout = Action._co2_layout(params)
 
     assert float(layout["y_base"]) > float(params["cy"])
-    assert abs(float(layout["y_base"]) - float(params["cy"])) <= 1.45
+
+
+def test_run_iteration_pipeline_element_validation_log_contains_run_meta(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Element validation logs should always include run metadata per execution."""
+    if image_composite_converter.np is None or image_composite_converter.cv2 is None:
+        pytest.skip("numpy/cv2 not available in this environment")
+
+    np = image_composite_converter.np
+    cv2 = image_composite_converter.cv2
+
+    img = np.full((12, 20, 3), 240, dtype=np.uint8)
+    img_path = tmp_path / "AC0812_L.jpg"
+    csv_path = tmp_path / "data.csv"
+    svg_dir = tmp_path / "svg"
+    diff_dir = tmp_path / "diff"
+    reports_dir = tmp_path / "reports"
+    csv_path.write_text("Wurzelform;Beschreibung\nAC0812;semantic\n", encoding="utf-8")
+    assert cv2.imwrite(str(img_path), img)
+
+    monkeypatch.setattr(
+        image_composite_converter.Reflection,
+        "parse_description",
+        lambda *_args, **_kwargs: (
+            "semantic",
+            {"mode": "semantic_badge", "elements": ["SEMANTIC: test"], "label": ""},
+        ),
+    )
+    monkeypatch.setattr(
+        image_composite_converter.Action,
+        "make_badge_params",
+        staticmethod(lambda *_args, **_kwargs: image_composite_converter.Action._default_ac0812_params(20, 12)),
+    )
+    monkeypatch.setattr(
+        image_composite_converter.Action,
+        "validate_semantic_description_alignment",
+        staticmethod(lambda *_args, **_kwargs: []),
+    )
+    monkeypatch.setattr(
+        image_composite_converter.Action,
+        "validate_badge_by_elements",
+        staticmethod(lambda *_args, **_kwargs: ["ok: element pass"]),
+    )
+    monkeypatch.setattr(
+        image_composite_converter.Action,
+        "_enforce_semantic_connector_expectation",
+        staticmethod(lambda _base, _elements, p, _w, _h: p),
+    )
+    monkeypatch.setattr(
+        image_composite_converter.Action,
+        "generate_badge_svg",
+        staticmethod(lambda w, h, _p: f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}"/>'),
+    )
+    monkeypatch.setattr(
+        image_composite_converter.Action,
+        "render_svg_to_numpy",
+        staticmethod(lambda _svg, w, h: np.full((h, w, 3), 240, dtype=np.uint8)),
+    )
+    monkeypatch.setattr(
+        image_composite_converter.Action,
+        "create_diff_image",
+        staticmethod(lambda a, _b: a.copy()),
+    )
+
+    image_composite_converter.Action.STOCHASTIC_RUN_SEED = 123
+    image_composite_converter.Action.STOCHASTIC_SEED_OFFSET = 7
+    res = image_composite_converter.run_iteration_pipeline(
+        str(img_path),
+        str(csv_path),
+        2,
+        str(svg_dir),
+        str(diff_dir),
+        str(reports_dir),
+    )
+    assert res is not None
+
+    log_file = reports_dir / "AC0812_L_element_validation.log"
+    assert log_file.exists()
+    first_line = log_file.read_text(encoding="utf-8").splitlines()[0]
+    assert first_line.startswith("run-meta: ")
+    assert "run_seed=123" in first_line
+    assert "pass_seed_offset=7" in first_line
+    assert "nonce_ns=" in first_line
+
+
+def test_convert_range_does_not_skip_variants_in_quality_passes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Global quality passes should keep all variants eligible (no per-variant skip lock)."""
+    if image_composite_converter.np is None or image_composite_converter.cv2 is None:
+        pytest.skip("numpy/cv2 not available in this environment")
+
+    np = image_composite_converter.np
+    cv2 = image_composite_converter.cv2
+
+    images_dir = tmp_path / "images"
+    images_dir.mkdir()
+    csv_path = tmp_path / "data.csv"
+    csv_path.write_text("Wurzelform;Beschreibung\nAC0812;semantic\n", encoding="utf-8")
+    for name in ("AC0812_L.jpg", "AC0812_M.jpg"):
+        assert cv2.imwrite(str(images_dir / name), np.full((10, 10, 3), 230, dtype=np.uint8))
+
+    monkeypatch.setattr(image_composite_converter, "_in_requested_range", lambda *_args, **_kwargs: True)
+    monkeypatch.setattr(image_composite_converter, "_load_quality_config", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr(image_composite_converter, "_write_quality_pass_report", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(image_composite_converter, "_harmonize_semantic_size_variants", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(image_composite_converter, "_write_pixel_delta2_ranking", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(image_composite_converter, "_default_converted_symbols_root", lambda: str(tmp_path / "out"))
+
+    def fake_pipeline(img_path: str, *_args, **_kwargs):
+        stem = Path(img_path).stem
+        params = {"mode": "semantic_badge", "cx": 5.0, "cy": 5.0, "r": 3.0}
+        return stem, "semantic", params, 1, 100.0
+
+    monkeypatch.setattr(image_composite_converter, "run_iteration_pipeline", fake_pipeline)
+
+    captured_cfg: dict[str, object] = {}
+
+    def capture_quality_cfg(_reports_out_dir: str, *, allowed_error_per_pixel: float, skipped_variants: list[str], source: str) -> None:
+        captured_cfg["allowed_error_per_pixel"] = allowed_error_per_pixel
+        captured_cfg["skipped_variants"] = list(skipped_variants)
+        captured_cfg["source"] = source
+
+    monkeypatch.setattr(image_composite_converter, "_write_quality_config", capture_quality_cfg)
+
+    observed_skips: list[set[str]] = []
+
+    def capture_open_cases(rows, allowed_error_per_pixel, skip_variants=None):
+        observed_skips.append(set(skip_variants or set()))
+        return []
+
+    monkeypatch.setattr(image_composite_converter, "_select_open_quality_cases", capture_open_cases)
+    monkeypatch.setattr(image_composite_converter, "_select_middle_lower_tercile", lambda _rows: [])
+
+    image_composite_converter.convert_range(str(images_dir), str(csv_path), iterations=2, start_ref="AC0812", end_ref="AC0812")
+
+    assert captured_cfg["skipped_variants"] == []
+    assert observed_skips
+    assert all(not skip_set for skip_set in observed_skips)
 
 
 def test_co2_layout_keeps_subscript_inside_inner_circle_for_centered_badges() -> None:

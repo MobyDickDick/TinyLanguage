@@ -1,0 +1,25 @@
+Runde 1: elementweise Validierung gestartet
+circle: Fehler=187.470
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 9.000->8.000 (best_err=16219.000); Kandidaten=8.000->16219.000, 8.500->16301.000, 9.000->16784.000, 12.000->23064.000
+arm: Fehler=127.741
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 24.500); Kandidaten=22.000->131.453, 24.500->127.741, 28.000->127.741, 33.500->127.741, 39.500->127.741, 45.000->127.741
+text: Fehler=166.002
+text: Breiten-Bracketing voc_font_scale 0.562->0.968; Kandidaten=0.337->163.831, 0.477->163.831, 0.526->164.791, 0.562->165.904, 0.646->161.266, 0.716->163.553, 0.968->157.154, 1.221->165.309, 1.411->178.225, 1.600->186.856
+Runde 1: Gesamtfehler=24.873
+Runde 2: elementweise Validierung gestartet
+circle: Fehler=181.886
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing keine relevante Änderung (r: 8.000, best_err=14946.000); Kandidaten=8.000->14946.000, 12.000->23064.000
+arm: Fehler=127.741
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 24.500); Kandidaten=22.000->131.453, 24.500->127.741, 28.000->127.741, 33.500->127.741, 39.500->127.741, 45.000->127.741
+text: Fehler=157.154
+text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.968); Kandidaten=0.450->163.831, 0.623->164.939, 0.795->162.080, 0.823->159.721, 0.968->157.154, 1.025->163.216, 1.113->166.151, 1.255->181.827, 1.427->177.686, 1.600->186.856
+Runde 2: Gesamtfehler=24.873
+Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet
+circle: Farb-Bracketing übersprungen (Farben gesperrt)
+arm: Farb-Bracketing übersprungen (Farben gesperrt)
+text: Farb-Bracketing übersprungen (Farben gesperrt)
+semantic-guard: Erwartete Arm-Geometrie bestätigt/wiederhergestellt (z.B. AC0812 links).

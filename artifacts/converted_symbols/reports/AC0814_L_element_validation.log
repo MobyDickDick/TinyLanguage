@@ -1,0 +1,28 @@
+Runde 1: elementweise Validierung gestartet
+circle: Fehler=231.384
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 10.300->9.500 (best_err=10890.000); Kandidaten=9.500->10890.000, 10.000->11179.000, 10.500->12196.000, 12.000->16359.000
+arm: Fehler=102.726
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 23.000); Kandidaten=17.000->117.940, 23.000->105.018, 24.000->105.018, 31.000->105.018, 38.000->105.018, 45.000->105.018
+Runde 1: Gesamtfehler=17.189
+Runde 2: elementweise Validierung gestartet
+circle: Fehler=220.988
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 9.500->9.000 (best_err=9364.000); Kandidaten=9.000->9364.000, 9.500->9841.000, 12.000->16359.000
+arm: Fehler=104.481
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 23.500); Kandidaten=17.500->119.760, 23.500->106.769, 24.500->106.769, 31.500->106.769, 38.000->106.769, 45.000->106.769
+Runde 2: Gesamtfehler=16.987
+Runde 3: elementweise Validierung gestartet
+circle: Fehler=211.862
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=8753.000); Kandidaten=9.000->8753.000, 12.000->16359.000
+arm: Fehler=104.481
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 23.500); Kandidaten=17.500->119.760, 23.500->106.769, 24.500->106.769, 31.500->106.769, 38.000->106.769, 45.000->106.769
+Runde 3: Gesamtfehler=16.987
+Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet
+circle: Farb-Bracketing übersprungen (Farben gesperrt)
+arm: Farb-Bracketing übersprungen (Farben gesperrt)
+semantic-guard: Erwartete Arm-Geometrie bestätigt/wiederhergestellt (z.B. AC0812 links).

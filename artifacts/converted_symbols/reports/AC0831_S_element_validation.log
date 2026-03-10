@@ -1,0 +1,26 @@
+Runde 1: elementweise Validierung gestartet
+circle: Fehler=195.154
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 5.700->6.500 (best_err=5923.000); Kandidaten=5.500->9275.000, 6.000->8145.000, 6.500->5923.000, 7.000->6016.000
+stem: Fehler=53.941
+stem: Breitenkorrektur mode=iter, ratio=0.167, alt=1.000, neu=1.000
+stem: Geometrie nach Elementabgleich aktualisiert
+stem: Breiten-Bracketing keine relevante Änderung (stem_width: 1.000); Kandidaten=1.000->53.941, 1.500->53.941
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.500->89.333, 11.000->44.800, 12.000->50.958, 16.500->74.800, 20.500->108.202, 25.000->117.219
+text: Fehler=158.964
+text: Breiten-Bracketing co2_font_scale 0.886->0.797; Kandidaten=0.797->158.964, 0.844->158.964, 0.886->158.964, 0.890->158.964, 0.952->158.964, 1.014->158.964, 1.018->158.964, 1.061->158.964, 1.107->158.964
+Runde 1: Gesamtfehler=20.336
+Runde 2: elementweise Validierung gestartet
+circle: Fehler=126.141
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing keine relevante Änderung (r: 6.500, best_err=5923.000); Kandidaten=6.000->8145.000, 6.500->5923.000, 7.000->6016.000
+stem: Fehler=44.800
+stem: Breiten-Bracketing keine relevante Änderung (stem_width: 1.000); Kandidaten=1.000->53.941, 1.500->53.941
+stem: Längen-Bracketing keine relevante Änderung (stem_len: 11.000); Kandidaten=7.500->89.333, 11.000->44.800, 12.000->50.958, 16.500->74.800, 20.500->108.202, 25.000->117.219
+text: Fehler=158.964
+text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.797); Kandidaten=0.797->158.964, 0.844->158.964, 0.890->158.964, 0.917->158.964, 0.952->158.964, 1.014->158.964, 1.061->158.964, 1.107->158.964
+Runde 2: Gesamtfehler=20.336
+Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet
+circle: Farb-Bracketing übersprungen (Farben gesperrt)
+stem: Farb-Bracketing übersprungen (Farben gesperrt)
+text: Farb-Bracketing übersprungen (Farben gesperrt)

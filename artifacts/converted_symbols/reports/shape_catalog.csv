@@ -1,5 +1,5 @@
 base;category;variants
-AC0800;Kellen ohne Buchstaben;AC0800_L|AC0800_M|AC0800_S
+AC0800;Kreise ohne Buchstaben;AC0800_L|AC0800_M|AC0800_S
 AC0812;Kellen ohne Buchstaben;AC0812_L|AC0812_M|AC0812_S
 AC0814;Kellen ohne Buchstaben;AC0814_L|AC0814_M|AC0814_S
 AC0820;Kellen mit Buchstaben;AC0820_L|AC0820_M|AC0820_S
@@ -11,5 +11,5 @@ AC0836;Kellen mit Buchstaben;AC0836_L|AC0836_M|AC0836_S
 AC0837;Kellen mit Buchstaben;AC0837_L|AC0837_M|AC0837_S
 AC0839;Kellen mit Buchstaben;AC0839_L|AC0839_M|AC0839_S
 AC0870;Kreise ohne Buchstaben;AC0870_L|AC0870_M|AC0870_S
-AC0881;Kellen ohne Buchstaben;AC0881_L|AC0881_M|AC0881_S
+AC0881;Kellen mit Buchstaben;AC0881_L|AC0881_M|AC0881_S
 AC0882;Kellen ohne Buchstaben;AC0882_L|AC0882_M|AC0882_S

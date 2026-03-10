@@ -1,4 +1,5 @@
-run-meta: run_seed=607509852 pass_seed_offset=4 nonce_ns=1773171444302093300
+run-meta: run_seed=485855977 pass_seed_offset=2 nonce_ns=1773172433419596200
+status=semantic_ok
 Runde 1: elementweise Validierung gestartet
 circle: Fehler=74.395
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)

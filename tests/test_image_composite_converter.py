@@ -57,6 +57,24 @@ def test_parse_semantic_badge_layout_overrides_centers_full_co2_cluster() -> Non
     assert float(overrides["co2_dx"]) == 0.0
 
 
+def test_parse_description_marks_ac0833_with_right_horizontal_arm() -> None:
+    """AC0833 belongs to the right-arm CO₂ family and must include that semantic element."""
+    ref = image_composite_converter.Reflection({})
+
+    _desc, params = ref.parse_description("AC0833", "AC0833_S.jpg")
+
+    assert "SEMANTIC: waagrechter Strich rechts vom Kreis" in list(params.get("elements", []))
+
+
+def test_parse_description_marks_ac0838_with_right_horizontal_arm() -> None:
+    """AC0838 belongs to the right-arm VOC family and must include that semantic element."""
+    ref = image_composite_converter.Reflection({})
+
+    _desc, params = ref.parse_description("AC0838", "AC0838_L.jpg")
+
+    assert "SEMANTIC: waagrechter Strich rechts vom Kreis" in list(params.get("elements", []))
+
+
 def test_finalize_ac0820_locks_plain_circle_center_and_min_radius() -> None:
     """Plain AC0820 badges should keep a centered ring and preserve readable radius."""
     params = Action._apply_co2_label(Action._default_ac0870_params(20, 20))

@@ -208,11 +208,11 @@ class Reflection:
             else:
                 params["elements"].append("SEMANTIC: Kreis + Buchstabe")
                 params["label"] = "M" if base_name.upper() == "AR0100" else "T"
-            if base_name.upper() == "AC0810":
+            if base_name.upper() in {"AC0810", "AC0814", "AC0834", "AC0839"}:
                 params["elements"].append("SEMANTIC: waagrechter Strich rechts vom Kreis")
-            if base_name.upper() == "AC0881":
+            if base_name.upper() in {"AC0881", "AC0831", "AC0836"}:
                 params["elements"].append("SEMANTIC: senkrechter Strich hinter dem Kreis")
-            if base_name.upper() in {"AC0812", "AC0882"}:
+            if base_name.upper() in {"AC0812", "AC0832", "AC0837", "AC0882"}:
                 params["elements"].append("SEMANTIC: waagrechter Strich links vom Kreis")
             if "waagrechter strich rechts" in desc:
                 params["elements"].append("SEMANTIC: waagrechter Strich rechts vom Kreis")

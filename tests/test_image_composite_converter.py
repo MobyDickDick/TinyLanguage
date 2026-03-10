@@ -560,6 +560,38 @@ def test_validate_badge_logs_extent_bracketing_for_line_elements() -> None:
     assert any("arm: Längen-Bracketing" in line for line in logs)
 
 
+def test_element_error_for_circle_radius_uses_expanded_source_mask_for_growth(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Circle growth probes should evaluate against an equally expanded source mask."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.zeros((25, 45, 3), dtype=np.uint8)
+    params = Action._finalize_ac08_style("AC0812", Action._default_ac0812_params(45, 25))
+
+    recorded_source_radii: list[float] = []
+
+    monkeypatch.setattr(Action, "generate_badge_svg", staticmethod(lambda _w, _h, _p: "<svg/>"))
+    monkeypatch.setattr(Action, "render_svg_to_numpy", staticmethod(lambda _svg, w, h: np.zeros((h, w, 3), dtype=np.uint8)))
+    monkeypatch.setattr(Action, "_fit_to_original_size", staticmethod(lambda _orig, rendered: rendered))
+    monkeypatch.setattr(Action, "_masked_union_error_in_bbox", staticmethod(lambda _a, _b, _c, _d: 0.0))
+
+    def fake_mask(_img: object, mask_params: dict, _element: str):
+        if mask_params is not params:
+            recorded_source_radii.append(float(mask_params.get("r", 0.0)))
+        return np.ones((25, 45), dtype=bool)
+
+    monkeypatch.setattr(Action, "extract_badge_element_mask", staticmethod(fake_mask))
+
+    start_r = float(params["r"])
+    probe_r = start_r + 2.0
+    err = Action._element_error_for_circle_radius(img, params, probe_r)
+
+    assert err == 0.0
+    assert recorded_source_radii
+    assert max(recorded_source_radii) >= probe_r
+
+
 
 
 def test_tune_ac0834_co2_badge_recenters_tiny_variant_and_locks_strokes() -> None:

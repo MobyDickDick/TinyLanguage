@@ -1285,6 +1285,23 @@ def test_parse_description_marks_ac0810_as_semantic_badge() -> None:
     assert "SEMANTIC: waagrechter Strich rechts vom Kreis" in params["elements"]
 
 
+@pytest.mark.parametrize(
+    ("symbol", "expected_element"),
+    [
+        ("AC0814", "SEMANTIC: waagrechter Strich rechts vom Kreis"),
+        ("AC0834", "SEMANTIC: waagrechter Strich rechts vom Kreis"),
+        ("AC0837", "SEMANTIC: waagrechter Strich links vom Kreis"),
+        ("AC0831", "SEMANTIC: senkrechter Strich hinter dem Kreis"),
+    ],
+)
+def test_parse_description_infers_semantic_connectors_for_derived_ac08_badges(symbol: str, expected_element: str) -> None:
+    """Derived AC08 badges should carry the same connector semantics as their base geometry."""
+    _desc, params = image_composite_converter.Reflection({}).parse_description(symbol, f"{symbol}_L.jpg")
+
+    assert params["mode"] == "semantic_badge"
+    assert expected_element in params["elements"]
+
+
 def test_template_transfer_skips_nonsemantic_donors_for_semantic_targets(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Semantic target badges must not accept generic donor transforms that can drop connector semantics."""
     if image_composite_converter.np is None or image_composite_converter.cv2 is None:

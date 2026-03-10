@@ -1202,6 +1202,7 @@ class Action:
         """Fit AC0812 while keeping the horizontal arm anchored to the left edge."""
         params = Action._fit_semantic_badge_from_image(img, defaults)
         h, w = img.shape[:2]
+        aspect_ratio = (float(w) / float(h)) if h > 0 else 1.0
 
         raw_arm_stroke = float(params.get("arm_stroke", defaults.get("arm_stroke", max(1.0, float(h) * 0.10))))
         cx = float(params.get("cx", defaults.get("cx", float(w) / 2.0)))
@@ -1229,6 +1230,13 @@ class Action:
             # AC0812_S can lose roughly one anti-aliased ring pixel in contour/Hough
             # fitting; keep tiny plain variants close to the semantic template size.
             r = max(r, default_r * 0.98)
+
+        # Diff-PNG inspection for AC0812_L shows that elongated variants can still
+        # shrink the ring too aggressively when the left connector bleeds into the
+        # contour mask. Keep large horizontal forms very close to their semantic
+        # template radius while preserving the adaptive fit for medium/small forms.
+        if aspect_ratio >= 1.75 and h >= 22 and not bool(params.get("draw_text", True)):
+            r = max(r, default_r * 0.96)
 
         params["r"] = r
 

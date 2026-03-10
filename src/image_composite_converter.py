@@ -4420,6 +4420,15 @@ def run_iteration_pipeline(
             max_rounds=max(1, int(badge_validation_rounds)),
             debug_out_dir=debug_dir,
         )
+        validation_logs.insert(
+            0,
+            (
+                "run-meta: "
+                f"run_seed={int(Action.STOCHASTIC_RUN_SEED)} "
+                f"pass_seed_offset={int(Action.STOCHASTIC_SEED_OFFSET)} "
+                f"nonce_ns={time.time_ns()}"
+            ),
+        )
         badge_params = Action._enforce_semantic_connector_expectation(
             perc.base_name,
             list(params.get("elements", [])),
@@ -5297,15 +5306,10 @@ def convert_range(
         except (TypeError, ValueError):
             allowed_error_pp = initial_threshold
 
-    skip_variants: set[str] = {str(row["variant"]) for row in initial_top_tercile}
-    cfg_skips = cfg.get("skip_variants")
-    if isinstance(cfg_skips, list):
-        skip_variants.update(str(item).upper() for item in cfg_skips)
-
-    if math.isfinite(allowed_error_pp):
-        for row in ranked_rows:
-            if float(row.get("error_per_pixel", float("inf"))) <= allowed_error_pp:
-                skip_variants.add(str(row.get("variant", "")).upper())
+    # Global policy: do not freeze individual variants. Every quality pass keeps
+    # all variants eligible so each run can re-evaluate with stochastic search
+    # while still converging by only accepting strict improvements.
+    skip_variants: set[str] = set()
 
     _write_quality_config(
         reports_out_dir,
@@ -5344,10 +5348,6 @@ def convert_range(
             rng.shuffle(candidates)
         for row in candidates:
             filename = str(row["filename"])
-            variant = str(row.get("variant", "")).upper()
-            if variant in skip_variants:
-                continue
-
             prev_error_pp = float(row["error_per_pixel"])
 
             new_row = _convert_one(filename, iteration_budget=iteration_budget, badge_rounds=badge_rounds)

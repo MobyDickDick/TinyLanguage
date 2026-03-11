@@ -790,7 +790,7 @@ def test_element_error_for_circle_radius_uses_expanded_source_mask_for_growth(mo
     monkeypatch.setattr(Action, "generate_badge_svg", staticmethod(lambda _w, _h, _p: "<svg/>"))
     monkeypatch.setattr(Action, "render_svg_to_numpy", staticmethod(lambda _svg, w, h: np.zeros((h, w, 3), dtype=np.uint8)))
     monkeypatch.setattr(Action, "_fit_to_original_size", staticmethod(lambda _orig, rendered: rendered))
-    monkeypatch.setattr(Action, "_masked_union_error_in_bbox", staticmethod(lambda _a, _b, _c, _d: 0.0))
+    monkeypatch.setattr(Action, "_element_match_error", staticmethod(lambda *_args, **_kwargs: 0.0))
 
     def fake_mask(_img: object, mask_params: dict, _element: str):
         if mask_params is not params:
@@ -941,19 +941,55 @@ def test_circle_error_uses_stable_source_mask_for_radius_candidates(monkeypatch:
 
     calls: list[dict] = []
 
-    def fake_extract(_img: object, mask_params: dict, _element: str) -> object:
+    def fake_extract(_img: object, mask_params: dict, _element: str):
         calls.append(mask_params)
-        return object()
+        return image_composite_converter.np.ones((20, 20), dtype=bool)
 
     monkeypatch.setattr(Action, "extract_badge_element_mask", staticmethod(fake_extract))
-    monkeypatch.setattr(Action, "_masked_union_error_in_bbox", staticmethod(lambda *_args, **_kwargs: 1.0))
+    monkeypatch.setattr(Action, "_element_match_error", staticmethod(lambda *_args, **_kwargs: 1.0))
 
     err = Action._element_error_for_circle_radius(img, params, 3.5)
 
     assert err == 1.0
     assert len(calls) >= 2
-    assert calls[0] is params
+    assert calls[0] is not params
     assert calls[1] is not params
+
+
+def test_circle_color_error_uses_stable_photometric_mask(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Circle color bracketing should use stable source mask photometric scoring."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.zeros((20, 20, 3), dtype=np.uint8)
+    mask = np.ones((20, 20), dtype=bool)
+    params = {"circle_enabled": True, "cx": 10.0, "cy": 10.0, "r": 6.0, "fill_gray": 220, "stroke_gray": 127}
+
+    monkeypatch.setattr(Action, "generate_badge_svg", staticmethod(lambda *_args, **_kwargs: "<svg />"))
+    monkeypatch.setattr(Action, "render_svg_to_numpy", staticmethod(lambda *_args, **_kwargs: object()))
+    monkeypatch.setattr(Action, "_fit_to_original_size", staticmethod(lambda _img, rendered: rendered))
+
+    monkeypatch.setattr(
+        Action,
+        "_element_match_error",
+        staticmethod(lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("must not be called"))),
+    )
+
+    calls: list[tuple[object, object]] = []
+
+    def fake_union(_img_a, _img_b, m1, m2):
+        calls.append((m1, m2))
+        return 3.0
+
+    monkeypatch.setattr(Action, "_masked_union_error_in_bbox", staticmethod(fake_union))
+
+    err = Action._element_error_for_color(img, params, "circle", "fill_gray", 210, mask)
+
+    assert err == 3.0
+    assert calls
+    assert calls[0][0] is mask
+    assert calls[0][1] is mask
 
 
 def test_circle_match_error_penalizes_non_concentric_candidate(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1030,6 +1066,36 @@ def test_circle_match_error_penalizes_undersized_candidate(monkeypatch: pytest.M
     )
 
     assert err_under > err_same
+
+def test_circle_pose_error_uses_element_match_scorer(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Center/pose probing should go through the unified element match scorer."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.zeros((20, 20, 3), dtype=np.uint8)
+    params = {"circle_enabled": True, "cx": 10.0, "cy": 10.0, "r": 6.0}
+
+    monkeypatch.setattr(Action, "generate_badge_svg", staticmethod(lambda *_args, **_kwargs: "<svg />"))
+    monkeypatch.setattr(Action, "render_svg_to_numpy", staticmethod(lambda *_args, **_kwargs: object()))
+    monkeypatch.setattr(Action, "_fit_to_original_size", staticmethod(lambda _img, rendered: rendered))
+    monkeypatch.setattr(
+        Action,
+        "extract_badge_element_mask",
+        staticmethod(lambda *_args, **_kwargs: np.ones((20, 20), dtype=bool)),
+    )
+    monkeypatch.setattr(Action, "_element_match_error", staticmethod(lambda *_args, **_kwargs: 2.5))
+
+    err = Action._element_error_for_circle_pose(
+        img,
+        params,
+        cx_value=10.5,
+        cy_value=9.5,
+        radius_value=5.5,
+    )
+
+    assert err == 2.5
+
 
 def test_voc_font_scale_bounds_allow_larger_tiny_badge_labels() -> None:
     """Tiny VOC badges should allow expanding text scale beyond the historic cap."""

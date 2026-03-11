@@ -1,3 +1,3 @@
-run-meta: run_seed=380962146 pass_seed_offset=0 nonce_ns=1773228030201978400
+run-meta: run_seed=397045129 pass_seed_offset=0 nonce_ns=1773229848716194800
 status=semantic_mismatch
 issue=Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten

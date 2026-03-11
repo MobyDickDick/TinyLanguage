@@ -40,6 +40,47 @@ except ImportError:  # pragma: no cover - optional dependency
     fitz = None
 
 
+
+
+def _clip(value: float, low: float, high: float):
+    """Clip scalar (or numpy value) to [low, high] even when numpy is unavailable."""
+    if np is not None:
+        return np.clip(value, low, high)
+    return max(low, min(high, value))
+
+
+
+def _isfinite(value: float) -> bool:
+    """Return True for finite numbers without requiring numpy."""
+    try:
+        return math.isfinite(float(value))
+    except (TypeError, ValueError):
+        return False
+
+
+
+class _CompatRNG:
+    """Minimal RNG adapter used when numpy is unavailable."""
+
+    def __init__(self, seed: int):
+        self._rng = random.Random(int(seed))
+
+    def uniform(self, low: float, high: float) -> float:
+        return self._rng.uniform(low, high)
+
+    def normal(self, mean: float, stddev: float) -> float:
+        return self._rng.gauss(mean, stddev)
+
+
+def _default_rng(seed: int):
+    if np is not None:
+        return np.random.default_rng(int(seed))
+    return _CompatRNG(int(seed))
+
+
+def _argmin(values: list[float]) -> int:
+    return min(range(len(values)), key=values.__getitem__)
+
 def _missing_required_image_dependencies() -> list[str]:
     missing: list[str] = []
     if cv2 is None:
@@ -808,9 +849,9 @@ class Action:
         max_r = min(float(w) * 0.52, float(top_limit) * 0.58)
         if max_r < min_r:
             max_r = min_r
-        r = float(np.clip(r, min_r, max_r))
-        cx = float(np.clip(cx, 0.0, float(w - 1)))
-        cy = float(np.clip(cy, 0.0, float(h - 1)))
+        r = float(_clip(r, min_r, max_r))
+        cx = float(_clip(cx, 0.0, float(w - 1)))
+        cy = float(_clip(cy, 0.0, float(h - 1)))
         return cx, cy, r
 
     @staticmethod
@@ -855,7 +896,7 @@ class Action:
             default_cy = float(defaults.get("cy", float(w) / 2.0))
             default_r = float(defaults.get("r", float(w) * 0.4))
             cx = default_cx
-            cy = float(np.clip(cy, default_cy - 0.8, default_cy + 0.8))
+            cy = float(_clip(cy, default_cy - 0.8, default_cy + 0.8))
             # Keep tiny variants from shrinking due to noisy anti-aliased edge pixels.
             # This preserves the visual diameter expected for AC0811_S.
             r = max(r, default_r * 0.96)
@@ -878,7 +919,7 @@ class Action:
         # shrinks both the circle and text size in variants such as AC0836_L.
         if str(params.get("text_mode", "")).lower() in {"voc", "co2"}:
             default_r = float(defaults.get("r", r))
-            r = float(np.clip(r, default_r * 0.95, default_r * 1.08))
+            r = float(_clip(r, default_r * 0.95, default_r * 1.08))
             params["r"] = r
 
         # AC0811 stems are intentionally thin. The generic contour fit can over-estimate
@@ -1275,7 +1316,7 @@ class Action:
         params["arm_y1"] = cy
         params["arm_x2"] = max(0.0, cx - r)
         params["arm_y2"] = cy
-        current_arm_len = float(np.hypot(params["arm_x2"] - params["arm_x1"], params["arm_y2"] - params["arm_y1"]))
+        current_arm_len = float(math.hypot(params["arm_x2"] - params["arm_x1"], params["arm_y2"] - params["arm_y1"]))
         default_arm_len = max(
             0.0,
             float(defaults.get("cx", float(w) / 2.0)) - float(defaults.get("r", float(h) * 0.4)),
@@ -1286,7 +1327,17 @@ class Action:
         # solution. Use the template arm span as the lower bound baseline instead.
         semantic_arm_len_min = max(1.0, default_arm_len * 0.75)
         params["arm_len_min"] = max(1.0, current_arm_len * 0.75, semantic_arm_len_min)
-        params["arm_len_min_ratio"] = float(max(float(params.get("arm_len_min_ratio", 0.75)), 0.75))
+        min_arm_len_ratio = 0.75
+        # For elongated AC0812 variants (L-like forms), preserve a visibly long
+        # connector arm so circle-fitting noise cannot eat too much horizontal
+        # span. This keeps the left arm close to the semantic template.
+        if aspect_ratio >= 1.60 and h >= 20 and not bool(params.get("draw_text", True)):
+            min_arm_len_ratio = 0.82
+        params["arm_len_min_ratio"] = float(max(float(params.get("arm_len_min_ratio", min_arm_len_ratio)), min_arm_len_ratio))
+        params["arm_len_min"] = max(
+            float(params["arm_len_min"]),
+            max(1.0, current_arm_len * float(params["arm_len_min_ratio"]), semantic_arm_len_min),
+        )
 
         # Expose a stable upper radius bound for later stochastic/adaptive circle
         # searches. This prevents left-arm AC0812 variants from re-growing the
@@ -1380,7 +1431,7 @@ class Action:
             default_cy = float(defaults.get("cy", float(h) - (float(w) / 2.0)))
             default_r = float(defaults.get("r", float(w) * 0.4))
             params["cx"] = default_cx
-            params["cy"] = float(np.clip(cy, default_cy - 0.8, default_cy + 0.8))
+            params["cy"] = float(_clip(cy, default_cy - 0.8, default_cy + 0.8))
             params["r"] = max(r, default_r * 0.94)
             params["lock_circle_cx"] = True
             params["lock_circle_cy"] = True
@@ -1473,7 +1524,7 @@ class Action:
         params["arm_y1"] = cy
         params["arm_x2"] = float(w)
         params["arm_y2"] = cy
-        current_arm_len = float(np.hypot(params["arm_x2"] - params["arm_x1"], params["arm_y2"] - params["arm_y1"]))
+        current_arm_len = float(math.hypot(params["arm_x2"] - params["arm_x1"], params["arm_y2"] - params["arm_y1"]))
         params["arm_len_min"] = max(1.0, current_arm_len * 0.75)
         return Action._normalize_light_circle_colors(params)
 
@@ -1642,7 +1693,7 @@ class Action:
             max_radius_delta = max(2.0, template_r * 0.70)
             for c in circles[0]:
                 cx, cy, r = float(c[0]), float(c[1]), float(c[2])
-                center_offset = float(np.hypot(cx - template_cx, cy - template_cy))
+                center_offset = float(math.hypot(cx - template_cx, cy - template_cy))
                 # Semantic AC08xx badges follow a fixed layout. Reject detections
                 # that drift too far away from the expected template center; on
                 # tiny CO₂/VOC symbols those are usually text blobs, not circles.
@@ -1694,7 +1745,7 @@ class Action:
                 radius_limit_y = max(1.0, min(cy, float(h) - cy) - (stroke / 2.0))
                 max_r = max(1.0, min(radius_limit_x, radius_limit_y))
                 min_r = min(max_r, max(1.0, default_r * min_ratio))
-                params["r"] = float(np.clip(float(params.get("r", default_r)), min_r, max_r))
+                params["r"] = float(_clip(float(params.get("r", default_r)), min_r, max_r))
 
         if params.get("stem_enabled"):
             dark = gray <= min(225, int(np.percentile(gray, 75)))
@@ -2282,8 +2333,8 @@ class Action:
             return None
 
         (cx, cy), (rw, rh), _angle = cv2.minAreaRect(cnt)
-        diag = float(np.hypot(float(rw), float(rh)))
-        if not np.isfinite(diag) or diag <= 0.0:
+        diag = float(math.hypot(float(rw), float(rh)))
+        if not _isfinite(diag) or diag <= 0.0:
             return None
         return float(cx), float(cy), diag
 
@@ -2311,8 +2362,8 @@ class Action:
         scx = (sx1 + sx2) / 2.0
         scy = (sy1 + sy2) / 2.0
 
-        center_dist = float(np.hypot(scx - ocx, scy - ocy))
-        orig_diag = float(np.hypot(ow, oh))
+        center_dist = float(math.hypot(scx - ocx, scy - ocy))
+        orig_diag = float(math.hypot(ow, oh))
         max_center_dist = max(2.0, orig_diag * 0.42)
 
         w_ratio = sw / ow
@@ -2351,7 +2402,7 @@ class Action:
         apply_circle_geometry_penalty: bool = True,
     ) -> bool:
         changed = False
-        scale = float(np.clip(diag_scale, 0.85, 1.18))
+        scale = float(_clip(diag_scale, 0.85, 1.18))
 
         if element == "circle" and apply_circle_geometry_penalty:
             old_cx = float(params["cx"])
@@ -2361,12 +2412,12 @@ class Action:
             if bool(params.get("lock_circle_cx", False)):
                 params["cx"] = old_cx
             else:
-                params["cx"] = float(np.clip(old_cx + center_dx * 0.65, 0.0, float(w - 1)))
+                params["cx"] = float(_clip(old_cx + center_dx * 0.65, 0.0, float(w - 1)))
             if bool(params.get("lock_circle_cy", False)):
                 params["cy"] = old_cy
             else:
-                params["cy"] = float(np.clip(old_cy + center_dy * 0.65, 0.0, float(h - 1)))
-            params["r"] = float(np.clip(old_r * scale, min_r, float(min(w, h)) * 0.48))
+                params["cy"] = float(_clip(old_cy + center_dy * 0.65, 0.0, float(h - 1)))
+            params["r"] = float(_clip(old_r * scale, min_r, float(min(w, h)) * 0.48))
             changed = (
                 abs(params["cx"] - old_cx) > 0.02
                 or abs(params["cy"] - old_cy) > 0.02
@@ -2383,12 +2434,12 @@ class Action:
             if bool(params.get("lock_stem_center_to_circle", False)):
                 stem_cx = float(params.get("cx", stem_cx))
             else:
-                stem_cx = float(np.clip(stem_cx + center_dx * 0.75, 0.0, float(w - 1)))
-            new_w = float(np.clip(old_w * scale, 1.0, float(w) * 0.22))
+                stem_cx = float(_clip(stem_cx + center_dx * 0.75, 0.0, float(w - 1)))
+            new_w = float(_clip(old_w * scale, 1.0, float(w) * 0.22))
             params["stem_width"] = new_w
-            params["stem_x"] = float(np.clip(stem_cx - (new_w / 2.0), 0.0, float(w) - new_w))
-            params["stem_top"] = float(np.clip(old_top + center_dy * 0.45, 0.0, float(h - 2)))
-            params["stem_bottom"] = float(np.clip(old_bottom + center_dy * 0.25, params["stem_top"] + 1.0, float(h - 1)))
+            params["stem_x"] = float(_clip(stem_cx - (new_w / 2.0), 0.0, float(w) - new_w))
+            params["stem_top"] = float(_clip(old_top + center_dy * 0.45, 0.0, float(h - 2)))
+            params["stem_bottom"] = float(_clip(old_bottom + center_dy * 0.25, params["stem_top"] + 1.0, float(h - 1)))
             changed = (
                 abs(params["stem_x"] - old_x) > 0.02
                 or abs(params["stem_width"] - old_w) > 0.02
@@ -2412,11 +2463,11 @@ class Action:
             vx = (ax2 - ax1) * scale
             vy = (ay2 - ay1) * scale
 
-            params["arm_x1"] = float(np.clip(acx - (vx / 2.0), 0.0, float(w - 1)))
-            params["arm_x2"] = float(np.clip(acx + (vx / 2.0), 0.0, float(w - 1)))
-            params["arm_y1"] = float(np.clip(acy - (vy / 2.0), 0.0, float(h - 1)))
-            params["arm_y2"] = float(np.clip(acy + (vy / 2.0), 0.0, float(h - 1)))
-            params["arm_stroke"] = float(np.clip(old_stroke * scale, 1.0, float(min(w, h)) * 0.18))
+            params["arm_x1"] = float(_clip(acx - (vx / 2.0), 0.0, float(w - 1)))
+            params["arm_x2"] = float(_clip(acx + (vx / 2.0), 0.0, float(w - 1)))
+            params["arm_y1"] = float(_clip(acy - (vy / 2.0), 0.0, float(h - 1)))
+            params["arm_y2"] = float(_clip(acy + (vy / 2.0), 0.0, float(h - 1)))
+            params["arm_stroke"] = float(_clip(old_stroke * scale, 1.0, float(min(w, h)) * 0.18))
             changed = (
                 abs(params["arm_x1"] - old_x1) > 0.02
                 or abs(params["arm_x2"] - old_x2) > 0.02
@@ -2433,15 +2484,15 @@ class Action:
             # AC0820_L can converge against the source when "CO" drifts too high.
             if mode == "co2":
                 old_dy = float(params.get("co2_dy", 0.0))
-                params["co2_dy"] = float(np.clip(old_dy + center_dy * 0.75, -0.45 * r, 0.45 * r))
+                params["co2_dy"] = float(_clip(old_dy + center_dy * 0.75, -0.45 * r, 0.45 * r))
                 changed = abs(params["co2_dy"] - old_dy) > 0.02
             elif mode == "voc":
                 old_dy = float(params.get("voc_dy", 0.0))
-                params["voc_dy"] = float(np.clip(old_dy + center_dy * 0.75, -0.45 * r, 0.45 * r))
+                params["voc_dy"] = float(_clip(old_dy + center_dy * 0.75, -0.45 * r, 0.45 * r))
                 changed = abs(params["voc_dy"] - old_dy) > 0.02
             elif "ty" in params:
                 old_ty = float(params.get("ty", 0.0))
-                params["ty"] = float(np.clip(old_ty + center_dy * 0.75, 0.0, float(h - 1)))
+                params["ty"] = float(_clip(old_ty + center_dy * 0.75, 0.0, float(h - 1)))
                 changed = abs(params["ty"] - old_ty) > 0.02
 
         return changed
@@ -2756,7 +2807,7 @@ class Action:
             return float("inf")
 
         photo_err = float(Action._masked_union_error_in_bbox(img_orig, img_svg, local_mask_orig, local_mask_svg))
-        if not np.isfinite(photo_err):
+        if not _isfinite(photo_err):
             return float("inf")
 
         inter = float(np.sum(local_mask_orig & local_mask_svg))
@@ -2782,7 +2833,7 @@ class Action:
             if src_circle is not None and cand_circle is not None:
                 src_cx, src_cy, src_r = src_circle
                 cand_cx, cand_cy, cand_r = cand_circle
-                center_dist = float(np.hypot(cand_cx - src_cx, cand_cy - src_cy))
+                center_dist = float(math.hypot(cand_cx - src_cx, cand_cy - src_cy))
                 center_norm = center_dist / max(1.0, src_r)
                 # Penalize undersized rings more strongly than oversized ones so
                 # AC0812-like badges keep a readable radius in optimization.
@@ -2842,13 +2893,13 @@ class Action:
         iterations: int = 20,
     ) -> tuple[float, float, bool]:
         """Random 3-candidate survivor search for a scalar parameter."""
-        cur = float(snap(float(np.clip(current_value, low, high))))
+        cur = float(snap(float(_clip(current_value, low, high))))
         best_value = cur
         best_err = float(evaluate(best_value))
-        if not np.isfinite(best_err):
+        if not _isfinite(best_err):
             return best_value, best_err, False
 
-        rng = np.random.default_rng(int(seed) + int(Action.STOCHASTIC_SEED_OFFSET))
+        rng = _default_rng(int(seed) + int(Action.STOCHASTIC_SEED_OFFSET))
         span = max(0.5, abs(high - low) * 0.22)
         improved = False
         stable_rounds = 0
@@ -2856,13 +2907,13 @@ class Action:
         for _ in range(max(1, iterations)):
             candidates = [best_value]
             for _j in range(2):
-                sample = float(np.clip(rng.normal(best_value, span), low, high))
+                sample = float(_clip(rng.normal(best_value, span), low, high))
                 candidates.append(float(snap(sample)))
 
             scored: list[tuple[float, float]] = []
             for cand in candidates:
                 err = float(evaluate(cand))
-                if np.isfinite(err):
+                if _isfinite(err):
                     scored.append((cand, err))
             if not scored:
                 continue
@@ -2906,7 +2957,7 @@ class Action:
         )
         lock_cx = bool(params.get("lock_circle_cx", False))
         lock_cy = bool(params.get("lock_circle_cy", False))
-        rng = np.random.default_rng(835 + int(Action.STOCHASTIC_RUN_SEED) + int(Action.STOCHASTIC_SEED_OFFSET))
+        rng = _default_rng(835 + int(Action.STOCHASTIC_RUN_SEED) + int(Action.STOCHASTIC_SEED_OFFSET))
 
         def eval_pose(candidate: tuple[float, float, float]) -> float:
             cx, cy, rad = candidate
@@ -2922,7 +2973,7 @@ class Action:
 
         best = current
         best_err = eval_pose(best)
-        if not np.isfinite(best_err):
+        if not _isfinite(best_err):
             return False
 
         spread_xy = max(1.0, float(min(w, h)) * 0.10)
@@ -2936,16 +2987,16 @@ class Action:
                 if lock_cx:
                     cx = best[0]
                 else:
-                    cx = Action._snap_half(float(np.clip(rng.normal(best[0], spread_xy), x_low, x_high)))
+                    cx = Action._snap_half(float(_clip(rng.normal(best[0], spread_xy), x_low, x_high)))
                 if lock_cy:
                     cy = best[1]
                 else:
-                    cy = Action._snap_half(float(np.clip(rng.normal(best[1], spread_xy), y_low, y_high)))
-                rad = Action._snap_half(float(np.clip(rng.normal(best[2], spread_r), r_low, r_high)))
+                    cy = Action._snap_half(float(_clip(rng.normal(best[1], spread_xy), y_low, y_high)))
+                rad = Action._snap_half(float(_clip(rng.normal(best[2], spread_r), r_low, r_high)))
                 cand = (cx, cy, rad)
                 candidates.append((cand, eval_pose(cand)))
 
-            finite = [pair for pair in candidates if np.isfinite(pair[1])]
+            finite = [pair for pair in candidates if _isfinite(pair[1])]
             if not finite:
                 continue
             finite.sort(key=lambda item: item[1])
@@ -3012,12 +3063,12 @@ class Action:
             if lock_cx:
                 cx = current[0]
             else:
-                cx = Action._snap_half(float(np.clip(cx, x_low, x_high)))
+                cx = Action._snap_half(float(_clip(cx, x_low, x_high)))
             if lock_cy:
                 cy = current[1]
             else:
-                cy = Action._snap_half(float(np.clip(cy, y_low, y_high)))
-            rad = Action._snap_half(float(np.clip(rad, r_low, r_high)))
+                cy = Action._snap_half(float(_clip(cy, y_low, y_high)))
+            rad = Action._snap_half(float(_clip(rad, r_low, r_high)))
             return cx, cy, rad
 
         cache: dict[tuple[float, float, float], float] = {}
@@ -3038,7 +3089,7 @@ class Action:
 
         best = clamp_pose(current)
         best_err = eval_pose(best)
-        if not np.isfinite(best_err):
+        if not _isfinite(best_err):
             return False
 
         domain = {
@@ -3050,7 +3101,7 @@ class Action:
             "r_high": r_high,
         }
 
-        rng = np.random.default_rng(2027 + int(Action.STOCHASTIC_RUN_SEED) + int(Action.STOCHASTIC_SEED_OFFSET))
+        rng = _default_rng(2027 + int(Action.STOCHASTIC_RUN_SEED) + int(Action.STOCHASTIC_SEED_OFFSET))
         improved = False
         flat_plateau_hits = 0
 
@@ -3079,7 +3130,7 @@ class Action:
                 pose = clamp_pose((cx, cy, rad))
                 samples.append((pose, eval_pose(pose)))
 
-            finite = [pair for pair in samples if np.isfinite(pair[1])]
+            finite = [pair for pair in samples if _isfinite(pair[1])]
             if not finite:
                 continue
             finite.sort(key=lambda item: item[1])
@@ -3091,15 +3142,33 @@ class Action:
             if len(plateau) >= 4:
                 flat_plateau_hits += 1
 
-            plateau_arr = np.array(plateau, dtype=np.float64) if plateau else np.array([round_best], dtype=np.float64)
-            plateau_min = plateau_arr.min(axis=0)
-            plateau_max = plateau_arr.max(axis=0)
-            plateau_mid = clamp_pose(tuple((plateau_min + plateau_max) / 2.0))
+            if plateau:
+                if np is not None:
+                    plateau_arr = np.array(plateau, dtype=np.float64)
+                    plateau_min = plateau_arr.min(axis=0)
+                    plateau_max = plateau_arr.max(axis=0)
+                else:
+                    xs = [float(pose[0]) for pose in plateau]
+                    ys = [float(pose[1]) for pose in plateau]
+                    rs = [float(pose[2]) for pose in plateau]
+                    plateau_min = (min(xs), min(ys), min(rs))
+                    plateau_max = (max(xs), max(ys), max(rs))
+            else:
+                plateau_min = round_best
+                plateau_max = round_best
+
+            plateau_mid = clamp_pose(
+                (
+                    (float(plateau_min[0]) + float(plateau_max[0])) / 2.0,
+                    (float(plateau_min[1]) + float(plateau_max[1])) / 2.0,
+                    (float(plateau_min[2]) + float(plateau_max[2])) / 2.0,
+                )
+            )
             plateau_mid_err = eval_pose(plateau_mid)
 
             candidate_best = round_best
             candidate_err = round_best_err
-            if np.isfinite(plateau_mid_err) and plateau_mid_err < candidate_err:
+            if _isfinite(plateau_mid_err) and plateau_mid_err < candidate_err:
                 candidate_best = plateau_mid
                 candidate_err = plateau_mid_err
 
@@ -3253,7 +3322,7 @@ class Action:
         if info is None:
             return float("inf")
         key, low, high = info
-        probe[key] = float(np.clip(width_value, low, high))
+        probe[key] = float(_clip(width_value, low, high))
         if key == "stem_width" and probe.get("stem_enabled"):
             probe["stem_x"] = float(probe.get("cx", probe.get("stem_x", 0.0))) - (probe["stem_width"] / 2.0)
         elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(probe, element))
@@ -3273,7 +3342,7 @@ class Action:
 
         probe = dict(params)
         max_r = max(1.0, (float(min(w, h)) * 0.48))
-        probe["r"] = float(np.clip(radius_value, 1.0, max_r))
+        probe["r"] = float(_clip(radius_value, 1.0, max_r))
 
         if probe.get("arm_enabled"):
             Action._reanchor_arm_to_circle_edge(probe, float(probe["r"]))
@@ -3330,10 +3399,10 @@ class Action:
 
         probe = dict(params)
         max_r = max(1.0, (float(min(w, h)) * 0.48))
-        probe["cx"] = Action._snap_half(float(np.clip(cx_value, 0.0, float(w - 1))))
-        probe["cy"] = Action._snap_half(float(np.clip(cy_value, 0.0, float(h - 1))))
+        probe["cx"] = Action._snap_half(float(_clip(cx_value, 0.0, float(w - 1))))
+        probe["cy"] = Action._snap_half(float(_clip(cy_value, 0.0, float(h - 1))))
         min_r = float(max(1.0, probe.get("min_circle_radius", 1.0)))
-        probe["r"] = Action._snap_half(float(np.clip(radius_value, min_r, max_r)))
+        probe["r"] = Action._snap_half(float(_clip(radius_value, min_r, max_r)))
 
         if probe.get("arm_enabled"):
             Action._reanchor_arm_to_circle_edge(probe, float(probe["r"]))
@@ -3426,8 +3495,8 @@ class Action:
         evaluations: dict[tuple[float, float], float] = {}
 
         def eval_center(cx_value: float, cy_value: float) -> float:
-            cx_snap = Action._snap_half(float(np.clip(cx_value, 0.0, float(w - 1))))
-            cy_snap = Action._snap_half(float(np.clip(cy_value, 0.0, float(h - 1))))
+            cx_snap = Action._snap_half(float(_clip(cx_value, 0.0, float(w - 1))))
+            cy_snap = Action._snap_half(float(_clip(cy_value, 0.0, float(h - 1))))
             key = (cx_snap, cy_snap)
             if key not in evaluations:
                 probe = dict(params)
@@ -3450,7 +3519,7 @@ class Action:
                     mid_err = eval_center(fixed, mid)
                     high_err = eval_center(fixed, high)
 
-                if not all(np.isfinite(v) for v in (low_err, mid_err, high_err)):
+                if not all(_isfinite(v) for v in (low_err, mid_err, high_err)):
                     return mid
 
                 if mid_err <= low_err and mid_err <= high_err:
@@ -3482,7 +3551,7 @@ class Action:
             best_cy = optimize_axis(y_low, y_high, best_cx, "y")
 
         best_err = eval_center(best_cx, best_cy)
-        if not np.isfinite(best_err):
+        if not _isfinite(best_err):
             logs.append("circle: Mittelpunkt-Bracketing abgebrochen wegen nicht-finitem Fehler")
             return False
 
@@ -3541,14 +3610,14 @@ class Action:
 
         low = Action._snap_half(low_bound)
         high = Action._snap_half(high_bound)
-        mid = Action._snap_half(float(np.clip(current, low, high)))
+        mid = Action._snap_half(float(_clip(current, low, high)))
         if high - low < 0.05:
             return False
 
         evaluations: dict[float, float] = {}
 
         def eval_radius(radius: float) -> float:
-            snapped = Action._snap_half(float(np.clip(radius, low_bound, high_bound)))
+            snapped = Action._snap_half(float(_clip(radius, low_bound, high_bound)))
             if snapped not in evaluations:
                 evaluations[snapped] = float(Action._element_error_for_circle_radius(img_orig, params, snapped))
             return evaluations[snapped]
@@ -3558,7 +3627,7 @@ class Action:
             low_err = eval_radius(low)
             mid_err = eval_radius(mid)
             high_err = eval_radius(high)
-            if not all(np.isfinite(v) for v in (low_err, mid_err, high_err)):
+            if not all(_isfinite(v) for v in (low_err, mid_err, high_err)):
                 logs.append(
                     "circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern "
                     + ", ".join(f"{v:.3f}->{e:.3f}" for v, e in sorted(evaluations.items()))
@@ -3629,19 +3698,19 @@ class Action:
             cx_candidates = [Action._snap_half(current_cx)]
         else:
             cx_candidates = [
-                Action._snap_half(float(np.clip(current_cx + offset, 0.0, float(w - 1))))
+                Action._snap_half(float(_clip(current_cx + offset, 0.0, float(w - 1))))
                 for offset in (-shift, 0.0, shift)
             ]
         if lock_cy:
             cy_candidates = [Action._snap_half(current_cy)]
         else:
             cy_candidates = [
-                Action._snap_half(float(np.clip(current_cy + offset, 0.0, float(h - 1))))
+                Action._snap_half(float(_clip(current_cy + offset, 0.0, float(h - 1))))
                 for offset in (-shift, 0.0, shift)
             ]
 
         r_candidates = [
-            Action._snap_half(float(np.clip(current_r + offset, min_r, max_r)))
+            Action._snap_half(float(_clip(current_r + offset, min_r, max_r)))
             for offset in (-radius_span, -(radius_span * 0.5), 0.0, radius_span * 0.5, radius_span)
         ]
 
@@ -3668,7 +3737,7 @@ class Action:
             for cy in cy_candidates:
                 for rad in r_candidates:
                     err = eval_pose(cx, cy, rad)
-                    if np.isfinite(err) and err + 0.05 < best_err:
+                    if _isfinite(err) and err + 0.05 < best_err:
                         best = (cx, cy, rad)
                         best_err = err
 
@@ -3720,11 +3789,11 @@ class Action:
         if element == "stem" and probe.get("stem_enabled"):
             min_len = 1.0
             max_len = float(h)
-            new_len = float(np.clip(extent_value, min_len, max_len))
+            new_len = float(_clip(extent_value, min_len, max_len))
             center = (float(probe.get("stem_top", 0.0)) + float(probe.get("stem_bottom", 0.0))) / 2.0
             half = new_len / 2.0
-            probe["stem_top"] = float(np.clip(center - half, 0.0, float(h - 1)))
-            probe["stem_bottom"] = float(np.clip(center + half, probe["stem_top"] + 1.0, float(h)))
+            probe["stem_top"] = float(_clip(center - half, 0.0, float(h - 1)))
+            probe["stem_bottom"] = float(_clip(center + half, probe["stem_top"] + 1.0, float(h)))
 
         elif element == "arm" and probe.get("arm_enabled"):
             x1 = float(probe.get("arm_x1", 0.0))
@@ -3733,10 +3802,10 @@ class Action:
             y2 = float(probe.get("arm_y2", 0.0))
             dx = x2 - x1
             dy = y2 - y1
-            cur_len = float(np.hypot(dx, dy))
+            cur_len = float(math.hypot(dx, dy))
             if cur_len <= 1e-6:
                 return float("inf")
-            new_len = float(np.clip(extent_value, 1.0, float(max(w, h))))
+            new_len = float(_clip(extent_value, 1.0, float(max(w, h))))
             ux = dx / cur_len
             uy = dy / cur_len
 
@@ -3752,25 +3821,25 @@ class Action:
 
                 cx = float(probe.get("cx", 0.0))
                 cy = float(probe.get("cy", 0.0))
-                d1 = float(np.hypot(ax1 - cx, ay1 - cy))
-                d2 = float(np.hypot(ax2 - cx, ay2 - cy))
+                d1 = float(math.hypot(ax1 - cx, ay1 - cy))
+                d2 = float(math.hypot(ax2 - cx, ay2 - cy))
 
                 if d1 <= d2:
                     ix, iy = ax1, ay1
-                    probe["arm_x2"] = float(np.clip(ix + (ux * new_len), 0.0, float(w - 1)))
-                    probe["arm_y2"] = float(np.clip(iy + (uy * new_len), 0.0, float(h - 1)))
+                    probe["arm_x2"] = float(_clip(ix + (ux * new_len), 0.0, float(w - 1)))
+                    probe["arm_y2"] = float(_clip(iy + (uy * new_len), 0.0, float(h - 1)))
                 else:
                     ix, iy = ax2, ay2
-                    probe["arm_x1"] = float(np.clip(ix - (ux * new_len), 0.0, float(w - 1)))
-                    probe["arm_y1"] = float(np.clip(iy - (uy * new_len), 0.0, float(h - 1)))
+                    probe["arm_x1"] = float(_clip(ix - (ux * new_len), 0.0, float(w - 1)))
+                    probe["arm_y1"] = float(_clip(iy - (uy * new_len), 0.0, float(h - 1)))
             else:
                 cx = (x1 + x2) / 2.0
                 cy = (y1 + y2) / 2.0
                 half = new_len / 2.0
-                probe["arm_x1"] = float(np.clip(cx - (ux * half), 0.0, float(w - 1)))
-                probe["arm_y1"] = float(np.clip(cy - (uy * half), 0.0, float(h - 1)))
-                probe["arm_x2"] = float(np.clip(cx + (ux * half), 0.0, float(w - 1)))
-                probe["arm_y2"] = float(np.clip(cy + (uy * half), 0.0, float(h - 1)))
+                probe["arm_x1"] = float(_clip(cx - (ux * half), 0.0, float(w - 1)))
+                probe["arm_y1"] = float(_clip(cy - (uy * half), 0.0, float(h - 1)))
+                probe["arm_x2"] = float(_clip(cx + (ux * half), 0.0, float(w - 1)))
+                probe["arm_y2"] = float(_clip(cy + (uy * half), 0.0, float(h - 1)))
         else:
             return float("inf")
 
@@ -3815,7 +3884,7 @@ class Action:
         elif element == "arm" and params.get("arm_enabled"):
             dx = float(params.get("arm_x2", 0.0)) - float(params.get("arm_x1", 0.0))
             dy = float(params.get("arm_y2", 0.0)) - float(params.get("arm_y1", 0.0))
-            current = float(np.hypot(dx, dy))
+            current = float(math.hypot(dx, dy))
             key_label = "arm_len"
             low_bound = 1.0
             high_bound = float(max(w, h))
@@ -3869,14 +3938,14 @@ class Action:
             }
         )
         candidate_errors = [Action._element_error_for_extent(img_orig, params, element, v) for v in candidates]
-        if not all(np.isfinite(e) for e in candidate_errors):
+        if not all(_isfinite(e) for e in candidate_errors):
             logs.append(
                 f"{element}: Längen-Bracketing abgebrochen ({key_label}) wegen nicht-finiten Fehlern "
                 + ", ".join(f"{v:.3f}->{e:.3f}" for v, e in zip(candidates, candidate_errors, strict=False))
             )
             return False
 
-        best_idx = int(np.argmin(candidate_errors))
+        best_idx = int(_argmin(candidate_errors))
         best_len = float(candidates[best_idx])
 
         boundary_best = abs(best_len - low) < 0.02 or abs(best_len - high) < 0.02
@@ -3906,14 +3975,14 @@ class Action:
         if element == "stem":
             if params.get("circle_enabled", True) and all(k in params for k in ("cy", "r")):
                 # Keep the stem attached to the circle edge and optimize only the free end.
-                top = float(np.clip(float(params.get("cy", 0.0)) + float(params.get("r", 0.0)), 0.0, float(h - 1)))
+                top = float(_clip(float(params.get("cy", 0.0)) + float(params.get("r", 0.0)), 0.0, float(h - 1)))
                 params["stem_top"] = top
-                params["stem_bottom"] = float(np.clip(top + best_len, top + 1.0, float(h)))
+                params["stem_bottom"] = float(_clip(top + best_len, top + 1.0, float(h)))
             else:
                 center = (float(params.get("stem_top", 0.0)) + float(params.get("stem_bottom", 0.0))) / 2.0
                 half = best_len / 2.0
-                params["stem_top"] = float(np.clip(center - half, 0.0, float(h - 1)))
-                params["stem_bottom"] = float(np.clip(center + half, params["stem_top"] + 1.0, float(h)))
+                params["stem_top"] = float(_clip(center - half, 0.0, float(h - 1)))
+                params["stem_bottom"] = float(_clip(center + half, params["stem_top"] + 1.0, float(h)))
         else:
             x1 = float(params.get("arm_x1", 0.0))
             y1 = float(params.get("arm_y1", 0.0))
@@ -3921,7 +3990,7 @@ class Action:
             y2 = float(params.get("arm_y2", 0.0))
             dx = x2 - x1
             dy = y2 - y1
-            cur_len = float(np.hypot(dx, dy))
+            cur_len = float(math.hypot(dx, dy))
             if cur_len <= 1e-6:
                 return False
             ux = dx / cur_len
@@ -3936,25 +4005,25 @@ class Action:
 
                 cx = float(params.get("cx", 0.0))
                 cy = float(params.get("cy", 0.0))
-                d1 = float(np.hypot(ax1 - cx, ay1 - cy))
-                d2 = float(np.hypot(ax2 - cx, ay2 - cy))
+                d1 = float(math.hypot(ax1 - cx, ay1 - cy))
+                d2 = float(math.hypot(ax2 - cx, ay2 - cy))
 
                 if d1 <= d2:
                     ix, iy = ax1, ay1
-                    params["arm_x2"] = float(np.clip(ix + (ux * best_len), 0.0, float(w - 1)))
-                    params["arm_y2"] = float(np.clip(iy + (uy * best_len), 0.0, float(h - 1)))
+                    params["arm_x2"] = float(_clip(ix + (ux * best_len), 0.0, float(w - 1)))
+                    params["arm_y2"] = float(_clip(iy + (uy * best_len), 0.0, float(h - 1)))
                 else:
                     ix, iy = ax2, ay2
-                    params["arm_x1"] = float(np.clip(ix - (ux * best_len), 0.0, float(w - 1)))
-                    params["arm_y1"] = float(np.clip(iy - (uy * best_len), 0.0, float(h - 1)))
+                    params["arm_x1"] = float(_clip(ix - (ux * best_len), 0.0, float(w - 1)))
+                    params["arm_y1"] = float(_clip(iy - (uy * best_len), 0.0, float(h - 1)))
             else:
                 cx = (x1 + x2) / 2.0
                 cy = (y1 + y2) / 2.0
                 half = best_len / 2.0
-                params["arm_x1"] = float(np.clip(cx - (ux * half), 0.0, float(w - 1)))
-                params["arm_y1"] = float(np.clip(cy - (uy * half), 0.0, float(h - 1)))
-                params["arm_x2"] = float(np.clip(cx + (ux * half), 0.0, float(w - 1)))
-                params["arm_y2"] = float(np.clip(cy + (uy * half), 0.0, float(h - 1)))
+                params["arm_x1"] = float(_clip(cx - (ux * half), 0.0, float(w - 1)))
+                params["arm_y1"] = float(_clip(cy - (uy * half), 0.0, float(h - 1)))
+                params["arm_x2"] = float(_clip(cx + (ux * half), 0.0, float(w - 1)))
+                params["arm_y2"] = float(_clip(cy + (uy * half), 0.0, float(h - 1)))
 
         logs.append(
             f"{element}: Längen-Bracketing {key_label} {current:.3f}->{best_len:.3f}; Kandidaten="
@@ -4011,14 +4080,14 @@ class Action:
                 }
             )
         candidate_errors = [Action._element_error_for_width(img_orig, params, element, v) for v in candidates]
-        if not all(np.isfinite(e) for e in candidate_errors):
+        if not all(_isfinite(e) for e in candidate_errors):
             logs.append(
                 f"{element}: Breiten-Bracketing abgebrochen ({key}) wegen nicht-finiten Fehlern "
                 + ", ".join(f"{v:.3f}->{e:.3f}" for v, e in zip(candidates, candidate_errors, strict=False))
             )
             return False
 
-        best_idx = int(np.argmin(candidate_errors))
+        best_idx = int(_argmin(candidate_errors))
         best_width = candidates[best_idx]
 
         boundary_best = abs(float(best_width) - low) < 0.02 or abs(float(best_width) - high) < 0.02
@@ -4089,7 +4158,7 @@ class Action:
         mask_orig: np.ndarray,
     ) -> float:
         probe = dict(params)
-        probe[color_key] = int(np.clip(color_value, 0, 255))
+        probe[color_key] = int(_clip(color_value, 0, 255))
 
         h, w = img_orig.shape[:2]
         elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(probe, element))
@@ -4132,16 +4201,16 @@ class Action:
         for color_key in Action._element_color_keys(element, params):
             current = int(round(float(params.get(color_key, 128))))
             candidates = {
-                int(np.clip(current - 32, 0, 255)),
-                int(np.clip(current - 16, 0, 255)),
-                int(np.clip(current - 8, 0, 255)),
-                int(np.clip(current, 0, 255)),
-                int(np.clip(current + 8, 0, 255)),
-                int(np.clip(current + 16, 0, 255)),
-                int(np.clip(current + 32, 0, 255)),
+                int(_clip(current - 32, 0, 255)),
+                int(_clip(current - 16, 0, 255)),
+                int(_clip(current - 8, 0, 255)),
+                int(_clip(current, 0, 255)),
+                int(_clip(current + 8, 0, 255)),
+                int(_clip(current + 16, 0, 255)),
+                int(_clip(current + 32, 0, 255)),
             }
             if sampled is not None:
-                candidates.add(int(np.clip(sampled, 0, 255)))
+                candidates.add(int(_clip(sampled, 0, 255)))
             if element == "circle" and color_key == "fill_gray":
                 candidates.update({200, 210, 220, 230, 240})
             if color_key in {"stroke_gray", "stem_gray", "text_gray"}:
@@ -4152,14 +4221,14 @@ class Action:
                 Action._element_error_for_color(img_orig, params, element, color_key, v, mask_orig)
                 for v in values
             ]
-            if not all(np.isfinite(e) for e in errs):
+            if not all(_isfinite(e) for e in errs):
                 logs.append(
                     f"{element}: Farb-Bracketing abgebrochen ({color_key}) wegen nicht-finiten Fehlern "
                     + ", ".join(f"{v}->{e:.3f}" for v, e in zip(values, errs, strict=False))
                 )
                 continue
 
-            best_idx = int(np.argmin(errs))
+            best_idx = int(_argmin(errs))
             best_value = int(values[best_idx])
 
             if best_value == min(values) or best_value == max(values):
@@ -4172,14 +4241,14 @@ class Action:
                         params,
                         element,
                         color_key,
-                        int(np.clip(int(round(v)), 0, 255)),
+                        int(_clip(int(round(v)), 0, 255)),
                         mask_orig,
                     ),
-                    snap=lambda v: int(np.clip(int(round(v)), 0, 255)),
+                    snap=lambda v: int(_clip(int(round(v)), 0, 255)),
                     seed=1301,
                 )
                 if s_improved:
-                    best_value = int(np.clip(int(round(s_best)), 0, 255))
+                    best_value = int(_clip(int(round(s_best)), 0, 255))
                     logs.append(
                         f"{element}: Farb-Stochastic-Survivor aktiviert ({color_key}={best_value}, err={s_err:.3f})"
                     )
@@ -4236,7 +4305,7 @@ class Action:
             if bool(params.get("lock_stem_center_to_circle", False)):
                 circle_cx = float(params.get("cx", est_cx))
                 max_offset = float(params.get("stem_center_lock_max_offset", max(0.35, target_width * 0.75)))
-                target_cx = float(np.clip(est_cx, circle_cx - max_offset, circle_cx + max_offset))
+                target_cx = float(_clip(est_cx, circle_cx - max_offset, circle_cx + max_offset))
             else:
                 target_cx = est_cx
             estimate_mode = "iter"
@@ -5091,10 +5160,10 @@ def _semantic_transfer_badge_params(
     if p.get("arm_enabled"):
         x1, y1 = _rot_scale_point(float(p.get("arm_x1", tx)), float(p.get("arm_y1", ty)))
         x2, y2 = _rot_scale_point(float(p.get("arm_x2", tx)), float(p.get("arm_y2", ty)))
-        p["arm_x1"] = float(np.clip(x1, 0.0, max(0.0, float(target_w - 1))))
-        p["arm_y1"] = float(np.clip(y1, 0.0, max(0.0, float(target_h - 1))))
-        p["arm_x2"] = float(np.clip(x2, 0.0, max(0.0, float(target_w - 1))))
-        p["arm_y2"] = float(np.clip(y2, 0.0, max(0.0, float(target_h - 1))))
+        p["arm_x1"] = float(_clip(x1, 0.0, max(0.0, float(target_w - 1))))
+        p["arm_y1"] = float(_clip(y1, 0.0, max(0.0, float(target_h - 1))))
+        p["arm_x2"] = float(_clip(x2, 0.0, max(0.0, float(target_w - 1))))
+        p["arm_y2"] = float(_clip(y2, 0.0, max(0.0, float(target_h - 1))))
 
     if p.get("stem_enabled"):
         stem_x = float(p.get("stem_x", tx)) + (float(p.get("stem_width", 1.0)) / 2.0)
@@ -5102,9 +5171,9 @@ def _semantic_transfer_badge_params(
         bottom = float(p.get("stem_bottom", ty))
         x1, y1 = _rot_scale_point(stem_x, top)
         x2, y2 = _rot_scale_point(stem_x, bottom)
-        p["stem_x"] = float(np.clip((x1 + x2) / 2.0 - (float(p.get("stem_width", 1.0)) / 2.0), 0.0, float(target_w)))
-        p["stem_top"] = float(np.clip(min(y1, y2), 0.0, float(target_h)))
-        p["stem_bottom"] = float(np.clip(max(y1, y2), 0.0, float(target_h)))
+        p["stem_x"] = float(_clip((x1 + x2) / 2.0 - (float(p.get("stem_width", 1.0)) / 2.0), 0.0, float(target_w)))
+        p["stem_top"] = float(_clip(min(y1, y2), 0.0, float(target_h)))
+        p["stem_bottom"] = float(_clip(max(y1, y2), 0.0, float(target_h)))
 
     # Keep text horizontally readable while preventing aggressive down-scaling
     # during template transfer. The historical sqrt(scale) shrink was often too
@@ -5793,12 +5862,12 @@ def _scale_badge_params(anchor: dict, anchor_w: int, anchor_h: int, target_w: in
         if min_cx > max_cx:
             cx = float(target_w) / 2.0
         else:
-            cx = float(np.clip(cx, min_cx, max_cx))
+            cx = float(_clip(cx, min_cx, max_cx))
 
         if min_cy > max_cy:
             cy = float(target_h) / 2.0
         else:
-            cy = float(np.clip(cy, min_cy, max_cy))
+            cy = float(_clip(cy, min_cy, max_cy))
 
         if scaled.get("stem_enabled") and "stem_width" in scaled:
             stem_width = max(1e-6, float(scaled["stem_width"]))
@@ -5982,7 +6051,7 @@ def _write_pixel_delta2_ranking(folder_path: str, svg_out_dir: str, reports_out_
         for row in ranking:
             writer.writerow([row["image"], f"{float(row['mean_delta2']):.6f}", f"{float(row['std_delta2']):.6f}"])
 
-    valid = [row for row in ranking if np.isfinite(float(row["mean_delta2"]))]
+    valid = [row for row in ranking if _isfinite(float(row["mean_delta2"]))]
     count_ok = sum(1 for row in valid if float(row["mean_delta2"]) <= threshold)
     summary_lines = [
         f"images_total={len(valid)}",

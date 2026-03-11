@@ -2352,7 +2352,7 @@ class Action:
         changed = False
         scale = float(np.clip(diag_scale, 0.85, 1.18))
 
-        if element == "circle":
+        if element == "circle" and apply_circle_geometry_penalty:
             old_cx = float(params["cx"])
             old_cy = float(params["cy"])
             old_r = float(params["r"])
@@ -2556,7 +2556,7 @@ class Action:
     def _element_region_mask(h: int, w: int, params: dict, element: str) -> np.ndarray | None:
         yy, xx = np.indices((h, w))
         context_pad = max(2.0, float(min(h, w)) * 0.12)
-        if element == "circle":
+        if element == "circle" and apply_circle_geometry_penalty:
             radius_with_context = params["r"] + context_pad
             circle = (xx - params["cx"]) ** 2 + (yy - params["cy"]) ** 2 <= radius_with_context**2
             top = yy <= (params["cy"] + params["r"] + context_pad)
@@ -2721,6 +2721,7 @@ class Action:
         *,
         mask_orig: np.ndarray | None = None,
         mask_svg: np.ndarray | None = None,
+        apply_circle_geometry_penalty: bool = True,
     ) -> float:
         """Element score for optimization: localization + redraw + symmetric compare.
 
@@ -2768,7 +2769,7 @@ class Action:
         # to the smallest ring that still overlaps the arm/label neighborhood.
         # The mask overlap terms above are necessary but can be too permissive
         # when anti-aliased JPEG edges blur circle/connector boundaries.
-        if element == "circle":
+        if element == "circle" and apply_circle_geometry_penalty:
             src_circle = Action._mask_centroid_radius(local_mask_orig)
             cand_circle = Action._mask_centroid_radius(local_mask_svg)
             if src_circle is not None and cand_circle is not None:
@@ -3297,7 +3298,14 @@ class Action:
         if mask_svg is None:
             return float("inf")
 
-        return Action._masked_union_error_in_bbox(img_orig, elem_render, mask_orig, mask_svg)
+        return Action._element_match_error(
+            img_orig,
+            elem_render,
+            probe,
+            "circle",
+            mask_orig=mask_orig,
+            mask_svg=mask_svg,
+        )
 
 
     @staticmethod
@@ -3340,7 +3348,14 @@ class Action:
         if mask_svg is None:
             return float("inf")
 
-        return Action._masked_union_error_in_bbox(img_orig, elem_render, mask_orig, mask_svg)
+        return Action._element_match_error(
+            img_orig,
+            elem_render,
+            probe,
+            "circle",
+            mask_orig=mask_orig,
+            mask_svg=mask_svg,
+        )
 
     @staticmethod
     def _reanchor_arm_to_circle_edge(params: dict, radius: float) -> None:
@@ -4074,7 +4089,14 @@ class Action:
         elem_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(elem_svg, w, h))
         if elem_render is None:
             return float("inf")
-        return Action._element_match_error(img_orig, elem_render, probe, element, mask_orig=mask_orig)
+        return Action._element_match_error(
+            img_orig,
+            elem_render,
+            probe,
+            element,
+            mask_orig=mask_orig,
+            apply_circle_geometry_penalty=(element != "circle"),
+        )
 
     @staticmethod
     def _optimize_element_color_bracket(
@@ -4351,7 +4373,7 @@ class Action:
                 if extent_changed:
                     round_changed = True
 
-                if element == "circle":
+                if element == "circle" and apply_circle_geometry_penalty:
                     center_changed = Action._optimize_circle_center_bracket(img_orig, params, logs)
                     if center_changed:
                         round_changed = True

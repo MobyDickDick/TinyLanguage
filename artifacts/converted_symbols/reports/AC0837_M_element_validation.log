@@ -1,4 +1,4 @@
-run-meta: run_seed=380962146 pass_seed_offset=4 nonce_ns=1773228393906212200
+run-meta: run_seed=397045129 pass_seed_offset=4 nonce_ns=1773230110570974700
 status=semantic_ok
 Runde 1: elementweise Validierung gestartet
 circle: Fehler=170.170
@@ -6,7 +6,7 @@ circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.
 circle: Radius-Bracketing r 7.400->7.000 (best_err=10786.000); Kandidaten=6.500->11288.000, 7.000->10786.000, 7.500->11867.000, 9.500->15698.000
 arm: Fehler=118.175
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 18.000); Kandidaten=16.000->125.049, 18.000->118.175, 21.000->118.175, 25.500->118.175, 30.500->118.175, 35.000->118.175
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 18.000); Kandidaten=13.500->130.157, 18.000->118.175, 19.000->118.175, 24.000->118.175, 29.500->118.175, 35.000->118.175
 text: Fehler=154.952
 text: Breiten-Bracketing voc_font_scale 0.562->0.646; Kandidaten=0.337->154.952, 0.477->154.952, 0.526->154.952, 0.562->154.952, 0.646->154.946, 0.716->159.156, 0.968->161.667, 1.221->181.568, 1.411->174.197, 1.600->176.972
 Runde 1: Gesamtfehler=24.454
@@ -16,7 +16,7 @@ circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.
 circle: Radius-Bracketing keine relevante Änderung (r: 7.000, best_err=10479.000); Kandidaten=6.500->10981.000, 7.000->10479.000, 9.500->15698.000
 arm: Fehler=118.175
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
-arm: Längen-Bracketing keine relevante Änderung (arm_len: 18.000); Kandidaten=16.000->125.049, 18.000->118.175, 21.000->118.175, 25.500->118.175, 30.500->118.175, 35.000->118.175
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 18.000); Kandidaten=13.500->130.157, 18.000->118.175, 19.000->118.175, 24.000->118.175, 29.500->118.175, 35.000->118.175
 text: Fehler=154.946
 text: Breiten-Bracketing keine relevante Änderung (voc_font_scale: 0.646); Kandidaten=0.388->154.952, 0.549->154.952, 0.569->154.952, 0.646->154.946, 0.743->160.291, 0.751->160.517, 0.994->167.936, 1.236->180.627, 1.418->176.788, 1.600->176.972
 Runde 2: Gesamtfehler=24.454

@@ -1,7 +1,7 @@
-run-meta: run_seed=397045129 pass_seed_offset=0 nonce_ns=1773229863543300500
+run-meta: run_seed=952395525 pass_seed_offset=0 nonce_ns=1773246958343980000
 status=semantic_ok
 Runde 1: elementweise Validierung gestartet
-circle: Fehler=210.748
+circle: Fehler=216.034
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing r 9.667->9.000 (best_err=16460.000); Kandidaten=9.000->16460.000, 9.500->16953.000, 12.000->23403.000
 stem: Fehler=113.833
@@ -12,7 +12,7 @@ stem: Längen-Bracketing stem_len 23.500->15.500; Kandidaten=15.500->56.987, 22.
 text: Fehler=193.143
 Runde 1: Gesamtfehler=24.933
 Runde 2: elementweise Validierung gestartet
-circle: Fehler=205.717
+circle: Fehler=212.433
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=15999.000); Kandidaten=9.000->15999.000, 12.000->23403.000
 stem: Fehler=100.350
@@ -23,7 +23,7 @@ stem: Längen-Bracketing stem_len 15.500->37.500; Kandidaten=15.000->101.654, 15
 text: Fehler=193.143
 Runde 2: Gesamtfehler=23.212
 Runde 3: elementweise Validierung gestartet
-circle: Fehler=205.717
+circle: Fehler=212.433
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=15999.000); Kandidaten=9.000->15999.000, 12.000->23403.000
 stem: Fehler=62.113
@@ -34,7 +34,7 @@ stem: Längen-Bracketing stem_len 23.500->15.500; Kandidaten=15.500->56.987, 22.
 text: Fehler=193.143
 Runde 3: Gesamtfehler=24.933
 Runde 4: elementweise Validierung gestartet
-circle: Fehler=205.717
+circle: Fehler=212.433
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=15999.000); Kandidaten=9.000->15999.000, 12.000->23403.000
 stem: Fehler=100.350
@@ -45,7 +45,7 @@ stem: Längen-Bracketing stem_len 15.500->37.500; Kandidaten=15.000->101.654, 15
 text: Fehler=193.143
 Runde 4: Gesamtfehler=23.212
 Runde 5: elementweise Validierung gestartet
-circle: Fehler=205.717
+circle: Fehler=212.433
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=15999.000); Kandidaten=9.000->15999.000, 12.000->23403.000
 stem: Fehler=62.113
@@ -56,7 +56,7 @@ stem: Längen-Bracketing stem_len 23.500->15.500; Kandidaten=15.500->56.987, 22.
 text: Fehler=193.143
 Runde 5: Gesamtfehler=24.933
 Runde 6: elementweise Validierung gestartet
-circle: Fehler=205.717
+circle: Fehler=212.433
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
 circle: Radius-Bracketing keine relevante Änderung (r: 9.000, best_err=15999.000); Kandidaten=9.000->15999.000, 12.000->23403.000
 stem: Fehler=100.350

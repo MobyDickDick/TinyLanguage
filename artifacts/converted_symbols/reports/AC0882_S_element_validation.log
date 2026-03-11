@@ -1,9 +1,9 @@
-run-meta: run_seed=952395525 pass_seed_offset=4 nonce_ns=1773247265134515100
+run-meta: run_seed=713101093 pass_seed_offset=4 nonce_ns=1773253780577879000
 status=semantic_ok
 Runde 1: elementweise Validierung gestartet
 circle: Fehler=237.987
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 6.050->5.500 (best_err=6235.000); Kandidaten=5.500->6235.000, 6.000->7089.000, 7.000->8571.000
+circle: Radius-Bracketing r 6.050->5.500 (best_err=209.664); Kandidaten=5.500->209.664, 6.000->237.987, 7.000->261.004
 arm: Fehler=89.438
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
 arm: Längen-Bracketing keine relevante Änderung (arm_len: 7.000); Kandidaten=7.000->89.438, 7.500->89.438, 12.000->89.438, 16.000->89.438, 20.500->89.438, 25.000->89.438
@@ -12,7 +12,7 @@ Runde 1: Gesamtfehler=31.499
 Runde 2: elementweise Validierung gestartet
 circle: Fehler=214.866
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 5.500, best_err=5971.000); Kandidaten=5.500->5971.000, 7.000->8571.000
+circle: Radius-Bracketing keine relevante Änderung (r: 5.500, best_err=214.866); Kandidaten=5.500->214.866, 7.000->261.004
 arm: Fehler=89.438
 arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
 arm: Längen-Bracketing keine relevante Änderung (arm_len: 7.000); Kandidaten=7.000->89.438, 7.500->89.438, 12.000->89.438, 16.000->89.438, 20.500->89.438, 25.000->89.438

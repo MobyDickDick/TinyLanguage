@@ -1,9 +1,9 @@
-run-meta: run_seed=952395525 pass_seed_offset=0 nonce_ns=1773246957157814700
+run-meta: run_seed=713101093 pass_seed_offset=0 nonce_ns=1773251888954452300
 status=semantic_ok
 Runde 1: elementweise Validierung gestartet
 circle: Fehler=223.794
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 12.200->13.500 (best_err=4040.000); Kandidaten=10.500->22179.000, 12.000->21185.000, 13.000->9130.000, 13.500->4040.000, 14.000->8560.000, 14.500->16999.000
+circle: Radius-Bracketing r 12.200->13.500 (best_err=55.503); Kandidaten=10.500->230.593, 12.000->223.794, 13.000->96.560, 13.500->55.503, 14.000->93.249, 14.500->179.466
 Runde 1: Gesamtfehler=6.847
 Gesamtfehler unter Schwellwert, Validierung beendet
 circle: Farb-Bracketing übersprungen (Farben gesperrt)

@@ -239,6 +239,63 @@ def test_fit_semantic_badge_keeps_near_template_hough_candidate(monkeypatch: pyt
     assert abs(float(fitted["r"]) - 5.2) < 1e-6
 
 
+def test_quantize_clamps_circle_radius_to_canvas_bounds() -> None:
+    """Quantization should keep the full ring inside the viewport."""
+    params = {
+        "circle_enabled": True,
+        "cx": 32.5,
+        "cy": 12.5,
+        "r": 15.0,
+        "stroke_circle": 1.0,
+    }
+
+    quantized = Action._quantize_badge_params(params, w=45, h=25)
+
+    assert float(quantized["r"]) <= 12.0 + 1e-6
+
+
+def test_circle_bounds_respect_canvas_for_locked_center() -> None:
+    """Circle optimization bounds must not permit radii outside canvas limits."""
+    params = {
+        "cx": 32.5,
+        "cy": 12.5,
+        "stroke_circle": 1.0,
+        "min_circle_radius": 1.0,
+    }
+
+    _x_low, _x_high, _y_low, _y_high, _r_low, r_high = Action._circle_bounds(params, w=45, h=25)
+
+    assert float(r_high) <= 12.0 + 1e-6
+
+
+def test_fit_ac0812_does_not_cap_radius_to_too_small_template(monkeypatch: pytest.MonkeyPatch) -> None:
+    """AC0812 fitting should allow radius growth above small defaults when image fit supports it."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.full((25, 45, 3), 240, dtype=np.uint8)
+    defaults = Action._default_ac0812_params(45, 25)
+
+    def fake_fit(_img, _defaults):
+        return {
+            **_defaults,
+            "cx": 32.5,
+            "cy": 12.5,
+            "r": 12.0,
+            "stroke_circle": 1.0,
+            "draw_text": False,
+            "arm_enabled": True,
+        }
+
+    monkeypatch.setattr(Action, "_fit_semantic_badge_from_image", staticmethod(fake_fit))
+
+    fitted = Action._fit_ac0812_params_from_image(img, defaults)
+
+    assert float(fitted["r"]) >= 11.5
+    assert float(fitted["max_circle_radius"]) >= 11.5
+
+
 def test_finalize_ac0820_increases_optical_bias_for_co_vertical_centering() -> None:
     """AC0820 should nudge CO down so the main run appears vertically centered in-circle."""
     params = Action._apply_co2_label(Action._default_ac0870_params(30, 30))

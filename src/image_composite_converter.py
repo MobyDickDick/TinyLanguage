@@ -344,6 +344,33 @@ class Action:
         return float(max(int(round(float(minimum))), int(round(float(value)))))
 
     @staticmethod
+    def _max_circle_radius_inside_canvas(cx: float, cy: float, w: int, h: int, stroke: float = 0.0) -> float:
+        """Return the largest circle radius that stays inside the SVG viewport."""
+        if w <= 0 or h <= 0:
+            return 1.0
+        edge_margin = min(float(cx), float(w) - float(cx), float(cy), float(h) - float(cy))
+        return float(max(1.0, edge_margin - (max(0.0, float(stroke)) / 2.0)))
+
+    @staticmethod
+    def _clamp_circle_inside_canvas(params: dict, w: int, h: int) -> dict:
+        """Clamp circle center/radius so no part of the ring exceeds the viewport."""
+        p = dict(params)
+        if not p.get("circle_enabled", True):
+            return p
+        if "cx" not in p or "cy" not in p or "r" not in p:
+            return p
+
+        cx = float(max(0.0, min(float(w), float(p.get("cx", 0.0)))))
+        cy = float(max(0.0, min(float(h), float(p.get("cy", 0.0)))))
+        stroke = float(p.get("stroke_circle", 0.0))
+        max_r = Action._max_circle_radius_inside_canvas(cx, cy, w, h, stroke)
+
+        p["cx"] = cx
+        p["cy"] = cy
+        p["r"] = float(max(1.0, min(max_r, float(p.get("r", 1.0)))))
+        return p
+
+    @staticmethod
     def _enforce_circle_connector_symmetry(params: dict, w: int, h: int) -> dict:
         """Keep circle+connector "lollipop" geometry centered around the connector axis."""
         p = dict(params)
@@ -440,6 +467,7 @@ class Action:
             p["stem_bottom"] = max(0.0, min(float(h), float(p["stem_bottom"])))
 
         p = Action._enforce_circle_connector_symmetry(p, w, h)
+        p = Action._clamp_circle_inside_canvas(p, w, h)
 
         # Symmetry enforcement may reintroduce non-snapped values.
         for key in half_keys:
@@ -1223,8 +1251,9 @@ class Action:
         # instead of variant-specific hard caps. This keeps elongated connector
         # symbols (including AC0812_L-like forms) free to grow when needed while
         # still avoiding runaway radii from anti-aliased merged contours.
-        max_r = max(default_r * 1.12, default_r + 0.75)
-        max_r = min(max_r, float(min(w, h)) * 0.48)
+        canvas_r_limit = Action._max_circle_radius_inside_canvas(cx, cy, w, h, stroke_circle)
+        max_r = max(default_r * 1.45, default_r + 3.0)
+        max_r = min(max_r, canvas_r_limit)
         r = min(r, max_r)
 
         if h <= 15 and not bool(params.get("draw_text", True)):
@@ -1255,15 +1284,15 @@ class Action:
         # derive the minimum arm length from an already-overgrown fitted circle,
         # later circle optimization can converge to the same unstable large-radius
         # solution. Use the template arm span as the lower bound baseline instead.
-        semantic_arm_len_min = max(1.0, default_arm_len * 0.90)
+        semantic_arm_len_min = max(1.0, default_arm_len * 0.75)
         params["arm_len_min"] = max(1.0, current_arm_len * 0.75, semantic_arm_len_min)
-        params["arm_len_min_ratio"] = float(max(float(params.get("arm_len_min_ratio", 0.75)), 0.90))
+        params["arm_len_min_ratio"] = float(max(float(params.get("arm_len_min_ratio", 0.75)), 0.75))
 
         # Expose a stable upper radius bound for later stochastic/adaptive circle
         # searches. This prevents left-arm AC0812 variants from re-growing the
         # circle and shortening the mandatory connector arm during optimization.
         max_r_from_arm_span = max(1.0, cx - params["arm_len_min"])
-        params["max_circle_radius"] = float(min(default_r, max_r_from_arm_span))
+        params["max_circle_radius"] = float(min(canvas_r_limit, max_r_from_arm_span))
         return Action._normalize_light_circle_colors(params)
 
     @staticmethod
@@ -2765,6 +2794,10 @@ class Action:
     def _circle_bounds(params: dict, w: int, h: int) -> tuple[float, float, float, float, float, float]:
         min_r = float(max(1.0, params.get("min_circle_radius", 1.0)))
         max_r = max(min_r, float(min(w, h)) * 0.48)
+        cx = float(params.get("cx", float(w) / 2.0))
+        cy = float(params.get("cy", float(h) / 2.0))
+        stroke = float(params.get("stroke_circle", 0.0))
+        max_r = min(max_r, Action._max_circle_radius_inside_canvas(cx, cy, w, h, stroke))
         if "max_circle_radius" in params:
             max_r = min(max_r, float(params.get("max_circle_radius", max_r)))
         return 0.0, float(w - 1), 0.0, float(h - 1), min_r, max_r

@@ -2764,6 +2764,26 @@ class Action:
         # meaningful across sizes (S/M/L variants).
         photo_norm = photo_err / max(1.0, orig_area)
 
+        # Circle optimization should prefer concentric matches and avoid shrinking
+        # to the smallest ring that still overlaps the arm/label neighborhood.
+        # The mask overlap terms above are necessary but can be too permissive
+        # when anti-aliased JPEG edges blur circle/connector boundaries.
+        if element == "circle":
+            src_circle = Action._mask_centroid_radius(local_mask_orig)
+            cand_circle = Action._mask_centroid_radius(local_mask_svg)
+            if src_circle is not None and cand_circle is not None:
+                src_cx, src_cy, src_r = src_circle
+                cand_cx, cand_cy, cand_r = cand_circle
+                center_dist = float(np.hypot(cand_cx - src_cx, cand_cy - src_cy))
+                center_norm = center_dist / max(1.0, src_r)
+                # Penalize undersized rings more strongly than oversized ones so
+                # AC0812-like badges keep a readable radius in optimization.
+                undersize_ratio = max(0.0, (src_r - cand_r) / max(1.0, src_r))
+                extra += undersize_ratio * 0.35
+                miss += undersize_ratio * 0.45
+                iou = max(0.0, iou - min(0.35, undersize_ratio * 0.55))
+                photo_norm += center_norm * 2.8
+
         return float(photo_norm + (38.0 * miss) + (24.0 * extra) + (18.0 * (1.0 - iou)))
 
     @staticmethod
@@ -3277,7 +3297,14 @@ class Action:
         if mask_svg is None:
             return float("inf")
 
-        return Action._masked_union_error_in_bbox(img_orig, elem_render, mask_orig, mask_svg)
+        return Action._element_match_error(
+            img_orig,
+            elem_render,
+            probe,
+            "circle",
+            mask_orig=mask_orig,
+            mask_svg=mask_svg,
+        )
 
 
     @staticmethod
@@ -3320,7 +3347,14 @@ class Action:
         if mask_svg is None:
             return float("inf")
 
-        return Action._masked_union_error_in_bbox(img_orig, elem_render, mask_orig, mask_svg)
+        return Action._element_match_error(
+            img_orig,
+            elem_render,
+            probe,
+            "circle",
+            mask_orig=mask_orig,
+            mask_svg=mask_svg,
+        )
 
     @staticmethod
     def _reanchor_arm_to_circle_edge(params: dict, radius: float) -> None:

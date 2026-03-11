@@ -790,7 +790,7 @@ def test_element_error_for_circle_radius_uses_expanded_source_mask_for_growth(mo
     monkeypatch.setattr(Action, "generate_badge_svg", staticmethod(lambda _w, _h, _p: "<svg/>"))
     monkeypatch.setattr(Action, "render_svg_to_numpy", staticmethod(lambda _svg, w, h: np.zeros((h, w, 3), dtype=np.uint8)))
     monkeypatch.setattr(Action, "_fit_to_original_size", staticmethod(lambda _orig, rendered: rendered))
-    monkeypatch.setattr(Action, "_masked_union_error_in_bbox", staticmethod(lambda _a, _b, _c, _d: 0.0))
+    monkeypatch.setattr(Action, "_element_match_error", staticmethod(lambda *_args, **_kwargs: 0.0))
 
     def fake_mask(_img: object, mask_params: dict, _element: str):
         if mask_params is not params:
@@ -941,19 +941,126 @@ def test_circle_error_uses_stable_source_mask_for_radius_candidates(monkeypatch:
 
     calls: list[dict] = []
 
-    def fake_extract(_img: object, mask_params: dict, _element: str) -> object:
+    def fake_extract(_img: object, mask_params: dict, _element: str):
         calls.append(mask_params)
-        return object()
+        return image_composite_converter.np.ones((20, 20), dtype=bool)
 
     monkeypatch.setattr(Action, "extract_badge_element_mask", staticmethod(fake_extract))
-    monkeypatch.setattr(Action, "_masked_union_error_in_bbox", staticmethod(lambda *_args, **_kwargs: 1.0))
+    monkeypatch.setattr(Action, "_element_match_error", staticmethod(lambda *_args, **_kwargs: 1.0))
 
     err = Action._element_error_for_circle_radius(img, params, 3.5)
 
     assert err == 1.0
     assert len(calls) >= 2
-    assert calls[0] is params
+    assert calls[0] is not params
     assert calls[1] is not params
+
+
+def test_circle_match_error_penalizes_non_concentric_candidate(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Circle scoring should prefer concentric candidates when overlap is otherwise similar."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.zeros((20, 20, 3), dtype=np.uint8)
+    params = {"cx": 10.0, "cy": 10.0, "r": 6.0}
+
+    src_mask = np.zeros((20, 20), dtype=bool)
+    src_mask[6:14, 6:14] = True
+
+    concentric = np.zeros((20, 20), dtype=bool)
+    concentric[6:14, 6:14] = True
+    shifted = np.zeros((20, 20), dtype=bool)
+    shifted[6:14, 7:15] = True
+
+    monkeypatch.setattr(Action, "_masked_union_error_in_bbox", staticmethod(lambda *_args, **_kwargs: 0.0))
+
+    err_concentric = Action._element_match_error(
+        img,
+        img,
+        params,
+        "circle",
+        mask_orig=src_mask,
+        mask_svg=concentric,
+    )
+    err_shifted = Action._element_match_error(
+        img,
+        img,
+        params,
+        "circle",
+        mask_orig=src_mask,
+        mask_svg=shifted,
+    )
+
+    assert err_shifted > err_concentric
+
+
+def test_circle_match_error_penalizes_undersized_candidate(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Circle scoring should discourage candidates that shrink below source radius."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.zeros((20, 20, 3), dtype=np.uint8)
+    params = {"cx": 10.0, "cy": 10.0, "r": 6.0}
+
+    src_mask = np.zeros((20, 20), dtype=bool)
+    src_mask[4:16, 4:16] = True
+
+    undersized = np.zeros((20, 20), dtype=bool)
+    undersized[6:14, 6:14] = True
+
+    monkeypatch.setattr(Action, "_masked_union_error_in_bbox", staticmethod(lambda *_args, **_kwargs: 0.0))
+
+    err_same = Action._element_match_error(
+        img,
+        img,
+        params,
+        "circle",
+        mask_orig=src_mask,
+        mask_svg=src_mask,
+    )
+    err_under = Action._element_match_error(
+        img,
+        img,
+        params,
+        "circle",
+        mask_orig=src_mask,
+        mask_svg=undersized,
+    )
+
+    assert err_under > err_same
+
+def test_circle_pose_error_uses_element_match_scorer(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Center/pose probing should go through the unified element match scorer."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.zeros((20, 20, 3), dtype=np.uint8)
+    params = {"circle_enabled": True, "cx": 10.0, "cy": 10.0, "r": 6.0}
+
+    monkeypatch.setattr(Action, "generate_badge_svg", staticmethod(lambda *_args, **_kwargs: "<svg />"))
+    monkeypatch.setattr(Action, "render_svg_to_numpy", staticmethod(lambda *_args, **_kwargs: object()))
+    monkeypatch.setattr(Action, "_fit_to_original_size", staticmethod(lambda _img, rendered: rendered))
+    monkeypatch.setattr(
+        Action,
+        "extract_badge_element_mask",
+        staticmethod(lambda *_args, **_kwargs: np.ones((20, 20), dtype=bool)),
+    )
+    monkeypatch.setattr(Action, "_element_match_error", staticmethod(lambda *_args, **_kwargs: 2.5))
+
+    err = Action._element_error_for_circle_pose(
+        img,
+        params,
+        cx_value=10.5,
+        cy_value=9.5,
+        radius_value=5.5,
+    )
+
+    assert err == 2.5
+
+
 def test_voc_font_scale_bounds_allow_larger_tiny_badge_labels() -> None:
     """Tiny VOC badges should allow expanding text scale beyond the historic cap."""
     params = {

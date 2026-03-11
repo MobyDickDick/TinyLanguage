@@ -962,6 +962,9 @@ def test_circle_error_uses_stable_source_mask_for_radius_candidates(monkeypatch:
     monkeypatch.setattr(Action, "render_svg_to_numpy", staticmethod(lambda *_args, **_kwargs: object()))
     monkeypatch.setattr(Action, "_fit_to_original_size", staticmethod(lambda _img, rendered: rendered))
 
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
     calls: list[dict] = []
 
     def fake_extract(_img: object, mask_params: dict, _element: str):

@@ -381,6 +381,40 @@ class Action:
         return round(float(value) * 2.0) / 2.0
 
     @staticmethod
+    def _clip_scalar(value: float, low: float, high: float) -> float:
+        """Return value clamped to [low, high] without numpy dependency."""
+        lo = float(low)
+        hi = float(high)
+        if lo > hi:
+            lo, hi = hi, lo
+        v = float(value)
+        if v < lo:
+            return lo
+        if v > hi:
+            return hi
+        return v
+
+    class _ScalarRng:
+        def __init__(self, seed: int) -> None:
+            self._rng = random.Random(int(seed))
+
+        def uniform(self, low: float, high: float) -> float:
+            return float(self._rng.uniform(float(low), float(high)))
+
+        def normal(self, mean: float, sigma: float) -> float:
+            return float(self._rng.gauss(float(mean), float(sigma)))
+
+    @staticmethod
+    def _make_rng(seed: int):
+        if np is not None:
+            return np.random.default_rng(int(seed))
+        return Action._ScalarRng(int(seed))
+
+    @staticmethod
+    def _argmin_index(values: list[float]) -> int:
+        return min(range(len(values)), key=lambda i: float(values[i]))
+
+    @staticmethod
     def _snap_int_px(value: float, minimum: float = 1.0) -> float:
         return float(max(int(round(float(minimum))), int(round(float(value)))))
 
@@ -3189,16 +3223,16 @@ class Action:
             shrink = 0.58
             if not lock_cx:
                 half_span = max(0.5, float((domain["cx_high"] - domain["cx_low"]) * shrink * 0.5))
-                focus = float(best[0] if len(plateau) <= 1 else (plateau_min[0] + plateau_max[0]) / 2.0)
+                focus = float(best[0] if len(plateau) <= 1 else (pmin_cx + pmax_cx) / 2.0)
                 domain["cx_low"] = max(x_low, focus - half_span)
                 domain["cx_high"] = min(x_high, focus + half_span)
             if not lock_cy:
                 half_span = max(0.5, float((domain["cy_high"] - domain["cy_low"]) * shrink * 0.5))
-                focus = float(best[1] if len(plateau) <= 1 else (plateau_min[1] + plateau_max[1]) / 2.0)
+                focus = float(best[1] if len(plateau) <= 1 else (pmin_cy + pmax_cy) / 2.0)
                 domain["cy_low"] = max(y_low, focus - half_span)
                 domain["cy_high"] = min(y_high, focus + half_span)
             half_span_r = max(0.5, float((domain["r_high"] - domain["r_low"]) * shrink * 0.5))
-            focus_r = float(best[2] if len(plateau) <= 1 else (plateau_min[2] + plateau_max[2]) / 2.0)
+            focus_r = float(best[2] if len(plateau) <= 1 else (pmin_r + pmax_r) / 2.0)
             domain["r_low"] = max(r_low, focus_r - half_span_r)
             domain["r_high"] = min(r_high, focus_r + half_span_r)
 
@@ -3869,6 +3903,8 @@ class Action:
             if forced_min_ratio is not None:
                 min_ratio = float(max(0.0, min(1.0, float(forced_min_ratio))))
                 low_bound = max(low_bound, current * min_ratio)
+            if h <= 15 and not bool(params.get("draw_text", True)):
+                low_bound = max(low_bound, 5.5)
             # Keep bottom-anchored stem variants (e.g. AC0811_S) from collapsing
             # into near-invisible stubs when anti-aliased extraction under-segments
             # thin line pixels in element-only masks.
@@ -3881,6 +3917,10 @@ class Action:
             ):
                 min_ratio = float(params.get("stem_len_min_ratio", 0.65))
                 low_bound = max(low_bound, current * max(0.0, min(1.0, min_ratio)))
+                # Tiny AC0811-like badges need a visibly readable stem even when
+                # contour extraction underestimates the semantic template length.
+                if h <= 15 and not bool(params.get("draw_text", True)):
+                    low_bound = max(low_bound, 5.5)
         elif element == "arm" and params.get("arm_enabled"):
             dx = float(params.get("arm_x2", 0.0)) - float(params.get("arm_x1", 0.0))
             dy = float(params.get("arm_y2", 0.0)) - float(params.get("arm_y1", 0.0))
@@ -3934,7 +3974,7 @@ class Action:
                 Action._snap_half((low + high) / 2.0),
                 Action._snap_half(low + (high - low) * 0.75),
                 Action._snap_half(high),
-                Action._snap_half(current),
+                Action._snap_half(Action._clip_scalar(current, low, high)),
             }
         )
         candidate_errors = [Action._element_error_for_extent(img_orig, params, element, v) for v in candidates]
@@ -4076,7 +4116,7 @@ class Action:
                     Action._snap_half((low + high) / 2.0),
                     Action._snap_half(low + (high - low) * 0.75),
                     Action._snap_half(high),
-                    Action._snap_half(current),
+                    Action._snap_half(Action._clip_scalar(current, low, high)),
                 }
             )
         candidate_errors = [Action._element_error_for_width(img_orig, params, element, v) for v in candidates]

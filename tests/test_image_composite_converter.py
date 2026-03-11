@@ -956,6 +956,35 @@ def test_circle_error_uses_stable_source_mask_for_radius_candidates(monkeypatch:
     assert calls[1] is not params
 
 
+def test_circle_color_error_disables_circle_geometry_penalty(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Circle color bracketing should not add geometry-only penalties."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.zeros((20, 20, 3), dtype=np.uint8)
+    mask = np.ones((20, 20), dtype=bool)
+    params = {"circle_enabled": True, "cx": 10.0, "cy": 10.0, "r": 6.0, "fill_gray": 220, "stroke_gray": 127}
+
+    monkeypatch.setattr(Action, "generate_badge_svg", staticmethod(lambda *_args, **_kwargs: "<svg />"))
+    monkeypatch.setattr(Action, "render_svg_to_numpy", staticmethod(lambda *_args, **_kwargs: object()))
+    monkeypatch.setattr(Action, "_fit_to_original_size", staticmethod(lambda _img, rendered: rendered))
+
+    recorded_kwargs: list[dict] = []
+
+    def fake_match(_a, _b, _c, _d, **kwargs):
+        recorded_kwargs.append(kwargs)
+        return 0.0
+
+    monkeypatch.setattr(Action, "_element_match_error", staticmethod(fake_match))
+
+    err = Action._element_error_for_color(img, params, "circle", "fill_gray", 210, mask)
+
+    assert err == 0.0
+    assert recorded_kwargs
+    assert recorded_kwargs[0].get("apply_circle_geometry_penalty") is False
+
+
 def test_circle_match_error_penalizes_non_concentric_candidate(monkeypatch: pytest.MonkeyPatch) -> None:
     """Circle scoring should prefer concentric candidates when overlap is otherwise similar."""
     if image_composite_converter.np is None:

@@ -2352,7 +2352,7 @@ class Action:
         changed = False
         scale = float(np.clip(diag_scale, 0.85, 1.18))
 
-        if element == "circle":
+        if element == "circle" and apply_circle_geometry_penalty:
             old_cx = float(params["cx"])
             old_cy = float(params["cy"])
             old_r = float(params["r"])
@@ -2556,7 +2556,7 @@ class Action:
     def _element_region_mask(h: int, w: int, params: dict, element: str) -> np.ndarray | None:
         yy, xx = np.indices((h, w))
         context_pad = max(2.0, float(min(h, w)) * 0.12)
-        if element == "circle":
+        if element == "circle" and apply_circle_geometry_penalty:
             radius_with_context = params["r"] + context_pad
             circle = (xx - params["cx"]) ** 2 + (yy - params["cy"]) ** 2 <= radius_with_context**2
             top = yy <= (params["cy"] + params["r"] + context_pad)
@@ -2721,6 +2721,7 @@ class Action:
         *,
         mask_orig: np.ndarray | None = None,
         mask_svg: np.ndarray | None = None,
+        apply_circle_geometry_penalty: bool = True,
     ) -> float:
         """Element score for optimization: localization + redraw + symmetric compare.
 
@@ -2763,6 +2764,26 @@ class Action:
         # Normalize photometric term by source element area so comparisons stay
         # meaningful across sizes (S/M/L variants).
         photo_norm = photo_err / max(1.0, orig_area)
+
+        # Circle optimization should prefer concentric matches and avoid shrinking
+        # to the smallest ring that still overlaps the arm/label neighborhood.
+        # The mask overlap terms above are necessary but can be too permissive
+        # when anti-aliased JPEG edges blur circle/connector boundaries.
+        if element == "circle" and apply_circle_geometry_penalty:
+            src_circle = Action._mask_centroid_radius(local_mask_orig)
+            cand_circle = Action._mask_centroid_radius(local_mask_svg)
+            if src_circle is not None and cand_circle is not None:
+                src_cx, src_cy, src_r = src_circle
+                cand_cx, cand_cy, cand_r = cand_circle
+                center_dist = float(np.hypot(cand_cx - src_cx, cand_cy - src_cy))
+                center_norm = center_dist / max(1.0, src_r)
+                # Penalize undersized rings more strongly than oversized ones so
+                # AC0812-like badges keep a readable radius in optimization.
+                undersize_ratio = max(0.0, (src_r - cand_r) / max(1.0, src_r))
+                extra += undersize_ratio * 0.35
+                miss += undersize_ratio * 0.45
+                iou = max(0.0, iou - min(0.35, undersize_ratio * 0.55))
+                photo_norm += center_norm * 2.8
 
         return float(photo_norm + (38.0 * miss) + (24.0 * extra) + (18.0 * (1.0 - iou)))
 
@@ -3277,7 +3298,14 @@ class Action:
         if mask_svg is None:
             return float("inf")
 
-        return Action._masked_union_error_in_bbox(img_orig, elem_render, mask_orig, mask_svg)
+        return Action._element_match_error(
+            img_orig,
+            elem_render,
+            probe,
+            "circle",
+            mask_orig=mask_orig,
+            mask_svg=mask_svg,
+        )
 
 
     @staticmethod
@@ -3320,7 +3348,14 @@ class Action:
         if mask_svg is None:
             return float("inf")
 
-        return Action._masked_union_error_in_bbox(img_orig, elem_render, mask_orig, mask_svg)
+        return Action._element_match_error(
+            img_orig,
+            elem_render,
+            probe,
+            "circle",
+            mask_orig=mask_orig,
+            mask_svg=mask_svg,
+        )
 
     @staticmethod
     def _reanchor_arm_to_circle_edge(params: dict, radius: float) -> None:
@@ -4054,7 +4089,20 @@ class Action:
         elem_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(elem_svg, w, h))
         if elem_render is None:
             return float("inf")
-        return Action._element_match_error(img_orig, elem_render, probe, element, mask_orig=mask_orig)
+
+        if element == "circle":
+            # Color-only circle probing should be photometric against a stable
+            # source region. Do not let threshold-induced mask area changes in
+            # candidate renders bias toward darker/larger-looking circles.
+            return Action._masked_union_error_in_bbox(img_orig, elem_render, mask_orig, mask_orig)
+
+        return Action._element_match_error(
+            img_orig,
+            elem_render,
+            probe,
+            element,
+            mask_orig=mask_orig,
+        )
 
     @staticmethod
     def _optimize_element_color_bracket(
@@ -4331,7 +4379,7 @@ class Action:
                 if extent_changed:
                     round_changed = True
 
-                if element == "circle":
+                if element == "circle" and apply_circle_geometry_penalty:
                     center_changed = Action._optimize_circle_center_bracket(img_orig, params, logs)
                     if center_changed:
                         round_changed = True

@@ -954,6 +954,83 @@ def test_circle_error_uses_stable_source_mask_for_radius_candidates(monkeypatch:
     assert len(calls) >= 2
     assert calls[0] is params
     assert calls[1] is not params
+
+
+def test_circle_match_error_penalizes_non_concentric_candidate(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Circle scoring should prefer concentric candidates when overlap is otherwise similar."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.zeros((20, 20, 3), dtype=np.uint8)
+    params = {"cx": 10.0, "cy": 10.0, "r": 6.0}
+
+    src_mask = np.zeros((20, 20), dtype=bool)
+    src_mask[6:14, 6:14] = True
+
+    concentric = np.zeros((20, 20), dtype=bool)
+    concentric[6:14, 6:14] = True
+    shifted = np.zeros((20, 20), dtype=bool)
+    shifted[6:14, 7:15] = True
+
+    monkeypatch.setattr(Action, "_masked_union_error_in_bbox", staticmethod(lambda *_args, **_kwargs: 0.0))
+
+    err_concentric = Action._element_match_error(
+        img,
+        img,
+        params,
+        "circle",
+        mask_orig=src_mask,
+        mask_svg=concentric,
+    )
+    err_shifted = Action._element_match_error(
+        img,
+        img,
+        params,
+        "circle",
+        mask_orig=src_mask,
+        mask_svg=shifted,
+    )
+
+    assert err_shifted > err_concentric
+
+
+def test_circle_match_error_penalizes_undersized_candidate(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Circle scoring should discourage candidates that shrink below source radius."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    img = np.zeros((20, 20, 3), dtype=np.uint8)
+    params = {"cx": 10.0, "cy": 10.0, "r": 6.0}
+
+    src_mask = np.zeros((20, 20), dtype=bool)
+    src_mask[4:16, 4:16] = True
+
+    undersized = np.zeros((20, 20), dtype=bool)
+    undersized[6:14, 6:14] = True
+
+    monkeypatch.setattr(Action, "_masked_union_error_in_bbox", staticmethod(lambda *_args, **_kwargs: 0.0))
+
+    err_same = Action._element_match_error(
+        img,
+        img,
+        params,
+        "circle",
+        mask_orig=src_mask,
+        mask_svg=src_mask,
+    )
+    err_under = Action._element_match_error(
+        img,
+        img,
+        params,
+        "circle",
+        mask_orig=src_mask,
+        mask_svg=undersized,
+    )
+
+    assert err_under > err_same
+
 def test_voc_font_scale_bounds_allow_larger_tiny_badge_labels() -> None:
     """Tiny VOC badges should allow expanding text scale beyond the historic cap."""
     params = {

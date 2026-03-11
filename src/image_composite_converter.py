@@ -2348,6 +2348,7 @@ class Action:
         diag_scale: float,
         w: int,
         h: int,
+        apply_circle_geometry_penalty: bool = True,
     ) -> bool:
         changed = False
         scale = float(np.clip(diag_scale, 0.85, 1.18))
@@ -2553,7 +2554,13 @@ class Action:
         return float(np.mean(vals))
 
     @staticmethod
-    def _element_region_mask(h: int, w: int, params: dict, element: str) -> np.ndarray | None:
+    def _element_region_mask(
+        h: int,
+        w: int,
+        params: dict,
+        element: str,
+        apply_circle_geometry_penalty: bool = True,
+    ) -> np.ndarray | None:
         yy, xx = np.indices((h, w))
         context_pad = max(2.0, float(min(h, w)) * 0.12)
         if element == "circle" and apply_circle_geometry_penalty:
@@ -4315,6 +4322,7 @@ class Action:
         *,
         max_rounds: int = 6,
         debug_out_dir: str | None = None,
+        apply_circle_geometry_penalty: bool = True,
     ) -> list[str]:
         h, w = img_orig.shape[:2]
         logs: list[str] = []

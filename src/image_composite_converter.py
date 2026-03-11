@@ -1251,8 +1251,9 @@ class Action:
         # instead of variant-specific hard caps. This keeps elongated connector
         # symbols (including AC0812_L-like forms) free to grow when needed while
         # still avoiding runaway radii from anti-aliased merged contours.
-        max_r = max(default_r * 1.12, default_r + 0.75)
-        max_r = min(max_r, float(min(w, h)) * 0.48)
+        canvas_r_limit = Action._max_circle_radius_inside_canvas(cx, cy, w, h, stroke_circle)
+        max_r = max(default_r * 1.45, default_r + 3.0)
+        max_r = min(max_r, canvas_r_limit)
         r = min(r, max_r)
 
         if h <= 15 and not bool(params.get("draw_text", True)):
@@ -1283,15 +1284,15 @@ class Action:
         # derive the minimum arm length from an already-overgrown fitted circle,
         # later circle optimization can converge to the same unstable large-radius
         # solution. Use the template arm span as the lower bound baseline instead.
-        semantic_arm_len_min = max(1.0, default_arm_len * 0.90)
+        semantic_arm_len_min = max(1.0, default_arm_len * 0.75)
         params["arm_len_min"] = max(1.0, current_arm_len * 0.75, semantic_arm_len_min)
-        params["arm_len_min_ratio"] = float(max(float(params.get("arm_len_min_ratio", 0.75)), 0.90))
+        params["arm_len_min_ratio"] = float(max(float(params.get("arm_len_min_ratio", 0.75)), 0.75))
 
         # Expose a stable upper radius bound for later stochastic/adaptive circle
         # searches. This prevents left-arm AC0812 variants from re-growing the
         # circle and shortening the mandatory connector arm during optimization.
         max_r_from_arm_span = max(1.0, cx - params["arm_len_min"])
-        params["max_circle_radius"] = float(min(default_r, max_r_from_arm_span))
+        params["max_circle_radius"] = float(min(canvas_r_limit, max_r_from_arm_span))
         return Action._normalize_light_circle_colors(params)
 
     @staticmethod

@@ -4089,13 +4089,19 @@ class Action:
         elem_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(elem_svg, w, h))
         if elem_render is None:
             return float("inf")
+
+        if element == "circle":
+            # Color-only circle probing should be photometric against a stable
+            # source region. Do not let threshold-induced mask area changes in
+            # candidate renders bias toward darker/larger-looking circles.
+            return Action._masked_union_error_in_bbox(img_orig, elem_render, mask_orig, mask_orig)
+
         return Action._element_match_error(
             img_orig,
             elem_render,
             probe,
             element,
             mask_orig=mask_orig,
-            apply_circle_geometry_penalty=(element != "circle"),
         )
 
     @staticmethod

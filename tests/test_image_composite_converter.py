@@ -956,8 +956,8 @@ def test_circle_error_uses_stable_source_mask_for_radius_candidates(monkeypatch:
     assert calls[1] is not params
 
 
-def test_circle_color_error_disables_circle_geometry_penalty(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Circle color bracketing should not add geometry-only penalties."""
+def test_circle_color_error_uses_stable_photometric_mask(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Circle color bracketing should use stable source mask photometric scoring."""
     if image_composite_converter.np is None:
         pytest.skip("numpy not available in this environment")
 
@@ -970,19 +970,26 @@ def test_circle_color_error_disables_circle_geometry_penalty(monkeypatch: pytest
     monkeypatch.setattr(Action, "render_svg_to_numpy", staticmethod(lambda *_args, **_kwargs: object()))
     monkeypatch.setattr(Action, "_fit_to_original_size", staticmethod(lambda _img, rendered: rendered))
 
-    recorded_kwargs: list[dict] = []
+    monkeypatch.setattr(
+        Action,
+        "_element_match_error",
+        staticmethod(lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("must not be called"))),
+    )
 
-    def fake_match(_a, _b, _c, _d, **kwargs):
-        recorded_kwargs.append(kwargs)
-        return 0.0
+    calls: list[tuple[object, object]] = []
 
-    monkeypatch.setattr(Action, "_element_match_error", staticmethod(fake_match))
+    def fake_union(_img_a, _img_b, m1, m2):
+        calls.append((m1, m2))
+        return 3.0
+
+    monkeypatch.setattr(Action, "_masked_union_error_in_bbox", staticmethod(fake_union))
 
     err = Action._element_error_for_color(img, params, "circle", "fill_gray", 210, mask)
 
-    assert err == 0.0
-    assert recorded_kwargs
-    assert recorded_kwargs[0].get("apply_circle_geometry_penalty") is False
+    assert err == 3.0
+    assert calls
+    assert calls[0][0] is mask
+    assert calls[0][1] is mask
 
 
 def test_circle_match_error_penalizes_non_concentric_candidate(monkeypatch: pytest.MonkeyPatch) -> None:

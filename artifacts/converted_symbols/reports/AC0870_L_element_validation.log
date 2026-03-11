@@ -1,15 +1,15 @@
-run-meta: run_seed=757099516 pass_seed_offset=0 nonce_ns=1773212167102230100
+run-meta: run_seed=380962146 pass_seed_offset=0 nonce_ns=1773228072536444700
 status=semantic_ok
 Runde 1: elementweise Validierung gestartet
 circle: Fehler=190.224
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing r 12.200->13.500 (best_err=18204.000); Kandidaten=10.500->32175.000, 12.000->30141.000, 13.000->20309.000, 13.500->18204.000, 14.000->20598.000, 14.500->25276.000
+circle: Radius-Bracketing r 12.200->13.500 (best_err=18204.000); Kandidaten=10.500->32175.000, 12.000->30141.000, 13.000->20309.000, 13.500->18204.000, 14.000->20598.000, 14.500->20598.000
 text: Fehler=80.522
 Runde 1: Gesamtfehler=15.123
 Runde 2: elementweise Validierung gestartet
 circle: Fehler=116.776
 circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
-circle: Radius-Bracketing keine relevante Änderung (r: 13.500, best_err=18204.000); Kandidaten=10.500->32175.000, 13.500->18204.000, 14.000->20598.000, 14.500->25276.000
+circle: Radius-Bracketing keine relevante Änderung (r: 13.500, best_err=18204.000); Kandidaten=10.500->32175.000, 13.500->18204.000, 14.000->20598.000, 14.500->20598.000
 text: Fehler=80.522
 Runde 2: Gesamtfehler=15.123
 Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet

@@ -1,3 +1,27 @@
-run-meta: run_seed=485855977 pass_seed_offset=0 nonce_ns=1773172404091386000
-status=semantic_mismatch
-issue=Im Bild ist waagrechter Strich erkennbar, aber nicht in der Beschreibung enthalten
+run-meta: run_seed=696518164 pass_seed_offset=4 nonce_ns=1773173089296421800
+status=semantic_ok
+Runde 1: elementweise Validierung gestartet
+circle: Fehler=208.265
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing r 5.640->6.500 (best_err=5737.000); Kandidaten=5.500->8481.000, 6.000->8006.000, 6.500->5737.000, 7.000->5839.000
+arm: Fehler=49.625
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 11.000); Kandidaten=8.500->74.375, 11.000->49.625, 12.500->49.625, 16.500->49.625, 21.000->49.625, 25.000->49.625
+text: Fehler=152.259
+text: Breiten-Bracketing co2_font_scale 0.886->0.797; Kandidaten=0.797->152.259, 0.844->152.259, 0.886->152.259, 0.890->152.259, 0.952->152.259, 1.014->152.259, 1.018->152.259, 1.061->152.259, 1.107->152.259
+Runde 1: Gesamtfehler=19.189
+Runde 2: elementweise Validierung gestartet
+circle: Fehler=125.541
+circle: Breiten-Bracketing übersprungen (stroke_circle: current=1.000, Range=1.000..1.000)
+circle: Radius-Bracketing keine relevante Änderung (r: 6.500, best_err=5737.000); Kandidaten=6.000->8064.000, 6.500->5737.000, 7.000->5839.000
+arm: Fehler=49.625
+arm: Breiten-Bracketing übersprungen (arm_stroke: current=1.000, Range=1.000..1.000)
+arm: Längen-Bracketing keine relevante Änderung (arm_len: 11.000); Kandidaten=8.500->74.375, 11.000->49.625, 12.500->49.625, 16.500->49.625, 21.000->49.625, 25.000->49.625
+text: Fehler=152.259
+text: Breiten-Bracketing keine relevante Änderung (co2_font_scale: 0.797); Kandidaten=0.797->152.259, 0.844->152.259, 0.890->152.259, 0.917->152.259, 0.952->152.259, 1.014->152.259, 1.061->152.259, 1.107->152.259
+Runde 2: Gesamtfehler=19.189
+Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet
+circle: Farb-Bracketing übersprungen (Farben gesperrt)
+arm: Farb-Bracketing übersprungen (Farben gesperrt)
+text: Farb-Bracketing übersprungen (Farben gesperrt)
+semantic-guard: Erwartete Arm-Geometrie bestätigt/wiederhergestellt (z.B. AC0812 links).

@@ -776,7 +776,7 @@
       "module": "src.image_composite_converter",
       "console": "integratedTerminal",
       "args": [
-        "${workspaceFolder}/artifacts",
+        "${workspaceFolder}/artifacts/images_to_convert",
         "${workspaceFolder}/artifacts/coonverted_images"
       ],
       "logToFile": true,

@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import random
+import struct
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -39,6 +40,8 @@ def load_binary_image(path: Path, threshold: int = 220) -> list[list[int]]:
         image_module = importlib.import_module("PIL.Image")
     except ModuleNotFoundError as exc:
         if exc.name in {"PIL", "PIL.Image"}:
+            if path.suffix.lower() == ".bmp":
+                return load_binary_bmp(path, threshold=threshold)
             raise ModuleNotFoundError(
                 "Missing dependency 'Pillow' (module 'PIL'). Install it into the active interpreter with "
                 "`python -m pip install Pillow` and ensure your IDE/debugger uses the same interpreter."
@@ -49,6 +52,48 @@ def load_binary_image(path: Path, threshold: int = 220) -> list[list[int]]:
     w, h = gray.size
     px = gray.load()
     return [[1 if px[x, y] < threshold else 0 for x in range(w)] for y in range(h)]
+
+
+def load_binary_bmp(path: Path, threshold: int = 220) -> list[list[int]]:
+    data = path.read_bytes()
+    if len(data) < 54 or data[:2] != b"BM":
+        raise ValueError(f"Unsupported BMP file: {path}")
+
+    pixel_offset = struct.unpack_from("<I", data, 10)[0]
+    dib_size = struct.unpack_from("<I", data, 14)[0]
+    if dib_size < 40:
+        raise ValueError(f"Unsupported BMP DIB header size {dib_size} in {path}")
+
+    width = struct.unpack_from("<i", data, 18)[0]
+    height = struct.unpack_from("<i", data, 22)[0]
+    planes = struct.unpack_from("<H", data, 26)[0]
+    bpp = struct.unpack_from("<H", data, 28)[0]
+    compression = struct.unpack_from("<I", data, 30)[0]
+
+    if width <= 0 or height == 0:
+        raise ValueError(f"Unsupported BMP dimensions in {path}")
+    if planes != 1 or bpp not in {24, 32} or compression != 0:
+        raise ValueError(f"Unsupported BMP format in {path}: planes={planes} bpp={bpp} compression={compression}")
+
+    top_down = height < 0
+    out_h = abs(height)
+    row_stride = ((width * bpp + 31) // 32) * 4
+
+    binary = [[0 for _ in range(width)] for _ in range(out_h)]
+    for row in range(out_h):
+        src_row = row if top_down else (out_h - 1 - row)
+        row_start = pixel_offset + src_row * row_stride
+        for x in range(width):
+            px_start = row_start + x * (bpp // 8)
+            if px_start + 2 >= len(data):
+                raise ValueError(f"Corrupt BMP pixel data in {path}")
+            b = data[px_start]
+            g = data[px_start + 1]
+            r = data[px_start + 2]
+            luminance = int(0.114 * b + 0.587 * g + 0.299 * r)
+            binary[row][x] = 1 if luminance < threshold else 0
+
+    return binary
 
 
 def find_elements(binary: list[list[int]], min_pixels: int = 25) -> list[Element]:

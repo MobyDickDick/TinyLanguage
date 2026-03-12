@@ -35,13 +35,13 @@ class Candidate:
     h: float
 
 
-def load_binary_image(path: Path, threshold: int = 220) -> list[list[int]]:
+def load_grayscale_image(path: Path) -> list[list[int]]:
     try:
         image_module = importlib.import_module("PIL.Image")
     except ModuleNotFoundError as exc:
         if exc.name in {"PIL", "PIL.Image"}:
             if path.suffix.lower() == ".bmp":
-                return load_binary_bmp(path, threshold=threshold)
+                return load_grayscale_bmp(path)
             raise ModuleNotFoundError(
                 "Missing dependency 'Pillow' (module 'PIL'). Install it into the active interpreter with "
                 "`python -m pip install Pillow` and ensure your IDE/debugger uses the same interpreter."
@@ -51,10 +51,10 @@ def load_binary_image(path: Path, threshold: int = 220) -> list[list[int]]:
     gray = image_module.open(path).convert("L")
     w, h = gray.size
     px = gray.load()
-    return [[1 if px[x, y] < threshold else 0 for x in range(w)] for y in range(h)]
+    return [[int(px[x, y]) for x in range(w)] for y in range(h)]
 
 
-def load_binary_bmp(path: Path, threshold: int = 220) -> list[list[int]]:
+def load_grayscale_bmp(path: Path) -> list[list[int]]:
     data = path.read_bytes()
     if len(data) < 54 or data[:2] != b"BM":
         raise ValueError(f"Unsupported BMP file: {path}")
@@ -79,7 +79,7 @@ def load_binary_bmp(path: Path, threshold: int = 220) -> list[list[int]]:
     out_h = abs(height)
     row_stride = ((width * bpp + 31) // 32) * 4
 
-    binary = [[0 for _ in range(width)] for _ in range(out_h)]
+    gray = [[255 for _ in range(width)] for _ in range(out_h)]
     for row in range(out_h):
         src_row = row if top_down else (out_h - 1 - row)
         row_start = pixel_offset + src_row * row_stride
@@ -90,10 +90,14 @@ def load_binary_bmp(path: Path, threshold: int = 220) -> list[list[int]]:
             b = data[px_start]
             g = data[px_start + 1]
             r = data[px_start + 2]
-            luminance = int(0.114 * b + 0.587 * g + 0.299 * r)
-            binary[row][x] = 1 if luminance < threshold else 0
+            gray[row][x] = int(0.114 * b + 0.587 * g + 0.299 * r)
 
-    return binary
+    return gray
+
+
+def load_binary_image(path: Path, threshold: int = 220) -> list[list[int]]:
+    grayscale = load_grayscale_image(path)
+    return [[1 if value < threshold else 0 for value in row] for row in grayscale]
 
 
 def find_elements(binary: list[list[int]], min_pixels: int = 25) -> list[Element]:
@@ -225,23 +229,44 @@ def optimize_element(target: list[list[int]], init: Candidate, *, max_iter: int,
     return best, best_score
 
 
-def candidate_to_svg(candidate: Candidate, gx: int, gy: int) -> str:
+def gray_to_hex(value: int) -> str:
+    c = max(0, min(255, int(value)))
+    return f"#{c:02x}{c:02x}{c:02x}"
+
+
+def element_fill_color(grayscale: list[list[int]], element: Element) -> str:
+    values: list[int] = []
+    for y, row in enumerate(element.pixels):
+        gy = y + element.y0
+        for x, is_foreground in enumerate(row):
+            if is_foreground:
+                gx = x + element.x0
+                values.append(grayscale[gy][gx])
+
+    if not values:
+        return "#000000"
+    return gray_to_hex(sum(values) // len(values))
+
+
+def candidate_to_svg(candidate: Candidate, gx: int, gy: int, fill_color: str) -> str:
     cx = candidate.cx + gx
     cy = candidate.cy + gy
     if candidate.shape == "circle":
         r = max(1.0, (candidate.w + candidate.h) / 4.0)
-        return f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{r:.2f}" fill="black" />'
-    return f'<ellipse cx="{cx:.2f}" cy="{cy:.2f}" rx="{candidate.w/2:.2f}" ry="{candidate.h/2:.2f}" fill="black" />'
+        return f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{r:.2f}" fill="{fill_color}" />'
+    return f'<ellipse cx="{cx:.2f}" cy="{cy:.2f}" rx="{candidate.w/2:.2f}" ry="{candidate.h/2:.2f}" fill="{fill_color}" />'
 
 
 def convert_image(image_path: Path, output_svg: Path, *, max_iter: int, plateau_limit: int, seed: int) -> None:
-    binary = load_binary_image(image_path)
+    grayscale = load_grayscale_image(image_path)
+    binary = [[1 if value < 220 else 0 for value in row] for row in grayscale]
     elements = find_elements(binary)
     parts: list[str] = []
     for idx, element in enumerate(elements):
         init = estimate_initial_candidate(element)
         best, _ = optimize_element(element.pixels, init, max_iter=max_iter, plateau_limit=plateau_limit, seed=seed + idx)
-        parts.append(candidate_to_svg(best, element.x0, element.y0))
+        fill_color = element_fill_color(grayscale, element)
+        parts.append(candidate_to_svg(best, element.x0, element.y0, fill_color))
 
     width, height = len(binary[0]), len(binary)
     svg = [

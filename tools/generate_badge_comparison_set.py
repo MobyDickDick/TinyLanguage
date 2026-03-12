@@ -64,16 +64,38 @@ def read_jpeg_size(path: Path) -> tuple[int, int]:
 
 
 def choose_reference_image(code: str) -> Path:
-    preferred = [f"{code}_M.jpg", f"{code}.jpg", f"{code}_M.JPG", f"{code}.JPG"]
-    for name in preferred:
-        candidate = IMG_DIR / name
-        if candidate.exists():
-            return candidate
+    candidates = sorted(IMG_DIR.glob(f"{code}*.jpg")) + sorted(IMG_DIR.glob(f"{code}*.JPG"))
+    if not candidates:
+        raise FileNotFoundError(f"No reference image found for {code}")
 
-    alternatives = sorted(IMG_DIR.glob(f"{code}_*.jpg")) + sorted(IMG_DIR.glob(f"{code}_*.JPG"))
-    if alternatives:
-        return alternatives[0]
-    raise FileNotFoundError(f"No reference image found for {code}")
+    ranked: list[tuple[int, bool, Path]] = []
+    for candidate in candidates:
+        width, height = read_jpeg_size(candidate)
+        area = width * height
+        is_large_variant = "_L" in candidate.stem.upper()
+        ranked.append((area, is_large_variant, candidate))
+
+    ranked.sort(key=lambda item: (item[0], item[1], item[2].name))
+    return ranked[-1][2]
+
+
+def color_profile(description: str) -> tuple[str, str, str]:
+    d = description.lower()
+
+    if "dunkelgrauem rand" in d:
+        stroke = "#666666"
+    elif "grauem rand" in d:
+        stroke = "#808080"
+    else:
+        stroke = "#111111"
+
+    if "hellgrauem hintergrund" in d or "hellgrauer kreisfläche" in d:
+        fill = "#d9d9d9"
+    else:
+        fill = "#111111"
+
+    text = stroke
+    return fill, stroke, text
 
 
 def parse_specs(limit: int) -> list[BadgeSpec]:
@@ -127,10 +149,8 @@ def svg_for_spec(spec: BadgeSpec) -> str:
     paddle = detect_paddle(spec.description)
     label = detect_label(spec.description)
 
-    paddle_color = "#111111"
-    fill_color = "#111111"
-    stroke_color = "#111111"
-    text_color = "#111111"
+    fill_color, stroke_color, text_color = color_profile(spec.description)
+    paddle_color = stroke_color
 
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">',
@@ -246,9 +266,10 @@ def rasterize_simple(spec: BadgeSpec) -> list[list[list[int]]]:
     paddle = detect_paddle(spec.description)
 
     white = (255, 255, 255)
-    paddle_color = parse_hex_color("#111111")
-    fill_color = parse_hex_color("#111111")
-    stroke_color = parse_hex_color("#111111")
+    fill_hex, stroke_hex, _text_hex = color_profile(spec.description)
+    paddle_color = parse_hex_color(stroke_hex)
+    fill_color = parse_hex_color(fill_hex)
+    stroke_color = parse_hex_color(stroke_hex)
 
     img = [[[white[0], white[1], white[2]] for _ in range(w)] for _ in range(h)]
 

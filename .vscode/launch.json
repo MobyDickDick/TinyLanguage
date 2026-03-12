@@ -712,6 +712,22 @@
       }
     },
     {
+      "name": "Python: pytest - tests/test_image_composite_converter.py",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_image_composite_converter.py",
+        "-q"
+      ],
+      "logToFile": true,
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
+    },
+    {
       "name": "Python: utils helper module",
       "type": "debugpy",
       "request": "launch",

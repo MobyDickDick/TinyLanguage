@@ -781,6 +781,19 @@
       ],
       "logToFile": true,
       "justMyCode": false
+    },
+    {
+      "name": "Python: pip install pillow",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pip",
+      "console": "integratedTerminal",
+      "args": [
+        "install",
+        "pillow"
+      ],
+      "logToFile": true,
+      "justMyCode": false
     }
   ],
   "compounds": [

@@ -768,6 +768,36 @@
       ],
       "logToFile": true,
       "justMyCode": false
+    },
+    {
+      "name": "Python: run image_composite_converter -> artifacts/converted_images",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "src.image_composite_converter",
+      "console": "integratedTerminal",
+      "args": [
+        "${workspaceFolder}/artifacts/images_to_convert",
+        "${workspaceFolder}/artifacts/converted_images"
+      ],
+      "logToFile": true,
+      "justMyCode": false,
+      "cwd": "${workspaceFolder}",
+      "python": "${config:python.defaultInterpreterPath}"
+    },
+    {
+      "name": "Python: pip install pillow",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pip",
+      "console": "integratedTerminal",
+      "args": [
+        "install",
+        "pillow"
+      ],
+      "logToFile": true,
+      "justMyCode": false,
+      "cwd": "${workspaceFolder}",
+      "python": "${config:python.defaultInterpreterPath}"
     }
   ],
   "compounds": [

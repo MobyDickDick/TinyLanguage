@@ -200,8 +200,12 @@ def convert_image(image_path: Path, output_svg: Path, *, max_iter: int, plateau_
 
 
 def iter_images(folder: Path) -> Iterable[Path]:
-    for ext in ("*.png", "*.jpg", "*.jpeg", "*.bmp", "*.tif", "*.tiff"):
-        yield from folder.glob(ext)
+    exts = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
+    if not folder.exists() or not folder.is_dir():
+        return
+    for item in folder.iterdir():
+        if item.is_file() and item.suffix.lower() in exts:
+            yield item
 
 
 def build_arg_parser() -> argparse.ArgumentParser:

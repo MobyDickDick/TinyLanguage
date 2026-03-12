@@ -54,3 +54,29 @@ def test_convert_image_writes_svg(tmp_path: Path) -> None:
     text = dst.read_text(encoding="utf-8")
     assert "<svg" in text
     assert "<circle" in text or "<ellipse" in text
+
+
+def test_estimate_stroke_style_detects_dark_ring() -> None:
+    grayscale = [[255 for _ in range(25)] for _ in range(25)]
+    pixels = [[0 for _ in range(21)] for _ in range(21)]
+
+    cx = cy = 10
+    for y in range(21):
+        for x in range(21):
+            d2 = (x - cx) ** 2 + (y - cy) ** 2
+            if d2 <= 100:
+                pixels[y][x] = 1
+                if d2 >= 72:
+                    grayscale[y + 2][x + 2] = 120
+                else:
+                    grayscale[y + 2][x + 2] = 210
+
+    element = conv.Element(pixels=pixels, x0=2, y0=2, x1=22, y1=22)
+    candidate = conv.Candidate(shape="circle", cx=10, cy=10, w=20, h=20)
+
+    fill, stroke, stroke_width = conv.estimate_stroke_style(grayscale, element, candidate)
+
+    assert fill == "#d2d2d2"
+    assert stroke is not None
+    assert int(stroke[1:3], 16) < int(fill[1:3], 16)
+    assert stroke_width is not None and stroke_width >= 1.0

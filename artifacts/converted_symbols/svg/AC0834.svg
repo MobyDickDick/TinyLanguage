@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="35" height="20" viewBox="0 0 35 20">
-<rect x="0" y="0" width="35" height="20" fill="white"/>
-<rect x="24.10" y="8.80" width="6.84" height="2.40" fill="#111111"/>
-<circle cx="17.50" cy="10.00" r="7.20" fill="#111111" stroke="#111111" stroke-width="1.20"/>
-<text x="17.50" y="10.00" text-anchor="middle" dominant-baseline="middle" fill="#111111" font-size="7.00" font-family="Arial, sans-serif">CO<tspan baseline-shift="sub" font-size="4.55">2</tspan></text>
+<svg xmlns="http://www.w3.org/2000/svg" width="45" height="25" viewBox="0 0 45 25">
+<rect x="0" y="0" width="45" height="25" fill="white"/>
+<rect x="30.75" y="11.00" width="8.55" height="3.00" fill="#808080"/>
+<circle cx="22.50" cy="12.50" r="9.00" fill="#d9d9d9" stroke="#808080" stroke-width="1.50"/>
+<text x="22.50" y="12.50" text-anchor="middle" dominant-baseline="middle" fill="#808080" font-size="7.00" font-family="Arial, sans-serif">CO<tspan baseline-shift="sub" font-size="4.55">2</tspan></text>
 </svg>

@@ -248,13 +248,67 @@ def element_fill_color(grayscale: list[list[int]], element: Element) -> str:
     return gray_to_hex(sum(values) // len(values))
 
 
-def candidate_to_svg(candidate: Candidate, gx: int, gy: int, fill_color: str) -> str:
+def estimate_stroke_style(grayscale: list[list[int]], element: Element, candidate: Candidate) -> tuple[str, str | None, float | None]:
+    """Estimate fill/stroke from grayscale values.
+
+    For near-circular components we check whether the outer radial band is
+    significantly darker than the center. If yes, emit an explicit stroke so
+    reconstructed symbols preserve visible borders.
+    """
+    fill_color = element_fill_color(grayscale, element)
+    if candidate.shape != "circle":
+        return fill_color, None, None
+
+    cx = candidate.cx + element.x0
+    cy = candidate.cy + element.y0
+    radius = max(1.0, (candidate.w + candidate.h) / 4.0)
+    inner_values: list[int] = []
+    outer_values: list[int] = []
+
+    for y, row in enumerate(element.pixels):
+        gy = y + element.y0
+        for x, is_foreground in enumerate(row):
+            if not is_foreground:
+                continue
+            gx = x + element.x0
+            d = ((gx - cx) ** 2 + (gy - cy) ** 2) ** 0.5
+            rel = d / radius
+            v = grayscale[gy][gx]
+            if rel <= 0.72:
+                inner_values.append(v)
+            elif 0.75 <= rel <= 1.05:
+                outer_values.append(v)
+
+    if len(inner_values) < 12 or len(outer_values) < 12:
+        return fill_color, None, None
+
+    inner_avg = sum(inner_values) / len(inner_values)
+    outer_avg = sum(outer_values) / len(outer_values)
+    darkness_delta = inner_avg - outer_avg
+    if darkness_delta < 16:
+        return fill_color, None, None
+
+    fill = gray_to_hex(round(inner_avg))
+    stroke = gray_to_hex(round(outer_avg))
+    stroke_width = max(1.0, radius * 0.16)
+    return fill, stroke, stroke_width
+
+
+def candidate_to_svg(candidate: Candidate, gx: int, gy: int, fill_color: str, stroke_color: str | None = None, stroke_width: float | None = None) -> str:
     cx = candidate.cx + gx
     cy = candidate.cy + gy
     if candidate.shape == "circle":
         r = max(1.0, (candidate.w + candidate.h) / 4.0)
-        return f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{r:.2f}" fill="{fill_color}" />'
-    return f'<ellipse cx="{cx:.2f}" cy="{cy:.2f}" rx="{candidate.w/2:.2f}" ry="{candidate.h/2:.2f}" fill="{fill_color}" />'
+        attrs = [f'cx="{cx:.2f}"', f'cy="{cy:.2f}"', f'r="{r:.2f}"', f'fill="{fill_color}"']
+        if stroke_color and stroke_width is not None:
+            attrs.append(f'stroke="{stroke_color}"')
+            attrs.append(f'stroke-width="{stroke_width:.2f}"')
+        return f"<circle {' '.join(attrs)} />"
+    attrs = [f'cx="{cx:.2f}"', f'cy="{cy:.2f}"', f'rx="{candidate.w/2:.2f}"', f'ry="{candidate.h/2:.2f}"', f'fill="{fill_color}"']
+    if stroke_color and stroke_width is not None:
+        attrs.append(f'stroke="{stroke_color}"')
+        attrs.append(f'stroke-width="{stroke_width:.2f}"')
+    return f"<ellipse {' '.join(attrs)} />"
 
 
 def convert_image(image_path: Path, output_svg: Path, *, max_iter: int, plateau_limit: int, seed: int) -> None:
@@ -265,8 +319,8 @@ def convert_image(image_path: Path, output_svg: Path, *, max_iter: int, plateau_
     for idx, element in enumerate(elements):
         init = estimate_initial_candidate(element)
         best, _ = optimize_element(element.pixels, init, max_iter=max_iter, plateau_limit=plateau_limit, seed=seed + idx)
-        fill_color = element_fill_color(grayscale, element)
-        parts.append(candidate_to_svg(best, element.x0, element.y0, fill_color))
+        fill_color, stroke_color, stroke_width = estimate_stroke_style(grayscale, element, best)
+        parts.append(candidate_to_svg(best, element.x0, element.y0, fill_color, stroke_color, stroke_width))
 
     width, height = len(binary[0]), len(binary)
     svg = [

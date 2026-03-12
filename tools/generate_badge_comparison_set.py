@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import csv
 import math
 import re
@@ -15,10 +16,9 @@ if str(REPO_ROOT) not in sys.path:
 from src.image_composite_converter import convert_image
 
 
-CSV_PATH = Path("artifacts/images_to_convert/nonexistent.csv")
-IMG_DIR = Path("artifacts/images_to_convert")
-SVG_OUT = Path("artifacts/converted_symbols/svg")
-BMP_OUT = Path("artifacts/examples")
+DEFAULT_CSV_PATH = Path("artifacts/images_to_convert/nonexistent.csv")
+DEFAULT_IMG_DIR = Path("artifacts/images_to_convert")
+DEFAULT_OUTPUT_DIR = Path("artifacts/converted_symbols")
 LIMIT = 50
 
 
@@ -63,8 +63,8 @@ def read_jpeg_size(path: Path) -> tuple[int, int]:
     raise ValueError(f"Could not read JPEG dimensions from {path}")
 
 
-def choose_reference_image(code: str) -> Path:
-    candidates = sorted(IMG_DIR.glob(f"{code}*.jpg")) + sorted(IMG_DIR.glob(f"{code}*.JPG"))
+def choose_reference_image(code: str, img_dir: Path) -> Path:
+    candidates = sorted(img_dir.glob(f"{code}*.jpg")) + sorted(img_dir.glob(f"{code}*.JPG"))
     if not candidates:
         raise FileNotFoundError(f"No reference image found for {code}")
 
@@ -98,8 +98,8 @@ def color_profile(description: str) -> tuple[str, str, str]:
     return fill, stroke, text
 
 
-def parse_specs(limit: int) -> list[BadgeSpec]:
-    rows = list(csv.reader(CSV_PATH.read_text(encoding="utf-8-sig").splitlines(), delimiter=";"))
+def parse_specs(csv_path: Path, img_dir: Path, limit: int) -> list[BadgeSpec]:
+    rows = list(csv.reader(csv_path.read_text(encoding="utf-8-sig").splitlines(), delimiter=";"))
     specs: list[BadgeSpec] = []
     for row in rows[1:]:
         if len(row) < 3:
@@ -107,7 +107,7 @@ def parse_specs(limit: int) -> list[BadgeSpec]:
         code = row[1].strip()
         if not code:
             continue
-        ref = choose_reference_image(code)
+        ref = choose_reference_image(code, img_dir)
         w, h = read_jpeg_size(ref)
         specs.append(BadgeSpec(code=code, description=row[2].strip(), width=w, height=h))
         if len(specs) >= limit:
@@ -288,23 +288,37 @@ def rasterize_simple(spec: BadgeSpec) -> list[list[list[int]]]:
     return img
 
 
-def main() -> int:
-    specs = parse_specs(LIMIT)
-    SVG_OUT.mkdir(parents=True, exist_ok=True)
-    BMP_OUT.mkdir(parents=True, exist_ok=True)
+def build_arg_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description="Generate synthetic badge SVG/BMP pairs and reconverted SVGs")
+    p.add_argument("--csv", type=Path, default=DEFAULT_CSV_PATH, help="CSV file describing badge objects")
+    p.add_argument("--images-dir", type=Path, default=DEFAULT_IMG_DIR, help="Reference images directory")
+    p.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR, help="Output base directory")
+    p.add_argument("--limit", type=int, default=LIMIT, help="Maximum number of objects to process")
+    return p
 
-    for old in SVG_OUT.glob("*.svg"):
+
+def main() -> int:
+    args = build_arg_parser().parse_args()
+
+    svg_out = args.output_dir / "svg"
+    bmp_out = args.output_dir / "bmp"
+
+    specs = parse_specs(args.csv, args.images_dir, args.limit)
+    svg_out.mkdir(parents=True, exist_ok=True)
+    bmp_out.mkdir(parents=True, exist_ok=True)
+
+    for old in svg_out.glob("*.svg"):
         old.unlink()
 
     for spec in specs:
         svg_text = svg_for_spec(spec)
-        (SVG_OUT / f"{spec.code}.svg").write_text(svg_text, encoding="utf-8")
+        (svg_out / f"{spec.code}.svg").write_text(svg_text, encoding="utf-8")
 
         bmp_img = rasterize_simple(spec)
-        bmp_path = BMP_OUT / f"{spec.code}.bmp"
+        bmp_path = bmp_out / f"{spec.code}.bmp"
         save_bmp24(bmp_path, bmp_img)
 
-        reconverted = SVG_OUT / f"{spec.code}_reconverted.svg"
+        reconverted = svg_out / f"{spec.code}_reconverted.svg"
         convert_image(bmp_path, reconverted, max_iter=120, plateau_limit=36, seed=42)
 
     print(f"Created {len(specs)} SVGs, {len(specs)} BMPs and {len(specs)} reconverted SVGs.")

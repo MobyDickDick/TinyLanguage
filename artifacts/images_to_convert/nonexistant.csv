@@ -1,0 +1,36 @@
+﻿Nr;Wurzelform;Beschreibung
+1;AC0800;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, ohne Buchstabe und ohne Kelle.
+2;AC0811;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, ohne Buchstabe, mit Kelle unten (senkrechter grauer Strich im Hintergrund). Kreis und gerader Strich sind bei L-, M- und S-Variante gleich gross wie bei AC0812/AC0813.
+3;AC0812;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, ohne Buchstabe, mit waagrechtem grauem Strich links, der den Kreis links berührt und hinter dem Kreis gezeichnet wird. Kreis und gerader Strich sind bei L-, M- und S-Variante gleich gross wie bei AC0811/AC0813.
+4;AC0813;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, ohne Buchstabe, mit Kelle oben (senkrechter Strich vom Kreis nach oben gezeichnet). Kreis und gerader Strich sind bei L-, M- und S-Variante gleich gross wie bei AC0811/AC0812.
+5;AC0814;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, ohne Buchstabe, mit Kelle rechts (entspricht AC0813, um 90° im Uhrzeigersinn gedreht).
+6;AC0820;Semantisches Badge: Kreis mit dunkelgrauem Rand und hellgrauer Kreisfläche, mit waagrecht geschriebenem Buchstaben "CO" möglichst deckungsgleich zum Referenzbild (z. B. AC0820_M.jpg) ausgerichtet; danach wird die tiefgestellte "2" rechts an "CO" angehängt und etwas kleiner dargestellt, ohne die CO-Ausrichtung zu verschieben. Ausrichtung: CO bezüglich des Kreises vertikal zentriert. CO_2 (2 tiefgestellt) bezüglich des Kreises horizontal zentriert.
+7;AC0831;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "CO_2" und Kelle unten.
+8;AC0832;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "CO_2" und Kelle links.
+9;AC0833;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "CO_2" und Kelle oben.
+10;AC0834;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "CO_2" und Kelle rechts.
+11;AC0835;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "VOC", ohne Kelle.
+12;AC0836;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "VOC" und Kelle unten.
+13;AC0837;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "VOC" und Kelle links.
+14;AC0838;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "VOC" und Kelle oben.
+15;AC0839;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "VOC" und Kelle rechts.
+16;AC0840;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "rF", ohne Kelle.
+17;AC0841;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "rF" und Kelle unten.
+18;AC0842;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "rF" und Kelle links.
+19;AC0843;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "rF" und Kelle oben.
+20;AC0844;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "rF" und Kelle rechts.
+21;AC0845;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "rH", ohne Kelle.
+22;AC0846;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "rH" und Kelle unten.
+23;AC0847;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "rH" und Kelle links.
+24;AC0848;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "rH" und Kelle oben.
+25;AC0849;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "rH" und Kelle rechts.
+26;AC0850;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "P", ohne Kelle.
+27;AC0861;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "P" und Kelle unten.
+28;AC0862;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "P" und Kelle links.
+29;AC0863;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "P" und Kelle oben.
+30;AC0864;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "P" und Kelle rechts.
+31;AC0870;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "T", ohne Kelle.
+32;AC0881;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "T" und Kelle unten.
+33;AC0882;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "T" und Kelle links.
+34;AC0883;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "T" und Kelle oben.
+35;AC0884;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "T" und Kelle rechts.

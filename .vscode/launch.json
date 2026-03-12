@@ -785,6 +785,25 @@
       "python": "${config:python.defaultInterpreterPath}"
     },
     {
+      "name": "Python: badges draw->bmp->reconstruct (nonexistant.csv -> converted_symbols)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/generate_badge_comparison_set.py",
+      "console": "integratedTerminal",
+      "args": [
+        "--csv",
+        "${workspaceFolder}/artifacts/images_to_convert/nonexistant.csv",
+        "--images-dir",
+        "${workspaceFolder}/artifacts/images_to_convert",
+        "--output-dir",
+        "${workspaceFolder}/artifacts/converted_symbols"
+      ],
+      "logToFile": true,
+      "justMyCode": false,
+      "cwd": "${workspaceFolder}",
+      "python": "${config:python.defaultInterpreterPath}"
+    },
+    {
       "name": "Python: pip install pillow",
       "type": "debugpy",
       "request": "launch",

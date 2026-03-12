@@ -768,6 +768,19 @@
       ],
       "logToFile": true,
       "justMyCode": false
+    },
+    {
+      "name": "Python: run image_composite_converter -> artifacts/coonverted_images",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "src.image_composite_converter",
+      "console": "integratedTerminal",
+      "args": [
+        "${workspaceFolder}/artifacts",
+        "${workspaceFolder}/artifacts/coonverted_images"
+      ],
+      "logToFile": true,
+      "justMyCode": false
     }
   ],
   "compounds": [

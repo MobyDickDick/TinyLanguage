@@ -15,9 +15,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-from PIL import Image, ImageDraw
-
-
 @dataclass
 class Element:
     pixels: list[list[int]]
@@ -37,6 +34,8 @@ class Candidate:
 
 
 def load_binary_image(path: Path, threshold: int = 220) -> list[list[int]]:
+    from PIL import Image
+
     gray = Image.open(path).convert("L")
     w, h = gray.size
     px = gray.load()
@@ -94,23 +93,28 @@ def estimate_initial_candidate(element: Element) -> Candidate:
 
 
 def render_candidate_mask(candidate: Candidate, width: int, height: int) -> list[list[int]]:
-    canvas = Image.new("L", (width, height), 0)
-    draw = ImageDraw.Draw(canvas)
+    mask = [[0 for _ in range(width)] for _ in range(height)]
+
     if candidate.shape == "circle":
-        r = max(1.0, (candidate.w + candidate.h) / 4.0)
-        draw.ellipse((candidate.cx - r, candidate.cy - r, candidate.cx + r, candidate.cy + r), fill=255)
+        rx = max(1.0, (candidate.w + candidate.h) / 4.0)
+        ry = rx
     else:
-        draw.ellipse(
-            (
-                candidate.cx - candidate.w / 2,
-                candidate.cy - candidate.h / 2,
-                candidate.cx + candidate.w / 2,
-                candidate.cy + candidate.h / 2,
-            ),
-            fill=255,
-        )
-    px = canvas.load()
-    return [[1 if px[x, y] > 0 else 0 for x in range(width)] for y in range(height)]
+        rx = max(1.0, candidate.w / 2.0)
+        ry = max(1.0, candidate.h / 2.0)
+
+    inv_rx2 = 1.0 / (rx * rx)
+    inv_ry2 = 1.0 / (ry * ry)
+
+    for y in range(height):
+        dy2 = (y - candidate.cy) ** 2 * inv_ry2
+        if dy2 > 1.0:
+            continue
+        for x in range(width):
+            dx2 = (x - candidate.cx) ** 2 * inv_rx2
+            if dx2 + dy2 <= 1.0:
+                mask[y][x] = 1
+
+    return mask
 
 
 def _iou(a: list[list[int]], b: list[list[int]]) -> float:

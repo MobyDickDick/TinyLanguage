@@ -4,8 +4,6 @@ from pathlib import Path
 
 import pytest
 
-Image = pytest.importorskip("PIL.Image")
-ImageDraw = pytest.importorskip("PIL.ImageDraw")
 conv = pytest.importorskip("src.image_composite_converter")
 
 
@@ -39,6 +37,9 @@ def test_optimize_element_improves_or_keeps_score() -> None:
 
 
 def test_convert_image_writes_svg(tmp_path: Path) -> None:
+    Image = pytest.importorskip("PIL.Image")
+    ImageDraw = pytest.importorskip("PIL.ImageDraw")
+
     image = Image.new("L", (40, 40), 255)
     draw = ImageDraw.Draw(image)
     draw.ellipse((8, 8, 24, 24), fill=0)

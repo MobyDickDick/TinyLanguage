@@ -10,6 +10,7 @@ Workflow:
 from __future__ import annotations
 
 import argparse
+import importlib
 import random
 from dataclasses import dataclass
 from pathlib import Path
@@ -34,9 +35,17 @@ class Candidate:
 
 
 def load_binary_image(path: Path, threshold: int = 220) -> list[list[int]]:
-    from PIL import Image
+    try:
+        image_module = importlib.import_module("PIL.Image")
+    except ModuleNotFoundError as exc:
+        if exc.name in {"PIL", "PIL.Image"}:
+            raise ModuleNotFoundError(
+                "Missing dependency 'Pillow' (module 'PIL'). Install it into the active interpreter with "
+                "`python -m pip install Pillow` and ensure your IDE/debugger uses the same interpreter."
+            ) from exc
+        raise
 
-    gray = Image.open(path).convert("L")
+    gray = image_module.open(path).convert("L")
     w, h = gray.size
     px = gray.load()
     return [[1 if px[x, y] < threshold else 0 for x in range(w)] for y in range(h)]

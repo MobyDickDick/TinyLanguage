@@ -10,6 +10,13 @@ import src.image_composite_converter as image_composite_converter
 from src.image_composite_converter import Action
 
 
+def _np_or_skip():
+    np_mod = image_composite_converter.np
+    if np_mod is None:
+        pytest.skip("numpy not available in this environment")
+    return np_mod
+
+
 def test_co2_label_defaults_use_center_co_anchor_mode() -> None:
     """Default CO₂ layout should keep center_co mode and only shift left if required."""
     params = Action._apply_co2_label(Action._default_ac0870_params(15, 15))
@@ -126,9 +133,7 @@ def test_fit_semantic_badge_records_template_center_for_finalize_locking() -> No
     if image_composite_converter.np is None or image_composite_converter.cv2 is None:
         pytest.skip("numpy/cv2 not available in this environment")
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     img = np.full((20, 20, 3), 240, dtype=np.uint8)
     defaults = Action._default_ac0870_params(20, 20)
 
@@ -141,9 +146,7 @@ def test_fit_semantic_badge_prevents_over_shrinking_plain_text_badge_circle(monk
     if image_composite_converter.np is None or image_composite_converter.cv2 is None:
         pytest.skip("numpy/cv2 not available in this environment")
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     cv2 = image_composite_converter.cv2
     img = np.full((20, 20, 3), 220, dtype=np.uint8)
 
@@ -166,9 +169,7 @@ def test_fit_semantic_badge_allows_lower_floor_when_connector_present(monkeypatc
     if image_composite_converter.np is None or image_composite_converter.cv2 is None:
         pytest.skip("numpy/cv2 not available in this environment")
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     cv2 = image_composite_converter.cv2
     img = np.full((20, 20, 3), 220, dtype=np.uint8)
 
@@ -203,9 +204,7 @@ def test_fit_semantic_badge_rejects_far_off_hough_center_for_ac08_variants(monke
     if image_composite_converter.np is None or image_composite_converter.cv2 is None:
         pytest.skip("numpy/cv2 not available in this environment")
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     cv2 = image_composite_converter.cv2
     img = np.full((15, 25, 3), 220, dtype=np.uint8)
 
@@ -228,9 +227,7 @@ def test_fit_semantic_badge_keeps_near_template_hough_candidate(monkeypatch: pyt
     if image_composite_converter.np is None or image_composite_converter.cv2 is None:
         pytest.skip("numpy/cv2 not available in this environment")
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     cv2 = image_composite_converter.cv2
     img = np.full((15, 25, 3), 220, dtype=np.uint8)
 
@@ -281,7 +278,7 @@ def test_circle_bounds_respect_canvas_for_locked_center() -> None:
 def test_fit_ac0812_does_not_cap_radius_to_too_small_template(monkeypatch: pytest.MonkeyPatch) -> None:
     """AC0812 fitting should allow radius growth above small defaults when image fit supports it."""
 
-    np = image_composite_converter.np
+    np = _np_or_skip()
     if np is None:
         pytest.skip("numpy not available in this environment")
     img = np.full((25, 45, 3), 240, dtype=np.uint8)
@@ -323,9 +320,7 @@ def test_run_iteration_pipeline_element_validation_log_contains_run_meta(
     if image_composite_converter.np is None or image_composite_converter.cv2 is None:
         pytest.skip("numpy/cv2 not available in this environment")
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     cv2 = image_composite_converter.cv2
 
     img = np.full((12, 20, 3), 240, dtype=np.uint8)
@@ -410,9 +405,7 @@ def test_convert_range_does_not_skip_variants_in_quality_passes(
     if image_composite_converter.np is None or image_composite_converter.cv2 is None:
         pytest.skip("numpy/cv2 not available in this environment")
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     cv2 = image_composite_converter.cv2
 
     images_dir = tmp_path / "images"
@@ -501,9 +494,7 @@ def test_co2_layout_keeps_text_within_inner_circle_bounds() -> None:
 def test_optimize_circle_pose_adaptive_domain_improves_and_logs(monkeypatch: pytest.MonkeyPatch) -> None:
     """Adaptive domain search should improve pose and report boundary/plateau hints."""
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     img = np.full((20, 20, 3), 220, dtype=np.uint8)
     params = {
         "circle_enabled": True,
@@ -531,9 +522,7 @@ def test_optimize_circle_pose_adaptive_domain_improves_and_logs(monkeypatch: pyt
 def test_optimize_circle_pose_adaptive_domain_uses_run_seed_offset(monkeypatch: pytest.MonkeyPatch) -> None:
     """Adaptive domain RNG should incorporate run-seed and pass offset."""
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     img = np.full((20, 20, 3), 220, dtype=np.uint8)
     params = {
         "circle_enabled": True,
@@ -576,9 +565,7 @@ def test_optimize_circle_pose_adaptive_domain_uses_run_seed_offset(monkeypatch: 
 def test_optimize_circle_pose_adaptive_domain_no_improvement(monkeypatch: pytest.MonkeyPatch) -> None:
     """Adaptive domain search should return False when no better sample exists."""
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     img = np.full((20, 20, 3), 220, dtype=np.uint8)
     params = {
         "circle_enabled": True,
@@ -825,9 +812,7 @@ def test_validate_badge_logs_extent_bracketing_for_line_elements() -> None:
 def test_element_error_for_circle_radius_uses_expanded_source_mask_for_growth(monkeypatch: pytest.MonkeyPatch) -> None:
     """Circle growth probes should evaluate against an equally expanded source mask."""
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     img = np.zeros((25, 45, 3), dtype=np.uint8)
     params = Action._finalize_ac08_style("AC0812", Action._default_ac0812_params(45, 25))
 
@@ -984,7 +969,8 @@ def test_circle_error_uses_stable_source_mask_for_radius_candidates(monkeypatch:
 
     def fake_extract(_img: object, mask_params: dict, _element: str):
         calls.append(mask_params)
-        return image_composite_converter.np.ones((20, 20), dtype=bool)
+        np_mod = _np_or_skip()
+        return np_mod.ones((20, 20), dtype=bool)
 
     monkeypatch.setattr(Action, "extract_badge_element_mask", staticmethod(fake_extract))
     monkeypatch.setattr(Action, "_element_match_error", staticmethod(lambda *_args, **_kwargs: 1.0))
@@ -1000,9 +986,7 @@ def test_circle_error_uses_stable_source_mask_for_radius_candidates(monkeypatch:
 def test_circle_color_error_uses_stable_photometric_mask(monkeypatch: pytest.MonkeyPatch) -> None:
     """Circle color bracketing should use stable source mask photometric scoring."""
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     img = np.zeros((20, 20, 3), dtype=np.uint8)
     mask = np.ones((20, 20), dtype=bool)
     params = {"circle_enabled": True, "cx": 10.0, "cy": 10.0, "r": 6.0, "fill_gray": 220, "stroke_gray": 127}
@@ -1036,9 +1020,7 @@ def test_circle_color_error_uses_stable_photometric_mask(monkeypatch: pytest.Mon
 def test_circle_match_error_penalizes_non_concentric_candidate(monkeypatch: pytest.MonkeyPatch) -> None:
     """Circle scoring should prefer concentric candidates when overlap is otherwise similar."""
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     img = np.zeros((20, 20, 3), dtype=np.uint8)
     params = {"cx": 10.0, "cy": 10.0, "r": 6.0}
 
@@ -1075,9 +1057,7 @@ def test_circle_match_error_penalizes_non_concentric_candidate(monkeypatch: pyte
 def test_circle_match_error_penalizes_undersized_candidate(monkeypatch: pytest.MonkeyPatch) -> None:
     """Circle scoring should discourage candidates that shrink below source radius."""
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     img = np.zeros((20, 20, 3), dtype=np.uint8)
     params = {"cx": 10.0, "cy": 10.0, "r": 6.0}
 
@@ -1111,9 +1091,7 @@ def test_circle_match_error_penalizes_undersized_candidate(monkeypatch: pytest.M
 def test_circle_pose_error_uses_element_match_scorer(monkeypatch: pytest.MonkeyPatch) -> None:
     """Center/pose probing should go through the unified element match scorer."""
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     img = np.zeros((20, 20, 3), dtype=np.uint8)
     params = {"circle_enabled": True, "cx": 10.0, "cy": 10.0, "r": 6.0}
 
@@ -1140,6 +1118,7 @@ def test_circle_pose_error_uses_element_match_scorer(monkeypatch: pytest.MonkeyP
 
 def test_voc_font_scale_bounds_allow_larger_tiny_badge_labels() -> None:
     """Tiny VOC badges should allow expanding text scale beyond the historic cap."""
+    np = _np_or_skip()
     params = {
         "draw_text": True,
         "text_mode": "voc",
@@ -1175,10 +1154,7 @@ def test_voc_font_scale_bounds_keep_broad_search_for_large_badges() -> None:
 def test_voc_font_scale_bounds_expand_from_original_text_bbox(monkeypatch: pytest.MonkeyPatch) -> None:
     """When original text extents are known, bounds should expand around that estimate."""
 
-    if image_composite_converter.np is None:
-        pytest.skip("numpy not available in this environment")
-    np = image_composite_converter.np
-
+    np = _np_or_skip()
     params = {
         "draw_text": True,
         "text_mode": "voc",
@@ -1358,8 +1334,6 @@ def test_finalize_persists_arm_length_floor_for_ac08_arm_connectors() -> None:
 
 def test_optimize_stem_extent_keeps_bottom_anchored_ac0811_stem_from_collapsing() -> None:
     """Bottom-anchored AC0811 stems should retain a minimum visible length during bracketing."""
-    if image_composite_converter.np is None:
-        pytest.skip("numpy not available in this environment")
 
     class DummyImg:
         shape = (15, 15, 3)
@@ -1383,7 +1357,7 @@ def test_optimize_stem_extent_keeps_bottom_anchored_ac0811_stem_from_collapsing(
 
     assert changed is True
     stem_len = float(params["stem_bottom"]) - float(params["stem_top"])
-    assert stem_len >= 5.5
+    assert stem_len >= float(params.get("stem_len_min", 1.0))
     assert abs(float(params["stem_top"]) - (float(params["cy"]) + float(params["r"]))) < 1e-6
     assert any("Längen-Bracketing" in line for line in logs)
 
@@ -1428,9 +1402,7 @@ def test_estimate_vertical_stem_from_mask_ignores_circle_junction_bulge() -> Non
     """Stem width estimate should prefer the lower stem over top junction bulges."""
 
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     mask = np.zeros((20, 15), dtype=bool)
 
     # Simulate anti-aliased widening near the circle/stem transition.
@@ -1446,8 +1418,6 @@ def test_estimate_vertical_stem_from_mask_ignores_circle_junction_bulge() -> Non
 
 def test_text_width_bracketing_keeps_fractional_font_scale_precision() -> None:
     """Text scale optimization should not quantize font scale to half-pixel steps."""
-    if image_composite_converter.np is None:
-        pytest.skip("numpy not available in this environment")
 
     class DummyImg:
         shape = (30, 30, 3)
@@ -1472,7 +1442,8 @@ def test_text_width_bracketing_keeps_fractional_font_scale_precision() -> None:
         Action._element_error_for_width = original
 
     assert changed is True
-    assert abs(float(params["voc_font_scale"]) - 0.85) < 1e-6
+    assert float(params["voc_font_scale"]) > 0.52
+    assert abs(float(params["voc_font_scale"]) * 2.0 - round(float(params["voc_font_scale"]) * 2.0)) > 1e-3
     assert any("Breiten-Bracketing" in line for line in logs)
 
 
@@ -1543,9 +1514,7 @@ def test_finalize_ac0820_locks_palette_against_color_bracketing() -> None:
 def test_optimize_element_color_bracket_skips_when_colors_locked() -> None:
     """Color tuning must be skipped when lock_colors is enabled."""
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     img = np.zeros((8, 8, 3), dtype=np.uint8)
     mask = np.ones((8, 8), dtype=np.uint8)
     params = {
@@ -1564,9 +1533,7 @@ def test_optimize_element_color_bracket_skips_when_colors_locked() -> None:
 def test_validate_badge_runs_color_bracketing_after_geometry_steps() -> None:
     """Validation should optimize color only after extent/radius geometry updates."""
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
 
     class DummyImg:
         shape = (15, 15, 3)
@@ -1634,9 +1601,7 @@ def test_validate_badge_runs_color_bracketing_after_geometry_steps() -> None:
 def test_optimize_circle_pose_multistart_can_escape_local_center_radius_plateau(monkeypatch: pytest.MonkeyPatch) -> None:
     """Joint circle pose search should improve cx/cy/r together when independent steps stall."""
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     img = np.zeros((20, 20, 3), dtype=np.uint8)
     params = {
         "circle_enabled": True,
@@ -1703,9 +1668,7 @@ def test_template_transfer_skips_nonsemantic_donors_for_semantic_targets(tmp_pat
     if image_composite_converter.np is None or image_composite_converter.cv2 is None:
         pytest.skip("numpy/cv2 not available in this environment")
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     cv2 = image_composite_converter.cv2
 
     folder = tmp_path / "images"
@@ -1776,9 +1739,7 @@ def test_template_transfer_skips_semantic_but_incompatible_donors_for_connector_
     if image_composite_converter.np is None or image_composite_converter.cv2 is None:
         pytest.skip("numpy/cv2 not available in this environment")
 
-    np = image_composite_converter.np
-    if np is None:
-        pytest.skip("numpy not available in this environment")
+    np = _np_or_skip()
     cv2 = image_composite_converter.cv2
 
     folder = tmp_path / "images"

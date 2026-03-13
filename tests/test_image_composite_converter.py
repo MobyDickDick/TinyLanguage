@@ -80,3 +80,34 @@ def test_estimate_stroke_style_detects_dark_ring() -> None:
     assert stroke is not None
     assert int(stroke[1:3], 16) < int(fill[1:3], 16)
     assert stroke_width is not None and stroke_width >= 1.0
+
+
+def test_decompose_circle_with_stem_detects_bottom_stem() -> None:
+    size = 25
+    grayscale = [[255 for _ in range(size)] for _ in range(size)]
+    pixels = [[0 for _ in range(size)] for _ in range(size)]
+
+    cx = cy = 12
+    r = 8
+    for y in range(size):
+        for x in range(size):
+            d2 = (x - cx) ** 2 + (y - cy) ** 2
+            if d2 <= r * r:
+                pixels[y][x] = 1
+                grayscale[y][x] = 215
+
+    for y in range(20, 24):
+        for x in range(11, 14):
+            pixels[y][x] = 1
+            grayscale[y][x] = 128
+
+    element = conv.Element(pixels=pixels, x0=0, y0=0, x1=24, y1=24)
+    candidate = conv.Candidate(shape="circle", cx=12, cy=12, w=16, h=16)
+
+    parts = conv.decompose_circle_with_stem(grayscale, element, candidate)
+
+    assert parts is not None
+    assert len(parts) == 2
+    assert parts[0].startswith("<rect ")
+    assert 'fill="#' in parts[0]
+    assert parts[1].startswith("<circle ")

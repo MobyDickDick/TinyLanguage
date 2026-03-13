@@ -804,6 +804,25 @@
       "python": "${config:python.defaultInterpreterPath}"
     },
     {
+      "name": "Python: optimize JPEG→SVG roundtrip (nonexistant.csv)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/optimize_jpeg_roundtrip_quality.py",
+      "console": "integratedTerminal",
+      "args": [
+        "--csv",
+        "${workspaceFolder}/artifacts/images_to_convert/nonexistant.csv",
+        "--images-dir",
+        "${workspaceFolder}/artifacts/images_to_convert",
+        "--output-dir",
+        "${workspaceFolder}/artifacts/converted_symbols/optimized_roundtrip"
+      ],
+      "logToFile": true,
+      "justMyCode": false,
+      "cwd": "${workspaceFolder}",
+      "python": "${config:python.defaultInterpreterPath}"
+    },
+    {
       "name": "Python: pip install pillow",
       "type": "debugpy",
       "request": "launch",

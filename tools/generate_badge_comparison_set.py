@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import math
+import csv
 import re
 import struct
 import sys
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -28,6 +29,16 @@ class BadgeSpec:
     description: str
     width: int
     height: int
+
+
+@dataclass
+class DiffStat:
+    code: str
+    red_mean: float
+    green_mean: float
+    blue_mean: float
+    error_mean: float
+    diff_path: Path
 
 
 def read_jpeg_size(path: Path) -> tuple[int, int]:
@@ -293,6 +304,169 @@ def rasterize_simple(spec: BadgeSpec) -> list[list[list[int]]]:
     return img
 
 
+def rasterize_svg_shapes(svg_path: Path, width: int, height: int) -> list[list[list[int]]]:
+    img = [[[255, 255, 255] for _ in range(width)] for _ in range(height)]
+    root = ET.fromstring(svg_path.read_text(encoding="utf-8"))
+
+    for node in root:
+        tag = node.tag.rsplit("}", 1)[-1]
+        if tag == "rect":
+            fill = node.attrib.get("fill")
+            if not fill or not fill.startswith("#"):
+                continue
+            color = parse_hex_color(fill)
+            x = int(float(node.attrib.get("x", "0")))
+            y = int(float(node.attrib.get("y", "0")))
+            w = int(float(node.attrib.get("width", "0")))
+            h = int(float(node.attrib.get("height", "0")))
+            draw_rect(img, x, y, x + w, y + h, color)
+        elif tag in {"circle", "ellipse"}:
+            fill = node.attrib.get("fill", "#000000")
+            fill_color = parse_hex_color(fill) if fill.startswith("#") else (0, 0, 0)
+            stroke = node.attrib.get("stroke")
+            stroke_width = float(node.attrib.get("stroke-width", "0") or 0.0)
+            stroke_color = parse_hex_color(stroke) if stroke and stroke.startswith("#") else fill_color
+            if tag == "circle":
+                cx = float(node.attrib.get("cx", "0"))
+                cy = float(node.attrib.get("cy", "0"))
+                r = float(node.attrib.get("r", "0"))
+                draw_circle(img, cx, cy, r, fill_color, stroke_color, stroke_width)
+            else:
+                cx = float(node.attrib.get("cx", "0"))
+                cy = float(node.attrib.get("cy", "0"))
+                rx = float(node.attrib.get("rx", "0"))
+                ry = float(node.attrib.get("ry", "0"))
+                draw_ellipse(img, cx, cy, rx, ry, fill_color, stroke_color, stroke_width)
+
+    return img
+
+
+def draw_ellipse(
+    img: list[list[list[int]]],
+    cx: float,
+    cy: float,
+    rx: float,
+    ry: float,
+    fill: tuple[int, int, int],
+    stroke: tuple[int, int, int],
+    stroke_width: float,
+) -> None:
+    h = len(img)
+    w = len(img[0])
+    if rx <= 0 or ry <= 0:
+        return
+    inner_rx = max(0.0, rx - stroke_width / 2.0)
+    inner_ry = max(0.0, ry - stroke_width / 2.0)
+    outer_rx = rx + stroke_width / 2.0
+    outer_ry = ry + stroke_width / 2.0
+    inv_inner_rx2 = 1.0 / (inner_rx * inner_rx) if inner_rx > 0 else 0.0
+    inv_inner_ry2 = 1.0 / (inner_ry * inner_ry) if inner_ry > 0 else 0.0
+    inv_outer_rx2 = 1.0 / (outer_rx * outer_rx)
+    inv_outer_ry2 = 1.0 / (outer_ry * outer_ry)
+
+    for y in range(h):
+        dy = y + 0.5 - cy
+        for x in range(w):
+            dx = x + 0.5 - cx
+            outer = dx * dx * inv_outer_rx2 + dy * dy * inv_outer_ry2
+            if outer > 1.0:
+                continue
+            inner = float("inf") if inner_rx == 0 or inner_ry == 0 else dx * dx * inv_inner_rx2 + dy * dy * inv_inner_ry2
+            if inner <= 1.0:
+                img[y][x][0], img[y][x][1], img[y][x][2] = fill
+            else:
+                img[y][x][0], img[y][x][1], img[y][x][2] = stroke
+
+
+def compute_diff(reference: list[list[list[int]]], reconstructed: list[list[list[int]]]) -> tuple[list[list[list[int]]], float, float, float, float]:
+    h = len(reference)
+    w = len(reference[0]) if h else 0
+    diff = [[[0, 0, 0] for _ in range(w)] for _ in range(h)]
+    red_sum = 0
+    green_sum = 0
+    blue_sum = 0
+    px_count = max(1, w * h)
+
+    for y in range(h):
+        for x in range(w):
+            dr = abs(reference[y][x][0] - reconstructed[y][x][0])
+            dg = abs(reference[y][x][1] - reconstructed[y][x][1])
+            db = abs(reference[y][x][2] - reconstructed[y][x][2])
+            diff[y][x][0], diff[y][x][1], diff[y][x][2] = dr, dg, db
+            red_sum += dr
+            green_sum += dg
+            blue_sum += db
+
+    red_mean = red_sum / px_count
+    green_mean = green_sum / px_count
+    blue_mean = blue_sum / px_count
+    error_mean = (red_mean + green_mean + blue_mean) / 3.0
+    return diff, red_mean, green_mean, blue_mean, error_mean
+
+
+def make_diff_tile(diff_stats: list[DiffStat], output_path: Path) -> None:
+    if not diff_stats:
+        return
+
+    ordered = sorted(diff_stats, key=lambda item: item.error_mean, reverse=True)
+    images = [load_bmp24_rgb(item.diff_path) for item in ordered]
+
+    cell_w = max(len(image[0]) for image in images)
+    cell_h = max(len(image) for image in images)
+    cols = max(1, math.ceil(math.sqrt(len(images))))
+    rows = math.ceil(len(images) / cols)
+    gap = 2
+
+    tile_w = cols * cell_w + (cols + 1) * gap
+    tile_h = rows * cell_h + (rows + 1) * gap
+    tile = [[[255, 255, 255] for _ in range(tile_w)] for _ in range(tile_h)]
+
+    for i, img in enumerate(images):
+        img_h = len(img)
+        img_w = len(img[0]) if img_h else 0
+        row = i // cols
+        col = i % cols
+        x0 = gap + col * (cell_w + gap)
+        y0 = gap + row * (cell_h + gap)
+        for y in range(img_h):
+            for x in range(img_w):
+                tile[y0 + y][x0 + x] = img[y][x][:]
+
+    save_bmp24(output_path, tile)
+
+
+def load_bmp24_rgb(path: Path) -> list[list[list[int]]]:
+    data = path.read_bytes()
+    if len(data) < 54 or data[:2] != b"BM":
+        raise ValueError(f"Unsupported BMP file: {path}")
+    pixel_offset = struct.unpack_from("<I", data, 10)[0]
+    width = struct.unpack_from("<i", data, 18)[0]
+    height = struct.unpack_from("<i", data, 22)[0]
+    bpp = struct.unpack_from("<H", data, 28)[0]
+    if width <= 0 or height <= 0 or bpp != 24:
+        raise ValueError(f"Unsupported BMP format in {path}")
+
+    row_stride = ((width * 3 + 3) // 4) * 4
+    img = [[[255, 255, 255] for _ in range(width)] for _ in range(height)]
+    for y in range(height):
+        src_row = height - 1 - y
+        row_start = pixel_offset + src_row * row_stride
+        for x in range(width):
+            b, g, r = data[row_start + x * 3 : row_start + x * 3 + 3]
+            img[y][x] = [r, g, b]
+    return img
+
+
+def write_diff_legend(diff_stats: list[DiffStat], path: Path) -> None:
+    ordered = sorted(diff_stats, key=lambda item: item.error_mean, reverse=True)
+    lines = ["code;error_mean;r_mean;g_mean;b_mean;diff_path"]
+    for stat in ordered:
+        lines.append(
+            f"{stat.code};{stat.error_mean:.4f};{stat.red_mean:.4f};{stat.green_mean:.4f};{stat.blue_mean:.4f};{stat.diff_path.name}"
+        )
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 
 
 def inject_label_into_reconverted_svg(spec: BadgeSpec, svg_path: Path) -> None:
@@ -340,12 +514,20 @@ def main() -> int:
     args = build_arg_parser().parse_args()
 
     svg_out = args.output_dir / "svg"
+    diff_out = args.output_dir / "diff"
+    diff_tile_path = args.output_dir / "diff_tile.bmp"
+    diff_legend_path = args.output_dir / "diff_legend.csv"
 
     specs = parse_specs(args.csv, args.images_dir, args.limit)
     svg_out.mkdir(parents=True, exist_ok=True)
+    diff_out.mkdir(parents=True, exist_ok=True)
 
     for old in svg_out.glob("*.svg"):
         old.unlink()
+    for old in diff_out.glob("*.bmp"):
+        old.unlink()
+
+    diff_stats: list[DiffStat] = []
 
     for spec in specs:
         svg_text = svg_for_spec(spec)
@@ -358,10 +540,32 @@ def main() -> int:
         reconverted = svg_out / f"{spec.code}_reconverted.svg"
         convert_image(bmp_path, reconverted, max_iter=120, plateau_limit=36, seed=42)
         inject_label_into_reconverted_svg(spec, reconverted)
+
+        reconstructed_img = rasterize_svg_shapes(reconverted, spec.width, spec.height)
+        diff_img, red_mean, green_mean, blue_mean, error_mean = compute_diff(bmp_img, reconstructed_img)
+        diff_path = diff_out / f"{spec.code}_diff.bmp"
+        save_bmp24(diff_path, diff_img)
+        diff_stats.append(
+            DiffStat(
+                code=spec.code,
+                red_mean=red_mean,
+                green_mean=green_mean,
+                blue_mean=blue_mean,
+                error_mean=error_mean,
+                diff_path=diff_path,
+            )
+        )
+
         if bmp_path.exists():
             bmp_path.unlink()
 
-    print(f"Created {len(specs)} SVGs and {len(specs)} reconverted SVGs.")
+    write_diff_legend(diff_stats, diff_legend_path)
+    make_diff_tile(diff_stats, diff_tile_path)
+
+    print(
+        f"Created {len(specs)} SVGs, {len(specs)} reconverted SVGs, "
+        f"{len(diff_stats)} diff images, tile '{diff_tile_path.name}', and legend '{diff_legend_path.name}'."
+    )
     return 0
 
 

@@ -311,7 +311,7 @@ def candidate_to_svg(candidate: Candidate, gx: int, gy: int, fill_color: str, st
     return f"<ellipse {' '.join(attrs)} />"
 
 
-def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, int, int]] | None:
+def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, int, int], str] | None:
     """Detect circle+stem geometry in a merged connected component.
 
     Returns a circle candidate plus stem bounding box (local element coordinates)
@@ -399,9 +399,11 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
         return xs[0], sy0, xs[-1], sy1
 
     stem_bbox = None
+    stem_direction = ""
     for direction in ("bottom", "top", "left", "right"):
         stem_bbox = _extract(direction)
         if stem_bbox is not None:
+            stem_direction = direction
             break
     if stem_bbox is None:
         return None
@@ -427,7 +429,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
         return None
 
     circle = Candidate(shape="circle", cx=sum(xs) / len(xs), cy=sum(ys) / len(ys), w=float(bw), h=float(bh))
-    return circle, stem_bbox
+    return circle, stem_bbox, stem_direction
 
 
 def decompose_circle_with_stem(
@@ -444,7 +446,7 @@ def decompose_circle_with_stem(
     if detected is None:
         return None
 
-    circle_candidate, (sx0, sy0, sx1, sy1) = detected
+    circle_candidate, (sx0, sy0, sx1, sy1), stem_direction = detected
     stem_w = sx1 - sx0 + 1
     stem_h = sy1 - sy0 + 1
 
@@ -457,10 +459,34 @@ def decompose_circle_with_stem(
     stem_color = gray_to_hex(round(sum(stem_values) / max(1, len(stem_values))))
     fill_color, stroke_color, stroke_width = estimate_stroke_style(grayscale, element, circle_candidate)
 
+    stem_x = element.x0 + sx0
+    stem_y = element.y0 + sy0
+    stem_wf = float(stem_w)
+    stem_hf = float(stem_h)
+
+    if stem_direction in {"bottom", "top"}:
+        circle_cx = element.x0 + circle_candidate.cx
+        stem_x = circle_cx - stem_wf / 2.0
+
+        radius = max(1.0, (circle_candidate.w + circle_candidate.h) / 4.0)
+        circle_cy = element.y0 + circle_candidate.cy
+        overlap = max(0.6, (stroke_width or 0.0) * 0.55)
+        old_bottom = (element.y0 + sy0) + stem_hf
+
+        if stem_direction == "bottom":
+            stem_y = circle_cy + radius - overlap
+            stem_hf = max(1.0, old_bottom - stem_y)
+        else:
+            old_top = element.y0 + sy0
+            old_right = (element.x0 + sx0) + stem_wf
+            stem_y = old_top
+            stem_hf = max(1.0, (circle_cy - radius + overlap) - stem_y)
+            stem_x = min(stem_x, old_right - stem_wf)
+
     parts: list[str] = []
     parts.append(
-        f'<rect x="{element.x0 + sx0:.2f}" y="{element.y0 + sy0:.2f}" '
-        f'width="{stem_w:.2f}" height="{stem_h:.2f}" fill="{stem_color}"/>'
+        f'<rect x="{stem_x:.2f}" y="{stem_y:.2f}" '
+        f'width="{stem_wf:.2f}" height="{stem_hf:.2f}" fill="{stem_color}"/>'
     )
     parts.append(candidate_to_svg(circle_candidate, element.x0, element.y0, fill_color, stroke_color, stroke_width))
     return parts

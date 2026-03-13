@@ -44,6 +44,9 @@ class ImageMetric:
 
 
 def read_codes(csv_path: Path) -> list[str]:
+    if not csv_path.exists():
+        return []
+
     rows = list(csv.reader(csv_path.read_text(encoding="utf-8-sig").splitlines(), delimiter=";"))
     codes: list[str] = []
     for row in rows[1:]:
@@ -53,6 +56,18 @@ def read_codes(csv_path: Path) -> list[str]:
         if code:
             codes.append(code)
     return codes
+
+
+def discover_codes_from_images(images_dir: Path) -> list[str]:
+    codes: set[str] = set()
+    for image in list(images_dir.glob("*.jpg")) + list(images_dir.glob("*.JPG")):
+        stem = image.stem
+        if not stem:
+            continue
+        code = stem.split("_")[0]
+        if code:
+            codes.add(code)
+    return sorted(codes)
 
 
 def load_rgb(path: Path) -> list[list[list[int]]]:
@@ -160,6 +175,35 @@ def choose_best_for_code(
     return best, metrics
 
 
+def evaluate_template_svg(
+    code: str,
+    source_label: str,
+    rgb_source: list[list[list[int]]],
+    template_svg_dir: Path,
+) -> ImageMetric | None:
+    template_svg = template_svg_dir / f"{code}.svg"
+    if not template_svg.exists():
+        return None
+
+    h = len(rgb_source)
+    w = len(rgb_source[0]) if h else 0
+    reconv = rasterize_svg_shapes(template_svg, width=w, height=h)
+    mae, rmse, exact = compute_metrics(rgb_source, reconv)
+    return ImageMetric(
+        code=code,
+        source_file=source_label,
+        width=w,
+        height=h,
+        mae=mae,
+        rmse=rmse,
+        exact_ratio=exact,
+        max_iter=0,
+        plateau_limit=0,
+        seed=0,
+        svg_path=template_svg,
+    )
+
+
 def write_csv(path: Path, rows: list[ImageMetric]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as f:
@@ -208,16 +252,27 @@ def write_report(path: Path, best_rows: list[ImageMetric], all_rows: list[ImageM
     avg_exact = sum(r.exact_ratio for r in best_rows) / len(best_rows)
 
     per_param: dict[str, list[ImageMetric]] = {p.name: [] for p in param_sets}
+    per_param["template_svg"] = []
     for r in all_rows:
-        per_param[f"iter{r.max_iter}_plat{r.plateau_limit}_seed{r.seed}"].append(r)
+        key = f"iter{r.max_iter}_plat{r.plateau_limit}_seed{r.seed}"
+        if key in per_param:
+            per_param[key].append(r)
+        elif r.max_iter == 0 and r.plateau_limit == 0 and r.seed == 0:
+            per_param["template_svg"].append(r)
 
     param_summary: list[tuple[str, float, float, float]] = []
-    for p in param_sets:
-        rows = per_param[p.name]
+    report_param_order = [p.name for p in param_sets]
+    if per_param["template_svg"]:
+        report_param_order.append("template_svg")
+
+    for name in report_param_order:
+        rows = per_param[name]
+        if not rows:
+            continue
         mae = sum(r.mae for r in rows) / len(rows)
         rmse = sum(r.rmse for r in rows) / len(rows)
         exact = sum(r.exact_ratio for r in rows) / len(rows)
-        param_summary.append((p.name, mae, rmse, exact))
+        param_summary.append((name, mae, rmse, exact))
     param_summary.sort(key=lambda t: (t[1], t[2], -t[3]))
 
     worst = sorted(best_rows, key=lambda r: r.mae, reverse=True)[:10]
@@ -263,6 +318,12 @@ def main() -> int:
     p.add_argument("--images-dir", type=Path, default=Path("artifacts/images_to_convert"))
     p.add_argument("--output-dir", type=Path, default=Path("artifacts/converted_symbols/optimized_roundtrip"))
     p.add_argument(
+        "--template-svg-dir",
+        type=Path,
+        default=Path("artifacts/converted_symbols/svg"),
+        help="Directory with existing SVG templates (code.svg) to be considered as baseline candidates.",
+    )
+    p.add_argument(
         "--param",
         action="append",
         default=["120:36:42", "240:72:42", "360:108:42", "240:72:1337", "480:144:42"],
@@ -273,6 +334,12 @@ def main() -> int:
 
     param_sets = parse_params(args.param)
     codes = read_codes(args.csv)
+    if not codes:
+        codes = discover_codes_from_images(args.images_dir)
+        print(
+            f"warning: no usable CSV entries found in {args.csv}; "
+            f"falling back to {len(codes)} code(s) discovered in {args.images_dir}"
+        )
     if args.limit > 0:
         codes = codes[: args.limit]
 
@@ -316,6 +383,16 @@ def main() -> int:
                 source_label = src.name
 
             best, rows = choose_best_for_code(code, source_for_conversion, source_label, rgb, param_sets, work_svg)
+            template_result = evaluate_template_svg(code, source_label, rgb, args.template_svg_dir)
+            if template_result is not None:
+                rows.append(template_result)
+                if (template_result.mae, template_result.rmse, -template_result.exact_ratio) < (
+                    best.mae,
+                    best.rmse,
+                    -best.exact_ratio,
+                ):
+                    best = template_result
+
             all_rows.extend(rows)
             best_rows.append(best)
 
@@ -328,7 +405,8 @@ def main() -> int:
 
             print(
                 f"[{idx}/{len(codes)}] {code}: mae={best.mae:.3f} rmse={best.rmse:.3f} "
-                f"exact={best.exact_ratio:.2%} params=({best.max_iter},{best.plateau_limit},{best.seed})"
+                f"exact={best.exact_ratio:.2%} params=({best.max_iter},{best.plateau_limit},{best.seed}) "
+                f"source={best.svg_path.name}"
             )
 
     write_csv(out_dir / "best_per_image.csv", best_rows)

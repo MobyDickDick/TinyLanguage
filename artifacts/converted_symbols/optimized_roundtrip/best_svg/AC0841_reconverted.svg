@@ -1,4 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="25" height="45" viewBox="0 0 25 45">
-<rect x="10.50" y="30.66" width="3.00" height="7.34" fill="#808080"/>
-<circle cx="12.00" cy="22.00" r="8.74" fill="#dbdbdb" stroke="#a9a9a9" stroke-width="1.52" />
+<rect x="0" y="0" width="25" height="45" fill="white"/>
+<rect x="11.00" y="30.75" width="3.00" height="8.55" fill="#808080"/>
+<circle cx="12.50" cy="22.50" r="9.00" fill="#dbdbdb" stroke="#808080" stroke-width="1.50"/>
+<text x="12.50" y="22.50" text-anchor="middle" dominant-baseline="middle" fill="#808080" font-size="8.10" font-family="Arial, sans-serif">rF</text>
 </svg>

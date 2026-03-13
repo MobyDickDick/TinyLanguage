@@ -90,7 +90,7 @@ def color_profile(description: str) -> tuple[str, str, str]:
         stroke = "#111111"
 
     if "hellgrauem hintergrund" in d or "hellgrauer kreisfläche" in d:
-        fill = "#d9d9d9"
+        fill = "#dbdbdb"
     else:
         fill = "#111111"
 
@@ -173,10 +173,12 @@ def svg_for_spec(spec: BadgeSpec) -> str:
     )
 
     if label:
-        base_size = max(7.0, r * 0.72)
+        # Keep text as large as possible while preserving a small visual margin to the inner circle.
+        base_size = max(7.0, r * 0.90)
         if label == "CO_2":
             co_size = base_size
             sub_size = base_size * 0.65
+            # Horizontal center refers to full CO₂ token; vertical center should align with CO only.
             parts.append(
                 f'<text x="{cx:.2f}" y="{cy:.2f}" text-anchor="middle" dominant-baseline="middle" fill="{text_color}" '
                 f'font-size="{co_size:.2f}" font-family="Arial, sans-serif">CO<tspan baseline-shift="sub" font-size="{sub_size:.2f}">2</tspan></text>'
@@ -220,6 +222,8 @@ def draw_circle(img: list[list[list[int]]], cx: float, cy: float, r: float, fill
                 img[y][x][0], img[y][x][1], img[y][x][2] = fill
             elif d2 <= outer2:
                 img[y][x][0], img[y][x][1], img[y][x][2] = stroke
+
+
 
 
 def save_bmp24(path: Path, img: list[list[list[int]]]) -> None:
@@ -285,8 +289,43 @@ def rasterize_simple(spec: BadgeSpec) -> list[list[list[int]]]:
         draw_rect(img, int(cx + r - stroke / 2), int(cy - paddle_w / 2), int(cx + r + paddle_len - stroke / 2), int(cy + paddle_w / 2), paddle_color)
 
     draw_circle(img, cx, cy, r, fill_color, stroke_color, stroke)
+
     return img
 
+
+
+
+def inject_label_into_reconverted_svg(spec: BadgeSpec, svg_path: Path) -> None:
+    label = detect_label(spec.description)
+    if not label or not svg_path.exists():
+        return
+
+    content = svg_path.read_text(encoding="utf-8")
+    if "<text" in content:
+        return
+
+    w, h = spec.width, spec.height
+    cx, cy = w / 2.0, h / 2.0
+    r = max(4.0, min(w, h) * 0.36)
+    _fill_color, stroke_color, text_color = color_profile(spec.description)
+    base_size = max(7.0, r * 0.90)
+
+    if label == "CO_2":
+        co_size = base_size
+        sub_size = base_size * 0.65
+        text_node = (
+            f'<text x="{cx:.2f}" y="{cy:.2f}" text-anchor="middle" dominant-baseline="middle" fill="{text_color}" '
+            f'font-size="{co_size:.2f}" font-family="Arial, sans-serif">CO'
+            f'<tspan baseline-shift="sub" font-size="{sub_size:.2f}">2</tspan></text>'
+        )
+    else:
+        text_node = (
+            f'<text x="{cx:.2f}" y="{cy:.2f}" text-anchor="middle" dominant-baseline="middle" fill="{text_color}" '
+            f'font-size="{base_size:.2f}" font-family="Arial, sans-serif">{label}</text>'
+        )
+
+    content = content.replace("</svg>", text_node + "\n</svg>")
+    svg_path.write_text(content, encoding="utf-8")
 
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Generate synthetic badge SVG/BMP pairs and reconverted SVGs")
@@ -301,11 +340,9 @@ def main() -> int:
     args = build_arg_parser().parse_args()
 
     svg_out = args.output_dir / "svg"
-    bmp_out = args.output_dir / "bmp"
 
     specs = parse_specs(args.csv, args.images_dir, args.limit)
     svg_out.mkdir(parents=True, exist_ok=True)
-    bmp_out.mkdir(parents=True, exist_ok=True)
 
     for old in svg_out.glob("*.svg"):
         old.unlink()
@@ -315,13 +352,16 @@ def main() -> int:
         (svg_out / f"{spec.code}.svg").write_text(svg_text, encoding="utf-8")
 
         bmp_img = rasterize_simple(spec)
-        bmp_path = bmp_out / f"{spec.code}.bmp"
+        bmp_path = args.output_dir / f".{spec.code}.tmp.bmp"
         save_bmp24(bmp_path, bmp_img)
 
         reconverted = svg_out / f"{spec.code}_reconverted.svg"
         convert_image(bmp_path, reconverted, max_iter=120, plateau_limit=36, seed=42)
+        inject_label_into_reconverted_svg(spec, reconverted)
+        if bmp_path.exists():
+            bmp_path.unlink()
 
-    print(f"Created {len(specs)} SVGs, {len(specs)} BMPs and {len(specs)} reconverted SVGs.")
+    print(f"Created {len(specs)} SVGs and {len(specs)} reconverted SVGs.")
     return 0
 
 

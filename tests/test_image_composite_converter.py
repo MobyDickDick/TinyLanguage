@@ -177,3 +177,39 @@ def test_decompose_circle_with_stem_recenters_vertical_stem() -> None:
 
     assert abs(stem_cx - 15.0) <= 0.2
     assert stem_y <= 24.1
+
+
+def test_generate_badges_reconverted_svg_contains_text(tmp_path: Path) -> None:
+    gen = pytest.importorskip("tools.generate_badge_comparison_set")
+
+    csv_path = tmp_path / "specs.csv"
+    csv_path.write_text(
+        "id;code;description\n"
+        '1;AC0820;Semantisches Badge: Kreis mit dunkelgrauem Rand und hellgrauer Kreisfläche, mit waagrecht geschriebenem Buchstaben "CO".\n'
+        '2;AC0831;Semantisches Badge: Kreis mit grauem Rand und hellgrauem Hintergrund, mit waagrecht geschriebenem Buchstaben "CO_2" und Kelle unten.\n',
+        encoding="utf-8",
+    )
+
+    # Create matching reference JPEGs required by parse_specs/choose_reference_image.
+    Image = pytest.importorskip("PIL.Image")
+    for code in ("AC0820", "AC0831"):
+        im = Image.new("RGB", (30, 30), (255, 255, 255))
+        im.save(tmp_path / f"{code}_M.jpg", format="JPEG")
+
+    out = tmp_path / "out"
+    # Drive the generation routine via its helpers to avoid CLI monkeypatching.
+    specs = gen.parse_specs(csv_path, tmp_path, limit=10)
+    svg_out = out / "svg"
+    bmp_out = out / "bmp"
+    svg_out.mkdir(parents=True, exist_ok=True)
+    bmp_out.mkdir(parents=True, exist_ok=True)
+
+    for spec in specs:
+        (svg_out / f"{spec.code}.svg").write_text(gen.svg_for_spec(spec), encoding="utf-8")
+        bmp_img = gen.rasterize_simple(spec)
+        bmp_path = bmp_out / f"{spec.code}.bmp"
+        gen.save_bmp24(bmp_path, bmp_img)
+        gen.convert_image(bmp_path, svg_out / f"{spec.code}_reconverted.svg", max_iter=120, plateau_limit=36, seed=42)
+
+    reconverted = (svg_out / "AC0831_reconverted.svg").read_text(encoding="utf-8")
+    assert "<text" in reconverted

@@ -111,3 +111,25 @@ def test_decompose_circle_with_stem_detects_bottom_stem() -> None:
     assert parts[0].startswith("<rect ")
     assert 'fill="#' in parts[0]
     assert parts[1].startswith("<circle ")
+
+
+def test_decompose_circle_with_stem_ignores_plain_circle() -> None:
+    size = 30
+    grayscale = [[255 for _ in range(size)] for _ in range(size)]
+    pixels = [[0 for _ in range(size)] for _ in range(size)]
+
+    cx = cy = 14
+    r = 12
+    for y in range(size):
+        for x in range(size):
+            d2 = (x - cx) ** 2 + (y - cy) ** 2
+            if d2 <= r * r:
+                pixels[y][x] = 1
+                grayscale[y][x] = 180
+
+    element = conv.Element(pixels=pixels, x0=0, y0=0, x1=29, y1=29)
+    candidate = conv.Candidate(shape="circle", cx=14, cy=14, w=24, h=24)
+
+    parts = conv.decompose_circle_with_stem(grayscale, element, candidate)
+
+    assert parts is None

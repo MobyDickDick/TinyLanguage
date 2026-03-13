@@ -349,7 +349,11 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
                     return None
             if len(rows) < 2 or len(rows) > max(2, int(h * 0.45)):
                 return None
-            ys = sorted(rows)
+            min_count = min(row_counts[y] for y in rows)
+            stem_rows = [y for y in rows if row_counts[y] <= max(2, int(min_count * 1.25))]
+            if len(stem_rows) < 2:
+                return None
+            ys = sorted(stem_rows)
             xvals = [x for y in ys for x, v in enumerate(element.pixels[y]) if v]
             if not xvals:
                 return None
@@ -378,7 +382,11 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
                 return None
         if len(cols) < 2 or len(cols) > max(2, int(w * 0.45)):
             return None
-        xs = sorted(cols)
+        min_count = min(col_counts[x] for x in cols)
+        stem_cols = [x for x in cols if col_counts[x] <= max(2, int(min_count * 1.25))]
+        if len(stem_cols) < 2:
+            return None
+        xs = sorted(stem_cols)
         yvals = [y for x in xs for y in range(h) if element.pixels[y][x]]
         if not yvals:
             return None

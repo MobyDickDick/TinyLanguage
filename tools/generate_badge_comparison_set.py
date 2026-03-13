@@ -340,11 +340,9 @@ def main() -> int:
     args = build_arg_parser().parse_args()
 
     svg_out = args.output_dir / "svg"
-    bmp_out = args.output_dir / "bmp"
 
     specs = parse_specs(args.csv, args.images_dir, args.limit)
     svg_out.mkdir(parents=True, exist_ok=True)
-    bmp_out.mkdir(parents=True, exist_ok=True)
 
     for old in svg_out.glob("*.svg"):
         old.unlink()
@@ -354,14 +352,16 @@ def main() -> int:
         (svg_out / f"{spec.code}.svg").write_text(svg_text, encoding="utf-8")
 
         bmp_img = rasterize_simple(spec)
-        bmp_path = bmp_out / f"{spec.code}.bmp"
+        bmp_path = args.output_dir / f".{spec.code}.tmp.bmp"
         save_bmp24(bmp_path, bmp_img)
 
         reconverted = svg_out / f"{spec.code}_reconverted.svg"
         convert_image(bmp_path, reconverted, max_iter=120, plateau_limit=36, seed=42)
         inject_label_into_reconverted_svg(spec, reconverted)
+        if bmp_path.exists():
+            bmp_path.unlink()
 
-    print(f"Created {len(specs)} SVGs, {len(specs)} BMPs and {len(specs)} reconverted SVGs.")
+    print(f"Created {len(specs)} SVGs and {len(specs)} reconverted SVGs.")
     return 0
 
 

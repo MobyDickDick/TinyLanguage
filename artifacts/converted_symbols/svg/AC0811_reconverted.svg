@@ -1,3 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="25" height="45" viewBox="0 0 25 45">
-<ellipse cx="12.00" cy="22.87" rx="9.50" ry="13.00" fill="#bebebe" />
+  <rect x="0" y="0" width="25" height="45" fill="white"/>
+  <!-- Kelle unten: zentrierter vertikaler Strich hinter dem Kreis -->
+  <rect x="11" y="22.5" width="3" height="16.8" fill="#808080"/>
+  <!-- Kreis: symmetrisch zur Mittellinie x=12.5 -->
+  <circle cx="12.5" cy="22.5" r="9" fill="#d9d9d9" stroke="#808080" stroke-width="1.5"/>
 </svg>

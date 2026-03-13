@@ -311,6 +311,153 @@ def candidate_to_svg(candidate: Candidate, gx: int, gy: int, fill_color: str, st
     return f"<ellipse {' '.join(attrs)} />"
 
 
+def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, int, int]] | None:
+    """Detect circle+stem geometry in a merged connected component.
+
+    Returns a circle candidate plus stem bounding box (local element coordinates)
+    when one thin axis-aligned strip protrudes from a mostly circular body.
+    """
+
+    if not element.pixels or not element.pixels[0]:
+        return None
+
+    h = len(element.pixels)
+    w = len(element.pixels[0])
+    row_counts = [sum(row) for row in element.pixels]
+    col_counts = [sum(element.pixels[y][x] for y in range(h)) for x in range(w)]
+    max_row = max(row_counts) if row_counts else 0
+    max_col = max(col_counts) if col_counts else 0
+    if max_row == 0 or max_col == 0:
+        return None
+
+    def _extract(direction: str) -> tuple[int, int, int, int] | None:
+        if direction in {"bottom", "top"}:
+            threshold = max(2, int(max_row * 0.48))
+            rows: list[int] = []
+            indices = range(h - 1, -1, -1) if direction == "bottom" else range(h)
+            for y in indices:
+                c = row_counts[y]
+                if c == 0:
+                    if rows:
+                        break
+                    continue
+                if c <= threshold:
+                    rows.append(y)
+                elif rows:
+                    break
+                else:
+                    return None
+            if len(rows) < 2 or len(rows) > max(2, int(h * 0.45)):
+                return None
+            ys = sorted(rows)
+            xvals = [x for y in ys for x, v in enumerate(element.pixels[y]) if v]
+            if not xvals:
+                return None
+            sx0, sx1 = min(xvals), max(xvals)
+            if (sx1 - sx0 + 1) > w * 0.45:
+                return None
+            stem_cx = (sx0 + sx1) / 2.0
+            if abs(stem_cx - (w - 1) / 2.0) > max(1.2, w * 0.2):
+                return None
+            return sx0, ys[0], sx1, ys[-1]
+
+        threshold = max(2, int(max_col * 0.48))
+        cols: list[int] = []
+        indices = range(w - 1, -1, -1) if direction == "right" else range(w)
+        for x in indices:
+            c = col_counts[x]
+            if c == 0:
+                if cols:
+                    break
+                continue
+            if c <= threshold:
+                cols.append(x)
+            elif cols:
+                break
+            else:
+                return None
+        if len(cols) < 2 or len(cols) > max(2, int(w * 0.45)):
+            return None
+        xs = sorted(cols)
+        yvals = [y for x in xs for y in range(h) if element.pixels[y][x]]
+        if not yvals:
+            return None
+        sy0, sy1 = min(yvals), max(yvals)
+        if (sy1 - sy0 + 1) > h * 0.45:
+            return None
+        stem_cy = (sy0 + sy1) / 2.0
+        if abs(stem_cy - (h - 1) / 2.0) > max(1.2, h * 0.2):
+            return None
+        return xs[0], sy0, xs[-1], sy1
+
+    stem_bbox = None
+    for direction in ("bottom", "top", "left", "right"):
+        stem_bbox = _extract(direction)
+        if stem_bbox is not None:
+            break
+    if stem_bbox is None:
+        return None
+
+    sx0, sy0, sx1, sy1 = stem_bbox
+    body_coords: list[tuple[int, int]] = []
+    for y, row in enumerate(element.pixels):
+        for x, is_fg in enumerate(row):
+            if not is_fg:
+                continue
+            if sx0 <= x <= sx1 and sy0 <= y <= sy1:
+                continue
+            body_coords.append((x, y))
+    if len(body_coords) < 20:
+        return None
+
+    xs = [x for x, _ in body_coords]
+    ys = [y for _, y in body_coords]
+    bw = max(xs) - min(xs) + 1
+    bh = max(ys) - min(ys) + 1
+    ratio = max(bw, bh) / max(1.0, min(bw, bh))
+    if ratio > 1.35:
+        return None
+
+    circle = Candidate(shape="circle", cx=sum(xs) / len(xs), cy=sum(ys) / len(ys), w=float(bw), h=float(bh))
+    return circle, stem_bbox
+
+
+def decompose_circle_with_stem(
+    grayscale: list[list[int]], element: Element, candidate: Candidate
+) -> list[str] | None:
+    """Split merged components into stem + circle when geometry strongly suggests it.
+
+    Some badges encode a circle with an attached straight stem ("Kelle"). During
+    connected-component search these pixels form one component, which the random
+    search otherwise approximates as a single ellipse. This heuristic keeps the
+    conversion process primitive-based by emitting a rect (stem) behind a circle.
+    """
+    detected = detect_stemmed_circle(element)
+    if detected is None:
+        return None
+
+    circle_candidate, (sx0, sy0, sx1, sy1) = detected
+    stem_w = sx1 - sx0 + 1
+    stem_h = sy1 - sy0 + 1
+
+    stem_values = [
+        grayscale[element.y0 + y][element.x0 + x]
+        for y in range(sy0, sy1 + 1)
+        for x in range(sx0, sx1 + 1)
+        if element.pixels[y][x]
+    ]
+    stem_color = gray_to_hex(round(sum(stem_values) / max(1, len(stem_values))))
+    fill_color, stroke_color, stroke_width = estimate_stroke_style(grayscale, element, circle_candidate)
+
+    parts: list[str] = []
+    parts.append(
+        f'<rect x="{element.x0 + sx0:.2f}" y="{element.y0 + sy0:.2f}" '
+        f'width="{stem_w:.2f}" height="{stem_h:.2f}" fill="{stem_color}"/>'
+    )
+    parts.append(candidate_to_svg(circle_candidate, element.x0, element.y0, fill_color, stroke_color, stroke_width))
+    return parts
+
+
 def convert_image(image_path: Path, output_svg: Path, *, max_iter: int, plateau_limit: int, seed: int) -> None:
     grayscale = load_grayscale_image(image_path)
     binary = [[1 if value < 220 else 0 for value in row] for row in grayscale]
@@ -319,8 +466,12 @@ def convert_image(image_path: Path, output_svg: Path, *, max_iter: int, plateau_
     for idx, element in enumerate(elements):
         init = estimate_initial_candidate(element)
         best, _ = optimize_element(element.pixels, init, max_iter=max_iter, plateau_limit=plateau_limit, seed=seed + idx)
-        fill_color, stroke_color, stroke_width = estimate_stroke_style(grayscale, element, best)
-        parts.append(candidate_to_svg(best, element.x0, element.y0, fill_color, stroke_color, stroke_width))
+        decomposed = decompose_circle_with_stem(grayscale, element, best)
+        if decomposed is not None:
+            parts.extend(decomposed)
+        else:
+            fill_color, stroke_color, stroke_width = estimate_stroke_style(grayscale, element, best)
+            parts.append(candidate_to_svg(best, element.x0, element.y0, fill_color, stroke_color, stroke_width))
 
     width, height = len(binary[0]), len(binary)
     svg = [

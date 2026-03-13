@@ -297,14 +297,20 @@ def estimate_stroke_style(grayscale: list[list[int]], element: Element, candidat
 def candidate_to_svg(candidate: Candidate, gx: int, gy: int, fill_color: str, stroke_color: str | None = None, stroke_width: float | None = None) -> str:
     cx = candidate.cx + gx
     cy = candidate.cy + gy
+    half_stroke = (stroke_width / 2.0) if (stroke_color and stroke_width is not None and stroke_width > 0) else 0.0
+
     if candidate.shape == "circle":
-        r = max(1.0, (candidate.w + candidate.h) / 4.0)
+        outer_r = max(1.0, (candidate.w + candidate.h) / 4.0)
+        r = max(0.5, outer_r - half_stroke)
         attrs = [f'cx="{cx:.2f}"', f'cy="{cy:.2f}"', f'r="{r:.2f}"', f'fill="{fill_color}"']
         if stroke_color and stroke_width is not None:
             attrs.append(f'stroke="{stroke_color}"')
             attrs.append(f'stroke-width="{stroke_width:.2f}"')
         return f"<circle {' '.join(attrs)} />"
-    attrs = [f'cx="{cx:.2f}"', f'cy="{cy:.2f}"', f'rx="{candidate.w/2:.2f}"', f'ry="{candidate.h/2:.2f}"', f'fill="{fill_color}"']
+
+    rx = max(0.5, candidate.w / 2.0 - half_stroke)
+    ry = max(0.5, candidate.h / 2.0 - half_stroke)
+    attrs = [f'cx="{cx:.2f}"', f'cy="{cy:.2f}"', f'rx="{rx:.2f}"', f'ry="{ry:.2f}"', f'fill="{fill_color}"']
     if stroke_color and stroke_width is not None:
         attrs.append(f'stroke="{stroke_color}"')
         attrs.append(f'stroke-width="{stroke_width:.2f}"')

@@ -82,6 +82,17 @@ def test_estimate_stroke_style_detects_dark_ring() -> None:
     assert stroke_width is not None and stroke_width >= 1.0
 
 
+
+
+def test_candidate_to_svg_preserves_outer_size_with_stroke() -> None:
+    candidate = conv.Candidate(shape="circle", cx=10.0, cy=10.0, w=20.0, h=20.0)
+
+    svg = conv.candidate_to_svg(candidate, 0, 0, "#dbdbdb", "#808080", 2.0)
+
+    assert 'r="9.00"' in svg
+    assert 'stroke-width="2.00"' in svg
+
+
 def test_decompose_circle_with_stem_detects_bottom_stem() -> None:
     size = 25
     grayscale = [[255 for _ in range(size)] for _ in range(size)]

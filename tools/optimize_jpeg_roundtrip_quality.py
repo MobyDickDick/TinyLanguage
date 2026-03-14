@@ -326,11 +326,14 @@ def main() -> int:
     p.add_argument(
         "--param",
         action="append",
-        default=["120:36:42", "240:72:42", "360:108:42", "240:72:1337", "480:144:42"],
+        default=[],
         help="Parameter set max_iter:plateau_limit:seed (repeatable)",
     )
     p.add_argument("--limit", type=int, default=0, help="Optional limit of codes from CSV (0 = all)")
     args = p.parse_args()
+
+    if not args.param:
+        args.param = ["120:36:42", "240:72:42", "360:108:42", "240:72:1337", "480:144:42"]
 
     param_sets = parse_params(args.param)
     codes = read_codes(args.csv)

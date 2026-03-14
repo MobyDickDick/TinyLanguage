@@ -273,3 +273,34 @@ def test_generate_badges_reconverted_svg_contains_text(tmp_path: Path) -> None:
 
     reconverted = (svg_out / "AC0831_reconverted.svg").read_text(encoding="utf-8")
     assert "<text" in reconverted
+
+
+def test_convert_image_variants_merges_to_largest_size(tmp_path: Path) -> None:
+    Image = pytest.importorskip("PIL.Image")
+    ImageDraw = pytest.importorskip("PIL.ImageDraw")
+
+    img_s = Image.new("L", (16, 16), 255)
+    draw_s = ImageDraw.Draw(img_s)
+    draw_s.ellipse((3, 3, 12, 12), fill=0)
+
+    img_l = Image.new("L", (32, 32), 255)
+    draw_l = ImageDraw.Draw(img_l)
+    draw_l.ellipse((6, 6, 24, 24), fill=0)
+
+    p1 = tmp_path / "FORM_S.png"
+    p2 = tmp_path / "FORM_L.png"
+    out = tmp_path / "merged.svg"
+    img_s.save(p1)
+    img_l.save(p2)
+
+    conv.convert_image_variants([p1, p2], out, max_iter=40, plateau_limit=12, seed=9)
+
+    text = out.read_text(encoding="utf-8")
+    assert 'width="32"' in text
+    assert 'height="32"' in text
+
+
+def test_variant_group_key_collapses_size_suffixes() -> None:
+    assert conv.variant_group_key(Path("KREIS_S.png")) == "kreis"
+    assert conv.variant_group_key(Path("KREIS_L.png")) == "kreis"
+    assert conv.variant_group_key(Path("KREIS_300.png")) == "kreis"

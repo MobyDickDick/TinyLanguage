@@ -3,9 +3,11 @@ from __future__ import annotations
 import argparse
 import csv
 import math
+import random
 import shutil
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -41,6 +43,18 @@ class ImageMetric:
     plateau_limit: int
     seed: int
     svg_path: Path
+
+
+@dataclass
+class VariationResult:
+    code: str
+    source_file: str
+    trial: int
+    mae: float
+    rmse: float
+    exact_ratio: float
+    improved: bool
+    plateau_run: int
 
 
 def read_codes(csv_path: Path) -> list[str]:
@@ -173,6 +187,127 @@ def choose_best_for_code(
 
     best = min(metrics, key=lambda m: (m.mae, m.rmse, -m.exact_ratio))
     return best, metrics
+
+
+def clamp_channel(value: float) -> int:
+    return max(0, min(255, int(round(value))))
+
+
+def jitter_hex_color(hex_color: str, rng: random.Random, delta: int = 16) -> str:
+    if not hex_color.startswith("#") or len(hex_color) != 7:
+        return hex_color
+    r = clamp_channel(int(hex_color[1:3], 16) + rng.randint(-delta, delta))
+    g = clamp_channel(int(hex_color[3:5], 16) + rng.randint(-delta, delta))
+    b = clamp_channel(int(hex_color[5:7], 16) + rng.randint(-delta, delta))
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
+def mutate_svg_tree(root: ET.Element, width: int, height: int, rng: random.Random, sigma: float) -> ET.Element:
+    mutated = ET.fromstring(ET.tostring(root, encoding="unicode"))
+    for node in mutated:
+        tag = node.tag.rsplit("}", 1)[-1]
+
+        if "stroke-width" in node.attrib:
+            stroke = float(node.attrib["stroke-width"] or 0.0)
+            node.attrib["stroke-width"] = f"{max(0.2, stroke + rng.gauss(0, sigma * 0.5)):.2f}"
+
+        for key in ("fill", "stroke"):
+            if key in node.attrib:
+                node.attrib[key] = jitter_hex_color(node.attrib[key], rng)
+
+        if tag == "rect":
+            x = float(node.attrib.get("x", "0") or 0.0) + rng.gauss(0, sigma)
+            y = float(node.attrib.get("y", "0") or 0.0) + rng.gauss(0, sigma)
+            w = max(0.8, float(node.attrib.get("width", "0") or 0.0) + rng.gauss(0, sigma))
+            h = max(0.8, float(node.attrib.get("height", "0") or 0.0) + rng.gauss(0, sigma))
+            x = max(0.0, min(width - w, x))
+            y = max(0.0, min(height - h, y))
+            node.attrib["x"] = f"{x:.2f}"
+            node.attrib["y"] = f"{y:.2f}"
+            node.attrib["width"] = f"{w:.2f}"
+            node.attrib["height"] = f"{h:.2f}"
+        elif tag in {"circle", "ellipse"}:
+            cx = float(node.attrib.get("cx", "0") or 0.0) + rng.gauss(0, sigma)
+            cy = float(node.attrib.get("cy", "0") or 0.0) + rng.gauss(0, sigma)
+            cx = max(0.0, min(float(width), cx))
+            cy = max(0.0, min(float(height), cy))
+            node.attrib["cx"] = f"{cx:.2f}"
+            node.attrib["cy"] = f"{cy:.2f}"
+            if tag == "circle":
+                r = max(0.6, float(node.attrib.get("r", "0") or 0.0) + rng.gauss(0, sigma))
+                node.attrib["r"] = f"{r:.2f}"
+            else:
+                rx = max(0.6, float(node.attrib.get("rx", "0") or 0.0) + rng.gauss(0, sigma))
+                ry = max(0.6, float(node.attrib.get("ry", "0") or 0.0) + rng.gauss(0, sigma))
+                node.attrib["rx"] = f"{rx:.2f}"
+                node.attrib["ry"] = f"{ry:.2f}"
+    return mutated
+
+
+def stochastic_refine_svg(
+    code: str,
+    source_label: str,
+    rgb_source: list[list[list[int]]],
+    base_metric: ImageMetric,
+    output_svg_dir: Path,
+    variation_trials: int,
+    variation_sigma: float,
+    variation_seed: int,
+) -> tuple[ImageMetric, list[VariationResult]]:
+    if variation_trials <= 0:
+        return base_metric, []
+
+    h = len(rgb_source)
+    w = len(rgb_source[0]) if h else 0
+    rng = random.Random(variation_seed)
+
+    best_metric = base_metric
+    current_tree = ET.fromstring(base_metric.svg_path.read_text(encoding="utf-8"))
+    plateau_run = 0
+    trace: list[VariationResult] = []
+
+    for trial in range(1, variation_trials + 1):
+        candidate_tree = mutate_svg_tree(current_tree, width=w, height=h, rng=rng, sigma=variation_sigma)
+        candidate_path = output_svg_dir / f"{code}_trial{trial:04d}.svg"
+        candidate_path.parent.mkdir(parents=True, exist_ok=True)
+        candidate_path.write_text(ET.tostring(candidate_tree, encoding="unicode"), encoding="utf-8")
+
+        reconv = rasterize_svg_shapes(candidate_path, width=w, height=h)
+        mae, rmse, exact = compute_metrics(rgb_source, reconv)
+        improved = (mae, rmse, -exact) < (best_metric.mae, best_metric.rmse, -best_metric.exact_ratio)
+        if improved:
+            best_metric = ImageMetric(
+                code=code,
+                source_file=source_label,
+                width=w,
+                height=h,
+                mae=mae,
+                rmse=rmse,
+                exact_ratio=exact,
+                max_iter=base_metric.max_iter,
+                plateau_limit=base_metric.plateau_limit,
+                seed=base_metric.seed,
+                svg_path=candidate_path,
+            )
+            current_tree = candidate_tree
+            plateau_run = 0
+        else:
+            plateau_run += 1
+
+        trace.append(
+            VariationResult(
+                code=code,
+                source_file=source_label,
+                trial=trial,
+                mae=mae,
+                rmse=rmse,
+                exact_ratio=exact,
+                improved=improved,
+                plateau_run=plateau_run,
+            )
+        )
+
+    return best_metric, trace
 
 
 def evaluate_template_svg(
@@ -312,6 +447,39 @@ def write_report(path: Path, best_rows: list[ImageMetric], all_rows: list[ImageM
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def write_variation_csv(path: Path, rows: list[VariationResult]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["code", "source_file", "trial", "mae_rgb", "rmse_rgb", "exact_pixel_ratio", "improved", "plateau_run"])
+        for r in rows:
+            w.writerow([r.code, r.source_file, r.trial, f"{r.mae:.6f}", f"{r.rmse:.6f}", f"{r.exact_ratio:.6f}", int(r.improved), r.plateau_run])
+
+
+def append_plateau_report(path: Path, traces: list[VariationResult], variation_trials: int) -> None:
+    if not traces or variation_trials <= 0:
+        return
+    by_code: dict[str, list[VariationResult]] = {}
+    for row in traces:
+        by_code.setdefault(row.code, []).append(row)
+
+    plateau_edges: list[int] = []
+    lines = ["", "## Stochastic variation search (Rekonstruktion)", "", "| Code | Last improvement trial | Plateau edge trial | Best trial MAE |", "|---|---:|---:|---:|"]
+    for code, rows in sorted(by_code.items()):
+        ordered = sorted(rows, key=lambda r: r.trial)
+        improving_trials = [r.trial for r in ordered if r.improved]
+        last_improvement = max(improving_trials) if improving_trials else 0
+        plateau_edge = min(variation_trials, last_improvement + max(3, variation_trials // 10))
+        plateau_edges.append(plateau_edge)
+        best_trial = min(ordered, key=lambda r: (r.mae, r.rmse, -r.exact_ratio))
+        lines.append(f"| {code} | {last_improvement} | {plateau_edge} | {best_trial.mae:.3f} |")
+
+    plateau_avg = sum(plateau_edges) / len(plateau_edges)
+    lines.extend(["", f"Plateau edge mean trial: **{plateau_avg:.1f} / {variation_trials}** (higher = broader event-space plateau)."])
+    with path.open("a", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description="Iteratively optimize JPEG->SVG roundtrip quality for selected symbols")
     p.add_argument("--csv", type=Path, default=Path("artifacts/images_to_convert/nonexistant.csv"))
@@ -330,6 +498,14 @@ def main() -> int:
         help="Parameter set max_iter:plateau_limit:seed (repeatable)",
     )
     p.add_argument("--limit", type=int, default=0, help="Optional limit of codes from CSV (0 = all)")
+    p.add_argument(
+        "--variation-trials",
+        type=int,
+        default=24,
+        help="Random reconstruction variations per chosen SVG (0 disables random local search).",
+    )
+    p.add_argument("--variation-sigma", type=float, default=0.9, help="Mutation strength in px for geometric reconstruction variation.")
+    p.add_argument("--variation-seed", type=int, default=2026, help="Seed for stochastic reconstruction refinement.")
     args = p.parse_args()
 
     if not args.param:
@@ -357,6 +533,7 @@ def main() -> int:
 
     best_rows: list[ImageMetric] = []
     all_rows: list[ImageMetric] = []
+    variation_rows: list[VariationResult] = []
 
     jpg_mode = True
     try:
@@ -396,6 +573,18 @@ def main() -> int:
                 ):
                     best = template_result
 
+            best, local_variations = stochastic_refine_svg(
+                code=code,
+                source_label=source_label,
+                rgb_source=rgb,
+                base_metric=best,
+                output_svg_dir=work_svg / "stochastic_refine",
+                variation_trials=args.variation_trials,
+                variation_sigma=args.variation_sigma,
+                variation_seed=args.variation_seed + idx,
+            )
+            variation_rows.extend(local_variations)
+
             all_rows.extend(rows)
             best_rows.append(best)
 
@@ -414,7 +603,9 @@ def main() -> int:
 
     write_csv(out_dir / "best_per_image.csv", best_rows)
     write_csv(out_dir / "all_results.csv", all_rows)
+    write_variation_csv(out_dir / "stochastic_variations.csv", variation_rows)
     write_report(out_dir / "optimization_report.md", best_rows, all_rows, param_sets)
+    append_plateau_report(out_dir / "optimization_report.md", variation_rows, args.variation_trials)
 
     print(f"done images={len(best_rows)} params={len(param_sets)} out={out_dir}")
     return 0

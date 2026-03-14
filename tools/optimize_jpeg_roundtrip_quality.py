@@ -253,6 +253,7 @@ def stochastic_refine_svg(
     variation_trials: int,
     variation_sigma: float,
     variation_seed: int,
+    save_all_variations: bool,
 ) -> tuple[ImageMetric, list[VariationResult]]:
     if variation_trials <= 0:
         return base_metric, []
@@ -266,46 +267,58 @@ def stochastic_refine_svg(
     plateau_run = 0
     trace: list[VariationResult] = []
 
-    for trial in range(1, variation_trials + 1):
-        candidate_tree = mutate_svg_tree(current_tree, width=w, height=h, rng=rng, sigma=variation_sigma)
-        candidate_path = output_svg_dir / f"{code}_trial{trial:04d}.svg"
-        candidate_path.parent.mkdir(parents=True, exist_ok=True)
-        candidate_path.write_text(ET.tostring(candidate_tree, encoding="unicode"), encoding="utf-8")
+    with tempfile.TemporaryDirectory(prefix="svg_variation_") as temp_dir:
+        temp_dir_path = Path(temp_dir)
+        for trial in range(1, variation_trials + 1):
+            candidate_tree = mutate_svg_tree(current_tree, width=w, height=h, rng=rng, sigma=variation_sigma)
+            candidate_path = temp_dir_path / f"{code}_trial{trial:04d}.svg"
+            candidate_path.write_text(ET.tostring(candidate_tree, encoding="unicode"), encoding="utf-8")
 
-        reconv = rasterize_svg_shapes(candidate_path, width=w, height=h)
-        mae, rmse, exact = compute_metrics(rgb_source, reconv)
-        improved = (mae, rmse, -exact) < (best_metric.mae, best_metric.rmse, -best_metric.exact_ratio)
-        if improved:
-            best_metric = ImageMetric(
-                code=code,
-                source_file=source_label,
-                width=w,
-                height=h,
-                mae=mae,
-                rmse=rmse,
-                exact_ratio=exact,
-                max_iter=base_metric.max_iter,
-                plateau_limit=base_metric.plateau_limit,
-                seed=base_metric.seed,
-                svg_path=candidate_path,
-            )
-            current_tree = candidate_tree
-            plateau_run = 0
-        else:
-            plateau_run += 1
+            reconv = rasterize_svg_shapes(candidate_path, width=w, height=h)
+            mae, rmse, exact = compute_metrics(rgb_source, reconv)
+            improved = (mae, rmse, -exact) < (best_metric.mae, best_metric.rmse, -best_metric.exact_ratio)
+            if improved:
+                if save_all_variations:
+                    persisted_path = output_svg_dir / f"{code}_trial{trial:04d}.svg"
+                else:
+                    persisted_path = output_svg_dir / f"{code}_best_variation.svg"
+                persisted_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(candidate_path, persisted_path)
+                best_metric = ImageMetric(
+                    code=code,
+                    source_file=source_label,
+                    width=w,
+                    height=h,
+                    mae=mae,
+                    rmse=rmse,
+                    exact_ratio=exact,
+                    max_iter=base_metric.max_iter,
+                    plateau_limit=base_metric.plateau_limit,
+                    seed=base_metric.seed,
+                    svg_path=persisted_path,
+                )
+                current_tree = candidate_tree
+                plateau_run = 0
+            else:
+                plateau_run += 1
 
-        trace.append(
-            VariationResult(
-                code=code,
-                source_file=source_label,
-                trial=trial,
-                mae=mae,
-                rmse=rmse,
-                exact_ratio=exact,
-                improved=improved,
-                plateau_run=plateau_run,
+            if save_all_variations and not improved:
+                persisted_path = output_svg_dir / f"{code}_trial{trial:04d}.svg"
+                persisted_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(candidate_path, persisted_path)
+
+            trace.append(
+                VariationResult(
+                    code=code,
+                    source_file=source_label,
+                    trial=trial,
+                    mae=mae,
+                    rmse=rmse,
+                    exact_ratio=exact,
+                    improved=improved,
+                    plateau_run=plateau_run,
+                )
             )
-        )
 
     return best_metric, trace
 
@@ -506,6 +519,11 @@ def main() -> int:
     )
     p.add_argument("--variation-sigma", type=float, default=0.9, help="Mutation strength in px for geometric reconstruction variation.")
     p.add_argument("--variation-seed", type=int, default=2026, help="Seed for stochastic reconstruction refinement.")
+    p.add_argument(
+        "--variation-save-all",
+        action="store_true",
+        help="Persist every mutation SVG trial (default only keeps the best variation per code).",
+    )
     args = p.parse_args()
 
     if not args.param:
@@ -582,6 +600,7 @@ def main() -> int:
                 variation_trials=args.variation_trials,
                 variation_sigma=args.variation_sigma,
                 variation_seed=args.variation_seed + idx,
+                save_all_variations=args.variation_save_all,
             )
             variation_rows.extend(local_variations)
 

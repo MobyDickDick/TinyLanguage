@@ -56,6 +56,55 @@ def test_convert_image_writes_svg(tmp_path: Path) -> None:
     assert "<circle" in text or "<ellipse" in text
 
 
+
+
+def test_compute_otsu_threshold_bimodal_distribution() -> None:
+    grayscale = [[40 for _ in range(20)] for _ in range(10)]
+    for y in range(5, 10):
+        for x in range(20):
+            grayscale[y][x] = 220
+
+    threshold = conv._compute_otsu_threshold(grayscale)
+
+    assert 40 <= threshold <= 220
+
+
+def test_load_binary_image_with_mode_adaptive_detects_dark_patch(tmp_path: Path) -> None:
+    Image = pytest.importorskip("PIL.Image")
+
+    image = Image.new("L", (21, 21), 200)
+    for y in range(8, 13):
+        for x in range(8, 13):
+            image.putpixel((x, y), 30)
+
+    src = tmp_path / "adaptive.png"
+    image.save(src)
+
+    binary = conv.load_binary_image_with_mode(src, mode="adaptive")
+
+    assert binary[10][10] == 1
+    assert binary[0][0] == 0
+
+
+def test_convert_image_accepts_threshold_mode_and_threshold(tmp_path: Path) -> None:
+    Image = pytest.importorskip("PIL.Image")
+    ImageDraw = pytest.importorskip("PIL.ImageDraw")
+
+    image = Image.new("L", (40, 40), 255)
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((10, 10, 28, 28), fill=140)
+
+    src = tmp_path / "input.jpg"
+    dst = tmp_path / "output.svg"
+    image.save(src, format="JPEG")
+
+    conv.convert_image(src, dst, max_iter=40, plateau_limit=12, seed=7, threshold_mode="otsu", threshold=220)
+
+    text = dst.read_text(encoding="utf-8")
+    assert "<svg" in text
+    assert "<ellipse" in text or "<circle" in text
+
+
 def test_estimate_stroke_style_detects_dark_ring() -> None:
     grayscale = [[255 for _ in range(25)] for _ in range(25)]
     pixels = [[0 for _ in range(21)] for _ in range(21)]

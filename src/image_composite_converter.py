@@ -100,6 +100,91 @@ def load_binary_image(path: Path, threshold: int = 220) -> list[list[int]]:
     return [[1 if value < threshold else 0 for value in row] for row in grayscale]
 
 
+def _compute_otsu_threshold(grayscale: list[list[int]]) -> int:
+    hist = [0] * 256
+    total = 0
+    for row in grayscale:
+        for value in row:
+            hist[value] += 1
+            total += 1
+
+    if total == 0:
+        return 220
+
+    sum_total = sum(i * hist[i] for i in range(256))
+    sum_bg = 0.0
+    weight_bg = 0
+    max_var = -1.0
+    threshold = 220
+
+    for t in range(256):
+        weight_bg += hist[t]
+        if weight_bg == 0:
+            continue
+        weight_fg = total - weight_bg
+        if weight_fg == 0:
+            break
+
+        sum_bg += t * hist[t]
+        mean_bg = sum_bg / weight_bg
+        mean_fg = (sum_total - sum_bg) / weight_fg
+        between_var = weight_bg * weight_fg * (mean_bg - mean_fg) ** 2
+        if between_var > max_var:
+            max_var = between_var
+            threshold = t
+
+    return threshold
+
+
+def _adaptive_threshold(grayscale: list[list[int]], block_size: int = 15, c: int = 5) -> list[list[int]]:
+    h = len(grayscale)
+    w = len(grayscale[0]) if h else 0
+    if h == 0 or w == 0:
+        return []
+
+    if block_size % 2 == 0:
+        block_size += 1
+    radius = block_size // 2
+
+    integral = [[0] * (w + 1) for _ in range(h + 1)]
+    for y in range(h):
+        row_sum = 0
+        for x in range(w):
+            row_sum += grayscale[y][x]
+            integral[y + 1][x + 1] = integral[y][x + 1] + row_sum
+
+    out = [[0] * w for _ in range(h)]
+    for y in range(h):
+        y0 = max(0, y - radius)
+        y1 = min(h - 1, y + radius)
+        for x in range(w):
+            x0 = max(0, x - radius)
+            x1 = min(w - 1, x + radius)
+            area = (y1 - y0 + 1) * (x1 - x0 + 1)
+            region_sum = (
+                integral[y1 + 1][x1 + 1]
+                - integral[y0][x1 + 1]
+                - integral[y1 + 1][x0]
+                + integral[y0][x0]
+            )
+            local_mean = region_sum / max(1, area)
+            out[y][x] = 1 if grayscale[y][x] < (local_mean - c) else 0
+    return out
+
+
+def load_binary_image_with_mode(path: Path, *, threshold: int = 220, mode: str = "global") -> list[list[int]]:
+    grayscale = load_grayscale_image(path)
+    normalized_mode = mode.lower()
+    if normalized_mode == "global":
+        return [[1 if value < threshold else 0 for value in row] for row in grayscale]
+    if normalized_mode == "otsu":
+        otsu_threshold = _compute_otsu_threshold(grayscale)
+        return [[1 if value < otsu_threshold else 0 for value in row] for row in grayscale]
+    if normalized_mode == "adaptive":
+        return _adaptive_threshold(grayscale)
+    raise ValueError(f"Unknown threshold mode '{mode}'. Expected one of: global, otsu, adaptive")
+
+
 def find_elements(binary: list[list[int]], min_pixels: int = 25) -> list[Element]:
     h = len(binary)
     w = len(binary[0]) if h else 0
@@ -498,9 +583,30 @@ def decompose_circle_with_stem(
     return parts
 
 
-def convert_image(image_path: Path, output_svg: Path, *, max_iter: int, plateau_limit: int, seed: int) -> None:
+def convert_image(
+    image_path: Path,
+    output_svg: Path,
+    *,
+    max_iter: int,
+    plateau_limit: int,
+    seed: int,
+    threshold_mode: str = "auto",
+    threshold: int = 220,
+) -> None:
     grayscale = load_grayscale_image(image_path)
-    binary = [[1 if value < 220 else 0 for value in row] for row in grayscale]
+    mode = threshold_mode.lower()
+    if mode == "auto":
+        mode = "otsu" if image_path.suffix.lower() in {".jpg", ".jpeg"} else "global"
+    if mode == "global":
+        binary = [[1 if value < threshold else 0 for value in row] for row in grayscale]
+    elif mode == "otsu":
+        otsu_threshold = _compute_otsu_threshold(grayscale)
+        binary = [[1 if value < otsu_threshold else 0 for value in row] for row in grayscale]
+    elif mode == "adaptive":
+        binary = _adaptive_threshold(grayscale)
+    else:
+        raise ValueError(f"Unknown threshold mode '{threshold_mode}'. Expected one of: auto, global, otsu, adaptive")
+
     elements = find_elements(binary)
     parts: list[str] = []
     for idx, element in enumerate(elements):
@@ -539,6 +645,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--max-iter", type=int, default=120)
     p.add_argument("--plateau-limit", type=int, default=36)
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--threshold-mode", choices=["auto", "global", "otsu", "adaptive"], default="auto")
+    p.add_argument("--threshold", type=int, default=220)
     return p
 
 
@@ -551,7 +659,15 @@ def main() -> int:
 
     for image in images:
         out = args.output_dir / f"{image.stem}.svg"
-        convert_image(image, out, max_iter=args.max_iter, plateau_limit=args.plateau_limit, seed=args.seed)
+        convert_image(
+            image,
+            out,
+            max_iter=args.max_iter,
+            plateau_limit=args.plateau_limit,
+            seed=args.seed,
+            threshold_mode=args.threshold_mode,
+            threshold=args.threshold,
+        )
         print(f"converted: {image.name} -> {out}")
     return 0
 

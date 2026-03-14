@@ -304,3 +304,64 @@ def test_variant_group_key_collapses_size_suffixes() -> None:
     assert conv.variant_group_key(Path("KREIS_S.png")) == "kreis"
     assert conv.variant_group_key(Path("KREIS_L.png")) == "kreis"
     assert conv.variant_group_key(Path("KREIS_300.png")) == "kreis"
+
+
+def test_decompose_rect_with_diagonal_detects_frame() -> None:
+    w, h = 13, 21
+    grayscale = [[245 for _ in range(w)] for _ in range(h)]
+    pixels = [[0 for _ in range(w)] for _ in range(h)]
+
+    for y in range(h):
+        for x in range(w):
+            if x in {0, w - 1} or y in {0, h - 1}:
+                pixels[y][x] = 1
+                grayscale[y][x] = 130
+            else:
+                pixels[y][x] = 1
+                grayscale[y][x] = 220
+
+    for y in range(1, h - 1):
+        x = max(1, min(w - 2, int(1 + (w - 3) * (h - 1 - y) / (h - 2))))
+        for t in (-1, 0, 1):
+            xx = x + t
+            if 1 <= xx < w - 1:
+                pixels[y][xx] = 1
+                grayscale[y][xx] = 128
+
+    element = conv.Element(pixels=pixels, x0=0, y0=0, x1=w - 1, y1=h - 1)
+    emitted = conv.decompose_rect_with_diagonal(grayscale, element, 'g0')
+
+    assert emitted is not None
+    assert any('linearGradient' in d for d in emitted.defs)
+    assert emitted.parts[0].startswith('<rect ')
+    assert emitted.parts[1].startswith('<path ')
+
+
+def test_convert_from_binary_and_grayscale_emits_defs_for_frame(tmp_path: Path) -> None:
+    w, h = 13, 21
+    grayscale = [[245 for _ in range(w)] for _ in range(h)]
+    binary = [[0 for _ in range(w)] for _ in range(h)]
+
+    for y in range(h):
+        for x in range(w):
+            if x in {0, w - 1} or y in {0, h - 1}:
+                binary[y][x] = 1
+                grayscale[y][x] = 130
+            elif x == 2 and y == 2:
+                pass
+
+    for y in range(1, h - 1):
+        x = max(1, min(w - 2, int(1 + (w - 3) * (h - 1 - y) / (h - 2))))
+        for t in (-1, 0, 1):
+            xx = x + t
+            if 1 <= xx < w - 1:
+                binary[y][xx] = 1
+                grayscale[y][xx] = 128
+
+    out = tmp_path / 'frame.svg'
+    conv._convert_from_binary_and_grayscale(binary, grayscale, out, max_iter=20, plateau_limit=6, seed=1)
+
+    text = out.read_text(encoding='utf-8')
+    assert '<defs>' in text
+    assert '<linearGradient' in text
+    assert '<path d="M ' in text

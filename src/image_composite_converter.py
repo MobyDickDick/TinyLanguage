@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+
 @dataclass
 class Element:
     pixels: list[list[int]]
@@ -34,6 +35,12 @@ class Candidate:
     cy: float
     w: float
     h: float
+
+
+@dataclass
+class SvgEmission:
+    parts: list[str]
+    defs: list[str]
 
 
 def load_grayscale_image(path: Path) -> list[list[int]]:
@@ -584,6 +591,156 @@ def decompose_circle_with_stem(
     return parts
 
 
+def decompose_plus_shape(grayscale: list[list[int]], element: Element) -> list[str] | None:
+    """Emit two rects for plus-like components instead of a blob ellipse."""
+    h = len(element.pixels)
+    w = len(element.pixels[0]) if h else 0
+    if h < 5 or w < 5:
+        return None
+
+    row_counts = [sum(row) for row in element.pixels]
+    col_counts = [sum(element.pixels[y][x] for y in range(h)) for x in range(w)]
+    max_row = max(row_counts) if row_counts else 0
+    max_col = max(col_counts) if col_counts else 0
+    if max_row < int(w * 0.65) or max_col < int(h * 0.65):
+        return None
+
+    area = sum(sum(row) for row in element.pixels)
+    if area <= 0:
+        return None
+    expected = max_row + max_col - 1
+    if area > expected * 1.9:
+        return None
+
+    cy = row_counts.index(max_row)
+    cx = col_counts.index(max_col)
+
+    y0 = cy
+    while y0 > 0 and element.pixels[y0 - 1][cx]:
+        y0 -= 1
+    y1 = cy
+    while y1 < h - 1 and element.pixels[y1 + 1][cx]:
+        y1 += 1
+
+    x0 = cx
+    while x0 > 0 and element.pixels[cy][x0 - 1]:
+        x0 -= 1
+    x1 = cx
+    while x1 < w - 1 and element.pixels[cy][x1 + 1]:
+        x1 += 1
+
+    thickness = max(1, min(max_row, max_col) // 3)
+    color = element_fill_color(grayscale, element)
+    gx, gy = element.x0, element.y0
+
+    return [
+        f'<rect x="{gx + x0:.2f}" y="{gy + cy - thickness / 2:.2f}" width="{x1 - x0 + 1:.2f}" height="{thickness:.2f}" fill="{color}"/>',
+        f'<rect x="{gx + cx - thickness / 2:.2f}" y="{gy + y0:.2f}" width="{thickness:.2f}" height="{y1 - y0 + 1:.2f}" fill="{color}"/>',
+    ]
+
+
+def decompose_rect_with_diagonal(grayscale: list[list[int]], element: Element, gradient_id: str) -> SvgEmission | None:
+    """Detect tall rectangular badges with border+diagonal and emit dedicated primitives."""
+    h = len(element.pixels)
+    w = len(element.pixels[0]) if h else 0
+    if h < 10 or w < 6:
+        return None
+
+    ratio = h / max(1.0, w)
+    if ratio < 1.4:
+        return None
+
+    row_counts = [sum(row) for row in element.pixels]
+    col_counts = [sum(element.pixels[y][x] for y in range(h)) for x in range(w)]
+    if min(row_counts[0], row_counts[-1]) < int(w * 0.75):
+        return None
+    if min(col_counts[0], col_counts[-1]) < int(h * 0.75):
+        return None
+
+    border_band = max(1, min(w, h) // 10)
+    interior_pixels = [
+        (x, y)
+        for y in range(border_band, h - border_band)
+        for x in range(border_band, w - border_band)
+        if element.pixels[y][x]
+    ]
+    if len(interior_pixels) < max(12, (w * h) // 20):
+        return None
+
+    filtered = [(x, y) for (x, y) in interior_pixels if not (x < w * 0.38 and y < h * 0.34)]
+    fit_points = filtered if len(filtered) > 10 else interior_pixels
+    n = len(fit_points)
+    sum_y = sum(y for _, y in fit_points)
+    sum_x = sum(x for x, _ in fit_points)
+    sum_yy = sum(y * y for _, y in fit_points)
+    sum_xy = sum(x * y for x, y in fit_points)
+    denom = n * sum_yy - sum_y * sum_y
+    if abs(denom) < 1e-6:
+        return None
+    a = (n * sum_xy - sum_x * sum_y) / denom
+    b = (sum_x - a * sum_y) / n
+    if a > -0.05:
+        return None
+
+    avg_dev = sum(abs(x - (a * y + b)) for x, y in fit_points) / n
+    thickness = max(2.0, min(w * 0.45, avg_dev * 2.2))
+
+    left_vals = [grayscale[element.y0 + y][element.x0 + x] for y in range(h) for x in range(0, max(1, w // 4)) if element.pixels[y][x]]
+    center_vals = [
+        grayscale[element.y0 + y][element.x0 + x]
+        for y in range(h)
+        for x in range(max(0, w // 3), min(w, (2 * w) // 3))
+        if element.pixels[y][x]
+    ]
+    right_vals = [grayscale[element.y0 + y][element.x0 + x] for y in range(h) for x in range(max(0, (3 * w) // 4), w) if element.pixels[y][x]]
+    if not left_vals or not center_vals or not right_vals:
+        return None
+
+    left_hex = gray_to_hex(round(sum(left_vals) / len(left_vals)))
+    mid_hex = gray_to_hex(round(sum(center_vals) / len(center_vals)))
+    right_hex = gray_to_hex(round(sum(right_vals) / len(right_vals)))
+    border_val = round(
+        (
+            sum(grayscale[element.y0][element.x0 + x] for x in range(w))
+            + sum(grayscale[element.y0 + h - 1][element.x0 + x] for x in range(w))
+            + sum(grayscale[element.y0 + y][element.x0] for y in range(h))
+            + sum(grayscale[element.y0 + y][element.x0 + w - 1] for y in range(h))
+        )
+        / max(1, 2 * (w + h))
+    )
+    border_hex = gray_to_hex(border_val)
+    diag_hex = gray_to_hex(max(0, border_val - 4))
+
+    y_start = h - 1 - border_band
+    y_end = border_band
+    x_start = a * y_start + b
+    x_end = a * y_end + b
+    dx = x_end - x_start
+    dy = y_end - y_start
+    length = max(1e-6, (dx * dx + dy * dy) ** 0.5)
+    nx = -dy / length
+    ny = dx / length
+    half_t = thickness / 2.0
+    p1 = (element.x0 + x_start + nx * half_t, element.y0 + y_start + ny * half_t)
+    p2 = (element.x0 + x_end + nx * half_t, element.y0 + y_end + ny * half_t)
+    p3 = (element.x0 + x_end - nx * half_t, element.y0 + y_end - ny * half_t)
+    p4 = (element.x0 + x_start - nx * half_t, element.y0 + y_start - ny * half_t)
+
+    defs = [
+        (
+            f'<linearGradient id="{gradient_id}" x1="{element.x0:.2f}" y1="{element.y0:.2f}" '
+            f'x2="{element.x0 + w:.2f}" y2="{element.y0:.2f}" gradientUnits="userSpaceOnUse">'
+            f'<stop offset="0" stop-color="{left_hex}"/><stop offset="0.53" stop-color="{mid_hex}"/>'
+            f'<stop offset="1" stop-color="{right_hex}"/></linearGradient>'
+        )
+    ]
+    parts = [
+        f'<rect x="{element.x0:.2f}" y="{element.y0:.2f}" width="{w:.2f}" height="{h:.2f}" fill="url(#{gradient_id})" stroke="{border_hex}" stroke-width="1.00"/>',
+        f'<path d="M {p1[0]:.2f},{p1[1]:.2f} L {p2[0]:.2f},{p2[1]:.2f} L {p3[0]:.2f},{p3[1]:.2f} L {p4[0]:.2f},{p4[1]:.2f} Z" fill="{diag_hex}"/>',
+    ]
+    return SvgEmission(parts=parts, defs=defs)
+
+
 def _rotate_matrix_90cw(matrix: list[list[int]]) -> list[list[int]]:
     h = len(matrix)
     w = len(matrix[0]) if h else 0
@@ -667,7 +824,19 @@ def _convert_from_binary_and_grayscale(
 ) -> None:
     elements = find_elements(binary)
     parts: list[str] = []
+    defs: list[str] = []
     for idx, element in enumerate(elements):
+        frame = decompose_rect_with_diagonal(grayscale, element, f"autoGradient{idx}")
+        if frame is not None:
+            parts.extend(frame.parts)
+            defs.extend(frame.defs)
+            continue
+
+        plus_parts = decompose_plus_shape(grayscale, element)
+        if plus_parts is not None:
+            parts.extend(plus_parts)
+            continue
+
         init = estimate_initial_candidate(element)
         best, _ = optimize_element(element.pixels, init, max_iter=max_iter, plateau_limit=plateau_limit, seed=seed + idx)
         decomposed = decompose_circle_with_stem(grayscale, element, best)
@@ -680,9 +849,13 @@ def _convert_from_binary_and_grayscale(
     width, height = len(binary[0]), len(binary)
     svg = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
+        "<defs>" if defs else "",
+        *defs,
+        "</defs>" if defs else "",
         *parts,
         "</svg>",
     ]
+    svg = [line for line in svg if line]
     output_svg.parent.mkdir(parents=True, exist_ok=True)
     output_svg.write_text("\n".join(svg), encoding="utf-8")
 

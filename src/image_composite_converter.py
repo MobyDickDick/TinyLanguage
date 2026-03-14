@@ -595,21 +595,21 @@ def decompose_plus_shape(grayscale: list[list[int]], element: Element) -> list[s
     """Emit two rects for plus-like components instead of a blob ellipse."""
     h = len(element.pixels)
     w = len(element.pixels[0]) if h else 0
-    if h < 5 or w < 5:
+    if h < 3 or w < 3:
         return None
 
     row_counts = [sum(row) for row in element.pixels]
     col_counts = [sum(element.pixels[y][x] for y in range(h)) for x in range(w)]
     max_row = max(row_counts) if row_counts else 0
     max_col = max(col_counts) if col_counts else 0
-    if max_row < int(w * 0.65) or max_col < int(h * 0.65):
+    if max_row < max(2, int(w * 0.45)) or max_col < max(2, int(h * 0.45)):
         return None
 
     area = sum(sum(row) for row in element.pixels)
     if area <= 0:
         return None
     expected = max_row + max_col - 1
-    if area > expected * 1.9:
+    if area > expected * 2.05:
         return None
 
     cy = row_counts.index(max_row)
@@ -629,7 +629,13 @@ def decompose_plus_shape(grayscale: list[list[int]], element: Element) -> list[s
     while x1 < w - 1 and element.pixels[cy][x1 + 1]:
         x1 += 1
 
-    thickness = max(1, min(max_row, max_col) // 3)
+    row_runs = [sum(1 for xx in range(w) if element.pixels[yy][xx] and y0 <= yy <= y1) for yy in range(h) if row_counts[yy]]
+    col_runs = [sum(1 for yy in range(h) if element.pixels[yy][xx] and x0 <= xx <= x1) for xx in range(w) if col_counts[xx]]
+    base_thickness = min(
+        min(row_runs) if row_runs else max_row,
+        min(col_runs) if col_runs else max_col,
+    )
+    thickness = float(max(1, min(base_thickness, max(1, min(w, h) // 2))))
     color = element_fill_color(grayscale, element)
     gx, gy = element.x0, element.y0
 
@@ -685,16 +691,34 @@ def decompose_rect_with_diagonal(grayscale: list[list[int]], element: Element, g
     avg_dev = sum(abs(x - (a * y + b)) for x, y in fit_points) / n
     thickness = max(2.0, min(w * 0.45, avg_dev * 2.2))
 
-    left_vals = [grayscale[element.y0 + y][element.x0 + x] for y in range(h) for x in range(0, max(1, w // 4)) if element.pixels[y][x]]
-    center_vals = [
-        grayscale[element.y0 + y][element.x0 + x]
-        for y in range(h)
-        for x in range(max(0, w // 3), min(w, (2 * w) // 3))
-        if element.pixels[y][x]
-    ]
-    right_vals = [grayscale[element.y0 + y][element.x0 + x] for y in range(h) for x in range(max(0, (3 * w) // 4), w) if element.pixels[y][x]]
+    interior_vals: list[tuple[int, int, int]] = []
+    diag_vals: list[int] = []
+    for y in range(border_band, h - border_band):
+        for x in range(border_band, w - border_band):
+            if not element.pixels[y][x]:
+                continue
+            value = grayscale[element.y0 + y][element.x0 + x]
+            if abs(x - (a * y + b)) <= max(1.0, thickness * 0.65):
+                diag_vals.append(value)
+            else:
+                interior_vals.append((x, y, value))
+
+    left_cut = border_band + max(1, (w - 2 * border_band) // 3)
+    right_cut = w - border_band - max(1, (w - 2 * border_band) // 3)
+    left_vals = [value for x, _, value in interior_vals if x < left_cut]
+    center_vals = [value for x, _, value in interior_vals if left_cut <= x < right_cut]
+    right_vals = [value for x, _, value in interior_vals if x >= right_cut]
     if not left_vals or not center_vals or not right_vals:
-        return None
+        left_vals = [grayscale[element.y0 + y][element.x0 + x] for y in range(h) for x in range(0, max(1, w // 4)) if element.pixels[y][x]]
+        center_vals = [
+            grayscale[element.y0 + y][element.x0 + x]
+            for y in range(h)
+            for x in range(max(0, w // 3), min(w, (2 * w) // 3))
+            if element.pixels[y][x]
+        ]
+        right_vals = [grayscale[element.y0 + y][element.x0 + x] for y in range(h) for x in range(max(0, (3 * w) // 4), w) if element.pixels[y][x]]
+        if not left_vals or not center_vals or not right_vals:
+            return None
 
     left_hex = gray_to_hex(round(sum(left_vals) / len(left_vals)))
     mid_hex = gray_to_hex(round(sum(center_vals) / len(center_vals)))
@@ -709,7 +733,10 @@ def decompose_rect_with_diagonal(grayscale: list[list[int]], element: Element, g
         / max(1, 2 * (w + h))
     )
     border_hex = gray_to_hex(border_val)
-    diag_hex = gray_to_hex(max(0, border_val - 4))
+    if diag_vals:
+        diag_hex = gray_to_hex(round(sum(diag_vals) / len(diag_vals)))
+    else:
+        diag_hex = gray_to_hex(max(0, border_val - 4))
 
     y_start = h - 1 - border_band
     y_end = border_band
@@ -822,7 +849,8 @@ def _convert_from_binary_and_grayscale(
     plateau_limit: int,
     seed: int,
 ) -> None:
-    elements = find_elements(binary)
+    min_pixels = max(6, int((len(binary) * len(binary[0])) * 0.0015)) if binary and binary[0] else 6
+    elements = find_elements(binary, min_pixels=min_pixels)
     parts: list[str] = []
     defs: list[str] = []
     for idx, element in enumerate(elements):

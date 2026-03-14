@@ -248,6 +248,121 @@ def mutate_svg_tree(root: ET.Element, width: int, height: int, rng: random.Rando
     return mutated
 
 
+def _mutate_circle_structured(node: ET.Element, width: int, height: int, rng: random.Random, sigma: float) -> None:
+    cx = float(node.attrib.get("cx", "0") or 0.0)
+    cy = float(node.attrib.get("cy", "0") or 0.0)
+    r = max(0.6, float(node.attrib.get("r", "0") or 0.0))
+    stroke_width = max(0.2, float(node.attrib.get("stroke-width", "0.2") or 0.2))
+
+    # Second mutation path: operate in geometric parameters (center, radius, stroke)
+    # and then project back to SVG attributes.
+    cx += rng.gauss(0, sigma * 0.65)
+    cy += rng.gauss(0, sigma * 0.65)
+    r = max(0.6, r + rng.gauss(0, sigma * 0.55))
+    stroke_width = max(0.2, stroke_width + rng.gauss(0, sigma * 0.35))
+
+    node.attrib["cx"] = f"{max(0.0, min(float(width), cx)):.2f}"
+    node.attrib["cy"] = f"{max(0.0, min(float(height), cy)):.2f}"
+    node.attrib["r"] = f"{r:.2f}"
+    if "stroke" in node.attrib or "stroke-width" in node.attrib:
+        node.attrib["stroke-width"] = f"{stroke_width:.2f}"
+
+
+def _mutate_line_structured(node: ET.Element, width: int, height: int, rng: random.Random, sigma: float) -> None:
+    x1 = float(node.attrib.get("x1", "0") or 0.0)
+    y1 = float(node.attrib.get("y1", "0") or 0.0)
+    x2 = float(node.attrib.get("x2", "0") or 0.0)
+    y2 = float(node.attrib.get("y2", "0") or 0.0)
+    stroke_width = max(0.2, float(node.attrib.get("stroke-width", "0.2") or 0.2))
+
+    dx = x2 - x1
+    dy = y2 - y1
+    length = max(0.8, math.hypot(dx, dy))
+    angle = math.atan2(dy, dx)
+    mx = (x1 + x2) / 2.0
+    my = (y1 + y2) / 2.0
+
+    # Structured second path: midpoint + direction + length + stroke width.
+    mx += rng.gauss(0, sigma * 0.7)
+    my += rng.gauss(0, sigma * 0.7)
+    angle += rng.gauss(0, sigma * 0.09)
+    length = max(0.8, length + rng.gauss(0, sigma * 0.7))
+    stroke_width = max(0.2, stroke_width + rng.gauss(0, sigma * 0.35))
+
+    half = length / 2.0
+    ndx = math.cos(angle) * half
+    ndy = math.sin(angle) * half
+    nx1 = max(0.0, min(float(width), mx - ndx))
+    ny1 = max(0.0, min(float(height), my - ndy))
+    nx2 = max(0.0, min(float(width), mx + ndx))
+    ny2 = max(0.0, min(float(height), my + ndy))
+
+    node.attrib["x1"] = f"{nx1:.2f}"
+    node.attrib["y1"] = f"{ny1:.2f}"
+    node.attrib["x2"] = f"{nx2:.2f}"
+    node.attrib["y2"] = f"{ny2:.2f}"
+    if "stroke" in node.attrib or "stroke-width" in node.attrib:
+        node.attrib["stroke-width"] = f"{stroke_width:.2f}"
+
+
+def mutate_svg_tree_structured(root: ET.Element, width: int, height: int, rng: random.Random, sigma: float) -> ET.Element:
+    """Alternative reconstruction path based on explicit geometry parameters.
+
+    Circle: center/radius/stroke-width.
+    Line: midpoint/direction/length/stroke-width.
+    """
+    mutated = ET.fromstring(ET.tostring(root, encoding="unicode"))
+    for node in mutated:
+        tag = node.tag.rsplit("}", 1)[-1]
+
+        for key in ("fill", "stroke"):
+            if key in node.attrib:
+                node.attrib[key] = jitter_hex_color(node.attrib[key], rng)
+
+        if tag == "circle":
+            _mutate_circle_structured(node, width=width, height=height, rng=rng, sigma=sigma)
+        elif tag == "line":
+            _mutate_line_structured(node, width=width, height=height, rng=rng, sigma=sigma)
+        else:
+            # Fallback to the current generic method for all other tags.
+            fallback_root = ET.Element("svg")
+            fallback_root.append(node)
+            fallback = mutate_svg_tree(fallback_root, width=width, height=height, rng=rng, sigma=sigma)
+            fallback_node = list(fallback)[0] if list(fallback) else None
+            if fallback_node is not None:
+                node.attrib.clear()
+                node.attrib.update(fallback_node.attrib)
+    return mutated
+
+
+def _candidate_metric_from_tree(
+    code: str,
+    source_label: str,
+    candidate_tree: ET.Element,
+    candidate_path: Path,
+    width: int,
+    height: int,
+    rgb_source: list[list[list[int]]],
+    base_metric: ImageMetric,
+) -> ImageMetric:
+    candidate_path.write_text(ET.tostring(candidate_tree, encoding="unicode"), encoding="utf-8")
+    reconv = rasterize_svg_shapes(candidate_path, width=width, height=height)
+    mae, rmse, exact = compute_metrics(rgb_source, reconv)
+    return ImageMetric(
+        code=code,
+        source_file=source_label,
+        width=width,
+        height=height,
+        mae=mae,
+        rmse=rmse,
+        exact_ratio=exact,
+        max_iter=base_metric.max_iter,
+        plateau_limit=base_metric.plateau_limit,
+        seed=base_metric.seed,
+        svg_path=candidate_path,
+    )
+
+
 def stochastic_refine_svg(
     code: str,
     source_label: str,
@@ -278,12 +393,50 @@ def stochastic_refine_svg(
     with tempfile.TemporaryDirectory(prefix="svg_variation_") as temp_dir:
         temp_dir_path = Path(temp_dir)
         for trial in range(1, variation_trials + 1):
-            candidate_tree = mutate_svg_tree(current_tree, width=w, height=h, rng=rng, sigma=sigma)
-            candidate_path = temp_dir_path / f"{code}_trial{trial:04d}.svg"
-            candidate_path.write_text(ET.tostring(candidate_tree, encoding="unicode"), encoding="utf-8")
+            # Combine existing random attribute jitter with a second structured
+            # geometric search path (circle center/radius and line midpoint/direction).
+            candidate_tree_generic = mutate_svg_tree(current_tree, width=w, height=h, rng=rng, sigma=sigma)
+            candidate_tree_struct = mutate_svg_tree_structured(current_tree, width=w, height=h, rng=rng, sigma=sigma)
 
-            reconv = rasterize_svg_shapes(candidate_path, width=w, height=h)
-            mae, rmse, exact = compute_metrics(rgb_source, reconv)
+            generic_path = temp_dir_path / f"{code}_trial{trial:04d}_generic.svg"
+            structured_path = temp_dir_path / f"{code}_trial{trial:04d}_structured.svg"
+            generic_metric = _candidate_metric_from_tree(
+                code=code,
+                source_label=source_label,
+                candidate_tree=candidate_tree_generic,
+                candidate_path=generic_path,
+                width=w,
+                height=h,
+                rgb_source=rgb_source,
+                base_metric=base_metric,
+            )
+            structured_metric = _candidate_metric_from_tree(
+                code=code,
+                source_label=source_label,
+                candidate_tree=candidate_tree_struct,
+                candidate_path=structured_path,
+                width=w,
+                height=h,
+                rgb_source=rgb_source,
+                base_metric=base_metric,
+            )
+
+            if (structured_metric.mae, structured_metric.rmse, -structured_metric.exact_ratio) < (
+                generic_metric.mae,
+                generic_metric.rmse,
+                -generic_metric.exact_ratio,
+            ):
+                chosen_metric = structured_metric
+                chosen_tree = candidate_tree_struct
+                chosen_temp_path = structured_path
+            else:
+                chosen_metric = generic_metric
+                chosen_tree = candidate_tree_generic
+                chosen_temp_path = generic_path
+
+            mae = chosen_metric.mae
+            rmse = chosen_metric.rmse
+            exact = chosen_metric.exact_ratio
             improved = (mae, rmse, -exact) < (best_metric.mae, best_metric.rmse, -best_metric.exact_ratio)
             if improved:
                 if save_all_variations:
@@ -291,7 +444,7 @@ def stochastic_refine_svg(
                 else:
                     persisted_path = output_svg_dir / f"{code}_best_variation.svg"
                 persisted_path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(candidate_path, persisted_path)
+                shutil.copy2(chosen_temp_path, persisted_path)
                 best_metric = ImageMetric(
                     code=code,
                     source_file=source_label,
@@ -305,7 +458,7 @@ def stochastic_refine_svg(
                     seed=base_metric.seed,
                     svg_path=persisted_path,
                 )
-                current_tree = candidate_tree
+                current_tree = chosen_tree
                 plateau_run = 0
             else:
                 plateau_run += 1
@@ -317,7 +470,7 @@ def stochastic_refine_svg(
             if save_all_variations and not improved:
                 persisted_path = output_svg_dir / f"{code}_trial{trial:04d}.svg"
                 persisted_path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(candidate_path, persisted_path)
+                shutil.copy2(chosen_temp_path, persisted_path)
 
             trace.append(
                 VariationResult(

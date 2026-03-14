@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import random
+import re
 import struct
 from dataclasses import dataclass
 from pathlib import Path
@@ -583,6 +584,159 @@ def decompose_circle_with_stem(
     return parts
 
 
+def _rotate_matrix_90cw(matrix: list[list[int]]) -> list[list[int]]:
+    h = len(matrix)
+    w = len(matrix[0]) if h else 0
+    return [[matrix[h - 1 - y][x] for y in range(h)] for x in range(w)]
+
+
+def _rotate_grayscale_90cw(matrix: list[list[int]]) -> list[list[int]]:
+    h = len(matrix)
+    w = len(matrix[0]) if h else 0
+    return [[matrix[h - 1 - y][x] for y in range(h)] for x in range(w)]
+
+
+def _resize_nn(matrix: list[list[int]], out_w: int, out_h: int) -> list[list[int]]:
+    in_h = len(matrix)
+    in_w = len(matrix[0]) if in_h else 0
+    if in_h == 0 or in_w == 0 or out_w <= 0 or out_h <= 0:
+        return [[0 for _ in range(max(0, out_w))] for _ in range(max(0, out_h))]
+    return [
+        [matrix[min(in_h - 1, int(y * in_h / out_h))][min(in_w - 1, int(x * in_w / out_w))] for x in range(out_w)]
+        for y in range(out_h)
+    ]
+
+
+def _merge_variants(
+    binaries: list[list[list[int]]],
+    grayscales: list[list[list[int]]],
+    *,
+    allow_quarter_turns: bool,
+    preserve_text_orientation: bool,
+) -> tuple[list[list[int]], list[list[int]]]:
+    if not binaries:
+        return [], []
+
+    heights = [len(b) for b in binaries]
+    widths = [len(b[0]) if b else 0 for b in binaries]
+    best_idx = max(range(len(binaries)), key=lambda i: widths[i] * heights[i])
+    out_w = widths[best_idx]
+    out_h = heights[best_idx]
+
+    union = [[0 for _ in range(out_w)] for _ in range(out_h)]
+    composite_gray = [[255 for _ in range(out_w)] for _ in range(out_h)]
+
+    for idx in range(len(binaries)):
+        b0 = _resize_nn(binaries[idx], out_w, out_h)
+        g0 = _resize_nn(grayscales[idx], out_w, out_h)
+
+        variants = [(b0, g0)]
+        if allow_quarter_turns and not preserve_text_orientation:
+            rb, rg = b0, g0
+            for _ in range(3):
+                rb = _rotate_matrix_90cw(rb)
+                rg = _rotate_grayscale_90cw(rg)
+                variants.append((_resize_nn(rb, out_w, out_h), _resize_nn(rg, out_w, out_h)))
+
+        base_iou = -1.0
+        chosen_b, chosen_g = variants[0]
+        if any(any(v for v in row) for row in union):
+            for vb, vg in variants:
+                score = _iou(union, vb)
+                if score > base_iou:
+                    base_iou = score
+                    chosen_b, chosen_g = vb, vg
+
+        for y in range(out_h):
+            for x in range(out_w):
+                if chosen_b[y][x]:
+                    union[y][x] = 1
+                    composite_gray[y][x] = min(composite_gray[y][x], chosen_g[y][x])
+
+    return union, composite_gray
+
+
+def _convert_from_binary_and_grayscale(
+    binary: list[list[int]],
+    grayscale: list[list[int]],
+    output_svg: Path,
+    *,
+    max_iter: int,
+    plateau_limit: int,
+    seed: int,
+) -> None:
+    elements = find_elements(binary)
+    parts: list[str] = []
+    for idx, element in enumerate(elements):
+        init = estimate_initial_candidate(element)
+        best, _ = optimize_element(element.pixels, init, max_iter=max_iter, plateau_limit=plateau_limit, seed=seed + idx)
+        decomposed = decompose_circle_with_stem(grayscale, element, best)
+        if decomposed is not None:
+            parts.extend(decomposed)
+        else:
+            fill_color, stroke_color, stroke_width = estimate_stroke_style(grayscale, element, best)
+            parts.append(candidate_to_svg(best, element.x0, element.y0, fill_color, stroke_color, stroke_width))
+
+    width, height = len(binary[0]), len(binary)
+    svg = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
+        *parts,
+        "</svg>",
+    ]
+    output_svg.parent.mkdir(parents=True, exist_ok=True)
+    output_svg.write_text("\n".join(svg), encoding="utf-8")
+
+
+def convert_image_variants(
+    image_paths: list[Path],
+    output_svg: Path,
+    *,
+    max_iter: int,
+    plateau_limit: int,
+    seed: int,
+    threshold_mode: str = "auto",
+    threshold: int = 220,
+    allow_quarter_turns: bool = False,
+    preserve_text_orientation: bool = True,
+) -> None:
+    if not image_paths:
+        raise ValueError("convert_image_variants requires at least one image path")
+
+    binaries: list[list[list[int]]] = []
+    grays: list[list[list[int]]] = []
+    for image_path in image_paths:
+        grayscale = load_grayscale_image(image_path)
+        mode = threshold_mode.lower()
+        if mode == "auto":
+            mode = "otsu" if image_path.suffix.lower() in {".jpg", ".jpeg"} else "global"
+        if mode == "global":
+            binary = [[1 if value < threshold else 0 for value in row] for row in grayscale]
+        elif mode == "otsu":
+            otsu_threshold = _compute_otsu_threshold(grayscale)
+            binary = [[1 if value < otsu_threshold else 0 for value in row] for row in grayscale]
+        elif mode == "adaptive":
+            binary = _adaptive_threshold(grayscale)
+        else:
+            raise ValueError(f"Unknown threshold mode '{threshold_mode}'. Expected one of: auto, global, otsu, adaptive")
+        binaries.append(binary)
+        grays.append(grayscale)
+
+    merged_binary, merged_gray = _merge_variants(
+        binaries,
+        grays,
+        allow_quarter_turns=allow_quarter_turns,
+        preserve_text_orientation=preserve_text_orientation,
+    )
+    _convert_from_binary_and_grayscale(
+        merged_binary,
+        merged_gray,
+        output_svg,
+        max_iter=max_iter,
+        plateau_limit=plateau_limit,
+        seed=seed,
+    )
+
+
 def convert_image(
     image_path: Path,
     output_svg: Path,
@@ -607,26 +761,14 @@ def convert_image(
     else:
         raise ValueError(f"Unknown threshold mode '{threshold_mode}'. Expected one of: auto, global, otsu, adaptive")
 
-    elements = find_elements(binary)
-    parts: list[str] = []
-    for idx, element in enumerate(elements):
-        init = estimate_initial_candidate(element)
-        best, _ = optimize_element(element.pixels, init, max_iter=max_iter, plateau_limit=plateau_limit, seed=seed + idx)
-        decomposed = decompose_circle_with_stem(grayscale, element, best)
-        if decomposed is not None:
-            parts.extend(decomposed)
-        else:
-            fill_color, stroke_color, stroke_width = estimate_stroke_style(grayscale, element, best)
-            parts.append(candidate_to_svg(best, element.x0, element.y0, fill_color, stroke_color, stroke_width))
-
-    width, height = len(binary[0]), len(binary)
-    svg = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
-        *parts,
-        "</svg>",
-    ]
-    output_svg.parent.mkdir(parents=True, exist_ok=True)
-    output_svg.write_text("\n".join(svg), encoding="utf-8")
+    _convert_from_binary_and_grayscale(
+        binary,
+        grayscale,
+        output_svg,
+        max_iter=max_iter,
+        plateau_limit=plateau_limit,
+        seed=seed,
+    )
 
 
 def iter_images(folder: Path) -> Iterable[Path]:
@@ -638,6 +780,19 @@ def iter_images(folder: Path) -> Iterable[Path]:
             yield item
 
 
+
+def variant_group_key(path: Path) -> str:
+    stem = path.stem
+    m = re.match(r"^(.*?)(?:_(?:XXL|XL|L|M|S|XS|\d+))?$", stem, flags=re.IGNORECASE)
+    return (m.group(1) if m else stem).lower()
+
+
+def group_image_variants(images: list[Path]) -> list[list[Path]]:
+    groups: dict[str, list[Path]] = {}
+    for image in images:
+        groups.setdefault(variant_group_key(image), []).append(image)
+    return [sorted(v) for _, v in sorted(groups.items(), key=lambda item: item[0])]
+
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Raster->SVG converter via random search and plateau narrowing")
     p.add_argument("input_dir", type=Path)
@@ -647,6 +802,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--threshold-mode", choices=["auto", "global", "otsu", "adaptive"], default="auto")
     p.add_argument("--threshold", type=int, default=220)
+    p.add_argument("--merge-variants", action="store_true", help="Merge similarly named image variants into one SVG")
+    p.add_argument("--allow-quarter-turns", action="store_true", help="Allow 90° rotation matching while merging variants")
+    p.add_argument("--preserve-text-orientation", action="store_true", default=True, help="Do not rotate variants while merging (default: true)")
+    p.add_argument("--no-preserve-text-orientation", dest="preserve_text_orientation", action="store_false", help="Permit rotated alignment that may rotate text")
     return p
 
 
@@ -657,18 +816,35 @@ def main() -> int:
         print(f"No images found in {args.input_dir}")
         return 1
 
-    for image in images:
-        out = args.output_dir / f"{image.stem}.svg"
-        convert_image(
-            image,
-            out,
-            max_iter=args.max_iter,
-            plateau_limit=args.plateau_limit,
-            seed=args.seed,
-            threshold_mode=args.threshold_mode,
-            threshold=args.threshold,
-        )
-        print(f"converted: {image.name} -> {out}")
+    if args.merge_variants:
+        for group in group_image_variants(images):
+            representative = max(group, key=lambda p: p.stat().st_size)
+            out = args.output_dir / f"{variant_group_key(representative)}.svg"
+            convert_image_variants(
+                group,
+                out,
+                max_iter=args.max_iter,
+                plateau_limit=args.plateau_limit,
+                seed=args.seed,
+                threshold_mode=args.threshold_mode,
+                threshold=args.threshold,
+                allow_quarter_turns=args.allow_quarter_turns,
+                preserve_text_orientation=args.preserve_text_orientation,
+            )
+            print(f"converted-group: {', '.join(img.name for img in group)} -> {out}")
+    else:
+        for image in images:
+            out = args.output_dir / f"{image.stem}.svg"
+            convert_image(
+                image,
+                out,
+                max_iter=args.max_iter,
+                plateau_limit=args.plateau_limit,
+                seed=args.seed,
+                threshold_mode=args.threshold_mode,
+                threshold=args.threshold,
+            )
+            print(f"converted: {image.name} -> {out}")
     return 0
 
 

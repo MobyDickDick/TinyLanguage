@@ -365,3 +365,60 @@ def test_convert_from_binary_and_grayscale_emits_defs_for_frame(tmp_path: Path) 
     assert '<defs>' in text
     assert '<linearGradient' in text
     assert '<path d="M ' in text
+
+
+def test_decompose_plus_shape_detects_small_cross() -> None:
+    w = h = 8
+    grayscale = [[255 for _ in range(w)] for _ in range(h)]
+    pixels = [[0 for _ in range(w)] for _ in range(h)]
+
+    for y in range(1, 7):
+        pixels[y][3] = 1
+        pixels[y][4] = 1
+        grayscale[y][3] = 120
+        grayscale[y][4] = 120
+    for x in range(1, 7):
+        pixels[3][x] = 1
+        pixels[4][x] = 1
+        grayscale[3][x] = 120
+        grayscale[4][x] = 120
+
+    element = conv.Element(pixels=pixels, x0=0, y0=0, x1=w - 1, y1=h - 1)
+    parts = conv.decompose_plus_shape(grayscale, element)
+
+    assert parts is not None
+    assert len(parts) == 2
+    assert all(part.startswith('<rect ') for part in parts)
+
+
+def test_decompose_rect_with_diagonal_uses_brighter_interior_gradient() -> None:
+    w, h = 35, 72
+    grayscale = [[255 for _ in range(w)] for _ in range(h)]
+    pixels = [[0 for _ in range(w)] for _ in range(h)]
+
+    for y in range(h):
+        for x in range(w):
+            pixels[y][x] = 1
+            if x in {0, w - 1} or y in {0, h - 1}:
+                grayscale[y][x] = 140
+            elif x < w // 3:
+                grayscale[y][x] = 202
+            elif x < (2 * w) // 3:
+                grayscale[y][x] = 244
+            else:
+                grayscale[y][x] = 198
+
+    for y in range(1, h - 1):
+        x = int((w - 2) - ((w - 4) * y / (h - 1)))
+        for t in (-1, 0):
+            xx = x + t
+            if 1 <= xx < w - 1:
+                grayscale[y][xx] = 134
+
+    element = conv.Element(pixels=pixels, x0=0, y0=0, x1=w - 1, y1=h - 1)
+    emitted = conv.decompose_rect_with_diagonal(grayscale, element, 'g1')
+
+    assert emitted is not None
+    gradient = next(d for d in emitted.defs if 'linearGradient' in d)
+    assert 'stop-color="#f4f4f4"' in gradient
+    assert 'stop-color="#caca' in gradient or 'stop-color="#c6c6' in gradient

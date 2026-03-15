@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 import src.image_composite_converter as image_composite_converter
-from src.image_composite_converter import Action
+from src.image_composite_converter import Action, _clip
 
 
 def test_co2_label_defaults_use_center_co_anchor_mode() -> None:
@@ -1935,3 +1935,18 @@ def test_optimize_circle_pose_adaptive_domain_logs_random_domain_steps() -> None
     assert any("Möglichkeitsraum" in line for line in logs)
     assert any("random-samples" in line for line in logs)
     assert any("Möglichkeitsraum eingegrenzt" in line for line in logs)
+
+
+def test_clip_scalar_inverted_bounds_collapse_to_upper_bound() -> None:
+    """Scalar clip fallback should mirror numpy for inverted bounds (low > high)."""
+    assert _clip(3.0, 5.0, 2.0) == 2.0
+    assert _clip(8.0, 5.0, 2.0) == 2.0
+
+
+def test_circle_sampling_clip_preserves_upper_cap_with_inverted_bounds() -> None:
+    """Inverted circle radius bounds should still clamp sampled radii to the upper cap."""
+    params = {"shape": "circle", "cx": 12.0, "cy": 12.0, "r": 10.0, "min_circle_radius": 20.0}
+    _x_low, _x_high, _y_low, _y_high, r_low, r_high = Action._circle_bounds(params, w=24, h=24)
+
+    assert r_low > r_high
+    assert _clip(100.0, r_low, r_high) == r_high

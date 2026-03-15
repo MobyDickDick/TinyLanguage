@@ -6442,8 +6442,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--csv-path", default=None, help="Expliziter Pfad zur CSV/Export-Tabelle")
     parser.add_argument("--output-dir", default=None, help="Explizites Ausgabeverzeichnis")
-    parser.add_argument("--start", default="AR0102", help="Start-Referenz (inkl.), default: AR0102")
-    parser.add_argument("--end", default="AR0104", help="End-Referenz (inkl.), default: AR0104")
+    parser.add_argument("--start", default="", help="Start-Referenz (inkl.), default: kein unteres Limit")
+    parser.add_argument("--end", default="ZZZZZZ", help="End-Referenz (inkl.), default: ZZZZZZ")
     parser.add_argument(
         "--debug-ac0811-dir",
         default=None,
@@ -6525,20 +6525,6 @@ def main(argv: list[str] | None = None) -> int:
     elif not os.path.exists(csv_path):
         print(f"[WARN] CSV/TSV-Datei nicht gefunden: {csv_path}")
 
-    csv_path = args.csv_path
-    output_dir = args.output_dir
-    if args.csv_or_output:
-        c = str(args.csv_or_output)
-        looks_like_csv = c.lower().endswith(".csv") or c.lower().endswith(".tsv")
-        if csv_path is None and looks_like_csv:
-            csv_path = c
-        elif output_dir is None and not looks_like_csv:
-            output_dir = c
-        elif csv_path is None:
-            csv_path = c
-
-    if csv_path is None:
-        csv_path = ""
 
     if args.bootstrap_deps:
         try:

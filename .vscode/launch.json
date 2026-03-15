@@ -777,7 +777,14 @@
       "console": "integratedTerminal",
       "args": [
         "${workspaceFolder}/artifacts/images_to_convert",
-        "${workspaceFolder}/artifacts/converted_images"
+        "--csv-path",
+        "${workspaceFolder}/artifacts/images_to_convert/reference_roundtrip_3symbols.csv",
+        "--output-dir",
+        "${workspaceFolder}/artifacts/converted_images",
+        "--start",
+        "AC0000",
+        "--end",
+        "ZZ9999"
       ],
       "logToFile": true,
       "justMyCode": false,

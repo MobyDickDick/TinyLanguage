@@ -6525,20 +6525,6 @@ def main(argv: list[str] | None = None) -> int:
     elif not os.path.exists(csv_path):
         print(f"[WARN] CSV/TSV-Datei nicht gefunden: {csv_path}")
 
-    csv_path = args.csv_path
-    output_dir = args.output_dir
-    if args.csv_or_output:
-        c = str(args.csv_or_output)
-        looks_like_csv = c.lower().endswith(".csv") or c.lower().endswith(".tsv")
-        if csv_path is None and looks_like_csv:
-            csv_path = c
-        elif output_dir is None and not looks_like_csv:
-            output_dir = c
-        elif csv_path is None:
-            csv_path = c
-
-    if csv_path is None:
-        csv_path = ""
 
     if args.bootstrap_deps:
         try:

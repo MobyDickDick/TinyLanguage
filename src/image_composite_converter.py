@@ -735,6 +735,49 @@ class Action:
         return p
 
     @staticmethod
+    def _estimate_border_background_gray(gray: np.ndarray) -> float:
+        """Estimate badge background tone from the outer image border pixels."""
+        if gray.size == 0:
+            return 255.0
+        h, w = gray.shape
+        if h < 2 or w < 2:
+            return float(np.median(gray))
+        border = np.concatenate((gray[0, :], gray[h - 1, :], gray[:, 0], gray[:, w - 1]))
+        return float(np.median(border))
+
+    @staticmethod
+    def _estimate_circle_tones_and_stroke(
+        gray: np.ndarray,
+        cx: float,
+        cy: float,
+        r: float,
+        stroke_hint: float,
+    ) -> tuple[float, float, float]:
+        """Estimate fill/ring grayscale and stroke width for circular ring-like badges."""
+        yy, xx = np.indices(gray.shape)
+        dist = np.sqrt((xx - float(cx)) ** 2 + (yy - float(cy)) ** 2)
+
+        inner_mask = dist <= max(1.0, float(r) * 0.78)
+        fill_gray = float(np.median(gray[inner_mask])) if np.any(inner_mask) else float(np.median(gray))
+
+        search_band = max(2.0, min(float(r) * 0.30, 5.0))
+        ring_search = np.abs(dist - float(r)) <= search_band
+        ring_vals = gray[ring_search] if np.any(ring_search) else gray
+        ring_gray = float(np.median(ring_vals))
+
+        # Prefer the darker contour around the estimated radius when present.
+        dark_cut = fill_gray - 2.0
+        dark_ring = ring_search & (gray <= dark_cut)
+        if np.any(dark_ring):
+            ring_gray = float(np.median(gray[dark_ring]))
+            d = np.abs(dist - float(r))[dark_ring]
+            stroke_est = float(max(1.0, min(6.0, np.percentile(d, 72) * 2.0)))
+        else:
+            stroke_est = float(max(1.0, min(6.0, stroke_hint)))
+
+        return fill_gray, ring_gray, stroke_est
+
+    @staticmethod
     def _persist_connector_length_floor(params: dict, element: str, default_ratio: float) -> None:
         """Persist a robust minimum connector length for later validation stages."""
         if element == "stem":
@@ -1077,65 +1120,9 @@ class Action:
             params["cy"] = cy
             params["r"] = r
 
-    stem_values = [
-        grayscale[element.y0 + y][element.x0 + x]
-        for y in range(sy0, sy1 + 1)
-        for x in range(sx0, sx1 + 1)
-        if element.pixels[y][x]
-    ]
-    stem_color = gray_to_hex(round(sum(stem_values) / max(1, len(stem_values))))
-    fill_color, stroke_color, stroke_width = estimate_stroke_style(grayscale, element, circle_candidate)
-
-    stem_x = element.x0 + sx0
-    stem_y = element.y0 + sy0
-    stem_wf = float(stem_w)
-    stem_hf = float(stem_h)
-
-    if stem_direction in {"bottom", "top"}:
-        circle_cx = element.x0 + circle_candidate.cx
-        stem_x = circle_cx - stem_wf / 2.0
-
-        radius = max(1.0, (circle_candidate.w + circle_candidate.h) / 4.0)
-        circle_cy = element.y0 + circle_candidate.cy
-        overlap = max(0.6, (stroke_width or 0.0) * 0.55)
-        old_bottom = (element.y0 + sy0) + stem_hf
-
-        if stem_direction == "bottom":
-            stem_y = circle_cy + radius - overlap
-            stem_hf = max(1.0, old_bottom - stem_y)
-        else:
-            old_top = element.y0 + sy0
-            old_right = (element.x0 + sx0) + stem_wf
-            stem_y = old_top
-            stem_hf = max(1.0, (circle_cy - radius + overlap) - stem_y)
-            stem_x = min(stem_x, old_right - stem_wf)
-
-    if stem_direction in {"left", "right"}:
-        circle_cy = element.y0 + circle_candidate.cy
-        stem_y = circle_cy - stem_hf / 2.0
-
-        radius = max(1.0, (circle_candidate.w + circle_candidate.h) / 4.0)
-        circle_cx = element.x0 + circle_candidate.cx
-        overlap = max(0.6, (stroke_width or 0.0) * 0.55)
-        old_right = (element.x0 + sx0) + stem_wf
-
-        if stem_direction == "right":
-            stem_x = circle_cx + radius - overlap
-            stem_wf = max(1.0, old_right - stem_x)
-        else:
-            old_left = element.x0 + sx0
-            old_bottom = (element.y0 + sy0) + stem_hf
-            stem_x = old_left
-            stem_wf = max(1.0, (circle_cx - radius + overlap) - stem_x)
-            stem_y = min(stem_y, old_bottom - stem_hf)
-
-    parts: list[str] = []
-    parts.append(
-        f'<rect x="{stem_x:.2f}" y="{stem_y:.2f}" '
-        f'width="{stem_wf:.2f}" height="{stem_hf:.2f}" fill="{stem_color}"/>'
-    )
-    parts.append(candidate_to_svg(circle_candidate, element.x0, element.y0, fill_color, stroke_color, stroke_width))
-    return parts
+        if w <= 18:
+            default_cx = float(defaults.get("cx", float(w) / 2.0))
+            default_cy = float(defaults.get("cy", float(w) / 2.0))
 
             # Ensure the fitted circle remains fully inside the canvas with stroke taken
             # into account so it is not clipped at the edges.
@@ -1943,7 +1930,16 @@ class Action:
                     continue
                 fill_gray = float(np.median(gray[fill_mask]))
                 ring_gray = float(np.median(gray[ring_mask]))
-                score = abs(fill_gray - 220.0) + abs(ring_gray - 152.0)
+                # Generalized scoring for circle+ring symbols:
+                # - prefer ring darker than fill with clear contrast,
+                # - keep geometric closeness to semantic template.
+                contrast = fill_gray - ring_gray
+                tone_penalty = 0.0
+                if contrast < 4.0:
+                    tone_penalty += (4.0 - contrast) * 4.0
+                if ring_gray >= fill_gray:
+                    tone_penalty += (ring_gray - fill_gray + 1.0) * 6.0
+                score = tone_penalty
                 # Prefer circles that stay close to the semantic template size/
                 # position so all AC08xx variants remain stable across JPEG noise.
                 score += (center_offset / max_center_offset) * 9.0
@@ -1956,8 +1952,22 @@ class Action:
                 params["cx"] = cx
                 params["cy"] = cy
                 params["r"] = r
-                params["fill_gray"] = int(round(fill_gray))
-                params["stroke_gray"] = int(round(ring_gray))
+                est_fill, est_ring, est_stroke = Action._estimate_circle_tones_and_stroke(
+                    gray,
+                    cx,
+                    cy,
+                    r,
+                    float(params.get("stroke_circle", defaults.get("stroke_circle", 1.2))),
+                )
+                params["fill_gray"] = int(round(est_fill))
+                params["stroke_gray"] = int(round(est_ring))
+                has_connector = bool(params.get("arm_enabled") or params.get("stem_enabled"))
+                has_text = bool(params.get("draw_text", False))
+                if not has_connector and not has_text:
+                    params["stroke_circle"] = float(max(1.0, est_stroke))
+                    bg_gray = Action._estimate_border_background_gray(gray)
+                    if bg_gray >= 240.0:
+                        params["background_fill"] = "#ffffff"
 
         # Keep contour/Hough noise from collapsing circles far below the semantic
         # template size. This was most visible for compact centered badges
@@ -2108,8 +2118,8 @@ class Action:
             defaults = {
                 "cx": 15.0 * scale,
                 "cy": 15.0 * scale,
-                "r": 12.0 * scale,
-                "stroke_circle": 2.0 * scale,
+                "r": 10.8 * scale,
+                "stroke_circle": 1.5 * scale,
                 "fill_gray": 220,
                 "stroke_gray": 152,
                 "draw_text": False,
@@ -2261,6 +2271,12 @@ class Action:
         elements = [
             f'<svg width="{w}px" height="{h}px" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">'
         ]
+
+        background_fill = p.get("background_fill")
+        if background_fill:
+            elements.append(
+                f'  <rect x="0" y="0" width="{float(w):.4f}" height="{float(h):.4f}" fill="{background_fill}"/>'
+            )
 
         if p.get("arm_enabled"):
             arm_y1 = p.get("arm_y1", p.get("arm_y", 0.0))

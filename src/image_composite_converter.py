@@ -16,6 +16,7 @@ import time
 import re
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 import importlib
@@ -401,41 +402,82 @@ class Perception:
     def __post_init__(self) -> None:
         self.base_name = get_base_name_from_file(os.path.basename(self.img_path))
         self.img = cv2.imread(self.img_path)
-        self.raw_desc = self._load_csv()
+        self.raw_desc = self._load_descriptions()
 
-    def _load_csv(self) -> dict[str, str]:
-        raw_desc: dict[str, str] = {}
-        if not os.path.exists(self.csv_path):
+    def _load_descriptions(self) -> dict[str, str]:
+        return _load_description_mapping(self.csv_path)
+
+
+def _load_description_mapping(path: str) -> dict[str, str]:
+    ext = os.path.splitext(path)[1].lower()
+    if ext == ".xml":
+        return _load_description_mapping_from_xml(path)
+    return _load_description_mapping_from_csv(path)
+
+
+def _load_description_mapping_from_csv(path: str) -> dict[str, str]:
+    raw_desc: dict[str, str] = {}
+    if not os.path.exists(path):
+        return raw_desc
+
+    with open(path, mode="r", encoding="utf-8-sig") as f:
+        content = f.read()
+        delimiter = ";" if ";" in content.split("\n", 1)[0] else ","
+        f.seek(0)
+        reader = csv.reader(f, delimiter=delimiter)
+        headers = next(reader, None)
+        if not headers:
             return raw_desc
 
-        with open(self.csv_path, mode="r", encoding="utf-8-sig") as f:
-            content = f.read()
-            delimiter = ";" if ";" in content.split("\n", 1)[0] else ","
-            f.seek(0)
-            reader = csv.reader(f, delimiter=delimiter)
-            headers = next(reader, None)
-            if not headers:
-                return raw_desc
+        root_idx, desc_idx = -1, -1
+        for i, h in enumerate(headers):
+            low = h.lower()
+            if "wurzelform" in low:
+                root_idx = i
+            elif "beschreibung" in low:
+                desc_idx = i
+        if root_idx == -1:
+            root_idx = 1
+        if desc_idx == -1:
+            desc_idx = 2
 
-            root_idx, desc_idx = -1, -1
-            for i, h in enumerate(headers):
-                low = h.lower()
-                if "wurzelform" in low:
-                    root_idx = i
-                elif "beschreibung" in low:
-                    desc_idx = i
-            if root_idx == -1:
-                root_idx = 1
-            if desc_idx == -1:
-                desc_idx = 2
+        for row in reader:
+            if len(row) > max(root_idx, desc_idx):
+                root_name = row[root_idx].strip()
+                desc = row[desc_idx].strip()
+                if root_name:
+                    raw_desc[root_name] = desc
+    return raw_desc
 
-            for row in reader:
-                if len(row) > max(root_idx, desc_idx):
-                    root_name = row[root_idx].strip()
-                    desc = row[desc_idx].strip()
-                    if root_name:
-                        raw_desc[root_name] = desc
+
+def _load_description_mapping_from_xml(path: str) -> dict[str, str]:
+    raw_desc: dict[str, str] = {}
+    if not os.path.exists(path):
         return raw_desc
+
+    try:
+        tree = ET.parse(path)
+    except ET.ParseError:
+        return raw_desc
+
+    root = tree.getroot()
+    for entry in root.findall(".//entry"):
+        desc = (entry.findtext("beschreibung") or "").strip()
+        root_form = (entry.findtext("wurzelform") or "").strip()
+        key = str(entry.attrib.get("key", "")).strip()
+
+        if root_form and desc:
+            raw_desc[root_form] = desc
+        if key and desc:
+            raw_desc[key] = desc
+
+        for image_tag in entry.findall("./bilder/bild"):
+            image_name = (image_tag.text or "").strip()
+            image_stem = os.path.splitext(image_name)[0].strip()
+            if image_stem and desc:
+                raw_desc[image_stem] = desc
+
+    return raw_desc
 
 
 class Reflection:
@@ -6427,7 +6469,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         nargs="?",
         default=None,
         help=(
-            "Optional: Pfad zur CSV/Export-Tabelle ODER Ausgabeverzeichnis für konvertierte Dateien. "
+            "Optional: Pfad zur CSV/TSV/XML-Export-Tabelle ODER Ausgabeverzeichnis für konvertierte Dateien. "
             "(Kompatibilität: bisheriger 2. Positionsparameter)"
         ),
     )
@@ -6438,7 +6480,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=128,
         help="Anzahl der Iterationen (optional, default: 128)",
     )
-    parser.add_argument("--csv-path", default=None, help="Expliziter Pfad zur CSV/Export-Tabelle")
+    parser.add_argument("--csv-path", default=None, help="Expliziter Pfad zur CSV/TSV/XML-Export-Tabelle")
     parser.add_argument("--output-dir", default=None, help="Explizites Ausgabeverzeichnis")
     parser.add_argument("--start", default="", help="Start-Referenz (inkl.), default: kein unteres Limit")
     parser.add_argument("--end", default="ZZZZZZ", help="End-Referenz (inkl.), default: ZZZZZZ")
@@ -6464,11 +6506,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def _auto_detect_csv_path(folder_path: str) -> str | None:
-    """Best-effort CSV lookup for CLI compatibility mode.
+    """Best-effort table lookup for CLI compatibility mode.
 
     Priority:
-    1) CSV/TSV files directly inside ``folder_path``
-    2) CSV/TSV files in the parent directory of ``folder_path``
+    1) CSV/TSV/XML files directly inside ``folder_path``
+    2) CSV/TSV/XML files in the parent directory of ``folder_path``
     """
     candidates: list[str] = []
     roots = [folder_path, os.path.dirname(folder_path)]
@@ -6477,7 +6519,7 @@ def _auto_detect_csv_path(folder_path: str) -> str | None:
             continue
         for name in sorted(os.listdir(root)):
             lower = name.lower()
-            if lower.endswith(".csv") or lower.endswith(".tsv"):
+            if lower.endswith(".csv") or lower.endswith(".tsv") or lower.endswith(".xml"):
                 candidates.append(os.path.join(root, name))
         if candidates:
             break
@@ -6495,12 +6537,12 @@ def _auto_detect_csv_path(folder_path: str) -> str | None:
 
 
 def _resolve_cli_csv_and_output(args: argparse.Namespace) -> tuple[str, str | None]:
-    """Resolve effective CSV and output directory from mixed CLI styles."""
+    """Resolve effective table path and output directory from mixed CLI styles."""
     csv_path = args.csv_path
     output_dir = args.output_dir
     if args.csv_or_output:
         c = str(args.csv_or_output)
-        looks_like_csv = c.lower().endswith(".csv") or c.lower().endswith(".tsv")
+        looks_like_csv = c.lower().endswith(".csv") or c.lower().endswith(".tsv") or c.lower().endswith(".xml")
         if csv_path is None and looks_like_csv:
             csv_path = c
         elif output_dir is None and not looks_like_csv:
@@ -6519,9 +6561,9 @@ def main(argv: list[str] | None = None) -> int:
     csv_path, output_dir = _resolve_cli_csv_and_output(args)
 
     if not csv_path:
-        print("[WARN] Keine CSV/TSV angegeben oder gefunden. Einige Symbole können ohne Beschreibung übersprungen werden.")
+        print("[WARN] Keine CSV/TSV/XML angegeben oder gefunden. Einige Symbole können ohne Beschreibung übersprungen werden.")
     elif not os.path.exists(csv_path):
-        print(f"[WARN] CSV/TSV-Datei nicht gefunden: {csv_path}")
+        print(f"[WARN] CSV/TSV/XML-Datei nicht gefunden: {csv_path}")
 
 
     if args.bootstrap_deps:

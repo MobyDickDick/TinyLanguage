@@ -2083,3 +2083,21 @@ def test_circle_sampling_clip_preserves_upper_cap_with_inverted_bounds() -> None
 
     assert r_low > r_high
     assert _clip(100.0, r_low, r_high) == r_high
+
+
+def test_parse_args_allows_two_positional_paths_with_default_iterations() -> None:
+    """CLI should accept `folder output_dir` without requiring iterations."""
+    args = conv.parse_args(["in_folder", "out_folder"])
+
+    assert args.folder_path == "in_folder"
+    assert args.csv_or_output == "out_folder"
+    assert int(args.iterations) == 128
+
+
+def test_parse_args_keeps_legacy_three_positional_arguments() -> None:
+    """Backward compatibility: `folder csv iterations` still parses unchanged."""
+    args = conv.parse_args(["in_folder", "table.csv", "64"])
+
+    assert args.folder_path == "in_folder"
+    assert args.csv_or_output == "table.csv"
+    assert int(args.iterations) == 64

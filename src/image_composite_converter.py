@@ -5729,8 +5729,9 @@ def convert_range(
     end_ref: str = "AR0104",
     debug_ac0811_dir: str | None = None,
     debug_element_diff_dir: str | None = None,
+    output_root: str | None = None,
 ) -> str:
-    out_root = _default_converted_symbols_root()
+    out_root = output_root or _default_converted_symbols_root()
     svg_out_dir = os.path.join(out_root, "svg")
     diff_out_dir = os.path.join(out_root, "diff_pngs")
     reports_out_dir = os.path.join(out_root, "reports")
@@ -6423,8 +6424,24 @@ def _write_pixel_delta2_ranking(folder_path: str, svg_out_dir: str, reports_out_
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("folder_path", help="Pfad zum Ordner mit den Bildern")
-    parser.add_argument("csv_path", help="Pfad zur CSV/Export-Tabelle")
-    parser.add_argument("iterations", type=int, help="Anzahl der Iterationen (z.B. 8)")
+    parser.add_argument(
+        "csv_or_output",
+        nargs="?",
+        default=None,
+        help=(
+            "Optional: Pfad zur CSV/Export-Tabelle ODER Ausgabeverzeichnis für konvertierte Dateien. "
+            "(Kompatibilität: bisheriger 2. Positionsparameter)"
+        ),
+    )
+    parser.add_argument(
+        "iterations",
+        nargs="?",
+        type=int,
+        default=128,
+        help="Anzahl der Iterationen (optional, default: 128)",
+    )
+    parser.add_argument("--csv-path", default=None, help="Expliziter Pfad zur CSV/Export-Tabelle")
+    parser.add_argument("--output-dir", default=None, help="Explizites Ausgabeverzeichnis")
     parser.add_argument("--start", default="AR0102", help="Start-Referenz (inkl.), default: AR0102")
     parser.add_argument("--end", default="AR0104", help="End-Referenz (inkl.), default: AR0104")
     parser.add_argument(
@@ -6451,6 +6468,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
 
+    csv_path = args.csv_path
+    output_dir = args.output_dir
+    if args.csv_or_output:
+        c = str(args.csv_or_output)
+        looks_like_csv = c.lower().endswith(".csv") or c.lower().endswith(".tsv")
+        if csv_path is None and looks_like_csv:
+            csv_path = c
+        elif output_dir is None and not looks_like_csv:
+            output_dir = c
+        elif csv_path is None:
+            csv_path = c
+
+    if csv_path is None:
+        csv_path = ""
+
     if args.bootstrap_deps:
         try:
             installed = _bootstrap_required_image_dependencies()
@@ -6462,12 +6494,13 @@ def main(argv: list[str] | None = None) -> int:
 
     out_dir = convert_range(
         args.folder_path,
-        args.csv_path,
+        csv_path,
         args.iterations,
         args.start,
         args.end,
         args.debug_ac0811_dir,
         args.debug_element_diff_dir,
+        output_dir,
     )
     print(f"\nAbgeschlossen! Ausgaben unter: {out_dir}")
     return 0

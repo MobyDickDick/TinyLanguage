@@ -3,9 +3,11 @@ from __future__ import annotations
 import argparse
 import csv
 import math
+import random
 import shutil
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -41,6 +43,18 @@ class ImageMetric:
     plateau_limit: int
     seed: int
     svg_path: Path
+
+
+@dataclass
+class VariationResult:
+    code: str
+    source_file: str
+    trial: int
+    mae: float
+    rmse: float
+    exact_ratio: float
+    improved: bool
+    plateau_run: int
 
 
 def read_codes(csv_path: Path) -> list[str]:
@@ -145,34 +159,333 @@ def choose_best_for_code(
     rgb_source: list[list[list[int]]],
     params: list[ParamSet],
     work_svg_dir: Path,
+    per_param_trials: int,
+    per_param_seed_step: int,
 ) -> tuple[ImageMetric, list[ImageMetric]]:
     h = len(rgb_source)
     w = len(rgb_source[0]) if h else 0
     metrics: list[ImageMetric] = []
     for p in params:
-        svg_path = work_svg_dir / p.name / f"{code}.svg"
-        svg_path.parent.mkdir(parents=True, exist_ok=True)
-        convert_image(source, svg_path, max_iter=p.max_iter, plateau_limit=p.plateau_limit, seed=p.seed)
-        reconv = rasterize_svg_shapes(svg_path, width=w, height=h)
-        mae, rmse, exact = compute_metrics(rgb_source, reconv)
-        metrics.append(
-            ImageMetric(
-                code=code,
-                source_file=source_label,
-                width=w,
-                height=h,
-                mae=mae,
-                rmse=rmse,
-                exact_ratio=exact,
-                max_iter=p.max_iter,
-                plateau_limit=p.plateau_limit,
-                seed=p.seed,
-                svg_path=svg_path,
+        for trial in range(per_param_trials):
+            trial_seed = p.seed + trial * per_param_seed_step
+            svg_path = work_svg_dir / p.name / f"{code}_trial{trial + 1:03d}_seed{trial_seed}.svg"
+            svg_path.parent.mkdir(parents=True, exist_ok=True)
+            convert_image(source, svg_path, max_iter=p.max_iter, plateau_limit=p.plateau_limit, seed=trial_seed)
+            reconv = rasterize_svg_shapes(svg_path, width=w, height=h)
+            mae, rmse, exact = compute_metrics(rgb_source, reconv)
+            metrics.append(
+                ImageMetric(
+                    code=code,
+                    source_file=source_label,
+                    width=w,
+                    height=h,
+                    mae=mae,
+                    rmse=rmse,
+                    exact_ratio=exact,
+                    max_iter=p.max_iter,
+                    plateau_limit=p.plateau_limit,
+                    seed=trial_seed,
+                    svg_path=svg_path,
+                )
             )
-        )
 
     best = min(metrics, key=lambda m: (m.mae, m.rmse, -m.exact_ratio))
     return best, metrics
+
+
+def clamp_channel(value: float) -> int:
+    return max(0, min(255, int(round(value))))
+
+
+def jitter_hex_color(hex_color: str, rng: random.Random, delta: int = 16) -> str:
+    if not hex_color.startswith("#") or len(hex_color) != 7:
+        return hex_color
+    r = clamp_channel(int(hex_color[1:3], 16) + rng.randint(-delta, delta))
+    g = clamp_channel(int(hex_color[3:5], 16) + rng.randint(-delta, delta))
+    b = clamp_channel(int(hex_color[5:7], 16) + rng.randint(-delta, delta))
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
+def mutate_svg_tree(root: ET.Element, width: int, height: int, rng: random.Random, sigma: float) -> ET.Element:
+    mutated = ET.fromstring(ET.tostring(root, encoding="unicode"))
+    for node in mutated:
+        tag = node.tag.rsplit("}", 1)[-1]
+
+        if "stroke-width" in node.attrib:
+            stroke = float(node.attrib["stroke-width"] or 0.0)
+            node.attrib["stroke-width"] = f"{max(0.2, stroke + rng.gauss(0, sigma * 0.5)):.2f}"
+
+        for key in ("fill", "stroke"):
+            if key in node.attrib:
+                node.attrib[key] = jitter_hex_color(node.attrib[key], rng)
+
+        if tag == "rect":
+            x = float(node.attrib.get("x", "0") or 0.0) + rng.gauss(0, sigma)
+            y = float(node.attrib.get("y", "0") or 0.0) + rng.gauss(0, sigma)
+            w = max(0.8, float(node.attrib.get("width", "0") or 0.0) + rng.gauss(0, sigma))
+            h = max(0.8, float(node.attrib.get("height", "0") or 0.0) + rng.gauss(0, sigma))
+            x = max(0.0, min(width - w, x))
+            y = max(0.0, min(height - h, y))
+            node.attrib["x"] = f"{x:.2f}"
+            node.attrib["y"] = f"{y:.2f}"
+            node.attrib["width"] = f"{w:.2f}"
+            node.attrib["height"] = f"{h:.2f}"
+        elif tag in {"circle", "ellipse"}:
+            cx = float(node.attrib.get("cx", "0") or 0.0) + rng.gauss(0, sigma)
+            cy = float(node.attrib.get("cy", "0") or 0.0) + rng.gauss(0, sigma)
+            cx = max(0.0, min(float(width), cx))
+            cy = max(0.0, min(float(height), cy))
+            node.attrib["cx"] = f"{cx:.2f}"
+            node.attrib["cy"] = f"{cy:.2f}"
+            if tag == "circle":
+                r = max(0.6, float(node.attrib.get("r", "0") or 0.0) + rng.gauss(0, sigma))
+                node.attrib["r"] = f"{r:.2f}"
+            else:
+                rx = max(0.6, float(node.attrib.get("rx", "0") or 0.0) + rng.gauss(0, sigma))
+                ry = max(0.6, float(node.attrib.get("ry", "0") or 0.0) + rng.gauss(0, sigma))
+                node.attrib["rx"] = f"{rx:.2f}"
+                node.attrib["ry"] = f"{ry:.2f}"
+    return mutated
+
+
+def _mutate_circle_structured(node: ET.Element, width: int, height: int, rng: random.Random, sigma: float) -> None:
+    cx = float(node.attrib.get("cx", "0") or 0.0)
+    cy = float(node.attrib.get("cy", "0") or 0.0)
+    r = max(0.6, float(node.attrib.get("r", "0") or 0.0))
+    stroke_width = max(0.2, float(node.attrib.get("stroke-width", "0.2") or 0.2))
+
+    # Second mutation path: operate in geometric parameters (center, radius, stroke)
+    # and then project back to SVG attributes.
+    cx += rng.gauss(0, sigma * 0.65)
+    cy += rng.gauss(0, sigma * 0.65)
+    r = max(0.6, r + rng.gauss(0, sigma * 0.55))
+    stroke_width = max(0.2, stroke_width + rng.gauss(0, sigma * 0.35))
+
+    node.attrib["cx"] = f"{max(0.0, min(float(width), cx)):.2f}"
+    node.attrib["cy"] = f"{max(0.0, min(float(height), cy)):.2f}"
+    node.attrib["r"] = f"{r:.2f}"
+    if "stroke" in node.attrib or "stroke-width" in node.attrib:
+        node.attrib["stroke-width"] = f"{stroke_width:.2f}"
+
+
+def _mutate_line_structured(node: ET.Element, width: int, height: int, rng: random.Random, sigma: float) -> None:
+    x1 = float(node.attrib.get("x1", "0") or 0.0)
+    y1 = float(node.attrib.get("y1", "0") or 0.0)
+    x2 = float(node.attrib.get("x2", "0") or 0.0)
+    y2 = float(node.attrib.get("y2", "0") or 0.0)
+    stroke_width = max(0.2, float(node.attrib.get("stroke-width", "0.2") or 0.2))
+
+    dx = x2 - x1
+    dy = y2 - y1
+    length = max(0.8, math.hypot(dx, dy))
+    angle = math.atan2(dy, dx)
+    mx = (x1 + x2) / 2.0
+    my = (y1 + y2) / 2.0
+
+    # Structured second path: midpoint + direction + length + stroke width.
+    mx += rng.gauss(0, sigma * 0.7)
+    my += rng.gauss(0, sigma * 0.7)
+    angle += rng.gauss(0, sigma * 0.09)
+    length = max(0.8, length + rng.gauss(0, sigma * 0.7))
+    stroke_width = max(0.2, stroke_width + rng.gauss(0, sigma * 0.35))
+
+    half = length / 2.0
+    ndx = math.cos(angle) * half
+    ndy = math.sin(angle) * half
+    nx1 = max(0.0, min(float(width), mx - ndx))
+    ny1 = max(0.0, min(float(height), my - ndy))
+    nx2 = max(0.0, min(float(width), mx + ndx))
+    ny2 = max(0.0, min(float(height), my + ndy))
+
+    node.attrib["x1"] = f"{nx1:.2f}"
+    node.attrib["y1"] = f"{ny1:.2f}"
+    node.attrib["x2"] = f"{nx2:.2f}"
+    node.attrib["y2"] = f"{ny2:.2f}"
+    if "stroke" in node.attrib or "stroke-width" in node.attrib:
+        node.attrib["stroke-width"] = f"{stroke_width:.2f}"
+
+
+def mutate_svg_tree_structured(root: ET.Element, width: int, height: int, rng: random.Random, sigma: float) -> ET.Element:
+    """Alternative reconstruction path based on explicit geometry parameters.
+
+    Circle: center/radius/stroke-width.
+    Line: midpoint/direction/length/stroke-width.
+    """
+    mutated = ET.fromstring(ET.tostring(root, encoding="unicode"))
+    for node in mutated:
+        tag = node.tag.rsplit("}", 1)[-1]
+
+        for key in ("fill", "stroke"):
+            if key in node.attrib:
+                node.attrib[key] = jitter_hex_color(node.attrib[key], rng)
+
+        if tag == "circle":
+            _mutate_circle_structured(node, width=width, height=height, rng=rng, sigma=sigma)
+        elif tag == "line":
+            _mutate_line_structured(node, width=width, height=height, rng=rng, sigma=sigma)
+        else:
+            # Fallback to the current generic method for all other tags.
+            fallback_root = ET.Element("svg")
+            fallback_root.append(node)
+            fallback = mutate_svg_tree(fallback_root, width=width, height=height, rng=rng, sigma=sigma)
+            fallback_node = list(fallback)[0] if list(fallback) else None
+            if fallback_node is not None:
+                node.attrib.clear()
+                node.attrib.update(fallback_node.attrib)
+    return mutated
+
+
+def _candidate_metric_from_tree(
+    code: str,
+    source_label: str,
+    candidate_tree: ET.Element,
+    candidate_path: Path,
+    width: int,
+    height: int,
+    rgb_source: list[list[list[int]]],
+    base_metric: ImageMetric,
+) -> ImageMetric:
+    candidate_path.write_text(ET.tostring(candidate_tree, encoding="unicode"), encoding="utf-8")
+    reconv = rasterize_svg_shapes(candidate_path, width=width, height=height)
+    mae, rmse, exact = compute_metrics(rgb_source, reconv)
+    return ImageMetric(
+        code=code,
+        source_file=source_label,
+        width=width,
+        height=height,
+        mae=mae,
+        rmse=rmse,
+        exact_ratio=exact,
+        max_iter=base_metric.max_iter,
+        plateau_limit=base_metric.plateau_limit,
+        seed=base_metric.seed,
+        svg_path=candidate_path,
+    )
+
+
+def stochastic_refine_svg(
+    code: str,
+    source_label: str,
+    rgb_source: list[list[list[int]]],
+    base_metric: ImageMetric,
+    output_svg_dir: Path,
+    variation_trials: int,
+    variation_sigma: float,
+    variation_seed: int,
+    save_all_variations: bool,
+    sigma_decay: float,
+    min_sigma: float,
+) -> tuple[ImageMetric, list[VariationResult]]:
+    if variation_trials <= 0:
+        return base_metric, []
+
+    h = len(rgb_source)
+    w = len(rgb_source[0]) if h else 0
+    rng = random.Random(variation_seed)
+
+    best_metric = base_metric
+    current_tree = ET.fromstring(base_metric.svg_path.read_text(encoding="utf-8"))
+    plateau_run = 0
+    trace: list[VariationResult] = []
+    sigma = max(min_sigma, variation_sigma)
+    local_plateau_limit = max(4, variation_trials // 4)
+
+    with tempfile.TemporaryDirectory(prefix="svg_variation_") as temp_dir:
+        temp_dir_path = Path(temp_dir)
+        for trial in range(1, variation_trials + 1):
+            # Combine existing random attribute jitter with a second structured
+            # geometric search path (circle center/radius and line midpoint/direction).
+            candidate_tree_generic = mutate_svg_tree(current_tree, width=w, height=h, rng=rng, sigma=sigma)
+            candidate_tree_struct = mutate_svg_tree_structured(current_tree, width=w, height=h, rng=rng, sigma=sigma)
+
+            generic_path = temp_dir_path / f"{code}_trial{trial:04d}_generic.svg"
+            structured_path = temp_dir_path / f"{code}_trial{trial:04d}_structured.svg"
+            generic_metric = _candidate_metric_from_tree(
+                code=code,
+                source_label=source_label,
+                candidate_tree=candidate_tree_generic,
+                candidate_path=generic_path,
+                width=w,
+                height=h,
+                rgb_source=rgb_source,
+                base_metric=base_metric,
+            )
+            structured_metric = _candidate_metric_from_tree(
+                code=code,
+                source_label=source_label,
+                candidate_tree=candidate_tree_struct,
+                candidate_path=structured_path,
+                width=w,
+                height=h,
+                rgb_source=rgb_source,
+                base_metric=base_metric,
+            )
+
+            if (structured_metric.mae, structured_metric.rmse, -structured_metric.exact_ratio) < (
+                generic_metric.mae,
+                generic_metric.rmse,
+                -generic_metric.exact_ratio,
+            ):
+                chosen_metric = structured_metric
+                chosen_tree = candidate_tree_struct
+                chosen_temp_path = structured_path
+            else:
+                chosen_metric = generic_metric
+                chosen_tree = candidate_tree_generic
+                chosen_temp_path = generic_path
+
+            mae = chosen_metric.mae
+            rmse = chosen_metric.rmse
+            exact = chosen_metric.exact_ratio
+            improved = (mae, rmse, -exact) < (best_metric.mae, best_metric.rmse, -best_metric.exact_ratio)
+            if improved:
+                if save_all_variations:
+                    persisted_path = output_svg_dir / f"{code}_trial{trial:04d}.svg"
+                else:
+                    persisted_path = output_svg_dir / f"{code}_best_variation.svg"
+                persisted_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(chosen_temp_path, persisted_path)
+                best_metric = ImageMetric(
+                    code=code,
+                    source_file=source_label,
+                    width=w,
+                    height=h,
+                    mae=mae,
+                    rmse=rmse,
+                    exact_ratio=exact,
+                    max_iter=base_metric.max_iter,
+                    plateau_limit=base_metric.plateau_limit,
+                    seed=base_metric.seed,
+                    svg_path=persisted_path,
+                )
+                current_tree = chosen_tree
+                plateau_run = 0
+            else:
+                plateau_run += 1
+
+            if plateau_run >= local_plateau_limit and sigma > min_sigma:
+                sigma = max(min_sigma, sigma * sigma_decay)
+                plateau_run = 0
+
+            if save_all_variations and not improved:
+                persisted_path = output_svg_dir / f"{code}_trial{trial:04d}.svg"
+                persisted_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(chosen_temp_path, persisted_path)
+
+            trace.append(
+                VariationResult(
+                    code=code,
+                    source_file=source_label,
+                    trial=trial,
+                    mae=mae,
+                    rmse=rmse,
+                    exact_ratio=exact,
+                    improved=improved,
+                    plateau_run=plateau_run,
+                )
+            )
+
+    return best_metric, trace
 
 
 def evaluate_template_svg(
@@ -312,6 +625,39 @@ def write_report(path: Path, best_rows: list[ImageMetric], all_rows: list[ImageM
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def write_variation_csv(path: Path, rows: list[VariationResult]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["code", "source_file", "trial", "mae_rgb", "rmse_rgb", "exact_pixel_ratio", "improved", "plateau_run"])
+        for r in rows:
+            w.writerow([r.code, r.source_file, r.trial, f"{r.mae:.6f}", f"{r.rmse:.6f}", f"{r.exact_ratio:.6f}", int(r.improved), r.plateau_run])
+
+
+def append_plateau_report(path: Path, traces: list[VariationResult], variation_trials: int) -> None:
+    if not traces or variation_trials <= 0:
+        return
+    by_code: dict[str, list[VariationResult]] = {}
+    for row in traces:
+        by_code.setdefault(row.code, []).append(row)
+
+    plateau_edges: list[int] = []
+    lines = ["", "## Stochastic variation search (Rekonstruktion)", "", "| Code | Last improvement trial | Plateau edge trial | Best trial MAE |", "|---|---:|---:|---:|"]
+    for code, rows in sorted(by_code.items()):
+        ordered = sorted(rows, key=lambda r: r.trial)
+        improving_trials = [r.trial for r in ordered if r.improved]
+        last_improvement = max(improving_trials) if improving_trials else 0
+        plateau_edge = min(variation_trials, last_improvement + max(3, variation_trials // 10))
+        plateau_edges.append(plateau_edge)
+        best_trial = min(ordered, key=lambda r: (r.mae, r.rmse, -r.exact_ratio))
+        lines.append(f"| {code} | {last_improvement} | {plateau_edge} | {best_trial.mae:.3f} |")
+
+    plateau_avg = sum(plateau_edges) / len(plateau_edges)
+    lines.extend(["", f"Plateau edge mean trial: **{plateau_avg:.1f} / {variation_trials}** (higher = broader event-space plateau)."])
+    with path.open("a", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description="Iteratively optimize JPEG->SVG roundtrip quality for selected symbols")
     p.add_argument("--csv", type=Path, default=Path("artifacts/images_to_convert/nonexistant.csv"))
@@ -326,13 +672,44 @@ def main() -> int:
     p.add_argument(
         "--param",
         action="append",
-        default=["120:36:42", "240:72:42", "360:108:42", "240:72:1337", "480:144:42"],
+        default=[],
         help="Parameter set max_iter:plateau_limit:seed (repeatable)",
     )
+    p.add_argument(
+        "--param-seed-trials",
+        type=int,
+        default=32,
+        help="How many converter restarts to run per parameter set (recommended 32-64 for stability).",
+    )
+    p.add_argument(
+        "--param-seed-step",
+        type=int,
+        default=997,
+        help="Seed increment between restarts of the same parameter set.",
+    )
     p.add_argument("--limit", type=int, default=0, help="Optional limit of codes from CSV (0 = all)")
+    p.add_argument(
+        "--variation-trials",
+        type=int,
+        default=64,
+        help="Random reconstruction variations per chosen SVG (0 disables random local search).",
+    )
+    p.add_argument("--variation-sigma", type=float, default=0.9, help="Initial mutation strength in px for geometric reconstruction variation.")
+    p.add_argument("--variation-min-sigma", type=float, default=0.2, help="Minimum mutation sigma after iterative narrowing.")
+    p.add_argument("--variation-sigma-decay", type=float, default=0.55, help="Sigma multiplier when local search hits a plateau.")
+    p.add_argument("--variation-seed", type=int, default=2026, help="Seed for stochastic reconstruction refinement.")
+    p.add_argument(
+        "--variation-save-all",
+        action="store_true",
+        help="Persist every mutation SVG trial (default only keeps the best variation per code).",
+    )
     args = p.parse_args()
 
+    if not args.param:
+        args.param = ["120:36:42", "240:72:42", "360:108:42", "240:72:1337", "480:144:42"]
+
     param_sets = parse_params(args.param)
+    args.param_seed_trials = max(1, args.param_seed_trials)
     codes = read_codes(args.csv)
     if not codes:
         codes = discover_codes_from_images(args.images_dir)
@@ -354,6 +731,7 @@ def main() -> int:
 
     best_rows: list[ImageMetric] = []
     all_rows: list[ImageMetric] = []
+    variation_rows: list[VariationResult] = []
 
     jpg_mode = True
     try:
@@ -382,7 +760,16 @@ def main() -> int:
                 save_bmp24(source_for_conversion, rgb)
                 source_label = src.name
 
-            best, rows = choose_best_for_code(code, source_for_conversion, source_label, rgb, param_sets, work_svg)
+            best, rows = choose_best_for_code(
+                code,
+                source_for_conversion,
+                source_label,
+                rgb,
+                param_sets,
+                work_svg,
+                per_param_trials=args.param_seed_trials,
+                per_param_seed_step=args.param_seed_step,
+            )
             template_result = evaluate_template_svg(code, source_label, rgb, args.template_svg_dir)
             if template_result is not None:
                 rows.append(template_result)
@@ -392,6 +779,21 @@ def main() -> int:
                     -best.exact_ratio,
                 ):
                     best = template_result
+
+            best, local_variations = stochastic_refine_svg(
+                code=code,
+                source_label=source_label,
+                rgb_source=rgb,
+                base_metric=best,
+                output_svg_dir=work_svg / "stochastic_refine",
+                variation_trials=args.variation_trials,
+                variation_sigma=args.variation_sigma,
+                variation_seed=args.variation_seed + idx,
+                save_all_variations=args.variation_save_all,
+                sigma_decay=args.variation_sigma_decay,
+                min_sigma=args.variation_min_sigma,
+            )
+            variation_rows.extend(local_variations)
 
             all_rows.extend(rows)
             best_rows.append(best)
@@ -406,12 +808,14 @@ def main() -> int:
             print(
                 f"[{idx}/{len(codes)}] {code}: mae={best.mae:.3f} rmse={best.rmse:.3f} "
                 f"exact={best.exact_ratio:.2%} params=({best.max_iter},{best.plateau_limit},{best.seed}) "
-                f"source={best.svg_path.name}"
+                f"seed_trials={args.param_seed_trials} source={best.svg_path.name}"
             )
 
     write_csv(out_dir / "best_per_image.csv", best_rows)
     write_csv(out_dir / "all_results.csv", all_rows)
+    write_variation_csv(out_dir / "stochastic_variations.csv", variation_rows)
     write_report(out_dir / "optimization_report.md", best_rows, all_rows, param_sets)
+    append_plateau_report(out_dir / "optimization_report.md", variation_rows, args.variation_trials)
 
     print(f"done images={len(best_rows)} params={len(param_sets)} out={out_dir}")
     return 0

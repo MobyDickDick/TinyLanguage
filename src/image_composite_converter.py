@@ -14,6 +14,7 @@ import importlib
 import random
 import re
 import struct
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -61,6 +62,15 @@ def _missing_required_image_dependencies() -> list[str]:
     if np is None:
         missing.append("numpy")
     return missing
+
+
+@dataclass
+class QualityRow:
+    image: str
+    svg: str
+    width: int
+    height: int
+    avg_error_per_pixel: float
 
 
 def load_grayscale_image(path: Path) -> list[list[int]]:
@@ -3746,6 +3756,118 @@ def group_image_variants(images: list[Path]) -> list[list[Path]]:
         groups.setdefault(variant_group_key(image), []).append(image)
     return [sorted(v) for _, v in sorted(groups.items(), key=lambda item: item[0])]
 
+
+def _hex_to_gray(value: str) -> int:
+    value = value.strip().lower()
+    if not value.startswith("#"):
+        return 0
+    if len(value) == 4:
+        value = "#" + "".join(ch * 2 for ch in value[1:])
+    if len(value) != 7:
+        return 0
+    r = int(value[1:3], 16)
+    g = int(value[3:5], 16)
+    b = int(value[5:7], 16)
+    return int(round(0.299 * r + 0.587 * g + 0.114 * b))
+
+
+def _rasterize_generated_svg(svg_path: Path, width: int, height: int) -> list[list[int]]:
+    img = [[255 for _ in range(width)] for _ in range(height)]
+    root = ET.fromstring(svg_path.read_text(encoding="utf-8"))
+
+    for node in root:
+        tag = node.tag.rsplit("}", 1)[-1]
+        fill = node.attrib.get("fill")
+        if not fill or fill.lower() == "none":
+            continue
+        fill_gray = _hex_to_gray(fill)
+        stroke = node.attrib.get("stroke")
+        stroke_gray = _hex_to_gray(stroke) if stroke and stroke.lower() != "none" else None
+        stroke_width = float(node.attrib.get("stroke-width", "0") or "0")
+
+        if tag == "rect":
+            x = float(node.attrib.get("x", "0"))
+            y = float(node.attrib.get("y", "0"))
+            w = float(node.attrib.get("width", "0"))
+            h = float(node.attrib.get("height", "0"))
+            x0 = max(0, int(x))
+            y0 = max(0, int(y))
+            x1 = min(width, int(x + w + 0.999))
+            y1 = min(height, int(y + h + 0.999))
+            for yy in range(y0, y1):
+                for xx in range(x0, x1):
+                    img[yy][xx] = fill_gray
+            continue
+
+        if tag == "circle":
+            cx = float(node.attrib.get("cx", "0"))
+            cy = float(node.attrib.get("cy", "0"))
+            r = float(node.attrib.get("r", "0"))
+            rx = r
+            ry = r
+        elif tag == "ellipse":
+            cx = float(node.attrib.get("cx", "0"))
+            cy = float(node.attrib.get("cy", "0"))
+            rx = float(node.attrib.get("rx", "0"))
+            ry = float(node.attrib.get("ry", "0"))
+        else:
+            continue
+
+        outer_rx = max(0.1, rx + stroke_width / 2.0)
+        outer_ry = max(0.1, ry + stroke_width / 2.0)
+        inner_rx = max(0.0, rx - stroke_width / 2.0)
+        inner_ry = max(0.0, ry - stroke_width / 2.0)
+
+        min_x = max(0, int(cx - outer_rx - 1))
+        max_x = min(width - 1, int(cx + outer_rx + 1))
+        min_y = max(0, int(cy - outer_ry - 1))
+        max_y = min(height - 1, int(cy + outer_ry + 1))
+        inv_outer_rx2 = 1.0 / (outer_rx * outer_rx)
+        inv_outer_ry2 = 1.0 / (outer_ry * outer_ry)
+        inv_inner_rx2 = 1.0 / (inner_rx * inner_rx) if inner_rx > 0 else 0.0
+        inv_inner_ry2 = 1.0 / (inner_ry * inner_ry) if inner_ry > 0 else 0.0
+
+        for yy in range(min_y, max_y + 1):
+            dy = yy + 0.5 - cy
+            dy_outer = dy * dy * inv_outer_ry2
+            if dy_outer > 1.0:
+                continue
+            dy_inner = dy * dy * inv_inner_ry2 if inner_ry > 0 else 0.0
+            for xx in range(min_x, max_x + 1):
+                dx = xx + 0.5 - cx
+                outer = dx * dx * inv_outer_rx2 + dy_outer
+                if outer > 1.0:
+                    continue
+                if stroke_gray is not None and stroke_width > 0 and inner_rx > 0 and inner_ry > 0:
+                    inner = dx * dx * inv_inner_rx2 + dy_inner
+                    img[yy][xx] = stroke_gray if inner > 1.0 else fill_gray
+                else:
+                    img[yy][xx] = fill_gray
+
+    return img
+
+
+def compute_svg_grayscale_mae(reference: list[list[int]], svg_path: Path) -> float:
+    height = len(reference)
+    width = len(reference[0]) if height else 0
+    if width == 0 or height == 0:
+        return 0.0
+    rendered = _rasterize_generated_svg(svg_path, width, height)
+    error_sum = 0.0
+    for y in range(height):
+        for x in range(width):
+            error_sum += abs(reference[y][x] - rendered[y][x])
+    return error_sum / (width * height)
+
+
+def write_quality_list(rows: list[QualityRow], path: Path) -> None:
+    ordered = sorted(rows, key=lambda row: row.avg_error_per_pixel)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lines = ["image,svg,width,height,avg_error_per_pixel"]
+    for row in ordered:
+        lines.append(f"{row.image},{row.svg},{row.width},{row.height},{row.avg_error_per_pixel:.6f}")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Raster->SVG converter via random search and plateau narrowing")
     p.add_argument("input_dir", type=Path)
@@ -3759,6 +3881,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--allow-quarter-turns", action="store_true", help="Allow 90° rotation matching while merging variants")
     p.add_argument("--preserve-text-orientation", action="store_true", default=True, help="Do not rotate variants while merging (default: true)")
     p.add_argument("--no-preserve-text-orientation", dest="preserve_text_orientation", action="store_false", help="Permit rotated alignment that may rotate text")
+    p.add_argument("--quality-list", type=Path, default=Path("artifacts/quality_list.csv"), help="Write converted-image quality ranking CSV (ascending avg error per pixel)")
     return p
 
 
@@ -3768,6 +3891,8 @@ def main() -> int:
     if not images:
         print(f"No images found in {args.input_dir}")
         return 1
+
+    quality_rows: list[QualityRow] = []
 
     if args.merge_variants:
         for group in group_image_variants(images):

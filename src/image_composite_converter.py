@@ -6465,8 +6465,65 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _auto_detect_csv_path(folder_path: str) -> str | None:
+    """Best-effort CSV lookup for CLI compatibility mode.
+
+    Priority:
+    1) CSV/TSV files directly inside ``folder_path``
+    2) CSV/TSV files in the parent directory of ``folder_path``
+    """
+    candidates: list[str] = []
+    roots = [folder_path, os.path.dirname(folder_path)]
+    for root in roots:
+        if not root or not os.path.isdir(root):
+            continue
+        for name in sorted(os.listdir(root)):
+            lower = name.lower()
+            if lower.endswith(".csv") or lower.endswith(".tsv"):
+                candidates.append(os.path.join(root, name))
+        if candidates:
+            break
+
+    if not candidates:
+        return None
+
+    # Prefer obvious mapping files if several exist.
+    preferred = [
+        p
+        for p in candidates
+        if any(tag in os.path.basename(p).lower() for tag in ("reference", "roundtrip", "export", "mapping"))
+    ]
+    return preferred[0] if preferred else candidates[0]
+
+
+def _resolve_cli_csv_and_output(args: argparse.Namespace) -> tuple[str, str | None]:
+    """Resolve effective CSV and output directory from mixed CLI styles."""
+    csv_path = args.csv_path
+    output_dir = args.output_dir
+    if args.csv_or_output:
+        c = str(args.csv_or_output)
+        looks_like_csv = c.lower().endswith(".csv") or c.lower().endswith(".tsv")
+        if csv_path is None and looks_like_csv:
+            csv_path = c
+        elif output_dir is None and not looks_like_csv:
+            output_dir = c
+        elif csv_path is None:
+            csv_path = c
+
+    if csv_path is None:
+        csv_path = _auto_detect_csv_path(args.folder_path) or ""
+
+    return csv_path, output_dir
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    csv_path, output_dir = _resolve_cli_csv_and_output(args)
+
+    if not csv_path:
+        print("[WARN] Keine CSV/TSV angegeben oder gefunden. Einige Symbole können ohne Beschreibung übersprungen werden.")
+    elif not os.path.exists(csv_path):
+        print(f"[WARN] CSV/TSV-Datei nicht gefunden: {csv_path}")
 
     csv_path = args.csv_path
     output_dir = args.output_dir

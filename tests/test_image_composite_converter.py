@@ -2101,3 +2101,32 @@ def test_parse_args_keeps_legacy_three_positional_arguments() -> None:
     assert args.folder_path == "in_folder"
     assert args.csv_or_output == "table.csv"
     assert int(args.iterations) == 64
+
+
+def test_resolve_cli_csv_and_output_autodetects_csv_when_second_arg_is_output(tmp_path: Path) -> None:
+    """When called as `folder output`, CSV should be auto-detected from input folder."""
+    in_dir = tmp_path / "images"
+    in_dir.mkdir()
+    out_dir = tmp_path / "converted"
+    csv_file = in_dir / "reference_roundtrip.csv"
+    csv_file.write_text("Wurzelform;Beschreibung\n", encoding="utf-8")
+
+    args = conv.parse_args([str(in_dir), str(out_dir)])
+    csv_path, output_dir = conv._resolve_cli_csv_and_output(args)
+
+    assert csv_path == str(csv_file)
+    assert output_dir == str(out_dir)
+
+
+def test_resolve_cli_csv_and_output_keeps_explicit_csv_over_autodetect(tmp_path: Path) -> None:
+    in_dir = tmp_path / "images"
+    in_dir.mkdir()
+    (in_dir / "reference_roundtrip.csv").write_text("Wurzelform;Beschreibung\n", encoding="utf-8")
+    explicit = tmp_path / "explicit.csv"
+    explicit.write_text("Wurzelform;Beschreibung\n", encoding="utf-8")
+
+    args = conv.parse_args([str(in_dir), "out_dir", "32", "--csv-path", str(explicit)])
+    csv_path, output_dir = conv._resolve_cli_csv_and_output(args)
+
+    assert csv_path == str(explicit)
+    assert output_dir == "out_dir"

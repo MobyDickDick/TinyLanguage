@@ -2147,3 +2147,43 @@ def test_resolve_cli_csv_and_output_keeps_explicit_csv_over_autodetect(tmp_path:
 
     assert csv_path == str(explicit)
     assert output_dir == "out_dir"
+
+
+def test_load_description_mapping_from_xml_reads_wurzelform_key_and_images(tmp_path: Path) -> None:
+    xml_path = tmp_path / "Finale_Wurzelformen_V3.xml"
+    xml_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"utf-8\"?>
+<wurzelformen_export>
+  <entries>
+    <entry kind=\"symbol\" key=\"AC0812_L\">
+      <wurzelform>AC0812</wurzelform>
+      <beschreibung>Semantic badge sample</beschreibung>
+      <bilder>
+        <bild>AC0812_L.jpg</bild>
+        <bild>AC0812_M.jpg</bild>
+      </bilder>
+    </entry>
+  </entries>
+</wurzelformen_export>
+""",
+        encoding="utf-8",
+    )
+
+    mapping = conv._load_description_mapping(str(xml_path))
+
+    assert mapping["AC0812"] == "Semantic badge sample"
+    assert mapping["AC0812_L"] == "Semantic badge sample"
+    assert mapping["AC0812_M"] == "Semantic badge sample"
+
+
+def test_resolve_cli_csv_and_output_accepts_xml_as_table_path(tmp_path: Path) -> None:
+    in_dir = tmp_path / "images"
+    in_dir.mkdir()
+    xml_path = tmp_path / "Finale_Wurzelformen_V3.xml"
+    xml_path.write_text("<wurzelformen_export/>\n", encoding="utf-8")
+
+    args = conv.parse_args([str(in_dir), str(xml_path), "32"])
+    csv_path, output_dir = conv._resolve_cli_csv_and_output(args)
+
+    assert csv_path == str(xml_path)
+    assert output_dir is None

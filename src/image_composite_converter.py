@@ -45,8 +45,9 @@ def _clip(value, low, high):
     if np is not None:
         return np.clip(value, low, high)
     if isinstance(value, (int, float)):
-        # Match numpy semantics for inverted bounds (`a_min > a_max`):
-        # values collapse to the upper bound.
+        # Keep numpy semantics for inverted bounds (`a_min > a_max`).
+        # We intentionally do *not* reorder the interval here; values must
+        # collapse to the provided upper bound.
         if low > high:
             return high
         return low if value < low else high if value > high else value

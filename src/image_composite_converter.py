@@ -1,42 +1,36 @@
-"""Element-based image-to-SVG converter with random-search refinement.
+"""Image-to-composite-SVG conversion pipeline.
 
-Workflow:
-1) Search image elements.
-2) Re-draw every element as SVG primitives with random parameter variation.
-3) Compare candidates to the source element.
-4) Narrow search space until a plateau or best solution is reached.
+Ported from the user-provided prototype and exposed as a Python helper module so
+it can be executed directly or via TinyLanguage (`src_tiny/image_composite_converter.tiny`).
 """
 
 from __future__ import annotations
 
 import argparse
-import importlib
+import csv
+import json
+import math
+import os
 import random
+import time
 import re
-import struct
-import xml.etree.ElementTree as ET
+import subprocess
+import sys
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Iterable
 
+try:
+    import cv2
+except ImportError:  # pragma: no cover - optional dependency in constrained environments
+    cv2 = None
+try:
+    import numpy as np
+except ImportError:  # pragma: no cover - optional dependency in constrained environments
+    np = None
 
-@dataclass
-class Element:
-    pixels: list[list[int]]
-    x0: int
-    y0: int
-    x1: int
-    y1: int
-
-
-@dataclass
-class Candidate:
-    shape: str
-    cx: float
-    cy: float
-    w: float
-    h: float
-
+try:
+    import fitz  # PyMuPDF for native SVG rendering
+except ImportError:  # pragma: no cover - optional dependency
+    fitz = None
 
 
 
@@ -45,20 +39,8 @@ def _clip(value, low, high):
     if np is not None:
         return np.clip(value, low, high)
     if isinstance(value, (int, float)):
-        # Keep numpy semantics for inverted bounds (`a_min > a_max`).
-        # We intentionally do *not* reorder the interval here; values must
-        # collapse to the provided upper bound.
-        if low > high:
-            return high
-        return low if value < low else high if value > high else value
+        return Action._clip_scalar(float(value), float(low), float(high))
     raise RuntimeError("numpy is required for non-scalar clip operations")
-
-
-def _isfinite(value: float) -> bool:
-    """Finite check that works even when numpy is unavailable."""
-    if np is not None:
-        return bool(np.isfinite(value))
-    return math.isfinite(float(value))
 
 def _missing_required_image_dependencies() -> list[str]:
     missing: list[str] = []
@@ -69,267 +51,794 @@ def _missing_required_image_dependencies() -> list[str]:
     return missing
 
 
-@dataclass
-class QualityRow:
-    image: str
-    svg: str
-    width: int
-    height: int
-    avg_error_per_pixel: float
-
-
-def load_grayscale_image(path: Path) -> list[list[int]]:
-    try:
-        image_module = importlib.import_module("PIL.Image")
-    except ModuleNotFoundError as exc:
-        if exc.name in {"PIL", "PIL.Image"}:
-            if path.suffix.lower() == ".bmp":
-                return load_grayscale_bmp(path)
-            raise ModuleNotFoundError(
-                "Missing dependency 'Pillow' (module 'PIL'). Install it into the active interpreter with "
-                "`python -m pip install Pillow` and ensure your IDE/debugger uses the same interpreter."
-            ) from exc
-        raise
-
-    gray = image_module.open(path).convert("L")
-    w, h = gray.size
-    px = gray.load()
-    return [[int(px[x, y]) for x in range(w)] for y in range(h)]
-
-
-def load_grayscale_bmp(path: Path) -> list[list[int]]:
-    data = path.read_bytes()
-    if len(data) < 54 or data[:2] != b"BM":
-        raise ValueError(f"Unsupported BMP file: {path}")
-
-    pixel_offset = struct.unpack_from("<I", data, 10)[0]
-    dib_size = struct.unpack_from("<I", data, 14)[0]
-    if dib_size < 40:
-        raise ValueError(f"Unsupported BMP DIB header size {dib_size} in {path}")
-
-    width = struct.unpack_from("<i", data, 18)[0]
-    height = struct.unpack_from("<i", data, 22)[0]
-    planes = struct.unpack_from("<H", data, 26)[0]
-    bpp = struct.unpack_from("<H", data, 28)[0]
-    compression = struct.unpack_from("<I", data, 30)[0]
-
-    if width <= 0 or height == 0:
-        raise ValueError(f"Unsupported BMP dimensions in {path}")
-    if planes != 1 or bpp not in {24, 32} or compression != 0:
-        raise ValueError(f"Unsupported BMP format in {path}: planes={planes} bpp={bpp} compression={compression}")
-
-    top_down = height < 0
-    out_h = abs(height)
-    row_stride = ((width * bpp + 31) // 32) * 4
-
-    gray = [[255 for _ in range(width)] for _ in range(out_h)]
-    for row in range(out_h):
-        src_row = row if top_down else (out_h - 1 - row)
-        row_start = pixel_offset + src_row * row_stride
-        for x in range(width):
-            px_start = row_start + x * (bpp // 8)
-            if px_start + 2 >= len(data):
-                raise ValueError(f"Corrupt BMP pixel data in {path}")
-            b = data[px_start]
-            g = data[px_start + 1]
-            r = data[px_start + 2]
-            gray[row][x] = int(0.114 * b + 0.587 * g + 0.299 * r)
-
-    return gray
-
-
-def load_binary_image(path: Path, threshold: int = 220) -> list[list[int]]:
-    grayscale = load_grayscale_image(path)
-    return [[1 if value < threshold else 0 for value in row] for row in grayscale]
-
-
-def _compute_otsu_threshold(grayscale: list[list[int]]) -> int:
-    hist = [0] * 256
-    total = 0
-    for row in grayscale:
-        for value in row:
-            hist[value] += 1
-            total += 1
-
-    if total == 0:
-        return 220
-
-    sum_total = sum(i * hist[i] for i in range(256))
-    sum_bg = 0.0
-    weight_bg = 0
-    max_var = -1.0
-    threshold = 220
-
-    for t in range(256):
-        weight_bg += hist[t]
-        if weight_bg == 0:
-            continue
-        weight_fg = total - weight_bg
-        if weight_fg == 0:
-            break
-
-        sum_bg += t * hist[t]
-        mean_bg = sum_bg / weight_bg
-        mean_fg = (sum_total - sum_bg) / weight_fg
-        between_var = weight_bg * weight_fg * (mean_bg - mean_fg) ** 2
-        if between_var > max_var:
-            max_var = between_var
-            threshold = t
-
-    return threshold
-
-
-def _adaptive_threshold(grayscale: list[list[int]], block_size: int = 15, c: int = 5) -> list[list[int]]:
-    h = len(grayscale)
-    w = len(grayscale[0]) if h else 0
-    if h == 0 or w == 0:
+def _bootstrap_required_image_dependencies() -> list[str]:
+    missing = _missing_required_image_dependencies()
+    if not missing:
         return []
 
-    if block_size % 2 == 0:
-        block_size += 1
-    radius = block_size // 2
+    cmd = [sys.executable, "-m", "pip", "install", *missing]
+    print(f"[INFO] Fehlende Bild-Abhängigkeiten gefunden: {', '.join(missing)}")
+    print(f"[INFO] Installiere via: {' '.join(cmd)}")
+    try:
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(
+            "Automatische Installation fehlgeschlagen. "
+            "Bitte Abhängigkeiten manuell installieren oder Proxy/Netzwerk prüfen."
+        ) from exc
 
-    integral = [[0] * (w + 1) for _ in range(h + 1)]
-    for y in range(h):
-        row_sum = 0
-        for x in range(w):
-            row_sum += grayscale[y][x]
-            integral[y + 1][x + 1] = integral[y][x + 1] + row_sum
+    # Re-import in current process so conversion can run without restart.
+    global cv2, np
+    if "opencv-python-headless" in missing:
+        import cv2 as _cv2
 
-    out = [[0] * w for _ in range(h)]
-    for y in range(h):
-        y0 = max(0, y - radius)
-        y1 = min(h - 1, y + radius)
-        for x in range(w):
-            x0 = max(0, x - radius)
-            x1 = min(w - 1, x + radius)
-            area = (y1 - y0 + 1) * (x1 - x0 + 1)
-            region_sum = (
-                integral[y1 + 1][x1 + 1]
-                - integral[y0][x1 + 1]
-                - integral[y1 + 1][x0]
-                + integral[y0][x0]
+        cv2 = _cv2
+    if "numpy" in missing:
+        import numpy as _np
+
+        np = _np
+
+    return missing
+
+
+def rgb_to_hex(rgb: np.ndarray) -> str:
+    return "#{:02x}{:02x}{:02x}".format(int(rgb[0]), int(rgb[1]), int(rgb[2]))
+
+
+def get_base_name_from_file(filename: str) -> str:
+    name = os.path.splitext(filename)[0]
+    name = re.sub(r"(-\d+)$", "", name)
+    while True:
+        prev = name
+        name = re.sub(r"_([1-9]|L|M|S|[1-9]S|W|X)$", "", name, flags=re.IGNORECASE)
+        if name == prev:
+            break
+    return name
+
+
+@dataclass
+class Perception:
+    img_path: str
+    csv_path: str
+
+    def __post_init__(self) -> None:
+        self.base_name = get_base_name_from_file(os.path.basename(self.img_path))
+        self.img = cv2.imread(self.img_path)
+        self.raw_desc = self._load_csv()
+
+    def _load_csv(self) -> dict[str, str]:
+        raw_desc: dict[str, str] = {}
+        if not os.path.exists(self.csv_path):
+            return raw_desc
+
+        with open(self.csv_path, mode="r", encoding="utf-8-sig") as f:
+            content = f.read()
+            delimiter = ";" if ";" in content.split("\n", 1)[0] else ","
+            f.seek(0)
+            reader = csv.reader(f, delimiter=delimiter)
+            headers = next(reader, None)
+            if not headers:
+                return raw_desc
+
+            root_idx, desc_idx = -1, -1
+            for i, h in enumerate(headers):
+                low = h.lower()
+                if "wurzelform" in low:
+                    root_idx = i
+                elif "beschreibung" in low:
+                    desc_idx = i
+            if root_idx == -1:
+                root_idx = 1
+            if desc_idx == -1:
+                desc_idx = 2
+
+            for row in reader:
+                if len(row) > max(root_idx, desc_idx):
+                    root_name = row[root_idx].strip()
+                    desc = row[desc_idx].strip()
+                    if root_name:
+                        raw_desc[root_name] = desc
+        return raw_desc
+
+
+class Reflection:
+    def __init__(self, raw_desc: dict[str, str]):
+        self.raw_desc = raw_desc
+
+    def parse_description(self, base_name: str, img_filename: str):
+        variant_name = os.path.splitext(img_filename)[0]
+        canonical_base = get_base_name_from_file(base_name).upper()
+        canonical_variant = get_base_name_from_file(variant_name).upper()
+
+        desc_parts = [
+            self.raw_desc.get(base_name, ""),
+            self.raw_desc.get(variant_name, ""),
+            self.raw_desc.get(canonical_base, ""),
+            self.raw_desc.get(canonical_variant, ""),
+        ]
+        desc_raw = " ".join(part for part in desc_parts if part)
+        desc = desc_raw.lower().strip()
+        base_upper = base_name.upper()
+        symbol_upper = canonical_base or base_upper
+
+        params = {
+            "mode": "auto",
+            "top_source_ref": None,
+            "bottom_shape": None,
+            "elements": [],
+            "label": "M",
+        }
+
+        semantic_symbol = symbol_upper.startswith("AC08") or symbol_upper == "AR0100"
+        forced_co2_symbols = {"AC0820", "AC0831", "AC0832", "AC0833", "AC0834"}
+        if semantic_symbol:
+            params["mode"] = "semantic_badge"
+
+        if base_name.upper() in {
+            "AR0100",
+            "AC0810",
+            "AC0812",
+            "AC0813",
+            "AC0814",
+            "AC0820",
+            "AC0831",
+            "AC0832",
+            "AC0833",
+            "AC0834",
+            "AC0835",
+            "AC0836",
+            "AC0837",
+            "AC0838",
+            "AC0839",
+            "AC0870",
+            "AC0881",
+            "AC0882",
+        }:
+            params["mode"] = "semantic_badge"
+            if base_name.upper() in {"AC0810", "AC0812", "AC0813", "AC0814"}:
+                params["elements"].append("SEMANTIC: Kreis ohne Buchstabe")
+                params["label"] = ""
+            elif symbol_upper in forced_co2_symbols or Reflection._contains_co_marker(desc):
+                params["elements"].append("SEMANTIC: Kreis + Buchstabe CO_2")
+                params["label"] = "CO_2"
+            elif "voc" in desc:
+                params["elements"].append("SEMANTIC: Kreis + Buchstabe VOC")
+                params["label"] = "VOC"
+            elif "buchstabe" in desc:
+                params["elements"].append("SEMANTIC: Kreis + Buchstabe")
+                params["label"] = "M" if symbol_upper == "AR0100" else "T"
+            else:
+                params["elements"].append("SEMANTIC: Kreis + Buchstabe")
+                params["label"] = "M" if base_name.upper() == "AR0100" else "T"
+            if base_name.upper() in {"AC0810", "AC0814", "AC0833", "AC0834", "AC0838", "AC0839"}:
+                params["elements"].append("SEMANTIC: waagrechter Strich rechts vom Kreis")
+            if base_name.upper() in {"AC0881", "AC0831", "AC0836"}:
+                params["elements"].append("SEMANTIC: senkrechter Strich hinter dem Kreis")
+            if base_name.upper() in {"AC0812", "AC0832", "AC0837", "AC0882"}:
+                params["elements"].append("SEMANTIC: waagrechter Strich links vom Kreis")
+            if "waagrechter strich rechts" in desc:
+                params["elements"].append("SEMANTIC: waagrechter Strich rechts vom Kreis")
+            if "senkrechter strich oben" in desc:
+                params["elements"].append("SEMANTIC: senkrechter Strich oben vom Kreis")
+            if "senkrechter strich hinter" in desc:
+                params["elements"].append("SEMANTIC: senkrechter Strich hinter dem Kreis")
+
+            layout_overrides = Reflection._parse_semantic_badge_layout_overrides(desc)
+            if layout_overrides:
+                params["badge_overrides"] = layout_overrides
+                params["elements"].append("SEMANTIC: Layout-Override für Badge-Text")
+
+            return desc, params
+
+        match = re.search(r"oben .*?wie .*?in ([a-z0-9_]+)", desc)
+        if match:
+            params["mode"] = "composite"
+            params["top_source_ref"] = match.group(1).upper()
+            params["elements"].append(
+                f"OBEN: Geschnitten aus Originaldatei {params['top_source_ref']}"
             )
-            local_mean = region_sum / max(1, area)
-            out[y][x] = 1 if grayscale[y][x] < (local_mean - c) else 0
-    return out
+
+        if "unten" in desc and "viereck" in desc and "kreuz" in desc:
+            params["mode"] = "composite"
+            params["bottom_shape"] = "square_cross"
+            params["elements"].append("UNTEN: Parametrisch generiertes Viereck mit Kreuz")
+
+        return desc, params
+
+    @staticmethod
+    def _contains_co_marker(text: str) -> bool:
+        """Hard-coded CO₂ exception: detect standalone CO and render as CO₂."""
+        if not text:
+            return False
+
+        subscript_digit_map = str.maketrans("₀₁₂₃₄₅₆₇₈₉", "0123456789")
+        normalized = text.lower().translate(subscript_digit_map)
+        return re.search(r"(^|[^a-z])co([^a-z]|$)", normalized) is not None
+
+    @staticmethod
+    def _parse_semantic_badge_layout_overrides(text: str) -> dict[str, float | str]:
+        """Extract optional layout directives from semantic badge descriptions."""
+        if not text:
+            return {}
+
+        normalized = re.sub(r"\s+", " ", text.lower()).strip()
+        overrides: dict[str, float | str] = {}
+
+        # Example phrases we intentionally support:
+        # - "CO bezüglich des Kreises vertikal zentriert"
+        # - "CO_2 bezüglich des Kreises horizontal zentriert"
+        if re.search(r"\bco\b[^.\n]*vertikal\s+zentriert", normalized):
+            overrides["co2_dy"] = 0.0
+            overrides["co2_optical_bias"] = 0.0
+
+        if re.search(r"\bco(?:[_\s-]*2|₂)\b[^.\n]*horizontal\s+zentriert", normalized):
+            # Horizontal centering explicitly targets the full CO₂ cluster,
+            # not just the dominant "CO" run.
+            overrides["co2_anchor_mode"] = "cluster"
+            overrides["co2_dx"] = 0.0
+
+        return overrides
 
 
-def load_binary_image_with_mode(path: Path, *, threshold: int = 220, mode: str = "global") -> list[list[int]]:
-    grayscale = load_grayscale_image(path)
-    normalized_mode = mode.lower()
-    if normalized_mode == "global":
-        return [[1 if value < threshold else 0 for value in row] for row in grayscale]
-    if normalized_mode == "otsu":
-        otsu_threshold = _compute_otsu_threshold(grayscale)
-        return [[1 if value < otsu_threshold else 0 for value in row] for row in grayscale]
-    if normalized_mode == "adaptive":
-        return _adaptive_threshold(grayscale)
-    raise ValueError(f"Unknown threshold mode '{mode}'. Expected one of: global, otsu, adaptive")
+class Action:
+    STOCHASTIC_SEED_OFFSET = 0
+    STOCHASTIC_RUN_SEED = 0
+    # DejaVuSans-Bold glyph outline in font units.
+    M_PATH_D = "M188 1493H678L1018 694L1360 1493H1849V0H1485V1092L1141 287H897L553 1092V0H188Z"
+    M_XMIN = 188
+    M_XMAX = 1849
+    M_YMIN = 0
+    M_YMAX = 1493
+    T_PATH_D = "M829 0V1194H381V1493H1636V1194H1188V0H829Z"
+    T_XMIN = 381
+    T_XMAX = 1636
+    T_YMIN = 0
+    T_YMAX = 1493
 
+    # AR0100 tuned defaults for 25x25.
+    AR0100_BASE = {
+        "cx": 12.654,
+        "cy": 12.065,
+        "r": 11.280,
+        "stroke_width": 1.618,
+        "fill_gray": 244,
+        "stroke_gray": 171,
+        "text_gray": 110,
+        "tx": 6.249,
+        "ty": 5.946,
+        "s": 0.007665,
+    }
 
-def find_elements(binary: list[list[int]], min_pixels: int = 25) -> list[Element]:
-    h = len(binary)
-    w = len(binary[0]) if h else 0
-    visited = [[False] * w for _ in range(h)]
-    elements: list[Element] = []
+    AC0870_BASE = {
+        "cx": 15.0,
+        "cy": 15.0,
+        "r": 12.0,
+        "stroke_width": 2.0,
+        "fill_gray": 220,
+        "stroke_gray": 152,
+        "text_gray": 98,
+        "label": "T",
+    }
 
-    for y in range(h):
-        for x in range(w):
-            if binary[y][x] == 0 or visited[y][x]:
+    LIGHT_CIRCLE_FILL_GRAY = 242
+    # Einheitliche AC08xx-Grauwerte (entspricht #7F7F7F).
+    LIGHT_CIRCLE_STROKE_GRAY = 127
+    LIGHT_CIRCLE_TEXT_GRAY = 127
+
+    # Global guardrail for text sizing in semantic badges.
+    # Historical runs were deliberately conservative to avoid overscaling on
+    # noisy rasters, but this can make converted labels consistently too small.
+    # Keep a mild global uplift that applies across text modes.
+    SEMANTIC_TEXT_BASE_SCALE = 1.08
+    AC08_STROKE_WIDTH_PX = 1.0
+
+    @staticmethod
+    def grayhex(gray: int) -> str:
+        g = max(0, min(255, int(round(gray))))
+        return f"#{g:02x}{g:02x}{g:02x}"
+
+    @staticmethod
+    def _snap_half(value: float) -> float:
+        return round(float(value) * 2.0) / 2.0
+
+    @staticmethod
+    def _clip_scalar(value: float, low: float, high: float) -> float:
+        """Return value clamped to ``[low, high]`` with ``numpy.clip`` scalar semantics."""
+        lo = float(low)
+        hi = float(high)
+        # Mirror numpy.clip behaviour for inverted bounds (a_min > a_max):
+        # any scalar collapses to the supplied upper bound.
+        if lo > hi:
+            return hi
+        v = float(value)
+        if v < lo:
+            return lo
+        if v > hi:
+            return hi
+        return v
+
+    class _ScalarRng:
+        def __init__(self, seed: int) -> None:
+            self._rng = random.Random(int(seed))
+
+        def uniform(self, low: float, high: float) -> float:
+            return float(self._rng.uniform(float(low), float(high)))
+
+        def normal(self, mean: float, sigma: float) -> float:
+            return float(self._rng.gauss(float(mean), float(sigma)))
+
+    @staticmethod
+    def _make_rng(seed: int):
+        if np is not None:
+            return np.random.default_rng(int(seed))
+        return Action._ScalarRng(int(seed))
+
+    @staticmethod
+    def _argmin_index(values: list[float]) -> int:
+        return min(range(len(values)), key=lambda i: float(values[i]))
+
+    @staticmethod
+    def _snap_int_px(value: float, minimum: float = 1.0) -> float:
+        return float(max(int(round(float(minimum))), int(round(float(value)))))
+
+    @staticmethod
+    def _max_circle_radius_inside_canvas(cx: float, cy: float, w: int, h: int, stroke: float = 0.0) -> float:
+        """Return the largest circle radius that stays inside the SVG viewport."""
+        if w <= 0 or h <= 0:
+            return 1.0
+        edge_margin = min(float(cx), float(w) - float(cx), float(cy), float(h) - float(cy))
+        return float(max(1.0, edge_margin - (max(0.0, float(stroke)) / 2.0)))
+
+    @staticmethod
+    def _clamp_circle_inside_canvas(params: dict, w: int, h: int) -> dict:
+        """Clamp circle center/radius so no part of the ring exceeds the viewport."""
+        p = dict(params)
+        if not p.get("circle_enabled", True):
+            return p
+        if "cx" not in p or "cy" not in p or "r" not in p:
+            return p
+
+        cx = float(max(0.0, min(float(w), float(p.get("cx", 0.0)))))
+        cy = float(max(0.0, min(float(h), float(p.get("cy", 0.0)))))
+        stroke = float(p.get("stroke_circle", 0.0))
+        max_r = Action._max_circle_radius_inside_canvas(cx, cy, w, h, stroke)
+
+        p["cx"] = cx
+        p["cy"] = cy
+        p["r"] = float(max(1.0, min(max_r, float(p.get("r", 1.0)))))
+        return p
+
+    @staticmethod
+    def _enforce_circle_connector_symmetry(params: dict, w: int, h: int) -> dict:
+        """Keep circle+connector "lollipop" geometry centered around the connector axis."""
+        p = dict(params)
+        if not p.get("circle_enabled", True):
+            return p
+        if "cx" not in p or "cy" not in p or "r" not in p:
+            return p
+
+        cx = float(p["cx"])
+        cy = float(p["cy"])
+        r = float(p["r"])
+
+        if p.get("stem_enabled") and "stem_width" in p:
+            p["stem_x"] = cx - (float(p["stem_width"]) / 2.0)
+
+        if p.get("arm_enabled") and all(k in p for k in ("arm_x1", "arm_y1", "arm_x2", "arm_y2")):
+            x1 = float(p["arm_x1"])
+            y1 = float(p["arm_y1"])
+            x2 = float(p["arm_x2"])
+            y2 = float(p["arm_y2"])
+
+            vertical = abs(x2 - x1) <= abs(y2 - y1)
+            if vertical:
+                p["arm_x1"] = cx
+                p["arm_x2"] = cx
+                end_is_p2 = abs(y2 - cy) <= abs(y1 - cy)
+                if end_is_p2:
+                    p["arm_y2"] = cy - r if y1 <= cy else cy + r
+                else:
+                    p["arm_y1"] = cy - r if y2 <= cy else cy + r
+            else:
+                p["arm_y1"] = cy
+                p["arm_y2"] = cy
+                end_is_p2 = abs(x2 - cx) <= abs(x1 - cx)
+                if end_is_p2:
+                    p["arm_x2"] = cx - r if x1 <= cx else cx + r
+                else:
+                    p["arm_x1"] = cx - r if x2 <= cx else cx + r
+
+        if "stem_x" in p and "stem_width" in p:
+            p["stem_x"] = max(0.0, min(float(w) - float(p["stem_width"]), float(p["stem_x"])))
+        for key in ("arm_x1", "arm_x2"):
+            if key in p:
+                p[key] = max(0.0, min(float(w), float(p[key])))
+        for key in ("arm_y1", "arm_y2"):
+            if key in p:
+                p[key] = max(0.0, min(float(h), float(p[key])))
+        return p
+
+    @staticmethod
+    def _quantize_badge_params(params: dict, w: int, h: int) -> dict:
+        """Quantize geometry for bitmap-like sources.
+
+        - Coordinates/lengths use 0.5px steps.
+        - Line widths use integer pixel steps.
+        """
+        p = dict(params)
+
+        half_keys = (
+            "cx",
+            "cy",
+            "r",
+            "stem_x",
+            "stem_top",
+            "stem_bottom",
+            "arm_x1",
+            "arm_y1",
+            "arm_x2",
+            "arm_y2",
+            "tx",
+            "ty",
+            "co2_dy",
+        )
+        for key in half_keys:
+            if key in p:
+                p[key] = Action._snap_half(float(p[key]))
+
+        int_width_keys = ("stroke_circle", "arm_stroke", "stem_width")
+        for key in int_width_keys:
+            if key in p:
+                p[key] = Action._snap_int_px(float(p[key]), minimum=1.0)
+
+        if "stem_width_max" in p:
+            p["stem_width_max"] = max(1.0, Action._snap_half(float(p["stem_width_max"])))
+
+        if p.get("stem_enabled") and "cx" in p and "stem_width" in p:
+            p["stem_x"] = Action._snap_half(float(p["cx"]) - (float(p["stem_width"]) / 2.0))
+
+        if "stem_x" in p and "stem_width" in p:
+            p["stem_x"] = max(0.0, min(float(w) - float(p["stem_width"]), float(p["stem_x"])))
+        if "stem_top" in p:
+            p["stem_top"] = max(0.0, min(float(h), float(p["stem_top"])))
+        if "stem_bottom" in p:
+            p["stem_bottom"] = max(0.0, min(float(h), float(p["stem_bottom"])))
+
+        p = Action._enforce_circle_connector_symmetry(p, w, h)
+        p = Action._clamp_circle_inside_canvas(p, w, h)
+
+        # Symmetry enforcement may reintroduce non-snapped values.
+        for key in half_keys:
+            if key in p:
+                p[key] = Action._snap_half(float(p[key]))
+
+        return p
+
+    @staticmethod
+    def _normalize_light_circle_colors(params: dict) -> dict:
+        params["fill_gray"] = Action.LIGHT_CIRCLE_FILL_GRAY
+        params["stroke_gray"] = Action.LIGHT_CIRCLE_STROKE_GRAY
+        if params.get("stem_enabled"):
+            params["stem_gray"] = Action.LIGHT_CIRCLE_STROKE_GRAY
+        if params.get("draw_text", True) and "text_gray" in params:
+            params["text_gray"] = Action.LIGHT_CIRCLE_TEXT_GRAY
+        return params
+
+    @staticmethod
+    def _normalize_ac08_line_widths(params: dict) -> dict:
+        """For AC08xx symbols: prefer a uniform 1px circle/connector stroke."""
+        p = dict(params)
+        p["stroke_circle"] = Action.AC08_STROKE_WIDTH_PX
+        # Keep semantic AC08xx families on their canonical stroke thickness.
+        # The later pixel-error bracketing step can otherwise over-fit anti-aliased
+        # ring edges and inflate widths (e.g. 1px -> 6px for tiny circles).
+        p["lock_stroke_widths"] = True
+        if p.get("arm_enabled"):
+            p["arm_stroke"] = Action.AC08_STROKE_WIDTH_PX
+        if p.get("stem_enabled"):
+            p["stem_width"] = Action.AC08_STROKE_WIDTH_PX
+            if "cx" in p:
+                p["stem_x"] = float(p["cx"]) - (Action.AC08_STROKE_WIDTH_PX / 2.0)
+            p["stem_gray"] = int(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY))
+        return p
+
+    @staticmethod
+    def _persist_connector_length_floor(params: dict, element: str, default_ratio: float) -> None:
+        """Persist a robust minimum connector length for later validation stages."""
+        if element == "stem":
+            length = float(params.get("stem_bottom", 0.0)) - float(params.get("stem_top", 0.0))
+            min_key = "stem_len_min"
+            ratio_key = "stem_len_min_ratio"
+        elif element == "arm":
+            x1 = float(params.get("arm_x1", 0.0))
+            y1 = float(params.get("arm_y1", 0.0))
+            x2 = float(params.get("arm_x2", 0.0))
+            y2 = float(params.get("arm_y2", 0.0))
+            length = float(math.hypot(x2 - x1, y2 - y1))
+            min_key = "arm_len_min"
+            ratio_key = "arm_len_min_ratio"
+        else:
+            return
+
+        if length <= 0.0:
+            return
+
+        ratio = float(max(0.0, min(1.0, float(params.get(ratio_key, default_ratio)))))
+        params[ratio_key] = ratio
+        params[min_key] = float(max(float(params.get(min_key, 1.0)), length * ratio, 1.0))
+
+    @staticmethod
+    def _finalize_ac08_style(name: str, params: dict) -> dict:
+        """Apply AC08xx palette/stroke conventions globally for semantic conversions."""
+        canonical_name = str(name).upper()
+        symbol_name = canonical_name.split("_", 1)[0]
+        if not symbol_name.startswith("AC08"):
+            return params
+        p = Action._capture_canonical_badge_colors(Action._normalize_light_circle_colors(dict(params)))
+        # During geometry fitting we intentionally keep auto-estimated colors.
+        # Canonical palette values are re-applied once fitting converged.
+        p = Action._normalize_ac08_line_widths(p)
+        p["lock_colors"] = True
+        if symbol_name != "AC0820":
+            p = Action._normalize_centered_co2_label(p)
+        if symbol_name == "AC0820" and str(p.get("text_mode", "")).lower() == "co2":
+            # AC0820 variants (L/M/S): center the full CO₂ cluster horizontally.
+            p["co2_anchor_mode"] = "cluster"
+            p["co2_optical_bias"] = 0.125
+            r = max(1.0, float(p.get("r", 1.0)))
+            # Keep AC0820 text close to the cap-height used by centered path
+            # glyph labels (e.g. single C) so the leading "C" is no longer
+            # undersized compared to the original badge family.
+            if r >= 10.0:
+                p["co2_font_scale"] = 0.94
+            elif r >= 6.0:
+                p["co2_font_scale"] = 0.95
+            else:
+                p["co2_font_scale"] = 0.97
+            # Keep AC0820_M/S adjustable in validation: the tiny CO run can still
+            # be slightly undersized after geometric fitting, but we do not want
+            # unconstrained growth that reintroduces prior over-scaling regressions.
+            base_scale = float(p["co2_font_scale"])
+            p["co2_font_scale_min"] = float(max(0.84, base_scale * 0.92))
+            p["co2_font_scale_max"] = float(min(1.12, base_scale * 1.22))
+            p["co2_sub_font_scale"] = float(p.get("co2_sub_font_scale", 66.0))
+            p["co2_subscript_offset_scale"] = 0.27
+        if p.get("circle_enabled", True):
+            has_connector = bool(p.get("arm_enabled") or p.get("stem_enabled"))
+            has_text = bool(p.get("draw_text", False))
+
+            # For all semantic AC08xx badges, keep a robust radius floor anchored
+            # to the template geometry. This prevents degenerate late-stage fits
+            # where noisy masks shrink circles far below their known base size.
+            template_r = float(p.get("template_circle_radius", p.get("r", 1.0)))
+            current_r = float(p.get("r", template_r))
+            base_r = max(1.0, template_r, current_r)
+            min_ratio = 0.88
+            if has_text:
+                # Text badges are especially sensitive to circle shrink because
+                # the label scales relative to the interior diameter.
+                min_ratio = 0.92 if symbol_name == "AC0820" else 0.90
+            p["min_circle_radius"] = float(max(float(p.get("min_circle_radius", 1.0)), base_r * min_ratio))
+
+            # Plain centered badges should keep their circle optically centered.
+            # Otherwise min-rect alignment may drift the ring into a corner,
+            # which also makes CO/VOC labels look far too small.
+            if not has_connector:
+                p["lock_circle_cx"] = True
+                p["lock_circle_cy"] = True
+
+            # Connector-only and connector+text badges can both lose connector
+            # extraction in noisy JPEGs. Without geometric anchors the circle
+            # optimizer may collapse toward unrelated border blobs (for plain
+            # symbols) or text blobs (for labeled symbols). Keep the center and
+            # connector alignment locked to template semantics for all connector
+            # families so rotations/reflections/scales remain stable.
+            if has_connector:
+                p["lock_circle_cx"] = True
+                p["lock_circle_cy"] = True
+                if p.get("stem_enabled"):
+                    p["lock_stem_center_to_circle"] = True
+                    p["stem_center_lock_max_offset"] = float(max(0.35, float(p.get("stroke_circle", 1.0)) * 0.6))
+                    p["allow_stem_width_tuning"] = True
+                    p["stem_width_tuning_px"] = 1.0
+                if p.get("arm_enabled"):
+                    p["lock_arm_center_to_circle"] = True
+
+            if bool(p.get("lock_circle_cx", False)) and "template_circle_cx" in p:
+                p["cx"] = float(p["template_circle_cx"])
+            if bool(p.get("lock_circle_cy", False)) and "template_circle_cy" in p:
+                p["cy"] = float(p["template_circle_cy"])
+        if p.get("stem_enabled"):
+            Action._persist_connector_length_floor(p, "stem", default_ratio=0.65)
+        if p.get("arm_enabled"):
+            Action._persist_connector_length_floor(p, "arm", default_ratio=0.75)
+        if str(p.get("text_mode", "")).lower() == "co2":
+            min_dim = float(min(float(p.get("width", 0.0) or 0.0), float(p.get("height", 0.0) or 0.0)))
+            if min_dim <= 0.0:
+                # Fallback for call sites that only pass geometry parameters.
+                min_dim = max(1.0, float(p.get("r", 1.0)) * 2.0)
+
+            # Keep AC0820 variants tunable (bounded via *_min/*_max overrides).
+            # Very small CO₂ badges from other AC08xx families (e.g. AC0833_S)
+            # can exhibit the same undersizing behavior after anti-aliased fitting,
+            # so unlock bounded tuning for tiny variants in general.
+            tiny_co2_variant = min_dim <= 15.5
+            p["lock_text_scale"] = not (symbol_name == "AC0820" or tiny_co2_variant)
+            if tiny_co2_variant:
+                base_scale = float(p.get("co2_font_scale", 0.82))
+                p["co2_font_scale_min"] = float(max(0.74, base_scale * 0.90))
+                p["co2_font_scale_max"] = float(min(1.18, base_scale * 1.25))
+        if str(p.get("text_mode", "")).lower() == "voc":
+            min_dim = float(min(float(p.get("width", 0.0) or 0.0), float(p.get("height", 0.0) or 0.0)))
+            if min_dim <= 0.0:
+                min_dim = max(1.0, float(p.get("r", 1.0)) * 2.0)
+            if symbol_name == "AC0835":
+                # AC0835 variants use a freer VOC fitting policy than the CO₂
+                # families: keep text scaling unlocked and bias the medium+
+                # badges toward a readable baseline.
+                p["lock_text_scale"] = False
+                if min_dim <= 15.5:
+                    # AC0835_S tends to over-scale VOC during text bracketing,
+                    # producing a visibly heavy label compared to the source icon.
+                    # Keep the historical small-badge cap stable regardless of
+                    # global baseline uplifts so regression bounds remain intact.
+                    legacy_base_scale = 0.52
+                    p.setdefault("voc_font_scale_min", float(max(0.58, legacy_base_scale * 0.90)))
+                    p.setdefault("voc_font_scale_max", float(min(0.92, legacy_base_scale * 1.05)))
+                else:
+                    # Medium/Large variants can start too small; pin a minimum
+                    # readable baseline while still allowing upward tuning.
+                    p["voc_font_scale"] = float(max(float(p.get("voc_font_scale", 0.52)), 0.60))
+                    p.setdefault("voc_font_scale_min", 0.60)
+                    p.pop("voc_font_scale_max", None)
+        if p.get("draw_text", True) and "text_gray" in p:
+            p["text_gray"] = int(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY))
+        return p
+
+    @staticmethod
+    def _align_stem_to_circle_center(params: dict) -> dict:
+        """Ensure vertical handle/stem extension runs through circle center.
+
+        For vertical connector badges (e.g. AC0811/AC0831/AC0836), force the
+        connector start to the circle edge so quantization does not leave a
+        visible gap between circle and stem.
+        """
+        if params.get("stem_enabled") and params.get("circle_enabled", True):
+            if "stem_width" in params and "cx" in params:
+                params["stem_x"] = float(params["cx"]) - (float(params["stem_width"]) / 2.0)
+            if "cy" in params and "r" in params:
+                params["stem_top"] = float(params["cy"]) + float(params["r"])
+        return params
+
+    @staticmethod
+    def _default_ac0870_params(w: int, h: int) -> dict:
+        scale = min(w, h) / 30.0 if min(w, h) > 0 else 1.0
+        b = Action.AC0870_BASE
+        params = {
+            "cx": b["cx"] * scale,
+            "cy": b["cy"] * scale,
+            "r": b["r"] * scale,
+            "stroke_circle": b["stroke_width"] * scale,
+            "fill_gray": b["fill_gray"],
+            "stroke_gray": b["stroke_gray"],
+            "text_gray": b["text_gray"],
+            "label": b["label"],
+            "tx": 8.7 * scale,
+            "ty": 6.5 * scale,
+            "s": 0.0100 * scale,
+            "text_mode": "path_t",
+        }
+        Action._center_glyph_bbox(params)
+        return Action._normalize_light_circle_colors(params)
+
+    @staticmethod
+    def _default_ac0881_params(w: int, h: int) -> dict:
+        params = Action._default_ac0870_params(w, h)
+        params["stem_enabled"] = True
+        params["stem_width"] = max(1.0, params["r"] * 0.30)
+        params["stem_x"] = params["cx"] - (params["stem_width"] / 2.0)
+        params["stem_top"] = params["cy"] + (params["r"] * 0.60)
+        params["stem_bottom"] = float(h)
+        params["stem_gray"] = params["stroke_gray"]
+        return params
+
+    @staticmethod
+    def _default_ac081x_shared(w: int, h: int) -> dict:
+        scale = min(1.0, (min(w, h) / 25.0)) if min(w, h) > 0 else 1.0
+        cx = float(w) / 2.0
+        cy = float(h) / 2.0
+        # AC081x reference bitmaps use a slightly larger circle than AR0100/AC0870.
+        r = 9.2 * scale
+        stroke_circle = 1.5 * scale
+        stem_or_arm = 2.0 * scale
+        # Keep connector lines long enough to match the raster source symbols.
+        stem_or_arm_len = 9.0 * scale
+        return {
+            "cx": cx,
+            "cy": cy,
+            "r": r,
+            "stroke_circle": stroke_circle,
+            "stroke_gray": 152,
+            "fill_gray": 220,
+            "stem_or_arm": stem_or_arm,
+            "stem_or_arm_len": stem_or_arm_len,
+        }
+
+    @staticmethod
+    def _default_ac0811_params(w: int, h: int) -> dict:
+        """AC0811 is vertically elongated: circle sits in the upper square area."""
+        if w <= 0 or h <= 0:
+            return Action._default_ac081x_shared(w, h)
+
+        r = float(w) * 0.4
+        stroke_circle = max(0.9, float(w) / 15.0)
+        cx = float(w) / 2.0
+        cy = float(w) / 2.0
+        stem_width = max(1.0, float(w) * 0.10)
+        # AC0811 reference symbols use a visually slim vertical handle.
+        # Persist an explicit width ceiling so later fitting/validation
+        # steps cannot widen the stem beyond the template's intent.
+        stem_width_max = max(1.0, float(w) * 0.105)
+        stem_len = max(2.0, float(h) - (cy + r))
+
+        return Action._normalize_light_circle_colors({
+            "cx": cx,
+            "cy": cy,
+            "r": r,
+            "stroke_circle": stroke_circle,
+            "stroke_gray": Action.LIGHT_CIRCLE_STROKE_GRAY,
+            "fill_gray": Action.LIGHT_CIRCLE_FILL_GRAY,
+            "draw_text": False,
+            "stem_enabled": True,
+            "stem_width": stem_width,
+            "stem_width_max": stem_width_max,
+            "stem_x": cx - (stem_width / 2.0),
+            "stem_top": cy + r,
+            "stem_bottom": min(float(h), (cy + r) + stem_len),
+            "stem_gray": Action.LIGHT_CIRCLE_STROKE_GRAY,
+        })
+
+    @staticmethod
+    def _estimate_upper_circle_from_foreground(img: np.ndarray, defaults: dict) -> tuple[float, float, float] | None:
+        """Estimate circle geometry from the upper symbol region.
+
+        AC0811_S is very small and Hough-based fitting can drift on anti-aliased
+        edges. This fallback uses a simple foreground extraction in the upper part
+        of the symbol and derives a robust enclosing circle from the largest blob.
+        """
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        h, w = gray.shape
+        if h <= 0 or w <= 0:
+            return None
+
+        _, fg = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        top_limit = int(round(min(float(h), float(defaults.get("cy", h / 2.0)) + float(defaults.get("r", w / 3.0)) * 1.15)))
+        top_limit = max(3, min(h, top_limit))
+        roi = fg[:top_limit, :]
+        if roi.size == 0:
+            return None
+
+        contours, _ = cv2.findContours(roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not contours:
+            return None
+
+        best = None
+        for cnt in contours:
+            area = float(cv2.contourArea(cnt))
+            if area < 8.0:
                 continue
-            stack = [(x, y)]
-            visited[y][x] = True
-            coords: list[tuple[int, int]] = []
-
-            while stack:
-                cx, cy = stack.pop()
-                coords.append((cx, cy))
-                for nx, ny in ((cx - 1, cy), (cx + 1, cy), (cx, cy - 1), (cx, cy + 1)):
-                    if 0 <= nx < w and 0 <= ny < h and binary[ny][nx] and not visited[ny][nx]:
-                        visited[ny][nx] = True
-                        stack.append((nx, ny))
-
-            if len(coords) < min_pixels:
+            perimeter = float(cv2.arcLength(cnt, True))
+            if perimeter <= 0.0:
                 continue
+            circularity = 4.0 * np.pi * area / max(1e-6, perimeter * perimeter)
+            if circularity < 0.35:
+                continue
+            score = area * (0.5 + circularity)
+            if best is None or score > best[0]:
+                best = (score, cnt)
 
-            xs = [c[0] for c in coords]
-            ys = [c[1] for c in coords]
-            x0, x1 = min(xs), max(xs)
-            y0, y1 = min(ys), max(ys)
-            local = [[0] * (x1 - x0 + 1) for _ in range(y1 - y0 + 1)]
-            for px, py in coords:
-                local[py - y0][px - x0] = 1
-            elements.append(Element(local, x0, y0, x1, y1))
-
-    return elements
-
-
-def estimate_initial_candidate(element: Element) -> Candidate:
-    coords = [(x, y) for y, row in enumerate(element.pixels) for x, v in enumerate(row) if v]
-    xs = [c[0] for c in coords]
-    ys = [c[1] for c in coords]
-    cx = sum(xs) / max(1, len(xs))
-    cy = sum(ys) / max(1, len(ys))
-    w = max(2.0, float(max(xs) - min(xs) + 1))
-    h = max(2.0, float(max(ys) - min(ys) + 1))
-    ratio = max(w, h) / max(1.0, min(w, h))
-    shape = "circle" if ratio < 1.35 else "ellipse"
-    return Candidate(shape=shape, cx=cx, cy=cy, w=w, h=h)
-
-
-def render_candidate_mask(candidate: Candidate, width: int, height: int) -> list[list[int]]:
-    mask = [[0 for _ in range(width)] for _ in range(height)]
-
-    if candidate.shape == "circle":
-        rx = max(1.0, (candidate.w + candidate.h) / 4.0)
-        ry = rx
-    else:
-        rx = max(1.0, candidate.w / 2.0)
-        ry = max(1.0, candidate.h / 2.0)
-
-    inv_rx2 = 1.0 / (rx * rx)
-    inv_ry2 = 1.0 / (ry * ry)
-
-    for y in range(height):
-        dy2 = (y - candidate.cy) ** 2 * inv_ry2
-        if dy2 > 1.0:
-            continue
-        for x in range(width):
-            dx2 = (x - candidate.cx) ** 2 * inv_rx2
-            if dx2 + dy2 <= 1.0:
-                mask[y][x] = 1
-
-    return mask
-
-
-def _iou(a: list[list[int]], b: list[list[int]]) -> float:
-    inter = 0
-    union = 0
-    for y in range(len(a)):
-        for x in range(len(a[0])):
-            av = a[y][x]
-            bv = b[y][x]
-            if av and bv:
-                inter += 1
-            if av or bv:
-                union += 1
-    return inter / union if union else 0.0
-
-
-def score_candidate(target: list[list[int]], candidate: Candidate) -> float:
-    rendered = render_candidate_mask(candidate, len(target[0]), len(target))
-    return _iou(target, rendered)
-
-
-def random_neighbor(base: Candidate, scale: float, rng: random.Random) -> Candidate:
-    return Candidate(
-        shape=base.shape,
-        cx=base.cx + rng.uniform(-scale, scale),
-        cy=base.cy + rng.uniform(-scale, scale),
-        w=max(1.0, base.w + rng.uniform(-scale, scale) * 1.4),
-        h=max(1.0, base.h + rng.uniform(-scale, scale) * 1.4),
-    )
+        if best is None:
+            return None
 
         (_score, cnt) = best
         (cx, cy), r = cv2.minEnclosingCircle(cnt)
@@ -337,9 +846,9 @@ def random_neighbor(base: Candidate, scale: float, rng: random.Random) -> Candid
         max_r = min(float(w) * 0.52, float(top_limit) * 0.58)
         if max_r < min_r:
             max_r = min_r
-        r = float(_clip(r, min_r, max_r))
-        cx = float(_clip(cx, 0.0, float(w - 1)))
-        cy = float(_clip(cy, 0.0, float(h - 1)))
+        r = float(Action._clip_scalar(r, min_r, max_r))
+        cx = float(Action._clip_scalar(cx, 0.0, float(w - 1)))
+        cy = float(Action._clip_scalar(cy, 0.0, float(h - 1)))
         return cx, cy, r
 
     @staticmethod
@@ -384,7 +893,7 @@ def random_neighbor(base: Candidate, scale: float, rng: random.Random) -> Candid
             default_cy = float(defaults.get("cy", float(w) / 2.0))
             default_r = float(defaults.get("r", float(w) * 0.4))
             cx = default_cx
-            cy = float(_clip(cy, default_cy - 0.8, default_cy + 0.8))
+            cy = float(Action._clip_scalar(cy, default_cy - 0.8, default_cy + 0.8))
             # Keep tiny variants from shrinking due to noisy anti-aliased edge pixels.
             # This preserves the visual diameter expected for AC0811_S.
             r = max(r, default_r * 0.96)
@@ -407,7 +916,7 @@ def random_neighbor(base: Candidate, scale: float, rng: random.Random) -> Candid
         # shrinks both the circle and text size in variants such as AC0836_L.
         if str(params.get("text_mode", "")).lower() in {"voc", "co2"}:
             default_r = float(defaults.get("r", r))
-            r = float(_clip(r, default_r * 0.95, default_r * 1.08))
+            r = float(Action._clip_scalar(r, default_r * 0.95, default_r * 1.08))
             params["r"] = r
 
         # AC0811 stems are intentionally thin. The generic contour fit can over-estimate
@@ -521,11 +1030,238 @@ def random_neighbor(base: Candidate, scale: float, rng: random.Random) -> Candid
             subscript_x = co_x + (co_width / 2.0) + gap
             x2 = subscript_x + sub_w
         else:
-            plateau += 1
-            if plateau % 8 == 0:
-                scale = max(0.6, scale * 0.8)
-        if plateau >= plateau_limit:
-            break
+            # Default mode: keep the "CO" run as the dominant anchor and only shift
+            # if geometry constraints require it.
+            # Prioritize matching the main "CO" glyphs first; if space is tight, shrink
+            # or tuck the subscript before shifting the dominant "CO" run.
+            visual_sub_w = sub_font_px * float(params.get("co2_subscript_visual_width_factor", 0.62))
+            visual_cluster_shift = (gap + visual_sub_w) / 2.0
+            center_co_bias = float(params.get("co2_center_co_bias", 0.0))
+            co_x = (cx + float(params.get("co2_dx", 0.0))) + (visual_cluster_shift * center_co_bias)
+            x1 = co_x - (co_width / 2.0)
+
+            local_gap = gap
+            local_sub_font_px = sub_font_px
+            local_sub_w = sub_w
+            subscript_x = co_x + (co_width / 2.0) + local_gap
+            x2 = subscript_x + local_sub_w
+
+            stroke = max(0.8, float(params.get("stroke_circle", 1.0)))
+            inner_right = cx + max(1.0, r - stroke) - inner_padding
+            inner_left = cx - max(1.0, r - stroke) + inner_padding
+
+            overflow = x2 - inner_right
+            if overflow > 0.0:
+                # Step 1: reduce spacing before moving CO.
+                min_gap = font_size * 0.005
+                shrink_gap = min(overflow, max(0.0, local_gap - min_gap))
+                local_gap -= shrink_gap
+                overflow -= shrink_gap
+
+                # Step 2: reduce subscript size (keep readable floor) before moving CO.
+                if overflow > 0.0:
+                    min_sub_font_px = max(4.0, font_size * 0.42)
+                    max_shrink_px = max(0.0, local_sub_font_px - min_sub_font_px)
+                    shrink_px = min(max_shrink_px, overflow / 0.62)
+                    local_sub_font_px -= shrink_px
+                    local_sub_w = local_sub_font_px * 0.62
+
+                # Recompute geometry with adjusted ₂ attachment.
+                sub_font_px = local_sub_font_px
+                subscript_x = co_x + (co_width / 2.0) + local_gap
+                x2 = subscript_x + local_sub_w
+
+                # Step 3: only if still necessary, shift cluster minimally left.
+                overflow = x2 - inner_right
+                if overflow > 0.0:
+                    co_x -= overflow
+                    x1 -= overflow
+                    subscript_x -= overflow
+                    x2 -= overflow
+
+            # Keep the left side inside the inner circle as well.
+            left_overflow = inner_left - x1
+            if left_overflow > 0.0:
+                co_x += left_overflow
+                x1 += left_overflow
+                subscript_x += left_overflow
+                x2 += left_overflow
+
+        # Capital glyphs usually appear slightly high when simply middle-anchored.
+        # Apply a proportional optical correction so the label sits visually centered.
+        # A stronger correction keeps the "CO" run from looking top-heavy in tiny
+        # AC08xx badges where antialiasing exaggerates baseline drift.
+        # Large variants (e.g. AC0820_L) can still look top-heavy with a fixed
+        # correction. Nudge bigger badges slightly further down while keeping the
+        # small-size behavior effectively unchanged.
+        optical_bias = float(params.get("co2_optical_bias", 0.090 + (0.015 * min(1.0, r / 12.0))))
+        y_base = cy + float(params.get("co2_dy", 0.0)) + (font_size * optical_bias)
+        subscript_offset = font_size * float(params.get("co2_subscript_offset_scale", 0.18))
+        height = font_size * 0.95
+
+        # Keep text vertically within the circle's clear area.
+        stroke = max(0.8, float(params.get("stroke_circle", 1.0)))
+        inner_top = cy - max(1.0, r - stroke)
+        inner_bottom = cy + max(1.0, r - stroke)
+        top = y_base - (height / 2.0)
+        bottom = y_base + (height / 2.0)
+        if top < inner_top:
+            delta = inner_top - top
+            y_base += delta
+        elif bottom > inner_bottom:
+            delta = bottom - inner_bottom
+            y_base -= delta
+
+        # Keep the subscript readable and away from the border, but do not let it
+        # drive the vertical centering of the main "CO" run.
+        min_subscript_offset = font_size * 0.08
+        max_subscript_offset = font_size * 0.24
+        subscript_offset = float(max(min_subscript_offset, min(max_subscript_offset, subscript_offset)))
+        subscript_y = y_base + subscript_offset
+        sub_bottom = subscript_y + (sub_font_px * 0.35)
+        if sub_bottom > inner_bottom:
+            max_offset = inner_bottom - y_base - (sub_font_px * 0.35)
+            subscript_offset = float(max(min_subscript_offset, min(max_subscript_offset, max_offset)))
+            subscript_y = y_base + subscript_offset
+
+        sub_top = subscript_y - (sub_font_px * 0.60)
+        if sub_top < inner_top:
+            min_offset = inner_top - y_base + (sub_font_px * 0.60)
+            subscript_offset = float(max(min_subscript_offset, min(max_subscript_offset, min_offset)))
+            subscript_y = y_base + subscript_offset
+
+        return {
+            "anchor_mode": anchor_mode,
+            "font_size": font_size,
+            "sub_scale": sub_scale,
+            "sub_font_px": sub_font_px,
+            "co_x": co_x,
+            "y_base": y_base,
+            "subscript_x": subscript_x,
+            "subscript_y": subscript_y,
+            "x1": x1,
+            "x2": x2,
+            "height": height,
+        }
+
+    @staticmethod
+    def _apply_voc_label(params: dict) -> dict:
+        params["draw_text"] = True
+        params["text_mode"] = "voc"
+        params["text_gray"] = int(round(params.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY)))
+        params["voc_font_scale"] = float(params.get("voc_font_scale", 0.52 * Action.SEMANTIC_TEXT_BASE_SCALE))
+        params["voc_dy"] = float(params.get("voc_dy", -0.01 * float(params.get("r", 0.0))))
+        params["voc_weight"] = int(params.get("voc_weight", 600))
+        return params
+
+    @staticmethod
+    def _tune_ac0832_co2_badge(params: dict) -> dict:
+        """AC0832 has a compact circle; keep CO₂ comfortably inside the ring."""
+        p = dict(params)
+        r = float(p.get("r", 0.0))
+        p["stroke_gray"] = Action.LIGHT_CIRCLE_STROKE_GRAY
+        p["arm_stroke"] = Action.AC08_STROKE_WIDTH_PX
+        p["stroke_circle"] = Action.AC08_STROKE_WIDTH_PX
+        p["co2_font_scale"] = min(float(p.get("co2_font_scale", 0.82)), 0.74)
+        p["co2_sub_font_scale"] = min(float(p.get("co2_sub_font_scale", 66.0)), 62.0)
+        p["co2_dy"] = float(p.get("co2_dy", 0.0)) - (0.03 * r)
+        p["text_gray"] = p["stroke_gray"]
+        return p
+
+    @staticmethod
+    def _tune_ac0834_co2_badge(params: dict, w: int, h: int) -> dict:
+        """Stabilize tiny AC0834 badges where fitting drifts the circle downward."""
+        p = dict(params)
+        p["stroke_gray"] = Action.LIGHT_CIRCLE_STROKE_GRAY
+        p["text_gray"] = p["stroke_gray"]
+        p["stroke_circle"] = Action.AC08_STROKE_WIDTH_PX
+        p["arm_stroke"] = Action.AC08_STROKE_WIDTH_PX
+
+        if min(w, h) <= 16:
+            default_cy = float(h) / 2.0
+            default_r = float(h) * 0.4
+
+            p["cy"] = default_cy
+            p["r"] = max(default_r * 0.95, float(p.get("r", default_r)))
+            cx = float(p.get("cx", float(h) / 2.0))
+            p["arm_y1"] = default_cy
+            p["arm_y2"] = default_cy
+            p["arm_x1"] = min(float(w), cx + float(p["r"]))
+            p["arm_x2"] = float(w)
+
+            p["co2_font_scale"] = min(float(p.get("co2_font_scale", 0.82)), 0.86)
+            p["co2_sub_font_scale"] = min(float(p.get("co2_sub_font_scale", 66.0)), 64.0)
+
+        return p
+
+    @staticmethod
+    def _normalize_centered_co2_label(params: dict) -> dict:
+        """Normalize CO₂ label sizing for plain circular badges.
+
+        This keeps CO₂ text proportionate to the inner circle diameter for any
+        centered (connector-free) semantic badge instead of tuning a single SKU.
+        """
+        p = dict(params)
+        if str(p.get("text_mode", "")).lower() != "co2":
+            return p
+        if p.get("arm_enabled") or p.get("stem_enabled"):
+            return p
+        if not p.get("circle_enabled", True):
+            return p
+
+        r = max(1.0, float(p.get("r", 1.0)))
+        stroke = max(0.8, float(p.get("stroke_circle", 1.0)))
+        inner_diameter = max(2.0, (2.0 * r) - stroke)
+
+        cur_scale = float(p.get("co2_font_scale", 0.82))
+        cur_font = max(4.0, r * cur_scale)
+        cur_width = cur_font * 1.45
+        # Keep centered CO₂ labels clearly readable in small AC0820 badges while
+        # still fitting inside the inner ring.
+        target_width = inner_diameter * 0.84
+
+        adjusted_scale = cur_scale * (target_width / max(1e-6, cur_width))
+        p["co2_font_scale"] = float(max(0.90, min(1.12, adjusted_scale)))
+        p["co2_sub_font_scale"] = float(max(60.0, min(68.0, float(p.get("co2_sub_font_scale", 66.0)))))
+        p["co2_dx"] = float(max(-0.18 * r, min(0.18 * r, float(p.get("co2_dx", -0.04 * r)))))
+        p["co2_dy"] = float(max(-0.20 * r, min(0.20 * r, float(p.get("co2_dy", 0.03 * r)))))
+        p["text_gray"] = int(round(p.get("stroke_gray", Action.LIGHT_CIRCLE_STROKE_GRAY)))
+        return p
+
+    @staticmethod
+    def _default_ac0812_params(w: int, h: int) -> dict:
+        """AC0812 is horizontally elongated: left arm, circle on the right."""
+        if w <= 0 or h <= 0:
+            return Action._default_ac081x_shared(w, h)
+
+        # Like AC0811/AC0813, size from the narrow side so tiny variants keep
+        # the intended visual circle diameter.
+        # AC0812 source rasters leave a slightly larger vertical margin around the
+        # ring than AC0811/AC0813. Using 0.40*h tends to over-size the circle.
+        r = float(h) * 0.36
+        stroke_circle = max(0.9, float(h) / 15.0)
+        cx = float(w) - (float(h) / 2.0)
+        cy = float(h) / 2.0
+        arm_stroke = max(1.0, float(h) * 0.10)
+
+        return Action._normalize_light_circle_colors(
+            {
+                "cx": cx,
+                "cy": cy,
+                "r": r,
+                "stroke_circle": stroke_circle,
+                "stroke_gray": Action.LIGHT_CIRCLE_STROKE_GRAY,
+                "fill_gray": Action.LIGHT_CIRCLE_FILL_GRAY,
+                "draw_text": False,
+                "arm_enabled": True,
+                "arm_x1": 0.0,
+                "arm_y1": cy,
+                "arm_x2": max(0.0, cx - r),
+                "arm_y2": cy,
+                "arm_stroke": arm_stroke,
+                "arm_len_min_ratio": 0.75,
+            }
+        )
 
     @staticmethod
     def _fit_ac0812_params_from_image(img: np.ndarray, defaults: dict) -> dict:
@@ -692,7 +1428,7 @@ def random_neighbor(base: Candidate, scale: float, rng: random.Random) -> Candid
             default_cy = float(defaults.get("cy", float(h) - (float(w) / 2.0)))
             default_r = float(defaults.get("r", float(w) * 0.4))
             params["cx"] = default_cx
-            params["cy"] = float(_clip(cy, default_cy - 0.8, default_cy + 0.8))
+            params["cy"] = float(Action._clip_scalar(cy, default_cy - 0.8, default_cy + 0.8))
             params["r"] = max(r, default_r * 0.94)
             params["lock_circle_cx"] = True
             params["lock_circle_cy"] = True
@@ -878,6 +1614,72 @@ def random_neighbor(base: Candidate, scale: float, rng: random.Random) -> Candid
             maxRadius=max(6, int(round(min_side * 0.48))),
         )
 
+        if circles is not None and circles.size > 0:
+            c = circles[0][0]
+            params["cx"] = float(c[0])
+            params["cy"] = float(c[1])
+            params["r"] = float(c[2])
+
+        yy, xx = np.indices(gray.shape)
+        dist = np.sqrt((xx - params["cx"]) ** 2 + (yy - params["cy"]) ** 2)
+        inner_mask = dist <= params["r"] * 0.88
+        ring_mask = np.abs(dist - params["r"]) <= max(1.0, params["stroke_circle"])
+
+        if np.any(inner_mask):
+            inner_vals = gray[inner_mask]
+            text_threshold = min(150, int(np.percentile(inner_vals, 20) + 3))
+            text_mask = (gray <= text_threshold) & inner_mask
+
+            kernel = np.ones((2, 2), np.uint8)
+            text_mask_u8 = cv2.morphologyEx(text_mask.astype(np.uint8), cv2.MORPH_OPEN, kernel)
+            contours, _ = cv2.findContours(text_mask_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            if contours:
+                contour = max(contours, key=cv2.contourArea)
+                x, y, tw, th = cv2.boundingRect(contour)
+                if tw > 2 and th > 2:
+                    t_width_units = 1636 - Action.T_XMIN
+                    t_height_units = Action.T_YMAX
+                    sx = tw / t_width_units
+                    sy = th / t_height_units
+                    s = float(max(0.004, min(0.04, (sx + sy) / 2.0)))
+                    params["s"] = s
+                    params["text_gray"] = int(np.median(gray[text_mask_u8 > 0]))
+
+            Action._center_glyph_bbox(params)
+
+            params["fill_gray"] = int(np.median(inner_vals))
+
+        if np.any(ring_mask):
+            params["stroke_gray"] = int(np.median(gray[ring_mask]))
+
+        return params
+
+    @staticmethod
+    def _fit_semantic_badge_from_image(img: np.ndarray, defaults: dict) -> dict:
+        """Fit common semantic badge primitives (circle/stem/arm) directly from image content."""
+        params = dict(defaults)
+        if "r" in params and "template_circle_radius" not in params:
+            params["template_circle_radius"] = float(params["r"])
+        if "cx" in params and "template_circle_cx" not in params:
+            params["template_circle_cx"] = float(params["cx"])
+        if "cy" in params and "template_circle_cy" not in params:
+            params["template_circle_cy"] = float(params["cy"])
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        h, w = gray.shape
+
+        min_side = float(min(h, w))
+        blur = cv2.GaussianBlur(gray, (3, 3), 0)
+        circles = cv2.HoughCircles(
+            blur,
+            cv2.HOUGH_GRADIENT,
+            dp=1.0,
+            minDist=max(6.0, min_side * 0.35),
+            param1=80,
+            param2=9,
+            minRadius=max(3, int(round(min_side * 0.14))),
+            maxRadius=max(6, int(round(min_side * 0.60))),
+        )
 
         if circles is not None and circles.size > 0:
             best = None
@@ -940,7 +1742,7 @@ def random_neighbor(base: Candidate, scale: float, rng: random.Random) -> Candid
                 radius_limit_y = max(1.0, min(cy, float(h) - cy) - (stroke / 2.0))
                 max_r = max(1.0, min(radius_limit_x, radius_limit_y))
                 min_r = min(max_r, max(1.0, default_r * min_ratio))
-                params["r"] = float(_clip(float(params.get("r", default_r)), min_r, max_r))
+                params["r"] = float(Action._clip_scalar(float(params.get("r", default_r)), min_r, max_r))
 
         if params.get("stem_enabled"):
             dark = gray <= min(225, int(np.percentile(gray, 75)))
@@ -1099,113 +1901,282 @@ def random_neighbor(base: Candidate, scale: float, rng: random.Random) -> Candid
                 h,
             )
 
-    if not values:
-        return "#000000"
-    return gray_to_hex(sum(values) // len(values))
+        if name == "AC0813":
+            defaults = Action._default_ac0813_params(w, h)
+            if img is None:
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._fit_ac0813_params_from_image(img, defaults))
 
+        if name == "AC0814":
+            defaults = Action._default_ac0814_params(w, h)
+            if img is None:
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._fit_ac0814_params_from_image(img, defaults))
 
-def estimate_stroke_style(grayscale: list[list[int]], element: Element, candidate: Candidate) -> tuple[str, str | None, float | None]:
-    """Estimate fill/stroke from grayscale values.
+        if name == "AC0881":
+            defaults = Action._default_ac0881_params(w, h)
+            if img is None:
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._fit_semantic_badge_from_image(img, defaults))
 
-    For near-circular components we check whether the outer radial band is
-    significantly darker than the center. If yes, emit an explicit stroke so
-    reconstructed symbols preserve visible borders.
-    """
-    fill_color = element_fill_color(grayscale, element)
-    if candidate.shape != "circle":
-        return fill_color, None, None
+        if name == "AC0882":
+            defaults = Action._default_ac0882_params(w, h)
+            if img is None:
+                return Action._enforce_left_arm_badge_geometry(Action._finalize_ac08_style(name, defaults), w, h)
+            return Action._enforce_left_arm_badge_geometry(
+                Action._finalize_ac08_style(name, Action._fit_semantic_badge_from_image(img, defaults)),
+                w,
+                h,
+            )
 
-    cx = candidate.cx + element.x0
-    cy = candidate.cy + element.y0
-    radius = max(1.0, (candidate.w + candidate.h) / 4.0)
-    inner_values: list[int] = []
-    outer_values: list[int] = []
+        if name == "AC0820":
+            defaults = Action._apply_co2_label(Action._default_ac0870_params(w, h))
+            if img is None:
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._apply_co2_label(Action._fit_semantic_badge_from_image(img, defaults)))
 
-    for y, row in enumerate(element.pixels):
-        gy = y + element.y0
-        for x, is_foreground in enumerate(row):
-            if not is_foreground:
+        if name == "AC0831":
+            defaults = Action._apply_co2_label(Action._default_ac0881_params(w, h))
+            if img is None:
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._apply_co2_label(Action._fit_ac0811_params_from_image(img, defaults)))
+
+        if name == "AC0832":
+            defaults = Action._apply_co2_label(Action._default_ac0812_params(w, h))
+            if img is None:
+                return Action._enforce_left_arm_badge_geometry(
+                    Action._finalize_ac08_style(name, Action._tune_ac0832_co2_badge(defaults)),
+                    w,
+                    h,
+                )
+            return Action._enforce_left_arm_badge_geometry(
+                Action._finalize_ac08_style(
+                    name,
+                    Action._tune_ac0832_co2_badge(
+                        Action._apply_co2_label(Action._fit_ac0812_params_from_image(img, defaults))
+                    ),
+                ),
+                w,
+                h,
+            )
+
+        if name == "AC0833":
+            defaults = Action._apply_co2_label(Action._default_ac0813_params(w, h))
+            if img is None:
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._apply_co2_label(Action._fit_ac0813_params_from_image(img, defaults)))
+
+        if name == "AC0834":
+            defaults = Action._apply_co2_label(Action._default_ac0814_params(w, h))
+            if img is None:
+                return Action._finalize_ac08_style(name, Action._tune_ac0834_co2_badge(defaults, w, h))
+            return Action._finalize_ac08_style(
+                name,
+                Action._tune_ac0834_co2_badge(
+                    Action._apply_co2_label(Action._fit_ac0814_params_from_image(img, defaults)),
+                    w,
+                    h,
+                ),
+            )
+
+        if name == "AC0835":
+            defaults = Action._apply_voc_label(Action._default_ac0870_params(w, h))
+            if img is None:
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._apply_voc_label(Action._fit_semantic_badge_from_image(img, defaults)))
+
+        if name == "AC0836":
+            defaults = Action._apply_voc_label(Action._default_ac0881_params(w, h))
+            if img is None:
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._apply_voc_label(Action._fit_ac0811_params_from_image(img, defaults)))
+
+        if name == "AC0837":
+            defaults = Action._apply_voc_label(Action._default_ac0812_params(w, h))
+            if img is None:
+                return Action._enforce_left_arm_badge_geometry(Action._finalize_ac08_style(name, defaults), w, h)
+            return Action._enforce_left_arm_badge_geometry(
+                Action._finalize_ac08_style(name, Action._apply_voc_label(Action._fit_ac0812_params_from_image(img, defaults))),
+                w,
+                h,
+            )
+
+        if name == "AC0838":
+            defaults = Action._apply_voc_label(Action._default_ac0813_params(w, h))
+            if img is None:
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._apply_voc_label(Action._fit_ac0813_params_from_image(img, defaults)))
+
+        if name == "AC0839":
+            defaults = Action._apply_voc_label(Action._default_ac0814_params(w, h))
+            if img is None:
+                return Action._finalize_ac08_style(name, defaults)
+            return Action._finalize_ac08_style(name, Action._apply_voc_label(Action._fit_ac0814_params_from_image(img, defaults)))
+
+        return None
+
+    @staticmethod
+    def generate_badge_svg(w: int, h: int, p: dict) -> str:
+        p = Action._align_stem_to_circle_center(dict(p))
+        p = Action._quantize_badge_params(p, w, h)
+        elements = [
+            f'<svg width="{w}px" height="{h}px" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">'
+        ]
+
+        if p.get("arm_enabled"):
+            arm_y1 = p.get("arm_y1", p.get("arm_y", 0.0))
+            arm_y2 = p.get("arm_y2", p.get("arm_y", arm_y1))
+            elements.append(
+                (
+                    f'  <line x1="{p["arm_x1"]:.4f}" y1="{arm_y1:.4f}" '
+                    f'x2="{p["arm_x2"]:.4f}" y2="{arm_y2:.4f}" '
+                    f'stroke="{Action.grayhex(p.get("stroke_gray", 152))}" '
+                    f'stroke-width="{p["arm_stroke"]:.4f}" stroke-linecap="round"/>'
+                )
+            )
+
+        if p.get("stem_enabled"):
+            stem_bottom = float(p.get("stem_bottom", 0.0))
+            # If the stem should touch the lower border, extend by half a pixel so
+            # rasterization keeps the bottom row fully covered after quantization.
+            if stem_bottom >= (float(h) - 0.01):
+                stem_bottom = float(h) + 0.5
+            elements.append(
+                (
+                    f'  <rect x="{p["stem_x"]:.4f}" y="{p["stem_top"]:.4f}" '
+                    f'width="{p["stem_width"]:.4f}" height="{max(0.0, stem_bottom - p["stem_top"]):.4f}" '
+                    f'fill="{Action.grayhex(p.get("stem_gray", p["stroke_gray"]))}"/>'
+                )
+            )
+
+        if p.get("circle_enabled", True):
+            elements.append(
+                (
+                    f'  <circle cx="{p["cx"]:.4f}" cy="{p["cy"]:.4f}" r="{p["r"]:.4f}" '
+                    f'fill="{Action.grayhex(p["fill_gray"])}" stroke="{Action.grayhex(p["stroke_gray"])}" '
+                    f'stroke-width="{p["stroke_circle"]:.4f}"/>'
+                )
+            )
+
+        if p.get("draw_text", True):
+            if p.get("text_mode") == "path_t":
+                elements.append(
+                    (
+                        f'  <path d="{Action.T_PATH_D}" fill="{Action.grayhex(p["text_gray"])}" '
+                        f'transform="translate({p["tx"]:.4f},{p["ty"]:.4f}) '
+                        f'scale({p["s"]:.6f},{-p["s"]:.6f}) '
+                        f'translate({-Action.T_XMIN},{-Action.T_YMAX})"/>'
+                    )
+                )
+            elif p.get("text_mode") == "co2":
+                layout = Action._co2_layout(p)
+                font_size = float(layout["font_size"])
+                sub_scale = float(layout["sub_scale"])
+                y_text = float(layout["y_base"])
+                elements.append(
+                    (
+                        f'  <text x="{float(layout["co_x"]):.4f}" y="{y_text:.4f}" fill="{Action.grayhex(p["text_gray"])}" '
+                        f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}px" '
+                        f'font-style="normal" font-weight="600" text-anchor="middle" dominant-baseline="middle">CO</text>'
+                    )
+                )
+                elements.append(
+                    (
+                        f'  <text x="{float(layout["subscript_x"]):.4f}" y="{float(layout["subscript_y"]):.4f}" fill="{Action.grayhex(p["text_gray"])}" '
+                        f'font-family="Arial, Helvetica, sans-serif" font-size="{float(layout["sub_font_px"]):.4f}px" '
+                        f'font-style="normal" font-weight="600" text-anchor="start" dominant-baseline="middle">2</text>'
+                    )
+                )
+            elif p.get("text_mode") == "voc":
+                radius = p.get("r", min(w, h) * 0.4)
+                font_size = max(4.0, radius * p.get("voc_font_scale", 0.52))
+                voc_dy = p.get("voc_dy", 0.0)
+                voc_weight = int(p.get("voc_weight", 600))
+                elements.append(
+                    (
+                        f'  <text x="{p["cx"]:.4f}" y="{(p["cy"] + voc_dy):.4f}" fill="{Action.grayhex(p["text_gray"])}" '
+                        f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size:.4f}px" '
+                        f'font-style="normal" font-weight="{voc_weight}" letter-spacing="0.01em" '
+                        f'text-anchor="middle" dominant-baseline="middle">VOC</text>'
+                    )
+                )
+            else:
+                elements.append(
+                    (
+                        f'  <path d="{Action.M_PATH_D}" fill="{Action.grayhex(p["text_gray"])}" '
+                        f'transform="translate({p["tx"]:.4f},{p["ty"]:.4f}) '
+                        f'scale({p["s"]:.6f},{-p["s"]:.6f}) '
+                        f'translate({-Action.M_XMIN},{-Action.M_YMAX})"/>'
+                    )
+                )
+
+        elements.append("</svg>")
+        return "\n".join(elements)
+
+    @staticmethod
+    def trace_image_segment(
+        img_segment: np.ndarray,
+        epsilon_factor: float,
+        *,
+        scale_x: float = 1.0,
+        scale_y: float = 1.0,
+        offset_x: float = 0.0,
+        offset_y: float = 0.0,
+    ) -> list[str]:
+        if img_segment is None or img_segment.size == 0:
+            return []
+
+        data = np.float32(img_segment).reshape((-1, 3))
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 0.001)
+        _, labels, centers = cv2.kmeans(data, 4, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
+        centers = np.uint8(centers)
+        img_quant = centers[labels.flatten()].reshape(img_segment.shape)
+
+        unique, counts = np.unique(img_quant.reshape(-1, 3), axis=0, return_counts=True)
+        bg_color = unique[np.argmax(counts)]
+
+        paths: list[str] = []
+        for color in unique:
+            if np.array_equal(color, bg_color):
                 continue
-            gx = x + element.x0
-            d = ((gx - cx) ** 2 + (gy - cy) ** 2) ** 0.5
-            rel = d / radius
-            v = grayscale[gy][gx]
-            if rel <= 0.72:
-                inner_values.append(v)
-            elif 0.75 <= rel <= 1.05:
-                outer_values.append(v)
 
-    if len(inner_values) < 12 or len(outer_values) < 12:
-        return fill_color, None, None
+            mask = cv2.inRange(img_quant, color, color)
+            contours, _ = cv2.findContours(mask, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+            hex_color = rgb_to_hex(color[::-1])
 
-    inner_avg = sum(inner_values) / len(inner_values)
-    outer_avg = sum(outer_values) / len(outer_values)
-    darkness_delta = inner_avg - outer_avg
-    if darkness_delta < 16:
-        return fill_color, None, None
-
-    fill = gray_to_hex(round(inner_avg))
-    stroke = gray_to_hex(round(outer_avg))
-    stroke_width = max(1.0, radius * 0.16)
-    return fill, stroke, stroke_width
-
-
-def candidate_to_svg(candidate: Candidate, gx: int, gy: int, fill_color: str, stroke_color: str | None = None, stroke_width: float | None = None) -> str:
-    cx = candidate.cx + gx
-    cy = candidate.cy + gy
-    half_stroke = (stroke_width / 2.0) if (stroke_color and stroke_width is not None and stroke_width > 0) else 0.0
-
-    if candidate.shape == "circle":
-        outer_r = max(1.0, (candidate.w + candidate.h) / 4.0)
-        r = max(0.5, outer_r - half_stroke)
-        attrs = [f'cx="{cx:.2f}"', f'cy="{cy:.2f}"', f'r="{r:.2f}"', f'fill="{fill_color}"']
-        if stroke_color and stroke_width is not None:
-            attrs.append(f'stroke="{stroke_color}"')
-            attrs.append(f'stroke-width="{stroke_width:.2f}"')
-        return f"<circle {' '.join(attrs)} />"
-
-    rx = max(0.5, candidate.w / 2.0 - half_stroke)
-    ry = max(0.5, candidate.h / 2.0 - half_stroke)
-    attrs = [f'cx="{cx:.2f}"', f'cy="{cy:.2f}"', f'rx="{rx:.2f}"', f'ry="{ry:.2f}"', f'fill="{fill_color}"']
-    if stroke_color and stroke_width is not None:
-        attrs.append(f'stroke="{stroke_color}"')
-        attrs.append(f'stroke-width="{stroke_width:.2f}"')
-    return f"<ellipse {' '.join(attrs)} />"
-
-
-def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, int, int], str] | None:
-    """Detect circle+stem geometry in a merged connected component.
-
-    Returns a circle candidate plus stem bounding box (local element coordinates)
-    when one thin axis-aligned strip protrudes from a mostly circular body.
-    """
-
-    if not element.pixels or not element.pixels[0]:
-        return None
-
-    h = len(element.pixels)
-    w = len(element.pixels[0])
-    row_counts = [sum(row) for row in element.pixels]
-    col_counts = [sum(element.pixels[y][x] for y in range(h)) for x in range(w)]
-    max_row = max(row_counts) if row_counts else 0
-    max_col = max(col_counts) if col_counts else 0
-    if max_row == 0 or max_col == 0:
-        return None
-
-    def _extract(direction: str) -> tuple[int, int, int, int] | None:
-        if direction in {"bottom", "top"}:
-            threshold = max(2, int(max_row * 0.48))
-            rows: list[int] = []
-            indices = range(h - 1, -1, -1) if direction == "bottom" else range(h)
-            for y in indices:
-                c = row_counts[y]
-                if c == 0:
-                    if rows:
-                        break
+            for contour in contours:
+                if cv2.contourArea(contour) < 10:
                     continue
-                if c <= threshold:
-                    rows.append(y)
-                elif rows:
+
+                epsilon = epsilon_factor * cv2.arcLength(contour, True)
+                approx = cv2.approxPolyDP(contour, epsilon, True)
+                path_d = "M " + " L ".join(
+                    [
+                        (
+                            f"{(pt[0][0] * scale_x) + offset_x:.3f},"
+                            f"{(pt[0][1] * scale_y) + offset_y:.3f}"
+                        )
+                        for pt in approx
+                    ]
+                ) + " Z"
+                paths.append(f'  <path d="{path_d}" fill="{hex_color}" stroke="none" />')
+        return paths
+
+    @staticmethod
+    def generate_composite_svg(w: int, h: int, params: dict, folder_path: str, epsilon: float) -> str:
+        svg_elements = [
+            (
+                f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}" '
+                'xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">'
+            )
+        ]
+
+        if params["top_source_ref"]:
+            ref_path = None
+            for ext in [".jpg", ".JPG", ".jpeg", ".JPEG", ".bmp", ".png", ".PNG"]:
+                p = os.path.join(folder_path, params["top_source_ref"] + ext)
+                if os.path.exists(p):
+                    ref_path = p
                     break
 
             if ref_path:
@@ -1360,7 +2331,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
 
         (cx, cy), (rw, rh), _angle = cv2.minAreaRect(cnt)
         diag = float(math.hypot(float(rw), float(rh)))
-        if not _isfinite(diag) or diag <= 0.0:
+        if not math.isfinite(diag) or diag <= 0.0:
             return None
         return float(cx), float(cy), diag
 
@@ -1428,7 +2399,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
         apply_circle_geometry_penalty: bool = True,
     ) -> bool:
         changed = False
-        scale = float(_clip(diag_scale, 0.85, 1.18))
+        scale = float(Action._clip_scalar(diag_scale, 0.85, 1.18))
 
         if element == "circle" and apply_circle_geometry_penalty:
             old_cx = float(params["cx"])
@@ -1438,12 +2409,12 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             if bool(params.get("lock_circle_cx", False)):
                 params["cx"] = old_cx
             else:
-                params["cx"] = float(_clip(old_cx + center_dx * 0.65, 0.0, float(w - 1)))
+                params["cx"] = float(Action._clip_scalar(old_cx + center_dx * 0.65, 0.0, float(w - 1)))
             if bool(params.get("lock_circle_cy", False)):
                 params["cy"] = old_cy
             else:
-                params["cy"] = float(_clip(old_cy + center_dy * 0.65, 0.0, float(h - 1)))
-            params["r"] = float(_clip(old_r * scale, min_r, float(min(w, h)) * 0.48))
+                params["cy"] = float(Action._clip_scalar(old_cy + center_dy * 0.65, 0.0, float(h - 1)))
+            params["r"] = float(Action._clip_scalar(old_r * scale, min_r, float(min(w, h)) * 0.48))
             changed = (
                 abs(params["cx"] - old_cx) > 0.02
                 or abs(params["cy"] - old_cy) > 0.02
@@ -1460,12 +2431,12 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             if bool(params.get("lock_stem_center_to_circle", False)):
                 stem_cx = float(params.get("cx", stem_cx))
             else:
-                stem_cx = float(_clip(stem_cx + center_dx * 0.75, 0.0, float(w - 1)))
-            new_w = float(_clip(old_w * scale, 1.0, float(w) * 0.22))
+                stem_cx = float(Action._clip_scalar(stem_cx + center_dx * 0.75, 0.0, float(w - 1)))
+            new_w = float(Action._clip_scalar(old_w * scale, 1.0, float(w) * 0.22))
             params["stem_width"] = new_w
-            params["stem_x"] = float(_clip(stem_cx - (new_w / 2.0), 0.0, float(w) - new_w))
-            params["stem_top"] = float(_clip(old_top + center_dy * 0.45, 0.0, float(h - 2)))
-            params["stem_bottom"] = float(_clip(old_bottom + center_dy * 0.25, params["stem_top"] + 1.0, float(h - 1)))
+            params["stem_x"] = float(Action._clip_scalar(stem_cx - (new_w / 2.0), 0.0, float(w) - new_w))
+            params["stem_top"] = float(Action._clip_scalar(old_top + center_dy * 0.45, 0.0, float(h - 2)))
+            params["stem_bottom"] = float(Action._clip_scalar(old_bottom + center_dy * 0.25, params["stem_top"] + 1.0, float(h - 1)))
             changed = (
                 abs(params["stem_x"] - old_x) > 0.02
                 or abs(params["stem_width"] - old_w) > 0.02
@@ -1489,11 +2460,11 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             vx = (ax2 - ax1) * scale
             vy = (ay2 - ay1) * scale
 
-            params["arm_x1"] = float(_clip(acx - (vx / 2.0), 0.0, float(w - 1)))
-            params["arm_x2"] = float(_clip(acx + (vx / 2.0), 0.0, float(w - 1)))
-            params["arm_y1"] = float(_clip(acy - (vy / 2.0), 0.0, float(h - 1)))
-            params["arm_y2"] = float(_clip(acy + (vy / 2.0), 0.0, float(h - 1)))
-            params["arm_stroke"] = float(_clip(old_stroke * scale, 1.0, float(min(w, h)) * 0.18))
+            params["arm_x1"] = float(Action._clip_scalar(acx - (vx / 2.0), 0.0, float(w - 1)))
+            params["arm_x2"] = float(Action._clip_scalar(acx + (vx / 2.0), 0.0, float(w - 1)))
+            params["arm_y1"] = float(Action._clip_scalar(acy - (vy / 2.0), 0.0, float(h - 1)))
+            params["arm_y2"] = float(Action._clip_scalar(acy + (vy / 2.0), 0.0, float(h - 1)))
+            params["arm_stroke"] = float(Action._clip_scalar(old_stroke * scale, 1.0, float(min(w, h)) * 0.18))
             changed = (
                 abs(params["arm_x1"] - old_x1) > 0.02
                 or abs(params["arm_x2"] - old_x2) > 0.02
@@ -1510,15 +2481,15 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             # AC0820_L can converge against the source when "CO" drifts too high.
             if mode == "co2":
                 old_dy = float(params.get("co2_dy", 0.0))
-                params["co2_dy"] = float(_clip(old_dy + center_dy * 0.75, -0.45 * r, 0.45 * r))
+                params["co2_dy"] = float(Action._clip_scalar(old_dy + center_dy * 0.75, -0.45 * r, 0.45 * r))
                 changed = abs(params["co2_dy"] - old_dy) > 0.02
             elif mode == "voc":
                 old_dy = float(params.get("voc_dy", 0.0))
-                params["voc_dy"] = float(_clip(old_dy + center_dy * 0.75, -0.45 * r, 0.45 * r))
+                params["voc_dy"] = float(Action._clip_scalar(old_dy + center_dy * 0.75, -0.45 * r, 0.45 * r))
                 changed = abs(params["voc_dy"] - old_dy) > 0.02
             elif "ty" in params:
                 old_ty = float(params.get("ty", 0.0))
-                params["ty"] = float(_clip(old_ty + center_dy * 0.75, 0.0, float(h - 1)))
+                params["ty"] = float(Action._clip_scalar(old_ty + center_dy * 0.75, 0.0, float(h - 1)))
                 changed = abs(params["ty"] - old_ty) > 0.02
 
         return changed
@@ -1572,40 +2543,190 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
                 if rx1 <= cx_idx <= rx2:
                     chosen = run
                     break
-                continue
-            if c <= threshold:
-                cols.append(x)
-            elif cols:
-                break
-            else:
-                return None
-        if len(cols) < 2 or len(cols) > max(2, int(w * 0.45)):
-            return None
-        min_count = min(col_counts[x] for x in cols)
-        stem_cols = [x for x in cols if col_counts[x] <= max(2, int(min_count * 1.25))]
-        if len(stem_cols) < 2:
-            return None
-        xs = sorted(stem_cols)
-        yvals = [y for x in xs for y in range(h) if element.pixels[y][x]]
-        if not yvals:
-            return None
-        sy0, sy1 = min(yvals), max(yvals)
-        if (sy1 - sy0 + 1) > h * 0.45:
-            return None
-        stem_cy = (sy0 + sy1) / 2.0
-        if abs(stem_cy - (h - 1) / 2.0) > max(1.2, h * 0.2):
-            return None
-        return xs[0], sy0, xs[-1], sy1
+                dist = min(abs(cx_idx - rx1), abs(cx_idx - rx2))
+                if dist < nearest_dist:
+                    nearest_dist = dist
+                    chosen = run
 
-    stem_bbox = None
-    stem_direction = ""
-    for direction in ("bottom", "top", "left", "right"):
-        stem_bbox = _extract(direction)
-        if stem_bbox is not None:
-            stem_direction = direction
-            break
-    if stem_bbox is None:
+            if chosen is None:
+                continue
+
+            rw = float((chosen[-1] - chosen[0]) + 1)
+            rcx = float((chosen[0] + chosen[-1]) / 2.0)
+            widths.append(rw)
+            centers.append(rcx)
+
+        if not widths:
+            return None
+
+        widths_arr = np.array(widths, dtype=np.float32)
+        centers_arr = np.array(centers, dtype=np.float32)
+        keep = np.ones(widths_arr.shape[0], dtype=bool)
+
+        for _ in range(3):
+            sel_w = widths_arr[keep]
+            if sel_w.size < 3:
+                break
+            med = float(np.median(sel_w))
+            tol = max(1.0, med * 0.35)
+            new_keep = keep & (np.abs(widths_arr - med) <= tol)
+            if int(np.sum(new_keep)) == int(np.sum(keep)):
+                break
+            keep = new_keep
+
+        if int(np.sum(keep)) == 0:
+            return None
+
+        est_width = float(np.median(widths_arr[keep]))
+        est_cx = float(np.median(centers_arr[keep]))
+        est_width = max(1.0, min(est_width, float(w)))
+        return est_cx, est_width
+
+    @staticmethod
+    def _ring_and_fill_masks(h: int, w: int, params: dict) -> tuple[np.ndarray, np.ndarray]:
+        yy, xx = np.indices((h, w))
+        dist = np.sqrt((xx - params["cx"]) ** 2 + (yy - params["cy"]) ** 2)
+        ring_half = max(0.7, params["stroke_circle"])
+        ring = np.abs(dist - params["r"]) <= ring_half
+        fill = dist <= max(0.5, params["r"] - ring_half)
+        return ring, fill
+
+    @staticmethod
+    def _mean_gray_for_mask(img: np.ndarray, mask: np.ndarray) -> float | None:
+        if int(mask.sum()) == 0:
+            return None
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        vals = gray[mask]
+        if vals.size == 0:
+            return None
+        return float(np.mean(vals))
+
+    @staticmethod
+    def _element_region_mask(
+        h: int,
+        w: int,
+        params: dict,
+        element: str,
+        apply_circle_geometry_penalty: bool = True,
+    ) -> np.ndarray | None:
+        yy, xx = np.indices((h, w))
+        context_pad = max(2.0, float(min(h, w)) * 0.12)
+        if element == "circle" and apply_circle_geometry_penalty:
+            radius_with_context = params["r"] + context_pad
+            circle = (xx - params["cx"]) ** 2 + (yy - params["cy"]) ** 2 <= radius_with_context**2
+            top = yy <= (params["cy"] + params["r"] + context_pad)
+            return circle & top
+        if element == "stem" and params.get("stem_enabled"):
+            x1 = max(0.0, params["stem_x"] - context_pad)
+            x2 = min(float(w), params["stem_x"] + params["stem_width"] + context_pad)
+            y1 = max(0.0, params["stem_top"] - context_pad)
+            y2 = min(float(h), params["stem_bottom"] + context_pad)
+            return (xx >= x1) & (xx <= x2) & (yy >= y1) & (yy <= y2)
+        if element == "arm" and params.get("arm_enabled"):
+            x1 = max(0.0, min(params.get("arm_x1", 0.0), params.get("arm_x2", 0.0)) - context_pad)
+            x2 = min(float(w), max(params.get("arm_x1", 0.0), params.get("arm_x2", 0.0)) + context_pad)
+            y1 = max(0.0, min(params.get("arm_y1", 0.0), params.get("arm_y2", 0.0)) - context_pad)
+            y2 = min(float(h), max(params.get("arm_y1", 0.0), params.get("arm_y2", 0.0)) + context_pad)
+            pad = max(1.0, params.get("arm_stroke", params.get("stem_or_arm", 1.0)) * 0.8)
+            return (xx >= (x1 - pad)) & (xx <= (x2 + pad)) & (yy >= (y1 - pad)) & (yy <= (y2 + pad))
+        if element == "text" and params.get("draw_text", True):
+            x1, y1, x2, y2 = Action._text_bbox(params)
+            x1 = max(0.0, x1 - context_pad)
+            y1 = max(0.0, y1 - context_pad)
+            x2 = min(float(w), x2 + context_pad)
+            y2 = min(float(h), y2 + context_pad)
+            return (xx >= x1) & (xx <= x2) & (yy >= y1) & (yy <= y2)
         return None
+
+    @staticmethod
+    def _text_bbox(params: dict) -> tuple[float, float, float, float]:
+        """Approximate text bounding box for semantic badge text modes."""
+        cx = float(params.get("cx", 0.0))
+        cy = float(params.get("cy", 0.0))
+        r = max(1.0, float(params.get("r", 1.0)))
+        mode = str(params.get("text_mode", "")).lower()
+
+        if mode == "voc":
+            font_size = max(4.0, r * float(params.get("voc_font_scale", 0.52)))
+            width = font_size * 1.95
+            height = font_size * 0.90
+            y = cy + float(params.get("voc_dy", 0.0))
+            return (cx - (width / 2.0), y - (height / 2.0), cx + (width / 2.0), y + (height / 2.0))
+
+        if mode == "co2":
+            layout = Action._co2_layout(params)
+            x1 = float(layout["x1"])
+            x2 = float(layout["x2"])
+            y = float(layout["y_base"])
+            height = float(layout["height"])
+            return (x1, y - (height / 2.0), x2, y + (height / 2.0))
+
+        # path/path_t fallback via known glyph bounds.
+        s = float(params.get("s", 0.0))
+        tx = float(params.get("tx", cx))
+        ty = float(params.get("ty", cy))
+        xmin, ymin, xmax, ymax = Action._glyph_bbox(params.get("text_mode", "path"))
+        x1 = tx + (xmin * s)
+        y1 = ty + (ymin * s)
+        x2 = tx + (xmax * s)
+        y2 = ty + (ymax * s)
+        return (x1, y1, x2, y2)
+
+    @staticmethod
+    def _foreground_mask(img: np.ndarray) -> np.ndarray:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        _, fg = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        return fg > 0
+
+    @staticmethod
+    def extract_badge_element_mask(img_orig: np.ndarray, params: dict, element: str) -> np.ndarray | None:
+        h, w = img_orig.shape[:2]
+        region_mask = Action._element_region_mask(h, w, params, element)
+        if region_mask is None:
+            return None
+
+        fg_bool = Action._foreground_mask(img_orig)
+        mask = fg_bool & region_mask
+
+        if int(mask.sum()) < 3:
+            return None
+        return mask
+
+    @staticmethod
+    def _element_only_params(params: dict, element: str) -> dict:
+        only = dict(params)
+        only["draw_text"] = bool(params.get("draw_text", True) and element == "text")
+        only["circle_enabled"] = element == "circle"
+        only["stem_enabled"] = bool(params.get("stem_enabled") and element == "stem")
+        only["arm_enabled"] = bool(params.get("arm_enabled") and element == "arm")
+        return only
+
+    @staticmethod
+    def _masked_error(img_orig: np.ndarray, img_svg: np.ndarray, mask: np.ndarray | None) -> float:
+        if img_svg is None or mask is None or int(mask.sum()) == 0:
+            return float("inf")
+        if img_svg.shape[:2] != img_orig.shape[:2]:
+            img_svg = cv2.resize(img_svg, (img_orig.shape[1], img_orig.shape[0]), interpolation=cv2.INTER_AREA)
+        gray_diff = cv2.cvtColor(cv2.absdiff(img_orig, img_svg), cv2.COLOR_BGR2GRAY).astype(np.float32)
+        valid = mask.astype(np.float32)
+        if float(np.sum(valid)) <= 0.0:
+            return float("inf")
+        weighted = gray_diff * valid
+        return float(np.sum(weighted))
+
+    @staticmethod
+    def _union_bbox_from_masks(mask_a: np.ndarray | None, mask_b: np.ndarray | None) -> tuple[int, int, int, int] | None:
+        boxes: list[tuple[float, float, float, float]] = []
+        if mask_a is not None:
+            box_a = Action._mask_bbox(mask_a)
+            if box_a is not None:
+                boxes.append(box_a)
+        if mask_b is not None:
+            box_b = Action._mask_bbox(mask_b)
+            if box_b is not None:
+                boxes.append(box_b)
+        if not boxes:
+            return None
 
         x1 = int(np.floor(min(b[0] for b in boxes)))
         y1 = int(np.floor(min(b[1] for b in boxes)))
@@ -1683,7 +2804,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             return float("inf")
 
         photo_err = float(Action._masked_union_error_in_bbox(img_orig, img_svg, local_mask_orig, local_mask_svg))
-        if not _isfinite(photo_err):
+        if not math.isfinite(photo_err):
             return float("inf")
 
         inter = float(np.sum(local_mask_orig & local_mask_svg))
@@ -1769,14 +2890,13 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
         iterations: int = 20,
     ) -> tuple[float, float, bool]:
         """Random 3-candidate survivor search for a scalar parameter."""
-        cur = float(snap(float(_clip(current_value, low, high))))
+        cur = float(snap(float(Action._clip_scalar(current_value, low, high))))
         best_value = cur
         best_err = float(evaluate(best_value))
-        if not _isfinite(best_err):
+        if not math.isfinite(best_err):
             return best_value, best_err, False
 
-        rng_seed = int(seed) + int(Action.STOCHASTIC_SEED_OFFSET)
-        rng = np.random.default_rng(rng_seed) if np is not None else random.Random(rng_seed)
+        rng = Action._make_rng(int(seed) + int(Action.STOCHASTIC_SEED_OFFSET))
         span = max(0.5, abs(high - low) * 0.22)
         improved = False
         stable_rounds = 0
@@ -1784,17 +2904,13 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
         for _ in range(max(1, iterations)):
             candidates = [best_value]
             for _j in range(2):
-                if np is not None:
-                    raw_sample = float(rng.normal(best_value, span))
-                else:
-                    raw_sample = float(rng.gauss(best_value, span))
-                sample = float(_clip(raw_sample, low, high))
+                sample = float(Action._clip_scalar(rng.normal(best_value, span), low, high))
                 candidates.append(float(snap(sample)))
 
             scored: list[tuple[float, float]] = []
             for cand in candidates:
                 err = float(evaluate(cand))
-                if _isfinite(err):
+                if math.isfinite(err):
                     scored.append((cand, err))
             if not scored:
                 continue
@@ -1838,7 +2954,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
         )
         lock_cx = bool(params.get("lock_circle_cx", False))
         lock_cy = bool(params.get("lock_circle_cy", False))
-        rng = np.random.default_rng(835 + int(Action.STOCHASTIC_RUN_SEED) + int(Action.STOCHASTIC_SEED_OFFSET))
+        rng = Action._make_rng(835 + int(Action.STOCHASTIC_RUN_SEED) + int(Action.STOCHASTIC_SEED_OFFSET))
 
         def eval_pose(candidate: tuple[float, float, float]) -> float:
             cx, cy, rad = candidate
@@ -1854,7 +2970,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
 
         best = current
         best_err = eval_pose(best)
-        if not _isfinite(best_err):
+        if not math.isfinite(best_err):
             return False
 
         spread_xy = max(1.0, float(min(w, h)) * 0.10)
@@ -1868,16 +2984,16 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
                 if lock_cx:
                     cx = best[0]
                 else:
-                    cx = Action._snap_half(float(_clip(rng.normal(best[0], spread_xy), x_low, x_high)))
+                    cx = Action._snap_half(float(Action._clip_scalar(rng.normal(best[0], spread_xy), x_low, x_high)))
                 if lock_cy:
                     cy = best[1]
                 else:
-                    cy = Action._snap_half(float(_clip(rng.normal(best[1], spread_xy), y_low, y_high)))
-                rad = Action._snap_half(float(_clip(rng.normal(best[2], spread_r), r_low, r_high)))
+                    cy = Action._snap_half(float(Action._clip_scalar(rng.normal(best[1], spread_xy), y_low, y_high)))
+                rad = Action._snap_half(float(Action._clip_scalar(rng.normal(best[2], spread_r), r_low, r_high)))
                 cand = (cx, cy, rad)
                 candidates.append((cand, eval_pose(cand)))
 
-            finite = [pair for pair in candidates if _isfinite(pair[1])]
+            finite = [pair for pair in candidates if math.isfinite(pair[1])]
             if not finite:
                 continue
             finite.sort(key=lambda item: item[1])
@@ -1944,12 +3060,12 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             if lock_cx:
                 cx = current[0]
             else:
-                cx = Action._snap_half(float(_clip(cx, x_low, x_high)))
+                cx = Action._snap_half(float(Action._clip_scalar(cx, x_low, x_high)))
             if lock_cy:
                 cy = current[1]
             else:
-                cy = Action._snap_half(float(_clip(cy, y_low, y_high)))
-            rad = Action._snap_half(float(_clip(rad, r_low, r_high)))
+                cy = Action._snap_half(float(Action._clip_scalar(cy, y_low, y_high)))
+            rad = Action._snap_half(float(Action._clip_scalar(rad, r_low, r_high)))
             return cx, cy, rad
 
         cache: dict[tuple[float, float, float], float] = {}
@@ -1970,7 +3086,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
 
         best = clamp_pose(current)
         best_err = eval_pose(best)
-        if not _isfinite(best_err):
+        if not math.isfinite(best_err):
             return False
 
         domain = {
@@ -1982,8 +3098,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             "r_high": r_high,
         }
 
-        rng_seed = 2027 + int(Action.STOCHASTIC_RUN_SEED) + int(Action.STOCHASTIC_SEED_OFFSET)
-        rng = np.random.default_rng(rng_seed) if np is not None else random.Random(rng_seed)
+        rng = Action._make_rng(2027 + int(Action.STOCHASTIC_RUN_SEED) + int(Action.STOCHASTIC_SEED_OFFSET))
         improved = False
         flat_plateau_hits = 0
 
@@ -2012,7 +3127,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
                 pose = clamp_pose((cx, cy, rad))
                 samples.append((pose, eval_pose(pose)))
 
-            finite = [pair for pair in samples if _isfinite(pair[1])]
+            finite = [pair for pair in samples if math.isfinite(pair[1])]
             if not finite:
                 continue
             finite.sort(key=lambda item: item[1])
@@ -2025,28 +3140,18 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
                 flat_plateau_hits += 1
 
             plateau_points = plateau if plateau else [round_best]
-            plateau_min = (
-                min(point[0] for point in plateau_points),
-                min(point[1] for point in plateau_points),
-                min(point[2] for point in plateau_points),
-            )
-            plateau_max = (
-                max(point[0] for point in plateau_points),
-                max(point[1] for point in plateau_points),
-                max(point[2] for point in plateau_points),
-            )
-            plateau_mid = clamp_pose(
-                (
-                    (plateau_min[0] + plateau_max[0]) / 2.0,
-                    (plateau_min[1] + plateau_max[1]) / 2.0,
-                    (plateau_min[2] + plateau_max[2]) / 2.0,
-                )
-            )
+            pmin_cx = min(p[0] for p in plateau_points)
+            pmin_cy = min(p[1] for p in plateau_points)
+            pmin_r = min(p[2] for p in plateau_points)
+            pmax_cx = max(p[0] for p in plateau_points)
+            pmax_cy = max(p[1] for p in plateau_points)
+            pmax_r = max(p[2] for p in plateau_points)
+            plateau_mid = clamp_pose(((pmin_cx + pmax_cx) / 2.0, (pmin_cy + pmax_cy) / 2.0, (pmin_r + pmax_r) / 2.0))
             plateau_mid_err = eval_pose(plateau_mid)
 
             candidate_best = round_best
             candidate_err = round_best_err
-            if _isfinite(plateau_mid_err) and plateau_mid_err < candidate_err:
+            if math.isfinite(plateau_mid_err) and plateau_mid_err < candidate_err:
                 candidate_best = plateau_mid
                 candidate_err = plateau_mid_err
 
@@ -2067,16 +3172,16 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             shrink = 0.58
             if not lock_cx:
                 half_span = max(0.5, float((domain["cx_high"] - domain["cx_low"]) * shrink * 0.5))
-                focus = float(best[0] if len(plateau) <= 1 else (plateau_min[0] + plateau_max[0]) / 2.0)
+                focus = float(best[0] if len(plateau) <= 1 else (pmin_cx + pmax_cx) / 2.0)
                 domain["cx_low"] = max(x_low, focus - half_span)
                 domain["cx_high"] = min(x_high, focus + half_span)
             if not lock_cy:
                 half_span = max(0.5, float((domain["cy_high"] - domain["cy_low"]) * shrink * 0.5))
-                focus = float(best[1] if len(plateau) <= 1 else (plateau_min[1] + plateau_max[1]) / 2.0)
+                focus = float(best[1] if len(plateau) <= 1 else (pmin_cy + pmax_cy) / 2.0)
                 domain["cy_low"] = max(y_low, focus - half_span)
                 domain["cy_high"] = min(y_high, focus + half_span)
             half_span_r = max(0.5, float((domain["r_high"] - domain["r_low"]) * shrink * 0.5))
-            focus_r = float(best[2] if len(plateau) <= 1 else (plateau_min[2] + plateau_max[2]) / 2.0)
+            focus_r = float(best[2] if len(plateau) <= 1 else (pmin_r + pmax_r) / 2.0)
             domain["r_low"] = max(r_low, focus_r - half_span_r)
             domain["r_high"] = min(r_high, focus_r + half_span_r)
 
@@ -2200,7 +3305,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
         if info is None:
             return float("inf")
         key, low, high = info
-        probe[key] = float(_clip(width_value, low, high))
+        probe[key] = float(Action._clip_scalar(width_value, low, high))
         if key == "stem_width" and probe.get("stem_enabled"):
             probe["stem_x"] = float(probe.get("cx", probe.get("stem_x", 0.0))) - (probe["stem_width"] / 2.0)
         elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(probe, element))
@@ -2220,7 +3325,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
 
         probe = dict(params)
         max_r = max(1.0, (float(min(w, h)) * 0.48))
-        probe["r"] = float(_clip(radius_value, 1.0, max_r))
+        probe["r"] = float(Action._clip_scalar(radius_value, 1.0, max_r))
 
         if probe.get("arm_enabled"):
             Action._reanchor_arm_to_circle_edge(probe, float(probe["r"]))
@@ -2277,10 +3382,10 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
 
         probe = dict(params)
         max_r = max(1.0, (float(min(w, h)) * 0.48))
-        probe["cx"] = Action._snap_half(float(_clip(cx_value, 0.0, float(w - 1))))
-        probe["cy"] = Action._snap_half(float(_clip(cy_value, 0.0, float(h - 1))))
+        probe["cx"] = Action._snap_half(float(Action._clip_scalar(cx_value, 0.0, float(w - 1))))
+        probe["cy"] = Action._snap_half(float(Action._clip_scalar(cy_value, 0.0, float(h - 1))))
         min_r = float(max(1.0, probe.get("min_circle_radius", 1.0)))
-        probe["r"] = Action._snap_half(float(_clip(radius_value, min_r, max_r)))
+        probe["r"] = Action._snap_half(float(Action._clip_scalar(radius_value, min_r, max_r)))
 
         if probe.get("arm_enabled"):
             Action._reanchor_arm_to_circle_edge(probe, float(probe["r"]))
@@ -2373,8 +3478,8 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
         evaluations: dict[tuple[float, float], float] = {}
 
         def eval_center(cx_value: float, cy_value: float) -> float:
-            cx_snap = Action._snap_half(float(_clip(cx_value, 0.0, float(w - 1))))
-            cy_snap = Action._snap_half(float(_clip(cy_value, 0.0, float(h - 1))))
+            cx_snap = Action._snap_half(float(Action._clip_scalar(cx_value, 0.0, float(w - 1))))
+            cy_snap = Action._snap_half(float(Action._clip_scalar(cy_value, 0.0, float(h - 1))))
             key = (cx_snap, cy_snap)
             if key not in evaluations:
                 probe = dict(params)
@@ -2397,7 +3502,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
                     mid_err = eval_center(fixed, mid)
                     high_err = eval_center(fixed, high)
 
-                if not all(_isfinite(v) for v in (low_err, mid_err, high_err)):
+                if not all(math.isfinite(v) for v in (low_err, mid_err, high_err)):
                     return mid
 
                 if mid_err <= low_err and mid_err <= high_err:
@@ -2429,7 +3534,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             best_cy = optimize_axis(y_low, y_high, best_cx, "y")
 
         best_err = eval_center(best_cx, best_cy)
-        if not _isfinite(best_err):
+        if not math.isfinite(best_err):
             logs.append("circle: Mittelpunkt-Bracketing abgebrochen wegen nicht-finitem Fehler")
             return False
 
@@ -2488,14 +3593,14 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
 
         low = Action._snap_half(low_bound)
         high = Action._snap_half(high_bound)
-        mid = Action._snap_half(float(_clip(current, low, high)))
+        mid = Action._snap_half(float(Action._clip_scalar(current, low, high)))
         if high - low < 0.05:
             return False
 
         evaluations: dict[float, float] = {}
 
         def eval_radius(radius: float) -> float:
-            snapped = Action._snap_half(float(_clip(radius, low_bound, high_bound)))
+            snapped = Action._snap_half(float(Action._clip_scalar(radius, low_bound, high_bound)))
             if snapped not in evaluations:
                 evaluations[snapped] = float(Action._element_error_for_circle_radius(img_orig, params, snapped))
             return evaluations[snapped]
@@ -2505,7 +3610,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             low_err = eval_radius(low)
             mid_err = eval_radius(mid)
             high_err = eval_radius(high)
-            if not all(_isfinite(v) for v in (low_err, mid_err, high_err)):
+            if not all(math.isfinite(v) for v in (low_err, mid_err, high_err)):
                 logs.append(
                     "circle: Radius-Bracketing abgebrochen wegen nicht-finiten Fehlern "
                     + ", ".join(f"{v:.3f}->{e:.3f}" for v, e in sorted(evaluations.items()))
@@ -2576,19 +3681,19 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             cx_candidates = [Action._snap_half(current_cx)]
         else:
             cx_candidates = [
-                Action._snap_half(float(_clip(current_cx + offset, 0.0, float(w - 1))))
+                Action._snap_half(float(Action._clip_scalar(current_cx + offset, 0.0, float(w - 1))))
                 for offset in (-shift, 0.0, shift)
             ]
         if lock_cy:
             cy_candidates = [Action._snap_half(current_cy)]
         else:
             cy_candidates = [
-                Action._snap_half(float(_clip(current_cy + offset, 0.0, float(h - 1))))
+                Action._snap_half(float(Action._clip_scalar(current_cy + offset, 0.0, float(h - 1))))
                 for offset in (-shift, 0.0, shift)
             ]
 
         r_candidates = [
-            Action._snap_half(float(_clip(current_r + offset, min_r, max_r)))
+            Action._snap_half(float(Action._clip_scalar(current_r + offset, min_r, max_r)))
             for offset in (-radius_span, -(radius_span * 0.5), 0.0, radius_span * 0.5, radius_span)
         ]
 
@@ -2615,7 +3720,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             for cy in cy_candidates:
                 for rad in r_candidates:
                     err = eval_pose(cx, cy, rad)
-                    if _isfinite(err) and err + 0.05 < best_err:
+                    if math.isfinite(err) and err + 0.05 < best_err:
                         best = (cx, cy, rad)
                         best_err = err
 
@@ -2667,11 +3772,11 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
         if element == "stem" and probe.get("stem_enabled"):
             min_len = 1.0
             max_len = float(h)
-            new_len = float(_clip(extent_value, min_len, max_len))
+            new_len = float(Action._clip_scalar(extent_value, min_len, max_len))
             center = (float(probe.get("stem_top", 0.0)) + float(probe.get("stem_bottom", 0.0))) / 2.0
             half = new_len / 2.0
-            probe["stem_top"] = float(_clip(center - half, 0.0, float(h - 1)))
-            probe["stem_bottom"] = float(_clip(center + half, probe["stem_top"] + 1.0, float(h)))
+            probe["stem_top"] = float(Action._clip_scalar(center - half, 0.0, float(h - 1)))
+            probe["stem_bottom"] = float(Action._clip_scalar(center + half, probe["stem_top"] + 1.0, float(h)))
 
         elif element == "arm" and probe.get("arm_enabled"):
             x1 = float(probe.get("arm_x1", 0.0))
@@ -2683,7 +3788,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             cur_len = float(math.hypot(dx, dy))
             if cur_len <= 1e-6:
                 return float("inf")
-            new_len = float(_clip(extent_value, 1.0, float(max(w, h))))
+            new_len = float(Action._clip_scalar(extent_value, 1.0, float(max(w, h))))
             ux = dx / cur_len
             uy = dy / cur_len
 
@@ -2704,20 +3809,20 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
 
                 if d1 <= d2:
                     ix, iy = ax1, ay1
-                    probe["arm_x2"] = float(_clip(ix + (ux * new_len), 0.0, float(w - 1)))
-                    probe["arm_y2"] = float(_clip(iy + (uy * new_len), 0.0, float(h - 1)))
+                    probe["arm_x2"] = float(Action._clip_scalar(ix + (ux * new_len), 0.0, float(w - 1)))
+                    probe["arm_y2"] = float(Action._clip_scalar(iy + (uy * new_len), 0.0, float(h - 1)))
                 else:
                     ix, iy = ax2, ay2
-                    probe["arm_x1"] = float(_clip(ix - (ux * new_len), 0.0, float(w - 1)))
-                    probe["arm_y1"] = float(_clip(iy - (uy * new_len), 0.0, float(h - 1)))
+                    probe["arm_x1"] = float(Action._clip_scalar(ix - (ux * new_len), 0.0, float(w - 1)))
+                    probe["arm_y1"] = float(Action._clip_scalar(iy - (uy * new_len), 0.0, float(h - 1)))
             else:
                 cx = (x1 + x2) / 2.0
                 cy = (y1 + y2) / 2.0
                 half = new_len / 2.0
-                probe["arm_x1"] = float(_clip(cx - (ux * half), 0.0, float(w - 1)))
-                probe["arm_y1"] = float(_clip(cy - (uy * half), 0.0, float(h - 1)))
-                probe["arm_x2"] = float(_clip(cx + (ux * half), 0.0, float(w - 1)))
-                probe["arm_y2"] = float(_clip(cy + (uy * half), 0.0, float(h - 1)))
+                probe["arm_x1"] = float(Action._clip_scalar(cx - (ux * half), 0.0, float(w - 1)))
+                probe["arm_y1"] = float(Action._clip_scalar(cy - (uy * half), 0.0, float(h - 1)))
+                probe["arm_x2"] = float(Action._clip_scalar(cx + (ux * half), 0.0, float(w - 1)))
+                probe["arm_y2"] = float(Action._clip_scalar(cy + (uy * half), 0.0, float(h - 1)))
         else:
             return float("inf")
 
@@ -2740,7 +3845,6 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             key_label = "stem_len"
             low_bound = 1.0
             high_bound = float(h)
-            is_bottom_anchored = float(params.get("stem_bottom", 0.0)) >= float(h) - 0.5
             forced_abs_min = params.get("stem_len_min")
             if forced_abs_min is not None:
                 low_bound = max(low_bound, float(forced_abs_min))
@@ -2748,11 +3852,12 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             if forced_min_ratio is not None:
                 min_ratio = float(max(0.0, min(1.0, float(forced_min_ratio))))
                 low_bound = max(low_bound, current * min_ratio)
-                if is_bottom_anchored and params.get("circle_enabled", True):
-                    low_bound = max(low_bound, float(h) * 0.36)
+            if h <= 15 and not bool(params.get("draw_text", True)):
+                low_bound = max(low_bound, 5.5)
             # Keep bottom-anchored stem variants (e.g. AC0811_S) from collapsing
             # into near-invisible stubs when anti-aliased extraction under-segments
             # thin line pixels in element-only masks.
+            is_bottom_anchored = float(params.get("stem_bottom", 0.0)) >= float(h) - 0.5
             if (
                 forced_min_ratio is None
                 and is_bottom_anchored
@@ -2761,9 +3866,10 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             ):
                 min_ratio = float(params.get("stem_len_min_ratio", 0.65))
                 low_bound = max(low_bound, current * max(0.0, min(1.0, min_ratio)))
-                # Keep tiny bottom-anchored stems visibly present even when
-                # current fits are already under-estimated by anti-aliasing.
-                low_bound = max(low_bound, float(h) * 0.36)
+                # Tiny AC0811-like badges need a visibly readable stem even when
+                # contour extraction underestimates the semantic template length.
+                if h <= 15 and not bool(params.get("draw_text", True)):
+                    low_bound = max(low_bound, 5.5)
         elif element == "arm" and params.get("arm_enabled"):
             dx = float(params.get("arm_x2", 0.0)) - float(params.get("arm_x1", 0.0))
             dy = float(params.get("arm_y2", 0.0)) - float(params.get("arm_y1", 0.0))
@@ -2817,18 +3923,18 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
                 Action._snap_half((low + high) / 2.0),
                 Action._snap_half(low + (high - low) * 0.75),
                 Action._snap_half(high),
-                Action._snap_half(current),
+                Action._snap_half(Action._clip_scalar(current, low, high)),
             }
         )
         candidate_errors = [Action._element_error_for_extent(img_orig, params, element, v) for v in candidates]
-        if not all(_isfinite(e) for e in candidate_errors):
+        if not all(math.isfinite(e) for e in candidate_errors):
             logs.append(
                 f"{element}: Längen-Bracketing abgebrochen ({key_label}) wegen nicht-finiten Fehlern "
                 + ", ".join(f"{v:.3f}->{e:.3f}" for v, e in zip(candidates, candidate_errors, strict=False))
             )
             return False
 
-        best_idx = min(range(len(candidate_errors)), key=lambda i: candidate_errors[i])
+        best_idx = Action._argmin_index(candidate_errors)
         best_len = float(candidates[best_idx])
 
         boundary_best = abs(best_len - low) < 0.02 or abs(best_len - high) < 0.02
@@ -2857,15 +3963,24 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
 
         if element == "stem":
             if params.get("circle_enabled", True) and all(k in params for k in ("cy", "r")):
-                # Keep the stem attached to the circle edge and optimize only the free end.
-                top = float(_clip(float(params.get("cy", 0.0)) + float(params.get("r", 0.0)), 0.0, float(h - 1)))
-                params["stem_top"] = top
-                params["stem_bottom"] = float(_clip(top + best_len, top + 1.0, float(h)))
+                # Keep tiny bottom-anchored stems visibly long by preserving the
+                # bottom anchor and moving the free top endpoint upward.
+                is_bottom_anchored = float(params.get("stem_bottom", 0.0)) >= float(h) - 0.5
+                if is_bottom_anchored and h <= 15 and not bool(params.get("draw_text", True)):
+                    bottom = float(h)
+                    top = float(Action._clip_scalar(bottom - best_len, 0.0, bottom - 1.0))
+                    params["stem_top"] = top
+                    params["stem_bottom"] = bottom
+                else:
+                    # Keep the stem attached to the circle edge and optimize only the free end.
+                    top = float(Action._clip_scalar(float(params.get("cy", 0.0)) + float(params.get("r", 0.0)), 0.0, float(h - 1)))
+                    params["stem_top"] = top
+                    params["stem_bottom"] = float(Action._clip_scalar(top + best_len, top + 1.0, float(h)))
             else:
                 center = (float(params.get("stem_top", 0.0)) + float(params.get("stem_bottom", 0.0))) / 2.0
                 half = best_len / 2.0
-                params["stem_top"] = float(_clip(center - half, 0.0, float(h - 1)))
-                params["stem_bottom"] = float(_clip(center + half, params["stem_top"] + 1.0, float(h)))
+                params["stem_top"] = float(Action._clip_scalar(center - half, 0.0, float(h - 1)))
+                params["stem_bottom"] = float(Action._clip_scalar(center + half, params["stem_top"] + 1.0, float(h)))
         else:
             x1 = float(params.get("arm_x1", 0.0))
             y1 = float(params.get("arm_y1", 0.0))
@@ -2893,20 +4008,20 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
 
                 if d1 <= d2:
                     ix, iy = ax1, ay1
-                    params["arm_x2"] = float(_clip(ix + (ux * best_len), 0.0, float(w - 1)))
-                    params["arm_y2"] = float(_clip(iy + (uy * best_len), 0.0, float(h - 1)))
+                    params["arm_x2"] = float(Action._clip_scalar(ix + (ux * best_len), 0.0, float(w - 1)))
+                    params["arm_y2"] = float(Action._clip_scalar(iy + (uy * best_len), 0.0, float(h - 1)))
                 else:
                     ix, iy = ax2, ay2
-                    params["arm_x1"] = float(_clip(ix - (ux * best_len), 0.0, float(w - 1)))
-                    params["arm_y1"] = float(_clip(iy - (uy * best_len), 0.0, float(h - 1)))
+                    params["arm_x1"] = float(Action._clip_scalar(ix - (ux * best_len), 0.0, float(w - 1)))
+                    params["arm_y1"] = float(Action._clip_scalar(iy - (uy * best_len), 0.0, float(h - 1)))
             else:
                 cx = (x1 + x2) / 2.0
                 cy = (y1 + y2) / 2.0
                 half = best_len / 2.0
-                params["arm_x1"] = float(_clip(cx - (ux * half), 0.0, float(w - 1)))
-                params["arm_y1"] = float(_clip(cy - (uy * half), 0.0, float(h - 1)))
-                params["arm_x2"] = float(_clip(cx + (ux * half), 0.0, float(w - 1)))
-                params["arm_y2"] = float(_clip(cy + (uy * half), 0.0, float(h - 1)))
+                params["arm_x1"] = float(Action._clip_scalar(cx - (ux * half), 0.0, float(w - 1)))
+                params["arm_y1"] = float(Action._clip_scalar(cy - (uy * half), 0.0, float(h - 1)))
+                params["arm_x2"] = float(Action._clip_scalar(cx + (ux * half), 0.0, float(w - 1)))
+                params["arm_y2"] = float(Action._clip_scalar(cy + (uy * half), 0.0, float(h - 1)))
 
         logs.append(
             f"{element}: Längen-Bracketing {key_label} {current:.3f}->{best_len:.3f}; Kandidaten="
@@ -2959,18 +4074,18 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
                     Action._snap_half((low + high) / 2.0),
                     Action._snap_half(low + (high - low) * 0.75),
                     Action._snap_half(high),
-                    Action._snap_half(current),
+                    Action._snap_half(Action._clip_scalar(current, low, high)),
                 }
             )
         candidate_errors = [Action._element_error_for_width(img_orig, params, element, v) for v in candidates]
-        if not all(_isfinite(e) for e in candidate_errors):
+        if not all(math.isfinite(e) for e in candidate_errors):
             logs.append(
                 f"{element}: Breiten-Bracketing abgebrochen ({key}) wegen nicht-finiten Fehlern "
                 + ", ".join(f"{v:.3f}->{e:.3f}" for v, e in zip(candidates, candidate_errors, strict=False))
             )
             return False
 
-        best_idx = min(range(len(candidate_errors)), key=lambda i: candidate_errors[i])
+        best_idx = Action._argmin_index(candidate_errors)
         best_width = candidates[best_idx]
 
         boundary_best = abs(float(best_width) - low) < 0.02 or abs(float(best_width) - high) < 0.02
@@ -3001,8 +4116,35 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             )
             return False
 
-    circle = Candidate(shape="circle", cx=sum(xs) / len(xs), cy=sum(ys) / len(ys), w=float(bw), h=float(bh))
-    return circle, stem_bbox, stem_direction
+        if key in {"stroke_circle", "arm_stroke", "stem_width"}:
+            best_width = Action._snap_int_px(best_width, minimum=1.0)
+        elif key.endswith("_font_scale"):
+            best_width = float(round(best_width, 3))
+        else:
+            best_width = Action._snap_half(best_width)
+
+        params[key] = best_width
+        if key == "stem_width" and params.get("stem_enabled"):
+            params["stem_x"] = Action._snap_half(float(params.get("cx", params.get("stem_x", 0.0))) - (params["stem_width"] / 2.0))
+        logs.append(
+            f"{element}: Breiten-Bracketing {key} {old:.3f}->{best_width:.3f}; "
+            f"Kandidaten="
+            + ", ".join(f"{v:.3f}->{e:.3f}" for v, e in zip(candidates, candidate_errors, strict=False))
+        )
+        return True
+
+
+    @staticmethod
+    def _element_color_keys(element: str, params: dict) -> list[str]:
+        if element == "circle" and params.get("circle_enabled", True):
+            return ["fill_gray", "stroke_gray"]
+        if element == "stem" and params.get("stem_enabled"):
+            return ["stem_gray"]
+        if element == "arm" and params.get("arm_enabled"):
+            return ["stroke_gray"]
+        if element == "text" and params.get("draw_text", True):
+            return ["text_gray"]
+        return []
 
     @staticmethod
     def _element_error_for_color(
@@ -3014,7 +4156,7 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
         mask_orig: np.ndarray,
     ) -> float:
         probe = dict(params)
-        probe[color_key] = int(_clip(color_value, 0, 255))
+        probe[color_key] = int(Action._clip_scalar(color_value, 0, 255))
 
         h, w = img_orig.shape[:2]
         elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(probe, element))
@@ -3057,16 +4199,16 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
         for color_key in Action._element_color_keys(element, params):
             current = int(round(float(params.get(color_key, 128))))
             candidates = {
-                int(_clip(current - 32, 0, 255)),
-                int(_clip(current - 16, 0, 255)),
-                int(_clip(current - 8, 0, 255)),
-                int(_clip(current, 0, 255)),
-                int(_clip(current + 8, 0, 255)),
-                int(_clip(current + 16, 0, 255)),
-                int(_clip(current + 32, 0, 255)),
+                int(Action._clip_scalar(current - 32, 0, 255)),
+                int(Action._clip_scalar(current - 16, 0, 255)),
+                int(Action._clip_scalar(current - 8, 0, 255)),
+                int(Action._clip_scalar(current, 0, 255)),
+                int(Action._clip_scalar(current + 8, 0, 255)),
+                int(Action._clip_scalar(current + 16, 0, 255)),
+                int(Action._clip_scalar(current + 32, 0, 255)),
             }
             if sampled is not None:
-                candidates.add(int(_clip(sampled, 0, 255)))
+                candidates.add(int(Action._clip_scalar(sampled, 0, 255)))
             if element == "circle" and color_key == "fill_gray":
                 candidates.update({200, 210, 220, 230, 240})
             if color_key in {"stroke_gray", "stem_gray", "text_gray"}:
@@ -3077,14 +4219,14 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
                 Action._element_error_for_color(img_orig, params, element, color_key, v, mask_orig)
                 for v in values
             ]
-            if not all(_isfinite(e) for e in errs):
+            if not all(math.isfinite(e) for e in errs):
                 logs.append(
                     f"{element}: Farb-Bracketing abgebrochen ({color_key}) wegen nicht-finiten Fehlern "
                     + ", ".join(f"{v}->{e:.3f}" for v, e in zip(values, errs, strict=False))
                 )
                 continue
 
-            best_idx = int(np.argmin(errs))
+            best_idx = Action._argmin_index(errs)
             best_value = int(values[best_idx])
 
             if best_value == min(values) or best_value == max(values):
@@ -3097,14 +4239,14 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
                         params,
                         element,
                         color_key,
-                        int(_clip(int(round(v)), 0, 255)),
+                        int(Action._clip_scalar(int(round(v)), 0, 255)),
                         mask_orig,
                     ),
-                    snap=lambda v: int(_clip(int(round(v)), 0, 255)),
+                    snap=lambda v: int(Action._clip_scalar(int(round(v)), 0, 255)),
                     seed=1301,
                 )
                 if s_improved:
-                    best_value = int(_clip(int(round(s_best)), 0, 255))
+                    best_value = int(Action._clip_scalar(int(round(s_best)), 0, 255))
                     logs.append(
                         f"{element}: Farb-Stochastic-Survivor aktiviert ({color_key}={best_value}, err={s_err:.3f})"
                     )
@@ -3116,9 +4258,12 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
                 )
                 continue
 
-    circle_candidate, (sx0, sy0, sx1, sy1), stem_direction = detected
-    stem_w = sx1 - sx0 + 1
-    stem_h = sy1 - sy0 + 1
+            params[color_key] = int(best_value)
+            changed_any = True
+            logs.append(
+                f"{element}: Farb-Bracketing {color_key} {current}->{best_value}; Kandidaten="
+                + ", ".join(f"{v}->{e:.3f}" for v, e in zip(values, errs, strict=False))
+            )
 
         return changed_any
 
@@ -3158,229 +4303,819 @@ def detect_stemmed_circle(element: Element) -> tuple[Candidate, tuple[int, int, 
             if bool(params.get("lock_stem_center_to_circle", False)):
                 circle_cx = float(params.get("cx", est_cx))
                 max_offset = float(params.get("stem_center_lock_max_offset", max(0.35, target_width * 0.75)))
-                target_cx = float(_clip(est_cx, circle_cx - max_offset, circle_cx + max_offset))
+                target_cx = float(Action._clip_scalar(est_cx, circle_cx - max_offset, circle_cx + max_offset))
             else:
                 target_cx = est_cx
             estimate_mode = "iter"
         else:
-            old_top = element.y0 + sy0
-            old_right = (element.x0 + sx0) + stem_wf
-            stem_y = old_top
-            stem_hf = max(1.0, (circle_cy - radius + overlap) - stem_y)
-            stem_x = min(stem_x, old_right - stem_wf)
+            if 0.95 <= ratio <= 1.05:
+                return False, None
+            target_width = float(params.get("stem_width", svg_w)) * (orig_w / svg_w)
+            stem_width_cap = float(params.get("stem_width_max", float(w) * 0.20))
+            target_width = max(1.0, min(target_width, min(float(w) * 0.20, stem_width_cap)))
+            target_cx = (ox1 + ox2) / 2.0
+            estimate_mode = "bbox"
 
-    parts: list[str] = []
-    parts.append(
-        f'<rect x="{stem_x:.2f}" y="{stem_y:.2f}" '
-        f'width="{stem_wf:.2f}" height="{stem_hf:.2f}" fill="{stem_color}"/>'
-    )
-    parts.append(candidate_to_svg(circle_candidate, element.x0, element.y0, fill_color, stroke_color, stroke_width))
-    return parts
+        old_width = float(params.get("stem_width", svg_w))
+        width_delta = abs(target_width - old_width)
+        ratio_after = target_width / max(1.0, orig_w)
 
+        if width_delta < 0.05 and 0.90 <= ratio_after <= 1.12:
+            return False, None
 
-def decompose_plus_shape(grayscale: list[list[int]], element: Element) -> list[str] | None:
-    """Emit two rects for plus-like components instead of a blob ellipse."""
-    h = len(element.pixels)
-    w = len(element.pixels[0]) if h else 0
-    if h < 3 or w < 3:
-        return None
+        stem_width_cap = float(params.get("stem_width_max", float(w) * 0.20))
+        target_width = min(target_width, stem_width_cap)
+        target_width = Action._snap_int_px(target_width, minimum=1.0)
+        old_x = float(params.get("stem_x", 0.0))
+        old_w = float(params.get("stem_width", 1.0))
+        new_x = Action._snap_half(max(0.0, min(float(w) - target_width, target_cx - (target_width / 2.0))))
+        if abs(target_width - old_w) < 0.05 and abs(new_x - old_x) < 0.05:
+            return False, None
+        params["stem_width"] = target_width
+        params["stem_x"] = new_x
+        return True, (
+            f"stem: Breitenkorrektur mode={estimate_mode}, ratio={ratio:.3f}, "
+            f"alt={old_width:.3f}, neu={target_width:.3f}"
+        )
 
-    row_counts = [sum(row) for row in element.pixels]
-    col_counts = [sum(element.pixels[y][x] for y in range(h)) for x in range(w)]
-    max_row = max(row_counts) if row_counts else 0
-    max_col = max(col_counts) if col_counts else 0
-    if max_row < max(2, int(w * 0.45)) or max_col < max(2, int(h * 0.45)):
-        return None
+    @staticmethod
+    def _expected_semantic_presence(semantic_elements: list[str]) -> dict[str, bool]:
+        normalized = [str(elem).lower() for elem in semantic_elements]
+        has_text = any("kreis + buchstabe" in elem for elem in normalized)
+        return {
+            "circle": True,
+            "stem": any("senkrechter strich" in elem for elem in normalized),
+            "arm": any("waagrechter strich" in elem for elem in normalized),
+            "text": has_text,
+        }
 
-    area = sum(sum(row) for row in element.pixels)
-    if area <= 0:
-        return None
-    expected = max_row + max_col - 1
-    if area > expected * 2.05:
-        return None
+    @staticmethod
+    def _semantic_presence_mismatches(expected: dict[str, bool], observed: dict[str, bool]) -> list[str]:
+        labels = {
+            "circle": "Kreis",
+            "stem": "senkrechter Strich",
+            "arm": "waagrechter Strich",
+            "text": "Buchstabe/Text",
+        }
+        issues: list[str] = []
+        for key in ("circle", "stem", "arm", "text"):
+            exp = bool(expected.get(key, False))
+            obs = bool(observed.get(key, False))
+            if exp and not obs:
+                issues.append(f"Beschreibung erwartet {labels[key]}, im Bild aber nicht robust erkennbar")
+            if obs and not exp:
+                issues.append(f"Im Bild ist {labels[key]} erkennbar, aber nicht in der Beschreibung enthalten")
+        return issues
 
-    cy = row_counts.index(max_row)
-    cx = col_counts.index(max_col)
+    @staticmethod
+    def validate_semantic_description_alignment(
+        img_orig: np.ndarray,
+        semantic_elements: list[str],
+        badge_params: dict,
+    ) -> list[str]:
+        expected = Action._expected_semantic_presence(semantic_elements)
+        observed = {
+            "circle": Action.extract_badge_element_mask(img_orig, badge_params, "circle") is not None,
+            "stem": Action.extract_badge_element_mask(img_orig, badge_params, "stem") is not None,
+            "arm": Action.extract_badge_element_mask(img_orig, badge_params, "arm") is not None,
+            "text": Action.extract_badge_element_mask(img_orig, badge_params, "text") is not None,
+        }
+        return Action._semantic_presence_mismatches(expected, observed)
 
-    y0 = cy
-    while y0 > 0 and element.pixels[y0 - 1][cx]:
-        y0 -= 1
-    y1 = cy
-    while y1 < h - 1 and element.pixels[y1 + 1][cx]:
-        y1 += 1
+    @staticmethod
+    def validate_badge_by_elements(
+        img_orig: np.ndarray,
+        params: dict,
+        *,
+        max_rounds: int = 6,
+        debug_out_dir: str | None = None,
+        apply_circle_geometry_penalty: bool = True,
+    ) -> list[str]:
+        h, w = img_orig.shape[:2]
+        logs: list[str] = []
+        elements = ["circle"]
+        if params.get("stem_enabled"):
+            elements.append("stem")
+        if params.get("arm_enabled"):
+            elements.append("arm")
+        if params.get("draw_text", True):
+            elements.append("text")
 
-    x0 = cx
-    while x0 > 0 and element.pixels[cy][x0 - 1]:
-        x0 -= 1
-    x1 = cx
-    while x1 < w - 1 and element.pixels[cy][x1 + 1]:
-        x1 += 1
+        for round_idx in range(max_rounds):
+            logs.append(f"Runde {round_idx + 1}: elementweise Validierung gestartet")
+            full_svg = Action.generate_badge_svg(w, h, params)
+            full_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(full_svg, w, h))
+            if full_render is None:
+                logs.append("Abbruch: SVG konnte nicht gerendert werden")
+                break
 
-    row_runs = [sum(1 for xx in range(w) if element.pixels[yy][xx] and y0 <= yy <= y1) for yy in range(h) if row_counts[yy]]
-    col_runs = [sum(1 for yy in range(h) if element.pixels[yy][xx] and x0 <= xx <= x1) for xx in range(w) if col_counts[xx]]
-    base_thickness = min(
-        min(row_runs) if row_runs else max_row,
-        min(col_runs) if col_runs else max_col,
-    )
-    thickness = float(max(1, min(base_thickness, max(1, min(w, h) // 2))))
-    color = element_fill_color(grayscale, element)
-    gx, gy = element.x0, element.y0
+            if debug_out_dir:
+                full_diff = Action.create_diff_image(img_orig, full_render)
+                cv2.imwrite(os.path.join(debug_out_dir, f"round_{round_idx + 1:02d}_full_diff.png"), full_diff)
 
-    return [
-        f'<rect x="{gx + x0:.2f}" y="{gy + cy - thickness / 2:.2f}" width="{x1 - x0 + 1:.2f}" height="{thickness:.2f}" fill="{color}"/>',
-        f'<rect x="{gx + cx - thickness / 2:.2f}" y="{gy + y0:.2f}" width="{thickness:.2f}" height="{y1 - y0 + 1:.2f}" fill="{color}"/>',
-    ]
+            round_changed = False
+            for element in elements:
+                elem_svg = Action.generate_badge_svg(w, h, Action._element_only_params(params, element))
+                elem_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(elem_svg, w, h))
+                if elem_render is None:
+                    logs.append(f"{element}: Element-SVG konnte nicht gerendert werden")
+                    continue
 
+                mask_orig = Action.extract_badge_element_mask(img_orig, params, element)
+                mask_svg = Action.extract_badge_element_mask(elem_render, params, element)
+                if mask_orig is None or mask_svg is None:
+                    logs.append(f"{element}: Element konnte nicht extrahiert werden")
+                    continue
 
-def decompose_rect_with_diagonal(grayscale: list[list[int]], element: Element, gradient_id: str) -> SvgEmission | None:
-    """Detect tall rectangular badges with border+diagonal and emit dedicated primitives."""
-    h = len(element.pixels)
-    w = len(element.pixels[0]) if h else 0
-    if h < 10 or w < 6:
-        return None
+                if debug_out_dir:
+                    elem_focus_mask = Action._element_region_mask(h, w, params, element)
+                    elem_diff = Action.create_diff_image(img_orig, elem_render, elem_focus_mask)
+                    cv2.imwrite(
+                        os.path.join(debug_out_dir, f"round_{round_idx + 1:02d}_{element}_diff.png"),
+                        elem_diff,
+                    )
 
-    ratio = h / max(1.0, w)
-    if ratio < 1.4:
-        return None
+                elem_err = Action._element_match_error(img_orig, elem_render, params, element, mask_orig=mask_orig, mask_svg=mask_svg)
+                logs.append(f"{element}: Fehler={elem_err:.3f}")
 
-    row_counts = [sum(row) for row in element.pixels]
-    col_counts = [sum(element.pixels[y][x] for y in range(h)) for x in range(w)]
-    if min(row_counts[0], row_counts[-1]) < int(w * 0.75):
-        return None
-    if min(col_counts[0], col_counts[-1]) < int(h * 0.75):
-        return None
+                if element == "stem" and params.get("stem_enabled"):
+                    changed, refine_log = Action._refine_stem_geometry_from_masks(params, mask_orig, mask_svg, w)
+                    if refine_log:
+                        logs.append(refine_log)
+                    if changed:
+                        round_changed = True
+                        logs.append("stem: Geometrie nach Elementabgleich aktualisiert")
 
-    border_band = max(1, min(w, h) // 10)
-    interior_pixels = [
-        (x, y)
-        for y in range(border_band, h - border_band)
-        for x in range(border_band, w - border_band)
-        if element.pixels[y][x]
-    ]
-    if len(interior_pixels) < max(12, (w * h) // 20):
-        return None
+                width_changed = Action._optimize_element_width_bracket(img_orig, params, element, logs)
+                if width_changed:
+                    round_changed = True
 
-    filtered = [(x, y) for (x, y) in interior_pixels if not (x < w * 0.38 and y < h * 0.34)]
-    fit_points = filtered if len(filtered) > 10 else interior_pixels
-    n = len(fit_points)
-    sum_y = sum(y for _, y in fit_points)
-    sum_x = sum(x for x, _ in fit_points)
-    sum_yy = sum(y * y for _, y in fit_points)
-    sum_xy = sum(x * y for x, y in fit_points)
-    denom = n * sum_yy - sum_y * sum_y
-    if abs(denom) < 1e-6:
-        return None
-    a = (n * sum_xy - sum_x * sum_y) / denom
-    b = (sum_x - a * sum_y) / n
-    if a > -0.05:
-        return None
+                extent_changed = Action._optimize_element_extent_bracket(img_orig, params, element, logs)
+                if extent_changed:
+                    round_changed = True
 
-    avg_dev = sum(abs(x - (a * y + b)) for x, y in fit_points) / n
-    thickness = max(2.0, min(w * 0.45, avg_dev * 2.2))
+                if element == "circle" and apply_circle_geometry_penalty:
+                    center_changed = Action._optimize_circle_center_bracket(img_orig, params, logs)
+                    if center_changed:
+                        round_changed = True
+                    radius_changed = Action._optimize_circle_radius_bracket(img_orig, params, logs)
+                    if radius_changed:
+                        round_changed = True
 
-    interior_vals: list[tuple[int, int, int]] = []
-    diag_vals: list[int] = []
-    for y in range(border_band, h - border_band):
-        for x in range(border_band, w - border_band):
-            if not element.pixels[y][x]:
+                # Color fitting is intentionally deferred to the end so
+                # geometry convergence is not biased by temporary palette noise.
+
+            full_svg = Action.generate_badge_svg(w, h, params)
+            full_render = Action._fit_to_original_size(img_orig, Action.render_svg_to_numpy(full_svg, w, h))
+            full_err = Action.calculate_error(img_orig, full_render)
+            logs.append(f"Runde {round_idx + 1}: Gesamtfehler={full_err:.3f}")
+
+            if full_err <= 8.0:
+                logs.append("Gesamtfehler unter Schwellwert, Validierung beendet")
+                break
+
+            if round_idx + 1 >= max_rounds:
+                break
+
+            if not round_changed:
+                logs.append("Keine Element-Geometrieänderung mehr; Validierung vorzeitig beendet")
+                break
+
+        for element in elements:
+            if element == "text" and not params.get("draw_text", True):
                 continue
-            value = grayscale[element.y0 + y][element.x0 + x]
-            if abs(x - (a * y + b)) <= max(1.0, thickness * 0.65):
-                diag_vals.append(value)
-            else:
-                interior_vals.append((x, y, value))
+            mask_orig = Action.extract_badge_element_mask(img_orig, params, element)
+            if mask_orig is None:
+                continue
+            color_changed = Action._optimize_element_color_bracket(img_orig, params, element, mask_orig, logs)
+            if color_changed:
+                logs.append(f"{element}: Farboptimierung in Abschlussphase angewendet")
 
-    left_cut = border_band + max(1, (w - 2 * border_band) // 3)
-    right_cut = w - border_band - max(1, (w - 2 * border_band) // 3)
-    left_vals = [value for x, _, value in interior_vals if x < left_cut]
-    center_vals = [value for x, _, value in interior_vals if left_cut <= x < right_cut]
-    right_vals = [value for x, _, value in interior_vals if x >= right_cut]
-    if not left_vals or not center_vals or not right_vals:
-        left_vals = [grayscale[element.y0 + y][element.x0 + x] for y in range(h) for x in range(0, max(1, w // 4)) if element.pixels[y][x]]
-        center_vals = [
-            grayscale[element.y0 + y][element.x0 + x]
-            for y in range(h)
-            for x in range(max(0, w // 3), min(w, (2 * w) // 3))
-            if element.pixels[y][x]
+        params.update(Action._apply_canonical_badge_colors(params))
+
+        return logs
+
+
+def run_iteration_pipeline(
+    img_path: str,
+    csv_path: str,
+    max_iterations: int,
+    svg_out_dir: str,
+    diff_out_dir: str,
+    reports_out_dir: str | None = None,
+    debug_ac0811_dir: str | None = None,
+    debug_element_diff_dir: str | None = None,
+    badge_validation_rounds: int = 6,
+):
+    if cv2 is None or np is None:
+        missing = []
+        if cv2 is None:
+            missing.append("cv2")
+        if np is None:
+            missing.append("numpy")
+        raise RuntimeError(
+            "Required image dependencies are missing: " + ", ".join(missing) + ". "
+            "Install dependencies before running the conversion pipeline."
+        )
+    if fitz is None:
+        raise RuntimeError(
+            "Required SVG renderer dependency is missing: fitz (PyMuPDF). "
+            "Install PyMuPDF before running the conversion pipeline."
+        )
+
+    folder_path = os.path.dirname(img_path)
+    filename = os.path.basename(img_path)
+
+    perc = Perception(img_path, csv_path)
+    if perc.img is None:
+        return None
+    h, w = perc.img.shape[:2]
+
+    ref = Reflection(perc.raw_desc)
+    desc, params = ref.parse_description(perc.base_name, filename)
+
+    if not desc.strip() and params["mode"] != "semantic_badge":
+        print("  -> Überspringe Bild, da keine begleitende textliche Beschreibung vorliegt.")
+        return None
+
+    print(f"\n--- Verarbeite {filename} ---")
+    elements = ", ".join(params["elements"]) if params["elements"] else "Kein Compositing-Befehl gefunden"
+    print(f"Befehl erkannt: {elements}")
+
+    log_path = None
+    if reports_out_dir:
+        log_path = os.path.join(reports_out_dir, f"{os.path.splitext(filename)[0]}_element_validation.log")
+
+    def _write_validation_log(lines: list[str]) -> None:
+        if not log_path:
+            return
+        payload = [
+            (
+                "run-meta: "
+                f"run_seed={int(Action.STOCHASTIC_RUN_SEED)} "
+                f"pass_seed_offset={int(Action.STOCHASTIC_SEED_OFFSET)} "
+                f"nonce_ns={time.time_ns()}"
+            )
         ]
-        right_vals = [grayscale[element.y0 + y][element.x0 + x] for y in range(h) for x in range(max(0, (3 * w) // 4), w) if element.pixels[y][x]]
-        if not left_vals or not center_vals or not right_vals:
+        payload.extend(str(line) for line in lines)
+        with open(log_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(payload).rstrip() + "\n")
+
+    if params["mode"] == "semantic_badge":
+        badge_params = Action.make_badge_params(w, h, perc.base_name, perc.img)
+        if badge_params is None:
             return None
 
-    left_hex = gray_to_hex(round(sum(left_vals) / len(left_vals)))
-    mid_hex = gray_to_hex(round(sum(center_vals) / len(center_vals)))
-    right_hex = gray_to_hex(round(sum(right_vals) / len(right_vals)))
-    border_val = round(
-        (
-            sum(grayscale[element.y0][element.x0 + x] for x in range(w))
-            + sum(grayscale[element.y0 + h - 1][element.x0 + x] for x in range(w))
-            + sum(grayscale[element.y0 + y][element.x0] for y in range(h))
-            + sum(grayscale[element.y0 + y][element.x0 + w - 1] for y in range(h))
+        badge_overrides = params.get("badge_overrides")
+        if isinstance(badge_overrides, dict):
+            badge_params.update(badge_overrides)
+
+        semantic_issues = Action.validate_semantic_description_alignment(
+            perc.img,
+            list(params.get("elements", [])),
+            badge_params,
         )
-        / max(1, 2 * (w + h))
+        if semantic_issues:
+            print("[ERROR] Semantik-Abgleich fehlgeschlagen:")
+            for issue in semantic_issues:
+                print(f"  - {issue}")
+            _write_validation_log(["status=semantic_mismatch", *[f"issue={issue}" for issue in semantic_issues]])
+            return None
+
+        validation_logs: list[str] = []
+        debug_dir = None
+        if debug_element_diff_dir:
+            debug_dir = os.path.join(debug_element_diff_dir, os.path.splitext(filename)[0])
+            os.makedirs(debug_dir, exist_ok=True)
+        elif debug_ac0811_dir and perc.base_name.upper() == "AC0811":
+            debug_dir = os.path.join(debug_ac0811_dir, os.path.splitext(filename)[0])
+            os.makedirs(debug_dir, exist_ok=True)
+        validation_logs = Action.validate_badge_by_elements(
+            perc.img,
+            badge_params,
+            max_rounds=max(1, int(badge_validation_rounds)),
+            debug_out_dir=debug_dir,
+        )
+        badge_params = Action._enforce_semantic_connector_expectation(
+            perc.base_name,
+            list(params.get("elements", [])),
+            badge_params,
+            w,
+            h,
+        )
+        if badge_params.get("arm_enabled"):
+            validation_logs.append(
+                "semantic-guard: Erwartete Arm-Geometrie bestätigt/wiederhergestellt (z.B. AC0812 links)."
+            )
+        _write_validation_log(["status=semantic_ok", *validation_logs])
+
+        svg_content = Action.generate_badge_svg(w, h, badge_params)
+        base = os.path.splitext(filename)[0]
+        with open(os.path.join(svg_out_dir, f"{base}.svg"), "w", encoding="utf-8") as f:
+            f.write(svg_content)
+
+        svg_rendered = Action.render_svg_to_numpy(svg_content, w, h)
+        if svg_rendered is None:
+            raise RuntimeError("SVG rendering failed although fitz is installed.")
+        diff = Action.create_diff_image(perc.img, svg_rendered)
+        cv2.imwrite(os.path.join(diff_out_dir, f"{base}_diff.png"), diff)
+        return base, desc, params, 1, Action.calculate_error(perc.img, svg_rendered)
+
+    if params["mode"] != "composite":
+        print("  -> Überspringe Bild, da keine Zerschneide-Anweisung (Compositing) im Text vorliegt.")
+        _write_validation_log(["status=skipped_non_composite"])
+        return None
+
+    best_error = float("inf")
+    best_svg = ""
+    best_diff = None
+    best_iter = 0
+
+    epsilon_factors = np.linspace(0.05, 0.0005, max_iterations)
+    for i, eps in enumerate(epsilon_factors):
+        svg_content = Action.generate_composite_svg(w, h, params, folder_path, float(eps))
+
+        svg_rendered = Action.render_svg_to_numpy(svg_content, w, h)
+        error = Action.calculate_error(perc.img, svg_rendered)
+
+        print(f"  [Iter {i+1}/{max_iterations}] Epsilon={eps:.4f} -> Diff-Fehler: {error:.2f}")
+
+        if error < best_error:
+            best_error, best_svg, best_iter = error, svg_content, i + 1
+            best_diff = Action.create_diff_image(perc.img, svg_rendered)
+
+    print(f"-> Bester Match in Iteration {best_iter} (Fehler auf {best_error:.2f} reduziert)")
+
+    base = os.path.splitext(filename)[0]
+    with open(os.path.join(svg_out_dir, f"{base}.svg"), "w", encoding="utf-8") as f:
+        f.write(best_svg)
+    if best_diff is not None:
+        cv2.imwrite(os.path.join(diff_out_dir, f"{base}_diff.png"), best_diff)
+
+    _write_validation_log([
+        "status=composite_ok",
+        f"best_iter={int(best_iter)}",
+        f"best_error={float(best_error):.6f}",
+    ])
+    return base, desc, params, best_iter, best_error
+
+
+def _extract_ref_parts(name: str) -> tuple[str, int] | None:
+    match = re.match(r"^([A-Z]{2})(\d{3,4})$", name.upper())
+    if not match:
+        return None
+    return match.group(1), int(match.group(2))
+
+
+def _in_requested_range(filename: str, start_ref: str, end_ref: str) -> bool:
+    stem = get_base_name_from_file(os.path.splitext(filename)[0]).upper()
+    stem_parts = _extract_ref_parts(stem)
+    start_parts = _extract_ref_parts(start_ref)
+    end_parts = _extract_ref_parts(end_ref)
+    if stem_parts is None or start_parts is None or end_parts is None:
+        return False
+
+    stem_prefix, stem_n = stem_parts
+    start_prefix, start_n = start_parts
+    end_prefix, end_n = end_parts
+
+    if start_prefix != end_prefix or stem_prefix != start_prefix:
+        return False
+
+    return start_n <= stem_n <= end_n
+
+
+
+
+def _conversion_random() -> random.Random:
+    """Return run-local RNG (seedable via env) for non-deterministic search order."""
+    seed_raw = os.environ.get("TINY_ICC_RANDOM_SEED")
+    if seed_raw is not None and str(seed_raw).strip() != "":
+        try:
+            return random.Random(int(str(seed_raw).strip()))
+        except ValueError:
+            pass
+    return random.Random(time.time_ns())
+
+def _default_converted_symbols_root() -> str:
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(repo_root, "artifacts", "converted_symbols")
+
+
+def _quality_config_path(reports_out_dir: str) -> str:
+    return os.path.join(reports_out_dir, "quality_tercile_config.json")
+
+
+def _load_quality_config(reports_out_dir: str) -> dict[str, object]:
+    path = _quality_config_path(reports_out_dir)
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _write_quality_config(
+    reports_out_dir: str,
+    *,
+    allowed_error_per_pixel: float,
+    skipped_variants: list[str],
+    source: str,
+) -> None:
+    path = _quality_config_path(reports_out_dir)
+    normalized_error_pp = float(allowed_error_per_pixel) if math.isfinite(allowed_error_per_pixel) else 0.0
+    payload = {
+        "allowed_error_per_pixel": float(max(0.0, normalized_error_pp)),
+        "skip_variants": sorted(set(skipped_variants)),
+        "notes": (
+            "Varianten in skip_variants werden in Folge-Pässen nicht erneut konvertiert. "
+            "Loeschen der Datei setzt den Ablauf zurueck, dann werden wieder alle Bitmaps bearbeitet."
+        ),
+        "source": source,
+    }
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+
+
+def _quality_sort_key(row: dict[str, object]) -> float:
+    value = float(row.get("error_per_pixel", float("inf")))
+    if math.isfinite(value):
+        return value
+    return float("inf")
+
+
+def _select_middle_lower_tercile(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    if len(rows) < 3:
+        return []
+
+    ranked = sorted(rows, key=_quality_sort_key)
+    first_cut = max(1, len(ranked) // 3)
+    return ranked[first_cut:]
+
+
+def _select_open_quality_cases(
+    rows: list[dict[str, object]],
+    *,
+    allowed_error_per_pixel: float,
+    skip_variants: set[str] | None = None,
+) -> list[dict[str, object]]:
+    """Return unresolved quality cases sorted from worst to best.
+
+    "Open" means the case is finite, not explicitly skipped, and still above the
+    accepted quality threshold.
+    """
+    skips = {str(v).upper() for v in (skip_variants or set()) if str(v).strip()}
+    open_rows: list[dict[str, object]] = []
+    for row in rows:
+        err = float(row.get("error_per_pixel", float("inf")))
+        if not math.isfinite(err):
+            continue
+        variant = str(row.get("variant", "")).upper()
+        if variant and variant in skips:
+            continue
+        if math.isfinite(allowed_error_per_pixel) and err <= allowed_error_per_pixel:
+            continue
+        open_rows.append(row)
+
+    return sorted(open_rows, key=_quality_sort_key, reverse=True)
+
+
+def _iteration_strategy_for_pass(pass_idx: int, base_iterations: int) -> tuple[int, int]:
+    """Adaptive per-pass search budget for unresolved quality cases."""
+    p = max(1, int(pass_idx))
+    base = max(1, int(base_iterations))
+    phase = (p - 1) % 3
+
+    if phase == 0:
+        return base + p, 6 + p
+    if phase == 1:
+        return base + 24 + (p * 2), 7 + p
+    return base + 48 + (p * 3), 8 + p
+
+
+def _write_quality_pass_report(
+    reports_out_dir: str,
+    pass_rows: list[dict[str, object]],
+) -> None:
+    if not pass_rows:
+        return
+
+    out_path = os.path.join(reports_out_dir, "quality_tercile_passes.csv")
+    with open(out_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f, delimiter=";")
+        writer.writerow([
+            "pass",
+            "filename",
+            "old_error_per_pixel",
+            "new_error_per_pixel",
+            "improved",
+            "iteration_budget",
+            "badge_validation_rounds",
+        ])
+        for row in pass_rows:
+            writer.writerow([
+                row["pass"],
+                row["filename"],
+                f"{float(row['old_error_per_pixel']):.8f}",
+                f"{float(row['new_error_per_pixel']):.8f}",
+                "1" if bool(row["improved"]) else "0",
+                row["iteration_budget"],
+                row["badge_validation_rounds"],
+            ])
+
+
+def _extract_svg_inner(svg_text: str) -> str:
+    match = re.search(r"<svg[^>]*>(.*)</svg>", svg_text, flags=re.DOTALL | re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+    return svg_text
+
+
+def _build_transformed_svg_from_template(
+    template_svg_text: str,
+    target_w: int,
+    target_h: int,
+    *,
+    rotation_deg: int,
+    scale: float,
+) -> str:
+    inner = _extract_svg_inner(template_svg_text)
+    # Keep donor stroke widths visually stable when trying scale-based transfers.
+    # This mirrors the "M->S/L while preserving line thickness" workflow that is
+    # often needed for noisy small/large bitmap variants.
+    inner = re.sub(
+        r"<(circle|ellipse|line|path|polygon|polyline|rect)\\b([^>]*)>",
+        lambda m: (
+            f"<{m.group(1)}{m.group(2)}>"
+            if "vector-effect=" in m.group(2)
+            else f"<{m.group(1)}{m.group(2)} vector-effect=\"non-scaling-stroke\">"
+        ),
+        inner,
+        flags=re.IGNORECASE,
     )
-    border_hex = gray_to_hex(border_val)
-    if diag_vals:
-        diag_hex = gray_to_hex(round(sum(diag_vals) / len(diag_vals)))
-    else:
-        diag_hex = gray_to_hex(max(0, border_val - 4))
+    cx = float(target_w) / 2.0
+    cy = float(target_h) / 2.0
+    return (
+        f'<svg width="{target_w}" height="{target_h}" viewBox="0 0 {target_w} {target_h}" '
+        'xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">\n'
+        f'  <g transform="translate({cx:.3f} {cy:.3f}) rotate({int(rotation_deg)}) scale({float(scale):.4f}) '
+        f'translate({-cx:.3f} {-cy:.3f})">\n'
+        f"{inner}\n"
+        "  </g>\n"
+        "</svg>"
+    )
 
-    y_start = h - 1 - border_band
-    y_end = border_band
-    x_start = a * y_start + b
-    x_end = a * y_end + b
-    dx = x_end - x_start
-    dy = y_end - y_start
-    length = max(1e-6, (dx * dx + dy * dy) ** 0.5)
-    nx = -dy / length
-    ny = dx / length
-    half_t = thickness / 2.0
-    p1 = (element.x0 + x_start + nx * half_t, element.y0 + y_start + ny * half_t)
-    p2 = (element.x0 + x_end + nx * half_t, element.y0 + y_end + ny * half_t)
-    p3 = (element.x0 + x_end - nx * half_t, element.y0 + y_end - ny * half_t)
-    p4 = (element.x0 + x_start - nx * half_t, element.y0 + y_start - ny * half_t)
 
-    defs = [
-        (
-            f'<linearGradient id="{gradient_id}" x1="{element.x0:.2f}" y1="{element.y0:.2f}" '
-            f'x2="{element.x0 + w:.2f}" y2="{element.y0:.2f}" gradientUnits="userSpaceOnUse">'
-            f'<stop offset="0" stop-color="{left_hex}"/><stop offset="0.53" stop-color="{mid_hex}"/>'
-            f'<stop offset="1" stop-color="{right_hex}"/></linearGradient>'
+def _template_transfer_scale_candidates(base_scale: float) -> list[float]:
+    """Build a compact scale ladder around an estimated best scale."""
+    if not math.isfinite(base_scale) or base_scale <= 0.0:
+        base_scale = 1.0
+
+    multipliers = (1.00, 0.92, 1.08, 0.84, 1.18, 0.74, 1.35, 1.55)
+    scales: list[float] = []
+    seen: set[float] = set()
+    for mul in multipliers:
+        value = float(min(1.90, max(0.65, base_scale * mul)))
+        key = round(value, 4)
+        if key in seen:
+            continue
+        seen.add(key)
+        scales.append(key)
+
+    for fallback in (0.80, 0.90, 1.00, 1.10, 1.25):
+        key = round(float(fallback), 4)
+        if key not in seen:
+            seen.add(key)
+            scales.append(key)
+    return scales
+
+
+def _estimate_template_transfer_scale(
+    img_orig: np.ndarray,
+    donor_svg_text: str,
+    target_w: int,
+    target_h: int,
+    *,
+    rotation_deg: int,
+) -> float | None:
+    """Estimate donor->target scale from foreground silhouette bboxes."""
+    rendered = Action.render_svg_to_numpy(
+        _build_transformed_svg_from_template(
+            donor_svg_text,
+            target_w,
+            target_h,
+            rotation_deg=rotation_deg,
+            scale=1.0,
+        ),
+        target_w,
+        target_h,
+    )
+    if rendered is None:
+        return None
+
+    target_mask = Action._foreground_mask(img_orig)
+    donor_mask = Action._foreground_mask(rendered)
+    target_bbox = Action._mask_bbox(target_mask)
+    donor_bbox = Action._mask_bbox(donor_mask)
+    if target_bbox is None or donor_bbox is None:
+        return None
+
+    target_w_box = max(1e-6, float(target_bbox[2] - target_bbox[0] + 1.0))
+    target_h_box = max(1e-6, float(target_bbox[3] - target_bbox[1] + 1.0))
+    donor_w_box = max(1e-6, float(donor_bbox[2] - donor_bbox[0] + 1.0))
+    donor_h_box = max(1e-6, float(donor_bbox[3] - donor_bbox[1] + 1.0))
+
+    scale_w = target_w_box / donor_w_box
+    scale_h = target_h_box / donor_h_box
+    scale = math.sqrt(max(1e-6, scale_w * scale_h))
+    if not math.isfinite(scale):
+        return None
+    return float(min(1.90, max(0.65, scale)))
+
+
+def _template_transfer_transform_candidates(
+    target_variant: str,
+    donor_variant: str,
+    *,
+    estimated_scale_by_rotation: dict[int, float] | None = None,
+) -> list[tuple[int, float]]:
+    """Return ordered rotation/scale candidates for template-based fallback."""
+    del target_variant, donor_variant  # reserved for future metadata-based policies
+
+    candidates: list[tuple[int, float]] = []
+    seen: set[tuple[int, float]] = set()
+    for rotation in (0, 90, 180, 270):
+        estimated = None
+        if estimated_scale_by_rotation is not None:
+            estimated = estimated_scale_by_rotation.get(rotation)
+        for scale in _template_transfer_scale_candidates(estimated if estimated is not None else 1.0):
+            candidate = (rotation, float(scale))
+            key = (rotation, round(float(scale), 4))
+            if key in seen:
+                continue
+            seen.add(key)
+            candidates.append(candidate)
+    return candidates
+
+
+def _rank_template_transfer_donors(
+    target_row: dict[str, object],
+    donor_rows: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Prioritize donors that are already good and geometrically close to target."""
+    target_base = str(target_row.get("base", "")).upper()
+    target_sig: dict[str, float] | None = None
+    target_params = target_row.get("params")
+    if isinstance(target_params, dict):
+        target_sig = _normalized_geometry_signature(
+            int(target_row.get("w", 0)),
+            int(target_row.get("h", 0)),
+            dict(target_params),
         )
-    ]
-    parts = [
-        f'<rect x="{element.x0:.2f}" y="{element.y0:.2f}" width="{w:.2f}" height="{h:.2f}" fill="url(#{gradient_id})" stroke="{border_hex}" stroke-width="1.00"/>',
-        f'<path d="M {p1[0]:.2f},{p1[1]:.2f} L {p2[0]:.2f},{p2[1]:.2f} L {p3[0]:.2f},{p3[1]:.2f} L {p4[0]:.2f},{p4[1]:.2f} Z" fill="{diag_hex}"/>',
-    ]
-    return SvgEmission(parts=parts, defs=defs)
+
+    ranked: list[tuple[tuple[float, float, float], dict[str, object]]] = []
+    for donor in donor_rows:
+        donor_base = str(donor.get("base", "")).upper()
+        donor_error_pp = float(donor.get("error_per_pixel", float("inf")))
+        donor_sig: dict[str, float] | None = None
+        donor_params = donor.get("params")
+        if isinstance(donor_params, dict):
+            donor_sig = _normalized_geometry_signature(int(donor.get("w", 0)), int(donor.get("h", 0)), dict(donor_params))
+
+        delta = float("inf")
+        if target_sig is not None and donor_sig is not None:
+            delta = _max_signature_delta(target_sig, donor_sig)
+
+        key = (0.0 if donor_base == target_base else 1.0, delta, donor_error_pp)
+        ranked.append((key, donor))
+
+    ranked.sort(key=lambda item: item[0])
+    return [donor for _, donor in ranked]
 
 
-def _rotate_matrix_90cw(matrix: list[list[int]]) -> list[list[int]]:
-    h = len(matrix)
-    w = len(matrix[0]) if h else 0
-    return [[matrix[h - 1 - y][x] for y in range(h)] for x in range(w)]
 
 
-def _rotate_grayscale_90cw(matrix: list[list[int]]) -> list[list[int]]:
-    h = len(matrix)
-    w = len(matrix[0]) if h else 0
-    return [[matrix[h - 1 - y][x] for y in range(h)] for x in range(w)]
+def _semantic_transfer_rotations(target_params: dict[str, object], donor_params: dict[str, object]) -> tuple[int, ...]:
+    """Rotation candidates for semantic transfer while preserving symbol semantics."""
+    has_text = bool(target_params.get("draw_text", False) or donor_params.get("draw_text", False))
+    has_connector = bool(
+        target_params.get("arm_enabled", False)
+        or target_params.get("stem_enabled", False)
+        or donor_params.get("arm_enabled", False)
+        or donor_params.get("stem_enabled", False)
+    )
+    if has_text or has_connector:
+        # Directional semantic badges (e.g. AC0812 left arm) encode orientation in
+        # geometry. Rotating donor templates can improve pixel error but flips the
+        # meaning of connector-side symbols. Keep transfer upright/unrotated.
+        return (0,)
+    return (0, 90, 180, 270)
 
 
-def _resize_nn(matrix: list[list[int]], out_w: int, out_h: int) -> list[list[int]]:
-    in_h = len(matrix)
-    in_w = len(matrix[0]) if in_h else 0
-    if in_h == 0 or in_w == 0 or out_w <= 0 or out_h <= 0:
-        return [[0 for _ in range(max(0, out_w))] for _ in range(max(0, out_h))]
-    return [
-        [matrix[min(in_h - 1, int(y * in_h / out_h))][min(in_w - 1, int(x * in_w / out_w))] for x in range(out_w)]
-        for y in range(out_h)
-    ]
 
 
-def _merge_variants(
-    binaries: list[list[list[int]]],
-    grayscales: list[list[list[int]]],
+
+
+def _semantic_transfer_is_compatible(target_params: dict[str, object], donor_params: dict[str, object]) -> bool:
+    """Return whether donor semantics can preserve target semantic geometry."""
+    target_has_arm = bool(target_params.get("arm_enabled", False))
+    target_has_stem = bool(target_params.get("stem_enabled", False))
+    donor_has_arm = bool(donor_params.get("arm_enabled", False))
+    donor_has_stem = bool(donor_params.get("stem_enabled", False))
+
+    # Keep connector type stable for directional symbols (arm vs stem).
+    if target_has_arm != donor_has_arm:
+        return False
+    if target_has_stem != donor_has_stem:
+        return False
+
+    target_has_text = bool(target_params.get("draw_text", False))
+    donor_has_text = bool(donor_params.get("draw_text", False))
+    if target_has_text != donor_has_text:
+        return False
+
+    # If both carry labels, require same text mode (e.g. VOC vs CO₂ path families).
+    if target_has_text and donor_has_text:
+        target_mode = str(target_params.get("text_mode", "")).lower()
+        donor_mode = str(donor_params.get("text_mode", "")).lower()
+        if target_mode and donor_mode and target_mode != donor_mode:
+            return False
+
+    # Directional connector families (e.g. AC0810 right arm vs AC0812 left arm)
+    # must keep side/orientation stable during semantic transfer.
+    if target_has_arm and donor_has_arm:
+        target_arm_dir = _connector_arm_direction(target_params)
+        donor_arm_dir = _connector_arm_direction(donor_params)
+        if target_arm_dir is not None and donor_arm_dir is not None and target_arm_dir != donor_arm_dir:
+            return False
+
+    if target_has_stem and donor_has_stem:
+        target_stem_dir = _connector_stem_direction(target_params)
+        donor_stem_dir = _connector_stem_direction(donor_params)
+        if target_stem_dir is not None and donor_stem_dir is not None and target_stem_dir != donor_stem_dir:
+            return False
+
+    return True
+
+
+def _connector_arm_direction(params: dict[str, object]) -> int | None:
+    """Return horizontal arm side: -1 left of circle, +1 right, or None if unknown."""
+    x1 = params.get("arm_x1")
+    x2 = params.get("arm_x2")
+    cx = params.get("cx")
+    if x1 is not None and x2 is not None and cx is not None:
+        mid = (float(x1) + float(x2)) * 0.5
+        delta = mid - float(cx)
+        if abs(delta) > 1e-3:
+            return -1 if delta < 0.0 else 1
+
+    if x1 is not None and cx is not None:
+        delta = float(x1) - float(cx)
+        if abs(delta) > 1e-3:
+            return -1 if delta < 0.0 else 1
+    return None
+
+
+def _connector_stem_direction(params: dict[str, object]) -> int | None:
+    """Return vertical stem direction: -1 up, +1 down, or None if unknown."""
+    y1 = params.get("arm_y1")
+    y2 = params.get("arm_y2")
+    if y1 is not None and y2 is not None:
+        dy = float(y2) - float(y1)
+        if abs(dy) > 1e-3:
+            return -1 if dy < 0.0 else 1
+
+    cy = params.get("cy")
+    if y1 is not None and y2 is not None and cy is not None:
+        mid = (float(y1) + float(y2)) * 0.5
+        delta = mid - float(cy)
+        if abs(delta) > 1e-3:
+            return -1 if delta < 0.0 else 1
+    return None
+
+
+def _semantic_transfer_scale_candidates(base_scale: float) -> list[float]:
+    """Broader scale ladder for semantic badge transfer exploration."""
+    core = _template_transfer_scale_candidates(base_scale)
+    extra = [0.55, 0.65, 0.75, 0.85, 1.00, 1.15, 1.30, 1.50, 1.75, 2.00]
+    values = []
+    seen: set[float] = set()
+    for v in [*core, *extra]:
+        value = float(min(2.2, max(0.5, float(v))))
+        key = round(value, 4)
+        if key in seen:
+            continue
+        seen.add(key)
+        values.append(key)
+    return values
+
+def _semantic_transfer_badge_params(
+    donor_params: dict[str, object],
+    target_params: dict[str, object],
     *,
     target_w: int,
     target_h: int,
@@ -3423,10 +5158,10 @@ def _merge_variants(
     if p.get("arm_enabled"):
         x1, y1 = _rot_scale_point(float(p.get("arm_x1", tx)), float(p.get("arm_y1", ty)))
         x2, y2 = _rot_scale_point(float(p.get("arm_x2", tx)), float(p.get("arm_y2", ty)))
-        p["arm_x1"] = float(_clip(x1, 0.0, max(0.0, float(target_w - 1))))
-        p["arm_y1"] = float(_clip(y1, 0.0, max(0.0, float(target_h - 1))))
-        p["arm_x2"] = float(_clip(x2, 0.0, max(0.0, float(target_w - 1))))
-        p["arm_y2"] = float(_clip(y2, 0.0, max(0.0, float(target_h - 1))))
+        p["arm_x1"] = float(Action._clip_scalar(x1, 0.0, max(0.0, float(target_w - 1))))
+        p["arm_y1"] = float(Action._clip_scalar(y1, 0.0, max(0.0, float(target_h - 1))))
+        p["arm_x2"] = float(Action._clip_scalar(x2, 0.0, max(0.0, float(target_w - 1))))
+        p["arm_y2"] = float(Action._clip_scalar(y2, 0.0, max(0.0, float(target_h - 1))))
 
     if p.get("stem_enabled"):
         stem_x = float(p.get("stem_x", tx)) + (float(p.get("stem_width", 1.0)) / 2.0)
@@ -3434,9 +5169,9 @@ def _merge_variants(
         bottom = float(p.get("stem_bottom", ty))
         x1, y1 = _rot_scale_point(stem_x, top)
         x2, y2 = _rot_scale_point(stem_x, bottom)
-        p["stem_x"] = float(_clip((x1 + x2) / 2.0 - (float(p.get("stem_width", 1.0)) / 2.0), 0.0, float(target_w)))
-        p["stem_top"] = float(_clip(min(y1, y2), 0.0, float(target_h)))
-        p["stem_bottom"] = float(_clip(max(y1, y2), 0.0, float(target_h)))
+        p["stem_x"] = float(Action._clip_scalar((x1 + x2) / 2.0 - (float(p.get("stem_width", 1.0)) / 2.0), 0.0, float(target_w)))
+        p["stem_top"] = float(Action._clip_scalar(min(y1, y2), 0.0, float(target_h)))
+        p["stem_bottom"] = float(Action._clip_scalar(max(y1, y2), 0.0, float(target_h)))
 
     # Keep text horizontally readable while preventing aggressive down-scaling
     # during template transfer. The historical sqrt(scale) shrink was often too
@@ -3460,97 +5195,541 @@ def _merge_variants(
 
 def _try_template_transfer(
     *,
-    max_iter: int,
-    plateau_limit: int,
-    seed: int,
-) -> None:
-    min_pixels = max(6, int((len(binary) * len(binary[0])) * 0.0015)) if binary and binary[0] else 6
-    elements = find_elements(binary, min_pixels=min_pixels)
-    parts: list[str] = []
-    defs: list[str] = []
-    for idx, element in enumerate(elements):
-        frame = decompose_rect_with_diagonal(grayscale, element, f"autoGradient{idx}")
-        if frame is not None:
-            parts.extend(frame.parts)
-            defs.extend(frame.defs)
+    target_row: dict[str, object],
+    donor_rows: list[dict[str, object]],
+    folder_path: str,
+    svg_out_dir: str,
+    diff_out_dir: str,
+    rng: random.Random | None = None,
+) -> tuple[dict[str, object] | None, dict[str, object] | None]:
+    filename = str(target_row.get("filename", ""))
+    if not filename:
+        return None, None
+
+    img_path = os.path.join(folder_path, filename)
+    img_orig = cv2.imread(img_path)
+    if img_orig is None:
+        return None, None
+
+    h, w = img_orig.shape[:2]
+    pixel_count = float(max(1, w * h))
+    prev_error_pp = float(target_row.get("error_per_pixel", float("inf")))
+
+    best_svg: str | None = None
+    best_error = float(target_row.get("best_error", float("inf")))
+    best_error_pp = prev_error_pp
+    best_donor = ""
+    best_rotation = 0
+    best_scale = 1.0
+
+    target_variant = str(target_row.get("variant", "")).upper()
+    target_svg_path = os.path.join(svg_out_dir, f"{target_variant}.svg")
+    target_svg_geometry = _read_svg_geometry(target_svg_path)
+    target_geom_params = dict(target_svg_geometry[2]) if target_svg_geometry is not None else None
+    target_params_raw = target_row.get("params")
+    target_is_semantic = isinstance(target_params_raw, dict) and str(target_params_raw.get("mode", "")) == "semantic_badge"
+    ordered_donors = _rank_template_transfer_donors(target_row, donor_rows)
+    if rng is not None and len(ordered_donors) > 1:
+        head = ordered_donors[:3]
+        tail = ordered_donors[3:]
+        rng.shuffle(head)
+        ordered_donors = head + tail
+    for donor in ordered_donors:
+        donor_variant = str(donor.get("variant", "")).upper()
+        if not donor_variant or donor_variant == target_variant:
+            continue
+        donor_svg_path = os.path.join(svg_out_dir, f"{donor_variant}.svg")
+        if not os.path.exists(donor_svg_path):
+            continue
+        try:
+            donor_svg_text = open(donor_svg_path, "r", encoding="utf-8").read()
+        except OSError:
             continue
 
-        plus_parts = decompose_plus_shape(grayscale, element)
-        if plus_parts is not None:
-            parts.extend(plus_parts)
+        donor_svg_geometry = _read_svg_geometry(donor_svg_path)
+        donor_geom_params = dict(donor_svg_geometry[2]) if donor_svg_geometry is not None else None
+
+        estimated_scales = {
+            rotation: _estimate_template_transfer_scale(
+                img_orig,
+                donor_svg_text,
+                w,
+                h,
+                rotation_deg=rotation,
+            )
+            for rotation in (0, 90, 180, 270)
+        }
+
+        donor_params_raw = donor.get("params")
+        donor_is_semantic = isinstance(donor_params_raw, dict) and str(donor_params_raw.get("mode", "")) == "semantic_badge"
+        if target_is_semantic and not donor_is_semantic:
             continue
 
-        init = estimate_initial_candidate(element)
-        best, _ = optimize_element(element.pixels, init, max_iter=max_iter, plateau_limit=plateau_limit, seed=seed + idx)
-        decomposed = decompose_circle_with_stem(grayscale, element, best)
-        if decomposed is not None:
-            parts.extend(decomposed)
-        else:
-            fill_color, stroke_color, stroke_width = estimate_stroke_style(grayscale, element, best)
-            parts.append(candidate_to_svg(best, element.x0, element.y0, fill_color, stroke_color, stroke_width))
+        if isinstance(target_params_raw, dict) and isinstance(donor_params_raw, dict):
+            if (
+                target_is_semantic
+                and donor_is_semantic
+                and target_geom_params is not None
+                and donor_geom_params is not None
+                and _semantic_transfer_is_compatible(dict(target_params_raw), dict(donor_params_raw))
+            ):
+                base_scale = float(min(w, h)) / max(1.0, float(min(int(donor.get("w", w)), int(donor.get("h", h)))))
+                semantic_scales = _semantic_transfer_scale_candidates(base_scale)
+                if rng is not None:
+                    keep = semantic_scales[:2]
+                    rest = semantic_scales[2:]
+                    rng.shuffle(rest)
+                    semantic_scales = keep + rest
+                for rotation in _semantic_transfer_rotations(dict(target_params_raw), dict(donor_params_raw)):
+                    for scale in semantic_scales:
+                        candidate_params = _semantic_transfer_badge_params(
+                            dict(donor_geom_params),
+                            dict(target_geom_params),
+                            target_w=w,
+                            target_h=h,
+                            rotation_deg=rotation,
+                            scale=float(scale),
+                        )
+                        try:
+                            candidate_svg = Action.generate_badge_svg(w, h, candidate_params)
+                            rendered = Action.render_svg_to_numpy(candidate_svg, w, h)
+                        except Exception:
+                            continue
+                        error = Action.calculate_error(img_orig, rendered)
+                        error_pp = float(error) / pixel_count
+                        if error_pp + 1e-9 < best_error_pp:
+                            best_error = float(error)
+                            best_error_pp = error_pp
+                            best_svg = candidate_svg
+                            best_donor = donor_variant
+                            best_rotation = rotation
+                            best_scale = float(scale)
 
-    width, height = len(binary[0]), len(binary)
-    svg = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
-        "<defs>" if defs else "",
-        *defs,
-        "</defs>" if defs else "",
-        *parts,
-        "</svg>",
+        if target_is_semantic:
+            # Semantic badges encode meaning in connector/text geometry.
+            # Generic donor SVG transforms can remove those semantics.
+            continue
+
+        for rotation, scale in _template_transfer_transform_candidates(
+            target_variant,
+            donor_variant,
+            estimated_scale_by_rotation=estimated_scales,
+        ):
+            candidate_svg = _build_transformed_svg_from_template(
+                donor_svg_text,
+                w,
+                h,
+                rotation_deg=rotation,
+                scale=scale,
+            )
+            rendered = Action.render_svg_to_numpy(candidate_svg, w, h)
+            error = Action.calculate_error(img_orig, rendered)
+            error_pp = float(error) / pixel_count
+            if error_pp + 1e-9 < best_error_pp:
+                best_error = float(error)
+                best_error_pp = error_pp
+                best_svg = candidate_svg
+                best_donor = donor_variant
+                best_rotation = rotation
+                best_scale = scale
+
+    if best_svg is None:
+        return None, None
+
+    stem = os.path.splitext(filename)[0]
+    svg_path = os.path.join(svg_out_dir, f"{stem}.svg")
+    with open(svg_path, "w", encoding="utf-8") as f:
+        f.write(best_svg)
+
+    rendered = Action.render_svg_to_numpy(best_svg, w, h)
+    if rendered is not None:
+        diff = Action.create_diff_image(img_orig, rendered)
+        cv2.imwrite(os.path.join(diff_out_dir, f"{stem}_diff.png"), diff)
+
+    updated_row = dict(target_row)
+    updated_row["best_error"] = float(best_error)
+    updated_row["error_per_pixel"] = float(best_error_pp)
+
+    detail = {
+        "filename": filename,
+        "donor_variant": best_donor,
+        "rotation_deg": int(best_rotation),
+        "scale": float(best_scale),
+        "old_error_per_pixel": float(prev_error_pp),
+        "new_error_per_pixel": float(best_error_pp),
+    }
+    return updated_row, detail
+
+
+def convert_range(
+    folder_path: str,
+    csv_path: str,
+    iterations: int,
+    start_ref: str = "AR0102",
+    end_ref: str = "AR0104",
+    debug_ac0811_dir: str | None = None,
+    debug_element_diff_dir: str | None = None,
+) -> str:
+    out_root = _default_converted_symbols_root()
+    svg_out_dir = os.path.join(out_root, "svg")
+    diff_out_dir = os.path.join(out_root, "diff_pngs")
+    reports_out_dir = os.path.join(out_root, "reports")
+
+    os.makedirs(svg_out_dir, exist_ok=True)
+    os.makedirs(diff_out_dir, exist_ok=True)
+    os.makedirs(reports_out_dir, exist_ok=True)
+
+    files = sorted(
+        f
+        for f in os.listdir(folder_path)
+        if f.lower().endswith((".bmp", ".jpg", ".png")) and _in_requested_range(f, start_ref, end_ref)
+    )
+    rng = _conversion_random()
+    run_seed = rng.randrange(1 << 30)
+    Action.STOCHASTIC_RUN_SEED = int(run_seed)
+    process_files = list(files)
+    rng.shuffle(process_files)
+
+    base_iterations = max(128, int(iterations))
+    max_quality_passes = 4
+    quality_logs: list[dict[str, object]] = []
+    result_map: dict[str, dict[str, object]] = {}
+
+    def _convert_one(filename: str, iteration_budget: int, badge_rounds: int) -> dict[str, object] | None:
+        image_path = os.path.join(folder_path, filename)
+        res = run_iteration_pipeline(
+            image_path,
+            csv_path,
+            max(1, int(iteration_budget)),
+            svg_out_dir,
+            diff_out_dir,
+            reports_out_dir,
+            debug_ac0811_dir,
+            debug_element_diff_dir,
+            badge_validation_rounds=max(1, int(badge_rounds)),
+        )
+        if not res:
+            return None
+
+        _base, _desc, params, best_iter, best_error = res
+        img = cv2.imread(image_path)
+        pixel_count = 1.0
+        width = 0
+        height = 0
+        if img is not None:
+            height, width = img.shape[:2]
+            pixel_count = float(max(1, width * height))
+
+        return {
+            "filename": filename,
+            "params": params,
+            "best_iter": int(best_iter),
+            "best_error": float(best_error),
+            "error_per_pixel": float(best_error) / pixel_count,
+            "w": int(width),
+            "h": int(height),
+            "base": get_base_name_from_file(os.path.splitext(filename)[0]).upper(),
+            "variant": os.path.splitext(filename)[0].upper(),
+        }
+
+    # Initial conversion pass for all forms.
+    for filename in process_files:
+        row = _convert_one(filename, iteration_budget=base_iterations, badge_rounds=6)
+        if row is None:
+            continue
+
+        donor_rows = [
+            prev
+            for key, prev in result_map.items()
+            if key != filename and math.isfinite(float(prev.get("error_per_pixel", float("inf"))))
+        ]
+        if donor_rows:
+            transferred, _detail = _try_template_transfer(
+                target_row=row,
+                donor_rows=donor_rows,
+                folder_path=folder_path,
+                svg_out_dir=svg_out_dir,
+                diff_out_dir=diff_out_dir,
+                rng=rng,
+            )
+            if transferred is not None and float(transferred.get("error_per_pixel", float("inf"))) + 1e-9 < float(row.get("error_per_pixel", float("inf"))):
+                row = transferred
+
+        result_map[filename] = row
+
+    current_rows = [
+        row
+        for row in result_map.values()
+        if math.isfinite(float(row.get("error_per_pixel", float("inf"))))
     ]
-    svg = [line for line in svg if line]
-    output_svg.parent.mkdir(parents=True, exist_ok=True)
-    output_svg.write_text("\n".join(svg), encoding="utf-8")
+    ranked_rows = sorted(current_rows, key=_quality_sort_key)
+    first_cut = max(1, len(ranked_rows) // 3) if ranked_rows else 0
+    initial_top_tercile = ranked_rows[:first_cut]
+    initial_threshold = float(initial_top_tercile[-1]["error_per_pixel"]) if initial_top_tercile else float("inf")
 
+    cfg = _load_quality_config(reports_out_dir)
+    allowed_error_pp = initial_threshold
+    cfg_value = cfg.get("allowed_error_per_pixel")
+    if cfg_value is not None:
+        try:
+            allowed_error_pp = max(0.0, float(cfg_value))
+        except (TypeError, ValueError):
+            allowed_error_pp = initial_threshold
 
-def convert_image_variants(
-    image_paths: list[Path],
-    output_svg: Path,
-    *,
-    max_iter: int,
-    plateau_limit: int,
-    seed: int,
-    threshold_mode: str = "auto",
-    threshold: int = 220,
-    allow_quarter_turns: bool = False,
-    preserve_text_orientation: bool = True,
-) -> None:
-    if not image_paths:
-        raise ValueError("convert_image_variants requires at least one image path")
+    # Global policy: do not freeze individual variants. Every quality pass keeps
+    # all variants eligible so each run can re-evaluate with stochastic search
+    # while still converging by only accepting strict improvements.
+    skip_variants: set[str] = set()
 
-    binaries: list[list[list[int]]] = []
-    grays: list[list[list[int]]] = []
-    for image_path in image_paths:
-        grayscale = load_grayscale_image(image_path)
-        mode = threshold_mode.lower()
-        if mode == "auto":
-            mode = "otsu" if image_path.suffix.lower() in {".jpg", ".jpeg"} else "global"
-        if mode == "global":
-            binary = [[1 if value < threshold else 0 for value in row] for row in grayscale]
-        elif mode == "otsu":
-            otsu_threshold = _compute_otsu_threshold(grayscale)
-            binary = [[1 if value < otsu_threshold else 0 for value in row] for row in grayscale]
-        elif mode == "adaptive":
-            binary = _adaptive_threshold(grayscale)
+    _write_quality_config(
+        reports_out_dir,
+        allowed_error_per_pixel=allowed_error_pp,
+        skipped_variants=sorted(v for v in skip_variants if v),
+        source="manual-config" if cfg_value is not None else "initial-first-tercile",
+    )
+
+    # Iteratively refine unresolved quality cases while preserving all already
+    # successful outputs (replace only when strictly better).
+    consecutive_no_improvement = 0
+    strategy_switch_after = 2
+    strategy_logs: list[dict[str, object]] = []
+    for pass_idx in range(1, max_quality_passes + 1):
+        Action.STOCHASTIC_SEED_OFFSET = pass_idx
+        current_rows = [
+            row
+            for row in result_map.values()
+            if math.isfinite(float(row.get("error_per_pixel", float("inf"))))
+        ]
+        candidates = _select_open_quality_cases(
+            current_rows,
+            allowed_error_per_pixel=allowed_error_pp,
+            skip_variants=skip_variants,
+        )
+        # Fallback to the historical selection when no explicit open set exists
+        # (e.g. without threshold config).
+        if not candidates:
+            candidates = _select_middle_lower_tercile(current_rows)
+        if not candidates:
+            break
+
+        improved_in_pass = False
+        iteration_budget, badge_rounds = _iteration_strategy_for_pass(pass_idx, base_iterations)
+        if len(candidates) > 1:
+            rng.shuffle(candidates)
+        for row in candidates:
+            filename = str(row["filename"])
+            prev_error_pp = float(row["error_per_pixel"])
+
+            new_row = _convert_one(filename, iteration_budget=iteration_budget, badge_rounds=badge_rounds)
+            if new_row is None:
+                continue
+
+            new_error_pp = float(new_row["error_per_pixel"])
+            improved = new_error_pp + 1e-9 < prev_error_pp
+            if improved:
+                result_map[filename] = new_row
+                improved_in_pass = True
+
+            quality_logs.append(
+                {
+                    "pass": pass_idx,
+                    "filename": filename,
+                    "old_error_per_pixel": prev_error_pp,
+                    "new_error_per_pixel": new_error_pp,
+                    "improved": improved,
+                    "iteration_budget": iteration_budget,
+                    "badge_validation_rounds": badge_rounds,
+                }
+            )
+
+        if not improved_in_pass:
+            consecutive_no_improvement += 1
         else:
-            raise ValueError(f"Unknown threshold mode '{threshold_mode}'. Expected one of: auto, global, otsu, adaptive")
-        binaries.append(binary)
-        grays.append(grayscale)
+            consecutive_no_improvement = 0
 
-    merged_binary, merged_gray = _merge_variants(
-        binaries,
-        grays,
-        allow_quarter_turns=allow_quarter_turns,
-        preserve_text_orientation=preserve_text_orientation,
+        if consecutive_no_improvement >= strategy_switch_after:
+            donor_rows = [
+                row
+                for row in result_map.values()
+                if math.isfinite(float(row.get("error_per_pixel", float("inf"))))
+                and float(row.get("error_per_pixel", float("inf"))) <= allowed_error_pp
+            ]
+            fallback_improved = False
+            if len(candidates) > 1:
+                rng.shuffle(candidates)
+            for row in candidates:
+                filename = str(row["filename"])
+                current = result_map.get(filename)
+                if current is None:
+                    continue
+                prev_error_pp = float(current.get("error_per_pixel", float("inf")))
+                if prev_error_pp <= allowed_error_pp:
+                    continue
+
+                updated, detail = _try_template_transfer(
+                    target_row=current,
+                    donor_rows=donor_rows,
+                    folder_path=folder_path,
+                    svg_out_dir=svg_out_dir,
+                    diff_out_dir=diff_out_dir,
+                    rng=rng,
+                )
+                if updated is None or detail is None:
+                    continue
+
+                new_error_pp = float(updated["error_per_pixel"])
+                improved = new_error_pp + 1e-9 < prev_error_pp
+                if improved:
+                    result_map[filename] = updated
+                    fallback_improved = True
+                    strategy_logs.append(detail)
+
+            if fallback_improved:
+                consecutive_no_improvement = 0
+                continue
+            else:
+                break
+
+        if not improved_in_pass and consecutive_no_improvement < strategy_switch_after:
+            continue
+
+    _write_quality_pass_report(reports_out_dir, quality_logs)
+    if strategy_logs:
+        strategy_path = os.path.join(reports_out_dir, "strategy_switch_template_transfers.csv")
+        with open(strategy_path, "w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f, delimiter=";")
+            writer.writerow([
+                "filename",
+                "donor_variant",
+                "rotation_deg",
+                "scale",
+                "old_error_per_pixel",
+                "new_error_per_pixel",
+            ])
+            for row in strategy_logs:
+                writer.writerow([
+                    row["filename"],
+                    row["donor_variant"],
+                    row["rotation_deg"],
+                    f"{float(row['scale']):.4f}",
+                    f"{float(row['old_error_per_pixel']):.8f}",
+                    f"{float(row['new_error_per_pixel']):.8f}",
+                ])
+
+    log_path = os.path.join(reports_out_dir, "Iteration_Log.csv")
+    semantic_results: list[dict[str, object]] = []
+    with open(log_path, mode="w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.writer(f, delimiter=";")
+        writer.writerow(["Dateiname", "Gefundene Elemente", "Beste Iteration", "Diff-Score", "FehlerProPixel"])
+        for filename in files:
+            row = result_map.get(filename)
+            if row is None:
+                continue
+            params = dict(row["params"])
+            writer.writerow([
+                filename,
+                " + ".join(params.get("elements", [])),
+                int(row["best_iter"]),
+                f"{float(row['best_error']):.2f}",
+                f"{float(row['error_per_pixel']):.8f}",
+            ])
+
+            if params.get("mode") == "semantic_badge":
+                semantic_results.append(
+                    {
+                        "filename": filename,
+                        "base": row["base"],
+                        "variant": row["variant"],
+                        "w": int(row.get("w", 0)),
+                        "h": int(row.get("h", 0)),
+                        "error": float(row["best_error"]),
+                    }
+                )
+
+    _harmonize_semantic_size_variants(semantic_results, folder_path, svg_out_dir, reports_out_dir)
+    _write_pixel_delta2_ranking(folder_path, svg_out_dir, reports_out_dir)
+
+    Action.STOCHASTIC_SEED_OFFSET = 0
+    Action.STOCHASTIC_RUN_SEED = 0
+    return out_root
+
+
+def _read_svg_geometry(svg_path: str) -> tuple[int, int, dict] | None:
+    if not os.path.exists(svg_path):
+        return None
+
+    text = open(svg_path, "r", encoding="utf-8").read()
+
+    svg_match = re.search(r"<svg[^>]*viewBox=\"0 0 (\d+) (\d+)\"", text)
+    if not svg_match:
+        return None
+    w = int(svg_match.group(1))
+    h = int(svg_match.group(2))
+
+    def _gray_from_hex(color: str, fallback: int) -> int:
+        m = re.match(r"#([0-9a-fA-F]{6})", color.strip())
+        if not m:
+            return fallback
+        hex_value = m.group(1)
+        r = int(hex_value[0:2], 16)
+        g = int(hex_value[2:4], 16)
+        b = int(hex_value[4:6], 16)
+        return int(round((r + g + b) / 3.0))
+
+    params: dict[str, float | bool | int | str] = {
+        "fill_gray": 220,
+        "stroke_gray": 152,
+        "text_gray": 98,
+        "draw_text": False,
+        "text_mode": "path",
+        "circle_enabled": False,
+        "stem_enabled": False,
+        "arm_enabled": False,
+    }
+
+    circle_match = re.search(
+        r"<circle[^>]*cx=\"([0-9.]+)\"[^>]*cy=\"([0-9.]+)\"[^>]*r=\"([0-9.]+)\"[^>]*stroke-width=\"([0-9.]+)\"",
+        text,
     )
-    _convert_from_binary_and_grayscale(
-        merged_binary,
-        merged_gray,
-        output_svg,
-        max_iter=max_iter,
-        plateau_limit=plateau_limit,
-        seed=seed,
+    if circle_match:
+        params["circle_enabled"] = True
+        params["cx"] = float(circle_match.group(1))
+        params["cy"] = float(circle_match.group(2))
+        params["r"] = float(circle_match.group(3))
+        params["stroke_circle"] = float(circle_match.group(4))
+        circle_tag_match = re.search(r"(<circle[^>]*>)", text)
+        if circle_tag_match:
+            circle_tag = circle_tag_match.group(1)
+            fill_match = re.search(r'fill="(#[0-9a-fA-F]{6})"', circle_tag)
+            stroke_match = re.search(r'stroke="(#[0-9a-fA-F]{6})"', circle_tag)
+            if fill_match:
+                params["fill_gray"] = _gray_from_hex(fill_match.group(1), int(params["fill_gray"]))
+            if stroke_match:
+                params["stroke_gray"] = _gray_from_hex(stroke_match.group(1), int(params["stroke_gray"]))
+
+    rect_match = re.search(
+        r"<rect[^>]*x=\"([0-9.]+)\"[^>]*y=\"([0-9.]+)\"[^>]*width=\"([0-9.]+)\"[^>]*height=\"([0-9.]+)\"",
+        text,
     )
+    if rect_match:
+        x = float(rect_match.group(1))
+        y = float(rect_match.group(2))
+        width = float(rect_match.group(3))
+        height = float(rect_match.group(4))
+        params["stem_enabled"] = True
+        params["stem_x"] = x
+        params["stem_width"] = width
+        params["stem_top"] = y
+        params["stem_bottom"] = y + height
+        rect_tag_match = re.search(r"(<rect[^>]*>)", text)
+        if rect_tag_match:
+            rect_fill_match = re.search(r'fill="(#[0-9a-fA-F]{6})"', rect_tag_match.group(1))
+            if rect_fill_match:
+                params["stem_gray"] = _gray_from_hex(rect_fill_match.group(1), int(params["stroke_gray"]))
+            else:
+                params["stem_gray"] = int(params["stroke_gray"])
+        else:
+            params["stem_gray"] = int(params["stroke_gray"])
 
     line_match = re.search(
         r"<line[^>]*x1=\"([0-9.]+)\"[^>]*y1=\"([0-9.]+)\"[^>]*x2=\"([0-9.]+)\"[^>]*y2=\"([0-9.]+)\"[^>]*stroke-width=\"([0-9.]+)\"",
@@ -3681,12 +5860,12 @@ def _scale_badge_params(anchor: dict, anchor_w: int, anchor_h: int, target_w: in
         if min_cx > max_cx:
             cx = float(target_w) / 2.0
         else:
-            cx = float(_clip(cx, min_cx, max_cx))
+            cx = float(Action._clip_scalar(cx, min_cx, max_cx))
 
         if min_cy > max_cy:
             cy = float(target_h) / 2.0
         else:
-            cy = float(_clip(cy, min_cy, max_cy))
+            cy = float(Action._clip_scalar(cy, min_cy, max_cy))
 
         if scaled.get("stem_enabled") and "stem_width" in scaled:
             stem_width = max(1e-6, float(scaled["stem_width"]))
@@ -3715,204 +5894,108 @@ def _harmonize_semantic_size_variants(
     svg_out_dir: str,
     reports_out_dir: str,
 ) -> None:
-    grayscale = load_grayscale_image(image_path)
-    mode = threshold_mode.lower()
-    if mode == "auto":
-        mode = "otsu" if image_path.suffix.lower() in {".jpg", ".jpeg"} else "global"
-    if mode == "global":
-        binary = [[1 if value < threshold else 0 for value in row] for row in grayscale]
-    elif mode == "otsu":
-        otsu_threshold = _compute_otsu_threshold(grayscale)
-        binary = [[1 if value < otsu_threshold else 0 for value in row] for row in grayscale]
-    elif mode == "adaptive":
-        binary = _adaptive_threshold(grayscale)
-    else:
-        raise ValueError(f"Unknown threshold mode '{threshold_mode}'. Expected one of: auto, global, otsu, adaptive")
+    grouped: dict[str, list[dict[str, object]]] = {}
+    for result in results:
+        base = str(result.get("base", ""))
+        grouped.setdefault(base, []).append(result)
 
-    _convert_from_binary_and_grayscale(
-        binary,
-        grayscale,
-        output_svg,
-        max_iter=max_iter,
-        plateau_limit=plateau_limit,
-        seed=seed,
-    )
-
-
-def iter_images(folder: Path) -> Iterable[Path]:
-    exts = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
-    if not folder.exists() or not folder.is_dir():
-        return
-    for item in folder.iterdir():
-        if item.is_file() and item.suffix.lower() in exts:
-            yield item
-
-
-
-def variant_group_key(path: Path) -> str:
-    stem = path.stem
-    m = re.match(r"^(.*?)(?:_(?:XXL|XL|L|M|S|XS|\d+))?$", stem, flags=re.IGNORECASE)
-    return (m.group(1) if m else stem).lower()
-
-
-def group_image_variants(images: list[Path]) -> list[list[Path]]:
-    groups: dict[str, list[Path]] = {}
-    for image in images:
-        groups.setdefault(variant_group_key(image), []).append(image)
-    return [sorted(v) for _, v in sorted(groups.items(), key=lambda item: item[0])]
-
-
-def _hex_to_gray(value: str) -> int:
-    value = value.strip().lower()
-    if not value.startswith("#"):
-        return 0
-    if len(value) == 4:
-        value = "#" + "".join(ch * 2 for ch in value[1:])
-    if len(value) != 7:
-        return 0
-    r = int(value[1:3], 16)
-    g = int(value[3:5], 16)
-    b = int(value[5:7], 16)
-    return int(round(0.299 * r + 0.587 * g + 0.114 * b))
-
-
-def _rasterize_generated_svg(svg_path: Path, width: int, height: int) -> list[list[int]]:
-    img = [[255 for _ in range(width)] for _ in range(height)]
-    root = ET.fromstring(svg_path.read_text(encoding="utf-8"))
-
-    for node in root:
-        tag = node.tag.rsplit("}", 1)[-1]
-        fill = node.attrib.get("fill")
-        if not fill or fill.lower() == "none":
-            continue
-        fill_gray = _hex_to_gray(fill)
-        stroke = node.attrib.get("stroke")
-        stroke_gray = _hex_to_gray(stroke) if stroke and stroke.lower() != "none" else None
-        stroke_width = float(node.attrib.get("stroke-width", "0") or "0")
-
-        if tag == "rect":
-            x = float(node.attrib.get("x", "0"))
-            y = float(node.attrib.get("y", "0"))
-            w = float(node.attrib.get("width", "0"))
-            h = float(node.attrib.get("height", "0"))
-            x0 = max(0, int(x))
-            y0 = max(0, int(y))
-            x1 = min(width, int(x + w + 0.999))
-            y1 = min(height, int(y + h + 0.999))
-            for yy in range(y0, y1):
-                for xx in range(x0, x1):
-                    img[yy][xx] = fill_gray
+    harmonized_logs: list[str] = []
+    category_logs: list[str] = []
+    for base, entries in sorted(grouped.items()):
+        if len(entries) < 2:
             continue
 
-        if tag == "circle":
-            cx = float(node.attrib.get("cx", "0"))
-            cy = float(node.attrib.get("cy", "0"))
-            r = float(node.attrib.get("r", "0"))
-            rx = r
-            ry = r
-        elif tag == "ellipse":
-            cx = float(node.attrib.get("cx", "0"))
-            cy = float(node.attrib.get("cy", "0"))
-            rx = float(node.attrib.get("rx", "0"))
-            ry = float(node.attrib.get("ry", "0"))
-        else:
-            continue
-
-        outer_rx = max(0.1, rx + stroke_width / 2.0)
-        outer_ry = max(0.1, ry + stroke_width / 2.0)
-        inner_rx = max(0.0, rx - stroke_width / 2.0)
-        inner_ry = max(0.0, ry - stroke_width / 2.0)
-
-        min_x = max(0, int(cx - outer_rx - 1))
-        max_x = min(width - 1, int(cx + outer_rx + 1))
-        min_y = max(0, int(cy - outer_ry - 1))
-        max_y = min(height - 1, int(cy + outer_ry + 1))
-        inv_outer_rx2 = 1.0 / (outer_rx * outer_rx)
-        inv_outer_ry2 = 1.0 / (outer_ry * outer_ry)
-        inv_inner_rx2 = 1.0 / (inner_rx * inner_rx) if inner_rx > 0 else 0.0
-        inv_inner_ry2 = 1.0 / (inner_ry * inner_ry) if inner_ry > 0 else 0.0
-
-        for yy in range(min_y, max_y + 1):
-            dy = yy + 0.5 - cy
-            dy_outer = dy * dy * inv_outer_ry2
-            if dy_outer > 1.0:
+        variant_rows: list[dict[str, object]] = []
+        for entry in entries:
+            variant = str(entry["variant"])
+            suffix = variant.rsplit("_", 1)[-1] if "_" in variant else ""
+            if suffix not in {"L", "M", "S"}:
                 continue
-            dy_inner = dy * dy * inv_inner_ry2 if inner_ry > 0 else 0.0
-            for xx in range(min_x, max_x + 1):
-                dx = xx + 0.5 - cx
-                outer = dx * dx * inv_outer_rx2 + dy_outer
-                if outer > 1.0:
-                    continue
-                if stroke_gray is not None and stroke_width > 0 and inner_rx > 0 and inner_ry > 0:
-                    inner = dx * dx * inv_inner_rx2 + dy_inner
-                    img[yy][xx] = stroke_gray if inner > 1.0 else fill_gray
-                else:
-                    img[yy][xx] = fill_gray
+            parsed = _read_svg_geometry(os.path.join(svg_out_dir, f"{variant}.svg"))
+            if parsed is None:
+                continue
+            w, h, params = parsed
+            variant_rows.append({"entry": entry, "variant": variant, "suffix": suffix, "w": w, "h": h, "params": params})
 
-    return img
+        if len(variant_rows) < 2:
+            continue
 
+        has_text = any(bool(dict(row["params"]).get("draw_text", False)) for row in variant_rows)
+        has_stem = any(bool(dict(row["params"]).get("stem_enabled", False)) for row in variant_rows)
+        has_arm = any(bool(dict(row["params"]).get("arm_enabled", False)) for row in variant_rows)
+        has_connector = has_stem or has_arm
+        category = "Kreise mit Buchstaben" if has_text and not has_connector else (
+            "Kreise ohne Buchstaben" if (not has_text and not has_connector) else (
+                "Kellen mit Buchstaben" if has_text else "Kellen ohne Buchstaben"
+            )
+        )
+        variants_joined = "|".join(sorted(str(r["variant"]) for r in variant_rows))
+        category_logs.append(f"{base};{category};{variants_joined}")
 
-def compute_svg_grayscale_mae(reference: list[list[int]], svg_path: Path) -> float:
-    height = len(reference)
-    width = len(reference[0]) if height else 0
-    if width == 0 or height == 0:
-        return 0.0
-    rendered = _rasterize_generated_svg(svg_path, width, height)
-    error_sum = 0.0
-    for y in range(height):
-        for x in range(width):
-            error_sum += abs(reference[y][x] - rendered[y][x])
-    return error_sum / (width * height)
+        sigs = {
+            row["variant"]: _normalized_geometry_signature(int(row["w"]), int(row["h"]), dict(row["params"]))
+            for row in variant_rows
+        }
+        max_delta = 0.0
+        for i in range(len(variant_rows)):
+            for j in range(i + 1, len(variant_rows)):
+                vi = str(variant_rows[i]["variant"])
+                vj = str(variant_rows[j]["variant"])
+                max_delta = max(max_delta, _max_signature_delta(sigs[vi], sigs[vj]))
 
+        # Do not skip families with one badly fitted outlier variant. We still
+        # validate every harmonization candidate against raster error before write.
 
-def write_quality_list(rows: list[QualityRow], path: Path) -> None:
-    ordered = sorted(rows, key=lambda row: row.avg_error_per_pixel)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    lines = ["image,svg,width,height,avg_error_per_pixel"]
-    for row in ordered:
-        lines.append(f"{row.image},{row.svg},{row.width},{row.height},{row.avg_error_per_pixel:.6f}")
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        def _anchor_rank(row: dict[str, object]) -> tuple[int, float]:
+            suffix = str(row.get("suffix", ""))
+            # Connector families ("Kellen") tend to under-fit large variants
+            # when we derive L from M. Prefer L as harmonization anchor so the
+            # largest geometry stays authoritative and M/S scale down from it.
+            priority = _harmonization_anchor_priority(suffix, prefer_large=has_connector)
+            err = float(dict(row["entry"]).get("error", float("inf")))
+            return priority, err
 
-def build_arg_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Raster->SVG converter via random search and plateau narrowing")
-    p.add_argument("input_dir", type=Path)
-    p.add_argument("output_dir", type=Path, nargs="?", default=Path("artifacts/converted_symbols/svg"))
-    p.add_argument("--max-iter", type=int, default=120)
-    p.add_argument("--plateau-limit", type=int, default=36)
-    p.add_argument("--seed", type=int, default=42)
-    p.add_argument("--threshold-mode", choices=["auto", "global", "otsu", "adaptive"], default="auto")
-    p.add_argument("--threshold", type=int, default=220)
-    p.add_argument("--merge-variants", action="store_true", help="Merge similarly named image variants into one SVG")
-    p.add_argument("--allow-quarter-turns", action="store_true", help="Allow 90° rotation matching while merging variants")
-    p.add_argument("--preserve-text-orientation", action="store_true", default=True, help="Do not rotate variants while merging (default: true)")
-    p.add_argument("--no-preserve-text-orientation", dest="preserve_text_orientation", action="store_false", help="Permit rotated alignment that may rotate text")
-    p.add_argument("--quality-list", type=Path, default=Path("artifacts/quality_list.csv"), help="Write converted-image quality ranking CSV (ascending avg error per pixel)")
-    return p
+        anchor = min(variant_rows, key=_anchor_rank)
+        anchor_variant = str(anchor["variant"])
+        anchor_w = int(anchor["w"])
+        anchor_h = int(anchor["h"])
+        anchor_params = dict(anchor["params"])
 
+        for row in variant_rows:
+            if row is anchor:
+                continue
+            target_variant = str(row["variant"])
+            target_w = int(row["w"])
+            target_h = int(row["h"])
+            scaled = _scale_badge_params(anchor_params, anchor_w, anchor_h, target_w, target_h)
+            svg = Action.generate_badge_svg(target_w, target_h, scaled)
 
-def main() -> int:
-    args = build_arg_parser().parse_args()
-    images = sorted(iter_images(args.input_dir))
-    if not images:
-        print(f"No images found in {args.input_dir}")
-        return 1
+            target_filename = str(dict(row["entry"])["filename"])
+            target_path = os.path.join(folder_path, target_filename)
+            target_img = cv2.imread(target_path)
+            if target_img is None:
+                harmonized_logs.append(f"{base}: {target_variant} übersprungen (Bild fehlt: {target_filename})")
+                continue
 
-    quality_rows: list[QualityRow] = []
+            rendered = Action.render_svg_to_numpy(svg, target_w, target_h)
+            candidate_error = Action.calculate_error(target_img, rendered)
+            baseline_error = float(dict(row["entry"]).get("error", float("inf")))
+            if candidate_error > baseline_error + 0.25:
+                harmonized_logs.append(
+                    (
+                        f"{base}: {target_variant} nicht harmonisiert "
+                        f"(Fehler {candidate_error:.2f} > Basis {baseline_error:.2f})"
+                    )
+                )
+                continue
 
-    if args.merge_variants:
-        for group in group_image_variants(images):
-            representative = max(group, key=lambda p: p.stat().st_size)
-            out = args.output_dir / f"{variant_group_key(representative)}.svg"
-            convert_image_variants(
-                group,
-                out,
-                max_iter=args.max_iter,
-                plateau_limit=args.plateau_limit,
-                seed=args.seed,
-                threshold_mode=args.threshold_mode,
-                threshold=args.threshold,
-                allow_quarter_turns=args.allow_quarter_turns,
-                preserve_text_orientation=args.preserve_text_orientation,
+            with open(os.path.join(svg_out_dir, f"{target_variant}.svg"), "w", encoding="utf-8") as f:
+                f.write(svg)
+            harmonized_logs.append(
+                (
+                    f"{base}: {target_variant} aus {anchor_variant} abgeleitet "
+                    f"(max_delta={max_delta:.4f}, Fehler {baseline_error:.2f}->{candidate_error:.2f})"
+                )
             )
 
     if harmonized_logs:
@@ -3966,7 +6049,7 @@ def _write_pixel_delta2_ranking(folder_path: str, svg_out_dir: str, reports_out_
         for row in ranking:
             writer.writerow([row["image"], f"{float(row['mean_delta2']):.6f}", f"{float(row['std_delta2']):.6f}"])
 
-    valid = [row for row in ranking if _isfinite(float(row["mean_delta2"]))]
+    valid = [row for row in ranking if math.isfinite(float(row["mean_delta2"]))]
     count_ok = sum(1 for row in valid if float(row["mean_delta2"]) <= threshold)
     summary_lines = [
         f"images_total={len(valid)}",
@@ -4032,3 +6115,27 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+
+def convert_image(input_path: str, output_path: str, *, max_iter: int = 120, plateau_limit: int = 14, seed: int = 42) -> Path:
+    """Backward-compatible single-image conversion entrypoint."""
+    out = convert_range(
+        image_file=input_path,
+        output_dir=Path(output_path).parent,
+        max_iter=max_iter,
+        plateau_limit=plateau_limit,
+        seed=seed,
+    )
+    generated = out[0] if isinstance(out, list) and out else Path(output_path)
+    # Ensure caller-requested output location exists.
+    if Path(generated) != Path(output_path):
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(generated).replace(output_path)
+        return Path(output_path)
+    return Path(generated)
+
+
+def convert_image_variants(*args, **kwargs):
+    """Compatibility shim kept for tooling imports."""
+    return convert_range(*args, **kwargs)

@@ -1475,7 +1475,53 @@ def test_text_width_bracketing_keeps_fractional_font_scale_precision() -> None:
     }
     logs: list[str] = []
 
-    original = Action._element_error_for_width
+
+
+def test_decompose_circle_with_stem_recenters_horizontal_stem() -> None:
+    size = 31
+    grayscale = [[255 for _ in range(size)] for _ in range(size)]
+    pixels = [[0 for _ in range(size)] for _ in range(size)]
+
+    cx = cy = 15
+    r = 9
+    for y in range(size):
+        for x in range(size):
+            d2 = (x - cx) ** 2 + (y - cy) ** 2
+            if d2 <= r * r:
+                pixels[y][x] = 1
+                grayscale[y][x] = 210
+
+    for y in range(17, 20):
+        for x in range(24, 29):
+            pixels[y][x] = 1
+            grayscale[y][x] = 120
+
+    element = conv.Element(pixels=pixels, x0=0, y0=0, x1=size - 1, y1=size - 1)
+    candidate = conv.Candidate(shape="circle", cx=15, cy=15, w=18, h=18)
+
+    parts = conv.decompose_circle_with_stem(grayscale, element, candidate)
+
+    assert parts is not None
+    rect = parts[0]
+    assert rect.startswith("<rect ")
+
+    import re
+
+    mx = re.search(r'x="([0-9.]+)"', rect)
+    my = re.search(r'y="([0-9.]+)"', rect)
+    mh = re.search(r'height="([0-9.]+)"', rect)
+    assert mx and my and mh
+
+    stem_x = float(mx.group(1))
+    stem_y = float(my.group(1))
+    stem_h = float(mh.group(1))
+    stem_cy = stem_y + stem_h / 2.0
+
+    assert stem_x >= 23.8
+    assert abs(stem_cy - 15.0) <= 0.2
+
+def test_generate_badges_reconverted_svg_contains_text(tmp_path: Path) -> None:
+    gen = pytest.importorskip("tools.generate_badge_comparison_set")
 
     def prefer_target_scale(_img: object, _params: dict, _element: str, width_value: float) -> float:
         return abs(float(width_value) - 0.85)

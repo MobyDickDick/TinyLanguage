@@ -422,3 +422,33 @@ def test_decompose_rect_with_diagonal_uses_brighter_interior_gradient() -> None:
     gradient = next(d for d in emitted.defs if 'linearGradient' in d)
     assert 'stop-color="#f4f4f4"' in gradient
     assert 'stop-color="#caca' in gradient or 'stop-color="#c6c6' in gradient
+
+
+def test_compute_svg_grayscale_mae_handles_basic_rect(tmp_path: Path) -> None:
+    svg = tmp_path / "shape.svg"
+    svg.write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2" viewBox="0 0 2 2">\n'
+        '<rect x="0" y="0" width="1" height="2" fill="#000000"/>\n'
+        '</svg>\n',
+        encoding="utf-8",
+    )
+    reference = [[0, 255], [0, 255]]
+
+    mae = conv.compute_svg_grayscale_mae(reference, svg)
+
+    assert mae == 0.0
+
+
+def test_write_quality_list_sorts_ascending(tmp_path: Path) -> None:
+    out = tmp_path / "quality_list.csv"
+    rows = [
+        conv.QualityRow(image="b.jpg", svg="b.svg", width=10, height=10, avg_error_per_pixel=4.2),
+        conv.QualityRow(image="a.jpg", svg="a.svg", width=10, height=10, avg_error_per_pixel=1.1),
+    ]
+
+    conv.write_quality_list(rows, out)
+
+    lines = out.read_text(encoding="utf-8").strip().splitlines()
+    assert lines[0] == "image,svg,width,height,avg_error_per_pixel"
+    assert lines[1].startswith("a.jpg,a.svg")
+    assert lines[2].startswith("b.jpg,b.svg")

@@ -6442,8 +6442,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--csv-path", default=None, help="Expliziter Pfad zur CSV/Export-Tabelle")
     parser.add_argument("--output-dir", default=None, help="Explizites Ausgabeverzeichnis")
-    parser.add_argument("--start", default="AR0102", help="Start-Referenz (inkl.), default: AR0102")
-    parser.add_argument("--end", default="AR0104", help="End-Referenz (inkl.), default: AR0104")
+    parser.add_argument("--start", default="", help="Start-Referenz (inkl.), default: kein unteres Limit")
+    parser.add_argument("--end", default="ZZZZZZ", help="End-Referenz (inkl.), default: ZZZZZZ")
     parser.add_argument(
         "--debug-ac0811-dir",
         default=None,

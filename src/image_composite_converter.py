@@ -222,16 +222,121 @@ def candidate_to_svg(candidate: Candidate, gx: int, gy: int, fill_color: str, st
 
 
 def decompose_circle_with_stem(grayscale: list[list[int]], element: Element, candidate: Candidate) -> list[str] | None:
-    r = max(1.0, (candidate.w + candidate.h) / 4.0)
-    stem = [(x,y) for y,row in enumerate(element.pixels) for x,v in enumerate(row) if v and y > candidate.cy + r*0.7 and abs(x-candidate.cx) < max(2.0, r*0.3)]
-    if not stem:
+    if not element.pixels or not element.pixels[0]:
         return None
-    xs=[x for x,_ in stem]; ys=[y for _,y in stem]
-    x=min(xs)+element.x0; y=min(ys)+element.y0; w=max(xs)-min(xs)+1; h=max(ys)-min(ys)+1
-    stem_vals=[grayscale[yy+element.y0][xx+element.x0] for xx,yy in stem]
-    circle_vals=[grayscale[yy+element.y0][xx+element.x0] for yy,row in enumerate(element.pixels) for xx,v in enumerate(row) if v and (yy,xx) not in {(sy,sx) for sx,sy in stem}]
-    rect=f'<rect x="{x:.2f}" y="{y:.2f}" width="{w:.2f}" height="{h:.2f}" fill="{_gray_to_hex(sum(stem_vals)/max(1,len(stem_vals)))}" />'
-    circle=candidate_to_svg(candidate, element.x0, element.y0, _gray_to_hex(sum(circle_vals)/max(1,len(circle_vals))))
+
+    h = len(element.pixels)
+    w = len(element.pixels[0])
+    r = max(1.0, (candidate.w + candidate.h) / 4.0)
+    cx = float(candidate.cx)
+    cy = float(candidate.cy)
+
+    # Residual foreground outside the candidate circle corresponds to connectors.
+    residual: list[tuple[int, int]] = []
+    circle_pixels: list[tuple[int, int]] = []
+    for y, row in enumerate(element.pixels):
+        for x, v in enumerate(row):
+            if not v:
+                continue
+            d = math.hypot(float(x) - cx, float(y) - cy)
+            if d <= (r * 1.02):
+                circle_pixels.append((x, y))
+            elif d >= (r * 0.90):
+                residual.append((x, y))
+
+    if not residual:
+        return None
+
+    # Keep only the dominant connected residual cluster.
+    residual_set = set(residual)
+    visited: set[tuple[int, int]] = set()
+    best_cluster: list[tuple[int, int]] = []
+    for seed in residual:
+        if seed in visited:
+            continue
+        stack = [seed]
+        cluster: list[tuple[int, int]] = []
+        visited.add(seed)
+        while stack:
+            px, py = stack.pop()
+            cluster.append((px, py))
+            for nx, ny in ((px + 1, py), (px - 1, py), (px, py + 1), (px, py - 1)):
+                if (nx, ny) in residual_set and (nx, ny) not in visited:
+                    visited.add((nx, ny))
+                    stack.append((nx, ny))
+        if len(cluster) > len(best_cluster):
+            best_cluster = cluster
+
+    if not best_cluster:
+        return None
+
+    xs = [x for x, _ in best_cluster]
+    ys = [y for _, y in best_cluster]
+    sx0, sx1 = min(xs), max(xs)
+    sy0, sy1 = min(ys), max(ys)
+    stem_w = max(1, sx1 - sx0 + 1)
+    stem_h = max(1, sy1 - sy0 + 1)
+
+    # infer connector orientation relative to circle center.
+    mean_x = sum(xs) / max(1, len(xs))
+    mean_y = sum(ys) / max(1, len(ys))
+    dx = abs(mean_x - cx)
+    dy = abs(mean_y - cy)
+    if dx >= dy:
+        stem_direction = "right" if mean_x >= cx else "left"
+    else:
+        stem_direction = "bottom" if mean_y >= cy else "top"
+
+    stem_values = [grayscale[element.y0 + y][element.x0 + x] for x, y in best_cluster]
+    stem_color = _gray_to_hex(round(sum(stem_values) / max(1, len(stem_values))))
+
+    fill_color, stroke_color, stroke_width = estimate_stroke_style(grayscale, element, candidate)
+
+    stem_x = float(element.x0 + sx0)
+    stem_y = float(element.y0 + sy0)
+    stem_wf = float(stem_w)
+    stem_hf = float(stem_h)
+    overlap = max(0.6, float(stroke_width or 0.0) * 0.55)
+
+    if stem_direction in {"bottom", "top"}:
+        circle_cx = float(element.x0) + cx
+        circle_cy = float(element.y0) + cy
+        stem_x = circle_cx - (stem_wf / 2.0)
+        old_bottom = float(element.y0 + sy1 + 1)
+        old_top = float(element.y0 + sy0)
+        if stem_direction == "bottom":
+            stem_y = circle_cy + r - overlap
+            stem_hf = max(1.0, old_bottom - stem_y)
+        else:
+            stem_y = old_top
+            stem_hf = max(1.0, (circle_cy - r + overlap) - stem_y)
+    else:
+        circle_cx = float(element.x0) + cx
+        circle_cy = float(element.y0) + cy
+        stem_y = circle_cy - (stem_hf / 2.0)
+        old_right = float(element.x0 + sx1 + 1)
+        old_left = float(element.x0 + sx0)
+        overlap_lr = min(0.2, overlap)
+        if stem_direction == "right":
+            stem_x = circle_cx + r - overlap_lr
+            stem_wf = max(1.0, old_right - stem_x)
+        else:
+            stem_x = old_left
+            stem_wf = max(1.0, (circle_cx - r + overlap_lr) - stem_x)
+
+    rect = (
+        f'<rect x="{stem_x:.2f}" y="{stem_y:.2f}" '
+        f'width="{stem_wf:.2f}" height="{stem_hf:.2f}" fill="{stem_color}"/>'
+    )
+    circle_vals = [grayscale[element.y0 + y][element.x0 + x] for x, y in circle_pixels] or stem_values
+    circle = candidate_to_svg(
+        candidate,
+        element.x0,
+        element.y0,
+        fill_color if fill_color else _gray_to_hex(sum(circle_vals) / max(1, len(circle_vals))),
+        stroke_color,
+        stroke_width,
+    )
     return [rect, circle]
 
 def _missing_required_image_dependencies() -> list[str]:
@@ -735,6 +840,49 @@ class Action:
         return p
 
     @staticmethod
+    def _estimate_border_background_gray(gray: np.ndarray) -> float:
+        """Estimate badge background tone from the outer image border pixels."""
+        if gray.size == 0:
+            return 255.0
+        h, w = gray.shape
+        if h < 2 or w < 2:
+            return float(np.median(gray))
+        border = np.concatenate((gray[0, :], gray[h - 1, :], gray[:, 0], gray[:, w - 1]))
+        return float(np.median(border))
+
+    @staticmethod
+    def _estimate_circle_tones_and_stroke(
+        gray: np.ndarray,
+        cx: float,
+        cy: float,
+        r: float,
+        stroke_hint: float,
+    ) -> tuple[float, float, float]:
+        """Estimate fill/ring grayscale and stroke width for circular ring-like badges."""
+        yy, xx = np.indices(gray.shape)
+        dist = np.sqrt((xx - float(cx)) ** 2 + (yy - float(cy)) ** 2)
+
+        inner_mask = dist <= max(1.0, float(r) * 0.78)
+        fill_gray = float(np.median(gray[inner_mask])) if np.any(inner_mask) else float(np.median(gray))
+
+        search_band = max(2.0, min(float(r) * 0.30, 5.0))
+        ring_search = np.abs(dist - float(r)) <= search_band
+        ring_vals = gray[ring_search] if np.any(ring_search) else gray
+        ring_gray = float(np.median(ring_vals))
+
+        # Prefer the darker contour around the estimated radius when present.
+        dark_cut = fill_gray - 2.0
+        dark_ring = ring_search & (gray <= dark_cut)
+        if np.any(dark_ring):
+            ring_gray = float(np.median(gray[dark_ring]))
+            d = np.abs(dist - float(r))[dark_ring]
+            stroke_est = float(max(1.0, min(6.0, np.percentile(d, 72) * 2.0)))
+        else:
+            stroke_est = float(max(1.0, min(6.0, stroke_hint)))
+
+        return fill_gray, ring_gray, stroke_est
+
+    @staticmethod
     def _persist_connector_length_floor(params: dict, element: str, default_ratio: float) -> None:
         """Persist a robust minimum connector length for later validation stages."""
         if element == "stem":
@@ -1077,65 +1225,9 @@ class Action:
             params["cy"] = cy
             params["r"] = r
 
-    stem_values = [
-        grayscale[element.y0 + y][element.x0 + x]
-        for y in range(sy0, sy1 + 1)
-        for x in range(sx0, sx1 + 1)
-        if element.pixels[y][x]
-    ]
-    stem_color = gray_to_hex(round(sum(stem_values) / max(1, len(stem_values))))
-    fill_color, stroke_color, stroke_width = estimate_stroke_style(grayscale, element, circle_candidate)
-
-    stem_x = element.x0 + sx0
-    stem_y = element.y0 + sy0
-    stem_wf = float(stem_w)
-    stem_hf = float(stem_h)
-
-    if stem_direction in {"bottom", "top"}:
-        circle_cx = element.x0 + circle_candidate.cx
-        stem_x = circle_cx - stem_wf / 2.0
-
-        radius = max(1.0, (circle_candidate.w + circle_candidate.h) / 4.0)
-        circle_cy = element.y0 + circle_candidate.cy
-        overlap = max(0.6, (stroke_width or 0.0) * 0.55)
-        old_bottom = (element.y0 + sy0) + stem_hf
-
-        if stem_direction == "bottom":
-            stem_y = circle_cy + radius - overlap
-            stem_hf = max(1.0, old_bottom - stem_y)
-        else:
-            old_top = element.y0 + sy0
-            old_right = (element.x0 + sx0) + stem_wf
-            stem_y = old_top
-            stem_hf = max(1.0, (circle_cy - radius + overlap) - stem_y)
-            stem_x = min(stem_x, old_right - stem_wf)
-
-    if stem_direction in {"left", "right"}:
-        circle_cy = element.y0 + circle_candidate.cy
-        stem_y = circle_cy - stem_hf / 2.0
-
-        radius = max(1.0, (circle_candidate.w + circle_candidate.h) / 4.0)
-        circle_cx = element.x0 + circle_candidate.cx
-        overlap = max(0.6, (stroke_width or 0.0) * 0.55)
-        old_right = (element.x0 + sx0) + stem_wf
-
-        if stem_direction == "right":
-            stem_x = circle_cx + radius - overlap
-            stem_wf = max(1.0, old_right - stem_x)
-        else:
-            old_left = element.x0 + sx0
-            old_bottom = (element.y0 + sy0) + stem_hf
-            stem_x = old_left
-            stem_wf = max(1.0, (circle_cx - radius + overlap) - stem_x)
-            stem_y = min(stem_y, old_bottom - stem_hf)
-
-    parts: list[str] = []
-    parts.append(
-        f'<rect x="{stem_x:.2f}" y="{stem_y:.2f}" '
-        f'width="{stem_wf:.2f}" height="{stem_hf:.2f}" fill="{stem_color}"/>'
-    )
-    parts.append(candidate_to_svg(circle_candidate, element.x0, element.y0, fill_color, stroke_color, stroke_width))
-    return parts
+        if w <= 18:
+            default_cx = float(defaults.get("cx", float(w) / 2.0))
+            default_cy = float(defaults.get("cy", float(w) / 2.0))
 
             # Ensure the fitted circle remains fully inside the canvas with stroke taken
             # into account so it is not clipped at the edges.
@@ -1943,7 +2035,16 @@ class Action:
                     continue
                 fill_gray = float(np.median(gray[fill_mask]))
                 ring_gray = float(np.median(gray[ring_mask]))
-                score = abs(fill_gray - 220.0) + abs(ring_gray - 152.0)
+                # Generalized scoring for circle+ring symbols:
+                # - prefer ring darker than fill with clear contrast,
+                # - keep geometric closeness to semantic template.
+                contrast = fill_gray - ring_gray
+                tone_penalty = 0.0
+                if contrast < 4.0:
+                    tone_penalty += (4.0 - contrast) * 4.0
+                if ring_gray >= fill_gray:
+                    tone_penalty += (ring_gray - fill_gray + 1.0) * 6.0
+                score = tone_penalty
                 # Prefer circles that stay close to the semantic template size/
                 # position so all AC08xx variants remain stable across JPEG noise.
                 score += (center_offset / max_center_offset) * 9.0
@@ -1956,8 +2057,22 @@ class Action:
                 params["cx"] = cx
                 params["cy"] = cy
                 params["r"] = r
-                params["fill_gray"] = int(round(fill_gray))
-                params["stroke_gray"] = int(round(ring_gray))
+                est_fill, est_ring, est_stroke = Action._estimate_circle_tones_and_stroke(
+                    gray,
+                    cx,
+                    cy,
+                    r,
+                    float(params.get("stroke_circle", defaults.get("stroke_circle", 1.2))),
+                )
+                params["fill_gray"] = int(round(est_fill))
+                params["stroke_gray"] = int(round(est_ring))
+                has_connector = bool(params.get("arm_enabled") or params.get("stem_enabled"))
+                has_text = bool(params.get("draw_text", False))
+                if not has_connector and not has_text:
+                    params["stroke_circle"] = float(max(1.0, est_stroke))
+                    bg_gray = Action._estimate_border_background_gray(gray)
+                    if bg_gray >= 240.0:
+                        params["background_fill"] = "#ffffff"
 
         # Keep contour/Hough noise from collapsing circles far below the semantic
         # template size. This was most visible for compact centered badges
@@ -2108,8 +2223,8 @@ class Action:
             defaults = {
                 "cx": 15.0 * scale,
                 "cy": 15.0 * scale,
-                "r": 12.0 * scale,
-                "stroke_circle": 2.0 * scale,
+                "r": 10.8 * scale,
+                "stroke_circle": 1.5 * scale,
                 "fill_gray": 220,
                 "stroke_gray": 152,
                 "draw_text": False,
@@ -2261,6 +2376,12 @@ class Action:
         elements = [
             f'<svg width="{w}px" height="{h}px" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">'
         ]
+
+        background_fill = p.get("background_fill")
+        if background_fill:
+            elements.append(
+                f'  <rect x="0" y="0" width="{float(w):.4f}" height="{float(h):.4f}" fill="{background_fill}"/>'
+            )
 
         if p.get("arm_enabled"):
             arm_y1 = p.get("arm_y1", p.get("arm_y", 0.0))
@@ -5608,8 +5729,9 @@ def convert_range(
     end_ref: str = "AR0104",
     debug_ac0811_dir: str | None = None,
     debug_element_diff_dir: str | None = None,
+    output_root: str | None = None,
 ) -> str:
-    out_root = _default_converted_symbols_root()
+    out_root = output_root or _default_converted_symbols_root()
     svg_out_dir = os.path.join(out_root, "svg")
     diff_out_dir = os.path.join(out_root, "diff_pngs")
     reports_out_dir = os.path.join(out_root, "reports")
@@ -6302,8 +6424,24 @@ def _write_pixel_delta2_ranking(folder_path: str, svg_out_dir: str, reports_out_
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("folder_path", help="Pfad zum Ordner mit den Bildern")
-    parser.add_argument("csv_path", help="Pfad zur CSV/Export-Tabelle")
-    parser.add_argument("iterations", type=int, help="Anzahl der Iterationen (z.B. 8)")
+    parser.add_argument(
+        "csv_or_output",
+        nargs="?",
+        default=None,
+        help=(
+            "Optional: Pfad zur CSV/Export-Tabelle ODER Ausgabeverzeichnis für konvertierte Dateien. "
+            "(Kompatibilität: bisheriger 2. Positionsparameter)"
+        ),
+    )
+    parser.add_argument(
+        "iterations",
+        nargs="?",
+        type=int,
+        default=128,
+        help="Anzahl der Iterationen (optional, default: 128)",
+    )
+    parser.add_argument("--csv-path", default=None, help="Expliziter Pfad zur CSV/Export-Tabelle")
+    parser.add_argument("--output-dir", default=None, help="Explizites Ausgabeverzeichnis")
     parser.add_argument("--start", default="AR0102", help="Start-Referenz (inkl.), default: AR0102")
     parser.add_argument("--end", default="AR0104", help="End-Referenz (inkl.), default: AR0104")
     parser.add_argument(
@@ -6330,6 +6468,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
 
+    csv_path = args.csv_path
+    output_dir = args.output_dir
+    if args.csv_or_output:
+        c = str(args.csv_or_output)
+        looks_like_csv = c.lower().endswith(".csv") or c.lower().endswith(".tsv")
+        if csv_path is None and looks_like_csv:
+            csv_path = c
+        elif output_dir is None and not looks_like_csv:
+            output_dir = c
+        elif csv_path is None:
+            csv_path = c
+
+    if csv_path is None:
+        csv_path = ""
+
     if args.bootstrap_deps:
         try:
             installed = _bootstrap_required_image_dependencies()
@@ -6341,12 +6494,13 @@ def main(argv: list[str] | None = None) -> int:
 
     out_dir = convert_range(
         args.folder_path,
-        args.csv_path,
+        csv_path,
         args.iterations,
         args.start,
         args.end,
         args.debug_ac0811_dir,
         args.debug_element_diff_dir,
+        output_dir,
     )
     print(f"\nAbgeschlossen! Ausgaben unter: {out_dir}")
     return 0

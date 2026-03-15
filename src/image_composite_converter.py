@@ -5035,14 +5035,12 @@ def _in_requested_range(filename: str, start_ref: str, end_ref: str) -> bool:
     if stem_parts is None or start_parts is None or end_parts is None:
         return False
 
-    stem_prefix, stem_n = stem_parts
-    start_prefix, start_n = start_parts
-    end_prefix, end_n = end_parts
+    start_key = start_parts
+    end_key = end_parts
+    if start_key > end_key:
+        start_key, end_key = end_key, start_key
 
-    if start_prefix != end_prefix or stem_prefix != start_prefix:
-        return False
-
-    return start_n <= stem_n <= end_n
+    return start_key <= stem_parts <= end_key
 
 
 

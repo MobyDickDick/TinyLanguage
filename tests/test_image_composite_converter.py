@@ -461,6 +461,23 @@ def test_run_iteration_pipeline_element_validation_log_contains_run_meta(
     assert "nonce_ns=" in first_line
 
 
+
+
+def test_in_requested_range_accepts_cross_prefix_span() -> None:
+    """Ranges spanning prefixes (e.g. AC..ZZ) should include matching intermediate symbols."""
+    assert image_composite_converter._in_requested_range("AC0812_L.jpg", "AC0000", "ZZ9999") is True
+
+
+def test_in_requested_range_handles_reversed_bounds() -> None:
+    """If CLI bounds are swapped, filtering should still behave as an inclusive range."""
+    assert image_composite_converter._in_requested_range("AC0812_L.jpg", "ZZ9999", "AC0000") is True
+
+
+def test_in_requested_range_excludes_values_outside_span() -> None:
+    """Symbols before the lower bound should still be filtered out."""
+    assert image_composite_converter._in_requested_range("AB9999_L.jpg", "AC0000", "ZZ9999") is False
+
+
 def test_convert_range_does_not_skip_variants_in_quality_passes(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

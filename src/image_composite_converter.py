@@ -17,6 +17,8 @@ import re
 import subprocess
 import sys
 from dataclasses import dataclass
+from pathlib import Path
+import importlib
 
 try:
     import cv2
@@ -41,6 +43,196 @@ def _clip(value, low, high):
     if isinstance(value, (int, float)):
         return Action._clip_scalar(float(value), float(low), float(high))
     raise RuntimeError("numpy is required for non-scalar clip operations")
+
+
+
+@dataclass
+class Element:
+    pixels: list[list[int]]
+    x0: int
+    y0: int
+    x1: int
+    y1: int
+
+
+@dataclass
+class Candidate:
+    shape: str
+    cx: float
+    cy: float
+    w: float
+    h: float
+
+
+def load_grayscale_image(path: Path) -> list[list[int]]:
+    image_module = importlib.import_module("PIL.Image")
+    gray = image_module.open(path).convert("L")
+    w, h = gray.size
+    px = gray.load()
+    return [[int(px[x, y]) for x in range(w)] for y in range(h)]
+
+
+def _compute_otsu_threshold(grayscale: list[list[int]]) -> int:
+    hist = [0] * 256
+    total = 0
+    for row in grayscale:
+        for value in row:
+            hist[value] += 1
+            total += 1
+    if total == 0:
+        return 220
+    sum_total = sum(i * hist[i] for i in range(256))
+    sum_bg = 0.0
+    weight_bg = 0
+    max_var = -1.0
+    threshold = 220
+    for t in range(256):
+        weight_bg += hist[t]
+        if weight_bg == 0:
+            continue
+        weight_fg = total - weight_bg
+        if weight_fg == 0:
+            break
+        sum_bg += t * hist[t]
+        mean_bg = sum_bg / weight_bg
+        mean_fg = (sum_total - sum_bg) / weight_fg
+        between_var = weight_bg * weight_fg * (mean_bg - mean_fg) ** 2
+        if between_var > max_var:
+            max_var = between_var
+            threshold = t
+    return threshold
+
+
+def _adaptive_threshold(grayscale: list[list[int]], block_size: int = 15, c: int = 5) -> list[list[int]]:
+    h = len(grayscale)
+    w = len(grayscale[0]) if h else 0
+    out = [[0] * w for _ in range(h)]
+    r = block_size // 2
+    for y in range(h):
+        for x in range(w):
+            y0, y1 = max(0, y-r), min(h, y+r+1)
+            x0, x1 = max(0, x-r), min(w, x+r+1)
+            vals = [grayscale[yy][xx] for yy in range(y0, y1) for xx in range(x0, x1)]
+            thresh = (sum(vals) / max(1, len(vals))) - c
+            out[y][x] = 1 if grayscale[y][x] < thresh else 0
+    return out
+
+
+def load_binary_image_with_mode(path: Path, *, threshold: int = 220, mode: str = "global") -> list[list[int]]:
+    grayscale = load_grayscale_image(path)
+    m = str(mode).lower()
+    if m == 'global':
+        return [[1 if v < threshold else 0 for v in row] for row in grayscale]
+    if m == 'otsu':
+        t = _compute_otsu_threshold(grayscale)
+        return [[1 if v < t else 0 for v in row] for row in grayscale]
+    if m == 'adaptive':
+        return _adaptive_threshold(grayscale)
+    raise ValueError(f"Unknown threshold mode '{mode}'.")
+
+
+def render_candidate_mask(candidate: Candidate, width: int, height: int) -> list[list[int]]:
+    mask = [[0 for _ in range(width)] for _ in range(height)]
+    rx = max(1.0, (candidate.w + candidate.h) / 4.0) if candidate.shape == 'circle' else max(1.0, candidate.w / 2.0)
+    ry = rx if candidate.shape == 'circle' else max(1.0, candidate.h / 2.0)
+    inv_rx2 = 1.0 / (rx * rx)
+    inv_ry2 = 1.0 / (ry * ry)
+    for y in range(height):
+        for x in range(width):
+            if ((x - candidate.cx) ** 2) * inv_rx2 + ((y - candidate.cy) ** 2) * inv_ry2 <= 1.0:
+                mask[y][x] = 1
+    return mask
+
+
+def _iou(a: list[list[int]], b: list[list[int]]) -> float:
+    inter = union = 0
+    for y in range(len(a)):
+        for x in range(len(a[0])):
+            av, bv = a[y][x], b[y][x]
+            if av and bv:
+                inter += 1
+            if av or bv:
+                union += 1
+    return inter / union if union else 0.0
+
+
+def score_candidate(target: list[list[int]], candidate: Candidate) -> float:
+    return _iou(target, render_candidate_mask(candidate, len(target[0]), len(target)))
+
+
+def random_neighbor(base: Candidate, scale: float, rng: random.Random) -> Candidate:
+    return Candidate(base.shape, base.cx + rng.uniform(-scale, scale), base.cy + rng.uniform(-scale, scale), max(1.0, base.w + rng.uniform(-scale, scale) * 1.4), max(1.0, base.h + rng.uniform(-scale, scale) * 1.4))
+
+
+def optimize_element(target: list[list[int]], init: Candidate, *, max_iter: int, plateau_limit: int, seed: int) -> tuple[Candidate, float]:
+    rng = random.Random(seed)
+    best = init
+    best_score = score_candidate(target, best)
+    scale = max(1.0, max(best.w, best.h) * 0.2)
+    plateau = 0
+    for _ in range(max_iter):
+        cand = random_neighbor(best, scale, rng)
+        s = score_candidate(target, cand)
+        if s >= best_score:
+            best, best_score, plateau = cand, s, 0
+        else:
+            plateau += 1
+        if plateau > plateau_limit:
+            scale = max(0.5, scale * 0.7)
+            plateau = 0
+    return best, best_score
+
+
+def _gray_to_hex(v: float) -> str:
+    g = max(0, min(255, int(round(v))))
+    return f"#{g:02x}{g:02x}{g:02x}"
+
+
+def estimate_stroke_style(grayscale: list[list[int]], element: Element, candidate: Candidate) -> tuple[str, str | None, float | None]:
+    vals = [grayscale[y + element.y0][x + element.x0] for y,row in enumerate(element.pixels) for x,v in enumerate(row) if v]
+    fill = _gray_to_hex(sum(vals) / max(1, len(vals)))
+    if candidate.shape != 'circle':
+        return fill, None, None
+    r = max(1.0, (candidate.w + candidate.h) / 4.0)
+    inner=[]; outer=[]
+    for y,row in enumerate(element.pixels):
+        for x,v in enumerate(row):
+            if not v: continue
+            d=((x-candidate.cx)**2 + (y-candidate.cy)**2) ** 0.5
+            px = grayscale[y + element.y0][x + element.x0]
+            if d >= r*0.84:
+                outer.append(px)
+            elif d <= r*0.65:
+                inner.append(px)
+    if outer and inner and (sum(outer)/len(outer)) < (sum(inner)/len(inner)) - 10:
+        return _gray_to_hex(sum(inner)/len(inner)), _gray_to_hex(sum(outer)/len(outer)), max(1.0, r*0.2)
+    return fill, None, None
+
+
+def candidate_to_svg(candidate: Candidate, gx: int, gy: int, fill_color: str, stroke_color: str | None = None, stroke_width: float | None = None) -> str:
+    if candidate.shape == 'circle':
+        r = max(1.0, (candidate.w + candidate.h) / 4.0)
+        if stroke_color is not None and stroke_width is not None:
+            r = max(0.5, r - (float(stroke_width) / 2.0))
+        stroke_attr = '' if stroke_color is None else f' stroke="{stroke_color}" stroke-width="{float(stroke_width or 1.0):.2f}"'
+        return f'<circle cx="{candidate.cx + gx:.2f}" cy="{candidate.cy + gy:.2f}" r="{r:.2f}" fill="{fill_color}"{stroke_attr} />'
+    rx = max(1.0, candidate.w / 2.0)
+    ry = max(1.0, candidate.h / 2.0)
+    return f'<ellipse cx="{candidate.cx + gx:.2f}" cy="{candidate.cy + gy:.2f}" rx="{rx:.2f}" ry="{ry:.2f}" fill="{fill_color}" />'
+
+
+def decompose_circle_with_stem(grayscale: list[list[int]], element: Element, candidate: Candidate) -> list[str] | None:
+    r = max(1.0, (candidate.w + candidate.h) / 4.0)
+    stem = [(x,y) for y,row in enumerate(element.pixels) for x,v in enumerate(row) if v and y > candidate.cy + r*0.7 and abs(x-candidate.cx) < max(2.0, r*0.3)]
+    if not stem:
+        return None
+    xs=[x for x,_ in stem]; ys=[y for _,y in stem]
+    x=min(xs)+element.x0; y=min(ys)+element.y0; w=max(xs)-min(xs)+1; h=max(ys)-min(ys)+1
+    stem_vals=[grayscale[yy+element.y0][xx+element.x0] for xx,yy in stem]
+    circle_vals=[grayscale[yy+element.y0][xx+element.x0] for yy,row in enumerate(element.pixels) for xx,v in enumerate(row) if v and (yy,xx) not in {(sy,sx) for sx,sy in stem}]
+    rect=f'<rect x="{x:.2f}" y="{y:.2f}" width="{w:.2f}" height="{h:.2f}" fill="{_gray_to_hex(sum(stem_vals)/max(1,len(stem_vals)))}" />'
+    circle=candidate_to_svg(candidate, element.x0, element.y0, _gray_to_hex(sum(circle_vals)/max(1,len(circle_vals))))
+    return [rect, circle]
 
 def _missing_required_image_dependencies() -> list[str]:
     missing: list[str] = []

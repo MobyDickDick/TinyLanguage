@@ -7,6 +7,7 @@ import pytest
 import src.image_composite_converter as image_composite_converter
 from src.image_composite_converter import Action, _clip
 
+conv = image_composite_converter
 
 def test_co2_label_defaults_use_center_co_anchor_mode() -> None:
     """Default CO₂ layout should keep center_co mode and only shift left if required."""
@@ -1056,24 +1057,6 @@ def test_optimize_element_improves_or_keeps_score() -> None:
     assert isinstance(best, conv.Candidate)
     assert best_score >= init_score
 
-    err_concentric = Action._element_match_error(
-        img,
-        img,
-        params,
-        "circle",
-        mask_orig=src_mask,
-        mask_svg=concentric,
-    )
-    err_shifted = Action._element_match_error(
-        img,
-        img,
-        params,
-        "circle",
-        mask_orig=src_mask,
-        mask_svg=shifted,
-    )
-
-    assert err_shifted > err_concentric
 
 
 def test_circle_match_error_penalizes_undersized_candidate(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1266,15 +1249,32 @@ def test_convert_image_accepts_threshold_mode_and_threshold(tmp_path: Path) -> N
 def test_optimize_arm_extent_keeps_circle_side_anchor_for_horizontal_connectors() -> None:
     """Arm length optimization should keep the circle-side endpoint fixed for AC0812-like arms."""
 
-    src = tmp_path / "input.jpg"
-    dst = tmp_path / "output.svg"
-    image.save(src, format="JPEG")
+    class DummyImg:
+        shape = (15, 25, 3)
 
-    conv.convert_image(src, dst, max_iter=40, plateau_limit=12, seed=7, threshold_mode="otsu", threshold=220)
+    img = DummyImg()
+    params = Action._default_ac0812_params(25, 15)
+    params = Action._finalize_ac08_style("AC0812", params)
 
-    text = dst.read_text(encoding="utf-8")
-    assert "<svg" in text
-    assert "<ellipse" in text or "<circle" in text
+    # Intentionally shrink the free-side arm to emulate under-length conversion output.
+    params["arm_x1"] = float(params["arm_x2"] - 3.0)
+
+    logs: list[str] = []
+    original = Action._element_error_for_extent
+
+    def prefer_longer(_img: object, _params: dict, _element: str, extent_value: float) -> float:
+        return abs(float(extent_value) - 10.0)
+
+    Action._element_error_for_extent = staticmethod(prefer_longer)
+    try:
+        changed = Action._optimize_element_extent_bracket(img, params, "arm", logs)
+    finally:
+        Action._element_error_for_extent = original
+
+    assert changed is True
+    assert abs(float(params["arm_x2"]) - (float(params["cx"]) - float(params["r"]))) < 1e-6
+    assert float(params["arm_x1"]) < float(params["arm_x2"])
+    assert any("arm: Längen-Bracketing" in line for line in logs)
 
 
 def test_estimate_stroke_style_detects_dark_ring() -> None:
@@ -1296,6 +1296,10 @@ def test_estimate_stroke_style_detects_dark_ring() -> None:
     candidate = conv.Candidate(shape="circle", cx=10, cy=10, w=20, h=20)
 
     fill, stroke, stroke_width = conv.estimate_stroke_style(grayscale, element, candidate)
+
+    assert fill == "#d2d2d2"
+    assert stroke == "#787878"
+    assert stroke_width == pytest.approx(2.0, rel=0.35)
 
 def test_optimize_stem_extent_keeps_circle_side_anchor() -> None:
     """Stem length optimization should keep stem_top attached to the circle edge."""
@@ -1391,7 +1395,8 @@ def test_decompose_circle_with_stem_recenters_vertical_stem() -> None:
     candidate = conv.Candidate(shape="circle", cx=15, cy=15, w=18, h=18)
 
     parts = conv.decompose_circle_with_stem(grayscale, element, candidate)
-
+    assert parts is not None
+    rect = parts[0]
 
     import re
 
@@ -1399,6 +1404,16 @@ def test_decompose_circle_with_stem_recenters_vertical_stem() -> None:
     my = re.search(r'y="([0-9.]+)"', rect)
     mw = re.search(r'width="([0-9.]+)"', rect)
     assert mx and my and mw
+
+
+def test_fit_ac0811_preserves_visible_stem_when_circle_estimate_reaches_bottom() -> None:
+    """AC0811 fitting should keep at least a small visible stem segment."""
+
+    class DummyImg:
+        shape = (15, 15, 3)
+
+    img = DummyImg()
+    defaults = Action._default_ac0811_params(15, 15)
 
     original_fit = Action._fit_semantic_badge_from_image
     original_upper = Action._estimate_upper_circle_from_foreground

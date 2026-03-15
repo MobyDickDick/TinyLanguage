@@ -46,6 +46,66 @@ def test_finalize_ac0820_variant_name_uses_cluster_anchor_mode() -> None:
     assert float(params["co2_optical_bias"]) >= 0.125
 
 
+def test_finalize_ac0800_keeps_ring_darker_than_fill() -> None:
+    """AC0800 should preserve generic ring semantics: darker stroke than fill."""
+    params = Action.make_badge_params(30, 30, "AC0800")
+
+    assert params is not None
+    assert float(params["r"]) == pytest.approx(10.8)
+    assert int(params["stroke_gray"]) < int(params["fill_gray"])
+    assert float(params["stroke_circle"]) >= 1.0
+
+
+def test_generate_badge_svg_emits_background_rect_when_requested() -> None:
+    """Badge SVG should include an explicit background rect when configured."""
+    params = {
+        "background_fill": "#ffffff",
+        "circle_enabled": True,
+        "cx": 15.0,
+        "cy": 15.0,
+        "r": 10.8,
+        "fill_gray": 217,
+        "stroke_gray": 128,
+        "stroke_circle": 1.8,
+        "draw_text": False,
+    }
+
+    svg = Action.generate_badge_svg(30, 30, params)
+
+    assert '<rect x="0" y="0" width="30.0000" height="30.0000" fill="#ffffff"/>' in svg
+
+
+def test_fit_semantic_badge_estimates_ring_style_for_plain_circle() -> None:
+    """Plain circles should infer ring/center style from raster tones generically."""
+    if image_composite_converter.np is None or image_composite_converter.cv2 is None:
+        pytest.skip("numpy/cv2 not available in this environment")
+
+    np = image_composite_converter.np
+    cv2 = image_composite_converter.cv2
+    if np is None or cv2 is None:
+        pytest.skip("numpy/cv2 not available in this environment")
+
+    img = np.full((30, 30, 3), 255, dtype=np.uint8)
+    cv2.circle(img, (15, 15), 11, (128, 128, 128), thickness=2)
+    cv2.circle(img, (15, 15), 10, (217, 217, 217), thickness=-1)
+
+    defaults = {
+        "cx": 15.0,
+        "cy": 15.0,
+        "r": 10.8,
+        "stroke_circle": 1.5,
+        "fill_gray": 220,
+        "stroke_gray": 152,
+        "draw_text": False,
+    }
+
+    fitted = Action._fit_semantic_badge_from_image(img, defaults)
+
+    assert int(fitted["stroke_gray"]) < int(fitted["fill_gray"])
+    assert float(fitted["stroke_circle"]) >= 1.0
+    assert fitted.get("background_fill") == "#ffffff"
+
+
 def test_parse_semantic_badge_layout_overrides_centers_full_co2_cluster() -> None:
     """Horizontal centering directive should target the full CO₂ cluster."""
     overrides = image_composite_converter.Reflection._parse_semantic_badge_layout_overrides(
@@ -1522,6 +1582,18 @@ def test_decompose_circle_with_stem_recenters_horizontal_stem() -> None:
 
 def test_generate_badges_reconverted_svg_contains_text(tmp_path: Path) -> None:
     gen = pytest.importorskip("tools.generate_badge_comparison_set")
+
+    class DummyImg:
+        shape = (30, 30, 3)
+
+    img = DummyImg()
+    params = {
+        "draw_text": True,
+        "text_mode": "voc",
+        "voc_font_scale": 0.52,
+    }
+    logs: list[str] = []
+    original = Action._element_error_for_width
 
     def prefer_target_scale(_img: object, _params: dict, _element: str, width_value: float) -> float:
         return abs(float(width_value) - 0.85)

@@ -1583,6 +1583,18 @@ def test_decompose_circle_with_stem_recenters_horizontal_stem() -> None:
 def test_generate_badges_reconverted_svg_contains_text(tmp_path: Path) -> None:
     gen = pytest.importorskip("tools.generate_badge_comparison_set")
 
+    class DummyImg:
+        shape = (30, 30, 3)
+
+    img = DummyImg()
+    params = {
+        "draw_text": True,
+        "text_mode": "voc",
+        "voc_font_scale": 0.52,
+    }
+    logs: list[str] = []
+    original = Action._element_error_for_width
+
     def prefer_target_scale(_img: object, _params: dict, _element: str, width_value: float) -> float:
         return abs(float(width_value) - 0.85)
 

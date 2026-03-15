@@ -1,3 +1,0 @@
-run-meta: run_seed=713101093 pass_seed_offset=0 nonce_ns=1773251885049058500
-status=semantic_mismatch
-issue=Im Bild ist senkrechter Strich erkennbar, aber nicht in der Beschreibung enthalten

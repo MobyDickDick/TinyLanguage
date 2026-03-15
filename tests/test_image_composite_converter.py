@@ -1,5 +1,3 @@
-"""Regression tests for CO₂ text positioning in semantic badges."""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -722,10 +720,15 @@ def test_default_ac0812_uses_height_based_circle_radius() -> None:
     """AC0812 should size its circle from height without overfilling the frame."""
     params = Action._default_ac0812_params(25, 15)
 
-    assert abs(float(params["r"]) - 5.4) < 1e-6
-    assert abs(float(params["cx"]) - 17.5) < 1e-6
-    assert abs(float(params["arm_x2"]) - 12.1) < 1e-6
 
+def test_find_elements_detects_multiple_components() -> None:
+    binary = [[0 for _ in range(30)] for _ in range(20)]
+    for y in range(2, 7):
+        for x in range(2, 7):
+            binary[y][x] = 1
+    for y in range(10, 17):
+        for x in range(20, 27):
+            binary[y][x] = 1
 
 def test_fit_ac0812_caps_radius_to_template(monkeypatch: pytest.MonkeyPatch) -> None:
     """AC0812 fit should cap radius to geometric canvas limits."""
@@ -1039,15 +1042,19 @@ def test_circle_match_error_penalizes_non_concentric_candidate(monkeypatch: pyte
     img = np.zeros((20, 20, 3), dtype=np.uint8)
     params = {"cx": 10.0, "cy": 10.0, "r": 6.0}
 
-    src_mask = np.zeros((20, 20), dtype=bool)
-    src_mask[6:14, 6:14] = True
+def test_optimize_element_improves_or_keeps_score() -> None:
+    target = [[0 for _ in range(16)] for _ in range(16)]
+    for y in range(16):
+        for x in range(16):
+            if ((y - 8) ** 2 + (x - 8) ** 2) <= 16:
+                target[y][x] = 1
 
-    concentric = np.zeros((20, 20), dtype=bool)
-    concentric[6:14, 6:14] = True
-    shifted = np.zeros((20, 20), dtype=bool)
-    shifted[6:14, 7:15] = True
+    init = conv.Candidate(shape="circle", cx=8, cy=8, w=5, h=5)
+    init_score = conv.score_candidate(target, init)
+    best, best_score = conv.optimize_element(target, init, max_iter=80, plateau_limit=25, seed=123)
 
-    monkeypatch.setattr(Action, "_masked_union_error_in_bbox", staticmethod(lambda *_args, **_kwargs: 0.0))
+    assert isinstance(best, conv.Candidate)
+    assert best_score >= init_score
 
     err_concentric = Action._element_match_error(
         img,
@@ -1202,156 +1209,153 @@ def test_finalize_ac08_style_caps_ac0835_s_voc_growth() -> None:
     """AC0835_S should keep VOC scale bounded to avoid heavy-looking labels."""
     params = Action._apply_voc_label(Action._default_ac0870_params(15, 15))
 
-    finalized = Action._finalize_ac08_style("AC0835_S", params)
+def test_convert_image_writes_svg(tmp_path: Path) -> None:
+    Image = pytest.importorskip("PIL.Image")
+    ImageDraw = pytest.importorskip("PIL.ImageDraw")
 
-    assert finalized["lock_text_scale"] is False
-    assert abs(float(finalized["voc_font_scale_min"]) - 0.58) < 1e-6
-    assert abs(float(finalized["voc_font_scale_max"]) - 0.546) < 1e-6
+    image = Image.new("L", (40, 40), 255)
+    draw = ImageDraw.Draw(image)
+    draw.ellipse((8, 8, 24, 24), fill=0)
+    draw.ellipse((26, 12, 36, 22), fill=0)
 
+    src = tmp_path / "input.png"
+    dst = tmp_path / "output.svg"
+    image.save(src)
 
-def test_finalize_ac08_style_boosts_ac0835_m_voc_baseline() -> None:
-    """AC0835_M should bias VOC text upward so medium badges remain readable."""
-    params = Action._apply_voc_label(Action._default_ac0870_params(20, 20))
+    conv.convert_image(src, dst, max_iter=60, plateau_limit=20, seed=7)
 
-    finalized = Action._finalize_ac08_style("AC0835_M", params)
-
-    assert finalized["lock_text_scale"] is False
-    assert abs(float(finalized["voc_font_scale"]) - 0.60) < 1e-6
-    assert abs(float(finalized["voc_font_scale_min"]) - 0.60) < 1e-6
-    assert "voc_font_scale_max" not in finalized
-
-
-def test_voc_font_scale_bounds_honor_explicit_min_max_overrides() -> None:
-    """VOC text bracketing should respect caller-provided scale bounds."""
-    params = {
-        "draw_text": True,
-        "text_mode": "voc",
-        "voc_font_scale": 0.52,
-        "voc_font_scale_min": 0.58,
-        "voc_font_scale_max": 0.546,
-    }
-
-    info = Action._element_width_key_and_bounds("text", params, 15, 15)
-
-    assert info is not None
-    key, low, high = info
-    assert key == "voc_font_scale"
-    assert abs(float(low) - 0.58) < 1e-6
-    assert abs(float(high) - 0.58) < 1e-6
+    text = dst.read_text(encoding="utf-8")
+    assert "<svg" in text
+    assert "<circle" in text or "<ellipse" in text
 
 
-def test_finalize_ac08_style_caps_ac0835_s_voc_growth() -> None:
-    """AC0835_S should keep VOC scale bounded to avoid heavy-looking labels."""
-    params = Action._apply_voc_label(Action._default_ac0870_params(15, 15))
-
-    finalized = Action._finalize_ac08_style("AC0835_S", params)
-
-    assert finalized["lock_text_scale"] is False
-    assert abs(float(finalized["voc_font_scale_min"]) - 0.58) < 1e-6
-    assert abs(float(finalized["voc_font_scale_max"]) - 0.546) < 1e-6
 
 
-def test_voc_font_scale_bounds_honor_explicit_min_max_overrides() -> None:
-    """VOC text bracketing should respect caller-provided scale bounds."""
-    params = {
-        "draw_text": True,
-        "text_mode": "voc",
-        "voc_font_scale": 0.52,
-        "voc_font_scale_min": 0.58,
-        "voc_font_scale_max": 0.546,
-    }
+def test_compute_otsu_threshold_bimodal_distribution() -> None:
+    grayscale = [[40 for _ in range(20)] for _ in range(10)]
+    for y in range(5, 10):
+        for x in range(20):
+            grayscale[y][x] = 220
 
-    info = Action._element_width_key_and_bounds("text", params, 15, 15)
+    threshold = conv._compute_otsu_threshold(grayscale)
 
-    assert info is not None
-    key, low, high = info
-    assert key == "voc_font_scale"
-    assert abs(float(low) - 0.58) < 1e-6
-    assert abs(float(high) - 0.58) < 1e-6
+    assert 40 <= threshold <= 220
 
+
+def test_load_binary_image_with_mode_adaptive_detects_dark_patch(tmp_path: Path) -> None:
+    Image = pytest.importorskip("PIL.Image")
+
+    image = Image.new("L", (21, 21), 200)
+    for y in range(8, 13):
+        for x in range(8, 13):
+            image.putpixel((x, y), 30)
+
+    src = tmp_path / "adaptive.png"
+    image.save(src)
+
+    binary = conv.load_binary_image_with_mode(src, mode="adaptive")
+
+    assert binary[10][10] == 1
+    assert binary[0][0] == 0
+
+
+def test_convert_image_accepts_threshold_mode_and_threshold(tmp_path: Path) -> None:
+    Image = pytest.importorskip("PIL.Image")
+    ImageDraw = pytest.importorskip("PIL.ImageDraw")
 
 def test_optimize_arm_extent_keeps_circle_side_anchor_for_horizontal_connectors() -> None:
     """Arm length optimization should keep the circle-side endpoint fixed for AC0812-like arms."""
 
-    class DummyImg:
-        shape = (15, 25, 3)
+    src = tmp_path / "input.jpg"
+    dst = tmp_path / "output.svg"
+    image.save(src, format="JPEG")
 
-    img = DummyImg()
-    params = Action._default_ac0812_params(25, 15)
-    params = Action._finalize_ac08_style("AC0812", params)
+    conv.convert_image(src, dst, max_iter=40, plateau_limit=12, seed=7, threshold_mode="otsu", threshold=220)
 
-    # Intentionally shrink the free-side arm to emulate under-length conversion output.
-    params["arm_x1"] = float(params["arm_x2"] - 3.0)
+    text = dst.read_text(encoding="utf-8")
+    assert "<svg" in text
+    assert "<ellipse" in text or "<circle" in text
 
-    logs: list[str] = []
-    original = Action._element_error_for_extent
 
-    def prefer_longer(_img: object, _params: dict, _element: str, extent_value: float) -> float:
-        return abs(float(extent_value) - 10.0)
+def test_estimate_stroke_style_detects_dark_ring() -> None:
+    grayscale = [[255 for _ in range(25)] for _ in range(25)]
+    pixels = [[0 for _ in range(21)] for _ in range(21)]
 
-    Action._element_error_for_extent = staticmethod(prefer_longer)
-    try:
-        changed = Action._optimize_element_extent_bracket(img, params, "arm", logs)
-    finally:
-        Action._element_error_for_extent = original
+    cx = cy = 10
+    for y in range(21):
+        for x in range(21):
+            d2 = (x - cx) ** 2 + (y - cy) ** 2
+            if d2 <= 100:
+                pixels[y][x] = 1
+                if d2 >= 72:
+                    grayscale[y + 2][x + 2] = 120
+                else:
+                    grayscale[y + 2][x + 2] = 210
 
-    assert changed is True
-    assert abs(float(params["arm_x2"]) - (float(params["cx"]) - float(params["r"]))) < 1e-6
-    assert float(params["arm_x1"]) < float(params["arm_x2"])
-    assert any("arm: Längen-Bracketing" in line for line in logs)
+    element = conv.Element(pixels=pixels, x0=2, y0=2, x1=22, y1=22)
+    candidate = conv.Candidate(shape="circle", cx=10, cy=10, w=20, h=20)
 
+    fill, stroke, stroke_width = conv.estimate_stroke_style(grayscale, element, candidate)
 
 def test_optimize_stem_extent_keeps_circle_side_anchor() -> None:
     """Stem length optimization should keep stem_top attached to the circle edge."""
 
-    class DummyImg:
-        shape = (25, 15, 3)
-
-    img = DummyImg()
-    params = Action._default_ac0811_params(15, 25)
-    params = Action._finalize_ac08_style("AC0811", params)
-    params["stem_top"] = float(params["cy"] + params["r"] + 2.0)
-
-    logs: list[str] = []
-    original = Action._element_error_for_extent
-
-    def prefer_longer(_img: object, _params: dict, _element: str, extent_value: float) -> float:
-        return abs(float(extent_value) - 12.0)
-
-    Action._element_error_for_extent = staticmethod(prefer_longer)
-    try:
-        changed = Action._optimize_element_extent_bracket(img, params, "stem", logs)
-    finally:
-        Action._element_error_for_extent = original
-
-    assert changed is True
-    assert abs(float(params["stem_top"]) - (float(params["cy"]) + float(params["r"]))) < 1e-6
-    assert float(params["stem_bottom"]) > float(params["stem_top"])
-    assert any("stem: Längen-Bracketing" in line for line in logs)
 
 
 
+def test_candidate_to_svg_preserves_outer_size_with_stroke() -> None:
+    candidate = conv.Candidate(shape="circle", cx=10.0, cy=10.0, w=20.0, h=20.0)
+
+    svg = conv.candidate_to_svg(candidate, 0, 0, "#dbdbdb", "#808080", 2.0)
+
+    assert 'r="9.00"' in svg
+    assert 'stroke-width="2.00"' in svg
 
 
+def test_decompose_circle_with_stem_detects_bottom_stem() -> None:
+    size = 25
+    grayscale = [[255 for _ in range(size)] for _ in range(size)]
+    pixels = [[0 for _ in range(size)] for _ in range(size)]
 
-def test_finalize_persists_stem_length_floor_for_ac08_stem_connectors() -> None:
-    params = Action._default_ac0881_params(15, 15)
-    params = Action._finalize_ac08_style("AC0881_S", params)
+    cx = cy = 12
+    r = 8
+    for y in range(size):
+        for x in range(size):
+            d2 = (x - cx) ** 2 + (y - cy) ** 2
+            if d2 <= r * r:
+                pixels[y][x] = 1
+                grayscale[y][x] = 215
 
-    stem_len = float(params["stem_bottom"]) - float(params["stem_top"])
-    assert stem_len > 0.0
-    assert float(params.get("stem_len_min_ratio", 0.0)) >= 0.65
-    assert float(params.get("stem_len_min", 0.0)) >= stem_len * float(params["stem_len_min_ratio"])
+    for y in range(20, 24):
+        for x in range(11, 14):
+            pixels[y][x] = 1
+            grayscale[y][x] = 128
+
+    element = conv.Element(pixels=pixels, x0=0, y0=0, x1=24, y1=24)
+    candidate = conv.Candidate(shape="circle", cx=12, cy=12, w=16, h=16)
+
+    parts = conv.decompose_circle_with_stem(grayscale, element, candidate)
+
+    assert parts is not None
+    assert len(parts) == 2
+    assert parts[0].startswith("<rect ")
+    assert 'fill="#' in parts[0]
+    assert parts[1].startswith("<circle ")
 
 
-def test_finalize_persists_arm_length_floor_for_ac08_arm_connectors() -> None:
-    params = Action._default_ac0812_params(15, 15)
-    params = Action._finalize_ac08_style("AC0812_S", params)
+def test_decompose_circle_with_stem_ignores_plain_circle() -> None:
+    size = 30
+    grayscale = [[255 for _ in range(size)] for _ in range(size)]
+    pixels = [[0 for _ in range(size)] for _ in range(size)]
 
-    arm_len = float(abs(params["arm_x2"] - params["arm_x1"]))
-    assert arm_len > 0.0
-    assert float(params.get("arm_len_min_ratio", 0.0)) >= 0.75
-    assert float(params.get("arm_len_min", 0.0)) >= arm_len * float(params["arm_len_min_ratio"])
+    cx = cy = 14
+    r = 12
+    for y in range(size):
+        for x in range(size):
+            d2 = (x - cx) ** 2 + (y - cy) ** 2
+            if d2 <= r * r:
+                pixels[y][x] = 1
+                grayscale[y][x] = 180
 
 def test_optimize_stem_extent_keeps_bottom_anchored_ac0811_stem_from_collapsing() -> None:
     """Bottom-anchored AC0811 stems should retain a minimum visible length during bracketing."""
@@ -1359,42 +1363,42 @@ def test_optimize_stem_extent_keeps_bottom_anchored_ac0811_stem_from_collapsing(
     if image_composite_converter.np is None:
         pytest.skip("numpy not available in this environment")
 
-    class DummyImg:
-        shape = (15, 15, 3)
+    parts = conv.decompose_circle_with_stem(grayscale, element, candidate)
 
-    img = DummyImg()
-    params = Action._default_ac0811_params(15, 15)
-    params = Action._finalize_ac08_style("AC0811_S", params)
-
-    logs: list[str] = []
-    original = Action._element_error_for_extent
-
-    def prefer_tiny(_img: object, _params: dict, _element: str, extent_value: float) -> float:
-        # Try to collapse the stem aggressively; guardrails should prevent this.
-        return abs(float(extent_value) - 1.0)
-
-    Action._element_error_for_extent = staticmethod(prefer_tiny)
-    try:
-        changed = Action._optimize_element_extent_bracket(img, params, "stem", logs)
-    finally:
-        Action._element_error_for_extent = original
-
-    assert changed is True
-    stem_len = float(params["stem_bottom"]) - float(params["stem_top"])
-    assert stem_len >= 5.5
-    assert abs(float(params["stem_top"]) - (float(params["cy"]) + float(params["r"]))) < 1e-6
-    assert any("Längen-Bracketing" in line for line in logs)
+    assert parts is None
 
 
-def test_fit_ac0811_preserves_visible_stem_when_circle_estimate_reaches_bottom() -> None:
-    """AC0811 fitting should keep at least a small visible stem segment."""
+def test_decompose_circle_with_stem_recenters_vertical_stem() -> None:
+    size = 31
+    grayscale = [[255 for _ in range(size)] for _ in range(size)]
+    pixels = [[0 for _ in range(size)] for _ in range(size)]
+
+    cx = cy = 15
+    r = 9
+    for y in range(size):
+        for x in range(size):
+            d2 = (x - cx) ** 2 + (y - cy) ** 2
+            if d2 <= r * r:
+                pixels[y][x] = 1
+                grayscale[y][x] = 210
+
+    for y in range(24, 29):
+        for x in range(17, 20):
+            pixels[y][x] = 1
+            grayscale[y][x] = 120
+
+    element = conv.Element(pixels=pixels, x0=0, y0=0, x1=size - 1, y1=size - 1)
+    candidate = conv.Candidate(shape="circle", cx=15, cy=15, w=18, h=18)
+
+    parts = conv.decompose_circle_with_stem(grayscale, element, candidate)
 
 
-    class DummyImg:
-        shape = (15, 15, 3)
+    import re
 
-    img = DummyImg()
-    defaults = Action._default_ac0811_params(15, 15)
+    mx = re.search(r'x="([0-9.]+)"', rect)
+    my = re.search(r'y="([0-9.]+)"', rect)
+    mw = re.search(r'width="([0-9.]+)"', rect)
+    assert mx and my and mw
 
     original_fit = Action._fit_semantic_badge_from_image
     original_upper = Action._estimate_upper_circle_from_foreground

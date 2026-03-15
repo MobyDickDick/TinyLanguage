@@ -592,6 +592,25 @@ def decompose_circle_with_stem(
             stem_hf = max(1.0, (circle_cy - radius + overlap) - stem_y)
             stem_x = min(stem_x, old_right - stem_wf)
 
+    if stem_direction in {"left", "right"}:
+        circle_cy = element.y0 + circle_candidate.cy
+        stem_y = circle_cy - stem_hf / 2.0
+
+        radius = max(1.0, (circle_candidate.w + circle_candidate.h) / 4.0)
+        circle_cx = element.x0 + circle_candidate.cx
+        overlap = max(0.6, (stroke_width or 0.0) * 0.55)
+        old_right = (element.x0 + sx0) + stem_wf
+
+        if stem_direction == "right":
+            stem_x = circle_cx + radius - overlap
+            stem_wf = max(1.0, old_right - stem_x)
+        else:
+            old_left = element.x0 + sx0
+            old_bottom = (element.y0 + sy0) + stem_hf
+            stem_x = old_left
+            stem_wf = max(1.0, (circle_cx - radius + overlap) - stem_x)
+            stem_y = min(stem_y, old_bottom - stem_hf)
+
     parts: list[str] = []
     parts.append(
         f'<rect x="{stem_x:.2f}" y="{stem_y:.2f}" '

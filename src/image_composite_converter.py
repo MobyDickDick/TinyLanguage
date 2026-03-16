@@ -5109,8 +5109,21 @@ def _in_requested_range(filename: str, start_ref: str, end_ref: str) -> bool:
     stem_parts = _extract_ref_parts(stem)
     start_parts = _extract_ref_parts(start_ref)
     end_parts = _extract_ref_parts(end_ref)
-    if stem_parts is None or start_parts is None or end_parts is None:
-        return False
+
+    # If no parseable range bounds are provided, treat filtering as disabled.
+    if start_parts is None and end_parts is None:
+        return True
+
+    # Files that do not follow the usual XX0000 naming scheme should still be
+    # processed in "convert whole folder" workflows.
+    if stem_parts is None:
+        return True
+
+    # Support one-sided range filters if only one boundary can be parsed.
+    if start_parts is None:
+        return stem_parts <= end_parts  # type: ignore[operator]
+    if end_parts is None:
+        return start_parts <= stem_parts
 
     start_key = start_parts
     end_key = end_parts

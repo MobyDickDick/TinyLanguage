@@ -2187,3 +2187,54 @@ def test_resolve_cli_csv_and_output_accepts_xml_as_table_path(tmp_path: Path) ->
 
     assert csv_path == str(xml_path)
     assert output_dir is None
+
+
+def test_load_description_mapping_from_xml_prefers_image_specific_detail(tmp_path: Path) -> None:
+    xml_path = tmp_path / "Finale_Wurzelformen_V3.xml"
+    xml_path.write_text(
+        """<?xml version="1.0" encoding="utf-8"?>
+<wurzelformen_export>
+  <entries>
+    <entry kind="rohrgruppe" key="z_rohre">
+      <beschreibung>Gruppenbeschreibung Rohrformen</beschreibung>
+      <bilder>
+        <bild>z_202.jpg</bild>
+      </bilder>
+      <bildbeschreibungen>
+        <bildbeschreibung bild="z_202.jpg">Langgezogenes Rechteck mit Verlauf</bildbeschreibung>
+      </bildbeschreibungen>
+    </entry>
+  </entries>
+</wurzelformen_export>
+""",
+        encoding="utf-8",
+    )
+
+    mapping = conv._load_description_mapping(str(xml_path))
+
+    assert "z_202" in mapping
+    assert "Gruppenbeschreibung Rohrformen" in mapping["z_202"]
+    assert "Langgezogenes Rechteck mit Verlauf" in mapping["z_202"]
+
+
+def test_load_description_mapping_from_xml_reads_bild_attribute_description(tmp_path: Path) -> None:
+    xml_path = tmp_path / "Finale_Wurzelformen_V3.xml"
+    xml_path.write_text(
+        """<?xml version="1.0" encoding="utf-8"?>
+<wurzelformen_export>
+  <entries>
+    <entry kind="rohrgruppe" key="z_rohre">
+      <beschreibung>Rohrgruppe</beschreibung>
+      <bilder>
+        <bild beschreibung="Halb offene Hand, Kontur + Innenfläche">z_111.jpg</bild>
+      </bilder>
+    </entry>
+  </entries>
+</wurzelformen_export>
+""",
+        encoding="utf-8",
+    )
+
+    mapping = conv._load_description_mapping(str(xml_path))
+
+    assert mapping["z_111"] == "Rohrgruppe Halb offene Hand, Kontur + Innenfläche"

@@ -2132,6 +2132,24 @@ def test_parse_args_keeps_legacy_three_positional_arguments() -> None:
     assert int(args.iterations) == 64
 
 
+def test_parse_args_accepts_log_file_option() -> None:
+    args = conv.parse_args(["in_folder", "out_folder", "--log-file", "run.log"])
+    assert args.log_file == "run.log"
+
+
+def test_optional_log_capture_writes_output_to_file(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    log_path = tmp_path / "run.log"
+
+    with conv._optional_log_capture(str(log_path)):
+        print("hello-capture")
+
+    console = capsys.readouterr()
+    assert "hello-capture" in console.out
+    written = log_path.read_text(encoding="utf-8")
+    assert "[INFO] Schreibe Konsolen-Output nach:" in written
+    assert "hello-capture" in written
+
+
 def test_resolve_cli_csv_and_output_autodetects_csv_when_second_arg_is_output(tmp_path: Path) -> None:
     """When called as `folder output`, CSV should be auto-detected from input folder."""
     in_dir = tmp_path / "images"

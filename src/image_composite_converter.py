@@ -7,6 +7,7 @@ it can be executed directly or via TinyLanguage (`src_tiny/image_composite_conve
 from __future__ import annotations
 
 import argparse
+import contextlib
 import csv
 import json
 import math
@@ -20,6 +21,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 import importlib
+import io
 
 try:
     import cv2
@@ -6550,7 +6552,48 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "automatisch via pip vor der Konvertierung."
         ),
     )
+    parser.add_argument(
+        "--log-file",
+        default=os.environ.get("IMAGE_COMPOSITE_CONVERTER_LOG_FILE", ""),
+        help=(
+            "Optional: Schreibt den kompletten Konsolen-Output zusätzlich in diese Datei. "
+            "Kann alternativ über IMAGE_COMPOSITE_CONVERTER_LOG_FILE gesetzt werden."
+        ),
+    )
     return parser.parse_args(argv)
+
+
+class _TeeTextIO(io.TextIOBase):
+    """Mirror text writes to multiple streams."""
+
+    def __init__(self, *streams: io.TextIOBase):
+        self._streams = streams
+
+    def write(self, s: str) -> int:
+        for stream in self._streams:
+            stream.write(s)
+        return len(s)
+
+    def flush(self) -> None:
+        for stream in self._streams:
+            stream.flush()
+
+
+@contextlib.contextmanager
+def _optional_log_capture(log_path: str):
+    """Duplicate stdout/stderr into ``log_path`` if configured."""
+    if not log_path:
+        yield
+        return
+
+    path = Path(log_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as logfile:
+        tee_stdout = _TeeTextIO(sys.stdout, logfile)
+        tee_stderr = _TeeTextIO(sys.stderr, logfile)
+        with contextlib.redirect_stdout(tee_stdout), contextlib.redirect_stderr(tee_stderr):
+            print(f"[INFO] Schreibe Konsolen-Output nach: {path}")
+            yield
 
 
 def _auto_detect_csv_path(folder_path: str) -> str | None:
@@ -6606,35 +6649,36 @@ def _resolve_cli_csv_and_output(args: argparse.Namespace) -> tuple[str, str | No
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    csv_path, output_dir = _resolve_cli_csv_and_output(args)
+    log_path = str(args.log_file or "").strip()
+    with _optional_log_capture(log_path):
+        csv_path, output_dir = _resolve_cli_csv_and_output(args)
 
-    if not csv_path:
-        print("[WARN] Keine CSV/TSV/XML angegeben oder gefunden. Einige Symbole können ohne Beschreibung übersprungen werden.")
-    elif not os.path.exists(csv_path):
-        print(f"[WARN] CSV/TSV/XML-Datei nicht gefunden: {csv_path}")
+        if not csv_path:
+            print("[WARN] Keine CSV/TSV/XML angegeben oder gefunden. Einige Symbole können ohne Beschreibung übersprungen werden.")
+        elif not os.path.exists(csv_path):
+            print(f"[WARN] CSV/TSV/XML-Datei nicht gefunden: {csv_path}")
 
+        if args.bootstrap_deps:
+            try:
+                installed = _bootstrap_required_image_dependencies()
+            except RuntimeError as exc:
+                print(f"[ERROR] {exc}")
+                return 2
+            if installed:
+                print(f"[INFO] Installiert: {', '.join(installed)}")
 
-    if args.bootstrap_deps:
-        try:
-            installed = _bootstrap_required_image_dependencies()
-        except RuntimeError as exc:
-            print(f"[ERROR] {exc}")
-            return 2
-        if installed:
-            print(f"[INFO] Installiert: {', '.join(installed)}")
-
-    out_dir = convert_range(
-        args.folder_path,
-        csv_path,
-        args.iterations,
-        args.start,
-        args.end,
-        args.debug_ac0811_dir,
-        args.debug_element_diff_dir,
-        output_dir,
-    )
-    print(f"\nAbgeschlossen! Ausgaben unter: {out_dir}")
-    return 0
+        out_dir = convert_range(
+            args.folder_path,
+            csv_path,
+            args.iterations,
+            args.start,
+            args.end,
+            args.debug_ac0811_dir,
+            args.debug_element_diff_dir,
+            output_dir,
+        )
+        print(f"\nAbgeschlossen! Ausgaben unter: {out_dir}")
+        return 0
 
 
 if __name__ == "__main__":

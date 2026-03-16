@@ -2268,3 +2268,30 @@ def test_load_description_mapping_from_xml_reads_bild_attribute_description(tmp_
     mapping = conv._load_description_mapping(str(xml_path))
 
     assert mapping["z_111"] == "Rohrgruppe Halb offene Hand, Kontur + Innenfläche"
+
+
+def test_load_description_mapping_from_xml_registers_case_and_extension_variants() -> None:
+    """XML loader should expose descriptions for key/image variants used by runtime lookup."""
+    mapping = conv._load_description_mapping_from_xml(
+        "artifacts/images_to_convert/Finale_Wurzelformen_V3.xml"
+    )
+
+    assert mapping.get("AC0241")
+    assert mapping.get("AC0241_L")
+    assert mapping.get("ac0241_l")
+    assert mapping.get("z_202")
+    assert mapping.get("Z_202")
+    assert mapping.get("z_202.jpg")
+    assert mapping.get("Z_202.JPG")
+
+
+def test_parse_description_uses_xml_loaded_variant_descriptions() -> None:
+    """Descriptions from merged XML entries should be discoverable for concrete image variants."""
+    mapping = conv._load_description_mapping_from_xml(
+        "artifacts/images_to_convert/Finale_Wurzelformen_V3.xml"
+    )
+    ref = conv.Reflection(mapping)
+
+    desc, _params = ref.parse_description("z_202", "z_202.jpg")
+
+    assert "rohr" in desc

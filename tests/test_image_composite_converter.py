@@ -2295,3 +2295,34 @@ def test_parse_description_uses_xml_loaded_variant_descriptions() -> None:
     desc, _params = ref.parse_description("z_202", "z_202.jpg")
 
     assert "rohr" in desc
+
+
+def test_trace_image_segment_uses_raw_contour_chain_for_epsilon_sweep(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Contour extraction should keep all points so epsilon iterations can have an effect."""
+    if image_composite_converter.np is None or image_composite_converter.cv2 is None:
+        pytest.skip("numpy/cv2 not available in this environment")
+
+    np = image_composite_converter.np
+    cv2 = image_composite_converter.cv2
+    if np is None or cv2 is None:
+        pytest.skip("numpy/cv2 not available in this environment")
+
+    original_find_contours = cv2.findContours
+    called_methods: list[int] = []
+
+    def _wrapped_find_contours(*args, **kwargs):
+        if len(args) >= 3:
+            called_methods.append(int(args[2]))
+        return original_find_contours(*args, **kwargs)
+
+    monkeypatch.setattr(cv2, "findContours", _wrapped_find_contours)
+
+    # white background + dark square foreground => at least one contour
+    img = np.full((24, 24, 3), 255, dtype=np.uint8)
+    cv2.rectangle(img, (5, 5), (18, 18), (90, 90, 90), thickness=-1)
+
+    paths = Action.trace_image_segment(img, epsilon_factor=0.01)
+
+    assert paths
+    assert called_methods
+    assert all(method == cv2.CHAIN_APPROX_NONE for method in called_methods)

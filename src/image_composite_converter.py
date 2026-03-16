@@ -2600,7 +2600,13 @@ class Action:
                 continue
 
             mask = cv2.inRange(img_quant, color, color)
-            contours, _ = cv2.findContours(mask, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+            # Keep the raw contour points and let approxPolyDP control how much
+            # simplification is applied via `epsilon_factor`.
+            #
+            # With CHAIN_APPROX_SIMPLE, OpenCV already drops many intermediate
+            # points, which can make the iterative epsilon sweep effectively a
+            # no-op (same polygon across all iterations).
+            contours, _ = cv2.findContours(mask, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
             hex_color = rgb_to_hex(color[::-1])
 
             for contour in contours:

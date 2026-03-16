@@ -478,6 +478,18 @@ def test_in_requested_range_excludes_values_outside_span() -> None:
     assert image_composite_converter._in_requested_range("AB9999_L.jpg", "AC0000", "ZZ9999") is False
 
 
+
+
+def test_in_requested_range_includes_non_reference_filenames() -> None:
+    """Non XX0000 filenames should not be filtered out by range settings."""
+    assert image_composite_converter._in_requested_range("LOGO.JPG", "AC0000", "ZZ9999") is True
+
+
+def test_in_requested_range_supports_one_sided_bounds() -> None:
+    """When one bound is invalid, the valid bound should still be applied."""
+    assert image_composite_converter._in_requested_range("AC0812_L.jpg", "", "AC0812") is True
+    assert image_composite_converter._in_requested_range("AC0813_L.jpg", "", "AC0812") is False
+
 def test_convert_range_does_not_skip_variants_in_quality_passes(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

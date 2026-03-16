@@ -20,6 +20,14 @@
       <quell_hinweise>
         <hinweis>Dateiname analysiert; Symbolform konnte keiner vorhandenen Wurzelform aus der Tabelle sicher zugeordnet werden. Bitte manuell prüfen.</hinweis>
       </quell_hinweise>
+      <bildbeschreibungen>
+        <bildbeschreibung bild="z_202.jpg">Geometrie: liegendes, stark langgezogenes Rechteck (Rohr). Farbverlauf vertikal von oben nach unten: dunkel → hell → dunkel → sehr dunkel, mit zusätzlicher heller Linie ganz unten. Konverter-Hinweis: Grundform Rechteck ist nachzeichnbar; komplexer Mehrzonen-Verlauf und schmale Abschlusslinie sind nur eingeschränkt bzw. derzeit nicht exakt mit Standard-Primitive des image_composite_converter reproduzierbar.</bildbeschreibung>
+        <bildbeschreibung bild="z_111.jpg">Geometrie: halb offene Hand. Kontur dunkelgrau, Innenfläche hautfarben und weitgehend einfarbig. Konverter-Hinweis: Freiform-Handkontur liegt außerhalb der robust unterstützten Standard-Geometrien (Kreis/Ellipse/Rechteck/Badge-Bestandteile) und sollte als "nicht automatisch nachzeichnbar" markiert werden.</bildbeschreibung>
+      </bildbeschreibungen>
+      <konverter_markierungen>
+        <markierung bild="z_202.jpg" status="teilweise_nachzeichnbar">Rechteckkörper ja; Mehrstufen-Farbverlauf + helle Bodenlinie nur eingeschränkt.</markierung>
+        <markierung bild="z_111.jpg" status="nicht_nachzeichnbar">Organische Hand-Freiform außerhalb der Konverter-Geometrien.</markierung>
+      </konverter_markierungen>
       <bilder>
         <bild>z_111.jpg</bild>
         <bild>z_113.jpg</bild>

@@ -778,7 +778,7 @@
       "args": [
         "${workspaceFolder}/artifacts/images_to_convert",
         "--csv-path",
-        "${workspaceFolder}/artifacts/images_to_convert/reference_roundtrip_3symbols.csv",
+        "${workspaceFolder}/artifacts/images_to_convert/Finale_Wurzelformen_V3.xml",
         "--output-dir",
         "${workspaceFolder}/artifacts/converted_images",
         "--start",

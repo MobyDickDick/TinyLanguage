@@ -525,8 +525,37 @@ def test_run_iteration_pipeline_breaks_early_on_flat_composite_error(
 
     out = capsys.readouterr().out
     assert "Früher Abbruch: Diff-Fehler blieb" in out
+    assert "Konvergenzdiagnose: Plateau ohne messbare Verbesserung" in out
     iter_lines = [line for line in out.splitlines() if "[Iter" in line]
     assert len(iter_lines) < 128
+
+
+def test_validate_semantic_description_alignment_rejects_non_semantic_cross_shape() -> None:
+    """A plain X-shape should not pass as circle+horizontal-line+CO₂ semantic badge."""
+    if image_composite_converter.np is None or image_composite_converter.cv2 is None:
+        pytest.skip("numpy/cv2 not available in this environment")
+
+    np = image_composite_converter.np
+    if np is None:
+        pytest.skip("numpy not available in this environment")
+    cv2 = image_composite_converter.cv2
+
+    h, w = 78, 51
+    img = np.full((h, w, 3), 255, dtype=np.uint8)
+    line_color = (180, 180, 180)
+    cv2.line(img, (6, 8), (w - 8, h - 8), line_color, 3)
+    cv2.line(img, (w - 8, 8), (6, h - 8), line_color, 3)
+
+    badge_params = Action._default_ac0834_params(w, h)
+    issues = Action.validate_semantic_description_alignment(
+        img,
+        ["SEMANTIC: Kreis + Buchstabe CO_2", "SEMANTIC: waagrechter Strich rechts vom Kreis"],
+        badge_params,
+    )
+
+    assert any("Kreis" in issue for issue in issues)
+    assert any("waagrechter Strich" in issue for issue in issues)
+    assert any("Text" in issue or "CO₂" in issue or "CO_2" in issue for issue in issues)
 
 
 

@@ -4833,19 +4833,113 @@ class Action:
         return issues
 
     @staticmethod
+    def _detect_semantic_primitives(img_orig: np.ndarray) -> dict[str, bool]:
+        """Detect coarse semantic primitives directly from the raw bitmap.
+
+        This guard is intentionally conservative: it should flag obvious non-badge
+        inserts (e.g. arbitrary crossing lines) before we accept semantic badge
+        reconstruction from templated defaults.
+        """
+        h, w = img_orig.shape[:2]
+        if h <= 0 or w <= 0:
+            return {"circle": False, "arm": False, "text": False}
+
+        gray = cv2.cvtColor(img_orig, cv2.COLOR_BGR2GRAY)
+        fg_mask = Action._foreground_mask(img_orig).astype(np.uint8)
+        min_side = max(1, min(h, w))
+
+        # Circle cue: require at least one plausible Hough circle.
+        circles = cv2.HoughCircles(
+            cv2.GaussianBlur(gray, (5, 5), 0),
+            cv2.HOUGH_GRADIENT,
+            dp=1.0,
+            minDist=max(8.0, min_side * 0.30),
+            param1=90,
+            param2=max(8, int(round(min_side * 0.22))),
+            minRadius=max(3, int(round(min_side * 0.12))),
+            maxRadius=max(8, int(round(min_side * 0.48))),
+        )
+        has_circle = circles is not None and circles.size > 0
+
+        # Horizontal line cue: long near-horizontal segment via probabilistic Hough.
+        has_arm = False
+        edges = cv2.Canny(gray, 45, 140)
+        lines = cv2.HoughLinesP(
+            edges,
+            rho=1,
+            theta=np.pi / 180.0,
+            threshold=max(8, int(round(min_side * 0.28))),
+            minLineLength=max(6, int(round(float(w) * 0.22))),
+            maxLineGap=max(3, int(round(min_side * 0.06))),
+        )
+        if lines is not None:
+            for seg in lines.reshape(-1, 4):
+                x1, y1, x2, y2 = [int(v) for v in seg]
+                dx = abs(x2 - x1)
+                dy = abs(y2 - y1)
+                if dx < max(6, int(round(float(w) * 0.20))):
+                    continue
+                if dy > max(1, int(round(dx * 0.18))):
+                    continue
+                has_arm = True
+                break
+
+        # Text cue: several small-ish connected components in center ROI.
+        has_text = False
+        x1 = max(0, int(round(float(w) * 0.15)))
+        x2 = min(w, int(round(float(w) * 0.85)))
+        y1 = max(0, int(round(float(h) * 0.20)))
+        y2 = min(h, int(round(float(h) * 0.80)))
+        roi = fg_mask[y1:y2, x1:x2]
+        if roi.size > 0:
+            n_labels, _labels, stats, _centroids = cv2.connectedComponentsWithStats(roi, connectivity=8)
+            small_component_count = 0
+            total_small_area = 0
+            max_small_area = max(3, int(round(float(roi.shape[0] * roi.shape[1]) * 0.12)))
+            for label_idx in range(1, n_labels):
+                area = int(stats[label_idx, cv2.CC_STAT_AREA])
+                if 2 <= area <= max_small_area:
+                    small_component_count += 1
+                    total_small_area += area
+            has_text = small_component_count >= 2 and total_small_area >= max(6, int(round(float(min_side) * 0.45)))
+
+        return {
+            "circle": bool(has_circle),
+            "arm": bool(has_arm),
+            "text": bool(has_text),
+        }
+
+    @staticmethod
     def validate_semantic_description_alignment(
         img_orig: np.ndarray,
         semantic_elements: list[str],
         badge_params: dict,
     ) -> list[str]:
         expected = Action._expected_semantic_presence(semantic_elements)
+        structural = Action._detect_semantic_primitives(img_orig)
         observed = {
-            "circle": Action.extract_badge_element_mask(img_orig, badge_params, "circle") is not None,
+            "circle": (
+                Action.extract_badge_element_mask(img_orig, badge_params, "circle") is not None
+                and bool(structural.get("circle", False))
+            ),
             "stem": Action.extract_badge_element_mask(img_orig, badge_params, "stem") is not None,
-            "arm": Action.extract_badge_element_mask(img_orig, badge_params, "arm") is not None,
-            "text": Action.extract_badge_element_mask(img_orig, badge_params, "text") is not None,
+            "arm": (
+                Action.extract_badge_element_mask(img_orig, badge_params, "arm") is not None
+                and bool(structural.get("arm", False))
+            ),
+            "text": (
+                Action.extract_badge_element_mask(img_orig, badge_params, "text") is not None
+                and bool(structural.get("text", False))
+            ),
         }
-        return Action._semantic_presence_mismatches(expected, observed)
+        issues = Action._semantic_presence_mismatches(expected, observed)
+        if expected.get("circle") and not structural.get("circle", False):
+            issues.append("Strukturprüfung: Kein belastbarer Kreis-Kandidat im Rohbild erkannt")
+        if expected.get("arm") and not structural.get("arm", False):
+            issues.append("Strukturprüfung: Kein belastbarer waagrechter Linien-Kandidat im Rohbild erkannt")
+        if expected.get("text") and not structural.get("text", False):
+            issues.append("Strukturprüfung: Keine belastbare Textstruktur (z.B. CO₂) im Rohbild erkannt")
+        return issues
 
     @staticmethod
     def validate_badge_by_elements(
@@ -5102,6 +5196,7 @@ def run_iteration_pipeline(
     plateau_patience = min(max_iterations, max(8, max_iterations // 6))
     plateau_streak = 0
     previous_error: float | None = None
+    stop_reason = "max_iterations"
     for i, eps in enumerate(epsilon_factors):
         svg_content = Action.generate_composite_svg(w, h, params, folder_path, float(eps))
 
@@ -5128,9 +5223,17 @@ def run_iteration_pipeline(
                 "  -> Früher Abbruch: Diff-Fehler blieb "
                 f"{plateau_streak + 1} Iterationen innerhalb ±{plateau_tolerance:.0e}"
             )
+            stop_reason = "plateau"
             break
 
     print(f"-> Bester Match in Iteration {best_iter} (Fehler auf {best_error:.2f} reduziert)")
+    if stop_reason == "plateau":
+        if best_iter <= 1:
+            print("-> Konvergenzdiagnose: Plateau ohne messbare Verbesserung (Parameterraum ggf. erweitern)")
+        else:
+            print("-> Konvergenzdiagnose: Plateau nach Verbesserung erreicht (lokales Optimum wahrscheinlich)")
+    else:
+        print("-> Konvergenzdiagnose: Iterationsbudget ausgeschöpft (Optimum unklar, ggf. Suchraum erweitern)")
 
     base = os.path.splitext(filename)[0]
     with open(os.path.join(svg_out_dir, f"{base}.svg"), "w", encoding="utf-8") as f:
@@ -5140,6 +5243,7 @@ def run_iteration_pipeline(
 
     _write_validation_log([
         "status=composite_ok",
+        f"convergence={stop_reason}",
         f"best_iter={int(best_iter)}",
         f"best_error={float(best_error):.6f}",
     ])

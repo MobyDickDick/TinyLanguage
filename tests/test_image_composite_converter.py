@@ -461,6 +461,74 @@ def test_run_iteration_pipeline_element_validation_log_contains_run_meta(
     assert "nonce_ns=" in first_line
 
 
+def test_run_iteration_pipeline_breaks_early_on_flat_composite_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Composite search should stop early once the diff error is flat for long enough."""
+    if image_composite_converter.np is None or image_composite_converter.cv2 is None:
+        pytest.skip("numpy/cv2 not available in this environment")
+
+    np = image_composite_converter.np
+    if np is None:
+        pytest.skip("numpy not available in this environment")
+    cv2 = image_composite_converter.cv2
+
+    img = np.full((8, 8, 3), 200, dtype=np.uint8)
+    img_path = tmp_path / "AC0001_L.jpg"
+    csv_path = tmp_path / "data.csv"
+    svg_dir = tmp_path / "svg"
+    diff_dir = tmp_path / "diff"
+    csv_path.write_text("Wurzelform;Beschreibung\nAC0001;composite\n", encoding="utf-8")
+    assert cv2.imwrite(str(img_path), img)
+
+    monkeypatch.setattr(
+        image_composite_converter.Reflection,
+        "parse_description",
+        lambda *_args, **_kwargs: (
+            "composite",
+            {"mode": "composite", "elements": ["OBEN"], "parts": [{"position": "top", "source": "DER"}]},
+        ),
+    )
+    monkeypatch.setattr(
+        image_composite_converter.Action,
+        "generate_composite_svg",
+        staticmethod(lambda *_args, **_kwargs: '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"/>'),
+    )
+    monkeypatch.setattr(
+        image_composite_converter.Action,
+        "render_svg_to_numpy",
+        staticmethod(lambda _svg, w, h: np.full((h, w, 3), 200, dtype=np.uint8)),
+    )
+    monkeypatch.setattr(
+        image_composite_converter.Action,
+        "calculate_error",
+        staticmethod(lambda *_args, **_kwargs: 42.0),
+    )
+    monkeypatch.setattr(
+        image_composite_converter.Action,
+        "create_diff_image",
+        staticmethod(lambda a, _b: a.copy()),
+    )
+
+    res = image_composite_converter.run_iteration_pipeline(
+        str(img_path),
+        str(csv_path),
+        128,
+        str(svg_dir),
+        str(diff_dir),
+    )
+    assert res is not None
+    assert res[3] == 1
+    assert float(res[4]) == pytest.approx(42.0)
+
+    out = capsys.readouterr().out
+    assert "Früher Abbruch: Diff-Fehler blieb" in out
+    iter_lines = [line for line in out.splitlines() if "[Iter" in line]
+    assert len(iter_lines) < 128
+
+
 
 
 def test_in_requested_range_accepts_cross_prefix_span() -> None:

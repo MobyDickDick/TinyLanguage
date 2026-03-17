@@ -530,6 +530,34 @@ def test_run_iteration_pipeline_breaks_early_on_flat_composite_error(
     assert len(iter_lines) < 128
 
 
+
+
+def test_validate_semantic_description_alignment_requires_co2_text_region(monkeypatch: pytest.MonkeyPatch) -> None:
+    """CO₂ semantic badges should fail when no usable foreground text region exists."""
+    if image_composite_converter.np is None:
+        pytest.skip("numpy not available in this environment")
+
+    np = image_composite_converter.np
+    assert np is not None
+    img = np.full((20, 20, 3), 255, dtype=np.uint8)
+    badge_params = Action._apply_co2_label(Action._default_ac0870_params(20, 20))
+
+    monkeypatch.setattr(
+        Action,
+        "_detect_semantic_primitives",
+        staticmethod(lambda *_args, **_kwargs: {"circle": True, "arm": False, "text": True}),
+    )
+    monkeypatch.setattr(Action, "extract_badge_element_mask", staticmethod(lambda *_args, **_kwargs: None))
+
+    issues = Action.validate_semantic_description_alignment(
+        img,
+        ["SEMANTIC: Kreis + Buchstabe CO_2"],
+        badge_params,
+    )
+
+    assert any("CO₂-Textregion" in issue for issue in issues)
+
+
 def test_validate_semantic_description_alignment_rejects_non_semantic_cross_shape() -> None:
     """A plain X-shape should not pass as circle+horizontal-line+CO₂ semantic badge."""
     if image_composite_converter.np is None or image_composite_converter.cv2 is None:

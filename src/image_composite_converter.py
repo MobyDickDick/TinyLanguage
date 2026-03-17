@@ -4859,7 +4859,39 @@ class Action:
             minRadius=max(3, int(round(min_side * 0.12))),
             maxRadius=max(8, int(round(min_side * 0.48))),
         )
-        has_circle = circles is not None and circles.size > 0
+        has_circle = False
+        if circles is not None and circles.size > 0:
+            circle_candidates = np.round(circles[0, :]).astype(int)
+            for cx, cy, radius in circle_candidates:
+                r = int(max(3, radius))
+                yy, xx = np.ogrid[:h, :w]
+                dist = np.sqrt((xx - int(cx)) ** 2 + (yy - int(cy)) ** 2)
+                ring = np.abs(dist - float(r)) <= max(1.2, float(r) * 0.20)
+                ring_count = int(np.sum(ring))
+                if ring_count <= 0:
+                    continue
+
+                support = fg_mask[ring] > 0
+                support_ratio = float(np.mean(support))
+                if support_ratio < 0.24:
+                    continue
+
+                # Require broad angular coverage so tiny arcs/noisy crescents
+                # cannot pass as semantic circles.
+                bins = 12
+                coverage_bins = np.zeros(bins, dtype=np.uint8)
+                ring_coords = np.argwhere(ring)
+                for py, px in ring_coords:
+                    if fg_mask[py, px] <= 0:
+                        continue
+                    ang = math.atan2(float(py - cy), float(px - cx))
+                    idx = int(((ang + math.pi) / (2.0 * math.pi)) * bins) % bins
+                    coverage_bins[idx] = 1
+                if int(np.sum(coverage_bins)) < 6:
+                    continue
+
+                has_circle = True
+                break
 
         # Horizontal line cue: long near-horizontal segment via probabilistic Hough.
         has_arm = False
@@ -4895,13 +4927,23 @@ class Action:
             n_labels, _labels, stats, _centroids = cv2.connectedComponentsWithStats(roi, connectivity=8)
             small_component_count = 0
             total_small_area = 0
+            compact_component_count = 0
             max_small_area = max(3, int(round(float(roi.shape[0] * roi.shape[1]) * 0.12)))
             for label_idx in range(1, n_labels):
                 area = int(stats[label_idx, cv2.CC_STAT_AREA])
                 if 2 <= area <= max_small_area:
+                    width = int(stats[label_idx, cv2.CC_STAT_WIDTH])
+                    height = int(stats[label_idx, cv2.CC_STAT_HEIGHT])
+                    aspect = float(width) / max(1.0, float(height))
                     small_component_count += 1
                     total_small_area += area
-            has_text = small_component_count >= 2 and total_small_area >= max(6, int(round(float(min_side) * 0.45)))
+                    if 0.25 <= aspect <= 4.0:
+                        compact_component_count += 1
+            has_text = (
+                small_component_count >= 2
+                and compact_component_count >= 2
+                and total_small_area >= max(6, int(round(float(min_side) * 0.45)))
+            )
 
         return {
             "circle": bool(has_circle),
@@ -4916,6 +4958,7 @@ class Action:
         badge_params: dict,
     ) -> list[str]:
         expected = Action._expected_semantic_presence(semantic_elements)
+        expected_co2 = any("co_2" in str(elem).lower() or "co₂" in str(elem).lower() for elem in semantic_elements)
         structural = Action._detect_semantic_primitives(img_orig)
         observed = {
             "circle": (
@@ -4939,6 +4982,31 @@ class Action:
             issues.append("Strukturprüfung: Kein belastbarer waagrechter Linien-Kandidat im Rohbild erkannt")
         if expected.get("text") and not structural.get("text", False):
             issues.append("Strukturprüfung: Keine belastbare Textstruktur (z.B. CO₂) im Rohbild erkannt")
+        if expected_co2 and expected.get("text"):
+            text_mask = Action.extract_badge_element_mask(img_orig, badge_params, "text")
+            if text_mask is None:
+                issues.append("Strukturprüfung: CO₂-Textregion enthält keine verwertbaren Vordergrundpixel")
+            else:
+                ys, xs = np.where(text_mask)
+                if ys.size == 0 or xs.size == 0:
+                    issues.append("Strukturprüfung: CO₂-Textregion konnte nicht lokalisiert werden")
+                else:
+                    x1, x2 = int(xs.min()), int(xs.max())
+                    y1, y2 = int(ys.min()), int(ys.max())
+                    roi = Action._foreground_mask(img_orig)[y1 : y2 + 1, x1 : x2 + 1].astype(np.uint8)
+                    n_labels, _labels, stats, _centroids = cv2.connectedComponentsWithStats(roi, connectivity=8)
+                    compact = 0
+                    for idx in range(1, n_labels):
+                        area = int(stats[idx, cv2.CC_STAT_AREA])
+                        if area < 2:
+                            continue
+                        width = int(stats[idx, cv2.CC_STAT_WIDTH])
+                        height = int(stats[idx, cv2.CC_STAT_HEIGHT])
+                        aspect = float(width) / max(1.0, float(height))
+                        if 0.2 <= aspect <= 4.5:
+                            compact += 1
+                    if compact < 2:
+                        issues.append("Strukturprüfung: Erwartete CO₂-Glyphenstruktur nicht ausreichend belegt")
         return issues
 
     @staticmethod

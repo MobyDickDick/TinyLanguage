@@ -674,6 +674,99 @@ def test_convert_range_does_not_skip_variants_in_quality_passes(
     assert all(not skip_set for skip_set in observed_skips)
 
 
+def test_template_transfer_donor_family_compatible() -> None:
+    assert image_composite_converter._template_transfer_donor_family_compatible("GE011", "GE020") is True
+    assert image_composite_converter._template_transfer_donor_family_compatible("GE011", "AC0812") is False
+    assert image_composite_converter._template_transfer_donor_family_compatible("DLG0000", "DLG0015") is True
+    assert image_composite_converter._template_transfer_donor_family_compatible("DLG0000", "AC0812") is False
+    assert image_composite_converter._template_transfer_donor_family_compatible("NAV0020", "NAV0030") is True
+    assert image_composite_converter._template_transfer_donor_family_compatible("NAV0020", "AC5000") is False
+    assert image_composite_converter._template_transfer_donor_family_compatible("LOGO", "AC0812") is True
+    assert image_composite_converter._template_transfer_donor_family_compatible(
+        "GE0000",
+        "AC0010",
+        documented_alias_refs={"AC0010"},
+    ) is True
+
+
+def test_parse_description_extracts_documented_alias_refs() -> None:
+    raw = {"GE0000": "Kreisform wie AC0010 und Kante wie in AC0501"}
+    _desc, params = image_composite_converter.Reflection(raw).parse_description("GE0000", "GE0000_S.jpg")
+    assert set(params.get("documented_alias_refs", [])) == {"AC0010", "AC0501"}
+
+
+def test_template_transfer_skips_cross_family_donor_for_non_semantic(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    if image_composite_converter.np is None or image_composite_converter.cv2 is None:
+        pytest.skip("numpy/cv2 not available in this environment")
+
+    np = image_composite_converter.np
+    cv2 = image_composite_converter.cv2
+    if np is None or cv2 is None:
+        pytest.skip("numpy/cv2 not available in this environment")
+
+    img = np.full((12, 12, 3), 220, dtype=np.uint8)
+    folder_path = tmp_path / "images"
+    svg_out = tmp_path / "svg"
+    diff_out = tmp_path / "diff"
+    folder_path.mkdir()
+    svg_out.mkdir()
+    diff_out.mkdir()
+
+    target_filename = "GE0110_S.jpg"
+    assert cv2.imwrite(str(folder_path / target_filename), img)
+    (svg_out / "GE0110_S.svg").write_text('<svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"/>', encoding="utf-8")
+    (svg_out / "AC0812_S.svg").write_text('<svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"/>', encoding="utf-8")
+
+    target_row = {
+        "filename": target_filename,
+        "variant": "GE0110_S",
+        "base": "GE0110",
+        "params": {"mode": "composite"},
+        "best_error": 100.0,
+        "error_per_pixel": 100.0 / 144.0,
+        "w": 12,
+        "h": 12,
+    }
+    donor_rows = [
+        {
+            "variant": "AC0812_S",
+            "base": "AC0812",
+            "params": {"mode": "composite"},
+            "error_per_pixel": 0.1,
+            "best_error": 14.0,
+            "w": 12,
+            "h": 12,
+        }
+    ]
+
+    monkeypatch.setattr(image_composite_converter, "_rank_template_transfer_donors", lambda _t, d: d)
+    monkeypatch.setattr(image_composite_converter, "_read_svg_geometry", lambda _p: None)
+
+    called: dict[str, int] = {"build": 0}
+
+    def fail_if_called(*_args, **_kwargs):
+        called["build"] += 1
+        return "<svg/>"
+
+    monkeypatch.setattr(image_composite_converter, "_build_transformed_svg_from_template", fail_if_called)
+
+    updated, detail = image_composite_converter._try_template_transfer(
+        target_row=target_row,
+        donor_rows=donor_rows,
+        folder_path=str(folder_path),
+        svg_out_dir=str(svg_out),
+        diff_out_dir=str(diff_out),
+        rng=None,
+    )
+
+    assert updated is None
+    assert detail is None
+    assert called["build"] == 0
+
+
 def test_co2_layout_keeps_subscript_inside_inner_circle_for_centered_badges() -> None:
     """Centered CO₂ badges should keep the subscript inside the inner circle."""
     params = Action._apply_co2_label(Action._default_ac0870_params(15, 15))

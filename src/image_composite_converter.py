@@ -563,6 +563,7 @@ class Reflection:
             "bottom_shape": None,
             "elements": [],
             "label": "M",
+            "documented_alias_refs": sorted(Reflection._extract_documented_alias_refs(desc)),
         }
 
         semantic_symbol = symbol_upper.startswith("AC08") or symbol_upper == "AR0100"
@@ -650,6 +651,18 @@ class Reflection:
         subscript_digit_map = str.maketrans("₀₁₂₃₄₅₆₇₈₉", "0123456789")
         normalized = text.lower().translate(subscript_digit_map)
         return re.search(r"(^|[^a-z])co([^a-z]|$)", normalized) is not None
+
+    @staticmethod
+    def _extract_documented_alias_refs(text: str) -> set[str]:
+        """Extract explicit "Wie AC0000" style alias references from descriptions."""
+        if not text:
+            return set()
+
+        refs = {
+            match.upper()
+            for match in re.findall(r"\bwie(?:\s+in)?\s+([a-z]{2}\d{3,4})\b", text, flags=re.IGNORECASE)
+        }
+        return refs
 
     @staticmethod
     def _parse_semantic_badge_layout_overrides(text: str) -> dict[str, float | str]:
@@ -5325,6 +5338,14 @@ def _extract_ref_parts(name: str) -> tuple[str, int] | None:
     return match.group(1), int(match.group(2))
 
 
+def _extract_symbol_family(name: str) -> str | None:
+    """Extract 2-3 letter corpus family prefixes such as AC, GE, DLG, or NAV."""
+    match = re.match(r"^([A-Z]{2,3})\d{3,4}$", str(name).upper())
+    if not match:
+        return None
+    return match.group(1)
+
+
 def _in_requested_range(filename: str, start_ref: str, end_ref: str) -> bool:
     stem = get_base_name_from_file(os.path.splitext(filename)[0]).upper()
     stem_parts = _extract_ref_parts(stem)
@@ -5666,14 +5687,23 @@ def _rank_template_transfer_donors(
     return [donor for _, donor in ranked]
 
 
-def _template_transfer_donor_family_compatible(target_base: str, donor_base: str) -> bool:
-    """Allow fallback transfer only within the same symbolic family (e.g. GE↔GE)."""
-    target_parts = _extract_ref_parts(str(target_base).upper())
-    donor_parts = _extract_ref_parts(str(donor_base).upper())
-    if target_parts is None or donor_parts is None:
+def _template_transfer_donor_family_compatible(
+    target_base: str,
+    donor_base: str,
+    *,
+    documented_alias_refs: set[str] | None = None,
+) -> bool:
+    """Allow fallback transfer within family, plus documented cross-family aliases."""
+    alias_refs = {str(v).upper() for v in (documented_alias_refs or set()) if str(v).strip()}
+    if donor_base.upper() in alias_refs:
+        return True
+
+    target_family = _extract_symbol_family(target_base)
+    donor_family = _extract_symbol_family(donor_base)
+    if target_family is None or donor_family is None:
         # Keep legacy behavior for non-standard names where family extraction fails.
         return True
-    return target_parts[0] == donor_parts[0]
+    return target_family == donor_family
 
 
 
@@ -5907,6 +5937,11 @@ def _try_template_transfer(
     target_svg_geometry = _read_svg_geometry(target_svg_path)
     target_geom_params = dict(target_svg_geometry[2]) if target_svg_geometry is not None else None
     target_params_raw = target_row.get("params")
+    target_alias_refs: set[str] = set()
+    if isinstance(target_params_raw, dict):
+        alias_values = target_params_raw.get("documented_alias_refs", [])
+        if isinstance(alias_values, list):
+            target_alias_refs = {str(v).upper() for v in alias_values if str(v).strip()}
     target_is_semantic = isinstance(target_params_raw, dict) and str(target_params_raw.get("mode", "")) == "semantic_badge"
     ordered_donors = _rank_template_transfer_donors(target_row, donor_rows)
     if rng is not None and len(ordered_donors) > 1:
@@ -5919,7 +5954,11 @@ def _try_template_transfer(
         donor_base = str(donor.get("base", "")).upper()
         if not donor_variant or donor_variant == target_variant:
             continue
-        if not target_is_semantic and not _template_transfer_donor_family_compatible(target_base, donor_base):
+        if not target_is_semantic and not _template_transfer_donor_family_compatible(
+            target_base,
+            donor_base,
+            documented_alias_refs=target_alias_refs,
+        ):
             continue
         donor_svg_path = os.path.join(svg_out_dir, f"{donor_variant}.svg")
         if not os.path.exists(donor_svg_path):

@@ -677,7 +677,22 @@ def test_convert_range_does_not_skip_variants_in_quality_passes(
 def test_template_transfer_donor_family_compatible() -> None:
     assert image_composite_converter._template_transfer_donor_family_compatible("GE011", "GE020") is True
     assert image_composite_converter._template_transfer_donor_family_compatible("GE011", "AC0812") is False
+    assert image_composite_converter._template_transfer_donor_family_compatible("DLG0000", "DLG0015") is True
+    assert image_composite_converter._template_transfer_donor_family_compatible("DLG0000", "AC0812") is False
+    assert image_composite_converter._template_transfer_donor_family_compatible("NAV0020", "NAV0030") is True
+    assert image_composite_converter._template_transfer_donor_family_compatible("NAV0020", "AC5000") is False
     assert image_composite_converter._template_transfer_donor_family_compatible("LOGO", "AC0812") is True
+    assert image_composite_converter._template_transfer_donor_family_compatible(
+        "GE0000",
+        "AC0010",
+        documented_alias_refs={"AC0010"},
+    ) is True
+
+
+def test_parse_description_extracts_documented_alias_refs() -> None:
+    raw = {"GE0000": "Kreisform wie AC0010 und Kante wie in AC0501"}
+    _desc, params = image_composite_converter.Reflection(raw).parse_description("GE0000", "GE0000_S.jpg")
+    assert set(params.get("documented_alias_refs", [])) == {"AC0010", "AC0501"}
 
 
 def test_template_transfer_skips_cross_family_donor_for_non_semantic(

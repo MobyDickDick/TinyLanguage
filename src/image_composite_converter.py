@@ -5666,6 +5666,16 @@ def _rank_template_transfer_donors(
     return [donor for _, donor in ranked]
 
 
+def _template_transfer_donor_family_compatible(target_base: str, donor_base: str) -> bool:
+    """Allow fallback transfer only within the same symbolic family (e.g. GE↔GE)."""
+    target_parts = _extract_ref_parts(str(target_base).upper())
+    donor_parts = _extract_ref_parts(str(donor_base).upper())
+    if target_parts is None or donor_parts is None:
+        # Keep legacy behavior for non-standard names where family extraction fails.
+        return True
+    return target_parts[0] == donor_parts[0]
+
+
 
 
 def _semantic_transfer_rotations(target_params: dict[str, object], donor_params: dict[str, object]) -> tuple[int, ...]:
@@ -5892,6 +5902,7 @@ def _try_template_transfer(
     best_scale = 1.0
 
     target_variant = str(target_row.get("variant", "")).upper()
+    target_base = str(target_row.get("base", "")).upper()
     target_svg_path = os.path.join(svg_out_dir, f"{target_variant}.svg")
     target_svg_geometry = _read_svg_geometry(target_svg_path)
     target_geom_params = dict(target_svg_geometry[2]) if target_svg_geometry is not None else None
@@ -5905,7 +5916,10 @@ def _try_template_transfer(
         ordered_donors = head + tail
     for donor in ordered_donors:
         donor_variant = str(donor.get("variant", "")).upper()
+        donor_base = str(donor.get("base", "")).upper()
         if not donor_variant or donor_variant == target_variant:
+            continue
+        if not target_is_semantic and not _template_transfer_donor_family_compatible(target_base, donor_base):
             continue
         donor_svg_path = os.path.join(svg_out_dir, f"{donor_variant}.svg")
         if not os.path.exists(donor_svg_path):

@@ -7,6 +7,7 @@ it can be executed directly or via TinyLanguage (`src_tiny/image_composite_conve
 from __future__ import annotations
 
 import argparse
+import base64
 import contextlib
 import csv
 import json
@@ -22,6 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import importlib
 import io
+import struct
 
 try:
     import cv2
@@ -5389,7 +5391,84 @@ def _conversion_random() -> random.Random:
 
 def _default_converted_symbols_root() -> str:
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(repo_root, "artifacts", "converted_symbols")
+    return os.path.join(repo_root, "artifacts", "converted_images_svg")
+
+
+def _sniff_raster_size(path: str | Path) -> tuple[int, int]:
+    file_path = Path(path)
+    with file_path.open("rb") as fh:
+        header = fh.read(32)
+
+    if header.startswith(b"\x89PNG\r\n\x1a\n") and len(header) >= 24:
+        return struct.unpack(">II", header[16:24])
+
+    if header[:6] in {b"GIF87a", b"GIF89a"} and len(header) >= 10:
+        return struct.unpack("<HH", header[6:10])
+
+    if header.startswith(b"BM"):
+        with file_path.open("rb") as fh:
+            fh.seek(18)
+            dib = fh.read(8)
+        if len(dib) == 8:
+            width, height = struct.unpack("<ii", dib)
+            return abs(int(width)), abs(int(height))
+
+    if header.startswith(b"\xff\xd8"):
+        with file_path.open("rb") as fh:
+            fh.seek(2)
+            while True:
+                marker_prefix = fh.read(1)
+                if not marker_prefix:
+                    break
+                if marker_prefix != b"\xff":
+                    continue
+                marker = fh.read(1)
+                while marker == b"\xff":
+                    marker = fh.read(1)
+                if marker in {b"\xd8", b"\xd9"}:
+                    continue
+                size_bytes = fh.read(2)
+                if len(size_bytes) != 2:
+                    break
+                segment_size = struct.unpack(">H", size_bytes)[0]
+                if marker in {
+                    b"\xc0", b"\xc1", b"\xc2", b"\xc3",
+                    b"\xc5", b"\xc6", b"\xc7",
+                    b"\xc9", b"\xca", b"\xcb",
+                    b"\xcd", b"\xce", b"\xcf",
+                }:
+                    payload = fh.read(5)
+                    if len(payload) != 5:
+                        break
+                    height, width = struct.unpack(">HH", payload[1:5])
+                    return int(width), int(height)
+                fh.seek(max(0, segment_size - 2), os.SEEK_CUR)
+
+    raise ValueError(f"Unsupported or unreadable raster image: {file_path}")
+
+
+def _svg_href_mime_type(path: str | Path) -> str:
+    ext = Path(path).suffix.lower()
+    return {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".gif": "image/gif",
+        ".bmp": "image/bmp",
+    }.get(ext, "application/octet-stream")
+
+
+def _render_embedded_raster_svg(input_path: str | Path) -> str:
+    width, height = _sniff_raster_size(input_path)
+    raw = Path(input_path).read_bytes()
+    encoded = base64.b64encode(raw).decode("ascii")
+    mime = _svg_href_mime_type(input_path)
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}">\n'
+        f'  <image width="{width}" height="{height}" href="data:{mime};base64,{encoded}"/>\n'
+        "</svg>\n"
+    )
 
 
 def _quality_config_path(reports_out_dir: str) -> str:
@@ -6094,7 +6173,7 @@ def convert_range(
     output_root: str | None = None,
 ) -> str:
     out_root = output_root or _default_converted_symbols_root()
-    svg_out_dir = os.path.join(out_root, "svg")
+    svg_out_dir = out_root
     diff_out_dir = os.path.join(out_root, "diff_pngs")
     reports_out_dir = os.path.join(out_root, "reports")
 
@@ -6105,8 +6184,26 @@ def convert_range(
     files = sorted(
         f
         for f in os.listdir(folder_path)
-        if f.lower().endswith((".bmp", ".jpg", ".png")) and _in_requested_range(f, start_ref, end_ref)
+        if f.lower().endswith((".bmp", ".jpg", ".png", ".gif")) and _in_requested_range(f, start_ref, end_ref)
     )
+    if cv2 is None or np is None:
+        log_path = os.path.join(reports_out_dir, "Iteration_Log.csv")
+        with open(log_path, mode="w", encoding="utf-8-sig", newline="") as f:
+            writer = csv.writer(f, delimiter=";")
+            writer.writerow(["Dateiname", "Gefundene Elemente", "Beste Iteration", "Diff-Score", "FehlerProPixel"])
+            for filename in files:
+                stem = os.path.splitext(filename)[0]
+                image_path = os.path.join(folder_path, filename)
+                svg_path = os.path.join(svg_out_dir, f"{stem}.svg")
+                with open(svg_path, "w", encoding="utf-8") as svg_file:
+                    svg_file.write(_render_embedded_raster_svg(image_path))
+                writer.writerow([filename, "embedded-raster", 0, "0.00", "0.00000000"])
+        with open(os.path.join(reports_out_dir, "fallback_mode.txt"), "w", encoding="utf-8") as f:
+            f.write(
+                "Fallback-Modus aktiv: fehlende numpy/opencv-Abhängigkeiten; "
+                "SVG-Dateien wurden als eingebettete Rasterbilder erzeugt.\n"
+            )
+        return out_root
     rng = _conversion_random()
     run_seed = rng.randrange(1 << 30)
     Action.STOCHASTIC_RUN_SEED = int(run_seed)
@@ -6960,20 +7057,26 @@ if __name__ == "__main__":
 
 def convert_image(input_path: str, output_path: str, *, max_iter: int = 120, plateau_limit: int = 14, seed: int = 42) -> Path:
     """Backward-compatible single-image conversion entrypoint."""
-    out = convert_range(
-        image_file=input_path,
-        output_dir=Path(output_path).parent,
-        max_iter=max_iter,
-        plateau_limit=plateau_limit,
-        seed=seed,
+    del max_iter, plateau_limit, seed
+    target = Path(output_path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+
+    if cv2 is None or np is None:
+        target.write_text(_render_embedded_raster_svg(input_path), encoding="utf-8")
+        return target
+
+    out_root = convert_range(
+        str(Path(input_path).parent),
+        "",
+        128,
+        start_ref=Path(input_path).stem,
+        end_ref=Path(input_path).stem,
+        output_root=str(target.parent),
     )
-    generated = out[0] if isinstance(out, list) and out else Path(output_path)
-    # Ensure caller-requested output location exists.
-    if Path(generated) != Path(output_path):
-        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        Path(generated).replace(output_path)
-        return Path(output_path)
-    return Path(generated)
+    generated = Path(out_root) / f"{Path(input_path).stem}.svg"
+    if generated != target:
+        generated.replace(target)
+    return target
 
 
 def convert_image_variants(*args, **kwargs):

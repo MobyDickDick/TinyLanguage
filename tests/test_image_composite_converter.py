@@ -2397,6 +2397,50 @@ def test_resolve_cli_csv_and_output_keeps_explicit_csv_over_autodetect(tmp_path:
     assert output_dir == "out_dir"
 
 
+def test_default_converted_symbols_root_points_to_converted_images_svg() -> None:
+    root = Path(conv._default_converted_symbols_root())
+
+    assert root.name == "converted_images_svg"
+    assert root.parent.name == "artifacts"
+
+
+def test_render_embedded_raster_svg_wraps_gif_without_optional_deps(tmp_path: Path) -> None:
+    gif_path = tmp_path / "sample.gif"
+    gif_path.write_bytes(
+        b"GIF89a"
+        + bytes([2, 0, 3, 0])
+        + b"\x80\x00\x00"
+        + b"\x00\x00\x00\xff\xff\xff"
+        + b",\x00\x00\x00\x00\x02\x00\x03\x00\x00\x02\x02D\x01\x00;"
+    )
+
+    svg = conv._render_embedded_raster_svg(gif_path)
+
+    assert 'width="2"' in svg
+    assert 'height="3"' in svg
+    assert "data:image/gif;base64," in svg
+
+
+def test_convert_image_fallback_writes_embedded_svg(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    jpg_path = tmp_path / "sample.jpg"
+    jpg_path.write_bytes(
+        b"\xff\xd8"
+        + b"\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00"
+        + b"\xff\xc0\x00\x11\x08\x00\x04\x00\x05\x03\x01\x22\x00\x02\x11\x01\x03\x11\x01"
+        + b"\xff\xd9"
+    )
+    out_path = tmp_path / "sample.svg"
+    monkeypatch.setattr(image_composite_converter, "cv2", None)
+    monkeypatch.setattr(image_composite_converter, "np", None)
+
+    result = conv.convert_image(jpg_path, out_path)
+
+    assert result == out_path
+    text = out_path.read_text(encoding="utf-8")
+    assert 'viewBox="0 0 5 4"' in text
+    assert "data:image/jpeg;base64," in text
+
+
 def test_load_description_mapping_from_xml_reads_wurzelform_key_and_images(tmp_path: Path) -> None:
     xml_path = tmp_path / "Finale_Wurzelformen_V3.xml"
     xml_path.write_text(

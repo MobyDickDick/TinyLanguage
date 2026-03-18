@@ -69,8 +69,61 @@ class Candidate:
     h: float
 
 
+def _candidate_pillow_site_packages() -> list[Path]:
+    repo_root = Path(__file__).resolve().parents[1]
+    return [
+        repo_root / ".venv" / "Lib" / "site-packages",
+        repo_root / ".venv" / "lib" / f"python{sys.version_info.major}.{sys.version_info.minor}" / "site-packages",
+    ]
+
+
+def _import_pillow_image_module():
+    try:
+        return importlib.import_module("PIL.Image")
+    except ModuleNotFoundError:
+        pass
+    except ImportError as exc:
+        raise RuntimeError(
+            "Pillow wurde gefunden, kann aber in dieser Python-/Plattform-Kombination nicht geladen werden. "
+            "Bitte eine zu diesem Linux-Python passende Pillow-Version installieren."
+        ) from exc
+
+    attempted: list[str] = []
+    for site_packages in _candidate_pillow_site_packages():
+        if not site_packages.exists():
+            continue
+        attempted.append(str(site_packages))
+        if str(site_packages) not in sys.path:
+            sys.path.insert(0, str(site_packages))
+        try:
+            return importlib.import_module("PIL.Image")
+        except ModuleNotFoundError:
+            continue
+        except ImportError as exc:
+            raise RuntimeError(
+                "Ein lokales Pillow wurde gefunden, aber die Binärmodule passen nicht zu dieser Laufzeit. "
+                "Ein Windows-Pillow aus '.venv/Lib/site-packages' kann unter Linux nicht verwendet werden; "
+                "benötigt wird eine Linux-Build passend zu Python "
+                f"{sys.version_info.major}.{sys.version_info.minor}."
+            ) from exc
+
+    attempted_text = ", ".join(attempted) if attempted else "keine zusätzlichen site-packages-Verzeichnisse gefunden"
+    raise RuntimeError(
+        "Pillow wird für das Shape-Tracing benötigt und konnte nicht importiert werden "
+        f"(geprüft: {attempted_text})."
+    )
+
+
+def _has_usable_pillow() -> bool:
+    try:
+        _import_pillow_image_module()
+    except RuntimeError:
+        return False
+    return True
+
+
 def load_grayscale_image(path: Path) -> list[list[int]]:
-    image_module = importlib.import_module("PIL.Image")
+    image_module = _import_pillow_image_module()
     gray = image_module.open(path).convert("L")
     w, h = gray.size
     px = gray.load()
@@ -344,8 +397,124 @@ def decompose_circle_with_stem(grayscale: list[list[int]], element: Element, can
     )
     return [rect, circle]
 
+
+def extract_elements(binary: list[list[int]], *, min_pixels: int = 6) -> list[Element]:
+    height = len(binary)
+    width = len(binary[0]) if height else 0
+    visited = [[False for _ in range(width)] for _ in range(height)]
+    elements: list[Element] = []
+
+    for y in range(height):
+        for x in range(width):
+            if visited[y][x] or not binary[y][x]:
+                continue
+            stack = [(x, y)]
+            visited[y][x] = True
+            pixels: list[tuple[int, int]] = []
+            x0 = x1 = x
+            y0 = y1 = y
+            while stack:
+                px, py = stack.pop()
+                pixels.append((px, py))
+                x0 = min(x0, px)
+                x1 = max(x1, px)
+                y0 = min(y0, py)
+                y1 = max(y1, py)
+                for nx, ny in ((px + 1, py), (px - 1, py), (px, py + 1), (px, py - 1)):
+                    if 0 <= nx < width and 0 <= ny < height and not visited[ny][nx] and binary[ny][nx]:
+                        visited[ny][nx] = True
+                        stack.append((nx, ny))
+            if len(pixels) < min_pixels:
+                continue
+            cropped = [[0 for _ in range(x1 - x0 + 1)] for _ in range(y1 - y0 + 1)]
+            for px, py in pixels:
+                cropped[py - y0][px - x0] = 1
+            elements.append(Element(cropped, x0, y0, x1, y1))
+    return elements
+
+
+def _fit_element_candidate(element: Element, seed: int, *, max_iter: int, plateau_limit: int) -> Candidate:
+    width = max(1, element.x1 - element.x0 + 1)
+    height = max(1, element.y1 - element.y0 + 1)
+    area = sum(sum(row) for row in element.pixels)
+    bbox_area = max(1, width * height)
+    fill_ratio = area / bbox_area
+    aspect_delta = abs(width - height) / max(width, height)
+    prefer_circle = aspect_delta <= 0.25 and fill_ratio >= 0.55
+
+    candidates = [
+        Candidate("circle", width / 2.0, height / 2.0, float(width), float(height)),
+        Candidate("ellipse", width / 2.0, height / 2.0, float(width), float(height)),
+    ]
+    if not prefer_circle:
+        candidates.reverse()
+
+    best_candidate = candidates[0]
+    best_score = -1.0
+    for idx, initial in enumerate(candidates):
+        fitted, score = optimize_element(
+            element.pixels,
+            initial,
+            max_iter=max_iter,
+            plateau_limit=plateau_limit,
+            seed=seed + idx,
+        )
+        if score > best_score:
+            best_candidate = fitted
+            best_score = score
+    return best_candidate
+
+
+def trace_image_to_svg(
+    input_path: str | Path,
+    *,
+    threshold_mode: str = "otsu",
+    threshold: int = 220,
+    max_iter: int = 120,
+    plateau_limit: int = 14,
+    seed: int = 42,
+    min_pixels: int = 6,
+) -> str:
+    path = Path(input_path)
+    grayscale = load_grayscale_image(path)
+    height = len(grayscale)
+    width = len(grayscale[0]) if height else 0
+    binary = load_binary_image_with_mode(path, threshold=threshold, mode=threshold_mode)
+    elements = extract_elements(binary, min_pixels=min_pixels)
+
+    svg_elements = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
+        f'<rect x="0" y="0" width="{width}" height="{height}" fill="white"/>',
+    ]
+    for index, element in enumerate(elements):
+        candidate = _fit_element_candidate(
+            element,
+            seed + (index * 13),
+            max_iter=max_iter,
+            plateau_limit=plateau_limit,
+        )
+        fill_color, stroke_color, stroke_width = estimate_stroke_style(grayscale, element, candidate)
+        decomposed = decompose_circle_with_stem(grayscale, element, candidate)
+        if decomposed is not None:
+            svg_elements.extend(decomposed)
+            continue
+        svg_elements.append(
+            candidate_to_svg(
+                candidate,
+                element.x0,
+                element.y0,
+                fill_color,
+                stroke_color,
+                stroke_width,
+            )
+        )
+    svg_elements.append("</svg>")
+    return "\n".join(svg_elements) + "\n"
+
 def _missing_required_image_dependencies() -> list[str]:
     missing: list[str] = []
+    if not _has_usable_pillow():
+        missing.append("Pillow")
     if cv2 is None:
         missing.append("opencv-python-headless")
     if np is None:
@@ -371,6 +540,8 @@ def _bootstrap_required_image_dependencies() -> list[str]:
 
     # Re-import in current process so conversion can run without restart.
     global cv2, np
+    if "Pillow" in missing:
+        _import_pillow_image_module()
     if "opencv-python-headless" in missing:
         import cv2 as _cv2
 
@@ -6196,12 +6367,17 @@ def convert_range(
                 image_path = os.path.join(folder_path, filename)
                 svg_path = os.path.join(svg_out_dir, f"{stem}.svg")
                 with open(svg_path, "w", encoding="utf-8") as svg_file:
-                    svg_file.write(_render_embedded_raster_svg(image_path))
-                writer.writerow([filename, "embedded-raster", 0, "0.00", "0.00000000"])
+                    try:
+                        svg_file.write(trace_image_to_svg(image_path))
+                        mode = "shape-traced-fallback"
+                    except RuntimeError:
+                        svg_file.write(_render_embedded_raster_svg(image_path))
+                        mode = "embedded-raster-fallback"
+                writer.writerow([filename, mode, 1, "", ""])
         with open(os.path.join(reports_out_dir, "fallback_mode.txt"), "w", encoding="utf-8") as f:
             f.write(
                 "Fallback-Modus aktiv: fehlende numpy/opencv-Abhängigkeiten; "
-                "SVG-Dateien wurden als eingebettete Rasterbilder erzeugt.\n"
+                "SVG-Dateien wurden mit der leichtgewichtigen Shape-Tracing-Pipeline erzeugt.\n"
             )
         return out_root
     rng = _conversion_random()
@@ -7057,12 +7233,22 @@ if __name__ == "__main__":
 
 def convert_image(input_path: str, output_path: str, *, max_iter: int = 120, plateau_limit: int = 14, seed: int = 42) -> Path:
     """Backward-compatible single-image conversion entrypoint."""
-    del max_iter, plateau_limit, seed
     target = Path(output_path)
     target.parent.mkdir(parents=True, exist_ok=True)
 
     if cv2 is None or np is None:
-        target.write_text(_render_embedded_raster_svg(input_path), encoding="utf-8")
+        try:
+            target.write_text(
+                trace_image_to_svg(
+                    input_path,
+                    max_iter=max_iter,
+                    plateau_limit=plateau_limit,
+                    seed=seed,
+                ),
+                encoding="utf-8",
+            )
+        except RuntimeError:
+            target.write_text(_render_embedded_raster_svg(input_path), encoding="utf-8")
         return target
 
     out_root = convert_range(

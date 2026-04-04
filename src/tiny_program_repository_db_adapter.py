@@ -11,6 +11,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+
+@dataclass(slots=True, frozen=True)
+class ParsedStatement:
+    """Normalized Tiny statement used for source/database conversions."""
+
+    statement_kind: str
+    raw_text: str
+    payload: dict[str, Any]
+
 SCHEMA_SQL = """
 PRAGMA foreign_keys = ON;
 
@@ -95,6 +104,132 @@ class TinyProgramRepositoryDB:
         """Create all repository tables."""
         self.connection.executescript(SCHEMA_SQL)
         self.connection.commit()
+
+    @staticmethod
+    def parse_source_to_statements(source_text: str) -> list[ParsedStatement]:
+        """Parse a small Tiny subset into normalized statements.
+
+        Supported syntax per non-empty line:
+        - `<label>:`
+        - `print <expr>`
+        - `set <var> = <expr>`
+        - `goto <label>`
+        - `if <expr> goto <label>`
+        """
+
+        statements: list[ParsedStatement] = []
+        for line_no, raw_line in enumerate(source_text.splitlines(), start=1):
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+
+            if line.endswith(":"):
+                label_name = line[:-1].strip()
+                if not label_name:
+                    raise ValueError(f"Line {line_no}: empty label is not allowed")
+                statements.append(
+                    ParsedStatement("label", f"{label_name}:", {"label_name": label_name})
+                )
+                continue
+
+            if line.startswith("print "):
+                value_expr = line[len("print ") :].strip()
+                if not value_expr:
+                    raise ValueError(f"Line {line_no}: print requires an expression")
+                statements.append(
+                    ParsedStatement("print", f"print {value_expr}", {"value_expr": value_expr})
+                )
+                continue
+
+            if line.startswith("set "):
+                assignment = line[len("set ") :]
+                if "=" not in assignment:
+                    raise ValueError(f"Line {line_no}: set requires '='")
+                var_name, value_expr = assignment.split("=", 1)
+                var_name = var_name.strip()
+                value_expr = value_expr.strip()
+                if not var_name or not value_expr:
+                    raise ValueError(f"Line {line_no}: set requires variable and expression")
+                statements.append(
+                    ParsedStatement(
+                        "set",
+                        f"set {var_name} = {value_expr}",
+                        {"var_name": var_name, "value_expr": value_expr},
+                    )
+                )
+                continue
+
+            if line.startswith("goto "):
+                target_label = line[len("goto ") :].strip()
+                if not target_label:
+                    raise ValueError(f"Line {line_no}: goto requires a target label")
+                statements.append(
+                    ParsedStatement("goto", f"goto {target_label}", {"target_label": target_label})
+                )
+                continue
+
+            if line.startswith("if ") and " goto " in line:
+                condition_part, target_part = line[3:].split(" goto ", 1)
+                condition_expr = condition_part.strip()
+                target_label = target_part.strip()
+                if not condition_expr or not target_label:
+                    raise ValueError(f"Line {line_no}: if-goto requires condition and target")
+                statements.append(
+                    ParsedStatement(
+                        "if_goto",
+                        f"if {condition_expr} goto {target_label}",
+                        {"condition_expr": condition_expr, "target_label": target_label},
+                    )
+                )
+                continue
+
+            raise ValueError(f"Line {line_no}: unsupported Tiny statement: {line}")
+
+        return statements
+
+    def source_to_db(self, program_name: str, source_text: str) -> int:
+        """Convert Tiny source code into normalized DB rows and return program_id."""
+
+        statements = self.parse_source_to_statements(source_text)
+        program_id = self.register_program(program_name, source_text)
+        for pc, statement in enumerate(statements):
+            self.add_statement(
+                program_id,
+                pc,
+                statement.statement_kind,
+                statement.raw_text,
+                statement.payload,
+            )
+        return program_id
+
+    def db_to_source(self, program_id: int) -> str:
+        """Reconstruct Tiny source from normalized DB rows."""
+
+        rows = self.connection.execute(
+            (
+                "SELECT statement_id, statement_kind, raw_text "
+                "FROM statements WHERE program_id = ? ORDER BY pc"
+            ),
+            (program_id,),
+        ).fetchall()
+        if not rows:
+            raise ValueError(f"Program {program_id} has no statements")
+        return "\n".join(str(row["raw_text"]) for row in rows)
+
+    @classmethod
+    def are_sources_equivalent(cls, source_a: str, source_b: str) -> bool:
+        """Return True when both sources normalize to the same Tiny program."""
+
+        parsed_a = cls.parse_source_to_statements(source_a)
+        parsed_b = cls.parse_source_to_statements(source_b)
+        if len(parsed_a) != len(parsed_b):
+            return False
+        for stmt_a, stmt_b in zip(parsed_a, parsed_b):
+            if stmt_a.statement_kind != stmt_b.statement_kind:
+                return False
+            if stmt_a.payload != stmt_b.payload:
+                return False
+        return True
 
     def register_program(self, name: str, source_text: str) -> int:
         """Insert a program shell and return its id."""

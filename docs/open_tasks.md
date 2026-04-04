@@ -33,11 +33,16 @@ window. They remain open until the listed success criteria are met.
     nested-pointer, high-churn allocation/deallocation, and deep-recursion
     heap-unwind scenarios that assert leak-report stability and expected output.
 
-- [ ] **Tooling ergonomics pass for CLI + formatter/LSP workflow docs**
+- [x] **Tooling ergonomics pass for CLI + formatter/LSP workflow docs**
   (Owner: Tooling)
   - Success: `docs/cli_workflows.md` and
     `docs/language_server_workflows.md` each receive one end-to-end workflow
     update validated by the corresponding tests.
+  - Notes: `docs/cli_workflows.md` now documents the typecheck-then-backend
+    execution workflow and `docs/language_server_workflows.md` documents the
+    project formatting/code-actions roundtrip; both flows are locked by
+    `test_tiny_cli_typecheck_then_backend_run_workflow` and
+    `test_cli_project_formatting_hook_matches_format_output`.
 
 ## Planning notes
 

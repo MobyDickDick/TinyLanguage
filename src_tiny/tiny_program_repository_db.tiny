@@ -1,0 +1,83 @@
+// Tiny-language Demo: atomare Programmdatenbank als SQLite-Adapter.
+// Dieses Programm erzeugt eine SQL-Datei mit normalisiertem Schema und Seed-Daten.
+
+fn create_schema_sql() {
+  return String.join(new[
+    "PRAGMA foreign_keys = ON;",
+    "",
+    "CREATE TABLE IF NOT EXISTS programs (",
+    "  program_id INTEGER PRIMARY KEY AUTOINCREMENT,",
+    "  name TEXT NOT NULL UNIQUE,",
+    "  source_text TEXT NOT NULL,",
+    "  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP",
+    ");",
+    "",
+    "CREATE TABLE IF NOT EXISTS statements (",
+    "  statement_id INTEGER PRIMARY KEY AUTOINCREMENT,",
+    "  program_id INTEGER NOT NULL,",
+    "  pc INTEGER NOT NULL,",
+    "  statement_kind TEXT NOT NULL,",
+    "  raw_text TEXT NOT NULL,",
+    "  FOREIGN KEY (program_id) REFERENCES programs(program_id) ON DELETE CASCADE,",
+    "  UNIQUE (program_id, pc)",
+    ");",
+    "",
+    "CREATE TABLE IF NOT EXISTS labels (",
+    "  statement_id INTEGER PRIMARY KEY,",
+    "  label_name TEXT NOT NULL,",
+    "  FOREIGN KEY (statement_id) REFERENCES statements(statement_id) ON DELETE CASCADE",
+    ");",
+    "",
+    "CREATE TABLE IF NOT EXISTS print_statements (",
+    "  statement_id INTEGER PRIMARY KEY,",
+    "  value_expr TEXT NOT NULL,",
+    "  FOREIGN KEY (statement_id) REFERENCES statements(statement_id) ON DELETE CASCADE",
+    ");",
+    "",
+    "CREATE TABLE IF NOT EXISTS set_statements (",
+    "  statement_id INTEGER PRIMARY KEY,",
+    "  var_name TEXT NOT NULL,",
+    "  value_expr TEXT NOT NULL,",
+    "  FOREIGN KEY (statement_id) REFERENCES statements(statement_id) ON DELETE CASCADE",
+    ");",
+    "",
+    "CREATE TABLE IF NOT EXISTS goto_statements (",
+    "  statement_id INTEGER PRIMARY KEY,",
+    "  target_label TEXT NOT NULL,",
+    "  FOREIGN KEY (statement_id) REFERENCES statements(statement_id) ON DELETE CASCADE",
+    ");",
+    "",
+    "CREATE TABLE IF NOT EXISTS if_goto_statements (",
+    "  statement_id INTEGER PRIMARY KEY,",
+    "  condition_expr TEXT NOT NULL,",
+    "  target_label TEXT NOT NULL,",
+    "  FOREIGN KEY (statement_id) REFERENCES statements(statement_id) ON DELETE CASCADE",
+    ");",
+    "",
+    "CREATE INDEX IF NOT EXISTS idx_statements_program_pc ON statements(program_id, pc);"
+  ], "\n");
+}
+
+fn create_seed_sql() {
+  return String.join(new[
+    "INSERT INTO programs(name, source_text) VALUES ('demo_workbench', 'set x=1; if x goto done; print x; done: print \"ok\";');",
+    "INSERT INTO statements(program_id, pc, statement_kind, raw_text) VALUES (1, 0, 'set', 'set x = 1');",
+    "INSERT INTO set_statements(statement_id, var_name, value_expr) VALUES (1, 'x', '1');",
+    "INSERT INTO statements(program_id, pc, statement_kind, raw_text) VALUES (1, 1, 'if_goto', 'if x goto done');",
+    "INSERT INTO if_goto_statements(statement_id, condition_expr, target_label) VALUES (2, 'x', 'done');",
+    "INSERT INTO statements(program_id, pc, statement_kind, raw_text) VALUES (1, 2, 'print', 'print x');",
+    "INSERT INTO print_statements(statement_id, value_expr) VALUES (3, 'x');",
+    "INSERT INTO statements(program_id, pc, statement_kind, raw_text) VALUES (1, 3, 'label', 'done:');",
+    "INSERT INTO labels(statement_id, label_name) VALUES (4, 'done');",
+    "INSERT INTO statements(program_id, pc, statement_kind, raw_text) VALUES (1, 4, 'print', 'print \"ok\"');",
+    "INSERT INTO print_statements(statement_id, value_expr) VALUES (5, 'ok');"
+  ], "\n");
+}
+
+def out_schema = "artifacts/tiny_program_repository_schema.sql";
+def out_seed = "artifacts/tiny_program_repository_seed.sql";
+def _unused_w1 = File.write(out_schema, create_schema_sql());
+def _unused_w2 = File.write(out_seed, create_seed_sql());
+
+print("Schema geschrieben: " + out_schema);
+print("Seed geschrieben: " + out_seed);

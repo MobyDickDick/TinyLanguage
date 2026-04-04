@@ -1,0 +1,11 @@
+INSERT INTO programs(name, source_text) VALUES ('demo_workbench', 'set x=1; if x goto done; print x; done: print "ok";');
+INSERT INTO statements(program_id, pc, statement_kind, raw_text) VALUES (1, 0, 'set', 'set x = 1');
+INSERT INTO set_statements(statement_id, var_name, value_expr) VALUES (1, 'x', '1');
+INSERT INTO statements(program_id, pc, statement_kind, raw_text) VALUES (1, 1, 'if_goto', 'if x goto done');
+INSERT INTO if_goto_statements(statement_id, condition_expr, target_label) VALUES (2, 'x', 'done');
+INSERT INTO statements(program_id, pc, statement_kind, raw_text) VALUES (1, 2, 'print', 'print x');
+INSERT INTO print_statements(statement_id, value_expr) VALUES (3, 'x');
+INSERT INTO statements(program_id, pc, statement_kind, raw_text) VALUES (1, 3, 'label', 'done:');
+INSERT INTO labels(statement_id, label_name) VALUES (4, 'done');
+INSERT INTO statements(program_id, pc, statement_kind, raw_text) VALUES (1, 4, 'print', 'print "ok"');
+INSERT INTO print_statements(statement_id, value_expr) VALUES (5, 'ok');

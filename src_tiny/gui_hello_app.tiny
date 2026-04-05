@@ -1,0 +1,16 @@
+// TinyLanguage demo: tiny GUI app using stdlib.gui
+
+import stdlib.gui;
+
+def app = gui.app("TinyLanguage GUI", 420, 180);
+app = gui.label(app, "Hallo aus TinyLanguage!");
+app = gui.button(app, "Schließen");
+
+def summary = gui.describe(app);
+print("backend=" + Map.get(summary, "backend"));
+print("widgets=" + String.from(Map.get(summary, "widget_count")));
+
+// Startet ein kleines Stand-Alone Fenster (Tkinter).
+// In Headless-Umgebungen liefert gui.run(...) eine Fehler-Map statt Crash.
+def result = gui.run(app);
+print(Map.get(result, "ok"));

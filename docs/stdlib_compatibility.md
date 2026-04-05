@@ -7,8 +7,9 @@ For the initial milestone, the TL stdlib aligns with these Python modules:
 - `random` (randomness)
 - `string` (string utilities, e.g. split/join)
 - `datetime` (Python interop-backed subset in `stdlib/datetime.tiny`)
+- `gui` (Tkinter-backed mini framework in `stdlib/gui.tiny` for desktop windows)
 
-**Current status:** The core namespaces `Math`, `Random`, and `String` are implemented natively. Additionally, `Collections`, `Map`, `Set`, `Deque`, `File`, `JSON`, `Async`, and `Result` are available. Wrapper modules for `math`, `random`, `string`, and `datetime` live in `stdlib/` (the datetime module delegates through the Python interop layer).
+**Current status:** The core namespaces `Math`, `Random`, and `String` are implemented natively. Additionally, `Collections`, `Map`, `Set`, `Deque`, `File`, `JSON`, `Async`, and `Result` are available. Wrapper modules for `math`, `random`, `string`, `datetime`, and `gui` live in `stdlib/` (`datetime` and `gui` delegate through the Python interop layer).
 
 ## 2) FFI/runtime strategy
 By default, TL stdlib functions are implemented **natively** in the runtime (see `src/stdlib/__init__.py`).
@@ -93,6 +94,7 @@ the following maturity tiers used to communicate API stability expectations.
 | `stdlib.fswatch` | Experimental | File watch API, likely to evolve with backend support. |
 | `stdlib.yaml` | Experimental | JSON-compatible YAML subset (`key: value` mappings + JSON literals for scalars/sequences/maps); broader YAML features remain out of scope for now. |
 | `stdlib.argparse` | Beta | CLI parsing helpers; expected to expand with package tooling. |
+| `stdlib.gui` | Experimental | Tkinter-backed helpers for tiny standalone desktop windows; intended for simple demos/tools. |
 
 When a module changes tiers, the docs and release notes must explicitly call out
 the new status, along with any migration guidance.

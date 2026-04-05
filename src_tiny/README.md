@@ -30,3 +30,15 @@ Run it from the repo root:
 ```bash
 python -m tiny_language src_tiny/structured_concurrency_demo.tiny
 ```
+
+## GUI demo
+
+- `gui_hello_app.tiny` shows a tiny desktop app built with `import stdlib.gui;`.
+  The module uses a declarative app map (`gui.app`, `gui.label`, `gui.button`)
+  and launches a Tkinter window via `gui.run(...)`.
+
+Run it from the repo root:
+
+```bash
+python -m tiny_language src_tiny/gui_hello_app.tiny
+```

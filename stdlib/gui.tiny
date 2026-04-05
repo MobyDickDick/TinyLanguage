@@ -1,0 +1,90 @@
+// TinyLanguage stdlib: gui module (small Tkinter-backed app framework)
+
+fn __gui_allowlist() {
+  def allow = new(5);
+  heap_set(allow, 0, "create_app");
+  heap_set(allow, 1, "add_label");
+  heap_set(allow, 2, "add_button");
+  heap_set(allow, 3, "describe_app");
+  heap_set(allow, 4, "run_app");
+  return allow;
+}
+
+fn app(title, width, height) {
+  def allow = __gui_allowlist();
+  def args = new(3);
+  heap_set(args, 0, title);
+  heap_set(args, 1, width);
+  heap_set(args, 2, height);
+  def result = Python.call(
+    "stdlib_gui",
+    "create_app",
+    args,
+    { allow: allow }
+  );
+  def _cleanup_args = delete(args);
+  def _cleanup_allow = delete(allow);
+  return result;
+}
+
+fn label(application, text) {
+  def allow = __gui_allowlist();
+  def args = new(2);
+  heap_set(args, 0, application);
+  heap_set(args, 1, text);
+  def result = Python.call(
+    "stdlib_gui",
+    "add_label",
+    args,
+    { allow: allow }
+  );
+  def _cleanup_args = delete(args);
+  def _cleanup_allow = delete(allow);
+  return result;
+}
+
+fn button(application, text) {
+  def allow = __gui_allowlist();
+  def args = new(2);
+  heap_set(args, 0, application);
+  heap_set(args, 1, text);
+  def result = Python.call(
+    "stdlib_gui",
+    "add_button",
+    args,
+    { allow: allow }
+  );
+  def _cleanup_args = delete(args);
+  def _cleanup_allow = delete(allow);
+  return result;
+}
+
+fn describe(application) {
+  def allow = __gui_allowlist();
+  def args = new(1);
+  heap_set(args, 0, application);
+  def result = Python.call(
+    "stdlib_gui",
+    "describe_app",
+    args,
+    { allow: allow }
+  );
+  def _cleanup_args = delete(args);
+  def _cleanup_allow = delete(allow);
+  return result;
+}
+
+fn run(application) {
+  def allow = __gui_allowlist();
+  def args = new(1);
+  heap_set(args, 0, application);
+  def result = Python.call(
+    "stdlib_gui",
+    "run_app",
+    args,
+    { allow: allow }
+  );
+  def _cleanup_args = delete(args);
+  def _cleanup_allow = delete(allow);
+  return result;
+}

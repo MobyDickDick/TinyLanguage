@@ -31,12 +31,42 @@ python src/tiny_program_daemon.py
 - `--count N`: endlich viele Programme erzeugen und beenden
 - `--idea <slug>`: bestimmte Programmidee erzwingen
 - `--seed <int>`: reproduzierbare Zufallsauswahl
+- `--db-path <sqlite.db>`: speichert validierte Programme zusätzlich in SQLite
 
 Beispiel:
 
 ```bash
 python src/tiny_program_daemon.py --interval-seconds 60 --count 3 --idea nand-gate
 ```
+
+## Qualitätskriterien für den Programmgenerator
+
+Der Generator prüft neue Programme vor dem Schreiben/Speichern mit konservativen
+Heuristiken:
+
+1. **Keine Dead Stores**: Variablen dürfen nicht nur geschrieben, sondern müssen
+   auch gelesen werden (außer explizit `_unused*`).
+2. **Keine offensichtlichen Endlosschleifen**: `while (true)` und `while (1)`
+   werden abgewiesen.
+3. **Keine offensichtlichen unbehandelten Exceptions**: `throw` und
+   offensichtliche `... / 0`-Muster werden abgewiesen.
+4. **Keine Duplikate in der DB**: Beim Schreiben in SQLite wird eine
+   normalisierte Signatur geprüft; semantisch identische Programme werden nicht
+   mehrfach gespeichert.
+5. **Einfache Deadlock-Warnung**: `spawn` ohne erkennbares `join(...)` führt zur
+   Ablehnung.
+
+### Weitere sinnvolle Kriterien (als nächste Aufgaben)
+
+- **Kontrollfluss-Termination tiefer prüfen**: CFG/SCC-basierte Analyse statt
+  rein textueller Muster.
+- **Typsicherheits-/Range-Checks**: z. B. Division nur bei nachweisbar
+  non-zero Nennern.
+- **Ressourcenbegrenzung**: obere Schranken für Heap-Allokationen und
+  Schleifeniterationen.
+- **Determinismus-Profil**: optionales Verbot von Zeit-/Zufallsquellen.
+- **Stil- und Lesbarkeitsregeln**: Mindestkommentare, Namenskonventionen,
+  Programmlänge pro Kategorie.
 
 ## Systemd-Template
 

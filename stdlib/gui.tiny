@@ -1,0 +1,75 @@
+// TinyLanguage stdlib: gui module (small Tkinter-backed app framework)
+
+fn __run_allowlist() {
+  def allow = new(1);
+  heap_set(allow, 0, "run_app");
+  return allow;
+}
+
+fn app(title, width, height) {
+  return {
+    title: title,
+    width: width,
+    height: height,
+    labels: new[],
+    buttons: new[]
+  };
+}
+
+fn label(application, text) {
+  def labels = Map.get(application, "labels");
+  def _ignored = Collections.push(labels, text);
+  return application;
+}
+
+fn button(application, text) {
+  def buttons = Map.get(application, "buttons");
+  def _ignored = Collections.push(buttons, text);
+  return application;
+}
+
+fn describe(application) {
+  def labels = Map.get(application, "labels");
+  def buttons = Map.get(application, "buttons");
+  def widget_types = new[];
+
+  def i = 0;
+  while (i < Collections.len(labels)) {
+    def _ignored = Collections.push(widget_types, "label");
+    i = i + 1;
+  }
+
+  i = 0;
+  while (i < Collections.len(buttons)) {
+    def _ignored = Collections.push(widget_types, "button");
+    i = i + 1;
+  }
+
+  return {
+    backend: "tkinter",
+    title: Map.get(application, "title"),
+    width: Map.get(application, "width"),
+    height: Map.get(application, "height"),
+    widget_count: Collections.len(widget_types),
+    widget_types: widget_types
+  };
+}
+
+fn run(application) {
+  def allow = __run_allowlist();
+  def args = new(5);
+  heap_set(args, 0, Map.get(application, "title"));
+  heap_set(args, 1, Map.get(application, "width"));
+  heap_set(args, 2, Map.get(application, "height"));
+  heap_set(args, 3, Map.get(application, "labels"));
+  heap_set(args, 4, Map.get(application, "buttons"));
+  def result = Python.call(
+    "stdlib_gui",
+    "run_app",
+    args,
+    { allow: allow }
+  );
+  def _cleanup_args = delete(args);
+  def _cleanup_allow = delete(allow);
+  return result;
+}

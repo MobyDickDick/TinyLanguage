@@ -370,3 +370,9 @@ and testable so they can be promoted into the formal backlog as needed.
 - [x] Conformance + cross-backend parity suite expansion.
   - Added parity fixtures for function branching and looped arithmetic in
     `tests/parity/`.
+
+## Open-task audit (2026-04-05)
+
+- [x] Re-read all documentation checklists to identify the next unchecked work item and execute it to completion.
+  - Result: no unchecked checklist items remain in `docs/` or in the root documentation task files (`documentation_tasks.md`).
+  - Follow-up: kept the backlog in a fully closed state and recorded this verification pass so the next cycle can start by adding new scoped tasks instead of re-auditing historical ones.

@@ -7,6 +7,8 @@ attributes are normalized into dedicated tables (print/set/goto/if_goto/label).
 from __future__ import annotations
 
 import sqlite3
+import json
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -26,6 +28,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS programs (
     program_id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
+    source_signature TEXT NOT NULL UNIQUE,
     source_text TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -233,12 +236,45 @@ class TinyProgramRepositoryDB:
 
     def register_program(self, name: str, source_text: str) -> int:
         """Insert a program shell and return its id."""
+        signature = self.normalized_source_signature(source_text)
         cur = self.connection.execute(
-            "INSERT INTO programs(name, source_text) VALUES (?, ?)",
-            (name, source_text),
+            "INSERT INTO programs(name, source_signature, source_text) VALUES (?, ?, ?)",
+            (name, signature, source_text),
         )
         self.connection.commit()
         return int(cur.lastrowid)
+
+    @classmethod
+    def normalized_source_signature(cls, source_text: str) -> str:
+        """Compute a stable signature for semantic duplicate detection."""
+        try:
+            normalized = [
+                {
+                    "kind": stmt.statement_kind,
+                    "payload": stmt.payload,
+                }
+                for stmt in cls.parse_source_to_statements(source_text)
+            ]
+            canonical = json.dumps(normalized, sort_keys=True, separators=(",", ":"))
+        except ValueError:
+            fallback_lines: list[str] = []
+            for raw_line in source_text.splitlines():
+                line = raw_line.split("//", 1)[0].split("#", 1)[0].strip()
+                if line:
+                    fallback_lines.append(line)
+            canonical = "\n".join(fallback_lines)
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+    def find_equivalent_program_id(self, source_text: str) -> int | None:
+        """Return a stored program id with equivalent semantics, if any."""
+        signature = self.normalized_source_signature(source_text)
+        row = self.connection.execute(
+            "SELECT program_id FROM programs WHERE source_signature = ?",
+            (signature,),
+        ).fetchone()
+        if row is None:
+            return None
+        return int(row["program_id"])
 
     def add_statement(
         self,

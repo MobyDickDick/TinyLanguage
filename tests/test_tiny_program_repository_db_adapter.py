@@ -118,3 +118,22 @@ def test_compare_tiny_sources_cli(tmp_path):
     )
     assert diff_result.returncode == 1
     assert "DIFFERENT" in diff_result.stdout
+
+
+def test_find_equivalent_program_id_uses_normalized_signature(tmp_path):
+    db = TinyProgramRepositoryDB(tmp_path / "equivalent.db")
+    db.initialize_schema()
+    source_a = """
+start:
+set x=1
+print x
+"""
+    source_b = """
+start:
+set x = 1
+print x
+"""
+    first_program_id = db.register_program("first", source_a)
+    found = db.find_equivalent_program_id(source_b)
+    assert found == first_program_id
+    db.close()

@@ -1,102 +1,51 @@
-"""Python-backed GUI helpers for TinyLanguage stdlib.gui.
-
-The module intentionally exposes a tiny declarative layer so TinyLanguage
-programs can build small standalone desktop windows via Tkinter without having
-to call Python interop primitives directly.
-"""
+"""Python-backed GUI runner for TinyLanguage stdlib.gui."""
 from __future__ import annotations
 
 from typing import Any
 
 
-def _normalize_app(app: dict[str, Any]) -> dict[str, Any]:
-    """Return an app dictionary with expected keys present."""
-    normalized = dict(app or {})
-    normalized.setdefault("title", "Tiny App")
-    normalized.setdefault("width", 480)
-    normalized.setdefault("height", 320)
-    widgets = normalized.get("widgets")
-    if not isinstance(widgets, list):
-        widgets = []
-    normalized["widgets"] = widgets
-    return normalized
+def _as_text_list(values: Any) -> list[str]:
+    """Normalize Tiny arrays/lists to a list of strings."""
+    if not isinstance(values, list):
+        return []
+    return [str(value) for value in values]
 
 
-def create_app(title: str, width: int, height: int) -> dict[str, Any]:
-    """Create a new declarative app description."""
-    return _normalize_app(
-        {
-            "title": title,
-            "width": int(width),
-            "height": int(height),
-            "widgets": [],
-        }
-    )
+def run_app(title: str, width: int, height: int, labels: Any, buttons: Any) -> dict[str, Any]:
+    """Launch a small Tkinter window with labels and close-buttons.
 
+    Returns a status map so Tiny callers can handle missing displays gracefully.
+    """
+    safe_title = str(title)
+    safe_width = int(width)
+    safe_height = int(height)
+    safe_labels = _as_text_list(labels)
+    safe_buttons = _as_text_list(buttons)
 
-def add_label(app: dict[str, Any], text: str) -> dict[str, Any]:
-    """Append a label component to the app description."""
-    normalized = _normalize_app(app)
-    normalized["widgets"].append({"kind": "label", "text": str(text)})
-    return normalized
-
-
-def add_button(app: dict[str, Any], text: str) -> dict[str, Any]:
-    """Append a button component to the app description."""
-    normalized = _normalize_app(app)
-    normalized["widgets"].append({"kind": "button", "text": str(text)})
-    return normalized
-
-
-def describe_app(app: dict[str, Any]) -> dict[str, Any]:
-    """Return a serializable summary for tests and CLI feedback."""
-    normalized = _normalize_app(app)
-    widget_types = [str(widget.get("kind", "unknown")) for widget in normalized["widgets"]]
-    return {
+    summary = {
         "backend": "tkinter",
-        "title": str(normalized["title"]),
-        "width": int(normalized["width"]),
-        "height": int(normalized["height"]),
-        "widget_count": len(normalized["widgets"]),
-        "widget_types": widget_types,
+        "title": safe_title,
+        "width": safe_width,
+        "height": safe_height,
+        "widget_count": len(safe_labels) + len(safe_buttons),
     }
 
-
-def run_app(app: dict[str, Any]) -> dict[str, Any]:
-    """Launch the window and render label/button widgets.
-
-    The function returns a status map instead of raising GUI errors so callers
-    can handle headless environments gracefully.
-    """
-    normalized = _normalize_app(app)
-    summary = describe_app(normalized)
     try:
         import tkinter as tk
-    except Exception as exc:  # pragma: no cover - depends on local Python build
-        return {
-            "ok": False,
-            "error": f"tkinter import failed: {exc}",
-            "summary": summary,
-        }
+    except Exception as exc:  # pragma: no cover - environment dependent
+        return {"ok": False, "error": f"tkinter import failed: {exc}", "summary": summary}
 
     try:
         root = tk.Tk()
-        root.title(str(normalized["title"]))
-        root.geometry(f"{int(normalized['width'])}x{int(normalized['height'])}")
+        root.title(safe_title)
+        root.geometry(f"{safe_width}x{safe_height}")
 
-        for widget in normalized["widgets"]:
-            kind = str(widget.get("kind", ""))
-            text = str(widget.get("text", ""))
-            if kind == "label":
-                tk.Label(root, text=text).pack()
-            elif kind == "button":
-                tk.Button(root, text=text, command=root.destroy).pack()
+        for text in safe_labels:
+            tk.Label(root, text=text).pack()
+        for text in safe_buttons:
+            tk.Button(root, text=text, command=root.destroy).pack()
 
         root.mainloop()
         return {"ok": True, "summary": summary}
-    except Exception as exc:  # pragma: no cover - depends on display availability
-        return {
-            "ok": False,
-            "error": f"gui launch failed: {exc}",
-            "summary": summary,
-        }
+    except Exception as exc:  # pragma: no cover - environment dependent
+        return {"ok": False, "error": f"gui launch failed: {exc}", "summary": summary}

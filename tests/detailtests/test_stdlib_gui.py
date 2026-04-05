@@ -14,8 +14,8 @@ def test_stdlib_gui_describe_returns_expected_shape(run_tiny_source, monkeypatch
             "gui",
             """
             def app = gui.app("Demo", 640, 360);
-            app = gui.label(app, "Hello");
-            app = gui.button(app, "Close");
+            def _label_result = gui.label(app, "Hello");
+            def _button_result = gui.button(app, "Close");
             def summary = gui.describe(app);
             print(Map.get(summary, "backend"));
             print(Map.get(summary, "title"));
@@ -25,6 +25,10 @@ def test_stdlib_gui_describe_returns_expected_shape(run_tiny_source, monkeypatch
             def widget_types = Map.get(summary, "widget_types");
             print(heap_get(widget_types, 0));
             print(heap_get(widget_types, 1));
+            def _cleanup_widget_types = delete(widget_types);
+            def _cleanup_summary = delete(summary);
+            def _cleanup_buttons = delete(Map.get(app, "buttons"));
+            def _cleanup_labels = delete(Map.get(app, "labels"));
             """,
         ),
     )

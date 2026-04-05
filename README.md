@@ -176,6 +176,7 @@ See [benchmarks/microbenchmarks.py](benchmarks/microbenchmarks.py) and [docs/per
 ### Tooling and debugging
 - [docs/language_server_workflows.md](docs/language_server_workflows.md) — LSP workflows and demo calls
 - [docs/debugger_workflows.md](docs/debugger_workflows.md) — VS Code stepping/launch guide
+- [docs/tiny_program_daemon.md](docs/tiny_program_daemon.md) — periodic Tiny-program generator daemon (30-minute default)
 - [var/NotepadPP.xml](var/NotepadPP.xml) — Notepad++ syntax highlighting for `.tiny` files
 - [docs/fuzzing.md](docs/fuzzing.md) — Hypothesis-based fuzz tests
 - [docs/building_executables.md](docs/building_executables.md) — PyInstaller notes

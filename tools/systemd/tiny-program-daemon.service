@@ -1,0 +1,14 @@
+[Unit]
+Description=TinyLanguage Program Generator Daemon
+After=network.target
+
+[Service]
+Type=simple
+# Adjust to your local checkout path and Python executable.
+WorkingDirectory=/workspace/TinyLanguage
+ExecStart=/usr/bin/env python src/tiny_program_daemon.py --output-dir generated_tiny_programs --interval-seconds 1800
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

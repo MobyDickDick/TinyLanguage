@@ -263,9 +263,10 @@ def _normalize_manifest_path(value: str) -> str:
 
 def resolve_manifest(
     manifest_path: Path,
-) -> tuple[dict[str, list[ResolvedDependency]], str, str | None]:
+) -> tuple[dict[str, list[ResolvedDependency]], str, str | None, str | None]:
     manifest, manifest_text = _read_manifest(manifest_path)
     manifest_dir = manifest_path.parent
+    toolchain_constraint = manifest.get("package", {}).get("tiny_language")
     registries = manifest.get("registries", {})
     default_registry = registries.get("default")
     registry_indexes: dict[str, Mapping[str, Mapping[str, Mapping[str, str]]]] = {}
@@ -344,15 +345,22 @@ def resolve_manifest(
                     registry_checksum=registry_checksum,
                 )
             )
-    return resolved, _manifest_hash(manifest_text), default_registry
+    return (
+        resolved,
+        _manifest_hash(manifest_text),
+        default_registry,
+        str(toolchain_constraint) if toolchain_constraint else None,
+    )
 
 
 def write_lockfile(lock_path: Path, manifest_path: Path) -> Path:
-    resolved, manifest_hash, default_registry = resolve_manifest(manifest_path)
+    resolved, manifest_hash, default_registry, toolchain_constraint = resolve_manifest(manifest_path)
     lines: list[str] = [
         "lockfile_version = 1",
         f'manifest_hash = "{manifest_hash}"',
     ]
+    if toolchain_constraint:
+        lines.append(f'toolchain = "{toolchain_constraint}"')
     if default_registry:
         lines.append(f'registry = "{default_registry}"')
     for section, deps in resolved.items():

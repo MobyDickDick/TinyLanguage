@@ -76,3 +76,29 @@ def test_write_lockfile_sorts_dependencies_for_stable_output(tmp_path: Path) -> 
 
     names = [line for line in lock_path.read_text(encoding="utf-8").splitlines() if line.startswith('name = ')]
     assert names == ['name = "alpha"', 'name = "beta"']
+
+
+def test_write_lockfile_preserves_toolchain_constraint(tmp_path: Path) -> None:
+    _write_dependency(tmp_path, "deps/alpha", version="1.0.0")
+    manifest_path = tmp_path / "tiny.toml"
+    manifest_path.write_text(
+        "\n".join(
+            [
+                "[package]",
+                'name = "demo"',
+                'version = "0.1.0"',
+                'tiny_language = ">=1.2 <2.0"',
+                "",
+                "[dependencies]",
+                'alpha = { path = "deps/alpha", version = "1.0.0" }',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    lock_path = tmp_path / "tiny.lock"
+    write_lockfile(lock_path, manifest_path)
+
+    lock_text = lock_path.read_text(encoding="utf-8")
+    assert 'toolchain = ">=1.2 <2.0"' in lock_text

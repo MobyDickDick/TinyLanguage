@@ -382,3 +382,9 @@ and testable so they can be promoted into the formal backlog as needed.
 - [x] Re-validated the documentation backlog to find the next unchecked documented task and execute it.
   - Result: there are still no unchecked checklist entries (`- [ ]`) in `docs/`, `documentation_tasks.md`, or `README.md`; the next actionable step is to add newly scoped tasks for the upcoming cycle before further execution work.
   - Follow-up: backlog remains intentionally closed; future "next open task" requests should begin by triaging and adding a new concrete unchecked item into `docs/open_tasks.md`.
+
+## Open-task audit (2026-04-25)
+
+- [x] Convert one documented package-manager open question into an implemented, test-backed decision.
+  - Result: `tiny.lock` now persists an optional top-level `toolchain` constraint derived from `[package].tiny_language` in `tiny.toml`, and the behavior is covered by lockfile reproducibility tests.
+  - Follow-up: keep the second package-manager open question (signed registry metadata) for the next planning cycle, because it depends on registry threat-model and deployment decisions.

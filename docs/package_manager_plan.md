@@ -184,6 +184,8 @@ bootstrap, dependency changes, and reproducible builds.
 
 ## Open questions
 
-- Should `tiny.lock` include resolved TinyLanguage version constraints so older
-  toolchains can refuse incompatible lockfiles?
+- ✅ Resolved (2026-04-25): `tiny.lock` now carries a top-level
+  `toolchain = "<constraint>"` field when `tiny.toml` declares
+  `[package].tiny_language`. Older toolchains can refuse incompatible lockfiles
+  before dependency resolution.
 - Should the registry support signed metadata (TUF-style) from day one?

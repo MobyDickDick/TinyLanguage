@@ -397,3 +397,9 @@ and testable so they can be promoted into the formal backlog as needed.
 - [x] Convert one documented package-manager open question into an implemented, test-backed decision.
   - Result: `tiny.lock` now persists an optional top-level `toolchain` constraint derived from `[package].tiny_language` in `tiny.toml`, and the behavior is covered by lockfile reproducibility tests.
   - Follow-up: keep the second package-manager open question (signed registry metadata) for the next planning cycle, because it depends on registry threat-model and deployment decisions.
+
+
+## Priority execution update (2026-05-02, follow-up)
+
+- [x] **Process highest-priority documented open question (package registry signing)** (Owner: Ecosystem)
+  - Result: resolved the remaining package-manager open question in `docs/package_manager_plan.md` with a phased decision for metadata signing (v1.1 informational hashes, v1.2 optional verification, v1.3 required signatures for official channels).

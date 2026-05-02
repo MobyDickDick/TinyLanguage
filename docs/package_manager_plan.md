@@ -188,4 +188,7 @@ bootstrap, dependency changes, and reproducible builds.
   `toolchain = "<constraint>"` field when `tiny.toml` declares
   `[package].tiny_language`. Older toolchains can refuse incompatible lockfiles
   before dependency resolution.
-- Should the registry support signed metadata (TUF-style) from day one?
+- ✅ Resolved (2026-05-02): ship registry metadata signing in a staged rollout rather than day one.
+  - Phase 1 (v1.1): publish unsigned index metadata over TLS with deterministic hashes in `tiny.lock`.
+  - Phase 2 (v1.2): add optional signature verification (`tiny pkg verify --signatures`) and publish root keys in repo docs.
+  - Phase 3 (v1.3): require signatures for official registry channels; keep an explicit `--allow-unsigned` escape hatch for private mirrors.

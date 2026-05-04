@@ -53,6 +53,22 @@ window. They remain open until the listed success criteria are met.
     shifts to preparing the next triage cycle and promoting new candidates into
     the upcoming active timebox.
 
+
+## Next documented step (executed 2026-05-04)
+
+- [x] **Prepare the next triage cycle candidate slate** (Owner: Project Lead)
+  - Success: promote at least three clearly scoped candidates into a dated, owner-tagged shortlist so the upcoming triage meeting can convert them into an active timebox without re-discovery work.
+  - Notes: consolidated a 2026-06 triage shortlist with owners, sequencing, and acceptance outcomes directly in this tracker so the next planning pass can promote items without additional discovery.
+
+### 2026-06 triage shortlist (ready for promotion)
+
+1. **Typecheck CI gate trial** (Owner: Language/Tooling)
+   - Outcome target: add an opt-in CI job that runs type-check/lint mode on a curated fixture set and publishes a baseline report for false-positive review.
+2. **Native backend error-parity audit** (Owner: Runtime/Compiler)
+   - Outcome target: run a focused interpreter vs. native error-message parity audit and capture remaining deltas as bounded follow-up issues.
+3. **Package manager reproducibility hardening** (Owner: Ecosystem)
+   - Outcome target: extend lockfile reproducibility coverage with additional path edge-cases and document the deterministic rendering contract.
+
 ## Planning notes
 
 - [x] Verified all historical checklist entries below this section remain

@@ -3,6 +3,13 @@ name: Tests, benchmark & fuzz
 on:
   push:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      run_typecheck_gate:
+        description: Run the curated typing-lint baseline trial
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   test:
@@ -40,3 +47,22 @@ jobs:
         run: python -m pytest --assert-no-heap-leaks
       - name: Build unsigned release artifacts
         run: python tools/release/build_release_artifacts.py --output-dir dist/release-ci
+
+  typecheck-gate-trial:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_typecheck_gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Run curated typecheck gate
+        run: python tools/typecheck_ci_gate.py
+      - name: Publish typecheck baseline report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: typecheck-baseline-report
+          path: artifacts/ci/typecheck-baseline.json
+          if-no-files-found: error

@@ -1,0 +1,57 @@
+{
+  "fixtures": [
+    {
+      "diagnostics": [],
+      "expected_diagnostic_codes": [],
+      "missing_expected_diagnostic_codes": [],
+      "path": "tests/fixtures/typecheck_ci/typed_functions.tiny",
+      "purpose": "Typed function declarations and compatible call sites",
+      "status": "pass",
+      "unexpected_diagnostic_codes": []
+    },
+    {
+      "diagnostics": [],
+      "expected_diagnostic_codes": [],
+      "missing_expected_diagnostic_codes": [],
+      "path": "tests/fixtures/typecheck_ci/gradual_adoption.tiny",
+      "purpose": "Unannotated code remains valid during gradual typing adoption",
+      "status": "pass",
+      "unexpected_diagnostic_codes": []
+    },
+    {
+      "diagnostics": [
+        {
+          "code": "E009",
+          "message": "[E009] type mismatch for parameter x in function add: expected number but got string (line 4, col 11 to line 4, col 15)",
+          "phase": "lint",
+          "range": [
+            4,
+            11,
+            4,
+            16
+          ],
+          "severity": "error",
+          "source": "linter"
+        }
+      ],
+      "expected_diagnostic_codes": [
+        "E009"
+      ],
+      "missing_expected_diagnostic_codes": [],
+      "path": "tests/fixtures/typecheck_ci/intentional_type_error.tiny",
+      "purpose": "Known positive control proving that argument mismatches are reported",
+      "status": "pass",
+      "unexpected_diagnostic_codes": []
+    }
+  ],
+  "lint_profile": "typing",
+  "manifest": "tests/fixtures/typecheck_ci/manifest.json",
+  "schema_version": 1,
+  "summary": {
+    "diagnostic_count": 1,
+    "fixture_count": 3,
+    "missing_expected_diagnostic_count": 0,
+    "passed": true,
+    "unexpected_diagnostic_count": 0
+  }
+}

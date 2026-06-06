@@ -1,0 +1,4 @@
+fn greet(name) {
+    return "Hello, " + name;
+}
+print(greet("Tiny"));

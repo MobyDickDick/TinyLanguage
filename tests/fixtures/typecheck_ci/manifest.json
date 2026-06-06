@@ -1,0 +1,21 @@
+{
+  "fixtures": [
+    {
+      "path": "tests/fixtures/typecheck_ci/typed_functions.tiny",
+      "purpose": "Typed function declarations and compatible call sites",
+      "expected_diagnostic_codes": []
+    },
+    {
+      "path": "tests/fixtures/typecheck_ci/gradual_adoption.tiny",
+      "purpose": "Unannotated code remains valid during gradual typing adoption",
+      "expected_diagnostic_codes": []
+    },
+    {
+      "path": "tests/fixtures/typecheck_ci/intentional_type_error.tiny",
+      "purpose": "Known positive control proving that argument mismatches are reported",
+      "expected_diagnostic_codes": [
+        "E009"
+      ]
+    }
+  ]
+}

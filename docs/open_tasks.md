@@ -62,8 +62,9 @@ window. They remain open until the listed success criteria are met.
 
 ### 2026-06 triage shortlist (ready for promotion)
 
-1. **Typecheck CI gate trial** (Owner: Language/Tooling)
+1. **Typecheck CI gate trial** (Owner: Language/Tooling) — completed 2026-06-06
    - Outcome target: add an opt-in CI job that runs type-check/lint mode on a curated fixture set and publishes a baseline report for false-positive review.
+   - Result: added a manually dispatched `typecheck-gate-trial` CI job, a deterministic reporting tool, three manifest-backed fixtures (including an E009 positive control), and regression coverage for baseline drift and review-required findings.
 2. **Native backend error-parity audit** (Owner: Runtime/Compiler)
    - Outcome target: run a focused interpreter vs. native error-message parity audit and capture remaining deltas as bounded follow-up issues.
 3. **Package manager reproducibility hardening** (Owner: Ecosystem)

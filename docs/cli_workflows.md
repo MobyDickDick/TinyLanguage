@@ -65,6 +65,27 @@ Regression coverage for this workflow lives in
 `tests/detailtests/test_tiny_language_cli_self_host.py`
 (`test_tiny_cli_typecheck_then_backend_run_workflow`).
 
+### Opt-in CI typecheck baseline trial
+
+The repository also provides a manually enabled GitHub Actions job for gradual
+adoption reviews. Start the **Tests, benchmark & fuzz** workflow with the
+`run_typecheck_gate` input enabled. The job runs the `typing` lint profile over
+the curated manifest at `tests/fixtures/typecheck_ci/manifest.json` and uploads
+`typecheck-baseline-report` even when the gate fails.
+
+Run the same gate locally with:
+
+```bash
+python tools/typecheck_ci_gate.py
+```
+
+The command writes `artifacts/ci/typecheck-baseline.json`. Each fixture declares
+its expected diagnostic codes. A new diagnostic or a missing positive-control
+diagnostic marks the report as `review-required` and fails the command, so the
+artifact can be reviewed before expectations are deliberately updated. Paths,
+ordering, and JSON keys are normalized to keep reports deterministic across
+runs.
+
 ## 3. LLVM emission (via `tiny_language_cli`)
 
 The CLI wrapper can emit LLVM IR without running the program. The LLVM pipeline

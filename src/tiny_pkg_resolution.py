@@ -13,6 +13,7 @@ import importlib
 import importlib.util
 import json
 from pathlib import Path
+import posixpath
 import re
 from typing import Mapping
 
@@ -159,8 +160,12 @@ def manifest_hash_for_path(manifest_path: Path) -> str:
 
 def _hash_directory(path: Path) -> str:
     hasher = hashlib.sha256()
-    for file_path in sorted(p for p in path.rglob("*") if p.is_file()):
-        relative = file_path.relative_to(path).as_posix()
+    files = (
+        (file_path.relative_to(path).as_posix(), file_path)
+        for file_path in path.rglob("*")
+        if file_path.is_file()
+    )
+    for relative, file_path in sorted(files, key=lambda item: item[0]):
         hasher.update(relative.encode("utf-8"))
         hasher.update(file_path.read_bytes())
     return hasher.hexdigest()
@@ -257,8 +262,16 @@ def _parse_dependency_entry(name: str, value: object) -> dict[str, object]:
 
 
 def _normalize_manifest_path(value: str) -> str:
-    """Normalize manifest path values to a stable, cross-platform form."""
-    return str(Path(value.replace("\\", "/")).as_posix())
+    """Normalize relative manifest paths without depending on the host OS."""
+    portable = value.replace("\\", "/")
+    if posixpath.isabs(portable) or re.match(r"^[A-Za-z]:/", portable):
+        raise SystemExit(f"Dependency paths must be relative: {value}")
+    return posixpath.normpath(portable)
+
+
+def _toml_string(value: object) -> str:
+    """Render a TOML-compatible basic string with deterministic escaping."""
+    return json.dumps(str(value), ensure_ascii=False)
 
 
 def resolve_manifest(
@@ -357,31 +370,31 @@ def write_lockfile(lock_path: Path, manifest_path: Path) -> Path:
     resolved, manifest_hash, default_registry, toolchain_constraint = resolve_manifest(manifest_path)
     lines: list[str] = [
         "lockfile_version = 1",
-        f'manifest_hash = "{manifest_hash}"',
+        f"manifest_hash = {_toml_string(manifest_hash)}",
     ]
     if toolchain_constraint:
-        lines.append(f'toolchain = "{toolchain_constraint}"')
+        lines.append(f"toolchain = {_toml_string(toolchain_constraint)}")
     if default_registry:
-        lines.append(f'registry = "{default_registry}"')
+        lines.append(f"registry = {_toml_string(default_registry)}")
     for section, deps in resolved.items():
         for dep in deps:
             lines.append("")
             lines.append(f"[[{section}]]")
-            lines.append(f'name = "{dep.name}"')
-            lines.append(f'version = "{dep.version}"')
-            lines.append(f'source = "{dep.source}"')
-            lines.append(f'checksum = "{dep.checksum}"')
+            lines.append(f"name = {_toml_string(dep.name)}")
+            lines.append(f"version = {_toml_string(dep.version)}")
+            lines.append(f"source = {_toml_string(dep.source)}")
+            lines.append(f"checksum = {_toml_string(dep.checksum)}")
             if dep.registry:
-                lines.append(f'registry = "{dep.registry}"')
+                lines.append(f"registry = {_toml_string(dep.registry)}")
             if dep.registry_checksum:
-                lines.append(f'registry_checksum = "{dep.registry_checksum}"')
+                lines.append(f"registry_checksum = {_toml_string(dep.registry_checksum)}")
             if dep.path:
-                lines.append(f'path = "{dep.path}"')
+                lines.append(f"path = {_toml_string(dep.path)}")
             if dep.url:
-                lines.append(f'url = "{dep.url}"')
+                lines.append(f"url = {_toml_string(dep.url)}")
             if dep.rev:
-                lines.append(f'rev = "{dep.rev}"')
+                lines.append(f"rev = {_toml_string(dep.rev)}")
             if dep.tag:
-                lines.append(f'tag = "{dep.tag}"')
+                lines.append(f"tag = {_toml_string(dep.tag)}")
     lock_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return lock_path

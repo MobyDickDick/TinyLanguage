@@ -68,8 +68,9 @@ window. They remain open until the listed success criteria are met.
 2. **Native backend error-parity audit** (Owner: Runtime/Compiler) — completed 2026-06-06
    - Outcome target: run a focused interpreter vs. native error-message parity audit and capture remaining deltas as bounded follow-up issues.
    - Result: added an executable exact-message parity matrix, documented the audit method and passing scenarios, and bounded the remaining native `len` and exception-metadata deltas as `NBEP-001` and `NBEP-002`.
-3. **Package manager reproducibility hardening** (Owner: Ecosystem)
+3. **Package manager reproducibility hardening** (Owner: Ecosystem) — completed 2026-06-11
    - Outcome target: extend lockfile reproducibility coverage with additional path edge-cases and document the deterministic rendering contract.
+   - Result: lockfile rendering now lexically normalizes redundant path segments and dependency-override paths, TOML-escapes every persisted string, and is covered by repeated-write, LF-ending, quoted-path, override, and dot-segment regressions. The byte-level ordering, path, encoding, and checksum rules are documented in `docs/package_manager_plan.md`.
 
 ## Planning notes
 

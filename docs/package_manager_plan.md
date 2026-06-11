@@ -80,6 +80,34 @@ checksum = "sha256:<hex>"
   json = "^0.9"
 ```
 
+### Deterministic rendering contract
+
+The resolver treats `tiny.lock` as generated content and renders it according
+to one canonical byte-level contract:
+
+- The file is UTF-8 text with LF (`\n`) line endings, exactly one trailing
+  newline, and no timestamps or host-specific absolute paths.
+- Top-level fields have a fixed order: `lockfile_version`, `manifest_hash`,
+  optional `toolchain`, then optional `registry`.
+- Dependency groups are emitted in the fixed order `dependencies`,
+  `dev-dependencies`, and `build-dependencies`; entries inside each group are
+  sorted by package name. Entry fields also use a fixed source-independent
+  order.
+- Manifest path values are normalized lexically on every host: `\` becomes
+  `/`, duplicate separators and `.` segments are removed, and resolvable `..`
+  pairs are collapsed. The normalized relative spelling, not an absolute host
+  path, is persisted. This rule also applies to `dependency-overrides`.
+- Every string is emitted as an escaped TOML basic string, so paths or URLs
+  containing quotes, backslashes, Unicode, or control characters remain valid
+  TOML without changing their parsed value.
+- Re-rendering an unchanged manifest and unchanged dependency contents must
+  produce byte-for-byte identical output. Path dependency checksums are based
+  on sorted `/`-normalized relative file names plus their exact bytes.
+
+These guarantees are regression-tested with Windows separators, redundant dot
+segments, override paths, TOML-sensitive path characters, dependency ordering,
+and repeated writes.
+
 ## Manifest + CLI workflow
 
 ### Manifest (`tiny.toml`)

@@ -26,10 +26,10 @@ different layers of the implementation:
 | Statically known heap bounds violation | Shared heap lint | Full rendered-message parity |
 | `len` called with an unsized value | Built-in runtime dispatch | Full rendered-message parity |
 
-Exception classes are not part of this audit gate. Some native paths use
-`RuntimeError` while the interpreter uses `TinyLangError`, but their complete
-user-facing text is identical in the passing cases. A future structured-error
-parity project may align exception metadata separately.
+Rendered-message parity and Python exception metadata are separate contracts.
+The rendered-message gate remains strict for every scenario above. NBEP-002 now
+also locks the currently supported metadata behavior at the public Python API
+boundary; the inventory and rationale are documented below.
 
 ## Completed bounded follow-up issues
 
@@ -40,16 +40,32 @@ calls are compared with interpreter output for all three value categories, and
 unsized values now emit the interpreter-compatible `E005` diagnostic, hint, and
 call-site span through the exact-message parity matrix.
 
+### NBEP-002: exception metadata inventory (completed 2026-06-12)
+
+The public Python API intentionally preserves the existing distinction between
+frontend/structured failures and native VM runtime failures. The executable
+contract in `tests/detailtests/test_native_backend_error_parity.py` inventories
+exception type, code, hint, position, and span independently from rendered text.
+
+| Scenario | Interpreter metadata | Native metadata | Supported contract |
+| --- | --- | --- | --- |
+| Unknown variable | `TinyLangError`; `E003`; declaration hint; position `1:7`; span `1:7-1:13` | `RuntimeError`; no structured fields | A native VM name-lookup failure is an opaque runtime exception whose string contains the complete formatted diagnostic. |
+| Division by zero | `TinyLangError`; `E000`; no hint; position `1:9`; span `1:7-1:11` | `TinyLangError`; `E000`; no hint; position `1:7`; span `1:7-1:11` | The expression span is authoritative for rendering; backend-specific point positions may identify different points inside that span. |
+| Function argument-count mismatch | `TinyLangError`; `E009`; argument-count hint; position `2:7`; span `2:7-2:12` | Same | Shared frontend lint failures expose identical structured metadata. |
+| Statically known heap bounds violation | `TinyLangError`; `E020`; bounds hint; position `2:7`; span `2:7-2:20` | Same | Shared frontend lint failures expose identical structured metadata. |
+| `len` called with an unsized value | `TinyLangError`; `E005`; sized-value hint; position `1:7`; span `1:7-1:12` | `RuntimeError`; no structured fields | A native built-in dispatch failure is an opaque runtime exception whose string contains the complete formatted diagnostic. |
+
+This difference is supported behavior for the experimental native backend. API
+consumers must use `str(error)` when they need a backend-neutral diagnostic.
+They may consume `TinyLangError` fields when the raised exception provides them,
+but must not assume that every native VM runtime failure is structured. This
+choice avoids changing exception inheritance or catch behavior while preserving
+the exact CLI-visible diagnostic contract.
+
 ## Remaining bounded follow-up issues
 
-### NBEP-002: inventory exception metadata parity separately
-
-- **Observed delta:** passing message-parity cases can still differ between
-  `TinyLangError` and `RuntimeError` at the Python API boundary.
-- **Boundary:** inventory only error type, code, hint, position, and span fields
-  for the scenarios in this audit. Do not change CLI-rendered text.
-- **Acceptance:** publish the intended API contract and either align the native
-  exceptions or document the type difference as supported behavior.
+None from this focused audit. New parity gaps should be recorded as separately
+bounded issues rather than widening this gate implicitly.
 
 ## Re-running the audit
 

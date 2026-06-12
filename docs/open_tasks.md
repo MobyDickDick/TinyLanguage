@@ -85,6 +85,18 @@ window. They remain open until the listed success criteria are met.
   - Follow-up: `NBEP-002` remains separately bounded to exception metadata and
     deliberately does not change CLI-rendered diagnostics.
 
+- [x] **NBEP-002: inventory native exception metadata parity**
+  (Owner: Runtime/Compiler)
+  - Success: inventory error type, code, hint, position, and span for every
+    scenario in the native error-parity audit; publish the intended Python API
+    contract without changing CLI-rendered text.
+  - Result: added an executable metadata matrix for all five audit scenarios and
+    documented the supported distinction between structured `TinyLangError`
+    failures and opaque native `RuntimeError` failures. Backend-neutral clients
+    use the already parity-checked rendered diagnostic.
+  - Follow-up: no bounded issues remain from the focused native error-parity
+    audit; future deltas receive new issue identifiers and explicit scope.
+
 ## Planning notes
 
 - [x] Verified all historical checklist entries below this section remain

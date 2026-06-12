@@ -24,27 +24,23 @@ different layers of the implementation:
 | Division by zero | Expression evaluation / VM arithmetic | Full rendered-message parity |
 | Function argument-count mismatch | Shared frontend lint | Full rendered-message parity |
 | Statically known heap bounds violation | Shared heap lint | Full rendered-message parity |
-| `len` called with an unsized value | Built-in runtime dispatch | Delta recorded as `NBEP-001` |
+| `len` called with an unsized value | Built-in runtime dispatch | Full rendered-message parity |
 
 Exception classes are not part of this audit gate. Some native paths use
 `RuntimeError` while the interpreter uses `TinyLangError`, but their complete
 user-facing text is identical in the passing cases. A future structured-error
 parity project may align exception metadata separately.
 
+## Completed bounded follow-up issues
+
+### NBEP-001: native `len` built-in parity (completed 2026-06-12)
+
+Native VM dispatch now handles strings, collections, and heap pointers. Valid
+calls are compared with interpreter output for all three value categories, and
+unsized values now emit the interpreter-compatible `E005` diagnostic, hint, and
+call-site span through the exact-message parity matrix.
+
 ## Remaining bounded follow-up issues
-
-### NBEP-001: implement native `len` built-in parity
-
-- **Observed interpreter diagnostic:** `E005: len expects a sized value`, with a
-  sized-value hint and the call-site span.
-- **Observed native diagnostic:** `E000: unknown function len`, with the same
-  call-site span but no built-in-specific hint.
-- **Boundary:** add native VM dispatch for `len` covering strings, collections,
-  and heap pointers; emit the interpreter's `E005` diagnostic for unsized
-  values. Do not broaden this issue into general standard-library parity.
-- **Acceptance:** valid `len` calls return the same value in both backends, the
-  unsized-value case moves into the exact-message parity matrix, and the
-  explicit delta assertion can be removed.
 
 ### NBEP-002: inventory exception metadata parity separately
 

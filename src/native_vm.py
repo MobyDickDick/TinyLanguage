@@ -380,6 +380,10 @@ class NativeVM:
             if len(args) != 1:
                 raise RuntimeError(f"{name} expects 1 arg, got {len(args)}")
             return self._heap_new(args[0])
+        if name == "len":
+            if len(args) != 1:
+                raise RuntimeError(f"len expects 1 arg, got {len(args)}")
+            return self._builtin_len(args[0])
         if name == "heap_get":
             if len(args) != 2:
                 raise RuntimeError(f"heap_get expects 2 args, got {len(args)}")
@@ -681,6 +685,16 @@ class NativeVM:
             self._record_error(message)
             return None
         return ip, cells
+
+    def _builtin_len(self, target: Any) -> int:
+        """Return the length of a heap allocation or another sized value."""
+
+        try:
+            if isinstance(target, int) and target in self.heap:
+                return len(self.heap[target])
+            return len(target)
+        except Exception as exc:
+            raise RuntimeError("len expects a sized value") from exc
 
     def _heap_new(self, size: Any) -> int:
         count = int(size)

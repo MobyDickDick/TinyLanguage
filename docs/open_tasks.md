@@ -72,6 +72,19 @@ window. They remain open until the listed success criteria are met.
    - Outcome target: extend lockfile reproducibility coverage with additional path edge-cases and document the deterministic rendering contract.
    - Result: lockfile rendering now lexically normalizes redundant path segments and dependency-override paths, TOML-escapes every persisted string, and is covered by repeated-write, LF-ending, quoted-path, override, and dot-segment regressions. The byte-level ordering, path, encoding, and checksum rules are documented in `docs/package_manager_plan.md`.
 
+## Next documented work package (completed 2026-06-12)
+
+- [x] **NBEP-001: implement native `len` built-in parity**
+  (Owner: Runtime/Compiler)
+  - Success: valid string, collection, and heap-pointer calls return the same
+    value in the interpreter and native VM; unsized values produce the exact
+    interpreter `E005` diagnostic.
+  - Result: added native `len` dispatch and parity regressions for all supported
+    value categories, moved the unsized-value scenario into the exact-message
+    matrix, and closed `NBEP-001` in the audit document.
+  - Follow-up: `NBEP-002` remains separately bounded to exception metadata and
+    deliberately does not change CLI-rendered diagnostics.
+
 ## Planning notes
 
 - [x] Verified all historical checklist entries below this section remain

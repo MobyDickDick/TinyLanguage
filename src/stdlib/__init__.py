@@ -1234,7 +1234,7 @@ class _StdLibRegistrar:
         return "/" if absolute else ""
 
     def _path_join(self, parts: Any) -> str:
-        """Join path parts with normalized separators and no duplicate slashes."""
+        """Join path parts and apply the Path namespace's lexical normalization."""
         seq = self._resolve_sequence(parts)
         drive = ""
         absolute = False
@@ -1261,9 +1261,9 @@ class _StdLibRegistrar:
         joined = "/".join(segments)
         prefix = drive + ("/" if absolute else "")
         if joined:
-            return f"{prefix}{joined}"
+            return self._path_normalize(f"{prefix}{joined}")
         if prefix:
-            return prefix
+            return self._path_normalize(prefix)
         return "/" if absolute else ""
 
     # -----------------------------------------------------------------------

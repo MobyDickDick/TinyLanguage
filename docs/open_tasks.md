@@ -97,6 +97,21 @@ window. They remain open until the listed success criteria are met.
   - Follow-up: no bounded issues remain from the focused native error-parity
     audit; future deltas receive new issue identifiers and explicit scope.
 
+## Next documented work package (completed 2026-06-13)
+
+- [x] **Resolve the `stdlib.path` architecture and normalization contract**
+  (Owner: Language/Stdlib)
+  - Success: decide whether `stdlib.path` wraps `File` or owns a dedicated
+    namespace; document the filesystem boundary and lock the decision with a
+    regression covering nonexistent paths plus lexical `.`/`..` reduction.
+  - Result: selected a dedicated, filesystem-independent `Path` namespace,
+    documented the boundary in the expansion plan, made `Path.join` apply the
+    same lexical normalization as `Path.normalize`, and added an end-to-end
+    regression proving path operations do not require the target to exist.
+  - Follow-up: the next unresolved Phase 1 decision is the cross-platform
+    guarantee for `stdlib.os` separators, case sensitivity, and environment
+    variable handling.
+
 ## Planning notes
 
 - [x] Verified all historical checklist entries below this section remain

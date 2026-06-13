@@ -89,3 +89,24 @@ def test_stdlib_path_posix_parity_with_python(run_tiny_source, monkeypatch):
         f"{str(expected_isabs).lower()}\n"
     )
     assert out == expected
+
+
+def test_stdlib_path_is_a_lexical_namespace(run_tiny_source, monkeypatch, tmp_path):
+    """Path operations normalize nonexistent paths without consulting File."""
+    monkeypatch.setenv("TINY_LINT_HEAP", "0")
+    missing_root = (tmp_path / "does-not-exist").as_posix()
+
+    out = run_tiny_source(
+        f"""
+        import stdlib.path;
+
+        def parts = new["{missing_root}", "child", "..", ".", "result.txt"];
+        print(path.join(parts));
+        print(path.normalize("{missing_root}//child/../result.txt"));
+        print(File.exists("{missing_root}/result.txt"));
+        def _cleanup_parts = delete(parts);
+        """,
+    )
+
+    expected = f"{missing_root}/result.txt\n{missing_root}/result.txt\nfalse\n"
+    assert out == expected

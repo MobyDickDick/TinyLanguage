@@ -307,10 +307,16 @@ A module is considered stable when:
 - The module passes interpreter, C backend, and LLVM backend smoke tests.
 - Documentation examples are verified via tests or CI scripts.
 
-## Open questions to resolve before Phase 1
+## Decisions and open questions for Phase 1
 
-- Should `stdlib.path` be a thin wrapper over `File` or a dedicated namespace
-  with its own path normalization rules?
+- ✅ **Resolved 2026-06-13:** `stdlib.path` is a dedicated, purely lexical
+  namespace rather than a thin wrapper over `File`. `Path.normalize` and
+  `Path.join` own separator conversion plus `.`/`..` reduction, while
+  `stdlib/path.tiny` builds decomposition helpers on top of those primitives.
+  Path operations do not query the filesystem, so they work identically for
+  existing and nonexistent paths. Filesystem effects and existence checks stay
+  in `File`, `stdlib.fs`, and `stdlib.os`. This boundary is locked by
+  `test_stdlib_path_is_a_lexical_namespace`.
 - What cross-platform guarantees do we want for `stdlib.os` path separators,
   case sensitivity, and environment variable handling?
 - Can `stdlib.time` expose both monotonic and wall-clock clocks in the runtime

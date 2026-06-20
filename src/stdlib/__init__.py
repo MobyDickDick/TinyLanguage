@@ -365,6 +365,7 @@ class _StdLibRegistrar:
         self.runtime.register_native("listdir", self._os_listdir, namespace="OS")
         self.runtime.register_native("platform", self._os_platform, namespace="OS")
         self.runtime.register_native("path_separator", self._os_path_separator, namespace="OS")
+        self.runtime.register_native("env_case_sensitive", self._os_env_case_sensitive, namespace="OS")
 
         # ----------------------------- Time --------------------------------
         self.runtime.register_native("now_ms", self._time_now_ms, namespace="Time")
@@ -1329,6 +1330,10 @@ class _StdLibRegistrar:
     def _os_path_separator(self) -> str:
         """Return the platform path separator."""
         return os.sep
+
+    def _os_env_case_sensitive(self) -> bool:
+        """Return whether environment variable keys are case-sensitive."""
+        return self._os_platform() != "windows"
 
     # -----------------------------------------------------------------------
     # Time namespace

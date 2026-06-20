@@ -65,6 +65,31 @@ small-scope implementations.
 - **`stdlib.time`**: Timestamps and sleeps that map to runtime-supported
   monotonic/epoch APIs.
 
+### `stdlib.os` cross-platform contract (Phase 1)
+
+`stdlib.os` exposes host operating-system state directly, but keeps the values
+portable enough for package tooling and CI smoke tests:
+
+- **Path separators**: `os.path_separator()` returns the host separator (`/` on
+  POSIX, `\\` on Windows). Directory-oriented helpers (`cwd`, `chdir`,
+  `listdir`) accept host paths; display-oriented paths returned by `cwd()` are
+  normalized to forward slashes so transcripts are stable across editors and
+  backends. Lexical, platform-independent path manipulation remains the
+  responsibility of `stdlib.path`/`stdlib.pathlib`, not `stdlib.os.path`.
+- **Case sensitivity**: file-system case sensitivity is treated as a host
+  property and must not be inferred from `stdlib.os`. The stdlib path helpers
+  preserve casing and do not case-fold names. Tests that compare file names
+  should create exact-case fixtures or explicitly normalize in the test.
+- **Environment variables**: `getenv`, `setenv`, and `unsetenv` delegate to the
+  host environment. `os.env_case_sensitive()` reports whether environment keys
+  are case-sensitive (`false` on Windows, `true` elsewhere) so package tooling
+  can avoid ambiguous mixed-case keys. Missing variables return `Null`, and
+  `unsetenv` returns `false` when the key did not exist.
+
+**Regression coverage**: `tests/detailtests/test_stdlib_os.py` locks the
+separator/platform output, sorted directory listing, stable forward-slash `cwd`
+rendering, and environment case-sensitivity behavior.
+
 ### `stdlib.csv` behavior notes (Phase 1)
 
 The initial CSV helpers should stay deliberately small and deterministic so

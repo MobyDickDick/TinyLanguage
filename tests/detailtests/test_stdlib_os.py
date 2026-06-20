@@ -24,7 +24,7 @@ def _expected_platform() -> str:
 
 
 def test_stdlib_os_environment_and_platform(run_tiny_source, monkeypatch):
-    """Validate env helpers plus platform + separator outputs."""
+    """Validate env helpers plus platform, separator, and env case semantics."""
     monkeypatch.setenv("TINY_LINT_HEAP", "0")
     missing_key = "TINY_STD_OS_TEST_MISSING"
     value_key = "TINY_STD_OS_TEST_VALUE"
@@ -47,17 +47,22 @@ def test_stdlib_os_environment_and_platform(run_tiny_source, monkeypatch):
         print(os.setenv("{value_key}", "value"));
         print(os.getenv("{value_key}"));
         print(os.unsetenv("{value_key}"));
+        print(os.unsetenv("{value_key}"));
         print(os.platform());
         print(os.path_separator());
+        print(os.env_case_sensitive());
         ''',
     )
 
+    expected_env_case = "false" if _expected_platform() == "windows" else "true"
     expected = (
         "true\n"
         "value\n"
         "true\n"
+        "false\n"
         f"{_expected_platform()}\n"
         f"{os.sep}\n"
+        f"{expected_env_case}\n"
     )
     assert out == expected
 

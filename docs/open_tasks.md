@@ -112,6 +112,20 @@ window. They remain open until the listed success criteria are met.
     guarantee for `stdlib.os` separators, case sensitivity, and environment
     variable handling.
 
+## Next documented work package (completed 2026-06-20)
+
+- [x] **Close stale conformance-strategy follow-ups**
+  (Owner: Tooling/QA)
+  - Success: resolve the remaining open follow-up bullets in
+    `docs/conformance_compatibility_test_strategy.md` by tying stdlib ownership
+    to the suite-boundary matrix and revalidating the local smoke command
+    against the 60-second feedback budget.
+  - Result: the stdlib ownership follow-up now points to explicit spec/parity/
+    compatibility responsibilities, and the smoke-subset follow-up records the
+    `python src/run_all.py --smoke` validation performed on 2026-06-20.
+  - Follow-up: future smoke-tier expansions should keep the same command under
+    60 seconds or move slower checks into nightly/full CI lanes.
+
 ## Planning notes
 
 - [x] Verified all historical checklist entries below this section remain

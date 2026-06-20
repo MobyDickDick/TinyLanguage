@@ -126,6 +126,21 @@ window. They remain open until the listed success criteria are met.
   - Follow-up: future smoke-tier expansions should keep the same command under
     60 seconds or move slower checks into nightly/full CI lanes.
 
+## Next documented work package (completed 2026-06-20)
+
+- [x] **Define the `stdlib.os` cross-platform contract**
+  (Owner: Language/Stdlib)
+  - Success: document separator, case-sensitivity, and environment-variable
+    behavior, and lock the contract with regression coverage.
+  - Result: `docs/stdlib_expansion_plan.md` now documents the Phase 1
+    `stdlib.os` portability boundary; `os.env_case_sensitive()` exposes host
+    environment key semantics; and `tests/detailtests/test_stdlib_os.py` covers
+    separator, platform, cwd normalization, directory ordering, missing env,
+    unset-missing, and case-sensitivity behavior.
+  - Follow-up: file-system case sensitivity remains an explicitly host-owned
+    property; future package tooling should rely on exact-case fixture paths or
+    add a separate capability probe before enforcing case-folding rules.
+
 ## Planning notes
 
 - [x] Verified all historical checklist entries below this section remain

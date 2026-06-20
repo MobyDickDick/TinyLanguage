@@ -92,3 +92,7 @@ fn platform() {
 fn path_separator() {
   return OS.path_separator();
 }
+
+fn env_case_sensitive() {
+  return OS.env_case_sensitive();
+}

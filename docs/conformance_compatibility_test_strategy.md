@@ -174,8 +174,17 @@ centralized in a single helper so new backend runners stay aligned.
     via `tools/output_normalization.py`, and regression coverage in
     `tests/test_parity_runner.py` verifies stream-specific diff reporting plus
     normalized error-prefix parity.
-- Decide which suite owns stdlib behavior vs. spec vs. parity.
-- Validate the smoke subset stays under 60 seconds as tests evolve.
+- [x] Decide which suite owns stdlib behavior vs. spec vs. parity.
+  - Notes: ownership is now captured in the suite-boundary matrix above: spec
+    conformance owns documented stdlib API contracts, cross-backend parity owns
+    backend agreement for shared stdlib behavior, and compatibility/regression
+    tests own deprecation and CLI-helper promises.
+- [x] Validate the smoke subset stays under 60 seconds as tests evolve.
+  - Notes: the current local smoke workflow is documented in the smoke-subset
+    section and was revalidated with `python src/run_all.py --smoke` on
+    2026-06-20; future expansions should keep this command below the
+    60-second local-feedback budget or move heavier checks out of the smoke
+    tier.
 
 ## Derived tasks
 

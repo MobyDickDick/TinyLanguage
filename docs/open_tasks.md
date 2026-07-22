@@ -5,6 +5,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Open-task audit (2026-07-22)
+
+- [x] **Re-validate the documented backlog before opening the next cycle**
+  (Owner: Project Lead)
+  - Result: no unchecked checklist entries (`- [ ]`) remain in the tracked
+    planning surfaces (`docs/`, `documentation_tasks.md`, and `README.md`)
+    as of 2026-07-22, so there is no implementation-ready documented work
+    package to execute without first adding newly scoped work.
+  - Follow-up: start the next cycle by triaging fresh candidates into this
+    file with owners, success criteria, and acceptance notes before future
+    "next documented work package" requests are executed.
+
 ## Active timebox (2026-02-15 refresh)
 
 The following items were promoted from the roadmap into an active execution

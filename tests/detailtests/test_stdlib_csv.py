@@ -87,6 +87,8 @@ def test_stdlib_csv_round_trip_quotes_newlines_and_crlf(run_tiny_source):
         def rows = csv.parse(original);
         def serialized = csv.stringify(rows);
         print(serialized);
+        def header_original = heap_get(rows, 0);
+        def _cleanup_header_original = delete(header_original);
         def reparsed = csv.parse(serialized);
         print(Collections.len(reparsed));
         def row1 = heap_get(reparsed, 1);
@@ -95,6 +97,8 @@ def test_stdlib_csv_round_trip_quotes_newlines_and_crlf(run_tiny_source):
         print(heap_get(row2, 1));
         def _cleanup_row1 = delete(row1);
         def _cleanup_row2 = delete(row2);
+        def header_reparsed = heap_get(reparsed, 0);
+        def _cleanup_header_reparsed = delete(header_reparsed);
         def _cleanup_rows = delete(rows);
         def _cleanup_reparsed = delete(reparsed);
         """,

@@ -17,6 +17,20 @@ archived in `docs/open_tasks_archive.md`.
     file with owners, success criteria, and acceptance notes before future
     "next documented work package" requests are executed.
 
+
+## Next documented work package (completed 2026-07-22)
+
+- [x] **Lock `stdlib.csv` parser round-trip edge coverage**
+  (Owner: Language/Stdlib)
+  - Success: add a deterministic CSV round-trip regression for quoted fields,
+    embedded newlines, and CRLF input normalization, as called out by the data
+    interchange parser round-trip follow-up in `docs/stdlib_expansion_plan.md`.
+  - Result: `tests/detailtests/test_stdlib_csv.py` now reparses serialized CSV
+    output and verifies stable row counts plus field preservation for embedded
+    delimiters and multiline fields.
+  - Follow-up: YAML remains optional for Phase 2 and should receive equivalent
+    round-trip coverage once a backend implementation is available.
+
 ## Active timebox (2026-02-15 refresh)
 
 The following items were promoted from the roadmap into an active execution

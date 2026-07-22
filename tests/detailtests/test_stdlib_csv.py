@@ -77,6 +77,32 @@ def test_stdlib_csv_stringify_with_headers(run_tiny_source):
     assert out == "name,note\nAda,hello\n\"Linus, Jr.\",\"\"\"kernel\"\"\"\n"
 
 
+def test_stdlib_csv_round_trip_quotes_newlines_and_crlf(run_tiny_source):
+    """Round-trip quoted fields, embedded newlines, and CRLF input deterministically."""
+    out = run_stdlib_module(
+        run_tiny_source,
+        "csv",
+        r"""
+        def original = "name,note\r\nAda,\"hello, world\"\r\nLinus,\"line 1\nline 2\"\r\n";
+        def rows = csv.parse(original);
+        def serialized = csv.stringify(rows);
+        print(serialized);
+        def reparsed = csv.parse(serialized);
+        print(Collections.len(reparsed));
+        def row1 = heap_get(reparsed, 1);
+        def row2 = heap_get(reparsed, 2);
+        print(heap_get(row1, 1));
+        print(heap_get(row2, 1));
+        def _cleanup_row1 = delete(row1);
+        def _cleanup_row2 = delete(row2);
+        def _cleanup_rows = delete(rows);
+        def _cleanup_reparsed = delete(reparsed);
+        """,
+    )
+
+    assert out == 'name,note\nAda,"hello, world"\nLinus,"line 1\nline 2"\n3\nhello, world\nline 1\nline 2\n'
+
+
 def test_stdlib_csv_invalid_delimiter_raises(run_tiny_source):
     """Invalid delimiter or quote inputs should raise a ValueError."""
     with pytest.raises(Exception, match=r"delimiter must be a single character"):

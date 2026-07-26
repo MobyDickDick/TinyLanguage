@@ -162,7 +162,10 @@ subset of YAML. The module will focus on deterministic round trips for:
 
 Non-goals for the first iteration include anchors/aliases, tags, complex keys,
 and multi-document streams. The module will expose `parse`, `stringify`, `load`,
-and `dump` wrappers once a backend implementation is available.
+and `dump` wrappers once a backend implementation is available. The initial
+backend is now available; `tests/detailtests/test_stdlib_yaml.py` locks a
+serialize-then-parse round trip for the supported JSON-compatible scalar types,
+Unicode strings, and inline lists.
 
 ### Minimal regex syntax subset (Phase 2)
 

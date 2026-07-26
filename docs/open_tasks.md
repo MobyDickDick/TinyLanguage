@@ -5,6 +5,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Next documented work package (completed 2026-07-26)
+
+- [x] **Lock `stdlib.yaml` JSON-compatible scalar round-trip coverage**
+  (Owner: Language/Stdlib)
+  - Success: reparse deterministic YAML serialization and verify that integers,
+    negative and decimal numbers, booleans, nulls, empty and Unicode strings,
+    and inline lists retain their values and scalar types.
+  - Result: YAML scalar parsing now delegates valid JSON scalar text to the
+    runtime JSON parser, while plain YAML strings remain strings; a regression
+    checks the complete reparsed structure against the typed source values.
+  - Follow-up: nested block-style lists and maps remain outside the conservative
+    initial YAML subset and require a separately scoped parser extension.
+
 ## Open-task audit (2026-07-22)
 
 - [x] **Re-validate the documented backlog before opening the next cycle**

@@ -13,8 +13,26 @@ def test_stdlib_yaml_round_trip_mapping_and_sequence(run_tiny_source):
         """,
     )
 
-    assert "a: \"1\"" in out
+    assert "a: 1" in out
     assert "b: [true,null]" in out
+
+
+def test_stdlib_yaml_round_trip_preserves_json_compatible_scalars(run_tiny_source):
+    """Reparse rendered YAML without changing supported scalar types or values."""
+    out = run_tiny_source(
+        '''
+        import stdlib.yaml;
+        def original = yaml.parse("integer: 42\nnegative: -7\ndecimal: 3.5\nflag: true\nempty: \\\"\\\"\nlabel: Grüße\nitems: [1,\\\"two\\\",false,null]\n");
+        def rendered = yaml.stringify(original);
+        def reparsed = yaml.parse(rendered);
+        print(JSON.stringify(reparsed));
+        def _cleanup_original = delete(original);
+        def _cleanup_reparsed = delete(reparsed);
+        ''',
+    )
+
+    expected = '{"integer":42,"negative":-7,"decimal":3.5,"flag":true,"empty":"","label":"Gr\\u00fc\\u00dfe","items":[1,"two",false,null]}'
+    assert out == f"{expected}\n"
 
 
 def test_stdlib_yaml_load_dump_round_trip(run_tiny_source, tmp_path):

@@ -2,22 +2,14 @@
 
 fn _parse_scalar(text) -> any {
   def trimmed = String.trim(text);
-  if (trimmed == "true" || trimmed == "false" || trimmed == "null") {
+  try {
     return JSON.parse(trimmed);
-  }
-  if (String.starts_with(trimmed, "[") || String.starts_with(trimmed, "{") || String.starts_with(trimmed, "\"")) {
-    return JSON.parse(trimmed);
-  }
-  if (String.is_digit(trimmed)) {
+  } catch (_err) {
     return trimmed;
   }
-  return trimmed;
 }
 
 fn _stringify_scalar(value) {
-  if (value == Null) { return "null"; }
-  if (value == true) { return "true"; }
-  if (value == false) { return "false"; }
   return JSON.stringify(value);
 }
 

@@ -311,6 +311,6 @@ def _cleanup_value = delete(value);
 ```
 
 ```text
-a: "1"
+a: 1
 b: [true,null]
 ```

@@ -35,6 +35,21 @@ def test_stdlib_yaml_round_trip_preserves_json_compatible_scalars(run_tiny_sourc
     assert out == f"{expected}\n"
 
 
+def test_stdlib_yaml_parses_nested_block_maps_and_lists(run_tiny_source):
+    """Parse nested indentation-based collections in the conservative subset."""
+    out = run_tiny_source(
+        '''
+        import stdlib.yaml;
+        def value = yaml.parse("project:\n  name: Tiny\n  releases:\n    - 1\n    - 2\n  metadata:\n    stable: true\n    note: null\n");
+        print(JSON.stringify(value));
+        def _cleanup_value = delete(value);
+        ''',
+    )
+
+    expected = '{"project":{"name":"Tiny","releases":[1,2],"metadata":{"stable":true,"note":null}}}'
+    assert out == f"{expected}\n"
+
+
 def test_stdlib_yaml_load_dump_round_trip(run_tiny_source, tmp_path):
     """Load a YAML file and dump it again via stdlib helpers."""
     yaml_path = tmp_path / "sample.yaml"

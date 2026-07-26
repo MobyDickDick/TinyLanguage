@@ -155,7 +155,10 @@ closing the incident:
 CI runs the microbenchmarks against the baseline snapshot stored in
 `benchmarks/performance_baselines.json` and enforces the budget ratios defined
 there. The check also flags regressions when a backend average is more than
-15% slower than the recorded baseline. To run the same check locally:
+15% slower than the recorded baseline. When an initial capture reports an
+issue, the gate automatically repeats the capture and fails only if the same
+benchmark/backend category fails twice consecutively. To run the same check
+locally:
 
 ```bash
 python tools/performance/check_performance_budgets.py

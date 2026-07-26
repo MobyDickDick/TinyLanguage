@@ -1,4 +1,7 @@
-from tools.performance.check_performance_budgets import _evaluate_results
+from tools.performance.check_performance_budgets import (
+    _evaluate_results,
+    _persistent_issues,
+)
 
 
 def _baseline(min_ratio: float) -> dict:
@@ -49,3 +52,16 @@ def test_material_ratio_drop_still_fails_budget() -> None:
     )
     assert issues
     assert "ratio 1.98x below budget 2.00x" in issues[0]
+
+
+def test_confirmation_discards_transient_performance_issue() -> None:
+    first = ["tight_loop: native ratio 1.85x below budget 2.00x"]
+
+    assert _persistent_issues(first, []) == []
+
+
+def test_confirmation_keeps_same_issue_category_with_new_timings() -> None:
+    first = ["tight_loop: native ratio 1.85x below budget 2.00x"]
+    second = ["tight_loop: native ratio 1.91x below budget 2.00x"]
+
+    assert _persistent_issues(first, second) == second

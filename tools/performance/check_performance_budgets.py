@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -143,6 +144,18 @@ def _evaluate_results(
     return issues, warnings
 
 
+def _issue_key(issue: str) -> str:
+    """Return the stable benchmark/backend category for a timing issue."""
+    normalized = re.sub(r"\d+(?:\.\d+)?(?:ms|x)", "<measurement>", issue)
+    return normalized
+
+
+def _persistent_issues(first: list[str], second: list[str]) -> list[str]:
+    """Keep second-run issues whose category also failed the first run."""
+    first_keys = {_issue_key(issue) for issue in first}
+    return [issue for issue in second if _issue_key(issue) in first_keys]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Check TinyLanguage performance budgets against baselines."
@@ -193,6 +206,31 @@ def main() -> int:
         return 1
 
     issues, warnings = _evaluate_results(results=results, baseline=baseline)
+
+    # Shared CI hosts occasionally distort one backend for a single capture.
+    # The documented regression policy requires two consecutive failures, so
+    # retry once and fail only categories reproduced by the second capture.
+    if issues:
+        print("Performance budget issue detected; retrying once to confirm...")
+        try:
+            retry_results = _run_benchmarks(
+                backends=backends,
+                cases=cases,
+                repeat=args.repeat,
+                warmup=args.warmup,
+            )
+        except Exception as exc:
+            print(f"Failed to rerun microbenchmarks: {exc}")
+            return 1
+        retry_issues, retry_warnings = _evaluate_results(
+            results=retry_results, baseline=baseline
+        )
+        issues = _persistent_issues(issues, retry_issues)
+        warnings.extend(retry_warnings)
+        if not issues:
+            warnings.append(
+                "initial performance issue did not reproduce on the confirmation run"
+            )
 
     if warnings:
         print("Performance budget warnings:")

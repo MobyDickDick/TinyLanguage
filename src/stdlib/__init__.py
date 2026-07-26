@@ -248,6 +248,7 @@ class _StdLibRegistrar:
         self._ensure_namespace("Time")
         self._ensure_namespace("JSON")
         self._ensure_namespace("TOML")
+        self._ensure_namespace("YAML")
         self._ensure_namespace("Regex")
         self._ensure_namespace("Async")
         self._ensure_namespace("Result")
@@ -292,6 +293,9 @@ class _StdLibRegistrar:
         self.runtime.register_native("starts_with", self._string_starts_with, namespace="String")
         self.runtime.register_native("ends_with", self._string_ends_with, namespace="String")
         self.runtime.register_native("is_digit", self._string_is_digit, namespace="String")
+
+        # ----------------------------- YAML --------------------------------
+        self.runtime.register_native("parse_block", self._yaml_parse_block, namespace="YAML")
 
         # ------------------------- Collections ------------------------------
         # Generic helpers for sequences (heap list pointers or Python lists).
@@ -853,6 +857,71 @@ class _StdLibRegistrar:
     def _string_is_digit(self, text: Any) -> bool:
         """Return True if text contains only digit characters."""
         return str(text).isdigit()
+
+    def _yaml_parse_block(self, text: Any) -> Any:
+        """Parse the indentation-based part of the conservative YAML subset."""
+        source = str(text)
+        if "\t" in source:
+            raise RuntimeError("invalid yaml: tabs are not supported for indentation")
+        lines = [
+            (len(line) - len(line.lstrip(" ")), line.strip())
+            for line in source.splitlines()
+            if line.strip()
+        ]
+        if not lines:
+            return {}
+
+        def scalar(raw: str) -> Any:
+            try:
+                return self._json_to_value(json.loads(raw))
+            except Exception:
+                return raw
+
+        def block(start: int, indent: int) -> tuple[Any, int]:
+            is_sequence = lines[start][1] == "-" or lines[start][1].startswith("- ")
+            result: Any = [] if is_sequence else {}
+            index = start
+            while index < len(lines):
+                current_indent, content = lines[index]
+                if current_indent < indent:
+                    break
+                if current_indent != indent:
+                    raise RuntimeError("invalid yaml: inconsistent indentation")
+                if is_sequence:
+                    if content != "-" and not content.startswith("- "):
+                        break
+                    raw_value = content[1:].strip()
+                    if raw_value:
+                        result.append(scalar(raw_value))
+                        index += 1
+                    elif index + 1 < len(lines) and lines[index + 1][0] > indent:
+                        child, index = block(index + 1, lines[index + 1][0])
+                        result.append(child)
+                    else:
+                        result.append(None)
+                        index += 1
+                else:
+                    if content.startswith("-") or ":" not in content:
+                        break
+                    key, raw_value = content.split(":", 1)
+                    key = key.strip()
+                    if not key:
+                        raise RuntimeError("invalid yaml: mapping keys must be non-empty strings")
+                    raw_value = raw_value.strip()
+                    if raw_value:
+                        result[key] = scalar(raw_value)
+                        index += 1
+                    elif index + 1 < len(lines) and lines[index + 1][0] > indent:
+                        result[key], index = block(index + 1, lines[index + 1][0])
+                    else:
+                        result[key] = None
+                        index += 1
+            return result, index
+
+        parsed, next_index = block(0, lines[0][0])
+        if next_index != len(lines):
+            raise RuntimeError("invalid yaml: mixed collection styles at the same indentation")
+        return parsed
 
     # -----------------------------------------------------------------------
     # Collections namespace

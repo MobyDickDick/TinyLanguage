@@ -7,6 +7,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-07-26)
 
+- [x] **Extend `stdlib.yaml` parsing to nested block collections**
+  (Owner: Language/Stdlib)
+  - Success: parse consistently indented block-style lists and string-keyed
+    maps recursively while retaining JSON-compatible scalar types.
+  - Result: the conservative YAML parser now recognizes nested map/list blocks,
+    empty mapping values introduce child collections, and a regression locks a
+    mixed map/list document to its exact JSON representation.
+  - Follow-up: inline mapping entries inside block lists (for example,
+    `- name: Tiny`) remain outside this small grammar and need separate scope.
+
+## Next documented work package (completed 2026-07-26)
+
 - [x] **Lock `stdlib.yaml` JSON-compatible scalar round-trip coverage**
   (Owner: Language/Stdlib)
   - Success: reparse deterministic YAML serialization and verify that integers,

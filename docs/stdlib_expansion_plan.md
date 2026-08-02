@@ -169,6 +169,8 @@ Unicode strings, and inline lists. The parser also recursively handles
 consistently indented block-style maps and lists. Mapping entries may begin on
 the same line as a block-list marker (for example, `- name: Tiny`) and may have
 continuation keys or nested block collections on following indented lines.
+Malformed block input reports the offending one-based source line for invalid
+indentation, tab indentation, and mixed map/list collection styles.
 
 ### Minimal regex syntax subset (Phase 2)
 

@@ -50,6 +50,21 @@ def test_stdlib_yaml_parses_nested_block_maps_and_lists(run_tiny_source):
     assert out == f"{expected}\n"
 
 
+def test_stdlib_yaml_parses_inline_maps_in_block_lists(run_tiny_source):
+    """Parse list items whose first mapping key shares the item marker line."""
+    out = run_tiny_source(
+        '''
+        import stdlib.yaml;
+        def value = yaml.parse("projects:\n  - name: Tiny\n    stable: true\n    releases:\n      - 1\n      - 2\n  - name: Tools\n    homepage: https://example.test/tools\n");
+        print(JSON.stringify(value));
+        def _cleanup_value = delete(value);
+        ''',
+    )
+
+    expected = '{"projects":[{"name":"Tiny","stable":true,"releases":[1,2]},{"name":"Tools","homepage":"https://example.test/tools"}]}'
+    assert out == f"{expected}\n"
+
+
 def test_stdlib_yaml_load_dump_round_trip(run_tiny_source, tmp_path):
     """Load a YAML file and dump it again via stdlib helpers."""
     yaml_path = tmp_path / "sample.yaml"

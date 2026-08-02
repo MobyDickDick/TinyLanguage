@@ -166,8 +166,9 @@ and `dump` wrappers once a backend implementation is available. The initial
 backend is now available; `tests/detailtests/test_stdlib_yaml.py` locks a
 serialize-then-parse round trip for the supported JSON-compatible scalar types,
 Unicode strings, and inline lists. The parser also recursively handles
-consistently indented block-style maps and lists; inline mapping entries in a
-block list remain outside the conservative grammar.
+consistently indented block-style maps and lists. Mapping entries may begin on
+the same line as a block-list marker (for example, `- name: Tiny`) and may have
+continuation keys or nested block collections on following indented lines.
 
 ### Minimal regex syntax subset (Phase 2)
 

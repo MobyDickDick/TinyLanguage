@@ -863,13 +863,31 @@ class _StdLibRegistrar:
         source = str(text)
         if "\t" in source:
             raise RuntimeError("invalid yaml: tabs are not supported for indentation")
-        lines = [
+        source_lines = [
             (len(line) - len(line.lstrip(" ")), line.strip())
             for line in source.splitlines()
             if line.strip()
         ]
-        if not lines:
+        if not source_lines:
             return {}
+
+        # Treat an inline mapping at the start of a sequence item as if the
+        # dash and mapping entry had appeared on consecutive lines.  The
+        # existing recursive block parser can then consume both continuation
+        # keys and values nested below the first key without maintaining a
+        # second mapping parser just for sequences.
+        lines: list[tuple[int, str]] = []
+        for indent, content in source_lines:
+            item = content[2:] if content.startswith("- ") else ""
+            separator = item.find(":")
+            is_inline_mapping = separator >= 0 and (
+                separator == len(item) - 1 or item[separator + 1].isspace()
+            )
+            if is_inline_mapping:
+                lines.append((indent, "-"))
+                lines.append((indent + 2, item))
+            else:
+                lines.append((indent, content))
 
         def scalar(raw: str) -> Any:
             try:

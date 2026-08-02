@@ -5,6 +5,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Next documented work package (completed 2026-08-02)
+
+- [x] **Support inline mapping entries inside YAML block lists**
+  (Owner: Language/Stdlib)
+  - Success: parse sequence items whose first string-keyed mapping entry shares
+    the dash line (for example, `- name: Tiny`), including continuation keys
+    and recursively nested block collections.
+  - Result: inline mapping items are normalized into the recursive block
+    parser, and a regression locks multiple mapping items, scalar continuation
+    keys, nested lists, and colon-containing scalar values to exact JSON.
+  - Follow-up: advanced YAML features such as quoted keys, anchors, aliases,
+    tags, and multi-document streams remain explicit non-goals.
+
 ## Next documented work package (completed 2026-07-26)
 
 - [x] **Extend `stdlib.yaml` parsing to nested block collections**

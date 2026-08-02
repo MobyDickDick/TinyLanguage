@@ -7,6 +7,17 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-02)
 
+- [x] **Add line-aware diagnostics for malformed YAML block collections**
+  (Owner: Language/Stdlib)
+  - Success: deterministic parse failures identify the offending source line
+    for inconsistent indentation, tab indentation, and mixed collection styles.
+  - Result: YAML block-parser errors now include one-based input line numbers,
+    with parameterized regressions covering the three malformed-input classes.
+  - Follow-up: advanced YAML features such as anchors, aliases, tags, complex
+    keys, and multi-document streams remain explicit non-goals.
+
+## Next documented work package (completed 2026-08-02)
+
 - [x] **Support inline mapping entries inside YAML block lists**
   (Owner: Language/Stdlib)
   - Success: parse sequence items whose first string-keyed mapping entry shares

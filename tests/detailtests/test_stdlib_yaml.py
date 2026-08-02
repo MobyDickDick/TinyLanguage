@@ -1,5 +1,7 @@
 """Coverage tests for the stdlib yaml module."""
 
+import pytest
+
 
 def test_stdlib_yaml_round_trip_mapping_and_sequence(run_tiny_source):
     """Parse a compact YAML mapping and render it back to text."""
@@ -63,6 +65,35 @@ def test_stdlib_yaml_parses_inline_maps_in_block_lists(run_tiny_source):
 
     expected = '{"projects":[{"name":"Tiny","stable":true,"releases":[1,2]},{"name":"Tools","homepage":"https://example.test/tools"}]}'
     assert out == f"{expected}\n"
+
+
+@pytest.mark.parametrize(
+    ("document", "message"),
+    [
+        ("project:\n  name: Tiny\n   stable: true\n", "line 3: inconsistent indentation"),
+        ("project:\n\tname: Tiny\n", "line 2: tabs are not supported for indentation"),
+        ("name: Tiny\n- Tools\n", "line 2: mixed collection styles"),
+    ],
+)
+def test_stdlib_yaml_reports_source_line_for_malformed_blocks(
+    run_tiny_source, document, message
+):
+    """Report the offending source line for deterministic block parse errors."""
+    escaped = (
+        document.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+    )
+
+    with pytest.raises(Exception, match=message):
+        run_tiny_source(
+            f'''
+            import stdlib.yaml;
+            def value = yaml.parse("{escaped}");
+            def _cleanup_value = delete(value);
+            ''',
+        )
 
 
 def test_stdlib_yaml_load_dump_round_trip(run_tiny_source, tmp_path):

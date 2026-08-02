@@ -862,10 +862,17 @@ class _StdLibRegistrar:
         """Parse the indentation-based part of the conservative YAML subset."""
         source = str(text)
         if "\t" in source:
-            raise RuntimeError("invalid yaml: tabs are not supported for indentation")
+            tab_line = next(
+                line_number
+                for line_number, line in enumerate(source.splitlines(), start=1)
+                if "\t" in line
+            )
+            raise RuntimeError(
+                f"invalid yaml at line {tab_line}: tabs are not supported for indentation"
+            )
         source_lines = [
-            (len(line) - len(line.lstrip(" ")), line.strip())
-            for line in source.splitlines()
+            (len(line) - len(line.lstrip(" ")), line.strip(), line_number)
+            for line_number, line in enumerate(source.splitlines(), start=1)
             if line.strip()
         ]
         if not source_lines:
@@ -876,18 +883,18 @@ class _StdLibRegistrar:
         # existing recursive block parser can then consume both continuation
         # keys and values nested below the first key without maintaining a
         # second mapping parser just for sequences.
-        lines: list[tuple[int, str]] = []
-        for indent, content in source_lines:
+        lines: list[tuple[int, str, int]] = []
+        for indent, content, line_number in source_lines:
             item = content[2:] if content.startswith("- ") else ""
             separator = item.find(":")
             is_inline_mapping = separator >= 0 and (
                 separator == len(item) - 1 or item[separator + 1].isspace()
             )
             if is_inline_mapping:
-                lines.append((indent, "-"))
-                lines.append((indent + 2, item))
+                lines.append((indent, "-", line_number))
+                lines.append((indent + 2, item, line_number))
             else:
-                lines.append((indent, content))
+                lines.append((indent, content, line_number))
 
         def scalar(raw: str) -> Any:
             try:
@@ -900,11 +907,13 @@ class _StdLibRegistrar:
             result: Any = [] if is_sequence else {}
             index = start
             while index < len(lines):
-                current_indent, content = lines[index]
+                current_indent, content, line_number = lines[index]
                 if current_indent < indent:
                     break
                 if current_indent != indent:
-                    raise RuntimeError("invalid yaml: inconsistent indentation")
+                    raise RuntimeError(
+                        f"invalid yaml at line {line_number}: inconsistent indentation"
+                    )
                 if is_sequence:
                     if content != "-" and not content.startswith("- "):
                         break
@@ -924,7 +933,10 @@ class _StdLibRegistrar:
                     key, raw_value = content.split(":", 1)
                     key = key.strip()
                     if not key:
-                        raise RuntimeError("invalid yaml: mapping keys must be non-empty strings")
+                        raise RuntimeError(
+                            f"invalid yaml at line {line_number}: "
+                            "mapping keys must be non-empty strings"
+                        )
                     raw_value = raw_value.strip()
                     if raw_value:
                         result[key] = scalar(raw_value)
@@ -938,7 +950,11 @@ class _StdLibRegistrar:
 
         parsed, next_index = block(0, lines[0][0])
         if next_index != len(lines):
-            raise RuntimeError("invalid yaml: mixed collection styles at the same indentation")
+            line_number = lines[next_index][2]
+            raise RuntimeError(
+                f"invalid yaml at line {line_number}: "
+                "mixed collection styles at the same indentation"
+            )
         return parsed
 
     # -----------------------------------------------------------------------

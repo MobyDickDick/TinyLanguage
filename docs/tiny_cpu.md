@@ -1,18 +1,45 @@
 # TinyCPU: Mikrocomputer, Assemblersprache und Simulator
 
 TinyCPU ist eine bewusst kleine, vollständige Lehrmaschine für TinyLanguage. Sie
-ist eine **16-Bit-Akkumulatormaschine** mit 4096 Speicherzellen (konfigurierbar),
-Adressregister, Programmzähler, Ein-/Ausgabe, bedingten Sprüngen und einer
-strikten Fehlersemantik. Der Simulator liegt in `src/tiny_cpu_vm.py`, der
+ist standardmäßig eine **16-Bit-Akkumulatormaschine** mit einem 12-Bit-Adressbus
+und 4096 Speicherzellen. Daten- und Adressbreite sind unabhängig konfigurierbar.
+Die Maschine besitzt Adressregister, Programmzähler, Ein-/Ausgabe, bedingte
+Sprünge und eine strikte Fehlersemantik. Der Simulator liegt in
+`src/tiny_cpu_vm.py`, der
 Assembler in `src/tiny_cpu_assembler.py` und die ISA in `src/tiny_cpu_isa.py`.
 
 ## Leitprinzip: Fehler sind keine Modulo-Arithmetik
 
 Jedes Register und jede Speicherzelle besteht logisch aus `(value, valid)`. Eine
 Operation erzeugt nur dann einen gültigen Wert, wenn alle Eingaben gültig sind,
-die Operation erlaubt ist und das Ergebnis zwischen -32768 und 32767 liegt.
+die Operation erlaubt ist und das Ergebnis im vorzeichenbehafteten Wertebereich
+des konfigurierten Datenbusses liegt (bei 16 Bit: -32768 bis 32767).
 Andernfalls wird das Ziel zu `0 INVALID` und ein spezifisches Fehlerflag gesetzt.
 Invalidität pflanzt sich bei weiterer Verwendung fort.
+
+## Skaleninvariante Breiten
+
+Die ISA und Assemblersprache enthalten absichtlich keine fest codierte
+Operandenbreite: Zahlen, Adressen, Offsets und Sprungziele werden symbolisch als
+Ganzzahlen dargestellt. Erst eine konkrete `TinyCPU`-Instanz legt mit
+`data_bits` und `address_bits` die Hardwaregrenzen fest. Dadurch bleibt dasselbe
+Assemblerprogramm beispielsweise auf einer 8/8-, 16/12- oder 32/20-Maschine
+verwendbar, sofern seine Werte und Adressen in die gewählten Bereiche passen.
+
+Der Datenbus verwendet Zweierkomplement und bestimmt Akkumulator,
+Speicherzellen, Ein-/Ausgabewerte und arithmetischen Überlauf. Der Adressbus ist
+vorzeichenlos und bestimmt unabhängig davon Adressregister, effektive Adressen,
+Programmzähler und die maximal adressierbare Speichergröße. `memory_size` darf
+kleiner als der Adressraum sein (teilbestückter Speicher), aber nie größer.
+
+```python
+TinyCPU(data_bits=8, address_bits=8, memory_size=256)
+TinyCPU(data_bits=32, address_bits=20, memory_size=65536)
+```
+
+Diese Parametrisierung ist semantisch skaleninvariant; ein späteres binäres
+Instruktionsformat muss seine Kodierungsbreite ebenfalls aus dem Zielprofil
+ableiten und darf sie nicht in Opcodes festschreiben.
 
 Fehlerflags sind **sticky**. `CLEAR_ERROR()` löscht sie, repariert aber keine
 invaliden Werte. Beispielsweise macht erst `LOAD_CONST(5)` den Akkumulator wieder

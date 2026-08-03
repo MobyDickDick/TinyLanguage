@@ -14,7 +14,9 @@ def test_logisim_starter_matches_default_hardware_profile():
     circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
 
     assert root.find("main").get("name") == "TinyCPU"
-    assert {"TinyCPU", "Datapath", "AddressPath", "Memory", "ErrorFlags"} <= circuits.keys()
+    assert {
+        "TinyCPU", "FetchDecode", "Datapath", "AddressPath", "Memory", "ErrorFlags"
+    } <= circuits.keys()
 
     datapath_registers = {
         _attributes(component).get("label"): _attributes(component).get("width", "1")
@@ -128,3 +130,28 @@ def test_ap3_error_flags_have_set_dominant_sticky_logic():
         assert parts[f"NEXT_{flag}"] == "OR Gate"
         assert parts[flag] == "Register"
         assert parts[f"{flag}_OUT"] == "Pin"
+
+
+def test_ap4_fetch_decode_has_pc_rom_core_controls_and_error_halt():
+    root = ET.parse(PROJECT).getroot()
+    fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
+    parts = {
+        _attributes(component).get("label"): (component.get("name"), _attributes(component))
+        for component in fetch.findall("comp")
+        if _attributes(component).get("label")
+    }
+
+    assert parts["PC"] == ("Register", {"appearance": "logisim_evolution", "label": "PC", "width": "12"})
+    assert parts["INSTRUCTION_ROM"][0] == "ROM"
+    assert parts["INSTRUCTION_ROM"][1]["addrWidth"] == "12"
+    assert parts["INSTRUCTION_ROM"][1]["dataWidth"] == "19"
+    assert parts["CORE_DECODER"][0] == "Decoder"
+    assert parts["PC_INCREMENT"][0] == "Adder"
+    assert parts["PC_SOURCE"][0] == "Multiplexer"
+    assert parts["PC_RANGE"][0] == "Comparator"
+    assert parts["JNZ_TAKEN"][0] == "AND Gate"
+    controls = {
+        "LOAD_CONST", "STORE_ADDRESS", "ADD_ADDRESS", "JUMP_NOT_ZERO",
+        "PRINT", "HALT", "SET_ADDR", "HALT_ERROR",
+    }
+    assert controls <= parts.keys()

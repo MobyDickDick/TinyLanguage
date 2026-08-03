@@ -48,7 +48,11 @@ keine dauerhaft inkompatiblen Opcodes erzeugen.
 - [x] **AP 3:** Speicher und Fehlerregister; Daten- und Valid-RAM teilen sich
   Adresse, Write-Enable und Takt. Sechs set-dominante Sticky-Flags implementieren
   `SET OR (Q AND NOT CLEAR_ERROR)` und exportieren ihren Zustand.
-- [ ] **AP 4:** Fetch und Decode
+- [x] **AP 4:** Fetch und Decode; ein 12-Bit-PC adressiert das interne ROM,
+  `CORE_DECODER` erzeugt die Steuersignale des Kernbefehlssatzes und
+  `PC_RANGE` setzt bei einem PC außerhalb `PROGRAM_LIMIT` gleichzeitig `ADDR`
+  und `HALT_ERROR`. Die Taktabläufe und das vorläufige interne ROM-Wort sind
+  in `hardware/logisim/README.md` dokumentiert und im Hardwareprofil fixiert.
 - [ ] **AP 5:** Kernprogramm integrieren
 - [ ] **AP 6:** ISA vervollständigen
 - [ ] **AP 7:** Maschinenformat und Tooling

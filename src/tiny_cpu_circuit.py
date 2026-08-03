@@ -162,6 +162,25 @@ def validate_hardware_contract(
                     f"{circuit_name}.{label}: data width is {data_bits}, "
                     f"expected {dimensions['data_bits']}"
                 )
+
+    for circuit_name, expected in profile.get("roms", {}).items():
+        actual = labelled_components(circuit_name, "ROM")
+        for label, dimensions in expected.items():
+            if label not in actual:
+                violations.append(f"{circuit_name}: missing ROM {label}")
+                continue
+            address_bits = int(actual[label].get("addrWidth", "0"))
+            data_bits = int(actual[label].get("dataWidth", "0"))
+            if address_bits != dimensions["address_bits"]:
+                violations.append(
+                    f"{circuit_name}.{label}: address width is {address_bits}, "
+                    f"expected {dimensions['address_bits']}"
+                )
+            if data_bits != dimensions["data_bits"]:
+                violations.append(
+                    f"{circuit_name}.{label}: data width is {data_bits}, "
+                    f"expected {dimensions['data_bits']}"
+                )
     return tuple(violations)
 
 

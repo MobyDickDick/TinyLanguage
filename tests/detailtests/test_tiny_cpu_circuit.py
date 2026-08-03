@@ -10,7 +10,8 @@ PROFILE = PROJECT.with_name("tinycpu-16-12.json")
 def test_inspector_exposes_completed_and_pending_sheets():
     reports = {report.name: report for report in inspect_project(PROJECT)}
 
-    assert reports["TinyCPU"].wires == 0
+    assert reports["TinyCPU"].connected
+    assert reports["FetchDecode"].connected
     assert reports["Datapath"].components == 12
     assert reports["Datapath"].wires == 17
     assert reports["Datapath"].connected
@@ -36,14 +37,14 @@ def test_inspector_accepts_a_minimal_connected_project(tmp_path):
     assert main([str(project)]) == 0
 
 
-def test_inspector_cli_fails_for_incomplete_project(capsys):
-    assert main([str(PROJECT)]) == 1
+def test_inspector_cli_accepts_connected_ap4_project(capsys):
+    assert main([str(PROJECT)]) == 0
     output = capsys.readouterr().out
     assert "Datapath: connected" in output
     assert "Memory: connected" in output
     assert "ErrorFlags: connected" in output
-    assert "TinyCPU: INCOMPLETE" in output
-    assert "0 wires" in output
+    assert "FetchDecode: connected" in output
+    assert "TinyCPU: connected" in output
 
 
 def test_hardware_profile_matches_starter_contract(capsys):
@@ -77,3 +78,17 @@ def test_hardware_profile_requires_ap2_status_and_offset_interfaces(tmp_path):
 
     violations = validate_hardware_contract(project, PROFILE)
     assert "Datapath: missing pin NEGATIVE" in violations
+
+
+def test_hardware_profile_requires_ap4_instruction_rom(tmp_path):
+    project = tmp_path / "missing-rom.circ"
+    project.write_text(
+        PROJECT.read_text(encoding="utf-8").replace(
+            '<a name="label" val="INSTRUCTION_ROM"/>',
+            '<a name="label" val="MISSING_ROM"/>',
+        ),
+        encoding="utf-8",
+    )
+
+    violations = validate_hardware_contract(project, PROFILE)
+    assert "FetchDecode: missing ROM INSTRUCTION_ROM" in violations

@@ -15,6 +15,7 @@ from tiny_cpu_machine import (
     encode_program,
     rom_image,
 )
+from tiny_cpu_verify import VerificationError, verify_checkout
 
 
 PROJECT = Path(__file__).parents[2] / "hardware" / "logisim" / "TinyCPU.circ"
@@ -249,6 +250,30 @@ def test_ap7_encoder_generated_rom_is_loaded_in_logisim():
 def test_ap7_decoder_rejects_reserved_or_noncanonical_words(word):
     with pytest.raises(MachineCodeError):
         decode_word(word)
+
+
+def test_ap8_fresh_checkout_verification_covers_all_deliverables():
+    repository = PROJECT.parents[2]
+    assert verify_checkout(repository) == (
+        "connectivity",
+        "hardware contract",
+        "ROM and listing",
+        "embedded ROM",
+        "17-edge trace",
+    )
+
+
+def test_ap8_verification_reports_a_stale_generated_artifact(tmp_path):
+    repository = tmp_path / "checkout"
+    target = repository / "hardware" / "logisim"
+    target.mkdir(parents=True)
+    for artifact in HARDWARE.iterdir():
+        if artifact.is_file():
+            (target / artifact.name).write_bytes(artifact.read_bytes())
+    (target / "ap5_countdown.rom").write_text("addr/data: 12 22\n", encoding="utf-8")
+
+    with pytest.raises(VerificationError, match="ap5_countdown[.]rom"):
+        verify_checkout(repository)
 
 
 @pytest.mark.parametrize("instruction", tuple(INSTRUCTION_SET))

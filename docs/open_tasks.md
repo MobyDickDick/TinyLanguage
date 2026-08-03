@@ -7,6 +7,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-03)
 
+- [x] **Complete TinyCPU AP 8 documentation and reproducibility checks**
+  (Owner: TinyCPU/Hardware)
+  - Success: document operation and schematic architecture and provide an
+    automated acceptance command that a fresh checkout can reproduce.
+  - Result: the hardware guide now defines the state-owning sheets, simulation
+    boundary, acceptance workflow, and artifact recovery paths; the standalone
+    verifier checks connectivity, the versioned contract, generated and
+    embedded ROM artifacts, the listing, and the 17-edge VM trace.
+  - Follow-up: the eight-package TinyCPU hardware baseline is complete; future
+    behavior or machine-format changes require a newly scoped roadmap cycle.
+
+## Next documented work package (completed 2026-08-03)
+
 - [x] **Complete the TinyCPU AP 6 symbolic ISA control surface**
   (Owner: TinyCPU/Hardware)
   - Success: extend the provisional hardware decode boundary across every

@@ -52,3 +52,15 @@ propagation rules, clocks, unknown values, and RAM would amount to maintaining a
 second Logisim. Use Logisim-evolution's command-line simulation for electrical
 tests once the schematic is wired, and compare clock-by-clock CPU state with
 the executable reference model in `src/tiny_cpu_vm.py`.
+
+The completed first work package also freezes the initial structural contract
+in `tinycpu-16-12.json`. It can be checked before any wiring is complete:
+
+```bash
+PYTHONPATH=src python src/tiny_cpu_circuit.py \
+  --profile hardware/logisim/tinycpu-16-12.json --contract-only \
+  hardware/logisim/TinyCPU.circ
+```
+
+See `docs/tiny_cpu_roadmap.md` for the ordered implementation packages and
+their acceptance criteria.

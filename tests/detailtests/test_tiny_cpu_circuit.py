@@ -15,6 +15,8 @@ def test_inspector_exposes_completed_and_pending_sheets():
     assert reports["Datapath"].wires == 17
     assert reports["Datapath"].connected
     assert reports["AddressPath"].connected
+    assert reports["Memory"].connected
+    assert reports["ErrorFlags"].connected
 
 
 def test_inspector_accepts_a_minimal_connected_project(tmp_path):
@@ -38,7 +40,9 @@ def test_inspector_cli_fails_for_incomplete_project(capsys):
     assert main([str(PROJECT)]) == 1
     output = capsys.readouterr().out
     assert "Datapath: connected" in output
-    assert "Memory: INCOMPLETE" in output
+    assert "Memory: connected" in output
+    assert "ErrorFlags: connected" in output
+    assert "TinyCPU: INCOMPLETE" in output
     assert "0 wires" in output
 
 

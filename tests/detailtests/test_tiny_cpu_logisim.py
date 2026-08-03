@@ -86,3 +86,45 @@ def test_ap2_datapaths_are_wired_and_expose_status_and_offset_results():
     }
     assert datapath_parts["ACC_STATUS"] == "Comparator"
     assert address_parts["OFFSET_ADDER"] == "Adder"
+
+
+def test_ap3_memory_shares_address_write_enable_and_clock():
+    root = ET.parse(PROJECT).getroot()
+    memory = next(c for c in root.findall("circuit") if c.get("name") == "Memory")
+    pins = {
+        _attributes(component).get("label"): _attributes(component)
+        for component in memory.findall("comp")
+        if component.get("name") == "Pin"
+    }
+    assert pins["ADDRESS"]["width"] == "12"
+    assert pins["DATA_IN"]["width"] == "16"
+    assert pins["DATA_OUT"]["width"] == "16"
+    assert {"VALID_IN", "WRITE_ENABLE", "CLK", "VALID_OUT"} <= pins.keys()
+
+    endpoints = {
+        point
+        for wire in memory.findall("wire")
+        for point in (wire.get("from"), wire.get("to"))
+    }
+    # Both RAM control-port coordinates are present on their shared nets.
+    assert {"(330,120)", "(330,200)"} <= endpoints
+    assert {"(330,180)", "(330,260)"} <= endpoints
+    assert {"(330,190)", "(330,270)"} <= endpoints
+
+
+def test_ap3_error_flags_have_set_dominant_sticky_logic():
+    root = ET.parse(PROJECT).getroot()
+    errors = next(c for c in root.findall("circuit") if c.get("name") == "ErrorFlags")
+    parts = {
+        _attributes(component).get("label"): component.get("name")
+        for component in errors.findall("comp")
+        if _attributes(component).get("label")
+    }
+    flags = {"OVF", "DIV0", "ADDR", "INV", "ILL", "INPUT"}
+    assert parts["NOT_CLEAR_ERROR"] == "NOT Gate"
+    for flag in flags:
+        assert parts[f"SET_{flag}"] == "Pin"
+        assert parts[f"HOLD_{flag}"] == "AND Gate"
+        assert parts[f"NEXT_{flag}"] == "OR Gate"
+        assert parts[flag] == "Register"
+        assert parts[f"{flag}_OUT"] == "Pin"

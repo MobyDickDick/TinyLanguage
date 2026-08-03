@@ -63,6 +63,89 @@
         "ADDRESS_PLUS_OFFSET": 12,
         "OFFSET_CARRY": 1
       }
+    },
+    "Memory": {
+      "pins": {
+        "ADDRESS": 12,
+        "DATA_IN": 16,
+        "VALID_IN": 1,
+        "WRITE_ENABLE": 1,
+        "CLK": 1,
+        "DATA_OUT": 16,
+        "VALID_OUT": 1
+      }
+    },
+    "ErrorFlags": {
+      "components": {
+        "NOT_CLEAR_ERROR": {
+          "kind": "NOT Gate",
+          "width": 1
+        },
+        "HOLD_OVF": {
+          "kind": "AND Gate",
+          "width": 1
+        },
+        "HOLD_DIV0": {
+          "kind": "AND Gate",
+          "width": 1
+        },
+        "HOLD_ADDR": {
+          "kind": "AND Gate",
+          "width": 1
+        },
+        "HOLD_INV": {
+          "kind": "AND Gate",
+          "width": 1
+        },
+        "HOLD_ILL": {
+          "kind": "AND Gate",
+          "width": 1
+        },
+        "HOLD_INPUT": {
+          "kind": "AND Gate",
+          "width": 1
+        },
+        "NEXT_OVF": {
+          "kind": "OR Gate",
+          "width": 1
+        },
+        "NEXT_DIV0": {
+          "kind": "OR Gate",
+          "width": 1
+        },
+        "NEXT_ADDR": {
+          "kind": "OR Gate",
+          "width": 1
+        },
+        "NEXT_INV": {
+          "kind": "OR Gate",
+          "width": 1
+        },
+        "NEXT_ILL": {
+          "kind": "OR Gate",
+          "width": 1
+        },
+        "NEXT_INPUT": {
+          "kind": "OR Gate",
+          "width": 1
+        }
+      },
+      "pins": {
+        "CLEAR_ERROR": 1,
+        "CLK": 1,
+        "SET_OVF": 1,
+        "SET_DIV0": 1,
+        "SET_ADDR": 1,
+        "SET_INV": 1,
+        "SET_ILL": 1,
+        "SET_INPUT": 1,
+        "OVF_OUT": 1,
+        "DIV0_OUT": 1,
+        "ADDR_OUT": 1,
+        "INV_OUT": 1,
+        "ILL_OUT": 1,
+        "INPUT_OUT": 1
+      }
     }
   }
 }

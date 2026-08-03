@@ -7,6 +7,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-03)
 
+- [x] **Complete the TinyCPU AP 6 symbolic ISA control surface**
+  (Owner: TinyCPU/Hardware)
+  - Success: extend the provisional hardware decode boundary across every
+    addressing mode, arithmetic and logic operation, jump, I/O instruction,
+    and sticky-error path; parameterized structural checks must cover every
+    instruction defined by the Python ISA.
+  - Result: the six-bit provisional decoder now exposes every symbolic ISA
+    control, all three branch-condition inputs, and all six error-set outputs;
+    the machine-readable profile and tests derive complete coverage from
+    `INSTRUCTION_SET`, while the AP 5 countdown remains frozen.
+  - Follow-up: AP 7 must assign versioned opcodes and a word layout and use an
+    encoder to produce the ROM image and listing.
+
+## Next documented work package (completed 2026-08-03)
+
 - [x] **Integrate the TinyCPU AP 5 core program**
   (Owner: TinyCPU/Hardware)
   - Success: load a reproducible counting-loop fixture and compare every

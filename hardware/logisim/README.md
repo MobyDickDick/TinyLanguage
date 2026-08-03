@@ -1,6 +1,6 @@
 # TinyCPU in Logisim-evolution
 
-This directory contains the first five, deliberately small hardware milestones
+This directory contains the first six, deliberately small hardware milestones
 for TinyCPU. Open `TinyCPU.circ` with Logisim-evolution 3.x.
 
 ## What is implemented
@@ -18,8 +18,9 @@ bits and splits the design into the same blocks as the hardware contract:
 - `ErrorFlags` implements the six set-dominant sticky error registers (`OVF`,
   `DIV0`, `ADDR`, `INV`, `ILL`, and `INPUT`) with a shared `CLEAR_ERROR`.
 - `FetchDecode` contains the 12-bit `PC`, a 4096-word instruction ROM, the
-  sequential/jump PC path, program-limit check, and control decode for the six
-  core instructions.
+  sequential/jump PC path, program-limit check, and control decode for the complete symbolic ISA. The expanded decoder
+  exposes every addressing, arithmetic, logic, branch, and I/O control plus all six
+  error-set paths.
 
 The AP 5 countdown program is loaded into the instruction ROM and its
 clock-edge reference trace is checked in as `ap5_countdown_trace.json`. The
@@ -48,6 +49,27 @@ Before decode, `PC_RANGE` compares `PC` with the exclusive `PROGRAM_LIMIT`.
 An invalid fetch asserts both `SET_ADDR` and `HALT_ERROR`; no instruction is
 committed and the error halt retains the failing PC for diagnosis.
 
+## AP 6 complete symbolic control surface
+
+`FetchDecode` now has a six-bit provisional decoder and exports one named
+control for every instruction in `src/tiny_cpu_isa.py`. Its condition boundary
+accepts `ZERO`, `NEGATIVE`, and aggregate `ERROR`; its error boundary exports
+all six sticky-flag set controls. The hardware profile records the same
+instruction, condition, and error sets, and parameterized structural tests
+check every member rather than sampling individual controls.
+
+This milestone completes the *symbolic* ISA control surface: constant, direct,
+address-register, and address-register-plus-offset modes; arithmetic and logic;
+all conditional and unconditional jumps; error clearing; and input/output are
+present at the decode boundary. Arithmetic range, invalid operands and
+addresses, division by zero, invalid instructions, and invalid input continue
+to feed the AP 3 sticky error registers. The AP 5 countdown trace remains the
+core behavioral regression.
+
+The selector values are intentionally not a public opcode allocation. AP 7
+will assign versioned opcodes and a word layout, then replace the provisional
+control-store representation with encoder-generated ROM contents.
+
 ## AP 5 reproducible fixture
 
 `ap5_countdown.tcpu` uses only the six core controls. It stores `-1` at address
@@ -69,7 +91,7 @@ PYTHONPATH=src python src/tiny_cpu_trace.py \
 
 The comparison is deliberately field-oriented: a failure names the clock edge
 and observable field that diverged. This makes the fixture usable both in CI
-and while single-stepping the circuit. AP 6 can now extend decode and execution
+and while single-stepping the circuit. AP 6 extends decode and execution
 without changing this frozen core trace.
 
 Do not store program ROM images as an official interchange format until the

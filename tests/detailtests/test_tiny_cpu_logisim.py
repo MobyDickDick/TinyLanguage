@@ -1,6 +1,10 @@
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+import pytest
+
+from tiny_cpu_isa import INSTRUCTION_SET
+
 
 PROJECT = Path(__file__).parents[2] / "hardware" / "logisim" / "TinyCPU.circ"
 
@@ -136,7 +140,10 @@ def test_ap4_fetch_decode_has_pc_rom_core_controls_and_error_halt():
     root = ET.parse(PROJECT).getroot()
     fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
     parts = {
-        _attributes(component).get("label"): (component.get("name"), _attributes(component))
+        _attributes(component).get("label"): (
+            component.get("name"),
+            _attributes(component),
+        )
         for component in fetch.findall("comp")
         if _attributes(component).get("label")
     }
@@ -145,7 +152,7 @@ def test_ap4_fetch_decode_has_pc_rom_core_controls_and_error_halt():
     assert parts["INSTRUCTION_ROM"][0] == "ROM"
     assert parts["INSTRUCTION_ROM"][1]["addrWidth"] == "12"
     assert parts["INSTRUCTION_ROM"][1]["dataWidth"] == "19"
-    assert parts["CORE_DECODER"][0] == "Decoder"
+    assert parts["ISA_DECODER"][0] == "Decoder"
     assert parts["PC_INCREMENT"][0] == "Adder"
     assert parts["PC_SOURCE"][0] == "Multiplexer"
     assert parts["PC_RANGE"][0] == "Comparator"
@@ -155,6 +162,24 @@ def test_ap4_fetch_decode_has_pc_rom_core_controls_and_error_halt():
         "PRINT", "HALT", "SET_ADDR", "HALT_ERROR",
     }
     assert controls <= parts.keys()
+
+
+def test_ap6_fetch_decode_exposes_every_symbolic_isa_control():
+    root = ET.parse(PROJECT).getroot()
+    fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
+    parts = {
+        _attributes(component).get("label"): (component.get("name"), _attributes(component))
+        for component in fetch.findall("comp")
+        if _attributes(component).get("label")
+    }
+
+    assert parts["ISA_DECODER"][1]["select"] == "6"
+    assert set(INSTRUCTION_SET) <= parts.keys()
+    assert {"ZERO", "NEGATIVE", "ERROR"} <= parts.keys()
+    error_outputs = {
+        "SET_OVF", "SET_DIV0", "SET_ADDR", "SET_INV", "SET_ILL", "SET_INPUT"
+    }
+    assert error_outputs <= parts.keys()
 
 
 def test_ap5_rom_contains_the_countdown_fixture():
@@ -175,3 +200,43 @@ def test_ap5_rom_contains_the_countdown_fixture():
         "0ffff", "10065", "00003", "10064", "40000",
         "20065", "10064", "30004", "50000",
     ]
+
+
+@pytest.mark.parametrize("instruction", tuple(INSTRUCTION_SET))
+def test_ap6_each_instruction_has_a_connected_decode_output(instruction):
+    root = ET.parse(PROJECT).getroot()
+    fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
+    pin = next(
+        component
+        for component in fetch.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("label") == instruction
+    )
+    endpoints = {
+        endpoint
+        for wire in fetch.findall("wire")
+        for endpoint in (wire.get("from"), wire.get("to"))
+    }
+    assert _attributes(pin).get("type") == "output"
+    assert pin.get("loc") in endpoints
+
+
+@pytest.mark.parametrize(
+    "signal",
+    ("SET_OVF", "SET_DIV0", "SET_ADDR", "SET_INV", "SET_ILL", "SET_INPUT"),
+)
+def test_ap6_each_error_path_has_a_connected_output(signal):
+    root = ET.parse(PROJECT).getroot()
+    fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
+    pin = next(
+        component
+        for component in fetch.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("label") == signal
+    )
+    endpoints = {
+        endpoint
+        for wire in fetch.findall("wire")
+        for endpoint in (wire.get("from"), wire.get("to"))
+    }
+    assert pin.get("loc") in endpoints

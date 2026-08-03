@@ -57,6 +57,9 @@ keine dauerhaft inkompatiblen Opcodes erzeugen.
   versionierter 17-Takt-Trace liegen unter `hardware/logisim/`. Der
   Trace-Comparator prüft PC, Akkumulator, Status, Speicherzellen, Ausgabe,
   Fehlerflags und Haltzustand an jeder Taktflanke gegen die Python-VM.
-- [ ] **AP 6:** ISA vervollständigen
+- [x] **AP 6:** ISA vervollständigen; `FetchDecode` exportiert die vollständige
+  symbolische ISA-Steuerfläche für alle Adressierungsarten, ALU-Operationen,
+  Sprünge und I/O. Profil und parametrisierte Strukturtests gleichen jeden
+  Befehl sowie alle Bedingungs- und Fehlerpfade mit der Python-ISA ab.
 - [ ] **AP 7:** Maschinenformat und Tooling
 - [ ] **AP 8:** Abschluss und Dokumentation

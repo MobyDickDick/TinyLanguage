@@ -156,10 +156,6 @@
           "kind": "Splitter",
           "width": 1
         },
-        "CORE_DECODER": {
-          "kind": "Decoder",
-          "width": 1
-        },
         "PC_INCREMENT": {
           "kind": "Adder",
           "width": 12
@@ -179,6 +175,10 @@
         "ERROR_HALT": {
           "kind": "OR Gate",
           "width": 1
+        },
+        "ISA_DECODER": {
+          "kind": "Decoder",
+          "width": 1
         }
       },
       "pins": {
@@ -195,7 +195,53 @@
         "HALT": 1,
         "SET_ADDR": 1,
         "HALT_ERROR": 1,
-        "PC_OUT": 12
+        "PC_OUT": 12,
+        "LOAD_ADDRESS": 1,
+        "LOAD_ADDRESS_REGISTER": 1,
+        "LOAD_ADDRESS_REGISTER_PLUS_OFFSET": 1,
+        "ADD_CONST": 1,
+        "ADD_ADDRESS_REGISTER": 1,
+        "ADD_ADDRESS_REGISTER_PLUS_OFFSET": 1,
+        "SUB_CONST": 1,
+        "SUB_ADDRESS": 1,
+        "SUB_ADDRESS_REGISTER": 1,
+        "SUB_ADDRESS_REGISTER_PLUS_OFFSET": 1,
+        "MUL_CONST": 1,
+        "MUL_ADDRESS": 1,
+        "MUL_ADDRESS_REGISTER": 1,
+        "MUL_ADDRESS_REGISTER_PLUS_OFFSET": 1,
+        "DIV_CONST": 1,
+        "DIV_ADDRESS": 1,
+        "DIV_ADDRESS_REGISTER": 1,
+        "DIV_ADDRESS_REGISTER_PLUS_OFFSET": 1,
+        "AND_CONST": 1,
+        "AND_ADDRESS": 1,
+        "AND_ADDRESS_REGISTER": 1,
+        "AND_ADDRESS_REGISTER_PLUS_OFFSET": 1,
+        "OR_CONST": 1,
+        "OR_ADDRESS": 1,
+        "OR_ADDRESS_REGISTER": 1,
+        "OR_ADDRESS_REGISTER_PLUS_OFFSET": 1,
+        "STORE_ADDRESS_REGISTER": 1,
+        "STORE_ADDRESS_REGISTER_PLUS_OFFSET": 1,
+        "LOAD_ADDRESS_REGISTER_CONST": 1,
+        "LOAD_ADDRESS_REGISTER_ADDRESS": 1,
+        "NOT": 1,
+        "JUMP_ADDRESS": 1,
+        "JUMP_ZERO": 1,
+        "JUMP_NEGATIVE": 1,
+        "JUMP_ERROR": 1,
+        "JUMP_NOT_ERROR": 1,
+        "CLEAR_ERROR": 1,
+        "INPUT": 1,
+        "PRINT_ADDRESS": 1,
+        "NEGATIVE": 1,
+        "ERROR": 1,
+        "SET_OVF": 1,
+        "SET_DIV0": 1,
+        "SET_INV": 1,
+        "SET_ILL": 1,
+        "SET_INPUT": 1
       }
     }
   },
@@ -206,5 +252,69 @@
         "data_bits": 19
       }
     }
+  },
+  "isa_controls": {
+    "instruction_signals": [
+      "LOAD_CONST",
+      "LOAD_ADDRESS",
+      "LOAD_ADDRESS_REGISTER",
+      "LOAD_ADDRESS_REGISTER_PLUS_OFFSET",
+      "ADD_CONST",
+      "ADD_ADDRESS",
+      "ADD_ADDRESS_REGISTER",
+      "ADD_ADDRESS_REGISTER_PLUS_OFFSET",
+      "SUB_CONST",
+      "SUB_ADDRESS",
+      "SUB_ADDRESS_REGISTER",
+      "SUB_ADDRESS_REGISTER_PLUS_OFFSET",
+      "MUL_CONST",
+      "MUL_ADDRESS",
+      "MUL_ADDRESS_REGISTER",
+      "MUL_ADDRESS_REGISTER_PLUS_OFFSET",
+      "DIV_CONST",
+      "DIV_ADDRESS",
+      "DIV_ADDRESS_REGISTER",
+      "DIV_ADDRESS_REGISTER_PLUS_OFFSET",
+      "AND_CONST",
+      "AND_ADDRESS",
+      "AND_ADDRESS_REGISTER",
+      "AND_ADDRESS_REGISTER_PLUS_OFFSET",
+      "OR_CONST",
+      "OR_ADDRESS",
+      "OR_ADDRESS_REGISTER",
+      "OR_ADDRESS_REGISTER_PLUS_OFFSET",
+      "STORE_ADDRESS",
+      "STORE_ADDRESS_REGISTER",
+      "STORE_ADDRESS_REGISTER_PLUS_OFFSET",
+      "LOAD_ADDRESS_REGISTER_CONST",
+      "LOAD_ADDRESS_REGISTER_ADDRESS",
+      "NOT",
+      "JUMP_ADDRESS",
+      "JUMP_ZERO",
+      "JUMP_NOT_ZERO",
+      "JUMP_NEGATIVE",
+      "JUMP_ERROR",
+      "JUMP_NOT_ERROR",
+      "CLEAR_ERROR",
+      "INPUT",
+      "PRINT",
+      "PRINT_ADDRESS",
+      "HALT",
+      "HALT_ERROR"
+    ],
+    "condition_inputs": [
+      "ZERO",
+      "NEGATIVE",
+      "ERROR"
+    ],
+    "error_outputs": [
+      "SET_OVF",
+      "SET_DIV0",
+      "SET_ADDR",
+      "SET_INV",
+      "SET_ILL",
+      "SET_INPUT"
+    ],
+    "encoding_status": "provisional-control-store"
   }
 }

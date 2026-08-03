@@ -96,6 +96,36 @@ def test_stdlib_yaml_reports_source_line_for_malformed_blocks(
         )
 
 
+@pytest.mark.parametrize(
+    ("document", "message"),
+    [
+        ("name: Tiny\nname: Language\n", "line 2: duplicate mapping key 'name'"),
+        (
+            "project:\n  stable: true\n  stable: false\n",
+            "line 3: duplicate mapping key 'stable'",
+        ),
+        (
+            "projects:\n  - name: Tiny\n    name: Language\n",
+            "line 3: duplicate mapping key 'name'",
+        ),
+    ],
+)
+def test_stdlib_yaml_rejects_duplicate_mapping_keys(
+    run_tiny_source, document, message
+):
+    """Reject ambiguous duplicate keys at every supported mapping depth."""
+    escaped = document.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+
+    with pytest.raises(Exception, match=message):
+        run_tiny_source(
+            f'''
+            import stdlib.yaml;
+            def value = yaml.parse("{escaped}");
+            def _cleanup_value = delete(value);
+            ''',
+        )
+
+
 def test_stdlib_yaml_load_dump_round_trip(run_tiny_source, tmp_path):
     """Load a YAML file and dump it again via stdlib helpers."""
     yaml_path = tmp_path / "sample.yaml"

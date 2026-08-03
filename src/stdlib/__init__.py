@@ -937,6 +937,11 @@ class _StdLibRegistrar:
                             f"invalid yaml at line {line_number}: "
                             "mapping keys must be non-empty strings"
                         )
+                    if key in result:
+                        raise RuntimeError(
+                            f"invalid yaml at line {line_number}: "
+                            f"duplicate mapping key {key!r}"
+                        )
                     raw_value = raw_value.strip()
                     if raw_value:
                         result[key] = scalar(raw_value)

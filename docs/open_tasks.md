@@ -5,6 +5,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Next documented work package (completed 2026-08-03)
+
+- [x] **Reject duplicate keys in YAML block mappings**
+  (Owner: Language/Stdlib)
+  - Success: reject duplicate mapping keys instead of silently retaining the
+    last value, and identify the duplicate's one-based source line at the root,
+    in nested mappings, and in inline mapping entries inside block lists.
+  - Result: the conservative YAML parser now reports duplicate keys with their
+    source line, and parameterized regressions cover all three mapping shapes.
+  - Follow-up: advanced YAML features such as anchors, aliases, tags, complex
+    keys, and multi-document streams remain explicit non-goals.
+
 ## Next documented work package (completed 2026-08-02)
 
 - [x] **Add line-aware diagnostics for malformed YAML block collections**

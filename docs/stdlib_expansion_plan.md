@@ -170,7 +170,9 @@ consistently indented block-style maps and lists. Mapping entries may begin on
 the same line as a block-list marker (for example, `- name: Tiny`) and may have
 continuation keys or nested block collections on following indented lines.
 Malformed block input reports the offending one-based source line for invalid
-indentation, tab indentation, and mixed map/list collection styles.
+indentation, tab indentation, mixed map/list collection styles, and duplicate
+mapping keys. Duplicate keys are rejected rather than silently overwritten so
+that parsing stays deterministic and accidental configuration loss is visible.
 
 ### Minimal regex syntax subset (Phase 2)
 

@@ -249,7 +249,7 @@
     "FetchDecode": {
       "INSTRUCTION_ROM": {
         "address_bits": 12,
-        "data_bits": 19
+        "data_bits": 22
       }
     }
   },
@@ -315,6 +315,7 @@
       "SET_ILL",
       "SET_INPUT"
     ],
-    "encoding_status": "provisional-control-store"
+    "encoding_status": "tinycpu-machine-v1",
+    "machine_format": "tinycpu-machine-v1.json"
   }
 }

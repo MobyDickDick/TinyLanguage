@@ -1,12 +1,24 @@
+import json
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import pytest
 
-from tiny_cpu_isa import INSTRUCTION_SET
+from tiny_cpu_assembler import assemble
+from tiny_cpu_isa import INSTRUCTION_SET, Instruction
+from tiny_cpu_machine import (
+    OPCODES,
+    WORD_BITS,
+    MachineCodeError,
+    decode_word,
+    encode_instruction,
+    encode_program,
+    rom_image,
+)
 
 
 PROJECT = Path(__file__).parents[2] / "hardware" / "logisim" / "TinyCPU.circ"
+HARDWARE = PROJECT.parent
 
 
 def _attributes(component):
@@ -151,7 +163,7 @@ def test_ap4_fetch_decode_has_pc_rom_core_controls_and_error_halt():
     assert parts["PC"] == ("Register", {"appearance": "logisim_evolution", "label": "PC", "width": "12"})
     assert parts["INSTRUCTION_ROM"][0] == "ROM"
     assert parts["INSTRUCTION_ROM"][1]["addrWidth"] == "12"
-    assert parts["INSTRUCTION_ROM"][1]["dataWidth"] == "19"
+    assert parts["INSTRUCTION_ROM"][1]["dataWidth"] == str(WORD_BITS)
     assert parts["ISA_DECODER"][0] == "Decoder"
     assert parts["PC_INCREMENT"][0] == "Adder"
     assert parts["PC_SOURCE"][0] == "Multiplexer"
@@ -195,11 +207,48 @@ def test_ap5_rom_contains_the_countdown_fixture():
         item for item in rom.findall("a") if item.get("name") == "contents"
     )
     contents = (contents_element.text or "").strip().splitlines()
-    assert contents[0] == "addr/data: 12 19"
+    assert contents[0] == "addr/data: 12 22"
     assert " ".join(contents[1:]).split() == [
-        "0ffff", "10065", "00003", "10064", "40000",
-        "20065", "10064", "30004", "50000",
+        "00ffff", "1c0065", "000003", "1c0064", "2a0000",
+        "050065", "1c0064", "240004", "2c0000",
     ]
+
+
+def test_ap7_versioned_opcode_table_covers_the_symbolic_isa():
+    table = json.loads((HARDWARE / "tinycpu-machine-v1.json").read_text())
+    assert table["schema_version"] == 1
+    assert table["word_bits"] == WORD_BITS
+    assert {row["mnemonic"]: row["code"] for row in table["opcodes"]} == OPCODES
+    assert set(OPCODES) == set(INSTRUCTION_SET)
+    assert len(set(OPCODES.values())) == len(OPCODES)
+
+
+def test_ap7_every_instruction_roundtrips_through_machine_code():
+    examples = {"none": None, "value": -7, "address": 123, "offset": -3, "target": 17}
+    for opcode, spec in INSTRUCTION_SET.items():
+        instruction = Instruction(opcode, examples[spec.operand.value])
+        assert decode_word(encode_instruction(instruction)) == instruction
+
+
+def test_ap7_encoder_generated_rom_is_loaded_in_logisim():
+    program = assemble((HARDWARE / "ap5_countdown.tcpu").read_text())
+    generated = rom_image(encode_program(program))
+    assert (HARDWARE / "ap5_countdown.rom").read_text() == generated
+
+    root = ET.parse(PROJECT).getroot()
+    fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
+    rom = next(c for c in fetch.findall("comp") if _attributes(c).get("label") == "INSTRUCTION_ROM")
+    embedded = next(a for a in rom.findall("a") if a.get("name") == "contents").text
+    embedded_lines = embedded.strip().splitlines()
+    generated_lines = generated.strip().splitlines()
+    assert embedded_lines[0] == generated_lines[0]
+    assert " ".join(embedded_lines[1:]).split() == " ".join(generated_lines[1:]).split()
+
+
+@pytest.mark.parametrize("word", (0x3F0000, 0x2C0001, 1 << WORD_BITS))
+def test_ap7_decoder_rejects_reserved_or_noncanonical_words(word):
+    with pytest.raises(MachineCodeError):
+        decode_word(word)
 
 
 @pytest.mark.parametrize("instruction", tuple(INSTRUCTION_SET))

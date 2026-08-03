@@ -1,0 +1,295 @@
+{
+  "schema_version": 1,
+  "format": "tinycpu-machine-v1",
+  "word_bits": 22,
+  "opcode": {
+    "bits": 6,
+    "most_significant_bit": 21,
+    "least_significant_bit": 16
+  },
+  "operand": {
+    "bits": 16,
+    "most_significant_bit": 15,
+    "least_significant_bit": 0,
+    "address_bits": 12,
+    "none_encoding": 0
+  },
+  "opcodes": [
+    {
+      "code": 0,
+      "hex": "0x00",
+      "mnemonic": "LOAD_CONST",
+      "operand": "value"
+    },
+    {
+      "code": 1,
+      "hex": "0x01",
+      "mnemonic": "LOAD_ADDRESS",
+      "operand": "address"
+    },
+    {
+      "code": 2,
+      "hex": "0x02",
+      "mnemonic": "LOAD_ADDRESS_REGISTER",
+      "operand": "none"
+    },
+    {
+      "code": 3,
+      "hex": "0x03",
+      "mnemonic": "LOAD_ADDRESS_REGISTER_PLUS_OFFSET",
+      "operand": "offset"
+    },
+    {
+      "code": 4,
+      "hex": "0x04",
+      "mnemonic": "ADD_CONST",
+      "operand": "value"
+    },
+    {
+      "code": 5,
+      "hex": "0x05",
+      "mnemonic": "ADD_ADDRESS",
+      "operand": "address"
+    },
+    {
+      "code": 6,
+      "hex": "0x06",
+      "mnemonic": "ADD_ADDRESS_REGISTER",
+      "operand": "none"
+    },
+    {
+      "code": 7,
+      "hex": "0x07",
+      "mnemonic": "ADD_ADDRESS_REGISTER_PLUS_OFFSET",
+      "operand": "offset"
+    },
+    {
+      "code": 8,
+      "hex": "0x08",
+      "mnemonic": "SUB_CONST",
+      "operand": "value"
+    },
+    {
+      "code": 9,
+      "hex": "0x09",
+      "mnemonic": "SUB_ADDRESS",
+      "operand": "address"
+    },
+    {
+      "code": 10,
+      "hex": "0x0a",
+      "mnemonic": "SUB_ADDRESS_REGISTER",
+      "operand": "none"
+    },
+    {
+      "code": 11,
+      "hex": "0x0b",
+      "mnemonic": "SUB_ADDRESS_REGISTER_PLUS_OFFSET",
+      "operand": "offset"
+    },
+    {
+      "code": 12,
+      "hex": "0x0c",
+      "mnemonic": "MUL_CONST",
+      "operand": "value"
+    },
+    {
+      "code": 13,
+      "hex": "0x0d",
+      "mnemonic": "MUL_ADDRESS",
+      "operand": "address"
+    },
+    {
+      "code": 14,
+      "hex": "0x0e",
+      "mnemonic": "MUL_ADDRESS_REGISTER",
+      "operand": "none"
+    },
+    {
+      "code": 15,
+      "hex": "0x0f",
+      "mnemonic": "MUL_ADDRESS_REGISTER_PLUS_OFFSET",
+      "operand": "offset"
+    },
+    {
+      "code": 16,
+      "hex": "0x10",
+      "mnemonic": "DIV_CONST",
+      "operand": "value"
+    },
+    {
+      "code": 17,
+      "hex": "0x11",
+      "mnemonic": "DIV_ADDRESS",
+      "operand": "address"
+    },
+    {
+      "code": 18,
+      "hex": "0x12",
+      "mnemonic": "DIV_ADDRESS_REGISTER",
+      "operand": "none"
+    },
+    {
+      "code": 19,
+      "hex": "0x13",
+      "mnemonic": "DIV_ADDRESS_REGISTER_PLUS_OFFSET",
+      "operand": "offset"
+    },
+    {
+      "code": 20,
+      "hex": "0x14",
+      "mnemonic": "AND_CONST",
+      "operand": "value"
+    },
+    {
+      "code": 21,
+      "hex": "0x15",
+      "mnemonic": "AND_ADDRESS",
+      "operand": "address"
+    },
+    {
+      "code": 22,
+      "hex": "0x16",
+      "mnemonic": "AND_ADDRESS_REGISTER",
+      "operand": "none"
+    },
+    {
+      "code": 23,
+      "hex": "0x17",
+      "mnemonic": "AND_ADDRESS_REGISTER_PLUS_OFFSET",
+      "operand": "offset"
+    },
+    {
+      "code": 24,
+      "hex": "0x18",
+      "mnemonic": "OR_CONST",
+      "operand": "value"
+    },
+    {
+      "code": 25,
+      "hex": "0x19",
+      "mnemonic": "OR_ADDRESS",
+      "operand": "address"
+    },
+    {
+      "code": 26,
+      "hex": "0x1a",
+      "mnemonic": "OR_ADDRESS_REGISTER",
+      "operand": "none"
+    },
+    {
+      "code": 27,
+      "hex": "0x1b",
+      "mnemonic": "OR_ADDRESS_REGISTER_PLUS_OFFSET",
+      "operand": "offset"
+    },
+    {
+      "code": 28,
+      "hex": "0x1c",
+      "mnemonic": "STORE_ADDRESS",
+      "operand": "address"
+    },
+    {
+      "code": 29,
+      "hex": "0x1d",
+      "mnemonic": "STORE_ADDRESS_REGISTER",
+      "operand": "none"
+    },
+    {
+      "code": 30,
+      "hex": "0x1e",
+      "mnemonic": "STORE_ADDRESS_REGISTER_PLUS_OFFSET",
+      "operand": "offset"
+    },
+    {
+      "code": 31,
+      "hex": "0x1f",
+      "mnemonic": "LOAD_ADDRESS_REGISTER_CONST",
+      "operand": "value"
+    },
+    {
+      "code": 32,
+      "hex": "0x20",
+      "mnemonic": "LOAD_ADDRESS_REGISTER_ADDRESS",
+      "operand": "address"
+    },
+    {
+      "code": 33,
+      "hex": "0x21",
+      "mnemonic": "NOT",
+      "operand": "none"
+    },
+    {
+      "code": 34,
+      "hex": "0x22",
+      "mnemonic": "JUMP_ADDRESS",
+      "operand": "target"
+    },
+    {
+      "code": 35,
+      "hex": "0x23",
+      "mnemonic": "JUMP_ZERO",
+      "operand": "target"
+    },
+    {
+      "code": 36,
+      "hex": "0x24",
+      "mnemonic": "JUMP_NOT_ZERO",
+      "operand": "target"
+    },
+    {
+      "code": 37,
+      "hex": "0x25",
+      "mnemonic": "JUMP_NEGATIVE",
+      "operand": "target"
+    },
+    {
+      "code": 38,
+      "hex": "0x26",
+      "mnemonic": "JUMP_ERROR",
+      "operand": "target"
+    },
+    {
+      "code": 39,
+      "hex": "0x27",
+      "mnemonic": "JUMP_NOT_ERROR",
+      "operand": "target"
+    },
+    {
+      "code": 40,
+      "hex": "0x28",
+      "mnemonic": "CLEAR_ERROR",
+      "operand": "none"
+    },
+    {
+      "code": 41,
+      "hex": "0x29",
+      "mnemonic": "INPUT",
+      "operand": "none"
+    },
+    {
+      "code": 42,
+      "hex": "0x2a",
+      "mnemonic": "PRINT",
+      "operand": "none"
+    },
+    {
+      "code": 43,
+      "hex": "0x2b",
+      "mnemonic": "PRINT_ADDRESS",
+      "operand": "address"
+    },
+    {
+      "code": 44,
+      "hex": "0x2c",
+      "mnemonic": "HALT",
+      "operand": "none"
+    },
+    {
+      "code": 45,
+      "hex": "0x2d",
+      "mnemonic": "HALT_ERROR",
+      "operand": "none"
+    }
+  ]
+}

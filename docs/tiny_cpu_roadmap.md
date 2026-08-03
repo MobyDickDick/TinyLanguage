@@ -61,5 +61,8 @@ keine dauerhaft inkompatiblen Opcodes erzeugen.
   symbolische ISA-Steuerfläche für alle Adressierungsarten, ALU-Operationen,
   Sprünge und I/O. Profil und parametrisierte Strukturtests gleichen jeden
   Befehl sowie alle Bedingungs- und Fehlerpfade mit der Python-ISA ab.
-- [ ] **AP 7:** Maschinenformat und Tooling
+- [x] **AP 7:** Maschinenformat und Tooling; die versionierte Opcode-Tabelle
+  definiert ein 22-Bit-Wort aus 6-Bit-Opcode und 16-Bit-Operand. Der Encoder
+  erzeugt ROM-Image und Listing der Zählschleife, das Logisim-ROM lädt exakt
+  dieses Image, und Roundtrip- sowie Negativtests sichern das Format ab.
 - [ ] **AP 8:** Abschluss und Dokumentation

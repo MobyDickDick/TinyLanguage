@@ -6,6 +6,7 @@ import argparse
 from pathlib import Path
 
 from tiny_cpu_assembler import AssemblyError, assemble, disassemble
+from tiny_cpu_isa import DEFAULT_ADDRESS_BITS, DEFAULT_DATA_BITS, DEFAULT_MEMORY_SIZE
 from tiny_cpu_vm import TinyCPU
 
 
@@ -13,7 +14,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Assemble and run TinyCPU programs")
     parser.add_argument("program", type=Path)
     parser.add_argument("--disassemble", action="store_true")
-    parser.add_argument("--memory-size", type=int, default=4096)
+    parser.add_argument("--data-bits", type=int, default=DEFAULT_DATA_BITS)
+    parser.add_argument("--address-bits", type=int, default=DEFAULT_ADDRESS_BITS)
+    parser.add_argument("--memory-size", type=int, default=DEFAULT_MEMORY_SIZE)
     parser.add_argument("--input", type=int, action="append", default=[])
     args = parser.parse_args(argv)
     try:
@@ -23,7 +26,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.disassemble:
         print(disassemble(program))
         return 0
-    cpu = TinyCPU(args.memory_size, args.input, print)
+    try:
+        cpu = TinyCPU(
+            args.memory_size,
+            args.input,
+            print,
+            data_bits=args.data_bits,
+            address_bits=args.address_bits,
+        )
+    except ValueError as error:
+        parser.error(str(error))
     cpu.run(program)
     if cpu.error:
         print("ERROR:", ", ".join(sorted(flag.value for flag in cpu.errors)))

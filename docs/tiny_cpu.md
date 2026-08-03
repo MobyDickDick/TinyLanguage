@@ -118,7 +118,12 @@ HALT()
 python src/tiny_cpu_cli.py program.tcpu
 python src/tiny_cpu_cli.py --disassemble program.tcpu
 python src/tiny_cpu_cli.py --input 41 input_program.tcpu
+python src/tiny_cpu_cli.py --data-bits 8 --address-bits 9 --memory-size 512 program.tcpu
 ```
+
+Mit `--data-bits` und `--address-bits` wird das Zielprofil auch beim CLI-Aufruf
+festgelegt. `--memory-size` darf den durch den Adressbus bestimmten Adressraum
+nicht überschreiten; die Standardwerte sind 16, 12 und 4096.
 
 Der Prozess endet mit Status 1, wenn `HALT_ERROR()` ausgeführt wird oder bei
 `HALT()` noch ein Fehlerflag gesetzt ist. Eine Schrittgrenze schützt vor

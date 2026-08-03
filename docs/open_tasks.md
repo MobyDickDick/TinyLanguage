@@ -634,3 +634,12 @@ and testable so they can be promoted into the formal backlog as needed.
 
 - [x] **Process highest-priority documented open question (package registry signing)** (Owner: Ecosystem)
   - Result: resolved the remaining package-manager open question in `docs/package_manager_plan.md` with a phased decision for metadata signing (v1.1 informational hashes, v1.2 optional verification, v1.3 required signatures for official channels).
+
+## TinyCPU execution update (2026-08-03)
+
+- [x] **AP 7: Maschinenformat und Tooling** (Owner: TinyCPU)
+  - Result: froze the version-1 22-bit machine-word layout and opcode table,
+    added a range-checking encoder/decoder that emits Logisim ROM images and
+    listings, and loaded the generated AP 5 countdown image into the circuit.
+  - Verification: instruction-wide roundtrip tests and artifact/circuit parity
+    tests protect the encoding contract; AP 8 remains the next work package.

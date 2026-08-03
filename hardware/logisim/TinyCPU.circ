@@ -42,95 +42,71 @@
     <a name="circuit" val="Datapath"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(100,150)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="DATA_IN"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="0" loc="(100,200)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="ACC_LOAD"/>
-    </comp>
-    <comp lib="0" loc="(100,260)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="VALID_IN"/>
-    </comp>
-    <comp lib="0" loc="(100,310)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="CLK"/>
-    </comp>
-    <comp lib="0" loc="(420,150)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="type" val="output"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="0" loc="(420,240)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="5" loc="(280,120)" name="Register">
-      <a name="appearance" val="logisim_evolution"/>
-      <a name="label" val="ACC"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="5" loc="(280,240)" name="Register">
-      <a name="appearance" val="logisim_evolution"/>
-      <a name="label" val="ACC_VALID"/>
-      <a name="width" val="1"/>
-    </comp>
-    <comp lib="9" loc="(80,60)" name="Text">
-      <a name="text" val="16-bit accumulator plus validity state"/>
-    </comp>
+    <comp lib="0" loc="(80,140)" name="Pin"><a name="label" val="DATA_IN"/><a name="width" val="16"/></comp>
+    <comp lib="0" loc="(80,190)" name="Pin"><a name="label" val="ACC_LOAD"/></comp>
+    <comp lib="0" loc="(80,250)" name="Pin"><a name="label" val="VALID_IN"/></comp>
+    <comp lib="0" loc="(80,300)" name="Pin"><a name="label" val="CLK"/></comp>
+    <comp lib="0" loc="(480,140)" name="Pin"><a name="facing" val="west"/><a name="label" val="ACC_OUT"/><a name="type" val="output"/><a name="width" val="16"/></comp>
+    <comp lib="0" loc="(480,220)" name="Pin"><a name="facing" val="west"/><a name="label" val="ACC_VALID_OUT"/><a name="type" val="output"/></comp>
+    <comp lib="0" loc="(480,270)" name="Pin"><a name="facing" val="west"/><a name="label" val="ZERO"/><a name="type" val="output"/></comp>
+    <comp lib="0" loc="(480,320)" name="Pin"><a name="facing" val="west"/><a name="label" val="NEGATIVE"/><a name="type" val="output"/></comp>
+    <comp lib="5" loc="(300,140)" name="Register"><a name="appearance" val="logisim_evolution"/><a name="label" val="ACC"/><a name="width" val="16"/></comp>
+    <comp lib="5" loc="(300,220)" name="Register"><a name="appearance" val="logisim_evolution"/><a name="label" val="ACC_VALID"/><a name="width" val="1"/></comp>
+    <comp lib="3" loc="(400,270)" name="Comparator"><a name="label" val="ACC_STATUS"/><a name="mode" val="twosComplement"/><a name="width" val="16"/></comp>
+    <comp lib="0" loc="(340,290)" name="Constant"><a name="value" val="0x0"/><a name="width" val="16"/></comp>
+    <wire from="(80,140)" to="(270,140)"/>
+    <wire from="(80,190)" to="(280,190)"/>
+    <wire from="(80,250)" to="(270,220)"/>
+    <wire from="(80,300)" to="(250,300)"/>
+    <wire from="(250,240)" to="(250,300)"/>
+    <wire from="(250,240)" to="(270,240)"/>
+    <wire from="(250,160)" to="(250,240)"/>
+    <wire from="(250,160)" to="(270,160)"/>
+    <wire from="(280,160)" to="(280,240)"/>
+    <wire from="(300,140)" to="(480,140)"/>
+    <wire from="(300,140)" to="(360,260)"/>
+    <wire from="(300,220)" to="(480,220)"/>
+    <wire from="(340,290)" to="(360,280)"/>
+    <wire from="(400,270)" to="(480,270)"/>
+    <wire from="(400,280)" to="(440,280)"/>
+    <wire from="(440,280)" to="(440,320)"/>
+    <wire from="(440,320)" to="(480,320)"/>
+    <comp lib="9" loc="(80,60)" name="Text"><a name="text" val="Clocked 16-bit accumulator; signed comparator derives ZERO and NEGATIVE"/></comp>
   </circuit>
   <circuit name="AddressPath">
     <a name="appearance" val="logisim_evolution"/>
     <a name="circuit" val="AddressPath"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(100,150)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="ADDRESS_IN"/>
-      <a name="width" val="12"/>
-    </comp>
-    <comp lib="0" loc="(100,200)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="AR_LOAD"/>
-    </comp>
-    <comp lib="0" loc="(100,260)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="VALID_IN"/>
-    </comp>
-    <comp lib="0" loc="(100,310)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="CLK"/>
-    </comp>
-    <comp lib="0" loc="(420,150)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="ADDRESS"/>
-      <a name="type" val="output"/>
-      <a name="width" val="12"/>
-    </comp>
-    <comp lib="0" loc="(420,240)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="5" loc="(280,150)" name="Register">
-      <a name="appearance" val="logisim_evolution"/>
-      <a name="label" val="AR"/>
-      <a name="width" val="12"/>
-    </comp>
-    <comp lib="5" loc="(280,240)" name="Register">
-      <a name="appearance" val="logisim_evolution"/>
-      <a name="label" val="AR_VALID"/>
-      <a name="width" val="1"/>
-    </comp>
-    <comp lib="9" loc="(80,60)" name="Text">
-      <a name="text" val="12-bit unsigned address register plus validity state"/>
-    </comp>
+    <comp lib="0" loc="(80,120)" name="Pin"><a name="label" val="ADDRESS_IN"/><a name="width" val="12"/></comp>
+    <comp lib="0" loc="(80,170)" name="Pin"><a name="label" val="OFFSET"/><a name="width" val="12"/></comp>
+    <comp lib="0" loc="(80,220)" name="Pin"><a name="label" val="AR_LOAD"/></comp>
+    <comp lib="0" loc="(80,270)" name="Pin"><a name="label" val="VALID_IN"/></comp>
+    <comp lib="0" loc="(80,320)" name="Pin"><a name="label" val="CLK"/></comp>
+    <comp lib="0" loc="(500,120)" name="Pin"><a name="facing" val="west"/><a name="label" val="ADDRESS"/><a name="type" val="output"/><a name="width" val="12"/></comp>
+    <comp lib="0" loc="(500,200)" name="Pin"><a name="facing" val="west"/><a name="label" val="ADDRESS_VALID"/><a name="type" val="output"/></comp>
+    <comp lib="0" loc="(500,270)" name="Pin"><a name="facing" val="west"/><a name="label" val="ADDRESS_PLUS_OFFSET"/><a name="type" val="output"/><a name="width" val="12"/></comp>
+    <comp lib="0" loc="(500,320)" name="Pin"><a name="facing" val="west"/><a name="label" val="OFFSET_CARRY"/><a name="type" val="output"/></comp>
+    <comp lib="5" loc="(300,120)" name="Register"><a name="appearance" val="logisim_evolution"/><a name="label" val="AR"/><a name="width" val="12"/></comp>
+    <comp lib="5" loc="(300,200)" name="Register"><a name="appearance" val="logisim_evolution"/><a name="label" val="AR_VALID"/><a name="width" val="1"/></comp>
+    <comp lib="3" loc="(420,270)" name="Adder"><a name="label" val="OFFSET_ADDER"/><a name="width" val="12"/></comp>
+    <wire from="(80,120)" to="(270,120)"/>
+    <wire from="(80,170)" to="(370,280)"/>
+    <wire from="(80,220)" to="(280,220)"/>
+    <wire from="(280,140)" to="(280,220)"/>
+    <wire from="(80,270)" to="(270,200)"/>
+    <wire from="(80,320)" to="(250,320)"/>
+    <wire from="(250,140)" to="(250,320)"/>
+    <wire from="(250,140)" to="(270,140)"/>
+    <wire from="(250,220)" to="(270,220)"/>
+    <wire from="(300,120)" to="(500,120)"/>
+    <wire from="(300,120)" to="(370,260)"/>
+    <wire from="(300,200)" to="(500,200)"/>
+    <wire from="(420,270)" to="(500,270)"/>
+    <wire from="(420,290)" to="(460,290)"/>
+    <wire from="(460,290)" to="(460,320)"/>
+    <wire from="(460,320)" to="(500,320)"/>
+    <comp lib="9" loc="(80,60)" name="Text"><a name="text" val="Clocked 12-bit address register with combinational offset addition"/></comp>
   </circuit>
   <circuit name="Memory">
     <a name="appearance" val="logisim_evolution"/>

@@ -6,14 +6,63 @@
   "memory_size": 4096,
   "top_circuit": "TinyCPU",
   "registers": {
-    "Datapath": {"ACC": 16, "ACC_VALID": 1},
-    "AddressPath": {"AR": 12, "AR_VALID": 1},
-    "ErrorFlags": {"OVF": 1, "DIV0": 1, "ADDR": 1, "INV": 1, "ILL": 1, "INPUT": 1}
+    "Datapath": {
+      "ACC": 16,
+      "ACC_VALID": 1
+    },
+    "AddressPath": {
+      "AR": 12,
+      "AR_VALID": 1
+    },
+    "ErrorFlags": {
+      "OVF": 1,
+      "DIV0": 1,
+      "ADDR": 1,
+      "INV": 1,
+      "ILL": 1,
+      "INPUT": 1
+    }
   },
   "rams": {
     "Memory": {
-      "DATA_RAM": {"address_bits": 12, "data_bits": 16},
-      "VALID_RAM": {"address_bits": 12, "data_bits": 1}
+      "DATA_RAM": {
+        "address_bits": 12,
+        "data_bits": 16
+      },
+      "VALID_RAM": {
+        "address_bits": 12,
+        "data_bits": 1
+      }
+    }
+  },
+  "datapaths": {
+    "Datapath": {
+      "components": {
+        "ACC_STATUS": {
+          "kind": "Comparator",
+          "width": 16
+        }
+      },
+      "pins": {
+        "ACC_OUT": 16,
+        "ACC_VALID_OUT": 1,
+        "ZERO": 1,
+        "NEGATIVE": 1
+      }
+    },
+    "AddressPath": {
+      "components": {
+        "OFFSET_ADDER": {
+          "kind": "Adder",
+          "width": 12
+        }
+      },
+      "pins": {
+        "ADDRESS": 12,
+        "ADDRESS_VALID": 1,
+        "ADDRESS_PLUS_OFFSET": 12,
+        "OFFSET_CARRY": 1
+      }
     }
   }
 }

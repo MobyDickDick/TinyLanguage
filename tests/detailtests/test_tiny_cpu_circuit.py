@@ -7,13 +7,14 @@ PROJECT = Path(__file__).parents[2] / "hardware" / "logisim" / "TinyCPU.circ"
 PROFILE = PROJECT.with_name("tinycpu-16-12.json")
 
 
-def test_inspector_exposes_unwired_starter_sheets():
+def test_inspector_exposes_completed_and_pending_sheets():
     reports = {report.name: report for report in inspect_project(PROJECT)}
 
     assert reports["TinyCPU"].wires == 0
-    assert reports["Datapath"].components == 8
-    assert "ACC@(280,120)" in reports["Datapath"].unconnected
-    assert not reports["Datapath"].connected
+    assert reports["Datapath"].components == 12
+    assert reports["Datapath"].wires == 17
+    assert reports["Datapath"].connected
+    assert reports["AddressPath"].connected
 
 
 def test_inspector_accepts_a_minimal_connected_project(tmp_path):
@@ -36,7 +37,8 @@ def test_inspector_accepts_a_minimal_connected_project(tmp_path):
 def test_inspector_cli_fails_for_incomplete_project(capsys):
     assert main([str(PROJECT)]) == 1
     output = capsys.readouterr().out
-    assert "Datapath: INCOMPLETE" in output
+    assert "Datapath: connected" in output
+    assert "Memory: INCOMPLETE" in output
     assert "0 wires" in output
 
 
@@ -57,3 +59,17 @@ def test_hardware_profile_reports_width_drift(tmp_path):
 
     violations = validate_hardware_contract(project, PROFILE)
     assert "Datapath.ACC: width is 8, expected 16" in violations
+
+
+def test_hardware_profile_requires_ap2_status_and_offset_interfaces(tmp_path):
+    project = tmp_path / "missing-ap2-output.circ"
+    project.write_text(
+        PROJECT.read_text(encoding="utf-8").replace(
+            '<a name="label" val="NEGATIVE"/>',
+            '<a name="label" val="NEGATIVE_MISSING"/>',
+        ),
+        encoding="utf-8",
+    )
+
+    violations = validate_hardware_contract(project, PROFILE)
+    assert "Datapath: missing pin NEGATIVE" in violations

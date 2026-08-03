@@ -40,7 +40,11 @@ keine dauerhaft inkompatiblen Opcodes erzeugen.
 - [x] **AP 1:** `hardware/logisim/tinycpu-16-12.json` beschreibt den Vertrag;
   `tiny_cpu_circuit.py --profile … --contract-only` prüft ihn unabhängig von
   der noch fehlenden Verdrahtung.
-- [ ] **AP 2:** Daten- und Adresspfad
+- [x] **AP 2:** Daten- und Adresspfad; `Datapath` lädt Akkumulator und
+  Valid-Bit an derselben Taktflanke und leitet `ZERO`/`NEGATIVE` über einen
+  vorzeichenbehafteten Vergleicher ab. `AddressPath` lädt Adressregister und
+  Valid-Bit synchron und stellt die 12-Bit-Offset-Summe samt Carry bereit. Das
+  Hardwareprofil und die Netlist-Tests frieren diese Schnittstellen ein.
 - [ ] **AP 3:** Speicher und Fehlerregister
 - [ ] **AP 4:** Fetch und Decode
 - [ ] **AP 5:** Kernprogramm integrieren

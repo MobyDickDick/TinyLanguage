@@ -110,6 +110,40 @@ def validate_hardware_contract(
                     f"{actual[label].get('width', '1')}, expected {width}"
                 )
 
+    for circuit_name, expected in profile.get("datapaths", {}).items():
+        circuit = circuits.get(circuit_name)
+        if circuit is None:
+            violations.append(f"missing circuit {circuit_name!r}")
+            continue
+        by_label = {
+            attrs["label"]: (component.get("name", ""), attrs)
+            for component in circuit.findall("comp")
+            if (attrs := _attributes(component)).get("label")
+        }
+        for label, spec in expected.get("components", {}).items():
+            if label not in by_label:
+                violations.append(f"{circuit_name}: missing component {label}")
+                continue
+            kind, attrs = by_label[label]
+            if kind != spec["kind"]:
+                violations.append(
+                    f"{circuit_name}.{label}: kind is {kind}, expected {spec['kind']}"
+                )
+            if int(attrs.get("width", "1")) != spec["width"]:
+                violations.append(
+                    f"{circuit_name}.{label}: width is {attrs.get('width', '1')}, "
+                    f"expected {spec['width']}"
+                )
+        pins = labelled_components(circuit_name, "Pin")
+        for label, width in expected.get("pins", {}).items():
+            if label not in pins:
+                violations.append(f"{circuit_name}: missing pin {label}")
+            elif int(pins[label].get("width", "1")) != width:
+                violations.append(
+                    f"{circuit_name}.{label}: width is "
+                    f"{pins[label].get('width', '1')}, expected {width}"
+                )
+
     for circuit_name, expected in profile["rams"].items():
         actual = labelled_components(circuit_name, "RAM")
         for label, dimensions in expected.items():

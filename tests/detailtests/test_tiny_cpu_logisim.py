@@ -50,3 +50,39 @@ def test_logisim_starter_has_parallel_valid_ram_and_all_error_flags():
         if component.get("name") == "Register"
     }
     assert labels == {"OVF", "DIV0", "ADDR", "INV", "ILL", "INPUT"}
+
+
+def test_ap2_datapaths_are_wired_and_expose_status_and_offset_results():
+    root = ET.parse(PROJECT).getroot()
+    circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
+
+    expected_outputs = {
+        "Datapath": {"ACC_OUT", "ACC_VALID_OUT", "ZERO", "NEGATIVE"},
+        "AddressPath": {
+            "ADDRESS",
+            "ADDRESS_VALID",
+            "ADDRESS_PLUS_OFFSET",
+            "OFFSET_CARRY",
+        },
+    }
+    for circuit_name, labels in expected_outputs.items():
+        circuit = circuits[circuit_name]
+        output_labels = {
+            _attributes(component).get("label")
+            for component in circuit.findall("comp")
+            if component.get("name") == "Pin"
+            and _attributes(component).get("type") == "output"
+        }
+        assert labels <= output_labels
+        assert circuit.findall("wire")
+
+    datapath_parts = {
+        _attributes(component).get("label"): component.get("name")
+        for component in circuits["Datapath"].findall("comp")
+    }
+    address_parts = {
+        _attributes(component).get("label"): component.get("name")
+        for component in circuits["AddressPath"].findall("comp")
+    }
+    assert datapath_parts["ACC_STATUS"] == "Comparator"
+    assert address_parts["OFFSET_ADDER"] == "Adder"

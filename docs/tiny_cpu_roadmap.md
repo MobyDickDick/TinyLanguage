@@ -53,7 +53,10 @@ keine dauerhaft inkompatiblen Opcodes erzeugen.
   `PC_RANGE` setzt bei einem PC außerhalb `PROGRAM_LIMIT` gleichzeitig `ADDR`
   und `HALT_ERROR`. Die Taktabläufe und das vorläufige interne ROM-Wort sind
   in `hardware/logisim/README.md` dokumentiert und im Hardwareprofil fixiert.
-- [ ] **AP 5:** Kernprogramm integrieren
+- [x] **AP 5:** Kernprogramm integrieren; die ROM-Zählschleife und ihr
+  versionierter 17-Takt-Trace liegen unter `hardware/logisim/`. Der
+  Trace-Comparator prüft PC, Akkumulator, Status, Speicherzellen, Ausgabe,
+  Fehlerflags und Haltzustand an jeder Taktflanke gegen die Python-VM.
 - [ ] **AP 6:** ISA vervollständigen
 - [ ] **AP 7:** Maschinenformat und Tooling
 - [ ] **AP 8:** Abschluss und Dokumentation

@@ -155,3 +155,23 @@ def test_ap4_fetch_decode_has_pc_rom_core_controls_and_error_halt():
         "PRINT", "HALT", "SET_ADDR", "HALT_ERROR",
     }
     assert controls <= parts.keys()
+
+
+def test_ap5_rom_contains_the_countdown_fixture():
+    root = ET.parse(PROJECT).getroot()
+    fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
+    rom = next(
+        component
+        for component in fetch.findall("comp")
+        if _attributes(component).get("label") == "INSTRUCTION_ROM"
+    )
+
+    contents_element = next(
+        item for item in rom.findall("a") if item.get("name") == "contents"
+    )
+    contents = (contents_element.text or "").strip().splitlines()
+    assert contents[0] == "addr/data: 12 19"
+    assert " ".join(contents[1:]).split() == [
+        "0ffff", "10065", "00003", "10064", "40000",
+        "20065", "10064", "30004", "50000",
+    ]

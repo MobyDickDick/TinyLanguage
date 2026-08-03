@@ -7,6 +7,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-03)
 
+- [x] **Integrate the TinyCPU AP 5 core program**
+  (Owner: TinyCPU/Hardware)
+  - Success: load a reproducible counting-loop fixture and compare every
+    clock-edge state, output, and halt result with the Python VM.
+  - Result: the provisional ROM now contains a core-only countdown program;
+    its 17-edge JSON trace freezes PC, accumulator validity, flags, watched
+    memory, output, and halt state, and a reusable comparator reports divergent
+    edge fields.
+  - Follow-up: AP 6 can extend the remaining addressing modes, arithmetic,
+    logic, jumps, and I/O while retaining the AP 5 trace as a core regression.
+
+## Next documented work package (completed 2026-08-03)
+
 - [x] **Implement TinyCPU AP 4 fetch and decode**
   (Owner: TinyCPU/Hardware)
   - Success: add a 12-bit PC, instruction ROM, and decode/control path for

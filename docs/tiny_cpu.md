@@ -8,6 +8,96 @@ Sprünge und eine strikte Fehlersemantik. Der Simulator liegt in
 `src/tiny_cpu_vm.py`, der
 Assembler in `src/tiny_cpu_assembler.py` und die ISA in `src/tiny_cpu_isa.py`.
 
+## Empfehlung für die Schaltungssimulation
+
+Für den Nachbau der TinyCPU wird **[Logisim-evolution](https://github.com/logisim-evolution/logisim-evolution)**
+empfohlen. Es ist plattformübergreifend, für Lehrschaltungen gut nachvollziehbar
+und bietet die für TinyCPU benötigten Register-, RAM/ROM-, ALU-, Splitter- und
+Taktbausteine. Vor allem lässt sich der Prozessor hierarchisch in Datenpfad,
+Steuerwerk und Ein-/Ausgabe zerlegen. Die mitgelieferte Python-VM bleibt dabei
+die Referenz: Ein Logisim-Test gilt als korrekt, wenn Register, Speicher,
+Ausgaben und Fehlerflags nach jedem Takt mit `src/tiny_cpu_vm.py` übereinstimmen.
+
+Als Alternative eignet sich **[Digital](https://github.com/hneemann/Digital)**,
+insbesondere wenn automatische Schaltungstests und eine kompakte
+Java-Anwendung wichtiger sind. Für gemeinsames Arbeiten und eine leicht
+zugängliche Dokumentation wird Logisim-evolution bevorzugt. Browserbasierte
+Werkzeuge sind für eine Demonstration brauchbar, erschweren aber die genaue
+Abbildung der unten beschriebenen Invalid-Bits und Sticky-Fehlerflags.
+
+Wichtig: Der gegenwärtige Assembler erzeugt noch **kein binäres ROM-Abbild**.
+`assemble()` liefert ein `Program` aus symbolischen `Instruction`-Objekten; die
+Opcode-Nummern und das Maschinenwortformat sind absichtlich noch nicht Teil der
+ISA. Deshalb darf eine Logisim-Schaltung nicht eigenmächtig dauerhafte
+Opcode-Werte als offizielles Dateiformat festlegen. Bis ein Encoder ergänzt
+wird, sind zwei sinnvolle Arbeitsweisen möglich:
+
+1. zuerst Datenpfad und Steuerwerk mit manuell eingegebenen Mikroinstruktionen
+   testen und die Python-VM als Vergleichsmodell verwenden;
+2. für einen lokalen Prototyp eine Opcode-Tabelle im Logisim-Projekt führen,
+   diese aber ausdrücklich als projektspezifisch kennzeichnen.
+
+Ein späterer Encoder sollte Zielprofil, Opcode-Tabelle und Wortlayout gemeinsam
+versionieren und ein von Logisim-evolution lesbares ROM-Image sowie eine
+menschenlesbare Listing-Datei ausgeben. So bleibt der vorhandene symbolische
+Assembler unabhängig von einer konkreten Schaltung.
+
+### Hardwarevertrag für den Nachbau
+
+Die kleinste kompatible Schaltung besteht aus folgenden Zuständen und Signalen:
+
+| Teil | Erforderlicher Zustand / Verhalten |
+|---|---|
+| Programmsteuerung | vorzeichenloser `address_bits` breiter PC; vor der Ausführung auf die Folgeinstruktion erhöhen |
+| Datenpfad | `data_bits` breiter Akkumulator im Zweierkomplement sowie Zero- und Negative-Status |
+| Adressierung | `address_bits` breites Adressregister mit eigenem Valid-Bit |
+| Datenspeicher | je Zelle ein `data_bits` breiter Wert **und ein Valid-Bit** |
+| Fehlerregister | sticky Bits `OVF`, `DIV0`, `ADDR`, `INV`, `ILL`, `INPUT`; deren OR ist `ERR` |
+| Ein-/Ausgabe | Eingabewarteschlange zum Akkumulator; `PRINT` schreibt einen gültigen Wert auf den Ausgabekanal |
+| Halt | getrennte Zustände für normal angehalten und mit Fehler angehalten |
+
+Das Valid-Bit ist kein optionales Debugsignal: Ohne ein Valid-Bit für
+Akkumulator, Adressregister und jede Speicherzelle kann die festgelegte
+Fehlerfortpflanzung nicht implementiert werden. `CLEAR_ERROR()` löscht nur das
+Fehlerregister, niemals Valid-Bits. Zero ist genau dann gesetzt, wenn der im
+Akkumulator gespeicherte Wert null ist; bedingte Zero-/Not-Zero-Sprünge werden
+jedoch nur bei gültigem Akkumulator genommen. Negative ist nur für einen
+gültigen negativen Akkumulator gesetzt.
+
+Für eine taktsynchrone Implementierung ist folgende Reihenfolge beobachtbar:
+
+1. Instruktion an `PC` lesen; eine ungültige Instruktionsadresse setzt `ADDR`
+   und hält mit Fehler an.
+2. `PC` auf die Folgeinstruktion erhöhen.
+3. Operanden lesen, Operation und Gültigkeitsprüfung ausführen.
+4. Ergebnis, Flags, Speicher oder Sprungziel gemeinsam an der Taktflanke
+   übernehmen.
+
+Sprungziele sind **Instruktionsindizes**, keine Byteadressen. Ein genommener
+Sprung außerhalb des geladenen Programms setzt `ADDR`; ein nicht genommener
+Sprung validiert sein Ziel nicht. Division ganzer Zahlen schneidet gegen null
+ab. `AND`, `OR` und `NOT` arbeiten bitweise auf der gewählten
+Zweierkomplementbreite. Arithmetische Ergebnisse außerhalb des signierten
+Datenbereichs setzen `OVF` und schreiben `0 INVALID` in den Akkumulator.
+
+### Empfohlener Aufbau in Logisim-evolution
+
+1. Das Zielprofil zunächst auf **16 Datenbits, 12 Adressbits und 4096
+   Speicherzellen** festlegen.
+2. Datenpfad (Akkumulator, ALU, Status), Adresspfad (Adressregister,
+   Offset-Addierer), Speicher und Steuerwerk als getrennte Subcircuits bauen.
+3. Valid-RAM parallel zum Daten-RAM anlegen; beide verwenden dieselbe Adresse
+   und denselben Write-Enable.
+4. Fehlerflags als Set-dominante Register implementieren; `CLEAR_ERROR` bildet
+   die einzige gemeinsame Clear-Leitung.
+5. Zuerst `LOAD_CONST`, `STORE_ADDRESS`, `ADD_ADDRESS`, `JUMP_NOT_ZERO`,
+   `PRINT` und `HALT` implementieren und damit das Schleifenbeispiel testen.
+6. Danach die übrigen Adressierungsarten und gezielte Fehlerfälle ergänzen.
+
+Für reproduzierbare Vergleiche sollte jeder Schaltungstest neben dem
+Logisim-Projekt auch die `.tcpu`-Quelldatei, das verwendete Zielprofil, die
+Eingabefolge sowie erwartete Ausgaben und Fehlerflags enthalten.
+
 ## Leitprinzip: Fehler sind keine Modulo-Arithmetik
 
 Jedes Register und jede Speicherzelle besteht logisch aus `(value, valid)`. Eine

@@ -102,3 +102,62 @@ def test_assembler_rejects_missing_and_spurious_operands():
 def test_disassembly_round_trip():
     program = assemble("LOAD_CONST(2)\nADD_CONST(3)\nHALT()")
     assert assemble(disassemble(program)).instructions == program.instructions
+
+
+@pytest.mark.parametrize(
+    ("data_bits", "largest", "smallest"),
+    [(8, 127, -128), (16, 32767, -32768), (32, 2147483647, -2147483648)],
+)
+def test_data_width_defines_arithmetic_range(data_bits, largest, smallest):
+    cpu = run(
+        f"LOAD_CONST({largest})\nADD_CONST(1)\nHALT()",
+        data_bits=data_bits,
+    )
+    assert cpu.errors == {ErrorFlag.OVERFLOW}
+
+    cpu = run(f"LOAD_CONST({smallest})\nHALT()", data_bits=data_bits)
+    assert (cpu.accumulator.value, cpu.accumulator.valid) == (smallest, True)
+
+
+def test_address_width_is_independent_of_data_width():
+    cpu = run(
+        """
+        LOAD_ADDRESS_REGISTER_CONST(200)
+        LOAD_CONST(7)
+        STORE_ADDRESS_REGISTER()
+        PRINT_ADDRESS(200)
+        HALT()
+        """,
+        data_bits=8,
+        address_bits=8,
+        memory_size=256,
+    )
+    assert cpu.output_values == [7]
+    assert not cpu.error
+
+
+def test_address_width_limits_memory_and_effective_addresses():
+    with pytest.raises(ValueError, match="exceeds 4-bit address space"):
+        TinyCPU(data_bits=32, address_bits=4, memory_size=17)
+
+    cpu = run(
+        """
+        LOAD_ADDRESS_REGISTER_CONST(15)
+        LOAD_CONST(1)
+        STORE_ADDRESS_REGISTER_PLUS_OFFSET(1)
+        HALT()
+        """,
+        data_bits=32,
+        address_bits=4,
+        memory_size=16,
+    )
+    assert ErrorFlag.INVALID_ADDRESS in cpu.errors
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [({"data_bits": 1}, "data_bits"), ({"address_bits": 0}, "address_bits")],
+)
+def test_bus_widths_have_explicit_minima(kwargs, message):
+    with pytest.raises(ValueError, match=message):
+        TinyCPU(**kwargs)

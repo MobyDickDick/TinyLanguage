@@ -11,9 +11,27 @@ from dataclasses import dataclass
 from enum import Enum
 
 
-WORD_MIN = -(2**15)
-WORD_MAX = 2**15 - 1
+DEFAULT_DATA_BITS = 16
+DEFAULT_ADDRESS_BITS = 12
+WORD_MIN = -(2 ** (DEFAULT_DATA_BITS - 1))
+WORD_MAX = 2 ** (DEFAULT_DATA_BITS - 1) - 1
 DEFAULT_MEMORY_SIZE = 4096
+
+
+def signed_bounds(bits: int) -> tuple[int, int]:
+    """Return the two's-complement range for a data bus of *bits* bits."""
+
+    if bits < 2:
+        raise ValueError("data_bits must be at least 2")
+    return -(2 ** (bits - 1)), 2 ** (bits - 1) - 1
+
+
+def address_limit(bits: int) -> int:
+    """Return the number of distinct addresses carried by *bits* bits."""
+
+    if bits < 1:
+        raise ValueError("address_bits must be at least 1")
+    return 2**bits
 
 
 class OperandKind(Enum):

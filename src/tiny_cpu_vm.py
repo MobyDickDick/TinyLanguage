@@ -7,7 +7,14 @@ from enum import Enum
 from typing import Callable, Iterable
 
 from tiny_cpu_assembler import Program
-from tiny_cpu_isa import DEFAULT_MEMORY_SIZE, WORD_MAX, WORD_MIN, Instruction
+from tiny_cpu_isa import (
+    DEFAULT_ADDRESS_BITS,
+    DEFAULT_DATA_BITS,
+    DEFAULT_MEMORY_SIZE,
+    Instruction,
+    address_limit,
+    signed_bounds,
+)
 
 
 @dataclass
@@ -26,7 +33,7 @@ class ErrorFlag(Enum):
 
 
 class TinyCPU:
-    """A 16-bit accumulator computer with validity tracking.
+    """A width-parametric accumulator computer with validity tracking.
 
     Error flags are sticky. ``CLEAR_ERROR`` clears flags, but never repairs a
     register or memory cell; only writing a newly valid value does that.
@@ -37,9 +44,20 @@ class TinyCPU:
         memory_size: int = DEFAULT_MEMORY_SIZE,
         inputs: Iterable[int] = (),
         output: Callable[[int], None] | None = None,
+        *,
+        data_bits: int = DEFAULT_DATA_BITS,
+        address_bits: int = DEFAULT_ADDRESS_BITS,
     ) -> None:
+        self.data_bits = data_bits
+        self.address_bits = address_bits
+        self.word_min, self.word_max = signed_bounds(data_bits)
+        self.address_space = address_limit(address_bits)
         if memory_size <= 0:
             raise ValueError("memory_size must be positive")
+        if memory_size > self.address_space:
+            raise ValueError(
+                f"memory_size {memory_size} exceeds {address_bits}-bit address space"
+            )
         self.memory = [Cell() for _ in range(memory_size)]
         self.accumulator = Cell()
         self.address_register = Cell()
@@ -70,10 +88,16 @@ class TinyCPU:
             self.address_register = Cell(0, False)
 
     def _checked(self, value: int) -> int | None:
-        if value < WORD_MIN or value > WORD_MAX:
+        if value < self.word_min or value > self.word_max:
             self._fail(ErrorFlag.OVERFLOW)
             return None
         return value
+
+    def _set_address_register(self, value: int) -> None:
+        if not 0 <= value < self.address_space:
+            self._fail(ErrorFlag.INVALID_ADDRESS, target="address_register")
+            return
+        self.address_register = Cell(value, True)
 
     def _cell(self, address: int) -> Cell | None:
         if not 0 <= address < len(self.memory):
@@ -92,8 +116,8 @@ class TinyCPU:
                 self._fail(ErrorFlag.INVALID_OPERAND)
                 return None
             address = self.address_register.value + int(instruction.operand or 0)
-            if not WORD_MIN <= address <= WORD_MAX:
-                self._fail(ErrorFlag.OVERFLOW)
+            if not 0 <= address < self.address_space:
+                self._fail(ErrorFlag.INVALID_ADDRESS)
                 return None
             return address
         return instruction.operand
@@ -152,17 +176,16 @@ class TinyCPU:
         self.pc += 1
         opcode = instruction.opcode
 
-        if opcode.startswith("LOAD_ADDRESS_REGISTER_") and opcode not in {
-            "LOAD_ADDRESS_REGISTER",
-            "LOAD_ADDRESS_REGISTER_PLUS_OFFSET",
-        }:
+        if opcode == "LOAD_ADDRESS_REGISTER_CONST":
+            self._set_address_register(int(instruction.operand))
+        elif opcode == "LOAD_ADDRESS_REGISTER_ADDRESS":
             value = self._read_operand(
-                Instruction(opcode.replace("LOAD_ADDRESS_REGISTER", "LOAD", 1), instruction.operand)
+                Instruction("LOAD_ADDRESS", instruction.operand)
             )
             if value is None:
                 self.address_register = Cell(0, False)
             else:
-                self.address_register = Cell(value, True)
+                self._set_address_register(value)
         elif opcode.startswith("LOAD_"):
             value = self._read_operand(instruction)
             if value is not None:
@@ -232,8 +255,17 @@ class TinyCPU:
         else:
             self._fail(ErrorFlag.INVALID_INSTRUCTION)
 
-    def run(self, program: Program | tuple[Instruction, ...], max_steps: int = 100_000) -> None:
+    def run(
+        self,
+        program: Program | tuple[Instruction, ...],
+        max_steps: int = 100_000,
+    ) -> None:
         instructions = program.instructions if isinstance(program, Program) else program
+        if len(instructions) > self.address_space:
+            self._fail(ErrorFlag.INVALID_ADDRESS)
+            self.halted = True
+            self.halted_with_error = True
+            return
         for _ in range(max_steps):
             if self.halted:
                 return

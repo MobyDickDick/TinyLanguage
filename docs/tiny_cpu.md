@@ -82,6 +82,12 @@ Datenbereichs setzen `OVF` und schreiben `0 INVALID` in den Akkumulator.
 
 ### Empfohlener Aufbau in Logisim-evolution
 
+Ein erstes, in Logisim-evolution 3.x öffnbares Strukturprojekt liegt unter
+[`hardware/logisim/TinyCPU.circ`](../hardware/logisim/TinyCPU.circ). Es legt das
+16/12-Bit-Profil, die Subcircuits und die zwingenden Valid-/Fehlerzustände an,
+ist aber bewusst noch keine ausführbare CPU. Umfang und nächste Verdrahtungsschritte
+sind in [`hardware/logisim/README.md`](../hardware/logisim/README.md) festgehalten.
+
 1. Das Zielprofil zunächst auf **16 Datenbits, 12 Adressbits und 4096
    Speicherzellen** festlegen.
 2. Datenpfad (Akkumulator, ALU, Status), Adresspfad (Adressregister,

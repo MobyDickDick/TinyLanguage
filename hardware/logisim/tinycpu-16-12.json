@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "name": "tinycpu-16-12",
+  "data_bits": 16,
+  "address_bits": 12,
+  "memory_size": 4096,
+  "top_circuit": "TinyCPU",
+  "registers": {
+    "Datapath": {"ACC": 16, "ACC_VALID": 1},
+    "AddressPath": {"AR": 12, "AR_VALID": 1},
+    "ErrorFlags": {"OVF": 1, "DIV0": 1, "ADDR": 1, "INV": 1, "ILL": 1, "INPUT": 1}
+  },
+  "rams": {
+    "Memory": {
+      "DATA_RAM": {"address_bits": 12, "data_bits": 16},
+      "VALID_RAM": {"address_bits": 12, "data_bits": 1}
+    }
+  }
+}

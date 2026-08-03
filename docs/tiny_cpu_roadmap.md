@@ -65,4 +65,8 @@ keine dauerhaft inkompatiblen Opcodes erzeugen.
   definiert ein 22-Bit-Wort aus 6-Bit-Opcode und 16-Bit-Operand. Der Encoder
   erzeugt ROM-Image und Listing der Zählschleife, das Logisim-ROM lädt exakt
   dieses Image, und Roundtrip- sowie Negativtests sichern das Format ab.
-- [ ] **AP 8:** Abschluss und Dokumentation
+- [x] **AP 8:** Abschluss und Dokumentation; die Bedienungs- und
+  Architekturhinweise beschreiben den Schaltplan sowie die Simulatorgrenze.
+  `tiny_cpu_verify.py` prüft aus einem frischen Checkout Vertrag, Verdrahtung,
+  generierte Artefakte, eingebettetes ROM und den 17-Takt-Referenztrace mit
+  einem einzigen reproduzierbaren Kommando.

@@ -1,7 +1,7 @@
 # TinyCPU in Logisim-evolution
 
-This directory contains the first seven, deliberately small hardware milestones
-for TinyCPU. Open `TinyCPU.circ` with Logisim-evolution 3.x.
+This directory contains the completed eight-package TinyCPU hardware baseline.
+Open `TinyCPU.circ` with Logisim-evolution 3.x.
 
 ## What is implemented
 
@@ -117,6 +117,37 @@ The `.rom` file is the supported Logisim interchange representation; the
 `.lst` file is diagnostic output and is not consumed by the circuit.
 
 ## Automated checks and simulation
+
+### Fresh-checkout acceptance
+
+From the repository root, the supported dependency-free acceptance command is:
+
+```bash
+PYTHONPATH=src python src/tiny_cpu_verify.py
+```
+
+It checks that every sheet is connected, the schematic matches the versioned
+hardware profile, the ROM and listing can be reproduced byte-for-byte, the ROM
+embedded in `TinyCPU.circ` matches the encoder, and the VM still reproduces the
+checked-in 17-edge trace. Then run the focused regression tests with:
+
+```bash
+PYTHONPATH=src python -m pytest -q tests/detailtests/test_tiny_cpu_logisim.py
+```
+
+Neither command modifies the checkout. A stale generated file is reported by
+name; regenerate ROM/listing with the AP 7 command above. A trace mismatch is
+reported by edge and field; regenerate the trace only after reviewing the VM or
+schematic behavior as an intentional compatibility change.
+
+### Architecture and simulation boundary
+
+The clocked state is owned by `FetchDecode` (PC), `Datapath` (accumulator and
+validity), `AddressPath` (address register and validity), `Memory` (parallel
+value/validity RAM), and `ErrorFlags` (six sticky bits). `FetchDecode` reads the
+22-bit instruction word and exposes symbolic controls; the other sheets commit
+selected state on the rising edge. `TinyCPU` is the integration boundary for
+the shared clock, reset, data/control paths, output, and halt state.
 
 The repository includes a dependency-free `.circ` netlist inspector. It parses
 the XML, lists circuits and components, and returns a failing exit status when

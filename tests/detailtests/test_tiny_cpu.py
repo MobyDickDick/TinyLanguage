@@ -1,6 +1,7 @@
 import pytest
 
 from tiny_cpu_assembler import AssemblyError, assemble, disassemble
+from tiny_cpu_cli import main
 from tiny_cpu_vm import ErrorFlag, TinyCPU
 
 
@@ -161,3 +162,36 @@ def test_address_width_limits_memory_and_effective_addresses():
 def test_bus_widths_have_explicit_minima(kwargs, message):
     with pytest.raises(ValueError, match=message):
         TinyCPU(**kwargs)
+
+
+def test_cli_runs_with_custom_bus_widths(tmp_path, capsys):
+    source = tmp_path / "wide_address.tcpu"
+    source.write_text(
+        "LOAD_CONST(7)\nSTORE_ADDRESS(300)\nPRINT_ADDRESS(300)\nHALT()\n",
+        encoding="utf-8",
+    )
+
+    exit_code = main(
+        [
+            "--data-bits",
+            "8",
+            "--address-bits",
+            "9",
+            "--memory-size",
+            "512",
+            str(source),
+        ]
+    )
+
+    assert exit_code == 0
+    assert capsys.readouterr().out == "7\n"
+
+
+def test_cli_rejects_memory_larger_than_address_space(tmp_path, capsys):
+    source = tmp_path / "halt.tcpu"
+    source.write_text("HALT()\n", encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="2"):
+        main(["--address-bits", "4", "--memory-size", "17", str(source)])
+
+    assert "memory_size 17 exceeds 4-bit address space" in capsys.readouterr().err

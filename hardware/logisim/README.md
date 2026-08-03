@@ -33,3 +33,22 @@ code format; the symbolic Python ISA remains authoritative.
 
 Do not store program ROM images as an official interchange format until the
 repository has a versioned encoder and target profile.
+
+## Automated checks and simulation
+
+The repository includes a dependency-free `.circ` netlist inspector. It parses
+the XML, lists circuits and components, and returns a failing exit status when
+sheets contain no wires or components have no wire at their anchor:
+
+```bash
+PYTHONPATH=src python src/tiny_cpu_circuit.py hardware/logisim/TinyCPU.circ
+```
+
+The current starter deliberately fails this check and reports `0 wires`. That
+makes the missing implementation explicit in CI instead of mistaking valid XML
+for a working processor. The inspector is **not** a replacement for Logisim's
+component simulator: faithfully emulating the complete Logisim library,
+propagation rules, clocks, unknown values, and RAM would amount to maintaining a
+second Logisim. Use Logisim-evolution's command-line simulation for electrical
+tests once the schematic is wired, and compare clock-by-clock CPU state with
+the executable reference model in `src/tiny_cpu_vm.py`.

@@ -88,6 +88,14 @@ Ein erstes, in Logisim-evolution 3.x öffnbares Strukturprojekt liegt unter
 ist aber bewusst noch keine ausführbare CPU. Umfang und nächste Verdrahtungsschritte
 sind in [`hardware/logisim/README.md`](../hardware/logisim/README.md) festgehalten.
 
+Mit `PYTHONPATH=src python src/tiny_cpu_circuit.py
+hardware/logisim/TinyCPU.circ` lässt sich das Projekt ohne Logisim zunächst
+strukturell prüfen. Der Prüfer liest das `.circ`-XML, meldet fehlende Leitungen
+und endet bei unvollständigen Schaltungen mit Status 1. Er simuliert bewusst
+nicht die gesamte Logisim-Bauteilbibliothek; für elektrische Simulation bleibt
+Logisim-evolution zuständig, während `tiny_cpu_vm.py` die CPU-Sollsemantik
+liefert. Das unverdrahtete Starterprojekt muss daher gegenwärtig fehlschlagen.
+
 1. Das Zielprofil zunächst auf **16 Datenbits, 12 Adressbits und 4096
    Speicherzellen** festlegen.
 2. Datenpfad (Akkumulator, ALU, Status), Adresspfad (Adressregister,

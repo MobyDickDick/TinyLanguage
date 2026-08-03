@@ -7,6 +7,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-03)
 
+- [x] **Implement TinyCPU AP 4 fetch and decode**
+  (Owner: TinyCPU/Hardware)
+  - Success: add a 12-bit PC, instruction ROM, and decode/control path for
+    `LOAD_CONST`, `STORE_ADDRESS`, `ADD_ADDRESS`, `JUMP_NOT_ZERO`, `PRINT`, and
+    `HALT`; an out-of-range PC must set `ADDR` and halt with an error.
+  - Result: the connected `FetchDecode` sheet exposes the six core controls,
+    operand and PC state, selects sequential or conditional-jump PC updates,
+    and turns the program-limit comparison into `SET_ADDR` plus `HALT_ERROR`.
+    The machine-readable contract and structural regressions freeze AP 4.
+  - Follow-up: AP 5 must load a reproducible counting-loop fixture and compare
+    every clock-edge state, output, and halt result with the Python VM.
+
+## Next documented work package (completed 2026-08-03)
+
 - [x] **Implement TinyCPU AP 3 memory and error registers**
   (Owner: TinyCPU/Hardware)
   - Success: connect value and validity RAM to one address, write-enable, and

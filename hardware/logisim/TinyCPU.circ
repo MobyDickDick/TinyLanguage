@@ -29,13 +29,59 @@
     <a name="circuit" val="TinyCPU"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="9" loc="(320,20)" name="Text">
-      <a name="text" val="TinyCPU 16/12 starter — wire and verify each subcircuit before adding control logic"/>
-    </comp>
-    <comp loc="(440,120)" name="Datapath"/>
-    <comp loc="(440,240)" name="AddressPath"/>
-    <comp loc="(700,120)" name="Memory"/>
-    <comp loc="(700,240)" name="ErrorFlags"/>
+    <comp lib="0" loc="(80,100)" name="Pin"><a name="label" val="CLK"/></comp>
+    <comp loc="(220,100)" name="FetchDecode"/>
+    <comp loc="(360,100)" name="Datapath"/>
+    <comp loc="(500,100)" name="AddressPath"/>
+    <comp loc="(640,100)" name="Memory"/>
+    <comp loc="(780,100)" name="ErrorFlags"/>
+    <comp lib="0" loc="(920,100)" name="Pin"><a name="facing" val="west"/><a name="label" val="HALTED"/><a name="type" val="output"/></comp>
+    <wire from="(80,100)" to="(220,100)"/>
+    <wire from="(220,100)" to="(360,100)"/>
+    <wire from="(360,100)" to="(500,100)"/>
+    <wire from="(500,100)" to="(640,100)"/>
+    <wire from="(640,100)" to="(780,100)"/>
+    <wire from="(780,100)" to="(920,100)"/>
+    <comp lib="9" loc="(320,30)" name="Text"><a name="text" val="TinyCPU AP 4: connected fetch/decode and core hardware boundaries"/></comp>
+  </circuit>
+  <circuit name="FetchDecode">
+    <a name="appearance" val="logisim_evolution"/>
+    <a name="circuit" val="FetchDecode"/>
+    <a name="circuitnamedboxfixedsize" val="true"/>
+    <a name="simulationFrequency" val="1.0"/>
+    <comp lib="0" loc="(60,100)" name="Pin"><a name="label" val="CLK"/></comp>
+    <comp lib="0" loc="(60,140)" name="Pin"><a name="label" val="RESET"/></comp>
+    <comp lib="0" loc="(60,180)" name="Pin"><a name="label" val="ZERO"/></comp>
+    <comp lib="0" loc="(60,220)" name="Pin"><a name="label" val="PROGRAM_LIMIT"/><a name="width" val="12"/></comp>
+    <comp lib="5" loc="(250,100)" name="Register"><a name="appearance" val="logisim_evolution"/><a name="label" val="PC"/><a name="width" val="12"/></comp>
+    <comp lib="5" loc="(390,100)" name="ROM"><a name="addrWidth" val="12"/><a name="dataWidth" val="19"/><a name="label" val="INSTRUCTION_ROM"/></comp>
+    <comp lib="0" loc="(470,100)" name="Splitter"><a name="fanout" val="2"/><a name="incoming" val="19"/><a name="label" val="INSTRUCTION_FIELDS"/></comp>
+    <comp lib="2" loc="(570,100)" name="Decoder"><a name="select" val="3"/><a name="label" val="CORE_DECODER"/></comp>
+    <comp lib="3" loc="(250,280)" name="Adder"><a name="label" val="PC_INCREMENT"/><a name="width" val="12"/></comp>
+    <comp lib="2" loc="(250,340)" name="Multiplexer"><a name="label" val="PC_SOURCE"/><a name="select" val="1"/><a name="width" val="12"/></comp>
+    <comp lib="3" loc="(390,220)" name="Comparator"><a name="label" val="PC_RANGE"/><a name="width" val="12"/></comp>
+    <comp lib="1" loc="(570,220)" name="AND Gate"><a name="label" val="JNZ_TAKEN"/></comp>
+    <comp lib="1" loc="(650,260)" name="OR Gate"><a name="label" val="ERROR_HALT"/></comp>
+    <comp lib="0" loc="(760,80)" name="Pin"><a name="facing" val="west"/><a name="label" val="OPERAND"/><a name="type" val="output"/><a name="width" val="16"/></comp>
+    <comp lib="0" loc="(760,120)" name="Pin"><a name="facing" val="west"/><a name="label" val="LOAD_CONST"/><a name="type" val="output"/></comp>
+    <comp lib="0" loc="(760,150)" name="Pin"><a name="facing" val="west"/><a name="label" val="STORE_ADDRESS"/><a name="type" val="output"/></comp>
+    <comp lib="0" loc="(760,180)" name="Pin"><a name="facing" val="west"/><a name="label" val="ADD_ADDRESS"/><a name="type" val="output"/></comp>
+    <comp lib="0" loc="(760,210)" name="Pin"><a name="facing" val="west"/><a name="label" val="JUMP_NOT_ZERO"/><a name="type" val="output"/></comp>
+    <comp lib="0" loc="(760,240)" name="Pin"><a name="facing" val="west"/><a name="label" val="PRINT"/><a name="type" val="output"/></comp>
+    <comp lib="0" loc="(760,270)" name="Pin"><a name="facing" val="west"/><a name="label" val="HALT"/><a name="type" val="output"/></comp>
+    <comp lib="0" loc="(760,310)" name="Pin"><a name="facing" val="west"/><a name="label" val="SET_ADDR"/><a name="type" val="output"/></comp>
+    <comp lib="0" loc="(760,350)" name="Pin"><a name="facing" val="west"/><a name="label" val="HALT_ERROR"/><a name="type" val="output"/></comp>
+    <comp lib="0" loc="(760,390)" name="Pin"><a name="facing" val="west"/><a name="label" val="PC_OUT"/><a name="type" val="output"/><a name="width" val="12"/></comp>
+    <wire from="(60,100)" to="(230,120)"/><wire from="(60,140)" to="(230,140)"/>
+    <wire from="(250,100)" to="(360,100)"/><wire from="(250,100)" to="(210,270)"/><wire from="(250,100)" to="(350,210)"/><wire from="(250,100)" to="(760,390)"/>
+    <wire from="(390,100)" to="(470,100)"/><wire from="(470,100)" to="(530,100)"/><wire from="(470,100)" to="(760,80)"/>
+    <wire from="(570,100)" to="(760,120)"/><wire from="(570,110)" to="(760,150)"/><wire from="(570,120)" to="(760,180)"/><wire from="(570,130)" to="(760,210)"/>
+    <wire from="(570,140)" to="(760,240)"/><wire from="(570,150)" to="(700,270)"/>
+    <wire from="(60,180)" to="(530,230)"/><wire from="(570,220)" to="(230,350)"/>
+    <wire from="(60,220)" to="(350,230)"/><wire from="(390,220)" to="(650,260)"/><wire from="(390,220)" to="(760,310)"/>
+    <wire from="(650,260)" to="(760,350)"/><wire from="(650,260)" to="(760,270)"/>
+    <wire from="(250,280)" to="(230,330)"/><wire from="(250,340)" to="(230,100)"/>
+    <comp lib="9" loc="(60,40)" name="Text"><a name="text" val="19-bit internal microinstruction: 3-bit core selector + 16-bit operand; not an interchange format"/></comp>
   </circuit>
   <circuit name="Datapath">
     <a name="appearance" val="logisim_evolution"/>

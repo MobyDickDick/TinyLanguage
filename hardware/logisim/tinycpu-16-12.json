@@ -21,6 +21,9 @@
       "INV": 1,
       "ILL": 1,
       "INPUT": 1
+    },
+    "FetchDecode": {
+      "PC": 12
     }
   },
   "rams": {
@@ -145,6 +148,62 @@
         "INV_OUT": 1,
         "ILL_OUT": 1,
         "INPUT_OUT": 1
+      }
+    },
+    "FetchDecode": {
+      "components": {
+        "INSTRUCTION_FIELDS": {
+          "kind": "Splitter",
+          "width": 1
+        },
+        "CORE_DECODER": {
+          "kind": "Decoder",
+          "width": 1
+        },
+        "PC_INCREMENT": {
+          "kind": "Adder",
+          "width": 12
+        },
+        "PC_SOURCE": {
+          "kind": "Multiplexer",
+          "width": 12
+        },
+        "PC_RANGE": {
+          "kind": "Comparator",
+          "width": 12
+        },
+        "JNZ_TAKEN": {
+          "kind": "AND Gate",
+          "width": 1
+        },
+        "ERROR_HALT": {
+          "kind": "OR Gate",
+          "width": 1
+        }
+      },
+      "pins": {
+        "CLK": 1,
+        "RESET": 1,
+        "ZERO": 1,
+        "PROGRAM_LIMIT": 12,
+        "OPERAND": 16,
+        "LOAD_CONST": 1,
+        "STORE_ADDRESS": 1,
+        "ADD_ADDRESS": 1,
+        "JUMP_NOT_ZERO": 1,
+        "PRINT": 1,
+        "HALT": 1,
+        "SET_ADDR": 1,
+        "HALT_ERROR": 1,
+        "PC_OUT": 12
+      }
+    }
+  },
+  "roms": {
+    "FetchDecode": {
+      "INSTRUCTION_ROM": {
+        "address_bits": 12,
+        "data_bits": 19
       }
     }
   }

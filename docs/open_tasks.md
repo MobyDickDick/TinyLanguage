@@ -7,6 +7,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-03)
 
+- [x] **Implement TinyCPU AP 3 memory and error registers**
+  (Owner: TinyCPU/Hardware)
+  - Success: connect value and validity RAM to one address, write-enable, and
+    clock interface; implement all six set-dominant sticky error flags with a
+    shared `CLEAR_ERROR`; freeze both interfaces in the hardware profile and
+    structural regressions.
+  - Result: the Logisim `Memory` and `ErrorFlags` sheets are connected, the
+    contract inspector validates their pins and logic components, and AP 3 is
+    marked complete in the hardware roadmap.
+  - Follow-up: AP 4 must add PC, instruction ROM, and fetch/decode control for
+    the documented core instruction subset.
+
+## Next documented work package (completed 2026-08-03)
+
 - [x] **Reject duplicate keys in YAML block mappings**
   (Owner: Language/Stdlib)
   - Success: reject duplicate mapping keys instead of silently retaining the

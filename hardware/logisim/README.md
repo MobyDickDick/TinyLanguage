@@ -1,7 +1,7 @@
 # TinyCPU in Logisim-evolution
 
-This directory contains the first two, deliberately small hardware milestones for
-TinyCPU. Open `TinyCPU.circ` with Logisim-evolution 3.x.
+This directory contains the first three, deliberately small hardware milestones
+for TinyCPU. Open `TinyCPU.circ` with Logisim-evolution 3.x.
 
 ## What is implemented
 
@@ -13,24 +13,24 @@ bits and splits the design into the same blocks as the hardware contract:
   mandatory valid bit; a signed comparator exports `ZERO` and `NEGATIVE`;
 - `AddressPath` contains the synchronously loaded 12-bit address register and
   its valid bit, plus the combinational 12-bit offset adder and carry output;
-- `Memory` places a 4096 x 16 data RAM beside a 4096 x 1 validity RAM; and
-- `ErrorFlags` reserves the six sticky error registers (`OVF`, `DIV0`, `ADDR`,
-  `INV`, `ILL`, and `INPUT`).
+- `Memory` connects a 4096 x 16 data RAM and a 4096 x 1 validity RAM to the
+  same address, write-enable, and clock signals; and
+- `ErrorFlags` implements the six set-dominant sticky error registers (`OVF`,
+  `DIV0`, `ADDR`, `INV`, `ILL`, and `INPUT`) with a shared `CLEAR_ERROR`.
 
-This is **not yet an executable CPU**: work package 2 wires the data and address
-paths, while memory, error flags, and the top level remain deliberate structural
-placeholders. The pins are exposed so each block can be tested independently. In
+This is **not yet an executable CPU**: work packages 2 and 3 wire the data/address
+paths, memory, and error flags, while fetch/decode and the top level remain
+deliberate structural placeholders. The pins are exposed so each block can be
+tested independently. In
 particular, the project does not assign opcodes or claim to define a machine
 code format; the symbolic Python ISA remains authoritative.
 
 ## Next milestone
 
-1. Give both RAMs a shared address and write-enable signal.
-2. Make each error bit set-dominant, with `CLEAR_ERROR` as the only clear.
-3. Add a fetch/decode controller for the initial instruction subset:
+1. Add a fetch/decode controller for the initial instruction subset:
    `LOAD_CONST`, `STORE_ADDRESS`, `ADD_ADDRESS`, `JUMP_NOT_ZERO`, `PRINT`, and
    `HALT`.
-4. Compare every clock edge against `src/tiny_cpu_vm.py` before extending the
+2. Compare every clock edge against `src/tiny_cpu_vm.py` before extending the
    instruction set.
 
 Do not store program ROM images as an official interchange format until the
@@ -46,8 +46,8 @@ sheets contain no wires or components have no wire at their anchor:
 PYTHONPATH=src python src/tiny_cpu_circuit.py hardware/logisim/TinyCPU.circ
 ```
 
-The complete-project check still deliberately fails because AP 3 and the top
-level are not wired. It nevertheless reports `Datapath` and `AddressPath` as
+The complete-project check still deliberately fails because the AP 4 top-level
+fetch/decode integration is not wired. It nevertheless reports `Datapath`, `AddressPath`, `Memory`, and `ErrorFlags` as
 connected, making both completed and pending work explicit in CI. The inspector
 is **not** a replacement for Logisim's
 component simulator: faithfully emulating the complete Logisim library,

@@ -45,7 +45,9 @@ keine dauerhaft inkompatiblen Opcodes erzeugen.
   vorzeichenbehafteten Vergleicher ab. `AddressPath` lädt Adressregister und
   Valid-Bit synchron und stellt die 12-Bit-Offset-Summe samt Carry bereit. Das
   Hardwareprofil und die Netlist-Tests frieren diese Schnittstellen ein.
-- [ ] **AP 3:** Speicher und Fehlerregister
+- [x] **AP 3:** Speicher und Fehlerregister; Daten- und Valid-RAM teilen sich
+  Adresse, Write-Enable und Takt. Sechs set-dominante Sticky-Flags implementieren
+  `SET OR (Q AND NOT CLEAR_ERROR)` und exportieren ihren Zustand.
 - [ ] **AP 4:** Fetch und Decode
 - [ ] **AP 5:** Kernprogramm integrieren
 - [ ] **AP 6:** ISA vervollständigen

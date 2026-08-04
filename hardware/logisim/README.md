@@ -47,15 +47,15 @@ Dafür enthält `diagnostics/` fünf eigenständig ladbare Projekte:
 | Datei | Elektrische Komponenten | Leitungen | Isoliert insbesondere |
 |---|---:|---:|---|
 | `TinyCPU-FetchDecode.circ` | 69 | 100 | ROM, Decoder und PC-Steuerung |
-| `TinyCPU-Datapath.circ` | 12 | 25 | Akkumulator und Vergleich |
-| `TinyCPU-AddressPath.circ` | 12 | 26 | Adressregister und Addierer |
+| `TinyCPU-Datapath.circ` | 12 | 24 | Akkumulator und Vergleich |
+| `TinyCPU-AddressPath.circ` | 12 | 25 | Adressregister und Addierer |
 | `TinyCPU-Memory.circ` | 9 | 18 | Daten- und Validitäts-RAM |
-| `TinyCPU-ErrorFlags.circ` | 33 | 87 | Sticky-Flag-Rückkopplungen |
+| `TinyCPU-ErrorFlags.circ` | 34 | 100 | Sticky-Flag-Rückkopplungen |
 
-Im Blatt `AddressPath` beziehen sich die XML-Koordinaten der Register auf den
-Q-Anschluss (den „Griff“) und nicht auf die optische Mitte des Symbols. D, WE
-und CLK werden deshalb gezielt an ihren links versetzten Anschlusskoordinaten
-verdrahtet. Adressbus und Offset enden getrennt an A und B des Addierers. Die
+Im Blatt `AddressPath` beziehen sich die XML-Koordinaten der Register auf die
+linke obere Symbolecke und nicht auf einen Anschluss. D, WE und CLK werden
+deshalb gezielt an ihren darunterliegenden Anschlusskoordinaten verdrahtet.
+Adressbus und Offset enden getrennt an A und B des Addierers. Die
 Offset-Leitung umfährt dabei den ein Bit breiten Reset-Anschluss des
 Adressregisters; der Carry-Ausgang beginnt am separaten ein Bit breiten
 Addiereranschluss. Die Leitungsführung besteht ausschließlich aus horizontalen und vertikalen
@@ -65,6 +65,11 @@ Dasselbe Anschlussprinzip gilt im Blatt `Datapath`: `DATA_IN`, `ACC_LOAD` und
 `CLK` enden an D, WE und CLK beider Register statt an deren Symbolmitten. Der
 16-Bit-Akkumulator und die Nullkonstante belegen außerdem getrennte Eingänge
 des Komparators; die ein Bit breiten Statusausgänge bleiben davon isoliert.
+`Memory` führt Adresse, Schreibfreigabe und Takt getrennt zu beiden RAMs und
+legt `VALID_IN` ausschließlich auf den Dateneingang des Validitäts-RAMs.
+`ErrorFlags` taktet die sechs Sticky-Register über einen segmentierten
+gemeinsamen Taktbus; ein High-Pegel an WE sorgt dafür, dass jedes berechnete
+Folgebit auf der steigenden Flanke übernommen wird.
 
 Die Dateien nacheinander einzeln öffnen und CPU- sowie Speicherverbrauch nach
 dem vollständigen Laden notieren. Tritt das Problem schon ohne Takten auf,

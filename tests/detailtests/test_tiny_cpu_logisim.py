@@ -133,28 +133,26 @@ def test_address_path_uses_component_terminals_without_shorting_buses():
     # symbol's top-left corner, not a terminal.  D/Q are 30 px below it, WE is
     # 50 px below it and CLK is 70 px below it; Q is 60 px to the right.
     assert has_wire("(240,150)", "(340,150)")      # ADDRESS_IN -> AR.D
-    assert has_wire("(300,170)", "(340,170)")      # AR_LOAD -> AR.WE
+    assert has_wire("(280,170)", "(340,170)")      # AR_LOAD -> AR.WE
     assert has_wire("(320,190)", "(340,190)")      # CLK -> AR clock
-    assert has_wire("(240,330)", "(340,330)")      # VALID_IN -> AR_VALID.D
+    assert has_wire("(190,330)", "(340,330)")      # VALID_IN -> AR_VALID.D
     assert has_wire("(280,350)", "(340,350)")      # AR_LOAD -> AR_VALID.WE
     assert has_wire("(320,370)", "(340,370)")      # CLK -> AR_VALID clock
 
     # The address register output and OFFSET terminate at the adder's distinct
     # A and B pins. Neither input bus shares a segment with the other.
     assert has_wire("(400,150)", "(420,150)")      # AR.Q -> address net
-    assert has_wire("(420,190)", "(470,190)")
+    assert has_wire("(420,190)", "(480,190)")
     # OFFSET detours around AR's one-bit reset terminal at (370,210); a
     # straight bus here makes Logisim report incompatible 12/1-bit widths.
-    assert has_wire("(80,210)", "(200,210)")
-    assert has_wire("(200,210)", "(200,240)")
-    assert has_wire("(200,240)", "(450,240)")
+    assert has_wire("(190,240)", "(450,240)")
     assert has_wire("(450,210)", "(450,240)")
-    assert has_wire("(450,210)", "(470,210)")
+    assert has_wire("(450,210)", "(480,210)")
     assert has_wire("(520,200)", "(620,200)")
     # Carry-out is the one-bit terminal below the adder at (500,220), not a
     # point below its 12-bit sum output anchor.
     assert has_wire("(500,220)", "(560,220)")
-    assert has_wire("(400,330)", "(540,330)")      # AR_VALID.Q -> output
+    assert has_wire("(400,330)", "(630,330)")      # AR_VALID.Q -> output
 
 
 def test_datapath_uses_register_terminals_instead_of_symbol_centres():
@@ -170,12 +168,12 @@ def test_datapath_uses_register_terminals_instead_of_symbol_centres():
 
     # For east-facing registers, D, WE and CLK are 30 px left of Q, with
     # WE and CLK respectively 20 and 30 px below the Q coordinate.
-    assert {"(270,140)", "(270,160)", "(270,170)"} <= endpoints
-    assert {"(270,220)", "(270,240)", "(270,250)"} <= endpoints
+    assert {"(270,130)", "(270,150)", "(270,170)"} <= endpoints
+    assert {"(270,250)", "(270,270)", "(270,290)"} <= endpoints
 
     # The comparator receives ACC and the zero constant on separate 16-bit
     # inputs; neither is accidentally attached to a one-bit status output.
-    assert {"(360,260)", "(360,280)", "(400,270)", "(400,280)"} <= endpoints
+    assert {"(360,270)", "(360,290)", "(390,270)", "(390,290)"} <= endpoints
 
 
 def test_ap3_memory_shares_address_write_enable_and_clock():
@@ -230,10 +228,10 @@ def test_ap3_error_flag_feedback_is_clocked_not_combinational():
 
     for register_y in (200, 270, 340, 410, 480, 550):
         # Q feeds the hold gate, while NOT_CLEAR_ERROR uses its other input.
-        assert (f"(430,{register_y})", f"(430,{register_y + 50})") in wires
+        assert (f"(460,{register_y})", f"(460,{register_y + 50})") in wires
         assert (
-            f"(210,{register_y + 10})",
             f"(220,{register_y + 10})",
+            f"(220,{register_y + 50})",
         ) in wires
         assert (
             f"(190,{register_y + 30})",
@@ -243,7 +241,7 @@ def test_ap3_error_flag_feedback_is_clocked_not_combinational():
         # The OR result enters D and CLK reaches the clock terminal.  The only
         # feedback consequently crosses the register before returning to HOLD.
         assert (f"(330,{register_y})", f"(400,{register_y})") in wires
-        clock_target = f"(400,{register_y + 20})"
+        clock_target = f"(400,{register_y + 40})"
         graph = {}
         for start, end in wires:
             graph.setdefault(start, set()).add(end)

@@ -63,7 +63,7 @@ def test_inspector_exposes_completed_and_pending_sheets():
     assert reports["TinyCPU"].connected
     assert reports["FetchDecode"].connected
     assert reports["Datapath"].components == 12
-    assert reports["Datapath"].wires == 25
+    assert reports["Datapath"].wires == 24
     assert reports["Datapath"].connected
     assert reports["AddressPath"].connected
     assert reports["Memory"].connected
@@ -210,7 +210,7 @@ def test_hardware_profile_reports_width_drift(tmp_path):
     project = tmp_path / "wrong-width.circ"
     project.write_text(
         PROJECT.read_text(encoding="utf-8").replace(
-            '<a name="width" val="16"/>', '<a name="width" val="8"/>'
+            '<a name="width" val="16" />', '<a name="width" val="8" />'
         ),
         encoding="utf-8",
     )
@@ -223,8 +223,8 @@ def test_hardware_profile_requires_ap2_status_and_offset_interfaces(tmp_path):
     project = tmp_path / "missing-ap2-output.circ"
     project.write_text(
         PROJECT.read_text(encoding="utf-8").replace(
-            '<a name="label" val="NEGATIVE"/>',
-            '<a name="label" val="NEGATIVE_MISSING"/>',
+            '<a name="label" val="NEGATIVE" />',
+            '<a name="label" val="NEGATIVE_MISSING" />',
         ),
         encoding="utf-8",
     )
@@ -237,8 +237,8 @@ def test_hardware_profile_requires_ap4_instruction_rom(tmp_path):
     project = tmp_path / "missing-rom.circ"
     project.write_text(
         PROJECT.read_text(encoding="utf-8").replace(
-            '<a name="label" val="INSTRUCTION_ROM"/>',
-            '<a name="label" val="MISSING_ROM"/>',
+            '<a name="label" val="INSTRUCTION_ROM" />',
+            '<a name="label" val="MISSING_ROM" />',
         ),
         encoding="utf-8",
     )

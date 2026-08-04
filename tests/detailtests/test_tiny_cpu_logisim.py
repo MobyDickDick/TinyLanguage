@@ -129,19 +129,21 @@ def test_address_path_uses_component_terminals_without_shorting_buses():
     def has_wire(first, second):
         return frozenset((first, second)) in wires
 
-    # AR and AR_VALID face east. Their anchors are Q; D, WE and CLK are
-    # respectively 30 px left, 30 px left/20 px down and 30 px left/30 px down.
-    assert has_wire("(80,120)", "(310,120)")       # ADDRESS_IN -> AR.D
-    assert has_wire("(260,140)", "(310,140)")     # AR_LOAD -> AR.WE
-    assert has_wire("(280,150)", "(310,150)")     # CLK -> AR clock
-    assert has_wire("(80,300)", "(310,300)")      # VALID_IN -> AR_VALID.D
-    assert has_wire("(260,320)", "(310,320)")     # AR_LOAD -> AR_VALID.WE
-    assert has_wire("(280,330)", "(310,330)")     # CLK -> AR_VALID clock
+    # With the logisim_evolution appearance, a register's ``loc`` is the
+    # symbol's top-left corner, not a terminal.  D/Q are 30 px below it, WE is
+    # 50 px below it and CLK is 70 px below it; Q is 60 px to the right.
+    assert has_wire("(240,150)", "(340,150)")      # ADDRESS_IN -> AR.D
+    assert has_wire("(300,170)", "(340,170)")      # AR_LOAD -> AR.WE
+    assert has_wire("(320,190)", "(340,190)")      # CLK -> AR clock
+    assert has_wire("(240,330)", "(340,330)")      # VALID_IN -> AR_VALID.D
+    assert has_wire("(280,350)", "(340,350)")      # AR_LOAD -> AR_VALID.WE
+    assert has_wire("(320,370)", "(340,370)")      # CLK -> AR_VALID clock
 
     # The address register output and OFFSET terminate at the adder's distinct
     # A and B pins. Neither input bus shares a segment with the other.
+    assert has_wire("(400,150)", "(420,150)")      # AR.Q -> address net
     assert has_wire("(420,190)", "(470,190)")
-    # OFFSET detours around AR's one-bit reset terminal at (330,210); a
+    # OFFSET detours around AR's one-bit reset terminal at (370,210); a
     # straight bus here makes Logisim report incompatible 12/1-bit widths.
     assert has_wire("(80,210)", "(200,210)")
     assert has_wire("(200,210)", "(200,240)")
@@ -152,6 +154,7 @@ def test_address_path_uses_component_terminals_without_shorting_buses():
     # Carry-out is the one-bit terminal below the adder at (500,220), not a
     # point below its 12-bit sum output anchor.
     assert has_wire("(500,220)", "(560,220)")
+    assert has_wire("(400,330)", "(540,330)")      # AR_VALID.Q -> output
 
 
 def test_datapath_uses_register_terminals_instead_of_symbol_centres():

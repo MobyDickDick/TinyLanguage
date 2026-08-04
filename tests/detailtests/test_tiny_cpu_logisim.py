@@ -154,6 +154,27 @@ def test_address_path_uses_component_terminals_without_shorting_buses():
     assert has_wire("(500,220)", "(560,220)")
 
 
+def test_datapath_uses_register_terminals_instead_of_symbol_centres():
+    """Both accumulator registers are wired at their actual left-side ports."""
+
+    root = ET.parse(PROJECT).getroot()
+    datapath = next(c for c in root.findall("circuit") if c.get("name") == "Datapath")
+    endpoints = {
+        point
+        for wire in datapath.findall("wire")
+        for point in (wire.get("from"), wire.get("to"))
+    }
+
+    # For east-facing registers, D, WE and CLK are 30 px left of Q, with
+    # WE and CLK respectively 20 and 30 px below the Q coordinate.
+    assert {"(270,140)", "(270,160)", "(270,170)"} <= endpoints
+    assert {"(270,220)", "(270,240)", "(270,250)"} <= endpoints
+
+    # The comparator receives ACC and the zero constant on separate 16-bit
+    # inputs; neither is accidentally attached to a one-bit status output.
+    assert {"(360,260)", "(360,280)", "(400,270)", "(400,280)"} <= endpoints
+
+
 def test_ap3_memory_shares_address_write_enable_and_clock():
     root = ET.parse(PROJECT).getroot()
     memory = next(c for c in root.findall("circuit") if c.get("name") == "Memory")

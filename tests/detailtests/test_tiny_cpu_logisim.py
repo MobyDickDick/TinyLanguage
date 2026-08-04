@@ -116,6 +116,36 @@ def test_ap2_datapaths_are_wired_and_expose_status_and_offset_results():
     assert address_parts["OFFSET_ADDER"] == "Adder"
 
 
+def test_address_path_uses_component_terminals_without_shorting_buses():
+    """Pin coordinates, not symbol centres, define Logisim connections."""
+
+    root = ET.parse(PROJECT).getroot()
+    address = next(c for c in root.findall("circuit") if c.get("name") == "AddressPath")
+    wires = {
+        frozenset((wire.get("from"), wire.get("to")))
+        for wire in address.findall("wire")
+    }
+
+    def has_wire(first, second):
+        return frozenset((first, second)) in wires
+
+    # AR and AR_VALID face east. Their anchors are Q; D, WE and CLK are
+    # respectively 30 px left, 30 px left/20 px down and 30 px left/30 px down.
+    assert has_wire("(80,120)", "(310,120)")       # ADDRESS_IN -> AR.D
+    assert has_wire("(260,140)", "(310,140)")     # AR_LOAD -> AR.WE
+    assert has_wire("(280,150)", "(310,150)")     # CLK -> AR clock
+    assert has_wire("(80,300)", "(310,300)")      # VALID_IN -> AR_VALID.D
+    assert has_wire("(260,320)", "(310,320)")     # AR_LOAD -> AR_VALID.WE
+    assert has_wire("(280,330)", "(310,330)")     # CLK -> AR_VALID clock
+
+    # The address register output and OFFSET terminate at the adder's distinct
+    # A and B pins. Neither input bus shares a segment with the other.
+    assert has_wire("(420,190)", "(470,190)")
+    assert has_wire("(80,210)", "(470,210)")
+    assert has_wire("(520,200)", "(620,200)")
+    assert has_wire("(520,220)", "(560,220)")
+
+
 def test_ap3_memory_shares_address_write_enable_and_clock():
     root = ET.parse(PROJECT).getroot()
     memory = next(c for c in root.findall("circuit") if c.get("name") == "Memory")

@@ -149,6 +149,32 @@ def test_ap3_error_flags_have_set_dominant_sticky_logic():
         assert parts[f"{flag}_OUT"] == "Pin"
 
 
+def test_ap3_error_flag_feedback_is_clocked_not_combinational():
+    root = ET.parse(PROJECT).getroot()
+    errors = next(c for c in root.findall("circuit") if c.get("name") == "ErrorFlags")
+    wires = {
+        (wire.get("from"), wire.get("to"))
+        for wire in errors.findall("wire")
+    }
+
+    for register_y in (200, 270, 340, 410, 480, 550):
+        # Q feeds the hold gate, while NOT_CLEAR_ERROR uses its other input.
+        assert (f"(430,{register_y})", f"(430,{register_y + 50})") in wires
+        assert (
+            f"(210,{register_y + 10})",
+            f"(220,{register_y + 10})",
+        ) in wires
+        assert (
+            f"(190,{register_y + 30})",
+            f"(220,{register_y + 30})",
+        ) in wires
+
+        # The OR result enters D and CLK reaches the clock terminal.  The only
+        # feedback consequently crosses the register before returning to HOLD.
+        assert (f"(330,{register_y})", f"(400,{register_y})") in wires
+        assert ("(80,140)", f"(400,{register_y + 20})") in wires
+
+
 def test_ap4_fetch_decode_has_pc_rom_core_controls_and_error_halt():
     root = ET.parse(PROJECT).getroot()
     fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")

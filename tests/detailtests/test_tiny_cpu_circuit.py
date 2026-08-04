@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from tiny_cpu_circuit import (
+    SUBCIRCUIT_ANCHOR_CLEARANCE,
     inspect_project,
     main,
     split_leaf_circuits,
@@ -51,6 +52,46 @@ def test_inspector_cli_accepts_connected_ap4_project(capsys):
     assert "ErrorFlags: connected" in output
     assert "FetchDecode: connected" in output
     assert "TinyCPU: connected" in output
+
+
+def test_top_level_subcircuits_have_exclusive_routing_lanes():
+    report = next(item for item in inspect_project(PROJECT) if item.name == "TinyCPU")
+
+    assert SUBCIRCUIT_ANCHOR_CLEARANCE == 600
+    assert report.placement_conflicts == ()
+
+
+def test_top_level_does_not_daisy_chain_unrelated_component_anchors():
+    root = ET.parse(PROJECT).getroot()
+    top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
+    instance_locations = {
+        component.get("loc")
+        for component in top.findall("comp")
+        if component.get("name") in {
+            "FetchDecode", "Datapath", "AddressPath", "Memory", "ErrorFlags"
+        }
+    }
+
+    for wire in top.findall("wire"):
+        touched_instances = instance_locations & {wire.get("from"), wire.get("to")}
+        assert len(touched_instances) <= 1
+
+
+def test_inspector_rejects_overlapping_subcircuit_symbols(tmp_path):
+    project = tmp_path / "overlap.circ"
+    project.write_text(
+        PROJECT.read_text(encoding="utf-8").replace(
+            'loc="(900,100)" name="Datapath"',
+            'loc="(310,100)" name="Datapath"',
+        ),
+        encoding="utf-8",
+    )
+
+    report = next(item for item in inspect_project(project) if item.name == "TinyCPU")
+    assert not report.connected
+    assert report.placement_conflicts == (
+        "FetchDecode@(300,100) overlaps the reserved lane of Datapath@(310,100)",
+    )
 
 
 def test_split_leaf_circuits_produces_independent_projects(tmp_path):

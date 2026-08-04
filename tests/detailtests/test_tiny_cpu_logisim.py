@@ -194,10 +194,12 @@ def test_ap3_memory_shares_address_write_enable_and_clock():
         for wire in memory.findall("wire")
         for point in (wire.get("from"), wire.get("to"))
     }
-    # Both RAM control-port coordinates are present on their shared nets.
-    assert {"(330,120)", "(330,200)"} <= endpoints
-    assert {"(330,180)", "(330,260)"} <= endpoints
-    assert {"(330,190)", "(330,270)"} <= endpoints
+    # Both RAMs receive the shared address, write-enable, and clock nets.
+    assert {"(330,120)", "(330,260)"} <= endpoints
+    assert {"(330,170)", "(330,320)"} <= endpoints
+    assert {"(330,190)", "(330,330)"} <= endpoints
+    # The validity value has its own one-bit input and output path.
+    assert {"(330,310)", "(570,350)", "(610,170)"} <= endpoints
 
 
 def test_ap3_error_flags_have_set_dominant_sticky_logic():

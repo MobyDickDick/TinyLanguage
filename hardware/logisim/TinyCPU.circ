@@ -721,14 +721,16 @@
       <a name="type" val="output"/>
     </comp>
     <wire from="(80,200)" to="(300,190)"/>
-    <wire from="(180,100)" to="(200,230)"/>
+    <wire from="(180,100)" to="(190,230)"/>
+    <wire from="(190,230)" to="(220,230)"/>
     <wire from="(250,220)" to="(300,210)"/>
     <wire from="(330,200)" to="(400,200)"/>
-    <wire from="(80,140)" to="(380,220)"/>
+    <wire from="(80,140)" to="(400,220)"/>
     <wire from="(430,200)" to="(560,200)"/>
-    <wire from="(470,200)" to="(470,240)"/>
-    <wire from="(200,240)" to="(470,240)"/>
-    <wire from="(200,230)" to="(200,240)"/>
+    <wire from="(430,200)" to="(430,250)"/>
+    <wire from="(210,250)" to="(430,250)"/>
+    <wire from="(210,210)" to="(210,250)"/>
+    <wire from="(210,210)" to="(220,210)"/>
     <comp lib="0" loc="(80,270)" name="Pin">
       <a name="label" val="SET_DIV0"/>
     </comp>
@@ -749,14 +751,16 @@
       <a name="type" val="output"/>
     </comp>
     <wire from="(80,270)" to="(300,260)"/>
-    <wire from="(180,100)" to="(200,300)"/>
+    <wire from="(180,100)" to="(190,300)"/>
+    <wire from="(190,300)" to="(220,300)"/>
     <wire from="(250,290)" to="(300,280)"/>
     <wire from="(330,270)" to="(400,270)"/>
-    <wire from="(80,140)" to="(380,290)"/>
+    <wire from="(80,140)" to="(400,290)"/>
     <wire from="(430,270)" to="(560,270)"/>
-    <wire from="(470,270)" to="(470,310)"/>
-    <wire from="(200,310)" to="(470,310)"/>
-    <wire from="(200,300)" to="(200,310)"/>
+    <wire from="(430,270)" to="(430,320)"/>
+    <wire from="(210,320)" to="(430,320)"/>
+    <wire from="(210,280)" to="(210,320)"/>
+    <wire from="(210,280)" to="(220,280)"/>
     <comp lib="0" loc="(80,340)" name="Pin">
       <a name="label" val="SET_ADDR"/>
     </comp>
@@ -777,14 +781,16 @@
       <a name="type" val="output"/>
     </comp>
     <wire from="(80,340)" to="(300,330)"/>
-    <wire from="(180,100)" to="(200,370)"/>
+    <wire from="(180,100)" to="(190,370)"/>
+    <wire from="(190,370)" to="(220,370)"/>
     <wire from="(250,360)" to="(300,350)"/>
     <wire from="(330,340)" to="(400,340)"/>
-    <wire from="(80,140)" to="(380,360)"/>
+    <wire from="(80,140)" to="(400,360)"/>
     <wire from="(430,340)" to="(560,340)"/>
-    <wire from="(470,340)" to="(470,380)"/>
-    <wire from="(200,380)" to="(470,380)"/>
-    <wire from="(200,370)" to="(200,380)"/>
+    <wire from="(430,340)" to="(430,390)"/>
+    <wire from="(210,390)" to="(430,390)"/>
+    <wire from="(210,350)" to="(210,390)"/>
+    <wire from="(210,350)" to="(220,350)"/>
     <comp lib="0" loc="(80,410)" name="Pin">
       <a name="label" val="SET_INV"/>
     </comp>
@@ -805,14 +811,16 @@
       <a name="type" val="output"/>
     </comp>
     <wire from="(80,410)" to="(300,400)"/>
-    <wire from="(180,100)" to="(200,440)"/>
+    <wire from="(180,100)" to="(190,440)"/>
+    <wire from="(190,440)" to="(220,440)"/>
     <wire from="(250,430)" to="(300,420)"/>
     <wire from="(330,410)" to="(400,410)"/>
-    <wire from="(80,140)" to="(380,430)"/>
+    <wire from="(80,140)" to="(400,430)"/>
     <wire from="(430,410)" to="(560,410)"/>
-    <wire from="(470,410)" to="(470,450)"/>
-    <wire from="(200,450)" to="(470,450)"/>
-    <wire from="(200,440)" to="(200,450)"/>
+    <wire from="(430,410)" to="(430,460)"/>
+    <wire from="(210,460)" to="(430,460)"/>
+    <wire from="(210,420)" to="(210,460)"/>
+    <wire from="(210,420)" to="(220,420)"/>
     <comp lib="0" loc="(80,480)" name="Pin">
       <a name="label" val="SET_ILL"/>
     </comp>
@@ -833,14 +841,16 @@
       <a name="type" val="output"/>
     </comp>
     <wire from="(80,480)" to="(300,470)"/>
-    <wire from="(180,100)" to="(200,510)"/>
+    <wire from="(180,100)" to="(190,510)"/>
+    <wire from="(190,510)" to="(220,510)"/>
     <wire from="(250,500)" to="(300,490)"/>
     <wire from="(330,480)" to="(400,480)"/>
-    <wire from="(80,140)" to="(380,500)"/>
+    <wire from="(80,140)" to="(400,500)"/>
     <wire from="(430,480)" to="(560,480)"/>
-    <wire from="(470,480)" to="(470,520)"/>
-    <wire from="(200,520)" to="(470,520)"/>
-    <wire from="(200,510)" to="(200,520)"/>
+    <wire from="(430,480)" to="(430,530)"/>
+    <wire from="(210,530)" to="(430,530)"/>
+    <wire from="(210,490)" to="(210,530)"/>
+    <wire from="(210,490)" to="(220,490)"/>
     <comp lib="0" loc="(80,550)" name="Pin">
       <a name="label" val="SET_INPUT"/>
     </comp>
@@ -861,14 +871,16 @@
       <a name="type" val="output"/>
     </comp>
     <wire from="(80,550)" to="(300,540)"/>
-    <wire from="(180,100)" to="(200,580)"/>
+    <wire from="(180,100)" to="(190,580)"/>
+    <wire from="(190,580)" to="(220,580)"/>
     <wire from="(250,570)" to="(300,560)"/>
     <wire from="(330,550)" to="(400,550)"/>
-    <wire from="(80,140)" to="(380,570)"/>
+    <wire from="(80,140)" to="(400,570)"/>
     <wire from="(430,550)" to="(560,550)"/>
-    <wire from="(470,550)" to="(470,590)"/>
-    <wire from="(200,590)" to="(470,590)"/>
-    <wire from="(200,580)" to="(200,590)"/>
+    <wire from="(430,550)" to="(430,600)"/>
+    <wire from="(210,600)" to="(430,600)"/>
+    <wire from="(210,560)" to="(210,600)"/>
+    <wire from="(210,560)" to="(220,560)"/>
     <comp lib="9" loc="(80,60)" name="Text">
       <a name="text" val="Set-dominant sticky flags: SET OR (current AND NOT CLEAR_ERROR)"/>
     </comp>

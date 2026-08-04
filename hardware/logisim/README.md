@@ -17,6 +17,8 @@ bits and splits the design into the same blocks as the hardware contract:
   same address, write-enable, and clock signals; and
 - `ErrorFlags` implements the six set-dominant sticky error registers (`OVF`,
   `DIV0`, `ADDR`, `INV`, `ILL`, and `INPUT`) with a shared `CLEAR_ERROR`.
+  Each hold path feeds the register output back through an AND gate and therefore
+  crosses a clocked register; the feedback is not a combinational loop.
 - `FetchDecode` contains the 12-bit `PC`, a 4096-word instruction ROM, the
   sequential/jump PC path, program-limit check, and control decode for the complete symbolic ISA. The expanded decoder
   exposes every addressing, arithmetic, logic, branch, and I/O control plus all six

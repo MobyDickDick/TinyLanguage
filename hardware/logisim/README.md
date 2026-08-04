@@ -65,8 +65,11 @@ Dasselbe Anschlussprinzip gilt im Blatt `Datapath`: `DATA_IN`, `ACC_LOAD` und
 `CLK` enden an D, WE und CLK beider Register statt an deren Symbolmitten. Der
 16-Bit-Akkumulator und die Nullkonstante belegen außerdem getrennte Eingänge
 des Komparators; die ein Bit breiten Statusausgänge bleiben davon isoliert.
-`Memory` führt Adresse, Schreibfreigabe und Takt getrennt zu beiden RAMs und
-legt `VALID_IN` ausschließlich auf den Dateneingang des Validitäts-RAMs.
+`Memory` führt Adresse, Schreibfreigabe und Takt parallel zu beiden RAMs und
+legt `VALID_IN` ausschließlich auf den Dateneingang des Validitäts-RAMs. Da
+beide RAMs eigene Ausgangsleitungen haben und keinen gemeinsamen Bus treiben,
+liegen ihre Output-Enable-Anschlüsse dauerhaft an logisch 1. Output-Enable ist
+dabei unabhängig von `WRITE_ENABLE`.
 `ErrorFlags` taktet die sechs Sticky-Register über einen segmentierten
 gemeinsamen Taktbus; ein High-Pegel an WE sorgt dafür, dass jedes berechnete
 Folgebit auf der steigenden Flanke übernommen wird. Paarweise benannte

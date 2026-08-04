@@ -225,8 +225,11 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
     """Read *path* and return a connectivity report for every circuit.
 
     A component is considered connected when its anchor shares a wire endpoint.
-    This conservative rule detects empty starter sheets; detailed pin geometry
-    remains Logisim's job. Text annotations have no electrical terminals.
+    Registers using Logisim-evolution's appearance are the exception: their
+    location is the symbol's top-left corner, so their five electrical
+    terminals are derived from that location.  This conservative rule detects
+    empty starter sheets without mistaking the register's drawing origin for a
+    pin. Text annotations have no electrical terminals.
     """
 
     root = _read_project(path)
@@ -251,7 +254,20 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
         unconnected = []
         for component in electrical:
             location = component.get("loc", "?")
-            if location not in endpoints:
+            connected = location in endpoints
+            if component.get("name") == "Register":
+                attrs = _attributes(component)
+                if attrs.get("appearance") == "logisim_evolution":
+                    x, y = _location(location)
+                    register_terminals = {
+                        f"({x},{y + 30})",       # D
+                        f"({x + 60},{y + 30})",  # Q
+                        f"({x},{y + 50})",       # WE
+                        f"({x},{y + 70})",       # clock
+                        f"({x + 30},{y + 90})",  # reset
+                    }
+                    connected = connected or bool(register_terminals & endpoints)
+            if not connected:
                 attrs = _attributes(component)
                 label = attrs.get("label") or component.get("name", "component")
                 unconnected.append(f"{label}@{location}")

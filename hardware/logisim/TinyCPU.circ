@@ -639,24 +639,29 @@
       <a name="label" val="AR_VALID"/>
       <a name="width" val="1"/>
     </comp>
-    <wire from="(80,120)" to="(310,120)"/>
+    <wire from="(80,120)" to="(240,120)"/>
+    <wire from="(240,120)" to="(240,150)"/>
+    <wire from="(240,150)" to="(340,150)"/>
     <wire from="(80,180)" to="(260,180)"/>
     <wire from="(80,210)" to="(200,210)"/>
     <wire from="(200,210)" to="(200,240)"/>
     <wire from="(200,240)" to="(450,240)"/>
     <wire from="(450,210)" to="(450,240)"/>
     <wire from="(450,210)" to="(470,210)"/>
-    <wire from="(80,300)" to="(310,300)"/>
-    <wire from="(80,380)" to="(280,380)"/>
-    <wire from="(260,140)" to="(310,140)"/>
-    <wire from="(260,140)" to="(260,180)"/>
-    <wire from="(260,180)" to="(260,320)"/>
-    <wire from="(260,320)" to="(310,320)"/>
-    <wire from="(280,150)" to="(310,150)"/>
-    <wire from="(280,150)" to="(280,330)"/>
-    <wire from="(280,330)" to="(310,330)"/>
-    <wire from="(280,330)" to="(280,380)"/>
-    <wire from="(340,120)" to="(420,120)"/>
+    <wire from="(80,300)" to="(240,300)"/>
+    <wire from="(240,300)" to="(240,330)"/>
+    <wire from="(240,330)" to="(340,330)"/>
+    <wire from="(80,380)" to="(320,380)"/>
+    <wire from="(300,170)" to="(340,170)"/>
+    <wire from="(300,170)" to="(300,180)"/>
+    <wire from="(260,180)" to="(300,180)"/>
+    <wire from="(280,180)" to="(280,350)"/>
+    <wire from="(280,350)" to="(340,350)"/>
+    <wire from="(320,190)" to="(340,190)"/>
+    <wire from="(320,190)" to="(320,370)"/>
+    <wire from="(320,370)" to="(340,370)"/>
+    <wire from="(320,370)" to="(320,380)"/>
+    <wire from="(400,150)" to="(420,150)"/>
     <wire from="(420,120)" to="(620,120)"/>
     <wire from="(420,120)" to="(420,190)"/>
     <wire from="(420,190)" to="(470,190)"/>
@@ -664,7 +669,9 @@
     <wire from="(500,220)" to="(560,220)"/>
     <wire from="(560,220)" to="(560,250)"/>
     <wire from="(560,250)" to="(620,250)"/>
-    <wire from="(340,300)" to="(620,300)"/>
+    <wire from="(400,330)" to="(540,330)"/>
+    <wire from="(540,300)" to="(540,330)"/>
+    <wire from="(540,300)" to="(620,300)"/>
     <comp lib="9" loc="(80,60)" name="Text">
       <a name="text" val="Clocked 12-bit address register with combinational offset addition"/>
     </comp>

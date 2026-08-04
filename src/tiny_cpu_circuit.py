@@ -325,6 +325,25 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
     return tuple(reports)
 
 
+
+def _serialize_standalone_logisim_project(data: bytes) -> bytes:
+    """Normalize extracted Logisim leaf projects for checked-in diagnostics."""
+
+    declaration = (
+        rb"^<\?xml\s+version=(['\"])1\.0\1\s+"
+        rb"encoding=(['\"])(?:utf-8|UTF-8)\2"
+        rb"(?:\s+standalone=(['\"])(?:yes|no)\3)?\s*\?>"
+    )
+    data = re.sub(
+        declaration,
+        b'<?xml version="1.0" encoding="UTF-8" standalone="no"?>',
+        data,
+        count=1,
+    )
+    data = data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return data.replace(b"\n", b"\r\n")
+
+
 def split_leaf_circuits(
     project: str | Path, output_directory: str | Path
 ) -> tuple[Path, ...]:
@@ -411,7 +430,7 @@ def split_leaf_circuits(
             )
         )
         target = destination / f"{prefix}-{name}.circ"
-        target.write_bytes(standalone)
+        target.write_bytes(_serialize_standalone_logisim_project(bytes(standalone)))
         written.append(target)
     return tuple(written)
 

@@ -3,6 +3,44 @@
 This directory contains the completed eight-package TinyCPU hardware baseline.
 Open `TinyCPU.circ` with Logisim-evolution 3.x.
 
+## Ressourcenverbrauch eingrenzen
+
+Die statische Prüfung des Projekts findet 148 XML-Komponenten (davon sechs
+reine Textfelder) und 192 Leitungen. `FetchDecode` ist mit 69 elektrischen
+Komponenten der größte Block; `ErrorFlags` folgt mit 33. Die beiden 4096-Zellen-
+RAMs liegen ausschließlich in `Memory`. In `ErrorFlags` läuft jede
+Rückkopplung über ein getaktetes Register, daher ist dort im Schaltbild keine
+rein kombinatorische Rückkopplung erkennbar. Eine Speicherbelegung von mehreren
+Gigabyte lässt sich allein durch diese Projektgröße nicht erklären; sie sollte
+blockweise in der tatsächlich verwendeten Simulatorversion reproduziert
+werden.
+
+Dafür enthält `diagnostics/` fünf eigenständig ladbare Projekte:
+
+| Datei | Elektrische Komponenten | Leitungen | Isoliert insbesondere |
+|---|---:|---:|---|
+| `TinyCPU-FetchDecode.circ` | 69 | 70 | ROM, Decoder und PC-Steuerung |
+| `TinyCPU-Datapath.circ` | 12 | 17 | Akkumulator und Vergleich |
+| `TinyCPU-AddressPath.circ` | 12 | 16 | Adressregister und Addierer |
+| `TinyCPU-Memory.circ` | 9 | 16 | Daten- und Validitäts-RAM |
+| `TinyCPU-ErrorFlags.circ` | 33 | 67 | Sticky-Flag-Rückkopplungen |
+
+Die Dateien nacheinander einzeln öffnen und CPU- sowie Speicherverbrauch nach
+dem vollständigen Laden notieren. Tritt das Problem schon ohne Takten auf,
+grenzt die erste auffällige Datei den verantwortlichen Baustein ein. Tritt es
+nur beim Takten auf, zuerst `ErrorFlags`, dann `FetchDecode` prüfen. Bleibt jede
+Einzeldatei unauffällig, liegt der Verdacht auf der Integration im Top-Level
+oder auf einem Simulatorproblem. Die Diagnoseprojekte enthalten absichtlich
+nur je ein Blatt und ersetzen `TinyCPU.circ` nicht als integrierte Schaltung.
+
+Sie werden reproduzierbar aus dem Hauptprojekt erzeugt:
+
+```bash
+PYTHONPATH=src python src/tiny_cpu_circuit.py \
+  --split-output hardware/logisim/diagnostics \
+  hardware/logisim/TinyCPU.circ
+```
+
 ## What is implemented
 
 The project fixes the initial hardware profile at 16 data bits and 12 address

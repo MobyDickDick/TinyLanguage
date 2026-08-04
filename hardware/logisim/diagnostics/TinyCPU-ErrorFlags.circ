@@ -1,0 +1,226 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project source="4.1.0" version="1.0">
+  This file is intended to be loaded by Logisim-evolution v4.1.0(https://github.com/logisim-evolution/).
+
+  <lib desc="#Wiring" name="0">
+    <tool name="Pin">
+      <a name="appearance" val="classic" />
+    </tool>
+  </lib>
+  <lib desc="#Gates" name="1" />
+  <lib desc="#Plexers" name="2" />
+  <lib desc="#Arithmetic" name="3" />
+  <lib desc="#FPArithmetic" name="4" />
+  <lib desc="#Memory" name="5" />
+  <lib desc="#I/O" name="6" />
+  <lib desc="#TTL" name="7" />
+  <lib desc="#TCL" name="8" />
+  <lib desc="#Base" name="9" />
+  <main name="ErrorFlags" />
+  <options>
+    <a name="gateUndefined" val="ignore" />
+    <a name="simlimit" val="1000" />
+    <a name="simrand" val="0" />
+  </options>
+  <mappings />
+  <toolbar />
+  <circuit name="ErrorFlags">
+    <a name="appearance" val="logisim_evolution" />
+    <a name="circuit" val="ErrorFlags" />
+    <a name="circuitnamedboxfixedsize" val="true" />
+    <a name="simulationFrequency" val="1.0" />
+    <comp lib="0" loc="(80,100)" name="Pin">
+      <a name="label" val="CLEAR_ERROR" />
+    </comp>
+    <comp lib="0" loc="(80,140)" name="Pin">
+      <a name="label" val="CLK" />
+    </comp>
+    <comp lib="1" loc="(180,100)" name="NOT Gate">
+      <a name="label" val="NOT_CLEAR_ERROR" />
+    </comp>
+    <wire from="(80,100)" to="(150,100)" />
+    <comp lib="0" loc="(80,200)" name="Pin">
+      <a name="label" val="SET_OVF" />
+    </comp>
+    <comp lib="1" loc="(250,220)" name="AND Gate">
+      <a name="label" val="HOLD_OVF" />
+    </comp>
+    <comp lib="1" loc="(330,200)" name="OR Gate">
+      <a name="label" val="NEXT_OVF" />
+    </comp>
+    <comp lib="5" loc="(430,200)" name="Register">
+      <a name="appearance" val="logisim_evolution" />
+      <a name="label" val="OVF" />
+      <a name="width" val="1" />
+    </comp>
+    <comp lib="0" loc="(560,200)" name="Pin">
+      <a name="facing" val="west" />
+      <a name="label" val="OVF_OUT" />
+      <a name="type" val="output" />
+    </comp>
+    <wire from="(80,200)" to="(300,190)" />
+    <wire from="(180,100)" to="(190,230)" />
+    <wire from="(190,230)" to="(220,230)" />
+    <wire from="(250,220)" to="(300,210)" />
+    <wire from="(330,200)" to="(400,200)" />
+    <wire from="(80,140)" to="(400,220)" />
+    <wire from="(430,200)" to="(560,200)" />
+    <wire from="(430,200)" to="(430,250)" />
+    <wire from="(210,250)" to="(430,250)" />
+    <wire from="(210,210)" to="(210,250)" />
+    <wire from="(210,210)" to="(220,210)" />
+    <comp lib="0" loc="(80,270)" name="Pin">
+      <a name="label" val="SET_DIV0" />
+    </comp>
+    <comp lib="1" loc="(250,290)" name="AND Gate">
+      <a name="label" val="HOLD_DIV0" />
+    </comp>
+    <comp lib="1" loc="(330,270)" name="OR Gate">
+      <a name="label" val="NEXT_DIV0" />
+    </comp>
+    <comp lib="5" loc="(430,270)" name="Register">
+      <a name="appearance" val="logisim_evolution" />
+      <a name="label" val="DIV0" />
+      <a name="width" val="1" />
+    </comp>
+    <comp lib="0" loc="(560,270)" name="Pin">
+      <a name="facing" val="west" />
+      <a name="label" val="DIV0_OUT" />
+      <a name="type" val="output" />
+    </comp>
+    <wire from="(80,270)" to="(300,260)" />
+    <wire from="(180,100)" to="(190,300)" />
+    <wire from="(190,300)" to="(220,300)" />
+    <wire from="(250,290)" to="(300,280)" />
+    <wire from="(330,270)" to="(400,270)" />
+    <wire from="(80,140)" to="(400,290)" />
+    <wire from="(430,270)" to="(560,270)" />
+    <wire from="(430,270)" to="(430,320)" />
+    <wire from="(210,320)" to="(430,320)" />
+    <wire from="(210,280)" to="(210,320)" />
+    <wire from="(210,280)" to="(220,280)" />
+    <comp lib="0" loc="(80,340)" name="Pin">
+      <a name="label" val="SET_ADDR" />
+    </comp>
+    <comp lib="1" loc="(250,360)" name="AND Gate">
+      <a name="label" val="HOLD_ADDR" />
+    </comp>
+    <comp lib="1" loc="(330,340)" name="OR Gate">
+      <a name="label" val="NEXT_ADDR" />
+    </comp>
+    <comp lib="5" loc="(430,340)" name="Register">
+      <a name="appearance" val="logisim_evolution" />
+      <a name="label" val="ADDR" />
+      <a name="width" val="1" />
+    </comp>
+    <comp lib="0" loc="(560,340)" name="Pin">
+      <a name="facing" val="west" />
+      <a name="label" val="ADDR_OUT" />
+      <a name="type" val="output" />
+    </comp>
+    <wire from="(80,340)" to="(300,330)" />
+    <wire from="(180,100)" to="(190,370)" />
+    <wire from="(190,370)" to="(220,370)" />
+    <wire from="(250,360)" to="(300,350)" />
+    <wire from="(330,340)" to="(400,340)" />
+    <wire from="(80,140)" to="(400,360)" />
+    <wire from="(430,340)" to="(560,340)" />
+    <wire from="(430,340)" to="(430,390)" />
+    <wire from="(210,390)" to="(430,390)" />
+    <wire from="(210,350)" to="(210,390)" />
+    <wire from="(210,350)" to="(220,350)" />
+    <comp lib="0" loc="(80,410)" name="Pin">
+      <a name="label" val="SET_INV" />
+    </comp>
+    <comp lib="1" loc="(250,430)" name="AND Gate">
+      <a name="label" val="HOLD_INV" />
+    </comp>
+    <comp lib="1" loc="(330,410)" name="OR Gate">
+      <a name="label" val="NEXT_INV" />
+    </comp>
+    <comp lib="5" loc="(430,410)" name="Register">
+      <a name="appearance" val="logisim_evolution" />
+      <a name="label" val="INV" />
+      <a name="width" val="1" />
+    </comp>
+    <comp lib="0" loc="(560,410)" name="Pin">
+      <a name="facing" val="west" />
+      <a name="label" val="INV_OUT" />
+      <a name="type" val="output" />
+    </comp>
+    <wire from="(80,410)" to="(300,400)" />
+    <wire from="(180,100)" to="(190,440)" />
+    <wire from="(190,440)" to="(220,440)" />
+    <wire from="(250,430)" to="(300,420)" />
+    <wire from="(330,410)" to="(400,410)" />
+    <wire from="(80,140)" to="(400,430)" />
+    <wire from="(430,410)" to="(560,410)" />
+    <wire from="(430,410)" to="(430,460)" />
+    <wire from="(210,460)" to="(430,460)" />
+    <wire from="(210,420)" to="(210,460)" />
+    <wire from="(210,420)" to="(220,420)" />
+    <comp lib="0" loc="(80,480)" name="Pin">
+      <a name="label" val="SET_ILL" />
+    </comp>
+    <comp lib="1" loc="(250,500)" name="AND Gate">
+      <a name="label" val="HOLD_ILL" />
+    </comp>
+    <comp lib="1" loc="(330,480)" name="OR Gate">
+      <a name="label" val="NEXT_ILL" />
+    </comp>
+    <comp lib="5" loc="(430,480)" name="Register">
+      <a name="appearance" val="logisim_evolution" />
+      <a name="label" val="ILL" />
+      <a name="width" val="1" />
+    </comp>
+    <comp lib="0" loc="(560,480)" name="Pin">
+      <a name="facing" val="west" />
+      <a name="label" val="ILL_OUT" />
+      <a name="type" val="output" />
+    </comp>
+    <wire from="(80,480)" to="(300,470)" />
+    <wire from="(180,100)" to="(190,510)" />
+    <wire from="(190,510)" to="(220,510)" />
+    <wire from="(250,500)" to="(300,490)" />
+    <wire from="(330,480)" to="(400,480)" />
+    <wire from="(80,140)" to="(400,500)" />
+    <wire from="(430,480)" to="(560,480)" />
+    <wire from="(430,480)" to="(430,530)" />
+    <wire from="(210,530)" to="(430,530)" />
+    <wire from="(210,490)" to="(210,530)" />
+    <wire from="(210,490)" to="(220,490)" />
+    <comp lib="0" loc="(80,550)" name="Pin">
+      <a name="label" val="SET_INPUT" />
+    </comp>
+    <comp lib="1" loc="(250,570)" name="AND Gate">
+      <a name="label" val="HOLD_INPUT" />
+    </comp>
+    <comp lib="1" loc="(330,550)" name="OR Gate">
+      <a name="label" val="NEXT_INPUT" />
+    </comp>
+    <comp lib="5" loc="(430,550)" name="Register">
+      <a name="appearance" val="logisim_evolution" />
+      <a name="label" val="INPUT" />
+      <a name="width" val="1" />
+    </comp>
+    <comp lib="0" loc="(560,550)" name="Pin">
+      <a name="facing" val="west" />
+      <a name="label" val="INPUT_OUT" />
+      <a name="type" val="output" />
+    </comp>
+    <wire from="(80,550)" to="(300,540)" />
+    <wire from="(180,100)" to="(190,580)" />
+    <wire from="(190,580)" to="(220,580)" />
+    <wire from="(250,570)" to="(300,560)" />
+    <wire from="(330,550)" to="(400,550)" />
+    <wire from="(80,140)" to="(400,570)" />
+    <wire from="(430,550)" to="(560,550)" />
+    <wire from="(430,550)" to="(430,600)" />
+    <wire from="(210,600)" to="(430,600)" />
+    <wire from="(210,560)" to="(210,600)" />
+    <wire from="(210,560)" to="(220,560)" />
+    <comp lib="9" loc="(80,60)" name="Text">
+      <a name="text" val="Set-dominant sticky flags: SET OR (current AND NOT CLEAR_ERROR)" />
+    </comp>
+  </circuit>
+</project>

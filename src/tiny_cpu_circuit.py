@@ -8,6 +8,7 @@ checked in CI before the authoritative Logisim simulator is invoked.
 from __future__ import annotations
 
 import argparse
+import copy
 from dataclasses import dataclass
 import json
 from pathlib import Path
@@ -228,6 +229,56 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
     return tuple(reports)
 
 
+def split_leaf_circuits(
+    project: str | Path, output_directory: str | Path
+) -> tuple[Path, ...]:
+    """Write independently loadable leaf circuits to *output_directory*.
+
+    Logisim keeps every sheet of an opened project available to its simulator.
+    Standalone leaf projects make it possible to isolate excessive CPU or
+    memory use without loading the complete CPU. Sheets which instantiate
+    another project circuit are skipped because they would contain unresolved
+    components after extraction.
+    """
+
+    root = _read_project(project)
+    circuits = {
+        circuit.get("name", ""): circuit for circuit in root.findall("circuit")
+    }
+    leaf_names = [
+        name
+        for name, circuit in circuits.items()
+        if name
+        and not any(
+            component.get("name") in circuits for component in circuit.findall("comp")
+        )
+    ]
+    if not leaf_names:
+        raise CircuitError(f"{project} contains no independently loadable leaf circuits")
+
+    destination = Path(output_directory)
+    destination.mkdir(parents=True, exist_ok=True)
+    prefix = Path(project).stem
+    written: list[Path] = []
+    for name in leaf_names:
+        standalone = copy.deepcopy(root)
+        for circuit in standalone.findall("circuit"):
+            if circuit.get("name") != name:
+                standalone.remove(circuit)
+        main = standalone.find("main")
+        if main is None:
+            main = ET.Element("main")
+            standalone.insert(0, main)
+        main.set("name", name)
+        ET.indent(standalone, space="  ")
+        target = destination / f"{prefix}-{name}.circ"
+        ET.ElementTree(standalone).write(
+            target, encoding="UTF-8", xml_declaration=True
+        )
+        written.append(target)
+    return tuple(written)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Check basic connectivity of a Logisim-evolution project"
@@ -241,11 +292,21 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="check the profile contract without requiring complete wiring",
     )
+    parser.add_argument(
+        "--split-output",
+        type=Path,
+        help="write standalone leaf-circuit projects to this directory",
+    )
     args = parser.parse_args(argv)
     if args.contract_only and args.profile is None:
         parser.error("--contract-only requires --profile")
     try:
         reports = inspect_project(args.project)
+        split_files = (
+            split_leaf_circuits(args.project, args.split_output)
+            if args.split_output is not None
+            else ()
+        )
         violations = (
             validate_hardware_contract(args.project, args.profile)
             if args.profile is not None
@@ -253,6 +314,9 @@ def main(argv: list[str] | None = None) -> int:
         )
     except CircuitError as error:
         parser.error(str(error))
+
+    for split_file in split_files:
+        print(f"wrote {split_file}")
 
     incomplete = False
     for report in reports:

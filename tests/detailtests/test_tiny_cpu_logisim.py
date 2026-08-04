@@ -20,10 +20,19 @@ from tiny_cpu_verify import VerificationError, verify_checkout
 
 PROJECT = Path(__file__).parents[2] / "hardware" / "logisim" / "TinyCPU.circ"
 HARDWARE = PROJECT.parent
+CI_WORKFLOW = Path(__file__).parents[2] / ".github" / "workflows" / "ci.yml"
 
 
 def _attributes(component):
     return {attribute.get("name"): attribute.get("val") for attribute in component}
+
+
+def test_ci_runs_the_fresh_checkout_hardware_verifier():
+    """Keep the documented dependency-free acceptance command in the main gate."""
+
+    workflow = CI_WORKFLOW.read_text(encoding="utf-8")
+    assert "Run TinyCPU hardware reproducibility gate" in workflow
+    assert "PYTHONPATH=src python src/tiny_cpu_verify.py" in workflow
 
 
 def test_logisim_starter_matches_default_hardware_profile():

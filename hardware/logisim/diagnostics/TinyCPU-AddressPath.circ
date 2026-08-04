@@ -1,0 +1,105 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project source="4.1.0" version="1.0">
+  This file is intended to be loaded by Logisim-evolution v4.1.0(https://github.com/logisim-evolution/).
+
+  <lib desc="#Wiring" name="0">
+    <tool name="Pin">
+      <a name="appearance" val="classic" />
+    </tool>
+  </lib>
+  <lib desc="#Gates" name="1" />
+  <lib desc="#Plexers" name="2" />
+  <lib desc="#Arithmetic" name="3" />
+  <lib desc="#FPArithmetic" name="4" />
+  <lib desc="#Memory" name="5" />
+  <lib desc="#I/O" name="6" />
+  <lib desc="#TTL" name="7" />
+  <lib desc="#TCL" name="8" />
+  <lib desc="#Base" name="9" />
+  <main name="AddressPath" />
+  <options>
+    <a name="gateUndefined" val="ignore" />
+    <a name="simlimit" val="1000" />
+    <a name="simrand" val="0" />
+  </options>
+  <mappings />
+  <toolbar />
+  <circuit name="AddressPath">
+    <a name="appearance" val="logisim_evolution" />
+    <a name="circuit" val="AddressPath" />
+    <a name="circuitnamedboxfixedsize" val="true" />
+    <a name="simulationFrequency" val="1.0" />
+    <comp lib="0" loc="(80,120)" name="Pin">
+      <a name="label" val="ADDRESS_IN" />
+      <a name="width" val="12" />
+    </comp>
+    <comp lib="0" loc="(80,170)" name="Pin">
+      <a name="label" val="OFFSET" />
+      <a name="width" val="12" />
+    </comp>
+    <comp lib="0" loc="(80,220)" name="Pin">
+      <a name="label" val="AR_LOAD" />
+    </comp>
+    <comp lib="0" loc="(80,270)" name="Pin">
+      <a name="label" val="VALID_IN" />
+    </comp>
+    <comp lib="0" loc="(80,320)" name="Pin">
+      <a name="label" val="CLK" />
+    </comp>
+    <comp lib="0" loc="(500,120)" name="Pin">
+      <a name="facing" val="west" />
+      <a name="label" val="ADDRESS" />
+      <a name="type" val="output" />
+      <a name="width" val="12" />
+    </comp>
+    <comp lib="0" loc="(500,200)" name="Pin">
+      <a name="facing" val="west" />
+      <a name="label" val="ADDRESS_VALID" />
+      <a name="type" val="output" />
+    </comp>
+    <comp lib="0" loc="(500,270)" name="Pin">
+      <a name="facing" val="west" />
+      <a name="label" val="ADDRESS_PLUS_OFFSET" />
+      <a name="type" val="output" />
+      <a name="width" val="12" />
+    </comp>
+    <comp lib="0" loc="(500,320)" name="Pin">
+      <a name="facing" val="west" />
+      <a name="label" val="OFFSET_CARRY" />
+      <a name="type" val="output" />
+    </comp>
+    <comp lib="5" loc="(300,120)" name="Register">
+      <a name="appearance" val="logisim_evolution" />
+      <a name="label" val="AR" />
+      <a name="width" val="12" />
+    </comp>
+    <comp lib="5" loc="(300,200)" name="Register">
+      <a name="appearance" val="logisim_evolution" />
+      <a name="label" val="AR_VALID" />
+      <a name="width" val="1" />
+    </comp>
+    <comp lib="3" loc="(420,270)" name="Adder">
+      <a name="label" val="OFFSET_ADDER" />
+      <a name="width" val="12" />
+    </comp>
+    <wire from="(80,120)" to="(270,120)" />
+    <wire from="(80,170)" to="(370,280)" />
+    <wire from="(80,220)" to="(280,220)" />
+    <wire from="(280,140)" to="(280,220)" />
+    <wire from="(80,270)" to="(270,200)" />
+    <wire from="(80,320)" to="(250,320)" />
+    <wire from="(250,140)" to="(250,320)" />
+    <wire from="(250,140)" to="(270,140)" />
+    <wire from="(250,220)" to="(270,220)" />
+    <wire from="(300,120)" to="(500,120)" />
+    <wire from="(300,120)" to="(370,260)" />
+    <wire from="(300,200)" to="(500,200)" />
+    <wire from="(420,270)" to="(500,270)" />
+    <wire from="(420,290)" to="(460,290)" />
+    <wire from="(460,290)" to="(460,320)" />
+    <wire from="(460,320)" to="(500,320)" />
+    <comp lib="9" loc="(80,60)" name="Text">
+      <a name="text" val="Clocked 12-bit address register with combinational offset addition" />
+    </comp>
+  </circuit>
+</project>

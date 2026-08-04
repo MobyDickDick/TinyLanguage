@@ -96,6 +96,14 @@ nicht die gesamte Logisim-Bauteilbibliothek; für elektrische Simulation bleibt
 Logisim-evolution zuständig, während `tiny_cpu_vm.py` die CPU-Sollsemantik
 liefert. Das unverdrahtete Starterprojekt muss daher gegenwärtig fehlschlagen.
 
+Bei ungewöhnlich hoher CPU- oder Speichernutzung können die fünf eigenständigen
+Projekte unter [`hardware/logisim/diagnostics/`](../hardware/logisim/diagnostics/)
+einzeln geladen werden. So lassen sich Fetch/Decode, Datenpfad, Adresspfad,
+Speicher und Fehlerflags untersuchen, ohne zugleich alle anderen Schaltungsblätter
+zu laden. Erzeugung, Größenvergleich und eine empfohlene Testreihenfolge sind im
+Hardware-[README](../hardware/logisim/README.md#ressourcenverbrauch-eingrenzen)
+dokumentiert.
+
 1. Das Zielprofil zunächst auf **16 Datenbits, 12 Adressbits und 4096
    Speicherzellen** festlegen.
 2. Datenpfad (Akkumulator, ALU, Status), Adresspfad (Adressregister,

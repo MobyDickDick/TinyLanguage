@@ -1,6 +1,12 @@
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from tiny_cpu_circuit import inspect_project, main, validate_hardware_contract
+from tiny_cpu_circuit import (
+    inspect_project,
+    main,
+    split_leaf_circuits,
+    validate_hardware_contract,
+)
 
 
 PROJECT = Path(__file__).parents[2] / "hardware" / "logisim" / "TinyCPU.circ"
@@ -45,6 +51,32 @@ def test_inspector_cli_accepts_connected_ap4_project(capsys):
     assert "ErrorFlags: connected" in output
     assert "FetchDecode: connected" in output
     assert "TinyCPU: connected" in output
+
+
+def test_split_leaf_circuits_produces_independent_projects(tmp_path):
+    written = split_leaf_circuits(PROJECT, tmp_path)
+
+    assert {path.name for path in written} == {
+        "TinyCPU-FetchDecode.circ",
+        "TinyCPU-Datapath.circ",
+        "TinyCPU-AddressPath.circ",
+        "TinyCPU-Memory.circ",
+        "TinyCPU-ErrorFlags.circ",
+    }
+    for path in written:
+        root = ET.parse(path).getroot()
+        circuits = root.findall("circuit")
+        assert len(circuits) == 1
+        assert root.find("main").get("name") == circuits[0].get("name")
+        assert inspect_project(path)[0].connected
+
+
+def test_checked_in_diagnostic_projects_are_reproducible(tmp_path):
+    written = split_leaf_circuits(PROJECT, tmp_path)
+    diagnostics = PROJECT.parent / "diagnostics"
+
+    for path in written:
+        assert path.read_bytes() == (diagnostics / path.name).read_bytes()
 
 
 def test_hardware_profile_matches_starter_contract(capsys):

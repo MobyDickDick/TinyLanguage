@@ -83,19 +83,23 @@
       <a name="width" val="12" />
     </comp>
     <wire from="(80,120)" to="(270,120)" />
-    <wire from="(80,170)" to="(370,280)" />
-    <wire from="(80,220)" to="(280,220)" />
-    <wire from="(280,140)" to="(280,220)" />
-    <wire from="(80,270)" to="(270,200)" />
-    <wire from="(80,320)" to="(250,320)" />
-    <wire from="(250,140)" to="(250,320)" />
+    <wire from="(300,120)" to="(370,120)" />
+    <wire from="(370,120)" to="(500,120)" />
+    <wire from="(370,120)" to="(370,170)" />
     <wire from="(250,140)" to="(270,140)" />
-    <wire from="(300,120)" to="(500,120)" />
-    <wire from="(300,120)" to="(370,260)" />
+    <wire from="(250,140)" to="(250,320)" />
+    <wire from="(280,140)" to="(280,220)" />
+    <wire from="(80,170)" to="(370,170)" />
+    <wire from="(370,170)" to="(370,260)" />
+    <wire from="(270,200)" to="(270,270)" />
     <wire from="(300,200)" to="(500,200)" />
+    <wire from="(80,220)" to="(280,220)" />
+    <wire from="(370,260)" to="(370,280)" />
+    <wire from="(80,270)" to="(270,270)" />
     <wire from="(420,270)" to="(500,270)" />
     <wire from="(420,290)" to="(460,290)" />
     <wire from="(460,290)" to="(460,320)" />
+    <wire from="(80,320)" to="(250,320)" />
     <wire from="(460,320)" to="(500,320)" />
     <comp lib="9" loc="(80,60)" name="Text">
       <a name="text" val="Clocked 12-bit address register with combinational offset addition" />

@@ -31,7 +31,7 @@ aber eines der folgenden Diagnoseblätter nicht, ist der Fehler auf dieses
 Blatt beziehungsweise dessen Bauteiltypen eingegrenzt.
 
 Die statische Prüfung des Projekts findet 161 XML-Komponenten (davon sechs
-reine Textfelder) und 274 rechtwinklige Leitungssegmente. Diagonale Leitungen
+reine Textfelder) und 282 rechtwinklige Leitungssegmente. Diagonale Leitungen
 werden abgewiesen, weil Logisim sie beim Laden nicht als gültige Drähte
 verarbeiten kann. `FetchDecode` ist mit 69 elektrischen
 Komponenten der größte Block; `ErrorFlags` folgt mit 46. Die beiden 4096-Zellen-
@@ -50,7 +50,7 @@ Dafür enthält `diagnostics/` fünf eigenständig ladbare Projekte:
 | `TinyCPU-Datapath.circ` | 12 | 24 | Akkumulator und Vergleich |
 | `TinyCPU-AddressPath.circ` | 12 | 25 | Adressregister und Addierer |
 | `TinyCPU-Memory.circ` | 9 | 20 | Daten- und Validitäts-RAM |
-| `TinyCPU-ErrorFlags.circ` | 46 | 92 | Sticky-Flag-Rückkopplungen |
+| `TinyCPU-ErrorFlags.circ` | 46 | 100 | Sticky-Flag-Rückkopplungen |
 
 Im Blatt `AddressPath` beziehen sich die XML-Koordinaten der Register auf die
 linke obere Symbolecke und nicht auf einen Anschluss. D, WE und CLK werden

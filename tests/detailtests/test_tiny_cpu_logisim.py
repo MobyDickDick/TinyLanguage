@@ -141,9 +141,17 @@ def test_address_path_uses_component_terminals_without_shorting_buses():
     # The address register output and OFFSET terminate at the adder's distinct
     # A and B pins. Neither input bus shares a segment with the other.
     assert has_wire("(420,190)", "(470,190)")
-    assert has_wire("(80,210)", "(470,210)")
+    # OFFSET detours around AR's one-bit reset terminal at (330,210); a
+    # straight bus here makes Logisim report incompatible 12/1-bit widths.
+    assert has_wire("(80,210)", "(200,210)")
+    assert has_wire("(200,210)", "(200,240)")
+    assert has_wire("(200,240)", "(450,240)")
+    assert has_wire("(450,210)", "(450,240)")
+    assert has_wire("(450,210)", "(470,210)")
     assert has_wire("(520,200)", "(620,200)")
-    assert has_wire("(520,220)", "(560,220)")
+    # Carry-out is the one-bit terminal below the adder at (500,220), not a
+    # point below its 12-bit sum output anchor.
+    assert has_wire("(500,220)", "(560,220)")
 
 
 def test_ap3_memory_shares_address_write_enable_and_clock():

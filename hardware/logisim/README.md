@@ -30,11 +30,11 @@ ist die CPU-Schaltung nicht die Ursache. Wenn alle drei Proben funktionieren,
 aber eines der folgenden Diagnoseblätter nicht, ist der Fehler auf dieses
 Blatt beziehungsweise dessen Bauteiltypen eingegrenzt.
 
-Die statische Prüfung des Projekts findet 148 XML-Komponenten (davon sechs
-reine Textfelder) und 255 rechtwinklige Leitungssegmente. Diagonale Leitungen
+Die statische Prüfung des Projekts findet 161 XML-Komponenten (davon sechs
+reine Textfelder) und 267 rechtwinklige Leitungssegmente. Diagonale Leitungen
 werden abgewiesen, weil Logisim sie beim Laden nicht als gültige Drähte
 verarbeiten kann. `FetchDecode` ist mit 69 elektrischen
-Komponenten der größte Block; `ErrorFlags` folgt mit 33. Die beiden 4096-Zellen-
+Komponenten der größte Block; `ErrorFlags` folgt mit 46. Die beiden 4096-Zellen-
 RAMs liegen ausschließlich in `Memory`. In `ErrorFlags` läuft jede
 Rückkopplung über ein getaktetes Register, daher ist dort im Schaltbild keine
 rein kombinatorische Rückkopplung erkennbar. Eine Speicherbelegung von mehreren
@@ -50,7 +50,7 @@ Dafür enthält `diagnostics/` fünf eigenständig ladbare Projekte:
 | `TinyCPU-Datapath.circ` | 12 | 24 | Akkumulator und Vergleich |
 | `TinyCPU-AddressPath.circ` | 12 | 25 | Adressregister und Addierer |
 | `TinyCPU-Memory.circ` | 9 | 18 | Daten- und Validitäts-RAM |
-| `TinyCPU-ErrorFlags.circ` | 34 | 100 | Sticky-Flag-Rückkopplungen |
+| `TinyCPU-ErrorFlags.circ` | 46 | 94 | Sticky-Flag-Rückkopplungen |
 
 Im Blatt `AddressPath` beziehen sich die XML-Koordinaten der Register auf die
 linke obere Symbolecke und nicht auf einen Anschluss. D, WE und CLK werden
@@ -69,7 +69,9 @@ des Komparators; die ein Bit breiten Statusausgänge bleiben davon isoliert.
 legt `VALID_IN` ausschließlich auf den Dateneingang des Validitäts-RAMs.
 `ErrorFlags` taktet die sechs Sticky-Register über einen segmentierten
 gemeinsamen Taktbus; ein High-Pegel an WE sorgt dafür, dass jedes berechnete
-Folgebit auf der steigenden Flanke übernommen wird.
+Folgebit auf der steigenden Flanke übernommen wird. Paarweise benannte
+`CURRENT_*`-Tunnel führen Q jeweils zum zugehörigen `HOLD_*`-Gatter zurück. So
+kreuzt die Rückkopplung weder Reset-Anschlüsse noch Takt- oder WE-Bus.
 
 Die Dateien nacheinander einzeln öffnen und CPU- sowie Speicherverbrauch nach
 dem vollständigen Laden notieren. Tritt das Problem schon ohne Takten auf,

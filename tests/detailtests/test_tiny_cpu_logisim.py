@@ -226,13 +226,25 @@ def test_ap3_error_flag_feedback_is_clocked_not_combinational():
         for wire in errors.findall("wire")
     }
 
-    for register_y in (200, 270, 340, 410, 480, 550):
-        # Q feeds the hold gate, while NOT_CLEAR_ERROR uses its other input.
-        assert (f"(460,{register_y})", f"(460,{register_y + 50})") in wires
-        assert (
-            f"(220,{register_y + 10})",
-            f"(220,{register_y + 50})",
-        ) in wires
+    tunnels = {}
+    for component in errors.findall("comp"):
+        if component.get("name") == "Tunnel":
+            label = _attributes(component).get("label")
+            tunnels.setdefault(label, set()).add(component.get("loc"))
+
+    for flag, register_y in zip(
+        ("OVF", "DIV0", "ADDR", "INV", "ILL", "INPUT"),
+        (200, 270, 340, 410, 480, 550),
+    ):
+        # Named tunnels carry Q back to HOLD without crossing the register's
+        # reset terminal or the shared clock and write-enable buses.
+        assert tunnels[f"CURRENT_{flag}"] == {
+            f"(480,{register_y})",
+            f"(200,{register_y + 10})",
+        }
+        assert (f"(460,{register_y})", f"(480,{register_y})") in wires
+        assert (f"(200,{register_y + 10})", f"(220,{register_y + 10})") in wires
+        assert (f"(460,{register_y})", f"(460,{register_y + 50})") not in wires
         assert (
             f"(190,{register_y + 30})",
             f"(220,{register_y + 30})",

@@ -94,6 +94,25 @@ def test_inspector_rejects_overlapping_subcircuit_symbols(tmp_path):
     )
 
 
+def test_inspector_rejects_overlapping_wire_segments(tmp_path):
+    project = tmp_path / "overlapping-wires.circ"
+    project.write_text(
+        """<project><main name="main"/><circuit name="main">
+        <comp lib="0" loc="(10,10)" name="Pin"/>
+        <comp lib="0" loc="(40,10)" name="Pin"/>
+        <wire from="(10,10)" to="(40,10)"/>
+        <wire from="(20,10)" to="(30,10)"/>
+        </circuit></project>""",
+        encoding="utf-8",
+    )
+
+    report = inspect_project(project)[0]
+    assert not report.connected
+    assert report.routing_conflicts == (
+        "(10,10)->(40,10) overlaps (20,10)->(30,10)",
+    )
+
+
 def test_split_leaf_circuits_produces_independent_projects(tmp_path):
     written = split_leaf_circuits(PROJECT, tmp_path)
 

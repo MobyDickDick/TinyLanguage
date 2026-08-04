@@ -31,6 +31,7 @@ class CircuitReport:
     wires: int
     unconnected: tuple[str, ...]
     placement_conflicts: tuple[str, ...] = ()
+    routing_conflicts: tuple[str, ...] = ()
 
     @property
     def connected(self) -> bool:
@@ -38,7 +39,26 @@ class CircuitReport:
             self.wires > 0
             and not self.unconnected
             and not self.placement_conflicts
+            and not self.routing_conflicts
         )
+
+
+def _wire_overlap(first: ET.Element, second: ET.Element) -> bool:
+    """Return whether two collinear wires overlap for a non-zero distance."""
+
+    first_from = _location(first.get("from", ""))
+    first_to = _location(first.get("to", ""))
+    second_from = _location(second.get("from", ""))
+    second_to = _location(second.get("to", ""))
+    if first_from[1] == first_to[1] == second_from[1] == second_to[1]:
+        first_span = sorted((first_from[0], first_to[0]))
+        second_span = sorted((second_from[0], second_to[0]))
+    elif first_from[0] == first_to[0] == second_from[0] == second_to[0]:
+        first_span = sorted((first_from[1], first_to[1]))
+        second_span = sorted((second_from[1], second_to[1]))
+    else:
+        return False
+    return max(first_span[0], second_span[0]) < min(first_span[1], second_span[1])
 
 
 def _location(value: str) -> tuple[int, int]:
@@ -236,6 +256,14 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
                 label = attrs.get("label") or component.get("name", "component")
                 unconnected.append(f"{label}@{location}")
         placement_conflicts: list[str] = []
+        routing_conflicts: list[str] = []
+        for index, first in enumerate(wires):
+            for second in wires[index + 1:]:
+                if _wire_overlap(first, second):
+                    routing_conflicts.append(
+                        f"{first.get('from')}->{first.get('to')} overlaps "
+                        f"{second.get('from')}->{second.get('to')}"
+                    )
         instances = [
             component
             for component in electrical
@@ -265,6 +293,7 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
                 len(wires),
                 tuple(unconnected),
                 tuple(placement_conflicts),
+                tuple(routing_conflicts),
             )
         )
     if not reports:
@@ -372,6 +401,8 @@ def main(argv: list[str] | None = None) -> int:
             print("  unconnected: " + ", ".join(report.unconnected))
         if report.placement_conflicts:
             print("  placement: " + ", ".join(report.placement_conflicts))
+        if report.routing_conflicts:
+            print("  routing: " + ", ".join(report.routing_conflicts))
         incomplete |= not report.connected
     if args.profile is not None:
         if violations:

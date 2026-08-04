@@ -8,10 +8,10 @@ checked in CI before the authoritative Logisim simulator is invoked.
 from __future__ import annotations
 
 import argparse
-import copy
 from dataclasses import dataclass
 import json
 from pathlib import Path
+import re
 from typing import Any
 import xml.etree.ElementTree as ET
 
@@ -337,7 +337,9 @@ def split_leaf_circuits(
     components after extraction.
     """
 
-    root = _read_project(project)
+    project_path = Path(project)
+    source = project_path.read_bytes()
+    root = _read_project(project_path)
     circuits = {
         circuit.get("name", ""): circuit for circuit in root.findall("circuit")
     }
@@ -350,27 +352,66 @@ def split_leaf_circuits(
         )
     ]
     if not leaf_names:
-        raise CircuitError(f"{project} contains no independently loadable leaf circuits")
+        raise CircuitError(
+            f"{project_path} contains no independently loadable leaf circuits"
+        )
+
+    circuit_pattern = re.compile(
+        rb"<circuit\b[^>]*\bname=(?P<quote>['\"])(?P<name>.*?)"
+        rb"(?P=quote)[^>]*>.*?</circuit>",
+        re.DOTALL,
+    )
+    circuit_matches = list(circuit_pattern.finditer(source))
+    source_names = {
+        match.group("name").decode("utf-8", errors="surrogateescape")
+        for match in circuit_matches
+    }
+    if source_names != set(circuits):
+        raise CircuitError(f"cannot locate every circuit byte range in {project_path}")
+
+    main_pattern = re.compile(
+        rb"(?P<prefix><main\b[^>]*\bname=)(?P<quote>['\"])(?P<name>.*?)"
+        rb"(?P=quote)",
+        re.DOTALL,
+    )
+    if main_pattern.search(source) is None:
+        raise CircuitError(f"{project_path} has no main circuit declaration")
 
     destination = Path(output_directory)
     destination.mkdir(parents=True, exist_ok=True)
-    prefix = Path(project).stem
+    prefix = project_path.stem
     written: list[Path] = []
     for name in leaf_names:
-        standalone = copy.deepcopy(root)
-        for circuit in standalone.findall("circuit"):
-            if circuit.get("name") != name:
-                standalone.remove(circuit)
-        main = standalone.find("main")
-        if main is None:
-            main = ET.Element("main")
-            standalone.insert(0, main)
-        main.set("name", name)
-        ET.indent(standalone, space="  ")
-        target = destination / f"{prefix}-{name}.circ"
-        ET.ElementTree(standalone).write(
-            target, encoding="UTF-8", xml_declaration=True
+        encoded_name = name.encode("utf-8", errors="surrogateescape")
+        standalone = bytearray(source)
+        # Delete from the end so the original byte offsets remain valid.  The
+        # selected circuit itself is never parsed and re-serialized: attribute
+        # order, whitespace, coordinates, and line endings stay byte-exact.
+        for match in reversed(circuit_matches):
+            if match.group("name") != encoded_name:
+                start = source.rfind(b"\n", 0, match.start()) + 1
+                if source[start : match.start()].strip():
+                    start = match.start()
+                end = match.end()
+                if source[end : end + 2] == b"\r\n":
+                    end += 2
+                elif source[end : end + 1] == b"\n":
+                    end += 1
+                del standalone[start:end]
+        standalone = bytearray(
+            main_pattern.sub(
+                lambda match: (
+                    match.group("prefix")
+                    + match.group("quote")
+                    + encoded_name
+                    + match.group("quote")
+                ),
+                bytes(standalone),
+                count=1,
+            )
         )
+        target = destination / f"{prefix}-{name}.circ"
+        target.write_bytes(standalone)
         written.append(target)
     return tuple(written)
 

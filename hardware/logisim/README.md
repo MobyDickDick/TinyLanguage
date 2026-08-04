@@ -21,7 +21,7 @@ Dafür enthält `diagnostics/` fünf eigenständig ladbare Projekte:
 |---|---:|---:|---|
 | `TinyCPU-FetchDecode.circ` | 69 | 70 | ROM, Decoder und PC-Steuerung |
 | `TinyCPU-Datapath.circ` | 12 | 17 | Akkumulator und Vergleich |
-| `TinyCPU-AddressPath.circ` | 12 | 16 | Adressregister und Addierer |
+| `TinyCPU-AddressPath.circ` | 12 | 15 | Adressregister und Addierer |
 | `TinyCPU-Memory.circ` | 9 | 16 | Daten- und Validitäts-RAM |
 | `TinyCPU-ErrorFlags.circ` | 33 | 67 | Sticky-Flag-Rückkopplungen |
 

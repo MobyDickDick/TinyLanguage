@@ -717,82 +717,88 @@
     <a name="circuit" val="Memory"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(150,170)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="WRITE_ENABLE"/>
-    </comp>
-    <comp lib="0" loc="(150,190)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="VALID_IN"/>
-    </comp>
-    <comp lib="0" loc="(150,210)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="CLK"/>
-    </comp>
-    <comp lib="0" loc="(150,240)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="DATA_IN"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="0" loc="(160,120)" name="Pin">
+    <comp lib="0" loc="(160,110)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="ADDRESS"/>
       <a name="width" val="12"/>
     </comp>
-    <comp lib="0" loc="(610,170)" name="Pin">
+    <comp lib="0" loc="(160,150)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="WRITE_ENABLE"/>
+    </comp>
+    <comp lib="0" loc="(160,180)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="CLK"/>
+    </comp>
+    <comp lib="0" loc="(160,210)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="VALID_IN"/>
+    </comp>
+    <comp lib="0" loc="(160,310)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="DATA_IN"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(630,200)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="VALID_OUT"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="0" loc="(610,210)" name="Pin">
+    <comp lib="0" loc="(650,310)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="DATA_OUT"/>
       <a name="type" val="output"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="5" loc="(330,120)" name="RAM">
-      <a name="addrWidth" val="12"/>
-      <a name="appearance" val="logisim_evolution"/>
-      <a name="dataWidth" val="16"/>
-      <a name="label" val="DATA_RAM"/>
-    </comp>
-    <comp lib="5" loc="(330,260)" name="RAM">
+    <comp lib="5" loc="(350,100)" name="RAM">
       <a name="addrWidth" val="12"/>
       <a name="appearance" val="logisim_evolution"/>
       <a name="dataWidth" val="1"/>
       <a name="label" val="VALID_RAM"/>
     </comp>
-    <comp lib="9" loc="(80,60)" name="Text">
+    <comp lib="5" loc="(350,220)" name="RAM">
+      <a name="addrWidth" val="12"/>
+      <a name="appearance" val="logisim_evolution"/>
+      <a name="dataWidth" val="16"/>
+      <a name="label" val="DATA_RAM"/>
+    </comp>
+    <comp lib="0" loc="(330,150)" name="Constant">
+      <a name="value" val="0x1"/>
+    </comp>
+    <comp lib="0" loc="(330,280)" name="Constant">
+      <a name="value" val="0x1"/>
+    </comp>
+    <comp lib="9" loc="(305,63)" name="Text">
       <a name="text" val="4096-word value/valid memory with shared address, write-enable, and clock"/>
     </comp>
-    <wire from="(150,170)" to="(330,170)"/>
-    <wire from="(150,190)" to="(290,190)"/>
-    <wire from="(150,210)" to="(300,210)"/>
-    <wire from="(150,240)" to="(160,240)"/>
-    <wire from="(160,120)" to="(330,120)"/>
-    <wire from="(160,220)" to="(160,240)"/>
-    <wire from="(160,220)" to="(310,220)"/>
-    <wire from="(290,180)" to="(290,190)"/>
-    <wire from="(290,180)" to="(330,180)"/>
-    <wire from="(300,190)" to="(300,210)"/>
-    <wire from="(300,190)" to="(330,190)"/>
-    <wire from="(310,210)" to="(310,220)"/>
-    <wire from="(310,210)" to="(330,210)"/>
-    <wire from="(330,120)" to="(330,130)"/>
-    <wire from="(570,210)" to="(610,210)"/>
-    <wire from="(250,120)" to="(250,260)"/>
-    <wire from="(250,260)" to="(330,260)"/>
-    <wire from="(270,190)" to="(270,310)"/>
-    <wire from="(270,310)" to="(330,310)"/>
-    <wire from="(280,170)" to="(280,320)"/>
-    <wire from="(280,320)" to="(330,320)"/>
-    <wire from="(290,210)" to="(290,330)"/>
-    <wire from="(290,330)" to="(330,330)"/>
-    <wire from="(570,350)" to="(590,350)"/>
-    <wire from="(590,170)" to="(590,350)"/>
-    <wire from="(590,170)" to="(610,170)"/>
+    <wire from="(160,110)" to="(250,110)"/>
+    <wire from="(160,150)" to="(170,150)"/>
+    <wire from="(160,180)" to="(170,180)"/>
+    <wire from="(160,210)" to="(170,210)"/>
+    <wire from="(160,310)" to="(350,310)"/>
+    <wire from="(170,140)" to="(170,150)"/>
+    <wire from="(170,140)" to="(280,140)"/>
+    <wire from="(170,170)" to="(170,180)"/>
+    <wire from="(170,170)" to="(320,170)"/>
+    <wire from="(170,200)" to="(170,210)"/>
+    <wire from="(170,200)" to="(350,200)"/>
+    <wire from="(250,110)" to="(250,230)"/>
+    <wire from="(250,110)" to="(350,110)"/>
+    <wire from="(250,230)" to="(350,230)"/>
+    <wire from="(350,100)" to="(350,110)"/>
+    <wire from="(350,220)" to="(350,230)"/>
+    <wire from="(280,140)" to="(280,270)"/>
+    <wire from="(280,140)" to="(350,140)"/>
+    <wire from="(280,270)" to="(350,270)"/>
+    <wire from="(320,170)" to="(320,290)"/>
+    <wire from="(320,170)" to="(350,170)"/>
+    <wire from="(320,290)" to="(350,290)"/>
+    <wire from="(330,150)" to="(350,150)"/>
+    <wire from="(330,280)" to="(350,280)"/>
+    <wire from="(590,200)" to="(630,200)"/>
+    <wire from="(590,310)" to="(650,310)"/>
   </circuit>
   <circuit name="ErrorFlags">
     <a name="appearance" val="logisim_evolution" />

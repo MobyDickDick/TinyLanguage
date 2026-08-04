@@ -49,7 +49,7 @@ Dafür enthält `diagnostics/` fünf eigenständig ladbare Projekte:
 | `TinyCPU-FetchDecode.circ` | 69 | 107 | ROM, Decoder und PC-Steuerung |
 | `TinyCPU-Datapath.circ` | 12 | 24 | Akkumulator und Vergleich |
 | `TinyCPU-AddressPath.circ` | 12 | 25 | Adressregister und Addierer |
-| `TinyCPU-Memory.circ` | 9 | 20 | Daten- und Validitäts-RAM |
+| `TinyCPU-Memory.circ` | 11 | 26 | Daten- und Validitäts-RAM |
 | `TinyCPU-ErrorFlags.circ` | 46 | 100 | Sticky-Flag-Rückkopplungen |
 
 Im Blatt `AddressPath` beziehen sich die XML-Koordinaten der Register auf die

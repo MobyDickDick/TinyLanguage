@@ -46,6 +46,12 @@ PYTHONPATH=src python src/tiny_cpu_circuit.py \
 The project fixes the initial hardware profile at 16 data bits and 12 address
 bits and splits the design into the same blocks as the hardware contract:
 
+The integrated top-level places every subcircuit anchor in its own 600-pixel
+routing lane. This is intentionally much wider than the generated component
+symbols: no terminals from adjacent subcircuits can be superimposed merely by
+their placement. The dependency-free inspector enforces this clearance and
+fails before a project with overlapping subcircuit symbols is checked in.
+
 - `TinyCPU` is the top-level sheet and documents the block boundary;
 - `Datapath` contains the synchronously loaded 16-bit accumulator and its
   mandatory valid bit; a signed comparator exports `ZERO` and `NEGATIVE`;

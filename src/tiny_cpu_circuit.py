@@ -21,6 +21,7 @@ class CircuitError(ValueError):
 
 
 SUPPORTED_PROFILE_SCHEMA = 1
+SUBCIRCUIT_ANCHOR_CLEARANCE = 600
 
 
 @dataclass(frozen=True)
@@ -29,10 +30,25 @@ class CircuitReport:
     components: int
     wires: int
     unconnected: tuple[str, ...]
+    placement_conflicts: tuple[str, ...] = ()
 
     @property
     def connected(self) -> bool:
-        return self.wires > 0 and not self.unconnected
+        return (
+            self.wires > 0
+            and not self.unconnected
+            and not self.placement_conflicts
+        )
+
+
+def _location(value: str) -> tuple[int, int]:
+    """Return the integer coordinates used by Logisim's ``loc`` attribute."""
+
+    try:
+        x, y = value.strip("()").split(",")
+        return int(x), int(y)
+    except (AttributeError, TypeError, ValueError) as error:
+        raise CircuitError(f"invalid Logisim component location {value!r}") from error
 
 
 def _attributes(element: ET.Element) -> dict[str, str]:
@@ -194,6 +210,9 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
     """
 
     root = _read_project(path)
+    circuit_names = {
+        circuit.get("name", "") for circuit in root.findall("circuit")
+    }
 
     reports: list[CircuitReport] = []
     for circuit in root.findall("circuit"):
@@ -216,12 +235,36 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
                 attrs = _attributes(component)
                 label = attrs.get("label") or component.get("name", "component")
                 unconnected.append(f"{label}@{location}")
+        placement_conflicts: list[str] = []
+        instances = [
+            component
+            for component in electrical
+            if component.get("name", "") in circuit_names
+        ]
+        for index, first in enumerate(instances):
+            first_location = _location(first.get("loc", ""))
+            for second in instances[index + 1:]:
+                second_location = _location(second.get("loc", ""))
+                horizontal = abs(first_location[0] - second_location[0])
+                vertical = abs(first_location[1] - second_location[1])
+                # Large subcircuits have a symbol derived from all their pins.
+                # Reserve a full routing lane in either axis so those symbols
+                # and their terminals can never be superimposed accidentally.
+                if (
+                    horizontal < SUBCIRCUIT_ANCHOR_CLEARANCE
+                    and vertical < SUBCIRCUIT_ANCHOR_CLEARANCE
+                ):
+                    placement_conflicts.append(
+                        f"{first.get('name')}@{first.get('loc')} overlaps the "
+                        f"reserved lane of {second.get('name')}@{second.get('loc')}"
+                    )
         reports.append(
             CircuitReport(
                 circuit.get("name", "<unnamed>"),
                 len(electrical),
                 len(wires),
                 tuple(unconnected),
+                tuple(placement_conflicts),
             )
         )
     if not reports:
@@ -327,6 +370,8 @@ def main(argv: list[str] | None = None) -> int:
         )
         if report.unconnected:
             print("  unconnected: " + ", ".join(report.unconnected))
+        if report.placement_conflicts:
+            print("  placement: " + ", ".join(report.placement_conflicts))
         incomplete |= not report.connected
     if args.profile is not None:
         if violations:

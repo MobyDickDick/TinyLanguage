@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="960" viewBox="0 0 1400 960">
+  <defs>
+    <style>
+      .bg{fill:#fff}.grid{stroke:#ddd;stroke-width:1;stroke-dasharray:1 9}.box{fill:#f8fbff;stroke:#111;stroke-width:2}.small{font:14px monospace}.title{font:700 22px sans-serif}.label{font:700 16px sans-serif;fill:#0645ff}.wire{fill:none;stroke:#111;stroke-width:2}.bus{fill:none;stroke:#0645ff;stroke-width:4}.sig{fill:none;stroke:#0a8a0a;stroke-width:2}.warn{fill:none;stroke:#c40;stroke-width:2}.dot{fill:#111}.pin{fill:#fff;stroke:#111}.note{font:13px sans-serif;fill:#333}.tiny{font:12px monospace;fill:#333}
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#111"/></marker>
+    <marker id="arrowb" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#0645ff"/></marker>
+  </defs>
+  <rect class="bg" width="100%" height="100%"/>
+  <path class="grid" d="M0 20H1400M0 40H1400M0 60H1400M0 80H1400M0 100H1400M0 120H1400M0 140H1400M0 160H1400M0 180H1400M0 200H1400M0 220H1400M0 240H1400M0 260H1400M0 280H1400M0 300H1400M0 320H1400M0 340H1400M0 360H1400M0 380H1400M0 400H1400M0 420H1400M0 440H1400M0 460H1400M0 480H1400M0 500H1400M0 520H1400M0 540H1400M0 560H1400M0 580H1400M0 600H1400M0 620H1400M0 640H1400M0 660H1400M0 680H1400M0 700H1400M0 720H1400M0 740H1400M0 760H1400M0 780H1400M0 800H1400M0 820H1400M0 840H1400M0 860H1400M0 880H1400M0 900H1400M0 920H1400M0 940H1400M20 0V960M40 0V960M60 0V960M80 0V960M100 0V960M120 0V960M140 0V960M160 0V960M180 0V960M200 0V960M220 0V960M240 0V960M260 0V960M280 0V960M300 0V960M320 0V960M340 0V960M360 0V960M380 0V960M400 0V960M420 0V960M440 0V960M460 0V960M480 0V960M500 0V960M520 0V960M540 0V960M560 0V960M580 0V960M600 0V960M620 0V960M640 0V960M660 0V960M680 0V960M700 0V960M720 0V960M740 0V960M760 0V960M780 0V960M800 0V960M820 0V960M840 0V960M860 0V960M880 0V960M900 0V960M920 0V960M940 0V960M960 0V960M980 0V960M1000 0V960M1020 0V960M1040 0V960M1060 0V960M1080 0V960M1100 0V960M1120 0V960M1140 0V960M1160 0V960M1180 0V960M1200 0V960M1220 0V960M1240 0V960M1260 0V960M1280 0V960M1300 0V960M1320 0V960M1340 0V960M1360 0V960M1380 0V960"/>
+  <text x="24" y="34" class="title">TinyCPU-FetchDecode.circ – Verdrahtungs-Vorlage zum Nachzeichnen</text>
+  <text x="24" y="58" class="note">Schwarz = 1-bit Steuerleitungen, Blau = Busse, Grün = Status/Clock, Rot = Fehler/Halt. Pin-Namen entsprechen der .circ-Datei.</text>
+
+  <rect x="150" y="100" width="90" height="80" class="box"/><text x="174" y="95" class="label">PC</text><text x="172" y="140" class="small">Register</text><text x="160" y="165" class="tiny">D WE R Q</text>
+  <rect x="330" y="250" width="160" height="250" class="box"/><text x="350" y="245" class="label">INSTRUCTION_ROM</text><text x="360" y="376" class="small">ROM 4K × 22</text>
+  <rect x="570" y="260" width="45" height="250" class="box"/><text x="580" y="390" class="small" transform="rotate(90 580 390)">Splitter 22 → operand/opcode</text>
+  <rect x="690" y="160" width="70" height="380" class="box"/><text x="704" y="355" class="small" transform="rotate(90 704 355)">Decoder 6 → 64</text>
+  <rect x="300" y="115" width="90" height="48" class="box"/><text x="314" y="145" class="small">Adder +1</text>
+  <rect x="305" y="185" width="105" height="48" class="box"/><text x="318" y="215" class="small">MUX next PC</text>
+  <rect x="480" y="100" width="110" height="52" class="box"/><text x="492" y="132" class="small">Comparator</text>
+  <circle cx="640" cy="126" r="26" class="box"/><text x="620" y="132" class="small">AND</text><text x="606" y="93" class="label">JNZ_TAKEN</text>
+  <circle cx="655" cy="220" r="30" class="box"/><text x="642" y="226" class="small">OR</text><text x="612" y="263" class="label">ERROR_HALT</text>
+
+  <path class="bus" marker-end="url(#arrowb)" d="M240 138H330"/><text x="252" y="128" class="tiny">PC_OUT[11:0]</text>
+  <path class="bus" marker-end="url(#arrowb)" d="M240 140V275H330"/><text x="245" y="270" class="tiny">ROM address</text>
+  <path class="bus" marker-end="url(#arrowb)" d="M490 375H570"/><text x="505" y="365" class="tiny">instruction[21:0]</text>
+  <path class="bus" marker-end="url(#arrowb)" d="M615 285H815"/><text x="635" y="277" class="tiny">operand[15:0] → OPERAND</text>
+  <path class="bus" marker-end="url(#arrowb)" d="M615 350H690"/><text x="622" y="340" class="tiny">opcode[5:0]</text>
+  <path class="bus" marker-end="url(#arrowb)" d="M760 505H1070"/><text x="785" y="495" class="tiny">64 decoded opcode lines to output pins</text>
+  <path class="wire" marker-end="url(#arrow)" d="M390 140H430V205H410"/><text x="392" y="130" class="tiny">PC+1</text>
+  <path class="wire" marker-end="url(#arrow)" d="M410 205H150V128"/><text x="178" y="206" class="tiny">next PC</text>
+  <path class="sig" marker-end="url(#arrow)" d="M48 92H150"/><text x="20" y="97" class="label">CLK</text>
+  <path class="sig" marker-end="url(#arrow)" d="M48 130H150"/><text x="20" y="135" class="label">RESET</text>
+  <path class="sig" marker-end="url(#arrow)" d="M48 175H480"/><text x="20" y="180" class="label">PROGRAM_LIMIT</text>
+  <path class="sig" marker-end="url(#arrow)" d="M48 305H640"/><text x="20" y="310" class="label">ZERO</text>
+  <path class="sig" marker-end="url(#arrow)" d="M48 338H655"/><text x="20" y="343" class="label">NEGATIVE</text>
+  <path class="warn" marker-end="url(#arrow)" d="M48 372H655"/><text x="20" y="377" class="label">ERROR</text>
+  <path class="wire" marker-end="url(#arrow)" d="M760 210H640"/><text x="665" y="198" class="tiny">JUMP_NOT_ZERO decode</text>
+  <path class="wire" marker-end="url(#arrow)" d="M640 152V185H410"/><text x="503" y="178" class="tiny">select jump operand vs PC+1</text>
+  <path class="warn" marker-end="url(#arrow)" d="M685 220H815"/><text x="704" y="211" class="tiny">HALT_ERROR</text>
+
+  <g class="small">
+    <text x="830" y="90" class="label">Direkte Splitter-Ausgänge</text>
+    <text x="850" y="120">instruction[15:0] → OPERAND</text><text x="850" y="148">PC[11:0] → PC_OUT</text>
+    <text x="830" y="195" class="label">Opcode-Decoder-Leitungen</text>
+    <text x="850" y="225">0 LOAD_CONST · 1 STORE_ADDRESS · 2 ADD_ADDRESS · 3 JUMP_NOT_ZERO</text>
+    <text x="850" y="250">4 PRINT · 5 HALT · 6 SET_ADDR · 7 HALT_ERROR</text>
+    <text x="850" y="290">8 LOAD_ADDRESS · 9 LOAD_ADDRESS_REGISTER · 10 LOAD_ADDRESS_REGISTER_PLUS_OFFSET</text>
+    <text x="850" y="315">11 ADD_CONST · 12 ADD_ADDRESS_REGISTER · 13 ADD_ADDRESS_REGISTER_PLUS_OFFSET</text>
+    <text x="850" y="340">14 SUB_CONST · 15 SUB_ADDRESS · 16 SUB_ADDRESS_REGISTER · 17 SUB_ADDRESS_REGISTER_PLUS_OFFSET</text>
+    <text x="850" y="365">18 MUL_CONST · 19 MUL_ADDRESS · 20 MUL_ADDRESS_REGISTER · 21 MUL_ADDRESS_REGISTER_PLUS_OFFSET</text>
+    <text x="850" y="390">22 DIV_CONST · 23 DIV_ADDRESS · 24 DIV_ADDRESS_REGISTER · 25 DIV_ADDRESS_REGISTER_PLUS_OFFSET</text>
+    <text x="850" y="415">26 AND_CONST · 27 AND_ADDRESS · 28 AND_ADDRESS_REGISTER · 29 AND_ADDRESS_REGISTER_PLUS_OFFSET</text>
+    <text x="850" y="440">30 OR_CONST · 31 OR_ADDRESS · 32 OR_ADDRESS_REGISTER · 33 OR_ADDRESS_REGISTER_PLUS_OFFSET</text>
+    <text x="850" y="465">34 STORE_ADDRESS_REGISTER · 35 STORE_ADDRESS_REGISTER_PLUS_OFFSET</text>
+    <text x="850" y="490">36 LOAD_ADDRESS_REGISTER_CONST · 37 LOAD_ADDRESS_REGISTER_ADDRESS · 38 NOT</text>
+    <text x="850" y="515">39 JUMP_ADDRESS · 40 JUMP_ZERO · 41 JUMP_NEGATIVE · 42 JUMP_ERROR · 43 JUMP_NOT_ERROR</text>
+    <text x="850" y="540">44 CLEAR_ERROR · 45 INPUT · 46 PRINT_ADDRESS</text>
+    <text x="850" y="580">Fehlerleitungen optional: SET_OVF, SET_DIV0, SET_INV, SET_ILL, SET_INPUT.</text>
+  </g>
+
+  <rect x="24" y="815" width="1320" height="105" fill="#fff8d8" stroke="#b38b00"/>
+  <text x="42" y="845" class="label">Nachzeichnungs-Reihenfolge</text>
+  <text x="42" y="872" class="note">1) PC-Q auf ROM-Adresse, Adder +1 und PC_OUT legen. 2) ROM-Daten auf Splitter legen: Bits 0–15 zu OPERAND, Bits 16–21 zum 6-bit Decoder.</text>
+  <text x="42" y="895" class="note">3) Decoder-Ausgänge gerade zu den gleichnamigen Output-Pins führen. 4) JUMP_NOT_ZERO mit ZERO invertiert/entsprechend der gewünschten Logik zu JNZ_TAKEN führen.</text>
+</svg>

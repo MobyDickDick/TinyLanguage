@@ -88,6 +88,28 @@
       <a name="fanout" val="2" />
       <a name="incoming" val="22" />
       <a name="label" val="INSTRUCTION_FIELDS" />
+      <a name="bit0" val="0" />
+      <a name="bit1" val="0" />
+      <a name="bit2" val="0" />
+      <a name="bit3" val="0" />
+      <a name="bit4" val="0" />
+      <a name="bit5" val="0" />
+      <a name="bit6" val="0" />
+      <a name="bit7" val="0" />
+      <a name="bit8" val="0" />
+      <a name="bit9" val="0" />
+      <a name="bit10" val="0" />
+      <a name="bit11" val="0" />
+      <a name="bit12" val="0" />
+      <a name="bit13" val="0" />
+      <a name="bit14" val="0" />
+      <a name="bit15" val="0" />
+      <a name="bit16" val="1" />
+      <a name="bit17" val="1" />
+      <a name="bit18" val="1" />
+      <a name="bit19" val="1" />
+      <a name="bit20" val="1" />
+      <a name="bit21" val="1" />
     </comp>
     <comp lib="2" loc="(570,100)" name="Decoder">
       <a name="select" val="6" />
@@ -164,7 +186,6 @@
       <a name="type" val="output" />
       <a name="width" val="12" />
     </comp>
-    <wire from="(760,80)" to="(760,100)" />
     <wire from="(60,100)" to="(210,100)" />
     <wire from="(210,100)" to="(230,100)" />
     <wire from="(210,100)" to="(210,270)" />
@@ -175,28 +196,11 @@
     <wire from="(350,100)" to="(350,210)" />
     <wire from="(360,100)" to="(390,100)" />
     <wire from="(390,100)" to="(470,100)" />
-    <wire from="(470,100)" to="(530,100)" />
-    <wire from="(530,100)" to="(570,100)" />
-    <wire from="(570,100)" to="(760,100)" />
-    <wire from="(760,100)" to="(760,110)" />
-    <wire from="(570,110)" to="(760,110)" />
-    <wire from="(760,110)" to="(760,120)" />
     <wire from="(230,120)" to="(230,140)" />
-    <wire from="(570,120)" to="(760,120)" />
-    <wire from="(760,120)" to="(760,130)" />
-    <wire from="(570,130)" to="(760,130)" />
-    <wire from="(760,130)" to="(760,140)" />
     <wire from="(60,140)" to="(230,140)" />
     <wire from="(230,140)" to="(230,220)" />
-    <wire from="(570,140)" to="(760,140)" />
-    <wire from="(760,140)" to="(760,150)" />
-    <wire from="(570,150)" to="(700,150)" />
-    <wire from="(700,150)" to="(700,270)" />
-    <wire from="(760,150)" to="(760,180)" />
     <wire from="(60,180)" to="(530,180)" />
     <wire from="(530,180)" to="(530,230)" />
-    <wire from="(760,180)" to="(760,210)" />
-    <wire from="(760,210)" to="(760,220)" />
     <wire from="(60,220)" to="(230,220)" />
     <wire from="(230,220)" to="(350,220)" />
     <wire from="(230,220)" to="(230,280)" />
@@ -204,22 +208,14 @@
     <wire from="(350,220)" to="(350,230)" />
     <wire from="(390,220)" to="(570,220)" />
     <wire from="(570,220)" to="(650,220)" />
-    <wire from="(650,220)" to="(760,220)" />
     <wire from="(650,220)" to="(650,260)" />
-    <wire from="(760,220)" to="(760,240)" />
-    <wire from="(760,240)" to="(760,260)" />
     <wire from="(60,260)" to="(570,260)" />
-    <wire from="(650,260)" to="(760,260)" />
-    <wire from="(760,260)" to="(760,270)" />
-    <wire from="(760,270)" to="(760,310)" />
     <wire from="(230,280)" to="(250,280)" />
     <wire from="(230,280)" to="(230,330)" />
     <wire from="(60,300)" to="(570,300)" />
-    <wire from="(760,310)" to="(760,350)" />
     <wire from="(230,330)" to="(230,340)" />
     <wire from="(230,340)" to="(250,340)" />
     <wire from="(230,340)" to="(230,350)" />
-    <wire from="(760,350)" to="(760,390)" />
     <wire from="(610,450)" to="(1000,450)" />
     <wire from="(610,470)" to="(1000,470)" />
     <wire from="(610,490)" to="(1000,490)" />
@@ -264,6 +260,39 @@
     <wire from="(610,1440)" to="(1000,1440)" />
     <wire from="(610,1460)" to="(1000,1460)" />
     <wire from="(610,1480)" to="(1000,1480)" />
+    <wire from="(490,90)" to="(700,90)" />
+    <wire from="(700,80)" to="(700,90)" />
+    <wire from="(700,80)" to="(760,80)" />
+    <wire from="(490,110)" to="(530,110)" />
+    <wire from="(530,100)" to="(530,110)" />
+    <wire from="(530,100)" to="(570,100)" />
+    <wire from="(610,430)" to="(720,430)" />
+    <wire from="(720,120)" to="(720,430)" />
+    <wire from="(720,120)" to="(760,120)" />
+    <wire from="(610,530)" to="(700,530)" />
+    <wire from="(700,180)" to="(700,530)" />
+    <wire from="(700,180)" to="(760,180)" />
+    <wire from="(610,990)" to="(740,990)" />
+    <wire from="(740,150)" to="(740,990)" />
+    <wire from="(740,150)" to="(760,150)" />
+    <wire from="(610,1150)" to="(680,1150)" />
+    <wire from="(680,210)" to="(680,1150)" />
+    <wire from="(680,210)" to="(760,210)" />
+    <wire from="(610,1270)" to="(660,1270)" />
+    <wire from="(660,240)" to="(660,1270)" />
+    <wire from="(660,240)" to="(760,240)" />
+    <wire from="(610,1310)" to="(640,1310)" />
+    <wire from="(640,270)" to="(640,1310)" />
+    <wire from="(640,270)" to="(760,270)" />
+    <wire from="(650,220)" to="(750,220)" />
+    <wire from="(750,220)" to="(750,310)" />
+    <wire from="(750,310)" to="(760,310)" />
+    <wire from="(650,260)" to="(730,260)" />
+    <wire from="(730,260)" to="(730,350)" />
+    <wire from="(730,350)" to="(760,350)" />
+    <wire from="(350,210)" to="(620,210)" />
+    <wire from="(620,210)" to="(620,390)" />
+    <wire from="(620,390)" to="(760,390)" />
     <comp lib="9" loc="(60,40)" name="Text">
       <a name="text" val="AP 7 machine format v1: stable six-bit opcode allocation and encoder-generated ROM" />
     </comp>
@@ -734,16 +763,18 @@
     <wire from="(250,200)" to="(330,200)" />
     <wire from="(80,170)" to="(330,170)" />
     <wire from="(360,160)" to="(620,160)" />
-    <wire from="(80,220)" to="(330,220)" />
-    <wire from="(330,220)" to="(330,250)" />
+    <wire from="(80,220)" to="(260,220)" />
+    <wire from="(260,220)" to="(260,250)" />
+    <wire from="(260,250)" to="(330,250)" />
     <wire from="(80,270)" to="(280,270)" />
     <wire from="(280,180)" to="(280,260)" />
     <wire from="(280,180)" to="(330,180)" />
     <wire from="(280,260)" to="(330,260)" />
     <wire from="(280,260)" to="(280,270)" />
     <wire from="(80,320)" to="(300,320)" />
-    <wire from="(300,190)" to="(300,320)" />
+    <wire from="(300,190)" to="(300,270)" />
     <wire from="(300,190)" to="(330,190)" />
+    <wire from="(300,270)" to="(300,320)" />
     <wire from="(300,270)" to="(330,270)" />
     <wire from="(360,240)" to="(620,240)" />
     <comp lib="9" loc="(80,60)" name="Text">

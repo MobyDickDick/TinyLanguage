@@ -63,7 +63,7 @@ def test_inspector_exposes_completed_and_pending_sheets():
     assert reports["TinyCPU"].connected
     assert reports["FetchDecode"].connected
     assert reports["Datapath"].components == 12
-    assert reports["Datapath"].wires == 22
+    assert reports["Datapath"].wires == 25
     assert reports["Datapath"].connected
     assert reports["AddressPath"].connected
     assert reports["Memory"].connected

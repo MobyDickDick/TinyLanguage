@@ -47,8 +47,8 @@ Dafür enthält `diagnostics/` fünf eigenständig ladbare Projekte:
 | Datei | Elektrische Komponenten | Leitungen | Isoliert insbesondere |
 |---|---:|---:|---|
 | `TinyCPU-FetchDecode.circ` | 69 | 100 | ROM, Decoder und PC-Steuerung |
-| `TinyCPU-Datapath.circ` | 12 | 22 | Akkumulator und Vergleich |
-| `TinyCPU-AddressPath.circ` | 12 | 22 | Adressregister und Addierer |
+| `TinyCPU-Datapath.circ` | 12 | 25 | Akkumulator und Vergleich |
+| `TinyCPU-AddressPath.circ` | 12 | 26 | Adressregister und Addierer |
 | `TinyCPU-Memory.circ` | 9 | 18 | Daten- und Validitäts-RAM |
 | `TinyCPU-ErrorFlags.circ` | 33 | 87 | Sticky-Flag-Rückkopplungen |
 
@@ -60,6 +60,11 @@ Offset-Leitung umfährt dabei den ein Bit breiten Reset-Anschluss des
 Adressregisters; der Carry-Ausgang beginnt am separaten ein Bit breiten
 Addiereranschluss. Die Leitungsführung besteht ausschließlich aus horizontalen und vertikalen
 Segmenten, von denen sich keine zwei kollinear überdecken.
+
+Dasselbe Anschlussprinzip gilt im Blatt `Datapath`: `DATA_IN`, `ACC_LOAD` und
+`CLK` enden an D, WE und CLK beider Register statt an deren Symbolmitten. Der
+16-Bit-Akkumulator und die Nullkonstante belegen außerdem getrennte Eingänge
+des Komparators; die ein Bit breiten Statusausgänge bleiben davon isoliert.
 
 Die Dateien nacheinander einzeln öffnen und CPU- sowie Speicherverbrauch nach
 dem vollständigen Laden notieren. Tritt das Problem schon ohne Takten auf,

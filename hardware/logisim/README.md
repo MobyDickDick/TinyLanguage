@@ -31,7 +31,9 @@ aber eines der folgenden Diagnoseblätter nicht, ist der Fehler auf dieses
 Blatt beziehungsweise dessen Bauteiltypen eingegrenzt.
 
 Die statische Prüfung des Projekts findet 148 XML-Komponenten (davon sechs
-reine Textfelder) und 192 Leitungen. `FetchDecode` ist mit 69 elektrischen
+reine Textfelder) und 252 rechtwinklige Leitungssegmente. Diagonale Leitungen
+werden abgewiesen, weil Logisim sie beim Laden nicht als gültige Drähte
+verarbeiten kann. `FetchDecode` ist mit 69 elektrischen
 Komponenten der größte Block; `ErrorFlags` folgt mit 33. Die beiden 4096-Zellen-
 RAMs liegen ausschließlich in `Memory`. In `ErrorFlags` läuft jede
 Rückkopplung über ein getaktetes Register, daher ist dort im Schaltbild keine
@@ -44,11 +46,11 @@ Dafür enthält `diagnostics/` fünf eigenständig ladbare Projekte:
 
 | Datei | Elektrische Komponenten | Leitungen | Isoliert insbesondere |
 |---|---:|---:|---|
-| `TinyCPU-FetchDecode.circ` | 69 | 70 | ROM, Decoder und PC-Steuerung |
-| `TinyCPU-Datapath.circ` | 12 | 17 | Akkumulator und Vergleich |
-| `TinyCPU-AddressPath.circ` | 12 | 15 | Adressregister und Addierer |
-| `TinyCPU-Memory.circ` | 9 | 16 | Daten- und Validitäts-RAM |
-| `TinyCPU-ErrorFlags.circ` | 33 | 67 | Sticky-Flag-Rückkopplungen |
+| `TinyCPU-FetchDecode.circ` | 69 | 100 | ROM, Decoder und PC-Steuerung |
+| `TinyCPU-Datapath.circ` | 12 | 22 | Akkumulator und Vergleich |
+| `TinyCPU-AddressPath.circ` | 12 | 19 | Adressregister und Addierer |
+| `TinyCPU-Memory.circ` | 9 | 18 | Daten- und Validitäts-RAM |
+| `TinyCPU-ErrorFlags.circ` | 33 | 87 | Sticky-Flag-Rückkopplungen |
 
 Die Dateien nacheinander einzeln öffnen und CPU- sowie Speicherverbrauch nach
 dem vollständigen Laden notieren. Tritt das Problem schon ohne Takten auf,

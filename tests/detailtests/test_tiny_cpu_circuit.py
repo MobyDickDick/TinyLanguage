@@ -63,7 +63,7 @@ def test_inspector_exposes_completed_and_pending_sheets():
     assert reports["TinyCPU"].connected
     assert reports["FetchDecode"].connected
     assert reports["Datapath"].components == 12
-    assert reports["Datapath"].wires == 17
+    assert reports["Datapath"].wires == 22
     assert reports["Datapath"].connected
     assert reports["AddressPath"].connected
     assert reports["Memory"].connected
@@ -153,6 +153,24 @@ def test_inspector_rejects_overlapping_wire_segments(tmp_path):
     assert not report.connected
     assert report.routing_conflicts == (
         "(10,10)->(40,10) overlaps (20,10)->(30,10)",
+    )
+
+
+def test_inspector_rejects_diagonal_wire_segments(tmp_path):
+    project = tmp_path / "diagonal-wire.circ"
+    project.write_text(
+        """<project><main name="main"/><circuit name="main">
+        <comp lib="0" loc="(10,10)" name="Pin"/>
+        <comp lib="0" loc="(40,20)" name="Pin"/>
+        <wire from="(10,10)" to="(40,20)"/>
+        </circuit></project>""",
+        encoding="utf-8",
+    )
+
+    report = inspect_project(project)[0]
+    assert not report.connected
+    assert report.routing_conflicts == (
+        "(10,10)->(40,20) is diagonal; Logisim wires must be horizontal or vertical",
     )
 
 

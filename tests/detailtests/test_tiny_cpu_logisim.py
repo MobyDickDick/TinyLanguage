@@ -181,7 +181,19 @@ def test_ap3_error_flag_feedback_is_clocked_not_combinational():
         # The OR result enters D and CLK reaches the clock terminal.  The only
         # feedback consequently crosses the register before returning to HOLD.
         assert (f"(330,{register_y})", f"(400,{register_y})") in wires
-        assert ("(80,140)", f"(400,{register_y + 20})") in wires
+        clock_target = f"(400,{register_y + 20})"
+        graph = {}
+        for start, end in wires:
+            graph.setdefault(start, set()).add(end)
+            graph.setdefault(end, set()).add(start)
+        reachable = {"(80,140)"}
+        pending = ["(80,140)"]
+        while pending:
+            for endpoint in graph.get(pending.pop(), ()):
+                if endpoint not in reachable:
+                    reachable.add(endpoint)
+                    pending.append(endpoint)
+        assert clock_target in reachable
 
 
 def test_ap4_fetch_decode_has_pc_rom_core_controls_and_error_halt():

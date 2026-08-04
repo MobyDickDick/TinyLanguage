@@ -257,6 +257,14 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
                 unconnected.append(f"{label}@{location}")
         placement_conflicts: list[str] = []
         routing_conflicts: list[str] = []
+        for wire in wires:
+            start = _location(wire.get("from", ""))
+            end = _location(wire.get("to", ""))
+            if start[0] != end[0] and start[1] != end[1]:
+                routing_conflicts.append(
+                    f"{wire.get('from')}->{wire.get('to')} is diagonal; "
+                    "Logisim wires must be horizontal or vertical"
+                )
         for index, first in enumerate(wires):
             for second in wires[index + 1:]:
                 if _wire_overlap(first, second):

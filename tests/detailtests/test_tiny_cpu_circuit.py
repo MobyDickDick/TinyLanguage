@@ -12,6 +12,49 @@ from tiny_cpu_circuit import (
 
 PROJECT = Path(__file__).parents[2] / "hardware" / "logisim" / "TinyCPU.circ"
 PROFILE = PROJECT.with_name("tinycpu-16-12.json")
+SMOKE_PROJECTS = PROJECT.parent / "smoke"
+
+
+def test_two_pin_smoke_projects_are_minimal_and_unambiguous():
+    expected_widths = {
+        "PinPair-1bit.circ": "1",
+        "PinPair-12bit.circ": "12",
+        "PinPair-16bit.circ": "16",
+    }
+
+    assert {path.name for path in SMOKE_PROJECTS.glob("*.circ")} == set(
+        expected_widths
+    )
+    for filename, expected_width in expected_widths.items():
+        root = ET.parse(SMOKE_PROJECTS / filename).getroot()
+        circuits = root.findall("circuit")
+        assert len(circuits) == 1
+        circuit = circuits[0]
+        assert root.find("main").get("name") == circuit.get("name")
+
+        components = circuit.findall("comp")
+        wires = circuit.findall("wire")
+        assert len(components) == 2
+        assert {component.get("name") for component in components} == {"Pin"}
+        assert len(wires) == 1
+
+        attributes = [
+            {item.get("name"): item.get("val") for item in component.findall("a")}
+            for component in components
+        ]
+        widths = {item.get("width", "1") for item in attributes}
+        assert widths == {expected_width}
+        assert sum(item.get("type", "input") == "input" for item in attributes) == 1
+        assert sum(item.get("type") == "output" for item in attributes) == 1
+
+        start = tuple(map(int, wires[0].get("from").strip("()").split(",")))
+        end = tuple(map(int, wires[0].get("to").strip("()").split(",")))
+        assert start[1] == end[1]
+        assert {wires[0].get("from"), wires[0].get("to")} == {
+            component.get("loc") for component in components
+        }
+        report = inspect_project(SMOKE_PROJECTS / filename)[0]
+        assert report.connected
 
 
 def test_inspector_exposes_completed_and_pending_sheets():

@@ -5,6 +5,31 @@ Open `TinyCPU.circ` with Logisim-evolution 3.x.
 
 ## Ressourcenverbrauch eingrenzen
 
+### Kleinstmögliche Verdrahtungsproben
+
+Bevor eines der CPU-Blätter geöffnet wird, können die drei Projekte in
+`smoke/` geprüft werden:
+
+| Datei | Bauteile | Leitung | Zweck |
+|---|---:|---:|---|
+| `PinPair-1bit.circ` | 2 Pins | 1 | einfaches Steuersignal |
+| `PinPair-12bit.circ` | 2 Pins | 1 | Adressbusbreite der TinyCPU |
+| `PinPair-16bit.circ` | 2 Pins | 1 | Datenbusbreite der TinyCPU |
+
+Jede Datei besitzt nur ein Eingangs- und ein Ausgangspin gleicher Breite. Die
+beiden Anschlusskoordinaten liegen auf derselben Horizontalen und werden durch
+genau ein gerades Leitungssegment verbunden. Es gibt weder Abzweigungen noch
+Kreuzungen, Rückkopplungen, Speicher oder Unterblätter. Ein Repository-Test
+prüft genau diese Invarianten sowie die XML-Lesbarkeit. Damit trennen die
+Proben einen grundsätzlichen Ladefehler der verwendeten Logisim-Version von
+Fehlern in der CPU-Verdrahtung.
+
+Die Dateien bitte in der Reihenfolge 1, 12 und 16 Bit einzeln öffnen. Wenn
+bereits `PinPair-1bit.circ` nicht ohne stark steigenden Speicherverbrauch lädt,
+ist die CPU-Schaltung nicht die Ursache. Wenn alle drei Proben funktionieren,
+aber eines der folgenden Diagnoseblätter nicht, ist der Fehler auf dieses
+Blatt beziehungsweise dessen Bauteiltypen eingegrenzt.
+
 Die statische Prüfung des Projekts findet 148 XML-Komponenten (davon sechs
 reine Textfelder) und 192 Leitungen. `FetchDecode` ist mit 69 elektrischen
 Komponenten der größte Block; `ErrorFlags` folgt mit 33. Die beiden 4096-Zellen-

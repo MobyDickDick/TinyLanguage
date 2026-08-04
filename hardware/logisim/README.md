@@ -55,8 +55,10 @@ Dafür enthält `diagnostics/` fünf eigenständig ladbare Projekte:
 Im Blatt `AddressPath` beziehen sich die XML-Koordinaten der Register auf den
 Q-Anschluss (den „Griff“) und nicht auf die optische Mitte des Symbols. D, WE
 und CLK werden deshalb gezielt an ihren links versetzten Anschlusskoordinaten
-verdrahtet. Adressbus und Offset enden getrennt an A und B des Addierers; die
-Leitungsführung besteht ausschließlich aus horizontalen und vertikalen
+verdrahtet. Adressbus und Offset enden getrennt an A und B des Addierers. Die
+Offset-Leitung umfährt dabei den ein Bit breiten Reset-Anschluss des
+Adressregisters; der Carry-Ausgang beginnt am separaten ein Bit breiten
+Addiereranschluss. Die Leitungsführung besteht ausschließlich aus horizontalen und vertikalen
 Segmenten, von denen sich keine zwei kollinear überdecken.
 
 Die Dateien nacheinander einzeln öffnen und CPU- sowie Speicherverbrauch nach

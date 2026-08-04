@@ -193,7 +193,6 @@
     <wire from="(230,100)" to="(230,120)" />
     <wire from="(250,100)" to="(350,100)" />
     <wire from="(350,100)" to="(360,100)" />
-    <wire from="(350,100)" to="(350,210)" />
     <wire from="(360,100)" to="(390,100)" />
     <wire from="(390,100)" to="(470,100)" />
     <wire from="(230,120)" to="(230,140)" />
@@ -290,9 +289,10 @@
     <wire from="(650,260)" to="(730,260)" />
     <wire from="(730,260)" to="(730,350)" />
     <wire from="(730,350)" to="(760,350)" />
-    <wire from="(350,210)" to="(620,210)" />
-    <wire from="(620,210)" to="(620,390)" />
-    <wire from="(620,390)" to="(760,390)" />
+    <wire from="(350,100)" to="(350,60)" />
+    <wire from="(350,60)" to="(800,60)" />
+    <wire from="(800,60)" to="(800,390)" />
+    <wire from="(760,390)" to="(800,390)" />
     <comp lib="9" loc="(60,40)" name="Text">
       <a name="text" val="AP 7 machine format v1: stable six-bit opcode allocation and encoder-generated ROM" />
     </comp>

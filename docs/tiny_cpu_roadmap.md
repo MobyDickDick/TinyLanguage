@@ -70,3 +70,12 @@ keine dauerhaft inkompatiblen Opcodes erzeugen.
   `tiny_cpu_verify.py` prüft aus einem frischen Checkout Vertrag, Verdrahtung,
   generierte Artefakte, eingebettetes ROM und den 17-Takt-Referenztrace mit
   einem einzigen reproduzierbaren Kommando.
+
+## Baseline-Pflege
+
+Nach Abschluss der acht Arbeitspakete ist das Abnahmekommando als eigener
+Schritt im Haupt-CI-Job verankert. Dadurch schlagen Änderungen an Vertrag,
+Schaltung, Maschinenformat, generierten ROM-/Listing-Artefakten oder
+Referenztrace bereits vor der allgemeinen Testsuite mit einer gezielten
+TinyCPU-Diagnose fehl. Ein Regressionstest schützt sowohl den Namen des Gates
+als auch das dokumentierte Kommando vor unbeabsichtigtem Entfernen.

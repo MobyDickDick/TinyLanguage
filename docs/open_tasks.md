@@ -5,6 +5,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Next documented work package (completed 2026-08-04)
+
+- [x] **Promote the TinyCPU reproducibility verifier to a dedicated CI gate**
+  (Owner: TinyCPU/Hardware)
+  - Success: the main CI job runs the documented fresh-checkout acceptance
+    command before the general test suite, and a regression prevents the gate
+    from being removed accidentally.
+  - Result: CI now runs `PYTHONPATH=src python src/tiny_cpu_verify.py` as a
+    named hardware reproducibility gate; focused coverage locks both the step
+    name and exact acceptance command, and the hardware roadmap documents the
+    post-AP-8 baseline-maintenance policy.
+  - Follow-up: future circuit or machine-format work must start a newly scoped
+    roadmap cycle while retaining this gate as the baseline compatibility
+    check.
+
 ## Next documented work package (completed 2026-08-03)
 
 - [x] **Complete TinyCPU AP 8 documentation and reproducibility checks**

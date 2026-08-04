@@ -218,6 +218,26 @@ def test_ap3_error_flags_have_set_dominant_sticky_logic():
         assert parts[f"{flag}_OUT"] == "Pin"
 
 
+def test_ap3_error_flags_have_readable_lane_layout():
+    root = ET.parse(PROJECT).getroot()
+    errors = next(c for c in root.findall("circuit") if c.get("name") == "ErrorFlags")
+    locations = {
+        _attributes(component).get("label"): component.get("loc")
+        for component in errors.findall("comp")
+        if _attributes(component).get("label")
+    }
+
+    # Fixed columns and generous lane spacing keep labels, gates, and registers
+    # from being drawn on top of one another in Logisim-evolution.
+    for index, flag in enumerate(("OVF", "DIV0", "ADDR", "INV", "ILL", "INPUT")):
+        y = 240 + index * 110
+        assert locations[f"SET_{flag}"] == f"(100,{y})"
+        assert locations[f"HOLD_{flag}"] == f"(400,{y + 30})"
+        assert locations[f"NEXT_{flag}"] == f"(540,{y})"
+        assert locations[flag] == f"(650,{y - 30})"
+        assert locations[f"{flag}_OUT"] == f"(900,{y})"
+
+
 def test_ap3_error_flag_feedback_is_clocked_not_combinational():
     root = ET.parse(PROJECT).getroot()
     errors = next(c for c in root.findall("circuit") if c.get("name") == "ErrorFlags")
@@ -234,32 +254,32 @@ def test_ap3_error_flag_feedback_is_clocked_not_combinational():
 
     for flag, register_y in zip(
         ("OVF", "DIV0", "ADDR", "INV", "ILL", "INPUT"),
-        (200, 270, 340, 410, 480, 550),
+        (240, 350, 460, 570, 680, 790),
     ):
         # Named tunnels carry Q back to HOLD without crossing the register's
         # reset terminal or the shared clock and write-enable buses.
         assert tunnels[f"CURRENT_{flag}"] == {
-            f"(480,{register_y})",
-            f"(200,{register_y + 10})",
+            f"(740,{register_y})",
+            f"(300,{register_y + 20})",
         }
-        assert (f"(460,{register_y})", f"(480,{register_y})") in wires
-        assert (f"(200,{register_y + 10})", f"(220,{register_y + 10})") in wires
-        assert (f"(460,{register_y})", f"(460,{register_y + 50})") not in wires
+        assert (f"(710,{register_y})", f"(740,{register_y})") in wires
+        assert (f"(300,{register_y + 20})", f"(370,{register_y + 20})") in wires
+        assert (f"(710,{register_y})", f"(710,{register_y + 50})") not in wires
         assert (
-            f"(190,{register_y + 30})",
-            f"(220,{register_y + 30})",
+            f"(280,{register_y + 40})",
+            f"(370,{register_y + 40})",
         ) in wires
 
         # The OR result enters D and CLK reaches the clock terminal.  The only
         # feedback consequently crosses the register before returning to HOLD.
-        assert (f"(330,{register_y})", f"(400,{register_y})") in wires
-        clock_target = f"(400,{register_y + 40})"
+        assert (f"(540,{register_y})", f"(650,{register_y})") in wires
+        clock_target = f"(650,{register_y + 40})"
         graph = {}
         for start, end in wires:
             graph.setdefault(start, set()).add(end)
             graph.setdefault(end, set()).add(start)
-        reachable = {"(80,140)"}
-        pending = ["(80,140)"]
+        reachable = {"(100,160)"}
+        pending = ["(100,160)"]
         while pending:
             for endpoint in graph.get(pending.pop(), ()):
                 if endpoint not in reachable:

@@ -11,7 +11,7 @@
       "ACC_VALID": 1
     },
     "AddressPath": {
-      "AR": 12,
+      "AR": 16,
       "AR_VALID": 1
     },
     "ErrorFlags": {
@@ -23,7 +23,7 @@
       "INPUT": 1
     },
     "FetchDecode": {
-      "PC": 12
+      "PC": 16
     }
   },
   "rams": {

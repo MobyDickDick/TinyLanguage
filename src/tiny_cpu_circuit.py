@@ -52,6 +52,8 @@ def _wire_overlap(first: ET.Element, second: ET.Element) -> bool:
     first_to = _location(first.get("to", ""))
     second_from = _location(second.get("from", ""))
     second_to = _location(second.get("to", ""))
+    if {first_from, first_to} & {second_from, second_to}:
+        return False
     if first_from[1] == first_to[1] == second_from[1] == second_to[1]:
         first_span = sorted((first_from[0], first_to[0]))
         second_span = sorted((second_from[0], second_to[0]))

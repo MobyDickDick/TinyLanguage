@@ -444,6 +444,22 @@ def test_fetch_decode_control_outputs_remain_separate_nets():
         assert peers == {label}
 
 
+def test_fetch_decode_does_not_route_one_bit_controls_to_mux_data_lanes():
+    """Avoid Logisim width conflicts from stale branch-control stubs."""
+
+    root = ET.parse(PROJECT).getroot()
+    fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
+    wires = {
+        frozenset((wire.get("from"), wire.get("to"))) for wire in fetch.findall("wire")
+    }
+
+    assert frozenset(("(1020,210)", "(760,210)")) not in wires
+    assert frozenset(("(1040,240)", "(760,240)")) not in wires
+    assert frozenset(("(1060,270)", "(760,270)")) not in wires
+    assert frozenset(("(1080,310)", "(760,310)")) not in wires
+    assert frozenset(("(665,350)", "(760,350)")) not in wires
+
+
 def test_ap5_rom_contains_the_countdown_fixture():
     root = ET.parse(PROJECT).getroot()
     fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")

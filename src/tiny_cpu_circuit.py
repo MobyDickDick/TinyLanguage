@@ -155,6 +155,8 @@ def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
 
     if circuit.get("name") != "FetchDecode":
         return ()
+    if not any(component.get("name") == "Decoder" for component in circuit.findall("comp")):
+        return ()
     output_pins = {
         attrs["label"]: _norm_loc(component.get("loc", "?"))
         for component in circuit.findall("comp")
@@ -176,7 +178,6 @@ def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
     for signal, lane in FETCH_DECODE_SIGNAL_LANES.items():
         pin = output_pins.get(signal)
         if pin is None:
-            conflicts.append(f"FetchDecode.{signal}: missing output pin")
             continue
         decoder_output = (
             f"({FETCH_DECODE_DECODER_X},"

@@ -84,12 +84,12 @@
       <a name="appearance" val="classic"/>
       <a name="label" val="DEC_HALT_ERROR"/>
     </comp>
-    <comp lib="0" loc="(780,340)" name="Pin">
+    <comp lib="0" loc="(820,460)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="INSTRUCTION"/>
+      <a name="label" val="OPCODE"/>
       <a name="type" val="output"/>
-      <a name="width" val="24"/>
+      <a name="width" val="22"/>
     </comp>
     <comp lib="0" loc="(860,130)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -123,11 +123,10 @@
     <comp lib="5" loc="(510,400)" name="ROM">
       <a name="addrWidth" val="12"/>
       <a name="appearance" val="logisim_evolution"/>
-      <a name="contents">addr/data: 12 24
-ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
-2c0000
+      <a name="contents">addr/data: 12 22
+3fffff 65 3 64 0 65 64 4
 </a>
-      <a name="dataWidth" val="24"/>
+      <a name="dataWidth" val="22"/>
       <a name="label" val="INSTRUCTION_ROM"/>
     </comp>
     <comp lib="9" loc="(60,40)" name="Text">
@@ -159,10 +158,8 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(720,110)" to="(770,110)"/>
     <wire from="(720,150)" to="(770,150)"/>
     <wire from="(730,230)" to="(770,230)"/>
-    <wire from="(750,460)" to="(770,460)"/>
+    <wire from="(750,460)" to="(820,460)"/>
     <wire from="(770,110)" to="(770,120)"/>
-    <wire from="(770,340)" to="(770,460)"/>
-    <wire from="(770,340)" to="(780,340)"/>
     <wire from="(80,160)" to="(80,170)"/>
     <wire from="(80,170)" to="(250,170)"/>
     <wire from="(80,190)" to="(280,190)"/>

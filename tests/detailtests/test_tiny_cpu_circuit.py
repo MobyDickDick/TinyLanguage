@@ -118,6 +118,26 @@ def test_inspector_rejects_fetch_decode_pins_on_wrong_decoder_lanes(tmp_path):
     )
 
 
+def test_inspector_rejects_fetch_decode_pins_with_only_a_dangling_stub(tmp_path):
+    project = tmp_path / "dangling-fetch-lane.circ"
+    project.write_text(
+        PROJECT.read_text(encoding="utf-8").replace(
+            '<wire from="(610,1490)" to="(1000,1490)"/>',
+            '<wire from="(1000,1490)" to="(1020,1490)"/>',
+        ),
+        encoding="utf-8",
+    )
+
+    report = next(
+        item for item in inspect_project(project) if item.name == "FetchDecode"
+    )
+    assert not report.connected
+    assert report.routing_conflicts == (
+        "FetchDecode.SET_INPUT: output pin (1000,1490) is not wired to "
+        "decoder lane 53 at (610,1490)",
+    )
+
+
 def test_top_level_subcircuits_have_exclusive_routing_lanes():
     report = next(item for item in inspect_project(PROJECT) if item.name == "TinyCPU")
 

@@ -248,7 +248,10 @@ the shared clock, reset, data/control paths, output, and halt state.
 
 The repository includes a dependency-free `.circ` netlist inspector. It parses
 the XML, lists circuits and components, and returns a failing exit status when
-sheets contain no wires or components have no wire at their anchor:
+sheets contain no wires or components have no wire at their anchor. For
+`FetchDecode`, the inspector also checks that each exported symbolic control is
+wired to its exact six-bit decoder lane; this catches dangling output-pin stubs
+or off-by-one-grid wires that would otherwise look connected from the pin alone:
 
 ```bash
 PYTHONPATH=src python src/tiny_cpu_circuit.py hardware/logisim/TinyCPU.circ

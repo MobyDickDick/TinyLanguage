@@ -51,6 +51,24 @@
       <a name="label" val="DATA_IN"/>
       <a name="width" val="16"/>
     </comp>
+    <comp lib="0" loc="(220,120)" name="Splitter">
+      <a name="bit1" val="0"/>
+      <a name="bit10" val="0"/>
+      <a name="bit11" val="0"/>
+      <a name="bit12" val="1"/>
+      <a name="bit13" val="1"/>
+      <a name="bit14" val="1"/>
+      <a name="bit15" val="1"/>
+      <a name="bit2" val="0"/>
+      <a name="bit3" val="0"/>
+      <a name="bit4" val="0"/>
+      <a name="bit5" val="0"/>
+      <a name="bit6" val="0"/>
+      <a name="bit7" val="0"/>
+      <a name="bit8" val="0"/>
+      <a name="bit9" val="0"/>
+      <a name="incoming" val="16"/>
+    </comp>
     <comp lib="0" loc="(320,170)" name="Constant"/>
     <comp lib="0" loc="(330,290)" name="Constant"/>
     <comp lib="0" loc="(600,210)" name="Pin">
@@ -81,7 +99,7 @@
     <comp lib="9" loc="(295,60)" name="Text">
       <a name="text" val="4096-word value/valid memory with shared address, write-enable, and clock"/>
     </comp>
-    <wire from="(190,120)" to="(260,120)"/>
+    <wire from="(190,120)" to="(220,120)"/>
     <wire from="(190,160)" to="(230,160)"/>
     <wire from="(190,190)" to="(210,190)"/>
     <wire from="(190,220)" to="(200,220)"/>
@@ -93,8 +111,9 @@
     <wire from="(230,160)" to="(230,250)"/>
     <wire from="(230,160)" to="(340,160)"/>
     <wire from="(230,250)" to="(330,250)"/>
-    <wire from="(260,120)" to="(260,240)"/>
-    <wire from="(260,120)" to="(340,120)"/>
+    <wire from="(240,100)" to="(260,100)"/>
+    <wire from="(260,100)" to="(260,240)"/>
+    <wire from="(260,100)" to="(340,100)"/>
     <wire from="(260,240)" to="(340,240)"/>
     <wire from="(280,180)" to="(280,300)"/>
     <wire from="(280,180)" to="(340,180)"/>
@@ -103,6 +122,7 @@
     <wire from="(330,250)" to="(330,280)"/>
     <wire from="(330,280)" to="(340,280)"/>
     <wire from="(330,290)" to="(340,290)"/>
+    <wire from="(340,100)" to="(340,120)"/>
     <wire from="(340,210)" to="(360,210)"/>
     <wire from="(580,210)" to="(600,210)"/>
     <wire from="(580,320)" to="(600,320)"/>

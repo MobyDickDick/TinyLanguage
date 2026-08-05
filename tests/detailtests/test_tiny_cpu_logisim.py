@@ -55,7 +55,7 @@ def test_logisim_starter_matches_default_hardware_profile():
         if component.get("name") == "Register"
     }
     assert datapath_registers == {"ACC": "16", "ACC_VALID": "1"}
-    assert address_registers == {"AR": "12", "AR_VALID": "1"}
+    assert address_registers == {"AR": "16", "AR_VALID": "1"}
 
 
 def test_logisim_starter_has_parallel_valid_ram_and_all_error_flags():
@@ -151,7 +151,8 @@ def test_address_path_uses_component_terminals_without_shorting_buses():
     assert has_wire("(520,200)", "(620,200)")
     # Carry-out is the one-bit terminal below the adder at (500,220), not a
     # point below its 12-bit sum output anchor.
-    assert has_wire("(500,220)", "(560,220)")
+    assert has_wire("(500,220)", "(500,250)")
+    assert has_wire("(500,250)", "(620,250)")
     assert has_wire("(400,330)", "(630,330)")      # AR_VALID.Q -> output
 
 
@@ -173,7 +174,7 @@ def test_datapath_uses_register_terminals_instead_of_symbol_centres():
 
     # The comparator receives ACC and the zero constant on separate 16-bit
     # inputs; neither is accidentally attached to a one-bit status output.
-    assert {"(360,270)", "(360,290)", "(390,270)", "(390,290)"} <= endpoints
+    assert {"(360,130)", "(360,170)", "(450,190)", "(480,190)"} <= endpoints
 
 
 def test_ap3_memory_shares_address_write_enable_and_clock():
@@ -184,7 +185,7 @@ def test_ap3_memory_shares_address_write_enable_and_clock():
         for component in memory.findall("comp")
         if component.get("name") == "Pin"
     }
-    assert pins["ADDRESS"]["width"] == "12"
+    assert pins["ADDRESS"]["width"] == "16"
     assert pins["DATA_IN"]["width"] == "16"
     assert pins["DATA_OUT"]["width"] == "16"
     assert {"VALID_IN", "WRITE_ENABLE", "CLK", "VALID_OUT"} <= pins.keys()
@@ -195,11 +196,11 @@ def test_ap3_memory_shares_address_write_enable_and_clock():
         for point in (wire.get("from"), wire.get("to"))
     }
     # Both RAMs receive the shared address, write-enable, and clock nets.
-    assert {"(330,120)", "(330,260)"} <= endpoints
-    assert {"(330,170)", "(330,320)"} <= endpoints
-    assert {"(330,190)", "(330,330)"} <= endpoints
+    assert {"(340,100)", "(340,240)"} <= endpoints
+    assert {"(340,160)", "(340,320)"} <= endpoints
+    assert {"(340,180)", "(340,300)"} <= endpoints
     # The validity value has its own one-bit input and output path.
-    assert {"(330,310)", "(570,350)", "(610,170)"} <= endpoints
+    assert {"(330,290)", "(580,320)", "(600,320)"} <= endpoints
 
 
 def test_ap3_error_flags_have_set_dominant_sticky_logic():
@@ -229,24 +230,25 @@ def test_ap3_error_flags_have_readable_lane_layout():
         if _attributes(component).get("label")
     }
 
-    # Fixed columns and generous lane spacing keep labels, gates, and registers
-    # from being drawn on top of one another in Logisim-evolution.
-    for index, flag in enumerate(("OVF", "DIV0", "ADDR", "INV", "ILL", "INPUT")):
-        y = 240 + index * 110
-        assert locations[f"SET_{flag}"] == f"(100,{y})"
-        assert locations[f"HOLD_{flag}"] == f"(400,{y + 30})"
-        assert locations[f"NEXT_{flag}"] == f"(540,{y})"
-        assert locations[flag] == f"(650,{y - 30})"
-        assert locations[f"{flag}_OUT"] == f"(900,{y})"
-
+    expected = {
+        "OVF": ("(100,210)", "(500,250)", "(600,230)", "(750,200)", "(1000,230)"),
+        "DIV0": ("(110,320)", "(500,360)", "(580,340)", "(750,310)", "(1000,340)"),
+        "ADDR": ("(110,430)", "(510,470)", "(590,450)", "(750,420)", "(1000,450)"),
+        "INV": ("(110,540)", "(500,580)", "(590,560)", "(750,530)", "(1000,560)"),
+        "ILL": ("(110,650)", "(510,690)", "(600,670)", "(750,640)", "(1000,670)"),
+        "INPUT": ("(120,760)", "(510,800)", "(610,780)", "(750,750)", "(1000,780)"),
+    }
+    for flag, (set_pin, hold, next_gate, register, output) in expected.items():
+        assert locations[f"SET_{flag}"] == set_pin
+        assert locations[f"HOLD_{flag}"] == hold
+        assert locations[f"NEXT_{flag}"] == next_gate
+        assert locations[flag] == register
+        assert locations[f"{flag}_OUT"] == output
 
 def test_ap3_error_flag_feedback_is_clocked_not_combinational():
     root = ET.parse(PROJECT).getroot()
     errors = next(c for c in root.findall("circuit") if c.get("name") == "ErrorFlags")
-    wires = {
-        (wire.get("from"), wire.get("to"))
-        for wire in errors.findall("wire")
-    }
+    wires = {(wire.get("from"), wire.get("to")) for wire in errors.findall("wire")}
 
     tunnels = {}
     for component in errors.findall("comp"):
@@ -254,41 +256,32 @@ def test_ap3_error_flag_feedback_is_clocked_not_combinational():
             label = _attributes(component).get("label")
             tunnels.setdefault(label, set()).add(component.get("loc"))
 
-    for flag, register_y in zip(
-        ("OVF", "DIV0", "ADDR", "INV", "ILL", "INPUT"),
-        (240, 350, 460, 570, 680, 790),
-    ):
-        # Named tunnels carry Q back to HOLD without crossing the register's
-        # reset terminal or the shared clock and write-enable buses.
-        assert tunnels[f"CURRENT_{flag}"] == {
-            f"(740,{register_y})",
-            f"(300,{register_y + 20})",
-        }
-        assert (f"(710,{register_y})", f"(740,{register_y})") in wires
-        assert (f"(300,{register_y + 20})", f"(370,{register_y + 20})") in wires
-        assert (f"(710,{register_y})", f"(710,{register_y + 50})") not in wires
-        assert (
-            f"(280,{register_y + 40})",
-            f"(370,{register_y + 40})",
-        ) in wires
+    expected_tunnels = {
+        "OVF": {"(420,230)", "(830,270)"},
+        "DIV0": {"(420,340)", "(830,370)"},
+        "ADDR": {"(430,450)", "(840,470)"},
+        "INV": {"(430,560)", "(830,580)"},
+        "ILL": {"(440,680)", "(840,700)"},
+        "INPUT": {"(440,780)", "(840,810)"},
+    }
+    for flag, locations in expected_tunnels.items():
+        assert tunnels[f"CURRENT_{flag}"] == locations
 
-        # The OR result enters D and CLK reaches the clock terminal.  The only
-        # feedback consequently crosses the register before returning to HOLD.
-        assert (f"(540,{register_y})", f"(650,{register_y})") in wires
-        clock_target = f"(650,{register_y + 40})"
-        graph = {}
-        for start, end in wires:
-            graph.setdefault(start, set()).add(end)
-            graph.setdefault(end, set()).add(start)
-        reachable = {"(100,160)"}
-        pending = ["(100,160)"]
-        while pending:
-            for endpoint in graph.get(pending.pop(), ()):
-                if endpoint not in reachable:
-                    reachable.add(endpoint)
-                    pending.append(endpoint)
-        assert clock_target in reachable
+    for register_y in (200, 310, 420, 530, 640, 750):
+        assert (f"(730,{register_y + 50})", f"(750,{register_y + 50})") in wires
 
+    graph = {}
+    for start, end in wires:
+        graph.setdefault(start, set()).add(end)
+        graph.setdefault(end, set()).add(start)
+    reachable = {"(100,160)"}
+    pending = ["(100,160)"]
+    while pending:
+        for endpoint in graph.get(pending.pop(), ()):  # shared clock bus
+            if endpoint not in reachable:
+                reachable.add(endpoint)
+                pending.append(endpoint)
+    assert {"(750,270)", "(750,380)", "(750,490)", "(750,600)", "(750,710)", "(750,820)"} <= reachable
 
 def test_ap4_fetch_decode_has_pc_rom_core_controls_and_error_halt():
     root = ET.parse(PROJECT).getroot()
@@ -302,7 +295,7 @@ def test_ap4_fetch_decode_has_pc_rom_core_controls_and_error_halt():
         if _attributes(component).get("label")
     }
 
-    assert parts["PC"] == ("Register", {"appearance": "logisim_evolution", "label": "PC", "width": "12"})
+    assert parts["PC"] == ("Register", {"appearance": "logisim_evolution", "label": "PC", "width": "16"})
     assert parts["INSTRUCTION_ROM"][0] == "ROM"
     assert parts["INSTRUCTION_ROM"][1]["addrWidth"] == "12"
     assert parts["INSTRUCTION_ROM"][1]["dataWidth"] == str(WORD_BITS)

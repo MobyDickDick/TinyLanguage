@@ -593,11 +593,11 @@ def test_fetch_decode_outputs_are_on_decoder_output_lanes():
         wire_neighbors.setdefault(start, set()).add(end)
         wire_neighbors.setdefault(end, set()).add(start)
 
-    # Logisim's 6-bit decoder draws output 0 at y=430 and then uses a 20 px
+    # Logisim's 6-bit decoder draws output 0 at (600,430) and then uses a 20 px
     # pitch. A line can still make the exported pin appear connected while
     # missing the decoder output by half a grid cell; SET_INPUT used to do that.
     for signal, opcode in OPCODES.items():
-        decoder_output = f"(610,{430 + 20 * opcode})"
+        decoder_output = f"(600,{430 + 20 * opcode})"
         pending = [decoder_output]
         seen = {decoder_output}
         while pending and output_pins[signal] not in seen:
@@ -617,7 +617,7 @@ def test_fetch_decode_outputs_are_on_decoder_output_lanes():
         "SET_INPUT": 53,
     }
     for signal, opcode in error_opcode_lanes.items():
-        decoder_output = f"(610,{430 + 20 * opcode})"
+        decoder_output = f"(600,{430 + 20 * opcode})"
         pending = [decoder_output]
         seen = {decoder_output}
         while pending and output_pins[signal] not in seen:
@@ -640,7 +640,7 @@ def test_set_input_decode_lane_wires_directly_without_dangling_tunnel():
     wires = {frozenset((wire.get("from"), wire.get("to"))) for wire in fetch.findall("wire")}
 
     assert "SET_INPUT_DECODE" not in tunnels
-    assert frozenset(("(610,1490)", "(1000,1490)")) in wires
+    assert frozenset(("(600,1490)", "(1000,1490)")) in wires
 
 
 def test_fetch_decode_diagnostic_wires_set_input_directly_without_tunnel():
@@ -649,7 +649,7 @@ def test_fetch_decode_diagnostic_wires_set_input_directly_without_tunnel():
     fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
     wires = {frozenset((wire.get("from"), wire.get("to"))) for wire in fetch.findall("wire")}
 
-    assert frozenset(("(610,1490)", "(1000,1490)")) in wires
+    assert frozenset(("(600,1490)", "(1000,1490)")) in wires
     assert "SET_INPUT_DECODE" not in {
         _attributes(component).get("label")
         for component in fetch.findall("comp")

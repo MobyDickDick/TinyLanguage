@@ -17,7 +17,6 @@ from tiny_cpu_machine import (
 )
 from tiny_cpu_verify import VerificationError, verify_checkout
 
-
 PROJECT = Path(__file__).parents[2] / "hardware" / "logisim" / "TinyCPU.circ"
 HARDWARE = PROJECT.parent
 CI_WORKFLOW = Path(__file__).parents[2] / ".github" / "workflows" / "ci.yml"
@@ -41,7 +40,12 @@ def test_logisim_starter_matches_default_hardware_profile():
 
     assert root.find("main").get("name") == "TinyCPU"
     assert {
-        "TinyCPU", "FetchDecode", "Datapath", "AddressPath", "Memory", "ErrorFlags"
+        "TinyCPU",
+        "FetchDecode",
+        "Datapath",
+        "AddressPath",
+        "Memory",
+        "ErrorFlags",
     } <= circuits.keys()
 
     datapath_registers = {
@@ -132,16 +136,16 @@ def test_address_path_uses_component_terminals_without_shorting_buses():
     # With the logisim_evolution appearance, a register's ``loc`` is the
     # symbol's top-left corner, not a terminal.  D/Q are 30 px below it, WE is
     # 50 px below it and CLK is 70 px below it; Q is 60 px to the right.
-    assert has_wire("(240,150)", "(340,150)")      # ADDRESS_IN -> AR.D
-    assert has_wire("(280,170)", "(340,170)")      # AR_LOAD -> AR.WE
-    assert has_wire("(320,190)", "(340,190)")      # CLK -> AR clock
-    assert has_wire("(190,330)", "(340,330)")      # VALID_IN -> AR_VALID.D
-    assert has_wire("(280,350)", "(340,350)")      # AR_LOAD -> AR_VALID.WE
-    assert has_wire("(320,370)", "(340,370)")      # CLK -> AR_VALID clock
+    assert has_wire("(240,150)", "(340,150)")  # ADDRESS_IN -> AR.D
+    assert has_wire("(280,170)", "(340,170)")  # AR_LOAD -> AR.WE
+    assert has_wire("(320,190)", "(340,190)")  # CLK -> AR clock
+    assert has_wire("(190,330)", "(340,330)")  # VALID_IN -> AR_VALID.D
+    assert has_wire("(280,350)", "(340,350)")  # AR_LOAD -> AR_VALID.WE
+    assert has_wire("(320,370)", "(340,370)")  # CLK -> AR_VALID clock
 
     # The address register output and OFFSET terminate at the adder's distinct
     # A and B pins. Neither input bus shares a segment with the other.
-    assert has_wire("(400,150)", "(420,150)")      # AR.Q -> address net
+    assert has_wire("(400,150)", "(420,150)")  # AR.Q -> address net
     assert has_wire("(420,190)", "(480,190)")
     # OFFSET detours around AR's one-bit reset terminal at (370,210); a
     # straight bus here makes Logisim report incompatible 12/1-bit widths.
@@ -153,7 +157,7 @@ def test_address_path_uses_component_terminals_without_shorting_buses():
     # point below its 12-bit sum output anchor.
     assert has_wire("(500,220)", "(500,250)")
     assert has_wire("(500,250)", "(620,250)")
-    assert has_wire("(400,330)", "(630,330)")      # AR_VALID.Q -> output
+    assert has_wire("(400,330)", "(630,330)")  # AR_VALID.Q -> output
 
 
 def test_datapath_uses_register_terminals_instead_of_symbol_centres():
@@ -245,6 +249,7 @@ def test_ap3_error_flags_have_readable_lane_layout():
         assert locations[flag] == register
         assert locations[f"{flag}_OUT"] == output
 
+
 def test_ap3_error_flag_feedback_is_clocked_not_combinational():
     root = ET.parse(PROJECT).getroot()
     errors = next(c for c in root.findall("circuit") if c.get("name") == "ErrorFlags")
@@ -281,7 +286,15 @@ def test_ap3_error_flag_feedback_is_clocked_not_combinational():
             if endpoint not in reachable:
                 reachable.add(endpoint)
                 pending.append(endpoint)
-    assert {"(750,270)", "(750,380)", "(750,490)", "(750,600)", "(750,710)", "(750,820)"} <= reachable
+    assert {
+        "(750,270)",
+        "(750,380)",
+        "(750,490)",
+        "(750,600)",
+        "(750,710)",
+        "(750,820)",
+    } <= reachable
+
 
 def test_ap4_fetch_decode_has_pc_rom_core_controls_and_error_halt():
     root = ET.parse(PROJECT).getroot()
@@ -295,7 +308,10 @@ def test_ap4_fetch_decode_has_pc_rom_core_controls_and_error_halt():
         if _attributes(component).get("label")
     }
 
-    assert parts["PC"] == ("Register", {"appearance": "logisim_evolution", "label": "PC", "width": "16"})
+    assert parts["PC"] == (
+        "Register",
+        {"appearance": "logisim_evolution", "label": "PC", "width": "16"},
+    )
     assert parts["INSTRUCTION_ROM"][0] == "ROM"
     assert parts["INSTRUCTION_ROM"][1]["addrWidth"] == "12"
     assert parts["INSTRUCTION_ROM"][1]["dataWidth"] == str(WORD_BITS)
@@ -305,8 +321,14 @@ def test_ap4_fetch_decode_has_pc_rom_core_controls_and_error_halt():
     assert parts["PC_RANGE"][0] == "Comparator"
     assert parts["JNZ_TAKEN"][0] == "AND Gate"
     controls = {
-        "LOAD_CONST", "STORE_ADDRESS", "ADD_ADDRESS", "JUMP_NOT_ZERO",
-        "PRINT", "HALT", "SET_ADDR", "HALT_ERROR",
+        "LOAD_CONST",
+        "STORE_ADDRESS",
+        "ADD_ADDRESS",
+        "JUMP_NOT_ZERO",
+        "PRINT",
+        "HALT",
+        "SET_ADDR",
+        "HALT_ERROR",
     }
     assert controls <= parts.keys()
 
@@ -315,7 +337,10 @@ def test_ap6_fetch_decode_exposes_every_symbolic_isa_control():
     root = ET.parse(PROJECT).getroot()
     fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
     parts = {
-        _attributes(component).get("label"): (component.get("name"), _attributes(component))
+        _attributes(component).get("label"): (
+            component.get("name"),
+            _attributes(component),
+        )
         for component in fetch.findall("comp")
         if _attributes(component).get("label")
     }
@@ -324,9 +349,99 @@ def test_ap6_fetch_decode_exposes_every_symbolic_isa_control():
     assert set(INSTRUCTION_SET) <= parts.keys()
     assert {"ZERO", "NEGATIVE", "ERROR"} <= parts.keys()
     error_outputs = {
-        "SET_OVF", "SET_DIV0", "SET_ADDR", "SET_INV", "SET_ILL", "SET_INPUT"
+        "SET_OVF",
+        "SET_DIV0",
+        "SET_ADDR",
+        "SET_INV",
+        "SET_ILL",
+        "SET_INPUT",
     }
     assert error_outputs <= parts.keys()
+
+
+def test_fetch_decode_keeps_instruction_bus_widths_explicit():
+    """Document the 16/12/22-bit boundaries with real wiring checks."""
+
+    root = ET.parse(PROJECT).getroot()
+    fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
+    parts = {
+        _attributes(component).get("label"): (
+            component.get("name"),
+            _attributes(component),
+            component.get("loc"),
+        )
+        for component in fetch.findall("comp")
+        if _attributes(component).get("label")
+    }
+    wires = {
+        frozenset((wire.get("from"), wire.get("to"))) for wire in fetch.findall("wire")
+    }
+
+    def has_wire(first, second):
+        return frozenset((first, second)) in wires
+
+    assert parts["PC"][1]["width"] == "16"
+    assert parts["PC_ADDRESS"] == (
+        "Splitter",
+        {
+            "label": "PC_ADDRESS",
+            "bit1": "0",
+            "bit10": "0",
+            "bit11": "0",
+            "bit12": "1",
+            "bit13": "1",
+            "bit14": "1",
+            "bit15": "1",
+            "bit2": "0",
+            "bit3": "0",
+            "bit4": "0",
+            "bit5": "0",
+            "bit6": "0",
+            "bit7": "0",
+            "bit8": "0",
+            "bit9": "0",
+            "incoming": "16",
+        },
+        "(350,130)",
+    )
+    assert parts["INSTRUCTION_FIELDS"][1]["incoming"] == str(WORD_BITS)
+    assert parts["OPERAND"][1]["width"] == "16"
+    assert parts["ISA_DECODER"][1]["select"] == "6"
+
+    # PC is a 16-bit register, but the ROM address port is 12-bit.  Route via
+    # the labelled splitter instead of relying on a 16-to-12 implicit join.
+    assert has_wire("(300,110)", "(350,110)")
+    assert has_wire("(350,110)", "(350,130)")
+    assert has_wire("(370,110)", "(390,110)")
+    assert not has_wire("(300,110)", "(390,110)")
+
+
+def test_fetch_decode_control_outputs_remain_separate_nets():
+    root = ET.parse(PROJECT).getroot()
+    fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
+    output_pins = {
+        component.get("loc"): _attributes(component).get("label")
+        for component in fetch.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("type") == "output"
+    }
+    graph = {}
+    for wire in fetch.findall("wire"):
+        start, end = wire.get("from"), wire.get("to")
+        graph.setdefault(start, set()).add(end)
+        graph.setdefault(end, set()).add(start)
+
+    for location, label in output_pins.items():
+        reachable = {location}
+        pending = [location]
+        while pending:
+            current = pending.pop()
+            for neighbor in graph.get(current, ()):
+                if neighbor not in reachable:
+                    reachable.add(neighbor)
+                    pending.append(neighbor)
+        peers = {output_pins[point] for point in reachable if point in output_pins}
+        assert peers == {label}
 
 
 def test_ap5_rom_contains_the_countdown_fixture():
@@ -344,8 +459,15 @@ def test_ap5_rom_contains_the_countdown_fixture():
     contents = (contents_element.text or "").strip().splitlines()
     assert contents[0] == "addr/data: 12 22"
     assert " ".join(contents[1:]).split() == [
-        "00ffff", "1c0065", "000003", "1c0064", "2a0000",
-        "050065", "1c0064", "240004", "2c0000",
+        "00ffff",
+        "1c0065",
+        "000003",
+        "1c0064",
+        "2a0000",
+        "050065",
+        "1c0064",
+        "240004",
+        "2c0000",
     ]
 
 
@@ -372,7 +494,11 @@ def test_ap7_encoder_generated_rom_is_loaded_in_logisim():
 
     root = ET.parse(PROJECT).getroot()
     fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
-    rom = next(c for c in fetch.findall("comp") if _attributes(c).get("label") == "INSTRUCTION_ROM")
+    rom = next(
+        c
+        for c in fetch.findall("comp")
+        if _attributes(c).get("label") == "INSTRUCTION_ROM"
+    )
     embedded = next(a for a in rom.findall("a") if a.get("name") == "contents").text
     embedded_lines = embedded.strip().splitlines()
     generated_lines = generated.strip().splitlines()

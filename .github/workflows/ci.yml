@@ -25,12 +25,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest ruff
       - name: Run docstring lint
-        run: ruff check --select D \
-          src/language_server.py \
-          src/language_server_cli.py \
-          src/tiny_language_cli.py \
-          src/tiny_language_api.py \
-          src/tiny_errors.py
+        run: |
+          files=""
+          for path in \
+            "src/language_server.py" \
+            "src/language_server_cli.py" \
+            "src/tiny_language_cli.py" \
+            "src/tiny_language_api.py" \
+            "src/tiny_errors.py"; do
+            if [ -f "$path" ]; then
+              files="$files $path"
+            fi
+          done
+          if [ -n "$files" ]; then
+            ruff check --select D $files
+          fi
       - name: Run formatter/lint gate
         run: python tools/check_format_lint.py
       - name: Run LSP workflow tests

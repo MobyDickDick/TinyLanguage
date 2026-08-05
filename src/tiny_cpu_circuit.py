@@ -22,7 +22,7 @@ class CircuitError(ValueError):
 
 SUPPORTED_PROFILE_SCHEMA = 1
 SUBCIRCUIT_ANCHOR_CLEARANCE = 600
-FETCH_DECODE_DECODER_X = 610
+FETCH_DECODE_DECODER_X = 600
 FETCH_DECODE_DECODER_OUTPUT0_Y = 430
 FETCH_DECODE_DECODER_PITCH = 20
 FETCH_DECODE_SIGNAL_LANES = {
@@ -210,7 +210,7 @@ def _component_terminals(component: ET.Element) -> set[str]:
         select = int(attrs.get("select", "1"))
         outputs = min(1 << select, 64)
         terminals.add(f"({x},{y + 20})")  # select input bus
-        terminals.update(f"({x + 40},{y + 330 + 20 * lane})" for lane in range(outputs))
+        terminals.update(f"({x + 30},{y + 330 + 20 * lane})" for lane in range(outputs))
         return terminals
     if attrs.get("appearance") != "logisim_evolution":
         return terminals

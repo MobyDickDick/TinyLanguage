@@ -613,19 +613,33 @@ def test_fetch_decode_outputs_are_on_decoder_output_lanes():
         assert output_pins[signal] in seen
 
 
-def test_set_input_decode_lane_uses_named_tunnel_component():
+def test_set_input_decode_lane_wires_directly_without_dangling_tunnel():
     root = ET.parse(PROJECT).getroot()
     fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
-    tunnel = next(
-        component
+    tunnels = {
+        _attributes(component).get("label")
         for component in fetch.findall("comp")
         if component.get("name") == "Tunnel"
-        and _attributes(component).get("label") == "SET_INPUT_DECODE"
-    )
-    assert tunnel.get("loc") == "(800,1490)"
+    }
     wires = {frozenset((wire.get("from"), wire.get("to"))) for wire in fetch.findall("wire")}
-    assert frozenset(("(610,1490)", "(800,1490)")) in wires
-    assert frozenset(("(800,1490)", "(1000,1490)")) in wires
+
+    assert "SET_INPUT_DECODE" not in tunnels
+    assert frozenset(("(610,1490)", "(1000,1490)")) in wires
+
+
+def test_fetch_decode_diagnostic_wires_set_input_directly_without_tunnel():
+    diagnostic = HARDWARE / "diagnostics" / "TinyCPU-FetchDecode.circ"
+    root = ET.parse(diagnostic).getroot()
+    fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
+    wires = {frozenset((wire.get("from"), wire.get("to"))) for wire in fetch.findall("wire")}
+
+    assert frozenset(("(610,1490)", "(1000,1490)")) in wires
+    assert "SET_INPUT_DECODE" not in {
+        _attributes(component).get("label")
+        for component in fetch.findall("comp")
+        if component.get("name") == "Tunnel"
+    }
+
 
 @pytest.mark.parametrize(
     "signal",

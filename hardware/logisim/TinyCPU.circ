@@ -107,6 +107,7 @@
       <a name="type" val="output"/>
     </comp>
     <comp lib="3" loc="(520,180)" name="Comparator">
+      <a name="label" val="ACC_STATUS"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(270,100)" name="Register">
@@ -199,6 +200,7 @@
       <a name="type" val="output"/>
     </comp>
     <comp lib="3" loc="(520,200)" name="Adder">
+      <a name="label" val="OFFSET_ADDER"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(340,120)" name="Register">
@@ -718,7 +720,7 @@
       <a name="facing" val="west"/>
       <a name="label" val="PC_OUT"/>
       <a name="type" val="output"/>
-      <a name="width" val="12"/>
+      <a name="width" val="16"/>
     </comp>
     <comp loc="(760,160)" name="Pin" lib="0">
       <a name="appearance" val="classic"/>

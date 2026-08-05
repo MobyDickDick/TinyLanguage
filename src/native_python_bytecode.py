@@ -267,6 +267,36 @@ def _heap_error_record(message: str) -> Dict[str, Any]:
     return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": message}}
 
 
+def _field_get(obj: Any, field_name: Any) -> Any:
+    field = str(field_name)
+    if isinstance(obj, dict) and "__fields__" in obj:
+        current_class = str(obj.get("__tag__", ""))
+        fields_by_class = obj.get("__fields__", {})
+        if "." in field:
+            owner, field = field.split(".", 1)
+            class_fields = fields_by_class.get(owner, {})
+            if field in class_fields:
+                return class_fields[field]
+            raise RuntimeError(f"unknown field {field} for base class {owner}")
+        class_fields = fields_by_class.get(current_class, {})
+        if field in class_fields:
+            return class_fields[field]
+        matches = [class_fields for class_fields in fields_by_class.values() if field in class_fields]
+        if len(matches) == 1:
+            return matches[0][field]
+        if len(matches) > 1:
+            raise RuntimeError(f"ambiguous field {field} during access; please qualify with a base class name")
+        raise RuntimeError(f"unknown field {field} for class {current_class}")
+    if isinstance(obj, dict):
+        if field in obj:
+            return obj[field]
+        raise RuntimeError(f"unknown field {field}")
+    try:
+        return getattr(obj, field)
+    except AttributeError as error:
+        raise RuntimeError("field access on non-class value") from error
+
+
 def _heap_delete(pointer: Any) -> Dict[str, Any]:
     resolved = _resolve_ptr(pointer, "delete")
     if resolved is None:
@@ -407,6 +437,10 @@ def _execute(instrs: List, locals_: Dict[str, Any], globals_: Dict[str, Any]) ->
                 if len(args) != 3:
                     raise RuntimeError(f"heap_set expects 3 args, got {len(args)}")
                 stack.append(_heap_set(args[0], args[1], args[2]))
+            elif name == "__field_get":
+                if len(args) != 2:
+                    raise RuntimeError(f"__field_get expects 2 args, got {len(args)}")
+                stack.append(_field_get(args[0], args[1]))
             elif name == "delete":
                 if len(args) != 1:
                     raise RuntimeError(f"delete expects 1 arg, got {len(args)}")

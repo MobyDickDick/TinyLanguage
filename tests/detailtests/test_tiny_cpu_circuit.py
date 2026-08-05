@@ -365,3 +365,25 @@ def test_fetch_decode_split_diagnostic_is_standalone_and_connected():
     )
 
     assert report.connected, report
+
+
+def test_inspector_flags_duplicate_components_as_possible_overlaid_circuit(tmp_path):
+    project = tmp_path / "duplicate-components.circ"
+    project.write_text(
+        """<project><main name="main"/><circuit name="main">
+        <comp lib="0" loc="(10,10)" name="Pin"><a name="label" val="A"/></comp>
+        <comp lib="0" loc="(10,10)" name="Pin"><a name="label" val="A"/></comp>
+        <comp lib="0" loc="(40,10)" name="Pin"><a name="label" val="B"/></comp>
+        <wire from="(10,10)" to="(40,10)"/>
+        </circuit></project>""",
+        encoding="utf-8",
+    )
+
+    report = inspect_project(project)[0]
+
+    assert not report.connected
+    assert "multiple components share (10,10): A, A" in report.placement_conflicts
+    assert (
+        "possible overlaid circuit: 2 identical A components at (10,10)"
+        in report.placement_conflicts
+    )

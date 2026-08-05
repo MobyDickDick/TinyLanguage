@@ -314,3 +314,12 @@ def test_hardware_profile_requires_ap4_instruction_rom(tmp_path):
 
     violations = validate_hardware_contract(project, PROFILE)
     assert "FetchDecode: missing ROM INSTRUCTION_ROM" in violations
+
+def test_fetch_decode_split_diagnostics_are_standalone_and_connected():
+    diagnostics = Path(__file__).parents[2] / "hardware" / "logisim" / "diagnostics"
+    for suffix in ("1", "2", "3"):
+        project = diagnostics / f"TinyCPU-FetchDecode{suffix}.circ"
+        report = next(
+            item for item in inspect_project(project) if item.name == "FetchDecode"
+        )
+        assert report.connected, report

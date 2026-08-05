@@ -101,10 +101,8 @@ def test_inspector_rejects_fetch_decode_pins_on_wrong_decoder_lanes(tmp_path):
     project = tmp_path / "wrong-fetch-lane.circ"
     project.write_text(
         PROJECT.read_text(encoding="utf-8").replace(
-            '<wire from="(610,1490)" to="(800,1490)"/>'
-            '<wire from="(800,1490)" to="(1000,1490)"/>',
-            '<wire from="(610,1500)" to="(800,1500)"/>'
-            '<wire from="(800,1500)" to="(1000,1500)"/>'
+            '<wire from="(610,1490)" to="(1000,1490)"/>',
+            '<wire from="(610,1500)" to="(1000,1500)"/>'
             '<wire from="(1000,1500)" to="(1000,1490)"/>',
         ),
         encoding="utf-8",
@@ -124,8 +122,7 @@ def test_inspector_rejects_fetch_decode_pins_with_only_a_dangling_stub(tmp_path)
     project = tmp_path / "dangling-fetch-lane.circ"
     project.write_text(
         PROJECT.read_text(encoding="utf-8").replace(
-            '<wire from="(610,1490)" to="(800,1490)"/>'
-            '<wire from="(800,1490)" to="(1000,1490)"/>',
+            '<wire from="(610,1490)" to="(1000,1490)"/>',
             '<wire from="(1000,1490)" to="(1020,1490)"/>',
         ),
         encoding="utf-8",

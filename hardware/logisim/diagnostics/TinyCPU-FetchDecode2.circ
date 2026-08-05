@@ -16,7 +16,7 @@
   <lib desc="#TTL" name="7"/>
   <lib desc="#TCL" name="8"/>
   <lib desc="#Base" name="9"/>
-  <main name="FetchDecode"/>
+  <main name="FetchDecode2"/>
   <options>
     <a name="gateUndefined" val="ignore"/>
     <a name="simlimit" val="1000"/>
@@ -24,9 +24,9 @@
   </options>
   <mappings/>
   <toolbar/>
-  <circuit name="FetchDecode">
+  <circuit name="FetchDecode2">
     <a name="appearance" val="logisim_evolution"/>
-    <a name="circuit" val="FetchDecode"/>
+    <a name="circuit" val="FetchDecode2"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
     <comp lib="0" loc="(160,230)" name="Pin">
@@ -66,10 +66,19 @@
     <comp lib="9" loc="(60,40)" name="Text">
       <a name="text" val="FetchDecode part 2 keeps only processed control signals; direct pass-through pins are omitted."/>
     </comp>
-    <wire from="(160,230)" to="(340,230)"/>
-    <wire from="(160,250)" to="(340,250)"/>
-    <wire from="(160,310)" to="(340,310)"/>
-    <wire from="(160,330)" to="(340,330)"/>
+    <wire from="(160,230)" to="(330,230)"/>
+    <wire from="(160,250)" to="(330,250)"/>
+    <wire from="(160,310)" to="(320,310)"/>
+    <wire from="(160,330)" to="(320,330)"/>
+    <wire from="(320,300)" to="(320,310)"/>
+    <wire from="(320,300)" to="(340,300)"/>
+    <wire from="(320,330)" to="(320,340)"/>
+    <wire from="(320,340)" to="(340,340)"/>
+    <wire from="(330,220)" to="(330,230)"/>
+    <wire from="(330,220)" to="(340,220)"/>
+    <wire from="(330,250)" to="(330,260)"/>
+    <wire from="(330,260)" to="(340,260)"/>
+    <wire from="(340,220)" to="(340,230)"/>
     <wire from="(390,240)" to="(520,240)"/>
     <wire from="(390,320)" to="(520,320)"/>
   </circuit>

@@ -16,7 +16,7 @@
   <lib desc="#TTL" name="7"/>
   <lib desc="#TCL" name="8"/>
   <lib desc="#Base" name="9"/>
-  <main name="FetchDecode"/>
+  <main name="FetchDecode3"/>
   <options>
     <a name="gateUndefined" val="ignore"/>
     <a name="simlimit" val="1000"/>
@@ -24,9 +24,9 @@
   </options>
   <mappings/>
   <toolbar/>
-  <circuit name="FetchDecode">
+  <circuit name="FetchDecode3">
     <a name="appearance" val="logisim_evolution"/>
-    <a name="circuit" val="FetchDecode"/>
+    <a name="circuit" val="FetchDecode3"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
     <comp lib="0" loc="(1000,1010)" name="Pin">

@@ -555,6 +555,42 @@ def test_ap6_each_instruction_has_a_connected_decode_output(instruction):
     assert pin.get("loc") in endpoints
 
 
+
+def test_fetch_decode_outputs_are_on_decoder_output_lanes():
+    """Catch wires that merely touch output pins but miss the decoder ports."""
+
+    root = ET.parse(PROJECT).getroot()
+    fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
+    output_pins = {
+        _attributes(component).get("label"): component.get("loc")
+        for component in fetch.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("type") == "output"
+    }
+    wires = {
+        frozenset((wire.get("from"), wire.get("to")))
+        for wire in fetch.findall("wire")
+    }
+
+    # Logisim's 6-bit decoder draws output 0 at y=430 and then uses a 20 px
+    # pitch. A line can still make the exported pin appear connected while
+    # missing the decoder output by half a grid cell; SET_INPUT used to do that.
+    for signal, opcode in OPCODES.items():
+        decoder_output = f"(610,{430 + 20 * opcode})"
+        assert frozenset((decoder_output, output_pins[signal])) in wires
+
+    error_opcode_lanes = {
+        "SET_OVF": 48,
+        "SET_DIV0": 49,
+        "SET_ADDR": 50,
+        "SET_INV": 51,
+        "SET_ILL": 52,
+        "SET_INPUT": 53,
+    }
+    for signal, opcode in error_opcode_lanes.items():
+        decoder_output = f"(610,{430 + 20 * opcode})"
+        assert frozenset((decoder_output, output_pins[signal])) in wires
+
 @pytest.mark.parametrize(
     "signal",
     ("SET_OVF", "SET_DIV0", "SET_ADDR", "SET_INV", "SET_ILL", "SET_INPUT"),

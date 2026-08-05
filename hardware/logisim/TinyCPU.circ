@@ -51,8 +51,7 @@
     <wire from="(2100,100)" to="(2200,100)"/>
     <wire from="(2700,100)" to="(2800,100)"/>
     <wire from="(3200,100)" to="(3300,100)"/>
-    <wire from="(80,100)" to="(130,100)"/>
-    <wire from="(130,100)" to="(300,100)"/>
+    <wire from="(80,100)" to="(300,100)"/>
     <wire from="(900,100)" to="(1000,100)"/>
   </circuit>
   <circuit name="FetchDecode">
@@ -325,7 +324,6 @@
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(470,100)" name="Splitter">
-      <a name="label" val="INSTRUCTION_FIELDS"/>
       <a name="bit1" val="0"/>
       <a name="bit10" val="0"/>
       <a name="bit11" val="0"/>
@@ -443,19 +441,15 @@
       <a name="label" val="ERROR_HALT"/>
     </comp>
     <comp lib="2" loc="(250,340)" name="Multiplexer">
-      <a name="label" val="PC_SOURCE"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(570,100)" name="Decoder">
-      <a name="label" val="ISA_DECODER"/>
       <a name="select" val="6"/>
     </comp>
     <comp lib="3" loc="(250,280)" name="Adder">
-      <a name="label" val="PC_INCREMENT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(390,220)" name="Comparator">
-      <a name="label" val="PC_RANGE"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(250,100)" name="Register">
@@ -467,7 +461,8 @@
       <a name="addrWidth" val="12"/>
       <a name="appearance" val="logisim_evolution"/>
       <a name="contents">addr/data: 12 22
-00ffff 1c0065 000003 1c0064 2a0000 050065 1c0064 240004 2c0000
+ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
+2c0000
 </a>
       <a name="dataWidth" val="22"/>
       <a name="label" val="INSTRUCTION_ROM"/>
@@ -637,7 +632,6 @@
       <a name="type" val="output"/>
     </comp>
     <comp lib="3" loc="(520,180)" name="Comparator">
-      <a name="label" val="ACC_STATUS"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(270,100)" name="Register">
@@ -730,7 +724,6 @@
       <a name="type" val="output"/>
     </comp>
     <comp lib="3" loc="(520,200)" name="Adder">
-      <a name="label" val="OFFSET_ADDER"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(340,120)" name="Register">
@@ -798,6 +791,24 @@
       <a name="label" val="DATA_IN"/>
       <a name="width" val="16"/>
     </comp>
+    <comp lib="0" loc="(220,120)" name="Splitter">
+      <a name="bit1" val="0"/>
+      <a name="bit10" val="0"/>
+      <a name="bit11" val="0"/>
+      <a name="bit12" val="1"/>
+      <a name="bit13" val="1"/>
+      <a name="bit14" val="1"/>
+      <a name="bit15" val="1"/>
+      <a name="bit2" val="0"/>
+      <a name="bit3" val="0"/>
+      <a name="bit4" val="0"/>
+      <a name="bit5" val="0"/>
+      <a name="bit6" val="0"/>
+      <a name="bit7" val="0"/>
+      <a name="bit8" val="0"/>
+      <a name="bit9" val="0"/>
+      <a name="incoming" val="16"/>
+    </comp>
     <comp lib="0" loc="(320,170)" name="Constant"/>
     <comp lib="0" loc="(330,290)" name="Constant"/>
     <comp lib="0" loc="(600,210)" name="Pin">
@@ -828,7 +839,7 @@
     <comp lib="9" loc="(295,60)" name="Text">
       <a name="text" val="4096-word value/valid memory with shared address, write-enable, and clock"/>
     </comp>
-    <wire from="(190,120)" to="(260,120)"/>
+    <wire from="(190,120)" to="(220,120)"/>
     <wire from="(190,160)" to="(230,160)"/>
     <wire from="(190,190)" to="(210,190)"/>
     <wire from="(190,220)" to="(200,220)"/>
@@ -840,8 +851,9 @@
     <wire from="(230,160)" to="(230,250)"/>
     <wire from="(230,160)" to="(340,160)"/>
     <wire from="(230,250)" to="(330,250)"/>
-    <wire from="(260,120)" to="(260,240)"/>
-    <wire from="(260,120)" to="(340,120)"/>
+    <wire from="(240,100)" to="(260,100)"/>
+    <wire from="(260,100)" to="(260,240)"/>
+    <wire from="(260,100)" to="(340,100)"/>
     <wire from="(260,240)" to="(340,240)"/>
     <wire from="(280,180)" to="(280,300)"/>
     <wire from="(280,180)" to="(340,180)"/>
@@ -850,6 +862,7 @@
     <wire from="(330,250)" to="(330,280)"/>
     <wire from="(330,280)" to="(340,280)"/>
     <wire from="(330,290)" to="(340,290)"/>
+    <wire from="(340,100)" to="(340,120)"/>
     <wire from="(340,210)" to="(360,210)"/>
     <wire from="(580,210)" to="(600,210)"/>
     <wire from="(580,320)" to="(600,320)"/>

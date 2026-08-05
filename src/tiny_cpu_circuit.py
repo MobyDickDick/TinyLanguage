@@ -32,6 +32,7 @@ class CircuitReport:
     unconnected: tuple[str, ...]
     placement_conflicts: tuple[str, ...] = ()
     routing_conflicts: tuple[str, ...] = ()
+    width_conflicts: tuple[str, ...] = ()
 
     @property
     def connected(self) -> bool:
@@ -40,6 +41,7 @@ class CircuitReport:
             and not self.unconnected
             and not self.placement_conflicts
             and not self.routing_conflicts
+            and not self.width_conflicts
         )
 
 
@@ -61,6 +63,60 @@ def _wire_overlap(first: ET.Element, second: ET.Element) -> bool:
     return max(first_span[0], second_span[0]) < min(first_span[1], second_span[1])
 
 
+def _norm_loc(value: str) -> str:
+    """Normalize Logisim coordinate strings for stable comparisons."""
+
+    x, y = _location(value)
+    return f"({x},{y})"
+
+
+def _point_on_wire(point: str, wire: ET.Element) -> bool:
+    """Return whether *point* lies on a horizontal or vertical wire segment."""
+
+    px, py = _location(point)
+    start = _location(wire.get("from", ""))
+    end = _location(wire.get("to", ""))
+    if start[0] == end[0] == px:
+        low, high = sorted((start[1], end[1]))
+        return low <= py <= high
+    if start[1] == end[1] == py:
+        low, high = sorted((start[0], end[0]))
+        return low <= px <= high
+    return False
+
+
+def _component_terminals(component: ET.Element) -> set[str]:
+    """Return conservative Logisim-evolution terminal coordinates."""
+
+    location = _norm_loc(component.get("loc", "?"))
+    terminals = {location}
+    x, y = _location(location)
+    attrs = _attributes(component)
+    if attrs.get("appearance") != "logisim_evolution":
+        return terminals
+    if component.get("name") == "Register":
+        terminals.update(
+            {
+                f"({x},{y + 30})",  # D
+                f"({x + 60},{y + 30})",  # Q
+                f"({x},{y + 50})",  # WE
+                f"({x},{y + 70})",  # clock
+                f"({x + 30},{y + 90})",  # reset
+            }
+        )
+    elif component.get("name") in {"RAM", "ROM"}:
+        terminals.update(
+            {
+                f"({x},{y + 10})",
+                f"({x},{y + 50})",
+                f"({x},{y + 60})",
+                f"({x},{y + 70})",
+                f"({x},{y + 100})",
+                f"({x + 240},{y + 100})",
+            }
+        )
+    return terminals
+
 def _location(value: str) -> tuple[int, int]:
     """Return the integer coordinates used by Logisim's ``loc`` attribute."""
 
@@ -73,7 +129,7 @@ def _location(value: str) -> tuple[int, int]:
 
 def _attributes(element: ET.Element) -> dict[str, str]:
     return {
-        item.get("name", ""): item.get("val", "")
+        item.get("name", "").strip(): item.get("val", "").strip()
         for item in element.findall("a")
     }
 
@@ -241,7 +297,7 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
     for circuit in root.findall("circuit"):
         wires = circuit.findall("wire")
         endpoints = {
-            point
+            _norm_loc(point)
             for wire in wires
             for point in (wire.get("from"), wire.get("to"))
             if point is not None
@@ -253,20 +309,13 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
         ]
         unconnected = []
         for component in electrical:
-            location = component.get("loc", "?")
-            connected = location in endpoints
-            if component.get("name") == "Register":
-                attrs = _attributes(component)
-                if attrs.get("appearance") == "logisim_evolution":
-                    x, y = _location(location)
-                    register_terminals = {
-                        f"({x},{y + 30})",       # D
-                        f"({x + 60},{y + 30})",  # Q
-                        f"({x},{y + 50})",       # WE
-                        f"({x},{y + 70})",       # clock
-                        f"({x + 30},{y + 90})",  # reset
-                    }
-                    connected = connected or bool(register_terminals & endpoints)
+            location = _norm_loc(component.get("loc", "?"))
+            terminals = _component_terminals(component)
+            connected = bool(terminals & endpoints) or any(
+                _point_on_wire(terminal, wire)
+                for terminal in terminals
+                for wire in wires
+            )
             if not connected:
                 attrs = _attributes(component)
                 label = attrs.get("label") or component.get("name", "component")
@@ -288,6 +337,7 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
                         f"{first.get('from')}->{first.get('to')} overlaps "
                         f"{second.get('from')}->{second.get('to')}"
                     )
+        width_conflicts: list[str] = []
         instances = [
             component
             for component in electrical
@@ -318,6 +368,7 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
                 tuple(unconnected),
                 tuple(placement_conflicts),
                 tuple(routing_conflicts),
+                tuple(width_conflicts),
             )
         )
     if not reports:
@@ -487,6 +538,8 @@ def main(argv: list[str] | None = None) -> int:
             print("  placement: " + ", ".join(report.placement_conflicts))
         if report.routing_conflicts:
             print("  routing: " + ", ".join(report.routing_conflicts))
+        if report.width_conflicts:
+            print("  widths: " + ", ".join(report.width_conflicts))
         incomplete |= not report.connected
     if args.profile is not None:
         if violations:

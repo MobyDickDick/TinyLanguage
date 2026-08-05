@@ -17,13 +17,13 @@
     <a name="simulationFrequency" val="1.0" />
     <comp lib="0" loc="(160,100)" name="Pin">
       <a name="label" val="INPUT_12" />
-      <a name="width" val="12" />
+      <a name="width" val="16" />
     </comp>
     <comp lib="0" loc="(360,100)" name="Pin">
       <a name="facing" val="west" />
       <a name="label" val="OUTPUT_12" />
       <a name="type" val="output" />
-      <a name="width" val="12" />
+      <a name="width" val="16" />
     </comp>
     <wire from="(160,100)" to="(360,100)" />
   </circuit>

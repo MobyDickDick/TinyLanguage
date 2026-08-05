@@ -76,6 +76,7 @@
       <a name="type" val="output"/>
     </comp>
     <comp lib="3" loc="(520,180)" name="Comparator">
+      <a name="label" val="ACC_STATUS"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(270,100)" name="Register">
@@ -88,7 +89,7 @@
       <a name="label" val="ACC_VALID"/>
       <a name="width" val="1"/>
     </comp>
-    <comp lib="9" loc="(302,60)" name="Text">
+    <comp lib="9" loc="(80,60)" name="Text">
       <a name="text" val="Clocked 16-bit accumulator; signed comparator derives ZERO and NEGATIVE"/>
     </comp>
     <wire from="(150,130)" to="(270,130)"/>

@@ -205,6 +205,12 @@ def _component_terminals(component: ET.Element) -> set[str]:
     terminals = {location}
     x, y = _location(location)
     attrs = _attributes(component)
+    if component.get("name") == "Decoder":
+        select = int(attrs.get("select", "1"))
+        outputs = min(1 << select, 64)
+        terminals.add(f"({x},{y + 20})")  # select input bus
+        terminals.update(f"({x + 40},{y + 330 + 20 * lane})" for lane in range(outputs))
+        return terminals
     if attrs.get("appearance") != "logisim_evolution":
         return terminals
     if component.get("name") == "Register":
@@ -229,6 +235,7 @@ def _component_terminals(component: ET.Element) -> set[str]:
             }
         )
     return terminals
+
 
 def _location(value: str) -> tuple[int, int]:
     """Return the integer coordinates used by Logisim's ``loc`` attribute."""
@@ -402,9 +409,7 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
     """
 
     root = _read_project(path)
-    circuit_names = {
-        circuit.get("name", "") for circuit in root.findall("circuit")
-    }
+    circuit_names = {circuit.get("name", "") for circuit in root.findall("circuit")}
 
     reports: list[CircuitReport] = []
     for circuit in root.findall("circuit"):
@@ -420,21 +425,84 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
             for component in circuit.findall("comp")
             if component.get("name") != "Text"
         ]
+        terminal_to_component: dict[str, list[ET.Element]] = {}
+        for component in electrical:
+            for terminal in _component_terminals(component):
+                terminal_to_component.setdefault(terminal, []).append(component)
+        wire_neighbors: dict[str, set[str]] = {}
+        for wire in wires:
+            start = _norm_loc(wire.get("from", ""))
+            end = _norm_loc(wire.get("to", ""))
+            points_on_wire = {start, end}
+            points_on_wire.update(
+                terminal
+                for terminal in terminal_to_component
+                if _point_on_wire(terminal, wire)
+            )
+            if _location(start)[0] == _location(end)[0]:
+                ordered = sorted(points_on_wire, key=lambda point: _location(point)[1])
+            else:
+                ordered = sorted(points_on_wire, key=lambda point: _location(point)[0])
+            for first, second in zip(ordered, ordered[1:]):
+                wire_neighbors.setdefault(first, set()).add(second)
+                wire_neighbors.setdefault(second, set()).add(first)
+
+        def reachable_wire_points(start_points: set[str]) -> set[str]:
+            seen = set(start_points)
+            pending = list(start_points)
+            while pending:
+                current = pending.pop()
+                for neighbor in wire_neighbors.get(current, ()):
+                    if neighbor not in seen:
+                        seen.add(neighbor)
+                        pending.append(neighbor)
+            return seen
+
         unconnected = []
         for component in electrical:
             location = _norm_loc(component.get("loc", "?"))
             terminals = _component_terminals(component)
-            connected = bool(terminals & endpoints) or any(
+            reachable = reachable_wire_points(terminals)
+            connected_components = {
+                id(other)
+                for point in reachable
+                for other in terminal_to_component.get(point, ())
+            }
+            connected_components.discard(id(component))
+            wire_connected = bool(terminals & endpoints) or any(
                 _point_on_wire(terminal, wire)
                 for terminal in terminals
                 for wire in wires
             )
+            requires_peer = (
+                component.get("name") == "Pin" and len(electrical) == 1
+            ) or len(terminals) > 1
+            connected = bool(connected_components) if requires_peer else wire_connected
             if not connected:
                 attrs = _attributes(component)
                 label = attrs.get("label") or component.get("name", "component")
                 unconnected.append(f"{label}@{location}")
         placement_conflicts: list[str] = []
         routing_conflicts: list[str] = []
+        visited_nets: set[frozenset[str]] = set()
+        for point in set(wire_neighbors) | set(terminal_to_component):
+            net = frozenset(reachable_wire_points({point}))
+            if not net or net in visited_nets:
+                continue
+            visited_nets.add(net)
+            drivers = []
+            for net_point in net:
+                for component in terminal_to_component.get(net_point, ()):
+                    attrs = _attributes(component)
+                    if component.get("name") == "Pin" and attrs.get("type") == "output":
+                        drivers.append(
+                            attrs.get("label") or f"Pin@{component.get('loc')}"
+                        )
+            if len(set(drivers)) > 1:
+                routing_conflicts.append(
+                    "multiple output pins drive one net: "
+                    + ", ".join(sorted(set(drivers)))
+                )
         for wire in wires:
             start = _location(wire.get("from", ""))
             end = _location(wire.get("to", ""))
@@ -445,7 +513,7 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
                 )
         routing_conflicts.extend(_fetch_decode_lane_conflicts(circuit))
         for index, first in enumerate(wires):
-            for second in wires[index + 1:]:
+            for second in wires[index + 1 :]:
                 if _wire_overlap(first, second):
                     routing_conflicts.append(
                         f"{first.get('from')}->{first.get('to')} overlaps "
@@ -459,7 +527,7 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
         ]
         for index, first in enumerate(instances):
             first_location = _location(first.get("loc", ""))
-            for second in instances[index + 1:]:
+            for second in instances[index + 1 :]:
                 second_location = _location(second.get("loc", ""))
                 horizontal = abs(first_location[0] - second_location[0])
                 vertical = abs(first_location[1] - second_location[1])
@@ -488,7 +556,6 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
     if not reports:
         raise CircuitError(f"{path} contains no circuits")
     return tuple(reports)
-
 
 
 def _serialize_standalone_logisim_project(data: bytes) -> bytes:
@@ -524,9 +591,7 @@ def split_leaf_circuits(
     project_path = Path(project)
     source = project_path.read_bytes()
     root = _read_project(project_path)
-    circuits = {
-        circuit.get("name", ""): circuit for circuit in root.findall("circuit")
-    }
+    circuits = {circuit.get("name", ""): circuit for circuit in root.findall("circuit")}
     leaf_names = [
         name
         for name, circuit in circuits.items()
@@ -554,8 +619,7 @@ def split_leaf_circuits(
         raise CircuitError(f"cannot locate every circuit byte range in {project_path}")
 
     main_pattern = re.compile(
-        rb"(?P<prefix><main\b[^>]*\bname=)(?P<quote>['\"])(?P<name>.*?)"
-        rb"(?P=quote)",
+        rb"(?P<prefix><main\b[^>]*\bname=)(?P<quote>['\"])(?P<name>.*?)" rb"(?P=quote)",
         re.DOTALL,
     )
     if main_pattern.search(source) is None:

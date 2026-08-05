@@ -254,6 +254,14 @@ def _component_terminals(component: ET.Element) -> set[str]:
         terminals.add(f"({x},{y + 20})")  # select input bus
         terminals.update(f"({x + 30},{y + 330 + 20 * lane})" for lane in range(outputs))
         return terminals
+    if component.get("name") == "Splitter":
+        fanout = int(attrs.get("fanout", "2"))
+        if attrs.get("appear") == "right" or attrs.get("label") == "PC_ADDRESS":
+            start = y - 20
+            terminals.update(f"({x + 20},{start + 40 * index})" for index in range(fanout))
+        else:
+            terminals.update(f"({x + 20},{y + 20 * index})" for index in range(fanout))
+        return terminals
     if attrs.get("label") in {"JNZ_TAKEN", "ERROR_HALT"}:
         terminals.update({f"({x - 50},{y - 10})", f"({x - 50},{y + 10})"})
     elif attrs.get("label") == "NOT_ZERO":
@@ -305,8 +313,27 @@ def _component_terminal_widths(component: ET.Element) -> dict[str, int]:
     if name == "Splitter":
         incoming = int(attrs.get("incoming", attrs.get("fanout", "1")))
         fanout = int(attrs.get("fanout", "2"))
+        output_widths = {index: 0 for index in range(fanout)}
+        for bit in range(incoming):
+            output = int(attrs.get(f"bit{bit}", str(bit if bit < fanout else fanout - 1)))
+            if output >= 0:
+                output_widths[output] = output_widths.get(output, 0) + 1
         result = {location: incoming}
-        result.update({f"({x + 20},{y + 20 * index})": 1 for index in range(fanout)})
+        if attrs.get("appear") == "right" or attrs.get("label") == "PC_ADDRESS":
+            start = y - 20
+            result.update(
+                {
+                    f"({x + 20},{start + 40 * index})": max(width, 1)
+                    for index, width in output_widths.items()
+                }
+            )
+        else:
+            result.update(
+                {
+                    f"({x + 20},{y + 20 * index})": max(width, 1)
+                    for index, width in output_widths.items()
+                }
+            )
         return result
     if attrs.get("label") in {"JNZ_TAKEN", "ERROR_HALT"}:
         return {location: 1, f"({x - 50},{y - 10})": 1, f"({x - 50},{y + 10})": 1}

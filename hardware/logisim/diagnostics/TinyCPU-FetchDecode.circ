@@ -158,6 +158,9 @@
     <comp loc="(820,1330)" name="OR Gate" lib="1">
       <a name="label" val="ERROR_HALT"/>
     </comp>
+    <comp loc="(720,1160)" name="NOT Gate" lib="1">
+      <a name="label" val="NOT_ZERO"/>
+    </comp>
     <comp loc="(1000,1150)" name="Pin" lib="0">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
@@ -537,13 +540,21 @@
     <wire from="(70,100)" to="(80,100)"/>
     <wire from="(70,150)" to="(80,150)"/>
     <wire from="(70,210)" to="(80,210)"/>
-    <wire from="(70,270)" to="(80,270)"/>
+    <wire from="(70,270)" to="(690,270)"/>
+    <wire from="(690,270)" to="(690,1160)"/>
+    <wire from="(690,1160)" to="(720,1160)"/>
+    <wire from="(720,1160)" to="(770,1160)"/>
     <wire from="(70,290)" to="(80,290)"/>
-    <wire from="(70,310)" to="(80,310)"/>
+    <wire from="(70,310)" to="(740,310)"/>
+    <wire from="(740,310)" to="(740,1340)"/>
+    <wire from="(740,1340)" to="(770,1340)"/>
     <wire from="(390,260)" to="(520,260)"/>
     <wire from="(390,330)" to="(400,330)"/>
-    <wire from="(600,1150)" to="(1000,1150)"/>
-    <wire from="(600,1330)" to="(610,1330)"/>
-    <wire from="(610,1330)" to="(1000,1330)"/>
+    <wire from="(600,1150)" to="(770,1150)"/>
+    <wire from="(770,1150)" to="(770,1140)"/>
+    <wire from="(820,1150)" to="(1000,1150)"/>
+    <wire from="(600,1330)" to="(770,1330)"/>
+    <wire from="(770,1330)" to="(770,1320)"/>
+    <wire from="(820,1330)" to="(1000,1330)"/>
   </circuit>
 </project>

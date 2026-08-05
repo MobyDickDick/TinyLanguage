@@ -571,7 +571,6 @@ def test_ap6_each_instruction_has_a_connected_decode_output(instruction):
     assert pin.get("loc") in endpoints
 
 
-
 def test_fetch_decode_outputs_are_on_decoder_output_lanes():
     """Catch wires that merely touch output pins but miss the decoder ports."""
 
@@ -583,30 +582,34 @@ def test_fetch_decode_outputs_are_on_decoder_output_lanes():
         if component.get("name") == "Pin"
         and _attributes(component).get("type") == "output"
     }
-    wires = {
-        frozenset((wire.get("from"), wire.get("to")))
-        for wire in fetch.findall("wire")
-    }
     wire_neighbors = {}
     for wire in fetch.findall("wire"):
         start, end = wire.get("from"), wire.get("to")
         wire_neighbors.setdefault(start, set()).add(end)
         wire_neighbors.setdefault(end, set()).add(start)
 
+    gated_decoder_targets = {
+        "JUMP_NOT_ZERO": "(770,1140)",
+        "HALT_ERROR": "(770,1320)",
+    }
+
     # Logisim's 6-bit decoder draws output 0 at (600,430) and then uses a 20 px
     # pitch. A line can still make the exported pin appear connected while
     # missing the decoder output by half a grid cell; SET_INPUT used to do that.
+    # Conditional controls route through their gate input instead of exposing the
+    # raw decoder lane directly on the output pin.
     for signal, opcode in OPCODES.items():
         decoder_output = f"(600,{430 + 20 * opcode})"
+        target = gated_decoder_targets.get(signal, output_pins[signal])
         pending = [decoder_output]
         seen = {decoder_output}
-        while pending and output_pins[signal] not in seen:
+        while pending and target not in seen:
             current = pending.pop()
             for neighbor in wire_neighbors.get(current, ()):
                 if neighbor not in seen:
                     seen.add(neighbor)
                     pending.append(neighbor)
-        assert output_pins[signal] in seen
+        assert target in seen
 
     error_opcode_lanes = {
         "SET_OVF": 48,
@@ -637,7 +640,9 @@ def test_set_input_decode_lane_wires_directly_without_dangling_tunnel():
         for component in fetch.findall("comp")
         if component.get("name") == "Tunnel"
     }
-    wires = {frozenset((wire.get("from"), wire.get("to"))) for wire in fetch.findall("wire")}
+    wires = {
+        frozenset((wire.get("from"), wire.get("to"))) for wire in fetch.findall("wire")
+    }
 
     assert "SET_INPUT_DECODE" not in tunnels
     assert frozenset(("(600,1490)", "(1000,1490)")) in wires
@@ -647,7 +652,9 @@ def test_fetch_decode_diagnostic_wires_set_input_directly_without_tunnel():
     diagnostic = HARDWARE / "diagnostics" / "TinyCPU-FetchDecode.circ"
     root = ET.parse(diagnostic).getroot()
     fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
-    wires = {frozenset((wire.get("from"), wire.get("to"))) for wire in fetch.findall("wire")}
+    wires = {
+        frozenset((wire.get("from"), wire.get("to"))) for wire in fetch.findall("wire")
+    }
 
     assert frozenset(("(600,1490)", "(1000,1490)")) in wires
     assert "SET_INPUT_DECODE" not in {

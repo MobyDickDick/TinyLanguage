@@ -22,8 +22,6 @@ class CircuitError(ValueError):
 
 SUPPORTED_PROFILE_SCHEMA = 1
 SUBCIRCUIT_ANCHOR_CLEARANCE = 600
-FETCH_DECODE_DECODER_X = 600
-FETCH_DECODE_DECODER_OUTPUT0_Y = 430
 FETCH_DECODE_DECODER_PITCH = 20
 FETCH_DECODE_SIGNAL_LANES = {
     "LOAD_CONST": 0,
@@ -155,18 +153,26 @@ def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
 
     if circuit.get("name") != "FetchDecode":
         return ()
-    if not any(component.get("name") == "Decoder" for component in circuit.findall("comp")):
+    decoder = next(
+        (
+            component
+            for component in circuit.findall("comp")
+            if component.get("name") == "Decoder"
+            and _attributes(component).get("select") == "6"
+        ),
+        None,
+    )
+    if decoder is None:
         return ()
+    decoder_x, decoder_y = _location(decoder.get("loc", ""))
+    decoder_output_x = decoder_x + 30
+    decoder_output0_y = decoder_y + 330
     output_pins = {
         attrs["label"]: _norm_loc(component.get("loc", "?"))
         for component in circuit.findall("comp")
         if component.get("name") == "Pin"
         and (attrs := _attributes(component)).get("type") == "output"
         and attrs.get("label") in FETCH_DECODE_SIGNAL_LANES
-    }
-    wires = {
-        frozenset((_norm_loc(wire.get("from", "")), _norm_loc(wire.get("to", ""))))
-        for wire in circuit.findall("wire")
     }
     wire_neighbors: dict[str, set[str]] = {}
     for wire in circuit.findall("wire"):
@@ -179,19 +185,46 @@ def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
         pin = output_pins.get(signal)
         if pin is None:
             continue
+        target = pin
+        if signal == "JUMP_NOT_ZERO":
+            gate = next(
+                (
+                    component
+                    for component in circuit.findall("comp")
+                    if component.get("name") == "AND Gate"
+                    and _attributes(component).get("label") == "JNZ_TAKEN"
+                ),
+                None,
+            )
+            if gate is not None:
+                gate_x, gate_y = _location(gate.get("loc", ""))
+                target = f"({gate_x - 50},{gate_y - 10})"
+        elif signal == "HALT_ERROR":
+            gate = next(
+                (
+                    component
+                    for component in circuit.findall("comp")
+                    if component.get("name") == "OR Gate"
+                    and _attributes(component).get("label") == "ERROR_HALT"
+                ),
+                None,
+            )
+            if gate is not None:
+                gate_x, gate_y = _location(gate.get("loc", ""))
+                target = f"({gate_x - 50},{gate_y - 10})"
         decoder_output = (
-            f"({FETCH_DECODE_DECODER_X},"
-            f"{FETCH_DECODE_DECODER_OUTPUT0_Y + FETCH_DECODE_DECODER_PITCH * lane})"
+            f"({decoder_output_x},"
+            f"{decoder_output0_y + FETCH_DECODE_DECODER_PITCH * lane})"
         )
         pending = [decoder_output]
         seen = {decoder_output}
-        while pending and pin not in seen:
+        while pending and target not in seen:
             current = pending.pop()
             for neighbor in wire_neighbors.get(current, ()):
                 if neighbor not in seen:
                     seen.add(neighbor)
                     pending.append(neighbor)
-        if pin not in seen:
+        if target not in seen:
             conflicts.append(
                 f"FetchDecode.{signal}: output pin {pin} is not wired to "
                 f"decoder lane {lane} at {decoder_output}"
@@ -212,6 +245,10 @@ def _component_terminals(component: ET.Element) -> set[str]:
         terminals.add(f"({x},{y + 20})")  # select input bus
         terminals.update(f"({x + 30},{y + 330 + 20 * lane})" for lane in range(outputs))
         return terminals
+    if attrs.get("label") in {"JNZ_TAKEN", "ERROR_HALT"}:
+        terminals.update({f"({x - 50},{y - 10})", f"({x - 50},{y + 10})"})
+    elif attrs.get("label") == "NOT_ZERO":
+        terminals.add(f"({x - 30},{y})")
     if attrs.get("appearance") != "logisim_evolution":
         return terminals
     if component.get("name") == "Register":

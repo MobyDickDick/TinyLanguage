@@ -135,6 +135,41 @@ def test_inspector_rejects_fetch_decode_pins_with_only_a_dangling_stub(tmp_path)
     )
 
 
+def test_fetch_decode_lane_check_follows_moved_decoder_location(tmp_path):
+    project = tmp_path / "moved-fetch-decoder.circ"
+    project.write_text(
+        """<project><main name="FetchDecode"/><circuit name="FetchDecode">
+        <comp lib="2" loc="(100,50)" name="Decoder"><a name="select" val="6"/></comp>
+        <comp lib="0" loc="(250,1440)" name="Pin"><a name="label" val="SET_INPUT"/><a name="type" val="output"/></comp>
+        <wire from="(130,1440)" to="(250,1440)"/>
+        </circuit></project>""",
+        encoding="utf-8",
+    )
+
+    report = inspect_project(project)[0]
+
+    assert report.routing_conflicts == ()
+
+
+def test_fetch_decode_lane_check_rejects_stub_with_moved_decoder(tmp_path):
+    project = tmp_path / "moved-fetch-decoder-stub.circ"
+    project.write_text(
+        """<project><main name="FetchDecode"/><circuit name="FetchDecode">
+        <comp lib="2" loc="(100,50)" name="Decoder"><a name="select" val="6"/></comp>
+        <comp lib="0" loc="(250,1440)" name="Pin"><a name="label" val="SET_INPUT"/><a name="type" val="output"/></comp>
+        <wire from="(250,1440)" to="(270,1440)"/>
+        </circuit></project>""",
+        encoding="utf-8",
+    )
+
+    report = inspect_project(project)[0]
+
+    assert report.routing_conflicts == (
+        "FetchDecode.SET_INPUT: output pin (250,1440) is not wired to "
+        "decoder lane 53 at (130,1440)",
+    )
+
+
 def test_inspector_rejects_pin_connected_only_to_a_wire_stub(tmp_path):
     project = tmp_path / "stub-only.circ"
     project.write_text(
@@ -315,11 +350,18 @@ def test_hardware_profile_requires_ap4_instruction_rom(tmp_path):
     violations = validate_hardware_contract(project, PROFILE)
     assert "FetchDecode: missing ROM INSTRUCTION_ROM" in violations
 
-def test_fetch_decode_split_diagnostics_are_standalone_and_connected():
-    diagnostics = Path(__file__).parents[2] / "hardware" / "logisim" / "diagnostics"
-    for suffix in ("1", "2", "3"):
-        project = diagnostics / f"TinyCPU-FetchDecode{suffix}.circ"
-        report = next(
-            item for item in inspect_project(project) if item.name == "FetchDecode"
-        )
-        assert report.connected, report
+
+def test_fetch_decode_split_diagnostic_is_standalone_and_connected():
+    project = (
+        Path(__file__).parents[2]
+        / "hardware"
+        / "logisim"
+        / "diagnostics"
+        / "TinyCPU-FetchDecode.circ"
+    )
+
+    report = next(
+        item for item in inspect_project(project) if item.name == "FetchDecode"
+    )
+
+    assert report.connected, report

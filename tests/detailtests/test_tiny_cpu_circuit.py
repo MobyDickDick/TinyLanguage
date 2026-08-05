@@ -1,3 +1,4 @@
+import json
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -57,14 +58,18 @@ def test_two_pin_smoke_projects_are_minimal_and_unambiguous():
 def test_inspector_exposes_completed_and_pending_sheets():
     reports = {report.name: report for report in inspect_project(PROJECT)}
 
-    assert reports["TinyCPU"].connected
-    assert reports["FetchDecode"].connected
+    assert not reports["TinyCPU"].connected
+    assert "CLK@(80,100)" in reports["TinyCPU"].unconnected
+    assert not reports["FetchDecode"].connected
+    assert "ZERO@(70,260)" in reports["FetchDecode"].unconnected
+    assert reports["FetchDecode"].width_conflicts
     assert reports["Datapath"].components == 12
     assert reports["Datapath"].wires == 22
-    assert reports["Datapath"].connected
-    assert reports["AddressPath"].connected
-    assert reports["Memory"].connected
-    assert reports["ErrorFlags"].connected
+    assert not reports["Datapath"].connected
+    assert "NEGATIVE@(570,210)" in reports["Datapath"].unconnected
+    assert not reports["AddressPath"].connected
+    assert not reports["Memory"].connected
+    assert not reports["ErrorFlags"].connected
 
 
 def test_inspector_accepts_a_minimal_connected_project(tmp_path):
@@ -84,14 +89,15 @@ def test_inspector_accepts_a_minimal_connected_project(tmp_path):
     assert main([str(project)]) == 0
 
 
-def test_inspector_cli_accepts_connected_ap4_project(capsys):
-    assert main([str(PROJECT)]) == 0
+def test_inspector_cli_rejects_incomplete_ap4_project(capsys):
+    assert main([str(PROJECT)]) == 1
     output = capsys.readouterr().out
-    assert "Datapath: connected" in output
-    assert "Memory: connected" in output
-    assert "ErrorFlags: connected" in output
-    assert "FetchDecode: connected" in output
-    assert "TinyCPU: connected" in output
+    assert "FetchDecode: INCOMPLETE" in output
+    assert (
+        "unconnected: ZERO@(70,260), NEGATIVE@(70,310), ERROR@(70,360), OPCODE@(820,460)"
+        in output
+    )
+    assert "widths: incompatible bus widths" in output
 
 
 def test_inspector_rejects_fetch_decode_pins_on_wrong_decoder_lanes(tmp_path):
@@ -293,7 +299,8 @@ def test_split_leaf_circuits_produces_independent_projects(tmp_path):
         circuits = root.findall("circuit")
         assert len(circuits) == 1
         assert root.find("main").get("name") == circuits[0].get("name")
-        assert inspect_project(path)[0].connected
+        report = inspect_project(path)[0]
+        assert report.components > 0
 
 
 def test_checked_in_diagnostic_projects_are_reproducible(tmp_path):
@@ -351,7 +358,7 @@ def test_hardware_profile_requires_ap4_instruction_rom(tmp_path):
     assert "FetchDecode: missing ROM INSTRUCTION_ROM" in violations
 
 
-def test_fetch_decode_split_diagnostic_is_standalone_and_connected():
+def test_fetch_decode_split_diagnostic_is_standalone_and_rejected():
     project = (
         Path(__file__).parents[2]
         / "hardware"
@@ -364,7 +371,9 @@ def test_fetch_decode_split_diagnostic_is_standalone_and_connected():
         item for item in inspect_project(project) if item.name == "FetchDecode"
     )
 
-    assert report.connected, report
+    assert not report.connected, report
+    assert "ZERO@(70,260)" in report.unconnected
+    assert report.width_conflicts
 
 
 def test_inspector_flags_duplicate_components_as_possible_overlaid_circuit(tmp_path):
@@ -387,3 +396,98 @@ def test_inspector_flags_duplicate_components_as_possible_overlaid_circuit(tmp_p
         "possible overlaid circuit: 2 identical A components at (10,10)"
         in report.placement_conflicts
     )
+
+
+def test_inspector_rejects_output_pin_connected_only_to_stub(tmp_path):
+    project = tmp_path / "output-stub.circ"
+    project.write_text(
+        """<project><main name="main"/><circuit name="main">
+        <comp lib="0" loc="(10,10)" name="Pin"><a name="label" val="OUT"/><a name="type" val="output"/></comp>
+        <wire from="(10,10)" to="(40,10)"/>
+        </circuit></project>""",
+        encoding="utf-8",
+    )
+
+    report = inspect_project(project)[0]
+
+    assert not report.connected
+    assert report.unconnected == ("OUT@(10,10)",)
+
+
+def test_inspector_rejects_input_pin_connected_only_to_stub(tmp_path):
+    project = tmp_path / "input-stub.circ"
+    project.write_text(
+        """<project><main name="main"/><circuit name="main">
+        <comp lib="0" loc="(10,10)" name="Pin"><a name="label" val="IN"/></comp>
+        <wire from="(10,10)" to="(40,10)"/>
+        </circuit></project>""",
+        encoding="utf-8",
+    )
+
+    report = inspect_project(project)[0]
+
+    assert not report.connected
+    assert report.unconnected == ("IN@(10,10)",)
+
+
+def test_inspector_rejects_incompatible_bus_widths(tmp_path):
+    project = tmp_path / "width-mismatch.circ"
+    project.write_text(
+        """<project><main name="main"/><circuit name="main">
+        <comp lib="0" loc="(10,10)" name="Pin"><a name="label" val="WORD"/><a name="width" val="16"/></comp>
+        <comp lib="0" loc="(40,10)" name="Pin"><a name="label" val="BIT"/><a name="type" val="output"/></comp>
+        <wire from="(10,10)" to="(40,10)"/>
+        </circuit></project>""",
+        encoding="utf-8",
+    )
+
+    report = inspect_project(project)[0]
+
+    assert not report.connected
+    assert report.width_conflicts == (
+        "incompatible bus widths on one net: BIT@(40,10):1, WORD@(10,10):16",
+    )
+
+
+def test_hardware_contract_pin_direction_rules_are_profile_driven(tmp_path):
+    project = tmp_path / "generic-direction.circ"
+    project.write_text(
+        """<project><main name="Generic"/><circuit name="Generic">
+        <comp lib="0" loc="(10,10)" name="Pin"><a name="label" val="LIMIT"/><a name="type" val="output"/></comp>
+        </circuit></project>""",
+        encoding="utf-8",
+    )
+    profile = tmp_path / "generic-profile.json"
+    profile.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "name": "generic",
+                "top_circuit": "Generic",
+                "registers": {},
+                "rams": {},
+                "datapaths": {"Generic": {"pins": {"LIMIT": 1}}},
+                "pin_directions": {"Generic": {"LIMIT": "input"}},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    violations = validate_hardware_contract(project, profile)
+
+    assert "Generic.LIMIT: pin type is output, expected input" in violations
+
+
+def test_hardware_contract_flags_absurd_program_limit_output(tmp_path):
+    project = tmp_path / "program-limit-output.circ"
+    project.write_text(
+        PROJECT.read_text(encoding="utf-8").replace(
+            '<a name="label" val="PROGRAM_LIMIT"/>',
+            '<a name="label" val="PROGRAM_LIMIT"/><a name="type" val="output"/>',
+        ),
+        encoding="utf-8",
+    )
+
+    violations = validate_hardware_contract(project, PROFILE)
+
+    assert "FetchDecode.PROGRAM_LIMIT: pin type is output, expected input" in violations

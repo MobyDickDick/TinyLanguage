@@ -284,6 +284,57 @@ def _component_terminals(component: ET.Element) -> set[str]:
     return terminals
 
 
+def _component_terminal_widths(component: ET.Element) -> dict[str, int]:
+    """Return conservative bit widths for known Logisim terminals."""
+
+    attrs = _attributes(component)
+    width = int(attrs.get("width", "1"))
+    location = _norm_loc(component.get("loc", "?"))
+    x, y = _location(location)
+    name = component.get("name")
+    if name == "Pin":
+        return {location: width}
+    if name == "Decoder":
+        select = int(attrs.get("select", "1"))
+        outputs = min(1 << select, 64)
+        result = {location: 1, f"({x},{y + 20})": select}
+        result.update(
+            {f"({x + 30},{y + 330 + 20 * lane})": 1 for lane in range(outputs)}
+        )
+        return result
+    if name == "Splitter":
+        incoming = int(attrs.get("incoming", attrs.get("fanout", "1")))
+        fanout = int(attrs.get("fanout", "2"))
+        result = {location: incoming}
+        result.update({f"({x + 20},{y + 20 * index})": 1 for index in range(fanout)})
+        return result
+    if attrs.get("label") in {"JNZ_TAKEN", "ERROR_HALT"}:
+        return {location: 1, f"({x - 50},{y - 10})": 1, f"({x - 50},{y + 10})": 1}
+    if attrs.get("label") == "NOT_ZERO":
+        return {location: 1, f"({x - 30},{y})": 1}
+    if attrs.get("appearance") == "logisim_evolution":
+        if name == "Register":
+            return {
+                f"({x},{y + 30})": width,
+                f"({x + 60},{y + 30})": width,
+                f"({x},{y + 50})": 1,
+                f"({x},{y + 70})": 1,
+                f"({x + 30},{y + 90})": 1,
+            }
+        if name in {"RAM", "ROM"}:
+            addr_width = int(attrs.get("addrWidth", attrs.get("addr", "1")))
+            data_width = int(attrs.get("dataWidth", attrs.get("data", str(width))))
+            return {
+                f"({x},{y + 10})": addr_width,
+                f"({x},{y + 50})": data_width,
+                f"({x},{y + 60})": 1,
+                f"({x},{y + 70})": 1,
+                f"({x},{y + 100})": 1,
+                f"({x + 240},{y + 100})": data_width,
+            }
+    return {terminal: width for terminal in _component_terminals(component)}
+
+
 def _location(value: str) -> tuple[int, int]:
     """Return the integer coordinates used by Logisim's ``loc`` attribute."""
 
@@ -395,14 +446,26 @@ def validate_hardware_contract(
                     f"expected {spec['width']}"
                 )
         pins = labelled_components(circuit_name, "Pin")
+        expected_pin_directions = profile.get("pin_directions", {}).get(
+            circuit_name, {}
+        )
         for label, width in expected.get("pins", {}).items():
             if label not in pins:
                 violations.append(f"{circuit_name}: missing pin {label}")
-            elif int(pins[label].get("width", "1")) != width:
+                continue
+            if int(pins[label].get("width", "1")) != width:
                 violations.append(
                     f"{circuit_name}.{label}: width is "
                     f"{pins[label].get('width', '1')}, expected {width}"
                 )
+            expected_type = expected_pin_directions.get(label)
+            if expected_type is not None:
+                actual_type = pins[label].get("type", "input")
+                if actual_type != expected_type:
+                    violations.append(
+                        f"{circuit_name}.{label}: pin type is {actual_type}, "
+                        f"expected {expected_type}"
+                    )
 
     for circuit_name, expected in profile["rams"].items():
         actual = labelled_components(circuit_name, "RAM")
@@ -521,9 +584,13 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
                 for terminal in terminals
                 for wire in wires
             )
-            requires_peer = (
-                component.get("name") == "Pin" and len(electrical) == 1
-            ) or len(terminals) > 1
+            # A wire stub is not an electrical connection.  Pins are the public
+            # circuit contract, so every input and output pin must reach at
+            # least one other component terminal on its net.  Earlier versions
+            # treated a pin as connected when any wire merely touched it; that
+            # let broken Logisim sheets pass with input pins ending in stubs
+            # or with output pins connected only to decorative wires.
+            requires_peer = component.get("name") == "Pin" or len(terminals) > 1
             connected = bool(connected_components) if requires_peer else wire_connected
             if not connected:
                 attrs = _attributes(component)
@@ -560,6 +627,7 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
                     f"components at ({x},{y})"
                 )
         routing_conflicts: list[str] = []
+        width_conflicts: list[str] = []
         visited_nets: set[frozenset[str]] = set()
         for point in set(wire_neighbors) | set(terminal_to_component):
             net = frozenset(reachable_wire_points({point}))
@@ -579,6 +647,29 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
                     "multiple output pins drive one net: "
                     + ", ".join(sorted(set(drivers)))
                 )
+        terminal_widths: dict[str, list[tuple[str, int]]] = {}
+        for component in electrical:
+            attrs = _attributes(component)
+            label = attrs.get("label") or component.get("name", "component")
+            for terminal, width in _component_terminal_widths(component).items():
+                terminal_widths.setdefault(terminal, []).append((label, width))
+        for net in visited_nets:
+            widths = {
+                width
+                for point in net
+                for _label, width in terminal_widths.get(point, ())
+            }
+            if len(widths) > 1:
+                members = sorted(
+                    {
+                        f"{label}@{point}:{width}"
+                        for point in net
+                        for label, width in terminal_widths.get(point, ())
+                    }
+                )
+                width_conflicts.append(
+                    "incompatible bus widths on one net: " + ", ".join(members)
+                )
         for wire in wires:
             start = _location(wire.get("from", ""))
             end = _location(wire.get("to", ""))
@@ -595,7 +686,6 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
                         f"{first.get('from')}->{first.get('to')} overlaps "
                         f"{second.get('from')}->{second.get('to')}"
                     )
-        width_conflicts: list[str] = []
         instances = [
             component
             for component in electrical

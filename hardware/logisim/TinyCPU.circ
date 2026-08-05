@@ -45,13 +45,14 @@
     <comp loc="(1500,100)" name="AddressPath"/>
     <comp loc="(2100,100)" name="Memory"/>
     <comp loc="(2700,100)" name="ErrorFlags"/>
-    <comp loc="(350,60)" name="FetchDecode1"/>
+    <comp loc="(300,100)" name="FetchDecode"/>
     <comp loc="(900,100)" name="Datapath"/>
     <wire from="(1500,100)" to="(1600,100)"/>
     <wire from="(2100,100)" to="(2200,100)"/>
     <wire from="(2700,100)" to="(2800,100)"/>
     <wire from="(3200,100)" to="(3300,100)"/>
     <wire from="(80,100)" to="(130,100)"/>
+    <wire from="(300,100)" to="(350,100)"/>
     <wire from="(900,100)" to="(1000,100)"/>
   </circuit>
   <circuit name="Datapath">
@@ -106,6 +107,7 @@
       <a name="type" val="output"/>
     </comp>
     <comp lib="3" loc="(520,180)" name="Comparator">
+      <a name="label" val="ACC_STATUS"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(270,100)" name="Register">
@@ -198,6 +200,7 @@
       <a name="type" val="output"/>
     </comp>
     <comp lib="3" loc="(520,200)" name="Adder">
+      <a name="label" val="OFFSET_ADDER"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(340,120)" name="Register">
@@ -622,9 +625,9 @@
     <wire from="(820,670)" to="(820,700)"/>
     <wire from="(820,700)" to="(840,700)"/>
   </circuit>
-  <circuit name="FetchDecode1">
+  <circuit name="FetchDecode">
     <a name="appearance" val="logisim_evolution"/>
-    <a name="circuit" val="FetchDecode1"/>
+    <a name="circuit" val="FetchDecode"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
     <comp lib="0" loc="(280,230)" name="Pin">
@@ -638,6 +641,7 @@
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(420,350)" name="Splitter">
+      <a name="label" val="INSTRUCTION_FIELDS"/>
       <a name="bit1" val="0"/>
       <a name="bit10" val="0"/>
       <a name="bit11" val="0"/>
@@ -660,7 +664,7 @@
       <a name="facing" val="west"/>
       <a name="label" val="PC_OUT"/>
       <a name="type" val="output"/>
-      <a name="width" val="12"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(70,160)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -708,9 +712,12 @@
       <a name="label" val="ERROR_HALT"/>
     </comp>
     <comp lib="3" loc="(430,190)" name="Comparator">
+      <a name="label" val="PC_RANGE"/>
       <a name="width" val="16"/>
     </comp>
+    <comp lib="2" loc="(600,280)" name="Multiplexer"><a name="label" val="PC_SOURCE"/><a name="width" val="16"/></comp>
     <comp lib="3" loc="(490,280)" name="Adder">
+      <a name="label" val="PC_INCREMENT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(250,100)" name="Register">
@@ -727,6 +734,15 @@
       <a name="dataWidth" val="22"/>
       <a name="label" val="INSTRUCTION_ROM"/>
     </comp>
+    <comp lib="0" loc="(70,260)" name="Pin"><a name="appearance" val="classic"/><a name="label" val="ZERO"/></comp>
+    <comp lib="0" loc="(70,300)" name="Pin"><a name="appearance" val="classic"/><a name="label" val="NEGATIVE"/></comp>
+    <comp lib="0" loc="(70,340)" name="Pin"><a name="appearance" val="classic"/><a name="label" val="ERROR"/></comp>
+    <comp lib="0" loc="(70,380)" name="Pin"><a name="appearance" val="classic"/><a name="label" val="OPERAND"/><a name="width" val="16"/></comp>
+    <comp lib="0" loc="(1000,10)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="LOAD_CONST"/><a name="type" val="output"/></comp>
+    <comp lib="0" loc="(1000,540)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="STORE_ADDRESS"/><a name="type" val="output"/></comp>
+    <comp lib="0" loc="(1000,780)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="PRINT"/><a name="type" val="output"/></comp>
+    <comp lib="0" loc="(1000,800)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="HALT"/><a name="type" val="output"/></comp>
+    <comp lib="0" loc="(1000,840)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="SET_ADDR"/><a name="type" val="output"/></comp>
     <comp lib="9" loc="(60,40)" name="Text">
       <a name="text" val="AP 7 machine format v1: stable six-bit opcode allocation and encoder-generated ROM"/>
     </comp>
@@ -754,7 +770,8 @@
     <wire from="(70,160)" to="(80,160)"/>
     <wire from="(70,210)" to="(80,210)"/>
     <wire from="(720,110)" to="(770,110)"/>
-    <wire from="(720,150)" to="(770,150)"/>
+    <wire from="(720,150)" to="(720,140)"/>
+    <wire from="(720,140)" to="(770,140)"/>
     <wire from="(730,230)" to="(770,230)"/>
     <wire from="(750,460)" to="(820,460)"/>
     <wire from="(770,110)" to="(770,120)"/>
@@ -764,12 +781,7 @@
     <wire from="(80,190)" to="(80,210)"/>
     <wire from="(820,130)" to="(860,130)"/>
     <wire from="(820,210)" to="(860,210)"/>
-  </circuit>
-  <circuit name="FetchDecode2">
-    <a name="appearance" val="logisim_evolution"/>
-    <a name="circuit" val="FetchDecode2"/>
-    <a name="circuitnamedboxfixedsize" val="true"/>
-    <a name="simulationFrequency" val="1.0"/>
+    <comp lib="0" loc="(1000,100)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="ADD_ADDRESS"/><a name="type" val="output"/></comp>
     <comp lib="0" loc="(1000,110)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
@@ -1040,6 +1052,7 @@
       <a name="width" val="6"/>
     </comp>
     <comp lib="2" loc="(520,670)" name="Decoder">
+      <a name="label" val="ISA_DECODER"/>
       <a name="select" val="6"/>
     </comp>
     <wire from="(490,700)" to="(520,700)"/>
@@ -1174,5 +1187,17 @@
     <wire from="(980,70)" to="(1000,70)"/>
     <wire from="(990,40)" to="(990,50)"/>
     <wire from="(990,50)" to="(1000,50)"/>
+    <wire from="(600,280)" to="(610,280)"/>
+    <wire from="(70,260)" to="(80,260)"/>
+    <wire from="(70,300)" to="(80,300)"/>
+    <wire from="(70,340)" to="(80,340)"/>
+    <wire from="(70,380)" to="(80,380)"/>
+    <wire from="(1000,10)" to="(1010,10)"/>
+    <wire from="(1000,100)" to="(1010,100)"/>
+    <wire from="(1000,540)" to="(1010,540)"/>
+    <wire from="(1000,780)" to="(1010,780)"/>
+    <wire from="(1000,800)" to="(1010,800)"/>
+    <wire from="(1000,840)" to="(1010,840)"/>
   </circuit>
+
 </project>

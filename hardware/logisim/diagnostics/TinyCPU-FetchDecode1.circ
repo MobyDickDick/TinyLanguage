@@ -74,15 +74,11 @@
       <a name="appearance" val="classic"/>
       <a name="label" val="CLK"/>
     </comp>
-    <comp lib="0" loc="(70,180)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="ZERO"/>
-    </comp>
     <comp lib="0" loc="(70,210)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="RESET"/>
     </comp>
-    <comp lib="0" loc="(790,460)" name="Pin">
+    <comp lib="0" loc="(790,500)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="INSTRUCTION"/>
@@ -130,15 +126,14 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(350,350)" to="(420,350)"/>
     <wire from="(410,290)" to="(450,290)"/>
     <wire from="(430,190)" to="(520,190)"/>
-    <wire from="(440,330)" to="(490,330)"/>
+    <wire from="(440,330)" to="(540,330)"/>
     <wire from="(490,280)" to="(660,280)"/>
-    <wire from="(490,330)" to="(490,410)"/>
-    <wire from="(490,330)" to="(540,330)"/>
-    <wire from="(490,410)" to="(510,410)"/>
+    <wire from="(440,330)" to="(440,410)"/>
+    <wire from="(440,410)" to="(510,410)"/>
     <wire from="(660,100)" to="(660,280)"/>
     <wire from="(70,160)" to="(80,160)"/>
     <wire from="(70,210)" to="(80,210)"/>
-    <wire from="(750,460)" to="(790,460)"/>
+    <wire from="(750,500)" to="(790,500)"/>
     <wire from="(80,160)" to="(80,170)"/>
     <wire from="(80,170)" to="(250,170)"/>
     <wire from="(80,190)" to="(280,190)"/>

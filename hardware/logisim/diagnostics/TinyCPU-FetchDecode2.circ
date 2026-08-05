@@ -29,117 +29,33 @@
     <a name="circuit" val="FetchDecode"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(430,200)" name="Pin">
+    <comp lib="0" loc="(160,230)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="DEC_JUMP_NOT_ZERO"/>
     </comp>
-    <comp lib="0" loc="(560,220)" name="Pin">
+    <comp lib="0" loc="(160,250)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="ZERO"/>
+      <a name="label" val="NOT_ZERO"/>
     </comp>
-    <comp lib="0" loc="(610,120)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="DEC_LOAD_CONST"/>
-    </comp>
-    <comp lib="0" loc="(610,150)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="DEC_STORE_ADDRESS"/>
-    </comp>
-    <comp lib="0" loc="(610,180)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="DEC_ADD_ADDRESS"/>
-    </comp>
-    <comp lib="0" loc="(610,240)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="DEC_PRINT"/>
-    </comp>
-    <comp lib="0" loc="(610,270)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="DEC_HALT"/>
-    </comp>
-    <comp lib="0" loc="(610,310)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="DEC_SET_ADDR"/>
-    </comp>
-    <comp lib="0" loc="(610,330)" name="Pin">
+    <comp lib="0" loc="(160,310)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="ERROR"/>
     </comp>
-    <comp lib="0" loc="(610,350)" name="Pin">
+    <comp lib="0" loc="(160,330)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="DEC_HALT_ERROR"/>
     </comp>
-    <comp lib="0" loc="(610,420)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="PC_IN"/>
-      <a name="width" val="12"/>
-    </comp>
-    <comp lib="0" loc="(610,80)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="OPERAND_IN"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="0" loc="(760,120)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="LOAD_CONST"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="0" loc="(760,150)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="STORE_ADDRESS"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="0" loc="(760,180)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="ADD_ADDRESS"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="0" loc="(760,210)" name="Pin">
+    <comp lib="0" loc="(520,240)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="JUMP_NOT_ZERO"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="0" loc="(760,240)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="PRINT"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="0" loc="(760,270)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="HALT"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="0" loc="(760,310)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="SET_ADDR"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="0" loc="(760,350)" name="Pin">
+    <comp lib="0" loc="(520,320)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="HALT_ERROR"/>
       <a name="type" val="output"/>
-    </comp>
-    <comp lib="0" loc="(760,420)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="PC_OUT"/>
-      <a name="type" val="output"/>
-      <a name="width" val="12"/>
-    </comp>
-    <comp lib="0" loc="(760,80)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="OPERAND"/>
-      <a name="type" val="output"/>
-      <a name="width" val="16"/>
     </comp>
     <comp lib="1" loc="(390,240)" name="AND Gate">
       <a name="label" val="JNZ_TAKEN"/>
@@ -148,26 +64,13 @@
       <a name="label" val="ERROR_HALT"/>
     </comp>
     <comp lib="9" loc="(60,40)" name="Text">
-      <a name="text" val="AP 7 machine format v1: stable six-bit opcode allocation and encoder-generated ROM"/>
+      <a name="text" val="FetchDecode part 2 keeps only processed control signals; direct pass-through pins are omitted."/>
     </comp>
-    <wire from="(430,180)" to="(440,180)"/>
-    <wire from="(430,200)" to="(610,200)"/>
-    <wire from="(520,220)" to="(560,220)"/>
-    <wire from="(610,120)" to="(760,120)"/>
-    <wire from="(610,150)" to="(760,150)"/>
-    <wire from="(610,180)" to="(760,180)"/>
-    <wire from="(610,200)" to="(610,210)"/>
-    <wire from="(610,210)" to="(760,210)"/>
-    <wire from="(610,240)" to="(760,240)"/>
-    <wire from="(610,270)" to="(760,270)"/>
-    <wire from="(610,310)" to="(760,310)"/>
-    <wire from="(610,330)" to="(620,330)"/>
-    <wire from="(610,350)" to="(740,350)"/>
-    <wire from="(610,420)" to="(760,420)"/>
-    <wire from="(610,80)" to="(760,80)"/>
-    <wire from="(620,330)" to="(620,340)"/>
-    <wire from="(620,340)" to="(740,340)"/>
-    <wire from="(740,340)" to="(740,350)"/>
-    <wire from="(740,350)" to="(760,350)"/>
+    <wire from="(160,230)" to="(340,230)"/>
+    <wire from="(160,250)" to="(340,250)"/>
+    <wire from="(160,310)" to="(340,310)"/>
+    <wire from="(160,330)" to="(340,330)"/>
+    <wire from="(390,240)" to="(520,240)"/>
+    <wire from="(390,320)" to="(520,320)"/>
   </circuit>
 </project>

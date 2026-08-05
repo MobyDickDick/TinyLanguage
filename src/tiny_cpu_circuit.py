@@ -232,6 +232,15 @@ def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
     return tuple(conflicts)
 
 
+def _component_identity(
+    component: ET.Element,
+) -> tuple[str, str, tuple[tuple[str, str], ...]]:
+    """Return a stable identity for duplicate/overlay detection."""
+
+    attrs = tuple(sorted(_attributes(component).items()))
+    return (component.get("name", ""), component.get("lib", ""), attrs)
+
+
 def _component_terminals(component: ET.Element) -> set[str]:
     """Return conservative Logisim-evolution terminal coordinates."""
 
@@ -521,6 +530,35 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
                 label = attrs.get("label") or component.get("name", "component")
                 unconnected.append(f"{label}@{location}")
         placement_conflicts: list[str] = []
+        components_by_location: dict[str, list[ET.Element]] = {}
+        duplicate_components: dict[
+            tuple[str, tuple[int, int], str, tuple[tuple[str, str], ...]], int
+        ] = {}
+        for component in electrical:
+            location = _norm_loc(component.get("loc", "?"))
+            components_by_location.setdefault(location, []).append(component)
+            name, lib, attrs = _component_identity(component)
+            key = (name, _location(location), lib, attrs)
+            duplicate_components[key] = duplicate_components.get(key, 0) + 1
+        for location, components_at_location in sorted(components_by_location.items()):
+            if len(components_at_location) > 1:
+                labels = []
+                for component in components_at_location:
+                    attrs = _attributes(component)
+                    labels.append(
+                        attrs.get("label") or component.get("name", "component")
+                    )
+                placement_conflicts.append(
+                    f"multiple components share {location}: "
+                    + ", ".join(sorted(labels))
+                )
+        for (name, (x, y), _lib, attrs), count in sorted(duplicate_components.items()):
+            if count > 1:
+                label = dict(attrs).get("label") or name or "component"
+                placement_conflicts.append(
+                    f"possible overlaid circuit: {count} identical {label} "
+                    f"components at ({x},{y})"
+                )
         routing_conflicts: list[str] = []
         visited_nets: set[frozenset[str]] = set()
         for point in set(wire_neighbors) | set(terminal_to_component):

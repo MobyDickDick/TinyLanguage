@@ -424,7 +424,7 @@
     <comp lib="5" loc="(250,100)" name="Register">
       <a name="appearance" val="logisim_evolution"/>
       <a name="label" val="PC"/>
-      <a name="width" val="12"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(280,380)" name="ROM">
       <a name="addrWidth" val="12"/>

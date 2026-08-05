@@ -83,7 +83,7 @@
     <comp lib="5" loc="(340,120)" name="Register">
       <a name="appearance" val="logisim_evolution"/>
       <a name="label" val="AR"/>
-      <a name="width" val="12"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(340,300)" name="Register">
       <a name="appearance" val="logisim_evolution"/>

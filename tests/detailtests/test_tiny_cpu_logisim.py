@@ -571,13 +571,26 @@ def test_fetch_decode_outputs_are_on_decoder_output_lanes():
         frozenset((wire.get("from"), wire.get("to")))
         for wire in fetch.findall("wire")
     }
+    wire_neighbors = {}
+    for wire in fetch.findall("wire"):
+        start, end = wire.get("from"), wire.get("to")
+        wire_neighbors.setdefault(start, set()).add(end)
+        wire_neighbors.setdefault(end, set()).add(start)
 
     # Logisim's 6-bit decoder draws output 0 at y=430 and then uses a 20 px
     # pitch. A line can still make the exported pin appear connected while
     # missing the decoder output by half a grid cell; SET_INPUT used to do that.
     for signal, opcode in OPCODES.items():
         decoder_output = f"(610,{430 + 20 * opcode})"
-        assert frozenset((decoder_output, output_pins[signal])) in wires
+        pending = [decoder_output]
+        seen = {decoder_output}
+        while pending and output_pins[signal] not in seen:
+            current = pending.pop()
+            for neighbor in wire_neighbors.get(current, ()):
+                if neighbor not in seen:
+                    seen.add(neighbor)
+                    pending.append(neighbor)
+        assert output_pins[signal] in seen
 
     error_opcode_lanes = {
         "SET_OVF": 48,
@@ -589,7 +602,30 @@ def test_fetch_decode_outputs_are_on_decoder_output_lanes():
     }
     for signal, opcode in error_opcode_lanes.items():
         decoder_output = f"(610,{430 + 20 * opcode})"
-        assert frozenset((decoder_output, output_pins[signal])) in wires
+        pending = [decoder_output]
+        seen = {decoder_output}
+        while pending and output_pins[signal] not in seen:
+            current = pending.pop()
+            for neighbor in wire_neighbors.get(current, ()):
+                if neighbor not in seen:
+                    seen.add(neighbor)
+                    pending.append(neighbor)
+        assert output_pins[signal] in seen
+
+
+def test_set_input_decode_lane_uses_named_tunnel_component():
+    root = ET.parse(PROJECT).getroot()
+    fetch = next(c for c in root.findall("circuit") if c.get("name") == "FetchDecode")
+    tunnel = next(
+        component
+        for component in fetch.findall("comp")
+        if component.get("name") == "Tunnel"
+        and _attributes(component).get("label") == "SET_INPUT_DECODE"
+    )
+    assert tunnel.get("loc") == "(800,1490)"
+    wires = {frozenset((wire.get("from"), wire.get("to"))) for wire in fetch.findall("wire")}
+    assert frozenset(("(610,1490)", "(800,1490)")) in wires
+    assert frozenset(("(800,1490)", "(1000,1490)")) in wires
 
 @pytest.mark.parametrize(
     "signal",

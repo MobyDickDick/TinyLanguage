@@ -166,6 +166,12 @@ def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
         frozenset((_norm_loc(wire.get("from", "")), _norm_loc(wire.get("to", ""))))
         for wire in circuit.findall("wire")
     }
+    wire_neighbors: dict[str, set[str]] = {}
+    for wire in circuit.findall("wire"):
+        start = _norm_loc(wire.get("from", ""))
+        end = _norm_loc(wire.get("to", ""))
+        wire_neighbors.setdefault(start, set()).add(end)
+        wire_neighbors.setdefault(end, set()).add(start)
     conflicts = []
     for signal, lane in FETCH_DECODE_SIGNAL_LANES.items():
         pin = output_pins.get(signal)
@@ -176,7 +182,15 @@ def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
             f"({FETCH_DECODE_DECODER_X},"
             f"{FETCH_DECODE_DECODER_OUTPUT0_Y + FETCH_DECODE_DECODER_PITCH * lane})"
         )
-        if frozenset((decoder_output, pin)) not in wires:
+        pending = [decoder_output]
+        seen = {decoder_output}
+        while pending and pin not in seen:
+            current = pending.pop()
+            for neighbor in wire_neighbors.get(current, ()):
+                if neighbor not in seen:
+                    seen.add(neighbor)
+                    pending.append(neighbor)
+        if pin not in seen:
             conflicts.append(
                 f"FetchDecode.{signal}: output pin {pin} is not wired to "
                 f"decoder lane {lane} at {decoder_output}"

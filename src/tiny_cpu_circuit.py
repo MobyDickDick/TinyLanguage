@@ -22,6 +22,63 @@ class CircuitError(ValueError):
 
 SUPPORTED_PROFILE_SCHEMA = 1
 SUBCIRCUIT_ANCHOR_CLEARANCE = 600
+FETCH_DECODE_DECODER_X = 610
+FETCH_DECODE_DECODER_OUTPUT0_Y = 430
+FETCH_DECODE_DECODER_PITCH = 20
+FETCH_DECODE_SIGNAL_LANES = {
+    "LOAD_CONST": 0,
+    "LOAD_ADDRESS": 1,
+    "LOAD_ADDRESS_REGISTER": 2,
+    "LOAD_ADDRESS_REGISTER_PLUS_OFFSET": 3,
+    "ADD_CONST": 4,
+    "ADD_ADDRESS": 5,
+    "ADD_ADDRESS_REGISTER": 6,
+    "ADD_ADDRESS_REGISTER_PLUS_OFFSET": 7,
+    "SUB_CONST": 8,
+    "SUB_ADDRESS": 9,
+    "SUB_ADDRESS_REGISTER": 10,
+    "SUB_ADDRESS_REGISTER_PLUS_OFFSET": 11,
+    "MUL_CONST": 12,
+    "MUL_ADDRESS": 13,
+    "MUL_ADDRESS_REGISTER": 14,
+    "MUL_ADDRESS_REGISTER_PLUS_OFFSET": 15,
+    "DIV_CONST": 16,
+    "DIV_ADDRESS": 17,
+    "DIV_ADDRESS_REGISTER": 18,
+    "DIV_ADDRESS_REGISTER_PLUS_OFFSET": 19,
+    "AND_CONST": 20,
+    "AND_ADDRESS": 21,
+    "AND_ADDRESS_REGISTER": 22,
+    "AND_ADDRESS_REGISTER_PLUS_OFFSET": 23,
+    "OR_CONST": 24,
+    "OR_ADDRESS": 25,
+    "OR_ADDRESS_REGISTER": 26,
+    "OR_ADDRESS_REGISTER_PLUS_OFFSET": 27,
+    "STORE_ADDRESS": 28,
+    "STORE_ADDRESS_REGISTER": 29,
+    "STORE_ADDRESS_REGISTER_PLUS_OFFSET": 30,
+    "LOAD_ADDRESS_REGISTER_CONST": 31,
+    "LOAD_ADDRESS_REGISTER_ADDRESS": 32,
+    "NOT": 33,
+    "JUMP_ADDRESS": 34,
+    "JUMP_ZERO": 35,
+    "JUMP_NOT_ZERO": 36,
+    "JUMP_NEGATIVE": 37,
+    "JUMP_ERROR": 38,
+    "JUMP_NOT_ERROR": 39,
+    "CLEAR_ERROR": 40,
+    "INPUT": 41,
+    "PRINT": 42,
+    "PRINT_ADDRESS": 43,
+    "HALT": 44,
+    "HALT_ERROR": 45,
+    "SET_OVF": 48,
+    "SET_DIV0": 49,
+    "SET_ADDR": 50,
+    "SET_INV": 51,
+    "SET_ILL": 52,
+    "SET_INPUT": 53,
+}
 
 
 @dataclass(frozen=True)
@@ -85,6 +142,46 @@ def _point_on_wire(point: str, wire: ET.Element) -> bool:
         low, high = sorted((start[0], end[0]))
         return low <= px <= high
     return False
+
+
+def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
+    """Return FetchDecode outputs that do not touch their decoder lane.
+
+    The generic connectivity pass only proves that a pin is on some wire.  A
+    decode output can therefore look connected while the wire is one grid step
+    above or below the six-bit decoder terminal.  These AP 7 lanes are fixed by
+    the machine-format opcode table, so check the exact decoder-port endpoint.
+    """
+
+    if circuit.get("name") != "FetchDecode":
+        return ()
+    output_pins = {
+        attrs["label"]: _norm_loc(component.get("loc", "?"))
+        for component in circuit.findall("comp")
+        if component.get("name") == "Pin"
+        and (attrs := _attributes(component)).get("type") == "output"
+        and attrs.get("label") in FETCH_DECODE_SIGNAL_LANES
+    }
+    wires = {
+        frozenset((_norm_loc(wire.get("from", "")), _norm_loc(wire.get("to", ""))))
+        for wire in circuit.findall("wire")
+    }
+    conflicts = []
+    for signal, lane in FETCH_DECODE_SIGNAL_LANES.items():
+        pin = output_pins.get(signal)
+        if pin is None:
+            conflicts.append(f"FetchDecode.{signal}: missing output pin")
+            continue
+        decoder_output = (
+            f"({FETCH_DECODE_DECODER_X},"
+            f"{FETCH_DECODE_DECODER_OUTPUT0_Y + FETCH_DECODE_DECODER_PITCH * lane})"
+        )
+        if frozenset((decoder_output, pin)) not in wires:
+            conflicts.append(
+                f"FetchDecode.{signal}: output pin {pin} is not wired to "
+                f"decoder lane {lane} at {decoder_output}"
+            )
+    return tuple(conflicts)
 
 
 def _component_terminals(component: ET.Element) -> set[str]:
@@ -332,6 +429,7 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
                     f"{wire.get('from')}->{wire.get('to')} is diagonal; "
                     "Logisim wires must be horizontal or vertical"
                 )
+        routing_conflicts.extend(_fetch_decode_lane_conflicts(circuit))
         for index, first in enumerate(wires):
             for second in wires[index + 1:]:
                 if _wire_overlap(first, second):

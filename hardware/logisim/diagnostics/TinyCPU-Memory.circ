@@ -32,7 +32,7 @@
     <comp lib="0" loc="(190,120)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="ADDRESS"/>
-      <a name="width" val="12"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(190,160)" name="Pin">
       <a name="appearance" val="classic"/>

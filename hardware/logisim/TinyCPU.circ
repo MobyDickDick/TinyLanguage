@@ -364,7 +364,7 @@
     <comp lib="0" loc="(60,220)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="PROGRAM_LIMIT"/>
-      <a name="width" val="12"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(60,260)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -427,7 +427,7 @@
       <a name="facing" val="west"/>
       <a name="label" val="PC_OUT"/>
       <a name="type" val="output"/>
-      <a name="width" val="12"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(760,80)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -444,7 +444,7 @@
     </comp>
     <comp lib="2" loc="(250,340)" name="Multiplexer">
       <a name="label" val="PC_SOURCE"/>
-      <a name="width" val="12"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(570,100)" name="Decoder">
       <a name="label" val="ISA_DECODER"/>
@@ -452,11 +452,11 @@
     </comp>
     <comp lib="3" loc="(250,280)" name="Adder">
       <a name="label" val="PC_INCREMENT"/>
-      <a name="width" val="12"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(390,220)" name="Comparator">
       <a name="label" val="PC_RANGE"/>
-      <a name="width" val="12"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(250,100)" name="Register">
       <a name="appearance" val="logisim_evolution"/>
@@ -684,7 +684,7 @@
     <comp lib="0" loc="(190,130)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="ADDRESS_IN"/>
-      <a name="width" val="12"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(190,170)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -693,7 +693,7 @@
     <comp lib="0" loc="(190,240)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="OFFSET"/>
-      <a name="width" val="12"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(190,330)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -708,14 +708,14 @@
       <a name="facing" val="west"/>
       <a name="label" val="ADDRESS"/>
       <a name="type" val="output"/>
-      <a name="width" val="12"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(620,200)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="ADDRESS_PLUS_OFFSET"/>
       <a name="type" val="output"/>
-      <a name="width" val="12"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(620,250)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -731,7 +731,7 @@
     </comp>
     <comp lib="3" loc="(520,200)" name="Adder">
       <a name="label" val="OFFSET_ADDER"/>
-      <a name="width" val="12"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(340,120)" name="Register">
       <a name="appearance" val="logisim_evolution"/>
@@ -779,7 +779,7 @@
     <comp lib="0" loc="(190,120)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="ADDRESS"/>
-      <a name="width" val="12"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(190,160)" name="Pin">
       <a name="appearance" val="classic"/>

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "name": "tinycpu-16-12",
   "data_bits": 16,
-  "address_bits": 12,
+  "address_bits": 16,
   "memory_size": 4096,
   "top_circuit": "TinyCPU",
   "registers": {
@@ -57,19 +57,19 @@
       "components": {
         "OFFSET_ADDER": {
           "kind": "Adder",
-          "width": 12
+          "width": 16
         }
       },
       "pins": {
-        "ADDRESS": 12,
+        "ADDRESS": 16,
         "ADDRESS_VALID": 1,
-        "ADDRESS_PLUS_OFFSET": 12,
+        "ADDRESS_PLUS_OFFSET": 16,
         "OFFSET_CARRY": 1
       }
     },
     "Memory": {
       "pins": {
-        "ADDRESS": 12,
+        "ADDRESS": 16,
         "DATA_IN": 16,
         "VALID_IN": 1,
         "WRITE_ENABLE": 1,
@@ -158,15 +158,15 @@
         },
         "PC_INCREMENT": {
           "kind": "Adder",
-          "width": 12
+          "width": 16
         },
         "PC_SOURCE": {
           "kind": "Multiplexer",
-          "width": 12
+          "width": 16
         },
         "PC_RANGE": {
           "kind": "Comparator",
-          "width": 12
+          "width": 16
         },
         "JNZ_TAKEN": {
           "kind": "AND Gate",
@@ -185,7 +185,7 @@
         "CLK": 1,
         "RESET": 1,
         "ZERO": 1,
-        "PROGRAM_LIMIT": 12,
+        "PROGRAM_LIMIT": 16,
         "OPERAND": 16,
         "LOAD_CONST": 1,
         "STORE_ADDRESS": 1,
@@ -195,7 +195,7 @@
         "HALT": 1,
         "SET_ADDR": 1,
         "HALT_ERROR": 1,
-        "PC_OUT": 12,
+        "PC_OUT": 16,
         "LOAD_ADDRESS": 1,
         "LOAD_ADDRESS_REGISTER": 1,
         "LOAD_ADDRESS_REGISTER_PLUS_OFFSET": 1,

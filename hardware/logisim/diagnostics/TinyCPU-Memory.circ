@@ -127,5 +127,4 @@
     <wire from="(580,210)" to="(600,210)"/>
     <wire from="(580,320)" to="(600,320)"/>
   </circuit>
-
 </project>

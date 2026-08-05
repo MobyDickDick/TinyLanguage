@@ -9,7 +9,6 @@ from tiny_cpu_circuit import (
     validate_hardware_contract,
 )
 
-
 PROJECT = Path(__file__).parents[2] / "hardware" / "logisim" / "TinyCPU.circ"
 PROFILE = PROJECT.with_name("tinycpu-16-12.json")
 SMOKE_PROJECTS = PROJECT.parent / "smoke"
@@ -22,9 +21,7 @@ def test_two_pin_smoke_projects_are_minimal_and_unambiguous():
         "PinPair-16bit.circ": "16",
     }
 
-    assert {path.name for path in SMOKE_PROJECTS.glob("*.circ")} == set(
-        expected_widths
-    )
+    assert {path.name for path in SMOKE_PROJECTS.glob("*.circ")} == set(expected_widths)
     for filename, expected_width in expected_widths.items():
         root = ET.parse(SMOKE_PROJECTS / filename).getroot()
         circuits = root.findall("circuit")
@@ -138,6 +135,38 @@ def test_inspector_rejects_fetch_decode_pins_with_only_a_dangling_stub(tmp_path)
     )
 
 
+def test_inspector_rejects_pin_connected_only_to_a_wire_stub(tmp_path):
+    project = tmp_path / "stub-only.circ"
+    project.write_text(
+        """<project><main name="main"/><circuit name="main">
+        <comp lib="0" loc="(10,10)" name="Pin"><a name="label" val="A"/></comp>
+        <wire from="(10,10)" to="(40,10)"/>
+        </circuit></project>""",
+        encoding="utf-8",
+    )
+
+    report = inspect_project(project)[0]
+    assert not report.connected
+    assert report.unconnected == ("A@(10,10)",)
+
+
+def test_inspector_rejects_multiple_output_pins_on_one_net(tmp_path):
+    project = tmp_path / "multi-driver.circ"
+    project.write_text(
+        """<project><main name="main"/><circuit name="main">
+        <comp lib="0" loc="(10,10)" name="Pin"><a name="label" val="A"/><a name="type" val="output"/></comp>
+        <comp lib="0" loc="(20,10)" name="Pin"><a name="label" val="B"/><a name="type" val="output"/></comp>
+        <comp lib="0" loc="(30,10)" name="Pin"><a name="label" val="C"/></comp>
+        <wire from="(10,10)" to="(30,10)"/>
+        </circuit></project>""",
+        encoding="utf-8",
+    )
+
+    report = inspect_project(project)[0]
+    assert not report.connected
+    assert report.routing_conflicts == ("multiple output pins drive one net: A, B",)
+
+
 def test_top_level_subcircuits_have_exclusive_routing_lanes():
     report = next(item for item in inspect_project(PROJECT) if item.name == "TinyCPU")
 
@@ -147,13 +176,14 @@ def test_top_level_subcircuits_have_exclusive_routing_lanes():
 
 def test_top_level_does_not_daisy_chain_unrelated_component_anchors():
     root = ET.parse(PROJECT).getroot()
-    top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
+    top = next(
+        item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
+    )
     instance_locations = {
         component.get("loc")
         for component in top.findall("comp")
-        if component.get("name") in {
-            "FetchDecode", "Datapath", "AddressPath", "Memory", "ErrorFlags"
-        }
+        if component.get("name")
+        in {"FetchDecode", "Datapath", "AddressPath", "Memory", "ErrorFlags"}
     }
 
     for wire in top.findall("wire"):
@@ -192,9 +222,7 @@ def test_inspector_rejects_overlapping_wire_segments(tmp_path):
 
     report = inspect_project(project)[0]
     assert not report.connected
-    assert report.routing_conflicts == (
-        "(10,10)->(40,10) overlaps (20,10)->(30,10)",
-    )
+    assert report.routing_conflicts == ("(10,10)->(40,10) overlaps (20,10)->(30,10)",)
 
 
 def test_inspector_rejects_diagonal_wire_segments(tmp_path):

@@ -1,14 +1,26 @@
 # TinyCPU in Logisim-evolution
 
 This directory contains the completed eight-package TinyCPU hardware baseline.
-Open `TinyCPU.circ` with Logisim-evolution 3.x.
+Open `TinyCPU.circ` with Logisim-evolution 3.x. Das Blatt **`TinyCPU` ist die
+von Hand gepflegte Übersichtsseite**. Es ist keine generierte Verdrahtung und
+darf beim Bearbeiten der Integration weder neu angeordnet noch durch eine
+automatisch erzeugte Top-Level-Schaltung ersetzt werden. Generatoren in diesem
+Repository dürfen ausschließlich die eigenständigen Dateien unter
+`diagnostics/` aktualisieren; Ausgangspunkt bleibt immer die eingecheckte
+`TinyCPU.circ` mit ihrer vorhandenen Übersichtsseite.
+
+Eine ausfüllbare Schritt-für-Schritt-Vorlage für die weitere Integration steht
+in [`docs/tiny_cpu_top_level_template.md`](../../docs/tiny_cpu_top_level_template.md).
+Sie schreibt insbesondere vor, Leitungen in freien Korridoren **um** Symbole
+herumzuführen und jeden neuen Signalverbund einzeln zu prüfen.
 
 ## TinyClock: erster Top-Level-Baustein
 
 Die elektrische Integration beginnt bewusst mit dem gemeinsamen Takt. Das
-Blatt `IntegrationClock` in `TinyCPU.circ` verteilt einen einzigen
-`CLK`-Eingang ohne Gatter auf Fetch/Decode, Datenpfad, Adresspfad, Speicher und
-Fehlerflags. Sein Pinvertrag ist nun Teil von `tinycpu-16-12.json`, sodass
+isolierte Blatt `IntegrationClock` in `TinyCPU.circ` beschreibt die spätere
+Verteilung eines einzigen `CLK`-Eingangs ohne Gatter auf Fetch/Decode,
+Datenpfad, Adresspfad, Speicher und Fehlerflags. Sein Pinvertrag ist Teil von
+`tinycpu-16-12.json`, sodass
 fehlende, umbenannte oder falsch gerichtete Taktanschlüsse bereits in der
 reproduzierbaren Hardwareprüfung auffallen.
 
@@ -16,20 +28,23 @@ Passend zur gewünschten Organisation liegt die eigenständig ladbare Ansicht
 unter `diagnostics/TinyCPU-IntegrationClock.circ`. Sie wird wie die anderen
 Diagnoseprojekte aus `TinyCPU.circ` erzeugt und bytegenau gegen das eingebettete
 Blatt geprüft. Damit gibt es nur eine Schaltungsquelle, aber weiterhin eine
-kleine Datei für die Poke-Prüfung in Logisim-evolution. Im Top-Level erreicht
-dieselbe Taktleitung nun Fetch/Decode, Datenpfad, Adresspfad, Speicher und
-Fehlerflags über getrennte Abzweige.
+kleine Datei für die Poke-Prüfung in Logisim-evolution. Auf der manuell
+wiederhergestellten Übersichtsseite erreicht die Taktleitung derzeit
+Fetch/Decode, Datenpfad, Adresspfad und Speicher. Der Anschluss der Fehlerflags
+bleibt ein eigener, noch abzusichernder Schritt.
 
 ## TinyReset: definierter Neustart des Befehlszählers
 
-Der nächste isolierte Top-Level-Schritt führt den externen Eingang `RESET`
+Das isolierte Blatt `IntegrationReset` führt den externen Eingang `RESET`
 ohne kombinatorische Logik an den Reset-Anschluss von Fetch/Decode. Damit wird
 der Programmzähler reproduzierbar auf den Startzustand gesetzt, ohne den
 Inhalt der Daten- und Valid-RAMs oder die getrennte Fehlerlöschung durch
 `CLEAR_ERROR` umzudeuten. Das Blatt `IntegrationReset` und das erzeugte
 Diagnoseprojekt `diagnostics/TinyCPU-IntegrationReset.circ` frieren diesen
-Pinvertrag unabhängig vom breiteren Top-Level ein. Als nächster elektrischer
-Schritt folgen die Steuernetze; Daten- und Halt-Netze bleiben davon getrennt.
+Pinvertrag unabhängig vom breiteren Top-Level ein. Auf der wiederhergestellten
+Übersichtsseite ist `RESET` noch nicht installiert. Es wird dort als nächster
+einzelner Arbeitsschritt ergänzt; Steuernetze, Daten- und Halt-Netze bleiben
+davon getrennt.
 
 ## Ressourcenverbrauch eingrenzen
 
@@ -115,7 +130,10 @@ Schaltung. Fetch/Decode ist dabei in den Zustands- und ROM-Pfad (`FetchDecode`)
 sowie die eigentliche Steuersignaldecodierung (`FetchDecodeControls`)
 aufgeteilt.
 
-Sie werden reproduzierbar aus dem Hauptprojekt erzeugt:
+Sie werden reproduzierbar aus dem Hauptprojekt erzeugt. Der Befehl liest
+`TinyCPU.circ`, schreibt aber nur Dateien in das angegebene Diagnoseverzeichnis;
+er ist ausdrücklich **kein** Weg, das Blatt `TinyCPU` wiederherzustellen oder
+zu ersetzen:
 
 ```bash
 PYTHONPATH=src python src/tiny_cpu_circuit.py \

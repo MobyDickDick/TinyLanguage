@@ -63,21 +63,19 @@ def test_integration_clock_fans_out_one_net_to_every_stateful_block():
     assert set(pins.values()) <= reachable
 
 
-def test_top_level_clock_reaches_every_stateful_block():
-    """The independently checked clock fan-out is installed at integration level."""
+def test_top_level_clock_reaches_the_manually_integrated_blocks():
+    """Follow the real symbol terminals instead of treating anchors as pins."""
 
     root = ET.parse(PROJECT).getroot()
     circuit = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
-    components = {
-        component.get("name"): component.get("loc")
-        for component in circuit.findall("comp")
-        if component.get("name") in {
-            "FetchDecode",
-            "Datapath",
-            "AddressPath",
-            "Memory",
-            "ErrorFlags",
-        }
+    # These are the visible CLK terminals of the four blocks wired on the
+    # restored overview.  A subcircuit's ``loc`` is its symbol anchor, not an
+    # electrical terminal, so anchor reachability would test the wrong points.
+    clock_terminals = {
+        "FetchDecode": "(430,160)",
+        "Datapath": "(720,170)",
+        "AddressPath": "(1020,130)",
+        "Memory": "(1310,100)",
     }
     clock = next(
         component.get("loc")
@@ -98,7 +96,7 @@ def test_top_level_clock_reaches_every_stateful_block():
                 reachable.add(endpoint)
                 pending.append(endpoint)
 
-    assert set(components.values()) <= reachable
+    assert set(clock_terminals.values()) <= reachable
 
 
 def test_integration_reset_connects_external_reset_to_fetch_only():
@@ -117,22 +115,17 @@ def test_integration_reset_connects_external_reset_to_fetch_only():
     } == {frozenset(pins.values())}
 
 
-def test_top_level_reset_reaches_fetch_decode_reset():
-    """Install the independently checked reset net at integration level."""
+def test_top_level_reset_remains_pending_on_the_restored_overview():
+    """Do not silently reinstall reset over the hand-maintained overview."""
 
     root = ET.parse(PROJECT).getroot()
     circuit = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
-    reset = next(
-        component.get("loc")
+    reset_pins = [
+        component
         for component in circuit.findall("comp")
         if component.get("name") == "Pin" and _attributes(component).get("label") == "RESET"
-    )
-    wires = {
-        frozenset((wire.get("from"), wire.get("to")))
-        for wire in circuit.findall("wire")
-    }
-    # FetchDecode.RESET is the second west-facing input on the generated symbol.
-    assert frozenset((reset, "(400,210)")) in wires
+    ]
+    assert reset_pins == []
 
 
 def test_ci_runs_the_fresh_checkout_hardware_verifier():

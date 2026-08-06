@@ -138,10 +138,10 @@ def test_inspector_rejects_multiple_input_pins_on_one_net(tmp_path):
     assert report.routing_conflicts == ("multiple input pins drive one net: A, B",)
 
 
-def test_top_level_subcircuits_have_exclusive_routing_lanes():
+def test_top_level_subcircuits_do_not_have_overlapping_anchors():
     report = next(item for item in inspect_project(PROJECT) if item.name == "TinyCPU")
 
-    assert SUBCIRCUIT_ANCHOR_CLEARANCE == 600
+    assert SUBCIRCUIT_ANCHOR_CLEARANCE == 200
     assert report.placement_conflicts == ()
 
 

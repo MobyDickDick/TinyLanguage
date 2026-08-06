@@ -59,14 +59,18 @@ def test_inspector_exposes_completed_and_pending_sheets():
     reports = {report.name: report for report in inspect_project(PROJECT)}
 
     assert not reports["TinyCPU"].connected
-    assert "CLK@(80,100)" in reports["TinyCPU"].unconnected
+    assert "CLK@(80,140)" in reports["TinyCPU"].unconnected
     assert reports["Datapath"].components == 12
     assert reports["Datapath"].wires == 22
-    assert not reports["Datapath"].connected
-    assert "NEGATIVE@(570,210)" in reports["Datapath"].unconnected
-    assert not reports["AddressPath"].connected
-    assert not reports["Memory"].connected
-    assert not reports["ErrorFlags"].connected
+    for sheet in (
+        "Datapath",
+        "AddressPath",
+        "Memory",
+        "ErrorFlags",
+        "FetchDecode",
+        "FetchDecodeControls",
+    ):
+        assert reports[sheet].connected
 
 
 def test_inspector_accepts_a_minimal_connected_project(tmp_path):
@@ -89,7 +93,16 @@ def test_inspector_accepts_a_minimal_connected_project(tmp_path):
 def test_inspector_cli_rejects_incomplete_ap4_project(capsys):
     assert main([str(PROJECT)]) == 1
     output = capsys.readouterr().out
-    assert "widths: incompatible bus widths" in output
+    assert "TinyCPU: INCOMPLETE" in output
+
+
+def test_inspector_accepts_checked_in_diagnostic_projects():
+    diagnostics = PROJECT.parent / "diagnostics"
+
+    for project in sorted(diagnostics.glob("*.circ")):
+        reports = inspect_project(project)
+        assert reports
+        assert all(report.connected for report in reports), project.name
 
 
 def test_inspector_rejects_pin_connected_only_to_a_wire_stub(tmp_path):
@@ -139,8 +152,7 @@ def test_top_level_does_not_daisy_chain_unrelated_component_anchors():
     instance_locations = {
         component.get("loc")
         for component in top.findall("comp")
-        if component.get("name")
-        in {"Datapath", "AddressPath", "Memory", "ErrorFlags"}
+        if component.get("name") in {"Datapath", "AddressPath", "Memory", "ErrorFlags"}
     }
 
     for wire in top.findall("wire"):
@@ -197,6 +209,7 @@ def test_split_leaf_circuits_produces_independent_projects(tmp_path):
         circuits = root.findall("circuit")
         assert len(circuits) == 1
         assert root.find("main").get("name") == circuits[0].get("name")
+
 
 def test_checked_in_diagnostic_projects_are_reproducible(tmp_path):
     written = split_leaf_circuits(PROJECT, tmp_path)

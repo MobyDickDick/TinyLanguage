@@ -7,6 +7,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-06)
 
+- [x] **Connect the TinyCPU top-level opcode decode net**
+  (Owner: TinyCPU/Hardware)
+  - Success: place the existing `FetchDecodeControls` block on the maintained
+    overview and connect only the 22-bit `FetchDecode.OPCODE` output to its
+    matching `FetchDecodeControls.OPCODE` input, without moving existing
+    components or coupling the bus to clock or reset.
+  - Result: the first decode-control net runs around the left edge of the
+    overview in a free orthogonal corridor; a structural regression follows
+    the actual automatic-symbol terminals and locks the isolated connection.
+  - Follow-up: expose and connect one one-bit decoded control at a time,
+    beginning with `CLEAR_ERROR` and its matching `ErrorFlags` input.
+
+## Next documented work package (completed 2026-08-06)
+
 - [x] **Connect the TinyCPU top-level reset net**
   (Owner: TinyCPU/Hardware)
   - Success: add one external `RESET` input and connect it exclusively to

@@ -8,6 +8,7 @@ checked in CI before the authoritative Logisim simulator is invoked.
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
 from dataclasses import dataclass
 import json
 from pathlib import Path
@@ -828,8 +829,13 @@ def _serialize_standalone_logisim_project(data: bytes) -> bytes:
         data,
         count=1,
     )
+    # ElementTree inserts a space before self-closing tags whereas Logisim's
+    # own writer does not.  Keep generated diagnostics in Logisim's stable
+    # spelling so regenerating them does not create formatting-only churn.
+    data = data.replace(b" />", b"/>")
     data = data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
-    return data.replace(b"\n", b"\r\n")
+    data = data.replace(b"\n", b"\r\n")
+    return data if data.endswith(b"\r\n") else data + b"\r\n"
 
 
 def split_leaf_circuits(
@@ -845,7 +851,6 @@ def split_leaf_circuits(
     """
 
     project_path = Path(project)
-    source = project_path.read_bytes()
     root = _read_project(project_path)
     circuits = {circuit.get("name", ""): circuit for circuit in root.findall("circuit")}
     leaf_names = [
@@ -861,24 +866,8 @@ def split_leaf_circuits(
             f"{project_path} contains no independently loadable leaf circuits"
         )
 
-    circuit_pattern = re.compile(
-        rb"<circuit\b[^>]*\bname=(?P<quote>['\"])(?P<name>.*?)"
-        rb"(?P=quote)[^>]*>.*?</circuit>",
-        re.DOTALL,
-    )
-    circuit_matches = list(circuit_pattern.finditer(source))
-    source_names = {
-        match.group("name").decode("utf-8", errors="surrogateescape")
-        for match in circuit_matches
-    }
-    if source_names != set(circuits):
-        raise CircuitError(f"cannot locate every circuit byte range in {project_path}")
-
-    main_pattern = re.compile(
-        rb"(?P<prefix><main\b[^>]*\bname=)(?P<quote>['\"])(?P<name>.*?)" rb"(?P=quote)",
-        re.DOTALL,
-    )
-    if main_pattern.search(source) is None:
+    main = root.find("main")
+    if main is None:
         raise CircuitError(f"{project_path} has no main circuit declaration")
 
     destination = Path(output_directory)
@@ -886,36 +875,28 @@ def split_leaf_circuits(
     prefix = project_path.stem
     written: list[Path] = []
     for name in leaf_names:
-        encoded_name = name.encode("utf-8", errors="surrogateescape")
-        standalone = bytearray(source)
-        # Delete from the end so the original byte offsets remain valid.  The
-        # selected circuit itself is never parsed and re-serialized: attribute
-        # order, whitespace, coordinates, and line endings stay byte-exact.
-        for match in reversed(circuit_matches):
-            if match.group("name") != encoded_name:
-                start = source.rfind(b"\n", 0, match.start()) + 1
-                if source[start : match.start()].strip():
-                    start = match.start()
-                end = match.end()
-                if source[end : end + 2] == b"\r\n":
-                    end += 2
-                elif source[end : end + 1] == b"\n":
-                    end += 1
-                del standalone[start:end]
-        standalone = bytearray(
-            main_pattern.sub(
-                lambda match: (
-                    match.group("prefix")
-                    + match.group("quote")
-                    + encoded_name
-                    + match.group("quote")
-                ),
-                bytes(standalone),
-                count=1,
-            )
+        # Build a fresh project instead of deleting circuit byte ranges from
+        # the source document.  This prevents root text, comments, processing
+        # instructions, or unknown tool output from leaking into a diagnostic
+        # project.  Only library declarations, one main declaration, and the
+        # selected circuit belong in a standalone diagnostic.  In particular,
+        # do not carry root text or optional/unknown project sections across.
+        standalone = ET.Element("project", root.attrib)
+        for library in root.findall("lib"):
+            standalone.append(deepcopy(library))
+        standalone_main = deepcopy(main)
+        standalone_main.set("name", name)
+        standalone.append(standalone_main)
+        standalone.append(deepcopy(circuits[name]))
+        ET.indent(standalone, space="  ")
+        xml = ET.tostring(
+            standalone,
+            encoding="utf-8",
+            xml_declaration=True,
+            short_empty_elements=True,
         )
         target = destination / f"{prefix}-{name}.circ"
-        target.write_bytes(_serialize_standalone_logisim_project(bytes(standalone)))
+        target.write_bytes(_serialize_standalone_logisim_project(xml))
         written.append(target)
     return tuple(written)
 

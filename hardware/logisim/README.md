@@ -168,6 +168,10 @@ fails before a project with overlapping subcircuit symbols is checked in.
   sequential/jump PC path, program-limit check, and control decode for the complete symbolic ISA. The expanded decoder
   exposes every addressing, arithmetic, logic, branch, and I/O control plus all six
   error-set paths.
+- On the maintained `TinyCPU` overview, the 22-bit `FetchDecode.OPCODE` bus is
+  the first decode-integration net and drives only the matching input of the
+  separately placed `FetchDecodeControls` block. Its left-side route remains
+  isolated from the already integrated clock and reset nets.
 
 The AP 5 countdown program is loaded into the instruction ROM and its
 clock-edge reference trace is checked in as `ap5_countdown_trace.json`. AP 7

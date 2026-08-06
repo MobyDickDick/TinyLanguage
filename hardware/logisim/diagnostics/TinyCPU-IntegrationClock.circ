@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project source="4.1.0" version="1.0">
-  This file is intended to be loaded by Logisim-evolution v4.1.0(https://github.com/logisim-evolution/).
-
   <lib desc="#Wiring" name="0">
     <tool name="Pin">
       <a name="appearance" val="classic"/>
@@ -17,13 +15,6 @@
   <lib desc="#TCL" name="8"/>
   <lib desc="#Base" name="9"/>
   <main name="IntegrationClock"/>
-  <options>
-    <a name="gateUndefined" val="ignore"/>
-    <a name="simlimit" val="1000"/>
-    <a name="simrand" val="0"/>
-  </options>
-  <mappings/>
-  <toolbar/>
   <circuit name="IntegrationClock">
     <a name="appearance" val="logisim_evolution"/>
     <a name="circuit" val="IntegrationClock"/>

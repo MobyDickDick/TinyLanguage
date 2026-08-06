@@ -153,6 +153,41 @@ def test_top_level_reset_reaches_fetch_decode_only():
     )
 
 
+def test_top_level_opcode_reaches_decode_controls_only():
+    """Start decode integration with the independently named opcode bus."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
+    controls = [
+        component
+        for component in circuit.findall("comp")
+        if component.get("name") == "FetchDecodeControls"
+    ]
+    assert [component.get("loc") for component in controls] == ["(330,400)"]
+
+    adjacency = {}
+    for wire in circuit.findall("wire"):
+        start, end = wire.get("from"), wire.get("to")
+        adjacency.setdefault(start, set()).add(end)
+        adjacency.setdefault(end, set()).add(start)
+
+    # Automatic Logisim symbols place FetchDecode.OPCODE at the second output
+    # terminal and the sole FetchDecodeControls.OPCODE input after its 51
+    # output terminals.
+    opcode_source = "(330,110)"
+    opcode_target = "(430,910)"
+    reachable = {opcode_source}
+    pending = list(reachable)
+    while pending:
+        for endpoint in adjacency.get(pending.pop(), ()):
+            if endpoint not in reachable:
+                reachable.add(endpoint)
+                pending.append(endpoint)
+
+    assert opcode_target in reachable
+    assert reachable.isdisjoint({"(80,70)", "(80,210)"})
+
+
 def test_ci_runs_the_fresh_checkout_hardware_verifier():
     """Keep the documented dependency-free acceptance command in the main gate."""
 

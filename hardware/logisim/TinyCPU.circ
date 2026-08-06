@@ -49,6 +49,7 @@
     <comp loc="(1240,90)" name="Memory"/>
     <comp loc="(1530,80)" name="ErrorFlags"/>
     <comp loc="(330,100)" name="FetchDecode"/>
+    <comp loc="(330,400)" name="FetchDecodeControls"/>
     <comp loc="(650,100)" name="Datapath"/>
     <comp loc="(940,90)" name="AddressPath"/>
     <wire from="(1010,130)" to="(1020,130)"/>
@@ -74,6 +75,9 @@
     <wire from="(110,280)" to="(450,280)"/>
     <wire from="(450,170)" to="(450,280)"/>
     <wire from="(430,170)" to="(450,170)"/>
+    <wire from="(330,110)" to="(60,110)"/>
+    <wire from="(60,110)" to="(60,910)"/>
+    <wire from="(60,910)" to="(430,910)"/>
   </circuit>
   <circuit name="Datapath">
     <a name="appearance" val="logisim_evolution"/>
@@ -655,8 +659,8 @@
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(410,290)" name="Constant">
-      <a name="value" val="0xffff"/>
       <a name="width" val="16"/>
+      <a name="value" val="0xffff"/>
     </comp>
     <comp lib="0" loc="(420,350)" name="Splitter">
       <a name="bit1" val="0"/>

@@ -212,6 +212,79 @@ def test_split_leaf_circuits_produces_independent_projects(tmp_path):
         assert root.find("main").get("name") == circuits[0].get("name")
 
 
+def _leaf_circuit_signature(path):
+    """Return the order-independent electrical content of a leaf project.
+
+    Logisim does not assign meaning to the order of ``comp`` and ``wire`` XML
+    elements.  Comparing their serialization made this regression dependent
+    on checkout line endings and harmless editor reordering instead of the
+    generated circuit.  Keep every component attribute and nested ``a`` value
+    in the signature, while treating components and undirected wires as
+    multisets.
+    """
+
+    root = ET.parse(path).getroot()
+    circuit = root.find("circuit")
+    assert circuit is not None
+
+    def element_signature(element):
+        return (
+            element.tag,
+            tuple(sorted(element.attrib.items())),
+            (element.text or "").strip(),
+            tuple(element_signature(child) for child in element),
+        )
+
+    def component_signature(component):
+        return (
+            component.get("name", ""),
+            component.get("lib", ""),
+            component.get("loc", ""),
+            tuple(
+                sorted(
+                    (
+                        attribute.get("name", ""),
+                        attribute.get("val", ""),
+                        attribute.text or "",
+                    )
+                    for attribute in component.findall("a")
+                )
+            ),
+        )
+
+    components = tuple(
+        sorted(component_signature(component) for component in circuit.findall("comp"))
+    )
+    wires = tuple(
+        sorted(
+            tuple(sorted((wire.get("from", ""), wire.get("to", ""))))
+            for wire in circuit.findall("wire")
+        )
+    )
+    circuit_attributes = tuple(
+        sorted(
+            (
+                attribute.get("name", ""),
+                attribute.get("val", ""),
+                attribute.text or "",
+            )
+            for attribute in circuit.findall("a")
+        )
+    )
+    return (
+        element_signature(root.find("main")),
+        tuple(
+            element_signature(child)
+            for child in root
+            if child.tag not in {"main", "circuit"}
+        ),
+        circuit.get("name"),
+        circuit_attributes,
+        components,
+        wires,
+    )
+
+
 def test_checked_in_diagnostic_projects_are_reproducible(tmp_path):
     written = split_leaf_circuits(PROJECT, tmp_path)
     diagnostics = PROJECT.parent / "diagnostics"
@@ -220,7 +293,32 @@ def test_checked_in_diagnostic_projects_are_reproducible(tmp_path):
         path.name for path in diagnostics.glob("*.circ")
     }
     for path in written:
-        assert path.read_bytes() == (diagnostics / path.name).read_bytes()
+        assert _leaf_circuit_signature(path) == _leaf_circuit_signature(
+            diagnostics / path.name
+        )
+
+
+def test_leaf_signature_ignores_xml_order_but_detects_wire_changes(tmp_path):
+    expected = PROJECT.parent / "diagnostics" / "TinyCPU-Datapath.circ"
+    root = ET.parse(expected).getroot()
+    circuit = root.find("circuit")
+    assert circuit is not None
+
+    components = circuit.findall("comp")
+    wires = circuit.findall("wire")
+    for child in components + wires:
+        circuit.remove(child)
+    circuit.extend(reversed(wires))
+    circuit.extend(reversed(components))
+
+    reordered = tmp_path / "reordered.circ"
+    ET.ElementTree(root).write(reordered, encoding="utf-8", xml_declaration=True)
+    assert _leaf_circuit_signature(reordered) == _leaf_circuit_signature(expected)
+
+    circuit.find("wire").set("to", "(999,999)")
+    changed = tmp_path / "changed.circ"
+    ET.ElementTree(root).write(changed, encoding="utf-8", xml_declaration=True)
+    assert _leaf_circuit_signature(changed) != _leaf_circuit_signature(expected)
 
 
 def test_hardware_profile_matches_starter_contract(capsys):

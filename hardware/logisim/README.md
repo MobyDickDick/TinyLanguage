@@ -3,6 +3,23 @@
 This directory contains the completed eight-package TinyCPU hardware baseline.
 Open `TinyCPU.circ` with Logisim-evolution 3.x.
 
+## Nächster Schritt: Top-Level-Integration
+
+Nach der achtteiligen Struktur-Baseline beginnt die elektrische Integration
+bewusst mit dem gemeinsamen Takt. `TinyCPU-IntegrationClock.circ` ist ein
+kleines, eigenständig ladbares Zwischenprojekt: Ein einziger `CLK`-Eingang
+wird dort ohne Gatter auf die fünf zustandsbehafteten Blöcke Fetch/Decode,
+Datenpfad, Adresspfad, Speicher und Fehlerflags verteilt. Ein Strukturtest
+stellt sicher, dass alle sechs Pins tatsächlich demselben Netz angehören.
+
+Das Zwischenprojekt verändert `TinyCPU.circ` noch nicht. Es trennt Fehler im
+Taktnetz von der späteren, deutlich größeren Daten- und Steuerverdrahtung und
+kann vor jedem Integrationsschritt einzeln in Logisim-evolution geöffnet und
+mit der Poke-Funktion geprüft werden. Als nächste Teilaufgabe werden diese fünf
+Ausgänge an die entsprechenden `CLK`-Ports der integrierten Subcircuits
+angeschlossen; danach folgen Reset, Datenbusse und Steuersignale jeweils als
+separat prüfbare Netze.
+
 ## Ressourcenverbrauch eingrenzen
 
 ### Kleinstmögliche Verdrahtungsproben

@@ -704,13 +704,17 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
             for net_point in net:
                 for component in terminal_to_component.get(net_point, ()):
                     attrs = _attributes(component)
-                    if component.get("name") == "Pin" and attrs.get("type") == "output":
+                    # A circuit input pin drives its internal net.  Conversely,
+                    # a pin with ``type=output`` is a sink inside the circuit
+                    # (although it drives the enclosing circuit when this sheet
+                    # is used as a subcircuit).
+                    if component.get("name") == "Pin" and attrs.get("type") != "output":
                         drivers.append(
                             attrs.get("label") or f"Pin@{component.get('loc')}"
                         )
             if len(set(drivers)) > 1:
                 routing_conflicts.append(
-                    "multiple output pins drive one net: "
+                    "multiple input pins drive one net: "
                     + ", ".join(sorted(set(drivers)))
                 )
         terminal_widths: dict[str, list[tuple[str, int]]] = {}

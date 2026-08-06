@@ -79,3 +79,14 @@ Schaltung, Maschinenformat, generierten ROM-/Listing-Artefakten oder
 Referenztrace bereits vor der allgemeinen Testsuite mit einer gezielten
 TinyCPU-Diagnose fehl. Ein Regressionstest schützt sowohl den Namen des Gates
 als auch das dokumentierte Kommando vor unbeabsichtigtem Entfernen.
+
+## Folgeschritt: elektrische Top-Level-Integration
+
+Die abgeschlossene AP-1-bis-AP-8-Baseline beschreibt und prüft die einzelnen
+Blöcke, während das Top-Level weiterhin eine Integrationsgrenze ist. Der neue
+Integrationsabschnitt beginnt deshalb mit einem einzigen, überschaubaren Netz:
+`hardware/logisim/TinyCPU-IntegrationClock.circ` verteilt `CLK` auf alle fünf
+zustandsbehafteten Blöcke. Erst nach der eigenständigen Logisim-Prüfung dieses
+Netzes wird es in `TinyCPU.circ` übernommen. Daten-, Steuer-, Reset- und
+Halt-Netze folgen einzeln, damit jeder Schritt strukturell und im Simulator
+isoliert abgenommen werden kann.

@@ -19,11 +19,47 @@ from tiny_cpu_verify import VerificationError, verify_checkout
 
 PROJECT = Path(__file__).parents[2] / "hardware" / "logisim" / "TinyCPU.circ"
 HARDWARE = PROJECT.parent
+INTEGRATION_CLOCK = HARDWARE / "TinyCPU-IntegrationClock.circ"
 CI_WORKFLOW = Path(__file__).parents[2] / ".github" / "workflows" / "ci.yml"
 
 
 def _attributes(component):
     return {attribute.get("name"): attribute.get("val") for attribute in component}
+
+
+def test_integration_clock_fans_out_one_net_to_every_stateful_block():
+    """Start top-level integration with a small, independently loadable net."""
+
+    circuit = ET.parse(INTEGRATION_CLOCK).getroot().find("circuit")
+    pins = {
+        _attributes(component)["label"]: component.get("loc")
+        for component in circuit.findall("comp")
+        if component.get("name") == "Pin"
+    }
+    assert set(pins) == {
+        "CLK",
+        "FETCH_CLK",
+        "DATAPATH_CLK",
+        "ADDRESS_CLK",
+        "MEMORY_CLK",
+        "ERROR_FLAGS_CLK",
+    }
+
+    adjacency = {}
+    for wire in circuit.findall("wire"):
+        start, end = wire.get("from"), wire.get("to")
+        adjacency.setdefault(start, set()).add(end)
+        adjacency.setdefault(end, set()).add(start)
+
+    reachable = {pins["CLK"]}
+    pending = [pins["CLK"]]
+    while pending:
+        for endpoint in adjacency.get(pending.pop(), ()):
+            if endpoint not in reachable:
+                reachable.add(endpoint)
+                pending.append(endpoint)
+
+    assert set(pins.values()) <= reachable
 
 
 def test_ci_runs_the_fresh_checkout_hardware_verifier():

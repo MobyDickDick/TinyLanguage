@@ -100,3 +100,10 @@ eine Leitung durch ein Symbol oder über einen fremden Anschluss ist auch dann
 unzulässig, wenn die XML-Strukturprüfung sie akzeptieren würde. Als Nächstes
 werden Steuernetze, Datenpfade und zuletzt Halt-/Fehlerausgänge jeweils getrennt
 verdrahtet und abgenommen.
+
+Als erstes Decode-Netz führt die Übersichtsseite nun den 22-Bit-Ausgang
+`FetchDecode.OPCODE` zum gleichnamigen Eingang des separat platzierten
+`FetchDecodeControls`-Blocks. Die Route bleibt von `CLK` und `RESET` isoliert
+und nutzt den freien linken Außenkorridor. Als nächstes wird genau ein
+einbittiges Decodesignal exportiert und angeschlossen: `CLEAR_ERROR` zum
+gleichnamigen Eingang der Fehlerflags.

@@ -22,7 +22,7 @@ class CircuitError(ValueError):
 
 SUPPORTED_PROFILE_SCHEMA = 1
 SUBCIRCUIT_ANCHOR_CLEARANCE = 600
-FETCH_DECODE_DECODER_PITCH = 20
+FETCH_DECODE_DECODER_PITCH = 10
 FETCH_DECODE_SIGNAL_LANES = {
     "LOAD_CONST": 0,
     "LOAD_ADDRESS": 1,
@@ -61,21 +61,21 @@ FETCH_DECODE_SIGNAL_LANES = {
     "JUMP_ADDRESS": 34,
     "JUMP_ZERO": 35,
     "JUMP_NOT_ZERO": 36,
-    "JUMP_NEGATIVE": 37,
-    "JUMP_ERROR": 38,
-    "JUMP_NOT_ERROR": 39,
-    "CLEAR_ERROR": 40,
-    "INPUT": 41,
-    "PRINT": 42,
-    "PRINT_ADDRESS": 43,
-    "HALT": 44,
-    "HALT_ERROR": 45,
-    "SET_OVF": 48,
-    "SET_DIV0": 49,
-    "SET_ADDR": 50,
-    "SET_INV": 51,
-    "SET_ILL": 52,
-    "SET_INPUT": 53,
+    "JUMP_NEGATIVE": 36,
+    "JUMP_ERROR": 37,
+    "JUMP_NOT_ERROR": 38,
+    "CLEAR_ERROR": 39,
+    "INPUT": 40,
+    "PRINT": 41,
+    "PRINT_ADDRESS": 42,
+    "HALT": 43,
+    "HALT_ERROR": 44,
+    "SET_OVF": 45,
+    "SET_DIV0": 46,
+    "SET_ADDR": 47,
+    "SET_INV": 48,
+    "SET_ILL": 49,
+    "SET_INPUT": 50,
 }
 
 
@@ -151,8 +151,6 @@ def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
     the machine-format opcode table, so check the exact decoder-port endpoint.
     """
 
-    if circuit.get("name") != "FetchDecode":
-        return ()
     decoder = next(
         (
             component
@@ -165,8 +163,9 @@ def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
     if decoder is None:
         return ()
     decoder_x, decoder_y = _location(decoder.get("loc", ""))
-    decoder_output_x = decoder_x + 30
-    decoder_output0_y = decoder_y + 330
+    decoder_outputs = min(1 << int(_attributes(decoder)["select"]), 64)
+    decoder_output_x = decoder_x + 20
+    decoder_output0_y = decoder_y - FETCH_DECODE_DECODER_PITCH * decoder_outputs
     output_pins = {
         attrs["label"]: _norm_loc(component.get("loc", "?"))
         for component in circuit.findall("comp")
@@ -198,7 +197,7 @@ def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
             )
             if gate is not None:
                 gate_x, gate_y = _location(gate.get("loc", ""))
-                target = f"({gate_x - 50},{gate_y - 10})"
+                target = f"({gate_x - 50},{gate_y - 20})"
         elif signal == "HALT_ERROR":
             gate = next(
                 (
@@ -211,7 +210,7 @@ def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
             )
             if gate is not None:
                 gate_x, gate_y = _location(gate.get("loc", ""))
-                target = f"({gate_x - 50},{gate_y - 10})"
+                target = f"({gate_x - 50},{gate_y - 20})"
         decoder_output = (
             f"({decoder_output_x},"
             f"{decoder_output0_y + FETCH_DECODE_DECODER_PITCH * lane})"
@@ -226,7 +225,7 @@ def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
                     pending.append(neighbor)
         if target not in seen:
             conflicts.append(
-                f"FetchDecode.{signal}: output pin {pin} is not wired to "
+                f"{circuit.get('name')}.{signal}: output pin {pin} is not wired to "
                 f"decoder lane {lane} at {decoder_output}"
             )
     return tuple(conflicts)
@@ -251,21 +250,30 @@ def _component_terminals(component: ET.Element) -> set[str]:
     if component.get("name") == "Decoder":
         select = int(attrs.get("select", "1"))
         outputs = min(1 << select, 64)
-        terminals.add(f"({x},{y + 20})")  # select input bus
-        terminals.update(f"({x + 30},{y + 330 + 20 * lane})" for lane in range(outputs))
+        terminals.update(
+            f"({x + 20},{y - 10 * outputs + 10 * lane})" for lane in range(outputs)
+        )
         return terminals
     if component.get("name") == "Splitter":
         fanout = int(attrs.get("fanout", "2"))
         if attrs.get("appear") == "right" or attrs.get("label") == "PC_ADDRESS":
             start = y - 20
-            terminals.update(f"({x + 20},{start + 40 * index})" for index in range(fanout))
+            terminals.update(
+                f"({x + 20},{start + 40 * index})" for index in range(fanout)
+            )
         else:
             terminals.update(f"({x + 20},{y + 20 * index})" for index in range(fanout))
         return terminals
-    if attrs.get("label") in {"JNZ_TAKEN", "ERROR_HALT"}:
-        terminals.update({f"({x - 50},{y - 10})", f"({x - 50},{y + 10})"})
-    elif attrs.get("label") == "NOT_ZERO":
+    if component.get("name") in {"AND Gate", "OR Gate"}:
+        terminals.update({f"({x - 50},{y - 20})", f"({x - 50},{y + 20})"})
+    elif component.get("name") == "NOT Gate":
         terminals.add(f"({x - 30},{y})")
+    elif component.get("name") in {"Adder", "Comparator"}:
+        terminals.update({f"({x - 40},{y - 10})", f"({x - 40},{y + 10})"})
+        if component.get("name") == "Adder":
+            terminals.update({f"({x - 20},{y - 20})", f"({x - 20},{y + 20})"})
+        else:
+            terminals.update({f"({x},{y - 10})", f"({x},{y + 10})"})
     if attrs.get("appearance") != "logisim_evolution":
         return terminals
     if component.get("name") == "Register":
@@ -278,17 +286,24 @@ def _component_terminals(component: ET.Element) -> set[str]:
                 f"({x + 30},{y + 90})",  # reset
             }
         )
-    elif component.get("name") in {"RAM", "ROM"}:
+    elif component.get("name") == "RAM":
+        data_width = int(
+            attrs.get("dataWidth", attrs.get("data", str(attrs.get("width", "1"))))
+        )
+        data_offset = 100 if data_width == 1 else 90
+        address_offset = -10 if data_width == 1 else 10
         terminals.update(
             {
-                f"({x},{y + 10})",
+                f"({x},{y + address_offset})",
                 f"({x},{y + 50})",
                 f"({x},{y + 60})",
                 f"({x},{y + 70})",
-                f"({x},{y + 100})",
-                f"({x + 240},{y + 100})",
+                f"({x},{y + data_offset})",
+                f"({x + 240},{y + data_offset})",
             }
         )
+    elif component.get("name") == "ROM":
+        terminals.update({f"({x},{y + 10})", f"({x + 240},{y + 60})"})
     return terminals
 
 
@@ -305,9 +320,9 @@ def _component_terminal_widths(component: ET.Element) -> dict[str, int]:
     if name == "Decoder":
         select = int(attrs.get("select", "1"))
         outputs = min(1 << select, 64)
-        result = {location: 1, f"({x},{y + 20})": select}
+        result = {location: select}
         result.update(
-            {f"({x + 30},{y + 330 + 20 * lane})": 1 for lane in range(outputs)}
+            {f"({x + 20},{y - 10 * outputs + 10 * lane})": 1 for lane in range(outputs)}
         )
         return result
     if name == "Splitter":
@@ -315,7 +330,9 @@ def _component_terminal_widths(component: ET.Element) -> dict[str, int]:
         fanout = int(attrs.get("fanout", "2"))
         output_widths = {index: 0 for index in range(fanout)}
         for bit in range(incoming):
-            output = int(attrs.get(f"bit{bit}", str(bit if bit < fanout else fanout - 1)))
+            output = int(
+                attrs.get(f"bit{bit}", str(bit if bit < fanout else fanout - 1))
+            )
             if output >= 0:
                 output_widths[output] = output_widths.get(output, 0) + 1
         result = {location: incoming}
@@ -335,10 +352,26 @@ def _component_terminal_widths(component: ET.Element) -> dict[str, int]:
                 }
             )
         return result
-    if attrs.get("label") in {"JNZ_TAKEN", "ERROR_HALT"}:
-        return {location: 1, f"({x - 50},{y - 10})": 1, f"({x - 50},{y + 10})": 1}
-    if attrs.get("label") == "NOT_ZERO":
+    if name in {"AND Gate", "OR Gate"}:
+        return {location: 1, f"({x - 50},{y - 20})": 1, f"({x - 50},{y + 20})": 1}
+    if name == "NOT Gate":
         return {location: 1, f"({x - 30},{y})": 1}
+    if name == "Adder":
+        return {
+            location: width,
+            f"({x - 40},{y - 10})": width,
+            f"({x - 40},{y + 10})": width,
+            f"({x - 20},{y - 20})": 1,
+            f"({x - 20},{y + 20})": 1,
+        }
+    if name == "Comparator":
+        return {
+            f"({x - 40},{y - 10})": width,
+            f"({x - 40},{y + 10})": width,
+            f"({x},{y - 10})": 1,
+            location: 1,
+            f"({x},{y + 10})": 1,
+        }
     if attrs.get("appearance") == "logisim_evolution":
         if name == "Register":
             return {
@@ -348,17 +381,23 @@ def _component_terminal_widths(component: ET.Element) -> dict[str, int]:
                 f"({x},{y + 70})": 1,
                 f"({x + 30},{y + 90})": 1,
             }
-        if name in {"RAM", "ROM"}:
+        if name == "RAM":
             addr_width = int(attrs.get("addrWidth", attrs.get("addr", "1")))
             data_width = int(attrs.get("dataWidth", attrs.get("data", str(width))))
+            data_offset = 100 if data_width == 1 else 90
+            address_offset = -10 if data_width == 1 else 10
             return {
-                f"({x},{y + 10})": addr_width,
-                f"({x},{y + 50})": data_width,
+                f"({x},{y + address_offset})": addr_width,
+                f"({x},{y + 50})": 1,
                 f"({x},{y + 60})": 1,
                 f"({x},{y + 70})": 1,
-                f"({x},{y + 100})": 1,
-                f"({x + 240},{y + 100})": data_width,
+                f"({x},{y + data_offset})": data_width,
+                f"({x + 240},{y + data_offset})": data_width,
             }
+        if name == "ROM":
+            addr_width = int(attrs.get("addrWidth", attrs.get("addr", "1")))
+            data_width = int(attrs.get("dataWidth", attrs.get("data", str(width))))
+            return {f"({x},{y + 10})": addr_width, f"({x + 240},{y + 60})": data_width}
     return {terminal: width for terminal in _component_terminals(component)}
 
 

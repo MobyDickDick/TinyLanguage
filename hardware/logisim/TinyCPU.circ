@@ -39,6 +39,10 @@
       <a name="appearance" val="classic"/>
       <a name="label" val="CLK"/>
     </comp>
+    <comp lib="0" loc="(80,210)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="RESET"/>
+    </comp>
     <comp lib="9" loc="(320,30)" name="Text">
       <a name="text" val="TinyCPU integration: one clock net drives all stateful blocks"/>
     </comp>
@@ -65,6 +69,11 @@
     <wire from="(90,140)" to="(110,140)"/>
     <wire from="(90,70)" to="(420,70)"/>
     <wire from="(90,70)" to="(90,140)"/>
+    <wire from="(80,210)" to="(110,210)"/>
+    <wire from="(110,210)" to="(110,280)"/>
+    <wire from="(110,280)" to="(450,280)"/>
+    <wire from="(450,170)" to="(450,280)"/>
+    <wire from="(430,170)" to="(450,170)"/>
   </circuit>
   <circuit name="Datapath">
     <a name="appearance" val="logisim_evolution"/>

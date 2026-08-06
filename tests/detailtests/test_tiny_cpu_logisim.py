@@ -116,8 +116,8 @@ def test_integration_reset_connects_external_reset_to_fetch_only():
     } == {frozenset(pins.values())}
 
 
-def test_top_level_reset_remains_pending_on_the_restored_overview():
-    """Do not silently reinstall reset over the hand-maintained overview."""
+def test_top_level_reset_reaches_fetch_decode_only():
+    """Reset the PC without coupling reset to any other top-level block."""
 
     root = ET.parse(PROJECT).getroot()
     circuit = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
@@ -126,7 +126,31 @@ def test_top_level_reset_remains_pending_on_the_restored_overview():
         for component in circuit.findall("comp")
         if component.get("name") == "Pin" and _attributes(component).get("label") == "RESET"
     ]
-    assert reset_pins == []
+    assert len(reset_pins) == 1
+
+    adjacency = {}
+    for wire in circuit.findall("wire"):
+        start, end = wire.get("from"), wire.get("to")
+        adjacency.setdefault(start, set()).add(end)
+        adjacency.setdefault(end, set()).add(start)
+
+    reachable = {reset_pins[0].get("loc")}
+    pending = list(reachable)
+    while pending:
+        for endpoint in adjacency.get(pending.pop(), ()):
+            if endpoint not in reachable:
+                reachable.add(endpoint)
+                pending.append(endpoint)
+
+    assert "(430,170)" in reachable  # FetchDecode.RESET
+    assert reachable.isdisjoint(
+        {
+            "(720,180)",  # Datapath reset-shaped terminal
+            "(1020,140)",  # AddressPath reset-shaped terminal
+            "(1310,110)",  # Memory control terminal
+            "(1610,30)",  # ErrorFlags control terminal
+        }
+    )
 
 
 def test_ci_runs_the_fresh_checkout_hardware_verifier():

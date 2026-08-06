@@ -7,6 +7,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-06)
 
+- [x] **Connect the TinyCPU top-level reset net**
+  (Owner: TinyCPU/Hardware)
+  - Success: add one external `RESET` input and connect it exclusively to
+    `FetchDecode.RESET`, without moving the hand-maintained overview or
+    implicitly clearing the accumulator, address register, RAM, or errors.
+  - Result: the one-bit reset net uses the free corridor below the overview to
+    reach the Fetch/Decode reset terminal from the right; a structural
+    regression follows the actual wire graph and excludes every other block.
+  - Follow-up: connect the decode-control nets one at a time, starting with an
+    independently named Fetch/Decode output and its matching contract input.
+
+## Next documented work package (completed 2026-08-06)
+
 - [x] **Complete the TinyCPU top-level clock fan-out**
   (Owner: TinyCPU/Hardware)
   - Success: connect the existing top-level clock net to `ErrorFlags.CLK`

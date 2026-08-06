@@ -47,7 +47,12 @@
     <comp loc="(2700,100)" name="ErrorFlags"/>
     <comp loc="(300,100)" name="FetchDecode"/>
     <comp loc="(900,100)" name="Datapath"/>
-    <wire from="(80,140)" to="(90,140)"/>
+    <wire from="(1500,100)" to="(1600,100)"/>
+    <wire from="(2100,100)" to="(2200,100)"/>
+    <wire from="(2700,100)" to="(2800,100)"/>
+    <wire from="(3200,100)" to="(3300,100)"/>
+    <wire from="(80,140)" to="(130,140)"/>
+    <wire from="(900,100)" to="(1000,100)"/>
   </circuit>
   <circuit name="Datapath">
     <a name="appearance" val="logisim_evolution"/>
@@ -101,6 +106,7 @@
       <a name="type" val="output"/>
     </comp>
     <comp lib="3" loc="(520,180)" name="Comparator">
+      <a name="label" val="ACC_STATUS"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(270,100)" name="Register">
@@ -193,6 +199,7 @@
       <a name="type" val="output"/>
     </comp>
     <comp lib="3" loc="(520,200)" name="Adder">
+      <a name="label" val="OFFSET_ADDER"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(340,120)" name="Register">
@@ -633,6 +640,7 @@
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(420,350)" name="Splitter">
+      <a name="label" val="INSTRUCTION_FIELDS"/>
       <a name="bit1" val="0"/>
       <a name="bit10" val="0"/>
       <a name="bit11" val="0"/>
@@ -703,9 +711,11 @@
       <a name="label" val="ERROR_HALT"/>
     </comp>
     <comp lib="3" loc="(430,190)" name="Comparator">
+      <a name="label" val="PC_RANGE"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(490,280)" name="Adder">
+      <a name="label" val="PC_INCREMENT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(250,100)" name="Register">
@@ -717,8 +727,7 @@
       <a name="addrWidth" val="12"/>
       <a name="appearance" val="logisim_evolution"/>
       <a name="contents">addr/data: 12 22
-ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
-2c0000
+00ffff 1c0065 000003 1c0064 2a0000 050065 1c0064 240004 2c0000
 </a>
       <a name="dataWidth" val="22"/>
       <a name="label" val="INSTRUCTION_ROM"/>
@@ -1077,6 +1086,7 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="width" val="6"/>
     </comp>
     <comp lib="2" loc="(500,670)" name="Decoder">
+      <a name="label" val="ISA_DECODER"/>
       <a name="select" val="6"/>
     </comp>
     <wire from="(1000,110)" to="(1040,110)"/>
@@ -1232,54 +1242,5 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(980,90)" to="(980,150)"/>
     <wire from="(990,130)" to="(1040,130)"/>
     <wire from="(990,80)" to="(990,130)"/>
-  </circuit>
-  <circuit name="IntegrationClock">
-    <a name="appearance" val="logisim_evolution"/>
-    <a name="circuit" val="IntegrationClock"/>
-    <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(120,200)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="CLK"/>
-    </comp>
-    <comp lib="0" loc="(420,140)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="DATAPATH_CLK"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="0" loc="(420,200)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="ADDRESS_CLK"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="0" loc="(420,260)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="MEMORY_CLK"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="0" loc="(420,320)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="ERROR_FLAGS_CLK"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="0" loc="(420,80)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="FETCH_CLK"/>
-      <a name="type" val="output"/>
-    </comp>
-    <wire from="(120,200)" to="(240,200)"/>
-    <wire from="(240,140)" to="(240,200)"/>
-    <wire from="(240,140)" to="(420,140)"/>
-    <wire from="(240,200)" to="(240,260)"/>
-    <wire from="(240,200)" to="(420,200)"/>
-    <wire from="(240,260)" to="(240,320)"/>
-    <wire from="(240,260)" to="(420,260)"/>
-    <wire from="(240,320)" to="(420,320)"/>
-    <wire from="(240,80)" to="(240,140)"/>
-    <wire from="(240,80)" to="(420,80)"/>
   </circuit>
 </project>

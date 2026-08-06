@@ -341,7 +341,6 @@
       <a name="width" val="6"/>
     </comp>
     <comp lib="2" loc="(500,670)" name="Decoder">
-      <a name="label" val="ISA_DECODER"/>
       <a name="select" val="6"/>
     </comp>
     <wire from="(1000,110)" to="(1040,110)"/>

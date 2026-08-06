@@ -83,10 +83,12 @@ als auch das dokumentierte Kommando vor unbeabsichtigtem Entfernen.
 ## Folgeschritt: elektrische Top-Level-Integration
 
 Die abgeschlossene AP-1-bis-AP-8-Baseline beschreibt und prüft die einzelnen
-Blöcke, während das Top-Level weiterhin eine Integrationsgrenze ist. Der neue
-Integrationsabschnitt beginnt deshalb mit einem einzigen, überschaubaren Netz:
-`hardware/logisim/TinyCPU-IntegrationClock.circ` verteilt `CLK` auf alle fünf
-zustandsbehafteten Blöcke. Erst nach der eigenständigen Logisim-Prüfung dieses
-Netzes wird es in `TinyCPU.circ` übernommen. Daten-, Steuer-, Reset- und
-Halt-Netze folgen einzeln, damit jeder Schritt strukturell und im Simulator
-isoliert abgenommen werden kann.
+Blöcke, während das Top-Level weiterhin eine Integrationsgrenze ist. Das in
+`TinyCPU.circ` eingebettete Blatt `IntegrationClock` verteilt `CLK` auf alle
+fünf zustandsbehafteten Blöcke. Sein maschinenlesbarer Pinvertrag und das aus
+dem Hauptprojekt erzeugte Diagnoseblatt
+`hardware/logisim/diagnostics/TinyCPU-IntegrationClock.circ` sichern jetzt
+gemeinsam Verdrahtung, Richtung und Reproduzierbarkeit ab. Als nächstes wird
+das geprüfte Taktnetz im Top-Level an die fünf Zustandsblöcke angeschlossen.
+Daten-, Steuer-, Reset- und Halt-Netze folgen einzeln, damit jeder Schritt
+strukturell und im Simulator isoliert abgenommen werden kann.

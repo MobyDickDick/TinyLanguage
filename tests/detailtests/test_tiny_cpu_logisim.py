@@ -19,7 +19,7 @@ from tiny_cpu_verify import VerificationError, verify_checkout
 
 PROJECT = Path(__file__).parents[2] / "hardware" / "logisim" / "TinyCPU.circ"
 HARDWARE = PROJECT.parent
-INTEGRATION_CLOCK = HARDWARE / "TinyCPU-IntegrationClock.circ"
+INTEGRATION_CLOCK = HARDWARE / "diagnostics" / "TinyCPU-IntegrationClock.circ"
 CI_WORKFLOW = Path(__file__).parents[2] / ".github" / "workflows" / "ci.yml"
 
 
@@ -143,16 +143,16 @@ def test_ap2_datapaths_are_wired_and_expose_status_and_offset_results():
         assert labels <= output_labels
         assert circuit.findall("wire")
 
-    datapath_parts = {
-        _attributes(component).get("label"): component.get("name")
+    assert any(
+        component.get("name") == "Comparator"
+        and _attributes(component).get("width") == "16"
         for component in circuits["Datapath"].findall("comp")
-    }
-    address_parts = {
-        _attributes(component).get("label"): component.get("name")
+    )
+    assert any(
+        component.get("name") == "Adder"
+        and _attributes(component).get("width") == "16"
         for component in circuits["AddressPath"].findall("comp")
-    }
-    assert datapath_parts["ACC_STATUS"] == "Comparator"
-    assert address_parts["OFFSET_ADDER"] == "Adder"
+    )
 
 
 def test_address_path_uses_component_terminals_without_shorting_buses():

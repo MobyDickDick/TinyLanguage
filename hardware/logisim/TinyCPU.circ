@@ -39,6 +39,10 @@
       <a name="appearance" val="classic"/>
       <a name="label" val="CLK"/>
     </comp>
+    <comp lib="0" loc="(80,210)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="RESET"/>
+    </comp>
     <comp lib="9" loc="(320,30)" name="Text">
       <a name="text" val="TinyCPU integration: one clock net drives all stateful blocks"/>
     </comp>
@@ -59,6 +63,7 @@
     <wire from="(710,70)" to="(1010,70)"/>
     <wire from="(710,70)" to="(710,170)"/>
     <wire from="(80,70)" to="(90,70)"/>
+    <wire from="(80,210)" to="(430,210)"/>
     <wire from="(90,140)" to="(110,140)"/>
     <wire from="(90,70)" to="(420,70)"/>
     <wire from="(90,70)" to="(90,140)"/>
@@ -1295,5 +1300,21 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(240,320)" to="(420,320)"/>
     <wire from="(240,80)" to="(240,140)"/>
     <wire from="(240,80)" to="(420,80)"/>
+  </circuit>
+  <circuit name="IntegrationReset">
+    <a name="appearance" val="logisim_evolution"/>
+    <a name="circuit" val="IntegrationReset"/>
+    <a name="simulationFrequency" val="1.0"/>
+    <comp lib="0" loc="(120,140)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="RESET"/>
+    </comp>
+    <comp lib="0" loc="(420,140)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="FETCH_RESET"/>
+      <a name="type" val="output"/>
+    </comp>
+    <wire from="(120,140)" to="(420,140)"/>
   </circuit>
 </project>

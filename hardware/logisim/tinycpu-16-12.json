@@ -254,6 +254,12 @@
         "MEMORY_CLK": 1,
         "ERROR_FLAGS_CLK": 1
       }
+    },
+    "IntegrationReset": {
+      "pins": {
+        "RESET": 1,
+        "FETCH_RESET": 1
+      }
     }
   },
   "roms": {
@@ -399,6 +405,10 @@
       "ADDRESS_CLK": "output",
       "MEMORY_CLK": "output",
       "ERROR_FLAGS_CLK": "output"
+    },
+    "IntegrationReset": {
+      "RESET": "input",
+      "FETCH_RESET": "output"
     }
   }
 }

@@ -20,6 +20,7 @@ from tiny_cpu_verify import VerificationError, verify_checkout
 PROJECT = Path(__file__).parents[2] / "hardware" / "logisim" / "TinyCPU.circ"
 HARDWARE = PROJECT.parent
 INTEGRATION_CLOCK = HARDWARE / "diagnostics" / "TinyCPU-IntegrationClock.circ"
+INTEGRATION_RESET = HARDWARE / "diagnostics" / "TinyCPU-IntegrationReset.circ"
 CI_WORKFLOW = Path(__file__).parents[2] / ".github" / "workflows" / "ci.yml"
 
 
@@ -98,6 +99,40 @@ def test_top_level_clock_reaches_every_stateful_block():
                 pending.append(endpoint)
 
     assert set(components.values()) <= reachable
+
+
+def test_integration_reset_connects_external_reset_to_fetch_only():
+    """Reset restarts the PC without implicitly clearing RAM or error flags."""
+
+    circuit = ET.parse(INTEGRATION_RESET).getroot().find("circuit")
+    pins = {
+        _attributes(component)["label"]: component.get("loc")
+        for component in circuit.findall("comp")
+        if component.get("name") == "Pin"
+    }
+    assert pins == {"RESET": "(120,140)", "FETCH_RESET": "(420,140)"}
+    assert {
+        frozenset((wire.get("from"), wire.get("to")))
+        for wire in circuit.findall("wire")
+    } == {frozenset(pins.values())}
+
+
+def test_top_level_reset_reaches_fetch_decode_reset():
+    """Install the independently checked reset net at integration level."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
+    reset = next(
+        component.get("loc")
+        for component in circuit.findall("comp")
+        if component.get("name") == "Pin" and _attributes(component).get("label") == "RESET"
+    )
+    wires = {
+        frozenset((wire.get("from"), wire.get("to")))
+        for wire in circuit.findall("wire")
+    }
+    # FetchDecode.RESET is the second west-facing input on the generated symbol.
+    assert frozenset((reset, "(430,210)")) in wires
 
 
 def test_ci_runs_the_fresh_checkout_hardware_verifier():

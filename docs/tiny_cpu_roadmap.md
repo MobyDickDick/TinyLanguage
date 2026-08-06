@@ -91,11 +91,12 @@ Prüfung; sie dürfen die Übersichtsseite weder ersetzen noch deren Bauteile
 verschieben.
 
 Der aktuelle Stand verteilt den gemeinsamen Takt an Fetch/Decode, Datenpfad,
-Adresspfad, Speicher und Fehlerflags; Reset ist noch nicht im Top-Level
-angeschlossen. Alle weiteren Netze werden anhand der
+Adresspfad, Speicher und Fehlerflags. Ein unabhängiger `RESET`-Eingang setzt
+ausschließlich Fetch/Decode und damit den Programmzähler zurück. Alle weiteren
+Netze werden anhand der
 [Top-Level-Vorlage](tiny_cpu_top_level_template.md) einzeln ergänzt. Dabei wird
 jede Leitung rechtwinklig in einem freien Korridor um Bauteile herumgeführt;
 eine Leitung durch ein Symbol oder über einen fremden Anschluss ist auch dann
 unzulässig, wenn die XML-Strukturprüfung sie akzeptieren würde. Als Nächstes
-werden Reset, Steuernetze, Datenpfade und zuletzt Halt-/Fehlerausgänge jeweils
-getrennt verdrahtet und abgenommen.
+werden Steuernetze, Datenpfade und zuletzt Halt-/Fehlerausgänge jeweils getrennt
+verdrahtet und abgenommen.

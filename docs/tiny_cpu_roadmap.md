@@ -90,6 +90,9 @@ dem Hauptprojekt erzeugte Diagnoseblatt
 `hardware/logisim/diagnostics/TinyCPU-IntegrationClock.circ` sichern jetzt
 gemeinsam Verdrahtung, Richtung und Reproduzierbarkeit ab. Das geprüfte
 Taktnetz ist im Top-Level an Fetch/Decode, Datenpfad, Adresspfad, Speicher und
-Fehlerflags angeschlossen. Als Nächstes folgen Reset und die Steuernetze;
-Daten- und Halt-Netze werden anschließend einzeln ergänzt, damit jeder Schritt
-strukturell und im Simulator isoliert abgenommen werden kann.
+Fehlerflags angeschlossen. Der folgende Reset-Schritt ist ebenfalls umgesetzt:
+`IntegrationReset` führt den externen `RESET` ausschließlich zum PC-Reset von
+Fetch/Decode; RAM-Inhalte und Sticky-Flags behalten ihre ausdrücklich getrennte
+Semantik. Als Nächstes folgen die Steuernetze. Daten- und Halt-Netze werden
+anschließend einzeln ergänzt, damit jeder Schritt strukturell und im Simulator
+isoliert abgenommen werden kann.

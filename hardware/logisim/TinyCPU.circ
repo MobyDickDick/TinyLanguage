@@ -35,33 +35,38 @@
       <a name="label" val="HALTED"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="0" loc="(80,70)" name="Pin">
+    <comp lib="0" loc="(80,140)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="CLK"/>
     </comp>
-    <comp lib="9" loc="(320,30)" name="Text">
-      <a name="text" val="TinyCPU integration: one clock net drives all stateful blocks"/>
+    <comp lib="0" loc="(80,210)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="RESET"/>
     </comp>
-    <comp loc="(1240,90)" name="Memory"/>
-    <comp loc="(1530,80)" name="ErrorFlags"/>
-    <comp loc="(330,100)" name="FetchDecode"/>
-    <comp loc="(650,100)" name="Datapath"/>
-    <comp loc="(940,90)" name="AddressPath"/>
-    <wire from="(1010,130)" to="(1020,130)"/>
-    <wire from="(1010,70)" to="(1010,130)"/>
-    <wire from="(1010,70)" to="(1290,70)"/>
-    <wire from="(1290,100)" to="(1310,100)"/>
-    <wire from="(1290,70)" to="(1290,100)"/>
-    <wire from="(420,160)" to="(430,160)"/>
-    <wire from="(420,70)" to="(420,160)"/>
-    <wire from="(420,70)" to="(710,70)"/>
-    <wire from="(710,170)" to="(720,170)"/>
-    <wire from="(710,70)" to="(1010,70)"/>
-    <wire from="(710,70)" to="(710,170)"/>
-    <wire from="(80,70)" to="(90,70)"/>
-    <wire from="(90,140)" to="(110,140)"/>
-    <wire from="(90,70)" to="(420,70)"/>
-    <wire from="(90,70)" to="(90,140)"/>
+    <comp lib="9" loc="(320,30)" name="Text">
+      <a name="text" val="TinyCPU integration: isolated clock and reset networks"/>
+    </comp>
+    <comp loc="(300,100)" name="FetchDecode"/>
+    <comp loc="(900,100)" name="Datapath"/>
+    <comp loc="(1500,100)" name="AddressPath"/>
+    <comp loc="(2100,100)" name="Memory"/>
+    <comp loc="(2700,100)" name="ErrorFlags"/>
+    <wire from="(80,140)" to="(280,140)"/>
+    <wire from="(280,100)" to="(280,140)"/>
+    <wire from="(280,100)" to="(300,100)"/>
+    <wire from="(280,140)" to="(880,140)"/>
+    <wire from="(880,100)" to="(880,140)"/>
+    <wire from="(880,100)" to="(900,100)"/>
+    <wire from="(880,140)" to="(1480,140)"/>
+    <wire from="(1480,100)" to="(1480,140)"/>
+    <wire from="(1480,100)" to="(1500,100)"/>
+    <wire from="(1480,140)" to="(2080,140)"/>
+    <wire from="(2080,100)" to="(2080,140)"/>
+    <wire from="(2080,100)" to="(2100,100)"/>
+    <wire from="(2080,140)" to="(2680,140)"/>
+    <wire from="(2680,100)" to="(2680,140)"/>
+    <wire from="(2680,100)" to="(2700,100)"/>
+    <wire from="(80,210)" to="(400,210)"/>
   </circuit>
   <circuit name="Datapath">
     <a name="appearance" val="logisim_evolution"/>
@@ -1295,5 +1300,21 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(240,320)" to="(420,320)"/>
     <wire from="(240,80)" to="(240,140)"/>
     <wire from="(240,80)" to="(420,80)"/>
+  </circuit>
+  <circuit name="IntegrationReset">
+    <a name="appearance" val="logisim_evolution"/>
+    <a name="circuit" val="IntegrationReset"/>
+    <a name="simulationFrequency" val="1.0"/>
+    <comp lib="0" loc="(120,140)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="RESET"/>
+    </comp>
+    <comp lib="0" loc="(420,140)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="FETCH_RESET"/>
+      <a name="type" val="output"/>
+    </comp>
+    <wire from="(120,140)" to="(420,140)"/>
   </circuit>
 </project>

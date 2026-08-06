@@ -18,8 +18,18 @@ Diagnoseprojekte aus `TinyCPU.circ` erzeugt und bytegenau gegen das eingebettete
 Blatt geprüft. Damit gibt es nur eine Schaltungsquelle, aber weiterhin eine
 kleine Datei für die Poke-Prüfung in Logisim-evolution. Im Top-Level erreicht
 dieselbe Taktleitung nun Fetch/Decode, Datenpfad, Adresspfad, Speicher und
-Fehlerflags über getrennte Abzweige. Als nächste elektrische Schritte folgen
-Reset und Steuerung; Daten- und Halt-Netze bleiben davon getrennt.
+Fehlerflags über getrennte Abzweige.
+
+## TinyReset: definierter Neustart des Befehlszählers
+
+Der nächste isolierte Top-Level-Schritt führt den externen Eingang `RESET`
+ohne kombinatorische Logik an den Reset-Anschluss von Fetch/Decode. Damit wird
+der Programmzähler reproduzierbar auf den Startzustand gesetzt, ohne den
+Inhalt der Daten- und Valid-RAMs oder die getrennte Fehlerlöschung durch
+`CLEAR_ERROR` umzudeuten. Das Blatt `IntegrationReset` und das erzeugte
+Diagnoseprojekt `diagnostics/TinyCPU-IntegrationReset.circ` frieren diesen
+Pinvertrag unabhängig vom breiteren Top-Level ein. Als nächster elektrischer
+Schritt folgen die Steuernetze; Daten- und Halt-Netze bleiben davon getrennt.
 
 ## Ressourcenverbrauch eingrenzen
 

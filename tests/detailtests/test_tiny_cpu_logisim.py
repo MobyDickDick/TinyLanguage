@@ -188,6 +188,42 @@ def test_top_level_opcode_reaches_decode_controls_only():
     assert reachable.isdisjoint({"(80,70)", "(80,210)"})
 
 
+def test_top_level_clear_error_reaches_error_flags_only():
+    """Route one decoded control without coupling it to clock or reset."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = next(
+        item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
+    )
+    adjacency = {}
+    for wire in circuit.findall("wire"):
+        start, end = wire.get("from"), wire.get("to")
+        adjacency.setdefault(start, set()).add(end)
+        adjacency.setdefault(end, set()).add(start)
+
+    # CLEAR_ERROR is output 40 on the automatic FetchDecodeControls symbol;
+    # the matching ErrorFlags input is its second automatic-symbol terminal.
+    clear_source = "(430,790)"
+    clear_target = "(1610,30)"
+    reachable = {clear_source}
+    pending = list(reachable)
+    while pending:
+        for endpoint in adjacency.get(pending.pop(), ()):
+            if endpoint not in reachable:
+                reachable.add(endpoint)
+                pending.append(endpoint)
+
+    assert clear_target in reachable
+    assert reachable.isdisjoint(
+        {
+            "(80,70)",  # CLK
+            "(80,210)",  # RESET
+            "(430,910)",  # FetchDecodeControls.OPCODE
+            "(1610,20)",  # ErrorFlags.CLK
+        }
+    )
+
+
 def test_ci_runs_the_fresh_checkout_hardware_verifier():
     """Keep the documented dependency-free acceptance command in the main gate."""
 

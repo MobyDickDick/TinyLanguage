@@ -29,9 +29,10 @@ unter `diagnostics/TinyCPU-IntegrationClock.circ`. Sie wird wie die anderen
 Diagnoseprojekte aus `TinyCPU.circ` erzeugt und bytegenau gegen das eingebettete
 Blatt geprüft. Damit gibt es nur eine Schaltungsquelle, aber weiterhin eine
 kleine Datei für die Poke-Prüfung in Logisim-evolution. Auf der manuell
-wiederhergestellten Übersichtsseite erreicht die Taktleitung derzeit
-Fetch/Decode, Datenpfad, Adresspfad und Speicher. Der Anschluss der Fehlerflags
-bleibt ein eigener, noch abzusichernder Schritt.
+wiederhergestellten Übersichtsseite erreicht die Taktleitung jetzt
+Fetch/Decode, Datenpfad, Adresspfad, Speicher und Fehlerflags. Der neue Abzweig
+verläuft oberhalb der Symbole im freien Korridor und trifft ausschließlich den
+`CLK`-Anschluss von `ErrorFlags`.
 
 ## TinyReset: definierter Neustart des Befehlszählers
 

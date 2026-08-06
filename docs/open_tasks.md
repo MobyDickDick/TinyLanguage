@@ -5,6 +5,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Next documented work package (completed 2026-08-06)
+
+- [x] **Complete the TinyCPU top-level clock fan-out**
+  (Owner: TinyCPU/Hardware)
+  - Success: connect the existing top-level clock net to `ErrorFlags.CLK`
+    without moving the hand-maintained overview or crossing another symbol,
+    and lock all five stateful clock terminals with a structural regression.
+  - Result: a new orthogonal branch uses the free corridor above the overview;
+    the focused regression follows the real generated-symbol terminals from
+    the single `CLK` input to Fetch/Decode, datapath, address path, memory, and
+    error flags.
+  - Follow-up: install the independently specified `RESET` net as the next
+    isolated top-level integration step.
+
 ## Next documented work package (completed 2026-08-04)
 
 - [x] **Promote the TinyCPU reproducibility verifier to a dedicated CI gate**

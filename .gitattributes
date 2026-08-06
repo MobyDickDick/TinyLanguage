@@ -1,0 +1,4 @@
+# Logisim projects are byte-sensitive generated XML with CRLF line endings.
+hardware/logisim/*.circ -text
+hardware/logisim/diagnostics/*.circ -text
+hardware/logisim/smoke/*.circ -text

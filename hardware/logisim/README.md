@@ -16,9 +16,10 @@ Passend zur gewünschten Organisation liegt die eigenständig ladbare Ansicht
 unter `diagnostics/TinyCPU-IntegrationClock.circ`. Sie wird wie die anderen
 Diagnoseprojekte aus `TinyCPU.circ` erzeugt und bytegenau gegen das eingebettete
 Blatt geprüft. Damit gibt es nur eine Schaltungsquelle, aber weiterhin eine
-kleine Datei für die Poke-Prüfung in Logisim-evolution. Als nächster
-elektrischer Schritt werden die fünf Ausgänge an die jeweiligen `CLK`-Ports im
-Top-Level angeschlossen; Daten-, Steuer-, Reset- und Halt-Netze folgen getrennt.
+kleine Datei für die Poke-Prüfung in Logisim-evolution. Im Top-Level erreicht
+dieselbe Taktleitung nun Fetch/Decode, Datenpfad, Adresspfad, Speicher und
+Fehlerflags über getrennte Abzweige. Als nächste elektrische Schritte folgen
+Reset und Steuerung; Daten- und Halt-Netze bleiben davon getrennt.
 
 ## Ressourcenverbrauch eingrenzen
 

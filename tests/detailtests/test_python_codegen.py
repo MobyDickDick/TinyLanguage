@@ -72,3 +72,19 @@ def test_python_backend_supports_field_access_expressions():
 
     assert interpreted == "3 4\n"
     assert generated == interpreted
+
+
+def test_python_backend_supports_heap_builtins():
+    """Heap calls should dispatch to the runtime just like interpreter calls."""
+    src = """
+    def values = new[0, 0];
+    def ignored_first_write = heap_set(values, 0, 21);
+    def ignored_second_write = heap_set(values, 1, 2);
+    print(heap_get(values, 0) * heap_get(values, 1));
+    """
+
+    interpreted = compile_and_run(src)
+    generated = run_with_python_backend(src)
+
+    assert interpreted == "42\n"
+    assert generated == interpreted

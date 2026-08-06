@@ -81,8 +81,11 @@ dem vollständigen Laden notieren. Tritt das Problem schon ohne Takten auf,
 grenzt die erste auffällige Datei den verantwortlichen Baustein ein. Tritt es
 nur beim Takten auf, zuerst `ErrorFlags`, dann `FetchDecode` prüfen. Bleibt jede
 Einzeldatei unauffällig, liegt der Verdacht auf der Integration im Top-Level
-oder auf einem Simulatorproblem. Die Diagnoseprojekte enthalten absichtlich
-nur je ein Blatt und ersetzen `TinyCPU.circ` nicht als integrierte Schaltung.
+oder auf einem Simulatorproblem. Die sechs Diagnoseprojekte enthalten
+absichtlich nur je ein Blatt und ersetzen `TinyCPU.circ` nicht als integrierte
+Schaltung. Fetch/Decode ist dabei in den Zustands- und ROM-Pfad (`FetchDecode`)
+sowie die eigentliche Steuersignaldecodierung (`FetchDecodeControls`)
+aufgeteilt.
 
 Sie werden reproduzierbar aus dem Hauptprojekt erzeugt:
 

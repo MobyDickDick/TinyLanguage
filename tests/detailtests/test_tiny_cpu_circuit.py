@@ -215,9 +215,10 @@ def test_checked_in_diagnostic_projects_are_reproducible(tmp_path):
     written = split_leaf_circuits(PROJECT, tmp_path)
     diagnostics = PROJECT.parent / "diagnostics"
 
+    assert {path.name for path in written} == {
+        path.name for path in diagnostics.glob("*.circ")
+    }
     for path in written:
-        if path.name == "TinyCPU-FetchDecode.circ":
-            continue
         assert path.read_bytes() == (diagnostics / path.name).read_bytes()
 
 

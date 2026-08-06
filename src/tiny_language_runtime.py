@@ -597,6 +597,14 @@ class Runtime:
             self.freed_ptrs.discard(p)
             return p
 
+    def heap_new(self, values: List[Any]) -> int:
+        """Allocate and initialize cells for generated-backend ``new`` literals."""
+
+        pointer = self.__new(len(values))
+        with self._lock:
+            self.heap[pointer][:] = values
+        return pointer
+
     @staticmethod
     def _pointer_label(p: Any) -> str:
         type_name = type(p).__name__

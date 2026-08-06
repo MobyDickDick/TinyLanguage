@@ -371,6 +371,28 @@ def test_leaf_signature_ignores_order_and_origin_but_detects_wire_changes(tmp_pa
     assert _leaf_circuit_signature(changed) != _leaf_circuit_signature(expected)
 
 
+def test_split_leaf_circuits_excludes_unknown_root_content(tmp_path):
+    root = ET.parse(PROJECT).getroot()
+    root.text = "\n--- ERROR ---\n"
+    unexpected = ET.Element("unexpected")
+    unexpected.text = "heap_get failed"
+    root.insert(0, unexpected)
+    contaminated = tmp_path / "contaminated.circ"
+    ET.ElementTree(root).write(contaminated, encoding="utf-8", xml_declaration=True)
+
+    output = tmp_path / "split"
+    written = split_leaf_circuits(contaminated, output)
+    assert written
+    for path in written:
+        data = path.read_bytes()
+        assert b"--- ERROR ---" not in data
+        assert b"heap_get failed" not in data
+        standalone = ET.parse(path).getroot()
+        assert standalone.find("unexpected") is None
+        assert standalone.findall("lib")
+        assert len(standalone.findall("circuit")) == 1
+
+
 def test_hardware_profile_matches_starter_contract(capsys):
     assert validate_hardware_contract(PROJECT, PROFILE) == ()
     assert main(["--profile", str(PROFILE), "--contract-only", str(PROJECT)]) == 0

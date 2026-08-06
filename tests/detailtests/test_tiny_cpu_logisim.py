@@ -132,7 +132,7 @@ def test_top_level_reset_reaches_fetch_decode_reset():
         for wire in circuit.findall("wire")
     }
     # FetchDecode.RESET is the second west-facing input on the generated symbol.
-    assert frozenset((reset, "(430,210)")) in wires
+    assert frozenset((reset, "(400,210)")) in wires
 
 
 def test_ci_runs_the_fresh_checkout_hardware_verifier():

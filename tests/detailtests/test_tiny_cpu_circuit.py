@@ -338,6 +338,28 @@ def test_checked_in_diagnostic_projects_are_reproducible(tmp_path):
         )
 
 
+def test_fetch_decode_diagnostic_preserves_pc_increment_constant():
+    projects = [PROJECT, PROJECT.parent / "diagnostics" / "TinyCPU-FetchDecode.circ"]
+    for project in projects:
+        root = ET.parse(project).getroot()
+        fetch = next(
+            circuit
+            for circuit in root.findall("circuit")
+            if circuit.get("name") == "FetchDecode"
+        )
+        constant = next(
+            component
+            for component in fetch.findall("comp")
+            if component.get("name") == "Constant"
+            and component.get("loc") == "(410,290)"
+        )
+        attributes = {
+            attribute.get("name"): attribute.get("val")
+            for attribute in constant.findall("a")
+        }
+        assert attributes == {"width": "16", "value": "0xffff"}
+
+
 def test_leaf_signature_ignores_order_and_origin_but_detects_wire_changes(tmp_path):
     expected = PROJECT.parent / "diagnostics" / "TinyCPU-Datapath.circ"
     root = ET.parse(expected).getroot()

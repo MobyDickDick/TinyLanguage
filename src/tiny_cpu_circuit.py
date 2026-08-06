@@ -878,18 +878,15 @@ def split_leaf_circuits(
         # Build a fresh project instead of deleting circuit byte ranges from
         # the source document.  This prevents root text, comments, processing
         # instructions, or unknown tool output from leaking into a diagnostic
-        # project.  The known Logisim project configuration is retained so
-        # component library numbers keep their meaning.
+        # project.  Only library declarations, one main declaration, and the
+        # selected circuit belong in a standalone diagnostic.  In particular,
+        # do not carry root text or optional/unknown project sections across.
         standalone = ET.Element("project", root.attrib)
-        for child in root:
-            if child.tag == "circuit":
-                continue
-            if child.tag not in {"lib", "main", "options", "mappings", "toolbar"}:
-                continue
-            copied = deepcopy(child)
-            if child.tag == "main":
-                copied.set("name", name)
-            standalone.append(copied)
+        for library in root.findall("lib"):
+            standalone.append(deepcopy(library))
+        standalone_main = deepcopy(main)
+        standalone_main.set("name", name)
+        standalone.append(standalone_main)
         standalone.append(deepcopy(circuits[name]))
         ET.indent(standalone, space="  ")
         xml = ET.tostring(

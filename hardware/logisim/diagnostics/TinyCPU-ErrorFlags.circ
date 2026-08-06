@@ -15,13 +15,6 @@
   <lib desc="#TCL" name="8"/>
   <lib desc="#Base" name="9"/>
   <main name="ErrorFlags"/>
-  <options>
-    <a name="gateUndefined" val="ignore"/>
-    <a name="simlimit" val="1000"/>
-    <a name="simrand" val="0"/>
-  </options>
-  <mappings/>
-  <toolbar/>
   <circuit name="ErrorFlags">
     <a name="appearance" val="logisim_evolution"/>
     <a name="circuit" val="ErrorFlags"/>

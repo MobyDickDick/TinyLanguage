@@ -388,9 +388,11 @@ def test_split_leaf_circuits_excludes_unknown_root_content(tmp_path):
         assert b"--- ERROR ---" not in data
         assert b"heap_get failed" not in data
         standalone = ET.parse(path).getroot()
+        assert not (standalone.text or "").strip()
         assert standalone.find("unexpected") is None
         assert standalone.findall("lib")
         assert len(standalone.findall("circuit")) == 1
+        assert {child.tag for child in standalone} == {"lib", "main", "circuit"}
 
 
 def test_hardware_profile_matches_starter_contract(capsys):

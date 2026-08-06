@@ -90,8 +90,9 @@ maßgeblich. Automatisch erzeugte Diagnoseblätter dienen nur der isolierten
 Prüfung; sie dürfen die Übersichtsseite weder ersetzen noch deren Bauteile
 verschieben.
 
-Der aktuelle Stand verteilt den gemeinsamen Takt an die zustandsbehafteten
-Blöcke. Alle weiteren Netze werden anhand der
+Der aktuelle Stand verteilt den gemeinsamen Takt an Fetch/Decode, Datenpfad,
+Adresspfad und Speicher; Fehlerflags und Reset sind noch nicht im Top-Level
+angeschlossen. Alle weiteren Netze werden anhand der
 [Top-Level-Vorlage](tiny_cpu_top_level_template.md) einzeln ergänzt. Dabei wird
 jede Leitung rechtwinklig in einem freien Korridor um Bauteile herumgeführt;
 eine Leitung durch ein Symbol oder über einen fremden Anschluss ist auch dann

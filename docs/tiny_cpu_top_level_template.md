@@ -25,21 +25,23 @@ Bauteile nicht für eine vermeintlich günstigere Verdrahtung neu anordnen.
 ## Reihenfolge der Netze
 
 Die Reihenfolge hält Takt, Reset, Steuerung und Daten voneinander getrennt.
-`CLK` ist bereits angelegt und wird lediglich als Referenz geprüft.
+`CLK` ist für vier Blöcke angelegt. Der noch offene Anschluss der Fehlerflags
+wird vor `RESET` als eigener Schritt ergänzt.
 
 | Schritt | Netz | Quelle | Ziele | Breite | Abnahme |
 |---:|---|---|---|---:|---|
-| 0 | `CLK` | Top-Level-Pin | `FetchDecode`, `Datapath`, `AddressPath`, `Memory`, `ErrorFlags` | 1 | Jeder Block reagiert auf genau dieselbe Flanke; bestehende Führung nicht ändern. |
-| 1 | `RESET` | neuer/erhaltener Top-Level-Pin | nur `FetchDecode.RESET` | 1 | PC wird zurückgesetzt; RAM, Akkumulator und Fehlerflags werden nicht versehentlich gelöscht. |
-| 2 | Decode-Steuerung | benannter `FetchDecode`-Ausgang | gleichnamiger Eingang des Zielblocks gemäß Pinvertrag | 1 je Netz | Keine Verbindung mit Takt oder Reset; jedes Signal beim Einzelschritt beobachten. |
-| 3 | Akkumulator-Steuerung | passender `FetchDecode`-Ausgang | passender `Datapath`-Eingang | 1 je Netz | Akkumulator ändert sich nur bei aktivem Ladesignal an der Taktflanke. |
-| 4 | Adress-Steuerung | benannte Fetch/Decode-Ausgänge | gleichnamige Eingänge von `AddressPath` | 1 je Netz | Jedes Signal einzeln zeichnen und prüfen. |
-| 5 | Speicher-Steuerung | Fetch/Decode-Ausgänge | `Memory` | 1 je Netz | Lesen und Schreiben getrennt testen; Validitäts-RAM mitprüfen. |
-| 6 | Adressbus | `AddressPath` | `Memory` und benötigte Rückwege | laut Pinvertrag | Splitter vermeiden, solange keine Breitenumsetzung erforderlich ist. |
-| 7 | Datenbus | jeweils dokumentierter Treiber | `Datapath`/`Memory` | 16 | Niemals zwei Ausgänge direkt auf dasselbe Netz legen. |
-| 8 | Status | `Datapath.ZERO`, `NEGATIVE` und Valid-Signale | `FetchDecode`/Fehlerlogik | 1 je Netz | Sprungbedingungen einzeln mit 0, negativem und positivem Wert prüfen. |
-| 9 | Fehler | Fehler-Set-Signale und `CLEAR_ERROR` | `ErrorFlags` | 1 je Netz | Sticky-Verhalten sowie Set-vor-Clear-Priorität prüfen. |
-| 10 | Halt | normale und fehlerhafte Haltquelle | Top-Level `HALTED` | 1 | Normalhalt und Fehlerhalt getrennt auslösen. |
+| 0 | bestehendes `CLK` | Top-Level-Pin | `FetchDecode`, `Datapath`, `AddressPath`, `Memory` | 1 | Die vier vorhandenen Abzweige prüfen und nicht neu führen. |
+| 1 | `CLK` ergänzen | bestehendes Taktnetz | `ErrorFlags.CLK` | 1 | Leitung im freien Korridor um alle Symbole führen; alle fünf Blöcke reagieren danach auf dieselbe Flanke. |
+| 2 | `RESET` | neuer Top-Level-Pin | nur `FetchDecode.RESET` | 1 | PC wird zurückgesetzt; RAM, Akkumulator und Fehlerflags werden nicht versehentlich gelöscht. |
+| 3 | Decode-Steuerung | benannter `FetchDecode`-Ausgang | gleichnamiger Eingang des Zielblocks gemäß Pinvertrag | 1 je Netz | Keine Verbindung mit Takt oder Reset; jedes Signal beim Einzelschritt beobachten. |
+| 4 | Akkumulator-Steuerung | passender `FetchDecode`-Ausgang | passender `Datapath`-Eingang | 1 je Netz | Akkumulator ändert sich nur bei aktivem Ladesignal an der Taktflanke. |
+| 5 | Adress-Steuerung | benannte Fetch/Decode-Ausgänge | gleichnamige Eingänge von `AddressPath` | 1 je Netz | Jedes Signal einzeln zeichnen und prüfen. |
+| 6 | Speicher-Steuerung | Fetch/Decode-Ausgänge | `Memory` | 1 je Netz | Lesen und Schreiben getrennt testen; Validitäts-RAM mitprüfen. |
+| 7 | Adressbus | `AddressPath` | `Memory` und benötigte Rückwege | laut Pinvertrag | Splitter vermeiden, solange keine Breitenumsetzung erforderlich ist. |
+| 8 | Datenbus | jeweils dokumentierter Treiber | `Datapath`/`Memory` | 16 | Niemals zwei Ausgänge direkt auf dasselbe Netz legen. |
+| 9 | Status | `Datapath.ZERO`, `NEGATIVE` und Valid-Signale | `FetchDecode`/Fehlerlogik | 1 je Netz | Sprungbedingungen einzeln mit 0, negativem und positivem Wert prüfen. |
+| 10 | Fehler | Fehler-Set-Signale und `CLEAR_ERROR` | `ErrorFlags` | 1 je Netz | Sticky-Verhalten sowie Set-vor-Clear-Priorität prüfen. |
+| 11 | Halt | normale und fehlerhafte Haltquelle | Top-Level `HALTED` | 1 | Normalhalt und Fehlerhalt getrennt auslösen. |
 
 Die exakten Namen und Richtungen vor jedem Schritt im maschinenlesbaren
 Pinvertrag `hardware/logisim/tinycpu-16-12.json` nachsehen. Wenn Tabellenname

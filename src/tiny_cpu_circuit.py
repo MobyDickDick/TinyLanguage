@@ -21,7 +21,10 @@ class CircuitError(ValueError):
 
 
 SUPPORTED_PROFILE_SCHEMA = 1
-SUBCIRCUIT_ANCHOR_CLEARANCE = 600
+# Top-level instances in the hand-maintained overview are placed roughly 300
+# grid units apart.  Keep a smaller guard around their anchors to catch true
+# accidental overlays without imposing the obsolete generated 600-unit lanes.
+SUBCIRCUIT_ANCHOR_CLEARANCE = 200
 FETCH_DECODE_DECODER_PITCH = 10
 FETCH_DECODE_SIGNAL_LANES = {
     "LOAD_CONST": 0,
@@ -405,7 +408,7 @@ def _location(value: str) -> tuple[int, int]:
     """Return the integer coordinates used by Logisim's ``loc`` attribute."""
 
     try:
-        x, y = value.strip("()").split(",")
+        x, y = value.strip().strip("()").split(",")
         return int(x), int(y)
     except (AttributeError, TypeError, ValueError) as error:
         raise CircuitError(f"invalid Logisim component location {value!r}") from error
@@ -784,9 +787,9 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
                 second_location = _location(second.get("loc", ""))
                 horizontal = abs(first_location[0] - second_location[0])
                 vertical = abs(first_location[1] - second_location[1])
-                # Large subcircuits have a symbol derived from all their pins.
-                # Reserve a full routing lane in either axis so those symbols
-                # and their terminals can never be superimposed accidentally.
+                # The overview is hand-maintained and routes around the
+                # generated symbols.  This guard catches accidental near-
+                # duplicate anchors; it does not prescribe generated lanes.
                 if (
                     horizontal < SUBCIRCUIT_ANCHOR_CLEARANCE
                     and vertical < SUBCIRCUIT_ANCHOR_CLEARANCE

@@ -18,7 +18,7 @@ zu verändern.
                  +------------------------------+
 ACC[15:0] ------>|                              |
                  |                              |----> RESULT[15:0]
-OPERAND[15:0] -->|           TinyCPU ALU         |----> ZERO
+OPERAND[15:0] -->|           TinyCPU ALU        |----> ZERO
                  |                              |----> NEGATIVE
 OP_SEL[7:0] ---->|                              |----> OVERFLOW
                  |                              |----> DIV_BY_ZERO

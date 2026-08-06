@@ -511,6 +511,23 @@ def validate_hardware_contract(
                     f"{circuit_name}.{label}: width is {attrs.get('width', '1')}, "
                     f"expected {spec['width']}"
                 )
+        for kind, spec in expected.get("component_kinds", {}).items():
+            matches = [
+                _attributes(component)
+                for component in circuit.findall("comp")
+                if component.get("name") == kind
+            ]
+            if len(matches) != spec["count"]:
+                violations.append(
+                    f"{circuit_name}: {kind} count is {len(matches)}, "
+                    f"expected {spec['count']}"
+                )
+            for attribute, value in spec.get("attributes", {}).items():
+                if any(attrs.get(attribute) != value for attrs in matches):
+                    violations.append(
+                        f"{circuit_name}: {kind} has unexpected {attribute}; "
+                        f"expected {value}"
+                    )
         pins = labelled_components(circuit_name, "Pin")
         expected_pin_directions = profile.get("pin_directions", {}).get(
             circuit_name, {}

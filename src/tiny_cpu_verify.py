@@ -38,6 +38,18 @@ def _embedded_rom(project: Path) -> str:
     return (contents.text or "").strip()
 
 
+def _rom_words(contents: str) -> tuple[int, ...]:
+    """Return Logisim ROM words independent of zero-padding and wrapping."""
+
+    tokens = contents.split()
+    if tokens[:3] != ["addr/data:", "12", "22"]:
+        raise VerificationError("unsupported Logisim ROM header")
+    try:
+        return tuple(int(token, 16) for token in tokens[3:])
+    except ValueError as error:
+        raise VerificationError("invalid hexadecimal word in Logisim ROM") from error
+
+
 def verify_checkout(repository: Path) -> tuple[str, ...]:
     """Verify the checked-in hardware deliverables below *repository*.
 
@@ -65,7 +77,7 @@ def verify_checkout(repository: Path) -> tuple[str, ...]:
         raise VerificationError("ap5_countdown.rom differs from encoder output")
     if (hardware / "ap5_countdown.lst").read_text(encoding="utf-8") != generated_listing:
         raise VerificationError("ap5_countdown.lst differs from encoder output")
-    if " ".join(_embedded_rom(project).split()) != " ".join(generated_rom.strip().split()):
+    if _rom_words(_embedded_rom(project)) != _rom_words(generated_rom):
         raise VerificationError("Logisim ROM differs from encoder output")
 
     expected_trace = capture_trace(source, watched_addresses=(100, 101))

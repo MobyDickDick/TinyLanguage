@@ -3,22 +3,22 @@
 This directory contains the completed eight-package TinyCPU hardware baseline.
 Open `TinyCPU.circ` with Logisim-evolution 3.x.
 
-## Nächster Schritt: Top-Level-Integration
+## TinyClock: erster Top-Level-Baustein
 
-Nach der achtteiligen Struktur-Baseline beginnt die elektrische Integration
-bewusst mit dem gemeinsamen Takt. `TinyCPU-IntegrationClock.circ` ist ein
-kleines, eigenständig ladbares Zwischenprojekt: Ein einziger `CLK`-Eingang
-wird dort ohne Gatter auf die fünf zustandsbehafteten Blöcke Fetch/Decode,
-Datenpfad, Adresspfad, Speicher und Fehlerflags verteilt. Ein Strukturtest
-stellt sicher, dass alle sechs Pins tatsächlich demselben Netz angehören.
+Die elektrische Integration beginnt bewusst mit dem gemeinsamen Takt. Das
+Blatt `IntegrationClock` in `TinyCPU.circ` verteilt einen einzigen
+`CLK`-Eingang ohne Gatter auf Fetch/Decode, Datenpfad, Adresspfad, Speicher und
+Fehlerflags. Sein Pinvertrag ist nun Teil von `tinycpu-16-12.json`, sodass
+fehlende, umbenannte oder falsch gerichtete Taktanschlüsse bereits in der
+reproduzierbaren Hardwareprüfung auffallen.
 
-Das Zwischenprojekt verändert `TinyCPU.circ` noch nicht. Es trennt Fehler im
-Taktnetz von der späteren, deutlich größeren Daten- und Steuerverdrahtung und
-kann vor jedem Integrationsschritt einzeln in Logisim-evolution geöffnet und
-mit der Poke-Funktion geprüft werden. Als nächste Teilaufgabe werden diese fünf
-Ausgänge an die entsprechenden `CLK`-Ports der integrierten Subcircuits
-angeschlossen; danach folgen Reset, Datenbusse und Steuersignale jeweils als
-separat prüfbare Netze.
+Passend zur gewünschten Organisation liegt die eigenständig ladbare Ansicht
+unter `diagnostics/TinyCPU-IntegrationClock.circ`. Sie wird wie die anderen
+Diagnoseprojekte aus `TinyCPU.circ` erzeugt und bytegenau gegen das eingebettete
+Blatt geprüft. Damit gibt es nur eine Schaltungsquelle, aber weiterhin eine
+kleine Datei für die Poke-Prüfung in Logisim-evolution. Als nächster
+elektrischer Schritt werden die fünf Ausgänge an die jeweiligen `CLK`-Ports im
+Top-Level angeschlossen; Daten-, Steuer-, Reset- und Halt-Netze folgen getrennt.
 
 ## Ressourcenverbrauch eingrenzen
 

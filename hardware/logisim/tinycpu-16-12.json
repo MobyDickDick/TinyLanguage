@@ -40,31 +40,35 @@
   },
   "datapaths": {
     "Datapath": {
-      "components": {
-        "ACC_STATUS": {
-          "kind": "Comparator",
-          "width": 16
-        }
-      },
       "pins": {
         "ACC_OUT": 16,
         "ACC_VALID_OUT": 1,
         "ZERO": 1,
         "NEGATIVE": 1
+      },
+      "component_kinds": {
+        "Comparator": {
+          "count": 1,
+          "attributes": {
+            "width": "16"
+          }
+        }
       }
     },
     "AddressPath": {
-      "components": {
-        "OFFSET_ADDER": {
-          "kind": "Adder",
-          "width": 16
-        }
-      },
       "pins": {
         "ADDRESS": 16,
         "ADDRESS_VALID": 1,
         "ADDRESS_PLUS_OFFSET": 16,
         "OFFSET_CARRY": 1
+      },
+      "component_kinds": {
+        "Adder": {
+          "count": 1,
+          "attributes": {
+            "width": "16"
+          }
+        }
       }
     },
     "Memory": {
@@ -151,28 +155,6 @@
       }
     },
     "FetchDecode": {
-      "components": {
-        "INSTRUCTION_FIELDS": {
-          "kind": "Splitter",
-          "width": 1
-        },
-        "PC_INCREMENT": {
-          "kind": "Adder",
-          "width": 16
-        },
-        "PC_RANGE": {
-          "kind": "Comparator",
-          "width": 16
-        },
-        "JNZ_TAKEN": {
-          "kind": "AND Gate",
-          "width": 1
-        },
-        "ERROR_HALT": {
-          "kind": "OR Gate",
-          "width": 1
-        }
-      },
       "pins": {
         "CLK": 1,
         "RESET": 1,
@@ -180,15 +162,26 @@
         "JUMP_NOT_ZERO": 1,
         "HALT_ERROR": 1,
         "PC_OUT": 12
+      },
+      "component_kinds": {
+        "Splitter": {
+          "count": 1
+        },
+        "Adder": {
+          "count": 1,
+          "attributes": {
+            "width": "16"
+          }
+        },
+        "Comparator": {
+          "count": 1,
+          "attributes": {
+            "width": "16"
+          }
+        }
       }
     },
     "FetchDecodeControls": {
-      "components": {
-        "ISA_DECODER": {
-          "kind": "Decoder",
-          "width": 1
-        }
-      },
       "pins": {
         "OPCODE": 6,
         "LOAD_CONST": 1,
@@ -242,6 +235,24 @@
         "SET_INV": 1,
         "SET_ILL": 1,
         "SET_INPUT": 1
+      },
+      "component_kinds": {
+        "Decoder": {
+          "count": 1,
+          "attributes": {
+            "select": "6"
+          }
+        }
+      }
+    },
+    "IntegrationClock": {
+      "pins": {
+        "CLK": 1,
+        "FETCH_CLK": 1,
+        "DATAPATH_CLK": 1,
+        "ADDRESS_CLK": 1,
+        "MEMORY_CLK": 1,
+        "ERROR_FLAGS_CLK": 1
       }
     }
   },
@@ -380,6 +391,14 @@
       "SET_INV": "output",
       "SET_ILL": "output",
       "SET_INPUT": "output"
+    },
+    "IntegrationClock": {
+      "CLK": "input",
+      "FETCH_CLK": "output",
+      "DATAPATH_CLK": "output",
+      "ADDRESS_CLK": "output",
+      "MEMORY_CLK": "output",
+      "ERROR_FLAGS_CLK": "output"
     }
   }
 }

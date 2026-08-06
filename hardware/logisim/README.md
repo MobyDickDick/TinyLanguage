@@ -1,7 +1,18 @@
 # TinyCPU in Logisim-evolution
 
 This directory contains the completed eight-package TinyCPU hardware baseline.
-Open `TinyCPU.circ` with Logisim-evolution 3.x.
+Open `TinyCPU.circ` with Logisim-evolution 3.x. Das Blatt **`TinyCPU` ist die
+von Hand gepflegte Übersichtsseite**. Es ist keine generierte Verdrahtung und
+darf beim Bearbeiten der Integration weder neu angeordnet noch durch eine
+automatisch erzeugte Top-Level-Schaltung ersetzt werden. Generatoren in diesem
+Repository dürfen ausschließlich die eigenständigen Dateien unter
+`diagnostics/` aktualisieren; Ausgangspunkt bleibt immer die eingecheckte
+`TinyCPU.circ` mit ihrer vorhandenen Übersichtsseite.
+
+Eine ausfüllbare Schritt-für-Schritt-Vorlage für die weitere Integration steht
+in [`docs/tiny_cpu_top_level_template.md`](../../docs/tiny_cpu_top_level_template.md).
+Sie schreibt insbesondere vor, Leitungen in freien Korridoren **um** Symbole
+herumzuführen und jeden neuen Signalverbund einzeln zu prüfen.
 
 ## TinyClock: erster Top-Level-Baustein
 
@@ -115,7 +126,10 @@ Schaltung. Fetch/Decode ist dabei in den Zustands- und ROM-Pfad (`FetchDecode`)
 sowie die eigentliche Steuersignaldecodierung (`FetchDecodeControls`)
 aufgeteilt.
 
-Sie werden reproduzierbar aus dem Hauptprojekt erzeugt:
+Sie werden reproduzierbar aus dem Hauptprojekt erzeugt. Der Befehl liest
+`TinyCPU.circ`, schreibt aber nur Dateien in das angegebene Diagnoseverzeichnis;
+er ist ausdrücklich **kein** Weg, das Blatt `TinyCPU` wiederherzustellen oder
+zu ersetzen:
 
 ```bash
 PYTHONPATH=src python src/tiny_cpu_circuit.py \

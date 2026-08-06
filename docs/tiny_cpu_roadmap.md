@@ -83,16 +83,18 @@ als auch das dokumentierte Kommando vor unbeabsichtigtem Entfernen.
 ## Folgeschritt: elektrische Top-Level-Integration
 
 Die abgeschlossene AP-1-bis-AP-8-Baseline beschreibt und prüft die einzelnen
-Blöcke, während das Top-Level weiterhin eine Integrationsgrenze ist. Das in
-`TinyCPU.circ` eingebettete Blatt `IntegrationClock` verteilt `CLK` auf alle
-fünf zustandsbehafteten Blöcke. Sein maschinenlesbarer Pinvertrag und das aus
-dem Hauptprojekt erzeugte Diagnoseblatt
-`hardware/logisim/diagnostics/TinyCPU-IntegrationClock.circ` sichern jetzt
-gemeinsam Verdrahtung, Richtung und Reproduzierbarkeit ab. Das geprüfte
-Taktnetz ist im Top-Level an Fetch/Decode, Datenpfad, Adresspfad, Speicher und
-Fehlerflags angeschlossen. Der folgende Reset-Schritt ist ebenfalls umgesetzt:
-`IntegrationReset` führt den externen `RESET` ausschließlich zum PC-Reset von
-Fetch/Decode; RAM-Inhalte und Sticky-Flags behalten ihre ausdrücklich getrennte
-Semantik. Als Nächstes folgen die Steuernetze. Daten- und Halt-Netze werden
-anschließend einzeln ergänzt, damit jeder Schritt strukturell und im Simulator
-isoliert abgenommen werden kann.
+Blöcke, während das Top-Level weiterhin eine Integrationsgrenze ist. Die
+Übersichtsseite `TinyCPU` in `hardware/logisim/TinyCPU.circ` wird manuell
+weitergebaut und gilt in ihrer eingecheckten Anordnung und Verdrahtung als
+maßgeblich. Automatisch erzeugte Diagnoseblätter dienen nur der isolierten
+Prüfung; sie dürfen die Übersichtsseite weder ersetzen noch deren Bauteile
+verschieben.
+
+Der aktuelle Stand verteilt den gemeinsamen Takt an die zustandsbehafteten
+Blöcke. Alle weiteren Netze werden anhand der
+[Top-Level-Vorlage](tiny_cpu_top_level_template.md) einzeln ergänzt. Dabei wird
+jede Leitung rechtwinklig in einem freien Korridor um Bauteile herumgeführt;
+eine Leitung durch ein Symbol oder über einen fremden Anschluss ist auch dann
+unzulässig, wenn die XML-Strukturprüfung sie akzeptieren würde. Als Nächstes
+werden Reset, Steuernetze, Datenpfade und zuletzt Halt-/Fehlerausgänge jeweils
+getrennt verdrahtet und abgenommen.

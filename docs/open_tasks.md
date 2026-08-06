@@ -7,6 +7,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-06)
 
+- [x] **Connect the TinyCPU top-level clear-error control**
+  (Owner: TinyCPU/Hardware)
+  - Success: connect the one-bit `FetchDecodeControls.CLEAR_ERROR` output to
+    the matching `ErrorFlags.CLEAR_ERROR` input without moving existing
+    components or coupling the control to clock, reset, or the opcode bus.
+  - Result: the first decoded one-bit control uses the free outer-right
+    corridor around every block; a structural regression follows the real
+    automatic-symbol terminals and locks its isolation from existing nets.
+  - Follow-up: connect the sticky-error set controls one at a time, beginning
+    with `SET_OVF` and its matching `ErrorFlags` input.
+
+## Next documented work package (completed 2026-08-06)
+
 - [x] **Connect the TinyCPU top-level opcode decode net**
   (Owner: TinyCPU/Hardware)
   - Success: place the existing `FetchDecodeControls` block on the maintained

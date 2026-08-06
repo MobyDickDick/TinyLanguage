@@ -43,9 +43,8 @@ Inhalt der Daten- und Valid-RAMs oder die getrennte Fehlerlöschung durch
 `CLEAR_ERROR` umzudeuten. Das Blatt `IntegrationReset` und das erzeugte
 Diagnoseprojekt `diagnostics/TinyCPU-IntegrationReset.circ` frieren diesen
 Pinvertrag unabhängig vom breiteren Top-Level ein. Auf der wiederhergestellten
-Übersichtsseite ist `RESET` noch nicht installiert. Es wird dort als nächster
-einzelner Arbeitsschritt ergänzt; Steuernetze, Daten- und Halt-Netze bleiben
-davon getrennt.
+Übersichtsseite erreicht `RESET` ausschließlich Fetch/Decode; Steuernetze,
+Daten- und Halt-Netze bleiben davon getrennt.
 
 ## Ressourcenverbrauch eingrenzen
 
@@ -172,6 +171,10 @@ fails before a project with overlapping subcircuit symbols is checked in.
   the first decode-integration net and drives only the matching input of the
   separately placed `FetchDecodeControls` block. Its left-side route remains
   isolated from the already integrated clock and reset nets.
+- The first decoded one-bit control, `CLEAR_ERROR`, leaves
+  `FetchDecodeControls` through the free outer-right corridor and reaches only
+  the matching `ErrorFlags` input. It remains isolated from clock, reset, and
+  the opcode bus.
 
 The AP 5 countdown program is loaded into the instruction ROM and its
 clock-edge reference trace is checked in as `ap5_countdown_trace.json`. AP 7

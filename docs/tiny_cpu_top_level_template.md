@@ -25,13 +25,13 @@ Bauteile nicht für eine vermeintlich günstigere Verdrahtung neu anordnen.
 ## Reihenfolge der Netze
 
 Die Reihenfolge hält Takt, Reset, Steuerung und Daten voneinander getrennt.
-`CLK` ist für vier Blöcke angelegt. Der noch offene Anschluss der Fehlerflags
-wird vor `RESET` als eigener Schritt ergänzt.
+`CLK` ist für alle fünf zustandsbehafteten Blöcke angelegt. Der Anschluss der
+Fehlerflags wurde als eigener Schritt vor `RESET` ergänzt.
 
 | Schritt | Netz | Quelle | Ziele | Breite | Abnahme |
 |---:|---|---|---|---:|---|
 | 0 | bestehendes `CLK` | Top-Level-Pin | `FetchDecode`, `Datapath`, `AddressPath`, `Memory` | 1 | Die vier vorhandenen Abzweige prüfen und nicht neu führen. |
-| 1 | `CLK` ergänzen | bestehendes Taktnetz | `ErrorFlags.CLK` | 1 | Leitung im freien Korridor um alle Symbole führen; alle fünf Blöcke reagieren danach auf dieselbe Flanke. |
+| 1 | `CLK` ergänzt | bestehendes Taktnetz | `ErrorFlags.CLK` | 1 | Der Abzweig verläuft oberhalb der Symbole; alle fünf Blöcke reagieren auf dieselbe Flanke. |
 | 2 | `RESET` | neuer Top-Level-Pin | nur `FetchDecode.RESET` | 1 | PC wird zurückgesetzt; RAM, Akkumulator und Fehlerflags werden nicht versehentlich gelöscht. |
 | 3 | Decode-Steuerung | benannter `FetchDecode`-Ausgang | gleichnamiger Eingang des Zielblocks gemäß Pinvertrag | 1 je Netz | Keine Verbindung mit Takt oder Reset; jedes Signal beim Einzelschritt beobachten. |
 | 4 | Akkumulator-Steuerung | passender `FetchDecode`-Ausgang | passender `Datapath`-Eingang | 1 je Netz | Akkumulator ändert sich nur bei aktivem Ladesignal an der Taktflanke. |

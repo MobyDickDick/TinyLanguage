@@ -63,12 +63,12 @@ def test_integration_clock_fans_out_one_net_to_every_stateful_block():
     assert set(pins.values()) <= reachable
 
 
-def test_top_level_clock_reaches_the_manually_integrated_blocks():
+def test_top_level_clock_reaches_every_stateful_block():
     """Follow the real symbol terminals instead of treating anchors as pins."""
 
     root = ET.parse(PROJECT).getroot()
     circuit = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
-    # These are the visible CLK terminals of the four blocks wired on the
+    # These are the visible CLK terminals of the five stateful blocks on the
     # restored overview.  A subcircuit's ``loc`` is its symbol anchor, not an
     # electrical terminal, so anchor reachability would test the wrong points.
     clock_terminals = {
@@ -76,6 +76,7 @@ def test_top_level_clock_reaches_the_manually_integrated_blocks():
         "Datapath": "(720,170)",
         "AddressPath": "(1020,130)",
         "Memory": "(1310,100)",
+        "ErrorFlags": "(1610,20)",
     }
     clock = next(
         component.get("loc")

@@ -78,7 +78,7 @@ def test_inspector_accepts_a_minimal_connected_project(tmp_path):
     project.write_text(
         """<project><main name="main"/><circuit name="main">
         <comp lib="0" loc="(10,10)" name="Pin"><a name="label" val="A"/></comp>
-        <comp lib="0" loc="(20,10)" name="Pin"><a name="label" val="B"/></comp>
+        <comp lib="0" loc="(20,10)" name="Pin"><a name="label" val="B"/><a name="type" val="output"/></comp>
         <wire from="(10,10)" to="(20,10)"/>
         </circuit></project>""",
         encoding="utf-8",
@@ -120,13 +120,13 @@ def test_inspector_rejects_pin_connected_only_to_a_wire_stub(tmp_path):
     assert report.unconnected == ("A@(10,10)",)
 
 
-def test_inspector_rejects_multiple_output_pins_on_one_net(tmp_path):
+def test_inspector_rejects_multiple_input_pins_on_one_net(tmp_path):
     project = tmp_path / "multi-driver.circ"
     project.write_text(
         """<project><main name="main"/><circuit name="main">
-        <comp lib="0" loc="(10,10)" name="Pin"><a name="label" val="A"/><a name="type" val="output"/></comp>
-        <comp lib="0" loc="(20,10)" name="Pin"><a name="label" val="B"/><a name="type" val="output"/></comp>
-        <comp lib="0" loc="(30,10)" name="Pin"><a name="label" val="C"/></comp>
+        <comp lib="0" loc="(10,10)" name="Pin"><a name="label" val="A"/></comp>
+        <comp lib="0" loc="(20,10)" name="Pin"><a name="label" val="B"/></comp>
+        <comp lib="0" loc="(30,10)" name="Pin"><a name="label" val="C"/><a name="type" val="output"/></comp>
         <wire from="(10,10)" to="(30,10)"/>
         </circuit></project>""",
         encoding="utf-8",
@@ -134,7 +134,7 @@ def test_inspector_rejects_multiple_output_pins_on_one_net(tmp_path):
 
     report = inspect_project(project)[0]
     assert not report.connected
-    assert report.routing_conflicts == ("multiple output pins drive one net: A, B",)
+    assert report.routing_conflicts == ("multiple input pins drive one net: A, B",)
 
 
 def test_top_level_subcircuits_have_exclusive_routing_lanes():
@@ -165,7 +165,7 @@ def test_inspector_rejects_overlapping_wire_segments(tmp_path):
     project.write_text(
         """<project><main name="main"/><circuit name="main">
         <comp lib="0" loc="(10,10)" name="Pin"/>
-        <comp lib="0" loc="(40,10)" name="Pin"/>
+        <comp lib="0" loc="(40,10)" name="Pin"><a name="type" val="output"/></comp>
         <wire from="(10,10)" to="(40,10)"/>
         <wire from="(20,10)" to="(30,10)"/>
         </circuit></project>""",
@@ -182,7 +182,7 @@ def test_inspector_rejects_diagonal_wire_segments(tmp_path):
     project.write_text(
         """<project><main name="main"/><circuit name="main">
         <comp lib="0" loc="(10,10)" name="Pin"/>
-        <comp lib="0" loc="(40,20)" name="Pin"/>
+        <comp lib="0" loc="(40,20)" name="Pin"><a name="type" val="output"/></comp>
         <wire from="(10,10)" to="(40,20)"/>
         </circuit></project>""",
         encoding="utf-8",

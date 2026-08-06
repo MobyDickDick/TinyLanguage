@@ -829,8 +829,13 @@ def _serialize_standalone_logisim_project(data: bytes) -> bytes:
         data,
         count=1,
     )
+    # ElementTree inserts a space before self-closing tags whereas Logisim's
+    # own writer does not.  Keep generated diagnostics in Logisim's stable
+    # spelling so regenerating them does not create formatting-only churn.
+    data = data.replace(b" />", b"/>")
     data = data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
-    return data.replace(b"\n", b"\r\n")
+    data = data.replace(b"\n", b"\r\n")
+    return data if data.endswith(b"\r\n") else data + b"\r\n"
 
 
 def split_leaf_circuits(

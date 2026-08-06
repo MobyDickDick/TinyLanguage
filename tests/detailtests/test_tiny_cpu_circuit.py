@@ -198,6 +198,10 @@ def test_inspector_rejects_diagonal_wire_segments(tmp_path):
 
 def test_split_leaf_circuits_produces_independent_projects(tmp_path):
     written = split_leaf_circuits(PROJECT, tmp_path)
+    source_circuits = {
+        circuit.get("name"): circuit
+        for circuit in ET.parse(PROJECT).getroot().findall("circuit")
+    }
 
     assert {
         "TinyCPU-Datapath.circ",
@@ -210,6 +214,13 @@ def test_split_leaf_circuits_produces_independent_projects(tmp_path):
         circuits = root.findall("circuit")
         assert len(circuits) == 1
         assert root.find("main").get("name") == circuits[0].get("name")
+        source = source_circuits[circuits[0].get("name")]
+        assert [component.get("loc") for component in circuits[0].findall("comp")] == [
+            component.get("loc") for component in source.findall("comp")
+        ]
+        assert [
+            (wire.get("from"), wire.get("to")) for wire in circuits[0].findall("wire")
+        ] == [(wire.get("from"), wire.get("to")) for wire in source.findall("wire")]
 
 
 def _leaf_circuit_signature(path):
@@ -218,14 +229,36 @@ def _leaf_circuit_signature(path):
     Logisim does not assign meaning to the order of ``comp`` and ``wire`` XML
     elements.  Comparing their serialization made this regression dependent
     on checkout line endings and harmless editor reordering instead of the
-    generated circuit.  Keep every component attribute and nested ``a`` value
+    generated circuit.  A standalone sheet may also be translated as a whole
+    when Logisim chooses a different drawing origin; that does not change its
+    electrical content.  Keep every component attribute and nested ``a`` value
     in the signature, while treating components and undirected wires as
-    multisets.
+    multisets and normalizing their common origin.
     """
 
     root = ET.parse(path).getroot()
     circuit = root.find("circuit")
     assert circuit is not None
+
+    def parse_location(value):
+        x, y = value.strip("()").split(",")
+        return int(x), int(y)
+
+    locations = [
+        parse_location(component.get("loc"))
+        for component in circuit.findall("comp")
+    ]
+    locations.extend(
+        parse_location(wire.get(endpoint))
+        for wire in circuit.findall("wire")
+        for endpoint in ("from", "to")
+    )
+    origin_x = min(x for x, _ in locations)
+    origin_y = min(y for _, y in locations)
+
+    def normalized_location(value):
+        x, y = parse_location(value)
+        return x - origin_x, y - origin_y
 
     def element_signature(element):
         return (
@@ -239,7 +272,7 @@ def _leaf_circuit_signature(path):
         return (
             component.get("name", ""),
             component.get("lib", ""),
-            component.get("loc", ""),
+            normalized_location(component.get("loc")),
             tuple(
                 sorted(
                     (
@@ -257,7 +290,14 @@ def _leaf_circuit_signature(path):
     )
     wires = tuple(
         sorted(
-            tuple(sorted((wire.get("from", ""), wire.get("to", ""))))
+            tuple(
+                sorted(
+                    (
+                        normalized_location(wire.get("from")),
+                        normalized_location(wire.get("to")),
+                    )
+                )
+            )
             for wire in circuit.findall("wire")
         )
     )
@@ -298,7 +338,7 @@ def test_checked_in_diagnostic_projects_are_reproducible(tmp_path):
         )
 
 
-def test_leaf_signature_ignores_xml_order_but_detects_wire_changes(tmp_path):
+def test_leaf_signature_ignores_order_and_origin_but_detects_wire_changes(tmp_path):
     expected = PROJECT.parent / "diagnostics" / "TinyCPU-Datapath.circ"
     root = ET.parse(expected).getroot()
     circuit = root.find("circuit")
@@ -310,6 +350,16 @@ def test_leaf_signature_ignores_xml_order_but_detects_wire_changes(tmp_path):
         circuit.remove(child)
     circuit.extend(reversed(wires))
     circuit.extend(reversed(components))
+
+    def translate(value):
+        x, y = map(int, value.strip("()").split(","))
+        return f"({x + 450},{y - 80})"
+
+    for component in circuit.findall("comp"):
+        component.set("loc", translate(component.get("loc")))
+    for wire in circuit.findall("wire"):
+        wire.set("from", translate(wire.get("from")))
+        wire.set("to", translate(wire.get("to")))
 
     reordered = tmp_path / "reordered.circ"
     ET.ElementTree(root).write(reordered, encoding="utf-8", xml_declaration=True)

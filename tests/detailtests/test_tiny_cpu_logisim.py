@@ -62,6 +62,44 @@ def test_integration_clock_fans_out_one_net_to_every_stateful_block():
     assert set(pins.values()) <= reachable
 
 
+def test_top_level_clock_reaches_every_stateful_block():
+    """The independently checked clock fan-out is installed at integration level."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
+    components = {
+        component.get("name"): component.get("loc")
+        for component in circuit.findall("comp")
+        if component.get("name") in {
+            "FetchDecode",
+            "Datapath",
+            "AddressPath",
+            "Memory",
+            "ErrorFlags",
+        }
+    }
+    clock = next(
+        component.get("loc")
+        for component in circuit.findall("comp")
+        if component.get("name") == "Pin" and _attributes(component).get("label") == "CLK"
+    )
+    adjacency = {}
+    for wire in circuit.findall("wire"):
+        start, end = wire.get("from"), wire.get("to")
+        adjacency.setdefault(start, set()).add(end)
+        adjacency.setdefault(end, set()).add(start)
+
+    reachable = {clock}
+    pending = [clock]
+    while pending:
+        for endpoint in adjacency.get(pending.pop(), ()):
+            if endpoint not in reachable:
+                reachable.add(endpoint)
+                pending.append(endpoint)
+
+    assert set(components.values()) <= reachable
+
+
 def test_ci_runs_the_fresh_checkout_hardware_verifier():
     """Keep the documented dependency-free acceptance command in the main gate."""
 

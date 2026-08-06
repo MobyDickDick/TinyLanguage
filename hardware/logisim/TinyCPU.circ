@@ -40,14 +40,28 @@
       <a name="label" val="CLK"/>
     </comp>
     <comp lib="9" loc="(320,30)" name="Text">
-      <a name="text" val="TinyCPU AP 5: countdown fixture and clock-edge trace boundary"/>
+      <a name="text" val="TinyCPU integration: one clock net drives all stateful blocks"/>
     </comp>
     <comp loc="(1500,100)" name="AddressPath"/>
     <comp loc="(2100,100)" name="Memory"/>
     <comp loc="(2700,100)" name="ErrorFlags"/>
     <comp loc="(300,100)" name="FetchDecode"/>
     <comp loc="(900,100)" name="Datapath"/>
-    <wire from="(80,140)" to="(90,140)"/>
+    <wire from="(80,140)" to="(280,140)"/>
+    <wire from="(280,100)" to="(280,140)"/>
+    <wire from="(280,100)" to="(300,100)"/>
+    <wire from="(280,140)" to="(880,140)"/>
+    <wire from="(880,100)" to="(880,140)"/>
+    <wire from="(880,100)" to="(900,100)"/>
+    <wire from="(880,140)" to="(1480,140)"/>
+    <wire from="(1480,100)" to="(1480,140)"/>
+    <wire from="(1480,100)" to="(1500,100)"/>
+    <wire from="(1480,140)" to="(2080,140)"/>
+    <wire from="(2080,100)" to="(2080,140)"/>
+    <wire from="(2080,100)" to="(2100,100)"/>
+    <wire from="(2080,140)" to="(2680,140)"/>
+    <wire from="(2680,100)" to="(2680,140)"/>
+    <wire from="(2680,100)" to="(2700,100)"/>
   </circuit>
   <circuit name="Datapath">
     <a name="appearance" val="logisim_evolution"/>

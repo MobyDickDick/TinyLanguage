@@ -88,7 +88,8 @@ Blöcke, während das Top-Level weiterhin eine Integrationsgrenze ist. Das in
 fünf zustandsbehafteten Blöcke. Sein maschinenlesbarer Pinvertrag und das aus
 dem Hauptprojekt erzeugte Diagnoseblatt
 `hardware/logisim/diagnostics/TinyCPU-IntegrationClock.circ` sichern jetzt
-gemeinsam Verdrahtung, Richtung und Reproduzierbarkeit ab. Als nächstes wird
-das geprüfte Taktnetz im Top-Level an die fünf Zustandsblöcke angeschlossen.
-Daten-, Steuer-, Reset- und Halt-Netze folgen einzeln, damit jeder Schritt
+gemeinsam Verdrahtung, Richtung und Reproduzierbarkeit ab. Das geprüfte
+Taktnetz ist im Top-Level an Fetch/Decode, Datenpfad, Adresspfad, Speicher und
+Fehlerflags angeschlossen. Als Nächstes folgen Reset und die Steuernetze;
+Daten- und Halt-Netze werden anschließend einzeln ergänzt, damit jeder Schritt
 strukturell und im Simulator isoliert abgenommen werden kann.

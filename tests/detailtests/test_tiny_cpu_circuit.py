@@ -59,7 +59,8 @@ def test_inspector_exposes_completed_and_pending_sheets():
     reports = {report.name: report for report in inspect_project(PROJECT)}
 
     assert not reports["TinyCPU"].connected
-    assert "CLK@(80,140)" in reports["TinyCPU"].unconnected
+    assert "CLK@(80,140)" not in reports["TinyCPU"].unconnected
+    assert "HALTED@(3300,100)" in reports["TinyCPU"].unconnected
     assert reports["Datapath"].components == 12
     assert reports["Datapath"].wires == 22
     for sheet in (

@@ -45,7 +45,7 @@
     <comp loc="(1500,100)" name="AddressPath"/>
     <comp loc="(2100,100)" name="Memory"/>
     <comp loc="(2700,100)" name="ErrorFlags"/>
-    <comp loc="(350,100)" name="FetchDecode"/>
+    <comp loc="(300,100)" name="FetchDecode"/>
     <comp loc="(900,100)" name="Datapath"/>
     <wire from="(1500,100)" to="(1600,100)"/>
     <wire from="(2100,100)" to="(2200,100)"/>
@@ -106,6 +106,7 @@
       <a name="type" val="output"/>
     </comp>
     <comp lib="3" loc="(520,180)" name="Comparator">
+      <a name="label" val="ACC_STATUS"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(270,100)" name="Register">
@@ -198,6 +199,7 @@
       <a name="type" val="output"/>
     </comp>
     <comp lib="3" loc="(520,200)" name="Adder">
+      <a name="label" val="OFFSET_ADDER"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(340,120)" name="Register">
@@ -638,6 +640,7 @@
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(420,350)" name="Splitter">
+      <a name="label" val="INSTRUCTION_FIELDS"/>
       <a name="bit1" val="0"/>
       <a name="bit10" val="0"/>
       <a name="bit11" val="0"/>
@@ -708,9 +711,11 @@
       <a name="label" val="ERROR_HALT"/>
     </comp>
     <comp lib="3" loc="(430,190)" name="Comparator">
+      <a name="label" val="PC_RANGE"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(490,280)" name="Adder">
+      <a name="label" val="PC_INCREMENT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(250,100)" name="Register">
@@ -722,7 +727,7 @@
       <a name="addrWidth" val="12"/>
       <a name="appearance" val="logisim_evolution"/>
       <a name="contents">addr/data: 12 22
-3fffff 65 3 64 0 65 64 4
+00ffff 1c0065 000003 1c0064 2a0000 050065 1c0064 240004 2c0000
 </a>
       <a name="dataWidth" val="22"/>
       <a name="label" val="INSTRUCTION_ROM"/>
@@ -1081,6 +1086,7 @@
       <a name="width" val="6"/>
     </comp>
     <comp lib="2" loc="(500,670)" name="Decoder">
+      <a name="label" val="ISA_DECODER"/>
       <a name="select" val="6"/>
     </comp>
     <wire from="(1000,110)" to="(1040,110)"/>

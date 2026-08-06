@@ -160,10 +160,6 @@
           "kind": "Adder",
           "width": 16
         },
-        "PC_SOURCE": {
-          "kind": "Multiplexer",
-          "width": 16
-        },
         "PC_RANGE": {
           "kind": "Comparator",
           "width": 16
@@ -175,31 +171,32 @@
         "ERROR_HALT": {
           "kind": "OR Gate",
           "width": 1
-        },
+        }
+      },
+      "pins": {
+        "CLK": 1,
+        "RESET": 1,
+        "PROGRAM_LIMIT": 16,
+        "JUMP_NOT_ZERO": 1,
+        "HALT_ERROR": 1,
+        "PC_OUT": 12
+      }
+    },
+    "FetchDecodeControls": {
+      "components": {
         "ISA_DECODER": {
           "kind": "Decoder",
           "width": 1
         }
       },
       "pins": {
-        "CLK": 1,
-        "RESET": 1,
-        "ZERO": 1,
-        "PROGRAM_LIMIT": 16,
-        "OPERAND": 16,
+        "OPCODE": 6,
         "LOAD_CONST": 1,
-        "STORE_ADDRESS": 1,
-        "ADD_ADDRESS": 1,
-        "JUMP_NOT_ZERO": 1,
-        "PRINT": 1,
-        "HALT": 1,
-        "SET_ADDR": 1,
-        "HALT_ERROR": 1,
-        "PC_OUT": 16,
         "LOAD_ADDRESS": 1,
         "LOAD_ADDRESS_REGISTER": 1,
         "LOAD_ADDRESS_REGISTER_PLUS_OFFSET": 1,
         "ADD_CONST": 1,
+        "ADD_ADDRESS": 1,
         "ADD_ADDRESS_REGISTER": 1,
         "ADD_ADDRESS_REGISTER_PLUS_OFFSET": 1,
         "SUB_CONST": 1,
@@ -222,6 +219,7 @@
         "OR_ADDRESS": 1,
         "OR_ADDRESS_REGISTER": 1,
         "OR_ADDRESS_REGISTER_PLUS_OFFSET": 1,
+        "STORE_ADDRESS": 1,
         "STORE_ADDRESS_REGISTER": 1,
         "STORE_ADDRESS_REGISTER_PLUS_OFFSET": 1,
         "LOAD_ADDRESS_REGISTER_CONST": 1,
@@ -234,11 +232,13 @@
         "JUMP_NOT_ERROR": 1,
         "CLEAR_ERROR": 1,
         "INPUT": 1,
+        "PRINT": 1,
         "PRINT_ADDRESS": 1,
-        "NEGATIVE": 1,
-        "ERROR": 1,
+        "HALT": 1,
+        "HALT_ERROR": 1,
         "SET_OVF": 1,
         "SET_DIV0": 1,
+        "SET_ADDR": 1,
         "SET_INV": 1,
         "SET_ILL": 1,
         "SET_INPUT": 1
@@ -322,22 +322,19 @@
     "FetchDecode": {
       "CLK": "input",
       "RESET": "input",
-      "ZERO": "input",
       "PROGRAM_LIMIT": "input",
-      "OPERAND": "output",
-      "LOAD_CONST": "output",
-      "STORE_ADDRESS": "output",
-      "ADD_ADDRESS": "output",
       "JUMP_NOT_ZERO": "output",
-      "PRINT": "output",
-      "HALT": "output",
-      "SET_ADDR": "output",
       "HALT_ERROR": "output",
-      "PC_OUT": "output",
+      "PC_OUT": "output"
+    },
+    "FetchDecodeControls": {
+      "OPCODE": "input",
+      "LOAD_CONST": "output",
       "LOAD_ADDRESS": "output",
       "LOAD_ADDRESS_REGISTER": "output",
       "LOAD_ADDRESS_REGISTER_PLUS_OFFSET": "output",
       "ADD_CONST": "output",
+      "ADD_ADDRESS": "output",
       "ADD_ADDRESS_REGISTER": "output",
       "ADD_ADDRESS_REGISTER_PLUS_OFFSET": "output",
       "SUB_CONST": "output",
@@ -360,6 +357,7 @@
       "OR_ADDRESS": "output",
       "OR_ADDRESS_REGISTER": "output",
       "OR_ADDRESS_REGISTER_PLUS_OFFSET": "output",
+      "STORE_ADDRESS": "output",
       "STORE_ADDRESS_REGISTER": "output",
       "STORE_ADDRESS_REGISTER_PLUS_OFFSET": "output",
       "LOAD_ADDRESS_REGISTER_CONST": "output",
@@ -372,11 +370,13 @@
       "JUMP_NOT_ERROR": "output",
       "CLEAR_ERROR": "output",
       "INPUT": "output",
+      "PRINT": "output",
       "PRINT_ADDRESS": "output",
-      "NEGATIVE": "input",
-      "ERROR": "input",
+      "HALT": "output",
+      "HALT_ERROR": "output",
       "SET_OVF": "output",
       "SET_DIV0": "output",
+      "SET_ADDR": "output",
       "SET_INV": "output",
       "SET_ILL": "output",
       "SET_INPUT": "output"

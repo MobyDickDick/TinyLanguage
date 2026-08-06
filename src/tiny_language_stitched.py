@@ -2138,6 +2138,43 @@ class PythonCodeGenerator:
                 orelse=[],
             ),
             ast.If(
+                test=ast.Compare(
+                    left=ast.Name(id="name", ctx=ast.Load()),
+                    ops=[ast.In()],
+                    comparators=[
+                        ast.Tuple(
+                            elts=[
+                                ast.Constant(value="heap_get"),
+                                ast.Constant(value="heap_set"),
+                            ],
+                            ctx=ast.Load(),
+                        )
+                    ],
+                ),
+                body=[
+                    ast.Return(
+                        value=ast.Call(
+                            func=ast.Call(
+                                func=ast.Name(id="getattr", ctx=ast.Load()),
+                                args=[
+                                    ast.Name(id="runtime", ctx=ast.Load()),
+                                    ast.Name(id="name", ctx=ast.Load()),
+                                ],
+                                keywords=[],
+                            ),
+                            args=[
+                                ast.Starred(
+                                    value=ast.Name(id="arguments", ctx=ast.Load()),
+                                    ctx=ast.Load(),
+                                )
+                            ],
+                            keywords=[],
+                        )
+                    )
+                ],
+                orelse=[],
+            ),
+            ast.If(
                 test=ast.Call(
                     func=ast.Attribute(
                         value=ast.Attribute(value=ast.Name(id="runtime", ctx=ast.Load()), attr="native_functions", ctx=ast.Load()),
@@ -2360,7 +2397,23 @@ class PythonCodeGenerator:
                 )
             return ast.BinOp(left=self._emit_expr(expr.a, env_name=env_name), op=self._bin_op(expr.op), right=self._emit_expr(expr.b, env_name=env_name))
         if isinstance(expr, NewLit):
-            return ast.List(elts=[self._emit_expr(item, env_name=env_name) for item in expr.items], ctx=ast.Load())
+            return ast.Call(
+                func=ast.Attribute(
+                    value=ast.Name(id="runtime", ctx=ast.Load()),
+                    attr="heap_new",
+                    ctx=ast.Load(),
+                ),
+                args=[
+                    ast.List(
+                        elts=[
+                            self._emit_expr(item, env_name=env_name)
+                            for item in expr.items
+                        ],
+                        ctx=ast.Load(),
+                    )
+                ],
+                keywords=[],
+            )
         if isinstance(expr, ObjLit):
             return ast.Dict(keys=[ast.Constant(value=k) for k, _ in expr.fields], values=[self._emit_expr(v, env_name=env_name) for _, v in expr.fields])
         raise NotImplementedError(f"expression {type(expr).__name__} is not supported by the Python backend yet")
@@ -10955,6 +11008,14 @@ class Runtime:
             self.heap_cell_types[p] = {}
             self.freed_ptrs.discard(p)
             return p
+
+    def heap_new(self, values: List[Any]) -> int:
+        """Allocate and initialize cells for generated-backend ``new`` literals."""
+
+        pointer = self.__new(len(values))
+        with self._lock:
+            self.heap[pointer][:] = values
+        return pointer
 
     @staticmethod
     def _pointer_label(p: Any) -> str:

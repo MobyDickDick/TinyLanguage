@@ -109,4 +109,6 @@ und nutzt den freien linken Außenkorridor. Das erste einbittige Decodesignal
 gleichnamigen Eingang der Fehlerflags verbunden und bleibt von Takt, Reset und
 Opcode-Bus getrennt. `SET_OVF`, das erste der sechs
 Sticky-Fehler-Setzsignale, nutzt daneben eine eigene äußere Leitung und bleibt
-von den vorhandenen Netzen isoliert. Als nächstes folgt `SET_DIV0`.
+von den vorhandenen Netzen isoliert. `SET_DIV0` folgt in einer weiteren
+äußeren Leitung und ist ebenfalls ausschließlich mit dem gleichnamigen
+Fehlerflag-Eingang verbunden. Als nächstes folgt `SET_ADDR`.

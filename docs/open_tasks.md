@@ -7,6 +7,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-08)
 
+- [x] **Connect the TinyCPU top-level divide-by-zero-error control**
+  (Owner: TinyCPU/Hardware)
+  - Success: connect the one-bit `FetchDecodeControls.SET_DIV0` output to the
+    matching `ErrorFlags.SET_DIV0` input without moving existing components or
+    coupling the control to any previously integrated top-level net.
+  - Result: the second sticky-error set control uses a dedicated outer-right
+    lane; a structural regression locks both endpoints and its isolation from
+    clock, reset, opcode, clear-error, and overflow-error nets.
+  - Follow-up: connect the remaining sticky-error set controls one at a time,
+    beginning with `SET_ADDR` and its matching `ErrorFlags` input.
+
+## Next documented work package (completed 2026-08-08)
+
 - [x] **Connect the TinyCPU top-level overflow-error control**
   (Owner: TinyCPU/Hardware)
   - Success: connect the one-bit `FetchDecodeControls.SET_OVF` output to the

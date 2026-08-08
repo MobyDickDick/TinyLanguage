@@ -107,5 +107,6 @@ Als erstes Decode-Netz führt die Übersichtsseite nun den 22-Bit-Ausgang
 und nutzt den freien linken Außenkorridor. Das erste einbittige Decodesignal
 `CLEAR_ERROR` ist ebenfalls über den freien rechten Außenkorridor mit dem
 gleichnamigen Eingang der Fehlerflags verbunden und bleibt von Takt, Reset und
-Opcode-Bus getrennt. Als nächstes folgt `SET_OVF` als erstes der sechs
-Sticky-Fehler-Setzsignale.
+Opcode-Bus getrennt. `SET_OVF`, das erste der sechs
+Sticky-Fehler-Setzsignale, nutzt daneben eine eigene äußere Leitung und bleibt
+von den vorhandenen Netzen isoliert. Als nächstes folgt `SET_DIV0`.

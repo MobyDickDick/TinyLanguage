@@ -651,7 +651,6 @@ def test_ap7_decoder_rejects_reserved_or_noncanonical_words(word):
 def test_ap8_fresh_checkout_verification_covers_all_deliverables():
     repository = PROJECT.parents[2]
     assert verify_checkout(repository) == (
-        "connectivity",
         "hardware contract",
         "ROM and listing",
         "embedded ROM",

@@ -48,6 +48,40 @@ Pinvertrag `hardware/logisim/tinycpu-16-12.json` nachsehen. Wenn Tabellenname
 und sichtbarer Pin voneinander abweichen, **nicht raten**, sondern den Schritt
 offenlassen und die Abweichung notieren.
 
+## Korrektur der bereits gezeichneten Decode-Leitungen
+
+Die automatische Logisim-Symboldarstellung verwendet den `loc`-Punkt einer
+Subcircuit-Instanz als rechten Ausgangsanker. Die zuvor verwendeten Punkte
+`x=430` an `FetchDecodeControls` und `x=1610` an `ErrorFlags` liegen deshalb
+neben den sichtbaren Pins. Die betreffenden Netze müssen vollständig gelöscht
+und mit diesen Endpunkten neu gezeichnet werden (Zwischenpunkte dürfen in
+freien Korridoren liegen):
+
+| Netz | von | nach |
+|---|---:|---:|
+| `OPCODE` | `FetchDecode.OPCODE (330,110)` | `FetchDecodeControls.OPCODE (130,910)` |
+| `CLK` | bestehendes CLK-Netz, z. B. Abzweig `(1290,10)` | `ErrorFlags.CLK (1330,90)` |
+| `CLEAR_ERROR` | `FetchDecodeControls.CLEAR_ERROR (330,790)` | `ErrorFlags.CLEAR_ERROR (1330,80)` |
+| `SET_OVF` | `FetchDecodeControls.SET_OVF (330,850)` | `ErrorFlags.SET_OVF (1330,100)` |
+| `SET_DIV0` | `FetchDecodeControls.SET_DIV0 (330,860)` | `ErrorFlags.SET_DIV0 (1330,110)` |
+| `SET_ADDR` | `FetchDecodeControls.SET_ADDR (330,870)` | `ErrorFlags.SET_ADDR (1330,120)` |
+| `SET_INV` | `FetchDecodeControls.SET_INV (330,880)` | `ErrorFlags.SET_INV (1330,130)` |
+| `SET_ILL` | `FetchDecodeControls.SET_ILL (330,890)` | `ErrorFlags.SET_ILL (1330,140)` |
+| `SET_INPUT` | `FetchDecodeControls.SET_INPUT (330,900)` | `ErrorFlags.SET_INPUT (1330,150)` |
+
+Die vorhandenen falschen Endpunkte dürfen nicht nur mit kurzen Stücken zu den
+richtigen Pins verlängert werden: Dadurch blieben irreführende Stummel und
+unnötige Wege erhalten. Jedes Netz einzeln ersetzen und anschließend mit dem
+Poke-Werkzeug am Quell- und Zielpin prüfen.
+
+`tiny_cpu_verify.py` prüft den strukturellen Pinvertrag und reproduzierbare
+Artefakte, aber keine elektrische Top-Level-Verbindung. Es meldet deshalb auch
+nicht länger irreführend eine bestandene `connectivity`-Prüfung. Der Circuit-
+Inspector meldet die Top-Level-Blöcke bei solchen danebenliegenden Endpunkten
+als `INCOMPLETE`/`unconnected`; die bisherigen Detailtests hatten lediglich die
+Erreichbarkeit zwischen denselben falsch angenommenen Koordinaten geprüft und
+konnten den geometrischen Grundfehler daher nicht erkennen.
+
 ## Kopiervorlage für jeden Arbeitsschritt
 
 Diesen Block kopieren und vor dem Zeichnen ausfüllen:

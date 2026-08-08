@@ -181,6 +181,10 @@ fails before a project with overlapping subcircuit symbols is checked in.
 - The second sticky-error set control, `SET_DIV0`, runs through its own next
   outer-right lane and reaches only the matching `ErrorFlags` input. It stays
   isolated from `SET_OVF` and all earlier top-level nets.
+- The four remaining sticky-error controls (`SET_ADDR`, `SET_INV`, `SET_ILL`,
+  and `SET_INPUT`) continue in dedicated outer-right lanes. Each reaches only
+  its identically named `ErrorFlags` input, so none of the long routes ends on
+  an unconnected grid point or joins another control net.
 
 The AP 5 countdown program is loaded into the instruction ROM and its
 clock-edge reference trace is checked in as `ap5_countdown_trace.json`. AP 7

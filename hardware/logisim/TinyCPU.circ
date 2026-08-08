@@ -87,6 +87,18 @@
     <wire from="(430,860)" to="(1740,860)"/>
     <wire from="(1740,50)" to="(1740,860)"/>
     <wire from="(1610,50)" to="(1740,50)"/>
+    <wire from="(430,870)" to="(1760,870)"/>
+    <wire from="(1760,60)" to="(1760,870)"/>
+    <wire from="(1610,60)" to="(1760,60)"/>
+    <wire from="(430,880)" to="(1780,880)"/>
+    <wire from="(1780,70)" to="(1780,880)"/>
+    <wire from="(1610,70)" to="(1780,70)"/>
+    <wire from="(430,890)" to="(1800,890)"/>
+    <wire from="(1800,80)" to="(1800,890)"/>
+    <wire from="(1610,80)" to="(1800,80)"/>
+    <wire from="(430,900)" to="(1820,900)"/>
+    <wire from="(1820,90)" to="(1820,900)"/>
+    <wire from="(1610,90)" to="(1820,90)"/>
   </circuit>
   <circuit name="Datapath">
     <a name="appearance" val="logisim_evolution"/>

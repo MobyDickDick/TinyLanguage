@@ -87,7 +87,12 @@ def verify_checkout(repository: Path) -> tuple[str, ...]:
     mismatches = compare_trace(expected_trace, checked_trace)
     if mismatches:
         raise VerificationError("AP 5 trace: " + "; ".join(mismatches))
-    return ("connectivity", "hardware contract", "ROM and listing", "embedded ROM", "17-edge trace")
+    # Do not advertise a connectivity check here.  ``validate_hardware_contract``
+    # verifies component and pin declarations inside the leaf circuits, but it
+    # deliberately does not prove that top-level wires end on the automatically
+    # generated subcircuit-symbol ports.  Electrical connectivity is reported by
+    # ``tiny_cpu_circuit.py`` (and ultimately established by Logisim itself).
+    return ("hardware contract", "ROM and listing", "embedded ROM", "17-edge trace")
 
 
 def main(argv: list[str] | None = None) -> int:

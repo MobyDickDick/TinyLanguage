@@ -35,70 +35,88 @@
       <a name="label" val="HALTED"/>
       <a name="type" val="output"/>
     </comp>
+    <comp lib="0" loc="(370,380)" name="Splitter">
+      <a name="bit1" val="0"/>
+      <a name="bit10" val="0"/>
+      <a name="bit11" val="0"/>
+      <a name="bit12" val="0"/>
+      <a name="bit13" val="0"/>
+      <a name="bit14" val="0"/>
+      <a name="bit15" val="1"/>
+      <a name="bit16" val="1"/>
+      <a name="bit17" val="0"/>
+      <a name="bit18" val="1"/>
+      <a name="bit19" val="1"/>
+      <a name="bit2" val="0"/>
+      <a name="bit20" val="1"/>
+      <a name="bit21" val="1"/>
+      <a name="bit3" val="0"/>
+      <a name="bit4" val="0"/>
+      <a name="bit5" val="0"/>
+      <a name="bit6" val="0"/>
+      <a name="bit7" val="0"/>
+      <a name="bit8" val="0"/>
+      <a name="bit9" val="0"/>
+      <a name="incoming" val="22"/>
+    </comp>
+    <comp lib="0" loc="(80,160)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="RESET"/>
+    </comp>
     <comp lib="0" loc="(80,70)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="CLK"/>
-    </comp>
-    <comp lib="0" loc="(80,210)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="RESET"/>
     </comp>
     <comp lib="9" loc="(320,30)" name="Text">
       <a name="text" val="TinyCPU integration: one clock net drives all stateful blocks"/>
     </comp>
     <comp loc="(1240,90)" name="Memory"/>
-    <comp loc="(1530,80)" name="ErrorFlags"/>
+    <comp loc="(1570,80)" name="ErrorFlags"/>
     <comp loc="(330,100)" name="FetchDecode"/>
-    <comp loc="(330,400)" name="FetchDecodeControls"/>
     <comp loc="(650,100)" name="Datapath"/>
+    <comp loc="(650,370)" name="FetchDecodeControls"/>
     <comp loc="(940,90)" name="AddressPath"/>
     <wire from="(1010,130)" to="(1020,130)"/>
     <wire from="(1010,70)" to="(1010,130)"/>
     <wire from="(1010,70)" to="(1290,70)"/>
-    <wire from="(1290,100)" to="(1310,100)"/>
+    <wire from="(1280,80)" to="(1280,1150)"/>
+    <wire from="(1280,80)" to="(1350,80)"/>
+    <wire from="(1290,100)" to="(1350,100)"/>
+    <wire from="(1290,120)" to="(1290,1270)"/>
+    <wire from="(1290,120)" to="(1350,120)"/>
     <wire from="(1290,70)" to="(1290,100)"/>
-    <wire from="(1290,10)" to="(1290,70)"/>
-    <wire from="(1290,10)" to="(1610,10)"/>
-    <wire from="(1610,10)" to="(1610,20)"/>
+    <wire from="(1300,140)" to="(1300,1290)"/>
+    <wire from="(1300,140)" to="(1350,140)"/>
+    <wire from="(1310,160)" to="(1310,1310)"/>
+    <wire from="(1310,160)" to="(1350,160)"/>
+    <wire from="(1320,180)" to="(1320,1330)"/>
+    <wire from="(1320,180)" to="(1350,180)"/>
+    <wire from="(1330,200)" to="(1330,1350)"/>
+    <wire from="(1330,200)" to="(1350,200)"/>
+    <wire from="(1340,220)" to="(1340,1370)"/>
+    <wire from="(1340,220)" to="(1350,220)"/>
+    <wire from="(330,160)" to="(360,160)"/>
+    <wire from="(360,160)" to="(360,380)"/>
+    <wire from="(360,380)" to="(370,380)"/>
+    <wire from="(390,370)" to="(430,370)"/>
     <wire from="(420,160)" to="(430,160)"/>
     <wire from="(420,70)" to="(420,160)"/>
     <wire from="(420,70)" to="(710,70)"/>
+    <wire from="(650,1150)" to="(1280,1150)"/>
+    <wire from="(650,1270)" to="(1290,1270)"/>
+    <wire from="(650,1290)" to="(1300,1290)"/>
+    <wire from="(650,1310)" to="(1310,1310)"/>
+    <wire from="(650,1330)" to="(1320,1330)"/>
+    <wire from="(650,1350)" to="(1330,1350)"/>
+    <wire from="(650,1370)" to="(1340,1370)"/>
     <wire from="(710,170)" to="(720,170)"/>
     <wire from="(710,70)" to="(1010,70)"/>
     <wire from="(710,70)" to="(710,170)"/>
+    <wire from="(80,160)" to="(110,160)"/>
     <wire from="(80,70)" to="(90,70)"/>
     <wire from="(90,140)" to="(110,140)"/>
     <wire from="(90,70)" to="(420,70)"/>
     <wire from="(90,70)" to="(90,140)"/>
-    <wire from="(80,210)" to="(110,210)"/>
-    <wire from="(110,210)" to="(110,280)"/>
-    <wire from="(110,280)" to="(450,280)"/>
-    <wire from="(450,170)" to="(450,280)"/>
-    <wire from="(430,170)" to="(450,170)"/>
-    <wire from="(330,110)" to="(60,110)"/>
-    <wire from="(60,110)" to="(60,910)"/>
-    <wire from="(60,910)" to="(430,910)"/>
-    <wire from="(430,790)" to="(1700,790)"/>
-    <wire from="(1700,30)" to="(1700,790)"/>
-    <wire from="(1610,30)" to="(1700,30)"/>
-    <wire from="(430,850)" to="(1720,850)"/>
-    <wire from="(1720,40)" to="(1720,850)"/>
-    <wire from="(1610,40)" to="(1720,40)"/>
-    <wire from="(430,860)" to="(1740,860)"/>
-    <wire from="(1740,50)" to="(1740,860)"/>
-    <wire from="(1610,50)" to="(1740,50)"/>
-    <wire from="(430,870)" to="(1760,870)"/>
-    <wire from="(1760,60)" to="(1760,870)"/>
-    <wire from="(1610,60)" to="(1760,60)"/>
-    <wire from="(430,880)" to="(1780,880)"/>
-    <wire from="(1780,70)" to="(1780,880)"/>
-    <wire from="(1610,70)" to="(1780,70)"/>
-    <wire from="(430,890)" to="(1800,890)"/>
-    <wire from="(1800,80)" to="(1800,890)"/>
-    <wire from="(1610,80)" to="(1800,80)"/>
-    <wire from="(430,900)" to="(1820,900)"/>
-    <wire from="(1820,90)" to="(1820,900)"/>
-    <wire from="(1610,90)" to="(1820,90)"/>
   </circuit>
   <circuit name="Datapath">
     <a name="appearance" val="logisim_evolution"/>
@@ -680,8 +698,8 @@
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(410,290)" name="Constant">
-      <a name="width" val="16"/>
       <a name="value" val="0xffff"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(420,350)" name="Splitter">
       <a name="bit1" val="0"/>

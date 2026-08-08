@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project source="4.1.0" version="1.0">
+  This file is intended to be loaded by Logisim-evolution v4.1.0(https://github.com/logisim-evolution/).
+
   <lib desc="#Wiring" name="0">
     <tool name="Pin">
       <a name="appearance" val="classic"/>
@@ -15,6 +17,13 @@
   <lib desc="#TCL" name="8"/>
   <lib desc="#Base" name="9"/>
   <main name="FetchDecode"/>
+  <options>
+    <a name="gateUndefined" val="ignore"/>
+    <a name="simlimit" val="1000"/>
+    <a name="simrand" val="0"/>
+  </options>
+  <mappings/>
+  <toolbar/>
   <circuit name="FetchDecode">
     <a name="appearance" val="logisim_evolution"/>
     <a name="circuit" val="FetchDecode"/>
@@ -28,7 +37,6 @@
     </comp>
     <comp lib="0" loc="(410,290)" name="Constant">
       <a name="width" val="16"/>
-      <a name="value" val="0xffff"/>
     </comp>
     <comp lib="0" loc="(420,350)" name="Splitter">
       <a name="bit1" val="0"/>

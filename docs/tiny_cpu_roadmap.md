@@ -115,3 +115,11 @@ Fehlerflag-Eingang verbunden. Auch `SET_ADDR`, `SET_INV`, `SET_ILL` und
 `SET_INPUT` erreichen den jeweils gleichnamigen Fehlerflag-Eingang über eigene,
 voneinander isolierte äußere Leitungen. Damit sind alle Sticky-Fehler-Setznetze
 der Decode-Steuerung angeschlossen; als nächstes folgen die Datenpfad-Steuernetze.
+Die nachträgliche visuelle Korrektur ist strukturell nachvollzogen: Der
+Opcode-Splitter reicht nur die sechs höchstwertigen Bits weiter, `RESET`
+erreicht wieder ausschließlich Fetch/Decode, und die Tests verwenden die
+tatsächlichen Anschlüsse der neu platzierten Steuer- und Fehlerblöcke. Mit
+`LOAD_CONST` nach `Datapath.ACC_LOAD` ist außerdem das erste
+Datenpfad-Steuernetz ergänzt; weitere Ladeursachen benötigen vor dem Anschluss
+eine explizite Zusammenfassung, damit Decoder-Ausgänge nicht gegeneinander
+treiben.

@@ -42,9 +42,9 @@
       <a name="bit12" val="0"/>
       <a name="bit13" val="0"/>
       <a name="bit14" val="0"/>
-      <a name="bit15" val="1"/>
+      <a name="bit15" val="0"/>
       <a name="bit16" val="1"/>
-      <a name="bit17" val="0"/>
+      <a name="bit17" val="1"/>
       <a name="bit18" val="1"/>
       <a name="bit19" val="1"/>
       <a name="bit2" val="0"/>
@@ -117,6 +117,11 @@
     <wire from="(90,140)" to="(110,140)"/>
     <wire from="(90,70)" to="(420,70)"/>
     <wire from="(90,70)" to="(90,140)"/>
+    <wire from="(110,160)" to="(110,170)"/>
+    <wire from="(110,170)" to="(430,170)"/>
+    <wire from="(650,370)" to="(780,370)"/>
+    <wire from="(720,180)" to="(780,180)"/>
+    <wire from="(780,180)" to="(780,370)"/>
   </circuit>
   <circuit name="Datapath">
     <a name="appearance" val="logisim_evolution"/>

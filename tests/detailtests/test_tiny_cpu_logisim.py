@@ -224,6 +224,44 @@ def test_top_level_clear_error_reaches_error_flags_only():
     )
 
 
+def test_top_level_set_ovf_reaches_error_flags_only():
+    """Route one sticky-error set control without joining existing nets."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = next(
+        item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
+    )
+    adjacency = {}
+    for wire in circuit.findall("wire"):
+        start, end = wire.get("from"), wire.get("to")
+        adjacency.setdefault(start, set()).add(end)
+        adjacency.setdefault(end, set()).add(start)
+
+    # SET_OVF is output 46 on the automatic FetchDecodeControls symbol; the
+    # matching ErrorFlags input follows CLK and CLEAR_ERROR on its symbol.
+    set_ovf_source = "(430,850)"
+    set_ovf_target = "(1610,40)"
+    reachable = {set_ovf_source}
+    pending = list(reachable)
+    while pending:
+        for endpoint in adjacency.get(pending.pop(), ()):
+            if endpoint not in reachable:
+                reachable.add(endpoint)
+                pending.append(endpoint)
+
+    assert set_ovf_target in reachable
+    assert reachable.isdisjoint(
+        {
+            "(80,70)",  # CLK
+            "(80,210)",  # RESET
+            "(430,910)",  # FetchDecodeControls.OPCODE
+            "(430,790)",  # FetchDecodeControls.CLEAR_ERROR
+            "(1610,20)",  # ErrorFlags.CLK
+            "(1610,30)",  # ErrorFlags.CLEAR_ERROR
+        }
+    )
+
+
 def test_ci_runs_the_fresh_checkout_hardware_verifier():
     """Keep the documented dependency-free acceptance command in the main gate."""
 

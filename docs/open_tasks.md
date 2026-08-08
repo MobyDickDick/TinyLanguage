@@ -5,6 +5,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Next documented work package (completed 2026-08-08)
+
+- [x] **Connect the TinyCPU top-level overflow-error control**
+  (Owner: TinyCPU/Hardware)
+  - Success: connect the one-bit `FetchDecodeControls.SET_OVF` output to the
+    matching `ErrorFlags.SET_OVF` input without moving existing components or
+    coupling the control to clock, reset, opcode, or clear-error nets.
+  - Result: the first sticky-error set control uses its own outer-right lane;
+    a structural regression follows the automatic-symbol terminals and locks
+    the connection and its isolation from all previously integrated nets.
+  - Follow-up: connect the remaining sticky-error set controls one at a time,
+    beginning with `SET_DIV0` and its matching `ErrorFlags` input.
+
 ## Next documented work package (completed 2026-08-06)
 
 - [x] **Connect the TinyCPU top-level clear-error control**

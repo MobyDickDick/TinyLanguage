@@ -178,6 +178,9 @@ fails before a project with overlapping subcircuit symbols is checked in.
 - The first sticky-error set control, `SET_OVF`, uses a separate outer-right
   lane between `FetchDecodeControls` and `ErrorFlags`. It remains isolated
   from `CLEAR_ERROR` and every earlier top-level net.
+- The second sticky-error set control, `SET_DIV0`, runs through its own next
+  outer-right lane and reaches only the matching `ErrorFlags` input. It stays
+  isolated from `SET_OVF` and all earlier top-level nets.
 
 The AP 5 countdown program is loaded into the instruction ROM and its
 clock-edge reference trace is checked in as `ap5_countdown_trace.json`. AP 7

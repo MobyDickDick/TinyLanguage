@@ -75,8 +75,8 @@ def test_top_level_clock_reaches_every_stateful_block():
         "FetchDecode": "(430,160)",
         "Datapath": "(720,170)",
         "AddressPath": "(1020,130)",
-        "Memory": "(1310,100)",
-        "ErrorFlags": "(1610,20)",
+        "Memory": "(1350,100)",
+        "ErrorFlags": "(1350,100)",
     }
     clock = next(
         component.get("loc")
@@ -147,8 +147,7 @@ def test_top_level_reset_reaches_fetch_decode_only():
         {
             "(720,180)",  # Datapath reset-shaped terminal
             "(1020,140)",  # AddressPath reset-shaped terminal
-            "(1310,110)",  # Memory control terminal
-            "(1610,30)",  # ErrorFlags control terminal
+            "(1350,120)",  # Memory/ErrorFlags non-clock control terminal
         }
     )
 
@@ -163,7 +162,7 @@ def test_top_level_opcode_reaches_decode_controls_only():
         for component in circuit.findall("comp")
         if component.get("name") == "FetchDecodeControls"
     ]
-    assert [component.get("loc") for component in controls] == ["(330,400)"]
+    assert [component.get("loc") for component in controls] == ["(650,370)"]
 
     adjacency = {}
     for wire in circuit.findall("wire"):
@@ -171,11 +170,11 @@ def test_top_level_opcode_reaches_decode_controls_only():
         adjacency.setdefault(start, set()).add(end)
         adjacency.setdefault(end, set()).add(start)
 
-    # Automatic Logisim symbols place FetchDecode.OPCODE at the second output
-    # terminal and the sole FetchDecodeControls.OPCODE input after its 51
-    # output terminals.
-    opcode_source = "(330,110)"
-    opcode_target = "(430,910)"
+    # The 22-bit machine word is split before the six opcode bits reach the
+    # controls block. Bits 21..16 form the decoder input; the operand remains
+    # deliberately unconnected until the data-bus integration steps.
+    opcode_source = "(330,160)"
+    splitter_input = "(370,380)"
     reachable = {opcode_source}
     pending = list(reachable)
     while pending:
@@ -184,8 +183,26 @@ def test_top_level_opcode_reaches_decode_controls_only():
                 reachable.add(endpoint)
                 pending.append(endpoint)
 
-    assert opcode_target in reachable
-    assert reachable.isdisjoint({"(80,70)", "(80,210)"})
+    assert splitter_input in reachable
+    decoder_side = {"(390,370)"}
+    pending = list(decoder_side)
+    while pending:
+        for endpoint in adjacency.get(pending.pop(), ()):
+            if endpoint not in decoder_side:
+                decoder_side.add(endpoint)
+                pending.append(endpoint)
+    assert "(430,370)" in decoder_side
+    splitter = next(
+        component
+        for component in circuit.findall("comp")
+        if component.get("name") == "Splitter"
+    )
+    splitter_attributes = _attributes(splitter)
+    assert splitter_attributes["incoming"] == "22"
+    assert {
+        bit for bit in range(22) if splitter_attributes.get(f"bit{bit}") == "1"
+    } == set(range(16, 22))
+    assert reachable.isdisjoint({"(80,70)", "(80,160)"})
 
 
 def test_top_level_clear_error_reaches_error_flags_only():
@@ -203,8 +220,8 @@ def test_top_level_clear_error_reaches_error_flags_only():
 
     # CLEAR_ERROR is output 40 on the automatic FetchDecodeControls symbol;
     # the matching ErrorFlags input is its second automatic-symbol terminal.
-    clear_source = "(430,790)"
-    clear_target = "(1610,30)"
+    clear_source = "(650,1150)"
+    clear_target = "(1350,80)"
     reachable = {clear_source}
     pending = list(reachable)
     while pending:
@@ -217,9 +234,9 @@ def test_top_level_clear_error_reaches_error_flags_only():
     assert reachable.isdisjoint(
         {
             "(80,70)",  # CLK
-            "(80,210)",  # RESET
-            "(430,910)",  # FetchDecodeControls.OPCODE
-            "(1610,20)",  # ErrorFlags.CLK
+            "(80,160)",  # RESET
+            "(430,370)",  # FetchDecodeControls.OPCODE
+            "(1350,100)",  # ErrorFlags.CLK
         }
     )
 
@@ -239,8 +256,8 @@ def test_top_level_set_ovf_reaches_error_flags_only():
 
     # SET_OVF is output 46 on the automatic FetchDecodeControls symbol; the
     # matching ErrorFlags input follows CLK and CLEAR_ERROR on its symbol.
-    set_ovf_source = "(430,850)"
-    set_ovf_target = "(1610,40)"
+    set_ovf_source = "(650,1270)"
+    set_ovf_target = "(1350,120)"
     reachable = {set_ovf_source}
     pending = list(reachable)
     while pending:
@@ -253,11 +270,11 @@ def test_top_level_set_ovf_reaches_error_flags_only():
     assert reachable.isdisjoint(
         {
             "(80,70)",  # CLK
-            "(80,210)",  # RESET
-            "(430,910)",  # FetchDecodeControls.OPCODE
-            "(430,790)",  # FetchDecodeControls.CLEAR_ERROR
-            "(1610,20)",  # ErrorFlags.CLK
-            "(1610,30)",  # ErrorFlags.CLEAR_ERROR
+            "(80,160)",  # RESET
+            "(430,370)",  # FetchDecodeControls.OPCODE
+            "(650,1150)",  # FetchDecodeControls.CLEAR_ERROR
+            "(1350,100)",  # ErrorFlags.CLK
+            "(1350,80)",  # ErrorFlags.CLEAR_ERROR
         }
     )
 
@@ -276,8 +293,8 @@ def test_top_level_set_div0_reaches_error_flags_only():
         adjacency.setdefault(end, set()).add(start)
 
     # SET_DIV0 immediately follows SET_OVF on both automatic symbols.
-    set_div0_source = "(430,860)"
-    set_div0_target = "(1610,50)"
+    set_div0_source = "(650,1290)"
+    set_div0_target = "(1350,140)"
     reachable = {set_div0_source}
     pending = list(reachable)
     while pending:
@@ -290,13 +307,13 @@ def test_top_level_set_div0_reaches_error_flags_only():
     assert reachable.isdisjoint(
         {
             "(80,70)",  # CLK
-            "(80,210)",  # RESET
-            "(430,910)",  # FetchDecodeControls.OPCODE
-            "(430,790)",  # FetchDecodeControls.CLEAR_ERROR
-            "(430,850)",  # FetchDecodeControls.SET_OVF
-            "(1610,20)",  # ErrorFlags.CLK
-            "(1610,30)",  # ErrorFlags.CLEAR_ERROR
-            "(1610,40)",  # ErrorFlags.SET_OVF
+            "(80,160)",  # RESET
+            "(430,370)",  # FetchDecodeControls.OPCODE
+            "(650,1150)",  # FetchDecodeControls.CLEAR_ERROR
+            "(650,1270)",  # FetchDecodeControls.SET_OVF
+            "(1350,100)",  # ErrorFlags.CLK
+            "(1350,80)",  # ErrorFlags.CLEAR_ERROR
+            "(1350,120)",  # ErrorFlags.SET_OVF
         }
     )
 
@@ -304,10 +321,10 @@ def test_top_level_set_div0_reaches_error_flags_only():
 @pytest.mark.parametrize(
     ("name", "source", "target"),
     [
-        ("SET_ADDR", "(430,870)", "(1610,60)"),
-        ("SET_INV", "(430,880)", "(1610,70)"),
-        ("SET_ILL", "(430,890)", "(1610,80)"),
-        ("SET_INPUT", "(430,900)", "(1610,90)"),
+        ("SET_ADDR", "(650,1310)", "(1350,160)"),
+        ("SET_INV", "(650,1330)", "(1350,180)"),
+        ("SET_ILL", "(650,1350)", "(1350,200)"),
+        ("SET_INPUT", "(650,1370)", "(1350,220)"),
     ],
 )
 def test_remaining_error_controls_reach_matching_error_flags_only(
@@ -335,25 +352,60 @@ def test_remaining_error_controls_reach_matching_error_flags_only(
 
     assert target in reachable, name
     all_control_terminals = {
-        "(430,790)",
-        "(430,850)",
-        "(430,860)",
-        "(430,870)",
-        "(430,880)",
-        "(430,890)",
-        "(430,900)",
-        "(1610,30)",
-        "(1610,40)",
-        "(1610,50)",
-        "(1610,60)",
-        "(1610,70)",
-        "(1610,80)",
-        "(1610,90)",
+        "(650,1150)",
+        "(650,1270)",
+        "(650,1290)",
+        "(650,1310)",
+        "(650,1330)",
+        "(650,1350)",
+        "(650,1370)",
+        "(1350,80)",
+        "(1350,120)",
+        "(1350,140)",
+        "(1350,160)",
+        "(1350,180)",
+        "(1350,200)",
+        "(1350,220)",
     }
     assert reachable.isdisjoint(
-        {"(80,70)", "(80,210)", "(430,910)", "(1610,20)"}
+        {"(80,70)", "(80,160)", "(430,370)", "(1350,100)"}
         | (all_control_terminals - {source, target})
     ), name
+
+
+def test_top_level_load_const_enables_accumulator_load():
+    """Start datapath integration with the first decoded load control."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = next(
+        item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
+    )
+    adjacency = {}
+    for wire in circuit.findall("wire"):
+        start, end = wire.get("from"), wire.get("to")
+        adjacency.setdefault(start, set()).add(end)
+        adjacency.setdefault(end, set()).add(start)
+
+    source = "(650,370)"  # FetchDecodeControls.LOAD_CONST
+    target = "(720,180)"  # Datapath.ACC_LOAD
+    reachable = {source}
+    pending = list(reachable)
+    while pending:
+        for endpoint in adjacency.get(pending.pop(), ()):
+            if endpoint not in reachable:
+                reachable.add(endpoint)
+                pending.append(endpoint)
+
+    assert target in reachable
+    assert reachable.isdisjoint(
+        {
+            "(80,70)",  # CLK
+            "(80,160)",  # RESET
+            "(430,370)",  # FetchDecodeControls.OPCODE
+            "(720,170)",  # Datapath.CLK
+            "(720,190)",  # next Datapath control terminal
+        }
+    )
 
 
 def test_ci_runs_the_fresh_checkout_hardware_verifier():

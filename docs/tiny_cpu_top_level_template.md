@@ -34,7 +34,7 @@ Fehlerflags wurde als eigener Schritt vor `RESET` ergänzt.
 | 1 | `CLK` ergänzt | bestehendes Taktnetz | `ErrorFlags.CLK` | 1 | Der Abzweig verläuft oberhalb der Symbole; alle fünf Blöcke reagieren auf dieselbe Flanke. |
 | 2 | `RESET` | neuer Top-Level-Pin | nur `FetchDecode.RESET` | 1 | PC wird zurückgesetzt; RAM, Akkumulator und Fehlerflags werden nicht versehentlich gelöscht. |
 | 3 | Decode-Steuerung | `FetchDecode.OPCODE`, danach benannte Ausgänge von `FetchDecodeControls` | zuerst `FetchDecodeControls.OPCODE`, danach gleichnamiger Eingang des Zielblocks gemäß Pinvertrag | 22 für `OPCODE`, danach 1 je Netz | Keine Verbindung mit Takt oder Reset; jedes Signal beim Einzelschritt beobachten. `OPCODE`, `CLEAR_ERROR` und alle sechs `SET_*`-Fehlernetze sind angeschlossen; als Nächstes folgen die Datenpfad-Steuernetze. |
-| 4 | Akkumulator-Steuerung | passender `FetchDecode`-Ausgang | passender `Datapath`-Eingang | 1 je Netz | Akkumulator ändert sich nur bei aktivem Ladesignal an der Taktflanke. |
+| 4 | Akkumulator-Steuerung | passender `FetchDecodeControls`-Ausgang | passender `Datapath`-Eingang | 1 je Netz | `LOAD_CONST` erreicht als erstes Netz `ACC_LOAD`; weitere Ladeursachen benötigen eine ausdrücklich dokumentierte Zusammenfassung und dürfen nicht durch direktes Zusammenschalten mehrerer Ausgänge entstehen. |
 | 5 | Adress-Steuerung | benannte Fetch/Decode-Ausgänge | gleichnamige Eingänge von `AddressPath` | 1 je Netz | Jedes Signal einzeln zeichnen und prüfen. |
 | 6 | Speicher-Steuerung | Fetch/Decode-Ausgänge | `Memory` | 1 je Netz | Lesen und Schreiben getrennt testen; Validitäts-RAM mitprüfen. |
 | 7 | Adressbus | `AddressPath` | `Memory` und benötigte Rückwege | laut Pinvertrag | Splitter vermeiden, solange keine Breitenumsetzung erforderlich ist. |
@@ -48,31 +48,29 @@ Pinvertrag `hardware/logisim/tinycpu-16-12.json` nachsehen. Wenn Tabellenname
 und sichtbarer Pin voneinander abweichen, **nicht raten**, sondern den Schritt
 offenlassen und die Abweichung notieren.
 
-## Korrektur der bereits gezeichneten Decode-Leitungen
+## Abgenommene Endpunkte der Decode-Leitungen
 
-Die automatische Logisim-Symboldarstellung verwendet den `loc`-Punkt einer
-Subcircuit-Instanz als rechten Ausgangsanker. Die zuvor verwendeten Punkte
-`x=430` an `FetchDecodeControls` und `x=1610` an `ErrorFlags` liegen deshalb
-neben den sichtbaren Pins. Die betreffenden Netze müssen vollständig gelöscht
-und mit diesen Endpunkten neu gezeichnet werden (Zwischenpunkte dürfen in
-freien Korridoren liegen):
+Nach der manuellen Korrektur der Übersichtsseite sind die sichtbaren Pins der
+neu platzierten Symbole maßgeblich. Die XML-Tests verfolgen jede Leitung von
+diesen Endpunkten und prüfen zusätzlich, dass Takt, Reset und benachbarte
+Steuernetze nicht versehentlich verbunden sind:
 
 | Netz | von | nach |
 |---|---:|---:|
-| `OPCODE` | `FetchDecode.OPCODE (330,110)` | `FetchDecodeControls.OPCODE (130,910)` |
-| `CLK` | bestehendes CLK-Netz, z. B. Abzweig `(1290,10)` | `ErrorFlags.CLK (1330,90)` |
-| `CLEAR_ERROR` | `FetchDecodeControls.CLEAR_ERROR (330,790)` | `ErrorFlags.CLEAR_ERROR (1330,80)` |
-| `SET_OVF` | `FetchDecodeControls.SET_OVF (330,850)` | `ErrorFlags.SET_OVF (1330,100)` |
-| `SET_DIV0` | `FetchDecodeControls.SET_DIV0 (330,860)` | `ErrorFlags.SET_DIV0 (1330,110)` |
-| `SET_ADDR` | `FetchDecodeControls.SET_ADDR (330,870)` | `ErrorFlags.SET_ADDR (1330,120)` |
-| `SET_INV` | `FetchDecodeControls.SET_INV (330,880)` | `ErrorFlags.SET_INV (1330,130)` |
-| `SET_ILL` | `FetchDecodeControls.SET_ILL (330,890)` | `ErrorFlags.SET_ILL (1330,140)` |
-| `SET_INPUT` | `FetchDecodeControls.SET_INPUT (330,900)` | `ErrorFlags.SET_INPUT (1330,150)` |
+| `OPCODE` | `FetchDecode.OPCODE (330,160)` über Splitter-Ausgang `(390,370)` | `FetchDecodeControls.OPCODE (430,370)` |
+| `CLK` | bestehendes CLK-Netz | `ErrorFlags.CLK (1350,100)` |
+| `CLEAR_ERROR` | `FetchDecodeControls.CLEAR_ERROR (650,1150)` | `ErrorFlags.CLEAR_ERROR (1350,80)` |
+| `SET_OVF` | `FetchDecodeControls.SET_OVF (650,1270)` | `ErrorFlags.SET_OVF (1350,120)` |
+| `SET_DIV0` | `FetchDecodeControls.SET_DIV0 (650,1290)` | `ErrorFlags.SET_DIV0 (1350,140)` |
+| `SET_ADDR` | `FetchDecodeControls.SET_ADDR (650,1310)` | `ErrorFlags.SET_ADDR (1350,160)` |
+| `SET_INV` | `FetchDecodeControls.SET_INV (650,1330)` | `ErrorFlags.SET_INV (1350,180)` |
+| `SET_ILL` | `FetchDecodeControls.SET_ILL (650,1350)` | `ErrorFlags.SET_ILL (1350,200)` |
+| `SET_INPUT` | `FetchDecodeControls.SET_INPUT (650,1370)` | `ErrorFlags.SET_INPUT (1350,220)` |
 
-Die vorhandenen falschen Endpunkte dürfen nicht nur mit kurzen Stücken zu den
-richtigen Pins verlängert werden: Dadurch blieben irreführende Stummel und
-unnötige Wege erhalten. Jedes Netz einzeln ersetzen und anschließend mit dem
-Poke-Werkzeug am Quell- und Zielpin prüfen.
+Der Splitter führt ausschließlich die Opcode-Bits 21 bis 16 des 22-Bit-
+Maschinenworts an den sechs Bit breiten Decoder. Der 16-Bit-Operand bleibt für
+die späteren Datenbus-Schritte getrennt; ein direkter 22-auf-6-Bit-Anschluss
+wäre ein Breitenfehler.
 
 `tiny_cpu_verify.py` prüft den strukturellen Pinvertrag und reproduzierbare
 Artefakte, aber keine elektrische Top-Level-Verbindung. Es meldet deshalb auch

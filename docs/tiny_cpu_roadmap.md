@@ -111,4 +111,7 @@ Opcode-Bus getrennt. `SET_OVF`, das erste der sechs
 Sticky-Fehler-Setzsignale, nutzt daneben eine eigene äußere Leitung und bleibt
 von den vorhandenen Netzen isoliert. `SET_DIV0` folgt in einer weiteren
 äußeren Leitung und ist ebenfalls ausschließlich mit dem gleichnamigen
-Fehlerflag-Eingang verbunden. Als nächstes folgt `SET_ADDR`.
+Fehlerflag-Eingang verbunden. Auch `SET_ADDR`, `SET_INV`, `SET_ILL` und
+`SET_INPUT` erreichen den jeweils gleichnamigen Fehlerflag-Eingang über eigene,
+voneinander isolierte äußere Leitungen. Damit sind alle Sticky-Fehler-Setznetze
+der Decode-Steuerung angeschlossen; als nächstes folgen die Datenpfad-Steuernetze.

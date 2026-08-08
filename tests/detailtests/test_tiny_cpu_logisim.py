@@ -301,6 +301,61 @@ def test_top_level_set_div0_reaches_error_flags_only():
     )
 
 
+@pytest.mark.parametrize(
+    ("name", "source", "target"),
+    [
+        ("SET_ADDR", "(430,870)", "(1610,60)"),
+        ("SET_INV", "(430,880)", "(1610,70)"),
+        ("SET_ILL", "(430,890)", "(1610,80)"),
+        ("SET_INPUT", "(430,900)", "(1610,90)"),
+    ],
+)
+def test_remaining_error_controls_reach_matching_error_flags_only(
+    name, source, target
+):
+    """Every remaining error control has one dedicated top-level net."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = next(
+        item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
+    )
+    adjacency = {}
+    for wire in circuit.findall("wire"):
+        start, end = wire.get("from"), wire.get("to")
+        adjacency.setdefault(start, set()).add(end)
+        adjacency.setdefault(end, set()).add(start)
+
+    reachable = {source}
+    pending = list(reachable)
+    while pending:
+        for endpoint in adjacency.get(pending.pop(), ()):
+            if endpoint not in reachable:
+                reachable.add(endpoint)
+                pending.append(endpoint)
+
+    assert target in reachable, name
+    all_control_terminals = {
+        "(430,790)",
+        "(430,850)",
+        "(430,860)",
+        "(430,870)",
+        "(430,880)",
+        "(430,890)",
+        "(430,900)",
+        "(1610,30)",
+        "(1610,40)",
+        "(1610,50)",
+        "(1610,60)",
+        "(1610,70)",
+        "(1610,80)",
+        "(1610,90)",
+    }
+    assert reachable.isdisjoint(
+        {"(80,70)", "(80,210)", "(430,910)", "(1610,20)"}
+        | (all_control_terminals - {source, target})
+    ), name
+
+
 def test_ci_runs_the_fresh_checkout_hardware_verifier():
     """Keep the documented dependency-free acceptance command in the main gate."""
 

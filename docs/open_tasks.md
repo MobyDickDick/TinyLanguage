@@ -7,6 +7,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-08)
 
+- [x] **Connect the remaining TinyCPU top-level sticky-error controls**
+  (Owner: TinyCPU/Hardware)
+  - Success: connect `SET_ADDR`, `SET_INV`, `SET_ILL`, and `SET_INPUT` from
+    `FetchDecodeControls` to the matching `ErrorFlags` inputs without coupling
+    any of the long routes to an existing top-level net.
+  - Result: every remaining signal has a dedicated outer-right lane, and a
+    parameterized structural regression locks both endpoint reachability and
+    isolation from clock, reset, opcode, and every sibling error-control net.
+  - Follow-up: integrate the data-path control nets individually.
+
+## Next documented work package (completed 2026-08-08)
+
 - [x] **Connect the TinyCPU top-level divide-by-zero-error control**
   (Owner: TinyCPU/Hardware)
   - Success: connect the one-bit `FetchDecodeControls.SET_DIV0` output to the

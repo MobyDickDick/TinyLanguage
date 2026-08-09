@@ -468,6 +468,61 @@ def _control_output(root, label):
     return f"({x},{y + 20 * index})"
 
 
+def _instruction_field_output(root, bits):
+    """Resolve an instruction-splitter branch from its declared bit mapping."""
+
+    splitter = next(
+        component
+        for component in _top_level(root).findall("comp")
+        if component.get("name") == "Splitter"
+    )
+    attributes = _attributes(splitter)
+    branches = {}
+    for bit in range(int(attributes["incoming"])):
+        branch = int(attributes.get(f"bit{bit}", "0"))
+        branches.setdefault(branch, set()).add(bit)
+    branch = next(
+        index
+        for index, mapped_bits in branches.items()
+        if mapped_bits == set(bits)
+    )
+    x, y = (int(value) for value in splitter.get("loc").strip("()").split(","))
+    return f"({x + 20},{y - 10 * len(branches) + 10 * branch})"
+
+
+def _subcircuit_input(root, circuit_name, pin_label):
+    """Resolve an automatic-symbol input from the named subcircuit pin."""
+
+    definition = next(
+        circuit
+        for circuit in root.findall("circuit")
+        if circuit.get("name") == circuit_name
+    )
+    inputs = sorted(
+        (
+            component
+            for component in definition.findall("comp")
+            if component.get("name") == "Pin"
+            and _attributes(component).get("type", "input") == "input"
+        ),
+        key=lambda component: tuple(
+            int(value) for value in component.get("loc").strip("()").split(",")
+        )[::-1],
+    )
+    index = next(
+        index
+        for index, component in enumerate(inputs)
+        if _attributes(component).get("label") == pin_label
+    )
+    instance = next(
+        component
+        for component in _top_level(root).findall("comp")
+        if component.get("name") == circuit_name
+    )
+    x, y = (int(value) for value in instance.get("loc").strip("()").split(","))
+    return f"({x + 70},{y - 10 + 20 * index})"
+
+
 def _gate_ports(component):
     """Resolve an OR gate's output and inputs from its declared fan-in."""
 
@@ -545,22 +600,20 @@ def test_top_level_non_family_write_controls_use_separate_gate_connections():
 
 
 def test_top_level_operand_bus_drives_datapath_data_input_only():
-    """Keep the first accumulator data source a dedicated 16-bit net."""
+    """Connect instruction operand bits to the named datapath input only."""
 
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
     adjacency = _electrical_adjacency(circuit)
 
-    # The instruction splitter's lower output carries bits 15..0.  The
-    # generated Datapath symbol exposes DATA_IN at its first input terminal.
-    operand = "(390,390)"
-    data_in = "(720,160)"
+    operand = _instruction_field_output(root, range(16))
+    data_in = _subcircuit_input(root, "Datapath", "DATA_IN")
     reachable = _reachable(adjacency, operand)
 
     assert data_in in reachable
-    assert "(390,370)" not in reachable  # six-bit opcode splitter output
-    assert "(720,180)" not in reachable  # one-bit ACC_LOAD control
-    assert "(720,200)" not in reachable  # one-bit VALID_IN control
+    assert _instruction_field_output(root, range(16, 22)) not in reachable
+    assert _subcircuit_input(root, "Datapath", "ACC_LOAD") not in reachable
+    assert _subcircuit_input(root, "Datapath", "VALID_IN") not in reachable
 
 
 def test_ci_runs_the_fresh_checkout_hardware_verifier():

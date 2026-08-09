@@ -186,8 +186,12 @@ fails before a project with overlapping subcircuit symbols is checked in.
   its identically named `ErrorFlags` input, so none of the long routes ends on
   an unconnected grid point or joins another control net.
 - The machine word reaches `FetchDecodeControls` through a splitter that
-  selects opcode bits 21..16; the 16-bit operand is kept separate for the
-  later data-bus integration. All four `LOAD_*`, `ADD_*`, `SUB_*`, `MUL_*`,
+  selects opcode bits 21..16; the split-off 16-bit operand reaches the visible
+  `Datapath.DATA_IN` terminal on an isolated net. Splitter, subcircuit, and pin
+  `loc` attributes are component anchors, not a reliable substitute for the
+  visible terminals of generated symbols; future top-level routes must use
+  terminals verified in Logisim rather than coordinates inferred from those
+  anchors. All four `LOAD_*`, `ADD_*`, `SUB_*`, `MUL_*`,
   `DIV_*`, `AND_*`, `OR_*`, and `XOR_*` addressing modes are the first eight
   datapath-control families. Separate routes feed the explicitly
   thirty-two-input,

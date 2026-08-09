@@ -373,8 +373,15 @@ def test_remaining_error_controls_reach_matching_error_flags_only(
     ), name
 
 
-def test_top_level_load_const_enables_accumulator_load():
-    """Start datapath integration with the first decoded load control."""
+@pytest.mark.parametrize(
+    "source",
+    [
+        "(650,370)",  # FetchDecodeControls.LOAD_CONST
+        "(650,390)",  # FetchDecodeControls.LOAD_ADDRESS
+    ],
+)
+def test_top_level_load_controls_enable_accumulator_load(source):
+    """Combine accumulator-load causes without coupling decoder outputs."""
 
     root = ET.parse(PROJECT).getroot()
     circuit = next(
@@ -386,8 +393,10 @@ def test_top_level_load_const_enables_accumulator_load():
         adjacency.setdefault(start, set()).add(end)
         adjacency.setdefault(end, set()).add(start)
 
-    source = "(650,370)"  # FetchDecodeControls.LOAD_CONST
-    target = "(720,180)"  # Datapath.ACC_LOAD
+    gate_input = {
+        "(650,370)": "(710,230)",
+        "(650,390)": "(710,250)",
+    }[source]
     reachable = {source}
     pending = list(reachable)
     while pending:
@@ -396,7 +405,8 @@ def test_top_level_load_const_enables_accumulator_load():
                 reachable.add(endpoint)
                 pending.append(endpoint)
 
-    assert target in reachable
+    assert gate_input in reachable
+    sibling = {"(650,370)", "(650,390)"} - {source}
     assert reachable.isdisjoint(
         {
             "(80,70)",  # CLK
@@ -405,7 +415,25 @@ def test_top_level_load_const_enables_accumulator_load():
             "(720,170)",  # Datapath.CLK
             "(720,190)",  # next Datapath control terminal
         }
+        | sibling
     )
+
+    aggregator = next(
+        component
+        for component in circuit.findall("comp")
+        if _attributes(component).get("label") == "ACC_LOAD_REQUEST"
+    )
+    assert aggregator.get("name") == "OR Gate"
+    assert aggregator.get("loc") == "(760,240)"
+
+    output_reachable = {"(760,240)"}
+    pending = list(output_reachable)
+    while pending:
+        for endpoint in adjacency.get(pending.pop(), ()):
+            if endpoint not in output_reachable:
+                output_reachable.add(endpoint)
+                pending.append(endpoint)
+    assert "(720,180)" in output_reachable  # Datapath.ACC_LOAD
 
 
 def test_ci_runs_the_fresh_checkout_hardware_verifier():

@@ -187,8 +187,10 @@ fails before a project with overlapping subcircuit symbols is checked in.
   an unconnected grid point or joins another control net.
 - The machine word reaches `FetchDecodeControls` through a splitter that
   selects opcode bits 21..16; the 16-bit operand is kept separate for the
-  later data-bus integration. `LOAD_CONST` is the first datapath control and
-  reaches only `Datapath.ACC_LOAD` through a free right-hand corridor.
+  later data-bus integration. `LOAD_CONST` and `LOAD_ADDRESS` are the first
+  datapath controls. Separate routes feed the named `ACC_LOAD_REQUEST` OR gate,
+  whose output alone reaches `Datapath.ACC_LOAD`; the decoder outputs are never
+  tied directly together.
 
 The AP 5 countdown program is loaded into the instruction ROM and its
 clock-edge reference trace is checked in as `ap5_countdown_trace.json`. AP 7

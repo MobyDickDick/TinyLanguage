@@ -28,6 +28,38 @@ def _attributes(component):
     return {attribute.get("name"): attribute.get("val") for attribute in component}
 
 
+def _electrical_adjacency(circuit):
+    """Return Logisim connectivity, including endpoint-on-wire junctions.
+
+    A wire endpoint that touches the middle of another wire creates a junction
+    in Logisim.  Merely comparing the declared endpoint pairs misses those
+    T-junctions and can therefore hide accidental wired-OR decoder outputs.
+    """
+
+    def coordinates(location):
+        x, y = location.strip("()").split(",")
+        return int(x), int(y)
+
+    wires = [(wire.get("from"), wire.get("to")) for wire in circuit.findall("wire")]
+    endpoints = {endpoint for wire in wires for endpoint in wire}
+    adjacency = {endpoint: set() for endpoint in endpoints}
+    for start, end in wires:
+        start_x, start_y = coordinates(start)
+        end_x, end_y = coordinates(end)
+        points = []
+        for endpoint in endpoints:
+            x, y = coordinates(endpoint)
+            if start_x == end_x == x and min(start_y, end_y) <= y <= max(start_y, end_y):
+                points.append(endpoint)
+            elif start_y == end_y == y and min(start_x, end_x) <= x <= max(start_x, end_x):
+                points.append(endpoint)
+        points.sort(key=coordinates)
+        for left, right in zip(points, points[1:]):
+            adjacency[left].add(right)
+            adjacency[right].add(left)
+    return adjacency
+
+
 def test_integration_clock_fans_out_one_net_to_every_stateful_block():
     """Start top-level integration with a small, independently loadable net."""
 
@@ -376,34 +408,38 @@ def test_remaining_error_controls_reach_matching_error_flags_only(
 @pytest.mark.parametrize(
     ("source", "gate_input"),
     [
-        ("(650,370)", "(940,610)"),  # LOAD_CONST
-        ("(650,390)", "(940,620)"),  # LOAD_ADDRESS
-        ("(650,410)", "(940,630)"),  # LOAD_ADDRESS_REGISTER
-        ("(650,430)", "(940,640)"),  # LOAD_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,450)", "(940,650)"),  # ADD_CONST
-        ("(650,470)", "(940,660)"),  # ADD_ADDRESS
-        ("(650,490)", "(940,670)"),  # ADD_ADDRESS_REGISTER
-        ("(650,510)", "(940,680)"),  # ADD_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,530)", "(940,690)"),  # SUB_CONST
-        ("(650,550)", "(940,700)"),  # SUB_ADDRESS
-        ("(650,570)", "(940,710)"),  # SUB_ADDRESS_REGISTER
-        ("(650,590)", "(940,720)"),  # SUB_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,610)", "(940,730)"),  # MUL_CONST
-        ("(650,630)", "(940,740)"),  # MUL_ADDRESS
-        ("(650,650)", "(940,760)"),  # MUL_ADDRESS_REGISTER
-        ("(650,670)", "(940,770)"),  # MUL_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,690)", "(940,780)"),  # DIV_CONST
-        ("(650,710)", "(940,790)"),  # DIV_ADDRESS
-        ("(650,730)", "(940,800)"),  # DIV_ADDRESS_REGISTER
-        ("(650,750)", "(940,810)"),  # DIV_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,770)", "(940,820)"),  # AND_CONST
-        ("(650,790)", "(940,830)"),  # AND_ADDRESS
-        ("(650,810)", "(940,840)"),  # AND_ADDRESS_REGISTER
-        ("(650,830)", "(940,850)"),  # AND_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,850)", "(940,860)"),  # OR_CONST
+        ("(650,370)", "(940,590)"),  # LOAD_CONST
+        ("(650,390)", "(940,600)"),  # LOAD_ADDRESS
+        ("(650,410)", "(940,610)"),  # LOAD_ADDRESS_REGISTER
+        ("(650,430)", "(940,620)"),  # LOAD_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,450)", "(940,630)"),  # ADD_CONST
+        ("(650,470)", "(940,640)"),  # ADD_ADDRESS
+        ("(650,490)", "(940,650)"),  # ADD_ADDRESS_REGISTER
+        ("(650,510)", "(940,660)"),  # ADD_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,530)", "(940,670)"),  # SUB_CONST
+        ("(650,550)", "(940,680)"),  # SUB_ADDRESS
+        ("(650,570)", "(940,690)"),  # SUB_ADDRESS_REGISTER
+        ("(650,590)", "(940,700)"),  # SUB_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,610)", "(940,710)"),  # MUL_CONST
+        ("(650,630)", "(940,720)"),  # MUL_ADDRESS
+        ("(650,650)", "(940,730)"),  # MUL_ADDRESS_REGISTER
+        ("(650,670)", "(940,740)"),  # MUL_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,690)", "(940,760)"),  # DIV_CONST
+        ("(650,710)", "(940,770)"),  # DIV_ADDRESS
+        ("(650,730)", "(940,780)"),  # DIV_ADDRESS_REGISTER
+        ("(650,750)", "(940,790)"),  # DIV_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,770)", "(940,800)"),  # AND_CONST
+        ("(650,790)", "(940,810)"),  # AND_ADDRESS
+        ("(650,810)", "(940,820)"),  # AND_ADDRESS_REGISTER
+        ("(650,830)", "(940,830)"),  # AND_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,850)", "(940,850)"),  # OR_CONST
         ("(650,870)", "(940,870)"),  # OR_ADDRESS
-        ("(650,890)", "(940,880)"),  # OR_ADDRESS_REGISTER
-        ("(650,910)", "(940,890)"),  # OR_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,890)", "(940,860)"),  # OR_ADDRESS_REGISTER
+        ("(650,910)", "(940,840)"),  # OR_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,930)", "(940,880)"),  # XOR_CONST
+        ("(650,950)", "(940,890)"),  # XOR_ADDRESS
+        ("(650,970)", "(940,900)"),  # XOR_ADDRESS_REGISTER
+        ("(650,990)", "(940,910)"),  # XOR_ADDRESS_REGISTER_PLUS_OFFSET
     ],
 )
 def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
@@ -413,11 +449,7 @@ def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
     circuit = next(
         item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
     )
-    adjacency = {}
-    for wire in circuit.findall("wire"):
-        start, end = wire.get("from"), wire.get("to")
-        adjacency.setdefault(start, set()).add(end)
-        adjacency.setdefault(end, set()).add(start)
+    adjacency = _electrical_adjacency(circuit)
 
     reachable = {source}
     pending = list(reachable)
@@ -428,7 +460,7 @@ def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
                 pending.append(endpoint)
 
     assert gate_input in reachable
-    sibling = {f"(650,{y})" for y in range(370, 930, 20)} - {source}
+    sibling = {f"(650,{y})" for y in range(370, 1010, 20)} - {source}
     assert reachable.isdisjoint(
         {
             "(80,70)",  # CLK
@@ -447,7 +479,7 @@ def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
     )
     assert aggregator.get("name") == "OR Gate"
     assert aggregator.get("loc") == "(990,750)"
-    assert _attributes(aggregator).get("inputs") == "28"
+    assert _attributes(aggregator).get("inputs") == "32"
 
     output_reachable = {"(990,750)"}
     pending = list(output_reachable)

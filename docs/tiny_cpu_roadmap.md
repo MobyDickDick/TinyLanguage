@@ -129,8 +129,10 @@ Auch `LOAD_ADDRESS_REGISTER` und `LOAD_ADDRESS_REGISTER_PLUS_OFFSET` sind nun
 als getrennte Eingänge angeschlossen. Damit deckt das ausdrücklich vierfach
 ausgelegte Gatter die gesamte `LOAD_*`-Familie ab, ohne den benachbarten
 `DATA_IN`-Eingang anzusteuern. Die vier `ADD_*`-Steuersignale belegen ebenfalls
-je einen eigenen Eingang. Das nun ausdrücklich mit achtundzwanzig Eingängen
-ausgelegte Gatter deckt die vollständigen `LOAD_*`-, `ADD_*`-, `SUB_*`-, `MUL_*`-,
-`DIV_*`-, `AND_*`- und `OR_*`-Familien ab, ohne ihre Decoder-Ausgänge
-elektrisch zu koppeln. Als nächste Akkumulator-schreibende Befehlsgruppe folgen
-die vier `XOR_*`-Steuersignale.
+je einen eigenen Eingang. Das nun ausdrücklich mit zweiunddreißig Eingängen
+ausgelegte Gatter deckt die vollständigen `LOAD_*`-, `ADD_*`-, `SUB_*`-, `MUL_*`-, `DIV_*`-, `AND_*`-,
+`OR_*`- und `XOR_*`-Familien ab, ohne ihre Decoder-Ausgänge elektrisch zu
+koppeln. Die Strukturtests berücksichtigen dabei auch Abzweige, die in Logisim
+entstehen, wenn ein Leitungsende auf eine andere Leitung trifft, und verhindern
+so insbesondere wired-ORs. Als nächste Akkumulator-schreibende Anweisung folgt
+`NOT`.

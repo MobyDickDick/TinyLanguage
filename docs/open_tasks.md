@@ -7,6 +7,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-09)
 
+- [x] **Add the TinyCPU OR-family accumulator controls**
+  (Owner: TinyCPU/Hardware)
+  - Success: add all four `OR_*` decoder outputs to `ACC_LOAD_REQUEST` on
+    independent nets while retaining the twenty-four existing `LOAD_*`,
+    `ADD_*`, `SUB_*`, `MUL_*`, `DIV_*`, and `AND_*` causes and isolation from
+    `Datapath.DATA_IN`.
+  - Result: the explicitly twenty-eight-input accumulator-write gate covers
+    all seven complete instruction families; parameterized structural coverage
+    locks every source, gate input, destination, and sibling-net isolation.
+  - Follow-up: add the four `XOR_*` accumulator-writing controls as the next
+    explicitly documented instruction group.
+
+## Next documented work package (completed 2026-08-09)
+
 - [x] **Add the TinyCPU AND-family accumulator controls**
   (Owner: TinyCPU/Hardware)
   - Success: add all four `AND_*` decoder outputs to `ACC_LOAD_REQUEST` on

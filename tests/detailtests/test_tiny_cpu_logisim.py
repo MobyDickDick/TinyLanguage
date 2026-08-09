@@ -376,30 +376,34 @@ def test_remaining_error_controls_reach_matching_error_flags_only(
 @pytest.mark.parametrize(
     ("source", "gate_input"),
     [
-        ("(650,370)", "(940,590)"),  # LOAD_CONST
-        ("(650,390)", "(940,600)"),  # LOAD_ADDRESS
-        ("(650,410)", "(940,610)"),  # LOAD_ADDRESS_REGISTER
-        ("(650,430)", "(940,620)"),  # LOAD_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,450)", "(940,630)"),  # ADD_CONST
-        ("(650,470)", "(940,640)"),  # ADD_ADDRESS
-        ("(650,490)", "(940,650)"),  # ADD_ADDRESS_REGISTER
-        ("(650,510)", "(940,660)"),  # ADD_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,530)", "(940,670)"),  # SUB_CONST
-        ("(650,550)", "(940,680)"),  # SUB_ADDRESS
-        ("(650,570)", "(940,690)"),  # SUB_ADDRESS_REGISTER
-        ("(650,590)", "(940,700)"),  # SUB_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,610)", "(940,720)"),  # MUL_CONST
-        ("(650,630)", "(940,730)"),  # MUL_ADDRESS
-        ("(650,650)", "(940,740)"),  # MUL_ADDRESS_REGISTER
-        ("(650,670)", "(940,750)"),  # MUL_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,690)", "(940,760)"),  # DIV_CONST
-        ("(650,710)", "(940,770)"),  # DIV_ADDRESS
-        ("(650,730)", "(940,780)"),  # DIV_ADDRESS_REGISTER
-        ("(650,750)", "(940,790)"),  # DIV_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,770)", "(940,800)"),  # AND_CONST
-        ("(650,790)", "(940,810)"),  # AND_ADDRESS
-        ("(650,810)", "(940,820)"),  # AND_ADDRESS_REGISTER
-        ("(650,830)", "(940,830)"),  # AND_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,370)", "(940,610)"),  # LOAD_CONST
+        ("(650,390)", "(940,620)"),  # LOAD_ADDRESS
+        ("(650,410)", "(940,630)"),  # LOAD_ADDRESS_REGISTER
+        ("(650,430)", "(940,640)"),  # LOAD_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,450)", "(940,650)"),  # ADD_CONST
+        ("(650,470)", "(940,660)"),  # ADD_ADDRESS
+        ("(650,490)", "(940,670)"),  # ADD_ADDRESS_REGISTER
+        ("(650,510)", "(940,680)"),  # ADD_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,530)", "(940,690)"),  # SUB_CONST
+        ("(650,550)", "(940,700)"),  # SUB_ADDRESS
+        ("(650,570)", "(940,710)"),  # SUB_ADDRESS_REGISTER
+        ("(650,590)", "(940,720)"),  # SUB_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,610)", "(940,730)"),  # MUL_CONST
+        ("(650,630)", "(940,740)"),  # MUL_ADDRESS
+        ("(650,650)", "(940,760)"),  # MUL_ADDRESS_REGISTER
+        ("(650,670)", "(940,770)"),  # MUL_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,690)", "(940,780)"),  # DIV_CONST
+        ("(650,710)", "(940,790)"),  # DIV_ADDRESS
+        ("(650,730)", "(940,800)"),  # DIV_ADDRESS_REGISTER
+        ("(650,750)", "(940,810)"),  # DIV_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,770)", "(940,820)"),  # AND_CONST
+        ("(650,790)", "(940,830)"),  # AND_ADDRESS
+        ("(650,810)", "(940,840)"),  # AND_ADDRESS_REGISTER
+        ("(650,830)", "(940,850)"),  # AND_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,850)", "(940,860)"),  # OR_CONST
+        ("(650,870)", "(940,870)"),  # OR_ADDRESS
+        ("(650,890)", "(940,880)"),  # OR_ADDRESS_REGISTER
+        ("(650,910)", "(940,890)"),  # OR_ADDRESS_REGISTER_PLUS_OFFSET
     ],
 )
 def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
@@ -424,7 +428,7 @@ def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
                 pending.append(endpoint)
 
     assert gate_input in reachable
-    sibling = {f"(650,{y})" for y in range(370, 850, 20)} - {source}
+    sibling = {f"(650,{y})" for y in range(370, 930, 20)} - {source}
     assert reachable.isdisjoint(
         {
             "(80,70)",  # CLK
@@ -442,10 +446,10 @@ def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
         if _attributes(component).get("label") == "ACC_LOAD_REQUEST"
     )
     assert aggregator.get("name") == "OR Gate"
-    assert aggregator.get("loc") == "(990,710)"
-    assert _attributes(aggregator).get("inputs") == "24"
+    assert aggregator.get("loc") == "(990,750)"
+    assert _attributes(aggregator).get("inputs") == "28"
 
-    output_reachable = {"(990,710)"}
+    output_reachable = {"(990,750)"}
     pending = list(output_reachable)
     while pending:
         for endpoint in adjacency.get(pending.pop(), ()):

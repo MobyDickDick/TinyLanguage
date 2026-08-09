@@ -125,5 +125,8 @@ eine explizite Zusammenfassung, damit Decoder-Ausgänge nicht gegeneinander
 treiben. Diese Zusammenfassung beginnt nun mit dem benannten ODER-Gatter
 `ACC_LOAD_REQUEST`: Es führt `LOAD_CONST` und `LOAD_ADDRESS` auf
 `Datapath.ACC_LOAD`, hält aber beide Decoder-Ausgänge auf getrennten Netzen.
-Die übrigen Akkumulator-schreibenden Befehlsgruppen werden schrittweise an
-diese ausdrücklich sichtbare Kombinationslogik angebunden.
+Auch `LOAD_ADDRESS_REGISTER` und `LOAD_ADDRESS_REGISTER_PLUS_OFFSET` sind nun
+als getrennte Eingänge angeschlossen. Damit deckt das ausdrücklich vierfach
+ausgelegte Gatter die gesamte `LOAD_*`-Familie ab, ohne den benachbarten
+`DATA_IN`-Eingang anzusteuern. Als nächste Akkumulator-schreibende
+Befehlsgruppe werden die vier `ADD_*`-Steuersignale ergänzt.

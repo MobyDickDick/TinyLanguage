@@ -187,8 +187,9 @@ fails before a project with overlapping subcircuit symbols is checked in.
   an unconnected grid point or joins another control net.
 - The machine word reaches `FetchDecodeControls` through a splitter that
   selects opcode bits 21..16; the 16-bit operand is kept separate for the
-  later data-bus integration. `LOAD_CONST` and `LOAD_ADDRESS` are the first
-  datapath controls. Separate routes feed the named `ACC_LOAD_REQUEST` OR gate,
+  later data-bus integration. All four `LOAD_*` addressing modes are the first
+  datapath-control family. Separate routes feed the explicitly four-input,
+  named `ACC_LOAD_REQUEST` OR gate,
   whose output alone reaches `Datapath.ACC_LOAD`; the decoder outputs are never
   tied directly together.
 

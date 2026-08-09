@@ -188,8 +188,9 @@ fails before a project with overlapping subcircuit symbols is checked in.
 - The machine word reaches `FetchDecodeControls` through a splitter that
   selects opcode bits 21..16; the 16-bit operand is kept separate for the
   later data-bus integration. All four `LOAD_*`, `ADD_*`, `SUB_*`, `MUL_*`,
-  `DIV_*`, and `AND_*` addressing modes are the first six datapath-control
-  families. Separate routes feed the explicitly twenty-four-input,
+  `DIV_*`, `AND_*`, and `OR_*` addressing modes are the first seven
+  datapath-control families. Separate routes feed the explicitly
+  twenty-eight-input,
   named `ACC_LOAD_REQUEST` OR gate,
   whose output alone reaches `Datapath.ACC_LOAD`; the decoder outputs are never
   tied directly together.

@@ -129,7 +129,7 @@ Auch `LOAD_ADDRESS_REGISTER` und `LOAD_ADDRESS_REGISTER_PLUS_OFFSET` sind nun
 als getrennte Eingänge angeschlossen. Damit deckt das ausdrücklich vierfach
 ausgelegte Gatter die gesamte `LOAD_*`-Familie ab, ohne den benachbarten
 `DATA_IN`-Eingang anzusteuern. Die vier `ADD_*`-Steuersignale belegen ebenfalls
-je einen eigenen Eingang. Das nun ausdrücklich mit zwölf Eingängen ausgelegte Gatter deckt die
-vollständigen `LOAD_*`-, `ADD_*`- und `SUB_*`-Familien ab, ohne ihre Decoder-Ausgänge
-elektrisch zu koppeln. Als nächste Akkumulator-schreibende Befehlsgruppe
-folgen die vier `MUL_*`-Steuersignale.
+je einen eigenen Eingang. Das nun ausdrücklich mit sechzehn Eingängen ausgelegte Gatter deckt die
+vollständigen `LOAD_*`-, `ADD_*`-, `SUB_*`- und `MUL_*`-Familien ab, ohne ihre
+Decoder-Ausgänge elektrisch zu koppeln. Als nächste Akkumulator-schreibende
+Befehlsgruppe folgen die vier `DIV_*`-Steuersignale.

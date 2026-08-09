@@ -374,16 +374,20 @@ def test_remaining_error_controls_reach_matching_error_flags_only(
 
 
 @pytest.mark.parametrize(
-    "source",
+    ("source", "gate_input"),
     [
-        "(650,370)",  # FetchDecodeControls.LOAD_CONST
-        "(650,390)",  # FetchDecodeControls.LOAD_ADDRESS
-        "(650,410)",  # FetchDecodeControls.LOAD_ADDRESS_REGISTER
-        "(650,430)",  # FetchDecodeControls.LOAD_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,370)", "(760,250)"),  # LOAD_CONST
+        ("(650,390)", "(760,270)"),  # LOAD_ADDRESS
+        ("(650,410)", "(760,290)"),  # LOAD_ADDRESS_REGISTER
+        ("(650,430)", "(760,310)"),  # LOAD_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,450)", "(760,330)"),  # ADD_CONST
+        ("(650,470)", "(760,350)"),  # ADD_ADDRESS
+        ("(650,490)", "(760,370)"),  # ADD_ADDRESS_REGISTER
+        ("(650,510)", "(760,390)"),  # ADD_ADDRESS_REGISTER_PLUS_OFFSET
     ],
 )
-def test_top_level_load_controls_enable_accumulator_load(source):
-    """Combine accumulator-load causes without coupling decoder outputs."""
+def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
+    """Combine accumulator-write causes without coupling decoder outputs."""
 
     root = ET.parse(PROJECT).getroot()
     circuit = next(
@@ -395,12 +399,6 @@ def test_top_level_load_controls_enable_accumulator_load(source):
         adjacency.setdefault(start, set()).add(end)
         adjacency.setdefault(end, set()).add(start)
 
-    gate_input = {
-        "(650,370)": "(710,250)",
-        "(650,390)": "(710,270)",
-        "(650,410)": "(710,290)",
-        "(650,430)": "(710,310)",
-    }[source]
     reachable = {source}
     pending = list(reachable)
     while pending:
@@ -410,9 +408,16 @@ def test_top_level_load_controls_enable_accumulator_load(source):
                 pending.append(endpoint)
 
     assert gate_input in reachable
-    sibling = {"(650,370)", "(650,390)", "(650,410)", "(650,430)"} - {
-        source
-    }
+    sibling = {
+        "(650,370)",
+        "(650,390)",
+        "(650,410)",
+        "(650,430)",
+        "(650,450)",
+        "(650,470)",
+        "(650,490)",
+        "(650,510)",
+    } - {source}
     assert reachable.isdisjoint(
         {
             "(80,70)",  # CLK
@@ -430,10 +435,10 @@ def test_top_level_load_controls_enable_accumulator_load(source):
         if _attributes(component).get("label") == "ACC_LOAD_REQUEST"
     )
     assert aggregator.get("name") == "OR Gate"
-    assert aggregator.get("loc") == "(760,280)"
-    assert _attributes(aggregator).get("inputs") == "4"
+    assert aggregator.get("loc") == "(810,320)"
+    assert _attributes(aggregator).get("inputs") == "8"
 
-    output_reachable = {"(760,280)"}
+    output_reachable = {"(810,320)"}
     pending = list(output_reachable)
     while pending:
         for endpoint in adjacency.get(pending.pop(), ()):

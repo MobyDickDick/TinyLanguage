@@ -633,14 +633,16 @@ def test_top_level_non_family_write_controls_use_separate_gate_connections():
 
 
 def test_top_level_accumulator_data_selector_keeps_sources_isolated():
-    """Select memory data for LOAD_ADDRESS without shorting either data source."""
+    """Select memory for two load modes without shorting data or controls."""
 
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
     adjacency = _electrical_adjacency(circuit)
     mux = _labelled_component(circuit, "ACC_DATA_SELECT")
+    memory_select_gate = _labelled_component(circuit, "ACC_MEMORY_SELECT")
     assert mux.get("name") == "Multiplexer"
     assert _attributes(mux).get("width") == "16"
+    assert memory_select_gate.get("name") == "OR Gate"
 
     x, y = (int(value) for value in mux.get("loc").strip("()").split(","))
     mux_output = f"({x},{y})"
@@ -658,9 +660,22 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
     assert memory_data not in operand_reachable
     assert data_in in _reachable(adjacency, mux_output)
 
-    select_reachable = _reachable(adjacency, _control_output(root, "LOAD_ADDRESS"))
-    assert mux_select in select_reachable
-    assert select_reachable.isdisjoint(mux_inputs | {mux_output, data_in})
+    select_output, select_inputs = _gate_ports(memory_select_gate)
+    select_causes = {
+        name: _control_output(root, name)
+        for name in ("LOAD_ADDRESS", "LOAD_ADDRESS_REGISTER")
+    }
+    connected_inputs = {}
+    for name, source in select_causes.items():
+        reachable = _reachable(adjacency, source)
+        matches = reachable & select_inputs
+        assert len(matches) == 1, name
+        connected_inputs[name] = matches.pop()
+        assert reachable.isdisjoint(set(select_causes.values()) - {source}), name
+        assert reachable.isdisjoint(mux_inputs | {mux_output, data_in}), name
+    assert len(set(connected_inputs.values())) == len(select_causes)
+    assert set(connected_inputs.values()) == select_inputs
+    assert mux_select in _reachable(adjacency, select_output)
     assert _instruction_field_output(root, range(16, 22)) not in operand_reachable
     assert _subcircuit_input(root, "Datapath", "ACC_LOAD") not in operand_reachable
     assert _subcircuit_input(root, "Datapath", "VALID_IN") not in operand_reachable

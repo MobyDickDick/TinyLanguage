@@ -7,6 +7,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-09)
 
+- [x] **Select memory data for TinyCPU `LOAD_ADDRESS_REGISTER`**
+  (Owner: TinyCPU/Hardware)
+  - Success: combine `LOAD_ADDRESS` and `LOAD_ADDRESS_REGISTER` through an
+    explicit labelled gate before `ACC_DATA_SELECT`, keeping both decoder
+    outputs independent and all 16-bit data paths unchanged.
+  - Result: `ACC_MEMORY_SELECT` gives each addressing mode its own input and
+    drives the accumulator-data multiplexer select line alone. The structural
+    regression verifies both causes, their electrical isolation, the gate-to-
+    selector path, and continued separation from all data-bus endpoints.
+  - Follow-up: add `LOAD_ADDRESS_REGISTER_PLUS_OFFSET` as the next explicitly
+    documented memory-data selection cause.
+
+## Next documented work package (completed 2026-08-09)
+
 - [x] **Select memory data for TinyCPU `LOAD_ADDRESS`**
   (Owner: TinyCPU/Hardware)
   - Success: replace the direct operand connection with a labelled 16-bit

@@ -105,7 +105,7 @@ def test_top_level_clock_reaches_every_stateful_block():
     # electrical terminal, so anchor reachability would test the wrong points.
     clock_terminals = {
         "FetchDecode": "(440,150)",
-        "Datapath": "(720,170)",
+        "Datapath": "(1280,140)",
         "AddressPath": "(1020,130)",
         "Memory": "(450,250)",
         "ErrorFlags": "(1350,100)",
@@ -692,6 +692,13 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
     assert _instruction_field_output(root, range(16, 22)) not in operand_reachable
     assert _subcircuit_input(root, "Datapath", "ACC_LOAD") not in operand_reachable
     assert _subcircuit_input(root, "Datapath", "VALID_IN") not in operand_reachable
+
+    address_outputs = {
+        _subcircuit_output(root, "AddressPath", label)
+        for label in ("ADDRESS", "ADDRESS_PLUS_OFFSET")
+    }
+    data_nets = operand_reachable | memory_reachable | _reachable(adjacency, data_in)
+    assert data_nets.isdisjoint(address_outputs)
 
 
 def test_top_level_not_data_selector_uses_inverted_accumulator():

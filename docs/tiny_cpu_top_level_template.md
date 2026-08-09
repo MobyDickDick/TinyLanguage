@@ -34,7 +34,7 @@ Fehlerflags wurde als eigener Schritt vor `RESET` ergänzt.
 | 1 | `CLK` ergänzt | bestehendes Taktnetz | `ErrorFlags.CLK` | 1 | Der Abzweig verläuft oberhalb der Symbole; alle fünf Blöcke reagieren auf dieselbe Flanke. |
 | 2 | `RESET` | neuer Top-Level-Pin | nur `FetchDecode.RESET` | 1 | PC wird zurückgesetzt; RAM, Akkumulator und Fehlerflags werden nicht versehentlich gelöscht. |
 | 3 | Decode-Steuerung | `FetchDecode.OPCODE`, danach benannte Ausgänge von `FetchDecodeControls` | zuerst `FetchDecodeControls.OPCODE`, danach gleichnamiger Eingang des Zielblocks gemäß Pinvertrag | 22 für `OPCODE`, danach 1 je Netz | Keine Verbindung mit Takt oder Reset; jedes Signal beim Einzelschritt beobachten. `OPCODE`, `CLEAR_ERROR` und alle sechs `SET_*`-Fehlernetze sind angeschlossen; als Nächstes folgen die Datenpfad-Steuernetze. |
-| 4 | Akkumulator-Steuerung | passender `FetchDecodeControls`-Ausgang | passender `Datapath`-Eingang | 1 je Netz | Alle vier `LOAD_*`- und alle vier `ADD_*`-Adressierungsarten erreichen `ACC_LOAD` über getrennte Eingänge des benannten ODER-Gatters `ACC_LOAD_REQUEST`; als Nächstes folgt die `SUB_*`-Gruppe. Weitere Schreibursachen dürfen nicht durch direktes Zusammenschalten mehrerer Ausgänge entstehen. |
+| 4 | Akkumulator-Steuerung | passender `FetchDecodeControls`-Ausgang | passender `Datapath`-Eingang | 1 je Netz | Alle vier `LOAD_*`-, `ADD_*`- und `SUB_*`-Adressierungsarten erreichen `ACC_LOAD` über getrennte Eingänge des benannten ODER-Gatters `ACC_LOAD_REQUEST`; als Nächstes folgt die `MUL_*`-Gruppe. Weitere Schreibursachen dürfen nicht durch direktes Zusammenschalten mehrerer Ausgänge entstehen. |
 | 5 | Adress-Steuerung | benannte Fetch/Decode-Ausgänge | gleichnamige Eingänge von `AddressPath` | 1 je Netz | Jedes Signal einzeln zeichnen und prüfen. |
 | 6 | Speicher-Steuerung | Fetch/Decode-Ausgänge | `Memory` | 1 je Netz | Lesen und Schreiben getrennt testen; Validitäts-RAM mitprüfen. |
 | 7 | Adressbus | `AddressPath` | `Memory` und benötigte Rückwege | laut Pinvertrag | Splitter vermeiden, solange keine Breitenumsetzung erforderlich ist. |
@@ -66,7 +66,7 @@ Steuernetze nicht versehentlich verbunden sind:
 | `SET_INV` | `FetchDecodeControls.SET_INV (650,1330)` | `ErrorFlags.SET_INV (1350,180)` |
 | `SET_ILL` | `FetchDecodeControls.SET_ILL (650,1350)` | `ErrorFlags.SET_ILL (1350,200)` |
 | `SET_INPUT` | `FetchDecodeControls.SET_INPUT (650,1370)` | `ErrorFlags.SET_INPUT (1350,220)` |
-| `ACC_LOAD_REQUEST` | `FetchDecodeControls.LOAD_CONST (650,370)`, `LOAD_ADDRESS (650,390)`, `LOAD_ADDRESS_REGISTER (650,410)`, `LOAD_ADDRESS_REGISTER_PLUS_OFFSET (650,430)`, `ADD_CONST (650,450)`, `ADD_ADDRESS (650,470)`, `ADD_ADDRESS_REGISTER (650,490)` und `ADD_ADDRESS_REGISTER_PLUS_OFFSET (650,510)` über getrennte ODER-Eingänge | `Datapath.ACC_LOAD (720,180)` |
+| `ACC_LOAD_REQUEST` | `FetchDecodeControls.LOAD_CONST (650,370)`, `LOAD_ADDRESS (650,390)`, `LOAD_ADDRESS_REGISTER (650,410)`, `LOAD_ADDRESS_REGISTER_PLUS_OFFSET (650,430)`, `ADD_CONST (650,450)`, `ADD_ADDRESS (650,470)`, `ADD_ADDRESS_REGISTER (650,490)`, `ADD_ADDRESS_REGISTER_PLUS_OFFSET (650,510)`, `SUB_CONST (650,530)`, `SUB_ADDRESS (650,550)`, `SUB_ADDRESS_REGISTER (650,570)` und `SUB_ADDRESS_REGISTER_PLUS_OFFSET (650,590)` über getrennte ODER-Eingänge | `Datapath.ACC_LOAD (720,180)` |
 
 Der Splitter führt ausschließlich die Opcode-Bits 21 bis 16 des 22-Bit-
 Maschinenworts an den sechs Bit breiten Decoder. Der 16-Bit-Operand bleibt für

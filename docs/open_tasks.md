@@ -7,6 +7,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-09)
 
+- [x] **Add the TinyCPU subtract-family accumulator controls**
+  (Owner: TinyCPU/Hardware)
+  - Success: add all four `SUB_*` decoder outputs to `ACC_LOAD_REQUEST` on
+    independent nets while retaining the eight existing `LOAD_*` and `ADD_*`
+    causes and isolation from `Datapath.DATA_IN`.
+  - Result: the explicitly twelve-input accumulator-write gate covers all
+    three complete instruction families; parameterized structural coverage
+    locks every source, gate input, destination, and sibling-net isolation.
+  - Follow-up: add the four `MUL_*` accumulator-writing controls as the next
+    explicitly documented instruction group.
+
+## Next documented work package (completed 2026-08-09)
+
 - [x] **Add the TinyCPU add-family accumulator controls**
   (Owner: TinyCPU/Hardware)
   - Success: add all four `ADD_*` decoder outputs to `ACC_LOAD_REQUEST` on

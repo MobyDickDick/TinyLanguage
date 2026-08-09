@@ -67,12 +67,31 @@ Steuernetze nicht versehentlich verbunden sind:
 | `SET_ILL` | `FetchDecodeControls.SET_ILL (650,1350)` | `ErrorFlags.SET_ILL (1350,200)` |
 | `SET_INPUT` | `FetchDecodeControls.SET_INPUT (650,1370)` | `ErrorFlags.SET_INPUT (1350,220)` |
 | `ACC_LOAD_REQUEST` | `FetchDecodeControls.LOAD_CONST (650,370)`, `LOAD_ADDRESS (650,390)`, `LOAD_ADDRESS_REGISTER (650,410)`, `LOAD_ADDRESS_REGISTER_PLUS_OFFSET (650,430)`, `ADD_CONST (650,450)`, `ADD_ADDRESS (650,470)`, `ADD_ADDRESS_REGISTER (650,490)`, `ADD_ADDRESS_REGISTER_PLUS_OFFSET (650,510)`, `SUB_CONST (650,530)`, `SUB_ADDRESS (650,550)`, `SUB_ADDRESS_REGISTER (650,570)`, `SUB_ADDRESS_REGISTER_PLUS_OFFSET (650,590)`, `MUL_CONST (650,610)`, `MUL_ADDRESS (650,630)`, `MUL_ADDRESS_REGISTER (650,650)`, `MUL_ADDRESS_REGISTER_PLUS_OFFSET (650,670)`, `DIV_CONST (650,690)`, `DIV_ADDRESS (650,710)`, `DIV_ADDRESS_REGISTER (650,730)`, `DIV_ADDRESS_REGISTER_PLUS_OFFSET (650,750)`, `AND_CONST (650,770)`, `AND_ADDRESS (650,790)`, `AND_ADDRESS_REGISTER (650,810)`, `AND_ADDRESS_REGISTER_PLUS_OFFSET (650,830)`, `OR_CONST (650,850)`, `OR_ADDRESS (650,870)`, `OR_ADDRESS_REGISTER (650,890)`, `OR_ADDRESS_REGISTER_PLUS_OFFSET (650,910)`, `XOR_CONST (650,930)`, `XOR_ADDRESS (650,950)`, `XOR_ADDRESS_REGISTER (650,970)` und `XOR_ADDRESS_REGISTER_PLUS_OFFSET (650,990)` über getrennte ODER-Eingänge | `Datapath.ACC_LOAD (720,180)` |
-| `OPERAND_DATA` | Instruktionssplitter, Bits 15..0 `(390,390)` | `Datapath.DATA_IN (720,160)` | 16 |
+| `OPERAND_DATA` | Instruktionssplitter-Ausgang für Bits 15..0 | `Datapath.DATA_IN` | 16 |
 
 Der Splitter führt ausschließlich die Opcode-Bits 21 bis 16 des 22-Bit-
 Maschinenworts an den sechs Bit breiten Decoder. Der getrennte 16-Bit-Ausgang
 führt den Operanden nun zum Datenpfad; ein direkter 22-auf-6-Bit-Anschluss wäre
 ein Breitenfehler.
+
+**Ursache der korrigierten Fehlverdrahtung:** Die zuvor verwendeten Endpunkte
+wurden aus den XML-Positionen des Splitters, der Top-Level-Instanz und des
+`DATA_IN`-Pins im Unterblatt abgeleitet. Diese
+`loc`-Werte beschreiben jedoch Bauteilanker beziehungsweise die Geometrie des
+Unterblatts, nicht automatisch die Anschlüsse des daraus erzeugten Symbols.
+Beim aktuellen Splitter liegt der sichtbare 16-Bit-Ausgang oberhalb seines
+Ankers; auch `Datapath.DATA_IN` liegt am automatisch erzeugten Symbol an einer
+anderen Stelle. Die manuell korrigierte Leitung in `TinyCPU.circ` ist deshalb
+die Referenz und wird durch einen Regressionstest geschützt, der die Verbindung
+semantisch als „Instruktionsbits 15..0 verbunden mit `Datapath.DATA_IN`“ prüft.
+
+Für zukünftige Verdrahtungen gilt daher zusätzlich: Endpunkte am sichtbaren
+Top-Level-Symbol in Logisim ablesen und mit dem Poke-Werkzeug prüfen. Weder den
+`loc`-Wert einer Unterblattinstanz noch die Koordinate eines Pins innerhalb der
+Unterblattdefinition in eine Top-Level-Koordinate umrechnen oder erraten. Nach
+Änderungen an Pinreihenfolge, Symbolaussehen, Ausrichtung oder Splitter-Fanout
+müssen die sichtbaren Anschlüsse erneut ermittelt und die Endpunkttabelle samt
+Strukturtest im selben Arbeitsschritt angepasst werden.
 
 `tiny_cpu_verify.py` prüft den strukturellen Pinvertrag und reproduzierbare
 Artefakte, aber keine elektrische Top-Level-Verbindung. Es meldet deshalb auch

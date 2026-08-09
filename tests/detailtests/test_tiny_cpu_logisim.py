@@ -376,18 +376,22 @@ def test_remaining_error_controls_reach_matching_error_flags_only(
 @pytest.mark.parametrize(
     ("source", "gate_input"),
     [
-        ("(650,370)", "(850,260)"),  # LOAD_CONST
-        ("(650,390)", "(850,270)"),  # LOAD_ADDRESS
-        ("(650,410)", "(850,280)"),  # LOAD_ADDRESS_REGISTER
-        ("(650,430)", "(850,290)"),  # LOAD_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,450)", "(850,300)"),  # ADD_CONST
-        ("(650,470)", "(850,310)"),  # ADD_ADDRESS
-        ("(650,490)", "(850,330)"),  # ADD_ADDRESS_REGISTER
-        ("(650,510)", "(850,340)"),  # ADD_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,530)", "(850,350)"),  # SUB_CONST
-        ("(650,550)", "(850,360)"),  # SUB_ADDRESS
-        ("(650,570)", "(850,370)"),  # SUB_ADDRESS_REGISTER
-        ("(650,590)", "(850,380)"),  # SUB_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,370)", "(850,240)"),  # LOAD_CONST
+        ("(650,390)", "(850,250)"),  # LOAD_ADDRESS
+        ("(650,410)", "(850,260)"),  # LOAD_ADDRESS_REGISTER
+        ("(650,430)", "(850,270)"),  # LOAD_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,450)", "(850,280)"),  # ADD_CONST
+        ("(650,470)", "(850,290)"),  # ADD_ADDRESS
+        ("(650,490)", "(850,300)"),  # ADD_ADDRESS_REGISTER
+        ("(650,510)", "(850,310)"),  # ADD_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,530)", "(850,330)"),  # SUB_CONST
+        ("(650,550)", "(850,340)"),  # SUB_ADDRESS
+        ("(650,570)", "(850,350)"),  # SUB_ADDRESS_REGISTER
+        ("(650,590)", "(850,360)"),  # SUB_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,610)", "(850,370)"),  # MUL_CONST
+        ("(650,630)", "(850,380)"),  # MUL_ADDRESS
+        ("(650,650)", "(850,390)"),  # MUL_ADDRESS_REGISTER
+        ("(650,670)", "(850,400)"),  # MUL_ADDRESS_REGISTER_PLUS_OFFSET
     ],
 )
 def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
@@ -412,7 +416,7 @@ def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
                 pending.append(endpoint)
 
     assert gate_input in reachable
-    sibling = {f"(650,{y})" for y in range(370, 610, 20)} - {source}
+    sibling = {f"(650,{y})" for y in range(370, 690, 20)} - {source}
     assert reachable.isdisjoint(
         {
             "(80,70)",  # CLK
@@ -431,7 +435,7 @@ def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
     )
     assert aggregator.get("name") == "OR Gate"
     assert aggregator.get("loc") == "(900,320)"
-    assert _attributes(aggregator).get("inputs") == "12"
+    assert _attributes(aggregator).get("inputs") == "16"
 
     output_reachable = {"(900,320)"}
     pending = list(output_reachable)

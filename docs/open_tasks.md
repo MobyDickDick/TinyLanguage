@@ -7,6 +7,22 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-09)
 
+- [x] **Integrate the TinyCPU `INPUT` accumulator-write control**
+  (Owner: TinyCPU/Hardware)
+  - Success: add `INPUT` to the second-stage `ACC_WRITE_REQUEST` gate on an
+    independent net while retaining the 32-family aggregator and unary `NOT`
+    causes and preserving isolation from `Datapath.DATA_IN`.
+  - Result: the explicitly three-input second-stage gate now combines the
+    family request, `INPUT`, and `NOT` without coupling decoder outputs. The
+    structural regression resolves controls and gates by their labels and checks
+    electrical reachability, so moving the hand-maintained drawing does not
+    invalidate the test.
+  - Follow-up: integrate the accumulator data-source selection required by
+    these write-enable controls, one explicitly documented source at a time.
+
+
+## Next documented work package (completed 2026-08-09)
+
 - [x] **Add the TinyCPU XOR-family accumulator controls**
   (Owner: TinyCPU/Hardware)
   - Success: add all four `XOR_*` decoder outputs to `ACC_LOAD_REQUEST` on

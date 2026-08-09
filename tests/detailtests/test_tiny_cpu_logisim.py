@@ -405,145 +405,143 @@ def test_remaining_error_controls_reach_matching_error_flags_only(
     ), name
 
 
-@pytest.mark.parametrize(
-    ("source", "gate_input"),
-    [
-        ("(650,370)", "(940,590)"),  # LOAD_CONST
-        ("(650,390)", "(940,600)"),  # LOAD_ADDRESS
-        ("(650,410)", "(940,610)"),  # LOAD_ADDRESS_REGISTER
-        ("(650,430)", "(940,620)"),  # LOAD_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,450)", "(940,630)"),  # ADD_CONST
-        ("(650,470)", "(940,640)"),  # ADD_ADDRESS
-        ("(650,490)", "(940,650)"),  # ADD_ADDRESS_REGISTER
-        ("(650,510)", "(940,660)"),  # ADD_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,530)", "(940,670)"),  # SUB_CONST
-        ("(650,550)", "(940,680)"),  # SUB_ADDRESS
-        ("(650,570)", "(940,690)"),  # SUB_ADDRESS_REGISTER
-        ("(650,590)", "(940,700)"),  # SUB_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,610)", "(940,710)"),  # MUL_CONST
-        ("(650,630)", "(940,720)"),  # MUL_ADDRESS
-        ("(650,650)", "(940,730)"),  # MUL_ADDRESS_REGISTER
-        ("(650,670)", "(940,740)"),  # MUL_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,690)", "(940,760)"),  # DIV_CONST
-        ("(650,710)", "(940,770)"),  # DIV_ADDRESS
-        ("(650,730)", "(940,780)"),  # DIV_ADDRESS_REGISTER
-        ("(650,750)", "(940,790)"),  # DIV_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,770)", "(940,800)"),  # AND_CONST
-        ("(650,790)", "(940,810)"),  # AND_ADDRESS
-        ("(650,810)", "(940,820)"),  # AND_ADDRESS_REGISTER
-        ("(650,830)", "(940,830)"),  # AND_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,850)", "(940,850)"),  # OR_CONST
-        ("(650,870)", "(940,870)"),  # OR_ADDRESS
-        ("(650,890)", "(940,860)"),  # OR_ADDRESS_REGISTER
-        ("(650,910)", "(940,840)"),  # OR_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,930)", "(940,880)"),  # XOR_CONST
-        ("(650,950)", "(940,890)"),  # XOR_ADDRESS
-        ("(650,970)", "(940,900)"),  # XOR_ADDRESS_REGISTER
-        ("(650,990)", "(940,910)"),  # XOR_ADDRESS_REGISTER_PLUS_OFFSET
-    ],
+ACCUMULATOR_FAMILIES = ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR")
+ACCUMULATOR_ADDRESSING_MODES = (
+    "CONST",
+    "ADDRESS",
+    "ADDRESS_REGISTER",
+    "ADDRESS_REGISTER_PLUS_OFFSET",
 )
-def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
-    """Combine accumulator-write causes without coupling decoder outputs."""
+ACCUMULATOR_FAMILY_CONTROLS = tuple(
+    f"{family}_{mode}"
+    for family in ACCUMULATOR_FAMILIES
+    for mode in ACCUMULATOR_ADDRESSING_MODES
+)
 
-    root = ET.parse(PROJECT).getroot()
-    circuit = next(
-        item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
-    )
-    adjacency = _electrical_adjacency(circuit)
 
-    reachable = {source}
-    pending = list(reachable)
-    while pending:
-        for endpoint in adjacency.get(pending.pop(), ()):
-            if endpoint not in reachable:
-                reachable.add(endpoint)
-                pending.append(endpoint)
-
-    assert gate_input in reachable
-    sibling = {f"(650,{y})" for y in range(370, 1010, 20)} - {source}
-    assert reachable.isdisjoint(
-        {
-            "(80,70)",  # CLK
-            "(80,160)",  # RESET
-            "(430,370)",  # FetchDecodeControls.OPCODE
-            "(720,170)",  # Datapath.CLK
-            "(720,190)",  # next Datapath control terminal
-        }
-        | sibling
+def _top_level(root):
+    return next(
+        circuit for circuit in root.findall("circuit") if circuit.get("name") == "TinyCPU"
     )
 
-    aggregator = next(
+
+def _labelled_component(circuit, label):
+    matches = [
         component
         for component in circuit.findall("comp")
-        if _attributes(component).get("label") == "ACC_LOAD_REQUEST"
-    )
-    assert aggregator.get("name") == "OR Gate"
-    assert aggregator.get("loc") == "(990,750)"
-    assert _attributes(aggregator).get("inputs") == "32"
+        if _attributes(component).get("label") == label
+    ]
+    assert len(matches) == 1, label
+    return matches[0]
 
-    output_reachable = {"(990,750)"}
-    pending = list(output_reachable)
+
+def _control_output(root, label):
+    """Resolve a generated-symbol output by its pin name, not a fixed point."""
+
+    definition = next(
+        circuit
+        for circuit in root.findall("circuit")
+        if circuit.get("name") == "FetchDecodeControls"
+    )
+    outputs = sorted(
+        (
+            component
+            for component in definition.findall("comp")
+            if component.get("name") == "Pin"
+            and _attributes(component).get("type") == "output"
+        ),
+        key=lambda component: tuple(
+            int(value) for value in component.get("loc").strip("()").split(",")
+        )[::-1],
+    )
+    index = next(
+        index
+        for index, component in enumerate(outputs)
+        if _attributes(component).get("label") == label
+    )
+    instance = next(
+        component
+        for component in _top_level(root).findall("comp")
+        if component.get("name") == "FetchDecodeControls"
+    )
+    x, y = (int(value) for value in instance.get("loc").strip("()").split(","))
+    return f"({x},{y + 20 * index})"
+
+
+def _gate_ports(component):
+    """Resolve an OR gate's output and inputs from its declared fan-in."""
+
+    x, y = (int(value) for value in component.get("loc").strip("()").split(","))
+    count = int(_attributes(component).get("inputs", "2"))
+    if count > 8:
+        offsets = range(-(count // 2) * 10, (count // 2) * 10, 10)
+    else:
+        offsets = ((index - (count - 1) / 2) * 20 for index in range(count))
+    inputs = {f"({x - 50},{int(y + offset)})" for offset in offsets}
+    return f"({x},{y})", inputs
+
+
+def _reachable(adjacency, start):
+    result = {start}
+    pending = [start]
     while pending:
         for endpoint in adjacency.get(pending.pop(), ()):
-            if endpoint not in output_reachable:
-                output_reachable.add(endpoint)
+            if endpoint not in result:
+                result.add(endpoint)
                 pending.append(endpoint)
-    assert "(1070,750)" in output_reachable  # ACC_WRITE_REQUEST input
-    assert "(720,110)" not in output_reachable  # separated by the second-stage gate
-    assert "(720,180)" not in output_reachable  # Datapath.DATA_IN
+    return result
 
 
-def test_top_level_not_control_enables_accumulator_write():
-    """Add unary NOT without exceeding the 32-input family aggregator."""
+def test_top_level_accumulator_family_controls_are_independent_connections():
+    """Connect every family control by name without freezing drawing coordinates."""
 
     root = ET.parse(PROJECT).getroot()
-    circuit = next(
-        item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
-    )
+    circuit = _top_level(root)
     adjacency = _electrical_adjacency(circuit)
+    family_gate = _labelled_component(circuit, "ACC_LOAD_REQUEST")
+    _, family_inputs = _gate_ports(family_gate)
+    sources = {name: _control_output(root, name) for name in ACCUMULATOR_FAMILY_CONTROLS}
 
-    reachable = {"(650,1010)"}  # FetchDecodeControls.NOT
-    pending = list(reachable)
-    while pending:
-        for endpoint in adjacency.get(pending.pop(), ()):
-            if endpoint not in reachable:
-                reachable.add(endpoint)
-                pending.append(endpoint)
+    connected_inputs = {}
+    for name, source in sources.items():
+        reachable = _reachable(adjacency, source)
+        matches = reachable & family_inputs
+        assert len(matches) == 1, name
+        connected_inputs[name] = matches.pop()
+        assert reachable.isdisjoint(set(sources.values()) - {source}), name
 
-    assert "(1070,790)" in reachable  # ACC_WRITE_REQUEST input
-    assert reachable.isdisjoint(
-        {f"(650,{y})" for y in range(370, 1010, 20)}
-        | {
-            "(80,70)",  # CLK
-            "(80,160)",  # RESET
-            "(430,370)",  # FetchDecodeControls.OPCODE
-            "(720,170)",  # Datapath.CLK
-            "(720,110)",  # Datapath.ACC_LOAD (only the gate output reaches it)
-        }
-    )
+    assert len(set(connected_inputs.values())) == len(ACCUMULATOR_FAMILY_CONTROLS)
+    assert set(connected_inputs.values()) <= family_inputs
 
-    write_aggregator = next(
-        component
-        for component in circuit.findall("comp")
-        if _attributes(component).get("label") == "ACC_WRITE_REQUEST"
-    )
-    assert write_aggregator.get("name") == "OR Gate"
-    assert write_aggregator.get("loc") == "(1120,770)"
 
-    output_reachable = {"(1120,770)"}
-    pending = list(output_reachable)
-    while pending:
-        for endpoint in adjacency.get(pending.pop(), ()):
-            if endpoint not in output_reachable:
-                output_reachable.add(endpoint)
-                pending.append(endpoint)
-    # Logisim's generated subcircuit symbol sorts its inputs by label, rather
-    # than preserving the vertical order of the pins on the Datapath sheet.
-    # ACC_LOAD is therefore the top terminal; DATA_IN is the third terminal.
-    # Keeping both assertions prevents a visually plausible one-grid reroute
-    # from silently exchanging the write-enable and data signals again.
-    assert "(720,110)" in output_reachable  # Datapath.ACC_LOAD
-    assert "(720,180)" not in output_reachable  # Datapath.DATA_IN
+def test_top_level_non_family_write_controls_use_separate_gate_connections():
+    """Keep the family request, NOT, and INPUT on three distinct named nets."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    adjacency = _electrical_adjacency(circuit)
+    family_gate = _labelled_component(circuit, "ACC_LOAD_REQUEST")
+    write_gate = _labelled_component(circuit, "ACC_WRITE_REQUEST")
+    family_output, _ = _gate_ports(family_gate)
+    write_output, write_inputs = _gate_ports(write_gate)
+    causes = {
+        "ACC_LOAD_REQUEST": family_output,
+        "NOT": _control_output(root, "NOT"),
+        "INPUT": _control_output(root, "INPUT"),
+    }
+
+    connected_inputs = {}
+    for name, source in causes.items():
+        reachable = _reachable(adjacency, source)
+        matches = reachable & write_inputs
+        assert len(matches) == 1, name
+        connected_inputs[name] = matches.pop()
+        assert reachable.isdisjoint(set(causes.values()) - {source}), name
+        assert write_output not in reachable, name
+
+    assert len(set(connected_inputs.values())) == 3
+    assert set(connected_inputs.values()) == write_inputs
+    assert len(_reachable(adjacency, write_output)) > 1
 
 
 def test_ci_runs_the_fresh_checkout_hardware_verifier():

@@ -71,6 +71,9 @@
       <a name="inputs" val="32"/>
       <a name="label" val="ACC_LOAD_REQUEST"/>
     </comp>
+    <comp lib="1" loc="(1090,750)" name="OR Gate">
+      <a name="label" val="ACC_WRITE_REQUEST"/>
+    </comp>
     <comp lib="9" loc="(320,30)" name="Text">
       <a name="text" val="TinyCPU integration: one clock net drives all stateful blocks"/>
     </comp>
@@ -80,7 +83,12 @@
     <comp loc="(650,100)" name="Datapath"/>
     <comp loc="(650,370)" name="FetchDecodeControls"/>
     <comp loc="(940,90)" name="AddressPath"/>
-    <wire from="(1000,360)" to="(1000,750)"/>
+    <wire from="(1020,740)" to="(1040,740)"/>
+    <wire from="(1020,740)" to="(1020,750)"/>
+    <wire from="(1030,760)" to="(1040,760)"/>
+    <wire from="(1030,760)" to="(1030,1030)"/>
+    <wire from="(1090,750)" to="(1140,750)"/>
+    <wire from="(1140,360)" to="(1140,750)"/>
     <wire from="(1010,130)" to="(1020,130)"/>
     <wire from="(1010,70)" to="(1010,130)"/>
     <wire from="(1010,70)" to="(1290,70)"/>
@@ -118,7 +126,7 @@
     <wire from="(650,1370)" to="(1340,1370)"/>
     <wire from="(690,180)" to="(690,360)"/>
     <wire from="(690,180)" to="(720,180)"/>
-    <wire from="(690,360)" to="(1000,360)"/>
+    <wire from="(690,360)" to="(1140,360)"/>
     <wire from="(710,170)" to="(720,170)"/>
     <wire from="(710,70)" to="(1010,70)"/>
     <wire from="(710,70)" to="(710,170)"/>
@@ -218,7 +226,10 @@
     <wire from="(650,990)" to="(710,990)"/>
     <wire from="(710,910)" to="(710,990)"/>
     <wire from="(710,910)" to="(940,910)"/>
-    <wire from="(990,750)" to="(1000,750)"/>
+    <wire from="(650,1010)" to="(720,1010)"/>
+    <wire from="(720,1010)" to="(720,1030)"/>
+    <wire from="(720,1030)" to="(1030,1030)"/>
+    <wire from="(990,750)" to="(1020,750)"/>
   </circuit>
   <circuit name="Datapath">
     <a name="appearance" val="logisim_evolution"/>

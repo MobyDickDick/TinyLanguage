@@ -885,3 +885,14 @@ and testable so they can be promoted into the formal backlog as needed.
     listings, and loaded the generated AP 5 countdown image into the circuit.
   - Verification: instruction-wide roundtrip tests and artifact/circuit parity
     tests protect the encoding contract; AP 8 remains the next work package.
+
+## TinyCPU top-level integration update (2026-08-09)
+
+- [x] **Integrate the unary `NOT` accumulator-write control** (Owner: TinyCPU)
+  - Result: routed `FetchDecodeControls.NOT` through a dedicated second-stage
+    `ACC_WRITE_REQUEST` OR gate, together with the existing 32-input arithmetic
+    family aggregator, so only the combined output drives `Datapath.ACC_LOAD`.
+  - Verification: structural regression coverage proves that `NOT` remains
+    isolated from sibling decoder outputs and that the combined write request
+    reaches the accumulator without touching `DATA_IN`; `INPUT` is the next
+    accumulator-writing top-level control.

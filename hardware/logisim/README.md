@@ -188,12 +188,14 @@ fails before a project with overlapping subcircuit symbols is checked in.
 - The machine word reaches `FetchDecodeControls` through a splitter that
   selects opcode bits 21..16; the 16-bit operand is kept separate for the
   later data-bus integration. All four `LOAD_*`, `ADD_*`, `SUB_*`, `MUL_*`,
-  `DIV_*`, `AND_*`, and `OR_*` addressing modes are the first seven
+  `DIV_*`, `AND_*`, `OR_*`, and `XOR_*` addressing modes are the first eight
   datapath-control families. Separate routes feed the explicitly
-  twenty-eight-input,
+  thirty-two-input,
   named `ACC_LOAD_REQUEST` OR gate,
   whose output alone reaches `Datapath.ACC_LOAD`; the decoder outputs are never
-  tied directly together.
+  tied directly together. The structural tests treat an endpoint touching the
+  middle of another wire as a Logisim junction, so accidental wired-ORs cannot
+  hide behind endpoint-only graph checks.
 
 The AP 5 countdown program is loaded into the instruction ROM and its
 clock-edge reference trace is checked in as `ap5_countdown_trace.json`. AP 7

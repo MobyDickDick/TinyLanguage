@@ -7,6 +7,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-09)
 
+- [x] **Add the TinyCPU XOR-family accumulator controls**
+  (Owner: TinyCPU/Hardware)
+  - Success: add all four `XOR_*` decoder outputs to `ACC_LOAD_REQUEST` on
+    independent nets while retaining the twenty-eight existing `LOAD_*`,
+    `ADD_*`, `SUB_*`, `MUL_*`, `DIV_*`, `AND_*`, and `OR_*` causes and
+    isolation from `Datapath.DATA_IN`.
+  - Result: the explicitly thirty-two-input accumulator-write gate covers all
+    eight complete four-mode instruction families. Structural coverage models
+    Logisim endpoint-on-wire junctions, preventing accidental wired-ORs while
+    checking every source, gate input, destination, and sibling-net isolation.
+  - Follow-up: add the unary `NOT` accumulator-write control as the next
+    explicitly documented instruction group.
+
+## Next documented work package (completed 2026-08-09)
+
 - [x] **Add the TinyCPU OR-family accumulator controls**
   (Owner: TinyCPU/Hardware)
   - Success: add all four `OR_*` decoder outputs to `ACC_LOAD_REQUEST` on

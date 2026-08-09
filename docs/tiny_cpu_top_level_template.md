@@ -38,7 +38,7 @@ Fehlerflags wurde als eigener Schritt vor `RESET` ergänzt.
 | 5 | Adress-Steuerung | benannte Fetch/Decode-Ausgänge | gleichnamige Eingänge von `AddressPath` | 1 je Netz | Jedes Signal einzeln zeichnen und prüfen. |
 | 6 | Speicher-Steuerung | Fetch/Decode-Ausgänge | `Memory` | 1 je Netz | Lesen und Schreiben getrennt testen; Validitäts-RAM mitprüfen. |
 | 7 | Adressbus | `AddressPath` | `Memory` und benötigte Rückwege | laut Pinvertrag | Splitter vermeiden, solange keine Breitenumsetzung erforderlich ist. |
-| 8 | Datenbus | jeweils dokumentierter Treiber | `Datapath`/`Memory` | 16 | Der 16-Bit-Instruktionsoperand und `Memory.DATA_OUT` erreichen getrennte Eingänge des Multiplexers `ACC_DATA_SELECT`; `LOAD_ADDRESS` wählt die Speicherquelle, der Multiplexerausgang treibt allein `Datapath.DATA_IN`. Weitere Auswahlursachen einzeln ergänzen; niemals zwei Ausgänge direkt auf dasselbe Netz legen. |
+| 8 | Datenbus | jeweils dokumentierter Treiber | `Datapath`/`Memory` | 16 | Der 16-Bit-Instruktionsoperand und `Memory.DATA_OUT` erreichen getrennte Eingänge des Multiplexers `ACC_DATA_SELECT`; `LOAD_ADDRESS` und `LOAD_ADDRESS_REGISTER` wählen die Speicherquelle über getrennte Eingänge von `ACC_MEMORY_SELECT`, der Multiplexerausgang treibt allein `Datapath.DATA_IN`. Weitere Auswahlursachen einzeln ergänzen; niemals zwei Ausgänge direkt auf dasselbe Netz legen. |
 | 9 | Status | `Datapath.ZERO`, `NEGATIVE` und Valid-Signale | `FetchDecode`/Fehlerlogik | 1 je Netz | Sprungbedingungen einzeln mit 0, negativem und positivem Wert prüfen. |
 | 10 | Fehler | Fehler-Set-Signale und `CLEAR_ERROR` | `ErrorFlags` | 1 je Netz | Sticky-Verhalten sowie Set-vor-Clear-Priorität prüfen. |
 | 11 | Halt | normale und fehlerhafte Haltquelle | Top-Level `HALTED` | 1 | Normalhalt und Fehlerhalt getrennt auslösen. |
@@ -69,15 +69,16 @@ Steuernetze nicht versehentlich verbunden sind:
 | `ACC_LOAD_REQUEST` | `FetchDecodeControls.LOAD_CONST (650,370)`, `LOAD_ADDRESS (650,390)`, `LOAD_ADDRESS_REGISTER (650,410)`, `LOAD_ADDRESS_REGISTER_PLUS_OFFSET (650,430)`, `ADD_CONST (650,450)`, `ADD_ADDRESS (650,470)`, `ADD_ADDRESS_REGISTER (650,490)`, `ADD_ADDRESS_REGISTER_PLUS_OFFSET (650,510)`, `SUB_CONST (650,530)`, `SUB_ADDRESS (650,550)`, `SUB_ADDRESS_REGISTER (650,570)`, `SUB_ADDRESS_REGISTER_PLUS_OFFSET (650,590)`, `MUL_CONST (650,610)`, `MUL_ADDRESS (650,630)`, `MUL_ADDRESS_REGISTER (650,650)`, `MUL_ADDRESS_REGISTER_PLUS_OFFSET (650,670)`, `DIV_CONST (650,690)`, `DIV_ADDRESS (650,710)`, `DIV_ADDRESS_REGISTER (650,730)`, `DIV_ADDRESS_REGISTER_PLUS_OFFSET (650,750)`, `AND_CONST (650,770)`, `AND_ADDRESS (650,790)`, `AND_ADDRESS_REGISTER (650,810)`, `AND_ADDRESS_REGISTER_PLUS_OFFSET (650,830)`, `OR_CONST (650,850)`, `OR_ADDRESS (650,870)`, `OR_ADDRESS_REGISTER (650,890)`, `OR_ADDRESS_REGISTER_PLUS_OFFSET (650,910)`, `XOR_CONST (650,930)`, `XOR_ADDRESS (650,950)`, `XOR_ADDRESS_REGISTER (650,970)` und `XOR_ADDRESS_REGISTER_PLUS_OFFSET (650,990)` über getrennte ODER-Eingänge | `Datapath.ACC_LOAD (720,180)` |
 | `OPERAND_DATA` | Instruktionssplitter-Ausgang für Bits 15..0 | `ACC_DATA_SELECT` Eingang 0 | 16 |
 | `MEMORY_LOAD_DATA` | `Memory.DATA_OUT` | `ACC_DATA_SELECT` Eingang 1 | 16 |
-| `LOAD_ADDRESS_SELECT` | `FetchDecodeControls.LOAD_ADDRESS (650,390)` | `ACC_DATA_SELECT` Auswahl | 1 |
+| `ACC_MEMORY_SELECT` | `FetchDecodeControls.LOAD_ADDRESS (650,390)`, `LOAD_ADDRESS_REGISTER (650,410)` über getrennte ODER-Eingänge | `ACC_DATA_SELECT` Auswahl | 1 |
 | `ACCUMULATOR_DATA` | `ACC_DATA_SELECT` Ausgang | `Datapath.DATA_IN` | 16 |
 
 Der Splitter führt ausschließlich die Opcode-Bits 21 bis 16 des 22-Bit-
 Maschinenworts an den sechs Bit breiten Decoder. Der getrennte 16-Bit-Ausgang
 führt den Operanden nun zum Standardeingang von `ACC_DATA_SELECT`. Der zweite
 Eingang empfängt `Memory.DATA_OUT`; nur der Multiplexerausgang führt zum
-Datenpfad. `LOAD_ADDRESS` wählt die Speicherquelle auf einem isolierten
-einbittigen Netz. Ein direkter 22-auf-6-Bit-Anschluss wäre ein Breitenfehler.
+Datenpfad. `LOAD_ADDRESS` und `LOAD_ADDRESS_REGISTER` wählen die Speicherquelle
+über unabhängige Eingänge des benannten ODER-Gatters `ACC_MEMORY_SELECT`. Ein
+direkter 22-auf-6-Bit-Anschluss wäre ein Breitenfehler.
 
 **Ursache der korrigierten Fehlverdrahtung:** Die zuvor verwendeten Endpunkte
 wurden aus den XML-Positionen des Splitters, der Top-Level-Instanz und des

@@ -79,6 +79,9 @@
       <a name="width" val="16"/>
       <a name="label" val="ACC_DATA_SELECT"/>
     </comp>
+    <comp lib="1" loc="(1040,1530)" name="OR Gate">
+      <a name="label" val="ACC_MEMORY_SELECT"/>
+    </comp>
     <comp lib="9" loc="(320,30)" name="Text">
       <a name="text" val="TinyCPU integration: one clock net drives all stateful blocks"/>
     </comp>
@@ -245,8 +248,12 @@
     <wire from="(1450,110)" to="(1450,1510)"/>
     <wire from="(1050,1510)" to="(1450,1510)"/>
     <wire from="(650,390)" to="(620,390)"/>
-    <wire from="(620,390)" to="(620,1530)"/>
-    <wire from="(620,1530)" to="(1080,1530)"/>
+    <wire from="(620,390)" to="(620,1520)"/>
+    <wire from="(620,1520)" to="(990,1520)"/>
+    <wire from="(650,410)" to="(600,410)"/>
+    <wire from="(600,410)" to="(600,1540)"/>
+    <wire from="(600,1540)" to="(990,1540)"/>
+    <wire from="(1040,1530)" to="(1080,1530)"/>
     <wire from="(1100,1500)" to="(1120,1500)"/>
     <wire from="(610,1450)" to="(1120,1450)"/>
     <wire from="(1120,1450)" to="(1120,1500)"/>

@@ -147,7 +147,8 @@ one-bit control nets remain separate. This establishes the constant operand as
 the first accumulator data source. The labelled 16-bit `ACC_DATA_SELECT`
 multiplexer now keeps that operand on its default input and
 `Memory.DATA_OUT` on an independent second input. `LOAD_ADDRESS` drives the
-selector on a separate one-bit net, providing the first memory-backed load
-without directly joining either data-bus driver. The next step is to extend
-that memory selection to the address-register addressing modes one explicitly
-documented mode at a time.
+selector through the labelled `ACC_MEMORY_SELECT` gate, whose second independent
+input is now `LOAD_ADDRESS_REGISTER`. Either addressing mode therefore selects
+the memory source without directly joining decoder outputs or data-bus drivers.
+The next step is to add `LOAD_ADDRESS_REGISTER_PLUS_OFFSET` to this selection
+logic as its own explicitly documented cause.

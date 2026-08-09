@@ -544,6 +544,25 @@ def test_top_level_non_family_write_controls_use_separate_gate_connections():
     assert len(_reachable(adjacency, write_output)) > 1
 
 
+def test_top_level_operand_bus_drives_datapath_data_input_only():
+    """Keep the first accumulator data source a dedicated 16-bit net."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    adjacency = _electrical_adjacency(circuit)
+
+    # The instruction splitter's lower output carries bits 15..0.  The
+    # generated Datapath symbol exposes DATA_IN at its first input terminal.
+    operand = "(390,390)"
+    data_in = "(720,160)"
+    reachable = _reachable(adjacency, operand)
+
+    assert data_in in reachable
+    assert "(390,370)" not in reachable  # six-bit opcode splitter output
+    assert "(720,180)" not in reachable  # one-bit ACC_LOAD control
+    assert "(720,200)" not in reachable  # one-bit VALID_IN control
+
+
 def test_ci_runs_the_fresh_checkout_hardware_verifier():
     """Keep the documented dependency-free acceptance command in the main gate."""
 

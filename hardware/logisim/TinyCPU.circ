@@ -59,9 +59,6 @@
       <a name="bit9" val="0"/>
       <a name="incoming" val="22"/>
     </comp>
-    <comp lib="1" loc="(760,240)" name="OR Gate">
-      <a name="label" val="ACC_LOAD_REQUEST"/>
-    </comp>
     <comp lib="0" loc="(80,160)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="RESET"/>
@@ -69,6 +66,9 @@
     <comp lib="0" loc="(80,70)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="CLK"/>
+    </comp>
+    <comp lib="1" loc="(760,280)" name="OR Gate">
+      <a name="label" val="ACC_LOAD_REQUEST"/>
     </comp>
     <comp lib="9" loc="(320,30)" name="Text">
       <a name="text" val="TinyCPU integration: one clock net drives all stateful blocks"/>
@@ -82,6 +82,8 @@
     <wire from="(1010,130)" to="(1020,130)"/>
     <wire from="(1010,70)" to="(1010,130)"/>
     <wire from="(1010,70)" to="(1290,70)"/>
+    <wire from="(110,160)" to="(110,170)"/>
+    <wire from="(110,170)" to="(430,170)"/>
     <wire from="(1280,80)" to="(1280,1150)"/>
     <wire from="(1280,80)" to="(1350,80)"/>
     <wire from="(1290,100)" to="(1350,100)"/>
@@ -112,25 +114,25 @@
     <wire from="(650,1330)" to="(1320,1330)"/>
     <wire from="(650,1350)" to="(1330,1350)"/>
     <wire from="(650,1370)" to="(1340,1370)"/>
+    <wire from="(650,370)" to="(680,370)"/>
+    <wire from="(650,390)" to="(690,390)"/>
+    <wire from="(680,260)" to="(680,370)"/>
+    <wire from="(680,260)" to="(710,260)"/>
+    <wire from="(690,110)" to="(690,220)"/>
+    <wire from="(690,110)" to="(720,110)"/>
+    <wire from="(690,220)" to="(800,220)"/>
+    <wire from="(690,300)" to="(690,390)"/>
+    <wire from="(690,300)" to="(710,300)"/>
     <wire from="(710,170)" to="(720,170)"/>
     <wire from="(710,70)" to="(1010,70)"/>
     <wire from="(710,70)" to="(710,170)"/>
+    <wire from="(760,280)" to="(800,280)"/>
     <wire from="(80,160)" to="(110,160)"/>
     <wire from="(80,70)" to="(90,70)"/>
+    <wire from="(800,220)" to="(800,280)"/>
     <wire from="(90,140)" to="(110,140)"/>
     <wire from="(90,70)" to="(420,70)"/>
     <wire from="(90,70)" to="(90,140)"/>
-    <wire from="(110,160)" to="(110,170)"/>
-    <wire from="(110,170)" to="(430,170)"/>
-    <wire from="(650,370)" to="(680,370)"/>
-    <wire from="(650,390)" to="(690,390)"/>
-    <wire from="(680,230)" to="(680,370)"/>
-    <wire from="(680,230)" to="(710,230)"/>
-    <wire from="(690,250)" to="(690,390)"/>
-    <wire from="(690,250)" to="(710,250)"/>
-    <wire from="(720,180)" to="(800,180)"/>
-    <wire from="(760,240)" to="(800,240)"/>
-    <wire from="(800,180)" to="(800,240)"/>
   </circuit>
   <circuit name="Datapath">
     <a name="appearance" val="logisim_evolution"/>
@@ -705,6 +707,7 @@
     <a name="circuit" val="FetchDecode"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
+    <comp lib="0" loc="(240,150)" name="Constant"/>
     <comp lib="0" loc="(280,230)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="initial" val="0xfff"/>
@@ -812,6 +815,7 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(230,130)" to="(250,130)"/>
     <wire from="(230,60)" to="(230,130)"/>
     <wire from="(230,60)" to="(510,60)"/>
+    <wire from="(240,150)" to="(250,150)"/>
     <wire from="(280,230)" to="(330,230)"/>
     <wire from="(310,130)" to="(350,130)"/>
     <wire from="(330,180)" to="(330,230)"/>

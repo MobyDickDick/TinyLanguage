@@ -376,14 +376,18 @@ def test_remaining_error_controls_reach_matching_error_flags_only(
 @pytest.mark.parametrize(
     ("source", "gate_input"),
     [
-        ("(650,370)", "(760,250)"),  # LOAD_CONST
-        ("(650,390)", "(760,270)"),  # LOAD_ADDRESS
-        ("(650,410)", "(760,290)"),  # LOAD_ADDRESS_REGISTER
-        ("(650,430)", "(760,310)"),  # LOAD_ADDRESS_REGISTER_PLUS_OFFSET
-        ("(650,450)", "(760,330)"),  # ADD_CONST
-        ("(650,470)", "(760,350)"),  # ADD_ADDRESS
-        ("(650,490)", "(760,370)"),  # ADD_ADDRESS_REGISTER
-        ("(650,510)", "(760,390)"),  # ADD_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,370)", "(850,260)"),  # LOAD_CONST
+        ("(650,390)", "(850,270)"),  # LOAD_ADDRESS
+        ("(650,410)", "(850,280)"),  # LOAD_ADDRESS_REGISTER
+        ("(650,430)", "(850,290)"),  # LOAD_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,450)", "(850,300)"),  # ADD_CONST
+        ("(650,470)", "(850,310)"),  # ADD_ADDRESS
+        ("(650,490)", "(850,330)"),  # ADD_ADDRESS_REGISTER
+        ("(650,510)", "(850,340)"),  # ADD_ADDRESS_REGISTER_PLUS_OFFSET
+        ("(650,530)", "(850,350)"),  # SUB_CONST
+        ("(650,550)", "(850,360)"),  # SUB_ADDRESS
+        ("(650,570)", "(850,370)"),  # SUB_ADDRESS_REGISTER
+        ("(650,590)", "(850,380)"),  # SUB_ADDRESS_REGISTER_PLUS_OFFSET
     ],
 )
 def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
@@ -408,16 +412,7 @@ def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
                 pending.append(endpoint)
 
     assert gate_input in reachable
-    sibling = {
-        "(650,370)",
-        "(650,390)",
-        "(650,410)",
-        "(650,430)",
-        "(650,450)",
-        "(650,470)",
-        "(650,490)",
-        "(650,510)",
-    } - {source}
+    sibling = {f"(650,{y})" for y in range(370, 610, 20)} - {source}
     assert reachable.isdisjoint(
         {
             "(80,70)",  # CLK
@@ -435,10 +430,10 @@ def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
         if _attributes(component).get("label") == "ACC_LOAD_REQUEST"
     )
     assert aggregator.get("name") == "OR Gate"
-    assert aggregator.get("loc") == "(810,320)"
-    assert _attributes(aggregator).get("inputs") == "8"
+    assert aggregator.get("loc") == "(900,320)"
+    assert _attributes(aggregator).get("inputs") == "12"
 
-    output_reachable = {"(810,320)"}
+    output_reachable = {"(900,320)"}
     pending = list(output_reachable)
     while pending:
         for endpoint in adjacency.get(pending.pop(), ()):

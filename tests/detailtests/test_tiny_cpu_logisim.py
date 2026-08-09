@@ -488,7 +488,7 @@ def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
             if endpoint not in output_reachable:
                 output_reachable.add(endpoint)
                 pending.append(endpoint)
-    assert "(1040,740)" in output_reachable  # ACC_WRITE_REQUEST input
+    assert "(1070,750)" in output_reachable  # ACC_WRITE_REQUEST input
     assert "(720,180)" not in output_reachable  # separated by the second-stage gate
     assert "(720,110)" not in output_reachable  # Datapath.DATA_IN
 
@@ -510,7 +510,7 @@ def test_top_level_not_control_enables_accumulator_write():
                 reachable.add(endpoint)
                 pending.append(endpoint)
 
-    assert "(1040,760)" in reachable  # ACC_WRITE_REQUEST input
+    assert "(1070,790)" in reachable  # ACC_WRITE_REQUEST input
     assert reachable.isdisjoint(
         {f"(650,{y})" for y in range(370, 1010, 20)}
         | {
@@ -528,9 +528,9 @@ def test_top_level_not_control_enables_accumulator_write():
         if _attributes(component).get("label") == "ACC_WRITE_REQUEST"
     )
     assert write_aggregator.get("name") == "OR Gate"
-    assert write_aggregator.get("loc") == "(1090,750)"
+    assert write_aggregator.get("loc") == "(1120,770)"
 
-    output_reachable = {"(1090,750)"}
+    output_reachable = {"(1120,770)"}
     pending = list(output_reachable)
     while pending:
         for endpoint in adjacency.get(pending.pop(), ()):

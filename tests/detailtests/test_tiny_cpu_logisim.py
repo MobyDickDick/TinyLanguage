@@ -489,8 +489,8 @@ def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
                 output_reachable.add(endpoint)
                 pending.append(endpoint)
     assert "(1070,750)" in output_reachable  # ACC_WRITE_REQUEST input
-    assert "(720,180)" not in output_reachable  # separated by the second-stage gate
-    assert "(720,110)" not in output_reachable  # Datapath.DATA_IN
+    assert "(720,110)" not in output_reachable  # separated by the second-stage gate
+    assert "(720,180)" not in output_reachable  # Datapath.DATA_IN
 
 
 def test_top_level_not_control_enables_accumulator_write():
@@ -518,7 +518,7 @@ def test_top_level_not_control_enables_accumulator_write():
             "(80,160)",  # RESET
             "(430,370)",  # FetchDecodeControls.OPCODE
             "(720,170)",  # Datapath.CLK
-            "(720,180)",  # Datapath.ACC_LOAD (only the gate output reaches it)
+            "(720,110)",  # Datapath.ACC_LOAD (only the gate output reaches it)
         }
     )
 
@@ -537,8 +537,13 @@ def test_top_level_not_control_enables_accumulator_write():
             if endpoint not in output_reachable:
                 output_reachable.add(endpoint)
                 pending.append(endpoint)
-    assert "(720,180)" in output_reachable
-    assert "(720,110)" not in output_reachable
+    # Logisim's generated subcircuit symbol sorts its inputs by label, rather
+    # than preserving the vertical order of the pins on the Datapath sheet.
+    # ACC_LOAD is therefore the top terminal; DATA_IN is the third terminal.
+    # Keeping both assertions prevents a visually plausible one-grid reroute
+    # from silently exchanging the write-enable and data signals again.
+    assert "(720,110)" in output_reachable  # Datapath.ACC_LOAD
+    assert "(720,180)" not in output_reachable  # Datapath.DATA_IN
 
 
 def test_ci_runs_the_fresh_checkout_hardware_verifier():

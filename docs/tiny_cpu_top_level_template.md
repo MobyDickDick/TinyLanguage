@@ -38,7 +38,7 @@ Fehlerflags wurde als eigener Schritt vor `RESET` ergänzt.
 | 5 | Adress-Steuerung | benannte Fetch/Decode-Ausgänge | gleichnamige Eingänge von `AddressPath` | 1 je Netz | Jedes Signal einzeln zeichnen und prüfen. |
 | 6 | Speicher-Steuerung | Fetch/Decode-Ausgänge | `Memory` | 1 je Netz | Lesen und Schreiben getrennt testen; Validitäts-RAM mitprüfen. |
 | 7 | Adressbus | `AddressPath` | `Memory` und benötigte Rückwege | laut Pinvertrag | Splitter vermeiden, solange keine Breitenumsetzung erforderlich ist. |
-| 8 | Datenbus | jeweils dokumentierter Treiber | `Datapath`/`Memory` | 16 | Niemals zwei Ausgänge direkt auf dasselbe Netz legen. |
+| 8 | Datenbus | jeweils dokumentierter Treiber | `Datapath`/`Memory` | 16 | Der 16-Bit-Instruktionsoperand erreicht `Datapath.DATA_IN` als erste Quelle auf einem eigenen Netz. Weitere Quellen nur über explizite Auswahllogik ergänzen; niemals zwei Ausgänge direkt auf dasselbe Netz legen. |
 | 9 | Status | `Datapath.ZERO`, `NEGATIVE` und Valid-Signale | `FetchDecode`/Fehlerlogik | 1 je Netz | Sprungbedingungen einzeln mit 0, negativem und positivem Wert prüfen. |
 | 10 | Fehler | Fehler-Set-Signale und `CLEAR_ERROR` | `ErrorFlags` | 1 je Netz | Sticky-Verhalten sowie Set-vor-Clear-Priorität prüfen. |
 | 11 | Halt | normale und fehlerhafte Haltquelle | Top-Level `HALTED` | 1 | Normalhalt und Fehlerhalt getrennt auslösen. |
@@ -67,11 +67,12 @@ Steuernetze nicht versehentlich verbunden sind:
 | `SET_ILL` | `FetchDecodeControls.SET_ILL (650,1350)` | `ErrorFlags.SET_ILL (1350,200)` |
 | `SET_INPUT` | `FetchDecodeControls.SET_INPUT (650,1370)` | `ErrorFlags.SET_INPUT (1350,220)` |
 | `ACC_LOAD_REQUEST` | `FetchDecodeControls.LOAD_CONST (650,370)`, `LOAD_ADDRESS (650,390)`, `LOAD_ADDRESS_REGISTER (650,410)`, `LOAD_ADDRESS_REGISTER_PLUS_OFFSET (650,430)`, `ADD_CONST (650,450)`, `ADD_ADDRESS (650,470)`, `ADD_ADDRESS_REGISTER (650,490)`, `ADD_ADDRESS_REGISTER_PLUS_OFFSET (650,510)`, `SUB_CONST (650,530)`, `SUB_ADDRESS (650,550)`, `SUB_ADDRESS_REGISTER (650,570)`, `SUB_ADDRESS_REGISTER_PLUS_OFFSET (650,590)`, `MUL_CONST (650,610)`, `MUL_ADDRESS (650,630)`, `MUL_ADDRESS_REGISTER (650,650)`, `MUL_ADDRESS_REGISTER_PLUS_OFFSET (650,670)`, `DIV_CONST (650,690)`, `DIV_ADDRESS (650,710)`, `DIV_ADDRESS_REGISTER (650,730)`, `DIV_ADDRESS_REGISTER_PLUS_OFFSET (650,750)`, `AND_CONST (650,770)`, `AND_ADDRESS (650,790)`, `AND_ADDRESS_REGISTER (650,810)`, `AND_ADDRESS_REGISTER_PLUS_OFFSET (650,830)`, `OR_CONST (650,850)`, `OR_ADDRESS (650,870)`, `OR_ADDRESS_REGISTER (650,890)`, `OR_ADDRESS_REGISTER_PLUS_OFFSET (650,910)`, `XOR_CONST (650,930)`, `XOR_ADDRESS (650,950)`, `XOR_ADDRESS_REGISTER (650,970)` und `XOR_ADDRESS_REGISTER_PLUS_OFFSET (650,990)` über getrennte ODER-Eingänge | `Datapath.ACC_LOAD (720,180)` |
+| `OPERAND_DATA` | Instruktionssplitter, Bits 15..0 `(390,390)` | `Datapath.DATA_IN (720,160)` | 16 |
 
 Der Splitter führt ausschließlich die Opcode-Bits 21 bis 16 des 22-Bit-
-Maschinenworts an den sechs Bit breiten Decoder. Der 16-Bit-Operand bleibt für
-die späteren Datenbus-Schritte getrennt; ein direkter 22-auf-6-Bit-Anschluss
-wäre ein Breitenfehler.
+Maschinenworts an den sechs Bit breiten Decoder. Der getrennte 16-Bit-Ausgang
+führt den Operanden nun zum Datenpfad; ein direkter 22-auf-6-Bit-Anschluss wäre
+ein Breitenfehler.
 
 `tiny_cpu_verify.py` prüft den strukturellen Pinvertrag und reproduzierbare
 Artefakte, aber keine elektrische Top-Level-Verbindung. Es meldet deshalb auch

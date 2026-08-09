@@ -7,6 +7,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-09)
 
+- [x] **Connect the TinyCPU instruction operand to the accumulator data input**
+  (Owner: TinyCPU/Hardware)
+  - Success: route the splitter's 16-bit operand output to
+    `Datapath.DATA_IN` on a dedicated net, without coupling it to the 6-bit
+    opcode output or the adjacent one-bit accumulator controls.
+  - Result: the first accumulator data source now reaches the datapath through
+    a free corridor around the maintained top-level symbols. A structural
+    regression checks the intended endpoints and bus isolation.
+  - Follow-up: integrate the next accumulator data source through explicit
+    selection logic before connecting memory-backed write operations.
+
+## Next documented work package (completed 2026-08-09)
+
 - [x] **Integrate the TinyCPU `INPUT` accumulator-write control**
   (Owner: TinyCPU/Hardware)
   - Success: add `INPUT` to the second-stage `ACC_WRITE_REQUEST` gate on an

@@ -141,3 +141,9 @@ independent input of that second stage; only the gate output drives
 `Datapath.ACC_LOAD`. This preserves isolated decoder outputs without exceeding
 Logisim's per-gate input limit. The next integration step is the explicit
 accumulator data-source selection required by these write-enable controls.
+The instruction splitter's 16-bit operand output now reaches
+`Datapath.DATA_IN` on an isolated route, while the adjacent opcode and
+one-bit control nets remain separate. This establishes the constant operand as
+the first accumulator data source. The next step is to introduce the next
+source through explicit selection logic before memory-backed writes are
+enabled.

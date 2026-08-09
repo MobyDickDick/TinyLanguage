@@ -192,10 +192,14 @@ fails before a project with overlapping subcircuit symbols is checked in.
   datapath-control families. Separate routes feed the explicitly
   thirty-two-input,
   named `ACC_LOAD_REQUEST` OR gate,
-  whose output alone reaches `Datapath.ACC_LOAD`; the decoder outputs are never
-  tied directly together. The structural tests treat an endpoint touching the
-  middle of another wire as a Logisim junction, so accidental wired-ORs cannot
-  hide behind endpoint-only graph checks.
+  whose output and the unary `NOT` control feed a second, named
+  `ACC_WRITE_REQUEST` OR gate. That final gate alone reaches
+  `Datapath.ACC_LOAD`; the decoder outputs are never tied directly together.
+  This two-stage arrangement keeps the family aggregator within Logisim's
+  32-input limit while leaving room for non-family accumulator writes. The
+  structural tests treat an endpoint touching the middle of another wire as a
+  Logisim junction, so accidental wired-ORs cannot hide behind endpoint-only
+  graph checks.
 
 The AP 5 countdown program is loaded into the instruction ROM and its
 clock-edge reference trace is checked in as `ap5_countdown_trace.json`. AP 7

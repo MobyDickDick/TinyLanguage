@@ -488,8 +488,57 @@ def test_top_level_accumulator_write_controls_enable_load(source, gate_input):
             if endpoint not in output_reachable:
                 output_reachable.add(endpoint)
                 pending.append(endpoint)
-    assert "(720,180)" in output_reachable  # Datapath.ACC_LOAD
+    assert "(1040,740)" in output_reachable  # ACC_WRITE_REQUEST input
+    assert "(720,180)" not in output_reachable  # separated by the second-stage gate
     assert "(720,110)" not in output_reachable  # Datapath.DATA_IN
+
+
+def test_top_level_not_control_enables_accumulator_write():
+    """Add unary NOT without exceeding the 32-input family aggregator."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = next(
+        item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
+    )
+    adjacency = _electrical_adjacency(circuit)
+
+    reachable = {"(650,1010)"}  # FetchDecodeControls.NOT
+    pending = list(reachable)
+    while pending:
+        for endpoint in adjacency.get(pending.pop(), ()):
+            if endpoint not in reachable:
+                reachable.add(endpoint)
+                pending.append(endpoint)
+
+    assert "(1040,760)" in reachable  # ACC_WRITE_REQUEST input
+    assert reachable.isdisjoint(
+        {f"(650,{y})" for y in range(370, 1010, 20)}
+        | {
+            "(80,70)",  # CLK
+            "(80,160)",  # RESET
+            "(430,370)",  # FetchDecodeControls.OPCODE
+            "(720,170)",  # Datapath.CLK
+            "(720,180)",  # Datapath.ACC_LOAD (only the gate output reaches it)
+        }
+    )
+
+    write_aggregator = next(
+        component
+        for component in circuit.findall("comp")
+        if _attributes(component).get("label") == "ACC_WRITE_REQUEST"
+    )
+    assert write_aggregator.get("name") == "OR Gate"
+    assert write_aggregator.get("loc") == "(1090,750)"
+
+    output_reachable = {"(1090,750)"}
+    pending = list(output_reachable)
+    while pending:
+        for endpoint in adjacency.get(pending.pop(), ()):
+            if endpoint not in output_reachable:
+                output_reachable.add(endpoint)
+                pending.append(endpoint)
+    assert "(720,180)" in output_reachable
+    assert "(720,110)" not in output_reachable
 
 
 def test_ci_runs_the_fresh_checkout_hardware_verifier():

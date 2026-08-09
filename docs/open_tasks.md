@@ -7,6 +7,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-09)
 
+- [x] **Select memory data for TinyCPU `LOAD_ADDRESS`**
+  (Owner: TinyCPU/Hardware)
+  - Success: replace the direct operand connection with a labelled 16-bit
+    multiplexer that keeps the instruction operand and `Memory.DATA_OUT` on
+    independent inputs, selects memory only for `LOAD_ADDRESS`, and remains
+    isolated from opcode, write-control, and validity nets.
+  - Result: `ACC_DATA_SELECT` now makes the instruction operand the default
+    accumulator input and routes memory data for the first memory-backed load.
+    A structural regression resolves both sources and the select control by
+    signal name and verifies source, control, and output isolation.
+  - Follow-up: extend memory-data selection to the address-register addressing
+    modes one explicitly documented mode at a time.
+
+## Next documented work package (completed 2026-08-09)
+
 - [x] **Connect the TinyCPU instruction operand to the accumulator data input**
   (Owner: TinyCPU/Hardware)
   - Success: route the splitter's 16-bit operand output to

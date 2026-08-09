@@ -144,6 +144,10 @@ accumulator data-source selection required by these write-enable controls.
 The instruction splitter's 16-bit operand output now reaches
 `Datapath.DATA_IN` on an isolated route, while the adjacent opcode and
 one-bit control nets remain separate. This establishes the constant operand as
-the first accumulator data source. The next step is to introduce the next
-source through explicit selection logic before memory-backed writes are
-enabled.
+the first accumulator data source. The labelled 16-bit `ACC_DATA_SELECT`
+multiplexer now keeps that operand on its default input and
+`Memory.DATA_OUT` on an independent second input. `LOAD_ADDRESS` drives the
+selector on a separate one-bit net, providing the first memory-backed load
+without directly joining either data-bus driver. The next step is to extend
+that memory selection to the address-register addressing modes one explicitly
+documented mode at a time.

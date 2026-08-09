@@ -7,6 +7,22 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-09)
 
+- [x] **Select the inverted accumulator for TinyCPU `NOT`**
+  (Owner: TinyCPU/Hardware)
+  - Success: derive a 16-bit inverted value from `Datapath.ACC_OUT` and select
+    it through an explicitly labelled second-stage multiplexer only when the
+    independent `NOT` decoder output is active.
+  - Result: `ACC_NOT_VALUE` and `ACC_NOT_SELECT` add the first computed
+    accumulator source without changing the existing operand-versus-memory
+    selection. Structural coverage verifies component widths, the staged data
+    path, the `NOT` select path, and isolation from the `INPUT` control. The
+    package also restores the clock, reset, and labelled data-selection routes
+    lost in the preceding manual redraw.
+  - Follow-up: integrate the external value used by `INPUT` as the next
+    explicitly documented accumulator source.
+
+## Next documented work package (completed 2026-08-09)
+
 - [x] **Select memory data for TinyCPU `LOAD_ADDRESS_REGISTER_PLUS_OFFSET`**
   (Owner: TinyCPU/Hardware)
   - Success: add `LOAD_ADDRESS_REGISTER_PLUS_OFFSET` to the explicitly labelled

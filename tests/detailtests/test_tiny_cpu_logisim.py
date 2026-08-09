@@ -658,7 +658,16 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
     assert len(memory_reachable & mux_inputs) == 1
     assert (operand_reachable & mux_inputs) != (memory_reachable & mux_inputs)
     assert memory_data not in operand_reachable
-    assert data_in in _reachable(adjacency, mux_output)
+    not_mux = _labelled_component(circuit, "ACC_NOT_SELECT")
+    not_mux_x, not_mux_y = (
+        int(value) for value in not_mux.get("loc").strip("()").split(",")
+    )
+    not_mux_inputs = {
+        f"({not_mux_x - 30},{not_mux_y - 10})",
+        f"({not_mux_x - 30},{not_mux_y + 10})",
+    }
+    assert len(_reachable(adjacency, mux_output) & not_mux_inputs) == 1
+    assert data_in in _reachable(adjacency, f"({not_mux_x},{not_mux_y})")
 
     select_output, select_inputs = _gate_ports(memory_select_gate)
     select_causes = {
@@ -683,6 +692,39 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
     assert _instruction_field_output(root, range(16, 22)) not in operand_reachable
     assert _subcircuit_input(root, "Datapath", "ACC_LOAD") not in operand_reachable
     assert _subcircuit_input(root, "Datapath", "VALID_IN") not in operand_reachable
+
+
+def test_top_level_not_data_selector_uses_inverted_accumulator():
+    """Select an isolated, bitwise-inverted accumulator only for ``NOT``."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    adjacency = _electrical_adjacency(circuit)
+    inverter = _labelled_component(circuit, "ACC_NOT_VALUE")
+    mux = _labelled_component(circuit, "ACC_NOT_SELECT")
+    assert inverter.get("name") == "NOT Gate"
+    assert _attributes(inverter).get("width") == "16"
+    assert mux.get("name") == "Multiplexer"
+    assert _attributes(mux).get("width") == "16"
+
+    inverter_x, inverter_y = (
+        int(value) for value in inverter.get("loc").strip("()").split(",")
+    )
+    inverter_input = f"({inverter_x - 20},{inverter_y})"
+    inverter_output = f"({inverter_x},{inverter_y})"
+    mux_x, mux_y = (int(value) for value in mux.get("loc").strip("()").split(","))
+    mux_inputs = {f"({mux_x - 30},{mux_y - 10})", f"({mux_x - 30},{mux_y + 10})"}
+    mux_select = f"({mux_x - 20},{mux_y + 30})"
+    acc_out = _subcircuit_output(root, "Datapath", "ACC_OUT")
+    not_control = _control_output(root, "NOT")
+    data_in = _subcircuit_input(root, "Datapath", "DATA_IN")
+
+    assert inverter_input in _reachable(adjacency, acc_out)
+    inverted_reachable = _reachable(adjacency, inverter_output)
+    assert len(inverted_reachable & mux_inputs) == 1
+    assert mux_select in _reachable(adjacency, not_control)
+    assert data_in in _reachable(adjacency, f"({mux_x},{mux_y})")
+    assert _control_output(root, "INPUT") not in _reachable(adjacency, not_control)
 
 
 def test_ci_runs_the_fresh_checkout_hardware_verifier():

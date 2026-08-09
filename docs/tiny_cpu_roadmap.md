@@ -150,5 +150,9 @@ multiplexer now keeps that operand on its default input and
 selector through the labelled `ACC_MEMORY_SELECT` gate, whose second independent
 input is now `LOAD_ADDRESS_REGISTER`. Either addressing mode therefore selects
 the memory source without directly joining decoder outputs or data-bus drivers.
-The next step is to add `LOAD_ADDRESS_REGISTER_PLUS_OFFSET` to this selection
-logic as its own explicitly documented cause.
+`LOAD_ADDRESS_REGISTER_PLUS_OFFSET` is now a third independent cause in that
+selection logic. A labelled 16-bit `ACC_NOT_VALUE` inverter derives the unary
+result from the accumulator, and the second-stage `ACC_NOT_SELECT` multiplexer
+selects it only for `NOT` while passing the existing operand-or-memory result
+through by default. The next integration step is the external accumulator data
+source required by `INPUT`.

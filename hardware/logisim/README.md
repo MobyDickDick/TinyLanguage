@@ -204,7 +204,12 @@ fails before a project with overlapping subcircuit symbols is checked in.
   structural tests resolve the participating controls and gates by their labels
   and then compare electrical nets. Coordinates remain a drawing detail, while
   endpoint-on-wire junctions are still treated as Logisim connections so an
-  accidental wired-OR cannot pass unnoticed.
+  accidental wired-OR cannot pass unnoticed. The labelled 16-bit
+  `ACC_DATA_SELECT` multiplexer first chooses the instruction operand or memory
+  data for all three memory-backed load modes. Its result feeds the default
+  input of `ACC_NOT_SELECT`; the other input receives `ACC_OUT` through the
+  labelled 16-bit `ACC_NOT_VALUE` inverter, and only the independent `NOT`
+  control selects that computed value.
 
 The AP 5 countdown program is loaded into the instruction ROM and its
 clock-edge reference trace is checked in as `ap5_countdown_trace.json`. AP 7

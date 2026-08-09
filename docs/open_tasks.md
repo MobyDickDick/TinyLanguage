@@ -7,6 +7,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-09)
 
+- [x] **Complete the TinyCPU load-family accumulator controls**
+  (Owner: TinyCPU/Hardware)
+  - Success: add `LOAD_ADDRESS_REGISTER` and
+    `LOAD_ADDRESS_REGISTER_PLUS_OFFSET` to `ACC_LOAD_REQUEST` while keeping all
+    four decoder outputs on independent nets and keeping the request away from
+    `Datapath.DATA_IN`.
+  - Result: the explicitly four-input accumulator-load gate now covers every
+    `LOAD_*` addressing mode; parameterized structural coverage locks each
+    input, the `ACC_LOAD` destination, and isolation from the data input.
+  - Follow-up: add the four `ADD_*` accumulator-writing controls as the next
+    explicitly documented instruction group.
+
+## Next documented work package (completed 2026-08-09)
+
 - [x] **Aggregate the first TinyCPU accumulator-load controls**
   (Owner: TinyCPU/Hardware)
   - Success: connect `LOAD_ADDRESS` to `Datapath.ACC_LOAD` together with the

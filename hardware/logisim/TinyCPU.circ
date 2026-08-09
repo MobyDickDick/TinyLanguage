@@ -68,6 +68,7 @@
       <a name="label" val="CLK"/>
     </comp>
     <comp lib="1" loc="(760,280)" name="OR Gate">
+      <a name="inputs" val="4"/>
       <a name="label" val="ACC_LOAD_REQUEST"/>
     </comp>
     <comp lib="9" loc="(320,30)" name="Text">
@@ -116,13 +117,18 @@
     <wire from="(650,1370)" to="(1340,1370)"/>
     <wire from="(650,370)" to="(680,370)"/>
     <wire from="(650,390)" to="(690,390)"/>
-    <wire from="(680,260)" to="(680,370)"/>
-    <wire from="(680,260)" to="(710,260)"/>
-    <wire from="(690,110)" to="(690,220)"/>
-    <wire from="(690,110)" to="(720,110)"/>
+    <wire from="(680,250)" to="(680,370)"/>
+    <wire from="(680,250)" to="(710,250)"/>
+    <wire from="(690,180)" to="(690,220)"/>
+    <wire from="(690,180)" to="(720,180)"/>
     <wire from="(690,220)" to="(800,220)"/>
-    <wire from="(690,300)" to="(690,390)"/>
-    <wire from="(690,300)" to="(710,300)"/>
+    <wire from="(690,270)" to="(690,390)"/>
+    <wire from="(690,270)" to="(710,270)"/>
+    <wire from="(650,410)" to="(700,410)"/>
+    <wire from="(700,290)" to="(700,410)"/>
+    <wire from="(700,290)" to="(710,290)"/>
+    <wire from="(650,430)" to="(710,430)"/>
+    <wire from="(710,310)" to="(710,430)"/>
     <wire from="(710,170)" to="(720,170)"/>
     <wire from="(710,70)" to="(1010,70)"/>
     <wire from="(710,70)" to="(710,170)"/>

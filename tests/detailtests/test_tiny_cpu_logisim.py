@@ -378,6 +378,8 @@ def test_remaining_error_controls_reach_matching_error_flags_only(
     [
         "(650,370)",  # FetchDecodeControls.LOAD_CONST
         "(650,390)",  # FetchDecodeControls.LOAD_ADDRESS
+        "(650,410)",  # FetchDecodeControls.LOAD_ADDRESS_REGISTER
+        "(650,430)",  # FetchDecodeControls.LOAD_ADDRESS_REGISTER_PLUS_OFFSET
     ],
 )
 def test_top_level_load_controls_enable_accumulator_load(source):
@@ -394,8 +396,10 @@ def test_top_level_load_controls_enable_accumulator_load(source):
         adjacency.setdefault(end, set()).add(start)
 
     gate_input = {
-        "(650,370)": "(710,230)",
-        "(650,390)": "(710,250)",
+        "(650,370)": "(710,250)",
+        "(650,390)": "(710,270)",
+        "(650,410)": "(710,290)",
+        "(650,430)": "(710,310)",
     }[source]
     reachable = {source}
     pending = list(reachable)
@@ -406,7 +410,9 @@ def test_top_level_load_controls_enable_accumulator_load(source):
                 pending.append(endpoint)
 
     assert gate_input in reachable
-    sibling = {"(650,370)", "(650,390)"} - {source}
+    sibling = {"(650,370)", "(650,390)", "(650,410)", "(650,430)"} - {
+        source
+    }
     assert reachable.isdisjoint(
         {
             "(80,70)",  # CLK
@@ -424,9 +430,10 @@ def test_top_level_load_controls_enable_accumulator_load(source):
         if _attributes(component).get("label") == "ACC_LOAD_REQUEST"
     )
     assert aggregator.get("name") == "OR Gate"
-    assert aggregator.get("loc") == "(760,240)"
+    assert aggregator.get("loc") == "(760,280)"
+    assert _attributes(aggregator).get("inputs") == "4"
 
-    output_reachable = {"(760,240)"}
+    output_reachable = {"(760,280)"}
     pending = list(output_reachable)
     while pending:
         for endpoint in adjacency.get(pending.pop(), ()):
@@ -434,6 +441,7 @@ def test_top_level_load_controls_enable_accumulator_load(source):
                 output_reachable.add(endpoint)
                 pending.append(endpoint)
     assert "(720,180)" in output_reachable  # Datapath.ACC_LOAD
+    assert "(720,110)" not in output_reachable  # Datapath.DATA_IN
 
 
 def test_ci_runs_the_fresh_checkout_hardware_verifier():

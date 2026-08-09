@@ -104,10 +104,10 @@ def test_top_level_clock_reaches_every_stateful_block():
     # restored overview.  A subcircuit's ``loc`` is its symbol anchor, not an
     # electrical terminal, so anchor reachability would test the wrong points.
     clock_terminals = {
-        "FetchDecode": "(430,160)",
+        "FetchDecode": "(440,150)",
         "Datapath": "(720,170)",
         "AddressPath": "(1020,130)",
-        "Memory": "(1350,100)",
+        "Memory": "(450,250)",
         "ErrorFlags": "(1350,100)",
     }
     clock = next(
@@ -174,7 +174,7 @@ def test_top_level_reset_reaches_fetch_decode_only():
                 reachable.add(endpoint)
                 pending.append(endpoint)
 
-    assert "(430,170)" in reachable  # FetchDecode.RESET
+    assert "(440,160)" in reachable  # FetchDecode.RESET
     assert reachable.isdisjoint(
         {
             "(720,180)",  # Datapath reset-shaped terminal
@@ -205,8 +205,8 @@ def test_top_level_opcode_reaches_decode_controls_only():
     # The 22-bit machine word is split before the six opcode bits reach the
     # controls block. Bits 21..16 form the decoder input; the operand remains
     # deliberately unconnected until the data-bus integration steps.
-    opcode_source = "(330,160)"
-    splitter_input = "(370,380)"
+    opcode_source = "(340,150)"
+    splitter_input = "(350,150)"
     reachable = {opcode_source}
     pending = list(reachable)
     while pending:
@@ -216,7 +216,7 @@ def test_top_level_opcode_reaches_decode_controls_only():
                 pending.append(endpoint)
 
     assert splitter_input in reachable
-    decoder_side = {"(390,370)"}
+    decoder_side = {"(370,140)"}
     pending = list(decoder_side)
     while pending:
         for endpoint in adjacency.get(pending.pop(), ()):
@@ -646,7 +646,7 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
 
     x, y = (int(value) for value in mux.get("loc").strip("()").split(","))
     mux_output = f"({x},{y})"
-    mux_inputs = {f"({x - 50},{y - 10})", f"({x - 50},{y + 10})"}
+    mux_inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
     mux_select = f"({x - 20},{y + 30})"
     operand = _instruction_field_output(root, range(16))
     memory_data = _subcircuit_output(root, "Memory", "DATA_OUT")

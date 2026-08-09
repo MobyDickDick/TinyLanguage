@@ -80,6 +80,7 @@
       <a name="label" val="ACC_DATA_SELECT"/>
     </comp>
     <comp lib="1" loc="(1040,1530)" name="OR Gate">
+      <a name="inputs" val="3"/>
       <a name="label" val="ACC_MEMORY_SELECT"/>
     </comp>
     <comp lib="9" loc="(320,30)" name="Text">
@@ -248,11 +249,14 @@
     <wire from="(1450,110)" to="(1450,1510)"/>
     <wire from="(1050,1510)" to="(1450,1510)"/>
     <wire from="(650,390)" to="(620,390)"/>
-    <wire from="(620,390)" to="(620,1520)"/>
-    <wire from="(620,1520)" to="(990,1520)"/>
+    <wire from="(620,390)" to="(620,1510)"/>
+    <wire from="(620,1510)" to="(990,1510)"/>
     <wire from="(650,410)" to="(600,410)"/>
-    <wire from="(600,410)" to="(600,1540)"/>
-    <wire from="(600,1540)" to="(990,1540)"/>
+    <wire from="(600,410)" to="(600,1530)"/>
+    <wire from="(600,1530)" to="(990,1530)"/>
+    <wire from="(650,430)" to="(580,430)"/>
+    <wire from="(580,430)" to="(580,1550)"/>
+    <wire from="(580,1550)" to="(990,1550)"/>
     <wire from="(1040,1530)" to="(1080,1530)"/>
     <wire from="(1100,1500)" to="(1120,1500)"/>
     <wire from="(610,1450)" to="(1120,1450)"/>

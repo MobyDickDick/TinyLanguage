@@ -633,7 +633,7 @@ def test_top_level_non_family_write_controls_use_separate_gate_connections():
 
 
 def test_top_level_accumulator_data_selector_keeps_sources_isolated():
-    """Select memory for two load modes without shorting data or controls."""
+    """Select memory for three load modes without shorting data or controls."""
 
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
@@ -663,7 +663,11 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
     select_output, select_inputs = _gate_ports(memory_select_gate)
     select_causes = {
         name: _control_output(root, name)
-        for name in ("LOAD_ADDRESS", "LOAD_ADDRESS_REGISTER")
+        for name in (
+            "LOAD_ADDRESS",
+            "LOAD_ADDRESS_REGISTER",
+            "LOAD_ADDRESS_REGISTER_PLUS_OFFSET",
+        )
     }
     connected_inputs = {}
     for name, source in select_causes.items():

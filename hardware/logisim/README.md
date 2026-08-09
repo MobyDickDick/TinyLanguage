@@ -209,7 +209,12 @@ fails before a project with overlapping subcircuit symbols is checked in.
   data for all three memory-backed load modes. Its result feeds the default
   input of `ACC_NOT_SELECT`; the other input receives `ACC_OUT` through the
   labelled 16-bit `ACC_NOT_VALUE` inverter, and only the independent `NOT`
-  control selects that computed value.
+  control selects that computed value. The selected 16-bit result reaches
+  `Datapath.DATA_IN` through the paired `ACC_DATA_BUS` tunnels. A previous
+  route crossed the one-bit clock trunk twice; Logisim joined both crossings
+  electrically and consequently reported two incompatible-width errors. The
+  tunnel pair makes that data connection explicit without crossing the clock
+  net.
 
 The AP 5 countdown program is loaded into the instruction ROM and its
 clock-edge reference trace is checked in as `ap5_countdown_trace.json`. AP 7

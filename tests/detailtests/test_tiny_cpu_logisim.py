@@ -29,7 +29,7 @@ def _attributes(component):
 
 
 def _electrical_adjacency(circuit):
-    """Return Logisim connectivity, including endpoint-on-wire junctions.
+    """Return Logisim connectivity, including junctions and named tunnels.
 
     A wire endpoint that touches the middle of another wire creates a junction
     in Logisim.  Merely comparing the declared endpoint pairs misses those
@@ -57,6 +57,17 @@ def _electrical_adjacency(circuit):
         for left, right in zip(points, points[1:]):
             adjacency[left].add(right)
             adjacency[right].add(left)
+
+    tunnels = {}
+    for component in circuit.findall("comp"):
+        if component.get("name") == "Tunnel":
+            tunnels.setdefault(_attributes(component).get("label"), []).append(
+                component.get("loc")
+            )
+    for locations in tunnels.values():
+        for left, right in zip(locations, locations[1:]):
+            adjacency.setdefault(left, set()).add(right)
+            adjacency.setdefault(right, set()).add(left)
     return adjacency
 
 
@@ -699,6 +710,28 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
     }
     data_nets = operand_reachable | memory_reachable | _reachable(adjacency, data_in)
     assert data_nets.isdisjoint(address_outputs)
+
+
+def test_top_level_accumulator_data_bus_uses_width_safe_tunnels():
+    """Do not route the 16-bit result across the one-bit clock trunk."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    tunnels = [
+        component
+        for component in circuit.findall("comp")
+        if component.get("name") == "Tunnel"
+        and _attributes(component).get("label") == "ACC_DATA_BUS"
+    ]
+
+    assert {component.get("loc") for component in tunnels} == {
+        "(970,260)",
+        "(1250,80)",
+    }
+    assert {_attributes(component).get("width") for component in tunnels} == {"16"}
+    assert _subcircuit_input(root, "Datapath", "DATA_IN") in _reachable(
+        _electrical_adjacency(circuit), "(970,260)"
+    )
 
 
 def test_top_level_not_data_selector_uses_inverted_accumulator():

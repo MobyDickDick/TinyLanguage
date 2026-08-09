@@ -91,6 +91,15 @@
       <a name="label" val="ACC_NOT_SELECT"/>
       <a name="width" val="16"/>
     </comp>
+    <comp lib="0" loc="(970,260)" name="Tunnel">
+      <a name="facing" val="east"/>
+      <a name="label" val="ACC_DATA_BUS"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(1250,80)" name="Tunnel">
+      <a name="label" val="ACC_DATA_BUS"/>
+      <a name="width" val="16"/>
+    </comp>
     <comp lib="9" loc="(320,30)" name="Text">
       <a name="text" val="TinyCPU integration: one clock net drives all stateful blocks"/>
     </comp>
@@ -265,9 +274,7 @@
     <wire from="(930,280)" to="(930,290)"/>
     <wire from="(930,290)" to="(1270,290)"/>
     <wire from="(950,260)" to="(970,260)"/>
-    <wire from="(970,60)" to="(970,260)"/>
-    <wire from="(970,60)" to="(1280,60)"/>
-    <wire from="(1280,60)" to="(1280,80)"/>
+    <wire from="(1250,80)" to="(1280,80)"/>
     <wire from="(90,70)" to="(460,70)"/>
     <wire from="(1010,70)" to="(1010,130)"/>
     <wire from="(1010,130)" to="(1020,130)"/>

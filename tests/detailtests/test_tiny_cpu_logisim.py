@@ -523,6 +523,39 @@ def _subcircuit_input(root, circuit_name, pin_label):
     return f"({x + 70},{y - 10 + 20 * index})"
 
 
+def _subcircuit_output(root, circuit_name, pin_label):
+    """Resolve an automatic-symbol output from the named subcircuit pin."""
+
+    definition = next(
+        circuit
+        for circuit in root.findall("circuit")
+        if circuit.get("name") == circuit_name
+    )
+    outputs = sorted(
+        (
+            component
+            for component in definition.findall("comp")
+            if component.get("name") == "Pin"
+            and _attributes(component).get("type") == "output"
+        ),
+        key=lambda component: tuple(
+            int(value) for value in component.get("loc").strip("()").split(",")
+        )[::-1],
+    )
+    index = next(
+        index
+        for index, component in enumerate(outputs)
+        if _attributes(component).get("label") == pin_label
+    )
+    instance = next(
+        component
+        for component in _top_level(root).findall("comp")
+        if component.get("name") == circuit_name
+    )
+    x, y = (int(value) for value in instance.get("loc").strip("()").split(","))
+    return f"({x},{y + 20 * index})"
+
+
 def _gate_ports(component):
     """Resolve an OR gate's output and inputs from its declared fan-in."""
 
@@ -599,21 +632,38 @@ def test_top_level_non_family_write_controls_use_separate_gate_connections():
     assert len(_reachable(adjacency, write_output)) > 1
 
 
-def test_top_level_operand_bus_drives_datapath_data_input_only():
-    """Connect instruction operand bits to the named datapath input only."""
+def test_top_level_accumulator_data_selector_keeps_sources_isolated():
+    """Select memory data for LOAD_ADDRESS without shorting either data source."""
 
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
     adjacency = _electrical_adjacency(circuit)
+    mux = _labelled_component(circuit, "ACC_DATA_SELECT")
+    assert mux.get("name") == "Multiplexer"
+    assert _attributes(mux).get("width") == "16"
 
+    x, y = (int(value) for value in mux.get("loc").strip("()").split(","))
+    mux_output = f"({x},{y})"
+    mux_inputs = {f"({x - 50},{y - 10})", f"({x - 50},{y + 10})"}
+    mux_select = f"({x - 20},{y + 30})"
     operand = _instruction_field_output(root, range(16))
+    memory_data = _subcircuit_output(root, "Memory", "DATA_OUT")
     data_in = _subcircuit_input(root, "Datapath", "DATA_IN")
-    reachable = _reachable(adjacency, operand)
 
-    assert data_in in reachable
-    assert _instruction_field_output(root, range(16, 22)) not in reachable
-    assert _subcircuit_input(root, "Datapath", "ACC_LOAD") not in reachable
-    assert _subcircuit_input(root, "Datapath", "VALID_IN") not in reachable
+    operand_reachable = _reachable(adjacency, operand)
+    memory_reachable = _reachable(adjacency, memory_data)
+    assert len(operand_reachable & mux_inputs) == 1
+    assert len(memory_reachable & mux_inputs) == 1
+    assert (operand_reachable & mux_inputs) != (memory_reachable & mux_inputs)
+    assert memory_data not in operand_reachable
+    assert data_in in _reachable(adjacency, mux_output)
+
+    select_reachable = _reachable(adjacency, _control_output(root, "LOAD_ADDRESS"))
+    assert mux_select in select_reachable
+    assert select_reachable.isdisjoint(mux_inputs | {mux_output, data_in})
+    assert _instruction_field_output(root, range(16, 22)) not in operand_reachable
+    assert _subcircuit_input(root, "Datapath", "ACC_LOAD") not in operand_reachable
+    assert _subcircuit_input(root, "Datapath", "VALID_IN") not in operand_reachable
 
 
 def test_ci_runs_the_fresh_checkout_hardware_verifier():

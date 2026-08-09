@@ -59,6 +59,9 @@
       <a name="bit9" val="0"/>
       <a name="incoming" val="22"/>
     </comp>
+    <comp lib="1" loc="(760,240)" name="OR Gate">
+      <a name="label" val="ACC_LOAD_REQUEST"/>
+    </comp>
     <comp lib="0" loc="(80,160)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="RESET"/>
@@ -119,9 +122,15 @@
     <wire from="(90,70)" to="(90,140)"/>
     <wire from="(110,160)" to="(110,170)"/>
     <wire from="(110,170)" to="(430,170)"/>
-    <wire from="(650,370)" to="(780,370)"/>
-    <wire from="(720,180)" to="(780,180)"/>
-    <wire from="(780,180)" to="(780,370)"/>
+    <wire from="(650,370)" to="(680,370)"/>
+    <wire from="(650,390)" to="(690,390)"/>
+    <wire from="(680,230)" to="(680,370)"/>
+    <wire from="(680,230)" to="(710,230)"/>
+    <wire from="(690,250)" to="(690,390)"/>
+    <wire from="(690,250)" to="(710,250)"/>
+    <wire from="(720,180)" to="(800,180)"/>
+    <wire from="(760,240)" to="(800,240)"/>
+    <wire from="(800,180)" to="(800,240)"/>
   </circuit>
   <circuit name="Datapath">
     <a name="appearance" val="logisim_evolution"/>

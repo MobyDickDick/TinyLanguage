@@ -5,6 +5,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Next documented work package (completed 2026-08-09)
+
+- [x] **Aggregate the first TinyCPU accumulator-load controls**
+  (Owner: TinyCPU/Hardware)
+  - Success: connect `LOAD_ADDRESS` to `Datapath.ACC_LOAD` together with the
+    existing `LOAD_CONST` cause through explicit combinational logic, without
+    wiring the two decoder outputs directly onto one driven net.
+  - Result: a named `ACC_LOAD_REQUEST` OR gate combines the two independent
+    causes; parameterized structural coverage proves that either cause reaches
+    `ACC_LOAD` while the decoder outputs remain electrically isolated.
+  - Follow-up: add the remaining accumulator-writing instruction groups to
+    the aggregation logic one explicitly documented group at a time.
+
 ## Next documented work package (completed 2026-08-08)
 
 - [x] **Connect the remaining TinyCPU top-level sticky-error controls**

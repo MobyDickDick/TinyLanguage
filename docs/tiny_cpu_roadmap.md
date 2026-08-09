@@ -122,4 +122,8 @@ tatsächlichen Anschlüsse der neu platzierten Steuer- und Fehlerblöcke. Mit
 `LOAD_CONST` nach `Datapath.ACC_LOAD` ist außerdem das erste
 Datenpfad-Steuernetz ergänzt; weitere Ladeursachen benötigen vor dem Anschluss
 eine explizite Zusammenfassung, damit Decoder-Ausgänge nicht gegeneinander
-treiben.
+treiben. Diese Zusammenfassung beginnt nun mit dem benannten ODER-Gatter
+`ACC_LOAD_REQUEST`: Es führt `LOAD_CONST` und `LOAD_ADDRESS` auf
+`Datapath.ACC_LOAD`, hält aber beide Decoder-Ausgänge auf getrennten Netzen.
+Die übrigen Akkumulator-schreibenden Befehlsgruppen werden schrittweise an
+diese ausdrücklich sichtbare Kombinationslogik angebunden.

@@ -7,6 +7,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-10)
 
+- [x] **Rebaseline TinyCPU integration checks after the corrected redraw**
+  (Owner: TinyCPU/Hardware)
+  - Success: treat the manually corrected component positions and direct routes
+    in `TinyCPU.circ` as authoritative instead of restoring coordinates and
+    tunnels from the superseded drawing.
+  - Result: structural tests now resolve the corrected automatic-symbol input
+    edge, follow the relocated decode and error-control endpoints, and protect
+    the direct accumulator data routes. Cosmetic labels identify the three
+    accumulator selectors. The checks also exposed and corrected the two
+    crossed selector controls from the redraw: `NOT` now selects the inverted
+    accumulator stage, while `INPUT` selects only the external-value stage.
+  - Follow-up: connect the accumulator-validity control required by `INPUT`.
+
+## Next documented work package (completed 2026-08-10)
+
 - [x] **Select the external accumulator value for TinyCPU `INPUT`**
   (Owner: TinyCPU/Hardware)
   - Success: expose a 16-bit `INPUT_VALUE` top-level pin and select it through

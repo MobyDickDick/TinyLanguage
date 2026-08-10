@@ -5,6 +5,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Next documented work package (completed 2026-08-10)
+
+- [x] **Select the external accumulator value for TinyCPU `INPUT`**
+  (Owner: TinyCPU/Hardware)
+  - Success: expose a 16-bit `INPUT_VALUE` top-level pin and select it through
+    an explicitly labelled final multiplexer only while the independent
+    `INPUT` decoder output is active.
+  - Result: `ACC_INPUT_SELECT` passes the existing operand, memory, or inverted
+    accumulator result by default and selects `INPUT_VALUE` for `INPUT`. The
+    corrected clock, clear-error, accumulator-feedback, and final data-bus
+    routes are structurally verified and remain width-safe and isolated.
+  - Follow-up: connect the accumulator-validity control required by `INPUT`.
+
 ## Next documented work package (completed 2026-08-09)
 
 - [x] **Select the inverted accumulator for TinyCPU `NOT`**

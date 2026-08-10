@@ -154,5 +154,8 @@ the memory source without directly joining decoder outputs or data-bus drivers.
 selection logic. A labelled 16-bit `ACC_NOT_VALUE` inverter derives the unary
 result from the accumulator, and the second-stage `ACC_NOT_SELECT` multiplexer
 selects it only for `NOT` while passing the existing operand-or-memory result
-through by default. The next integration step is the external accumulator data
-source required by `INPUT`.
+through by default. A final labelled 16-bit `ACC_INPUT_SELECT` multiplexer now
+passes that result through normally and selects the external top-level
+`INPUT_VALUE` only for `INPUT`. Width-safe tunnels carry the selected result to
+`Datapath.DATA_IN`; the next integration step is the accumulator-validity
+control required by `INPUT`.

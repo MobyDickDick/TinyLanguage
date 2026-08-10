@@ -431,7 +431,7 @@ def _accumulator_selectors(circuit):
         if component.get("name") == "Multiplexer"
         and _attributes(component).get("width") == "16"
     ]
-    assert len(muxes) == 2
+    assert len(muxes) == 3
     return sorted(
         muxes,
         key=lambda component: int(component.get("loc").strip("()").split(",")[0]),
@@ -640,7 +640,7 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
 
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
-    mux, not_mux = _accumulator_selectors(circuit)
+    mux, not_mux, input_mux = _accumulator_selectors(circuit)
     memory_select_gate = _labelled_component(circuit, "ACC_MEMORY_SELECT")
     assert mux.get("name") == "Multiplexer"
     assert _attributes(mux).get("width") == "16"
@@ -675,7 +675,15 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
     assert (operand_reachable & mux_inputs) != (memory_reachable & mux_inputs)
     assert memory_data not in operand_reachable
     assert len(_reachable(adjacency, mux_output) & not_mux_inputs) == 1
-    assert data_in in _reachable(adjacency, not_mux_output)
+    input_mux_x, input_mux_y = (
+        int(value) for value in input_mux.get("loc").strip("()").split(",")
+    )
+    input_mux_inputs = {
+        f"({input_mux_x - 30},{input_mux_y - 10})",
+        f"({input_mux_x - 30},{input_mux_y + 10})",
+    }
+    assert len(_reachable(adjacency, not_mux_output) & input_mux_inputs) == 1
+    assert data_in in _reachable(adjacency, f"({input_mux_x},{input_mux_y})")
 
     select_output, select_inputs = _gate_ports(memory_select_gate)
     select_causes = {
@@ -709,6 +717,37 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
     assert data_nets.isdisjoint(address_outputs)
 
 
+def test_top_level_input_value_is_selected_only_for_input():
+    """Route the external 16-bit value through a dedicated final selector."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    adjacency = _electrical_adjacency(circuit)
+    _, not_mux, input_mux = _accumulator_selectors(circuit)
+    assert _attributes(input_mux).get("label") == "ACC_INPUT_SELECT"
+
+    x, y = (int(value) for value in input_mux.get("loc").strip("()").split(","))
+    inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
+    select = f"({x - 20},{y + 30})"
+    output = f"({x},{y})"
+    not_output = not_mux.get("loc")
+    input_pin = _labelled_component(circuit, "INPUT_VALUE")
+    assert _attributes(input_pin).get("width") == "16"
+
+    prior_matches = _reachable(adjacency, not_output) & inputs
+    external_matches = _reachable(adjacency, input_pin.get("loc")) & inputs
+    assert len(prior_matches) == 1
+    assert len(external_matches) == 1
+    assert prior_matches != external_matches
+    assert select in _reachable(adjacency, _control_output(root, "INPUT"))
+    assert _subcircuit_input(root, "Datapath", "DATA_IN") in _reachable(
+        adjacency, output
+    )
+    assert _control_output(root, "NOT") not in _reachable(
+        adjacency, input_pin.get("loc")
+    )
+
+
 def test_top_level_accumulator_data_bus_uses_width_safe_tunnels():
     """Do not route the 16-bit result across the one-bit clock trunk."""
 
@@ -735,7 +774,7 @@ def test_top_level_not_data_selector_uses_inverted_accumulator():
     circuit = _top_level(root)
     adjacency = _electrical_adjacency(circuit)
     inverter = _labelled_component(circuit, "ACC_NOT_VALUE")
-    _, mux = _accumulator_selectors(circuit)
+    _, mux, _ = _accumulator_selectors(circuit)
     assert inverter.get("name") == "NOT Gate"
     assert _attributes(inverter).get("width") == "16"
     assert mux.get("name") == "Multiplexer"
@@ -757,7 +796,13 @@ def test_top_level_not_data_selector_uses_inverted_accumulator():
     inverted_reachable = _reachable(adjacency, inverter_output)
     assert len(inverted_reachable & mux_inputs) == 1
     assert mux_select in _reachable(adjacency, not_control)
-    assert data_in in _reachable(adjacency, f"({mux_x},{mux_y})")
+    input_mux = _accumulator_selectors(circuit)[2]
+    input_x, input_y = (
+        int(value) for value in input_mux.get("loc").strip("()").split(",")
+    )
+    input_ports = {f"({input_x - 30},{input_y - 10})", f"({input_x - 30},{input_y + 10})"}
+    assert len(_reachable(adjacency, f"({mux_x},{mux_y})") & input_ports) == 1
+    assert data_in in _reachable(adjacency, f"({input_x},{input_y})")
     assert _control_output(root, "INPUT") not in _reachable(adjacency, not_control)
 
 

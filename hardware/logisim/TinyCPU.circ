@@ -121,6 +121,30 @@
       <a name="facing" val="west"/>
       <a name="label" val="ACC_NOT_VALID_SELECT_CONTROL"/>
     </comp>
+    <comp lib="2" loc="(850,350)" name="Multiplexer"><a name="label" val="ACC_ADD_VALID_SELECT"/></comp>
+    <comp lib="2" loc="(1160,1540)" name="Multiplexer"><a name="label" val="ACC_ADD_OPERAND_VALID_SELECT"/></comp>
+    <comp lib="1" loc="(1050,1520)" name="OR Gate"><a name="inputs" val="3"/><a name="label" val="ACC_ADD_MEMORY_SELECT"/></comp>
+    <comp lib="1" loc="(1050,1620)" name="OR Gate"><a name="inputs" val="4"/><a name="label" val="ACC_ADD_SELECT"/></comp>
+    <comp lib="1" loc="(1240,1540)" name="AND Gate"><a name="inputs" val="2"/><a name="label" val="ACC_ADD_VALID"/></comp>
+    <comp lib="0" loc="(1090,1530)" name="Constant"><a name="value" val="0x1"/></comp>
+    <comp lib="0" loc="(760,560)" name="Tunnel"><a name="label" val="ADD_CONST_VALID"/></comp>
+    <comp lib="0" loc="(750,580)" name="Tunnel"><a name="label" val="ADD_ADDRESS_VALID"/></comp>
+    <comp lib="0" loc="(740,600)" name="Tunnel"><a name="label" val="ADD_AR_VALID"/></comp>
+    <comp lib="0" loc="(730,620)" name="Tunnel"><a name="label" val="ADD_OFFSET_VALID"/></comp>
+    <comp lib="0" loc="(1000,1590)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ADD_CONST_VALID"/></comp>
+    <comp lib="0" loc="(1000,1610)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ADD_ADDRESS_VALID"/></comp>
+    <comp lib="0" loc="(1000,1630)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ADD_AR_VALID"/></comp>
+    <comp lib="0" loc="(1000,1650)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ADD_OFFSET_VALID"/></comp>
+    <comp lib="0" loc="(1000,1500)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ADD_ADDRESS_VALID"/></comp>
+    <comp lib="0" loc="(1000,1520)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ADD_AR_VALID"/></comp>
+    <comp lib="0" loc="(1000,1540)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ADD_OFFSET_VALID"/></comp>
+    <comp lib="0" loc="(1090,1550)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ADD_MEMORY_VALID"/></comp>
+    <comp lib="0" loc="(360,360)" name="Tunnel"><a name="label" val="ADD_MEMORY_VALID"/></comp>
+    <comp lib="0" loc="(1190,1530)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ACC_CURRENT_VALID"/></comp>
+    <comp lib="0" loc="(830,370)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ADD_SELECT_RESULT"/></comp>
+    <comp lib="0" loc="(1080,1620)" name="Tunnel"><a name="facing" val="west"/><a name="label" val="ADD_SELECT_RESULT"/></comp>
+    <comp lib="0" loc="(820,360)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ADD_VALID_RESULT"/></comp>
+    <comp lib="0" loc="(1270,1540)" name="Tunnel"><a name="facing" val="west"/><a name="label" val="ADD_VALID_RESULT"/></comp>
     <comp lib="2" loc="(920,260)" name="Multiplexer">
       <a name="width" val="16"/>
     </comp>
@@ -210,7 +234,10 @@
     <wire from="(650,350)" to="(700,350)"/>
     <wire from="(700,340)" to="(700,350)"/>
     <wire from="(700,340)" to="(740,340)"/>
-    <wire from="(770,350)" to="(890,350)"/>
+    <wire from="(770,350)" to="(800,350)"/>
+    <wire from="(800,340)" to="(800,350)"/>
+    <wire from="(800,340)" to="(820,340)"/>
+    <wire from="(850,350)" to="(890,350)"/>
     <wire from="(650,480)" to="(800,480)"/>
     <wire from="(650,500)" to="(790,500)"/>
     <wire from="(650,520)" to="(780,520)"/>
@@ -328,6 +355,15 @@
     <wire from="(970,130)" to="(970,360)"/>
     <wire from="(970,130)" to="(990,130)"/>
     <wire from="(990,810)" to="(1020,810)"/>
+    <wire from="(1050,1520)" to="(1140,1520)"/>
+    <wire from="(1050,1620)" to="(1080,1620)"/>
+    <wire from="(1240,1540)" to="(1270,1540)"/>
+    <wire from="(1140,1520)" to="(1140,1530)"/>
+    <wire from="(1090,1530)" to="(1130,1530)"/>
+    <wire from="(1090,1550)" to="(1130,1550)"/>
+    <wire from="(1160,1540)" to="(1180,1540)"/>
+    <wire from="(1180,1540)" to="(1180,1550)"/>
+    <wire from="(1180,1550)" to="(1190,1550)"/>
   </circuit>
   <circuit name="Datapath">
     <a name="appearance" val="logisim_evolution"/>

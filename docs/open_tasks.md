@@ -7,6 +7,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-10)
 
+- [x] **Propagate TinyCPU `ADD_*` validity to the accumulator**
+  (Owner: TinyCPU/Hardware)
+  - Success: require a valid accumulator and a valid selected operand for all
+    four `ADD_*` addressing modes, while preserving the established load,
+    `NOT`, and final `INPUT` validity priorities.
+  - Result: `ACC_ADD_OPERAND_VALID_SELECT` chooses a valid immediate or
+    `Memory.VALID_OUT`; `ACC_ADD_VALID` combines it with
+    `Datapath.ACC_VALID_OUT`. `ACC_ADD_VALID_SELECT` applies that result only
+    for the four independently routed `ADD_*` controls.
+  - Follow-up: integrate the `SUB_*` result data and validity as the next
+    explicitly documented binary family.
+
+## Next documented work package (completed 2026-08-10)
+
 - [x] **Propagate TinyCPU `NOT` validity to the accumulator**
   (Owner: TinyCPU/Hardware)
   - Success: select the accumulator's current valid bit for `Datapath.VALID_IN`

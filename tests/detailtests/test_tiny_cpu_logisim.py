@@ -440,8 +440,9 @@ def _accumulator_validity_selectors(circuit):
         for component in circuit.findall("comp")
         if component.get("name") == "Multiplexer"
         and _attributes(component).get("width", "1") == "1"
+        and int(component.get("loc").strip("()").split(",")[0]) < 1000
     ]
-    assert len(muxes) == 3
+    assert len(muxes) == 4
     return sorted(
         muxes,
         key=lambda component: int(component.get("loc").strip("()").split(",")[0]),
@@ -760,7 +761,7 @@ def test_top_level_input_validity_is_selected_only_for_input():
 
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
-    _, _, selector = _accumulator_validity_selectors(circuit)
+    _, _, _, selector = _accumulator_validity_selectors(circuit)
     assert selector.get("name") == "Multiplexer"
     assert _attributes(selector).get("width", "1") == "1"
 
@@ -769,12 +770,12 @@ def test_top_level_input_validity_is_selected_only_for_input():
     select = f"({x - 20},{y + 20})"
     output = f"({x},{y})"
     input_valid = _labelled_component(circuit, "INPUT_VALID")
-    memory_selector, not_selector, _ = _accumulator_validity_selectors(circuit)
+    memory_selector, not_selector, add_selector, _ = _accumulator_validity_selectors(circuit)
     adjacency = _electrical_adjacency(
         circuit, inputs | {select, output, input_valid.get("loc")}
     )
 
-    default_matches = _reachable(adjacency, not_selector.get("loc")) & inputs
+    default_matches = _reachable(adjacency, add_selector.get("loc")) & inputs
     external_matches = _reachable(adjacency, input_valid.get("loc")) & inputs
     assert len(default_matches) == len(external_matches) == 1
     assert default_matches != external_matches
@@ -792,7 +793,7 @@ def test_top_level_memory_validity_is_selected_for_memory_loads():
 
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
-    selector, not_selector, input_selector = _accumulator_validity_selectors(circuit)
+    selector, not_selector, add_selector, input_selector = _accumulator_validity_selectors(circuit)
     assert selector.get("name") == "Multiplexer"
     assert _attributes(selector).get("width", "1") == "1"
 
@@ -844,7 +845,7 @@ def test_top_level_not_propagates_accumulator_validity():
 
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
-    memory_selector, selector, input_selector = _accumulator_validity_selectors(
+    memory_selector, selector, add_selector, input_selector = _accumulator_validity_selectors(
         circuit
     )
     x, y = (int(value) for value in selector.get("loc").strip("()").split(","))
@@ -867,11 +868,47 @@ def test_top_level_not_propagates_accumulator_validity():
         f"({input_x - 30},{input_y - 10})",
         f"({input_x - 30},{input_y + 10})",
     }
-    assert len(_reachable(adjacency, output) & input_selector_inputs) == 1
+    add_x, add_y = (int(value) for value in add_selector.get("loc").strip("()").split(","))
+    add_inputs = {f"({add_x - 30},{add_y - 10})", f"({add_x - 30},{add_y + 10})"}
+    assert len(_reachable(adjacency, output) & add_inputs) == 1
+    assert len(_reachable(adjacency, add_selector.get("loc")) & input_selector_inputs) == 1
     assert _subcircuit_input(root, "Datapath", "VALID_IN") in _reachable(
         adjacency, input_selector.get("loc")
     )
 
+
+def test_top_level_add_propagates_both_operand_validities():
+    """ADD is valid only when the accumulator and selected operand are valid."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    adjacency = _electrical_adjacency(circuit)
+    memory_gate = _labelled_component(circuit, "ACC_ADD_MEMORY_SELECT")
+    family_gate = _labelled_component(circuit, "ACC_ADD_SELECT")
+    operand_selector = _labelled_component(circuit, "ACC_ADD_OPERAND_VALID_SELECT")
+    valid_gate = _labelled_component(circuit, "ACC_ADD_VALID")
+    _, memory_inputs = _gate_ports(memory_gate)
+    _, family_inputs = _gate_ports(family_gate)
+
+    controls = {name: _control_output(root, name) for name in (
+        "ADD_CONST", "ADD_ADDRESS", "ADD_ADDRESS_REGISTER",
+        "ADD_ADDRESS_REGISTER_PLUS_OFFSET",
+    )}
+    for name, source in controls.items():
+        reachable = _reachable(adjacency, source)
+        assert len(reachable & family_inputs) == 1
+        if name != "ADD_CONST":
+            assert len(reachable & memory_inputs) == 1
+
+    mux_x, mux_y = (int(value) for value in operand_selector.get("loc").strip("()").split(","))
+    mux_inputs = {f"({mux_x - 30},{mux_y - 10})", f"({mux_x - 30},{mux_y + 10})"}
+    assert len(_reachable(adjacency, _subcircuit_output(root, "Memory", "VALID_OUT")) & mux_inputs) == 1
+    gate_output, gate_inputs = _gate_ports(valid_gate)
+    assert len(_reachable(adjacency, operand_selector.get("loc")) & gate_inputs) == 1
+    assert len(_reachable(adjacency, _subcircuit_output(root, "Datapath", "ACC_VALID_OUT")) & gate_inputs) == 1
+    _, _, add_selector, _ = _accumulator_validity_selectors(circuit)
+    add_x, add_y = (int(value) for value in add_selector.get("loc").strip("()").split(","))
+    assert len(_reachable(adjacency, gate_output) & {f"({add_x - 30},{add_y - 10})", f"({add_x - 30},{add_y + 10})"}) == 1
 
 def test_top_level_uses_the_corrected_direct_data_routes():
     """Do not reintroduce the obsolete tunnel endpoints from the old drawing."""

@@ -7,6 +7,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-10)
 
+- [x] **Propagate TinyCPU `NOT` validity to the accumulator**
+  (Owner: TinyCPU/Hardware)
+  - Success: select the accumulator's current valid bit for `Datapath.VALID_IN`
+    while the unary `NOT` result is selected, without changing the established
+    load or `INPUT` validity priorities.
+  - Result: `ACC_NOT_VALID_SELECT` sits between the memory-validity and input-
+    validity stages. Its independent `NOT` control selects
+    `Datapath.ACC_VALID_OUT`; otherwise it preserves the immediate-or-memory
+    validity. `INPUT_VALID` remains the final override.
+  - Follow-up: integrate binary accumulator-result validity, beginning with one
+    explicitly documented instruction family and its operand-validity rules.
+
+## Next documented work package (completed 2026-08-10)
+
 - [x] **Propagate TinyCPU memory validity to the accumulator**
   (Owner: TinyCPU/Hardware)
   - Success: select `Memory.VALID_OUT` for `Datapath.VALID_IN` whenever the

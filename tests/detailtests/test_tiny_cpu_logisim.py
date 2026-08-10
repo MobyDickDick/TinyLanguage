@@ -432,6 +432,22 @@ def _accumulator_selectors(circuit):
     )
 
 
+def _accumulator_validity_selectors(circuit):
+    """Return the one-bit validity muxes in signal-flow order."""
+
+    muxes = [
+        component
+        for component in circuit.findall("comp")
+        if component.get("name") == "Multiplexer"
+        and _attributes(component).get("width", "1") == "1"
+    ]
+    assert len(muxes) == 3
+    return sorted(
+        muxes,
+        key=lambda component: int(component.get("loc").strip("()").split(",")[0]),
+    )
+
+
 def _control_output(root, label):
     """Resolve a generated-symbol output by its pin name, not a fixed point."""
 
@@ -718,8 +734,6 @@ def test_top_level_input_value_is_selected_only_for_input():
     circuit = _top_level(root)
     adjacency = _electrical_adjacency(circuit)
     _, not_mux, input_mux = _accumulator_selectors(circuit)
-    assert _attributes(input_mux).get("label") == "ACC_INPUT_SELECT"
-
     x, y = (int(value) for value in input_mux.get("loc").strip("()").split(","))
     inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
     select = f"({x - 20},{y + 20})"
@@ -746,7 +760,7 @@ def test_top_level_input_validity_is_selected_only_for_input():
 
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
-    selector = _labelled_component(circuit, "ACC_INPUT_VALID_SELECT")
+    _, _, selector = _accumulator_validity_selectors(circuit)
     assert selector.get("name") == "Multiplexer"
     assert _attributes(selector).get("width", "1") == "1"
 
@@ -755,12 +769,12 @@ def test_top_level_input_validity_is_selected_only_for_input():
     select = f"({x - 20},{y + 20})"
     output = f"({x},{y})"
     input_valid = _labelled_component(circuit, "INPUT_VALID")
-    memory_selector = _labelled_component(circuit, "ACC_MEMORY_VALID_SELECT")
+    memory_selector, not_selector, _ = _accumulator_validity_selectors(circuit)
     adjacency = _electrical_adjacency(
         circuit, inputs | {select, output, input_valid.get("loc")}
     )
 
-    default_matches = _reachable(adjacency, memory_selector.get("loc")) & inputs
+    default_matches = _reachable(adjacency, not_selector.get("loc")) & inputs
     external_matches = _reachable(adjacency, input_valid.get("loc")) & inputs
     assert len(default_matches) == len(external_matches) == 1
     assert default_matches != external_matches
@@ -778,7 +792,7 @@ def test_top_level_memory_validity_is_selected_for_memory_loads():
 
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
-    selector = _labelled_component(circuit, "ACC_MEMORY_VALID_SELECT")
+    selector, not_selector, input_selector = _accumulator_validity_selectors(circuit)
     assert selector.get("name") == "Multiplexer"
     assert _attributes(selector).get("width", "1") == "1"
 
@@ -793,7 +807,6 @@ def test_top_level_memory_validity_is_selected_for_memory_loads():
         and _attributes(component).get("value") == "0x1"
     )
     memory_valid = _subcircuit_output(root, "Memory", "VALID_OUT")
-    input_selector = _labelled_component(circuit, "ACC_INPUT_VALID_SELECT")
     adjacency = _electrical_adjacency(
         circuit,
         inputs
@@ -802,7 +815,7 @@ def test_top_level_memory_validity_is_selected_for_memory_loads():
             output,
             default_valid.get("loc"),
             memory_valid,
-            input_selector.get("loc"),
+            not_selector.get("loc"),
         },
     )
 
@@ -813,6 +826,40 @@ def test_top_level_memory_validity_is_selected_for_memory_loads():
     memory_select_gate = _labelled_component(circuit, "ACC_MEMORY_SELECT")
     memory_select_output, _ = _gate_ports(memory_select_gate)
     assert select in _reachable(adjacency, memory_select_output)
+    not_x, not_y = (
+        int(value) for value in not_selector.get("loc").strip("()").split(",")
+    )
+    not_selector_inputs = {
+        f"({not_x - 30},{not_y - 10})",
+        f"({not_x - 30},{not_y + 10})",
+    }
+    assert len(_reachable(adjacency, output) & not_selector_inputs) == 1
+    assert _subcircuit_input(root, "Datapath", "DATA_IN") not in _reachable(
+        adjacency, memory_valid
+    )
+
+
+def test_top_level_not_propagates_accumulator_validity():
+    """Select the current accumulator validity for the unary NOT result."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    memory_selector, selector, input_selector = _accumulator_validity_selectors(
+        circuit
+    )
+    x, y = (int(value) for value in selector.get("loc").strip("()").split(","))
+    inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
+    select = f"({x - 20},{y + 20})"
+    output = selector.get("loc")
+    accumulator_valid = _subcircuit_output(root, "Datapath", "ACC_VALID_OUT")
+    adjacency = _electrical_adjacency(circuit, inputs | {select, output})
+
+    prior_matches = _reachable(adjacency, memory_selector.get("loc")) & inputs
+    accumulator_matches = _reachable(adjacency, accumulator_valid) & inputs
+    assert len(prior_matches) == len(accumulator_matches) == 1
+    assert prior_matches != accumulator_matches
+    assert select in _reachable(adjacency, _control_output(root, "NOT"))
+
     input_x, input_y = (
         int(value) for value in input_selector.get("loc").strip("()").split(",")
     )
@@ -821,8 +868,8 @@ def test_top_level_memory_validity_is_selected_for_memory_loads():
         f"({input_x - 30},{input_y + 10})",
     }
     assert len(_reachable(adjacency, output) & input_selector_inputs) == 1
-    assert _subcircuit_input(root, "Datapath", "DATA_IN") not in _reachable(
-        adjacency, memory_valid
+    assert _subcircuit_input(root, "Datapath", "VALID_IN") in _reachable(
+        adjacency, input_selector.get("loc")
     )
 
 

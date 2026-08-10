@@ -163,8 +163,11 @@ reaches `Datapath.VALID_IN` through the labelled one-bit
 `ACC_INPUT_VALID_SELECT` multiplexer only while `INPUT` is active. Before that
 final override, `ACC_MEMORY_VALID_SELECT` mirrors the accumulator data
 selection: immediate operands supply a valid constant, while all three
-memory-backed load modes propagate `Memory.VALID_OUT`. The next validity work
-integrates the arithmetic and logic instruction families. Nach
+memory-backed load modes propagate `Memory.VALID_OUT`. A following
+`ACC_NOT_VALID_SELECT` stage propagates `Datapath.ACC_VALID_OUT` for `NOT`,
+because the unary result is valid exactly when its accumulator input is valid;
+the independent `INPUT` stage retains final priority. The next validity work
+integrates the binary arithmetic and logic instruction families. Nach
 der erneuten manuellen Korrektur gelten die
 verschobenen Symbole und direkten Leitungen der eingecheckten Übersichtsseite
 als neue Referenz. Die Strukturtests leiten die Eingangsseite der automatisch

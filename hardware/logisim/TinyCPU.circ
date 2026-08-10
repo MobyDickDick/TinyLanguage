@@ -142,9 +142,9 @@
     <comp lib="0" loc="(360,360)" name="Tunnel"><a name="label" val="ADD_MEMORY_VALID"/></comp>
     <comp lib="0" loc="(1190,1530)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ACC_CURRENT_VALID"/></comp>
     <comp lib="0" loc="(830,370)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ADD_SELECT_RESULT"/></comp>
-    <comp lib="0" loc="(1050,1620)" name="Tunnel"><a name="label" val="ADD_SELECT_RESULT"/></comp>
+    <comp lib="0" loc="(1080,1620)" name="Tunnel"><a name="facing" val="west"/><a name="label" val="ADD_SELECT_RESULT"/></comp>
     <comp lib="0" loc="(820,360)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ADD_VALID_RESULT"/></comp>
-    <comp lib="0" loc="(1240,1540)" name="Tunnel"><a name="label" val="ADD_VALID_RESULT"/></comp>
+    <comp lib="0" loc="(1270,1540)" name="Tunnel"><a name="facing" val="west"/><a name="label" val="ADD_VALID_RESULT"/></comp>
     <comp lib="2" loc="(920,260)" name="Multiplexer">
       <a name="width" val="16"/>
     </comp>
@@ -356,6 +356,8 @@
     <wire from="(970,130)" to="(990,130)"/>
     <wire from="(990,810)" to="(1020,810)"/>
     <wire from="(1050,1520)" to="(1140,1520)"/>
+    <wire from="(1050,1620)" to="(1080,1620)"/>
+    <wire from="(1240,1540)" to="(1270,1540)"/>
     <wire from="(1140,1520)" to="(1140,1530)"/>
     <wire from="(1090,1530)" to="(1130,1530)"/>
     <wire from="(1090,1550)" to="(1130,1550)"/>

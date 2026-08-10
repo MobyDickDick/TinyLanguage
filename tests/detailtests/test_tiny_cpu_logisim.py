@@ -741,6 +741,46 @@ def test_top_level_input_value_is_selected_only_for_input():
     )
 
 
+def test_top_level_input_validity_is_selected_only_for_input():
+    """Propagate external validity only while INPUT writes the accumulator."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    selector = _labelled_component(circuit, "ACC_INPUT_VALID_SELECT")
+    assert selector.get("name") == "Multiplexer"
+    assert _attributes(selector).get("width", "1") == "1"
+
+    x, y = (int(value) for value in selector.get("loc").strip("()").split(","))
+    inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
+    select = f"({x - 20},{y + 20})"
+    output = f"({x},{y})"
+    input_valid = _labelled_component(circuit, "INPUT_VALID")
+    default_valid = next(
+        component
+        for component in circuit.findall("comp")
+        if component.get("name") == "Constant"
+        and component.get("loc") in _reachable(
+            _electrical_adjacency(circuit, inputs), min(inputs)
+        )
+    )
+    adjacency = _electrical_adjacency(
+        circuit, inputs | {select, output, input_valid.get("loc")}
+    )
+
+    default_matches = _reachable(adjacency, default_valid.get("loc")) & inputs
+    external_matches = _reachable(adjacency, input_valid.get("loc")) & inputs
+    assert _attributes(default_valid).get("value") == "0x1"
+    assert len(default_matches) == len(external_matches) == 1
+    assert default_matches != external_matches
+    assert select in _reachable(adjacency, _control_output(root, "INPUT"))
+    assert _subcircuit_input(root, "Datapath", "VALID_IN") in _reachable(
+        adjacency, output
+    )
+    assert _subcircuit_input(root, "Datapath", "DATA_IN") not in _reachable(
+        adjacency, input_valid.get("loc")
+    )
+
+
 def test_top_level_uses_the_corrected_direct_data_routes():
     """Do not reintroduce the obsolete tunnel endpoints from the old drawing."""
 

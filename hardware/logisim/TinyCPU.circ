@@ -92,6 +92,13 @@
       <a name="label" val="ACC_DATA_SELECT"/>
       <a name="width" val="16"/>
     </comp>
+    <comp lib="0" loc="(860,360)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="INPUT_VALID"/>
+    </comp>
+    <comp lib="0" loc="(860,340)" name="Constant">
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="2" loc="(620,250)" name="Multiplexer">
       <a name="label" val="ACC_NOT_SELECT"/>
       <a name="width" val="16"/>
@@ -99,6 +106,9 @@
     <comp lib="2" loc="(920,260)" name="Multiplexer">
       <a name="label" val="ACC_INPUT_SELECT"/>
       <a name="width" val="16"/>
+    </comp>
+    <comp lib="2" loc="(920,350)" name="Multiplexer">
+      <a name="label" val="ACC_INPUT_VALID_SELECT"/>
     </comp>
     <comp lib="9" loc="(320,30)" name="Text">
       <a name="text" val="TinyCPU integration: one clock net drives all stateful blocks"/>
@@ -276,16 +286,22 @@
     <wire from="(820,70)" to="(1330,70)"/>
     <wire from="(820,70)" to="(820,150)"/>
     <wire from="(860,270)" to="(890,270)"/>
+    <wire from="(860,340)" to="(890,340)"/>
+    <wire from="(860,360)" to="(890,360)"/>
     <wire from="(860,790)" to="(940,790)"/>
     <wire from="(900,1140)" to="(1270,1140)"/>
     <wire from="(900,280)" to="(1280,280)"/>
     <wire from="(900,310)" to="(1270,310)"/>
+    <wire from="(900,370)" to="(1280,370)"/>
     <wire from="(900,810)" to="(900,1140)"/>
     <wire from="(900,810)" to="(940,810)"/>
     <wire from="(910,1280)" to="(1280,1280)"/>
     <wire from="(910,830)" to="(910,1280)"/>
     <wire from="(910,830)" to="(940,830)"/>
     <wire from="(920,260)" to="(950,260)"/>
+    <wire from="(920,350)" to="(970,350)"/>
+    <wire from="(970,130)" to="(970,350)"/>
+    <wire from="(970,130)" to="(990,130)"/>
     <wire from="(950,90)" to="(950,260)"/>
     <wire from="(950,90)" to="(990,90)"/>
     <wire from="(990,810)" to="(1020,810)"/>

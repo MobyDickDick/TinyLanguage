@@ -202,8 +202,13 @@ fails before a project with overlapping subcircuit symbols is checked in.
   together. This two-stage arrangement keeps the family aggregator within
   Logisim's 32-input limit while accommodating non-family accumulator writes. The
   structural tests resolve the participating controls and gates by their labels
-  and then compare electrical nets. Coordinates remain a drawing detail, while
-  endpoint-on-wire junctions are still treated as Logisim connections so an
+  and then compare electrical nets. Coordinates remain a drawing detail.
+  `INPUT_VALID` independently reports whether `INPUT_VALUE` is usable. The
+  labelled one-bit `ACC_INPUT_VALID_SELECT` multiplexer forwards that bit to
+  `Datapath.VALID_IN` only for `INPUT`; its default input is the valid constant
+  for the currently integrated operand path. This validity route remains
+  electrically separate from the 16-bit accumulator data selectors.
+  Endpoint-on-wire junctions are still treated as Logisim connections so an
   accidental wired-OR cannot pass unnoticed. The labelled 16-bit
   `ACC_DATA_SELECT` multiplexer first chooses the instruction operand or memory
   data for all three memory-backed load modes. Its result feeds the default

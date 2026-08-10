@@ -14,8 +14,10 @@ archived in `docs/open_tasks_archive.md`.
     `INPUT` decoder output is active.
   - Result: `ACC_INPUT_SELECT` passes the existing operand, memory, or inverted
     accumulator result by default and selects `INPUT_VALUE` for `INPUT`. The
-    corrected clock, clear-error, accumulator-feedback, and final data-bus
-    routes are structurally verified and remain width-safe and isolated.
+    data and selection tunnels are now explicitly oriented away from their
+    attached wires: west for a wire arriving from the west, east for a wire
+    leaving toward the east. This corrects the initially reversed tunnel
+    artwork; both data tunnel pairs remain explicitly 16 bits wide.
   - Follow-up: connect the accumulator-validity control required by `INPUT`.
 
 ## Next documented work package (completed 2026-08-09)

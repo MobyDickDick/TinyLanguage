@@ -69,20 +69,22 @@
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(90,220)" name="Tunnel">
-      <a name="facing" val="east"/>
+      <a name="facing" val="west"/>
       <a name="label" val="INPUT_VALUE_NET"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(1040,270)" name="Tunnel">
+      <a name="facing" val="east"/>
       <a name="label" val="INPUT_VALUE_NET"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(1110,260)" name="Tunnel">
-      <a name="facing" val="east"/>
+      <a name="facing" val="west"/>
       <a name="label" val="ACC_DATA_BUS"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(1250,80)" name="Tunnel">
+      <a name="facing" val="east"/>
       <a name="label" val="ACC_DATA_BUS"/>
       <a name="width" val="16"/>
     </comp>
@@ -90,10 +92,11 @@
       <a name="label" val="CLEAR_ERROR_NET"/>
     </comp>
     <comp lib="0" loc="(930,1170)" name="Tunnel">
-      <a name="facing" val="east"/>
+      <a name="facing" val="west"/>
       <a name="label" val="INPUT_SELECT_NET"/>
     </comp>
     <comp lib="0" loc="(1070,290)" name="Tunnel">
+      <a name="facing" val="east"/>
       <a name="label" val="INPUT_SELECT_NET"/>
     </comp>
     <comp lib="0" loc="(80,150)" name="Pin">

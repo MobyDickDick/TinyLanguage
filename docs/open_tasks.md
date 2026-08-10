@@ -7,6 +7,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-10)
 
+- [x] **Propagate TinyCPU `INPUT` validity to the accumulator**
+  (Owner: TinyCPU/Hardware)
+  - Success: expose an independent one-bit `INPUT_VALID` top-level pin and
+    select it for `Datapath.VALID_IN` only while the `INPUT` decoder output is
+    active, without coupling the validity and 16-bit data nets.
+  - Result: the labelled `ACC_INPUT_VALID_SELECT` multiplexer normally supplies
+    the valid constant used by the currently integrated operand path and
+    selects `INPUT_VALID` for `INPUT`. Structural coverage protects both
+    sources, the shared `INPUT` selection control, the datapath destination,
+    and isolation from `Datapath.DATA_IN`.
+  - Follow-up: integrate `Memory.VALID_OUT` for memory-backed accumulator loads
+    through an explicit validity-selection stage.
+
+## Next documented work package (completed 2026-08-10)
+
 - [x] **Rebaseline TinyCPU integration checks after the corrected redraw**
   (Owner: TinyCPU/Hardware)
   - Success: treat the manually corrected component positions and direct routes

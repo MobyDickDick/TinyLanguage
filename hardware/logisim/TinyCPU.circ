@@ -67,7 +67,7 @@
       <a name="appearance" val="classic"/>
       <a name="label" val="CLK"/>
     </comp>
-    <comp lib="0" loc="(860,280)" name="Pin">
+    <comp lib="0" loc="(860,270)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="INPUT_VALUE"/>
       <a name="width" val="16"/>
@@ -89,13 +89,26 @@
       <a name="label" val="ACC_WRITE_REQUEST"/>
     </comp>
     <comp lib="2" loc="(470,240)" name="Multiplexer">
+      <a name="label" val="ACC_DATA_SELECT"/>
       <a name="width" val="16"/>
     </comp>
+    <comp lib="0" loc="(860,360)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="INPUT_VALID"/>
+    </comp>
+    <comp lib="0" loc="(860,340)" name="Constant">
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="2" loc="(620,250)" name="Multiplexer">
+      <a name="label" val="ACC_NOT_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(920,260)" name="Multiplexer">
+      <a name="label" val="ACC_INPUT_SELECT"/>
       <a name="width" val="16"/>
+    </comp>
+    <comp lib="2" loc="(920,350)" name="Multiplexer">
+      <a name="label" val="ACC_INPUT_VALID_SELECT"/>
     </comp>
     <comp lib="9" loc="(320,30)" name="Text">
       <a name="text" val="TinyCPU integration: one clock net drives all stateful blocks"/>
@@ -132,6 +145,8 @@
     <wire from="(1340,220)" to="(1530,220)"/>
     <wire from="(1350,80)" to="(1350,1260)"/>
     <wire from="(1350,80)" to="(1530,80)"/>
+    <wire from="(210,360)" to="(210,400)"/>
+    <wire from="(210,400)" to="(220,400)"/>
     <wire from="(340,150)" to="(350,150)"/>
     <wire from="(340,260)" to="(430,260)"/>
     <wire from="(370,130)" to="(400,130)"/>
@@ -155,7 +170,7 @@
     <wire from="(580,260)" to="(580,290)"/>
     <wire from="(580,260)" to="(590,260)"/>
     <wire from="(600,270)" to="(600,310)"/>
-    <wire from="(600,310)" to="(1270,310)"/>
+    <wire from="(600,310)" to="(900,310)"/>
     <wire from="(620,250)" to="(890,250)"/>
     <wire from="(650,1000)" to="(750,1000)"/>
     <wire from="(650,1020)" to="(760,1020)"/>
@@ -270,18 +285,23 @@
     <wire from="(820,150)" to="(990,150)"/>
     <wire from="(820,70)" to="(1330,70)"/>
     <wire from="(820,70)" to="(820,150)"/>
-    <wire from="(860,280)" to="(870,280)"/>
+    <wire from="(860,270)" to="(890,270)"/>
+    <wire from="(860,340)" to="(890,340)"/>
+    <wire from="(860,360)" to="(890,360)"/>
     <wire from="(860,790)" to="(940,790)"/>
-    <wire from="(870,270)" to="(870,280)"/>
-    <wire from="(870,270)" to="(890,270)"/>
     <wire from="(900,1140)" to="(1270,1140)"/>
     <wire from="(900,280)" to="(1280,280)"/>
+    <wire from="(900,310)" to="(1270,310)"/>
+    <wire from="(900,370)" to="(1280,370)"/>
     <wire from="(900,810)" to="(900,1140)"/>
     <wire from="(900,810)" to="(940,810)"/>
     <wire from="(910,1280)" to="(1280,1280)"/>
     <wire from="(910,830)" to="(910,1280)"/>
     <wire from="(910,830)" to="(940,830)"/>
     <wire from="(920,260)" to="(950,260)"/>
+    <wire from="(920,350)" to="(970,350)"/>
+    <wire from="(970,130)" to="(970,350)"/>
+    <wire from="(970,130)" to="(990,130)"/>
     <wire from="(950,90)" to="(950,260)"/>
     <wire from="(950,90)" to="(990,90)"/>
     <wire from="(990,810)" to="(1020,810)"/>

@@ -177,7 +177,7 @@ def test_top_level_opcode_reaches_decode_controls_only():
         for component in circuit.findall("comp")
         if component.get("name") == "FetchDecodeControls"
     ]
-    assert [component.get("loc") for component in controls] == ["(650,370)"]
+    assert [component.get("loc") for component in controls] == ["(650,480)"]
 
     adjacency = {}
     for wire in circuit.findall("wire"):
@@ -206,7 +206,7 @@ def test_top_level_opcode_reaches_decode_controls_only():
             if endpoint not in decoder_side:
                 decoder_side.add(endpoint)
                 pending.append(endpoint)
-    assert "(430,370)" in decoder_side
+    assert "(430,480)" in decoder_side
     splitter = next(
         component
         for component in circuit.findall("comp")
@@ -228,14 +228,8 @@ def test_top_level_clear_error_reaches_error_flags_only():
         item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
     )
     clear_source = _control_output(root, "CLEAR_ERROR")
-    clear_tunnels = [
-        component.get("loc")
-        for component in circuit.findall("comp")
-        if component.get("name") == "Tunnel"
-        and _attributes(component).get("label") == "CLEAR_ERROR_NET"
-    ]
-    assert len(clear_tunnels) == 2
-    adjacency = _electrical_adjacency(circuit, {clear_source, *clear_tunnels})
+    clear_target = _subcircuit_input(root, "ErrorFlags", "CLEAR_ERROR")
+    adjacency = _electrical_adjacency(circuit, {clear_source, clear_target})
     reachable = {clear_source}
     pending = list(reachable)
     while pending:
@@ -244,7 +238,7 @@ def test_top_level_clear_error_reaches_error_flags_only():
                 reachable.add(endpoint)
                 pending.append(endpoint)
 
-    assert set(clear_tunnels) <= reachable
+    assert clear_target in reachable
     forbidden = {
         component.get("loc")
         for component in circuit.findall("comp")
@@ -271,8 +265,8 @@ def test_top_level_set_ovf_reaches_error_flags_only():
 
     # SET_OVF is output 46 on the automatic FetchDecodeControls symbol; the
     # matching ErrorFlags input follows CLK and CLEAR_ERROR on its symbol.
-    set_ovf_source = "(650,1270)"
-    set_ovf_target = "(1350,120)"
+    set_ovf_source = "(650,1380)"
+    set_ovf_target = "(1530,120)"
     reachable = {set_ovf_source}
     pending = list(reachable)
     while pending:
@@ -308,8 +302,8 @@ def test_top_level_set_div0_reaches_error_flags_only():
         adjacency.setdefault(end, set()).add(start)
 
     # SET_DIV0 immediately follows SET_OVF on both automatic symbols.
-    set_div0_source = "(650,1290)"
-    set_div0_target = "(1350,140)"
+    set_div0_source = "(650,1400)"
+    set_div0_target = "(1530,140)"
     reachable = {set_div0_source}
     pending = list(reachable)
     while pending:
@@ -336,10 +330,10 @@ def test_top_level_set_div0_reaches_error_flags_only():
 @pytest.mark.parametrize(
     ("name", "source", "target"),
     [
-        ("SET_ADDR", "(650,1310)", "(1350,160)"),
-        ("SET_INV", "(650,1330)", "(1350,180)"),
-        ("SET_ILL", "(650,1350)", "(1350,200)"),
-        ("SET_INPUT", "(650,1370)", "(1350,220)"),
+        ("SET_ADDR", "(650,1420)", "(1530,160)"),
+        ("SET_INV", "(650,1440)", "(1530,180)"),
+        ("SET_ILL", "(650,1460)", "(1530,200)"),
+        ("SET_INPUT", "(650,1480)", "(1530,220)"),
     ],
 )
 def test_remaining_error_controls_reach_matching_error_flags_only(
@@ -523,7 +517,7 @@ def _subcircuit_input(root, circuit_name, pin_label):
         if component.get("name") == circuit_name
     )
     x, y = (int(value) for value in instance.get("loc").strip("()").split(","))
-    return f"({x + 70},{y - 10 + 20 * index})"
+    return f"({x - 220},{y + 20 * index})"
 
 
 def _subcircuit_output(root, circuit_name, pin_label):
@@ -649,7 +643,7 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
     x, y = (int(value) for value in mux.get("loc").strip("()").split(","))
     mux_output = f"({x},{y})"
     mux_inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
-    mux_select = f"({x - 20},{y + 30})"
+    mux_select = f"({x - 20},{y + 20})"
     operand = _instruction_field_output(root, range(16))
     memory_data = _subcircuit_output(root, "Memory", "DATA_OUT")
     data_in = _subcircuit_input(root, "Datapath", "DATA_IN")
@@ -728,22 +722,11 @@ def test_top_level_input_value_is_selected_only_for_input():
 
     x, y = (int(value) for value in input_mux.get("loc").strip("()").split(","))
     inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
-    select = f"({x - 20},{y + 30})"
+    select = f"({x - 20},{y + 20})"
     output = f"({x},{y})"
     not_output = not_mux.get("loc")
     input_pin = _labelled_component(circuit, "INPUT_VALUE")
     assert _attributes(input_pin).get("width") == "16"
-    input_tunnels = [
-        component
-        for component in circuit.findall("comp")
-        if component.get("name") == "Tunnel"
-        and _attributes(component).get("label") == "INPUT_VALUE_NET"
-    ]
-    assert len(input_tunnels) == 2
-    assert {_attributes(component).get("width") for component in input_tunnels} == {
-        "16"
-    }
-
     prior_matches = _reachable(adjacency, not_output) & inputs
     external_matches = _reachable(adjacency, input_pin.get("loc")) & inputs
     assert len(prior_matches) == 1
@@ -758,48 +741,29 @@ def test_top_level_input_value_is_selected_only_for_input():
     )
 
 
-def test_top_level_data_tunnels_face_away_from_their_attached_wires():
-    """Keep west/east tunnel artwork from covering the data-path wiring."""
+def test_top_level_uses_the_corrected_direct_data_routes():
+    """Do not reintroduce the obsolete tunnel endpoints from the old drawing."""
 
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
-    expected = {
-        ("INPUT_VALUE_NET", "(90,220)"): "west",
-        ("INPUT_VALUE_NET", "(1040,270)"): "east",
-        ("ACC_DATA_BUS", "(1110,260)"): "west",
-        ("ACC_DATA_BUS", "(1250,80)"): "east",
-        ("INPUT_SELECT_NET", "(930,1170)"): "west",
-        ("INPUT_SELECT_NET", "(1070,290)"): "east",
-    }
+    obsolete_labels = {"INPUT_VALUE_NET", "ACC_DATA_BUS", "INPUT_SELECT_NET"}
     actual = {
-        (_attributes(component).get("label"), component.get("loc")): _attributes(
-            component
-        ).get("facing", "west")
+        _attributes(component).get("label")
         for component in circuit.findall("comp")
         if component.get("name") == "Tunnel"
-        and (_attributes(component).get("label"), component.get("loc")) in expected
     }
+    assert actual.isdisjoint(obsolete_labels)
 
-    assert actual == expected
 
-
-def test_top_level_accumulator_data_bus_uses_width_safe_tunnels():
-    """Do not route the 16-bit result across the one-bit clock trunk."""
+def test_top_level_accumulator_data_bus_reaches_the_corrected_terminal():
+    """Follow the hand-corrected direct route to the visible data terminal."""
 
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
-    tunnels = [
-        component
-        for component in circuit.findall("comp")
-        if component.get("name") == "Tunnel"
-        and _attributes(component).get("label") == "ACC_DATA_BUS"
-    ]
-
-    assert len(tunnels) == 2
-    assert {_attributes(component).get("width") for component in tunnels} == {"16"}
     adjacency = _electrical_adjacency(circuit)
     data_input = _subcircuit_input(root, "Datapath", "DATA_IN")
-    assert any(data_input in _reachable(adjacency, tunnel.get("loc")) for tunnel in tunnels)
+    _, _, input_mux = _accumulator_selectors(circuit)
+    assert data_input in _reachable(adjacency, input_mux.get("loc"))
 
 
 def test_top_level_not_data_selector_uses_inverted_accumulator():
@@ -818,11 +782,11 @@ def test_top_level_not_data_selector_uses_inverted_accumulator():
     inverter_x, inverter_y = (
         int(value) for value in inverter.get("loc").strip("()").split(",")
     )
-    inverter_input = f"({inverter_x - 20},{inverter_y})"
+    inverter_input = f"({inverter_x - 30},{inverter_y})"
     inverter_output = f"({inverter_x},{inverter_y})"
     mux_x, mux_y = (int(value) for value in mux.get("loc").strip("()").split(","))
     mux_inputs = {f"({mux_x - 30},{mux_y - 10})", f"({mux_x - 30},{mux_y + 10})"}
-    mux_select = f"({mux_x - 20},{mux_y + 30})"
+    mux_select = f"({mux_x - 20},{mux_y + 20})"
     acc_out = _subcircuit_output(root, "Datapath", "ACC_OUT")
     not_control = _control_output(root, "NOT")
     data_in = _subcircuit_input(root, "Datapath", "DATA_IN")

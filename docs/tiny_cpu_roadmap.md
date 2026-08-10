@@ -158,4 +158,9 @@ through by default. A final labelled 16-bit `ACC_INPUT_SELECT` multiplexer now
 passes that result through normally and selects the external top-level
 `INPUT_VALUE` only for `INPUT`. Width-safe tunnels carry the selected result to
 `Datapath.DATA_IN`; the next integration step is the accumulator-validity
-control required by `INPUT`.
+control required by `INPUT`. Nach der erneuten manuellen Korrektur gelten die
+verschobenen Symbole und direkten Leitungen der eingecheckten Übersichtsseite
+als neue Referenz. Die Strukturtests leiten die Eingangsseite der automatisch
+erzeugten Symbole entsprechend ab und verlangen nicht länger die Tunnel und
+Koordinaten der überholten Zeichnung; die drei Akkumulator-Multiplexer behalten
+lediglich eindeutige, nicht-elektrische Bezeichner.

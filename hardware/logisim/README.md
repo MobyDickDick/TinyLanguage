@@ -209,15 +209,13 @@ fails before a project with overlapping subcircuit symbols is checked in.
   data for all three memory-backed load modes. Its result feeds the default
   input of `ACC_NOT_SELECT`; the other input receives `ACC_OUT` through the
   labelled 16-bit `ACC_NOT_VALUE` inverter, and only the independent `NOT`
-  control selects that computed value. The selected 16-bit result reaches
-  `Datapath.DATA_IN` through the paired `ACC_DATA_BUS` tunnels. A previous
-  route crossed the one-bit clock trunk twice; Logisim joined both crossings
-  electrically and consequently reported two incompatible-width errors. The
-  tunnel pair makes that data connection explicit without crossing the clock
-  net. `CLEAR_ERROR` likewise uses the paired one-bit `CLEAR_ERROR_NET`
-  tunnels: its former outer route ended at the same generated-symbol terminal
-  as `Datapath.DATA_IN` and therefore joined the control signal to the 16-bit
-  accumulator bus.
+  control selects that computed value. The selected 16-bit result follows the
+  direct route of the manually corrected drawing to the visible
+  `Datapath.DATA_IN` terminal. The same redraw routes `INPUT_VALUE`, the
+  `INPUT` selector and `CLEAR_ERROR` directly; the obsolete tunnel endpoints
+  are deliberately not reconstructed from inferred subcircuit coordinates.
+  Structural tests follow these checked-in routes and keep the one-bit controls
+  isolated from the 16-bit accumulator bus.
 
 Die automatisch gezeichneten Anschlüsse einer Subcircuit-Instanz werden in
 der `.circ`-Datei nicht mit ihren Pin-Namen gespeichert. Ihre sichtbaren

@@ -38,7 +38,7 @@ Fehlerflags wurde als eigener Schritt vor `RESET` ergänzt.
 | 5 | Adress-Steuerung | benannte Fetch/Decode-Ausgänge | gleichnamige Eingänge von `AddressPath` | 1 je Netz | Jedes Signal einzeln zeichnen und prüfen. |
 | 6 | Speicher-Steuerung | Fetch/Decode-Ausgänge | `Memory` | 1 je Netz | Lesen und Schreiben getrennt testen; Validitäts-RAM mitprüfen. |
 | 7 | Adressbus | `AddressPath` | `Memory` und benötigte Rückwege | laut Pinvertrag | Splitter vermeiden, solange keine Breitenumsetzung erforderlich ist. |
-| 8 | Datenbus | jeweils dokumentierter Treiber | `Datapath`/`Memory` | 16 | Der 16-Bit-Instruktionsoperand und `Memory.DATA_OUT` erreichen getrennte Eingänge von `ACC_DATA_SELECT`; `ACC_NOT_SELECT` ergänzt den invertierten Akkumulator. `ACC_INPUT_SELECT` wählt abschließend den neuen 16-Bit-Top-Level-Eingang `INPUT_VALUE` ausschließlich für `INPUT`; sein Ausgang erreicht `Datapath.DATA_IN` über zwei `ACC_DATA_BUS`-Tunnel. Niemals zwei Ausgänge direkt auf dasselbe Netz legen. |
+| 8 | Datenbus | jeweils dokumentierter Treiber | `Datapath`/`Memory` | 16 | Der 16-Bit-Instruktionsoperand und `Memory.DATA_OUT` erreichen getrennte Eingänge von `ACC_DATA_SELECT`; `ACC_NOT_SELECT` ergänzt den invertierten Akkumulator. `ACC_INPUT_SELECT` wählt abschließend den neuen 16-Bit-Top-Level-Eingang `INPUT_VALUE` ausschließlich für `INPUT`; sein Ausgang erreicht `Datapath.DATA_IN` über die direkt eingezeichnete, manuell korrigierte Route. Niemals zwei Ausgänge direkt auf dasselbe Netz legen. |
 | 9 | Status | `Datapath.ZERO`, `NEGATIVE` und Valid-Signale | `FetchDecode`/Fehlerlogik | 1 je Netz | Sprungbedingungen einzeln mit 0, negativem und positivem Wert prüfen. |
 | 10 | Fehler | Fehler-Set-Signale und `CLEAR_ERROR` | `ErrorFlags` | 1 je Netz | Sticky-Verhalten sowie Set-vor-Clear-Priorität prüfen. |
 | 11 | Halt | normale und fehlerhafte Haltquelle | Top-Level `HALTED` | 1 | Normalhalt und Fehlerhalt getrennt auslösen. |
@@ -87,7 +87,7 @@ wurden aus den XML-Positionen des Splitters, der Top-Level-Instanz und des
 Unterblatts, nicht automatisch die Anschlüsse des daraus erzeugten Symbols.
 Beim aktuellen Splitter liegt der sichtbare 16-Bit-Ausgang oberhalb seines
 Ankers; auch `Datapath.DATA_IN` liegt am automatisch erzeugten Symbol an einer
-anderen Stelle. Die manuell korrigierte Leitung in `TinyCPU.circ` ist deshalb
+anderen Stelle. Die zuletzt manuell korrigierten direkten Leitungen und Bauteilpositionen in `TinyCPU.circ` sind deshalb
 die Referenz und wird durch einen Regressionstest geschützt, der die Verbindung
 semantisch als „Instruktionsbits 15..0 verbunden mit `Datapath.DATA_IN`“ prüft.
 

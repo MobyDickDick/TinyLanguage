@@ -419,7 +419,7 @@ def _labelled_component(circuit, label):
 
 
 def _accumulator_selectors(circuit):
-    """Return the two 16-bit accumulator muxes in signal-flow order.
+    """Return the three 16-bit accumulator muxes in signal-flow order.
 
     Logisim may omit cosmetic component labels when a hand-edited project is
     saved.  The mux identity must therefore not depend on those labels alone.
@@ -733,6 +733,16 @@ def test_top_level_input_value_is_selected_only_for_input():
     not_output = not_mux.get("loc")
     input_pin = _labelled_component(circuit, "INPUT_VALUE")
     assert _attributes(input_pin).get("width") == "16"
+    input_tunnels = [
+        component
+        for component in circuit.findall("comp")
+        if component.get("name") == "Tunnel"
+        and _attributes(component).get("label") == "INPUT_VALUE_NET"
+    ]
+    assert len(input_tunnels) == 2
+    assert {_attributes(component).get("width") for component in input_tunnels} == {
+        "16"
+    }
 
     prior_matches = _reachable(adjacency, not_output) & inputs
     external_matches = _reachable(adjacency, input_pin.get("loc")) & inputs
@@ -746,6 +756,31 @@ def test_top_level_input_value_is_selected_only_for_input():
     assert _control_output(root, "NOT") not in _reachable(
         adjacency, input_pin.get("loc")
     )
+
+
+def test_top_level_data_tunnels_face_away_from_their_attached_wires():
+    """Keep west/east tunnel artwork from covering the data-path wiring."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    expected = {
+        ("INPUT_VALUE_NET", "(90,220)"): "west",
+        ("INPUT_VALUE_NET", "(1040,270)"): "east",
+        ("ACC_DATA_BUS", "(1110,260)"): "west",
+        ("ACC_DATA_BUS", "(1250,80)"): "east",
+        ("INPUT_SELECT_NET", "(930,1170)"): "west",
+        ("INPUT_SELECT_NET", "(1070,290)"): "east",
+    }
+    actual = {
+        (_attributes(component).get("label"), component.get("loc")): _attributes(
+            component
+        ).get("facing", "west")
+        for component in circuit.findall("comp")
+        if component.get("name") == "Tunnel"
+        and (_attributes(component).get("label"), component.get("loc")) in expected
+    }
+
+    assert actual == expected
 
 
 def test_top_level_accumulator_data_bus_uses_width_safe_tunnels():

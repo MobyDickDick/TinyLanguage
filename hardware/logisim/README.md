@@ -204,10 +204,13 @@ fails before a project with overlapping subcircuit symbols is checked in.
   structural tests resolve the participating controls and gates by their labels
   and then compare electrical nets. Coordinates remain a drawing detail.
   `INPUT_VALID` independently reports whether `INPUT_VALUE` is usable. The
-  labelled one-bit `ACC_INPUT_VALID_SELECT` multiplexer forwards that bit to
-  `Datapath.VALID_IN` only for `INPUT`; its default input is the valid constant
-  for the currently integrated operand path. This validity route remains
-  electrically separate from the 16-bit accumulator data selectors.
+  labelled one-bit `ACC_MEMORY_VALID_SELECT` multiplexer first chooses the
+  immediate-path valid constant or `Memory.VALID_OUT` using the same
+  `ACC_MEMORY_SELECT` control as the corresponding data selector. The labelled
+  `ACC_INPUT_VALID_SELECT` multiplexer then forwards `INPUT_VALID` to
+  `Datapath.VALID_IN` only for `INPUT` and otherwise passes the preceding
+  validity result. This validity route remains electrically separate from the
+  16-bit accumulator data selectors.
   Endpoint-on-wire junctions are still treated as Logisim connections so an
   accidental wired-OR cannot pass unnoticed. The labelled 16-bit
   `ACC_DATA_SELECT` multiplexer first chooses the instruction operand or memory

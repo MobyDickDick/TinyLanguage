@@ -7,6 +7,23 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-10)
 
+- [x] **Integrate TinyCPU `SUB_*` accumulator results and validity**
+  (Owner: TinyCPU/Hardware)
+  - Success: subtract the selected immediate or memory operand from the current
+    accumulator for all four `SUB_*` addressing modes and mark the result valid
+    only when both inputs are valid, without changing the established load,
+    `NOT`, `ADD`, or final `INPUT` priorities.
+  - Result: `ACC_SUB_OPERAND_SELECT` and `ACC_SUB_VALUE` form the 16-bit
+    accumulator-minus-operand result. `ACC_SUB_SELECT` applies it only for the
+    four independently routed `SUB_*` controls. The parallel validity path
+    selects the matching operand validity, combines it with
+    `Datapath.ACC_VALID_OUT`, and inserts the result after `ADD` and before the
+    final `INPUT` override.
+  - Follow-up: integrate the `MUL_*` result data and validity as the next
+    explicitly documented binary family.
+
+## Next documented work package (completed 2026-08-10)
+
 - [x] **Propagate TinyCPU `ADD_*` validity to the accumulator**
   (Owner: TinyCPU/Hardware)
   - Success: require a valid accumulator and a valid selected operand for all

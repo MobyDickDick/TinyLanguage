@@ -145,6 +145,48 @@
     <comp lib="0" loc="(1080,1620)" name="Tunnel"><a name="facing" val="west"/><a name="label" val="ADD_SELECT_RESULT"/></comp>
     <comp lib="0" loc="(820,360)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ADD_VALID_RESULT"/></comp>
     <comp lib="0" loc="(1270,1540)" name="Tunnel"><a name="facing" val="west"/><a name="label" val="ADD_VALID_RESULT"/></comp>
+    <comp lib="3" loc="(1260,1740)" name="Subtractor"><a name="width" val="16"/><a name="label" val="ACC_SUB_VALUE"/></comp>
+    <comp lib="2" loc="(1160,1770)" name="Multiplexer"><a name="width" val="16"/><a name="label" val="ACC_SUB_OPERAND_SELECT"/></comp>
+    <comp lib="2" loc="(1360,1740)" name="Multiplexer"><a name="width" val="16"/><a name="label" val="ACC_SUB_SELECT"/></comp>
+    <comp lib="1" loc="(1050,1750)" name="OR Gate"><a name="inputs" val="3"/><a name="label" val="ACC_SUB_MEMORY_SELECT"/></comp>
+    <comp lib="1" loc="(1050,1840)" name="OR Gate"><a name="inputs" val="4"/><a name="label" val="ACC_SUB_FAMILY_SELECT"/></comp>
+    <comp lib="2" loc="(1360,1880)" name="Multiplexer"><a name="label" val="ACC_SUB_VALID_SELECT"/></comp>
+    <comp lib="1" loc="(1260,1900)" name="AND Gate"><a name="inputs" val="2"/><a name="label" val="ACC_SUB_VALID"/></comp>
+    <comp lib="0" loc="(1050,1750)" name="Tunnel"><a name="label" val="SUB_MEMORY_SELECT_RESULT"/></comp>
+    <comp lib="0" loc="(1140,1790)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="SUB_MEMORY_SELECT_RESULT"/></comp>
+    <comp lib="0" loc="(1140,1920)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="SUB_MEMORY_SELECT_RESULT"/></comp>
+    <comp lib="0" loc="(1090,1760)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="OPERAND_DATA"/><a name="width" val="16"/></comp>
+    <comp lib="0" loc="(1090,1780)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="MEMORY_DATA"/><a name="width" val="16"/></comp>
+    <comp lib="0" loc="(400,230)" name="Tunnel"><a name="facing" val="west"/><a name="label" val="OPERAND_DATA"/><a name="width" val="16"/></comp>
+    <comp lib="0" loc="(430,250)" name="Tunnel"><a name="facing" val="west"/><a name="label" val="MEMORY_DATA"/><a name="width" val="16"/></comp>
+    <comp lib="0" loc="(1190,1730)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ACC_DATA_FOR_SUB"/><a name="width" val="16"/></comp>
+    <comp lib="0" loc="(1210,90)" name="Tunnel"><a name="facing" val="west"/><a name="label" val="ACC_DATA_FOR_SUB"/><a name="width" val="16"/></comp>
+    <comp lib="0" loc="(1330,1730)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="PRE_SUB_DATA"/><a name="width" val="16"/></comp>
+    <comp lib="0" loc="(620,250)" name="Tunnel"><a name="facing" val="west"/><a name="label" val="PRE_SUB_DATA"/><a name="width" val="16"/></comp>
+    <comp lib="0" loc="(1330,1760)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="SUB_FAMILY_SELECT"/></comp>
+    <comp lib="0" loc="(1080,1840)" name="Tunnel"><a name="facing" val="west"/><a name="label" val="SUB_FAMILY_SELECT"/></comp>
+    <comp lib="0" loc="(1360,1740)" name="Tunnel"><a name="label" val="SUB_DATA_RESULT"/><a name="width" val="16"/></comp>
+    <comp lib="0" loc="(890,250)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="SUB_DATA_RESULT"/><a name="width" val="16"/></comp>
+    <comp lib="0" loc="(1000,1810)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="SUB_CONST_CONTROL"/></comp>
+    <comp lib="0" loc="(1000,1830)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="SUB_ADDRESS_CONTROL"/></comp>
+    <comp lib="0" loc="(1000,1850)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="SUB_AR_CONTROL"/></comp>
+    <comp lib="0" loc="(1000,1870)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="SUB_OFFSET_CONTROL"/></comp>
+    <comp lib="0" loc="(720,640)" name="Tunnel"><a name="label" val="SUB_CONST_CONTROL"/></comp>
+    <comp lib="0" loc="(710,660)" name="Tunnel"><a name="label" val="SUB_ADDRESS_CONTROL"/></comp>
+    <comp lib="0" loc="(700,680)" name="Tunnel"><a name="label" val="SUB_AR_CONTROL"/></comp>
+    <comp lib="0" loc="(690,700)" name="Tunnel"><a name="label" val="SUB_OFFSET_CONTROL"/></comp>
+    <comp lib="0" loc="(1000,1730)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="SUB_ADDRESS_CONTROL"/></comp>
+    <comp lib="0" loc="(1000,1750)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="SUB_AR_CONTROL"/></comp>
+    <comp lib="0" loc="(1000,1770)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="SUB_OFFSET_CONTROL"/></comp>
+    <comp lib="0" loc="(1090,1890)" name="Constant"><a name="value" val="0x1"/></comp>
+    <comp lib="0" loc="(1090,1910)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ADD_MEMORY_VALID"/></comp>
+    <comp lib="2" loc="(1160,1900)" name="Multiplexer"><a name="label" val="ACC_SUB_OPERAND_VALID_SELECT"/></comp>
+    <comp lib="0" loc="(1190,1890)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ACC_CURRENT_VALID"/></comp>
+    <comp lib="0" loc="(1330,1870)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="ADD_STAGE_VALID"/></comp>
+    <comp lib="0" loc="(850,350)" name="Tunnel"><a name="facing" val="west"/><a name="label" val="ADD_STAGE_VALID"/></comp>
+    <comp lib="0" loc="(1330,1900)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="SUB_FAMILY_SELECT"/></comp>
+    <comp lib="0" loc="(1360,1880)" name="Tunnel"><a name="label" val="SUB_VALID_RESULT"/></comp>
+    <comp lib="0" loc="(890,350)" name="Tunnel"><a name="facing" val="east"/><a name="label" val="SUB_VALID_RESULT"/></comp>
     <comp lib="2" loc="(920,260)" name="Multiplexer">
       <a name="width" val="16"/>
     </comp>
@@ -213,7 +255,6 @@
     <wire from="(590,340)" to="(620,340)"/>
     <wire from="(600,270)" to="(600,310)"/>
     <wire from="(600,310)" to="(1270,310)"/>
-    <wire from="(620,250)" to="(890,250)"/>
     <wire from="(630,370)" to="(630,410)"/>
     <wire from="(630,410)" to="(1160,410)"/>
     <wire from="(650,1000)" to="(750,1000)"/>
@@ -237,7 +278,6 @@
     <wire from="(770,350)" to="(800,350)"/>
     <wire from="(800,340)" to="(800,350)"/>
     <wire from="(800,340)" to="(820,340)"/>
-    <wire from="(850,350)" to="(890,350)"/>
     <wire from="(650,480)" to="(800,480)"/>
     <wire from="(650,500)" to="(790,500)"/>
     <wire from="(650,520)" to="(780,520)"/>
@@ -363,6 +403,26 @@
     <wire from="(1090,1550)" to="(1130,1550)"/>
     <wire from="(1160,1540)" to="(1180,1540)"/>
     <wire from="(1180,1540)" to="(1180,1550)"/>
+    <wire from="(1210,1750)" to="(1220,1750)"/>
+    <wire from="(1330,1760)" to="(1340,1760)"/>
+    <wire from="(1330,1900)" to="(1340,1900)"/>
+    <wire from="(1090,1760)" to="(1130,1760)"/>
+    <wire from="(1090,1780)" to="(1130,1780)"/>
+    <wire from="(1160,1770)" to="(1210,1770)"/>
+    <wire from="(1210,1750)" to="(1210,1770)"/>
+    <wire from="(1190,1730)" to="(1220,1730)"/>
+    <wire from="(1260,1740)" to="(1290,1740)"/>
+    <wire from="(1290,1740)" to="(1290,1750)"/>
+    <wire from="(1290,1750)" to="(1330,1750)"/>
+    <wire from="(1050,1840)" to="(1080,1840)"/>
+    <wire from="(1090,1890)" to="(1130,1890)"/>
+    <wire from="(1090,1910)" to="(1130,1910)"/>
+    <wire from="(1160,1900)" to="(1210,1900)"/>
+    <wire from="(1190,1890)" to="(1210,1890)"/>
+    <wire from="(1210,1890)" to="(1210,1900)"/>
+    <wire from="(1260,1900)" to="(1290,1900)"/>
+    <wire from="(1290,1890)" to="(1290,1900)"/>
+    <wire from="(1290,1890)" to="(1330,1890)"/>
     <wire from="(1180,1550)" to="(1190,1550)"/>
   </circuit>
   <circuit name="Datapath">

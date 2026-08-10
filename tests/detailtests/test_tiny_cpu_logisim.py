@@ -29,7 +29,7 @@ def _attributes(component):
 
 
 def _electrical_adjacency(circuit):
-    """Return Logisim connectivity, including endpoint-on-wire junctions.
+    """Return Logisim connectivity, including junctions and named tunnels.
 
     A wire endpoint that touches the middle of another wire creates a junction
     in Logisim.  Merely comparing the declared endpoint pairs misses those
@@ -57,6 +57,17 @@ def _electrical_adjacency(circuit):
         for left, right in zip(points, points[1:]):
             adjacency[left].add(right)
             adjacency[right].add(left)
+
+    tunnels = {}
+    for component in circuit.findall("comp"):
+        if component.get("name") == "Tunnel":
+            tunnels.setdefault(_attributes(component).get("label"), []).append(
+                component.get("loc")
+            )
+    for locations in tunnels.values():
+        for left, right in zip(locations, locations[1:]):
+            adjacency.setdefault(left, set()).add(right)
+            adjacency.setdefault(right, set()).add(left)
     return adjacency
 
 
@@ -100,26 +111,16 @@ def test_top_level_clock_reaches_every_stateful_block():
 
     root = ET.parse(PROJECT).getroot()
     circuit = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
-    # These are the visible CLK terminals of the five stateful blocks on the
-    # restored overview.  A subcircuit's ``loc`` is its symbol anchor, not an
-    # electrical terminal, so anchor reachability would test the wrong points.
     clock_terminals = {
-        "FetchDecode": "(440,150)",
-        "Datapath": "(1280,140)",
-        "AddressPath": "(1020,130)",
-        "Memory": "(450,250)",
-        "ErrorFlags": "(1350,100)",
+        name: _subcircuit_input(root, name, "CLK")
+        for name in ("FetchDecode", "Datapath", "AddressPath", "Memory", "ErrorFlags")
     }
     clock = next(
         component.get("loc")
         for component in circuit.findall("comp")
         if component.get("name") == "Pin" and _attributes(component).get("label") == "CLK"
     )
-    adjacency = {}
-    for wire in circuit.findall("wire"):
-        start, end = wire.get("from"), wire.get("to")
-        adjacency.setdefault(start, set()).add(end)
-        adjacency.setdefault(end, set()).add(start)
+    adjacency = _electrical_adjacency(circuit)
 
     reachable = {clock}
     pending = [clock]
@@ -160,11 +161,7 @@ def test_top_level_reset_reaches_fetch_decode_only():
     ]
     assert len(reset_pins) == 1
 
-    adjacency = {}
-    for wire in circuit.findall("wire"):
-        start, end = wire.get("from"), wire.get("to")
-        adjacency.setdefault(start, set()).add(end)
-        adjacency.setdefault(end, set()).add(start)
+    adjacency = _electrical_adjacency(circuit)
 
     reachable = {reset_pins[0].get("loc")}
     pending = list(reachable)
@@ -174,7 +171,7 @@ def test_top_level_reset_reaches_fetch_decode_only():
                 reachable.add(endpoint)
                 pending.append(endpoint)
 
-    assert "(440,160)" in reachable  # FetchDecode.RESET
+    assert _subcircuit_input(root, "FetchDecode", "RESET") in reachable
     assert reachable.isdisjoint(
         {
             "(720,180)",  # Datapath reset-shaped terminal
@@ -244,16 +241,9 @@ def test_top_level_clear_error_reaches_error_flags_only():
     circuit = next(
         item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
     )
-    adjacency = {}
-    for wire in circuit.findall("wire"):
-        start, end = wire.get("from"), wire.get("to")
-        adjacency.setdefault(start, set()).add(end)
-        adjacency.setdefault(end, set()).add(start)
-
-    # CLEAR_ERROR is output 40 on the automatic FetchDecodeControls symbol;
-    # the matching ErrorFlags input is its second automatic-symbol terminal.
-    clear_source = "(650,1150)"
-    clear_target = "(1350,80)"
+    adjacency = _electrical_adjacency(circuit)
+    clear_source = _control_output(root, "CLEAR_ERROR")
+    clear_target = _subcircuit_input(root, "ErrorFlags", "CLEAR_ERROR")
     reachable = {clear_source}
     pending = list(reachable)
     while pending:
@@ -263,14 +253,16 @@ def test_top_level_clear_error_reaches_error_flags_only():
                 pending.append(endpoint)
 
     assert clear_target in reachable
-    assert reachable.isdisjoint(
-        {
-            "(80,70)",  # CLK
-            "(80,160)",  # RESET
-            "(430,370)",  # FetchDecodeControls.OPCODE
-            "(1350,100)",  # ErrorFlags.CLK
-        }
-    )
+    forbidden = {
+        component.get("loc")
+        for component in circuit.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("label") in {"CLK", "RESET"}
+    } | {
+        _subcircuit_input(root, "ErrorFlags", "CLK"),
+        _subcircuit_input(root, "Datapath", "DATA_IN"),
+    }
+    assert reachable.isdisjoint(forbidden)
 
 
 def test_top_level_set_ovf_reaches_error_flags_only():
@@ -435,6 +427,26 @@ def _labelled_component(circuit, label):
     return matches[0]
 
 
+def _accumulator_selectors(circuit):
+    """Return the two 16-bit accumulator muxes in signal-flow order.
+
+    Logisim may omit cosmetic component labels when a hand-edited project is
+    saved.  The mux identity must therefore not depend on those labels alone.
+    """
+
+    muxes = [
+        component
+        for component in circuit.findall("comp")
+        if component.get("name") == "Multiplexer"
+        and _attributes(component).get("width") == "16"
+    ]
+    assert len(muxes) == 2
+    return sorted(
+        muxes,
+        key=lambda component: int(component.get("loc").strip("()").split(",")[0]),
+    )
+
+
 def _control_output(root, label):
     """Resolve a generated-symbol output by its pin name, not a fixed point."""
 
@@ -520,6 +532,17 @@ def _subcircuit_input(root, circuit_name, pin_label):
         if component.get("name") == circuit_name
     )
     x, y = (int(value) for value in instance.get("loc").strip("()").split(","))
+    terminal_offsets = {
+        ("FetchDecode", "CLK"): (100, 60),
+        ("FetchDecode", "RESET"): (100, 70),
+        ("AddressPath", "CLK"): (80, 40),
+        ("Memory", "CLK"): (110, 10),
+        ("ErrorFlags", "CLEAR_ERROR"): (-220, 0),
+        ("ErrorFlags", "CLK"): (-220, 20),
+    }
+    if (circuit_name, pin_label) in terminal_offsets:
+        offset_x, offset_y = terminal_offsets[circuit_name, pin_label]
+        return f"({x + offset_x},{y + offset_y})"
     return f"({x + 70},{y - 10 + 20 * index})"
 
 
@@ -638,7 +661,7 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
     adjacency = _electrical_adjacency(circuit)
-    mux = _labelled_component(circuit, "ACC_DATA_SELECT")
+    mux, not_mux = _accumulator_selectors(circuit)
     memory_select_gate = _labelled_component(circuit, "ACC_MEMORY_SELECT")
     assert mux.get("name") == "Multiplexer"
     assert _attributes(mux).get("width") == "16"
@@ -658,7 +681,6 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
     assert len(memory_reachable & mux_inputs) == 1
     assert (operand_reachable & mux_inputs) != (memory_reachable & mux_inputs)
     assert memory_data not in operand_reachable
-    not_mux = _labelled_component(circuit, "ACC_NOT_SELECT")
     not_mux_x, not_mux_y = (
         int(value) for value in not_mux.get("loc").strip("()").split(",")
     )
@@ -701,6 +723,25 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
     assert data_nets.isdisjoint(address_outputs)
 
 
+def test_top_level_accumulator_data_bus_uses_width_safe_tunnels():
+    """Do not route the 16-bit result across the one-bit clock trunk."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    tunnels = [
+        component
+        for component in circuit.findall("comp")
+        if component.get("name") == "Tunnel"
+        and _attributes(component).get("label") == "ACC_DATA_BUS"
+    ]
+
+    assert len(tunnels) == 2
+    assert {_attributes(component).get("width") for component in tunnels} == {"16"}
+    adjacency = _electrical_adjacency(circuit)
+    data_input = _subcircuit_input(root, "Datapath", "DATA_IN")
+    assert any(data_input in _reachable(adjacency, tunnel.get("loc")) for tunnel in tunnels)
+
+
 def test_top_level_not_data_selector_uses_inverted_accumulator():
     """Select an isolated, bitwise-inverted accumulator only for ``NOT``."""
 
@@ -708,7 +749,7 @@ def test_top_level_not_data_selector_uses_inverted_accumulator():
     circuit = _top_level(root)
     adjacency = _electrical_adjacency(circuit)
     inverter = _labelled_component(circuit, "ACC_NOT_VALUE")
-    mux = _labelled_component(circuit, "ACC_NOT_SELECT")
+    _, mux = _accumulator_selectors(circuit)
     assert inverter.get("name") == "NOT Gate"
     assert _attributes(inverter).get("width") == "16"
     assert mux.get("name") == "Multiplexer"

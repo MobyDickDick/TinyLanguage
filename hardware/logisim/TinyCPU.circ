@@ -59,6 +59,10 @@
       <a name="bit9" val="0"/>
       <a name="incoming" val="22"/>
     </comp>
+    <comp lib="0" loc="(670,1150)" name="Tunnel">
+      <a name="facing" val="east"/>
+      <a name="label" val="CLEAR_ERROR_NET"/>
+    </comp>
     <comp lib="0" loc="(80,150)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="RESET"/>
@@ -89,22 +93,6 @@
     <comp lib="2" loc="(950,260)" name="Multiplexer">
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(970,260)" name="Tunnel">
-      <a name="facing" val="east"/>
-      <a name="label" val="ACC_DATA_BUS"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="0" loc="(1250,80)" name="Tunnel">
-      <a name="label" val="ACC_DATA_BUS"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="0" loc="(670,1150)" name="Tunnel">
-      <a name="facing" val="east"/>
-      <a name="label" val="CLEAR_ERROR_NET"/>
-    </comp>
-    <comp lib="0" loc="(1330,80)" name="Tunnel">
-      <a name="label" val="CLEAR_ERROR_NET"/>
-    </comp>
     <comp lib="9" loc="(320,30)" name="Text">
       <a name="text" val="TinyCPU integration: one clock net drives all stateful blocks"/>
     </comp>
@@ -116,14 +104,13 @@
     <comp loc="(940,90)" name="AddressPath"/>
     <wire from="(100,280)" to="(120,280)"/>
     <wire from="(100,70)" to="(100,280)"/>
-    <wire from="(100,70)" to="(980,70)"/>
+    <wire from="(100,70)" to="(970,70)"/>
     <wire from="(1020,360)" to="(1020,700)"/>
     <wire from="(1150,410)" to="(1160,410)"/>
     <wire from="(1160,300)" to="(1160,410)"/>
     <wire from="(1210,90)" to="(1220,90)"/>
     <wire from="(1220,90)" to="(1220,320)"/>
     <wire from="(1270,290)" to="(1270,1030)"/>
-    <wire from="(1290,100)" to="(1350,100)"/>
     <wire from="(1290,120)" to="(1290,1270)"/>
     <wire from="(1290,120)" to="(1350,120)"/>
     <wire from="(1300,140)" to="(1300,1290)"/>
@@ -132,8 +119,10 @@
     <wire from="(1310,160)" to="(1350,160)"/>
     <wire from="(1320,180)" to="(1320,1330)"/>
     <wire from="(1320,180)" to="(1350,180)"/>
+    <wire from="(1330,100)" to="(1350,100)"/>
     <wire from="(1330,200)" to="(1330,1350)"/>
     <wire from="(1330,200)" to="(1350,200)"/>
+    <wire from="(1330,70)" to="(1330,100)"/>
     <wire from="(1340,220)" to="(1340,1370)"/>
     <wire from="(1340,220)" to="(1350,220)"/>
     <wire from="(340,150)" to="(350,150)"/>
@@ -273,22 +262,12 @@
     <wire from="(910,720)" to="(940,720)"/>
     <wire from="(930,280)" to="(930,290)"/>
     <wire from="(930,290)" to="(1270,290)"/>
-    <wire from="(950,260)" to="(970,260)"/>
-    <wire from="(1250,80)" to="(1280,80)"/>
-    <wire from="(1330,80)" to="(1350,80)"/>
-    <wire from="(90,70)" to="(460,70)"/>
-    <wire from="(1010,70)" to="(1010,130)"/>
-    <wire from="(1010,130)" to="(1020,130)"/>
-    <wire from="(1010,70)" to="(1290,70)"/>
-    <wire from="(1010,40)" to="(1010,70)"/>
-    <wire from="(1010,40)" to="(1190,40)"/>
-    <wire from="(1190,40)" to="(1190,140)"/>
-    <wire from="(1190,140)" to="(1280,140)"/>
-    <wire from="(1210,90)" to="(1220,90)"/>
-    <wire from="(1220,90)" to="(1220,320)"/>
-    <wire from="(800,320)" to="(1220,320)"/>
-    <wire from="(800,290)" to="(800,320)"/>
-    <wire from="(800,290)" to="(820,290)"/>
+    <wire from="(950,260)" to="(980,260)"/>
+    <wire from="(970,150)" to="(990,150)"/>
+    <wire from="(970,70)" to="(1330,70)"/>
+    <wire from="(970,70)" to="(970,150)"/>
+    <wire from="(980,90)" to="(980,260)"/>
+    <wire from="(980,90)" to="(990,90)"/>
     <wire from="(990,700)" to="(1020,700)"/>
   </circuit>
   <circuit name="Datapath">

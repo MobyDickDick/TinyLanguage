@@ -424,6 +424,7 @@ def _accumulator_selectors(circuit):
         for component in circuit.findall("comp")
         if component.get("name") == "Multiplexer"
         and _attributes(component).get("width") == "16"
+        and int(component.get("loc").strip("()").split(",")[0]) < 1000
     ]
     assert len(muxes) == 3
     return sorted(
@@ -440,8 +441,9 @@ def _accumulator_validity_selectors(circuit):
         for component in circuit.findall("comp")
         if component.get("name") == "Multiplexer"
         and _attributes(component).get("width", "1") == "1"
+        and int(component.get("loc").strip("()").split(",")[0]) < 1000
     ]
-    assert len(muxes) == 3
+    assert len(muxes) == 4
     return sorted(
         muxes,
         key=lambda component: int(component.get("loc").strip("()").split(",")[0]),
@@ -692,7 +694,8 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
         f"({input_mux_x - 30},{input_mux_y - 10})",
         f"({input_mux_x - 30},{input_mux_y + 10})",
     }
-    assert len(_reachable(adjacency, not_mux_output) & input_mux_inputs) == 1
+    sub_mux = _labelled_component(circuit, "ACC_SUB_SELECT")
+    assert len(_reachable(adjacency, sub_mux.get("loc")) & input_mux_inputs) == 1
     assert data_in in _reachable(adjacency, f"({input_mux_x},{input_mux_y})")
 
     select_output, select_inputs = _gate_ports(memory_select_gate)
@@ -741,7 +744,8 @@ def test_top_level_input_value_is_selected_only_for_input():
     not_output = not_mux.get("loc")
     input_pin = _labelled_component(circuit, "INPUT_VALUE")
     assert _attributes(input_pin).get("width") == "16"
-    prior_matches = _reachable(adjacency, not_output) & inputs
+    sub_mux = _labelled_component(circuit, "ACC_SUB_SELECT")
+    prior_matches = _reachable(adjacency, sub_mux.get("loc")) & inputs
     external_matches = _reachable(adjacency, input_pin.get("loc")) & inputs
     assert len(prior_matches) == 1
     assert len(external_matches) == 1
@@ -760,7 +764,7 @@ def test_top_level_input_validity_is_selected_only_for_input():
 
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
-    _, _, selector = _accumulator_validity_selectors(circuit)
+    _, _, _, selector = _accumulator_validity_selectors(circuit)
     assert selector.get("name") == "Multiplexer"
     assert _attributes(selector).get("width", "1") == "1"
 
@@ -769,12 +773,13 @@ def test_top_level_input_validity_is_selected_only_for_input():
     select = f"({x - 20},{y + 20})"
     output = f"({x},{y})"
     input_valid = _labelled_component(circuit, "INPUT_VALID")
-    memory_selector, not_selector, _ = _accumulator_validity_selectors(circuit)
+    memory_selector, not_selector, add_selector, _ = _accumulator_validity_selectors(circuit)
     adjacency = _electrical_adjacency(
         circuit, inputs | {select, output, input_valid.get("loc")}
     )
 
-    default_matches = _reachable(adjacency, not_selector.get("loc")) & inputs
+    sub_selector = _labelled_component(circuit, "ACC_SUB_VALID_SELECT")
+    default_matches = _reachable(adjacency, sub_selector.get("loc")) & inputs
     external_matches = _reachable(adjacency, input_valid.get("loc")) & inputs
     assert len(default_matches) == len(external_matches) == 1
     assert default_matches != external_matches
@@ -792,7 +797,7 @@ def test_top_level_memory_validity_is_selected_for_memory_loads():
 
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
-    selector, not_selector, input_selector = _accumulator_validity_selectors(circuit)
+    selector, not_selector, add_selector, input_selector = _accumulator_validity_selectors(circuit)
     assert selector.get("name") == "Multiplexer"
     assert _attributes(selector).get("width", "1") == "1"
 
@@ -844,7 +849,7 @@ def test_top_level_not_propagates_accumulator_validity():
 
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
-    memory_selector, selector, input_selector = _accumulator_validity_selectors(
+    memory_selector, selector, add_selector, input_selector = _accumulator_validity_selectors(
         circuit
     )
     x, y = (int(value) for value in selector.get("loc").strip("()").split(","))
@@ -867,9 +872,148 @@ def test_top_level_not_propagates_accumulator_validity():
         f"({input_x - 30},{input_y - 10})",
         f"({input_x - 30},{input_y + 10})",
     }
-    assert len(_reachable(adjacency, output) & input_selector_inputs) == 1
+    add_x, add_y = (int(value) for value in add_selector.get("loc").strip("()").split(","))
+    add_inputs = {f"({add_x - 30},{add_y - 10})", f"({add_x - 30},{add_y + 10})"}
+    assert len(_reachable(adjacency, output) & add_inputs) == 1
+    sub_selector = _labelled_component(circuit, "ACC_SUB_VALID_SELECT")
+    assert len(_reachable(adjacency, sub_selector.get("loc")) & input_selector_inputs) == 1
     assert _subcircuit_input(root, "Datapath", "VALID_IN") in _reachable(
         adjacency, input_selector.get("loc")
+    )
+
+
+def test_top_level_add_propagates_both_operand_validities():
+    """ADD is valid only when the accumulator and selected operand are valid."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    adjacency = _electrical_adjacency(circuit)
+    memory_gate = _labelled_component(circuit, "ACC_ADD_MEMORY_SELECT")
+    family_gate = _labelled_component(circuit, "ACC_ADD_SELECT")
+    operand_selector = _labelled_component(circuit, "ACC_ADD_OPERAND_VALID_SELECT")
+    valid_gate = _labelled_component(circuit, "ACC_ADD_VALID")
+    _, memory_inputs = _gate_ports(memory_gate)
+    _, family_inputs = _gate_ports(family_gate)
+
+    controls = {name: _control_output(root, name) for name in (
+        "ADD_CONST", "ADD_ADDRESS", "ADD_ADDRESS_REGISTER",
+        "ADD_ADDRESS_REGISTER_PLUS_OFFSET",
+    )}
+    for name, source in controls.items():
+        reachable = _reachable(adjacency, source)
+        assert len(reachable & family_inputs) == 1
+        if name != "ADD_CONST":
+            assert len(reachable & memory_inputs) == 1
+
+    mux_x, mux_y = (int(value) for value in operand_selector.get("loc").strip("()").split(","))
+    mux_inputs = {f"({mux_x - 30},{mux_y - 10})", f"({mux_x - 30},{mux_y + 10})"}
+    assert len(_reachable(adjacency, _subcircuit_output(root, "Memory", "VALID_OUT")) & mux_inputs) == 1
+    gate_output, gate_inputs = _gate_ports(valid_gate)
+    assert len(_reachable(adjacency, operand_selector.get("loc")) & gate_inputs) == 1
+    assert len(_reachable(adjacency, _subcircuit_output(root, "Datapath", "ACC_VALID_OUT")) & gate_inputs) == 1
+    _, _, add_selector, _ = _accumulator_validity_selectors(circuit)
+    add_x, add_y = (int(value) for value in add_selector.get("loc").strip("()").split(","))
+    assert len(_reachable(adjacency, gate_output) & {f"({add_x - 30},{add_y - 10})", f"({add_x - 30},{add_y + 10})"}) == 1
+
+def test_top_level_subtracts_the_selected_operand_and_propagates_validity():
+    """SUB selects accumulator-minus-operand data and requires two valid inputs."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    adjacency = _electrical_adjacency(circuit)
+    family_gate = _labelled_component(circuit, "ACC_SUB_FAMILY_SELECT")
+    memory_gate = _labelled_component(circuit, "ACC_SUB_MEMORY_SELECT")
+    operand_mux = _labelled_component(circuit, "ACC_SUB_OPERAND_SELECT")
+    subtractor = _labelled_component(circuit, "ACC_SUB_VALUE")
+    result_mux = _labelled_component(circuit, "ACC_SUB_SELECT")
+    valid_mux = _labelled_component(circuit, "ACC_SUB_OPERAND_VALID_SELECT")
+    valid_gate = _labelled_component(circuit, "ACC_SUB_VALID")
+    valid_result_mux = _labelled_component(circuit, "ACC_SUB_VALID_SELECT")
+    _, family_inputs = _gate_ports(family_gate)
+    _, memory_inputs = _gate_ports(memory_gate)
+
+    controls = {
+        name: _control_output(root, name)
+        for name in (
+            "SUB_CONST",
+            "SUB_ADDRESS",
+            "SUB_ADDRESS_REGISTER",
+            "SUB_ADDRESS_REGISTER_PLUS_OFFSET",
+        )
+    }
+    for name, source in controls.items():
+        reachable = _reachable(adjacency, source)
+        assert len(reachable & family_inputs) == 1
+        if name != "SUB_CONST":
+            assert len(reachable & memory_inputs) == 1
+
+    operand_x, operand_y = map(int, operand_mux.get("loc").strip("()").split(","))
+    operand_inputs = {
+        f"({operand_x - 30},{operand_y - 10})",
+        f"({operand_x - 30},{operand_y + 10})",
+    }
+    assert len(_reachable(adjacency, "(400,230)") & operand_inputs) == 1
+    assert (
+        len(
+            _reachable(adjacency, _subcircuit_output(root, "Memory", "DATA_OUT"))
+            & operand_inputs
+        )
+        == 1
+    )
+
+    sub_x, sub_y = map(int, subtractor.get("loc").strip("()").split(","))
+    sub_inputs = {f"({sub_x - 40},{sub_y - 10})", f"({sub_x - 40},{sub_y + 10})"}
+    assert len(_reachable(adjacency, operand_mux.get("loc")) & sub_inputs) == 1
+    assert (
+        len(
+            _reachable(adjacency, _subcircuit_output(root, "Datapath", "ACC_OUT"))
+            & sub_inputs
+        )
+        == 1
+    )
+
+    result_x, result_y = map(int, result_mux.get("loc").strip("()").split(","))
+    result_inputs = {
+        f"({result_x - 30},{result_y - 10})",
+        f"({result_x - 30},{result_y + 10})",
+    }
+    assert len(_reachable(adjacency, subtractor.get("loc")) & result_inputs) == 1
+    assert f"({result_x - 20},{result_y + 20})" in _reachable(
+        adjacency, family_gate.get("loc")
+    )
+
+    valid_x, valid_y = map(int, valid_mux.get("loc").strip("()").split(","))
+    valid_inputs = {
+        f"({valid_x - 30},{valid_y - 10})",
+        f"({valid_x - 30},{valid_y + 10})",
+    }
+    assert (
+        len(
+            _reachable(adjacency, _subcircuit_output(root, "Memory", "VALID_OUT"))
+            & valid_inputs
+        )
+        == 1
+    )
+    _, valid_gate_inputs = _gate_ports(valid_gate)
+    assert len(_reachable(adjacency, valid_mux.get("loc")) & valid_gate_inputs) == 1
+    assert (
+        len(
+            _reachable(adjacency, _subcircuit_output(root, "Datapath", "ACC_VALID_OUT"))
+            & valid_gate_inputs
+        )
+        == 1
+    )
+
+    result_valid_x, result_valid_y = map(
+        int, valid_result_mux.get("loc").strip("()").split(",")
+    )
+    result_valid_inputs = {
+        f"({result_valid_x - 30},{result_valid_y - 10})",
+        f"({result_valid_x - 30},{result_valid_y + 10})",
+    }
+    assert len(_reachable(adjacency, valid_gate.get("loc")) & result_valid_inputs) == 1
+    assert f"({result_valid_x - 20},{result_valid_y + 20})" in _reachable(
+        adjacency, family_gate.get("loc")
     )
 
 
@@ -932,7 +1076,8 @@ def test_top_level_not_data_selector_uses_inverted_accumulator():
         int(value) for value in input_mux.get("loc").strip("()").split(",")
     )
     input_ports = {f"({input_x - 30},{input_y - 10})", f"({input_x - 30},{input_y + 10})"}
-    assert len(_reachable(adjacency, f"({mux_x},{mux_y})") & input_ports) == 1
+    sub_mux = _labelled_component(circuit, "ACC_SUB_SELECT")
+    assert len(_reachable(adjacency, sub_mux.get("loc")) & input_ports) == 1
     assert data_in in _reachable(adjacency, f"({input_x},{input_y})")
     assert _control_output(root, "INPUT") not in _reachable(adjacency, not_control)
 

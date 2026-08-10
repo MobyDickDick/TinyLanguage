@@ -225,7 +225,16 @@ fails before a project with overlapping subcircuit symbols is checked in.
   `INPUT` selector and `CLEAR_ERROR` directly; the obsolete tunnel endpoints
   are deliberately not reconstructed from inferred subcircuit coordinates.
   Structural tests follow these checked-in routes and keep the one-bit controls
-  isolated from the 16-bit accumulator bus.
+  isolated from the 16-bit accumulator bus. The `ADD_*` validity stage
+  independently groups all four addition modes, selects a valid immediate or
+  `Memory.VALID_OUT`, and ANDs that operand validity with
+  `Datapath.ACC_VALID_OUT`. The result is selected between the `NOT` and
+  `INPUT` validity stages. The following `SUB_*` data stage selects the
+  immediate operand or `Memory.DATA_OUT`, subtracts it from `ACC_OUT`, and
+  inserts that result before the final `INPUT` data selector. Its parallel
+  validity stage requires both `ACC_VALID_OUT` and the matching immediate-or-
+  memory operand validity. `INPUT_VALUE` and `INPUT_VALID` therefore retain
+  final priority over both binary families.
 
 Die automatisch gezeichneten Anschlüsse einer Subcircuit-Instanz werden in
 der `.circ`-Datei nicht mit ihren Pin-Namen gespeichert. Ihre sichtbaren

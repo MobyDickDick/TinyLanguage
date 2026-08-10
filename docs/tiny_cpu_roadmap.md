@@ -166,8 +166,13 @@ selection: immediate operands supply a valid constant, while all three
 memory-backed load modes propagate `Memory.VALID_OUT`. A following
 `ACC_NOT_VALID_SELECT` stage propagates `Datapath.ACC_VALID_OUT` for `NOT`,
 because the unary result is valid exactly when its accumulator input is valid;
-the independent `INPUT` stage retains final priority. The next validity work
-integrates the binary arithmetic and logic instruction families. Nach
+the independent `INPUT` stage retains final priority. The four `ADD_*` modes
+select immediate or memory operand validity and combine it with
+`Datapath.ACC_VALID_OUT`; only two valid operands produce a valid addition
+result. The four `SUB_*` modes now additionally select the matching 16-bit
+operand, subtract it from the current accumulator, and apply the same two-valid-
+operand rule in the next staged data and validity selectors. `INPUT` remains
+both final overrides. The next binary family is `MUL_*`. Nach
 der erneuten manuellen Korrektur gelten die
 verschobenen Symbole und direkten Leitungen der eingecheckten Übersichtsseite
 als neue Referenz. Die Strukturtests leiten die Eingangsseite der automatisch

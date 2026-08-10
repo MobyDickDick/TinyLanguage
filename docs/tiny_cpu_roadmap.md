@@ -160,9 +160,11 @@ passes that result through normally and selects the external top-level
 `Datapath.DATA_IN`; the next integration step is the accumulator-validity
 control required by `INPUT`. The independent top-level `INPUT_VALID` pin now
 reaches `Datapath.VALID_IN` through the labelled one-bit
-`ACC_INPUT_VALID_SELECT` multiplexer only while `INPUT` is active; otherwise
-the currently integrated operand path supplies a valid constant. The next
-validity source is `Memory.VALID_OUT` for memory-backed accumulator loads. Nach
+`ACC_INPUT_VALID_SELECT` multiplexer only while `INPUT` is active. Before that
+final override, `ACC_MEMORY_VALID_SELECT` mirrors the accumulator data
+selection: immediate operands supply a valid constant, while all three
+memory-backed load modes propagate `Memory.VALID_OUT`. The next validity work
+integrates the arithmetic and logic instruction families. Nach
 der erneuten manuellen Korrektur gelten die
 verschobenen Symbole und direkten Leitungen der eingecheckten Übersichtsseite
 als neue Referenz. Die Strukturtests leiten die Eingangsseite der automatisch

@@ -96,7 +96,7 @@
       <a name="appearance" val="classic"/>
       <a name="label" val="INPUT_VALID"/>
     </comp>
-    <comp lib="0" loc="(860,340)" name="Constant">
+    <comp lib="0" loc="(710,340)" name="Constant">
       <a name="value" val="0x1"/>
     </comp>
     <comp lib="2" loc="(620,250)" name="Multiplexer">
@@ -109,6 +109,9 @@
     </comp>
     <comp lib="2" loc="(920,350)" name="Multiplexer">
       <a name="label" val="ACC_INPUT_VALID_SELECT"/>
+    </comp>
+    <comp lib="2" loc="(770,350)" name="Multiplexer">
+      <a name="label" val="ACC_MEMORY_VALID_SELECT"/>
     </comp>
     <comp lib="9" loc="(320,30)" name="Text">
       <a name="text" val="TinyCPU integration: one clock net drives all stateful blocks"/>
@@ -286,7 +289,14 @@
     <wire from="(820,70)" to="(1330,70)"/>
     <wire from="(820,70)" to="(820,150)"/>
     <wire from="(860,270)" to="(890,270)"/>
-    <wire from="(860,340)" to="(890,340)"/>
+    <wire from="(340,240)" to="(360,240)"/>
+    <wire from="(360,240)" to="(360,360)"/>
+    <wire from="(360,360)" to="(740,360)"/>
+    <wire from="(710,340)" to="(740,340)"/>
+    <wire from="(750,370)" to="(750,410)"/>
+    <wire from="(770,350)" to="(820,350)"/>
+    <wire from="(820,340)" to="(820,350)"/>
+    <wire from="(820,340)" to="(890,340)"/>
     <wire from="(860,360)" to="(890,360)"/>
     <wire from="(860,790)" to="(940,790)"/>
     <wire from="(900,1140)" to="(1270,1140)"/>

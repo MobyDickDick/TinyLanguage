@@ -755,21 +755,13 @@ def test_top_level_input_validity_is_selected_only_for_input():
     select = f"({x - 20},{y + 20})"
     output = f"({x},{y})"
     input_valid = _labelled_component(circuit, "INPUT_VALID")
-    default_valid = next(
-        component
-        for component in circuit.findall("comp")
-        if component.get("name") == "Constant"
-        and component.get("loc") in _reachable(
-            _electrical_adjacency(circuit, inputs), min(inputs)
-        )
-    )
+    memory_selector = _labelled_component(circuit, "ACC_MEMORY_VALID_SELECT")
     adjacency = _electrical_adjacency(
         circuit, inputs | {select, output, input_valid.get("loc")}
     )
 
-    default_matches = _reachable(adjacency, default_valid.get("loc")) & inputs
+    default_matches = _reachable(adjacency, memory_selector.get("loc")) & inputs
     external_matches = _reachable(adjacency, input_valid.get("loc")) & inputs
-    assert _attributes(default_valid).get("value") == "0x1"
     assert len(default_matches) == len(external_matches) == 1
     assert default_matches != external_matches
     assert select in _reachable(adjacency, _control_output(root, "INPUT"))
@@ -778,6 +770,59 @@ def test_top_level_input_validity_is_selected_only_for_input():
     )
     assert _subcircuit_input(root, "Datapath", "DATA_IN") not in _reachable(
         adjacency, input_valid.get("loc")
+    )
+
+
+def test_top_level_memory_validity_is_selected_for_memory_loads():
+    """Use memory validity exactly when the matching data selector uses RAM."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    selector = _labelled_component(circuit, "ACC_MEMORY_VALID_SELECT")
+    assert selector.get("name") == "Multiplexer"
+    assert _attributes(selector).get("width", "1") == "1"
+
+    x, y = (int(value) for value in selector.get("loc").strip("()").split(","))
+    inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
+    select = f"({x - 20},{y + 20})"
+    output = f"({x},{y})"
+    default_valid = next(
+        component
+        for component in circuit.findall("comp")
+        if component.get("name") == "Constant"
+        and _attributes(component).get("value") == "0x1"
+    )
+    memory_valid = _subcircuit_output(root, "Memory", "VALID_OUT")
+    input_selector = _labelled_component(circuit, "ACC_INPUT_VALID_SELECT")
+    adjacency = _electrical_adjacency(
+        circuit,
+        inputs
+        | {
+            select,
+            output,
+            default_valid.get("loc"),
+            memory_valid,
+            input_selector.get("loc"),
+        },
+    )
+
+    default_matches = _reachable(adjacency, default_valid.get("loc")) & inputs
+    memory_matches = _reachable(adjacency, memory_valid) & inputs
+    assert len(default_matches) == len(memory_matches) == 1
+    assert default_matches != memory_matches
+    memory_select_gate = _labelled_component(circuit, "ACC_MEMORY_SELECT")
+    memory_select_output, _ = _gate_ports(memory_select_gate)
+    assert select in _reachable(adjacency, memory_select_output)
+    input_x, input_y = (
+        int(value) for value in input_selector.get("loc").strip("()").split(",")
+    )
+    input_selector_inputs = {
+        f"({input_x - 30},{input_y - 10})",
+        f"({input_x - 30},{input_y + 10})",
+    }
+    assert len(_reachable(adjacency, output) & input_selector_inputs) == 1
+    assert _subcircuit_input(root, "Datapath", "DATA_IN") not in _reachable(
+        adjacency, memory_valid
     )
 
 

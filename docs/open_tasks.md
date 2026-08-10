@@ -7,6 +7,23 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-10)
 
+- [x] **Propagate TinyCPU memory validity to the accumulator**
+  (Owner: TinyCPU/Hardware)
+  - Success: select `Memory.VALID_OUT` for `Datapath.VALID_IN` whenever the
+    existing memory-backed accumulator data path is selected, while retaining
+    the valid constant for immediate operands and the independent `INPUT`
+    validity override.
+  - Result: the labelled `ACC_MEMORY_VALID_SELECT` multiplexer mirrors
+    `ACC_MEMORY_SELECT`: its default is the valid constant and its memory input
+    is `Memory.VALID_OUT`. Its output feeds the default side of
+    `ACC_INPUT_VALID_SELECT`, so `INPUT_VALID` still has final priority only for
+    `INPUT`. Structural coverage protects the sources, shared selection net,
+    staged destination, and isolation from `Datapath.DATA_IN`.
+  - Follow-up: integrate accumulator result validity for the arithmetic and
+    logic instruction families, one explicitly documented group at a time.
+
+## Next documented work package (completed 2026-08-10)
+
 - [x] **Propagate TinyCPU `INPUT` validity to the accumulator**
   (Owner: TinyCPU/Hardware)
   - Success: expose an independent one-bit `INPUT_VALID` top-level pin and

@@ -60,7 +60,7 @@ def test_inspector_exposes_completed_and_pending_sheets():
 
     assert not reports["TinyCPU"].connected
     assert "CLK@(80,140)" not in reports["TinyCPU"].unconnected
-    assert "HALTED@(3300,100)" in reports["TinyCPU"].unconnected
+    assert "HALTED@(1900,100)" in reports["TinyCPU"].unconnected
     assert reports["Datapath"].components == 12
     assert reports["Datapath"].wires == 22
     for sheet in (
@@ -136,6 +136,22 @@ def test_inspector_rejects_multiple_input_pins_on_one_net(tmp_path):
     report = inspect_project(project)[0]
     assert not report.connected
     assert report.routing_conflicts == ("multiple input pins drive one net: A, B",)
+
+
+def test_top_level_accumulator_stages_are_grouped_in_compact_columns():
+    root = ET.parse(PROJECT).getroot()
+    top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
+    labelled = {
+        child.get("val"): component.get("loc")
+        for component in top.findall("comp")
+        for child in component.findall("a")
+        if child.get("name") in {"label", "text"}
+    }
+
+    assert labelled["ADD: operand, result and validity"] == "(1420,420)"
+    assert labelled["SUB: operand, result and validity"] == "(1420,840)"
+    assert labelled["ACC_ADD_VALID"] == "(1690,490)"
+    assert labelled["ACC_SUB_VALID"] == "(1710,1050)"
 
 
 def test_top_level_keeps_the_hand_placed_fetch_and_memory_anchors():

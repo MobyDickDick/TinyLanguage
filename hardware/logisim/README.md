@@ -153,6 +153,9 @@ their placement. The dependency-free inspector enforces this clearance and
 fails before a project with overlapping subcircuit symbols is checked in.
 
 - `TinyCPU` is the top-level sheet and documents the block boundary;
+  its accumulator integration is visually grouped into a decode column and compact,
+  labelled ADD/SUB stage columns so related operand, result, and validity logic can
+  be read without scrolling to a disconnected lower workspace;
 - `Datapath` contains the synchronously loaded 16-bit accumulator and its
   mandatory valid bit; a signed comparator exports `ZERO` and `NEGATIVE`;
 - `AddressPath` contains the synchronously loaded 12-bit address register and

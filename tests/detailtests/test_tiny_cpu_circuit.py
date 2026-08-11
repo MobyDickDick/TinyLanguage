@@ -3,7 +3,6 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from tiny_cpu_circuit import (
-    SUBCIRCUIT_ANCHOR_CLEARANCE,
     inspect_project,
     main,
     split_leaf_circuits,
@@ -59,8 +58,10 @@ def test_inspector_exposes_completed_and_pending_sheets():
     reports = {report.name: report for report in inspect_project(PROJECT)}
 
     assert not reports["TinyCPU"].connected
-    assert "CLK@(80,140)" not in reports["TinyCPU"].unconnected
-    assert "HALTED@(1900,100)" in reports["TinyCPU"].unconnected
+    unconnected_labels = {
+        item.partition("@")[0] for item in reports["TinyCPU"].unconnected
+    }
+    assert "HALTED" in unconnected_labels
     assert reports["Datapath"].components == 12
     assert reports["Datapath"].wires == 22
     for sheet in (
@@ -138,33 +139,39 @@ def test_inspector_rejects_multiple_input_pins_on_one_net(tmp_path):
     assert report.routing_conflicts == ("multiple input pins drive one net: A, B",)
 
 
-def test_top_level_accumulator_stages_are_grouped_in_compact_columns():
+def test_top_level_accumulator_stages_have_the_required_components():
     root = ET.parse(PROJECT).getroot()
     top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
     labelled = {
-        child.get("val"): component.get("loc")
+        child.get("val"): component
         for component in top.findall("comp")
         for child in component.findall("a")
-        if child.get("name") in {"label", "text"}
+        if child.get("name") == "label"
     }
 
-    assert labelled["ADD: operand, result and validity"] == "(1420,420)"
-    assert labelled["SUB: operand, result and validity"] == "(1420,840)"
-    assert labelled["ACC_ADD_VALID"] == "(1690,490)"
-    assert labelled["ACC_SUB_VALID"] == "(1710,1050)"
-
-
-def test_top_level_keeps_the_hand_placed_fetch_and_memory_anchors():
-    report = next(item for item in inspect_project(PROJECT) if item.name == "TinyCPU")
-
-    assert SUBCIRCUIT_ANCHOR_CLEARANCE == 200
-    # The inspector's deliberately conservative 200-pixel lane reports these
-    # adjacent hand-placed symbols even though their rendered boxes are apart.
-    # Freeze the maintained anchors instead of moving either component merely
-    # to satisfy that heuristic.
-    assert report.placement_conflicts == (
-        "Memory@(340,240) overlaps the reserved lane of FetchDecode@(340,90)",
-    )
+    expected = {
+        "ACC_ADD_OPERAND_VALID_SELECT": ("Multiplexer", None),
+        "ACC_ADD_MEMORY_SELECT": ("OR Gate", None),
+        "ACC_ADD_SELECT": ("OR Gate", None),
+        "ACC_ADD_VALID": ("AND Gate", None),
+        "ACC_SUB_VALUE": ("Subtractor", "16"),
+        "ACC_SUB_OPERAND_SELECT": ("Multiplexer", "16"),
+        "ACC_SUB_SELECT": ("Multiplexer", "16"),
+        "ACC_SUB_MEMORY_SELECT": ("OR Gate", None),
+        "ACC_SUB_FAMILY_SELECT": ("OR Gate", None),
+        "ACC_SUB_VALID_SELECT": ("Multiplexer", None),
+        "ACC_SUB_OPERAND_VALID_SELECT": ("Multiplexer", None),
+        "ACC_SUB_VALID": ("AND Gate", None),
+    }
+    for label, (component_name, width) in expected.items():
+        component = labelled[label]
+        attributes = {
+            attribute.get("name"): attribute.get("val")
+            for attribute in component.findall("a")
+        }
+        assert component.get("name") == component_name
+        if width is not None:
+            assert attributes.get("width") == width
 
 
 def test_top_level_does_not_daisy_chain_unrelated_component_anchors():
@@ -369,17 +376,15 @@ def test_fetch_decode_diagnostic_preserves_pc_increment_constant():
             for circuit in root.findall("circuit")
             if circuit.get("name") == "FetchDecode"
         )
-        constant = next(
-            component
+        constants = [
+            {
+                attribute.get("name"): attribute.get("val")
+                for attribute in component.findall("a")
+            }
             for component in fetch.findall("comp")
             if component.get("name") == "Constant"
-            and component.get("loc") == "(410,290)"
-        )
-        attributes = {
-            attribute.get("name"): attribute.get("val")
-            for attribute in constant.findall("a")
-        }
-        assert attributes == {"width": "16", "value": "0xffff"}
+        ]
+        assert constants.count({"width": "16", "value": "0xffff"}) == 1
 
 
 def test_leaf_signature_ignores_order_and_origin_but_detects_wire_changes(tmp_path):

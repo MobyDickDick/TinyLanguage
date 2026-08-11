@@ -73,11 +73,11 @@ ist die CPU-Schaltung nicht die Ursache. Wenn alle drei Proben funktionieren,
 aber eines der folgenden Diagnoseblätter nicht, ist der Fehler auf dieses
 Blatt beziehungsweise dessen Bauteiltypen eingegrenzt.
 
-Die statische Prüfung des Projekts findet 162 XML-Komponenten (davon sechs
-reine Textfelder) und 280 rechtwinklige Leitungssegmente. Diagonale Leitungen
+Die statische Prüfung des Projekts findet 150 XML-Komponenten (davon sechs
+reine Textfelder) und 298 rechtwinklige Leitungssegmente. Diagonale Leitungen
 werden abgewiesen, weil Logisim sie beim Laden nicht als gültige Drähte
 verarbeiten kann. `FetchDecode` ist mit 69 elektrischen
-Komponenten der größte Block; `ErrorFlags` folgt mit 46. Die beiden 4096-Zellen-
+Komponenten der größte Block; `ErrorFlags` folgt mit 34. Die beiden 4096-Zellen-
 RAMs liegen ausschließlich in `Memory`. In `ErrorFlags` läuft jede
 Rückkopplung über ein getaktetes Register, daher ist dort im Schaltbild keine
 rein kombinatorische Rückkopplung erkennbar. Eine Speicherbelegung von mehreren
@@ -93,7 +93,7 @@ Dafür enthält `diagnostics/` fünf eigenständig ladbare Projekte:
 | `TinyCPU-Datapath.circ` | 12 | 22 | Akkumulator und Vergleich |
 | `TinyCPU-AddressPath.circ` | 12 | 25 | Adressregister und Addierer |
 | `TinyCPU-Memory.circ` | 12 | 27 | Daten- und Validitäts-RAM |
-| `TinyCPU-ErrorFlags.circ` | 46 | 92 | Sticky-Flag-Rückkopplungen |
+| `TinyCPU-ErrorFlags.circ` | 34 | 110 | Sticky-Flag-Rückkopplungen |
 
 Im Blatt `AddressPath` beziehen sich die XML-Koordinaten der Register auf die
 linke obere Symbolecke und nicht auf einen Anschluss. D, WE und CLK werden
@@ -115,9 +115,24 @@ liegen ihre Output-Enable-Anschlüsse dauerhaft an logisch 1. Output-Enable ist
 dabei unabhängig von `WRITE_ENABLE`.
 `ErrorFlags` taktet die sechs Sticky-Register über einen segmentierten
 gemeinsamen Taktbus; ein High-Pegel an WE sorgt dafür, dass jedes berechnete
-Folgebit auf der steigenden Flanke übernommen wird. Paarweise benannte
-`CURRENT_*`-Tunnel führen Q jeweils zum zugehörigen `HOLD_*`-Gatter zurück. So
-kreuzt die Rückkopplung weder Reset-Anschlüsse noch Takt- oder WE-Bus.
+Folgebit auf der steigenden Flanke übernommen wird. Die Rückführung von Q zum
+jeweiligen `HOLD_*`-Gatter ist jetzt als kurze, U-förmige Leitung vollständig
+sichtbar. Sie verläuft im freien Korridor oberhalb der jeweiligen Flag-Zeile
+und kreuzt weder Reset-Anschlüsse noch Takt- oder WE-Bus.
+
+## Gestaltungsregel: sichtbare Leitungen vor Tunneln
+
+Die TinyCPU soll eine **graphische und direkt verfolgbare** Schaltung bleiben.
+Darum werden zusammengehörige Anschlüsse grundsätzlich mit sichtbaren,
+rechtwinkligen Leitungen verbunden. Tunnel sind kein Mittel, um eine schwierige
+Leitungsführung abzukürzen. Sie sind nur ausnahmsweise zulässig, wenn eine
+direkte Route trotz Verschieben der Bauteile und Nutzung freier Korridore die
+Lesbarkeit verschlechtern oder fremde Netze elektrisch verbinden würde. Jede
+solche Ausnahme muss im Designdokument begründet und bei der nächsten
+Überarbeitung erneut auflösbar geprüft werden. Neue oder lokal begrenzte Netze
+dürfen nicht als Tunnel angelegt werden. Die sechs bisher getunnelten
+Sticky-Flag-Rückkopplungen sind deshalb vollständig durch sichtbare Leitungen
+ersetzt.
 
 Die Dateien nacheinander einzeln öffnen und CPU- sowie Speicherverbrauch nach
 dem vollständigen Laden notieren. Tritt das Problem schon ohne Takten auf,

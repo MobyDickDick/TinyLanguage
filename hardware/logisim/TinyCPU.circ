@@ -232,7 +232,9 @@
       <a name="label" val="OPERAND_DATA"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(590,340)" name="Constant"/>
+    <comp lib="0" loc="(590,340)" name="Constant">
+      <a name="label" val="ACC_DEFAULT_VALID"/>
+    </comp>
     <comp lib="0" loc="(640,230)" name="Tunnel">
       <a name="label" val="PRE_SUB_DATA"/>
       <a name="width" val="16"/>
@@ -317,28 +319,48 @@
       <a name="label" val="ACC_WRITE_REQUEST"/>
     </comp>
     <comp lib="2" loc="(1030,260)" name="Multiplexer">
+      <a name="label" val="ACC_INPUT_DATA_SELECT"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="2" loc="(2130,1330)" name="Multiplexer"/>
+    <comp lib="2" loc="(2130,1330)" name="Multiplexer">
+      <a name="label" val="ACC_SUB_OPERAND_VALID_SELECT"/>
+    </comp>
     <comp lib="2" loc="(2250,1010)" name="Multiplexer">
+      <a name="label" val="ACC_SUB_OPERAND_SELECT"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="2" loc="(2340,570)" name="Multiplexer"/>
-    <comp lib="2" loc="(2480,1300)" name="Multiplexer"/>
+    <comp lib="2" loc="(2340,570)" name="Multiplexer">
+      <a name="label" val="ACC_ADD_OPERAND_VALID_SELECT"/>
+    </comp>
+    <comp lib="2" loc="(2480,1300)" name="Multiplexer">
+      <a name="label" val="ACC_SUB_VALID_SELECT"/>
+    </comp>
     <comp lib="2" loc="(2490,960)" name="Multiplexer">
+      <a name="label" val="ACC_SUB_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(470,200)" name="Multiplexer">
+      <a name="label" val="ACC_MEMORY_DATA_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(620,250)" name="Multiplexer">
+      <a name="label" val="ACC_NOT_DATA_SELECT"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="2" loc="(650,350)" name="Multiplexer"/>
-    <comp lib="2" loc="(820,410)" name="Multiplexer"/>
-    <comp lib="2" loc="(920,460)" name="Multiplexer"/>
-    <comp lib="2" loc="(950,530)" name="Multiplexer"/>
+    <comp lib="2" loc="(650,350)" name="Multiplexer">
+      <a name="label" val="ACC_MEMORY_VALID_SELECT"/>
+    </comp>
+    <comp lib="2" loc="(820,410)" name="Multiplexer">
+      <a name="label" val="ACC_NOT_VALID_SELECT"/>
+    </comp>
+    <comp lib="2" loc="(920,460)" name="Multiplexer">
+      <a name="label" val="ACC_ADD_VALID_SELECT"/>
+    </comp>
+    <comp lib="2" loc="(950,530)" name="Multiplexer">
+      <a name="label" val="ACC_INPUT_VALID_SELECT"/>
+    </comp>
     <comp lib="3" loc="(2430,980)" name="Subtractor">
+      <a name="label" val="ACC_SUB_VALUE"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="9" loc="(1930,500)" name="Text">
@@ -732,6 +754,91 @@
     <wire from="(970,130)" to="(970,530)"/>
     <wire from="(970,130)" to="(990,130)"/>
     <wire from="(990,970)" to="(1020,970)"/>
+  </circuit>
+  <circuit name="AddSub">
+    <a name="appearance" val="logisim_evolution"/>
+    <a name="circuit" val="AddSub"/>
+    <a name="circuitnamedboxfixedsize" val="true"/>
+    <a name="simulationFrequency" val="1.0"/>
+    <comp lib="0" loc="(100,140)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="OPERANDS"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="0" loc="(100,300)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="VALID"/>
+      <a name="width" val="2"/>
+    </comp>
+    <comp lib="0" loc="(100,380)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="SUBTRACT"/>
+    </comp>
+    <comp lib="0" loc="(700,100)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="CARRY"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="0" loc="(360,80)" name="Constant"/>
+    <comp lib="0" loc="(700,180)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="RESULT"/>
+      <a name="type" val="output"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(700,340)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="RESULT_VALID"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="0" loc="(180,140)" name="Splitter">
+      <a name="fanout" val="2"/>
+      <a name="incoming" val="32"/>
+      <a name="bit0" val="0"/><a name="bit1" val="0"/><a name="bit2" val="0"/><a name="bit3" val="0"/>
+      <a name="bit4" val="0"/><a name="bit5" val="0"/><a name="bit6" val="0"/><a name="bit7" val="0"/>
+      <a name="bit8" val="0"/><a name="bit9" val="0"/><a name="bit10" val="0"/><a name="bit11" val="0"/>
+      <a name="bit12" val="0"/><a name="bit13" val="0"/><a name="bit14" val="0"/><a name="bit15" val="0"/>
+      <a name="bit16" val="1"/><a name="bit17" val="1"/><a name="bit18" val="1"/><a name="bit19" val="1"/>
+      <a name="bit20" val="1"/><a name="bit21" val="1"/><a name="bit22" val="1"/><a name="bit23" val="1"/>
+      <a name="bit24" val="1"/><a name="bit25" val="1"/><a name="bit26" val="1"/><a name="bit27" val="1"/>
+      <a name="bit28" val="1"/><a name="bit29" val="1"/><a name="bit30" val="1"/><a name="bit31" val="1"/>
+    </comp>
+    <comp lib="0" loc="(180,300)" name="Splitter">
+      <a name="fanout" val="2"/><a name="incoming" val="2"/>
+      <a name="bit0" val="0"/><a name="bit1" val="1"/>
+    </comp>
+    <comp lib="3" loc="(420,120)" name="Adder">
+      <a name="label" val="ADD"/><a name="width" val="16"/>
+    </comp>
+    <comp lib="3" loc="(420,220)" name="Subtractor">
+      <a name="label" val="SUB"/><a name="width" val="16"/>
+    </comp>
+    <comp lib="2" loc="(570,180)" name="Multiplexer">
+      <a name="label" val="ADD_SUB_SELECT"/><a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(420,320)" name="AND Gate"><a name="label" val="BOTH_VALID"/></comp>
+    <comp lib="1" loc="(570,340)" name="AND Gate"><a name="label" val="ACTIVE_VALID"/></comp>
+    <comp lib="9" loc="(310,60)" name="Text"><a name="text" val="ADD / SUB — gebündelte Operanden- und Validitätsbusse"/></comp>
+    <wire from="(100,140)" to="(180,140)"/>
+    <wire from="(200,140)" to="(280,140)"/><wire from="(280,110)" to="(280,210)"/>
+    <wire from="(280,110)" to="(380,110)"/><wire from="(280,210)" to="(380,210)"/>
+    <wire from="(200,160)" to="(300,160)"/><wire from="(300,130)" to="(300,230)"/>
+    <wire from="(300,130)" to="(380,130)"/><wire from="(300,230)" to="(380,230)"/>
+    <wire from="(360,80)" to="(400,80)"/><wire from="(400,80)" to="(400,100)"/>
+    <wire from="(400,140)" to="(460,140)"/><wire from="(460,100)" to="(460,140)"/><wire from="(460,100)" to="(700,100)"/>
+    <wire from="(420,120)" to="(500,120)"/><wire from="(500,120)" to="(500,170)"/><wire from="(500,170)" to="(540,170)"/>
+    <wire from="(420,220)" to="(500,220)"/><wire from="(500,190)" to="(500,220)"/><wire from="(500,190)" to="(540,190)"/>
+    <wire from="(100,380)" to="(550,380)"/><wire from="(550,200)" to="(550,380)"/>
+    <wire from="(570,180)" to="(700,180)"/>
+    <wire from="(100,300)" to="(180,300)"/>
+    <wire from="(200,300)" to="(300,300)"/><wire from="(300,300)" to="(370,300)"/>
+    <wire from="(200,320)" to="(300,320)"/><wire from="(300,320)" to="(300,340)"/><wire from="(300,340)" to="(370,340)"/>
+    <wire from="(420,320)" to="(520,320)"/>
+    <wire from="(100,380)" to="(520,380)"/><wire from="(520,360)" to="(520,380)"/>
+    <wire from="(570,340)" to="(700,340)"/>
   </circuit>
   <circuit name="Datapath">
     <a name="appearance" val="logisim_evolution"/>

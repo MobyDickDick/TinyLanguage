@@ -156,7 +156,7 @@ result from the accumulator, and the second-stage `ACC_NOT_SELECT` multiplexer
 selects it only for `NOT` while passing the existing operand-or-memory result
 through by default. A final labelled 16-bit `ACC_INPUT_SELECT` multiplexer now
 passes that result through normally and selects the external top-level
-`INPUT_VALUE` only for `INPUT`. Width-safe tunnels carry the selected result to
+`INPUT_VALUE` only for `INPUT`. The selected result reaches
 `Datapath.DATA_IN`; the next integration step is the accumulator-validity
 control required by `INPUT`. The independent top-level `INPUT_VALID` pin now
 reaches `Datapath.VALID_IN` through the labelled one-bit
@@ -179,3 +179,12 @@ als neue Referenz. Die Strukturtests leiten die Eingangsseite der automatisch
 erzeugten Symbole entsprechend ab und verlangen nicht länger die Tunnel und
 Koordinaten der überholten Zeichnung; die drei Akkumulator-Multiplexer behalten
 lediglich eindeutige, nicht-elektrische Bezeichner.
+
+Für alle weiteren Arbeitspakete gilt: Eine sichtbare rechtwinklige Leitung hat
+Vorrang vor einem benannten Tunnel. Vor dem Einsatz eines Tunnels sind Symbole
+zu verschieben und freie Leitungskorridore zu prüfen. Nur wenn beides keine
+lesbare und elektrisch getrennte Route ermöglicht, darf ein Tunnel als
+dokumentierte Ausnahme verbleiben; diese Ausnahme ist in einem späteren Redraw
+erneut zu prüfen. Lokal begrenzte Netze und neu hinzukommende Verbindungen
+werden immer direkt gezeichnet. Als erster konsequenter Redraw wurden alle
+sechs `ErrorFlags`-Rückkopplungen ohne Tunnel ausgeführt.

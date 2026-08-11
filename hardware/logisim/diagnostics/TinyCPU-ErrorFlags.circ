@@ -88,49 +88,7 @@
       <a name="appearance" val="classic"/>
       <a name="label" val="CLEAR_ERROR"/>
     </comp>
-    <comp lib="0" loc="(420,230)" name="Tunnel">
-      <a name="facing" val="east"/>
-      <a name="label" val="CURRENT_OVF"/>
-    </comp>
-    <comp lib="0" loc="(420,340)" name="Tunnel">
-      <a name="facing" val="east"/>
-      <a name="label" val="CURRENT_DIV0"/>
-    </comp>
-    <comp lib="0" loc="(430,450)" name="Tunnel">
-      <a name="facing" val="east"/>
-      <a name="label" val="CURRENT_ADDR"/>
-    </comp>
-    <comp lib="0" loc="(430,560)" name="Tunnel">
-      <a name="facing" val="east"/>
-      <a name="label" val="CURRENT_INV"/>
-    </comp>
-    <comp lib="0" loc="(440,680)" name="Tunnel">
-      <a name="facing" val="east"/>
-      <a name="label" val="CURRENT_ILL"/>
-    </comp>
-    <comp lib="0" loc="(440,780)" name="Tunnel">
-      <a name="facing" val="east"/>
-      <a name="label" val="CURRENT_INPUT"/>
-    </comp>
     <comp lib="0" loc="(720,200)" name="Constant"/>
-    <comp lib="0" loc="(830,270)" name="Tunnel">
-      <a name="label" val="CURRENT_OVF"/>
-    </comp>
-    <comp lib="0" loc="(830,370)" name="Tunnel">
-      <a name="label" val="CURRENT_DIV0"/>
-    </comp>
-    <comp lib="0" loc="(830,580)" name="Tunnel">
-      <a name="label" val="CURRENT_INV"/>
-    </comp>
-    <comp lib="0" loc="(840,470)" name="Tunnel">
-      <a name="label" val="CURRENT_ADDR"/>
-    </comp>
-    <comp lib="0" loc="(840,700)" name="Tunnel">
-      <a name="label" val="CURRENT_ILL"/>
-    </comp>
-    <comp lib="0" loc="(840,810)" name="Tunnel">
-      <a name="label" val="CURRENT_INPUT"/>
-    </comp>
     <comp lib="1" loc="(260,110)" name="NOT Gate">
       <a name="label" val="NOT_CLEAR_ERROR"/>
     </comp>
@@ -295,5 +253,23 @@
     <wire from="(820,670)" to="(1000,670)"/>
     <wire from="(820,670)" to="(820,700)"/>
     <wire from="(820,700)" to="(840,700)"/>
+    <wire from="(420,230)" to="(420,190)"/>
+    <wire from="(420,190)" to="(830,190)"/>
+    <wire from="(830,190)" to="(830,270)"/>
+    <wire from="(420,340)" to="(420,300)"/>
+    <wire from="(420,300)" to="(830,300)"/>
+    <wire from="(830,300)" to="(830,370)"/>
+    <wire from="(430,450)" to="(430,410)"/>
+    <wire from="(430,410)" to="(840,410)"/>
+    <wire from="(840,410)" to="(840,470)"/>
+    <wire from="(430,560)" to="(430,520)"/>
+    <wire from="(430,520)" to="(830,520)"/>
+    <wire from="(830,520)" to="(830,580)"/>
+    <wire from="(440,680)" to="(440,640)"/>
+    <wire from="(440,640)" to="(840,640)"/>
+    <wire from="(840,640)" to="(840,700)"/>
+    <wire from="(440,780)" to="(440,740)"/>
+    <wire from="(440,740)" to="(840,740)"/>
+    <wire from="(840,740)" to="(840,810)"/>
   </circuit>
 </project>

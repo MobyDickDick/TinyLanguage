@@ -1212,22 +1212,27 @@ def test_ap3_error_flag_feedback_is_clocked_not_combinational():
     errors = next(c for c in root.findall("circuit") if c.get("name") == "ErrorFlags")
     wires = {(wire.get("from"), wire.get("to")) for wire in errors.findall("wire")}
 
-    tunnels = {}
-    for component in errors.findall("comp"):
-        if component.get("name") == "Tunnel":
-            label = _attributes(component).get("label")
-            tunnels.setdefault(label, set()).add(component.get("loc"))
+    assert all(
+        component.get("name") != "Tunnel" for component in errors.findall("comp")
+    )
 
-    expected_tunnels = {
-        "OVF": {"(420,230)", "(830,270)"},
-        "DIV0": {"(420,340)", "(830,370)"},
-        "ADDR": {"(430,450)", "(840,470)"},
-        "INV": {"(430,560)", "(830,580)"},
-        "ILL": {"(440,680)", "(840,700)"},
-        "INPUT": {"(440,780)", "(840,810)"},
+    expected_feedback_routes = {
+        "OVF": ("(420,230)", "(830,270)", 190),
+        "DIV0": ("(420,340)", "(830,370)", 300),
+        "ADDR": ("(430,450)", "(840,470)", 410),
+        "INV": ("(430,560)", "(830,580)", 520),
+        "ILL": ("(440,680)", "(840,700)", 640),
+        "INPUT": ("(440,780)", "(840,810)", 740),
     }
-    for flag, locations in expected_tunnels.items():
-        assert tunnels[f"CURRENT_{flag}"] == locations
+    for start, end, lane_y in expected_feedback_routes.values():
+        start_x = start.partition(",")[0] + ","
+        end_x = end.partition(",")[0] + ","
+        route = {
+            (start, f"{start_x}{lane_y})"),
+            (f"{start_x}{lane_y})", f"{end_x}{lane_y})"),
+            (f"{end_x}{lane_y})", end),
+        }
+        assert route <= wires
 
     for register_y in (200, 310, 420, 530, 640, 750):
         assert (f"(730,{register_y + 50})", f"(750,{register_y + 50})") in wires

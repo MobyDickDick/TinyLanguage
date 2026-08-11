@@ -168,57 +168,30 @@ def test_fetch_decode_alone_exposes_named_reset_input():
 
 
 def test_top_level_opcode_reaches_decode_controls_only():
-    """Start decode integration with the independently named opcode bus."""
+    """Resolve the opcode route from named pins and the splitter mapping."""
 
     root = ET.parse(PROJECT).getroot()
-    circuit = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
-    controls = [
-        component
-        for component in circuit.findall("comp")
-        if component.get("name") == "FetchDecodeControls"
-    ]
-    assert [component.get("loc") for component in controls] == ["(650,480)"]
-
-    adjacency = {}
-    for wire in circuit.findall("wire"):
-        start, end = wire.get("from"), wire.get("to")
-        adjacency.setdefault(start, set()).add(end)
-        adjacency.setdefault(end, set()).add(start)
-
-    # The 22-bit machine word is split before the six opcode bits reach the
-    # controls block. Bits 21..16 form the decoder input; the operand remains
-    # deliberately unconnected until the data-bus integration steps.
-    opcode_source = "(340,150)"
-    splitter_input = "(350,150)"
-    reachable = {opcode_source}
-    pending = list(reachable)
-    while pending:
-        for endpoint in adjacency.get(pending.pop(), ()):
-            if endpoint not in reachable:
-                reachable.add(endpoint)
-                pending.append(endpoint)
-
-    assert splitter_input in reachable
-    decoder_side = {"(370,140)"}
-    pending = list(decoder_side)
-    while pending:
-        for endpoint in adjacency.get(pending.pop(), ()):
-            if endpoint not in decoder_side:
-                decoder_side.add(endpoint)
-                pending.append(endpoint)
-    assert "(430,480)" in decoder_side
-    splitter = next(
-        component
-        for component in circuit.findall("comp")
-        if component.get("name") == "Splitter"
+    circuit = _top_level(root)
+    opcode_source = _subcircuit_output(root, "FetchDecode", "OPCODE")
+    opcode_branch = _instruction_field_output(root, range(16, 22))
+    opcode_target = _subcircuit_input(root, "FetchDecodeControls", "OPCODE")
+    adjacency = _electrical_adjacency(
+        circuit, {opcode_source, opcode_branch, opcode_target}
     )
-    splitter_attributes = _attributes(splitter)
-    assert splitter_attributes["incoming"] == "22"
-    assert {
-        bit for bit in range(22) if splitter_attributes.get(f"bit{bit}") == "1"
-    } == set(range(16, 22))
-    assert reachable.isdisjoint({"(80,70)", "(80,160)"})
 
+    source_net = _reachable(adjacency, opcode_source)
+    decoder_net = _reachable(adjacency, opcode_branch)
+    assert opcode_branch not in source_net  # the splitter separates the fields
+    assert opcode_target in decoder_net
+    assert _instruction_field_output(root, range(16)) not in decoder_net
+    external_controls = {
+        component.get("loc")
+        for component in circuit.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("label") in {"CLK", "RESET"}
+    }
+    assert source_net.isdisjoint(external_controls)
+    assert decoder_net.isdisjoint(external_controls)
 
 def test_top_level_clear_error_reaches_error_flags_only():
     """Route one decoded control without coupling it to clock or reset."""
@@ -250,136 +223,40 @@ def test_top_level_clear_error_reaches_error_flags_only():
     assert reachable.isdisjoint(forbidden)
 
 
-def test_top_level_set_ovf_reaches_error_flags_only():
-    """Route one sticky-error set control without joining existing nets."""
-
-    root = ET.parse(PROJECT).getroot()
-    circuit = next(
-        item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
-    )
-    adjacency = {}
-    for wire in circuit.findall("wire"):
-        start, end = wire.get("from"), wire.get("to")
-        adjacency.setdefault(start, set()).add(end)
-        adjacency.setdefault(end, set()).add(start)
-
-    # SET_OVF is output 46 on the automatic FetchDecodeControls symbol; the
-    # matching ErrorFlags input follows CLK and CLEAR_ERROR on its symbol.
-    set_ovf_source = "(650,1380)"
-    set_ovf_target = "(1530,120)"
-    reachable = {set_ovf_source}
-    pending = list(reachable)
-    while pending:
-        for endpoint in adjacency.get(pending.pop(), ()):
-            if endpoint not in reachable:
-                reachable.add(endpoint)
-                pending.append(endpoint)
-
-    assert set_ovf_target in reachable
-    assert reachable.isdisjoint(
-        {
-            "(80,70)",  # CLK
-            "(80,160)",  # RESET
-            "(430,370)",  # FetchDecodeControls.OPCODE
-            "(650,1150)",  # FetchDecodeControls.CLEAR_ERROR
-            "(1350,100)",  # ErrorFlags.CLK
-            "(1350,80)",  # ErrorFlags.CLEAR_ERROR
-        }
-    )
-
-
-def test_top_level_set_div0_reaches_error_flags_only():
-    """Route the divide-by-zero set control on an isolated top-level net."""
-
-    root = ET.parse(PROJECT).getroot()
-    circuit = next(
-        item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
-    )
-    adjacency = {}
-    for wire in circuit.findall("wire"):
-        start, end = wire.get("from"), wire.get("to")
-        adjacency.setdefault(start, set()).add(end)
-        adjacency.setdefault(end, set()).add(start)
-
-    # SET_DIV0 immediately follows SET_OVF on both automatic symbols.
-    set_div0_source = "(650,1400)"
-    set_div0_target = "(1530,140)"
-    reachable = {set_div0_source}
-    pending = list(reachable)
-    while pending:
-        for endpoint in adjacency.get(pending.pop(), ()):
-            if endpoint not in reachable:
-                reachable.add(endpoint)
-                pending.append(endpoint)
-
-    assert set_div0_target in reachable
-    assert reachable.isdisjoint(
-        {
-            "(80,70)",  # CLK
-            "(80,160)",  # RESET
-            "(430,370)",  # FetchDecodeControls.OPCODE
-            "(650,1150)",  # FetchDecodeControls.CLEAR_ERROR
-            "(650,1270)",  # FetchDecodeControls.SET_OVF
-            "(1350,100)",  # ErrorFlags.CLK
-            "(1350,80)",  # ErrorFlags.CLEAR_ERROR
-            "(1350,120)",  # ErrorFlags.SET_OVF
-        }
-    )
-
-
 @pytest.mark.parametrize(
-    ("name", "source", "target"),
-    [
-        ("SET_ADDR", "(650,1420)", "(1530,160)"),
-        ("SET_INV", "(650,1440)", "(1530,180)"),
-        ("SET_ILL", "(650,1460)", "(1530,200)"),
-        ("SET_INPUT", "(650,1480)", "(1530,220)"),
-    ],
+    "name", ("SET_OVF", "SET_DIV0", "SET_ADDR", "SET_INV", "SET_ILL", "SET_INPUT")
 )
-def test_remaining_error_controls_reach_matching_error_flags_only(
-    name, source, target
-):
-    """Every remaining error control has one dedicated top-level net."""
+def test_top_level_error_controls_reach_only_the_matching_error_input(name):
+    """Resolve every error route by pin name, independent of drawing coordinates."""
 
     root = ET.parse(PROJECT).getroot()
-    circuit = next(
-        item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
-    )
-    adjacency = {}
-    for wire in circuit.findall("wire"):
-        start, end = wire.get("from"), wire.get("to")
-        adjacency.setdefault(start, set()).add(end)
-        adjacency.setdefault(end, set()).add(start)
-
-    reachable = {source}
-    pending = list(reachable)
-    while pending:
-        for endpoint in adjacency.get(pending.pop(), ()):
-            if endpoint not in reachable:
-                reachable.add(endpoint)
-                pending.append(endpoint)
-
-    assert target in reachable, name
-    all_control_terminals = {
-        "(650,1150)",
-        "(650,1270)",
-        "(650,1290)",
-        "(650,1310)",
-        "(650,1330)",
-        "(650,1350)",
-        "(650,1370)",
-        "(1350,80)",
-        "(1350,120)",
-        "(1350,140)",
-        "(1350,160)",
-        "(1350,180)",
-        "(1350,200)",
-        "(1350,220)",
+    circuit = _top_level(root)
+    sources = {
+        label: _control_output(root, label)
+        for label in (
+            "CLEAR_ERROR", "SET_OVF", "SET_DIV0", "SET_ADDR",
+            "SET_INV", "SET_ILL", "SET_INPUT",
+        )
     }
-    assert reachable.isdisjoint(
-        {"(80,70)", "(80,160)", "(430,370)", "(1350,100)"}
-        | (all_control_terminals - {source, target})
-    ), name
+    targets = {
+        label: _subcircuit_input(root, "ErrorFlags", label)
+        for label in sources
+    }
+    adjacency = _electrical_adjacency(
+        circuit, set(sources.values()) | set(targets.values())
+    )
+    reachable = _reachable(adjacency, sources[name])
+
+    assert targets[name] in reachable
+    assert reachable.isdisjoint(set(sources.values()) - {sources[name]})
+    assert reachable.isdisjoint(set(targets.values()) - {targets[name]})
+    external_controls = {
+        component.get("loc")
+        for component in circuit.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("label") in {"CLK", "RESET"}
+    }
+    assert reachable.isdisjoint(external_controls)
 
 
 ACCUMULATOR_FAMILIES = ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR")
@@ -581,6 +458,37 @@ def _reachable(adjacency, start):
                 result.add(endpoint)
                 pending.append(endpoint)
     return result
+
+
+def test_top_level_tunnels_are_used_and_have_a_matching_endpoint():
+    """Reject singleton and already hard-wired tunnel endpoints."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    tunnels = {}
+    for component in circuit.findall("comp"):
+        if component.get("name") == "Tunnel":
+            tunnels.setdefault(_attributes(component)["label"], []).append(
+                component.get("loc")
+            )
+
+    # Build the physical-wire graph without the virtual links introduced by
+    # tunnel names. This makes the assertion independent of drawing positions:
+    # coordinates are parsed only as Logisim's electrical contact points.
+    physical = ET.fromstring(ET.tostring(circuit))
+    for component in list(physical.findall("comp")):
+        if component.get("name") == "Tunnel":
+            physical.remove(component)
+    locations = {location for group in tunnels.values() for location in group}
+    adjacency = _electrical_adjacency(physical, locations)
+
+    for label, endpoints in tunnels.items():
+        assert len(endpoints) >= 2, f"{label} has no matching definition"
+        for endpoint in endpoints:
+            physical_net = _reachable(adjacency, endpoint)
+            assert physical_net.isdisjoint(
+                set(endpoints) - {endpoint}
+            ), f"{label} redundantly tunnels an already connected net"
 
 
 def test_top_level_accumulator_family_controls_are_independent_connections():

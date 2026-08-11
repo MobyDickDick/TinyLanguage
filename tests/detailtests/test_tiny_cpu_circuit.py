@@ -62,6 +62,7 @@ def test_inspector_exposes_completed_and_pending_sheets():
     unconnected_labels = {item.partition("@")[0] for item in reports["TinyCPU"].unconnected}
     assert {"INPUT_VALUE", "INPUT_VALID"} <= unconnected_labels
     assert {"CLK", "RESET"}.isdisjoint(unconnected_labels)
+    assert reports["TinyCPU"].routing_conflicts == ()
     assert reports["Datapath"].components == 12
     assert reports["Datapath"].wires == 22
     for sheet in (

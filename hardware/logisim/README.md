@@ -124,7 +124,10 @@ und kreuzt weder Reset-Anschlüsse noch Takt- oder WE-Bus.
 
 Die TinyCPU soll eine **graphische und direkt verfolgbare** Schaltung bleiben.
 Darum werden zusammengehörige Anschlüsse grundsätzlich mit sichtbaren,
-rechtwinkligen Leitungen verbunden. Tunnel sind kein Mittel, um eine schwierige
+rechtwinkligen Leitungen verbunden. Auf der neu gezeichneten Übersichtsseite
+`TinyCPU` sind die verbliebenen Tunnel jetzt durch sichtbare Leitungen in
+getrennten rechten Routingkorridoren ersetzt; unbeschriftete Logikbausteine
+halten dabei den Signalfluss statt interner Netznamen im Vordergrund. Tunnel sind kein Mittel, um eine schwierige
 Leitungsführung abzukürzen. Sie sind nur ausnahmsweise zulässig, wenn eine
 direkte Route trotz Verschieben der Bauteile und Nutzung freier Korridore die
 Lesbarkeit verschlechtern oder fremde Netze elektrisch verbinden würde. Jede

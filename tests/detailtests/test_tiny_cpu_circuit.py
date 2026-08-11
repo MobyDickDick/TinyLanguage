@@ -63,6 +63,16 @@ def test_inspector_exposes_completed_and_pending_sheets():
     assert {"INPUT_VALUE", "INPUT_VALID"} <= unconnected_labels
     assert {"CLK", "RESET"}.isdisjoint(unconnected_labels)
     assert reports["TinyCPU"].routing_conflicts == ()
+    # Keep the lower arithmetic mux connected to the AND input without the old
+    # vertical stub, whose endpoint joined the shared control lane.
+    top = next(
+        circuit
+        for circuit in ET.parse(PROJECT).getroot().findall("circuit")
+        if circuit.get("name") == "TinyCPU"
+    )
+    wires = {(wire.get("from"), wire.get("to")) for wire in top.findall("wire")}
+    assert (("(2330,2140)", "(2390,2140)")) in wires
+    assert (("(2390,2130)", "(2390,2140)")) not in wires
     assert reports["Datapath"].components == 12
     assert reports["Datapath"].wires == 22
     for sheet in (

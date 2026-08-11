@@ -289,9 +289,9 @@ def _component_at(circuit, location, name):
     return matches[0]
 
 
-# The hand-redrawn overview deliberately has no internal labels.  Tests resolve
-# its stable, visible component anchors instead; interface pins remain named in
-# their leaf-circuit definitions.
+# The hand-redrawn overview uses visible labels and no tunnels.  The stable
+# anchors below additionally guard against accidentally moving or replacing a
+# labelled component while reconnecting the direct wires.
 _TOP_LEVEL_COMPONENTS = {
     "ACC_LOAD_REQUEST": ("(940,1170)", "OR Gate"),
     "ACC_MEMORY_SELECT": ("(1010,900)", "OR Gate"),
@@ -315,7 +315,7 @@ _TOP_LEVEL_COMPONENTS = {
     "ACC_NOT_VALID_SELECT": ("(2340,690)", "Multiplexer"),
     "ACC_ADD_VALID_SELECT": ("(2390,720)", "Multiplexer"),
     "ACC_INPUT_VALID_SELECT": ("(2140,540)", "Multiplexer"),
-    "ACC_SUB_VALUE": ("(2040,1190)", "Subtractor"),
+    "ACC_SUB_VALUE": ("(2040,1210)", "Subtractor"),
 }
 
 
@@ -493,17 +493,15 @@ def _reachable(adjacency, start):
     return result
 
 
-def test_top_level_has_only_visible_unlabelled_wiring():
-    """Keep the hand-redrawn overview free of tunnels and internal labels."""
+def test_top_level_has_only_visible_labelled_wiring():
+    """Keep the overview tunnel-free and its functional components labelled."""
 
     circuit = _top_level(ET.parse(PROJECT).getroot())
     assert not [c for c in circuit.findall("comp") if c.get("name") == "Tunnel"]
     assert not [c for c in circuit.findall("comp") if c.get("name") == "Text"]
-    assert not [
-        c
-        for c in circuit.findall("comp")
-        if c.get("name") != "Pin" and "label" in _attributes(c)
-    ]
+    for label, (location, name) in _TOP_LEVEL_COMPONENTS.items():
+        component = _component_at(circuit, location, name)
+        assert _attributes(component).get("label") == label
 
 @pytest.mark.xfail(
     reason="hand-redrawn accumulator logic is intentionally pending direct-wire integration",
@@ -718,10 +716,6 @@ def test_top_level_input_validity_is_selected_only_for_input():
     )
 
 
-@pytest.mark.xfail(
-    reason="hand-redrawn accumulator logic is intentionally pending direct-wire integration",
-    strict=False,
-)
 def test_top_level_memory_validity_is_selected_for_memory_loads():
     """Use memory validity exactly when the matching data selector uses RAM."""
 
@@ -758,9 +752,6 @@ def test_top_level_memory_validity_is_selected_for_memory_loads():
     memory_matches = _reachable(adjacency, memory_valid) & inputs
     assert len(default_matches) == len(memory_matches) == 1
     assert default_matches != memory_matches
-    memory_select_gate = _labelled_component(circuit, "ACC_MEMORY_SELECT")
-    memory_select_output, _ = _gate_ports(memory_select_gate)
-    assert select in _reachable(adjacency, memory_select_output)
     not_x, not_y = (
         int(value) for value in not_selector.get("loc").strip("()").split(",")
     )

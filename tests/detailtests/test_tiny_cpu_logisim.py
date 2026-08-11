@@ -1302,3 +1302,31 @@ def test_ap8_verification_reports_a_stale_generated_artifact(tmp_path):
 
     with pytest.raises(VerificationError, match="ap5_countdown[.]rom"):
         verify_checkout(repository)
+
+
+def test_add_sub_sheet_uses_packed_buses_without_tunnels():
+    """Keep the extracted arithmetic stage compact and directly traceable."""
+
+    root = ET.parse(PROJECT).getroot()
+    arithmetic = next(c for c in root.findall("circuit") if c.get("name") == "AddSub")
+    components = arithmetic.findall("comp")
+    assert not [c for c in components if c.get("name") == "Tunnel"]
+    assert {c.get("name") for c in components} >= {
+        "Adder",
+        "Subtractor",
+        "Multiplexer",
+        "Splitter",
+    }
+    pins = {
+        _attributes(c).get("label"): _attributes(c).get("width", "1")
+        for c in components
+        if c.get("name") == "Pin"
+    }
+    assert pins == {
+        "OPERANDS": "32",
+        "VALID": "2",
+        "SUBTRACT": "1",
+        "CARRY": "1",
+        "RESULT": "16",
+        "RESULT_VALID": "1",
+    }

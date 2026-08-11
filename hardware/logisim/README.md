@@ -1,6 +1,6 @@
 # TinyCPU in Logisim-evolution
 
-This directory contains the completed eight-package TinyCPU hardware baseline.
+This directory contains the TinyCPU hardware baseline with a dedicated arithmetic sheet.
 Open `TinyCPU.circ` with Logisim-evolution 3.x. Das Blatt **`TinyCPU` ist die
 von Hand gepflegte Übersichtsseite**. Es ist keine generierte Verdrahtung und
 darf beim Bearbeiten der Integration weder neu angeordnet noch durch eine
@@ -168,6 +168,7 @@ their placement. The dependency-free inspector enforces this clearance and
 fails before a project with overlapping subcircuit symbols is checked in.
 
 - `TinyCPU` is the top-level sheet and documents the block boundary;
+- `AddSub` bündelt die beiden parallelen 16-Bit-Operanden in einem 32-Bit-Bus und die beiden Gültigkeitsleitungen in einem 2-Bit-Bus. Erst auf dem eigenen Schemablatt teilen Splitter diese Busse für den 16-Bit-Addierer und -Subtrahierer auf; ein gemeinsamer Selektor führt genau ein Ergebnis zurück. Das Blatt kommt vollständig ohne Tunnel aus und bildet damit die neue, kompakte Grenze für den arithmetischen ADD/SUB-Strang;
   its accumulator integration is visually grouped into a decode column and compact,
   labelled ADD/SUB stage columns so related operand, result, and validity logic can
   be read without scrolling to a disconnected lower workspace;

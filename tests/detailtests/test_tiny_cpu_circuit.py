@@ -60,7 +60,8 @@ def test_inspector_exposes_completed_and_pending_sheets():
 
     assert not reports["TinyCPU"].connected
     unconnected_labels = {item.partition("@")[0] for item in reports["TinyCPU"].unconnected}
-    assert {"CLK", "RESET", "INPUT_VALUE", "INPUT_VALID"} <= unconnected_labels
+    assert {"INPUT_VALUE", "INPUT_VALID"} <= unconnected_labels
+    assert {"CLK", "RESET"}.isdisjoint(unconnected_labels)
     assert reports["Datapath"].components == 12
     assert reports["Datapath"].wires == 22
     for sheet in (
@@ -135,7 +136,58 @@ def test_inspector_rejects_multiple_input_pins_on_one_net(tmp_path):
 
     report = inspect_project(project)[0]
     assert not report.connected
-    assert report.routing_conflicts == ("multiple input pins drive one net: A, B",)
+    assert report.routing_conflicts == (
+        "multiple outputs drive one net (wired-OR is forbidden): "
+        "A@(10,10), B@(20,10)",
+    )
+
+
+def test_inspector_rejects_outputs_joined_by_a_t_junction(tmp_path):
+    """A wire endpoint on another segment is an electrical junction in Logisim."""
+
+    project = tmp_path / "wired-or-t-junction.circ"
+    project.write_text(
+        """<project><main name="main"/><circuit name="main">
+        <comp lib="0" loc="(10,10)" name="Pin"><a name="label" val="A"/></comp>
+        <comp lib="0" loc="(10,30)" name="Pin"><a name="label" val="B"/></comp>
+        <comp lib="0" loc="(50,10)" name="Pin"><a name="label" val="OUT"/><a name="type" val="output"/></comp>
+        <wire from="(10,10)" to="(50,10)"/>
+        <wire from="(10,30)" to="(30,30)"/>
+        <wire from="(30,30)" to="(30,10)"/>
+        </circuit></project>""",
+        encoding="utf-8",
+    )
+
+    report = inspect_project(project)[0]
+
+    assert not report.connected
+    assert report.routing_conflicts == (
+        "multiple outputs drive one net (wired-OR is forbidden): "
+        "A@(10,10), B@(10,30)",
+    )
+
+
+def test_inspector_resolves_generated_subcircuit_output_drivers(tmp_path):
+    project = tmp_path / "shorted-subcircuits.circ"
+    project.write_text(
+        """<project><main name="main"/><circuit name="main">
+        <comp loc="(300,100)" name="Source"/>
+        <comp loc="(300,200)" name="Source"/>
+        <comp lib="0" loc="(400,100)" name="Pin"><a name="label" val="OUT"/><a name="type" val="output"/></comp>
+        <wire from="(300,100)" to="(400,100)"/>
+        <wire from="(300,200)" to="(300,100)"/>
+        </circuit><circuit name="Source">
+        <comp lib="0" loc="(100,100)" name="Pin"><a name="label" val="VALUE"/><a name="type" val="output"/></comp>
+        </circuit></project>""",
+        encoding="utf-8",
+    )
+
+    report = inspect_project(project)[0]
+
+    assert report.routing_conflicts == (
+        "multiple outputs drive one net (wired-OR is forbidden): "
+        "Source.VALUE@(300,100), Source.VALUE@(300,200)",
+    )
 
 
 def test_top_level_redraw_is_tunnel_and_internal_label_free():

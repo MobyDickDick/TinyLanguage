@@ -405,6 +405,59 @@ def _component_terminal_widths(component: ET.Element) -> dict[str, int]:
     return {terminal: width for terminal in _component_terminals(component)}
 
 
+def _component_output_terminals(
+    component: ET.Element, circuit_interfaces: dict[str, tuple[str, ...]]
+) -> set[str]:
+    """Return terminals that actively drive their net.
+
+    Logisim does not store a netlist in ``.circ`` files, only drawing geometry.
+    In particular, treating a component as a driver without identifying its
+    output terminal produces both false positives and missed output-to-output
+    shorts.  Keep this deliberately conservative list in step with
+    :func:`_component_terminals` and resolve generated subcircuit ports from
+    their declared output pins.
+    """
+
+    location = _norm_loc(component.get("loc", "?"))
+    name = component.get("name", "")
+    attrs = _attributes(component)
+    x, y = _location(location)
+    if name == "Pin":
+        # An input pin is a source when viewed from inside its circuit.
+        return {location} if attrs.get("type", "input") != "output" else set()
+    if name in circuit_interfaces:
+        return {
+            f"({x},{y + 20 * index})"
+            for index, _label in enumerate(circuit_interfaces[name])
+        }
+    if name == "Decoder":
+        select = int(attrs.get("select", "1"))
+        outputs = min(1 << select, 64)
+        return {
+            f"({x + 20},{y - 10 * outputs + 10 * lane})"
+            for lane in range(outputs)
+        }
+    if name == "Splitter":
+        # A splitter is passive: its branches are separate nets connected to
+        # slices of the incoming bus, not independent voltage sources.
+        return set()
+    if name == "Register" and attrs.get("appearance") == "logisim_evolution":
+        return {f"({x + 60},{y + 30})"}
+    if name in {"RAM", "ROM"} and attrs.get("appearance") == "logisim_evolution":
+        data_width = int(
+            attrs.get("dataWidth", attrs.get("data", attrs.get("width", "1")))
+        )
+        data_offset = 100 if data_width == 1 else (60 if name == "ROM" else 90)
+        return {f"({x + 240},{y + data_offset})"}
+    # These Logisim primitives all expose their result at the component anchor.
+    if name in {
+        "AND Gate", "OR Gate", "NOT Gate", "Adder", "Subtractor",
+        "Comparator", "Multiplexer", "Constant",
+    }:
+        return {location}
+    return set()
+
+
 def _location(value: str) -> tuple[int, int]:
     """Return the integer coordinates used by Logisim's ``loc`` attribute."""
 
@@ -607,6 +660,31 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
 
     root = _read_project(path)
     circuit_names = {circuit.get("name", "") for circuit in root.findall("circuit")}
+    circuit_definitions = {
+        circuit.get("name", ""): circuit for circuit in root.findall("circuit")
+    }
+
+    def interface_pins(name: str, pin_type: str) -> tuple[ET.Element, ...]:
+        definition = circuit_definitions[name]
+        return tuple(
+            sorted(
+                (
+                    component
+                    for component in definition.findall("comp")
+                    if component.get("name") == "Pin"
+                    and _attributes(component).get("type", "input") == pin_type
+                ),
+                key=lambda component: _location(component.get("loc", ""))[::-1],
+            )
+        )
+
+    circuit_outputs = {
+        name: tuple(
+            _attributes(pin).get("label", f"output {index}")
+            for index, pin in enumerate(interface_pins(name, "output"))
+        )
+        for name in circuit_names
+    }
 
     reports: list[CircuitReport] = []
     for circuit in root.findall("circuit"):
@@ -622,15 +700,34 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
             for component in circuit.findall("comp")
             if component.get("name") != "Text"
         ]
+
+        def component_terminals(component: ET.Element) -> set[str]:
+            terminals = _component_terminals(component)
+            if component.get("name", "") not in circuit_names:
+                return terminals
+            x, y = _location(component.get("loc", ""))
+            inputs = interface_pins(component.get("name", ""), "input")
+            outputs = interface_pins(component.get("name", ""), "output")
+            return {
+                *(f"({x - 220},{y + 20 * index})" for index in range(len(inputs))),
+                *(f"({x},{y + 20 * index})" for index in range(len(outputs))),
+            }
+
         terminal_to_component: dict[str, list[ET.Element]] = {}
         for component in electrical:
-            for terminal in _component_terminals(component):
+            for terminal in component_terminals(component):
                 terminal_to_component.setdefault(terminal, []).append(component)
         wire_neighbors: dict[str, set[str]] = {}
         for wire in wires:
             start = _norm_loc(wire.get("from", ""))
             end = _norm_loc(wire.get("to", ""))
-            points_on_wire = {start, end}
+            # Every endpoint is a potential Logisim junction, including the
+            # endpoint of a *different* wire that lands midway on this one.
+            # Omitting these T-junctions was the reason wired-OR faults escaped
+            # the old checker.
+            points_on_wire = {
+                point for point in endpoints if _point_on_wire(point, wire)
+            }
             points_on_wire.update(
                 terminal
                 for terminal in terminal_to_component
@@ -658,7 +755,7 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
         unconnected = []
         for component in electrical:
             location = _norm_loc(component.get("loc", "?"))
-            terminals = _component_terminals(component)
+            terminals = component_terminals(component)
             reachable = reachable_wire_points(terminals)
             connected_components = {
                 id(other)
@@ -725,17 +822,22 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
             for net_point in net:
                 for component in terminal_to_component.get(net_point, ()):
                     attrs = _attributes(component)
-                    # A circuit input pin drives its internal net.  Conversely,
-                    # a pin with ``type=output`` is a sink inside the circuit
-                    # (although it drives the enclosing circuit when this sheet
-                    # is used as a subcircuit).
-                    if component.get("name") == "Pin" and attrs.get("type") != "output":
-                        drivers.append(
-                            attrs.get("label") or f"Pin@{component.get('loc')}"
-                        )
+                    if net_point in _component_output_terminals(
+                        component, circuit_outputs
+                    ):
+                        label = attrs.get("label") or component.get("name", "component")
+                        if component.get("name", "") in circuit_outputs:
+                            index = (
+                                _location(net_point)[1]
+                                - _location(component.get("loc", ""))[1]
+                            ) // 20
+                            outputs = circuit_outputs[component.get("name", "")]
+                            if 0 <= index < len(outputs):
+                                label = f"{label}.{outputs[index]}"
+                        drivers.append(f"{label}@{net_point}")
             if len(set(drivers)) > 1:
                 routing_conflicts.append(
-                    "multiple input pins drive one net: "
+                    "multiple outputs drive one net (wired-OR is forbidden): "
                     + ", ".join(sorted(set(drivers)))
                 )
         terminal_widths: dict[str, list[tuple[str, int]]] = {}

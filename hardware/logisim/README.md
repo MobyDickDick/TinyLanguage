@@ -405,8 +405,8 @@ or off-by-one-grid wires that would otherwise look connected from the pin alone:
 PYTHONPATH=src python src/tiny_cpu_circuit.py hardware/logisim/TinyCPU.circ
 ```
 
-The complete-project structural check succeeds and reports all six sheets
-as connected. The inspector
+The leaf sheets pass the structural check; the manually maintained top-level
+sheet remains pending while its integration wiring is completed. The inspector
 is **not** a replacement for Logisim's
 component simulator: faithfully emulating the complete Logisim library,
 propagation rules, clocks, unknown values, and RAM would amount to maintaining a
@@ -425,3 +425,21 @@ PYTHONPATH=src python src/tiny_cpu_circuit.py \
 
 See `docs/tiny_cpu_roadmap.md` for the ordered implementation packages and
 their acceptance criteria.
+
+## Electrical construction rule
+
+TinyCPU does **not** use wired-OR nets.  Every net may have at most one active
+driver; combine control signals with an explicit OR gate instead of joining
+component outputs.  This also applies when a wire endpoint lands in the middle
+of another wire: Logisim treats that T contact as a junction even if the longer
+segment was not split in the project XML.
+
+Run the structural checker after every schematic edit:
+
+```bash
+PYTHONPATH=src python src/tiny_cpu_circuit.py hardware/logisim/TinyCPU.circ
+```
+
+The checker derives output ports for built-in parts and generated subcircuit
+symbols and reports a `wired-OR is forbidden` routing conflict when two output
+terminals are reachable on one electrical net.

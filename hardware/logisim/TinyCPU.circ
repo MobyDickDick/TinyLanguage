@@ -232,7 +232,9 @@
       <a name="label" val="OPERAND_DATA"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(590,340)" name="Constant"/>
+    <comp lib="0" loc="(590,340)" name="Constant">
+      <a name="label" val="ACC_DEFAULT_VALID"/>
+    </comp>
     <comp lib="0" loc="(640,230)" name="Tunnel">
       <a name="label" val="PRE_SUB_DATA"/>
       <a name="width" val="16"/>
@@ -317,28 +319,48 @@
       <a name="label" val="ACC_WRITE_REQUEST"/>
     </comp>
     <comp lib="2" loc="(1030,260)" name="Multiplexer">
+      <a name="label" val="ACC_INPUT_DATA_SELECT"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="2" loc="(2130,1330)" name="Multiplexer"/>
+    <comp lib="2" loc="(2130,1330)" name="Multiplexer">
+      <a name="label" val="ACC_SUB_OPERAND_VALID_SELECT"/>
+    </comp>
     <comp lib="2" loc="(2250,1010)" name="Multiplexer">
+      <a name="label" val="ACC_SUB_OPERAND_SELECT"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="2" loc="(2340,570)" name="Multiplexer"/>
-    <comp lib="2" loc="(2480,1300)" name="Multiplexer"/>
+    <comp lib="2" loc="(2340,570)" name="Multiplexer">
+      <a name="label" val="ACC_ADD_OPERAND_VALID_SELECT"/>
+    </comp>
+    <comp lib="2" loc="(2480,1300)" name="Multiplexer">
+      <a name="label" val="ACC_SUB_VALID_SELECT"/>
+    </comp>
     <comp lib="2" loc="(2490,960)" name="Multiplexer">
+      <a name="label" val="ACC_SUB_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(470,200)" name="Multiplexer">
+      <a name="label" val="ACC_MEMORY_DATA_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(620,250)" name="Multiplexer">
+      <a name="label" val="ACC_NOT_DATA_SELECT"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="2" loc="(650,350)" name="Multiplexer"/>
-    <comp lib="2" loc="(820,410)" name="Multiplexer"/>
-    <comp lib="2" loc="(920,460)" name="Multiplexer"/>
-    <comp lib="2" loc="(950,530)" name="Multiplexer"/>
+    <comp lib="2" loc="(650,350)" name="Multiplexer">
+      <a name="label" val="ACC_MEMORY_VALID_SELECT"/>
+    </comp>
+    <comp lib="2" loc="(820,410)" name="Multiplexer">
+      <a name="label" val="ACC_NOT_VALID_SELECT"/>
+    </comp>
+    <comp lib="2" loc="(920,460)" name="Multiplexer">
+      <a name="label" val="ACC_ADD_VALID_SELECT"/>
+    </comp>
+    <comp lib="2" loc="(950,530)" name="Multiplexer">
+      <a name="label" val="ACC_INPUT_VALID_SELECT"/>
+    </comp>
     <comp lib="3" loc="(2430,980)" name="Subtractor">
+      <a name="label" val="ACC_SUB_VALUE"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="9" loc="(1930,500)" name="Text">

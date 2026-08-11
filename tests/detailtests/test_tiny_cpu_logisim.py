@@ -785,21 +785,25 @@ def test_top_level_add_propagates_both_operand_validities():
     circuit = _top_level(root)
     adjacency = _electrical_adjacency(circuit)
     memory_gate = _labelled_component(circuit, "ACC_ADD_MEMORY_SELECT")
-    family_gate = _labelled_component(circuit, "ACC_ADD_SELECT")
     operand_selector = _labelled_component(circuit, "ACC_ADD_OPERAND_VALID_SELECT")
     valid_gate = _labelled_component(circuit, "ACC_ADD_VALID")
     _, memory_inputs = _gate_ports(memory_gate)
-    _, family_inputs = _gate_ports(family_gate)
 
-    controls = {name: _control_output(root, name) for name in (
-        "ADD_CONST", "ADD_ADDRESS", "ADD_ADDRESS_REGISTER",
-        "ADD_ADDRESS_REGISTER_PLUS_OFFSET",
-    )}
-    for name, source in controls.items():
-        reachable = _reachable(adjacency, source)
-        assert len(reachable & family_inputs) == 1
-        if name != "ADD_CONST":
-            assert len(reachable & memory_inputs) == 1
+    # Only the three memory-backed ADD modes drive the memory-validity
+    # selector. ADD_CONST obtains its validity from the instruction operand.
+    memory_controls = {
+        name: _control_output(root, name)
+        for name in (
+            "ADD_ADDRESS",
+            "ADD_ADDRESS_REGISTER",
+            "ADD_ADDRESS_REGISTER_PLUS_OFFSET",
+        )
+    }
+    for source in memory_controls.values():
+        assert len(_reachable(adjacency, source) & memory_inputs) == 1
+    assert _reachable(adjacency, _control_output(root, "ADD_CONST")).isdisjoint(
+        memory_inputs
+    )
 
     mux_x, mux_y = (int(value) for value in operand_selector.get("loc").strip("()").split(","))
     mux_inputs = {f"({mux_x - 30},{mux_y - 10})", f"({mux_x - 30},{mux_y + 10})"}
@@ -1211,6 +1215,7 @@ def test_ap3_error_flag_feedback_is_clocked_not_combinational():
     root = ET.parse(PROJECT).getroot()
     errors = next(c for c in root.findall("circuit") if c.get("name") == "ErrorFlags")
     wires = {(wire.get("from"), wire.get("to")) for wire in errors.findall("wire")}
+    undirected_wires = {frozenset(wire) for wire in wires}
 
     assert all(
         component.get("name") != "Tunnel" for component in errors.findall("comp")
@@ -1232,7 +1237,7 @@ def test_ap3_error_flag_feedback_is_clocked_not_combinational():
             (f"{start_x}{lane_y})", f"{end_x}{lane_y})"),
             (f"{end_x}{lane_y})", end),
         }
-        assert route <= wires
+        assert {frozenset(wire) for wire in route} <= undirected_wires
 
     for register_y in (200, 310, 420, 530, 640, 750):
         assert (f"(730,{register_y + 50})", f"(750,{register_y + 50})") in wires

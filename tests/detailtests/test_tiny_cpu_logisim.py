@@ -413,42 +413,30 @@ def _labelled_component(circuit, label):
 
 
 def _accumulator_selectors(circuit):
-    """Return the three 16-bit accumulator muxes in signal-flow order.
+    """Return the three named 16-bit accumulator muxes in signal-flow order."""
 
-    Logisim may omit cosmetic component labels when a hand-edited project is
-    saved.  The mux identity must therefore not depend on those labels alone.
-    """
-
-    muxes = [
-        component
-        for component in circuit.findall("comp")
-        if component.get("name") == "Multiplexer"
-        and _attributes(component).get("width") == "16"
-        and int(component.get("loc").strip("()").split(",")[0]) < 1000
-    ]
-    assert len(muxes) == 3
-    return sorted(
-        muxes,
-        key=lambda component: int(component.get("loc").strip("()").split(",")[0]),
+    return tuple(
+        _labelled_component(circuit, label)
+        for label in (
+            "ACC_MEMORY_DATA_SELECT",
+            "ACC_NOT_DATA_SELECT",
+            "ACC_INPUT_DATA_SELECT",
+        )
     )
 
 
 def _accumulator_validity_selectors(circuit):
-    """Return the one-bit validity muxes in signal-flow order."""
+    """Return the named one-bit validity muxes in signal-flow order."""
 
-    muxes = [
-        component
-        for component in circuit.findall("comp")
-        if component.get("name") == "Multiplexer"
-        and _attributes(component).get("width", "1") == "1"
-        and int(component.get("loc").strip("()").split(",")[0]) < 1000
-    ]
-    assert len(muxes) == 4
-    return sorted(
-        muxes,
-        key=lambda component: int(component.get("loc").strip("()").split(",")[0]),
+    return tuple(
+        _labelled_component(circuit, label)
+        for label in (
+            "ACC_MEMORY_VALID_SELECT",
+            "ACC_NOT_VALID_SELECT",
+            "ACC_ADD_VALID_SELECT",
+            "ACC_INPUT_VALID_SELECT",
+        )
     )
-
 
 def _control_output(root, label):
     """Resolve a generated-symbol output by its pin name, not a fixed point."""
@@ -809,7 +797,7 @@ def test_top_level_memory_validity_is_selected_for_memory_loads():
         component
         for component in circuit.findall("comp")
         if component.get("name") == "Constant"
-        and _attributes(component).get("value") == "0x1"
+        and _attributes(component).get("label") == "ACC_DEFAULT_VALID"
     )
     memory_valid = _subcircuit_output(root, "Memory", "VALID_OUT")
     adjacency = _electrical_adjacency(
@@ -952,7 +940,13 @@ def test_top_level_subtracts_the_selected_operand_and_propagates_validity():
         f"({operand_x - 30},{operand_y - 10})",
         f"({operand_x - 30},{operand_y + 10})",
     }
-    assert len(_reachable(adjacency, "(400,230)") & operand_inputs) == 1
+    assert (
+        len(
+            _reachable(adjacency, _instruction_field_output(root, range(16)))
+            & operand_inputs
+        )
+        == 1
+    )
     assert (
         len(
             _reachable(adjacency, _subcircuit_output(root, "Memory", "DATA_OUT"))

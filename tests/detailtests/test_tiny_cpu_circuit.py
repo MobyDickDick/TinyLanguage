@@ -60,7 +60,7 @@ def test_inspector_exposes_completed_and_pending_sheets():
 
     assert not reports["TinyCPU"].connected
     unconnected_labels = {item.partition("@")[0] for item in reports["TinyCPU"].unconnected}
-    assert "ACC_CURRENT_VALID" in unconnected_labels
+    assert {"CLK", "RESET", "INPUT_VALUE", "INPUT_VALID"} <= unconnected_labels
     assert reports["Datapath"].components == 12
     assert reports["Datapath"].wires == 22
     for sheet in (
@@ -138,27 +138,19 @@ def test_inspector_rejects_multiple_input_pins_on_one_net(tmp_path):
     assert report.routing_conflicts == ("multiple input pins drive one net: A, B",)
 
 
-def test_top_level_accumulator_stages_are_grouped_in_compact_columns():
+def test_top_level_redraw_is_tunnel_and_internal_label_free():
     root = ET.parse(PROJECT).getroot()
     top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
-    labelled = {
-        child.get("val"): component.get("loc")
+
+    assert not [item for item in top.findall("comp") if item.get("name") == "Tunnel"]
+    assert not [item for item in top.findall("comp") if item.get("name") == "Text"]
+    assert not [
+        child
         for component in top.findall("comp")
+        if component.get("name") != "Pin"
         for child in component.findall("a")
-        if child.get("name") in {"label", "text"}
-    }
-
-    def point(label):
-        return tuple(map(int, labelled[label].strip("()").split(",")))
-
-    add_heading = point("ADD: operand, result and validity")
-    sub_heading = point("SUB: operand, result and validity")
-    add_result = point("ACC_ADD_VALID")
-    sub_result = point("ACC_SUB_VALID")
-    assert add_heading[1] < sub_heading[1]
-    assert add_heading[0] <= add_result[0] <= add_heading[0] + 600
-    assert sub_heading[0] <= sub_result[0] <= sub_heading[0] + 600
-
+        if child.get("name") == "label"
+    ]
 
 def test_top_level_keeps_the_hand_placed_fetch_and_memory_anchors():
     report = next(item for item in inspect_project(PROJECT) if item.name == "TinyCPU")

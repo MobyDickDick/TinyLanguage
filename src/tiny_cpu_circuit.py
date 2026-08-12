@@ -272,12 +272,20 @@ def _component_terminals(component: ET.Element) -> set[str]:
         terminals.update({f"({x - 50},{y - 20})", f"({x - 50},{y + 20})"})
     elif component.get("name") == "NOT Gate":
         terminals.add(f"({x - 30},{y})")
-    elif component.get("name") in {"Adder", "Comparator"}:
+    elif component.get("name") in {"Adder", "Subtractor", "Comparator"}:
         terminals.update({f"({x - 40},{y - 10})", f"({x - 40},{y + 10})"})
-        if component.get("name") == "Adder":
+        if component.get("name") in {"Adder", "Subtractor"}:
             terminals.update({f"({x - 20},{y - 20})", f"({x - 20},{y + 20})"})
         else:
             terminals.update({f"({x},{y - 10})", f"({x},{y + 10})"})
+    elif component.get("name") == "Multiplexer":
+        terminals.update(
+            {
+                f"({x - 30},{y - 10})",
+                f"({x - 30},{y + 10})",
+                f"({x - 20},{y + 20})",
+            }
+        )
     if attrs.get("appearance") != "logisim_evolution":
         return terminals
     if component.get("name") == "Register":
@@ -360,12 +368,19 @@ def _component_terminal_widths(component: ET.Element) -> dict[str, int]:
         return {location: 1, f"({x - 50},{y - 20})": 1, f"({x - 50},{y + 20})": 1}
     if name == "NOT Gate":
         return {location: 1, f"({x - 30},{y})": 1}
-    if name == "Adder":
+    if name in {"Adder", "Subtractor"}:
         return {
             location: width,
             f"({x - 40},{y - 10})": width,
             f"({x - 40},{y + 10})": width,
             f"({x - 20},{y - 20})": 1,
+            f"({x - 20},{y + 20})": 1,
+        }
+    if name == "Multiplexer":
+        return {
+            location: width,
+            f"({x - 30},{y - 10})": width,
+            f"({x - 30},{y + 10})": width,
             f"({x - 20},{y + 20})": 1,
         }
     if name == "Comparator":
@@ -456,6 +471,27 @@ def _component_output_terminals(
     }:
         return {location}
     return set()
+
+
+def _required_terminal_names(component: ET.Element) -> dict[str, str]:
+    """Return terminals that must each reach another component.
+
+    Most primitives have optional control/status pins, so the general
+    connectivity check deliberately remains conservative.  A multiplexer is
+    different: both data inputs and its select input are fundamental to the
+    operation.  In particular, a floating select pin must not be hidden by
+    wires attached to the data terminals.
+    """
+
+    if component.get("name") != "Multiplexer":
+        return {}
+    x, y = _location(component.get("loc", ""))
+    return {
+        f"({x - 30},{y - 10})": "data input 0",
+        f"({x - 30},{y + 10})": "data input 1",
+        f"({x - 20},{y + 20})": "select input",
+        f"({x},{y})": "output",
+    }
 
 
 def _location(value: str) -> tuple[int, int]:
@@ -756,6 +792,24 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
         for component in electrical:
             location = _norm_loc(component.get("loc", "?"))
             terminals = component_terminals(component)
+            attrs = _attributes(component)
+            label = attrs.get("label") or component.get("name", "component")
+            missing_required = []
+            for terminal, terminal_name in _required_terminal_names(component).items():
+                terminal_net = reachable_wire_points({terminal})
+                terminal_peers = {
+                    id(other)
+                    for point in terminal_net
+                    for other in terminal_to_component.get(point, ())
+                    if other is not component
+                }
+                if not terminal_peers:
+                    missing_required.append(f"{terminal_name} {terminal}")
+            if missing_required:
+                unconnected.extend(
+                    f"{label}.{terminal_name}@{location}"
+                    for terminal_name in missing_required
+                )
             reachable = reachable_wire_points(terminals)
             connected_components = {
                 id(other)
@@ -777,8 +831,6 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
             requires_peer = component.get("name") == "Pin" or len(terminals) > 1
             connected = bool(connected_components) if requires_peer else wire_connected
             if not connected:
-                attrs = _attributes(component)
-                label = attrs.get("label") or component.get("name", "component")
                 unconnected.append(f"{label}@{location}")
         placement_conflicts: list[str] = []
         components_by_location: dict[str, list[ET.Element]] = {}

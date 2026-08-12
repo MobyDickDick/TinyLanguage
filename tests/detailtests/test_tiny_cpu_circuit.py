@@ -103,6 +103,7 @@ def test_inspector_accepts_checked_in_diagnostic_projects():
         if project.name in {
             "TinyCPU-AddSub.circ",
             "TinyCPU-AddSubCircuit.circ",
+            "TinyCPU-AddValidCircuit.circ",
             "TinyCPU-SubValidCircuit.circ",
         }:
             # These hand-edited arithmetic sheets still have pending isolated-
@@ -263,6 +264,40 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
         "ACC_SUB_FAMILY_SELECT",
         "ACC_SUB_VALID",
     } <= subtraction_component_labels
+
+
+def test_add_and_sub_validity_circuits_have_symmetric_size_and_interfaces():
+    """ADD validity must not absorb the surrounding validity-selector chain."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuits = {item.get("name"): item for item in root.findall("circuit")}
+    addition = circuits["AddValidCircuit"]
+    subtraction = circuits["SubValidCircuit"]
+
+    assert len(addition.findall("comp")) == len(subtraction.findall("comp"))
+    assert len(addition.findall("wire")) == len(subtraction.findall("wire"))
+
+    def pin_labels(circuit):
+        return {
+            child.get("val")
+            for component in circuit.findall("comp")
+            if component.get("name") == "Pin"
+            for child in component.findall("a")
+            if child.get("name") == "label"
+        }
+
+    assert pin_labels(addition) == {
+        "ADD_ADDRESS",
+        "ADD_ADDRESS_REGISTER",
+        "ADD_ADDRESS_REGISTER_PLUS_OFFSET",
+        "ADD_CONST",
+        "MEMORY_VALID",
+        "ACC_VALID",
+        "ADD_VALID",
+    }
+    assert pin_labels(subtraction) == {
+        label.replace("ADD_", "SUB_") for label in pin_labels(addition)
+    }
 
 
 def test_subtraction_validity_instance_connects_every_automatic_symbol_port():

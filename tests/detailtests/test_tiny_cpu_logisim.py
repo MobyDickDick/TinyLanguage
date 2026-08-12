@@ -293,29 +293,29 @@ def _component_at(circuit, location, name):
 # anchors below additionally guard against accidentally moving or replacing a
 # labelled component while reconnecting the direct wires.
 _TOP_LEVEL_COMPONENTS = {
-    "ACC_LOAD_REQUEST": ("(940,1170)", "OR Gate"),
-    "ACC_MEMORY_SELECT": ("(1010,900)", "OR Gate"),
-    "ACC_WRITE_REQUEST": ("(1070,1190)", "OR Gate"),
-    "ACC_SUB_MEMORY_SELECT": ("(1750,1670)", "OR Gate"),
-    "ACC_NOT_VALUE": ("(1900,1140)", "NOT Gate"),
-    "ACC_ADD_MEMORY_SELECT": ("(2020,2120)", "OR Gate"),
-    "ACC_ADD_SELECT": ("(2060,2300)", "OR Gate"),
-    "ACC_SUB_FAMILY_SELECT": ("(2080,1690)", "OR Gate"),
-    "ACC_SUB_VALID": ("(2200,1770)", "AND Gate"),
-    "ACC_ADD_VALID": ("(2440,2120)", "AND Gate"),
-    "ACC_MEMORY_DATA_SELECT": ("(1900,1080)", "Multiplexer"),
-    "ACC_NOT_DATA_SELECT": ("(2040,1130)", "Multiplexer"),
-    "ACC_INPUT_DATA_SELECT": ("(2090,1140)", "Multiplexer"),
-    "ACC_SUB_OPERAND_SELECT": ("(1860,1220)", "Multiplexer"),
-    "ACC_SUB_SELECT": ("(2090,1750)", "Multiplexer"),
-    "ACC_SUB_OPERAND_VALID_SELECT": ("(2440,1720)", "Multiplexer"),
-    "ACC_SUB_VALID_SELECT": ("(2160,870)", "Multiplexer"),
-    "ACC_ADD_OPERAND_VALID_SELECT": ("(2330,2140)", "Multiplexer"),
-    "ACC_MEMORY_VALID_SELECT": ("(2070,700)", "Multiplexer"),
-    "ACC_NOT_VALID_SELECT": ("(2340,690)", "Multiplexer"),
-    "ACC_ADD_VALID_SELECT": ("(2390,720)", "Multiplexer"),
-    "ACC_INPUT_VALID_SELECT": ("(2140,540)", "Multiplexer"),
-    "ACC_SUB_VALUE": ("(2040,1210)", "Subtractor"),
+    "ACC_LOAD_REQUEST": ("(860,730)", "OR Gate"),
+    "ACC_MEMORY_SELECT": ("(950,520)", "OR Gate"),
+    "ACC_WRITE_REQUEST": ("(990,750)", "OR Gate"),
+    "ACC_SUB_MEMORY_SELECT": ("(1610,1060)", "OR Gate"),
+    "ACC_NOT_VALUE": ("(1580,900)", "NOT Gate"),
+    "ACC_ADD_MEMORY_SELECT": ("(1640,560)", "OR Gate"),
+    "ACC_ADD_SELECT": ("(1730,620)", "OR Gate"),
+    "ACC_SUB_FAMILY_SELECT": ("(1790,1110)", "OR Gate"),
+    "ACC_SUB_VALID": ("(2100,1160)", "AND Gate"),
+    "ACC_ADD_VALID": ("(1880,470)", "AND Gate"),
+    "ACC_MEMORY_DATA_SELECT": ("(1500,860)", "Multiplexer"),
+    "ACC_NOT_DATA_SELECT": ("(1710,870)", "Multiplexer"),
+    "ACC_INPUT_DATA_SELECT": ("(2250,980)", "Multiplexer"),
+    "ACC_SUB_OPERAND_SELECT": ("(1830,970)", "Multiplexer"),
+    "ACC_SUB_SELECT": ("(1970,950)", "Multiplexer"),
+    "ACC_SUB_OPERAND_VALID_SELECT": ("(1980,1140)", "Multiplexer"),
+    "ACC_SUB_VALID_SELECT": ("(2330,1140)", "Multiplexer"),
+    "ACC_ADD_OPERAND_VALID_SELECT": ("(1770,490)", "Multiplexer"),
+    "ACC_MEMORY_VALID_SELECT": ("(2000,360)", "Multiplexer"),
+    "ACC_NOT_VALID_SELECT": ("(2140,590)", "Multiplexer"),
+    "ACC_ADD_VALID_SELECT": ("(2060,400)", "Multiplexer"),
+    "ACC_INPUT_VALID_SELECT": ("(2520,1150)", "Multiplexer"),
+    "ACC_SUB_VALUE": ("(1910,960)", "Subtractor"),
 }
 
 
@@ -752,14 +752,16 @@ def test_top_level_memory_validity_is_selected_for_memory_loads():
     memory_matches = _reachable(adjacency, memory_valid) & inputs
     assert len(default_matches) == len(memory_matches) == 1
     assert default_matches != memory_matches
-    not_x, not_y = (
-        int(value) for value in not_selector.get("loc").strip("()").split(",")
+    # The redraw places the ADD-valid selection between the memory and NOT
+    # validity stages; the selected memory-valid result must feed that stage.
+    add_x, add_y = (
+        int(value) for value in add_selector.get("loc").strip("()").split(",")
     )
-    not_selector_inputs = {
-        f"({not_x - 30},{not_y - 10})",
-        f"({not_x - 30},{not_y + 10})",
+    add_selector_inputs = {
+        f"({add_x - 30},{add_y - 10})",
+        f"({add_x - 30},{add_y + 10})",
     }
-    assert len(_reachable(adjacency, output) & not_selector_inputs) == 1
+    assert len(_reachable(adjacency, output) & add_selector_inputs) == 1
     assert _subcircuit_input(root, "Datapath", "DATA_IN") not in _reachable(
         adjacency, memory_valid
     )

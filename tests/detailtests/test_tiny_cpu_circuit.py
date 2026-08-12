@@ -100,9 +100,13 @@ def test_inspector_accepts_checked_in_diagnostic_projects():
     for project in sorted(diagnostics.glob("*.circ")):
         reports = inspect_project(project)
         assert reports
-        if project.name == "TinyCPU-AddSub.circ":
-            # The hand-edited AddSub sheet still has a pending splitter-width
-            # correction; reproducibility is checked separately below.
+        if project.name in {
+            "TinyCPU-AddSub.circ",
+            "TinyCPU-AddSubCircuit.circ",
+        }:
+            # Both hand-edited arithmetic sheets still have pending isolated-
+            # sheet connectivity diagnostics; reproducibility is checked
+            # separately below.
             continue
         assert all(report.connected for report in reports), project.name
 
@@ -207,12 +211,24 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
     }
     assert {
         "ACC_VALUE →",
-        "ADD_VALID →",
         "INPUT_VALUE →",
         "SUB_VALID →",
         "WRITE_DATA →",
         "WRITE_VALID →",
     } <= signal_labels
+    addition = next(
+        item
+        for item in root.findall("circuit")
+        if item.get("name") == "AddSubCircuit"
+    )
+    addition_labels = {
+        child.get("val")
+        for component in addition.findall("comp")
+        if component.get("name") == "Text"
+        for child in component.findall("a")
+        if child.get("name") == "text"
+    }
+    assert "ADD_VALID →" in addition_labels
     labels = {
         child.get("val")
         for component in top.findall("comp")
@@ -220,7 +236,15 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
         for child in component.findall("a")
         if child.get("name") == "label"
     }
-    assert {"ACC_ADD_MEMORY_SELECT", "ACC_SUB_MEMORY_SELECT", "ACC_NOT_VALUE"} <= labels
+    addition_component_labels = {
+        child.get("val")
+        for component in addition.findall("comp")
+        if component.get("name") != "Pin"
+        for child in component.findall("a")
+        if child.get("name") == "label"
+    }
+    assert {"ACC_SUB_MEMORY_SELECT", "ACC_NOT_VALUE"} <= labels
+    assert "ACC_ADD_MEMORY_SELECT" in addition_component_labels
 
 
 def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():

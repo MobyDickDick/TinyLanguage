@@ -493,12 +493,15 @@ def _reachable(adjacency, start):
     return result
 
 
-def test_top_level_has_only_visible_labelled_wiring():
-    """Keep the overview tunnel-free and its functional components labelled."""
+def test_top_level_has_visible_labels_on_wires_at_components():
+    """Name signals beside component ports without hiding them in tunnels."""
 
     circuit = _top_level(ET.parse(PROJECT).getroot())
     assert not [c for c in circuit.findall("comp") if c.get("name") == "Tunnel"]
-    assert not [c for c in circuit.findall("comp") if c.get("name") == "Text"]
+    wire_labels = [c for c in circuit.findall("comp") if c.get("name") == "Text"]
+    assert len(wire_labels) == 41
+    assert all(_attributes(label).get("font") == "SansSerif plain 9" for label in wire_labels)
+    assert all(_attributes(label).get("text", "").endswith("→") for label in wire_labels)
     for label, (location, name) in _TOP_LEVEL_COMPONENTS.items():
         component = _component_at(circuit, location, name)
         assert _attributes(component).get("label") == label

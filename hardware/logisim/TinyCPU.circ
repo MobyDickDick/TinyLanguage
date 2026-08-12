@@ -1533,6 +1533,170 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp loc="(340,90)" name="FetchDecode"/>
     <comp loc="(650,420)" name="FetchDecodeControls"/>
     <comp loc="(780,90)" name="AddressPath"/>
+    <comp lib="9" loc="(1450,845)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="MEMORY_DATA →"/>
+    </comp>
+    <comp lib="9" loc="(1450,885)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ACC_VALUE →"/>
+    </comp>
+    <comp lib="9" loc="(1510,915)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ACC_VALUE →"/>
+    </comp>
+    <comp lib="9" loc="(1590,885)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="NOT_VALUE →"/>
+    </comp>
+    <comp lib="9" loc="(1670,845)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="MEMORY_RESULT →"/>
+    </comp>
+    <comp lib="9" loc="(1670,885)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="NOT_VALUE →"/>
+    </comp>
+    <comp lib="9" loc="(1720,855)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ALU_DATA →"/>
+    </comp>
+    <comp lib="9" loc="(1780,945)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ACC_VALUE →"/>
+    </comp>
+    <comp lib="9" loc="(1780,985)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="OPERAND →"/>
+    </comp>
+    <comp lib="9" loc="(1840,945)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="SUB_VALUE →"/>
+    </comp>
+    <comp lib="9" loc="(1930,935)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="SUB_VALUE →"/>
+    </comp>
+    <comp lib="9" loc="(1930,975)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ALU_DATA →"/>
+    </comp>
+    <comp lib="9" loc="(2020,935)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ALU_DATA →"/>
+    </comp>
+    <comp lib="9" loc="(2170,965)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ALU_DATA →"/>
+    </comp>
+    <comp lib="9" loc="(2170,1005)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="INPUT_VALUE →"/>
+    </comp>
+    <comp lib="9" loc="(2270,965)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="WRITE_DATA →"/>
+    </comp>
+    <comp lib="9" loc="(1680,465)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="OPERAND_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(1680,505)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="CONST_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(1790,475)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="OPERAND_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(1840,455)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ADD_SELECT →"/>
+    </comp>
+    <comp lib="9" loc="(1890,485)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ADD_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(1930,335)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="DEFAULT_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(1930,375)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="MEMORY_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(2010,345)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="MEMORY_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(2010,385)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ADD_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(2070,415)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ALU_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(2080,565)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ALU_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(2080,605)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="NOT_SELECT →"/>
+    </comp>
+    <comp lib="9" loc="(2150,575)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ALU_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(1890,1125)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="SUB_CONST_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(1890,1155)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="OPERAND_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(1990,1125)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="OPERAND_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(2030,1145)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="SUB_SELECT →"/>
+    </comp>
+    <comp lib="9" loc="(2040,1175)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="SUB_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(2110,1135)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ALU_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(2260,1125)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ALU_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(2260,1165)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="SUB_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(2350,1125)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ALU_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(2450,1135)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ALU_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(2450,1175)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="INPUT_VALID →"/>
+    </comp>
+    <comp lib="9" loc="(2530,1135)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="WRITE_VALID →"/>
+    </comp>
     <wire from="(100,280)" to="(120,280)"/>
     <wire from="(100,70)" to="(100,280)"/>
     <wire from="(100,70)" to="(820,70)"/>

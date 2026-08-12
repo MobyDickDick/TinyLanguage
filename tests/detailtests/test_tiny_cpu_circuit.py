@@ -204,12 +204,26 @@ def test_inspector_resolves_generated_subcircuit_output_drivers(tmp_path):
     )
 
 
-def test_top_level_redraw_is_tunnel_free_and_internally_labelled():
+def test_top_level_redraw_is_tunnel_free_and_labels_signals_at_components():
     root = ET.parse(PROJECT).getroot()
     top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
 
     assert not [item for item in top.findall("comp") if item.get("name") == "Tunnel"]
-    assert not [item for item in top.findall("comp") if item.get("name") == "Text"]
+    signal_labels = {
+        child.get("val")
+        for component in top.findall("comp")
+        if component.get("name") == "Text"
+        for child in component.findall("a")
+        if child.get("name") == "text"
+    }
+    assert {
+        "ACC_VALUE →",
+        "ADD_VALID →",
+        "INPUT_VALUE →",
+        "SUB_VALID →",
+        "WRITE_DATA →",
+        "WRITE_VALID →",
+    } <= signal_labels
     labels = {
         child.get("val")
         for component in top.findall("comp")

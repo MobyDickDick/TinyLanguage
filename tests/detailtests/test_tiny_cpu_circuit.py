@@ -58,13 +58,23 @@ def test_two_pin_smoke_projects_are_minimal_and_unambiguous():
 def test_inspector_exposes_completed_and_pending_sheets():
     reports = {report.name: report for report in inspect_project(PROJECT)}
 
-    assert not reports["ProcessorCore"].connected
+    # ProcessorCore is deliberately a hierarchy-only page; pending electrical
+    # endpoints belong to its implementation sheet rather than to the wrapper.
+    assert reports["ProcessorCore"].components == 1
+    assert reports["ProcessorCore"].wires == 0
+    assert reports["ProcessorCore"].unconnected == (
+        "ProcessorImplementation@(360,240)",
+    )
+    assert reports["ProcessorCore"].routing_conflicts == ()
+
+    assert not reports["ProcessorImplementation"].connected
     unconnected_labels = {
-        item.partition("@")[0] for item in reports["ProcessorCore"].unconnected
+        item.partition("@")[0]
+        for item in reports["ProcessorImplementation"].unconnected
     }
     assert {"INPUT_VALUE", "INPUT_VALID"} <= unconnected_labels
     assert {"CLK", "RESET"}.isdisjoint(unconnected_labels)
-    assert reports["ProcessorCore"].routing_conflicts == ()
+    assert reports["ProcessorImplementation"].routing_conflicts == ()
 
     # TinyCPU deliberately contains only the hierarchical integration page.
     assert reports["TinyCPU"].components == 1
@@ -74,7 +84,7 @@ def test_inspector_exposes_completed_and_pending_sheets():
     top = next(
         circuit
         for circuit in ET.parse(PROJECT).getroot().findall("circuit")
-        if circuit.get("name") == "ProcessorCore"
+        if circuit.get("name") == "ProcessorImplementation"
     )
     labels = {
         attribute.get("val")
@@ -211,11 +221,11 @@ def test_inspector_resolves_generated_subcircuit_output_drivers(tmp_path):
     )
 
 
-def test_processor_core_redraw_is_tunnel_free_and_labels_signals_at_components():
+def test_processor_implementation_is_tunnel_free_and_labels_signals_at_components():
     root = ET.parse(PROJECT).getroot()
     top = next(
         item for item in root.findall("circuit")
-        if item.get("name") == "ProcessorCore"
+        if item.get("name") == "ProcessorImplementation"
     )
 
     assert not [item for item in top.findall("comp") if item.get("name") == "Tunnel"]
@@ -244,9 +254,11 @@ def test_processor_core_redraw_is_tunnel_free_and_labels_signals_at_components()
     assert {"ACC_MEMORY_SELECT", "ACC_MEMORY_VALID_SELECT", "ACC_SUB_VALUE"} <= labels
 
 
-def test_processor_core_keeps_the_hand_placed_fetch_and_memory_anchors():
+def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():
     report = next(
-        item for item in inspect_project(PROJECT) if item.name == "ProcessorCore"
+        item
+        for item in inspect_project(PROJECT)
+        if item.name == "ProcessorImplementation"
     )
 
     assert SUBCIRCUIT_ANCHOR_CLEARANCE == 200
@@ -260,10 +272,12 @@ def test_processor_core_keeps_the_hand_placed_fetch_and_memory_anchors():
     assert "FetchDecode@" in conflict
 
 
-def test_processor_core_does_not_daisy_chain_unrelated_component_anchors():
+def test_processor_implementation_does_not_daisy_chain_component_anchors():
     root = ET.parse(PROJECT).getroot()
     top = next(
-        item for item in root.findall("circuit") if item.get("name") == "ProcessorCore"
+        item
+        for item in root.findall("circuit")
+        if item.get("name") == "ProcessorImplementation"
     )
     instance_locations = {
         component.get("loc")

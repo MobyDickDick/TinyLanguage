@@ -1055,30 +1055,34 @@ def test_ci_runs_the_fresh_checkout_hardware_verifier():
     assert "PYTHONPATH=src python src/tiny_cpu_verify.py" in workflow
 
 
-def test_processor_core_contains_only_hierarchical_subcircuits():
-    """Keep ProcessorCore free of gates, muxes, constants, and other primitives."""
-
-    root = ET.parse(PROJECT).getroot()
-    core = next(c for c in root.findall("circuit") if c.get("name") == "ProcessorCore")
-    components = core.findall("comp")
-
-    assert components
-    assert all(component.get("lib") is None for component in components)
-    assert {component.get("name") for component in components} == {
-        "ProcessorImplementation"
-    }
-
-
 def test_tinycpu_sheet_contains_only_hierarchical_subcircuits():
-    """Keep the main sheet a component-free architectural overview."""
+    """Move primitives, but keep the functional sheets directly on TinyCPU."""
 
     root = ET.parse(PROJECT).getroot()
     top = next(c for c in root.findall("circuit") if c.get("name") == "TinyCPU")
     components = top.findall("comp")
 
     assert components
-    assert all(component.get("lib") is None for component in components)
-    assert {component.get("name") for component in components} == {"ProcessorCore"}
+    electrical = [component for component in components if component.get("lib") != "9"]
+    assert all(component.get("lib") is None for component in electrical)
+    assert {
+        "Datapath",
+        "ErrorFlags",
+        "FetchDecode",
+        "Memory",
+        "DecodeSignals",
+        "FetchDecodeControls",
+        "AddressPath",
+        "ExecutionComponents",
+    } == {component.get("name") for component in electrical}
+
+    physical = next(
+        circuit
+        for circuit in root.findall("circuit")
+        if circuit.get("name") == "ExecutionComponents"
+    )
+    assert physical.findall("comp")
+    assert all(component.get("lib") not in (None, "9") for component in physical.findall("comp"))
 
 
 def test_logisim_starter_matches_default_hardware_profile():
@@ -1088,7 +1092,7 @@ def test_logisim_starter_matches_default_hardware_profile():
     assert root.find("main").get("name") == "TinyCPU"
     assert {
         "TinyCPU",
-        "ProcessorCore",
+        "ExecutionComponents",
         "Datapath",
         "AddressPath",
         "Memory",

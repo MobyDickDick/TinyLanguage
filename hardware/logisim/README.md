@@ -268,6 +268,16 @@ fails before a project with overlapping subcircuit symbols is checked in.
   memory operand validity. `INPUT_VALUE` and `INPUT_VALID` therefore retain
   final priority over both binary families.
 
+`AddValidCircuit` and `SubValidCircuit` now have the same six-input/one-output
+shape.  Earlier, the drawing referred to as the addition-valid circuit also
+contained the surrounding default, memory, `NOT`, and final family selectors.
+It was therefore a validity-pipeline wrapper rather than the counterpart of
+`SubValidCircuit`; its larger size did not reflect more complex ADD validity
+rules.  The extracted ADD circuit now contains only the symmetric rule: group
+the three memory-backed modes, combine them with the constant mode, select
+constant-valid or `Memory.VALID_OUT`, and AND the result with
+`Datapath.ACC_VALID_OUT`.
+
 The extracted `SubValidCircuit` is placed below the surrounding validity
 selectors so that all six automatically generated input ports remain visible.
 The four `SUB_*` decoder controls, `Memory.VALID_OUT`, and

@@ -268,6 +268,14 @@ fails before a project with overlapping subcircuit symbols is checked in.
   memory operand validity. `INPUT_VALUE` and `INPUT_VALID` therefore retain
   final priority over both binary families.
 
+The extracted `SubValidCircuit` is placed below the surrounding validity
+selectors so that all six automatically generated input ports remain visible.
+The four `SUB_*` decoder controls, `Memory.VALID_OUT`, and
+`Datapath.ACC_VALID_OUT` are routed individually to those ports; its sole
+`SUB_VALID` output then returns to the existing result selector. This avoids
+the visually adjacent but electrically open pins that resulted from merely
+replacing the original gates with a subcircuit instance.
+
 Die automatisch gezeichneten Anschlüsse einer Subcircuit-Instanz werden in
 der `.circ`-Datei nicht mit ihren Pin-Namen gespeichert. Ihre sichtbaren
 Koordinaten hängen von Logisims Symbol-Layout ab und können sich nach einem

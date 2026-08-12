@@ -1366,9 +1366,9 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     </comp>
     <wire from="(120,140)" to="(420,140)"/>
   </circuit>
-  <circuit name="TinyCPU">
+  <circuit name="ExecutionComponents">
     <a name="appearance" val="logisim_evolution"/>
-    <a name="circuit" val="TinyCPU"/>
+    <a name="circuit" val="ExecutionComponents"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
     <comp lib="0" loc="(1710,510)" name="Constant"/>
@@ -1464,6 +1464,12 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp lib="3" loc="(1900,1000)" name="Subtractor">
       <a name="width" val="16"/>
     </comp>
+  </circuit>
+  <circuit name="TinyCPU">
+    <a name="appearance" val="logisim_evolution"/>
+    <a name="circuit" val="TinyCPU"/>
+    <a name="circuitnamedboxfixedsize" val="true"/>
+    <a name="simulationFrequency" val="1.0"/>
     <comp lib="9" loc="(1500,875)" name="Text">
       <a name="font" val="SansSerif plain 9"/>
       <a name="text" val="MEMORY_DATA →"/>
@@ -1635,6 +1641,7 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp loc="(640,390)" name="DecodeSignals"/>
     <comp loc="(640,460)" name="FetchDecodeControls"/>
     <comp loc="(770,130)" name="AddressPath"/>
+    <comp loc="(1500,900)" name="ExecutionComponents"/>
     <wire from="(1200,130)" to="(1370,130)"/>
     <wire from="(1200,190)" to="(1420,190)"/>
     <wire from="(1250,960)" to="(1250,1120)"/>

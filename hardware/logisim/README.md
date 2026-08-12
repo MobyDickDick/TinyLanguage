@@ -1,13 +1,19 @@
 # TinyCPU in Logisim-evolution
 
 This directory contains the TinyCPU hardware baseline with a dedicated arithmetic sheet.
-Open `TinyCPU.circ` with Logisim-evolution 3.x. Das Blatt **`TinyCPU` ist die
-von Hand gepflegte Übersichtsseite**. Es ist keine generierte Verdrahtung und
-darf beim Bearbeiten der Integration weder neu angeordnet noch durch eine
-automatisch erzeugte Top-Level-Schaltung ersetzt werden. Generatoren in diesem
-Repository dürfen ausschließlich die eigenständigen Dateien unter
+Open `TinyCPU.circ` with Logisim-evolution 3.x. Das Blatt **`TinyCPU` ist eine
+rein hierarchische Übersichtsseite**: Es enthält ausschließlich die
+Unterseite `ProcessorCore` und keine Pins, Gatter, Splitter, Konstanten oder
+sonstigen elementaren Bauteile. Die eigentliche Integration liegt eine Ebene
+tiefer, während fachlich zusammengehörige Vorgänge auf kleinen Blättern wie
+`AddSub`, `Datapath`, `AddressPath`, `Memory`, `FetchDecode` und `ErrorFlags`
+gekapselt bleiben. So kann die oberste Ansicht nicht wieder mit Detailverdrahtung
+anwachsen.
+
+Die Hierarchie ist von Hand gepflegt und keine generierte Verdrahtung. Generatoren
+in diesem Repository dürfen ausschließlich die eigenständigen Dateien unter
 `diagnostics/` aktualisieren; Ausgangspunkt bleibt immer die eingecheckte
-`TinyCPU.circ` mit ihrer vorhandenen Übersichtsseite.
+`TinyCPU.circ` mit ihrer vorhandenen Seitenstruktur.
 
 Eine ausfüllbare Schritt-für-Schritt-Vorlage für die weitere Integration steht
 in [`docs/tiny_cpu_top_level_template.md`](../../docs/tiny_cpu_top_level_template.md).
@@ -164,13 +170,14 @@ PYTHONPATH=src python src/tiny_cpu_circuit.py \
 The project fixes the initial hardware profile at 16 data bits and 12 address
 bits and splits the design into the same blocks as the hardware contract:
 
-The integrated top-level places every subcircuit anchor in its own 600-pixel
+The `ProcessorCore` integration sheet places every subcircuit anchor in its own 600-pixel
 routing lane. This is intentionally much wider than the generated component
 symbols: no terminals from adjacent subcircuits can be superimposed merely by
 their placement. The dependency-free inspector enforces this clearance and
 fails before a project with overlapping subcircuit symbols is checked in.
 
-- `TinyCPU` is the top-level sheet and documents the block boundary;
+- `TinyCPU` is the component-free top-level sheet; its sole `ProcessorCore` instance makes the architectural boundary explicit;
+- `ProcessorCore` is the integration sheet that connects the functional subcircuits and keeps detailed integration out of `TinyCPU`;
 - `AddSub` bündelt die beiden parallelen 16-Bit-Operanden in einem 32-Bit-Bus und die beiden Gültigkeitsleitungen in einem 2-Bit-Bus. Erst auf dem eigenen Schemablatt teilen Splitter diese Busse für den 16-Bit-Addierer und -Subtrahierer auf; ein gemeinsamer Selektor führt genau ein Ergebnis zurück. Das Blatt kommt vollständig ohne Tunnel aus und bildet damit die neue, kompakte Grenze für den arithmetischen ADD/SUB-Strang;
   its accumulator integration is visually grouped into a decode column and compact,
   labelled ADD/SUB stage columns so related operand, result, and validity logic can
@@ -189,7 +196,7 @@ fails before a project with overlapping subcircuit symbols is checked in.
   sequential/jump PC path, program-limit check, and control decode for the complete symbolic ISA. The expanded decoder
   exposes every addressing, arithmetic, logic, branch, and I/O control plus all six
   error-set paths.
-- On the maintained `TinyCPU` overview, the 22-bit `FetchDecode.OPCODE` bus is
+- On the maintained `ProcessorCore` integration sheet, the 22-bit `FetchDecode.OPCODE` bus is
   the first decode-integration net and drives only the matching input of the
   separately placed `FetchDecodeControls` block. Its left-side route remains
   isolated from the already integrated clock and reset nets.

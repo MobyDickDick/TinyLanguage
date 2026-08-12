@@ -503,13 +503,12 @@ def test_top_level_has_visible_labels_on_wires_at_components():
     circuit = _top_level(ET.parse(PROJECT).getroot())
     assert not [c for c in circuit.findall("comp") if c.get("name") == "Tunnel"]
     wire_labels = [c for c in circuit.findall("comp") if c.get("name") == "Text"]
-    assert len(wire_labels) == 28
+    assert len(wire_labels) == 23
     assert all(_attributes(label).get("font") == "SansSerif plain 9" for label in wire_labels)
     assert all(_attributes(label).get("text", "").endswith("→") for label in wire_labels)
-    assert {
-        "SUB_ADDRESS/CONST →",
-        "SUB_ADDRESS/CONST_VALID →",
-    } <= {_attributes(label)["text"] for label in wire_labels}
+    assert "SUB_ADDRESS/CONST →" in {
+        _attributes(label)["text"] for label in wire_labels
+    }
     root = ET.parse(PROJECT).getroot()
     addition = next(
         item for item in root.findall("circuit")
@@ -518,6 +517,19 @@ def test_top_level_has_visible_labels_on_wires_at_components():
     assert "ADD_ADDRESS/CONST_VALID →" in {
         _attributes(component).get("text")
         for component in addition.findall("comp")
+        if component.get("name") == "Text"
+    }
+    subtraction_validity = next(
+        item for item in root.findall("circuit")
+        if item.get("name") == "SubValidCircuit"
+    )
+    assert {
+        "SUB_ADDRESS/CONST_VALID →",
+        "SUB_OPERAND_VALID →",
+        "SUB_VALID →",
+    } <= {
+        _attributes(component).get("text")
+        for component in subtraction_validity.findall("comp")
         if component.get("name") == "Text"
     }
     present_labels = {

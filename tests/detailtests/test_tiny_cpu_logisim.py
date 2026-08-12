@@ -1072,23 +1072,22 @@ def test_ci_runs_the_fresh_checkout_hardware_verifier():
 
 def test_tinycpu_sheet_is_the_integration_sheet():
     """Keep the hand-maintained functional subcircuits on the TinyCPU sheet."""
-
-    root = ET.parse(PROJECT).getroot()
-    top = next(c for c in root.findall("circuit") if c.get("name") == "TinyCPU")
     subcircuits = {
         component.get("name")
         for component in top.findall("comp")
         if component.get("lib") is None
     }
     assert {
-        "AddressPath",
-        "Datapath",
-        "DecodeSignals",
-        "ErrorFlags",
-        "FetchDecode",
-        "FetchDecodeControls",
-        "Memory",
+        "Datapath", "AddressPath", "Memory", "ErrorFlags", "FetchDecode",
+        "FetchDecodeControls", "DecodeSignals",
     } <= subcircuits
+        "DecodeSignals",
+        circuit
+        for circuit in root.findall("circuit")
+        if circuit.get("name") == "ExecutionComponents"
+    )
+    assert physical.findall("comp")
+    assert all(component.get("lib") not in (None, "9") for component in physical.findall("comp"))
 
 
 def test_logisim_starter_matches_default_hardware_profile():
@@ -1098,7 +1097,7 @@ def test_logisim_starter_matches_default_hardware_profile():
     assert root.find("main").get("name") == "TinyCPU"
     assert {
         "TinyCPU",
-        "DecodeSignals",
+        "ExecutionComponents",
         "Datapath",
         "AddressPath",
         "Memory",
@@ -1183,8 +1182,8 @@ def test_address_path_uses_component_terminals_without_shorting_buses():
     root = ET.parse(PROJECT).getroot()
     address = next(c for c in root.findall("circuit") if c.get("name") == "AddressPath")
     wires = {
-        frozenset((wire.get("from"), wire.get("to")))
-        for wire in address.findall("wire")
+    assert has_wire("(500,220)", "(500,240)")
+    assert has_wire("(500,240)", "(620,240)")
     }
 
     def has_wire(first, second):
@@ -1264,23 +1263,23 @@ def test_ap3_memory_shares_address_write_enable_and_clock():
     assert {"(330,290)", "(580,320)", "(600,320)"} <= endpoints
 
 
-def test_ap3_error_flags_have_set_dominant_sticky_logic():
-    root = ET.parse(PROJECT).getroot()
-    errors = next(c for c in root.findall("circuit") if c.get("name") == "ErrorFlags")
-    parts = {
-        _attributes(component).get("label"): component.get("name")
-        for component in errors.findall("comp")
-        if _attributes(component).get("label")
-    }
-    flags = {"OVF", "DIV0", "ADDR", "INV", "ILL", "INPUT"}
-    assert parts["NOT_CLEAR_ERROR"] == "NOT Gate"
-    for flag in flags:
-        assert parts[f"SET_{flag}"] == "Pin"
-        assert parts[f"HOLD_{flag}"] == "AND Gate"
-        assert parts[f"NEXT_{flag}"] == "OR Gate"
-        assert parts[flag] == "Register"
-        assert parts[f"{flag}_OUT"] == "Pin"
-
+        "DIV0": ("(110,340)", "(500,380)", "(580,360)", "(750,330)", "(1000,360)"),
+        "ADDR": ("(110,480)", "(510,520)", "(590,500)", "(750,470)", "(1000,500)"),
+        "INV": ("(110,610)", "(500,650)", "(590,630)", "(750,600)", "(1000,630)"),
+        "ILL": ("(110,750)", "(510,790)", "(600,770)", "(750,740)", "(1000,770)"),
+        "INPUT": ("(120,890)", "(510,930)", "(610,910)", "(750,880)", "(1000,910)"),
+        "OVF": ("(420,230)", "(820,230)", 170),
+        "DIV0": ("(420,360)", "(820,360)", 300),
+        "ADDR": ("(420,500)", "(820,500)", 440),
+        "INV": ("(430,630)", "(820,630)", 570),
+        "ILL": ("(440,770)", "(820,770)", 710),
+        "INPUT": ("(440,910)", "(830,910)", 850),
+    for register_y in (200, 330, 470, 600, 740, 880):
+        "(750,400)",
+        "(750,540)",
+        "(750,670)",
+        "(750,810)",
+        "(750,950)",
 
 def test_ap3_error_flags_have_readable_lane_layout():
     root = ET.parse(PROJECT).getroot()

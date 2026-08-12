@@ -9,6 +9,18 @@ Repository dürfen ausschließlich die eigenständigen Dateien unter
 `diagnostics/` aktualisieren; Ausgangspunkt bleibt immer die eingecheckte
 `TinyCPU.circ` mit ihrer vorhandenen Übersichtsseite.
 
+## Wiederhergestellte Referenzverdrahtung
+
+Das Top-Level-Blatt `TinyCPU` entspricht wieder bytegenau der funktionalen
+Verdrahtung aus `TinyCPU_previousVersion.circ`. Insbesondere wurden nicht nur
+die gleichen Unterblätter beibehalten, sondern auch alle Multiplexer,
+Logikgatter, Tunnel und Leitungssegmente der Referenz übernommen. Ein
+Regressionstest vergleicht beide Top-Level-Schaltungen direkt und verhindert,
+dass eine nur optisch ähnliche, aber elektrisch abweichende Neuzeichnung
+erneut unbemerkt eingecheckt wird. Das zusätzliche Blatt `AddSub` bleibt als
+isoliertes Diagnoseblatt erhalten; die wiederhergestellte Top-Level-Schaltung
+verwendet wie ihre Referenz weiterhin die dort eingezeichnete ADD/SUB-Logik.
+
 Eine ausfüllbare Schritt-für-Schritt-Vorlage für die weitere Integration steht
 in [`docs/tiny_cpu_top_level_template.md`](../../docs/tiny_cpu_top_level_template.md).
 Sie schreibt insbesondere vor, Leitungen in freien Korridoren **um** Symbole

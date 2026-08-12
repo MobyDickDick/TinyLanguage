@@ -11,6 +11,7 @@ from tiny_cpu_circuit import (
 )
 
 PROJECT = Path(__file__).parents[2] / "hardware" / "logisim" / "TinyCPU.circ"
+PREVIOUS_PROJECT = PROJECT.with_name("TinyCPU_previousVersion.circ")
 PROFILE = PROJECT.with_name("tinycpu-16-12.json")
 SMOKE_PROJECTS = PROJECT.parent / "smoke"
 
@@ -55,24 +56,13 @@ def test_two_pin_smoke_projects_are_minimal_and_unambiguous():
         assert report.connected
 
 
-def test_inspector_exposes_completed_and_pending_sheets():
+def test_restored_top_level_has_the_reference_connectivity_report():
     reports = {report.name: report for report in inspect_project(PROJECT)}
+    previous_reports = {
+        report.name: report for report in inspect_project(PREVIOUS_PROJECT)
+    }
 
-    assert not reports["TinyCPU"].connected
-    unconnected_labels = {item.partition("@")[0] for item in reports["TinyCPU"].unconnected}
-    assert {"INPUT_VALUE", "INPUT_VALID"} <= unconnected_labels
-    assert {"CLK", "RESET"}.isdisjoint(unconnected_labels)
-    assert reports["TinyCPU"].routing_conflicts == ()
-    # Keep the lower arithmetic mux connected to the AND input without the old
-    # vertical stub, whose endpoint joined the shared control lane.
-    top = next(
-        circuit
-        for circuit in ET.parse(PROJECT).getroot().findall("circuit")
-        if circuit.get("name") == "TinyCPU"
-    )
-    wires = {(wire.get("from"), wire.get("to")) for wire in top.findall("wire")}
-    assert (("(2330,2140)", "(2390,2140)")) in wires
-    assert (("(2390,2130)", "(2390,2140)")) not in wires
+    assert reports["TinyCPU"] == previous_reports["TinyCPU"]
     assert reports["Datapath"].components == 12
     assert reports["Datapath"].wires == 22
     for sheet in (
@@ -201,20 +191,15 @@ def test_inspector_resolves_generated_subcircuit_output_drivers(tmp_path):
     )
 
 
-def test_top_level_redraw_is_tunnel_free_and_internally_labelled():
-    root = ET.parse(PROJECT).getroot()
-    top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
+def test_top_level_wiring_matches_the_previous_functional_version():
+    def top_level_bytes(path):
+        root = ET.parse(path).getroot()
+        top = next(
+            item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
+        )
+        return ET.tostring(top, encoding="utf-8")
 
-    assert not [item for item in top.findall("comp") if item.get("name") == "Tunnel"]
-    assert not [item for item in top.findall("comp") if item.get("name") == "Text"]
-    labels = {
-        child.get("val")
-        for component in top.findall("comp")
-        if component.get("name") != "Pin"
-        for child in component.findall("a")
-        if child.get("name") == "label"
-    }
-    assert {"ACC_MEMORY_SELECT", "ACC_MEMORY_VALID_SELECT", "ACC_SUB_VALUE"} <= labels
+    assert top_level_bytes(PROJECT) == top_level_bytes(PREVIOUS_PROJECT)
 
 def test_top_level_keeps_the_hand_placed_fetch_and_memory_anchors():
     report = next(item for item in inspect_project(PROJECT) if item.name == "TinyCPU")

@@ -56,7 +56,7 @@
       <a name="type" val="output"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(620,250)" name="Pin">
+    <comp lib="0" loc="(620,240)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="OFFSET_CARRY"/>
@@ -105,8 +105,8 @@
     <wire from="(420,190)" to="(480,190)"/>
     <wire from="(450,210)" to="(450,240)"/>
     <wire from="(450,210)" to="(480,210)"/>
-    <wire from="(500,220)" to="(500,250)"/>
-    <wire from="(500,250)" to="(620,250)"/>
+    <wire from="(500,220)" to="(500,240)"/>
+    <wire from="(500,240)" to="(620,240)"/>
     <wire from="(520,200)" to="(620,200)"/>
   </circuit>
 </project>

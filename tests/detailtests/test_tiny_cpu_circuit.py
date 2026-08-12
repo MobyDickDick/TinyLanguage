@@ -103,8 +103,9 @@ def test_inspector_accepts_checked_in_diagnostic_projects():
         if project.name in {
             "TinyCPU-AddSub.circ",
             "TinyCPU-AddSubCircuit.circ",
+            "TinyCPU-SubValidCircuit.circ",
         }:
-            # Both hand-edited arithmetic sheets still have pending isolated-
+            # These hand-edited arithmetic sheets still have pending isolated-
             # sheet connectivity diagnostics; reproducibility is checked
             # separately below.
             continue
@@ -243,8 +244,25 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
         for child in component.findall("a")
         if child.get("name") == "label"
     }
-    assert {"ACC_SUB_MEMORY_SELECT", "ACC_NOT_VALUE"} <= labels
+    subtraction_validity = next(
+        item
+        for item in root.findall("circuit")
+        if item.get("name") == "SubValidCircuit"
+    )
+    subtraction_component_labels = {
+        child.get("val")
+        for component in subtraction_validity.findall("comp")
+        if component.get("name") != "Pin"
+        for child in component.findall("a")
+        if child.get("name") == "label"
+    }
+    assert "ACC_NOT_VALUE" in labels
     assert "ACC_ADD_MEMORY_SELECT" in addition_component_labels
+    assert {
+        "ACC_SUB_MEMORY_SELECT",
+        "ACC_SUB_FAMILY_SELECT",
+        "ACC_SUB_VALID",
+    } <= subtraction_component_labels
 
 
 def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():

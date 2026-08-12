@@ -297,20 +297,20 @@ _TOP_LEVEL_COMPONENTS = {
     "ACC_MEMORY_SELECT": ("(950,520)", "OR Gate"),
     "ACC_WRITE_REQUEST": ("(990,750)", "OR Gate"),
     "ACC_SUB_MEMORY_SELECT": ("(1610,1060)", "OR Gate"),
-    "ACC_NOT_VALUE": ("(1580,900)", "NOT Gate"),
+    "ACC_NOT_VALUE": ("(1670,900)", "NOT Gate"),
     "ACC_ADD_MEMORY_SELECT": ("(1640,560)", "OR Gate"),
     "ACC_ADD_SELECT": ("(1730,620)", "OR Gate"),
     "ACC_SUB_FAMILY_SELECT": ("(1790,1110)", "OR Gate"),
-    "ACC_SUB_VALID": ("(2100,1160)", "AND Gate"),
+    "ACC_SUB_VALID": ("(2170,1160)", "AND Gate"),
     "ACC_ADD_VALID": ("(1880,470)", "AND Gate"),
-    "ACC_MEMORY_DATA_SELECT": ("(1500,860)", "Multiplexer"),
-    "ACC_NOT_DATA_SELECT": ("(1710,870)", "Multiplexer"),
+    "ACC_MEMORY_DATA_SELECT": ("(1590,860)", "Multiplexer"),
+    "ACC_NOT_DATA_SELECT": ("(1850,870)", "Multiplexer"),
     "ACC_INPUT_DATA_SELECT": ("(2250,980)", "Multiplexer"),
     "ACC_SUB_OPERAND_SELECT": ("(1830,970)", "Multiplexer"),
     "ACC_SUB_SELECT": ("(1970,950)", "Multiplexer"),
-    "ACC_SUB_OPERAND_VALID_SELECT": ("(1980,1140)", "Multiplexer"),
+    "ACC_SUB_OPERAND_VALID_SELECT": ("(2040,1140)", "Multiplexer"),
     "ACC_SUB_VALID_SELECT": ("(2330,1140)", "Multiplexer"),
-    "ACC_ADD_OPERAND_VALID_SELECT": ("(1770,490)", "Multiplexer"),
+    "ACC_ADD_OPERAND_VALID_SELECT": ("(1770,480)", "Multiplexer"),
     "ACC_MEMORY_VALID_SELECT": ("(2000,360)", "Multiplexer"),
     "ACC_NOT_VALID_SELECT": ("(2140,590)", "Multiplexer"),
     "ACC_ADD_VALID_SELECT": ("(2060,400)", "Multiplexer"),
@@ -502,6 +502,11 @@ def test_top_level_has_visible_labels_on_wires_at_components():
     assert len(wire_labels) == 41
     assert all(_attributes(label).get("font") == "SansSerif plain 9" for label in wire_labels)
     assert all(_attributes(label).get("text", "").endswith("→") for label in wire_labels)
+    assert {
+        "ADD_ADDRESS/CONST_VALID →",
+        "SUB_ADDRESS/CONST →",
+        "SUB_ADDRESS/CONST_VALID →",
+    } <= {_attributes(label)["text"] for label in wire_labels}
     for label, (location, name) in _TOP_LEVEL_COMPONENTS.items():
         component = _component_at(circuit, location, name)
         assert _attributes(component).get("label") == label

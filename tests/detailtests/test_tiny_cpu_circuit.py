@@ -266,7 +266,7 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
 
 
 def test_subtraction_validity_instance_connects_every_automatic_symbol_port():
-    """Keep all six inputs wired after extracting the validity subcircuit."""
+    """Keep all six inputs wired, without shorting adjacent symbol ports."""
 
     root = ET.parse(PROJECT).getroot()
     top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
@@ -291,6 +291,35 @@ def test_subtraction_validity_instance_connects_every_automatic_symbol_port():
         "(1950,1180)",
         "(2160,1080)",
     } <= endpoints
+
+    adjacency = {
+        endpoint: set()
+        for wire in top.findall("wire")
+        for endpoint in (wire.get("from"), wire.get("to"))
+    }
+    for wire in top.findall("wire"):
+        start, end = wire.get("from"), wire.get("to")
+        adjacency[start].add(end)
+        adjacency[end].add(start)
+
+    input_ports = {f"(1950,{y})" for y in range(1080, 1200, 20)}
+    for port in input_ports:
+        pending = [port]
+        reachable = set()
+        while pending:
+            point = pending.pop()
+            if point in reachable:
+                continue
+            reachable.add(point)
+            pending.extend(adjacency.get(point, ()))
+        assert reachable & input_ports == {port}
+
+    wire_segments = {
+        frozenset((wire.get("from"), wire.get("to")))
+        for wire in top.findall("wire")
+    }
+    assert frozenset(("(1900,1160)", "(1900,1190)")) in wire_segments
+    assert frozenset(("(1940,1120)", "(1940,1160)")) not in wire_segments
 
 
 def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():

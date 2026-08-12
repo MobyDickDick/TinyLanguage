@@ -272,9 +272,12 @@ The extracted `SubValidCircuit` is placed below the surrounding validity
 selectors so that all six automatically generated input ports remain visible.
 The four `SUB_*` decoder controls, `Memory.VALID_OUT`, and
 `Datapath.ACC_VALID_OUT` are routed individually to those ports; its sole
-`SUB_VALID` output then returns to the existing result selector. This avoids
-the visually adjacent but electrically open pins that resulted from merely
-replacing the original gates with a subcircuit instance.
+`SUB_VALID` output then returns to the existing result selector. The
+memory-valid branch approaches its port from below, while the `SUB_CONST` branch
+ends before that vertical lane and approaches its own port from above. This
+avoids both the visually adjacent but electrically open pins that resulted from
+merely replacing the original gates with a subcircuit instance and accidental
+connections between neighbouring input pins.
 
 Die automatisch gezeichneten Anschlüsse einer Subcircuit-Instanz werden in
 der `.circ`-Datei nicht mit ihren Pin-Namen gespeichert. Ihre sichtbaren

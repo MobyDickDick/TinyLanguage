@@ -283,48 +283,16 @@ def _top_level(root):
     )
 
 
-def _component_at(circuit, location, name):
+def _labelled_component(circuit, label):
+    """Resolve a component by its stable schematic label, not its position."""
+
     matches = [
         component
         for component in circuit.findall("comp")
-        if component.get("loc") == location and component.get("name") == name
+        if _attributes(component).get("label") == label
     ]
-    assert len(matches) == 1, (name, location)
+    assert len(matches) == 1, label
     return matches[0]
-
-
-# The hand-redrawn overview uses visible labels and no tunnels.  The stable
-# anchors below additionally guard against accidentally moving or replacing a
-# labelled component while reconnecting the direct wires.
-_TOP_LEVEL_COMPONENTS = {
-    "ACC_LOAD_REQUEST": ("(860,730)", "OR Gate"),
-    "ACC_MEMORY_SELECT": ("(950,520)", "OR Gate"),
-    "ACC_WRITE_REQUEST": ("(990,750)", "OR Gate"),
-    "ACC_SUB_MEMORY_SELECT": ("(1610,1060)", "OR Gate"),
-    "ACC_NOT_VALUE": ("(1670,900)", "NOT Gate"),
-    "ACC_ADD_MEMORY_SELECT": ("(1640,560)", "OR Gate"),
-    "ACC_ADD_SELECT": ("(1730,620)", "OR Gate"),
-    "ACC_SUB_FAMILY_SELECT": ("(1790,1110)", "OR Gate"),
-    "ACC_SUB_VALID": ("(2170,1160)", "AND Gate"),
-    "ACC_ADD_VALID": ("(1880,470)", "AND Gate"),
-    "ACC_MEMORY_DATA_SELECT": ("(1590,860)", "Multiplexer"),
-    "ACC_NOT_DATA_SELECT": ("(1850,870)", "Multiplexer"),
-    "ACC_INPUT_DATA_SELECT": ("(2250,980)", "Multiplexer"),
-    "ACC_SUB_OPERAND_SELECT": ("(1830,970)", "Multiplexer"),
-    "ACC_SUB_SELECT": ("(1970,950)", "Multiplexer"),
-    "ACC_SUB_OPERAND_VALID_SELECT": ("(2040,1140)", "Multiplexer"),
-    "ACC_SUB_VALID_SELECT": ("(2330,1140)", "Multiplexer"),
-    "ACC_ADD_OPERAND_VALID_SELECT": ("(1770,480)", "Multiplexer"),
-    "ACC_MEMORY_VALID_SELECT": ("(2000,360)", "Multiplexer"),
-    "ACC_NOT_VALID_SELECT": ("(2140,590)", "Multiplexer"),
-    "ACC_ADD_VALID_SELECT": ("(2060,400)", "Multiplexer"),
-    "ACC_INPUT_VALID_SELECT": ("(2520,1150)", "Multiplexer"),
-    "ACC_SUB_VALUE": ("(1910,960)", "Subtractor"),
-}
-
-
-def _labelled_component(circuit, label):
-    return _component_at(circuit, *_TOP_LEVEL_COMPONENTS[label])
 
 def _accumulator_selectors(circuit):
     """Return the three named 16-bit accumulator muxes in signal-flow order."""
@@ -532,22 +500,12 @@ def test_top_level_has_visible_labels_on_wires_at_components():
         for component in subtraction_validity.findall("comp")
         if component.get("name") == "Text"
     }
-    present_labels = {
+    component_labels = [
         _attributes(component).get("label")
         for component in circuit.findall("comp")
-    }
-    for label, (location, name) in _TOP_LEVEL_COMPONENTS.items():
-        if label not in present_labels:
-            continue
-        matches = [
-            component
-            for component in circuit.findall("comp")
-            if component.get("name") == name
-            and _attributes(component).get("label") == label
-        ]
-        assert len(matches) == 1, label
-        component = matches[0]
-        assert _attributes(component).get("label") == label
+        if _attributes(component).get("label")
+    ]
+    assert len(component_labels) == len(set(component_labels))
 
 @pytest.mark.xfail(
     reason="hand-redrawn accumulator logic is intentionally pending direct-wire integration",

@@ -265,6 +265,34 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
     } <= subtraction_component_labels
 
 
+def test_subtraction_validity_instance_connects_every_automatic_symbol_port():
+    """Keep all six inputs wired after extracting the validity subcircuit."""
+
+    root = ET.parse(PROJECT).getroot()
+    top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
+    instance = next(
+        component
+        for component in top.findall("comp")
+        if component.get("name") == "SubValidCircuit"
+    )
+    assert instance.get("loc") == "(2160,1080)"
+
+    endpoints = {
+        endpoint
+        for wire in top.findall("wire")
+        for endpoint in (wire.get("from"), wire.get("to"))
+    }
+    assert {
+        "(1950,1080)",
+        "(1950,1100)",
+        "(1950,1120)",
+        "(1950,1140)",
+        "(1950,1160)",
+        "(1950,1180)",
+        "(2160,1080)",
+    } <= endpoints
+
+
 def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():
     report = next(
         item

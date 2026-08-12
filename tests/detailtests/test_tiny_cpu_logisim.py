@@ -164,7 +164,7 @@ def test_fetch_decode_alone_exposes_named_reset_input():
             for component in circuit.findall("comp")
         )
     }
-    assert reset_owners == {"TinyCPU", "FetchDecode", "IntegrationReset"}
+    assert reset_owners == {"ProcessorCore", "FetchDecode", "IntegrationReset"}
 
 
 def test_top_level_opcode_reaches_decode_controls_only():
@@ -198,7 +198,7 @@ def test_top_level_clear_error_reaches_error_flags_only():
 
     root = ET.parse(PROJECT).getroot()
     circuit = next(
-        item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
+        item for item in root.findall("circuit") if item.get("name") == "ProcessorCore"
     )
     clear_source = _control_output(root, "CLEAR_ERROR")
     clear_target = _subcircuit_input(root, "ErrorFlags", "CLEAR_ERROR")
@@ -275,7 +275,7 @@ ACCUMULATOR_FAMILY_CONTROLS = tuple(
 
 def _top_level(root):
     return next(
-        circuit for circuit in root.findall("circuit") if circuit.get("name") == "TinyCPU"
+        circuit for circuit in root.findall("circuit") if circuit.get("name") == "ProcessorCore"
     )
 
 
@@ -1051,6 +1051,18 @@ def test_ci_runs_the_fresh_checkout_hardware_verifier():
     assert "PYTHONPATH=src python src/tiny_cpu_verify.py" in workflow
 
 
+def test_tinycpu_sheet_contains_only_hierarchical_subcircuits():
+    """Keep the main sheet a component-free architectural overview."""
+
+    root = ET.parse(PROJECT).getroot()
+    top = next(c for c in root.findall("circuit") if c.get("name") == "TinyCPU")
+    components = top.findall("comp")
+
+    assert components
+    assert all(component.get("lib") is None for component in components)
+    assert {component.get("name") for component in components} == {"ProcessorCore"}
+
+
 def test_logisim_starter_matches_default_hardware_profile():
     root = ET.parse(PROJECT).getroot()
     circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
@@ -1058,6 +1070,7 @@ def test_logisim_starter_matches_default_hardware_profile():
     assert root.find("main").get("name") == "TinyCPU"
     assert {
         "TinyCPU",
+        "ProcessorCore",
         "Datapath",
         "AddressPath",
         "Memory",

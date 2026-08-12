@@ -1633,13 +1633,13 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(1610,640)" to="(1640,640)"/>
     <wire from="(1620,450)" to="(1620,580)"/>
     <wire from="(1620,580)" to="(1640,580)"/>
-    <wire from="(1630,430)" to="(1630,550)"/>
-    <wire from="(1630,550)" to="(1640,550)"/>
+    <wire from="(1630,430)" to="(1630,560)"/>
+    <wire from="(1630,560)" to="(1640,560)"/>
     <wire from="(1630,560)" to="(1630,620)"/>
     <wire from="(1630,620)" to="(1640,620)"/>
     <wire from="(1640,410)" to="(1640,540)"/>
-    <wire from="(1640,550)" to="(1640,560)"/>
-    <wire from="(1640,590)" to="(1640,600)"/>
+    <wire from="(1430,590)" to="(1430,600)"/>
+    <wire from="(1430,600)" to="(1640,600)"/>
     <wire from="(1660,940)" to="(1790,940)"/>
     <wire from="(1700,1100)" to="(1700,1130)"/>
     <wire from="(1700,1100)" to="(1800,1100)"/>
@@ -1897,11 +1897,11 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <a name="simulationFrequency" val="1.0"/>
     <comp lib="0" loc="(1450,410)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="VALID_OUTPUT"/>
+      <a name="label" val="DEFAULT_VALID"/>
     </comp>
     <comp lib="0" loc="(1450,430)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="ACC_MEMORY_REQUEST"/>
+      <a name="label" val="MEMORY_VALID"/>
     </comp>
     <comp lib="0" loc="(1450,450)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -1909,7 +1909,7 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     </comp>
     <comp lib="0" loc="(1450,470)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="ACC_NOT_VALID_SELECT_CONTROL"/>
+      <a name="label" val="NOT_VALID_SELECT"/>
     </comp>
     <comp lib="0" loc="(1460,560)" name="Pin">
       <a name="appearance" val="classic"/>

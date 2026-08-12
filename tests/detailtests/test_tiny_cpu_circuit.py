@@ -58,16 +58,23 @@ def test_two_pin_smoke_projects_are_minimal_and_unambiguous():
 def test_inspector_exposes_completed_and_pending_sheets():
     reports = {report.name: report for report in inspect_project(PROJECT)}
 
-    assert not reports["TinyCPU"].connected
-    unconnected_labels = {item.partition("@")[0] for item in reports["TinyCPU"].unconnected}
+    assert not reports["ProcessorCore"].connected
+    unconnected_labels = {
+        item.partition("@")[0] for item in reports["ProcessorCore"].unconnected
+    }
     assert {"INPUT_VALUE", "INPUT_VALID"} <= unconnected_labels
     assert {"CLK", "RESET"}.isdisjoint(unconnected_labels)
-    assert reports["TinyCPU"].routing_conflicts == ()
+    assert reports["ProcessorCore"].routing_conflicts == ()
+
+    # TinyCPU deliberately contains only the hierarchical integration page.
+    assert reports["TinyCPU"].components == 1
+    assert reports["TinyCPU"].wires == 0
+    assert reports["TinyCPU"].unconnected == ("ProcessorCore@(360,240)",)
     # Resolve redraw-sensitive arithmetic stages by their visible labels.
     top = next(
         circuit
         for circuit in ET.parse(PROJECT).getroot().findall("circuit")
-        if circuit.get("name") == "TinyCPU"
+        if circuit.get("name") == "ProcessorCore"
     )
     labels = {
         attribute.get("val")
@@ -204,9 +211,12 @@ def test_inspector_resolves_generated_subcircuit_output_drivers(tmp_path):
     )
 
 
-def test_top_level_redraw_is_tunnel_free_and_labels_signals_at_components():
+def test_processor_core_redraw_is_tunnel_free_and_labels_signals_at_components():
     root = ET.parse(PROJECT).getroot()
-    top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
+    top = next(
+        item for item in root.findall("circuit")
+        if item.get("name") == "ProcessorCore"
+    )
 
     assert not [item for item in top.findall("comp") if item.get("name") == "Tunnel"]
     signal_labels = {
@@ -233,8 +243,11 @@ def test_top_level_redraw_is_tunnel_free_and_labels_signals_at_components():
     }
     assert {"ACC_MEMORY_SELECT", "ACC_MEMORY_VALID_SELECT", "ACC_SUB_VALUE"} <= labels
 
-def test_top_level_keeps_the_hand_placed_fetch_and_memory_anchors():
-    report = next(item for item in inspect_project(PROJECT) if item.name == "TinyCPU")
+
+def test_processor_core_keeps_the_hand_placed_fetch_and_memory_anchors():
+    report = next(
+        item for item in inspect_project(PROJECT) if item.name == "ProcessorCore"
+    )
 
     assert SUBCIRCUIT_ANCHOR_CLEARANCE == 200
     # The inspector's deliberately conservative 200-pixel lane reports these
@@ -247,10 +260,10 @@ def test_top_level_keeps_the_hand_placed_fetch_and_memory_anchors():
     assert "FetchDecode@" in conflict
 
 
-def test_top_level_does_not_daisy_chain_unrelated_component_anchors():
+def test_processor_core_does_not_daisy_chain_unrelated_component_anchors():
     root = ET.parse(PROJECT).getroot()
     top = next(
-        item for item in root.findall("circuit") if item.get("name") == "TinyCPU"
+        item for item in root.findall("circuit") if item.get("name") == "ProcessorCore"
     )
     instance_locations = {
         component.get("loc")

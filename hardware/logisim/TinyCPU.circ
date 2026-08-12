@@ -1530,7 +1530,7 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     </comp>
     <comp loc="(1200,130)" name="Datapath"/>
     <comp loc="(1740,120)" name="ErrorFlags"/>
-    <comp loc="(1860,530)" name="AddSubCircuit"/>
+    <comp loc="(1860,530)" name="AddValidCircuit"/>
     <comp loc="(2160,1080)" name="SubValidCircuit"/>
     <comp loc="(330,130)" name="FetchDecode"/>
     <comp loc="(330,280)" name="Memory"/>
@@ -1766,7 +1766,7 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="font" val="SansSerif plain 9"/>
       <a name="text" val="SUB_OPERAND_VALID →"/>
     </comp>
-    <comp lib="9" loc="(916,314)" name="Text">
+    <comp lib="9" loc="(915,310)" name="Text">
       <a name="font" val="SansSerif plain 9"/>
       <a name="text" val="SUB_VALID →"/>
     </comp>
@@ -1934,9 +1934,9 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(760,120)" to="(920,120)"/>
     <wire from="(800,410)" to="(900,410)"/>
   </circuit>
-  <circuit name="AddSubCircuit">
+  <circuit name="AddValidCircuit">
     <a name="appearance" val="logisim_evolution"/>
-    <a name="circuit" val="AddSubCircuit"/>
+    <a name="circuit" val="AddValidCircuit"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
     <comp lib="0" loc="(1450,410)" name="Pin">

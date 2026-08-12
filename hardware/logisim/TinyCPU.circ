@@ -1391,9 +1391,9 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     </comp>
     <wire from="(120,140)" to="(420,140)"/>
   </circuit>
-  <circuit name="ProcessorCore">
+  <circuit name="ProcessorImplementation">
     <a name="appearance" val="logisim_evolution"/>
-    <a name="circuit" val="ProcessorCore"/>
+    <a name="circuit" val="ProcessorImplementation"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
     <comp lib="0" loc="(1720,470)" name="Constant">
@@ -2002,6 +2002,13 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(980,50)" to="(980,90)"/>
     <wire from="(980,90)" to="(990,90)"/>
     <wire from="(990,750)" to="(2540,750)"/>
+  </circuit>
+  <circuit name="ProcessorCore">
+    <a name="appearance" val="logisim_evolution"/>
+    <a name="circuit" val="ProcessorCore"/>
+    <a name="circuitnamedboxfixedsize" val="true"/>
+    <a name="simulationFrequency" val="1.0"/>
+    <comp loc="(360,240)" name="ProcessorImplementation"/>
   </circuit>
   <circuit name="TinyCPU">
     <a name="appearance" val="logisim_evolution"/>

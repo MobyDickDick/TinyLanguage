@@ -164,7 +164,7 @@ def test_fetch_decode_alone_exposes_named_reset_input():
             for component in circuit.findall("comp")
         )
     }
-    assert reset_owners == {"ProcessorCore", "FetchDecode", "IntegrationReset"}
+    assert reset_owners == {"ProcessorImplementation", "FetchDecode", "IntegrationReset"}
 
 
 def test_top_level_opcode_reaches_decode_controls_only():
@@ -198,7 +198,9 @@ def test_top_level_clear_error_reaches_error_flags_only():
 
     root = ET.parse(PROJECT).getroot()
     circuit = next(
-        item for item in root.findall("circuit") if item.get("name") == "ProcessorCore"
+        item
+        for item in root.findall("circuit")
+        if item.get("name") == "ProcessorImplementation"
     )
     clear_source = _control_output(root, "CLEAR_ERROR")
     clear_target = _subcircuit_input(root, "ErrorFlags", "CLEAR_ERROR")
@@ -275,7 +277,9 @@ ACCUMULATOR_FAMILY_CONTROLS = tuple(
 
 def _top_level(root):
     return next(
-        circuit for circuit in root.findall("circuit") if circuit.get("name") == "ProcessorCore"
+        circuit
+        for circuit in root.findall("circuit")
+        if circuit.get("name") == "ProcessorImplementation"
     )
 
 
@@ -1049,6 +1053,20 @@ def test_ci_runs_the_fresh_checkout_hardware_verifier():
     workflow = CI_WORKFLOW.read_text(encoding="utf-8")
     assert "Run TinyCPU hardware reproducibility gate" in workflow
     assert "PYTHONPATH=src python src/tiny_cpu_verify.py" in workflow
+
+
+def test_processor_core_contains_only_hierarchical_subcircuits():
+    """Keep ProcessorCore free of gates, muxes, constants, and other primitives."""
+
+    root = ET.parse(PROJECT).getroot()
+    core = next(c for c in root.findall("circuit") if c.get("name") == "ProcessorCore")
+    components = core.findall("comp")
+
+    assert components
+    assert all(component.get("lib") is None for component in components)
+    assert {component.get("name") for component in components} == {
+        "ProcessorImplementation"
+    }
 
 
 def test_tinycpu_sheet_contains_only_hierarchical_subcircuits():

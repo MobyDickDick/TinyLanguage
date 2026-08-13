@@ -295,6 +295,14 @@ ist nur gesetzt, wenn `INPUT_VALID` gesetzt und `OVERFLOW` nicht gesetzt ist;
 ein Überlauf in Richtung + oder - unendlich kann deshalb nicht als gültiger
 Datenwert in den Akkumulator gelangen.
 
+Auf dem Integrationsblatt besitzt die automatisch erzeugte, breite
+`SubArithmeticCircuit`-Darstellung nun einen eigenen sichtbaren Korridor vor
+dem Multiplexer `ACC_SUB_SELECT`. Die beiden Ergebnisleitungen wurden bis zu
+den verschobenen Multiplexereingängen verlängert; Beschriftungen liegen nicht
+mehr auf dem Unterseitensymbol. Ein Strukturtest friert diesen Mindestabstand
+ein, damit ein späteres Verschieben die in Logisim sichtbaren Bauteile nicht
+erneut übereinanderlegt.
+
 The extracted `SubValidCircuit` is placed below the surrounding validity
 selectors so that all six automatically generated input ports remain visible.
 The four `SUB_*` decoder controls, `Memory.VALID_OUT`, and

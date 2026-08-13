@@ -460,6 +460,39 @@ def test_subtraction_validity_instance_connects_every_automatic_symbol_port():
     assert frozenset(("(1940,1120)", "(1940,1160)")) not in wire_segments
 
 
+def test_subtraction_result_selector_has_a_visible_routing_lane():
+    """Keep the SUB selector clear of the generated arithmetic symbol."""
+
+    root = ET.parse(PROJECT).getroot()
+    top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
+    arithmetic = next(
+        component
+        for component in top.findall("comp")
+        if component.get("name") == "SubArithmeticCircuit"
+    )
+    selector = next(
+        component
+        for component in top.findall("comp")
+        if component.get("name") == "Multiplexer"
+        and any(
+            attribute.get("name") == "label"
+            and attribute.get("val") == "ACC_SUB_SELECT"
+            for attribute in component.findall("a")
+        )
+    )
+
+    arithmetic_x, arithmetic_y = (
+        int(value) for value in arithmetic.get("loc").strip("()").split(",")
+    )
+    selector_x, selector_y = (
+        int(value) for value in selector.get("loc").strip("()").split(",")
+    )
+    assert selector_y == arithmetic_y - 10
+    # The arithmetic symbol ends at its anchor, while the west-facing mux
+    # inputs begin 30 pixels left of theirs. Preserve a full 100-pixel lane.
+    assert selector_x - 30 - arithmetic_x >= 100
+
+
 def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():
     report = next(
         item

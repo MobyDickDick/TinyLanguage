@@ -16,7 +16,7 @@
   <lib desc="#TTL" name="7"/>
   <lib desc="#TCL" name="8"/>
   <lib desc="#Base" name="9"/>
-  <main name="TinyCPU"/>
+  <main name="TinyCPUMain"/>
   <options>
     <a name="gateUndefined" val="ignore"/>
     <a name="simlimit" val="1000"/>
@@ -24,9 +24,9 @@
   </options>
   <mappings/>
   <toolbar/>
-  <circuit name="TinyCPU">
+  <circuit name="TinyCPUMain">
     <a name="appearance" val="logisim_evolution"/>
-    <a name="circuit" val="TinyCPU"/>
+    <a name="circuit" val="TinyCPUMain"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
     <comp lib="0" loc="(2460,1200)" name="Pin">
@@ -1849,7 +1849,7 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp lib="1" loc="(570,530)" name="AND Gate">
       <a name="label" val="ACC_ADD_VALID"/>
     </comp>
-    <comp lib="9" loc="(437,522)" name="Text">
+    <comp lib="9" loc="(435,520)" name="Text">
       <a name="font" val="SansSerif plain 9"/>
       <a name="text" val="MEMORY_VALID →"/>
     </comp>
@@ -1966,7 +1966,7 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="inputs" val="4"/>
       <a name="label" val="ACC_SUB_MEMORY_SELECT"/>
     </comp>
-    <comp lib="9" loc="(437,202)" name="Text">
+    <comp lib="9" loc="(435,200)" name="Text">
       <a name="font" val="SansSerif plain 9"/>
       <a name="text" val="MEMORY_VALID →"/>
     </comp>
@@ -2137,7 +2137,7 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp lib="3" loc="(530,160)" name="Adder">
       <a name="width" val="16"/>
     </comp>
-    <comp lib="9" loc="(340,68)" name="Text">
+    <comp lib="9" loc="(340,65)" name="Text">
       <a name="text" val="signed ADD: overflow = NOT(left_sign XOR right_sign) AND (left_sign XOR result_sign)"/>
     </comp>
     <wire from="(1000,280)" to="(1050,280)"/>

@@ -21,7 +21,7 @@
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
     <comp lib="0" loc="(240,150)" name="Constant">
-      <a name="label" val="PC_START"/>
+      <a name="label" val="CONSTANT"/>
     </comp>
     <comp lib="0" loc="(280,230)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -35,7 +35,7 @@
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(420,350)" name="Splitter">
-      <a name="label" val="INSTRUCTION_SPLIT"/>
+      <a name="label" val="SPLITTER"/>
       <a name="bit1" val="0"/>
       <a name="bit10" val="0"/>
       <a name="bit11" val="0"/>
@@ -106,11 +106,11 @@
       <a name="label" val="ERROR_HALT"/>
     </comp>
     <comp lib="3" loc="(430,190)" name="Comparator">
-      <a name="label" val="PC_LIMIT_COMPARE"/>
+      <a name="label" val="COMPARATOR"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(490,280)" name="Adder">
-      <a name="label" val="NEXT_PC_ADD"/>
+      <a name="label" val="ADDER"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(250,100)" name="Register">

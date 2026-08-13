@@ -35,7 +35,7 @@
       <a name="width" val="32"/>
     </comp>
     <comp lib="0" loc="(190,140)" name="Splitter">
-      <a name="label" val="OPERAND_SPLIT"/>
+      <a name="label" val="SPLITTER"/>
       <a name="bit1" val="0"/>
       <a name="bit10" val="0"/>
       <a name="bit11" val="0"/>
@@ -70,10 +70,10 @@
       <a name="incoming" val="32"/>
     </comp>
     <comp lib="0" loc="(190,300)" name="Splitter">
-      <a name="label" val="VALID_SPLIT"/>
+      <a name="label" val="SPLITTER_2"/>
     </comp>
     <comp lib="0" loc="(370,80)" name="Constant">
-      <a name="label" val="CARRY_IN_ZERO"/>
+      <a name="label" val="CONSTANT"/>
     </comp>
     <comp lib="0" loc="(660,150)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -101,15 +101,15 @@
       <a name="label" val="ACTIVE_VALID"/>
     </comp>
     <comp lib="2" loc="(650,210)" name="Multiplexer">
-      <a name="label" val="ADD_SUB_RESULT_SELECT"/>
+      <a name="label" val="MULTIPLEXER"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(430,120)" name="Adder">
-      <a name="label" val="ADD_VALUE"/>
+      <a name="label" val="ADDER"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(430,220)" name="Subtractor">
-      <a name="label" val="SUB_VALUE"/>
+      <a name="label" val="SUBTRACTOR"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="9" loc="(320,60)" name="Text">

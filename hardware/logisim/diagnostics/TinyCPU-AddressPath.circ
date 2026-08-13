@@ -69,7 +69,7 @@
       <a name="type" val="output"/>
     </comp>
     <comp lib="3" loc="(520,200)" name="Adder">
-      <a name="label" val="ADDRESS_OFFSET_ADD"/>
+      <a name="label" val="ADDER"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(340,120)" name="Register">

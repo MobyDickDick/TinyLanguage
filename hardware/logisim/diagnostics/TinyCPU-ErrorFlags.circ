@@ -89,7 +89,7 @@
       <a name="label" val="CLEAR_ERROR"/>
     </comp>
     <comp lib="0" loc="(720,200)" name="Constant">
-      <a name="label" val="ERROR_REGISTER_ENABLE"/>
+      <a name="label" val="CONSTANT"/>
     </comp>
     <comp lib="1" loc="(260,110)" name="NOT Gate">
       <a name="label" val="NOT_CLEAR_ERROR"/>

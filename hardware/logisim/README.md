@@ -286,6 +286,31 @@ Adressierungsart gegliederte Logik in `AddValidCircuit` beziehungsweise
 `SubValidCircuit` übersichtlich, während die zugehörige Rechenoperation direkt
 darunter gekapselt ist.
 
+## Einheitliche Operationsboxen und Ergebnispriorität
+
+Für die weitere Integration gilt eine Operation als eigene FBox. Neben dem
+berechneten Wert liefert sie ihre Gültigkeit und ein Aktivsignal. Fehler sind
+ebenfalls Teil der Box; bei `ADD` und `SUB` ist dies `OVERFLOW`. Die neue
+`NotCircuit`-Box hat dieselbe äußere Form. Da eine bitweise Invertierung nicht
+überlaufen kann, ist ihr `OVERFLOW`-Ausgang fest auf 0 gelegt. `SubCircuit`
+übernimmt entsprechend die beiden von der Adressierungslogik vorbereiteten
+Operanden, ihre Gültigkeit und das SUB-Aktivsignal und kapselt damit die
+vollständige Subtraktion. Die bereits
+von Hand angepasste ADD-Box `AddSubCircuit` bleibt erhalten; ihre Ausgänge
+`RESULT`, `OVERFLOW`, `ADD_VALID` und `ADD_SELECTED` bilden denselben Vertrag.
+
+Logisim-evolution besitzt keinen einzelnen Multiplexer, der unmittelbar „den
+ersten Eingang mit aktiver Enable-Leitung“ auswählt. Ein normaler Multiplexer
+erwartet eine binär codierte Auswahl. Dafür kann man entweder einen
+Prioritätsencoder vor einen Mehrfachmultiplexer setzen oder – in diesem
+Schaltbild besser sichtbar – 2:1-Multiplexer kaskadieren. In der Kaskade wählt
+jede Operationsbox mit ihrem `*_SELECTED`-Signal zwischen dem bisherigen Wert
+und ihrem Resultat. Die Reihenfolge der Stufen definiert damit ausdrücklich
+die Priorität; es entsteht kein Bus mit mehreren gleichzeitig treibenden
+Ausgängen. Die Decoderlogik soll zwar weiterhin höchstens eine Operation
+aktivieren, die Kaskade bleibt aber auch bei mehreren aktiven Leitungen
+elektrisch eindeutig.
+
 Die Bereichsprüfung interpretiert Daten als vorzeichenbehaftete 16-Bit-Werte
 im Bereich -32768 bis +32767. Bei der Addition liegt ein Überlauf vor, wenn die
 Operanden dasselbe Vorzeichen, das Ergebnis jedoch ein anderes Vorzeichen hat.

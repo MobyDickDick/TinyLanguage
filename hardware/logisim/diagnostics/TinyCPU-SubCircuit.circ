@@ -14,10 +14,10 @@
   <lib desc="#TTL" name="7"/>
   <lib desc="#TCL" name="8"/>
   <lib desc="#Base" name="9"/>
-  <main name="SubArithmeticCircuit"/>
-  <circuit name="SubArithmeticCircuit">
+  <main name="SubCircuit"/>
+  <circuit name="SubCircuit">
     <a name="appearance" val="logisim_evolution"/>
-    <a name="circuit" val="SubArithmeticCircuit"/>
+    <a name="circuit" val="SubCircuit"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
     <comp lib="0" loc="(120,100)" name="Pin">
@@ -107,7 +107,7 @@
     <comp lib="0" loc="(790,330)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="RESULT_VALID"/>
+      <a name="label" val="SUB_VALID"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="1" loc="(350,240)" name="XOR Gate">
@@ -124,9 +124,6 @@
     </comp>
     <comp lib="1" loc="(770,320)" name="AND Gate">
       <a name="label" val="RANGE_VALID"/>
-    </comp>
-    <comp lib="0" loc="(300,170)" name="Constant">
-      <a name="label" val="BORROW_IN_ZERO"/>
     </comp>
     <comp lib="3" loc="(360,140)" name="Subtractor">
       <a name="width" val="16"/>
@@ -171,6 +168,17 @@
     <wire from="(770,320)" to="(780,320)"/>
     <wire from="(780,320)" to="(780,330)"/>
     <wire from="(780,330)" to="(790,330)"/>
-    <wire from="(300,170)" to="(340,170)"/>
+    <comp lib="0" loc="(120,240)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="SUB_SELECT"/>
+    </comp>
+    <comp lib="0" loc="(700,220)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="SUB_SELECTED"/>
+      <a name="type" val="output"/>
+    </comp>
+    <wire from="(120,240)" to="(700,240)"/>
+    <wire from="(700,220)" to="(700,240)"/>
   </circuit>
 </project>

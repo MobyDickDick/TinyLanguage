@@ -164,7 +164,7 @@ def test_fetch_decode_alone_exposes_named_reset_input():
             for component in circuit.findall("comp")
         )
     }
-    assert reset_owners == {"TinyCPU", "FetchDecode", "IntegrationReset"}
+    assert reset_owners == {"TinyCPUMain", "FetchDecode", "IntegrationReset"}
 
 
 def test_top_level_opcode_reaches_decode_controls_only():
@@ -200,7 +200,7 @@ def test_top_level_clear_error_reaches_error_flags_only():
     circuit = next(
         item
         for item in root.findall("circuit")
-        if item.get("name") == "TinyCPU"
+        if item.get("name") == "TinyCPUMain"
     )
     clear_source = _control_output(root, "CLEAR_ERROR")
     clear_target = _subcircuit_input(root, "ErrorFlags", "CLEAR_ERROR")
@@ -279,7 +279,7 @@ def _top_level(root):
     return next(
         circuit
         for circuit in root.findall("circuit")
-        if circuit.get("name") == "TinyCPU"
+        if circuit.get("name") == "TinyCPUMain"
     )
 
 
@@ -1053,7 +1053,7 @@ def test_tinycpu_sheet_is_the_integration_sheet():
     """Keep the hand-maintained functional subcircuits on the TinyCPU sheet."""
 
     root = ET.parse(PROJECT).getroot()
-    top = next(c for c in root.findall("circuit") if c.get("name") == "TinyCPU")
+    top = next(c for c in root.findall("circuit") if c.get("name") == "TinyCPUMain")
     subcircuits = {
         component.get("name")
         for component in top.findall("comp")
@@ -1068,9 +1068,9 @@ def test_logisim_starter_matches_default_hardware_profile():
     root = ET.parse(PROJECT).getroot()
     circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
 
-    assert root.find("main").get("name") == "TinyCPU"
+    assert root.find("main").get("name") == "TinyCPUMain"
     assert {
-        "TinyCPU",
+        "TinyCPUMain",
         "AddSubCircuit",
         "Datapath",
         "AddressPath",

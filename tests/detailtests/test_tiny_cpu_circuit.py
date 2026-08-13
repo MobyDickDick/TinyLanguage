@@ -58,11 +58,11 @@ def test_two_pin_smoke_projects_are_minimal_and_unambiguous():
 def test_inspector_exposes_completed_and_pending_sheets():
     reports = {report.name: report for report in inspect_project(PROJECT)}
 
-    assert not reports["TinyCPU"].connected
-    unconnected_labels = {item.partition("@")[0] for item in reports["TinyCPU"].unconnected}
+    assert not reports["TinyCPUMain"].connected
+    unconnected_labels = {item.partition("@")[0] for item in reports["TinyCPUMain"].unconnected}
     assert any("select input" in label for label in unconnected_labels)
     assert {"CLK", "RESET"}.isdisjoint(unconnected_labels)
-    assert reports["TinyCPU"].routing_conflicts == ()
+    assert reports["TinyCPUMain"].routing_conflicts == ()
 
     for sheet in (
         "Datapath", "AddressPath", "Memory", "ErrorFlags", "FetchDecode",
@@ -91,7 +91,7 @@ def test_inspector_accepts_a_minimal_connected_project(tmp_path):
 def test_inspector_cli_rejects_incomplete_ap4_project(capsys):
     assert main([str(PROJECT)]) == 1
     output = capsys.readouterr().out
-    assert "TinyCPU: INCOMPLETE" in output
+    assert "TinyCPUMain: INCOMPLETE" in output
 
 
 def test_inspector_accepts_checked_in_diagnostic_projects():
@@ -225,7 +225,7 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
     root = ET.parse(PROJECT).getroot()
     top = next(
         item for item in root.findall("circuit")
-        if item.get("name") == "TinyCPU"
+        if item.get("name") == "TinyCPUMain"
     )
 
     assert not [item for item in top.findall("comp") if item.get("name") == "Tunnel"]
@@ -463,7 +463,7 @@ def test_subtraction_validity_instance_connects_every_automatic_symbol_port():
     """Keep all six inputs wired, without shorting adjacent symbol ports."""
 
     root = ET.parse(PROJECT).getroot()
-    top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
+    top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPUMain")
     instance = next(
         component
         for component in top.findall("comp")
@@ -510,7 +510,7 @@ def test_subtraction_result_selector_has_a_visible_routing_lane():
     """Keep the SUB result selector identifiable after FBox extraction."""
 
     root = ET.parse(PROJECT).getroot()
-    top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
+    top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPUMain")
     selector = next(
         component
         for component in top.findall("comp")
@@ -532,7 +532,7 @@ def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():
     report = next(
         item
         for item in inspect_project(PROJECT)
-        if item.name == "TinyCPU"
+        if item.name == "TinyCPUMain"
     )
 
     assert SUBCIRCUIT_ANCHOR_CLEARANCE == 200
@@ -552,7 +552,7 @@ def test_processor_implementation_does_not_daisy_chain_component_anchors():
     top = next(
         item
         for item in root.findall("circuit")
-        if item.get("name") == "TinyCPU"
+        if item.get("name") == "TinyCPUMain"
     )
     instance_locations = {
         component.get("loc")

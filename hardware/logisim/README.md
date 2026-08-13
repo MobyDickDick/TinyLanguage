@@ -1,7 +1,7 @@
 # TinyCPU in Logisim-evolution
 
 This directory contains the TinyCPU hardware baseline with a dedicated arithmetic sheet.
-Open `TinyCPU.circ` with Logisim-evolution 3.x. Das Blatt **`TinyCPU` ist eine
+Open `TinyCPU.circ` with Logisim-evolution 3.x. Das Blatt **`TinyCPUMain` ist eine
 rein hierarchische Übersichtsseite**: Es enthält ausschließlich die
 Unterseite `ProcessorCore` und keine Pins, Gatter, Splitter, Konstanten oder
 sonstigen elementaren Bauteile. Auch **`ProcessorCore` ist jetzt ein reines
@@ -134,7 +134,7 @@ und kreuzt weder Reset-Anschlüsse noch Takt- oder WE-Bus.
 Die TinyCPU soll eine **graphische und direkt verfolgbare** Schaltung bleiben.
 Darum werden zusammengehörige Anschlüsse grundsätzlich mit sichtbaren,
 rechtwinkligen Leitungen verbunden. Auf der neu gezeichneten Übersichtsseite
-`TinyCPU` sind die verbliebenen Tunnel jetzt durch sichtbare Leitungen in
+`TinyCPUMain` sind die verbliebenen Tunnel jetzt durch sichtbare Leitungen in
 getrennten rechten Routingkorridoren ersetzt; unbeschriftete Logikbausteine
 halten dabei den Signalfluss statt interner Netznamen im Vordergrund. Tunnel sind kein Mittel, um eine schwierige
 Leitungsführung abzukürzen. Sie sind nur ausnahmsweise zulässig, wenn eine
@@ -159,7 +159,7 @@ aufgeteilt.
 
 Sie werden reproduzierbar aus dem Hauptprojekt erzeugt. Der Befehl liest
 `TinyCPU.circ`, schreibt aber nur Dateien in das angegebene Diagnoseverzeichnis;
-er ist ausdrücklich **kein** Weg, das Blatt `TinyCPU` wiederherzustellen oder
+er ist ausdrücklich **kein** Weg, das Blatt `TinyCPUMain` wiederherzustellen oder
 zu ersetzen:
 
 ```bash
@@ -173,14 +173,13 @@ PYTHONPATH=src python src/tiny_cpu_circuit.py \
 The project fixes the initial hardware profile at 16 data bits and 12 address
 bits and splits the design into the same blocks as the hardware contract:
 
-The `ProcessorCore` integration sheet places every subcircuit anchor in its own 600-pixel
-routing lane. This is intentionally much wider than the generated component
-symbols: no terminals from adjacent subcircuits can be superimposed merely by
-their placement. The dependency-free inspector enforces this clearance and
-fails before a project with overlapping subcircuit symbols is checked in.
+`TinyCPUMain` is the integration sheet. Stateful blocks and independently
+selectable operations are encapsulated on named subpages, while the main sheet
+contains only their explicit interconnection and selection logic. Every
+component and subcircuit instance has a unique label so that signals remain
+traceable in Logisim and in the dependency-free inspector.
 
-- `TinyCPU` is the component-free top-level sheet; its sole `ProcessorCore` instance makes the architectural boundary explicit;
-- `ProcessorCore` is the integration sheet that connects the functional subcircuits and keeps detailed integration out of `TinyCPU`;
+- `TinyCPUMain` connects the functional subcircuits and is the top-level circuit selected when the project is opened;
 - `AddSub` bündelt die beiden parallelen 16-Bit-Operanden in einem 32-Bit-Bus und die beiden Gültigkeitsleitungen in einem 2-Bit-Bus. Erst auf dem eigenen Schemablatt teilen Splitter diese Busse für den 16-Bit-Addierer und -Subtrahierer auf; ein gemeinsamer Selektor führt genau ein Ergebnis zurück. Das Blatt kommt vollständig ohne Tunnel aus und bildet damit die neue, kompakte Grenze für den arithmetischen ADD/SUB-Strang;
   its accumulator integration is visually grouped into a decode column and compact,
   labelled ADD/SUB stage columns so related operand, result, and validity logic can
@@ -199,7 +198,7 @@ fails before a project with overlapping subcircuit symbols is checked in.
   sequential/jump PC path, program-limit check, and control decode for the complete symbolic ISA. The expanded decoder
   exposes every addressing, arithmetic, logic, branch, and I/O control plus all six
   error-set paths.
-- On the maintained `ProcessorCore` integration sheet, the 22-bit `FetchDecode.OPCODE` bus is
+- On the maintained `TinyCPUMain` integration sheet, the 22-bit `FetchDecode.OPCODE` bus is
   the first decode-integration net and drives only the matching input of the
   separately placed `FetchDecodeControls` block. Its left-side route remains
   isolated from the already integrated clock and reset nets.
@@ -484,7 +483,7 @@ The clocked state is owned by `FetchDecode` (PC), `Datapath` (accumulator and
 validity), `AddressPath` (address register and validity), `Memory` (parallel
 value/validity RAM), and `ErrorFlags` (six sticky bits). `FetchDecode` reads the
 22-bit instruction word and exposes symbolic controls; the other sheets commit
-selected state on the rising edge. `TinyCPU` is the integration boundary for
+selected state on the rising edge. `TinyCPUMain` is the integration boundary for
 the shared clock, reset, data/control paths, output, and halt state.
 
 The repository includes a dependency-free `.circ` netlist inspector. It parses

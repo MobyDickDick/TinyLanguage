@@ -278,6 +278,23 @@ the three memory-backed modes, combine them with the constant mode, select
 constant-valid or `Memory.VALID_OUT`, and AND the result with
 `Datapath.ACC_VALID_OUT`.
 
+Die eigentlichen 16-Bit-Operationen liegen nicht mehr auf dem gemeinsamen
+`AddSub`-Blatt, sondern auf den Unterseiten `AddArithmeticCircuit` und
+`SubArithmeticCircuit`. Beide Unterseiten führen neben `RESULT` auch
+`OVERFLOW` und `RESULT_VALID` heraus. Damit bleibt die bestehende, nach
+Adressierungsart gegliederte Logik in `AddValidCircuit` beziehungsweise
+`SubValidCircuit` übersichtlich, während die zugehörige Rechenoperation direkt
+darunter gekapselt ist.
+
+Die Bereichsprüfung interpretiert Daten als vorzeichenbehaftete 16-Bit-Werte
+im Bereich -32768 bis +32767. Bei der Addition liegt ein Überlauf vor, wenn die
+Operanden dasselbe Vorzeichen, das Ergebnis jedoch ein anderes Vorzeichen hat.
+Bei der Subtraktion liegt er vor, wenn die Operanden verschiedene Vorzeichen
+haben und das Ergebnisvorzeichen vom linken Operanden abweicht. `RESULT_VALID`
+ist nur gesetzt, wenn `INPUT_VALID` gesetzt und `OVERFLOW` nicht gesetzt ist;
+ein Überlauf in Richtung + oder - unendlich kann deshalb nicht als gültiger
+Datenwert in den Akkumulator gelangen.
+
 The extracted `SubValidCircuit` is placed below the surrounding validity
 selectors so that all six automatically generated input ports remain visible.
 The four `SUB_*` decoder controls, `Memory.VALID_OUT`, and

@@ -105,6 +105,8 @@ def test_inspector_accepts_checked_in_diagnostic_projects():
             "TinyCPU-AddSubCircuit.circ",
             "TinyCPU-AddValidCircuit.circ",
             "TinyCPU-SubValidCircuit.circ",
+            "TinyCPU-AddArithmeticCircuit.circ",
+            "TinyCPU-SubArithmeticCircuit.circ",
         }:
             # These hand-edited arithmetic sheets still have pending isolated-
             # sheet connectivity diagnostics; reproducibility is checked
@@ -369,6 +371,46 @@ def test_validity_subcircuits_have_expected_interfaces_when_present():
         assert pin_labels(addition) == addition_labels
         assert len(addition.findall("comp")) == len(subtraction.findall("comp"))
         assert len(addition.findall("wire")) == len(subtraction.findall("wire"))
+
+
+def test_addition_and_subtraction_live_on_overflow_checked_subpages():
+    """The arithmetic helpers reject signed results outside the 16-bit domain."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuits = {item.get("name"): item for item in root.findall("circuit")}
+
+    for name, operation in (
+        ("AddArithmeticCircuit", "Adder"),
+        ("SubArithmeticCircuit", "Subtractor"),
+    ):
+        circuit = circuits[name]
+        components = circuit.findall("comp")
+        labels = {
+            child.get("val")
+            for component in components
+            for child in component.findall("a")
+            if child.get("name") == "label"
+        }
+        pin_labels = {
+            child.get("val")
+            for component in components
+            if component.get("name") == "Pin"
+            for child in component.findall("a")
+            if child.get("name") == "label"
+        }
+
+        assert sum(component.get("name") == operation for component in components) == 1
+        assert {"LEFT", "RIGHT", "INPUT_VALID", "RESULT", "RESULT_VALID", "OVERFLOW"} <= pin_labels
+        assert {"SIGN_OVERFLOW", "NO_OVERFLOW", "RANGE_VALID"} <= labels
+
+    add_sub = circuits["AddSub"]
+    assert not {
+        component.get("name")
+        for component in add_sub.findall("comp")
+    } & {"Adder", "Subtractor"}
+    assert {"AddArithmeticCircuit", "SubArithmeticCircuit"} <= {
+        component.get("name") for component in add_sub.findall("comp")
+    }
 
 
 def test_subtraction_validity_instance_connects_every_automatic_symbol_port():

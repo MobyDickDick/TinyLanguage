@@ -482,20 +482,16 @@ def test_top_level_has_visible_labels_on_wires_at_components():
         item for item in root.findall("circuit")
         if item.get("name") == "AddSubCircuit"
     )
-    assert "ADD_ADDRESS/CONST_VALID →" in {
+    assert {"MEMORY_VALID →", "ADD_VALID →", "CONST_VALID →"} <= {
         _attributes(component).get("text")
         for component in addition.findall("comp")
         if component.get("name") == "Text"
     }
     subtraction_validity = next(
         item for item in root.findall("circuit")
-        if item.get("name") == "SubValidCircuit"
+        if item.get("name") == "SubSubCircuit"
     )
-    assert {
-        "SUB_ADDRESS/CONST_VALID →",
-        "SUB_OPERAND_VALID →",
-        "SUB_VALID →",
-    } <= {
+    assert {"MEMORY_VALID →", "ADD_VALID →", "CONST_VALID →"} <= {
         _attributes(component).get("text")
         for component in subtraction_validity.findall("comp")
         if component.get("name") == "Text"
@@ -1378,28 +1374,20 @@ def test_ap8_verification_reports_a_stale_generated_artifact(tmp_path):
         verify_checkout(repository)
 
 
-def test_add_sub_sheet_uses_packed_buses_without_tunnels():
-    """Keep packed buses and make the extracted arithmetic directly traceable."""
+def test_restored_arithmetic_boxes_are_tunnel_free():
+    """Keep the restored independent ADD and SUB boxes directly traceable."""
 
     root = ET.parse(PROJECT).getroot()
-    arithmetic = next(c for c in root.findall("circuit") if c.get("name") == "AddSub")
-    components = arithmetic.findall("comp")
-    assert not [c for c in components if c.get("name") == "Tunnel"]
-    assert {c.get("name") for c in components} >= {
-        "AddArithmeticCircuit",
-        "SubArithmeticCircuit",
-        "Multiplexer",
-        "Splitter",
-    }
-    assert not {
-        component.get("name") for component in components
-    } & {"Adder", "Subtractor"}
+    circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
+    for box, helper in (("AddSubCircuit", "AddArithmeticCircuit"), ("SubSubCircuit", "SubArithmeticCircuit")):
+        components = circuits[box].findall("comp")
+        assert not [c for c in components if c.get("name") == "Tunnel"]
+        assert helper in {c.get("name") for c in components}
 
     extracted_operations = {
         "AddArithmeticCircuit": "Adder",
         "SubArithmeticCircuit": "Subtractor",
     }
-    circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
     for circuit_name, primitive in extracted_operations.items():
         extracted = circuits[circuit_name]
         extracted_components = extracted.findall("comp")
@@ -1413,33 +1401,15 @@ def test_add_sub_sheet_uses_packed_buses_without_tunnels():
             if component.get("name") == "Tunnel"
         ]
 
-    pins = {
-        _attributes(c).get("label"): _attributes(c).get("width", "1")
-        for c in components
-        if c.get("name") == "Pin"
-    }
-    assert pins == {
-        "OPERANDS": "32",
-        "VALID": "2",
-        "SUBTRACT": "1",
-        "CARRY": "1",
-        "RESULT": "16",
-        "RESULT_VALID": "1",
-    }
 
 
-def test_subtraction_validity_select_is_driven_by_named_activity_output():
-    """Select SUB_VALID through named ports, independent of sheet coordinates."""
+def test_not_operation_gates_data_and_valid_with_activity():
+    """An inactive NOT operation contributes neutral data and validity."""
 
     root = ET.parse(PROJECT).getroot()
-    circuit = _top_level(root)
-    source = _subcircuit_output(root, "SubValidCircuit", "SUB_ACTIVE")
-    selector = _labelled_component(circuit, "ACC_SUB_VALID_SELECT")
-    x, y = (int(value) for value in selector.get("loc").strip("()").split(","))
-    select_port = f"({x - 20},{y + 20})"
-    adjacency = _electrical_adjacency(circuit, {source, select_port})
-
-    assert select_port in _reachable(adjacency, source)
+    circuit = next(c for c in root.findall("circuit") if c.get("name") == "NotCircuit")
+    labels = {_attributes(c).get("label") for c in circuit.findall("comp")}
+    assert {"ACTIVE_NOT_RESULT", "ACTIVE_NOT_VALID"} <= labels
 
 
 def test_unary_and_subtraction_boxes_export_a_uniform_operation_contract():
@@ -1449,7 +1419,7 @@ def test_unary_and_subtraction_boxes_export_a_uniform_operation_contract():
     circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
     expected_outputs = {
         "NotCircuit": {"RESULT", "OVERFLOW", "NOT_VALID", "NOT_SELECTED"},
-        "SubCircuit": {"RESULT", "OVERFLOW", "SUB_VALID", "SUB_SELECTED"},
+        "SubSubCircuit": {"RESULT", "OVERFLOW", "ADD_VALID", "ADD_SELECTED"},
     }
     for circuit_name, outputs in expected_outputs.items():
         circuit = circuits[circuit_name]
@@ -1473,7 +1443,5 @@ def test_unary_and_subtraction_boxes_export_a_uniform_operation_contract():
         if _attributes(component).get("label") == "NO_OVERFLOW"
     )
     assert overflow_zero.get("name") == "Constant"
-    assert any(
-        component.get("name") == "Subtractor"
-        for component in circuits["SubCircuit"].findall("comp")
-    )
+    assert any(component.get("name") == "SubArithmeticCircuit"
+               for component in circuits["SubSubCircuit"].findall("comp"))

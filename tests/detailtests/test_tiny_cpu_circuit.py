@@ -413,27 +413,49 @@ def test_addition_and_subtraction_live_on_overflow_checked_subpages():
     }
 
 
-def test_subtractor_borrow_input_is_tied_low():
-    """An open ``b in`` propagates Logisim's error value to every result bit."""
+def test_arithmetic_auxiliary_inputs_are_tied_low():
+    """An open carry/borrow input propagates an error to every result bit."""
 
     root = ET.parse(PROJECT).getroot()
-    subtraction = next(
-        item for item in root.findall("circuit")
-        if item.get("name") == "SubArithmeticCircuit"
-    )
-    constants = {
-        child.get("val"): component.get("loc")
-        for component in subtraction.findall("comp")
-        if component.get("name") == "Constant"
-        for child in component.findall("a")
-        if child.get("name") == "label"
-    }
-    wires = {
-        (wire.get("from"), wire.get("to")) for wire in subtraction.findall("wire")
+    circuits = {item.get("name"): item for item in root.findall("circuit")}
+    for circuit_name, constant_label, operation_name in (
+        ("AddArithmeticCircuit", "CARRY_IN_ZERO", "Adder"),
+        ("SubArithmeticCircuit", "BORROW_IN_ZERO", "Subtractor"),
+    ):
+        arithmetic = circuits[circuit_name]
+        constants = {
+            child.get("val"): component.get("loc")
+            for component in arithmetic.findall("comp")
+            if component.get("name") == "Constant"
+            for child in component.findall("a")
+            if child.get("name") == "label"
+        }
+        wires = {
+            (wire.get("from"), wire.get("to"))
+            for wire in arithmetic.findall("wire")
+        }
+
+        assert sum(
+            component.get("name") == operation_name
+            for component in arithmetic.findall("comp")
+        ) == 1
+        assert constants.get(constant_label) == "(300,170)"
+        assert ("(300,170)", "(340,170)") in wires
+
+
+def test_arithmetic_subpages_have_no_zero_length_wires():
+    root = ET.parse(PROJECT).getroot()
+    arithmetic = {
+        item.get("name"): item
+        for item in root.findall("circuit")
+        if item.get("name") in {"AddArithmeticCircuit", "SubArithmeticCircuit"}
     }
 
-    assert constants.get("BORROW_IN_ZERO") == "(300,170)"
-    assert ("(300,170)", "(340,170)") in wires
+    assert set(arithmetic) == {"AddArithmeticCircuit", "SubArithmeticCircuit"}
+    for circuit in arithmetic.values():
+        assert all(
+            wire.get("from") != wire.get("to") for wire in circuit.findall("wire")
+        )
 
 
 def test_subtraction_validity_instance_connects_every_automatic_symbol_port():

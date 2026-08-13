@@ -57,6 +57,9 @@
       <a name="label" val="ADDER"/>
       <a name="width" val="16"/>
     </comp>
+    <comp loc="(300,170)" name="Constant" lib="0">
+      <a name="label" val="CARRY_IN_ZERO"/>
+    </comp>
     <comp loc="(180,100)" name="Splitter" lib="0">
       <a name="label" val="LEFT_SIGN"/>
       <a name="incoming" val="16"/>
@@ -149,6 +152,7 @@
     <wire from="(100,180)" to="(280,180)"/>
     <wire from="(280,180)" to="(280,150)"/>
     <wire from="(280,150)" to="(320,150)"/>
+    <wire from="(300,170)" to="(340,170)"/>
     <wire from="(360,140)" to="(700,140)"/>
     <wire from="(450,140)" to="(470,140)"/>
     <wire from="(200,120)" to="(260,120)"/>
@@ -159,7 +163,6 @@
     <wire from="(280,260)" to="(300,260)"/>
     <wire from="(350,240)" to="(400,240)"/>
     <wire from="(430,240)" to="(510,240)"/>
-    <wire from="(510,240)" to="(510,240)"/>
     <wire from="(510,240)" to="(550,240)"/>
     <wire from="(260,220)" to="(480,220)"/>
     <wire from="(480,220)" to="(480,200)"/>
@@ -171,7 +174,6 @@
     <wire from="(600,260)" to="(700,260)"/>
     <wire from="(600,260)" to="(570,260)"/>
     <wire from="(570,260)" to="(570,300)"/>
-    <wire from="(600,300)" to="(600,300)"/>
     <wire from="(100,300)" to="(520,300)"/>
     <wire from="(520,300)" to="(520,340)"/>
     <wire from="(520,340)" to="(600,340)"/>

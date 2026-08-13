@@ -413,6 +413,29 @@ def test_addition_and_subtraction_live_on_overflow_checked_subpages():
     }
 
 
+def test_subtractor_borrow_input_is_tied_low():
+    """An open ``b in`` propagates Logisim's error value to every result bit."""
+
+    root = ET.parse(PROJECT).getroot()
+    subtraction = next(
+        item for item in root.findall("circuit")
+        if item.get("name") == "SubArithmeticCircuit"
+    )
+    constants = {
+        child.get("val"): component.get("loc")
+        for component in subtraction.findall("comp")
+        if component.get("name") == "Constant"
+        for child in component.findall("a")
+        if child.get("name") == "label"
+    }
+    wires = {
+        (wire.get("from"), wire.get("to")) for wire in subtraction.findall("wire")
+    }
+
+    assert constants.get("BORROW_IN_ZERO") == "(300,170)"
+    assert ("(300,170)", "(340,170)") in wires
+
+
 def test_subtraction_validity_instance_connects_every_automatic_symbol_port():
     """Keep all six inputs wired, without shorting adjacent symbol ports."""
 

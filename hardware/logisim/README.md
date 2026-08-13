@@ -295,6 +295,11 @@ ist nur gesetzt, wenn `INPUT_VALID` gesetzt und `OVERFLOW` nicht gesetzt ist;
 ein Überlauf in Richtung + oder - unendlich kann deshalb nicht als gültiger
 Datenwert in den Akkumulator gelangen.
 
+Der `b in`-Eingang des Logisim-Subtrahierers ist dabei explizit mit der
+Konstante 0 verbunden. Ein offener Borrow-Eingang wird von Logisim als
+Fehlerwert ausgewertet und würde deshalb auch bei zwei gültigen
+16-Bit-Operanden ein rotes `E` an `RESULT` erzeugen.
+
 Auf dem Integrationsblatt besitzt die automatisch erzeugte, breite
 `SubArithmeticCircuit`-Darstellung nun einen eigenen sichtbaren Korridor vor
 dem Multiplexer `ACC_SUB_SELECT`. Die beiden Ergebnisleitungen wurden bis zu

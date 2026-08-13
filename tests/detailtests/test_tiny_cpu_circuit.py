@@ -310,6 +310,28 @@ def test_every_schematic_component_has_a_unique_label():
         assert len(labels) == len(set(labels)), circuit.get("name")
 
 
+def test_component_labels_do_not_collide_with_circuit_names():
+    """Logisim treats component labels and circuit names case-insensitively."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit_names = {
+        circuit.get("name").casefold() for circuit in root.findall("circuit")
+    }
+
+    for circuit in root.findall("circuit"):
+        for component in circuit.findall("comp"):
+            attributes = {
+                child.get("name"): child.get("val")
+                for child in component.findall("a")
+            }
+            label = attributes.get("label", "").strip()
+            assert label.casefold() not in circuit_names, (
+                circuit.get("name"),
+                component.get("name"),
+                label,
+            )
+
+
 def test_validity_subcircuits_have_expected_interfaces_when_present():
     """Validate validity helpers without requiring a particular sheet layout."""
 

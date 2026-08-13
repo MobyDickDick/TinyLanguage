@@ -25,18 +25,15 @@
       <a name="label" val="ACC_VALUE"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(100,160)" name="Pin">
+    <comp lib="0" loc="(110,160)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="ACC_VALID"/>
     </comp>
-    <comp lib="0" loc="(100,220)" name="Pin">
+    <comp lib="0" loc="(130,220)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="NOT_SELECT"/>
     </comp>
-    <comp lib="1" loc="(260,100)" name="NOT Gate">
-      <a name="label" val="NOT_VALUE"/>
-      <a name="width" val="16"/>
-    </comp>
+    <comp lib="0" loc="(330,150)" name="Constant"/>
     <comp lib="0" loc="(400,100)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
@@ -62,21 +59,22 @@
       <a name="label" val="NOT_SELECTED"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="0" loc="(330,150)" name="Constant">
-      <a name="label" val="NO_OVERFLOW"/>
+    <comp lib="1" loc="(260,100)" name="NOT Gate">
+      <a name="label" val="NOT_VALUE"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="1" loc="(330,190)" name="AND Gate">
       <a name="label" val="ACTIVE_NOT_VALID"/>
     </comp>
     <wire from="(100,100)" to="(230,100)"/>
-    <wire from="(100,160)" to="(260,160)"/>
+    <wire from="(110,160)" to="(260,160)"/>
+    <wire from="(130,220)" to="(260,220)"/>
+    <wire from="(260,100)" to="(400,100)"/>
     <wire from="(260,160)" to="(260,170)"/>
     <wire from="(260,170)" to="(280,170)"/>
-    <wire from="(100,220)" to="(260,220)"/>
-    <wire from="(260,220)" to="(260,210)"/>
+    <wire from="(260,210)" to="(260,220)"/>
     <wire from="(260,210)" to="(280,210)"/>
-    <wire from="(100,220)" to="(400,220)"/>
-    <wire from="(260,100)" to="(400,100)"/>
+    <wire from="(260,220)" to="(400,220)"/>
     <wire from="(330,150)" to="(400,150)"/>
     <wire from="(330,190)" to="(400,190)"/>
   </circuit>

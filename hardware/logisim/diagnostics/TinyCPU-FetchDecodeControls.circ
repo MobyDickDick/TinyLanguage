@@ -333,7 +333,6 @@
     </comp>
     <comp lib="2" loc="(500,670)" name="Decoder">
       <a name="select" val="6"/>
-      <a name="label" val="DECODER_500_670"/>
     </comp>
     <wire from="(1000,110)" to="(1040,110)"/>
     <wire from="(1000,70)" to="(1000,110)"/>

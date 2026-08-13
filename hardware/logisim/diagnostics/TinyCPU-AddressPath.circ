@@ -70,7 +70,6 @@
     </comp>
     <comp lib="3" loc="(520,200)" name="Adder">
       <a name="width" val="16"/>
-      <a name="label" val="ADDER_520_200"/>
     </comp>
     <comp lib="5" loc="(340,120)" name="Register">
       <a name="appearance" val="logisim_evolution"/>

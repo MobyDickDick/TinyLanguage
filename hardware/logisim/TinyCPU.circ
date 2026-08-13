@@ -596,7 +596,7 @@
     <comp lib="0" loc="(600,210)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="DATA_VALID"/>
+      <a name="label" val="VALID_OUT"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(600,320)" name="Pin">
@@ -902,6 +902,7 @@
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(410,290)" name="Constant">
+      <a name="label" val="PC_INCREMENT"/>
       <a name="value" val="0xffff"/>
       <a name="width" val="16"/>
     </comp>

@@ -198,7 +198,7 @@
       <a name="text" val="WRITE_VALID →"/>
     </comp>
     <comp loc="(1200,130)" name="Datapath">
-      <a name="label" val="DATAPATH"/>
+      <a name="label" val="DATAPATH_INSTANCE"/>
     </comp>
     <comp loc="(1740,120)" name="ErrorFlags">
       <a name="label" val="ERROR_FLAGS"/>
@@ -213,7 +213,7 @@
       <a name="label" val="FETCH_DECODE"/>
     </comp>
     <comp loc="(330,280)" name="Memory">
-      <a name="label" val="MEMORY"/>
+      <a name="label" val="MEMORY_INSTANCE"/>
     </comp>
     <comp loc="(640,380)" name="DecodeSignals">
       <a name="label" val="DECODE_SIGNALS"/>

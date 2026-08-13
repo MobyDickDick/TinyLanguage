@@ -51,7 +51,7 @@ def test_extracted_addition_inputs_reach_the_intended_symbol_ports():
     top = next(
         circuit
         for circuit in root.findall("circuit")
-        if circuit.get("name") == "TinyCPU"
+        if circuit.get("name") == "TinyCPUMain"
     )
     addition = next(
         circuit

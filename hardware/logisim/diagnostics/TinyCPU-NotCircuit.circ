@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project source="4.1.0" version="1.0">
+  <lib desc="#Wiring" name="0">
+    <tool name="Pin">
+      <a name="appearance" val="classic"/>
+    </tool>
+  </lib>
+  <lib desc="#Gates" name="1"/>
+  <lib desc="#Plexers" name="2"/>
+  <lib desc="#Arithmetic" name="3"/>
+  <lib desc="#FPArithmetic" name="4"/>
+  <lib desc="#Memory" name="5"/>
+  <lib desc="#I/O" name="6"/>
+  <lib desc="#TTL" name="7"/>
+  <lib desc="#TCL" name="8"/>
+  <lib desc="#Base" name="9"/>
+  <main name="NotCircuit"/>
+  <circuit name="NotCircuit">
+    <a name="appearance" val="logisim_evolution"/>
+    <a name="circuit" val="NotCircuit"/>
+    <a name="circuitnamedboxfixedsize" val="true"/>
+    <a name="simulationFrequency" val="1.0"/>
+    <comp lib="0" loc="(100,100)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="ACC_VALUE"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(100,160)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="ACC_VALID"/>
+    </comp>
+    <comp lib="0" loc="(100,220)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="NOT_SELECT"/>
+    </comp>
+    <comp lib="1" loc="(260,100)" name="NOT Gate">
+      <a name="label" val="NOT_VALUE"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(400,100)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="RESULT"/>
+      <a name="type" val="output"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(400,150)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="OVERFLOW"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="0" loc="(400,190)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="NOT_VALID"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="0" loc="(400,220)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="NOT_SELECTED"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="0" loc="(330,150)" name="Constant">
+      <a name="label" val="NO_OVERFLOW"/>
+    </comp>
+    <comp lib="1" loc="(330,190)" name="AND Gate">
+      <a name="label" val="ACTIVE_NOT_VALID"/>
+    </comp>
+    <wire from="(100,100)" to="(230,100)"/>
+    <wire from="(100,160)" to="(260,160)"/>
+    <wire from="(260,160)" to="(260,170)"/>
+    <wire from="(260,170)" to="(280,170)"/>
+    <wire from="(100,220)" to="(260,220)"/>
+    <wire from="(260,220)" to="(260,210)"/>
+    <wire from="(260,210)" to="(280,210)"/>
+    <wire from="(100,220)" to="(400,220)"/>
+    <wire from="(260,100)" to="(400,100)"/>
+    <wire from="(330,150)" to="(400,150)"/>
+    <wire from="(330,190)" to="(400,190)"/>
+  </circuit>
+</project>

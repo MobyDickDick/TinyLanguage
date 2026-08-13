@@ -1440,3 +1440,40 @@ def test_subtraction_validity_select_is_driven_by_named_activity_output():
     adjacency = _electrical_adjacency(circuit, {source, select_port})
 
     assert select_port in _reachable(adjacency, source)
+
+
+def test_unary_and_subtraction_boxes_export_a_uniform_operation_contract():
+    """Each independently selectable operation reports data, status and activity."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
+    expected_outputs = {
+        "NotCircuit": {"RESULT", "OVERFLOW", "NOT_VALID", "NOT_SELECTED"},
+        "SubCircuit": {"RESULT", "OVERFLOW", "SUB_VALID", "SUB_SELECTED"},
+    }
+    for circuit_name, outputs in expected_outputs.items():
+        circuit = circuits[circuit_name]
+        actual_outputs = {
+            _attributes(component)["label"]
+            for component in circuit.findall("comp")
+            if component.get("name") == "Pin"
+            and _attributes(component).get("type") == "output"
+        }
+        assert actual_outputs == outputs
+        assert not [
+            component
+            for component in circuit.findall("comp")
+            if component.get("name") == "Tunnel"
+        ]
+
+    not_circuit = circuits["NotCircuit"]
+    overflow_zero = next(
+        component
+        for component in not_circuit.findall("comp")
+        if _attributes(component).get("label") == "NO_OVERFLOW"
+    )
+    assert overflow_zero.get("name") == "Constant"
+    assert any(
+        component.get("name") == "Subtractor"
+        for component in circuits["SubCircuit"].findall("comp")
+    )

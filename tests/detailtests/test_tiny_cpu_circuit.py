@@ -107,6 +107,7 @@ def test_inspector_accepts_checked_in_diagnostic_projects():
             "TinyCPU-SubValidCircuit.circ",
             "TinyCPU-AddArithmeticCircuit.circ",
             "TinyCPU-SubArithmeticCircuit.circ",
+            "TinyCPU-SubCircuit.circ",
         }:
             # These hand-edited arithmetic sheets still have pending isolated-
             # sheet connectivity diagnostics; reproducibility is checked

@@ -300,6 +300,13 @@ Konstante 0 verbunden. Ein offener Borrow-Eingang wird von Logisim als
 Fehlerwert ausgewertet und würde deshalb auch bei zwei gültigen
 16-Bit-Operanden ein rotes `E` an `RESULT` erzeugen.
 
+Dasselbe gilt für den optionalen `c in`-Eingang des Addierers: Er ist auf
+`AddArithmeticCircuit` mit `CARRY_IN_ZERO` fest auf 0 gelegt. Damit haben
+Addition und Subtraktion vollständig definierte primitive Eingänge. Die
+beiden Rechenblätter enthalten außerdem keine Null-Längen-Leitungen mehr;
+direkt aneinanderliegende Gate-Anschlüsse werden ohne solche wirkungslosen
+XML-Wire-Einträge verbunden.
+
 Auf dem Integrationsblatt besitzt die automatisch erzeugte, breite
 `SubArithmeticCircuit`-Darstellung nun einen eigenen sichtbaren Korridor vor
 dem Multiplexer `ACC_SUB_SELECT`. Die beiden Ergebnisleitungen wurden bis zu

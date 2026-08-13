@@ -57,6 +57,9 @@
       <a name="label" val="SUBTRACTOR"/>
       <a name="width" val="16"/>
     </comp>
+    <comp loc="(300,170)" name="Constant" lib="0">
+      <a name="label" val="BORROW_IN_ZERO"/>
+    </comp>
     <comp loc="(180,100)" name="Splitter" lib="0">
       <a name="label" val="LEFT_SIGN"/>
       <a name="incoming" val="16"/>
@@ -146,6 +149,7 @@
     <wire from="(100,180)" to="(280,180)"/>
     <wire from="(280,180)" to="(280,150)"/>
     <wire from="(280,150)" to="(320,150)"/>
+    <wire from="(300,170)" to="(340,170)"/>
     <wire from="(360,140)" to="(700,140)"/>
     <wire from="(450,140)" to="(470,140)"/>
     <wire from="(200,120)" to="(260,120)"/>

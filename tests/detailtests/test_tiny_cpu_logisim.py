@@ -1379,18 +1379,40 @@ def test_ap8_verification_reports_a_stale_generated_artifact(tmp_path):
 
 
 def test_add_sub_sheet_uses_packed_buses_without_tunnels():
-    """Keep the extracted arithmetic stage compact and directly traceable."""
+    """Keep packed buses and make the extracted arithmetic directly traceable."""
 
     root = ET.parse(PROJECT).getroot()
     arithmetic = next(c for c in root.findall("circuit") if c.get("name") == "AddSub")
     components = arithmetic.findall("comp")
     assert not [c for c in components if c.get("name") == "Tunnel"]
     assert {c.get("name") for c in components} >= {
-        "Adder",
-        "Subtractor",
+        "AddArithmeticCircuit",
+        "SubArithmeticCircuit",
         "Multiplexer",
         "Splitter",
     }
+    assert not {
+        component.get("name") for component in components
+    } & {"Adder", "Subtractor"}
+
+    extracted_operations = {
+        "AddArithmeticCircuit": "Adder",
+        "SubArithmeticCircuit": "Subtractor",
+    }
+    circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
+    for circuit_name, primitive in extracted_operations.items():
+        extracted = circuits[circuit_name]
+        extracted_components = extracted.findall("comp")
+        assert sum(
+            component.get("name") == primitive
+            for component in extracted_components
+        ) == 1
+        assert not [
+            component
+            for component in extracted_components
+            if component.get("name") == "Tunnel"
+        ]
+
     pins = {
         _attributes(c).get("label"): _attributes(c).get("width", "1")
         for c in components

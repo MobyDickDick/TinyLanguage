@@ -337,7 +337,7 @@ def test_validity_subcircuits_have_expected_interfaces_when_present():
     }
     assert pin_labels(subtraction) == {
         label.replace("ADD_", "SUB_") for label in addition_labels
-    }
+    } | {"SUB_ACTIVE"}
 
     # ADD validity may be drawn directly in its containing circuit.  If the
     # optional extracted helper exists, keep its interface symmetric without

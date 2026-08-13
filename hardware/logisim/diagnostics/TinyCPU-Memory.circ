@@ -43,7 +43,7 @@
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(220,120)" name="Splitter">
-      <a name="label" val="MEMORY_ADDRESS_SPLIT"/>
+      <a name="label" val="SPLITTER"/>
       <a name="bit1" val="0"/>
       <a name="bit10" val="0"/>
       <a name="bit11" val="0"/>
@@ -62,10 +62,10 @@
       <a name="incoming" val="16"/>
     </comp>
     <comp lib="0" loc="(320,170)" name="Constant">
-      <a name="label" val="DATA_OUTPUT_ENABLE"/>
+      <a name="label" val="CONSTANT"/>
     </comp>
     <comp lib="0" loc="(330,290)" name="Constant">
-      <a name="label" val="VALID_OUTPUT_ENABLE"/>
+      <a name="label" val="CONSTANT_2"/>
     </comp>
     <comp lib="0" loc="(600,210)" name="Pin">
       <a name="appearance" val="classic"/>

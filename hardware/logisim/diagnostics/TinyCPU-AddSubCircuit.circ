@@ -53,10 +53,10 @@
       <a name="label" val="ADD_CONST"/>
     </comp>
     <comp lib="0" loc="(1710,510)" name="Constant">
-      <a name="label" val="ADD_DEFAULT_VALID"/>
+      <a name="label" val="CONSTANT"/>
     </comp>
     <comp lib="0" loc="(1940,390)" name="Constant">
-      <a name="label" val="SUBTRACT_DISABLED"/>
+      <a name="label" val="CONSTANT_2"/>
     </comp>
     <comp lib="0" loc="(2170,630)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -75,16 +75,16 @@
       <a name="label" val="ACC_ADD_VALID"/>
     </comp>
     <comp lib="2" loc="(1760,520)" name="Multiplexer">
-      <a name="label" val="ACC_ADD_OPERAND_VALID_SELECT"/>
+      <a name="label" val="MULTIPLEXER"/>
     </comp>
     <comp lib="2" loc="(1990,400)" name="Multiplexer">
-      <a name="label" val="ACC_ADD_OPERAND_SELECT"/>
+      <a name="label" val="MULTIPLEXER_2"/>
     </comp>
     <comp lib="2" loc="(2050,440)" name="Multiplexer">
-      <a name="label" val="ACC_ADD_RESULT_SELECT"/>
+      <a name="label" val="MULTIPLEXER_3"/>
     </comp>
     <comp lib="2" loc="(2130,630)" name="Multiplexer">
-      <a name="label" val="ACC_ADD_VALID_SELECT"/>
+      <a name="label" val="MULTIPLEXER_4"/>
     </comp>
     <comp lib="9" loc="(1645,485)" name="Text">
       <a name="font" val="SansSerif plain 9"/>

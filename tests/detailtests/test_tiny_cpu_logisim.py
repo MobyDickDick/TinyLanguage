@@ -1404,3 +1404,17 @@ def test_add_sub_sheet_uses_packed_buses_without_tunnels():
         "RESULT": "16",
         "RESULT_VALID": "1",
     }
+
+
+def test_subtraction_validity_select_is_driven_by_named_activity_output():
+    """Select SUB_VALID through named ports, independent of sheet coordinates."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    source = _subcircuit_output(root, "SubValidCircuit", "SUB_ACTIVE")
+    selector = _labelled_component(circuit, "ACC_SUB_VALID_SELECT")
+    x, y = (int(value) for value in selector.get("loc").strip("()").split(","))
+    select_port = f"({x - 20},{y + 20})"
+    adjacency = _electrical_adjacency(circuit, {source, select_port})
+
+    assert select_port in _reachable(adjacency, source)

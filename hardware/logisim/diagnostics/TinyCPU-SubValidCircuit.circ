@@ -45,12 +45,18 @@
       <a name="label" val="ACC_VALID"/>
     </comp>
     <comp lib="0" loc="(780,320)" name="Constant">
-      <a name="label" val="SUB_DEFAULT_VALID"/>
+      <a name="label" val="CONSTANT"/>
     </comp>
     <comp lib="0" loc="(980,350)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="SUB_VALID"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="0" loc="(980,230)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="SUB_ACTIVE"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="1" loc="(510,150)" name="OR Gate">
@@ -64,7 +70,7 @@
       <a name="label" val="ACC_SUB_VALID"/>
     </comp>
     <comp lib="2" loc="(830,330)" name="Multiplexer">
-      <a name="label" val="ACC_SUB_OPERAND_VALID_SELECT"/>
+      <a name="label" val="ACC_SUB_VALID_SELECT"/>
     </comp>
     <comp lib="9" loc="(520,115)" name="Text">
       <a name="font" val="SansSerif plain 9"/>
@@ -93,6 +99,7 @@
     <wire from="(560,150)" to="(560,210)"/>
     <wire from="(560,150)" to="(700,150)"/>
     <wire from="(610,230)" to="(660,230)"/>
+    <wire from="(610,230)" to="(980,230)"/>
     <wire from="(700,150)" to="(700,360)"/>
     <wire from="(700,360)" to="(810,360)"/>
     <wire from="(740,310)" to="(740,340)"/>

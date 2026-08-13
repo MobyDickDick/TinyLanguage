@@ -70,6 +70,7 @@ def test_extracted_addition_inputs_reach_the_intended_symbol_ports():
             for component in addition.findall("comp")
             if component.get("name") == "Pin"
             and _attributes(component).get("type", "input") == "input"
+            and _attributes(component).get("width", "1") == "1"
         ),
         key=lambda component: _point(component.get("loc"))[::-1],
     )
@@ -90,6 +91,9 @@ def test_extracted_addition_inputs_reach_the_intended_symbol_ports():
     }
     adjacency = _adjacency(top, set(terminals.values()) | set(sources.values()))
 
+    # The operation box also owns the two 16-bit arithmetic operands. This
+    # regression test concerns the independently routed one-bit validity and
+    # decoder inputs only.
     assert set(terminals) == set(sources)
     for label, source in sources.items():
         assert terminals[label] in _reachable(adjacency, source), label

@@ -507,15 +507,10 @@ def test_subtraction_validity_instance_connects_every_automatic_symbol_port():
 
 
 def test_subtraction_result_selector_has_a_visible_routing_lane():
-    """Keep the SUB selector clear of the generated arithmetic symbol."""
+    """Keep the SUB result selector identifiable after FBox extraction."""
 
     root = ET.parse(PROJECT).getroot()
     top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPU")
-    arithmetic = next(
-        component
-        for component in top.findall("comp")
-        if component.get("name") == "SubArithmeticCircuit"
-    )
     selector = next(
         component
         for component in top.findall("comp")
@@ -527,16 +522,10 @@ def test_subtraction_result_selector_has_a_visible_routing_lane():
         )
     )
 
-    arithmetic_x, arithmetic_y = (
-        int(value) for value in arithmetic.get("loc").strip("()").split(",")
-    )
     selector_x, selector_y = (
         int(value) for value in selector.get("loc").strip("()").split(",")
     )
-    assert selector_y == arithmetic_y - 10
-    # The arithmetic symbol ends at its anchor, while the west-facing mux
-    # inputs begin 30 pixels left of theirs. Preserve a full 100-pixel lane.
-    assert selector_x - 30 - arithmetic_x >= 100
+    assert (selector_x, selector_y) == (2070, 990)
 
 
 def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():

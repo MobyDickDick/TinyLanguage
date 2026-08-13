@@ -51,6 +51,7 @@
       <a name="bit8" val="0"/>
       <a name="bit9" val="0"/>
       <a name="incoming" val="16"/>
+      <a name="label" val="SPLITTER_180_100"/>
     </comp>
     <comp lib="0" loc="(180,180)" name="Splitter">
       <a name="bit1" val="0"/>
@@ -69,6 +70,7 @@
       <a name="bit8" val="0"/>
       <a name="bit9" val="0"/>
       <a name="incoming" val="16"/>
+      <a name="label" val="SPLITTER_180_180"/>
     </comp>
     <comp lib="0" loc="(410,140)" name="Splitter">
       <a name="bit1" val="0"/>
@@ -87,6 +89,7 @@
       <a name="bit8" val="0"/>
       <a name="bit9" val="0"/>
       <a name="incoming" val="16"/>
+      <a name="label" val="SPLITTER_410_140"/>
     </comp>
     <comp lib="0" loc="(700,140)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -124,6 +127,7 @@
     </comp>
     <comp lib="3" loc="(360,140)" name="Subtractor">
       <a name="width" val="16"/>
+      <a name="label" val="SUBTRACTOR_360_140"/>
     </comp>
     <comp lib="9" loc="(270,60)" name="Text">
       <a name="text" val="signed SUB: overflow = (left_sign XOR right_sign) AND (left_sign XOR result_sign)"/>

@@ -88,7 +88,9 @@
       <a name="appearance" val="classic"/>
       <a name="label" val="CLEAR_ERROR"/>
     </comp>
-    <comp lib="0" loc="(720,200)" name="Constant"/>
+    <comp lib="0" loc="(720,200)" name="Constant">
+      <a name="label" val="ERROR_REGISTER_ENABLE"/>
+    </comp>
     <comp lib="1" loc="(260,110)" name="NOT Gate">
       <a name="label" val="NOT_CLEAR_ERROR"/>
     </comp>

@@ -38,6 +38,7 @@
       <a name="label" val="CLK"/>
     </comp>
     <comp lib="0" loc="(450,190)" name="Constant">
+      <a name="label" val="ZERO_VALUE"/>
       <a name="value" val="0x0"/>
       <a name="width" val="16"/>
     </comp>
@@ -67,6 +68,7 @@
       <a name="type" val="output"/>
     </comp>
     <comp lib="3" loc="(520,180)" name="Comparator">
+      <a name="label" val="ACC_STATUS_COMPARE"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="5" loc="(270,100)" name="Register">

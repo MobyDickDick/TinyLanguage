@@ -288,6 +288,28 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
     } <= subtraction_component_labels
 
 
+def test_every_schematic_component_has_a_unique_label():
+    """Keep components and subcircuit instances identifiable in Logisim."""
+
+    root = ET.parse(PROJECT).getroot()
+    for circuit in root.findall("circuit"):
+        labels = []
+        for component in circuit.findall("comp"):
+            if component.get("name") == "Text":
+                continue
+            attributes = {
+                child.get("name"): child.get("val")
+                for child in component.findall("a")
+            }
+            label = attributes.get("label", "").strip()
+            assert label, (
+                circuit.get("name"), component.get("name"), component.get("loc")
+            )
+            labels.append(label)
+
+        assert len(labels) == len(set(labels)), circuit.get("name")
+
+
 def test_validity_subcircuits_have_expected_interfaces_when_present():
     """Validate validity helpers without requiring a particular sheet layout."""
 
@@ -608,7 +630,11 @@ def test_fetch_decode_diagnostic_preserves_pc_increment_constant():
             attribute.get("name"): attribute.get("val")
             for attribute in constant.findall("a")
         }
-        assert attributes == {"width": "16", "value": "0xffff"}
+        assert attributes == {
+            "label": "PC_INCREMENT",
+            "width": "16",
+            "value": "0xffff",
+        }
 
 
 def test_leaf_signature_ignores_order_and_origin_but_detects_wire_changes(tmp_path):

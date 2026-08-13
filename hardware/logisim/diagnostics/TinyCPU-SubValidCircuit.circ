@@ -20,85 +20,86 @@
     <a name="circuit" val="SubValidCircuit"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(100,100)" name="Pin">
+    <comp lib="0" loc="(360,110)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="SUB_ADDRESS"/>
     </comp>
-    <comp lib="0" loc="(100,140)" name="Pin">
+    <comp lib="0" loc="(360,150)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="SUB_ADDRESS_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(100,180)" name="Pin">
+    <comp lib="0" loc="(360,190)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="SUB_ADDRESS_REGISTER_PLUS_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(100,240)" name="Pin">
+    <comp lib="0" loc="(360,250)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="SUB_CONST"/>
     </comp>
-    <comp lib="0" loc="(100,300)" name="Pin">
+    <comp lib="0" loc="(360,310)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="MEMORY_VALID"/>
     </comp>
-    <comp lib="0" loc="(100,360)" name="Pin">
+    <comp lib="0" loc="(360,370)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="ACC_VALID"/>
     </comp>
-    <comp lib="0" loc="(600,340)" name="Pin">
+    <comp lib="0" loc="(780,320)" name="Constant">
+      <a name="label" val="SUB_DEFAULT_VALID"/>
+    </comp>
+    <comp lib="0" loc="(980,350)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="SUB_VALID"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="0" loc="(350,280)" name="Constant"/>
-    <comp lib="1" loc="(250,140)" name="OR Gate">
+    <comp lib="1" loc="(510,150)" name="OR Gate">
       <a name="inputs" val="3"/>
       <a name="label" val="ACC_SUB_MEMORY_SELECT"/>
     </comp>
-    <comp lib="1" loc="(350,220)" name="OR Gate">
+    <comp lib="1" loc="(610,230)" name="OR Gate">
       <a name="label" val="ACC_SUB_FAMILY_SELECT"/>
     </comp>
-    <comp lib="1" loc="(550,340)" name="AND Gate">
+    <comp lib="1" loc="(930,350)" name="AND Gate">
       <a name="label" val="ACC_SUB_VALID"/>
     </comp>
-    <comp lib="2" loc="(450,320)" name="Multiplexer"/>
-    <comp lib="9" loc="(260,105)" name="Text">
+    <comp lib="2" loc="(830,330)" name="Multiplexer">
+      <a name="label" val="ACC_SUB_OPERAND_VALID_SELECT"/>
+    </comp>
+    <comp lib="9" loc="(520,115)" name="Text">
       <a name="font" val="SansSerif plain 9"/>
       <a name="text" val="SUB_ADDRESS/CONST_VALID →"/>
     </comp>
-    <comp lib="9" loc="(360,245)" name="Text">
+    <comp lib="9" loc="(620,255)" name="Text">
       <a name="font" val="SansSerif plain 9"/>
       <a name="text" val="SUB_OPERAND_VALID →"/>
     </comp>
-    <comp lib="9" loc="(505,315)" name="Text">
+    <comp lib="9" loc="(885,325)" name="Text">
       <a name="font" val="SansSerif plain 9"/>
       <a name="text" val="SUB_VALID →"/>
     </comp>
-    <wire from="(100,100)" to="(180,100)"/>
-    <wire from="(180,100)" to="(180,120)"/>
-    <wire from="(180,120)" to="(220,120)"/>
-    <wire from="(100,140)" to="(220,140)"/>
-    <wire from="(100,180)" to="(180,180)"/>
-    <wire from="(180,160)" to="(180,180)"/>
-    <wire from="(180,160)" to="(220,160)"/>
-    <wire from="(250,140)" to="(300,140)"/>
-    <wire from="(300,140)" to="(300,200)"/>
-    <wire from="(300,140)" to="(440,140)"/>
-    <wire from="(440,140)" to="(440,350)"/>
-    <wire from="(100,240)" to="(300,240)"/>
-    <wire from="(350,220)" to="(400,220)"/>
-    <wire from="(350,280)" to="(390,280)"/>
-    <wire from="(390,280)" to="(390,310)"/>
-    <wire from="(390,310)" to="(420,310)"/>
-    <wire from="(100,300)" to="(400,300)"/>
-    <wire from="(400,300)" to="(400,330)"/>
-    <wire from="(400,330)" to="(420,330)"/>
-    <wire from="(450,320)" to="(500,320)"/>
-    <wire from="(500,320)" to="(500,330)"/>
-    <wire from="(500,330)" to="(520,330)"/>
-    <wire from="(100,360)" to="(500,360)"/>
-    <wire from="(500,350)" to="(500,360)"/>
-    <wire from="(500,350)" to="(520,350)"/>
-    <wire from="(550,340)" to="(600,340)"/>
+    <wire from="(360,110)" to="(440,110)"/>
+    <wire from="(360,150)" to="(460,150)"/>
+    <wire from="(360,190)" to="(440,190)"/>
+    <wire from="(360,250)" to="(560,250)"/>
+    <wire from="(360,310)" to="(740,310)"/>
+    <wire from="(360,370)" to="(880,370)"/>
+    <wire from="(440,110)" to="(440,130)"/>
+    <wire from="(440,130)" to="(460,130)"/>
+    <wire from="(440,170)" to="(440,190)"/>
+    <wire from="(440,170)" to="(460,170)"/>
+    <wire from="(460,150)" to="(480,150)"/>
+    <wire from="(510,150)" to="(560,150)"/>
+    <wire from="(560,150)" to="(560,210)"/>
+    <wire from="(560,150)" to="(700,150)"/>
+    <wire from="(610,230)" to="(660,230)"/>
+    <wire from="(700,150)" to="(700,360)"/>
+    <wire from="(700,360)" to="(810,360)"/>
+    <wire from="(740,310)" to="(740,340)"/>
+    <wire from="(740,340)" to="(800,340)"/>
+    <wire from="(780,320)" to="(800,320)"/>
+    <wire from="(810,350)" to="(810,360)"/>
+    <wire from="(830,330)" to="(880,330)"/>
+    <wire from="(930,350)" to="(980,350)"/>
   </circuit>
 </project>

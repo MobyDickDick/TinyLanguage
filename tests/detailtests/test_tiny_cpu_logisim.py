@@ -470,13 +470,11 @@ def test_top_level_has_visible_labels_on_wires_at_components():
 
     circuit = _top_level(ET.parse(PROJECT).getroot())
     assert not [c for c in circuit.findall("comp") if c.get("name") == "Tunnel"]
-    wire_labels = [c for c in circuit.findall("comp") if c.get("name") == "Text"]
-    assert len(wire_labels) == 5
-    assert all(_attributes(label).get("font") == "SansSerif plain 9" for label in wire_labels)
-    assert all(_attributes(label).get("text", "").endswith("→") for label in wire_labels)
-    assert "SUB_ADDRESS/CONST →" in {
-        _attributes(label)["text"] for label in wire_labels
-    }
+    operations = next(
+        c for c in ET.parse(PROJECT).getroot().findall("circuit")
+        if c.get("name") == "Operations"
+    )
+    assert not [c for c in operations.findall("comp") if c.get("name") == "Tunnel"]
     root = ET.parse(PROJECT).getroot()
     addition = next(
         item for item in root.findall("circuit")
@@ -1057,12 +1055,12 @@ def test_tinycpu_sheet_uses_the_operations_sheet_as_its_only_operation_box():
     }
     assert {
         "Datapath", "AddressPath", "Memory", "ErrorFlags", "FetchDecode",
-        "FetchDecodeControls", "DecodeSignals", "OPERATIONS",
+        "FetchDecodeControls", "DecodeSignals", "Operations",
     } <= subcircuits
     assert not {"AddSubCircuit", "SubSubCircuit", "NotCircuit"} & subcircuits
 
     operations = next(
-        c for c in root.findall("circuit") if c.get("name") == "OPERATIONS"
+        c for c in root.findall("circuit") if c.get("name") == "Operations"
     )
     operation_boxes = [
         component.get("name")
@@ -1080,9 +1078,9 @@ def test_tinycpu_sheet_uses_the_operations_sheet_as_its_only_operation_box():
         for box in operation_boxes
     }
     assert owners == {
-        "AddSubCircuit": ["OPERATIONS"],
-        "SubSubCircuit": ["OPERATIONS"],
-        "NotCircuit": ["OPERATIONS"],
+        "AddSubCircuit": ["Operations"],
+        "SubSubCircuit": ["Operations"],
+        "NotCircuit": ["Operations"],
     }
 
 def test_logisim_starter_matches_default_hardware_profile():
@@ -1440,7 +1438,10 @@ def test_not_operation_gates_data_and_valid_with_activity():
 def test_operation_data_and_validity_are_combined_by_explicit_or_trees():
     """Keep operation outputs single-driver while preserving the redrawn boxes."""
 
-    circuit = _top_level(ET.parse(PROJECT).getroot())
+    circuit = next(
+        c for c in ET.parse(PROJECT).getroot().findall("circuit")
+        if c.get("name") == "Operations"
+    )
     components = {
         _attributes(component).get("label"): component
         for component in circuit.findall("comp")

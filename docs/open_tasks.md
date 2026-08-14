@@ -7,26 +7,44 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-14)
 
-- [x] **Move the TinyCPU operation boxes to an `OPERATIONS` sheet**
+- [x] **Correct the TinyCPU ADD/SUB operand and validity sources**
+  (Owner: TinyCPU/Hardware)
+  - Success: use the accumulator as the left operand, select the instruction's
+    immediate value only for `*_CONST`, and use memory data for every direct or
+    address-register-backed form. Apply the same selection to operand validity.
+  - Result: `AddSubCircuit` and `SubSubCircuit` now contain parallel, labelled
+    right-operand and right-valid selectors. A constant operation selects the
+    16-bit instruction operand and a valid constant; all three memory forms
+    select `Memory.MEMORY_DATA` and `Memory.MEMORY_VALID`. Both paths require
+    `Datapath.ACC_VALID_OUT`, and subtraction remains `ACC_OUT - selected right`.
+  - Integration: the manually simplified `Operations` sheet is retained. Shared
+    instruction, memory, accumulator, and validity values cross its boundary
+    once, while result, validity, and overflow are combined locally and leave
+    the sheet through one output each.
+  - Follow-up: validate and integrate `SET_INV` for an active arithmetic result
+    with invalid operands, then audit the common effective-address selection.
+
+## Next documented work package (completed 2026-08-14)
+
+- [x] **Move the TinyCPU operation boxes to an `Operations` sheet**
   (Owner: TinyCPU/Hardware)
   - Scope: move only the three `AddSubCircuit`, `SubSubCircuit`, and
     `NotCircuit` instances (the `ADD_SUB`, `SUB_SUB`, and `NOT` functional
-    boxes) from `TinyCPUMain` to a new `OPERATIONS` schematic sheet.
-  - Integration: instantiate `OPERATIONS` exactly once in `TinyCPUMain` and
+    boxes) from `TinyCPUMain` to a new `Operations` schematic sheet.
+  - Integration: instantiate `Operations` exactly once in `TinyCPUMain` and
     expose explicit inputs and outputs for all signals currently connected to
     those three boxes. Keep the result and result-valid aggregation on
     `TinyCPUMain`; no other functional box moves as part of this package.
   - Success: the Logisim project opens with `TinyCPUMain` as its top-level
-    circuit, the three operation instances occur only on `OPERATIONS`, and the
+    circuit, the three operation instances occur only on `Operations`, and the
     existing ADD, SUB, and NOT signal paths and structural checks remain
     unchanged in behavior.
   - Result: `TinyCPUMain` now contains one labelled `OPERATIONS_INSTANCE` with
     explicit, typed boundary ports. The `ADD_OPERATION`, `SUB_OPERATION`, and
-    `NOT_OPERATION` instances live only on the tunnel-free `OPERATIONS` sheet;
-    their result and result-valid outputs still feed the aggregation gates on
-    `TinyCPUMain`.
-  - Follow-up: correct and validate the ADD/SUB operand sources described in
-    the hardware correction backlog before moving another functional box.
+    `NOT_OPERATION` instances live only on the tunnel-free `Operations` sheet.
+    A subsequent manual simplification moved the result, validity, and overflow
+    aggregation onto that same sheet and exposes only the combined outputs.
+  - Follow-up: completed by the ADD/SUB operand and validity correction above.
 
 ## Next documented work package (completed 2026-08-10)
 

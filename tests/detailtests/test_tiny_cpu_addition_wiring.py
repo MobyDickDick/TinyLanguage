@@ -51,7 +51,7 @@ def test_extracted_addition_has_the_restored_operation_interface():
     operations = next(
         circuit
         for circuit in root.findall("circuit")
-        if circuit.get("name") == "OPERATIONS"
+        if circuit.get("name") == "Operations"
     )
     addition = next(
         circuit
@@ -95,3 +95,11 @@ def test_extracted_addition_has_the_restored_operation_interface():
         for component in operations.findall("comp")
         if component.get("name") == "Tunnel"
     ]
+
+    labels = {_attributes(component).get("label") for component in addition.findall("comp")}
+    assert {"ADD_RIGHT_SOURCE", "ADD_RIGHT_VALID", "ADD_CONST_VALID"} <= labels
+    assert any(
+        _attributes(component).get("label") == "IMMEDIATE_VALUE"
+        and _attributes(component).get("width") == "16"
+        for component in addition.findall("comp")
+    )

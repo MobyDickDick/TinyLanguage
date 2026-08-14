@@ -85,19 +85,19 @@
     <comp loc="(770,130)" name="AddressPath">
       <a name="label" val="ADDRESS_PATH"/>
     </comp>
-    <comp lib="1" loc="(2100,1800)" name="OR Gate">
+    <comp lib="1" loc="(1900,1200)" name="OR Gate">
       <a name="inputs" val="8"/>
       <a name="label" val="MEMORY_ADDRESS_REGISTER_SELECT"/>
     </comp>
-    <comp lib="1" loc="(2100,2000)" name="OR Gate">
+    <comp lib="1" loc="(1900,1400)" name="OR Gate">
       <a name="inputs" val="8"/>
       <a name="label" val="MEMORY_ADDRESS_OFFSET_SELECT"/>
     </comp>
-    <comp lib="2" loc="(2100,1500)" name="Multiplexer">
+    <comp lib="2" loc="(1900,1000)" name="Multiplexer">
       <a name="label" val="MEMORY_REGISTER_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="2" loc="(2200,1500)" name="Multiplexer">
+    <comp lib="2" loc="(2000,1000)" name="Multiplexer">
       <a name="label" val="MEMORY_OFFSET_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
@@ -105,53 +105,55 @@
       <a name="label" val="EFFECTIVE_DIRECT_ADDRESS"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(2070,1490)" name="Tunnel">
+    <comp lib="0" loc="(1870,990)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_DIRECT_ADDRESS"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(820,130)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_REGISTER_ADDRESS"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="0" loc="(2070,1510)" name="Tunnel">
+    <comp lib="0" loc="(770,130)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_REGISTER_ADDRESS"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(2100,1500)" name="Tunnel">
+    <comp lib="0" loc="(1870,1010)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_REGISTER_ADDRESS"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(1900,1000)" name="Tunnel">
       <a name="label" val="EFFECTIVE_REGISTER_SELECTED"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(2170,1490)" name="Tunnel">
+    <comp lib="0" loc="(1970,990)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_REGISTER_SELECTED"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(820,150)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_OFFSET_ADDRESS"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="0" loc="(2170,1510)" name="Tunnel">
+    <comp lib="0" loc="(770,150)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_OFFSET_ADDRESS"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(2100,1800)" name="Tunnel">
+    <comp lib="0" loc="(1970,1010)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_OFFSET_ADDRESS"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(1900,1200)" name="Tunnel">
       <a name="label" val="EFFECTIVE_REGISTER_MODE"/>
     </comp>
-    <comp lib="0" loc="(2080,1520)" name="Tunnel">
+    <comp lib="0" loc="(1880,1020)" name="Tunnel">
       <a name="facing" val="south"/>
       <a name="label" val="EFFECTIVE_REGISTER_MODE"/>
     </comp>
-    <comp lib="0" loc="(2100,2000)" name="Tunnel">
+    <comp lib="0" loc="(1900,1400)" name="Tunnel">
       <a name="label" val="EFFECTIVE_OFFSET_MODE"/>
     </comp>
-    <comp lib="0" loc="(2180,1520)" name="Tunnel">
+    <comp lib="0" loc="(1980,1020)" name="Tunnel">
       <a name="facing" val="south"/>
       <a name="label" val="EFFECTIVE_OFFSET_MODE"/>
     </comp>
-    <comp lib="0" loc="(2200,1500)" name="Tunnel">
+    <comp lib="0" loc="(2000,1000)" name="Tunnel">
       <a name="label" val="EFFECTIVE_MEMORY_ADDRESS"/>
       <a name="width" val="16"/>
     </comp>
@@ -160,136 +162,134 @@
       <a name="label" val="EFFECTIVE_MEMORY_ADDRESS"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(960,500)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_LOAD_REGISTER"/>
-    </comp>
-    <comp lib="0" loc="(2050,1730)" name="Tunnel">
+    <comp lib="0" loc="(640,500)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_LOAD_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(960,580)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_ADD_REGISTER"/>
+    <comp lib="0" loc="(1850,1130)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_LOAD_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(2050,1750)" name="Tunnel">
+    <comp lib="0" loc="(640,580)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_ADD_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(960,660)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_SUB_REGISTER"/>
+    <comp lib="0" loc="(1850,1150)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_ADD_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(2050,1770)" name="Tunnel">
+    <comp lib="0" loc="(640,660)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_SUB_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(960,740)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_MUL_REGISTER"/>
+    <comp lib="0" loc="(1850,1170)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_SUB_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(2050,1790)" name="Tunnel">
+    <comp lib="0" loc="(640,740)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_MUL_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(960,820)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_DIV_REGISTER"/>
+    <comp lib="0" loc="(1850,1190)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_MUL_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(2050,1810)" name="Tunnel">
+    <comp lib="0" loc="(640,820)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_DIV_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(960,900)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_AND_REGISTER"/>
+    <comp lib="0" loc="(1850,1210)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_DIV_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(2050,1830)" name="Tunnel">
+    <comp lib="0" loc="(640,900)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_AND_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(960,980)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_OR_REGISTER"/>
+    <comp lib="0" loc="(1850,1230)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_AND_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(2050,1850)" name="Tunnel">
+    <comp lib="0" loc="(640,980)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_OR_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(960,1040)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_STORE_REGISTER"/>
+    <comp lib="0" loc="(1850,1250)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_OR_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(2050,1870)" name="Tunnel">
+    <comp lib="0" loc="(640,1040)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_STORE_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(960,520)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_LOAD_OFFSET"/>
+    <comp lib="0" loc="(1850,1270)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_STORE_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(2050,1930)" name="Tunnel">
+    <comp lib="0" loc="(640,520)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_LOAD_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(960,600)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_ADD_OFFSET"/>
+    <comp lib="0" loc="(1850,1330)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_LOAD_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(2050,1950)" name="Tunnel">
+    <comp lib="0" loc="(640,600)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_ADD_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(960,680)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_SUB_OFFSET"/>
+    <comp lib="0" loc="(1850,1350)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_ADD_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(2050,1970)" name="Tunnel">
+    <comp lib="0" loc="(640,680)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_SUB_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(960,760)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_MUL_OFFSET"/>
+    <comp lib="0" loc="(1850,1370)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_SUB_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(2050,1990)" name="Tunnel">
+    <comp lib="0" loc="(640,760)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_MUL_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(960,840)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_DIV_OFFSET"/>
+    <comp lib="0" loc="(1850,1390)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_MUL_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(2050,2010)" name="Tunnel">
+    <comp lib="0" loc="(640,840)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_DIV_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(960,920)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_AND_OFFSET"/>
+    <comp lib="0" loc="(1850,1410)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_DIV_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(2050,2030)" name="Tunnel">
+    <comp lib="0" loc="(640,920)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_AND_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(960,1000)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_OR_OFFSET"/>
+    <comp lib="0" loc="(1850,1430)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_AND_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(2050,2050)" name="Tunnel">
+    <comp lib="0" loc="(640,1000)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_OR_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(960,1060)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_STORE_OFFSET"/>
+    <comp lib="0" loc="(1850,1450)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_OR_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(2050,2070)" name="Tunnel">
+    <comp lib="0" loc="(640,1060)" name="Tunnel">
       <a name="facing" val="west"/>
       <a name="label" val="EFFECTIVE_STORE_OFFSET"/>
     </comp>
-    <wire from="(770,130)" to="(820,130)"/>
-    <wire from="(770,150)" to="(820,150)"/>
-    <wire from="(640,500)" to="(960,500)"/>
-    <wire from="(640,520)" to="(960,520)"/>
-    <wire from="(640,580)" to="(960,580)"/>
-    <wire from="(640,600)" to="(960,600)"/>
-    <wire from="(640,660)" to="(960,660)"/>
-    <wire from="(640,680)" to="(960,680)"/>
-    <wire from="(640,740)" to="(960,740)"/>
-    <wire from="(640,760)" to="(960,760)"/>
-    <wire from="(640,820)" to="(960,820)"/>
-    <wire from="(640,840)" to="(960,840)"/>
-    <wire from="(640,900)" to="(960,900)"/>
-    <wire from="(640,920)" to="(960,920)"/>
-    <wire from="(640,980)" to="(960,980)"/>
-    <wire from="(640,1000)" to="(960,1000)"/>
-    <wire from="(640,1040)" to="(960,1040)"/>
-    <wire from="(640,1060)" to="(960,1060)"/>
+    <comp lib="0" loc="(1850,1470)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="EFFECTIVE_STORE_OFFSET"/>
+    </comp>
     <wire from="(1200,130)" to="(1360,130)"/>
     <wire from="(1200,190)" to="(1420,190)"/>
     <wire from="(1220,680)" to="(1220,780)"/>

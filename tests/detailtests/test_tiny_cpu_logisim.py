@@ -1510,29 +1510,44 @@ def test_memory_address_selector_includes_indirect_addressing_modes():
 
 
 def test_effective_address_tunnels_sit_on_the_correct_symbol_side():
-    """Keep producer tunnels east and the Memory consumer tunnel west."""
+    """Keep producer labels clear and the selector close to its controls."""
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
     all_tunnels = [
         component for component in circuit.findall("comp")
         if component.get("name") == "Tunnel"
     ]
-    tunnels = {
+    producer_tunnels = {
         _attributes(component)["label"]: component
         for component in all_tunnels
-        if _attributes(component).get("facing", "east") == "east"
+        if component.get("loc") in {
+            "(770,130)", "(770,150)",
+            *(f"(640,{y})" for y in range(500, 1061, 20)),
+        }
     }
 
-    # Automatic subcircuit symbols put outputs on their eastern edge.  The
-    # instance location is the western input anchor, so using it for a tunnel
-    # puts labels on top of the symbol (and connects them to the wrong side).
-    assert tunnels["EFFECTIVE_REGISTER_ADDRESS"].get("loc") == "(820,130)"
-    assert tunnels["EFFECTIVE_OFFSET_ADDRESS"].get("loc") == "(820,150)"
+    # A west-facing tunnel paints its label to the right. It can therefore sit
+    # directly on the output pin without a long cosmetic wire or label overlap.
+    assert producer_tunnels["EFFECTIVE_REGISTER_ADDRESS"].get("loc") == "(770,130)"
+    assert producer_tunnels["EFFECTIVE_OFFSET_ADDRESS"].get("loc") == "(770,150)"
     for family in ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR", "STORE"):
         for mode in ("REGISTER", "OFFSET"):
-            tunnel = tunnels[f"EFFECTIVE_{family}_{mode}"]
-            assert int(tunnel.get("loc").strip("()").split(",")[0]) == 960
-            assert _attributes(tunnel).get("facing", "east") == "east"
+            tunnel = producer_tunnels[f"EFFECTIVE_{family}_{mode}"]
+            assert int(tunnel.get("loc").strip("()").split(",")[0]) == 640
+            assert _attributes(tunnel)["facing"] == "west"
+
+    selector_parts = [
+        component for component in circuit.findall("comp")
+        if _attributes(component).get("label") in {
+            "MEMORY_ADDRESS_REGISTER_SELECT",
+            "MEMORY_ADDRESS_OFFSET_SELECT",
+            "MEMORY_REGISTER_ADDRESS_SELECT",
+            "MEMORY_OFFSET_ADDRESS_SELECT",
+        }
+    ]
+    assert selector_parts
+    assert max(int(part.get("loc").strip("()").split(",")[0]) for part in selector_parts) <= 2000
+    assert max(int(part.get("loc").strip("()").split(",")[1]) for part in selector_parts) <= 1400
 
     memory_input = next(
         component for component in all_tunnels

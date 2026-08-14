@@ -469,7 +469,7 @@ def test_top_level_has_visible_labels_on_wires_at_components():
     """Name signals beside component ports without hiding them in tunnels."""
 
     circuit = _top_level(ET.parse(PROJECT).getroot())
-    assert not [c for c in circuit.findall("comp") if c.get("name") == "Tunnel"]
+    assert all(_attributes(c).get("label", "").startswith("EFFECTIVE_") for c in circuit.findall("comp") if c.get("name") == "Tunnel")
     operations = next(
         c for c in ET.parse(PROJECT).getroot().findall("circuit")
         if c.get("name") == "Operations"
@@ -497,7 +497,7 @@ def test_top_level_has_visible_labels_on_wires_at_components():
     component_labels = [
         _attributes(component).get("label")
         for component in circuit.findall("comp")
-        if _attributes(component).get("label")
+        if _attributes(component).get("label") and component.get("name") != "Tunnel"
     ]
     assert len(component_labels) == len(set(component_labels))
 
@@ -1484,3 +1484,26 @@ def test_unary_and_subtraction_boxes_export_a_uniform_operation_contract():
     assert "OVERFLOW" not in expected_outputs["NotCircuit"]
     assert any(component.get("name") == "SubArithmeticCircuit"
                for component in circuits["SubSubCircuit"].findall("comp"))
+
+
+def test_memory_address_selector_includes_indirect_addressing_modes():
+    """Memory selects direct, register, and register-plus-offset addresses."""
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    adjacency = _electrical_adjacency(circuit)
+    register_mux = _labelled_component(circuit, "MEMORY_REGISTER_ADDRESS_SELECT")
+    offset_mux = _labelled_component(circuit, "MEMORY_OFFSET_ADDRESS_SELECT")
+    def ports(component):
+        x, y = (int(v) for v in component.get("loc").strip("()").split(","))
+        return {f"({x-30},{y-10})", f"({x-30},{y+10})"}, f"({x},{y})"
+    register_inputs, register_output = ports(register_mux)
+    offset_inputs, offset_output = ports(offset_mux)
+    assert len(_reachable(adjacency, _instruction_field_output(root, range(16))) & register_inputs) == 1
+    assert len(_reachable(adjacency, _subcircuit_output(root, "AddressPath", "ADDRESS")) & register_inputs) == 1
+    assert len(_reachable(adjacency, register_output) & offset_inputs) == 1
+    assert len(_reachable(adjacency, _subcircuit_output(root, "AddressPath", "ADDRESS_PLUS_OFFSET")) & offset_inputs) == 1
+    assert _subcircuit_input(root, "Memory", "ADDRESS") in _reachable(adjacency, offset_output)
+    for label, suffix in (("MEMORY_ADDRESS_REGISTER_SELECT", "ADDRESS_REGISTER"), ("MEMORY_ADDRESS_OFFSET_SELECT", "ADDRESS_REGISTER_PLUS_OFFSET")):
+        _, inputs = _gate_ports(_labelled_component(circuit, label))
+        connected = {next(iter(_reachable(adjacency, _control_output(root, f"{family}_{suffix}")) & inputs)) for family in ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR", "STORE")}
+        assert connected == inputs

@@ -99,7 +99,9 @@
     <comp loc="(1740,540)" name="AddSubCircuit">
       <a name="label" val="ADD_OPERATION"/>
     </comp>
-    <comp loc="(1740,750)" name="SubSubCircuit"/>
+    <comp loc="(1740,750)" name="SubSubCircuit">
+      <a name="label" val="SUB_OPERATION"/>
+    </comp>
     <comp loc="(1740,960)" name="NotCircuit">
       <a name="label" val="NOT_OPERATION"/>
     </comp>

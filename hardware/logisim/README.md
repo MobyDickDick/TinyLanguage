@@ -18,12 +18,14 @@ in diesem Repository dürfen ausschließlich die eigenständigen Dateien unter
 `diagnostics/` aktualisieren; Ausgangspunkt bleibt immer die eingecheckte
 `TinyCPU.circ` mit ihrer vorhandenen Seitenstruktur.
 
-Die Tunnel für die effektiven Adressen und Adressierungsarten liegen nicht
-direkt auf den Unterblattsymbolen, sondern östlich davon am Ende kurzer,
-horizontaler Leitungen und zeigen nach Osten. Nur der Empfängertunnel am
-westlichen `Memory`-Eingang zeigt nach Westen. So bleiben Quelle und Ziel
-eindeutig und die Beschriftungen liegen weder über `AddressPath` noch über
-`FetchDecodeControls`.
+Die Quelltunnel für die effektiven Adressen und Adressierungsarten sitzen direkt
+auf den östlichen Ausgangspins und zeigen nach Westen. Dadurch wachsen ihre
+Beschriftungen in den freien Bereich rechts vom jeweiligen Unterblatt, statt
+rückwärts über `AddressPath` oder `FetchDecodeControls`; rein optische lange
+Verlängerungsleitungen sind nicht nötig. Die beiden Modus-ODER-Gatter und die
+Adressmultiplexer bilden unmittelbar unter den Steuerleitungen einen kompakten
+Block. Nur der Empfängertunnel am westlichen `Memory`-Eingang bleibt nach Westen
+gerichtet.
 
 Der Hardware-Vertragscheck prüft diese Hierarchie auf direkte und indirekte
 rekursive Unterblatt-Aufrufe. Solche Zyklen werden abgewiesen, weil Logisim beim

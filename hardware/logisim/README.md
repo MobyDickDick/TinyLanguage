@@ -264,7 +264,7 @@ Schaltung und kein erneutes Ersetzen des Hauptblatts.
   and then compare electrical nets. Coordinates remain a drawing detail.
   `INPUT_VALID` independently reports whether `INPUT_VALUE` is usable. The
   first one-bit validity multiplexer chooses the
-  immediate-path valid constant or `Memory.VALID_OUT` using the same
+  immediate-path valid constant or `Memory.MEMORY_VALID` using the same
   `ACC_MEMORY_SELECT` control as the corresponding data selector. The labelled
   `ACC_NOT_VALID_SELECT` stage then selects `Datapath.ACC_VALID_OUT` for `NOT`,
   so an invalid unary operand cannot become valid merely by being inverted.
@@ -286,10 +286,10 @@ Schaltung und kein erneutes Ersetzen des Hauptblatts.
   Structural tests follow these checked-in routes and keep the one-bit controls
   isolated from the 16-bit accumulator bus. The `ADD_*` validity stage
   independently groups all four addition modes, selects a valid immediate or
-  `Memory.VALID_OUT`, and ANDs that operand validity with
+  `Memory.MEMORY_VALID`, and ANDs that operand validity with
   `Datapath.ACC_VALID_OUT`. The result is selected between the `NOT` and
   `INPUT` validity stages. The following `SUB_*` data stage selects the
-  immediate operand or `Memory.DATA_OUT`, subtracts it from `ACC_OUT`, and
+  immediate operand or `Memory.MEMORY_DATA`, subtracts it from `ACC_OUT`, and
   inserts that result before the final `INPUT` data selector. Its parallel
   validity stage requires both `ACC_VALID_OUT` and the matching immediate-or-
   memory operand validity. `INPUT_VALUE` and `INPUT_VALID` therefore retain
@@ -302,7 +302,7 @@ It was therefore a validity-pipeline wrapper rather than the counterpart of
 `SubValidCircuit`; its larger size did not reflect more complex ADD validity
 rules.  The extracted ADD circuit now contains only the symmetric rule: group
 the three memory-backed modes, combine them with the constant mode, select
-constant-valid or `Memory.VALID_OUT`, and AND the result with
+constant-valid or `Memory.MEMORY_VALID`, and AND the result with
 `Datapath.ACC_VALID_OUT`.
 
 Die eigentlichen 16-Bit-Operationen liegen nicht mehr auf dem gemeinsamen
@@ -369,7 +369,7 @@ erneut übereinanderlegt.
 
 The extracted `SubValidCircuit` is placed below the surrounding validity
 selectors so that all six automatically generated input ports remain visible.
-The four `SUB_*` decoder controls, `Memory.VALID_OUT`, and
+The four `SUB_*` decoder controls, `Memory.MEMORY_VALID`, and
 `Datapath.ACC_VALID_OUT` are routed individually to those ports; its sole
 `SUB_VALID` output then returns to the existing result selector. The
 memory-valid branch approaches its port from below, while the `SUB_CONST` branch

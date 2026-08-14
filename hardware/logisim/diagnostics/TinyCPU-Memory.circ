@@ -65,13 +65,13 @@
     <comp lib="0" loc="(600,210)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="VALID_OUT"/>
+      <a name="label" val="MEMORY_VALID"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(600,320)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="DATA_OUT"/>
+      <a name="label" val="MEMORY_DATA"/>
       <a name="type" val="output"/>
       <a name="width" val="16"/>
     </comp>

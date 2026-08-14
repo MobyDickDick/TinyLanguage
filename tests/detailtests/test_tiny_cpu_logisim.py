@@ -580,7 +580,7 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
     mux_inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
     mux_select = f"({x - 20},{y + 20})"
     operand = _instruction_field_output(root, range(16))
-    memory_data = _subcircuit_output(root, "Memory", "DATA_OUT")
+    memory_data = _subcircuit_output(root, "Memory", "MEMORY_DATA")
     data_in = _subcircuit_input(root, "Datapath", "DATA_IN")
     not_mux_x, not_mux_y = (
         int(value) for value in not_mux.get("loc").strip("()").split(",")
@@ -737,7 +737,7 @@ def test_top_level_memory_validity_is_selected_for_memory_loads():
         if component.get("name") == "Constant"
         and _attributes(component).get("label") == "ACC_DEFAULT_VALID"
     )
-    memory_valid = _subcircuit_output(root, "Memory", "VALID_OUT")
+    memory_valid = _subcircuit_output(root, "Memory", "MEMORY_VALID")
     adjacency = _electrical_adjacency(
         circuit,
         inputs
@@ -844,7 +844,7 @@ def test_top_level_add_propagates_both_operand_validities():
 
     mux_x, mux_y = (int(value) for value in operand_selector.get("loc").strip("()").split(","))
     mux_inputs = {f"({mux_x - 30},{mux_y - 10})", f"({mux_x - 30},{mux_y + 10})"}
-    assert len(_reachable(adjacency, _subcircuit_output(root, "Memory", "VALID_OUT")) & mux_inputs) == 1
+    assert len(_reachable(adjacency, _subcircuit_output(root, "Memory", "MEMORY_VALID")) & mux_inputs) == 1
     gate_output, gate_inputs = _gate_ports(valid_gate)
     assert len(_reachable(adjacency, operand_selector.get("loc")) & gate_inputs) == 1
     assert len(_reachable(adjacency, _subcircuit_output(root, "Datapath", "ACC_VALID_OUT")) & gate_inputs) == 1
@@ -902,7 +902,7 @@ def test_top_level_subtracts_the_selected_operand_and_propagates_validity():
     )
     assert (
         len(
-            _reachable(adjacency, _subcircuit_output(root, "Memory", "DATA_OUT"))
+            _reachable(adjacency, _subcircuit_output(root, "Memory", "MEMORY_DATA"))
             & operand_inputs
         )
         == 1
@@ -936,7 +936,7 @@ def test_top_level_subtracts_the_selected_operand_and_propagates_validity():
     }
     assert (
         len(
-            _reachable(adjacency, _subcircuit_output(root, "Memory", "VALID_OUT"))
+            _reachable(adjacency, _subcircuit_output(root, "Memory", "MEMORY_VALID"))
             & valid_inputs
         )
         == 1
@@ -1217,8 +1217,8 @@ def test_ap3_memory_shares_address_write_enable_and_clock():
     }
     assert pins["ADDRESS"]["width"] == "16"
     assert pins["DATA_IN"]["width"] == "16"
-    assert pins["DATA_OUT"]["width"] == "16"
-    assert {"VALID_IN", "WRITE_ENABLE", "CLK", "VALID_OUT"} <= pins.keys()
+    assert pins["MEMORY_DATA"]["width"] == "16"
+    assert {"VALID_IN", "WRITE_ENABLE", "CLK", "MEMORY_VALID"} <= pins.keys()
 
     endpoints = {
         point

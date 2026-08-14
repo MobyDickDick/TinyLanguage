@@ -87,7 +87,7 @@ def test_extracted_addition_has_the_restored_operation_interface():
         "ADD_ADDRESS",
         "ADD_ADDRESS_REGISTER",
         "ADD_ADDRESS_REGISTER_PLUS_OFFSET",
-        "DATA_VALID",
+        "MEMORY_VALID",
         "ACC_VALID",
     }
     assert not [component for component in top.findall("comp") if component.get("name") == "Tunnel"]

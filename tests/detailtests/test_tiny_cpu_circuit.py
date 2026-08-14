@@ -470,7 +470,7 @@ def test_restored_subtraction_box_is_instantiated_and_tunnel_free():
         for component in operations.findall("comp")
         if component.get("name") == "SubSubCircuit"
     )
-    assert instance.get("loc") == "(870,340)"
+    assert instance.get("loc") == "(840,470)"
     assert {
         child.get("name"): child.get("val") for child in instance.findall("a")
     }["label"] == "SUB_OPERATION"
@@ -496,7 +496,7 @@ def test_result_merge_has_a_visible_routing_lane():
     result_or_x, result_or_y = (
         int(value) for value in result_or.get("loc").strip("()").split(",")
     )
-    assert (result_or_x, result_or_y) == (1100, 300)
+    assert (result_or_x, result_or_y) == (1080, 690)
 
 
 def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():

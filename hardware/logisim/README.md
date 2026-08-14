@@ -173,6 +173,63 @@ PYTHONPATH=src python src/tiny_cpu_circuit.py \
 The project fixes the initial hardware profile at 16 data bits and 12 address
 bits and splits the design into the same blocks as the hardware contract:
 
+## Korrektur-Arbeitspakete: Datenquellen und indirekte Adressierung
+
+Bei der weiteren Verdrahtung darf der 16-Bit-Operandenanteil des Befehlsworts
+nicht pauschal als Datenwert verwendet werden. Er hat je nach Adressierungsart
+drei verschiedene Bedeutungen: unmittelbarer Wert (`*_CONST`), direkte
+Speicheradresse (`*_ADDRESS`) oder Offset zum Adressregister
+(`*_ADDRESS_REGISTER_PLUS_OFFSET`). Bei `*_ADDRESS_REGISTER` besitzt der
+Befehl gar keinen Datenoperanden. Der Akkumulator ist davon unabhängig die
+linke Seite jeder binären Operation und die Datenquelle für Speicherzugriffe.
+
+Die folgenden Punkte bilden die priorisierte Fehler- und Arbeitsliste. Ein
+Punkt wird erst abgehakt, wenn die sichtbare Logisim-Verdrahtung und ein
+Struktur- oder Verhaltenstest dieselbe Datenquelle bestätigen:
+
+- [x] Die Python-VM als semantische Referenz absichern: `ADD` und `SUB`
+  verwenden in allen vier Adressierungsarten den bisherigen Akkumulator als
+  linken Operanden; direkte und beide adressregisterbasierten Varianten lesen
+  den rechten Operanden aus dem Speicher. Die gezielten Regressionstests
+  unterscheiden bewusst Akkumulator, Konstante, Adresse, Offset und
+  Speicherinhalt, sodass ein versehentlich verwendetes Befehlsfeld auffällt.
+- [ ] `AddSubCircuit` korrigieren: `LEFT` muss von `Datapath.ACC_OUT` kommen.
+  `RIGHT` benötigt einen durch die vier `ADD_*`-Signale gesteuerten Pfad, der
+  nur für `ADD_CONST` den unmittelbaren Operanden und sonst
+  `Memory.MEMORY_DATA` verwendet. Direkte Adresse, Adressregister und
+  Adressregister-plus-Offset bestimmen dabei ausschließlich die Speicheradresse.
+- [ ] `SubSubCircuit` symmetrisch korrigieren. Gerade bei `SUB` darf weder die
+  Reihenfolge vertauscht noch für eine indirekte Variante der konstante
+  Befehlsoperand subtrahiert werden: Das Ergebnis ist immer
+  `ACC_OUT - selected_right_operand`.
+- [ ] Die Validität der ADD/SUB-Datenquelle parallel zum Datenmultiplexer
+  führen: `*_CONST` liefert einen gültigen unmittelbaren Wert; jede
+  Speicherform benötigt `Memory.MEMORY_VALID`; beide Fälle benötigen zusätzlich
+  `Datapath.ACC_VALID_OUT`. Ein ungültiger Adressregister- oder Speicherwert
+  muss `RESULT_VALID` löschen und `SET_INV` auslösen.
+- [ ] Die effektive Adresse für alle direkten und indirekten Familien zentral
+  prüfen: `*_ADDRESS` verwendet das 12-Bit-Adressfeld,
+  `*_ADDRESS_REGISTER` den Inhalt des Adressregisters und
+  `*_ADDRESS_REGISTER_PLUS_OFFSET` dessen Summe mit dem signierten Offset.
+  Übertrag beziehungsweise Bereichsfehler müssen `SET_ADDR` auslösen.
+- [ ] Anschließend `MUL`, `DIV`, `AND` und `OR` nach demselben Vertrag prüfen
+  und verdrahten: links Akkumulator, rechts unmittelbarer Wert oder gelesener
+  Speicherwert. `DIV` benötigt zusätzlich die Nullprüfung des ausgewählten
+  rechten Operanden.
+- [ ] Die nicht-binären Datenwege separat auditieren: `STORE_*` schreibt den
+  Akkumulator, `NOT` invertiert den Akkumulator, `PRINT` liest den Akkumulator,
+  `PRINT_ADDRESS` liest Speicher und `LOAD_*` schreibt den jeweils ausgewählten
+  unmittelbaren oder indirekt gelesenen Wert in den Akkumulator.
+- [ ] Erst nach diesen Korrekturen den gemeinsamen Ergebnisbaum und die
+  Fehlerflags integrieren; bis dahin dürfen neutrale Operationsausgänge nicht
+  als Beleg für inhaltlich richtige Operandenwahl gelten.
+
+Das nächste Hardware-Arbeitspaket sind somit die beiden offenen
+`AddSubCircuit`-/`SubSubCircuit`-Punkte einschließlich ihrer Validität. Die
+Referenztests sind der erste abgeschlossene Teil der Korrektur und sollen beim
+Umbau gegen die Logisim-Ausführung beziehungsweise eine Schaltungsspur
+gespiegelt werden.
+
 `TinyCPUMain` is the integration sheet. Stateful blocks and independently
 selectable operations are encapsulated on named subpages, while the main sheet
 contains only their explicit interconnection and selection logic. Every

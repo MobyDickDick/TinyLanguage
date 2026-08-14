@@ -46,6 +46,54 @@ def test_address_register_and_offset_modes():
     assert (cpu.accumulator.value, cpu.accumulator.valid) == (7, True)
 
 
+@pytest.mark.parametrize(
+    ("operation", "addressing_mode", "setup", "expected"),
+    [
+        ("ADD", "CONST(7)", "", 27),
+        ("ADD", "ADDRESS(31)", "LOAD_CONST(7)\nSTORE_ADDRESS(31)", 27),
+        (
+            "ADD",
+            "ADDRESS_REGISTER()",
+            "LOAD_ADDRESS_REGISTER_CONST(31)\nLOAD_CONST(7)\n"
+            "STORE_ADDRESS_REGISTER()",
+            27,
+        ),
+        (
+            "ADD",
+            "ADDRESS_REGISTER_PLUS_OFFSET(3)",
+            "LOAD_ADDRESS_REGISTER_CONST(28)\nLOAD_CONST(7)\n"
+            "STORE_ADDRESS_REGISTER_PLUS_OFFSET(3)",
+            27,
+        ),
+        ("SUB", "CONST(7)", "", 13),
+        ("SUB", "ADDRESS(31)", "LOAD_CONST(7)\nSTORE_ADDRESS(31)", 13),
+        (
+            "SUB",
+            "ADDRESS_REGISTER()",
+            "LOAD_ADDRESS_REGISTER_CONST(31)\nLOAD_CONST(7)\n"
+            "STORE_ADDRESS_REGISTER()",
+            13,
+        ),
+        (
+            "SUB",
+            "ADDRESS_REGISTER_PLUS_OFFSET(3)",
+            "LOAD_ADDRESS_REGISTER_CONST(28)\nLOAD_CONST(7)\n"
+            "STORE_ADDRESS_REGISTER_PLUS_OFFSET(3)",
+            13,
+        ),
+    ],
+)
+def test_add_and_sub_use_accumulator_and_selected_operand(
+    operation, addressing_mode, setup, expected
+):
+    """Lock down the software oracle before repairing the Logisim data paths."""
+
+    cpu = run(f"{setup}\nLOAD_CONST(20)\n{operation}_{addressing_mode}\nHALT()")
+
+    assert (cpu.accumulator.value, cpu.accumulator.valid) == (expected, True)
+    assert not cpu.error
+
+
 def test_overflow_invalidates_and_propagates_to_memory():
     cpu = run(
         """

@@ -70,6 +70,26 @@
       <a name="inputs" val="3"/>
       <a name="label" val="RESULT_VALID"/>
     </comp>
+    <comp lib="9" loc="(1500,875)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="MEMORY_DATA →"/>
+    </comp>
+    <comp lib="9" loc="(1500,955)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ACC_VALUE →"/>
+    </comp>
+    <comp lib="9" loc="(1505,905)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="ACC_VALUE →"/>
+    </comp>
+    <comp lib="9" loc="(1750,930)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="NOT_VALUE →"/>
+    </comp>
+    <comp lib="9" loc="(1770,1025)" name="Text">
+      <a name="font" val="SansSerif plain 9"/>
+      <a name="text" val="SUB_ADDRESS/CONST →"/>
+    </comp>
     <comp loc="(1200,130)" name="Datapath">
       <a name="label" val="DATAPATH_INSTANCE"/>
     </comp>

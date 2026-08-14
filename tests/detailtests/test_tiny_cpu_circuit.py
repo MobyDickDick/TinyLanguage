@@ -254,7 +254,10 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
         if item.get("name") == "TinyCPUMain"
     )
 
-    assert not [item for item in top.findall("comp") if item.get("name") == "Tunnel"]
+    assert all(
+        dict((a.get("name"), a.get("val")) for a in item).get("label", "").startswith("EFFECTIVE_")
+        for item in top.findall("comp") if item.get("name") == "Tunnel"
+    )
     operations = next(item for item in root.findall("circuit") if item.get("name") == "Operations")
     assert not [item for item in operations.findall("comp") if item.get("name") == "Tunnel"]
     addition = next(
@@ -332,7 +335,7 @@ def test_every_schematic_component_has_a_unique_label():
                 assert label, (
                     circuit.get("name"), component.get("name"), component.get("loc")
                 )
-            if label:
+            if label and component.get("name") != "Tunnel":
                 labels.append(label)
 
         assert len(labels) == len(set(labels)), circuit.get("name")

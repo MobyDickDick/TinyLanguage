@@ -815,6 +815,16 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
             for terminal in component_terminals(component):
                 terminal_to_component.setdefault(terminal, []).append(component)
         wire_neighbors: dict[str, set[str]] = {}
+        tunnel_locations: dict[str, list[str]] = {}
+        for component in electrical:
+            if component.get("name") == "Tunnel":
+                tunnel_locations.setdefault(
+                    _attributes(component).get("label", ""), []
+                ).append(_norm_loc(component.get("loc", "")))
+        for locations in tunnel_locations.values():
+            for first, second in zip(locations, locations[1:]):
+                wire_neighbors.setdefault(first, set()).add(second)
+                wire_neighbors.setdefault(second, set()).add(first)
         for wire in wires:
             start = _norm_loc(wire.get("from", ""))
             end = _norm_loc(wire.get("to", ""))
@@ -851,6 +861,8 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
 
         unconnected = []
         for component in electrical:
+            if component.get("name") == "Tunnel":
+                continue
             location = _norm_loc(component.get("loc", "?"))
             terminals = component_terminals(component)
             attrs = _attributes(component)
@@ -899,6 +911,8 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
             tuple[str, tuple[int, int], str, tuple[tuple[str, str], ...]], int
         ] = {}
         for component in electrical:
+            if component.get("name") == "Tunnel":
+                continue
             location = _norm_loc(component.get("loc", "?"))
             components_by_location.setdefault(location, []).append(component)
             name, lib, attrs = _component_identity(component)

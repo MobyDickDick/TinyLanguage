@@ -69,6 +69,22 @@
     <comp lib="0" loc="(1210,970)" name="Tunnel">
       <a name="label" val="EFFECTIVE_AND_OFFSET"/>
     </comp>
+    <comp lib="0" loc="(620,280)" name="Tunnel">
+      <a name="label" val="EFFECTIVE_MEMORY_VALID_BUS"/>
+    </comp>
+    <comp lib="0" loc="(620,300)" name="Tunnel">
+      <a name="label" val="EFFECTIVE_MEMORY_DATA_BUS"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(1740,620)" name="Tunnel">
+      <a name="facing" val="east"/>
+      <a name="label" val="EFFECTIVE_MEMORY_DATA_BUS"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(1740,660)" name="Tunnel">
+      <a name="facing" val="east"/>
+      <a name="label" val="EFFECTIVE_MEMORY_VALID_BUS"/>
+    </comp>
     <comp lib="0" loc="(1950,1110)" name="Tunnel">
       <a name="facing" val="east"/>
       <a name="label" val="EFFECTIVE_LOAD_REGISTER"/>
@@ -314,8 +330,6 @@
     <wire from="(1480,720)" to="(1760,720)"/>
     <wire from="(1490,600)" to="(1490,700)"/>
     <wire from="(1490,700)" to="(1760,700)"/>
-    <wire from="(1500,280)" to="(1500,660)"/>
-    <wire from="(1500,660)" to="(1760,660)"/>
     <wire from="(1510,1040)" to="(1510,1240)"/>
     <wire from="(1510,360)" to="(1510,910)"/>
     <wire from="(1520,140)" to="(1520,1340)"/>
@@ -336,8 +350,6 @@
     <wire from="(1590,780)" to="(1760,780)"/>
     <wire from="(1610,270)" to="(1610,640)"/>
     <wire from="(1610,640)" to="(1760,640)"/>
-    <wire from="(1620,300)" to="(1620,620)"/>
-    <wire from="(1620,620)" to="(1760,620)"/>
     <wire from="(1630,110)" to="(1630,600)"/>
     <wire from="(1630,600)" to="(1760,600)"/>
     <wire from="(1650,120)" to="(1760,120)"/>
@@ -425,8 +437,10 @@
     <wire from="(500,30)" to="(510,30)"/>
     <wire from="(500,50)" to="(600,50)"/>
     <wire from="(570,170)" to="(580,170)"/>
-    <wire from="(570,280)" to="(1500,280)"/>
-    <wire from="(570,300)" to="(1620,300)"/>
+    <wire from="(570,280)" to="(620,280)"/>
+    <wire from="(570,300)" to="(620,300)"/>
+    <wire from="(1740,620)" to="(1760,620)"/>
+    <wire from="(1740,660)" to="(1760,660)"/>
     <wire from="(600,150)" to="(670,150)"/>
     <wire from="(600,160)" to="(610,160)"/>
     <wire from="(600,50)" to="(600,150)"/>

@@ -501,6 +501,45 @@ def test_top_level_has_visible_labels_on_wires_at_components():
     ]
     assert len(component_labels) == len(set(component_labels))
 
+
+def test_memory_outputs_reach_matching_operations_inputs_on_isolated_buses():
+    """Keep the one-bit valid signal separate from the 16-bit memory value."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    memory_data = _subcircuit_output(root, "Memory", "MEMORY_DATA")
+    memory_valid = _subcircuit_output(root, "Memory", "MEMORY_VALID")
+    operations_value = _subcircuit_input(root, "Operations", "MEMORY_VALUE")
+    operations_valid = _subcircuit_input(root, "Operations", "MEMORY_VALID")
+    adjacency = _electrical_adjacency(
+        circuit,
+        {memory_data, memory_valid, operations_value, operations_valid},
+    )
+
+    data_net = _reachable(adjacency, memory_data)
+    valid_net = _reachable(adjacency, memory_valid)
+    assert operations_value in data_net
+    assert operations_valid in valid_net
+    assert memory_valid not in data_net
+    assert operations_valid not in data_net
+    assert memory_data not in valid_net
+    assert operations_value not in valid_net
+
+    bus_widths = {
+        _attributes(component)["label"]: _attributes(component).get("width", "1")
+        for component in circuit.findall("comp")
+        if component.get("name") == "Tunnel"
+        and _attributes(component).get("label") in {
+            "EFFECTIVE_MEMORY_DATA_BUS",
+            "EFFECTIVE_MEMORY_VALID_BUS",
+        }
+    }
+    assert bus_widths == {
+        "EFFECTIVE_MEMORY_DATA_BUS": "16",
+        "EFFECTIVE_MEMORY_VALID_BUS": "1",
+    }
+
+
 @pytest.mark.xfail(
     reason="hand-redrawn accumulator logic is intentionally pending direct-wire integration",
     strict=False,

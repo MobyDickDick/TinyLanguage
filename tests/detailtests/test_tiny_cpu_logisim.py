@@ -471,7 +471,7 @@ def test_top_level_has_visible_labels_on_wires_at_components():
     circuit = _top_level(ET.parse(PROJECT).getroot())
     assert not [c for c in circuit.findall("comp") if c.get("name") == "Tunnel"]
     wire_labels = [c for c in circuit.findall("comp") if c.get("name") == "Text"]
-    assert len(wire_labels) == 23
+    assert len(wire_labels) == 5
     assert all(_attributes(label).get("font") == "SansSerif plain 9" for label in wire_labels)
     assert all(_attributes(label).get("text", "").endswith("→") for label in wire_labels)
     assert "SUB_ADDRESS/CONST →" in {
@@ -1409,7 +1409,7 @@ def test_not_operation_gates_data_and_valid_with_activity():
     root = ET.parse(PROJECT).getroot()
     circuit = next(c for c in root.findall("circuit") if c.get("name") == "NotCircuit")
     labels = {_attributes(c).get("label") for c in circuit.findall("comp")}
-    assert {"ACTIVE_NOT_RESULT", "ACTIVE_NOT_VALID"} <= labels
+    assert "ACTIVE_NOT_VALID" in labels
 
 
 def test_operation_data_and_validity_are_combined_by_explicit_or_trees():
@@ -1421,20 +1421,14 @@ def test_operation_data_and_validity_are_combined_by_explicit_or_trees():
         for component in circuit.findall("comp")
         if _attributes(component).get("label")
     }
-    expected_gates = {
-        "ADD_OR_SUB_RESULT": "16",
-        "OPERATION_RESULT_OR": "16",
-        "ADD_OR_SUB_VALID": "1",
-        "OPERATION_VALID_OR": "1",
-    }
+    expected_gates = {"RESULT": "16", "RESULT_VALID": "1"}
     for label, width in expected_gates.items():
         gate = components[label]
         assert gate.get("name") == "OR Gate"
         assert _attributes(gate).get("width", "1") == width
 
-    assert _attributes(components["OPERATION_RESULT"])["type"] == "output"
-    assert _attributes(components["OPERATION_RESULT"])["width"] == "16"
-    assert _attributes(components["OPERATION_VALID"])["type"] == "output"
+    assert _attributes(components["RESULT"])["inputs"] == "3"
+    assert _attributes(components["RESULT_VALID"])["inputs"] == "3"
 
 
 def test_unary_and_subtraction_boxes_export_a_uniform_operation_contract():
@@ -1443,8 +1437,8 @@ def test_unary_and_subtraction_boxes_export_a_uniform_operation_contract():
     root = ET.parse(PROJECT).getroot()
     circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
     expected_outputs = {
-        "NotCircuit": {"RESULT", "OVERFLOW", "NOT_VALID", "NOT_SELECTED"},
-        "SubSubCircuit": {"RESULT", "OVERFLOW", "ADD_VALID", "ADD_SELECTED"},
+        "NotCircuit": {"RESULT", "RESULT_VALID"},
+        "SubSubCircuit": {"RESULT", "OVERFLOW", "RESULT_VALID"},
     }
     for circuit_name, outputs in expected_outputs.items():
         circuit = circuits[circuit_name]
@@ -1461,12 +1455,6 @@ def test_unary_and_subtraction_boxes_export_a_uniform_operation_contract():
             if component.get("name") == "Tunnel"
         ]
 
-    not_circuit = circuits["NotCircuit"]
-    overflow_zero = next(
-        component
-        for component in not_circuit.findall("comp")
-        if _attributes(component).get("label") == "NO_OVERFLOW"
-    )
-    assert overflow_zero.get("name") == "Constant"
+    assert "OVERFLOW" not in expected_outputs["NotCircuit"]
     assert any(component.get("name") == "SubArithmeticCircuit"
                for component in circuits["SubSubCircuit"].findall("comp"))

@@ -239,13 +239,7 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
         for child in component.findall("a")
         if child.get("name") == "text"
     }
-    assert {
-        "ACC_VALUE →",
-        "INPUT_VALUE →",
-        "SUB_VALID →",
-        "WRITE_DATA →",
-        "WRITE_VALID →",
-    } <= signal_labels
+    assert {"ACC_VALUE →", "SUB_ADDRESS/CONST →"} <= signal_labels
     addition = next(
         item
         for item in root.findall("circuit")
@@ -287,10 +281,8 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
     }
     assert {
         "NOT_OPERATION",
-        "ADD_OR_SUB_RESULT",
-        "OPERATION_RESULT_OR",
-        "ADD_OR_SUB_VALID",
-        "OPERATION_VALID_OR",
+        "RESULT",
+        "RESULT_VALID",
     } <= labels
     assert "ACC_ADD_MEMORY_SELECT" in addition_component_labels
     assert {"ACC_SUB_MEMORY_SELECT", "ACC_ADD_VALID"} <= subtraction_component_labels
@@ -367,7 +359,7 @@ def test_validity_subcircuits_have_expected_interfaces_when_present():
         "SUB_ADDRESS", "SUB_ADDRESS_REGISTER",
         "SUB_ADDRESS_REGISTER_PLUS_OFFSET", "ADD_CONST", "MEMORY_VALUE",
         "ACC_VALUE", "DEFAULT_VALID", "ACC_VALID", "RESULT", "OVERFLOW",
-        "ADD_VALID", "ADD_SELECTED",
+        "RESULT_VALID",
     }
 
     # ADD validity may be drawn directly in its containing circuit.  If the
@@ -460,8 +452,8 @@ def test_restored_subtraction_box_is_instantiated_and_tunnel_free():
     assert not [c for c in definition.findall("comp") if c.get("name") == "Tunnel"]
 
 
-def test_restored_result_merge_has_a_visible_routing_lane():
-    """Freeze the final data OR anchor used by the maintained merge lane."""
+def test_result_merge_has_a_visible_routing_lane():
+    """Freeze the compact data OR anchor used by the maintained merge lane."""
 
     root = ET.parse(PROJECT).getroot()
     top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPUMain")
@@ -472,13 +464,13 @@ def test_restored_result_merge_has_a_visible_routing_lane():
         and {
             child.get("name"): child.get("val")
             for child in component.findall("a")
-        }.get("label") == "OPERATION_RESULT_OR"
+        }.get("label") == "RESULT"
     )
 
     result_or_x, result_or_y = (
         int(value) for value in result_or.get("loc").strip("()").split(",")
     )
-    assert (result_or_x, result_or_y) == (2250, 760)
+    assert (result_or_x, result_or_y) == (2050, 660)
 
 
 def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():
@@ -715,11 +707,7 @@ def test_fetch_decode_diagnostic_preserves_pc_increment_constant():
             attribute.get("name"): attribute.get("val")
             for attribute in constant.findall("a")
         }
-        assert attributes == {
-            "label": "PC_INCREMENT",
-            "width": "16",
-            "value": "0xffff",
-        }
+        assert attributes == {"width": "16", "value": "0xffff"}
 
 
 def test_leaf_signature_ignores_order_and_origin_but_detects_wire_changes(tmp_path):

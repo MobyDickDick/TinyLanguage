@@ -20,81 +20,64 @@
     <a name="circuit" val="NotCircuit"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(100,100)" name="Pin">
+    <comp lib="0" loc="(240,150)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="ACC_VALID"/>
+    </comp>
+    <comp lib="0" loc="(240,210)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="NOT_IS_ACTIVE"/>
+    </comp>
+    <comp lib="0" loc="(240,90)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="ACC_VALUE"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(110,160)" name="Pin">
+    <comp lib="0" loc="(360,60)" name="Constant">
+      <a name="value" val="0x0"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(460,180)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="ACC_VALID"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="RESULT_VALID"/>
+      <a name="type" val="output"/>
     </comp>
-    <comp lib="0" loc="(130,220)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="NOT_SELECT"/>
-    </comp>
-    <comp lib="0" loc="(330,150)" name="Constant">
-      <a name="label" val="NO_OVERFLOW"/>
-    </comp>
-    <comp lib="0" loc="(400,100)" name="Pin">
+    <comp lib="0" loc="(460,90)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="RESULT"/>
       <a name="type" val="output"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(400,150)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="OVERFLOW"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="0" loc="(400,190)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="NOT_VALID"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="0" loc="(400,220)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="NOT_SELECTED"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="1" loc="(260,100)" name="NOT Gate">
+    <comp lib="1" loc="(320,90)" name="NOT Gate">
       <a name="label" val="NOT_VALUE"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="1" loc="(330,190)" name="AND Gate">
+    <comp lib="1" loc="(390,180)" name="AND Gate">
       <a name="label" val="ACTIVE_NOT_VALID"/>
     </comp>
-    <wire from="(100,100)" to="(230,100)"/>
-    <wire from="(110,160)" to="(260,160)"/>
-    <wire from="(130,220)" to="(260,220)"/>
-    <comp lib="0" loc="(300,70)" name="Constant">
-      <a name="label" val="INACTIVE_NOT_RESULT"/>
+    <comp lib="2" loc="(410,90)" name="Multiplexer">
       <a name="width" val="16"/>
     </comp>
-    <comp lib="4" loc="(350,100)" name="Multiplexer">
-      <a name="label" val="ACTIVE_NOT_RESULT"/>
-      <a name="width" val="16"/>
-    </comp>
-    <wire from="(260,100)" to="(300,100)"/>
-    <wire from="(300,100)" to="(300,110)"/>
-    <wire from="(300,110)" to="(320,110)"/>
-    <wire from="(300,70)" to="(310,70)"/>
-    <wire from="(310,70)" to="(310,90)"/>
-    <wire from="(310,90)" to="(320,90)"/>
-    <wire from="(270,120)" to="(270,220)"/>
-    <wire from="(270,120)" to="(330,120)"/>
-    <wire from="(350,100)" to="(400,100)"/>
-    <wire from="(260,160)" to="(260,170)"/>
-    <wire from="(260,170)" to="(280,170)"/>
-    <wire from="(260,210)" to="(260,220)"/>
-    <wire from="(260,210)" to="(280,210)"/>
-    <wire from="(260,220)" to="(270,220)"/>
-    <wire from="(270,220)" to="(400,220)"/>
-    <wire from="(330,150)" to="(400,150)"/>
-    <wire from="(330,190)" to="(400,190)"/>
+    <wire from="(240,150)" to="(320,150)"/>
+    <wire from="(240,210)" to="(320,210)"/>
+    <wire from="(240,90)" to="(290,90)"/>
+    <wire from="(320,150)" to="(320,160)"/>
+    <wire from="(320,160)" to="(340,160)"/>
+    <wire from="(320,200)" to="(320,210)"/>
+    <wire from="(320,200)" to="(340,200)"/>
+    <wire from="(320,210)" to="(330,210)"/>
+    <wire from="(320,90)" to="(360,90)"/>
+    <wire from="(330,120)" to="(330,210)"/>
+    <wire from="(330,120)" to="(390,120)"/>
+    <wire from="(360,100)" to="(380,100)"/>
+    <wire from="(360,60)" to="(370,60)"/>
+    <wire from="(360,90)" to="(360,100)"/>
+    <wire from="(370,60)" to="(370,80)"/>
+    <wire from="(370,80)" to="(380,80)"/>
+    <wire from="(390,110)" to="(390,120)"/>
+    <wire from="(390,180)" to="(460,180)"/>
+    <wire from="(410,90)" to="(460,90)"/>
   </circuit>
 </project>

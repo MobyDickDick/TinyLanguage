@@ -28,7 +28,6 @@
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(410,290)" name="Constant">
-      <a name="label" val="PC_INCREMENT"/>
       <a name="value" val="0xffff"/>
       <a name="width" val="16"/>
     </comp>

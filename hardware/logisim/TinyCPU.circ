@@ -166,9 +166,9 @@
     <wire from="(1430,590)" to="(1430,1160)"/>
     <wire from="(1740,540)" to="(1900,540)"/>
     <wire from="(1740,580)" to="(1880,580)"/>
-    <wire from="(1740,760)" to="(1900,760)"/>
+    <wire from="(1740,760)" to="(1920,760)"/>
     <wire from="(1740,800)" to="(1860,800)"/>
-    <wire from="(1740,960)" to="(1900,960)"/>
+    <wire from="(1740,960)" to="(1940,960)"/>
     <wire from="(1740,980)" to="(1910,980)"/>
     <wire from="(1860,800)" to="(1860,840)"/>
     <wire from="(1860,840)" to="(2000,840)"/>
@@ -176,11 +176,10 @@
     <wire from="(1880,820)" to="(2000,820)"/>
     <wire from="(1900,540)" to="(1900,640)"/>
     <wire from="(1900,640)" to="(2000,640)"/>
-    <wire from="(1900,660)" to="(1900,680)"/>
-    <wire from="(1900,660)" to="(2000,660)"/>
-    <wire from="(1900,680)" to="(1900,760)"/>
-    <wire from="(1900,680)" to="(2000,680)"/>
-    <wire from="(1900,760)" to="(1900,960)"/>
+    <wire from="(1920,660)" to="(1920,760)"/>
+    <wire from="(1920,660)" to="(2000,660)"/>
+    <wire from="(1940,680)" to="(1940,960)"/>
+    <wire from="(1940,680)" to="(2000,680)"/>
     <wire from="(1910,860)" to="(1910,980)"/>
     <wire from="(1910,860)" to="(2000,860)"/>
     <wire from="(2050,660)" to="(2510,660)"/>
@@ -1711,7 +1710,7 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp lib="0" loc="(960,500)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="RESZLT_VALID"/>
+      <a name="label" val="RESULT_VALID"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="1" loc="(570,360)" name="OR Gate">

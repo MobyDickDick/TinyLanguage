@@ -60,7 +60,10 @@ def test_inspector_exposes_completed_and_pending_sheets():
 
     assert not reports["TinyCPUMain"].connected
     unconnected_labels = {item.partition("@")[0] for item in reports["TinyCPUMain"].unconnected}
-    assert any("select input" in label for label in unconnected_labels)
+    # The former result-selection multiplexers were intentionally replaced by
+    # fully wired OR trees.  The integration sheet is still pending because of
+    # its documented placement/width diagnostics, not floating select pins.
+    assert unconnected_labels == set()
     assert {"CLK", "RESET"}.isdisjoint(unconnected_labels)
     assert reports["TinyCPUMain"].routing_conflicts == ()
 
@@ -282,7 +285,13 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
         for child in component.findall("a")
         if child.get("name") == "label"
     }
-    assert "ACC_NOT_VALUE" in labels
+    assert {
+        "NOT_OPERATION",
+        "ADD_OR_SUB_RESULT",
+        "OPERATION_RESULT_OR",
+        "ADD_OR_SUB_VALID",
+        "OPERATION_VALID_OR",
+    } <= labels
     assert "ACC_ADD_MEMORY_SELECT" in addition_component_labels
     assert {"ACC_SUB_MEMORY_SELECT", "ACC_ADD_VALID"} <= subtraction_component_labels
 
@@ -434,7 +443,7 @@ def test_arithmetic_subpages_have_no_zero_length_wires():
 
 
 def test_restored_subtraction_box_is_instantiated_and_tunnel_free():
-    """Protect the restored subtraction boundary rather than a reverted helper."""
+    """Protect the redrawn subtraction boundary rather than an old selector layout."""
 
     root = ET.parse(PROJECT).getroot()
     top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPUMain")
@@ -443,27 +452,33 @@ def test_restored_subtraction_box_is_instantiated_and_tunnel_free():
         for component in top.findall("comp")
         if component.get("name") == "SubSubCircuit"
     )
-    assert instance.get("loc") == "(2160,1080)"
+    assert instance.get("loc") == "(1740,760)"
+    assert {
+        child.get("name"): child.get("val") for child in instance.findall("a")
+    }["label"] == "SUB_OPERATION"
     definition = next(c for c in root.findall("circuit") if c.get("name") == "SubSubCircuit")
     assert not [c for c in definition.findall("comp") if c.get("name") == "Tunnel"]
 
 
 def test_restored_result_merge_has_a_visible_routing_lane():
-    """Freeze the maintained merge anchor without requiring reverted labels."""
+    """Freeze the final data OR anchor used by the maintained merge lane."""
 
     root = ET.parse(PROJECT).getroot()
     top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPUMain")
-    selector = next(
+    result_or = next(
         component
         for component in top.findall("comp")
-        if component.get("name") == "Multiplexer"
-        and component.get("loc") == "(2070,990)"
+        if component.get("name") == "OR Gate"
+        and {
+            child.get("name"): child.get("val")
+            for child in component.findall("a")
+        }.get("label") == "OPERATION_RESULT_OR"
     )
 
-    selector_x, selector_y = (
-        int(value) for value in selector.get("loc").strip("()").split(",")
+    result_or_x, result_or_y = (
+        int(value) for value in result_or.get("loc").strip("()").split(",")
     )
-    assert (selector_x, selector_y) == (2070, 990)
+    assert (result_or_x, result_or_y) == (2250, 760)
 
 
 def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():

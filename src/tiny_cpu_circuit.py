@@ -577,6 +577,40 @@ def validate_hardware_contract(
     circuits = {item.get("name", ""): item for item in root.findall("circuit")}
     violations: list[str] = []
 
+    # Logisim expands subcircuit symbols while loading a project.  A recursive
+    # reference can therefore exhaust memory before the schematic becomes
+    # interactive, so reject hierarchy cycles as part of the checkout gate.
+    dependencies = {
+        name: tuple(
+            component.get("name", "")
+            for component in circuit.findall("comp")
+            if component.get("lib") is None
+            and component.get("name", "") in circuits
+        )
+        for name, circuit in circuits.items()
+    }
+    visiting: list[str] = []
+    visited: set[str] = set()
+
+    def check_hierarchy(circuit_name: str) -> None:
+        if circuit_name in visiting:
+            start = visiting.index(circuit_name)
+            cycle = visiting[start:] + [circuit_name]
+            violation = "recursive subcircuit hierarchy: " + " -> ".join(cycle)
+            if violation not in violations:
+                violations.append(violation)
+            return
+        if circuit_name in visited:
+            return
+        visiting.append(circuit_name)
+        for dependency in dependencies[circuit_name]:
+            check_hierarchy(dependency)
+        visiting.pop()
+        visited.add(circuit_name)
+
+    for circuit_name in circuits:
+        check_hierarchy(circuit_name)
+
     main = root.find("main")
     actual_top = main.get("name") if main is not None else None
     if actual_top != profile["top_circuit"]:

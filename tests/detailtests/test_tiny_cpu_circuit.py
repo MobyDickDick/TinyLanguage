@@ -91,6 +91,28 @@ def test_inspector_accepts_a_minimal_connected_project(tmp_path):
     assert main([str(project)]) == 0
 
 
+def test_hardware_contract_rejects_recursive_subcircuit_hierarchy(tmp_path):
+    project = tmp_path / "recursive.circ"
+    project.write_text(
+        """<project><main name="TinyCPUMain"/>
+        <circuit name="TinyCPUMain"><comp name="Operations"/></circuit>
+        <circuit name="Operations"><comp name="AddBox"/></circuit>
+        <circuit name="AddBox"><comp name="Operations"/></circuit>
+        </project>""",
+        encoding="utf-8",
+    )
+
+    violations = validate_hardware_contract(project, PROFILE)
+
+    assert "recursive subcircuit hierarchy: Operations -> AddBox -> Operations" in violations
+
+
+def test_checked_in_tinycpu_has_no_recursive_subcircuit_hierarchy():
+    violations = validate_hardware_contract(PROJECT, PROFILE)
+
+    assert not [item for item in violations if item.startswith("recursive subcircuit hierarchy:")]
+
+
 def test_inspector_cli_rejects_incomplete_ap4_project(capsys):
     assert main([str(PROJECT)]) == 1
     output = capsys.readouterr().out

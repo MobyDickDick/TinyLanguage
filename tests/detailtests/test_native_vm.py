@@ -22,6 +22,27 @@ def test_vm_runs_simple_program():
     assert output == "3\n"
 
 
+def test_vm_skips_runtime_type_resolution_without_operator_overloads(monkeypatch):
+    """Keep ordinary binary operations on the native VM's fast path."""
+    program = ProgramIR(
+        entry=[
+            Instruction(Opcode.PUSH_CONST, 1),
+            Instruction(Opcode.PUSH_CONST, 2),
+            Instruction(Opcode.BINARY, "+"),
+            Instruction(Opcode.RETURN),
+        ],
+        functions={},
+    )
+    vm = NativeVM()
+
+    def unexpected_type_lookup(_value):
+        raise AssertionError("binary fast path performed a runtime type lookup")
+
+    monkeypatch.setattr(vm, "_value_type_name", unexpected_type_lookup)
+
+    assert vm.run(program) == ""
+
+
 def test_vm_executes_function_calls_and_locals():
     """Ensure calls pass arguments and locals load correctly."""
     add_body = [

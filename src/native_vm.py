@@ -193,6 +193,12 @@ class NativeVM:
         """Interpret instructions inside the given frame until completion."""
 
         stack: List[Any] = []
+        # Most programs, including arithmetic-heavy loops, do not declare
+        # operator overloads.  Avoid deriving two runtime type names for every
+        # binary instruction in that common case; the full lookup remains in
+        # place as soon as the program defines at least one overload.
+        operator_overloads = self.operator_overloads
+        has_operator_overloads = bool(operator_overloads)
         while frame.ip < len(frame.instructions):
             instr = frame.instructions[frame.ip]
             frame.ip += 1
@@ -209,12 +215,14 @@ class NativeVM:
                 elif instr.op == Opcode.BINARY:
                     right = stack.pop()
                     left = stack.pop()
-                    overload_key = (
-                        instr.arg,
-                        self._value_type_name(left),
-                        self._value_type_name(right),
-                    )
-                    overload_name = self.operator_overloads.get(overload_key)
+                    overload_name = None
+                    if has_operator_overloads:
+                        overload_key = (
+                            instr.arg,
+                            self._value_type_name(left),
+                            self._value_type_name(right),
+                        )
+                        overload_name = operator_overloads.get(overload_key)
                     if overload_name is not None:
                         stack.append(self._call(overload_name, [left, right]))
                     else:

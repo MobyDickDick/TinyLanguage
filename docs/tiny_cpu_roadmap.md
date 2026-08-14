@@ -146,7 +146,7 @@ The instruction splitter's 16-bit operand output now reaches
 one-bit control nets remain separate. This establishes the constant operand as
 the first accumulator data source. The labelled 16-bit `ACC_DATA_SELECT`
 multiplexer now keeps that operand on its default input and
-`Memory.DATA_OUT` on an independent second input. `LOAD_ADDRESS` drives the
+`Memory.MEMORY_DATA` on an independent second input. `LOAD_ADDRESS` drives the
 selector through the labelled `ACC_MEMORY_SELECT` gate, whose second independent
 input is now `LOAD_ADDRESS_REGISTER`. Either addressing mode therefore selects
 the memory source without directly joining decoder outputs or data-bus drivers.
@@ -163,7 +163,7 @@ reaches `Datapath.VALID_IN` through the labelled one-bit
 `ACC_INPUT_VALID_SELECT` multiplexer only while `INPUT` is active. Before that
 final override, `ACC_MEMORY_VALID_SELECT` mirrors the accumulator data
 selection: immediate operands supply a valid constant, while all three
-memory-backed load modes propagate `Memory.VALID_OUT`. A following
+memory-backed load modes propagate `Memory.MEMORY_VALID`. A following
 `ACC_NOT_VALID_SELECT` stage propagates `Datapath.ACC_VALID_OUT` for `NOT`,
 because the unary result is valid exactly when its accumulator input is valid;
 the independent `INPUT` stage retains final priority. The four `ADD_*` modes

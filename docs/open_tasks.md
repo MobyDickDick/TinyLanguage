@@ -30,7 +30,7 @@ archived in `docs/open_tasks_archive.md`.
     four `ADD_*` addressing modes, while preserving the established load,
     `NOT`, and final `INPUT` validity priorities.
   - Result: `ACC_ADD_OPERAND_VALID_SELECT` chooses a valid immediate or
-    `Memory.VALID_OUT`; `ACC_ADD_VALID` combines it with
+    `Memory.MEMORY_VALID`; `ACC_ADD_VALID` combines it with
     `Datapath.ACC_VALID_OUT`. `ACC_ADD_VALID_SELECT` applies that result only
     for the four independently routed `ADD_*` controls.
   - Follow-up: integrate the `SUB_*` result data and validity as the next
@@ -54,13 +54,13 @@ archived in `docs/open_tasks_archive.md`.
 
 - [x] **Propagate TinyCPU memory validity to the accumulator**
   (Owner: TinyCPU/Hardware)
-  - Success: select `Memory.VALID_OUT` for `Datapath.VALID_IN` whenever the
+  - Success: select `Memory.MEMORY_VALID` for `Datapath.VALID_IN` whenever the
     existing memory-backed accumulator data path is selected, while retaining
     the valid constant for immediate operands and the independent `INPUT`
     validity override.
   - Result: the labelled `ACC_MEMORY_VALID_SELECT` multiplexer mirrors
     `ACC_MEMORY_SELECT`: its default is the valid constant and its memory input
-    is `Memory.VALID_OUT`. Its output feeds the default side of
+    is `Memory.MEMORY_VALID`. Its output feeds the default side of
     `ACC_INPUT_VALID_SELECT`, so `INPUT_VALID` still has final priority only for
     `INPUT`. Structural coverage protects the sources, shared selection net,
     staged destination, and isolation from `Datapath.DATA_IN`.
@@ -79,7 +79,7 @@ archived in `docs/open_tasks_archive.md`.
     selects `INPUT_VALID` for `INPUT`. Structural coverage protects both
     sources, the shared `INPUT` selection control, the datapath destination,
     and isolation from `Datapath.DATA_IN`.
-  - Follow-up: integrate `Memory.VALID_OUT` for memory-backed accumulator loads
+  - Follow-up: integrate `Memory.MEMORY_VALID` for memory-backed accumulator loads
     through an explicit validity-selection stage.
 
 ## Next documented work package (completed 2026-08-10)
@@ -161,7 +161,7 @@ archived in `docs/open_tasks_archive.md`.
 - [x] **Select memory data for TinyCPU `LOAD_ADDRESS`**
   (Owner: TinyCPU/Hardware)
   - Success: replace the direct operand connection with a labelled 16-bit
-    multiplexer that keeps the instruction operand and `Memory.DATA_OUT` on
+    multiplexer that keeps the instruction operand and `Memory.MEMORY_DATA` on
     independent inputs, selects memory only for `LOAD_ADDRESS`, and remains
     isolated from opcode, write-control, and validity nets.
   - Result: `ACC_DATA_SELECT` now makes the instruction operand the default

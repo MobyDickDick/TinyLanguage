@@ -357,8 +357,8 @@ def test_validity_subcircuits_have_expected_interfaces_when_present():
 
     assert pin_labels(subtraction) == {
         "SUB_ADDRESS", "SUB_ADDRESS_REGISTER",
-        "SUB_ADDRESS_REGISTER_PLUS_OFFSET", "ADD_CONST", "MEMORY_VALUE",
-        "ACC_VALUE", "DEFAULT_VALID", "ACC_VALID", "RESULT", "OVERFLOW",
+        "SUB_ADDRESS_REGISTER_PLUS_OFFSET", "SUB_CONST", "MEMORY_VALUE",
+        "ACC_VALUE", "MEMORY_VALID", "ACC_VALID", "RESULT", "OVERFLOW",
         "RESULT_VALID",
     }
 
@@ -444,7 +444,7 @@ def test_restored_subtraction_box_is_instantiated_and_tunnel_free():
         for component in top.findall("comp")
         if component.get("name") == "SubSubCircuit"
     )
-    assert instance.get("loc") == "(1740,760)"
+    assert instance.get("loc") == "(1740,750)"
     assert {
         child.get("name"): child.get("val") for child in instance.findall("a")
     }["label"] == "SUB_OPERATION"

@@ -78,8 +78,8 @@
         "VALID_IN": 1,
         "WRITE_ENABLE": 1,
         "CLK": 1,
-        "DATA_OUT": 16,
-        "VALID_OUT": 1
+        "MEMORY_DATA": 16,
+        "MEMORY_VALID": 1
       }
     },
     "ErrorFlags": {

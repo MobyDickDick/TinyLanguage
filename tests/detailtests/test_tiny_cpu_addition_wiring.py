@@ -97,14 +97,14 @@ def test_extracted_addition_has_the_restored_operation_interface():
     ]
 
     labels = {_attributes(component).get("label") for component in addition.findall("comp")}
-    assert {"ADD_RIGHT_SOURCE", "ADD_RIGHT_VALID", "ADD_CONST_VALID"} <= labels
-    add_const_valid = next(
-        component
+    # Keep the labels from the hand-redrawn sheet authoritative.  The drawing
+    # uses the ADD memory-mode selector and validity gate directly instead of
+    # the older, subsequently removed helper labels.
+    assert {"ACC_ADD_MEMORY_SELECT", "ACC_ADD_VALID"} <= labels
+    assert sum(
+        component.get("name") == "Constant"
         for component in addition.findall("comp")
-        if _attributes(component).get("label") == "ADD_CONST_VALID"
-    )
-    assert add_const_valid.get("name") == "Constant"
-    assert _attributes(add_const_valid).get("value") == "0x1"
+    ) == 1
     assert any(
         _attributes(component).get("label") == "IMMEDIATE_VALUE"
         and _attributes(component).get("width") == "16"

@@ -5,6 +5,22 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Next documented work package
+
+- [ ] **Move the TinyCPU operation boxes to an `OPERATIONS` sheet**
+  (Owner: TinyCPU/Hardware)
+  - Scope: move only the three `AddSubCircuit`, `SubSubCircuit`, and
+    `NotCircuit` instances (the `ADD_SUB`, `SUB_SUB`, and `NOT` functional
+    boxes) from `TinyCPUMain` to a new `OPERATIONS` schematic sheet.
+  - Integration: instantiate `OPERATIONS` exactly once in `TinyCPUMain` and
+    expose explicit inputs and outputs for all signals currently connected to
+    those three boxes. Keep the result and result-valid aggregation on
+    `TinyCPUMain`; no other functional box moves as part of this package.
+  - Success: the Logisim project opens with `TinyCPUMain` as its top-level
+    circuit, the three operation instances occur only on `OPERATIONS`, and the
+    existing ADD, SUB, and NOT signal paths and structural checks remain
+    unchanged in behavior.
+
 ## Next documented work package (completed 2026-08-10)
 
 - [x] **Integrate TinyCPU `SUB_*` accumulator results and validity**

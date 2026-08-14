@@ -2040,7 +2040,10 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="appearance" val="classic"/>
       <a name="label" val="MEMORY_VALID"/>
     </comp>
-    <comp lib="0" loc="(430,460)" name="Constant"/>
+    <comp lib="0" loc="(430,460)" name="Constant">
+      <a name="label" val="ADD_CONST_VALID"/>
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="0" loc="(980,440)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
@@ -2068,9 +2071,12 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="label" val="ACC_ADD_VALID"/>
     </comp>
     <comp lib="2" loc="(480,370)" name="Multiplexer">
+      <a name="label" val="ADD_RIGHT_SOURCE"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="2" loc="(480,450)" name="Multiplexer"/>
+    <comp lib="2" loc="(480,450)" name="Multiplexer">
+      <a name="label" val="ADD_RIGHT_VALID"/>
+    </comp>
     <comp lib="9" loc="(430,512)" name="Text">
       <a name="font" val="SansSerif plain 9"/>
       <a name="text" val="ADD_VALID →"/>
@@ -2192,7 +2198,10 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="label" val="IMMEDIATE_VALUE"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(440,400)" name="Constant"/>
+    <comp lib="0" loc="(440,400)" name="Constant">
+      <a name="label" val="SUB_CONST_VALID"/>
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="1" loc="(550,140)" name="OR Gate">
       <a name="inputs" val="4"/>
       <a name="label" val="ACC_SUB_MEMORY_SELECT"/>
@@ -2201,9 +2210,12 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="label" val="ACC_ADD_VALID"/>
     </comp>
     <comp lib="2" loc="(480,300)" name="Multiplexer">
+      <a name="label" val="SUB_RIGHT_SOURCE"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="2" loc="(490,390)" name="Multiplexer"/>
+    <comp lib="2" loc="(490,390)" name="Multiplexer">
+      <a name="label" val="SUB_RIGHT_VALID"/>
+    </comp>
     <comp lib="9" loc="(447,450)" name="Text">
       <a name="font" val="SansSerif plain 9"/>
       <a name="text" val="ADD_VALID →"/>

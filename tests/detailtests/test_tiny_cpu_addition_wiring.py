@@ -98,6 +98,13 @@ def test_extracted_addition_has_the_restored_operation_interface():
 
     labels = {_attributes(component).get("label") for component in addition.findall("comp")}
     assert {"ADD_RIGHT_SOURCE", "ADD_RIGHT_VALID", "ADD_CONST_VALID"} <= labels
+    add_const_valid = next(
+        component
+        for component in addition.findall("comp")
+        if _attributes(component).get("label") == "ADD_CONST_VALID"
+    )
+    assert add_const_valid.get("name") == "Constant"
+    assert _attributes(add_const_valid).get("value") == "0x1"
     assert any(
         _attributes(component).get("label") == "IMMEDIATE_VALUE"
         and _attributes(component).get("width") == "16"

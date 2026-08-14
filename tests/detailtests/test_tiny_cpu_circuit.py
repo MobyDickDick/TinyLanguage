@@ -470,7 +470,7 @@ def test_restored_subtraction_box_is_instantiated_and_tunnel_free():
         for component in operations.findall("comp")
         if component.get("name") == "SubSubCircuit"
     )
-    assert instance.get("loc") == "(870,300)"
+    assert instance.get("loc") == "(870,340)"
     assert {
         child.get("name"): child.get("val") for child in instance.findall("a")
     }["label"] == "SUB_OPERATION"

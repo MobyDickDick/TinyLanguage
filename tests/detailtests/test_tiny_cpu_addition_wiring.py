@@ -48,10 +48,10 @@ def _reachable(adjacency, source):
 
 def test_extracted_addition_has_the_restored_operation_interface():
     root = ET.parse(PROJECT).getroot()
-    top = next(
+    operations = next(
         circuit
         for circuit in root.findall("circuit")
-        if circuit.get("name") == "TinyCPUMain"
+        if circuit.get("name") == "OPERATIONS"
     )
     addition = next(
         circuit
@@ -60,7 +60,7 @@ def test_extracted_addition_has_the_restored_operation_interface():
     )
     instance = next(
         component
-        for component in top.findall("comp")
+        for component in operations.findall("comp")
         if component.get("name") == "AddSubCircuit"
     )
 
@@ -90,4 +90,8 @@ def test_extracted_addition_has_the_restored_operation_interface():
         "MEMORY_VALID",
         "ACC_VALID",
     }
-    assert not [component for component in top.findall("comp") if component.get("name") == "Tunnel"]
+    assert not [
+        component
+        for component in operations.findall("comp")
+        if component.get("name") == "Tunnel"
+    ]

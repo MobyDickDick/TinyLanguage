@@ -269,7 +269,18 @@ def _component_terminals(component: ET.Element) -> set[str]:
             terminals.update(f"({x + 20},{y + 20 * index})" for index in range(fanout))
         return terminals
     if component.get("name") in {"AND Gate", "OR Gate"}:
-        terminals.update({f"({x - 50},{y - 20})", f"({x - 50},{y + 20})"})
+        inputs = int(attrs.get("inputs", "2"))
+        offsets = (
+            (-20, 20)
+            if inputs == 2
+            else tuple(range(-(inputs // 2) * 10, 0, 10))
+            + tuple(range(10, (inputs // 2 + 1) * 10, 10))
+            if inputs % 2 == 0
+            else tuple(range(-(inputs // 2) * 20, (inputs // 2 + 1) * 20, 20))
+        )
+        terminals.update(
+            f"({x - 50},{y + offset})" for offset in offsets
+        )
     elif component.get("name") == "NOT Gate":
         terminals.add(f"({x - 30},{y})")
     elif component.get("name") in {"Adder", "Subtractor", "Comparator"}:
@@ -365,11 +376,23 @@ def _component_terminal_widths(component: ET.Element) -> dict[str, int]:
             )
         return result
     if name in {"AND Gate", "OR Gate"}:
-        return {
-            location: width,
-            f"({x - 50},{y - 20})": width,
-            f"({x - 50},{y + 20})": width,
-        }
+        inputs = int(attrs.get("inputs", "2"))
+        offsets = (
+            (-20, 20)
+            if inputs == 2
+            else tuple(range(-(inputs // 2) * 10, 0, 10))
+            + tuple(range(10, (inputs // 2 + 1) * 10, 10))
+            if inputs % 2 == 0
+            else tuple(range(-(inputs // 2) * 20, (inputs // 2 + 1) * 20, 20))
+        )
+        result = {location: width}
+        result.update(
+            {
+                f"({x - 50},{y + offset})": width
+                for offset in offsets
+            }
+        )
+        return result
     if name == "NOT Gate":
         return {location: width, f"({x - 30},{y})": width}
     if name in {"Adder", "Subtractor"}:
@@ -900,7 +923,27 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
         for component in electrical:
             attrs = _attributes(component)
             label = attrs.get("label") or component.get("name", "component")
-            for terminal, width in _component_terminal_widths(component).items():
+            if component.get("name", "") in circuit_names:
+                x, y = _location(component.get("loc", ""))
+                inputs = interface_pins(component.get("name", ""), "input")
+                outputs = interface_pins(component.get("name", ""), "output")
+                widths = {
+                    **{
+                        f"({x - 220},{y + 20 * index})": int(
+                            _attributes(pin).get("width", "1")
+                        )
+                        for index, pin in enumerate(inputs)
+                    },
+                    **{
+                        f"({x},{y + 20 * index})": int(
+                            _attributes(pin).get("width", "1")
+                        )
+                        for index, pin in enumerate(outputs)
+                    },
+                }
+            else:
+                widths = _component_terminal_widths(component)
+            for terminal, width in widths.items():
                 terminal_widths.setdefault(terminal, []).append((label, width))
         for net in visited_nets:
             widths = {

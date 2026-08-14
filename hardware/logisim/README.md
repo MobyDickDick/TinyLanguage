@@ -171,6 +171,15 @@ Schaltung. Fetch/Decode ist dabei in den Zustands- und ROM-Pfad (`FetchDecode`)
 sowie die eigentliche Steuersignaldecodierung (`FetchDecodeControls`)
 aufgeteilt.
 
+Das Blatt `Operations` sowie seine Auswahlblöcke `AddSubCircuit` und
+`SubSubCircuit` besitzen getrennte, rechtwinklige Leitungswege für Steuerbits,
+16-Bit-Operanden und Gültigkeitssignale. Insbesondere enden die Daten- und
+Select-Leitungen an den tatsächlichen Multiplexeranschlüssen; gemeinsame
+Operanden werden über eigene Fan-out-Korridore verteilt. Dadurch entstehen an
+Kreuzungen weder versehentliche Busverbindungen noch mehrere Treiber auf einem
+Netz. Der Strukturtest verlangt für alle drei Blätter einen vollständig
+verbundenen Zustand.
+
 Sie werden reproduzierbar aus dem Hauptprojekt erzeugt. Der Befehl liest
 `TinyCPU.circ`, schreibt aber nur Dateien in das angegebene Diagnoseverzeichnis;
 er ist ausdrücklich **kein** Weg, das Blatt `TinyCPUMain` wiederherzustellen oder

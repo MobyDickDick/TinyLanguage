@@ -191,6 +191,13 @@ Der Decoder muss weiterhin garantieren, dass höchstens eine Operation aktiv
 ist; eine Mehrfachaktivierung wäre sonst kein Multiplexing, sondern würde die
 Datenwörter bitweise vermischen.
 
+Das neu gezeichnete Integrationsblatt behält die drei getrennten Boxen für
+`AddSubCircuit`, `SubSubCircuit` und `NotCircuit` bei. Zwei explizite,
+zweistufige ODER-Bäume führen deren neutrale Daten- beziehungsweise
+Valid-Ausgänge auf `OPERATION_RESULT` und `OPERATION_VALID` zusammen. Damit
+werden weder Ausgangstreiber direkt zusammengeschaltet noch Daten und
+Gültigkeit unterschiedlich priorisiert.
+
 `NotCircuit` erfüllt diesen Vertrag bereits direkt: `ACTIVE_NOT_RESULT` sperrt
 das invertierte Datenwort mit `NOT_SELECT`, und `ACTIVE_NOT_VALID` sperrt das
 zugehörige Valid-Bit. Die ADD- und SUB-Zweige nullen ihre Operanden derzeit über

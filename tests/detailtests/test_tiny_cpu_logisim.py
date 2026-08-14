@@ -1412,6 +1412,31 @@ def test_not_operation_gates_data_and_valid_with_activity():
     assert {"ACTIVE_NOT_RESULT", "ACTIVE_NOT_VALID"} <= labels
 
 
+def test_operation_data_and_validity_are_combined_by_explicit_or_trees():
+    """Keep operation outputs single-driver while preserving the redrawn boxes."""
+
+    circuit = _top_level(ET.parse(PROJECT).getroot())
+    components = {
+        _attributes(component).get("label"): component
+        for component in circuit.findall("comp")
+        if _attributes(component).get("label")
+    }
+    expected_gates = {
+        "ADD_OR_SUB_RESULT": "16",
+        "OPERATION_RESULT_OR": "16",
+        "ADD_OR_SUB_VALID": "1",
+        "OPERATION_VALID_OR": "1",
+    }
+    for label, width in expected_gates.items():
+        gate = components[label]
+        assert gate.get("name") == "OR Gate"
+        assert _attributes(gate).get("width", "1") == width
+
+    assert _attributes(components["OPERATION_RESULT"])["type"] == "output"
+    assert _attributes(components["OPERATION_RESULT"])["width"] == "16"
+    assert _attributes(components["OPERATION_VALID"])["type"] == "output"
+
+
 def test_unary_and_subtraction_boxes_export_a_uniform_operation_contract():
     """Each independently selectable operation reports data, status and activity."""
 

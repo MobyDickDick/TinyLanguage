@@ -567,6 +567,21 @@ def test_inspector_rejects_diagonal_wire_segments(tmp_path):
     )
 
 
+def test_checked_in_tinycpu_contains_only_orthogonal_wire_segments():
+    """Keep malformed diagonal nets out of the project Logisim must load."""
+
+    root = ET.parse(PROJECT).getroot()
+    diagonal = []
+    for circuit in root.findall("circuit"):
+        for wire in circuit.findall("wire"):
+            start = tuple(int(value) for value in wire.get("from").strip("()").split(","))
+            end = tuple(int(value) for value in wire.get("to").strip("()").split(","))
+            if start[0] != end[0] and start[1] != end[1]:
+                diagonal.append((circuit.get("name"), start, end))
+
+    assert diagonal == []
+
+
 def test_split_leaf_circuits_produces_independent_projects(tmp_path):
     written = split_leaf_circuits(PROJECT, tmp_path)
     source_circuits = {

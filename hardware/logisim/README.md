@@ -179,6 +179,27 @@ contains only their explicit interconnection and selection logic. Every
 component and subcircuit instance has a unique label so that signals remain
 traceable in Logisim and in the dependency-free inspector.
 
+### Neutrale Operationsausgänge
+
+Die Operationszweige werden schrittweise auf einen neutralen Ausgangsvertrag
+umgestellt: Ein nicht ausgewählter Zweig liefert sowohl für `RESULT` als auch
+für `RESULT_VALID` null. Dadurch dürfen die Daten aller Zweige mit bitweisen
+OR-Gattern zusammengeführt werden. **Auch die Valid-Bits müssen dabei mit OR,
+nicht mit AND, vereinigt werden**: Da jeder inaktive Zweig null liefert, würde
+eine AND-Verknüpfung den gültigen aktiven Zweig stets wieder auf null ziehen.
+Der Decoder muss weiterhin garantieren, dass höchstens eine Operation aktiv
+ist; eine Mehrfachaktivierung wäre sonst kein Multiplexing, sondern würde die
+Datenwörter bitweise vermischen.
+
+`NotCircuit` erfüllt diesen Vertrag bereits direkt: `ACTIVE_NOT_RESULT` sperrt
+das invertierte Datenwort mit `NOT_SELECT`, und `ACTIVE_NOT_VALID` sperrt das
+zugehörige Valid-Bit. Die ADD- und SUB-Zweige nullen ihre Operanden derzeit über
+die vorhandenen Eingangs-Multiplexer. Beim weiteren Umbau sind ihre
+Ergebnis-Valid-Bits ebenfalls explizit mit dem jeweiligen Aktivierungssignal zu
+sperren, bevor die bisherigen Auswahl-Multiplexer durch OR-Bäume ersetzt
+werden. Das ist bewusst eine inkrementelle Fortführung der vorhandenen
+Schaltung und kein erneutes Ersetzen des Hauptblatts.
+
 - `TinyCPUMain` connects the functional subcircuits and is the top-level circuit selected when the project is opened;
 - `AddSub` bündelt die beiden parallelen 16-Bit-Operanden in einem 32-Bit-Bus und die beiden Gültigkeitsleitungen in einem 2-Bit-Bus. Erst auf dem eigenen Schemablatt teilen Splitter diese Busse für den 16-Bit-Addierer und -Subtrahierer auf; ein gemeinsamer Selektor führt genau ein Ergebnis zurück. Das Blatt kommt vollständig ohne Tunnel aus und bildet damit die neue, kompakte Grenze für den arithmetischen ADD/SUB-Strang;
   its accumulator integration is visually grouped into a decode column and compact,

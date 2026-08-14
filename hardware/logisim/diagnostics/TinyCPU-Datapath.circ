@@ -40,7 +40,6 @@
     <comp lib="0" loc="(450,190)" name="Constant">
       <a name="value" val="0x0"/>
       <a name="width" val="16"/>
-      <a name="label" val="CONSTANT_450_190"/>
     </comp>
     <comp lib="0" loc="(480,130)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -69,7 +68,6 @@
     </comp>
     <comp lib="3" loc="(520,180)" name="Comparator">
       <a name="width" val="16"/>
-      <a name="label" val="COMPARATOR_520_180"/>
     </comp>
     <comp lib="5" loc="(270,100)" name="Register">
       <a name="appearance" val="logisim_evolution"/>

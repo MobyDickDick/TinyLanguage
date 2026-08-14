@@ -596,7 +596,7 @@
     <comp lib="0" loc="(600,210)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="DATA_VALID"/>
+      <a name="label" val="VALID_OUT"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(600,320)" name="Pin">
@@ -902,6 +902,7 @@
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(410,290)" name="Constant">
+      <a name="label" val="PC_INCREMENT"/>
       <a name="value" val="0xffff"/>
       <a name="width" val="16"/>
     </comp>
@@ -1590,7 +1591,9 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="appearance" val="classic"/>
       <a name="label" val="NOT_SELECT"/>
     </comp>
-    <comp lib="0" loc="(330,150)" name="Constant"/>
+    <comp lib="0" loc="(330,150)" name="Constant">
+      <a name="label" val="NO_OVERFLOW"/>
+    </comp>
     <comp lib="0" loc="(400,100)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
@@ -1626,12 +1629,29 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(100,100)" to="(230,100)"/>
     <wire from="(110,160)" to="(260,160)"/>
     <wire from="(130,220)" to="(260,220)"/>
-    <wire from="(260,100)" to="(400,100)"/>
+    <comp lib="0" loc="(300,70)" name="Constant">
+      <a name="label" val="INACTIVE_NOT_RESULT"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="4" loc="(350,100)" name="Multiplexer">
+      <a name="label" val="ACTIVE_NOT_RESULT"/>
+      <a name="width" val="16"/>
+    </comp>
+    <wire from="(260,100)" to="(300,100)"/>
+    <wire from="(300,100)" to="(300,110)"/>
+    <wire from="(300,110)" to="(320,110)"/>
+    <wire from="(300,70)" to="(310,70)"/>
+    <wire from="(310,70)" to="(310,90)"/>
+    <wire from="(310,90)" to="(320,90)"/>
+    <wire from="(270,120)" to="(270,220)"/>
+    <wire from="(270,120)" to="(330,120)"/>
+    <wire from="(350,100)" to="(400,100)"/>
     <wire from="(260,160)" to="(260,170)"/>
     <wire from="(260,170)" to="(280,170)"/>
     <wire from="(260,210)" to="(260,220)"/>
     <wire from="(260,210)" to="(280,210)"/>
-    <wire from="(260,220)" to="(400,220)"/>
+    <wire from="(260,220)" to="(270,220)"/>
+    <wire from="(270,220)" to="(400,220)"/>
     <wire from="(330,150)" to="(400,150)"/>
     <wire from="(330,190)" to="(400,190)"/>
   </circuit>

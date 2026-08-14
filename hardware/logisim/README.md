@@ -193,16 +193,16 @@ Struktur- oder Verhaltenstest dieselbe Datenquelle bestätigen:
   den rechten Operanden aus dem Speicher. Die gezielten Regressionstests
   unterscheiden bewusst Akkumulator, Konstante, Adresse, Offset und
   Speicherinhalt, sodass ein versehentlich verwendetes Befehlsfeld auffällt.
-- [ ] `AddSubCircuit` korrigieren: `LEFT` muss von `Datapath.ACC_OUT` kommen.
+- [x] `AddSubCircuit` korrigieren: `LEFT` muss von `Datapath.ACC_OUT` kommen.
   `RIGHT` benötigt einen durch die vier `ADD_*`-Signale gesteuerten Pfad, der
   nur für `ADD_CONST` den unmittelbaren Operanden und sonst
   `Memory.MEMORY_DATA` verwendet. Direkte Adresse, Adressregister und
   Adressregister-plus-Offset bestimmen dabei ausschließlich die Speicheradresse.
-- [ ] `SubSubCircuit` symmetrisch korrigieren. Gerade bei `SUB` darf weder die
+- [x] `SubSubCircuit` symmetrisch korrigieren. Gerade bei `SUB` darf weder die
   Reihenfolge vertauscht noch für eine indirekte Variante der konstante
   Befehlsoperand subtrahiert werden: Das Ergebnis ist immer
   `ACC_OUT - selected_right_operand`.
-- [ ] Die Validität der ADD/SUB-Datenquelle parallel zum Datenmultiplexer
+- [x] Die Validität der ADD/SUB-Datenquelle parallel zum Datenmultiplexer
   führen: `*_CONST` liefert einen gültigen unmittelbaren Wert; jede
   Speicherform benötigt `Memory.MEMORY_VALID`; beide Fälle benötigen zusätzlich
   `Datapath.ACC_VALID_OUT`. Ein ungültiger Adressregister- oder Speicherwert
@@ -224,17 +224,18 @@ Struktur- oder Verhaltenstest dieselbe Datenquelle bestätigen:
   Fehlerflags integrieren; bis dahin dürfen neutrale Operationsausgänge nicht
   als Beleg für inhaltlich richtige Operandenwahl gelten.
 
-Das nächste Hardware-Arbeitspaket sind somit die beiden offenen
-`AddSubCircuit`-/`SubSubCircuit`-Punkte einschließlich ihrer Validität. Die
-Referenztests sind der erste abgeschlossene Teil der Korrektur und sollen beim
-Umbau gegen die Logisim-Ausführung beziehungsweise eine Schaltungsspur
-gespiegelt werden.
+Die `AddSubCircuit`-/`SubSubCircuit`-Punkte einschließlich ihrer Validität sind
+nun abgeschlossen: Beide Boxen verwenden `ACC_OUT` links und wählen rechts
+parallel zwischen unmittelbarem Befehlswert und Speicherwert samt zugehöriger
+Gültigkeit. Als nächstes wird `SET_INV` für aktive Operationen mit ungültiger
+Quelle integriert; danach folgt die gemeinsame effektive Adressauswahl.
 
 `TinyCPUMain` is the integration sheet. Stateful blocks are encapsulated on
-named subpages, and its single `OPERATIONS` instance groups the independently
-selectable `AddSubCircuit`, `SubSubCircuit`, and `NotCircuit` boxes. Their
-explicit input and output ports preserve the existing signal paths, while the
-result and result-valid aggregation remains on `TinyCPUMain`. Every
+named subpages, and its single `Operations` instance groups the independently
+selectable `AddSubCircuit`, `SubSubCircuit`, and `NotCircuit` boxes. Shared
+instruction, memory, accumulator, and validity values cross that boundary only
+once; result, result-valid, and overflow aggregation remains local to
+`Operations`. Every
 component and subcircuit instance has a unique label so that signals remain
 traceable in Logisim and in the dependency-free inspector.
 

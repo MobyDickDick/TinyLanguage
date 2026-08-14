@@ -181,10 +181,11 @@ Koordinaten der überholten Zeichnung; die drei Akkumulator-Multiplexer behalten
 lediglich eindeutige, nicht-elektrische Bezeichner.
 
 Die drei funktionalen Kästen `AddSubCircuit`, `SubSubCircuit` und `NotCircuit`
-sind nun auf dem eigenen Blatt `OPERATIONS` gekapselt. `TinyCPUMain` enthält
-genau eine Instanz dieses Blatts und behält die Zusammenführung von `RESULT`
-und `RESULT_VALID`; alle bisherigen Steuer-, Daten- und Validitätssignale
-überschreiten die neue Grenze über explizite Pins.
+sind nun auf dem eigenen Blatt `Operations` gekapselt. `TinyCPUMain` enthält
+genau eine Instanz dieses Blatts. Gemeinsam verwendete Befehls-, Speicher-,
+Akkumulator- und Validitätswerte überschreiten die Grenze jeweils nur einmal;
+`Operations` führt `RESULT`, `RESULT_VALID` und `OVERFLOW` lokal zusammen und
+exportiert je ein gemeinsames Signal.
 
 Für alle weiteren Arbeitspakete gilt: Eine sichtbare rechtwinklige Leitung hat
 Vorrang vor einem benannten Tunnel. Vor dem Einsatz eines Tunnels sind Symbole

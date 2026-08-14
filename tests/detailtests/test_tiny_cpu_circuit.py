@@ -232,14 +232,8 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
     )
 
     assert not [item for item in top.findall("comp") if item.get("name") == "Tunnel"]
-    signal_labels = {
-        child.get("val")
-        for component in top.findall("comp")
-        if component.get("name") == "Text"
-        for child in component.findall("a")
-        if child.get("name") == "text"
-    }
-    assert {"ACC_VALUE →", "SUB_ADDRESS/CONST →"} <= signal_labels
+    operations = next(item for item in root.findall("circuit") if item.get("name") == "Operations")
+    assert not [item for item in operations.findall("comp") if item.get("name") == "Tunnel"]
     addition = next(
         item
         for item in root.findall("circuit")
@@ -254,7 +248,7 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
     }
     assert "ADD_VALID →" in addition_labels
     operations = next(
-        item for item in root.findall("circuit") if item.get("name") == "OPERATIONS"
+        item for item in root.findall("circuit") if item.get("name") == "Operations"
     )
     labels = {
         child.get("val")
@@ -362,7 +356,7 @@ def test_validity_subcircuits_have_expected_interfaces_when_present():
     assert pin_labels(subtraction) == {
         "SUB_ADDRESS", "SUB_ADDRESS_REGISTER",
         "SUB_ADDRESS_REGISTER_PLUS_OFFSET", "SUB_CONST", "MEMORY_VALUE",
-        "ACC_VALUE", "MEMORY_VALID", "ACC_VALID", "RESULT", "OVERFLOW",
+        "ACC_VALUE", "IMMEDIATE_VALUE", "MEMORY_VALID", "ACC_VALID", "RESULT", "OVERFLOW",
         "RESULT_VALID",
     }
 
@@ -443,14 +437,14 @@ def test_restored_subtraction_box_is_instantiated_and_tunnel_free():
 
     root = ET.parse(PROJECT).getroot()
     operations = next(
-        item for item in root.findall("circuit") if item.get("name") == "OPERATIONS"
+        item for item in root.findall("circuit") if item.get("name") == "Operations"
     )
     instance = next(
         component
         for component in operations.findall("comp")
         if component.get("name") == "SubSubCircuit"
     )
-    assert instance.get("loc") == "(700,260)"
+    assert instance.get("loc") == "(870,300)"
     assert {
         child.get("name"): child.get("val") for child in instance.findall("a")
     }["label"] == "SUB_OPERATION"
@@ -462,7 +456,7 @@ def test_result_merge_has_a_visible_routing_lane():
     """Freeze the compact data OR anchor used by the maintained merge lane."""
 
     root = ET.parse(PROJECT).getroot()
-    top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPUMain")
+    top = next(item for item in root.findall("circuit") if item.get("name") == "Operations")
     result_or = next(
         component
         for component in top.findall("comp")
@@ -476,7 +470,7 @@ def test_result_merge_has_a_visible_routing_lane():
     result_or_x, result_or_y = (
         int(value) for value in result_or.get("loc").strip("()").split(",")
     )
-    assert (result_or_x, result_or_y) == (2050, 660)
+    assert (result_or_x, result_or_y) == (1100, 300)
 
 
 def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():

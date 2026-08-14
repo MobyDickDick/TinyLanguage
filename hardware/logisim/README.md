@@ -18,6 +18,11 @@ in diesem Repository dürfen ausschließlich die eigenständigen Dateien unter
 `diagnostics/` aktualisieren; Ausgangspunkt bleibt immer die eingecheckte
 `TinyCPU.circ` mit ihrer vorhandenen Seitenstruktur.
 
+Der Hardware-Vertragscheck prüft diese Hierarchie auf direkte und indirekte
+rekursive Unterblatt-Aufrufe. Solche Zyklen werden abgewiesen, weil Logisim beim
+Laden andernfalls die Symbole unbegrenzt expandieren und dabei den verfügbaren
+Speicher aufbrauchen kann.
+
 Eine ausfüllbare Schritt-für-Schritt-Vorlage für die weitere Integration steht
 in [`docs/tiny_cpu_top_level_template.md`](../../docs/tiny_cpu_top_level_template.md).
 Sie schreibt insbesondere vor, Leitungen in freien Korridoren **um** Symbole

@@ -365,7 +365,11 @@ def _component_terminal_widths(component: ET.Element) -> dict[str, int]:
             )
         return result
     if name in {"AND Gate", "OR Gate"}:
-        return {location: 1, f"({x - 50},{y - 20})": 1, f"({x - 50},{y + 20})": 1}
+        return {
+            location: width,
+            f"({x - 50},{y - 20})": width,
+            f"({x - 50},{y + 20})": width,
+        }
     if name == "NOT Gate":
         return {location: width, f"({x - 30},{y})": width}
     if name in {"Adder", "Subtractor"}:

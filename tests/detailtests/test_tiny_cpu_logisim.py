@@ -1507,3 +1507,37 @@ def test_memory_address_selector_includes_indirect_addressing_modes():
         _, inputs = _gate_ports(_labelled_component(circuit, label))
         connected = {next(iter(_reachable(adjacency, _control_output(root, f"{family}_{suffix}")) & inputs)) for family in ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR", "STORE")}
         assert connected == inputs
+
+
+def test_effective_address_tunnels_sit_on_the_correct_symbol_side():
+    """Keep producer tunnels east and the Memory consumer tunnel west."""
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    all_tunnels = [
+        component for component in circuit.findall("comp")
+        if component.get("name") == "Tunnel"
+    ]
+    tunnels = {
+        _attributes(component)["label"]: component
+        for component in all_tunnels
+        if _attributes(component).get("facing", "east") == "east"
+    }
+
+    # Automatic subcircuit symbols put outputs on their eastern edge.  The
+    # instance location is the western input anchor, so using it for a tunnel
+    # puts labels on top of the symbol (and connects them to the wrong side).
+    assert tunnels["EFFECTIVE_REGISTER_ADDRESS"].get("loc") == "(820,130)"
+    assert tunnels["EFFECTIVE_OFFSET_ADDRESS"].get("loc") == "(820,150)"
+    for family in ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR", "STORE"):
+        for mode in ("REGISTER", "OFFSET"):
+            tunnel = tunnels[f"EFFECTIVE_{family}_{mode}"]
+            assert int(tunnel.get("loc").strip("()").split(",")[0]) == 960
+            assert _attributes(tunnel).get("facing", "east") == "east"
+
+    memory_input = next(
+        component for component in all_tunnels
+        if _attributes(component).get("label") == "EFFECTIVE_MEMORY_ADDRESS"
+        and _attributes(component).get("facing") == "west"
+    )
+    assert memory_input.get("loc") == "(110,300)"
+    assert _attributes(memory_input)["facing"] == "west"

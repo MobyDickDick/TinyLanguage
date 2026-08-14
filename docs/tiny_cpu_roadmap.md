@@ -180,6 +180,12 @@ erzeugten Symbole entsprechend ab und verlangen nicht länger die Tunnel und
 Koordinaten der überholten Zeichnung; die drei Akkumulator-Multiplexer behalten
 lediglich eindeutige, nicht-elektrische Bezeichner.
 
+Die drei funktionalen Kästen `AddSubCircuit`, `SubSubCircuit` und `NotCircuit`
+sind nun auf dem eigenen Blatt `OPERATIONS` gekapselt. `TinyCPUMain` enthält
+genau eine Instanz dieses Blatts und behält die Zusammenführung von `RESULT`
+und `RESULT_VALID`; alle bisherigen Steuer-, Daten- und Validitätssignale
+überschreiten die neue Grenze über explizite Pins.
+
 Für alle weiteren Arbeitspakete gilt: Eine sichtbare rechtwinklige Leitung hat
 Vorrang vor einem benannten Tunnel. Vor dem Einsatz eines Tunnels sind Symbole
 zu verschieben und freie Leitungskorridore zu prüfen. Nur wenn beides keine

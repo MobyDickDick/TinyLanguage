@@ -5,9 +5,9 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
-## Next documented work package
+## Next documented work package (completed 2026-08-14)
 
-- [ ] **Move the TinyCPU operation boxes to an `OPERATIONS` sheet**
+- [x] **Move the TinyCPU operation boxes to an `OPERATIONS` sheet**
   (Owner: TinyCPU/Hardware)
   - Scope: move only the three `AddSubCircuit`, `SubSubCircuit`, and
     `NotCircuit` instances (the `ADD_SUB`, `SUB_SUB`, and `NOT` functional
@@ -20,6 +20,13 @@ archived in `docs/open_tasks_archive.md`.
     circuit, the three operation instances occur only on `OPERATIONS`, and the
     existing ADD, SUB, and NOT signal paths and structural checks remain
     unchanged in behavior.
+  - Result: `TinyCPUMain` now contains one labelled `OPERATIONS_INSTANCE` with
+    explicit, typed boundary ports. The `ADD_OPERATION`, `SUB_OPERATION`, and
+    `NOT_OPERATION` instances live only on the tunnel-free `OPERATIONS` sheet;
+    their result and result-valid outputs still feed the aggregation gates on
+    `TinyCPUMain`.
+  - Follow-up: correct and validate the ADD/SUB operand sources described in
+    the hardware correction backlog before moving another functional box.
 
 ## Next documented work package (completed 2026-08-10)
 

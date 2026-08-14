@@ -253,9 +253,13 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
         if child.get("name") == "text"
     }
     assert "ADD_VALID →" in addition_labels
+    operations = next(
+        item for item in root.findall("circuit") if item.get("name") == "OPERATIONS"
+    )
     labels = {
         child.get("val")
-        for component in top.findall("comp")
+        for circuit in (top, operations)
+        for component in circuit.findall("comp")
         if component.get("name") != "Pin"
         for child in component.findall("a")
         if child.get("name") == "label"
@@ -438,13 +442,15 @@ def test_restored_subtraction_box_is_instantiated_and_tunnel_free():
     """Protect the redrawn subtraction boundary rather than an old selector layout."""
 
     root = ET.parse(PROJECT).getroot()
-    top = next(item for item in root.findall("circuit") if item.get("name") == "TinyCPUMain")
+    operations = next(
+        item for item in root.findall("circuit") if item.get("name") == "OPERATIONS"
+    )
     instance = next(
         component
-        for component in top.findall("comp")
+        for component in operations.findall("comp")
         if component.get("name") == "SubSubCircuit"
     )
-    assert instance.get("loc") == "(1740,750)"
+    assert instance.get("loc") == "(700,260)"
     assert {
         child.get("name"): child.get("val") for child in instance.findall("a")
     }["label"] == "SUB_OPERATION"

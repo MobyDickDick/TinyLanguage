@@ -1045,8 +1045,8 @@ def test_ci_runs_the_fresh_checkout_hardware_verifier():
     assert "PYTHONPATH=src python src/tiny_cpu_verify.py" in workflow
 
 
-def test_tinycpu_sheet_is_the_integration_sheet():
-    """Keep the hand-maintained functional subcircuits on the TinyCPU sheet."""
+def test_tinycpu_sheet_uses_the_operations_sheet_as_its_only_operation_box():
+    """Keep operation boxes encapsulated behind one explicit integration boundary."""
 
     root = ET.parse(PROJECT).getroot()
     top = next(c for c in root.findall("circuit") if c.get("name") == "TinyCPUMain")
@@ -1057,8 +1057,33 @@ def test_tinycpu_sheet_is_the_integration_sheet():
     }
     assert {
         "Datapath", "AddressPath", "Memory", "ErrorFlags", "FetchDecode",
-        "FetchDecodeControls", "DecodeSignals", "AddSubCircuit",
+        "FetchDecodeControls", "DecodeSignals", "OPERATIONS",
     } <= subcircuits
+    assert not {"AddSubCircuit", "SubSubCircuit", "NotCircuit"} & subcircuits
+
+    operations = next(
+        c for c in root.findall("circuit") if c.get("name") == "OPERATIONS"
+    )
+    operation_boxes = [
+        component.get("name")
+        for component in operations.findall("comp")
+        if component.get("name") in {"AddSubCircuit", "SubSubCircuit", "NotCircuit"}
+    ]
+    assert sorted(operation_boxes) == ["AddSubCircuit", "NotCircuit", "SubSubCircuit"]
+    owners = {
+        box: [
+            circuit.get("name")
+            for circuit in root.findall("circuit")
+            for component in circuit.findall("comp")
+            if component.get("name") == box
+        ]
+        for box in operation_boxes
+    }
+    assert owners == {
+        "AddSubCircuit": ["OPERATIONS"],
+        "SubSubCircuit": ["OPERATIONS"],
+        "NotCircuit": ["OPERATIONS"],
+    }
 
 def test_logisim_starter_matches_default_hardware_profile():
     root = ET.parse(PROJECT).getroot()

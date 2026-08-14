@@ -230,9 +230,11 @@ Referenztests sind der erste abgeschlossene Teil der Korrektur und sollen beim
 Umbau gegen die Logisim-Ausführung beziehungsweise eine Schaltungsspur
 gespiegelt werden.
 
-`TinyCPUMain` is the integration sheet. Stateful blocks and independently
-selectable operations are encapsulated on named subpages, while the main sheet
-contains only their explicit interconnection and selection logic. Every
+`TinyCPUMain` is the integration sheet. Stateful blocks are encapsulated on
+named subpages, and its single `OPERATIONS` instance groups the independently
+selectable `AddSubCircuit`, `SubSubCircuit`, and `NotCircuit` boxes. Their
+explicit input and output ports preserve the existing signal paths, while the
+result and result-valid aggregation remains on `TinyCPUMain`. Every
 component and subcircuit instance has a unique label so that signals remain
 traceable in Logisim and in the dependency-free inspector.
 

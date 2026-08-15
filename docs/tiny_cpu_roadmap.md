@@ -187,6 +187,12 @@ Akkumulator- und Validitätswerte überschreiten die Grenze jeweils nur einmal;
 `Operations` führt `RESULT`, `RESULT_VALID` und `OVERFLOW` lokal zusammen und
 exportiert je ein gemeinsames Signal.
 
+Die manuelle Fetch/Decode-Anpassung wird ebenfalls als maßgeblich behandelt:
+Die Überlaufprüfung des Programmzählers ist nach dessen Hochzählen angeordnet.
+Regressionstests verfolgen diese Stufen anhand ihrer relativen Topologie und
+dürfen weder die früheren absoluten Koordinaten noch die alte Anordnung
+wiederherstellen.
+
 Für alle weiteren Arbeitspakete gilt: Eine sichtbare rechtwinklige Leitung hat
 Vorrang vor einem benannten Tunnel. Vor dem Einsatz eines Tunnels sind Symbole
 zu verschieben und freie Leitungskorridore zu prüfen. Nur wenn beides keine

@@ -585,9 +585,12 @@ have these sequences:
 | `PRINT` | present the valid accumulator to the output boundary | emit once; increment `PC` |
 | `HALT` | assert the normal halt output | retain halted state and `PC` |
 
-Before decode, `PC_RANGE` compares `PC` with the exclusive `PROGRAM_LIMIT`.
-An invalid fetch asserts both `SET_ADDR` and `HALT_ERROR`; no instruction is
-committed and the error halt retains the failing PC for diagnosis.
+The hand-maintained `FetchDecode` drawing now arranges the program-counter
+increment before the `PC_RANGE` overflow check. This ordering is intentional:
+the range decision belongs to the incremented program-counter path, not to the
+former pre-increment layout. Structural regression checks therefore follow the
+relative increment/range topology and must not restore the old component
+coordinates. An invalid result asserts both `SET_ADDR` and `HALT_ERROR`.
 
 ## AP 6 complete symbolic control surface
 

@@ -7,6 +7,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-15)
 
+- [x] **Revalidate the post-increment TinyCPU program-counter range check**
+  (Owner: TinyCPU/Hardware)
+  - Success: retain the manually redrawn `FetchDecode` layout in which the
+    program-counter increment is arranged before the range-check stage; do not
+    restore the former increment constant, comparator, or error-gate positions.
+  - Result: the structural regression now identifies the increment and range
+    stages by their relative topology rather than obsolete absolute coordinates.
+    The generated `FetchDecode` diagnostic matches the maintained circuit. The
+    unrelated effective-address selector names and counter-clockwise error-gate
+    terminal stubs were also preserved while refreshing all diagnostics.
+  - Follow-up: complete the central address-range check for direct, register,
+    and register-plus-offset results.
+
+## Next documented work package (completed 2026-08-15)
+
 - [x] **Revalidate the counter-clockwise TinyCPU address-error routing**
   (Owner: TinyCPU/Hardware)
   - Success: retain the manually moved, east-facing offset-error gate and its

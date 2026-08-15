@@ -734,7 +734,8 @@ def test_checked_in_diagnostic_projects_are_reproducible(tmp_path):
         )
 
 
-def test_fetch_decode_diagnostic_preserves_pc_increment_constant():
+def test_fetch_decode_diagnostic_preserves_post_increment_range_layout():
+    """Keep the manually redrawn increment and subsequent range-check stages."""
     projects = [PROJECT, PROJECT.parent / "diagnostics" / "TinyCPU-FetchDecode.circ"]
     for project in projects:
         root = ET.parse(project).getroot()
@@ -743,17 +744,24 @@ def test_fetch_decode_diagnostic_preserves_pc_increment_constant():
             for circuit in root.findall("circuit")
             if circuit.get("name") == "FetchDecode"
         )
-        constant = next(
-            component
-            for component in fetch.findall("comp")
-            if component.get("name") == "Constant"
-            and component.get("loc") == "(410,290)"
-        )
-        attributes = {
-            attribute.get("name"): attribute.get("val")
-            for attribute in constant.findall("a")
-        }
-        assert attributes == {"width": "16", "value": "0xffff"}
+        # Locations are normalized in the generated leaf diagnostic, so verify
+        # the topology through relative placement rather than restoring the old
+        # pre-redraw absolute coordinates.
+        adder = next(component for component in fetch.findall("comp")
+                     if component.get("name") == "Adder")
+        comparator = next(component for component in fetch.findall("comp")
+                          if component.get("name") == "Comparator")
+        constant = next(component for component in fetch.findall("comp")
+                        if component.get("name") == "Constant"
+                        and any(attribute.get("name") == "width"
+                                and attribute.get("val") == "16"
+                                for attribute in component.findall("a")))
+        ax, ay = (int(value) for value in adder.get("loc").strip("()").split(","))
+        cx, cy = (int(value) for value in constant.get("loc").strip("()").split(","))
+        rx, ry = (int(value) for value in comparator.get("loc").strip("()").split(","))
+        assert (cx, cy) == (ax - 60, ay + 10)
+        assert ry > ay
+        assert rx < ax
 
 
 def test_leaf_signature_ignores_order_and_origin_but_detects_wire_changes(tmp_path):

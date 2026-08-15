@@ -199,10 +199,12 @@
     <wire from="(200,20)" to="(200,340)"/>
     <wire from="(200,20)" to="(950,20)"/>
     <wire from="(200,340)" to="(350,340)"/>
-    <wire from="(2010,1000)" to="(2070,1000)"/>
     <wire from="(2010,960)" to="(2010,1000)"/>
+    <wire from="(2010,1000)" to="(2070,1000)"/>
+    <wire from="(2070,990)" to="(2070,1000)"/>
     <wire from="(2030,310)" to="(2030,960)"/>
     <wire from="(2030,960)" to="(2070,960)"/>
+    <wire from="(2070,960)" to="(2070,970)"/>
     <wire from="(2120,980)" to="(2190,980)"/>
     <wire from="(2130,30)" to="(2130,520)"/>
     <wire from="(2140,20)" to="(2140,540)"/>
@@ -398,9 +400,11 @@
       <a name="label" val="MEMORY_ADDRESS_OFFSET_SELECT"/>
     </comp>
     <comp lib="2" loc="(750,220)" name="Multiplexer">
+      <a name="label" val="MEMORY_REGISTER_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(750,580)" name="Multiplexer">
+      <a name="label" val="MEMORY_OFFSET_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <wire from="(300,160)" to="(490,160)"/>

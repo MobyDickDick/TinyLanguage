@@ -469,7 +469,7 @@ def test_top_level_has_visible_labels_on_wires_at_components():
     """Name signals beside component ports without hiding them in tunnels."""
 
     circuit = _top_level(ET.parse(PROJECT).getroot())
-    assert all(_attributes(c).get("label", "").startswith("EFFECTIVE_") for c in circuit.findall("comp") if c.get("name") == "Tunnel")
+    assert not [c for c in circuit.findall("comp") if c.get("name") == "Tunnel"]
     operations = next(
         c for c in ET.parse(PROJECT).getroot().findall("circuit")
         if c.get("name") == "Operations"
@@ -1489,7 +1489,10 @@ def test_unary_and_subtraction_boxes_export_a_uniform_operation_contract():
 def test_memory_address_selector_includes_indirect_addressing_modes():
     """Memory selects direct, register, and register-plus-offset addresses."""
     root = ET.parse(PROJECT).getroot()
-    circuit = next(item for item in root.findall("circuit") if item.get("name") == "FBox")
+    circuit = next(
+        item for item in root.findall("circuit")
+        if item.get("name") == "EffectiveAddress"
+    )
     register_mux = _labelled_component(circuit, "MEMORY_REGISTER_ADDRESS_SELECT")
     offset_mux = _labelled_component(circuit, "MEMORY_OFFSET_ADDRESS_SELECT")
     def ports(component):
@@ -1514,45 +1517,19 @@ def test_memory_address_selector_includes_indirect_addressing_modes():
         assert len(connected) == 8
 
 
-def test_effective_address_tunnels_keep_the_existing_layout():
-    """Keep the established tunnel placement while repairing its wiring."""
+def test_effective_address_sheet_keeps_the_existing_selector_layout():
+    """Keep the extracted selector layout without top-level tunnels."""
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
-    all_tunnels = [
+    assert not [
         component for component in circuit.findall("comp")
         if component.get("name") == "Tunnel"
     ]
-    producer_tunnels = {
-        _attributes(component)["label"]: component
-        for component in all_tunnels
-        if int(component.get("loc").strip("()").split(",")[0]) < 1300
-    }
 
-    expected_locations = {
-        "EFFECTIVE_REGISTER_ADDRESS": "(910,30)",
-        "EFFECTIVE_OFFSET_ADDRESS": "(1070,230)",
-        "EFFECTIVE_LOAD_REGISTER": "(910,440)",
-        "EFFECTIVE_LOAD_OFFSET": "(920,480)",
-        "EFFECTIVE_ADD_REGISTER": "(1170,440)",
-        "EFFECTIVE_ADD_OFFSET": "(1180,480)",
-        "EFFECTIVE_SUB_REGISTER": "(1210,690)",
-        "EFFECTIVE_SUB_OFFSET": "(1210,730)",
-        "EFFECTIVE_MUL_REGISTER": "(1210,770)",
-        "EFFECTIVE_MUL_OFFSET": "(1210,810)",
-        "EFFECTIVE_DIV_REGISTER": "(1210,850)",
-        "EFFECTIVE_DIV_OFFSET": "(1210,890)",
-        "EFFECTIVE_AND_REGISTER": "(1210,930)",
-        "EFFECTIVE_AND_OFFSET": "(1210,970)",
-        "EFFECTIVE_OR_REGISTER": "(1210,1010)",
-        "EFFECTIVE_OR_OFFSET": "(1210,1050)",
-        "EFFECTIVE_STORE_REGISTER": "(900,1020)",
-        "EFFECTIVE_STORE_OFFSET": "(900,1070)",
-    }
-    assert {
-        label: producer_tunnels[label].get("loc") for label in expected_locations
-    } == expected_locations
-
-    fbox = next(item for item in root.findall("circuit") if item.get("name") == "FBox")
+    fbox = next(
+        item for item in root.findall("circuit")
+        if item.get("name") == "EffectiveAddress"
+    )
     selector_parts = [
         component for component in fbox.findall("comp")
         if _attributes(component).get("label") in {
@@ -1566,11 +1543,7 @@ def test_effective_address_tunnels_keep_the_existing_layout():
     assert {part.get("loc") for part in selector_parts} == {
         "(400,205)", "(400,445)", "(600,190)", "(600,250)",
     }
-    assert any(component.get("name") == "FBox" for component in circuit.findall("comp"))
-
-    memory_input = next(
-        component for component in all_tunnels
-        if _attributes(component).get("label") == "EFFECTIVE_MEMORY_ADDRESS"
-        and component.get("loc") == "(310,280)"
+    assert any(
+        component.get("name") == "EffectiveAddress"
+        for component in circuit.findall("comp")
     )
-    assert _attributes(memory_input)["facing"] == "east"

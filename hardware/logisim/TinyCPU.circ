@@ -29,12 +29,6 @@
     <a name="circuit" val="TinyCPUMain"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(2150,940)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_OFFSET_MODE"/>
-    </comp>
-    <comp lib="0" loc="(2150,960)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_REGISTER_MODE"/>
-    </comp>
     <comp lib="0" loc="(310,170)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="RESET"/>
@@ -139,9 +133,8 @@
     <wire from="(1500,940)" to="(1890,940)"/>
     <wire from="(1500,960)" to="(1500,1040)"/>
     <wire from="(1510,1000)" to="(1890,1000)"/>
-    <wire from="(1510,280)" to="(1510,360)"/>
-    <wire from="(1510,360)" to="(1510,660)"/>
-    <wire from="(1510,660)" to="(1760,660)"/>
+    <wire from="(1510,280)" to="(1510,640)"/>
+    <wire from="(1510,640)" to="(1760,640)"/>
     <wire from="(1510,800)" to="(1510,1000)"/>
     <wire from="(1520,140)" to="(1520,1340)"/>
     <wire from="(1520,140)" to="(1760,140)"/>
@@ -166,8 +159,8 @@
     <wire from="(1600,980)" to="(1600,1020)"/>
     <wire from="(1600,980)" to="(1890,980)"/>
     <wire from="(1610,1020)" to="(1890,1020)"/>
-    <wire from="(1610,270)" to="(1610,640)"/>
-    <wire from="(1610,640)" to="(1680,640)"/>
+    <wire from="(1610,270)" to="(1610,630)"/>
+    <wire from="(1610,630)" to="(1680,630)"/>
     <wire from="(1610,880)" to="(1610,1020)"/>
     <wire from="(1620,1200)" to="(1890,1200)"/>
     <wire from="(1620,300)" to="(1620,620)"/>
@@ -194,8 +187,7 @@
     <wire from="(1670,580)" to="(1670,1080)"/>
     <wire from="(1670,580)" to="(1760,580)"/>
     <wire from="(1680,1260)" to="(1890,1260)"/>
-    <wire from="(1680,640)" to="(1680,1260)"/>
-    <wire from="(1680,640)" to="(1760,640)"/>
+    <wire from="(1680,630)" to="(1680,1260)"/>
     <wire from="(1880,1220)" to="(1890,1220)"/>
     <wire from="(1880,860)" to="(1880,1220)"/>
     <wire from="(1880,860)" to="(2120,860)"/>
@@ -203,8 +195,6 @@
     <wire from="(1980,540)" to="(2140,540)"/>
     <wire from="(2110,900)" to="(2150,900)"/>
     <wire from="(2110,920)" to="(2120,920)"/>
-    <wire from="(2110,940)" to="(2150,940)"/>
-    <wire from="(2110,960)" to="(2150,960)"/>
     <wire from="(2120,860)" to="(2120,920)"/>
     <wire from="(2130,30)" to="(2130,520)"/>
     <wire from="(2140,20)" to="(2140,540)"/>
@@ -246,7 +236,11 @@
     <wire from="(880,1400)" to="(1550,1400)"/>
     <wire from="(880,1420)" to="(1560,1420)"/>
     <wire from="(880,1440)" to="(1570,1440)"/>
-    <wire from="(880,360)" to="(1510,360)"/>
+    <wire from="(340,340)" to="(350,340)"/>
+    <wire from="(340,340)" to="(340,350)"/>
+    <wire from="(340,350)" to="(900,350)"/>
+    <wire from="(880,360)" to="(900,360)"/>
+    <wire from="(900,350)" to="(900,360)"/>
     <wire from="(880,380)" to="(2150,380)"/>
     <wire from="(880,480)" to="(1600,480)"/>
     <wire from="(880,500)" to="(1650,500)"/>
@@ -559,9 +553,11 @@
       <a name="label" val="MEMORY_ADDRESS_OFFSET_SELECT"/>
     </comp>
     <comp lib="2" loc="(600,190)" name="Multiplexer">
+      <a name="label" val="MEMORY_OFFSET_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(600,250)" name="Multiplexer">
+      <a name="label" val="MEMORY_REGISTER_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <wire from="(100,100)" to="(150,100)"/>

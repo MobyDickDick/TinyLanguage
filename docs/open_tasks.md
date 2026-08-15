@@ -7,6 +7,23 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-15)
 
+- [x] **Integrate TinyCPU offset-carry address errors**
+  (Owner: TinyCPU/Hardware)
+  - Success: assert `ErrorFlags.SET_ADDR` when a register-plus-offset addressing
+    mode is active and `AddressPath.OFFSET_CARRY` reports an overflow, without
+    retaining the decoder's placeholder `SET_ADDR` route or flagging an
+    inactive offset adder.
+  - Result: the labelled `ACTIVE_OFFSET_ADDRESS_ERROR` gate combines the
+    central effective-address mode with the offset carry and is the sole
+    integrated source of `ErrorFlags.SET_ADDR`. Structural coverage resolves
+    both inputs and the destination electrically and confirms that the decoded
+    placeholder remains isolated.
+  - Follow-up: complete the central address-range check for direct, register,
+    and register-plus-offset results before marking the broader effective-
+    address audit complete.
+
+## Next documented work package (completed 2026-08-15)
+
 - [x] **Revalidate the manually compacted TinyCPU integration layout**
   (Owner: TinyCPU/Hardware)
   - Success: retain the hand-adjusted `AddressPath`, `EffectiveAddress`, and

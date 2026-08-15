@@ -273,13 +273,17 @@ Instruktion ins Adressregister geladen werden. Erst eine andere, hier nicht
 definierte Memory-indirekte Adressierungsart würde innerhalb derselben
 Instruktion zwei aufeinanderfolgende Speicherlesevorgänge benötigen.
 
-Die erneute Prüfung hat außerdem eine noch offene Grenze des Arbeitspakets
-bestätigt: `AddressPath.OFFSET_CARRY` ist noch nicht mit `SET_ADDR` verknüpft.
-Der Punkt zur effektiven Adresse bleibt deshalb bewusst offen. Ihn bereits
-abzuhaken würde die getestete Quellenauswahl mit der noch fehlenden
-Bereichsfehlerbehandlung verwechseln. Die beiden Adressmultiplexer tragen
-wieder stabile Bezeichner, damit Strukturtests und die Logisim-Ansicht diese
-Verdrahtung eindeutig verfolgen können.
+`AddressPath.OFFSET_CARRY` ist nun über das bezeichnete Gatter
+`ACTIVE_OFFSET_ADDRESS_ERROR` mit `ErrorFlags.SET_ADDR` verknüpft. Das Gatter
+fordert zusätzlich `EffectiveAddress.EFFECTIVE_OFFSET_MODE`; ein Übertrag des
+ständig kombinatorisch berechneten Offsets setzt das Sticky-Flag deshalb nur
+für eine tatsächlich aktive Register-plus-Offset-Instruktion. Der bisherige
+Decoder-Platzhalter `SET_ADDR` bleibt elektrisch isoliert. Der allgemeinere
+Punkt zur effektiven Adresse bleibt dennoch bewusst offen, bis auch die
+12-Bit-Bereichsprüfung der direkten, Register- und Offset-Ergebnisse zentral
+verdrahtet ist. Die beiden Adressmultiplexer tragen wieder stabile
+Bezeichner, damit Strukturtests und die Logisim-Ansicht diese Verdrahtung
+eindeutig verfolgen können.
 
 Die manuelle Überarbeitung von `Operations` ist dabei ausdrücklich erhalten:
 die drei Operationsblöcke und ihre Ergebnis-ODER-Gatter bleiben in den nach
@@ -331,8 +335,10 @@ wieder eindeutig und automatisiert prüfbar.
 Die `AddSubCircuit`-/`SubSubCircuit`-Punkte einschließlich ihrer Validität sind
 nun abgeschlossen: Beide Boxen verwenden `ACC_OUT` links und wählen rechts
 parallel zwischen unmittelbarem Befehlswert und Speicherwert samt zugehöriger
-Gültigkeit. Als nächstes wird `SET_INV` für aktive Operationen mit ungültiger
-Quelle integriert; danach folgt die gemeinsame effektive Adressauswahl.
+Gültigkeit. `SET_INV` ist für aktive Operationen mit ungültiger Quelle
+integriert. Ebenso ist der Offset-Übertrag nun aktivitätsabhängig an `SET_ADDR`
+angebunden; als nächster Adressschritt folgt die gemeinsame
+12-Bit-Bereichsprüfung.
 
 `TinyCPUMain` is the integration sheet. Stateful blocks are encapsulated on
 named subpages, and its single `Operations` instance groups the independently

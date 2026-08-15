@@ -207,6 +207,14 @@ Kreuzungen weder versehentliche Busverbindungen noch mehrere Treiber auf einem
 Netz. Der Strukturtest verlangt für alle drei Blätter einen vollständig
 verbundenen Zustand.
 
+Für `ADD_*` und `SUB_*` bildet `Operations` zusätzlich ein gemeinsames
+Aktivitätssignal. Nur wenn dieses aktiv ist und zugleich weder das Additions-
+noch das Subtraktionsergebnis gültig ist, wird `INVALID_OPERAND` gesetzt. Dieser
+Ausgang führt im Hauptblatt direkt zu `ErrorFlags.SET_INV`; der gleichnamige
+Platzhalterausgang des Decoders ist bewusst nicht mehr angeschlossen. Dadurch
+bleibt das Invalid-Flag bei inaktiver Arithmetik gelöscht, obwohl die gegateten
+Ergebnis-Gültigkeitssignale dann ebenfalls null sind.
+
 Sie werden reproduzierbar aus dem Hauptprojekt erzeugt. Der Befehl liest
 `TinyCPU.circ`, schreibt aber nur Dateien in das angegebene Diagnoseverzeichnis;
 er ist ausdrücklich **kein** Weg, das Blatt `TinyCPUMain` wiederherzustellen oder

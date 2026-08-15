@@ -227,7 +227,7 @@ def test_top_level_clear_error_reaches_error_flags_only():
 
 
 @pytest.mark.parametrize(
-    "name", ("SET_OVF", "SET_DIV0", "SET_ADDR", "SET_INV", "SET_ILL", "SET_INPUT")
+    "name", ("SET_OVF", "SET_DIV0", "SET_ADDR", "SET_ILL", "SET_INPUT")
 )
 def test_top_level_error_controls_reach_only_the_matching_error_input(name):
     """Resolve every error route by pin name, independent of drawing coordinates."""
@@ -260,6 +260,33 @@ def test_top_level_error_controls_reach_only_the_matching_error_input(name):
         and _attributes(component).get("label") in {"CLK", "RESET"}
     }
     assert reachable.isdisjoint(external_controls)
+
+
+def test_invalid_arithmetic_result_sets_the_invalid_operand_flag():
+    """SET_INV comes from active invalid arithmetic, not a decoded constant."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    operation_invalid = _subcircuit_output(root, "Operations", "INVALID_OPERAND")
+    invalid_target = _subcircuit_input(root, "ErrorFlags", "SET_INV")
+    decoded_invalid = _control_output(root, "SET_INV")
+    adjacency = _electrical_adjacency(
+        circuit, {operation_invalid, invalid_target, decoded_invalid}
+    )
+
+    assert invalid_target in _reachable(adjacency, operation_invalid)
+    assert invalid_target not in _reachable(adjacency, decoded_invalid)
+
+    operations = next(
+        item for item in root.findall("circuit") if item.get("name") == "Operations"
+    )
+    labels = {
+        _attributes(component).get("label"): component
+        for component in operations.findall("comp")
+        if _attributes(component).get("label")
+    }
+    assert labels["ARITHMETIC_RESULT_INVALID"].get("name") == "NOT Gate"
+    assert labels["ACTIVE_INVALID_ARITHMETIC"].get("name") == "AND Gate"
 
 
 ACCUMULATOR_FAMILIES = ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR")

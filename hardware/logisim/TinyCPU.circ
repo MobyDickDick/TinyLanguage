@@ -384,11 +384,9 @@
       <a name="label" val="MEMORY_ADDRESS_OFFSET_SELECT"/>
     </comp>
     <comp lib="2" loc="(750,220)" name="Multiplexer">
-      <a name="label" val="MEMORY_REGISTER_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(750,580)" name="Multiplexer">
-      <a name="label" val="MEMORY_OFFSET_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <wire from="(300,160)" to="(490,160)"/>
@@ -2296,44 +2294,44 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="label" val="RESULT_VALID"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="0" loc="(330,70)" name="Pin">
+    <comp lib="0" loc="(360,110)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="SUB_CONST"/>
     </comp>
-    <comp lib="0" loc="(340,380)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="MEMORY_VALID"/>
-    </comp>
-    <comp lib="0" loc="(340,460)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="label" val="ACC_VALID"/>
-    </comp>
-    <comp lib="0" loc="(350,130)" name="Pin">
+    <comp lib="0" loc="(360,130)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="SUB_ADDRESS_REGISTER_PLUS_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(350,150)" name="Pin">
+    <comp lib="0" loc="(360,150)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="SUB_ADDRESS"/>
     </comp>
-    <comp lib="0" loc="(350,170)" name="Pin">
+    <comp lib="0" loc="(360,170)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="SUB_ADDRESS_REGISTER"/>
     </comp>
-    <comp lib="0" loc="(350,210)" name="Pin">
+    <comp lib="0" loc="(360,210)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="ACC_VALUE"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(350,260)" name="Pin">
+    <comp lib="0" loc="(360,260)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="MEMORY_VALUE"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(350,310)" name="Pin">
+    <comp lib="0" loc="(360,310)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="IMMEDIATE_VALUE"/>
       <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(360,380)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="MEMORY_VALID"/>
+    </comp>
+    <comp lib="0" loc="(360,460)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="ACC_VALID"/>
     </comp>
     <comp lib="0" loc="(440,400)" name="Constant"/>
     <comp lib="1" loc="(550,140)" name="OR Gate">
@@ -2364,19 +2362,17 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     </comp>
     <wire from="(1000,390)" to="(1000,410)"/>
     <wire from="(1000,410)" to="(1020,410)"/>
-    <wire from="(330,70)" to="(350,70)"/>
-    <wire from="(340,380)" to="(460,380)"/>
-    <wire from="(340,460)" to="(520,460)"/>
-    <wire from="(350,110)" to="(410,110)"/>
-    <wire from="(350,130)" to="(500,130)"/>
-    <wire from="(350,150)" to="(500,150)"/>
-    <wire from="(350,170)" to="(500,170)"/>
-    <wire from="(350,210)" to="(700,210)"/>
-    <wire from="(350,260)" to="(370,260)"/>
-    <wire from="(350,310)" to="(450,310)"/>
-    <wire from="(350,70)" to="(350,110)"/>
-    <wire from="(370,260)" to="(370,290)"/>
-    <wire from="(370,290)" to="(450,290)"/>
+    <wire from="(360,110)" to="(410,110)"/>
+    <wire from="(360,130)" to="(500,130)"/>
+    <wire from="(360,150)" to="(500,150)"/>
+    <wire from="(360,170)" to="(500,170)"/>
+    <wire from="(360,210)" to="(700,210)"/>
+    <wire from="(360,260)" to="(380,260)"/>
+    <wire from="(360,310)" to="(450,310)"/>
+    <wire from="(360,380)" to="(460,380)"/>
+    <wire from="(360,460)" to="(520,460)"/>
+    <wire from="(380,260)" to="(380,290)"/>
+    <wire from="(380,290)" to="(450,290)"/>
     <wire from="(410,110)" to="(410,350)"/>
     <wire from="(410,110)" to="(500,110)"/>
     <wire from="(410,350)" to="(410,420)"/>
@@ -2385,18 +2381,17 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(440,400)" to="(460,400)"/>
     <wire from="(460,320)" to="(460,350)"/>
     <wire from="(470,410)" to="(470,420)"/>
-    <wire from="(480,300)" to="(500,300)"/>
-    <wire from="(490,390)" to="(520,390)"/>
+    <wire from="(480,300)" to="(690,300)"/>
+    <wire from="(490,390)" to="(500,390)"/>
     <wire from="(500,110)" to="(500,120)"/>
     <wire from="(500,160)" to="(500,170)"/>
-    <wire from="(500,300)" to="(500,380)"/>
-    <wire from="(500,380)" to="(690,380)"/>
-    <wire from="(520,390)" to="(520,420)"/>
+    <wire from="(500,390)" to="(500,420)"/>
+    <wire from="(500,420)" to="(520,420)"/>
     <wire from="(550,140)" to="(560,140)"/>
     <wire from="(560,140)" to="(560,160)"/>
     <wire from="(560,160)" to="(710,160)"/>
     <wire from="(570,440)" to="(710,440)"/>
-    <wire from="(690,380)" to="(690,410)"/>
+    <wire from="(690,300)" to="(690,410)"/>
     <wire from="(690,410)" to="(710,410)"/>
     <wire from="(700,210)" to="(700,390)"/>
     <wire from="(700,390)" to="(710,390)"/>

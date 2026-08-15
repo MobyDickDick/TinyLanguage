@@ -45,6 +45,13 @@ zuvor kurzgeschlossenen Paare `MUL_ADR_REG`/`MUL_REG_OFF` und
 sechs `SET_*`-Signale laufen einzeln zu den gleichnamigen `ErrorFlags`-Pins;
 keine dieser Leitungen endet mehr auf einer fremden Route.
 
+Nach der manuellen Kompaktierung und der dadurch geänderten Pinreihenfolge von
+`FetchDecodeControls` wurden diese Fehlerleitungen an den neuen, benannten
+Ausgangspositionen neu angeschlossen. Die kürzeren Korridore sowie die
+verschobene `AddressPath`-Box bleiben dabei erhalten. Die beiden vorhandenen
+Adressmultiplexer tragen weiterhin stabile Bezeichner; ihre Position und
+Verdrahtung wurden durch die erneute Abnahme nicht zurückgesetzt.
+
 Der Hardware-Vertragscheck prüft diese Hierarchie auf direkte und indirekte
 rekursive Unterblatt-Aufrufe. Solche Zyklen werden abgewiesen, weil Logisim beim
 Laden andernfalls die Symbole unbegrenzt expandieren und dabei den verfügbaren

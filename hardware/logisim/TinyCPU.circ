@@ -127,17 +127,17 @@
     <wire from="(1510,280)" to="(1510,660)"/>
     <wire from="(1510,660)" to="(1760,660)"/>
     <wire from="(1510,800)" to="(1510,1020)"/>
-    <wire from="(1520,100)" to="(1520,1180)"/>
+    <wire from="(1520,100)" to="(1520,1220)"/>
     <wire from="(1520,100)" to="(1760,100)"/>
-    <wire from="(1530,140)" to="(1530,1300)"/>
+    <wire from="(1530,140)" to="(1530,1340)"/>
     <wire from="(1530,140)" to="(1760,140)"/>
-    <wire from="(1540,160)" to="(1540,1320)"/>
+    <wire from="(1540,160)" to="(1540,1360)"/>
     <wire from="(1540,160)" to="(1760,160)"/>
-    <wire from="(1550,180)" to="(1550,1340)"/>
+    <wire from="(1550,180)" to="(1550,1380)"/>
     <wire from="(1550,180)" to="(1760,180)"/>
-    <wire from="(1570,220)" to="(1570,1380)"/>
+    <wire from="(1570,220)" to="(1570,1420)"/>
     <wire from="(1570,220)" to="(1760,220)"/>
-    <wire from="(1580,240)" to="(1580,1400)"/>
+    <wire from="(1580,240)" to="(1580,1440)"/>
     <wire from="(1580,240)" to="(1760,240)"/>
     <wire from="(1590,780)" to="(1590,1100)"/>
     <wire from="(1590,780)" to="(1760,780)"/>
@@ -228,12 +228,12 @@
     <wire from="(880,1020)" to="(1480,1020)"/>
     <wire from="(880,1040)" to="(1450,1040)"/>
     <wire from="(880,1100)" to="(1590,1100)"/>
-    <wire from="(880,1180)" to="(1520,1180)"/>
-    <wire from="(880,1300)" to="(1530,1300)"/>
-    <wire from="(880,1320)" to="(1540,1320)"/>
-    <wire from="(880,1340)" to="(1550,1340)"/>
-    <wire from="(880,1380)" to="(1570,1380)"/>
-    <wire from="(880,1400)" to="(1580,1400)"/>
+    <wire from="(880,1220)" to="(1520,1220)"/>
+    <wire from="(880,1340)" to="(1530,1340)"/>
+    <wire from="(880,1360)" to="(1540,1360)"/>
+    <wire from="(880,1380)" to="(1550,1380)"/>
+    <wire from="(880,1420)" to="(1570,1420)"/>
+    <wire from="(880,1440)" to="(1580,1440)"/>
     <wire from="(880,360)" to="(950,360)"/>
     <wire from="(880,380)" to="(2150,380)"/>
     <wire from="(880,480)" to="(1600,480)"/>
@@ -384,9 +384,11 @@
       <a name="label" val="MEMORY_ADDRESS_OFFSET_SELECT"/>
     </comp>
     <comp lib="2" loc="(750,220)" name="Multiplexer">
+      <a name="label" val="MEMORY_REGISTER_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(750,580)" name="Multiplexer">
+      <a name="label" val="MEMORY_OFFSET_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <wire from="(300,160)" to="(490,160)"/>

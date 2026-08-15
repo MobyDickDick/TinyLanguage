@@ -295,8 +295,60 @@ def test_active_offset_carry_sets_the_address_error_flag():
     assert len(gate_inputs & carry_net) == 1
     assert len(gate_inputs & active_net) == 1
     assert carry_net.isdisjoint(active_net)
-    assert address_error in _reachable(adjacency, gate.get("loc"))
+    integrated_error = _labelled_component(circuit, "ACTIVE_ADDRESS_ERROR")
+    assert integrated_error.get("name") == "OR Gate"
+    assert "(2130,970)" in _reachable(adjacency, gate.get("loc"))
+    assert address_error in _reachable(adjacency, integrated_error.get("loc"))
     assert address_error not in _reachable(adjacency, decoded_address_error)
+
+
+def test_effective_address_range_error_covers_every_memory_address_mode():
+    """Reject active 16-bit addresses that do not fit the 12-bit memory."""
+
+    root = ET.parse(PROJECT).getroot()
+    effective = next(
+        circuit for circuit in root.findall("circuit")
+        if circuit.get("name") == "EffectiveAddress"
+    )
+    labels = {
+        _attributes(component).get("label"): component
+        for component in effective.findall("comp")
+        if _attributes(component).get("label")
+    }
+    assert labels["MEMORY_ADDRESS_RANGE_CHECK"].get("name") == "Comparator"
+    limit = labels["MAXIMUM_MEMORY_ADDRESS"]
+    assert _attributes(limit) == {
+        "label": "MAXIMUM_MEMORY_ADDRESS", "value": "0xfff", "width": "16"
+    }
+
+    top = _top_level(root)
+    direct = _labelled_component(top, "DIRECT_MEMORY_ADDRESS_ACTIVE")
+    active = _labelled_component(top, "MEMORY_ADDRESS_ACTIVE")
+    range_gate = _labelled_component(top, "ACTIVE_ADDRESS_OUT_OF_RANGE")
+    assert _attributes(direct)["inputs"] == "8"
+    assert _attributes(active)["inputs"] == "3"
+    assert range_gate.get("name") == "AND Gate"
+
+    adjacency = _electrical_adjacency(top)
+    direct_inputs = {f"(1350,{y})" for y in range(1570, 1650, 10)}
+    for operation in ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR", "STORE"):
+        assert len(direct_inputs & _reachable(
+            adjacency, _control_output(root, f"{operation}_ADDRESS")
+        )) == 1
+    assert "(2130,1670)" in _reachable(adjacency, direct.get("loc"))
+    for mode, target in (
+        ("EFFECTIVE_REGISTER_MODE", "(2130,1690)"),
+        ("EFFECTIVE_OFFSET_MODE", "(2130,1710)"),
+    ):
+        assert target in _reachable(
+            adjacency, _subcircuit_output(root, "EffectiveAddress", mode)
+        )
+    assert "(2050,1760)" in _reachable(
+        adjacency,
+        _subcircuit_output(root, "EffectiveAddress", "ADDRESS_OUT_OF_RANGE"),
+    )
+    assert "(2050,1800)" in _reachable(adjacency, active.get("loc"))
+    assert "(2130,990)" in _reachable(adjacency, range_gate.get("loc"))
 
 
 def test_invalid_arithmetic_result_sets_the_invalid_operand_flag():

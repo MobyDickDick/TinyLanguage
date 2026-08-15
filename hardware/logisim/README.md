@@ -285,10 +285,12 @@ Instruktion zwei aufeinanderfolgende Speicherlesevorgänge benötigen.
 fordert zusätzlich `EffectiveAddress.EFFECTIVE_OFFSET_MODE`; ein Übertrag des
 ständig kombinatorisch berechneten Offsets setzt das Sticky-Flag deshalb nur
 für eine tatsächlich aktive Register-plus-Offset-Instruktion. Der bisherige
-Decoder-Platzhalter `SET_ADDR` bleibt elektrisch isoliert. Der allgemeinere
-Punkt zur effektiven Adresse bleibt dennoch bewusst offen, bis auch die
-12-Bit-Bereichsprüfung der direkten, Register- und Offset-Ergebnisse zentral
-verdrahtet ist. Die beiden Adressmultiplexer tragen wieder stabile
+Decoder-Platzhalter `SET_ADDR` bleibt elektrisch isoliert. Die zentrale
+Bereichsprüfung vergleicht die ausgewählte 16-Bit-Adresse mit `0xfff` und wird
+nur für eine aktive direkte, Register- oder Register-plus-Offset-Speicherform
+ausgewertet. Das benannte Gatter `ACTIVE_ADDRESS_ERROR` vereinigt diesen
+Bereichsfehler mit dem aktiven Offset-Übertrag, bevor `ErrorFlags.SET_ADDR`
+gesetzt wird. Die beiden Adressmultiplexer tragen wieder stabile
 Bezeichner, damit Strukturtests und die Logisim-Ansicht diese Verdrahtung
 eindeutig verfolgen können.
 
@@ -322,7 +324,7 @@ wieder eindeutig und automatisiert prüfbar.
   Speicherform benötigt `Memory.MEMORY_VALID`; beide Fälle benötigen zusätzlich
   `Datapath.ACC_VALID_OUT`. Ein ungültiger Adressregister- oder Speicherwert
   muss `RESULT_VALID` löschen und `SET_INV` auslösen.
-- [ ] Die effektive Adresse für alle direkten und indirekten Familien zentral
+- [x] Die effektive Adresse für alle direkten und indirekten Familien zentral
   prüfen: `*_ADDRESS` verwendet das 12-Bit-Adressfeld,
   `*_ADDRESS_REGISTER` den Inhalt des Adressregisters und
   `*_ADDRESS_REGISTER_PLUS_OFFSET` dessen Summe mit dem signierten Offset.
@@ -343,9 +345,9 @@ Die `AddSubCircuit`-/`SubSubCircuit`-Punkte einschließlich ihrer Validität sin
 nun abgeschlossen: Beide Boxen verwenden `ACC_OUT` links und wählen rechts
 parallel zwischen unmittelbarem Befehlswert und Speicherwert samt zugehöriger
 Gültigkeit. `SET_INV` ist für aktive Operationen mit ungültiger Quelle
-integriert. Ebenso ist der Offset-Übertrag nun aktivitätsabhängig an `SET_ADDR`
-angebunden; als nächster Adressschritt folgt die gemeinsame
-12-Bit-Bereichsprüfung.
+integriert. Ebenso sind der Offset-Übertrag und die gemeinsame
+12-Bit-Bereichsprüfung nun aktivitätsabhängig an `SET_ADDR` angebunden. Als
+nächster Operationsschritt folgt die `MUL_*`-Familie.
 
 `TinyCPUMain` is the integration sheet. Stateful blocks are encapsulated on
 named subpages, and its single `Operations` instance groups the independently

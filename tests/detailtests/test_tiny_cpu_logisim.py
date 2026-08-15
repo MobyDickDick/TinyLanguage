@@ -339,10 +339,15 @@ def _control_output(root, label):
             int(value) for value in component.get("loc").strip("()").split(",")
         )[::-1],
     )
+    compact_label = (
+        label.replace("ADDRESS_REGISTER_PLUS_OFFSET", "REG_OFF")
+        .replace("ADDRESS_REGISTER", "ADR_REG")
+        .replace("ADDRESS", "ADR")
+    )
     index = next(
         index
         for index, component in enumerate(outputs)
-        if _attributes(component).get("label") == label
+        if _attributes(component).get("label") == compact_label
     )
     instance = next(
         component
@@ -1551,6 +1556,15 @@ def test_effective_address_input_labels_are_compact_source_names():
     }
 
     assert expected_control_labels <= input_labels
+    control_outputs = {
+        _attributes(pin).get("label")
+        for circuit in root.findall("circuit")
+        if circuit.get("name") == "FetchDecodeControls"
+        for pin in circuit.findall("comp")
+        if pin.get("name") == "Pin"
+        and _attributes(pin).get("type") == "output"
+    }
+    assert expected_control_labels <= control_outputs
     assert {"DIRECT_ADDR", "REG_ADDR", "OFFSET_ADDR", "REG_SELECTED"} <= input_labels
     assert all(len(label) <= 13 for label in input_labels)
     assert all(not label.startswith("EFFECTIVE_") for label in input_labels)

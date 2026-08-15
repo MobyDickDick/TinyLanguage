@@ -33,8 +33,10 @@ bewusst kurze Namen, die den angeschlossenen Ausgängen von
 `REG_OFF` steht für `ADDRESS_REGISTER_PLUS_OFFSET`. So bleiben beispielsweise
 `LOAD_ADR_REG`, `ADD_ADR_REG` und `STORE_REG_OFF` vollständig sichtbar. Auch
 die vier 16-Bit-Eingänge heißen kompakt `DIRECT_ADDR`, `REG_ADDR`,
-`OFFSET_ADDR` und `REG_SELECTED`. Das Präfix `EFFECTIVE_` entfällt nur an den
-Eingängen; die fachliche Zuordnung und die Pinpositionen ändern sich nicht.
+`OFFSET_ADDR` und `REG_SELECTED`. Das Präfix `EFFECTIVE_` entfällt an den Eingängen. Die Ausgänge von
+`FetchDecodeControls` verwenden dieselben Kürzel (`ADR`, `ADR_REG` und
+`REG_OFF`), sodass jede angeschlossene 1:1-Verbindung auf beiden Seiten
+denselben Namen trägt; die Pinpositionen ändern sich dadurch nicht.
 
 Der Hardware-Vertragscheck prüft diese Hierarchie auf direkte und indirekte
 rekursive Unterblatt-Aufrufe. Solche Zyklen werden abgewiesen, weil Logisim beim

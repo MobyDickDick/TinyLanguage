@@ -64,21 +64,11 @@
     <comp lib="1" loc="(2120,980)" name="AND Gate">
       <a name="label" val="ACTIVE_OFFSET_ADDRESS_ERROR"/>
     </comp>
-    <comp lib="1" loc="(1400,1600)" name="OR Gate">
-      <a name="inputs" val="8"/>
-      <a name="label" val="DIRECT_MEMORY_ADDRESS_ACTIVE"/>
-    </comp>
-    <comp lib="1" loc="(2180,1690)" name="OR Gate">
-      <a name="facing" val="west"/>
-      <a name="inputs" val="3"/>
-      <a name="label" val="MEMORY_ADDRESS_ACTIVE"/>
-    </comp>
-    <comp lib="1" loc="(2100,1780)" name="AND Gate">
-      <a name="facing" val="west"/>
-      <a name="label" val="ACTIVE_ADDRESS_OUT_OF_RANGE"/>
-    </comp>
     <comp lib="1" loc="(2180,980)" name="OR Gate">
       <a name="label" val="ACTIVE_ADDRESS_ERROR"/>
+    </comp>
+    <comp loc="(2180,1570)" name="AddressRangeFBox">
+      <a name="label" val="ADDRESS_RANGE_FBOX"/>
     </comp>
     <comp loc="(1440,110)" name="Datapath">
       <a name="label" val="DATAPATH_INSTANCE"/>
@@ -257,19 +247,18 @@
     <wire from="(640,10)" to="(2150,10)"/>
     <wire from="(640,10)" to="(640,130)"/>
     <wire from="(640,130)" to="(650,130)"/>
-    <wire from="(880,460)" to="(1010,460)"/><wire from="(1010,460)" to="(1010,1570)"/><wire from="(1010,1570)" to="(1350,1570)"/>
-    <wire from="(1020,540)" to="(1020,1580)"/><wire from="(1020,1580)" to="(1350,1580)"/>
-    <wire from="(1030,620)" to="(1030,1590)"/><wire from="(1030,1590)" to="(1350,1590)"/>
-    <wire from="(880,700)" to="(1040,700)"/><wire from="(1040,700)" to="(1040,1600)"/><wire from="(1040,1600)" to="(1350,1600)"/>
-    <wire from="(880,780)" to="(1050,780)"/><wire from="(1050,780)" to="(1050,1610)"/><wire from="(1050,1610)" to="(1350,1610)"/>
-    <wire from="(880,860)" to="(1060,860)"/><wire from="(1060,860)" to="(1060,1620)"/><wire from="(1060,1620)" to="(1350,1620)"/>
-    <wire from="(880,940)" to="(1070,940)"/><wire from="(1070,940)" to="(1070,1630)"/><wire from="(1070,1630)" to="(1350,1630)"/>
-    <wire from="(880,1000)" to="(1080,1000)"/><wire from="(1080,1000)" to="(1080,1640)"/><wire from="(1080,1640)" to="(1350,1640)"/>
-    <wire from="(1400,1600)" to="(1450,1600)"/><wire from="(1450,1600)" to="(1450,1670)"/><wire from="(1450,1670)" to="(2130,1670)"/>
-    <wire from="(1980,920)" to="(2040,920)"/><wire from="(2040,920)" to="(2040,1690)"/><wire from="(2040,1690)" to="(2130,1690)"/>
-    <wire from="(2010,1000)" to="(2010,1710)"/><wire from="(2010,1710)" to="(2130,1710)"/>
-    <wire from="(2180,1690)" to="(2320,1690)"/><wire from="(2320,1690)" to="(2320,1820)"/><wire from="(2000,1820)" to="(2320,1820)"/><wire from="(2000,1800)" to="(2000,1820)"/><wire from="(2000,1800)" to="(2050,1800)"/>
-    <wire from="(1980,980)" to="(1980,1760)"/><wire from="(1980,1760)" to="(2050,1760)"/>
+    <wire from="(880,460)" to="(1010,460)"/><wire from="(1010,460)" to="(1010,1570)"/><wire from="(1010,1570)" to="(1960,1570)"/>
+    <wire from="(1020,540)" to="(1020,1590)"/><wire from="(1020,1590)" to="(1960,1590)"/>
+    <wire from="(1030,620)" to="(1030,1610)"/><wire from="(1030,1610)" to="(1960,1610)"/>
+    <wire from="(880,700)" to="(1040,700)"/><wire from="(1040,700)" to="(1040,1630)"/><wire from="(1040,1630)" to="(1960,1630)"/>
+    <wire from="(880,780)" to="(1050,780)"/><wire from="(1050,780)" to="(1050,1650)"/><wire from="(1050,1650)" to="(1960,1650)"/>
+    <wire from="(880,860)" to="(1060,860)"/><wire from="(1060,860)" to="(1060,1670)"/><wire from="(1060,1670)" to="(1960,1670)"/>
+    <wire from="(880,940)" to="(1070,940)"/><wire from="(1070,940)" to="(1070,1690)"/><wire from="(1070,1690)" to="(1960,1690)"/>
+    <wire from="(880,1000)" to="(1080,1000)"/><wire from="(1080,1000)" to="(1080,1710)"/><wire from="(1080,1710)" to="(1960,1710)"/>
+    <wire from="(1980,920)" to="(1950,920)"/><wire from="(1950,920)" to="(1950,1730)"/><wire from="(1950,1730)" to="(1960,1730)"/>
+    <wire from="(2010,1000)" to="(1940,1000)"/><wire from="(1940,1000)" to="(1940,1750)"/><wire from="(1940,1750)" to="(1960,1750)"/>
+    <wire from="(1980,980)" to="(1930,980)"/><wire from="(1930,980)" to="(1930,1770)"/><wire from="(1930,1770)" to="(1960,1770)"/>
+    <wire from="(2180,1570)" to="(2300,1570)"/><wire from="(2300,990)" to="(2300,1570)"/><wire from="(2130,990)" to="(2300,990)"/>
     <wire from="(840,1520)" to="(2250,1520)"/>
     <wire from="(870,110)" to="(930,110)"/>
     <wire from="(870,130)" to="(910,130)"/>
@@ -2815,5 +2804,34 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(890,330)" to="(950,330)"/>
     <wire from="(940,240)" to="(940,260)"/>
     <wire from="(940,260)" to="(950,260)"/>
+  </circuit>
+  <circuit name="AddressRangeFBox">
+    <a name="appearance" val="logisim_evolution"/>
+    <a name="circuit" val="AddressRangeFBox"/>
+    <a name="circuitnamedboxfixedsize" val="true"/>
+    <a name="simulationFrequency" val="1.0"/>
+    <comp lib="0" loc="(100,130)" name="Pin"><a name="appearance" val="classic"/><a name="label" val="LOAD_ADDRESS"/></comp>
+    <comp lib="0" loc="(100,140)" name="Pin"><a name="appearance" val="classic"/><a name="label" val="ADD_ADDRESS"/></comp>
+    <comp lib="0" loc="(100,150)" name="Pin"><a name="appearance" val="classic"/><a name="label" val="SUB_ADDRESS"/></comp>
+    <comp lib="0" loc="(100,160)" name="Pin"><a name="appearance" val="classic"/><a name="label" val="MUL_ADDRESS"/></comp>
+    <comp lib="0" loc="(100,170)" name="Pin"><a name="appearance" val="classic"/><a name="label" val="DIV_ADDRESS"/></comp>
+    <comp lib="0" loc="(100,180)" name="Pin"><a name="appearance" val="classic"/><a name="label" val="AND_ADDRESS"/></comp>
+    <comp lib="0" loc="(100,190)" name="Pin"><a name="appearance" val="classic"/><a name="label" val="OR_ADDRESS"/></comp>
+    <comp lib="0" loc="(100,200)" name="Pin"><a name="appearance" val="classic"/><a name="label" val="STORE_ADDRESS"/></comp>
+    <comp lib="0" loc="(100,280)" name="Pin"><a name="appearance" val="classic"/><a name="label" val="EFFECTIVE_REGISTER_MODE"/></comp>
+    <comp lib="0" loc="(100,300)" name="Pin"><a name="appearance" val="classic"/><a name="label" val="EFFECTIVE_OFFSET_MODE"/></comp>
+    <comp lib="0" loc="(100,390)" name="Pin"><a name="appearance" val="classic"/><a name="label" val="ADDRESS_OUT_OF_RANGE"/></comp>
+    <comp lib="0" loc="(1000,400)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="ACTIVE_ADDRESS_OUT_OF_RANGE"/><a name="type" val="output"/></comp>
+    <comp lib="1" loc="(500,160)" name="OR Gate"><a name="inputs" val="8"/><a name="label" val="DIRECT_MEMORY_ADDRESS_ACTIVE"/></comp>
+    <comp lib="1" loc="(700,300)" name="OR Gate"><a name="inputs" val="3"/><a name="label" val="MEMORY_ADDRESS_ACTIVE"/></comp>
+    <comp lib="1" loc="(900,400)" name="AND Gate"><a name="label" val="ACTIVE_ADDRESS_RANGE_GATE"/></comp>
+    <wire from="(100,130)" to="(450,130)"/><wire from="(100,140)" to="(450,140)"/>
+    <wire from="(100,150)" to="(450,150)"/><wire from="(100,160)" to="(350,160)"/><wire from="(350,120)" to="(350,160)"/><wire from="(350,120)" to="(450,120)"/>
+    <wire from="(100,170)" to="(450,170)"/><wire from="(100,180)" to="(450,180)"/>
+    <wire from="(100,190)" to="(450,190)"/><wire from="(100,200)" to="(450,200)"/>
+    <wire from="(100,280)" to="(650,280)"/><wire from="(100,300)" to="(650,300)"/>
+    <wire from="(500,160)" to="(600,160)"/><wire from="(600,160)" to="(600,320)"/><wire from="(600,320)" to="(650,320)"/>
+    <wire from="(100,390)" to="(820,390)"/><wire from="(820,380)" to="(820,390)"/><wire from="(820,380)" to="(850,380)"/><wire from="(700,300)" to="(800,300)"/><wire from="(800,300)" to="(800,420)"/><wire from="(800,420)" to="(850,420)"/>
+    <wire from="(900,400)" to="(1000,400)"/>
   </circuit>
 </project>

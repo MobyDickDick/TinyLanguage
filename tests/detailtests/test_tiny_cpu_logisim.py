@@ -321,34 +321,39 @@ def test_effective_address_range_error_covers_every_memory_address_mode():
         "label": "MAXIMUM_MEMORY_ADDRESS", "value": "0xfff", "width": "16"
     }
 
-    top = _top_level(root)
-    direct = _labelled_component(top, "DIRECT_MEMORY_ADDRESS_ACTIVE")
-    active = _labelled_component(top, "MEMORY_ADDRESS_ACTIVE")
-    range_gate = _labelled_component(top, "ACTIVE_ADDRESS_OUT_OF_RANGE")
+    fbox = next(
+        circuit for circuit in root.findall("circuit")
+        if circuit.get("name") == "AddressRangeFBox"
+    )
+    direct = _labelled_component(fbox, "DIRECT_MEMORY_ADDRESS_ACTIVE")
+    active = _labelled_component(fbox, "MEMORY_ADDRESS_ACTIVE")
+    range_gate = _labelled_component(fbox, "ACTIVE_ADDRESS_RANGE_GATE")
     assert _attributes(direct)["inputs"] == "8"
     assert _attributes(active)["inputs"] == "3"
     assert range_gate.get("name") == "AND Gate"
 
+    top = _top_level(root)
+    instance = _labelled_component(top, "ADDRESS_RANGE_FBOX")
+    assert instance.get("name") == "AddressRangeFBox"
     adjacency = _electrical_adjacency(top)
-    direct_inputs = {f"(1350,{y})" for y in range(1570, 1650, 10)}
     for operation in ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR", "STORE"):
-        assert len(direct_inputs & _reachable(
-            adjacency, _control_output(root, f"{operation}_ADDRESS")
-        )) == 1
-    assert "(2130,1670)" in _reachable(adjacency, direct.get("loc"))
-    for mode, target in (
-        ("EFFECTIVE_REGISTER_MODE", "(2130,1690)"),
-        ("EFFECTIVE_OFFSET_MODE", "(2130,1710)"),
-    ):
-        assert target in _reachable(
+        assert _subcircuit_input(
+            root, "AddressRangeFBox", f"{operation}_ADDRESS"
+        ) in _reachable(adjacency, _control_output(root, f"{operation}_ADDRESS"))
+    for mode in ("EFFECTIVE_REGISTER_MODE", "EFFECTIVE_OFFSET_MODE"):
+        assert _subcircuit_input(root, "AddressRangeFBox", mode) in _reachable(
             adjacency, _subcircuit_output(root, "EffectiveAddress", mode)
         )
-    assert "(2050,1760)" in _reachable(
+    assert _subcircuit_input(
+        root, "AddressRangeFBox", "ADDRESS_OUT_OF_RANGE"
+    ) in _reachable(
         adjacency,
         _subcircuit_output(root, "EffectiveAddress", "ADDRESS_OUT_OF_RANGE"),
     )
-    assert "(2050,1800)" in _reachable(adjacency, active.get("loc"))
-    assert "(2130,990)" in _reachable(adjacency, range_gate.get("loc"))
+    assert "(2130,990)" in _reachable(
+        adjacency,
+        _subcircuit_output(root, "AddressRangeFBox", "ACTIVE_ADDRESS_OUT_OF_RANGE"),
+    )
 
 
 def test_invalid_arithmetic_result_sets_the_invalid_operand_flag():

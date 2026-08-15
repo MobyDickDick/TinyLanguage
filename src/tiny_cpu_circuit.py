@@ -27,6 +27,24 @@ SUPPORTED_PROFILE_SCHEMA = 1
 # accidental overlays without imposing the obsolete generated 600-unit lanes.
 SUBCIRCUIT_ANCHOR_CLEARANCE = 200
 FETCH_DECODE_DECODER_PITCH = 10
+
+
+def hardware_control_label(signal: str) -> str:
+    """Return the compact label printed on a control-pin symbol."""
+
+    special_labels = {
+        "LOAD_ADDRESS_REGISTER_CONST": "LD_REG_CONST",
+        "LOAD_ADDRESS_REGISTER_ADDRESS": "LD_REG_ADR",
+    }
+    if signal in special_labels:
+        return special_labels[signal]
+    return (
+        signal.replace("ADDRESS_REGISTER_PLUS_OFFSET", "REG_OFF")
+        .replace("ADDRESS_REGISTER", "ADR_REG")
+        .replace("ADDRESS", "ADR")
+    )
+
+
 FETCH_DECODE_SIGNAL_LANES = {
     "LOAD_CONST": 0,
     "LOAD_ADDRESS": 1,
@@ -175,7 +193,8 @@ def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
         for component in circuit.findall("comp")
         if component.get("name") == "Pin"
         and (attrs := _attributes(component)).get("type") == "output"
-        and attrs.get("label") in FETCH_DECODE_SIGNAL_LANES
+        and attrs.get("label")
+        in {hardware_control_label(signal) for signal in FETCH_DECODE_SIGNAL_LANES}
     }
     wire_neighbors: dict[str, set[str]] = {}
     for wire in circuit.findall("wire"):
@@ -185,7 +204,7 @@ def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
         wire_neighbors.setdefault(end, set()).add(start)
     conflicts = []
     for signal, lane in FETCH_DECODE_SIGNAL_LANES.items():
-        pin = output_pins.get(signal)
+        pin = output_pins.get(hardware_control_label(signal))
         if pin is None:
             continue
         target = pin

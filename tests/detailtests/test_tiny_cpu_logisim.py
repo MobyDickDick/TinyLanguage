@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from tiny_cpu_assembler import assemble
+from tiny_cpu_circuit import inspect_project
 from tiny_cpu_isa import INSTRUCTION_SET, Instruction
 from tiny_cpu_machine import (
     OPCODES,
@@ -1648,20 +1649,12 @@ def test_top_level_follows_the_redrawn_effective_address_pin_order():
 
 
 def test_effective_address_routes_use_separate_drawing_lanes():
-    """Keep the fan-in readable and prevent endpoint-on-wire short circuits."""
+    """Reject shorts without prescribing obsolete absolute routing lanes."""
 
-    circuit = _top_level(ET.parse(PROJECT).getroot())
+    report = next(
+        report for report in inspect_project(PROJECT)
+        if report.name == "TinyCPUMain"
+    )
 
-    lower_lanes = []
-    target_lanes = []
-    for wire in circuit.findall("wire"):
-        start = tuple(map(int, wire.get("from").strip("()").split(",")))
-        end = tuple(map(int, wire.get("to").strip("()").split(",")))
-        if start[1] == end[1] and start[1] >= 1500:
-            lower_lanes.append(start[1])
-        if start[0] == end[0] and 1760 <= start[0] <= 1950:
-            if min(start[1], end[1]) < 1300 <= max(start[1], end[1]):
-                target_lanes.append(start[0])
-
-    assert sorted(lower_lanes) == list(range(1500, 1700, 10))
-    assert sorted(target_lanes) == list(range(1760, 1960, 10))
+    assert report.routing_conflicts == ()
+    assert report.width_conflicts == ()

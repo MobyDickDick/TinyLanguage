@@ -1592,3 +1592,23 @@ def test_top_level_follows_the_redrawn_effective_address_pin_order():
 
     for index, source_net in enumerate(source_nets):
         assert all(source_net.isdisjoint(other) for other in source_nets[index + 1:])
+
+
+def test_effective_address_routes_use_separate_drawing_lanes():
+    """Keep the fan-in readable and prevent endpoint-on-wire short circuits."""
+
+    circuit = _top_level(ET.parse(PROJECT).getroot())
+
+    lower_lanes = []
+    target_lanes = []
+    for wire in circuit.findall("wire"):
+        start = tuple(map(int, wire.get("from").strip("()").split(",")))
+        end = tuple(map(int, wire.get("to").strip("()").split(",")))
+        if start[1] == end[1] and start[1] >= 1500:
+            lower_lanes.append(start[1])
+        if start[0] == end[0] and 1760 <= start[0] <= 1950:
+            if min(start[1], end[1]) < 1300 <= max(start[1], end[1]):
+                target_lanes.append(start[0])
+
+    assert sorted(lower_lanes) == list(range(1500, 1700, 10))
+    assert sorted(target_lanes) == list(range(1760, 1960, 10))

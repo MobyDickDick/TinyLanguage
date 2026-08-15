@@ -61,9 +61,6 @@
       <a name="bit9" val="0"/>
       <a name="incoming" val="22"/>
     </comp>
-    <comp loc="(1010,110)" name="AddressPath">
-      <a name="label" val="ADDRESS_PATH"/>
-    </comp>
     <comp loc="(1440,110)" name="Datapath">
       <a name="label" val="DATAPATH_INSTANCE"/>
     </comp>
@@ -82,18 +79,15 @@
     <comp loc="(570,280)" name="Memory">
       <a name="label" val="MEMORY_INSTANCE"/>
     </comp>
+    <comp loc="(870,110)" name="AddressPath">
+      <a name="label" val="ADDRESS_PATH"/>
+    </comp>
     <comp loc="(880,360)" name="DecodeSignals">
       <a name="label" val="DECODE_SIGNALS"/>
     </comp>
     <comp loc="(880,440)" name="FetchDecodeControls">
       <a name="label" val="FETCH_DECODE_CONTROLS"/>
     </comp>
-    <wire from="(1010,110)" to="(1050,110)"/>
-    <wire from="(1010,130)" to="(1040,130)"/>
-    <wire from="(1040,130)" to="(1040,260)"/>
-    <wire from="(1040,260)" to="(1690,260)"/>
-    <wire from="(1050,110)" to="(1050,250)"/>
-    <wire from="(1050,250)" to="(1700,250)"/>
     <wire from="(1190,170)" to="(1220,170)"/>
     <wire from="(1190,70)" to="(1190,170)"/>
     <wire from="(1190,70)" to="(1650,70)"/>
@@ -197,9 +191,9 @@
     <wire from="(1980,900)" to="(1990,900)"/>
     <wire from="(1980,940)" to="(2160,940)"/>
     <wire from="(1990,860)" to="(1990,900)"/>
-    <wire from="(210,10)" to="(210,340)"/>
-    <wire from="(210,10)" to="(690,10)"/>
-    <wire from="(210,340)" to="(350,340)"/>
+    <wire from="(200,20)" to="(200,340)"/>
+    <wire from="(200,20)" to="(950,20)"/>
+    <wire from="(200,340)" to="(350,340)"/>
     <wire from="(2130,30)" to="(2130,520)"/>
     <wire from="(2140,20)" to="(2140,540)"/>
     <wire from="(2150,10)" to="(2150,380)"/>
@@ -218,19 +212,19 @@
     <wire from="(570,170)" to="(580,170)"/>
     <wire from="(570,280)" to="(1510,280)"/>
     <wire from="(570,300)" to="(1620,300)"/>
-    <wire from="(600,150)" to="(670,150)"/>
+    <wire from="(600,150)" to="(630,150)"/>
     <wire from="(600,160)" to="(610,160)"/>
     <wire from="(610,160)" to="(610,360)"/>
     <wire from="(610,360)" to="(610,440)"/>
     <wire from="(610,360)" to="(660,360)"/>
     <wire from="(610,440)" to="(660,440)"/>
-    <wire from="(670,150)" to="(670,270)"/>
-    <wire from="(670,270)" to="(1610,270)"/>
-    <wire from="(690,10)" to="(690,310)"/>
-    <wire from="(690,310)" to="(900,310)"/>
-    <wire from="(780,10)" to="(2150,10)"/>
-    <wire from="(780,10)" to="(780,130)"/>
-    <wire from="(780,130)" to="(790,130)"/>
+    <wire from="(630,150)" to="(630,270)"/>
+    <wire from="(630,270)" to="(1610,270)"/>
+    <wire from="(640,10)" to="(2150,10)"/>
+    <wire from="(640,10)" to="(640,130)"/>
+    <wire from="(640,130)" to="(650,130)"/>
+    <wire from="(870,110)" to="(930,110)"/>
+    <wire from="(870,130)" to="(910,130)"/>
     <wire from="(880,1020)" to="(1480,1020)"/>
     <wire from="(880,1040)" to="(1450,1040)"/>
     <wire from="(880,1100)" to="(1590,1100)"/>
@@ -240,7 +234,7 @@
     <wire from="(880,1340)" to="(1550,1340)"/>
     <wire from="(880,1380)" to="(1570,1380)"/>
     <wire from="(880,1400)" to="(1580,1400)"/>
-    <wire from="(880,360)" to="(900,360)"/>
+    <wire from="(880,360)" to="(950,360)"/>
     <wire from="(880,380)" to="(2150,380)"/>
     <wire from="(880,480)" to="(1600,480)"/>
     <wire from="(880,500)" to="(1650,500)"/>
@@ -260,7 +254,11 @@
     <wire from="(880,900)" to="(1470,900)"/>
     <wire from="(880,960)" to="(1600,960)"/>
     <wire from="(880,980)" to="(1460,980)"/>
-    <wire from="(900,310)" to="(900,360)"/>
+    <wire from="(910,130)" to="(910,260)"/>
+    <wire from="(910,260)" to="(1690,260)"/>
+    <wire from="(930,110)" to="(930,250)"/>
+    <wire from="(930,250)" to="(1700,250)"/>
+    <wire from="(950,20)" to="(950,360)"/>
   </circuit>
   <circuit name="EffectiveAddress">
     <a name="appearance" val="logisim_evolution"/>

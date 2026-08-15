@@ -467,7 +467,15 @@ def test_restored_subtraction_box_is_instantiated_and_tunnel_free():
         for component in operations.findall("comp")
         if component.get("name") == "SubSubCircuit"
     )
-    assert instance.get("loc") == "(840,470)"
+    add_instance = next(
+        component
+        for component in operations.findall("comp")
+        if component.get("name") == "AddSubCircuit"
+    )
+    # The hand-maintained redraw moved both arithmetic boxes together. Protect
+    # their alignment and spacing rather than restoring obsolete coordinates.
+    assert add_instance.get("loc") == "(900,230)"
+    assert instance.get("loc") == "(900,470)"
     assert {
         child.get("name"): child.get("val") for child in instance.findall("a")
     }["label"] == "SUB_OPERATION"
@@ -493,7 +501,7 @@ def test_result_merge_has_a_visible_routing_lane():
     result_or_x, result_or_y = (
         int(value) for value in result_or.get("loc").strip("()").split(",")
     )
-    assert (result_or_x, result_or_y) == (1080, 690)
+    assert (result_or_x, result_or_y) == (1160, 690)
 
 
 def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():

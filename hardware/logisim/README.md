@@ -274,6 +274,16 @@ Bereichsfehlerbehandlung verwechseln. Die beiden Adressmultiplexer tragen
 wieder stabile Bezeichner, damit Strukturtests und die Logisim-Ansicht diese
 Verdrahtung eindeutig verfolgen können.
 
+Die manuelle Überarbeitung von `Operations` ist dabei ausdrücklich erhalten:
+die drei Operationsblöcke und ihre Ergebnis-ODER-Gatter bleiben in den nach
+rechts verschobenen, rechtwinklig verdrahteten Routingbahnen. Die Abnahme
+bindet diese Anordnung nicht mehr an die Koordinaten der fehlerhaften
+Vorgängerversion. Bei der Kontrolle des nächsten Arbeitspakets wurden dagegen
+die versehentlich entfernten Bezeichner der beiden Adressmultiplexer wieder
+ergänzt. Das ändert weder ihre Position noch ihre Verdrahtung, macht aber die
+zentrale Auswahl zwischen direkter Adresse, Registeradresse und Offsetsumme
+wieder eindeutig und automatisiert prüfbar.
+
 - [x] Die Python-VM als semantische Referenz absichern: `ADD` und `SUB`
   verwenden in allen vier Adressierungsarten den bisherigen Akkumulator als
   linken Operanden; direkte und beide adressregisterbasierten Varianten lesen

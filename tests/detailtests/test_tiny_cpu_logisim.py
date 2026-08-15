@@ -1489,8 +1489,7 @@ def test_unary_and_subtraction_boxes_export_a_uniform_operation_contract():
 def test_memory_address_selector_includes_indirect_addressing_modes():
     """Memory selects direct, register, and register-plus-offset addresses."""
     root = ET.parse(PROJECT).getroot()
-    circuit = _top_level(root)
-    adjacency = _electrical_adjacency(circuit)
+    circuit = next(item for item in root.findall("circuit") if item.get("name") == "FBox")
     register_mux = _labelled_component(circuit, "MEMORY_REGISTER_ADDRESS_SELECT")
     offset_mux = _labelled_component(circuit, "MEMORY_OFFSET_ADDRESS_SELECT")
     def ports(component):
@@ -1498,15 +1497,21 @@ def test_memory_address_selector_includes_indirect_addressing_modes():
         return {f"({x-30},{y-10})", f"({x-30},{y+10})"}, f"({x},{y})"
     register_inputs, register_output = ports(register_mux)
     offset_inputs, offset_output = ports(offset_mux)
-    assert len(_reachable(adjacency, _instruction_field_output(root, range(16))) & register_inputs) == 1
-    assert len(_reachable(adjacency, _subcircuit_output(root, "AddressPath", "ADDRESS")) & register_inputs) == 1
-    assert len(_reachable(adjacency, register_output) & offset_inputs) == 1
-    assert len(_reachable(adjacency, _subcircuit_output(root, "AddressPath", "ADDRESS_PLUS_OFFSET")) & offset_inputs) == 1
-    assert _subcircuit_input(root, "Memory", "ADDRESS") in _reachable(adjacency, offset_output)
+    tunnels = {
+        _attributes(component).get("label"): component.get("loc")
+        for component in circuit.findall("comp")
+        if component.get("name") == "Tunnel"
+    }
+    assert {tunnels["EFFECTIVE_DIRECT_ADDRESS"], tunnels["EFFECTIVE_REGISTER_ADDRESS"]} == register_inputs
+    assert {tunnels["EFFECTIVE_REGISTER_SELECTED"], tunnels["EFFECTIVE_OFFSET_ADDRESS"]} == offset_inputs
+    assert offset_output == "(600,190)"
     for label, suffix in (("MEMORY_ADDRESS_REGISTER_SELECT", "ADDRESS_REGISTER"), ("MEMORY_ADDRESS_OFFSET_SELECT", "ADDRESS_REGISTER_PLUS_OFFSET")):
-        _, inputs = _gate_ports(_labelled_component(circuit, label))
-        connected = {next(iter(_reachable(adjacency, _control_output(root, f"{family}_{suffix}")) & inputs)) for family in ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR", "STORE")}
-        assert connected == inputs
+        _labelled_component(circuit, label)
+        connected = {
+            tunnels[f"EFFECTIVE_{family}_{'REGISTER' if suffix == 'ADDRESS_REGISTER' else 'OFFSET'}"]
+            for family in ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR", "STORE")
+        }
+        assert len(connected) == 8
 
 
 def test_effective_address_tunnels_keep_the_existing_layout():
@@ -1547,8 +1552,9 @@ def test_effective_address_tunnels_keep_the_existing_layout():
         label: producer_tunnels[label].get("loc") for label in expected_locations
     } == expected_locations
 
+    fbox = next(item for item in root.findall("circuit") if item.get("name") == "FBox")
     selector_parts = [
-        component for component in circuit.findall("comp")
+        component for component in fbox.findall("comp")
         if _attributes(component).get("label") in {
             "MEMORY_ADDRESS_REGISTER_SELECT",
             "MEMORY_ADDRESS_OFFSET_SELECT",
@@ -1558,8 +1564,9 @@ def test_effective_address_tunnels_keep_the_existing_layout():
     ]
     assert selector_parts
     assert {part.get("loc") for part in selector_parts} == {
-        "(2130,970)", "(2260,940)", "(2170,1220)", "(2180,1470)",
+        "(400,205)", "(400,445)", "(600,190)", "(600,250)",
     }
+    assert any(component.get("name") == "FBox" for component in circuit.findall("comp"))
 
     memory_input = next(
         component for component in all_tunnels

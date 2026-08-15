@@ -7,6 +7,22 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-15)
 
+- [x] **Revalidate the counter-clockwise TinyCPU address-error routing**
+  (Owner: TinyCPU/Hardware)
+  - Success: retain the manually moved, east-facing offset-error gate and its
+    upward counter-clockwise input routes while ensuring that both routes end
+    on actual gate terminals. Preserve stable names on the two effective-
+    address multiplexers and keep generated diagnostics reproducible.
+  - Result: two short vertical terminal stubs now complete the retained routes
+    without moving the gate or restoring the former west-facing layout. The
+    structural check resolves terminals from the gate's declared orientation,
+    and both selector labels are restored at their existing positions.
+  - Follow-up: complete the central address-range check for direct, register,
+    and register-plus-offset results before marking the broader effective-
+    address audit complete.
+
+## Next documented work package (completed 2026-08-15)
+
 - [x] **Integrate TinyCPU offset-carry address errors**
   (Owner: TinyCPU/Hardware)
   - Success: assert `ErrorFlags.SET_ADDR` when a register-plus-offset addressing

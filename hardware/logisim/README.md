@@ -52,6 +52,13 @@ verschobene `AddressPath`-Box bleiben dabei erhalten. Die beiden vorhandenen
 Adressmultiplexer tragen weiterhin stabile Bezeichner; ihre Position und
 Verdrahtung wurden durch die erneute Abnahme nicht zurückgesetzt.
 
+Auch die nachträglich gegen den Uhrzeigersinn nach oben zurückgeführten
+Eingänge von `ACTIVE_OFFSET_ADDRESS_ERROR` bleiben erhalten. Das Gatter zeigt
+nun nach Osten; zwei kurze senkrechte Anschlussstücke führen die vorhandenen
+Korridore auf seine tatsächlichen Eingangskoordinaten. Der Strukturtest leitet
+die Anschlüsse aus der im XML angegebenen Ausrichtung ab, statt die frühere
+westliche Ausrichtung oder die alte Position wiederherzustellen.
+
 Der Hardware-Vertragscheck prüft diese Hierarchie auf direkte und indirekte
 rekursive Unterblatt-Aufrufe. Solche Zyklen werden abgewiesen, weil Logisim beim
 Laden andernfalls die Symbole unbegrenzt expandieren und dabei den verfügbaren

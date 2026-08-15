@@ -263,7 +263,12 @@ def test_top_level_error_controls_reach_only_the_matching_error_input(name):
 
 
 def test_active_offset_carry_sets_the_address_error_flag():
-    """Only an active register-plus-offset carry replaces decoded SET_ADDR."""
+    """Only an active register-plus-offset carry replaces decoded SET_ADDR.
+
+    The hand-maintained drawing may face this gate in either direction.  Resolve
+    its terminals from that declared orientation rather than forcing the older
+    west-facing placement back onto the compact, counter-clockwise route.
+    """
 
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
@@ -277,7 +282,9 @@ def test_active_offset_carry_sets_the_address_error_flag():
     assert gate.get("name") == "AND Gate"
 
     x, y = (int(value) for value in gate.get("loc").strip("()").split(","))
-    gate_inputs = {f"({x + 30},{y - 10})", f"({x + 30},{y + 10})"}
+    facing = _attributes(gate).get("facing", "east")
+    input_x = x + 30 if facing == "west" else x - 50
+    gate_inputs = {f"({input_x},{y - 10})", f"({input_x},{y + 10})"}
     adjacency = _electrical_adjacency(
         circuit,
         {carry, offset_active, address_error, decoded_address_error} | gate_inputs,

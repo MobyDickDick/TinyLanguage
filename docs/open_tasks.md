@@ -5,6 +5,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Next documented work package (completed 2026-08-15)
+
+- [x] **Set TinyCPU `SET_INV` for active arithmetic with invalid operands**
+  (Owner: TinyCPU/Hardware)
+  - Success: detect an active `ADD_*` or `SUB_*` operation whose selected
+    operand path is invalid, and route that condition to `ErrorFlags.SET_INV`
+    without asserting the flag while arithmetic is inactive.
+  - Result: `Operations` now combines the eight ADD/SUB activity controls,
+    negates the combined arithmetic-valid result, and gates both conditions as
+    `ACTIVE_INVALID_ARITHMETIC`. Its `INVALID_OPERAND` output is the sole
+    integrated source for `ErrorFlags.SET_INV`; the decoder's placeholder
+    `SET_INV` output remains isolated.
+  - Follow-up: extend the same explicit result-and-validity contract to the
+    next arithmetic family, beginning with `MUL_*`.
+
 ## Next documented work package (completed 2026-08-14)
 
 - [x] **Correct the TinyCPU ADD/SUB operand and validity sources**

@@ -29,12 +29,6 @@
     <a name="circuit" val="TinyCPUMain"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(2150,940)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_OFFSET_MODE"/>
-    </comp>
-    <comp lib="0" loc="(2150,960)" name="Tunnel">
-      <a name="label" val="EFFECTIVE_REGISTER_MODE"/>
-    </comp>
     <comp lib="0" loc="(310,170)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="RESET"/>
@@ -203,8 +197,6 @@
     <wire from="(1980,540)" to="(2140,540)"/>
     <wire from="(2110,900)" to="(2150,900)"/>
     <wire from="(2110,920)" to="(2120,920)"/>
-    <wire from="(2110,940)" to="(2150,940)"/>
-    <wire from="(2110,960)" to="(2150,960)"/>
     <wire from="(2120,860)" to="(2120,920)"/>
     <wire from="(2130,30)" to="(2130,520)"/>
     <wire from="(2140,20)" to="(2140,540)"/>

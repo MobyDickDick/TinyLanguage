@@ -469,7 +469,7 @@ def test_top_level_has_visible_labels_on_wires_at_components():
     """Name signals beside component ports without hiding them in tunnels."""
 
     circuit = _top_level(ET.parse(PROJECT).getroot())
-    assert all(_attributes(c).get("label", "").startswith("EFFECTIVE_") for c in circuit.findall("comp") if c.get("name") == "Tunnel")
+    assert not [c for c in circuit.findall("comp") if c.get("name") == "Tunnel"]
     operations = next(
         c for c in ET.parse(PROJECT).getroot().findall("circuit")
         if c.get("name") == "Operations"

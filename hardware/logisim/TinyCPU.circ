@@ -61,6 +61,9 @@
       <a name="bit9" val="0"/>
       <a name="incoming" val="22"/>
     </comp>
+    <comp lib="1" loc="(2120,980)" name="AND Gate">
+      <a name="label" val="ACTIVE_OFFSET_ADDRESS_ERROR"/>
+    </comp>
     <comp loc="(1440,110)" name="Datapath">
       <a name="label" val="DATAPATH_INSTANCE"/>
     </comp>
@@ -72,10 +75,6 @@
     </comp>
     <comp loc="(1980,900)" name="EffectiveAddress">
       <a name="label" val="EFFECTIVE_ADDRESS_FBOX"/>
-    </comp>
-    <comp lib="1" loc="(2200,1500)" name="AND Gate">
-      <a name="facing" val="west"/>
-      <a name="label" val="ACTIVE_OFFSET_ADDRESS_ERROR"/>
     </comp>
     <comp loc="(570,110)" name="FetchDecode">
       <a name="label" val="FETCH_DECODE"/>
@@ -133,12 +132,10 @@
     <wire from="(1510,800)" to="(1510,1020)"/>
     <wire from="(1520,100)" to="(1520,1220)"/>
     <wire from="(1520,100)" to="(1760,100)"/>
-    <wire from="(1530,140)" to="(1530,1340)"/>
-    <wire from="(1530,140)" to="(1760,140)"/>
     <wire from="(1540,160)" to="(1540,1360)"/>
     <wire from="(1540,160)" to="(1760,160)"/>
-    <wire from="(1550,180)" to="(1550,1380)"/>
-    <wire from="(1550,180)" to="(1760,180)"/>
+    <wire from="(1560,140)" to="(1560,1340)"/>
+    <wire from="(1560,140)" to="(1760,140)"/>
     <wire from="(1570,220)" to="(1570,1420)"/>
     <wire from="(1570,220)" to="(1760,220)"/>
     <wire from="(1580,240)" to="(1580,1440)"/>
@@ -184,25 +181,37 @@
     <wire from="(1700,250)" to="(1700,920)"/>
     <wire from="(1700,920)" to="(1760,920)"/>
     <wire from="(1730,1120)" to="(1760,1120)"/>
+    <wire from="(1730,180)" to="(1760,180)"/>
+    <wire from="(1730,50)" to="(1730,180)"/>
+    <wire from="(1730,50)" to="(2190,50)"/>
     <wire from="(1730,860)" to="(1730,1120)"/>
     <wire from="(1730,860)" to="(1990,860)"/>
     <wire from="(1750,200)" to="(1760,200)"/>
-    <wire from="(1750,40)" to="(1750,200)"/>
-    <wire from="(1750,40)" to="(2180,40)"/>
+    <wire from="(1750,60)" to="(1750,200)"/>
+    <wire from="(1750,60)" to="(2180,60)"/>
     <wire from="(1980,520)" to="(2130,520)"/>
     <wire from="(1980,540)" to="(2140,540)"/>
     <wire from="(1980,580)" to="(2180,580)"/>
     <wire from="(1980,900)" to="(1990,900)"/>
     <wire from="(1980,940)" to="(2160,940)"/>
+    <wire from="(1980,960)" to="(2010,960)"/>
     <wire from="(1990,860)" to="(1990,900)"/>
     <wire from="(200,20)" to="(200,340)"/>
     <wire from="(200,20)" to="(950,20)"/>
     <wire from="(200,340)" to="(350,340)"/>
+    <wire from="(2010,1000)" to="(2070,1000)"/>
+    <wire from="(2010,960)" to="(2010,1000)"/>
+    <wire from="(2030,310)" to="(2030,960)"/>
+    <wire from="(2030,960)" to="(2070,960)"/>
+    <wire from="(2120,980)" to="(2180,980)"/>
     <wire from="(2130,30)" to="(2130,520)"/>
     <wire from="(2140,20)" to="(2140,540)"/>
     <wire from="(2150,10)" to="(2150,380)"/>
     <wire from="(2160,0)" to="(2160,940)"/>
-    <wire from="(2180,40)" to="(2180,580)"/>
+    <wire from="(2180,60)" to="(2180,580)"/>
+    <wire from="(2180,980)" to="(2180,990)"/>
+    <wire from="(2180,990)" to="(2190,990)"/>
+    <wire from="(2190,50)" to="(2190,990)"/>
     <wire from="(220,0)" to="(2160,0)"/>
     <wire from="(220,0)" to="(220,280)"/>
     <wire from="(220,280)" to="(350,280)"/>
@@ -227,24 +236,16 @@
     <wire from="(640,10)" to="(2150,10)"/>
     <wire from="(640,10)" to="(640,130)"/>
     <wire from="(640,130)" to="(650,130)"/>
+    <wire from="(840,1520)" to="(2250,1520)"/>
     <wire from="(870,110)" to="(930,110)"/>
     <wire from="(870,130)" to="(910,130)"/>
+    <wire from="(870,150)" to="(900,150)"/>
     <wire from="(880,1020)" to="(1480,1020)"/>
     <wire from="(880,1040)" to="(1450,1040)"/>
     <wire from="(880,1100)" to="(1590,1100)"/>
     <wire from="(880,1220)" to="(1520,1220)"/>
-    <wire from="(880,1340)" to="(1530,1340)"/>
+    <wire from="(880,1340)" to="(1560,1340)"/>
     <wire from="(880,1360)" to="(1540,1360)"/>
-    <wire from="(840,150)" to="(840,1520)"/>
-    <wire from="(840,150)" to="(870,150)"/>
-    <wire from="(840,1520)" to="(2270,1520)"/>
-    <wire from="(1550,1380)" to="(1550,1500)"/>
-    <wire from="(1550,1500)" to="(2200,1500)"/>
-    <wire from="(1980,960)" to="(2250,960)"/>
-    <wire from="(2230,1490)" to="(2250,1490)"/>
-    <wire from="(2230,1510)" to="(2270,1510)"/>
-    <wire from="(2250,960)" to="(2250,1490)"/>
-    <wire from="(2270,1510)" to="(2270,1520)"/>
     <wire from="(880,1420)" to="(1570,1420)"/>
     <wire from="(880,1440)" to="(1580,1440)"/>
     <wire from="(880,360)" to="(950,360)"/>
@@ -267,6 +268,8 @@
     <wire from="(880,900)" to="(1470,900)"/>
     <wire from="(880,960)" to="(1600,960)"/>
     <wire from="(880,980)" to="(1460,980)"/>
+    <wire from="(900,150)" to="(900,310)"/>
+    <wire from="(900,310)" to="(2030,310)"/>
     <wire from="(910,130)" to="(910,260)"/>
     <wire from="(910,260)" to="(1690,260)"/>
     <wire from="(930,110)" to="(930,250)"/>
@@ -397,11 +400,9 @@
       <a name="label" val="MEMORY_ADDRESS_OFFSET_SELECT"/>
     </comp>
     <comp lib="2" loc="(750,220)" name="Multiplexer">
-      <a name="label" val="MEMORY_REGISTER_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(750,580)" name="Multiplexer">
-      <a name="label" val="MEMORY_OFFSET_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <wire from="(300,160)" to="(490,160)"/>

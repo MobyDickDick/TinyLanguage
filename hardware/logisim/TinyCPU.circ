@@ -73,6 +73,10 @@
     <comp loc="(1980,900)" name="EffectiveAddress">
       <a name="label" val="EFFECTIVE_ADDRESS_FBOX"/>
     </comp>
+    <comp lib="1" loc="(2200,1500)" name="AND Gate">
+      <a name="facing" val="west"/>
+      <a name="label" val="ACTIVE_OFFSET_ADDRESS_ERROR"/>
+    </comp>
     <comp loc="(570,110)" name="FetchDecode">
       <a name="label" val="FETCH_DECODE"/>
     </comp>
@@ -231,7 +235,16 @@
     <wire from="(880,1220)" to="(1520,1220)"/>
     <wire from="(880,1340)" to="(1530,1340)"/>
     <wire from="(880,1360)" to="(1540,1360)"/>
-    <wire from="(880,1380)" to="(1550,1380)"/>
+    <wire from="(840,150)" to="(840,1520)"/>
+    <wire from="(840,150)" to="(870,150)"/>
+    <wire from="(840,1520)" to="(2270,1520)"/>
+    <wire from="(1550,1380)" to="(1550,1500)"/>
+    <wire from="(1550,1500)" to="(2200,1500)"/>
+    <wire from="(1980,960)" to="(2250,960)"/>
+    <wire from="(2230,1490)" to="(2250,1490)"/>
+    <wire from="(2230,1510)" to="(2270,1510)"/>
+    <wire from="(2250,960)" to="(2250,1490)"/>
+    <wire from="(2270,1510)" to="(2270,1520)"/>
     <wire from="(880,1420)" to="(1570,1420)"/>
     <wire from="(880,1440)" to="(1580,1440)"/>
     <wire from="(880,360)" to="(950,360)"/>
@@ -384,9 +397,11 @@
       <a name="label" val="MEMORY_ADDRESS_OFFSET_SELECT"/>
     </comp>
     <comp lib="2" loc="(750,220)" name="Multiplexer">
+      <a name="label" val="MEMORY_REGISTER_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(750,580)" name="Multiplexer">
+      <a name="label" val="MEMORY_OFFSET_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <wire from="(300,160)" to="(490,160)"/>

@@ -227,7 +227,7 @@ def test_top_level_clear_error_reaches_error_flags_only():
 
 
 @pytest.mark.parametrize(
-    "name", ("SET_OVF", "SET_DIV0", "SET_ADDR", "SET_ILL", "SET_INPUT")
+    "name", ("SET_OVF", "SET_DIV0", "SET_ILL", "SET_INPUT")
 )
 def test_top_level_error_controls_reach_only_the_matching_error_input(name):
     """Resolve every error route by pin name, independent of drawing coordinates."""
@@ -260,6 +260,36 @@ def test_top_level_error_controls_reach_only_the_matching_error_input(name):
         and _attributes(component).get("label") in {"CLK", "RESET"}
     }
     assert reachable.isdisjoint(external_controls)
+
+
+def test_active_offset_carry_sets_the_address_error_flag():
+    """Only an active register-plus-offset carry replaces decoded SET_ADDR."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    carry = _subcircuit_output(root, "AddressPath", "OFFSET_CARRY")
+    offset_active = _subcircuit_output(
+        root, "EffectiveAddress", "EFFECTIVE_OFFSET_MODE"
+    )
+    address_error = _subcircuit_input(root, "ErrorFlags", "SET_ADDR")
+    decoded_address_error = _control_output(root, "SET_ADDR")
+    gate = _labelled_component(circuit, "ACTIVE_OFFSET_ADDRESS_ERROR")
+    assert gate.get("name") == "AND Gate"
+
+    x, y = (int(value) for value in gate.get("loc").strip("()").split(","))
+    gate_inputs = {f"({x + 30},{y - 10})", f"({x + 30},{y + 10})"}
+    adjacency = _electrical_adjacency(
+        circuit,
+        {carry, offset_active, address_error, decoded_address_error} | gate_inputs,
+    )
+
+    carry_net = _reachable(adjacency, carry)
+    active_net = _reachable(adjacency, offset_active)
+    assert len(gate_inputs & carry_net) == 1
+    assert len(gate_inputs & active_net) == 1
+    assert carry_net.isdisjoint(active_net)
+    assert address_error in _reachable(adjacency, gate.get("loc"))
+    assert address_error not in _reachable(adjacency, decoded_address_error)
 
 
 def test_invalid_arithmetic_result_sets_the_invalid_operand_flag():

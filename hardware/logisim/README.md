@@ -38,6 +38,13 @@ die vier 16-Bit-Eingänge heißen kompakt `DIRECT_ADDR`, `REG_ADDR`,
 `REG_OFF`), sodass jede angeschlossene 1:1-Verbindung auf beiden Seiten
 denselben Namen trägt; die Pinpositionen ändern sich dadurch nicht.
 
+Die Top-Level-Routen zu `EffectiveAddress` besitzen getrennte Korridore. Die
+zuvor kurzgeschlossenen Paare `MUL_ADR_REG`/`MUL_REG_OFF` und
+`OR_ADR_REG`/`SUB_ADR_REG` sowie das gemeinsame Netz aus `LOAD_ADR_REG`,
+`DIV_ADR_REG` und `STORE_ADR_REG` sind getrennt. Auch `CLEAR_ERROR` und die
+sechs `SET_*`-Signale laufen einzeln zu den gleichnamigen `ErrorFlags`-Pins;
+keine dieser Leitungen endet mehr auf einer fremden Route.
+
 Der Hardware-Vertragscheck prüft diese Hierarchie auf direkte und indirekte
 rekursive Unterblatt-Aufrufe. Solche Zyklen werden abgewiesen, weil Logisim beim
 Laden andernfalls die Symbole unbegrenzt expandieren und dabei den verfügbaren

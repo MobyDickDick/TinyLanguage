@@ -7,6 +7,22 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-15)
 
+- [x] **Revalidate the manually compacted TinyCPU integration layout**
+  (Owner: TinyCPU/Hardware)
+  - Success: retain the hand-adjusted `AddressPath`, `EffectiveAddress`, and
+    decoder layout while reconnecting every error control by its named pin and
+    keeping the effective-address selectors structurally identifiable.
+  - Result: the compact `AddressPath` placement and shortened top-level routes
+    remain unchanged. The reordered `FetchDecodeControls` outputs now reach
+    only their matching `ErrorFlags` inputs, and the two existing address
+    multiplexers again have stable labels without changing their positions or
+    electrical connections. The regenerated decoder diagnostic captures the
+    maintained pin order.
+  - Follow-up: extend the explicit result-and-validity operation contract to
+    the next arithmetic family, beginning with `MUL_*`.
+
+## Next documented work package (completed 2026-08-15)
+
 - [x] **Set TinyCPU `SET_INV` for active arithmetic with invalid operands**
   (Owner: TinyCPU/Hardware)
   - Success: detect an active `ADD_*` or `SUB_*` operation whose selected

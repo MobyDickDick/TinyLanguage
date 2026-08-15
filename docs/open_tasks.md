@@ -7,6 +7,22 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-15)
 
+- [x] **Complete the central TinyCPU effective-address range check**
+  (Owner: TinyCPU/Hardware)
+  - Success: reject active direct, address-register, and register-plus-offset
+    memory addresses above the 12-bit `0xfff` limit, and merge that condition
+    with the existing active offset-carry error before `ErrorFlags.SET_ADDR`.
+  - Result: `EffectiveAddress` compares the selected 16-bit address with the
+    named maximum. The top level independently combines all eight direct
+    memory controls with the existing register and offset modes, so inactive
+    instructions cannot set the sticky flag. A final named OR gate combines
+    the range and offset-carry causes while the decoder placeholder remains
+    isolated.
+  - Follow-up: extend the explicit result-and-validity operation contract to
+    the next arithmetic family, beginning with `MUL_*`.
+
+## Next documented work package (completed 2026-08-15)
+
 - [x] **Revalidate the post-increment TinyCPU program-counter range check**
   (Owner: TinyCPU/Hardware)
   - Success: retain the manually redrawn `FetchDecode` layout in which the

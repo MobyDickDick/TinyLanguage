@@ -414,9 +414,6 @@
       <a name="appearance" val="classic"/>
       <a name="label" val="EFFECTIVE_STORE_OFFSET"/>
     </comp>
-    <comp lib="0" loc="(310,750)" name="Pin">
-      <a name="appearance" val="classic"/>
-    </comp>
     <comp lib="0" loc="(490,130)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="EFFECTIVE_REGISTER_ADDRESS"/>
@@ -472,9 +469,11 @@
       <a name="label" val="MEMORY_ADDRESS_OFFSET_SELECT"/>
     </comp>
     <comp lib="2" loc="(750,220)" name="Multiplexer">
+      <a name="label" val="MEMORY_REGISTER_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(750,580)" name="Multiplexer">
+      <a name="label" val="MEMORY_OFFSET_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <wire from="(300,160)" to="(490,160)"/>

@@ -1500,18 +1500,31 @@ def test_memory_address_selector_includes_indirect_addressing_modes():
         return {f"({x-30},{y-10})", f"({x-30},{y+10})"}, f"({x},{y})"
     register_inputs, register_output = ports(register_mux)
     offset_inputs, offset_output = ports(offset_mux)
-    tunnels = {
+    pins = {
         _attributes(component).get("label"): component.get("loc")
         for component in circuit.findall("comp")
-        if component.get("name") == "Tunnel"
+        if component.get("name") == "Pin"
     }
-    assert {tunnels["EFFECTIVE_DIRECT_ADDRESS"], tunnels["EFFECTIVE_REGISTER_ADDRESS"]} == register_inputs
-    assert {tunnels["EFFECTIVE_REGISTER_SELECTED"], tunnels["EFFECTIVE_OFFSET_ADDRESS"]} == offset_inputs
-    assert offset_output == "(600,190)"
+    points = set(register_inputs | offset_inputs) | {
+        pins["EFFECTIVE_DIRECT_ADDRESS"],
+        pins["EFFECTIVE_REGISTER_ADDRESS"],
+        pins["EFFECTIVE_REGISTER_SELECTED"],
+        pins["EFFECTIVE_OFFSET_ADDRESS"],
+    }
+    adjacency = _electrical_adjacency(circuit, points)
+    for source, target in (
+        (pins["EFFECTIVE_DIRECT_ADDRESS"], "(720,210)"),
+        (pins["EFFECTIVE_REGISTER_ADDRESS"], "(720,230)"),
+        (pins["EFFECTIVE_REGISTER_SELECTED"], "(720,590)"),
+        (pins["EFFECTIVE_OFFSET_ADDRESS"], "(720,570)"),
+    ):
+        assert target in _reachable(adjacency, source)
+    assert register_output == "(750,220)"
+    assert offset_output == "(750,580)"
     for label, suffix in (("MEMORY_ADDRESS_REGISTER_SELECT", "ADDRESS_REGISTER"), ("MEMORY_ADDRESS_OFFSET_SELECT", "ADDRESS_REGISTER_PLUS_OFFSET")):
         _labelled_component(circuit, label)
         connected = {
-            tunnels[f"EFFECTIVE_{family}_{'REGISTER' if suffix == 'ADDRESS_REGISTER' else 'OFFSET'}"]
+            pins[f"EFFECTIVE_{family}_{'REGISTER' if suffix == 'ADDRESS_REGISTER' else 'OFFSET'}"]
             for family in ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR", "STORE")
         }
         assert len(connected) == 8
@@ -1541,7 +1554,7 @@ def test_effective_address_sheet_keeps_the_existing_selector_layout():
     ]
     assert selector_parts
     assert {part.get("loc") for part in selector_parts} == {
-        "(400,205)", "(400,445)", "(600,190)", "(600,250)",
+        "(560,260)", "(570,620)", "(750,220)", "(750,580)",
     }
     assert any(
         component.get("name") == "EffectiveAddress"

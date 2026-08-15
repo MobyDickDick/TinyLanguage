@@ -237,6 +237,35 @@ Die folgenden Punkte bilden die priorisierte Fehler- und Arbeitsliste. Ein
 Punkt wird erst abgehakt, wenn die sichtbare Logisim-Verdrahtung und ein
 Struktur- oder Verhaltenstest dieselbe Datenquelle bestätigen:
 
+### Ergebnis der erneuten Verdrahtungsprüfung
+
+Die zentrale Auswahl auf `EffectiveAddress` ist elektrisch getrennt aufgebaut:
+Der erste Multiplexer wählt zwischen dem direkten Adressfeld und dem Inhalt
+des Adressregisters. Nur wenn eine `*_ADDRESS_REGISTER`-Steuerleitung aktiv
+ist, wird der Registereingang ausgewählt. Der zweite Multiplexer wählt danach
+für eine aktive `*_ADDRESS_REGISTER_PLUS_OFFSET`-Steuerleitung die bereits in
+`AddressPath` berechnete Summe aus Register und Offset; andernfalls reicht er
+das Ergebnis des ersten Multiplexers weiter. Damit erreicht immer genau eine
+effektive Adresse den gemeinsamen Adresseingang von Daten- und Validitäts-RAM.
+
+Wichtig für den Begriff **indirekt**: Die TinyCPU-ISA implementiert
+registerindirekte Adressierung, nicht Memory-indirekte Adressierung. Bei
+`LOAD_ADDRESS_REGISTER()` steht die effektive Adresse bereits im
+Adressregister; der Daten-RAM wird daher für diese Instruktion nur einmal an
+dieser Adresse gelesen. Soll die Adresse ihrerseits aus dem Speicher stammen,
+muss sie vorher mit `LOAD_ADDRESS_REGISTER_ADDRESS(address)` in einer eigenen
+Instruktion ins Adressregister geladen werden. Erst eine andere, hier nicht
+definierte Memory-indirekte Adressierungsart würde innerhalb derselben
+Instruktion zwei aufeinanderfolgende Speicherlesevorgänge benötigen.
+
+Die erneute Prüfung hat außerdem eine noch offene Grenze des Arbeitspakets
+bestätigt: `AddressPath.OFFSET_CARRY` ist noch nicht mit `SET_ADDR` verknüpft.
+Der Punkt zur effektiven Adresse bleibt deshalb bewusst offen. Ihn bereits
+abzuhaken würde die getestete Quellenauswahl mit der noch fehlenden
+Bereichsfehlerbehandlung verwechseln. Die beiden Adressmultiplexer tragen
+wieder stabile Bezeichner, damit Strukturtests und die Logisim-Ansicht diese
+Verdrahtung eindeutig verfolgen können.
+
 - [x] Die Python-VM als semantische Referenz absichern: `ADD` und `SUB`
   verwenden in allen vier Adressierungsarten den bisherigen Akkumulator als
   linken Operanden; direkte und beide adressregisterbasierten Varianten lesen

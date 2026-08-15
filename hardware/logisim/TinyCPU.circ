@@ -274,86 +274,86 @@
     <a name="simulationFrequency" val="1.0"/>
     <comp lib="0" loc="(300,160)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_LOAD_REGISTER"/>
+      <a name="label" val="LOAD_ADR_REG"/>
     </comp>
     <comp lib="0" loc="(300,190)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_ADD_REGISTER"/>
+      <a name="label" val="ADD_ADR_REG"/>
     </comp>
     <comp lib="0" loc="(300,220)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_SUB_REGISTER"/>
+      <a name="label" val="SUB_ADR_REG"/>
     </comp>
     <comp lib="0" loc="(300,250)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_MUL_REGISTER"/>
+      <a name="label" val="MUL_ADR_REG"/>
     </comp>
     <comp lib="0" loc="(300,280)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_DIV_REGISTER"/>
+      <a name="label" val="DIV_ADR_REG"/>
     </comp>
     <comp lib="0" loc="(300,310)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_AND_REGISTER"/>
+      <a name="label" val="AND_ADR_REG"/>
     </comp>
     <comp lib="0" loc="(300,340)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_OR_REGISTER"/>
+      <a name="label" val="OR_ADR_REG"/>
     </comp>
     <comp lib="0" loc="(300,370)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_STORE_REGISTER"/>
+      <a name="label" val="STORE_ADR_REG"/>
     </comp>
     <comp lib="0" loc="(300,510)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_LOAD_OFFSET"/>
+      <a name="label" val="LOAD_REG_OFF"/>
     </comp>
     <comp lib="0" loc="(300,540)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_ADD_OFFSET"/>
+      <a name="label" val="ADD_REG_OFF"/>
     </comp>
     <comp lib="0" loc="(300,570)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_SUB_OFFSET"/>
+      <a name="label" val="SUB_REG_OFF"/>
     </comp>
     <comp lib="0" loc="(300,600)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_MUL_OFFSET"/>
+      <a name="label" val="MUL_REG_OFF"/>
     </comp>
     <comp lib="0" loc="(300,630)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_DIV_OFFSET"/>
+      <a name="label" val="DIV_REG_OFF"/>
     </comp>
     <comp lib="0" loc="(300,670)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_AND_OFFSET"/>
+      <a name="label" val="AND_REG_OFF"/>
     </comp>
     <comp lib="0" loc="(300,700)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_OR_OFFSET"/>
+      <a name="label" val="OR_REG_OFF"/>
     </comp>
     <comp lib="0" loc="(300,740)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_STORE_OFFSET"/>
+      <a name="label" val="STORE_REG_OFF"/>
     </comp>
     <comp lib="0" loc="(490,130)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_REGISTER_ADDRESS"/>
+      <a name="label" val="REG_ADDR"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(490,80)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_DIRECT_ADDRESS"/>
+      <a name="label" val="DIRECT_ADDR"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(500,430)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_OFFSET_ADDRESS"/>
+      <a name="label" val="OFFSET_ADDR"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(500,480)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="EFFECTIVE_REGISTER_SELECTED"/>
+      <a name="label" val="REG_SELECTED"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(770,220)" name="Pin">

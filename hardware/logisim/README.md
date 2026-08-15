@@ -27,6 +27,15 @@ Adressmultiplexer bilden unmittelbar unter den Steuerleitungen einen kompakten
 Block. Nur der Empfängertunnel am westlichen `Memory`-Eingang bleibt nach Westen
 gerichtet.
 
+Die Eingänge des Unterblatts `EffectiveAddress` tragen auf dem festen Symbol
+bewusst kurze Namen, die den angeschlossenen Ausgängen von
+`FetchDecodeControls` entsprechen: `ADR_REG` kürzt `ADDRESS_REGISTER` ab und
+`REG_OFF` steht für `ADDRESS_REGISTER_PLUS_OFFSET`. So bleiben beispielsweise
+`LOAD_ADR_REG`, `ADD_ADR_REG` und `STORE_REG_OFF` vollständig sichtbar. Auch
+die vier 16-Bit-Eingänge heißen kompakt `DIRECT_ADDR`, `REG_ADDR`,
+`OFFSET_ADDR` und `REG_SELECTED`. Das Präfix `EFFECTIVE_` entfällt nur an den
+Eingängen; die fachliche Zuordnung und die Pinpositionen ändern sich nicht.
+
 Der Hardware-Vertragscheck prüft diese Hierarchie auf direkte und indirekte
 rekursive Unterblatt-Aufrufe. Solche Zyklen werden abgewiesen, weil Logisim beim
 Laden andernfalls die Symbole unbegrenzt expandieren und dabei den verfügbaren

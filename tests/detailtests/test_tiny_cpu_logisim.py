@@ -1506,17 +1506,17 @@ def test_memory_address_selector_includes_indirect_addressing_modes():
         if component.get("name") == "Pin"
     }
     points = set(register_inputs | offset_inputs) | {
-        pins["EFFECTIVE_DIRECT_ADDRESS"],
-        pins["EFFECTIVE_REGISTER_ADDRESS"],
-        pins["EFFECTIVE_REGISTER_SELECTED"],
-        pins["EFFECTIVE_OFFSET_ADDRESS"],
+        pins["DIRECT_ADDR"],
+        pins["REG_ADDR"],
+        pins["REG_SELECTED"],
+        pins["OFFSET_ADDR"],
     }
     adjacency = _electrical_adjacency(circuit, points)
     for source, target in (
-        (pins["EFFECTIVE_DIRECT_ADDRESS"], "(720,210)"),
-        (pins["EFFECTIVE_REGISTER_ADDRESS"], "(720,230)"),
-        (pins["EFFECTIVE_REGISTER_SELECTED"], "(720,590)"),
-        (pins["EFFECTIVE_OFFSET_ADDRESS"], "(720,570)"),
+        (pins["DIRECT_ADDR"], "(720,210)"),
+        (pins["REG_ADDR"], "(720,230)"),
+        (pins["REG_SELECTED"], "(720,590)"),
+        (pins["OFFSET_ADDR"], "(720,570)"),
     ):
         assert target in _reachable(adjacency, source)
     assert register_output == "(750,220)"
@@ -1524,10 +1524,36 @@ def test_memory_address_selector_includes_indirect_addressing_modes():
     for label, suffix in (("MEMORY_ADDRESS_REGISTER_SELECT", "ADDRESS_REGISTER"), ("MEMORY_ADDRESS_OFFSET_SELECT", "ADDRESS_REGISTER_PLUS_OFFSET")):
         _labelled_component(circuit, label)
         connected = {
-            pins[f"EFFECTIVE_{family}_{'REGISTER' if suffix == 'ADDRESS_REGISTER' else 'OFFSET'}"]
+            pins[f"{family}_{'ADR_REG' if suffix == 'ADDRESS_REGISTER' else 'REG_OFF'}"]
             for family in ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR", "STORE")
         }
         assert len(connected) == 8
+
+
+def test_effective_address_input_labels_are_compact_source_names():
+    """Show each source signal on the fixed-width EffectiveAddress symbol."""
+
+    root = ET.parse(PROJECT).getroot()
+    effective_address = next(
+        circuit for circuit in root.findall("circuit")
+        if circuit.get("name") == "EffectiveAddress"
+    )
+    input_labels = {
+        _attributes(pin).get("label")
+        for pin in effective_address.findall("comp")
+        if pin.get("name") == "Pin"
+        and _attributes(pin).get("type", "input") == "input"
+    }
+    expected_control_labels = {
+        f"{operation}_{mode}"
+        for operation in ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR", "STORE")
+        for mode in ("ADR_REG", "REG_OFF")
+    }
+
+    assert expected_control_labels <= input_labels
+    assert {"DIRECT_ADDR", "REG_ADDR", "OFFSET_ADDR", "REG_SELECTED"} <= input_labels
+    assert all(len(label) <= 13 for label in input_labels)
+    assert all(not label.startswith("EFFECTIVE_") for label in input_labels)
 
 
 def test_effective_address_sheet_keeps_the_existing_selector_layout():
@@ -1568,22 +1594,22 @@ def test_top_level_follows_the_redrawn_effective_address_pin_order():
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
     pairs = {
-        "LOAD_ADDRESS_REGISTER": "EFFECTIVE_LOAD_REGISTER",
-        "ADD_ADDRESS_REGISTER": "EFFECTIVE_ADD_REGISTER",
-        "SUB_ADDRESS_REGISTER": "EFFECTIVE_SUB_REGISTER",
-        "MUL_ADDRESS_REGISTER": "EFFECTIVE_MUL_REGISTER",
-        "DIV_ADDRESS_REGISTER": "EFFECTIVE_DIV_REGISTER",
-        "AND_ADDRESS_REGISTER": "EFFECTIVE_AND_REGISTER",
-        "OR_ADDRESS_REGISTER": "EFFECTIVE_OR_REGISTER",
-        "STORE_ADDRESS_REGISTER": "EFFECTIVE_STORE_REGISTER",
-        "LOAD_ADDRESS_REGISTER_PLUS_OFFSET": "EFFECTIVE_LOAD_OFFSET",
-        "ADD_ADDRESS_REGISTER_PLUS_OFFSET": "EFFECTIVE_ADD_OFFSET",
-        "SUB_ADDRESS_REGISTER_PLUS_OFFSET": "EFFECTIVE_SUB_OFFSET",
-        "MUL_ADDRESS_REGISTER_PLUS_OFFSET": "EFFECTIVE_MUL_OFFSET",
-        "DIV_ADDRESS_REGISTER_PLUS_OFFSET": "EFFECTIVE_DIV_OFFSET",
-        "AND_ADDRESS_REGISTER_PLUS_OFFSET": "EFFECTIVE_AND_OFFSET",
-        "OR_ADDRESS_REGISTER_PLUS_OFFSET": "EFFECTIVE_OR_OFFSET",
-        "STORE_ADDRESS_REGISTER_PLUS_OFFSET": "EFFECTIVE_STORE_OFFSET",
+        "LOAD_ADDRESS_REGISTER": "LOAD_ADR_REG",
+        "ADD_ADDRESS_REGISTER": "ADD_ADR_REG",
+        "SUB_ADDRESS_REGISTER": "SUB_ADR_REG",
+        "MUL_ADDRESS_REGISTER": "MUL_ADR_REG",
+        "DIV_ADDRESS_REGISTER": "DIV_ADR_REG",
+        "AND_ADDRESS_REGISTER": "AND_ADR_REG",
+        "OR_ADDRESS_REGISTER": "OR_ADR_REG",
+        "STORE_ADDRESS_REGISTER": "STORE_ADR_REG",
+        "LOAD_ADDRESS_REGISTER_PLUS_OFFSET": "LOAD_REG_OFF",
+        "ADD_ADDRESS_REGISTER_PLUS_OFFSET": "ADD_REG_OFF",
+        "SUB_ADDRESS_REGISTER_PLUS_OFFSET": "SUB_REG_OFF",
+        "MUL_ADDRESS_REGISTER_PLUS_OFFSET": "MUL_REG_OFF",
+        "DIV_ADDRESS_REGISTER_PLUS_OFFSET": "DIV_REG_OFF",
+        "AND_ADDRESS_REGISTER_PLUS_OFFSET": "AND_REG_OFF",
+        "OR_ADDRESS_REGISTER_PLUS_OFFSET": "OR_REG_OFF",
+        "STORE_ADDRESS_REGISTER_PLUS_OFFSET": "STORE_REG_OFF",
     }
     points = {
         point

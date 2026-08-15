@@ -1547,3 +1547,48 @@ def test_effective_address_sheet_keeps_the_existing_selector_layout():
         component.get("name") == "EffectiveAddress"
         for component in circuit.findall("comp")
     )
+
+
+def test_top_level_follows_the_redrawn_effective_address_pin_order():
+    """Keep integration wiring attached to signals, not obsolete pin positions."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    pairs = {
+        "LOAD_ADDRESS_REGISTER": "EFFECTIVE_LOAD_REGISTER",
+        "ADD_ADDRESS_REGISTER": "EFFECTIVE_ADD_REGISTER",
+        "SUB_ADDRESS_REGISTER": "EFFECTIVE_SUB_REGISTER",
+        "MUL_ADDRESS_REGISTER": "EFFECTIVE_MUL_REGISTER",
+        "DIV_ADDRESS_REGISTER": "EFFECTIVE_DIV_REGISTER",
+        "AND_ADDRESS_REGISTER": "EFFECTIVE_AND_REGISTER",
+        "OR_ADDRESS_REGISTER": "EFFECTIVE_OR_REGISTER",
+        "STORE_ADDRESS_REGISTER": "EFFECTIVE_STORE_REGISTER",
+        "LOAD_ADDRESS_REGISTER_PLUS_OFFSET": "EFFECTIVE_LOAD_OFFSET",
+        "ADD_ADDRESS_REGISTER_PLUS_OFFSET": "EFFECTIVE_ADD_OFFSET",
+        "SUB_ADDRESS_REGISTER_PLUS_OFFSET": "EFFECTIVE_SUB_OFFSET",
+        "MUL_ADDRESS_REGISTER_PLUS_OFFSET": "EFFECTIVE_MUL_OFFSET",
+        "DIV_ADDRESS_REGISTER_PLUS_OFFSET": "EFFECTIVE_DIV_OFFSET",
+        "AND_ADDRESS_REGISTER_PLUS_OFFSET": "EFFECTIVE_AND_OFFSET",
+        "OR_ADDRESS_REGISTER_PLUS_OFFSET": "EFFECTIVE_OR_OFFSET",
+        "STORE_ADDRESS_REGISTER_PLUS_OFFSET": "EFFECTIVE_STORE_OFFSET",
+    }
+    points = {
+        point
+        for source_label, target_label in pairs.items()
+        for point in (
+            _control_output(root, source_label),
+            _subcircuit_input(root, "EffectiveAddress", target_label),
+        )
+    }
+    adjacency = _electrical_adjacency(circuit, points)
+
+    source_nets = []
+    for source_label, target_label in pairs.items():
+        source = _control_output(root, source_label)
+        target = _subcircuit_input(root, "EffectiveAddress", target_label)
+        reachable = _reachable(adjacency, source)
+        assert target in reachable, (source_label, target_label)
+        source_nets.append(reachable)
+
+    for index, source_net in enumerate(source_nets):
+        assert all(source_net.isdisjoint(other) for other in source_nets[index + 1:])

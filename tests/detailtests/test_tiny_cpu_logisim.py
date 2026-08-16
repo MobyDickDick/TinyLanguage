@@ -412,8 +412,10 @@ def test_invalid_arithmetic_result_sets_the_invalid_operand_flag():
         for component in operations.findall("comp")
         if _attributes(component).get("label")
     }
-    assert labels["ARITHMETIC_RESULT_INVALID"].get("name") == "NOT Gate"
-    assert labels["ACTIVE_INVALID_ARITHMETIC"].get("name") == "AND Gate"
+    assert labels["OPERATION_RESULT_INVALID"].get("name") == "NOT Gate"
+    assert labels["ACTIVE_INVALID_OPERATION"].get("name") == "AND Gate"
+    assert labels["OPERATION_IS_ACTIVE"].get("name") == "OR Gate"
+    assert labels["OPERATION_RESULT_VALID"].get("name") == "OR Gate"
 
 
 ACCUMULATOR_FAMILIES = ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR")
@@ -1617,7 +1619,7 @@ def test_mul_box_exports_the_arithmetic_result_and_validity_contract():
         "MUL_ADDRESS_REGISTER_PLUS_OFFSET", "ACC_VALUE", "ACC_VALID",
         "MEMORY_VALUE", "MEMORY_VALID", "IMMEDIATE_VALUE",
     } == inputs
-    assert {"RESULT", "OVERFLOW", "RESULT_VALID"} == outputs
+    assert {"RESULT", "OVERFLOW", "RESULT_VALID", "RESULT_ACTIVE"} == outputs
     assert any(
         component.get("name") == "MulArithmeticCircuit"
         for component in multiply.findall("comp")
@@ -1657,7 +1659,7 @@ def test_and_box_exports_bitwise_result_and_validity_contract():
         "AND_ADDRESS_REGISTER_PLUS_OFFSET", "ACC_VALUE", "ACC_VALID",
         "MEMORY_VALUE", "MEMORY_VALID", "IMMEDIATE_VALUE",
     } == inputs
-    assert {"RESULT", "RESULT_VALID"} == outputs
+    assert {"RESULT", "RESULT_VALID", "RESULT_ACTIVE"} == outputs
     arithmetic = circuits["AndArithmeticCircuit"]
     labels = {_attributes(component).get("label") for component in arithmetic.findall("comp")}
     assert {"BITWISE_AND", "ACTIVE_AND_VALID"} <= labels
@@ -1666,7 +1668,7 @@ def test_and_box_exports_bitwise_result_and_validity_contract():
         for component in arithmetic.findall("comp")
     )
     inactive = _labelled_component(arithmetic, "INACTIVE_AND_DEFAULT")
-    assert _attributes(inactive)["value"] == "0xffff"
+    assert _attributes(inactive)["value"] == "0x0"
     assert not [
         component for name in ("AndSubCircuit", "AndArithmeticCircuit")
         for component in circuits[name].findall("comp")
@@ -1727,7 +1729,7 @@ def test_div_box_exports_result_validity_and_divide_by_zero_contract():
         "DIV_ADDRESS_REGISTER_PLUS_OFFSET", "ACC_VALUE", "ACC_VALID",
         "MEMORY_VALUE", "MEMORY_VALID", "IMMEDIATE_VALUE",
     } == inputs
-    assert {"RESULT", "RESULT_VALID", "DIVIDE_BY_ZERO"} == outputs
+    assert {"RESULT", "RESULT_VALID", "RESULT_ACTIVE", "DIVIDE_BY_ZERO"} == outputs
     arithmetic = circuits["DivArithmeticCircuit"]
     assert any(component.get("name") == "Divider" for component in arithmetic.findall("comp"))
     labels = {_attributes(component).get("label") for component in arithmetic.findall("comp")}
@@ -1749,7 +1751,7 @@ def test_not_operation_gates_data_and_valid_with_activity():
 
 
 def test_operation_data_and_validity_are_combined_by_explicit_or_trees():
-    """Keep operation outputs single-driver while preserving the redrawn boxes."""
+    """Aggregate every FBox contract and clear validity for active invalid work."""
 
     circuit = next(
         c for c in ET.parse(PROJECT).getroot().findall("circuit")
@@ -1760,16 +1762,11 @@ def test_operation_data_and_validity_are_combined_by_explicit_or_trees():
         for component in circuit.findall("comp")
         if _attributes(component).get("label")
     }
-    expected_gates = {"RESULT": "16", "RESULT_VALID": "1"}
-    for label, width in expected_gates.items():
-        gate = components[label]
-        assert gate.get("name") == "OR Gate"
-        assert _attributes(gate).get("width", "1") == width
-
     assert _attributes(components["RESULT"])["inputs"] == "5"
-    # Logisim omits the default two-input attribute after the manual OR merge.
-    assert _attributes(components["RESULT_VALID"]).get("inputs", "2") == "2"
-
+    assert _attributes(components["OPERATION_RESULT_VALID"])["inputs"] == "6"
+    assert _attributes(components["OPERATION_IS_ACTIVE"])["inputs"] == "6"
+    assert components["ACTIVE_INVALID_OPERATION"].get("name") == "AND Gate"
+    assert components["RESULT_VALID_WITHOUT_ERROR"].get("name") == "AND Gate"
 
 def test_mul_operation_is_integrated_into_results_and_invalid_operand_detection():
     """MUL crosses Operations once and participates in every arithmetic merge."""
@@ -1792,9 +1789,9 @@ def test_mul_operation_is_integrated_into_results_and_invalid_operand_detection(
         if _attributes(component).get("label")
     }
     assert labels["MUL_OPERATION"].get("name") == "MulSubCircuit"
-    assert _attributes(labels["ARITHMETIC_RESULT_VALID"])["inputs"] == "3"
+    assert _attributes(labels["OPERATION_RESULT_VALID"])["inputs"] == "6"
+    assert _attributes(labels["OPERATION_IS_ACTIVE"])["inputs"] == "6"
     assert _attributes(labels["OVERFLOW_SET"])["inputs"] == "4"
-    assert _attributes(labels["ADD_SUB_IS_ACTIVE"])["inputs"] == "16"
 
 
 def test_unary_and_subtraction_boxes_export_a_uniform_operation_contract():
@@ -1803,8 +1800,8 @@ def test_unary_and_subtraction_boxes_export_a_uniform_operation_contract():
     root = ET.parse(PROJECT).getroot()
     circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
     expected_outputs = {
-        "NotCircuit": {"RESULT", "RESULT_VALID"},
-        "SubSubCircuit": {"RESULT", "OVERFLOW", "RESULT_VALID"},
+        "NotCircuit": {"RESULT", "RESULT_VALID", "RESULT_ACTIVE"},
+        "SubSubCircuit": {"RESULT", "OVERFLOW", "RESULT_VALID", "RESULT_ACTIVE"},
     }
     for circuit_name, outputs in expected_outputs.items():
         circuit = circuits[circuit_name]
@@ -2051,11 +2048,9 @@ def test_and_operation_is_integrated_with_its_one_default_normalized_for_merge()
         for component in operations.findall("comp")
     }
     assert labels["AND_OPERATION"].get("name") == "AndSubCircuit"
-    assert labels["AND_RESULT_FOR_MERGE"].get("name") == "Multiplexer"
-    for label in (
-        "RESULT_WITH_AND",
-        "RESULT_VALID_WITH_AND",
-        "ARITHMETIC_VALID_WITH_AND",
-        "ARITHMETIC_ACTIVE_WITH_AND",
-    ):
-        assert labels[label].get("name") == "OR Gate"
+    assert labels["RESULT_WITH_AND"].get("name") == "OR Gate"
+    assert _attributes(labels["OPERATION_RESULT_VALID"])["inputs"] == "6"
+    assert _attributes(labels["OPERATION_IS_ACTIVE"])["inputs"] == "6"
+    arithmetic = next(c for c in root.findall("circuit") if c.get("name") == "AndArithmeticCircuit")
+    inactive = _labelled_component(arithmetic, "INACTIVE_AND_DEFAULT")
+    assert _attributes(inactive)["value"] == "0x0"

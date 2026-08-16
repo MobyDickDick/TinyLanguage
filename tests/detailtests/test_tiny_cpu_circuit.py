@@ -305,7 +305,7 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
     assert {
         "NOT_OPERATION",
         "RESULT",
-        "RESULT_VALID",
+        "OPERATION_RESULT_VALID",
     } <= labels
     assert "ACC_ADD_MEMORY_SELECT" in addition_component_labels
     assert {"ACC_SUB_MEMORY_SELECT", "ACC_SUB_VALID"} <= subtraction_component_labels
@@ -382,7 +382,7 @@ def test_validity_subcircuits_have_expected_interfaces_when_present():
         "SUB_ADDRESS", "SUB_ADDRESS_REGISTER",
         "SUB_ADDRESS_REGISTER_PLUS_OFFSET", "SUB_CONST", "MEMORY_VALUE",
         "ACC_VALUE", "IMMEDIATE_VALUE", "MEMORY_VALID", "ACC_VALID", "RESULT", "OVERFLOW",
-        "RESULT_VALID",
+        "RESULT_VALID", "RESULT_ACTIVE",
     }
 
     # ADD validity may be drawn directly in its containing circuit.  If the

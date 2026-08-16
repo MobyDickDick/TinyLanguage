@@ -7,6 +7,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-16)
 
+- [x] **Extract the TinyCPU AND result-and-validity FBox**
+  (Owner: TinyCPU/Hardware)
+  - Success: give all four `AND_*` addressing modes the established explicit
+    accumulator/immediate-or-memory operand boundary without adding arithmetic
+    overflow semantics.
+  - Result: the tunnel-free `AndSubCircuit` selects operand data and validity in
+    parallel and delegates the active, neutral-gated bitwise operation to the
+    independently inspectable `AndArithmeticCircuit`. Structural coverage
+    freezes both contracts and the generated leaf diagnostic.
+  - Follow-up: integrate the AND box behind `Operations` and merge its result,
+    validity, and invalid-operand activity with the maintained trees.
+
+## Next documented work package (completed 2026-08-16)
+
 - [x] **Integrate the TinyCPU DIV result, validity, and error FBox**
   (Owner: TinyCPU/Hardware)
   - Success: place the extracted division box behind `Operations`, merge its

@@ -7,6 +7,26 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-16)
 
+- [x] **Extract the TinyCPU OR result-and-validity FBox**
+  (Owner: TinyCPU/Hardware)
+  - Review: the latest manual redraw was compared electrically with its parent.
+    Reversed wire endpoints are electrically identical, but the removed routes
+    in `Operations` included driven control, result, validity, overflow, and
+    invalid-operand nets; accepting that redraw would therefore change CPU
+    behaviour. The maintained schematic was not rewritten to reproduce it, and
+    its existing wires were left untouched.
+  - Success: give all four `OR_*` addressing modes the established explicit
+    accumulator/immediate-or-memory operand and validity boundary without
+    arithmetic overflow semantics.
+  - Result: the tunnel-free `OrSubCircuit` selects operand data and validity in
+    parallel and delegates the neutral-gated bitwise operation to the leaf
+    `OrArithmeticCircuit`; a generated leaf diagnostic and structural coverage
+    freeze the contract.
+  - Follow-up: integrate the OR box behind `Operations` and merge its result,
+    validity, and invalid-operand activity without disturbing the manual layout.
+
+## Next documented work package (completed 2026-08-16)
+
 - [x] **Integrate the TinyCPU AND result-and-validity FBox**
   (Owner: TinyCPU/Hardware)
   - Success: place the manually redrawn AND box behind `Operations` and merge

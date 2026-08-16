@@ -787,3 +787,21 @@ integer division stays in the representable range, while a zero divisor (or an
 already invalid operand) makes the result invalid. Result and validity feed
 the consolidated OR gates on `Operations`; the superseded chain of
 operation-specific OR gates must not be restored.
+
+## Bitwise OR extraction contract
+
+`OrSubCircuit` is the independently inspectable, tunnel-free boundary for the
+four `OR_*` addressing modes. It selects the immediate or memory operand and
+its validity in parallel, always combines that selected right operand with the
+accumulator, and exports `RESULT`, activity-gated `RESULT_VALID`, and
+`RESULT_ACTIVE`. `OrArithmeticCircuit` uses a 16-bit bitwise OR primitive and a
+zero inactive result, so the unintegrated box cannot drive the shared result
+merge. Bitwise OR has no arithmetic-overflow output. Integration into
+`Operations` is a separate follow-up package.
+
+The manual redraw reviewed with this package is not treated as layout-only:
+although reversing the endpoint order of a wire is electrically neutral, its
+removed `Operations` routes carried operation controls and the result,
+validity, overflow, and invalid-operand aggregations. Removing those routes
+would change CPU behaviour. Consequently the maintained routes remain part of
+the hardware contract; this package only adds the new OR sheets.

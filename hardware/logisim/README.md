@@ -227,13 +227,19 @@ mitkopierten Namen waren nur falsche Beschriftungen, keine zusätzlichen Netze.
 Ein Regressionstest prüft diese Zuordnung nun gemeinsam für ADD, SUB, MUL und
 DIV, damit die Verdrahtung beim visuellen Verfolgen nicht mehr irreführend ist.
 
-Für `ADD_*` und `SUB_*` bildet `Operations` zusätzlich ein gemeinsames
-Aktivitätssignal. Nur wenn dieses aktiv ist und zugleich weder das Additions-
-noch das Subtraktionsergebnis gültig ist, wird `INVALID_OPERAND` gesetzt. Dieser
+Für die integrierten Operationszweige bildet `Operations` zusätzlich ein
+gemeinsames Aktivitätssignal. Nur wenn dieses aktiv ist und zugleich kein
+Zweigergebnis gültig ist, wird `INVALID_OPERAND` gesetzt. Dieser
 Ausgang führt im Hauptblatt direkt zu `ErrorFlags.SET_INV`; der gleichnamige
 Platzhalterausgang des Decoders ist bewusst nicht mehr angeschlossen. Dadurch
 bleibt das Invalid-Flag bei inaktiver Arithmetik gelöscht, obwohl die gegateten
 Ergebnis-Gültigkeitssignale dann ebenfalls null sind.
+
+Die zusammengeführte Ergebnisgültigkeit wird dagegen ohne eine weitere
+Fehlermaske direkt als `RESULT_IS_VALID` ausgegeben. Jeder Operationszweig
+unterdrückt sein `RESULT_VALID` bereits selbst: ADD, SUB und MUL bei Überlauf,
+DIV bei Division durch null und alle Zweige bei ungültigen Operanden. Eine
+zweite Negation von `INVALID_OPERAND` auf `Operations` wäre daher redundant.
 
 Sie werden reproduzierbar aus dem Hauptprojekt erzeugt. Der Befehl liest
 `TinyCPU.circ`, schreibt aber nur Dateien in das angegebene Diagnoseverzeichnis;

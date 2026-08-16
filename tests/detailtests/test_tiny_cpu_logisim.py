@@ -1751,7 +1751,7 @@ def test_not_operation_gates_data_and_valid_with_activity():
 
 
 def test_operation_data_and_validity_are_combined_by_explicit_or_trees():
-    """Aggregate every FBox contract and clear validity for active invalid work."""
+    """Aggregate every FBox contract without duplicating its error checks."""
 
     circuit = next(
         c for c in ET.parse(PROJECT).getroot().findall("circuit")
@@ -1766,7 +1766,8 @@ def test_operation_data_and_validity_are_combined_by_explicit_or_trees():
     assert _attributes(components["OPERATION_RESULT_VALID"])["inputs"] == "6"
     assert _attributes(components["OPERATION_IS_ACTIVE"])["inputs"] == "6"
     assert components["ACTIVE_INVALID_OPERATION"].get("name") == "AND Gate"
-    assert components["RESULT_VALID_WITHOUT_ERROR"].get("name") == "AND Gate"
+    assert "RESULT_VALID_WITHOUT_ERROR" not in components
+    assert "NO_INVALID_OPERAND" not in components
 
 def test_mul_operation_is_integrated_into_results_and_invalid_operand_detection():
     """MUL crosses Operations once and participates in every arithmetic merge."""

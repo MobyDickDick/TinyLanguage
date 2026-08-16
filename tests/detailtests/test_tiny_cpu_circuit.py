@@ -70,7 +70,7 @@ def test_inspector_exposes_completed_and_pending_sheets():
     for sheet in (
         "Datapath", "AddressPath", "Memory", "ErrorFlags", "FetchDecode",
         "FetchDecodeControls", "DecodeSignals", "AddSubCircuit",
-        "SubSubCircuit",
+        "SubSubCircuit", "Operations",
     ):
         assert reports[sheet].connected
 

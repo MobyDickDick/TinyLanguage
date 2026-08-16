@@ -1676,6 +1676,42 @@ def test_and_box_exports_bitwise_result_and_validity_contract():
     ]
 
 
+def test_or_box_exports_bitwise_result_and_validity_contract():
+    """OR mirrors the binary validity boundary without arithmetic status."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
+    bitwise_or = circuits["OrSubCircuit"]
+    inputs = {
+        _attributes(component).get("label")
+        for component in bitwise_or.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("type") != "output"
+    }
+    outputs = {
+        _attributes(component).get("label")
+        for component in bitwise_or.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("type") == "output"
+    }
+    assert {
+        "OR_CONST", "OR_ADDRESS", "OR_ADDRESS_REGISTER",
+        "OR_ADDRESS_REGISTER_PLUS_OFFSET", "ACC_VALUE", "ACC_VALID",
+        "MEMORY_VALUE", "MEMORY_VALID", "IMMEDIATE_VALUE",
+    } == inputs
+    assert {"RESULT", "RESULT_VALID", "RESULT_ACTIVE"} == outputs
+    arithmetic = circuits["OrArithmeticCircuit"]
+    labels = {_attributes(component).get("label") for component in arithmetic.findall("comp")}
+    assert {"BITWISE_OR", "ACTIVE_OR_VALID", "INACTIVE_OR_DEFAULT"} <= labels
+    assert _labelled_component(arithmetic, "BITWISE_OR").get("name") == "OR Gate"
+    assert _attributes(_labelled_component(arithmetic, "INACTIVE_OR_DEFAULT"))["value"] == "0x0"
+    assert not [
+        component for name in ("OrSubCircuit", "OrArithmeticCircuit")
+        for component in circuits[name].findall("comp")
+        if component.get("name") == "Tunnel"
+    ]
+
+
 def test_arithmetic_fboxes_use_operation_specific_activation_and_validity_labels():
     """Prevent copy/paste labels from making the visible wiring misleading."""
 

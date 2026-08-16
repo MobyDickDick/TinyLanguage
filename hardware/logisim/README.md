@@ -769,3 +769,13 @@ PYTHONPATH=src python src/tiny_cpu_circuit.py hardware/logisim/TinyCPU.circ
 The checker derives output ports for built-in parts and generated subcircuit
 symbols and reports a `wired-OR is forbidden` routing conflict when two output
 terminals are reachable on one electrical net.
+
+## Division wiring contract
+
+The four `DIV_*` control routes follow the current pin order of the manually
+compacted `Operations` symbol. `DivSubCircuit` returns the result, result
+validity, and `DIVIDE_BY_ZERO`. It deliberately has no overflow output:
+integer division stays in the representable range, while a zero divisor (or an
+already invalid operand) makes the result invalid. Result and validity feed
+the consolidated OR gates on `Operations`; the superseded chain of
+operation-specific OR gates must not be restored.

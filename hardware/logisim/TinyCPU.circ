@@ -2131,9 +2131,8 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp loc="(900,710)" name="NotCircuit">
       <a name="label" val="NOT_OPERATION" />
     </comp>
-    <comp lib="0" loc="(1820,1040)" name="Pin"><a name="appearance" val="classic" /><a name="facing" val="west" /><a name="label" val="INVALID_OPERAND" /><a name="type" val="output" /></comp><comp lib="1" loc="(1490,780)" name="OR Gate"><a name="inputs" val="6" /><a name="label" val="OPERATION_RESULT_VALID" /></comp><comp lib="1" loc="(1490,1000)" name="OR Gate"><a name="inputs" val="6" /><a name="label" val="OPERATION_IS_ACTIVE" /></comp><comp lib="1" loc="(1580,1020)" name="NOT Gate"><a name="label" val="OPERATION_RESULT_INVALID" /></comp><comp lib="1" loc="(1680,1040)" name="AND Gate"><a name="label" val="ACTIVE_INVALID_OPERATION" /></comp><comp lib="1" loc="(1620,780)" name="AND Gate"><a name="label" val="RESULT_VALID_WITHOUT_ERROR" /></comp>
+    <comp lib="0" loc="(1820,1040)" name="Pin"><a name="appearance" val="classic" /><a name="facing" val="west" /><a name="label" val="INVALID_OPERAND" /><a name="type" val="output" /></comp><comp lib="1" loc="(1490,780)" name="OR Gate"><a name="inputs" val="6" /><a name="label" val="OPERATION_RESULT_VALID" /></comp><comp lib="1" loc="(1490,1000)" name="OR Gate"><a name="inputs" val="6" /><a name="label" val="OPERATION_IS_ACTIVE" /></comp><comp lib="1" loc="(1580,1020)" name="NOT Gate"><a name="label" val="OPERATION_RESULT_INVALID" /></comp><comp lib="1" loc="(1680,1040)" name="AND Gate"><a name="label" val="ACTIVE_INVALID_OPERATION" /></comp>
     <comp lib="0" loc="(1450,890)" name="Constant"><a name="label" val="NO_DIV_OVERFLOW" /></comp>
-    <comp lib="1" loc="(1760,900)" name="NOT Gate"><a name="label" val="NO_INVALID_OPERAND" /></comp>
 
     <wire from="(370,1240)" to="(430,1240)" />
     <wire from="(370,1260)" to="(440,1260)" />
@@ -2356,15 +2355,7 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(1630,1020)" to="(1630,1050)" />
     <wire from="(1630,1050)" to="(1650,1050)" />
     <wire from="(1680,1040)" to="(1820,1040)" />
-    <wire from="(1490,780)" to="(1560,780)" />
-    <wire from="(1560,780)" to="(1560,770)" />
-    <wire from="(1560,770)" to="(1590,770)" />
-    <wire from="(1680,1040)" to="(1730,1040)" />
-    <wire from="(1730,1040)" to="(1730,900)" />
-    <wire from="(1760,900)" to="(1770,900)" />
-    <wire from="(1770,900)" to="(1770,790)" />
-    <wire from="(1770,790)" to="(1590,790)" />
-    <wire from="(1620,780)" to="(1700,780)" />
+    <wire from="(1490,780)" to="(1700,780)" />
   </circuit>
 
 <circuit name="NotCircuit">

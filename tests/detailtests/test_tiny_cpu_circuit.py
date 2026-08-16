@@ -134,6 +134,7 @@ def test_inspector_accepts_checked_in_diagnostic_projects():
             "TinyCPU-AddArithmeticCircuit.circ",
             "TinyCPU-SubArithmeticCircuit.circ",
             "TinyCPU-MulArithmeticCircuit.circ",
+            "TinyCPU-DivArithmeticCircuit.circ",
             "TinyCPU-SubCircuit.circ",
         }:
             # These hand-edited arithmetic sheets still have pending isolated-
@@ -502,7 +503,9 @@ def test_result_merge_has_a_visible_routing_lane():
     result_or_x, result_or_y = (
         int(value) for value in result_or.get("loc").strip("()").split(",")
     )
-    assert (result_or_x, result_or_y) == (1160, 690)
+    # The manually widened operation sheet keeps this merge to the right of
+    # the growing operation FBoxes, leaving a visible routing corridor.
+    assert (result_or_x, result_or_y) == (1290, 690)
 
 
 def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():

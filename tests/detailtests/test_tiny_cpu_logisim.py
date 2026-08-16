@@ -1630,6 +1630,41 @@ def test_mul_box_exports_the_arithmetic_result_and_validity_contract():
     ]
 
 
+
+def test_div_box_exports_result_validity_and_divide_by_zero_contract():
+    """DIV selects operands like MUL and reports its dedicated zero error."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
+    divide = circuits["DivSubCircuit"]
+    inputs = {
+        _attributes(component).get("label")
+        for component in divide.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("type") != "output"
+    }
+    outputs = {
+        _attributes(component).get("label")
+        for component in divide.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("type") == "output"
+    }
+    assert {
+        "DIV_CONST", "DIV_ADDRESS", "DIV_ADDRESS_REGISTER",
+        "DIV_ADDRESS_REGISTER_PLUS_OFFSET", "ACC_VALUE", "ACC_VALID",
+        "MEMORY_VALUE", "MEMORY_VALID", "IMMEDIATE_VALUE",
+    } == inputs
+    assert {"RESULT", "OVERFLOW", "RESULT_VALID"} == outputs
+    arithmetic = circuits["DivArithmeticCircuit"]
+    assert any(component.get("name") == "Divider" for component in arithmetic.findall("comp"))
+    labels = {_attributes(component).get("label") for component in arithmetic.findall("comp")}
+    assert {"DIVISOR_ZERO_CHECK", "DIVIDE_BY_ZERO", "NONZERO_DIVISOR"} <= labels
+    assert not [
+        component for name in ("DivSubCircuit", "DivArithmeticCircuit")
+        for component in circuits[name].findall("comp")
+        if component.get("name") == "Tunnel"
+    ]
+
 def test_not_operation_gates_data_and_valid_with_activity():
     """An inactive NOT operation contributes neutral data and validity."""
 

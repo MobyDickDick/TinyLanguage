@@ -354,6 +354,16 @@ vorhandenen Zusammenfassungen; ein aktiver ungültiger MUL-Operand setzt damit
 denselben `SET_INV`-Pfad wie ADD und SUB. Als nächster binärer
 Operationsschritt folgt die `DIV_*`-Familie.
 
+Die erste DIV-Etappe ist als getrennte `DivSubCircuit`-FBox vorbereitet. Sie
+übernimmt denselben linken Akkumulator und dieselbe parallele Auswahl von
+unmittelbarem beziehungsweise speicherbasiertem rechten Operanden wie MUL.
+Die untergeordnete `DivArithmeticCircuit`-Seite führt zusätzlich eine
+explizite Nullprüfung des ausgewählten Divisors heraus und sperrt damit die
+Ergebnisgültigkeit. Die Integration in die gemeinsamen Ergebnis- und
+Fehlerbäume bleibt das folgende Arbeitspaket. Beim Ausbau werden wachsende
+FBoxen nicht dichter zusammengeschoben; sichtbare Routingkorridore bleiben
+zwischen ihren Begrenzungen erhalten.
+
 `TinyCPUMain` is the integration sheet. Stateful blocks are encapsulated on
 named subpages, and its single `Operations` instance groups the independently
 selectable `AddSubCircuit`, `SubSubCircuit`, `MulSubCircuit`, and `NotCircuit`

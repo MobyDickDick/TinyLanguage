@@ -7,6 +7,23 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-16)
 
+- [x] **Extract the TinyCPU DIV result, validity, and zero-error FBox**
+  (Owner: TinyCPU/Hardware)
+  - Success: give all four `DIV_*` addressing modes the established explicit
+    accumulator/immediate-or-memory operand boundary, while keeping the
+    manually widened FBoxes and their routing corridors separate.
+  - Result: the tunnel-free `DivSubCircuit` selects data and validity in
+    parallel. `DivArithmeticCircuit` exports the quotient, signed-overflow and
+    validity contract and explicitly detects a zero selected divisor, which is
+    excluded from `RESULT_VALID`.
+  - Wiring audit: restored stable labels accidentally removed from the two
+    effective-address multiplexers, the address-limit constant, and its
+    comparator. No component was moved back into the former crowded layout.
+  - Follow-up: integrate the DIV box behind `Operations`, including its
+    divide-by-zero output in the sticky error path.
+
+## Next documented work package (completed 2026-08-16)
+
 - [x] **Integrate the TinyCPU MUL result-and-validity FBox**
   (Owner: TinyCPU/Hardware)
   - Success: place the extracted multiplication box behind `Operations`, merge

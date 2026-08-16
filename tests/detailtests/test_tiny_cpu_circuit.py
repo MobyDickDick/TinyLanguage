@@ -308,7 +308,7 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
         "RESULT_VALID",
     } <= labels
     assert "ACC_ADD_MEMORY_SELECT" in addition_component_labels
-    assert {"ACC_SUB_MEMORY_SELECT", "ACC_ADD_VALID"} <= subtraction_component_labels
+    assert {"ACC_SUB_MEMORY_SELECT", "ACC_SUB_VALID"} <= subtraction_component_labels
 
 
 def test_every_schematic_component_has_a_unique_label():

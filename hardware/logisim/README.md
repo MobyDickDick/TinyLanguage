@@ -219,6 +219,14 @@ Kreuzungen weder versehentliche Busverbindungen noch mehrere Treiber auf einem
 Netz. Der Strukturtest verlangt für alle drei Blätter einen vollständig
 verbundenen Zustand.
 
+Die sichtbaren Aktivierungs- und Gültigkeitsbezeichner folgen auf jedem
+Arithmetikblatt der tatsächlichen Operation. Insbesondere heißen sie im
+Subtraktionspfad `ACC_SUB_VALID`/`SUB_VALID` und am Multiplikationseingang
+`MUL_ACTIVATED`; die zuvor aus den ADD- beziehungsweise SUB-Vorlagen
+mitkopierten Namen waren nur falsche Beschriftungen, keine zusätzlichen Netze.
+Ein Regressionstest prüft diese Zuordnung nun gemeinsam für ADD, SUB, MUL und
+DIV, damit die Verdrahtung beim visuellen Verfolgen nicht mehr irreführend ist.
+
 Für `ADD_*` und `SUB_*` bildet `Operations` zusätzlich ein gemeinsames
 Aktivitätssignal. Nur wenn dieses aktiv ist und zugleich weder das Additions-
 noch das Subtraktionsergebnis gültig ist, wird `INVALID_OPERAND` gesetzt. Dieser

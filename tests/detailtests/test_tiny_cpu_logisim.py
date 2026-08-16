@@ -648,7 +648,7 @@ def test_top_level_has_visible_labels_on_wires_at_components():
         item for item in root.findall("circuit")
         if item.get("name") == "SubSubCircuit"
     )
-    assert {"MEMORY_VALID →", "ADD_VALID →", "CONST_VALID →"} <= {
+    assert {"MEMORY_VALID →", "SUB_VALID →", "CONST_VALID →"} <= {
         _attributes(component).get("text")
         for component in subtraction_validity.findall("comp")
         if component.get("name") == "Text"
@@ -1628,6 +1628,35 @@ def test_mul_box_exports_the_arithmetic_result_and_validity_contract():
         for component in circuits[name].findall("comp")
         if component.get("name") == "Tunnel"
     ]
+
+
+def test_arithmetic_fboxes_use_operation_specific_activation_and_validity_labels():
+    """Prevent copy/paste labels from making the visible wiring misleading."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
+
+    for operation in ("ADD", "SUB", "MUL", "DIV"):
+        selector = circuits[f"{operation.title()}SubCircuit"]
+        arithmetic = circuits[f"{operation.title()}ArithmeticCircuit"]
+        selector_labels = {
+            _attributes(component).get("label")
+            for component in selector.findall("comp")
+        }
+        arithmetic_pin_labels = {
+            _attributes(component).get("label")
+            for component in arithmetic.findall("comp")
+            if component.get("name") == "Pin"
+        }
+        text = {
+            _attributes(component).get("text")
+            for component in selector.findall("comp")
+            if component.get("name") == "Text"
+        }
+
+        assert f"ACC_{operation}_VALID" in selector_labels
+        assert f"{operation}_ACTIVATED" in arithmetic_pin_labels
+        assert f"{operation}_VALID →" in text
 
 
 

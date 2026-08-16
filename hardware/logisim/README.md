@@ -327,9 +327,12 @@ wieder eindeutig und automatisiert prüfbar.
   `*_ADDRESS_REGISTER` den Inhalt des Adressregisters und
   `*_ADDRESS_REGISTER_PLUS_OFFSET` dessen Summe mit dem signierten Offset.
   Übertrag beziehungsweise Bereichsfehler müssen `SET_ADDR` auslösen.
-- [ ] Anschließend `MUL`, `DIV`, `AND` und `OR` nach demselben Vertrag prüfen
-  und verdrahten: links Akkumulator, rechts unmittelbarer Wert oder gelesener
-  Speicherwert. `DIV` benötigt zusätzlich die Nullprüfung des ausgewählten
+- [x] `MUL` nach demselben Vertrag prüfen und verdrahten: links Akkumulator,
+  rechts unmittelbarer Wert oder gelesener Speicherwert. Ergebnis, Validität,
+  vorzeichenbehafteter Überlauf und ungültige Operanden werden im
+  `Operations`-Blatt zusammengeführt.
+- [ ] Anschließend `DIV`, `AND` und `OR` nach demselben Vertrag prüfen und
+  verdrahten. `DIV` benötigt zusätzlich die Nullprüfung des ausgewählten
   rechten Operanden.
 - [ ] Die nicht-binären Datenwege separat auditieren: `STORE_*` schreibt den
   Akkumulator, `NOT` invertiert den Akkumulator, `PRINT` liest den Akkumulator,
@@ -344,12 +347,17 @@ nun abgeschlossen: Beide Boxen verwenden `ACC_OUT` links und wählen rechts
 parallel zwischen unmittelbarem Befehlswert und Speicherwert samt zugehöriger
 Gültigkeit. `SET_INV` ist für aktive Operationen mit ungültiger Quelle
 integriert. Ebenso sind der Offset-Übertrag und die gemeinsame
-12-Bit-Bereichsprüfung nun aktivitätsabhängig an `SET_ADDR` angebunden. Als
-nächster Operationsschritt folgt die `MUL_*`-Familie.
+12-Bit-Bereichsprüfung nun aktivitätsabhängig an `SET_ADDR` angebunden. Die
+`MUL_*`-Familie ist ebenfalls hinter `Operations` integriert. Ihre aktiv
+begrenzten Ergebnis-, Validitäts- und Überlaufausgänge erweitern die
+vorhandenen Zusammenfassungen; ein aktiver ungültiger MUL-Operand setzt damit
+denselben `SET_INV`-Pfad wie ADD und SUB. Als nächster binärer
+Operationsschritt folgt die `DIV_*`-Familie.
 
 `TinyCPUMain` is the integration sheet. Stateful blocks are encapsulated on
 named subpages, and its single `Operations` instance groups the independently
-selectable `AddSubCircuit`, `SubSubCircuit`, and `NotCircuit` boxes. Shared
+selectable `AddSubCircuit`, `SubSubCircuit`, `MulSubCircuit`, and `NotCircuit`
+boxes. Shared
 instruction, memory, accumulator, and validity values cross that boundary only
 once; result, result-valid, and overflow aggregation remains local to
 `Operations`. Every

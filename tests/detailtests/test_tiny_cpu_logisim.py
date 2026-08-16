@@ -1224,9 +1224,13 @@ def test_tinycpu_sheet_uses_the_operations_sheet_as_its_only_operation_box():
     operation_boxes = [
         component.get("name")
         for component in operations.findall("comp")
-        if component.get("name") in {"AddSubCircuit", "SubSubCircuit", "NotCircuit"}
+        if component.get("name") in {
+            "AddSubCircuit", "SubSubCircuit", "MulSubCircuit", "NotCircuit"
+        }
     ]
-    assert sorted(operation_boxes) == ["AddSubCircuit", "NotCircuit", "SubSubCircuit"]
+    assert sorted(operation_boxes) == [
+        "AddSubCircuit", "MulSubCircuit", "NotCircuit", "SubSubCircuit"
+    ]
     owners = {
         box: [
             circuit.get("name")
@@ -1239,6 +1243,7 @@ def test_tinycpu_sheet_uses_the_operations_sheet_as_its_only_operation_box():
     assert owners == {
         "AddSubCircuit": ["Operations"],
         "SubSubCircuit": ["Operations"],
+        "MulSubCircuit": ["Operations"],
         "NotCircuit": ["Operations"],
     }
 
@@ -1652,8 +1657,35 @@ def test_operation_data_and_validity_are_combined_by_explicit_or_trees():
         assert gate.get("name") == "OR Gate"
         assert _attributes(gate).get("width", "1") == width
 
-    assert _attributes(components["RESULT"])["inputs"] == "3"
-    assert _attributes(components["RESULT_VALID"])["inputs"] == "3"
+    assert _attributes(components["RESULT"])["inputs"] == "4"
+    assert _attributes(components["RESULT_VALID"])["inputs"] == "4"
+
+
+def test_mul_operation_is_integrated_into_results_and_invalid_operand_detection():
+    """MUL crosses Operations once and participates in every arithmetic merge."""
+
+    root = ET.parse(PROJECT).getroot()
+    top_adjacency = _electrical_adjacency(_top_level(root))
+    for mode in ACCUMULATOR_ADDRESSING_MODES:
+        label = f"MUL_{mode}"
+        assert _subcircuit_input(root, "Operations", label) in _reachable(
+            top_adjacency, _control_output(root, label)
+        )
+
+    operations = next(
+        circuit for circuit in root.findall("circuit")
+        if circuit.get("name") == "Operations"
+    )
+    labels = {
+        _attributes(component).get("label"): component
+        for component in operations.findall("comp")
+        if _attributes(component).get("label")
+    }
+    assert labels["MUL_OPERATION"].get("name") == "MulSubCircuit"
+    assert _attributes(labels["ARITHMETIC_RESULT_VALID"])["inputs"] == "3"
+    assert _attributes(labels["OVERFLOW_SET"])["inputs"] == "3"
+    assert _attributes(labels["ARITHMETIC_IS_ACTIVE"])["inputs"] == "3"
+    assert labels["MUL_IS_ACTIVE"].get("name") == "OR Gate"
 
 
 def test_unary_and_subtraction_boxes_export_a_uniform_operation_contract():

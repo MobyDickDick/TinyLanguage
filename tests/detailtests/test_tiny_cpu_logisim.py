@@ -278,28 +278,60 @@ def test_active_offset_carry_sets_the_address_error_flag():
     )
     address_error = _subcircuit_input(root, "ErrorFlags", "SET_ADDR")
     decoded_address_error = _control_output(root, "SET_ADDR")
-    gate = _labelled_component(circuit, "ACTIVE_OFFSET_ADDRESS_ERROR")
+    range_fbox = next(
+        item for item in root.findall("circuit")
+        if item.get("name") == "AddressRangeFBox"
+    )
+    gate = _labelled_component(range_fbox, "ACTIVE_OFFSET_ADDRESS_ERROR")
     assert gate.get("name") == "AND Gate"
 
     x, y = (int(value) for value in gate.get("loc").strip("()").split(","))
-    facing = _attributes(gate).get("facing", "east")
-    input_x = x + 30 if facing == "west" else x - 50
-    gate_inputs = {f"({input_x},{y - 10})", f"({input_x},{y + 10})"}
-    adjacency = _electrical_adjacency(
-        circuit,
-        {carry, offset_active, address_error, decoded_address_error} | gate_inputs,
-    )
+    # Logisim's default narrow two-input AND symbol places the terminals twenty
+    # pixels above and below its centre (the generic helper models the wider
+    # ten-pixel-spacing symbols used elsewhere in this project).
+    gate_inputs = {f"({x - 50},{y - 20})", f"({x - 50},{y + 20})"}
+    adjacency = _electrical_adjacency(range_fbox, gate_inputs)
 
-    carry_net = _reachable(adjacency, carry)
-    active_net = _reachable(adjacency, offset_active)
+    fbox_pins = {
+        _attributes(component).get("label"): component.get("loc")
+        for component in range_fbox.findall("comp")
+        if component.get("name") == "Pin"
+    }
+    carry_net = _reachable(adjacency, fbox_pins["OFFSET_CARRY"])
+    active_net = _reachable(
+        adjacency,
+        fbox_pins["EFFECTIVE_OFFSET_MODE"],
+    )
     assert len(gate_inputs & carry_net) == 1
     assert len(gate_inputs & active_net) == 1
     assert carry_net.isdisjoint(active_net)
-    integrated_error = _labelled_component(circuit, "ACTIVE_ADDRESS_ERROR")
+    integrated_error = _labelled_component(range_fbox, "ACTIVE_ADDRESS_ERROR")
     assert integrated_error.get("name") == "OR Gate"
-    assert "(2130,970)" in _reachable(adjacency, gate.get("loc"))
-    assert address_error in _reachable(adjacency, integrated_error.get("loc"))
-    assert address_error not in _reachable(adjacency, decoded_address_error)
+    integrated_x, integrated_y = (
+        int(value) for value in integrated_error.get("loc").strip("()").split(",")
+    )
+    integrated_inputs = {
+        f"({integrated_x - 50},{integrated_y - 20})",
+        f"({integrated_x - 50},{integrated_y + 20})",
+    }
+    assert len(
+        integrated_inputs & _reachable(adjacency, gate.get("loc"))
+    ) == 1
+
+    top_adjacency = _electrical_adjacency(circuit)
+    assert carry in _reachable(
+        top_adjacency,
+        _subcircuit_input(root, "AddressRangeFBox", "OFFSET_CARRY"),
+    )
+    assert offset_active in _reachable(
+        top_adjacency,
+        _subcircuit_input(root, "AddressRangeFBox", "EFFECTIVE_OFFSET_MODE"),
+    )
+    fbox_error = _subcircuit_output(
+        root, "AddressRangeFBox", "ACTIVE_ADDRESS_OUT_OF_RANGE"
+    )
+    assert address_error in _reachable(top_adjacency, fbox_error)
+    assert address_error not in _reachable(top_adjacency, decoded_address_error)
 
 
 def test_effective_address_range_error_covers_every_memory_address_mode():
@@ -350,7 +382,7 @@ def test_effective_address_range_error_covers_every_memory_address_mode():
         adjacency,
         _subcircuit_output(root, "EffectiveAddress", "ADDRESS_OUT_OF_RANGE"),
     )
-    assert "(2130,990)" in _reachable(
+    assert _subcircuit_input(root, "ErrorFlags", "SET_ADDR") in _reachable(
         adjacency,
         _subcircuit_output(root, "AddressRangeFBox", "ACTIVE_ADDRESS_OUT_OF_RANGE"),
     )

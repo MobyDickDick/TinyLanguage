@@ -434,6 +434,7 @@
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(790,900)" name="Constant">
+      <a name="label" val="MAXIMUM_MEMORY_ADDRESS"/>
       <a name="value" val="0xfff"/>
       <a name="width" val="16"/>
     </comp>
@@ -452,12 +453,15 @@
       <a name="label" val="MEMORY_ADDRESS_OFFSET_SELECT"/>
     </comp>
     <comp lib="2" loc="(750,220)" name="Multiplexer">
+      <a name="label" val="MEMORY_REGISTER_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(750,580)" name="Multiplexer">
+      <a name="label" val="MEMORY_OFFSET_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(850,890)" name="Comparator">
+      <a name="label" val="MEMORY_ADDRESS_RANGE_CHECK"/>
       <a name="width" val="16"/>
     </comp>
     <wire from="(300,160)" to="(490,160)"/>
@@ -2849,19 +2853,19 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     </comp>
     <comp lib="0" loc="(590,170)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="MUL_ADDRESS"/>
+      <a name="label" val="LOAD_ADDRESS"/>
     </comp>
     <comp lib="0" loc="(590,190)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="LOAD_ADDRESS"/>
+      <a name="label" val="ADD_ADDRESS"/>
     </comp>
     <comp lib="0" loc="(590,210)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="ADD_ADDRESS"/>
+      <a name="label" val="SUB_ADDRESS"/>
     </comp>
     <comp lib="0" loc="(590,230)" name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="label" val="SUB_ADDRESS"/>
+      <a name="label" val="MUL_ADDRESS"/>
     </comp>
     <comp lib="0" loc="(590,250)" name="Pin">
       <a name="appearance" val="classic"/>

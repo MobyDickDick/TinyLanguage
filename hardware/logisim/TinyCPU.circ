@@ -434,6 +434,7 @@
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(790,770)" name="Constant">
+      <a name="label" val="MAXIMUM_MEMORY_ADDRESS"/>
       <a name="value" val="0xfff"/>
       <a name="width" val="16"/>
     </comp>
@@ -452,12 +453,15 @@
       <a name="label" val="MEMORY_ADDRESS_OFFSET_SELECT"/>
     </comp>
     <comp lib="2" loc="(750,220)" name="Multiplexer">
+      <a name="label" val="MEMORY_REGISTER_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(750,580)" name="Multiplexer">
+      <a name="label" val="MEMORY_OFFSET_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(850,760)" name="Comparator">
+      <a name="label" val="MEMORY_ADDRESS_RANGE_CHECK"/>
       <a name="width" val="16"/>
     </comp>
     <wire from="(300,160)" to="(490,160)"/>
@@ -1888,6 +1892,7 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(1160,870)" to="(1220,870)"/>
     <wire from="(1240,950)" to="(1310,950)"/>
     <wire from="(1310,1020)" to="(1350,1020)"/>
+    <wire from="(1400,1040)" to="(1520,1040)"/>
     <wire from="(1310,950)" to="(1310,1020)"/>
     <wire from="(450,80)" to="(460,80)"/>
     <wire from="(460,110)" to="(600,110)"/>

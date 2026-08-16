@@ -121,7 +121,7 @@
     <comp lib="1" loc="(1000,350)" name="AND Gate">
       <a name="label" val="RANGE_VALID"/>
     </comp>
-    <comp lib="1" loc="(540,300)" name="XOR Gate">
+    <comp lib="1" loc="(610,300)" name="XOR Gate">
       <a name="label" val="OPERAND_SIGN_DIFFERENT"/>
     </comp>
     <comp lib="1" loc="(840,240)" name="XOR Gate">
@@ -166,18 +166,18 @@
     <wire from="(370,110)" to="(420,110)"/>
     <wire from="(370,190)" to="(400,190)"/>
     <wire from="(400,190)" to="(400,320)"/>
-    <wire from="(400,320)" to="(480,320)"/>
+    <wire from="(400,320)" to="(550,320)"/>
     <wire from="(420,110)" to="(420,260)"/>
-    <wire from="(420,260)" to="(450,260)"/>
+    <wire from="(420,260)" to="(500,260)"/>
     <wire from="(430,120)" to="(430,150)"/>
     <wire from="(430,150)" to="(490,150)"/>
     <wire from="(430,170)" to="(430,200)"/>
     <wire from="(430,170)" to="(490,170)"/>
-    <wire from="(450,260)" to="(450,280)"/>
-    <wire from="(450,260)" to="(780,260)"/>
-    <wire from="(450,280)" to="(480,280)"/>
+    <wire from="(500,260)" to="(500,280)"/>
+    <wire from="(500,260)" to="(780,260)"/>
+    <wire from="(500,280)" to="(550,280)"/>
     <wire from="(530,160)" to="(620,160)"/>
-    <wire from="(540,300)" to="(790,300)"/>
+    <wire from="(610,300)" to="(790,300)"/>
     <wire from="(620,160)" to="(930,160)"/>
     <wire from="(640,150)" to="(730,150)"/>
     <wire from="(730,150)" to="(730,220)"/>

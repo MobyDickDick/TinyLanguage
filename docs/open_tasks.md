@@ -5,6 +5,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Next documented work package (completed 2026-08-16)
+
+- [x] **Extract the TinyCPU MUL result-and-validity FBox**
+  (Owner: TinyCPU/Hardware)
+  - Success: give all four `MUL_*` addressing modes the same explicit operand,
+    result, overflow, and validity boundary already used by addition and
+    subtraction, without disturbing the manually redrawn integration sheet.
+  - Result: the tunnel-free `MulSubCircuit` selects immediate or memory-backed
+    operands and validity in parallel and delegates signed arithmetic to the
+    independently inspectable `MulArithmeticCircuit`. Structural coverage
+    freezes its complete input/output contract and multiplication primitive.
+  - Follow-up: place the new multiplication FBox behind `Operations` and merge
+    its neutral-gated result, validity, overflow, and invalid-operand activity.
+
 ## Next documented work package (completed 2026-08-15)
 
 - [x] **Revalidate the manually extracted TinyCPU address-range FBox**

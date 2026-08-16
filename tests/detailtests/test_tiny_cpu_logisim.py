@@ -1585,6 +1585,46 @@ def test_restored_arithmetic_boxes_are_tunnel_free():
 
 
 
+def test_mul_box_exports_the_arithmetic_result_and_validity_contract():
+    """Keep MUL ready for integration behind the same explicit FBox contract."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
+    multiply = circuits["MulSubCircuit"]
+    inputs = {
+        _attributes(component).get("label")
+        for component in multiply.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("type") != "output"
+    }
+    outputs = {
+        _attributes(component).get("label")
+        for component in multiply.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("type") == "output"
+    }
+
+    assert {
+        "MUL_CONST", "MUL_ADDRESS", "MUL_ADDRESS_REGISTER",
+        "MUL_ADDRESS_REGISTER_PLUS_OFFSET", "ACC_VALUE", "ACC_VALID",
+        "MEMORY_VALUE", "MEMORY_VALID", "IMMEDIATE_VALUE",
+    } == inputs
+    assert {"RESULT", "OVERFLOW", "RESULT_VALID"} == outputs
+    assert any(
+        component.get("name") == "MulArithmeticCircuit"
+        for component in multiply.findall("comp")
+    )
+    assert any(
+        component.get("name") == "Multiplier"
+        for component in circuits["MulArithmeticCircuit"].findall("comp")
+    )
+    assert not [
+        component for name in ("MulSubCircuit", "MulArithmeticCircuit")
+        for component in circuits[name].findall("comp")
+        if component.get("name") == "Tunnel"
+    ]
+
+
 def test_not_operation_gates_data_and_valid_with_activity():
     """An inactive NOT operation contributes neutral data and validity."""
 

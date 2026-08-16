@@ -341,7 +341,9 @@ wieder eindeutig und automatisiert prüfbar.
   `Operations`-Blatt zusammengeführt.
 - [ ] Anschließend `DIV`, `AND` und `OR` nach demselben Vertrag prüfen und
   verdrahten. `DIV` benötigt zusätzlich die Nullprüfung des ausgewählten
-  rechten Operanden.
+  rechten Operanden. `DIV` und `AND` sind abgeschlossen; bei `AND` bleibt der
+  inaktive logische Identitätswert `0xffff` erhalten und wird erst an der
+  gemeinsamen OR-Ergebnisgrenze auf null normalisiert. Offen ist `OR`.
 - [ ] Die nicht-binären Datenwege separat auditieren: `STORE_*` schreibt den
   Akkumulator, `NOT` invertiert den Akkumulator, `PRINT` liest den Akkumulator,
   `PRINT_ADDRESS` liest Speicher und `LOAD_*` schreibt den jeweils ausgewählten

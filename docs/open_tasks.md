@@ -7,6 +7,24 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-16)
 
+- [x] **Integrate the TinyCPU AND result-and-validity FBox**
+  (Owner: TinyCPU/Hardware)
+  - Success: place the manually redrawn AND box behind `Operations` and merge
+    its result and validity into the maintained result and invalid-operand
+    paths without changing its bitwise operand-selection contract.
+  - Result: all four `AND_*` controls cross the `Operations` boundary once.
+    The AND leaf retains its correct inactive identity value of `0xffff`, while
+    a boundary multiplexer converts that inactive value to zero only for the
+    shared OR result tree. AND validity now participates in both result
+    validity and active invalid-operand detection.
+  - Wiring audit: retained the manually redrawn `AndArithmeticCircuit` and
+    `AndSubCircuit` layout and added only the integration lanes and explicit
+    default label required by the contract.
+  - Follow-up: extract and integrate the `OR_*` result-and-validity FBox under
+    the same operation boundary contract.
+
+## Next documented work package (completed 2026-08-16)
+
 - [x] **Extract the TinyCPU AND result-and-validity FBox**
   (Owner: TinyCPU/Hardware)
   - Success: give all four `AND_*` addressing modes the established explicit

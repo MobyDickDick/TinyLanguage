@@ -135,10 +135,6 @@
       <a name="value" val="0xfff"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="3" loc="(850,890)" name="Comparator">
-      <a name="label" val="MEMORY_ADDRESS_RANGE_CHECK"/>
-      <a name="width" val="16"/>
-    </comp>
     <comp lib="0" loc="(920,880)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
@@ -161,11 +157,10 @@
       <a name="label" val="MEMORY_OFFSET_ADDRESS_SELECT"/>
       <a name="width" val="16"/>
     </comp>
-    <wire from="(750,580)" to="(760,580)"/>
-    <wire from="(760,580)" to="(760,880)"/>
-    <wire from="(760,880)" to="(810,880)"/>
-    <wire from="(790,900)" to="(810,900)"/>
-    <wire from="(850,880)" to="(920,880)"/>
+    <comp lib="3" loc="(850,890)" name="Comparator">
+      <a name="label" val="MEMORY_ADDRESS_RANGE_CHECK"/>
+      <a name="width" val="16"/>
+    </comp>
     <wire from="(300,160)" to="(490,160)"/>
     <wire from="(300,190)" to="(480,190)"/>
     <wire from="(300,220)" to="(470,220)"/>
@@ -230,6 +225,11 @@
     <wire from="(730,600)" to="(730,620)"/>
     <wire from="(730,620)" to="(780,620)"/>
     <wire from="(750,220)" to="(770,220)"/>
-    <wire from="(750,580)" to="(780,580)"/>
+    <wire from="(750,580)" to="(760,580)"/>
+    <wire from="(760,580)" to="(760,880)"/>
+    <wire from="(760,580)" to="(780,580)"/>
+    <wire from="(760,880)" to="(810,880)"/>
+    <wire from="(790,900)" to="(810,900)"/>
+    <wire from="(850,880)" to="(920,880)"/>
   </circuit>
 </project>

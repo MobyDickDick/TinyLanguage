@@ -7,6 +7,22 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-15)
 
+- [x] **Revalidate the manually extracted TinyCPU address-range FBox**
+  (Owner: TinyCPU/Hardware)
+  - Success: retain the redrawn `TinyCPUMain` as a hierarchy of functional
+    boxes, keep address-error combinatorics on `AddressRangeFBox`, and verify
+    the effective-address selectors without restoring primitive gates to the
+    integration sheet.
+  - Result: the structural regression now follows the FBox boundary for the
+    active offset-carry and final address-error paths. Stable, non-electrical
+    labels were restored to the two retained multiplexers, comparator, and
+    limit constant without moving or rewiring them, and generated diagnostics
+    were refreshed from the maintained project.
+  - Follow-up: extend the explicit result-and-validity operation contract to
+    the next arithmetic family, beginning with `MUL_*`.
+
+## Next documented work package (completed 2026-08-15)
+
 - [x] **Complete the central TinyCPU effective-address range check**
   (Owner: TinyCPU/Hardware)
   - Success: reject active direct, address-register, and register-plus-offset

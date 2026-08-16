@@ -1,17 +1,15 @@
 # TinyCPU in Logisim-evolution
 
 This directory contains the TinyCPU hardware baseline with a dedicated arithmetic sheet.
-Open `TinyCPU.circ` with Logisim-evolution 3.x. Das Blatt **`TinyCPUMain` ist eine
-rein hierarchische Übersichtsseite**: Es enthält ausschließlich die
-Unterseite `ProcessorCore` und keine Pins, Gatter, Splitter, Konstanten oder
-sonstigen elementaren Bauteile. Auch **`ProcessorCore` ist jetzt ein reines
-Hierarchieblatt**: Dort steht ausschließlich das Unterblatt
-`ProcessorImplementation`; Multiplexer, Gatter, Konstanten und alle übrigen
-Bauteile der Integration liegen auf diesem separaten Implementierungsblatt.
-Damit bleiben sowohl die Projektübersicht als auch die vom Benutzer geöffnete
-Prozessorkern-Ansicht frei von Bauteildetails. Fachlich zusammengehörige
-Vorgänge sind weiterhin auf kleinen Blättern wie `AddSub`, `Datapath`,
-`AddressPath`, `Memory`, `FetchDecode` und `ErrorFlags` gekapselt.
+Open `TinyCPU.circ` with Logisim-evolution 4.1.x. Das Blatt **`TinyCPUMain` ist
+die hierarchische Integrationsseite**. Die fachliche Logik liegt in benannten
+FBoxen, die auf andere Schemablätter verweisen, darunter `Operations`,
+`EffectiveAddress`, `AddressRangeFBox`, `Datapath`, `AddressPath`, `Memory`,
+`FetchDecode` und `ErrorFlags`. Auf `TinyCPUMain` verbleiben nur die externen
+Pins, der Splitter des extern sichtbaren Befehlsworts, die FBox-Instanzen und
+ihre sichtbaren rechtwinkligen Verbindungen. Insbesondere werden die nach der
+manuellen Überarbeitung in `AddressRangeFBox` liegenden Fehlergatter nicht auf
+die Integrationsseite zurückverschoben.
 
 Die Hierarchie ist von Hand gepflegt und keine generierte Verdrahtung. Generatoren
 in diesem Repository dürfen ausschließlich die eigenständigen Dateien unter

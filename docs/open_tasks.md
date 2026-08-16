@@ -7,6 +7,25 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-16)
 
+- [x] **Integrate the TinyCPU DIV result, validity, and error FBox**
+  (Owner: TinyCPU/Hardware)
+  - Success: place the extracted division box behind `Operations`, merge its
+    activity-gated result, validity, and signed-overflow signals with the
+    existing arithmetic tree, and make an active zero divisor set the sticky
+    divide-by-zero error independently of the decoder placeholder.
+  - Result: all four `DIV_*` controls cross the `Operations` boundary once.
+    Staged, single-driver OR gates extend the maintained four-way result lanes
+    without widening or crowding them, while division validity participates in
+    invalid-operand detection and `DIVIDE_BY_ZERO` exclusively drives
+    `ErrorFlags.SET_DIV0`.
+  - Wiring audit: restored the stable effective-address selector, memory-limit,
+    range-comparator, and divisor-zero-comparator labels removed by the latest
+    manual redraw; all new integration routes remain orthogonal and tunnel-free.
+  - Follow-up: extract the `AND_*` result-and-validity FBox under the same
+    operation boundary contract.
+
+## Next documented work package (completed 2026-08-16)
+
 - [x] **Extract the TinyCPU DIV result, validity, and zero-error FBox**
   (Owner: TinyCPU/Hardware)
   - Success: give all four `DIV_*` addressing modes the established explicit

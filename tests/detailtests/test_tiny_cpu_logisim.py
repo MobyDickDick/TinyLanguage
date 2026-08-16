@@ -227,7 +227,7 @@ def test_top_level_clear_error_reaches_error_flags_only():
 
 
 @pytest.mark.parametrize(
-    "name", ("SET_OVF", "SET_DIV0", "SET_ILL", "SET_INPUT")
+    "name", ("SET_OVF", "SET_ILL", "SET_INPUT")
 )
 def test_top_level_error_controls_reach_only_the_matching_error_input(name):
     """Resolve every error route by pin name, independent of drawing coordinates."""
@@ -1225,11 +1225,11 @@ def test_tinycpu_sheet_uses_the_operations_sheet_as_its_only_operation_box():
         component.get("name")
         for component in operations.findall("comp")
         if component.get("name") in {
-            "AddSubCircuit", "SubSubCircuit", "MulSubCircuit", "NotCircuit"
+            "AddSubCircuit", "SubSubCircuit", "MulSubCircuit", "DivSubCircuit", "NotCircuit"
         }
     ]
     assert sorted(operation_boxes) == [
-        "AddSubCircuit", "MulSubCircuit", "NotCircuit", "SubSubCircuit"
+        "AddSubCircuit", "DivSubCircuit", "MulSubCircuit", "NotCircuit", "SubSubCircuit"
     ]
     owners = {
         box: [
@@ -1244,6 +1244,7 @@ def test_tinycpu_sheet_uses_the_operations_sheet_as_its_only_operation_box():
         "AddSubCircuit": ["Operations"],
         "SubSubCircuit": ["Operations"],
         "MulSubCircuit": ["Operations"],
+        "DivSubCircuit": ["Operations"],
         "NotCircuit": ["Operations"],
     }
 
@@ -1683,7 +1684,7 @@ def test_div_box_exports_result_validity_and_divide_by_zero_contract():
         "DIV_ADDRESS_REGISTER_PLUS_OFFSET", "ACC_VALUE", "ACC_VALID",
         "MEMORY_VALUE", "MEMORY_VALID", "IMMEDIATE_VALUE",
     } == inputs
-    assert {"RESULT", "OVERFLOW", "RESULT_VALID"} == outputs
+    assert {"RESULT", "OVERFLOW", "RESULT_VALID", "DIVIDE_BY_ZERO"} == outputs
     arithmetic = circuits["DivArithmeticCircuit"]
     assert any(component.get("name") == "Divider" for component in arithmetic.findall("comp"))
     labels = {_attributes(component).get("label") for component in arithmetic.findall("comp")}
@@ -1947,3 +1948,26 @@ def test_effective_address_routes_use_separate_drawing_lanes():
 
     assert report.routing_conflicts == ()
     assert report.width_conflicts == ()
+
+
+def test_div_operation_is_integrated_into_results_status_and_sticky_zero_error():
+    """DIV crosses Operations once and owns the hardware divide-by-zero path."""
+    root = ET.parse(PROJECT).getroot()
+    top = _top_level(root)
+    adjacency = _electrical_adjacency(top)
+    for mode in ACCUMULATOR_ADDRESSING_MODES:
+        label = f"DIV_{mode}"
+        assert _subcircuit_input(root, "Operations", label) in _reachable(
+            adjacency, _control_output(root, label)
+        )
+    zero = _subcircuit_output(root, "Operations", "DIVIDE_BY_ZERO")
+    sticky = _subcircuit_input(root, "ErrorFlags", "SET_DIV0")
+    assert sticky in _reachable(adjacency, zero)
+    assert sticky not in _reachable(adjacency, _control_output(root, "SET_DIV0"))
+
+    operations = next(c for c in root.findall("circuit") if c.get("name") == "Operations")
+    labels = {_attributes(c).get("label"): c for c in operations.findall("comp")}
+    assert labels["DIV_OPERATION"].get("name") == "DivSubCircuit"
+    for label in ("RESULT_WITH_DIV", "RESULT_VALID_WITH_DIV", "OVERFLOW_WITH_DIV",
+                  "ARITHMETIC_VALID_WITH_DIV", "ARITHMETIC_ACTIVE_WITH_DIV"):
+        assert labels[label].get("name") == "OR Gate"

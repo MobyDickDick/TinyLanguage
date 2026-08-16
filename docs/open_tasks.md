@@ -7,6 +7,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-16)
 
+- [x] **Integrate the TinyCPU MUL result-and-validity FBox**
+  (Owner: TinyCPU/Hardware)
+  - Success: place the extracted multiplication box behind `Operations`, merge
+    its activity-gated data, validity, and signed-overflow outputs with the
+    existing ADD/SUB/NOT tree, and include invalid MUL operands in `SET_INV`.
+  - Result: all four `MUL_*` controls and the shared accumulator, instruction,
+    memory, and validity inputs cross the `Operations` boundary once. The
+    four-way result trees and three-way arithmetic status trees merge the
+    multiplication contract without adding tunnels or wired-OR nets.
+  - Follow-up: extract and integrate the `DIV_*` result, validity, overflow,
+    divide-by-zero, and invalid-operand paths under the same contract.
+
+## Next documented work package (completed 2026-08-16)
+
 - [x] **Extract the TinyCPU MUL result-and-validity FBox**
   (Owner: TinyCPU/Hardware)
   - Success: give all four `MUL_*` addressing modes the same explicit operand,

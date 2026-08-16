@@ -172,7 +172,10 @@ select immediate or memory operand validity and combine it with
 result. The four `SUB_*` modes now additionally select the matching 16-bit
 operand, subtract it from the current accumulator, and apply the same two-valid-
 operand rule in the next staged data and validity selectors. `INPUT` remains
-both final overrides. The next binary family is `MUL_*`. Nach
+both final overrides. `MUL_*` now follows the same operand and validity
+contract inside its extracted operation box and participates in the combined
+result, overflow, validity, and invalid-operand paths. The next binary family
+is `DIV_*`. Nach
 der erneuten manuellen Korrektur gelten die
 verschobenen Symbole und direkten Leitungen der eingecheckten Übersichtsseite
 als neue Referenz. Die Strukturtests leiten die Eingangsseite der automatisch
@@ -180,8 +183,9 @@ erzeugten Symbole entsprechend ab und verlangen nicht länger die Tunnel und
 Koordinaten der überholten Zeichnung; die drei Akkumulator-Multiplexer behalten
 lediglich eindeutige, nicht-elektrische Bezeichner.
 
-Die drei funktionalen Kästen `AddSubCircuit`, `SubSubCircuit` und `NotCircuit`
-sind nun auf dem eigenen Blatt `Operations` gekapselt. `TinyCPUMain` enthält
+Die vier funktionalen Kästen `AddSubCircuit`, `SubSubCircuit`, `MulSubCircuit`
+und `NotCircuit` sind nun auf dem eigenen Blatt `Operations` gekapselt.
+`TinyCPUMain` enthält
 genau eine Instanz dieses Blatts. Gemeinsam verwendete Befehls-, Speicher-,
 Akkumulator- und Validitätswerte überschreiten die Grenze jeweils nur einmal;
 `Operations` führt `RESULT`, `RESULT_VALID` und `OVERFLOW` lokal zusammen und

@@ -180,8 +180,7 @@ signal, and participates in the consolidated result and validity OR gates.
 Integer division deliberately has no overflow output; apart from invalid
 operands, only a zero divisor invalidates its result. The manually compacted
 four-mode routes have been checked against the current `Operations` pin order
-and corrected without restoring the superseded drawing. The next binary
-family is `AND_*`. Nach
+and corrected without restoring the superseded drawing. `AND_*` is now extracted behind the same operand and validity boundary; its bitwise result is neutral-gated while inactive and deliberately exports no overflow status. The next step integrates that box into `Operations`. Nach
 der erneuten manuellen Korrektur gelten die
 verschobenen Symbole und direkten Leitungen der eingecheckten Übersichtsseite
 als neue Referenz. Die Strukturtests leiten die Eingangsseite der automatisch

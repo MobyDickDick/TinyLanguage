@@ -211,7 +211,7 @@ sowie die eigentliche Steuersignaldecodierung (`FetchDecodeControls`)
 aufgeteilt.
 
 Das Blatt `Operations` sowie seine Auswahlblöcke `AddSubCircuit` und
-`SubSubCircuit` besitzen getrennte, rechtwinklige Leitungswege für Steuerbits,
+`SubSubCircuit` sowie die extrahierte `AndSubCircuit` besitzen getrennte, rechtwinklige Leitungswege für Steuerbits,
 16-Bit-Operanden und Gültigkeitssignale. Insbesondere enden die Daten- und
 Select-Leitungen an den tatsächlichen Multiplexeranschlüssen; gemeinsame
 Operanden werden über eigene Fan-out-Korridore verteilt. Dadurch entstehen an

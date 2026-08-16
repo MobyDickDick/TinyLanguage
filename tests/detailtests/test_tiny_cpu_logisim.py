@@ -1226,11 +1226,11 @@ def test_tinycpu_sheet_uses_the_operations_sheet_as_its_only_operation_box():
         component.get("name")
         for component in operations.findall("comp")
         if component.get("name") in {
-            "AddSubCircuit", "SubSubCircuit", "MulSubCircuit", "DivSubCircuit", "NotCircuit"
+            "AddSubCircuit", "SubSubCircuit", "MulSubCircuit", "DivSubCircuit", "AndSubCircuit", "NotCircuit"
         }
     ]
     assert sorted(operation_boxes) == [
-        "AddSubCircuit", "DivSubCircuit", "MulSubCircuit", "NotCircuit", "SubSubCircuit"
+        "AddSubCircuit", "AndSubCircuit", "DivSubCircuit", "MulSubCircuit", "NotCircuit", "SubSubCircuit"
     ]
     owners = {
         box: [
@@ -1246,6 +1246,7 @@ def test_tinycpu_sheet_uses_the_operations_sheet_as_its_only_operation_box():
         "SubSubCircuit": ["Operations"],
         "MulSubCircuit": ["Operations"],
         "DivSubCircuit": ["Operations"],
+        "AndSubCircuit": ["Operations"],
         "NotCircuit": ["Operations"],
     }
 
@@ -1659,7 +1660,13 @@ def test_and_box_exports_bitwise_result_and_validity_contract():
     assert {"RESULT", "RESULT_VALID"} == outputs
     arithmetic = circuits["AndArithmeticCircuit"]
     labels = {_attributes(component).get("label") for component in arithmetic.findall("comp")}
-    assert {"BITWISE_AND", "ACTIVE_AND_RESULT", "ACTIVE_AND_VALID"} <= labels
+    assert {"BITWISE_AND", "ACTIVE_AND_VALID"} <= labels
+    assert any(
+        component.get("name") == "Multiplexer"
+        for component in arithmetic.findall("comp")
+    )
+    inactive = _labelled_component(arithmetic, "INACTIVE_AND_DEFAULT")
+    assert _attributes(inactive)["value"] == "0xffff"
     assert not [
         component for name in ("AndSubCircuit", "AndArithmeticCircuit")
         for component in circuits[name].findall("comp")
@@ -2021,3 +2028,34 @@ def test_div_operation_is_integrated_into_results_status_and_sticky_zero_error()
         for pin in next(c for c in root.findall("circuit") if c.get("name") == "DivSubCircuit")
         .findall("comp")
     }
+
+
+def test_and_operation_is_integrated_with_its_one_default_normalized_for_merge():
+    """AND keeps logical one by default but contributes zero to an inactive OR tree."""
+
+    root = ET.parse(PROJECT).getroot()
+    top = _top_level(root)
+    adjacency = _electrical_adjacency(top)
+    for mode in ACCUMULATOR_ADDRESSING_MODES:
+        label = f"AND_{mode}"
+        assert _subcircuit_input(root, "Operations", label) in _reachable(
+            adjacency, _control_output(root, label)
+        )
+
+    operations = next(
+        circuit for circuit in root.findall("circuit")
+        if circuit.get("name") == "Operations"
+    )
+    labels = {
+        _attributes(component).get("label"): component
+        for component in operations.findall("comp")
+    }
+    assert labels["AND_OPERATION"].get("name") == "AndSubCircuit"
+    assert labels["AND_RESULT_FOR_MERGE"].get("name") == "Multiplexer"
+    for label in (
+        "RESULT_WITH_AND",
+        "RESULT_VALID_WITH_AND",
+        "ARITHMETIC_VALID_WITH_AND",
+        "ARITHMETIC_ACTIVE_WITH_AND",
+    ):
+        assert labels[label].get("name") == "OR Gate"

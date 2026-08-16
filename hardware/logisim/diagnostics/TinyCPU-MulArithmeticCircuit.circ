@@ -14,10 +14,10 @@
   <lib desc="#TTL" name="7"/>
   <lib desc="#TCL" name="8"/>
   <lib desc="#Base" name="9"/>
-  <main name="SubArithmeticCircuit"/>
-  <circuit name="SubArithmeticCircuit">
+  <main name="MulArithmeticCircuit"/>
+  <circuit name="MulArithmeticCircuit">
     <a name="appearance" val="logisim_evolution"/>
-    <a name="circuit" val="SubArithmeticCircuit"/>
+    <a name="circuit" val="MulArithmeticCircuit"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
     <comp lib="0" loc="(1050,280)" name="Pin">
@@ -136,7 +136,7 @@
     <comp lib="2" loc="(330,200)" name="Multiplexer">
       <a name="width" val="16"/>
     </comp>
-    <comp lib="3" loc="(530,160)" name="Subtractor">
+    <comp lib="3" loc="(530,160)" name="Multiplier">
       <a name="width" val="16"/>
     </comp>
     <comp lib="9" loc="(270,60)" name="Text">

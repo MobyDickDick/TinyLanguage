@@ -174,8 +174,14 @@ operand, subtract it from the current accumulator, and apply the same two-valid-
 operand rule in the next staged data and validity selectors. `INPUT` remains
 both final overrides. `MUL_*` now follows the same operand and validity
 contract inside its extracted operation box and participates in the combined
-result, overflow, validity, and invalid-operand paths. The next binary family
-is `DIV_*`. Nach
+result, overflow, validity, and invalid-operand paths. `DIV_*` follows the same
+operand selection and validity contract, exports a dedicated divide-by-zero
+signal, and participates in the consolidated result and validity OR gates.
+Integer division deliberately has no overflow output; apart from invalid
+operands, only a zero divisor invalidates its result. The manually compacted
+four-mode routes have been checked against the current `Operations` pin order
+and corrected without restoring the superseded drawing. The next binary
+family is `AND_*`. Nach
 der erneuten manuellen Korrektur gelten die
 verschobenen Symbole und direkten Leitungen der eingecheckten Übersichtsseite
 als neue Referenz. Die Strukturtests leiten die Eingangsseite der automatisch

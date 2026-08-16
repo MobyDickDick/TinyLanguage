@@ -505,7 +505,7 @@ def test_result_merge_has_a_visible_routing_lane():
     )
     # The manually widened operation sheet keeps this merge to the right of
     # the growing operation FBoxes, leaving a visible routing corridor.
-    assert (result_or_x, result_or_y) == (1290, 690)
+    assert (result_or_x, result_or_y) == (1500, 690)
 
 
 def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():

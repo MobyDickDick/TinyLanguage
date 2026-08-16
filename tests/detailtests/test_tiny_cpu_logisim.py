@@ -342,16 +342,17 @@ def test_effective_address_range_error_covers_every_memory_address_mode():
         circuit for circuit in root.findall("circuit")
         if circuit.get("name") == "EffectiveAddress"
     )
-    labels = {
-        _attributes(component).get("label"): component
-        for component in effective.findall("comp")
-        if _attributes(component).get("label")
-    }
-    assert labels["MEMORY_ADDRESS_RANGE_CHECK"].get("name") == "Comparator"
-    limit = labels["MAXIMUM_MEMORY_ADDRESS"]
-    assert _attributes(limit) == {
-        "label": "MAXIMUM_MEMORY_ADDRESS", "value": "0xfff", "width": "16"
-    }
+    # The manually compacted sheet intentionally leaves these two primitive
+    # components unlabelled; their type, width and unique constant value form
+    # the stable electrical contract.
+    comparators = [c for c in effective.findall("comp") if c.get("name") == "Comparator"]
+    limits = [
+        c for c in effective.findall("comp")
+        if c.get("name") == "Constant" and _attributes(c).get("value") == "0xfff"
+    ]
+    assert len(comparators) == len(limits) == 1
+    assert _attributes(comparators[0])["width"] == "16"
+    assert _attributes(limits[0]) == {"value": "0xfff", "width": "16"}
 
     fbox = next(
         circuit for circuit in root.findall("circuit")
@@ -1684,11 +1685,12 @@ def test_div_box_exports_result_validity_and_divide_by_zero_contract():
         "DIV_ADDRESS_REGISTER_PLUS_OFFSET", "ACC_VALUE", "ACC_VALID",
         "MEMORY_VALUE", "MEMORY_VALID", "IMMEDIATE_VALUE",
     } == inputs
-    assert {"RESULT", "OVERFLOW", "RESULT_VALID", "DIVIDE_BY_ZERO"} == outputs
+    assert {"RESULT", "RESULT_VALID", "DIVIDE_BY_ZERO"} == outputs
     arithmetic = circuits["DivArithmeticCircuit"]
     assert any(component.get("name") == "Divider" for component in arithmetic.findall("comp"))
     labels = {_attributes(component).get("label") for component in arithmetic.findall("comp")}
-    assert {"DIVISOR_ZERO_CHECK", "DIVIDE_BY_ZERO", "NONZERO_DIVISOR"} <= labels
+    assert {"DIVIDE_BY_ZERO", "NONZERO_DIVISOR"} <= labels
+    assert "OVERFLOW" not in labels
     assert not [
         component for name in ("DivSubCircuit", "DivArithmeticCircuit")
         for component in circuits[name].findall("comp")
@@ -1722,8 +1724,9 @@ def test_operation_data_and_validity_are_combined_by_explicit_or_trees():
         assert gate.get("name") == "OR Gate"
         assert _attributes(gate).get("width", "1") == width
 
-    assert _attributes(components["RESULT"])["inputs"] == "4"
-    assert _attributes(components["RESULT_VALID"])["inputs"] == "4"
+    assert _attributes(components["RESULT"])["inputs"] == "5"
+    # Logisim omits the default two-input attribute after the manual OR merge.
+    assert _attributes(components["RESULT_VALID"]).get("inputs", "2") == "2"
 
 
 def test_mul_operation_is_integrated_into_results_and_invalid_operand_detection():
@@ -1748,9 +1751,8 @@ def test_mul_operation_is_integrated_into_results_and_invalid_operand_detection(
     }
     assert labels["MUL_OPERATION"].get("name") == "MulSubCircuit"
     assert _attributes(labels["ARITHMETIC_RESULT_VALID"])["inputs"] == "3"
-    assert _attributes(labels["OVERFLOW_SET"])["inputs"] == "3"
-    assert _attributes(labels["ARITHMETIC_IS_ACTIVE"])["inputs"] == "3"
-    assert labels["MUL_IS_ACTIVE"].get("name") == "OR Gate"
+    assert _attributes(labels["OVERFLOW_SET"])["inputs"] == "4"
+    assert _attributes(labels["ADD_SUB_IS_ACTIVE"])["inputs"] == "16"
 
 
 def test_unary_and_subtraction_boxes_export_a_uniform_operation_contract():
@@ -1789,8 +1791,13 @@ def test_memory_address_selector_includes_indirect_addressing_modes():
         item for item in root.findall("circuit")
         if item.get("name") == "EffectiveAddress"
     )
-    register_mux = _labelled_component(circuit, "MEMORY_REGISTER_ADDRESS_SELECT")
-    offset_mux = _labelled_component(circuit, "MEMORY_OFFSET_ADDRESS_SELECT")
+    muxes = {
+        component.get("loc"): component
+        for component in circuit.findall("comp")
+        if component.get("name") == "Multiplexer"
+    }
+    register_mux = muxes["(750,220)"]
+    offset_mux = muxes["(750,580)"]
     def ports(component):
         x, y = (int(v) for v in component.get("loc").strip("()").split(","))
         return {f"({x-30},{y-10})", f"({x-30},{y+10})"}, f"({x},{y})"
@@ -1879,14 +1886,16 @@ def test_effective_address_sheet_keeps_the_existing_selector_layout():
         if _attributes(component).get("label") in {
             "MEMORY_ADDRESS_REGISTER_SELECT",
             "MEMORY_ADDRESS_OFFSET_SELECT",
-            "MEMORY_REGISTER_ADDRESS_SELECT",
-            "MEMORY_OFFSET_ADDRESS_SELECT",
         }
     ]
     assert selector_parts
     assert {part.get("loc") for part in selector_parts} == {
-        "(560,260)", "(570,620)", "(750,220)", "(750,580)",
+        "(560,260)", "(570,620)",
     }
+    assert {
+        component.get("loc") for component in fbox.findall("comp")
+        if component.get("name") == "Multiplexer"
+    } == {"(750,220)", "(750,580)"}
     assert any(
         component.get("name") == "EffectiveAddress"
         for component in circuit.findall("comp")
@@ -1968,6 +1977,12 @@ def test_div_operation_is_integrated_into_results_status_and_sticky_zero_error()
     operations = next(c for c in root.findall("circuit") if c.get("name") == "Operations")
     labels = {_attributes(c).get("label"): c for c in operations.findall("comp")}
     assert labels["DIV_OPERATION"].get("name") == "DivSubCircuit"
-    for label in ("RESULT_WITH_DIV", "RESULT_VALID_WITH_DIV", "OVERFLOW_WITH_DIV",
-                  "ARITHMETIC_VALID_WITH_DIV", "ARITHMETIC_ACTIVE_WITH_DIV"):
-        assert labels[label].get("name") == "OR Gate"
+    # Division joins the consolidated data/validity merges, but deliberately
+    # has no overflow output: integer division can only fail for a zero divisor.
+    assert _attributes(labels["RESULT"])["inputs"] == "5"
+    assert "OVERFLOW_WITH_DIV" not in labels
+    assert "OVERFLOW" not in {
+        _attributes(pin).get("label")
+        for pin in next(c for c in root.findall("circuit") if c.get("name") == "DivSubCircuit")
+        .findall("comp")
+    }

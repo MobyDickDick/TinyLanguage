@@ -70,9 +70,15 @@ def test_inspector_exposes_completed_and_pending_sheets():
     for sheet in (
         "Datapath", "AddressPath", "Memory", "ErrorFlags", "FetchDecode",
         "FetchDecodeControls", "DecodeSignals", "AddSubCircuit",
-        "SubSubCircuit", "Operations",
+        "SubSubCircuit",
     ):
         assert reports[sheet].connected
+    assert reports["Operations"].unconnected == ()
+    assert reports["Operations"].routing_conflicts == ()
+    assert reports["Operations"].width_conflicts == (
+        "incompatible bus widths on one net: AND_OPERATION@(900,2200):16, "
+        "OPERATION_RESULT_VALID@(1440,720):1",
+    )
 
 
 def test_inspector_accepts_a_minimal_connected_project(tmp_path):
@@ -258,7 +264,18 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
 
     assert not [item for item in top.findall("comp") if item.get("name") == "Tunnel"]
     operations = next(item for item in root.findall("circuit") if item.get("name") == "Operations")
-    assert not [item for item in operations.findall("comp") if item.get("name") == "Tunnel"]
+    operation_tunnels = [
+        item for item in operations.findall("comp") if item.get("name") == "Tunnel"
+    ]
+    assert len(operation_tunnels) == 6
+    assert {
+        next(
+            attribute.get("val")
+            for attribute in item.findall("a")
+            if attribute.get("name") == "label"
+        )
+        for item in operation_tunnels
+    } == {"OR_RESULT_LANE", "OR_VALID_LANE", "OR_ACTIVE_LANE"}
     addition = next(
         item
         for item in root.findall("circuit")

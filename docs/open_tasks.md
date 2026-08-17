@@ -7,6 +7,25 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-17)
 
+- [x] **Integrate the TinyCPU XOR result-and-validity FBox**
+  (Owner: TinyCPU/Hardware)
+  - Wiring audit: repaired two regressions in the manually redrawn
+    `TinyCPUMain`: `LOAD_ADDRESS_REGISTER_PLUS_OFFSET` again reaches the
+    matching effective-address input, and the accidentally joined
+    `OR_ADR_REG`/sticky-error routes are electrically separate again.
+  - Success: connect all four `XOR_*` addressing modes to the extracted box
+    and merge its neutral result, validity, and activity into the maintained
+    operation boundary without assigning arithmetic-overflow semantics.
+  - Result: the version-1 opcode table appends the four XOR modes, the decoder
+    exports their controls, and `Operations` uses explicit second-stage OR
+    gates so the compact seven-way merge and its established routing remain
+    undisturbed. Structural tests freeze the repaired top-level routes and the
+    complete XOR path through the VM, decoder, boundary, and FBox.
+  - Follow-up: audit the remaining non-binary `STORE_*`, `NOT`, `PRINT`,
+    `PRINT_ADDRESS`, and `LOAD_*` data paths before further result-tree work.
+
+## Next documented work package (completed 2026-08-17)
+
 - [x] **Extract the TinyCPU XOR result-and-validity FBox**
   (Owner: TinyCPU/Hardware)
   - Review: the compacted `Operations` redraw is electrically complete: it has

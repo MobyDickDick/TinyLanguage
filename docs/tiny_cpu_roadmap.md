@@ -180,10 +180,13 @@ signal, and participates in the consolidated result and validity OR gates.
 Integer division deliberately has no overflow output; apart from invalid
 operands, only a zero divisor invalidates its result. The manually compacted
 four-mode routes have been checked against the current `Operations` pin order
-and corrected without restoring the superseded drawing. `AND_*` and `OR_*` are
-now extracted and integrated behind the same operand and validity boundary;
-their bitwise results are neutral while inactive and deliberately export no
-overflow status. The `XOR_*` operand-and-validity FBox is now extracted under the same contract; its integration is the next bitwise step. Nach
+and corrected without restoring the superseded drawing. `AND_*`, `OR_*`, and
+`XOR_*` are now extracted and integrated behind the same operand and validity
+boundary; their bitwise results are neutral while inactive and deliberately
+export no overflow status. XOR extends the compact seven-way summaries through
+an explicit second OR stage. The accompanying top-level audit also separated
+the accidentally joined error/OR controls and restored the interrupted
+`LOAD_ADDRESS_REGISTER_PLUS_OFFSET` route. The non-binary data paths are next. Nach
 der erneuten manuellen Korrektur gelten die
 verschobenen Symbole und direkten Leitungen der eingecheckten Übersichtsseite
 als neue Referenz. Die Strukturtests leiten die Eingangsseite der automatisch

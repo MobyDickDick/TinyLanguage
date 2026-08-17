@@ -157,6 +157,8 @@ class TinyCPU:
             result = left & operand
         elif operation == "OR":
             result = left | operand
+        elif operation == "XOR":
+            result = left ^ operand
         else:
             self._fail(ErrorFlag.INVALID_INSTRUCTION)
             return
@@ -199,7 +201,7 @@ class TinyCPU:
                 else:
                     cell.value, cell.valid = 0, False
                     self.errors.add(ErrorFlag.INVALID_OPERAND)
-        elif opcode.startswith(("ADD_", "SUB_", "MUL_", "DIV_", "AND_", "OR_")):
+        elif opcode.startswith(("ADD_", "SUB_", "MUL_", "DIV_", "AND_", "OR_", "XOR_")):
             operand = self._read_operand(instruction)
             if operand is not None:
                 self._binary(opcode, operand)

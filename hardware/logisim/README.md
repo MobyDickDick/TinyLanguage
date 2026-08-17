@@ -805,9 +805,12 @@ merge. Bitwise OR has no arithmetic-overflow output. Integration into
 the OR box to all four `XOR_*` addressing modes. `XorArithmeticCircuit` uses a
 16-bit XOR gate, exports a zero result while inactive, and activity-gates
 `RESULT_VALID`; bitwise XOR deliberately has no overflow output. The checked-in
-leaf diagnostic is generated from the maintained project. Integration into
-`Operations` remains the next work package so the compact manual layout is not
-redrawn as part of extraction.
+leaf diagnostic is generated from the maintained project. `Operations` now
+instantiates the box once and extends its maintained seven-way result,
+validity, and activity trees through explicit two-input OR stages. Four paired
+local tunnel lanes cross the occupied compact merge area; this documented
+exception avoids moving the manually maintained boxes. The four XOR controls
+append their version-1 opcodes and deliberately add no overflow source.
 
 The manual redraw reviewed with this package is not treated as layout-only:
 although reversing the endpoint order of a wire is electrically neutral, its

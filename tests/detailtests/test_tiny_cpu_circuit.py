@@ -264,7 +264,7 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
     operation_tunnels = [
         item for item in operations.findall("comp") if item.get("name") == "Tunnel"
     ]
-    assert len(operation_tunnels) == 1
+    assert len(operation_tunnels) == 9
     assert {
         next(
             attribute.get("val")
@@ -272,7 +272,10 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
             if attribute.get("name") == "label"
         )
         for item in operation_tunnels
-    } == {"OR_VALID_LANE"}
+    } == {
+        "OR_VALID_LANE", "XOR_RESULT_LANE", "XOR_VALID_LANE",
+        "XOR_ACTIVE_LANE", "XOR_MERGED_VALID_LANE",
+    }
     addition = next(
         item
         for item in root.findall("circuit")

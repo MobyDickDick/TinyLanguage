@@ -183,7 +183,7 @@ four-mode routes have been checked against the current `Operations` pin order
 and corrected without restoring the superseded drawing. `AND_*` and `OR_*` are
 now extracted and integrated behind the same operand and validity boundary;
 their bitwise results are neutral while inactive and deliberately export no
-overflow status. The next bitwise integration step is `XOR_*`. Nach
+overflow status. The `XOR_*` operand-and-validity FBox is now extracted under the same contract; its integration is the next bitwise step. Nach
 der erneuten manuellen Korrektur gelten die
 verschobenen Symbole und direkten Leitungen der eingecheckten Übersichtsseite
 als neue Referenz. Die Strukturtests leiten die Eingangsseite der automatisch

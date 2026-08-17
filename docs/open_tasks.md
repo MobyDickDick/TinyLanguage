@@ -5,6 +5,25 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Next documented work package (completed 2026-08-17)
+
+- [x] **Extract the TinyCPU XOR result-and-validity FBox**
+  (Owner: TinyCPU/Hardware)
+  - Review: the compacted `Operations` redraw is electrically complete: it has
+    no unconnected ports, routing conflicts, or width conflicts. Its single
+    remaining local tunnel, three-input overflow merge, and relocated result
+    lane are now reflected by topology-based structural checks.
+  - Success: give all four `XOR_*` addressing modes the established explicit
+    accumulator/immediate-or-memory operand and validity boundary without
+    arithmetic overflow semantics.
+  - Result: the tunnel-free `XorSubCircuit` selects operand data and validity
+    in parallel and delegates the neutral-gated operation to the leaf
+    `XorArithmeticCircuit`. The circuit inspector now understands XOR-gate
+    terminals, and generated diagnostics plus structural coverage freeze the
+    new contract.
+  - Follow-up: integrate the XOR box behind `Operations` and merge its result,
+    validity, and invalid-operand activity without disturbing the manual layout.
+
 ## Next documented work package (completed 2026-08-16)
 
 - [x] **Integrate the TinyCPU OR result-and-validity FBox**

@@ -41,7 +41,6 @@
     <comp lib="0" loc="(480,160)" name="Constant">
       <a name="value" val="0x0"/>
       <a name="width" val="16"/>
-      <a name="label" val="INACTIVE_OR_DEFAULT"/>
     </comp>
     <comp lib="0" loc="(650,180)" name="Pin">
       <a name="appearance" val="classic"/>

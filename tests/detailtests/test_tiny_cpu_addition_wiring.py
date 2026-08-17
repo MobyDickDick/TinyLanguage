@@ -90,11 +90,11 @@ def test_extracted_addition_has_the_restored_operation_interface():
         "MEMORY_VALID",
         "ACC_VALID",
     }
-    assert not [
-        component
+    assert {
+        _attributes(component).get("label")
         for component in operations.findall("comp")
         if component.get("name") == "Tunnel"
-    ]
+    } == {"OR_RESULT_LANE", "OR_VALID_LANE", "OR_ACTIVE_LANE"}
 
     labels = {_attributes(component).get("label") for component in addition.findall("comp")}
     # Keep the labels from the hand-redrawn sheet authoritative.  The drawing

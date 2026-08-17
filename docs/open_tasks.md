@@ -7,6 +7,27 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-16)
 
+- [x] **Integrate the TinyCPU OR result-and-validity FBox**
+  (Owner: TinyCPU/Hardware)
+  - Success: connect all four `OR_*` addressing modes to the extracted box and
+    merge its activity-neutral result, validity, and active invalid-operand
+    contribution without redrawing the maintained operation logic.
+  - Result: `OrSubCircuit` is instantiated exactly once on `Operations`; the
+    four controls cross the operation boundary once, while the existing shared
+    accumulator, immediate, memory, and validity lanes are extended locally.
+    The three maintained aggregation gates now expose their seventh input for
+    OR, and no arithmetic overflow meaning was added to the bitwise operation.
+  - Wiring audit: the manually revised operation boxes and their direct neutral
+    behavior remain authoritative. Only the missing OR boundary, fan-out, and
+    merge lanes were added, with separate top-level routes protected by the
+    wired-OR and routing-conflict checks. Three documented, paired local
+    tunnels cross the already occupied result, validity, and activity corridors
+    on `Operations`; they avoid both hidden crossings and a broad manual redraw.
+  - Follow-up: extract and integrate the `XOR_*` result-and-validity FBox under
+    the same bitwise operation boundary contract.
+
+## Next documented work package (completed 2026-08-16)
+
 - [x] **Extract the TinyCPU OR result-and-validity FBox**
   (Owner: TinyCPU/Hardware)
   - Review: the latest manual redraw was compared electrically with its parent.

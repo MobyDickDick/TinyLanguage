@@ -636,7 +636,13 @@ def test_top_level_has_visible_labels_on_wires_at_components():
         c for c in ET.parse(PROJECT).getroot().findall("circuit")
         if c.get("name") == "Operations"
     )
-    assert not [c for c in operations.findall("comp") if c.get("name") == "Tunnel"]
+    operation_tunnels = [
+        c for c in operations.findall("comp") if c.get("name") == "Tunnel"
+    ]
+    assert {
+        _attributes(component).get("label") for component in operation_tunnels
+    } == {"OR_RESULT_LANE", "OR_VALID_LANE", "OR_ACTIVE_LANE"}
+    assert len(operation_tunnels) == 6
     root = ET.parse(PROJECT).getroot()
     addition = next(
         item for item in root.findall("circuit")
@@ -1667,8 +1673,7 @@ def test_and_box_exports_bitwise_result_and_validity_contract():
         component.get("name") == "Multiplexer"
         for component in arithmetic.findall("comp")
     )
-    inactive = _labelled_component(arithmetic, "INACTIVE_AND_DEFAULT")
-    assert _attributes(inactive)["value"] == "0x0"
+    assert "INACTIVE_AND_DEFAULT" not in labels
     assert not [
         component for name in ("AndSubCircuit", "AndArithmeticCircuit")
         for component in circuits[name].findall("comp")
@@ -1702,9 +1707,9 @@ def test_or_box_exports_bitwise_result_and_validity_contract():
     assert {"RESULT", "RESULT_VALID", "RESULT_ACTIVE"} == outputs
     arithmetic = circuits["OrArithmeticCircuit"]
     labels = {_attributes(component).get("label") for component in arithmetic.findall("comp")}
-    assert {"BITWISE_OR", "ACTIVE_OR_VALID", "INACTIVE_OR_DEFAULT"} <= labels
+    assert {"BITWISE_OR", "ACTIVE_OR_VALID"} <= labels
+    assert "INACTIVE_OR_DEFAULT" not in labels
     assert _labelled_component(arithmetic, "BITWISE_OR").get("name") == "OR Gate"
-    assert _attributes(_labelled_component(arithmetic, "INACTIVE_OR_DEFAULT"))["value"] == "0x0"
     assert not [
         component for name in ("OrSubCircuit", "OrArithmeticCircuit")
         for component in circuits[name].findall("comp")
@@ -1798,9 +1803,9 @@ def test_operation_data_and_validity_are_combined_by_explicit_or_trees():
         for component in circuit.findall("comp")
         if _attributes(component).get("label")
     }
-    assert _attributes(components["RESULT"])["inputs"] == "5"
-    assert _attributes(components["OPERATION_RESULT_VALID"])["inputs"] == "6"
-    assert _attributes(components["OPERATION_IS_ACTIVE"])["inputs"] == "6"
+    assert _attributes(components["RESULT"])["inputs"] == "7"
+    assert _attributes(components["OPERATION_RESULT_VALID"])["inputs"] == "7"
+    assert _attributes(components["OPERATION_IS_ACTIVE"])["inputs"] == "7"
     assert components["ACTIVE_INVALID_OPERATION"].get("name") == "AND Gate"
     assert "RESULT_VALID_WITHOUT_ERROR" not in components
     assert "NO_INVALID_OPERAND" not in components
@@ -1826,8 +1831,8 @@ def test_mul_operation_is_integrated_into_results_and_invalid_operand_detection(
         if _attributes(component).get("label")
     }
     assert labels["MUL_OPERATION"].get("name") == "MulSubCircuit"
-    assert _attributes(labels["OPERATION_RESULT_VALID"])["inputs"] == "6"
-    assert _attributes(labels["OPERATION_IS_ACTIVE"])["inputs"] == "6"
+    assert _attributes(labels["OPERATION_RESULT_VALID"])["inputs"] == "7"
+    assert _attributes(labels["OPERATION_IS_ACTIVE"])["inputs"] == "7"
     assert _attributes(labels["OVERFLOW_SET"])["inputs"] == "4"
 
 
@@ -2055,7 +2060,7 @@ def test_div_operation_is_integrated_into_results_status_and_sticky_zero_error()
     assert labels["DIV_OPERATION"].get("name") == "DivSubCircuit"
     # Division joins the consolidated data/validity merges, but deliberately
     # has no overflow output: integer division can only fail for a zero divisor.
-    assert _attributes(labels["RESULT"])["inputs"] == "5"
+    assert _attributes(labels["RESULT"])["inputs"] == "7"
     assert "OVERFLOW_WITH_DIV" not in labels
     assert "OVERFLOW" not in {
         _attributes(pin).get("label")
@@ -2064,8 +2069,8 @@ def test_div_operation_is_integrated_into_results_status_and_sticky_zero_error()
     }
 
 
-def test_and_operation_is_integrated_with_its_one_default_normalized_for_merge():
-    """AND keeps logical one by default but contributes zero to an inactive OR tree."""
+def test_and_operation_is_integrated_into_the_maintained_result_merge():
+    """AND contributes its activity-neutral result to the shared tree."""
 
     root = ET.parse(PROJECT).getroot()
     top = _top_level(root)
@@ -2085,9 +2090,36 @@ def test_and_operation_is_integrated_with_its_one_default_normalized_for_merge()
         for component in operations.findall("comp")
     }
     assert labels["AND_OPERATION"].get("name") == "AndSubCircuit"
-    assert labels["RESULT_WITH_AND"].get("name") == "OR Gate"
-    assert _attributes(labels["OPERATION_RESULT_VALID"])["inputs"] == "6"
-    assert _attributes(labels["OPERATION_IS_ACTIVE"])["inputs"] == "6"
+    assert _attributes(labels["RESULT"])["inputs"] == "7"
+    assert _attributes(labels["OPERATION_RESULT_VALID"])["inputs"] == "7"
+    assert _attributes(labels["OPERATION_IS_ACTIVE"])["inputs"] == "7"
     arithmetic = next(c for c in root.findall("circuit") if c.get("name") == "AndArithmeticCircuit")
-    inactive = _labelled_component(arithmetic, "INACTIVE_AND_DEFAULT")
-    assert _attributes(inactive)["value"] == "0x0"
+    assert not any(
+        _attributes(component).get("label") == "INACTIVE_AND_DEFAULT"
+        for component in arithmetic.findall("comp")
+    )
+
+
+def test_or_operation_is_integrated_into_results_and_invalid_operand_detection():
+    """OR crosses Operations once and participates in every shared merge."""
+
+    root = ET.parse(PROJECT).getroot()
+    adjacency = _electrical_adjacency(_top_level(root))
+    for mode in ACCUMULATOR_ADDRESSING_MODES:
+        label = f"OR_{mode}"
+        assert _subcircuit_input(root, "Operations", label) in _reachable(
+            adjacency, _control_output(root, label)
+        )
+
+    operations = next(
+        circuit for circuit in root.findall("circuit")
+        if circuit.get("name") == "Operations"
+    )
+    labels = {
+        _attributes(component).get("label"): component
+        for component in operations.findall("comp")
+    }
+    assert labels["OR_OPERATION"].get("name") == "OrSubCircuit"
+    assert _attributes(labels["RESULT"])["inputs"] == "7"
+    assert _attributes(labels["OPERATION_RESULT_VALID"])["inputs"] == "7"
+    assert _attributes(labels["OPERATION_IS_ACTIVE"])["inputs"] == "7"

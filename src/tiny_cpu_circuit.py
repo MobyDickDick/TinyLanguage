@@ -92,12 +92,10 @@ FETCH_DECODE_SIGNAL_LANES = {
     "PRINT_ADDRESS": 42,
     "HALT": 43,
     "HALT_ERROR": 44,
-    "SET_OVF": 45,
-    "SET_DIV0": 46,
-    "SET_ADDR": 47,
-    "SET_INV": 48,
-    "SET_ILL": 49,
-    "SET_INPUT": 50,
+    "XOR_CONST": 46,
+    "XOR_ADDRESS": 47,
+    "XOR_ADDRESS_REGISTER": 48,
+    "XOR_ADDRESS_REGISTER_PLUS_OFFSET": 49,
 }
 
 

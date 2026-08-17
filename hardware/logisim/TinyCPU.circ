@@ -170,19 +170,19 @@
     <wire from="(1500,660)" to="(1850,660)"/>
     <wire from="(1510,100)" to="(1510,1220)"/>
     <wire from="(1510,100)" to="(1760,100)"/>
-    <wire from="(1550,1340)" to="(1550,1590)"/>
-    <wire from="(1550,140)" to="(1550,960)"/>
-    <wire from="(1550,140)" to="(1760,140)"/>
-    <wire from="(1550,1590)" to="(1550,2400)"/>
+    <wire from="(1540,160)" to="(1540,1360)"/>
     <wire from="(1550,1590)" to="(1880,1590)"/>
     <wire from="(1550,2400)" to="(1760,2400)"/>
-    <wire from="(1550,960)" to="(1550,1340)"/>
-    <wire from="(1560,220)" to="(1560,1420)"/>
-    <wire from="(1560,220)" to="(1760,220)"/>
-    <wire from="(1570,240)" to="(1570,1440)"/>
-    <wire from="(1570,240)" to="(1760,240)"/>
-    <wire from="(1580,780)" to="(1580,1100)"/>
-    <wire from="(1580,780)" to="(1850,780)"/>
+    <wire from="(1550,960)" to="(1550,1590)"/>
+    <wire from="(1550,1590)" to="(1550,2400)"/>
+    <wire from="(1560,140)" to="(1560,1340)"/>
+    <wire from="(1560,140)" to="(1760,140)"/>
+    <wire from="(1570,220)" to="(1570,1420)"/>
+    <wire from="(1570,220)" to="(1760,220)"/>
+    <wire from="(1580,240)" to="(1580,1440)"/>
+    <wire from="(1580,240)" to="(1760,240)"/>
+    <wire from="(1590,780)" to="(1590,1100)"/>
+    <wire from="(1590,780)" to="(1850,780)"/>
     <wire from="(1600,1470)" to="(1880,1470)"/>
     <wire from="(1600,480)" to="(1600,1470)"/>
     <wire from="(1610,270)" to="(1610,640)"/>
@@ -196,9 +196,9 @@
     <wire from="(1640,560)" to="(1850,560)"/>
     <wire from="(1650,120)" to="(1760,120)"/>
     <wire from="(1650,70)" to="(1650,120)"/>
-    <wire from="(1660,1670)" to="(1880,1670)"/>
+    <wire from="(1650,1670)" to="(1880,1670)"/>
+    <wire from="(1650,500)" to="(1650,1670)"/>
     <wire from="(1660,170)" to="(1660,680)"/>
-    <wire from="(1660,680)" to="(1660,1670)"/>
     <wire from="(1660,680)" to="(1850,680)"/>
     <wire from="(1670,1690)" to="(1880,1690)"/>
     <wire from="(1670,580)" to="(1670,1690)"/>
@@ -300,11 +300,24 @@
     <wire from="(880,1000)" to="(1000,1000)"/>
     <wire from="(880,1020)" to="(1110,1020)"/>
     <wire from="(880,1040)" to="(1100,1040)"/>
-    <wire from="(880,1100)" to="(1580,1100)"/>
+    <wire from="(880,1100)" to="(1590,1100)"/>
     <wire from="(880,1220)" to="(1510,1220)"/>
-    <wire from="(880,1340)" to="(1550,1340)"/>
-    <wire from="(880,1420)" to="(1560,1420)"/>
-    <wire from="(880,1440)" to="(1570,1440)"/>
+    <wire from="(880,1340)" to="(1560,1340)"/>
+    <wire from="(880,1360)" to="(1540,1360)"/>
+    <wire from="(880,1420)" to="(1570,1420)"/>
+    <wire from="(880,1440)" to="(1580,1440)"/>
+    <wire from="(880,1460)" to="(1750,1460)"/>
+    <wire from="(1750,1120)" to="(1750,1460)"/>
+    <wire from="(1750,1120)" to="(1850,1120)"/>
+    <wire from="(880,1480)" to="(1770,1480)"/>
+    <wire from="(1770,1160)" to="(1770,1480)"/>
+    <wire from="(1770,1160)" to="(1850,1160)"/>
+    <wire from="(880,1500)" to="(1790,1500)"/>
+    <wire from="(1790,1180)" to="(1790,1500)"/>
+    <wire from="(1790,1180)" to="(1850,1180)"/>
+    <wire from="(880,1520)" to="(1810,1520)"/>
+    <wire from="(1810,1140)" to="(1810,1520)"/>
+    <wire from="(1810,1140)" to="(1850,1140)"/>
     <wire from="(880,360)" to="(950,360)"/>
     <wire from="(880,380)" to="(2150,380)"/>
     <wire from="(880,460)" to="(1070,460)"/>
@@ -1255,6 +1268,30 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="label" val="SET_INPUT"/>
       <a name="type" val="output"/>
     </comp>
+    <comp lib="0" loc="(1040,1050)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="XOR_CONST"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="0" loc="(1040,1070)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="XOR_ADR"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="0" loc="(1040,1090)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="XOR_ADR_REG"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="0" loc="(1040,1110)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="XOR_REG_OFF"/>
+      <a name="type" val="output"/>
+    </comp>
     <comp lib="0" loc="(1040,110)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
@@ -1557,6 +1594,12 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp lib="2" loc="(500,670)" name="Decoder">
       <a name="select" val="6"/>
     </comp>
+    <comp lib="0" loc="(1000,930)" name="Constant"/>
+    <comp lib="0" loc="(1000,950)" name="Constant"/>
+    <comp lib="0" loc="(1000,970)" name="Constant"/>
+    <comp lib="0" loc="(1000,990)" name="Constant"/>
+    <comp lib="0" loc="(1000,1010)" name="Constant"/>
+    <comp lib="0" loc="(1000,1030)" name="Constant"/>
     <wire from="(1000,110)" to="(1040,110)"/>
     <wire from="(1000,70)" to="(1000,110)"/>
     <wire from="(1010,60)" to="(1010,90)"/>
@@ -1618,18 +1661,20 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(520,70)" to="(1000,70)"/>
     <wire from="(520,80)" to="(990,80)"/>
     <wire from="(520,90)" to="(980,90)"/>
-    <wire from="(540,1030)" to="(1040,1030)"/>
-    <wire from="(540,530)" to="(540,1030)"/>
-    <wire from="(550,1010)" to="(1040,1010)"/>
-    <wire from="(550,520)" to="(550,1010)"/>
-    <wire from="(560,510)" to="(560,990)"/>
-    <wire from="(560,990)" to="(1040,990)"/>
-    <wire from="(570,500)" to="(570,970)"/>
-    <wire from="(570,970)" to="(1040,970)"/>
-    <wire from="(580,490)" to="(580,950)"/>
-    <wire from="(580,950)" to="(1040,950)"/>
-    <wire from="(590,480)" to="(590,930)"/>
-    <wire from="(590,930)" to="(1040,930)"/>
+    <wire from="(580,490)" to="(580,1050)"/>
+    <wire from="(580,1050)" to="(1040,1050)"/>
+    <wire from="(570,500)" to="(570,1070)"/>
+    <wire from="(570,1070)" to="(1040,1070)"/>
+    <wire from="(560,510)" to="(560,1090)"/>
+    <wire from="(560,1090)" to="(1040,1090)"/>
+    <wire from="(550,520)" to="(550,1110)"/>
+    <wire from="(550,1110)" to="(1040,1110)"/>
+    <wire from="(1000,930)" to="(1040,930)"/>
+    <wire from="(1000,950)" to="(1040,950)"/>
+    <wire from="(1000,970)" to="(1040,970)"/>
+    <wire from="(1000,990)" to="(1040,990)"/>
+    <wire from="(1000,1010)" to="(1040,1010)"/>
+    <wire from="(1000,1030)" to="(1040,1030)"/>
     <wire from="(600,470)" to="(600,910)"/>
     <wire from="(600,910)" to="(1040,910)"/>
     <wire from="(610,460)" to="(610,890)"/>
@@ -2085,6 +2130,22 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="appearance" val="classic"/>
       <a name="label" val="OR_ADDRESS_REGISTER"/>
     </comp>
+    <comp lib="0" loc="(390,2180)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="XOR_CONST"/>
+    </comp>
+    <comp lib="0" loc="(390,2200)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="XOR_ADDRESS_REGISTER_PLUS_OFFSET"/>
+    </comp>
+    <comp lib="0" loc="(390,2220)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="XOR_ADDRESS"/>
+    </comp>
+    <comp lib="0" loc="(390,2240)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="XOR_ADDRESS_REGISTER"/>
+    </comp>
     <comp lib="0" loc="(450,750)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="NOT_IS_ACTIVE"/>
@@ -2179,6 +2240,49 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp loc="(900,1910)" name="OrSubCircuit">
       <a name="label" val="OR_OPERATION"/>
     </comp>
+    <comp loc="(900,2180)" name="XorSubCircuit">
+      <a name="label" val="XOR_OPERATION"/>
+    </comp>
+    <comp lib="0" loc="(930,2180)" name="Tunnel">
+      <a name="label" val="XOR_RESULT_LANE"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(1550,640)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="XOR_RESULT_LANE"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(930,2200)" name="Tunnel">
+      <a name="label" val="XOR_VALID_LANE"/>
+    </comp>
+    <comp lib="0" loc="(1520,760)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="XOR_VALID_LANE"/>
+    </comp>
+    <comp lib="0" loc="(930,2220)" name="Tunnel">
+      <a name="label" val="XOR_ACTIVE_LANE"/>
+    </comp>
+    <comp lib="0" loc="(1520,980)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="XOR_ACTIVE_LANE"/>
+    </comp>
+    <comp lib="1" loc="(1600,660)" name="OR Gate">
+      <a name="label" val="RESULT_WITH_XOR"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(1570,780)" name="OR Gate">
+      <a name="label" val="RESULT_VALID_WITH_XOR"/>
+    </comp>
+    <comp lib="0" loc="(1630,780)" name="Tunnel">
+      <a name="label" val="XOR_MERGED_VALID_LANE"/>
+    </comp>
+    <comp lib="0" loc="(1540,960)" name="Tunnel">
+      <a name="facing" val="west"/>
+      <a name="label" val="XOR_MERGED_VALID_LANE"/>
+    </comp>
+    <comp lib="1" loc="(1570,1000)" name="OR Gate">
+      <a name="label" val="OPERATION_ACTIVE_WITH_XOR"/>
+    </comp>
     <comp loc="(900,230)" name="AddSubCircuit">
       <a name="label" val="ADD_OPERATION"/>
     </comp>
@@ -2238,13 +2342,19 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(1410,870)" to="(1460,870)"/>
     <wire from="(1420,490)" to="(1420,850)"/>
     <wire from="(1420,850)" to="(1460,850)"/>
-    <wire from="(1490,1000)" to="(1640,1000)"/>
-    <wire from="(1490,780)" to="(1520,780)"/>
+    <wire from="(1490,1000)" to="(1500,1000)"/>
+    <wire from="(1500,1000)" to="(1500,1020)"/>
+    <wire from="(1500,1020)" to="(1520,1020)"/>
+    <wire from="(1490,780)" to="(1500,780)"/>
+    <wire from="(1500,780)" to="(1500,800)"/>
+    <wire from="(1500,800)" to="(1520,800)"/>
     <wire from="(1510,870)" to="(1700,870)"/>
-    <wire from="(1520,660)" to="(1720,660)"/>
-    <wire from="(1520,780)" to="(1520,960)"/>
-    <wire from="(1520,780)" to="(1700,780)"/>
-    <wire from="(1520,960)" to="(1540,960)"/>
+    <wire from="(1520,660)" to="(1530,660)"/>
+    <wire from="(1530,660)" to="(1530,680)"/>
+    <wire from="(1530,680)" to="(1550,680)"/>
+    <wire from="(1570,780)" to="(1700,780)"/>
+    <wire from="(1600,660)" to="(1720,660)"/>
+    <wire from="(1570,1000)" to="(1640,1000)"/>
     <wire from="(1570,960)" to="(1640,960)"/>
     <wire from="(1690,980)" to="(1690,990)"/>
     <wire from="(1690,980)" to="(1800,980)"/>
@@ -2264,6 +2374,10 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(390,1930)" to="(680,1930)"/>
     <wire from="(390,1950)" to="(680,1950)"/>
     <wire from="(390,1970)" to="(680,1970)"/>
+    <wire from="(390,2180)" to="(680,2180)"/>
+    <wire from="(390,2200)" to="(680,2200)"/>
+    <wire from="(390,2220)" to="(680,2220)"/>
+    <wire from="(390,2240)" to="(680,2240)"/>
     <wire from="(450,750)" to="(680,750)"/>
     <wire from="(450,80)" to="(460,80)"/>
     <wire from="(460,110)" to="(600,110)"/>
@@ -2284,6 +2398,8 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(480,1800)" to="(480,2070)"/>
     <wire from="(480,1800)" to="(680,1800)"/>
     <wire from="(480,2070)" to="(680,2070)"/>
+    <wire from="(480,2070)" to="(480,2340)"/>
+    <wire from="(480,2340)" to="(680,2340)"/>
     <wire from="(480,390)" to="(480,1510)"/>
     <wire from="(480,390)" to="(530,390)"/>
     <wire from="(500,1220)" to="(500,1490)"/>
@@ -2293,6 +2409,8 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(500,1780)" to="(500,2050)"/>
     <wire from="(500,1780)" to="(680,1780)"/>
     <wire from="(500,2050)" to="(680,2050)"/>
+    <wire from="(500,2050)" to="(500,2320)"/>
+    <wire from="(500,2320)" to="(680,2320)"/>
     <wire from="(500,360)" to="(500,610)"/>
     <wire from="(500,360)" to="(600,360)"/>
     <wire from="(500,610)" to="(500,1220)"/>
@@ -2311,6 +2429,8 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(550,1760)" to="(550,2030)"/>
     <wire from="(550,1760)" to="(680,1760)"/>
     <wire from="(550,2030)" to="(680,2030)"/>
+    <wire from="(550,2030)" to="(550,2300)"/>
+    <wire from="(550,2300)" to="(680,2300)"/>
     <wire from="(550,320)" to="(550,350)"/>
     <wire from="(550,350)" to="(550,590)"/>
     <wire from="(550,350)" to="(680,350)"/>
@@ -2323,6 +2443,8 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(560,1740)" to="(560,2010)"/>
     <wire from="(560,1740)" to="(680,1740)"/>
     <wire from="(560,2010)" to="(680,2010)"/>
+    <wire from="(560,2010)" to="(560,2280)"/>
+    <wire from="(560,2280)" to="(680,2280)"/>
     <wire from="(560,270)" to="(560,330)"/>
     <wire from="(560,330)" to="(560,570)"/>
     <wire from="(560,330)" to="(680,330)"/>
@@ -2335,6 +2457,8 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(570,1720)" to="(570,1990)"/>
     <wire from="(570,1720)" to="(680,1720)"/>
     <wire from="(570,1990)" to="(680,1990)"/>
+    <wire from="(570,1990)" to="(570,2260)"/>
+    <wire from="(570,2260)" to="(680,2260)"/>
     <wire from="(570,220)" to="(570,310)"/>
     <wire from="(570,310)" to="(570,550)"/>
     <wire from="(570,310)" to="(680,310)"/>
@@ -2366,6 +2490,10 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(900,1910)" to="(1270,1910)"/>
     <wire from="(900,1930)" to="(1400,1930)"/>
     <wire from="(900,1950)" to="(1410,1950)"/>
+    <wire from="(900,2180)" to="(930,2180)"/>
+    <wire from="(900,2200)" to="(930,2200)"/>
+    <wire from="(900,2220)" to="(930,2220)"/>
+    <wire from="(1520,640)" to="(1550,640)"/>
     <wire from="(900,230)" to="(1260,230)"/>
     <wire from="(900,250)" to="(1410,250)"/>
     <wire from="(900,270)" to="(1300,270)"/>

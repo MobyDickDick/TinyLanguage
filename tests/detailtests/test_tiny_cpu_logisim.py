@@ -641,8 +641,11 @@ def test_top_level_has_visible_labels_on_wires_at_components():
     ]
     assert {
         _attributes(component).get("label") for component in operation_tunnels
-    } == {"OR_VALID_LANE"}
-    assert len(operation_tunnels) == 1
+    } == {
+        "OR_VALID_LANE", "XOR_RESULT_LANE", "XOR_VALID_LANE",
+        "XOR_ACTIVE_LANE", "XOR_MERGED_VALID_LANE",
+    }
+    assert len(operation_tunnels) == 9
     root = ET.parse(PROJECT).getroot()
     addition = next(
         item for item in root.findall("circuit")
@@ -2158,3 +2161,28 @@ def test_or_operation_is_integrated_into_results_and_invalid_operand_detection()
     assert _attributes(labels["RESULT"])["inputs"] == "7"
     assert _attributes(labels["OPERATION_RESULT_VALID"])["inputs"] == "7"
     assert _attributes(labels["OPERATION_IS_ACTIVE"])["inputs"] == "7"
+
+
+def test_xor_operation_is_integrated_by_explicit_second_stage_merges():
+    """XOR crosses Operations once and extends all neutral shared outputs."""
+
+    root = ET.parse(PROJECT).getroot()
+    adjacency = _electrical_adjacency(_top_level(root))
+    for mode in ACCUMULATOR_ADDRESSING_MODES:
+        label = f"XOR_{mode}"
+        assert _subcircuit_input(root, "Operations", label) in _reachable(
+            adjacency, _control_output(root, label)
+        )
+
+    operations = next(
+        circuit for circuit in root.findall("circuit")
+        if circuit.get("name") == "Operations"
+    )
+    labels = {
+        _attributes(component).get("label"): component
+        for component in operations.findall("comp")
+    }
+    assert labels["XOR_OPERATION"].get("name") == "XorSubCircuit"
+    assert labels["RESULT_WITH_XOR"].get("name") == "OR Gate"
+    assert labels["RESULT_VALID_WITH_XOR"].get("name") == "OR Gate"
+    assert labels["OPERATION_ACTIVE_WITH_XOR"].get("name") == "OR Gate"

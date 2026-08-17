@@ -75,10 +75,7 @@ def test_inspector_exposes_completed_and_pending_sheets():
         assert reports[sheet].connected
     assert reports["Operations"].unconnected == ()
     assert reports["Operations"].routing_conflicts == ()
-    assert reports["Operations"].width_conflicts == (
-        "incompatible bus widths on one net: AND_OPERATION@(900,2200):16, "
-        "OPERATION_RESULT_VALID@(1440,720):1",
-    )
+    assert reports["Operations"].width_conflicts == ()
 
 
 def test_inspector_accepts_a_minimal_connected_project(tmp_path):
@@ -267,7 +264,7 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
     operation_tunnels = [
         item for item in operations.findall("comp") if item.get("name") == "Tunnel"
     ]
-    assert len(operation_tunnels) == 6
+    assert len(operation_tunnels) == 1
     assert {
         next(
             attribute.get("val")
@@ -275,7 +272,7 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
             if attribute.get("name") == "label"
         )
         for item in operation_tunnels
-    } == {"OR_RESULT_LANE", "OR_VALID_LANE", "OR_ACTIVE_LANE"}
+    } == {"OR_VALID_LANE"}
     addition = next(
         item
         for item in root.findall("circuit")
@@ -522,7 +519,7 @@ def test_result_merge_has_a_visible_routing_lane():
     )
     # The manually widened operation sheet keeps this merge to the right of
     # the growing operation FBoxes, leaving a visible routing corridor.
-    assert (result_or_x, result_or_y) == (1500, 690)
+    assert (result_or_x, result_or_y) == (1520, 660)
 
 
 def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():

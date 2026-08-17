@@ -641,8 +641,8 @@ def test_top_level_has_visible_labels_on_wires_at_components():
     ]
     assert {
         _attributes(component).get("label") for component in operation_tunnels
-    } == {"OR_RESULT_LANE", "OR_VALID_LANE", "OR_ACTIVE_LANE"}
-    assert len(operation_tunnels) == 6
+    } == {"OR_VALID_LANE"}
+    assert len(operation_tunnels) == 1
     root = ET.parse(PROJECT).getroot()
     addition = next(
         item for item in root.findall("circuit")
@@ -1717,6 +1717,41 @@ def test_or_box_exports_bitwise_result_and_validity_contract():
     ]
 
 
+def test_xor_box_exports_bitwise_result_and_validity_contract():
+    """XOR mirrors the binary validity boundary without arithmetic status."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
+    bitwise_xor = circuits["XorSubCircuit"]
+    inputs = {
+        _attributes(component).get("label")
+        for component in bitwise_xor.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("type") != "output"
+    }
+    outputs = {
+        _attributes(component).get("label")
+        for component in bitwise_xor.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("type") == "output"
+    }
+    assert {
+        "XOR_CONST", "XOR_ADDRESS", "XOR_ADDRESS_REGISTER",
+        "XOR_ADDRESS_REGISTER_PLUS_OFFSET", "ACC_VALUE", "ACC_VALID",
+        "MEMORY_VALUE", "MEMORY_VALID", "IMMEDIATE_VALUE",
+    } == inputs
+    assert {"RESULT", "RESULT_VALID", "RESULT_ACTIVE"} == outputs
+    arithmetic = circuits["XorArithmeticCircuit"]
+    labels = {_attributes(component).get("label") for component in arithmetic.findall("comp")}
+    assert {"BITWISE_XOR", "ACTIVE_XOR_VALID"} <= labels
+    assert _labelled_component(arithmetic, "BITWISE_XOR").get("name") == "XOR Gate"
+    assert not [
+        component for name in ("XorSubCircuit", "XorArithmeticCircuit")
+        for component in circuits[name].findall("comp")
+        if component.get("name") == "Tunnel"
+    ]
+
+
 def test_arithmetic_fboxes_use_operation_specific_activation_and_validity_labels():
     """Prevent copy/paste labels from making the visible wiring misleading."""
 
@@ -1833,7 +1868,7 @@ def test_mul_operation_is_integrated_into_results_and_invalid_operand_detection(
     assert labels["MUL_OPERATION"].get("name") == "MulSubCircuit"
     assert _attributes(labels["OPERATION_RESULT_VALID"])["inputs"] == "7"
     assert _attributes(labels["OPERATION_IS_ACTIVE"])["inputs"] == "7"
-    assert _attributes(labels["OVERFLOW_SET"])["inputs"] == "4"
+    assert _attributes(labels["OVERFLOW_SET"])["inputs"] == "3"
 
 
 def test_unary_and_subtraction_boxes_export_a_uniform_operation_contract():

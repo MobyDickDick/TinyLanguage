@@ -799,6 +799,16 @@ zero inactive result, so the unintegrated box cannot drive the shared result
 merge. Bitwise OR has no arithmetic-overflow output. Integration into
 `Operations` is a separate follow-up package.
 
+## Bitwise XOR extraction contract
+
+`XorSubCircuit` applies the same tunnel-free operand and validity selection as
+the OR box to all four `XOR_*` addressing modes. `XorArithmeticCircuit` uses a
+16-bit XOR gate, exports a zero result while inactive, and activity-gates
+`RESULT_VALID`; bitwise XOR deliberately has no overflow output. The checked-in
+leaf diagnostic is generated from the maintained project. Integration into
+`Operations` remains the next work package so the compact manual layout is not
+redrawn as part of extraction.
+
 The manual redraw reviewed with this package is not treated as layout-only:
 although reversing the endpoint order of a wire is electrically neutral, its
 removed `Operations` routes carried operation controls and the result,

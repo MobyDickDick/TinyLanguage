@@ -287,7 +287,7 @@ def _component_terminals(component: ET.Element) -> set[str]:
         else:
             terminals.update(f"({x + 20},{y + 20 * index})" for index in range(fanout))
         return terminals
-    if component.get("name") in {"AND Gate", "OR Gate"}:
+    if component.get("name") in {"AND Gate", "OR Gate", "XOR Gate"}:
         inputs = int(attrs.get("inputs", "2"))
         offsets = (
             (-20, 20)
@@ -394,7 +394,7 @@ def _component_terminal_widths(component: ET.Element) -> dict[str, int]:
                 }
             )
         return result
-    if name in {"AND Gate", "OR Gate"}:
+    if name in {"AND Gate", "OR Gate", "XOR Gate"}:
         inputs = int(attrs.get("inputs", "2"))
         offsets = (
             (-20, 20)
@@ -512,7 +512,7 @@ def _component_output_terminals(
         return {f"({x + 240},{y + data_offset})"}
     # These Logisim primitives all expose their result at the component anchor.
     if name in {
-        "AND Gate", "OR Gate", "NOT Gate", "Adder", "Subtractor",
+        "AND Gate", "OR Gate", "XOR Gate", "NOT Gate", "Adder", "Subtractor",
         "Comparator", "Multiplexer", "Constant",
     }:
         return {location}

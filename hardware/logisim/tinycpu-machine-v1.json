@@ -290,6 +290,30 @@
       "hex": "0x2d",
       "mnemonic": "HALT_ERROR",
       "operand": "none"
+    },
+    {
+      "code": 46,
+      "hex": "0x2e",
+      "mnemonic": "XOR_CONST",
+      "operand": "value"
+    },
+    {
+      "code": 47,
+      "hex": "0x2f",
+      "mnemonic": "XOR_ADDRESS",
+      "operand": "address"
+    },
+    {
+      "code": 48,
+      "hex": "0x30",
+      "mnemonic": "XOR_ADDRESS_REGISTER",
+      "operand": "none"
+    },
+    {
+      "code": 49,
+      "hex": "0x31",
+      "mnemonic": "XOR_ADDRESS_REGISTER_PLUS_OFFSET",
+      "operand": "offset"
     }
   ]
 }

@@ -55,7 +55,7 @@ class Instruction:
 
 def _families() -> dict[str, InstructionSpec]:
     result: dict[str, InstructionSpec] = {}
-    for operation in ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR"):
+    for operation in ("LOAD", "ADD", "SUB", "MUL", "DIV", "AND", "OR", "XOR"):
         result[f"{operation}_CONST"] = InstructionSpec(OperandKind.VALUE)
         result[f"{operation}_ADDRESS"] = InstructionSpec(OperandKind.ADDRESS)
         result[f"{operation}_ADDRESS_REGISTER"] = InstructionSpec(OperandKind.NONE)

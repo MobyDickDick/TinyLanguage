@@ -333,7 +333,11 @@
       "SET_INPUT"
     ],
     "encoding_status": "tinycpu-machine-v1",
-    "machine_format": "tinycpu-machine-v1.json"
+    "machine_format": "tinycpu-machine-v1.json",
+    "XOR_CONST": 1,
+    "XOR_ADR": 1,
+    "XOR_ADR_REG": 1,
+    "XOR_REG_OFF": 1
   },
   "pin_directions": {
     "FetchDecode": {
@@ -396,7 +400,11 @@
       "SET_ADDR": "output",
       "SET_INV": "output",
       "SET_ILL": "output",
-      "SET_INPUT": "output"
+      "SET_INPUT": "output",
+      "XOR_CONST": "output",
+      "XOR_ADR": "output",
+      "XOR_ADR_REG": "output",
+      "XOR_REG_OFF": "output"
     },
     "IntegrationClock": {
       "CLK": "input",

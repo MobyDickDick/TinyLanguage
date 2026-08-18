@@ -1952,6 +1952,36 @@ def test_memory_address_selector_includes_indirect_addressing_modes():
         assert len(connected) == 8
 
 
+def test_store_modes_write_the_accumulator_payload_to_memory():
+    """Only STORE modes enable RAM and preserve accumulator validity."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    write_gate = _labelled_component(circuit, "MEMORY_WRITE_REQUEST")
+    write_output, write_inputs = _gate_ports(write_gate)
+    adjacency = _electrical_adjacency(circuit, write_inputs | {write_output})
+
+    controls = {
+        _control_output(root, "STORE_ADDRESS"),
+        _control_output(root, "STORE_ADDRESS_REGISTER"),
+        _control_output(root, "STORE_ADDRESS_REGISTER_PLUS_OFFSET"),
+    }
+    connected_inputs = {
+        next(iter(_reachable(adjacency, control) & write_inputs))
+        for control in controls
+    }
+    assert connected_inputs == write_inputs
+    assert _subcircuit_input(root, "Memory", "WRITE_ENABLE") in _reachable(
+        adjacency, write_output
+    )
+    assert _subcircuit_input(root, "Memory", "DATA_IN") in _reachable(
+        adjacency, _subcircuit_output(root, "Datapath", "ACC_OUT")
+    )
+    assert _subcircuit_input(root, "Memory", "VALID_IN") in _reachable(
+        adjacency, _subcircuit_output(root, "Datapath", "ACC_VALID_OUT")
+    )
+
+
 def test_effective_address_input_labels_are_compact_source_names():
     """Show each source signal on the fixed-width EffectiveAddress symbol."""
 

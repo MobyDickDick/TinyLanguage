@@ -5,6 +5,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Next documented work package (completed 2026-08-18)
+
+- [x] **Integrate the TinyCPU STORE memory-write paths**
+  (Owner: TinyCPU/Hardware)
+  - Success: combine the three writable `STORE_*` addressing modes into the
+    sole memory write-enable request while retaining the shared effective-
+    address selection used by loads and binary operations.
+  - Result: `STORE_ADDRESS`, `STORE_ADDRESS_REGISTER`, and
+    `STORE_ADDRESS_REGISTER_PLUS_OFFSET` reach distinct inputs on the named
+    write-request gate. Its output exclusively enables memory writes, and the
+    accumulator value plus its validity bit form the stored payload.
+  - Follow-up: integrate the accumulator-based `NOT` path before adding the
+    two output controls, `PRINT` and `PRINT_ADDRESS`.
+
 ## Next documented work package (completed 2026-08-17)
 
 - [x] **Audit the TinyCPU non-binary data paths**

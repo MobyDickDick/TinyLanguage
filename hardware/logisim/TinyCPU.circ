@@ -61,6 +61,10 @@
       <a name="bit9" val="0"/>
       <a name="incoming" val="22"/>
     </comp>
+    <comp lib="1" loc="(320,400)" name="OR Gate">
+      <a name="inputs" val="3"/>
+      <a name="label" val="MEMORY_WRITE_REQUEST"/>
+    </comp>
     <comp loc="(1440,110)" name="Datapath">
       <a name="label" val="DATAPATH_INSTANCE"/>
     </comp>
@@ -236,9 +240,7 @@
     <wire from="(1860,1380)" to="(1860,1650)"/>
     <wire from="(1860,1380)" to="(2100,1380)"/>
     <wire from="(1860,1650)" to="(1880,1650)"/>
-    <wire from="(200,20)" to="(200,340)"/>
     <wire from="(200,20)" to="(950,20)"/>
-    <wire from="(200,340)" to="(350,340)"/>
     <wire from="(2070,520)" to="(2130,520)"/>
     <wire from="(2070,540)" to="(2140,540)"/>
     <wire from="(2070,580)" to="(2180,580)"/>
@@ -353,6 +355,28 @@
     <wire from="(990,1770)" to="(990,2200)"/>
     <wire from="(990,2200)" to="(1820,2200)"/>
     <wire from="(990,900)" to="(990,1770)"/>
+    <wire from="(1440,110)" to="(1400,110)"/>
+    <wire from="(1400,-20)" to="(1400,110)"/>
+    <wire from="(180,-20)" to="(1400,-20)"/>
+    <wire from="(180,-20)" to="(180,360)"/>
+    <wire from="(180,360)" to="(350,360)"/>
+    <wire from="(1440,170)" to="(1390,170)"/>
+    <wire from="(1390,-40)" to="(1390,170)"/>
+    <wire from="(190,-40)" to="(1390,-40)"/>
+    <wire from="(190,-40)" to="(190,340)"/>
+    <wire from="(190,340)" to="(350,340)"/>
+    <wire from="(320,400)" to="(340,400)"/>
+    <wire from="(340,300)" to="(340,400)"/>
+    <wire from="(340,300)" to="(350,300)"/>
+    <wire from="(230,380)" to="(270,380)"/>
+    <wire from="(230,380)" to="(230,1000)"/>
+    <wire from="(230,1000)" to="(880,1000)"/>
+    <wire from="(240,400)" to="(270,400)"/>
+    <wire from="(240,400)" to="(240,1020)"/>
+    <wire from="(240,1020)" to="(880,1020)"/>
+    <wire from="(250,420)" to="(270,420)"/>
+    <wire from="(250,420)" to="(250,1040)"/>
+    <wire from="(250,1040)" to="(880,1040)"/>
   </circuit>
   <circuit name="EffectiveAddress">
     <a name="appearance" val="logisim_evolution"/>

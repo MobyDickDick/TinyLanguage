@@ -7,6 +7,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-18)
 
+- [x] **Integrate the TinyCPU accumulator-based NOT path**
+  (Owner: TinyCPU/Hardware)
+  - Wiring audit: the `NOT` control already reaches the isolated unary box,
+    and the shared operation result and validity buses already reach the
+    accumulator data inputs without conflicting drivers.
+  - Result: the combined accumulator-write request now also reaches
+    `Datapath.ACC_LOAD`, so an active `NOT` commits the inverted accumulator
+    value and propagates its validity on the clock edge. A topology regression
+    protects the complete control, data, validity, and write-enable path.
+  - Follow-up: integrate the two output controls, `PRINT` and
+    `PRINT_ADDRESS`, as a separate package.
+
+## Next documented work package (completed 2026-08-18)
+
 - [x] **Integrate the TinyCPU STORE memory-write paths**
   (Owner: TinyCPU/Hardware)
   - Success: combine the three writable `STORE_*` addressing modes into the

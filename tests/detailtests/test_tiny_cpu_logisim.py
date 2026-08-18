@@ -1982,6 +1982,28 @@ def test_store_modes_write_the_accumulator_payload_to_memory():
     )
 
 
+def test_not_result_is_committed_by_the_accumulator_write_request():
+    """NOT selects its operation result and enables the accumulator write."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    adjacency = _electrical_adjacency(circuit)
+
+    not_control = _control_output(root, "NOT")
+    assert _subcircuit_input(root, "Operations", "NOT_IS_ACTIVE") in _reachable(
+        adjacency, not_control
+    )
+    assert _subcircuit_input(root, "Datapath", "DATA_IN") in _reachable(
+        adjacency, _subcircuit_output(root, "Operations", "RESULT_VALUE")
+    )
+    assert _subcircuit_input(root, "Datapath", "VALID_IN") in _reachable(
+        adjacency, _subcircuit_output(root, "Operations", "RESULT_IS_VALID")
+    )
+    assert _subcircuit_input(root, "Datapath", "ACC_LOAD") in _reachable(
+        adjacency, _subcircuit_output(root, "DecodeSignals", "ACCC_WRITE_REQUEST")
+    )
+
+
 def test_effective_address_input_labels_are_compact_source_names():
     """Show each source signal on the fixed-width EffectiveAddress symbol."""
 

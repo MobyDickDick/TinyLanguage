@@ -61,7 +61,7 @@
       <a name="bit9" val="0"/>
       <a name="incoming" val="22"/>
     </comp>
-    <comp lib="1" loc="(150,300)" name="OR Gate">
+    <comp lib="1" loc="(320,400)" name="OR Gate">
       <a name="inputs" val="3"/>
       <a name="label" val="MEMORY_WRITE_REQUEST"/>
     </comp>
@@ -179,7 +179,6 @@
     <wire from="(1400,110)" to="(1440,110)"/>
     <wire from="(1440,110)" to="(1630,110)"/>
     <wire from="(1440,170)" to="(1660,170)"/>
-    <wire from="(150,300)" to="(350,300)"/>
     <wire from="(1500,280)" to="(1500,660)"/>
     <wire from="(1500,660)" to="(1850,660)"/>
     <wire from="(1510,100)" to="(1510,1220)"/>
@@ -291,19 +290,13 @@
     <wire from="(330,320)" to="(350,320)"/>
     <wire from="(330,70)" to="(1190,70)"/>
     <wire from="(330,70)" to="(330,150)"/>
+    <wire from="(320,400)" to="(340,400)"/>
+    <wire from="(340,300)" to="(340,400)"/>
+    <wire from="(340,300)" to="(350,300)"/>
     <wire from="(3370,50)" to="(3370,1930)"/>
-    <wire from="(40,2140)" to="(1000,2140)"/>
-    <wire from="(40,280)" to="(100,280)"/>
-    <wire from="(40,280)" to="(40,2140)"/>
-    <wire from="(50,1610)" to="(960,1610)"/>
-    <wire from="(50,300)" to="(100,300)"/>
-    <wire from="(50,300)" to="(50,1610)"/>
     <wire from="(570,170)" to="(580,170)"/>
     <wire from="(570,280)" to="(1500,280)"/>
     <wire from="(570,300)" to="(1620,300)"/>
-    <wire from="(60,1590)" to="(940,1590)"/>
-    <wire from="(60,320)" to="(100,320)"/>
-    <wire from="(60,320)" to="(60,1590)"/>
     <wire from="(600,150)" to="(630,150)"/>
     <wire from="(600,160)" to="(610,160)"/>
     <wire from="(610,160)" to="(610,360)"/>
@@ -318,7 +311,15 @@
     <wire from="(870,110)" to="(930,110)"/>
     <wire from="(870,130)" to="(910,130)"/>
     <wire from="(870,150)" to="(900,150)"/>
-    <wire from="(880,1000)" to="(940,1000)"/>
+    <wire from="(230,380)" to="(270,380)"/>
+    <wire from="(230,380)" to="(230,1000)"/>
+    <wire from="(230,1000)" to="(880,1000)"/>
+    <wire from="(240,400)" to="(270,400)"/>
+    <wire from="(240,400)" to="(240,1020)"/>
+    <wire from="(240,1020)" to="(880,1020)"/>
+    <wire from="(250,420)" to="(270,420)"/>
+    <wire from="(250,420)" to="(250,1040)"/>
+    <wire from="(250,1040)" to="(880,1040)"/>
     <wire from="(880,1020)" to="(960,1020)"/>
     <wire from="(880,1040)" to="(950,1040)"/>
     <wire from="(880,1100)" to="(1590,1100)"/>
@@ -365,8 +366,7 @@
     <wire from="(910,260)" to="(1690,260)"/>
     <wire from="(930,110)" to="(930,250)"/>
     <wire from="(930,250)" to="(1700,250)"/>
-    <wire from="(940,1000)" to="(1000,1000)"/>
-    <wire from="(940,1000)" to="(940,1590)"/>
+    <wire from="(880,1000)" to="(1000,1000)"/>
     <wire from="(950,1040)" to="(950,1810)"/>
     <wire from="(950,1810)" to="(1880,1810)"/>
     <wire from="(950,20)" to="(950,360)"/>
@@ -380,6 +380,50 @@
     <wire from="(980,880)" to="(980,1020)"/>
     <wire from="(990,1200)" to="(1830,1200)"/>
     <wire from="(990,900)" to="(990,1200)"/>
+    <comp lib="0" loc="(910,1260)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="PRINT_ENABLE"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="0" loc="(910,1280)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="PRINT_ADDRESS_ENABLE"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="0" loc="(1470,110)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="PRINT_VALUE"/>
+      <a name="type" val="output"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(1470,170)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="PRINT_VALID"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="0" loc="(600,300)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="PRINT_ADDRESS_VALUE"/>
+      <a name="type" val="output"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(600,280)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="PRINT_ADDRESS_VALID"/>
+      <a name="type" val="output"/>
+    </comp>
+    <wire from="(570,280)" to="(600,280)"/>
+    <wire from="(570,300)" to="(600,300)"/>
+    <wire from="(880,1260)" to="(910,1260)"/>
+    <wire from="(880,1280)" to="(910,1280)"/>
+    <wire from="(1440,110)" to="(1470,110)"/>
+    <wire from="(1440,170)" to="(1470,170)"/>
   </circuit>
   <circuit name="EffectiveAddress">
     <a name="appearance" val="logisim_evolution"/>

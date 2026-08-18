@@ -206,8 +206,13 @@ Der gemeinsame Ergebnis- und Validitätsbus erreicht nun zusammen mit
 `DecodeSignals.ACC_WRITE_REQUEST` alle drei Ladeeingänge des Akkumulators.
 Damit schreibt insbesondere der bereits isoliert ausgewählte `NOT`-Zweig sein
 invertiertes Ergebnis samt Eingangsvalidität an der nächsten Taktflanke zurück.
-Als nächstes werden `PRINT` und `PRINT_ADDRESS` getrennt an den Top-Level-Ausgang
-angebunden.
+`PRINT` und `PRINT_ADDRESS` sind nun als getrennte Top-Level-Ausgabekanäle
+angebunden. Jeder Kanal exportiert sein eigenes Enable-Signal sowie den Wert und
+das Validitätsbit seiner Quelle: `PRINT` verwendet den Akkumulator,
+`PRINT_ADDRESS` den ausgewählten Speicherwert. Dadurch muss ein Verbraucher nur
+bei aktivem Enable und gesetzter Validität ausgeben, ohne die beiden
+Befehlsursachen elektrisch zusammenzuschalten. Als nächstes werden `HALT` und
+`HALT_ERROR` mit getrennt beobachtbaren Halt-Ergebnissen integriert.
 
 Die manuelle Fetch/Decode-Anpassung wird ebenfalls als maßgeblich behandelt:
 Die Überlaufprüfung des Programmzählers ist nach dessen Hochzählen angeordnet.

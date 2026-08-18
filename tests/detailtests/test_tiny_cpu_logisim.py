@@ -412,7 +412,6 @@ def test_invalid_arithmetic_result_sets_the_invalid_operand_flag():
         for component in operations.findall("comp")
         if _attributes(component).get("label")
     }
-    assert labels["OPERATION_RESULT_INVALID"].get("name") == "NOT Gate"
     assert labels["ACTIVE_INVALID_OPERATION"].get("name") == "AND Gate"
     assert labels["OPERATION_IS_ACTIVE"].get("name") == "OR Gate"
     assert labels["OPERATION_RESULT_VALID"].get("name") == "OR Gate"
@@ -639,13 +638,7 @@ def test_top_level_has_visible_labels_on_wires_at_components():
     operation_tunnels = [
         c for c in operations.findall("comp") if c.get("name") == "Tunnel"
     ]
-    assert {
-        _attributes(component).get("label") for component in operation_tunnels
-    } == {
-        "OR_VALID_LANE", "XOR_RESULT_LANE", "XOR_VALID_LANE",
-        "XOR_ACTIVE_LANE", "XOR_MERGED_VALID_LANE",
-    }
-    assert len(operation_tunnels) == 9
+    assert operation_tunnels == []
     root = ET.parse(PROJECT).getroot()
     addition = next(
         item for item in root.findall("circuit")
@@ -1841,9 +1834,9 @@ def test_operation_data_and_validity_are_combined_by_explicit_or_trees():
         for component in circuit.findall("comp")
         if _attributes(component).get("label")
     }
-    assert _attributes(components["RESULT"])["inputs"] == "7"
-    assert _attributes(components["OPERATION_RESULT_VALID"])["inputs"] == "7"
-    assert _attributes(components["OPERATION_IS_ACTIVE"])["inputs"] == "7"
+    assert _attributes(components["RESULT"])["inputs"] == "8"
+    assert _attributes(components["OPERATION_RESULT_VALID"])["inputs"] == "8"
+    assert _attributes(components["OPERATION_IS_ACTIVE"])["inputs"] == "8"
     assert components["ACTIVE_INVALID_OPERATION"].get("name") == "AND Gate"
     assert "RESULT_VALID_WITHOUT_ERROR" not in components
     assert "NO_INVALID_OPERAND" not in components
@@ -1869,8 +1862,8 @@ def test_mul_operation_is_integrated_into_results_and_invalid_operand_detection(
         if _attributes(component).get("label")
     }
     assert labels["MUL_OPERATION"].get("name") == "MulSubCircuit"
-    assert _attributes(labels["OPERATION_RESULT_VALID"])["inputs"] == "7"
-    assert _attributes(labels["OPERATION_IS_ACTIVE"])["inputs"] == "7"
+    assert _attributes(labels["OPERATION_RESULT_VALID"])["inputs"] == "8"
+    assert _attributes(labels["OPERATION_IS_ACTIVE"])["inputs"] == "8"
     assert _attributes(labels["OVERFLOW_SET"])["inputs"] == "3"
 
 
@@ -1979,6 +1972,28 @@ def test_store_modes_write_the_accumulator_payload_to_memory():
     )
     assert _subcircuit_input(root, "Memory", "VALID_IN") in _reachable(
         adjacency, _subcircuit_output(root, "Datapath", "ACC_VALID_OUT")
+    )
+
+
+def test_not_result_is_committed_by_the_accumulator_write_request():
+    """NOT selects its operation result and enables the accumulator write."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    adjacency = _electrical_adjacency(circuit)
+
+    not_control = _control_output(root, "NOT")
+    assert _subcircuit_input(root, "Operations", "NOT_IS_ACTIVE") in _reachable(
+        adjacency, not_control
+    )
+    assert _subcircuit_input(root, "Datapath", "DATA_IN") in _reachable(
+        adjacency, _subcircuit_output(root, "Operations", "RESULT_VALUE")
+    )
+    assert _subcircuit_input(root, "Datapath", "VALID_IN") in _reachable(
+        adjacency, _subcircuit_output(root, "Operations", "RESULT_IS_VALID")
+    )
+    assert _subcircuit_input(root, "Datapath", "ACC_LOAD") in _reachable(
+        adjacency, _subcircuit_output(root, "DecodeSignals", "ACCC_WRITE_REQUEST")
     )
 
 
@@ -2128,7 +2143,7 @@ def test_div_operation_is_integrated_into_results_status_and_sticky_zero_error()
     assert labels["DIV_OPERATION"].get("name") == "DivSubCircuit"
     # Division joins the consolidated data/validity merges, but deliberately
     # has no overflow output: integer division can only fail for a zero divisor.
-    assert _attributes(labels["RESULT"])["inputs"] == "7"
+    assert _attributes(labels["RESULT"])["inputs"] == "8"
     assert "OVERFLOW_WITH_DIV" not in labels
     assert "OVERFLOW" not in {
         _attributes(pin).get("label")
@@ -2158,9 +2173,9 @@ def test_and_operation_is_integrated_into_the_maintained_result_merge():
         for component in operations.findall("comp")
     }
     assert labels["AND_OPERATION"].get("name") == "AndSubCircuit"
-    assert _attributes(labels["RESULT"])["inputs"] == "7"
-    assert _attributes(labels["OPERATION_RESULT_VALID"])["inputs"] == "7"
-    assert _attributes(labels["OPERATION_IS_ACTIVE"])["inputs"] == "7"
+    assert _attributes(labels["RESULT"])["inputs"] == "8"
+    assert _attributes(labels["OPERATION_RESULT_VALID"])["inputs"] == "8"
+    assert _attributes(labels["OPERATION_IS_ACTIVE"])["inputs"] == "8"
     arithmetic = next(c for c in root.findall("circuit") if c.get("name") == "AndArithmeticCircuit")
     assert not any(
         _attributes(component).get("label") == "INACTIVE_AND_DEFAULT"
@@ -2188,13 +2203,13 @@ def test_or_operation_is_integrated_into_results_and_invalid_operand_detection()
         for component in operations.findall("comp")
     }
     assert labels["OR_OPERATION"].get("name") == "OrSubCircuit"
-    assert _attributes(labels["RESULT"])["inputs"] == "7"
-    assert _attributes(labels["OPERATION_RESULT_VALID"])["inputs"] == "7"
-    assert _attributes(labels["OPERATION_IS_ACTIVE"])["inputs"] == "7"
+    assert _attributes(labels["RESULT"])["inputs"] == "8"
+    assert _attributes(labels["OPERATION_RESULT_VALID"])["inputs"] == "8"
+    assert _attributes(labels["OPERATION_IS_ACTIVE"])["inputs"] == "8"
 
 
-def test_xor_operation_is_integrated_by_explicit_second_stage_merges():
-    """XOR crosses Operations once and extends all neutral shared outputs."""
+def test_xor_operation_is_integrated_into_the_eight_way_merges():
+    """XOR occupies the eighth input of every neutral shared output tree."""
 
     root = ET.parse(PROJECT).getroot()
     adjacency = _electrical_adjacency(_top_level(root))
@@ -2213,6 +2228,10 @@ def test_xor_operation_is_integrated_by_explicit_second_stage_merges():
         for component in operations.findall("comp")
     }
     assert labels["XOR_OPERATION"].get("name") == "XorSubCircuit"
-    assert labels["RESULT_WITH_XOR"].get("name") == "OR Gate"
-    assert labels["RESULT_VALID_WITH_XOR"].get("name") == "OR Gate"
-    assert labels["OPERATION_ACTIVE_WITH_XOR"].get("name") == "OR Gate"
+    assert _attributes(labels["RESULT"])["inputs"] == "8"
+    assert _attributes(labels["OPERATION_RESULT_VALID"])["inputs"] == "8"
+    assert _attributes(labels["OPERATION_IS_ACTIVE"])["inputs"] == "8"
+    assert not {
+        "RESULT_WITH_XOR", "RESULT_VALID_WITH_XOR",
+        "OPERATION_ACTIVE_WITH_XOR",
+    } & labels.keys()

@@ -202,6 +202,13 @@ Akkumulator- und Validitätswerte überschreiten die Grenze jeweils nur einmal;
 `Operations` führt `RESULT`, `RESULT_VALID` und `OVERFLOW` lokal zusammen und
 exportiert je ein gemeinsames Signal.
 
+Der gemeinsame Ergebnis- und Validitätsbus erreicht nun zusammen mit
+`DecodeSignals.ACC_WRITE_REQUEST` alle drei Ladeeingänge des Akkumulators.
+Damit schreibt insbesondere der bereits isoliert ausgewählte `NOT`-Zweig sein
+invertiertes Ergebnis samt Eingangsvalidität an der nächsten Taktflanke zurück.
+Als nächstes werden `PRINT` und `PRINT_ADDRESS` getrennt an den Top-Level-Ausgang
+angebunden.
+
 Die manuelle Fetch/Decode-Anpassung wird ebenfalls als maßgeblich behandelt:
 Die Überlaufprüfung des Programmzählers ist nach dessen Hochzählen angeordnet.
 Regressionstests verfolgen diese Stufen anhand ihrer relativen Topologie und

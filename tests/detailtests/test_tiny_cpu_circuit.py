@@ -264,18 +264,7 @@ def test_processor_implementation_is_tunnel_free_and_labels_signals_at_component
     operation_tunnels = [
         item for item in operations.findall("comp") if item.get("name") == "Tunnel"
     ]
-    assert len(operation_tunnels) == 9
-    assert {
-        next(
-            attribute.get("val")
-            for attribute in item.findall("a")
-            if attribute.get("name") == "label"
-        )
-        for item in operation_tunnels
-    } == {
-        "OR_VALID_LANE", "XOR_RESULT_LANE", "XOR_VALID_LANE",
-        "XOR_ACTIVE_LANE", "XOR_MERGED_VALID_LANE",
-    }
+    assert operation_tunnels == []
     addition = next(
         item
         for item in root.findall("circuit")
@@ -522,7 +511,7 @@ def test_result_merge_has_a_visible_routing_lane():
     )
     # The manually widened operation sheet keeps this merge to the right of
     # the growing operation FBoxes, leaving a visible routing corridor.
-    assert (result_or_x, result_or_y) == (1520, 660)
+    assert (result_or_x, result_or_y) == (1570, 660)
 
 
 def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():

@@ -345,15 +345,19 @@ wieder eindeutig und automatisiert prüfbar.
   rechts unmittelbarer Wert oder gelesener Speicherwert. Ergebnis, Validität,
   vorzeichenbehafteter Überlauf und ungültige Operanden werden im
   `Operations`-Blatt zusammengeführt.
-- [ ] Anschließend `DIV`, `AND` und `OR` nach demselben Vertrag prüfen und
+- [x] Anschließend `DIV`, `AND` und `OR` nach demselben Vertrag prüfen und
   verdrahten. `DIV` benötigt zusätzlich die Nullprüfung des ausgewählten
   rechten Operanden. `DIV` und `AND` sind abgeschlossen; bei `AND` bleibt der
   inaktive logische Identitätswert `0xffff` erhalten und wird erst an der
-  gemeinsamen OR-Ergebnisgrenze auf null normalisiert. Offen ist `OR`.
-- [ ] Die nicht-binären Datenwege separat auditieren: `STORE_*` schreibt den
+  gemeinsamen OR-Ergebnisgrenze auf null normalisiert. `OR` und die danach
+  ergänzte `XOR`-Familie sind ebenfalls abgeschlossen.
+- [x] Die nicht-binären Datenwege separat auditieren: `STORE_*` schreibt den
   Akkumulator, `NOT` invertiert den Akkumulator, `PRINT` liest den Akkumulator,
   `PRINT_ADDRESS` liest Speicher und `LOAD_*` schreibt den jeweils ausgewählten
-  unmittelbaren oder indirekt gelesenen Wert in den Akkumulator.
+  unmittelbaren oder indirekt gelesenen Wert in den Akkumulator. `LOAD_*` und
+  `NOT` sind korrekt integriert. Die Prüfung hält ausdrücklich fest, dass die
+  Speicher-Schreibeingänge und die beiden Print-Steuerungen noch offen sind;
+  ihr Anschluss erfolgt in getrennten Folgepaketen.
 - [ ] Erst nach diesen Korrekturen den gemeinsamen Ergebnisbaum und die
   Fehlerflags integrieren; bis dahin dürfen neutrale Operationsausgänge nicht
   als Beleg für inhaltlich richtige Operandenwahl gelten.

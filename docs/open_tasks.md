@@ -7,6 +7,24 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-17)
 
+- [x] **Audit the TinyCPU non-binary data paths**
+  (Owner: TinyCPU/Hardware)
+  - Wiring audit: the latest `TinyCPUMain` redraw had connected
+    `STORE_ADDRESS_REGISTER` to the `AND_ADDRESS_REGISTER` operation input and
+    `OR_ADDRESS_REGISTER_PLUS_OFFSET` to the corresponding AND input. The
+    STORE and OR routes remain intact, while both AND controls once again use
+    their own electrically isolated routes.
+  - Result: the existing `LOAD_*` source-selection and validity stages and the
+    accumulator-based `NOT` path remain correctly wired. The audit also
+    confirms that the memory write-enable/data inputs and the two print
+    controls are not integrated yet; they must not be mistaken for completed
+    paths merely because address selection is already present.
+  - Follow-up: integrate the three `STORE_*` modes so that only their combined
+    request enables memory writes, with accumulator value and validity as the
+    stored payload.
+
+## Next documented work package (completed 2026-08-17)
+
 - [x] **Integrate the TinyCPU XOR result-and-validity FBox**
   (Owner: TinyCPU/Hardware)
   - Wiring audit: repaired two regressions in the manually redrawn

@@ -1975,6 +1975,53 @@ def test_store_modes_write_the_accumulator_payload_to_memory():
     )
 
 
+def test_print_controls_export_separate_validated_output_channels():
+    """Keep accumulator and addressed-memory print events electrically distinct."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    adjacency = _electrical_adjacency(circuit)
+    output_pins = {
+        _attributes(component).get("label"): component.get("loc")
+        for component in circuit.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("type") == "output"
+    }
+
+    channels = {
+        "PRINT": {
+            "enable": "PRINT_ENABLE",
+            "value": "PRINT_VALUE",
+            "valid": "PRINT_VALID",
+            "value_source": _subcircuit_output(root, "Datapath", "ACC_OUT"),
+            "valid_source": _subcircuit_output(root, "Datapath", "ACC_VALID_OUT"),
+        },
+        "PRINT_ADDRESS": {
+            "enable": "PRINT_ADDRESS_ENABLE",
+            "value": "PRINT_ADDRESS_VALUE",
+            "valid": "PRINT_ADDRESS_VALID",
+            "value_source": _subcircuit_output(root, "Memory", "MEMORY_DATA"),
+            "valid_source": _subcircuit_output(root, "Memory", "MEMORY_VALID"),
+        },
+    }
+
+    for control, channel in channels.items():
+        assert output_pins[channel["enable"]] in _reachable(
+            adjacency, _control_output(root, control)
+        )
+        assert output_pins[channel["value"]] in _reachable(
+            adjacency, channel["value_source"]
+        )
+        assert output_pins[channel["valid"]] in _reachable(
+            adjacency, channel["valid_source"]
+        )
+
+    for field in ("enable", "value", "valid"):
+        left = output_pins[channels["PRINT"][field]]
+        right = output_pins[channels["PRINT_ADDRESS"][field]]
+        assert right not in _reachable(adjacency, left)
+
+
 def test_not_result_is_committed_by_the_accumulator_write_request():
     """NOT selects its operation result and enables the accumulator write."""
 

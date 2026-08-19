@@ -7,6 +7,26 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-18)
 
+- [x] **Integrate the TinyCPU PRINT output paths**
+  (Owner: TinyCPU/Hardware)
+  - Success: export `PRINT` and `PRINT_ADDRESS` as electrically separate output
+    events, each accompanied by the value source and validity bit required to
+    decide whether the event may be consumed.
+  - Wiring audit: restored the three isolated `STORE_*` request routes after
+    the latest manual gate move had joined two inputs and left the offset mode
+    disconnected. The repaired routes retain the established memory-write
+    behavior while the output channels are added independently.
+  - Result: `PRINT` exposes the accumulator value and accumulator validity,
+    while `PRINT_ADDRESS` exposes the selected memory value and memory-cell
+    validity. Distinct enable, value, and validity nets prevent either output
+    mode from masquerading as the other. A topology regression freezes both
+    three-signal channel contracts.
+  - Follow-up: integrate the `HALT` and `HALT_ERROR` controls with distinct
+    observable halt outcomes.
+
+
+## Next documented work package (completed 2026-08-18)
+
 - [x] **Integrate the TinyCPU accumulator-based NOT path**
   (Owner: TinyCPU/Hardware)
   - Wiring audit: the `NOT` control already reaches the isolated unary box,

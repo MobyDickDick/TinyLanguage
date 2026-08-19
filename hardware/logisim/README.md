@@ -722,6 +722,19 @@ Python VM and compares every field with this checked-in interchange fixture.
 This is the reference used to review a trace exported from Logisim-evolution;
 it is not presented as an electrical simulation when Logisim is unavailable.
 
+Save each scenario exported by Logisim-evolution as one trace document with
+the nested `boundary` fields shown in the fixture, save the matching assembly
+program separately, and compare the electrical observation directly with:
+
+```bash
+PYTHONPATH=src python src/tiny_cpu_trace.py scenario.tcpu \
+  --integration --check logisim_trace.json
+```
+
+The command selects the integration-boundary sampling contract rather than the
+full AP 5 VM-state contract and reports the first differing edge/field. Memory
+`--watch` arguments intentionally remain exclusive to the full-state mode.
+
 ## Automated checks and simulation
 
 ### Fresh-checkout acceptance

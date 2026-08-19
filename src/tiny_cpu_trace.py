@@ -114,12 +114,20 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate or check a TinyCPU edge trace")
     parser.add_argument("program", type=Path)
     parser.add_argument("--watch", type=int, action="append", default=[])
+    parser.add_argument(
+        "--integration",
+        action="store_true",
+        help="sample the TinyCPUMain print/halt boundary instead of full VM state",
+    )
     parser.add_argument("--check", type=Path, help="compare this observed JSON trace")
     args = parser.parse_args(argv)
-    expected = capture_trace(
-        args.program.read_text(encoding="utf-8"),
-        watched_addresses=tuple(args.watch),
-    )
+    source = args.program.read_text(encoding="utf-8")
+    if args.integration:
+        if args.watch:
+            parser.error("--watch cannot be combined with --integration")
+        expected = capture_integration_trace(source)
+    else:
+        expected = capture_trace(source, watched_addresses=tuple(args.watch))
     if args.check is None:
         print(json.dumps(expected, indent=2))
         return 0

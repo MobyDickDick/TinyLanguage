@@ -47,6 +47,48 @@ def capture_trace(source: str, *, watched_addresses: tuple[int, ...] = ()) -> di
     return {"schema_version": 1, "watched_addresses": list(watched_addresses), "edges": edges}
 
 
+def capture_integration_trace(source: str) -> dict[str, Any]:
+    """Capture the externally visible ``TinyCPUMain`` event boundary.
+
+    Values and validity are sampled immediately before the rising edge, like
+    the corresponding Logisim output pins.  Sticky errors and halt state are
+    sampled immediately after the edge.  Keeping those phases explicit avoids
+    treating an invalid ``PRINT`` as if it had emitted the VM's replacement
+    accumulator value.
+    """
+
+    program = assemble(source)
+    cpu = TinyCPU()
+    edges: list[dict[str, Any]] = []
+    while not cpu.halted:
+        instruction = program.instructions[cpu.pc]
+        opcode = instruction.opcode
+        address = int(instruction.operand or 0)
+        source_cell = cpu.memory[address] if 0 <= address < len(cpu.memory) else None
+        boundary = {
+            "print_enable": opcode == "PRINT",
+            "print_address_enable": opcode == "PRINT_ADDRESS",
+            "print_value": cpu.accumulator.value,
+            "print_valid": cpu.accumulator.valid,
+            "print_address_value": source_cell.value if source_cell is not None else 0,
+            "print_address_valid": source_cell.valid if source_cell is not None else False,
+            "halt_enable": opcode == "HALT",
+            "halt_error_enable": opcode == "HALT_ERROR",
+        }
+        cpu.step(program.instructions)
+        edges.append(
+            {
+                "edge": len(edges) + 1,
+                "instruction": opcode,
+                "boundary": boundary,
+                "errors": sorted(flag.value for flag in cpu.errors),
+                "halted": cpu.halted,
+                "halted_with_error": cpu.halted_with_error,
+            }
+        )
+    return {"schema_version": 1, "edges": edges}
+
+
 def compare_trace(expected: dict[str, Any], observed: dict[str, Any]) -> tuple[str, ...]:
     """Return concise edge/field mismatches between two trace documents."""
 

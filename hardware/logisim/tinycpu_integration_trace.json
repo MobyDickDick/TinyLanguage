@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "description": "TinyCPUMain event pins sampled before each rising edge; state sampled after it.",
+  "scenarios": [
+    {
+      "name": "normal_halt",
+      "program": "LOAD_CONST(7)\nPRINT()\nHALT()\n",
+      "trace": {
+        "schema_version": 1,
+        "edges": [
+          {
+            "edge": 1,
+            "instruction": "LOAD_CONST",
+            "boundary": {
+              "print_enable": false,
+              "print_address_enable": false,
+              "print_value": 0,
+              "print_valid": false,
+              "print_address_value": 0,
+              "print_address_valid": false,
+              "halt_enable": false,
+              "halt_error_enable": false
+            },
+            "errors": [],
+            "halted": false,
+            "halted_with_error": false
+          },
+          {
+            "edge": 2,
+            "instruction": "PRINT",
+            "boundary": {
+              "print_enable": true,
+              "print_address_enable": false,
+              "print_value": 7,
+              "print_valid": true,
+              "print_address_value": 0,
+              "print_address_valid": false,
+              "halt_enable": false,
+              "halt_error_enable": false
+            },
+            "errors": [],
+            "halted": false,
+            "halted_with_error": false
+          },
+          {
+            "edge": 3,
+            "instruction": "HALT",
+            "boundary": {
+              "print_enable": false,
+              "print_address_enable": false,
+              "print_value": 7,
+              "print_valid": true,
+              "print_address_value": 0,
+              "print_address_valid": false,
+              "halt_enable": true,
+              "halt_error_enable": false
+            },
+            "errors": [],
+            "halted": true,
+            "halted_with_error": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "error_halt",
+      "program": "LOAD_CONST(1)\nDIV_CONST(0)\nHALT_ERROR()\n",
+      "trace": {
+        "schema_version": 1,
+        "edges": [
+          {
+            "edge": 1,
+            "instruction": "LOAD_CONST",
+            "boundary": {
+              "print_enable": false,
+              "print_address_enable": false,
+              "print_value": 0,
+              "print_valid": false,
+              "print_address_value": 0,
+              "print_address_valid": false,
+              "halt_enable": false,
+              "halt_error_enable": false
+            },
+            "errors": [],
+            "halted": false,
+            "halted_with_error": false
+          },
+          {
+            "edge": 2,
+            "instruction": "DIV_CONST",
+            "boundary": {
+              "print_enable": false,
+              "print_address_enable": false,
+              "print_value": 1,
+              "print_valid": true,
+              "print_address_value": 0,
+              "print_address_valid": false,
+              "halt_enable": false,
+              "halt_error_enable": false
+            },
+            "errors": [
+              "DIV0"
+            ],
+            "halted": false,
+            "halted_with_error": false
+          },
+          {
+            "edge": 3,
+            "instruction": "HALT_ERROR",
+            "boundary": {
+              "print_enable": false,
+              "print_address_enable": false,
+              "print_value": 0,
+              "print_valid": false,
+              "print_address_value": 0,
+              "print_address_valid": false,
+              "halt_enable": false,
+              "halt_error_enable": true
+            },
+            "errors": [
+              "DIV0"
+            ],
+            "halted": true,
+            "halted_with_error": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "invalid_print",
+      "program": "PRINT()\nHALT_ERROR()\n",
+      "trace": {
+        "schema_version": 1,
+        "edges": [
+          {
+            "edge": 1,
+            "instruction": "PRINT",
+            "boundary": {
+              "print_enable": true,
+              "print_address_enable": false,
+              "print_value": 0,
+              "print_valid": false,
+              "print_address_value": 0,
+              "print_address_valid": false,
+              "halt_enable": false,
+              "halt_error_enable": false
+            },
+            "errors": [
+              "INV"
+            ],
+            "halted": false,
+            "halted_with_error": false
+          },
+          {
+            "edge": 2,
+            "instruction": "HALT_ERROR",
+            "boundary": {
+              "print_enable": false,
+              "print_address_enable": false,
+              "print_value": 0,
+              "print_valid": false,
+              "print_address_value": 0,
+              "print_address_valid": false,
+              "halt_enable": false,
+              "halt_error_enable": true
+            },
+            "errors": [
+              "INV"
+            ],
+            "halted": true,
+            "halted_with_error": true
+          }
+        ]
+      }
+    }
+  ]
+}

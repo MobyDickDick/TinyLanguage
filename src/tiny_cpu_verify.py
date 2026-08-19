@@ -16,7 +16,7 @@ import xml.etree.ElementTree as ET
 from tiny_cpu_assembler import assemble
 from tiny_cpu_circuit import validate_hardware_contract
 from tiny_cpu_machine import encode_program, listing, rom_image
-from tiny_cpu_trace import capture_trace, compare_trace
+from tiny_cpu_trace import capture_integration_trace, capture_trace, compare_trace
 
 
 class VerificationError(ValueError):
@@ -87,12 +87,26 @@ def verify_checkout(repository: Path) -> tuple[str, ...]:
     mismatches = compare_trace(expected_trace, checked_trace)
     if mismatches:
         raise VerificationError("AP 5 trace: " + "; ".join(mismatches))
+    integration_fixture = json.loads(
+        (hardware / "tinycpu_integration_trace.json").read_text(encoding="utf-8")
+    )
+    for scenario in integration_fixture.get("scenarios", ()):
+        expected = capture_integration_trace(scenario["program"])
+        mismatches = compare_trace(expected, scenario["trace"])
+        if mismatches:
+            raise VerificationError(
+                f"integration trace {scenario.get('name', '<unnamed>')}: "
+                + "; ".join(mismatches)
+            )
     # Do not advertise a connectivity check here.  ``validate_hardware_contract``
     # verifies component and pin declarations inside the leaf circuits, but it
     # deliberately does not prove that top-level wires end on the automatically
     # generated subcircuit-symbol ports.  Electrical connectivity is reported by
     # ``tiny_cpu_circuit.py`` (and ultimately established by Logisim itself).
-    return ("hardware contract", "ROM and listing", "embedded ROM", "17-edge trace")
+    return (
+        "hardware contract", "ROM and listing", "embedded ROM", "17-edge trace",
+        "integration boundary trace",
+    )
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -1552,6 +1552,7 @@ def test_ap8_fresh_checkout_verification_covers_all_deliverables():
         "ROM and listing",
         "embedded ROM",
         "17-edge trace",
+        "integration boundary trace",
     )
 
 

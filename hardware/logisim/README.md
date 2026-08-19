@@ -722,9 +722,26 @@ Python VM and compares every field with this checked-in interchange fixture.
 This is the reference used to review a trace exported from Logisim-evolution;
 it is not presented as an electrical simulation when Logisim is unavailable.
 
-Save each scenario exported by Logisim-evolution as one trace document with
-the nested `boundary` fields shown in the fixture, save the matching assembly
-program separately, and compare the electrical observation directly with:
+The preferred interchange is the table logger's CSV or tab-separated output.
+Label the observed signals with the following header names, in any order:
+
+```text
+PRINT_ENABLE PRINT_ADDRESS_ENABLE PRINT_VALUE PRINT_VALID
+PRINT_ADDRESS_VALUE PRINT_ADDRESS_VALID HALT_ENABLE HALT_ERROR_ENABLE
+ERROR_OVF ERROR_DIV0 ERROR_ADDR ERROR_INV ERROR_ILL ERROR_INPUT
+HALTED HALTED_WITH_ERROR
+```
+
+One data row represents one rising edge. Bits must be `0` or `1`; values may
+be decimal or use Python-style `0x`/`0b` prefixes. Save the matching assembly
+program separately and compare the electrical table directly with:
+
+```bash
+PYTHONPATH=src python src/tiny_cpu_trace.py scenario.tcpu \
+  --integration --check-logisim-table logisim_trace.tsv
+```
+
+The JSON interchange schema remains supported for hand-authored fixtures:
 
 ```bash
 PYTHONPATH=src python src/tiny_cpu_trace.py scenario.tcpu \
@@ -734,6 +751,8 @@ PYTHONPATH=src python src/tiny_cpu_trace.py scenario.tcpu \
 The command selects the integration-boundary sampling contract rather than the
 full AP 5 VM-state contract and reports the first differing edge/field. Memory
 `--watch` arguments intentionally remain exclusive to the full-state mode.
+Undefined electrical cells such as `x` are rejected rather than silently
+coerced to a value.
 
 ## Automated checks and simulation
 

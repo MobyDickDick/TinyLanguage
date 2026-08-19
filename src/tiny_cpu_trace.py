@@ -3,12 +3,116 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 from pathlib import Path
 from typing import Any
 
 from tiny_cpu_assembler import assemble
 from tiny_cpu_vm import TinyCPU
+
+
+INTEGRATION_TABLE_COLUMNS = (
+    "PRINT_ENABLE",
+    "PRINT_ADDRESS_ENABLE",
+    "PRINT_VALUE",
+    "PRINT_VALID",
+    "PRINT_ADDRESS_VALUE",
+    "PRINT_ADDRESS_VALID",
+    "HALT_ENABLE",
+    "HALT_ERROR_ENABLE",
+    "ERROR_OVF",
+    "ERROR_DIV0",
+    "ERROR_ADDR",
+    "ERROR_INV",
+    "ERROR_ILL",
+    "ERROR_INPUT",
+    "HALTED",
+    "HALTED_WITH_ERROR",
+)
+
+
+def _table_bit(value: str, column: str, row_number: int) -> bool:
+    """Decode a single-bit Logisim table cell with a useful diagnostic."""
+
+    normalized = value.strip().lower()
+    if normalized in {"0", "false", "low"}:
+        return False
+    if normalized in {"1", "true", "high"}:
+        return True
+    raise ValueError(f"row {row_number}: {column} must be a defined bit (0 or 1)")
+
+
+def integration_trace_from_table(table: str, instructions: list[str]) -> dict[str, Any]:
+    """Convert a Logisim pin-table export into the integration trace schema.
+
+    Logisim's table logger produces a flat CSV or tab-separated document.  The
+    circuit pin labels form the header, while each subsequent row represents
+    one rising edge.  Instruction names come from the matching assembly input
+    because they are comparator metadata rather than electrical output pins.
+    """
+
+    lines = [
+        line
+        for line in table.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    if not lines:
+        raise ValueError("Logisim table is empty")
+    delimiter = "\t" if "\t" in lines[0] else ","
+    reader = csv.DictReader(lines, delimiter=delimiter)
+    rows = list(reader)
+    fieldnames = reader.fieldnames or []
+    missing = [column for column in INTEGRATION_TABLE_COLUMNS if column not in fieldnames]
+    if missing:
+        raise ValueError("Logisim table is missing columns: " + ", ".join(missing))
+    if len(rows) != len(instructions):
+        raise ValueError(
+            f"Logisim table has {len(rows)} rows but the program executes {len(instructions)} edges"
+        )
+
+    error_columns = {
+        "ERROR_OVF": "OVF",
+        "ERROR_DIV0": "DIV0",
+        "ERROR_ADDR": "ADDR",
+        "ERROR_INV": "INV",
+        "ERROR_ILL": "ILL",
+        "ERROR_INPUT": "INPUT",
+    }
+    edges: list[dict[str, Any]] = []
+    for index, row in enumerate(rows):
+        row_number = index + 2
+
+        def bit(column: str) -> bool:
+            return _table_bit(row[column], column, row_number)
+
+        try:
+            print_value = int(row["PRINT_VALUE"].strip(), 0)
+            print_address_value = int(row["PRINT_ADDRESS_VALUE"].strip(), 0)
+        except ValueError as error:
+            raise ValueError(f"row {row_number}: output values must be integers") from error
+        edges.append(
+            {
+                "edge": index + 1,
+                "instruction": instructions[index],
+                "boundary": {
+                    "print_enable": bit("PRINT_ENABLE"),
+                    "print_address_enable": bit("PRINT_ADDRESS_ENABLE"),
+                    "print_value": print_value,
+                    "print_valid": bit("PRINT_VALID"),
+                    "print_address_value": print_address_value,
+                    "print_address_valid": bit("PRINT_ADDRESS_VALID"),
+                    "halt_enable": bit("HALT_ENABLE"),
+                    "halt_error_enable": bit("HALT_ERROR_ENABLE"),
+                },
+                "errors": sorted(
+                    name for column, name in error_columns.items() if bit(column)
+                ),
+                "halted": bit("HALTED"),
+                "halted_with_error": bit("HALTED_WITH_ERROR"),
+            }
+        )
+    return {"schema_version": 1, "edges": edges}
 
 
 def capture_trace(source: str, *, watched_addresses: tuple[int, ...] = ()) -> dict[str, Any]:
@@ -120,7 +224,16 @@ def main(argv: list[str] | None = None) -> int:
         help="sample the TinyCPUMain print/halt boundary instead of full VM state",
     )
     parser.add_argument("--check", type=Path, help="compare this observed JSON trace")
+    parser.add_argument(
+        "--check-logisim-table",
+        type=Path,
+        help="compare a CSV/TSV table exported by Logisim (integration mode only)",
+    )
     args = parser.parse_args(argv)
+    if args.check is not None and args.check_logisim_table is not None:
+        parser.error("--check and --check-logisim-table are mutually exclusive")
+    if args.check_logisim_table is not None and not args.integration:
+        parser.error("--check-logisim-table requires --integration")
     source = args.program.read_text(encoding="utf-8")
     if args.integration:
         if args.watch:
@@ -128,10 +241,19 @@ def main(argv: list[str] | None = None) -> int:
         expected = capture_integration_trace(source)
     else:
         expected = capture_trace(source, watched_addresses=tuple(args.watch))
-    if args.check is None:
+    if args.check is None and args.check_logisim_table is None:
         print(json.dumps(expected, indent=2))
         return 0
-    observed = json.loads(args.check.read_text(encoding="utf-8"))
+    if args.check_logisim_table is not None:
+        instructions = [edge["instruction"] for edge in expected["edges"]]
+        try:
+            observed = integration_trace_from_table(
+                args.check_logisim_table.read_text(encoding="utf-8"), instructions
+            )
+        except ValueError as error:
+            parser.error(str(error))
+    else:
+        observed = json.loads(args.check.read_text(encoding="utf-8"))
     mismatches = compare_trace(expected, observed)
     if mismatches:
         print("trace mismatch: " + "; ".join(mismatches))

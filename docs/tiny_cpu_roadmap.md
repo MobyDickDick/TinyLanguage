@@ -240,6 +240,14 @@ Assemblerprogramm den erwarteten Grenztrace und vergleicht ihn feldweise mit
 dem aus Logisim exportierten JSON. Der eigentliche elektrische Export bleibt
 weiterhin simulatorabhängig und wird nicht durch den VM-Vergleich ersetzt.
 
+Als vorbereitendes Folgepaket akzeptiert der Comparator nun außerdem den
+flachen CSV-/TSV-Export des Logisim-Tabellenloggers direkt. Die festgelegten
+Pin-Spalten werden in das versionierte Grenztrace-Schema überführt;
+undefinierte Bits, fehlende Spalten und eine vom Programm abweichende
+Taktanzahl brechen die Abnahme eindeutig ab. Damit ist nach der späteren
+Simulatorinstallation keine manuelle Umschreibung in verschachteltes JSON
+mehr nötig.
+
 Für alle weiteren Arbeitspakete gilt: Eine sichtbare rechtwinklige Leitung hat
 Vorrang vor einem benannten Tunnel. Vor dem Einsatz eines Tunnels sind Symbole
 zu verschieben und freie Leitungskorridore zu prüfen. Nur wenn beides keine

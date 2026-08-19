@@ -84,6 +84,19 @@ def test_electrical_adjacency_splits_wires_at_component_contacts():
     assert "(20,10)" in _reachable(adjacency, "(10,10)")
 
 
+def test_top_level_has_no_abandoned_upper_left_wire_tail():
+    """Keep the removed L-shaped stub from returning beside the clock input."""
+
+    circuit = _top_level(ET.parse(PROJECT).getroot())
+    wires = {
+        frozenset((wire.get("from"), wire.get("to")))
+        for wire in circuit.findall("wire")
+    }
+
+    assert frozenset(("(210,250)", "(960,250)")) not in wires
+    assert frozenset(("(960,250)", "(960,590)")) not in wires
+
+
 def test_integration_clock_fans_out_one_net_to_every_stateful_block():
     """Start top-level integration with a small, independently loadable net."""
 

@@ -227,6 +227,13 @@ Regressionstests verfolgen diese Stufen anhand ihrer relativen Topologie und
 dürfen weder die früheren absoluten Koordinaten noch die alte Anordnung
 wiederherstellen.
 
+Der funktionslose L-förmige Leitungsrest im oberen linken Außenkorridor von
+`TinyCPUMain` ist entfernt. Er endete ohne Verbraucher und gehörte weder zum
+Takt noch zu einem Decode-Netz; ein gezielter Strukturtest verhindert seine
+erneute Einfügung. Als nächster externer Abnahmeschritt bleibt der direkte
+Export des Integrations-Grenztraces aus Logisim-evolution, sobald der Simulator
+in CI verfügbar ist.
+
 Für alle weiteren Arbeitspakete gilt: Eine sichtbare rechtwinklige Leitung hat
 Vorrang vor einem benannten Tunnel. Vor dem Einsatz eines Tunnels sind Symbole
 zu verschieben und freie Leitungskorridore zu prüfen. Nur wenn beides keine

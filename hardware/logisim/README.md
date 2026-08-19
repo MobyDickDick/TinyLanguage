@@ -708,6 +708,20 @@ without changing this frozen core trace.
 The `.rom` file is the supported Logisim interchange representation; the
 `.lst` file is diagnostic output and is not consumed by the circuit.
 
+### TinyCPUMain integration boundary trace
+
+`tinycpu_integration_trace.json` freezes three small acceptance scenarios for
+the completed top-level output boundary: normal `HALT`, explicit `HALT_ERROR`,
+and `PRINT` while the accumulator is invalid. Each edge records the eight
+distinct print/halt pins before the rising edge and the sticky errors and halt
+state after it. In particular, invalid output asserts `PRINT_ENABLE` while
+`PRINT_VALID` remains low; it must not be confused with a successful emission.
+
+The dependency-free verifier regenerates the expected observations with the
+Python VM and compares every field with this checked-in interchange fixture.
+This is the reference used to review a trace exported from Logisim-evolution;
+it is not presented as an electrical simulation when Logisim is unavailable.
+
 ## Automated checks and simulation
 
 ### Fresh-checkout acceptance
@@ -718,10 +732,10 @@ From the repository root, the supported dependency-free acceptance command is:
 PYTHONPATH=src python src/tiny_cpu_verify.py
 ```
 
-It checks that every sheet is connected, the schematic matches the versioned
-hardware profile, the ROM and listing can be reproduced byte-for-byte, the ROM
-embedded in `TinyCPU.circ` matches the encoder, and the VM still reproduces the
-checked-in 17-edge trace. Then run the focused regression tests with:
+It checks the versioned hardware contract, reproducible ROM and listing, the
+embedded ROM, the 17-edge AP-5 trace, and all three integration-boundary trace
+scenarios. Electrical connectivity remains the responsibility of the inspector
+and Logisim-evolution. Then run the focused regression tests with:
 
 ```bash
 PYTHONPATH=src python -m pytest -q tests/detailtests/test_tiny_cpu_logisim.py

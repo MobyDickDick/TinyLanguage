@@ -7,6 +7,25 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-19)
 
+- [x] **Add the TinyCPUMain end-to-end boundary trace**
+  (Owner: TinyCPU/Hardware)
+  - Wiring audit: the dependency-free inspector and topology regressions confirm
+    that every `TinyCPUMain` port is connected, with no routing or width
+    conflicts; the two reported reserved-lane overlaps are placement warnings,
+    not electrical shorts.
+  - Success: freeze edge-by-edge observations for normal halt, explicit error
+    halt, and an invalid `PRINT`, including all distinct print and halt event
+    pins plus sticky errors and post-edge halt state.
+  - Result: `tinycpu_integration_trace.json` supplies the three reference
+    scenarios, the trace helper models the pre-edge Logisim output-pin sampling
+    boundary, and the fresh-checkout verifier rejects drift in any observation.
+  - Follow-up: when Logisim-evolution is available in CI, export these same pin
+    observations directly from the simulator and compare them to the frozen
+    fixture; do not describe the dependency-free reference replay as an
+    electrical simulation.
+
+## Next documented work package (completed 2026-08-19)
+
 - [x] **Close the TinyCPU top-level integration acceptance audit**
   (Owner: TinyCPU/Hardware)
   - Success: reconcile the maintained circuit with the remaining integration

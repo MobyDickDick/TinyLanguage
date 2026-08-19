@@ -211,8 +211,11 @@ angebunden. Jeder Kanal exportiert sein eigenes Enable-Signal sowie den Wert und
 das Validitätsbit seiner Quelle: `PRINT` verwendet den Akkumulator,
 `PRINT_ADDRESS` den ausgewählten Speicherwert. Dadurch muss ein Verbraucher nur
 bei aktivem Enable und gesetzter Validität ausgeben, ohne die beiden
-Befehlsursachen elektrisch zusammenzuschalten. Als nächstes werden `HALT` und
-`HALT_ERROR` mit getrennt beobachtbaren Halt-Ergebnissen integriert.
+Befehlsursachen elektrisch zusammenzuschalten. `HALT` und `HALT_ERROR` sind
+ebenfalls als getrennte Ereignisnetze `HALT_ENABLE` und `HALT_ERROR_ENABLE`
+integriert. Nach Abschluss der strukturellen Top-Level-Integration ist der
+nächste Abnahmeschritt ein End-to-End-Logisim-Trace, der Normalhalt,
+Fehlerhalt und ungültige Ausgabevalidität gemeinsam beobachtet.
 
 Die manuelle Fetch/Decode-Anpassung wird ebenfalls als maßgeblich behandelt:
 Die Überlaufprüfung des Programmzählers ist nach dessen Hochzählen angeordnet.

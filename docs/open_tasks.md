@@ -1543,3 +1543,16 @@ and testable so they can be promoted into the formal backlog as needed.
     isolated from sibling decoder outputs and that the combined write request
     reaches the accumulator without touching `DATA_IN`; `INPUT` is the next
     accumulator-writing top-level control.
+
+## TinyCPU external-trace acceptance update (2026-08-19)
+
+- [x] **Make exported integration-boundary traces directly comparable**
+  (Owner: TinyCPU)
+  - Result: `tiny_cpu_trace.py --integration --check` now derives the expected
+    print/halt boundary observations from a matching assembly program and
+    compares them edge-by-edge with an exported JSON trace.
+  - Verification: CLI regressions cover a matching three-edge boundary trace
+    and reject full-state memory watches in integration mode.
+  - Follow-up: capture the observed JSON directly from Logisim-evolution once
+    the simulator is installed in CI; the VM-derived expectation remains a
+    comparator and is not electrical-simulation evidence.

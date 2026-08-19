@@ -234,6 +234,12 @@ erneute Einfügung. Als nächster externer Abnahmeschritt bleibt der direkte
 Export des Integrations-Grenztraces aus Logisim-evolution, sobald der Simulator
 in CI verfügbar ist.
 
+Die Vergleichsseite dieses Abnahmeschritts ist inzwischen ausführbar:
+`tiny_cpu_trace.py --integration --check` erzeugt aus dem jeweiligen
+Assemblerprogramm den erwarteten Grenztrace und vergleicht ihn feldweise mit
+dem aus Logisim exportierten JSON. Der eigentliche elektrische Export bleibt
+weiterhin simulatorabhängig und wird nicht durch den VM-Vergleich ersetzt.
+
 Für alle weiteren Arbeitspakete gilt: Eine sichtbare rechtwinklige Leitung hat
 Vorrang vor einem benannten Tunnel. Vor dem Einsatz eines Tunnels sind Symbole
 zu verschieben und freie Leitungskorridore zu prüfen. Nur wenn beides keine

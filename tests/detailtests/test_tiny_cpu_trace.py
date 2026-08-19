@@ -36,6 +36,30 @@ def test_trace_cli_checks_an_observed_fixture(capsys):
     assert "17 clock edges" in capsys.readouterr().out
 
 
+def test_trace_cli_checks_an_exported_integration_boundary(tmp_path, capsys):
+    program = tmp_path / "normal_halt.tcpu"
+    observed = tmp_path / "logisim_trace.json"
+    program.write_text("LOAD_CONST(7)\nPRINT()\nHALT()\n", encoding="utf-8")
+    observed.write_text(
+        json.dumps(capture_integration_trace(program.read_text(encoding="utf-8"))),
+        encoding="utf-8",
+    )
+
+    assert main([str(program), "--integration", "--check", str(observed)]) == 0
+    assert "3 clock edges" in capsys.readouterr().out
+
+
+def test_trace_cli_rejects_memory_watches_for_boundary_mode(capsys):
+    try:
+        main([str(PROGRAM), "--integration", "--watch", "100"])
+    except SystemExit as error:
+        assert error.code == 2
+    else:
+        raise AssertionError("argparse should reject incompatible trace modes")
+
+    assert "--watch cannot be combined with --integration" in capsys.readouterr().err
+
+
 def test_integration_trace_covers_the_three_top_level_outcomes():
     fixture = json.loads(INTEGRATION_TRACE.read_text(encoding="utf-8"))
     scenarios = {item["name"]: item for item in fixture["scenarios"]}

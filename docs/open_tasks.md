@@ -7,6 +7,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-19)
 
+- [x] **Remove the abandoned TinyCPUMain wire tail**
+  (Owner: TinyCPU/Hardware)
+  - Wiring audit: the L-shaped route from `(210,250)` via `(960,250)` to
+    `(960,590)` ended without a consumer and carried no integration signal.
+  - Result: both dead segments are removed without changing the adjacent clock,
+    reset, decode, or data nets. A focused topology regression prevents the
+    visually misleading route from being reintroduced.
+  - Follow-up: export the already documented integration-boundary scenarios
+    directly from Logisim-evolution when the simulator becomes available in CI.
+
+## Next documented work package (completed 2026-08-19)
+
 - [x] **Add the TinyCPUMain end-to-end boundary trace**
   (Owner: TinyCPU/Hardware)
   - Wiring audit: the dependency-free inspector and topology regressions confirm

@@ -7,6 +7,22 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-19)
 
+- [x] **Close the TinyCPU top-level integration acceptance audit**
+  (Owner: TinyCPU/Hardware)
+  - Success: reconcile the maintained circuit with the remaining integration
+    checklist and document one unambiguous next boundary after all result,
+    sticky-error, print, and halt routes have been accepted.
+  - Result: the checklist now records the already integrated operation result
+    tree and its independent `OVERFLOW`, `DIVIDE_BY_ZERO`, and
+    `INVALID_OPERAND` sticky-error routes. The top-level plan also reflects the
+    completed accumulator, status, and distinct halt-output wiring instead of
+    advertising superseded follow-ups.
+  - Follow-up: exercise the completed electrical boundary in an end-to-end
+    Logisim trace that includes normal halt, error halt, and invalid output
+    validity rather than adding another structural route.
+
+## Next documented work package (completed 2026-08-19)
+
 - [x] **Integrate the TinyCPU HALT output paths**
   (Owner: TinyCPU/Hardware)
   - Success: export `HALT` and `HALT_ERROR` as electrically distinct observable

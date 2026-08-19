@@ -358,9 +358,12 @@ wieder eindeutig und automatisiert prüfbar.
   `NOT` sind korrekt integriert. Die Prüfung hält ausdrücklich fest, dass die
   Speicher-Schreibeingänge und die beiden Print-Steuerungen noch offen sind;
   ihr Anschluss erfolgt in getrennten Folgepaketen.
-- [ ] Erst nach diesen Korrekturen den gemeinsamen Ergebnisbaum und die
-  Fehlerflags integrieren; bis dahin dürfen neutrale Operationsausgänge nicht
-  als Beleg für inhaltlich richtige Operandenwahl gelten.
+- [x] Nach diesen Korrekturen den gemeinsamen Ergebnisbaum und die Fehlerflags
+  integrieren. Die neutral gegateten Zweigergebnisse speisen den gemeinsamen
+  Daten- und Validitätsbaum; `OVERFLOW`, `DIVIDE_BY_ZERO` und
+  `INVALID_OPERAND` erreichen ausschließlich ihre jeweils zuständigen
+  Sticky-Fehlerpfade. Die getrennten Strukturtests für Operandenwahl und
+  Aggregation bleiben weiterhin beide erforderlich.
 
 Die `AddSubCircuit`-/`SubSubCircuit`-Punkte einschließlich ihrer Validität sind
 nun abgeschlossen: Beide Boxen verwenden `ACC_OUT` links und wählen rechts

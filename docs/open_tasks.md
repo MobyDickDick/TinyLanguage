@@ -5,6 +5,17 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Open-task audit (2026-08-19)
+
+- [x] **Re-validate the documented backlog before opening another work package**
+  (Owner: Project Lead)
+  - Audit: searched every tracked Markdown file for unchecked checklist entries
+    (`- [ ]`), including the root task list, active plans, and roadmaps.
+  - Result: no unchecked documented work package remains. The current backlog
+    is intentionally closed, so implementation must wait until a newly scoped,
+    prioritized task is added here rather than inferring work from historical
+    follow-up notes.
+
 ## Next documented work package (completed 2026-08-19)
 
 - [x] **Accept the Logisim integration pin table without manual JSON rewriting**

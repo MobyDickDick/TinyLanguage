@@ -5,6 +5,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+## Next documented work package (completed 2026-08-19)
+
+- [x] **Integrate the TinyCPU HALT output paths**
+  (Owner: TinyCPU/Hardware)
+  - Success: export `HALT` and `HALT_ERROR` as electrically distinct observable
+    outcomes so a consumer can retain the stopped state without losing the
+    reason execution ended.
+  - Result: `HALT_ENABLE` carries only the normal halt control, while
+    `HALT_ERROR_ENABLE` carries only the explicit error-halt control. A topology
+    regression freezes both routes and proves that the event nets never join.
+
+
 ## Next documented work package (completed 2026-08-18)
 
 - [x] **Integrate the TinyCPU PRINT output paths**

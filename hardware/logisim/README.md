@@ -623,6 +623,12 @@ have these sequences:
 | `PRINT` | present the valid accumulator to the output boundary | emit once; increment `PC` |
 | `HALT` | assert the normal halt output | retain halted state and `PC` |
 
+The integration sheet exports the decoded `HALT` and `HALT_ERROR` controls as
+the separate `HALT_ENABLE` and `HALT_ERROR_ENABLE` event outputs. Consumers can
+therefore retain the stopped state while preserving whether execution ended
+normally or explicitly requested an error halt; neither event can masquerade
+as the other through a shared net.
+
 The hand-maintained `FetchDecode` drawing now arranges the program-counter
 increment before the `PC_RANGE` overflow check. This ordering is intentional:
 the range decision belongs to the incremented program-counter path, not to the

@@ -2022,6 +2022,28 @@ def test_print_controls_export_separate_validated_output_channels():
         assert right not in _reachable(adjacency, left)
 
 
+def test_halt_controls_export_distinct_observable_outcomes():
+    """Normal and error halts must never share an external event net."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    adjacency = _electrical_adjacency(circuit)
+    output_pins = {
+        _attributes(component).get("label"): component.get("loc")
+        for component in circuit.findall("comp")
+        if component.get("name") == "Pin"
+        and _attributes(component).get("type") == "output"
+    }
+
+    normal_halt = output_pins["HALT_ENABLE"]
+    error_halt = output_pins["HALT_ERROR_ENABLE"]
+    assert normal_halt in _reachable(adjacency, _control_output(root, "HALT"))
+    assert error_halt in _reachable(
+        adjacency, _control_output(root, "HALT_ERROR")
+    )
+    assert error_halt not in _reachable(adjacency, normal_halt)
+
+
 def test_not_result_is_committed_by_the_accumulator_write_request():
     """NOT selects its operation result and enables the accumulator write."""
 

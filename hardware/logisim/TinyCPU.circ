@@ -54,6 +54,18 @@
       <a name="label" val="PRINT_ADDRESS_ENABLE"/>
       <a name="type" val="output"/>
     </comp>
+    <comp lib="0" loc="(2540,1530)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="HALT_ENABLE"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="0" loc="(2540,1550)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="HALT_ERROR_ENABLE"/>
+      <a name="type" val="output"/>
+    </comp>
     <comp lib="0" loc="(320,300)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="CLK"/>
@@ -386,6 +398,8 @@
     <wire from="(890,1450)" to="(1520,1450)"/>
     <wire from="(890,1490)" to="(2540,1490)"/>
     <wire from="(890,1510)" to="(2540,1510)"/>
+    <wire from="(890,1530)" to="(2540,1530)"/>
+    <wire from="(890,1550)" to="(2540,1550)"/>
     <wire from="(890,1570)" to="(1570,1570)"/>
     <wire from="(890,1650)" to="(1580,1650)"/>
     <wire from="(890,1670)" to="(1590,1670)"/>

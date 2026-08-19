@@ -1,7 +1,14 @@
 import json
 from pathlib import Path
 
-from tiny_cpu_trace import capture_integration_trace, capture_trace, compare_trace, main
+from tiny_cpu_trace import (
+    INTEGRATION_TABLE_COLUMNS,
+    capture_integration_trace,
+    capture_trace,
+    compare_trace,
+    integration_trace_from_table,
+    main,
+)
 
 
 FIXTURES = Path(__file__).parents[2] / "hardware" / "logisim"
@@ -47,6 +54,51 @@ def test_trace_cli_checks_an_exported_integration_boundary(tmp_path, capsys):
 
     assert main([str(program), "--integration", "--check", str(observed)]) == 0
     assert "3 clock edges" in capsys.readouterr().out
+
+
+def _normal_halt_logisim_table() -> str:
+    rows = [
+        (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        (1, 0, 7, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        (0, 0, 7, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0),
+    ]
+    return "\t".join(INTEGRATION_TABLE_COLUMNS) + "\n" + "\n".join(
+        "\t".join(map(str, row)) for row in rows
+    )
+
+
+def test_logisim_table_converts_flat_pin_rows_to_boundary_trace():
+    expected = capture_integration_trace("LOAD_CONST(7)\nPRINT()\nHALT()\n")
+
+    observed = integration_trace_from_table(
+        _normal_halt_logisim_table(),
+        ["LOAD_CONST", "PRINT", "HALT"],
+    )
+
+    assert compare_trace(expected, observed) == ()
+
+
+def test_trace_cli_checks_a_logisim_table_export(tmp_path, capsys):
+    program = tmp_path / "normal_halt.tcpu"
+    table = tmp_path / "normal_halt.tsv"
+    program.write_text("LOAD_CONST(7)\nPRINT()\nHALT()\n", encoding="utf-8")
+    table.write_text(_normal_halt_logisim_table(), encoding="utf-8")
+
+    assert main(
+        [str(program), "--integration", "--check-logisim-table", str(table)]
+    ) == 0
+    assert "3 clock edges" in capsys.readouterr().out
+
+
+def test_logisim_table_rejects_undefined_pin_values():
+    table = _normal_halt_logisim_table().replace("0\t0\t0\t0", "x\t0\t0\t0", 1)
+
+    try:
+        integration_trace_from_table(table, ["LOAD_CONST", "PRINT", "HALT"])
+    except ValueError as error:
+        assert "must be a defined bit" in str(error)
+    else:
+        raise AssertionError("undefined electrical observations must not be accepted")
 
 
 def test_trace_cli_rejects_memory_watches_for_boundary_mode(capsys):

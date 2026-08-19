@@ -7,6 +7,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Next documented work package (completed 2026-08-19)
 
+- [x] **Accept the Logisim integration pin table without manual JSON rewriting**
+  (Owner: TinyCPU/Hardware)
+  - Success: consume the table logger's flat CSV/TSV rows while preserving the
+    existing edge-by-edge integration-boundary comparison contract.
+  - Result: `tiny_cpu_trace.py --integration --check-logisim-table` maps the
+    sixteen named output, sticky-error, and halt columns into the versioned
+    trace schema. It rejects missing columns, undefined electrical bits, and
+    row counts that differ from the matching assembly execution.
+  - Follow-up: install Logisim-evolution in CI and feed this adapter with a
+    table captured from the maintained circuit; the adapter and VM expectation
+    still do not constitute electrical-simulation evidence by themselves.
+
+## Next documented work package (completed 2026-08-19)
+
 - [x] **Remove the abandoned TinyCPUMain wire tail**
   (Owner: TinyCPU/Hardware)
   - Wiring audit: the L-shaped route from `(210,250)` via `(960,250)` to

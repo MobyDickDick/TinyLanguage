@@ -5,6 +5,16 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Export and accept the electrical AP-5 core trace**
+  (Owner: TinyCPU/Hardware)
+  - Success: clock the frozen AP-5 ROM in Logisim-evolution and compare the
+    unmodified 16-pin table with the integration-boundary VM contract.
+  - Result: `AP5TraceHarness` supplies an autonomous clock, inactive reset, all
+    event, sticky-error, and terminal-state observations, plus the tty halt
+    signal. CI retains the raw 17-edge table even when comparison fails.
+  - Follow-up: AP 11 must replace the single embedded core ROM with small
+    positive and error fixtures covering every opcode and sticky-error bit.
+
 - [x] **Run the maintained TinyCPU circuit in a pinned headless Logisim environment**
   (Owner: TinyCPU/Hardware)
   - Scope: add a reproducible Logisim-evolution installation/launch path for

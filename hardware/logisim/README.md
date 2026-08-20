@@ -780,12 +780,15 @@ Logisim-evolution 4.1.0 rejects that option. Instead, the project declares
 `TinyCPUMain` as its `<main>` circuit, so `-tty table TinyCPU.circ` selects the
 maintained integration sheet directly.
 
-This invocation currently prints the four `CLK`/`RESET` input combinations;
-it does not generate the 17 sequential AP-5 edges. Its header also contains
-only the eight public print/halt event outputs. Consequently, its stdout must
-not be passed to `--check-logisim-table`: the integration comparator correctly
-rejects the absent sticky-error and retained-halt columns. AP 10 remains open
-until a clocked harness exposes the complete 16-pin observation contract.
+With `--trace-output PATH`, the launcher additionally selects the dedicated
+`AP5TraceHarness` in a temporary project copy. Its autonomous clock drives the
+embedded AP-5 ROM while its inactive reset and 16 named observation pins expose
+events, sticky errors, and terminal state to the table logger. The lowercase
+`halt` companion pin stops tty simulation after the terminal edge; it is not
+part of the comparator schema. The raw 17-edge output is written to `PATH`
+before comparison, so CI can publish useful electrical evidence on both success
+and mismatch. The checked-in project retains `TinyCPUMain` as its normal main
+circuit; the AP-9 load-only invocation therefore remains independently useful.
 
 ### Fresh-checkout acceptance
 

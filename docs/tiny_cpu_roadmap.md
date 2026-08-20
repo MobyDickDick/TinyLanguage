@@ -85,30 +85,22 @@ in einem frischen Checkout verpflichtend laufen.
   21.0.8+9.0.LTS sind in CI und im Launcher festgelegt. Der nicht-interaktive
   Tabellenlauf protokolliert beide Versionen und lädt `TinyCPUMain`; Fehler beim
   Download, Start, Versionsabgleich oder Projektladen brechen das Gate ab.
-- [ ] **AP 10:** Elektrischen AP-5-Kerntrace exportieren und den rohen
-  Tabellenlogger-Export mit dem vorhandenen Integrations-Comparator prüfen.
+- [x] **AP 10:** Der eigenständige `AP5TraceHarness` taktet das eingefrorene
+  Kern-ROM im gepinnten Simulator. CI bewahrt den unveränderten Tabellenexport
+  als Artefakt auf und vergleicht alle 17 Flanken mit dem VM-Vertrag.
 - [ ] **AP 11:** Die elektrische Positiv- und Fehlermatrix auf alle Opcodes und
   Sticky-Fehler ausweiten; die erwartete Opcode-Abdeckung maschinenlesbar
   kontrollieren.
 - [ ] **AP 12:** Verbindliche Abschlussabnahme, Reset-/Wiederanlauftests und
   Bedienungsdokumentation für die tatsächlich simulierte Hardware liefern.
 
-## Nächstes Arbeitspaket: AP 10
+## Nächstes Arbeitspaket: AP 11
 
-AP 10 baut auf dem gepinnten Lade-Smoke-Test auf und taktet erstmals das
-eingefrorene AP-5-Programm im echten Simulator. Der Tabellenlogger muss die
-Integrationspins unverändert als CSV oder TSV exportieren und den Export mit
-`tiny_cpu_trace.py --integration --check-logisim-table` gegen die VM-Erwartung
-prüfen. Das CI-Artefakt muss den Roh-Export behalten, damit eine Abweichung auf
-eine konkrete Taktflanke und einen konkreten Pin zurückgeführt werden kann.
-
-Der AP-9-Aufruf erfüllt diese Abnahme noch nicht: Da `CLK` und `RESET` normale
-Eingangspins sind, liefert `-tty table` lediglich deren vier kombinatorische
-Belegungen und taktet das ROM nicht. Außerdem exportiert `TinyCPUMain` derzeit
-nur die acht Print-/Halt-Ereignispins, nicht die sechs Sticky-Fehler und die
-beiden gehaltenen Haltzustände des Comparator-Vertrags. AP 10 benötigt daher
-zuerst einen echten Takttreiber und alle 16 benannten Beobachtungspins; der
-Lade-Smoke-Test darf bis dahin nicht als elektrischer Trace behandelt werden.
+AP 11 verbreitert den verpflichtenden AP-5-Vergleich auf jede
+Instruktionsfamilie und alle Sticky-Fehler. Kleine ROM-Fixtures müssen positive
+und fehlerhafte Pfade im echten Simulator ausführen; maschinenlesbare
+Abdeckungsmetadaten verhindern, dass ein Opcode ohne elektrischen
+VM-Vergleich bleibt.
 
 ## Baseline-Pflege
 

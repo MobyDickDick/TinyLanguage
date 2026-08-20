@@ -74,6 +74,42 @@ def test_obtain_jar_uses_versioned_url_and_atomic_partial(tmp_path, monkeypatch)
     assert not destination.with_suffix(".jar.part").exists()
 
 
+def test_trace_test_runs_dedicated_harness_and_retains_raw_table(tmp_path, monkeypatch):
+    """AP 10 must clock the harness rather than reusing the load-only table."""
+    project = tmp_path / "TinyCPU.circ"
+    project.write_text(
+        '<?xml version="1.0"?><project><main name="TinyCPUMain"/>'
+        '<circuit name="TinyCPUMain"/><circuit name="AP5TraceHarness"/></project>',
+        encoding="utf-8",
+    )
+    program = tmp_path / "program.tcpu"
+    program.write_text("HALT()\n", encoding="utf-8")
+    output = tmp_path / "artifacts" / "trace.tsv"
+    header = "\t".join(runner.integration_trace_from_table.__globals__["INTEGRATION_TABLE_COLUMNS"])
+    row = "\t".join(["0", "0", "0", "0", "0", "0", "1", "0", *(["0"] * 6), "1", "0"])
+    commands = []
+
+    def fake_run(command, *, timeout=120):
+        commands.append(command)
+        generated = Path(command[-1]).read_text(encoding="utf-8")
+        assert '<main name="AP5TraceHarness"' in generated
+        return completed(command, stdout=f"{header}\n{row}\n")
+
+    monkeypatch.setattr(runner, "_run", fake_run)
+    runner.trace_test("java", tmp_path / "logisim.jar", project, program, output)
+
+    assert commands[0][-3:-1] == ["-tty", "table"]
+    assert output.read_text(encoding="utf-8") == f"{header}\n{row}\n"
+
+
+def test_ci_publishes_the_raw_electrical_trace_even_on_failure():
+    workflow = CI_WORKFLOW.read_text(encoding="utf-8")
+
+    assert "--trace-output artifacts/ci/tinycpu-ap5-logisim.tsv" in workflow
+    assert "name: tinycpu-ap5-logisim-table" in workflow
+    assert "if: always()" in workflow
+
+
 def test_ci_uses_available_temurin_build_and_current_setup_action():
     """Keep the pinned JDK resolvable and avoid setup-java's Node 20 runtime."""
     workflow = CI_WORKFLOW.read_text(encoding="utf-8")

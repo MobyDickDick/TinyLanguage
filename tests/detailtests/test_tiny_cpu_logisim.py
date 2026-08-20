@@ -2057,6 +2057,17 @@ def test_halt_controls_export_distinct_observable_outcomes():
     )
     assert error_halt not in _reachable(adjacency, normal_halt)
 
+    # AP-5 terminates with a normal HALT.  Mirroring the two already valid
+    # event nets avoids the erroneous extra OR gate that previously left the
+    # tty harness running forever with HALTED=E.
+    assert output_pins["HALTED"] in _reachable(adjacency, normal_halt)
+    assert output_pins["HALTED_WITH_ERROR"] in _reachable(adjacency, error_halt)
+    assert not any(
+        component.get("name") == "OR Gate"
+        and _attributes(component).get("label") == "HALTED_STATE"
+        for component in circuit.findall("comp")
+    )
+
 
 def test_not_result_is_committed_by_the_accumulator_write_request():
     """NOT selects its operation result and enables the accumulator write."""

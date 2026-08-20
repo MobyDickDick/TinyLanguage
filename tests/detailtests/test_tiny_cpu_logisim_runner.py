@@ -74,6 +74,146 @@ def test_obtain_jar_uses_versioned_url_and_atomic_partial(tmp_path, monkeypatch)
     assert not destination.with_suffix(".jar.part").exists()
 
 
+def _tty_row(**overrides):
+    values = {label: "0" for label, _width in runner.TTY_OUTPUTS}
+    values.update(
+        {
+            "PRINT_VALUE": "0000000000000000",
+            "PRINT_ADDRESS_VALUE": "0000000000000000",
+        }
+    )
+    values.update(overrides)
+    tokens = []
+    for label, width in runner.TTY_OUTPUTS:
+        value = values[label]
+        tokens.extend(
+            [value[index : index + 4] for index in range(0, 16, 4)]
+            if width == 16
+            else [value]
+        )
+    return " ".join(tokens)
+
+
+def test_trace_test_clocks_temporary_main_and_retains_raw_table(tmp_path, monkeypatch):
+    """AP 10 must drive TinyCPUMain without an unreliable nested symbol."""
+    project = tmp_path / "TinyCPU.circ"
+    project.write_text(
+        '<?xml version="1.0"?><project><main name="TinyCPUMain"/>'
+        '<circuit name="TinyCPUMain">'
+        '<comp name="Pin" loc="(0,0)"><a name="label" val="CLK"/></comp>'
+        '<comp name="Pin" loc="(0,20)"><a name="label" val="RESET"/></comp>'
+        "</circuit></project>",
+        encoding="utf-8",
+    )
+    program = tmp_path / "program.tcpu"
+    program.write_text("HALT()\n", encoding="utf-8")
+    output = tmp_path / "artifacts" / "trace.tsv"
+    raw_table = _tty_row(HALT_ENABLE="1", HALTED="1", halt="1") + "\n"
+    commands = []
+
+    def fake_run(command, *, timeout=120, stdout_path=None):
+        commands.append(command)
+        generated = Path(command[-1]).read_text(encoding="utf-8")
+        assert '<main name="TinyCPUMain"' in generated
+        assert 'name="Clock"' in generated
+        assert 'val="TRACE_CLK"' in generated
+        assert 'val="halt"' in generated
+        if stdout_path is not None:
+            stdout_path.write_text(raw_table, encoding="utf-8")
+        return completed(command, stdout=raw_table)
+
+    monkeypatch.setattr(runner, "_run", fake_run)
+    runner.trace_test("java", tmp_path / "logisim.jar", project, program, output)
+
+    assert commands[0][-3:-1] == ["-tty", "table,halt"]
+    assert output.read_text(encoding="utf-8") == raw_table
+
+
+def test_tty_trace_converter_samples_last_stable_low_row_per_edge():
+    raw = "\n".join(
+        [
+            "Logisim-evolution v4.1.0",
+            _tty_row(PRINT_VALUE="UUUUUUUUUUUUUUUU", TRACE_CLK="0"),
+            _tty_row(PRINT_VALUE="0000000000000111", TRACE_CLK="0"),
+            _tty_row(PRINT_VALUE="0000000000000111", TRACE_CLK="1"),
+            _tty_row(PRINT_ENABLE="1", PRINT_VALUE="0000000000000111", TRACE_CLK="0"),
+            _tty_row(PRINT_ENABLE="1", PRINT_VALUE="0000000000000111", TRACE_CLK="1"),
+            _tty_row(HALT_ENABLE="1", HALTED="1", halt="1", TRACE_CLK="0"),
+        ]
+    )
+
+    converted = runner._tty_trace_to_tsv(raw)
+
+    assert len(converted.splitlines()) == 4
+    assert "\t7\t" in converted
+
+
+def test_run_retains_simulator_stdout_before_reporting_failure(tmp_path, monkeypatch):
+    """A failed electrical comparison must still leave useful CI evidence."""
+    output = tmp_path / "artifacts" / "trace.tsv"
+    monkeypatch.setattr(
+        runner.subprocess,
+        "run",
+        lambda *args, **kwargs: subprocess.CompletedProcess(
+            args[0], 1, "PIN_A\tPIN_B\n0\t1\n", "simulator failed\n"
+        ),
+    )
+
+    try:
+        runner._run(["logisim"], stdout_path=output)
+    except runner.SmokeTestError:
+        pass
+    else:
+        raise AssertionError("a failed simulator process was accepted")
+
+    assert output.read_text(encoding="utf-8") == "PIN_A\tPIN_B\n0\t1\n"
+
+
+def test_run_retains_partial_stdout_when_simulator_times_out(tmp_path, monkeypatch):
+    """A timeout must preserve the electrical rows emitted before the hang."""
+    output = tmp_path / "artifacts" / "trace.tsv"
+
+    def time_out(*args, **kwargs):
+        raise subprocess.TimeoutExpired(
+            args[0], kwargs["timeout"], output="HEADER\npartial row\n"
+        )
+
+    monkeypatch.setattr(runner.subprocess, "run", time_out)
+
+    try:
+        runner._run(["logisim"], stdout_path=output)
+    except runner.SmokeTestError:
+        pass
+    else:
+        raise AssertionError("a timed-out simulator process was accepted")
+
+    assert output.read_text(encoding="utf-8") == "HEADER\npartial row\n"
+
+
+def test_main_creates_diagnostic_artifact_before_dependency_checks(tmp_path, monkeypatch):
+    """Even a Java/version failure must not make the upload step fail again."""
+    output = tmp_path / "artifacts" / "trace.tsv"
+
+    def fail_java(java):
+        raise runner.SmokeTestError("wrong Java")
+
+    monkeypatch.setattr(runner, "verify_java", fail_java)
+
+    assert runner.main(["--trace-output", str(output)]) == 1
+    assert "has not reached the simulator" in output.read_text(encoding="utf-8")
+
+
+def test_ci_publishes_the_raw_electrical_trace_even_on_failure():
+    workflow = CI_WORKFLOW.read_text(encoding="utf-8")
+
+    assert "--trace-output artifacts/ci/tinycpu-ap5-logisim.tsv" in workflow
+    assert "name: tinycpu-ap5-logisim-table" in workflow
+    assert "if: always()" in workflow
+    assert "uses: actions/upload-artifact@v5" in workflow
+    assert "path: artifacts/ci/" in workflow
+    assert "actions/upload-artifact@v4" not in workflow
+
+
 def test_ci_uses_available_temurin_build_and_current_setup_action():
     """Keep the pinned JDK resolvable and avoid setup-java's Node 20 runtime."""
     workflow = CI_WORKFLOW.read_text(encoding="utf-8")
@@ -81,3 +221,5 @@ def test_ci_uses_available_temurin_build_and_current_setup_action():
     assert "uses: actions/setup-java@v5" in workflow
     assert "java-version: '21.0.8+9.0.LTS'" in workflow
     assert "actions/setup-java@v4" not in workflow
+    assert "uses: actions/checkout@v5" in workflow
+    assert "uses: actions/setup-python@v6" in workflow

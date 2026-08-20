@@ -15,9 +15,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - name: Set up pinned Java for Logisim-evolution
@@ -60,7 +60,16 @@ jobs:
       - name: Run TinyCPU hardware reproducibility gate
         run: PYTHONPATH=src python src/tiny_cpu_verify.py
       - name: Load TinyCPU in pinned Logisim-evolution
-        run: PYTHONPATH=src python src/tiny_cpu_logisim.py
+        run: >-
+          PYTHONPATH=src python src/tiny_cpu_logisim.py
+          --trace-output artifacts/ci/tinycpu-ap5-logisim.tsv
+      - name: Publish TinyCPU AP-5 electrical trace
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: tinycpu-ap5-logisim-table
+          path: artifacts/ci/
+          if-no-files-found: error
       - name: Run pytest suite
         run: python -m pytest --assert-no-heap-leaks
       - name: Build unsigned release artifacts
@@ -70,16 +79,16 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.run_typecheck_gate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - name: Run curated typecheck gate
         run: python tools/typecheck_ci_gate.py
       - name: Publish typecheck baseline report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: typecheck-baseline-report
           path: artifacts/ci/typecheck-baseline.json

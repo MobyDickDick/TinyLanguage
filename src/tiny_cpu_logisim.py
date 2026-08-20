@@ -30,7 +30,12 @@ class SmokeTestError(RuntimeError):
     """Report a reproducibility or simulator-load failure."""
 
 
-def _run(command: list[str], *, timeout: int = 120) -> subprocess.CompletedProcess[str]:
+def _run(
+    command: list[str],
+    *,
+    timeout: int = 120,
+    stdout_path: Path | None = None,
+) -> subprocess.CompletedProcess[str]:
     """Run a command while retaining its complete diagnostics for CI logs."""
     try:
         result = subprocess.run(
@@ -44,6 +49,9 @@ def _run(command: list[str], *, timeout: int = 120) -> subprocess.CompletedProce
         raise SmokeTestError(f"could not run {' '.join(command)}: {exc}") from exc
     if result.stdout:
         print(result.stdout, end="")
+    if stdout_path is not None:
+        stdout_path.parent.mkdir(parents=True, exist_ok=True)
+        stdout_path.write_text(result.stdout, encoding="utf-8")
     if result.stderr:
         print(result.stderr, end="", file=sys.stderr)
     if result.returncode:
@@ -102,6 +110,8 @@ def smoke_test(java: str, jar: Path, project: Path) -> None:
 
 def trace_test(java: str, jar: Path, project: Path, program: Path, output: Path) -> None:
     """Clock the AP-5 harness, retain its raw pin table, and compare it to the VM."""
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("# Logisim AP-5 trace was requested but has not started.\n", encoding="utf-8")
     if not program.is_file():
         raise SmokeTestError(f"TinyCPU AP-5 program does not exist: {program}")
     try:
@@ -114,13 +124,12 @@ def trace_test(java: str, jar: Path, project: Path, program: Path, output: Path)
             harness_project = Path(directory) / project.name
             tree.write(harness_project, encoding="UTF-8", xml_declaration=True)
             result = _run(
-                [java, "-jar", str(jar), "-tty", "table", str(harness_project)]
+                [java, "-jar", str(jar), "-tty", "table", str(harness_project)],
+                stdout_path=output,
             )
     except ET.ParseError as exc:
         raise SmokeTestError(f"could not prepare AP-5 trace harness: {exc}") from exc
 
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(result.stdout, encoding="utf-8")
     expected = capture_integration_trace(program.read_text(encoding="utf-8"))
     instructions = [edge["instruction"] for edge in expected["edges"]]
     try:
@@ -142,6 +151,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--program", type=Path, default=DEFAULT_PROGRAM)
     parser.add_argument("--trace-output", type=Path)
     args = parser.parse_args(argv)
+    if args.trace_output is not None:
+        args.trace_output.parent.mkdir(parents=True, exist_ok=True)
+        args.trace_output.write_text(
+            "# TinyCPU Logisim trace gate has not reached the simulator.\n",
+            encoding="utf-8",
+        )
     try:
         verify_java(args.java)
         obtain_jar(args.jar)

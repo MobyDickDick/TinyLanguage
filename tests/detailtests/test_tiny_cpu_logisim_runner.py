@@ -89,11 +89,14 @@ def test_trace_test_runs_dedicated_harness_and_retains_raw_table(tmp_path, monke
     row = "\t".join(["0", "0", "0", "0", "0", "0", "1", "0", *(["0"] * 6), "1", "0"])
     commands = []
 
-    def fake_run(command, *, timeout=120):
+    def fake_run(command, *, timeout=120, stdout_path=None):
         commands.append(command)
         generated = Path(command[-1]).read_text(encoding="utf-8")
         assert '<main name="AP5TraceHarness"' in generated
-        return completed(command, stdout=f"{header}\n{row}\n")
+        table = f"{header}\n{row}\n"
+        if stdout_path is not None:
+            stdout_path.write_text(table, encoding="utf-8")
+        return completed(command, stdout=table)
 
     monkeypatch.setattr(runner, "_run", fake_run)
     runner.trace_test("java", tmp_path / "logisim.jar", project, program, output)
@@ -102,12 +105,49 @@ def test_trace_test_runs_dedicated_harness_and_retains_raw_table(tmp_path, monke
     assert output.read_text(encoding="utf-8") == f"{header}\n{row}\n"
 
 
+def test_run_retains_simulator_stdout_before_reporting_failure(tmp_path, monkeypatch):
+    """A failed electrical comparison must still leave useful CI evidence."""
+    output = tmp_path / "artifacts" / "trace.tsv"
+    monkeypatch.setattr(
+        runner.subprocess,
+        "run",
+        lambda *args, **kwargs: subprocess.CompletedProcess(
+            args[0], 1, "PIN_A\tPIN_B\n0\t1\n", "simulator failed\n"
+        ),
+    )
+
+    try:
+        runner._run(["logisim"], stdout_path=output)
+    except runner.SmokeTestError:
+        pass
+    else:
+        raise AssertionError("a failed simulator process was accepted")
+
+    assert output.read_text(encoding="utf-8") == "PIN_A\tPIN_B\n0\t1\n"
+
+
+def test_main_creates_diagnostic_artifact_before_dependency_checks(tmp_path, monkeypatch):
+    """Even a Java/version failure must not make the upload step fail again."""
+    output = tmp_path / "artifacts" / "trace.tsv"
+
+    def fail_java(java):
+        raise runner.SmokeTestError("wrong Java")
+
+    monkeypatch.setattr(runner, "verify_java", fail_java)
+
+    assert runner.main(["--trace-output", str(output)]) == 1
+    assert "has not reached the simulator" in output.read_text(encoding="utf-8")
+
+
 def test_ci_publishes_the_raw_electrical_trace_even_on_failure():
     workflow = CI_WORKFLOW.read_text(encoding="utf-8")
 
     assert "--trace-output artifacts/ci/tinycpu-ap5-logisim.tsv" in workflow
     assert "name: tinycpu-ap5-logisim-table" in workflow
     assert "if: always()" in workflow
+    assert "uses: actions/upload-artifact@v5" in workflow
+    assert "path: artifacts/ci/" in workflow
+    assert "actions/upload-artifact@v4" not in workflow
 
 
 def test_ci_uses_available_temurin_build_and_current_setup_action():
@@ -117,3 +157,5 @@ def test_ci_uses_available_temurin_build_and_current_setup_action():
     assert "uses: actions/setup-java@v5" in workflow
     assert "java-version: '21.0.8+9.0.LTS'" in workflow
     assert "actions/setup-java@v4" not in workflow
+    assert "uses: actions/checkout@v5" in workflow
+    assert "uses: actions/setup-python@v6" in workflow

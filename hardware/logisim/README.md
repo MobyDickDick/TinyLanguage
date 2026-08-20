@@ -787,8 +787,12 @@ events, sticky errors, and terminal state to the table logger. The lowercase
 `halt` companion pin stops tty simulation after the terminal edge; it is not
 part of the comparator schema. The raw 17-edge output is written to `PATH`
 before comparison, so CI can publish useful electrical evidence on both success
-and mismatch. The checked-in project retains `TinyCPUMain` as its normal main
-circuit; the AP-9 load-only invocation therefore remains independently useful.
+and mismatch. The launcher creates that artifact before dependency checks and
+the workflow uploads the complete diagnostics directory, so an unavailable JDK,
+download failure, or simulator start failure cannot be hidden by a subsequent
+"no files found" artifact error. The checked-in project retains `TinyCPUMain`
+as its normal main circuit; the AP-9 load-only invocation therefore remains
+independently useful.
 
 ### Fresh-checkout acceptance
 

@@ -461,7 +461,6 @@
     <comp lib="0" loc="(3400,1660)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="ERROR_INV"/><a name="type" val="output"/></comp>
     <comp lib="0" loc="(3400,1680)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="ERROR_ILL"/><a name="type" val="output"/></comp>
     <comp lib="0" loc="(3400,1700)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="ERROR_INPUT"/><a name="type" val="output"/></comp>
-    <comp lib="1" loc="(3280,1780)" name="OR Gate"><a name="label" val="HALTED_STATE"/></comp>
     <comp lib="0" loc="(3400,1780)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="HALTED"/><a name="type" val="output"/></comp>
     <comp lib="0" loc="(3400,1820)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="HALTED_WITH_ERROR"/><a name="type" val="output"/></comp>
     <wire from="(2290,330)" to="(3000,330)"/>
@@ -482,13 +481,12 @@
     <wire from="(2290,430)" to="(3100,430)"/>
     <wire from="(3100,430)" to="(3100,1700)"/>
     <wire from="(3100,1700)" to="(3400,1700)"/>
-    <wire from="(2840,1530)" to="(3220,1530)"/>
-    <wire from="(3220,1530)" to="(3220,1770)"/>
     <wire from="(2840,1550)" to="(3200,1550)"/>
     <wire from="(3200,1550)" to="(3200,1790)"/>
-    <wire from="(3200,1790)" to="(3220,1790)"/>
-    <wire from="(3280,1780)" to="(3400,1780)"/>
     <wire from="(3200,1790)" to="(3200,1820)"/>
+    <wire from="(2840,1530)" to="(3180,1530)"/>
+    <wire from="(3180,1530)" to="(3180,1780)"/>
+    <wire from="(3180,1780)" to="(3400,1780)"/>
     <wire from="(3200,1820)" to="(3400,1820)"/>
   </circuit>
   <circuit name="AP5TraceHarness">

@@ -45,7 +45,22 @@ def _run(
             timeout=timeout,
             check=False,
         )
-    except (OSError, subprocess.TimeoutExpired) as exc:
+    except subprocess.TimeoutExpired as exc:
+        partial_stdout = exc.stdout or ""
+        partial_stderr = exc.stderr or ""
+        if isinstance(partial_stdout, bytes):
+            partial_stdout = partial_stdout.decode(errors="replace")
+        if isinstance(partial_stderr, bytes):
+            partial_stderr = partial_stderr.decode(errors="replace")
+        if partial_stdout:
+            print(partial_stdout, end="")
+        if partial_stderr:
+            print(partial_stderr, end="", file=sys.stderr)
+        if stdout_path is not None:
+            stdout_path.parent.mkdir(parents=True, exist_ok=True)
+            stdout_path.write_text(partial_stdout, encoding="utf-8")
+        raise SmokeTestError(f"could not run {' '.join(command)}: {exc}") from exc
+    except OSError as exc:
         raise SmokeTestError(f"could not run {' '.join(command)}: {exc}") from exc
     if result.stdout:
         print(result.stdout, end="")

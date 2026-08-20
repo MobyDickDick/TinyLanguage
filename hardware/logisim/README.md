@@ -783,7 +783,10 @@ maintained integration sheet directly.
 With `--trace-output PATH`, the launcher additionally selects the dedicated
 `AP5TraceHarness` in a temporary project copy. Its autonomous clock drives the
 embedded AP-5 ROM while its inactive reset and 16 named observation pins expose
-events, sticky errors, and terminal state to the table logger. The lowercase
+events, sticky errors, and terminal state to the table logger. For this normal-
+halt AP-5 fixture, `HALTED` is derived directly from the electrically valid
+`HALT_ENABLE` event instead of an additional state gate; `HALTED_WITH_ERROR`
+likewise mirrors `HALT_ERROR_ENABLE`. The lowercase
 `halt` companion pin stops tty simulation after the terminal edge; it is not
 part of the comparator schema. The raw 17-edge output is written to `PATH`
 before comparison, so CI can publish useful electrical evidence on both success

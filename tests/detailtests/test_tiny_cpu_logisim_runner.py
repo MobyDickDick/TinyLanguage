@@ -126,6 +126,27 @@ def test_run_retains_simulator_stdout_before_reporting_failure(tmp_path, monkeyp
     assert output.read_text(encoding="utf-8") == "PIN_A\tPIN_B\n0\t1\n"
 
 
+def test_run_retains_partial_stdout_when_simulator_times_out(tmp_path, monkeypatch):
+    """A timeout must preserve the electrical rows emitted before the hang."""
+    output = tmp_path / "artifacts" / "trace.tsv"
+
+    def time_out(*args, **kwargs):
+        raise subprocess.TimeoutExpired(
+            args[0], kwargs["timeout"], output="HEADER\npartial row\n"
+        )
+
+    monkeypatch.setattr(runner.subprocess, "run", time_out)
+
+    try:
+        runner._run(["logisim"], stdout_path=output)
+    except runner.SmokeTestError:
+        pass
+    else:
+        raise AssertionError("a timed-out simulator process was accepted")
+
+    assert output.read_text(encoding="utf-8") == "HEADER\npartial row\n"
+
+
 def test_main_creates_diagnostic_artifact_before_dependency_checks(tmp_path, monkeypatch):
     """Even a Java/version failure must not make the upload step fail again."""
     output = tmp_path / "artifacts" / "trace.tsv"

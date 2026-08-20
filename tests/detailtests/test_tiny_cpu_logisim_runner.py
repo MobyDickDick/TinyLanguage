@@ -3,8 +3,6 @@
 from pathlib import Path
 import subprocess
 
-from tiny_cpu_trace import INTEGRATION_TABLE_COLUMNS, capture_integration_trace
-
 import tiny_cpu_logisim as runner
 
 
@@ -83,45 +81,3 @@ def test_ci_uses_available_temurin_build_and_current_setup_action():
     assert "uses: actions/setup-java@v5" in workflow
     assert "java-version: '21.0.8+9.0.LTS'" in workflow
     assert "actions/setup-java@v4" not in workflow
-
-
-def test_check_trace_retains_raw_ap5_electrical_table(tmp_path):
-    """The evidence artifact must be byte-for-byte simulator output."""
-    program = tmp_path / "program.tcpu"
-    output = tmp_path / "artifacts" / "trace.tsv"
-    program.write_text("HALT()\n", encoding="utf-8")
-    expected = capture_integration_trace("HALT()\n")["edges"][0]
-    boundary = expected["boundary"]
-    values = {
-        "PRINT_ENABLE": boundary["print_enable"],
-        "PRINT_ADDRESS_ENABLE": boundary["print_address_enable"],
-        "PRINT_VALUE": boundary["print_value"],
-        "PRINT_VALID": boundary["print_valid"],
-        "PRINT_ADDRESS_VALUE": boundary["print_address_value"],
-        "PRINT_ADDRESS_VALID": boundary["print_address_valid"],
-        "HALT_ENABLE": boundary["halt_enable"],
-        "HALT_ERROR_ENABLE": boundary["halt_error_enable"],
-        "ERROR_OVF": 0,
-        "ERROR_DIV0": 0,
-        "ERROR_ADDR": 0,
-        "ERROR_INV": 0,
-        "ERROR_ILL": 0,
-        "ERROR_INPUT": 0,
-        "HALTED": expected["halted"],
-        "HALTED_WITH_ERROR": expected["halted_with_error"],
-    }
-    table = "\t".join(INTEGRATION_TABLE_COLUMNS) + "\n" + "\t".join(
-        str(int(values[column])) for column in INTEGRATION_TABLE_COLUMNS
-    ) + "\n"
-
-    runner.check_trace(table, program, output)
-
-    assert output.read_text(encoding="utf-8") == table
-
-
-def test_ci_publishes_raw_logisim_trace_even_when_comparison_fails():
-    workflow = CI_WORKFLOW.read_text(encoding="utf-8")
-
-    assert "--trace-output artifacts/ci/tinycpu-ap5-logisim.tsv" in workflow
-    assert "if: always()" in workflow
-    assert "name: tinycpu-ap5-logisim-table" in workflow

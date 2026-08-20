@@ -5,17 +5,6 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
-- [x] **Export and verify the electrical AP-5 core trace**
-  (Owner: TinyCPU/Hardware)
-  - Scope: retain the real simulator's table output without rewriting it and
-    submit its integration pins directly to the VM-backed comparator.
-  - Result: the pinned launcher optionally writes the raw table before parsing
-    it, rejects malformed rows and edge/field drift, and reports the matching
-    edge count. CI enables this mode for the AP-5 fixture and publishes the raw
-    table even when the comparison fails.
-  - Follow-up: AP 11 must expand this electrical gate to every opcode family
-    and sticky-error outcome with machine-readable coverage metadata.
-
 - [x] **Run the maintained TinyCPU circuit in a pinned headless Logisim environment**
   (Owner: TinyCPU/Hardware)
   - Scope: add a reproducible Logisim-evolution installation/launch path for

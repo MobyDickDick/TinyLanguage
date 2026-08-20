@@ -85,23 +85,30 @@ in einem frischen Checkout verpflichtend laufen.
   21.0.8+9.0.LTS sind in CI und im Launcher festgelegt. Der nicht-interaktive
   Tabellenlauf protokolliert beide Versionen und lädt `TinyCPUMain`; Fehler beim
   Download, Start, Versionsabgleich oder Projektladen brechen das Gate ab.
-- [x] **AP 10:** Der gepinnte Launcher bewahrt den unveränderten AP-5-
-  Tabellenlogger-Export als CI-Artefakt auf und prüft dessen 17 elektrische
-  Pin-Zeilen unmittelbar mit dem vorhandenen Integrations-Comparator. Auch bei
-  einer Abweichung veröffentlicht CI die Rohdaten zur Diagnose.
+- [ ] **AP 10:** Elektrischen AP-5-Kerntrace exportieren und den rohen
+  Tabellenlogger-Export mit dem vorhandenen Integrations-Comparator prüfen.
 - [ ] **AP 11:** Die elektrische Positiv- und Fehlermatrix auf alle Opcodes und
   Sticky-Fehler ausweiten; die erwartete Opcode-Abdeckung maschinenlesbar
   kontrollieren.
 - [ ] **AP 12:** Verbindliche Abschlussabnahme, Reset-/Wiederanlauftests und
   Bedienungsdokumentation für die tatsächlich simulierte Hardware liefern.
 
-## Nächstes Arbeitspaket: AP 11
+## Nächstes Arbeitspaket: AP 10
 
-AP 11 verbreitert den jetzt verpflichtenden AP-5-Vergleich auf jede
-Instruktionsfamilie und alle Sticky-Fehler. Kleine ROM-Fixtures müssen die
-positiven und fehlerhaften Pfade im echten Simulator ausführen; eine
-maschinenlesbare Abdeckungsmatrix verhindert, dass ein Opcode ohne
-elektrischen VM-Vergleich bleibt.
+AP 10 baut auf dem gepinnten Lade-Smoke-Test auf und taktet erstmals das
+eingefrorene AP-5-Programm im echten Simulator. Der Tabellenlogger muss die
+Integrationspins unverändert als CSV oder TSV exportieren und den Export mit
+`tiny_cpu_trace.py --integration --check-logisim-table` gegen die VM-Erwartung
+prüfen. Das CI-Artefakt muss den Roh-Export behalten, damit eine Abweichung auf
+eine konkrete Taktflanke und einen konkreten Pin zurückgeführt werden kann.
+
+Der AP-9-Aufruf erfüllt diese Abnahme noch nicht: Da `CLK` und `RESET` normale
+Eingangspins sind, liefert `-tty table` lediglich deren vier kombinatorische
+Belegungen und taktet das ROM nicht. Außerdem exportiert `TinyCPUMain` derzeit
+nur die acht Print-/Halt-Ereignispins, nicht die sechs Sticky-Fehler und die
+beiden gehaltenen Haltzustände des Comparator-Vertrags. AP 10 benötigt daher
+zuerst einen echten Takttreiber und alle 16 benannten Beobachtungspins; der
+Lade-Smoke-Test darf bis dahin nicht als elektrischer Trace behandelt werden.
 
 ## Baseline-Pflege
 

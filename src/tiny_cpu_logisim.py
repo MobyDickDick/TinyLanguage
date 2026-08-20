@@ -10,12 +10,6 @@ import subprocess
 import sys
 import urllib.request
 
-from tiny_cpu_trace import (
-    capture_integration_trace,
-    compare_trace,
-    integration_trace_from_table,
-)
-
 
 LOGISIM_VERSION = "4.1.0"
 JAVA_VERSION = "21.0.8"
@@ -25,7 +19,6 @@ LOGISIM_URL = (
 )
 DEFAULT_JAR = Path.home() / ".cache" / "tinylanguage" / Path(LOGISIM_URL).name
 DEFAULT_PROJECT = Path("hardware/logisim/TinyCPU.circ")
-DEFAULT_PROGRAM = Path("hardware/logisim/ap5_countdown.tcpu")
 
 
 class SmokeTestError(RuntimeError):
@@ -80,9 +73,7 @@ def obtain_jar(jar: Path) -> None:
         raise SmokeTestError(f"could not download pinned Logisim-evolution: {exc}") from exc
 
 
-def smoke_test(
-    java: str, jar: Path, project: Path
-) -> subprocess.CompletedProcess[str]:
+def smoke_test(java: str, jar: Path, project: Path) -> None:
     """Print the simulator version, then load the maintained top-level circuit."""
     if not project.is_file():
         raise SmokeTestError(f"TinyCPU project does not exist: {project}")
@@ -92,7 +83,7 @@ def smoke_test(
         raise SmokeTestError(
             f"expected Logisim-evolution {LOGISIM_VERSION} in version output"
         )
-    return _run(
+    _run(
         [
             java,
             "-jar",
@@ -104,42 +95,17 @@ def smoke_test(
     )
 
 
-def check_trace(table: str, program: Path, output: Path) -> None:
-    """Retain the raw table and compare every electrical row with the VM."""
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(table, encoding="utf-8")
-    source = program.read_text(encoding="utf-8")
-    expected = capture_integration_trace(source)
-    instructions = [edge["instruction"] for edge in expected["edges"]]
-    try:
-        observed = integration_trace_from_table(table, instructions)
-    except ValueError as exc:
-        raise SmokeTestError(f"invalid Logisim AP-5 table: {exc}") from exc
-    mismatches = compare_trace(expected, observed)
-    if mismatches:
-        raise SmokeTestError("AP-5 electrical trace mismatch: " + "; ".join(mismatches))
-    print(f"AP-5 electrical trace matches across {len(instructions)} clock edges")
-
-
 def main(argv: list[str] | None = None) -> int:
     """Run the pinned dependency and project-load checks."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--java", default="java", help="Java executable")
     parser.add_argument("--jar", type=Path, default=DEFAULT_JAR)
     parser.add_argument("--project", type=Path, default=DEFAULT_PROJECT)
-    parser.add_argument(
-        "--trace-output",
-        type=Path,
-        help="retain and verify the raw AP-5 table at this path",
-    )
-    parser.add_argument("--program", type=Path, default=DEFAULT_PROGRAM)
     args = parser.parse_args(argv)
     try:
         verify_java(args.java)
         obtain_jar(args.jar)
-        result = smoke_test(args.java, args.jar, args.project)
-        if args.trace_output is not None:
-            check_trace(result.stdout, args.program, args.trace_output)
+        smoke_test(args.java, args.jar, args.project)
     except SmokeTestError as exc:
         print(f"TinyCPU Logisim smoke test failed: {exc}", file=sys.stderr)
         return 1

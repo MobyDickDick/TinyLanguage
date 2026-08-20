@@ -756,6 +756,24 @@ coerced to a value.
 
 ## Automated checks and simulation
 
+### Pinned real-simulator load smoke test
+
+AP 9 pins Logisim-evolution 4.1.0 and Eclipse Temurin Java 21.0.8. CI installs
+that exact Java runtime; the launcher downloads the version-addressed upstream
+Logisim JAR into the user cache, prints both dependency versions, and loads
+`TinyCPUMain` through Logisim's non-interactive table interface:
+
+```bash
+PYTHONPATH=src python src/tiny_cpu_logisim.py
+```
+
+The command returns non-zero if Java has drifted, the simulator cannot start,
+the project cannot be parsed, the named top-level circuit is missing, or the
+headless load times out. Use `--jar PATH` to test an already downloaded copy;
+the copy must still identify itself as version 4.1.0. This gate proves a real
+simulator can load the maintained project, but deliberately makes no claim
+about VM/CPU trace parity; exporting the AP-5 pins is AP 10.
+
 ### Fresh-checkout acceptance
 
 From the repository root, the supported dependency-free acceptance command is:

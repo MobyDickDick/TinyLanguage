@@ -4,6 +4,19 @@ This roadmap collects the high-level work packages that will extend TinyLanguage
 towards compiler, library, and transpiler capabilities. The items are phrased so
 they can be tackled incrementally.
 
+## 0) Finish TinyCPU electrical acceptance
+
+- **Current boundary**: the structural circuit, VM oracle, machine format, and
+  integration-trace adapter exist, but a VM-derived replay is not evidence that
+  Logisim executed the maintained circuit.
+- **Next package**: pin Java and Logisim-evolution and add a mandatory headless
+  project-load smoke test (AP 9).
+- **Then**: capture the AP-5 trace directly from Logisim (AP 10), expand it into
+  a complete opcode/error matrix (AP 11), and make those electrical checks part
+  of the reproducible hardware release gate (AP 12).
+- **Detailed acceptance criteria**: see `docs/tiny_cpu_roadmap.md` and the active
+  item in `docs/open_tasks.md`.
+
 ## 1) Native compiler (executables)
 
 - **LLVM-based pipeline**: TinyLanguage → Native IR → LLVM IR → binary.

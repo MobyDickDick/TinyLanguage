@@ -102,6 +102,14 @@ Integrationspins unverändert als CSV oder TSV exportieren und den Export mit
 prüfen. Das CI-Artefakt muss den Roh-Export behalten, damit eine Abweichung auf
 eine konkrete Taktflanke und einen konkreten Pin zurückgeführt werden kann.
 
+Der AP-9-Aufruf erfüllt diese Abnahme noch nicht: Da `CLK` und `RESET` normale
+Eingangspins sind, liefert `-tty table` lediglich deren vier kombinatorische
+Belegungen und taktet das ROM nicht. Außerdem exportiert `TinyCPUMain` derzeit
+nur die acht Print-/Halt-Ereignispins, nicht die sechs Sticky-Fehler und die
+beiden gehaltenen Haltzustände des Comparator-Vertrags. AP 10 benötigt daher
+zuerst einen echten Takttreiber und alle 16 benannten Beobachtungspins; der
+Lade-Smoke-Test darf bis dahin nicht als elektrischer Trace behandelt werden.
+
 ## Baseline-Pflege
 
 Nach Abschluss der acht Arbeitspakete ist das Abnahmekommando als eigener

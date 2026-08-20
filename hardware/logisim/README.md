@@ -780,6 +780,13 @@ Logisim-evolution 4.1.0 rejects that option. Instead, the project declares
 `TinyCPUMain` as its `<main>` circuit, so `-tty table TinyCPU.circ` selects the
 maintained integration sheet directly.
 
+This invocation currently prints the four `CLK`/`RESET` input combinations;
+it does not generate the 17 sequential AP-5 edges. Its header also contains
+only the eight public print/halt event outputs. Consequently, its stdout must
+not be passed to `--check-logisim-table`: the integration comparator correctly
+rejects the absent sticky-error and retained-halt columns. AP 10 remains open
+until a clocked harness exposes the complete 16-pin observation contract.
+
 ### Fresh-checkout acceptance
 
 From the repository root, the supported dependency-free acceptance command is:

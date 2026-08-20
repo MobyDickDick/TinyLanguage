@@ -5,7 +5,7 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
-- [ ] **Run the maintained TinyCPU circuit in a pinned headless Logisim environment**
+- [x] **Run the maintained TinyCPU circuit in a pinned headless Logisim environment**
   (Owner: TinyCPU/Hardware)
   - Scope: add a reproducible Logisim-evolution installation/launch path for
     local development and CI, pinning the simulator version and Java runtime
@@ -18,6 +18,12 @@ archived in `docs/open_tasks_archive.md`.
     following package captures electrical pin observations.
   - Roadmap: this is AP 9 in `docs/tiny_cpu_roadmap.md`; AP 10 then exports the
     AP-5 core trace, before the full ISA matrix is attempted.
+  - Result: CI installs Temurin 21.0.8+9.0.LTS and the maintained launcher fetches
+    Logisim-evolution 4.1.0 from its versioned release URL, logs both versions,
+    and loads `TinyCPUMain` through the non-interactive table interface. Unit
+    tests freeze the runtime check, download URL, and exact load command.
+  - Follow-up: AP 10 must capture the AP-5 integration pins from this real
+    simulator and submit the raw table to the existing comparator.
 
 ## Open-task audit (2026-08-19)
 

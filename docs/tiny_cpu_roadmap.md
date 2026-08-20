@@ -81,10 +81,10 @@ in einem frischen Checkout verpflichtend laufen.
   `tiny_cpu_verify.py` prüft aus einem frischen Checkout Vertrag, Verdrahtung,
   generierte Artefakte, eingebettetes ROM und den 17-Takt-Referenztrace mit
   einem einzigen reproduzierbaren Kommando.
-- [ ] **AP 9:** Reale Simulator-Basis; eine Logisim-evolution- und Java-Version
-  pinnen, einen nicht-interaktiven Startweg bereitstellen und das Laden des
-  gepflegten Projekts als eigenen CI-Schritt absichern. Dieses Paket ist das
-  nächste ausführbare Arbeitspaket und umfasst noch keinen Paritätsnachweis.
+- [x] **AP 9:** Reale Simulator-Basis; Logisim-evolution 4.1.0 und Temurin
+  21.0.8+9.0.LTS sind in CI und im Launcher festgelegt. Der nicht-interaktive
+  Tabellenlauf protokolliert beide Versionen und lädt `TinyCPUMain`; Fehler beim
+  Download, Start, Versionsabgleich oder Projektladen brechen das Gate ab.
 - [ ] **AP 10:** Elektrischen AP-5-Kerntrace exportieren und den rohen
   Tabellenlogger-Export mit dem vorhandenen Integrations-Comparator prüfen.
 - [ ] **AP 11:** Die elektrische Positiv- und Fehlermatrix auf alle Opcodes und
@@ -93,16 +93,14 @@ in einem frischen Checkout verpflichtend laufen.
 - [ ] **AP 12:** Verbindliche Abschlussabnahme, Reset-/Wiederanlauftests und
   Bedienungsdokumentation für die tatsächlich simulierte Hardware liefern.
 
-## Nächstes Arbeitspaket: AP 9
+## Nächstes Arbeitspaket: AP 10
 
-AP 9 ist absichtlich kleiner als die Trace-Abnahme: Zuerst muss feststehen,
-dass CI und lokale Entwickler dasselbe Logisim-evolution mit derselben
-Java-Laufzeit verwenden und das gepflegte Projekt ohne GUI laden können. Der
-CI-Schritt muss Version, Startkommando und Diagnoseausgabe sichtbar halten und
-darf bei fehlendem Simulator nicht still übersprungen werden. Erst wenn dieser
-reproduzierbare Lade-Smoke-Test besteht, darf AP 10 den Tabellenlogger
-automatisieren. Dadurch bleibt klar getrennt, ob ein Fehler aus Installation
-und Projektladen oder aus dem elektrischen Verhalten der CPU stammt.
+AP 10 baut auf dem gepinnten Lade-Smoke-Test auf und taktet erstmals das
+eingefrorene AP-5-Programm im echten Simulator. Der Tabellenlogger muss die
+Integrationspins unverändert als CSV oder TSV exportieren und den Export mit
+`tiny_cpu_trace.py --integration --check-logisim-table` gegen die VM-Erwartung
+prüfen. Das CI-Artefakt muss den Roh-Export behalten, damit eine Abweichung auf
+eine konkrete Taktflanke und einen konkreten Pin zurückgeführt werden kann.
 
 ## Baseline-Pflege
 

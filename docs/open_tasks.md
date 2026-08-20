@@ -9,9 +9,10 @@ archived in `docs/open_tasks_archive.md`.
   (Owner: TinyCPU/Hardware)
   - Success: clock the frozen AP-5 ROM in Logisim-evolution and compare the
     unmodified 16-pin table with the integration-boundary VM contract.
-  - Result: `AP5TraceHarness` supplies an autonomous clock, inactive reset, all
-    event, sticky-error, and terminal-state observations, plus the tty halt
-    signal. CI retains the raw 17-edge table even when comparison fails.
+  - Result: the launcher drives a temporary copy of `TinyCPUMain` directly with
+    an autonomous clock and inactive reset, avoiding unstable generated wrapper
+    ports. It samples stable low phases, stops via tty `table,halt`, and retains
+    the raw change-driven simulator output even when comparison fails.
   - Follow-up: AP 11 must replace the single embedded core ROM with small
     positive and error fixtures covering every opcode and sticky-error bit.
 

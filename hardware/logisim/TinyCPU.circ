@@ -489,52 +489,6 @@
     <wire from="(3180,1780)" to="(3400,1780)"/>
     <wire from="(3200,1820)" to="(3400,1820)"/>
   </circuit>
-  <circuit name="AP5TraceHarness">
-    <a name="appearance" val="logisim_evolution"/>
-    <a name="circuit" val="AP5TraceHarness"/>
-    <a name="circuitnamedboxfixedsize" val="true"/>
-    <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(100,300)" name="Clock"><a name="highDuration" val="1"/><a name="lowDuration" val="1"/><a name="phase" val="0"/></comp>
-    <comp lib="0" loc="(100,320)" name="Constant"><a name="value" val="0x0"/></comp>
-    <comp loc="(400,300)" name="TinyCPUMain"><a name="label" val="AP5_CPU"/></comp>
-    <wire from="(100,300)" to="(180,300)"/>
-    <wire from="(100,320)" to="(180,320)"/>
-    <comp lib="0" loc="(700,300)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="PRINT_VALID"/><a name="type" val="output"/></comp>
-    <wire from="(400,300)" to="(700,300)"/>
-    <comp lib="0" loc="(700,320)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="PRINT_VALUE"/><a name="type" val="output"/><a name="width" val="16"/></comp>
-    <wire from="(400,320)" to="(700,320)"/>
-    <comp lib="0" loc="(700,340)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="PRINT_ADDRESS_VALID"/><a name="type" val="output"/></comp>
-    <wire from="(400,340)" to="(700,340)"/>
-    <comp lib="0" loc="(700,360)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="PRINT_ADDRESS_VALUE"/><a name="type" val="output"/><a name="width" val="16"/></comp>
-    <wire from="(400,360)" to="(700,360)"/>
-    <comp lib="0" loc="(700,380)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="PRINT_ENABLE"/><a name="type" val="output"/></comp>
-    <wire from="(400,380)" to="(700,380)"/>
-    <comp lib="0" loc="(700,400)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="PRINT_ADDRESS_ENABLE"/><a name="type" val="output"/></comp>
-    <wire from="(400,400)" to="(700,400)"/>
-    <comp lib="0" loc="(700,420)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="HALT_ENABLE"/><a name="type" val="output"/></comp>
-    <wire from="(400,420)" to="(700,420)"/>
-    <comp lib="0" loc="(700,440)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="HALT_ERROR_ENABLE"/><a name="type" val="output"/></comp>
-    <wire from="(400,440)" to="(700,440)"/>
-    <comp lib="0" loc="(700,460)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="ERROR_OVF"/><a name="type" val="output"/></comp>
-    <wire from="(400,460)" to="(700,460)"/>
-    <comp lib="0" loc="(700,480)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="ERROR_DIV0"/><a name="type" val="output"/></comp>
-    <wire from="(400,480)" to="(700,480)"/>
-    <comp lib="0" loc="(700,500)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="ERROR_ADDR"/><a name="type" val="output"/></comp>
-    <wire from="(400,500)" to="(700,500)"/>
-    <comp lib="0" loc="(700,520)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="ERROR_INV"/><a name="type" val="output"/></comp>
-    <wire from="(400,520)" to="(700,520)"/>
-    <comp lib="0" loc="(700,540)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="ERROR_ILL"/><a name="type" val="output"/></comp>
-    <wire from="(400,540)" to="(700,540)"/>
-    <comp lib="0" loc="(700,560)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="ERROR_INPUT"/><a name="type" val="output"/></comp>
-    <wire from="(400,560)" to="(700,560)"/>
-    <comp lib="0" loc="(700,580)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="HALTED"/><a name="type" val="output"/></comp>
-    <wire from="(400,580)" to="(700,580)"/>
-    <comp lib="0" loc="(700,600)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="HALTED_WITH_ERROR"/><a name="type" val="output"/></comp>
-    <wire from="(400,600)" to="(700,600)"/>
-    <comp lib="0" loc="(700,660)" name="Pin"><a name="appearance" val="classic"/><a name="facing" val="west"/><a name="label" val="halt"/><a name="type" val="output"/></comp>
-    <wire from="(550,580)" to="(550,660)"/>
-    <wire from="(550,660)" to="(700,660)"/>
-  </circuit>
   <circuit name="EffectiveAddress">
     <a name="appearance" val="logisim_evolution"/>
     <a name="circuit" val="EffectiveAddress"/>

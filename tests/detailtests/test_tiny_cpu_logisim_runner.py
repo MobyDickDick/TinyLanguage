@@ -74,35 +74,78 @@ def test_obtain_jar_uses_versioned_url_and_atomic_partial(tmp_path, monkeypatch)
     assert not destination.with_suffix(".jar.part").exists()
 
 
-def test_trace_test_runs_dedicated_harness_and_retains_raw_table(tmp_path, monkeypatch):
-    """AP 10 must clock the harness rather than reusing the load-only table."""
+def _tty_row(**overrides):
+    values = {label: "0" for label, _width in runner.TTY_OUTPUTS}
+    values.update(
+        {
+            "PRINT_VALUE": "0000000000000000",
+            "PRINT_ADDRESS_VALUE": "0000000000000000",
+        }
+    )
+    values.update(overrides)
+    tokens = []
+    for label, width in runner.TTY_OUTPUTS:
+        value = values[label]
+        tokens.extend(
+            [value[index : index + 4] for index in range(0, 16, 4)]
+            if width == 16
+            else [value]
+        )
+    return " ".join(tokens)
+
+
+def test_trace_test_clocks_temporary_main_and_retains_raw_table(tmp_path, monkeypatch):
+    """AP 10 must drive TinyCPUMain without an unreliable nested symbol."""
     project = tmp_path / "TinyCPU.circ"
     project.write_text(
         '<?xml version="1.0"?><project><main name="TinyCPUMain"/>'
-        '<circuit name="TinyCPUMain"/><circuit name="AP5TraceHarness"/></project>',
+        '<circuit name="TinyCPUMain">'
+        '<comp name="Pin" loc="(0,0)"><a name="label" val="CLK"/></comp>'
+        '<comp name="Pin" loc="(0,20)"><a name="label" val="RESET"/></comp>'
+        "</circuit></project>",
         encoding="utf-8",
     )
     program = tmp_path / "program.tcpu"
     program.write_text("HALT()\n", encoding="utf-8")
     output = tmp_path / "artifacts" / "trace.tsv"
-    header = "\t".join(runner.integration_trace_from_table.__globals__["INTEGRATION_TABLE_COLUMNS"])
-    row = "\t".join(["0", "0", "0", "0", "0", "0", "1", "0", *(["0"] * 6), "1", "0"])
+    raw_table = _tty_row(HALT_ENABLE="1", HALTED="1", halt="1") + "\n"
     commands = []
 
     def fake_run(command, *, timeout=120, stdout_path=None):
         commands.append(command)
         generated = Path(command[-1]).read_text(encoding="utf-8")
-        assert '<main name="AP5TraceHarness"' in generated
-        table = f"{header}\n{row}\n"
+        assert '<main name="TinyCPUMain"' in generated
+        assert 'name="Clock"' in generated
+        assert 'val="TRACE_CLK"' in generated
+        assert 'val="halt"' in generated
         if stdout_path is not None:
-            stdout_path.write_text(table, encoding="utf-8")
-        return completed(command, stdout=table)
+            stdout_path.write_text(raw_table, encoding="utf-8")
+        return completed(command, stdout=raw_table)
 
     monkeypatch.setattr(runner, "_run", fake_run)
     runner.trace_test("java", tmp_path / "logisim.jar", project, program, output)
 
-    assert commands[0][-3:-1] == ["-tty", "table"]
-    assert output.read_text(encoding="utf-8") == f"{header}\n{row}\n"
+    assert commands[0][-3:-1] == ["-tty", "table,halt"]
+    assert output.read_text(encoding="utf-8") == raw_table
+
+
+def test_tty_trace_converter_samples_last_stable_low_row_per_edge():
+    raw = "\n".join(
+        [
+            "Logisim-evolution v4.1.0",
+            _tty_row(PRINT_VALUE="UUUUUUUUUUUUUUUU", TRACE_CLK="0"),
+            _tty_row(PRINT_VALUE="0000000000000111", TRACE_CLK="0"),
+            _tty_row(PRINT_VALUE="0000000000000111", TRACE_CLK="1"),
+            _tty_row(PRINT_ENABLE="1", PRINT_VALUE="0000000000000111", TRACE_CLK="0"),
+            _tty_row(PRINT_ENABLE="1", PRINT_VALUE="0000000000000111", TRACE_CLK="1"),
+            _tty_row(HALT_ENABLE="1", HALTED="1", halt="1", TRACE_CLK="0"),
+        ]
+    )
+
+    converted = runner._tty_trace_to_tsv(raw)
+
+    assert len(converted.splitlines()) == 4
+    assert "\t7\t" in converted
 
 
 def test_run_retains_simulator_stdout_before_reporting_failure(tmp_path, monkeypatch):

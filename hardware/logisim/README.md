@@ -780,15 +780,20 @@ Logisim-evolution 4.1.0 rejects that option. Instead, the project declares
 `TinyCPUMain` as its `<main>` circuit, so `-tty table TinyCPU.circ` selects the
 maintained integration sheet directly.
 
-With `--trace-output PATH`, the launcher additionally selects the dedicated
-`AP5TraceHarness` in a temporary project copy. Its autonomous clock drives the
-embedded AP-5 ROM while its inactive reset and 16 named observation pins expose
-events, sticky errors, and terminal state to the table logger. For this normal-
+With `--trace-output PATH`, the launcher makes a temporary project copy and
+replaces only `TinyCPUMain`'s external clock and reset pins with an autonomous
+clock and an inactive constant. Driving the maintained circuit directly avoids
+depending on Logisim's generated port order for a nested wrapper symbol. The 16
+named observation pins expose events, sticky errors, and terminal state to the
+table logger. For this normal-
 halt AP-5 fixture, `HALTED` is derived directly from the electrically valid
 `HALT_ENABLE` event instead of an additional state gate; `HALTED_WITH_ERROR`
 likewise mirrors `HALT_ERROR_ENABLE`. The lowercase
-`halt` companion pin stops tty simulation after the terminal edge; it is not
-part of the comparator schema. The raw 17-edge output is written to `PATH`
+`halt` companion pin and the `table,halt` tty mode stop simulation at the
+terminal edge; neither the companion pin nor the temporary `TRACE_CLK` pin is
+part of the comparator schema. The launcher converts Logisim's grouped,
+change-driven display into one stable low-phase sample per rising edge for the
+comparison. The unmodified simulator output is written to `PATH`
 before comparison, so CI can publish useful electrical evidence on both success
 and mismatch. The launcher creates that artifact before dependency checks and
 the workflow uploads the complete diagnostics directory, so an unavailable JDK,

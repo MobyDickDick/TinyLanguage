@@ -85,9 +85,10 @@ in einem frischen Checkout verpflichtend laufen.
   21.0.8+9.0.LTS sind in CI und im Launcher festgelegt. Der nicht-interaktive
   Tabellenlauf protokolliert beide Versionen und lädt `TinyCPUMain`; Fehler beim
   Download, Start, Versionsabgleich oder Projektladen brechen das Gate ab.
-- [x] **AP 10:** Der eigenständige `AP5TraceHarness` taktet das eingefrorene
-  Kern-ROM im gepinnten Simulator. CI bewahrt den unveränderten Tabellenexport
-  als Artefakt auf und vergleicht alle 17 Flanken mit dem VM-Vertrag.
+- [x] **AP 10:** Der Launcher taktet eine temporäre Kopie von `TinyCPUMain`
+  direkt im gepinnten Simulator, normalisiert dessen änderungsgetriebene
+  Tabellenausgabe und vergleicht alle 17 Flanken mit dem VM-Vertrag. CI bewahrt
+  den unveränderten Simulator-Export als Artefakt auf.
 - [ ] **AP 11:** Die elektrische Positiv- und Fehlermatrix auf alle Opcodes und
   Sticky-Fehler ausweiten; die erwartete Opcode-Abdeckung maschinenlesbar
   kontrollieren.

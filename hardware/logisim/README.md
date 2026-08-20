@@ -771,9 +771,13 @@ PYTHONPATH=src python src/tiny_cpu_logisim.py
 The command returns non-zero if Java has drifted, the simulator cannot start,
 the project cannot be parsed, the named top-level circuit is missing, or the
 headless load times out. Use `--jar PATH` to test an already downloaded copy;
-the copy must still identify itself as version 4.1.0. This gate proves a real
-simulator can load the maintained project, but deliberately makes no claim
-about VM/CPU trace parity; exporting the AP-5 pins is AP 10.
+the copy must still identify itself as version 4.1.0. Without `--trace-output`
+this command remains a load-only smoke test. CI adds `--trace-output
+artifacts/ci/tinycpu-ap5-logisim.tsv`; that mode writes the simulator's stdout
+unchanged before parsing it and requires all 17 AP-5 rows to match the VM
+integration-boundary trace. The `tinycpu-ap5-logisim-table` artifact is
+published with `if: always()`, so malformed electrical values or a pin mismatch
+retain the original evidence for diagnosis.
 
 The launcher intentionally does not pass the former `-circuit` CLI option:
 Logisim-evolution 4.1.0 rejects that option. Instead, the project declares

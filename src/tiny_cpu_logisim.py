@@ -90,8 +90,6 @@ def smoke_test(java: str, jar: Path, project: Path) -> None:
             str(jar),
             "-tty",
             "table",
-            "-circuit",
-            "TinyCPUMain",
             str(project),
         ]
     )

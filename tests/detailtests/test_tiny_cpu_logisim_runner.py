@@ -53,7 +53,8 @@ def test_smoke_test_logs_version_before_loading_project(tmp_path, monkeypatch):
     runner.smoke_test("java", jar, project)
 
     assert commands[0][-1] == "--version"
-    assert commands[1][-5:] == ["-tty", "table", "-circuit", "TinyCPUMain", str(project)]
+    assert commands[1][-3:] == ["-tty", "table", str(project)]
+    assert "-circuit" not in commands[1]
 
 
 def test_obtain_jar_uses_versioned_url_and_atomic_partial(tmp_path, monkeypatch):

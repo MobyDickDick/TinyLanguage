@@ -775,6 +775,11 @@ the copy must still identify itself as version 4.1.0. This gate proves a real
 simulator can load the maintained project, but deliberately makes no claim
 about VM/CPU trace parity; exporting the AP-5 pins is AP 10.
 
+The launcher intentionally does not pass the former `-circuit` CLI option:
+Logisim-evolution 4.1.0 rejects that option. Instead, the project declares
+`TinyCPUMain` as its `<main>` circuit, so `-tty table TinyCPU.circ` selects the
+maintained integration sheet directly.
+
 ### Fresh-checkout acceptance
 
 From the repository root, the supported dependency-free acceptance command is:

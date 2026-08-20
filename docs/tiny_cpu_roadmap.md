@@ -9,9 +9,12 @@ sind.
 ## Ziel und Definition of Done
 
 Das erste Zielsystem verwendet 16 Datenbits, 12 Adressbits und 4096
-Speicherzellen. Fertig ist die TinyCPU, wenn ein Logisim-Testlauf das
-Kernprogramm aus Arbeitspaket 5 taktweise mit der VM vergleichen kann und
-Ausgabe, Haltzustand, Register, Speicher-Validität und Fehlerflags
+Speicherzellen. Die AP-1-bis-AP-8-Baseline stellt Schaltung, Maschinenformat
+und ein VM-basiertes Referenzmodell bereit, ist aber noch kein Nachweis einer
+elektrisch ausgeführten CPU. Fertig ist die TinyCPU erst, wenn ein gepinnter
+Logisim-evolution-Testlauf das Kernprogramm aus Arbeitspaket 5 taktweise mit
+der VM vergleicht, die gesamte ISA in Positiv- und Fehlerfällen elektrisch
+abdeckt und Ausgabe, Haltzustand, Register, Speicher-Validität und Fehlerflags
 übereinstimmen.
 
 ## Arbeitspakete
@@ -26,6 +29,10 @@ Ausgabe, Haltzustand, Register, Speicher-Validität und Fehlerflags
 | **6. ISA vervollständigen** | Weitere Adressierungsarten, Arithmetik, Logik, Sprünge und I/O ergänzen. | Parametrisierte Positiv- und Fehlertests decken jede Instruktion ab. |
 | **7. Maschinenformat und Tooling** | Versionierte Opcode-Tabelle und Wortlayout definieren; Encoder, ROM-Image und Listing erzeugen. | Roundtrip-Tests und ein durch den Encoder geladenes Logisim-Programm bestehen. |
 | **8. Abschluss und Dokumentation** | Bedienung, Schaltplanarchitektur und automatisierte Regressionstests vervollständigen. | Ein frischer Checkout kann die dokumentierten Prüfungen reproduzieren. |
+| **9. Reale Simulator-Basis** | Logisim-evolution und Java für lokale sowie CI-Läufe pinnen; `TinyCPU.circ` headless laden. | Ein frischer Checkout startet die festgelegte Simulatorversion, protokolliert sie und bricht bei Lade- oder Schaltungsfehlern ab. |
+| **10. Elektrischen Kerntrace abnehmen** | Das AP-5-ROM im echten Simulator takten und die festgelegten Integrationspins per Tabellenlogger exportieren. | Der unveränderte CSV-/TSV-Export besteht `tiny_cpu_trace.py --integration --check-logisim-table`; das CI-Artefakt belegt die elektrische Ausführung. |
+| **11. Elektrische ISA-Matrix** | Jede Instruktionsfamilie sowie Invalidität, Adress-, Overflow-, Div0-, Illegal- und Input-Fehler mit kleinen ROM-Fixtures ausführen. | Parametrisierte Logisim/VM-Vergleiche decken jeden Opcode und jedes Sticky-Fehlerbit ab; Abdeckungsmetadaten verhindern ungetestete Opcodes. |
+| **12. Hardware-Abschluss** | Reset-/Wiederanlauf-, Mehrzyklus- und reproduzierbare Release-Abnahme dokumentieren und alle elektrischen Gates verpflichtend machen. | Das Abschlusskommando erzeugt die Nachweisartefakte aus einem frischen Checkout; kein Simulator-Test ist mehr optional und die Definition of Done ist erfüllt. |
 
 ## Abhängigkeiten und Reihenfolge
 
@@ -33,7 +40,11 @@ AP 1 ist die gemeinsame Schnittstelle aller folgenden Pakete. AP 2 und AP 3
 können danach getrennt entwickelt werden; AP 4 benötigt beide. AP 5 friert den
 Kern als Integrationsbasis ein, bevor AP 6 den Befehlssatz verbreitert. Das
 binäre Format in AP 7 kommt bewusst spät, damit frühe Schaltungsänderungen
-keine dauerhaft inkompatiblen Opcodes erzeugen.
+keine dauerhaft inkompatiblen Opcodes erzeugen. AP 9 ist die Voraussetzung für
+alle elektrischen Abnahmen. AP 10 hält die erste reale Simulation bewusst auf
+das bereits eingefrorene Kernprogramm begrenzt; erst danach verbreitert AP 11
+die Abdeckung auf die ISA. AP 12 darf erst geschlossen werden, wenn diese Gates
+in einem frischen Checkout verpflichtend laufen.
 
 ## Stand
 
@@ -70,6 +81,28 @@ keine dauerhaft inkompatiblen Opcodes erzeugen.
   `tiny_cpu_verify.py` prüft aus einem frischen Checkout Vertrag, Verdrahtung,
   generierte Artefakte, eingebettetes ROM und den 17-Takt-Referenztrace mit
   einem einzigen reproduzierbaren Kommando.
+- [ ] **AP 9:** Reale Simulator-Basis; eine Logisim-evolution- und Java-Version
+  pinnen, einen nicht-interaktiven Startweg bereitstellen und das Laden des
+  gepflegten Projekts als eigenen CI-Schritt absichern. Dieses Paket ist das
+  nächste ausführbare Arbeitspaket und umfasst noch keinen Paritätsnachweis.
+- [ ] **AP 10:** Elektrischen AP-5-Kerntrace exportieren und den rohen
+  Tabellenlogger-Export mit dem vorhandenen Integrations-Comparator prüfen.
+- [ ] **AP 11:** Die elektrische Positiv- und Fehlermatrix auf alle Opcodes und
+  Sticky-Fehler ausweiten; die erwartete Opcode-Abdeckung maschinenlesbar
+  kontrollieren.
+- [ ] **AP 12:** Verbindliche Abschlussabnahme, Reset-/Wiederanlauftests und
+  Bedienungsdokumentation für die tatsächlich simulierte Hardware liefern.
+
+## Nächstes Arbeitspaket: AP 9
+
+AP 9 ist absichtlich kleiner als die Trace-Abnahme: Zuerst muss feststehen,
+dass CI und lokale Entwickler dasselbe Logisim-evolution mit derselben
+Java-Laufzeit verwenden und das gepflegte Projekt ohne GUI laden können. Der
+CI-Schritt muss Version, Startkommando und Diagnoseausgabe sichtbar halten und
+darf bei fehlendem Simulator nicht still übersprungen werden. Erst wenn dieser
+reproduzierbare Lade-Smoke-Test besteht, darf AP 10 den Tabellenlogger
+automatisieren. Dadurch bleibt klar getrennt, ob ein Fehler aus Installation
+und Projektladen oder aus dem elektrischen Verhalten der CPU stammt.
 
 ## Baseline-Pflege
 

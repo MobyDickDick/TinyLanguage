@@ -5,16 +5,29 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [ ] **Run the maintained TinyCPU circuit in a pinned headless Logisim environment**
+  (Owner: TinyCPU/Hardware)
+  - Scope: add a reproducible Logisim-evolution installation/launch path for
+    local development and CI, pinning the simulator version and Java runtime
+    instead of relying on an unversioned workstation installation.
+  - Acceptance: a fresh CI checkout opens `hardware/logisim/TinyCPU.circ` in
+    headless mode, fails on load or circuit errors, and records the exact
+    simulator version in the job log.
+  - Boundary: this package establishes the real simulator as a test dependency
+    and proves that the project loads. It does not claim VM/CPU parity until a
+    following package captures electrical pin observations.
+  - Roadmap: this is AP 9 in `docs/tiny_cpu_roadmap.md`; AP 10 then exports the
+    AP-5 core trace, before the full ISA matrix is attempted.
+
 ## Open-task audit (2026-08-19)
 
 - [x] **Re-validate the documented backlog before opening another work package**
   (Owner: Project Lead)
   - Audit: searched every tracked Markdown file for unchecked checklist entries
     (`- [ ]`), including the root task list, active plans, and roadmaps.
-  - Result: no unchecked documented work package remains. The current backlog
-    is intentionally closed, so implementation must wait until a newly scoped,
-    prioritized task is added here rather than inferring work from historical
-    follow-up notes.
+  - Result: no unchecked documented work package remained at the time of the
+    audit. The new AP-9-to-AP-12 electrical-simulation sequence supersedes that
+    state without re-opening accepted structural integration packages.
 
 ## Next documented work package (completed 2026-08-19)
 

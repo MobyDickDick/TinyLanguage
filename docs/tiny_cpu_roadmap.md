@@ -82,7 +82,7 @@ in einem frischen Checkout verpflichtend laufen.
   generierte Artefakte, eingebettetes ROM und den 17-Takt-Referenztrace mit
   einem einzigen reproduzierbaren Kommando.
 - [x] **AP 9:** Reale Simulator-Basis; Logisim-evolution 4.1.0 und Temurin
-  21.0.8+9 sind in CI und im Launcher festgelegt. Der nicht-interaktive
+  21.0.8+9.0.LTS sind in CI und im Launcher festgelegt. Der nicht-interaktive
   Tabellenlauf protokolliert beide Versionen und lädt `TinyCPUMain`; Fehler beim
   Download, Start, Versionsabgleich oder Projektladen brechen das Gate ab.
 - [ ] **AP 10:** Elektrischen AP-5-Kerntrace exportieren und den rohen

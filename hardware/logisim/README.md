@@ -759,8 +759,9 @@ coerced to a value.
 ### Pinned real-simulator load smoke test
 
 AP 9 pins Logisim-evolution 4.1.0 and Eclipse Temurin Java 21.0.8. CI installs
-that exact Java runtime; the launcher downloads the version-addressed upstream
-Logisim JAR into the user cache, prints both dependency versions, and loads
+the exact available Temurin build `21.0.8+9.0.LTS`; the launcher downloads the
+version-addressed upstream Logisim JAR into the user cache, prints both
+dependency versions, and loads
 `TinyCPUMain` through Logisim's non-interactive table interface:
 
 ```bash

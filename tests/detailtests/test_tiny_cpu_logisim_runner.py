@@ -6,6 +6,9 @@ import subprocess
 import tiny_cpu_logisim as runner
 
 
+CI_WORKFLOW = Path(__file__).parents[2] / ".github" / "workflows" / "ci.yml"
+
+
 def completed(command: list[str], stdout: str = "", stderr: str = ""):
     """Build a successful subprocess result for the small command doubles."""
     return subprocess.CompletedProcess(command, 0, stdout, stderr)
@@ -68,3 +71,12 @@ def test_obtain_jar_uses_versioned_url_and_atomic_partial(tmp_path, monkeypatch)
     assert "/v4.1.0/logisim-evolution-4.1.0-all.jar" in observed["url"]
     assert destination.read_bytes() == b"pinned jar"
     assert not destination.with_suffix(".jar.part").exists()
+
+
+def test_ci_uses_available_temurin_build_and_current_setup_action():
+    """Keep the pinned JDK resolvable and avoid setup-java's Node 20 runtime."""
+    workflow = CI_WORKFLOW.read_text(encoding="utf-8")
+
+    assert "uses: actions/setup-java@v5" in workflow
+    assert "java-version: '21.0.8+9.0.LTS'" in workflow
+    assert "actions/setup-java@v4" not in workflow

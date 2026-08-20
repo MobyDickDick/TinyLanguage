@@ -18,7 +18,7 @@ archived in `docs/open_tasks_archive.md`.
     following package captures electrical pin observations.
   - Roadmap: this is AP 9 in `docs/tiny_cpu_roadmap.md`; AP 10 then exports the
     AP-5 core trace, before the full ISA matrix is attempted.
-  - Result: CI installs Temurin 21.0.8+9 and the maintained launcher fetches
+  - Result: CI installs Temurin 21.0.8+9.0.LTS and the maintained launcher fetches
     Logisim-evolution 4.1.0 from its versioned release URL, logs both versions,
     and loads `TinyCPUMain` through the non-interactive table interface. Unit
     tests freeze the runtime check, download URL, and exact load command.

@@ -5,9 +5,31 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Apply taken TinyCPU jumps to the next program address**
+  (Owner: TinyCPU/Hardware)
+  - Cause: `JUMP_NOT_ZERO` was observable as a control output but did not select
+    the encoded instruction operand for the `PC` input; the counter could only
+    execute sequentially once its increment was repaired.
+  - Result: a named 16-bit `NEXT_PC` multiplexer selects either `PC + 1` or the
+    low 16-bit ROM operand, controlled by the existing `JNZ_TAKEN` result.
+  - Verification: a focused connectivity regression follows both data inputs,
+    the select input, and the multiplexer output through to the PC data pin.
+
+- [x] **Increment the enabled TinyCPU program counter**
+  (Owner: TinyCPU/Hardware)
+  - Cause: enabling `FetchDecode.PC` did not make it advance because the second
+    input of its next-address adder was still the default 16-bit zero. Every
+    clock edge therefore reloaded `PC + 0`, repeatedly selecting ROM address
+    zero even after the ROM-to-decoder route was repaired.
+  - Result: the adder now receives an explicit 16-bit `1`, so ordinary clock
+    edges compute the next sequential program address.
+  - Verification: the focused PC regression now freezes both independent
+    requirements: asserted register enable and an asserted, 16-bit increment
+    constant connected to the adder input.
+
 - [x] **Connect the TinyCPU instruction ROM to the decoder output**
   (Owner: TinyCPU/Hardware)
-  - Cause: after the program counter was enabled, its address reached the ROM,
+  - Cause: the program counter's address reached the ROM,
     but the ROM's 22-bit data terminal still ended without a wire. The top-level
     `OPCODE` output and all decode controls therefore remained undefined, so no
     fixture could reach its electrical halt condition.

@@ -181,6 +181,21 @@ def test_fetch_decode_alone_exposes_named_reset_input():
     assert reset_owners == {"TinyCPUMain", "FetchDecode", "IntegrationReset"}
 
 
+def test_fetch_decode_program_counter_is_enabled():
+    """The autonomous clock must be able to advance beyond ROM address zero."""
+
+    root = ET.parse(PROJECT).getroot()
+    fetch = root.find("circuit[@name='FetchDecode']")
+    assert fetch is not None
+    enable = fetch.find("comp[@name='Constant'][@loc='(260,140)']")
+    assert enable is not None
+    assert _attributes(enable).get("value") == "0x1"
+    assert any(
+        {wire.get("from"), wire.get("to")} == {"(260,140)", "(270,140)"}
+        for wire in fetch.findall("wire")
+    )
+
+
 def test_top_level_opcode_reaches_decode_controls_only():
     """Resolve the opcode route from named pins and the splitter mapping."""
 

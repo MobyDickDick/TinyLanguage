@@ -202,7 +202,12 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
     if main is None or circuit is None:
         raise SmokeTestError("TinyCPU project has no TinyCPUMain circuit")
     main.set("name", "TinyCPUMain")
-    for label, replacement in (("CLK", "Clock"), ("RESET", "Constant")):
+    # A constant-low RESET leaves every validity register in its power-up state.
+    # That happened to produce a very large, almost entirely zero tty table: the
+    # clock was running, but the processor had never been initialized and could
+    # therefore never reach the generated halt pin.  PowerOnReset supplies the
+    # one startup assertion expected by the maintained synchronous reset nets.
+    for label, replacement in (("CLK", "Clock"), ("RESET", "PowerOnReset")):
         pin = next(
             (
                 component
@@ -216,11 +221,13 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
         pin.set("name", replacement)
         for attribute in list(pin):
             pin.remove(attribute)
-        if replacement == "Clock":
-            for name, value in (("highDuration", "1"), ("lowDuration", "1"), ("phase", "0")):
-                ET.SubElement(pin, "a", name=name, val=value)
-        else:
-            ET.SubElement(pin, "a", name="value", val="0x0")
+        if replacement != "Clock":
+            # PowerOnReset has no configurable attributes.  In particular, the
+            # input Pin's label/type attributes were removed above so tty does
+            # not continue to treat RESET as an undriven external input.
+            continue
+        for name, value in (("highDuration", "1"), ("lowDuration", "1"), ("phase", "0")):
+            ET.SubElement(pin, "a", name=name, val=value)
 
     for location, label in (("(3500,1900)", "TRACE_CLK"), ("(3500,1920)", "halt")):
         pin = ET.SubElement(circuit, "comp", lib="0", loc=location, name="Pin")

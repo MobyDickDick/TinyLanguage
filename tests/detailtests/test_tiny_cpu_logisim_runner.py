@@ -118,6 +118,8 @@ def test_trace_test_clocks_temporary_main_and_retains_raw_table(tmp_path, monkey
         generated = Path(command[-1]).read_text(encoding="utf-8")
         assert '<main name="TinyCPUMain"' in generated
         assert 'name="Clock"' in generated
+        assert 'name="PowerOnReset"' in generated
+        assert 'name="Constant"' not in generated
         assert 'val="TRACE_CLK"' in generated
         assert 'val="halt"' in generated
         if stdout_path is not None:

@@ -5,17 +5,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
-- [x] **Connect the TinyCPU instruction wire to the ROM data terminal**
+- [x] **Attach the TinyCPU instruction wire to the actual ROM data terminal**
   (Owner: TinyCPU/Hardware)
-  - Cause: the instruction route started at the ROM component's XML location,
-    which is the upper-left drawing anchor rather than an electrical terminal.
-    The actual 22-bit data output is 40 pixels east of that anchor, so the
-    decoder remained undriven despite the visually adjacent wire.
-  - Result: the route now starts at the ROM's east-edge data terminal and
-    continues to the `OPCODE` output without joining the address input.
-  - Verification: the focused connectivity regression derives the terminal
-    from the ROM anchor, requires the complete data route, and rejects the
-    drawing anchor as part of that electrical net.
+  - Cause: two earlier structural fixes mistook the ROM's upper-left XML anchor
+    first for its data output and then offset only the horizontal coordinate.
+    Both `(510,400)` and `(550,400)` miss the terminals centred vertically at
+    `y=410`, which explains why only the autonomous clock changed in the table.
+  - Result: the 22-bit instruction route now starts at the east-edge data output
+    `(550,410)` and remains isolated from the west-edge address input
+    `(510,410)` before reaching `OPCODE`.
+  - Verification: the regression derives both terminals from the 40-by-20 ROM
+    geometry, requires the complete data route, keeps the address net isolated,
+    and rejects both previously used non-terminal endpoints.
 
 - [x] **Attach the TinyCPU PC address slice to the ROM address terminal**
   (Owner: TinyCPU/Hardware)

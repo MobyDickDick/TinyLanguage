@@ -34,7 +34,11 @@ digest-mismatched evidence files. It also rejects symbolic links and other
 non-regular inventory entries instead of following them outside the retained
 bundle. The report and every inventory entry are schema-checked first, so
 malformed paths, byte sizes, and SHA-256 values produce a controlled
-verification failure rather than being interpreted as evidence metadata:
+verification failure rather than being interpreted as evidence metadata. The
+verifier also requires the pinned runtime versions, both linked reset/restart
+traces with identical digests and edge counts, and a matrix fixture count that
+matches the inventoried tables; an arbitrary inventory alone is not an AP-12
+acceptance report:
 
 ```bash
 PYTHONPATH=src python src/tiny_cpu_logisim.py \

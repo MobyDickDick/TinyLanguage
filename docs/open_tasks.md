@@ -5,6 +5,16 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Bind retained TinyCPU evidence to the AP-12 acceptance claims**
+  (Owner: TinyCPU/Hardware)
+  - Scope: close the gap between authentic inventory bytes and the report's
+    claim that those bytes represent the complete mandatory release gate.
+  - Result: offline verification now requires the pinned runtime versions, both
+    named reset/restart raw and normalized traces, matching reproducibility
+    metadata, and a positive matrix fixture count equal to its inventoried TSVs.
+  - Verification: focused coverage rejects a substituted simulator version, a
+    missing restart run, and a matrix count inconsistent with retained tables.
+
 - [x] **Validate the retained TinyCPU evidence manifest before traversal**
   (Owner: TinyCPU/Hardware)
   - Scope: make malformed or hand-edited AP-12 reports fail predictably while

@@ -30,6 +30,24 @@ If you want a compact reference first:
 
 ## Quick start
 
+### Prepare a development environment
+
+On Debian/Ubuntu, Fedora, Arch Linux, or macOS with Homebrew, the bootstrap
+script installs the required system tools, creates `.venv`, and installs all
+Python test dependencies:
+
+```bash
+./scripts/bootstrap-dev.sh
+source .venv/bin/activate
+```
+
+If Python 3, Git, and the C/LLVM toolchain are already installed (or if you do
+not have administrator access), skip the system package manager step:
+
+```bash
+./scripts/bootstrap-dev.sh --skip-system-packages
+```
+
 ### Run a `.tiny` program
 
 1. (Optional) Activate your virtual environment.

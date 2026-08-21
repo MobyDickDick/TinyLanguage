@@ -102,7 +102,9 @@ def test_trace_test_clocks_temporary_main_and_retains_raw_table(tmp_path, monkey
         '<circuit name="TinyCPUMain">'
         '<comp name="Pin" loc="(0,0)"><a name="label" val="CLK"/></comp>'
         '<comp name="Pin" loc="(0,20)"><a name="label" val="RESET"/></comp>'
-        "</circuit></project>",
+        '</circuit><circuit name="FetchDecode"><comp name="ROM">'
+        '<a name="contents">addr/data: 12 22\n2c0000\n</a>'
+        "</comp></circuit></project>",
         encoding="utf-8",
     )
     program = tmp_path / "program.tcpu"
@@ -227,6 +229,17 @@ def test_ci_uses_available_temurin_build_and_current_setup_action():
 
 def test_ap11_matrix_contract_covers_every_opcode_and_sticky_error():
     runner.verify_matrix_contract(runner.DEFAULT_MATRIX, runner.DEFAULT_MACHINE_FORMAT)
+
+
+def test_ap11_matrix_supplies_runnable_family_and_error_fixtures():
+    import json
+
+    matrix = json.loads(runner.DEFAULT_MATRIX.read_text(encoding="utf-8"))
+    expected = {family["id"] for family in matrix["opcode_families"]}
+    expected.update(row["fixture"] for row in matrix["sticky_errors"])
+
+    assert {fixture["id"] for fixture in matrix["fixtures"]} == expected
+    assert all(fixture["program"].strip() for fixture in matrix["fixtures"])
 
 
 def test_ap11_matrix_contract_rejects_missing_opcode(tmp_path):

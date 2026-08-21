@@ -89,19 +89,16 @@ in einem frischen Checkout verpflichtend laufen.
   direkt im gepinnten Simulator, normalisiert dessen änderungsgetriebene
   Tabellenausgabe und vergleicht alle 17 Flanken mit dem VM-Vertrag. CI bewahrt
   den unveränderten Simulator-Export als Artefakt auf.
-- [ ] **AP 11:** Die elektrische Positiv- und Fehlermatrix auf alle Opcodes und
-  Sticky-Fehler ausweiten; die erwartete Opcode-Abdeckung maschinenlesbar
-  kontrollieren.
+- [x] **AP 11:** Die elektrische Positiv- und Fehlermatrix tauscht das ROM je
+  Fixture aus, bewahrt jede Roh-Tabelle auf und vergleicht alle Flanken mit der VM.
 - [ ] **AP 12:** Verbindliche Abschlussabnahme, Reset-/Wiederanlauftests und
   Bedienungsdokumentation für die tatsächlich simulierte Hardware liefern.
 
-## Nächstes Arbeitspaket: AP 11
+## Nächstes Arbeitspaket: AP 12
 
-AP 11 verbreitert den verpflichtenden AP-5-Vergleich auf jede
-Instruktionsfamilie und alle Sticky-Fehler. Kleine ROM-Fixtures müssen positive
-und fehlerhafte Pfade im echten Simulator ausführen; maschinenlesbare
-Abdeckungsmetadaten verhindern, dass ein Opcode ohne elektrischen
-VM-Vergleich bleibt.
+AP 12 macht die elektrische Matrix zur verbindlichen Abschlussabnahme und
+ergänzt Reset-, Wiederanlauf- und Mehrzyklusnachweise sowie die Bedienungsdokumentation
+für einen reproduzierbaren Lauf aus einem frischen Checkout.
 
 ## Baseline-Pflege
 

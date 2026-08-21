@@ -5,16 +5,15 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
-- [ ] **Execute the complete TinyCPU electrical ISA matrix**
+- [x] **Execute the complete TinyCPU electrical ISA matrix**
   (Owner: TinyCPU/Hardware)
   - Completed slice: `tinycpu-electrical-matrix-v1.json` now freezes every
     version-1 opcode, its electrical test family, and one fixture identifier for
     each of the six sticky errors. The pinned launcher rejects missing, duplicate,
     extra, or renumbered coverage before starting Logisim.
-  - Remaining acceptance: replace the embedded ROM for each declared family and
-    compare the resulting electrical edge tables with the VM oracle. Until those
-    simulator fixtures run, AP 11 remains open and this metadata is not presented
-    as electrical execution evidence.
+  - Result: the launcher now replaces the program ROM in a temporary circuit for
+    every declared opcode-family and sticky-error fixture, retains a raw table per
+    fixture, and compares every electrical edge with the VM oracle.
 
 
 - [x] **Export and accept the electrical AP-5 core trace**

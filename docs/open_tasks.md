@@ -5,6 +5,16 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Validate the retained TinyCPU evidence manifest before traversal**
+  (Owner: TinyCPU/Hardware)
+  - Scope: make malformed or hand-edited AP-12 reports fail predictably while
+    preserving dependency-free offline verification.
+  - Result: the verifier requires a JSON-object report and validates every
+    inventory entry's canonical POSIX path, non-negative integer byte size, and
+    lowercase SHA-256 value before comparing the directory or reading evidence.
+  - Verification: focused coverage exercises a non-object report, a normalized
+    path alias, a boolean size, and a malformed digest.
+
 - [x] **Reject indirect files in retained TinyCPU acceptance evidence**
   (Owner: TinyCPU/Hardware)
   - Scope: harden the offline AP-12 verifier at the next trust boundary without

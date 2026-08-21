@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import stat
 import subprocess
@@ -471,14 +471,39 @@ def verify_acceptance_bundle(output: Path) -> None:
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise SmokeTestError(f"could not read AP-12 acceptance report: {exc}") from exc
+    if not isinstance(report, dict):
+        raise SmokeTestError("AP-12 acceptance report must be a JSON object")
     if report.get("schema_version") != 2 or report.get("status") != "passed":
         raise SmokeTestError("AP-12 acceptance report is not a passed schema-version-2 report")
     evidence = report.get("evidence")
     if not isinstance(evidence, list):
         raise SmokeTestError("AP-12 acceptance report has no evidence inventory")
-    recorded_paths = [item.get("path") for item in evidence if isinstance(item, dict)]
-    if len(recorded_paths) != len(evidence) or any(not isinstance(path, str) for path in recorded_paths):
-        raise SmokeTestError("AP-12 evidence inventory contains an invalid path")
+    recorded_paths = []
+    for item in evidence:
+        if not isinstance(item, dict):
+            raise SmokeTestError("AP-12 evidence inventory contains an invalid entry")
+        path = item.get("path")
+        digest = item.get("sha256")
+        size = item.get("size_bytes")
+        if not isinstance(path, str):
+            raise SmokeTestError("AP-12 evidence inventory contains an invalid path")
+        relative = PurePosixPath(path)
+        if (
+            not path
+            or "\\" in path
+            or relative.is_absolute()
+            or ".." in relative.parts
+            or relative.as_posix() != path
+        ):
+            raise SmokeTestError(f"unsafe AP-12 evidence path: {path}")
+        if not isinstance(size, int) or isinstance(size, bool) or size < 0:
+            raise SmokeTestError(f"invalid AP-12 evidence size: {path}")
+        if (
+            not isinstance(digest, str)
+            or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+        ):
+            raise SmokeTestError(f"invalid AP-12 evidence digest: {path}")
+        recorded_paths.append(path)
     if recorded_paths != sorted(set(recorded_paths)):
         raise SmokeTestError("AP-12 evidence inventory paths must be unique and sorted")
     actual_paths = []
@@ -505,9 +530,7 @@ def verify_acceptance_bundle(output: Path) -> None:
     if recorded_paths != actual_paths:
         raise SmokeTestError("AP-12 evidence inventory does not match bundle contents")
     for item in evidence:
-        relative = Path(item["path"])
-        if relative.is_absolute() or ".." in relative.parts:
-            raise SmokeTestError(f"unsafe AP-12 evidence path: {item['path']}")
+        relative = Path(*PurePosixPath(item["path"]).parts)
         evidence_path = output / relative
         try:
             mode = evidence_path.lstat().st_mode

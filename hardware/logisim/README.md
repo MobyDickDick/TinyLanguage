@@ -32,7 +32,9 @@ A retained or downloaded bundle can be checked independently of Java and
 Logisim. The verifier rejects missing, additional, reordered, resized, or
 digest-mismatched evidence files. It also rejects symbolic links and other
 non-regular inventory entries instead of following them outside the retained
-bundle:
+bundle. The report and every inventory entry are schema-checked first, so
+malformed paths, byte sizes, and SHA-256 values produce a controlled
+verification failure rather than being interpreted as evidence metadata:
 
 ```bash
 PYTHONPATH=src python src/tiny_cpu_logisim.py \

@@ -5,6 +5,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Restore the TinyCPU instruction wire to the ROM data terminal**
+  (Owner: TinyCPU/Hardware)
+  - Cause: the previous maintenance package incorrectly treated the ROM's XML
+    location as a drawing anchor and moved the instruction route 40 pixels east.
+    For this Logisim ROM the location is the electrical data-output connection;
+    the moved route was disconnected and every exported instruction stayed zero.
+  - Result: the route again starts at `(510,400)` and continues to the `OPCODE`
+    output without joining the separate address input at `(510,410)`.
+  - Verification: the focused connectivity regression requires the route from
+    the ROM's declared location and proves that no route starts or ends at the
+    erroneous `(550,400)` coordinate.
+
 - [x] **Attach the TinyCPU PC address slice to the ROM address terminal**
   (Owner: TinyCPU/Hardware)
   - Cause: the 16-to-12-bit PC splitter used the default symbol appearance while

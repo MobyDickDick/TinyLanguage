@@ -238,9 +238,19 @@ def test_fetch_decode_rom_drives_instruction_output():
         for component in fetch.findall("comp[@name='Pin']")
         if _attributes(component).get("label") == "OPCODE"
     )
-    adjacency = _electrical_adjacency(fetch, {rom.get("loc"), opcode.get("loc")})
+    # Logisim stores this ROM at its data-output connection point.  Moving the
+    # route east by the symbol width creates a disconnected wire and makes the
+    # exported instruction word remain zero during simulation.
+    data_output = rom.get("loc")
+    adjacency = _electrical_adjacency(fetch, {data_output, opcode.get("loc")})
+    instruction_wires = {
+        (wire.get("from"), wire.get("to")) for wire in fetch.findall("wire")
+    }
 
-    assert opcode.get("loc") in _reachable(adjacency, rom.get("loc"))
+    assert data_output == "(510,400)"
+    assert opcode.get("loc") in _reachable(adjacency, data_output)
+    assert (data_output, "(750,400)") in instruction_wires
+    assert all("(550,400)" not in endpoints for endpoints in instruction_wires)
 
 
 def test_taken_jump_selects_instruction_operand_as_next_pc():

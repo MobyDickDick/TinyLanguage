@@ -5,17 +5,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
-- [x] **Restore the TinyCPU instruction wire to the ROM data terminal**
+- [x] **Attach the TinyCPU instruction wire to the actual ROM data terminal**
   (Owner: TinyCPU/Hardware)
-  - Cause: the previous maintenance package incorrectly treated the ROM's XML
-    location as a drawing anchor and moved the instruction route 40 pixels east.
-    For this Logisim ROM the location is the electrical data-output connection;
-    the moved route was disconnected and every exported instruction stayed zero.
-  - Result: the route again starts at `(510,400)` and continues to the `OPCODE`
-    output without joining the separate address input at `(510,410)`.
-  - Verification: the focused connectivity regression requires the route from
-    the ROM's declared location and proves that no route starts or ends at the
-    erroneous `(550,400)` coordinate.
+  - Cause: two earlier structural fixes mistook the ROM's upper-left XML anchor
+    first for its data output and then offset only the horizontal coordinate.
+    Both `(510,400)` and `(550,400)` miss the terminals centred vertically at
+    `y=410`, which explains why only the autonomous clock changed in the table.
+  - Result: the 22-bit instruction route now starts at the east-edge data output
+    `(550,410)` and remains isolated from the west-edge address input
+    `(510,410)` before reaching `OPCODE`.
+  - Verification: the regression derives both terminals from the 40-by-20 ROM
+    geometry, requires the complete data route, keeps the address net isolated,
+    and rejects both previously used non-terminal endpoints.
 
 - [x] **Attach the TinyCPU PC address slice to the ROM address terminal**
   (Owner: TinyCPU/Hardware)

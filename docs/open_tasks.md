@@ -18,7 +18,7 @@ archived in `docs/open_tasks_archive.md`.
     and a focused electrical-topology regression freezes both the word routes
     and their isolation from each 15-bit splitter output.
   - Additional repair: the `FetchDecode` ROM route now starts at the actual
-    Logisim-evolution data terminal `(750,460)` and feeds both `OPCODE` and the
+    Logisim-evolution data terminal `(750,400)` and feeds both `OPCODE` and the
     instruction-field splitter; the previously documented `(550,410)` point is
     empty drawing space rather than a component contact.
   - Clock repair: `ErrorFlags.CLK` now belongs to the shared external clock net.

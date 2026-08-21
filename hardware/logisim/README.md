@@ -25,7 +25,7 @@ its 12-bit output terminal therefore coincides with the checked-in route to the
 ROM address input instead of leaving that route one symbol lane away.
 The ROM's XML location is the upper-left drawing anchor. Its address input is
 at `(510,410)` on the west edge and, with the Logisim-evolution appearance, its
-22-bit data output is at `(750,460)` on the lower-right edge of the expanded
+22-bit data output is at `(750,400)` on the upper-right edge of the expanded
 ROM body. The data net drives both `OPCODE` and the instruction-field splitter;
 the former `(550,410)` route ended on empty drawing space. A taken
 `JUMP_NOT_ZERO` selects

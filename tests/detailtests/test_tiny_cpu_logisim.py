@@ -196,6 +196,23 @@ def test_fetch_decode_program_counter_is_enabled():
     )
 
 
+def test_fetch_decode_rom_drives_instruction_output():
+    """Decoded controls must observe the word read from the program ROM."""
+
+    root = ET.parse(PROJECT).getroot()
+    fetch = root.find("circuit[@name='FetchDecode']")
+    assert fetch is not None
+    rom = fetch.find("comp[@name='ROM'][@loc='(510,400)']")
+    opcode = next(
+        component
+        for component in fetch.findall("comp[@name='Pin']")
+        if _attributes(component).get("label") == "OPCODE"
+    )
+    adjacency = _electrical_adjacency(fetch, {rom.get("loc"), opcode.get("loc")})
+
+    assert opcode.get("loc") in _reachable(adjacency, rom.get("loc"))
+
+
 def test_top_level_opcode_reaches_decode_controls_only():
     """Resolve the opcode route from named pins and the splitter mapping."""
 

@@ -5,6 +5,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Connect the TinyCPU instruction ROM to the decoder output**
+  (Owner: TinyCPU/Hardware)
+  - Cause: after the program counter was enabled, its address reached the ROM,
+    but the ROM's 22-bit data terminal still ended without a wire. The top-level
+    `OPCODE` output and all decode controls therefore remained undefined, so no
+    fixture could reach its electrical halt condition.
+  - Result: a dedicated 22-bit route now connects `FetchDecode.INSTRUCTION_ROM`
+    directly to the `OPCODE` output without joining the nearby clock, reset,
+    program-counter, or jump-control nets.
+  - Verification: a focused electrical-connectivity regression resolves the
+    complete ROM-to-output net instead of checking only XML coordinates.
+
 - [x] **Enable the TinyCPU program counter in the electrical circuit**
   (Owner: TinyCPU/Hardware)
   - Cause: the `FetchDecode.PC` enable input was tied to the default zero-valued

@@ -18,6 +18,9 @@ AP-5 traces. (A constant inactive reset is not equivalent: it leaves the CPU's
 documented reset boundary untested.) The maintained `FetchDecode` circuit also
 drives the `PC` register enable high; a low enable would hold ROM address zero
 forever and yield the long, almost empty tables seen in the earlier evidence.
+The ROM's 22-bit data terminal is wired directly to the `OPCODE` output, so the
+word selected by that advancing address reaches the top-level decoder instead
+of ending on an unconnected component terminal.
 These independent runs are the reset/restart and multi-cycle reproducibility
 check. Finally, the same invocation runs every AP-11 opcode-family and
 sticky-error fixture; none of

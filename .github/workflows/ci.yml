@@ -63,6 +63,7 @@ jobs:
         run: >-
           PYTHONPATH=src python src/tiny_cpu_logisim.py
           --trace-output artifacts/ci/tinycpu-ap5-logisim.tsv
+          --matrix-output artifacts/ci/tinycpu-ap11-matrix
       - name: Publish TinyCPU AP-5 electrical trace
         if: always()
         uses: actions/upload-artifact@v5

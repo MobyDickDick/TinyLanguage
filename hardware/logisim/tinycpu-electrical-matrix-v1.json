@@ -265,5 +265,59 @@
     "simulator": "logisim-evolution-4.1.0",
     "all_opcodes_required": true,
     "all_sticky_errors_required": true
-  }
+  },
+  "fixtures": [
+    {
+      "id": "data",
+      "program": "LOAD_CONST(7)\nSTORE_ADDRESS(10)\nLOAD_ADDRESS(10)\nLOAD_ADDRESS_REGISTER_CONST(10)\nLOAD_ADDRESS_REGISTER()\nLOAD_ADDRESS_REGISTER_PLUS_OFFSET(0)\nSTORE_ADDRESS_REGISTER()\nSTORE_ADDRESS_REGISTER_PLUS_OFFSET(1)\nLOAD_ADDRESS_REGISTER_ADDRESS(10)\nHALT()\n"
+    },
+    {
+      "id": "alu",
+      "program": "LOAD_CONST(6)\nSTORE_ADDRESS(10)\nLOAD_ADDRESS_REGISTER_CONST(10)\nADD_CONST(1)\nADD_ADDRESS(10)\nADD_ADDRESS_REGISTER()\nADD_ADDRESS_REGISTER_PLUS_OFFSET(0)\nSUB_CONST(1)\nSUB_ADDRESS(10)\nSUB_ADDRESS_REGISTER()\nSUB_ADDRESS_REGISTER_PLUS_OFFSET(0)\nMUL_CONST(1)\nMUL_ADDRESS(10)\nMUL_ADDRESS_REGISTER()\nMUL_ADDRESS_REGISTER_PLUS_OFFSET(0)\nDIV_CONST(2)\nDIV_ADDRESS(10)\nDIV_ADDRESS_REGISTER()\nDIV_ADDRESS_REGISTER_PLUS_OFFSET(0)\nAND_CONST(7)\nAND_ADDRESS(10)\nAND_ADDRESS_REGISTER()\nAND_ADDRESS_REGISTER_PLUS_OFFSET(0)\nOR_CONST(1)\nOR_ADDRESS(10)\nOR_ADDRESS_REGISTER()\nOR_ADDRESS_REGISTER_PLUS_OFFSET(0)\nNOT()\nXOR_CONST(1)\nXOR_ADDRESS(10)\nXOR_ADDRESS_REGISTER()\nXOR_ADDRESS_REGISTER_PLUS_OFFSET(0)\nHALT()\n"
+    },
+    {
+      "id": "branch",
+      "program": "LOAD_CONST(1)\nJUMP_ZERO(3)\nJUMP_NEGATIVE(3)\nJUMP_ERROR(4)\nJUMP_NOT_ZERO(5)\nJUMP_NOT_ERROR(6)\nJUMP_ADDRESS(7)\nHALT()\n"
+    },
+    {
+      "id": "error-control",
+      "program": "CLEAR_ERROR()\nHALT()\n"
+    },
+    {
+      "id": "io",
+      "program": "INPUT()\nPRINT()\nPRINT_ADDRESS(0)\nHALT()\n"
+    },
+    {
+      "id": "halt",
+      "program": "HALT()\nHALT_ERROR()\n"
+    },
+    {
+      "id": "overflow",
+      "program": "LOAD_CONST(32767)\nADD_CONST(1)\nHALT_ERROR()\n"
+    },
+    {
+      "id": "division-by-zero",
+      "program": "LOAD_CONST(1)\nDIV_CONST(0)\nHALT_ERROR()\n"
+    },
+    {
+      "id": "address-range",
+      "program": "LOAD_ADDRESS_REGISTER_CONST(4095)\nLOAD_ADDRESS_REGISTER_PLUS_OFFSET(1)\nHALT_ERROR()\n"
+    },
+    {
+      "id": "invalid-operand",
+      "program": "LOAD_ADDRESS(0)\nADD_CONST(1)\nHALT_ERROR()\n"
+    },
+    {
+      "id": "reserved-opcode",
+      "program": "HALT()\n",
+      "raw_words": [
+        4128768,
+        2949120
+      ]
+    },
+    {
+      "id": "missing-input",
+      "program": "INPUT()\nHALT_ERROR()\n"
+    }
+  ]
 }

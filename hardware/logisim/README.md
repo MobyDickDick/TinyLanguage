@@ -933,6 +933,13 @@ Maschinenformats einer Testfamilie zu und benennt für jedes Sticky-Fehlerbit
 eine Fehler-Fixture. Der gepinnte Launcher validiert die Matrix vor Java- und
 Logisim-Start gegen `tinycpu-machine-v1.json`; fehlende, doppelte, zusätzliche
 oder umnummerierte Opcodes sowie unvollständige Fehlerabdeckung brechen den Lauf
-ab. Die Matrix allein ist ausdrücklich noch kein Simulationsnachweis: AP 11
-bleibt offen, bis der Launcher jede Familie mit ausgetauschtem ROM elektrisch
-ausführt und deren Flankentabelle gegen die VM vergleicht.
+ab. Die Matrix allein ist kein Simulationsnachweis; der Launcher führt deshalb
+jede Familie mit ausgetauschtem ROM elektrisch aus und vergleicht ihre
+Flankentabelle gegen die VM.
+
+Der CI-Aufruf übergibt zusätzlich
+`--matrix-output artifacts/ci/tinycpu-ap11-matrix`. Der Launcher assembliert
+damit jede in der Matrix hinterlegte Fixture, ersetzt ausschließlich den ROM-
+Inhalt einer temporären Projektkopie und schreibt die unveränderte Logisim-
+Tabelle unter der Fixture-ID. Auch die sechs Fehler-Fixtures, einschließlich
+des reservierten Roh-Opcodes, werden so gegen den VM-Grenzvertrag geprüft.

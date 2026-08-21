@@ -19,6 +19,8 @@ from tiny_cpu_trace import (
     compare_trace,
     integration_trace_from_table,
 )
+from tiny_cpu_assembler import assemble
+from tiny_cpu_machine import encode_program, rom_image
 
 
 LOGISIM_VERSION = "4.1.0"
@@ -235,6 +237,22 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
     ET.SubElement(circuit, "wire", **{"from": "(3460,1920)", "to": "(3500,1920)"})
 
 
+def _replace_program_rom(
+    tree: ET.ElementTree, source: str, *, raw_words: tuple[int, ...] | None = None
+) -> None:
+    """Install an assembled fixture in the temporary FetchDecode ROM."""
+    fetch = tree.getroot().find("circuit[@name='FetchDecode']")
+    if fetch is None:
+        raise SmokeTestError("TinyCPU project has no FetchDecode circuit")
+    roms = fetch.findall("comp[@name='ROM']")
+    if len(roms) != 1:
+        raise SmokeTestError("FetchDecode must contain exactly one program ROM")
+    contents = roms[0].find("a[@name='contents']")
+    if contents is None:
+        contents = ET.SubElement(roms[0], "a", name="contents")
+    contents.text = rom_image(raw_words or encode_program(assemble(source)))
+
+
 def _tty_trace_to_tsv(raw: str) -> str:
     """Convert Logisim's grouped, change-driven tty table into rising-edge rows."""
     decoded_rows: list[dict[str, str]] = []
@@ -286,6 +304,7 @@ def trace_test(java: str, jar: Path, project: Path, program: Path, output: Path)
     try:
         tree = ET.parse(project)
         _autonomous_trace_project(tree)
+        _replace_program_rom(tree, program.read_text(encoding="utf-8"))
         with tempfile.TemporaryDirectory(prefix="tinycpu-logisim-") as directory:
             harness_project = Path(directory) / project.name
             tree.write(harness_project, encoding="UTF-8", xml_declaration=True)
@@ -308,6 +327,72 @@ def trace_test(java: str, jar: Path, project: Path, program: Path, output: Path)
     print(f"AP-5 electrical trace matches across {len(instructions)} clock edges")
 
 
+def matrix_test(java: str, jar: Path, project: Path, matrix_path: Path, output: Path) -> None:
+    """Execute every declared AP-11 fixture with a replaced ROM and VM oracle."""
+    matrix = json.loads(matrix_path.read_text(encoding="utf-8"))
+    fixtures = matrix.get("fixtures", [])
+    declared = {family["id"] for family in matrix.get("opcode_families", [])}
+    declared.update(row["fixture"] for row in matrix.get("sticky_errors", []))
+    supplied = {fixture.get("id") for fixture in fixtures}
+    if supplied != declared or len(supplied) != len(fixtures):
+        raise SmokeTestError("electrical matrix must define exactly one runnable fixture per family and error")
+    output.mkdir(parents=True, exist_ok=True)
+    for fixture in fixtures:
+        fixture_id = fixture["id"]
+        source = fixture.get("program", "")
+        artifact = output / f"{fixture_id}.tsv"
+        artifact.write_text("# fixture has not reached Logisim\n", encoding="utf-8")
+        try:
+            tree = ET.parse(project)
+            _autonomous_trace_project(tree)
+            raw_words = fixture.get("raw_words")
+            _replace_program_rom(
+                tree,
+                source,
+                raw_words=tuple(raw_words) if raw_words is not None else None,
+            )
+            with tempfile.TemporaryDirectory(prefix=f"tinycpu-{fixture_id}-") as directory:
+                harness = Path(directory) / project.name
+                tree.write(harness, encoding="UTF-8", xml_declaration=True)
+                result = _run(
+                    [java, "-jar", str(jar), "-tty", "table,halt", str(harness)],
+                    stdout_path=artifact,
+                )
+        except (ET.ParseError, KeyError, ValueError) as exc:
+            raise SmokeTestError(f"could not prepare electrical fixture {fixture_id}: {exc}") from exc
+        # Reserved machine words have no symbolic VM instruction. Their
+        # electrical contract is the ILL sticky bit followed by error halt.
+        if fixture_id == "reserved-opcode":
+            expected = {
+                "schema_version": 1,
+                "edges": [
+                    {
+                        "edge": 1,
+                        "instruction": "RESERVED_63",
+                        "boundary": {
+                            "print_enable": False, "print_address_enable": False,
+                            "print_value": 0, "print_valid": False,
+                            "print_address_value": 0, "print_address_valid": False,
+                            "halt_enable": False, "halt_error_enable": False,
+                        },
+                        "errors": ["ILL"], "halted": True,
+                        "halted_with_error": True,
+                    }
+                ],
+            }
+        else:
+            expected = capture_integration_trace(source)
+        instructions = [edge["instruction"] for edge in expected["edges"]]
+        try:
+            observed = integration_trace_from_table(_tty_trace_to_tsv(result.stdout), instructions)
+        except ValueError as exc:
+            raise SmokeTestError(f"invalid Logisim table for {fixture_id}: {exc}") from exc
+        mismatches = compare_trace(expected, observed)
+        if mismatches:
+            raise SmokeTestError(f"electrical fixture {fixture_id} mismatch: " + "; ".join(mismatches))
+        print(f"AP-11 fixture {fixture_id} matches across {len(instructions)} clock edges")
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the pinned dependency and project-load checks."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -316,6 +401,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--project", type=Path, default=DEFAULT_PROJECT)
     parser.add_argument("--program", type=Path, default=DEFAULT_PROGRAM)
     parser.add_argument("--trace-output", type=Path)
+    parser.add_argument("--matrix-output", type=Path)
     parser.add_argument("--matrix", type=Path, default=DEFAULT_MATRIX)
     parser.add_argument("--machine-format", type=Path, default=DEFAULT_MACHINE_FORMAT)
     args = parser.parse_args(argv)
@@ -334,6 +420,8 @@ def main(argv: list[str] | None = None) -> int:
             trace_test(
                 args.java, args.jar, args.project, args.program, args.trace_output
             )
+        if args.matrix_output is not None:
+            matrix_test(args.java, args.jar, args.project, args.matrix, args.matrix_output)
     except SmokeTestError as exc:
         print(f"TinyCPU Logisim smoke test failed: {exc}", file=sys.stderr)
         return 1

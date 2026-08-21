@@ -23,9 +23,10 @@ empty tables seen in the earlier evidence.
 The `PC_ADDRESS` splitter also declares its right-facing appearance explicitly;
 its 12-bit output terminal therefore coincides with the checked-in route to the
 ROM address input instead of leaving that route one symbol lane away.
-The ROM's 22-bit data terminal is wired directly to the `OPCODE` output, so the
-word selected by that advancing address reaches the top-level decoder instead
-of ending on an unconnected component terminal. A taken `JUMP_NOT_ZERO` selects
+The ROM's 22-bit data terminal at the east edge of the component is wired
+directly to the `OPCODE` output, so the word selected by that advancing address
+reaches the top-level decoder instead of mistakenly wiring the ROM's
+non-electrical drawing anchor. A taken `JUMP_NOT_ZERO` selects
 the instruction's low 16-bit operand as the next PC value; otherwise the next-PC
 multiplexer retains the sequential `PC + 1` result.
 These independent runs are the reset/restart and multi-cycle reproducibility

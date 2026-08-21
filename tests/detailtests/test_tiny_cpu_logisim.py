@@ -238,9 +238,17 @@ def test_fetch_decode_rom_drives_instruction_output():
         for component in fetch.findall("comp[@name='Pin']")
         if _attributes(component).get("label") == "OPCODE"
     )
-    adjacency = _electrical_adjacency(fetch, {rom.get("loc"), opcode.get("loc")})
+    # The ROM location is its upper-left drawing anchor, not an electrical
+    # terminal.  For Logisim-evolution's rectangular ROM appearance the data
+    # output is 40 pixels east of that anchor; the address input is separately
+    # exposed at (510,410).
+    rom_x, rom_y = (int(value) for value in rom.get("loc").strip("()").split(","))
+    data_output = f"({rom_x + 40},{rom_y})"
+    adjacency = _electrical_adjacency(fetch, {data_output, opcode.get("loc")})
 
-    assert opcode.get("loc") in _reachable(adjacency, rom.get("loc"))
+    assert data_output == "(550,400)"
+    assert opcode.get("loc") in _reachable(adjacency, data_output)
+    assert rom.get("loc") not in _reachable(adjacency, data_output)
 
 
 def test_taken_jump_selects_instruction_operand_as_next_pc():

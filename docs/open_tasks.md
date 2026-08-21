@@ -5,6 +5,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Connect the TinyCPU instruction wire to the ROM data terminal**
+  (Owner: TinyCPU/Hardware)
+  - Cause: the instruction route started at the ROM component's XML location,
+    which is the upper-left drawing anchor rather than an electrical terminal.
+    The actual 22-bit data output is 40 pixels east of that anchor, so the
+    decoder remained undriven despite the visually adjacent wire.
+  - Result: the route now starts at the ROM's east-edge data terminal and
+    continues to the `OPCODE` output without joining the address input.
+  - Verification: the focused connectivity regression derives the terminal
+    from the ROM anchor, requires the complete data route, and rejects the
+    drawing anchor as part of that electrical net.
+
 - [x] **Attach the TinyCPU PC address slice to the ROM address terminal**
   (Owner: TinyCPU/Hardware)
   - Cause: the 16-to-12-bit PC splitter used the default symbol appearance while

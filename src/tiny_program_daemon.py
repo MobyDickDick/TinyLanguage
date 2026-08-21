@@ -21,6 +21,46 @@ from tiny_program_repository_db_adapter import TinyProgramRepositoryDB
 ASSIGNMENT_PATTERN = re.compile(r"^\s*(?:def\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=")
 IDENTIFIER_PATTERN = re.compile(r"\b[A-Za-z_][A-Za-z0-9_]*\b")
 KEYWORDS = {"def", "fn", "if", "while", "return", "print", "true", "false", "null"}
+WHILE_PATTERN = re.compile(r"\bwhile\s*\((.*?)\)\s*\{")
+COMPARISON_PATTERN = re.compile(
+    r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:<|<=|>|>=|!=)\s*.+$"
+)
+
+
+def _loop_regions(source_text: str) -> tuple[tuple[str, str], ...]:
+    """Return ``(condition, body)`` pairs for balanced, structured loops.
+
+    A loop body is the cyclic region (SCC) of Tiny's structured control-flow
+    graph.  Extracting complete regions instead of inspecting individual lines
+    lets the quality gate reason about progress across nested blocks.
+    """
+    code = re.sub(r"//[^\n]*", "", source_text)
+    regions: list[tuple[str, str]] = []
+    for match in WHILE_PATTERN.finditer(code):
+        opening_brace = match.end() - 1
+        depth = 1
+        cursor = opening_brace + 1
+        while cursor < len(code) and depth:
+            if code[cursor] == "{":
+                depth += 1
+            elif code[cursor] == "}":
+                depth -= 1
+            cursor += 1
+        if depth == 0:
+            regions.append((match.group(1).strip(), code[opening_brace + 1 : cursor - 1]))
+    return tuple(regions)
+
+
+def _loop_has_progress(condition: str, body: str) -> bool:
+    """Prove a basic induction-variable update in a loop's cyclic region."""
+    match = COMPARISON_PATTERN.match(condition)
+    if match is None:
+        return False
+    variable = re.escape(match.group(1))
+    return bool(
+        re.search(rf"\b{variable}\s*=\s*{variable}\s*[+-]\s*[^;]+", body)
+        or re.search(rf"\b{variable}\s*[+-]=\s*[^;]+", body)
+    )
 
 
 @dataclass(frozen=True)
@@ -145,6 +185,23 @@ class TinyProgramGenerator:
         assigned_vars: set[str] = set()
         read_vars: set[str] = set()
 
+        for condition, body in _loop_regions(source_text):
+            normalized_condition = re.sub(r"\s+", "", condition).lower()
+            if normalized_condition in {"true", "1"}:
+                issues.append(
+                    ValidationIssue(
+                        "infinite_loop_literal",
+                        "Programm enthält eine potenziell unendliche Schleife (while true/1).",
+                    )
+                )
+            elif not _loop_has_progress(condition, body):
+                issues.append(
+                    ValidationIssue(
+                        "loop_termination_unproven",
+                        "Für eine Schleife ist keine fortschreitende Induktionsvariable nachweisbar.",
+                    )
+                )
+
         for raw_line in source_text.splitlines():
             line = raw_line.split("//", 1)[0].strip()
             if not line:
@@ -161,13 +218,6 @@ class TinyProgramGenerator:
                     continue
                 read_vars.add(name)
 
-            if "while (true)" in line or "while (1)" in line:
-                issues.append(
-                    ValidationIssue(
-                        "infinite_loop_literal",
-                        "Programm enthält eine potenziell unendliche Schleife (while true/1).",
-                    )
-                )
             if line.startswith("goto "):
                 target = line[len("goto ") :].strip().rstrip(";")
                 if target and f"{target}:" in source_text:

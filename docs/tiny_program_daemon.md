@@ -58,8 +58,11 @@ Heuristiken:
 
 ### Weitere sinnvolle Kriterien (als nächste Aufgaben)
 
-- **Kontrollfluss-Termination tiefer prüfen**: CFG/SCC-basierte Analyse statt
-  rein textueller Muster.
+- **Kontrollfluss-Termination tiefer prüfen (erledigt 2026-08-21)**:
+  Strukturierte `while`-Blöcke werden als zyklische Kontrollflussregionen
+  vollständig erfasst. Der Validator akzeptiert nur Vergleichsschleifen, für
+  deren Induktionsvariable im Schleifenrumpf ein Fortschritt nachweisbar ist;
+  auch anders formatierte literale Endlosschleifen werden abgewiesen.
 - **Typsicherheits-/Range-Checks**: z. B. Division nur bei nachweisbar
   non-zero Nennern.
 - **Ressourcenbegrenzung**: obere Schranken für Heap-Allokationen und

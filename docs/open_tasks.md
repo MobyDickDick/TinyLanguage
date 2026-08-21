@@ -5,6 +5,17 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Deepen generated-program loop termination analysis**
+  (Owner: Tooling/Program Generator)
+  - Scope: execute the first follow-up criterion in
+    `docs/tiny_program_daemon.md` by replacing line-local infinite-loop checks
+    with analysis of complete structured cyclic control-flow regions.
+  - Result: validation now extracts balanced `while` bodies, recognizes
+    literal infinite conditions independent of whitespace, and requires a
+    provable update of the comparison's induction variable inside the loop.
+  - Verification: focused regressions cover progress through a nested block,
+    a loop that updates only unrelated state, and a spaced literal condition.
+
 - [x] **Attach the TinyCPU instruction wire to the actual ROM data terminal**
   (Owner: TinyCPU/Hardware)
   - Cause: two earlier structural fixes mistook the ROM's upper-left XML anchor

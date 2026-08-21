@@ -54,3 +54,42 @@ def test_generator_rejects_duplicate_program_insert(tmp_path: Path):
     else:
         raise AssertionError("Expected duplicate insertion to be rejected")
     db.close()
+
+
+def test_validator_accepts_loop_with_induction_variable_progress():
+    report = TinyProgramGenerator.validate_program(
+        """def i = 0;
+while (i < 3) {
+    if (i == 1) {
+        def _unused = print(i);
+    }
+    i = i + 1;
+}
+def _unused_result = print(i);
+"""
+    )
+
+    assert "loop_termination_unproven" not in {issue.code for issue in report.issues}
+
+
+def test_validator_rejects_loop_without_condition_progress():
+    report = TinyProgramGenerator.validate_program(
+        """def i = 0;
+def total = 0;
+while (i < 3) {
+    total = total + 1;
+}
+def _unused_i = print(i);
+def _unused_total = print(total);
+"""
+    )
+
+    assert "loop_termination_unproven" in {issue.code for issue in report.issues}
+
+
+def test_validator_recognizes_spaced_literal_infinite_loop_once():
+    report = TinyProgramGenerator.validate_program("while ( true ) {\n}\n")
+
+    codes = [issue.code for issue in report.issues]
+    assert codes.count("infinite_loop_literal") == 1
+    assert "loop_termination_unproven" not in codes

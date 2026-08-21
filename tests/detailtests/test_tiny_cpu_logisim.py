@@ -217,6 +217,35 @@ def test_integration_reset_connects_external_reset_to_fetch_only():
     } == {frozenset(pins.values())}
 
 
+def test_fetch_decode_pc_reset_combines_external_and_power_on_reset():
+    """The PC must be known before ROM/decode feedback can produce errors."""
+
+    root = ET.parse(PROJECT).getroot()
+    fetch = root.find("circuit[@name='FetchDecode']")
+    assert fetch is not None
+    reset = next(
+        component.get("loc")
+        for component in fetch.findall("comp[@name='Pin']")
+        if _attributes(component).get("label") == "RESET"
+    )
+    power_on_reset = fetch.find("comp[@name='PowerOnReset']")
+    assert power_on_reset is not None
+    reset_gate = next(
+        component
+        for component in fetch.findall("comp[@name='OR Gate']")
+        if _attributes(component).get("label") == "PC_RESET"
+    )
+    contacts = {
+        reset, power_on_reset.get("loc"), "(350,200)", "(350,240)",
+        reset_gate.get("loc"), "(300,180)",
+    }
+    adjacency = _electrical_adjacency(fetch, contacts)
+
+    assert "(350,200)" in _reachable(adjacency, reset)
+    assert "(350,240)" in _reachable(adjacency, power_on_reset.get("loc"))
+    assert "(300,180)" in _reachable(adjacency, reset_gate.get("loc"))
+
+
 def test_fetch_decode_alone_exposes_named_reset_input():
     """Keep reset ownership explicit without inferring a rendered terminal."""
 

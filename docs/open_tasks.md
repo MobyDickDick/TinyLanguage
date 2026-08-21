@@ -34,6 +34,10 @@ archived in `docs/open_tasks_archive.md`.
     the PC retains its externally observable reset contract. This removes the
     `U` state that fed selectors and subsequently expanded into `E`/`EEEE`
     values before the first decoded write.
+  - PC startup repair: the external reset is now ORed with a local
+    `PowerOnReset` before reaching the PC clear terminal. Previously the
+    synchronous external startup pulse could miss the first clock transition,
+    leaving the PC and therefore the ROM/decode loop undefined indefinitely.
 
 - [x] **Deepen generated-program loop termination analysis**
   (Owner: Tooling/Program Generator)

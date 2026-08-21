@@ -5,6 +5,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Seal the TinyCPU release-acceptance evidence bundle**
+  (Owner: TinyCPU/Hardware)
+  - Scope: turn the next-cycle evidence-integrity candidate into a bounded
+    post-AP-12 maintenance package without changing the accepted electrical
+    test matrix.
+  - Result: a passed schema-version-2 acceptance report inventories every raw
+    table, normalized trace, and matrix artifact with its relative path, byte
+    size, and SHA-256 digest. The report excludes itself and retains the
+    schema-version-1 `started` marker, so incomplete runs remain distinguishable
+    from complete, self-checking evidence bundles.
+  - Verification: focused runner coverage recomputes every recorded digest and
+    freezes deterministic POSIX-path ordering for portable artifact review.
+
 - [x] **Complete the mandatory TinyCPU hardware release acceptance**
   (Owner: TinyCPU/Hardware)
   - Result: the AP-12 command performs two independent electrical reset-start

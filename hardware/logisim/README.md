@@ -20,10 +20,13 @@ these simulator checks is optional in CI.
 
 The output directory contains `reset-start.tsv` and `restart.tsv` as untouched
 Logisim tables, normalized TSV counterparts, all raw `isa-matrix/*.tsv` tables,
-and `acceptance.json`. The JSON report is written as `started` before simulation
-and changed to `passed` only after every comparison succeeds, so an interrupted
-run cannot be mistaken for accepted hardware. CI uploads the entire directory
-even on failure.
+and `acceptance.json`. A passed schema-version-2 report inventories every other
+evidence file by relative POSIX path, byte size, and SHA-256 digest. This makes
+the uploaded bundle self-checking without including the report in its own
+manifest. The JSON report is written as schema version 1 with status `started`
+before simulation and replaced by the passed report only after every comparison
+succeeds, so an interrupted run cannot be mistaken for accepted hardware. CI
+uploads the entire directory even on failure.
 
 This directory contains the TinyCPU hardware baseline with a dedicated arithmetic sheet.
 Open `TinyCPU.circ` with Logisim-evolution 4.1.x. Das Blatt **`TinyCPUMain` ist

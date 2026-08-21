@@ -437,13 +437,25 @@ def acceptance_test(
     matrix_output = output / "isa-matrix"
     matrix_test(java, jar, project, matrix_path, matrix_output)
     fixture_count = len(json.loads(matrix_path.read_text(encoding="utf-8"))["fixtures"])
+    evidence = []
+    for evidence_path in sorted(path for path in output.rglob("*") if path.is_file()):
+        if evidence_path == report_path:
+            continue
+        evidence.append(
+            {
+                "path": evidence_path.relative_to(output).as_posix(),
+                "sha256": hashlib.sha256(evidence_path.read_bytes()).hexdigest(),
+                "size_bytes": evidence_path.stat().st_size,
+            }
+        )
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "status": "passed",
         "logisim_version": LOGISIM_VERSION,
         "java_version": JAVA_VERSION,
         "reset_restart_runs": runs,
         "matrix": {"fixture_count": fixture_count, "directory": matrix_output.name},
+        "evidence": evidence,
     }
     report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"AP-12 release acceptance passed with {fixture_count} electrical fixtures")

@@ -251,9 +251,20 @@ def test_ap12_acceptance_repeats_trace_and_runs_complete_matrix(tmp_path, monkey
     import json
 
     report = json.loads((output / "acceptance.json").read_text(encoding="utf-8"))
+    assert report["schema_version"] == 2
     assert report["status"] == "passed"
     assert report["reset_restart_runs"][0]["clock_edges"] == 1
     assert report["reset_restart_runs"][0]["sha256"] == report["reset_restart_runs"][1]["sha256"]
+    assert [item["path"] for item in report["evidence"]] == [
+        "reset-start.normalized.tsv",
+        "reset-start.tsv",
+        "restart.normalized.tsv",
+        "restart.tsv",
+    ]
+    for item in report["evidence"]:
+        evidence_path = output / item["path"]
+        assert item["size_bytes"] == evidence_path.stat().st_size
+        assert item["sha256"] == runner.hashlib.sha256(evidence_path.read_bytes()).hexdigest()
 
 
 def test_ap12_acceptance_rejects_nonreproducible_restart(tmp_path, monkeypatch):

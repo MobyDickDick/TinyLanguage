@@ -5,6 +5,17 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Drive the electrical TinyCPU fixtures through startup reset**
+  (Owner: TinyCPU/Hardware)
+  - Cause: the temporary Logisim harness replaced `RESET` with a constant zero,
+    so validity registers were never initialized; the autonomous clock then
+    emitted millions of mostly zero rows without ever reaching `halt`.
+  - Result: every AP-5/AP-11/AP-12 simulator harness now uses Logisim's
+    `PowerOnReset` component, giving each independent process the synchronous
+    startup assertion required by the maintained circuit.
+  - Verification: focused harness coverage rejects a return to the inactive
+    constant and still freezes the autonomous clock and retained raw table.
+
 - [x] **Bind retained TinyCPU evidence to the AP-12 acceptance claims**
   (Owner: TinyCPU/Hardware)
   - Scope: close the gap between authentic inventory bytes and the report's

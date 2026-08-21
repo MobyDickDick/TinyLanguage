@@ -12,9 +12,11 @@ PYTHONPATH=src python src/tiny_cpu_logisim.py \
 
 The command downloads the version-addressed Logisim-evolution 4.1.0 JAR when
 needed, verifies both pinned versions, and loads the maintained project. It
-then starts `TinyCPUMain` twice from its electrically asserted initial reset
-state and compares the normalized 17-edge AP-5 traces. These independent runs
-are the reset/restart and multi-cycle reproducibility check. Finally, the same
+then starts `TinyCPUMain` twice with Logisim's `PowerOnReset` component asserting
+the synchronous reset at simulator startup and compares the normalized 17-edge
+AP-5 traces. (A constant inactive reset is not equivalent: it leaves the CPU's
+validity state uninitialized and yields a long, almost empty table.) These
+independent runs are the reset/restart and multi-cycle reproducibility check. Finally, the same
 invocation runs every AP-11 opcode-family and sticky-error fixture; none of
 these simulator checks is optional in CI.
 

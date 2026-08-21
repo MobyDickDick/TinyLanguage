@@ -238,9 +238,26 @@ def test_fetch_decode_rom_drives_instruction_output():
         for component in fetch.findall("comp[@name='Pin']")
         if _attributes(component).get("label") == "OPCODE"
     )
-    adjacency = _electrical_adjacency(fetch, {rom.get("loc"), opcode.get("loc")})
+    # The Logisim-evolution ROM location is the upper-left drawing anchor.  Its
+    # address and data terminals share the vertical centre line, respectively
+    # on the west and east edges of the 40-by-20-pixel component.
+    rom_x, rom_y = (int(value) for value in rom.get("loc").strip("()").split(","))
+    address_input = f"({rom_x},{rom_y + 10})"
+    data_output = f"({rom_x + 40},{rom_y + 10})"
+    adjacency = _electrical_adjacency(
+        fetch, {address_input, data_output, opcode.get("loc")}
+    )
+    instruction_wires = {
+        (wire.get("from"), wire.get("to")) for wire in fetch.findall("wire")
+    }
 
-    assert opcode.get("loc") in _reachable(adjacency, rom.get("loc"))
+    assert address_input == "(510,410)"
+    assert data_output == "(550,410)"
+    assert opcode.get("loc") in _reachable(adjacency, data_output)
+    assert address_input not in _reachable(adjacency, data_output)
+    assert (data_output, "(750,410)") in instruction_wires
+    assert all("(510,400)" not in endpoints for endpoints in instruction_wires)
+    assert all("(550,400)" not in endpoints for endpoints in instruction_wires)
 
 
 def test_taken_jump_selects_instruction_operand_as_next_pc():

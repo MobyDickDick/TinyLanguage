@@ -287,6 +287,55 @@ def test_ap12_acceptance_rejects_nonreproducible_restart(tmp_path, monkeypatch):
         raise AssertionError("different restart traces were accepted")
 
 
+def _acceptance_bundle(path):
+    import hashlib
+    import json
+
+    evidence_path = path / "reset-start.tsv"
+    evidence_path.parent.mkdir(parents=True, exist_ok=True)
+    evidence_path.write_text("electrical evidence\n", encoding="utf-8")
+    contents = evidence_path.read_bytes()
+    report = {
+        "schema_version": 2,
+        "status": "passed",
+        "evidence": [{
+            "path": evidence_path.name,
+            "sha256": hashlib.sha256(contents).hexdigest(),
+            "size_bytes": len(contents),
+        }],
+    }
+    (path / "acceptance.json").write_text(json.dumps(report), encoding="utf-8")
+    return evidence_path
+
+
+def test_ap12_bundle_verifier_accepts_complete_untampered_inventory(tmp_path):
+    _acceptance_bundle(tmp_path)
+
+    runner.verify_acceptance_bundle(tmp_path)
+
+
+def test_ap12_bundle_verifier_rejects_tampered_evidence(tmp_path):
+    evidence = _acceptance_bundle(tmp_path)
+    evidence.write_text("modified evidence\n", encoding="utf-8")
+
+    try:
+        runner.verify_acceptance_bundle(tmp_path)
+    except runner.SmokeTestError as exc:
+        assert "mismatch" in str(exc)
+    else:
+        raise AssertionError("tampered AP-12 evidence was accepted")
+
+
+def test_verify_acceptance_cli_skips_simulator_dependencies(tmp_path, monkeypatch):
+    _acceptance_bundle(tmp_path)
+
+    def unexpected_java(java):
+        raise AssertionError("offline verification invoked Java")
+
+    monkeypatch.setattr(runner, "verify_java", unexpected_java)
+    assert runner.main(["--verify-acceptance", str(tmp_path)]) == 0
+
+
 def test_ci_uses_available_temurin_build_and_current_setup_action():
     """Keep the pinned JDK resolvable and avoid setup-java's Node 20 runtime."""
     workflow = CI_WORKFLOW.read_text(encoding="utf-8")

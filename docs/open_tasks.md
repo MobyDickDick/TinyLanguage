@@ -5,6 +5,16 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Make retained TinyCPU acceptance evidence independently verifiable**
+  (Owner: TinyCPU/Hardware)
+  - Scope: provide the bounded follow-up to the sealed AP-12 bundle without
+    rerunning Logisim or changing the electrical acceptance matrix.
+  - Result: the launcher can verify a retained schema-version-2 bundle offline,
+    requiring an exact, sorted inventory and matching byte sizes and SHA-256
+    digests. Missing, additional, reordered, or modified evidence is rejected.
+  - Verification: focused tests cover an intact bundle, tampered evidence, and
+    the dependency-free CLI path that deliberately skips Java and Logisim.
+
 - [x] **Seal the TinyCPU release-acceptance evidence bundle**
   (Owner: TinyCPU/Hardware)
   - Scope: turn the next-cycle evidence-integrity candidate into a bounded

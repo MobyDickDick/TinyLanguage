@@ -16,8 +16,18 @@ then starts `TinyCPUMain` twice with Logisim's `PowerOnReset` component assertin
 the synchronous reset at simulator startup and compares the normalized 17-edge
 AP-5 traces. (A constant inactive reset is not equivalent: it leaves the CPU's
 documented reset boundary untested.) The maintained `FetchDecode` circuit also
-drives the `PC` register enable high; a low enable would hold ROM address zero
-forever and yield the long, almost empty tables seen in the earlier evidence.
+drives the `PC` register enable high and feeds an explicit 16-bit one into its
+next-address adder. Both are required: a low enable or the former zero-valued
+increment makes every edge select ROM address zero and yields the long, almost
+empty tables seen in the earlier evidence.
+The `PC_ADDRESS` splitter also declares its right-facing appearance explicitly;
+its 12-bit output terminal therefore coincides with the checked-in route to the
+ROM address input instead of leaving that route one symbol lane away.
+The ROM's 22-bit data terminal is wired directly to the `OPCODE` output, so the
+word selected by that advancing address reaches the top-level decoder instead
+of ending on an unconnected component terminal. A taken `JUMP_NOT_ZERO` selects
+the instruction's low 16-bit operand as the next PC value; otherwise the next-PC
+multiplexer retains the sequential `PC + 1` result.
 These independent runs are the reset/restart and multi-cycle reproducibility
 check. Finally, the same invocation runs every AP-11 opcode-family and
 sticky-error fixture; none of

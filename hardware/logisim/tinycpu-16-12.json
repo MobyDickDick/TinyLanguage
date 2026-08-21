@@ -165,7 +165,13 @@
       },
       "component_kinds": {
         "Splitter": {
-          "count": 1
+          "count": 2
+        },
+        "Multiplexer": {
+          "count": 1,
+          "attributes": {
+            "width": "16"
+          }
         },
         "Adder": {
           "count": 1,

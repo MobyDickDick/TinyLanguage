@@ -181,8 +181,8 @@ def test_fetch_decode_alone_exposes_named_reset_input():
     assert reset_owners == {"TinyCPUMain", "FetchDecode", "IntegrationReset"}
 
 
-def test_fetch_decode_program_counter_is_enabled():
-    """The autonomous clock must be able to advance beyond ROM address zero."""
+def test_fetch_decode_program_counter_is_enabled_and_incremented():
+    """The autonomous clock must advance the PC rather than reload its value."""
 
     root = ET.parse(PROJECT).getroot()
     fetch = root.find("circuit[@name='FetchDecode']")
@@ -194,6 +194,78 @@ def test_fetch_decode_program_counter_is_enabled():
         {wire.get("from"), wire.get("to")} == {"(260,140)", "(270,140)"}
         for wire in fetch.findall("wire")
     )
+    increment = fetch.find("comp[@name='Constant'][@loc='(430,140)']")
+    assert increment is not None
+    assert _attributes(increment).get("value") == "0x1"
+    assert _attributes(increment).get("width") == "16"
+    adjacency = _electrical_adjacency(
+        fetch, {increment.get("loc"), "(450,140)", "(490,130)"}
+    )
+    assert "(450,140)" in _reachable(adjacency, increment.get("loc"))
+
+
+def test_program_counter_address_branch_reaches_rom_address_input():
+    """Keep the 12-bit splitter branch on the terminal used by the ROM."""
+
+    root = ET.parse(PROJECT).getroot()
+    fetch = root.find("circuit[@name='FetchDecode']")
+    assert fetch is not None
+    splitter = next(
+        component
+        for component in fetch.findall("comp[@name='Splitter']")
+        if _attributes(component).get("incoming") == "16"
+    )
+    attributes = _attributes(splitter)
+    assert attributes.get("appear") == "right"
+    assert attributes.get("label") == "PC_ADDRESS"
+    assert all(attributes.get(f"bit{bit}") == "0" for bit in range(12))
+    assert all(attributes.get(f"bit{bit}") == "1" for bit in range(12, 16))
+    adjacency = _electrical_adjacency(
+        fetch, {"(440,330)", "(480,410)", "(510,410)"}
+    )
+    assert "(510,410)" in _reachable(adjacency, "(440,330)")
+
+
+def test_fetch_decode_rom_drives_instruction_output():
+    """Decoded controls must observe the word read from the program ROM."""
+
+    root = ET.parse(PROJECT).getroot()
+    fetch = root.find("circuit[@name='FetchDecode']")
+    assert fetch is not None
+    rom = fetch.find("comp[@name='ROM'][@loc='(510,400)']")
+    opcode = next(
+        component
+        for component in fetch.findall("comp[@name='Pin']")
+        if _attributes(component).get("label") == "OPCODE"
+    )
+    adjacency = _electrical_adjacency(fetch, {rom.get("loc"), opcode.get("loc")})
+
+    assert opcode.get("loc") in _reachable(adjacency, rom.get("loc"))
+
+
+def test_taken_jump_selects_instruction_operand_as_next_pc():
+    """A taken JUMP_NOT_ZERO must replace PC + 1 with the encoded target."""
+
+    root = ET.parse(PROJECT).getroot()
+    fetch = root.find("circuit[@name='FetchDecode']")
+    assert fetch is not None
+    mux = next(
+        component
+        for component in fetch.findall("comp[@name='Multiplexer']")
+        if _attributes(component).get("label") == "NEXT_PC"
+    )
+    assert _attributes(mux).get("width") == "16"
+    adjacency = _electrical_adjacency(
+        fetch,
+        {"(490,130)", "(560,100)", "(640,380)", "(560,80)",
+         "(850,130)", "(570,110)", "(590,90)", "(270,120)"},
+    )
+    # Logisim's two-input mux numbers the upper data terminal 0. Therefore a
+    # false JNZ_TAKEN selects PC + 1, while true selects the lower jump operand.
+    assert "(560,80)" in _reachable(adjacency, "(490,130)")
+    assert "(560,100)" in _reachable(adjacency, "(640,380)")
+    assert "(570,110)" in _reachable(adjacency, "(850,130)")
+    assert "(270,120)" in _reachable(adjacency, "(590,90)")
 
 
 def test_top_level_opcode_reaches_decode_controls_only():

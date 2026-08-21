@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import re
 import subprocess
@@ -29,6 +30,9 @@ LOGISIM_URL = (
 DEFAULT_JAR = Path.home() / ".cache" / "tinylanguage" / Path(LOGISIM_URL).name
 DEFAULT_PROJECT = Path("hardware/logisim/TinyCPU.circ")
 DEFAULT_PROGRAM = Path("hardware/logisim/ap5_countdown.tcpu")
+DEFAULT_MATRIX = Path("hardware/logisim/tinycpu-electrical-matrix-v1.json")
+DEFAULT_MACHINE_FORMAT = Path("hardware/logisim/tinycpu-machine-v1.json")
+EXPECTED_STICKY_ERRORS = {"OVF", "DIV0", "ADDR", "INV", "ILL", "INPUT"}
 
 TTY_OUTPUTS = (
     ("PRINT_VALID", 1),
@@ -125,6 +129,38 @@ def obtain_jar(jar: Path) -> None:
     except Exception as exc:
         partial.unlink(missing_ok=True)
         raise SmokeTestError(f"could not download pinned Logisim-evolution: {exc}") from exc
+
+
+def verify_matrix_contract(matrix_path: Path, machine_format_path: Path) -> None:
+    """Reject incomplete or stale AP-11 electrical coverage metadata."""
+    try:
+        matrix = json.loads(matrix_path.read_text(encoding="utf-8"))
+        machine = json.loads(machine_format_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SmokeTestError(f"could not read TinyCPU electrical matrix: {exc}") from exc
+    if matrix.get("schema_version") != 1:
+        raise SmokeTestError("TinyCPU electrical matrix must use schema version 1")
+    expected = {row["mnemonic"]: row["code"] for row in machine.get("opcodes", ())}
+    covered: dict[str, int] = {}
+    duplicates: set[str] = set()
+    for family in matrix.get("opcode_families", ()):
+        for row in family.get("opcodes", ()):
+            mnemonic = row.get("mnemonic")
+            if mnemonic in covered:
+                duplicates.add(mnemonic)
+            covered[mnemonic] = row.get("code")
+    missing = sorted(set(expected) - set(covered))
+    extra = sorted(set(covered) - set(expected))
+    wrong = sorted(name for name in expected.keys() & covered.keys() if covered[name] != expected[name])
+    if missing or extra or wrong or duplicates:
+        details = []
+        for label, values in (("missing", missing), ("extra", extra), ("wrong code", wrong), ("duplicate", sorted(duplicates))):
+            if values:
+                details.append(f"{label}: {', '.join(values)}")
+        raise SmokeTestError("invalid electrical opcode coverage (" + "; ".join(details) + ")")
+    errors = [row.get("flag") for row in matrix.get("sticky_errors", ())]
+    if set(errors) != EXPECTED_STICKY_ERRORS or len(errors) != len(EXPECTED_STICKY_ERRORS):
+        raise SmokeTestError("electrical matrix must cover each sticky error exactly once")
 
 
 def smoke_test(java: str, jar: Path, project: Path) -> None:
@@ -280,6 +316,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--project", type=Path, default=DEFAULT_PROJECT)
     parser.add_argument("--program", type=Path, default=DEFAULT_PROGRAM)
     parser.add_argument("--trace-output", type=Path)
+    parser.add_argument("--matrix", type=Path, default=DEFAULT_MATRIX)
+    parser.add_argument("--machine-format", type=Path, default=DEFAULT_MACHINE_FORMAT)
     args = parser.parse_args(argv)
     if args.trace_output is not None:
         args.trace_output.parent.mkdir(parents=True, exist_ok=True)
@@ -288,6 +326,7 @@ def main(argv: list[str] | None = None) -> int:
             encoding="utf-8",
         )
     try:
+        verify_matrix_contract(args.matrix, args.machine_format)
         verify_java(args.java)
         obtain_jar(args.jar)
         smoke_test(args.java, args.jar, args.project)

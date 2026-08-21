@@ -1,0 +1,269 @@
+{
+  "schema_version": 1,
+  "machine_format": "tinycpu-machine-v1",
+  "description": "Mandatory electrical VM-parity coverage contract for TinyCPU AP 11.",
+  "opcode_families": [
+    {
+      "id": "data",
+      "opcodes": [
+        {
+          "code": 0,
+          "mnemonic": "LOAD_CONST"
+        },
+        {
+          "code": 1,
+          "mnemonic": "LOAD_ADDRESS"
+        },
+        {
+          "code": 2,
+          "mnemonic": "LOAD_ADDRESS_REGISTER"
+        },
+        {
+          "code": 3,
+          "mnemonic": "LOAD_ADDRESS_REGISTER_PLUS_OFFSET"
+        },
+        {
+          "code": 28,
+          "mnemonic": "STORE_ADDRESS"
+        },
+        {
+          "code": 29,
+          "mnemonic": "STORE_ADDRESS_REGISTER"
+        },
+        {
+          "code": 30,
+          "mnemonic": "STORE_ADDRESS_REGISTER_PLUS_OFFSET"
+        },
+        {
+          "code": 31,
+          "mnemonic": "LOAD_ADDRESS_REGISTER_CONST"
+        },
+        {
+          "code": 32,
+          "mnemonic": "LOAD_ADDRESS_REGISTER_ADDRESS"
+        }
+      ]
+    },
+    {
+      "id": "alu",
+      "opcodes": [
+        {
+          "code": 4,
+          "mnemonic": "ADD_CONST"
+        },
+        {
+          "code": 5,
+          "mnemonic": "ADD_ADDRESS"
+        },
+        {
+          "code": 6,
+          "mnemonic": "ADD_ADDRESS_REGISTER"
+        },
+        {
+          "code": 7,
+          "mnemonic": "ADD_ADDRESS_REGISTER_PLUS_OFFSET"
+        },
+        {
+          "code": 8,
+          "mnemonic": "SUB_CONST"
+        },
+        {
+          "code": 9,
+          "mnemonic": "SUB_ADDRESS"
+        },
+        {
+          "code": 10,
+          "mnemonic": "SUB_ADDRESS_REGISTER"
+        },
+        {
+          "code": 11,
+          "mnemonic": "SUB_ADDRESS_REGISTER_PLUS_OFFSET"
+        },
+        {
+          "code": 12,
+          "mnemonic": "MUL_CONST"
+        },
+        {
+          "code": 13,
+          "mnemonic": "MUL_ADDRESS"
+        },
+        {
+          "code": 14,
+          "mnemonic": "MUL_ADDRESS_REGISTER"
+        },
+        {
+          "code": 15,
+          "mnemonic": "MUL_ADDRESS_REGISTER_PLUS_OFFSET"
+        },
+        {
+          "code": 16,
+          "mnemonic": "DIV_CONST"
+        },
+        {
+          "code": 17,
+          "mnemonic": "DIV_ADDRESS"
+        },
+        {
+          "code": 18,
+          "mnemonic": "DIV_ADDRESS_REGISTER"
+        },
+        {
+          "code": 19,
+          "mnemonic": "DIV_ADDRESS_REGISTER_PLUS_OFFSET"
+        },
+        {
+          "code": 20,
+          "mnemonic": "AND_CONST"
+        },
+        {
+          "code": 21,
+          "mnemonic": "AND_ADDRESS"
+        },
+        {
+          "code": 22,
+          "mnemonic": "AND_ADDRESS_REGISTER"
+        },
+        {
+          "code": 23,
+          "mnemonic": "AND_ADDRESS_REGISTER_PLUS_OFFSET"
+        },
+        {
+          "code": 24,
+          "mnemonic": "OR_CONST"
+        },
+        {
+          "code": 25,
+          "mnemonic": "OR_ADDRESS"
+        },
+        {
+          "code": 26,
+          "mnemonic": "OR_ADDRESS_REGISTER"
+        },
+        {
+          "code": 27,
+          "mnemonic": "OR_ADDRESS_REGISTER_PLUS_OFFSET"
+        },
+        {
+          "code": 33,
+          "mnemonic": "NOT"
+        },
+        {
+          "code": 46,
+          "mnemonic": "XOR_CONST"
+        },
+        {
+          "code": 47,
+          "mnemonic": "XOR_ADDRESS"
+        },
+        {
+          "code": 48,
+          "mnemonic": "XOR_ADDRESS_REGISTER"
+        },
+        {
+          "code": 49,
+          "mnemonic": "XOR_ADDRESS_REGISTER_PLUS_OFFSET"
+        }
+      ]
+    },
+    {
+      "id": "branch",
+      "opcodes": [
+        {
+          "code": 34,
+          "mnemonic": "JUMP_ADDRESS"
+        },
+        {
+          "code": 35,
+          "mnemonic": "JUMP_ZERO"
+        },
+        {
+          "code": 36,
+          "mnemonic": "JUMP_NOT_ZERO"
+        },
+        {
+          "code": 37,
+          "mnemonic": "JUMP_NEGATIVE"
+        },
+        {
+          "code": 38,
+          "mnemonic": "JUMP_ERROR"
+        },
+        {
+          "code": 39,
+          "mnemonic": "JUMP_NOT_ERROR"
+        }
+      ]
+    },
+    {
+      "id": "error-control",
+      "opcodes": [
+        {
+          "code": 40,
+          "mnemonic": "CLEAR_ERROR"
+        }
+      ]
+    },
+    {
+      "id": "io",
+      "opcodes": [
+        {
+          "code": 41,
+          "mnemonic": "INPUT"
+        },
+        {
+          "code": 42,
+          "mnemonic": "PRINT"
+        },
+        {
+          "code": 43,
+          "mnemonic": "PRINT_ADDRESS"
+        }
+      ]
+    },
+    {
+      "id": "halt",
+      "opcodes": [
+        {
+          "code": 44,
+          "mnemonic": "HALT"
+        },
+        {
+          "code": 45,
+          "mnemonic": "HALT_ERROR"
+        }
+      ]
+    }
+  ],
+  "sticky_errors": [
+    {
+      "flag": "OVF",
+      "fixture": "overflow"
+    },
+    {
+      "flag": "DIV0",
+      "fixture": "division-by-zero"
+    },
+    {
+      "flag": "ADDR",
+      "fixture": "address-range"
+    },
+    {
+      "flag": "INV",
+      "fixture": "invalid-operand"
+    },
+    {
+      "flag": "ILL",
+      "fixture": "reserved-opcode"
+    },
+    {
+      "flag": "INPUT",
+      "fixture": "missing-input"
+    }
+  ],
+  "requirements": {
+    "compare": "vm-edge-trace",
+    "simulator": "logisim-evolution-4.1.0",
+    "all_opcodes_required": true,
+    "all_sticky_errors_required": true
+  }
+}

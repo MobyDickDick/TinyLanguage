@@ -923,3 +923,16 @@ removed `Operations` routes carried operation controls and the result,
 validity, overflow, and invalid-operand aggregations. Removing those routes
 would change CPU behaviour. Consequently the maintained routes remain part of
 the hardware contract; this package only adds the new OR sheets.
+
+
+## AP-11-Abdeckungsvertrag
+
+`tinycpu-electrical-matrix-v1.json` ist die maschinenlesbare Soll-Matrix für
+die nächste elektrische Abnahmestufe. Sie ordnet jeden Opcode des stabilen
+Maschinenformats einer Testfamilie zu und benennt für jedes Sticky-Fehlerbit
+eine Fehler-Fixture. Der gepinnte Launcher validiert die Matrix vor Java- und
+Logisim-Start gegen `tinycpu-machine-v1.json`; fehlende, doppelte, zusätzliche
+oder umnummerierte Opcodes sowie unvollständige Fehlerabdeckung brechen den Lauf
+ab. Die Matrix allein ist ausdrücklich noch kein Simulationsnachweis: AP 11
+bleibt offen, bis der Launcher jede Familie mit ausgetauschtem ROM elektrisch
+ausführt und deren Flankentabelle gegen die VM vergleicht.

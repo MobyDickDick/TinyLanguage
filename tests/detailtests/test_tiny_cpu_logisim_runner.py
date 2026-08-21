@@ -223,3 +223,39 @@ def test_ci_uses_available_temurin_build_and_current_setup_action():
     assert "actions/setup-java@v4" not in workflow
     assert "uses: actions/checkout@v5" in workflow
     assert "uses: actions/setup-python@v6" in workflow
+
+
+def test_ap11_matrix_contract_covers_every_opcode_and_sticky_error():
+    runner.verify_matrix_contract(runner.DEFAULT_MATRIX, runner.DEFAULT_MACHINE_FORMAT)
+
+
+def test_ap11_matrix_contract_rejects_missing_opcode(tmp_path):
+    import json
+
+    matrix = json.loads(runner.DEFAULT_MATRIX.read_text(encoding="utf-8"))
+    matrix["opcode_families"][0]["opcodes"].pop()
+    incomplete = tmp_path / "matrix.json"
+    incomplete.write_text(json.dumps(matrix), encoding="utf-8")
+
+    try:
+        runner.verify_matrix_contract(incomplete, runner.DEFAULT_MACHINE_FORMAT)
+    except runner.SmokeTestError as exc:
+        assert "missing:" in str(exc)
+    else:
+        raise AssertionError("an incomplete electrical opcode matrix was accepted")
+
+
+def test_ap11_matrix_contract_rejects_duplicate_error_fixture(tmp_path):
+    import json
+
+    matrix = json.loads(runner.DEFAULT_MATRIX.read_text(encoding="utf-8"))
+    matrix["sticky_errors"].append(matrix["sticky_errors"][0])
+    invalid = tmp_path / "matrix.json"
+    invalid.write_text(json.dumps(matrix), encoding="utf-8")
+
+    try:
+        runner.verify_matrix_contract(invalid, runner.DEFAULT_MACHINE_FORMAT)
+    except runner.SmokeTestError as exc:
+        assert "each sticky error exactly once" in str(exc)
+    else:
+        raise AssertionError("duplicate sticky-error coverage was accepted")

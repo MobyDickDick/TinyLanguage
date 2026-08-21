@@ -34,7 +34,9 @@
       <a name="label" val="PROGRAM_LIMIT"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(260,140)" name="Constant"/>
+    <comp lib="0" loc="(260,140)" name="Constant">
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="0" loc="(420,350)" name="Splitter">
       <a name="bit1" val="0"/>
       <a name="bit10" val="0"/>

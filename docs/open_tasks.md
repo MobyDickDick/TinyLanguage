@@ -5,11 +5,24 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Enable the TinyCPU program counter in the electrical circuit**
+  (Owner: TinyCPU/Hardware)
+  - Cause: the `FetchDecode.PC` enable input was tied to the default zero-valued
+    constant. Resetting the harness therefore changed the initial PC state but
+    could not advance execution beyond ROM address zero, which explains why the
+    follow-up evidence still contained hundreds of thousands of idle rows.
+  - Result: the maintained circuit now drives the PC enable input high, allowing
+    every rising edge to fetch the next instruction until the fixture reaches
+    its normal or error halt condition.
+  - Verification: a focused electrical-topology regression freezes both the
+    asserted constant and its direct route to the register enable terminal.
+
 - [x] **Drive the electrical TinyCPU fixtures through startup reset**
   (Owner: TinyCPU/Hardware)
   - Cause: the temporary Logisim harness replaced `RESET` with a constant zero,
-    so validity registers were never initialized; the autonomous clock then
-    emitted millions of mostly zero rows without ever reaching `halt`.
+    so a simulator start did not exercise the documented reset boundary. This
+    was a real defect, but resetting alone could not overcome the separately
+    disabled program-counter enable input.
   - Result: every AP-5/AP-11/AP-12 simulator harness now uses Logisim's
     `PowerOnReset` component, giving each independent process the synchronous
     startup assertion required by the maintained circuit.

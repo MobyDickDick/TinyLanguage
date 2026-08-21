@@ -291,21 +291,37 @@ def _acceptance_bundle(path):
     import hashlib
     import json
 
-    evidence_path = path / "reset-start.tsv"
-    evidence_path.parent.mkdir(parents=True, exist_ok=True)
-    evidence_path.write_text("electrical evidence\n", encoding="utf-8")
-    contents = evidence_path.read_bytes()
+    files = {
+        "isa-matrix/data.tsv": b"matrix evidence\n",
+        "reset-start.normalized.tsv": b"normalized evidence\n",
+        "reset-start.tsv": b"electrical evidence\n",
+        "restart.normalized.tsv": b"normalized evidence\n",
+        "restart.tsv": b"electrical evidence\n",
+    }
+    evidence = []
+    for name, contents in files.items():
+        evidence_path = path / name
+        evidence_path.parent.mkdir(parents=True, exist_ok=True)
+        evidence_path.write_bytes(contents)
+        evidence.append({"path": name, "sha256": hashlib.sha256(contents).hexdigest(),
+                         "size_bytes": len(contents)})
+    trace_digest = hashlib.sha256(files["reset-start.normalized.tsv"]).hexdigest()
     report = {
         "schema_version": 2,
         "status": "passed",
-        "evidence": [{
-            "path": evidence_path.name,
-            "sha256": hashlib.sha256(contents).hexdigest(),
-            "size_bytes": len(contents),
-        }],
+        "logisim_version": runner.LOGISIM_VERSION,
+        "java_version": runner.JAVA_VERSION,
+        "reset_restart_runs": [
+            {"name": name, "raw_table": f"{name}.tsv",
+             "normalized_table": f"{name}.normalized.tsv",
+             "sha256": trace_digest, "clock_edges": 1}
+            for name in ("reset-start", "restart")
+        ],
+        "matrix": {"fixture_count": 1, "directory": "isa-matrix"},
+        "evidence": evidence,
     }
     (path / "acceptance.json").write_text(json.dumps(report), encoding="utf-8")
-    return evidence_path
+    return path / "reset-start.tsv"
 
 
 def test_ap12_bundle_verifier_accepts_complete_untampered_inventory(tmp_path):
@@ -373,6 +389,29 @@ def test_ap12_bundle_verifier_rejects_malformed_inventory_metadata(tmp_path):
             assert message in str(exc)
         else:
             raise AssertionError(f"malformed AP-12 {field} was accepted")
+
+
+def test_ap12_bundle_verifier_rejects_incomplete_acceptance_metadata(tmp_path):
+    import json
+
+    _acceptance_bundle(tmp_path)
+    report_path = tmp_path / "acceptance.json"
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    invalid_reports = (
+        ({**report, "logisim_version": "untrusted"}, "invalid Logisim version"),
+        ({**report, "reset_restart_runs": report["reset_restart_runs"][:1]},
+         "two reset/restart runs"),
+        ({**report, "matrix": {"fixture_count": 2, "directory": "isa-matrix"}},
+         "fixture count"),
+    )
+    for invalid, message in invalid_reports:
+        report_path.write_text(json.dumps(invalid), encoding="utf-8")
+        try:
+            runner.verify_acceptance_bundle(tmp_path)
+        except runner.SmokeTestError as exc:
+            assert message in str(exc)
+        else:
+            raise AssertionError("incomplete AP-12 acceptance metadata was accepted")
 
 
 def test_verify_acceptance_cli_skips_simulator_dependencies(tmp_path, monkeypatch):

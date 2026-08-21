@@ -506,6 +506,41 @@ def verify_acceptance_bundle(output: Path) -> None:
         recorded_paths.append(path)
     if recorded_paths != sorted(set(recorded_paths)):
         raise SmokeTestError("AP-12 evidence inventory paths must be unique and sorted")
+    # An inventory authenticates bytes, but these fields establish that those
+    # bytes represent every mandatory part of the AP-12 release gate.
+    if report.get("logisim_version") != LOGISIM_VERSION:
+        raise SmokeTestError("AP-12 acceptance report has an invalid Logisim version")
+    if report.get("java_version") != JAVA_VERSION:
+        raise SmokeTestError("AP-12 acceptance report has an invalid Java version")
+    runs = report.get("reset_restart_runs")
+    if not isinstance(runs, list) or len(runs) != 2:
+        raise SmokeTestError("AP-12 acceptance report must describe two reset/restart runs")
+    inventory_by_path = {item["path"]: item for item in evidence}
+    for run, expected_name in zip(runs, ("reset-start", "restart")):
+        if not isinstance(run, dict) or run.get("name") != expected_name:
+            raise SmokeTestError("AP-12 acceptance report has invalid reset/restart metadata")
+        raw = run.get("raw_table")
+        normalized = run.get("normalized_table")
+        if raw != f"{expected_name}.tsv" or normalized != f"{expected_name}.normalized.tsv":
+            raise SmokeTestError("AP-12 acceptance report has invalid reset/restart paths")
+        if raw not in inventory_by_path or normalized not in inventory_by_path:
+            raise SmokeTestError("AP-12 reset/restart evidence is missing from the inventory")
+        if run.get("sha256") != inventory_by_path[normalized]["sha256"]:
+            raise SmokeTestError("AP-12 normalized trace digest does not match the inventory")
+        edges = run.get("clock_edges")
+        if not isinstance(edges, int) or isinstance(edges, bool) or edges <= 0:
+            raise SmokeTestError("AP-12 acceptance report has an invalid clock-edge count")
+    if runs[0]["sha256"] != runs[1]["sha256"] or runs[0]["clock_edges"] != runs[1]["clock_edges"]:
+        raise SmokeTestError("AP-12 reset/restart trace metadata is not reproducible")
+    matrix = report.get("matrix")
+    if not isinstance(matrix, dict) or matrix.get("directory") != "isa-matrix":
+        raise SmokeTestError("AP-12 acceptance report has invalid matrix metadata")
+    fixture_count = matrix.get("fixture_count")
+    if not isinstance(fixture_count, int) or isinstance(fixture_count, bool) or fixture_count <= 0:
+        raise SmokeTestError("AP-12 acceptance report has an invalid fixture count")
+    matrix_paths = [path for path in recorded_paths if path.startswith("isa-matrix/")]
+    if len(matrix_paths) != fixture_count or any(not path.endswith(".tsv") for path in matrix_paths):
+        raise SmokeTestError("AP-12 matrix fixture count does not match the inventory")
     actual_paths = []
     for path in output.rglob("*"):
         if path == report_path:

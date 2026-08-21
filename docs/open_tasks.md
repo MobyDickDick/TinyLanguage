@@ -28,6 +28,12 @@ archived in `docs/open_tasks_archive.md`.
     The same audit found the `AddressPath.CLK` terminal completely unwired; it
     now joins the shared clock as well, so the address register can leave its
     undefined startup state on the first accepted edge.
+  - Startup repair: the accumulator, both validity registers, the address
+    register, and all six sticky-error registers previously had floating reset
+    terminals. Local `PowerOnReset` nets now initialize every non-PC register;
+    the PC retains its externally observable reset contract. This removes the
+    `U` state that fed selectors and subsequently expanded into `E`/`EEEE`
+    values before the first decoded write.
 
 - [x] **Deepen generated-program loop termination analysis**
   (Owner: Tooling/Program Generator)

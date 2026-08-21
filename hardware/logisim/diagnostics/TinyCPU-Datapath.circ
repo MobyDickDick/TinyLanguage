@@ -20,6 +20,16 @@
     <a name="circuit" val="Datapath"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
+    <comp lib="0" loc="(100,350)" name="PowerOnReset"/>
+    <comp lib="0" loc="(120,350)" name="Tunnel">
+      <a name="label" val="DATAPATH_STARTUP_RESET"/>
+    </comp>
+    <comp lib="0" loc="(300,190)" name="Tunnel">
+      <a name="label" val="DATAPATH_STARTUP_RESET"/>
+    </comp>
+    <comp lib="0" loc="(300,310)" name="Tunnel">
+      <a name="label" val="DATAPATH_STARTUP_RESET"/>
+    </comp>
     <comp lib="0" loc="(150,130)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="DATA_IN"/>
@@ -83,6 +93,7 @@
       <a name="text" val="Clocked 16-bit accumulator; signed comparator derives ZERO and NEGATIVE"/>
     </comp>
     <wire from="(150,130)" to="(270,130)"/>
+    <wire from="(100,350)" to="(120,350)"/>
     <wire from="(150,210)" to="(240,210)"/>
     <wire from="(150,250)" to="(270,250)"/>
     <wire from="(150,300)" to="(200,300)"/>

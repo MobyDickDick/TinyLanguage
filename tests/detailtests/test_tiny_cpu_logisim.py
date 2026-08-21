@@ -170,6 +170,37 @@ def test_top_level_clock_reaches_every_stateful_block_without_joining_acc_valid(
     assert acc_valid not in clock_net
 
 
+def test_power_on_reset_initializes_all_non_pc_registers():
+    """No state bit may remain undefined before the first decoded write."""
+
+    root = ET.parse(PROJECT).getroot()
+    expected_reset_terminals = {
+        "Datapath": {"(300,190)", "(300,310)"},
+        "AddressPath": {"(370,210)", "(370,390)"},
+        "ErrorFlags": {
+            "(780,290)", "(780,420)", "(780,560)",
+            "(780,690)", "(780,830)", "(780,970)",
+        },
+    }
+    for circuit_name, terminals in expected_reset_terminals.items():
+        circuit = root.find(f"circuit[@name='{circuit_name}']")
+        assert circuit is not None
+        resets = circuit.findall("comp[@name='PowerOnReset']")
+        assert len(resets) == 1
+        reset_label = next(
+            _attributes(component)["label"]
+            for component in circuit.findall("comp[@name='Tunnel']")
+            if component.get("loc") not in terminals
+            and _attributes(component).get("label", "").endswith("STARTUP_RESET")
+        )
+        reset_tunnels = {
+            component.get("loc")
+            for component in circuit.findall("comp[@name='Tunnel']")
+            if _attributes(component).get("label") == reset_label
+        }
+        assert terminals <= reset_tunnels
+
+
 def test_integration_reset_connects_external_reset_to_fetch_only():
     """Reset restarts the PC without implicitly clearing RAM or error flags."""
 
@@ -1637,9 +1668,13 @@ def test_ap3_error_flag_feedback_is_clocked_not_combinational():
     wires = {(wire.get("from"), wire.get("to")) for wire in errors.findall("wire")}
     undirected_wires = {frozenset(wire) for wire in wires}
 
-    assert all(
-        component.get("name") != "Tunnel" for component in errors.findall("comp")
-    )
+    # Feedback remains explicit wiring. The only tunnels are the deliberately
+    # shared startup-reset net for the six register clear terminals.
+    tunnels = errors.findall("comp[@name='Tunnel']")
+    assert tunnels
+    assert {
+        _attributes(component).get("label") for component in tunnels
+    } == {"ERROR_FLAGS_STARTUP_RESET"}
 
     expected_feedback_routes = {
         "OVF": ("(420,230)", "(820,230)", 170),

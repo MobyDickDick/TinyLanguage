@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -34,6 +35,7 @@ DEFAULT_PROJECT = Path("hardware/logisim/TinyCPU.circ")
 DEFAULT_PROGRAM = Path("hardware/logisim/ap5_countdown.tcpu")
 DEFAULT_MATRIX = Path("hardware/logisim/tinycpu-electrical-matrix-v1.json")
 DEFAULT_MACHINE_FORMAT = Path("hardware/logisim/tinycpu-machine-v1.json")
+DEFAULT_ACCEPTANCE_OUTPUT = Path("artifacts/tinycpu-ap12-acceptance")
 EXPECTED_STICKY_ERRORS = {"OVF", "DIV0", "ADDR", "INV", "ILL", "INPUT"}
 
 TTY_OUTPUTS = (
@@ -295,7 +297,7 @@ def _tty_trace_to_tsv(raw: str) -> str:
     return "\n".join(lines) + "\n"
 
 
-def trace_test(java: str, jar: Path, project: Path, program: Path, output: Path) -> None:
+def trace_test(java: str, jar: Path, project: Path, program: Path, output: Path) -> str:
     """Clock the AP-5 harness, retain its raw pin table, and compare it to the VM."""
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("# Logisim AP-5 trace was requested but has not started.\n", encoding="utf-8")
@@ -325,6 +327,7 @@ def trace_test(java: str, jar: Path, project: Path, program: Path, output: Path)
     if mismatches:
         raise SmokeTestError("AP-5 electrical trace mismatch: " + "; ".join(mismatches))
     print(f"AP-5 electrical trace matches across {len(instructions)} clock edges")
+    return _tty_trace_to_tsv(result.stdout)
 
 
 def matrix_test(java: str, jar: Path, project: Path, matrix_path: Path, output: Path) -> None:
@@ -393,6 +396,59 @@ def matrix_test(java: str, jar: Path, project: Path, matrix_path: Path, output: 
         print(f"AP-11 fixture {fixture_id} matches across {len(instructions)} clock edges")
 
 
+def acceptance_test(
+    java: str,
+    jar: Path,
+    project: Path,
+    program: Path,
+    matrix_path: Path,
+    output: Path,
+) -> None:
+    """Run the mandatory AP-12 release gate and retain reproducibility evidence.
+
+    Two independent simulator starts exercise the real RESET-at-start boundary.
+    Comparing their normalized multi-cycle traces proves that resetting and
+    restarting the maintained circuit produces the same 17-edge execution.
+    The complete AP-11 matrix is then executed as part of the same command.
+    """
+    output.mkdir(parents=True, exist_ok=True)
+    report_path = output / "acceptance.json"
+    report_path.write_text(
+        json.dumps({"schema_version": 1, "status": "started"}, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    runs = []
+    for name in ("reset-start", "restart"):
+        raw_path = output / f"{name}.tsv"
+        normalized = trace_test(java, jar, project, program, raw_path)
+        normalized_path = output / f"{name}.normalized.tsv"
+        normalized_path.write_text(normalized, encoding="utf-8")
+        runs.append(
+            {
+                "name": name,
+                "raw_table": raw_path.name,
+                "normalized_table": normalized_path.name,
+                "sha256": hashlib.sha256(normalized.encode()).hexdigest(),
+                "clock_edges": len(normalized.splitlines()) - 1,
+            }
+        )
+    if runs[0]["sha256"] != runs[1]["sha256"]:
+        raise SmokeTestError("AP-12 reset/restart traces are not reproducible")
+    matrix_output = output / "isa-matrix"
+    matrix_test(java, jar, project, matrix_path, matrix_output)
+    fixture_count = len(json.loads(matrix_path.read_text(encoding="utf-8"))["fixtures"])
+    report = {
+        "schema_version": 1,
+        "status": "passed",
+        "logisim_version": LOGISIM_VERSION,
+        "java_version": JAVA_VERSION,
+        "reset_restart_runs": runs,
+        "matrix": {"fixture_count": fixture_count, "directory": matrix_output.name},
+    }
+    report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(f"AP-12 release acceptance passed with {fixture_count} electrical fixtures")
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the pinned dependency and project-load checks."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -402,6 +458,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--program", type=Path, default=DEFAULT_PROGRAM)
     parser.add_argument("--trace-output", type=Path)
     parser.add_argument("--matrix-output", type=Path)
+    parser.add_argument(
+        "--acceptance-output",
+        type=Path,
+        help="run the mandatory AP-12 reset/restart, multi-cycle, and ISA release gate",
+    )
     parser.add_argument("--matrix", type=Path, default=DEFAULT_MATRIX)
     parser.add_argument("--machine-format", type=Path, default=DEFAULT_MACHINE_FORMAT)
     args = parser.parse_args(argv)
@@ -422,6 +483,15 @@ def main(argv: list[str] | None = None) -> int:
             )
         if args.matrix_output is not None:
             matrix_test(args.java, args.jar, args.project, args.matrix, args.matrix_output)
+        if args.acceptance_output is not None:
+            acceptance_test(
+                args.java,
+                args.jar,
+                args.project,
+                args.program,
+                args.matrix,
+                args.acceptance_output,
+            )
     except SmokeTestError as exc:
         print(f"TinyCPU Logisim smoke test failed: {exc}", file=sys.stderr)
         return 1

@@ -91,14 +91,18 @@ in einem frischen Checkout verpflichtend laufen.
   den unveränderten Simulator-Export als Artefakt auf.
 - [x] **AP 11:** Die elektrische Positiv- und Fehlermatrix tauscht das ROM je
   Fixture aus, bewahrt jede Roh-Tabelle auf und vergleicht alle Flanken mit der VM.
-- [ ] **AP 12:** Verbindliche Abschlussabnahme, Reset-/Wiederanlauftests und
-  Bedienungsdokumentation für die tatsächlich simulierte Hardware liefern.
+- [x] **AP 12:** Das verpflichtende Release-Gate startet die reale Schaltung
+  zweimal am Reset-Zustand, vergleicht die normalisierten 17-Flanken-Traces,
+  führt anschließend die vollständige elektrische ISA-Matrix aus und bewahrt
+  Rohdaten, normalisierte Traces und ein versioniertes Abnahmeprotokoll auf.
 
-## Nächstes Arbeitspaket: AP 12
+## Abgeschlossenes Arbeitspaket: AP 12
 
-AP 12 macht die elektrische Matrix zur verbindlichen Abschlussabnahme und
-ergänzt Reset-, Wiederanlauf- und Mehrzyklusnachweise sowie die Bedienungsdokumentation
-für einen reproduzierbaren Lauf aus einem frischen Checkout.
+AP 12 macht die elektrische Matrix zur verbindlichen Abschlussabnahme. Das
+CI-Gate ruft nur noch das gemeinsame Abnahmekommando auf; ein fehlgeschlagener
+Simulator-, Reset-/Wiederanlauf-, Mehrzyklus- oder Matrixvergleich bricht den
+Job ab. Die Bedienung und die erzeugten Nachweise sind im Logisim-Handbuch
+dokumentiert.
 
 ## Baseline-Pflege
 

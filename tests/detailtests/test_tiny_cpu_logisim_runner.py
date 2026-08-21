@@ -341,6 +341,40 @@ def test_ap12_bundle_verifier_rejects_symbolic_link_evidence(tmp_path):
         raise AssertionError("symbolic-link AP-12 evidence was accepted")
 
 
+def test_ap12_bundle_verifier_rejects_non_object_report(tmp_path):
+    (tmp_path / "acceptance.json").write_text("[]", encoding="utf-8")
+
+    try:
+        runner.verify_acceptance_bundle(tmp_path)
+    except runner.SmokeTestError as exc:
+        assert "must be a JSON object" in str(exc)
+    else:
+        raise AssertionError("non-object AP-12 report was accepted")
+
+
+def test_ap12_bundle_verifier_rejects_malformed_inventory_metadata(tmp_path):
+    import json
+
+    _acceptance_bundle(tmp_path)
+    report_path = tmp_path / "acceptance.json"
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    invalid_values = (
+        ("path", "./reset-start.tsv", "unsafe AP-12 evidence path"),
+        ("size_bytes", True, "invalid AP-12 evidence size"),
+        ("sha256", "not-a-sha256", "invalid AP-12 evidence digest"),
+    )
+    for field, value, message in invalid_values:
+        invalid = json.loads(json.dumps(report))
+        invalid["evidence"][0][field] = value
+        report_path.write_text(json.dumps(invalid), encoding="utf-8")
+        try:
+            runner.verify_acceptance_bundle(tmp_path)
+        except runner.SmokeTestError as exc:
+            assert message in str(exc)
+        else:
+            raise AssertionError(f"malformed AP-12 {field} was accepted")
+
+
 def test_verify_acceptance_cli_skips_simulator_dependencies(tmp_path, monkeypatch):
     _acceptance_bundle(tmp_path)
 

@@ -204,6 +204,28 @@ def test_fetch_decode_program_counter_is_enabled_and_incremented():
     assert "(450,140)" in _reachable(adjacency, increment.get("loc"))
 
 
+def test_program_counter_address_branch_reaches_rom_address_input():
+    """Keep the 12-bit splitter branch on the terminal used by the ROM."""
+
+    root = ET.parse(PROJECT).getroot()
+    fetch = root.find("circuit[@name='FetchDecode']")
+    assert fetch is not None
+    splitter = next(
+        component
+        for component in fetch.findall("comp[@name='Splitter']")
+        if _attributes(component).get("incoming") == "16"
+    )
+    attributes = _attributes(splitter)
+    assert attributes.get("appear") == "right"
+    assert attributes.get("label") == "PC_ADDRESS"
+    assert all(attributes.get(f"bit{bit}") == "0" for bit in range(12))
+    assert all(attributes.get(f"bit{bit}") == "1" for bit in range(12, 16))
+    adjacency = _electrical_adjacency(
+        fetch, {"(440,330)", "(480,410)", "(510,410)"}
+    )
+    assert "(510,410)" in _reachable(adjacency, "(440,330)")
+
+
 def test_fetch_decode_rom_drives_instruction_output():
     """Decoded controls must observe the word read from the program ROM."""
 

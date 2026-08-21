@@ -5,6 +5,17 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Attach the TinyCPU PC address slice to the ROM address terminal**
+  (Owner: TinyCPU/Hardware)
+  - Cause: the 16-to-12-bit PC splitter used the default symbol appearance while
+    its checked-in wire started at the terminal position of the right-facing
+    appearance. The apparent route therefore began beside, rather than on, the
+    splitter output and left the ROM address input electrically undriven.
+  - Result: the splitter now has the explicit, named `PC_ADDRESS` right-facing
+    appearance that matches its 12-bit branch wire to the ROM.
+  - Verification: a regression freezes the splitter orientation, all bit-lane
+    assignments, and the complete branch route to the ROM address terminal.
+
 - [x] **Apply taken TinyCPU jumps to the next program address**
   (Owner: TinyCPU/Hardware)
   - Cause: `JUMP_NOT_ZERO` was observable as a control output but did not select

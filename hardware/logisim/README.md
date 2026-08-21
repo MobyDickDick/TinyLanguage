@@ -20,6 +20,9 @@ drives the `PC` register enable high and feeds an explicit 16-bit one into its
 next-address adder. Both are required: a low enable or the former zero-valued
 increment makes every edge select ROM address zero and yields the long, almost
 empty tables seen in the earlier evidence.
+The `PC_ADDRESS` splitter also declares its right-facing appearance explicitly;
+its 12-bit output terminal therefore coincides with the checked-in route to the
+ROM address input instead of leaving that route one symbol lane away.
 The ROM's 22-bit data terminal is wired directly to the `OPCODE` output, so the
 word selected by that advancing address reaches the top-level decoder instead
 of ending on an unconnected component terminal. A taken `JUMP_NOT_ZERO` selects

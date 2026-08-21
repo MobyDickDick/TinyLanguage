@@ -5,6 +5,16 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Reject indirect files in retained TinyCPU acceptance evidence**
+  (Owner: TinyCPU/Hardware)
+  - Scope: harden the offline AP-12 verifier at the next trust boundary without
+    changing the electrical acceptance matrix or requiring simulator access.
+  - Result: bundle traversal uses filesystem metadata without following links
+    and rejects symbolic links and non-regular evidence before reading bytes,
+    so an inventory cannot attest to content outside the retained directory.
+  - Verification: focused coverage replaces a valid evidence file with a link
+    to byte-identical external content and confirms that verification fails.
+
 - [x] **Make retained TinyCPU acceptance evidence independently verifiable**
   (Owner: TinyCPU/Hardware)
   - Scope: provide the bounded follow-up to the sealed AP-12 bundle without

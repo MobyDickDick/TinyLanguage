@@ -30,7 +30,9 @@ uploads the entire directory even on failure.
 
 A retained or downloaded bundle can be checked independently of Java and
 Logisim. The verifier rejects missing, additional, reordered, resized, or
-digest-mismatched evidence files:
+digest-mismatched evidence files. It also rejects symbolic links and other
+non-regular inventory entries instead of following them outside the retained
+bundle:
 
 ```bash
 PYTHONPATH=src python src/tiny_cpu_logisim.py \

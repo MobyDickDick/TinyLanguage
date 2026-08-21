@@ -326,6 +326,21 @@ def test_ap12_bundle_verifier_rejects_tampered_evidence(tmp_path):
         raise AssertionError("tampered AP-12 evidence was accepted")
 
 
+def test_ap12_bundle_verifier_rejects_symbolic_link_evidence(tmp_path):
+    evidence = _acceptance_bundle(tmp_path)
+    external = tmp_path.parent / "external-electrical-evidence.tsv"
+    external.write_bytes(evidence.read_bytes())
+    evidence.unlink()
+    evidence.symlink_to(external)
+
+    try:
+        runner.verify_acceptance_bundle(tmp_path)
+    except runner.SmokeTestError as exc:
+        assert "symbolic link" in str(exc)
+    else:
+        raise AssertionError("symbolic-link AP-12 evidence was accepted")
+
+
 def test_verify_acceptance_cli_skips_simulator_dependencies(tmp_path, monkeypatch):
     _acceptance_bundle(tmp_path)
 

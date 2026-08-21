@@ -28,6 +28,15 @@ before simulation and replaced by the passed report only after every comparison
 succeeds, so an interrupted run cannot be mistaken for accepted hardware. CI
 uploads the entire directory even on failure.
 
+A retained or downloaded bundle can be checked independently of Java and
+Logisim. The verifier rejects missing, additional, reordered, resized, or
+digest-mismatched evidence files:
+
+```bash
+PYTHONPATH=src python src/tiny_cpu_logisim.py \
+  --verify-acceptance artifacts/tinycpu-ap12-acceptance
+```
+
 This directory contains the TinyCPU hardware baseline with a dedicated arithmetic sheet.
 Open `TinyCPU.circ` with Logisim-evolution 4.1.x. Das Blatt **`TinyCPUMain` ist
 die hierarchische Integrationsseite**. Die fachliche Logik liegt in benannten

@@ -461,6 +461,42 @@ def acceptance_test(
     print(f"AP-12 release acceptance passed with {fixture_count} electrical fixtures")
 
 
+def verify_acceptance_bundle(output: Path) -> None:
+    """Verify a downloaded AP-12 evidence bundle without simulator dependencies."""
+    report_path = output / "acceptance.json"
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SmokeTestError(f"could not read AP-12 acceptance report: {exc}") from exc
+    if report.get("schema_version") != 2 or report.get("status") != "passed":
+        raise SmokeTestError("AP-12 acceptance report is not a passed schema-version-2 report")
+    evidence = report.get("evidence")
+    if not isinstance(evidence, list):
+        raise SmokeTestError("AP-12 acceptance report has no evidence inventory")
+    recorded_paths = [item.get("path") for item in evidence if isinstance(item, dict)]
+    if len(recorded_paths) != len(evidence) or any(not isinstance(path, str) for path in recorded_paths):
+        raise SmokeTestError("AP-12 evidence inventory contains an invalid path")
+    if recorded_paths != sorted(set(recorded_paths)):
+        raise SmokeTestError("AP-12 evidence inventory paths must be unique and sorted")
+    actual_paths = sorted(
+        path.relative_to(output).as_posix()
+        for path in output.rglob("*")
+        if path.is_file() and path != report_path
+    )
+    if recorded_paths != actual_paths:
+        raise SmokeTestError("AP-12 evidence inventory does not match bundle contents")
+    for item in evidence:
+        relative = Path(item["path"])
+        if relative.is_absolute() or ".." in relative.parts:
+            raise SmokeTestError(f"unsafe AP-12 evidence path: {item['path']}")
+        contents = (output / relative).read_bytes()
+        if item.get("size_bytes") != len(contents):
+            raise SmokeTestError(f"AP-12 evidence size mismatch: {item['path']}")
+        if item.get("sha256") != hashlib.sha256(contents).hexdigest():
+            raise SmokeTestError(f"AP-12 evidence digest mismatch: {item['path']}")
+    print(f"AP-12 acceptance evidence verified ({len(evidence)} files)")
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the pinned dependency and project-load checks."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -477,6 +513,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--matrix", type=Path, default=DEFAULT_MATRIX)
     parser.add_argument("--machine-format", type=Path, default=DEFAULT_MACHINE_FORMAT)
+    parser.add_argument(
+        "--verify-acceptance", type=Path,
+        help="verify a retained AP-12 evidence bundle without Java or Logisim",
+    )
     args = parser.parse_args(argv)
     if args.trace_output is not None:
         args.trace_output.parent.mkdir(parents=True, exist_ok=True)
@@ -485,6 +525,9 @@ def main(argv: list[str] | None = None) -> int:
             encoding="utf-8",
         )
     try:
+        if args.verify_acceptance is not None:
+            verify_acceptance_bundle(args.verify_acceptance)
+            return 0
         verify_matrix_contract(args.matrix, args.machine_format)
         verify_java(args.java)
         obtain_jar(args.jar)

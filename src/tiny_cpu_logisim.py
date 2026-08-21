@@ -8,6 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import stat
 import subprocess
 import sys
 import tempfile
@@ -465,6 +466,8 @@ def verify_acceptance_bundle(output: Path) -> None:
     """Verify a downloaded AP-12 evidence bundle without simulator dependencies."""
     report_path = output / "acceptance.json"
     try:
+        if not stat.S_ISREG(report_path.lstat().st_mode):
+            raise SmokeTestError("AP-12 acceptance report is not a regular file")
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise SmokeTestError(f"could not read AP-12 acceptance report: {exc}") from exc
@@ -478,18 +481,45 @@ def verify_acceptance_bundle(output: Path) -> None:
         raise SmokeTestError("AP-12 evidence inventory contains an invalid path")
     if recorded_paths != sorted(set(recorded_paths)):
         raise SmokeTestError("AP-12 evidence inventory paths must be unique and sorted")
-    actual_paths = sorted(
-        path.relative_to(output).as_posix()
-        for path in output.rglob("*")
-        if path.is_file() and path != report_path
-    )
+    actual_paths = []
+    for path in output.rglob("*"):
+        if path == report_path:
+            continue
+        try:
+            mode = path.lstat().st_mode
+        except OSError as exc:
+            raise SmokeTestError(f"could not inspect AP-12 evidence: {exc}") from exc
+        if stat.S_ISLNK(mode):
+            raise SmokeTestError(
+                f"AP-12 evidence bundle contains a symbolic link: "
+                f"{path.relative_to(output).as_posix()}"
+            )
+        if stat.S_ISREG(mode):
+            actual_paths.append(path.relative_to(output).as_posix())
+        elif not stat.S_ISDIR(mode):
+            raise SmokeTestError(
+                f"AP-12 evidence bundle contains a non-regular entry: "
+                f"{path.relative_to(output).as_posix()}"
+            )
+    actual_paths.sort()
     if recorded_paths != actual_paths:
         raise SmokeTestError("AP-12 evidence inventory does not match bundle contents")
     for item in evidence:
         relative = Path(item["path"])
         if relative.is_absolute() or ".." in relative.parts:
             raise SmokeTestError(f"unsafe AP-12 evidence path: {item['path']}")
-        contents = (output / relative).read_bytes()
+        evidence_path = output / relative
+        try:
+            mode = evidence_path.lstat().st_mode
+            if not stat.S_ISREG(mode):
+                raise SmokeTestError(
+                    f"AP-12 evidence is not a regular file: {item['path']}"
+                )
+            contents = evidence_path.read_bytes()
+        except OSError as exc:
+            raise SmokeTestError(
+                f"could not read AP-12 evidence {item['path']}: {exc}"
+            ) from exc
         if item.get("size_bytes") != len(contents):
             raise SmokeTestError(f"AP-12 evidence size mismatch: {item['path']}")
         if item.get("sha256") != hashlib.sha256(contents).hexdigest():

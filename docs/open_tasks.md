@@ -5,6 +5,14 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Complete the mandatory TinyCPU hardware release acceptance**
+  (Owner: TinyCPU/Hardware)
+  - Result: the AP-12 command performs two independent electrical reset-start
+    runs, requires identical normalized 17-edge traces, and executes the full
+    AP-11 ISA/error matrix in the same mandatory CI gate.
+  - Evidence: CI retains both raw tables, normalized traces, every matrix table,
+    and a versioned JSON report identifying the pinned simulator and Java.
+
 - [x] **Execute the complete TinyCPU electrical ISA matrix**
   (Owner: TinyCPU/Hardware)
   - Completed slice: `tinycpu-electrical-matrix-v1.json` now freezes every

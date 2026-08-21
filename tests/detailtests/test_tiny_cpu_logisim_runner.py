@@ -208,12 +208,72 @@ def test_main_creates_diagnostic_artifact_before_dependency_checks(tmp_path, mon
 def test_ci_publishes_the_raw_electrical_trace_even_on_failure():
     workflow = CI_WORKFLOW.read_text(encoding="utf-8")
 
-    assert "--trace-output artifacts/ci/tinycpu-ap5-logisim.tsv" in workflow
-    assert "name: tinycpu-ap5-logisim-table" in workflow
+    assert "--acceptance-output artifacts/ci/tinycpu-ap12-acceptance" in workflow
+    assert "name: tinycpu-ap12-electrical-acceptance" in workflow
     assert "if: always()" in workflow
     assert "uses: actions/upload-artifact@v5" in workflow
     assert "path: artifacts/ci/" in workflow
     assert "actions/upload-artifact@v4" not in workflow
+
+
+def test_ap12_acceptance_repeats_trace_and_runs_complete_matrix(tmp_path, monkeypatch):
+    """The release command must make lifecycle and ISA checks inseparable."""
+    calls = []
+
+    def fake_trace(java, jar, project, program, output):
+        calls.append(("trace", output.name))
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text("raw simulator output\n", encoding="utf-8")
+        return "PRINT_VALID\tPRINT_VALUE\n0\t0\n"
+
+    def fake_matrix(java, jar, project, matrix_path, output):
+        calls.append(("matrix", output.name))
+        output.mkdir(parents=True)
+
+    monkeypatch.setattr(runner, "trace_test", fake_trace)
+    monkeypatch.setattr(runner, "matrix_test", fake_matrix)
+    output = tmp_path / "acceptance"
+
+    runner.acceptance_test(
+        "java",
+        tmp_path / "logisim.jar",
+        runner.DEFAULT_PROJECT,
+        runner.DEFAULT_PROGRAM,
+        runner.DEFAULT_MATRIX,
+        output,
+    )
+
+    assert calls == [
+        ("trace", "reset-start.tsv"),
+        ("trace", "restart.tsv"),
+        ("matrix", "isa-matrix"),
+    ]
+    import json
+
+    report = json.loads((output / "acceptance.json").read_text(encoding="utf-8"))
+    assert report["status"] == "passed"
+    assert report["reset_restart_runs"][0]["clock_edges"] == 1
+    assert report["reset_restart_runs"][0]["sha256"] == report["reset_restart_runs"][1]["sha256"]
+
+
+def test_ap12_acceptance_rejects_nonreproducible_restart(tmp_path, monkeypatch):
+    traces = iter(("HEADER\nfirst\n", "HEADER\nsecond\n"))
+
+    def fake_trace(java, jar, project, program, output):
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text("raw\n", encoding="utf-8")
+        return next(traces)
+
+    monkeypatch.setattr(runner, "trace_test", fake_trace)
+    try:
+        runner.acceptance_test(
+            "java", tmp_path / "jar", runner.DEFAULT_PROJECT,
+            runner.DEFAULT_PROGRAM, runner.DEFAULT_MATRIX, tmp_path / "out"
+        )
+    except runner.SmokeTestError as exc:
+        assert "not reproducible" in str(exc)
+    else:
+        raise AssertionError("different restart traces were accepted")
 
 
 def test_ci_uses_available_temurin_build_and_current_setup_action():

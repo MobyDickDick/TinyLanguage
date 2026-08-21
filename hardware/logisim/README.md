@@ -1,5 +1,30 @@
 # TinyCPU in Logisim-evolution
 
+## AP-12 release acceptance
+
+From a fresh checkout with Eclipse Temurin 21.0.8 available, run the complete
+electrical release gate with one command:
+
+```bash
+PYTHONPATH=src python src/tiny_cpu_logisim.py \
+  --acceptance-output artifacts/tinycpu-ap12-acceptance
+```
+
+The command downloads the version-addressed Logisim-evolution 4.1.0 JAR when
+needed, verifies both pinned versions, and loads the maintained project. It
+then starts `TinyCPUMain` twice from its electrically asserted initial reset
+state and compares the normalized 17-edge AP-5 traces. These independent runs
+are the reset/restart and multi-cycle reproducibility check. Finally, the same
+invocation runs every AP-11 opcode-family and sticky-error fixture; none of
+these simulator checks is optional in CI.
+
+The output directory contains `reset-start.tsv` and `restart.tsv` as untouched
+Logisim tables, normalized TSV counterparts, all raw `isa-matrix/*.tsv` tables,
+and `acceptance.json`. The JSON report is written as `started` before simulation
+and changed to `passed` only after every comparison succeeds, so an interrupted
+run cannot be mistaken for accepted hardware. CI uploads the entire directory
+even on failure.
+
 This directory contains the TinyCPU hardware baseline with a dedicated arithmetic sheet.
 Open `TinyCPU.circ` with Logisim-evolution 4.1.x. Das Blatt **`TinyCPUMain` ist
 die hierarchische Integrationsseite**. Die fachliche Logik liegt in benannten

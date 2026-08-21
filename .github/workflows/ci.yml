@@ -62,13 +62,12 @@ jobs:
       - name: Load TinyCPU in pinned Logisim-evolution
         run: >-
           PYTHONPATH=src python src/tiny_cpu_logisim.py
-          --trace-output artifacts/ci/tinycpu-ap5-logisim.tsv
-          --matrix-output artifacts/ci/tinycpu-ap11-matrix
-      - name: Publish TinyCPU AP-5 electrical trace
+          --acceptance-output artifacts/ci/tinycpu-ap12-acceptance
+      - name: Publish TinyCPU electrical acceptance evidence
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: tinycpu-ap5-logisim-table
+          name: tinycpu-ap12-electrical-acceptance
           path: artifacts/ci/
           if-no-files-found: error
       - name: Run pytest suite

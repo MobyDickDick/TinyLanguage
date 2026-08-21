@@ -21,6 +21,13 @@ archived in `docs/open_tasks_archive.md`.
     Logisim-evolution data terminal `(750,460)` and feeds both `OPCODE` and the
     instruction-field splitter; the previously documented `(550,410)` point is
     empty drawing space rather than a component contact.
+  - Clock repair: `ErrorFlags.CLK` now belongs to the shared external clock net.
+    It was incorrectly wired to `Datapath.ACC_VALID_OUT`, which propagated
+    undefined validity into the sticky-error state and left observed controls
+    at `U` even while the external clock was toggling.
+    The same audit found the `AddressPath.CLK` terminal completely unwired; it
+    now joins the shared clock as well, so the address register can leave its
+    undefined startup state on the first accepted edge.
 
 - [x] **Deepen generated-program loop termination analysis**
   (Owner: Tooling/Program Generator)

@@ -148,6 +148,28 @@ def test_stateful_blocks_expose_named_clock_inputs():
         assert len(clocks) == 1, name
 
 
+def test_top_level_clock_reaches_every_stateful_block_without_joining_acc_valid():
+    """All state clocks must share CLK, never accumulator validity."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    clock = next(
+        component.get("loc")
+        for component in circuit.findall("comp[@name='Pin']")
+        if _attributes(component).get("label") == "CLK"
+    )
+    state_clocks = {
+        _subcircuit_input(root, name, "CLK")
+        for name in ("FetchDecode", "Datapath", "AddressPath", "Memory", "ErrorFlags")
+    }
+    acc_valid = _subcircuit_output(root, "Datapath", "ACC_VALID_OUT")
+    adjacency = _electrical_adjacency(circuit, {clock, acc_valid} | state_clocks)
+
+    clock_net = _reachable(adjacency, clock)
+    assert state_clocks <= clock_net
+    assert acc_valid not in clock_net
+
+
 def test_integration_reset_connects_external_reset_to_fetch_only():
     """Reset restarts the PC without implicitly clearing RAM or error flags."""
 

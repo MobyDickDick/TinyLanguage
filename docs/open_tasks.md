@@ -5,6 +5,23 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Remove TinyCPU signed-arithmetic bus conflicts**
+  (Owner: TinyCPU/Hardware)
+  - Cause: the sign-bit splitters in the `ADD`, `SUB`, and `MUL` arithmetic
+    sheets were placed inline. Their 15-bit magnitude outputs therefore joined
+    the original 16-bit operands and results, which Logisim reported as `E`
+    values and which then contaminated the merged top-level result bus.
+  - Result: every word-sized route now branches before its sign splitter. The
+    independent 16-bit operand/result path bypasses the 15-bit terminal while
+    the existing overflow logic retains its sign and magnitude taps.
+  - Verification: the netlist inspector accepts all three arithmetic sheets,
+    and a focused electrical-topology regression freezes both the word routes
+    and their isolation from each 15-bit splitter output.
+  - Additional repair: the `FetchDecode` ROM route now starts at the actual
+    Logisim-evolution data terminal `(750,460)` and feeds both `OPCODE` and the
+    instruction-field splitter; the previously documented `(550,410)` point is
+    empty drawing space rather than a component contact.
+
 - [x] **Deepen generated-program loop termination analysis**
   (Owner: Tooling/Program Generator)
   - Scope: execute the first follow-up criterion in

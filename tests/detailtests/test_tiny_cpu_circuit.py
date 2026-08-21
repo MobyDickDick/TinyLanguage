@@ -744,6 +744,20 @@ def test_checked_in_diagnostic_projects_are_reproducible(tmp_path):
         )
 
 
+def test_word_arithmetic_sheets_have_no_connectivity_or_width_errors():
+    reports = {report.name: report for report in inspect_project(PROJECT)}
+
+    for name in (
+        "AddArithmeticCircuit",
+        "SubArithmeticCircuit",
+        "MulArithmeticCircuit",
+        "DivArithmeticCircuit",
+    ):
+        report = reports[name]
+        assert report.unconnected == ()
+        assert report.width_conflicts == ()
+
+
 def test_fetch_decode_diagnostic_preserves_post_increment_range_layout():
     """Keep the manually redrawn increment and subsequent range-check stages."""
     projects = [PROJECT, PROJECT.parent / "diagnostics" / "TinyCPU-FetchDecode.circ"]

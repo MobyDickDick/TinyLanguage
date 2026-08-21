@@ -238,12 +238,12 @@ def test_fetch_decode_rom_drives_instruction_output():
         for component in fetch.findall("comp[@name='Pin']")
         if _attributes(component).get("label") == "OPCODE"
     )
-    # The Logisim-evolution ROM location is the upper-left drawing anchor.  Its
-    # address and data terminals share the vertical centre line, respectively
-    # on the west and east edges of the 40-by-20-pixel component.
+    # In the Logisim-evolution appearance the XML location is the upper-left
+    # anchor. The address is on the west edge; the wide data output is at the
+    # lower-right terminal of the expanded ROM body.
     rom_x, rom_y = (int(value) for value in rom.get("loc").strip("()").split(","))
     address_input = f"({rom_x},{rom_y + 10})"
-    data_output = f"({rom_x + 40},{rom_y + 10})"
+    data_output = f"({rom_x + 240},{rom_y + 60})"
     adjacency = _electrical_adjacency(
         fetch, {address_input, data_output, opcode.get("loc")}
     )
@@ -252,12 +252,12 @@ def test_fetch_decode_rom_drives_instruction_output():
     }
 
     assert address_input == "(510,410)"
-    assert data_output == "(550,410)"
+    assert data_output == "(750,460)"
     assert opcode.get("loc") in _reachable(adjacency, data_output)
     assert address_input not in _reachable(adjacency, data_output)
-    assert (data_output, "(750,410)") in instruction_wires
+    assert (data_output, "(820,460)") in instruction_wires
     assert all("(510,400)" not in endpoints for endpoints in instruction_wires)
-    assert all("(550,400)" not in endpoints for endpoints in instruction_wires)
+    assert all("(550,410)" not in endpoints for endpoints in instruction_wires)
 
 
 def test_taken_jump_selects_instruction_operand_as_next_pc():
@@ -283,6 +283,28 @@ def test_taken_jump_selects_instruction_operand_as_next_pc():
     assert "(560,100)" in _reachable(adjacency, "(640,380)")
     assert "(570,110)" in _reachable(adjacency, "(850,130)")
     assert "(270,120)" in _reachable(adjacency, "(590,90)")
+
+
+def test_signed_arithmetic_splitters_do_not_short_15_and_16_bit_buses():
+    """Sign-bit taps must branch off, never sit inline with word-sized data."""
+
+    root = ET.parse(PROJECT).getroot()
+    for name in ("AddArithmeticCircuit", "SubArithmeticCircuit", "MulArithmeticCircuit"):
+        circuit = root.find(f"circuit[@name='{name}']")
+        assert circuit is not None
+        contacts = {
+            "(300,120)", "(370,120)", "(490,150)",
+            "(330,200)", "(370,200)", "(490,170)",
+            "(530,160)", "(640,160)", "(930,160)",
+        }
+        adjacency = _electrical_adjacency(circuit, contacts)
+
+        assert "(490,150)" in _reachable(adjacency, "(300,120)")
+        assert "(370,120)" not in _reachable(adjacency, "(300,120)")
+        assert "(490,170)" in _reachable(adjacency, "(330,200)")
+        assert "(370,200)" not in _reachable(adjacency, "(330,200)")
+        assert "(930,160)" in _reachable(adjacency, "(530,160)")
+        assert "(640,160)" not in _reachable(adjacency, "(530,160)")
 
 
 def test_top_level_opcode_reaches_decode_controls_only():

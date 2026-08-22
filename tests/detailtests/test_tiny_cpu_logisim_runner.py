@@ -1,5 +1,6 @@
 """Tests for the pinned real-Logisim TinyCPU smoke-test runner."""
 
+import csv
 from pathlib import Path
 import subprocess
 import xml.etree.ElementTree as ET
@@ -114,7 +115,7 @@ def test_trace_test_clocks_temporary_main_and_retains_raw_table(tmp_path, monkey
     program = tmp_path / "program.tcpu"
     program.write_text("HALT()\n", encoding="utf-8")
     output = tmp_path / "artifacts" / "trace.tsv"
-    raw_table = _tty_row(HALT_ENABLE="1", HALTED="1", halt="1") + "\n"
+    raw_table = _tty_row(TRACE_OPCODE=f"{44:06b}" + "0" * 16, HALTED="1") + "\n"
     commands = []
 
     def fake_run(command, *, timeout=120, stdout_path=None):
@@ -154,10 +155,9 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
             component.get("loc"), runner._pin_attributes(component).get("width")
         )
         for component in main.findall("comp[@name='Tunnel']")
-        if component.get("loc") in {"(960,390)", "(940,410)", "(690,310)"}
+        if component.get("loc") in {"(940,410)", "(690,310)"}
     }
     assert tunnels == {
-        "AP5_TRACE_PC": ("(960,390)", "12"),
         "AP5_TRACE_OPCODE": ("(940,410)", "22"),
         "AP5_TRACE_CLOCK": ("(690,310)", None),
     }
@@ -170,7 +170,13 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
     generated_wires = {
         (wire.get("from"), wire.get("to")) for wire in main.findall("wire")
     }
-    assert (("(3510,1540)", "(3460,1540)")) in generated_wires
+    assert (("(3510,1540)", "(3490,1540)")) in generated_wires
+    assert (("(3510,1560)", "(3470,1560)")) in generated_wires
+    assert any(
+        component.get("name") == "OR Gate"
+        and runner._pin_attributes(component).get("label") == "HALT_ANY"
+        for component in main.findall("comp")
+    )
     assert any(
         start == "(1270,1540)" and end == "(3510,1540)"
         for start, end in original_wires
@@ -186,7 +192,7 @@ def test_tty_trace_converter_samples_last_stable_low_row_per_edge():
             _tty_row(PRINT_VALUE="0000000000000111", TRACE_CLK="1"),
             _tty_row(PRINT_ENABLE="1", PRINT_VALUE="0000000000000111", TRACE_CLK="0"),
             _tty_row(PRINT_ENABLE="1", PRINT_VALUE="0000000000000111", TRACE_CLK="1"),
-            _tty_row(HALT_ENABLE="1", HALTED="1", halt="1", TRACE_CLK="0"),
+            _tty_row(TRACE_OPCODE=f"{44:06b}" + "0" * 16, HALTED="1", TRACE_CLK="0"),
         ]
     )
 
@@ -197,17 +203,31 @@ def test_tty_trace_converter_samples_last_stable_low_row_per_edge():
 
 
 def test_tty_trace_converter_reports_undefined_fetch_decode_state():
-    raw = _tty_row(TRACE_PC="E" * 12, TRACE_OPCODE="U" * 22)
+    raw = _tty_row(TRACE_OPCODE="U" * 22)
 
     try:
         runner._tty_trace_to_tsv(raw)
     except runner.SmokeTestError as exc:
         message = str(exc)
         assert "fetch/decode is undefined" in message
-        assert "TRACE_PC=EEEEEEEEEEEE" in message
-        assert "OPCODE=" in message
+        assert "TRACE_OPCODE=" in message
     else:
         raise AssertionError("undefined PC/opcode state was accepted")
+
+
+def test_tty_trace_converter_preserves_error_halt_asserted_on_final_rising_edge():
+    raw = "\n".join(
+        [
+            _tty_row(TRACE_CLK="0"),
+            _tty_row(ERROR_INV="1", HALTED_WITH_ERROR="1", TRACE_CLK="1"),
+        ]
+    )
+
+    converted = runner._tty_trace_to_tsv(raw)
+
+    row = list(csv.DictReader(converted.splitlines(), delimiter="\t"))[0]
+    assert row["ERROR_INV"] == "1"
+    assert row["HALTED_WITH_ERROR"] == "1"
 
 
 def test_run_retains_simulator_stdout_before_reporting_failure(tmp_path, monkeypatch):
@@ -229,6 +249,25 @@ def test_run_retains_simulator_stdout_before_reporting_failure(tmp_path, monkeyp
         raise AssertionError("a failed simulator process was accepted")
 
     assert output.read_text(encoding="utf-8") == "PIN_A\tPIN_B\n0\t1\n"
+
+
+def test_run_treats_logisim_halt_message_as_normal_completion(monkeypatch, capsys):
+    """Logisim logs its expected halt-pin exit at ERROR level despite status zero."""
+    marker = (
+        "[main] ERROR com.cburch.logisim.gui.start.TtyInterface - "
+        "halted due to halt pin\n"
+    )
+    monkeypatch.setattr(
+        runner.subprocess,
+        "run",
+        lambda *args, **kwargs: subprocess.CompletedProcess(args[0], 0, "table\n", marker),
+    )
+
+    runner._run(["logisim"])
+
+    captured = capsys.readouterr()
+    assert "stopped at the configured halt pin" in captured.out
+    assert captured.err == ""
 
 
 def test_run_retains_partial_stdout_when_simulator_times_out(tmp_path, monkeypatch):

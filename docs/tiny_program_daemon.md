@@ -112,7 +112,13 @@ empfiehlt sich ein mehrstufiger Pipeline-Ansatz:
    Shebangs, dynamische Codeausführung, Prozessstarts und externe I/O-APIs ab.
    Nur ein bestandener, versionierter Prüfbericht gibt die automatische
    Portierung als nächste Stufe frei.
-3. **Automatische Portierung** nach TinyLanguage
+3. **Automatische Portierung (erledigt 2026-08-22)** nach TinyLanguage: Der
+   Porter akzeptiert ausschließlich eine zusammengehörige Quarantäne-,
+   Provenienz- und bestandene Scan-Datei und prüft den SHA-256-Bezug erneut.
+   Python wird nur im begrenzten, deklarativen Transpiler-Subset übersetzt;
+   bereits vorhandener Tiny-Quelltext wird übernommen. Das Ergebnis bleibt
+   ausdrücklich unausgeführt und erhält einen versionierten Prüfbericht mit
+   Ausgabe-Hash und `sandbox-test` als einzigem nächsten Schritt.
 4. **Sandbox-Testlauf** + Ergebnisbewertung
 5. **Optional GUI-Wrapper** pro generiertem Programm
 

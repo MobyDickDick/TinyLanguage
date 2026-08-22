@@ -1817,3 +1817,14 @@ and testable so they can be promoted into the formal backlog as needed.
   - Follow-up: capture the observed JSON directly from Logisim-evolution once
     the simulator is installed in CI; the VM-derived expectation remains a
     comparator and is not electrical-simulation evidence.
+
+## Program-generator validation update (2026-08-22)
+
+- [x] **Require provably non-zero division operands** (Owner: Tooling/Program Generator)
+  - Scope: execute the next follow-up criterion in
+    `docs/tiny_program_daemon.md` after structured loop termination analysis.
+  - Result: generated programs now accept division only when conservative local
+    evidence proves the divisor non-zero; literal zero, unknown parameters, and
+    reassignment after a returning zero guard are rejected.
+  - Verification: focused regressions cover a returning zero guard, an
+    unguarded parameter, and invalidation of guard evidence by reassignment.

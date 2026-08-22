@@ -1828,3 +1828,15 @@ and testable so they can be promoted into the formal backlog as needed.
     reassignment after a returning zero guard are rejected.
   - Verification: focused regressions cover a returning zero guard, an
     unguarded parameter, and invalidation of guard evidence by reassignment.
+
+## Program-generator resource-bounds update (2026-08-22)
+
+- [x] **Bound generated heap allocations and loop iterations** (Owner: Tooling/Program Generator)
+  - Scope: execute the next follow-up criterion in
+    `docs/tiny_program_daemon.md` after non-zero divisor analysis.
+  - Result: generated programs require fixed heap sizes of at most 4096 slots
+    and statically provable comparison-loop bounds of at most 10,000 iterations.
+    The logistic-map template now exposes its existing eight-step limit directly
+    in the loop condition so it satisfies the same conservative gate.
+  - Verification: focused regressions cover accepted bounded resources, dynamic
+    heap sizes, excessive iteration counts, and parameter-dependent loop bounds.

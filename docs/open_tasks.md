@@ -1876,3 +1876,17 @@ and testable so they can be promoted into the formal backlog as needed.
   - Verification: focused regressions cover byte-exact retention, metadata and
     permissions, rejected schemes/hosts/credentials/ports/redirects, and the
     size boundary. Security scanning remains the next pipeline package.
+
+## Program-source security-scan update (2026-08-22)
+
+- [x] **Statically scan quarantined external sources**
+  (Owner: Tooling/Program Generator)
+  - Scope: execute the second documented import-pipeline package without
+    parsing, importing, or executing untrusted content.
+  - Result: the scanner verifies the immutable payload against its provenance,
+    permits only UTF-8 `.py` and `.tiny` sources, rejects binary and dangerous
+    static signatures, and writes an atomic versioned verdict. Only a passing
+    report names automatic porting as an allowed next stage.
+  - Verification: focused regressions cover a passing report, content-type and
+    signature rejections, tampered provenance, symlinks, and report permissions.
+    Automatic TinyLanguage porting remains the next pipeline package.

@@ -1471,7 +1471,7 @@ class _StdLibRegistrar:
 
     def _time_now_iso(self) -> str:
         """Return the current UTC timestamp in ISO 8601 format."""
-        return datetime.datetime.utcnow().isoformat() + "Z"
+        return datetime.datetime.now(datetime.UTC).isoformat().replace("+00:00", "Z")
 
     # -----------------------------------------------------------------------
     # JSON namespace

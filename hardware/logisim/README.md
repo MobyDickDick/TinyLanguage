@@ -15,6 +15,22 @@ then runs the load, reset/restart trace, and complete opcode/error matrix agains
 the real simulator. Java security-patch and newer-feature releases are accepted;
 requiring one exact JDK patch had unnecessarily prevented local reproduction.
 
+If the automatic download is blocked, copy
+`logisim-evolution-4.1.0-all.jar` anywhere into the repository checkout and run:
+
+```bash
+scripts/test-logisim-local.sh
+```
+
+The local launcher searches the checkout for that exact versioned filename and
+passes it to the normal acceptance script. The JAR pattern is ignored by Git,
+so a local simulator binary is not accidentally committed. If several copies
+exist, or the file has a different name, select it explicitly:
+
+```bash
+scripts/test-logisim-local.sh path/to/logisim-evolution-4.1.0-all.jar
+```
+
 The command downloads the version-addressed Logisim-evolution 4.1.0 JAR when
 needed, verifies both pinned versions, and loads the maintained project. It
 then starts `TinyCPUMain` twice with Logisim's `PowerOnReset` component asserting

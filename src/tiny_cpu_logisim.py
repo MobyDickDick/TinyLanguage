@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
@@ -104,7 +105,14 @@ def _run(
         stdout_path.parent.mkdir(parents=True, exist_ok=True)
         stdout_path.write_text(result.stdout, encoding="utf-8")
     if result.stderr:
-        print(result.stderr, end="", file=sys.stderr)
+        stderr_lines = result.stderr.splitlines(keepends=True)
+        halt_marker = "TtyInterface - halted due to halt pin"
+        expected_halt = result.returncode == 0 and any(halt_marker in line for line in stderr_lines)
+        if expected_halt:
+            stderr_lines = [line for line in stderr_lines if halt_marker not in line]
+            print("Logisim tty stopped at the configured halt pin.")
+        if stderr_lines:
+            print("".join(stderr_lines), end="", file=sys.stderr)
     if result.returncode:
         raise SmokeTestError(
             f"command exited with status {result.returncode}: {' '.join(command)}"
@@ -334,7 +342,14 @@ def _tty_trace_to_tsv(raw: str) -> str:
         if row["TRACE_CLK"] == "0":
             last_low = row
         elif last_low is not None:
-            edges.append(last_low)
+            # A halt asserted by this rising edge stops tty mode immediately,
+            # so no following low row exists. Preserve the terminal state
+            # instead of the pre-edge sample in that one case.
+            edges.append(
+                row
+                if row["HALTED"] == "1" or row["HALTED_WITH_ERROR"] == "1"
+                else last_low
+            )
             last_low = None
     if last_low is not None and last_low["HALTED"] == "1":
         edges.append(last_low)
@@ -368,15 +383,28 @@ def trace_test(java: str, jar: Path, project: Path, program: Path, output: Path)
 
     expected = capture_integration_trace(program.read_text(encoding="utf-8"))
     instructions = [edge["instruction"] for edge in expected["edges"]]
+    normalized = _tty_trace_to_tsv(result.stdout)
     try:
-        observed = integration_trace_from_table(_tty_trace_to_tsv(result.stdout), instructions)
+        observed = integration_trace_from_table(normalized, instructions)
     except ValueError as exc:
+        rows = list(csv.DictReader(normalized.splitlines(), delimiter="\t"))
+        if rows and rows[-1].get("HALTED_WITH_ERROR") == "1":
+            error_names = [
+                name
+                for name in sorted(EXPECTED_STICKY_ERRORS)
+                if rows[-1].get(f"ERROR_{name}") == "1"
+            ]
+            errors = ", ".join(error_names) or "no sticky error flag"
+            raise SmokeTestError(
+                f"AP-5 circuit halted with error after {len(rows)} clock edges "
+                f"({errors}); expected {len(instructions)} edges and a normal HALT"
+            ) from exc
         raise SmokeTestError(f"invalid Logisim AP-5 table: {exc}") from exc
     mismatches = compare_trace(expected, observed)
     if mismatches:
         raise SmokeTestError("AP-5 electrical trace mismatch: " + "; ".join(mismatches))
     print(f"AP-5 electrical trace matches across {len(instructions)} clock edges")
-    return _tty_trace_to_tsv(result.stdout)
+    return normalized
 
 
 def matrix_test(java: str, jar: Path, project: Path, matrix_path: Path, output: Path) -> None:

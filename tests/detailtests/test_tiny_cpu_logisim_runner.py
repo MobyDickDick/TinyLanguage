@@ -1,5 +1,6 @@
 """Tests for the pinned real-Logisim TinyCPU smoke-test runner."""
 
+import csv
 from pathlib import Path
 import subprocess
 import xml.etree.ElementTree as ET
@@ -214,6 +215,21 @@ def test_tty_trace_converter_reports_undefined_fetch_decode_state():
         raise AssertionError("undefined PC/opcode state was accepted")
 
 
+def test_tty_trace_converter_preserves_error_halt_asserted_on_final_rising_edge():
+    raw = "\n".join(
+        [
+            _tty_row(TRACE_CLK="0"),
+            _tty_row(ERROR_INV="1", HALTED_WITH_ERROR="1", TRACE_CLK="1"),
+        ]
+    )
+
+    converted = runner._tty_trace_to_tsv(raw)
+
+    row = list(csv.DictReader(converted.splitlines(), delimiter="\t"))[0]
+    assert row["ERROR_INV"] == "1"
+    assert row["HALTED_WITH_ERROR"] == "1"
+
+
 def test_run_retains_simulator_stdout_before_reporting_failure(tmp_path, monkeypatch):
     """A failed electrical comparison must still leave useful CI evidence."""
     output = tmp_path / "artifacts" / "trace.tsv"
@@ -233,6 +249,25 @@ def test_run_retains_simulator_stdout_before_reporting_failure(tmp_path, monkeyp
         raise AssertionError("a failed simulator process was accepted")
 
     assert output.read_text(encoding="utf-8") == "PIN_A\tPIN_B\n0\t1\n"
+
+
+def test_run_treats_logisim_halt_message_as_normal_completion(monkeypatch, capsys):
+    """Logisim logs its expected halt-pin exit at ERROR level despite status zero."""
+    marker = (
+        "[main] ERROR com.cburch.logisim.gui.start.TtyInterface - "
+        "halted due to halt pin\n"
+    )
+    monkeypatch.setattr(
+        runner.subprocess,
+        "run",
+        lambda *args, **kwargs: subprocess.CompletedProcess(args[0], 0, "table\n", marker),
+    )
+
+    runner._run(["logisim"])
+
+    captured = capsys.readouterr()
+    assert "stopped at the configured halt pin" in captured.out
+    assert captured.err == ""
 
 
 def test_run_retains_partial_stdout_when_simulator_times_out(tmp_path, monkeypatch):

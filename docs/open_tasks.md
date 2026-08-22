@@ -1862,3 +1862,17 @@ and testable so they can be promoted into the formal backlog as needed.
     declarations, with category-specific limits of 80 or 100 source lines.
   - Verification: focused regressions cover missing comments, invalid function
     and variable names, category limits, and all curated default templates.
+
+## Program-source quarantine update (2026-08-22)
+
+- [x] **Acquire allowlisted external sources into quarantine**
+  (Owner: Tooling/Program Generator)
+  - Scope: execute the first documented pipeline package after completing the
+    local generator quality criteria; acquisition must never execute or parse
+    downloaded content.
+  - Result: a dedicated CLI accepts HTTPS sources only from RosettaCode and raw
+    GitHub, enforces a 256 KiB default limit, revalidates redirect targets, and
+    atomically stores non-executable bytes with provenance and a SHA-256 digest.
+  - Verification: focused regressions cover byte-exact retention, metadata and
+    permissions, rejected schemes/hosts/credentials/ports/redirects, and the
+    size boundary. Security scanning remains the next pipeline package.

@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import subprocess
+import xml.etree.ElementTree as ET
 
 import tiny_cpu_logisim as runner
 
@@ -134,6 +135,44 @@ def test_trace_test_clocks_temporary_main_and_retains_raw_table(tmp_path, monkey
 
     assert commands[0][-3:-1] == ["-tty", "table,halt"]
     assert output.read_text(encoding="utf-8") == raw_table
+
+
+def test_autonomous_trace_taps_real_tinycpu_main_nets():
+    """Trace probes must not silently sit on empty drawing coordinates."""
+
+    tree = ET.parse(runner.DEFAULT_PROJECT)
+    main = tree.getroot().find("circuit[@name='TinyCPUMain']")
+    assert main is not None
+    original_wires = {
+        (wire.get("from"), wire.get("to")) for wire in main.findall("wire")
+    }
+
+    runner._autonomous_trace_project(tree)
+
+    tunnels = {
+        runner._pin_attributes(component).get("label"): component.get("loc")
+        for component in main.findall("comp[@name='Tunnel']")
+        if component.get("loc") in {"(960,390)", "(960,400)", "(690,310)"}
+    }
+    assert tunnels == {
+        "AP5_TRACE_PC": "(960,390)",
+        "AP5_TRACE_OPCODE": "(960,400)",
+        "AP5_TRACE_CLOCK": "(690,310)",
+    }
+
+    # Each source probe is an endpoint or junction of the maintained circuit,
+    # rather than merely being present somewhere on the drawing canvas.
+    contacts = {point for wire in original_wires for point in wire}
+    assert set(tunnels.values()) <= contacts
+
+    generated_wires = {
+        (wire.get("from"), wire.get("to")) for wire in main.findall("wire")
+    }
+    assert (("(3510,1540)", "(3460,1540)")) in generated_wires
+    assert any(
+        start == "(1270,1540)" and end == "(3510,1540)"
+        for start, end in original_wires
+    )
 
 
 def test_tty_trace_converter_samples_last_stable_low_row_per_edge():

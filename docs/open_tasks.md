@@ -5,6 +5,16 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Port statically approved quarantined sources to TinyLanguage**
+  (Owner: Tooling/Program Generator)
+  - Scope: execute the next pipeline stage in `docs/tiny_program_daemon.md`
+    without weakening the quarantine or executing third-party source.
+  - Result: the automatic porter revalidates provenance and the exact passing
+    scan report, translates only the supported Python IR subset (or copies
+    approved Tiny text), and atomically emits a hashed, versioned audit record.
+  - Boundary: every result is marked `ported-unexecuted`; only the separate
+    sandbox-test stage may evaluate it.
+
 - [x] **Expose the first undefined TinyCPU fetch/decode boundary**
   (Owner: TinyCPU/Hardware)
   - Result: temporary electrical harnesses now export the 12-bit PC and 22-bit

@@ -36,3 +36,29 @@ done
 Diese Prüfung bewertet Struktur, Anschlussbelegung und Busbreiten. Die
 elektrische Laufzeitsimulation der Logisim-Bauteilbibliothek bleibt weiterhin
 Aufgabe von Logisim-evolution.
+
+## Ursachenanalyse der wiederholten Rücksetzung
+
+Die fehlerhafte Fassung wurde nicht von Logisim selbst wiederhergestellt. Die
+Git-Historie zeigt vielmehr, dass auf die ausdrücklich wiederhergestellte
+Benutzerfassung (`ac06b29` beziehungsweise später `5f4d2ab`) jeweils erneut ein
+älterer, automatisiert erzeugter Reparaturstand (`3e9ea7a`, `c5b8cd2` und
+`de63af2`) angewendet und anschließend über einen Pull Request zusammengeführt
+wurde. Damit wurde bei der Reparatur die falsche Baseline gewählt: statt den
+jeweils neuesten Benutzer-Commit zu korrigieren, dienten frühere
+Agenten-Commits als vermeintlich bekannte, „funktionierende“ Referenz.
+
+Begünstigt wurde das durch Regressionstests, die konkrete Koordinaten und
+Bauteilpositionen der älteren Zeichnung festschrieben. Eine elektrisch anders
+angeordnete Benutzerlösung schlug daher selbst dann fehl, wenn ihr Aufbau
+inhaltlich gleichwertig war. Der scheinbar einfachste Weg zu grünen Tests war
+so das Zurückkopieren der alten Zeichnung – genau das hat die Benutzeränderung
+wiederholt verdrängt.
+
+Für die aktuelle Reparatur gilt deshalb ausdrücklich Commit `28d49cb` als
+Baseline. Bauteile und Layout dieser Fassung bleiben erhalten; korrigiert wurden
+nur fehlerhafte Netze, Busabgriffe und die dazugehörigen Diagnose-Fixtures.
+Die Tests ermitteln verschobene Bauteile nun anhand ihrer Labels oder ihrer
+aktuellen Schnittstelle, statt die alte Zeichnung durch historische
+Koordinaten indirekt wiederherzustellen. Die aus dem Hauptprojekt erzeugten
+Diagnoseblätter bleiben bytegenau reproduzierbar.

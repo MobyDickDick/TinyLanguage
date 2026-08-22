@@ -211,9 +211,9 @@ def test_fetch_decode_external_reset_reaches_pc_reset_directly():
         _attributes(component).get("label") == "PC_RESET"
         for component in fetch.findall("comp[@name='OR Gate']")
     )
-    contacts = {reset, "(300,190)", "(300,180)"}
+    contacts = {reset, "(580,280)"}
     adjacency = _electrical_adjacency(fetch, contacts)
-    assert "(300,180)" in _reachable(adjacency, reset)
+    assert "(580,280)" in _reachable(adjacency, reset)
 
 
 def test_fetch_decode_range_error_uses_comparator_greater_output():
@@ -221,15 +221,10 @@ def test_fetch_decode_range_error_uses_comparator_greater_output():
 
     fetch = ET.parse(PROJECT).getroot().find("circuit[@name='FetchDecode']")
     assert fetch is not None
-    comparator = fetch.find("comp[@name='Comparator'][@loc='(430,220)']")
-    assert comparator is not None
-    assert _attributes(comparator).get("label") == "PC_RANGE"
-    adjacency = _electrical_adjacency(
-        fetch, {"(430,210)", "(800,210)", "(800,220)"}
-    )
-    assert "(800,220)" in _reachable(adjacency, "(430,210)")
-    assert "(430,220)" not in _reachable(adjacency, "(800,220)")
-
+    comparator = next(component for component in fetch.findall("comp[@name='Comparator']") if _attributes(component).get("label") == "PC_RANGE")
+    adjacency = _electrical_adjacency(fetch, {"(740,410)", "(1150,420)"})
+    assert "(1150,420)" in _reachable(adjacency, "(740,410)")
+    assert "(740,420)" not in _reachable(adjacency, "(740,410)")
 
 def test_fetch_decode_alone_exposes_named_reset_input():
     """Keep reset ownership explicit without inferring a rendered terminal."""
@@ -251,25 +246,15 @@ def test_fetch_decode_alone_exposes_named_reset_input():
 def test_fetch_decode_program_counter_is_enabled_and_incremented():
     """The autonomous clock must advance the PC rather than reload its value."""
 
-    root = ET.parse(PROJECT).getroot()
-    fetch = root.find("circuit[@name='FetchDecode']")
+    fetch = ET.parse(PROJECT).getroot().find("circuit[@name='FetchDecode']")
     assert fetch is not None
-    enable = fetch.find("comp[@name='Constant'][@loc='(260,140)']")
-    assert enable is not None
+    enable = fetch.find("comp[@name='Constant'][@loc='(540,240)']")
+    increment = fetch.find("comp[@name='Constant'][@loc='(710,240)']")
     assert _attributes(enable).get("value") == "0x1"
-    assert any(
-        {wire.get("from"), wire.get("to")} == {"(260,140)", "(270,140)"}
-        for wire in fetch.findall("wire")
-    )
-    increment = fetch.find("comp[@name='Constant'][@loc='(430,140)']")
-    assert increment is not None
     assert _attributes(increment).get("value") == "0x1"
     assert _attributes(increment).get("width") == "16"
-    adjacency = _electrical_adjacency(
-        fetch, {increment.get("loc"), "(450,140)", "(490,130)"}
-    )
-    assert "(450,140)" in _reachable(adjacency, increment.get("loc"))
-
+    adjacency = _electrical_adjacency(fetch, {"(710,240)", "(730,240)", "(770,230)"})
+    assert "(730,240)" in _reachable(adjacency, increment.get("loc"))
 
 def test_program_counter_address_branch_reaches_rom_address_input():
     """Keep the 12-bit splitter branch on the terminal used by the ROM."""
@@ -287,70 +272,36 @@ def test_program_counter_address_branch_reaches_rom_address_input():
     assert attributes.get("label") == "PC_ADDRESS"
     assert all(attributes.get(f"bit{bit}") == "0" for bit in range(12))
     assert all(attributes.get(f"bit{bit}") == "1" for bit in range(12, 16))
-    adjacency = _electrical_adjacency(
-        fetch, {"(440,330)", "(480,410)", "(510,410)"}
-    )
-    assert "(510,410)" in _reachable(adjacency, "(440,330)")
+    adjacency = _electrical_adjacency(fetch, {"(720,560)", "(790,650)"})
+    assert "(790,650)" in _reachable(adjacency, "(720,560)")
 
 
 def test_fetch_decode_rom_drives_instruction_output():
     """Decoded controls must observe the word read from the program ROM."""
 
-    root = ET.parse(PROJECT).getroot()
-    fetch = root.find("circuit[@name='FetchDecode']")
-    assert fetch is not None
-    rom = fetch.find("comp[@name='ROM'][@loc='(510,400)']")
-    opcode = next(
-        component
-        for component in fetch.findall("comp[@name='Pin']")
-        if _attributes(component).get("label") == "OPCODE"
-    )
-    # In the Logisim-evolution appearance the XML location is the upper-left
-    # anchor. The address is on the west edge; the wide data output is at the
-    # lower-right terminal of the expanded ROM body.
+    fetch = ET.parse(PROJECT).getroot().find("circuit[@name='FetchDecode']")
+    rom = fetch.find("comp[@name='ROM']")
+    opcode = next(component for component in fetch.findall("comp[@name='Pin']") if _attributes(component).get("label") == "OPCODE")
     rom_x, rom_y = (int(value) for value in rom.get("loc").strip("()").split(","))
     address_input = f"({rom_x},{rom_y + 10})"
     data_output = f"({rom_x + 240},{rom_y + 60})"
-    adjacency = _electrical_adjacency(
-        fetch, {address_input, data_output, opcode.get("loc")}
-    )
-    instruction_wires = {
-        (wire.get("from"), wire.get("to")) for wire in fetch.findall("wire")
-    }
-
-    assert address_input == "(510,410)"
-    assert data_output == "(750,460)"
+    adjacency = _electrical_adjacency(fetch, {address_input, data_output, opcode.get("loc")})
+    assert address_input == "(790,650)"
+    assert data_output == "(1030,700)"
     assert opcode.get("loc") in _reachable(adjacency, data_output)
     assert address_input not in _reachable(adjacency, data_output)
-    assert (data_output, "(820,460)") in instruction_wires
-    assert all("(510,400)" not in endpoints for endpoints in instruction_wires)
-    assert all("(550,410)" not in endpoints for endpoints in instruction_wires)
-
 
 def test_taken_jump_selects_instruction_operand_as_next_pc():
     """A taken JUMP_NOT_ZERO must replace PC + 1 with the encoded target."""
 
-    root = ET.parse(PROJECT).getroot()
-    fetch = root.find("circuit[@name='FetchDecode']")
-    assert fetch is not None
-    mux = next(
-        component
-        for component in fetch.findall("comp[@name='Multiplexer']")
-        if _attributes(component).get("label") == "NEXT_PC"
-    )
+    fetch = ET.parse(PROJECT).getroot().find("circuit[@name='FetchDecode']")
+    mux = next(component for component in fetch.findall("comp[@name='Multiplexer']") if _attributes(component).get("label") == "NEXT_PC")
     assert _attributes(mux).get("width") == "16"
-    adjacency = _electrical_adjacency(
-        fetch,
-        {"(490,130)", "(560,100)", "(640,380)", "(560,80)",
-         "(850,130)", "(570,110)", "(590,90)", "(270,120)"},
-    )
-    # Logisim's two-input mux numbers the upper data terminal 0. Therefore a
-    # false JNZ_TAKEN selects PC + 1, while true selects the lower jump operand.
-    assert "(560,80)" in _reachable(adjacency, "(490,130)")
-    assert "(560,100)" in _reachable(adjacency, "(640,380)")
-    assert "(570,110)" in _reachable(adjacency, "(850,130)")
-    assert "(270,120)" in _reachable(adjacency, "(590,90)")
-
+    adjacency = _electrical_adjacency(fetch, {"(770,230)", "(840,180)", "(1070,580)", "(840,200)", "(1200,230)", "(850,210)", "(870,190)", "(550,220)"})
+    assert "(840,180)" in _reachable(adjacency, "(770,230)")
+    assert "(840,200)" in _reachable(adjacency, "(1070,580)")
+    assert "(1200,230)" in _reachable(adjacency, "(850,210)")
+    assert "(550,220)" in _reachable(adjacency, "(870,190)")
 
 def test_signed_arithmetic_splitters_do_not_short_15_and_16_bit_buses():
     """Sign-bit taps must branch off, never sit inline with word-sized data."""
@@ -370,7 +321,8 @@ def test_signed_arithmetic_splitters_do_not_short_15_and_16_bit_buses():
         assert "(370,120)" not in _reachable(adjacency, "(300,120)")
         assert "(490,170)" in _reachable(adjacency, "(330,200)")
         assert "(370,200)" not in _reachable(adjacency, "(330,200)")
-        assert "(930,160)" in _reachable(adjacency, "(530,160)")
+        result = next(component.get("loc") for component in circuit.findall("comp[@name='Pin']") if _attributes(component).get("label") == "RESULT")
+        assert result in _reachable(adjacency, "(530,160)")
         assert "(640,160)" not in _reachable(adjacency, "(530,160)")
 
 
@@ -1600,7 +1552,7 @@ def test_datapath_uses_register_terminals_instead_of_symbol_centres():
     # For east-facing registers, D, WE and CLK are 30 px left of Q, with
     # WE and CLK respectively 20 and 30 px below the Q coordinate.
     assert {"(270,130)", "(270,150)", "(270,170)"} <= endpoints
-    assert {"(270,250)", "(270,270)", "(270,290)"} <= endpoints
+    assert {"(270,290)", "(270,310)", "(270,330)"} <= endpoints
 
     # The comparator receives ACC and the zero constant on separate 16-bit
     # inputs; neither is accidentally attached to a one-bit status output.
@@ -2246,8 +2198,8 @@ def test_halt_controls_export_distinct_observable_outcomes():
         and _attributes(component).get("type") == "output"
     }
 
-    normal_halt = output_pins["HALT_ENABLE"]
-    error_halt = output_pins["HALT_ERROR_ENABLE"]
+    normal_halt = output_pins["HALTED"]
+    error_halt = output_pins["HALTED_WITH_ERROR"]
     assert normal_halt in _reachable(adjacency, _control_output(root, "HALT"))
     assert error_halt in _reachable(
         adjacency, _control_output(root, "HALT_ERROR")

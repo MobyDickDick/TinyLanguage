@@ -20,28 +20,6 @@
     <a name="circuit" val="ErrorFlags"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(160,970)" name="Constant"/>
-    <comp lib="0" loc="(180,970)" name="Tunnel">
-      <a name="label" val="ERROR_FLAGS_STARTUP_RESET"/>
-    </comp>
-    <comp lib="0" loc="(780,290)" name="Tunnel">
-      <a name="label" val="ERROR_FLAGS_STARTUP_RESET"/>
-    </comp>
-    <comp lib="0" loc="(780,420)" name="Tunnel">
-      <a name="label" val="ERROR_FLAGS_STARTUP_RESET"/>
-    </comp>
-    <comp lib="0" loc="(780,560)" name="Tunnel">
-      <a name="label" val="ERROR_FLAGS_STARTUP_RESET"/>
-    </comp>
-    <comp lib="0" loc="(780,690)" name="Tunnel">
-      <a name="label" val="ERROR_FLAGS_STARTUP_RESET"/>
-    </comp>
-    <comp lib="0" loc="(780,830)" name="Tunnel">
-      <a name="label" val="ERROR_FLAGS_STARTUP_RESET"/>
-    </comp>
-    <comp lib="0" loc="(780,970)" name="Tunnel">
-      <a name="label" val="ERROR_FLAGS_STARTUP_RESET"/>
-    </comp>
     <comp lib="0" loc="(100,160)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="CLK"/>
@@ -110,7 +88,28 @@
       <a name="appearance" val="classic"/>
       <a name="label" val="CLEAR_ERROR"/>
     </comp>
+    <comp lib="0" loc="(180,970)" name="Tunnel">
+      <a name="label" val="ERROR_FLAGS_STARTUP_RESET"/>
+    </comp>
     <comp lib="0" loc="(720,200)" name="Constant"/>
+    <comp lib="0" loc="(780,290)" name="Tunnel">
+      <a name="label" val="ERROR_FLAGS_STARTUP_RESET"/>
+    </comp>
+    <comp lib="0" loc="(780,420)" name="Tunnel">
+      <a name="label" val="ERROR_FLAGS_STARTUP_RESET"/>
+    </comp>
+    <comp lib="0" loc="(780,560)" name="Tunnel">
+      <a name="label" val="ERROR_FLAGS_STARTUP_RESET"/>
+    </comp>
+    <comp lib="0" loc="(780,690)" name="Tunnel">
+      <a name="label" val="ERROR_FLAGS_STARTUP_RESET"/>
+    </comp>
+    <comp lib="0" loc="(780,830)" name="Tunnel">
+      <a name="label" val="ERROR_FLAGS_STARTUP_RESET"/>
+    </comp>
+    <comp lib="0" loc="(780,970)" name="Tunnel">
+      <a name="label" val="ERROR_FLAGS_STARTUP_RESET"/>
+    </comp>
     <comp lib="1" loc="(260,110)" name="NOT Gate">
       <a name="label" val="NOT_CLEAR_ERROR"/>
     </comp>
@@ -184,7 +183,6 @@
       <a name="text" val="Set-dominant sticky flags: SET OR (current AND NOT CLEAR_ERROR)"/>
     </comp>
     <wire from="(100,160)" to="(700,160)"/>
-    <wire from="(160,970)" to="(180,970)"/>
     <wire from="(100,210)" to="(550,210)"/>
     <wire from="(110,340)" to="(530,340)"/>
     <wire from="(110,480)" to="(540,480)"/>
@@ -192,6 +190,7 @@
     <wire from="(110,750)" to="(550,750)"/>
     <wire from="(120,890)" to="(560,890)"/>
     <wire from="(140,110)" to="(230,110)"/>
+    <wire from="(160,970)" to="(180,970)"/>
     <wire from="(260,110)" to="(280,110)"/>
     <wire from="(280,110)" to="(280,270)"/>
     <wire from="(280,270)" to="(280,390)"/>

@@ -547,6 +547,39 @@ def test_effective_address_range_error_covers_every_memory_address_mode():
     )
 
 
+def test_decoded_error_placeholders_are_inactive():
+    """Unused decoded error outputs must not continuously set sticky flags."""
+
+    root = ET.parse(PROJECT).getroot()
+    controls = next(
+        circuit
+        for circuit in root.findall("circuit")
+        if circuit.get("name") == "FetchDecodeControls"
+    )
+    components = {component.get("loc"): component for component in controls.findall("comp")}
+    wires = {
+        (wire.get("from"), wire.get("to"))
+        for wire in controls.findall("wire")
+    }
+
+    for label in ("SET_OVF", "SET_DIV0", "SET_ADDR", "SET_INV", "SET_ILL", "SET_INPUT"):
+        output = next(
+            component
+            for component in controls.findall("comp")
+            if component.get("name") == "Pin"
+            and _attributes(component).get("label") == label
+        )
+        output_x, output_y = (
+            int(value) for value in output.get("loc").strip("()").split(",")
+        )
+        source_location = f"({output_x - 40},{output_y})"
+        source = components[source_location]
+
+        assert source.get("name") == "Constant"
+        assert _attributes(source).get("value") == "0x0"
+        assert (source_location, output.get("loc")) in wires
+
+
 def test_invalid_arithmetic_result_sets_the_invalid_operand_flag():
     """SET_INV comes from active invalid arithmetic, not a decoded constant."""
 

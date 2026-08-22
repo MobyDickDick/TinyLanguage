@@ -1487,12 +1487,24 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <a name="circuit" val="FetchDecodeControls"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(1000,1010)" name="Constant"/>
-    <comp lib="0" loc="(1000,1030)" name="Constant"/>
-    <comp lib="0" loc="(1000,930)" name="Constant"/>
-    <comp lib="0" loc="(1000,950)" name="Constant"/>
-    <comp lib="0" loc="(1000,970)" name="Constant"/>
-    <comp lib="0" loc="(1000,990)" name="Constant"/>
+    <comp lib="0" loc="(1000,1010)" name="Constant">
+      <a name="value" val="0x0"/>
+    </comp>
+    <comp lib="0" loc="(1000,1030)" name="Constant">
+      <a name="value" val="0x0"/>
+    </comp>
+    <comp lib="0" loc="(1000,930)" name="Constant">
+      <a name="value" val="0x0"/>
+    </comp>
+    <comp lib="0" loc="(1000,950)" name="Constant">
+      <a name="value" val="0x0"/>
+    </comp>
+    <comp lib="0" loc="(1000,970)" name="Constant">
+      <a name="value" val="0x0"/>
+    </comp>
+    <comp lib="0" loc="(1000,990)" name="Constant">
+      <a name="value" val="0x0"/>
+    </comp>
     <comp lib="0" loc="(1040,1010)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>

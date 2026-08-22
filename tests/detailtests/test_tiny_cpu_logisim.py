@@ -195,8 +195,8 @@ def test_integration_reset_connects_external_reset_to_fetch_only():
     } == {frozenset(pins.values())}
 
 
-def test_fetch_decode_external_reset_reaches_portable_pc_reset_gate():
-    """Combine RESET with a portable inactive constant before clearing PC."""
+def test_fetch_decode_external_reset_reaches_pc_reset_directly():
+    """RESET must clear the PC without a decorative constant or logic gate."""
 
     root = ET.parse(PROJECT).getroot()
     fetch = root.find("circuit[@name='FetchDecode']")
@@ -206,21 +206,29 @@ def test_fetch_decode_external_reset_reaches_portable_pc_reset_gate():
         for component in fetch.findall("comp[@name='Pin']")
         if _attributes(component).get("label") == "RESET"
     )
-    reset_constant = fetch.find("comp[@name='Constant'][@loc='(300,240)']")
-    assert reset_constant is not None
-    reset_gate = next(
-        component
+    assert fetch.find("comp[@name='Constant'][@loc='(300,240)']") is None
+    assert not any(
+        _attributes(component).get("label") == "PC_RESET"
         for component in fetch.findall("comp[@name='OR Gate']")
-        if _attributes(component).get("label") == "PC_RESET"
     )
-    contacts = {
-        reset, reset_constant.get("loc"), "(350,200)", "(350,240)",
-        reset_gate.get("loc"), "(300,180)",
-    }
+    contacts = {reset, "(300,190)", "(300,180)"}
     adjacency = _electrical_adjacency(fetch, contacts)
-    assert "(350,200)" in _reachable(adjacency, reset)
-    assert "(350,240)" in _reachable(adjacency, reset_constant.get("loc"))
-    assert "(300,180)" in _reachable(adjacency, reset_gate.get("loc"))
+    assert "(300,180)" in _reachable(adjacency, reset)
+
+
+def test_fetch_decode_range_error_uses_comparator_greater_output():
+    """PC overflow, rather than PC equality, must request an error halt."""
+
+    fetch = ET.parse(PROJECT).getroot().find("circuit[@name='FetchDecode']")
+    assert fetch is not None
+    comparator = fetch.find("comp[@name='Comparator'][@loc='(430,220)']")
+    assert comparator is not None
+    assert _attributes(comparator).get("label") == "PC_RANGE"
+    adjacency = _electrical_adjacency(
+        fetch, {"(430,210)", "(800,210)", "(800,220)"}
+    )
+    assert "(800,220)" in _reachable(adjacency, "(430,210)")
+    assert "(430,220)" not in _reachable(adjacency, "(800,220)")
 
 
 def test_fetch_decode_alone_exposes_named_reset_input():

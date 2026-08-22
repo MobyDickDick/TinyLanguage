@@ -100,7 +100,11 @@ führt keinen fremden Code aus.
 Für die nächste Ausbaustufe (Crawler, Repo-Import, Virenscan, Portierung nach Tiny)
 empfiehlt sich ein mehrstufiger Pipeline-Ansatz:
 
-1. **Quelle holen** (z. B. RosettaCode / Git-Repos) in Quarantäne
+1. **Quelle holen (erledigt 2026-08-22)** (z. B. RosettaCode / Git-Repos) in
+   Quarantäne. `src/tiny_program_source_import.py` lädt ausschließlich HTTPS-
+   Quellen von einer engen Host-Allowlist, begrenzt die Größe und speichert die
+   unveränderten Bytes ohne ausführbare Dateiendung zusammen mit URL, Zeit,
+   Größe und SHA-256-Prüfsumme. Weiterverarbeitung ist vor Schritt 2 verboten.
 2. **Sicherheitsprüfung** (Signaturen, statische Analyse, Allowlist)
 3. **Automatische Portierung** nach TinyLanguage
 4. **Sandbox-Testlauf** + Ergebnisbewertung

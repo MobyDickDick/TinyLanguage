@@ -56,6 +56,8 @@ TTY_OUTPUTS = (
     ("ERROR_INPUT", 1),
     ("HALTED", 1),
     ("HALTED_WITH_ERROR", 1),
+    ("TRACE_PC", 12),
+    ("TRACE_OPCODE", 22),
     ("TRACE_CLK", 1),
     ("halt", 1),
 )
@@ -229,7 +231,12 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
         for name, value in (("highDuration", "1"), ("lowDuration", "1"), ("phase", "0")):
             ET.SubElement(pin, "a", name=name, val=value)
 
-    for location, label in (("(3500,1900)", "TRACE_CLK"), ("(3500,1920)", "halt")):
+    for location, label, width in (
+        ("(3500,1860)", "TRACE_PC", 12),
+        ("(3500,1880)", "TRACE_OPCODE", 22),
+        ("(3500,1900)", "TRACE_CLK", 1),
+        ("(3500,1920)", "halt", 1),
+    ):
         pin = ET.SubElement(circuit, "comp", lib="0", loc=location, name="Pin")
         for name, value in (
             ("appearance", "classic"),
@@ -238,6 +245,14 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
             ("type", "output"),
         ):
             ET.SubElement(pin, "a", name=name, val=value)
+        if width != 1:
+            ET.SubElement(pin, "a", name="width", val=str(width))
+    for location, label in (("(580,380)", "AP5_TRACE_PC"), ("(3480,1860)", "AP5_TRACE_PC"),
+                            ("(580,400)", "AP5_TRACE_OPCODE"), ("(3480,1880)", "AP5_TRACE_OPCODE")):
+        tunnel = ET.SubElement(circuit, "comp", lib="0", loc=location, name="Tunnel")
+        ET.SubElement(tunnel, "a", name="label", val=label)
+    ET.SubElement(circuit, "wire", **{"from": "(3480,1860)", "to": "(3500,1860)"})
+    ET.SubElement(circuit, "wire", **{"from": "(3480,1880)", "to": "(3500,1880)"})
     for location in ("(330,300)", "(3480,1900)"):
         tunnel = ET.SubElement(circuit, "comp", lib="0", loc=location, name="Tunnel")
         ET.SubElement(tunnel, "a", name="label", val="AP5_TRACE_CLOCK")
@@ -266,7 +281,7 @@ def _replace_program_rom(
 def _tty_trace_to_tsv(raw: str) -> str:
     """Convert Logisim's grouped, change-driven tty table into rising-edge rows."""
     decoded_rows: list[dict[str, str]] = []
-    expected_tokens = sum(4 if width == 16 else 1 for _label, width in TTY_OUTPUTS)
+    expected_tokens = sum((width + 3) // 4 if width > 1 else 1 for _label, width in TTY_OUTPUTS)
     for line in raw.splitlines():
         tokens = line.split()
         if len(tokens) != expected_tokens:
@@ -274,7 +289,7 @@ def _tty_trace_to_tsv(raw: str) -> str:
         row: dict[str, str] = {}
         offset = 0
         for label, width in TTY_OUTPUTS:
-            count = 4 if width == 16 else 1
+            count = (width + 3) // 4 if width > 1 else 1
             cells = tokens[offset : offset + count]
             offset += count
             grouped = "".join(cells)
@@ -286,6 +301,14 @@ def _tty_trace_to_tsv(raw: str) -> str:
             decoded_rows.append(row)
     if not decoded_rows:
         raise SmokeTestError("Logisim AP-5 tty output contains no clocked table rows")
+    for index, row in enumerate(decoded_rows, start=1):
+        for label in ("TRACE_PC", "TRACE_OPCODE"):
+            value = row[label]
+            if any(cell in value.upper() for cell in ("U", "E", "X")):
+                raise SmokeTestError(
+                    f"Logisim fetch/decode is undefined at table row {index}: "
+                    f"{label}={value} (PC={row['TRACE_PC']}, OPCODE={row['TRACE_OPCODE']})"
+                )
 
     edges: list[dict[str, str]] = []
     last_low: dict[str, str] | None = None

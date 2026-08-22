@@ -5,6 +5,61 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Expose the first undefined TinyCPU fetch/decode boundary**
+  (Owner: TinyCPU/Hardware)
+  - Result: temporary electrical harnesses now export the 12-bit PC and 22-bit
+    ROM opcode alongside the acceptance pins. The table adapter stops at the
+    first `U`, `E`, or `X` and identifies whether undefined state is already
+    present at the PC or first appears at the ROM output.
+  - Boundary: this deliberately replaces further coordinate guesses with
+    retained simulator evidence. The probes exist only in temporary projects
+    and do not change the maintained `TinyCPUMain` interface.
+
+- [x] **Remove TinyCPU signed-arithmetic bus conflicts**
+  (Owner: TinyCPU/Hardware)
+  - Cause: the sign-bit splitters in the `ADD`, `SUB`, and `MUL` arithmetic
+    sheets were placed inline. Their 15-bit magnitude outputs therefore joined
+    the original 16-bit operands and results, which Logisim reported as `E`
+    values and which then contaminated the merged top-level result bus.
+  - Result: every word-sized route now branches before its sign splitter. The
+    independent 16-bit operand/result path bypasses the 15-bit terminal while
+    the existing overflow logic retains its sign and magnitude taps.
+  - Verification: the netlist inspector accepts all three arithmetic sheets,
+    and a focused electrical-topology regression freezes both the word routes
+    and their isolation from each 15-bit splitter output.
+  - Additional repair: the `FetchDecode` ROM route now starts at the actual
+    Logisim-evolution data terminal `(750,460)` and feeds both `OPCODE` and the
+    instruction-field splitter; the previously documented `(550,410)` point is
+    empty drawing space rather than a component contact.
+  - Clock repair: `ErrorFlags.CLK` now belongs to the shared external clock net.
+    It was incorrectly wired to `Datapath.ACC_VALID_OUT`, which propagated
+    undefined validity into the sticky-error state and left observed controls
+    at `U` even while the external clock was toggling.
+    The same audit found the `AddressPath.CLK` terminal completely unwired; it
+    now joins the shared clock as well, so the address register can leave its
+    undefined startup state on the first accepted edge.
+  - Startup repair: the accumulator, both validity registers, the address
+    register, and all six sticky-error registers previously had floating reset
+    terminals. Local `PowerOnReset` nets now initialize every non-PC register;
+    the PC retains its externally observable reset contract. This removes the
+    `U` state that fed selectors and subsequently expanded into `E`/`EEEE`
+    values before the first decoded write.
+  - PC startup repair: the external reset is now ORed with a local
+    `PowerOnReset` before reaching the PC clear terminal. Previously the
+    synchronous external startup pulse could miss the first clock transition,
+    leaving the PC and therefore the ROM/decode loop undefined indefinitely.
+
+- [x] **Deepen generated-program loop termination analysis**
+  (Owner: Tooling/Program Generator)
+  - Scope: execute the first follow-up criterion in
+    `docs/tiny_program_daemon.md` by replacing line-local infinite-loop checks
+    with analysis of complete structured cyclic control-flow regions.
+  - Result: validation now extracts balanced `while` bodies, recognizes
+    literal infinite conditions independent of whitespace, and requires a
+    provable update of the comparison's induction variable inside the loop.
+  - Verification: focused regressions cover progress through a nested block,
+    a loop that updates only unrelated state, and a spaced literal condition.
+
 - [x] **Attach the TinyCPU instruction wire to the actual ROM data terminal**
   (Owner: TinyCPU/Hardware)
   - Cause: two earlier structural fixes mistook the ROM's upper-left XML anchor

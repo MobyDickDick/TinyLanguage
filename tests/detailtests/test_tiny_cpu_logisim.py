@@ -148,6 +148,59 @@ def test_stateful_blocks_expose_named_clock_inputs():
         assert len(clocks) == 1, name
 
 
+def test_top_level_clock_reaches_every_stateful_block_without_joining_acc_valid():
+    """All state clocks must share CLK, never accumulator validity."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    clock = next(
+        component.get("loc")
+        for component in circuit.findall("comp[@name='Pin']")
+        if _attributes(component).get("label") == "CLK"
+    )
+    state_clocks = {
+        _subcircuit_input(root, name, "CLK")
+        for name in ("FetchDecode", "Datapath", "AddressPath", "Memory", "ErrorFlags")
+    }
+    acc_valid = _subcircuit_output(root, "Datapath", "ACC_VALID_OUT")
+    adjacency = _electrical_adjacency(circuit, {clock, acc_valid} | state_clocks)
+
+    clock_net = _reachable(adjacency, clock)
+    assert state_clocks <= clock_net
+    assert acc_valid not in clock_net
+
+
+def test_power_on_reset_initializes_all_non_pc_registers():
+    """No state bit may remain undefined before the first decoded write."""
+
+    root = ET.parse(PROJECT).getroot()
+    expected_reset_terminals = {
+        "Datapath": {"(300,190)", "(300,310)"},
+        "AddressPath": {"(370,210)", "(370,390)"},
+        "ErrorFlags": {
+            "(780,290)", "(780,420)", "(780,560)",
+            "(780,690)", "(780,830)", "(780,970)",
+        },
+    }
+    for circuit_name, terminals in expected_reset_terminals.items():
+        circuit = root.find(f"circuit[@name='{circuit_name}']")
+        assert circuit is not None
+        resets = circuit.findall("comp[@name='PowerOnReset']")
+        assert len(resets) == 1
+        reset_label = next(
+            _attributes(component)["label"]
+            for component in circuit.findall("comp[@name='Tunnel']")
+            if component.get("loc") not in terminals
+            and _attributes(component).get("label", "").endswith("STARTUP_RESET")
+        )
+        reset_tunnels = {
+            component.get("loc")
+            for component in circuit.findall("comp[@name='Tunnel']")
+            if _attributes(component).get("label") == reset_label
+        }
+        assert terminals <= reset_tunnels
+
+
 def test_integration_reset_connects_external_reset_to_fetch_only():
     """Reset restarts the PC without implicitly clearing RAM or error flags."""
 
@@ -162,6 +215,35 @@ def test_integration_reset_connects_external_reset_to_fetch_only():
         frozenset((wire.get("from"), wire.get("to")))
         for wire in circuit.findall("wire")
     } == {frozenset(pins.values())}
+
+
+def test_fetch_decode_pc_reset_combines_external_and_power_on_reset():
+    """The PC must be known before ROM/decode feedback can produce errors."""
+
+    root = ET.parse(PROJECT).getroot()
+    fetch = root.find("circuit[@name='FetchDecode']")
+    assert fetch is not None
+    reset = next(
+        component.get("loc")
+        for component in fetch.findall("comp[@name='Pin']")
+        if _attributes(component).get("label") == "RESET"
+    )
+    power_on_reset = fetch.find("comp[@name='PowerOnReset']")
+    assert power_on_reset is not None
+    reset_gate = next(
+        component
+        for component in fetch.findall("comp[@name='OR Gate']")
+        if _attributes(component).get("label") == "PC_RESET"
+    )
+    contacts = {
+        reset, power_on_reset.get("loc"), "(350,200)", "(350,240)",
+        reset_gate.get("loc"), "(300,180)",
+    }
+    adjacency = _electrical_adjacency(fetch, contacts)
+
+    assert "(350,200)" in _reachable(adjacency, reset)
+    assert "(350,240)" in _reachable(adjacency, power_on_reset.get("loc"))
+    assert "(300,180)" in _reachable(adjacency, reset_gate.get("loc"))
 
 
 def test_fetch_decode_alone_exposes_named_reset_input():
@@ -238,12 +320,12 @@ def test_fetch_decode_rom_drives_instruction_output():
         for component in fetch.findall("comp[@name='Pin']")
         if _attributes(component).get("label") == "OPCODE"
     )
-    # The Logisim-evolution ROM location is the upper-left drawing anchor.  Its
-    # address and data terminals share the vertical centre line, respectively
-    # on the west and east edges of the 40-by-20-pixel component.
+    # In the Logisim-evolution appearance the XML location is the upper-left
+    # anchor. The address is on the west edge; the wide data output is at the
+    # lower-right terminal of the expanded ROM body.
     rom_x, rom_y = (int(value) for value in rom.get("loc").strip("()").split(","))
     address_input = f"({rom_x},{rom_y + 10})"
-    data_output = f"({rom_x + 40},{rom_y + 10})"
+    data_output = f"({rom_x + 240},{rom_y + 60})"
     adjacency = _electrical_adjacency(
         fetch, {address_input, data_output, opcode.get("loc")}
     )
@@ -252,12 +334,12 @@ def test_fetch_decode_rom_drives_instruction_output():
     }
 
     assert address_input == "(510,410)"
-    assert data_output == "(550,410)"
+    assert data_output == "(750,460)"
     assert opcode.get("loc") in _reachable(adjacency, data_output)
     assert address_input not in _reachable(adjacency, data_output)
-    assert (data_output, "(750,410)") in instruction_wires
+    assert (data_output, "(820,460)") in instruction_wires
     assert all("(510,400)" not in endpoints for endpoints in instruction_wires)
-    assert all("(550,400)" not in endpoints for endpoints in instruction_wires)
+    assert all("(550,410)" not in endpoints for endpoints in instruction_wires)
 
 
 def test_taken_jump_selects_instruction_operand_as_next_pc():
@@ -283,6 +365,28 @@ def test_taken_jump_selects_instruction_operand_as_next_pc():
     assert "(560,100)" in _reachable(adjacency, "(640,380)")
     assert "(570,110)" in _reachable(adjacency, "(850,130)")
     assert "(270,120)" in _reachable(adjacency, "(590,90)")
+
+
+def test_signed_arithmetic_splitters_do_not_short_15_and_16_bit_buses():
+    """Sign-bit taps must branch off, never sit inline with word-sized data."""
+
+    root = ET.parse(PROJECT).getroot()
+    for name in ("AddArithmeticCircuit", "SubArithmeticCircuit", "MulArithmeticCircuit"):
+        circuit = root.find(f"circuit[@name='{name}']")
+        assert circuit is not None
+        contacts = {
+            "(300,120)", "(370,120)", "(490,150)",
+            "(330,200)", "(370,200)", "(490,170)",
+            "(530,160)", "(640,160)", "(930,160)",
+        }
+        adjacency = _electrical_adjacency(circuit, contacts)
+
+        assert "(490,150)" in _reachable(adjacency, "(300,120)")
+        assert "(370,120)" not in _reachable(adjacency, "(300,120)")
+        assert "(490,170)" in _reachable(adjacency, "(330,200)")
+        assert "(370,200)" not in _reachable(adjacency, "(330,200)")
+        assert "(930,160)" in _reachable(adjacency, "(530,160)")
+        assert "(640,160)" not in _reachable(adjacency, "(530,160)")
 
 
 def test_top_level_opcode_reaches_decode_controls_only():
@@ -1593,9 +1697,13 @@ def test_ap3_error_flag_feedback_is_clocked_not_combinational():
     wires = {(wire.get("from"), wire.get("to")) for wire in errors.findall("wire")}
     undirected_wires = {frozenset(wire) for wire in wires}
 
-    assert all(
-        component.get("name") != "Tunnel" for component in errors.findall("comp")
-    )
+    # Feedback remains explicit wiring. The only tunnels are the deliberately
+    # shared startup-reset net for the six register clear terminals.
+    tunnels = errors.findall("comp[@name='Tunnel']")
+    assert tunnels
+    assert {
+        _attributes(component).get("label") for component in tunnels
+    } == {"ERROR_FLAGS_STARTUP_RESET"}
 
     expected_feedback_routes = {
         "OVF": ("(420,230)", "(820,230)", 170),

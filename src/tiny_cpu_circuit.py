@@ -300,9 +300,11 @@ def _component_terminals(component: ET.Element) -> set[str]:
         )
     elif component.get("name") == "NOT Gate":
         terminals.add(f"({x - 30},{y})")
-    elif component.get("name") in {"Adder", "Subtractor", "Comparator"}:
+    elif component.get("name") in {
+        "Adder", "Subtractor", "Multiplier", "Divider", "Comparator"
+    }:
         terminals.update({f"({x - 40},{y - 10})", f"({x - 40},{y + 10})"})
-        if component.get("name") in {"Adder", "Subtractor"}:
+        if component.get("name") in {"Adder", "Subtractor", "Multiplier", "Divider"}:
             terminals.update({f"({x - 20},{y - 20})", f"({x - 20},{y + 20})"})
         else:
             terminals.update({f"({x},{y - 10})", f"({x},{y + 10})"})
@@ -412,7 +414,7 @@ def _component_terminal_widths(component: ET.Element) -> dict[str, int]:
         return result
     if name == "NOT Gate":
         return {location: width, f"({x - 30},{y})": width}
-    if name in {"Adder", "Subtractor"}:
+    if name in {"Adder", "Subtractor", "Multiplier", "Divider"}:
         return {
             location: width,
             f"({x - 40},{y - 10})": width,
@@ -511,7 +513,7 @@ def _component_output_terminals(
     # These Logisim primitives all expose their result at the component anchor.
     if name in {
         "AND Gate", "OR Gate", "XOR Gate", "NOT Gate", "Adder", "Subtractor",
-        "Comparator", "Multiplexer", "Constant",
+        "Multiplier", "Divider", "Comparator", "Multiplexer", "Constant",
     }:
         return {location}
     return set()

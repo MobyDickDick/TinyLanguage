@@ -24,10 +24,11 @@ The `PC_ADDRESS` splitter also declares its right-facing appearance explicitly;
 its 12-bit output terminal therefore coincides with the checked-in route to the
 ROM address input instead of leaving that route one symbol lane away.
 The ROM's XML location is the upper-left drawing anchor. Its address input is
-at `(510,410)` on the west edge and its 22-bit data output is at `(550,410)` on
-the east edge. The data terminal is wired directly to the `OPCODE` output;
-routes from `(510,400)` or `(550,400)` miss both electrical terminals and leave
-the exported instruction word at zero. A taken `JUMP_NOT_ZERO` selects
+at `(510,410)` on the west edge and, with the Logisim-evolution appearance, its
+22-bit data output is at `(750,460)` on the lower-right edge of the expanded
+ROM body. The data net drives both `OPCODE` and the instruction-field splitter;
+the former `(550,410)` route ended on empty drawing space. A taken
+`JUMP_NOT_ZERO` selects
 the instruction's low 16-bit operand as the next PC value; otherwise the next-PC
 multiplexer retains the sequential `PC + 1` result.
 These independent runs are the reset/restart and multi-cycle reproducibility

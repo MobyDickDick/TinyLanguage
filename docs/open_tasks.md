@@ -1840,3 +1840,14 @@ and testable so they can be promoted into the formal backlog as needed.
     in the loop condition so it satisfies the same conservative gate.
   - Verification: focused regressions cover accepted bounded resources, dynamic
     heap sizes, excessive iteration counts, and parameter-dependent loop bounds.
+
+## Program-generator determinism update (2026-08-22)
+
+- [x] **Add an optional deterministic generation profile** (Owner: Tooling/Program Generator)
+  - Scope: execute the next follow-up criterion in
+    `docs/tiny_program_daemon.md` after resource-bound validation.
+  - Result: `--deterministic` rejects generated programs that call supported
+    time or random sources, while the default profile remains backward
+    compatible and documentation text cannot trigger false positives.
+  - Verification: focused regressions cover time and random calls, the opt-in
+    default, comment/string handling, and CLI activation.

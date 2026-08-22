@@ -35,6 +35,18 @@ LOOP_BOUND_PATTERN = re.compile(
 )
 MAX_GENERATED_HEAP_SLOTS = 4096
 MAX_GENERATED_LOOP_ITERATIONS = 10_000
+NONDETERMINISTIC_RANDOM_CALL_PATTERN = re.compile(
+    r"\b(?:Random|random)\s*\.\s*(?:random|randint|choice|shuffle|uniform|seed)\s*\("
+)
+NONDETERMINISTIC_TIME_CALL_PATTERN = re.compile(
+    r"\b(?:Time|time)\s*\.\s*(?:now_ms|now_iso|monotonic_ms|time|time_ns|monotonic)\s*\("
+)
+
+
+def _code_without_comments_or_strings(source_text: str) -> str:
+    """Remove text that cannot contain executable nondeterministic calls."""
+    without_comments = re.sub(r"//[^\n]*", "", source_text)
+    return re.sub(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', '""', without_comments)
 
 
 def _loop_regions(source_text: str) -> tuple[tuple[str, str], ...]:
@@ -263,20 +275,41 @@ class TinyProgramGenerator:
         ideas: tuple[ProgramIdea, ...] = DEFAULT_IDEAS,
         seed: int | None = None,
         repository_db: TinyProgramRepositoryDB | None = None,
+        deterministic_profile: bool = False,
     ) -> None:
         self.output_dir = output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self._ideas = ideas
         self._rng = random.Random(seed)
         self._repository_db = repository_db
+        self._deterministic_profile = deterministic_profile
 
     @staticmethod
-    def validate_program(source_text: str) -> ValidationReport:
+    def validate_program(
+        source_text: str, *, deterministic_profile: bool = False
+    ) -> ValidationReport:
         """Validate generated source against conservative quality gates."""
         issues: list[ValidationIssue] = []
         assigned_vars: set[str] = set()
         read_vars: set[str] = set()
         code = re.sub(r"//[^\n]*", "", source_text)
+
+        if deterministic_profile:
+            executable_code = _code_without_comments_or_strings(source_text)
+            if NONDETERMINISTIC_RANDOM_CALL_PATTERN.search(executable_code):
+                issues.append(
+                    ValidationIssue(
+                        "nondeterministic_random_source",
+                        "Das Determinismus-Profil verbietet Zufallsquellen.",
+                    )
+                )
+            if NONDETERMINISTIC_TIME_CALL_PATTERN.search(executable_code):
+                issues.append(
+                    ValidationIssue(
+                        "nondeterministic_time_source",
+                        "Das Determinismus-Profil verbietet Zeitquellen.",
+                    )
+                )
 
         for allocation in HEAP_ALLOCATION_PATTERN.finditer(code):
             size_expression, literal_items = allocation.groups()
@@ -430,7 +463,9 @@ class TinyProgramGenerator:
             ]
         )
         source_text = header + idea.template
-        validation_report = self.validate_program(source_text)
+        validation_report = self.validate_program(
+            source_text, deterministic_profile=self._deterministic_profile
+        )
         if not validation_report.is_valid:
             rendered = ", ".join(f"{issue.code}: {issue.message}" for issue in validation_report.issues)
             raise ValueError(f"Generated program failed validation: {rendered}")
@@ -519,6 +554,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Optional SQLite DB path; when set, generated programs are persisted.",
     )
+    parser.add_argument(
+        "--deterministic",
+        action="store_true",
+        help="Reject generated programs that use time or random sources.",
+    )
     return parser.parse_args(argv)
 
 
@@ -532,6 +572,7 @@ def main(argv: list[str] | None = None) -> int:
         Path(args.output_dir),
         seed=args.seed,
         repository_db=repository_db,
+        deterministic_profile=args.deterministic,
     )
     daemon = TinyProgramDaemon(
         generator,

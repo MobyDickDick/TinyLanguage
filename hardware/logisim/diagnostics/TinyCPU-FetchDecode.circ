@@ -128,7 +128,7 @@
     <comp lib="1" loc="(1200,230)" name="AND Gate">
       <a name="label" val="JNZ_TAKEN"/>
     </comp>
-    <comp lib="1" loc="(1200,440)" name="OR Gate">
+    <comp lib="1" loc="(1200,430)" name="OR Gate">
       <a name="label" val="ERROR_HALT"/>
     </comp>
     <comp lib="2" loc="(870,190)" name="Multiplexer">
@@ -160,18 +160,29 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp lib="9" loc="(645,90)" name="Text">
       <a name="text" val="AP 7 machine format v1: stable six-bit opcode allocation and encoder-generated ROM"/>
     </comp>
+    <wire from="(1030,600)" to="(1030,660)"/>
+    <wire from="(1030,600)" to="(1050,600)"/>
+    <wire from="(1030,660)" to="(1030,700)"/>
+    <wire from="(1030,660)" to="(1130,660)"/>
+    <wire from="(1070,580)" to="(1000,580)"/>
     <wire from="(1100,210)" to="(1150,210)"/>
     <wire from="(1100,250)" to="(1150,250)"/>
     <wire from="(1100,460)" to="(1150,460)"/>
+    <wire from="(1150,450)" to="(1150,460)"/>
     <wire from="(1200,230)" to="(1200,270)"/>
     <wire from="(1200,230)" to="(1240,230)"/>
-    <wire from="(1200,440)" to="(1260,440)"/>
+    <wire from="(1200,430)" to="(1210,430)"/>
+    <wire from="(1210,430)" to="(1210,440)"/>
+    <wire from="(1210,440)" to="(1260,440)"/>
+    <wire from="(1000,120)" to="(1000,580)"/>
     <wire from="(500,260)" to="(550,260)"/>
     <wire from="(500,430)" to="(700,430)"/>
+    <wire from="(510,360)" to="(580,360)"/>
     <wire from="(530,140)" to="(530,220)"/>
     <wire from="(530,140)" to="(890,140)"/>
     <wire from="(530,220)" to="(550,220)"/>
     <wire from="(540,240)" to="(550,240)"/>
+    <wire from="(580,280)" to="(580,360)"/>
     <wire from="(610,220)" to="(650,220)"/>
     <wire from="(650,220)" to="(650,410)"/>
     <wire from="(650,220)" to="(730,220)"/>
@@ -180,14 +191,12 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(650,550)" to="(700,550)"/>
     <wire from="(710,240)" to="(730,240)"/>
     <wire from="(720,560)" to="(760,560)"/>
+    <wire from="(740,410)" to="(1150,410)"/>
     <wire from="(760,560)" to="(760,650)"/>
     <wire from="(760,560)" to="(810,560)"/>
     <wire from="(760,650)" to="(790,650)"/>
     <wire from="(770,230)" to="(790,230)"/>
-    <wire from="(770,400)" to="(770,420)"/>
-    <wire from="(770,400)" to="(820,400)"/>
-    <wire from="(770,420)" to="(1150,420)"/>
-    <wire from="(780,120)" to="(1410,120)"/>
+    <wire from="(780,120)" to="(1000,120)"/>
     <wire from="(780,120)" to="(780,200)"/>
     <wire from="(780,200)" to="(840,200)"/>
     <wire from="(790,180)" to="(790,230)"/>
@@ -197,15 +206,5 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(870,190)" to="(890,190)"/>
     <wire from="(890,140)" to="(890,190)"/>
     <wire from="(920,580)" to="(980,580)"/>
-    <wire from="(510,360)" to="(580,360)"/>
-    <wire from="(580,280)" to="(580,360)"/>
-    <wire from="(1030,700)" to="(1030,600)"/>
-    <wire from="(1030,600)" to="(1050,600)"/>
-    <wire from="(1030,660)" to="(1130,660)"/>
-    <wire from="(1070,580)" to="(1000,580)"/>
-    <wire from="(1000,580)" to="(1000,120)"/>
-    <wire from="(780,120)" to="(1000,120)"/>
-    <wire from="(740,410)" to="(770,410)"/>
-    <wire from="(770,410)" to="(770,420)"/>
   </circuit>
 </project>

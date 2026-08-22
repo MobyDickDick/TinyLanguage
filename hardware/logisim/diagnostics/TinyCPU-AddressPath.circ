@@ -20,72 +20,67 @@
     <a name="circuit" val="AddressPath"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(140,410)" name="Tunnel">
-      <a name="label" val="ADDRESS_PATH_STARTUP_RESET"/>
-    </comp>
-    <comp lib="0" loc="(190,130)" name="Pin">
+    <comp lib="0" loc="(300,130)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="ADDRESS_IN"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(190,170)" name="Pin">
+    <comp lib="0" loc="(300,170)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="AR_LOAD"/>
     </comp>
-    <comp lib="0" loc="(190,240)" name="Pin">
+    <comp lib="0" loc="(300,240)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="OFFSET"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(190,330)" name="Pin">
+    <comp lib="0" loc="(300,330)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="VALID_IN"/>
     </comp>
-    <comp lib="0" loc="(190,370)" name="Pin">
+    <comp lib="0" loc="(300,370)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="CLK"/>
     </comp>
-    <comp lib="0" loc="(370,210)" name="Tunnel">
+    <comp lib="0" loc="(300,430)" name="Pin">
+      <a name="appearance" val="classic"/>
       <a name="label" val="ADDRESS_PATH_STARTUP_RESET"/>
     </comp>
-    <comp lib="0" loc="(370,390)" name="Tunnel">
-      <a name="label" val="ADDRESS_PATH_STARTUP_RESET"/>
-    </comp>
-    <comp lib="0" loc="(620,120)" name="Pin">
+    <comp lib="0" loc="(730,120)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="ADDRESS"/>
       <a name="type" val="output"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(620,200)" name="Pin">
+    <comp lib="0" loc="(730,200)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="ADDRESS_PLUS_OFFSET"/>
       <a name="type" val="output"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(620,240)" name="Pin">
+    <comp lib="0" loc="(730,240)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="OFFSET_CARRY"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="0" loc="(630,330)" name="Pin">
+    <comp lib="0" loc="(740,330)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="ADDRESS_VALID"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="3" loc="(520,200)" name="Adder">
+    <comp lib="3" loc="(630,200)" name="Adder">
       <a name="width" val="16"/>
     </comp>
-    <comp lib="5" loc="(340,120)" name="Register">
+    <comp lib="5" loc="(450,120)" name="Register">
       <a name="appearance" val="logisim_evolution"/>
       <a name="label" val="AR"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="5" loc="(340,300)" name="Register">
+    <comp lib="5" loc="(450,300)" name="Register">
       <a name="appearance" val="logisim_evolution"/>
       <a name="label" val="AR_VALID"/>
       <a name="width" val="1"/>
@@ -93,30 +88,35 @@
     <comp lib="9" loc="(255,60)" name="Text">
       <a name="text" val="Clocked 12-bit address register with combinational offset addition"/>
     </comp>
-    <wire from="(120,410)" to="(140,410)"/>
-    <wire from="(190,130)" to="(240,130)"/>
-    <wire from="(190,170)" to="(280,170)"/>
-    <wire from="(190,240)" to="(450,240)"/>
-    <wire from="(190,330)" to="(340,330)"/>
-    <wire from="(190,370)" to="(320,370)"/>
-    <wire from="(240,130)" to="(240,150)"/>
-    <wire from="(240,150)" to="(340,150)"/>
-    <wire from="(280,170)" to="(280,350)"/>
-    <wire from="(280,170)" to="(340,170)"/>
-    <wire from="(280,350)" to="(340,350)"/>
-    <wire from="(320,190)" to="(320,370)"/>
-    <wire from="(320,190)" to="(340,190)"/>
-    <wire from="(320,370)" to="(340,370)"/>
-    <wire from="(400,150)" to="(420,150)"/>
-    <wire from="(400,330)" to="(630,330)"/>
-    <wire from="(420,120)" to="(420,150)"/>
-    <wire from="(420,120)" to="(620,120)"/>
-    <wire from="(420,150)" to="(420,190)"/>
-    <wire from="(420,190)" to="(480,190)"/>
-    <wire from="(450,210)" to="(450,240)"/>
-    <wire from="(450,210)" to="(480,210)"/>
-    <wire from="(500,220)" to="(500,240)"/>
-    <wire from="(500,240)" to="(620,240)"/>
-    <wire from="(520,200)" to="(620,200)"/>
+    <wire from="(300,130)" to="(350,130)"/>
+    <wire from="(300,170)" to="(390,170)"/>
+    <wire from="(300,240)" to="(560,240)"/>
+    <wire from="(300,330)" to="(450,330)"/>
+    <wire from="(300,370)" to="(430,370)"/>
+    <wire from="(300,430)" to="(360,430)"/>
+    <wire from="(350,130)" to="(350,150)"/>
+    <wire from="(350,150)" to="(450,150)"/>
+    <wire from="(360,260)" to="(360,430)"/>
+    <wire from="(360,260)" to="(480,260)"/>
+    <wire from="(360,430)" to="(480,430)"/>
+    <wire from="(390,170)" to="(390,350)"/>
+    <wire from="(390,170)" to="(450,170)"/>
+    <wire from="(390,350)" to="(450,350)"/>
+    <wire from="(430,190)" to="(430,370)"/>
+    <wire from="(430,190)" to="(450,190)"/>
+    <wire from="(430,370)" to="(450,370)"/>
+    <wire from="(480,210)" to="(480,260)"/>
+    <wire from="(480,390)" to="(480,430)"/>
+    <wire from="(510,150)" to="(530,150)"/>
+    <wire from="(510,330)" to="(740,330)"/>
+    <wire from="(530,120)" to="(530,150)"/>
+    <wire from="(530,120)" to="(730,120)"/>
+    <wire from="(530,150)" to="(530,190)"/>
+    <wire from="(530,190)" to="(590,190)"/>
+    <wire from="(560,210)" to="(560,240)"/>
+    <wire from="(560,210)" to="(590,210)"/>
+    <wire from="(610,220)" to="(610,240)"/>
+    <wire from="(610,240)" to="(730,240)"/>
+    <wire from="(630,200)" to="(730,200)"/>
   </circuit>
 </project>

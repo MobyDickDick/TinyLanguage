@@ -222,8 +222,8 @@ def test_fetch_decode_range_error_uses_comparator_greater_output():
     fetch = ET.parse(PROJECT).getroot().find("circuit[@name='FetchDecode']")
     assert fetch is not None
     comparator = next(component for component in fetch.findall("comp[@name='Comparator']") if _attributes(component).get("label") == "PC_RANGE")
-    adjacency = _electrical_adjacency(fetch, {"(740,410)", "(1150,420)"})
-    assert "(1150,420)" in _reachable(adjacency, "(740,410)")
+    adjacency = _electrical_adjacency(fetch, {"(740,410)", "(1150,410)"})
+    assert "(1150,410)" in _reachable(adjacency, "(740,410)")
     assert "(740,420)" not in _reachable(adjacency, "(740,410)")
 
 def test_fetch_decode_alone_exposes_named_reset_input():
@@ -1547,28 +1547,28 @@ def test_address_path_uses_component_terminals_without_shorting_buses():
     # With the logisim_evolution appearance, a register's ``loc`` is the
     # symbol's top-left corner, not a terminal.  D/Q are 30 px below it, WE is
     # 50 px below it and CLK is 70 px below it; Q is 60 px to the right.
-    assert has_wire("(240,150)", "(340,150)")  # ADDRESS_IN -> AR.D
-    assert has_wire("(280,170)", "(340,170)")  # AR_LOAD -> AR.WE
-    assert has_wire("(320,190)", "(340,190)")  # CLK -> AR clock
-    assert has_wire("(190,330)", "(340,330)")  # VALID_IN -> AR_VALID.D
-    assert has_wire("(280,350)", "(340,350)")  # AR_LOAD -> AR_VALID.WE
-    assert has_wire("(320,370)", "(340,370)")  # CLK -> AR_VALID clock
+    assert has_wire("(350,150)", "(450,150)")  # ADDRESS_IN -> AR.D
+    assert has_wire("(390,170)", "(450,170)")  # AR_LOAD -> AR.WE
+    assert has_wire("(430,190)", "(450,190)")  # CLK -> AR clock
+    assert has_wire("(300,330)", "(450,330)")  # VALID_IN -> AR_VALID.D
+    assert has_wire("(390,350)", "(450,350)")  # AR_LOAD -> AR_VALID.WE
+    assert has_wire("(430,370)", "(450,370)")  # CLK -> AR_VALID clock
 
     # The address register output and OFFSET terminate at the adder's distinct
     # A and B pins. Neither input bus shares a segment with the other.
-    assert has_wire("(400,150)", "(420,150)")  # AR.Q -> address net
-    assert has_wire("(420,190)", "(480,190)")
-    # OFFSET detours around AR's one-bit reset terminal at (370,210); a
+    assert has_wire("(510,150)", "(530,150)")  # AR.Q -> address net
+    assert has_wire("(530,190)", "(590,190)")
+    # OFFSET detours around AR's one-bit reset terminal at (480,210); a
     # straight bus here makes Logisim report incompatible 12/1-bit widths.
-    assert has_wire("(190,240)", "(450,240)")
-    assert has_wire("(450,210)", "(450,240)")
-    assert has_wire("(450,210)", "(480,210)")
-    assert has_wire("(520,200)", "(620,200)")
+    assert has_wire("(300,240)", "(560,240)")
+    assert has_wire("(560,210)", "(560,240)")
+    assert has_wire("(560,210)", "(590,210)")
+    assert has_wire("(630,200)", "(730,200)")
     # Carry-out is the one-bit terminal below the adder at (500,220), not a
     # point below its 12-bit sum output anchor.
-    assert has_wire("(500,220)", "(500,240)")
-    assert has_wire("(500,240)", "(620,240)")
-    assert has_wire("(400,330)", "(630,330)")  # AR_VALID.Q -> output
+    assert has_wire("(610,220)", "(610,240)")
+    assert has_wire("(610,240)", "(730,240)")
+    assert has_wire("(510,330)", "(740,330)")  # AR_VALID.Q -> output
 
 
 def test_datapath_uses_register_terminals_instead_of_symbol_centres():

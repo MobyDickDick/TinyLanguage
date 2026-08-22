@@ -19,3 +19,6 @@ vscode-extension/tinylanguage-vscode-0.1.0.vsix
 artifacts/perf/**/*.prof
 converted_symbols
 converted_images
+
+# Optional local Logisim-evolution runtime used by scripts/test-logisim-local.sh
+logisim-evolution-*-all.jar

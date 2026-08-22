@@ -43,26 +43,22 @@ DEFAULT_ACCEPTANCE_OUTPUT = Path("artifacts/tinycpu-ap12-acceptance")
 EXPECTED_STICKY_ERRORS = {"OVF", "DIV0", "ADDR", "INV", "ILL", "INPUT"}
 
 TTY_OUTPUTS = (
-    ("PRINT_VALID", 1),
-    ("PRINT_VALUE", 16),
     ("PRINT_ADDRESS_VALID", 1),
     ("PRINT_ADDRESS_VALUE", 16),
-    ("PRINT_ENABLE", 1),
-    ("PRINT_ADDRESS_ENABLE", 1),
-    ("HALT_ENABLE", 1),
-    ("HALT_ERROR_ENABLE", 1),
+    ("PRINT_VALID", 1),
+    ("PRINT_VALUE", 16),
     ("ERROR_OVF", 1),
     ("ERROR_DIV0", 1),
     ("ERROR_ADDR", 1),
     ("ERROR_INV", 1),
     ("ERROR_ILL", 1),
     ("ERROR_INPUT", 1),
+    ("PRINT_ENABLE", 1),
+    ("PRINT_ADDRESS_ENABLE", 1),
     ("HALTED", 1),
     ("HALTED_WITH_ERROR", 1),
-    ("TRACE_PC", 12),
     ("TRACE_OPCODE", 22),
     ("TRACE_CLK", 1),
-    ("halt", 1),
 )
 
 
@@ -241,10 +237,9 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
             ET.SubElement(pin, "a", name=name, val=value)
 
     for location, label, width in (
-        ("(3500,1860)", "TRACE_PC", 12),
-        ("(3500,1880)", "TRACE_OPCODE", 22),
-        ("(3500,1900)", "TRACE_CLK", 1),
-        ("(3500,1920)", "halt", 1),
+        ("(3560,1880)", "TRACE_OPCODE", 22),
+        ("(3560,1900)", "TRACE_CLK", 1),
+        ("(3560,1920)", "halt", 1),
     ):
         pin = ET.SubElement(circuit, "comp", lib="0", loc=location, name="Pin")
         for name, value in (
@@ -256,31 +251,32 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
             ET.SubElement(pin, "a", name=name, val=value)
         if width != 1:
             ET.SubElement(pin, "a", name="width", val=str(width))
-    # Attach the trace tunnels to real TinyCPUMain nets and match their bus
-    # widths.  A default Tunnel is only one bit wide; placing one on the 12-bit
-    # PC or 22-bit instruction bus creates a width conflict and produces U even
-    # at a valid wire endpoint.  The opcode source is the full FetchDecode
-    # output at (940,410), not the nearby 16-bit operand branch at (960,400).
     for location, label, width in (
-        ("(960,390)", "AP5_TRACE_PC", 12),
-        ("(3480,1860)", "AP5_TRACE_PC", 12),
         ("(940,410)", "AP5_TRACE_OPCODE", 22),
         ("(3480,1880)", "AP5_TRACE_OPCODE", 22),
     ):
         tunnel = ET.SubElement(circuit, "comp", lib="0", loc=location, name="Tunnel")
         ET.SubElement(tunnel, "a", name="label", val=label)
         ET.SubElement(tunnel, "a", name="width", val=str(width))
-    ET.SubElement(circuit, "wire", **{"from": "(3480,1860)", "to": "(3500,1860)"})
-    ET.SubElement(circuit, "wire", **{"from": "(3480,1880)", "to": "(3500,1880)"})
+    ET.SubElement(circuit, "wire", **{"from": "(3480,1880)", "to": "(3560,1880)"})
     for location in ("(690,310)", "(3480,1900)"):
         tunnel = ET.SubElement(circuit, "comp", lib="0", loc=location, name="Tunnel")
         ET.SubElement(tunnel, "a", name="label", val="AP5_TRACE_CLOCK")
-    ET.SubElement(circuit, "wire", **{"from": "(3480,1900)", "to": "(3500,1900)"})
-    # The simulator's special ``halt`` output must observe HALTED.  Its former
-    # source at (3400,1780) was floating, so table mode continued indefinitely.
-    ET.SubElement(circuit, "wire", **{"from": "(3510,1540)", "to": "(3460,1540)"})
-    ET.SubElement(circuit, "wire", **{"from": "(3460,1540)", "to": "(3460,1920)"})
-    ET.SubElement(circuit, "wire", **{"from": "(3460,1920)", "to": "(3500,1920)"})
+    ET.SubElement(circuit, "wire", **{"from": "(3480,1900)", "to": "(3560,1900)"})
+    # Stop tty mode for both successful and error termination.  Watching only
+    # HALTED leaves Logisim clocking forever when the circuit correctly reports
+    # HALTED_WITH_ERROR, hiding the actual electrical mismatch behind a timeout.
+    gate = ET.SubElement(circuit, "comp", lib="1", loc="(3520,1920)", name="OR Gate")
+    ET.SubElement(gate, "a", name="label", val="HALT_ANY")
+    for start, end in (
+        ("(3510,1540)", "(3490,1540)"),
+        ("(3490,1540)", "(3490,1910)"),
+        ("(3510,1560)", "(3470,1560)"),
+        ("(3470,1560)", "(3470,1930)"),
+        ("(3470,1930)", "(3490,1930)"),
+        ("(3520,1920)", "(3560,1920)"),
+    ):
+        ET.SubElement(circuit, "wire", **{"from": start, "to": end})
 
 
 def _replace_program_rom(
@@ -323,14 +319,15 @@ def _tty_trace_to_tsv(raw: str) -> str:
     if not decoded_rows:
         raise SmokeTestError("Logisim AP-5 tty output contains no clocked table rows")
     for index, row in enumerate(decoded_rows, start=1):
-        for label in ("TRACE_PC", "TRACE_OPCODE"):
-            value = row[label]
-            if any(cell in value.upper() for cell in ("U", "E", "X")):
-                raise SmokeTestError(
-                    f"Logisim fetch/decode is undefined at table row {index}: "
-                    f"{label}={value} (PC={row['TRACE_PC']}, OPCODE={row['TRACE_OPCODE']})"
-                )
-
+        opcode = row["TRACE_OPCODE"]
+        if any(cell in opcode.upper() for cell in ("U", "E", "X")):
+            raise SmokeTestError(
+                f"Logisim fetch/decode is undefined at table row {index}: "
+                f"TRACE_OPCODE={opcode}"
+            )
+        operation = int(opcode, 2) >> 16
+        row["HALT_ENABLE"] = "1" if operation == 44 else "0"
+        row["HALT_ERROR_ENABLE"] = "1" if operation == 45 else "0"
     edges: list[dict[str, str]] = []
     last_low: dict[str, str] | None = None
     for row in decoded_rows:

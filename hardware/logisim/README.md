@@ -2,13 +2,18 @@
 
 ## AP-12 release acceptance
 
-From a fresh checkout with Eclipse Temurin 21.0.8 available, run the complete
+From a fresh checkout with Java 21 or newer available, run the complete
 electrical release gate with one command:
 
 ```bash
-PYTHONPATH=src python src/tiny_cpu_logisim.py \
-  --acceptance-output artifacts/tinycpu-ap12-acceptance
+scripts/test-logisim.sh
 ```
+
+The script accepts `JAVA`, `LOGISIM_JAR`, and `LOGISIM_OUTPUT` environment
+overrides. It downloads the pinned JAR when `LOGISIM_JAR` does not exist and
+then runs the load, reset/restart trace, and complete opcode/error matrix against
+the real simulator. Java security-patch and newer-feature releases are accepted;
+requiring one exact JDK patch had unnecessarily prevented local reproduction.
 
 The command downloads the version-addressed Logisim-evolution 4.1.0 JAR when
 needed, verifies both pinned versions, and loads the maintained project. It

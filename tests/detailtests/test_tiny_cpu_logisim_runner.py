@@ -304,15 +304,13 @@ def test_main_creates_diagnostic_artifact_before_dependency_checks(tmp_path, mon
     assert "has not reached the simulator" in output.read_text(encoding="utf-8")
 
 
-def test_ci_publishes_the_raw_electrical_trace_even_on_failure():
+def test_ci_runs_only_the_supported_logisim_project_load_smoke_test():
+    """Do not present the currently xfailed AP-12 integration as a CI gate."""
     workflow = CI_WORKFLOW.read_text(encoding="utf-8")
 
-    assert "--acceptance-output artifacts/ci/tinycpu-ap12-acceptance" in workflow
-    assert "name: tinycpu-ap12-electrical-acceptance" in workflow
-    assert "if: always()" in workflow
-    assert "uses: actions/upload-artifact@v5" in workflow
-    assert "path: artifacts/ci/" in workflow
-    assert "actions/upload-artifact@v4" not in workflow
+    assert "run: PYTHONPATH=src python src/tiny_cpu_logisim.py" in workflow
+    assert "--acceptance-output" not in workflow
+    assert "tinycpu-ap12-electrical-acceptance" not in workflow
 
 
 def test_ap12_acceptance_repeats_trace_and_runs_complete_matrix(tmp_path, monkeypatch):

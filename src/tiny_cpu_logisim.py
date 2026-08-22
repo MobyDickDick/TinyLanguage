@@ -256,15 +256,20 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
             ET.SubElement(pin, "a", name=name, val=value)
         if width != 1:
             ET.SubElement(pin, "a", name="width", val=str(width))
-    # Attach the trace tunnels to real TinyCPUMain nets.  The former source
-    # coordinates (580,380), (580,400), and (330,300) were empty drawing
-    # locations.  Logisim consequently reported U for PC, opcode, and clock
-    # even while the CPU itself was running.  These coordinates are stable
-    # junctions on the FetchDecode PC/opcode outputs and the shared clock net.
-    for location, label in (("(960,390)", "AP5_TRACE_PC"), ("(3480,1860)", "AP5_TRACE_PC"),
-                            ("(960,400)", "AP5_TRACE_OPCODE"), ("(3480,1880)", "AP5_TRACE_OPCODE")):
+    # Attach the trace tunnels to real TinyCPUMain nets and match their bus
+    # widths.  A default Tunnel is only one bit wide; placing one on the 12-bit
+    # PC or 22-bit instruction bus creates a width conflict and produces U even
+    # at a valid wire endpoint.  The opcode source is the full FetchDecode
+    # output at (940,410), not the nearby 16-bit operand branch at (960,400).
+    for location, label, width in (
+        ("(960,390)", "AP5_TRACE_PC", 12),
+        ("(3480,1860)", "AP5_TRACE_PC", 12),
+        ("(940,410)", "AP5_TRACE_OPCODE", 22),
+        ("(3480,1880)", "AP5_TRACE_OPCODE", 22),
+    ):
         tunnel = ET.SubElement(circuit, "comp", lib="0", loc=location, name="Tunnel")
         ET.SubElement(tunnel, "a", name="label", val=label)
+        ET.SubElement(tunnel, "a", name="width", val=str(width))
     ET.SubElement(circuit, "wire", **{"from": "(3480,1860)", "to": "(3500,1860)"})
     ET.SubElement(circuit, "wire", **{"from": "(3480,1880)", "to": "(3500,1880)"})
     for location in ("(690,310)", "(3480,1900)"):

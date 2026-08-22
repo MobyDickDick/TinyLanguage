@@ -150,20 +150,22 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
     runner._autonomous_trace_project(tree)
 
     tunnels = {
-        runner._pin_attributes(component).get("label"): component.get("loc")
+        runner._pin_attributes(component).get("label"): (
+            component.get("loc"), runner._pin_attributes(component).get("width")
+        )
         for component in main.findall("comp[@name='Tunnel']")
-        if component.get("loc") in {"(960,390)", "(960,400)", "(690,310)"}
+        if component.get("loc") in {"(960,390)", "(940,410)", "(690,310)"}
     }
     assert tunnels == {
-        "AP5_TRACE_PC": "(960,390)",
-        "AP5_TRACE_OPCODE": "(960,400)",
-        "AP5_TRACE_CLOCK": "(690,310)",
+        "AP5_TRACE_PC": ("(960,390)", "12"),
+        "AP5_TRACE_OPCODE": ("(940,410)", "22"),
+        "AP5_TRACE_CLOCK": ("(690,310)", None),
     }
 
     # Each source probe is an endpoint or junction of the maintained circuit,
     # rather than merely being present somewhere on the drawing canvas.
     contacts = {point for wire in original_wires for point in wire}
-    assert set(tunnels.values()) <= contacts
+    assert {location for location, _width in tunnels.values()} <= contacts
 
     generated_wires = {
         (wire.get("from"), wire.get("to")) for wire in main.findall("wire")

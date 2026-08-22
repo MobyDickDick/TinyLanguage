@@ -38,16 +38,13 @@ archived in `docs/open_tasks_archive.md`.
     The same audit found the `AddressPath.CLK` terminal completely unwired; it
     now joins the shared clock as well, so the address register can leave its
     undefined startup state on the first accepted edge.
-  - Startup repair: the accumulator, both validity registers, the address
-    register, and all six sticky-error registers previously had floating reset
-    terminals. Local `PowerOnReset` nets now initialize every non-PC register;
-    the PC retains its externally observable reset contract. This removes the
-    `U` state that fed selectors and subsequently expanded into `E`/`EEEE`
-    values before the first decoded write.
-  - PC startup repair: the external reset is now ORed with a local
-    `PowerOnReset` before reaching the PC clear terminal. Previously the
-    synchronous external startup pulse could miss the first clock transition,
-    leaving the PC and therefore the ROM/decode loop undefined indefinitely.
+  - Compatibility correction: local `PowerOnReset` components were replaced
+    by portable inactive constants because unsupported Logisim installations
+    reject all four affected sheets while loading the file. This keeps every
+    register reset terminal at a defined logic level; the checked-in PC remains
+    controlled by the explicit external `RESET` input. The pinned acceptance
+    harness still supplies its startup pulse in a temporary copy, without
+    persisting a version-specific component in the user-facing file.
 
 - [x] **Deepen generated-program loop termination analysis**
   (Owner: Tooling/Program Generator)

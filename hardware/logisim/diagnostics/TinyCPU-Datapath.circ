@@ -20,7 +20,7 @@
     <a name="circuit" val="Datapath"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(100,350)" name="PowerOnReset"/>
+    <comp lib="0" loc="(100,350)" name="Constant"/>
     <comp lib="0" loc="(120,350)" name="Tunnel">
       <a name="label" val="DATAPATH_STARTUP_RESET"/>
     </comp>

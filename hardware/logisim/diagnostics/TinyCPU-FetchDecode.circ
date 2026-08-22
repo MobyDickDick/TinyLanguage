@@ -20,7 +20,7 @@
     <a name="circuit" val="FetchDecode"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(300,240)" name="PowerOnReset"/>
+    <comp lib="0" loc="(300,240)" name="Constant"/>
     <comp lib="1" loc="(400,220)" name="OR Gate">
       <a name="label" val="PC_RESET"/>
     </comp>

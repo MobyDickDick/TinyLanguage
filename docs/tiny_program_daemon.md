@@ -105,7 +105,13 @@ empfiehlt sich ein mehrstufiger Pipeline-Ansatz:
    Quellen von einer engen Host-Allowlist, begrenzt die Größe und speichert die
    unveränderten Bytes ohne ausführbare Dateiendung zusammen mit URL, Zeit,
    Größe und SHA-256-Prüfsumme. Weiterverarbeitung ist vor Schritt 2 verboten.
-2. **Sicherheitsprüfung** (Signaturen, statische Analyse, Allowlist)
+2. **Sicherheitsprüfung (erledigt 2026-08-22)**: Der separate, nicht
+   ausführende Scanner `src/tiny_program_source_scan.py` verifiziert zuerst
+   Größe und SHA-256-Provenienz. Danach akzeptiert er nur UTF-8-Quelltexte mit
+   den Endungen `.py` oder `.tiny` und weist Binärsignaturen, ausführbare
+   Shebangs, dynamische Codeausführung, Prozessstarts und externe I/O-APIs ab.
+   Nur ein bestandener, versionierter Prüfbericht gibt die automatische
+   Portierung als nächste Stufe frei.
 3. **Automatische Portierung** nach TinyLanguage
 4. **Sandbox-Testlauf** + Ergebnisbewertung
 5. **Optional GUI-Wrapper** pro generiertem Programm

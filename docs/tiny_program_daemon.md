@@ -67,8 +67,10 @@ Heuristiken:
   akzeptiert, wenn ein numerisches Literal, eine lokale Literalzuweisung oder
   ein vorheriger Null-Check mit zwingendem `return` einen von Null verschiedenen
   Nenner nachweist. Eine spätere Zuweisung macht den Nachweis ungültig.
-- **Ressourcenbegrenzung**: obere Schranken für Heap-Allokationen und
-  Schleifeniterationen.
+- **Ressourcenbegrenzung (erledigt 2026-08-22)**: Heap-Allokationen benötigen
+  eine feste, nichtnegative Größe von höchstens 4096 Elementen. Vergleichs-
+  schleifen benötigen einen lokal nachweisbaren ganzzahligen Startwert, eine
+  konstante Schrittweite und eine Obergrenze von höchstens 10.000 Iterationen.
 - **Determinismus-Profil**: optionales Verbot von Zeit-/Zufallsquellen.
 - **Stil- und Lesbarkeitsregeln**: Mindestkommentare, Namenskonventionen,
   Programmlänge pro Kategorie.

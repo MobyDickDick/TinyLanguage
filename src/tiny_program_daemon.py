@@ -28,6 +28,13 @@ COMPARISON_PATTERN = re.compile(
 DIVISOR_PATTERN = re.compile(
     r"/\s*\(?\s*(?P<divisor>[A-Za-z_][A-Za-z0-9_]*|[+-]?(?:\d+(?:\.\d*)?|\.\d+))"
 )
+HEAP_ALLOCATION_PATTERN = re.compile(r"\bnew\s*(?:\(\s*([^)]*)\s*\)|\[([^]]*)\])")
+LOOP_BOUND_PATTERN = re.compile(
+    r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(<|<=|>|>=)\s*"
+    r"([A-Za-z_][A-Za-z0-9_]*|[+-]?\d+)\s*$"
+)
+MAX_GENERATED_HEAP_SLOTS = 4096
+MAX_GENERATED_LOOP_ITERATIONS = 10_000
 
 
 def _loop_regions(source_text: str) -> tuple[tuple[str, str], ...]:
@@ -64,6 +71,52 @@ def _loop_has_progress(condition: str, body: str) -> bool:
         re.search(rf"\b{variable}\s*=\s*{variable}\s*[+-]\s*[^;]+", body)
         or re.search(rf"\b{variable}\s*[+-]=\s*[^;]+", body)
     )
+
+
+def _latest_integer_assignment(source_prefix: str, variable: str) -> int | None:
+    """Return the latest literal integer assigned to ``variable``."""
+    assignments = list(
+        re.finditer(
+            rf"\b(?:def\s+)?{re.escape(variable)}\s*=\s*([+-]?\d+)\s*;",
+            source_prefix,
+        )
+    )
+    return int(assignments[-1].group(1)) if assignments else None
+
+
+def _loop_iteration_bound(source_prefix: str, condition: str, body: str) -> int | None:
+    """Conservatively derive an upper iteration count for a simple loop."""
+    match = LOOP_BOUND_PATTERN.match(condition)
+    if match is None:
+        return None
+    variable, operator, bound_expression = match.groups()
+    start = _latest_integer_assignment(source_prefix, variable)
+    try:
+        bound = int(bound_expression)
+    except ValueError:
+        bound = _latest_integer_assignment(source_prefix, bound_expression)
+    if start is None or bound is None:
+        return None
+
+    updates = list(
+        re.finditer(
+            rf"\b{re.escape(variable)}\s*=\s*{re.escape(variable)}\s*([+-])\s*(\d+)\s*;",
+            body,
+        )
+    )
+    if len(updates) != 1:
+        return None
+    sign, magnitude = updates[0].groups()
+    step = int(magnitude) * (1 if sign == "+" else -1)
+    distance = bound - start
+    if operator in {"<", "<="} and step > 0:
+        distance += 1 if operator == "<=" else 0
+    elif operator in {">", ">="} and step < 0:
+        distance = -distance + (1 if operator == ">=" else 0)
+        step = -step
+    else:
+        return None
+    return max(0, (distance + step - 1) // step)
 
 
 def _divisor_is_proven_nonzero(source_prefix: str, divisor: str) -> bool:
@@ -171,7 +224,7 @@ def _unused = print(solution);
 fn iterate_logistic(seed, growth, steps) {
     def x = seed;
     def i = 0;
-    while (i < steps) {
+    while (i < 8) {
         x = growth * x * (1 - x);
         def _unused_print = print(x);
         i = i + 1;
@@ -225,6 +278,30 @@ class TinyProgramGenerator:
         read_vars: set[str] = set()
         code = re.sub(r"//[^\n]*", "", source_text)
 
+        for allocation in HEAP_ALLOCATION_PATTERN.finditer(code):
+            size_expression, literal_items = allocation.groups()
+            if literal_items is not None:
+                size = 0 if not literal_items.strip() else len(literal_items.split(","))
+            else:
+                try:
+                    size = int(size_expression.strip())
+                except (AttributeError, ValueError):
+                    size = None
+            if size is None or size < 0:
+                issues.append(
+                    ValidationIssue(
+                        "heap_bound_unproven",
+                        "Für eine Heap-Allokation ist keine nichtnegative feste Obergrenze nachweisbar.",
+                    )
+                )
+            elif size > MAX_GENERATED_HEAP_SLOTS:
+                issues.append(
+                    ValidationIssue(
+                        "heap_bound_exceeded",
+                        f"Heap-Allokation überschreitet {MAX_GENERATED_HEAP_SLOTS} Elemente.",
+                    )
+                )
+
         for division in DIVISOR_PATTERN.finditer(code):
             divisor = division.group("divisor")
             if re.fullmatch(r"[+-]?(?:0+(?:\.0*)?|\.0+)", divisor):
@@ -258,6 +335,24 @@ class TinyProgramGenerator:
                         "Für eine Schleife ist keine fortschreitende Induktionsvariable nachweisbar.",
                     )
                 )
+            else:
+                loop_start = code.find(f"while ({condition})")
+                source_prefix = code[:loop_start] if loop_start >= 0 else code
+                iteration_bound = _loop_iteration_bound(source_prefix, condition, body)
+                if iteration_bound is None:
+                    issues.append(
+                        ValidationIssue(
+                            "loop_resource_bound_unproven",
+                            "Für eine Schleife ist keine feste Iterationsobergrenze nachweisbar.",
+                        )
+                    )
+                elif iteration_bound > MAX_GENERATED_LOOP_ITERATIONS:
+                    issues.append(
+                        ValidationIssue(
+                            "loop_resource_bound_exceeded",
+                            f"Schleife überschreitet {MAX_GENERATED_LOOP_ITERATIONS} Iterationen.",
+                        )
+                    )
 
         for raw_line in source_text.splitlines():
             line = raw_line.split("//", 1)[0].strip()

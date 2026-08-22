@@ -134,3 +134,62 @@ def test_validator_rejects_reassignment_after_zero_guard():
 
     codes = [issue.code for issue in report.issues]
     assert codes.count("division_nonzero_unproven") == 1
+
+
+def test_validator_accepts_statically_bounded_resources():
+    report = TinyProgramGenerator.validate_program(
+        """def values = new(32);
+def i = 0;
+while (i < 100) {
+    i = i + 1;
+}
+def _unused_values = print(values);
+def _unused_i = print(i);
+"""
+    )
+
+    codes = {issue.code for issue in report.issues}
+    assert "heap_bound_unproven" not in codes
+    assert "heap_bound_exceeded" not in codes
+    assert "loop_resource_bound_unproven" not in codes
+    assert "loop_resource_bound_exceeded" not in codes
+
+
+def test_validator_rejects_dynamic_heap_allocation():
+    report = TinyProgramGenerator.validate_program(
+        """fn allocate(size) {
+    def values = new(size);
+    return values;
+}
+"""
+    )
+
+    assert "heap_bound_unproven" in {issue.code for issue in report.issues}
+
+
+def test_validator_rejects_excessive_loop_iteration_bound():
+    report = TinyProgramGenerator.validate_program(
+        """def i = 0;
+while (i < 10001) {
+    i = i + 1;
+}
+def _unused_i = print(i);
+"""
+    )
+
+    assert "loop_resource_bound_exceeded" in {issue.code for issue in report.issues}
+
+
+def test_validator_rejects_unknown_loop_iteration_bound():
+    report = TinyProgramGenerator.validate_program(
+        """fn count(limit) {
+    def i = 0;
+    while (i < limit) {
+        i = i + 1;
+    }
+    return i;
+}
+"""
+    )
+
+    assert "loop_resource_bound_unproven" in {issue.code for issue in report.issues}

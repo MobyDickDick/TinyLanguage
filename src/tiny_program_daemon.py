@@ -51,6 +51,13 @@ PROGRAM_LINE_LIMITS = {
     "physics-simulation": 100,
 }
 DEFAULT_PROGRAM_LINE_LIMIT = 100
+GENERATED_COMMENT_PREFIXES = (
+    "auto-generated tiny program:",
+    "category:",
+    "description:",
+    "generated at:",
+    "idea:",
+)
 
 
 def _code_without_comments_or_strings(source_text: str) -> str:
@@ -224,6 +231,7 @@ def _unused4 = print(out3);
         template="""// Auto-generated Tiny program: Linear equation solver
 // Category: math
 
+// A zero coefficient has no unique solution, so handle it before division.
 fn solve_linear(a, b) {
     if (a == 0) {
         return "no unique solution";
@@ -243,6 +251,7 @@ def _unused = print(solution);
         template="""// Auto-generated Tiny program: Logistic map simulation
 // Category: physics-simulation
 
+// Print each state of a bounded logistic-map simulation.
 fn iterate_logistic(seed, growth, steps) {
     def x = seed;
     def i = 0;
@@ -308,7 +317,12 @@ class TinyProgramGenerator:
         code = re.sub(r"//[^\n]*", "", source_text)
 
         comments = re.findall(r"^\s*//\s*(\S.*)$", source_text, re.MULTILINE)
-        if not comments:
+        explanatory_comments = [
+            comment
+            for comment in comments
+            if not comment.casefold().startswith(GENERATED_COMMENT_PREFIXES)
+        ]
+        if not explanatory_comments:
             issues.append(
                 ValidationIssue(
                     "missing_explanatory_comment",

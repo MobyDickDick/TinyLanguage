@@ -77,8 +77,10 @@ Heuristiken:
   Zufallswerte abgewiesen. Kommentare und Zeichenketten lösen die Prüfung nicht
   aus; ohne die Option bleibt das bisherige Generatorverhalten erhalten.
 - **Stil- und Lesbarkeitsregeln (erledigt 2026-08-22)**: Jedes erzeugte
-  Programm benötigt mindestens einen nichtleeren `//`-Kommentar. Deklarierte
-  Funktions- und Variablennamen müssen `snake_case` verwenden. Die Kategorien
+  Programm benötigt mindestens einen nichtleeren, erklärenden `//`-Kommentar;
+  automatisch erzeugte Metadaten wie Idee, Kategorie und Beschreibung zählen
+  dafür nicht. Deklarierte Funktions- und Variablennamen müssen `snake_case`
+  verwenden. Die Kategorien
   `logic` und `math` sind auf 80 Zeilen, `physics-simulation` und unbekannte
   Kategorien auf 100 Zeilen begrenzt.
 

@@ -1,6 +1,11 @@
 from pathlib import Path
 
-from tiny_program_daemon import TinyProgramDaemon, TinyProgramGenerator, parse_args
+from tiny_program_daemon import (
+    DEFAULT_IDEAS,
+    TinyProgramDaemon,
+    TinyProgramGenerator,
+    parse_args,
+)
 from tiny_program_repository_db_adapter import TinyProgramRepositoryDB
 
 
@@ -238,7 +243,11 @@ def test_cli_enables_deterministic_profile():
 
 def test_validator_requires_an_explanatory_comment():
     report = TinyProgramGenerator.validate_program(
-        'def value = "// not a comment";\ndef _unused = print(value);\n'
+        "// Generated at: 2026-08-22T00:00:00+00:00\n"
+        "// Idea: Metadata is not an explanation\n"
+        "// Description: Boilerplate must not satisfy the quality gate.\n"
+        'def value = "// not a comment";\n'
+        "def _unused = print(value);\n"
     )
 
     assert "missing_explanatory_comment" in {issue.code for issue in report.issues}
@@ -265,11 +274,11 @@ def test_validator_applies_category_specific_program_length_limit():
     assert "program_too_long" in {issue.code for issue in report.issues}
 
 
-def test_default_templates_satisfy_style_and_readability_rules(tmp_path: Path):
-    generator = TinyProgramGenerator(tmp_path)
-
-    for idea in generator._ideas:
-        report = generator.validate_program(idea.template, category=idea.category)
+def test_default_templates_satisfy_style_and_readability_rules():
+    for idea in DEFAULT_IDEAS:
+        report = TinyProgramGenerator.validate_program(
+            idea.template, category=idea.category
+        )
         codes = {issue.code for issue in report.issues}
         assert "missing_explanatory_comment" not in codes
         assert "non_snake_case_name" not in codes

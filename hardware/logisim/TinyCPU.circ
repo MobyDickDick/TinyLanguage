@@ -1351,7 +1351,7 @@
       <a name="label" val="JUMP_NOT_ZERO"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="0" loc="(1260,440)" name="Pin">
+    <comp lib="0" loc="(1260,430)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="HALT_ERROR"/>
@@ -1371,9 +1371,7 @@
       <a name="appearance" val="classic"/>
       <a name="label" val="RESET"/>
     </comp>
-    <comp lib="0" loc="(540,240)" name="Constant">
-      <a name="value" val="0x1"/>
-    </comp>
+    <comp lib="0" loc="(540,240)" name="Constant"/>
     <comp lib="0" loc="(700,550)" name="Splitter">
       <a name="appear" val="right"/>
       <a name="bit1" val="0"/>
@@ -1392,12 +1390,9 @@
       <a name="bit8" val="0"/>
       <a name="bit9" val="0"/>
       <a name="incoming" val="16"/>
-      <a name="label" val="PC_ADDRESS"/>
-      <a name="bit0" val="0"/>
     </comp>
     <comp lib="0" loc="(710,240)" name="Constant">
       <a name="width" val="16"/>
-      <a name="value" val="0x1"/>
     </comp>
     <comp lib="0" loc="(810,560)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -1414,11 +1409,9 @@
     </comp>
     <comp lib="2" loc="(870,190)" name="Multiplexer">
       <a name="width" val="16"/>
-      <a name="label" val="NEXT_PC"/>
     </comp>
     <comp lib="3" loc="(740,420)" name="Comparator">
       <a name="width" val="16"/>
-      <a name="label" val="PC_RANGE"/>
     </comp>
     <comp lib="3" loc="(770,230)" name="Adder">
       <a name="width" val="16"/>
@@ -1445,17 +1438,15 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(1030,600)" to="(1050,600)"/>
     <wire from="(1030,660)" to="(1030,700)"/>
     <wire from="(1030,660)" to="(1130,660)"/>
-    <wire from="(1070,580)" to="(1000,580)"/>
+    <wire from="(1070,610)" to="(1410,610)"/>
     <wire from="(1100,210)" to="(1150,210)"/>
     <wire from="(1100,250)" to="(1150,250)"/>
     <wire from="(1100,460)" to="(1150,460)"/>
     <wire from="(1150,450)" to="(1150,460)"/>
     <wire from="(1200,230)" to="(1200,270)"/>
     <wire from="(1200,230)" to="(1240,230)"/>
-    <wire from="(1200,430)" to="(1210,430)"/>
-    <wire from="(1210,430)" to="(1210,440)"/>
-    <wire from="(1210,440)" to="(1260,440)"/>
-    <wire from="(1000,120)" to="(1000,580)"/>
+    <wire from="(1200,430)" to="(1260,430)"/>
+    <wire from="(1410,120)" to="(1410,610)"/>
     <wire from="(500,260)" to="(550,260)"/>
     <wire from="(500,430)" to="(700,430)"/>
     <wire from="(510,360)" to="(580,360)"/>
@@ -1477,7 +1468,7 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(760,560)" to="(810,560)"/>
     <wire from="(760,650)" to="(790,650)"/>
     <wire from="(770,230)" to="(790,230)"/>
-    <wire from="(780,120)" to="(1000,120)"/>
+    <wire from="(780,120)" to="(1410,120)"/>
     <wire from="(780,120)" to="(780,200)"/>
     <wire from="(780,200)" to="(840,200)"/>
     <wire from="(790,180)" to="(790,230)"/>
@@ -1486,7 +1477,6 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(850,270)" to="(1200,270)"/>
     <wire from="(870,190)" to="(890,190)"/>
     <wire from="(890,140)" to="(890,190)"/>
-    <wire from="(920,580)" to="(980,580)"/>
   </circuit>
   <circuit name="FetchDecodeControls">
     <a name="appearance" val="logisim_evolution"/>

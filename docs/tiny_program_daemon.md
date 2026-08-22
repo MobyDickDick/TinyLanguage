@@ -32,6 +32,7 @@ python src/tiny_program_daemon.py
 - `--idea <slug>`: bestimmte Programmidee erzwingen
 - `--seed <int>`: reproduzierbare Zufallsauswahl
 - `--db-path <sqlite.db>`: speichert validierte Programme zusätzlich in SQLite
+- `--deterministic`: lehnt Zeit- und Zufallsquellen im erzeugten Programm ab
 
 Beispiel:
 
@@ -71,7 +72,10 @@ Heuristiken:
   eine feste, nichtnegative Größe von höchstens 4096 Elementen. Vergleichs-
   schleifen benötigen einen lokal nachweisbaren ganzzahligen Startwert, eine
   konstante Schrittweite und eine Obergrenze von höchstens 10.000 Iterationen.
-- **Determinismus-Profil**: optionales Verbot von Zeit-/Zufallsquellen.
+- **Determinismus-Profil (erledigt 2026-08-22)**: Mit `--deterministic` werden
+  Aufrufe der Tiny-Standardbibliothek für aktuelle Zeit, monotone Zeit und
+  Zufallswerte abgewiesen. Kommentare und Zeichenketten lösen die Prüfung nicht
+  aus; ohne die Option bleibt das bisherige Generatorverhalten erhalten.
 - **Stil- und Lesbarkeitsregeln**: Mindestkommentare, Namenskonventionen,
   Programmlänge pro Kategorie.
 

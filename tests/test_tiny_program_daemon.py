@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from tiny_program_daemon import TinyProgramDaemon, TinyProgramGenerator
+from tiny_program_daemon import TinyProgramDaemon, TinyProgramGenerator, parse_args
 from tiny_program_repository_db_adapter import TinyProgramRepositoryDB
 
 
@@ -193,3 +193,44 @@ def test_validator_rejects_unknown_loop_iteration_bound():
     )
 
     assert "loop_resource_bound_unproven" in {issue.code for issue in report.issues}
+
+
+def test_deterministic_profile_rejects_time_and_random_sources():
+    report = TinyProgramGenerator.validate_program(
+        """def roll = Random.randint(1, 6);
+def timestamp = Time.now_ms();
+def _unused_roll = print(roll);
+def _unused_timestamp = print(timestamp);
+""",
+        deterministic_profile=True,
+    )
+
+    assert {issue.code for issue in report.issues} >= {
+        "nondeterministic_random_source",
+        "nondeterministic_time_source",
+    }
+
+
+def test_deterministic_profile_ignores_comments_strings_and_is_optional():
+    source = """// Random.random() is only documentation.
+def message = \"Time.now_iso() is only text\";
+def _unused_message = print(message);
+"""
+
+    strict_report = TinyProgramGenerator.validate_program(
+        source, deterministic_profile=True
+    )
+    default_report = TinyProgramGenerator.validate_program(
+        "def value = Random.random();\ndef _unused = print(value);\n"
+    )
+
+    assert "nondeterministic_random_source" not in {
+        issue.code for issue in strict_report.issues
+    }
+    assert "nondeterministic_random_source" not in {
+        issue.code for issue in default_report.issues
+    }
+
+
+def test_cli_enables_deterministic_profile():
+    assert parse_args(["--deterministic"]).deterministic is True

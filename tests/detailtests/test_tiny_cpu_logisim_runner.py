@@ -75,21 +75,17 @@ def test_obtain_jar_uses_versioned_url_and_atomic_partial(tmp_path, monkeypatch)
 
 
 def _tty_row(**overrides):
-    values = {label: "0" for label, _width in runner.TTY_OUTPUTS}
-    values.update(
-        {
-            "PRINT_VALUE": "0000000000000000",
-            "PRINT_ADDRESS_VALUE": "0000000000000000",
-        }
-    )
+    values = {
+        label: "0" * width if width > 1 else "0"
+        for label, width in runner.TTY_OUTPUTS
+    }
     values.update(overrides)
     tokens = []
     for label, width in runner.TTY_OUTPUTS:
         value = values[label]
         tokens.extend(
-            [value[index : index + 4] for index in range(0, 16, 4)]
-            if width == 16
-            else [value]
+            [value[index : index + 4] for index in range(0, width, 4)]
+            if width > 1 else [value]
         )
     return " ".join(tokens)
 
@@ -150,6 +146,20 @@ def test_tty_trace_converter_samples_last_stable_low_row_per_edge():
 
     assert len(converted.splitlines()) == 4
     assert "\t7\t" in converted
+
+
+def test_tty_trace_converter_reports_undefined_fetch_decode_state():
+    raw = _tty_row(TRACE_PC="E" * 12, TRACE_OPCODE="U" * 22)
+
+    try:
+        runner._tty_trace_to_tsv(raw)
+    except runner.SmokeTestError as exc:
+        message = str(exc)
+        assert "fetch/decode is undefined" in message
+        assert "TRACE_PC=EEEEEEEEEEEE" in message
+        assert "OPCODE=" in message
+    else:
+        raise AssertionError("undefined PC/opcode state was accepted")
 
 
 def test_run_retains_simulator_stdout_before_reporting_failure(tmp_path, monkeypatch):

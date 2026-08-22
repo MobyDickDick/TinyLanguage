@@ -345,7 +345,7 @@ def _component_terminals(component: ET.Element) -> set[str]:
             }
         )
     elif component.get("name") == "ROM":
-        terminals.update({f"({x},{y + 10})", f"({x + 240},{y})"})
+        terminals.update({f"({x},{y + 10})", f"({x + 240},{y + 60})"})
     return terminals
 
 
@@ -462,7 +462,7 @@ def _component_terminal_widths(component: ET.Element) -> dict[str, int]:
         if name == "ROM":
             addr_width = int(attrs.get("addrWidth", attrs.get("addr", "1")))
             data_width = int(attrs.get("dataWidth", attrs.get("data", str(width))))
-            return {f"({x},{y + 10})": addr_width, f"({x + 240},{y})": data_width}
+            return {f"({x},{y + 10})": addr_width, f"({x + 240},{y + 60})": data_width}
     return {terminal: width for terminal in _component_terminals(component)}
 
 
@@ -508,7 +508,7 @@ def _component_output_terminals(
         data_width = int(
             attrs.get("dataWidth", attrs.get("data", attrs.get("width", "1")))
         )
-        data_offset = 100 if data_width == 1 else (0 if name == "ROM" else 90)
+        data_offset = 100 if data_width == 1 else (60 if name == "ROM" else 90)
         return {f"({x + 240},{y + data_offset})"}
     # These Logisim primitives all expose their result at the component anchor.
     if name in {

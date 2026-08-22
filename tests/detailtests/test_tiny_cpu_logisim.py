@@ -322,10 +322,10 @@ def test_fetch_decode_rom_drives_instruction_output():
     )
     # In the Logisim-evolution appearance the XML location is the upper-left
     # anchor. The address is on the west edge; the wide data output is at the
-    # upper-right terminal of the expanded ROM body.
+    # lower-right terminal of the expanded ROM body.
     rom_x, rom_y = (int(value) for value in rom.get("loc").strip("()").split(","))
     address_input = f"({rom_x},{rom_y + 10})"
-    data_output = f"({rom_x + 240},{rom_y})"
+    data_output = f"({rom_x + 240},{rom_y + 60})"
     adjacency = _electrical_adjacency(
         fetch, {address_input, data_output, opcode.get("loc")}
     )
@@ -334,10 +334,10 @@ def test_fetch_decode_rom_drives_instruction_output():
     }
 
     assert address_input == "(510,410)"
-    assert data_output == "(750,400)"
+    assert data_output == "(750,460)"
     assert opcode.get("loc") in _reachable(adjacency, data_output)
     assert address_input not in _reachable(adjacency, data_output)
-    assert (data_output, "(750,460)") in instruction_wires
+    assert (data_output, "(820,460)") in instruction_wires
     assert all("(510,400)" not in endpoints for endpoints in instruction_wires)
     assert all("(550,410)" not in endpoints for endpoints in instruction_wires)
 

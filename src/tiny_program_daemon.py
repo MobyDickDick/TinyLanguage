@@ -25,6 +25,9 @@ WHILE_PATTERN = re.compile(r"\bwhile\s*\((.*?)\)\s*\{")
 COMPARISON_PATTERN = re.compile(
     r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:<|<=|>|>=|!=)\s*.+$"
 )
+DIVISOR_PATTERN = re.compile(
+    r"/\s*\(?\s*(?P<divisor>[A-Za-z_][A-Za-z0-9_]*|[+-]?(?:\d+(?:\.\d*)?|\.\d+))"
+)
 
 
 def _loop_regions(source_text: str) -> tuple[tuple[str, str], ...]:
@@ -61,6 +64,42 @@ def _loop_has_progress(condition: str, body: str) -> bool:
         re.search(rf"\b{variable}\s*=\s*{variable}\s*[+-]\s*[^;]+", body)
         or re.search(rf"\b{variable}\s*[+-]=\s*[^;]+", body)
     )
+
+
+def _divisor_is_proven_nonzero(source_prefix: str, divisor: str) -> bool:
+    """Return whether simple local evidence proves ``divisor`` is non-zero.
+
+    The generator deliberately does not pretend to be a full type checker.  It
+    accepts numeric constants, a latest literal assignment, or an earlier
+    zero-check whose branch necessarily returns.  Restricting the search to the
+    current function prevents a guard in a sibling function from being reused.
+    """
+    try:
+        return float(divisor) != 0
+    except ValueError:
+        pass
+
+    function_start = source_prefix.rfind("fn ")
+    local_prefix = source_prefix[function_start:] if function_start >= 0 else source_prefix
+    escaped = re.escape(divisor)
+    assignments = list(
+        re.finditer(
+            rf"\b(?:def\s+)?{escaped}\s*=\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*;",
+            local_prefix,
+        )
+    )
+    last_assignment = assignments[-1] if assignments else None
+    guard_pattern = re.compile(
+        rf"\bif\s*\(\s*{escaped}\s*==\s*0(?:\.0*)?\s*\)\s*\{{[^{{}}]*\breturn\b[^{{}}]*\}}",
+        re.DOTALL,
+    )
+    guards = list(guard_pattern.finditer(local_prefix))
+    last_guard = guards[-1] if guards else None
+    if last_guard is not None and (
+        last_assignment is None or last_guard.end() > last_assignment.end()
+    ):
+        return True
+    return last_assignment is not None and float(last_assignment.group(1)) != 0
 
 
 @dataclass(frozen=True)
@@ -184,6 +223,24 @@ class TinyProgramGenerator:
         issues: list[ValidationIssue] = []
         assigned_vars: set[str] = set()
         read_vars: set[str] = set()
+        code = re.sub(r"//[^\n]*", "", source_text)
+
+        for division in DIVISOR_PATTERN.finditer(code):
+            divisor = division.group("divisor")
+            if re.fullmatch(r"[+-]?(?:0+(?:\.0*)?|\.0+)", divisor):
+                issues.append(
+                    ValidationIssue(
+                        "division_by_zero_literal",
+                        "Programm enthält eine mögliche Division durch 0.",
+                    )
+                )
+            elif not _divisor_is_proven_nonzero(code[: division.start()], divisor):
+                issues.append(
+                    ValidationIssue(
+                        "division_nonzero_unproven",
+                        f"Für den Divisor '{divisor}' ist kein von Null verschiedener Wert nachweisbar.",
+                    )
+                )
 
         for condition, body in _loop_regions(source_text):
             normalized_condition = re.sub(r"\s+", "", condition).lower()
@@ -232,13 +289,6 @@ class TinyProgramGenerator:
                     ValidationIssue(
                         "uncaught_exception",
                         "Programm enthält 'throw' und kann unbehandelte Ausnahmen erzeugen.",
-                    )
-                )
-            if re.search(r"/\s*0\b", line):
-                issues.append(
-                    ValidationIssue(
-                        "division_by_zero_literal",
-                        "Programm enthält eine mögliche Division durch 0.",
                     )
                 )
             if "spawn " in line and "join(" not in source_text:

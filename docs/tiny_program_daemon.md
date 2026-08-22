@@ -63,8 +63,10 @@ Heuristiken:
   vollständig erfasst. Der Validator akzeptiert nur Vergleichsschleifen, für
   deren Induktionsvariable im Schleifenrumpf ein Fortschritt nachweisbar ist;
   auch anders formatierte literale Endlosschleifen werden abgewiesen.
-- **Typsicherheits-/Range-Checks**: z. B. Division nur bei nachweisbar
-  non-zero Nennern.
+- **Typsicherheits-/Range-Checks (erledigt 2026-08-22)**: Divisionen werden nur
+  akzeptiert, wenn ein numerisches Literal, eine lokale Literalzuweisung oder
+  ein vorheriger Null-Check mit zwingendem `return` einen von Null verschiedenen
+  Nenner nachweist. Eine spätere Zuweisung macht den Nachweis ungültig.
 - **Ressourcenbegrenzung**: obere Schranken für Heap-Allokationen und
   Schleifeniterationen.
 - **Determinismus-Profil**: optionales Verbot von Zeit-/Zufallsquellen.

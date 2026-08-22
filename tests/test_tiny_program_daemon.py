@@ -93,3 +93,44 @@ def test_validator_recognizes_spaced_literal_infinite_loop_once():
     codes = [issue.code for issue in report.issues]
     assert codes.count("infinite_loop_literal") == 1
     assert "loop_termination_unproven" not in codes
+
+
+def test_validator_accepts_divisor_after_returning_zero_guard():
+    report = TinyProgramGenerator.validate_program(
+        """fn divide(value, divisor) {
+    if (divisor == 0) {
+        return null;
+    }
+    return value / divisor;
+}
+"""
+    )
+
+    assert "division_nonzero_unproven" not in {issue.code for issue in report.issues}
+
+
+def test_validator_rejects_divisor_without_nonzero_evidence():
+    report = TinyProgramGenerator.validate_program(
+        """fn divide(value, divisor) {
+    return value / divisor;
+}
+"""
+    )
+
+    assert "division_nonzero_unproven" in {issue.code for issue in report.issues}
+
+
+def test_validator_rejects_reassignment_after_zero_guard():
+    report = TinyProgramGenerator.validate_program(
+        """fn divide(value, divisor) {
+    if (divisor == 0) {
+        return null;
+    }
+    divisor = 0;
+    return value / divisor;
+}
+"""
+    )
+
+    codes = [issue.code for issue in report.issues]
+    assert codes.count("division_nonzero_unproven") == 1

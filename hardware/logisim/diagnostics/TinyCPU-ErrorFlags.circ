@@ -20,7 +20,7 @@
     <a name="circuit" val="ErrorFlags"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(160,970)" name="PowerOnReset"/>
+    <comp lib="0" loc="(160,970)" name="Constant"/>
     <comp lib="0" loc="(180,970)" name="Tunnel">
       <a name="label" val="ERROR_FLAGS_STARTUP_RESET"/>
     </comp>

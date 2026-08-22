@@ -170,35 +170,13 @@ def test_top_level_clock_reaches_every_stateful_block_without_joining_acc_valid(
     assert acc_valid not in clock_net
 
 
-def test_power_on_reset_initializes_all_non_pc_registers():
-    """No state bit may remain undefined before the first decoded write."""
+def test_maintained_projects_use_only_portable_wiring_components():
+    """Do not persist PowerOnReset, which older Logisim versions reject."""
 
-    root = ET.parse(PROJECT).getroot()
-    expected_reset_terminals = {
-        "Datapath": {"(300,190)", "(300,310)"},
-        "AddressPath": {"(370,210)", "(370,390)"},
-        "ErrorFlags": {
-            "(780,290)", "(780,420)", "(780,560)",
-            "(780,690)", "(780,830)", "(780,970)",
-        },
-    }
-    for circuit_name, terminals in expected_reset_terminals.items():
-        circuit = root.find(f"circuit[@name='{circuit_name}']")
-        assert circuit is not None
-        resets = circuit.findall("comp[@name='PowerOnReset']")
-        assert len(resets) == 1
-        reset_label = next(
-            _attributes(component)["label"]
-            for component in circuit.findall("comp[@name='Tunnel']")
-            if component.get("loc") not in terminals
-            and _attributes(component).get("label", "").endswith("STARTUP_RESET")
-        )
-        reset_tunnels = {
-            component.get("loc")
-            for component in circuit.findall("comp[@name='Tunnel']")
-            if _attributes(component).get("label") == reset_label
-        }
-        assert terminals <= reset_tunnels
+    projects = [PROJECT, *(HARDWARE / "diagnostics").glob("*.circ")]
+    for project in projects:
+        root = ET.parse(project).getroot()
+        assert not root.findall(".//comp[@name='PowerOnReset']"), project
 
 
 def test_integration_reset_connects_external_reset_to_fetch_only():
@@ -217,8 +195,8 @@ def test_integration_reset_connects_external_reset_to_fetch_only():
     } == {frozenset(pins.values())}
 
 
-def test_fetch_decode_pc_reset_combines_external_and_power_on_reset():
-    """The PC must be known before ROM/decode feedback can produce errors."""
+def test_fetch_decode_external_reset_reaches_portable_pc_reset_gate():
+    """Combine RESET with a portable inactive constant before clearing PC."""
 
     root = ET.parse(PROJECT).getroot()
     fetch = root.find("circuit[@name='FetchDecode']")
@@ -228,21 +206,20 @@ def test_fetch_decode_pc_reset_combines_external_and_power_on_reset():
         for component in fetch.findall("comp[@name='Pin']")
         if _attributes(component).get("label") == "RESET"
     )
-    power_on_reset = fetch.find("comp[@name='PowerOnReset']")
-    assert power_on_reset is not None
+    reset_constant = fetch.find("comp[@name='Constant'][@loc='(300,240)']")
+    assert reset_constant is not None
     reset_gate = next(
         component
         for component in fetch.findall("comp[@name='OR Gate']")
         if _attributes(component).get("label") == "PC_RESET"
     )
     contacts = {
-        reset, power_on_reset.get("loc"), "(350,200)", "(350,240)",
+        reset, reset_constant.get("loc"), "(350,200)", "(350,240)",
         reset_gate.get("loc"), "(300,180)",
     }
     adjacency = _electrical_adjacency(fetch, contacts)
-
     assert "(350,200)" in _reachable(adjacency, reset)
-    assert "(350,240)" in _reachable(adjacency, power_on_reset.get("loc"))
+    assert "(350,240)" in _reachable(adjacency, reset_constant.get("loc"))
     assert "(300,180)" in _reachable(adjacency, reset_gate.get("loc"))
 
 
@@ -1698,7 +1675,7 @@ def test_ap3_error_flag_feedback_is_clocked_not_combinational():
     undirected_wires = {frozenset(wire) for wire in wires}
 
     # Feedback remains explicit wiring. The only tunnels are the deliberately
-    # shared startup-reset net for the six register clear terminals.
+    # shared portable reset net for the six register clear terminals.
     tunnels = errors.findall("comp[@name='Tunnel']")
     assert tunnels
     assert {

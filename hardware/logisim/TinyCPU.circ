@@ -752,7 +752,7 @@
     <a name="circuit" val="Datapath"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(100,350)" name="PowerOnReset"/>
+    <comp lib="0" loc="(100,350)" name="Constant"/>
     <comp lib="0" loc="(120,350)" name="Tunnel">
       <a name="label" val="DATAPATH_STARTUP_RESET"/>
     </comp>
@@ -853,7 +853,7 @@
     <a name="circuit" val="AddressPath"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(120,410)" name="PowerOnReset"/>
+    <comp lib="0" loc="(120,410)" name="Constant"/>
     <comp lib="0" loc="(140,410)" name="Tunnel">
       <a name="label" val="ADDRESS_PATH_STARTUP_RESET"/>
     </comp>
@@ -1059,7 +1059,7 @@
     <a name="circuit" val="ErrorFlags"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(160,970)" name="PowerOnReset"/>
+    <comp lib="0" loc="(160,970)" name="Constant"/>
     <comp lib="0" loc="(180,970)" name="Tunnel">
       <a name="label" val="ERROR_FLAGS_STARTUP_RESET"/>
     </comp>
@@ -1324,7 +1324,7 @@
     <a name="circuit" val="FetchDecode"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(300,240)" name="PowerOnReset"/>
+    <comp lib="0" loc="(300,240)" name="Constant"/>
     <comp lib="1" loc="(400,220)" name="OR Gate">
       <a name="label" val="PC_RESET"/>
     </comp>

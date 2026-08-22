@@ -20,7 +20,7 @@
     <a name="circuit" val="AddressPath"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(120,410)" name="PowerOnReset"/>
+    <comp lib="0" loc="(120,410)" name="Constant"/>
     <comp lib="0" loc="(140,410)" name="Tunnel">
       <a name="label" val="ADDRESS_PATH_STARTUP_RESET"/>
     </comp>

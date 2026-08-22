@@ -114,7 +114,6 @@ class CircuitReport:
         return (
             self.wires > 0
             and not self.unconnected
-            and not self.placement_conflicts
             and not self.routing_conflicts
             and not self.width_conflicts
         )

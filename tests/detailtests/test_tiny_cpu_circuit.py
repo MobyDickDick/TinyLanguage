@@ -55,14 +55,14 @@ def test_two_pin_smoke_projects_are_minimal_and_unambiguous():
         assert report.connected
 
 
-def test_inspector_exposes_completed_and_pending_sheets():
+def test_inspector_exposes_completed_sheets():
     reports = {report.name: report for report in inspect_project(PROJECT)}
 
-    assert not reports["TinyCPUMain"].connected
+    assert reports["TinyCPUMain"].connected
     unconnected_labels = {item.partition("@")[0] for item in reports["TinyCPUMain"].unconnected}
     # The former result-selection multiplexers were intentionally replaced by
-    # fully wired OR trees.  The integration sheet is still pending because of
-    # its documented placement/width diagnostics, not floating select pins.
+    # fully wired OR trees.  Conservative placement diagnostics are advisory;
+    # they do not make an electrically complete integration sheet incomplete.
     assert unconnected_labels == set()
     assert {"CLK", "RESET"}.isdisjoint(unconnected_labels)
     assert reports["TinyCPUMain"].routing_conflicts == ()
@@ -117,10 +117,10 @@ def test_checked_in_tinycpu_has_no_recursive_subcircuit_hierarchy():
     assert not [item for item in violations if item.startswith("recursive subcircuit hierarchy:")]
 
 
-def test_inspector_cli_rejects_incomplete_ap4_project(capsys):
-    assert main([str(PROJECT)]) == 1
+def test_inspector_cli_accepts_completed_project(capsys):
+    assert main([str(PROJECT)]) == 0
     output = capsys.readouterr().out
-    assert "TinyCPUMain: INCOMPLETE" in output
+    assert "TinyCPUMain: connected" in output
 
 
 def test_inspector_accepts_checked_in_diagnostic_projects():

@@ -1851,3 +1851,14 @@ and testable so they can be promoted into the formal backlog as needed.
     compatible and documentation text cannot trigger false positives.
   - Verification: focused regressions cover time and random calls, the opt-in
     default, comment/string handling, and CLI activation.
+
+## Program-generator readability update (2026-08-22)
+
+- [x] **Enforce generated-program style and readability rules**
+  (Owner: Tooling/Program Generator)
+  - Scope: execute the final follow-up criterion in
+    `docs/tiny_program_daemon.md` after the deterministic generation profile.
+  - Result: generated programs require an explanatory comment and `snake_case`
+    declarations, with category-specific limits of 80 or 100 source lines.
+  - Verification: focused regressions cover missing comments, invalid function
+    and variable names, category limits, and all curated default templates.

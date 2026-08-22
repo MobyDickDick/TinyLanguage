@@ -41,6 +41,23 @@ NONDETERMINISTIC_RANDOM_CALL_PATTERN = re.compile(
 NONDETERMINISTIC_TIME_CALL_PATTERN = re.compile(
     r"\b(?:Time|time)\s*\.\s*(?:now_ms|now_iso|monotonic_ms|time|time_ns|monotonic)\s*\("
 )
+DECLARED_NAME_PATTERN = re.compile(
+    r"^\s*(?:def|fn)\s+([A-Za-z_][A-Za-z0-9_]*)", re.MULTILINE
+)
+SNAKE_CASE_NAME_PATTERN = re.compile(r"^[a-z_][a-z0-9_]*$")
+PROGRAM_LINE_LIMITS = {
+    "logic": 80,
+    "math": 80,
+    "physics-simulation": 100,
+}
+DEFAULT_PROGRAM_LINE_LIMIT = 100
+GENERATED_COMMENT_PREFIXES = (
+    "auto-generated tiny program:",
+    "category:",
+    "description:",
+    "generated at:",
+    "idea:",
+)
 
 
 def _code_without_comments_or_strings(source_text: str) -> str:
@@ -214,6 +231,7 @@ def _unused4 = print(out3);
         template="""// Auto-generated Tiny program: Linear equation solver
 // Category: math
 
+// A zero coefficient has no unique solution, so handle it before division.
 fn solve_linear(a, b) {
     if (a == 0) {
         return "no unique solution";
@@ -233,6 +251,7 @@ def _unused = print(solution);
         template="""// Auto-generated Tiny program: Logistic map simulation
 // Category: physics-simulation
 
+// Print each state of a bounded logistic-map simulation.
 fn iterate_logistic(seed, growth, steps) {
     def x = seed;
     def i = 0;
@@ -286,13 +305,58 @@ class TinyProgramGenerator:
 
     @staticmethod
     def validate_program(
-        source_text: str, *, deterministic_profile: bool = False
+        source_text: str,
+        *,
+        deterministic_profile: bool = False,
+        category: str | None = None,
     ) -> ValidationReport:
         """Validate generated source against conservative quality gates."""
         issues: list[ValidationIssue] = []
         assigned_vars: set[str] = set()
         read_vars: set[str] = set()
         code = re.sub(r"//[^\n]*", "", source_text)
+
+        comments = re.findall(r"^\s*//\s*(\S.*)$", source_text, re.MULTILINE)
+        explanatory_comments = [
+            comment
+            for comment in comments
+            if not comment.casefold().startswith(GENERATED_COMMENT_PREFIXES)
+        ]
+        if not explanatory_comments:
+            issues.append(
+                ValidationIssue(
+                    "missing_explanatory_comment",
+                    "Das Programm benötigt mindestens einen erklärenden Kommentar.",
+                )
+            )
+
+        invalid_names = sorted(
+            {
+                match.group(1)
+                for match in DECLARED_NAME_PATTERN.finditer(code)
+                if not SNAKE_CASE_NAME_PATTERN.fullmatch(match.group(1))
+            }
+        )
+        if invalid_names:
+            issues.append(
+                ValidationIssue(
+                    "non_snake_case_name",
+                    "Deklarierte Namen müssen snake_case verwenden: "
+                    + ", ".join(invalid_names),
+                )
+            )
+
+        line_limit = PROGRAM_LINE_LIMITS.get(category, DEFAULT_PROGRAM_LINE_LIMIT)
+        line_count = len(source_text.splitlines())
+        if line_count > line_limit:
+            category_label = category or "default"
+            issues.append(
+                ValidationIssue(
+                    "program_too_long",
+                    f"Programm der Kategorie '{category_label}' überschreitet "
+                    f"{line_limit} Zeilen ({line_count}).",
+                )
+            )
 
         if deterministic_profile:
             executable_code = _code_without_comments_or_strings(source_text)
@@ -464,7 +528,9 @@ class TinyProgramGenerator:
         )
         source_text = header + idea.template
         validation_report = self.validate_program(
-            source_text, deterministic_profile=self._deterministic_profile
+            source_text,
+            deterministic_profile=self._deterministic_profile,
+            category=idea.category,
         )
         if not validation_report.is_valid:
             rendered = ", ".join(f"{issue.code}: {issue.message}" for issue in validation_report.issues)

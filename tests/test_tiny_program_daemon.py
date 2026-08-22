@@ -1,6 +1,11 @@
 from pathlib import Path
 
-from tiny_program_daemon import TinyProgramDaemon, TinyProgramGenerator, parse_args
+from tiny_program_daemon import (
+    DEFAULT_IDEAS,
+    TinyProgramDaemon,
+    TinyProgramGenerator,
+    parse_args,
+)
 from tiny_program_repository_db_adapter import TinyProgramRepositoryDB
 
 
@@ -234,3 +239,47 @@ def _unused_message = print(message);
 
 def test_cli_enables_deterministic_profile():
     assert parse_args(["--deterministic"]).deterministic is True
+
+
+def test_validator_requires_an_explanatory_comment():
+    report = TinyProgramGenerator.validate_program(
+        "// Generated at: 2026-08-22T00:00:00+00:00\n"
+        "// Idea: Metadata is not an explanation\n"
+        "// Description: Boilerplate must not satisfy the quality gate.\n"
+        'def value = "// not a comment";\n'
+        "def _unused = print(value);\n"
+    )
+
+    assert "missing_explanatory_comment" in {issue.code for issue in report.issues}
+
+
+def test_validator_rejects_non_snake_case_declarations():
+    report = TinyProgramGenerator.validate_program(
+        "// Explain the result.\nfn CalculateValue() { return 1; }\n"
+        "def resultValue = CalculateValue();\n"
+        "def _unused = print(resultValue);\n"
+    )
+
+    issues = {issue.code: issue.message for issue in report.issues}
+    assert "non_snake_case_name" in issues
+    assert "CalculateValue" in issues["non_snake_case_name"]
+    assert "resultValue" in issues["non_snake_case_name"]
+
+
+def test_validator_applies_category_specific_program_length_limit():
+    source = "// Explain the generated program.\n" + "print(1);\n" * 80
+
+    report = TinyProgramGenerator.validate_program(source, category="logic")
+
+    assert "program_too_long" in {issue.code for issue in report.issues}
+
+
+def test_default_templates_satisfy_style_and_readability_rules():
+    for idea in DEFAULT_IDEAS:
+        report = TinyProgramGenerator.validate_program(
+            idea.template, category=idea.category
+        )
+        codes = {issue.code for issue in report.issues}
+        assert "missing_explanatory_comment" not in codes
+        assert "non_snake_case_name" not in codes
+        assert "program_too_long" not in codes

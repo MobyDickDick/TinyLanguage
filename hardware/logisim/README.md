@@ -907,9 +907,10 @@ or off-by-one-grid wires that would otherwise look connected from the pin alone:
 PYTHONPATH=src python src/tiny_cpu_circuit.py hardware/logisim/TinyCPU.circ
 ```
 
-The leaf sheets pass the structural check; the manually maintained top-level
-sheet remains pending while its integration wiring is completed. The inspector
-is **not** a replacement for Logisim's
+All sheets, including the manually maintained top-level integration sheet,
+pass the structural check. Conservative placement messages remain advisory:
+they identify tightly arranged subcircuit anchors, not electrical faults. The
+inspector is **not** a replacement for Logisim's
 component simulator: faithfully emulating the complete Logisim library,
 propagation rules, clocks, unknown values, and RAM would amount to maintaining a
 second Logisim. Use Logisim-evolution's command-line simulation for electrical

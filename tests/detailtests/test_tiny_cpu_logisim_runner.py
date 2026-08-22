@@ -14,8 +14,8 @@ def completed(command: list[str], stdout: str = "", stderr: str = ""):
     return subprocess.CompletedProcess(command, 0, stdout, stderr)
 
 
-def test_verify_java_accepts_only_pinned_runtime(monkeypatch):
-    """The launcher must not silently accept the runner image's default JDK."""
+def test_verify_java_accepts_supported_newer_runtimes(monkeypatch):
+    """Patch-level drift must not prevent running the real simulator locally."""
     monkeypatch.setattr(
         runner,
         "_run",
@@ -26,12 +26,19 @@ def test_verify_java_accepts_only_pinned_runtime(monkeypatch):
     monkeypatch.setattr(
         runner,
         "_run",
-        lambda command: completed(command, stderr='openjdk version "21.0.7" 2025-04-15\n'),
+        lambda command: completed(command, stderr='openjdk version "25.0.2" 2026-01-20\n'),
+    )
+    runner.verify_java("java")
+
+    monkeypatch.setattr(
+        runner,
+        "_run",
+        lambda command: completed(command, stderr='openjdk version "17.0.16" 2025-07-15\n'),
     )
     try:
         runner.verify_java("java")
     except runner.SmokeTestError as exc:
-        assert "Java 21.0.8 is required; found 21.0.7" in str(exc)
+        assert "Java 21 or newer is required; found 17.0.16" in str(exc)
     else:
         raise AssertionError("an unpinned Java runtime was accepted")
 

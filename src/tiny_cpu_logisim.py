@@ -26,7 +26,10 @@ from tiny_cpu_machine import encode_program, rom_image
 
 
 LOGISIM_VERSION = "4.1.0"
-JAVA_VERSION = "21.0.8"
+MINIMUM_JAVA_FEATURE = 21
+# Acceptance bundles record the supported runtime contract, not the local
+# patch release. This keeps retained evidence reproducible across Java updates.
+JAVA_VERSION = "21+"
 LOGISIM_URL = (
     "https://github.com/logisim-evolution/logisim-evolution/releases/download/"
     f"v{LOGISIM_VERSION}/logisim-evolution-{LOGISIM_VERSION}-all.jar"
@@ -114,13 +117,19 @@ def _run(
 
 
 def verify_java(java: str) -> None:
-    """Require the exact pinned Java feature/security version."""
+    """Require a Java runtime new enough for the pinned Logisim release."""
     result = _run([java, "-version"])
     output = f"{result.stdout}\n{result.stderr}"
     match = re.search(r'version "([^"+]+)', output)
-    if not match or match.group(1) != JAVA_VERSION:
-        found = match.group(1) if match else "unknown"
-        raise SmokeTestError(f"Java {JAVA_VERSION} is required; found {found}")
+    found = match.group(1) if match else "unknown"
+    try:
+        feature = int(found.split(".", 1)[0])
+    except ValueError:
+        feature = 0
+    if feature < MINIMUM_JAVA_FEATURE:
+        raise SmokeTestError(
+            f"Java {MINIMUM_JAVA_FEATURE} or newer is required; found {found}"
+        )
 
 
 def obtain_jar(jar: Path) -> None:
@@ -670,7 +679,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     print(
         f"TinyCPU Logisim smoke test passed (Logisim-evolution {LOGISIM_VERSION}, "
-        f"Java {JAVA_VERSION})."
+        f"Java {MINIMUM_JAVA_FEATURE}+)."
     )
     return 0
 

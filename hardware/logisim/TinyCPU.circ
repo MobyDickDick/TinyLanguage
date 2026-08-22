@@ -1324,10 +1324,6 @@
     <a name="circuit" val="FetchDecode"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(300,240)" name="Constant"/>
-    <comp lib="1" loc="(400,220)" name="OR Gate">
-      <a name="label" val="PC_RESET"/>
-    </comp>
     <comp lib="0" loc="(220,160)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="CLK"/>
@@ -1445,6 +1441,7 @@
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(430,220)" name="Comparator">
+      <a name="label" val="PC_RANGE"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(490,130)" name="Adder">
@@ -1469,11 +1466,8 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="text" val="AP 7 machine format v1: stable six-bit opcode allocation and encoder-generated ROM"/>
     </comp>
     <wire from="(220,160)" to="(270,160)"/>
-    <wire from="(220,190)" to="(350,190)"/>
-    <wire from="(350,190)" to="(350,200)"/>
-    <wire from="(300,240)" to="(350,240)"/>
-    <wire from="(300,180)" to="(400,180)"/>
-    <wire from="(400,180)" to="(400,220)"/>
+    <wire from="(220,190)" to="(300,190)"/>
+    <wire from="(300,180)" to="(300,190)"/>
     <wire from="(220,230)" to="(390,230)"/>
     <wire from="(250,120)" to="(270,120)"/>
     <wire from="(250,40)" to="(250,120)"/>
@@ -1486,7 +1480,8 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(370,210)" to="(390,210)"/>
     <wire from="(370,350)" to="(420,350)"/>
     <wire from="(430,140)" to="(450,140)"/>
-    <wire from="(430,220)" to="(800,220)"/>
+    <wire from="(430,210)" to="(800,210)"/>
+    <wire from="(800,210)" to="(800,220)"/>
     <wire from="(440,330)" to="(480,330)"/>
     <wire from="(480,330)" to="(480,410)"/>
     <wire from="(480,330)" to="(540,330)"/>

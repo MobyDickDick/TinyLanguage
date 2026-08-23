@@ -1373,7 +1373,10 @@
       <a name="appearance" val="classic"/>
       <a name="label" val="RESET"/>
     </comp>
-    <comp lib="0" loc="(540,240)" name="Constant"/>
+    <comp lib="0" loc="(540,240)" name="Constant">
+      <a name="width" val="1"/>
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="0" loc="(700,550)" name="Splitter">
       <a name="appear" val="right"/>
       <a name="bit1" val="0"/>
@@ -1394,6 +1397,7 @@
       <a name="incoming" val="16"/>
     </comp>
     <comp lib="0" loc="(710,240)" name="Constant">
+      <a name="value" val="0x1"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(810,560)" name="Pin">
@@ -1410,9 +1414,11 @@
       <a name="label" val="ERROR_HALT"/>
     </comp>
     <comp lib="2" loc="(870,190)" name="Multiplexer">
+      <a name="label" val="NEXT_PC"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(740,420)" name="Comparator">
+      <a name="label" val="PC_RANGE"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(770,230)" name="Adder">
@@ -2812,8 +2818,8 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="label" val="ACCC_WRITE_REQUEST"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="1" loc="(670,390)" name="OR Gate">
-      <a name="inputs" val="32"/>
+    <comp lib="1" loc="(670,370)" name="OR Gate">
+      <a name="inputs" val="28"/>
       <a name="label" val="ACC_LOAD_REQUEST"/>
     </comp>
     <comp lib="1" loc="(760,120)" name="OR Gate">
@@ -2925,7 +2931,9 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(610,550)" to="(610,700)"/>
     <wire from="(610,550)" to="(620,550)"/>
     <wire from="(610,80)" to="(610,230)"/>
-    <wire from="(670,390)" to="(750,390)"/>
+    <wire from="(670,370)" to="(700,370)"/>
+    <wire from="(700,370)" to="(700,390)"/>
+    <wire from="(700,390)" to="(750,390)"/>
     <wire from="(710,410)" to="(710,740)"/>
     <wire from="(710,410)" to="(750,410)"/>
     <wire from="(720,430)" to="(720,880)"/>

@@ -1074,3 +1074,14 @@ damit jede in der Matrix hinterlegte Fixture, ersetzt ausschließlich den ROM-
 Inhalt einer temporären Projektkopie und schreibt die unveränderte Logisim-
 Tabelle unter der Fixture-ID. Auch die sechs Fehler-Fixtures, einschließlich
 des reservierten Roh-Opcodes, werden so gegen den VM-Grenzvertrag geprüft.
+
+## Maintained-redraw reconciliation contract
+
+`TinyCPUMain`'s checked-in placement is authoritative and is not regenerated
+from an older schematic. The redraw reconciliation adds only the missing
+vertical accumulator-bus segment between the current `Datapath.ACC_OUT`, RAM
+write-data, and print-value lanes. Stable labels and one-valued constants on
+`FetchDecode` and `Operations` make the existing electrical intent auditable
+again without moving a component. The autonomous Logisim trace probes use the
+current opcode and clock contacts, and the JNZ status remains a visible direct
+wire rather than restoring the superseded tunnel pair.

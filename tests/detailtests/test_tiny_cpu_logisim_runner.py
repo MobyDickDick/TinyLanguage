@@ -155,11 +155,11 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
             component.get("loc"), runner._pin_attributes(component).get("width")
         )
         for component in main.findall("comp[@name='Tunnel']")
-        if component.get("loc") in {"(940,410)", "(690,310)"}
+        if component.get("loc") in {"(900,410)", "(650,310)"}
     }
     assert tunnels == {
-        "AP5_TRACE_OPCODE": ("(940,410)", "22"),
-        "AP5_TRACE_CLOCK": ("(690,310)", None),
+        "AP5_TRACE_OPCODE": ("(900,410)", "22"),
+        "AP5_TRACE_CLOCK": ("(650,310)", None),
     }
 
     # Each source probe is an endpoint or junction of the maintained circuit,
@@ -170,15 +170,15 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
     generated_wires = {
         (wire.get("from"), wire.get("to")) for wire in main.findall("wire")
     }
-    assert (("(3340,1540)", "(3490,1540)")) in generated_wires
-    assert (("(3340,1560)", "(3470,1560)")) in generated_wires
+    assert (("(3340,1590)", "(3490,1590)")) in generated_wires
+    assert (("(3340,1610)", "(3470,1610)")) in generated_wires
     assert any(
         component.get("name") == "OR Gate"
         and runner._pin_attributes(component).get("label") == "HALT_ANY"
         for component in main.findall("comp")
     )
     assert any(
-        start == "(1270,1540)" and end == "(3340,1540)"
+        start == "(1260,1590)" and end == "(3340,1590)"
         for start, end in original_wires
     )
 

@@ -289,3 +289,13 @@ dokumentierte Ausnahme verbleiben; diese Ausnahme ist in einem späteren Redraw
 erneut zu prüfen. Lokal begrenzte Netze und neu hinzukommende Verbindungen
 werden immer direkt gezeichnet. Als erster konsequenter Redraw wurden alle
 sechs `ErrorFlags`-Rückkopplungen ohne Tunnel ausgeführt.
+
+## Folgepaket: Abgleich der manuell angepassten Übersichtsseite
+
+Die aktuelle, manuell angepasste Anordnung von `TinyCPUMain` bleibt die
+verbindliche Ausgangsbasis. Das Abgleichpaket stellt keine frühere Zeichnung
+wieder her: Es ergänzt ausschließlich die beim Redraw verlorene senkrechte
+Akkumulator-Busstrecke, stellt die elektrischen Attribute von Fetch/Decode und
+der Ergebniswahl wieder her und richtet die Trace-Abgriffe sowie Strukturtests
+auf die tatsächlich eingecheckten Anschlüsse aus. Der direkte, tunnelfreie
+JNZ-Statuspfad und alle verschobenen Symbole bleiben unverändert erhalten.

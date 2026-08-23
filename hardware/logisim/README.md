@@ -56,8 +56,13 @@ The jump selection condition is now defined at the integration boundary as
 `NOT Datapath.ZERO`. The named `INVERT_ZERO_FOR_JNZ` gate feeds
 `FetchDecode.NOT_ZERO`, so the AP-5 countdown takes its first two loop jumps and
 falls through when the accumulator reaches zero. This status route uses the
-free corridor above the existing integration nets and remains a visible,
-orthogonal direct wire; `TinyCPUMain` therefore remains tunnel-free.
+single documented top-level tunnel exception, `NOT_ZERO_STATUS`: its source and
+consumer are separated by enclosed clock, reset, address, and data wiring
+regions, where a direct line would electrically cross unrelated nets.
+In particular, the visually open `y=100` corridor is electrically occupied;
+routing the status through it joins existing top-level signals and produces
+Logisim error values. The topology regression therefore rejects that former
+three-segment route as well as any additional top-level tunnel.
 These independent runs are the reset/restart and multi-cycle reproducibility
 check. Finally, the same invocation runs every AP-11 opcode-family and
 sticky-error fixture; none of

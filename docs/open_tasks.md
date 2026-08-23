@@ -5,6 +5,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Isolate TinyCPU's not-zero status from unrelated top-level nets**
+  (Owner: TinyCPU/Hardware)
+  - Cause: the attempted direct status route used the occupied `y=100`
+    corridor. Its vertical drops intersected existing integration wires and
+    turned the accumulator, error, halt, and opcode observations into Logisim
+    error values instead of providing an isolated jump condition.
+  - Result: the unsafe direct segments are removed. The already named
+    `NOT_ZERO_STATUS` tunnel pair now carries only the inverter output to
+    `FetchDecode.NOT_ZERO`, without crossing any unrelated electrical net.
+  - Verification: the focused topology regression freezes both tunnel
+    endpoints and explicitly rejects every segment of the conflicting route.
+
 - [x] **Drive TinyCPU's not-zero jump condition from the accumulator status**
   (Owner: TinyCPU/Hardware)
   - Cause: `Datapath.ZERO` and `FetchDecode.NOT_ZERO` were both electrically
@@ -12,10 +24,13 @@ archived in `docs/open_tasks_archive.md`.
     36, but `JNZ_TAKEN` had no defined accumulator condition and the AP-5
     countdown could not implement its documented taken/taken/untaken sequence.
   - Result: a named inverter derives `NOT_ZERO` from the accumulator's zero
-    flag and supplies the fetch block through a visible, orthogonal direct
-    route above the existing integration nets.
+    flag and supplies the fetch block through one documented tunnel pair.
+  - Routing exception: the status source and consumer lie in separate enclosed
+    top-level wiring regions. A direct route would cross the clock, reset,
+    address, and data nets, so this pair is the bounded exception allowed by
+    the hardware routing policy.
   - Verification: a focused topology regression freezes the status source,
-    inversion, tunnel-free route, and the receiving fetch input.
+    inversion, two tunnel endpoints, and the receiving fetch input.
 
 - [x] **Align TinyCPU terminal controls with their machine opcodes**
   (Owner: TinyCPU/Hardware)

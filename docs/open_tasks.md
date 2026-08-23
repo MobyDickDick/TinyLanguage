@@ -5,6 +5,43 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Canonicalize the TinyCPU JNZ status inverter**
+  (Owner: TinyCPU/Hardware)
+  - Scope: close the CI-reported duplicate-driver regression at the top-level
+    `NOT_ZERO_STATUS` source without changing the accepted tunnel boundary.
+  - Result: `INVERT_ZERO_FOR_JNZ` has one explicit east-facing instance at
+    `(1900,370)`; the conflicting `(1910,370)` anchor is absent.
+  - Verification: focused circuit and electrical-topology regressions require
+    the single canonical instance and reject the former duplicate anchor.
+
+- [x] **Preserve Logisim component attributes in extracted leaf projects**
+  (Owner: TinyCPU/Tooling)
+  - Cause: leaf extraction relied on an implicit generic deep copy even though
+    Logisim stores electrical settings such as constant values, bus widths,
+    and labels in nested `<a>` elements.
+  - Result: a dedicated deep-copy boundary now preserves the complete XML
+    subtree and verifies a recursive content signature before standalone
+    diagnostic projects are serialized. Extraction fails rather than emitting
+    an electrically changed sheet if any tag, attribute, text, tail, or child
+    is lost.
+  - Verification: focused coverage checks both an isolated configured
+    component and the constants, multiplexer, and comparator in the extracted
+    `FetchDecode` sheet. The circuit policy test also recognizes the single
+    documented `NOT_ZERO_STATUS` tunnel pair instead of enforcing an obsolete
+    blanket tunnel ban.
+
+- [x] **Isolate TinyCPU's not-zero status from unrelated top-level nets**
+  (Owner: TinyCPU/Hardware)
+  - Cause: the attempted direct status route used the occupied `y=100`
+    corridor. Its vertical drops intersected existing integration wires and
+    turned the accumulator, error, halt, and opcode observations into Logisim
+    error values instead of providing an isolated jump condition.
+  - Result: the unsafe direct segments are removed. The already named
+    `NOT_ZERO_STATUS` tunnel pair now carries only the inverter output to
+    `FetchDecode.NOT_ZERO`, without crossing any unrelated electrical net.
+  - Verification: the focused topology regression freezes both tunnel
+    endpoints and explicitly rejects every segment of the conflicting route.
+
 - [x] **Drive TinyCPU's not-zero jump condition from the accumulator status**
   (Owner: TinyCPU/Hardware)
   - Cause: `Datapath.ZERO` and `FetchDecode.NOT_ZERO` were both electrically
@@ -12,10 +49,13 @@ archived in `docs/open_tasks_archive.md`.
     36, but `JNZ_TAKEN` had no defined accumulator condition and the AP-5
     countdown could not implement its documented taken/taken/untaken sequence.
   - Result: a named inverter derives `NOT_ZERO` from the accumulator's zero
-    flag and supplies the fetch block through a visible, orthogonal direct
-    route above the existing integration nets.
+    flag and supplies the fetch block through one documented tunnel pair.
+  - Routing exception: the status source and consumer lie in separate enclosed
+    top-level wiring regions. A direct route would cross the clock, reset,
+    address, and data nets, so this pair is the bounded exception allowed by
+    the hardware routing policy.
   - Verification: a focused topology regression freezes the status source,
-    inversion, tunnel-free route, and the receiving fetch input.
+    inversion, two tunnel endpoints, and the receiving fetch input.
 
 - [x] **Align TinyCPU terminal controls with their machine opcodes**
   (Owner: TinyCPU/Hardware)

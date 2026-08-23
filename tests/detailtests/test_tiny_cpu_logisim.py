@@ -883,6 +883,34 @@ def test_top_level_accumulator_family_controls_are_independent_connections():
     assert set(connected_inputs.values()) <= family_inputs
 
 
+def test_decode_accumulator_family_request_excludes_store_and_register_loads():
+    """Only value-producing families may enable the accumulator register."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = root.find("circuit[@name='DecodeSignals']")
+    gate = _labelled_component(circuit, "ACC_LOAD_REQUEST")
+    assert _attributes(gate).get("inputs") == "28"
+    output = gate.get("loc")
+    # The expanded classic gate leaves the lane immediately below its output
+    # unused; freeze the actual 28 contacts rather than a symbol-size guess.
+    inputs = {
+        f"(620,{y})"
+        for y in (*range(230, 390, 10), *range(400, 520, 10))
+    }
+
+    adjacency = _electrical_adjacency(circuit, inputs | {output})
+    family_outputs = {f"(460,{80 + 20 * index})" for index in range(28)}
+    excluded_outputs = {f"(460,{80 + 20 * index})" for index in range(28, 33)}
+    connected_inputs = {
+        next(iter(_reachable(adjacency, source) & inputs))
+        for source in family_outputs
+    }
+
+    assert connected_inputs == inputs
+    assert all(_reachable(adjacency, source).isdisjoint(inputs) for source in excluded_outputs)
+    assert output in _reachable(adjacency, "(750,390)")
+
+
 @pytest.mark.xfail(reason="write-request gates moved to DecodeSignals; integration pending")
 def test_top_level_non_family_write_controls_use_separate_gate_connections():
     """Keep the family request, NOT, and INPUT on three distinct named nets."""

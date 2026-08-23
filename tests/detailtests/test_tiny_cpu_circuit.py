@@ -744,6 +744,32 @@ def test_checked_in_diagnostic_projects_are_reproducible(tmp_path):
         )
 
 
+def test_fetch_decode_extraction_retains_electrical_component_attributes(tmp_path):
+    """Do not silently drop FetchDecode attributes while refreshing diagnostics."""
+
+    written = split_leaf_circuits(PROJECT, tmp_path)
+    extracted = next(path for path in written if path.name == "TinyCPU-FetchDecode.circ")
+    circuit = ET.parse(extracted).getroot().find("circuit")
+    components = {
+        (component.get("name"), component.get("loc")): {
+            attribute.get("name"): attribute.get("val")
+            for attribute in component.findall("a")
+        }
+        for component in circuit.findall("comp")
+    }
+
+    assert components[("Constant", "(540,240)")] == {
+        "width": "1",
+        "value": "0x1",
+    }
+    assert components[("Constant", "(710,240)")] == {
+        "width": "16",
+        "value": "0x1",
+    }
+    assert components[("Multiplexer", "(870,190)")]["label"] == "NEXT_PC"
+    assert components[("Comparator", "(740,420)")]["label"] == "PC_RANGE"
+
+
 def test_word_arithmetic_sheets_have_no_connectivity_or_width_errors():
     reports = {report.name: report for report in inspect_project(PROJECT)}
 
@@ -905,6 +931,26 @@ def test_inspector_flags_duplicate_components_as_possible_overlaid_circuit(tmp_p
         "possible overlaid circuit: 2 identical A components at (10,10)"
         in report.placement_conflicts
     )
+
+
+def test_inspector_does_not_count_one_overlaid_terminal_as_two_net_drivers(tmp_path):
+    """Report an XML overlay without inventing a second electrical terminal."""
+
+    project = tmp_path / "labelled-overlay.circ"
+    project.write_text(
+        """<project><main name="main"/><circuit name="main">
+        <comp lib="0" loc="(10,10)" name="Constant"/>
+        <comp lib="0" loc="(10,10)" name="Constant"><a name="label" val="ONE"/></comp>
+        <comp lib="0" loc="(40,10)" name="Pin"><a name="label" val="OUT"/><a name="type" val="output"/></comp>
+        <wire from="(10,10)" to="(40,10)"/>
+        </circuit></project>""",
+        encoding="utf-8",
+    )
+
+    report = inspect_project(project)[0]
+
+    assert "multiple components share (10,10): Constant, ONE" in report.placement_conflicts
+    assert report.routing_conflicts == ()
 
 
 def test_inspector_rejects_output_pin_connected_only_to_stub(tmp_path):

@@ -373,6 +373,16 @@ Struktur- oder Verhaltenstest dieselbe Datenquelle bestätigen:
 
 ### Ergebnis der erneuten Verdrahtungsprüfung
 
+Die am 23. August eingecheckte Neuanordnung bleibt die geometrische Grundlage
+des Hauptblatts. Bei der elektrischen Kontrolle wurden ausschließlich Fehler
+innerhalb dieser Anordnung behoben: zwei überlagerte Ergebnis-Multiplexer auf
+`Operations` wurden entfernt, verlorene elektrische Attribute wieder gesetzt,
+`SET_ILL` und `SET_INPUT` in getrennte Leitungsbahnen gelegt und der
+`OFFSET_CARRY`-Pfad so um `INVALID_OPERAND` geführt, dass beide Netze getrennt
+bleiben. Die SUB-Adressleitung erreicht wieder sowohl `Operations` als auch die
+zentrale Bereichsprüfung. Es wurde weder das Blatt noch seine neue Platzierung
+durch die Vorgängerversion ersetzt.
+
 Die zentrale Auswahl auf `EffectiveAddress` ist elektrisch getrennt aufgebaut:
 Der erste Multiplexer wählt zwischen dem direkten Adressfeld und dem Inhalt
 des Adressregisters. Nur wenn eine `*_ADDRESS_REGISTER`-Steuerleitung aktiv

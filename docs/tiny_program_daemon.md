@@ -119,7 +119,12 @@ empfiehlt sich ein mehrstufiger Pipeline-Ansatz:
    bereits vorhandener Tiny-Quelltext wird übernommen. Das Ergebnis bleibt
    ausdrücklich unausgeführt und erhält einen versionierten Prüfbericht mit
    Ausgabe-Hash und `sandbox-test` als einzigem nächsten Schritt.
-4. **Sandbox-Testlauf** + Ergebnisbewertung
+4. **Sandbox-Testlauf + Ergebnisbewertung (erledigt 2026-08-23)**: Nur ein
+   bytegenau zum Porter-Bericht passendes Programm wird in einem leeren
+   Arbeitsverzeichnis und einem isolierten Python-Prozess gestartet.
+   `src/tiny_program_source_sandbox.py` begrenzt Laufzeit, Speicher, Ausgabedatei,
+   offene Dateien und Kindprozesse, erfasst die kombinierte Ausgabe und gibt nur
+   erfolgreiche Läufe per versioniertem Bericht für einen GUI-Wrapper frei.
 5. **Optional GUI-Wrapper** pro generiertem Programm
 
 So bleibt der kreative Workflow erhalten, ohne den sicheren Standardbetrieb zu gefährden.

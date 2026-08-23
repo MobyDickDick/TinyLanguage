@@ -1933,3 +1933,16 @@ and testable so they can be promoted into the formal backlog as needed.
   - Verification: focused regressions cover a passing report, content-type and
     signature rejections, tampered provenance, symlinks, and report permissions.
     Automatic TinyLanguage porting remains the next pipeline package.
+
+## Program-source sandbox update (2026-08-23)
+
+- [x] **Run and assess approved ports under resource limits**
+  (Owner: Tooling/Program Generator)
+  - Scope: execute the next documented import-pipeline package after automatic
+    porting without trusting a stale or substituted output artifact.
+  - Result: the sandbox stage revalidates the port report and output hash, runs
+    TinyLanguage in an isolated child process with an empty working directory,
+    timeout and OS resource ceilings, and records a versioned pass/fail report.
+  - Verification: focused regressions cover a successful program, a runtime
+    failure that is not promoted, and byte tampering after port approval.
+    Optional GUI-wrapper generation remains the next pipeline package.

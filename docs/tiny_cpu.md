@@ -80,21 +80,31 @@ ab. `AND`, `OR` und `NOT` arbeiten bitweise auf der gewählten
 Zweierkomplementbreite. Arithmetische Ergebnisse außerhalb des signierten
 Datenbereichs setzen `OVF` und schreiben `0 INVALID` in den Akkumulator.
 
+### TinyCPU.circ testen
+
+Eine kurze deutschsprachige Schritt-für-Schritt-Anleitung für den vollständigen
+elektrischen Test, den Test mit einer bereits vorhandenen Logisim-JAR und die
+visuelle Fehlersuche steht in
+[`docs/tiny_cpu_test_guide.md`](tiny_cpu_test_guide.md). Der verbindliche
+Kompletttest wird aus dem Repository-Hauptverzeichnis mit
+`scripts/test-logisim.sh` gestartet.
+
 ### Empfohlener Aufbau in Logisim-evolution
 
-Ein erstes, in Logisim-evolution 3.x öffnbares Strukturprojekt liegt unter
+Das in Logisim-evolution 4.1.x ausführbare Projekt liegt unter
 [`hardware/logisim/TinyCPU.circ`](../hardware/logisim/TinyCPU.circ). Es legt das
-16/12-Bit-Profil, die Subcircuits und die zwingenden Valid-/Fehlerzustände an,
-ist aber bewusst noch keine ausführbare CPU. Umfang und nächste Verdrahtungsschritte
-sind in [`hardware/logisim/README.md`](../hardware/logisim/README.md) festgehalten.
+16/12-Bit-Profil, die Subcircuits und die zwingenden Valid-/Fehlerzustände an.
+Architektur und elektrische AP-12-Abnahme sind in
+[`hardware/logisim/README.md`](../hardware/logisim/README.md) festgehalten.
 
 Mit `PYTHONPATH=src python src/tiny_cpu_circuit.py
 hardware/logisim/TinyCPU.circ` lässt sich das Projekt ohne Logisim zunächst
 strukturell prüfen. Der Prüfer liest das `.circ`-XML, meldet fehlende Leitungen
-und endet bei unvollständigen Schaltungen mit Status 1. Er simuliert bewusst
+und endet bei Vertragsverletzungen mit Status 1. Er simuliert bewusst
 nicht die gesamte Logisim-Bauteilbibliothek; für elektrische Simulation bleibt
 Logisim-evolution zuständig, während `tiny_cpu_vm.py` die CPU-Sollsemantik
-liefert. Das unverdrahtete Starterprojekt muss daher gegenwärtig fehlschlagen.
+liefert. Ein erfolgreicher Strukturcheck ersetzt deshalb nicht den oben
+verlinkten elektrischen Kompletttest.
 
 Bei ungewöhnlich hoher CPU- oder Speichernutzung können die fünf eigenständigen
 Projekte unter [`hardware/logisim/diagnostics/`](../hardware/logisim/diagnostics/)

@@ -2030,3 +2030,16 @@ and testable so they can be promoted into the formal backlog as needed.
   - Verification: a documentation regression compares the AP completion
     checklist with the expansion-roadmap status and requires future TinyCPU
     work to be explicitly scoped rather than inferred from stale prose.
+
+## TinyCPU self-test documentation update (2026-08-23)
+
+- [x] **Document a beginner-friendly TinyCPU.circ self-test**
+  (Owner: TinyCPU/Documentation)
+  - Scope: triage and complete the first bounded package after the intentionally
+    closed backlog by turning the existing AP-12 operator details into a short,
+    standalone German procedure.
+  - Result: the guide covers prerequisites, the one-command electrical gate,
+    an existing-JAR fallback, offline evidence verification, visual inspection,
+    and common failures; the main documentation links to it directly.
+  - Verification: documentation checks freeze the executable command names,
+    maintained circuit path, and expected passed-report location.

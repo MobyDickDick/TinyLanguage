@@ -11,6 +11,7 @@ If you want a compact reference first:
 - Python interop (FFI): [docs/python_interop.md](docs/python_interop.md)
 - Backend coverage: [docs/backend_feature_matrix.md](docs/backend_feature_matrix.md)
 - TinyCPU microcomputer and assembly language: [docs/tiny_cpu.md](docs/tiny_cpu.md)
+- TinyCPU circuit self-test (German): [docs/tiny_cpu_test_guide.md](docs/tiny_cpu_test_guide.md)
 
 ---
 

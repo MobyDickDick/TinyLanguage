@@ -5,6 +5,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Drive TinyCPU's not-zero jump condition from the accumulator status**
+  (Owner: TinyCPU/Hardware)
+  - Cause: `Datapath.ZERO` and `FetchDecode.NOT_ZERO` were both electrically
+    isolated at the integration boundary. The decoder could recognize opcode
+    36, but `JNZ_TAKEN` had no defined accumulator condition and the AP-5
+    countdown could not implement its documented taken/taken/untaken sequence.
+  - Result: a named inverter derives `NOT_ZERO` from the accumulator's zero
+    flag and supplies the fetch block through one documented tunnel pair.
+  - Routing exception: the status source and consumer lie in separate enclosed
+    top-level wiring regions. A direct route would cross the clock, reset,
+    address, and data nets, so this pair is the bounded exception allowed by
+    the hardware routing policy.
+  - Verification: a focused topology regression freezes the status source,
+    inversion, two tunnel endpoints, and the receiving fetch input.
+
 - [x] **Align TinyCPU terminal controls with their machine opcodes**
   (Owner: TinyCPU/Hardware)
   - Cause: the symbolic decoder-lane table assigned `JUMP_NEGATIVE` through

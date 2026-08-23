@@ -160,6 +160,7 @@
       <a name="label" val="NOT_ZERO_STATUS"/>
     </comp>
     <comp lib="1" loc="(1900,370)" name="NOT Gate">
+      <a name="facing" val="east"/>
       <a name="label" val="INVERT_ZERO_FOR_JNZ"/>
     </comp>
     <comp loc="(1260,350)" name="AddressPath">

@@ -2002,3 +2002,19 @@ and testable so they can be promoted into the formal backlog as needed.
   - Verification: focused regressions compile the generated launcher, confirm
     that it contains no subprocess execution path, and reject failed or
     subsequently tampered sandbox results. The documented pipeline is complete.
+
+## TinyCPU schematic-regression update (2026-08-23)
+
+- [x] **Preserve TinyCPU electrical contracts across schematic adjustments**
+  (Owner: TinyCPU/Hardware)
+  - Cause: the latest visual adjustment removed non-default constants and stable
+    component attributes from `FetchDecode` and `Operations`, disconnected the
+    accumulator store/print routes, and replaced the isolated JNZ status tunnel
+    with a route through occupied top-level wiring.
+  - Result: restored the last electrically verified schematic, including the
+    enabled and incrementing program counter, named selectors and range check,
+    accumulator-backed store/print channels, and the single documented JNZ
+    tunnel pair.
+  - Verification: the focused circuit, Logisim-topology, and launcher suites
+    again freeze the complete electrical contract; future visual edits must
+    preserve these attributes and nets rather than treating them as cosmetic.

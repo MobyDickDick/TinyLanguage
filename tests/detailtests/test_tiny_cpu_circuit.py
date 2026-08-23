@@ -4,6 +4,7 @@ from pathlib import Path
 
 from tiny_cpu_circuit import (
     SUBCIRCUIT_ANCHOR_CLEARANCE,
+    _copy_project_element,
     inspect_project,
     main,
     split_leaf_circuits,
@@ -252,14 +253,22 @@ def test_inspector_resolves_generated_subcircuit_output_drivers(tmp_path):
     )
 
 
-def test_processor_implementation_is_tunnel_free_and_labels_signals_at_components():
+def test_processor_implementation_limits_tunnels_and_labels_signals_at_components():
     root = ET.parse(PROJECT).getroot()
     top = next(
         item for item in root.findall("circuit")
         if item.get("name") == "TinyCPUMain"
     )
 
-    assert not [item for item in top.findall("comp") if item.get("name") == "Tunnel"]
+    top_level_tunnels = [
+        item for item in top.findall("comp") if item.get("name") == "Tunnel"
+    ]
+    assert len(top_level_tunnels) == 2
+    assert {
+        attribute.get("val")
+        for tunnel in top_level_tunnels
+        for attribute in tunnel.findall("a[@name='label']")
+    } == {"NOT_ZERO_STATUS"}
     operations = next(item for item in root.findall("circuit") if item.get("name") == "Operations")
     operation_tunnels = [
         item for item in operations.findall("comp") if item.get("name") == "Tunnel"
@@ -768,6 +777,28 @@ def test_fetch_decode_extraction_retains_electrical_component_attributes(tmp_pat
     }
     assert components[("Multiplexer", "(870,190)")]["label"] == "NEXT_PC"
     assert components[("Comparator", "(740,420)")]["label"] == "PC_RANGE"
+
+
+def test_project_element_copy_retains_nested_attributes():
+    """The extraction copier must recursively preserve component settings."""
+
+    source = ET.fromstring(
+        '<comp lib="0" loc="(10,20)" name="Constant">'
+        '<a name="width" val="16"/><a name="value" val="0x1"/>'
+        "</comp>"
+    )
+
+    copied = _copy_project_element(source)
+
+    assert copied is not source
+    assert copied.attrib == source.attrib
+    assert copied[0] is not source[0]
+    assert [(item.get("name"), item.get("val")) for item in copied] == [
+        ("width", "16"),
+        ("value", "0x1"),
+    ]
+    copied[0].set("val", "8")
+    assert source[0].get("val") == "16"
 
 
 def test_word_arithmetic_sheets_have_no_connectivity_or_width_errors():

@@ -311,6 +311,25 @@ def test_taken_jump_selects_instruction_operand_as_next_pc():
     assert "(1200,230)" in _reachable(adjacency, "(850,210)")
     assert "(550,220)" in _reachable(adjacency, "(870,190)")
 
+
+def test_jump_not_zero_receives_the_inverted_accumulator_status():
+    """The JNZ condition must not float independently of the accumulator."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    adjacency = _electrical_adjacency(circuit)
+    inverter = _labelled_component(circuit, "INVERT_ZERO_FOR_JNZ")
+    assert inverter.get("name") == "NOT Gate"
+    inverter_output = inverter.get("loc")
+    assert "(1850,370)" in _reachable(
+        adjacency, _subcircuit_output(root, "Datapath", "ZERO")
+    )
+
+    assert not circuit.findall("comp[@name='Tunnel']")
+    assert _subcircuit_input(root, "FetchDecode", "NOT_ZERO") in _reachable(
+        adjacency, inverter_output
+    )
+
 def test_signed_arithmetic_splitters_do_not_short_15_and_16_bit_buses():
     """Sign-bit taps must branch off, never sit inline with word-sized data."""
 

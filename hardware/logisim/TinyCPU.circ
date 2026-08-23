@@ -151,6 +151,9 @@
       <a name="inputs" val="3"/>
       <a name="label" val="MEMORY_WRITE_REQUEST"/>
     </comp>
+    <comp lib="1" loc="(1900,370)" name="NOT Gate">
+      <a name="label" val="INVERT_ZERO_FOR_JNZ"/>
+    </comp>
     <comp loc="(1260,350)" name="AddressPath">
       <a name="label" val="ADDRESS_PATH"/>
     </comp>
@@ -329,6 +332,10 @@
     <wire from="(1810,940)" to="(1810,1060)"/>
     <wire from="(1830,1040)" to="(2540,1040)"/>
     <wire from="(1830,350)" to="(1860,350)"/>
+    <wire from="(1830,370)" to="(1850,370)"/>
+    <wire from="(1900,100)" to="(1900,370)"/>
+    <wire from="(710,100)" to="(1900,100)"/>
+    <wire from="(710,100)" to="(710,370)"/>
     <wire from="(1830,410)" to="(1870,410)"/>
     <wire from="(1830,920)" to="(1830,1040)"/>
     <wire from="(1850,1000)" to="(1890,1000)"/>

@@ -52,6 +52,12 @@ the former `(550,410)` route ended on empty drawing space. A taken
 `JUMP_NOT_ZERO` selects
 the instruction's low 16-bit operand as the next PC value; otherwise the next-PC
 multiplexer retains the sequential `PC + 1` result.
+The jump selection condition is now defined at the integration boundary as
+`NOT Datapath.ZERO`. The named `INVERT_ZERO_FOR_JNZ` gate feeds
+`FetchDecode.NOT_ZERO`, so the AP-5 countdown takes its first two loop jumps and
+falls through when the accumulator reaches zero. This status route uses the
+free corridor above the existing integration nets and remains a visible,
+orthogonal direct wire; `TinyCPUMain` therefore remains tunnel-free.
 These independent runs are the reset/restart and multi-cycle reproducibility
 check. Finally, the same invocation runs every AP-11 opcode-family and
 sticky-error fixture; none of

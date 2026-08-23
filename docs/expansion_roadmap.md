@@ -6,16 +6,19 @@ they can be tackled incrementally.
 
 ## 0) Finish TinyCPU electrical acceptance
 
-- **Current boundary**: the structural circuit, VM oracle, machine format, and
-  integration-trace adapter exist, but a VM-derived replay is not evidence that
-  Logisim executed the maintained circuit.
-- **Next package**: pin Java and Logisim-evolution and add a mandatory headless
-  project-load smoke test (AP 9).
-- **Then**: capture the AP-5 trace directly from Logisim (AP 10), expand it into
-  a complete opcode/error matrix (AP 11), and make those electrical checks part
-  of the reproducible hardware release gate (AP 12).
+- **Completed boundary**: AP 9 through AP 12 pin Java and Logisim-evolution,
+  load the maintained project headlessly, capture the AP-5 trace in the real
+  simulator, exercise the complete opcode/error matrix, and retain the
+  reproducible hardware release evidence.
+- **Maintenance contract**: circuit edits must preserve the focused structural
+  and topology regressions and rerun the mandatory AP-12 acceptance command.
+  Retained evidence can be authenticated offline with its versioned inventory;
+  a VM-derived replay alone must never be described as electrical evidence.
+- **Next package**: none is currently scoped. New TinyCPU feature work must add
+  a bounded package to `docs/open_tasks.md` before implementation rather than
+  reopening one of the accepted AP-9-to-AP-12 gates.
 - **Detailed acceptance criteria**: see `docs/tiny_cpu_roadmap.md` and the active
-  item in `docs/open_tasks.md`.
+  maintenance history in `docs/open_tasks.md`.
 
 ## 1) Native compiler (executables)
 

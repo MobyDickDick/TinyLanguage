@@ -2018,3 +2018,15 @@ and testable so they can be promoted into the formal backlog as needed.
   - Verification: the focused circuit, Logisim-topology, and launcher suites
     again freeze the complete electrical contract; future visual edits must
     preserve these attributes and nets rather than treating them as cosmetic.
+
+## TinyCPU roadmap-consistency update (2026-08-23)
+
+- [x] **Retire the stale AP-9 next-package marker** (Owner: TinyCPU/Planning)
+  - Scope: reconcile the expansion roadmap with the completed AP-9-to-AP-12
+    status and the retained, independently verifiable release evidence.
+  - Result: the expansion roadmap now describes electrical acceptance as a
+    completed boundary, preserves the maintenance and evidence rules, and does
+    not advertise an already accepted package as the next implementation task.
+  - Verification: a documentation regression compares the AP completion
+    checklist with the expansion-roadmap status and requires future TinyCPU
+    work to be explicitly scoped rather than inferred from stale prose.

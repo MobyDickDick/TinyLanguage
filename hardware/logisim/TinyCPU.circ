@@ -1372,6 +1372,7 @@
       <a name="label" val="RESET"/>
     </comp>
     <comp lib="0" loc="(540,240)" name="Constant">
+      <a name="width" val="1"/>
       <a name="value" val="0x1"/>
     </comp>
     <comp lib="0" loc="(700,550)" name="Splitter">
@@ -1396,8 +1397,8 @@
       <a name="bit0" val="0"/>
     </comp>
     <comp lib="0" loc="(710,240)" name="Constant">
-      <a name="width" val="16"/>
       <a name="value" val="0x1"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(810,560)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -1413,12 +1414,12 @@
       <a name="label" val="ERROR_HALT"/>
     </comp>
     <comp lib="2" loc="(870,190)" name="Multiplexer">
-      <a name="width" val="16"/>
       <a name="label" val="NEXT_PC"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(740,420)" name="Comparator">
-      <a name="width" val="16"/>
       <a name="label" val="PC_RANGE"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(770,230)" name="Adder">
       <a name="width" val="16"/>

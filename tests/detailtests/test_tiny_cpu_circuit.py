@@ -758,7 +758,10 @@ def test_fetch_decode_extraction_retains_electrical_component_attributes(tmp_pat
         for component in circuit.findall("comp")
     }
 
-    assert components[("Constant", "(540,240)")]["value"] == "0x1"
+    assert components[("Constant", "(540,240)")] == {
+        "width": "1",
+        "value": "0x1",
+    }
     assert components[("Constant", "(710,240)")] == {
         "width": "16",
         "value": "0x1",

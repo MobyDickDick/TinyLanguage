@@ -963,7 +963,12 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
             if not net or net in visited_nets:
                 continue
             visited_nets.add(net)
-            drivers = []
+            # A labelled and an unlabelled serialization of the same primitive
+            # can occupy one Logisim anchor after a three-way XML merge.  That
+            # is an overlay/placement problem, not two distinct output
+            # terminals on the net.  Key drivers by primitive and terminal;
+            # keep the most descriptive label for diagnostics.
+            drivers: dict[tuple[str, str], str] = {}
             for net_point in net:
                 for component in terminal_to_component.get(net_point, ()):
                     attrs = _attributes(component)
@@ -979,11 +984,18 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
                             outputs = circuit_outputs[component.get("name", "")]
                             if 0 <= index < len(outputs):
                                 label = f"{label}.{outputs[index]}"
-                        drivers.append(f"{label}@{net_point}")
-            if len(set(drivers)) > 1:
+                        key = (component.get("name", "component"), net_point)
+                        description = f"{label}@{net_point}"
+                        previous = drivers.get(key)
+                        if previous is None or (
+                            previous.startswith(f"{key[0]}@")
+                            and not description.startswith(f"{key[0]}@")
+                        ):
+                            drivers[key] = description
+            if len(drivers) > 1:
                 routing_conflicts.append(
                     "multiple outputs drive one net (wired-OR is forbidden): "
-                    + ", ".join(sorted(set(drivers)))
+                    + ", ".join(sorted(drivers.values()))
                 )
         terminal_widths: dict[str, list[tuple[str, int]]] = {}
         for component in electrical:

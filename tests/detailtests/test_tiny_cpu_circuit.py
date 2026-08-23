@@ -933,6 +933,26 @@ def test_inspector_flags_duplicate_components_as_possible_overlaid_circuit(tmp_p
     )
 
 
+def test_inspector_does_not_count_one_overlaid_terminal_as_two_net_drivers(tmp_path):
+    """Report an XML overlay without inventing a second electrical terminal."""
+
+    project = tmp_path / "labelled-overlay.circ"
+    project.write_text(
+        """<project><main name="main"/><circuit name="main">
+        <comp lib="0" loc="(10,10)" name="Constant"/>
+        <comp lib="0" loc="(10,10)" name="Constant"><a name="label" val="ONE"/></comp>
+        <comp lib="0" loc="(40,10)" name="Pin"><a name="label" val="OUT"/><a name="type" val="output"/></comp>
+        <wire from="(10,10)" to="(40,10)"/>
+        </circuit></project>""",
+        encoding="utf-8",
+    )
+
+    report = inspect_project(project)[0]
+
+    assert "multiple components share (10,10): Constant, ONE" in report.placement_conflicts
+    assert report.routing_conflicts == ()
+
+
 def test_inspector_rejects_output_pin_connected_only_to_stub(tmp_path):
     project = tmp_path / "output-stub.circ"
     project.write_text(

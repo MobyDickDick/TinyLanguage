@@ -1946,3 +1946,17 @@ and testable so they can be promoted into the formal backlog as needed.
   - Verification: focused regressions cover a successful program, a runtime
     failure that is not promoted, and byte tampering after port approval.
     Optional GUI-wrapper generation remains the next pipeline package.
+
+## Program-source GUI-wrapper update (2026-08-23)
+
+- [x] **Generate an optional GUI for approved sandbox results**
+  (Owner: Tooling/Program Generator)
+  - Scope: complete the final documented import-pipeline package without
+    allowing a desktop launcher to bypass the preceding sandbox boundary.
+  - Result: the generator revalidates the exact source and captured-output
+    hashes from a passing sandbox report, embeds that output in a read-only Tk
+    presentation, and records source, output, and wrapper hashes in a versioned
+    audit report.
+  - Verification: focused regressions compile the generated launcher, confirm
+    that it contains no subprocess execution path, and reject failed or
+    subsequently tampered sandbox results. The documented pipeline is complete.

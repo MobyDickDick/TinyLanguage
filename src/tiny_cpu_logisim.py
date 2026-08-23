@@ -270,14 +270,14 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
         if width != 1:
             ET.SubElement(pin, "a", name="width", val=str(width))
     for location, label, width in (
-        ("(940,410)", "AP5_TRACE_OPCODE", 22),
+        ("(900,410)", "AP5_TRACE_OPCODE", 22),
         ("(3480,1880)", "AP5_TRACE_OPCODE", 22),
     ):
         tunnel = ET.SubElement(circuit, "comp", lib="0", loc=location, name="Tunnel")
         ET.SubElement(tunnel, "a", name="label", val=label)
         ET.SubElement(tunnel, "a", name="width", val=str(width))
     ET.SubElement(circuit, "wire", **{"from": "(3480,1880)", "to": "(3560,1880)"})
-    for location in ("(690,310)", "(3480,1900)"):
+    for location in ("(650,310)", "(3480,1900)"):
         tunnel = ET.SubElement(circuit, "comp", lib="0", loc=location, name="Tunnel")
         ET.SubElement(tunnel, "a", name="label", val="AP5_TRACE_CLOCK")
     ET.SubElement(circuit, "wire", **{"from": "(3480,1900)", "to": "(3560,1900)"})

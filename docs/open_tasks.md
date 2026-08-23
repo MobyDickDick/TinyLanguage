@@ -5,6 +5,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Align TinyCPU terminal controls with their machine opcodes**
+  (Owner: TinyCPU/Hardware)
+  - Cause: the symbolic decoder-lane table assigned `JUMP_NEGATIVE` through
+    `HALT_ERROR` one lane too early after the separately gated
+    `JUMP_NOT_ZERO`. The control sheet followed that table, so opcode 44
+    (`HALT`) electrically asserted `HALT_ERROR` and ended the AP-5 trace after
+    eight edges with the wrong outcome.
+  - Result: all affected controls now use their versioned machine-opcode lanes;
+    in particular, opcode 44 reaches `HALT` and opcode 45 reaches
+    `HALT_ERROR` on distinct nets.
+  - Verification: a focused regression equates every documented decoder lane
+    with `OPCODES`; the real simulator now reports normal rather than error
+    halt. Its separately visible untaken-loop mismatch keeps the complete
+    AP-12 gate pending.
+
 - [x] **Keep store and address-register controls out of TinyCPU accumulator writes**
   (Owner: TinyCPU/Hardware)
   - Cause: `DecodeSignals.ACC_LOAD_REQUEST` consumed the first 32 decoder

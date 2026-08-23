@@ -2074,3 +2074,21 @@ and testable so they can be promoted into the formal backlog as needed.
     accumulator selection, store, and print integration as completed work.
   - Verification: a roadmap-consistency regression rejects the obsolete
     future-tense markers and requires the completed follow-package heading.
+
+## TinyCPU post-adjustment recovery update (2026-08-23)
+
+- [x] **Restore TinyCPU electrical attributes after the latest schematic adjustment**
+  (Owner: TinyCPU/Hardware)
+  - Scope: execute the next bounded package by validating the latest circuit
+    adjustment against the checked-in electrical-contract and diagnostic-leaf
+    regressions.
+  - Cause: the adjustment again removed the asserted program-counter constants
+    and the stable `PC_ADDRESS`, `PC_RANGE`, `NEXT_PC`, and accumulator-selector
+    labels. The edited leaf sheets therefore no longer matched their generated
+    diagnostics, and the program counter and immediate-load boundary lost
+    machine-significant configuration.
+  - Result: restored the regression-verified circuit definition while leaving
+    the documented AP-12 acceptance boundary unchanged.
+  - Verification: the focused circuit, Logisim-topology, addition-wiring,
+    roadmap, and self-test-guide suites pass with the expected simulator-only
+    cases explicitly marked as expected failures.

@@ -24,3 +24,28 @@ def test_expansion_roadmap_does_not_reopen_completed_electrical_packages():
     assert "**Completed boundary**: AP 9 through AP 12" in tinycpu_section
     assert "**Next package**: none is currently scoped" in tinycpu_section
     assert "add a mandatory headless" not in tinycpu_section
+
+
+def test_detailed_hardware_docs_do_not_advertise_completed_follow_ups():
+    """Historical implementation notes must not look like active packages."""
+
+    detailed = (REPOSITORY_ROOT / "docs" / "tiny_cpu_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    hardware_readme = (
+        REPOSITORY_ROOT / "hardware" / "logisim" / "README.md"
+    ).read_text(encoding="utf-8")
+
+    assert "## Abgeschlossenes Folgepaket:" in detailed
+    assert "## Folgepaket:" not in detailed
+
+    stale_markers = (
+        "The next integration step is",
+        "The non-binary data paths are next",
+        "Als nächster binärer\nOperationsschritt",
+        "bleibt das folgende Arbeitspaket",
+        "noch offen sind",
+    )
+    combined_docs = detailed + hardware_readme
+    for marker in stale_markers:
+        assert marker not in combined_docs

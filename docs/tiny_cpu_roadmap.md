@@ -167,13 +167,13 @@ ausgelegte Gatter deckt die vollständigen `LOAD_*`-, `ADD_*`-, `SUB_*`-, `MUL_*
 `OR_*`- und `XOR_*`-Familien ab, ohne ihre Decoder-Ausgänge elektrisch zu
 koppeln. Die Strukturtests berücksichtigen dabei auch Abzweige, die in Logisim
 entstehen, wenn ein Leitungsende auf eine andere Leitung trifft, und verhindern
-so insbesondere wired-ORs. Als nächste Akkumulator-schreibende Anweisung folgt
-`NOT`. `NOT` is routed separately into the second-stage `ACC_WRITE_REQUEST` OR gate
-together with the 32-input family aggregator. `INPUT` now occupies a third,
+so insbesondere wired-ORs. `NOT` was then routed separately as the next accumulator-writing instruction
+into the second-stage `ACC_WRITE_REQUEST` OR gate together with the 32-input
+family aggregator. `INPUT` now occupies a third,
 independent input of that second stage; only the gate output drives
 `Datapath.ACC_LOAD`. This preserves isolated decoder outputs without exceeding
-Logisim's per-gate input limit. The next integration step is the explicit
-accumulator data-source selection required by these write-enable controls.
+Logisim's per-gate input limit. The explicit accumulator data-source selection
+required by these write-enable controls is also complete.
 The instruction splitter's 16-bit operand output now reaches
 `Datapath.DATA_IN` on an isolated route, while the adjacent opcode and
 one-bit control nets remain separate. This establishes the constant operand as
@@ -190,8 +190,8 @@ selects it only for `NOT` while passing the existing operand-or-memory result
 through by default. A final labelled 16-bit `ACC_INPUT_SELECT` multiplexer now
 passes that result through normally and selects the external top-level
 `INPUT_VALUE` only for `INPUT`. The selected result reaches
-`Datapath.DATA_IN`; the next integration step is the accumulator-validity
-control required by `INPUT`. The independent top-level `INPUT_VALID` pin now
+`Datapath.DATA_IN`; the accumulator-validity control required by `INPUT` is
+also integrated. The independent top-level `INPUT_VALID` pin now
 reaches `Datapath.VALID_IN` through the labelled one-bit
 `ACC_INPUT_VALID_SELECT` multiplexer only while `INPUT` is active. Before that
 final override, `ACC_MEMORY_VALID_SELECT` mirrors the accumulator data
@@ -219,8 +219,8 @@ boundary; their bitwise results are neutral while inactive and deliberately
 export no overflow status. XOR extends the compact seven-way summaries through
 an explicit second OR stage. The accompanying top-level audit also separated
 the accidentally joined error/OR controls and restored the interrupted
-`LOAD_ADDRESS_REGISTER_PLUS_OFFSET` route. The non-binary data paths are next. Nach
-der erneuten manuellen Korrektur gelten die
+`LOAD_ADDRESS_REGISTER_PLUS_OFFSET` route. The non-binary data paths have also
+been integrated. Nach der erneuten manuellen Korrektur gelten die
 verschobenen Symbole und direkten Leitungen der eingecheckten Übersichtsseite
 als neue Referenz. Die Strukturtests leiten die Eingangsseite der automatisch
 erzeugten Symbole entsprechend ab und verlangen nicht länger die Tunnel und
@@ -290,7 +290,7 @@ erneut zu prüfen. Lokal begrenzte Netze und neu hinzukommende Verbindungen
 werden immer direkt gezeichnet. Als erster konsequenter Redraw wurden alle
 sechs `ErrorFlags`-Rückkopplungen ohne Tunnel ausgeführt.
 
-## Folgepaket: Abgleich der manuell angepassten Übersichtsseite
+## Abgeschlossenes Folgepaket: Abgleich der manuell angepassten Übersichtsseite
 
 Die aktuelle, manuell angepasste Anordnung von `TinyCPUMain` bleibt die
 verbindliche Ausgangsbasis. Das Abgleichpaket stellt keine frühere Zeichnung
@@ -299,3 +299,9 @@ Akkumulator-Busstrecke, stellt die elektrischen Attribute von Fetch/Decode und
 der Ergebniswahl wieder her und richtet die Trace-Abgriffe sowie Strukturtests
 auf die tatsächlich eingecheckten Anschlüsse aus. Der direkte, tunnelfreie
 JNZ-Statuspfad und alle verschobenen Symbole bleiben unverändert erhalten.
+
+Der Abgleich ist abgeschlossen und wird durch die fokussierten Struktur-,
+Topologie- und Verdrahtungstests dauerhaft abgesichert. Weitere Änderungen an
+der Übersichtsseite benötigen deshalb ein neu abgegrenztes Arbeitspaket; aus
+diesem historischen Abschnitt darf kein impliziter Folgeauftrag abgeleitet
+werden.

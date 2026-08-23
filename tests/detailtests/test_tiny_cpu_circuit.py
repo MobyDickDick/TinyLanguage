@@ -355,6 +355,24 @@ def test_every_schematic_component_has_a_unique_label():
         assert len(labels) == len(set(labels)), circuit.get("name")
 
 
+def test_top_level_has_one_canonical_jnz_status_inverter():
+    """Reject the duplicate inverter that electrically shorted the JNZ net."""
+
+    top = ET.parse(PROJECT).getroot().find("circuit[@name='TinyCPUMain']")
+    assert top is not None
+    matches = [
+        component
+        for component in top.findall("comp[@name='NOT Gate']")
+        if any(
+            attribute.get("name") == "label"
+            and attribute.get("val") == "INVERT_ZERO_FOR_JNZ"
+            for attribute in component.findall("a")
+        )
+    ]
+    assert [component.get("loc") for component in matches] == ["(1900,370)"]
+    assert not top.findall("comp[@loc='(1910,370)']")
+
+
 def test_component_labels_do_not_collide_with_circuit_names():
     """Logisim treats component labels and circuit names case-insensitively."""
 

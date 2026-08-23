@@ -320,6 +320,9 @@ def test_jump_not_zero_receives_the_inverted_accumulator_status():
     adjacency = _electrical_adjacency(circuit)
     inverter = _labelled_component(circuit, "INVERT_ZERO_FOR_JNZ")
     assert inverter.get("name") == "NOT Gate"
+    assert inverter.get("loc") == "(1900,370)"
+    assert _attributes(inverter).get("facing") == "east"
+    assert not circuit.findall("comp[@name='NOT Gate'][@loc='(1910,370)']")
     inverter_output = inverter.get("loc")
     assert "(1850,370)" in _reachable(
         adjacency, _subcircuit_output(root, "Datapath", "ZERO")

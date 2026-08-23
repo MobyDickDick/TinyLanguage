@@ -5,6 +5,22 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Keep store and address-register controls out of TinyCPU accumulator writes**
+  (Owner: TinyCPU/Hardware)
+  - Cause: `DecodeSignals.ACC_LOAD_REQUEST` consumed the first 32 decoder
+    outputs, although only its first 28 outputs are accumulator-producing load
+    and arithmetic families. The following three `STORE_*` controls and
+    `LOAD_ADDRESS_REGISTER*` controls therefore reloaded the accumulator with
+    the unrelated default result.
+  - Result: the family request now has exactly 28 isolated inputs. Store and
+    address-register instructions retain the accumulator while continuing to
+    perform their own state changes.
+  - Verification: a focused topology regression freezes both the included and
+    excluded decoder ranges. The real AP-5 trace now preserves `-1` and `3`
+    across their stores and no longer raises the former spurious `INV` flag.
+  - Boundary: the trace now exposes a separate effective-memory-address and
+    halt-outcome mismatch; the complete AP-12 gate remains pending.
+
 - [x] **Preserve TinyCPU immediate values at the accumulator boundary**
   (Owner: TinyCPU/Hardware)
   - Cause: the extracted `Operations` sheet exported the OR-combined arithmetic

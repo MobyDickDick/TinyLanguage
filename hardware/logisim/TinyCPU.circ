@@ -2822,8 +2822,8 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="label" val="ACCC_WRITE_REQUEST"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="1" loc="(670,390)" name="OR Gate">
-      <a name="inputs" val="32"/>
+    <comp lib="1" loc="(670,370)" name="OR Gate">
+      <a name="inputs" val="28"/>
       <a name="label" val="ACC_LOAD_REQUEST"/>
     </comp>
     <comp lib="1" loc="(760,120)" name="OR Gate">
@@ -2935,7 +2935,9 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(610,550)" to="(610,700)"/>
     <wire from="(610,550)" to="(620,550)"/>
     <wire from="(610,80)" to="(610,230)"/>
-    <wire from="(670,390)" to="(750,390)"/>
+    <wire from="(670,370)" to="(700,370)"/>
+    <wire from="(700,370)" to="(700,390)"/>
+    <wire from="(700,390)" to="(750,390)"/>
     <wire from="(710,410)" to="(710,740)"/>
     <wire from="(710,410)" to="(750,410)"/>
     <wire from="(720,430)" to="(720,880)"/>

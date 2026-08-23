@@ -92,6 +92,14 @@ ALU- oder `NOT`-Operation aktiv ist, bleibt dadurch insbesondere der Wert von
 liefert seine berechnete Gültigkeit. Diese begrenzte Reparatur schließt noch
 nicht die getrennt zu untersuchenden Speicheroperanden- und Ausgaberouten.
 
+`DecodeSignals.ACC_LOAD_REQUEST` umfasst ausschließlich die 28
+wertproduzierenden `LOAD`-, `ADD`-, `SUB`-, `MUL`-, `DIV`-, `AND`- und
+`OR`-Steuerungen. Die unmittelbar folgenden `STORE_*`- und
+Adressregister-Steuerungen dürfen den Akkumulator nicht neu laden. Damit
+bleiben geladene Werte insbesondere während eines Speichervorgangs erhalten;
+die im elektrischen AP-5-Lauf danach sichtbare Adress-/Halt-Abweichung ist eine
+getrennte Integrationsgrenze.
+
 This directory contains the TinyCPU hardware baseline with a dedicated arithmetic sheet.
 Open `TinyCPU.circ` with Logisim-evolution 4.1.x. Das Blatt **`TinyCPUMain` ist
 die hierarchische Integrationsseite**. Die fachliche Logik liegt in benannten

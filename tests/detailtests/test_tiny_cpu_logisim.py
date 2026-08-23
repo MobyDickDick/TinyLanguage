@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from tiny_cpu_assembler import assemble
-from tiny_cpu_circuit import inspect_project
+from tiny_cpu_circuit import FETCH_DECODE_SIGNAL_LANES, inspect_project
 from tiny_cpu_isa import INSTRUCTION_SET, Instruction
 from tiny_cpu_machine import (
     OPCODES,
@@ -23,6 +23,14 @@ HARDWARE = PROJECT.parent
 INTEGRATION_CLOCK = HARDWARE / "diagnostics" / "TinyCPU-IntegrationClock.circ"
 INTEGRATION_RESET = HARDWARE / "diagnostics" / "TinyCPU-IntegrationReset.circ"
 CI_WORKFLOW = Path(__file__).parents[2] / ".github" / "workflows" / "ci.yml"
+
+
+def test_fetch_decode_lanes_match_the_versioned_machine_opcodes():
+    """Do not let symbolic output names drift one lane from the decoder."""
+
+    assert FETCH_DECODE_SIGNAL_LANES == {
+        signal: OPCODES[signal] for signal in FETCH_DECODE_SIGNAL_LANES
+    }
 
 
 def _attributes(component):

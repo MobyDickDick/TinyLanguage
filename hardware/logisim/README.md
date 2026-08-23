@@ -100,6 +100,15 @@ bleiben geladene Werte insbesondere während eines Speichervorgangs erhalten;
 die im elektrischen AP-5-Lauf danach sichtbare Adress-/Halt-Abweichung ist eine
 getrennte Integrationsgrenze.
 
+Die Ausgänge von `FetchDecodeControls` folgen für jede Steuerung exakt der
+nummerierten Opcode-Spur des Maschinenformats. Insbesondere belegt das separat
+verknüpfte `JUMP_NOT_ZERO` keine gemeinsame Decoder-Spur mit `JUMP_NEGATIVE`:
+die folgenden Steuerungen bleiben bis `HALT` (Opcode 44) und `HALT_ERROR`
+(Opcode 45) um eine Position versetzt. Dadurch meldet das AP-5-Programm an
+seiner Halt-Instruktion den normalen Ausgang statt des Fehlerhalts; die dabei
+weiterhin sichtbare, zu kurze Schleifenausführung bleibt eine getrennte
+Integrationsgrenze.
+
 This directory contains the TinyCPU hardware baseline with a dedicated arithmetic sheet.
 Open `TinyCPU.circ` with Logisim-evolution 4.1.x. Das Blatt **`TinyCPUMain` ist
 die hierarchische Integrationsseite**. Die fachliche Logik liegt in benannten

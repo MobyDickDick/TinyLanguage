@@ -827,9 +827,17 @@ def test_top_level_has_visible_labels_on_wires_at_components():
         if c.get("name") == "Operations"
     )
     operation_tunnels = [
-        c for c in operations.findall("comp") if c.get("name") == "Tunnel"
+        _attributes(component).get("label")
+        for component in operations.findall("comp")
+        if component.get("name") == "Tunnel"
     ]
-    assert operation_tunnels == []
+    assert sorted(operation_tunnels) == [
+        "OPERATIONS_IMMEDIATE_VALUE",
+        "OPERATIONS_IMMEDIATE_VALUE",
+        "OPERATION_ACTIVE_SELECT",
+        "OPERATION_ACTIVE_SELECT",
+        "OPERATION_ACTIVE_SELECT",
+    ]
     root = ET.parse(PROJECT).getroot()
     addition = next(
         item for item in root.findall("circuit")
@@ -2271,6 +2279,51 @@ def test_not_result_is_committed_by_the_accumulator_write_request():
     assert _subcircuit_input(root, "Datapath", "ACC_LOAD") in _reachable(
         adjacency, _subcircuit_output(root, "DecodeSignals", "ACCC_WRITE_REQUEST")
     )
+
+
+def test_operations_preserve_immediate_load_values_outside_alu_cycles():
+    """LOAD_CONST must not receive the inactive operation tree's zero value."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = root.find("circuit[@name='Operations']")
+    assert circuit is not None
+    adjacency = _electrical_adjacency(circuit)
+
+    data_selector = _labelled_component(circuit, "ACC_RESULT_SOURCE")
+    data_x, data_y = map(int, data_selector.get("loc").strip("()").split(","))
+    data_inputs = {f"({data_x - 30},{data_y - 10})", f"({data_x - 30},{data_y + 10})"}
+    immediate = next(
+        component.get("loc")
+        for component in circuit.findall("comp[@name='Pin']")
+        if _attributes(component).get("label") == "IMMEDIATE_VALUE"
+    )
+    operation_result = _labelled_component(circuit, "RESULT").get("loc")
+    assert len(_reachable(adjacency, immediate) & data_inputs) == 1
+    assert len(_reachable(adjacency, operation_result) & data_inputs) == 1
+    assert _reachable(adjacency, immediate) & data_inputs != _reachable(
+        adjacency, operation_result
+    ) & data_inputs
+
+    active = _labelled_component(circuit, "OPERATION_IS_ACTIVE").get("loc")
+    assert f"({data_x - 20},{data_y + 20})" in _reachable(adjacency, active)
+    result_pin = next(
+        component.get("loc")
+        for component in circuit.findall("comp[@name='Pin']")
+        if _attributes(component).get("label") == "RESULT_VALUE"
+    )
+    assert result_pin in _reachable(adjacency, data_selector.get("loc"))
+
+    valid_selector = _labelled_component(circuit, "ACC_RESULT_VALID_SOURCE")
+    valid_x, valid_y = map(int, valid_selector.get("loc").strip("()").split(","))
+    valid_inputs = {
+        f"({valid_x - 30},{valid_y - 10})",
+        f"({valid_x - 30},{valid_y + 10})",
+    }
+    immediate_valid = _labelled_component(circuit, "IMMEDIATE_IS_VALID").get("loc")
+    operation_valid = _labelled_component(circuit, "OPERATION_RESULT_VALID").get("loc")
+    assert len(_reachable(adjacency, immediate_valid) & valid_inputs) == 1
+    assert len(_reachable(adjacency, operation_valid) & valid_inputs) == 1
+    assert f"({valid_x - 20},{valid_y + 20})" in _reachable(adjacency, active)
 
 
 def test_effective_address_input_labels_are_compact_source_names():

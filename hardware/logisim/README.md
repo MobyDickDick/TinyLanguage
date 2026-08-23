@@ -84,6 +84,14 @@ PYTHONPATH=src python src/tiny_cpu_logisim.py \
   --verify-acceptance artifacts/tinycpu-ap12-acceptance
 ```
 
+Am Ausgang des `Operations`-Blatts wählen zwei ausdrücklich benannte
+Multiplexer zwischen dem unmittelbaren Befehlsoperanden und dem zusammengeführten
+Operationsergebnis sowie zwischen deren jeweiligen Validitäten. Solange keine
+ALU- oder `NOT`-Operation aktiv ist, bleibt dadurch insbesondere der Wert von
+`LOAD_CONST` erhalten; ein aktiver Operationszweig hat weiterhin Vorrang und
+liefert seine berechnete Gültigkeit. Diese begrenzte Reparatur schließt noch
+nicht die getrennt zu untersuchenden Speicheroperanden- und Ausgaberouten.
+
 This directory contains the TinyCPU hardware baseline with a dedicated arithmetic sheet.
 Open `TinyCPU.circ` with Logisim-evolution 4.1.x. Das Blatt **`TinyCPUMain` ist
 die hierarchische Integrationsseite**. Die fachliche Logik liegt in benannten

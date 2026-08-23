@@ -1394,7 +1394,9 @@
       <a name="bit7" val="0"/>
       <a name="bit8" val="0"/>
       <a name="bit9" val="0"/>
+      <a name="label" val="PC_ADDRESS"/>
       <a name="incoming" val="16"/>
+      <a name="bit0" val="0"/>
     </comp>
     <comp lib="0" loc="(710,240)" name="Constant">
       <a name="value" val="0x1"/>
@@ -2449,6 +2451,17 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp lib="0" loc="(460,80)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="ADD_CONST"/>
+    </comp>
+    <comp lib="2" loc="(1660,660)" name="Multiplexer">
+      <a name="width" val="16"/>
+      <a name="label" val="ACC_RESULT_SOURCE"/>
+    </comp>
+    <comp lib="2" loc="(1750,780)" name="Multiplexer">
+      <a name="label" val="ACC_RESULT_VALID_SOURCE"/>
+    </comp>
+    <comp lib="0" loc="(1680,770)" name="Constant">
+      <a name="label" val="IMMEDIATE_IS_VALID"/>
+      <a name="value" val="0x1"/>
     </comp>
     <comp lib="1" loc="(1550,1000)" name="OR Gate">
       <a name="inputs" val="8"/>

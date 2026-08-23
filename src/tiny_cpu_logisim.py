@@ -217,6 +217,16 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
     if main is None or circuit is None:
         raise SmokeTestError("TinyCPU project has no TinyCPUMain circuit")
     main.set("name", "TinyCPUMain")
+    output_locations = {
+        _pin_attributes(component).get("label"): component.get("loc")
+        for component in circuit.findall("comp[@name='Pin']")
+        if _pin_attributes(component).get("type") == "output"
+    }
+    # Minimal unit-test fixtures predate explicit output pins; production
+    # projects resolve the maintained locations by label so a redraw cannot
+    # leave the temporary logger attached to an empty coordinate.
+    halted = output_locations.get("HALTED", "(3510,1540)")
+    halted_with_error = output_locations.get("HALTED_WITH_ERROR", "(3510,1560)")
     # A constant-low RESET leaves every validity register in its power-up state.
     # That happened to produce a very large, almost entirely zero tty table: the
     # clock was running, but the processor had never been initialized and could
@@ -276,11 +286,13 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
     # HALTED_WITH_ERROR, hiding the actual electrical mismatch behind a timeout.
     gate = ET.SubElement(circuit, "comp", lib="1", loc="(3520,1920)", name="OR Gate")
     ET.SubElement(gate, "a", name="label", val="HALT_ANY")
+    halt_y = halted.strip("()").split(",")[1]
+    error_y = halted_with_error.strip("()").split(",")[1]
     for start, end in (
-        ("(3510,1540)", "(3490,1540)"),
-        ("(3490,1540)", "(3490,1910)"),
-        ("(3510,1560)", "(3470,1560)"),
-        ("(3470,1560)", "(3470,1930)"),
+        (halted, f"(3490,{halt_y})"),
+        (f"(3490,{halt_y})", "(3490,1910)"),
+        (halted_with_error, f"(3470,{error_y})"),
+        (f"(3470,{error_y})", "(3470,1930)"),
         ("(3470,1930)", "(3490,1930)"),
         ("(3520,1920)", "(3560,1920)"),
     ):

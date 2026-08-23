@@ -170,15 +170,15 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
     generated_wires = {
         (wire.get("from"), wire.get("to")) for wire in main.findall("wire")
     }
-    assert (("(3510,1540)", "(3490,1540)")) in generated_wires
-    assert (("(3510,1560)", "(3470,1560)")) in generated_wires
+    assert (("(3340,1540)", "(3490,1540)")) in generated_wires
+    assert (("(3340,1560)", "(3470,1560)")) in generated_wires
     assert any(
         component.get("name") == "OR Gate"
         and runner._pin_attributes(component).get("label") == "HALT_ANY"
         for component in main.findall("comp")
     )
     assert any(
-        start == "(1270,1540)" and end == "(3510,1540)"
+        start == "(1270,1540)" and end == "(3340,1540)"
         for start, end in original_wires
     )
 

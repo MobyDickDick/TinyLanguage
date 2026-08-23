@@ -1117,6 +1117,34 @@ def _serialize_standalone_logisim_project(data: bytes) -> bytes:
     return data if data.endswith(b"\r\n") else data + b"\r\n"
 
 
+def _project_element_signature(element: ET.Element) -> tuple[Any, ...]:
+    """Return the complete XML content used by extraction postconditions."""
+
+    return (
+        element.tag,
+        tuple(sorted(element.attrib.items())),
+        element.text,
+        element.tail,
+        tuple(_project_element_signature(child) for child in element),
+    )
+
+
+def _copy_project_element(element: ET.Element) -> ET.Element:
+    """Deep-copy one project element and verify that no content was lost.
+
+    Component configuration is stored in child ``a`` elements rather than in
+    the component's XML attributes.  Keeping the copy operation explicit here
+    prevents an extractor refactor from retaining only ``lib``, ``loc``, and
+    ``name`` while silently turning constants, buses, and labelled components
+    back into their library defaults.
+    """
+
+    copied = deepcopy(element)
+    if _project_element_signature(copied) != _project_element_signature(element):
+        raise CircuitError("Logisim project element changed while being copied")
+    return copied
+
+
 def split_leaf_circuits(
     project: str | Path, output_directory: str | Path
 ) -> tuple[Path, ...]:
@@ -1162,11 +1190,11 @@ def split_leaf_circuits(
         # do not carry root text or optional/unknown project sections across.
         standalone = ET.Element("project", root.attrib)
         for library in root.findall("lib"):
-            standalone.append(deepcopy(library))
-        standalone_main = deepcopy(main)
+            standalone.append(_copy_project_element(library))
+        standalone_main = _copy_project_element(main)
         standalone_main.set("name", name)
         standalone.append(standalone_main)
-        standalone.append(deepcopy(circuits[name]))
+        standalone.append(_copy_project_element(circuits[name]))
         ET.indent(standalone, space="  ")
         xml = ET.tostring(
             standalone,

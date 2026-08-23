@@ -5,6 +5,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Preserve Logisim attributes while extracting leaf projects**
+  (Owner: TinyCPU/Tooling)
+  - Result: extraction deep-copies each complete XML subtree and verifies a
+    recursive signature before serialization, including nested electrical
+    attributes such as constant values, widths, and labels.
+  - Boundary: this package deliberately leaves the maintained TinyCPU circuit
+    and its JNZ routing unchanged, avoiding a stale schematic patch that could
+    reintroduce a second `INVERT_ZERO_FOR_JNZ` during integration.
+  - Verification: the extracted `FetchDecode` diagnostic must reproduce the
+    checked-in sheet and retain the configured constants, `NEXT_PC`, and
+    `PC_RANGE` attributes.
+
 - [x] **Drive TinyCPU's not-zero jump condition from the accumulator status**
   (Owner: TinyCPU/Hardware)
   - Cause: `Datapath.ZERO` and `FetchDecode.NOT_ZERO` were both electrically

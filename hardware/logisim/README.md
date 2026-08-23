@@ -484,10 +484,9 @@ wieder eindeutig und automatisiert prüfbar.
 - [x] Die nicht-binären Datenwege separat auditieren: `STORE_*` schreibt den
   Akkumulator, `NOT` invertiert den Akkumulator, `PRINT` liest den Akkumulator,
   `PRINT_ADDRESS` liest Speicher und `LOAD_*` schreibt den jeweils ausgewählten
-  unmittelbaren oder indirekt gelesenen Wert in den Akkumulator. `LOAD_*` und
-  `NOT` sind korrekt integriert. Die Prüfung hält ausdrücklich fest, dass die
-  Speicher-Schreibeingänge und die beiden Print-Steuerungen noch offen sind;
-  ihr Anschluss erfolgt in getrennten Folgepaketen.
+  unmittelbaren oder indirekt gelesenen Wert in den Akkumulator. `LOAD_*`,
+  `NOT`, die Speicher-Schreibeingänge und die beiden getrennten
+  Print-Steuerungen sind inzwischen vollständig integriert.
 - [x] Nach diesen Korrekturen den gemeinsamen Ergebnisbaum und die Fehlerflags
   integrieren. Die neutral gegateten Zweigergebnisse speisen den gemeinsamen
   Daten- und Validitätsbaum; `OVERFLOW`, `DIVIDE_BY_ZERO` und
@@ -504,8 +503,8 @@ integriert. Ebenso sind der Offset-Übertrag und die gemeinsame
 `MUL_*`-Familie ist ebenfalls hinter `Operations` integriert. Ihre aktiv
 begrenzten Ergebnis-, Validitäts- und Überlaufausgänge erweitern die
 vorhandenen Zusammenfassungen; ein aktiver ungültiger MUL-Operand setzt damit
-denselben `SET_INV`-Pfad wie ADD und SUB. Als nächster binärer
-Operationsschritt folgt die `DIV_*`-Familie.
+denselben `SET_INV`-Pfad wie ADD und SUB. Die anschließend integrierte
+`DIV_*`-Familie verwendet denselben Operanden- und Validitätsvertrag.
 
 Die erste DIV-Etappe ist als getrennte `DivSubCircuit`-FBox vorbereitet. Sie
 übernimmt denselben linken Akkumulator und dieselbe parallele Auswahl von
@@ -513,9 +512,9 @@ unmittelbarem beziehungsweise speicherbasiertem rechten Operanden wie MUL.
 Die untergeordnete `DivArithmeticCircuit`-Seite führt zusätzlich eine
 explizite Nullprüfung des ausgewählten Divisors heraus und sperrt damit die
 Ergebnisgültigkeit. Die Integration in die gemeinsamen Ergebnis- und
-Fehlerbäume bleibt das folgende Arbeitspaket. Beim Ausbau werden wachsende
-FBoxen nicht dichter zusammengeschoben; sichtbare Routingkorridore bleiben
-zwischen ihren Begrenzungen erhalten.
+Fehlerbäume ist abgeschlossen. Beim Ausbau werden wachsende FBoxen nicht
+dichter zusammengeschoben; sichtbare Routingkorridore bleiben zwischen ihren
+Begrenzungen erhalten.
 
 `TinyCPUMain` is the integration sheet. Stateful blocks are encapsulated on
 named subpages, and its single `Operations` instance groups the independently

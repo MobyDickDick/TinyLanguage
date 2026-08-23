@@ -2062,3 +2062,15 @@ and testable so they can be promoted into the formal backlog as needed.
     pass again (117 passed, with 11 explicitly expected failures). Future
     schematic adjustments must preserve component attributes as part of the
     electrical design rather than treating them as visual metadata.
+
+## TinyCPU historical-roadmap closure update (2026-08-23)
+
+- [x] **Close stale follow-up language in the detailed hardware documentation**
+  (Owner: TinyCPU/Documentation)
+  - Scope: execute the next documented package by reconciling the historical
+    staged-integration narrative with the already completed AP-12 boundary.
+  - Result: the detailed roadmap marks the manual-overview reconciliation as
+    completed, and both hardware documents describe DIV, non-binary data paths,
+    accumulator selection, store, and print integration as completed work.
+  - Verification: a roadmap-consistency regression rejects the obsolete
+    future-tense markers and requires the completed follow-package heading.

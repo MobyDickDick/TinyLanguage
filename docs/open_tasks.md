@@ -5,17 +5,17 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
-- [x] **Isolate TinyCPU's not-zero status from unrelated top-level nets**
-  (Owner: TinyCPU/Hardware)
-  - Cause: the attempted direct status route used the occupied `y=100`
-    corridor. Its vertical drops intersected existing integration wires and
-    turned the accumulator, error, halt, and opcode observations into Logisim
-    error values instead of providing an isolated jump condition.
-  - Result: the unsafe direct segments are removed. The already named
-    `NOT_ZERO_STATUS` tunnel pair now carries only the inverter output to
-    `FetchDecode.NOT_ZERO`, without crossing any unrelated electrical net.
-  - Verification: the focused topology regression freezes both tunnel
-    endpoints and explicitly rejects every segment of the conflicting route.
+- [x] **Preserve Logisim attributes while extracting leaf projects**
+  (Owner: TinyCPU/Tooling)
+  - Result: extraction deep-copies each complete XML subtree and verifies a
+    recursive signature before serialization, including nested electrical
+    attributes such as constant values, widths, and labels.
+  - Boundary: this package deliberately leaves the maintained TinyCPU circuit
+    and its JNZ routing unchanged, avoiding a stale schematic patch that could
+    reintroduce a second `INVERT_ZERO_FOR_JNZ` during integration.
+  - Verification: the extracted `FetchDecode` diagnostic must reproduce the
+    checked-in sheet and retain the configured constants, `NEXT_PC`, and
+    `PC_RANGE` attributes.
 
 - [x] **Drive TinyCPU's not-zero jump condition from the accumulator status**
   (Owner: TinyCPU/Hardware)

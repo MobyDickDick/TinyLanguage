@@ -12,13 +12,10 @@ archived in `docs/open_tasks_archive.md`.
     36, but `JNZ_TAKEN` had no defined accumulator condition and the AP-5
     countdown could not implement its documented taken/taken/untaken sequence.
   - Result: a named inverter derives `NOT_ZERO` from the accumulator's zero
-    flag and supplies the fetch block through one documented tunnel pair.
-  - Routing exception: the status source and consumer lie in separate enclosed
-    top-level wiring regions. A direct route would cross the clock, reset,
-    address, and data nets, so this pair is the bounded exception allowed by
-    the hardware routing policy.
+    flag and supplies the fetch block through a visible, orthogonal direct
+    route above the existing integration nets.
   - Verification: a focused topology regression freezes the status source,
-    inversion, two tunnel endpoints, and the receiving fetch input.
+    inversion, tunnel-free route, and the receiving fetch input.
 
 - [x] **Align TinyCPU terminal controls with their machine opcodes**
   (Owner: TinyCPU/Hardware)

@@ -325,18 +325,9 @@ def test_jump_not_zero_receives_the_inverted_accumulator_status():
         adjacency, _subcircuit_output(root, "Datapath", "ZERO")
     )
 
-    status_tunnels = [
-        component
-        for component in circuit.findall("comp[@name='Tunnel']")
-        if _attributes(component).get("label") == "NOT_ZERO_STATUS"
-    ]
-    assert {component.get("loc") for component in status_tunnels} == {
-        "(660,370)",
-        "(1950,370)",
-    }
-    assert "(1950,370)" in _reachable(adjacency, inverter_output)
+    assert not circuit.findall("comp[@name='Tunnel']")
     assert _subcircuit_input(root, "FetchDecode", "NOT_ZERO") in _reachable(
-        adjacency, "(660,370)"
+        adjacency, inverter_output
     )
 
 def test_signed_arithmetic_splitters_do_not_short_15_and_16_bit_buses():
@@ -854,17 +845,10 @@ def _reachable(adjacency, start):
 
 
 def test_top_level_has_visible_labels_on_wires_at_components():
-    """Keep top-level tunnels limited to the documented status exception."""
+    """Name signals beside component ports without hiding them in tunnels."""
 
     circuit = _top_level(ET.parse(PROJECT).getroot())
-    top_level_tunnels = [
-        c for c in circuit.findall("comp") if c.get("name") == "Tunnel"
-    ]
-    assert len(top_level_tunnels) == 2
-    assert {
-        _attributes(component).get("label")
-        for component in top_level_tunnels
-    } == {"NOT_ZERO_STATUS"}
+    assert not [c for c in circuit.findall("comp") if c.get("name") == "Tunnel"]
     operations = next(
         c for c in ET.parse(PROJECT).getroot().findall("circuit")
         if c.get("name") == "Operations"
@@ -2426,17 +2410,13 @@ def test_effective_address_input_labels_are_compact_source_names():
 
 
 def test_effective_address_sheet_keeps_the_existing_selector_layout():
-    """Keep only the documented status-wire exception at the top level."""
+    """Keep the extracted selector layout without top-level tunnels."""
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
-    tunnels = [
+    assert not [
         component for component in circuit.findall("comp")
         if component.get("name") == "Tunnel"
     ]
-    assert len(tunnels) == 2
-    assert {
-        _attributes(component).get("label") for component in tunnels
-    } == {"NOT_ZERO_STATUS"}
 
     fbox = next(
         item for item in root.findall("circuit")

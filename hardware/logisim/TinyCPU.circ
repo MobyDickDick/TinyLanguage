@@ -2459,23 +2459,6 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="label" val="IMMEDIATE_IS_VALID"/>
       <a name="value" val="0x1"/>
     </comp>
-    <comp lib="0" loc="(460,320)" name="Tunnel">
-      <a name="label" val="OPERATIONS_IMMEDIATE_VALUE"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="0" loc="(1630,650)" name="Tunnel">
-      <a name="label" val="OPERATIONS_IMMEDIATE_VALUE"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="0" loc="(1550,1000)" name="Tunnel">
-      <a name="label" val="OPERATION_ACTIVE_SELECT"/>
-    </comp>
-    <comp lib="0" loc="(1640,680)" name="Tunnel">
-      <a name="label" val="OPERATION_ACTIVE_SELECT"/>
-    </comp>
-    <comp lib="0" loc="(1730,800)" name="Tunnel">
-      <a name="label" val="OPERATION_ACTIVE_SELECT"/>
-    </comp>
     <comp lib="1" loc="(1550,1000)" name="OR Gate">
       <a name="inputs" val="8"/>
       <a name="label" val="OPERATION_IS_ACTIVE"/>
@@ -2578,6 +2561,14 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(1430,490)" to="(1430,850)"/>
     <wire from="(1430,850)" to="(1520,850)"/>
     <wire from="(1550,1000)" to="(1710,1000)"/>
+    <wire from="(300,40)" to="(1630,40)"/>
+    <wire from="(300,40)" to="(300,320)"/>
+    <wire from="(300,320)" to="(460,320)"/>
+    <wire from="(1630,40)" to="(1630,650)"/>
+    <wire from="(1710,1000)" to="(1900,1000)"/>
+    <wire from="(1900,680)" to="(1900,1000)"/>
+    <wire from="(1640,680)" to="(1900,680)"/>
+    <wire from="(1730,800)" to="(1900,800)"/>
     <wire from="(1570,660)" to="(1590,660)"/>
     <wire from="(1590,660)" to="(1590,670)"/>
     <wire from="(1590,670)" to="(1630,670)"/>

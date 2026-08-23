@@ -826,17 +826,10 @@ def test_top_level_has_visible_labels_on_wires_at_components():
         c for c in ET.parse(PROJECT).getroot().findall("circuit")
         if c.get("name") == "Operations"
     )
-    operation_tunnels = [
-        _attributes(component).get("label")
+    assert not [
+        component
         for component in operations.findall("comp")
         if component.get("name") == "Tunnel"
-    ]
-    assert sorted(operation_tunnels) == [
-        "OPERATIONS_IMMEDIATE_VALUE",
-        "OPERATIONS_IMMEDIATE_VALUE",
-        "OPERATION_ACTIVE_SELECT",
-        "OPERATION_ACTIVE_SELECT",
-        "OPERATION_ACTIVE_SELECT",
     ]
     root = ET.parse(PROJECT).getroot()
     addition = next(

@@ -5,6 +5,23 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Preserve TinyCPU immediate values at the accumulator boundary**
+  (Owner: TinyCPU/Hardware)
+  - Cause: the extracted `Operations` sheet exported the OR-combined arithmetic
+    result unconditionally. During `LOAD_CONST`, every arithmetic branch is
+    inactive, so the accumulator received `0 INVALID` instead of the encoded
+    immediate value and the following store raised `INV`.
+  - Result: explicit result and validity selectors now use the instruction
+    operand and valid constant outside active ALU/NOT cycles, while preserving
+    the operation result and its computed validity during active operations.
+  - Verification: the structural inspector accepts the completed sheet, a
+    focused topology regression freezes both selector contracts, and the real
+    Logisim AP-5 trace now visibly carries `ffff` and `0003` across the repaired
+    boundary before reaching the separately pending memory/print integration
+    mismatch.
+  - Boundary: this package repairs only the first state boundary identified by
+    the electrical trace; it does not claim that the complete AP-12 gate passes.
+
 - [x] **Port statically approved quarantined sources to TinyLanguage**
   (Owner: Tooling/Program Generator)
   - Scope: execute the next pipeline stage in `docs/tiny_program_daemon.md`

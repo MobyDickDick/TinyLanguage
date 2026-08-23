@@ -125,6 +125,12 @@ empfiehlt sich ein mehrstufiger Pipeline-Ansatz:
    `src/tiny_program_source_sandbox.py` begrenzt Laufzeit, Speicher, Ausgabedatei,
    offene Dateien und Kindprozesse, erfasst die kombinierte Ausgabe und gibt nur
    erfolgreiche Läufe per versioniertem Bericht für einen GUI-Wrapper frei.
-5. **Optional GUI-Wrapper** pro generiertem Programm
+5. **Optionaler GUI-Wrapper (erledigt 2026-08-23)**: Der Generator
+   `src/tiny_program_gui_wrapper.py` akzeptiert nur ein bestandenes
+   Sandbox-Ergebnis, dessen Quell- und Ausgabe-Hashes weiterhin stimmen. Der
+   erzeugte Tk-Wrapper zeigt ausschließlich die geprüfte, eingebettete Ausgabe
+   an und führt den importierten Quelltext nicht außerhalb der Sandbox erneut
+   aus. Ein separater Bericht bindet Wrapper, Quelle und Sandbox-Ausgabe über
+   SHA-256-Prüfsummen aneinander.
 
 So bleibt der kreative Workflow erhalten, ohne den sicheren Standardbetrieb zu gefährden.

@@ -2043,3 +2043,22 @@ and testable so they can be promoted into the formal backlog as needed.
     and common failures; the main documentation links to it directly.
   - Verification: documentation checks freeze the executable command names,
     maintained circuit path, and expected passed-report location.
+
+## TinyCPU electrical-contract recovery update (2026-08-23)
+
+- [x] **Recover the verified TinyCPU circuit after a visual adjustment**
+  (Owner: TinyCPU/Hardware)
+  - Scope: triage and complete the next bounded package after the closed
+    backlog by checking the latest schematic-only change against the existing
+    electrical contract regressions.
+  - Cause: the adjustment removed non-default component values and stable
+    labels from `FetchDecode` and `Operations`. This disabled PC advancement
+    and made the range, next-PC, and accumulator-result selectors
+    unidentifiable; it also made the checked-in diagnostic leaves stale.
+  - Result: restored the last regression-verified circuit definition, including
+    the asserted PC enable and increment, the named address/range/next-PC
+    components, and the immediate-value result and validity selectors.
+  - Verification: the focused circuit, topology, and addition-wiring suites
+    pass again (117 passed, with 11 explicitly expected failures). Future
+    schematic adjustments must preserve component attributes as part of the
+    electrical design rather than treating them as visual metadata.

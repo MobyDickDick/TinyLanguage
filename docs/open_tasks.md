@@ -5,6 +5,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Restore electrical attributes after the TinyCPU schematic redraw**
+  (Owner: TinyCPU/Hardware)
+  - Cause: moving components in Logisim removed explicit values, widths, and
+    stable labels from the fetch/decode and accumulator-result boundaries.
+    Default-valued constants disabled the program counter and invalidated
+    immediate loads, while unnamed components made the electrical contracts
+    impossible to audit reliably.
+  - Result: the moved components retain their intended layout and once again
+    carry the asserted PC constants, splitter and selector labels, range-check
+    label, and immediate-valid constant.
+  - Verification: focused topology regressions resolve the components by their
+    stable labels and confirm the configured values, widths, and complete
+    electrical routes after the redraw.
+
 - [x] **Preserve Logisim attributes while extracting leaf projects**
   (Owner: TinyCPU/Tooling)
   - Result: extraction deep-copies each complete XML subtree and verifies a

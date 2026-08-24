@@ -2352,11 +2352,15 @@ def test_operations_preserve_immediate_load_values_outside_alu_cycles():
         if _attributes(component).get("label") == "IMMEDIATE_VALUE"
     )
     operation_result = _labelled_component(circuit, "RESULT").get("loc")
-    assert len(_reachable(adjacency, immediate) & data_inputs) == 1
-    assert len(_reachable(adjacency, operation_result) & data_inputs) == 1
-    assert _reachable(adjacency, immediate) & data_inputs != _reachable(
-        adjacency, operation_result
-    ) & data_inputs
+    # Logisim numbers this east-facing mux from bottom (input 0) to top
+    # (input 1).  An active operation must therefore select the upper input;
+    # the lower input preserves IMMEDIATE_VALUE while the ALU is inactive.
+    assert _reachable(adjacency, immediate) & data_inputs == {
+        f"({data_x - 30},{data_y + 10})"
+    }
+    assert _reachable(adjacency, operation_result) & data_inputs == {
+        f"({data_x - 30},{data_y - 10})"
+    }
 
     active = _labelled_component(circuit, "OPERATION_IS_ACTIVE").get("loc")
     assert f"({data_x - 20},{data_y + 20})" in _reachable(adjacency, active)
@@ -2375,8 +2379,16 @@ def test_operations_preserve_immediate_load_values_outside_alu_cycles():
     }
     immediate_valid = _labelled_component(circuit, "IMMEDIATE_IS_VALID").get("loc")
     operation_valid = _labelled_component(circuit, "OPERATION_RESULT_VALID").get("loc")
-    assert len(_reachable(adjacency, immediate_valid) & valid_inputs) == 1
-    assert len(_reachable(adjacency, operation_valid) & valid_inputs) == 1
+    assert _reachable(adjacency, immediate_valid) & valid_inputs == {
+        f"({valid_x - 30},{valid_y + 10})"
+    }
+    assert _reachable(adjacency, operation_valid) & valid_inputs == {
+        f"({valid_x - 30},{valid_y - 10})"
+    }
+    assert _attributes(_labelled_component(circuit, "IMMEDIATE_IS_VALID")) == {
+        "label": "IMMEDIATE_IS_VALID",
+        "value": "0x1",
+    }
     assert f"({valid_x - 20},{valid_y + 20})" in _reachable(adjacency, active)
 
 

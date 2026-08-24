@@ -8,7 +8,6 @@ checked in CI before the authoritative Logisim simulator is invoked.
 from __future__ import annotations
 
 import argparse
-from copy import deepcopy
 from dataclasses import dataclass
 import json
 from pathlib import Path
@@ -1139,7 +1138,11 @@ def _copy_project_element(element: ET.Element) -> ET.Element:
     back into their library defaults.
     """
 
-    copied = deepcopy(element)
+    copied = ET.Element(element.tag, element.attrib.copy())
+    copied.text = element.text
+    copied.tail = element.tail
+    for child in element:
+        copied.append(_copy_project_element(child))
     if _project_element_signature(copied) != _project_element_signature(element):
         raise CircuitError("Logisim project element changed while being copied")
     return copied

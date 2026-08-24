@@ -812,6 +812,27 @@ def test_project_element_copy_retains_nested_attributes():
     assert source[0].get("val") == "16"
 
 
+def test_project_element_copy_recursively_retains_text_tail_and_children():
+    """Copy complete XML subtrees rather than only direct component settings."""
+
+    source = ET.fromstring(
+        '<comp lib="0" loc="(10,20)" name="ROM">before'
+        '<a name="contents">addr/data: 1 1\n0 1</a>between'
+        '<meta kind="diagnostic"><a name="label" val="ROM_DATA"/></meta>after'
+        '</comp>'
+    )
+
+    copied = _copy_project_element(source)
+
+    assert ET.tostring(copied) == ET.tostring(source)
+    assert copied is not source
+    assert copied[0] is not source[0]
+    assert copied[1] is not source[1]
+    assert copied[1][0] is not source[1][0]
+    copied[1][0].set("val", "CHANGED")
+    assert source[1][0].get("val") == "ROM_DATA"
+
+
 def test_word_arithmetic_sheets_have_no_connectivity_or_width_errors():
     reports = {report.name: report for report in inspect_project(PROJECT)}
 

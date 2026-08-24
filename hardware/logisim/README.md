@@ -103,6 +103,15 @@ ALU- oder `NOT`-Operation aktiv ist, bleibt dadurch insbesondere der Wert von
 liefert seine berechnete Gültigkeit. Diese begrenzte Reparatur schließt noch
 nicht die getrennt zu untersuchenden Speicheroperanden- und Ausgaberouten.
 
+Die gemeinsame Operanden-Grenze ist inzwischen separat eingefroren:
+`Operations.ACC_VALUE`, `MEMORY_VALUE` und `IMMEDIATE_VALUE` erhalten jeweils
+ausschließlich Akkumulator, Speicherausgang beziehungsweise das 16-Bit-Feld der
+aktuellen Instruktion. `ACC_VALID` und `MEMORY_VALID` folgen ebenso auf zwei
+getrennten Ein-Bit-Netzen. Ein fokussierter Topologietest prüft nicht nur jede
+Quelle, sondern schließt Kurzschlüsse zwischen allen fünf Eingängen aus; die
+einzelnen Rechenfamilien dürfen daher ihre lokale Immediate-/Speicherauswahl
+treffen, ohne dass die Integrationsseite diese Auswahl vorwegnimmt.
+
 `DecodeSignals.ACC_LOAD_REQUEST` umfasst ausschließlich die 28
 wertproduzierenden `LOAD`-, `ADD`-, `SUB`-, `MUL`-, `DIV`-, `AND`- und
 `OR`-Steuerungen. Die unmittelbar folgenden `STORE_*`- und

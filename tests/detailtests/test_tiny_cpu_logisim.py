@@ -2335,6 +2335,32 @@ def test_not_result_is_committed_by_the_accumulator_write_request():
     )
 
 
+def test_operations_receives_distinct_accumulator_memory_and_immediate_sources():
+    """Freeze the shared operand boundary used by every arithmetic family."""
+
+    root = ET.parse(PROJECT).getroot()
+    adjacency = _electrical_adjacency(_top_level(root))
+    sources = {
+        "ACC_VALUE": _subcircuit_output(root, "Datapath", "ACC_OUT"),
+        "MEMORY_VALUE": _subcircuit_output(root, "Memory", "MEMORY_DATA"),
+        "IMMEDIATE_VALUE": _instruction_field_output(root, range(16)),
+        "ACC_VALID": _subcircuit_output(root, "Datapath", "ACC_VALID_OUT"),
+        "MEMORY_VALID": _subcircuit_output(root, "Memory", "MEMORY_VALID"),
+    }
+    operation_inputs = {
+        label: _subcircuit_input(root, "Operations", label) for label in sources
+    }
+
+    for label, source in sources.items():
+        reachable = _reachable(adjacency, source)
+        assert operation_inputs[label] in reachable
+        assert all(
+            other_input not in reachable
+            for other_label, other_input in operation_inputs.items()
+            if other_label != label
+        )
+
+
 def test_operations_preserve_immediate_load_values_outside_alu_cycles():
     """LOAD_CONST must not receive the inactive operation tree's zero value."""
 

@@ -5,6 +5,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Freeze TinyCPU's shared arithmetic operand boundary**
+  (Owner: TinyCPU/Hardware)
+  - Scope: close the documented memory-operand follow-up at the `Operations`
+    boundary without changing the manually maintained top-level layout.
+  - Result: a focused topology regression now requires the accumulator value,
+    memory value, immediate instruction field, accumulator validity, and memory
+    validity to reach exactly their matching `Operations` inputs. It also proves
+    that none of the five buses is electrically joined to another input.
+  - Verification: all arithmetic families continue to perform their local
+    immediate-versus-memory selection, while top-level redraws can no longer
+    silently replace a memory operand with the immediate field (or vice versa).
+
 - [x] **Keep autonomous trace probes attached after TinyCPUMain redraws**
   (Owner: TinyCPU/Tooling)
   - Cause: the AP-5 clock probe used a fixed coordinate from the previous

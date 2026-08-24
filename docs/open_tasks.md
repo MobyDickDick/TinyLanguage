@@ -16,6 +16,9 @@ archived in `docs/open_tasks_archive.md`.
   - Verification: all arithmetic families continue to perform their local
     immediate-versus-memory selection, while top-level redraws can no longer
     silently replace a memory operand with the immediate field (or vice versa).
+    A parameterized second boundary check follows `ACC_VALUE` through every
+    binary operation box and requires it exclusively at the arithmetic
+    `LEFT` input; the independently selected operand must reach `RIGHT`.
 
 - [x] **Keep autonomous trace probes attached after TinyCPUMain redraws**
   (Owner: TinyCPU/Tooling)

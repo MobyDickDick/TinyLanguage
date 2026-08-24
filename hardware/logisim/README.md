@@ -111,6 +111,12 @@ getrennten Ein-Bit-Netzen. Ein fokussierter Topologietest prüft nicht nur jede
 Quelle, sondern schließt Kurzschlüsse zwischen allen fünf Eingängen aus; die
 einzelnen Rechenfamilien dürfen daher ihre lokale Immediate-/Speicherauswahl
 treffen, ohne dass die Integrationsseite diese Auswahl vorwegnimmt.
+Für `ADD`, `SUB`, `MUL`, `DIV`, `AND`, `OR` und `XOR` wird zusätzlich die
+innere FBox-Grenze verfolgt: `ACC_VALUE` muss ausschließlich den linken
+Arithmetikeingang speisen und darf den rechten Eingang nicht erreichen. Der
+rechte Eingang muss stattdessen mit dem Ausgang der lokalen Immediate-/
+Speicher-Auswahl verbunden sein. Damit prüft die Regression nicht nur die
+Top-Level-Pinnamen, sondern den tatsächlich verwendeten Akkumulatoroperanden.
 
 `DecodeSignals.ACC_LOAD_REQUEST` umfasst ausschließlich die 28
 wertproduzierenden `LOAD`-, `ADD`-, `SUB`-, `MUL`-, `DIV`-, `AND`- und

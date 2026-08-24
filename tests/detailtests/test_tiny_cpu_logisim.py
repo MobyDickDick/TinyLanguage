@@ -2361,6 +2361,54 @@ def test_operations_receives_distinct_accumulator_memory_and_immediate_sources()
         )
 
 
+@pytest.mark.parametrize("operation", ("Add", "Sub", "Mul", "Div", "And", "Or", "Xor"))
+def test_binary_operation_uses_accumulator_exclusively_as_left_operand(operation):
+    """Every binary hardware operation must compute ACC op selected operand."""
+
+    root = ET.parse(PROJECT).getroot()
+    selector = root.find(f"circuit[@name='{operation}SubCircuit']")
+    arithmetic_name = f"{operation}ArithmeticCircuit"
+    arithmetic = root.find(f"circuit[@name='{arithmetic_name}']")
+    assert selector is not None
+    assert arithmetic is not None
+
+    instance = selector.find(f"comp[@name='{arithmetic_name}']")
+    assert instance is not None
+    instance_x, instance_y = map(
+        int, instance.get("loc").strip("()").split(",")
+    )
+    inputs = sorted(
+        (
+            component
+            for component in arithmetic.findall("comp[@name='Pin']")
+            if _attributes(component).get("type", "input") == "input"
+        ),
+        key=lambda component: tuple(
+            int(value) for value in component.get("loc").strip("()").split(",")
+        )[::-1],
+    )
+    instance_inputs = {
+        _attributes(component).get("label"): f"({instance_x - 220},{instance_y + 20 * index})"
+        for index, component in enumerate(inputs)
+    }
+    accumulator = next(
+        component.get("loc")
+        for component in selector.findall("comp[@name='Pin']")
+        if _attributes(component).get("label") == "ACC_VALUE"
+    )
+    adjacency = _electrical_adjacency(selector)
+    accumulator_net = _reachable(adjacency, accumulator)
+
+    assert instance_inputs["LEFT"] in accumulator_net
+    assert instance_inputs["RIGHT"] not in accumulator_net
+    right_net = _reachable(adjacency, instance_inputs["RIGHT"])
+    assert any(
+        component.get("name") == "Multiplexer"
+        and component.get("loc") in right_net
+        for component in selector.findall("comp")
+    )
+
+
 def test_operations_preserve_immediate_load_values_outside_alu_cycles():
     """LOAD_CONST must not receive the inactive operation tree's zero value."""
 

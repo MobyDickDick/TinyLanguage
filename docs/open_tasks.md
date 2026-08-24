@@ -5,6 +5,31 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Keep autonomous trace probes attached after TinyCPUMain redraws**
+  (Owner: TinyCPU/Tooling)
+  - Cause: the AP-5 clock probe used a fixed coordinate from the previous
+    `TinyCPUMain` layout. Moving the external clock route left that temporary
+    probe on empty canvas even though the maintained circuit remained wired.
+  - Result: the trace harness now derives the clock tap from the wire adjacent
+    to the labelled `CLK` input and resolves the opcode tap from the maintained
+    22-bit splitter. Missing or ambiguous contacts fail before Logisim starts.
+  - Verification: the harness regression confirms that both generated source
+    tunnels occupy real endpoints or junctions in the maintained circuit.
+
+- [x] **Restore electrical attributes after the TinyCPU schematic redraw**
+  (Owner: TinyCPU/Hardware)
+  - Cause: moving components in Logisim removed explicit values, widths, and
+    stable labels from the fetch/decode and accumulator-result boundaries.
+    Default-valued constants disabled the program counter and invalidated
+    immediate loads, while unnamed components made the electrical contracts
+    impossible to audit reliably.
+  - Result: the moved components retain their intended layout and once again
+    carry the asserted PC constants, splitter and selector labels, range-check
+    label, and immediate-valid constant.
+  - Verification: focused topology regressions resolve the components by their
+    stable labels and confirm the configured values, widths, and complete
+    electrical routes after the redraw.
+
 - [x] **Preserve Logisim attributes while extracting leaf projects**
   (Owner: TinyCPU/Tooling)
   - Result: extraction deep-copies each complete XML subtree and verifies a

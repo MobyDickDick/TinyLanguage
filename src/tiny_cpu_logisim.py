@@ -227,6 +227,54 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
     # leave the temporary logger attached to an empty coordinate.
     halted = output_locations.get("HALTED", "(3510,1540)")
     halted_with_error = output_locations.get("HALTED_WITH_ERROR", "(3510,1560)")
+    wires = circuit.findall("wire")
+
+    def connected_wire_contact(location: str, signal: str) -> str:
+        """Return a maintained wire contact adjacent to a component terminal."""
+
+        contacts = [
+            wire.get("to") if wire.get("from") == location else wire.get("from")
+            for wire in wires
+            if location in {wire.get("from"), wire.get("to")}
+        ]
+        contacts = [contact for contact in contacts if contact is not None]
+        if len(contacts) != 1:
+            raise SmokeTestError(
+                f"TinyCPUMain {signal} terminal {location} must have exactly one "
+                f"adjacent wire contact, found {len(contacts)}"
+            )
+        return contacts[0]
+
+    clock_pin = next(
+        (
+            component
+            for component in circuit.findall("comp[@name='Pin']")
+            if _pin_attributes(component).get("label") == "CLK"
+        ),
+        None,
+    )
+    if clock_pin is None or clock_pin.get("loc") is None:
+        raise SmokeTestError("TinyCPUMain has no CLK input pin")
+    clock_probe = connected_wire_contact(clock_pin.get("loc", ""), "CLK")
+
+    opcode_splitter = next(
+        (
+            component
+            for component in circuit.findall("comp[@name='Splitter']")
+            if _pin_attributes(component).get("incoming") == "22"
+        ),
+        None,
+    )
+    if opcode_splitter is None or opcode_splitter.get("loc") is None:
+        raise SmokeTestError("TinyCPUMain has no 22-bit opcode splitter")
+    opcode_probe = opcode_splitter.get("loc", "")
+    wire_contacts = {
+        point for wire in wires for point in (wire.get("from"), wire.get("to"))
+    }
+    if opcode_probe not in wire_contacts:
+        raise SmokeTestError(
+            f"TinyCPUMain opcode splitter terminal {opcode_probe} is not a wire contact"
+        )
     # A constant-low RESET leaves every validity register in its power-up state.
     # That happened to produce a very large, almost entirely zero tty table: the
     # clock was running, but the processor had never been initialized and could
@@ -270,14 +318,14 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
         if width != 1:
             ET.SubElement(pin, "a", name="width", val=str(width))
     for location, label, width in (
-        ("(900,410)", "AP5_TRACE_OPCODE", 22),
+        (opcode_probe, "AP5_TRACE_OPCODE", 22),
         ("(3480,1880)", "AP5_TRACE_OPCODE", 22),
     ):
         tunnel = ET.SubElement(circuit, "comp", lib="0", loc=location, name="Tunnel")
         ET.SubElement(tunnel, "a", name="label", val=label)
         ET.SubElement(tunnel, "a", name="width", val=str(width))
     ET.SubElement(circuit, "wire", **{"from": "(3480,1880)", "to": "(3560,1880)"})
-    for location in ("(650,310)", "(3480,1900)"):
+    for location in (clock_probe, "(3480,1900)"):
         tunnel = ET.SubElement(circuit, "comp", lib="0", loc=location, name="Tunnel")
         ET.SubElement(tunnel, "a", name="label", val="AP5_TRACE_CLOCK")
     ET.SubElement(circuit, "wire", **{"from": "(3480,1900)", "to": "(3560,1900)"})

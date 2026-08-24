@@ -107,6 +107,9 @@ def test_trace_test_clocks_temporary_main_and_retains_raw_table(tmp_path, monkey
         '<circuit name="TinyCPUMain">'
         '<comp name="Pin" loc="(0,0)"><a name="label" val="CLK"/></comp>'
         '<comp name="Pin" loc="(0,20)"><a name="label" val="RESET"/></comp>'
+        '<comp name="Splitter" loc="(10,40)"><a name="incoming" val="22"/></comp>'
+        '<wire from="(0,0)" to="(10,0)"/>'
+        '<wire from="(0,40)" to="(10,40)"/>'
         '</circuit><circuit name="FetchDecode"><comp name="ROM">'
         '<a name="contents">addr/data: 12 22\n2c0000\n</a>'
         "</comp></circuit></project>",
@@ -150,16 +153,17 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
 
     runner._autonomous_trace_project(tree)
 
+    expected_probes = {"(900,410)", "(620,310)"}
     tunnels = {
         runner._pin_attributes(component).get("label"): (
             component.get("loc"), runner._pin_attributes(component).get("width")
         )
         for component in main.findall("comp[@name='Tunnel']")
-        if component.get("loc") in {"(900,410)", "(650,310)"}
+        if component.get("loc") in expected_probes
     }
     assert tunnels == {
         "AP5_TRACE_OPCODE": ("(900,410)", "22"),
-        "AP5_TRACE_CLOCK": ("(650,310)", None),
+        "AP5_TRACE_CLOCK": ("(620,310)", None),
     }
 
     # Each source probe is an endpoint or junction of the maintained circuit,

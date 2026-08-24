@@ -2352,14 +2352,14 @@ def test_operations_preserve_immediate_load_values_outside_alu_cycles():
         if _attributes(component).get("label") == "IMMEDIATE_VALUE"
     )
     operation_result = _labelled_component(circuit, "RESULT").get("loc")
-    # Logisim numbers this east-facing mux from bottom (input 0) to top
-    # (input 1).  An active operation must therefore select the upper input;
-    # the lower input preserves IMMEDIATE_VALUE while the ALU is inactive.
+    # Logisim numbers this east-facing mux from top (input 0) to bottom
+    # (input 1).  An active operation must therefore select the lower input;
+    # the upper input preserves IMMEDIATE_VALUE while the ALU is inactive.
     assert _reachable(adjacency, immediate) & data_inputs == {
-        f"({data_x - 30},{data_y + 10})"
+        f"({data_x - 30},{data_y - 10})"
     }
     assert _reachable(adjacency, operation_result) & data_inputs == {
-        f"({data_x - 30},{data_y - 10})"
+        f"({data_x - 30},{data_y + 10})"
     }
 
     active = _labelled_component(circuit, "OPERATION_IS_ACTIVE").get("loc")
@@ -2380,10 +2380,10 @@ def test_operations_preserve_immediate_load_values_outside_alu_cycles():
     immediate_valid = _labelled_component(circuit, "IMMEDIATE_IS_VALID").get("loc")
     operation_valid = _labelled_component(circuit, "OPERATION_RESULT_VALID").get("loc")
     assert _reachable(adjacency, immediate_valid) & valid_inputs == {
-        f"({valid_x - 30},{valid_y + 10})"
+        f"({valid_x - 30},{valid_y - 10})"
     }
     assert _reachable(adjacency, operation_valid) & valid_inputs == {
-        f"({valid_x - 30},{valid_y - 10})"
+        f"({valid_x - 30},{valid_y + 10})"
     }
     assert _attributes(_labelled_component(circuit, "IMMEDIATE_IS_VALID")) == {
         "label": "IMMEDIATE_IS_VALID",

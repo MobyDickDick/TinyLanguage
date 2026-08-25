@@ -5,6 +5,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Reconcile stale TinyCPU follow-up notes with the completed hardware gate**
+  (Owner: TinyCPU/Tooling; completed 2026-08-25)
+  - Cause: several narrative sections still described the encoder, electrical
+    integration trace, and AP-5 loop repair as future or outstanding work even
+    though AP 7, AP 10, and AP 12 are accepted.
+  - Result: the user guide now documents the versioned 22-bit machine format,
+    and historical hardware notes identify those integration findings as
+    resolved instead of presenting them as open follow-ups.
+  - Verification: the roadmap-consistency regression rejects both an unchecked
+    TinyCPU entry and the superseded future-work wording while the expansion
+    roadmap states that no new package is currently scoped.
+
 - [x] **Restore TinyCPU electrical contracts after the latest schematic adjustment**
   (Owner: TinyCPU/Hardware)
   - Cause: the latest manual `FetchDecode` and `Operations` adjustment retained

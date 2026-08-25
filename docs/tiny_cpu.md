@@ -25,22 +25,14 @@ zugängliche Dokumentation wird Logisim-evolution bevorzugt. Browserbasierte
 Werkzeuge sind für eine Demonstration brauchbar, erschweren aber die genaue
 Abbildung der unten beschriebenen Invalid-Bits und Sticky-Fehlerflags.
 
-Wichtig: Der gegenwärtige Assembler erzeugt noch **kein binäres ROM-Abbild**.
-`assemble()` liefert ein `Program` aus symbolischen `Instruction`-Objekten; die
-Opcode-Nummern und das Maschinenwortformat sind absichtlich noch nicht Teil der
-ISA. Deshalb darf eine Logisim-Schaltung nicht eigenmächtig dauerhafte
-Opcode-Werte als offizielles Dateiformat festlegen. Bis ein Encoder ergänzt
-wird, sind zwei sinnvolle Arbeitsweisen möglich:
-
-1. zuerst Datenpfad und Steuerwerk mit manuell eingegebenen Mikroinstruktionen
-   testen und die Python-VM als Vergleichsmodell verwenden;
-2. für einen lokalen Prototyp eine Opcode-Tabelle im Logisim-Projekt führen,
-   diese aber ausdrücklich als projektspezifisch kennzeichnen.
-
-Ein späterer Encoder sollte Zielprofil, Opcode-Tabelle und Wortlayout gemeinsam
-versionieren und ein von Logisim-evolution lesbares ROM-Image sowie eine
-menschenlesbare Listing-Datei ausgeben. So bleibt der vorhandene symbolische
-Assembler unabhängig von einer konkreten Schaltung.
+Das Maschinenformat ist inzwischen versioniert: Ein Instruktionswort umfasst
+22 Bit aus einem 6-Bit-Opcode und einem 16-Bit-Operanden. `assemble()` liefert
+weiterhin ein `Program` aus symbolischen `Instruction`-Objekten; anschließend
+erzeugt `src/tiny_cpu_machine.py` daraus die Maschinenwörter, ein von
+Logisim-evolution lesbares ROM-Image und eine menschenlesbare Listing-Datei.
+Die Opcode-Tabelle liegt in `hardware/logisim/tinycpu-machine-v1.json`. Das
+AP-5-Programm, sein ROM-Abbild und sein Listing dienen als reproduzierbare
+Referenzartefakte für den Encoder und das eingebettete Logisim-ROM.
 
 ### Hardwarevertrag für den Nachbau
 

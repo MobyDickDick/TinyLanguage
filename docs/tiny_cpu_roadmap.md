@@ -263,15 +263,16 @@ wiederherstellen.
 Der funktionslose L-förmige Leitungsrest im oberen linken Außenkorridor von
 `TinyCPUMain` ist entfernt. Er endete ohne Verbraucher und gehörte weder zum
 Takt noch zu einem Decode-Netz; ein gezielter Strukturtest verhindert seine
-erneute Einfügung. Als nächster externer Abnahmeschritt bleibt der direkte
-Export des Integrations-Grenztraces aus Logisim-evolution, sobald der Simulator
-in CI verfügbar ist.
+erneute Einfügung. Der damals nächste externe Abnahmeschritt, der direkte Export
+des Integrations-Grenztraces aus Logisim-evolution, ist inzwischen Bestandteil
+der abgeschlossenen AP-10- und AP-12-Abnahme.
 
 Die Vergleichsseite dieses Abnahmeschritts ist inzwischen ausführbar:
 `tiny_cpu_trace.py --integration --check` erzeugt aus dem jeweiligen
 Assemblerprogramm den erwarteten Grenztrace und vergleicht ihn feldweise mit
-dem aus Logisim exportierten JSON. Der eigentliche elektrische Export bleibt
-weiterhin simulatorabhängig und wird nicht durch den VM-Vergleich ersetzt.
+dem aus Logisim exportierten JSON. Der elektrische Export ist
+simulatorabhängig und wird in der AP-12-Abnahme tatsächlich mit dem gepinnten
+Logisim-evolution ausgeführt; der VM-Vergleich ersetzt ihn nicht.
 
 Als vorbereitendes Folgepaket akzeptiert der Comparator nun außerdem den
 flachen CSV-/TSV-Export des Logisim-Tabellenloggers direkt. Die festgelegten

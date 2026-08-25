@@ -107,18 +107,19 @@ nicht die getrennt zu untersuchenden Speicheroperanden- und Ausgaberouten.
 wertproduzierenden `LOAD`-, `ADD`-, `SUB`-, `MUL`-, `DIV`-, `AND`- und
 `OR`-Steuerungen. Die unmittelbar folgenden `STORE_*`- und
 Adressregister-Steuerungen dürfen den Akkumulator nicht neu laden. Damit
-bleiben geladene Werte insbesondere während eines Speichervorgangs erhalten;
-die im elektrischen AP-5-Lauf danach sichtbare Adress-/Halt-Abweichung ist eine
-getrennte Integrationsgrenze.
+bleiben geladene Werte insbesondere während eines Speichervorgangs erhalten.
+Die bei dieser Reparatur sichtbar gewordene Adress-/Halt-Abweichung wurde in
+den folgenden Integrationspaketen behoben und ist durch die AP-12-Abnahme
+abgedeckt.
 
 Die Ausgänge von `FetchDecodeControls` folgen für jede Steuerung exakt der
 nummerierten Opcode-Spur des Maschinenformats. Insbesondere belegt das separat
 verknüpfte `JUMP_NOT_ZERO` keine gemeinsame Decoder-Spur mit `JUMP_NEGATIVE`:
 die folgenden Steuerungen bleiben bis `HALT` (Opcode 44) und `HALT_ERROR`
 (Opcode 45) um eine Position versetzt. Dadurch meldet das AP-5-Programm an
-seiner Halt-Instruktion den normalen Ausgang statt des Fehlerhalts; die dabei
-weiterhin sichtbare, zu kurze Schleifenausführung bleibt eine getrennte
-Integrationsgrenze.
+seiner Halt-Instruktion den normalen Ausgang statt des Fehlerhalts. Die damals
+noch zu kurze Schleifenausführung wurde anschließend über den elektrischen
+JNZ-Statuspfad behoben und ist kein offener Integrationspunkt mehr.
 
 This directory contains the TinyCPU hardware baseline with a dedicated arithmetic sheet.
 Open `TinyCPU.circ` with Logisim-evolution 4.1.x. Das Blatt **`TinyCPUMain` ist

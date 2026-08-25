@@ -1399,12 +1399,10 @@
       <a name="bit9" val="0"/>
       <a name="label" val="PC_ADDRESS"/>
       <a name="incoming" val="16"/>
-      <a name="label" val="PC_ADDRESS"/>
     </comp>
     <comp lib="0" loc="(710,240)" name="Constant">
       <a name="value" val="0x1"/>
       <a name="width" val="16"/>
-      <a name="value" val="0x1"/>
     </comp>
     <comp lib="0" loc="(810,560)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -1422,12 +1420,10 @@
     <comp lib="2" loc="(870,190)" name="Multiplexer">
       <a name="label" val="NEXT_PC"/>
       <a name="width" val="16"/>
-      <a name="label" val="NEXT_PC"/>
     </comp>
     <comp lib="3" loc="(740,420)" name="Comparator">
       <a name="label" val="PC_RANGE"/>
       <a name="width" val="16"/>
-      <a name="label" val="PC_RANGE"/>
     </comp>
     <comp lib="3" loc="(770,230)" name="Adder">
       <a name="width" val="16"/>
@@ -2484,7 +2480,6 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp lib="2" loc="(1730,650)" name="Multiplexer">
       <a name="label" val="ACC_RESULT_SOURCE"/>
       <a name="width" val="16"/>
-      <a name="label" val="ACC_RESULT_SOURCE"/>
     </comp>
     <comp lib="2" loc="(1810,770)" name="Multiplexer">
       <a name="label" val="ACC_RESULT_VALID_SOURCE"/>

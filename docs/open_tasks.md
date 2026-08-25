@@ -5,15 +5,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
-- [x] **Freeze the `stdlib.time` clock portability contract**
-  (Owner: Language/Stdlib; completed 2026-08-25)
-  - Scope: resolve the remaining Phase 1 question about exposing wall and
-    monotonic clocks without promising platform-independent absolute values.
-  - Result: the stdlib plan now distinguishes UTC epoch timestamps from opaque
-    monotonic readings, limits portable monotonic use to same-process deltas,
-    and documents `sleep_ms` and UTC ISO formatting at the runtime boundary.
-  - Verification: the focused stdlib regression locks the public wrappers,
-    native registrations, and resolved portability decision together.
+- [x] **Freeze TinyCPU next-PC selector net isolation**
+  (Owner: TinyCPU/Hardware; completed 2026-08-25)
+  - Scope: triage the next bounded package after restoring the jump operand by
+    protecting all four electrical boundaries of the `NEXT_PC` selector.
+  - Risk: simple reachability checks proved that each source reached a selector
+    terminal, but did not reject a future short between the sequential-PC,
+    jump-target, jump-control, or selected-output nets.
+  - Result: the focused topology regression fixes the selector at its maintained
+    location and proves that both data inputs, the select input, and the output
+    remain mutually isolated outside the multiplexer.
+  - Verification: the jump topology test continues to prove every required
+    route while explicitly rejecting data-to-data, control-to-data, and
+    output-to-input bypasses.
 
 - [x] **Freeze the restored TinyCPU jump-operand route**
   (Owner: TinyCPU/Hardware; completed 2026-08-25)

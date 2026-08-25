@@ -194,8 +194,8 @@ Instruktionsalias. Sprungziele werden mit `name:` definiert. Häufige Kurzformen
 
 ## Befehlssatz
 
-Die Operationen `LOAD`, `ADD`, `SUB`, `MUL`, `DIV`, `AND` und `OR` besitzen je
-vier explizite Quellen:
+Die Operationen `LOAD`, `ADD`, `SUB`, `MUL`, `DIV`, `AND`, `OR` und `XOR`
+besitzen je vier explizite Quellen:
 
 ```text
 OP_CONST(value)
@@ -221,6 +221,23 @@ Sprunginstruktionen erwarten ein Label oder eine numerische Instruktionsadresse.
 ungültige Eingabe setzt `INPUT` und invalidiert den Akkumulator.
 
 ## Beispiel und Aufruf
+
+Ausführbare Beispielprogramme liegen unter [`examples/tiny_cpu/`](../examples/tiny_cpu/).
+Für jede der unten aufgeführten Operationen gibt es ein eigenes Programm; bei
+Operationen mit mehreren Adressierungsarten führt dieses alle Varianten aus.
+Zu jeder `.tcpu`-Datei gehört eine gleichnamige `.stdout`-Datei mit der
+vollständigen erwarteten Ausgabe. Optional liefern `.args` die CLI-Argumente
+und `.exit` den erwarteten, von null abweichenden Exit-Status. Der Test
+`tests/detailtests/test_tiny_cpu_examples.py` findet alle diese Programme
+automatisch, führt sie über die öffentliche CLI aus und vergleicht Ausgabe,
+Fehlerausgabe und Exit-Status. Ein neues Ausgabebeispiel benötigt daher nur
+die Quelldatei und ihren Output-Snapshot. Ein zusätzlicher Abdeckungstest stellt
+sicher, dass keine Operation oder Adressierungsart fehlt. Die Beispielsuite
+lässt sich gezielt so starten:
+
+```bash
+python -m pytest tests/detailtests/test_tiny_cpu_examples.py
+```
 
 ```text
 counter := 20

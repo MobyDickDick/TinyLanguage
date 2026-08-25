@@ -1,0 +1,9 @@
+; Example for JUMP_ERROR
+LOAD_CONST(1)
+DIV_CONST(0)
+JUMP_ERROR(target)
+HALT_ERROR()
+target: CLEAR_ERROR()
+LOAD_CONST(1)
+PRINT()
+HALT()

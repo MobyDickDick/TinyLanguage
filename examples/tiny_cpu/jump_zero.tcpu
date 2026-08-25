@@ -1,0 +1,7 @@
+; Example for JUMP_ZERO
+LOAD_CONST(0)
+JUMP_ZERO(target)
+LOAD_CONST(0)
+target: LOAD_CONST(1)
+PRINT()
+HALT()

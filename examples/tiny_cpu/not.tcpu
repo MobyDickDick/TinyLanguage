@@ -1,0 +1,5 @@
+; Example for NOT
+LOAD_CONST(0)
+NOT()
+PRINT()
+HALT()

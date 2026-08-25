@@ -5,6 +5,31 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Gate TinyCPU acceptance-critical electrical attributes in CI**
+  (Owner: TinyCPU/Tooling; completed 2026-08-25)
+  - Cause: focused topology tests detected missing PC constants, stable labels,
+    and result-selector widths only during the full pytest phase.
+  - Result: the required checkout verifier now rejects attribute resets on the
+    `FetchDecode` PC path and the `Operations` accumulator-result selector
+    before ROM, trace, or simulator checks can obscure the schematic failure.
+    The authoritative project and extracted `FetchDecode` diagnostic explicitly
+    serialize the asserted values, widths, and labels in this change set rather
+    than depending on attributes inherited from an earlier merge base.
+    The same explicit serialization now covers the PC-to-ROM, jump-target, and
+    accumulator-validity routes exercised by the required topology checks.
+  - Verification: mutation regressions remove each reported attribute class
+    and require a component-, coordinate-, and attribute-specific diagnostic.
+
+- [x] **Enforce ASCII semantics for portable regex escapes**
+  (Owner: Language/Stdlib; completed 2026-08-25)
+  - Scope: close the Phase 2 determinism gap between the documented ASCII-only
+    `\\d`, `\\w`, and `\\s` escapes and Python's default Unicode regex mode.
+  - Result: the runtime now compiles the supported regex subset in explicit
+    ASCII mode without restricting Unicode literals, classes, or wildcards.
+  - Verification: the focused stdlib regression distinguishes ASCII from
+    Arabic-Indic digits, accented word characters, and non-breaking spaces
+    while retaining Unicode wildcard behavior.
+
 - [x] **Complete TinyCPU next-PC selector pairwise isolation coverage**
   (Owner: TinyCPU/Hardware; completed 2026-08-25)
   - Scope: close the remaining assertion gap in the documented four-boundary

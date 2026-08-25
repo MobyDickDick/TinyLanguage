@@ -50,3 +50,27 @@ def test_stdlib_regex_failure_cases(run_tiny_source):
             def _match = regex.match("(?=a)", "a");
             """,
         )
+
+
+def test_stdlib_regex_character_escapes_are_ascii_only(run_tiny_source):
+    """Lock the documented ASCII meaning of portable character escapes."""
+    out = run_tiny_source(
+        r'''
+        import stdlib.regex;
+
+        def ascii_word = regex.search("\\w+", "éclair ASCII_42");
+        print(heap_get(ascii_word, 0));
+        def _cleanup_word = delete(ascii_word);
+
+        def ascii_digit = regex.search("\\d+", "٣ 42");
+        print(heap_get(ascii_digit, 0));
+        def _cleanup_digit = delete(ascii_digit);
+
+        print(Regex.search("^\\s$", "\u00a0") == Null);
+        def unicode_wildcard = regex.match("^.$", "é");
+        print(unicode_wildcard != Null);
+        def _cleanup_wildcard = delete(unicode_wildcard);
+        '''
+    )
+
+    assert out == "clair\n42\ntrue\ntrue\n"

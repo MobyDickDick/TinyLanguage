@@ -46,6 +46,7 @@ def test_active_backlog_agrees_that_no_tinycpu_package_is_scoped():
     tinycpu_section = expansion.split("## 1) Native compiler", maxsplit=1)[0]
     assert "**Next package**: none is currently scoped" in tinycpu_section
     assert "Reconcile stale TinyCPU follow-up notes" in active_tasks
+    assert "Freeze the restored TinyCPU jump-operand route" in active_tasks
 
     user_guide = (REPOSITORY_ROOT / "docs" / "tiny_cpu.md").read_text(
         encoding="utf-8"

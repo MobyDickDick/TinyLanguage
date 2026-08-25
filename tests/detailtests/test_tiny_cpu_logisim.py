@@ -304,6 +304,7 @@ def test_taken_jump_selects_instruction_operand_as_next_pc():
 
     fetch = ET.parse(PROJECT).getroot().find("circuit[@name='FetchDecode']")
     mux = next(component for component in fetch.findall("comp[@name='Multiplexer']") if _attributes(component).get("label") == "NEXT_PC")
+    assert mux.get("loc") == "(870,190)"
     assert _attributes(mux).get("width") == "16"
     wires = {
         frozenset((wire.get("from"), wire.get("to")))
@@ -318,6 +319,11 @@ def test_taken_jump_selects_instruction_operand_as_next_pc():
     assert "(840,200)" in _reachable(adjacency, "(1070,580)")
     assert "(1200,230)" in _reachable(adjacency, "(850,210)")
     assert "(550,220)" in _reachable(adjacency, "(870,190)")
+    assert "(840,200)" not in _reachable(adjacency, "(840,180)")
+    assert "(850,210)" not in _reachable(adjacency, "(840,180)")
+    assert "(850,210)" not in _reachable(adjacency, "(840,200)")
+    assert "(870,190)" not in _reachable(adjacency, "(840,180)")
+    assert "(870,190)" not in _reachable(adjacency, "(840,200)")
 
 
 def test_jump_not_zero_receives_the_inverted_accumulator_status():

@@ -5,6 +5,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Freeze the restored TinyCPU jump-operand route**
+  (Owner: TinyCPU/Hardware; completed 2026-08-25)
+  - Scope: triage the first concrete package after the intentionally closed
+    backlog by protecting the repaired `FetchDecode` jump-target connection
+    from another schematic adjustment.
+  - Cause: the encoded instruction operand had been routed to an empty row at
+    `y=610` instead of the splitter output at `y=580`, so a taken jump could
+    not supply its target to the `NEXT_PC` selector.
+  - Result: the instruction operand again reaches the jump-target selector on
+    the maintained route, while the stale disconnected route remains absent.
+  - Verification: the focused topology regression now freezes both segments
+    of the repaired route, rejects both stale segments, and proves electrical
+    reachability from the instruction operand to the `NEXT_PC` data input.
+
 - [x] **Expose a directory-scoped file-system case-sensitivity probe**
   (Owner: Language/Stdlib; completed 2026-08-25)
   - Scope: promote the deferred `stdlib.os` package-tooling capability question

@@ -305,6 +305,14 @@ def test_taken_jump_selects_instruction_operand_as_next_pc():
     fetch = ET.parse(PROJECT).getroot().find("circuit[@name='FetchDecode']")
     mux = next(component for component in fetch.findall("comp[@name='Multiplexer']") if _attributes(component).get("label") == "NEXT_PC")
     assert _attributes(mux).get("width") == "16"
+    wires = {
+        frozenset((wire.get("from"), wire.get("to")))
+        for wire in fetch.findall("wire")
+    }
+    assert frozenset(("(1070,580)", "(1420,580)")) in wires
+    assert frozenset(("(1420,120)", "(1420,580)")) in wires
+    assert frozenset(("(1070,610)", "(1420,610)")) not in wires
+    assert frozenset(("(1420,120)", "(1420,610)")) not in wires
     adjacency = _electrical_adjacency(fetch, {"(770,230)", "(840,180)", "(1070,580)", "(840,200)", "(1200,230)", "(850,210)", "(870,190)", "(550,220)"})
     assert "(840,180)" in _reachable(adjacency, "(770,230)")
     assert "(840,200)" in _reachable(adjacency, "(1070,580)")

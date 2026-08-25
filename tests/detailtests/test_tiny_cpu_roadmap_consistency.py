@@ -48,6 +48,10 @@ def test_active_backlog_agrees_that_no_tinycpu_package_is_scoped():
     assert "Reconcile stale TinyCPU follow-up notes" in active_tasks
     assert "Freeze the restored TinyCPU jump-operand route" in active_tasks
     assert "Freeze TinyCPU next-PC selector net isolation" in active_tasks
+    assert (
+        "Complete TinyCPU next-PC selector pairwise isolation coverage"
+        in active_tasks
+    )
 
     user_guide = (REPOSITORY_ROOT / "docs" / "tiny_cpu.md").read_text(
         encoding="utf-8"

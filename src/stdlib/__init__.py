@@ -1817,7 +1817,11 @@ class _StdLibRegistrar:
         pattern_text = str(pattern)
         self._regex_validate_pattern(pattern_text)
         try:
-            return re.compile(pattern_text)
+            # The public subset defines ``\d``, ``\w``, and ``\s`` in terms of
+            # ASCII characters.  Python enables Unicode matching for these
+            # escapes by default, so make the portable contract explicit here
+            # rather than inheriting host-regex behavior.
+            return re.compile(pattern_text, flags=re.ASCII)
         except re.error as exc:
             raise RuntimeError(f"invalid regex pattern {pattern_text!r}: {exc}")
 

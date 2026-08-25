@@ -5,6 +5,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Restore TinyCPU electrical contracts after the latest schematic adjustment**
+  (Owner: TinyCPU/Hardware)
+  - Cause: the latest manual `FetchDecode` and `Operations` adjustment retained
+    the intended component positions and routes but reset explicit constant
+    values, widths, splitter metadata, and stable selector/range labels to
+    Logisim defaults.
+  - Result: the adjusted drawing remains authoritative while the PC enable and
+    increment constants, `PC_ADDRESS`, `NEXT_PC`, `PC_RANGE`, immediate-valid
+    source, and accumulator result selectors again carry their documented
+    electrical attributes.
+  - Verification: focused topology tests resolve the restored labels and
+    values, and regenerated leaf diagnostics reproduce the maintained project
+    byte-for-structure rather than preserving the stale pre-adjustment sheets.
+
 - [x] **Keep autonomous trace probes attached after TinyCPUMain redraws**
   (Owner: TinyCPU/Tooling)
   - Cause: the AP-5 clock probe used a fixed coordinate from the previous

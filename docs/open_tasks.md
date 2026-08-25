@@ -5,6 +5,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Complete TinyCPU next-PC selector pairwise isolation coverage**
+  (Owner: TinyCPU/Hardware; completed 2026-08-25)
+  - Scope: close the remaining assertion gap in the documented four-boundary
+    `NEXT_PC` isolation contract.
+  - Risk: the topology regression rejected five of the six possible terminal
+    pairs, but did not explicitly reject a short between the select input and
+    the selected output.
+  - Result: all six pairwise combinations of the sequential-PC, jump-target,
+    jump-control, and selected-output nets are now proven electrically
+    isolated outside the multiplexer.
+  - Verification: the focused jump topology regression additionally rejects
+    reachability between the `JNZ_TAKEN` selector input and `NEXT_PC` output.
+
 - [x] **Freeze TinyCPU next-PC selector net isolation**
   (Owner: TinyCPU/Hardware; completed 2026-08-25)
   - Scope: triage the next bounded package after restoring the jump operand by

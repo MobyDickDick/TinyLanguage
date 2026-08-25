@@ -324,6 +324,7 @@ def test_taken_jump_selects_instruction_operand_as_next_pc():
     assert "(850,210)" not in _reachable(adjacency, "(840,200)")
     assert "(870,190)" not in _reachable(adjacency, "(840,180)")
     assert "(870,190)" not in _reachable(adjacency, "(840,200)")
+    assert "(870,190)" not in _reachable(adjacency, "(850,210)")
 
 
 def test_jump_not_zero_receives_the_inverted_accumulator_status():

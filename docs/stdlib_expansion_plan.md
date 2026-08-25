@@ -94,6 +94,27 @@ separator/platform output, sorted directory listing, stable forward-slash `cwd`
 rendering, environment case-sensitivity behavior, and a cleanup-safe
 file-system case-sensitivity probe.
 
+### `stdlib.time` cross-platform contract (Phase 1)
+
+`stdlib.time` exposes two deliberately distinct clocks. `now_ms()` is UTC epoch
+time for timestamps and may move forward or backward when the host wall clock
+is adjusted. `monotonic_ms()` is an opaque, nondecreasing reading suitable for
+elapsed-time measurements within the current process; its origin and absolute
+value are unspecified and must not be persisted or compared across processes.
+Both readings use milliseconds and may be fractional.
+
+`sleep_ms(ms)` clamps negative durations to zero, rejects non-finite or
+non-numeric inputs, and measures the returned elapsed duration with the
+monotonic clock. Scheduler delays may make the result larger than requested.
+`now_iso()` represents the wall clock as an ISO 8601 UTC timestamp ending in
+`Z`. These guarantees depend only on clock properties provided by the host
+runtime, not on a platform-specific epoch for monotonic time.
+
+**Regression coverage**: `tests/detailtests/test_stdlib_time.py` checks wall and
+monotonic readings against independent host-clock windows, verifies monotonic
+elapsed sleep measurement, and locks the wrappers, native registrations, and
+this portability decision together.
+
 ### `stdlib.csv` behavior notes (Phase 1)
 
 The initial CSV helpers should stay deliberately small and deterministic so
@@ -359,5 +380,7 @@ A module is considered stable when:
 - ✅ **Resolved 2026-08-25:** the `stdlib.os` cross-platform contract above
   defines separators and environment-key casing, while file-system casing is
   queried per writable directory through `filesystem_case_sensitive`.
-- Can `stdlib.time` expose both monotonic and wall-clock clocks in the runtime
-  without platform-specific behavior divergences?
+- ✅ **Resolved 2026-08-25:** `stdlib.time` exposes UTC epoch time for
+  timestamps and an opaque monotonic clock for same-process elapsed-time
+  measurements. Only those clock properties, rather than either absolute
+  reading, form the cross-platform contract documented above.

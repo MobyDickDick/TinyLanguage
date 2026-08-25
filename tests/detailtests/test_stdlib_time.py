@@ -2,9 +2,35 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 import time
 
 from tests.detailtests.stdlib_helpers import stdlib_program
+
+
+REPOSITORY_ROOT = Path(__file__).parents[2]
+
+
+def test_stdlib_time_contract_stays_aligned_with_runtime_surface():
+    """Keep the resolved portability decision and public API synchronized."""
+
+    wrapper = (REPOSITORY_ROOT / "stdlib" / "time.tiny").read_text(encoding="utf-8")
+    runtime = (REPOSITORY_ROOT / "src" / "stdlib" / "__init__.py").read_text(
+        encoding="utf-8"
+    )
+    plan = (REPOSITORY_ROOT / "docs" / "stdlib_expansion_plan.md").read_text(
+        encoding="utf-8"
+    )
+
+    for helper in ("now_ms", "monotonic_ms", "sleep_ms", "now_iso"):
+        assert f"fn {helper}(" in wrapper
+        assert f'register_native("{helper}"' in runtime
+
+    assert "### `stdlib.time` cross-platform contract (Phase 1)" in plan
+    assert "opaque, nondecreasing reading" in plan
+    assert "must not be persisted or compared across processes" in plan
+    assert "✅ **Resolved 2026-08-25:** `stdlib.time`" in plan
+    assert "Can `stdlib.time` expose both monotonic" not in plan
 
 
 def test_stdlib_time_now_and_sleep(run_tiny_source, monkeypatch):

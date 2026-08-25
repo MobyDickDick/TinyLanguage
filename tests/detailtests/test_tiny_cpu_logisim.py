@@ -303,20 +303,23 @@ def test_taken_jump_selects_instruction_operand_as_next_pc():
     """A taken JUMP_NOT_ZERO must replace PC + 1 with the encoded target."""
 
     fetch = ET.parse(PROJECT).getroot().find("circuit[@name='FetchDecode']")
-    mux = next(component for component in fetch.findall("comp[@name='Multiplexer']") if _attributes(component).get("label") == "NEXT_PC")
+    mux = fetch.find("comp[@name='Multiplexer'][@loc='(870,190)']")
+    assert mux is not None
     assert mux.get("loc") == "(870,190)"
     assert _attributes(mux).get("width") == "16"
     wires = {
         frozenset((wire.get("from"), wire.get("to")))
         for wire in fetch.findall("wire")
     }
-    assert frozenset(("(1070,580)", "(1420,580)")) in wires
-    assert frozenset(("(1420,120)", "(1420,580)")) in wires
-    assert frozenset(("(1070,610)", "(1420,610)")) not in wires
-    assert frozenset(("(1420,120)", "(1420,610)")) not in wires
-    adjacency = _electrical_adjacency(fetch, {"(770,230)", "(840,180)", "(1070,580)", "(840,200)", "(1200,230)", "(850,210)", "(870,190)", "(550,220)"})
+    # The instruction splitter's operand output is at y=610.  The old y=580
+    # endpoint was empty drawing space and left the lower mux input floating.
+    assert frozenset(("(1070,610)", "(1420,610)")) in wires
+    assert frozenset(("(1420,120)", "(1420,610)")) in wires
+    assert frozenset(("(1070,580)", "(1420,580)")) not in wires
+    assert frozenset(("(1420,120)", "(1420,580)")) not in wires
+    adjacency = _electrical_adjacency(fetch, {"(770,230)", "(840,180)", "(1070,610)", "(840,200)", "(1200,230)", "(850,210)", "(870,190)", "(550,220)"})
     assert "(840,180)" in _reachable(adjacency, "(770,230)")
-    assert "(840,200)" in _reachable(adjacency, "(1070,580)")
+    assert "(840,200)" in _reachable(adjacency, "(1070,610)")
     assert "(1200,230)" in _reachable(adjacency, "(850,210)")
     assert "(550,220)" in _reachable(adjacency, "(870,190)")
     assert "(840,200)" not in _reachable(adjacency, "(840,180)")

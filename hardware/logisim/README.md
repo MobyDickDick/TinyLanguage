@@ -367,6 +367,13 @@ Sie werden reproduzierbar aus dem Hauptprojekt erzeugt. Der Befehl liest
 er ist ausdrücklich **kein** Weg, das Blatt `TinyCPUMain` wiederherzustellen oder
 zu ersetzen:
 
+Auch Regressionstests dürfen eine manuelle Neuverdrahtung nicht anhand alter
+Koordinaten zurücksetzen. Im Blatt `FetchDecode` liegt der Operanden-Ausgang des
+Befehlssplitters bei `(1070,610)`; seine Leitung zum unteren Eingang des
+`NEXT_PC`-Multiplexers muss daher über `(1420,610)` geschlossen bleiben. Der
+frühere Endpunkt `(1070,580)` liegt im leeren Zeichenbereich und trennt den
+Sprungoperanden elektrisch ab.
+
 ```bash
 PYTHONPATH=src python src/tiny_cpu_circuit.py \
   --split-output hardware/logisim/diagnostics \

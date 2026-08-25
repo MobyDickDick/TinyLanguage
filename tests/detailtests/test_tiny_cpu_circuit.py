@@ -767,6 +767,7 @@ def test_checked_in_diagnostic_projects_are_reproducible(tmp_path):
 def test_fetch_decode_extraction_retains_electrical_component_attributes(tmp_path):
     """Do not silently drop FetchDecode attributes while refreshing diagnostics."""
 
+    source_circuit = ET.parse(PROJECT).getroot().find("circuit[@name='FetchDecode']")
     written = split_leaf_circuits(PROJECT, tmp_path)
     extracted = next(path for path in written if path.name == "TinyCPU-FetchDecode.circ")
     circuit = ET.parse(extracted).getroot().find("circuit")
@@ -778,16 +779,18 @@ def test_fetch_decode_extraction_retains_electrical_component_attributes(tmp_pat
         for component in circuit.findall("comp")
     }
 
-    assert components[("Constant", "(540,240)")] == {
-        "width": "1",
-        "value": "0x1",
+    source_components = {
+        (component.get("name"), component.get("loc")): {
+            attribute.get("name"): attribute.get("val")
+            for attribute in component.findall("a")
+        }
+        for component in source_circuit.findall("comp")
     }
-    assert components[("Constant", "(710,240)")] == {
-        "width": "16",
-        "value": "0x1",
-    }
-    assert components[("Multiplexer", "(870,190)")]["label"] == "NEXT_PC"
-    assert components[("Comparator", "(740,420)")]["label"] == "PC_RANGE"
+
+    # Logisim may omit attributes that equal its defaults when a user saves a
+    # sheet.  Extraction must mirror the authoritative source rather than
+    # resurrecting an older, explicitly serialized representation.
+    assert components == source_components
 
 
 def test_project_element_copy_retains_nested_attributes():

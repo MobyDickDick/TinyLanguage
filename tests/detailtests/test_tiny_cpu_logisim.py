@@ -1821,6 +1821,7 @@ def test_ap8_fresh_checkout_verification_covers_all_deliverables():
     repository = PROJECT.parents[2]
     assert verify_checkout(repository) == (
         "hardware contract",
+        "electrical attributes",
         "ROM and listing",
         "embedded ROM",
         "17-edge trace",
@@ -1838,6 +1839,45 @@ def test_ap8_verification_reports_a_stale_generated_artifact(tmp_path):
     (target / "ap5_countdown.rom").write_text("addr/data: 12 22\n", encoding="utf-8")
 
     with pytest.raises(VerificationError, match="ap5_countdown[.]rom"):
+        verify_checkout(repository)
+
+
+@pytest.mark.parametrize(
+    ("circuit_name", "component_name", "location", "attribute"),
+    (
+        ("FetchDecode", "Constant", "(540,240)", "value"),
+        ("FetchDecode", "Constant", "(710,240)", "width"),
+        ("FetchDecode", "Splitter", "(700,550)", "label"),
+        ("FetchDecode", "Multiplexer", "(870,190)", "label"),
+        ("FetchDecode", "Comparator", "(740,420)", "label"),
+        ("Operations", "Multiplexer", "(1730,650)", "label"),
+    ),
+)
+def test_ap8_verification_rejects_missing_electrical_attributes(
+    tmp_path, circuit_name, component_name, location, attribute
+):
+    """The required CI gate must catch Logisim attribute resets directly."""
+
+    repository = tmp_path / "checkout"
+    target = repository / "hardware" / "logisim"
+    target.mkdir(parents=True)
+    for artifact in HARDWARE.iterdir():
+        if artifact.is_file():
+            (target / artifact.name).write_bytes(artifact.read_bytes())
+
+    project = target / "TinyCPU.circ"
+    tree = ET.parse(project)
+    circuit = tree.getroot().find(f"circuit[@name='{circuit_name}']")
+    component = circuit.find(
+        f"comp[@name='{component_name}'][@loc='{location}']"
+    )
+    component.remove(next(item for item in component if item.get("name") == attribute))
+    tree.write(project, encoding="utf-8", xml_declaration=True)
+
+    with pytest.raises(
+        VerificationError,
+        match=rf"electrical attributes: .* requires {attribute}=",
+    ):
         verify_checkout(repository)
 
 

@@ -70,10 +70,10 @@ SNAPSHOTS = [
         stdout="",
         stderr=(
             "[E000] file does not exist: missing.txt (line 57, col 10 to line 57, col 24)\n"
-            "  56 | fn read_text(path) {\n"
-            "> 57 |   return File.read(path);\n"
-            "     |          ^^^^^^^^^^^^^^^\n"
-            "  58 | }\n"
+            "   56 | fn read_text(path) {\n"
+            ">  57 |   return File.read(path);\n"
+            "      |          ^^^^^^^^^^^^^^^\n"
+            "   58 | }\n"
             "Stack trace:\n"
             "  at stdlib.os.read_text (line 56, col 1)\n"
         ),

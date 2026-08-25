@@ -5,6 +5,16 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Enforce ASCII semantics for portable regex escapes**
+  (Owner: Language/Stdlib; completed 2026-08-25)
+  - Scope: close the Phase 2 determinism gap between the documented ASCII-only
+    `\\d`, `\\w`, and `\\s` escapes and Python's default Unicode regex mode.
+  - Result: the runtime now compiles the supported regex subset in explicit
+    ASCII mode without restricting Unicode literals, classes, or wildcards.
+  - Verification: the focused stdlib regression distinguishes ASCII from
+    Arabic-Indic digits, accented word characters, and non-breaking spaces
+    while retaining Unicode wildcard behavior.
+
 - [x] **Complete TinyCPU next-PC selector pairwise isolation coverage**
   (Owner: TinyCPU/Hardware; completed 2026-08-25)
   - Scope: close the remaining assertion gap in the documented four-boundary

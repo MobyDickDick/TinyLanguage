@@ -76,10 +76,13 @@ portable enough for package tooling and CI smoke tests:
   normalized to forward slashes so transcripts are stable across editors and
   backends. Lexical, platform-independent path manipulation remains the
   responsibility of `stdlib.path`/`stdlib.pathlib`, not `stdlib.os.path`.
-- **Case sensitivity**: file-system case sensitivity is treated as a host
-  property and must not be inferred from `stdlib.os`. The stdlib path helpers
-  preserve casing and do not case-fold names. Tests that compare file names
-  should create exact-case fixtures or explicitly normalize in the test.
+- **Case sensitivity**: file-system case sensitivity is a property of a
+  particular mounted directory and must not be inferred from the platform.
+  `os.filesystem_case_sensitive(path)` probes an existing, writable directory
+  with a temporary mixed-case file, removes that file before returning, and
+  reports whether a differently cased spelling resolves to it. The stdlib path
+  helpers preserve casing and do not case-fold names. Read-only package tooling
+  should continue to use exact-case fixture paths rather than probing.
 - **Environment variables**: `getenv`, `setenv`, and `unsetenv` delegate to the
   host environment. `os.env_case_sensitive()` reports whether environment keys
   are case-sensitive (`false` on Windows, `true` elsewhere) so package tooling
@@ -88,7 +91,8 @@ portable enough for package tooling and CI smoke tests:
 
 **Regression coverage**: `tests/detailtests/test_stdlib_os.py` locks the
 separator/platform output, sorted directory listing, stable forward-slash `cwd`
-rendering, and environment case-sensitivity behavior.
+rendering, environment case-sensitivity behavior, and a cleanup-safe
+file-system case-sensitivity probe.
 
 ### `stdlib.csv` behavior notes (Phase 1)
 
@@ -352,7 +356,8 @@ A module is considered stable when:
   existing and nonexistent paths. Filesystem effects and existence checks stay
   in `File`, `stdlib.fs`, and `stdlib.os`. This boundary is locked by
   `test_stdlib_path_is_a_lexical_namespace`.
-- What cross-platform guarantees do we want for `stdlib.os` path separators,
-  case sensitivity, and environment variable handling?
+- ✅ **Resolved 2026-08-25:** the `stdlib.os` cross-platform contract above
+  defines separators and environment-key casing, while file-system casing is
+  queried per writable directory through `filesystem_case_sensitive`.
 - Can `stdlib.time` expose both monotonic and wall-clock clocks in the runtime
   without platform-specific behavior divergences?

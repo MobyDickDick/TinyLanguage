@@ -5,6 +5,17 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Expose a directory-scoped file-system case-sensitivity probe**
+  (Owner: Language/Stdlib; completed 2026-08-25)
+  - Scope: promote the deferred `stdlib.os` package-tooling capability question
+    into a bounded API instead of inferring file-system behavior from the host
+    platform.
+  - Result: `os.filesystem_case_sensitive(path)` performs a cleanup-safe probe
+    in an existing writable directory, while the portability contract keeps
+    exact-case paths as the rule for read-only tooling.
+  - Verification: the stdlib regression compares the Tiny result with an
+    independent host probe and proves that no probe file remains afterward.
+
 - [x] **Restore TinyCPU electrical contracts after the latest schematic adjustment**
   (Owner: TinyCPU/Hardware; completed 2026-08-25)
   - Cause: the latest Logisim save reset explicit component attributes in

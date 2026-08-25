@@ -12,6 +12,9 @@ archived in `docs/open_tasks_archive.md`.
   - Result: the required checkout verifier now rejects attribute resets on the
     `FetchDecode` PC path and the `Operations` accumulator-result selector
     before ROM, trace, or simulator checks can obscure the schematic failure.
+    The authoritative project and extracted `FetchDecode` diagnostic explicitly
+    serialize the asserted values, widths, and labels in this change set rather
+    than depending on attributes inherited from an earlier merge base.
   - Verification: mutation regressions remove each reported attribute class
     and require a component-, coordinate-, and attribute-specific diagnostic.
 

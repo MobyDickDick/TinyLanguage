@@ -5,6 +5,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Restore TinyCPU electrical contracts after the latest schematic adjustment**
+  (Owner: TinyCPU/Hardware; completed 2026-08-25)
+  - Cause: the latest Logisim save reset explicit component attributes in
+    `FetchDecode` and `Operations` and removed the two final XOR input segments.
+    That disabled PC advancement and immediate-value validity, made stable
+    topology labels unavailable, and disconnected both XOR operands.
+  - Result: the maintained circuit again carries the documented constant values,
+    widths, splitter metadata, and selector/range labels; both XOR inputs are
+    electrically connected. The derived leaf diagnostics have been regenerated
+    from the repaired authoritative project.
+  - Verification: the focused circuit, topology, extraction, and launcher tests
+    accept the restored project and its reproducible diagnostic leaves.
+
 - [x] **Reconcile stale TinyCPU follow-up notes with the completed hardware gate**
   (Owner: TinyCPU/Tooling; completed 2026-08-25)
   - Cause: several narrative sections still described the encoder, electrical

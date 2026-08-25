@@ -96,3 +96,7 @@ fn path_separator() {
 fn env_case_sensitive() {
   return OS.env_case_sensitive();
 }
+
+fn filesystem_case_sensitive(path) {
+  return OS.filesystem_case_sensitive(path);
+}

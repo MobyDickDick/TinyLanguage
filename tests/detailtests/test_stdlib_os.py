@@ -114,3 +114,25 @@ def test_stdlib_os_cwd_chdir_listdir(run_tiny_source, monkeypatch, tmp_path):
         f"{normalized_original}\n"
     )
     assert out == expected
+
+
+def test_stdlib_os_probes_filesystem_case_sensitivity(run_tiny_source, tmp_path):
+    """Probe the target directory rather than guessing from the host platform."""
+    probe_name = "TinyCaseExpectation"
+    original = tmp_path / probe_name
+    alternate = tmp_path / probe_name.swapcase()
+    original.write_text("probe", encoding="utf-8")
+    expected = not alternate.exists()
+    original.unlink()
+
+    before = set(tmp_path.iterdir())
+    out = run_tiny_source(
+        f'''
+        import stdlib.os;
+
+        print(os.filesystem_case_sensitive("{_escape_tiny_string(str(tmp_path))}"));
+        ''',
+    )
+
+    assert out == f"{str(expected).lower()}\n"
+    assert set(tmp_path.iterdir()) == before

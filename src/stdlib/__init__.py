@@ -54,6 +54,7 @@ import os
 import random
 import re
 import sys
+import tempfile
 import threading
 import time
 from collections import deque
@@ -370,6 +371,9 @@ class _StdLibRegistrar:
         self.runtime.register_native("platform", self._os_platform, namespace="OS")
         self.runtime.register_native("path_separator", self._os_path_separator, namespace="OS")
         self.runtime.register_native("env_case_sensitive", self._os_env_case_sensitive, namespace="OS")
+        self.runtime.register_native(
+            "filesystem_case_sensitive", self._os_filesystem_case_sensitive, namespace="OS"
+        )
 
         # ----------------------------- Time --------------------------------
         self.runtime.register_native("now_ms", self._time_now_ms, namespace="Time")
@@ -1442,6 +1446,30 @@ class _StdLibRegistrar:
     def _os_env_case_sensitive(self) -> bool:
         """Return whether environment variable keys are case-sensitive."""
         return self._os_platform() != "windows"
+
+    def _os_filesystem_case_sensitive(self, path: Any) -> bool:
+        """Probe filename case sensitivity in an existing directory."""
+        directory = self._coerce_path(path)
+        if not directory.exists():
+            raise RuntimeError(f"directory does not exist: {directory}")
+        if not directory.is_dir():
+            raise RuntimeError(f"path is not a directory: {directory}")
+
+        probe_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                prefix="TinyCaseProbe-", dir=directory, delete=False
+            ) as probe:
+                probe_path = Path(probe.name)
+            alternate = probe_path.with_name(probe_path.name.swapcase())
+            return not alternate.exists()
+        except OSError as exc:
+            raise RuntimeError(
+                f"cannot probe file-system case sensitivity in directory: {directory}"
+            ) from exc
+        finally:
+            if probe_path is not None:
+                probe_path.unlink(missing_ok=True)
 
     # -----------------------------------------------------------------------
     # Time namespace

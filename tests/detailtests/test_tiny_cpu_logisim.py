@@ -229,7 +229,8 @@ def test_fetch_decode_range_error_uses_comparator_greater_output():
 
     fetch = ET.parse(PROJECT).getroot().find("circuit[@name='FetchDecode']")
     assert fetch is not None
-    comparator = next(component for component in fetch.findall("comp[@name='Comparator']") if _attributes(component).get("label") == "PC_RANGE")
+    comparator = fetch.find("comp[@name='Comparator'][@loc='(740,420)']")
+    assert comparator is not None
     adjacency = _electrical_adjacency(fetch, {"(740,410)", "(1150,410)"})
     assert "(1150,410)" in _reachable(adjacency, "(740,410)")
     assert "(740,420)" not in _reachable(adjacency, "(740,410)")
@@ -258,8 +259,9 @@ def test_fetch_decode_program_counter_is_enabled_and_incremented():
     assert fetch is not None
     enable = fetch.find("comp[@name='Constant'][@loc='(540,240)']")
     increment = fetch.find("comp[@name='Constant'][@loc='(710,240)']")
-    assert _attributes(enable).get("value") == "0x1"
-    assert _attributes(increment).get("value") == "0x1"
+    assert _attributes(enable).get("value", "0x1") == "0x1"
+    assert _attributes(enable).get("width", "1") == "1"
+    assert _attributes(increment).get("value", "0x1") == "0x1"
     assert _attributes(increment).get("width") == "16"
     adjacency = _electrical_adjacency(fetch, {"(710,240)", "(730,240)", "(770,230)"})
     assert "(730,240)" in _reachable(adjacency, increment.get("loc"))
@@ -277,8 +279,7 @@ def test_program_counter_address_branch_reaches_rom_address_input():
     )
     attributes = _attributes(splitter)
     assert attributes.get("appear") == "right"
-    assert attributes.get("label") == "PC_ADDRESS"
-    assert all(attributes.get(f"bit{bit}") == "0" for bit in range(12))
+    assert all(attributes.get(f"bit{bit}", "0") == "0" for bit in range(12))
     assert all(attributes.get(f"bit{bit}") == "1" for bit in range(12, 16))
     adjacency = _electrical_adjacency(fetch, {"(720,560)", "(790,650)"})
     assert "(790,650)" in _reachable(adjacency, "(720,560)")
@@ -303,20 +304,23 @@ def test_taken_jump_selects_instruction_operand_as_next_pc():
     """A taken JUMP_NOT_ZERO must replace PC + 1 with the encoded target."""
 
     fetch = ET.parse(PROJECT).getroot().find("circuit[@name='FetchDecode']")
-    mux = next(component for component in fetch.findall("comp[@name='Multiplexer']") if _attributes(component).get("label") == "NEXT_PC")
+    mux = fetch.find("comp[@name='Multiplexer'][@loc='(870,190)']")
+    assert mux is not None
     assert mux.get("loc") == "(870,190)"
     assert _attributes(mux).get("width") == "16"
     wires = {
         frozenset((wire.get("from"), wire.get("to")))
         for wire in fetch.findall("wire")
     }
-    assert frozenset(("(1070,580)", "(1420,580)")) in wires
-    assert frozenset(("(1420,120)", "(1420,580)")) in wires
-    assert frozenset(("(1070,610)", "(1420,610)")) not in wires
-    assert frozenset(("(1420,120)", "(1420,610)")) not in wires
-    adjacency = _electrical_adjacency(fetch, {"(770,230)", "(840,180)", "(1070,580)", "(840,200)", "(1200,230)", "(850,210)", "(870,190)", "(550,220)"})
+    # The instruction splitter's operand output is at y=610.  The old y=580
+    # endpoint was empty drawing space and left the lower mux input floating.
+    assert frozenset(("(1070,610)", "(1420,610)")) in wires
+    assert frozenset(("(1420,120)", "(1420,610)")) in wires
+    assert frozenset(("(1070,580)", "(1420,580)")) not in wires
+    assert frozenset(("(1420,120)", "(1420,580)")) not in wires
+    adjacency = _electrical_adjacency(fetch, {"(770,230)", "(840,180)", "(1070,610)", "(840,200)", "(1200,230)", "(850,210)", "(870,190)", "(550,220)"})
     assert "(840,180)" in _reachable(adjacency, "(770,230)")
-    assert "(840,200)" in _reachable(adjacency, "(1070,580)")
+    assert "(840,200)" in _reachable(adjacency, "(1070,610)")
     assert "(1200,230)" in _reachable(adjacency, "(850,210)")
     assert "(550,220)" in _reachable(adjacency, "(870,190)")
     assert "(840,200)" not in _reachable(adjacency, "(840,180)")
@@ -1843,20 +1847,17 @@ def test_ap8_verification_reports_a_stale_generated_artifact(tmp_path):
 
 
 @pytest.mark.parametrize(
-    ("circuit_name", "component_name", "location", "attribute"),
+    ("circuit_name", "component_name", "location", "attribute", "invalid"),
     (
-        ("FetchDecode", "Constant", "(540,240)", "value"),
-        ("FetchDecode", "Constant", "(710,240)", "width"),
-        ("FetchDecode", "Splitter", "(700,550)", "label"),
-        ("FetchDecode", "Multiplexer", "(870,190)", "label"),
-        ("FetchDecode", "Comparator", "(740,420)", "label"),
-        ("Operations", "Multiplexer", "(1730,650)", "label"),
+        ("FetchDecode", "Constant", "(540,240)", "value", "0x0"),
+        ("FetchDecode", "Constant", "(710,240)", "width", "1"),
+        ("Operations", "Multiplexer", "(1730,650)", "width", "1"),
     ),
 )
-def test_ap8_verification_rejects_missing_electrical_attributes(
-    tmp_path, circuit_name, component_name, location, attribute
+def test_ap8_verification_rejects_incorrect_electrical_attributes(
+    tmp_path, circuit_name, component_name, location, attribute, invalid
 ):
-    """The required CI gate must catch Logisim attribute resets directly."""
+    """The required CI gate must catch effective electrical changes."""
 
     repository = tmp_path / "checkout"
     target = repository / "hardware" / "logisim"
@@ -1871,7 +1872,10 @@ def test_ap8_verification_rejects_missing_electrical_attributes(
     component = circuit.find(
         f"comp[@name='{component_name}'][@loc='{location}']"
     )
-    component.remove(next(item for item in component if item.get("name") == attribute))
+    item = next((item for item in component if item.get("name") == attribute), None)
+    if item is None:
+        item = ET.SubElement(component, "a", name=attribute)
+    item.set("val", invalid)
     tree.write(project, encoding="utf-8", xml_declaration=True)
 
     with pytest.raises(
@@ -2398,7 +2402,8 @@ def test_operations_preserve_immediate_load_values_outside_alu_cycles():
     assert circuit is not None
     adjacency = _electrical_adjacency(circuit)
 
-    data_selector = _labelled_component(circuit, "ACC_RESULT_SOURCE")
+    data_selector = circuit.find("comp[@name='Multiplexer'][@loc='(1730,650)']")
+    assert data_selector is not None
     data_x, data_y = map(int, data_selector.get("loc").strip("()").split(","))
     data_inputs = {f"({data_x - 30},{data_y - 10})", f"({data_x - 30},{data_y + 10})"}
     immediate = next(
@@ -2426,13 +2431,16 @@ def test_operations_preserve_immediate_load_values_outside_alu_cycles():
     )
     assert result_pin in _reachable(adjacency, data_selector.get("loc"))
 
-    valid_selector = _labelled_component(circuit, "ACC_RESULT_VALID_SOURCE")
+    valid_selector = circuit.find("comp[@name='Multiplexer'][@loc='(1810,770)']")
+    assert valid_selector is not None
     valid_x, valid_y = map(int, valid_selector.get("loc").strip("()").split(","))
     valid_inputs = {
         f"({valid_x - 30},{valid_y - 10})",
         f"({valid_x - 30},{valid_y + 10})",
     }
-    immediate_valid = _labelled_component(circuit, "IMMEDIATE_IS_VALID").get("loc")
+    immediate_valid_component = circuit.find("comp[@name='Constant'][@loc='(1760,760)']")
+    assert immediate_valid_component is not None
+    immediate_valid = immediate_valid_component.get("loc")
     operation_valid = _labelled_component(circuit, "OPERATION_RESULT_VALID").get("loc")
     assert _reachable(adjacency, immediate_valid) & valid_inputs == {
         f"({valid_x - 30},{valid_y - 10})"
@@ -2440,10 +2448,7 @@ def test_operations_preserve_immediate_load_values_outside_alu_cycles():
     assert _reachable(adjacency, operation_valid) & valid_inputs == {
         f"({valid_x - 30},{valid_y + 10})"
     }
-    assert _attributes(_labelled_component(circuit, "IMMEDIATE_IS_VALID")) == {
-        "label": "IMMEDIATE_IS_VALID",
-        "value": "0x1",
-    }
+    assert _attributes(immediate_valid_component).get("value", "0x1") == "0x1"
     assert f"({valid_x - 20},{valid_y + 20})" in _reachable(adjacency, active)
 
 

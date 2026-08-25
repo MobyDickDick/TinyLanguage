@@ -277,7 +277,10 @@ def _component_terminals(component: ET.Element) -> set[str]:
     if component.get("name") == "Splitter":
         fanout = int(attrs.get("fanout", "2"))
         if attrs.get("appear") == "right" or attrs.get("label") == "PC_ADDRESS":
-            start = y - 20
+            # Logisim's right-hand splitter symbol places branch zero one grid
+            # step below its anchor.  Using y-20 here made real wires at y+10
+            # look like decorative stubs (notably FetchDecode's operand bus).
+            start = y + 10
             terminals.update(
                 f"({x + 20},{start + 40 * index})" for index in range(fanout)
             )
@@ -378,7 +381,7 @@ def _component_terminal_widths(component: ET.Element) -> dict[str, int]:
                 output_widths[output] = output_widths.get(output, 0) + 1
         result = {location: incoming}
         if attrs.get("appear") == "right" or attrs.get("label") == "PC_ADDRESS":
-            start = y - 20
+            start = y + 10
             result.update(
                 {
                     f"({x + 20},{start + 40 * index})": max(width, 1)

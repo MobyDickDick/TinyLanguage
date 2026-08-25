@@ -232,6 +232,10 @@ initial `stdlib.regex` module targets a small, deterministic syntax slice.
 **Determinism requirements**
 
 - The engine should behave as ASCII-only for the supported escapes above.
+- The runtime compiles patterns in ASCII mode, so `\d`, `\w`, and `\s` never
+  expand to host- or Unicode-dependent character sets. Literal characters,
+  explicit character classes, and the `.` wildcard continue to accept Unicode
+  text; the restriction applies only to the documented shorthand escapes.
 - Errors must include the failing pattern and a short reason (e.g., "unsupported
   construct" vs. "unbalanced parentheses").
 

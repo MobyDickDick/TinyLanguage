@@ -50,6 +50,44 @@ def _rom_words(contents: str) -> tuple[int, ...]:
         raise VerificationError("invalid hexadecimal word in Logisim ROM") from error
 
 
+def _verify_electrical_attributes(project: Path) -> None:
+    """Reject schematic saves that drop acceptance-critical attributes.
+
+    Logisim can retain a component at the correct coordinate while resetting
+    its nested attributes to defaults.  Connectivity inspection alone cannot
+    distinguish that state, so the checkout gate locks the small set of
+    constants, widths, and stable labels used by the PC and result selectors.
+    """
+
+    root = ET.parse(project).getroot()
+    circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
+    required = (
+        ("FetchDecode", "Constant", "(540,240)", "value", "0x1"),
+        ("FetchDecode", "Constant", "(540,240)", "width", "1"),
+        ("FetchDecode", "Constant", "(710,240)", "value", "0x1"),
+        ("FetchDecode", "Constant", "(710,240)", "width", "16"),
+        ("FetchDecode", "Splitter", "(700,550)", "label", "PC_ADDRESS"),
+        ("FetchDecode", "Multiplexer", "(870,190)", "label", "NEXT_PC"),
+        ("FetchDecode", "Multiplexer", "(870,190)", "width", "16"),
+        ("FetchDecode", "Comparator", "(740,420)", "label", "PC_RANGE"),
+        ("FetchDecode", "Comparator", "(740,420)", "width", "16"),
+        ("Operations", "Multiplexer", "(1730,650)", "label", "ACC_RESULT_SOURCE"),
+        ("Operations", "Multiplexer", "(1730,650)", "width", "16"),
+    )
+    for circuit_name, component_name, location, attribute, expected in required:
+        circuit = circuits.get(circuit_name)
+        component = None if circuit is None else circuit.find(
+            f"comp[@name='{component_name}'][@loc='{location}']"
+        )
+        actual = None if component is None else _attributes(component).get(attribute)
+        if actual != expected:
+            raise VerificationError(
+                "electrical attributes: "
+                f"{circuit_name}.{component_name}@{location} requires "
+                f"{attribute}={expected!r}, found {actual!r}"
+            )
+
+
 def verify_checkout(repository: Path) -> tuple[str, ...]:
     """Verify the checked-in hardware deliverables below *repository*.
 
@@ -67,6 +105,7 @@ def verify_checkout(repository: Path) -> tuple[str, ...]:
     violations = validate_hardware_contract(project, profile)
     if violations:
         raise VerificationError("hardware contract: " + "; ".join(violations))
+    _verify_electrical_attributes(project)
 
     source = (hardware / "ap5_countdown.tcpu").read_text(encoding="utf-8")
     program = assemble(source)
@@ -104,8 +143,8 @@ def verify_checkout(repository: Path) -> tuple[str, ...]:
     # generated subcircuit-symbol ports.  Electrical connectivity is reported by
     # ``tiny_cpu_circuit.py`` (and ultimately established by Logisim itself).
     return (
-        "hardware contract", "ROM and listing", "embedded ROM", "17-edge trace",
-        "integration boundary trace",
+        "hardware contract", "electrical attributes", "ROM and listing",
+        "embedded ROM", "17-edge trace", "integration boundary trace",
     )
 
 

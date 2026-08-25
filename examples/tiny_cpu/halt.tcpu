@@ -1,0 +1,4 @@
+; Example for HALT
+LOAD_CONST(42)
+HALT()
+PRINT()

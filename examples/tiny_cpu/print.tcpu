@@ -1,0 +1,4 @@
+; Example for PRINT
+LOAD_CONST(42)
+PRINT()
+HALT()

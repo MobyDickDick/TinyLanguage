@@ -1,0 +1,6 @@
+; Example for JUMP_NOT_ERROR
+JUMP_NOT_ERROR(target)
+LOAD_CONST(0)
+target: LOAD_CONST(1)
+PRINT()
+HALT()

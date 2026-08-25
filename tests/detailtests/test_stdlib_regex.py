@@ -67,7 +67,9 @@ def test_stdlib_regex_character_escapes_are_ascii_only(run_tiny_source):
         def _cleanup_digit = delete(ascii_digit);
 
         print(Regex.search("^\\s$", "\u00a0") == Null);
-        print(regex.match("^.$", "é") != Null);
+        def unicode_wildcard = regex.match("^.$", "é");
+        print(unicode_wildcard != Null);
+        def _cleanup_wildcard = delete(unicode_wildcard);
         '''
     )
 

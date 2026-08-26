@@ -5,6 +5,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Reconcile the TinyCPU error-register follow-up documentation**
+  (Owner: TinyCPU/Documentation; completed 2026-08-26)
+  - Scope: execute the next documented TinyCPU integration package after the
+    status reconciliation by checking the error row against the maintained
+    decoded controls, operation/address errors, and `ErrorFlags` boundary.
+  - Cause: the template still reduced the completed error integration to
+    generic set signals and a future sticky-behavior check, obscuring which
+    sources are decoded controls and which are derived execution errors.
+  - Result: the template now records `CLEAR_ERROR`, decoded illegal-opcode and
+    input errors, the four derived execution-error routes, and the six
+    set-dominant sticky outputs as the completed error-register boundary.
+  - Verification: the roadmap-consistency regression freezes the named error
+    sources, outputs, and priority rule and rejects the obsolete generic row.
+
 - [x] **Reconcile the TinyCPU status follow-up documentation**
   (Owner: TinyCPU/Documentation; completed 2026-08-26)
   - Scope: execute the next documented TinyCPU integration package after the

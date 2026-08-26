@@ -81,13 +81,20 @@ visuelle Fehlersuche steht in
 Kompletttest wird aus dem Repository-Hauptverzeichnis mit
 `scripts/test-logisim.sh` gestartet.
 
-### Empfohlener Aufbau in Logisim-evolution
+### Abgenommener Aufbau in Logisim-evolution
 
 Das in Logisim-evolution 4.1.x ausführbare Projekt liegt unter
 [`hardware/logisim/TinyCPU.circ`](../hardware/logisim/TinyCPU.circ). Es legt das
 16/12-Bit-Profil, die Subcircuits und die zwingenden Valid-/Fehlerzustände an.
 Architektur und elektrische AP-12-Abnahme sind in
 [`hardware/logisim/README.md`](../hardware/logisim/README.md) festgehalten.
+Die folgende Liste beschreibt die bereits ausgeführte Aufbau- und
+Abnahmereihenfolge, nicht fehlende Verdrahtung: Der Inspector meldet
+`TinyCPUMain: connected`, und die elektrische AP-11-Matrix deckt alle 50
+Opcodes des versionierten Maschinenformats einschließlich ihrer Positiv- und
+Fehlerfälle ab. Damit sind sowohl sämtliche Top-Level-Pins als auch der
+dokumentierte Befehlssatz umgesetzt; sichtbare Leitungskreuzungen ohne
+Abzweigpunkt sind in Logisim bewusst keine elektrischen Verbindungen.
 
 Mit `PYTHONPATH=src python src/tiny_cpu_circuit.py
 hardware/logisim/TinyCPU.circ` lässt sich das Projekt ohne Logisim zunächst
@@ -106,17 +113,19 @@ zu laden. Erzeugung, Größenvergleich und eine empfohlene Testreihenfolge sind 
 Hardware-[README](../hardware/logisim/README.md#ressourcenverbrauch-eingrenzen)
 dokumentiert.
 
-1. Das Zielprofil zunächst auf **16 Datenbits, 12 Adressbits und 4096
-   Speicherzellen** festlegen.
+1. Das Zielprofil wurde auf **16 Datenbits, 12 Adressbits und 4096
+   Speicherzellen** festgelegt.
 2. Datenpfad (Akkumulator, ALU, Status), Adresspfad (Adressregister,
-   Offset-Addierer), Speicher und Steuerwerk als getrennte Subcircuits bauen.
-3. Valid-RAM parallel zum Daten-RAM anlegen; beide verwenden dieselbe Adresse
+   Offset-Addierer), Speicher und Steuerwerk wurden als getrennte Subcircuits
+   gebaut.
+3. Das Valid-RAM liegt parallel zum Daten-RAM; beide verwenden dieselbe Adresse
    und denselben Write-Enable.
-4. Fehlerflags als Set-dominante Register implementieren; `CLEAR_ERROR` bildet
-   die einzige gemeinsame Clear-Leitung.
-5. Zuerst `LOAD_CONST`, `STORE_ADDRESS`, `ADD_ADDRESS`, `JUMP_NOT_ZERO`,
-   `PRINT` und `HALT` implementieren und damit das Schleifenbeispiel testen.
-6. Danach die übrigen Adressierungsarten und gezielte Fehlerfälle ergänzen.
+4. Die Fehlerflags sind set-dominante Register; `CLEAR_ERROR` bildet die einzige
+   gemeinsame Clear-Leitung.
+5. `LOAD_CONST`, `STORE_ADDRESS`, `ADD_ADDRESS`, `JUMP_NOT_ZERO`, `PRINT` und
+   `HALT` wurden zuerst mit dem Schleifenbeispiel abgenommen.
+6. Anschließend wurden die übrigen Adressierungsarten und gezielten Fehlerfälle
+   ergänzt und in der vollständigen elektrischen Matrix abgenommen.
 
 Für reproduzierbare Vergleiche sollte jeder Schaltungstest neben dem
 Logisim-Projekt auch die `.tcpu`-Quelldatei, das verwendete Zielprofil, die

@@ -5,6 +5,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Reconcile the TinyCPU completeness documentation**
+  (Owner: TinyCPU/Documentation; completed 2026-08-26)
+  - Scope: verify the user's apparent open pins and potentially missing
+    instructions against the maintained circuit, machine table, electrical
+    matrix, and roadmap, then execute the next documentation-maintenance item.
+  - Cause: the user guide still presented the accepted construction sequence
+    as imperative future work, while AP 1 still referred to missing wiring and
+    the roadmap labelled completed integration as a follow-up.
+  - Result: the guide now records `TinyCPUMain: connected`, all 50 versioned
+    opcodes as electrically covered, and the construction list as acceptance
+    history; the detailed roadmap marks baseline and top-level integration as
+    completed without claiming that visual wire crossings are junctions.
+  - Verification: the roadmap-consistency regression compares the ISA and
+    machine opcode inventories and freezes the reconciled completion wording.
+
 - [x] **Reconcile the TinyCPU inspector-boundary documentation**
   (Owner: TinyCPU/Documentation; completed 2026-08-26)
   - Scope: execute the next documentation-maintenance package after retiring

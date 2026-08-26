@@ -50,7 +50,8 @@ in einem frischen Checkout verpflichtend laufen.
 
 - [x] **AP 1:** `hardware/logisim/tinycpu-16-12.json` beschreibt den Vertrag;
   `tiny_cpu_circuit.py --profile … --contract-only` prüft ihn unabhängig von
-  der noch fehlenden Verdrahtung.
+  der Verdrahtung. Der vollständige Inspector-Lauf meldet die inzwischen
+  abgenommene Schaltung `TinyCPUMain: connected`.
 - [x] **AP 2:** Daten- und Adresspfad; `Datapath` lädt Akkumulator und
   Valid-Bit an derselben Taktflanke und leitet `ZERO`/`NEGATIVE` über einen
   vorzeichenbehafteten Vergleicher ab. `AddressPath` lädt Adressregister und
@@ -104,7 +105,7 @@ Simulator-, Reset-/Wiederanlauf-, Mehrzyklus- oder Matrixvergleich bricht den
 Job ab. Die Bedienung und die erzeugten Nachweise sind im Logisim-Handbuch
 dokumentiert.
 
-## Baseline-Pflege
+## Abgeschlossene Baseline-Pflege
 
 Nach Abschluss der acht Arbeitspakete ist das Abnahmekommando als eigener
 Schritt im Haupt-CI-Job verankert. Dadurch schlagen Änderungen an Vertrag,
@@ -113,7 +114,7 @@ Referenztrace bereits vor der allgemeinen Testsuite mit einer gezielten
 TinyCPU-Diagnose fehl. Ein Regressionstest schützt sowohl den Namen des Gates
 als auch das dokumentierte Kommando vor unbeabsichtigtem Entfernen.
 
-## Folgeschritt: elektrische Top-Level-Integration
+## Abgeschlossener Folgeschritt: elektrische Top-Level-Integration
 
 Die abgeschlossene AP-1-bis-AP-8-Baseline beschreibt und prüft die einzelnen
 Blöcke, während das Top-Level weiterhin eine Integrationsgrenze ist. Die

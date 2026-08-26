@@ -202,6 +202,23 @@ def test_error_template_records_sticky_register_boundary():
     assert "Sticky-Verhalten sowie Set-vor-Clear-Priorität prüfen" not in template
 
 
+def test_halt_template_records_distinct_decode_and_trace_boundaries():
+    """Halt documentation must name the maintained electrical event nets."""
+
+    template = (
+        REPOSITORY_ROOT / "docs" / "tiny_cpu_top_level_template.md"
+    ).read_text(encoding="utf-8")
+
+    assert "`FetchDecodeControls.HALT`" in template
+    assert "`FetchDecodeControls.HALT_ERROR`" in template
+    assert "Top-Level-Ausgang `HALTED`" in template
+    assert "`HALTED_WITH_ERROR`" in template
+    assert "`HALT_ENABLE` beziehungsweise" in template
+    assert "`HALT_ERROR_ENABLE`" in template
+    assert "kein zusätzliches `HALTED_STATE`-ODER" in template
+    assert "normale und fehlerhafte Haltquelle" not in template
+
+
 def test_alu_architecture_note_matches_the_versioned_machine_contract():
     """The historical ALU sketch must not reopen an incompatible redesign."""
 

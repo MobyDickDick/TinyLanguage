@@ -5,6 +5,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Reconcile the TinyCPU halt-boundary follow-up documentation**
+  (Owner: TinyCPU/Documentation; completed 2026-08-26)
+  - Scope: execute the next documented TinyCPU integration package after the
+    error-register reconciliation by checking the final halt row against the
+    maintained decoded controls, top-level pins, and integration-trace names.
+  - Cause: the template still described anonymous normal and error sources and
+    named only the trace fields as top-level targets, obscuring the circuit's
+    actual `HALTED` and `HALTED_WITH_ERROR` output boundary.
+  - Result: the template now records the direct, isolated `HALT` and
+    `HALT_ERROR` decode routes, their physical output pins, their trace-field
+    mappings, and the deliberate absence of a shared halt-state OR gate.
+  - Verification: the roadmap-consistency regression freezes both halt routes
+    and rejects the obsolete generic source description.
+
 - [x] **Reconcile the TinyCPU error-register follow-up documentation**
   (Owner: TinyCPU/Documentation; completed 2026-08-26)
   - Scope: execute the next documented TinyCPU integration package after the

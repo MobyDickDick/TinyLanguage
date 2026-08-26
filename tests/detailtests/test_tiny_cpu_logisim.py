@@ -980,21 +980,20 @@ def test_decode_accumulator_family_request_excludes_store_and_register_loads():
     assert output in _reachable(adjacency, "(750,390)")
 
 
-@pytest.mark.xfail(reason="write-request gates moved to DecodeSignals; integration pending")
-def test_top_level_non_family_write_controls_use_separate_gate_connections():
+def test_decode_write_request_causes_use_separate_gate_connections():
     """Keep the family request, NOT, and INPUT on three distinct named nets."""
 
     root = ET.parse(PROJECT).getroot()
-    circuit = _top_level(root)
+    circuit = root.find("circuit[@name='DecodeSignals']")
     adjacency = _electrical_adjacency(circuit)
     family_gate = _labelled_component(circuit, "ACC_LOAD_REQUEST")
-    write_gate = _labelled_component(circuit, "ACC_WRITE_REQUEST")
+    write_gate = _labelled_component(circuit, "ACC_WRITE_AGGREGATOR")
     family_output, _ = _gate_ports(family_gate)
     write_output, write_inputs = _gate_ports(write_gate)
     causes = {
         "ACC_LOAD_REQUEST": family_output,
-        "NOT": _control_output(root, "NOT"),
-        "INPUT": _control_output(root, "INPUT"),
+        "NOT": "(460,740)",
+        "INPUT": "(460,880)",
     }
 
     connected_inputs = {}
@@ -1008,7 +1007,12 @@ def test_top_level_non_family_write_controls_use_separate_gate_connections():
 
     assert len(set(connected_inputs.values())) == 3
     assert set(connected_inputs.values()) == write_inputs
-    assert len(_reachable(adjacency, write_output)) > 1
+    write_request = next(
+        component.get("loc")
+        for component in circuit.findall("comp[@name='Pin']")
+        if _attributes(component).get("label") == "ACC_WRITE_REQUEST"
+    )
+    assert write_request in _reachable(adjacency, write_output)
 
 
 @pytest.mark.xfail(

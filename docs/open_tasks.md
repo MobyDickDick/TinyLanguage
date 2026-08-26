@@ -5,6 +5,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Reconcile the TinyCPU inspector-boundary documentation**
+  (Owner: TinyCPU/Documentation; completed 2026-08-26)
+  - Scope: execute the next documentation-maintenance package after retiring
+    the incremental-build exception by checking the remaining inspector note
+    against the accepted circuit and its current verification boundaries.
+  - Cause: the reference still claimed that the maintained top-level blocks
+    report `INCOMPLETE`/`unconnected`, although the inspector reports
+    `TinyCPUMain: connected`; it also left the generic connectivity diagnostic
+    insufficiently distinguished from focused topology and simulator proof.
+  - Result: the reference now records the current connected status, treats a
+    future incomplete report as a maintenance failure, and explicitly states
+    why connected pins alone do not constitute electrical acceptance.
+  - Verification: the roadmap-consistency regression freezes the current
+    inspector status and its boundary to topology tests and AP-12 acceptance.
+
 - [x] **Retire the TinyCPU incremental-build verification exception**
   (Owner: TinyCPU/Documentation; completed 2026-08-26)
   - Scope: execute the next documentation-maintenance package after retiring

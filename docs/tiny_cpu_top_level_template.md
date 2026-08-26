@@ -127,9 +127,9 @@ wurden aus den XML-Positionen des Splitters, der Top-Level-Instanz und des
 Unterblatts, nicht automatisch die Anschlüsse des daraus erzeugten Symbols.
 Beim aktuellen Splitter liegt der sichtbare 16-Bit-Ausgang oberhalb seines
 Ankers; auch `Datapath.DATA_IN` liegt am automatisch erzeugten Symbol an einer
-anderen Stelle. Die zuletzt manuell korrigierten direkten Leitungen und Bauteilpositionen in `TinyCPU.circ` sind deshalb
-die Referenz und wird durch einen Regressionstest geschützt, der die Verbindung
-semantisch als „Instruktionsbits 15..0 verbunden mit `Datapath.DATA_IN`“ prüft.
+anderen Stelle. Die zuletzt manuell korrigierten direkten Leitungen und
+Bauteilpositionen in `TinyCPU.circ` sind deshalb die Referenz und werden durch
+Regressionstests geschützt, welche die Verbindungen semantisch prüfen.
 
 Für zukünftige Verdrahtungen gilt daher zusätzlich: Endpunkte am sichtbaren
 Top-Level-Symbol in Logisim ablesen und mit dem Poke-Werkzeug prüfen. Weder den
@@ -140,12 +140,13 @@ müssen die sichtbaren Anschlüsse erneut ermittelt und die Endpunkttabelle samt
 Strukturtest im selben Arbeitsschritt angepasst werden.
 
 `tiny_cpu_verify.py` prüft den strukturellen Pinvertrag und reproduzierbare
-Artefakte, aber keine elektrische Top-Level-Verbindung. Es meldet deshalb auch
-nicht länger irreführend eine bestandene `connectivity`-Prüfung. Der Circuit-
-Inspector meldet die Top-Level-Blöcke bei solchen danebenliegenden Endpunkten
-als `INCOMPLETE`/`unconnected`; die bisherigen Detailtests hatten lediglich die
-Erreichbarkeit zwischen denselben falsch angenommenen Koordinaten geprüft und
-konnten den geometrischen Grundfehler daher nicht erkennen.
+Artefakte, wirbt aber weiterhin bewusst nicht mit einer eigenständigen
+`connectivity`-Prüfung. Der Circuit-Inspector meldet die gepflegte
+Top-Level-Schaltung inzwischen als `TinyCPUMain: connected`; seine generische
+Prüfung belegt jedoch nur, dass die Pins an Leitungen liegen, und ersetzt weder
+die fokussierten elektrischen Topologietests noch die AP-12-Simulatorabnahme.
+Ein künftiges `INCOMPLETE`/`unconnected` ist daher ein Wartungsfehler, während
+`connected` allein noch kein vollständiger elektrischer Funktionsnachweis ist.
 
 ## Änderungsprotokoll für künftige Wartungspakete
 

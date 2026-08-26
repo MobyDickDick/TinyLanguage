@@ -5,6 +5,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Reconcile the TinyCPU status follow-up documentation**
+  (Owner: TinyCPU/Documentation; completed 2026-08-26)
+  - Scope: execute the next documented TinyCPU integration package after the
+    accumulator-data reconciliation by checking the status row and endpoint
+    table against the extracted `Operations` and `EffectiveAddress` boundaries.
+  - Cause: the template still described generic validity and error-logic
+    destinations instead of the maintained result-valid, branch-status, and
+    operation/address error routes.
+  - Result: the template now records the single `Operations.RESULT_IS_VALID`
+    load-validity route, the zero-derived `FetchDecode.NOT_ZERO` condition,
+    and the distinct overflow, divide-by-zero, invalid-operand, and address
+    error boundaries.
+  - Verification: the roadmap-consistency regression freezes the completed
+    status endpoints and rejects the obsolete generic status description.
+
 - [x] **Reconcile the TinyCPU accumulator-data follow-up documentation**
   (Owner: TinyCPU/Documentation; completed 2026-08-26)
   - Scope: execute the next documented TinyCPU integration package after the

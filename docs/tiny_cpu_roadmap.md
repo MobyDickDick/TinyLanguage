@@ -126,13 +126,13 @@ verschieben.
 Der aktuelle Stand verteilt den gemeinsamen Takt an Fetch/Decode, Datenpfad,
 Adresspfad, Speicher und Fehlerflags. Ein unabhängiger `RESET`-Eingang setzt
 ausschließlich Fetch/Decode und damit den Programmzähler zurück. Alle weiteren
-Netze werden anhand der
+Netze wurden anhand der
 [Top-Level-Vorlage](tiny_cpu_top_level_template.md) einzeln ergänzt. Dabei wird
 jede Leitung rechtwinklig in einem freien Korridor um Bauteile herumgeführt;
 eine Leitung durch ein Symbol oder über einen fremden Anschluss ist auch dann
-unzulässig, wenn die XML-Strukturprüfung sie akzeptieren würde. Als Nächstes
-werden Steuernetze, Datenpfade und zuletzt Halt-/Fehlerausgänge jeweils getrennt
-verdrahtet und abgenommen.
+unzulässig, wenn die XML-Strukturprüfung sie akzeptieren würde. Die damals
+nächsten Steuernetze, Datenpfade und Halt-/Fehlerausgänge sind inzwischen
+getrennt verdrahtet und durch die abgeschlossene elektrische Abnahme geschützt.
 
 Als erstes Decode-Netz führt die Übersichtsseite nun den 22-Bit-Ausgang
 `FetchDecode.OPCODE` zum gleichnamigen Eingang des separat platzierten
@@ -147,7 +147,9 @@ von den vorhandenen Netzen isoliert. `SET_DIV0` folgt in einer weiteren
 Fehlerflag-Eingang verbunden. Auch `SET_ADDR`, `SET_INV`, `SET_ILL` und
 `SET_INPUT` erreichen den jeweils gleichnamigen Fehlerflag-Eingang über eigene,
 voneinander isolierte äußere Leitungen. Damit sind alle Sticky-Fehler-Setznetze
-der Decode-Steuerung angeschlossen; als nächstes folgen die Datenpfad-Steuernetze.
+der Decode-Steuerung angeschlossen. Die damals folgenden
+Datenpfad-Steuernetze sind inzwischen über die zusammengefasste
+`DecodeSignals.ACC_WRITE_REQUEST`-Grenze angeschlossen und abgenommen.
 Die nachträgliche visuelle Korrektur ist strukturell nachvollzogen: Der
 Opcode-Splitter reicht nur die sechs höchstwertigen Bits weiter, `RESET`
 erreicht wieder ausschließlich Fetch/Decode, und die Tests verwenden die

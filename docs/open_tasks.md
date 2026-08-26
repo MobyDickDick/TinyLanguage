@@ -2281,3 +2281,17 @@ and testable so they can be promoted into the formal backlog as needed.
   - Verification: the focused Logisim suite again passes all 77 executable
     checks; the 10 simulator-dependent cases remain explicitly expected
     failures.
+
+## TinyCPU ALU-documentation reconciliation update (2026-08-26)
+
+- [x] **Retire the obsolete TinyCPU ALU redesign follow-up**
+  (Owner: TinyCPU/Documentation)
+  - Scope: execute the next explicitly documented TinyCPU follow-up by checking
+    the historical ALU sketch against the accepted machine and schematic.
+  - Cause: the sketch still presented an unimplemented `ALU` sheet, 24-bit
+    words, and 8-bit opcodes as the next step even though the accepted design
+    uses `Operations`, 22-bit words, and 6-bit opcodes.
+  - Result: the note now records the maintained operation boundaries and
+    authoritative widths and explicitly closes the incompatible redesign.
+  - Verification: a roadmap-consistency regression reads the versioned machine
+    contract and prevents the stale next-step language from returning.

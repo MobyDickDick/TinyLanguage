@@ -946,6 +946,10 @@ def test_decode_signals_exports_canonical_accumulator_request_names():
         if _attributes(component).get("type") == "output"
     }
     assert output_labels == {"ACC_MEMORY_REQUEST", "ACC_WRITE_REQUEST"}
+    assert (
+        _labelled_component(circuit, "ACC_WRITE_AGGREGATOR").get("name")
+        == "OR Gate"
+    )
 
 
 def test_decode_accumulator_family_request_excludes_store_and_register_loads():

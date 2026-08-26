@@ -168,7 +168,7 @@ ausgelegte Gatter deckt die vollständigen `LOAD_*`-, `ADD_*`-, `SUB_*`-, `MUL_*
 koppeln. Die Strukturtests berücksichtigen dabei auch Abzweige, die in Logisim
 entstehen, wenn ein Leitungsende auf eine andere Leitung trifft, und verhindern
 so insbesondere wired-ORs. `NOT` was then routed separately as the next accumulator-writing instruction
-into the second-stage `ACC_WRITE_REQUEST` OR gate together with the 32-input
+into the second-stage `ACC_WRITE_AGGREGATOR` OR gate together with the 32-input
 family aggregator. `INPUT` now occupies a third,
 independent input of that second stage; only the gate output drives
 `Datapath.ACC_LOAD`. This preserves isolated decoder outputs without exceeding

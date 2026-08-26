@@ -15,10 +15,12 @@ archived in `docs/open_tasks_archive.md`.
     documentation already specified the canonical singular spellings.
   - Result: `DecodeSignals` now exports `ACC_MEMORY_REQUEST` and
     `ACC_WRITE_REQUEST`; the maintained top-level write route follows the
-    corrected interface name without changing the pin locations or wiring.
-  - Verification: a focused structural regression freezes the complete public
-    output-label set and the existing topology test resolves the corrected
-    accumulator-write pin through the subcircuit boundary.
+    corrected interface name without changing the pin locations or wiring. The
+    internal three-input OR gate is uniquely labelled `ACC_WRITE_AGGREGATOR`,
+    so it cannot collide with the public output pin.
+  - Verification: focused structural regressions freeze the complete public
+    output-label set, require the uniquely named aggregator, and resolve the
+    corrected accumulator-write pin through the subcircuit boundary.
 
 - [x] **Enforce ASCII semantics for portable regex escapes**
   (Owner: Language/Stdlib; completed 2026-08-25)

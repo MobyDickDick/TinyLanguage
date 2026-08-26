@@ -2818,7 +2818,7 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     </comp>
     <comp lib="1" loc="(800,410)" name="OR Gate">
       <a name="inputs" val="3"/>
-      <a name="label" val="ACC_WRITE_REQUEST"/>
+      <a name="label" val="ACC_WRITE_AGGREGATOR"/>
     </comp>
     <comp loc="(460,80)" name="FetchDecodeControls">
       <a name="label" val="CONTROL_DECODER"/>

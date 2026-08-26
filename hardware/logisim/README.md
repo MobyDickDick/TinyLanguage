@@ -611,7 +611,7 @@ Schaltung und kein erneutes Ersetzen des Hauptblatts.
   thirty-two-input,
   named `ACC_LOAD_REQUEST` OR gate,
   whose output, the unary `NOT` control, and `INPUT` feed three independent
-  inputs of a second, named `ACC_WRITE_REQUEST` OR gate. That final gate alone
+  inputs of a second, named `ACC_WRITE_AGGREGATOR` OR gate. That final gate alone
   reaches `Datapath.ACC_LOAD`; the decoder outputs are never tied directly
   together. This two-stage arrangement keeps the family aggregator within
   Logisim's 32-input limit while accommodating non-family accumulator writes. The

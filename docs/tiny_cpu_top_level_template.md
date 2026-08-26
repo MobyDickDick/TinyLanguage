@@ -47,10 +47,11 @@ eigener Schritt vor `RESET` ergänzt.
 | 10 | Fehler | `FetchDecodeControls.CLEAR_ERROR`, die decodierten `SET_ILL`-/`SET_INPUT`-Signale und die vier abgeleiteten Ausführungsfehler aus Schritt 9 | `ErrorFlags.CLEAR_ERROR` und der jeweils zuständige `SET_*`-Eingang | 1 je Netz | Alle sechs Register sind set-dominant und sticky verdrahtet; `CLEAR_ERROR` löscht sie gemeinsam nur dann, wenn nicht an derselben Taktflanke erneut ihre jeweilige Fehlerursache anliegt. Die sechs Zustände bleiben getrennt als `OVF_OUT`, `DIV0_OUT`, `ADDR_OUT`, `INV_OUT`, `ILL_OUT` und `INPUT_OUT` beobachtbar. |
 | 11 | Halt | `FetchDecodeControls.HALT` und `FetchDecodeControls.HALT_ERROR` | Top-Level `HALTED` und `HALTED_WITH_ERROR` (im Integrationstrace `HALT_ENABLE` und `HALT_ERROR_ENABLE`) | 1 je Netz | Beide decodierten Ereignisse sind direkt und getrennt exportiert. Es gibt weder ein gemeinsames Halt-ODER noch eine Verbindung zwischen Normal- und Fehlerhalt. |
 
-Die exakten Namen und Richtungen vor jedem Schritt im maschinenlesbaren
-Pinvertrag `hardware/logisim/tinycpu-16-12.json` nachsehen. Wenn Tabellenname
-und sichtbarer Pin voneinander abweichen, **nicht raten**, sondern den Schritt
-offenlassen und die Abweichung notieren.
+Die exakten Namen und Richtungen vor jeder Wartungsänderung im
+maschinenlesbaren Pinvertrag `hardware/logisim/tinycpu-16-12.json` nachsehen.
+Wenn Tabellenname und sichtbarer Pin voneinander abweichen, **nicht raten**,
+sondern die Änderung abbrechen und die Abweichung als neues, begrenztes
+Arbeitspaket dokumentieren.
 
 ## Abgenommene Endpunkte der Decode-Leitungen
 
@@ -146,9 +147,11 @@ als `INCOMPLETE`/`unconnected`; die bisherigen Detailtests hatten lediglich die
 Erreichbarkeit zwischen denselben falsch angenommenen Koordinaten geprüft und
 konnten den geometrischen Grundfehler daher nicht erkennen.
 
-## Kopiervorlage für jeden Arbeitsschritt
+## Änderungsprotokoll für künftige Wartungspakete
 
-Diesen Block kopieren und vor dem Zeichnen ausfüllen:
+Die abgeschlossene Schaltung benötigt keinen weiteren Arbeitsschritt. Nur für
+ein zuvor in `docs/open_tasks.md` abgegrenztes Wartungspaket wird dieser Block
+vor dem Zeichnen ausgefüllt und zusammen mit der Änderung geprüft:
 
 ```text
 Netz:
@@ -164,7 +167,7 @@ Inspector-Ergebnis:
 Git-Commit:
 ```
 
-## Prüfung nach jedem Netz
+## Prüfung nach einer abgegrenzten Wartungsänderung
 
 ```bash
 PYTHONPATH=src python src/tiny_cpu_circuit.py \
@@ -172,10 +175,10 @@ PYTHONPATH=src python src/tiny_cpu_circuit.py \
   hardware/logisim/TinyCPU.circ
 ```
 
-Während des schrittweisen Aufbaus darf der Inspector `TinyCPU: INCOMPLETE`
-melden, weil spätere Pins noch offen sind. Neu auftretende Meldungen zu
-`routing conflicts`, diagonalen/überlappenden Leitungen, Mehrfachtreibern oder
-Breitenfehlern müssen dagegen vor dem nächsten Netz behoben werden.
+Die abgenommene Schaltung darf weder `TinyCPU: INCOMPLETE` noch neue Meldungen
+zu `routing conflicts`, diagonalen/überlappenden Leitungen, Mehrfachtreibern
+oder Breitenfehlern erzeugen. Jede solche Meldung lässt das Wartungspaket
+scheitern und muss vor dem Commit behoben werden.
 
 Diagnoseblätter nur bei Bedarf in ein **temporäres** Verzeichnis schreiben:
 

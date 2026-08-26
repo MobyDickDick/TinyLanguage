@@ -233,6 +233,20 @@ def test_top_level_template_is_a_completed_integration_reference():
     assert "Arbeitszettel für die manuelle Integration" not in template
 
 
+def test_top_level_reference_requires_bounded_maintenance_changes():
+    """Historical build checks must enforce the accepted maintenance gate."""
+
+    template = (
+        REPOSITORY_ROOT / "docs" / "tiny_cpu_top_level_template.md"
+    ).read_text(encoding="utf-8")
+
+    assert "Änderungsprotokoll für künftige Wartungspakete" in template
+    assert "zuvor in `docs/open_tasks.md` abgegrenztes Wartungspaket" in template
+    assert "darf weder `TinyCPU: INCOMPLETE`" in template
+    assert "## Kopiervorlage für jeden Arbeitsschritt" not in template
+    assert "Während des schrittweisen Aufbaus darf" not in template
+
+
 def test_alu_architecture_note_matches_the_versioned_machine_contract():
     """The historical ALU sketch must not reopen an incompatible redesign."""
 

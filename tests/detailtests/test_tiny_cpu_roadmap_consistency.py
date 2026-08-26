@@ -98,6 +98,24 @@ def test_detailed_hardware_docs_do_not_advertise_completed_follow_ups():
         assert marker not in combined_docs
 
 
+def test_bitwise_or_contract_records_completed_operations_integration():
+    """The extracted OR box is already connected to the shared merge trees."""
+
+    hardware_readme = (
+        REPOSITORY_ROOT / "hardware" / "logisim" / "README.md"
+    ).read_text(encoding="utf-8")
+    or_contract = hardware_readme.split(
+        "## Bitwise OR extraction contract", maxsplit=1
+    )[1].split("## Bitwise XOR extraction contract", maxsplit=1)[0]
+
+    assert "`Operations` instantiates\n`OrSubCircuit` exactly once" in or_contract
+    assert "the integration package is complete" in or_contract
+    assert (
+        "Integration into\n`Operations` is a separate follow-up package"
+        not in or_contract
+    )
+
+
 def test_alu_architecture_note_matches_the_versioned_machine_contract():
     """The historical ALU sketch must not reopen an incompatible redesign."""
 

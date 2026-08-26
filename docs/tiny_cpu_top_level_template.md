@@ -40,7 +40,7 @@ Fehlerflags wurde als eigener Schritt vor `RESET` ergänzt.
 | 7 | Adressbus | `EffectiveAddress.EFFECTIVE_ADDRESS` | Daten- und Validitäts-RAM in `Memory` | 16 | Die zentral ausgewählte effektive Adresse erreicht beide RAMs über einen gemeinsamen Bus. Eine Breitenprüfung gegen `0xfff` erfolgt vor dem Zugriff, ohne einen zweiten Adresstreiber einzufügen. |
 | 8 | Datenbus | Instruktionsoperand, `Memory.MEMORY_DATA` und `Datapath.ACC_OUT` | `Operations`, danach `Datapath.DATA_IN` | 16 | Die drei unabhängigen Quellen erreichen `Operations.IMMEDIATE_VALUE`, `MEMORY_VALUE` und `ACC_VALUE`. `Operations.RESULT_VALUE` führt den dort ausgewählten Lade- oder Operationwert als einzigen Treiber zu `Datapath.DATA_IN`; die Auswahl- und Rechenstufen bleiben innerhalb des extrahierten Blatts. |
 | 9 | Status | `Operations`, `Datapath.ZERO`, `EffectiveAddress` und `AddressPath.OFFSET_CARRY` | `Datapath.VALID_IN`, `FetchDecode.NOT_ZERO` und die zuständigen `ErrorFlags.SET_*`-Eingänge | 1 je Netz | `Operations.RESULT_IS_VALID` ist der einzige Treiber der Ladevalidität. Der invertierte Nullstatus steuert unabhängig davon `FetchDecode.NOT_ZERO`. `OVERFLOW`, `DIVIDE_BY_ZERO` und `INVALID_OPERAND` erreichen getrennt `SET_OVF`, `SET_DIV0` und `SET_INV`; der aktivitätsabhängige Bereichsfehler und Offset-Übertrag werden erst vor `SET_ADDR` vereinigt. |
-| 10 | Fehler | Fehler-Set-Signale und `CLEAR_ERROR` | `ErrorFlags` | 1 je Netz | Sticky-Verhalten sowie Set-vor-Clear-Priorität prüfen. |
+| 10 | Fehler | `FetchDecodeControls.CLEAR_ERROR`, die decodierten `SET_ILL`-/`SET_INPUT`-Signale und die vier abgeleiteten Ausführungsfehler aus Schritt 9 | `ErrorFlags.CLEAR_ERROR` und der jeweils zuständige `SET_*`-Eingang | 1 je Netz | Alle sechs Register sind set-dominant und sticky verdrahtet; `CLEAR_ERROR` löscht sie gemeinsam nur dann, wenn nicht an derselben Taktflanke erneut ihre jeweilige Fehlerursache anliegt. Die sechs Zustände bleiben getrennt als `OVF_OUT`, `DIV0_OUT`, `ADDR_OUT`, `INV_OUT`, `ILL_OUT` und `INPUT_OUT` beobachtbar. |
 | 11 | Halt | normale und fehlerhafte Haltquelle | Top-Level `HALT_ENABLE` und `HALT_ERROR_ENABLE` | 1 je Netz | Normalhalt und Fehlerhalt getrennt auslösen; beide beobachtbaren Ereignisnetze dürfen sich nicht verbinden. |
 
 Die exakten Namen und Richtungen vor jedem Schritt im maschinenlesbaren
@@ -92,6 +92,17 @@ Auch die Statusgrenze besitzt jeweils genau einen zuständigen Verbraucher:
 Operationsfehler bleiben bis zu ihren jeweiligen Sticky-Flag-Eingängen
 getrennt. Nur die beiden Adressfehlerursachen werden nach ihrer
 Aktivitätsprüfung vor `SET_ADDR` zusammengeführt.
+
+Die anschließende Fehlerregistergrenze ist ebenfalls vollständig. Der Decoder
+liefert `CLEAR_ERROR` sowie die unmittelbar aus dem Opcode beziehungsweise der
+Eingabe abgeleiteten Ursachen `SET_ILL` und `SET_INPUT`. Die übrigen vier
+Set-Eingänge erhalten ausschließlich die in der Statusstufe gebildeten
+Überlauf-, Divisions-, Operanden- und Adressfehler. `ErrorFlags` hält jede
+Ursache in einem eigenen set-dominanten Sticky-Register; ein gleichzeitig
+anliegendes Set gewinnt deshalb gegenüber dem gemeinsamen `CLEAR_ERROR`. Die
+sechs unabhängigen Zustände verlassen das Blatt als `OVF_OUT`, `DIV0_OUT`,
+`ADDR_OUT`, `INV_OUT`, `ILL_OUT` und `INPUT_OUT` und werden weder untereinander
+noch zu einem unbenannten Sammelfehler zusammengeschaltet.
 
 **Ursache der korrigierten Fehlverdrahtung:** Die zuvor verwendeten Endpunkte
 wurden aus den XML-Positionen des Splitters, der Top-Level-Instanz und des

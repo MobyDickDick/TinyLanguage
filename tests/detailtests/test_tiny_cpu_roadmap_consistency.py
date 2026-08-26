@@ -184,6 +184,24 @@ def test_status_template_records_operations_and_address_boundaries():
     assert "`FetchDecode`/Fehlerlogik" not in template
 
 
+def test_error_template_records_sticky_register_boundary():
+    """Error wiring must distinguish decoded and execution-derived causes."""
+
+    template = (
+        REPOSITORY_ROOT / "docs" / "tiny_cpu_top_level_template.md"
+    ).read_text(encoding="utf-8")
+
+    assert "`FetchDecodeControls.CLEAR_ERROR`" in template
+    assert "`SET_ILL` und `SET_INPUT`" in template
+    assert "vier abgeleiteten Ausführungsfehler" in template
+    assert "set-dominanten Sticky-Register" in template
+    for output in (
+        "OVF_OUT", "DIV0_OUT", "ADDR_OUT", "INV_OUT", "ILL_OUT", "INPUT_OUT"
+    ):
+        assert f"`{output}`" in template
+    assert "Sticky-Verhalten sowie Set-vor-Clear-Priorität prüfen" not in template
+
+
 def test_alu_architecture_note_matches_the_versioned_machine_contract():
     """The historical ALU sketch must not reopen an incompatible redesign."""
 

@@ -6,19 +6,21 @@ they can be tackled incrementally.
 
 ## 0) Finish TinyCPU electrical acceptance
 
-- **Completed boundary**: AP 9 through AP 12 pin Java and Logisim-evolution,
-  load the maintained project headlessly, capture the AP-5 trace in the real
-  simulator, exercise the complete opcode/error matrix, and retain the
-  reproducible hardware release evidence.
+- **Completed boundary**: AP 1 through AP 12 are complete. The first eight
+  packages establish the hardware contract, integrated CPU, machine format,
+  tooling, and reproducible baseline verification; AP 9 through AP 12 pin Java
+  and Logisim-evolution, load the maintained project headlessly, capture the
+  AP-5 trace in the real simulator, exercise the complete opcode/error matrix,
+  and retain the reproducible hardware release evidence.
 - **Maintenance contract**: circuit edits must preserve the focused structural
   and topology regressions and rerun the mandatory AP-12 acceptance command.
   Retained evidence can be authenticated offline with its versioned inventory;
   a VM-derived replay alone must never be described as electrical evidence.
 - **Next package**: none is currently scoped. New TinyCPU feature work must add
   a bounded package to `docs/open_tasks.md` before implementation rather than
-  reopening one of the accepted AP-9-to-AP-12 gates.
-- **Detailed acceptance criteria**: see `docs/tiny_cpu_roadmap.md` and the active
-  maintenance history in `docs/open_tasks.md`.
+  reopening one of the accepted AP-1-to-AP-12 packages.
+- **Detailed acceptance criteria**: see `docs/tiny_cpu_roadmap.md`; completed
+  maintenance packages are recorded in `docs/open_tasks.md`.
 
 ## 1) Native compiler (executables)
 

@@ -5,6 +5,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Align the complete TinyCPU boundary in the expansion roadmap**
+  (Owner: TinyCPU/Documentation; completed 2026-08-26)
+  - Scope: execute the next documentation-maintenance package by comparing the
+    high-level expansion roadmap with the complete AP 1 through AP 12 inventory
+    already frozen in the detailed roadmap.
+  - Cause: the expansion roadmap described only the electrical AP 9 through
+    AP 12 subset as its completed boundary and referred to the checked-off task
+    log as active maintenance history.
+  - Result: the high-level boundary now explicitly closes AP 1 through AP 12,
+    distinguishes the AP-1-to-AP-8 baseline from the AP-9-to-AP-12 electrical
+    gates, and describes the task log as completed maintenance history.
+  - Verification: the roadmap-consistency regression requires the complete
+    boundary and rejects the superseded AP-9-to-AP-12-only wording.
+
 - [x] **Freeze the complete TinyCPU work-package boundary**
   (Owner: TinyCPU/Documentation; completed 2026-08-26)
   - Scope: harden the no-next-package decision by checking the complete

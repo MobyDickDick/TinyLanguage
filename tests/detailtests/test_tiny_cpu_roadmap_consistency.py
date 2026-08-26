@@ -56,7 +56,9 @@ def test_expansion_roadmap_does_not_reopen_completed_hardware_packages():
         assert re.search(rf"^- \[x\] \*\*AP {package}:\*\*", detailed, re.MULTILINE)
 
     tinycpu_section = expansion.split("## 1) Native compiler", maxsplit=1)[0]
-    assert "**Completed boundary**: AP 9 through AP 12" in tinycpu_section
+    assert "**Completed boundary**: AP 1 through AP 12 are complete" in tinycpu_section
+    assert "reopening one of the accepted AP-1-to-AP-12 packages" in tinycpu_section
+    assert "active\n  maintenance history" not in tinycpu_section
     assert "**Next package**: none is currently scoped" in tinycpu_section
     assert "add a mandatory headless" not in tinycpu_section
 

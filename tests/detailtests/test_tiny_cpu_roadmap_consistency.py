@@ -247,6 +247,19 @@ def test_top_level_reference_requires_bounded_maintenance_changes():
     assert "Während des schrittweisen Aufbaus darf" not in template
 
 
+def test_top_level_reference_describes_current_inspector_boundary():
+    """The reference must distinguish connectivity diagnostics from acceptance."""
+
+    template = (
+        REPOSITORY_ROOT / "docs" / "tiny_cpu_top_level_template.md"
+    ).read_text(encoding="utf-8")
+
+    assert "`TinyCPUMain: connected`" in template
+    assert "ersetzt weder\ndie fokussierten elektrischen Topologietests" in template
+    assert "`connected` allein noch kein vollständiger elektrischer" in template
+    assert "Inspector meldet die Top-Level-Blöcke bei solchen" not in template
+
+
 def test_alu_architecture_note_matches_the_versioned_machine_contract():
     """The historical ALU sketch must not reopen an incompatible redesign."""
 

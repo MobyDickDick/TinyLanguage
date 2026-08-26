@@ -231,8 +231,16 @@ def test_fetch_decode_range_error_uses_comparator_greater_output():
     assert fetch is not None
     comparator = fetch.find("comp[@name='Comparator'][@loc='(740,420)']")
     assert comparator is not None
-    adjacency = _electrical_adjacency(fetch, {"(740,410)", "(1150,410)"})
-    assert "(1150,410)" in _reachable(adjacency, "(740,410)")
+    error_halt = _labelled_component(fetch, "ERROR_HALT")
+    error_x, error_y = (
+        int(value) for value in error_halt.get("loc").strip("()").split(",")
+    )
+    greater_output = "(740,410)"
+    range_error_input = f"({error_x - 50},{error_y - 20})"
+    adjacency = _electrical_adjacency(
+        fetch, {greater_output, range_error_input}
+    )
+    assert range_error_input in _reachable(adjacency, greater_output)
     assert "(740,420)" not in _reachable(adjacency, "(740,410)")
 
 def test_fetch_decode_alone_exposes_named_reset_input():
@@ -304,9 +312,9 @@ def test_taken_jump_selects_instruction_operand_as_next_pc():
     """A taken JUMP_NOT_ZERO must replace PC + 1 with the encoded target."""
 
     fetch = ET.parse(PROJECT).getroot().find("circuit[@name='FetchDecode']")
-    mux = fetch.find("comp[@name='Multiplexer'][@loc='(870,190)']")
+    mux = fetch.find("comp[@name='Multiplexer']")
     assert mux is not None
-    assert mux.get("loc") == "(870,190)"
+    assert mux.get("loc") == "(870,240)"
     assert _attributes(mux).get("width") == "16"
     wires = {
         frozenset((wire.get("from"), wire.get("to")))
@@ -314,8 +322,8 @@ def test_taken_jump_selects_instruction_operand_as_next_pc():
     }
     # The instruction splitter's operand output is at y=610.  The old y=580
     # endpoint was empty drawing space and left the lower mux input floating.
-    assert frozenset(("(1070,610)", "(1420,610)")) in wires
-    assert frozenset(("(1420,120)", "(1420,610)")) in wires
+    assert frozenset(("(1070,610)", "(1320,610)")) in wires
+    assert frozenset(("(1320,120)", "(1320,610)")) in wires
     assert frozenset(("(1070,580)", "(1420,580)")) not in wires
     assert frozenset(("(1420,120)", "(1420,580)")) not in wires
     jump_taken = next(
@@ -327,25 +335,25 @@ def test_taken_jump_selects_instruction_operand_as_next_pc():
         fetch,
         {
             "(770,230)",
-            "(840,180)",
+            "(840,230)",
             "(1070,610)",
-            "(840,200)",
+            "(840,250)",
             jump_taken,
-            "(850,210)",
-            "(870,190)",
+            "(850,260)",
+            "(870,240)",
             "(550,220)",
         },
     )
-    assert "(840,180)" in _reachable(adjacency, "(770,230)")
-    assert "(840,200)" in _reachable(adjacency, "(1070,610)")
-    assert jump_taken in _reachable(adjacency, "(850,210)")
-    assert "(550,220)" in _reachable(adjacency, "(870,190)")
-    assert "(840,200)" not in _reachable(adjacency, "(840,180)")
-    assert "(850,210)" not in _reachable(adjacency, "(840,180)")
-    assert "(850,210)" not in _reachable(adjacency, "(840,200)")
-    assert "(870,190)" not in _reachable(adjacency, "(840,180)")
-    assert "(870,190)" not in _reachable(adjacency, "(840,200)")
-    assert "(870,190)" not in _reachable(adjacency, "(850,210)")
+    assert "(840,230)" in _reachable(adjacency, "(770,230)")
+    assert "(840,250)" in _reachable(adjacency, "(1070,610)")
+    assert jump_taken in _reachable(adjacency, "(850,260)")
+    assert "(550,220)" in _reachable(adjacency, "(870,240)")
+    assert "(840,250)" not in _reachable(adjacency, "(840,230)")
+    assert "(850,260)" not in _reachable(adjacency, "(840,230)")
+    assert "(850,260)" not in _reachable(adjacency, "(840,250)")
+    assert "(870,240)" not in _reachable(adjacency, "(840,230)")
+    assert "(870,240)" not in _reachable(adjacency, "(840,250)")
+    assert "(870,240)" not in _reachable(adjacency, "(850,260)")
 
 
 def test_jump_not_zero_receives_the_inverted_accumulator_status():

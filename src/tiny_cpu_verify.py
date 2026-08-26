@@ -66,7 +66,7 @@ def _verify_electrical_attributes(project: Path) -> None:
         ("FetchDecode", "Constant", "(540,240)", "width", "1"),
         ("FetchDecode", "Constant", "(710,240)", "value", "0x1"),
         ("FetchDecode", "Constant", "(710,240)", "width", "16"),
-        ("FetchDecode", "Multiplexer", "(870,190)", "width", "16"),
+        ("FetchDecode", "Multiplexer", "(870,240)", "width", "16"),
         ("FetchDecode", "Comparator", "(740,420)", "width", "16"),
         ("Operations", "Multiplexer", "(1730,650)", "width", "16"),
     )

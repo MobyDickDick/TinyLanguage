@@ -52,11 +52,24 @@ def test_expansion_roadmap_does_not_reopen_completed_hardware_packages():
         encoding="utf-8"
     )
 
-    for package in range(1, 13):
-        assert re.search(rf"^- \[x\] \*\*AP {package}:\*\*", detailed, re.MULTILINE)
+    defined_packages = [
+        int(package)
+        for package in re.findall(r"^\| \*\*(\d+)\.", detailed, re.MULTILINE)
+    ]
+    completed_packages = [
+        int(package)
+        for package in re.findall(
+            r"^- \[x\] \*\*AP (\d+):\*\*", detailed, re.MULTILINE
+        )
+    ]
+    expected_packages = list(range(1, 13))
+    assert defined_packages == expected_packages
+    assert completed_packages == expected_packages
+    assert defined_packages == completed_packages
 
     tinycpu_section = expansion.split("## 1) Native compiler", maxsplit=1)[0]
     assert "**Completed boundary**: AP 1 through AP 12 are complete" in tinycpu_section
+    assert "package table and completed status\n  checklist" in tinycpu_section
     assert "reopening one of the accepted AP-1-to-AP-12 packages" in tinycpu_section
     assert "active\n  maintenance history" not in tinycpu_section
     assert "**Next package**: none is currently scoped" in tinycpu_section

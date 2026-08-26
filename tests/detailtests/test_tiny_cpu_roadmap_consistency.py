@@ -148,6 +148,24 @@ def test_address_and_memory_template_records_completed_integration():
     assert "Splitter vermeiden, solange" not in template
 
 
+def test_accumulator_data_template_records_operations_boundary():
+    """Accumulator data selection must describe the extracted operations sheet."""
+
+    template = (
+        REPOSITORY_ROOT / "docs" / "tiny_cpu_top_level_template.md"
+    ).read_text(encoding="utf-8")
+
+    assert "`Operations.IMMEDIATE_VALUE`" in template
+    assert "`Operations.MEMORY_VALUE`" in template
+    assert "`Operations.ACC_VALUE`" in template
+    assert "`Operations.RESULT_VALUE`" in template
+    assert "`DecodeSignals.ACC_WRITE_REQUEST`" in template
+    assert "`ACC_DATA_SELECT`" not in template
+    assert "`ACC_NOT_SELECT`" not in template
+    assert "`ACC_INPUT_SELECT`" not in template
+    assert "`ACC_LOAD_REQUEST`" not in template
+
+
 def test_alu_architecture_note_matches_the_versioned_machine_contract():
     """The historical ALU sketch must not reopen an incompatible redesign."""
 

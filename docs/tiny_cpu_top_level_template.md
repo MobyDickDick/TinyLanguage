@@ -38,7 +38,7 @@ Fehlerflags wurde als eigener Schritt vor `RESET` ergänzt.
 | 5 | Adress-Steuerung | benannte Ausgänge von `DecodeSignals` und `AddressPath` | `EffectiveAddress` | 1 je Netz | Die einzeln geführten Modussignale wählen direkte Adresse, Adressregister oder Register-plus-Offset; nur ein aktiver Offsetmodus darf `OFFSET_CARRY` als Adressfehler werten. |
 | 6 | Speicher-Steuerung | `DecodeSignals.ACC_MEMORY_REQUEST` und die drei zusammengefassten `STORE_*`-Steuerungen | `Memory` | 1 je Netz | Leseanforderung und akkumulatorgespeiste Schreibanforderung sind getrennt angeschlossen; Daten- und Validitäts-RAM verwenden dieselben aktiven Steuerungen. |
 | 7 | Adressbus | `EffectiveAddress.EFFECTIVE_ADDRESS` | Daten- und Validitäts-RAM in `Memory` | 16 | Die zentral ausgewählte effektive Adresse erreicht beide RAMs über einen gemeinsamen Bus. Eine Breitenprüfung gegen `0xfff` erfolgt vor dem Zugriff, ohne einen zweiten Adresstreiber einzufügen. |
-| 8 | Datenbus | jeweils dokumentierter Treiber | `Datapath`/`Memory` | 16 | Der 16-Bit-Instruktionsoperand und `Memory.MEMORY_DATA` erreichen getrennte Eingänge von `ACC_DATA_SELECT`; `ACC_NOT_SELECT` ergänzt den invertierten Akkumulator. Die `SUB_*`-Stufe wählt den unmittelbaren oder gespeicherten Operanden und subtrahiert ihn vom Akkumulator; `ACC_INPUT_SELECT` wählt abschließend den neuen 16-Bit-Top-Level-Eingang `INPUT_VALUE` ausschließlich für `INPUT`; sein Ausgang erreicht `Datapath.DATA_IN` über die direkt eingezeichnete, manuell korrigierte Route. Niemals zwei Ausgänge direkt auf dasselbe Netz legen. |
+| 8 | Datenbus | Instruktionsoperand, `Memory.MEMORY_DATA` und `Datapath.ACC_OUT` | `Operations`, danach `Datapath.DATA_IN` | 16 | Die drei unabhängigen Quellen erreichen `Operations.IMMEDIATE_VALUE`, `MEMORY_VALUE` und `ACC_VALUE`. `Operations.RESULT_VALUE` führt den dort ausgewählten Lade- oder Operationwert als einzigen Treiber zu `Datapath.DATA_IN`; die Auswahl- und Rechenstufen bleiben innerhalb des extrahierten Blatts. |
 | 9 | Status | `Datapath.ZERO`, `NEGATIVE` und Valid-Signale | `FetchDecode`/Fehlerlogik | 1 je Netz | Die Ladevalidität folgt Konstante oder Speicher, `NOT` übernimmt `Datapath.ACC_VALID_OUT`, alle binären Operationsfamilien verlangen gültige ausgewählte Operanden, und `INPUT` hat mit `INPUT_VALID` die letzte Auswahlpriorität. Die zentrale Adressprüfung aktiviert den Vergleich mit `0xfff` nur für direkte, Register- oder Offset-Speicherformen und vereinigt den Bereichsfehler mit dem aktiven Offset-Übertrag. `OVERFLOW`, `DIVIDE_BY_ZERO` und `INVALID_OPERAND` bleiben getrennte Sticky-Fehlerursachen. |
 | 10 | Fehler | Fehler-Set-Signale und `CLEAR_ERROR` | `ErrorFlags` | 1 je Netz | Sticky-Verhalten sowie Set-vor-Clear-Priorität prüfen. |
 | 11 | Halt | normale und fehlerhafte Haltquelle | Top-Level `HALT_ENABLE` und `HALT_ERROR_ENABLE` | 1 je Netz | Normalhalt und Fehlerhalt getrennt auslösen; beide beobachtbaren Ereignisnetze dürfen sich nicht verbinden. |
@@ -66,19 +66,19 @@ Steuernetze nicht versehentlich verbunden sind:
 | `SET_INV` | `FetchDecodeControls.SET_INV (650,1330)` | `ErrorFlags.SET_INV (1350,180)` |
 | `SET_ILL` | `FetchDecodeControls.SET_ILL (650,1350)` | `ErrorFlags.SET_ILL (1350,200)` |
 | `SET_INPUT` | `FetchDecodeControls.SET_INPUT (650,1370)` | `ErrorFlags.SET_INPUT (1350,220)` |
-| `ACC_LOAD_REQUEST` | `FetchDecodeControls.LOAD_CONST (650,370)`, `LOAD_ADDRESS (650,390)`, `LOAD_ADDRESS_REGISTER (650,410)`, `LOAD_ADDRESS_REGISTER_PLUS_OFFSET (650,430)`, `ADD_CONST (650,450)`, `ADD_ADDRESS (650,470)`, `ADD_ADDRESS_REGISTER (650,490)`, `ADD_ADDRESS_REGISTER_PLUS_OFFSET (650,510)`, `SUB_CONST (650,530)`, `SUB_ADDRESS (650,550)`, `SUB_ADDRESS_REGISTER (650,570)`, `SUB_ADDRESS_REGISTER_PLUS_OFFSET (650,590)`, `MUL_CONST (650,610)`, `MUL_ADDRESS (650,630)`, `MUL_ADDRESS_REGISTER (650,650)`, `MUL_ADDRESS_REGISTER_PLUS_OFFSET (650,670)`, `DIV_CONST (650,690)`, `DIV_ADDRESS (650,710)`, `DIV_ADDRESS_REGISTER (650,730)`, `DIV_ADDRESS_REGISTER_PLUS_OFFSET (650,750)`, `AND_CONST (650,770)`, `AND_ADDRESS (650,790)`, `AND_ADDRESS_REGISTER (650,810)`, `AND_ADDRESS_REGISTER_PLUS_OFFSET (650,830)`, `OR_CONST (650,850)`, `OR_ADDRESS (650,870)`, `OR_ADDRESS_REGISTER (650,890)`, `OR_ADDRESS_REGISTER_PLUS_OFFSET (650,910)`, `XOR_CONST (650,930)`, `XOR_ADDRESS (650,950)`, `XOR_ADDRESS_REGISTER (650,970)` und `XOR_ADDRESS_REGISTER_PLUS_OFFSET (650,990)` über getrennte ODER-Eingänge | `Datapath.ACC_LOAD (720,180)` |
-| `OPERAND_DATA` | Instruktionssplitter-Ausgang für Bits 15..0 | `ACC_DATA_SELECT` Eingang 0 | 16 |
-| `MEMORY_LOAD_DATA` | `Memory.MEMORY_DATA` | `ACC_DATA_SELECT` Eingang 1 | 16 |
-| `ACC_MEMORY_SELECT` | `FetchDecodeControls.LOAD_ADDRESS (650,390)`, `LOAD_ADDRESS_REGISTER (650,410)` über getrennte ODER-Eingänge | `ACC_DATA_SELECT` Auswahl | 1 |
-| `ACCUMULATOR_DATA` | `ACC_DATA_SELECT` Ausgang | `Datapath.DATA_IN` | 16 |
+| `ACC_WRITE_REQUEST` | `DecodeSignals.ACC_WRITE_REQUEST` | `Datapath.ACC_LOAD` | 1 |
+| `IMMEDIATE_VALUE` | Instruktionssplitter-Ausgang für Bits 15..0 | `Operations.IMMEDIATE_VALUE` | 16 |
+| `MEMORY_VALUE` | `Memory.MEMORY_DATA` | `Operations.MEMORY_VALUE` | 16 |
+| `ACC_VALUE` | `Datapath.ACC_OUT` | `Operations.ACC_VALUE` | 16 |
+| `RESULT_VALUE` | `Operations.RESULT_VALUE` | `Datapath.DATA_IN` | 16 |
 
 Der Splitter führt ausschließlich die Opcode-Bits 21 bis 16 des 22-Bit-
 Maschinenworts an den sechs Bit breiten Decoder. Der getrennte 16-Bit-Ausgang
-führt den Operanden nun zum Standardeingang von `ACC_DATA_SELECT`. Der zweite
-Eingang empfängt `Memory.MEMORY_DATA`; nur der Multiplexerausgang führt zum
-Datenpfad. `LOAD_ADDRESS` und `LOAD_ADDRESS_REGISTER` wählen die Speicherquelle
-über unabhängige Eingänge des benannten ODER-Gatters `ACC_MEMORY_SELECT`. Ein
-direkter 22-auf-6-Bit-Anschluss wäre ein Breitenfehler.
+führt den Operanden zu `Operations.IMMEDIATE_VALUE`. Speicherwert und
+Akkumulator erreichen das Blatt über eigene Eingänge; nur dessen gemeinsamer
+`RESULT_VALUE`-Ausgang führt zurück zum Datenpfad. Ein direkter
+22-auf-6-Bit-Anschluss oder das Zusammenschalten dieser Datentreiber wäre ein
+Breiten- beziehungsweise Mehrfachtreiberfehler.
 
 **Ursache der korrigierten Fehlverdrahtung:** Die zuvor verwendeten Endpunkte
 wurden aus den XML-Positionen des Splitters, der Top-Level-Instanz und des

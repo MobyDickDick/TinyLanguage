@@ -5,6 +5,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Retire the TinyCPU incremental-build verification exception**
+  (Owner: TinyCPU/Documentation; completed 2026-08-26)
+  - Scope: execute the next documentation-maintenance package after retiring
+    the top-level worksheet by reconciling its remaining per-net build and
+    verification instructions with the accepted AP-12 circuit boundary.
+  - Cause: the reference still allowed `TinyCPU: INCOMPLETE` during an implied
+    incremental build and offered an unrestricted worksheet even though no
+    further construction package is scoped.
+  - Result: the reference now reserves its change record for previously scoped
+    maintenance packages, requires contract mismatches to become explicit
+    work, and rejects every incomplete or electrically invalid maintained
+    circuit.
+  - Verification: the roadmap-consistency regression rejects the historical
+    build exception and freezes the bounded-maintenance wording.
+
 - [x] **Retire the completed TinyCPU top-level build worksheet**
   (Owner: TinyCPU/Documentation; completed 2026-08-26)
   - Scope: execute the next documentation-maintenance package after the halt

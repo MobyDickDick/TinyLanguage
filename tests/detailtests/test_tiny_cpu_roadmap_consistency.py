@@ -4,8 +4,42 @@ import json
 import re
 from pathlib import Path
 
+from tiny_cpu_isa import INSTRUCTION_SET
+
 
 REPOSITORY_ROOT = Path(__file__).parents[2]
+
+
+def test_user_guide_and_roadmap_record_verified_tinycpu_completeness():
+    """Accepted wiring and ISA coverage must not read like future build work."""
+
+    user_guide = (REPOSITORY_ROOT / "docs" / "tiny_cpu.md").read_text(
+        encoding="utf-8"
+    )
+    roadmap = (REPOSITORY_ROOT / "docs" / "tiny_cpu_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    machine = json.loads(
+        (REPOSITORY_ROOT / "hardware" / "logisim" / "tinycpu-machine-v1.json")
+        .read_text(encoding="utf-8")
+    )
+
+    machine_opcodes = {entry["mnemonic"] for entry in machine["opcodes"]}
+    assert machine_opcodes == set(INSTRUCTION_SET)
+    assert len(machine["opcodes"]) == 50
+    assert "### Abgenommener Aufbau in Logisim-evolution" in user_guide
+    assert "`TinyCPUMain: connected`" in user_guide
+    assert "alle 50\nOpcodes" in user_guide
+    assert (
+        "beschreibt die bereits ausgeführte Aufbau- und\nAbnahmereihenfolge"
+        in user_guide
+    )
+    assert "### Empfohlener Aufbau in Logisim-evolution" not in user_guide
+    assert "unabhängig von\n  der noch fehlenden Verdrahtung" not in roadmap
+    assert (
+        "## Abgeschlossener Folgeschritt: elektrische Top-Level-Integration"
+        in roadmap
+    )
 
 
 def test_expansion_roadmap_does_not_reopen_completed_electrical_packages():

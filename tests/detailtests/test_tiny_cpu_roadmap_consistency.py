@@ -219,6 +219,20 @@ def test_halt_template_records_distinct_decode_and_trace_boundaries():
     assert "normale und fehlerhafte Haltquelle" not in template
 
 
+def test_top_level_template_is_a_completed_integration_reference():
+    """The fully accepted wiring table must not read as an open build plan."""
+
+    template = (
+        REPOSITORY_ROOT / "docs" / "tiny_cpu_top_level_template.md"
+    ).read_text(encoding="utf-8")
+
+    assert template.startswith("# Referenz: TinyCPU-Top-Level-Integration")
+    assert "kein offener Bauplan" in template
+    assert "Alle Schritte 0 bis 11 sind abgeschlossen" in template
+    assert "# Vorlage: TinyCPU-Übersichtsseite weiterbauen" not in template
+    assert "Arbeitszettel für die manuelle Integration" not in template
+
+
 def test_alu_architecture_note_matches_the_versioned_machine_contract():
     """The historical ALU sketch must not reopen an incompatible redesign."""
 

@@ -80,6 +80,13 @@ def test_active_backlog_agrees_that_no_tinycpu_package_is_scoped():
 
     tinycpu_section = expansion.split("## 1) Native compiler", maxsplit=1)[0]
     assert "**Next package**: none is currently scoped" in tinycpu_section
+    assert "Re-validate the TinyCPU work-package boundary" in active_tasks
+    assert "there is no unchecked TinyCPU package to implement" in active_tasks
+    assert (
+        "new TinyCPU work must first be added here as a bounded,\n"
+        "    unchecked package with acceptance criteria"
+        in active_tasks
+    )
     assert "Reconcile stale TinyCPU follow-up notes" in active_tasks
     assert "Freeze the restored TinyCPU jump-operand route" in active_tasks
     assert "Freeze TinyCPU next-PC selector net isolation" in active_tasks

@@ -19,8 +19,9 @@ they can be tackled incrementally.
 - **Next package**: none is currently scoped. New TinyCPU feature work must add
   a bounded package to `docs/open_tasks.md` before implementation rather than
   reopening one of the accepted AP-1-to-AP-12 packages.
-- **Detailed acceptance criteria**: see `docs/tiny_cpu_roadmap.md`; completed
-  maintenance packages are recorded in `docs/open_tasks.md`.
+- **Detailed acceptance criteria**: the package table and completed status
+  checklist in `docs/tiny_cpu_roadmap.md` both enumerate AP 1 through AP 12;
+  completed maintenance packages are recorded in `docs/open_tasks.md`.
 
 ## 1) Native compiler (executables)
 

@@ -5,6 +5,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Cross-check the complete TinyCPU package inventory**
+  (Owner: TinyCPU/Documentation; completed 2026-08-26)
+  - Scope: execute the next documentation-maintenance package by comparing the
+    twelve package definitions in the detailed roadmap table with its completed
+    status checklist and the high-level expansion boundary.
+  - Result: the package table and status checklist both enumerate exactly
+    AP 1 through AP 12, while the expansion roadmap continues to expose no
+    separately scoped next package; no circuit change is warranted.
+  - Verification: the roadmap-consistency regression parses both detailed
+    inventories, rejects missing, duplicate, or extra package numbers, and
+    requires their equality before accepting the no-work boundary.
+
 - [x] **Align the complete TinyCPU boundary in the expansion roadmap**
   (Owner: TinyCPU/Documentation; completed 2026-08-26)
   - Scope: execute the next documentation-maintenance package by comparing the

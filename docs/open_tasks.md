@@ -5,6 +5,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Reconcile the TinyCPU OR integration documentation**
+  (Owner: TinyCPU/Documentation; completed 2026-08-26)
+  - Scope: execute the next explicitly documented TinyCPU follow-up by checking
+    the bitwise-OR extraction contract against the maintained `Operations`
+    sheet and the completed integration history.
+  - Cause: the hardware README still called OR integration a separate
+    follow-up even though `OrSubCircuit` is already instantiated and connected
+    to the shared result, validity, and activity trees.
+  - Result: the extraction contract now describes the integrated boundary and
+    no longer advertises the completed package as future work.
+  - Verification: the roadmap-consistency regression freezes the completed OR
+    integration wording and rejects the obsolete follow-up marker.
+
 - [x] **Accept the latest TinyCPU FetchDecode layout**
   (Owner: TinyCPU/Hardware; completed 2026-08-26)
   - Scope: retain the latest manual `FetchDecode` redraw while checking that

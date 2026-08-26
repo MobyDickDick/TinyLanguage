@@ -1041,9 +1041,10 @@ four `OR_*` addressing modes. It selects the immediate or memory operand and
 its validity in parallel, always combines that selected right operand with the
 accumulator, and exports `RESULT`, activity-gated `RESULT_VALID`, and
 `RESULT_ACTIVE`. `OrArithmeticCircuit` uses a 16-bit bitwise OR primitive and a
-zero inactive result, so the unintegrated box cannot drive the shared result
-merge. Bitwise OR has no arithmetic-overflow output. Integration into
-`Operations` is a separate follow-up package.
+zero inactive result, so an inactive box cannot drive the shared result merge.
+Bitwise OR has no arithmetic-overflow output. `Operations` instantiates
+`OrSubCircuit` exactly once and includes its result, validity, and activity in
+the maintained merge trees; the integration package is complete.
 
 ## Bitwise XOR extraction contract
 

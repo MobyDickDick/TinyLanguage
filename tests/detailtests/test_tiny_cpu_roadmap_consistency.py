@@ -1,5 +1,6 @@
 """Keep the high-level TinyCPU roadmap aligned with its acceptance checklist."""
 
+import json
 import re
 from pathlib import Path
 
@@ -95,3 +96,23 @@ def test_detailed_hardware_docs_do_not_advertise_completed_follow_ups():
     combined_docs = detailed + hardware_readme
     for marker in stale_markers:
         assert marker not in combined_docs
+
+
+def test_alu_architecture_note_matches_the_versioned_machine_contract():
+    """The historical ALU sketch must not reopen an incompatible redesign."""
+
+    note = (REPOSITORY_ROOT / "docs" / "tiny_cpu_alu_sketch.md").read_text(
+        encoding="utf-8"
+    )
+    machine = json.loads(
+        (REPOSITORY_ROOT / "hardware" / "logisim" / "tinycpu-machine-v1.json")
+        .read_text(encoding="utf-8")
+    )
+
+    assert machine["word_bits"] == 22
+    assert machine["opcode"]["bits"] == 6
+    assert "Maschinenwort: 22 Bit" in note
+    assert "Opcode: 6 Bit" in note
+    assert "kein offenes\nFolgepaket" in note
+    assert "## Nächster sinnvoller Schritt" not in note
+    assert "auf 24-Bit-Instruktionen" not in note

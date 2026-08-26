@@ -133,6 +133,21 @@ def test_datapath_control_notes_record_completed_integration():
     assert "Als Nächstes\nwerden Steuernetze" not in detailed
 
 
+def test_address_and_memory_template_records_completed_integration():
+    """Address selection and both RAM planes must not remain future wiring."""
+
+    template = (
+        REPOSITORY_ROOT / "docs" / "tiny_cpu_top_level_template.md"
+    ).read_text(encoding="utf-8")
+
+    assert "`EffectiveAddress.EFFECTIVE_ADDRESS`" in template
+    assert "Daten- und Validitäts-RAM verwenden dieselben" in template
+    assert "`DecodeSignals.ACC_MEMORY_REQUEST`" in template
+    assert "Jedes Signal einzeln zeichnen und prüfen" not in template
+    assert "Lesen und Schreiben getrennt testen" not in template
+    assert "Splitter vermeiden, solange" not in template
+
+
 def test_alu_architecture_note_matches_the_versioned_machine_contract():
     """The historical ALU sketch must not reopen an incompatible redesign."""
 

@@ -5,6 +5,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Reconcile the TinyCPU address-and-memory-control follow-up documentation**
+  (Owner: TinyCPU/Documentation; completed 2026-08-26)
+  - Scope: execute the next documented TinyCPU integration package after the
+    accumulator-control reconciliation by checking the address-control,
+    memory-control, and address-bus rows of the top-level wiring template.
+  - Cause: the rows still used prospective drawing instructions even though
+    the maintained circuit already selects one effective address for direct,
+    address-register, and address-register-plus-offset modes and connects that
+    selection to both data and validity RAM.
+  - Result: the template now records the completed effective-address boundary,
+    accumulator-backed store controls, and shared RAM address bus, while
+    retaining their electrical acceptance rules.
+  - Verification: the roadmap-consistency regression freezes the three
+    completed boundaries and rejects the obsolete prospective instructions.
+
 - [x] **Reconcile the TinyCPU datapath-control follow-up documentation**
   (Owner: TinyCPU/Documentation; completed 2026-08-26)
   - Scope: execute the next explicitly documented TinyCPU follow-up by checking

@@ -2250,3 +2250,21 @@ and testable so they can be promoted into the formal backlog as needed.
   - Verification: the focused circuit, Logisim-topology, addition-wiring,
     roadmap, and self-test-guide suites pass with the expected simulator-only
     cases explicitly marked as expected failures.
+
+## TinyCPU Fetch/Decode recovery update (2026-08-26)
+
+- [x] **Recover Fetch/Decode after the latest schematic adjustment**
+  (Owner: TinyCPU/Hardware)
+  - Scope: execute the next bounded package by validating the adjusted
+    `FetchDecode` sheet and its automatically derived top-level symbol against
+    the checked-in electrical contract.
+  - Cause: the adjustment moved the ROM and control path, removed the enabled
+    program-counter constants and stable range/next-PC components, disconnected
+    reset and the ROM address branch, and changed the generated symbol's pin
+    positions without reconnecting the top-level clock and JNZ nets.
+  - Result: restored the last electrically verified `FetchDecode` definition
+    and its matching top-level connections without changing the completed
+    AP-12 acceptance boundary.
+  - Verification: the focused Logisim suite again passes all 77 executable
+    checks; the 10 simulator-dependent cases remain explicitly expected
+    failures.

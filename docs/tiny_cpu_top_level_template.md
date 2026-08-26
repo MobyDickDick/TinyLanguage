@@ -41,7 +41,7 @@ Fehlerflags wurde als eigener Schritt vor `RESET` ergänzt.
 | 8 | Datenbus | Instruktionsoperand, `Memory.MEMORY_DATA` und `Datapath.ACC_OUT` | `Operations`, danach `Datapath.DATA_IN` | 16 | Die drei unabhängigen Quellen erreichen `Operations.IMMEDIATE_VALUE`, `MEMORY_VALUE` und `ACC_VALUE`. `Operations.RESULT_VALUE` führt den dort ausgewählten Lade- oder Operationwert als einzigen Treiber zu `Datapath.DATA_IN`; die Auswahl- und Rechenstufen bleiben innerhalb des extrahierten Blatts. |
 | 9 | Status | `Operations`, `Datapath.ZERO`, `EffectiveAddress` und `AddressPath.OFFSET_CARRY` | `Datapath.VALID_IN`, `FetchDecode.NOT_ZERO` und die zuständigen `ErrorFlags.SET_*`-Eingänge | 1 je Netz | `Operations.RESULT_IS_VALID` ist der einzige Treiber der Ladevalidität. Der invertierte Nullstatus steuert unabhängig davon `FetchDecode.NOT_ZERO`. `OVERFLOW`, `DIVIDE_BY_ZERO` und `INVALID_OPERAND` erreichen getrennt `SET_OVF`, `SET_DIV0` und `SET_INV`; der aktivitätsabhängige Bereichsfehler und Offset-Übertrag werden erst vor `SET_ADDR` vereinigt. |
 | 10 | Fehler | `FetchDecodeControls.CLEAR_ERROR`, die decodierten `SET_ILL`-/`SET_INPUT`-Signale und die vier abgeleiteten Ausführungsfehler aus Schritt 9 | `ErrorFlags.CLEAR_ERROR` und der jeweils zuständige `SET_*`-Eingang | 1 je Netz | Alle sechs Register sind set-dominant und sticky verdrahtet; `CLEAR_ERROR` löscht sie gemeinsam nur dann, wenn nicht an derselben Taktflanke erneut ihre jeweilige Fehlerursache anliegt. Die sechs Zustände bleiben getrennt als `OVF_OUT`, `DIV0_OUT`, `ADDR_OUT`, `INV_OUT`, `ILL_OUT` und `INPUT_OUT` beobachtbar. |
-| 11 | Halt | normale und fehlerhafte Haltquelle | Top-Level `HALT_ENABLE` und `HALT_ERROR_ENABLE` | 1 je Netz | Normalhalt und Fehlerhalt getrennt auslösen; beide beobachtbaren Ereignisnetze dürfen sich nicht verbinden. |
+| 11 | Halt | `FetchDecodeControls.HALT` und `FetchDecodeControls.HALT_ERROR` | Top-Level `HALTED` und `HALTED_WITH_ERROR` (im Integrationstrace `HALT_ENABLE` und `HALT_ERROR_ENABLE`) | 1 je Netz | Beide decodierten Ereignisse sind direkt und getrennt exportiert. Es gibt weder ein gemeinsames Halt-ODER noch eine Verbindung zwischen Normal- und Fehlerhalt. |
 
 Die exakten Namen und Richtungen vor jedem Schritt im maschinenlesbaren
 Pinvertrag `hardware/logisim/tinycpu-16-12.json` nachsehen. Wenn Tabellenname
@@ -77,6 +77,8 @@ Steuernetze nicht versehentlich verbunden sind:
 | `DIVIDE_BY_ZERO` | `Operations.DIVIDE_BY_ZERO` | `ErrorFlags.SET_DIV0` | 1 |
 | `INVALID_OPERAND` | `Operations.INVALID_OPERAND` | `ErrorFlags.SET_INV` | 1 |
 | `ADDRESS_ERROR` | `EffectiveAddress.ADDRESS_OUT_OF_RANGE` oder aktiver `AddressPath.OFFSET_CARRY` | `ErrorFlags.SET_ADDR` | 1 |
+| `HALT` | `FetchDecodeControls.HALT` | Top-Level `HALTED`; Trace-Feld `HALT_ENABLE` | 1 |
+| `HALT_ERROR` | `FetchDecodeControls.HALT_ERROR` | Top-Level `HALTED_WITH_ERROR`; Trace-Feld `HALT_ERROR_ENABLE` | 1 |
 
 Der Splitter führt ausschließlich die Opcode-Bits 21 bis 16 des 22-Bit-
 Maschinenworts an den sechs Bit breiten Decoder. Der getrennte 16-Bit-Ausgang
@@ -103,6 +105,15 @@ anliegendes Set gewinnt deshalb gegenüber dem gemeinsamen `CLEAR_ERROR`. Die
 sechs unabhängigen Zustände verlassen das Blatt als `OVF_OUT`, `DIV0_OUT`,
 `ADDR_OUT`, `INV_OUT`, `ILL_OUT` und `INPUT_OUT` und werden weder untereinander
 noch zu einem unbenannten Sammelfehler zusammengeschaltet.
+
+Auch die Haltgrenze ist abgeschlossen. `FetchDecodeControls.HALT` erreicht
+direkt und ausschließlich den Top-Level-Ausgang `HALTED`, während
+`FetchDecodeControls.HALT_ERROR` direkt und ausschließlich
+`HALTED_WITH_ERROR` erreicht. Der Tabellenlogger bildet diese Ereignisnetze
+für den Integrationsvergleich auf `HALT_ENABLE` beziehungsweise
+`HALT_ERROR_ENABLE` ab. Die getrennten Ausgänge bewahren die Beendigungsart;
+insbesondere gibt es kein zusätzliches `HALTED_STATE`-ODER, das Normal- und
+Fehlerhalt elektrisch zusammenfassen würde.
 
 **Ursache der korrigierten Fehlverdrahtung:** Die zuvor verwendeten Endpunkte
 wurden aus den XML-Positionen des Splitters, der Top-Level-Instanz und des

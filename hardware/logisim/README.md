@@ -370,9 +370,12 @@ zu ersetzen:
 Auch Regressionstests dürfen eine manuelle Neuverdrahtung nicht anhand alter
 Koordinaten zurücksetzen. Im Blatt `FetchDecode` liegt der Operanden-Ausgang des
 Befehlssplitters bei `(1070,610)`; seine Leitung zum unteren Eingang des
-`NEXT_PC`-Multiplexers muss daher über `(1420,610)` geschlossen bleiben. Der
-frühere Endpunkt `(1070,580)` liegt im leeren Zeichenbereich und trennt den
-Sprungoperanden elektrisch ab.
+verschobenen `NEXT_PC`-Multiplexers bleibt über den Außenkorridor bei
+`(1320,610)` geschlossen. Der frühere Endpunkt `(1070,580)` liegt im leeren
+Zeichenbereich und trennt den Sprungoperanden elektrisch ab. Die ebenfalls
+verschobenen JNZ- und Fehlergatter werden in den Regressionstests über ihre
+Labels und tatsächlichen Anschlüsse statt über die überholten Zielkoordinaten
+gefunden.
 
 ```bash
 PYTHONPATH=src python src/tiny_cpu_circuit.py \

@@ -5,6 +5,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Accept the latest TinyCPU FetchDecode layout**
+  (Owner: TinyCPU/Hardware; completed 2026-08-26)
+  - Scope: retain the latest manual `FetchDecode` redraw while checking that
+    the sequential-PC, jump-target, jump-control, selected-PC, and range-error
+    routes are still electrically correct.
+  - Result: the adjusted selector and gates remain authoritative; the focused
+    topology regressions now follow their real terminals and the checkout gate
+    validates the selector at its new position instead of restoring the old
+    drawing.
+  - Verification: the regenerated `FetchDecode` diagnostic is structurally
+    identical to the maintained sheet, while pairwise selector isolation and
+    the comparator-greater error route remain covered.
+
 - [x] **Freeze the TinyCPU accumulator write-request causes**
   (Owner: TinyCPU/Hardware; completed 2026-08-26)
   - Scope: close the stale pending integration check left behind when the

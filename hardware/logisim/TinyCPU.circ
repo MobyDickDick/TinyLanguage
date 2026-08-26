@@ -2799,13 +2799,13 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp lib="0" loc="(890,120)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="ACC_MEMORY_REQUESST"/>
+      <a name="label" val="ACC_MEMORY_REQUEST"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(900,410)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="ACCC_WRITE_REQUEST"/>
+      <a name="label" val="ACC_WRITE_REQUEST"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="1" loc="(670,370)" name="OR Gate">

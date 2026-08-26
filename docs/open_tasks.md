@@ -5,6 +5,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Canonicalize the TinyCPU decode-request interface**
+  (Owner: TinyCPU/Hardware; completed 2026-08-25)
+  - Scope: triage the next bounded maintenance package after the closed
+    electrical roadmap by auditing the newly extracted `DecodeSignals` output
+    boundary.
+  - Cause: the two public accumulator-request pins were saved as
+    `ACC_MEMORY_REQUESST` and `ACCC_WRITE_REQUEST`, while the architecture
+    documentation already specified the canonical singular spellings.
+  - Result: `DecodeSignals` now exports `ACC_MEMORY_REQUEST` and
+    `ACC_WRITE_REQUEST`; the maintained top-level write route follows the
+    corrected interface name without changing the pin locations or wiring.
+  - Verification: a focused structural regression freezes the complete public
+    output-label set and the existing topology test resolves the corrected
+    accumulator-write pin through the subcircuit boundary.
+
 - [x] **Enforce ASCII semantics for portable regex escapes**
   (Owner: Language/Stdlib; completed 2026-08-25)
   - Scope: close the Phase 2 determinism gap between the documented ASCII-only

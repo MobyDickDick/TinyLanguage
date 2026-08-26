@@ -116,6 +116,23 @@ def test_bitwise_or_contract_records_completed_operations_integration():
     )
 
 
+def test_datapath_control_notes_record_completed_integration():
+    """The accumulator control boundary must not remain a future step."""
+
+    detailed = (REPOSITORY_ROOT / "docs" / "tiny_cpu_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    template = (
+        REPOSITORY_ROOT / "docs" / "tiny_cpu_top_level_template.md"
+    ).read_text(encoding="utf-8")
+
+    combined_docs = detailed + template
+    assert "`DecodeSignals.ACC_WRITE_REQUEST`-Grenze" in detailed
+    assert "`DecodeSignals.ACC_WRITE_REQUEST`" in template
+    assert "als nächstes folgen die Datenpfad-Steuernetze" not in combined_docs
+    assert "Als Nächstes\nwerden Steuernetze" not in detailed
+
+
 def test_alu_architecture_note_matches_the_versioned_machine_contract():
     """The historical ALU sketch must not reopen an incompatible redesign."""
 

@@ -5,6 +5,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Reconcile the TinyCPU datapath-control follow-up documentation**
+  (Owner: TinyCPU/Documentation; completed 2026-08-26)
+  - Scope: execute the next explicitly documented TinyCPU follow-up by checking
+    the roadmap and top-level integration template against the completed
+    accumulator-control boundary.
+  - Cause: both documents still said that datapath control nets were the next
+    integration step even though `DecodeSignals.ACC_WRITE_REQUEST` already
+    combines every accumulator-writing instruction family and drives the
+    maintained `Datapath.ACC_LOAD` boundary.
+  - Result: the historical roadmap and integration table now record that step
+    as completed instead of advertising it as future work.
+  - Verification: the roadmap-consistency regression freezes the completed
+    datapath-control wording and rejects both obsolete follow-up markers.
+
 - [x] **Reconcile the TinyCPU OR integration documentation**
   (Owner: TinyCPU/Documentation; completed 2026-08-26)
   - Scope: execute the next explicitly documented TinyCPU follow-up by checking

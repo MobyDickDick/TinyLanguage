@@ -5,6 +5,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Freeze the TinyCPU accumulator write-request causes**
+  (Owner: TinyCPU/Hardware; completed 2026-08-26)
+  - Scope: close the stale pending integration check left behind when the
+    accumulator write-request gates moved from `TinyCPUMain` into
+    `DecodeSignals`.
+  - Risk: the canonical public output name alone did not prove that the family
+    request, `NOT`, and `INPUT` occupied three electrically independent inputs;
+    a short between causes could write the accumulator for the wrong opcode.
+  - Result: the focused topology regression now follows the maintained
+    `DecodeSignals` boundary, proves one distinct aggregator input per cause,
+    rejects cause-to-cause and input-to-output bypasses, and follows the
+    aggregator output to the canonical `ACC_WRITE_REQUEST` pin.
+  - Verification: the formerly expected-failing top-level test is now an
+    active regression over the extracted decode sheet.
+
 - [x] **Canonicalize the TinyCPU decode-request interface**
   (Owner: TinyCPU/Hardware; completed 2026-08-25)
   - Scope: triage the next bounded maintenance package after the closed

@@ -166,6 +166,24 @@ def test_accumulator_data_template_records_operations_boundary():
     assert "`ACC_LOAD_REQUEST`" not in template
 
 
+def test_status_template_records_operations_and_address_boundaries():
+    """Status wiring must name the maintained producers and consumers."""
+
+    template = (
+        REPOSITORY_ROOT / "docs" / "tiny_cpu_top_level_template.md"
+    ).read_text(encoding="utf-8")
+
+    assert "`Operations.RESULT_IS_VALID`" in template
+    assert "`Datapath.VALID_IN`" in template
+    assert "`FetchDecode.NOT_ZERO`" in template
+    assert "`Operations.OVERFLOW`" in template
+    assert "`Operations.DIVIDE_BY_ZERO`" in template
+    assert "`Operations.INVALID_OPERAND`" in template
+    assert "`EffectiveAddress.ADDRESS_OUT_OF_RANGE`" in template
+    assert "`AddressPath.OFFSET_CARRY`" in template
+    assert "`FetchDecode`/Fehlerlogik" not in template
+
+
 def test_alu_architecture_note_matches_the_versioned_machine_contract():
     """The historical ALU sketch must not reopen an incompatible redesign."""
 

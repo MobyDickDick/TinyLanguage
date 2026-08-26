@@ -935,6 +935,23 @@ def test_top_level_accumulator_family_controls_are_independent_connections():
     assert set(connected_inputs.values()) <= family_inputs
 
 
+def test_decode_signals_exports_canonical_accumulator_request_names():
+    """Keep the decode boundary free of misspelled public pin labels."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = root.find("circuit[@name='DecodeSignals']")
+    output_labels = {
+        _attributes(component).get("label")
+        for component in circuit.findall("comp[@name='Pin']")
+        if _attributes(component).get("type") == "output"
+    }
+    assert output_labels == {"ACC_MEMORY_REQUEST", "ACC_WRITE_REQUEST"}
+    assert (
+        _labelled_component(circuit, "ACC_WRITE_AGGREGATOR").get("name")
+        == "OR Gate"
+    )
+
+
 def test_decode_accumulator_family_request_excludes_store_and_register_loads():
     """Only value-producing families may enable the accumulator register."""
 
@@ -2390,7 +2407,7 @@ def test_not_result_is_committed_by_the_accumulator_write_request():
         adjacency, _subcircuit_output(root, "Operations", "RESULT_IS_VALID")
     )
     assert _subcircuit_input(root, "Datapath", "ACC_LOAD") in _reachable(
-        adjacency, _subcircuit_output(root, "DecodeSignals", "ACCC_WRITE_REQUEST")
+        adjacency, _subcircuit_output(root, "DecodeSignals", "ACC_WRITE_REQUEST")
     )
 
 

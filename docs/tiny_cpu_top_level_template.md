@@ -1,10 +1,13 @@
-# Vorlage: TinyCPU-Übersichtsseite weiterbauen
+# Referenz: TinyCPU-Top-Level-Integration
 
-Diese Vorlage ist als knapper Arbeitszettel für die manuelle Integration in
-Logisim-evolution gedacht. Die bestehende Übersichtsseite **`TinyCPU` in
-`hardware/logisim/TinyCPU.circ` bleibt erhalten**. Nicht aus einem
-Diagnoseprojekt kopieren, nicht automatisch neu erzeugen und die vorhandenen
-Bauteile nicht für eine vermeintlich günstigere Verdrahtung neu anordnen.
+Diese Referenz dokumentiert die abgeschlossene manuelle Integration in
+Logisim-evolution. Die folgende Reihenfolge ist die Abnahmehistorie der bereits
+verdrahteten Netze und kein offener Bauplan. Die bestehende Übersichtsseite
+**`TinyCPU` in `hardware/logisim/TinyCPU.circ` bleibt erhalten**. Künftige,
+zuvor als begrenztes Arbeitspaket dokumentierte Wartungsänderungen dürfen
+nicht aus einem Diagnoseprojekt kopiert oder automatisch erzeugt werden und
+die vorhandenen Bauteile nicht für eine vermeintlich günstigere Verdrahtung
+neu anordnen.
 
 ## Unveränderliche Regeln
 
@@ -22,11 +25,12 @@ Bauteile nicht für eine vermeintlich günstigere Verdrahtung neu anordnen.
 6. Nach jedem Netz speichern, neu öffnen, mit dem Poke-Werkzeug prüfen und erst
    dann committen. Bei einem Fehler nur diesen einen Schritt zurücknehmen.
 
-## Reihenfolge der Netze
+## Abgeschlossene Reihenfolge der Netze
 
-Die Reihenfolge hält Takt, Reset, Steuerung und Daten voneinander getrennt.
-`CLK` ist für alle fünf zustandsbehafteten Blöcke angelegt. Der Anschluss der
-Fehlerflags wurde als eigener Schritt vor `RESET` ergänzt.
+Die ausgeführte Reihenfolge hält Takt, Reset, Steuerung und Daten voneinander
+getrennt. Alle Schritte 0 bis 11 sind abgeschlossen. `CLK` ist für alle fünf
+zustandsbehafteten Blöcke angelegt. Der Anschluss der Fehlerflags wurde als
+eigener Schritt vor `RESET` ergänzt.
 
 | Schritt | Netz | Quelle | Ziele | Breite | Abnahme |
 |---:|---|---|---|---:|---|

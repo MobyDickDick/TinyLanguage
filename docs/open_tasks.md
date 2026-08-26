@@ -5,6 +5,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Retire the completed TinyCPU top-level build worksheet**
+  (Owner: TinyCPU/Documentation; completed 2026-08-26)
+  - Scope: execute the next documentation-maintenance package after the halt
+    reconciliation by checking whether the top-level template still presented
+    the now-complete steps 0 through 11 as future construction work.
+  - Cause: the heading and introduction continued to call the document a
+    worksheet for extending the overview even though every row now records an
+    accepted electrical boundary and no new TinyCPU package is scoped.
+  - Result: the document is now an integration reference, explicitly records
+    the table as completed acceptance history, and reserves future circuit
+    changes for separately scoped maintenance packages.
+  - Verification: the roadmap-consistency regression rejects the obsolete
+    build-worksheet title and freezes the completed-step statement.
+
 - [x] **Reconcile the TinyCPU halt-boundary follow-up documentation**
   (Owner: TinyCPU/Documentation; completed 2026-08-26)
   - Scope: execute the next documented TinyCPU integration package after the

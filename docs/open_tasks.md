@@ -5,6 +5,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Reconcile the TinyCPU accumulator-data follow-up documentation**
+  (Owner: TinyCPU/Documentation; completed 2026-08-26)
+  - Scope: execute the next documented TinyCPU integration package after the
+    address-and-memory reconciliation by checking the data-bus row and its
+    endpoint table against the extracted `Operations` boundary.
+  - Cause: the template still described the superseded top-level
+    `ACC_DATA_SELECT`, `ACC_NOT_SELECT`, and `ACC_INPUT_SELECT` chain and listed
+    decoder outputs as the source of the accumulator write request.
+  - Result: the template now records the maintained operand, memory, and
+    accumulator inputs of `Operations`, its single selected result into
+    `Datapath.DATA_IN`, and the canonical `DecodeSignals.ACC_WRITE_REQUEST`
+    control boundary.
+  - Verification: the roadmap-consistency regression freezes the completed
+    data boundary and rejects the obsolete selector and request names.
+
 - [x] **Reconcile the TinyCPU address-and-memory-control follow-up documentation**
   (Owner: TinyCPU/Documentation; completed 2026-08-26)
   - Scope: execute the next documented TinyCPU integration package after the

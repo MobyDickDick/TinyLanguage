@@ -5,6 +5,17 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Freeze the complete TinyCPU work-package boundary**
+  (Owner: TinyCPU/Documentation; completed 2026-08-26)
+  - Scope: harden the no-next-package decision by checking the complete
+    documented AP 1 through AP 12 inventory, rather than only the later
+    electrical AP 9 through AP 12 subset.
+  - Result: all twelve roadmap packages remain explicitly checked off and no
+    new circuit scope is inferred from completed implementation history.
+  - Verification: the roadmap-consistency regression now enumerates AP 1
+    through AP 12 before accepting the expansion roadmap's empty next-package
+    boundary.
+
 - [x] **Re-validate the TinyCPU work-package boundary**
   (Owner: TinyCPU/Documentation; completed 2026-08-26)
   - Scope: answer the request for the next documented TinyCPU package by

@@ -20,100 +20,99 @@
     <a name="circuit" val="Datapath"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(150,130)" name="Pin">
+    <comp lib="0" loc="(260,140)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="DATA_IN"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(150,180)" name="Pin">
+    <comp lib="0" loc="(260,220)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="DATAPATH_STARTUP_RESET"/>
     </comp>
-    <comp lib="0" loc="(150,250)" name="Pin">
+    <comp lib="0" loc="(260,260)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="ACC_LOAD"/>
     </comp>
-    <comp lib="0" loc="(150,290)" name="Pin">
+    <comp lib="0" loc="(260,300)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="VALID_IN"/>
     </comp>
-    <comp lib="0" loc="(150,340)" name="Pin">
+    <comp lib="0" loc="(260,350)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="CLK"/>
     </comp>
-    <comp lib="0" loc="(450,190)" name="Constant">
+    <comp lib="0" loc="(560,200)" name="Constant">
       <a name="value" val="0x0"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(480,130)" name="Pin">
+    <comp lib="0" loc="(590,140)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="ACC_OUT"/>
       <a name="type" val="output"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="0" loc="(480,290)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="ACC_VALID_OUT"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="0" loc="(570,180)" name="Pin">
+    <comp lib="0" loc="(680,190)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="ZERO"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="0" loc="(570,250)" name="Pin">
+    <comp lib="0" loc="(680,260)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="NEGATIVE"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="3" loc="(520,180)" name="Comparator">
+    <comp lib="0" loc="(680,300)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="ACC_VALID_OUT"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="3" loc="(630,190)" name="Comparator">
       <a name="width" val="16"/>
     </comp>
-    <comp lib="5" loc="(270,100)" name="Register">
+    <comp lib="5" loc="(380,110)" name="Register">
       <a name="appearance" val="logisim_evolution"/>
       <a name="label" val="ACC"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="5" loc="(270,260)" name="Register">
+    <comp lib="5" loc="(380,270)" name="Register">
       <a name="appearance" val="logisim_evolution"/>
       <a name="label" val="ACC_VALID"/>
       <a name="width" val="1"/>
     </comp>
-    <comp lib="9" loc="(80,60)" name="Text">
+    <comp lib="9" loc="(300,70)" name="Text">
       <a name="text" val="Clocked 16-bit accumulator; signed comparator derives ZERO and NEGATIVE"/>
     </comp>
-    <wire from="(150,130)" to="(270,130)"/>
-    <wire from="(150,180)" to="(170,180)"/>
-    <wire from="(150,250)" to="(240,250)"/>
-    <wire from="(150,290)" to="(270,290)"/>
-    <wire from="(150,340)" to="(200,340)"/>
-    <wire from="(170,180)" to="(170,210)"/>
-    <wire from="(170,210)" to="(170,370)"/>
-    <wire from="(170,210)" to="(300,210)"/>
-    <wire from="(170,370)" to="(300,370)"/>
-    <wire from="(200,170)" to="(200,310)"/>
-    <wire from="(200,170)" to="(270,170)"/>
-    <wire from="(200,310)" to="(200,340)"/>
-    <wire from="(200,310)" to="(270,310)"/>
-    <wire from="(240,150)" to="(240,250)"/>
-    <wire from="(240,150)" to="(270,150)"/>
-    <wire from="(240,250)" to="(240,330)"/>
-    <wire from="(240,330)" to="(270,330)"/>
-    <wire from="(300,190)" to="(300,210)"/>
-    <wire from="(300,350)" to="(300,370)"/>
-    <wire from="(330,130)" to="(360,130)"/>
-    <wire from="(330,290)" to="(480,290)"/>
-    <wire from="(360,130)" to="(360,170)"/>
-    <wire from="(360,130)" to="(480,130)"/>
-    <wire from="(360,170)" to="(480,170)"/>
-    <wire from="(450,190)" to="(480,190)"/>
-    <wire from="(520,180)" to="(570,180)"/>
-    <wire from="(520,190)" to="(530,190)"/>
-    <wire from="(530,190)" to="(530,250)"/>
-    <wire from="(530,250)" to="(570,250)"/>
+    <wire from="(260,140)" to="(380,140)"/>
+    <wire from="(260,220)" to="(280,220)"/>
+    <wire from="(260,260)" to="(350,260)"/>
+    <wire from="(260,300)" to="(380,300)"/>
+    <wire from="(260,350)" to="(310,350)"/>
+    <wire from="(280,220)" to="(280,380)"/>
+    <wire from="(280,220)" to="(410,220)"/>
+    <wire from="(280,380)" to="(410,380)"/>
+    <wire from="(310,180)" to="(310,320)"/>
+    <wire from="(310,180)" to="(380,180)"/>
+    <wire from="(310,320)" to="(310,350)"/>
+    <wire from="(310,320)" to="(380,320)"/>
+    <wire from="(350,160)" to="(350,260)"/>
+    <wire from="(350,160)" to="(380,160)"/>
+    <wire from="(350,260)" to="(350,340)"/>
+    <wire from="(350,340)" to="(380,340)"/>
+    <wire from="(410,200)" to="(410,220)"/>
+    <wire from="(410,360)" to="(410,380)"/>
+    <wire from="(440,140)" to="(470,140)"/>
+    <wire from="(440,300)" to="(680,300)"/>
+    <wire from="(470,140)" to="(470,180)"/>
+    <wire from="(470,140)" to="(590,140)"/>
+    <wire from="(470,180)" to="(590,180)"/>
+    <wire from="(560,200)" to="(590,200)"/>
+    <wire from="(630,190)" to="(680,190)"/>
+    <wire from="(630,200)" to="(640,200)"/>
+    <wire from="(640,200)" to="(640,260)"/>
+    <wire from="(640,260)" to="(680,260)"/>
   </circuit>
 </project>

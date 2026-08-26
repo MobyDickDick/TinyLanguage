@@ -318,10 +318,27 @@ def test_taken_jump_selects_instruction_operand_as_next_pc():
     assert frozenset(("(1420,120)", "(1420,610)")) in wires
     assert frozenset(("(1070,580)", "(1420,580)")) not in wires
     assert frozenset(("(1420,120)", "(1420,580)")) not in wires
-    adjacency = _electrical_adjacency(fetch, {"(770,230)", "(840,180)", "(1070,610)", "(840,200)", "(1200,230)", "(850,210)", "(870,190)", "(550,220)"})
+    jump_taken = next(
+        component.get("loc")
+        for component in fetch.findall("comp[@name='Pin']")
+        if _attributes(component).get("label") == "JUMP_NOT_ZERO"
+    )
+    adjacency = _electrical_adjacency(
+        fetch,
+        {
+            "(770,230)",
+            "(840,180)",
+            "(1070,610)",
+            "(840,200)",
+            jump_taken,
+            "(850,210)",
+            "(870,190)",
+            "(550,220)",
+        },
+    )
     assert "(840,180)" in _reachable(adjacency, "(770,230)")
     assert "(840,200)" in _reachable(adjacency, "(1070,610)")
-    assert "(1200,230)" in _reachable(adjacency, "(850,210)")
+    assert jump_taken in _reachable(adjacency, "(850,210)")
     assert "(550,220)" in _reachable(adjacency, "(870,190)")
     assert "(840,200)" not in _reachable(adjacency, "(840,180)")
     assert "(850,210)" not in _reachable(adjacency, "(840,180)")
@@ -1686,12 +1703,12 @@ def test_datapath_uses_register_terminals_instead_of_symbol_centres():
 
     # For east-facing registers, D, WE and CLK are 30 px left of Q, with
     # WE and CLK respectively 20 and 30 px below the Q coordinate.
-    assert {"(270,130)", "(270,150)", "(270,170)"} <= endpoints
-    assert {"(270,290)", "(270,310)", "(270,330)"} <= endpoints
+    assert {"(380,140)", "(380,160)", "(380,180)"} <= endpoints
+    assert {"(380,300)", "(380,320)", "(380,340)"} <= endpoints
 
     # The comparator receives ACC and the zero constant on separate 16-bit
     # inputs; neither is accidentally attached to a one-bit status output.
-    assert {"(360,130)", "(360,170)", "(450,190)", "(480,190)"} <= endpoints
+    assert {"(470,140)", "(470,180)", "(560,200)", "(590,200)"} <= endpoints
 
 
 def test_ap3_memory_shares_address_write_enable_and_clock():

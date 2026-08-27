@@ -5,6 +5,17 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Validate the TinyCPU blind-wire cleanup**
+  (Owner: TinyCPU/Hardware; completed 2026-08-27)
+  - Scope: execute the next bounded schematic-maintenance package by checking
+    the removed `FetchDecodeControls` wire from `(520,390)` to `(680,390)`
+    against the accepted electrical and topology contracts.
+  - Result: the disconnected horizontal spur remains removed; the surrounding
+    decoder-control routes and the completed AP-12 boundary are unchanged.
+  - Verification: the extracted `FetchDecodeControls` diagnostic was refreshed
+    and the focused Logisim regression suite now rejects reintroducing this
+    exact blind wire or allowing the checked-in diagnostic to drift.
+
 - [x] **Align the highlighted TinyCPU completion heading**
   (Owner: TinyCPU/Documentation; completed 2026-08-27)
   - Scope: execute the next documentation-maintenance package by comparing the

@@ -16,7 +16,8 @@ archived in `docs/open_tasks_archive.md`.
   - Verification: a focused in-memory mutation regression removes each of the
     50 versioned outputs in turn and requires the inspector to identify the
     corresponding missing lane without serializing or rewriting circuit
-    fixtures.
+    fixtures. A separate port-order regression preserves the established
+    top-level coordinates for error, print, halt, and XOR controls.
 
 - [x] **Connect the TinyCPU `JUMP_NOT_ZERO` decoder lane**
   (Owner: TinyCPU/Hardware; completed 2026-08-27)

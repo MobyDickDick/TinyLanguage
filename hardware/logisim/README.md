@@ -129,6 +129,13 @@ Der Netlist-Inspektor prüft dabei nicht nur vorhandene Pins gegen ihre Spur,
 sondern meldet auch jeden fehlenden Ausgang der versionierten Opcode-Tabelle.
 Damit kann eine Decoderleitung nicht erneut dadurch aus der Abnahme fallen,
 dass ihr Pin vollständig aus dem Schaltbild entfernt wird.
+Der physische Pin steht absichtlich im letzten freien Symbolplatz: Logisim
+ordnet die Ports automatisch nach den Pin-Koordinaten. Ein Einschieben zwischen
+`JUMP_ZERO` und `JUMP_NEGATIVE` würde deshalb alle bereits verdrahteten
+`JUMP_NEGATIVE`-, Fehler-, Ein-/Ausgabe-, Halt- und XOR-Anschlüsse am
+Top-Level-Symbol um einen Rasterpunkt verschieben. Die Opcode-Zuordnung entsteht
+stattdessen durch die separate Leitung von Decoder-Spur 36; die Pinposition ist
+keine Opcode-Nummerierung.
 
 This directory contains the TinyCPU hardware baseline with a dedicated arithmetic sheet.
 Open `TinyCPU.circ` with Logisim-evolution 4.1.x. Das Blatt **`TinyCPUMain` ist

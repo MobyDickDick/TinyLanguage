@@ -113,18 +113,31 @@ den folgenden Integrationspaketen behoben und ist durch die AP-12-Abnahme
 abgedeckt.
 
 Die Ausgänge von `FetchDecodeControls` folgen für jede Steuerung exakt der
-nummerierten Opcode-Spur des Maschinenformats. Die zuvor offene Decoderleitung
-zwischen `JUMP_ZERO` und `JUMP_NEGATIVE` ist Spur 36 (`JUMP_NOT_ZERO`). Sie
-endet jetzt an einem gleichnamigen Ausgangspin, dessen sichtbare
-Top-Level-Leitung `FetchDecode.DEC_JUMP_NOT_ZERO` treibt. Die bedingte
-Auswertung bleibt im separaten `FetchDecode`-Block. Das separat verknüpfte
-`JUMP_NOT_ZERO`-Signal darf
+nummerierten Opcode-Spur des Maschinenformats. Die im Schaltbild offene
+Decoderleitung zwischen `JUMP_ZERO` und `JUMP_NEGATIVE` ist Spur 36
+(`JUMP_NOT_ZERO`). Sie ist **nicht** ein reservierter Opcode: Dem Block fehlt
+hier ein gleichnamiger Ausgangspin, sodass auch `FetchDecode.DEC_JUMP_NOT_ZERO`
+keinen Treiber erhält. Die bedingte Auswertung gehört zwar in den separaten
+`FetchDecode`-Block, dieser benötigt dafür aber weiterhin das Decodesignal; die
+offene Leitung ist daher eine Verdrahtungslücke und nicht beabsichtigt.
+Insbesondere darf das reparierte, separat verknüpfte `JUMP_NOT_ZERO`-Signal
 keine gemeinsame Decoder-Spur mit `JUMP_NEGATIVE` belegen:
 die folgenden Steuerungen bleiben bis `HALT` (Opcode 44) und `HALT_ERROR`
 (Opcode 45) um eine Position versetzt. Dadurch meldet das AP-5-Programm an
 seiner Halt-Instruktion den normalen Ausgang statt des Fehlerhalts. Die damals
 noch zu kurze Schleifenausführung wurde anschließend über den elektrischen
 JNZ-Statuspfad behoben und ist kein offener Integrationspunkt mehr.
+Der Netlist-Inspektor prüft dabei nicht nur vorhandene Pins gegen ihre Spur,
+sondern meldet auch jeden fehlenden Ausgang der versionierten Opcode-Tabelle.
+Damit kann eine Decoderleitung nicht erneut dadurch aus der Abnahme fallen,
+dass ihr Pin vollständig aus dem Schaltbild entfernt wird.
+Der physische Pin steht absichtlich im letzten freien Symbolplatz: Logisim
+ordnet die Ports automatisch nach den Pin-Koordinaten. Ein Einschieben zwischen
+`JUMP_ZERO` und `JUMP_NEGATIVE` würde deshalb alle bereits verdrahteten
+`JUMP_NEGATIVE`-, Fehler-, Ein-/Ausgabe-, Halt- und XOR-Anschlüsse am
+Top-Level-Symbol um einen Rasterpunkt verschieben. Die Opcode-Zuordnung entsteht
+stattdessen durch die separate Leitung von Decoder-Spur 36; die Pinposition ist
+keine Opcode-Nummerierung.
 
 This directory contains the TinyCPU hardware baseline with a dedicated arithmetic sheet.
 Open `TinyCPU.circ` with Logisim-evolution 4.1.x. Das Blatt **`TinyCPUMain` ist

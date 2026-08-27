@@ -5,6 +5,8 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+    top-level coordinates for error, print, halt, and XOR controls.
+
 - [x] **Connect the TinyCPU `JUMP_NOT_ZERO` decoder lane**
   (Owner: TinyCPU/Hardware; completed 2026-08-27)
   - Scope: execute the next bounded schematic-maintenance package by promoting

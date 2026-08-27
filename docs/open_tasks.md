@@ -13,9 +13,10 @@ archived in `docs/open_tasks_archive.md`.
   - Result: all 50 machine opcodes are now mandatory in the decoder-output
     audit; a missing pin is reported as a routing conflict before lane
     connectivity is considered.
-  - Verification: a focused mutation regression removes `JUMP_NOT_ZERO` from
-    a copy of the maintained project and requires the inspector to identify
-    the missing opcode-36 output.
+  - Verification: a focused in-memory mutation regression removes each of the
+    50 versioned outputs in turn and requires the inspector to identify the
+    corresponding missing lane without serializing or rewriting circuit
+    fixtures.
 
 - [x] **Connect the TinyCPU `JUMP_NOT_ZERO` decoder lane**
   (Owner: TinyCPU/Hardware; completed 2026-08-27)

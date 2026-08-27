@@ -25,18 +25,27 @@ INTEGRATION_RESET = HARDWARE / "diagnostics" / "TinyCPU-IntegrationReset.circ"
 CI_WORKFLOW = Path(__file__).parents[2] / ".github" / "workflows" / "ci.yml"
 
 
-def test_fetch_decode_controls_blind_wire_stays_removed():
-    """The removed decoder-control spur must not return unconnected."""
+def test_fetch_decode_controls_drives_jump_not_zero_lane():
+    """Opcode 36 must reach a dedicated decoder-control output."""
     controls = ET.parse(PROJECT).getroot().find(
         "circuit[@name='FetchDecodeControls']"
     )
     assert controls is not None
 
-    wires = {
-        frozenset((wire.get("from"), wire.get("to")))
-        for wire in controls.findall("wire")
-    }
-    assert frozenset(("(520,390)", "(680,390)")) not in wires
+    output = next(
+        component
+        for component in controls.findall("comp[@name='Pin']")
+        if _attributes(component).get("label") == "JUMP_NOT_ZERO"
+    )
+    adjacency = _electrical_adjacency(controls, {"(520,390)", output.get("loc")})
+    assert output.get("loc") in _reachable(adjacency, "(520,390)")
+
+
+def test_jump_not_zero_pin_preserves_existing_generated_symbol_ports():
+    """Adding opcode 36 must not renumber every established top-level port.
+
+    Logisim orders generated-symbol ports by their physical pin coordinates,
+    not by opcode number.  JUMP_NOT_ZERO therefore deliberately occupies the
     final physical slot while its wire still originates at decoder lane 36.
     Moving it between JUMP_ZERO and JUMP_NEGATIVE would silently move PRINT,
     HALT, error, and XOR terminals by one grid position.

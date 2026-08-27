@@ -5,6 +5,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Connect the TinyCPU `JUMP_NOT_ZERO` decoder lane**
+  (Owner: TinyCPU/Hardware; completed 2026-08-27)
+  - Scope: execute the next bounded schematic-maintenance package by promoting
+    the documented open opcode-36 decoder line to a dedicated
+    `FetchDecodeControls.JUMP_NOT_ZERO` output and routing it to
+    `FetchDecode.DEC_JUMP_NOT_ZERO`.
+  - Result: opcode 36 now has its own control pin and a visible top-level route;
+    the neighboring `JUMP_ZERO` and `JUMP_NEGATIVE` lanes remain isolated.
+  - Verification: focused topology regressions trace both halves of the route,
+    and the extracted diagnostic is kept byte-for-byte aligned with the
+    maintained circuit.
+
 - [x] **Validate the TinyCPU blind-wire cleanup**
   (Owner: TinyCPU/Hardware; completed 2026-08-27)
   - Scope: execute the next bounded schematic-maintenance package by checking

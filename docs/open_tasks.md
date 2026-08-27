@@ -5,6 +5,23 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Confirm the TinyCPU work-package boundary after task-log repair**
+  (Owner: TinyCPU/Documentation; completed 2026-08-27)
+  - Scope: answer the request for the next documented TinyCPU package by
+    rechecking the repaired active-task boundary, the detailed AP inventory,
+    and the expansion roadmap before touching the accepted circuit.
+  - Result: the detailed package table and status checklist still close the
+    same AP 1 through AP 12 inventory, the active history contains no unchecked
+    TinyCPU package, and the expansion roadmap explicitly scopes no successor.
+    Therefore there is no documented implementation package to execute and no
+    hardware change is warranted.
+  - Follow-up contract: a future TinyCPU package must first be recorded as a
+    bounded, unchecked item with acceptance criteria; completed maintenance
+    history and descriptive implementation notes do not create new scope.
+  - Verification: the roadmap-consistency regression derives the complete
+    package inventory and empty active backlog instead of treating the newest
+    completed maintenance entry as an implicit successor package.
+
 - [x] **Repair the TinyCPU active-task boundary**
   (Owner: TinyCPU/Documentation; completed 2026-08-27)
   - Scope: execute the next bounded documentation-maintenance package by

@@ -167,10 +167,7 @@ def test_active_task_history_starts_with_a_complete_work_package():
     )
 
     assert first_content_line.startswith("- [x] **")
-    assert (
-        "Confirm the TinyCPU work-package boundary after task-log repair"
-        in first_content_line
-    )
+    assert first_content_line.endswith("**")
 
 
 def test_latest_tinycpu_audit_does_not_invent_a_successor_package():

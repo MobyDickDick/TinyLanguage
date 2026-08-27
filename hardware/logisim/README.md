@@ -125,6 +125,10 @@ die folgenden Steuerungen bleiben bis `HALT` (Opcode 44) und `HALT_ERROR`
 seiner Halt-Instruktion den normalen Ausgang statt des Fehlerhalts. Die damals
 noch zu kurze Schleifenausführung wurde anschließend über den elektrischen
 JNZ-Statuspfad behoben und ist kein offener Integrationspunkt mehr.
+Der Netlist-Inspektor prüft dabei nicht nur vorhandene Pins gegen ihre Spur,
+sondern meldet auch jeden fehlenden Ausgang der versionierten Opcode-Tabelle.
+Damit kann eine Decoderleitung nicht erneut dadurch aus der Abnahme fallen,
+dass ihr Pin vollständig aus dem Schaltbild entfernt wird.
 
 This directory contains the TinyCPU hardware baseline with a dedicated arithmetic sheet.
 Open `TinyCPU.circ` with Logisim-evolution 4.1.x. Das Blatt **`TinyCPUMain` ist

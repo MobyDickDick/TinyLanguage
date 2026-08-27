@@ -1014,6 +1014,36 @@ def test_inspector_rejects_output_pin_connected_only_to_stub(tmp_path):
     assert report.unconnected == ("OUT@(10,10)",)
 
 
+def test_inspector_rejects_a_missing_versioned_decoder_output(tmp_path):
+    """A deleted opcode pin must not disappear from the lane audit silently."""
+
+    root = ET.parse(PROJECT)
+    controls = root.getroot().find("circuit[@name='FetchDecodeControls']")
+    assert controls is not None
+    jump_not_zero = next(
+        component
+        for component in controls.findall("comp[@name='Pin']")
+        if any(
+            attribute.get("name") == "label"
+            and attribute.get("val") == "JUMP_NOT_ZERO"
+            for attribute in component
+        )
+    )
+    controls.remove(jump_not_zero)
+    project = tmp_path / "missing-decoder-output.circ"
+    root.write(project, encoding="utf-8", xml_declaration=True)
+
+    report = next(
+        item for item in inspect_project(project)
+        if item.name == "FetchDecodeControls"
+    )
+
+    assert (
+        "FetchDecodeControls.JUMP_NOT_ZERO: missing output pin for decoder lane 36"
+        in report.routing_conflicts
+    )
+
+
 def test_inspector_rejects_input_pin_connected_only_to_stub(tmp_path):
     project = tmp_path / "input-stub.circ"
     project.write_text(

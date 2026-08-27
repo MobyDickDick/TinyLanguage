@@ -162,7 +162,7 @@ def _point_on_wire(point: str, wire: ET.Element) -> bool:
 
 
 def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
-    """Return FetchDecode outputs that do not touch their decoder lane.
+    """Return missing or miswired FetchDecode outputs.
 
     The generic connectivity pass only proves that a pin is on some wire.  A
     decode output can therefore look connected while the wire is one grid step
@@ -203,6 +203,10 @@ def _fetch_decode_lane_conflicts(circuit: ET.Element) -> tuple[str, ...]:
     for signal, lane in FETCH_DECODE_SIGNAL_LANES.items():
         pin = output_pins.get(hardware_control_label(signal))
         if pin is None:
+            conflicts.append(
+                f"{circuit.get('name')}.{signal}: missing output pin for "
+                f"decoder lane {lane}"
+            )
             continue
         target = pin
         if signal == "JUMP_NOT_ZERO":

@@ -5,6 +5,18 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Close the complete TinyCPU decoder-output audit**
+  (Owner: TinyCPU/Tooling; completed 2026-08-27)
+  - Scope: execute the next bounded follow-up to the opcode-36 repair by
+    checking whether the netlist inspector rejects a versioned decoder lane
+    whose output pin is removed altogether.
+  - Result: all 50 machine opcodes are now mandatory in the decoder-output
+    audit; a missing pin is reported as a routing conflict before lane
+    connectivity is considered.
+  - Verification: a focused mutation regression removes `JUMP_NOT_ZERO` from
+    a copy of the maintained project and requires the inspector to identify
+    the missing opcode-36 output.
+
 - [x] **Connect the TinyCPU `JUMP_NOT_ZERO` decoder lane**
   (Owner: TinyCPU/Hardware; completed 2026-08-27)
   - Scope: execute the next bounded schematic-maintenance package by promoting

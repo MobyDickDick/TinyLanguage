@@ -217,11 +217,6 @@
     <wire from="(1260,1770)" to="(1740,1770)"/>
     <wire from="(1260,1790)" to="(1760,1790)"/>
     <wire from="(1260,1810)" to="(1700,1810)"/>
-    <wire from="(1260,1830)" to="(1280,1830)"/>
-    <wire from="(1280,1830)" to="(1280,1850)"/>
-    <wire from="(650,1850)" to="(1280,1850)"/>
-    <wire from="(650,390)" to="(650,1850)"/>
-    <wire from="(650,390)" to="(670,390)"/>
     <wire from="(1260,650)" to="(1460,650)"/>
     <wire from="(1260,750)" to="(1620,750)"/>
     <wire from="(1260,770)" to="(2040,770)"/>
@@ -1551,12 +1546,6 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="label" val="XOR_REG_OFF"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="0" loc="(1040,1130)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="west"/>
-      <a name="label" val="JUMP_NOT_ZERO"/>
-      <a name="type" val="output"/>
-    </comp>
     <comp lib="0" loc="(1040,130)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
@@ -1921,9 +1910,6 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(520,90)" to="(980,90)"/>
     <wire from="(550,1110)" to="(1040,1110)"/>
     <wire from="(550,520)" to="(550,1110)"/>
-    <wire from="(520,390)" to="(680,390)"/>
-    <wire from="(680,390)" to="(680,1130)"/>
-    <wire from="(680,1130)" to="(1040,1130)"/>
     <wire from="(560,1090)" to="(1040,1090)"/>
     <wire from="(560,510)" to="(560,1090)"/>
     <wire from="(570,1070)" to="(1040,1070)"/>

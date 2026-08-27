@@ -5,6 +5,17 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Cross-check the TinyCPU package titles**
+  (Owner: TinyCPU/Documentation; completed 2026-08-27)
+  - Scope: execute the next documentation-maintenance package by comparing the
+    names in the twelve-package definition table with the completed status
+    checklist, after the preceding package froze their numeric inventory.
+  - Result: every AP 1 through AP 12 status entry now repeats its canonical
+    table title; the previously titleless AP 10 and AP 11 entries and the
+    shortened AP 12 entry no longer leave two competing package inventories.
+  - Verification: the roadmap-consistency regression parses package numbers and
+    titles from both detailed inventories and requires exact ordered equality.
+
 - [x] **Cross-check the complete TinyCPU package inventory**
   (Owner: TinyCPU/Documentation; completed 2026-08-26)
   - Scope: execute the next documentation-maintenance package by comparing the

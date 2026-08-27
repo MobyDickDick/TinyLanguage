@@ -48,51 +48,55 @@ in einem frischen Checkout verpflichtend laufen.
 
 ## Stand
 
-- [x] **AP 1:** `hardware/logisim/tinycpu-16-12.json` beschreibt den Vertrag;
+- [x] **AP 1: Hardwarevertrag einfrieren:** Das Profil
+  `hardware/logisim/tinycpu-16-12.json` beschreibt den Vertrag;
   `tiny_cpu_circuit.py --profile … --contract-only` prüft ihn unabhängig von
   der Verdrahtung. Der vollständige Inspector-Lauf meldet die inzwischen
   abgenommene Schaltung `TinyCPUMain: connected`.
-- [x] **AP 2:** Daten- und Adresspfad; `Datapath` lädt Akkumulator und
+- [x] **AP 2: Daten- und Adresspfad:** `Datapath` lädt Akkumulator und
   Valid-Bit an derselben Taktflanke und leitet `ZERO`/`NEGATIVE` über einen
   vorzeichenbehafteten Vergleicher ab. `AddressPath` lädt Adressregister und
   Valid-Bit synchron und stellt die 12-Bit-Offset-Summe samt Carry bereit. Das
   Hardwareprofil und die Netlist-Tests frieren diese Schnittstellen ein.
-- [x] **AP 3:** Speicher und Fehlerregister; Daten- und Valid-RAM teilen sich
+- [x] **AP 3: Speicher und Fehlerregister:** Daten- und Valid-RAM teilen sich
   Adresse, Write-Enable und Takt. Sechs set-dominante Sticky-Flags implementieren
   `SET OR (Q AND NOT CLEAR_ERROR)` und exportieren ihren Zustand.
-- [x] **AP 4:** Fetch und Decode; ein 12-Bit-PC adressiert das interne ROM,
+- [x] **AP 4: Fetch und Decode:** ein 12-Bit-PC adressiert das interne ROM,
   `CORE_DECODER` erzeugt die Steuersignale des Kernbefehlssatzes und
   `PC_RANGE` setzt bei einem PC außerhalb `PROGRAM_LIMIT` gleichzeitig `ADDR`
   und `HALT_ERROR`. Die Taktabläufe und das vorläufige interne ROM-Wort sind
   in `hardware/logisim/README.md` dokumentiert und im Hardwareprofil fixiert.
-- [x] **AP 5:** Kernprogramm integrieren; die ROM-Zählschleife und ihr
+- [x] **AP 5: Kernprogramm integrieren:** die ROM-Zählschleife und ihr
   versionierter 17-Takt-Trace liegen unter `hardware/logisim/`. Der
   Trace-Comparator prüft PC, Akkumulator, Status, Speicherzellen, Ausgabe,
   Fehlerflags und Haltzustand an jeder Taktflanke gegen die Python-VM.
-- [x] **AP 6:** ISA vervollständigen; `FetchDecode` exportiert die vollständige
+- [x] **AP 6: ISA vervollständigen:** `FetchDecode` exportiert die vollständige
   symbolische ISA-Steuerfläche für alle Adressierungsarten, ALU-Operationen,
   Sprünge und I/O. Profil und parametrisierte Strukturtests gleichen jeden
   Befehl sowie alle Bedingungs- und Fehlerpfade mit der Python-ISA ab.
-- [x] **AP 7:** Maschinenformat und Tooling; die versionierte Opcode-Tabelle
+- [x] **AP 7: Maschinenformat und Tooling:** die versionierte Opcode-Tabelle
   definiert ein 22-Bit-Wort aus 6-Bit-Opcode und 16-Bit-Operand. Der Encoder
   erzeugt ROM-Image und Listing der Zählschleife, das Logisim-ROM lädt exakt
   dieses Image, und Roundtrip- sowie Negativtests sichern das Format ab.
-- [x] **AP 8:** Abschluss und Dokumentation; die Bedienungs- und
+- [x] **AP 8: Abschluss und Dokumentation:** die Bedienungs- und
   Architekturhinweise beschreiben den Schaltplan sowie die Simulatorgrenze.
   `tiny_cpu_verify.py` prüft aus einem frischen Checkout Vertrag, Verdrahtung,
   generierte Artefakte, eingebettetes ROM und den 17-Takt-Referenztrace mit
   einem einzigen reproduzierbaren Kommando.
-- [x] **AP 9:** Reale Simulator-Basis; Logisim-evolution 4.1.0 und Temurin
+- [x] **AP 9: Reale Simulator-Basis:** Logisim-evolution 4.1.0 und Temurin
   21.0.8+9.0.LTS sind in CI und im Launcher festgelegt. Der nicht-interaktive
   Tabellenlauf protokolliert beide Versionen und lädt `TinyCPUMain`; Fehler beim
   Download, Start, Versionsabgleich oder Projektladen brechen das Gate ab.
-- [x] **AP 10:** Der Launcher taktet eine temporäre Kopie von `TinyCPUMain`
+- [x] **AP 10: Elektrischen Kerntrace abnehmen:** Der Launcher taktet eine
+  temporäre Kopie von `TinyCPUMain`
   direkt im gepinnten Simulator, normalisiert dessen änderungsgetriebene
   Tabellenausgabe und vergleicht alle 17 Flanken mit dem VM-Vertrag. CI bewahrt
   den unveränderten Simulator-Export als Artefakt auf.
-- [x] **AP 11:** Die elektrische Positiv- und Fehlermatrix tauscht das ROM je
-  Fixture aus, bewahrt jede Roh-Tabelle auf und vergleicht alle Flanken mit der VM.
-- [x] **AP 12:** Das verpflichtende Release-Gate startet die reale Schaltung
+- [x] **AP 11: Elektrische ISA-Matrix:** Die elektrische Positiv- und
+  Fehlermatrix tauscht das ROM je Fixture aus, bewahrt jede Roh-Tabelle auf und
+  vergleicht alle Flanken mit der VM.
+- [x] **AP 12: Hardware-Abschluss:** Das verpflichtende Release-Gate startet die
+  reale Schaltung
   zweimal am Reset-Zustand, vergleicht die normalisierten 17-Flanken-Traces,
   führt anschließend die vollständige elektrische ISA-Matrix aus und bewahrt
   Rohdaten, normalisierte Traces und ein versioniertes Abnahmeprotokoll auf.

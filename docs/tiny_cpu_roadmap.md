@@ -109,6 +109,16 @@ Simulator-, Reset-/Wiederanlauf-, Mehrzyklus- oder Matrixvergleich bricht den
 Job ab. Die Bedienung und die erzeugten Nachweise sind im Logisim-Handbuch
 dokumentiert.
 
+## Aktive Arbeitspaketgrenze
+
+Nach AP 12 ist derzeit kein weiteres TinyCPU-Arbeitspaket definiert. Die
+abgeschlossenen Pflegeeinträge in `docs/open_tasks.md` sind keine implizite
+Fortsetzung der nummerierten Hardware-Roadmap. Ein AP 13 oder ein unnummeriertes
+Folgepaket muss dort zuerst als begrenzte, nicht abgehakte Aufgabe mit eigenen
+Abnahmekriterien dokumentiert werden, bevor Schaltung oder Tooling dafür
+geändert werden. Damit stimmt diese Detail-Roadmap mit der ausdrücklich leeren
+TinyCPU-Paketgrenze in `docs/expansion_roadmap.md` überein.
+
 ## Abgeschlossene Baseline-Pflege
 
 Nach Abschluss der acht Arbeitspakete ist das Abnahmekommando als eigener

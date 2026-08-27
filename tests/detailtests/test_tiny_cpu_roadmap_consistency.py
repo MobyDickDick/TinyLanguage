@@ -53,18 +53,22 @@ def test_expansion_roadmap_does_not_reopen_completed_hardware_packages():
     )
 
     defined_packages = [
-        int(package)
-        for package in re.findall(r"^\| \*\*(\d+)\.", detailed, re.MULTILINE)
-    ]
-    completed_packages = [
-        int(package)
-        for package in re.findall(
-            r"^- \[x\] \*\*AP (\d+):\*\*", detailed, re.MULTILINE
+        (int(package), title)
+        for package, title in re.findall(
+            r"^\| \*\*(\d+)\. ([^*]+)\*\*", detailed, re.MULTILINE
         )
     ]
-    expected_packages = list(range(1, 13))
-    assert defined_packages == expected_packages
-    assert completed_packages == expected_packages
+    completed_packages = [
+        (int(package), title)
+        for package, title in re.findall(
+            r"^- \[x\] \*\*AP (\d+): ([^*]+):\*\*",
+            detailed,
+            re.MULTILINE,
+        )
+    ]
+    expected_package_numbers = list(range(1, 13))
+    assert [package for package, _ in defined_packages] == expected_package_numbers
+    assert [package for package, _ in completed_packages] == expected_package_numbers
     assert defined_packages == completed_packages
 
     tinycpu_section = expansion.split("## 1) Native compiler", maxsplit=1)[0]

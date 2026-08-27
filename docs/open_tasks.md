@@ -5,7 +5,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
-    top-level coordinates for error, print, halt, and XOR controls.
+- [x] **Repair the TinyCPU active-task boundary**
+  (Owner: TinyCPU/Documentation; completed 2026-08-27)
+  - Scope: execute the next bounded documentation-maintenance package by
+    checking the active-task heading after the completed decoder-output audit
+    was removed from the current history.
+  - Cause: that cleanup left the final wrapped line of the removed package
+    between the heading and the next checklist entry, so the task log started
+    with an orphaned sentence rather than a complete work package.
+  - Result: the orphaned line is removed and the current history again begins
+    with a complete, attributable TinyCPU package; the accepted AP-1-to-AP-12
+    hardware boundary remains unchanged.
+  - Verification: the roadmap-consistency regression requires the first
+    nonblank content below `Current tasks` to be a complete checklist entry and
+    rejects an indented prose fragment at that boundary.
 
 - [x] **Connect the TinyCPU `JUMP_NOT_ZERO` decoder lane**
   (Owner: TinyCPU/Hardware; completed 2026-08-27)

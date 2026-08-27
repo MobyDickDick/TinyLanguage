@@ -157,7 +157,27 @@ def test_active_task_history_starts_with_a_complete_work_package():
     )
 
     assert first_content_line.startswith("- [x] **")
-    assert "Repair the TinyCPU active-task boundary" in first_content_line
+    assert (
+        "Confirm the TinyCPU work-package boundary after task-log repair"
+        in first_content_line
+    )
+
+
+def test_latest_tinycpu_audit_does_not_invent_a_successor_package():
+    """Completed maintenance history is not an implicit hardware backlog."""
+
+    active_tasks = (REPOSITORY_ROOT / "docs" / "open_tasks.md").read_text(
+        encoding="utf-8"
+    )
+    latest_package = active_tasks.split(
+        "**Confirm the TinyCPU work-package boundary after task-log repair**",
+        maxsplit=1,
+    )[1].split("- [x] **Repair the TinyCPU active-task boundary**", maxsplit=1)[0]
+
+    assert "AP 1 through AP 12" in latest_package
+    assert "no documented implementation package to execute" in latest_package
+    assert "no\n    hardware change is warranted" in latest_package
+    assert "bounded, unchecked item with acceptance criteria" in latest_package
 
 
 def test_detailed_hardware_docs_do_not_advertise_completed_follow_ups():

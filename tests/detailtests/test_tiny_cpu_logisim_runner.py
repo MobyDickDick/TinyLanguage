@@ -16,6 +16,36 @@ def completed(command: list[str], stdout: str = "", stderr: str = ""):
     return subprocess.CompletedProcess(command, 0, stdout, stderr)
 
 
+def subcircuit_output(root, circuit_name: str, pin_label: str) -> str:
+    """Resolve a generated-symbol output without freezing drawing coordinates."""
+    definition = root.find(f"circuit[@name='{circuit_name}']")
+    assert definition is not None
+    outputs = sorted(
+        (
+            component
+            for component in definition.findall("comp[@name='Pin']")
+            if runner._pin_attributes(component).get("type") == "output"
+        ),
+        key=lambda component: tuple(
+            int(value) for value in component.get("loc").strip("()").split(",")
+        )[::-1],
+    )
+    output_index = next(
+        index
+        for index, component in enumerate(outputs)
+        if runner._pin_attributes(component).get("label") == pin_label
+    )
+    main = root.find("circuit[@name='TinyCPUMain']")
+    assert main is not None
+    instance = next(
+        component
+        for component in main.findall("comp")
+        if component.get("name") == circuit_name
+    )
+    x, y = (int(value) for value in instance.get("loc").strip("()").split(","))
+    return f"({x},{y + 20 * output_index})"
+
+
 def test_verify_java_accepts_supported_newer_runtimes(monkeypatch):
     """Patch-level drift must not prevent running the real simulator locally."""
     monkeypatch.setattr(
@@ -206,7 +236,10 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
         and runner._pin_attributes(component).get("label") == "HALT_ANY"
         for component in main.findall("comp")
     )
-    assert ("(1260,1590)", output_locations["PRINT_ENABLE"]) in original_wires
+    print_enable = subcircuit_output(
+        tree.getroot(), "FetchDecodeControls", "PRINT"
+    )
+    assert (print_enable, output_locations["PRINT_ENABLE"]) in original_wires
 
 
 def test_tty_trace_converter_samples_last_stable_low_row_per_edge():

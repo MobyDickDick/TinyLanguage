@@ -5,6 +5,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Finish making the TinyCPU trace regression redraw-aware**
+  (Owner: TinyCPU/Testing; completed 2026-08-27)
+  - Scope: execute the next bounded maintenance package after the integration
+    sheet redraw by auditing the trace regression for drawing coordinates that
+    still represented generated-symbol ports rather than electrical identity.
+  - Cause: the trace probes and halt outputs were resolved by labels after the
+    redraw, but the `FetchDecodeControls.PRINT` assertion still froze its old
+    top-level coordinate and would reject an electrically equivalent move.
+  - Result: the regression now derives the generated decoder-control output from
+    the named subcircuit pin and instance position before checking its route to
+    the named top-level output. Genuine disconnects remain failures while
+    coordinate-only redraws no longer require weakening the contract.
+  - Verification: the focused trace-runner and Logisim topology suites pass
+    against the maintained circuit.
+
 - [x] **Confirm the TinyCPU work-package boundary after task-log repair**
   (Owner: TinyCPU/Documentation; completed 2026-08-27)
   - Scope: answer the request for the next documented TinyCPU package by

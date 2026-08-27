@@ -113,8 +113,15 @@ den folgenden Integrationspaketen behoben und ist durch die AP-12-Abnahme
 abgedeckt.
 
 Die Ausgänge von `FetchDecodeControls` folgen für jede Steuerung exakt der
-nummerierten Opcode-Spur des Maschinenformats. Insbesondere belegt das separat
-verknüpfte `JUMP_NOT_ZERO` keine gemeinsame Decoder-Spur mit `JUMP_NEGATIVE`:
+nummerierten Opcode-Spur des Maschinenformats. Die im Schaltbild offene
+Decoderleitung zwischen `JUMP_ZERO` und `JUMP_NEGATIVE` ist Spur 36
+(`JUMP_NOT_ZERO`). Sie ist **nicht** ein reservierter Opcode: Dem Block fehlt
+hier ein gleichnamiger Ausgangspin, sodass auch `FetchDecode.DEC_JUMP_NOT_ZERO`
+keinen Treiber erhält. Die bedingte Auswertung gehört zwar in den separaten
+`FetchDecode`-Block, dieser benötigt dafür aber weiterhin das Decodesignal; die
+offene Leitung ist daher eine Verdrahtungslücke und nicht beabsichtigt.
+Insbesondere darf das reparierte, separat verknüpfte `JUMP_NOT_ZERO`-Signal
+keine gemeinsame Decoder-Spur mit `JUMP_NEGATIVE` belegen:
 die folgenden Steuerungen bleiben bis `HALT` (Opcode 44) und `HALT_ERROR`
 (Opcode 45) um eine Position versetzt. Dadurch meldet das AP-5-Programm an
 seiner Halt-Instruktion den normalen Ausgang statt des Fehlerhalts. Die damals

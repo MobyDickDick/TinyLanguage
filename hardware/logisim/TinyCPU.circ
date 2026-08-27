@@ -184,6 +184,119 @@
     <comp loc="(890,550)" name="Memory">
       <a name="label" val="MEMORY_INSTANCE"/>
     </comp>
+    <comp lib="0" loc="(1020,350)" name="Constant">
+      <a name="label" val="DEFINED_ADDRESS_IN"/>
+      <a name="width" val="16"/>
+    </comp>
+    <wire from="(1020,350)" to="(1030,350)"/>
+    <comp lib="0" loc="(1020,390)" name="Constant">
+      <a name="label" val="DEFINED_OFFSET"/>
+      <a name="width" val="16"/>
+    </comp>
+    <wire from="(1020,390)" to="(1030,390)"/>
+    <comp lib="0" loc="(1020,410)" name="Constant">
+      <a name="label" val="DEFINED_VALID_IN"/>
+    </comp>
+    <wire from="(1020,410)" to="(1030,410)"/>
+    <comp lib="0" loc="(1020,450)" name="Constant">
+      <a name="label" val="DEFINED_ADDRESS_PATH_STARTUP_RESET"/>
+    </comp>
+    <wire from="(1020,450)" to="(1030,450)"/>
+    <comp lib="0" loc="(1260,410)" name="Probe">
+      <a name="label" val="MONITOR_ADDRESS_VALID"/>
+    </comp>
+    <wire from="(1260,410)" to="(1250,410)"/>
+    <comp lib="0" loc="(1270,630)" name="Probe">
+      <a name="label" val="MONITOR_ACC_MEMORY_REQUEST"/>
+    </comp>
+    <wire from="(1270,630)" to="(1260,630)"/>
+    <comp lib="0" loc="(1270,730)" name="Probe">
+      <a name="label" val="MONITOR_LOAD_CONST"/>
+    </comp>
+    <wire from="(1270,730)" to="(1260,730)"/>
+    <comp lib="0" loc="(1270,1350)" name="Probe">
+      <a name="label" val="MONITOR_LD_REG_CONST"/>
+    </comp>
+    <wire from="(1270,1350)" to="(1260,1350)"/>
+    <comp lib="0" loc="(1270,1370)" name="Probe">
+      <a name="label" val="MONITOR_LD_REG_ADR"/>
+    </comp>
+    <wire from="(1270,1370)" to="(1260,1370)"/>
+    <comp lib="0" loc="(1270,1410)" name="Probe">
+      <a name="label" val="MONITOR_JUMP_ADR"/>
+    </comp>
+    <wire from="(1270,1410)" to="(1260,1410)"/>
+    <comp lib="0" loc="(1270,1430)" name="Probe">
+      <a name="label" val="MONITOR_JUMP_ZERO"/>
+    </comp>
+    <wire from="(1270,1430)" to="(1260,1430)"/>
+    <comp lib="0" loc="(1270,1450)" name="Probe">
+      <a name="label" val="MONITOR_JUMP_NEGATIVE"/>
+    </comp>
+    <wire from="(1270,1450)" to="(1260,1450)"/>
+    <comp lib="0" loc="(1270,1470)" name="Probe">
+      <a name="label" val="MONITOR_JUMP_ERROR"/>
+    </comp>
+    <wire from="(1270,1470)" to="(1260,1470)"/>
+    <comp lib="0" loc="(1270,1490)" name="Probe">
+      <a name="label" val="MONITOR_JUMP_NOT_ERROR"/>
+    </comp>
+    <wire from="(1270,1490)" to="(1260,1490)"/>
+    <comp lib="0" loc="(1270,1530)" name="Probe">
+      <a name="label" val="MONITOR_INPUT"/>
+    </comp>
+    <wire from="(1270,1530)" to="(1260,1530)"/>
+    <comp lib="0" loc="(1270,1650)" name="Probe">
+      <a name="label" val="MONITOR_SET_DIV0"/>
+    </comp>
+    <wire from="(1270,1650)" to="(1260,1650)"/>
+    <comp lib="0" loc="(1270,1670)" name="Probe">
+      <a name="label" val="MONITOR_SET_ADDR"/>
+    </comp>
+    <wire from="(1270,1670)" to="(1260,1670)"/>
+    <comp lib="0" loc="(1270,1690)" name="Probe">
+      <a name="label" val="MONITOR_SET_INV"/>
+    </comp>
+    <wire from="(1270,1690)" to="(1260,1690)"/>
+    <comp lib="0" loc="(1500,370)" name="Constant">
+      <a name="label" val="DEFINED_DATAPATH_STARTUP_RESET"/>
+    </comp>
+    <wire from="(1500,370)" to="(1510,370)"/>
+    <comp lib="0" loc="(1740,390)" name="Probe">
+      <a name="label" val="MONITOR_NEGATIVE"/>
+    </comp>
+    <wire from="(1740,390)" to="(1730,390)"/>
+    <comp lib="0" loc="(2770,850)" name="Probe">
+      <a name="label" val="MONITOR_OVERFLOW"/>
+    </comp>
+    <wire from="(2770,850)" to="(2760,850)"/>
+    <comp lib="0" loc="(2800,1720)" name="Probe">
+      <a name="label" val="MONITOR_EFFECTIVE_REGISTER_SELECTED_OUT"/>
+      <a name="width" val="16"/>
+    </comp>
+    <wire from="(2800,1720)" to="(2790,1720)"/>
+    <comp lib="0" loc="(660,430)" name="Constant">
+      <a name="label" val="DEFINED_PROGRAM_LIMIT"/>
+      <a name="width" val="16"/>
+    </comp>
+    <wire from="(660,430)" to="(670,430)"/>
+    <comp lib="0" loc="(660,450)" name="Constant">
+      <a name="label" val="DEFINED_DEC_HALT_ERROR"/>
+    </comp>
+    <wire from="(660,450)" to="(670,450)"/>
+    <comp lib="0" loc="(900,350)" name="Probe">
+      <a name="label" val="MONITOR_JUMP_NOT_ZERO"/>
+    </comp>
+    <wire from="(900,350)" to="(890,350)"/>
+    <comp lib="0" loc="(900,370)" name="Probe">
+      <a name="label" val="MONITOR_HALT_ERROR"/>
+    </comp>
+    <wire from="(900,370)" to="(890,370)"/>
+    <comp lib="0" loc="(900,390)" name="Probe">
+      <a name="label" val="MONITOR_PC_OUT"/>
+      <a name="width" val="12"/>
+    </comp>
+    <wire from="(900,390)" to="(890,390)"/>
     <wire from="(1250,350)" to="(1360,350)"/>
     <wire from="(1250,370)" to="(1340,370)"/>
     <wire from="(1250,390)" to="(1320,390)"/>
@@ -2832,6 +2945,130 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp loc="(460,80)" name="FetchDecodeControls">
       <a name="label" val="CONTROL_DECODER"/>
     </comp>
+    <comp lib="0" loc="(470,360)" name="Probe">
+      <a name="label" val="MONITOR_MUL_ADR_REG"/>
+    </comp>
+    <wire from="(460,360)" to="(470,360)"/>
+    <comp lib="0" loc="(470,560)" name="Probe">
+      <a name="label" val="MONITOR_OR_CONST"/>
+    </comp>
+    <wire from="(460,560)" to="(470,560)"/>
+    <comp lib="0" loc="(470,580)" name="Probe">
+      <a name="label" val="MONITOR_OR_ADR"/>
+    </comp>
+    <wire from="(460,580)" to="(470,580)"/>
+    <comp lib="0" loc="(470,600)" name="Probe">
+      <a name="label" val="MONITOR_OR_ADR_REG"/>
+    </comp>
+    <wire from="(460,600)" to="(470,600)"/>
+    <comp lib="0" loc="(470,620)" name="Probe">
+      <a name="label" val="MONITOR_OR_REG_OFF"/>
+    </comp>
+    <wire from="(460,620)" to="(470,620)"/>
+    <comp lib="0" loc="(470,640)" name="Probe">
+      <a name="label" val="MONITOR_STORE_ADR"/>
+    </comp>
+    <wire from="(460,640)" to="(470,640)"/>
+    <comp lib="0" loc="(470,660)" name="Probe">
+      <a name="label" val="MONITOR_STORE_ADR_REG"/>
+    </comp>
+    <wire from="(460,660)" to="(470,660)"/>
+    <comp lib="0" loc="(470,680)" name="Probe">
+      <a name="label" val="MONITOR_STORE_REG_OFF"/>
+    </comp>
+    <wire from="(460,680)" to="(470,680)"/>
+    <comp lib="0" loc="(470,700)" name="Probe">
+      <a name="label" val="MONITOR_LD_REG_CONST"/>
+    </comp>
+    <wire from="(460,700)" to="(470,700)"/>
+    <comp lib="0" loc="(470,720)" name="Probe">
+      <a name="label" val="MONITOR_LD_REG_ADR"/>
+    </comp>
+    <wire from="(460,720)" to="(470,720)"/>
+    <comp lib="0" loc="(470,760)" name="Probe">
+      <a name="label" val="MONITOR_JUMP_ADR"/>
+    </comp>
+    <wire from="(460,760)" to="(470,760)"/>
+    <comp lib="0" loc="(470,780)" name="Probe">
+      <a name="label" val="MONITOR_JUMP_ZERO"/>
+    </comp>
+    <wire from="(460,780)" to="(470,780)"/>
+    <comp lib="0" loc="(470,800)" name="Probe">
+      <a name="label" val="MONITOR_JUMP_NEGATIVE"/>
+    </comp>
+    <wire from="(460,800)" to="(470,800)"/>
+    <comp lib="0" loc="(470,820)" name="Probe">
+      <a name="label" val="MONITOR_JUMP_ERROR"/>
+    </comp>
+    <wire from="(460,820)" to="(470,820)"/>
+    <comp lib="0" loc="(470,840)" name="Probe">
+      <a name="label" val="MONITOR_JUMP_NOT_ERROR"/>
+    </comp>
+    <wire from="(460,840)" to="(470,840)"/>
+    <comp lib="0" loc="(470,860)" name="Probe">
+      <a name="label" val="MONITOR_CLEAR_ERROR"/>
+    </comp>
+    <wire from="(460,860)" to="(470,860)"/>
+    <comp lib="0" loc="(470,900)" name="Probe">
+      <a name="label" val="MONITOR_PRINT"/>
+    </comp>
+    <wire from="(460,900)" to="(470,900)"/>
+    <comp lib="0" loc="(470,920)" name="Probe">
+      <a name="label" val="MONITOR_PRINT_ADR"/>
+    </comp>
+    <wire from="(460,920)" to="(470,920)"/>
+    <comp lib="0" loc="(470,940)" name="Probe">
+      <a name="label" val="MONITOR_HALT"/>
+    </comp>
+    <wire from="(460,940)" to="(470,940)"/>
+    <comp lib="0" loc="(470,960)" name="Probe">
+      <a name="label" val="MONITOR_HALT_ERROR"/>
+    </comp>
+    <wire from="(460,960)" to="(470,960)"/>
+    <comp lib="0" loc="(470,980)" name="Probe">
+      <a name="label" val="MONITOR_SET_OVF"/>
+    </comp>
+    <wire from="(460,980)" to="(470,980)"/>
+    <comp lib="0" loc="(470,1000)" name="Probe">
+      <a name="label" val="MONITOR_SET_DIV0"/>
+    </comp>
+    <wire from="(460,1000)" to="(470,1000)"/>
+    <comp lib="0" loc="(470,1020)" name="Probe">
+      <a name="label" val="MONITOR_SET_ADDR"/>
+    </comp>
+    <wire from="(460,1020)" to="(470,1020)"/>
+    <comp lib="0" loc="(470,1040)" name="Probe">
+      <a name="label" val="MONITOR_SET_INV"/>
+    </comp>
+    <wire from="(460,1040)" to="(470,1040)"/>
+    <comp lib="0" loc="(470,1060)" name="Probe">
+      <a name="label" val="MONITOR_SET_ILL"/>
+    </comp>
+    <wire from="(460,1060)" to="(470,1060)"/>
+    <comp lib="0" loc="(470,1080)" name="Probe">
+      <a name="label" val="MONITOR_SET_INPUT"/>
+    </comp>
+    <wire from="(460,1080)" to="(470,1080)"/>
+    <comp lib="0" loc="(470,1100)" name="Probe">
+      <a name="label" val="MONITOR_XOR_CONST"/>
+    </comp>
+    <wire from="(460,1100)" to="(470,1100)"/>
+    <comp lib="0" loc="(470,1120)" name="Probe">
+      <a name="label" val="MONITOR_XOR_ADR"/>
+    </comp>
+    <wire from="(460,1120)" to="(470,1120)"/>
+    <comp lib="0" loc="(470,1140)" name="Probe">
+      <a name="label" val="MONITOR_XOR_ADR_REG"/>
+    </comp>
+    <wire from="(460,1140)" to="(470,1140)"/>
+    <comp lib="0" loc="(470,1160)" name="Probe">
+      <a name="label" val="MONITOR_XOR_REG_OFF"/>
+    </comp>
+    <wire from="(460,1160)" to="(470,1160)"/>
+    <comp lib="0" loc="(470,1180)" name="Probe">
+      <a name="label" val="MONITOR_JUMP_NOT_ZERO"/>
+    </comp>
+    <wire from="(460,1180)" to="(470,1180)"/>
     <wire from="(150,80)" to="(240,80)"/>
     <wire from="(460,100)" to="(600,100)"/>
     <wire from="(460,120)" to="(590,120)"/>

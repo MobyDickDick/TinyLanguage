@@ -2583,3 +2583,19 @@ and testable so they can be promoted into the formal backlog as needed.
     authoritative widths and explicitly closes the incompatible redesign.
   - Verification: a roadmap-consistency regression reads the versioned machine
     contract and prevents the stale next-step language from returning.
+
+## TinyCPU FBox connection closure (2026-08-27)
+
+- [x] **Close every visible FBox port before versioning the completed baseline**
+  (Owner: TinyCPU/Hardware)
+  - Scope: audit every input and output of every subcircuit instance rather
+    than accepting an FBox as soon as any one of its ports is connected.
+  - Cause: the former inspector checked the FBox as a whole. Consequently,
+    compatibility inputs and unused status outputs could remain visibly open
+    while the integration sheet was still reported as connected.
+  - Result: all such inputs now have explicit named inactive drivers and all
+    intentionally unused outputs have named monitor probes, both on
+    `TinyCPUMain` and inside `DecodeSignals`.
+  - Verification: the inspector reports every maintained sheet connected, and
+    a focused regression rejects an otherwise connected FBox with one open
+    port.

@@ -893,7 +893,24 @@ def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
             attrs = _attributes(component)
             label = attrs.get("label") or component.get("name", "component")
             missing_required = []
-            for terminal, terminal_name in _required_terminal_names(component).items():
+            required_terminals = _required_terminal_names(component)
+            if component.get("name", "") in circuit_names:
+                x, y = _location(component.get("loc", ""))
+                inputs = interface_pins(component.get("name", ""), "input")
+                outputs = interface_pins(component.get("name", ""), "output")
+                required_terminals = {
+                    **{
+                        f"({x - 220},{y + 20 * index})":
+                        _attributes(pin).get("label", f"input {index}")
+                        for index, pin in enumerate(inputs)
+                    },
+                    **{
+                        f"({x},{y + 20 * index})":
+                        _attributes(pin).get("label", f"output {index}")
+                        for index, pin in enumerate(outputs)
+                    },
+                }
+            for terminal, terminal_name in required_terminals.items():
                 terminal_net = reachable_wire_points({terminal})
                 terminal_peers = {
                     id(other)

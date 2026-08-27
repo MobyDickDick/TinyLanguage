@@ -101,7 +101,7 @@ in einem frischen Checkout verpflichtend laufen.
   führt anschließend die vollständige elektrische ISA-Matrix aus und bewahrt
   Rohdaten, normalisierte Traces und ein versioniertes Abnahmeprotokoll auf.
 
-## Abgeschlossenes Arbeitspaket: AP 12
+## Abgeschlossenes Arbeitspaket: AP 12 – Hardware-Abschluss
 
 AP 12 macht die elektrische Matrix zur verbindlichen Abschlussabnahme. Das
 CI-Gate ruft nur noch das gemeinsame Abnahmekommando auf; ein fehlgeschlagener

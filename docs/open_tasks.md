@@ -5,6 +5,17 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Align the highlighted TinyCPU completion heading**
+  (Owner: TinyCPU/Documentation; completed 2026-08-27)
+  - Scope: execute the next documentation-maintenance package by comparing the
+    separately highlighted completed package with the canonical package table
+    and status checklist aligned by the preceding package.
+  - Result: the completion heading now identifies AP 12 by both its number and
+    canonical `Hardware-Abschluss` title instead of reintroducing a third,
+    titleless package reference.
+  - Verification: the roadmap-consistency regression parses the highlighted
+    package and requires it to equal the final canonical table entry.
+
 - [x] **Cross-check the TinyCPU package titles**
   (Owner: TinyCPU/Documentation; completed 2026-08-27)
   - Scope: execute the next documentation-maintenance package by comparing the

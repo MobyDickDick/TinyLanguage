@@ -465,6 +465,15 @@ gesetzt wird. Die beiden Adressmultiplexer tragen wieder stabile
 Bezeichner, damit Strukturtests und die Logisim-Ansicht diese Verdrahtung
 eindeutig verfolgen können.
 
+Offene FBox-Anschlüsse gelten nicht mehr als vollständig: Der Inspektor prüft
+jeden einzelnen Ein- und Ausgang eines Unterblatts. Noch vorhandene
+Kompatibilitätseingänge werden auf der Integrationsseite durch benannte
+`DEFINED_*`-Konstanten eindeutig definiert; nicht benötigte Statusausgänge
+enden an benannten `MONITOR_*`-Proben. Damit bleibt kein Anschluss optisch oder
+elektrisch in der Luft, ohne unbenutzte Ausgänge mit einem fremden Steuernetz
+zu verbinden. Dasselbe gilt für die interne `FetchDecodeControls`-Instanz in
+`DecodeSignals`.
+
 Die manuelle Überarbeitung von `Operations` ist dabei ausdrücklich erhalten:
 die drei Operationsblöcke und ihre Ergebnis-ODER-Gatter bleiben in den nach
 rechts verschobenen, rechtwinklig verdrahteten Routingbahnen. Die Abnahme

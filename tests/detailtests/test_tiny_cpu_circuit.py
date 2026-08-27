@@ -100,6 +100,28 @@ def test_inspector_accepts_a_minimal_connected_project(tmp_path):
     assert main([str(project)]) == 0
 
 
+def test_inspector_rejects_one_open_port_on_an_otherwise_connected_fbox(tmp_path):
+    project = tmp_path / "open-fbox-port.circ"
+    project.write_text(
+        """<project><main name="main"/>
+        <circuit name="main">
+          <comp loc="(230,10)" name="FBox"/>
+          <comp lib="0" loc="(0,10)" name="Constant"/>
+          <wire from="(0,10)" to="(10,10)"/>
+        </circuit>
+        <circuit name="FBox">
+          <comp lib="0" loc="(10,10)" name="Pin"><a name="label" val="A"/></comp>
+          <comp lib="0" loc="(10,20)" name="Pin"><a name="label" val="B"/></comp>
+        </circuit></project>""",
+        encoding="utf-8",
+    )
+
+    report = inspect_project(project)[0]
+
+    assert not report.connected
+    assert report.unconnected == ("FBox.B (10,30)@(230,10)",)
+
+
 def test_hardware_contract_rejects_recursive_subcircuit_hierarchy(tmp_path):
     project = tmp_path / "recursive.circ"
     project.write_text(

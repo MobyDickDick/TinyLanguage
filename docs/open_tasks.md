@@ -5,6 +5,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [ ] **AP 13: Freeze the TinyCPU 1.0 release contract**
+  (Owner: TinyCPU/Release)
+  - Scope: define and validate the machine-readable product boundary before any
+    archive or release candidate is built.
+  - Deliverables: `tinycpu-release-v1.json`, a 1.x compatibility policy, and
+    verifier coverage cross-checking hardware profile, machine format, pinned
+    runtime versions, public CLI entry points, and acceptance schema.
+  - Acceptance: the focused contract tests and normal checkout verifier pass;
+    contradictory or incomplete release metadata is rejected.
+  - Follow-ups: AP 14 (reproducible distribution) and AP 15 (qualification and
+    publication) remain blocked on this package and are specified in
+    `docs/tiny_cpu_1_0_release_plan.md`.
+
 - [x] **Finish making the TinyCPU trace regression redraw-aware**
   (Owner: TinyCPU/Testing; completed 2026-08-27)
   - Scope: execute the next bounded maintenance package after the integration

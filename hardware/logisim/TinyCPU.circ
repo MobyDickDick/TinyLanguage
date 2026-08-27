@@ -46,6 +46,7 @@
       <a name="facing" val="west"/>
       <a name="label" val="MONITOR_PC_OUT"/>
       <a name="labelloc" val="east"/>
+      <a name="width" val="12"/>
     </comp>
     <comp lib="0" loc="(1020,350)" name="Constant">
       <a name="width" val="16"/>
@@ -201,6 +202,7 @@
       <a name="facing" val="west"/>
       <a name="label" val="MONITOR_EFFECTIVE_REGISTER_SELECTED_OUT"/>
       <a name="labelloc" val="east"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(3580,550)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -682,10 +684,11 @@
     <wire from="(930,280)" to="(1010,280)"/>
     <wire from="(930,280)" to="(930,380)"/>
     <wire from="(930,390)" to="(950,390)"/>
-    <wire from="(930,400)" to="(930,670)"/>
-    <wire from="(930,670)" to="(1040,670)"/>
-    <wire from="(930,670)" to="(930,770)"/>
-    <wire from="(930,770)" to="(1040,770)"/>
+    <wire from="(930,400)" to="(960,400)"/>
+    <wire from="(960,400)" to="(960,670)"/>
+    <wire from="(960,670)" to="(1040,670)"/>
+    <wire from="(960,670)" to="(960,770)"/>
+    <wire from="(960,770)" to="(1040,770)"/>
     <wire from="(950,390)" to="(950,530)"/>
     <wire from="(950,530)" to="(2240,530)"/>
     <wire from="(970,310)" to="(1700,310)"/>

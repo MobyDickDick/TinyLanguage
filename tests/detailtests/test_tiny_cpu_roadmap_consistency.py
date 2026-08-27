@@ -71,6 +71,18 @@ def test_expansion_roadmap_does_not_reopen_completed_hardware_packages():
     assert [package for package, _ in completed_packages] == expected_package_numbers
     assert defined_packages == completed_packages
 
+    completed_package_heading = re.search(
+        r"^## Abgeschlossenes Arbeitspaket: AP (\d+) – (.+)$",
+        detailed,
+        re.MULTILINE,
+    )
+    assert completed_package_heading is not None
+    highlighted_package = (
+        int(completed_package_heading.group(1)),
+        completed_package_heading.group(2),
+    )
+    assert highlighted_package == defined_packages[-1]
+
     tinycpu_section = expansion.split("## 1) Native compiler", maxsplit=1)[0]
     assert "**Completed boundary**: AP 1 through AP 12 are complete" in tinycpu_section
     assert "package table and completed status\n  checklist" in tinycpu_section

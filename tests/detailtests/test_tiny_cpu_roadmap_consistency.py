@@ -145,6 +145,21 @@ def test_active_backlog_agrees_that_no_tinycpu_package_is_scoped():
         assert claim not in combined_docs
 
 
+def test_active_task_history_starts_with_a_complete_work_package():
+    """A removed package must not leave wrapped prose below the section heading."""
+
+    active_tasks = (REPOSITORY_ROOT / "docs" / "open_tasks.md").read_text(
+        encoding="utf-8"
+    )
+    current_tasks = active_tasks.split("## Current tasks", maxsplit=1)[1]
+    first_content_line = next(
+        line for line in current_tasks.splitlines() if line.strip()
+    )
+
+    assert first_content_line.startswith("- [x] **")
+    assert "Repair the TinyCPU active-task boundary" in first_content_line
+
+
 def test_detailed_hardware_docs_do_not_advertise_completed_follow_ups():
     """Historical implementation notes must not look like active packages."""
 

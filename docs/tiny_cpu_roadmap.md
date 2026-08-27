@@ -33,6 +33,9 @@ abdeckt und Ausgabe, Haltzustand, Register, Speicher-Validität und Fehlerflags
 | **10. Elektrischen Kerntrace abnehmen** | Das AP-5-ROM im echten Simulator takten und die festgelegten Integrationspins per Tabellenlogger exportieren. | Der unveränderte CSV-/TSV-Export besteht `tiny_cpu_trace.py --integration --check-logisim-table`; das CI-Artefakt belegt die elektrische Ausführung. |
 | **11. Elektrische ISA-Matrix** | Jede Instruktionsfamilie sowie Invalidität, Adress-, Overflow-, Div0-, Illegal- und Input-Fehler mit kleinen ROM-Fixtures ausführen. | Parametrisierte Logisim/VM-Vergleiche decken jeden Opcode und jedes Sticky-Fehlerbit ab; Abdeckungsmetadaten verhindern ungetestete Opcodes. |
 | **12. Hardware-Abschluss** | Reset-/Wiederanlauf-, Mehrzyklus- und reproduzierbare Release-Abnahme dokumentieren und alle elektrischen Gates verpflichtend machen. | Das Abschlusskommando erzeugt die Nachweisartefakte aus einem frischen Checkout; kein Simulator-Test ist mehr optional und die Definition of Done ist erfüllt. |
+| **13. 1.0-Releasevertrag einfrieren** | Öffentliche Hardware-, ISA-, Maschinenformat-, CLI- und Nachweisgrenzen versionieren. | Ein maschinenlesbarer Releasevertrag wird gegen vorhandene Profile, Tool-Versionen und CLI-Oberflächen geprüft. |
+| **14. Reproduzierbare Distribution bauen** | Quell- und Simulator-Bundle mit kanonischem Inventar, Digests, Dokumentation und AP-12-Nachweisen erzeugen. | Zwei saubere Builds liefern identische Payloads; das extrahierte Bundle lässt sich offline verifizieren. |
+| **15. TinyCPU 1.0 qualifizieren und veröffentlichen** | Den exakten Release Candidate elektrisch abnehmen, im Clean Room testen und mit Release Notes sowie authentifizierten Prüfsummen veröffentlichen. | Alle Nachweise referenzieren denselben Commit und dieselben Digests; erst danach gilt TinyCPU 1.0 als veröffentlicht. |
 
 ## Abhängigkeiten und Reihenfolge
 
@@ -45,6 +48,9 @@ alle elektrischen Abnahmen. AP 10 hält die erste reale Simulation bewusst auf
 das bereits eingefrorene Kernprogramm begrenzt; erst danach verbreitert AP 11
 die Abdeckung auf die ISA. AP 12 darf erst geschlossen werden, wenn diese Gates
 in einem frischen Checkout verpflichtend laufen.
+AP 13 friert anschließend die Produktgrenze ein, bevor AP 14 daraus
+Distributionsartefakte erzeugt. AP 15 qualifiziert exakt diese Artefakte; es darf
+weder einen anderen Commit noch nachträglich veränderte Bundles veröffentlichen.
 
 ## Stand
 
@@ -111,13 +117,12 @@ dokumentiert.
 
 ## Aktive Arbeitspaketgrenze
 
-Nach AP 12 ist derzeit kein weiteres TinyCPU-Arbeitspaket definiert. Die
-abgeschlossenen Pflegeeinträge in `docs/open_tasks.md` sind keine implizite
-Fortsetzung der nummerierten Hardware-Roadmap. Ein AP 13 oder ein unnummeriertes
-Folgepaket muss dort zuerst als begrenzte, nicht abgehakte Aufgabe mit eigenen
-Abnahmekriterien dokumentiert werden, bevor Schaltung oder Tooling dafür
-geändert werden. Damit stimmt diese Detail-Roadmap mit der ausdrücklich leeren
-TinyCPU-Paketgrenze in `docs/expansion_roadmap.md` überein.
+Die elektrische Hardware ist nach AP 12 abgenommen, aber noch nicht als Produkt
+TinyCPU 1.0 veröffentlicht. AP 13 ist deshalb das nächste aktive Arbeitspaket;
+AP 14 und AP 15 folgen abhängig davon. Ihr Umfang und ihre Abnahmekriterien sind
+im [TinyCPU-1.0-Releaseplan](tiny_cpu_1_0_release_plan.md) festgelegt. Die
+abgeschlossenen Pflegeeinträge in `docs/open_tasks.md` öffnen AP 1 bis AP 12
+nicht erneut.
 
 ## Abgeschlossene Baseline-Pflege
 

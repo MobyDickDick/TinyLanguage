@@ -16,12 +16,17 @@ they can be tackled incrementally.
   and topology regressions and rerun the mandatory AP-12 acceptance command.
   Retained evidence can be authenticated offline with its versioned inventory;
   a VM-derived replay alone must never be described as electrical evidence.
-- **Next package**: none is currently scoped. New TinyCPU feature work must add
-  a bounded package to `docs/open_tasks.md` before implementation rather than
-  reopening one of the accepted AP-1-to-AP-12 packages.
+- **Release gap**: electrical acceptance is complete, but a versioned,
+  reproducible TinyCPU 1.0 distribution has not yet been qualified or
+  published.
+- **Next package**: AP 13 freezes the 1.0 release contract. AP 14 builds the
+  reproducible distribution and AP 15 qualifies and publishes the exact
+  release candidate. The bounded deliverables and acceptance criteria are in
+  `docs/tiny_cpu_1_0_release_plan.md`.
 - **Detailed acceptance criteria**: the package table and completed status
-  checklist in `docs/tiny_cpu_roadmap.md` both enumerate AP 1 through AP 12;
-  completed maintenance packages are recorded in `docs/open_tasks.md`.
+  checklist in `docs/tiny_cpu_roadmap.md` record completed AP 1 through AP 12
+  and the open AP 13 through AP 15 release sequence; completed maintenance
+  packages are recorded in `docs/open_tasks.md`.
 
 ## 1) Native compiler (executables)
 

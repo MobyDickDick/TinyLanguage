@@ -80,6 +80,12 @@
       <a name="label" val="XOR_REG_OFF"/>
       <a name="type" val="output"/>
     </comp>
+    <comp lib="0" loc="(1040,1130)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="JUMP_NOT_ZERO"/>
+      <a name="type" val="output"/>
+    </comp>
     <comp lib="0" loc="(1040,130)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
@@ -444,6 +450,9 @@
     <wire from="(520,90)" to="(980,90)"/>
     <wire from="(550,1110)" to="(1040,1110)"/>
     <wire from="(550,520)" to="(550,1110)"/>
+    <wire from="(520,390)" to="(680,390)"/>
+    <wire from="(680,390)" to="(680,1130)"/>
+    <wire from="(680,1130)" to="(1040,1130)"/>
     <wire from="(560,1090)" to="(1040,1090)"/>
     <wire from="(560,510)" to="(560,1090)"/>
     <wire from="(570,1070)" to="(1040,1070)"/>

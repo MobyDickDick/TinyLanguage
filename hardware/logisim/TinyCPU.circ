@@ -1490,52 +1490,52 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <a name="circuit" val="FetchDecodeControls"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
+    <comp lib="0" loc="(1000,1010)" name="Constant">
+      <a name="value" val="0x0"/>
+    </comp>
     <comp lib="0" loc="(1000,1030)" name="Constant">
       <a name="value" val="0x0"/>
     </comp>
-    <comp lib="0" loc="(1000,1050)" name="Constant">
+    <comp lib="0" loc="(1000,930)" name="Constant">
       <a name="value" val="0x0"/>
     </comp>
-    <comp lib="0" loc="(1000,1070)" name="Constant">
+    <comp lib="0" loc="(1000,950)" name="Constant">
       <a name="value" val="0x0"/>
     </comp>
-    <comp lib="0" loc="(1000,1090)" name="Constant">
+    <comp lib="0" loc="(1000,970)" name="Constant">
       <a name="value" val="0x0"/>
     </comp>
-    <comp lib="0" loc="(1000,1110)" name="Constant">
-      <a name="value" val="0x0"/>
-    </comp>
-    <comp lib="0" loc="(1000,1130)" name="Constant">
+    <comp lib="0" loc="(1000,990)" name="Constant">
       <a name="value" val="0x0"/>
     </comp>
     <comp lib="0" loc="(1040,1010)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="XOR_REG_OFF"/>
+      <a name="label" val="SET_ILL"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,1030)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="SET_OVF"/>
+      <a name="label" val="SET_INPUT"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,1050)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="SET_DIV0"/>
+      <a name="label" val="XOR_CONST"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,1070)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="SET_ADDR"/>
+      <a name="label" val="XOR_ADR"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,1090)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="SET_INV"/>
+      <a name="label" val="XOR_ADR_REG"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,110)" name="Pin">
@@ -1547,7 +1547,13 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp lib="0" loc="(1040,1110)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="SET_ILL"/>
+      <a name="label" val="XOR_REG_OFF"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="0" loc="(1040,1130)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="JUMP_NOT_ZERO"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,130)" name="Pin">
@@ -1757,49 +1763,49 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp lib="0" loc="(1040,750)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="JUMP_NOT_ZERO"/>
+      <a name="label" val="JUMP_NEGATIVE"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,770)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="JUMP_NEGATIVE"/>
+      <a name="label" val="JUMP_ERROR"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,790)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="JUMP_ERROR"/>
+      <a name="label" val="JUMP_NOT_ERROR"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,810)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="JUMP_NOT_ERROR"/>
+      <a name="label" val="CLEAR_ERROR"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,830)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="CLEAR_ERROR"/>
+      <a name="label" val="INPUT"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,850)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="INPUT"/>
+      <a name="label" val="PRINT"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,870)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="PRINT"/>
+      <a name="label" val="PRINT_ADR"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,890)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="PRINT_ADR"/>
+      <a name="label" val="HALT"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,90)" name="Pin">
@@ -1811,31 +1817,31 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp lib="0" loc="(1040,910)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="HALT"/>
+      <a name="label" val="HALT_ERROR"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,930)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="HALT_ERROR"/>
+      <a name="label" val="SET_OVF"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,950)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="XOR_CONST"/>
+      <a name="label" val="SET_DIV0"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,970)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="XOR_ADR"/>
+      <a name="label" val="SET_ADDR"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(1040,990)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="label" val="XOR_ADR_REG"/>
+      <a name="label" val="SET_INV"/>
       <a name="type" val="output"/>
     </comp>
     <comp lib="0" loc="(480,700)" name="Pin">
@@ -1846,14 +1852,14 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <comp lib="2" loc="(500,670)" name="Decoder">
       <a name="select" val="6"/>
     </comp>
+    <wire from="(1000,1010)" to="(1040,1010)"/>
     <wire from="(1000,1030)" to="(1040,1030)"/>
-    <wire from="(1000,1050)" to="(1040,1050)"/>
-    <wire from="(1000,1070)" to="(1040,1070)"/>
-    <wire from="(1000,1090)" to="(1040,1090)"/>
     <wire from="(1000,110)" to="(1040,110)"/>
-    <wire from="(1000,1110)" to="(1040,1110)"/>
-    <wire from="(1000,1130)" to="(1040,1130)"/>
     <wire from="(1000,70)" to="(1000,110)"/>
+    <wire from="(1000,930)" to="(1040,930)"/>
+    <wire from="(1000,950)" to="(1040,950)"/>
+    <wire from="(1000,970)" to="(1040,970)"/>
+    <wire from="(1000,990)" to="(1040,990)"/>
     <wire from="(1010,60)" to="(1010,90)"/>
     <wire from="(1010,90)" to="(1040,90)"/>
     <wire from="(1020,50)" to="(1020,70)"/>
@@ -1892,7 +1898,6 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(520,360)" to="(710,360)"/>
     <wire from="(520,370)" to="(700,370)"/>
     <wire from="(520,380)" to="(690,380)"/>
-    <wire from="(520,390)" to="(680,390)"/>
     <wire from="(520,40)" to="(1030,40)"/>
     <wire from="(520,400)" to="(670,400)"/>
     <wire from="(520,410)" to="(660,410)"/>
@@ -1908,12 +1913,16 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <wire from="(520,500)" to="(570,500)"/>
     <wire from="(520,510)" to="(560,510)"/>
     <wire from="(520,520)" to="(550,520)"/>
+    <wire from="(520,530)" to="(540,530)"/>
     <wire from="(520,60)" to="(1010,60)"/>
     <wire from="(520,70)" to="(1000,70)"/>
     <wire from="(520,80)" to="(990,80)"/>
     <wire from="(520,90)" to="(980,90)"/>
     <wire from="(550,1110)" to="(1040,1110)"/>
     <wire from="(550,520)" to="(550,1110)"/>
+    <wire from="(520,390)" to="(680,390)"/>
+    <wire from="(680,390)" to="(680,1130)"/>
+    <wire from="(680,1130)" to="(1040,1130)"/>
     <wire from="(560,1090)" to="(1040,1090)"/>
     <wire from="(560,510)" to="(560,1090)"/>
     <wire from="(570,1070)" to="(1040,1070)"/>

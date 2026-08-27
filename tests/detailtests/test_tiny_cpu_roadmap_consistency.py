@@ -91,6 +91,16 @@ def test_expansion_roadmap_does_not_reopen_completed_hardware_packages():
     assert "**Next package**: none is currently scoped" in tinycpu_section
     assert "add a mandatory headless" not in tinycpu_section
 
+    active_boundary = detailed.split(
+        "## Aktive Arbeitspaketgrenze", maxsplit=1
+    )[1].split("## Abgeschlossene Baseline-Pflege", maxsplit=1)[0]
+    assert "Nach AP 12 ist derzeit kein weiteres TinyCPU-Arbeitspaket definiert" in (
+        active_boundary
+    )
+    assert "Ein AP 13 oder ein unnummeriertes\nFolgepaket" in active_boundary
+    assert "nicht abgehakte Aufgabe mit eigenen\nAbnahmekriterien" in active_boundary
+    assert "`docs/expansion_roadmap.md`" in active_boundary
+
 
 def test_active_backlog_agrees_that_no_tinycpu_package_is_scoped():
     """Do not claim an empty roadmap while retaining an unchecked CPU task."""

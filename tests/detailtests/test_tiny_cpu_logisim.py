@@ -25,6 +25,18 @@ INTEGRATION_RESET = HARDWARE / "diagnostics" / "TinyCPU-IntegrationReset.circ"
 CI_WORKFLOW = Path(__file__).parents[2] / ".github" / "workflows" / "ci.yml"
 
 
+def test_operations_blind_control_wire_stays_removed():
+    """The removed Operations spur must not return as an unconnected wire."""
+    operations = ET.parse(PROJECT).getroot().find("circuit[@name='Operations']")
+    assert operations is not None
+
+    wires = {
+        frozenset((wire.get("from"), wire.get("to")))
+        for wire in operations.findall("wire")
+    }
+    assert frozenset(("(520,390)", "(680,390)")) not in wires
+
+
 def test_fetch_decode_lanes_match_the_versioned_machine_opcodes():
     """Do not let symbolic output names drift one lane from the decoder."""
 

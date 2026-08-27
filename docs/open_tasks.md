@@ -5,6 +5,16 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Validate the TinyCPU blind-wire cleanup**
+  (Owner: TinyCPU/Hardware; completed 2026-08-27)
+  - Scope: execute the next bounded schematic-maintenance package by checking
+    the removed `Operations` wire from `(520,390)` to `(680,390)` against the
+    accepted electrical and topology contracts.
+  - Result: the disconnected horizontal spur remains removed; the surrounding
+    operation-control routes and the completed AP-12 boundary are unchanged.
+  - Verification: the focused Logisim regression suite passes and now rejects
+    reintroducing this exact blind wire.
+
 - [x] **Align the highlighted TinyCPU completion heading**
   (Owner: TinyCPU/Documentation; completed 2026-08-27)
   - Scope: execute the next documentation-maintenance package by comparing the

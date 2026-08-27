@@ -78,9 +78,12 @@ def test_jump_not_zero_pin_preserves_existing_generated_symbol_ports():
 
 def test_jump_not_zero_decode_reaches_fetch_decode():
     """The dedicated decoder output must drive FetchDecode's DEC_JUMP_NOT_ZERO."""
-    top = _top_level(ET.parse(PROJECT).getroot())
-    adjacency = _electrical_adjacency(top, {"(1260,1830)", "(670,390)"})
-    assert "(670,390)" in _reachable(adjacency, "(1260,1830)")
+    root = ET.parse(PROJECT).getroot()
+    top = _top_level(root)
+    source = _subcircuit_output(root, "FetchDecodeControls", "JUMP_NOT_ZERO")
+    destination = _subcircuit_input(root, "FetchDecode", "DEC_JUMP_NOT_ZERO")
+    adjacency = _electrical_adjacency(top, {source, destination})
+    assert destination in _reachable(adjacency, source)
 
 
 def test_fetch_decode_lanes_match_the_versioned_machine_opcodes():
@@ -422,9 +425,12 @@ def test_jump_not_zero_receives_the_inverted_accumulator_status():
     adjacency = _electrical_adjacency(circuit)
     inverter = _labelled_component(circuit, "INVERT_ZERO_FOR_JNZ")
     assert inverter.get("name") == "NOT Gate"
-    assert inverter.get("loc") == "(1920,370)"
     assert _attributes(inverter).get("facing", "east") == "east"
-    assert "(1890,370)" in _reachable(
+    inverter_x, inverter_y = (
+        int(value) for value in inverter.get("loc").strip("()").split(",")
+    )
+    inverter_input = f"({inverter_x - 30},{inverter_y})"
+    assert inverter_input in _reachable(
         adjacency, _subcircuit_output(root, "Datapath", "ZERO")
     )
     assert _subcircuit_input(root, "FetchDecode", "NOT_ZERO") in _reachable(

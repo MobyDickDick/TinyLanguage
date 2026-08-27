@@ -151,9 +151,25 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
         (wire.get("from"), wire.get("to")) for wire in main.findall("wire")
     }
 
+    opcode_probe = next(
+        component.get("loc")
+        for component in main.findall("comp[@name='Splitter']")
+        if runner._pin_attributes(component).get("incoming") == "22"
+    )
+    clock_pin = next(
+        component.get("loc")
+        for component in main.findall("comp[@name='Pin']")
+        if runner._pin_attributes(component).get("label") == "CLK"
+    )
+    clock_probe = next(
+        end if start == clock_pin else start
+        for start, end in original_wires
+        if clock_pin in {start, end}
+    )
+
     runner._autonomous_trace_project(tree)
 
-    expected_probes = {"(900,410)", "(620,310)"}
+    expected_probes = {opcode_probe, clock_probe}
     tunnels = {
         runner._pin_attributes(component).get("label"): (
             component.get("loc"), runner._pin_attributes(component).get("width")
@@ -162,8 +178,8 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
         if component.get("loc") in expected_probes
     }
     assert tunnels == {
-        "AP5_TRACE_OPCODE": ("(900,410)", "22"),
-        "AP5_TRACE_CLOCK": ("(620,310)", None),
+        "AP5_TRACE_OPCODE": (opcode_probe, "22"),
+        "AP5_TRACE_CLOCK": (clock_probe, None),
     }
 
     # Each source probe is an endpoint or junction of the maintained circuit,
@@ -174,17 +190,23 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
     generated_wires = {
         (wire.get("from"), wire.get("to")) for wire in main.findall("wire")
     }
-    assert (("(3340,1590)", "(3490,1590)")) in generated_wires
-    assert (("(3340,1610)", "(3470,1610)")) in generated_wires
+    output_locations = {
+        runner._pin_attributes(component).get("label"): component.get("loc")
+        for component in main.findall("comp[@name='Pin']")
+        if runner._pin_attributes(component).get("type") == "output"
+    }
+    halted = output_locations["HALTED"]
+    halted_with_error = output_locations["HALTED_WITH_ERROR"]
+    halt_y = halted.strip("()").split(",")[1]
+    error_y = halted_with_error.strip("()").split(",")[1]
+    assert (halted, f"(3490,{halt_y})") in generated_wires
+    assert (halted_with_error, f"(3470,{error_y})") in generated_wires
     assert any(
         component.get("name") == "OR Gate"
         and runner._pin_attributes(component).get("label") == "HALT_ANY"
         for component in main.findall("comp")
     )
-    assert any(
-        start == "(1260,1590)" and end == "(3340,1590)"
-        for start, end in original_wires
-    )
+    assert ("(1260,1590)", output_locations["PRINT_ENABLE"]) in original_wires
 
 
 def test_tty_trace_converter_samples_last_stable_low_row_per_edge():

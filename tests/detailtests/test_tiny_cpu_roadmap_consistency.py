@@ -199,6 +199,32 @@ def test_latest_tinycpu_audit_does_not_invent_a_successor_package():
     assert "bounded, unchecked item with acceptance criteria" in latest_package
 
 
+def test_post_repair_audit_keeps_the_tinycpu_backlog_closed():
+    """The electrical repair must not be mistaken for new feature scope."""
+
+    active_tasks = (REPOSITORY_ROOT / "docs" / "open_tasks.md").read_text(
+        encoding="utf-8"
+    )
+    latest_package = active_tasks.split(
+        "**Re-confirm the TinyCPU work-package boundary after electrical repair**",
+        maxsplit=1,
+    )[1].split(
+        "- [x] **Restore TinyCPU electrical acceptance after the latest redraw**",
+        maxsplit=1,
+    )[0]
+
+    assert "AP 1 through AP 15 remain complete" in latest_package
+    assert "no unchecked TinyCPU package to\n    implement" in latest_package
+    assert (
+        "no circuit, release-contract, or feature change\n    is warranted"
+        in latest_package
+    )
+    assert (
+        "bounded,\n    unchecked package with explicit acceptance criteria"
+        in latest_package
+    )
+
+
 def test_detailed_hardware_docs_do_not_advertise_completed_follow_ups():
     """Historical implementation notes must not look like active packages."""
 

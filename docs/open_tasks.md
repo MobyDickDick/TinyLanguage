@@ -5,6 +5,23 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Restore TinyCPU electrical acceptance after the latest redraw**
+  (Owner: TinyCPU/Hardware; completed 2026-08-28)
+  - Scope: audit the latest `TinyCPUMain` redraw against the accepted named-pin
+    topology, bus-width, inspector, and release contracts, then complete the
+    resulting bounded maintenance package without changing the TinyCPU 1.0
+    feature or release boundary.
+  - Cause: the redraw displaced the fetch/decode and memory instances, changed
+    the instruction splitter orientation, shifted generated control ports, and
+    dropped the explicit widths of both multi-bit monitor probes. It thereby
+    disconnected opcode, print, and halt routes and introduced width conflicts.
+  - Result: the accepted component placement, generated-port order, control
+    routes, terminal isolation, and 12-/16-bit monitor widths are restored. The
+    inspector again reports every maintained sheet connected; no successor
+    implementation package is currently documented.
+  - Verification: the focused circuit, Logisim topology, trace, roadmap, and
+    frozen release-contract suites pass against the restored source.
+
 - [x] **Re-validate the restored TinyCPU integration sheet in CI**
   (Owner: TinyCPU/Testing; completed 2026-08-28)
   - Scope: reproduce the reported top-level inspector, monitor-width, and CLI

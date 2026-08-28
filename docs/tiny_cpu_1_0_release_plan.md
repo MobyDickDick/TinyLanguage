@@ -44,6 +44,29 @@ real Logisim-evolution acceptance remains mandatory.
 
 ## AP 14 — Build a reproducible distribution
 
+**Status: complete (2026-08-28).** Build both archives from a checkout with
+retained, passed AP-12 evidence:
+
+```bash
+python tools/tiny_cpu_distribution.py build \
+  --acceptance artifacts/tinycpu-ap12-acceptance \
+  --output-dir dist/tinycpu
+```
+
+After extracting either archive, its canonical inventory records every payload
+path, byte size, and SHA-256 digest. The simulator bundle also contains the
+standalone verifier; it needs only Python and no repository or network access:
+
+```bash
+python verify.py verify .
+```
+
+Archive entries use sorted paths, zero timestamps and owners, fixed modes, and
+a gzip header without a host filename or build time. The build rejects missing
+or non-regular inputs and invalid AP-12 reports. Offline verification rejects
+missing, additional, symlinked, size-mismatched, or digest-mismatched files and
+revalidates the nested AP-12 evidence inventory.
+
 **Deliverables**
 
 - one release command that creates a source archive and a simulator-ready
@@ -81,7 +104,7 @@ real Logisim-evolution acceptance remains mandatory.
 
 ## Execution order
 
-AP 13 is complete and its manifest is frozen. AP 14 is the next active package;
-AP 15 depends on the reproducible artifacts from AP 14. Scope discovered while
+AP 13 and AP 14 are complete. AP 15 is the next active package and consumes the
+reproducible artifacts from AP 14. Scope discovered while
 executing a package must be added to that package's deliverables or recorded as
 a separate unchecked task; completed AP 1 through AP 12 are not reopened.

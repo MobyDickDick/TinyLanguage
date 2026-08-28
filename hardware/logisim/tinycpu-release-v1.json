@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "release_version": "1.0.0",
+  "compatibility_series": "1.x",
+  "release_state": "contract-frozen",
+  "hardware": {
+    "profile": "hardware/logisim/tinycpu-16-12.json",
+    "profile_schema_version": 1,
+    "profile_name": "tinycpu-16-12",
+    "top_circuit": "TinyCPUMain"
+  },
+  "machine_format": {
+    "path": "hardware/logisim/tinycpu-machine-v1.json",
+    "schema_version": 1,
+    "format": "tinycpu-machine-v1",
+    "word_bits": 22
+  },
+  "runtime": {
+    "logisim_evolution": "4.1.0",
+    "java": "21+",
+    "minimum_java_feature": 21
+  },
+  "acceptance_report": {
+    "schema_version": 2,
+    "status": "passed",
+    "required_sections": [
+      "reset_restart_runs",
+      "matrix",
+      "evidence"
+    ]
+  },
+  "public_cli_entry_points": [
+    {
+      "name": "circuit-inspector",
+      "path": "src/tiny_cpu_circuit.py",
+      "help_contains": "Check basic connectivity"
+    },
+    {
+      "name": "logisim-acceptance",
+      "path": "src/tiny_cpu_logisim.py",
+      "help_contains": "pinned Logisim-evolution"
+    },
+    {
+      "name": "simulator",
+      "path": "src/tiny_cpu_cli.py",
+      "help_contains": "Assemble and run TinyCPU programs"
+    },
+    {
+      "name": "verifier",
+      "path": "src/tiny_cpu_verify.py",
+      "help_contains": "Verify a TinyCPU checkout"
+    }
+  ]
+}

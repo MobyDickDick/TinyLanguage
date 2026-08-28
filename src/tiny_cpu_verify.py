@@ -16,6 +16,7 @@ import xml.etree.ElementTree as ET
 from tiny_cpu_assembler import assemble
 from tiny_cpu_circuit import validate_hardware_contract
 from tiny_cpu_machine import encode_program, listing, rom_image
+from tiny_cpu_release import validate_release_contract
 from tiny_cpu_trace import capture_integration_trace, capture_trace, compare_trace
 
 
@@ -104,6 +105,7 @@ def verify_checkout(repository: Path) -> tuple[str, ...]:
     if violations:
         raise VerificationError("hardware contract: " + "; ".join(violations))
     _verify_electrical_attributes(project)
+    validate_release_contract(repository)
 
     source = (hardware / "ap5_countdown.tcpu").read_text(encoding="utf-8")
     program = assemble(source)
@@ -141,7 +143,7 @@ def verify_checkout(repository: Path) -> tuple[str, ...]:
     # generated subcircuit-symbol ports.  Electrical connectivity is reported by
     # ``tiny_cpu_circuit.py`` (and ultimately established by Logisim itself).
     return (
-        "hardware contract", "electrical attributes", "ROM and listing",
+        "hardware contract", "electrical attributes", "release contract", "ROM and listing",
         "embedded ROM", "17-edge trace", "integration boundary trace",
     )
 

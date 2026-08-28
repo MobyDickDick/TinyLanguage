@@ -81,7 +81,7 @@ real Logisim-evolution acceptance remains mandatory.
 
 ## Execution order
 
-AP 13 is the next active package. AP 14 depends on its frozen manifest, and
+AP 13 is complete and its manifest is frozen. AP 14 is the next active package;
 AP 15 depends on the reproducible artifacts from AP 14. Scope discovered while
 executing a package must be added to that package's deliverables or recorded as
 a separate unchecked task; completed AP 1 through AP 12 are not reopened.

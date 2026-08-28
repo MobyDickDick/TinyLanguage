@@ -5,18 +5,28 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
-- [ ] **AP 13: Freeze the TinyCPU 1.0 release contract**
-  (Owner: TinyCPU/Release)
+- [x] **AP 13: Freeze the TinyCPU 1.0 release contract**
+  (Owner: TinyCPU/Release; completed 2026-08-28)
   - Scope: define and validate the machine-readable product boundary before any
     archive or release candidate is built.
-  - Deliverables: `tinycpu-release-v1.json`, a 1.x compatibility policy, and
-    verifier coverage cross-checking hardware profile, machine format, pinned
-    runtime versions, public CLI entry points, and acceptance schema.
-  - Acceptance: the focused contract tests and normal checkout verifier pass;
-    contradictory or incomplete release metadata is rejected.
-  - Follow-ups: AP 14 (reproducible distribution) and AP 15 (qualification and
-    publication) remain blocked on this package and are specified in
-    `docs/tiny_cpu_1_0_release_plan.md`.
+  - Result: `tinycpu-release-v1.json` freezes the hardware and machine profiles,
+    runtime versions, AP-12 evidence schema, and supported CLI help boundary;
+    the 1.x compatibility policy separates those interfaces from diagnostics.
+  - Verification: focused negative cases reject missing and contradictory
+    metadata, while the normal checkout verifier cross-checks every source.
+  - Follow-ups: AP 14 (reproducible distribution) is now active; AP 15
+    (qualification and publication) remains blocked on AP 14.
+
+- [ ] **AP 14: Build a reproducible TinyCPU distribution**
+  (Owner: TinyCPU/Release)
+  - Scope: build source and simulator-ready archives from the frozen AP-13
+    contract without modifying the checkout.
+  - Deliverables: one release command, canonical path/size/SHA-256 inventories,
+    the declared circuit, tools, example, documentation, license, and retained
+    AP-12 evidence, plus an offline bundle verifier.
+  - Acceptance: two clean builds are identical; missing, extra, symlinked, or
+    digest-mismatched files are rejected; extracted verification succeeds
+    outside the repository. AP 15 remains blocked on these artifacts.
 
 - [x] **Finish making the TinyCPU trace regression redraw-aware**
   (Owner: TinyCPU/Testing; completed 2026-08-27)

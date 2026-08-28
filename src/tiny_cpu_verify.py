@@ -16,6 +16,7 @@ import xml.etree.ElementTree as ET
 from tiny_cpu_assembler import assemble
 from tiny_cpu_circuit import validate_hardware_contract
 from tiny_cpu_machine import encode_program, listing, rom_image
+from tiny_cpu_release import validate_release_contract
 from tiny_cpu_trace import capture_integration_trace, capture_trace, compare_trace
 
 
@@ -135,6 +136,11 @@ def verify_checkout(repository: Path) -> tuple[str, ...]:
                 f"integration trace {scenario.get('name', '<unnamed>')}: "
                 + "; ".join(mismatches)
             )
+    # AP 13 extends the checkout gate without changing the stable AP-8 result
+    # tuple below.  Keep this check after the AP-8 artifacts so focused fixture
+    # tests still report the artifact mismatch they were constructed to expose
+    # before the deliberately minimal fixture reaches the release boundary.
+    validate_release_contract(repository)
     # Do not advertise a connectivity check here.  ``validate_hardware_contract``
     # verifies component and pin declarations inside the leaf circuits, but it
     # deliberately does not prove that top-level wires end on the automatically

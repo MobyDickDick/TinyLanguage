@@ -67,8 +67,8 @@ def test_expansion_roadmap_does_not_reopen_completed_hardware_packages():
         )
     ]
     assert [package for package, _ in defined_packages] == list(range(1, 16))
-    assert [package for package, _ in completed_packages] == list(range(1, 13))
-    assert defined_packages[:12] == completed_packages
+    assert [package for package, _ in completed_packages] == list(range(1, 14))
+    assert defined_packages[:13] == completed_packages
 
     completed_package_heading = re.search(
         r"^## Abgeschlossenes Arbeitspaket: AP (\d+) – (.+)$",
@@ -80,20 +80,20 @@ def test_expansion_roadmap_does_not_reopen_completed_hardware_packages():
         int(completed_package_heading.group(1)),
         completed_package_heading.group(2),
     )
-    assert highlighted_package == completed_packages[-1]
+    assert highlighted_package == completed_packages[11]
 
     tinycpu_section = expansion.split("## 1) Native compiler", maxsplit=1)[0]
     assert "**Completed boundary**: AP 1 through AP 12 are complete" in tinycpu_section
-    assert "completed AP 1 through AP 12\n  and the open AP 13" in tinycpu_section
+    assert "completed AP 13 plus open AP 14" in tinycpu_section
     assert "active\n  maintenance history" not in tinycpu_section
-    assert "**Next package**: AP 13 freezes the 1.0 release contract" in tinycpu_section
+    assert "**Next package**: AP 13 has frozen the 1.0 release contract" in tinycpu_section
     assert "add a mandatory headless" not in tinycpu_section
 
     active_boundary = detailed.split(
         "## Aktive Arbeitspaketgrenze", maxsplit=1
     )[1].split("## Abgeschlossene Baseline-Pflege", maxsplit=1)[0]
-    assert "AP 13 ist deshalb das nächste aktive Arbeitspaket" in active_boundary
-    assert "AP 14 und AP 15 folgen abhängig davon" in active_boundary
+    assert "AP 13 hat die Release-Grenze eingefroren" in active_boundary
+    assert "AP 14 ist\ndeshalb das nächste aktive Arbeitspaket" in active_boundary
     assert "[TinyCPU-1.0-Releaseplan]" in active_boundary
 
 
@@ -113,11 +113,11 @@ def test_active_backlog_exposes_the_scoped_tinycpu_release_package():
         re.IGNORECASE | re.MULTILINE,
     )
     assert unchecked_tinycpu == [
-        "- [ ] **AP 13: Freeze the TinyCPU 1.0 release contract**"
+        "- [ ] **AP 14: Build a reproducible TinyCPU distribution**"
     ]
 
     tinycpu_section = expansion.split("## 1) Native compiler", maxsplit=1)[0]
-    assert "**Next package**: AP 13 freezes the 1.0 release contract" in tinycpu_section
+    assert "**Next package**: AP 13 has frozen the 1.0 release contract" in tinycpu_section
     assert "Re-validate the TinyCPU work-package boundary" in active_tasks
     assert "there is no unchecked TinyCPU package to implement" in active_tasks
     assert (

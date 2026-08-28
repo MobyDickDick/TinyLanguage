@@ -106,6 +106,10 @@ weder einen anderen Commit noch nachträglich veränderte Bundles veröffentlich
   zweimal am Reset-Zustand, vergleicht die normalisierten 17-Flanken-Traces,
   führt anschließend die vollständige elektrische ISA-Matrix aus und bewahrt
   Rohdaten, normalisierte Traces und ein versioniertes Abnahmeprotokoll auf.
+- [x] **AP 13: 1.0-Releasevertrag einfrieren:** Der maschinenlesbare Vertrag
+  gleicht Hardwareprofil, Maschinenformat, Laufzeitversionen, AP-12-Schema und
+  öffentliche CLI-Hilfe mit ihren Quellen ab. Die 1.x-Richtlinie trennt diese
+  stabilen Grenzen von internen Diagnoseartefakten.
 
 ## Abgeschlossenes Arbeitspaket: AP 12 – Hardware-Abschluss
 
@@ -118,8 +122,8 @@ dokumentiert.
 ## Aktive Arbeitspaketgrenze
 
 Die elektrische Hardware ist nach AP 12 abgenommen, aber noch nicht als Produkt
-TinyCPU 1.0 veröffentlicht. AP 13 ist deshalb das nächste aktive Arbeitspaket;
-AP 14 und AP 15 folgen abhängig davon. Ihr Umfang und ihre Abnahmekriterien sind
+TinyCPU 1.0 veröffentlicht. AP 13 hat die Release-Grenze eingefroren; AP 14 ist
+deshalb das nächste aktive Arbeitspaket und AP 15 folgt abhängig davon. Ihr Umfang und ihre Abnahmekriterien sind
 im [TinyCPU-1.0-Releaseplan](tiny_cpu_1_0_release_plan.md) festgelegt. Die
 abgeschlossenen Pflegeeinträge in `docs/open_tasks.md` öffnen AP 1 bis AP 12
 nicht erneut.

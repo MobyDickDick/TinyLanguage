@@ -31,6 +31,7 @@ SOURCE_PATHS = (
     "docs/tiny_cpu_compatibility.md",
     "docs/tiny_cpu_test_guide.md",
     "docs/tiny_cpu_1_0_release_plan.md",
+    "docs/tiny_cpu_1_0_release_notes.md",
     "LICENSE-TinyCPU.md",
     "scripts/test-logisim.sh",
     "scripts/test-logisim-local.sh",
@@ -45,6 +46,7 @@ SOURCE_PATHS = (
     "src/tiny_cpu_verify.py",
     "src/tiny_cpu_vm.py",
     "tools/tiny_cpu_distribution.py",
+    "tools/tiny_cpu_qualification.py",
 )
 
 

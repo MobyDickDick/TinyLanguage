@@ -85,6 +85,10 @@ revalidates the nested AP-12 evidence inventory.
 
 ## AP 15 — Qualify and publish TinyCPU 1.0
 
+**Status: complete (2026-08-28).** The qualification command, signed checksum
+verification, release notes, support boundary, and immutable tag/publication
+procedure are documented in `docs/tiny_cpu_1_0_release_notes.md`.
+
 **Deliverables**
 
 - a release-candidate checklist that runs the complete AP-12 electrical gate,
@@ -104,7 +108,7 @@ revalidates the nested AP-12 evidence inventory.
 
 ## Execution order
 
-AP 13 and AP 14 are complete. AP 15 is the next active package and consumes the
-reproducible artifacts from AP 14. Scope discovered while
+AP 13 through AP 15 are complete. No successor release package is currently
+scoped. Scope discovered while
 executing a package must be added to that package's deliverables or recorded as
 a separate unchecked task; completed AP 1 through AP 12 are not reopened.

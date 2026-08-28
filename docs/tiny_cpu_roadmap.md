@@ -113,6 +113,10 @@ weder einen anderen Commit noch nachträglich veränderte Bundles veröffentlich
 - [x] **AP 14: Reproduzierbare Distribution bauen:** Ein deterministischer
   Builder erzeugt Quell- und Simulatorarchive mit kanonischen Inventaren,
   eingebetteter Offline-Prüfung und validierten AP-12-Nachweisen.
+- [x] **AP 15: TinyCPU 1.0 qualifizieren und veröffentlichen:** Die signierte
+  Qualifikation prüft exakt diese Archive offline, führt den Countdown im Clean
+  Room aus und friert Commit, Digests und unveränderte Veröffentlichungsbytes
+  für den Tag `tinycpu-v1.0.0` ein.
 
 ## Abgeschlossenes Arbeitspaket: AP 12 – Hardware-Abschluss
 
@@ -122,13 +126,14 @@ Simulator-, Reset-/Wiederanlauf-, Mehrzyklus- oder Matrixvergleich bricht den
 Job ab. Die Bedienung und die erzeugten Nachweise sind im Logisim-Handbuch
 dokumentiert.
 
-## Aktive Arbeitspaketgrenze
+## Abgeschlossene Release-Arbeitspaketgrenze
 
-Die elektrische Hardware ist nach AP 12 abgenommen, aber noch nicht als Produkt
-TinyCPU 1.0 veröffentlicht. AP 13 hat die Release-Grenze eingefroren und AP 14
-die reproduzierbare Distribution gebaut; AP 15 ist deshalb das nächste aktive
-Arbeitspaket. Sein Umfang und seine Abnahmekriterien sind
-im [TinyCPU-1.0-Releaseplan](tiny_cpu_1_0_release_plan.md) festgelegt. Die
+Die elektrische Hardware ist nach AP 12 abgenommen. AP 13 hat die
+Release-Grenze eingefroren, AP 14 die reproduzierbare Distribution gebaut und
+AP 15 deren signierte Clean-Room-Qualifikation und unveränderte Veröffentlichung
+abgeschlossen. Der Umfang und die Abnahmekriterien sind im
+[TinyCPU-1.0-Releaseplan](tiny_cpu_1_0_release_plan.md) festgelegt; ein weiteres
+Release-Arbeitspaket ist derzeit nicht dokumentiert. Die
 abgeschlossenen Pflegeeinträge in `docs/open_tasks.md` öffnen AP 1 bis AP 12
 nicht erneut.
 

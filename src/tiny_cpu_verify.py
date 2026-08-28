@@ -105,7 +105,6 @@ def verify_checkout(repository: Path) -> tuple[str, ...]:
     if violations:
         raise VerificationError("hardware contract: " + "; ".join(violations))
     _verify_electrical_attributes(project)
-    validate_release_contract(repository)
 
     source = (hardware / "ap5_countdown.tcpu").read_text(encoding="utf-8")
     program = assemble(source)
@@ -137,13 +136,18 @@ def verify_checkout(repository: Path) -> tuple[str, ...]:
                 f"integration trace {scenario.get('name', '<unnamed>')}: "
                 + "; ".join(mismatches)
             )
+    # AP 13 extends the checkout gate without changing the stable AP-8 result
+    # tuple below.  Keep this check after the AP-8 artifacts so focused fixture
+    # tests still report the artifact mismatch they were constructed to expose
+    # before the deliberately minimal fixture reaches the release boundary.
+    validate_release_contract(repository)
     # Do not advertise a connectivity check here.  ``validate_hardware_contract``
     # verifies component and pin declarations inside the leaf circuits, but it
     # deliberately does not prove that top-level wires end on the automatically
     # generated subcircuit-symbol ports.  Electrical connectivity is reported by
     # ``tiny_cpu_circuit.py`` (and ultimately established by Logisim itself).
     return (
-        "hardware contract", "electrical attributes", "release contract", "ROM and listing",
+        "hardware contract", "electrical attributes", "ROM and listing",
         "embedded ROM", "17-edge trace", "integration boundary trace",
     )
 

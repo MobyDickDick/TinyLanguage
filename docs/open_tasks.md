@@ -5,6 +5,22 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Restore the accepted TinyCPU wiring after the integration redraw**
+  (Owner: TinyCPU/Hardware; completed 2026-08-28)
+  - Scope: audit the latest schematic adjustment against the named-pin topology,
+    bus-width, inspector, and release contracts, then execute the next bounded
+    maintenance package without expanding the frozen TinyCPU 1.0 feature scope.
+  - Cause: the redraw moved generated-symbol pins without preserving their
+    established top-level routes, removed two multi-bit probe widths, enlarged
+    `ACC_LOAD_REQUEST`, and introduced a reserved-lane overlap. This disconnected
+    jump, error, print, halt, and XOR controls and created two width conflicts.
+  - Result: the maintained circuit is restored to the accepted, electrically
+    connected topology. All named control routes are isolated again, monitor
+    widths and accumulator-load membership are preserved, and the inspector
+    reports every sheet connected.
+  - Verification: the complete focused circuit and Logisim topology suites pass;
+    the frozen AP-13 release verifier continues to accept the restored source.
+
 - [x] **AP 13: Freeze the TinyCPU 1.0 release contract**
   (Owner: TinyCPU/Release; completed 2026-08-28)
   - Scope: define and validate the machine-readable product boundary before any

@@ -2,6 +2,7 @@
 
 import json
 import re
+import subprocess
 from pathlib import Path
 
 from tiny_cpu_isa import INSTRUCTION_SET
@@ -221,6 +222,47 @@ def test_post_repair_audit_keeps_the_tinycpu_backlog_closed():
     )
     assert (
         "bounded,\n    unchecked package with explicit acceptance criteria"
+        in latest_package
+    )
+
+
+
+def test_latest_repository_backlog_audit_finds_no_documented_package():
+    """Only unchecked checklist entries may authorize another work package."""
+
+    task_log = REPOSITORY_ROOT / "docs" / "open_tasks.md"
+    active_tasks = task_log.read_text(encoding="utf-8")
+    latest_package = active_tasks.split(
+        "**Re-audit the documented backlog after the closed TinyCPU boundary**",
+        maxsplit=1,
+    )[1].split(
+        "- [x] **Re-confirm the TinyCPU work-package boundary after electrical repair**",
+        maxsplit=1,
+    )[0]
+
+    planning_files = (
+        REPOSITORY_ROOT / relative_path
+        for relative_path in subprocess.check_output(
+            ["git", "ls-files", "*.md", "*.rst", "*.txt"],
+            cwd=REPOSITORY_ROOT,
+            text=True,
+        ).splitlines()
+    )
+    unchecked_entries = []
+    for planning_file in planning_files:
+        for line_number, line in enumerate(
+            planning_file.read_text(encoding="utf-8").splitlines(), start=1
+        ):
+            if re.match(r"^\s*[-*] \[ \]", line):
+                unchecked_entries.append(
+                    f"{planning_file.relative_to(REPOSITORY_ROOT)}:{line_number}"
+                )
+
+    assert unchecked_entries == []
+    assert "no unchecked work package is documented" in latest_package
+    assert "all AP 1 through AP 15 packages remain\n    complete" in latest_package
+    assert (
+        "bounded, unchecked\n    package with explicit acceptance criteria"
         in latest_package
     )
 

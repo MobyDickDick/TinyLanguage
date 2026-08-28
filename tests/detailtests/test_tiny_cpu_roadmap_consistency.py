@@ -165,6 +165,23 @@ def test_active_task_history_starts_with_a_complete_work_package():
     assert first_content_line.endswith("**")
 
 
+def test_completed_release_entries_do_not_advertise_ap15_as_active():
+    """Earlier release entries must agree that the AP-15 sequence is closed."""
+
+    active_tasks = (REPOSITORY_ROOT / "docs" / "open_tasks.md").read_text(
+        encoding="utf-8"
+    )
+    release_history = active_tasks.split(
+        "**AP 13: Freeze the TinyCPU 1.0 release contract**", maxsplit=1
+    )[1].split(
+        "**Finish making the TinyCPU trace regression redraw-aware**", maxsplit=1
+    )[0]
+
+    assert "AP 15 is now active" not in release_history
+    assert "AP 15 is complete" in release_history
+    assert "no successor release package is currently\n    scoped" in release_history
+
+
 def test_latest_tinycpu_audit_does_not_invent_a_successor_package():
     """Completed maintenance history is not an implicit hardware backlog."""
 

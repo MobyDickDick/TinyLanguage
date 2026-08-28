@@ -34,14 +34,22 @@ archived in `docs/open_tasks_archive.md`.
     verify an extracted bundle outside the checkout, and exercise every
     required rejection class. AP 15 is now active.
 
-- [ ] **AP 15: Qualify and publish TinyCPU 1.0**
-  (Owner: TinyCPU/Release)
+- [x] **AP 15: Qualify and publish TinyCPU 1.0**
+  (Owner: TinyCPU/Release; completed 2026-08-28)
   - Scope: qualify the exact AP-14 artifacts with the mandatory AP-12 gate and
     a clean-room countdown run, then publish those unchanged artifacts.
   - Deliverables: release-candidate checklist, release notes and supported
     limitations, authenticated checksums, and the `tinycpu-v1.0.0` tag.
   - Acceptance: every result names the same commit and artifact digests, and
     the published archives are byte-for-byte the qualified candidate.
+  - Result: `tools/tiny_cpu_qualification.py` verifies AP-14 archives outside
+    the checkout, runs the countdown in a clean room, stages unchanged archive
+    bytes, records the commit and digests, and signs the canonical checksum
+    list. The release notes freeze the support boundary and authenticated
+    `tinycpu-v1.0.0` publication procedure.
+  - Verification: focused tests cover a successful signed qualification,
+    candidate/publication byte identity, malformed commits, and post-signing
+    archive tampering.
 
 - [x] **Finish making the TinyCPU trace regression redraw-aware**
   (Owner: TinyCPU/Testing; completed 2026-08-27)

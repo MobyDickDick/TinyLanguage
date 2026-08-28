@@ -83,6 +83,25 @@ def test_inspector_exposes_completed_sheets():
     assert reports["Operations"].width_conflicts == ()
 
 
+def test_top_level_monitor_probes_preserve_their_bus_widths():
+    """A Logisim redraw must not reset multi-bit monitors to one-bit probes."""
+
+    root = ET.parse(PROJECT).getroot()
+    top = root.find("circuit[@name='TinyCPUMain']")
+    assert top is not None
+    probes = {}
+    for component in top.findall("comp[@name='Probe']"):
+        attributes = {
+            attribute.get("name"): attribute.get("val")
+            for attribute in component.findall("a")
+        }
+        if "label" in attributes:
+            probes[attributes["label"]] = attributes
+
+    assert probes["MONITOR_PC_OUT"]["width"] == "12"
+    assert probes["MONITOR_EFFECTIVE_REGISTER_SELECTED_OUT"]["width"] == "16"
+
+
 def test_inspector_accepts_a_minimal_connected_project(tmp_path):
     project = tmp_path / "connected.circ"
     project.write_text(

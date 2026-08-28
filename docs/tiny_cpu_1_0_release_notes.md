@@ -38,10 +38,13 @@ python tools/tiny_cpu_qualification.py qualify \
   --signing-key /secure/path/tinycpu-release-private.pem
 ```
 
-The command records the AP-12 gate, offline archive checks, clean-room `3, 2,
-1` countdown, unchanged candidate-to-publication bytes, commit, sizes, and
-digests in `tinycpu-v1.0.0-qualification.json`. It signs `SHA256SUMS` with
-OpenSSL SHA-256 and stages only the qualified archives under `published/`.
+The command first checks that `--commit` is the checkout's exact `HEAD`, runs
+the complete checkout verifier, and validates the full AP-12 report rather than
+accepting only its top-level status. It then records the offline archive checks,
+clean-room `3, 2, 1` countdown, unchanged candidate-to-publication bytes,
+commit, sizes, and digests in `tinycpu-v1.0.0-qualification.json`. It signs a
+`SHA256SUMS` that covers both archives **and the qualification report** with
+OpenSSL SHA-256 and stages only the qualified files under `published/`.
 
 Before uploading, verify with the separately distributed public key:
 
@@ -53,7 +56,8 @@ git tag -s tinycpu-v1.0.0 "$(git rev-parse HEAD)" \
   -m "TinyCPU 1.0.0"
 ```
 
-Upload the two files named in the signed checksum list without rebuilding or
-renaming them. Download the uploaded files into a fresh directory and rerun the
-verification command before publishing the tag. This last comparison ensures
-the public archives are byte-for-byte the qualified candidate.
+Upload the complete `published/` directory: the two archives, qualification
+report, checksum list, and detached signature. Do not rebuild or rename any of
+them. Download all five files into a fresh directory and rerun the verification
+command before publishing the tag. This last comparison ensures the public
+archives are byte-for-byte the qualified candidate.

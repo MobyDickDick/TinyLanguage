@@ -12,11 +12,15 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import stat
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
+sys.path.insert(0, str(ROOT / "src"))
 import tiny_cpu_distribution as distribution  # noqa: E402
+from tiny_cpu_logisim import verify_acceptance_bundle  # noqa: E402
+from tiny_cpu_verify import verify_checkout  # noqa: E402
 
 TAG = "tinycpu-v1.0.0"
 CHECKSUMS = "SHA256SUMS"
@@ -38,6 +42,12 @@ def _run(command: list[str], *, cwd: Path | None = None) -> subprocess.Completed
 
 
 def _sha256(path: Path) -> str:
+    try:
+        mode = path.lstat().st_mode
+    except OSError as exc:
+        raise QualificationError(f"missing publication file: {path.name}") from exc
+    if not stat.S_ISREG(mode):
+        raise QualificationError(f"publication path is not a regular file: {path.name}")
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
@@ -54,6 +64,16 @@ def qualify(repository: Path, acceptance: Path, output: Path, commit: str, signi
     """Build once, verify outside the checkout, smoke test, sign, and stage unchanged bytes."""
     if len(commit) != 40 or any(character not in "0123456789abcdef" for character in commit):
         raise QualificationError("commit must be a full lowercase Git object id")
+    actual_commit = _run(["git", "rev-parse", "HEAD"], cwd=repository).stdout.strip()
+    if actual_commit != commit:
+        raise QualificationError(
+            f"requested commit {commit} is not checkout HEAD {actual_commit}"
+        )
+    # AP-15 consumes the complete AP-12 contract.  The distribution builder's
+    # lightweight nested-inventory check is deliberately not a substitute for
+    # either the checkout verifier or the strict AP-12 metadata verifier.
+    verify_checkout(repository)
+    verify_acceptance_bundle(acceptance)
     output.mkdir(parents=True, exist_ok=False)
     candidate = output / "candidate"
     published = output / "published"
@@ -81,12 +101,6 @@ def qualify(repository: Path, acceptance: Path, output: Path, commit: str, signi
         shutil.copyfile(artifact, published / artifact.name)
         if (published / artifact.name).read_bytes() != artifact.read_bytes():
             raise QualificationError(f"published bytes changed: {artifact.name}")
-    checksums = "".join(f"{row['sha256']}  {row['name']}\n" for row in artifact_rows)
-    (published / CHECKSUMS).write_text(checksums, encoding="ascii")
-    _run([
-        "openssl", "dgst", "-sha256", "-sign", str(signing_key),
-        "-out", str(published / SIGNATURE), str(published / CHECKSUMS),
-    ])
     report = {
         "schema_version": 1,
         "release_version": distribution.RELEASE,
@@ -103,6 +117,17 @@ def qualify(repository: Path, acceptance: Path, output: Path, commit: str, signi
         },
     }
     (published / REPORT).write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    signed_rows = artifact_rows + [{
+        "name": REPORT,
+        "sha256": _sha256(published / REPORT),
+        "size_bytes": (published / REPORT).stat().st_size,
+    }]
+    checksums = "".join(f"{row['sha256']}  {row['name']}\n" for row in signed_rows)
+    (published / CHECKSUMS).write_text(checksums, encoding="ascii")
+    _run([
+        "openssl", "dgst", "-sha256", "-sign", str(signing_key),
+        "-out", str(published / SIGNATURE), str(published / CHECKSUMS),
+    ])
     return published
 
 
@@ -113,13 +138,35 @@ def verify(directory: Path, public_key: Path) -> None:
         "-signature", str(directory / SIGNATURE), str(directory / CHECKSUMS),
     ])
     report = json.loads((directory / REPORT).read_text(encoding="utf-8"))
+    if not isinstance(report, dict):
+        raise QualificationError("publication qualification report must be an object")
     if report.get("status") != "passed" or report.get("tag") != TAG:
         raise QualificationError("publication has no passed AP-15 report")
-    expected = {row["name"]: row["sha256"] for row in report.get("artifacts", [])}
+    artifacts = report.get("artifacts")
+    if not isinstance(artifacts, list) or any(
+        not isinstance(row, dict)
+        or not isinstance(row.get("name"), str)
+        or not isinstance(row.get("sha256"), str)
+        for row in artifacts
+    ):
+        raise QualificationError("publication has an invalid artifact inventory")
+    expected = {row["name"]: row["sha256"] for row in artifacts}
+    if len(expected) != len(artifacts):
+        raise QualificationError("publication artifact names must be unique")
+    expected[REPORT] = _sha256(directory / REPORT)
     lines = (directory / CHECKSUMS).read_text(encoding="ascii").splitlines()
-    recorded = dict(reversed(line.split("  ", 1)) for line in lines)
+    pairs = [line.split("  ", 1) for line in lines]
+    if any(len(pair) != 2 or not pair[0] or not pair[1] for pair in pairs):
+        raise QualificationError("signed checksum file is malformed")
+    recorded = {name: digest for digest, name in pairs}
+    if len(recorded) != len(pairs):
+        raise QualificationError("signed checksum paths must be unique")
     if recorded != expected:
         raise QualificationError("signed checksums differ from qualification report")
+    allowed = set(expected) | {CHECKSUMS, SIGNATURE}
+    actual = {path.name for path in directory.iterdir()}
+    if actual != allowed:
+        raise QualificationError("publication contains missing or additional files")
     for name, digest in expected.items():
         if _sha256(directory / name) != digest:
             raise QualificationError(f"published artifact digest mismatch: {name}")

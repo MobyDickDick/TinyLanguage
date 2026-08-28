@@ -47,9 +47,9 @@ archived in `docs/open_tasks_archive.md`.
     bytes, records the commit and digests, and signs the canonical checksum
     list. The release notes freeze the support boundary and authenticated
     `tinycpu-v1.0.0` publication procedure.
-  - Verification: focused tests cover a successful signed qualification,
-    candidate/publication byte identity, malformed commits, and post-signing
-    archive tampering.
+  - Verification: focused tests cover the complete checkout and AP-12 gates, a
+    successful signed qualification, candidate/publication byte identity,
+    wrong or malformed commits, and post-signing archive or report tampering.
 
 - [x] **Finish making the TinyCPU trace regression redraw-aware**
   (Owner: TinyCPU/Testing; completed 2026-08-27)

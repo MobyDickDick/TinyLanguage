@@ -5,6 +5,19 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Re-validate the restored TinyCPU integration sheet in CI**
+  (Owner: TinyCPU/Testing; completed 2026-08-28)
+  - Scope: reproduce the reported top-level inspector, monitor-width, and CLI
+    failures against the current `TinyCPU.circ` rather than changing the frozen
+    release contract in response to stale diagnostics.
+  - Result: the maintained sheet has no open ports, output-driver conflicts, or
+    width conflicts; both multi-bit monitor widths are present, and the
+    inspector CLI accepts the project. The single reserved-lane placement note
+    remains an explicitly advisory drawing diagnostic.
+  - Verification: the focused circuit suite passes all 48 tests. Its completed-
+    sheet regression now checks the empty width-conflict set and freezes the
+    one accepted advisory placement message separately from electrical status.
+
 - [x] **Close stale TinyCPU release follow-up markers**
   (Owner: TinyCPU/Documentation; completed 2026-08-28)
   - Scope: execute the next bounded documentation-maintenance package by

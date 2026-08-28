@@ -71,6 +71,11 @@ def test_inspector_exposes_completed_sheets():
     assert unconnected_labels == set()
     assert {"CLK", "RESET"}.isdisjoint(unconnected_labels)
     assert reports["TinyCPUMain"].routing_conflicts == ()
+    assert reports["TinyCPUMain"].width_conflicts == ()
+    assert reports["TinyCPUMain"].placement_conflicts == (
+        "DecodeSignals@(1260,670) overlaps the reserved lane of "
+        "FetchDecodeControls@(1260,770)",
+    )
 
     for sheet in (
         "Datapath", "AddressPath", "Memory", "ErrorFlags", "FetchDecode",

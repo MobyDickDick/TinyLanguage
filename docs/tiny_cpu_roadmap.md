@@ -110,6 +110,9 @@ weder einen anderen Commit noch nachträglich veränderte Bundles veröffentlich
   gleicht Hardwareprofil, Maschinenformat, Laufzeitversionen, AP-12-Schema und
   öffentliche CLI-Hilfe mit ihren Quellen ab. Die 1.x-Richtlinie trennt diese
   stabilen Grenzen von internen Diagnoseartefakten.
+- [x] **AP 14: Reproduzierbare Distribution bauen:** Ein deterministischer
+  Builder erzeugt Quell- und Simulatorarchive mit kanonischen Inventaren,
+  eingebetteter Offline-Prüfung und validierten AP-12-Nachweisen.
 
 ## Abgeschlossenes Arbeitspaket: AP 12 – Hardware-Abschluss
 
@@ -122,8 +125,9 @@ dokumentiert.
 ## Aktive Arbeitspaketgrenze
 
 Die elektrische Hardware ist nach AP 12 abgenommen, aber noch nicht als Produkt
-TinyCPU 1.0 veröffentlicht. AP 13 hat die Release-Grenze eingefroren; AP 14 ist
-deshalb das nächste aktive Arbeitspaket und AP 15 folgt abhängig davon. Ihr Umfang und ihre Abnahmekriterien sind
+TinyCPU 1.0 veröffentlicht. AP 13 hat die Release-Grenze eingefroren und AP 14
+die reproduzierbare Distribution gebaut; AP 15 ist deshalb das nächste aktive
+Arbeitspaket. Sein Umfang und seine Abnahmekriterien sind
 im [TinyCPU-1.0-Releaseplan](tiny_cpu_1_0_release_plan.md) festgelegt. Die
 abgeschlossenen Pflegeeinträge in `docs/open_tasks.md` öffnen AP 1 bis AP 12
 nicht erneut.

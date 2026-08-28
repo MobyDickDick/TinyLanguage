@@ -19,13 +19,13 @@ they can be tackled incrementally.
 - **Release gap**: electrical acceptance is complete, but a versioned,
   reproducible TinyCPU 1.0 distribution has not yet been qualified or
   published.
-- **Next package**: AP 13 has frozen the 1.0 release contract. AP 14 now builds
-  the reproducible distribution and AP 15 qualifies and publishes the exact
+- **Next package**: AP 13 froze the 1.0 release contract and AP 14 built the
+  reproducible distribution. AP 15 now qualifies and publishes the exact
   release candidate. The bounded deliverables and acceptance criteria are in
   `docs/tiny_cpu_1_0_release_plan.md`.
 - **Detailed acceptance criteria**: the package table and completed status
   checklist in `docs/tiny_cpu_roadmap.md` record completed AP 1 through AP 12
-  and the completed AP 13 plus open AP 14 through AP 15 release sequence; completed maintenance
+  and the completed AP 13 through AP 14 plus open AP 15 release sequence; completed maintenance
   packages are recorded in `docs/open_tasks.md`.
 
 ## 1) Native compiler (executables)

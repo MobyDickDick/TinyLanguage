@@ -14,11 +14,11 @@ archived in `docs/open_tasks_archive.md`.
     the 1.x compatibility policy separates those interfaces from diagnostics.
   - Verification: focused negative cases reject missing and contradictory
     metadata, while the normal checkout verifier cross-checks every source.
-  - Follow-ups: AP 14 (reproducible distribution) is now active; AP 15
-    (qualification and publication) remains blocked on AP 14.
+  - Follow-ups: AP 14 (reproducible distribution) is complete; AP 15
+    (qualification and publication) is now active.
 
-- [ ] **AP 14: Build a reproducible TinyCPU distribution**
-  (Owner: TinyCPU/Release)
+- [x] **AP 14: Build a reproducible TinyCPU distribution**
+  (Owner: TinyCPU/Release; completed 2026-08-28)
   - Scope: build source and simulator-ready archives from the frozen AP-13
     contract without modifying the checkout.
   - Deliverables: one release command, canonical path/size/SHA-256 inventories,
@@ -26,7 +26,22 @@ archived in `docs/open_tasks_archive.md`.
     AP-12 evidence, plus an offline bundle verifier.
   - Acceptance: two clean builds are identical; missing, extra, symlinked, or
     digest-mismatched files are rejected; extracted verification succeeds
-    outside the repository. AP 15 remains blocked on these artifacts.
+    outside the repository.
+  - Result: `tools/tiny_cpu_distribution.py` creates deterministic source and
+    simulator archives, embeds canonical inventories and an offline verifier,
+    and retains only passed, internally consistent AP-12 evidence.
+  - Verification: focused tests rebuild both artifacts twice byte-for-byte,
+    verify an extracted bundle outside the checkout, and exercise every
+    required rejection class. AP 15 is now active.
+
+- [ ] **AP 15: Qualify and publish TinyCPU 1.0**
+  (Owner: TinyCPU/Release)
+  - Scope: qualify the exact AP-14 artifacts with the mandatory AP-12 gate and
+    a clean-room countdown run, then publish those unchanged artifacts.
+  - Deliverables: release-candidate checklist, release notes and supported
+    limitations, authenticated checksums, and the `tinycpu-v1.0.0` tag.
+  - Acceptance: every result names the same commit and artifact digests, and
+    the published archives are byte-for-byte the qualified candidate.
 
 - [x] **Finish making the TinyCPU trace regression redraw-aware**
   (Owner: TinyCPU/Testing; completed 2026-08-27)

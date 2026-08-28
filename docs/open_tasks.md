@@ -5,6 +5,22 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Re-confirm the TinyCPU work-package boundary after electrical repair**
+  (Owner: TinyCPU/Documentation; completed 2026-08-28)
+  - Scope: answer the request for the next documented TinyCPU package by
+    rechecking the repaired electrical baseline against the detailed AP
+    inventory, the active task log, and the expansion roadmap before opening
+    new implementation scope.
+  - Result: AP 1 through AP 15 remain complete, the newest electrical repair is
+    a closed maintenance item, and there is no unchecked TinyCPU package to
+    implement. Consequently, no circuit, release-contract, or feature change
+    is warranted.
+  - Follow-up contract: a successor must first be documented as a bounded,
+    unchecked package with explicit acceptance criteria; a completed repair
+    does not implicitly create another work package.
+  - Verification: the roadmap-consistency regression identifies this audit as
+    the current boundary and protects its no-successor decision.
+
 - [x] **Restore TinyCPU electrical acceptance after the latest redraw**
   (Owner: TinyCPU/Hardware; completed 2026-08-28)
   - Scope: audit the latest `TinyCPUMain` redraw against the accepted named-pin

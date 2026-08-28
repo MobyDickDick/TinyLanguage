@@ -5,6 +5,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Close stale TinyCPU release follow-up markers**
+  (Owner: TinyCPU/Documentation; completed 2026-08-28)
+  - Scope: execute the next bounded documentation-maintenance package by
+    reconciling the AP-13 and AP-14 follow-up text with the completed AP-15
+    qualification and publication entry immediately below it.
+  - Cause: both earlier release entries still called AP 15 active even though
+    AP 15, the detailed roadmap, and the expansion roadmap record the complete
+    AP-13-through-AP-15 release sequence.
+  - Result: the earlier entries now identify AP 15 as completed and point to
+    the closed release sequence instead of advertising a nonexistent active
+    package. No successor release package is currently scoped.
+  - Verification: the roadmap-consistency regression rejects active-package
+    language in completed AP-13-through-AP-15 task entries and preserves the
+    explicit no-successor boundary.
+
 - [x] **Restore the accepted TinyCPU wiring after the integration redraw**
   (Owner: TinyCPU/Hardware; completed 2026-08-28)
   - Scope: audit the latest schematic adjustment against the named-pin topology,
@@ -30,8 +45,9 @@ archived in `docs/open_tasks_archive.md`.
     the 1.x compatibility policy separates those interfaces from diagnostics.
   - Verification: focused negative cases reject missing and contradictory
     metadata, while the normal checkout verifier cross-checks every source.
-  - Follow-ups: AP 14 (reproducible distribution) is complete; AP 15
-    (qualification and publication) is now active.
+  - Follow-ups: AP 14 (reproducible distribution) and AP 15 (qualification and
+    publication) are complete; no successor release package is currently
+    scoped.
 
 - [x] **AP 14: Build a reproducible TinyCPU distribution**
   (Owner: TinyCPU/Release; completed 2026-08-28)
@@ -48,7 +64,8 @@ archived in `docs/open_tasks_archive.md`.
     and retains only passed, internally consistent AP-12 evidence.
   - Verification: focused tests rebuild both artifacts twice byte-for-byte,
     verify an extracted bundle outside the checkout, and exercise every
-    required rejection class. AP 15 is now active.
+    required rejection class. AP 15 is complete, closing the documented
+    release sequence.
 
 - [x] **AP 15: Qualify and publish TinyCPU 1.0**
   (Owner: TinyCPU/Release; completed 2026-08-28)

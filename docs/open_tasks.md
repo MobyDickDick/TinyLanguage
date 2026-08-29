@@ -5,6 +5,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Confirm the repository-wide work-package boundary**
+  (Owner: Project/Documentation; completed 2026-08-29)
+  - Scope: answer the request for the next documented work package by scanning
+    every tracked Markdown, reStructuredText, and text planning file for an
+    unchecked checklist entry before changing implementation or release scope.
+  - Result: no unchecked work package is documented. The current TinyCPU
+    boundary remains closed with AP 1 through AP 15 complete, and the other
+    maintained plans likewise contain no executable checklist item. No code,
+    circuit, or release artifact change is therefore authorized.
+  - Follow-up contract: a future package must first be added to the maintained
+    backlog as a bounded, unchecked item with explicit acceptance criteria;
+    prose ideas, completed history, and this request do not create scope.
+  - Verification: the roadmap-consistency regression scans all tracked planning
+    formats and requires this repository-wide decision to head the active log.
+
 - [x] **Re-validate the TinyCPU backlog after the repository-wide audit**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)
   - Scope: answer the request for the next documented TinyCPU work package by

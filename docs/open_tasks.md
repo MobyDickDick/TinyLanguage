@@ -2588,7 +2588,7 @@ and testable so they can be promoted into the formal backlog as needed.
 
 ## TinyCPU execution update (2026-08-03)
 
-- [x] **AP 7: Maschinenformat und Tooling** (Owner: TinyCPU)
+- [x] **AP 7: Machine format and tooling** (Owner: TinyCPU)
   - Result: froze the version-1 22-bit machine-word layout and opcode table,
     added a range-checking encoder/decoder that emits Logisim ROM images and
     listings, and loaded the generated AP 5 countdown image into the circuit.

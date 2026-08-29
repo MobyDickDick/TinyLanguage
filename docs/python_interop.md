@@ -193,7 +193,7 @@ The following mini-scenarios complement the list above and highlight common pitf
 
   Combination of namespaces, allowlists, and strict return types (the linter flags missing returns immediately with `[E010]`).
 
-- **Timeout- und Fehlercodes sichtbar machen** (bewusst lange HTTP-Anfrage):
+- **Make timeout and error codes visible** (deliberately long HTTP request):
 
   ```bash
   PYTHONPATH=src python src/tiny_language.py --eval 'Python.call("requests", "get", new["https://example.com"], { allow: new["status_code", "text"], timeout_ms: 1 });'

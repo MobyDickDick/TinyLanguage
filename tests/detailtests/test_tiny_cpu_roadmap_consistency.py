@@ -267,6 +267,42 @@ def test_latest_repository_backlog_audit_finds_no_documented_package():
     )
 
 
+def test_latest_tinycpu_request_preserves_the_closed_roadmap_boundary():
+    """A request to execute work must not invent a successor to AP 15."""
+
+    active_tasks = (REPOSITORY_ROOT / "docs" / "open_tasks.md").read_text(
+        encoding="utf-8"
+    )
+    current_tasks = active_tasks.split("## Current tasks", maxsplit=1)[1]
+    latest_package = current_tasks.split(
+        "- [x] **Re-audit the documented backlog after the closed TinyCPU boundary**",
+        maxsplit=1,
+    )[0]
+    detailed = (REPOSITORY_ROOT / "docs" / "tiny_cpu_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    expansion = (REPOSITORY_ROOT / "docs" / "expansion_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+
+    first_content_line = next(
+        line for line in current_tasks.splitlines() if line.strip()
+    )
+    assert first_content_line == (
+        "- [x] **Re-validate the TinyCPU backlog after the repository-wide audit**"
+    )
+    assert "AP 1 through AP 15 remain complete" in latest_package
+    assert "no TinyCPU implementation package\n    to execute" in latest_package
+    assert "no circuit, tooling, or release change is warranted" in latest_package
+    assert "bounded, unchecked package with explicit acceptance criteria" in (
+        latest_package
+    )
+    assert "ein weiteres\nRelease-Arbeitspaket ist derzeit nicht dokumentiert" in (
+        detailed
+    )
+    assert "No successor package is\n  currently scoped" in expansion
+
+
 def test_detailed_hardware_docs_do_not_advertise_completed_follow_ups():
     """Historical implementation notes must not look like active packages."""
 

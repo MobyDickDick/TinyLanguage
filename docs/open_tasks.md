@@ -5,6 +5,21 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Re-validate the TinyCPU backlog after the repository-wide audit**
+  (Owner: TinyCPU/Documentation; completed 2026-08-29)
+  - Scope: answer the request for the next documented TinyCPU work package by
+    checking the active task log, the detailed AP inventory, and the expansion
+    roadmap before modifying the accepted hardware or release artifacts.
+  - Result: the repository-wide audit is still the newest documented boundary,
+    AP 1 through AP 15 remain complete, and neither roadmap defines an
+    unchecked successor. There is therefore no TinyCPU implementation package
+    to execute and no circuit, tooling, or release change is warranted.
+  - Follow-up contract: the next TinyCPU change must first be recorded as a
+    bounded, unchecked package with explicit acceptance criteria; a request to
+    execute the next package does not itself create implementation scope.
+  - Verification: the roadmap-consistency regression ties this decision to the
+    head of the active task log and to both maintained TinyCPU roadmaps.
+
 - [x] **Re-audit the documented backlog after the closed TinyCPU boundary**
   (Owner: Project/Documentation; completed 2026-08-28)
   - Scope: answer the request for the next documented work package by checking

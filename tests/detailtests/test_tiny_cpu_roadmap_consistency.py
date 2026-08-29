@@ -233,10 +233,10 @@ def test_latest_repository_backlog_audit_finds_no_documented_package():
     task_log = REPOSITORY_ROOT / "docs" / "open_tasks.md"
     active_tasks = task_log.read_text(encoding="utf-8")
     latest_package = active_tasks.split(
-        "**Re-audit the documented backlog after the closed TinyCPU boundary**",
+        "**Confirm the repository-wide work-package boundary**",
         maxsplit=1,
     )[1].split(
-        "- [x] **Re-confirm the TinyCPU work-package boundary after electrical repair**",
+        "- [x] **Re-validate the TinyCPU backlog after the repository-wide audit**",
         maxsplit=1,
     )[0]
 
@@ -260,10 +260,18 @@ def test_latest_repository_backlog_audit_finds_no_documented_package():
 
     assert unchecked_entries == []
     assert "no unchecked work package is documented" in latest_package
-    assert "all AP 1 through AP 15 packages remain\n    complete" in latest_package
+    assert "AP 1 through AP 15 complete" in latest_package
+    assert "No code,\n    circuit, or release artifact change" in latest_package
     assert (
-        "bounded, unchecked\n    package with explicit acceptance criteria"
+        "bounded, unchecked item with explicit acceptance criteria"
         in latest_package
+    )
+    current_tasks = active_tasks.split("## Current tasks", maxsplit=1)[1]
+    first_content_line = next(
+        line for line in current_tasks.splitlines() if line.strip()
+    )
+    assert first_content_line == (
+        "- [x] **Confirm the repository-wide work-package boundary**"
     )
 
 
@@ -285,10 +293,12 @@ def test_latest_tinycpu_request_preserves_the_closed_roadmap_boundary():
         encoding="utf-8"
     )
 
-    first_content_line = next(
-        line for line in current_tasks.splitlines() if line.strip()
+    first_tinycpu_entry = next(
+        line
+        for line in current_tasks.splitlines()
+        if line.startswith("- [x]") and "TinyCPU" in line
     )
-    assert first_content_line == (
+    assert first_tinycpu_entry == (
         "- [x] **Re-validate the TinyCPU backlog after the repository-wide audit**"
     )
     assert "AP 1 through AP 15 remain complete" in latest_package

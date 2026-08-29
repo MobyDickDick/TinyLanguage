@@ -14,7 +14,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 from tiny_cpu_assembler import assemble
-from tiny_cpu_circuit import validate_hardware_contract
+from tiny_cpu_circuit import validate_hardware_contract, validate_named_topology
 from tiny_cpu_machine import encode_program, listing, rom_image
 from tiny_cpu_release import validate_release_contract
 from tiny_cpu_trace import capture_integration_trace, capture_trace, compare_trace
@@ -63,18 +63,25 @@ def _verify_electrical_attributes(project: Path) -> None:
     root = ET.parse(project).getroot()
     circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}
     required = (
-        ("FetchDecode", "Constant", "(540,240)", "value", "0x1"),
-        ("FetchDecode", "Constant", "(540,240)", "width", "1"),
-        ("FetchDecode", "Constant", "(710,240)", "value", "0x1"),
-        ("FetchDecode", "Constant", "(710,240)", "width", "16"),
-        ("FetchDecode", "Multiplexer", "(870,240)", "width", "16"),
-        ("FetchDecode", "Comparator", "(740,420)", "width", "16"),
-        ("Operations", "Multiplexer", "(1730,650)", "width", "16"),
+        ("FetchDecode", "PC_INCREMENT_ENABLE", "Constant", "value", "0x1"),
+        ("FetchDecode", "PC_INCREMENT_ENABLE", "Constant", "width", "1"),
+        ("FetchDecode", "PC_INCREMENT", "Constant", "value", "0x1"),
+        ("FetchDecode", "PC_INCREMENT", "Constant", "width", "16"),
+        ("FetchDecode", "PC_NEXT_SELECT", "Multiplexer", "width", "16"),
+        ("FetchDecode", "PROGRAM_LIMIT_COMPARE", "Comparator", "width", "16"),
+        ("Operations", "RESULT_DATA_SELECT", "Multiplexer", "width", "16"),
     )
-    for circuit_name, component_name, location, attribute, expected in required:
+    for circuit_name, label, component_name, attribute, expected in required:
         circuit = circuits.get(circuit_name)
-        component = None if circuit is None else circuit.find(
-            f"comp[@name='{component_name}'][@loc='{location}']"
+        candidates = () if circuit is None else circuit.findall("comp")
+        component = next(
+            (
+                item
+                for item in candidates
+                if item.get("name") == component_name
+                and _attributes(item).get("label") == label
+            ),
+            None,
         )
         actual = None if component is None else _attributes(component).get(attribute)
         if actual is None and component_name == "Constant":
@@ -82,7 +89,7 @@ def _verify_electrical_attributes(project: Path) -> None:
         if actual != expected:
             raise VerificationError(
                 "electrical attributes: "
-                f"{circuit_name}.{component_name}@{location} requires "
+                f"{circuit_name}.{label} ({component_name}) requires "
                 f"{attribute}={expected!r}, found {actual!r}"
             )
 
@@ -105,6 +112,9 @@ def verify_checkout(repository: Path) -> tuple[str, ...]:
     if violations:
         raise VerificationError("hardware contract: " + "; ".join(violations))
     _verify_electrical_attributes(project)
+    topology_violations = validate_named_topology(project)
+    if topology_violations:
+        raise VerificationError("named topology: " + "; ".join(topology_violations))
 
     source = (hardware / "ap5_countdown.tcpu").read_text(encoding="utf-8")
     program = assemble(source)
@@ -141,13 +151,8 @@ def verify_checkout(repository: Path) -> tuple[str, ...]:
     # tests still report the artifact mismatch they were constructed to expose
     # before the deliberately minimal fixture reaches the release boundary.
     validate_release_contract(repository)
-    # Do not advertise a connectivity check here.  ``validate_hardware_contract``
-    # verifies component and pin declarations inside the leaf circuits, but it
-    # deliberately does not prove that top-level wires end on the automatically
-    # generated subcircuit-symbol ports.  Electrical connectivity is reported by
-    # ``tiny_cpu_circuit.py`` (and ultimately established by Logisim itself).
     return (
-        "hardware contract", "electrical attributes", "ROM and listing",
+        "hardware contract", "named topology", "electrical attributes", "ROM and listing",
         "embedded ROM", "17-edge trace", "integration boundary trace",
     )
 

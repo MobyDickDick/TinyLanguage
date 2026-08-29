@@ -91,6 +91,7 @@
       <a name="label" val="DEC_HALT_ERROR"/>
     </comp>
     <comp lib="0" loc="(540,240)" name="Constant">
+      <a name="label" val="PC_INCREMENT_ENABLE"/>
       <a name="value" val="0x1"/>
     </comp>
     <comp lib="0" loc="(700,550)" name="Splitter">
@@ -113,6 +114,7 @@
       <a name="incoming" val="16"/>
     </comp>
     <comp lib="0" loc="(710,240)" name="Constant">
+      <a name="label" val="PC_INCREMENT"/>
       <a name="value" val="0x1"/>
       <a name="width" val="16"/>
     </comp>
@@ -130,9 +132,11 @@
       <a name="label" val="ERROR_HALT"/>
     </comp>
     <comp lib="2" loc="(870,240)" name="Multiplexer">
+      <a name="label" val="PC_NEXT_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(740,420)" name="Comparator">
+      <a name="label" val="PROGRAM_LIMIT_COMPARE"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(770,230)" name="Adder">

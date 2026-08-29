@@ -1580,6 +1580,7 @@ def test_ap8_fresh_checkout_verification_covers_all_deliverables():
     repository = PROJECT.parents[2]
     assert verify_checkout(repository) == (
         "hardware contract",
+        "named topology",
         "electrical attributes",
         "ROM and listing",
         "embedded ROM",
@@ -1602,15 +1603,15 @@ def test_ap8_verification_reports_a_stale_generated_artifact(tmp_path):
 
 
 @pytest.mark.parametrize(
-    ("circuit_name", "component_name", "location", "attribute", "invalid"),
+    ("circuit_name", "component_name", "label", "attribute", "invalid"),
     (
-        ("FetchDecode", "Constant", "(540,240)", "value", "0x0"),
-        ("FetchDecode", "Constant", "(710,240)", "width", "1"),
-        ("Operations", "Multiplexer", "(1730,650)", "width", "1"),
+        ("FetchDecode", "Constant", "PC_INCREMENT_ENABLE", "value", "0x0"),
+        ("FetchDecode", "Constant", "PC_INCREMENT", "width", "1"),
+        ("Operations", "Multiplexer", "RESULT_DATA_SELECT", "width", "1"),
     ),
 )
 def test_ap8_verification_rejects_incorrect_electrical_attributes(
-    tmp_path, circuit_name, component_name, location, attribute, invalid
+    tmp_path, circuit_name, component_name, label, attribute, invalid
 ):
     """The required CI gate must catch effective electrical changes."""
 
@@ -1624,8 +1625,9 @@ def test_ap8_verification_rejects_incorrect_electrical_attributes(
     project = target / "TinyCPU.circ"
     tree = ET.parse(project)
     circuit = tree.getroot().find(f"circuit[@name='{circuit_name}']")
-    component = circuit.find(
-        f"comp[@name='{component_name}'][@loc='{location}']"
+    component = next(
+        item for item in circuit.findall(f"comp[@name='{component_name}']")
+        if _attributes(item).get("label") == label
     )
     item = next((item for item in component if item.get("name") == attribute), None)
     if item is None:

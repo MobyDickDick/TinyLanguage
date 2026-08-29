@@ -46,6 +46,7 @@
       <a name="facing" val="west"/>
       <a name="label" val="MONITOR_PC_OUT"/>
       <a name="labelloc" val="east"/>
+      <a name="width" val="12"/>
     </comp>
     <comp lib="0" loc="(1020,350)" name="Constant">
       <a name="width" val="16"/>
@@ -201,6 +202,7 @@
       <a name="facing" val="west"/>
       <a name="label" val="MONITOR_EFFECTIVE_REGISTER_SELECTED_OUT"/>
       <a name="labelloc" val="east"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(3580,550)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -1550,7 +1552,10 @@
       <a name="appearance" val="classic"/>
       <a name="label" val="DEC_HALT_ERROR"/>
     </comp>
-    <comp lib="0" loc="(540,240)" name="Constant"/>
+    <comp lib="0" loc="(540,240)" name="Constant">
+      <a name="label" val="PC_INCREMENT_ENABLE"/>
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="0" loc="(700,550)" name="Splitter">
       <a name="appear" val="right"/>
       <a name="bit1" val="0"/>
@@ -1571,6 +1576,8 @@
       <a name="incoming" val="16"/>
     </comp>
     <comp lib="0" loc="(710,240)" name="Constant">
+      <a name="label" val="PC_INCREMENT"/>
+      <a name="value" val="0x1"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(810,560)" name="Pin">
@@ -1587,9 +1594,11 @@
       <a name="label" val="ERROR_HALT"/>
     </comp>
     <comp lib="2" loc="(870,240)" name="Multiplexer">
+      <a name="label" val="PC_NEXT_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(740,420)" name="Comparator">
+      <a name="label" val="PROGRAM_LIMIT_COMPARE"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(770,230)" name="Adder">
@@ -2647,6 +2656,7 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="label" val="ACTIVE_INVALID_OPERATION"/>
     </comp>
     <comp lib="2" loc="(1730,650)" name="Multiplexer">
+      <a name="label" val="RESULT_DATA_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(1810,770)" name="Multiplexer"/>

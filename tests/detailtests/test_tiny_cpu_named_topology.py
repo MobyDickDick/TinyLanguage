@@ -8,7 +8,7 @@ from collections import Counter
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
-from tiny_cpu_circuit import inspect_project
+from tiny_cpu_circuit import inspect_project, validate_named_topology
 
 
 PROJECT = Path(__file__).parents[2] / "hardware" / "logisim" / "TinyCPU.circ"
@@ -62,3 +62,26 @@ def test_every_schematic_page_is_electrically_connected_by_named_report():
         if not report.connected
     }
     assert not failures
+
+
+def test_checkout_named_topology_contract_is_complete():
+    assert validate_named_topology(PROJECT) == ()
+
+
+def test_named_topology_rejects_a_disconnected_named_port(tmp_path):
+    project = tmp_path / "broken.circ"
+    tree = ET.parse(PROJECT)
+    top = tree.getroot().find("circuit[@name='TinyCPUMain']")
+    reset = next(
+        pin for pin in top.findall("comp[@name='Pin']")
+        if _attributes(pin).get("label") == "RESET"
+    )
+    reset_location = reset.get("loc")
+    for wire in list(top.findall("wire")):
+        if reset_location in {wire.get("from"), wire.get("to")}:
+            top.remove(wire)
+    tree.write(project, encoding="utf-8", xml_declaration=True)
+
+    violations = validate_named_topology(project)
+
+    assert any("TinyCPUMain: unconnected RESET@" in item for item in violations)

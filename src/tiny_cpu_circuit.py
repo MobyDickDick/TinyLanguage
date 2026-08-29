@@ -769,6 +769,59 @@ def validate_hardware_contract(
     return tuple(violations)
 
 
+def validate_named_topology(project: str | Path) -> tuple[str, ...]:
+    """Validate the schematic hierarchy through stable names and electrical nets.
+
+    Coordinates are necessarily used while reading Logisim's geometric wire
+    format, but they are never part of this contract: circuits, boundary ports,
+    and hierarchical instances are identified exclusively by their names and
+    labels.  Moving a component together with its wires therefore leaves the
+    result unchanged.
+    """
+
+    root = _read_project(project)
+    circuits = {
+        circuit.get("name", ""): circuit for circuit in root.findall("circuit")
+    }
+    violations: list[str] = []
+    for circuit_name, circuit in circuits.items():
+        ports: set[str] = set()
+        instances: set[str] = set()
+        for component in circuit.findall("comp"):
+            attrs = _attributes(component)
+            if component.get("name") == "Pin":
+                label = attrs.get("label", "").strip()
+                if not label:
+                    violations.append(f"{circuit_name}: unnamed boundary port")
+                elif label in ports:
+                    violations.append(
+                        f"{circuit_name}: duplicate boundary port {label!r}"
+                    )
+                ports.add(label)
+            if component.get("name", "") in circuits:
+                label = attrs.get("label", "").strip()
+                if not label:
+                    violations.append(
+                        f"{circuit_name}: unnamed {component.get('name')} instance"
+                    )
+                elif label in instances:
+                    violations.append(
+                        f"{circuit_name}: duplicate instance label {label!r}"
+                    )
+                instances.add(label)
+
+    for report in inspect_project(project):
+        for item in report.unconnected:
+            violations.append(f"{report.name}: unconnected {item}")
+        for item in report.routing_conflicts:
+            violations.append(f"{report.name}: routing conflict: {item}")
+        for item in report.width_conflicts:
+            violations.append(f"{report.name}: width conflict: {item}")
+        if report.wires == 0:
+            violations.append(f"{report.name}: circuit has no electrical nets")
+    return tuple(violations)
+
+
 def inspect_project(path: str | Path) -> tuple[CircuitReport, ...]:
     """Read *path* and return a connectivity report for every circuit.
 

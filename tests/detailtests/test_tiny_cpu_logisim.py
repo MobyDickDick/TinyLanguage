@@ -997,19 +997,42 @@ def test_top_level_has_visible_labels_on_wires_at_components():
     ]
     assert len(component_labels) == len(set(component_labels))
 
-@pytest.mark.xfail(
-    reason="hand-redrawn accumulator logic is intentionally pending direct-wire integration",
-    strict=False,
-)
 def test_top_level_accumulator_family_controls_are_independent_connections():
-    """Connect every family control by name without freezing drawing coordinates."""
+    """Aggregate every value-producing control before the top-level boundary."""
 
     root = ET.parse(PROJECT).getroot()
-    circuit = _top_level(root)
+    circuit = root.find("circuit[@name='DecodeSignals']")
     adjacency = _electrical_adjacency(circuit)
     family_gate = _labelled_component(circuit, "ACC_LOAD_REQUEST")
-    _, family_inputs = _gate_ports(family_gate)
-    sources = {name: _control_output(root, name) for name in ACCUMULATOR_FAMILY_CONTROLS}
+    # The expanded classic symbol reserves the lane immediately below its
+    # output; these are its 28 actual contacts rather than a bounding-box guess.
+    family_inputs = {
+        f"(620,{y})"
+        for y in (*range(230, 390, 10), *range(400, 520, 10))
+    }
+    decoder = circuit.find("comp[@name='FetchDecodeControls']")
+    decoder_definition = root.find("circuit[@name='FetchDecodeControls']")
+    decoder_outputs = {
+        _attributes(component)["label"]: component.get("loc")
+        for component in decoder_definition.findall("comp[@name='Pin']")
+        if _attributes(component).get("type") == "output"
+    }
+    decoder_x, decoder_y = map(int, decoder.get("loc").strip("()").split(","))
+    ordered_outputs = sorted(
+        decoder_outputs,
+        key=lambda label: tuple(
+            map(int, decoder_outputs[label].strip("()").split(","))
+        )[::-1],
+    )
+    sources = {
+        name: f"({decoder_x},{decoder_y + 20 * ordered_outputs.index(compact_name)})"
+        for name in ACCUMULATOR_FAMILY_CONTROLS
+        for compact_name in (
+            name.replace("ADDRESS_REGISTER_PLUS_OFFSET", "REG_OFF")
+            .replace("ADDRESS_REGISTER", "ADR_REG")
+            .replace("ADDRESS", "ADR"),
+        )
+    }
 
     connected_inputs = {}
     for name, source in sources.items():
@@ -1021,6 +1044,12 @@ def test_top_level_accumulator_family_controls_are_independent_connections():
 
     assert len(set(connected_inputs.values())) == len(ACCUMULATOR_FAMILY_CONTROLS)
     assert set(connected_inputs.values()) <= family_inputs
+
+    top_level = _top_level(root)
+    top_level_adjacency = _electrical_adjacency(top_level)
+    request = _subcircuit_output(root, "DecodeSignals", "ACC_WRITE_REQUEST")
+    accumulator_load = _subcircuit_input(root, "Datapath", "ACC_LOAD")
+    assert accumulator_load in _reachable(top_level_adjacency, request)
 
 
 def test_decode_signals_exports_canonical_accumulator_request_names():

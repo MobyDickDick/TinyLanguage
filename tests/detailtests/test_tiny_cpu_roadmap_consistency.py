@@ -114,7 +114,6 @@ def test_active_backlog_exposes_the_scoped_tinycpu_coverage_packages():
         re.IGNORECASE | re.MULTILINE,
     )
     expected_packages = (
-        "Wire the TinyCPU accumulator write-enable controls directly",
         "Complete the TinyCPU accumulator data-selection chain",
         "Complete TinyCPU accumulator validity and arithmetic selection",
         "Close the TinyCPU opcode-proof electrical repair",
@@ -270,7 +269,7 @@ def test_historical_repository_audit_precedes_new_opcode_packages():
                     f"{planning_file.relative_to(REPOSITORY_ROOT)}:{line_number}"
                 )
 
-    assert len(unchecked_entries) == 4
+    assert len(unchecked_entries) == 3
     assert all(entry.startswith("docs/open_tasks.md:") for entry in unchecked_entries)
     assert "no unchecked work package is documented" in latest_package
     assert "AP 1 through AP 15 complete" in latest_package
@@ -404,7 +403,7 @@ def test_new_opcode_audit_creates_only_the_documented_packages():
     assert first_content_line == (
         "- [x] **Prove every TinyCPU opcode behavior electrically**"
     )
-    assert len(unchecked_entries) == 4
+    assert len(unchecked_entries) == 3
     assert all(entry.startswith("docs/open_tasks.md:") for entry in unchecked_entries)
     assert "no unchecked work package is documented" in latest_package
     assert "AP 1 through AP 15 remain\n    complete" in latest_package

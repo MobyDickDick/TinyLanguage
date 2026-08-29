@@ -778,17 +778,22 @@ def _labelled_component(circuit, label):
     assert len(matches) == 1, label
     return matches[0]
 
-def _accumulator_selectors(circuit):
-    """Return the three named 16-bit accumulator muxes in signal-flow order."""
+def test_top_level_does_not_restore_the_obsolete_accumulator_selector_chain():
+    """Keep regressions aligned with the maintained direct data routes."""
 
-    return tuple(
-        _labelled_component(circuit, label)
-        for label in (
-            "ACC_MEMORY_DATA_SELECT",
-            "ACC_NOT_DATA_SELECT",
-            "ACC_INPUT_DATA_SELECT",
-        )
-    )
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    labels = {
+        _attributes(component).get("label")
+        for component in circuit.findall("comp")
+    }
+    obsolete = {
+        "ACC_MEMORY_DATA_SELECT",
+        "ACC_NOT_DATA_SELECT",
+        "ACC_INPUT_DATA_SELECT",
+        "ACC_NOT_VALUE",
+    }
+    assert labels.isdisjoint(obsolete)
 
 
 def _accumulator_validity_selectors(circuit):
@@ -1132,124 +1137,8 @@ def test_decode_write_request_causes_use_separate_gate_connections():
     assert write_request in _reachable(adjacency, write_output)
 
 
-@pytest.mark.xfail(
-    reason="the user-maintained baseline intentionally omits the former selector chain",
-    strict=False,
-)
-def test_top_level_accumulator_data_selector_keeps_sources_isolated():
-    """Select memory for three load modes without shorting data or controls."""
-
-    root = ET.parse(PROJECT).getroot()
-    circuit = _top_level(root)
-    mux, not_mux, input_mux = _accumulator_selectors(circuit)
-    memory_select_gate = _labelled_component(circuit, "ACC_MEMORY_SELECT")
-    assert mux.get("name") == "Multiplexer"
-    assert _attributes(mux).get("width") == "16"
-    assert memory_select_gate.get("name") == "OR Gate"
-
-    x, y = (int(value) for value in mux.get("loc").strip("()").split(","))
-    mux_output = f"({x},{y})"
-    mux_inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
-    mux_select = f"({x - 20},{y + 20})"
-    operand = _instruction_field_output(root, range(16))
-    memory_data = _subcircuit_output(root, "Memory", "MEMORY_DATA")
-    data_in = _subcircuit_input(root, "Datapath", "DATA_IN")
-    not_mux_x, not_mux_y = (
-        int(value) for value in not_mux.get("loc").strip("()").split(",")
-    )
-    not_mux_inputs = {
-        f"({not_mux_x - 30},{not_mux_y - 10})",
-        f"({not_mux_x - 30},{not_mux_y + 10})",
-    }
-    not_mux_output = f"({not_mux_x},{not_mux_y})"
-    adjacency = _electrical_adjacency(
-        circuit,
-        mux_inputs
-        | {mux_output, mux_select, data_in, not_mux_output}
-        | not_mux_inputs,
-    )
-
-    operand_reachable = _reachable(adjacency, operand)
-    memory_reachable = _reachable(adjacency, memory_data)
-    assert len(operand_reachable & mux_inputs) == 1
-    assert len(memory_reachable & mux_inputs) == 1
-    assert (operand_reachable & mux_inputs) != (memory_reachable & mux_inputs)
-    assert memory_data not in operand_reachable
-    assert len(_reachable(adjacency, mux_output) & not_mux_inputs) == 1
-    input_mux_x, input_mux_y = (
-        int(value) for value in input_mux.get("loc").strip("()").split(",")
-    )
-    input_mux_inputs = {
-        f"({input_mux_x - 30},{input_mux_y - 10})",
-        f"({input_mux_x - 30},{input_mux_y + 10})",
-    }
-    sub_mux = _labelled_component(circuit, "ACC_SUB_SELECT")
-    assert len(_reachable(adjacency, sub_mux.get("loc")) & input_mux_inputs) == 1
-    assert data_in in _reachable(adjacency, f"({input_mux_x},{input_mux_y})")
-
-    select_output, select_inputs = _gate_ports(memory_select_gate)
-    select_causes = {
-        name: _control_output(root, name)
-        for name in (
-            "LOAD_ADDRESS",
-            "LOAD_ADDRESS_REGISTER",
-            "LOAD_ADDRESS_REGISTER_PLUS_OFFSET",
-        )
-    }
-    connected_inputs = {}
-    for name, source in select_causes.items():
-        reachable = _reachable(adjacency, source)
-        matches = reachable & select_inputs
-        assert len(matches) == 1, name
-        connected_inputs[name] = matches.pop()
-        assert reachable.isdisjoint(set(select_causes.values()) - {source}), name
-        assert reachable.isdisjoint(mux_inputs | {mux_output, data_in}), name
-    assert len(set(connected_inputs.values())) == len(select_causes)
-    assert set(connected_inputs.values()) == select_inputs
-    assert mux_select in _reachable(adjacency, select_output)
-    assert _instruction_field_output(root, range(16, 22)) not in operand_reachable
-    assert _subcircuit_input(root, "Datapath", "ACC_LOAD") not in operand_reachable
-    assert _subcircuit_input(root, "Datapath", "VALID_IN") not in operand_reachable
-
-    address_outputs = {
-        _subcircuit_output(root, "AddressPath", label)
-        for label in ("ADDRESS", "ADDRESS_PLUS_OFFSET")
-    }
-    data_nets = operand_reachable | memory_reachable | _reachable(adjacency, data_in)
-    assert data_nets.isdisjoint(address_outputs)
 
 
-@pytest.mark.xfail(
-    reason="the user-maintained baseline intentionally omits the former selector chain",
-    strict=False,
-)
-def test_top_level_input_value_is_selected_only_for_input():
-    """Route the external 16-bit value through a dedicated final selector."""
-
-    root = ET.parse(PROJECT).getroot()
-    circuit = _top_level(root)
-    adjacency = _electrical_adjacency(circuit)
-    _, not_mux, input_mux = _accumulator_selectors(circuit)
-    x, y = (int(value) for value in input_mux.get("loc").strip("()").split(","))
-    inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
-    select = f"({x - 20},{y + 20})"
-    output = f"({x},{y})"
-    not_output = not_mux.get("loc")
-    input_pin = _labelled_component(circuit, "INPUT_VALUE")
-    assert _attributes(input_pin).get("width") == "16"
-    sub_mux = _labelled_component(circuit, "ACC_SUB_SELECT")
-    prior_matches = _reachable(adjacency, sub_mux.get("loc")) & inputs
-    external_matches = _reachable(adjacency, input_pin.get("loc")) & inputs
-    assert len(prior_matches) == 1
-    assert len(external_matches) == 1
-    assert prior_matches != external_matches
-    assert select in _reachable(adjacency, _control_output(root, "INPUT"))
-    assert _subcircuit_input(root, "Datapath", "DATA_IN") in _reachable(
-        adjacency, output
-    )
-    assert _control_output(root, "NOT") not in _reachable(
-        adjacency, input_pin.get("loc")
-    )
 
 
 def _assert_binary_validity_selector(root, circuit_name, operation):
@@ -1333,63 +1222,8 @@ def test_top_level_uses_the_corrected_direct_data_routes():
     assert actual.isdisjoint(obsolete_labels)
 
 
-@pytest.mark.xfail(
-    reason="the user-maintained baseline intentionally omits the former selector chain",
-    strict=False,
-)
-def test_top_level_accumulator_data_bus_reaches_the_corrected_terminal():
-    """Follow the hand-corrected direct route to the visible data terminal."""
-
-    root = ET.parse(PROJECT).getroot()
-    circuit = _top_level(root)
-    adjacency = _electrical_adjacency(circuit)
-    data_input = _subcircuit_input(root, "Datapath", "DATA_IN")
-    _, _, input_mux = _accumulator_selectors(circuit)
-    assert data_input in _reachable(adjacency, input_mux.get("loc"))
 
 
-@pytest.mark.xfail(
-    reason="the user-maintained baseline intentionally omits the former selector chain",
-    strict=False,
-)
-def test_top_level_not_data_selector_uses_inverted_accumulator():
-    """Select an isolated, bitwise-inverted accumulator only for ``NOT``."""
-
-    root = ET.parse(PROJECT).getroot()
-    circuit = _top_level(root)
-    adjacency = _electrical_adjacency(circuit)
-    inverter = _labelled_component(circuit, "ACC_NOT_VALUE")
-    _, mux, _ = _accumulator_selectors(circuit)
-    assert inverter.get("name") == "NOT Gate"
-    assert _attributes(inverter).get("width") == "16"
-    assert mux.get("name") == "Multiplexer"
-    assert _attributes(mux).get("width") == "16"
-
-    inverter_x, inverter_y = (
-        int(value) for value in inverter.get("loc").strip("()").split(",")
-    )
-    inverter_input = f"({inverter_x - 30},{inverter_y})"
-    inverter_output = f"({inverter_x},{inverter_y})"
-    mux_x, mux_y = (int(value) for value in mux.get("loc").strip("()").split(","))
-    mux_inputs = {f"({mux_x - 30},{mux_y - 10})", f"({mux_x - 30},{mux_y + 10})"}
-    mux_select = f"({mux_x - 20},{mux_y + 20})"
-    acc_out = _subcircuit_output(root, "Datapath", "ACC_OUT")
-    not_control = _control_output(root, "NOT")
-    data_in = _subcircuit_input(root, "Datapath", "DATA_IN")
-
-    assert inverter_input in _reachable(adjacency, acc_out)
-    inverted_reachable = _reachable(adjacency, inverter_output)
-    assert len(inverted_reachable & mux_inputs) == 1
-    assert mux_select in _reachable(adjacency, not_control)
-    input_mux = _accumulator_selectors(circuit)[2]
-    input_x, input_y = (
-        int(value) for value in input_mux.get("loc").strip("()").split(",")
-    )
-    input_ports = {f"({input_x - 30},{input_y - 10})", f"({input_x - 30},{input_y + 10})"}
-    sub_mux = _labelled_component(circuit, "ACC_SUB_SELECT")
-    assert len(_reachable(adjacency, sub_mux.get("loc")) & input_ports) == 1
-    assert data_in in _reachable(adjacency, f"({input_x},{input_y})")
-    assert _control_output(root, "INPUT") not in _reachable(adjacency, not_control)
 
 
 def test_ci_runs_the_fresh_checkout_hardware_verifier():
